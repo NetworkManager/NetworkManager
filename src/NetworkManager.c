@@ -305,10 +305,10 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 	g_return_if_fail (udi != NULL);
 	g_return_if_fail (key != NULL);
 
-	//syslog (LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added);
+	/*syslog (LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added);*/
 
 	/* Only accept wired ethernet link changes for now */
-	if (is_removed || (strcmp (key, "net.80203.link")))
+	if (is_removed || (strcmp (key, "net.80203.link") != 0))
 		return;
 
 	if (!hal_device_property_exists (ctx, udi, "net.80203.link"))
@@ -323,7 +323,7 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 		if ((dev = nm_get_device_by_udi (data, udi)) && nm_device_is_wired (dev))
 		{
 			syslog (LOG_DEBUG, "HAL signaled link state change for device %s.", nm_device_get_iface (dev));
-			nm_device_update_link_active (dev, FALSE);
+			nm_device_update_link_active (dev);
 
 			/* If the currently active device is locked and wireless, and the wired
 			 * device we just received this property change event for now has a link
@@ -444,7 +444,7 @@ gboolean nm_link_state_monitor (gpointer user_data)
 			{
 				if (!nm_device_is_up (dev))
 					nm_device_bring_up (dev);
-				nm_device_update_link_active (dev, FALSE);						
+				nm_device_update_link_active (dev);
 
 				if (dev == data->active_device)
 				{
@@ -562,6 +562,9 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->state_modified_idle_id = 0;
 
 	data->enable_test_devices = enable_test_devices;
+
+	data->scanning_enabled = TRUE;
+	data->wireless_enabled = TRUE;
 
 	nm_policy_schedule_state_update (data);
 

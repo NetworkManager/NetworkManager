@@ -61,8 +61,7 @@ typedef struct NMDeviceWirelessOptions
 /* Wired device specific options */
 typedef struct NMDeviceWiredOptions
 {
-	guint			 link_watch_id;
-	guint			 foo;
+	gboolean			 has_carrier_detect;
 } NMDeviceWiredOptions;
 
 typedef union NMDeviceOptions

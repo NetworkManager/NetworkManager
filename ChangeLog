@@ -1,5 +1,50 @@
 2005-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.[ch]
+		- Add a context menu that contains:
+			Pause/Resume Wireless Scanning
+			Stop/Start All Wireless Devices
+			About...
+		- Grab active device strength off active device,
+			not its network
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- Add DBUS accessors for "getSupportsCarrierDetect", "setScanningEnabled",
+			"getScanningEnabled", "setWirelessEnabled", and "getWirelessEnabled"
+		- Update active device strength every 2 seconds, not every 1 second
+
+	* panel-applet/menu-info.c
+		- Only disable wired devices in the menu when they support carrier detection,
+			and don't currently have a link.  Non-carrier-detect devices will always
+			remain choosable
+
+	* src/Makefile.am
+	  src/NetworkManagerDbusUtils.[ch]
+		- Add new new dbus utils sources
+
+	* src/NetworkManager.c
+		- Fixes for new link detection, we no longer need to call nm_device_update_link_active()
+			with the boolean parameter
+		- Set scanning_enabled & wireless_enabled to TRUE
+
+	* src/NetworkManagerDbus.c
+		- Use new dbus util method dispatcher functions for org.freedesktop.NetworkManager methods
+		- Implement scanning & wireless enable/disable calls
+		- Remove the dbus vtable unregister handlers, weren't doing anything with them anyway
+
+	* src/NetworkManagerDevice.c
+		- New link detection stuff again...
+			o  Create device's mainloop earlier (but don't run it earlier)
+			o  Hook up new carrier-detect support stuff
+			o  Add in the ethtool & mii support detection code
+		- Don't scan if scanning is disabled
+
+	* src/NetworkManagerPolicy.c
+		- Never automatically choose a device that doesn't support carrier detection
+		- Don't automatically choose a wireless device if wireless is disabled
+
+2005-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* libnm_glib/libnm_glib.c
 		- Small cleanup in element list iteration
 

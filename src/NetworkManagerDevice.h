@@ -58,7 +58,7 @@ void			nm_device_set_removed			(NMDevice *dev, const gboolean removed);
 
 gboolean		nm_device_get_link_active		(NMDevice *dev);
 void			nm_device_set_link_active		(NMDevice *dev, const gboolean active);
-void			nm_device_update_link_active		(NMDevice *dev, gboolean check_mii);
+void			nm_device_update_link_active		(NMDevice *dev);
 
 char *		nm_device_get_essid				(NMDevice *dev);
 void			nm_device_set_essid				(NMDevice *dev, const char *essid);
@@ -76,8 +76,8 @@ void			nm_device_update_hw_address		(NMDevice *dev);
 void			nm_device_get_ip6_address		(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
-gboolean		nm_device_wireless_network_exists	(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type,
-												struct ether_addr *addr, gboolean *encrypted);
+
+gboolean		nm_device_get_supports_carrier_detect (NMDevice *dev);
 
 gboolean		nm_device_set_mode				(NMDevice *dev, const NMNetworkMode mode);
 

@@ -22,7 +22,7 @@
  *		Eskil Heyn Olsen <eskil@eskil.dk>
  *		Bastien Nocera <hadess@hadess.net> (Gnome2 port)
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004-2005 Red Hat, Inc.
  * (C) Copyright 2001, 2002 Free Software Foundation
  */
 
@@ -55,11 +55,13 @@
 
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
-static gboolean	do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event);
-static GObject * nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
-static void   setup_stock (void);
-static void nmwa_icons_init (NMWirelessApplet *applet);
-static gboolean nmwa_fill (NMWirelessApplet *applet);
+static gboolean	nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data);
+static GObject *	nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
+static void		setup_stock (void);
+static void		nmwa_icons_init (NMWirelessApplet *applet);
+static gboolean	nmwa_fill (NMWirelessApplet *applet);
+static void		nmwa_about_cb (void);
+static void		nmwa_context_menu_update (NMWirelessApplet *applet);
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 
@@ -92,12 +94,40 @@ static GObject *nmwa_constructor (GType type,
   NMWirelessAppletClass *klass;
 
   klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
-  obj = G_OBJECT_CLASS (nmwa_parent_class)->constructor (type,
-							 n_props,
-							 construct_props);
+  obj = G_OBJECT_CLASS (nmwa_parent_class)->constructor (type, n_props, construct_props);
   applet =  NM_WIRELESS_APPLET (obj);
 
   return obj;
+}
+
+
+void nmwa_about_cb (void)
+{    
+	static const gchar *authors[] =
+	{
+		"\nThe Red Hat Desktop Team, including:\n",
+		"Dan Williams <dcbw@redhat.com>",
+		"Jonathan Blandford <jrb@redhat.com>",
+		"John Palmieri <johnp@redhat.com>",
+		"Colin Walters <walters@redhat.com>",
+		NULL
+	};
+
+	static const gchar *documenters[] =
+	{
+		NULL
+	};
+
+	gtk_show_about_dialog (NULL,
+		"name",				_("NetworkManager Applet"),
+		"version",			VERSION,
+		"copyright",			_("\xC2\xA9 2004-2005 by Red Hat, Inc."),
+		"comments",			_("A panel application for managing your network devices & connections."),
+		"authors",			authors,
+		"documenters",			documenters,
+		"translator-credits",	_("translator-credits"),
+		"logo-icon-name",		GTK_STOCK_NETWORK,
+		NULL);
 }
 
 
@@ -276,23 +306,7 @@ nmwa_update_state (NMWirelessApplet *applet)
 	g_mutex_lock (applet->data_mutex);
 	if (    applet->active_device
 		&& (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
-	{
-		GSList *list;
-		for (list = applet->active_device->networks; list; list = list->next)
-		{
-			WirelessNetwork *network = (WirelessNetwork *) list->data;
-
-			if (network->active)
-			{
-				strength = CLAMP ((int) network->strength, 0, 100);
-				active_network = network;
-			}
-		}
-
-		/* Fall back to old strength if current strength is invalid */
-		if (strength <= 0)
-			strength = applet->active_device->strength;
-	}
+		strength = CLAMP ((int)applet->active_device->strength, 0, 100);
 
 #if 0
 	/* Only show icon if there's more than one device and at least one is wireless */
@@ -945,8 +959,127 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 	return (menu);
 }
 
+
+static void nmwa_set_scanning_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_enable_scanning (applet, !applet->scanning_enabled);
+}
+
+static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_enable_scanning (applet, !applet->wireless_enabled);
+}
+
+
 /*
- * mnwa_setup_widgets
+ * nmwa_context_menu_update
+ *
+ */
+static void nmwa_context_menu_update (NMWirelessApplet *applet)
+{
+	GtkWidget *image;	
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->pause_scanning_item != NULL);
+	g_return_if_fail (applet->stop_wireless_item != NULL);
+
+	g_mutex_lock (applet->data_mutex);
+
+	gtk_widget_destroy (applet->pause_scanning_item);
+	gtk_widget_destroy (applet->stop_wireless_item);
+
+	if (applet->scanning_enabled)
+	{
+		applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Pause Wireless Scanning"));
+		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_MENU);
+	}
+	else
+	{
+		applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Resume Wireless Scanning"));
+		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_MENU);
+	}
+	g_signal_connect (G_OBJECT (applet->pause_scanning_item), "activate", G_CALLBACK (nmwa_set_scanning_enabled_cb), applet);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->pause_scanning_item), image);
+	gtk_menu_shell_insert (GTK_MENU_SHELL (applet->context_menu), applet->pause_scanning_item, 0);
+	gtk_widget_show_all (applet->pause_scanning_item);
+
+	if (applet->wireless_enabled)
+	{
+		applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Stop All Wireless Devices"));
+		image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
+	}
+	else
+	{
+		applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Start All Wireless Devices"));
+		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_MENU);
+	}
+	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
+	gtk_menu_shell_insert (GTK_MENU_SHELL (applet->context_menu), applet->stop_wireless_item, 1);
+	gtk_widget_set_sensitive (GTK_WIDGET (applet->stop_wireless_item), FALSE);
+	gtk_widget_show_all (applet->stop_wireless_item);
+
+	g_mutex_unlock (applet->data_mutex);
+}
+
+
+/*
+ * nmwa_context_menu_create
+ *
+ * Generate the contextual popup menu.
+ *
+ */
+static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
+{
+	GtkWidget	*menu;
+	GtkWidget	*menu_item;
+	GtkWidget *image;
+	
+	g_return_val_if_fail (applet != NULL, NULL);
+
+	menu = gtk_menu_new ();
+
+	applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Pause Wireless Scanning"));
+	g_signal_connect (G_OBJECT (applet->pause_scanning_item), "activate", G_CALLBACK (nmwa_set_scanning_enabled_cb), applet);
+	image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->pause_scanning_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->pause_scanning_item);
+
+	applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Stop All Wireless Devices"));
+	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
+	image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
+	gtk_widget_set_sensitive (GTK_WIDGET (applet->stop_wireless_item), FALSE);
+
+	menu_item = gtk_separator_menu_item_new ();
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+
+	menu_item = gtk_image_menu_item_new_with_label (_("Help"));
+/*	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_help_cb), applet); */
+	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	gtk_widget_set_sensitive (GTK_WIDGET (menu_item), FALSE);
+
+	menu_item = gtk_image_menu_item_new_with_label (_("About"));
+	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_about_cb), applet);
+	image = gtk_image_new_from_stock (GTK_STOCK_ABOUT, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+
+	gtk_widget_show_all (menu);
+
+	return menu;
+}
+
+
+/*
+ * nmwa_setup_widgets
  *
  * Intialize the applet's widgets and packing, create the initial
  * menu of networks.
@@ -961,18 +1094,22 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->pixmap = gtk_image_new ();
 	applet->event_box = gtk_event_box_new ();
 	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
+
 	menu_bar = gtk_menu_bar_new ();
 	gtk_container_add (GTK_CONTAINER(applet->event_box), menu_bar);
+
 	applet->toplevel_menu = gtk_menu_item_new();
 	gtk_widget_set_name (applet->toplevel_menu, "ToplevelMenu");
 	gtk_container_set_border_width (GTK_CONTAINER (applet->toplevel_menu), 0);
 	gtk_container_add (GTK_CONTAINER(applet->toplevel_menu), applet->pixmap);
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), applet->toplevel_menu);
-	g_signal_connect(applet->toplevel_menu, "activate", G_CALLBACK(nmwa_toplevel_menu_activate), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL(menu_bar), applet->toplevel_menu);
+	g_signal_connect (applet->toplevel_menu, "activate", G_CALLBACK (nmwa_toplevel_menu_activate), applet);
+
+	applet->context_menu = nmwa_context_menu_create (applet);
+	g_signal_connect (applet->toplevel_menu, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press), applet);
 
 	applet->menu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
-	g_signal_connect (menu_bar, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
@@ -982,19 +1119,27 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 }
 
 
-static gboolean do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event)
+/*
+ * nmwa_toplevel_menu_button_press
+ *
+ * Handle right-clicks for the context popup menu
+ *
+ */
+static gboolean nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	/* Don't worry about this for now
-	   We can use it if we need a contectual menu
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+
+	g_return_val_if_fail (applet != NULL, FALSE);
 
 	if (event->button != 1)
 		g_signal_stop_emission_by_name (widget, "button_press_event");
 
-	if (event->button == 3) {
-		g_message ("3nd button pressed");
+	if (event->button == 3)
+	{
+		nmwa_context_menu_update (applet);
+		gtk_menu_popup (GTK_MENU (applet->context_menu), NULL, NULL, NULL, applet, event->button, event->time);
 		return (TRUE);
 	}
-	*/
 
 	return (FALSE);
 }
@@ -1047,7 +1192,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 
 static gboolean nmwa_fill (NMWirelessApplet *applet)
 {
-	gtk_window_set_default_icon_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png", NULL);
+/*	gtk_window_set_default_icon_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png", NULL); */
 
 	glade_gnome_init ();
 	gtk_widget_show (nmwa_get_instance (applet));

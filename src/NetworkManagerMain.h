@@ -30,6 +30,9 @@
 #include "NetworkManagerAP.h"
 #include "nm-named-manager.h"
 
+typedef struct NMDbusMethodList NMDbusMethodList;
+
+
 typedef struct NMData
 {
 	GIOChannel			*sigterm_iochannel;
@@ -42,6 +45,10 @@ typedef struct NMData
 	guint				 domain_search_id;
 
 	DBusConnection			*dbus_connection;
+	NMDbusMethodList		*nm_methods;
+	NMDbusMethodList		*device_methods;
+	NMDbusMethodList		*net_methods;
+
 	GMainContext			*main_context;
 	GMainLoop				*main_loop;
 	gboolean				 enable_test_devices;
@@ -55,6 +62,9 @@ typedef struct NMData
 	gboolean				 active_device_locked;
 
 	gboolean				 forcing_device;
+
+	gboolean				 scanning_enabled;
+	gboolean				 wireless_enabled;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;

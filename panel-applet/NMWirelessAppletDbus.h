@@ -46,6 +46,10 @@ void				nmwa_dbus_create_network			(DBusConnection *connection, const NetworkDev
 												const WirelessNetwork *network, NMEncKeyType key_type,
 												const char *passphrase);
 
+void				nmwa_dbus_enable_scanning		(NMWirelessApplet *applet, gboolean enabled);
+
+void				nmwa_dbus_enable_wireless		(NMWirelessApplet *applet, gboolean enabled);
+
 WirelessNetwork *	wireless_network_new_with_essid	(const char *essid);
 void				wireless_network_unref			(WirelessNetwork *net);
 

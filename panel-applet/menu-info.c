@@ -95,23 +95,27 @@ nm_menu_wired_new (void)
 
 void
 nm_menu_wired_update (NMMenuWired   *menu_wired,
-		      NetworkDevice *network,
+		      NetworkDevice *dev,
 		      gint           n_devices)
 {
   gchar *text;
-  gchar *network_name;
+  gchar *dev_name;
 
-  g_assert (network->type == DEVICE_TYPE_WIRED_ETHERNET);
+  g_assert (dev->type == DEVICE_TYPE_WIRED_ETHERNET);
 
-  network_name = network->hal_name ? network->hal_name : network->nm_name;
+  dev_name = dev->hal_name ? dev->hal_name : dev->nm_name;
 
   if (n_devices > 1)
-    text = g_strdup_printf (_("Wired Network (%s)"), network_name);
+    text = g_strdup_printf (_("Wired Network (%s)"), dev_name);
   else
     text = g_strdup (_("Wired Network"));
 
   gtk_label_set_text (GTK_LABEL (menu_wired->label), text);
-  gtk_widget_set_sensitive (GTK_WIDGET (menu_wired), network->link);
+  /* Only dim the item if the device supports carrier detection AND
+   * we know it doesn't have a link.
+   */
+  if (dev->supports_carrier_detect == TRUE)
+    gtk_widget_set_sensitive (GTK_WIDGET (menu_wired), dev->link);
 }
 
 

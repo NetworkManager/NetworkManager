@@ -40,11 +40,12 @@
 #include "NetworkManagerDHCP.h"
 
 /* Local static prototypes */
-static gboolean mii_get_link (NMDevice *dev);
 static gpointer nm_device_worker (gpointer user_data);
 static gboolean nm_device_activate (gpointer user_data);
 static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_only_autoip);
 static gboolean nm_device_wireless_scan (gpointer user_data);
+static gboolean supports_mii_carrier_detect (NMDevice *dev);
+static gboolean supports_ethtool_carrier_detect (NMDevice *dev);
 
 typedef struct
 {
@@ -247,43 +248,38 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev->type = nm_device_test_wireless_extensions (dev) ?
 						DEVICE_TYPE_WIRELESS_ETHERNET : DEVICE_TYPE_WIRED_ETHERNET;
 
+	/* Device thread's main loop */
+	dev->context = g_main_context_new ();
+	dev->loop = g_main_loop_new (dev->context, FALSE);
+
+	if (!dev->context || !dev->loop)
+		goto err;
+
 	/* Have to bring the device up before checking link status and other stuff */
 	nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC);
+	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
 
 	/* Initialize wireless-specific options */
 	if (nm_device_is_wireless (dev))
 	{
-		int		sk;
-
-		dev->options.wireless.scan_interval = 20;
-
-		if (!(dev->options.wireless.scan_mutex = g_mutex_new ()))
-		{
-			g_free (dev->iface);
-			g_free (dev);
-			return (NULL);
-		}
-		nm_register_mutex_desc (dev->options.wireless.scan_mutex, "Scan Mutex");
-
-		if (!(dev->options.wireless.best_ap_mutex = g_mutex_new ()))
-		{
-			g_mutex_free (dev->options.wireless.scan_mutex);
-			g_free (dev->iface);
-			g_free (dev);
-			return (NULL);
-		}
-		nm_register_mutex_desc (dev->options.wireless.best_ap_mutex, "Best AP Mutex");
-
-		if (!(dev->options.wireless.ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE)))
-		{
-			g_free (dev->iface);
-			g_mutex_free (dev->options.wireless.best_ap_mutex);
-			g_free (dev);
-			return (NULL);
-		}
-		dev->options.wireless.supports_wireless_scan = nm_device_supports_wireless_scan (dev);
+		int					sk;
+		NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
 
 		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+
+		opts->scan_interval = 20;
+
+		opts->scan_mutex = g_mutex_new ();
+		opts->best_ap_mutex = g_mutex_new ();
+		opts->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+		if (!opts->scan_mutex || !opts->best_ap_mutex || !opts->ap_list)
+			goto err;
+
+		nm_register_mutex_desc (opts->scan_mutex, "Scan Mutex");
+		nm_register_mutex_desc (opts->best_ap_mutex, "Best AP Mutex");
+
+		opts->supports_wireless_scan = nm_device_supports_wireless_scan (dev);
 
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
@@ -292,29 +288,32 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 			{
 				int i;
 
-				dev->options.wireless.max_qual.qual = range.max_qual.qual;
-				dev->options.wireless.max_qual.level = range.max_qual.level;
-				dev->options.wireless.max_qual.noise = range.max_qual.noise;
-				dev->options.wireless.max_qual.updated = range.max_qual.updated;
+				opts->max_qual.qual = range.max_qual.qual;
+				opts->max_qual.level = range.max_qual.level;
+				opts->max_qual.noise = range.max_qual.noise;
+				opts->max_qual.updated = range.max_qual.updated;
 
-				dev->options.wireless.avg_qual.qual = range.avg_qual.qual;
-				dev->options.wireless.avg_qual.level = range.avg_qual.level;
-				dev->options.wireless.avg_qual.noise = range.avg_qual.noise;
-				dev->options.wireless.avg_qual.updated = range.avg_qual.updated;
+				opts->avg_qual.qual = range.avg_qual.qual;
+				opts->avg_qual.level = range.avg_qual.level;
+				opts->avg_qual.noise = range.avg_qual.noise;
+				opts->avg_qual.updated = range.avg_qual.updated;
 
-				dev->options.wireless.num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
-				for (i = 0; i < dev->options.wireless.num_freqs; i++)
-					dev->options.wireless.freqs[i] = iw_freq2float (&(range.freq[i]));
+				opts->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
+				for (i = 0; i < opts->num_freqs; i++)
+					opts->freqs[i] = iw_freq2float (&(range.freq[i]));
 			}
 			close (sk);
 		}
 	}
-
-	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
+	else if (nm_device_is_wired (dev))
+	{
+		if (supports_ethtool_carrier_detect (dev) || supports_mii_carrier_detect (dev))
+			dev->options.wired.has_carrier_detect = TRUE;
+	}
 
 	if (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED)
 	{
-		nm_device_update_link_active (dev, TRUE);
+		nm_device_update_link_active (dev);
 
 		nm_device_update_ip4_address (dev);
 		nm_device_update_hw_address (dev);
@@ -327,14 +326,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	{
 		syslog (LOG_CRIT, "nm_device_new (): could not create device worker thread. (glib said: '%s')", error->message);
 		g_error_free (error);
-
-		/* When we get here, we've got a refcount of 2, one because the
-		 * device starts off with a refcount of 1, and a second ref because
-		 * so that it sticks around for the worker thread.  So we have to unref twice.
-		 */
-		nm_device_unref (dev);
-		nm_device_unref (dev);
-		dev = NULL;
+		goto err;
 	}
 
 	/* Block until our device thread has actually had a chance to start. */
@@ -344,6 +336,12 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	syslog (LOG_ERR, "nm_device_new(): device's worker thread started, continuing.\n");
 
 	return (dev);
+
+err:
+	/* Initial refcount is 2 */
+	nm_device_unref (dev);
+	nm_device_unref (dev);
+	return NULL;
 }
 
 
@@ -418,9 +416,6 @@ static gpointer nm_device_worker (gpointer user_data)
 		syslog (LOG_CRIT, "nm_device_worker(): received NULL device object, NetworkManager cannot continue.\n");
 		exit (1);
 	}
-
-	dev->context = g_main_context_new ();
-	dev->loop = g_main_loop_new (dev->context, FALSE);
 
 	dev->worker_started = TRUE;
 
@@ -521,7 +516,7 @@ int nm_device_open_sock (void)
 	if (fd >= 0)
 	     return (fd);
 
-	syslog (LOG_ERR, "nm_get_network_control_socket() could not get network control socket.");
+	syslog (LOG_ERR, "nm_device_open_sock () could not get network control socket.");
 	return (-1);
 }
 
@@ -675,6 +670,19 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
 
 
 /*
+ * nm_device_get_supports_carrier_detect
+ */
+gboolean nm_device_get_supports_carrier_detect (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if (!nm_device_is_wired (dev))
+		return (FALSE);
+
+	return (dev->options.wired.has_carrier_detect);
+}
+
+/*
  * nm_device_wireless_is_associated
  *
  * Figure out whether or not we're associated to an access point
@@ -764,28 +772,33 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 /*
  * nm_device_wired_link_active
  *
- * Return the link state of a wired device.  We usually just grab the HAL
- * net.80203.link property, but on card insertion we need to check the MII
- * registers of the card to get a more accurate response, since HAL may not
- * have received a netlink socket link event for the device yet, and therefore
- * will return FALSE when the device really does have a link.
+ * 
  *
  */
-static gboolean nm_device_wired_link_active (NMDevice *dev, gboolean check_mii)
+static gboolean nm_device_wired_link_active (NMDevice *dev)
 {
 	gboolean	link = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wired (dev) == TRUE, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
 		return (nm_device_get_link_active (dev));
 
-	if (check_mii)
-		link = mii_get_link (dev);
-	else if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link"))
-		link = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link");
+	/* We say that non-carrier-detect devices always have a link, because
+	 * they never get auto-selected by NM.  User has to force them on us,
+	 * so we just hope the user knows whether or not the cable's plugged in.
+	 */
+	if (dev->options.wired.has_carrier_detect != TRUE)
+		link = TRUE;
+	else
+	{
+		/* Device has carrier detect, yay! */
+		if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link"))
+			link = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link");
+	}
 
 	return (link);
 }
@@ -797,7 +810,7 @@ static gboolean nm_device_wired_link_active (NMDevice *dev, gboolean check_mii)
  * Updates the link state for a particular device.
  *
  */
-void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
+void nm_device_update_link_active (NMDevice *dev)
 {
 	gboolean		link = FALSE;
 
@@ -813,7 +826,7 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 			break;
 
 		case DEVICE_TYPE_WIRED_ETHERNET:
-			link = nm_device_wired_link_active (dev, check_mii);
+			link = nm_device_wired_link_active (dev);
 			break;
 
 		default:
@@ -3419,10 +3432,19 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	/* We don't really scan on test devices or devices that don't have scanning support */
+	/* We don't scan on test devices or devices that don't have scanning support */
 	if (dev->test_device || !nm_device_supports_wireless_scan (dev))
 		return FALSE;
 
+	/* Just reschedule ourselves if scanning or all wireless is disabled */
+	if (    (dev->app_data->scanning_enabled == FALSE)
+		|| (dev->app_data->wireless_enabled == FALSE))
+	{
+		dev->options.wireless.scan_interval = 10;
+		goto reschedule;
+	}
+
+syslog (LOG_ERR, "ABOUT TO SCAN\n");
 	/* Grab the scan mutex */
 	if (nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 	{
@@ -3495,6 +3517,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		g_source_unref (scan_process_source);
 	}
 
+reschedule:
 	/* Make sure we reschedule ourselves so we keep scanning */
 	nm_device_wireless_schedule_scan (dev);
 
@@ -3574,85 +3597,90 @@ void nm_device_config_set_ip4_broadcast (NMDevice *dev, guint32 broadcast)
 }
 
 
-/****************************************/
-/* Code ripped from HAL                 */
-/*   minor modifications made for       */
-/* integration with NLM                 */
-/****************************************/
+/**************************************/
+/*    Ethtool capability detection    */
+/**************************************/
+#include <pci/types.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 
-/** Read a word from the MII transceiver management registers 
- *
- *  @param  iface               Which interface
- *  @param  location            Which register
- *  @return                     Word that is read
- */
-static guint16 mdio_read (int sockfd, struct ifreq *ifr, int location, gboolean new_ioctl_nums)
+static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 {
-	guint16 *data = (guint16 *) &(ifr->ifr_data);
+	int				sk;
+	struct ifreq		ifr;
+	gboolean			supports_ethtool = FALSE;
+	struct ethtool_cmd	edata;
 
-	data[1] = location;
-	if (ioctl (sockfd, new_ioctl_nums ? 0x8948 : SIOCDEVPRIVATE + 1, ifr) < 0)
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		syslog(LOG_ERR, "SIOCGMIIREG on %s failed: %s", ifr->ifr_name, strerror (errno));
-		return -1;
+		syslog (LOG_ERR, "cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
+		return (FALSE);
 	}
-	return data[3];
+
+	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
+	edata.cmd = ETHTOOL_GLINK;
+	ifr.ifr_data = (char *) &edata;
+	if (ioctl(sk, SIOCETHTOOL, &ifr) == -1)
+		goto out;
+
+	supports_ethtool = TRUE;
+
+out:
+	close (sk);
+	return (supports_ethtool);
 }
 
-static gboolean mii_get_link (NMDevice *dev)
+
+
+/**************************************/
+/*    MII capability detection        */
+/**************************************/
+#include <linux/mii.h>
+
+static int mdio_read (int sk, struct ifreq *ifr, int location)
 {
-	int			sockfd;
+	struct mii_ioctl_data *mii;
+
+	g_return_val_if_fail (sk < 0, -1);
+	g_return_val_if_fail (ifr != NULL, -1);
+
+	mii = (struct mii_ioctl_data *) &(ifr->ifr_data);
+	mii->reg_num = location;
+
+	if (ioctl (sk, SIOCGMIIREG, &ifr) < 0)
+		return -1;
+
+	return (mii->val_out);
+}
+
+static gboolean supports_mii_carrier_detect (NMDevice *dev)
+{
+	int			sk;
 	struct ifreq	ifr;
-	gboolean		new_ioctl_nums;
-	guint16		status_word;
-	gboolean		link_active = FALSE;
+	int			bmsr;
+	gboolean		supports_mii = FALSE;
 
-	sockfd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (sockfd < 0)
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		syslog (LOG_ERR, "cannot open socket on interface %s; errno=%d", nm_device_get_iface (dev), errno);
+		syslog (LOG_ERR, "cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 
-	snprintf (ifr.ifr_name, IFNAMSIZ, nm_device_get_iface (dev));
-	if (ioctl (sockfd, 0x8947, &ifr) >= 0)
-		new_ioctl_nums = TRUE;
-	else if (ioctl (sockfd, SIOCDEVPRIVATE, &ifr) >= 0)
-		new_ioctl_nums = FALSE;
-	else
-	{
-		syslog (LOG_ERR, "SIOCGMIIPHY on %s failed: %s", ifr.ifr_name, strerror (errno));
-		close (sockfd);
-		return (FALSE);
-	}
+	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
+	if (ioctl(sk, SIOCGMIIPHY, &ifr) < 0)
+		goto out;
 
-	/* Refer to http://www.scyld.com/diag/mii-status.html for
-	 * the full explanation of the numbers
-	 *
-	 * 0x8000  Capable of 100baseT4.
-	 * 0x7800  Capable of 10/100 HD/FD (most common).
-	 * 0x0040  Preamble suppression permitted.
-	 * 0x0020  Autonegotiation complete.
-	 * 0x0010  Remote fault.
-	 * 0x0008  Capable of Autonegotiation.
-	 * 0x0004  Link established ("sticky"* on link failure)
-	 * 0x0002  Jabber detected ("sticky"* on transmit jabber)
-	 * 0x0001  Extended MII register exist.
-	 *
-	 */
+	/* If we can read the BMSR register, we assume that the card supports MII link detection */
+	bmsr = mdio_read(sk, &ifr, MII_BMSR);
+	supports_mii = (bmsr != -1) ? TRUE : FALSE;
 
-	/* We have to read it twice to clear any "sticky" bits */
-	status_word = mdio_read (sockfd, &ifr, 1, new_ioctl_nums);
-	status_word = mdio_read (sockfd, &ifr, 1, new_ioctl_nums);
-
-	if ((status_word & 0x0016) == 0x0004)
-		link_active = TRUE;
-	else
-		link_active = FALSE;
-
-	close (sockfd);
-
-	return (link_active);
+out:
+	close (sk);
+	return (supports_mii);	
 }
 
 /****************************************/

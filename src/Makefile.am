@@ -11,6 +11,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerAPList.h		\
 		NetworkManagerDbus.c		\
 		NetworkManagerDbus.h		\
+		NetworkManagerDbusUtils.c	\
+		NetworkManagerDbusUtils.h	\
 		NetworkManagerDHCP.c		\
 		NetworkManagerDHCP.h		\
 		NetworkManagerDevice.c		\

@@ -70,6 +70,7 @@ typedef struct
 	char		*nm_device;
 	int		 type;
 	gboolean	 link;
+	gboolean	 supports_carrier_detect;
 	char		*nm_name;
 	char		*hal_name;
 	char		*udi;
@@ -119,25 +120,27 @@ typedef struct
 	NetworkDevice		*active_device;
 	char				*nm_status;
 	NetworkDevice		*dbus_active_device;
+	gboolean			 scanning_enabled;
+	gboolean			 wireless_enabled;
 
-	GdkPixbuf *no_nm_icon;
-	GdkPixbuf *wired_icon;
-	GdkPixbuf *adhoc_icon;
+	GdkPixbuf			*no_nm_icon;
+	GdkPixbuf			*wired_icon;
+	GdkPixbuf			*adhoc_icon;
 #define NUM_WIRED_CONNECTING_FRAMES 11
-	GdkPixbuf *wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
-	GdkPixbuf *wireless_00_icon;
-	GdkPixbuf *wireless_25_icon;
-	GdkPixbuf *wireless_50_icon;
-	GdkPixbuf *wireless_75_icon;
-	GdkPixbuf *wireless_100_icon;
+	GdkPixbuf			*wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
+	GdkPixbuf			*wireless_00_icon;
+	GdkPixbuf			*wireless_25_icon;
+	GdkPixbuf			*wireless_50_icon;
+	GdkPixbuf			*wireless_75_icon;
+	GdkPixbuf			*wireless_100_icon;
 #define NUM_WIRELESS_CONNECTING_FRAMES 11
-	GdkPixbuf *wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+	GdkPixbuf			*wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
 #define NUM_WIRELESS_SCANNING_FRAMES 16
-	GdkPixbuf *wireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
+	GdkPixbuf			*wireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
 
 	/* Animation stuff */
-	int animation_step;
-	guint animation_id;
+	int				 animation_step;
+	guint			 animation_id;
 
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
@@ -146,6 +149,11 @@ typedef struct
 	GtkWidget			*event_box;
 	GtkSizeGroup        *encryption_size_group;
 	GtkTooltips		*tooltips;
+
+	GtkWidget			*context_menu;
+	GtkWidget			*pause_scanning_item;
+	GtkWidget			*stop_wireless_item;
+
 } NMWirelessApplet;
 
 

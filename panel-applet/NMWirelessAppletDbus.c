@@ -281,6 +281,31 @@ static gboolean nmwa_dbus_get_device_link_active (NMWirelessApplet *applet, char
 
 
 /*
+ * nmwa_dbus_get_device_supports_carrier_detect
+ *
+ * Returns whether or not the device supports carrier detection.
+ *
+ */
+static gboolean nmwa_dbus_get_device_supports_carrier_detect (NMWirelessApplet *applet, char *net_path)
+{
+	gboolean	supports_carrier_detect = FALSE;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, net_path, "getSupportsCarrierDetect",
+				DBUS_TYPE_BOOLEAN, (void **)(&supports_carrier_detect), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (supports_carrier_detect);
+}
+
+
+/*
  * nmwa_dbus_get_object_strength
  *
  * Returns the strength of a given object (device or wireless network)
@@ -425,6 +450,47 @@ static gboolean nmwa_dbus_get_network_encrypted (NMWirelessApplet *applet, char 
 	}
 
 	return (enc);
+}
+
+
+/*
+ * nmwa_dbus_get_scanning_enabled
+ */
+static gboolean nmwa_dbus_get_scanning_enabled (NMWirelessApplet *applet)
+{
+	gboolean	enabled = FALSE;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getScanningEnabled", DBUS_TYPE_BOOLEAN, (void **)(&enabled), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (enabled);
+}
+
+/*
+ * nmwa_dbus_get_wireless_enabled
+ */
+static gboolean nmwa_dbus_get_wireless_enabled (NMWirelessApplet *applet)
+{
+	gboolean	enabled = FALSE;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getWirelessEnabled", DBUS_TYPE_BOOLEAN, (void **)(&enabled), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (enabled);
 }
 
 
@@ -634,6 +700,50 @@ void nmwa_dbus_create_network (DBusConnection *connection, const NetworkDevice *
 	}
 	else
 		fprintf (stderr, "nm_dbus_set_device(): Couldn't allocate the dbus message\n");
+}
+
+
+/*
+ * nmwa_dbus_enable_scanning
+ *
+ * Tell NetworkManager to start/stop scanning.
+ *
+ */
+void nmwa_dbus_enable_scanning (NMWirelessApplet *applet, gboolean enabled)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->connection != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setScanningEnabled")))
+	{
+		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, enabled, DBUS_TYPE_INVALID);
+		dbus_connection_send (applet->connection, message, NULL);
+		applet->scanning_enabled = nmwa_dbus_get_scanning_enabled (applet);
+	}
+}
+
+
+/*
+ * nmwa_dbus_enable_wireless
+ *
+ * Tell NetworkManager to enabled or disable all wireless devices.
+ *
+ */
+void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->connection != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setWirelessEnabled")))
+	{
+		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, enabled, DBUS_TYPE_INVALID);
+		dbus_connection_send (applet->connection, message, NULL);
+		applet->wireless_enabled = nmwa_dbus_get_wireless_enabled (applet);
+	}
 }
 
 
@@ -955,7 +1065,6 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	int			  i;
 	char			 *nm_act_dev = NULL;
 	GSList		 *device_list = NULL;
-	NetworkDevice	 *active_device = NULL;
 	char			 *nm_status = NULL;
 	gboolean		  adhoc = FALSE;
 
@@ -995,6 +1104,8 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 			{
 				dev->nm_device = g_strdup (devices[i]);
 				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
+				if (dev->type == DEVICE_TYPE_WIRED_ETHERNET)
+					dev->supports_carrier_detect = nmwa_dbus_get_device_supports_carrier_detect (applet, devices[i]);
 				dev->link = nmwa_dbus_get_device_link_active (applet, devices[i]);
 				dev->nm_name = g_strdup (name);
 				dev->udi = nmwa_dbus_get_device_udi (applet, devices[i]);
@@ -1008,7 +1119,6 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 					device_list = g_slist_append (device_list, dev);
 					if (nm_act_dev && !strcmp (nm_act_dev, devices[i]))
 					{
-						active_device = dev;
 						network_device_ref (dev);
 						applet->dbus_active_device = dev;
 						network_device_ref (dev);
@@ -1041,9 +1151,12 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 		g_free (applet->nm_status);
 
 	applet->device_list = device_list;
-	applet->active_device = active_device;
+	applet->active_device = applet->dbus_active_device;
 	applet->nm_status = nm_status;
 	applet->is_adhoc = adhoc;
+
+	applet->scanning_enabled = nmwa_dbus_get_scanning_enabled (applet);
+	applet->wireless_enabled = nmwa_dbus_get_wireless_enabled (applet);
 
 	g_mutex_unlock (applet->data_mutex);
 }
@@ -1276,7 +1389,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	g_source_set_callback (timeout_source, nmwa_dbus_timeout_worker, applet, NULL);
 	timeout_id = g_source_attach (timeout_source, applet->thread_context);
 
-	strength_source = g_timeout_source_new (1000);
+	strength_source = g_timeout_source_new (2000);
 	g_source_set_callback (strength_source, nmwa_dbus_update_active_device_strength, applet, NULL);
 	strength_id = g_source_attach (strength_source, applet->thread_context);
 

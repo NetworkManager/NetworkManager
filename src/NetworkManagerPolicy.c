@@ -1,4 +1,3 @@
-
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -45,7 +44,7 @@
  */
 static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 {
-	GSList		*element;
+	GSList		*elt;
 	NMDevice		*best_wired_dev = NULL;
 	guint		 best_wired_prio = 0;
 	NMDevice		*best_wireless_dev = NULL;
@@ -53,27 +52,27 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 	NMDevice		*highest_priority_dev = NULL;
 
 	g_return_val_if_fail (data != NULL, NULL);
-	element = data->dev_list;
 
-	while (element)
+	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
 	{
 		guint	 dev_type;
 		gboolean	 link_active;
 		guint	 prio = 0;
-		NMDevice	*dev = (NMDevice *)(element->data);
+		NMDevice	*dev = (NMDevice *)(elt->data);
 
 		/* Skip unsupported devices */
 		if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
-		{
-			element = g_slist_next (element);
 			continue;
-		}
 
 		dev_type = nm_device_get_type (dev);
 		link_active = nm_device_get_link_active (dev);
 
 		if (dev_type == DEVICE_TYPE_WIRED_ETHERNET)
 		{
+			/* We never automatically choose devices that don't support carrier detect */
+			if (!nm_device_get_supports_carrier_detect (dev))
+				continue;
+
 			if (link_active)
 				prio += 1;
 
@@ -88,7 +87,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 				best_wired_prio = prio;
 			}
 		}
-		else if (dev_type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		else if ((dev_type == DEVICE_TYPE_WIRELESS_ETHERNET) && data->wireless_enabled)
 		{
 			NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
 
@@ -126,8 +125,6 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 			if (best_ap)
 				nm_ap_unref (best_ap);
 		}
-
-		element = g_slist_next (element);
 	}
 
 #if 0
@@ -182,20 +179,18 @@ static NMDevice * nm_policy_get_best_device (NMDevice *switch_to_dev, NMData *da
 	{
 		switch (nm_device_get_type (data->active_device))
 		{
-			/* If the active device was a wired device, and it no
-			 * longer has a link, switch to auto mode.
-			 */
+			/* Wired devices get unlocked only if they have lost their link */
 			case (DEVICE_TYPE_WIRED_ETHERNET):
 				if (nm_device_get_link_active (data->active_device))
 					best_dev = data->active_device;
 				break;
 
-			/* For wireless devices, we only "unlock" them if they are
-			 * removed from the system or a different device is "locked"
-			 * by the user.
+			/* Wireless devices get unlocked if the user removes the card
+			 * or turns wireless off.
 			 */
 			case (DEVICE_TYPE_WIRELESS_ETHERNET):
-				best_dev = data->active_device;
+				if (data->wireless_enabled == TRUE)
+					best_dev = data->active_device;
 				break;
 
 			default:
