@@ -45,6 +45,7 @@
 #include "config.h"
 #include "NMWirelessApplet.h"
 #include "NMWirelessAppletDbus.h"
+#include "menu-info.h"
 
 #define CFG_UPDATE_INTERVAL 1
 #define NM_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
@@ -565,7 +566,7 @@ static void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  * Add a network device to the menu
  *
  */
-static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, gpointer user_data)
+static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, NMWirelessApplet *applet)
 {
 	GtkWidget		*menu_item;
 	GtkWidget		*label;
@@ -577,99 +578,31 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *n
 	g_return_if_fail (name != NULL);
 	g_return_if_fail (nm_device != NULL);
 
-	menu_item = gtk_menu_item_new ();
-	hbox = gtk_hbox_new (FALSE, 5);
+	menu_item = gtk_check_menu_item_new ();
+	hbox = gtk_hbox_new (FALSE, 2);
 	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
 	gtk_widget_show (hbox);
 
 	if ((image = gtk_image_new_from_pixbuf (icon)))
 	{
-		gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 2);
+		gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
 		gtk_widget_show (image);
+		gtk_size_group_add_widget (applet->image_size_group, image);
 	}
 
 	label = gtk_label_new (name);
 	if (current)
 	{
-		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", name);
+		char *markup = g_markup_printf_escaped ("<span weight=\"bold\">%s</span>", name);
 		gtk_label_set_markup (GTK_LABEL (label), markup);
 		g_free (markup);
 	}
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 2);
+	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
 	gtk_widget_show (label);
 
 	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (nm_device));
-	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), user_data);
-
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-	gtk_widget_show (menu_item);
-}
-
-
-/*
- * nmwa_menu_add_network
- *
- * Add a wireless network menu item
- *
- */
-static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, NetworkDevice *dev,
-								WirelessNetwork *net, gpointer user_data)
-{
-	GtkWidget		*menu_item;
-	GtkWidget		*label;
-	GtkWidget		*hbox;
-	GtkWidget		*foo;
-	GtkWidget		*progress;
-	float		 percent;
-
-	g_return_if_fail (menu != NULL);
-	g_return_if_fail (net != NULL);
-	g_return_if_fail (dev != NULL);
-
-	menu_item = gtk_menu_item_new ();
-	hbox = gtk_hbox_new (FALSE, 5);
-	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
-	gtk_widget_show (hbox);
-
-	/* Add spacing container */
-	foo = gtk_hbox_new (FALSE, 5);
-	gtk_widget_set_size_request (foo, 7, -1);
-	gtk_box_pack_start (GTK_BOX (hbox), foo, FALSE, FALSE, 2);
-	gtk_widget_show (foo);
-
-	label = gtk_label_new (net->essid);
-	if (net->active)
-	{
-		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", net->essid);
-		gtk_label_set_markup (GTK_LABEL (label), markup);
-		g_free (markup);
-	}
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 2);
-	gtk_widget_show (label);
-
-	progress = gtk_progress_bar_new ();
-	percent = ((float)net->strength / (float)100);
-	percent = (percent < 0 ? 0 : (percent > 1.0 ? 1.0 : percent));
-	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (progress), percent);
-	gtk_box_pack_start (GTK_BOX (hbox), progress, TRUE, TRUE, 0);
-	gtk_widget_show (progress);
-
-	if (net->encrypted)
-	{
-		GtkWidget		*image;
-
-		if ((image = gtk_image_new_from_pixbuf (key)))
-		{
-			gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 2);
-			gtk_widget_show (image);
-		}
-	}
-
-	g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (net->essid));
-	g_object_set_data (G_OBJECT (menu_item), "nm_device", g_strdup (dev->nm_device));
-	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), user_data);
+	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_show (menu_item);
@@ -682,7 +615,8 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, NetworkDevic
  */
 static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, NMWirelessApplet *applet)
 {
-	GSList	*element;
+	GSList *list;
+	gboolean has_encrypted = FALSE;
 
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
@@ -691,21 +625,45 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	if (dev->type != DEVICE_TYPE_WIRELESS_ETHERNET)
 		return;
 
-	element = dev->networks;
-	if (!element)
-		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
-	else
+	if (dev->networks == NULL)
 	{
-		/* Add all networks in our network list to the menu */
-		while (element)
-		{
-			WirelessNetwork *net = (WirelessNetwork *)(element->data);
+		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
+		return;
+	}
 
-			if (net)
-				nmwa_menu_add_network (menu, applet->key_pixbuf, dev, net, applet);
+	/* Check for any security */
+	for (list = dev->networks; list; list = list->next)
+	{
+		WirelessNetwork *network = list->data;
 
-			element = g_slist_next (element);
-		}
+		if (FALSE && !has_encrypted)//BADHACKTOTEST
+		{ // REMOVE!
+			network->encrypted = TRUE; // REMOVE!
+			network->active = TRUE; // REMOVE!
+		} // REMOVE!
+			
+		if (network->encrypted)
+			has_encrypted = TRUE;
+	}
+
+	/* Add all networks in our network list to the menu */
+	for (list = dev->networks; list; list = list->next)
+	{
+		GtkWidget *menu_item;
+		WirelessNetwork *net;
+
+		net = (WirelessNetwork *) list->data;
+
+		menu_item = nm_menu_wireless_new (applet->image_size_group,
+						  applet->encryption_size_group);
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+		nm_menu_wireless_update (NM_MENU_WIRELESS (menu_item), net, has_encrypted);
+
+		g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (net->essid));
+		g_object_set_data (G_OBJECT (menu_item), "nm_device", g_strdup (dev->nm_device));
+		g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
+
+		gtk_widget_show (menu_item);
 	}
 }
 
@@ -873,6 +831,8 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
 	g_signal_connect (applet->menu, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
+	applet->image_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 	gtk_widget_show (menu_bar);
 	gtk_widget_show (applet->toplevel_menu);
 	gtk_widget_show (applet->menu);
@@ -1018,10 +978,33 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 	return (TRUE);
 }
 
+static void
+setup_stock (void)
+{
+	GtkIconFactory *ifactory;
+	GtkIconSet *iset;
+	GtkIconSource *isource;
+	static gboolean initted = FALSE;
+
+	if (initted)
+		return;
+
+	ifactory = gtk_icon_factory_new ();
+	iset = gtk_icon_set_new ();
+	isource = gtk_icon_source_new ();
+	gtk_icon_source_set_icon_name (isource, "gnome-lockscreen");
+	gtk_icon_set_add_source (iset, isource);
+	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);
+	gtk_icon_factory_add_default (ifactory);
+
+	initted = TRUE;
+}
+
 static gboolean nmwa_factory (NMWirelessApplet *applet, const gchar *iid, gpointer data)
 {
 	gboolean retval = FALSE;
 
+	setup_stock ();
 	if (!strcmp (iid, "OAFIID:NMWirelessApplet"))
 		retval = nmwa_fill (applet);
 

@@ -117,13 +117,15 @@ typedef struct
 	GSList			*devices;
 	NetworkDevice		*active_device;
 	AppletState		 applet_state;
-
+	
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
 	GtkWidget			*box;
 	GtkWidget			*about_dialog;
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
+	GtkSizeGroup                    *image_size_group;
+	GtkSizeGroup                    *encryption_size_group;
 } NMWirelessApplet;
 
 

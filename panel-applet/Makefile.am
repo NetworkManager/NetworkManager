@@ -20,6 +20,12 @@ NMWirelessApplet_SOURCES =		\
 	NMWirelessApplet.h			\
 	NMWirelessAppletDbus.c		\
 	NMWirelessAppletDbus.h		\
+	menu-info.c			\
+	menu-info.h			\
+	gtkcellview.c			\
+	gtkcellview.h			\
+	gtkcellrendererprogress.c	\
+	gtkcellrendererprogress.h	\
 	$(NULL)
 
 NMWirelessApplet_LDADD =		\

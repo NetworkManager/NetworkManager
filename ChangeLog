@@ -1,3 +1,9 @@
+Fri Sep 17 14:04:34 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c: Redo the menu item code.
+
+	* panel-applet/menu-item.[ch]: Wireless menu item.
+
 2004-09-15  John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.conf
