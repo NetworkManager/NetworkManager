@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-11-04 11:25+0100\n"
-"PO-Revision-Date: 2004-11-04 15:47+0100\n"
+"POT-Creation-Date: 2004-12-07 11:23+0100\n"
+"PO-Revision-Date: 2004-12-07 18:18+0100\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -58,7 +58,8 @@ msgid "Key Type:"
 msgstr "Typ klíče:"
 
 #: info-daemon/passphrase.glade.h:10
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:102
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Heslo:"
@@ -71,58 +72,83 @@ msgstr "Je vyžadován klíč bezdrátové sítě"
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:105
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
 msgid "Ascii Key:"
 msgstr "Klíč v ascii:"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:108
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
 msgid "Hex Key:"
 msgstr "Klíč šestnáctkově:"
 
-#: panel-applet/NMWirelessApplet.c:289
+#: info-daemon/NetworkManagerInfoVPN.c:157
+#, c-format
+msgid "You must log in to access the private network %s"
+msgstr "Pro přístup k soukromé síti %s se musíte přihlásit"
+
+#: panel-applet/NMWirelessApplet.c:290
 msgid "No network connection"
 msgstr "Žádné připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:293
+#: panel-applet/NMWirelessApplet.c:294
 msgid "Wired network connection"
 msgstr "Drátové připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:299
+#: panel-applet/NMWirelessApplet.c:300
 msgid "Connecting to a wired network..."
 msgstr "Připojuji se k drátové síti..."
 
-#: panel-applet/NMWirelessApplet.c:314
+#: panel-applet/NMWirelessApplet.c:315
 #, c-format
 msgid "Wireless network connection (%d%%)"
 msgstr "Bezdrátové připojení k síti (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:317
+#: panel-applet/NMWirelessApplet.c:318
 msgid "Wireless network connection"
 msgstr "Bezdrátové připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:323
+#: panel-applet/NMWirelessApplet.c:324
 msgid "Connecting to a wireless network..."
 msgstr "Připojuji se k bezdrátové síti..."
 
-#: panel-applet/NMWirelessApplet.c:326
+#: panel-applet/NMWirelessApplet.c:327
 msgid "NetworkManager is not running"
 msgstr "NetworkManager neběží"
 
-#: panel-applet/NMWirelessApplet.c:332
+#: panel-applet/NMWirelessApplet.c:333
 msgid "Scanning for wireless networks..."
 msgstr "Hledám bezdrátové sítě..."
 
-#: panel-applet/NMWirelessApplet.c:656
+#: panel-applet/NMWirelessApplet.c:657
 msgid "Other Wireless Networks..."
 msgstr "Jiné bezdrátové sítě..."
 
-#: panel-applet/NMWirelessApplet.c:767
+#: panel-applet/NMWirelessApplet.c:768
 msgid "No network devices have been found"
 msgstr "Nebylo nalezeno žádné síťové zařízení"
 
-#: panel-applet/NMWirelessApplet.c:884
+#: panel-applet/NMWirelessApplet.c:885
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
+msgid "Custom wireless network"
+msgstr "Vlastní bezdrátová síť"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Zadejte ESSID bezdrátové sítě, ke které se chcete připojit."
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Aplet NetworkManager nemohl najít některé vyžadované zdroje (soubor glade "
+"nebyl nalezen)."
 
 #: panel-applet/essid.glade.h:5
 msgid "C_onnect"
@@ -175,17 +201,3 @@ msgstr "Orientace"
 #: examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "Orientace oznamovací oblasti."
-
-#~ msgid ""
-#~ "The NetworkManager Applet could not find some required resources (the "
-#~ "glade file was not found)."
-#~ msgstr ""
-#~ "Aplet NetworkManager nemohl najít některé vyžadované zdroje (soubor glade "
-#~ "nebyl nalezen)."
-
-#~ msgid "Custom wireless network"
-#~ msgstr "Vlastní bezdrátová síť"
-
-#~ msgid ""
-#~ "Enter the ESSID of the wireless network to which you wish to connect."
-#~ msgstr "Zadejte ESSID bezdrátové sítě, ke které se chcete připojit."
