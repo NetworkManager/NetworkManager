@@ -3264,6 +3264,8 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		return FALSE;
 	}
 
+	g_get_current_time (&cur_time);
+
 	/* Translate iwlib scan results to NM access point list */
 	for (tmp_ap = results->scan_head.result; tmp_ap; tmp_ap = tmp_ap->next)
 	{
@@ -3272,6 +3274,9 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		{
 			NMAccessPoint		*nm_ap  = nm_ap_new ();
 			int				 percent;
+			gboolean			 new = FALSE;
+			gboolean			 strength_changed = FALSE;
+			gboolean			 success = FALSE;
 
 			/* Copy over info from scan to local structure */
 
@@ -3280,11 +3285,8 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			 */
 			if (    !tmp_ap->b.has_essid
 				|| (tmp_ap->b.essid && !strlen (tmp_ap->b.essid))
-				|| (tmp_ap->b.essid && !strcmp (tmp_ap->b.essid, "<hidden>")))
-			{
+				|| (tmp_ap->b.essid && !strcmp (tmp_ap->b.essid, "<hidden>")))	/* Stupid ipw drivers use <hidden> */
 				nm_ap_set_essid (nm_ap, NULL);
-				have_blank_essids = TRUE;
-			}
 			else
 				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
 
@@ -3330,29 +3332,41 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			if (tmp_ap->b.has_freq)
 				nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
 
-			g_get_current_time (&cur_time);
 			nm_ap_set_last_seen (nm_ap, &cur_time);
 
+			/* If the AP is not broadcasting its ESSID, try to fill it in here from our
+			 * allowed list where we cache known MAC->ESSID associations.
+			 */
+			if (!nm_ap_get_essid (nm_ap))
+				nm_ap_list_copy_one_essid_by_address (nm_ap, dev->app_data->allowed_ap_list);
+
 			/* Add the AP to the device's AP list */
-			if (nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), nm_ap))
+			success = nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), nm_ap, &new, &strength_changed);
+			if (success)
 			{
-				nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap, FALSE);
-				list_changed = TRUE;
+				/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes
+				 * strength.
+				*/
+				if (new)
+				{
+					nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap,
+								NETWORK_STATUS_APPEARED, -1);
+					list_changed = TRUE;
+				}
+				else if (strength_changed)
+				{
+					nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap,
+								NETWORK_STATUS_STRENGTH_CHANGED, nm_ap_get_strength (nm_ap));
+				}
 			}
 			nm_ap_unref (nm_ap);
 		}
 	}	
 
-	/* If we detected any blank-ESSID access points (ie don't broadcast their ESSID), then try to
-	 * merge in ESSIDs that we have addresses for from user preferences/NetworkManagerInfo.
-	 */
-	if (have_blank_essids)
-		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
-
 	/* Once we have the list, copy in any relevant information from our Allowed list. */
 	nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
 
-	/* Walk the access point list and remove any access points older than 60s */
+	/* Walk the access point list and remove any access points older than 120s */
 	g_get_current_time (&cur_time);
 	if (nm_device_ap_list_get (dev) && (iter = nm_ap_list_iter_new (nm_device_ap_list_get (dev))))
 	{
@@ -3366,18 +3380,12 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			const GTimeVal	*ap_time = nm_ap_get_last_seen (outdated_ap);
 			gboolean		 keep_around = FALSE;
 
-			/* We don't add "artifical" APs to the outdated list if it is the
-			 * one the card is currently associated with.
-			 * Some Cisco cards don't report non-ESSID-broadcasting access points
-			 * in their scans even though the card associates with that AP just fine.
-			 */
+			/* Don't ever get prune the AP we're currently associated with */
 			if (	    nm_ap_get_essid (outdated_ap)
-				&&  (best_ap && (nm_null_safe_strcmp (nm_ap_get_essid (best_ap), nm_ap_get_essid (outdated_ap))) == 0)
-				&&  nm_ap_get_artificial (outdated_ap))
+				&&  (best_ap && (nm_null_safe_strcmp (nm_ap_get_essid (best_ap), nm_ap_get_essid (outdated_ap))) == 0))
 				keep_around = TRUE;
 
-			/* Eh, we don't care about sub-second time resolution. */
-			if ((ap_time->tv_sec + 120 < cur_time.tv_sec) && !keep_around)
+			if (!keep_around && (ap_time->tv_sec + 120 < cur_time.tv_sec))
 				outdated_list = g_slist_append (outdated_list, outdated_ap);
 		}
 		nm_ap_list_iter_free (iter);
@@ -3393,7 +3401,7 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		{
 			if ((outdated_ap = (NMAccessPoint *)(elt->data)))
 			{
-				nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, outdated_ap, TRUE);
+				nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
 				nm_ap_list_remove_ap (nm_device_ap_list_get (dev), outdated_ap);
 				list_changed = TRUE;
 			}

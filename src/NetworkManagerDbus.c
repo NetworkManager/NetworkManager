@@ -417,11 +417,12 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
  * Notifies the bus that a new wireless network has come into range
  *
  */
-void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, gboolean gone)
+void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint8 strength)
 {
 	DBusMessage	*message;
 	char			*dev_path;
 	char			*ap_path;
+	const char	*signal;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -436,8 +437,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 		return;
 	}
 
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE,
-								(gone ? "WirelessNetworkDisappeared" : "WirelessNetworkAppeared"));
+	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	if (!message)
 	{
 		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
@@ -449,9 +449,14 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	dbus_message_append_args (message,
 							DBUS_TYPE_STRING, dev_path,
 							DBUS_TYPE_STRING, ap_path,
+							DBUS_TYPE_UINT32, status,
 							DBUS_TYPE_INVALID);
 	g_free (ap_path);
 	g_free (dev_path);
+
+	/* Append signal-specific data */
+	if (status == NETWORK_STATUS_STRENGTH_CHANGED)
+		dbus_message_append_args (message, DBUS_TYPE_INT32, strength, DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
@@ -768,19 +773,20 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 	/* Send message and get essid back from NetworkManagerInfo */
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 		syslog (LOG_ERR, "nm_dbus_get_networks(): %s raised %s", error.name, error.message);
 	else if (!reply)
 		syslog (LOG_NOTICE, "nm_dbus_get_networks(): reply was NULL.");
 	else
 	{
-		DBusMessageIter	 iter;
-
-		dbus_message_iter_init (reply, &iter);
-		dbus_message_iter_get_string_array (&iter, &networks, num_networks);
+		dbus_error_init (&error);
+		dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
+								&networks, num_networks, DBUS_TYPE_INVALID);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
 	}
 
-	dbus_message_unref (message);
 	if (reply)
 		dbus_message_unref (reply);
 

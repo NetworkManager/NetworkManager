@@ -54,7 +54,7 @@ void			nm_dbus_signal_network_status_change	(DBusConnection *connection, NMData 
 
 void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
 
-void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, gboolean gone);
+void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint8 strength);
 
 void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, int attempt);
 

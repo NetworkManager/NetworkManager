@@ -377,32 +377,53 @@ void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
  *			TRUE if the ap was completely new
  *
  */
-gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *merge_ap)
+gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *merge_ap,
+				gboolean *new, gboolean *strength_changed)
 {
 	NMAccessPoint	*list_ap;
-	gboolean		 new = FALSE;
+	gboolean		 success = FALSE;
 
+	g_return_val_if_fail (list != NULL, FALSE);
 	g_return_val_if_fail (merge_ap != NULL, FALSE);
+	g_return_val_if_fail (new != NULL, FALSE);
+	g_return_val_if_fail (strength_changed != NULL, FALSE);
 
 	if (!(list_ap = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
 		list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap));
 
 	if (list_ap)
 	{
+		const GTimeVal	*merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const GTimeVal *list_ap_seen = nm_ap_get_last_seen (list_ap);
+
 		/* Merge some properties on the AP that are new from scan to scan. */
 		nm_ap_set_encrypted (list_ap, nm_ap_get_encrypted (merge_ap));
 		nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (merge_ap));
-		nm_ap_set_last_seen (list_ap, nm_ap_get_last_seen (merge_ap));
-		nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
+
+		/* Don't update the strength on the existing AP if the timestamp is
+		 * the same as the AP we're going to merge (which means that they were
+		 * found in the same scan, have the same ESSID, but are different APs)
+		 * and the existing AP's strength is greater than the one we're about
+		 * to merge.  This helps keep the ESSID's reported strength that of the
+		 * strongest AP we can see.
+		 */
+		if (!(    (list_ap_seen->tv_sec == merge_ap_seen->tv_sec)
+			  && (nm_ap_get_strength (list_ap) > nm_ap_get_strength (merge_ap))))
+		{
+			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
+			*strength_changed = TRUE;
+		}
+
+		nm_ap_set_last_seen (list_ap, merge_ap_seen);
 	}
 	else
 	{
 		/* Add the whole AP, list takes ownership. */
 		nm_ap_list_append_ap (list, merge_ap);
-		new = TRUE;
+		*new = TRUE;
 	}
 
-	return new;
+	return TRUE;
 }
 
 
@@ -451,6 +472,29 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 
 
 /*
+ * nm_ap_list_copy_one_essid_by_address
+ *
+ * If the access point doesn't have an ESSID, search through a list of access points
+ * and find one (if any) that has the MAC address of the access point we're looking for.
+ * If one is found, copy the essid over to the original access point.
+ *
+ */
+void nm_ap_list_copy_one_essid_by_address (NMAccessPoint *ap, NMAccessPointList *search_list)
+{
+	NMAccessPoint	*found_ap;
+
+	if (!ap || !search_list)
+		return;
+
+	if (!nm_ap_get_essid (ap) && (found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap))))
+	{
+		if (nm_ap_get_essid (found_ap))
+			nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
+	}
+}
+
+
+/*
  * nm_ap_list_copy_essids_by_address
  *
  * For each blank-essid access point in the destination list, try to find
@@ -469,15 +513,8 @@ void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointLi
 	if ((iter = nm_ap_list_iter_new (dest)))
 	{
 		while ((dest_ap = nm_ap_list_iter_next (iter)))
-		{
-			NMAccessPoint	*src_ap = NULL;
+			nm_ap_list_copy_one_essid_by_address (dest_ap, source);
 
-			if (!nm_ap_get_essid (dest_ap) && (src_ap = nm_ap_list_get_ap_by_address (source, nm_ap_get_address (dest_ap))))
-			{
-				if (nm_ap_get_essid (src_ap))
-					nm_ap_set_essid (dest_ap, nm_ap_get_essid (src_ap));
-			}
-		}
 		nm_ap_list_iter_free (iter);
 	}
 }
@@ -523,7 +560,7 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 					nm_ap_set_matched (new_ap, TRUE);
 				}
 				else
-					nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, TRUE);
+					nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, NETWORK_STATUS_DISAPPEARED, -1);
 			}
 		}
 		nm_ap_list_iter_free (iter);
@@ -537,7 +574,7 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 		while ((new_ap = nm_ap_list_iter_next (iter)))
 		{
 			if (!nm_ap_get_matched (new_ap) && nm_ap_get_essid (new_ap))
-				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, new_ap, FALSE);
+				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, new_ap, NETWORK_STATUS_APPEARED, -1);
 		}
 		nm_ap_list_iter_free (iter);
 	}

@@ -56,4 +56,8 @@ void				wireless_network_unref			(WirelessNetwork *net);
 void				network_device_ref				(NetworkDevice *dev);
 void				network_device_unref			(NetworkDevice *dev);
 
+void				nmwa_free_gui_data_model			(NMWirelessApplet *applet);
+void				nmwa_free_dbus_data_model		(NMWirelessApplet *applet);
+
+
 #endif

@@ -111,17 +111,23 @@ typedef struct
 	guint			 redraw_timeout_id;
 	GThread			*dbus_thread;
 	GMainContext		*thread_context;
+	GMainLoop			*thread_loop;
+	gboolean			 thread_done;
 
         /* Data model elements */
 	GMutex			*data_mutex;
 	AppletState		 applet_state;
 	gboolean			 is_adhoc;
-	GSList			*device_list;
-	NetworkDevice		*active_device;
-	char				*nm_status;
-	NetworkDevice		*dbus_active_device;
 	gboolean			 scanning_enabled;
 	gboolean			 wireless_enabled;
+
+	GSList			*gui_device_list;
+	NetworkDevice		*gui_active_device;
+	char				*gui_nm_status;
+
+	GSList			*dbus_device_list;
+	NetworkDevice		*dbus_active_device;
+	char				*dbus_nm_status;
 
 	GdkPixbuf			*no_nm_icon;
 	GdkPixbuf			*wired_icon;
@@ -157,7 +163,9 @@ typedef struct
 } NMWirelessApplet;
 
 
-NetworkDevice		*nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);
+NetworkDevice		*nmwa_get_device_for_nm_device (GSList *dev_list, const char *nm_dev);
+WirelessNetwork	*nmwa_get_net_for_nm_net (NetworkDevice *dev, const char *net_path);
+WirelessNetwork	*nmwa_get_net_by_essid (NetworkDevice *dev, const char *essid);
 NMWirelessApplet	*nmwa_new (void);
 void				 show_warning_dialog (gboolean error, gchar *mesg, ...);
 

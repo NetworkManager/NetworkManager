@@ -1,3 +1,41 @@
+2005-02-27  Dan Williams  <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.[ch]
+	  panel-applet/NMWirelessAppletDbus.[ch]
+		- Move to incremental network updates.  Instead of blowing away our list
+			of devices every time we get a signal from NetworkManager, we now
+			incrementally add/remove networks when NetworkManager notifies us that
+			a new network has appeared or disappered.  Strength updates now happen
+			on-the-fly for each access point as well.  There are now two copies of
+			data from NetworkManager: one for the dbus side, and one for the gui side.
+			When the dbus side data is modified, it is copied over to the gui side
+			so we don't have to hold the data_mutex for long periods of time (and
+			therefore block animation of the applet's icon).
+		- Clean up some memleaks too
+
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c
+		- Minor code beautification
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_merge_scanned_ap): return whether or not the access point is
+			completely new and whether or not an existing one's strength was updated.
+			Try to fix multiple access points and signal strength by using the highest
+			signal strength in each scan for any given ESSID.
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_signal_wireless_network_change): consolidate signals that deal with
+			wireless networks; now we have only WirelessNetworkUpdate which includes
+			a UINT32 for Appeared, Disappeared, or StrengthChanged (see NetworkManager.h).
+		- Kill usage of DbusMessageIter
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_process_scan_results): Use the same timestamp for all APs
+			in the same scan result list.  Copy ESSIDs-by-address earlier on, for each
+			AP rather than all-at-once.  Also don't ever remove the AP a card is
+			currently associated with from the network list.
+		- Update for new signals during scan, send out Appeared, Disappeared, or
+			StrengthChanged when necessary.
+
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
 	* README
