@@ -50,6 +50,7 @@ typedef struct
 	gboolean			 nm_active;
 	gboolean			 have_active_device;
 
+	PixmapState		 pix_state;
 	/* contains pointers into the images GList.
 	 * 0-100 are for link */
 	GdkPixbuf			*pixmaps[PIX_NUMBER];

@@ -25,12 +25,24 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
+/* Must match NetworkManager device types */
+enum
+{
+	DEVICE_TYPE_DONT_KNOW = 0,
+	DEVICE_TYPE_WIRED_ETHERNET,
+	DEVICE_TYPE_WIRELESS_ETHERNET
+};
+
 DBusConnection *	nmwa_dbus_init						(gpointer user_data);
 
 gboolean			nmwa_dbus_nm_is_running				(DBusConnection *connection);
 
 void				nmwa_dbus_add_networks_to_menu		(DBusConnection *connection, gpointer user_data);
 
-char *			nmwa_dbus_get_active_wireless_device	(DBusConnection *connection);
+char *			nmwa_dbus_get_active_device			(DBusConnection *connection);
+
+int				nmwa_dbus_get_device_type			(DBusConnection *connection, char *path);
+
+char *			nmwa_dbus_get_nm_status				(DBusConnection *connection);
 
 #endif

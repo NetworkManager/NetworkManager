@@ -1413,7 +1413,6 @@ void nm_device_update_best_ap (NMDevice *dev)
 			char		*ap_essid = nm_ap_get_essid (ap);
 
 			/* Access points in the "invalid" list cannot be used */
-fprintf( stderr, "PREF: Looking at ap '%s'\n", nm_ap_get_essid (ap));
 			if (!nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, ap_essid))
 			{
 				NMAccessPoint	*tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->preferred_ap_list, ap_essid);
@@ -1423,7 +1422,6 @@ fprintf( stderr, "PREF: Looking at ap '%s'\n", nm_ap_get_essid (ap));
 				 */
 				if ( tmp_ap && (nm_ap_get_priority (tmp_ap) < highest_priority))
 				{
-fprintf( stderr, "PREF: setting ap '%s' as best\n", nm_ap_get_essid (ap));
 					best_ap = ap;
 					highest_priority = nm_ap_get_priority (ap);
 				}
@@ -1432,7 +1430,14 @@ fprintf( stderr, "PREF: setting ap '%s' as best\n", nm_ap_get_essid (ap));
 		nm_ap_list_iter_free (iter);
 	}
 
+	/* If the best ap is NULL, bring device down and clear out its essid and AP */
 	nm_device_set_best_ap (dev, best_ap);
+	if (!best_ap)
+	{
+		nm_device_bring_down (dev);
+		nm_device_set_essid (dev, "");
+		nm_device_bring_up (dev);
+	}
 }
 
 

@@ -873,7 +873,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	if (!(object_path = dbus_message_get_path (message)))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	NM_DEBUG_PRINT_2 ("nm_dbus_nmi_filter() got method %s for path %s\n", method, object_path);
+	/* NM_DEBUG_PRINT_2 ("nm_dbus_nmi_filter() got method %s for path %s\n", method, object_path); /**/
 
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "TrustedNetworkUpdate"))
@@ -1069,7 +1069,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 
 		if ((ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev))))
 		{
-			if ((object_path = nm_device_get_path_for_ap (dev, ap)))
+			if ((ap == nm_device_get_best_ap (dev)) && (object_path = nm_device_get_path_for_ap (dev, ap)))
 			{
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 				g_free (object_path);
@@ -1160,7 +1160,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	NM_DEBUG_PRINT_2 ("nm_dbus_nm_message_handler() got method %s for path %s\n", method, path);
+	/* NM_DEBUG_PRINT_2 ("nm_dbus_nm_message_handler() got method %s for path %s\n", method, path); /**/
 
 	if (strcmp ("getActiveDevice", method) == 0)
 		reply_message = nm_dbus_nm_get_active_device (connection, message, data);
@@ -1173,10 +1173,10 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		reply_message = dbus_message_new_method_return (message);
 		if (reply_message)
 		{
-			if (data->active_device)
-				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connected", DBUS_TYPE_INVALID);
 			if (data->active_device && nm_device_activating (data->active_device))
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);
+			else if (data->active_device)
+				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connected", DBUS_TYPE_INVALID);
 			else
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "disconnected", DBUS_TYPE_INVALID);
 		}

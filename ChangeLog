@@ -1,5 +1,34 @@
 2004-08-11  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.[ch]
+		- Fix up copyright and credits to include Bastien and Eskil,
+			who created the gnome-applets wireless applet, from whose
+			skeleton this one was created
+		- Rework nmwa_update_state()/nmwa_draw() so that state and which
+			pixmap to draw is computed during nmwa_update_state()
+		- Applet now shows itself all the time due to panel packing issues
+			which caused the applet to previously never come back after hiding.
+			When a wired device is the active device, the applet shows "not connected"
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- Clean up error messages and show what function they are from
+		- nmwa_dbus_get_active_wireless_device()->nmwa_dbus_get_active_device()
+		- Add new device type getters, and a status getter
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_devices_handle_request): Don't return an active network unless that
+			network is actually in the device's ap list
+		- (nm_dbus_nm_message_handler): Fix silly mistake returning status
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_update_best_ap): If the best AP is NULL, clear out the ESSID of the
+			card
+
+	* test/nmclienttest.c
+		- Report status of NetworkManager too
+
+2004-08-11  Dan Williams <dcbw@redhat.com>
+
 	* info-daemon/NetworkManagerInfo.c:
 		- (main): clean up Seth's code style
 

@@ -16,7 +16,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ * This applet used the GNOME Wireless Applet as a skeleton to build from.
+ *
+ * GNOME Wireless Applet Authors:
+ *		Eskil Heyn Olsen <eskil@eskil.dk>
+ *		Bastien Nocera <hadess@hadess.net> (Gnome2 port)
+ *
  * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2001, 2002 Free Software Foundation
  */
 
 #include <string.h>
@@ -102,20 +109,63 @@ static void nmwa_draw (NMWirelessApplet *applet)
 {
 	const char *label_text;
 	char *tmp;
-	PixmapState state = PIX_BROKEN;
 
-	if (applet->have_active_device)
-		state = PIX_SIGNAL_4;
-
-	if (applet->pixmaps[state] != applet->current_pixbuf)
+	if (applet->pixmaps[applet->pix_state] != applet->current_pixbuf)
 	{
-		applet->current_pixbuf = (GdkPixbuf *)applet->pixmaps[state];
+		applet->current_pixbuf = (GdkPixbuf *)applet->pixmaps[applet->pix_state];
 		gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->current_pixbuf);
 	}
 }
 
 static void nmwa_update_state (NMWirelessApplet *applet)
 {
+	if (applet->nm_active)
+	{
+		char *status = nmwa_dbus_get_nm_status (applet->connection);
+		char *active_device = nmwa_dbus_get_active_device (applet->connection);
+
+		if (active_device && status)
+		{
+			int	type = nmwa_dbus_get_device_type (applet->connection, active_device);
+
+			switch (type)
+			{
+				case (DEVICE_TYPE_WIRELESS_ETHERNET):
+					applet->have_active_device = TRUE;
+					if (strcmp (status, "connected") == 0)
+						applet->pix_state = PIX_SIGNAL_4;
+					else if (strcmp (status, "connecting") == 0)
+					{
+						if (    (applet->pix_state < PIX_CONNECT_0)
+							|| (applet->pix_state > PIX_CONNECT_2))
+							applet->pix_state = PIX_CONNECT_0;
+						else
+							applet->pix_state++;
+					}
+					break;
+
+				case (DEVICE_TYPE_WIRED_ETHERNET):
+				default:
+					applet->have_active_device = FALSE;
+					applet->pix_state = PIX_BROKEN;
+					break;
+			}
+		}
+		else
+		{
+			applet->have_active_device = FALSE;
+			applet->pix_state = PIX_BROKEN;
+		}
+
+		if (active_device)	dbus_free (active_device);
+		if (status)		dbus_free (status);
+	}
+	else
+	{
+		applet->have_active_device = FALSE;
+		applet->pix_state = PIX_BROKEN;
+	}
+
 	nmwa_draw (applet);
 }
 
@@ -156,35 +206,11 @@ static void nmwa_load_theme (NMWirelessApplet *applet)
   
 static int nmwa_timeout_handler (NMWirelessApplet *applet)
 {
-	char *active_device;
-
 	/* Try to get a connection to dbus if we don't already have one */
 	if (!applet->connection)
 		applet->connection = nmwa_dbus_init (applet);
 
-	if (applet->nm_active)
-	{
-		fprintf( stderr, "NM is present {\n");
-		if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
-		{
-			applet->have_active_device = TRUE;
-			nmwa_update_state (applet);
-			fprintf( stderr, "  A wireless device was active, showing applet\n");
-			gtk_widget_show (GTK_WIDGET (applet));
-			dbus_free (active_device);
-		}
-		else
-		{
-			fprintf( stderr, "  A wireless device was not active, hiding applet\n");
-			gtk_widget_hide (GTK_WIDGET (applet));
-		}
-		fprintf( stderr, "}\n\n");
-	}
-	else
-	{
-		fprintf( stderr, "NM is *not* present\n");
-		gtk_widget_hide (GTK_WIDGET (applet));
-	}
+	nmwa_update_state (applet);
 
   	return (TRUE);
 }
@@ -228,6 +254,8 @@ static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 	const gchar *authors[] =
 	{
 		"Dan Williams <dcbw@redhat.com>",
+		"Eskil Heyn Olsen <eskil@eskil.org> (GNOME Wireless Applet)",
+		"Bastien Nocera <hadess@hadess.net> (GNOME Wireless Applet)",
 		NULL
 	};
 
@@ -245,8 +273,8 @@ static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 	applet->about_dialog = gnome_about_new (
 			"Wireless Network Applet",
 			VERSION,
-			"(C) 2004 Red Hat, Inc.",
-			"This utility shows the status of a wireless link.",
+			"(C) 2004 Red Hat, Inc.\n(C) Copyright 2001, 2002 Free Software Foundation",
+			"This utility shows the status of a wireless networking link.",
 			authors,
 			NULL,
 			NULL,
@@ -495,6 +523,7 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 
 	gtk_widget_hide(GTK_WIDGET(applet));
 
+	applet->pix_state = PIX_BROKEN;
 	applet->connection = nmwa_dbus_init(applet);
 	applet->have_active_device = FALSE;
 	applet->nm_active = nmwa_dbus_nm_is_running(applet->connection);
@@ -507,7 +536,7 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 
 	nmwa_timeout_handler (applet);
 	nmwa_start_timeout (applet);
-		 
+
 	panel_applet_setup_menu_from_file (PANEL_APPLET (applet), NULL, "NMWirelessApplet.xml", NULL,
 						nmwa_context_menu_verbs, applet);
 
@@ -534,7 +563,7 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 	glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
 		 "NMWirelessApplet/wireless-applet.glade", FALSE, NULL);
 
-	nmwa_new (applet);
+	gtk_widget_show (nmwa_new (applet));
 	return (TRUE);
 }
 

@@ -128,6 +128,55 @@ void get_device_name (DBusConnection *connection, char *path)
 	dbus_message_unref (message);
 }
 
+void get_nm_status (DBusConnection *connection)
+{
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	DBusMessageIter iter;
+	DBusError		 error;
+
+	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						"/org/freedesktop/NetworkManager",
+						"org.freedesktop.NetworkManager",
+						"status");
+	if (message == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return;
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		dbus_message_unref (message);
+		return;
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "dbus reply message was NULL\n" );
+		dbus_message_unref (message);
+		return;
+	}
+
+	/* now analyze reply */
+	dbus_message_iter_init (reply, &iter);
+	char *string;
+	string = dbus_message_iter_get_string (&iter);
+	if (!string)
+	{
+		fprintf (stderr, "NetworkManager returned a NULL status" );
+		return;
+	}
+
+	fprintf (stderr, "NM Status: '%s'\n", string );
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+}
+
 void get_device_active_network (DBusConnection *connection, char *path)
 {
 	DBusMessage	*message;
@@ -441,6 +490,7 @@ int main( int argc, char *argv[] )
 	char *path;
 	int	 type;
 
+	get_nm_status (connection);
 	path = get_active_device (connection);
 	get_device_name (connection, path);
 	type = get_device_type (connection, path);
