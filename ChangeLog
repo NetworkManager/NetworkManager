@@ -1,3 +1,8 @@
+2004-11-22  Colin Walters  <walters@verbum.org>
+
+	* src/Makefile.am (NetworkManager_SOURCES): Add
+	NetworkManagerDevicePrivate.h.
+
 2004-11-22  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevicePrivate.h

@@ -25,6 +25,7 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDHCP.h		\
 		NetworkManagerDevice.c		\
 		NetworkManagerDevice.h		\
+		NetworkManagerDevicePrivate.h		\
 		NetworkManager.c			\
 		NetworkManagerMain.h		\
 		NetworkManagerPolicy.c		\
