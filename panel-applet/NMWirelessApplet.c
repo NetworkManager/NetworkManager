@@ -157,7 +157,7 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 	gtk_show_about_dialog (NULL,
 		"name",				_("NetworkManager Applet"),
 		"version",			VERSION,
-		"copyright",			_("\xC2\xA9 2004-2005 by Red Hat, Inc."),
+		"copyright",			_("(C) 2004-2005 by Red Hat, Inc."),
 		"comments",			_("A panel application for managing your network devices & connections."),
 		"authors",			authors,
 		"documenters",			documenters,
