@@ -440,6 +440,7 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
 	g_return_if_fail (iter != NULL);
 
 	nm_ap_list_unlock (iter->list);
+	memset (iter, 0, sizeof (struct NMAPListIter));
 	g_free (iter);
 }
 

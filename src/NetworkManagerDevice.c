@@ -890,13 +890,13 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
  */
 static gpointer nm_device_activation_worker (gpointer user_data)
 {
+	NMDevice		*dev = (NMDevice *)user_data;
 	unsigned char	 buf[500];
-	unsigned char	*iface;
 	unsigned char	 hostname[100] = "\0";
 	int			 host_err;
 	int			 dhclient_err;
+	char			*iface;
 	FILE			*pidfile;
-	NMDevice		*dev = (NMDevice *)user_data;
 
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
@@ -965,8 +965,7 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1.5\n", n
 	}
 
 	/* Kill the old default route */
-	snprintf (buf, 500, "/sbin/ip route del default");
-	system (buf);
+	nm_spawn_process ("/sbin/ip route del default");
 
 	/* Find and kill the previous dhclient process for this interface */
 	iface = nm_device_get_iface (dev);
@@ -985,7 +984,7 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1.5\n", n
 
 		n_pid = atoi (s_pid);
 		if (n_pid > 0)
-			kill (n_pid, 9);
+			kill (n_pid, SIGTERM);
 	}
 
 	/* If we don't have a "best" ap, don't try to get a DHCP address or restart the name service cache */
@@ -996,29 +995,16 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1.5\n", n
 
 		/* Unfortunately, dhclient can take a long time to get a dhcp address
 		 * (for example, bad WEP key so it can't actually talk to the AP).
-		 * We are essentially blocked until it returns.
-		 * FIXME:  fork() NetworkManager to do the dhclient stuff, and if our
-		 * state changes during the dhclient stuff, we can kill() the
-		 * forked process running dhclient.
 		 */
 		snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
 						iface, iface, iface, iface);
-		dhclient_err = system (buf);
+		dhclient_err = nm_spawn_process (buf);
 
 		/* Set the hostname back to what it was before so that X11 doesn't
 		 * puke when the hostname changes, and so users can actually launch stuff.
 		 */
 		if (host_err >= 0)
 			sethostname (hostname, strlen (hostname));
-
-		/* If we were told to quit activation, stop the thread and return */
-		if (dev->quit_activation)
-		{
-fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 2\n", nm_device_get_iface (dev));
-			dev->just_activated = FALSE;
-			nm_device_unref (dev);
-			return (NULL);
-		}
 
 		if (dhclient_err != 0)
 		{
@@ -1036,9 +1022,17 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 2\n", nm_
 			nm_device_bring_up (dev);
 		}
 
+		/* If we were told to quit activation, stop the thread and return */
+		if (dev->quit_activation)
+		{
+fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 2\n", nm_device_get_iface (dev));
+			dev->just_activated = FALSE;
+			nm_device_unref (dev);
+			return (NULL);
+		}
+
 		/* Restart the nameservice caching daemon to make apps aware of new DNS servers */
-		snprintf (buf, 500, "/sbin/service nscd restart");
-		system (buf);
+		nm_spawn_process ("/sbin/service nscd restart");
 	}
 
 	/* If we were told to quit activation, stop the thread and return */
@@ -1135,11 +1129,11 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	{
 		/* Remove routing table entries */
 		snprintf (buf, 500, "/sbin/ip route flush dev %s", iface);
-		system (buf);
+		nm_spawn_process (buf);
 
 		/* Remove ip address */
 		snprintf (buf, 500, "/sbin/ip address flush dev %s", iface);
-		system (buf);
+		nm_spawn_process (buf);
 
 		dev->ip4_address = 0;
 
@@ -1317,6 +1311,38 @@ void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
 
 
 /*
+ * Freeze/unfreeze best ap
+ *
+ * If the user explicitly picks a network to associate with, we don't
+ * change the active network until it goes out of range.
+ *
+ */
+void nm_device_freeze_best_ap (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	dev->options.wireless.freeze_best_ap = TRUE;
+}
+
+void nm_device_unfreeze_best_ap (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	dev->options.wireless.freeze_best_ap = FALSE;
+}
+
+gboolean nm_device_get_best_ap_frozen (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+
+	return (dev->options.wireless.freeze_best_ap);
+}
+
+
+/*
  * nm_device_get_path_for_ap
  *
  * Return the object path for an access point.
@@ -1377,7 +1403,33 @@ void nm_device_update_best_ap (NMDevice *dev)
 	if (!(ap_list = nm_device_ap_list_get (dev)))
 		return;
 
-	/* Check the trusted list first */
+	/* Iterate over the device's ap list to make sure the current
+	 * "best" ap is still in the device's ap list (so that if its
+	 * not, we can "unfreeze" the best ap if its been frozen already).
+	 * If it is, we don't change the best ap here.
+	 */
+	if (nm_device_get_best_ap_frozen (dev))
+	{
+		g_mutex_lock (dev->options.wireless.best_ap_mutex);
+		best_ap = nm_device_get_best_ap (dev);
+
+		/* If its in the device's ap list still, don't change the
+		 * best ap, since its frozen.
+		 */
+		if (    best_ap
+			&& !nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (best_ap))
+			&& nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
+		{
+			g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+			return;
+		}
+
+		/* Otherwise, its gone away and we don't care about it anymore */
+		nm_device_unfreeze_best_ap (dev);
+		g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+	}
+
+	/* Check the trusted list then */
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
 		return;
 	while ((ap = nm_ap_list_iter_next (iter)))

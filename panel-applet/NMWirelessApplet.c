@@ -40,6 +40,7 @@
 #include <panel-applet.h>
 #include <panel-applet-gconf.h>
 #include <glade/glade.h>
+#include <gconf/gconf-client.h>
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -63,6 +64,7 @@ static char * pixmap_names[] =
 	"connect-3.png",
 };
 
+static char *glade_file;
 
 /* Represents an access point */
 typedef struct
@@ -71,12 +73,7 @@ typedef struct
 	gboolean	encrypted;
 } AccessPoint;
 
-static GladeXML	*xml = NULL;
-static gchar		*glade_file = NULL;
-
-static int		nmwa_timeout_handler	(NMWirelessApplet *applet);
 static void		nmwa_about_cb			(BonoboUIComponent *uic, NMWirelessApplet *applet);
-static GtkWidget *	nmwa_populate_menu		(NMWirelessApplet *applet);
 
 static const BonoboUIVerb nmwa_context_menu_verbs [] =
 {
@@ -105,6 +102,14 @@ static GType nmwa_get_type (void)
 	return (type);
 }
 
+
+/*
+ * nmwa_draw
+ *
+ * Actually update the applet's pixmap so that our panel icon reflects
+ * the state of the applet
+ *
+ */
 static void nmwa_draw (NMWirelessApplet *applet)
 {
 	const char *label_text;
@@ -117,6 +122,14 @@ static void nmwa_draw (NMWirelessApplet *applet)
 	}
 }
 
+
+/*
+ * nmwa_update_state
+ *
+ * Figure out what the currently active device is from NetworkManager, its type,
+ * and what our icon on the panel should look like for each type.
+ *
+ */
 static void nmwa_update_state (NMWirelessApplet *applet)
 {
 	if (applet->nm_active)
@@ -131,7 +144,6 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			switch (type)
 			{
 				case (DEVICE_TYPE_WIRELESS_ETHERNET):
-					applet->have_active_device = TRUE;
 					if (strcmp (status, "connected") == 0)
 						applet->pix_state = PIX_SIGNAL_4;
 					else if (strcmp (status, "connecting") == 0)
@@ -146,27 +158,38 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 
 				case (DEVICE_TYPE_WIRED_ETHERNET):
 				default:
-					applet->have_active_device = FALSE;
 					applet->pix_state = PIX_BROKEN;
 					break;
 			}
 		}
 		else
-		{
-			applet->have_active_device = FALSE;
 			applet->pix_state = PIX_BROKEN;
-		}
 
 		if (active_device)	dbus_free (active_device);
 		if (status)		dbus_free (status);
 	}
 	else
-	{
-		applet->have_active_device = FALSE;
 		applet->pix_state = PIX_BROKEN;
-	}
 
 	nmwa_draw (applet);
+}
+
+
+/*
+ * nmwa_timeout_handler
+ *
+ * Called regularly to update the applet's state and icon in the panel
+ *
+ */  
+static int nmwa_timeout_handler (NMWirelessApplet *applet)
+{
+	/* Try to get a connection to dbus if we don't already have one */
+	if (!applet->connection)
+		applet->connection = nmwa_dbus_init (applet);
+
+	nmwa_update_state (applet);
+
+  	return (TRUE);
 }
 
 static void nmwa_start_timeout (NMWirelessApplet *applet)
@@ -185,9 +208,10 @@ static void nmwa_cancel_timeout (NMWirelessApplet *applet)
 
 static void nmwa_load_theme (NMWirelessApplet *applet)
 {
-	char *pixmapdir;
-	char *pixmapname;
-	int i;
+	char		*pixmapdir;
+	char		*pixmapname;
+	int		 i;
+	GError	*error = NULL;
 
 	pixmapdir = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP,
 			"NMWirelessApplet/", FALSE, NULL);
@@ -200,22 +224,21 @@ static void nmwa_load_theme (NMWirelessApplet *applet)
 		g_free (pixmapname);
 	}
 
+	pixmapname = g_build_filename (G_DIR_SEPARATOR_S, pixmapdir, "keyring.png", NULL);
+	applet->key_pixbuf = gdk_pixbuf_new_from_file_at_size (pixmapname, 16, 16, &error);
+	g_free (pixmapname);
+
 	g_free (pixmapdir);
 }
 
-  
-static int nmwa_timeout_handler (NMWirelessApplet *applet)
-{
-	/* Try to get a connection to dbus if we don't already have one */
-	if (!applet->connection)
-		applet->connection = nmwa_dbus_init (applet);
 
-	nmwa_update_state (applet);
-
-  	return (TRUE);
-}
-
-void show_error_dialog (gchar *mesg, ...) 
+/*
+ * show_warning_dialog
+ *
+ * pop up a warning or error dialog with certain text
+ *
+ */
+static void show_warning_dialog (gboolean error, gchar *mesg, ...) 
 {
 	GtkWidget	*dialog;
 	char		*tmp;
@@ -223,22 +246,8 @@ void show_error_dialog (gchar *mesg, ...)
 
 	va_start (ap,mesg);
 	tmp = g_strdup_vprintf (mesg,ap);
-	dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, mesg, NULL);
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
-	g_free (tmp);
-	va_end (ap);
-}
-
-void show_warning_dialog (gchar *mesg, ...) 
-{
-	GtkWidget	*dialog;
-	char		*tmp;
-	va_list	 ap;
-
-	va_start (ap,mesg);
-	tmp = g_strdup_vprintf (mesg,ap);
-	dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_WARNING, GTK_BUTTONS_OK, mesg, NULL);
+	dialog = gtk_message_dialog_new (NULL, 0, error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_WARNING,
+								GTK_BUTTONS_OK, mesg, NULL);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 	g_free (tmp);
@@ -246,6 +255,12 @@ void show_warning_dialog (gchar *mesg, ...)
 }
 
 
+/*
+ * nmwa_about_cb
+ *
+ * Display our about dialog
+ *
+ */
 static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 {
 	GdkPixbuf	*pixbuf;
@@ -290,12 +305,18 @@ static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 }
 
 
+/*
+ * nmwa_destroy
+ *
+ * Destroy the applet and clean up its data
+ *
+ */
 static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 {
 	int i;
 	
 	if (applet->menu)
-		gtk_widget_destroy (applet->menu);
+		nmwa_dispose_menu (applet);
 
 	if (applet->timeout_handler_id > 0)
 	{
@@ -311,9 +332,18 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 		gtk_widget_destroy (applet->about_dialog);
 		applet->about_dialog = NULL;
 	}
+
+	if (applet->gconf_client)
+		g_object_unref (G_OBJECT (applet->gconf_client));
 }
 
 
+/*
+ * nmwa_get_menu_pos
+ *
+ * When displaying the popup menu, figure out exactly where to put it on the screen
+ *
+ */
 static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer data)
 {
 	NMWirelessApplet	*applet = data;
@@ -347,18 +377,65 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
 }
 
 
+/*
+ * nmwa_handle_network_choice
+ *
+ * Ask the user whether to add the network they have chosen to the trusted
+ * networks list, and then stuff the network into gconf in either the trusted
+ * or preferred networks list depending on their choice.  This notifies
+ * NetworkInfoManager that the networks list has changed, and it notifies
+ * NetworkManager about those changes, triggering an AP switch.
+ */
+void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
+{
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (network != NULL);
+
+fprintf( stderr, "Forcing network '%s'\n", network);
+	nmwa_dbus_set_network (applet->connection, network);
+}
+
+
+/*
+ * nmwa_menu_item_activated
+ *
+ * Signal function called when user clicks on a menu item
+ *
+ */
+void nmwa_menu_item_activated (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+	char				*network;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	if ((network = g_object_get_data (G_OBJECT (item), "network")))
+		nmwa_handle_network_choice (applet, network);
+}
+
+
+/*
+ * nmwa_button_clicked
+ *
+ * Pop up the wireless networks menu in response to a click on the applet
+ *
+ */
 static void nmwa_button_clicked (GtkWidget *button, NMWirelessApplet *applet)
 {
-	if (applet->menu != NULL) 
-	{
-	  gtk_menu_popdown (GTK_MENU (applet->menu));
-	  g_object_unref(G_OBJECT(applet->menu));
-	  applet->menu = NULL;
-	}
+	if (applet->menu && GTK_WIDGET_VISIBLE (applet->menu))
+		gtk_menu_popdown (GTK_MENU (applet->menu));
 	else
 	{
-		applet->menu = nmwa_populate_menu (applet);
-		gtk_menu_popup (GTK_MENU (applet->menu), NULL, NULL, nmwa_get_menu_pos, applet, 0, gtk_get_current_event_time());
+		if (applet->nm_active)
+		{
+			if (!applet->menu)
+				applet->menu = nmwa_populate_menu (applet);
+
+			gtk_menu_popup (GTK_MENU (applet->menu), NULL, NULL, nmwa_get_menu_pos,
+							applet, 0, gtk_get_current_event_time());
+		}
 	}
 }
 
@@ -370,18 +447,84 @@ static void nmwa_button_clicked (GtkWidget *button, NMWirelessApplet *applet)
  * Given a network, add it to our networks menu.
  *
  */
-void nmwa_add_menu_item (char *network, gboolean current, gpointer user_data)
+void nmwa_add_menu_item (NMWirelessApplet *applet, GtkWidget *menu, char *text, char *tag, gboolean current,
+						gboolean encrypted)
 {
-	GtkWidget		*menu = (GtkWidget *)user_data;
 	GtkWidget		*menu_item;
+	GtkWidget		*label;
+	GtkWidget		*hbox;
 
-	g_return_if_fail (network != NULL);
+	g_return_if_fail (text != NULL);
 	g_return_if_fail (menu != NULL);
+fprintf( stderr, "text = %s\n", text);
+	menu_item = gtk_menu_item_new ();
+	hbox = gtk_hbox_new (FALSE, 5);
+	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
+	gtk_widget_show (hbox);
 
-	menu_item = gtk_check_menu_item_new_with_label (network);
-	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), current);
-	gtk_widget_show (menu_item);
+	label = gtk_label_new (text);
+	if (current)
+	{
+		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", text);
+		gtk_label_set_markup (GTK_LABEL (label), markup);
+		g_free (markup);
+	}
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 2);
+	gtk_widget_show (label);
+
+	if (encrypted)
+	{
+		GtkWidget		*image;
+
+		if ((image = gtk_image_new_from_pixbuf (applet->key_pixbuf)))
+		{
+			gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 2);
+			gtk_widget_show (image);
+		}
+	}
+
+	g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (tag));
+	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activated), applet);
+
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	gtk_widget_show (menu_item);
+}
+
+
+/*
+ * nmwa_menu_item_data_free
+ *
+ * Frees the "network" data tag on a menu item we've created
+ *
+ */
+static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer user_data)
+{
+	char	*tag;
+
+	g_return_if_fail (menu_item != NULL);
+
+	if ((tag = g_object_get_data (G_OBJECT (menu_item), "network")))
+	{
+		g_object_set_data (G_OBJECT (menu_item), "network", NULL);
+		g_free (tag);
+	}
+}
+
+
+/*
+ * nmwa_dispose_menu
+ *
+ * Destroy the menu and each of its items data tags
+ *
+ */
+void nmwa_dispose_menu (NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	/* Free the "network" data on each menu item */
+	gtk_container_foreach (GTK_CONTAINER (applet->menu), nmwa_menu_item_data_free, NULL);
+	gtk_widget_destroy (applet->menu);
 }
 
 
@@ -391,24 +534,27 @@ void nmwa_add_menu_item (char *network, gboolean current, gpointer user_data)
  * Set up our networks menu from scratch
  *
  */
-static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
+GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 {
 	GtkWidget		 *menu;
-	GtkWidget		 *menu_item;
-	int		 	  num_networks;
-	char			**networks;
 
-	g_assert(applet->nm_active);
+	g_assert (applet->nm_active);
 	g_return_if_fail (applet != NULL);
 
 	menu = gtk_menu_new ();
-
-	nmwa_dbus_add_networks_to_menu (applet->connection, menu);
+	nmwa_dbus_add_networks_to_menu (applet, menu);
 
 	return (menu);
 }
 
 
+/*
+ * mnwa_setup_widgets
+ *
+ * Intialize the applet's widgets and packing, create the initial
+ * menu of networks.
+ *
+ */
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
 	GtkRequisition	 req;
@@ -467,7 +613,8 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->current_pixbuf = NULL;
 	applet->about_dialog = NULL;
 
-	applet->menu = NULL;
+	if (applet->nm_active)
+		applet->menu = nmwa_populate_menu (applet);
 }
 
 static void change_size_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
@@ -517,17 +664,37 @@ static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
 	gtk_rc_style_unref (rc_style);
 }
 
+
+/*
+ * nmwa_new
+ *
+ * Create the initial instance of our wireless applet
+ *
+ */
 static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 {
 	panel_applet_set_flags (PANEL_APPLET (applet), PANEL_APPLET_EXPAND_MINOR);
 
 	gtk_widget_hide(GTK_WIDGET(applet));
 
+	applet->gconf_client = gconf_client_get_default ();
+	if (!applet->gconf_client)
+		return (NULL);
+
+#if 0
+	applet->net_dialog = glade_xml_new(GLADEDIR"/network_chocie.glade", NULL, NULL);
+	if (!applet->net_dialog)
+	{
+		fprintf (stderr, "Could not open the network dialog glade file!\n");
+		g_object_unref (G_OBJECT (applet->gconf_client));
+		return (NULL);
+	}
+#endif
+
 	applet->pix_state = PIX_BROKEN;
 	applet->connection = nmwa_dbus_init(applet);
-	applet->have_active_device = FALSE;
 	applet->nm_active = nmwa_dbus_nm_is_running(applet->connection);
-	
+
 	nmwa_load_theme (applet);
 	nmwa_setup_widgets (applet);
 

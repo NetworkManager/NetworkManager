@@ -1,3 +1,57 @@
+2004-08-12  Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/passphrase.glade
+		- Set window title to " "
+
+	* panel-applet/Makefile.am
+	  panel-applet/keyring.png
+		- Deliver to correct place
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Add comments
+		- Remove applet->have_active_device as its no longer used
+		- (nmwa_load_theme): load keyring.png too
+		- (error_dialog): remove
+		- (show_warning_dialog): subsume functionality of error dialog too
+		- (nmwa_destroy, nmwa_new): create and dispose of an application-wide GConfClient
+		- (nmwa_handle_network_choice): add to deal with user clicking on an item from
+			the networks menu
+		- (nmwa_menu_item_activated): GtkMenuItem "activate" signal handler
+		- (nmwa_button_clicked, nmwa_setup_widgets): create and populate the menu on startup
+			and when we get broadcasts of changed wireless access points only, not when the
+			user clicks on the button to display the menu (too long of a wait)
+		- (nmwa_add_menu_item): Make active network bold, and place a keyring icon beside
+			networks that are encrypted
+		- (nmwa_dispose_menu, nmwa_menu_item_data_free): dispose of the data we place on each
+			menu item with g_object_set_data()
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- (nmwa_dbus_get_bool): add method to return boolean value from dbus message
+		- (nmwa_dbus_get_active_network): add (nmwa_dbus_get_string() wrapper to get active network)
+		- (nmwa_dbus_add_networks_to_menu): clean up, only show one instance of each ESSID in the menu
+		- (nmwa_dbus_set_network): force NetworkManager to use a particular network for wireless cards
+		- (nmwa_dbus_init, nmwa_dbus_filter): Trap network appear/disappear and device
+			activation/deactivation signals and rebuild the menu when they happen
+
+	* src/NetworkManager.c
+		- (main): use new nm_spawn_process() rather than system()
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_devices_handle_request): don't compare AP structure addresses directly, but essids
+			instead.  Since we can now force best_aps to stick around, the AP structure to which
+			dev->options.wireless.best_ap points to won't necessarily be in the device's device list
+			if a scan has happened since the best_ap was frozen.  Also add "setNetwork" method
+			to freeze the best_ap.
+
+	* src/NetworkManagerDevice.[ch]
+		- (nm_device_activation_worker): Use new nm_spawn_process() call rather than system()
+		- (nm_device_*_best_ap): add freeze/unfreeze/get_frozen functions, and don't really update
+			the best_ap in nm_device_update_best_ap() if the best_ap is frozen AND in the device's
+			ap list
+
+	* src/NetworkManagerUtils.[ch]
+		- (nm_spawn_process): add replacement for system() usage
+
 2004-08-11  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.[ch]

@@ -138,6 +138,54 @@ gint32 nmwa_dbus_get_int (DBusConnection *connection, const char *path, const ch
 
 
 /*
+ * nmwa_dbus_get_bool
+ *
+ */
+gboolean nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char *method)
+{
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	DBusError		 error;
+	gboolean		 val;
+
+	g_return_val_if_fail (connection != NULL, 0);
+	g_return_val_if_fail (path != NULL, 0);
+	g_return_val_if_fail (method != NULL, 0);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
+	{
+		fprintf (stderr, "nmwa_dbus_get_int(): Couldn't allocate the dbus message\n");
+		return (0);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "nmwa_dbus_get_int(): %s raised:\n %s\n\n", error.name, error.message);
+		dbus_message_unref (message);
+		return (0);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "nmwa_dbus_get_int(): dbus reply message was NULL\n" );
+		dbus_message_unref (message);
+		return (0);
+	}
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &val, DBUS_TYPE_INVALID))
+		val = FALSE;
+
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	return (val);
+}
+
+
+/*
  * nmwa_dbus_get_double
  *
  */
@@ -265,6 +313,32 @@ char * nmwa_dbus_get_active_device (DBusConnection *connection)
 
 
 /*
+ * nmwa_dbus_get_active_network
+ *
+ * Returns the object_path of the currently active network of the active device.
+ *
+ */
+char * nmwa_dbus_get_active_network (DBusConnection *connection, char *dev_path)
+{
+	char	*network;
+
+	if (!connection)
+		return (NULL);
+
+	if ((network = nmwa_dbus_get_string (connection, dev_path, "getActiveNetwork")))
+	{
+		if (strlen (network) < 1)
+		{
+			dbus_free (network);
+			network = NULL;
+		}
+	}
+
+	return (network);
+}
+
+
+/*
  * nmwa_dbus_get_device_type
  *
  * Returns the object_path of the currently active device, if any.
@@ -311,58 +385,120 @@ char * nmwa_dbus_get_nm_status (DBusConnection *connection)
  * Query NetworkManager for networks and add any to the networks menu
  *
  */
-void nmwa_dbus_add_networks_to_menu (DBusConnection *connection, gpointer user_data)
+void nmwa_dbus_add_networks_to_menu (NMWirelessApplet *applet, GtkWidget *menu)
 {
 	char		 *active_device;
 	char		 *active_network;
 	char		**networks;
 	int		  num_items = 0;
+	int		  i;
 
-	if (!connection)
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->connection != NULL);
+	g_return_if_fail (menu != NULL);
+
+	if (!applet->connection)
 	{
-		nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
+		nmwa_add_menu_item (applet, menu, "No wireless networks found...", NULL, FALSE, FALSE);
 		return;
 	}
 
-	if (!(active_device = nmwa_dbus_get_active_device (connection)))
+	if (!(active_device = nmwa_dbus_get_active_device (applet->connection)))
 	{
-		nmwa_add_menu_item ("No network connection is present.", FALSE, user_data);
+		nmwa_add_menu_item (applet, menu, "No network connection is present.", NULL, FALSE, FALSE);
 		return;
 	}
 
-	switch (nmwa_dbus_get_device_type (connection, active_device))
+	switch (nmwa_dbus_get_device_type (applet->connection, active_device))
 	{
 		case (DEVICE_TYPE_WIRED_ETHERNET):
-			nmwa_add_menu_item ("A wired ethernet card is currently active.", FALSE, user_data);
+			nmwa_add_menu_item (applet, menu, "A wired ethernet card is currently active.", NULL, FALSE, FALSE);
 			return;
 
 		case (DEVICE_TYPE_WIRELESS_ETHERNET):
 			break;
 
 		default:
-			nmwa_add_menu_item ("Some other network device is currently active.", FALSE, user_data);
+			nmwa_add_menu_item (applet, menu, "Some other network device is currently active.", NULL, FALSE, FALSE);
 			return;
 	}
 
+	active_network = nmwa_dbus_get_active_network (applet->connection, active_device);
+
 	/* Get each of the networks in turn and add them to the menu */
-	if ((networks = nmwa_dbus_get_string_array (connection, active_device, "getNetworks", &num_items)))
+	if (!(networks = nmwa_dbus_get_string_array (applet->connection, active_device, "getNetworks", &num_items)))
 	{
-		if (strlen (networks[0]) == 0)
-			nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
-		else
-		{
-			int i;
-			for (i = 0; i < num_items; i++)
-			{
-				char *name = nmwa_dbus_get_string (connection, networks[i], "getName");
-				nmwa_add_menu_item (name, (strcmp (networks[i], active_network) == 0), user_data);
-				dbus_free (name);
-			}
-		}
-		dbus_free_string_array (networks);
+		dbus_free (active_device);
+		if (active_network)
+			dbus_free (active_network);
+		return;
 	}
 
+	if (strlen (networks[0]) == 0)
+	{
+		nmwa_add_menu_item (applet, menu, "No wireless networks found...", NULL, FALSE, FALSE);
+		dbus_free (active_device);
+		if (active_network)
+			dbus_free (active_network);
+		return;
+	}
+
+	for (i = 0; i < num_items; i++)
+	{
+		char		*name = nmwa_dbus_get_string (applet->connection, networks[i], "getName");
+
+		if (name && strlen (name))
+		{
+			gboolean	 found = FALSE;
+			int		 j;
+
+			/* Only show one menu item per network.  NetworkManager really passes back a list
+			 * of access points, and there may be more than one that have the same ESSID.  Filter
+			 * them here.
+			 */
+			for (j = 0; j < i; j++)
+				if (found = (networks[j] && (strcmp (networks[i], networks[j]) == 0)))
+					break;
+						
+			if (!found)
+			{
+				gboolean	 active = active_network ? (strcmp (networks[i], active_network) == 0) : FALSE;
+				gboolean	 encrypted = nmwa_dbus_get_bool (applet->connection, networks[i], "getEncrypted");
+
+				fprintf( stderr, "Adding '%s' active (%d), enc (%d)\n", name, active, encrypted);
+				nmwa_add_menu_item (applet, menu, name, name, active, encrypted);
+			}
+		}
+		dbus_free (name);
+	}
+
+	dbus_free_string_array (networks);
+	dbus_free (active_network);
 	dbus_free (active_device);
+}
+
+
+/*
+ * nmwa_dbus_set_network
+ *
+ * Tell NetworkManager to use a specific network that the user picked.
+ *
+ */
+void nmwa_dbus_set_network (DBusConnection *connection, char *network)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (network != NULL);
+
+	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setNetwork");
+	if (message)
+	{
+		dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
+		dbus_connection_send (connection, message, NULL);
+	}
+	else
+		fprintf (stderr, "nm_dbus_get_network_priority(): Couldn't allocate the dbus message\n");
 }
 
 
@@ -418,6 +554,19 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			&& (strcmp (service, NM_DBUS_SERVICE) == 0))
 			applet->nm_active = FALSE;
 	}
+	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive"))
+	{
+		if (applet->menu && !GTK_WIDGET_VISIBLE (applet->menu))
+		{
+			nmwa_dispose_menu (applet);
+			applet->menu = nmwa_populate_menu (applet);
+		}
+		else if (!applet->menu)
+			applet->menu = nmwa_populate_menu (applet);
+	}
 	else
 		handled = FALSE;
 
@@ -457,6 +606,13 @@ DBusConnection * nmwa_dbus_init (gpointer user_data)
 				"type='signal',"
 				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
 				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				&error);
+
+	dbus_bus_add_match(connection,
+				"type='signal',"
+				"interface='" NM_DBUS_INTERFACE "',"
+				"path='" NM_DBUS_PATH "',"
+				"sender='" NM_DBUS_SERVICE "'",
 				&error);
 
 	return (connection);

@@ -1069,7 +1069,8 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 
 		if ((ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev))))
 		{
-			if ((ap == nm_device_get_best_ap (dev)) && (object_path = nm_device_get_path_for_ap (dev, ap)))
+			if (    (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_ap_get_essid (nm_device_get_best_ap (dev))) == 0)
+				&& (object_path = nm_device_get_path_for_ap (dev, ap)))
 			{
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 				g_free (object_path);
@@ -1168,6 +1169,34 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		reply_message = nm_dbus_nm_get_devices (connection, message, data);
 	else if (strcmp ("setKeyForNetwork", method) == 0)
 		nm_dbus_set_user_key_for_network (connection, message, data);
+	else if (strcmp ("setNetwork", method) == 0)
+	{
+		if (data->active_device && nm_device_is_wireless (data->active_device))
+		{
+			char		*network;
+			DBusError	 error;
+
+			dbus_error_init (&error);
+			if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+			{
+				NMAccessPoint	*ap;
+
+				if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (data->active_device), network)))
+				{
+fprintf (stderr, "Forcing AP '%s'\n", nm_ap_get_essid (ap));
+					nm_device_freeze_best_ap (data->active_device);
+					nm_device_set_best_ap (data->active_device, ap);
+					nm_data_set_state_modified (data, TRUE);
+				}
+				dbus_free (network);
+			}
+		}
+		else
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "BadDevice",
+						"A network can only be set when a wireless device is active.");
+
+		handled = TRUE;
+	}
 	else if (strcmp ("status", method) == 0)
 	{
 		reply_message = dbus_message_new_method_return (message);

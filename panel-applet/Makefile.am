@@ -53,6 +53,7 @@ pixmap_DATA = no-link-0.png	\
 	connect-1.png		\
 	connect-2.png		\
 	connect-3.png		\
+	keyring.png		\
 	$(NULL)
 
 CLEANFILES = $(server_in_files) $(server_DATA) *.bak *.gladep

@@ -624,7 +624,7 @@ int main( int argc, char *argv[] )
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
 	 */
-	system ("killall dhclient");
+	nm_spawn_process ("/usr/bin/killall dhclient");
 
 	/* Wheeee!!! */
 	loop = g_main_loop_new (NULL, FALSE);

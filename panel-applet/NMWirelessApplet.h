@@ -25,6 +25,8 @@
 #include <gnome.h>
 #include <panel-applet.h>
 #include <panel-applet-gconf.h>
+#include <gconf/gconf-client.h>
+#include <glade/glade.h>
 
 typedef enum
 {
@@ -48,7 +50,8 @@ typedef struct
 
 	DBusConnection		*connection;
 	gboolean			 nm_active;
-	gboolean			 have_active_device;
+	GConfClient		*gconf_client;
+	GladeXML			*net_dialog;
 
 	PixmapState		 pix_state;
 	/* contains pointers into the images GList.
@@ -56,6 +59,7 @@ typedef struct
 	GdkPixbuf			*pixmaps[PIX_NUMBER];
 	/* pointer to the current used file name */
 	GdkPixbuf			*current_pixbuf;
+	GdkPixbuf			*key_pixbuf;
 
 	GtkWidget			*pixmap;
 	GtkWidget			*button;
@@ -67,11 +71,11 @@ typedef struct
 } NMWirelessApplet;
 
 
-void		nmwa_add_menu_item		(char *network, gboolean current, gpointer user_data);
+void			nmwa_add_menu_item	(NMWirelessApplet *applet, GtkWidget *menu, char *text, char *tag,
+								gboolean current, gboolean encrypted);
 
-void		show_warning_dialog		(gchar *mesg, ...);
+GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 
-void		show_warning_dialog		(gchar *mesg, ...);
-
+void			nmwa_dispose_menu	(NMWirelessApplet *applet);
 
 #endif

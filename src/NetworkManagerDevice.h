@@ -75,6 +75,9 @@ NMAccessPoint *nm_device_get_best_ap		(NMDevice *dev);
 void			nm_device_set_best_ap		(NMDevice *dev, NMAccessPoint *ap);
 void			nm_device_update_best_ap		(NMDevice *dev);
 gboolean		nm_device_need_ap_switch		(NMDevice *dev);
+void			nm_device_freeze_best_ap		(NMDevice *dev);
+void			nm_device_unfreeze_best_ap	(NMDevice *dev);
+gboolean		nm_device_get_best_ap_frozen	(NMDevice *dev);
 
 char *		nm_device_get_path_for_ap	(NMDevice *dev, NMAccessPoint *ap);
 

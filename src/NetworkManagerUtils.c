@@ -172,3 +172,30 @@ void nm_dispose_scan_results (wireless_scan *result_list)
 	}
 }
 
+
+/*
+ * nm_spawn_process
+ *
+ * Wrap g_spawn_sync in a usable manner
+ *
+ */
+int nm_spawn_process (char *args)
+{
+	gint		  num_args;
+	char		**argv;
+	int		  exit_status;
+	
+	g_return_val_if_fail (args != NULL, -1);
+
+	if (g_shell_parse_argv (args, &num_args, &argv, NULL))
+	{
+		if (g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, NULL))
+		{
+			g_strfreev (argv);
+			return (exit_status);
+		}
+		g_strfreev (argv);
+	}
+
+	return (-1);
+}
