@@ -90,56 +90,28 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			 */
 			if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 			{
-				unsigned char	buf[500];
-
 				NM_DEBUG_PRINT_3( "nm_create_device_and_add_to_list() adding udi='%s', iface='%s', iface_type=%s\n",
 					nm_device_get_udi (dev), nm_device_get_iface (dev), nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET ? "wireless" : "wired" );
 
 				data->dev_list = g_slist_append (data->dev_list, dev);
-
-				/* Initialize and bring up all new devices */
-				if (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
-				{
-					/* Disable WEP, take device down */
-					nm_device_bring_down (dev);
-					nm_device_set_wep_key (dev, NULL);
-					nm_device_set_essid (dev, NULL);
-				}
-				else
-				{
-					if (!nm_device_is_up (dev))
-						nm_device_bring_up (dev);
-				}
-
-				/* Remove routing table entries */
-				snprintf (buf, 500, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
-				system (buf);
-
-				/* Remove ip address */
-				snprintf (buf, 500, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
-				system (buf);
-
+				nm_device_deactivate (dev, TRUE);
 				success = TRUE;
 
 				nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-			}
-			else
-				NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not acquire device list mutex.\n" );
-		}
-		else
-			NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not allocate device data.\n" );
+			} else NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not acquire device list mutex.\n" );
+		} else NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not allocate device data.\n" );
 
 		hal_free_string (iface_name);
 
-		if (!success)
+		if (success)
+			nm_data_set_state_modified (data, TRUE);
+		else
 		{
 			/* If we couldn't add the device to our list, free its data. */
 			nm_device_unref (dev);
 			dev = NULL;
 		}
-	}
-	else
-		NM_DEBUG_PRINT_1( "nm_create_device_and_add_to_list(): device %s does not have 'net.interface' property\n", udi );
+	} else NM_DEBUG_PRINT_1( "nm_create_device_and_add_to_list(): device %s does not have 'net.interface' property\n", udi );
 
 	return (dev);
 }
@@ -173,29 +145,27 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 			{
 				if (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0)
 				{
-					if (    data->active_device
-						&& (dev == data->active_device))
-					{
-						nm_device_unref (data->active_device);
+					if (data->active_device && (dev == data->active_device))
 						data->active_device = NULL;
-					}
+					else if (data->pending_device && (dev == data->pending_device))
+						data->pending_device = NULL;
+
+					nm_device_pending_action_cancel (dev);
+					nm_device_unref (dev);
 
 					/* Remove the device entry from the device list and free its data */
 					data->dev_list = g_slist_remove_link (data->dev_list, element);
 					nm_device_unref (element->data);
 					g_slist_free (element);
-			
+					nm_data_set_state_modified (data, TRUE);
+
 					break;
 				}
 			}
-
 			element = g_slist_next (element);
 		}
-
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	}
-	else
-		NM_DEBUG_PRINT( "nm_remove_device_from_list() could not acquire device list mutex.\n" );
+	} else NM_DEBUG_PRINT( "nm_remove_device_from_list() could not acquire device list mutex.\n" );
 }
 
 
@@ -333,40 +303,47 @@ gboolean nm_link_state_monitor (gpointer user_data)
 
 			if (dev)
 			{
-				if (    dev != data->active_device
-					&& (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET))
-				{
-					/* If its a wireless card, make sure its down.  Saves power. */
-					if (nm_device_is_up (dev))
-						nm_device_bring_down (dev);
-				}
-
-				if ((nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRED_ETHERNET))
-				{
-					/* Make sure the device is up first.  It doesn't have to have
-					 * an IP address or anything, but most wired devices cannot do link
-					 * detection when they are down.
-					 */
-					if (!nm_device_is_up (dev))
-						nm_device_bring_up (dev);
-
-					nm_device_update_link_active (dev, FALSE);
-				}
-
-				/* Check if the device's IP address has changed
-				 * (ie dhcp lease renew/address change)
+				/* Wired cards are always up and active, because otherwise we cannot do
+				 * link detection on them.  A wireless card is only up if it's the active
+				 * device, since we only do scanning and link detection on the active device
+				 * anyway.
 				 */
+				switch (nm_device_get_iface_type (dev))
+				{
+					case NM_IFACE_TYPE_WIRELESS_ETHERNET:
+						if (dev != data->active_device)
+						{
+							if (nm_device_is_up (dev))
+								nm_device_bring_down (dev);
+						}
+						else
+							nm_device_update_link_active (dev, FALSE);						
+						break;
+
+					case NM_IFACE_TYPE_WIRED_ETHERNET:
+						if (!nm_device_is_up (dev))
+							nm_device_bring_up (dev);
+						nm_device_update_link_active (dev, FALSE);
+						break;
+
+					default:
+						break;
+				}
+
 				if (dev == data->active_device)
+				{
+					/* Check if the device's IP address has changed
+					 * (ie dhcp lease renew/address change)
+					 */
 					nm_device_update_ip4_address (dev);
+				}
 			}
 
 			element = g_slist_next (element);
 		}
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	}
-	else
-		NM_DEBUG_PRINT( "nm_link_state_monitor() could not acquire device list mutex.\n" );
+	} else NM_DEBUG_PRINT( "nm_link_state_monitor() could not acquire device list mutex.\n" );
 	
 	return (TRUE);
 }
@@ -496,6 +473,7 @@ static void nm_data_free (NMData *data)
 	g_slist_free (data->dev_list);
 	g_mutex_free (data->dev_list_mutex);
 	nm_device_unref (data->active_device);
+	nm_device_unref (data->pending_device);
 
 	nm_data_allowed_ap_list_free (data);
 }
@@ -613,7 +591,6 @@ int main( int argc, char *argv[] )
 	if (become_daemon)
 	{
 		int child_pid;
-		int dev_null_fd;
 
 		if (chdir ("/") < 0)
 		{

@@ -140,7 +140,7 @@ gboolean nm_ethernet_address_is_valid (struct ether_addr *test_addr)
 	struct ether_addr	invalid_addr2 = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00} };
 	struct ether_addr	invalid_addr3 = { {0x44, 0x44, 0x44, 0x44, 0x44, 0x44} };
 
-	g_return_if_fail (test_addr != NULL);
+	g_return_val_if_fail (test_addr != NULL, FALSE);
 
 	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
 	if (    (memcmp(test_addr, &invalid_addr1, sizeof(struct ether_addr)) != 0)

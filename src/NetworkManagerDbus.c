@@ -22,6 +22,7 @@
 #include <glib.h>
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
+#include <iwlib.h>
 
 extern gboolean debug;
 
@@ -156,14 +157,13 @@ NMDevice *nm_dbus_get_device_from_object_path (const char *path, int *dev_index)
 
 
 /*
- * nm_dbus_get_network_by_object_path
+ * nm_dbus_get_network_from_object_path
  *
  * Returns the network (ap) associated with a dbus object path
  *
  */
-NMAccessPoint *nm_dbus_get_network_by_object_path (const char *path, NMDevice *dev, int dev_index, int *ap_index)
+NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev, int dev_index, int *ap_index)
 {
-	NMData		*data;
 	NMAccessPoint	*ap = NULL;
 	int			 i = 0;
 	char			 compare_path[100];
@@ -172,7 +172,7 @@ NMAccessPoint *nm_dbus_get_network_by_object_path (const char *path, NMDevice *d
 
 	g_return_val_if_fail (path != NULL, NULL);
 
-	while (ap = nm_device_ap_list_get_ap (dev, i))
+	while ((ap = nm_device_ap_list_get_ap (dev, i)) != NULL)
 	{
 		snprintf (compare_path, 100, "%s/%d/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index, i);
 		if (strncmp (path, compare_path, strlen (compare_path)) == 0)
@@ -414,6 +414,49 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 
 
 /*
+ * nm_dbus_signal_need_key_for_network
+ *
+ * Notifies the bus that NetworkManager needs a encryption key for a particular access point,
+ * because it does not have one or the one stored with allowed access points is wrong.
+ *
+ * Returns:	 0 on no error
+ *			-1 on error
+ */
+int nm_dbus_signal_need_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
+{
+	DBusMessage	*message;
+	unsigned char	*object_path = g_new0 (unsigned char, 100);
+	int			 return_val = -1;	
+
+	g_return_val_if_fail (dev != NULL, -1);
+	g_return_val_if_fail (ap != NULL, -1);
+	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, -1);
+
+	message = dbus_message_new_signal (NM_DBUS_NM_OBJECT_PATH_PREFIX, NM_DBUS_NM_NAMESPACE, "NeedKeyForNetwork");
+	if (!message)
+	{
+		NM_DEBUG_PRINT ("nm_dbus_signal_need_wep_key_for_network(): Not enough memory for new dbus message!\n");
+		return (return_val);
+	}
+
+	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, nm_ap_get_essid (ap), DBUS_TYPE_INVALID);
+	g_free (object_path);
+
+	if (!dbus_connection_send (connection, message, NULL))
+	{
+		NM_DEBUG_PRINT ("nm_dbus_signal_need_wep_key_for_network(): Could not raise the NeedKeyForNetwork signal!\n");
+	}
+	else
+		return_val = 0;
+
+	dbus_message_unref (message);
+	return (return_val);
+}
+
+
+/*
  * nm_dbus_signal_device_ip4_address_change
  *
  * Notifies the bus that a particular device's IPv4 address changed.
@@ -456,7 +499,7 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 	DBusMessageIter	 iter;
 	int				 ap_index;
 
-	ap = nm_dbus_get_network_by_object_path (path, dev, dev_index, &ap_index);
+	ap = nm_dbus_get_network_from_object_path (path, dev, dev_index, &ap_index);
 	if (!ap || (ap_index == -1))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "NetworkNotFound",
@@ -470,7 +513,13 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 	if (strcmp ("getName", request) == 0)
 		dbus_message_iter_append_string (&iter, nm_ap_get_essid (ap));
 	else if (strcmp ("getAddress", request) == 0)
-		dbus_message_iter_append_string (&iter, nm_ap_get_address (ap));
+	{
+		char		buf[20];
+
+		memset (&buf[0], 0, 20);
+		iw_ether_ntop((const struct ether_addr *) (nm_ap_get_address (ap)), &buf[0]);
+		dbus_message_iter_append_string (&iter, &buf[0]);
+	}
 	else if (strcmp ("getQuality", request) == 0)
 		dbus_message_iter_append_int32 (&iter, nm_ap_get_quality (ap));
 	else if (strcmp ("getFrequency", request) == 0)
@@ -533,12 +582,30 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_iter_append_int32 (&iter, nm_device_get_iface_type (dev));
 	else if (strcmp ("getIP4Address", request) == 0)
 		dbus_message_iter_append_uint32 (&iter, nm_device_get_ip4_address (dev));
+	else if (strcmp ("setKeyForNetwork", request) == 0)
+	{
+		DBusMessageIter	 key_iter;
+		char				*dbus_string;
+		char				*key;
+
+		dbus_message_iter_init (message, &key_iter);
+		dbus_string = dbus_message_iter_get_string (&key_iter);
+		key = (dbus_string == NULL ? NULL : strdup (dbus_string));
+		dbus_free (dbus_string);
+
+		if (!key)
+		{
+			NM_DEBUG_PRINT ("NetworkManagerClient returned a NULL key in setKeyForNetwork message" )
+		}
+		else
+			nm_device_pending_action_set_user_key (dev, key);
+	}
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
 		NMAccessPoint		*ap = NULL;
 		int				 i = 0;
 	
-		while (ap = nm_device_ap_list_get_ap (dev, i))
+		while ((ap = nm_device_ap_list_get_ap (dev, i)) != NULL)
 		{
 			if (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_device_get_essid (dev)) == 0)
 			{
@@ -563,7 +630,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 	
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
 
-		while (ap = nm_device_ap_list_get_ap (dev, i))
+		while ((ap = nm_device_ap_list_get_ap (dev, i)) != NULL)
 		{
 			object_path = g_strdup_printf ("%s/%d/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index, i);
 			dbus_message_iter_append_string (&iter_array, object_path);

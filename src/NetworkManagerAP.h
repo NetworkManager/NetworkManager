@@ -45,8 +45,11 @@ void				 nm_ap_set_essid			(NMAccessPoint *ap, gchar * essid);
 gchar *			 nm_ap_get_wep_key			(NMAccessPoint *ap);
 void				 nm_ap_set_wep_key			(NMAccessPoint *ap, gchar * wep_key);
 
-gchar *			 nm_ap_get_address			(NMAccessPoint *ap);
-void				 nm_ap_set_address			(NMAccessPoint *ap, gchar * address);
+gboolean			 nm_ap_get_encrypted		(NMAccessPoint *ap);
+void				 nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
+
+struct ether_addr *	 nm_ap_get_address			(NMAccessPoint *ap);
+void				 nm_ap_set_address			(NMAccessPoint *ap, const struct ether_addr *addr);
 
 guint8			 nm_ap_get_quality			(NMAccessPoint *ap);
 void				 nm_ap_set_quality			(NMAccessPoint *ap, guint8 quality);

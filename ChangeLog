@@ -1,5 +1,63 @@
 2004-07-15  Dan Williams <dcbw@redhat.com>
 
+	* src/Makefile.am
+		- Turn on warnings
+
+	* src/NetworkManager.c
+		- nm_create_device_and_add_to_list(): call nm_device_deactivate() rather
+			that doing the deactivation ourselves
+		- Cancel an pending actions on a device if its being removed
+		- Break up link state checking a bit, make non-active wireless cards
+			deactivated to save power
+		- Remove unused variables
+
+	* src/NetworkManager.h
+		- Add support for "pending" device
+
+	* src/NetworkManagerAP.h
+	  src/NetworkManagerAP.c
+		- Add support for determining whether and AP has encryption enabled or not
+		- AP address is now "struct ether_addr" rather than a string
+
+	* src/NetworkManagerDbus.h
+	  src/NetworkManagerDbus.c
+		- Add signal NeedKeyForNetwork, method SetKeyForNetwork (testing only)
+		- Changes for AP address from struct ether_addr->string
+
+	* src/NetworkManagerDevice.h
+	  src/NetworkManagerDevice.c
+		- Remove unused variables, fix warnings
+		- Add support for Pending Actions (things that block a device from being "active"
+			until they are completed).
+		- First pending action:  Get a WEP key from the user
+		- Add nm_device_is_wire[d|less](), rename nm_device_is_wireless()
+		- Clean up explicit testing of dev->iface_type to use nm_device_is_wireless()
+		- Update wireless link checking to try to determine if the AP we are associated
+			with is correct, but the WEP key we are using is just wrong.  If its wrong,
+			trigger the GetUserKey pending action on the device
+		- If dhclient can't get an IP address, it brings the device down.  Bring it back
+			up in that case, otherwise we can't scan or link-check on it
+		- Add IP address change notifications at appropriate points (still needs some work)
+		- Add nm_device_need_ap_switch(), checks whether we need to switch access points or not
+
+	* src/NetworkManagerPolicy.h
+	  src/NetworkManagerPolicy.c
+		- Split out "best" access point determiniation into separate function
+		- Make device activation 2-stage:  first the device is pending, then
+			in the next iteration through it becomes "active" unless it has
+			pending actions
+
+	* src/NetworkManagerUtils.h
+	  src/NetworkManagerUtils.c
+		- Clean up unused variables and warnings
+		- Wrap our debug macros in {} to prevent possible confusion
+
+	* src/NetworkManagerWireless.c
+		- Forgot to return current best priority, which lead to last available AP always
+			being chosen no matter what its priority was.  Corrected.
+
+2004-07-15  Dan Williams <dcbw@redhat.com>
+
 	* dispatcher-daemon/Makefile.am
 		- Turn on warnings
 

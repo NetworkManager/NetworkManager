@@ -62,6 +62,7 @@ gboolean nm_wireless_is_most_prefered_ap (NMAccessPoint *ap, int *highest_priori
 				&& (nm_null_safe_strcmp (nm_ap_get_essid (allowed_ap), nm_ap_get_essid (ap)) == 0)
 				&& (nm_ap_get_priority (allowed_ap) < *highest_priority))
 			{
+				*highest_priority = nm_ap_get_priority (allowed_ap);
 				is_most_preferred = TRUE;
 				break;
 			}

@@ -33,6 +33,7 @@ struct NMData
 	GSList					*dev_list;
 	GMutex					*dev_list_mutex;
 	struct NMDevice			*active_device;
+	struct NMDevice			*pending_device;
 	gboolean					 state_modified;
 	GMutex					*state_modified_mutex;
 	GSList					*allowed_ap_list;

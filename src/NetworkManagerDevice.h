@@ -50,6 +50,8 @@ void			nm_device_set_udi			(NMDevice *dev, const char *udi);
 char *		nm_device_get_iface			(NMDevice *dev);
 
 NMIfaceType	nm_device_get_iface_type		(NMDevice *dev);
+gboolean		nm_device_is_wireless		(NMDevice *dev);
+gboolean		nm_device_is_wired			(NMDevice *dev);
 /* There is no nm_device_set_iface_type() because that's determined when you set the device's iface */
 
 gboolean		nm_device_get_link_active	(NMDevice *dev);
@@ -70,16 +72,22 @@ gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
 void			nm_device_do_wireless_scan	(NMDevice *dev);
 NMAccessPoint *nm_device_get_best_ap		(NMDevice *dev);
 void			nm_device_set_best_ap		(NMDevice *dev, NMAccessPoint *ap);
+gboolean		nm_device_need_ap_switch		(NMDevice *dev);
 
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_wep_key		(NMDevice *dev, const char *wep_key);
 
-gboolean		nm_device_deactivate		(NMDevice *dev);
 gboolean		nm_device_activate			(NMDevice *dev);
+gboolean		nm_device_deactivate		(NMDevice *dev, gboolean just_added);
 
 void			nm_device_bring_up			(NMDevice *dev);
 void			nm_device_bring_down		(NMDevice *dev);
 gboolean		nm_device_is_up			(NMDevice *dev);
+
+gboolean		nm_device_pending_action		(NMDevice *dev);
+void			nm_device_pending_action_cancel	(NMDevice *dev);
+void			nm_device_pending_action_get_user_key (NMDevice *dev, NMAccessPoint *ap);
+void			nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key);
 
 void			nm_device_ap_list_add		(NMDevice *dev, NMAccessPoint *ap);
 void			nm_device_ap_list_clear		(NMDevice *dev);

@@ -38,6 +38,94 @@ extern gboolean	debug;
 
 
 /*
+ * nm_policy_get_best_device
+ *
+ * Filter all the devices and find the best device to use as the
+ * link.  NOTE: caller must lock the device list if needed.
+ *
+ */
+NMDevice * nm_policy_get_best_device (NMData *data)
+{
+	GSList		*element;
+	NMDevice		*best_wired_dev = NULL;
+	guint		 best_wired_prio = 0;
+	NMDevice		*best_wireless_dev = NULL;
+	guint		 best_wireless_prio = 0;
+	NMDevice		*highest_priority_dev = NULL;
+
+	g_return_val_if_fail (data != NULL, NULL);
+	element = data->dev_list;
+
+	while (element)
+	{
+		NMDevice	*dev = NULL;
+		guint	 iface_type;
+		gboolean	 link_active;
+		guint	 prio = 0;
+
+		dev = (NMDevice *)(element->data);
+
+		iface_type = nm_device_get_iface_type (dev);
+		link_active = nm_device_get_link_active (dev);
+
+		if (iface_type == NM_IFACE_TYPE_WIRED_ETHERNET)
+		{
+			if (link_active)
+				prio += 1;
+
+			if (    data->active_device
+				&& (dev == data->active_device)
+				&& link_active)
+				prio += 1;
+
+			if (prio > best_wired_prio)
+			{
+				best_wired_dev = dev;
+				best_wired_prio = prio;
+			}
+		}
+		else if (iface_type == NM_IFACE_TYPE_WIRELESS_ETHERNET)
+		{
+			if (link_active)
+				prio += 1;
+
+			if (nm_device_get_supports_wireless_scan (dev))
+				prio += 2;
+			else
+				prio += 1;
+
+			if (    data->active_device
+				&& (dev == data->active_device)
+				&& link_active)
+				prio += 3;
+
+			if (prio > best_wireless_prio)
+			{
+				best_wireless_dev = dev;
+				best_wireless_prio = prio;
+			}
+		}
+
+		element = g_slist_next (element);
+	}
+
+	NM_DEBUG_PRINT_1 ("Best wired device = %s\n", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
+	NM_DEBUG_PRINT_2 ("Best wireless device = %s  (%s)\n", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
+			best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
+
+	if (best_wireless_dev || best_wired_dev)
+	{
+		if (best_wired_dev)
+			highest_priority_dev = best_wired_dev;
+		else
+			highest_priority_dev = best_wireless_dev;
+	}
+
+	return (highest_priority_dev);
+}
+
+
+/*
  * nm_state_modification_monitor
  *
  * Called every 2s and figures out which interface to switch the active
@@ -71,132 +159,61 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	{
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			GSList		*element = data->dev_list;
-			NMDevice		*best_wired_dev = NULL;
-			guint		 best_wired_prio = 0;
-			NMDevice		*best_wireless_dev = NULL;
-			guint		 best_wireless_prio = 0;
-			guint		 highest_priority = 0;
-			NMDevice		*highest_priority_dev = NULL;
-			gboolean		 essid_change_needed = FALSE;
+			NMDevice		*best_dev = NULL;
 
-			while (element)
+			if ((best_dev = nm_policy_get_best_device (data)) != NULL)
+				nm_device_ref (best_dev);
+
+			/* Cancel pending device actions on an existing pending device */
+			if (data->pending_device)
 			{
-				NMDevice	*dev = NULL;
-				guint	 iface_type;
-				gboolean	 link_active;
-				guint	 prio = 0;
-
-				dev = (NMDevice *)(element->data);
-
-				iface_type = nm_device_get_iface_type (dev);
-				link_active = nm_device_get_link_active (dev);
-
-				if (iface_type == NM_IFACE_TYPE_WIRED_ETHERNET)
-				{
-					if (link_active)
-						prio += 1;
-
-					if (data->active_device
-						&& (dev == data->active_device)
-						&& link_active)
-						prio += 1;
-
-					if (prio > best_wired_prio)
-					{
-						best_wired_dev = dev;
-						best_wired_prio = prio;
-					}
-				}
-				else if (iface_type == NM_IFACE_TYPE_WIRELESS_ETHERNET)
-				{
-					if (link_active)
-						prio += 1;
-
-					if (nm_device_get_supports_wireless_scan (dev))
-						prio += 2;
-
-					if (    data->active_device
-						&& (dev == data->active_device)
-						&& link_active)
-						prio += 3;
-
-					if (prio > best_wireless_prio)
-					{
-						best_wireless_dev = dev;
-						best_wireless_prio = prio;
-					}
-				}
-
-				element = g_slist_next (element);
+				nm_device_pending_action_cancel (data->pending_device);
+				nm_device_unref (data->pending_device);
+				data->pending_device = NULL;
 			}
 
-			NM_DEBUG_PRINT_1 ("Best wired device = %s\n", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
-			NM_DEBUG_PRINT_2 ("Best wireless device = %s  (%s)\n", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
-						best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
-
-			if (best_wireless_dev || best_wired_dev)
-			{
-				if (best_wired_dev)
-					highest_priority_dev = best_wired_dev;
-				else
-					highest_priority_dev = best_wireless_dev;
-			}
-			else
-			{
-				/* No devices at all, wait for them to change status */
-				nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-				return (TRUE);
-			}
-
-			/* If the current essid of the wireless card and the desired ap's essid are different,
-			 * trigger an interface switch.  We switch to the same interface, but we still need to bring
-			 * the device up again to get a new DHCP address.  However, don't switch if there is no
-			 * desired ap.
+			/* Only do a switch when:
+			 * 1) the best_dev is different from data->active_device, OR
+			 * 2) best_dev is wireless and its access point is not the "best" ap, OR
+			 * 3) best_dev is wireless and its access point is the best, but it doesn't have an IP address
 			 */
-			if (nm_device_get_iface_type (highest_priority_dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
+			if (    best_dev != data->active_device
+				|| (    best_dev && nm_device_is_wireless (best_dev)
+					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
 			{
-				NMAccessPoint	*ap = nm_device_get_best_ap (highest_priority_dev);
+				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() set pending_device = %s\n", best_dev ? nm_device_get_iface (best_dev) : "(null)");
 
-				if (    ap
-					&& (nm_null_safe_strcmp (nm_device_get_essid (highest_priority_dev), nm_ap_get_essid (ap)) != 0)
-					&& (strlen (nm_ap_get_essid (ap)) > 0))
-						essid_change_needed = TRUE;
-			}
+				data->pending_device = best_dev;
+				if (data->pending_device && !nm_device_is_up (data->pending_device))
+					nm_device_bring_up (data->pending_device);
 
-			/* If the highest priority device is different than data->active_device, switch the connection. */
-			if (    essid_change_needed
-				|| (!data->active_device || (highest_priority_dev != data->active_device)))
-			{
-				NM_DEBUG_PRINT_2 ("**** Switching active interface from '%s' to '%s'\n",
-						data->active_device ? nm_device_get_iface (data->active_device) : "(null)",
-						nm_device_get_iface (highest_priority_dev));
-
-				/* FIXME
-				 * We should probably wait a bit before forcibly changing connections
-				 * after we send the signal.  However, dbus delivers its messages in the
-				 * glib main loop.  If we call g_main_context_iteration(), we can deadlock
-				 * but if we split this function into two steps and execute the second half,
-				 * after a main loop iteration, we make a much more complicated state machine.
-				 */
+				/* Deactivate the old device */
 				if (data->active_device)
-					nm_device_deactivate (data->active_device);
-
-				if (data->active_device)
+				{
+					nm_device_deactivate (data->active_device, FALSE);
 					nm_device_unref (data->active_device);
-
-				data->active_device = highest_priority_dev;
-				nm_device_ref (data->active_device);
-
-				nm_device_activate (data->active_device);
-
-				NM_DEBUG_PRINT ("**** Switched.\n");
+					data->active_device = NULL;
+				}
 			}
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 		}
 		else
 			NM_DEBUG_PRINT("nm_state_modification_monitor() could not get device list mutex\n");
+	}
+	else if (data->pending_device)
+	{
+		/* If there are pending device actions, don't switch to the device, but
+		 * wait for the actions to complete.
+		 */
+		if (!nm_device_pending_action (data->pending_device))
+		{
+			NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() will activate device %s\n", nm_device_get_iface (data->pending_device));
+
+			data->active_device = data->pending_device;
+			data->pending_device = NULL;
+			nm_device_activate (data->active_device);
+		}
 	}
 
 	return (TRUE);
@@ -215,7 +232,7 @@ gpointer nm_policy_allowed_ap_refresh_worker (gpointer user_data)
 	NMData		*data = (NMData *)(user_data);
 	struct timeval	 timeout;
 	
-	g_return_if_fail (data != NULL);
+	g_return_val_if_fail (data != NULL, NULL);
 	
 	/* Simply loop and every 20s update the available allowed ap data */
 	while (!allowed_ap_worker_exit)
@@ -235,6 +252,8 @@ gpointer nm_policy_allowed_ap_refresh_worker (gpointer user_data)
 	}
 
 	g_thread_exit (0);
+
+	return (NULL);
 }
 
 

@@ -30,17 +30,18 @@ extern gboolean	debug;
  */
 struct NMAccessPoint
 {
-	guint	 refcount;
-	gchar	*essid;
-	gchar	*address;
-	guint8	 quality;
-	double	 freq;
-	guint16	 rate;
-	time_t	 stamp;
+	guint			 refcount;
+	gchar			*essid;
+	struct ether_addr	*address;
+	guint8			 quality;
+	double			 freq;
+	guint16			 rate;
+	time_t			 stamp;
+	gboolean			 encrypted;
 
 	/* Things from user prefs */
-	gchar	*wep_key;
-	guint	 priority;
+	gchar			*wep_key;
+	guint			 priority;
 };
 
 
@@ -56,7 +57,7 @@ NMAccessPoint * nm_ap_new (void)
 	
 	ap = g_new0 (NMAccessPoint, 1);
 	if (!ap)
-		NM_DEBUG_PRINT( "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" );
+		NM_DEBUG_PRINT( "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" )
 
 	ap->priority = NM_AP_PRIORITY_WORST;
 	ap->refcount = 1;
@@ -73,23 +74,31 @@ NMAccessPoint * nm_ap_new (void)
  */
 NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 {
-	NMAccessPoint	*new_ap;
+	NMAccessPoint		*new_ap;
+	struct ether_addr	*new_addr;
 
 	g_return_val_if_fail (src_ap != NULL, NULL);
 
+	new_addr = g_new0 (struct ether_addr, 1);
+	g_return_val_if_fail (new_addr != NULL, NULL);
+
 	new_ap = nm_ap_new();
 	if (!new_ap)
-		NM_DEBUG_PRINT( "nm_ap_new_from_uap() could not allocate a new user access point info structure.  Not enough memory?" );
+		NM_DEBUG_PRINT( "nm_ap_new_from_uap() could not allocate a new user access point info structure.  Not enough memory?" )
 
 	new_ap->refcount = 1;
 
 	if (src_ap->essid && (strlen (src_ap->essid) > 0))
 		new_ap->essid = g_strdup (src_ap->essid);
-	if (src_ap->address && (strlen (src_ap->address) > 0))
-		new_ap->address = g_strdup (src_ap->address);
+	if (src_ap->address)
+	{
+		memcpy (new_addr, src_ap->address, sizeof (struct ether_addr));
+		new_ap->address = new_addr;
+	}
 	new_ap->quality = src_ap->quality;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
+	new_ap->encrypted = new_ap->encrypted;
 
 	if (src_ap->wep_key && (strlen (src_ap->wep_key) > 0))
 		new_ap->wep_key = g_strdup (src_ap->wep_key);
@@ -192,24 +201,49 @@ void nm_ap_set_wep_key (NMAccessPoint *ap, gchar * wep_key)
 
 
 /*
+ * Get/set functions for encrypted flag
+ *
+ */
+gboolean nm_ap_get_encrypted (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (ap->encrypted);
+}
+
+void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean encrypted)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->encrypted = encrypted;
+}
+
+
+/*
  * Get/set functions for address
  *
  */
-gchar * nm_ap_get_address (NMAccessPoint *ap)
+struct ether_addr * nm_ap_get_address (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	return (ap->address);
 }
 
-void nm_ap_set_address (NMAccessPoint *ap, gchar * address)
+void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 {
+	struct ether_addr *new_addr;
+
 	g_return_if_fail (ap != NULL);
+
+	new_addr = g_new0 (struct ether_addr, 1);
+	g_return_if_fail (new_addr != NULL);
 
 	if (ap->address)
 		g_free (ap->address);
 
-	ap->address = g_strdup (address);
+	memcpy (new_addr, addr, sizeof (struct ether_addr));
+	ap->address = new_addr;
 }
 
 

@@ -40,4 +40,6 @@ void				nm_dbus_signal_device_now_active		(DBusConnection *connection, NMDevice 
 
 void				nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
 
+int				nm_dbus_signal_need_key_for_network	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap);
+
 #endif
