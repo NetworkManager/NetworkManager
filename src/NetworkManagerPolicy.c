@@ -130,8 +130,10 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 		element = g_slist_next (element);
 	}
 
+#if 0
 	syslog (LOG_NOTICE, "AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
 			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
+#endif
 
 	if (best_wireless_dev || best_wired_dev)
 	{
@@ -258,7 +260,7 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			nm_device_get_ap_address (dev, &addr);
 			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (dev), &addr);
 		}
-		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
+		syslog (LOG_INFO, "Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
 	}
 	else
 	{
@@ -277,16 +279,16 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 				/* Unref because nm_device_get_best_ap() refs it before returning. */
 				nm_ap_unref (ap);
 			}
-			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+			syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
 		}
 		else
-			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s", nm_device_get_iface (dev));
+			syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
 		nm_data_mark_state_changed (data);
 	}
 
 out:
-	g_free (result);
 	nm_device_unref (dev);
+	g_free (result);
 	return FALSE;
 }
 
@@ -317,7 +319,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			nm_ap_list_unref (data->allowed_ap_list);
 		data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 		if (data->allowed_ap_list)
-			nm_ap_list_populate (data->allowed_ap_list, data);
+			nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
 
 		data->update_ap_lists = FALSE;
 	}
@@ -364,10 +366,9 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			if (best_dev)
 			{
 				/* Begin activation on the new device */
-				syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", nm_device_get_iface (best_dev));
 				nm_device_ref (best_dev);
 				data->active_device = best_dev;
-				nm_device_activation_begin (data->active_device);
+				nm_device_activation_schedule_start (data->active_device);
 
 				/* nm_policy_get_best_device() signals us that the user forced
 				 * a device upon us and that we should lock the active device.

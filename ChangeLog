@@ -1,3 +1,49 @@
+2005-01-18  Dan Williams <dcbw@redhat.com>
+
+	* dhcpcd/client.c
+		- Remove some debug messages
+		- Wrap others in #ifdef DEBUG/#endif
+
+	* src/NetworkManager.c
+		- Remove some debug messages
+		- Clarify some debug messages
+		- Remove code related to old single-thread wireless scanning
+
+	* src/NetworkManagerAP.[ch]
+		- New AP property "last_seen" to track how recently an AP was
+			found in a scan
+		- Start using 'const' more in function arguments
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_merge_scanned_ap): new, selectively update attributes
+			of an AP found in an AP list from a source AP, or if not found
+			in the list add the source AP
+		- (nm_ap_list_combine): remove, no longer needed
+
+	* src/NetworkManagerDevice.c
+		- Each device now has a "worker" thread from start to end of its life.
+			Scanning for wireless devices now happens in that thread,
+			not in a single "wireless scanning thread" for all devices as
+			previously.  Activation consists of adding an idle handler to the
+			thread's main loop/context, which gets run at the next available
+			opportunity.
+		- Wireless scanning is also simplified, there is now only one list of
+			access points per wireless device, and APs older than 60s are
+			removed from the list.  Previously, we kept results for the last
+			3 scans and merged whole lists, which was complicated.
+		- Cleaned up activation debug messages.
+		- Wireless activation and access-point search routines now use Open System
+			authentication before trying Shared Key.
+		- Removed some code in nm_device_update_best_ap() that could cause cards
+			to loose their link to the access point.
+		- Scanning now uses a backoff algorithm, where the inverval becomes
+			progressively longer between scans when the list of scanned access
+			points doesn't change.  A change will revert to the shortest scan
+			interval (20s).
+
+	* src/NetworkManagerWireless.[ch]
+		- Remove code related to old single-thread wireless scanning
+
 2005-01-18  Colin Walters  <walters@redhat.com>
 
 	* src/NetworkManagerDHCP.c (set_nameservers): Free and clear list

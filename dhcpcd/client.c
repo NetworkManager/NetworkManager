@@ -422,12 +422,12 @@ int peekfd (dhcp_interface *iface, int sk, int min_data, struct timeval *end_tim
 	 * to stop with iface->cease and check our end time.
 	 */
 	gettimeofday (&now, NULL);
-	syslog (LOG_INFO, "DHCP waiting for data, overall end_time = {%ds, %dus}\n", (int)end_time->tv_sec, (int)end_time->tv_usec);
+/*	syslog (LOG_INFO, "DHCP waiting for data, overall end_time = {%ds, %dus}\n", (int)end_time->tv_sec, (int)end_time->tv_usec);*/
 	while ((timeval_subtract (&diff, end_time, &now) == 0) && !iface->cease && (recv_data_len < min_data))
 	{
 		fd_set fs;
 		struct timeval wait = {1, 0};
-		syslog (LOG_INFO, "DHCP waiting for data of minimum size %d, remaining timeout = {%ds, %dus}\n", min_data, (int)diff.tv_sec, (int)diff.tv_usec);
+/*		syslog (LOG_INFO, "DHCP waiting for data of minimum size %d, remaining timeout = {%ds, %dus}\n", min_data, (int)diff.tv_sec, (int)diff.tv_usec);*/
 
 		FD_ZERO (&fs);
 		FD_SET (sk, &fs);
@@ -487,7 +487,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	/* Send the request, then wait for the reply for a certain period of time
 	 * that increases with each failed request.  Quit when we reach our end time though.
 	 */
+#ifdef DEBUG
 	syslog (LOG_INFO, "DHCP: Starting request loop");
+#endif
 	do
 	{
 		udpipMessage		*udp_msg_recv = NULL;
@@ -506,7 +508,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			goto out;
 
 		/* Send the DHCP request */
+	#ifdef DEBUG
 		syslog (LOG_INFO, "DHCP: Sending request packet...");
+	#endif
 		do
 		{
 			int				 udp_send_len = 0;
@@ -524,7 +528,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			err = sendto (iface->sk, udp_send, udp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
 			if (iface->cease || ((err == -1) && (errno != EAGAIN)))
 			{
+			#ifdef DEBUG
 				syslog (LOG_INFO, "DHCP: error sending, cease = %d, err = %d, errno = %d", iface->cease, err, errno);
+			#endif
 				err = iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
 				goto out;
 			}
@@ -534,11 +540,15 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			if (timeval_subtract (&diff, &overall_end, &current) != 0)
 			{
 				err = RET_DHCP_TIMEOUT;
+			#ifdef DEBUG
 				syslog (LOG_INFO, "DHCP: Send timeout");
+			#endif
 				goto out;
 			}
 		} while ((err == -1) && (errno == EAGAIN));
+	#ifdef DEBUG
 		syslog (LOG_INFO, "DHCP: Sent request packet.");
+	#endif
 
 		/* Set up the future time at which point to stop waiting for data
 		 * on our socket and try the request again.  If that future point is
@@ -563,56 +573,71 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			char		ethPacket[ETH_FRAME_LEN];
 
 			/* Wait for some kind of data to appear on the socket */
+		#ifdef DEBUG
 			syslog (LOG_INFO, "DHCP: Waiting for reply...");
+		#endif
 			if ((err = peekfd (iface, recv_sk, min_data_len, &recv_end)) != RET_DHCP_SUCCESS)
 			{
 				if (err == RET_DHCP_TIMEOUT)
 					break;
 				goto out;
 			}
-			syslog (LOG_INFO, "DHCP: Got some data to check for reply packet.");
 
 			gettimeofday (&current, NULL);
 
 			/* Ok, we allegedly have the data we need, so grab it from the queue */
 			o = sizeof (struct sockaddr_ll);
 			len = recvfrom (recv_sk, pkt_recv, ETH_FRAME_LEN, 0, (struct sockaddr *)&server_hw_addr, &o);
-			syslog (LOG_INFO, "DHCP: actual data length was %d", len);
+		#ifdef DEBUG
+			syslog (LOG_INFO, "DHCP: Got some data of length %d.", len);
+		#endif
 			if (len < (sizeof (struct iphdr) + sizeof (struct udphdr)))
 			{
-				syslog (LOG_INFO, "DHCP: Data length failed minimum length check (should be %d, got %d)", (sizeof (struct iphdr) + sizeof (struct udphdr)), len);
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Data length failed minimum length check (should be %d, got %d)", (sizeof (struct iphdr) + sizeof (struct udphdr)), len);
+				#endif
 				continue;
 			}
 
 			ip_hdr = (struct iphdr *) pkt_recv;
 			if (!verify_checksum (NULL, 0, ip_hdr, sizeof (struct iphdr)))
 			{
-				syslog (LOG_INFO, "DHCP: Reply message had bad IP checksum, won't use it.");
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message had bad IP checksum, won't use it.");
+				#endif
 				continue;
 			}
 
 			if (ntohs (ip_hdr->tot_len) > len)
 			{
-				syslog (LOG_INFO, "DHCP: Reply message had mismatch in length (IP header said %d, packet was really %d), won't use it.", ntohs (ip_hdr->tot_len), len);
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message had mismatch in length (IP header said %d, packet was really %d), won't use it.", ntohs (ip_hdr->tot_len), len);
+				#endif
 				continue;
 			}
 			len = ntohs (ip_hdr->tot_len);
 
 			if (ip_hdr->protocol != IPPROTO_UDP)
 			{
-				syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
+				#endif
 				continue;
 			}
 
 			udp_hdr = (struct udphdr *) (pkt_recv + sizeof (struct iphdr));
 			if (ntohs (udp_hdr->source) != DHCP_SERVER_PORT)
 			{
-				syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
+				#endif
 				continue;
 			}
 			if (ntohs (udp_hdr->dest) != DHCP_CLIENT_PORT) 
 			{
-				syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
+				#endif
 				continue;
 			}
 
@@ -624,22 +649,28 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 
 			if (dhcp_msg_recv->xid != iface->xid)
 			{
-				syslog (LOG_INFO, "DHCP: Reply message's XID does not match expected XID (message %d, expected %d), won't use it.", dhcp_msg_recv->xid, iface->xid);
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message's XID does not match expected XID (message %d, expected %d), won't use it.", dhcp_msg_recv->xid, iface->xid);
+				#endif
 				free (dhcp_msg_recv);
 				continue;
 			}
 
 			if (dhcp_msg_recv->htype != ARPHRD_ETHER)
 			{
-				if (DebugFlag)
-					syslog (LOG_DEBUG, "DHCP: Reply message's header type was not ARPHRD_ETHER (messgae %d, expected %d), won't use it.", dhcp_msg_recv->htype, ARPHRD_ETHER);
+				#ifdef DEBUG
+					if (DebugFlag)
+						syslog (LOG_DEBUG, "DHCP: Reply message's header type was not ARPHRD_ETHER (messgae %d, expected %d), won't use it.", dhcp_msg_recv->htype, ARPHRD_ETHER);
+				#endif
 				free (dhcp_msg_recv);
 				continue;
 			}
 
 			if (dhcp_msg_recv->op != DHCP_BOOTREPLY)
 			{
-				syslog (LOG_INFO, "DHCP: Reply message was not a bootp/DHCP reply, won't use it.");
+				#ifdef DEBUG
+					syslog (LOG_INFO, "DHCP: Reply message was not a bootp/DHCP reply, won't use it.");
+				#endif
 				free (dhcp_msg_recv);
 				continue;
 			}
@@ -668,10 +699,12 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 
 		if (reply_type == DHCP_NAK)
 		{
-			if (iface->dhcp_options.val[dhcpMsg])
-				syslog (LOG_ERR, "DHCP: DHCP_NAK response received: %s.", (char *)iface->dhcp_options.val[dhcpMsg]);
-			else
-				syslog (LOG_ERR, "DHCP: DHCP_NAK response received.");
+			#ifdef DEBUG
+				if (iface->dhcp_options.val[dhcpMsg])
+					syslog (LOG_ERR, "DHCP: DHCP_NAK response received: %s.", (char *)iface->dhcp_options.val[dhcpMsg]);
+				else
+					syslog (LOG_ERR, "DHCP: DHCP_NAK response received.");
+			#endif
 			err = RET_DHCP_NAK;
 			goto out;
 		}
@@ -714,8 +747,8 @@ int dhcp_init (dhcp_interface *iface)
 	release_dhcp_options (iface);
 
 #ifdef DEBUG
-	syslog (LOG_DEBUG, "ClassID  = \"%s\"\n"
-		"ClientID = \"%u.%u.%u.%02X.%02X.%02X.%02X.%02X.%02X\"\n", iface->cls_id,
+	syslog (LOG_DEBUG, "ClassID  = \"%s\"",  iface->cls_id);
+	syslog (LOG_DEBUG, "ClientID = \"%u.%u.%u.%02X.%02X.%02X.%02X.%02X.%02X\"\n",
 		iface->cli_id[0], iface->cli_id[1], iface->cli_id[2],
 		iface->cli_id[3], iface->cli_id[4], iface->cli_id[5],
 		iface->cli_id[6], iface->cli_id[7], iface->cli_id[8]);

@@ -45,16 +45,8 @@ typedef struct NMDeviceWirelessOptions
 	struct iw_range	 range_info;
 
 	GMutex			*scan_mutex;
-	/* We keep a couple lists around since wireless cards
-	 * are a bit flakey and don't report the same access
-	 * points every time.  The lists get merged and diffed
-	 * to figure out the "real" list, but the latest_ap_list
-	 * is always the most-current scan.
-	 */
 	NMAccessPointList	*ap_list;
-	NMAccessPointList	*cached_ap_list1;
-	NMAccessPointList	*cached_ap_list2;
-	NMAccessPointList	*cached_ap_list3;
+	guint8			 scan_interval; /* seconds */
 
 	NMAccessPoint		*best_ap;
 	GMutex			*best_ap_mutex;
@@ -110,6 +102,7 @@ struct NMDevice
 
 	GMainContext			*context;
 	GMainLoop				*loop;
+	gboolean				 worker_done;
 	guint		 		 renew_timeout;
 	guint				 rebind_timeout;
 

@@ -37,19 +37,21 @@ struct NMAccessPoint
 	double			 freq;
 	guint16			 rate;
 	gboolean			 encrypted;
+
+	/* Non-scanned attributes */
 	gboolean			 invalid;
 	gboolean			 matched;	/* used in ap list diffing */
-	gboolean			 trusted;
 	gboolean			 artificial; /* Whether or not the AP is from a scan */
 	gboolean			 user_created; /* Whether or not the AP was created by the user with "Create network..." */
+	GTimeVal			 last_seen; /* Last time the AP was seen in a scan */
 
-	/* Things from user prefs */
+	/* Things from user prefs/NetworkManagerInfo */
+	gboolean			 trusted;
 	char				*enc_key;
 	NMEncKeyType		 enc_method;
 	GTimeVal			 timestamp;
 	GSList			*user_addresses;
 };
-
 
 /*
  * nm_ap_new
@@ -153,7 +155,7 @@ void nm_ap_unref (NMAccessPoint *ap)
  * Get/set functions for timestamp
  *
  */
-const GTimeVal *nm_ap_get_timestamp (NMAccessPoint *ap)
+const GTimeVal *nm_ap_get_timestamp (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
@@ -172,7 +174,7 @@ void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
  * Get/set functions for essid
  *
  */
-char * nm_ap_get_essid (NMAccessPoint *ap)
+char * nm_ap_get_essid (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
@@ -198,7 +200,7 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
  * Get/set functions for encryption key
  *
  */
-char * nm_ap_get_enc_key_source (NMAccessPoint *ap)
+char * nm_ap_get_enc_key_source (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
@@ -216,7 +218,7 @@ void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType
 	ap->enc_method = method;
 }
 
-char *nm_ap_get_enc_key_hashed (NMAccessPoint *ap)
+char *nm_ap_get_enc_key_hashed (const NMAccessPoint *ap)
 {
 	char	*hashed = NULL;
 	char	*source_key;
@@ -256,7 +258,7 @@ char *nm_ap_get_enc_key_hashed (NMAccessPoint *ap)
  * Get/set functions for encrypted flag
  *
  */
-gboolean nm_ap_get_encrypted (NMAccessPoint *ap)
+gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
@@ -275,7 +277,7 @@ void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean encrypted)
  * Get/set functions for address
  *
  */
-struct ether_addr * nm_ap_get_address (NMAccessPoint *ap)
+struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
@@ -303,7 +305,7 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
  * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
  *
  */
-NMNetworkMode nm_ap_get_mode (NMAccessPoint *ap)
+NMNetworkMode nm_ap_get_mode (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NETWORK_MODE_UNKNOWN);
 
@@ -322,7 +324,7 @@ void nm_ap_set_mode (NMAccessPoint *ap, const NMNetworkMode mode)
  * Get/set functions for strength
  *
  */
-gint8 nm_ap_get_strength (NMAccessPoint *ap)
+gint8 nm_ap_get_strength (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
@@ -341,7 +343,7 @@ void  nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
  * Get/set functions for frequency
  *
  */
-double nm_ap_get_freq (NMAccessPoint *ap)
+double nm_ap_get_freq (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
@@ -360,7 +362,7 @@ void nm_ap_set_freq (NMAccessPoint *ap, const double freq)
  * Get/set functions for rate
  *
  */
-guint16 nm_ap_get_rate (NMAccessPoint *ap)
+guint16 nm_ap_get_rate (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
@@ -381,7 +383,7 @@ void nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
  * (by cancelling requests for WEP key, for example)
  *
  */
-gboolean nm_ap_get_invalid (NMAccessPoint *ap)
+gboolean nm_ap_get_invalid (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 
@@ -401,7 +403,7 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
  * the ap list diffing functions to speed up the diff
  *
  */
-gboolean nm_ap_get_matched (NMAccessPoint *ap)
+gboolean nm_ap_get_matched (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 
@@ -421,7 +423,7 @@ void nm_ap_set_matched (NMAccessPoint *ap, gboolean matched)
  * 'trusted'
  *
  */
-gboolean nm_ap_get_trusted (NMAccessPoint *ap)
+gboolean nm_ap_get_trusted (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
@@ -442,7 +444,7 @@ void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
  * by the card or not
  *
  */
-gboolean nm_ap_get_artificial (NMAccessPoint *ap)
+gboolean nm_ap_get_artificial (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
@@ -458,13 +460,33 @@ void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
 
 
 /*
+ * Get/Set functions for how long ago the AP was last seen in a scan.
+ * APs older than a certain date are dropped from the list.
+ *
+ */
+const GTimeVal *nm_ap_get_last_seen (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (&ap->last_seen);
+}
+
+void nm_ap_set_last_seen (NMAccessPoint *ap, const GTimeVal *last_seen)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->last_seen = *last_seen;
+}
+
+
+/*
  * Get/Set functions to indicate that an access point is
  * user-created, ie whether or not its a network filled with
  * information from the user and intended to create a new Ad-Hoc
  * wireless network.
  *
  */
-gboolean nm_ap_get_user_created (NMAccessPoint *ap)
+gboolean nm_ap_get_user_created (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
@@ -483,7 +505,7 @@ void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
  * Return the encryption method the user specified for this access point.
  *
  */
-const NMEncKeyType nm_ap_get_enc_method (NMAccessPoint *ap)
+const NMEncKeyType nm_ap_get_enc_method (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 
@@ -500,7 +522,7 @@ const NMEncKeyType nm_ap_get_enc_method (NMAccessPoint *ap)
  * ap's actual list.
  *
  */
-GSList *nm_ap_get_user_addresses (NMAccessPoint *ap)
+GSList *nm_ap_get_user_addresses (const NMAccessPoint *ap)
 {
 	GSList	*new = NULL;
 	GSList	*elem = NULL;

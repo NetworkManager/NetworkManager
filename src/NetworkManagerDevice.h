@@ -80,8 +80,6 @@ void			nm_device_update_hw_address		(NMDevice *dev);
 void			nm_device_get_ip6_address		(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
-void			nm_device_process_scan_results	(NMDevice *dev, struct wireless_scan_head *results);
-void			nm_device_do_wireless_scan		(NMDevice *dev, struct wireless_scan_head *results);
 gboolean		nm_device_wireless_network_exists	(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type,
 												struct ether_addr *addr, gboolean *encrypted);
 
@@ -107,7 +105,7 @@ char *		nm_device_get_path_for_ap		(NMDevice *dev, NMAccessPoint *ap);
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_enc_key			(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);
 
-gboolean		nm_device_activation_begin		(NMDevice *dev);
+gboolean		nm_device_activation_schedule_start(NMDevice *dev);
 void			nm_device_activation_cancel		(NMDevice *dev);
 gboolean		nm_device_activation_should_cancel	(NMDevice *dev);
 gboolean		nm_device_is_activating			(NMDevice *dev);

@@ -30,35 +30,36 @@
 typedef struct NMAccessPointList	NMAccessPointList;
 typedef struct NMAPListIter		NMAPListIter;
 
-NMAccessPointList *	nm_ap_list_new				(NMNetworkType type);
-void				nm_ap_list_ref				(NMAccessPointList *list);
-void				nm_ap_list_unref			(NMAccessPointList *list);
+NMAccessPointList *	nm_ap_list_new					(NMNetworkType type);
+void				nm_ap_list_ref					(NMAccessPointList *list);
+void				nm_ap_list_unref				(NMAccessPointList *list);
 
-gboolean			nm_ap_list_is_empty			(NMAccessPointList *list);
+gboolean			nm_ap_list_is_empty				(NMAccessPointList *list);
 
-void				nm_ap_list_append_ap		(NMAccessPointList *list, NMAccessPoint *ap);
-void				nm_ap_list_remove_ap		(NMAccessPointList *list, NMAccessPoint *ap);
+void				nm_ap_list_append_ap			(NMAccessPointList *list, NMAccessPoint *ap);
+void				nm_ap_list_remove_ap			(NMAccessPointList *list, NMAccessPoint *ap);
 
-NMAccessPoint *	nm_ap_list_get_ap_by_essid	(NMAccessPointList *list, const char *network);
-NMAccessPoint *	nm_ap_list_get_ap_by_address	(NMAccessPointList *list, const struct ether_addr *addr);
+NMAccessPoint *	nm_ap_list_get_ap_by_essid		(NMAccessPointList *list, const char *network);
+NMAccessPoint *	nm_ap_list_get_ap_by_address		(NMAccessPointList *list, const struct ether_addr *addr);
 
-void				nm_ap_list_update_network	(NMAccessPointList *list, const char *network, NMData *data);
+void				nm_ap_list_update_network_from_nmi	(NMAccessPointList *list, const char *network, NMData *data);
 
-void				nm_ap_list_populate			(NMAccessPointList *list, NMData *data);
+void				nm_ap_list_populate_from_nmi		(NMAccessPointList *list, NMData *data);
 
-void				nm_ap_list_copy_properties	(NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_properties		(NMAccessPointList *dest, NMAccessPointList *source);
 void				nm_ap_list_copy_essids_by_address	(NMAccessPointList *dest, NMAccessPointList *source);
-NMAccessPointList *	nm_ap_list_combine			(NMAccessPointList *list1, NMAccessPointList *list2);
-void				nm_ap_list_diff			(NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new);
 
-gboolean			nm_ap_list_lock			(NMAccessPointList *list);
-void				nm_ap_list_unlock			(NMAccessPointList *list);
+void				nm_ap_list_diff				(NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new);
+gboolean			nm_ap_list_merge_scanned_ap		(NMAccessPointList *list, NMAccessPoint *merge_ap);
 
-NMAPListIter *		nm_ap_list_iter_new			(NMAccessPointList *list);
-NMAccessPoint *	nm_ap_list_iter_get_ap		(NMAPListIter *iter);
-NMAccessPoint *	nm_ap_list_iter_next		(NMAPListIter *iter);
-void				nm_ap_list_iter_free		(NMAPListIter *iter);
+gboolean			nm_ap_list_lock				(NMAccessPointList *list);
+void				nm_ap_list_unlock				(NMAccessPointList *list);
 
-void				nm_ap_list_print_members		(NMAccessPointList *list, const char *name);
+NMAPListIter *		nm_ap_list_iter_new				(NMAccessPointList *list);
+NMAccessPoint *	nm_ap_list_iter_get_ap			(NMAPListIter *iter);
+NMAccessPoint *	nm_ap_list_iter_next			(NMAPListIter *iter);
+void				nm_ap_list_iter_free			(NMAPListIter *iter);
+
+void				nm_ap_list_print_members			(NMAccessPointList *list, const char *name);
 
 #endif

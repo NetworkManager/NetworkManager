@@ -291,12 +291,12 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 
 
 /*
- * nm_ap_list_update_network
+ * nm_ap_list_update_network_from_nmi
  *
  * Given a network ID, get its information from NetworkManagerInfo
  *
  */
-void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NMData *data)
+void nm_ap_list_update_network_from_nmi (NMAccessPointList *list, const char *network, NMData *data)
 {
 	NMAccessPoint	*ap = NULL;
 	NMAccessPoint	*list_ap = NULL;
@@ -332,12 +332,12 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 
 
 /*
- * nm_ap_list_populate
+ * nm_ap_list_populate_from_nmi
  *
  * Populate an initial list of allowed access points
  *
  */
-void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
+void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
 {
 	char		**networks;
 	int		  num_networks;	
@@ -353,7 +353,7 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
 		for (i = 0; i < num_networks; i++)
 		{
 			if (networks[i] && (strlen (networks[i]) > 0))
-				nm_ap_list_update_network (list, networks[i], data);
+				nm_ap_list_update_network_from_nmi (list, networks[i], data);
 		}
 
 		dbus_free_string_array (networks);
@@ -362,63 +362,41 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
 
 
 /*
- * nm_ap_list_combine
+ * nm_ap_list_merge_scanned_ap
  *
- * Combine two access point lists into one.  This is a simple OR operation, where each
- * unique access point in either list is present in the final, combined list.
+ * Given an AP list and an access point, merge the access point into the list.
+ * If the AP is already in the list, merge just the /attributes/ together for that
+ * AP, if its not already in the list then just add it.  This doesn't merge all
+ * attributes, just ones that are likely to be new from the scan.
  *
- * NOTE: locks NMAccessPointList arguments
+ * Returns:	FALSE if the AP was not new and was merged
+ *			TRUE if the ap was completely new
+ *
  */
-NMAccessPointList * nm_ap_list_combine (NMAccessPointList *list1, NMAccessPointList *list2)
+gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *merge_ap)
 {
-	NMAccessPointList	*final_list = NULL;
-	NMAPListIter		*iter;
-	NMAccessPoint		*ap;
+	NMAccessPoint	*list_ap;
+	gboolean		 new = FALSE;
 
-	final_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
-	if (!final_list)
-		return (NULL);
+	g_return_val_if_fail (merge_ap != NULL, FALSE);
 
-	/* Add all APs in the first list */
-	if (list1 && (iter = nm_ap_list_iter_new (list1)))
+	if (!(list_ap = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
+		list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap));
+
+	if (list_ap)
 	{
-		while ((ap = nm_ap_list_iter_next (iter)))
-		{
-			NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
-			if (new_ap)
-			{
-				nm_ap_list_append_ap (final_list, new_ap);
-				nm_ap_unref (new_ap);
-			}
-		}
-		nm_ap_list_iter_free (iter);
+		/* Merge some properties on the AP that are new from scan to scan. */
+		nm_ap_set_encrypted (list_ap, nm_ap_get_encrypted (merge_ap));
+		nm_ap_set_last_seen (list_ap, nm_ap_get_last_seen (merge_ap));
+	}
+	else
+	{
+		/* Add the whole AP, list takes ownership. */
+		nm_ap_list_append_ap (list, merge_ap);
+		new = TRUE;
 	}
 
-	/* Add all APs in the second list not already added from the first */
-	if (list2 && (iter = nm_ap_list_iter_new (list2)))
-	{
-		while ((ap = nm_ap_list_iter_next (iter)))
-		{
-			if (!nm_ap_list_get_ap_by_essid (final_list, nm_ap_get_essid (ap)))
-			{
-				NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
-				if (new_ap)
-				{
-					nm_ap_list_append_ap (final_list, new_ap);
-					nm_ap_unref (new_ap);
-				}
-			}
-		}
-		nm_ap_list_iter_free (iter);
-	}
-
-	if (nm_ap_list_is_empty (final_list))
-	{
-		nm_ap_list_unref (final_list);
-		final_list = NULL;
-	}
-
-	return (final_list);
+	return new;
 }
 
 

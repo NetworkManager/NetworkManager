@@ -34,52 +34,55 @@ NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 void				nm_ap_unref			(NMAccessPoint *ap);
 void				nm_ap_ref				(NMAccessPoint *ap);
 
-const GTimeVal *	nm_ap_get_timestamp		(NMAccessPoint *ap);
+const GTimeVal *	nm_ap_get_timestamp		(const NMAccessPoint *ap);
 void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
-char *			nm_ap_get_essid		(NMAccessPoint *ap);
+char *			nm_ap_get_essid		(const NMAccessPoint *ap);
 void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
-char *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
-char *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap);
+char *			nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
+char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
 void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
 
-gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
+gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
 
-struct ether_addr *	nm_ap_get_address		(NMAccessPoint *ap);
+struct ether_addr *	nm_ap_get_address		(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
-NMNetworkMode		nm_ap_get_mode			(NMAccessPoint *ap);
+NMNetworkMode		nm_ap_get_mode			(const NMAccessPoint *ap);
 void				nm_ap_set_mode			(NMAccessPoint *ap, const NMNetworkMode mode);
 
-gint8			nm_ap_get_strength		(NMAccessPoint *ap);
+gint8			nm_ap_get_strength		(const NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 
-double			nm_ap_get_freq			(NMAccessPoint *ap);
+double			nm_ap_get_freq			(const NMAccessPoint *ap);
 void				nm_ap_set_freq			(NMAccessPoint *ap, double freq);
 
-guint16			nm_ap_get_rate			(NMAccessPoint *ap);
+guint16			nm_ap_get_rate			(const NMAccessPoint *ap);
 void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 
-gboolean			nm_ap_get_invalid		(NMAccessPoint *ap);
+gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
 void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
 
-gboolean			nm_ap_get_matched		(NMAccessPoint *ap);
+gboolean			nm_ap_get_matched		(const NMAccessPoint *ap);
 void				nm_ap_set_matched		(NMAccessPoint *ap, gboolean matched);
 
-gboolean			nm_ap_get_trusted		(NMAccessPoint *ap);
+gboolean			nm_ap_get_trusted		(const NMAccessPoint *ap);
 void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 
-gboolean			nm_ap_get_artificial	(NMAccessPoint *ap);
+gboolean			nm_ap_get_artificial	(const NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
-gboolean			nm_ap_get_user_created	(NMAccessPoint *ap);
+const GTimeVal *	nm_ap_get_last_seen		(const NMAccessPoint *ap);
+void				nm_ap_set_last_seen		(NMAccessPoint *ap, const GTimeVal *last_seen);
+
+gboolean			nm_ap_get_user_created	(const NMAccessPoint *ap);
 void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 
-const NMEncKeyType	nm_ap_get_enc_method	(NMAccessPoint *ap);
+const NMEncKeyType	nm_ap_get_enc_method	(const NMAccessPoint *ap);
 
-GSList *			nm_ap_get_user_addresses	(NMAccessPoint *ap);
+GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 
 #endif

@@ -124,7 +124,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		 */
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			syslog (LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
+			syslog (LOG_INFO, "Adding device '%s' (%s) to our list.",
 				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired");
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
@@ -202,7 +202,6 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				g_slist_free (element);
 				nm_data_mark_state_changed (data);
 				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
-
 				break;
 			}
 			element = g_slist_next (element);
@@ -238,7 +237,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog( LOG_DEBUG, "nm_hal_device_added() called with udi = %s", udi );
+	syslog( LOG_DEBUG, "New device added (hal udi is '%s').", udi );
 
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
@@ -262,7 +261,7 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog( LOG_DEBUG, "nm_hal_device_removed() called with udi = %s", udi );
+	syslog( LOG_DEBUG, "Device removed (hal udi is '%s').", udi );
 
 	nm_remove_device_from_list (data, udi);
 }
@@ -278,7 +277,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 	g_return_if_fail (data != NULL);
 
-	syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
+	/*syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
 
 	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
 	{
@@ -800,9 +799,7 @@ int main( int argc, char *argv[] )
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
 
-	/* Create a watch function that monitors cards for link status (hal doesn't do
-	 * this for wireless cards yet).
-	 */
+	/* Create a watch function that monitors cards for link status. */
 	link_source = g_timeout_source_new (5000);
 	g_source_set_callback (link_source, nm_link_state_monitor, nm_data, NULL);
 	link_source_id = g_source_attach (link_source, nm_data->main_context);
@@ -810,7 +807,7 @@ int main( int argc, char *argv[] )
 	if (become_daemon && daemon (0, 0) < 0)
 	{
 		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
-	     exit (1);
+	     exit (EXIT_FAILURE);
 	}
 
 	if (!nm_named_manager_start (nm_data->named, &error))
@@ -819,31 +816,15 @@ int main( int argc, char *argv[] )
 		exit (EXIT_FAILURE);
 	}
 
-	/* Start the wireless scanning thread and timeout */
-	if (!g_thread_create (nm_wireless_scan_worker, nm_data, FALSE, &error))
-	{
-		syslog (LOG_CRIT, "Could not start wireless scan worker thread.  Exiting. (error: %s)", error ? error->message : "unknown");
-		if (error)
-			g_error_free (error);
-		exit (1);
-	}
-
 	/* Wheeee!!! */
-	syslog (LOG_NOTICE, "running mainloop...");
 	g_main_loop_run (nm_data->main_loop);
-	syslog (LOG_NOTICE, "exiting...");
 
 	/* Kill the watch functions */
 	g_source_remove (link_source_id);
 
-	/* Quit and wait for the scan thread */
-	g_main_loop_quit (nm_data->wscan_loop);
-	while (nm_data->wscan_thread_done == FALSE)
-		g_usleep (100);
-
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)
-		syslog (LOG_NOTICE, "libhal shutdown failed");
+		syslog (LOG_NOTICE, "Error: libhal shutdown failed");
 
 	nm_data_free (nm_data);
 

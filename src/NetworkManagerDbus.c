@@ -1060,8 +1060,8 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-		syslog (LOG_DEBUG, "NetowrkManagerInfo triggered update of wireless network '%s'", network);
-		nm_ap_list_update_network (data->allowed_ap_list, network, data);
+		syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
+		nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
 		dbus_free (network);
 		handled = TRUE;
 	}
