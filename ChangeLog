@@ -1,5 +1,11 @@
 2005-01-12  Dan Williams <dcbw@redhat.com>
 
+	* initscripts/RedHat/NetworkManager
+		- Change initial level to "-" rather than "345" so that
+			we don't activate ourselves by default on install
+
+2005-01-12  Dan Williams <dcbw@redhat.com>
+
 	* libnm_glib/
 		- Client library for applications using glib
 
