@@ -8,13 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-21 12:16+0200\n"
-"PO-Revision-Date: 2004-09-21 14:40+0200\n"
+"POT-Creation-Date: 2004-09-22 20:20+0200\n"
+"PO-Revision-Date: 2004-09-23 01:39+0200\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
 
 #: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
@@ -52,27 +53,19 @@ msgstr "Je vyžadován klíč bezdrátové sítě"
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: panel-applet/NMWirelessApplet.c:630
-msgid "There are no wireless networks..."
-msgstr "Neexistuje žádná bezdrátová síť..."
-
-#: panel-applet/NMWirelessApplet.c:685
-msgid "There are no network devices..."
-msgstr "Neexistuje žádné síťové zařízení..."
-
-#: panel-applet/NMWirelessApplet.c:773
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager neběží..."
-
-#: panel-applet/NMWirelessApplet.c:777
-msgid "Network Connections"
-msgstr "Připojení k síti"
-
-#: panel-applet/NMWirelessApplet.c:779
+#: panel-applet/NMWirelessApplet.c:600
 msgid "Other Wireless Network..."
 msgstr "Jiná bezdrátová síť..."
 
-#: panel-applet/NMWirelessApplet.c:913 panel-applet/NMWirelessApplet.c:973
+#: panel-applet/NMWirelessApplet.c:714
+msgid "No network devices have been found"
+msgstr "Nebylo nalezeno žádné síťové zařízení"
+
+#: panel-applet/NMWirelessApplet.c:826
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager neběží..."
+
+#: panel-applet/NMWirelessApplet.c:964 panel-applet/NMWirelessApplet.c:1024
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -117,6 +110,39 @@ msgstr "Orientace"
 msgid "The orientation of the tray."
 msgstr "Orientace oznamovací oblasti."
 
-#: panel-applet/menu-info.c:158
+#: panel-applet/menu-info.c:153
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Drátová síť (%s)"
+
+#: panel-applet/menu-info.c:155
+msgid "Wired Network"
+msgstr "Drátová síť"
+
+#: panel-applet/menu-info.c:159
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Bezdrátová síť (%s)"
+msgstr[1] "Bezdrátové sítě (%s)"
+msgstr[2] "Bezdrátové sítě (%s)"
+
+#: panel-applet/menu-info.c:161
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Bezdrátová síť"
+msgstr[1] "Bezdrátové sítě"
+msgstr[2] "Bezdrátové sítě"
+
+#: panel-applet/menu-info.c:294
 msgid " (invalid Unicode)"
 msgstr " (neplatné Unicode)"
+
+#~ msgid "There are no wireless networks..."
+#~ msgstr "Neexistuje žádná bezdrátová síť..."
+
+#~ msgid "There are no network devices..."
+#~ msgstr "Neexistuje žádné síťové zařízení..."
+
+#~ msgid "Network Connections"
+#~ msgstr "Připojení k síti"
