@@ -36,6 +36,12 @@
  */
 void nm_system_init (void)
 {
+	/* Kill any dhclients lying around */
+	nm_system_kill_all_dhcp_daemons ();
+
+	/* Stop nifd since we respawn mDNSResponder ourselves */
+	if (nm_spawn_process ("/etc/init.d/nifd status") != 0)
+		nm_spawn_process ("/etc/init.d/nifd stop");
 }
 
 

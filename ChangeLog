@@ -1,5 +1,12 @@
 2005-02-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_init): Kill any dhclient processes lying around as well
+			as stopping 'nifd' if its already been started.  NetworkManager
+			subsumes the functions of nifd (kicking mDNSResponder, autoip)
+
+2005-02-27  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- (nmwa_destroy): Really mean to destroy GUI data model first, then
 			dbus data model, not the GUI data model twice.
