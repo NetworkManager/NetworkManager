@@ -72,9 +72,9 @@ int parse_dhcp_reply (struct iphdr *iphdr, struct sockaddr_ll *saddr, dhcpMessag
 
 	/* Force T1 and T2 to 0: either new values will be in message, or they
 	   will need to be recalculated from lease time */
-	if ( options->val[dhcpT1value] && options->len[dhcpT1value] > 0 )
+	if (options->val[dhcpT1value] && options->len[dhcpT1value] > 0)
 		memset (options->val[dhcpT1value], 0, options->len[dhcpT1value]);
-	if ( options->val[dhcpT2value] && options->len[dhcpT2value] > 0 )
+	if (options->val[dhcpT2value] && options->len[dhcpT2value] > 0)
 		memset (options->val[dhcpT2value], 0, options->len[dhcpT2value]);
 
 	while ( p < end )
@@ -87,14 +87,14 @@ int parse_dhcp_reply (struct iphdr *iphdr, struct sockaddr_ll *saddr, dhcpMessag
 				p++;
 				break;
 			default:
-				if ( p[1] )
+				if (p[1])
 				{
-					if ( options->len[*p] == p[1] )
+					if (options->len[*p] == p[1])
 						memcpy (options->val[*p], p+2, p[1]);
 					else
 					{
 						options->len[*p] = p[1];
-						if ( options->val[*p] )
+						if (options->val[*p])
 							free (options->val[*p]);
 						else
 							options->num++;
@@ -125,7 +125,7 @@ swend:
 		options->len[dhcpServerIdentifier] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog (LOG_DEBUG, "dhcpServerIdentifier option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+			syslog (LOG_DEBUG, "Server ID option is missing in DHCP server response. Assuming %u.%u.%u.%u.\n",
 				((unsigned char *)options->val[dhcpServerIdentifier])[0],
 				((unsigned char *)options->val[dhcpServerIdentifier])[1],
 				((unsigned char *)options->val[dhcpServerIdentifier])[2],
@@ -139,7 +139,7 @@ swend:
 		options->len[dns] = 4;
 		options->num++;
 		if ( DebugFlag )
-			syslog (LOG_DEBUG, "dns option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+			syslog (LOG_DEBUG, "DNS Server option is missing in DHCP server response. Assuming %u.%u.%u.%u.\n",
 				((unsigned char *)options->val[dns])[0], ((unsigned char *)options->val[dns])[1],
 				((unsigned char *)options->val[dns])[2], ((unsigned char *)options->val[dns])[3]);
 	}
@@ -173,7 +173,7 @@ swend:
 		options->len[subnetMask] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog (LOG_DEBUG, "subnetMask option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+			syslog (LOG_DEBUG, "Subnet Mask option is missing in DHCP server response. Assuming %u.%u.%u.%u.\n",
 				((unsigned char *)options->val[subnetMask])[0], ((unsigned char *)options->val[subnetMask])[1],
 				((unsigned char *)options->val[subnetMask])[2], ((unsigned char *)options->val[subnetMask])[3]);
 	}
@@ -185,7 +185,7 @@ swend:
 		options->len[broadcastAddr] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog(LOG_DEBUG, "broadcastAddr option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+			syslog(LOG_DEBUG, "Broadcast Address option is missing in DHCP server response. Assuming %u.%u.%u.%u.\n",
 				((unsigned char *)options->val[broadcastAddr])[0], ((unsigned char *)options->val[broadcastAddr])[1],
 				((unsigned char *)options->val[broadcastAddr])[2], ((unsigned char *)options->val[broadcastAddr])[3]);
 	}
@@ -199,10 +199,11 @@ swend:
 		options->len[routersOnSubnet] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog (LOG_DEBUG, "routersOnSubnet option is missing in DHCP server response.  Assuming %u.%u.%u.%u (DHCP server)\n",
+			syslog (LOG_DEBUG, "Routers option is missing in DHCP server response.  Assuming %u.%u.%u.%u (DHCP server).\n",
 				((unsigned char *)options->val[routersOnSubnet])[0], ((unsigned char *)options->val[routersOnSubnet])[1],
 				((unsigned char *)options->val[routersOnSubnet])[2], ((unsigned char *)options->val[routersOnSubnet])[3]);
 	}
+
 	if (options->val[dhcpIPaddrLeaseTime] && options->len[dhcpIPaddrLeaseTime] == 4)
 	{
 		if ( *(unsigned int *)options->val[dhcpIPaddrLeaseTime] == 0 )
@@ -210,12 +211,12 @@ swend:
 			unsigned int	lease_time = htonl (DHCP_DEFAULT_LEASETIME);
 			memcpy (options->val[dhcpIPaddrLeaseTime], &lease_time, 4);
 			if (DebugFlag)
-				syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime=0 in DHCP server response. Assuming %u sec\n", lease_time);
+				syslog (LOG_DEBUG, "Lease Time = 0 in DHCP server response. Assuming %us.\n", lease_time);
 		}
 		else
 		{
 			if (DebugFlag)
-				syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime = %u in DHCP server response.\n",
+				syslog (LOG_DEBUG, "Lease Time = %u in DHCP server response.\n",
 					ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]));
 		}
 	}
@@ -227,8 +228,9 @@ swend:
 		options->len[dhcpIPaddrLeaseTime] = 4;
 		options->num++;
 		if ( DebugFlag )
-			syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime option is missing in DHCP server response. Assuming %u sec\n", lease_time);
+			syslog (LOG_DEBUG, "Lease Time option is missing in DHCP server response. Assuming %us.\n", lease_time);
 	}
+
 	if (options->val[dhcpT1value] && options->len[dhcpT1value] == 4)
 	{
 		if (*(unsigned int *)options->val[dhcpT1value] == 0)
@@ -238,7 +240,7 @@ swend:
 			memcpy (options->val[dhcpT1value],&t1,4);
 			options->len[dhcpT1value] = 4;
 			if (DebugFlag)
-				syslog (LOG_DEBUG, "dhcpT1value is missing in DHCP server response. Assuming %u sec\n", t2);
+				syslog (LOG_DEBUG, "Renewal Time (T1) is missing in DHCP server response. Assuming %us.\n", t2);
 		}
 	}
 	else		/* did not get T1 */
@@ -250,8 +252,9 @@ swend:
 		options->len[dhcpT1value] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog (LOG_DEBUG, "dhcpT1value is missing in DHCP server response. Assuming %u sec\n", t2);
+			syslog (LOG_DEBUG, "Renewal Time (T1) is missing in DHCP server response. Assuming %us.\n", t2);
 	}
+
 	if (options->val[dhcpT2value] && options->len[dhcpT2value] == 4)
 	{
 		if (*(unsigned int *)options->val[dhcpT2value] == 0)
@@ -261,7 +264,7 @@ swend:
 			memcpy (options->val[dhcpT2value],&t1,4);
 			options->len[dhcpT2value] = 4;
 			if (DebugFlag)
-				syslog (LOG_DEBUG, "dhcpT2value is missing in DHCP server response. Assuming %u sec\n", t2);
+				syslog (LOG_DEBUG, "Rebind Time (T2) is missing in DHCP server response. Assuming %us.\n", t2);
 		}
 	}
 	else		/* did not get T2 */
@@ -273,7 +276,7 @@ swend:
 		options->len[dhcpT2value] = 4;
 		options->num++;
 		if (DebugFlag)
-			syslog (LOG_DEBUG, "dhcpT2value is missing in DHCP server response. Assuming %u sec\n", t2);
+			syslog (LOG_DEBUG, "Rebind Time (T2) is missing in DHCP server response. Assuming %us.\n", t2);
 	}
 	if (options->val[dhcpMessageType])
 		return *(unsigned char *)options->val[dhcpMessageType];
@@ -1049,8 +1052,8 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 					for (j = 0; j < options->len[i]; j += 4)
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %u.%u.%u.%u\n",
-								i, opt_name, options->len[i],
+						syslog (LOG_INFO, "\t%s (%d):\t%u.%u.%u.%u\n",
+								opt_name, i,
 								((unsigned char *)options->val[i])[0+j],
 								((unsigned char *)options->val[i])[1+j],
 								((unsigned char *)options->val[i])[2+j],
@@ -1065,8 +1068,8 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				case 59:/* dhcpT2value */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %d\n", i, opt_name,
-							options->len[i], ntohl(*(int *)options->val[i]));
+						syslog (LOG_INFO, "\t%s (%d):\t%d\n", opt_name, i,
+							ntohl(*(int *)options->val[i]));
 						free (opt_name);
 					}
 					break;
@@ -1076,16 +1079,16 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				case 53:/* dhcpMessageType */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %u\n", i, opt_name,
-							options->len[i],*(unsigned char *)options->val[i]);
+						syslog (LOG_INFO, "\t%s (%d):\t%u\n", opt_name, i,
+							*(unsigned char *)options->val[i]);
 						free (opt_name);
 					}
 					break;
 				default:
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = \"%s\"\n",
-							i, opt_name, options->len[i], (char *)options->val[i]);
+						syslog (LOG_INFO, "\t%s (%d):\t\"%s\"\n",
+							opt_name, i, (char *)options->val[i]);
 						free (opt_name);
 					}
 					break;
@@ -1093,19 +1096,20 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 		}
 	}
 
-	syslog (LOG_INFO, "\tdhcp_msg->yiaddr  = %u.%u.%u.%u",
+	syslog (LOG_INFO, "\tYour IP Address:\t%u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->yiaddr)[0], ((unsigned char *)&dhcp_msg->yiaddr)[1],
 				((unsigned char *)&dhcp_msg->yiaddr)[2], ((unsigned char *)&dhcp_msg->yiaddr)[3]);
-	syslog (LOG_INFO, "\tdhcp_msg->siaddr  = %u.%u.%u.%u",
+	syslog (LOG_INFO, "\tDHCP Server Address:\t%u.%u.%u.%u (HW=%02X:%02X:%02X:%02X:%02X:%02X)",
 				((unsigned char *)&dhcp_msg->siaddr)[0], ((unsigned char *)&dhcp_msg->siaddr)[1],
-				((unsigned char *)&dhcp_msg->siaddr)[2], ((unsigned char *)&dhcp_msg->siaddr)[3]);
-	syslog (LOG_INFO, "\tdhcp_msg->giaddr  = %u.%u.%u.%u",
-				((unsigned char *)&dhcp_msg->giaddr)[0], ((unsigned char *)&dhcp_msg->giaddr)[1],
-				((unsigned char *)&dhcp_msg->giaddr)[2], ((unsigned char *)&dhcp_msg->giaddr)[3]);
-	syslog (LOG_INFO, "\tdhcp_msg->sname   = \"%s\"", dhcp_msg->sname);
-	syslog (LOG_INFO, "\tServer Hardware Address   = %02X.%02X.%02X.%02X.%02X.%02X\n",
+				((unsigned char *)&dhcp_msg->siaddr)[2], ((unsigned char *)&dhcp_msg->siaddr)[3],
 				saddr->sll_addr[0], saddr->sll_addr[1], saddr->sll_addr[2], saddr->sll_addr[3],
 				saddr->sll_addr[4], saddr->sll_addr[5]);
+	if (((unsigned char *)&dhcp_msg->giaddr)[0] != 0)
+		syslog (LOG_INFO, "\tGateway Address:\t%u.%u.%u.%u",
+				((unsigned char *)&dhcp_msg->giaddr)[0], ((unsigned char *)&dhcp_msg->giaddr)[1],
+				((unsigned char *)&dhcp_msg->giaddr)[2], ((unsigned char *)&dhcp_msg->giaddr)[3]);
+	if (dhcp_msg->sname && strlen (dhcp_msg->sname))
+		syslog (LOG_INFO, "\tServer Name:\t\"%s\"", dhcp_msg->sname);
 }
 
 #endif

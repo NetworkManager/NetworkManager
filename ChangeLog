@@ -1,5 +1,10 @@
 2005-02-13  Dan Williams  <dcbw@redhat.com>
 
+	* dhcpcd/client.c
+		- Debug output cleanups of DHCP option printing and parsing.
+
+2005-02-13  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Dan Reed:  DHCP options D-BUS API
 		Exposes the DHCP options that a device receives to clients over D-BUS.
 
