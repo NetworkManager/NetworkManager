@@ -29,6 +29,6 @@ config.h:
 
 # A rule to clean the generated files
 clean:
-	rm -f trayicon.so *.o trayicon.c trayicon.defs *~ config.h NetworkManager.py
+	rm -f trayicon.so *.o trayicon.c trayicon.defs *~ config.h NetworkManager.py*
 
 .PHONY: clean

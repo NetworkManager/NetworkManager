@@ -1,5 +1,9 @@
 2004-08-27  Bryan Clark  <bclark@redhat.com>
 
+	* examples/python/systray/Makefile: 
+
+	Updated the clean section
+	
 	* examples/python/systray/trayiconmodule.c: 
 	* examples/python/systray/trayicon.override: 
 	* examples/python/systray/network_tray.py: 
