@@ -791,8 +791,8 @@ static gboolean nm_device_wired_link_active (NMDevice *dev)
 	else
 	{
 		/* Device has carrier detect, yay! */
-		if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link"))
-			link = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link");
+		if (libhal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link", NULL))
+			link = libhal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link", NULL);
 	}
 
 	return (link);

@@ -88,8 +88,11 @@ static DBusMessage *nm_dbus_net_get_name (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, nm_ap_get_essid (data->ap), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                const char *essid;
+                essid = nm_ap_get_essid (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -106,7 +109,7 @@ static DBusMessage *nm_dbus_net_get_address (DBusConnection *connection, DBusMes
 
 		memset (&buf[0], 0, 20);
 		iw_ether_ntop((const struct ether_addr *) (nm_ap_get_address (data->ap)), &buf[0]);
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, &buf[0], DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &buf, DBUS_TYPE_INVALID);
 	}
 
 	return reply;
@@ -144,7 +147,7 @@ static DBusMessage *nm_dbus_net_get_strength (DBusConnection *connection, DBusMe
 		nm_ap_list_iter_free (iter);
 
 	append:
-		dbus_message_append_args (reply, DBUS_TYPE_INT32, best_strength, DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &best_strength, DBUS_TYPE_INVALID);
 	}
 
 	return reply;
@@ -156,8 +159,11 @@ static DBusMessage *nm_dbus_net_get_frequency (DBusConnection *connection, DBusM
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_DOUBLE, nm_ap_get_freq (data->ap), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                double freq;
+                freq = nm_ap_get_freq (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_DOUBLE, &freq, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -168,8 +174,11 @@ static DBusMessage *nm_dbus_net_get_rate (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_INT32, nm_ap_get_rate (data->ap), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_int32_t rate;
+                rate = nm_ap_get_rate (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &rate, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -180,8 +189,11 @@ static DBusMessage *nm_dbus_net_get_encrypted (DBusConnection *connection, DBusM
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, nm_ap_get_encrypted (data->ap), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_bool_t is_encrypted;
+                is_encrypted = nm_ap_get_encrypted (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &is_encrypted, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -192,8 +204,11 @@ static DBusMessage *nm_dbus_net_get_mode (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, nm_ap_get_mode (data->ap), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_uint32_t mode;
+                mode = nm_ap_get_mode (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &mode, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }

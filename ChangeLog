@@ -1,3 +1,19 @@
+2005-03-07  Ray Strode  <rstrode@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c:
+	* libnm_glib/libnm_glib.c:
+	* panel-applet/NMWirelessAppletDbus.c:
+	* src/NetworkManager.c:
+	* src/NetworkManagerDbus.c:
+	* src/NetworkManagerDevice.c:
+	* src/NetworkManagerUtils.c:
+	* src/nm-dbus-device.c:
+	* src/nm-dbus-dhcp.c:
+	* src/nm-dbus-net.c:
+	* src/nm-dbus-nm.c:
+	* test/nminfotest.c:
+	First (unfinished, unworking) cut at porting to dbus 0.30 api.
+
 2005-03-04  Dan Williams  <dcbw@redhat.com>
 
 	* configure.in

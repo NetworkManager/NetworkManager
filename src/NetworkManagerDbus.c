@@ -156,7 +156,7 @@ static gboolean nm_dbus_send_network_not_found (gpointer user_data)
 		goto out;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, cb_data->net, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &cb_data->net, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (cb_data->app_data->dbus_connection, message, NULL))
 		syslog (LOG_WARNING, "nm_dbus_send_network_not_found(): could not send dbus message");
 
@@ -251,7 +251,7 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 {
 	DBusMessage		*message;
 	unsigned char		*dev_path;
-	unsigned char		*signal = NULL;
+	const char		*signal = NULL;
 	NMAccessPoint		*ap = NULL;
 
 	g_return_if_fail (connection != NULL);
@@ -295,10 +295,14 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 	if ((status == DEVICE_ACTIVATION_FAILED) && nm_device_is_wireless (dev))
 		ap = nm_device_get_best_ap (dev);
 	/* If the device was wireless, attach the name of the wireless network that failed to activate */
-	if (ap && nm_ap_get_essid (ap))
-		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_STRING, nm_ap_get_essid (ap), DBUS_TYPE_INVALID);
-	else
-		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+	if (ap && nm_ap_get_essid (ap)) {
+                const char *essid;
+                essid = nm_ap_get_essid (ap);
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, 
+                                          DBUS_TYPE_STRING, &essid, 
+                                          DBUS_TYPE_INVALID);
+        } else
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
 
 	if (ap)
 		nm_ap_unref (ap);
@@ -365,7 +369,7 @@ void nm_dbus_signal_network_status_change (DBusConnection *connection, NMData *d
 
 	if ((status = nm_dbus_network_status_from_data (data)))
 	{
-		dbus_message_append_args (message, DBUS_TYPE_STRING, status, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &status, DBUS_TYPE_INVALID);
 
 		if (!dbus_connection_send (connection, message, NULL))
 			syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
@@ -401,7 +405,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
@@ -447,16 +451,16 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	}
 
 	dbus_message_append_args (message,
-							DBUS_TYPE_STRING, dev_path,
-							DBUS_TYPE_STRING, ap_path,
-							DBUS_TYPE_UINT32, status,
+							DBUS_TYPE_STRING, &dev_path,
+							DBUS_TYPE_STRING, &ap_path,
+							DBUS_TYPE_UINT32, &status,
 							DBUS_TYPE_INVALID);
 	g_free (ap_path);
 	g_free (dev_path);
 
 	/* Append signal-specific data */
 	if (status == NETWORK_STATUS_STRENGTH_CHANGED)
-		dbus_message_append_args (message, DBUS_TYPE_INT32, strength, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
@@ -474,6 +478,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, int attempt)
 {
 	DBusMessage		*message;
+        const char *iface, *essid;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -489,9 +494,11 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, nm_device_get_iface (dev),
-								DBUS_TYPE_STRING, nm_ap_get_essid (ap),
-								DBUS_TYPE_INT32, attempt,
+        iface = nm_device_get_iface (dev);
+        essid = nm_ap_get_essid (ap);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &iface,
+								DBUS_TYPE_STRING, &essid,
+								DBUS_TYPE_INT32, &attempt,
 								DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
@@ -539,7 +546,6 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
-	gboolean			 success = FALSE;
 	NMAccessPoint		*ap = NULL;
 
 	char				*essid = NULL;
@@ -548,8 +554,8 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
 	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
-	char				**addrs = NULL;
-	gint				 num_addr = -1;
+	DBusMessageIter 	 iter;
+        dbus_int32_t             type_as_int32;
 	
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
@@ -561,8 +567,9 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		return (NULL);
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
+        type_as_int32 = (dbus_int32_t) type;
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
+								DBUS_TYPE_INT32, &type_as_int32,
 								DBUS_TYPE_INVALID);
 
 	/* Send message and get properties back from NetworkManagerInfo */
@@ -582,64 +589,58 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		goto out;
 	}
 
-	dbus_error_init (&error);
-	success = dbus_message_get_args (reply, &error,
-								DBUS_TYPE_STRING, &essid,
-								DBUS_TYPE_INT32, &timestamp_secs,
-								DBUS_TYPE_STRING, &key,
-								DBUS_TYPE_INT32, &key_type,
-								DBUS_TYPE_INT32, &auth_method,
-								DBUS_TYPE_BOOLEAN, &trusted,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &addrs, &num_addr,
-								DBUS_TYPE_INVALID);
-	if (success)
+	dbus_message_iter_init (reply, &iter);
+	dbus_message_iter_get_basic (&iter, &essid);
+	dbus_message_iter_get_basic (&iter, &timestamp_secs);
+	dbus_message_iter_get_basic (&iter, &key);
+	dbus_message_iter_get_basic (&iter, &key_type);
+	dbus_message_iter_get_basic (&iter, &auth_method);
+	dbus_message_iter_get_basic (&iter, &trusted);
+	
+	if (timestamp_secs > 0)
 	{
-		if (timestamp_secs > 0)
+		GTimeVal	*timestamp = g_new0 (GTimeVal, 1);
+
+		ap = nm_ap_new ();
+		nm_ap_set_essid (ap, essid);
+
+		timestamp->tv_sec = timestamp_secs;
+		timestamp->tv_usec = 0;
+		nm_ap_set_timestamp (ap, timestamp);
+		g_free (timestamp);
+
+		nm_ap_set_trusted (ap, trusted);
+
+		if (key && strlen (key)) 
+			nm_ap_set_enc_key_source (ap, key, key_type);
+		else
+			nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
+		nm_ap_set_auth_method (ap, auth_method);
+
+		/* Get user addresses, form into a GSList, and stuff into the AP */
 		{
-			GTimeVal	*timestamp = g_new0 (GTimeVal, 1);
+			GSList	*addr_list = NULL;
+			DBusMessageIter array_iter;
 
-			ap = nm_ap_new ();
-			nm_ap_set_essid (ap, essid);
+			dbus_message_iter_recurse (&iter, &array_iter);
 
-			timestamp->tv_sec = timestamp_secs;
-			timestamp->tv_usec = 0;
-			nm_ap_set_timestamp (ap, timestamp);
-			g_free (timestamp);
-
-			nm_ap_set_trusted (ap, trusted);
-
-			if (key && strlen (key))
-				nm_ap_set_enc_key_source (ap, key, key_type);
-			else
-				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
-			nm_ap_set_auth_method (ap, auth_method);
-
-			/* Get user addresses, form into a GSList, and stuff into the AP */
+			while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
 			{
-				GSList	*addr_list = NULL;
-				int		 i;
+				gchar *addr;
 
-				if (!addrs)
-					num_addr = 0;
-
-				for (i = 0; i < num_addr; i++)
-				{
-					if (addrs[i] && (strlen (addrs[i]) >= 11))
-						addr_list = g_slist_append (addr_list, g_strdup (addrs[i]));
-				}
-				nm_ap_set_user_addresses (ap, addr_list);
-				g_slist_foreach (addr_list, (GFunc)g_free, NULL);
-				g_slist_free (addr_list);
+				dbus_message_iter_get_basic (&array_iter, &addr);
+				if (addr && (strlen (addr) >= 11))
+					addr_list = g_slist_append (addr_list, g_strdup (addr));
 			}
+			
+			nm_ap_set_user_addresses (ap, addr_list);
+			g_slist_foreach (addr_list, (GFunc)g_free, NULL);
+			g_slist_free (addr_list);
 		}
-		dbus_free_string_array (addrs);
-		g_free (essid);
-		g_free (key);
 	}
-	else
-		syslog (LOG_ERR, "nm_dbus_get_network_object(): bad data, %s raised %s", error.name, error.message);
 
 out:
+
 	if (reply)
 		dbus_message_unref (reply);
 
@@ -658,6 +659,7 @@ gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const c
 	DBusMessage		*message;
 	DBusError			 error;
 	gboolean			 success = FALSE;
+        dbus_int32_t           auth_method_as_int32;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
@@ -670,8 +672,9 @@ gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const c
 		return (FALSE);
 	}
 
+        auth_method_as_int32 = (dbus_int32_t) auth_method;
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)auth_method,
+								DBUS_TYPE_INT32, &auth_method,
 								DBUS_TYPE_INVALID);
 
 	/* Send message and get trusted status back from NetworkManagerInfo */
@@ -704,6 +707,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 	DBusError			 error;
 	gboolean			 success = FALSE;
 	char				 char_addr[20];
+        dbus_int32_t             type_as_int32;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
@@ -721,8 +725,9 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 	memset (char_addr, 0, 20);
 	ether_ntoa_r (addr, &char_addr[0]);
 
+        type_as_int32 = (dbus_int32_t) type;
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
+								DBUS_TYPE_INT32, &type_as_int32,
 								DBUS_TYPE_STRING, &char_addr,
 								DBUS_TYPE_INVALID);
 
@@ -755,6 +760,7 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 	DBusError			 error;
 	DBusMessage		*reply;
 	char			    **networks = NULL;
+        dbus_int32_t             type_as_int32;
 
 	*num_networks = 0;
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -768,7 +774,8 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 		return (NULL);
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_INT32, (int)type, DBUS_TYPE_INVALID);
+        type_as_int32 = (dbus_int32_t) type;
+	dbus_message_append_args (message, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
 
 	/* Send message and get essid back from NetworkManagerInfo */
 	dbus_error_init (&error);
@@ -780,13 +787,35 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 		syslog (LOG_NOTICE, "nm_dbus_get_networks(): reply was NULL.");
 	else
 	{
-		dbus_error_init (&error);
-		dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
-								&networks, num_networks, DBUS_TYPE_INVALID);
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-	}
+		DBusMessageIter iter, array_iter;
+		GArray *buffer;
 
+		dbus_message_iter_init (reply, &iter);
+		dbus_message_iter_recurse (&iter, &array_iter);
+
+		buffer = g_array_new (TRUE, TRUE, sizeof (gchar *));
+
+		if (buffer == NULL)
+			return NULL;
+
+		while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING) {
+			const char *value;
+			char *str;
+		
+			dbus_message_iter_get_basic (&array_iter, &value);
+			str = g_strdup (value);
+			
+			if (str == NULL)
+				return NULL;
+
+			g_array_append_val (buffer, str);
+
+			dbus_message_iter_next(&array_iter);
+		}
+		networks = (gchar **)(buffer->data);
+		g_array_free (buffer, FALSE);
+	}
+	
 	if (reply)
 		dbus_message_unref (reply);
 
@@ -808,7 +837,7 @@ gboolean nm_dbus_nmi_is_running (DBusConnection *connection)
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	dbus_error_init (&error);
-	exists = dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error);
+	exists = dbus_bus_name_has_owner (connection, NMI_DBUS_SERVICE, &error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
 	return (exists);
@@ -851,26 +880,11 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			/* Update a single wireless network's data */
 			syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
 			nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
-			dbus_free (network);
 			handled = TRUE;
 		}
 	}
-#if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
-		/* Only for dbus <= 0.22 */
-		char 	*service;
-
-		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
-			&& (strcmp (service, NMI_DBUS_SERVICE) == 0))
-		{
-			nm_policy_schedule_allowed_ap_list_update (data);
-		}
-	}
-#elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceOwnerChanged"))
-	{
-		/* New signal for dbus 0.23... */
 		char 	*service;
 		char		*old_owner;
 		char		*new_owner;
@@ -885,16 +899,10 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
 			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
 
-			/* Service didn't used to have an owner, now it does.  Equivalent to
-			 * "ServiceCreated" signal in dbus <= 0.22
-			 */
 			if (!old_owner_good && new_owner_good)
 				nm_policy_schedule_allowed_ap_list_update (data);
 		}
 	}
-#else
-#error "Unrecognized version of DBUS."
-#endif
 
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
@@ -1035,7 +1043,7 @@ gboolean nm_dbus_is_info_daemon_running (DBusConnection *connection)
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	dbus_error_init (&error);
-	running = dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error);
+	running = dbus_bus_name_has_owner (connection, NMI_DBUS_SERVICE, &error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
 	return (running);
@@ -1101,12 +1109,12 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_bus_add_match(connection,
 				"type='signal',"
-				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
-				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				"interface='" DBUS_INTERFACE_DBUS "',"
+				"sender='" DBUS_SERVICE_DBUS "'",
 				NULL);
 
 	dbus_error_init (&error);
-	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &error);
+	dbus_bus_request_name (connection, NM_DBUS_SERVICE, 0, &error);
 	if (dbus_error_is_set (&error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);

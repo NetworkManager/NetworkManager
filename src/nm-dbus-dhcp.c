@@ -66,7 +66,7 @@ static int nm_dbus_dhcp_record_type (int id)
 				__DBUS_REPLY_BYTYPE_val = ((dbus_uint16_t *)__DBUS_REPLY_BYTYPE_blob)[0];						\
 			else																					\
 				__DBUS_REPLY_BYTYPE_val = ((dbus_uint32_t *)__DBUS_REPLY_BYTYPE_blob)[0];						\
-			dbus_message_append_args (reply, Dtype, __DBUS_REPLY_BYTYPE_val, DBUS_TYPE_INVALID);					\
+			dbus_message_append_args (reply, Dtype, &__DBUS_REPLY_BYTYPE_val, DBUS_TYPE_INVALID);					\
 		}																						\
 	} while (0)
 
@@ -79,25 +79,12 @@ static int nm_dbus_dhcp_record_type (int id)
 		{																						\
 			DBusMessageIter	__DBUS_REPLY_BYTYPE_iter, __DBUS_REPLY_BYTYPE_sub;							\
 			void	*__DBUS_REPLY_BYTYPE_blob;															\
-			int	__DBUS_REPLY_BYTYPE_i, __DBUS_REPLY_BYTYPE_count;											\
+			int	__DBUS_REPLY_BYTYPE_count;											\
 																								\
 			__DBUS_REPLY_BYTYPE_blob = dhcp_interface_option_payload (dhcp_iface, data->opt_id);					\
 			__DBUS_REPLY_BYTYPE_count = dhcp_interface_option_len (dhcp_iface, data->opt_id) / __DBUS_REPLY_BYTYPE_len; \
-			dbus_message_iter_init (reply, &__DBUS_REPLY_BYTYPE_iter);										\
-			dbus_message_iter_append_array (&__DBUS_REPLY_BYTYPE_iter, &__DBUS_REPLY_BYTYPE_sub, Dtype);			\
-			for (__DBUS_REPLY_BYTYPE_i = 0; __DBUS_REPLY_BYTYPE_i < __DBUS_REPLY_BYTYPE_count; __DBUS_REPLY_BYTYPE_i++) \
-			{																					\
-				Ctype __DBUS_REPLY_BYTYPE_val;														\
-																								\
-				if (__DBUS_REPLY_BYTYPE_len == 1)														\
-					__DBUS_REPLY_BYTYPE_val = ((unsigned char *)__DBUS_REPLY_BYTYPE_blob)[__DBUS_REPLY_BYTYPE_i];	\
-				else if (__DBUS_REPLY_BYTYPE_len == 2)													\
-					__DBUS_REPLY_BYTYPE_val = ((dbus_uint16_t *)__DBUS_REPLY_BYTYPE_blob)[__DBUS_REPLY_BYTYPE_i];	\
-				else																				\
-					__DBUS_REPLY_BYTYPE_val = ((dbus_uint32_t *)__DBUS_REPLY_BYTYPE_blob)[__DBUS_REPLY_BYTYPE_i];	\
-				/*dbus_message_iter_append_basic (&__DBUS_REPLY_BYTYPE_sub, Dtype, __DBUS_REPLY_BYTYPE_val);*/		\
-				dbus_message_iter_append_ ## Dappend (&__DBUS_REPLY_BYTYPE_sub, __DBUS_REPLY_BYTYPE_val);			\
-			}																					\
+			dbus_message_iter_init_append (reply, &__DBUS_REPLY_BYTYPE_iter);										\
+			dbus_message_iter_append_fixed_array (&__DBUS_REPLY_BYTYPE_iter, Dtype, __DBUS_REPLY_BYTYPE_blob, __DBUS_REPLY_BYTYPE_count);			\
 		}																						\
 	} while (0)
 
@@ -111,7 +98,7 @@ static int nm_dbus_dhcp_record_type (int id)
 			Ctype __DBUS_REPLY_BYTYPE_val;															\
 																								\
 			__DBUS_REPLY_BYTYPE_val = (Ctype)dhcp_interface_option_payload (dhcp_iface, data->opt_id);			\
-			dbus_message_append_args (reply, Dtype, __DBUS_REPLY_BYTYPE_val, DBUS_TYPE_INVALID);					\
+			dbus_message_append_args (reply, Dtype, &__DBUS_REPLY_BYTYPE_val, DBUS_TYPE_INVALID);					\
 		}																						\
 	} while (0)
 
@@ -130,8 +117,11 @@ static DBusMessage *nm_dbus_dhcp_get_len (DBusConnection *connection, DBusMessag
 	g_return_val_if_fail (data && data->data && (data->opt_id >= 0) && (data->dhcp_iface != NULL) && connection && message, NULL);
 	dhcp_iface = data->dhcp_iface;
 
-	if ((reply = dbus_message_new_method_return (message)) != NULL)
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, dhcp_interface_option_len (dhcp_iface, data->opt_id), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message)) != NULL) {
+                dbus_int32_t len;
+                len = dhcp_interface_option_len (dhcp_iface, data->opt_id);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &len, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -152,12 +142,17 @@ static DBusMessage *nm_dbus_dhcp_get_type (DBusConnection *connection, DBusMessa
 
 	if ((reply = dbus_message_new_method_return (message)) != NULL)
 	{
-		if (nm_dbus_dhcp_record_type (data->opt_id) == DBUS_TYPE_STRING)
-			dbus_message_append_args (reply, DBUS_TYPE_UINT32, DBUS_TYPE_STRING, DBUS_TYPE_INVALID);
-		else if (dhcp_interface_option_len (dhcp_iface, data->opt_id) != dhcp_option_record_len (data->opt_id))
-			dbus_message_append_args (reply, DBUS_TYPE_UINT32, DBUS_TYPE_ARRAY, DBUS_TYPE_INVALID);
-		else
-			dbus_message_append_args (reply, DBUS_TYPE_UINT32, nm_dbus_dhcp_record_type (data->opt_id), DBUS_TYPE_INVALID);
+                dbus_uint32_t type;
+
+		if (nm_dbus_dhcp_record_type (data->opt_id) == DBUS_TYPE_STRING) {
+                        type = DBUS_TYPE_STRING;
+                } else if (dhcp_interface_option_len (dhcp_iface, data->opt_id) != dhcp_option_record_len (data->opt_id)) {
+                        type = DBUS_TYPE_ARRAY;
+                } else {
+                        type = nm_dbus_dhcp_record_type (data->opt_id);
+                }
+
+                dbus_message_append_args (reply, DBUS_TYPE_UINT32, &type, DBUS_TYPE_INVALID);
 	}
 
 	return reply;
@@ -178,8 +173,11 @@ static DBusMessage *nm_dbus_dhcp_get_record_type (DBusConnection *connection, DB
 	g_return_val_if_fail (data && data->data && (data->opt_id >= 0) && (data->dhcp_iface != NULL) && connection && message, NULL);
 	dhcp_iface = data->dhcp_iface;
 
-	if ((reply = dbus_message_new_method_return (message)) != NULL)
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, nm_dbus_dhcp_record_type (data->opt_id), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message)) != NULL) {
+                dbus_uint32_t type;
+                type = nm_dbus_dhcp_record_type (data->opt_id);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &type, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -325,8 +323,11 @@ static DBusMessage *nm_dbus_dhcp_get_name (DBusConnection *connection, DBusMessa
 
 	g_return_val_if_fail (data && data->data && (data->opt_id >= 0) && (data->dhcp_iface != NULL) && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)) != NULL)
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, dhcp_option_name (data->opt_id), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message)) != NULL) {
+                const char *name;
+                name = dhcp_option_name (data->opt_id);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }

@@ -32,6 +32,9 @@
 #include "NetworkManagerPolicy.h"
 #include "nm-dbus-device.h"
 
+static gchar *nm_dbus_unescape_object_path (const gchar *object_path);
+static gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
+
 static DBusMessage *nm_dbus_device_get_name (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
@@ -40,8 +43,11 @@ static DBusMessage *nm_dbus_device_get_name (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, nm_device_get_iface (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                const char *iface;
+                iface = nm_device_get_iface (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &iface, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -54,8 +60,11 @@ static DBusMessage *nm_dbus_device_get_type (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_INT32, nm_device_get_type (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_int32_t type;
+                type = nm_device_get_type (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -68,8 +77,11 @@ static DBusMessage *nm_dbus_device_get_hal_udi (DBusConnection *connection, DBus
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, nm_device_get_udi (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                const char *udi;
+                udi = nm_device_get_udi (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &udi, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -82,8 +94,12 @@ static DBusMessage *nm_dbus_device_get_ip4_address (DBusConnection *connection, 
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, nm_device_get_ip4_address (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_uint32_t address;
+                
+                address = nm_device_get_ip4_address (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &address, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -96,8 +112,11 @@ static DBusMessage *nm_dbus_device_get_mode (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, nm_device_get_mode (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_uint32_t mode;
+                mode = nm_device_get_mode (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &mode, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -110,8 +129,12 @@ static DBusMessage *nm_dbus_device_get_link_active (DBusConnection *connection, 
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, nm_device_get_link_active (dev), DBUS_TYPE_INVALID);
+	if ((reply = dbus_message_new_method_return (message))) {
+                dbus_bool_t is_active;
+
+                is_active = nm_device_get_link_active (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &is_active, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -130,8 +153,12 @@ static DBusMessage *nm_dbus_device_get_strength (DBusConnection *connection, DBu
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
 				"Wired devices cannot have signal strength.");
 	}
-	else if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_INT32, nm_device_get_signal_strength (dev), DBUS_TYPE_INVALID);
+	else if ((reply = dbus_message_new_method_return (message))) {
+                dbus_int32_t strength;
+
+                strength = nm_device_get_signal_strength (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -166,7 +193,7 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
 				&& (object_path = nm_device_get_path_for_ap (dev, tmp_ap)))
 			{
-				dbus_message_append_args (reply, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+				dbus_message_append_args (reply, DBUS_TYPE_STRING, &object_path, DBUS_TYPE_INVALID);
 				success = TRUE;
 			}
 			nm_ap_unref (best_ap);
@@ -205,10 +232,11 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 		gboolean			 success = FALSE;
 		NMAccessPointList	*ap_list;
 		NMAPListIter		*list_iter;
-		char				*object_path;
+		char				*object_path,
+                                                *escaped_object_path;
 
-		dbus_message_iter_init (reply, &iter);
-		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
+		dbus_message_iter_init_append (reply, &iter);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
 
 		if ((ap_list = nm_device_ap_list_get (dev)))
 		{
@@ -220,14 +248,19 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 					{
 						object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
 								nm_device_get_iface (dev), nm_ap_get_essid (ap));
-						dbus_message_iter_append_string (&iter_array, object_path);
+                                                escaped_object_path = nm_dbus_escape_object_path (object_path);
 						g_free (object_path);
+						dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH,
+                                                                                &escaped_object_path);
+						g_free (escaped_object_path);
 						success = TRUE;
 					}
 				}
 				nm_ap_list_iter_free (list_iter);
 			}
 		}
+
+		dbus_message_iter_close_container (&iter, &iter_array);
 
 		if (!success)
 		{
@@ -254,8 +287,11 @@ static DBusMessage *nm_dbus_device_get_supports_carrier_detect (DBusConnection *
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWired",
 				"Carrier detection is only supported for wired devices.");
 	}
-	else if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, nm_device_get_supports_carrier_detect (dev), DBUS_TYPE_INVALID);
+	else if ((reply = dbus_message_new_method_return (message))) {
+                dbus_bool_t supports_carrier_detect;
+                supports_carrier_detect = nm_device_get_supports_carrier_detect (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &supports_carrier_detect, DBUS_TYPE_INVALID);
+        }
 
 	return reply;
 }
@@ -316,3 +352,107 @@ NMDbusMethodList *nm_dbus_device_methods_setup (void)
 	return (list);
 }
 
+static gchar *nm_dbus_escape_object_path (const gchar *utf8_string)
+{
+	const gchar *p;
+	gchar *object_path;
+	GString *string;
+
+	g_return_val_if_fail (utf8_string != NULL, NULL);	
+	g_return_val_if_fail (g_utf8_validate (utf8_string, -1, NULL), NULL);
+
+	string = g_string_sized_new ((strlen (utf8_string) + 1) * 6);
+
+	for (p = utf8_string; *p != '\0'; p = g_utf8_next_char (p))
+	{
+		gunichar character;
+
+		character = g_utf8_get_char (p);
+
+		if (((character >= ((gunichar) 'a')) && 
+		     (character <= ((gunichar) 'z'))) ||
+		    ((character >= ((gunichar) 'A')) && 
+		     (character <= ((gunichar) 'Z'))) ||
+		    ((character >= ((gunichar) '0')) && 
+		     (character <= ((gunichar) '9'))) ||
+                     (character == ((gunichar) '/')))
+		{
+			g_string_append_c (string, (gchar) character);
+			continue;
+		}
+
+		g_string_append_printf (string, "_%x_", character);
+	}
+
+	object_path = string->str;
+
+	g_string_free (string, FALSE);
+
+	return object_path;
+}
+
+static gchar *nm_dbus_unescape_object_path (const gchar *object_path)
+{
+	const gchar *p;
+	gchar *utf8_string;
+	GString *string;
+
+	g_return_val_if_fail (object_path != NULL, NULL);	
+
+	string = g_string_sized_new (strlen (object_path) + 1);
+
+	for (p = object_path; *p != '\0'; p++)
+	{
+		const gchar *q;
+		gchar *hex_digits, *end, utf8_character[6] = { '\0' };
+		gint utf8_character_size;
+		gunichar character;
+		gulong hex_value;
+
+		if (*p != '_')
+		{
+		    g_string_append_c (string, *p);
+		    continue;
+		}
+
+		q = strchr (p + 1, '_'); 
+
+		if ((q == NULL) || (q == p + 1))
+		{
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		hex_digits = g_strndup (p + 1, (q - 1) - p);
+
+		hex_value = strtoul (hex_digits, &end, 16);
+
+		character = (gunichar) hex_value;
+
+		if (((hex_value == G_MAXLONG) && (errno == ERANGE)) ||
+		    (hex_value > G_MAXUINT32) ||
+		    (*end != '\0') ||
+		    (!g_unichar_validate (character)))
+		{
+		    g_free (hex_digits);
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		utf8_character_size = 
+			g_unichar_to_utf8 (character, utf8_character);
+
+		g_assert (utf8_character_size > 0);
+
+		g_string_append_len (string, utf8_character,
+				     utf8_character_size);
+
+		p = q;
+	}
+
+	utf8_string = string->str;
+
+	g_string_free (string, FALSE);
+
+	return utf8_string;
+}

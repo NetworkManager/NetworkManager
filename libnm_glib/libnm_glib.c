@@ -189,7 +189,7 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
 	dbus_error_init (&error);
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_LOCAL, "Disconnected"))
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected"))
 	{
 		/* Try to reactivate our connection to dbus on the next pass through the event loop */
 		ctx->nm_status = LIBNM_NO_DBUS;
@@ -197,7 +197,7 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 		libnm_glib_schedule_dbus_watcher (ctx);
 	}
 #if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceCreated"))
 	{
 		char 	*service;
 
@@ -209,7 +209,7 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 			g_free (status_string);
 		}
 	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceDeleted"))
 	{
 		char 	*service;
 
@@ -220,7 +220,7 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 		}
 	}
 #elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceOwnerChanged"))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceOwnerChanged"))
 	{
 		/* New signal for dbus 0.23... */
 		char 	*service;
@@ -249,6 +249,37 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 			}
 		}
 	}
+#elif ((DBUS_VERSION_MAJOR == 0) && ((DBUS_VERSION_MINOR == 30) || (DBUS_VERSION_MINOR == 31)))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
+	{
+		/* New signal for dbus 0.23... */
+		char 	*service;
+		char		*old_owner;
+		char		*new_owner;
+
+		if (    dbus_message_get_args (message, &error,
+									DBUS_TYPE_STRING, &service,
+									DBUS_TYPE_STRING, &old_owner,
+									DBUS_TYPE_STRING, &new_owner,
+									DBUS_TYPE_INVALID))
+		{
+			if (strcmp (service, NM_DBUS_SERVICE) == 0)
+			{
+				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+
+				if (!old_owner_good && new_owner_good)	/* Equivalent to old ServiceCreated signal */
+				{
+					char *status_string = libnm_glib_get_nm_status (ctx->dbus_con);
+					libnm_glib_update_status (ctx, status_string);
+					g_free (status_string);
+				}
+				else if (old_owner_good && !new_owner_good)	/* Equivalent to old ServiceDeleted signal */
+					ctx->nm_status = LIBNM_NO_NETWORKMANAGER;
+			}
+		}
+	}
+
 #else
 #error "Unrecognized version of DBUS."
 #endif
@@ -312,8 +343,8 @@ static DBusConnection * libnm_glib_dbus_init (gpointer *user_data, GMainContext 
 	dbus_error_init (&error);
 	dbus_bus_add_match(connection,
 				"type='signal',"
-				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
-				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				"interface='" DBUS_INTERFACE_DBUS "',"
+				"sender='" DBUS_SERVICE_DBUS "'",
 				&error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);

@@ -32,6 +32,9 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
 
+static gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
+static gchar *nm_dbus_unescape_object_path (const gchar *object_path);
+
 
 /*
  * nm_dbus_nm_get_active_device
@@ -58,7 +61,7 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 			return (NULL);
 
 		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (data->data->active_device));
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &object_path, DBUS_TYPE_INVALID);
 		g_free (object_path);
 	}
 	else
@@ -97,14 +100,14 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 	if (!(reply = dbus_message_new_method_return (message)))
 		return NULL;
 
-	dbus_message_iter_init (reply, &iter);
-	dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
-
+	dbus_message_iter_init_append (reply, &iter);
 	/* Iterate over device list and grab index of "active device" */
 	if (nm_try_acquire_mutex (data->data->dev_list_mutex, __FUNCTION__))
 	{
 		GSList	*elt;
 		gboolean	 appended = FALSE;
+
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
 
 		for (elt = data->data->dev_list; elt; elt = g_slist_next (elt))
 		{
@@ -112,9 +115,13 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 
 			if (dev && (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED))
 			{
-				char *object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-				dbus_message_iter_append_string (&iter_array, object_path);
-				g_free (object_path);
+				char *object_path, *escaped_object_path;
+                                
+                                object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+                                escaped_object_path = nm_dbus_escape_object_path (object_path);
+                                g_free (object_path);
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &escaped_object_path);
+				g_free (escaped_object_path);
 				appended = TRUE;
 			}
 		}
@@ -125,10 +132,12 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 		if (!appended)
 			g_assert ("Device list existed, but no devices were in it.");
 
+		dbus_message_iter_close_container (&iter, &iter_array);
 		nm_unlock_mutex (data->data->dev_list_mutex, __FUNCTION__);
 	}
 	else
 	{
+		dbus_message_unref (reply);
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "Retry",
 						"NetworkManager could not lock device list, try again.");
 	}
@@ -209,9 +218,6 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	nm_device_schedule_force_use (dev, network, key, key_type);
 
 out:
-	dbus_free (dev_path);
-	dbus_free (network);
-	dbus_free (key);
 	return (reply);
 }
 
@@ -290,8 +296,6 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	nm_policy_schedule_device_switch (dev, data->data);
 
 out:
-	dbus_free (network);
-	dbus_free (key);
 	nm_device_unref (dev);
 	return (reply);
 }
@@ -319,7 +323,7 @@ static DBusMessage *nm_dbus_nm_create_test_device (DBusConnection *connection, D
 		if ((reply = dbus_message_new_method_return (message)))
 		{
 			char		*dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+			dbus_message_append_args (reply, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
 			g_free (dev_path);
 		}
 		g_free (interface);
@@ -404,9 +408,6 @@ static DBusMessage * nm_dbus_nm_set_user_key_for_network (DBusConnection *connec
 		if ((dev = nm_get_device_by_iface (data->data, device)))
 			nm_device_set_user_key_for_network (dev, data->data->invalid_ap_list, network, passphrase, key_type);
 
-		dbus_free (device);
-		dbus_free (network);
-		dbus_free (passphrase);
 	}
 
 	return (NULL);
@@ -434,7 +435,7 @@ static DBusMessage *nm_dbus_nm_get_scanning_enabled (DBusConnection *connection,
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
 
 	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, data->data->scanning_enabled, DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &data->data->scanning_enabled, DBUS_TYPE_INVALID);
 	
 	return reply;
 }
@@ -463,7 +464,7 @@ static DBusMessage *nm_dbus_nm_get_wireless_enabled (DBusConnection *connection,
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
 
 	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, data->data->wireless_enabled, DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &data->data->wireless_enabled, DBUS_TYPE_INVALID);
 
 	return reply;
 }
@@ -477,7 +478,7 @@ static DBusMessage *nm_dbus_nm_get_status (DBusConnection *connection, DBusMessa
 
 	status = nm_dbus_network_status_from_data (data->data);
 	if (status && (reply = dbus_message_new_method_return (message)))
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, status, DBUS_TYPE_INVALID);
+			dbus_message_append_args (reply, DBUS_TYPE_STRING, &status, DBUS_TYPE_INVALID);
 	g_free (status);
 
 	return reply;
@@ -510,4 +511,107 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	return (list);
 }
 
+static gchar *nm_dbus_escape_object_path (const gchar *utf8_string)
+{
+	const gchar *p;
+	gchar *object_path;
+	GString *string;
 
+	g_return_val_if_fail (utf8_string != NULL, NULL);	
+	g_return_val_if_fail (g_utf8_validate (utf8_string, -1, NULL), NULL);
+
+	string = g_string_sized_new ((strlen (utf8_string) + 1) * 6);
+
+	for (p = utf8_string; *p != '\0'; p = g_utf8_next_char (p))
+	{
+		gunichar character;
+
+		character = g_utf8_get_char (p);
+
+		if (((character >= ((gunichar) 'a')) && 
+		     (character <= ((gunichar) 'z'))) ||
+		    ((character >= ((gunichar) 'A')) && 
+		     (character <= ((gunichar) 'Z'))) ||
+		    ((character >= ((gunichar) '0')) && 
+		     (character <= ((gunichar) '9'))) ||
+                     (character == ((gunichar) '/')))
+		{
+			g_string_append_c (string, (gchar) character);
+			continue;
+		}
+
+		g_string_append_printf (string, "_%x_", character);
+	}
+
+	object_path = string->str;
+
+	g_string_free (string, FALSE);
+
+	return object_path;
+}
+
+static gchar *nm_dbus_unescape_object_path (const gchar *object_path)
+{
+	const gchar *p;
+	gchar *utf8_string;
+	GString *string;
+
+	g_return_val_if_fail (object_path != NULL, NULL);	
+
+	string = g_string_sized_new (strlen (object_path) + 1);
+
+	for (p = object_path; *p != '\0'; p++)
+	{
+		const gchar *q;
+		gchar *hex_digits, *end, utf8_character[6] = { '\0' };
+		gint utf8_character_size;
+		gunichar character;
+		gulong hex_value;
+
+		if (*p != '_')
+		{
+		    g_string_append_c (string, *p);
+		    continue;
+		}
+
+		q = strchr (p + 1, '_'); 
+
+		if ((q == NULL) || (q == p + 1))
+		{
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		hex_digits = g_strndup (p + 1, (q - 1) - p);
+
+		hex_value = strtoul (hex_digits, &end, 16);
+
+		character = (gunichar) hex_value;
+
+		if (((hex_value == G_MAXLONG) && (errno == ERANGE)) ||
+		    (hex_value > G_MAXUINT32) ||
+		    (*end != '\0') ||
+		    (!g_unichar_validate (character)))
+		{
+		    g_free (hex_digits);
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		utf8_character_size = 
+			g_unichar_to_utf8 (character, utf8_character);
+
+		g_assert (utf8_character_size > 0);
+
+		g_string_append_len (string, utf8_character,
+				     utf8_character_size);
+
+		p = q;
+	}
+
+	utf8_string = string->str;
+
+	g_string_free (string, FALSE);
+
+	return utf8_string;
+}

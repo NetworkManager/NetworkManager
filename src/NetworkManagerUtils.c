@@ -292,9 +292,9 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, NULL);
 
 	if (    (udi = nm_device_get_udi (dev))
-		&& hal_device_property_exists (ctx, udi, "net.linux.driver"))
+		&& libhal_device_property_exists (ctx, udi, "net.linux.driver", NULL))
 	{
-		driver_name = hal_device_get_property_string (ctx, udi, "net.linux.driver");
+		driver_name = libhal_device_get_property_string (ctx, udi, "net.linux.driver", NULL);
 	}
 
 	return (driver_name);
@@ -374,10 +374,10 @@ NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDe
 
 	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
 	udi = nm_device_get_udi (dev);
-	if (    hal_device_property_exists (ctx, udi, "usb.interface.class")
-		&& (usb_test = hal_device_get_property_string (ctx, udi, "usb.interface.class")))
+	if (    libhal_device_property_exists (ctx, udi, "usb.interface.class", NULL)
+		&& (usb_test = libhal_device_get_property_string (ctx, udi, "usb.interface.class", NULL)))
 	{
-		hal_free_string (usb_test);
+		libhal_free_string (usb_test);
 		level = NM_DRIVER_UNSUPPORTED;
 	}
 

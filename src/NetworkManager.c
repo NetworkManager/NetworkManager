@@ -66,19 +66,19 @@ static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *u
 {
 	char *iface = NULL;
 
-	if (hal_device_property_exists (ctx, udi, "net.interface"))
+	if (libhal_device_property_exists (ctx, udi, "net.interface", NULL))
 	{
 		/* Only use Ethernet and Wireless devices at the moment */
-		if (hal_device_property_exists (ctx, udi, "info.category"))
+		if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
 		{
-			char *category = hal_device_get_property_string (ctx, udi, "info.category");
+			char *category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
 			if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211")))
 			{
-				char *temp = hal_device_get_property_string (ctx, udi, "net.interface");
+				char *temp = libhal_device_get_property_string (ctx, udi, "net.interface", NULL);
 				iface = g_strdup (temp);
-				hal_free_string (temp);
+				libhal_free_string (temp);
 			}
-			hal_free_string (category);
+			libhal_free_string (category);
 		}
 	}
 
@@ -219,7 +219,7 @@ static void nm_hal_mainloop_integration (LibHalContext *ctx, DBusConnection * db
  */
 static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 {
-	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
 	char		*iface = NULL;
 
 	g_return_if_fail (data != NULL);
@@ -244,7 +244,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
  */
 static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 {
-	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
 
 	g_return_if_fail (data != NULL);
 
@@ -260,7 +260,7 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
  */
 static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
-	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
 
 	g_return_if_fail (data != NULL);
 
@@ -295,7 +295,7 @@ static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, 
  */
 static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi, const char *key, dbus_bool_t is_removed, dbus_bool_t is_added)
 {
-	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
 	gboolean	 link = FALSE;
 
 	g_return_if_fail (data != NULL);
@@ -308,10 +308,10 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 	if (is_removed || (strcmp (key, "net.80203.link") != 0))
 		return;
 
-	if (!hal_device_property_exists (ctx, udi, "net.80203.link"))
+	if (!libhal_device_property_exists (ctx, udi, "net.80203.link", NULL))
 		return;
 
-	link = hal_device_get_property_bool (ctx, udi, "net.80203.link");
+	link = libhal_device_get_property_bool (ctx, udi, "net.80203.link", NULL);
 
 	/* Attempt to acquire mutex for device link updating.  If acquire fails ignore the event. */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
@@ -358,10 +358,20 @@ static void nm_add_initial_devices (NMData *data)
 	int		  num_net_devices;
 	int		  i;
 
+        DBusError error;
+
 	g_return_if_fail (data != NULL);
 	
+        dbus_error_init (&error);
 	/* Grab a list of network devices */
-	net_devices = hal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices);
+	net_devices = libhal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices, &error);
+        if (dbus_error_is_set (&error))
+          {
+            syslog (LOG_ERR, "nm_add_initial_devices() could not find existing"
+                             "networking devices: %s", error.message);
+            dbus_error_free (&error);
+          }
+
 	if (net_devices)
 	{
 		for (i = 0; i < num_net_devices; i++)
@@ -376,7 +386,7 @@ static void nm_add_initial_devices (NMData *data)
 		}
 	}
 
-	hal_free_string_array (net_devices);
+	libhal_free_string_array (net_devices);
 }
 
 
@@ -472,22 +482,6 @@ gboolean nm_link_state_monitor (gpointer user_data)
 	
 	return (TRUE);
 }
-
-
-/*
- * libhal callback function structure
- */
-static LibHalFunctions hal_functions =
-{
-	nm_hal_mainloop_integration,
-	nm_hal_device_added,
-	nm_hal_device_removed,
-	nm_hal_device_new_capability,
-	nm_hal_device_lost_capability,
-	nm_hal_device_property_modified,
-	NULL
-};
-
 
 /*
  * nm_data_new
@@ -642,6 +636,8 @@ int main( int argc, char *argv[] )
 	gboolean		 become_daemon = TRUE;
 	gboolean		 enable_test_devices = FALSE;
 	GError		*error = NULL;
+	DBusError 	dbus_error;
+
 	
 	if ((int)getuid() != 0)
 	{
@@ -741,14 +737,46 @@ int main( int argc, char *argv[] )
 	main_context = nm_data->main_context;
 
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
-	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
+	if ((ctx = libhal_ctx_new()) == NULL)
 	{
-		syslog (LOG_CRIT, "hal_initialize() failed, exiting...  Make sure the hal daemon is running?");
+		syslog (LOG_CRIT, "libhal_ctx_new() failed, exiting...");
 		exit (EXIT_FAILURE);
 	}
+
+	nm_hal_mainloop_integration (ctx, nm_data->dbus_connection); 
+
+        libhal_ctx_set_dbus_connection (ctx, nm_data->dbus_connection);
+
+	dbus_error_init (&dbus_error);
+	if(!libhal_ctx_init (ctx, &dbus_error)) {
+		syslog (LOG_CRIT, "libhal_ctx_init() failed, exiting...  Make sure the hal daemon is running? - %s", dbus_error.message);
+
+		dbus_error_free (&dbus_error);
+		exit (EXIT_FAILURE);
+	}
+
 	nm_data->hal_ctx = ctx;
-	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
-	hal_device_property_watch_all (nm_data->hal_ctx);
+	libhal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
+
+	libhal_ctx_set_device_added (ctx,
+				     nm_hal_device_added);
+	libhal_ctx_set_device_removed (ctx,
+		  		       nm_hal_device_removed);
+	libhal_ctx_set_device_new_capability (ctx,
+					     nm_hal_device_new_capability);
+	libhal_ctx_set_device_lost_capability (ctx,
+		  			       nm_hal_device_lost_capability);
+	libhal_ctx_set_device_property_modified (ctx,
+		  				 nm_hal_device_property_modified);
+
+	libhal_device_property_watch_all (nm_data->hal_ctx, &dbus_error);
+
+	if (dbus_error_is_set (&dbus_error))
+	{
+		syslog (LOG_CRIT, "libhal_device_property_watch_all(): %s", dbus_error.message);
+		dbus_error_free (&dbus_error);
+		exit (EXIT_FAILURE);
+	}
 
 	/* Grab network devices that are already present and add them to our list */
 	nm_add_initial_devices (nm_data);
@@ -779,8 +807,13 @@ int main( int argc, char *argv[] )
 	g_source_remove (link_source_id);
 
 	/* Cleanup */
-	if (hal_shutdown (nm_data->hal_ctx) != 0)
-		syslog (LOG_NOTICE, "Error: libhal shutdown failed");
+	if (libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error) != 0) {
+		syslog (LOG_NOTICE, "Error: libhal shutdown failed - %s", dbus_error.message);
+
+		dbus_error_free (&dbus_error);
+	}
+
+	libhal_ctx_free (nm_data->hal_ctx);
 
 	nm_data_free (nm_data);
 

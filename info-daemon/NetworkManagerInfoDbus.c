@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoDbus.h"
@@ -117,9 +118,6 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
 							DBUS_TYPE_INVALID))
 	{
 		nmi_passphrase_dialog_show (device, network, info);
-
-		dbus_free (device);
-		dbus_free (network);
 	}
 }
 
@@ -145,12 +143,9 @@ static void nmi_dbus_get_vpn_userpass (NMIAppInfo *info, DBusMessage *message)
 				   DBUS_TYPE_INVALID))
 	{
 		if (username[0] == '\0') {
-			dbus_free (username);
 			username = NULL;
 		}
 		nmi_vpn_request_password (info, message, vpn, username, retry);
-		dbus_free (vpn);
-		dbus_free (username);
 	}
 }
 
@@ -178,10 +173,10 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	}
 
 	/* Add network name and passphrase */
-	if (dbus_message_append_args (message, DBUS_TYPE_STRING, device,
-								DBUS_TYPE_STRING, network,
-								DBUS_TYPE_STRING, passphrase,
-								DBUS_TYPE_INT32, key_type,
+	if (dbus_message_append_args (message, DBUS_TYPE_STRING, &device,
+								DBUS_TYPE_STRING, &network,
+								DBUS_TYPE_STRING, &passphrase,
+								DBUS_TYPE_INT32, &key_type,
 								DBUS_TYPE_INVALID))
 	{
 		if (!dbus_connection_send (connection, message, NULL))
@@ -213,7 +208,7 @@ void nmi_dbus_return_vpn_password (DBusConnection *connection, DBusMessage *mess
 	{
 		reply = dbus_message_new_method_return (message);
 		dbus_message_append_args (reply,
-					  DBUS_TYPE_STRING, password,
+					  DBUS_TYPE_STRING, &password,
 					  DBUS_TYPE_INVALID);
 	}
 	dbus_connection_send (connection, reply, NULL);
@@ -245,7 +240,7 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
 
@@ -294,8 +289,8 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		gboolean	value_added = FALSE;
 
 		reply_message = dbus_message_new_method_return (message);
-		dbus_message_iter_init (reply_message, &iter);
-		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
+		dbus_message_iter_init_append (reply_message, &iter);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
 
 		/* Append the essid of every allowed or ignored access point we know of 
 		 * to a string array in the dbus message.
@@ -309,7 +304,9 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 			value = gconf_client_get (info->gconf_client, key, NULL);
 			if (value && gconf_value_get_string (value))
 			{
-				dbus_message_iter_append_string (&iter_array, gconf_value_get_string (value));
+				const gchar *essid;
+				essid = gconf_value_get_string (value);
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &essid);
 				value_added = TRUE;
 				gconf_value_free (value);
 			}
@@ -318,6 +315,8 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 			element = element->next;
 		}
 		g_slist_free (dir_list);
+
+		dbus_message_iter_close_container (&iter, &iter_array);
 
 		if (!value_added)
 		{
@@ -450,8 +449,20 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	}
 	else
 	{
-		char				**array = NULL;
-		int				 num_items = 0;
+		DBusMessageIter 		iter, array_iter;
+
+		reply = dbus_message_new_method_return (message);
+
+		dbus_message_iter_init_append (reply, &iter);
+
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &timestamp);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &key);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &key_type);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &auth_method);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &trusted);
+		
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
 
 		/* Add a string array of access point MAC addresses if the array is valid */
 		if (    ap_addrs_value
@@ -460,31 +471,16 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 		{
 			GSList	*list = gconf_value_get_list (ap_addrs_value);
 			GSList	*elt;
-			int		 i;
 
-			num_items = g_slist_length (list); 
-			if (num_items > 0)
-				array = g_malloc0 (sizeof (char *) * num_items);
-
-			for (elt = list, i = 0; elt; elt = g_slist_next (elt), i++)
+			for (elt = list; elt; elt = g_slist_next (elt))
 			{
 				const char *string;
 				if ((string = gconf_value_get_string ((GConfValue *)elt->data)))
-					array[i] = g_strdup (string);
+					dbus_message_iter_append_basic (&array_iter, DBUS_TYPE_STRING, &string);
 			}
 		}
 
-		reply = dbus_message_new_method_return (message);
-
-		/* Add general properties to dbus reply */
-		dbus_message_append_args (reply,   DBUS_TYPE_STRING, essid,
-									DBUS_TYPE_INT32, timestamp,
-									DBUS_TYPE_STRING, key,
-									DBUS_TYPE_INT32, key_type,
-									DBUS_TYPE_INT32, auth_method,
-									DBUS_TYPE_BOOLEAN, trusted,
-									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, array, num_items,
-									DBUS_TYPE_INVALID);
+		dbus_message_iter_close_container (&iter, &array_iter);
 	}	
 	gconf_value_free (ap_addrs_value);
 
@@ -492,7 +488,6 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	g_free (key);
 
 	g_free (escaped_network);
-	dbus_free (network);
 	return (reply);
 }
 
@@ -633,7 +628,6 @@ static DBusMessage *nmi_dbus_add_network_address (NMIAppInfo *info, DBusMessage 
 	g_slist_foreach (new_mac_list, (GFunc)g_free, NULL);
 	g_slist_free (new_mac_list);
 
-	dbus_free (addr);
 	g_free (key);
 
 	return (NULL);
@@ -776,8 +770,6 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 		else if (dev)
 			nmi_show_warning_dialog (TRUE, "Connection to the wired network failed.\n");
 
-		dbus_free (dev);
-		dbus_free (net);
 	}
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -797,7 +789,7 @@ static gboolean nmi_dbus_nm_is_running (DBusConnection *connection)
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	dbus_error_init (&error);
-	exists = dbus_bus_service_exists (connection, NM_DBUS_SERVICE, &error);
+	exists = dbus_bus_name_has_owner (connection, NM_DBUS_SERVICE, &error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
 	return (exists);
@@ -817,8 +809,8 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	int acquisition;
 
 	dbus_error_init (&dbus_error);
-	acquisition = dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE,
-						DBUS_SERVICE_FLAG_PROHIBIT_REPLACEMENT,
+	acquisition = dbus_bus_request_name    (dbus_connection, NMI_DBUS_SERVICE,
+						DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT,
 						&dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
@@ -826,7 +818,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 		dbus_error_free (&dbus_error);
 		return (-1);
 	}
-	if (acquisition & DBUS_SERVICE_REPLY_SERVICE_EXISTS) {
+	if (acquisition == DBUS_REQUEST_NAME_REPLY_EXISTS) {
 	     exit (0);
 	}
 
@@ -858,8 +850,8 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 
 	dbus_bus_add_match(dbus_connection,
 				"type='signal',"
-				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
-				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				"interface='" DBUS_INTERFACE_DBUS "',"
+				"sender='" DBUS_SERVICE_DBUS "'",
 				&dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
@@ -868,4 +860,109 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	}
 
 	return (0);
+}
+
+gchar *nm_dbus_escape_object_path (const gchar *utf8_string)
+{
+	const gchar *p;
+	gchar *object_path;
+	GString *string;
+
+	g_return_val_if_fail (utf8_string != NULL, NULL);	
+	g_return_val_if_fail (g_utf8_validate (utf8_string, -1, NULL), NULL);
+
+	string = g_string_sized_new ((strlen (utf8_string) + 1) * 6);
+
+	for (p = utf8_string; *p != '\0'; p = g_utf8_next_char (p))
+	{
+		gunichar character;
+
+		character = g_utf8_get_char (p);
+
+		if (((character >= ((gunichar) 'a')) && 
+		     (character <= ((gunichar) 'z'))) ||
+		    ((character >= ((gunichar) 'A')) && 
+		     (character <= ((gunichar) 'Z'))) ||
+		    ((character >= ((gunichar) '0')) && 
+		     (character <= ((gunichar) '9'))) ||
+                     (character == ((gunichar) '/')))
+		{
+			g_string_append_c (string, (gchar) character);
+			continue;
+		}
+
+		g_string_append_printf (string, "_%x_", character);
+	}
+
+	object_path = string->str;
+
+	g_string_free (string, FALSE);
+
+	return object_path;
+}
+
+gchar *nm_dbus_unescape_object_path (const gchar *object_path)
+{
+	const gchar *p;
+	gchar *utf8_string;
+	GString *string;
+
+	g_return_val_if_fail (object_path != NULL, NULL);	
+
+	string = g_string_sized_new (strlen (object_path) + 1);
+
+	for (p = object_path; *p != '\0'; p++)
+	{
+		const gchar *q;
+		gchar *hex_digits, *end, utf8_character[6] = { '\0' };
+		gint utf8_character_size;
+		gunichar character;
+		gulong hex_value;
+
+		if (*p != '_')
+		{
+		    g_string_append_c (string, *p);
+		    continue;
+		}
+
+		q = strchr (p + 1, '_'); 
+
+		if ((q == NULL) || (q == p + 1))
+		{
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		hex_digits = g_strndup (p + 1, (q - 1) - p);
+
+		hex_value = strtoul (hex_digits, &end, 16);
+
+		character = (gunichar) hex_value;
+
+		if (((hex_value == G_MAXLONG) && (errno == ERANGE)) ||
+		    (hex_value > G_MAXUINT32) ||
+		    (*end != '\0') ||
+		    (!g_unichar_validate (character)))
+		{
+		    g_free (hex_digits);
+		    g_string_free (string, TRUE);
+		    return NULL;
+		}
+
+		utf8_character_size = 
+			g_unichar_to_utf8 (character, utf8_character);
+
+		g_assert (utf8_character_size > 0);
+
+		g_string_append_len (string, utf8_character,
+				     utf8_character_size);
+
+		p = q;
+	}
+
+	utf8_string = string->str;
+
+	g_string_free (string, FALSE);
+
+	return utf8_string;
 }

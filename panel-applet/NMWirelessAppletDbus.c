@@ -33,9 +33,7 @@
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
-/* dbus doesn't define a DBUS_TYPE_STRING_ARRAY so we fake one here for consistency */
 #define	DBUS_TYPE_STRING_ARRAY		((int) '$')
-
 
 /*
  * nmwa_dbus_call_nm_method
@@ -150,6 +148,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 		case DBUS_TYPE_STRING_ARRAY:
 			*((char ***)(arg)) = g_strdupv (dbus_string_array);
 			*item_count = num_items;
+			g_strfreev (dbus_string_array);
 			break;
 		case DBUS_TYPE_INT32:
 		case DBUS_TYPE_UINT32:
@@ -546,7 +545,7 @@ static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connectio
 		return (NULL);
 
 	dbus_error_init (&error);
-	dbus_message_append_args (message, DBUS_TYPE_STRING, property_name, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &property_name, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
@@ -590,6 +589,7 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
 	DBusMessage	*reply;
 	gboolean		 exists = FALSE;
 	char			*info = NULL;
+        const char *product;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
@@ -599,7 +599,8 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
 		return (NULL);
 
 	dbus_error_init (&error);
-	dbus_message_append_args (message, DBUS_TYPE_STRING, "info.product", DBUS_TYPE_INVALID);
+        product = "info.product";
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &product, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
@@ -652,16 +653,20 @@ void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev,
 		if ((dev->type == DEVICE_TYPE_WIRELESS_ETHERNET) && network && network->essid)
 		{
 			fprintf (stderr, "Forcing device '%s' and network '%s' %s passphrase\n", dev->nm_device, network->essid, passphrase ? "with" : "without");
-			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
-									DBUS_TYPE_STRING, network->essid,
-									DBUS_TYPE_STRING, (passphrase ? passphrase : ""),
-									DBUS_TYPE_INT32, key_type,
+
+                        if (passphrase == NULL)
+                                passphrase = "";
+
+			dbus_message_append_args (message, DBUS_TYPE_STRING, &dev->nm_device,
+									DBUS_TYPE_STRING, &network->essid,
+									DBUS_TYPE_STRING, &passphrase,
+									DBUS_TYPE_INT32, &key_type,
 									DBUS_TYPE_INVALID);
 		}
 		else
 		{
 			fprintf (stderr, "Forcing device '%s'\n", dev->nm_device);
-			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device, DBUS_TYPE_INVALID);
+			dbus_message_append_args (message, DBUS_TYPE_STRING, &dev->nm_device, DBUS_TYPE_INVALID);
 		}
 		dbus_connection_send (connection, message, NULL);
 	}
@@ -690,10 +695,12 @@ void nmwa_dbus_create_network (DBusConnection *connection, const NetworkDevice *
 		if (network && network->essid)
 		{
 			fprintf (stderr, "Creating network '%s' %s passphrase on device '%s'.\n", network->essid, passphrase ? "with" : "without", dev->nm_device);
-			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
-									DBUS_TYPE_STRING, network->essid,
-									DBUS_TYPE_STRING, (passphrase ? passphrase : ""),
-									DBUS_TYPE_INT32, key_type,
+                        if (passphrase == NULL)
+                                passphrase = "";
+			dbus_message_append_args (message, DBUS_TYPE_STRING, &dev->nm_device,
+									DBUS_TYPE_STRING, &network->essid,
+									DBUS_TYPE_STRING, &passphrase,
+									DBUS_TYPE_INT32, &key_type,
 									DBUS_TYPE_INVALID);
 		}
 		dbus_connection_send (connection, message, NULL);
@@ -718,7 +725,7 @@ void nmwa_dbus_enable_scanning (NMWirelessApplet *applet, gboolean enabled)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setScanningEnabled")))
 	{
-		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, enabled, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID);
 		dbus_connection_send (applet->connection, message, NULL);
 		applet->scanning_enabled = nmwa_dbus_get_scanning_enabled (applet);
 	}
@@ -740,7 +747,7 @@ void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setWirelessEnabled")))
 	{
-		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, enabled, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID);
 		dbus_connection_send (applet->connection, message, NULL);
 		applet->wireless_enabled = nmwa_dbus_get_wireless_enabled (applet);
 	}
@@ -1475,32 +1482,8 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 
 	dbus_error_init (&error);
 
-#if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
-	/* Old signal names for dbus <= 0.22 */
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
-		char 	*service;
-
-		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
-			&& (strcmp (service, NM_DBUS_SERVICE) == 0) && (applet->applet_state == APPLET_STATE_NO_NM))
-			applet->applet_state = APPLET_STATE_NO_CONNECTION;
-	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
-	{
-		char 	*service;
-
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
-		{
-			if (strcmp (service, NM_DBUS_SERVICE) == 0)
-				applet->applet_state = APPLET_STATE_NO_NM;
-			else if (strcmp (service, NMI_DBUS_SERVICE) == 0)
-				gtk_main_quit ();	/* Just die if NetworkManagerInfo dies */
-		}
-	}
-#elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceOwnerChanged"))
-	{
-		/* New signal for dbus 0.23... */
 		char 	*service;
 		char		*old_owner;
 		char		*new_owner;
@@ -1530,9 +1513,6 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			}
 		}
 	}
-#else
-#error "Unrecognized version of DBUS."
-#endif
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkUpdate"))
 		nmwa_dbus_device_update_one_network (applet, message);
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
@@ -1567,7 +1547,7 @@ static gboolean nmwa_dbus_nm_is_running (DBusConnection *connection)
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	dbus_error_init (&error);
-	exists = dbus_bus_service_exists (connection, NM_DBUS_SERVICE, &error);
+	exists = dbus_bus_name_has_owner (connection, NM_DBUS_SERVICE, &error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
 	return (exists);
@@ -1605,8 +1585,8 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *
 
 	dbus_bus_add_match(connection,
 				"type='signal',"
-				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
-				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				"interface='" DBUS_INTERFACE_DBUS "',"
+				"sender='" DBUS_SERVICE_DBUS "'",
 				&error);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);

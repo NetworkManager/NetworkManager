@@ -301,10 +301,10 @@ int main( int argc, char *argv[] )
 
 	dbus_connection_setup_with_g_main (connection, NULL);
 	dbus_error_init (&error);
-	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &error);
+	dbus_bus_request_name (connection, NM_DBUS_SERVICE, 0, &error);
 	if (dbus_error_is_set (&error))
 	{
-		fprintf (stderr, "Could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", error.message);
+		fprintf (stderr, "Could not acquire its service.  dbus_bus_request_name() says: '%s'\n", error.message);
 		exit (1);
 	}
 
