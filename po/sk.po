@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004.
 #
-# $Id: sk.po,v 1.6 2004/10/30 05:45:25 marcel Exp $
+# $Id: sk.po,v 1.7 2004/11/04 21:31:59 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-30 07:39+0200\n"
-"PO-Revision-Date: 2004-10-30 07:43+0200\n"
+"POT-Creation-Date: 2004-11-04 22:28+0100\n"
+"PO-Revision-Date: 2004-11-04 22:30+0100\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -32,13 +32,15 @@ msgstr "*"
 
 #: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
 msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
 msgstr ""
-"128-bitvé heslo\n"
-"128-bitový priamy kľúč v šestnástkovej sústave"
+"128-bitvé heslo (WEP)\n"
+"Ascii kľúč (WEP)\n"
+"Kľúč v šestnástkovej sústave (WEP)"
 
-#: info-daemon/passphrase.glade.h:5
+#: info-daemon/passphrase.glade.h:6
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -52,86 +54,90 @@ msgstr ""
 "\n"
 "Heslo alebo šifrovací kľúč je potrebný pre prístup k bezdrôtovej sieti '%s'."
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/essid.glade.h:6
+#: info-daemon/passphrase.glade.h:9 panel-applet/essid.glade.h:7
 msgid "Key Type:"
 msgstr "Typ kľúča:"
 
-#: info-daemon/passphrase.glade.h:9
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:100
-#: panel-applet/essid.glade.h:7
+#: info-daemon/passphrase.glade.h:10
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:102
+#: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Heslo:"
 
-#: info-daemon/passphrase.glade.h:10
+#: info-daemon/passphrase.glade.h:11
 msgid "Wireless Network Key Required"
 msgstr "Je potrebný kľúč bezdrôtovej siete"
 
-#: info-daemon/passphrase.glade.h:11
+#: info-daemon/passphrase.glade.h:12
 msgid "_Login to Network"
 msgstr "_Prihlásenie k sieti"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:103
-msgid "Key:"
-msgstr "Kľúč:"
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:105
+msgid "Ascii Key:"
+msgstr "Ascii kľúč:"
 
-#: panel-applet/NMWirelessApplet.c:290
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:108
+msgid "Hex Key:"
+msgstr "Kľúč v šestnástkovej sústave:"
+
+#: panel-applet/NMWirelessApplet.c:289
 msgid "No network connection"
 msgstr "Bez sieťového spojenia"
 
-#: panel-applet/NMWirelessApplet.c:294
+#: panel-applet/NMWirelessApplet.c:293
 msgid "Wired network connection"
 msgstr "Pripojenie k drôtovej sieti"
 
-#: panel-applet/NMWirelessApplet.c:300
+#: panel-applet/NMWirelessApplet.c:299
 msgid "Connecting to a wired network..."
 msgstr "Pripájanie k drôtovej sieti..."
 
-#: panel-applet/NMWirelessApplet.c:315
+#: panel-applet/NMWirelessApplet.c:314
 #, c-format
 msgid "Wireless network connection (%d%%)"
 msgstr "Pripojenie k bezdrôtovej sieti (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:318
+#: panel-applet/NMWirelessApplet.c:317
 msgid "Wireless network connection"
 msgstr "Pripojenie k bezdrôtovej sieti"
 
-#: panel-applet/NMWirelessApplet.c:324
+#: panel-applet/NMWirelessApplet.c:323
 msgid "Connecting to a wireless network..."
 msgstr "Pripájanie k bezdrôtovej sieti..."
 
-#: panel-applet/NMWirelessApplet.c:327
+#: panel-applet/NMWirelessApplet.c:326
 msgid "NetworkManager is not running"
 msgstr "NetworkManager nebeží"
 
-#: panel-applet/NMWirelessApplet.c:333
+#: panel-applet/NMWirelessApplet.c:332
 msgid "Scanning for wireless networks..."
 msgstr "Vyhľadávanie bezdrôtových sietí..."
 
-#: panel-applet/NMWirelessApplet.c:657
+#: panel-applet/NMWirelessApplet.c:656
 msgid "Other Wireless Networks..."
 msgstr "Ostatné bezdrôtové siete..."
 
-#: panel-applet/NMWirelessApplet.c:768
+#: panel-applet/NMWirelessApplet.c:767
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: panel-applet/NMWirelessApplet.c:885
+#: panel-applet/NMWirelessApplet.c:884
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
-#: panel-applet/essid.glade.h:4
+#: panel-applet/essid.glade.h:5
 msgid "C_onnect"
 msgstr "Prip_ojiť"
 
-#: panel-applet/essid.glade.h:5
+#: panel-applet/essid.glade.h:6
 msgid "Connect with encryption enabled"
 msgstr "Povolené pripojenie so šifrovaním"
 
-#: panel-applet/essid.glade.h:8
+#: panel-applet/essid.glade.h:9
 msgid "Wireless _Adaptor:"
 msgstr "Bezdrôtový _adaptér:"
 
-#: panel-applet/essid.glade.h:9
+#: panel-applet/essid.glade.h:10
 msgid "Wireless _Network:"
 msgstr "Bezdrôtová _sieť:"
 
