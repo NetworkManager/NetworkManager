@@ -32,6 +32,7 @@
 #include "NetworkManagerWireless.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
+#include "utils/nm-utils.h"
 
 /*
  * nm_wireless_64bit_ascii_to_hex
@@ -215,7 +216,7 @@ nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual
 		percent = level_percent;
 
 #if IW_QUAL_DEBUG
-	nm_debug ("QL: Final quality %% is %d (%d).", percent, CLAMP (percent, 0, 100));
+	nm_debug ("QL: Final quality percent is %d (%d).", percent, CLAMP (percent, 0, 100));
 #endif
 	return (CLAMP (percent, 0, 100));
 }
