@@ -1,5 +1,12 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* test/nmclienttest.c
+	  test/nminfotest.c
+		- Add missing <dbus/dbus.h> headers
+		- Add GPL message at top
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerAPList.[ch]
 	  src/Makefile.am
 		- Add.  Deal with allowed network list additions, deletions, and updates
