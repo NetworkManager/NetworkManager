@@ -725,7 +725,7 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
   gtk_widget_grab_focus (entry);
   gtk_entry_set_text (GTK_ENTRY (entry), "");
   gtk_widget_set_sensitive (button, FALSE);
-  g_signal_connect (entry, "changed", update_button_cb, button);
+  g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), button);
 
   label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
 			   _("Custom wireless network"),
@@ -817,7 +817,7 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *
   gtk_container_add (GTK_CONTAINER (menu_item), label);
   gtk_widget_show_all (menu_item);
   gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-  g_signal_connect (menu_item, "activate", custom_essid_item_selected, applet);
+  g_signal_connect (menu_item, "activate", G_CALLBACK (custom_essid_item_selected), applet);
 }
 
 

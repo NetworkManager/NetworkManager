@@ -1,3 +1,9 @@
+2004-10-26 Ray Strode <rstrode@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c:
+	  (custom_essid_item_selected):  kill some compiler
+	warnings 
+
 2004-10-26 John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c
