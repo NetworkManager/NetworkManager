@@ -1,3 +1,22 @@
+2004-12-05  Dan Williams  <dcbw@redhat.com>
+
+	* Major rework of the DHCP code, taking some cues from pump.  We don't
+		write raw Ethernet packets anymore, which simplifies the code quite
+		a bit.  The new code should be more robust, not hang in recvfrom()
+		as much, and generally work better.  This also means that we need
+		to force HAL/dbus to use a created GMainContext rather than the
+		default context, since having the DHCP renew/rebind thread using
+		its own GMainContext seemed to give dbus a fit.  There is also more
+		debugging information printed from the DHCP loop to help with future
+		problems.
+
+	* Also, if the DHCP server doesn't give us the "routersOnSubnet" option,
+		assume that the default gateway should be the DHCP server.
+
+	Patch from Matthew Schick <matt oss-institute org>
+	* src/backends/NetworkManagerGentoo.c
+		- Fix compilation error due to missing "ip4_broadcast"
+
 2004-12-03  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/Makefile.am

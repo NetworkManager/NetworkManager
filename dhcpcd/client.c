@@ -30,6 +30,10 @@
 #include <net/if_arp.h>
 #include <net/if_packet.h>
 #include <net/route.h>
+#include <arpa/inet.h>
+#include <netinet/udp.h>
+#include <netinet/ip.h>
+#include <netpacket/packet.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,21 +45,26 @@
 #include <time.h>
 #include "client.h"
 #include "buildmsg.h"
-#include "udpipgen.h"
 #include "arp.h"
 
 int DebugFlag = 1;
 #define DEBUG
 
-void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options);
+typedef struct dhcp_response_return
+{
+	unsigned int	server_ip_addr;
+	char			server_hw_addr[ETH_ALEN];
+	dhcpMessage	dhcp_msg;
+} dhcp_response_return;
+
+
+void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, dhcpOptions *options);
 
 /*****************************************************************************/
-int parseDhcpMsgRecv(udpipMessage *udp_msg, dhcpOptions *options) /* this routine parses dhcp message received */
+int parse_dhcp_reply (struct iphdr *iphdr, struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, dhcpOptions *options)
 {
-	const struct ip	*ip_msg = (struct ip *)((struct udpiphdr *)udp_msg->udpipmsg)->ip;
-	dhcpMessage		*dhcp_msg = (dhcpMessage *)&(udp_msg->udpipmsg[sizeof(udpiphdr)]);
 	register u_char	*p = dhcp_msg->options+4;
-	unsigned char		*end = dhcp_msg->options + sizeof(dhcp_msg->options);
+	unsigned char		*end = dhcp_msg->options + sizeof (dhcp_msg->options);
 
 	/* Force T1 and T2 to 0: either new values will be in message, or they
 	   will need to be recalculated from lease time */
@@ -96,47 +105,45 @@ int parseDhcpMsgRecv(udpipMessage *udp_msg, dhcpOptions *options) /* this routin
 
 swend:
 #ifdef DEBUG
-	debug_dump_dhcp_options (udp_msg, options);
+	debug_dump_dhcp_options (saddr, dhcp_msg, options);
 #endif
 
 #if 0
-	if ( ! dhcp_msg->yiaddr )
+	if ( !dhcp_msg->yiaddr )
 		dhcp_msg->yiaddr = DhcpMsgSend->ciaddr;
 #endif
 
-	if ( ! options->val[dhcpServerIdentifier] ) /* did not get dhcpServerIdentifier */
+	if (!options->val[dhcpServerIdentifier]) /* did not get dhcpServerIdentifier */
 	{
 		/* make it the same as IP address of the sender */
-		options->val[dhcpServerIdentifier] = malloc(4);
-		memcpy (options->val[dhcpServerIdentifier], &ip_msg->ip_src.s_addr, 4);
+		options->val[dhcpServerIdentifier] = malloc (4);
+		memcpy (options->val[dhcpServerIdentifier], &(iphdr->saddr), 4);
 		options->len[dhcpServerIdentifier] = 4;
 		options->num++;
-		if ( DebugFlag )
-			syslog(LOG_DEBUG, "dhcpServerIdentifier option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+		if (DebugFlag)
+			syslog (LOG_DEBUG, "dhcpServerIdentifier option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
 				((unsigned char *)options->val[dhcpServerIdentifier])[0],
 				((unsigned char *)options->val[dhcpServerIdentifier])[1],
 				((unsigned char *)options->val[dhcpServerIdentifier])[2],
 				((unsigned char *)options->val[dhcpServerIdentifier])[3]);
 	}
-	if ( ! options->val[dns] ) /* did not get DNS */
+	if (!options->val[dns]) /* did not get DNS */
 	{
 		/* make it the same as dhcpServerIdentifier */
-		options->val[dns] = malloc(4);
+		options->val[dns] = malloc (4);
 		memcpy (options->val[dns], options->val[dhcpServerIdentifier], 4);
 		options->len[dns] = 4;
 		options->num++;
 		if ( DebugFlag )
-			syslog(LOG_DEBUG, "dns option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
-				((unsigned char *)options->val[dns])[0],
-				((unsigned char *)options->val[dns])[1],
-				((unsigned char *)options->val[dns])[2],
-				((unsigned char *)options->val[dns])[3]);
+			syslog (LOG_DEBUG, "dns option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+				((unsigned char *)options->val[dns])[0], ((unsigned char *)options->val[dns])[1],
+				((unsigned char *)options->val[dns])[2], ((unsigned char *)options->val[dns])[3]);
 	}
-	if ( ! options->val[subnetMask] ) /* did not get subnetMask */
+	if (!options->val[subnetMask]) /* did not get subnetMask */
 	{
-		options->val[subnetMask] = malloc(4);
+		options->val[subnetMask] = malloc (4);
 		((unsigned char *)options->val[subnetMask])[0] = 255;
-		if ( IN_CLASSA(ntohl(dhcp_msg->yiaddr)) )
+		if (IN_CLASSA (ntohl (dhcp_msg->yiaddr)))
 		{
 			((unsigned char *)options->val[subnetMask])[1] = 0; /* class A */
 			((unsigned char *)options->val[subnetMask])[2] = 0;
@@ -145,7 +152,7 @@ swend:
 		else
 		{
 			((unsigned char *)options->val[subnetMask])[1] = 255;
-			if ( IN_CLASSB(ntohl(dhcp_msg->yiaddr)) )
+			if (IN_CLASSB (ntohl (dhcp_msg->yiaddr)))
 			{
 				((unsigned char *)(options->val[subnetMask]))[2] = 0;/* class B */
 				((unsigned char *)(options->val[subnetMask]))[3] = 0;
@@ -153,7 +160,7 @@ swend:
 			else
 			{
 				((unsigned char *)options->val[subnetMask])[2] = 255;
-				if ( IN_CLASSC(ntohl(dhcp_msg->yiaddr)) )
+				if (IN_CLASSC (ntohl (dhcp_msg->yiaddr)))
 					((unsigned char *)options->val[subnetMask])[3] = 0; /* class C */
 				else
 					((unsigned char *)options->val[subnetMask])[3] = 255;
@@ -161,59 +168,51 @@ swend:
 		}
 		options->len[subnetMask] = 4;
 		options->num++;
-		if ( DebugFlag )
-			syslog(LOG_DEBUG, "subnetMask option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
-				((unsigned char *)options->val[subnetMask])[0],
-				((unsigned char *)options->val[subnetMask])[1],
-				((unsigned char *)options->val[subnetMask])[2],
-				((unsigned char *)options->val[subnetMask])[3]);
+		if (DebugFlag)
+			syslog (LOG_DEBUG, "subnetMask option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
+				((unsigned char *)options->val[subnetMask])[0], ((unsigned char *)options->val[subnetMask])[1],
+				((unsigned char *)options->val[subnetMask])[2], ((unsigned char *)options->val[subnetMask])[3]);
 	}
-	if ( ! options->val[broadcastAddr] ) /* did not get broadcastAddr */
+	if (!options->val[broadcastAddr]) /* did not get broadcastAddr */
 	{
 		int br = dhcp_msg->yiaddr | ~*((int *)options->val[subnetMask]);
-		options->val[broadcastAddr] = malloc(4);
+		options->val[broadcastAddr] = malloc (4);
 		memcpy (options->val[broadcastAddr], &br, 4);
 		options->len[broadcastAddr] = 4;
 		options->num++;
-		if ( DebugFlag )
+		if (DebugFlag)
 			syslog(LOG_DEBUG, "broadcastAddr option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
-				((unsigned char *)options->val[broadcastAddr])[0],
-				((unsigned char *)options->val[broadcastAddr])[1],
-				((unsigned char *)options->val[broadcastAddr])[2],
-				((unsigned char *)options->val[broadcastAddr])[3]);
+				((unsigned char *)options->val[broadcastAddr])[0], ((unsigned char *)options->val[broadcastAddr])[1],
+				((unsigned char *)options->val[broadcastAddr])[2], ((unsigned char *)options->val[broadcastAddr])[3]);
 	}
-#if 0
-	if ( ! options->val[routersOnSubnet] )
+	if (!options->val[routersOnSubnet])
 	{
-		options->val[routersOnSubnet] = malloc(4);
-		if ( dhcp_msg->giaddr )
-			memcpy(options->val[routersOnSubnet],&dhcp_msg->giaddr,4);
+		options->val[routersOnSubnet] = malloc (4);
+		if (options->val[dhcpServerIdentifier])
+			memcpy (options->val[routersOnSubnet], options->val[dhcpServerIdentifier], 4);
 		else
-			memcpy(options->val[routersOnSubnet],options->val[dhcpServerIdentifier],4);
+			memcpy (options->val[routersOnSubnet], &dhcp_msg->giaddr, 4);
 		options->len[routersOnSubnet] = 4;
 		options->num++;
-		if ( DebugFlag )
-			syslog(LOG_DEBUG, "routersOnSubnet option is missing in DHCP server response. Assuming %u.%u.%u.%u\n",
-				((unsigned char *)options->val[routersOnSubnet])[0],
-				((unsigned char *)options->val[routersOnSubnet])[1],
-				((unsigned char *)options->val[routersOnSubnet])[2],
-				((unsigned char *)options->val[routersOnSubnet])[3]);
+		if (DebugFlag)
+			syslog (LOG_DEBUG, "routersOnSubnet option is missing in DHCP server response.  Assuming %u.%u.%u.%u (DHCP server)\n",
+				((unsigned char *)options->val[routersOnSubnet])[0], ((unsigned char *)options->val[routersOnSubnet])[1],
+				((unsigned char *)options->val[routersOnSubnet])[2], ((unsigned char *)options->val[routersOnSubnet])[3]);
 	}
-#endif
-	if ( options->val[dhcpIPaddrLeaseTime] && options->len[dhcpIPaddrLeaseTime] == 4 )
+	if (options->val[dhcpIPaddrLeaseTime] && options->len[dhcpIPaddrLeaseTime] == 4)
 	{
 		if ( *(unsigned int *)options->val[dhcpIPaddrLeaseTime] == 0 )
 		{
 			unsigned int	lease_time = htonl (DHCP_DEFAULT_LEASETIME);
 			memcpy (options->val[dhcpIPaddrLeaseTime], &lease_time, 4);
-			if ( DebugFlag )
-				syslog(LOG_DEBUG,"dhcpIPaddrLeaseTime=0 in DHCP server response. Assuming %u sec\n", lease_time);
+			if (DebugFlag)
+				syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime=0 in DHCP server response. Assuming %u sec\n", lease_time);
 		}
 		else
 		{
-			if ( DebugFlag )
-				syslog(LOG_DEBUG,"dhcpIPaddrLeaseTime = %u in DHCP server response.\n",
-					ntohl(*(unsigned int *)options->val[dhcpIPaddrLeaseTime]));
+			if (DebugFlag)
+				syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime = %u in DHCP server response.\n",
+					ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]));
 		}
 	}
 	else /* did not get dhcpIPaddrLeaseTime */
@@ -224,60 +223,60 @@ swend:
 		options->len[dhcpIPaddrLeaseTime] = 4;
 		options->num++;
 		if ( DebugFlag )
-			syslog(LOG_DEBUG,"dhcpIPaddrLeaseTime option is missing in DHCP server response. Assuming %u sec\n", lease_time);
+			syslog (LOG_DEBUG, "dhcpIPaddrLeaseTime option is missing in DHCP server response. Assuming %u sec\n", lease_time);
 	}
-	if ( options->val[dhcpT1value] && options->len[dhcpT1value] == 4 )
+	if (options->val[dhcpT1value] && options->len[dhcpT1value] == 4)
 	{
-		if ( *(unsigned int *)options->val[dhcpT1value] == 0 )
+		if (*(unsigned int *)options->val[dhcpT1value] == 0)
 		{
-			unsigned t2 = 0.5 * ntohl(*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
-			int t1 = htonl(t2);
+			unsigned t2 = 0.5 * ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
+			int t1 = htonl (t2);
 			memcpy (options->val[dhcpT1value],&t1,4);
 			options->len[dhcpT1value] = 4;
-			if ( DebugFlag )
-				syslog(LOG_DEBUG,"dhcpT1value is missing in DHCP server response. Assuming %u sec\n",t2);
+			if (DebugFlag)
+				syslog (LOG_DEBUG, "dhcpT1value is missing in DHCP server response. Assuming %u sec\n", t2);
 		}
 	}
 	else		/* did not get T1 */
 	{
-		unsigned t2 = 0.5*ntohl(*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
-		int t1 = htonl(t2);
+		unsigned t2 = 0.5 * ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
+		int t1 = htonl (t2);
 		options->val[dhcpT1value] = malloc(4);
 		memcpy (options->val[dhcpT1value],&t1,4);
 		options->len[dhcpT1value] = 4;
 		options->num++;
-		if ( DebugFlag )
-			syslog(LOG_DEBUG,"dhcpT1value is missing in DHCP server response. Assuming %u sec\n",t2);
+		if (DebugFlag)
+			syslog (LOG_DEBUG, "dhcpT1value is missing in DHCP server response. Assuming %u sec\n", t2);
 	}
-	if ( options->val[dhcpT2value] && options->len[dhcpT2value] == 4 )
+	if (options->val[dhcpT2value] && options->len[dhcpT2value] == 4)
 	{
-		if ( *(unsigned int *)options->val[dhcpT2value] == 0 )
+		if (*(unsigned int *)options->val[dhcpT2value] == 0)
 		{
-			unsigned t2 = 0.875*ntohl(*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
-			int t1 = htonl(t2);
-			memcpy(options->val[dhcpT2value],&t1,4);
+			unsigned t2 = 0.875 * ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
+			int t1 = htonl (t2);
+			memcpy (options->val[dhcpT2value],&t1,4);
 			options->len[dhcpT2value] = 4;
-			if ( DebugFlag )
-				syslog(LOG_DEBUG,"dhcpT2value is missing in DHCP server response. Assuming %u sec\n",t2);
+			if (DebugFlag)
+				syslog (LOG_DEBUG, "dhcpT2value is missing in DHCP server response. Assuming %u sec\n", t2);
 		}
 	}
 	else		/* did not get T2 */
 	{
-		unsigned t2 = 0.875*ntohl(*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
-		int t1 = htonl(t2);
+		unsigned t2 = 0.875 * ntohl (*(unsigned int *)options->val[dhcpIPaddrLeaseTime]);
+		int t1 = htonl (t2);
 		options->val[dhcpT2value] = malloc(4);
-		memcpy(options->val[dhcpT2value],&t1,4);
+		memcpy (options->val[dhcpT2value],&t1,4);
 		options->len[dhcpT2value] = 4;
 		options->num++;
-		if ( DebugFlag )
-			syslog(LOG_DEBUG,"dhcpT2value is missing in DHCP server response. Assuming %u sec\n",t2);
+		if (DebugFlag)
+			syslog (LOG_DEBUG, "dhcpT2value is missing in DHCP server response. Assuming %u sec\n", t2);
 	}
-	if ( options->val[dhcpMessageType] )
+	if (options->val[dhcpMessageType])
 		return *(unsigned char *)options->val[dhcpMessageType];
 	return -1;
 }
 /*****************************************************************************/
-void classIDsetup(dhcp_interface *iface, const char *g_cls_id)
+void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 {
 	unsigned int	 g_cls_id_len = 0;
 
@@ -301,7 +300,7 @@ void classIDsetup(dhcp_interface *iface, const char *g_cls_id)
 	}
 }
 /*****************************************************************************/
-void clientIDsetup(dhcp_interface *iface, const char *g_cli_id)
+void client_id_setup (dhcp_interface *iface, const char *g_cli_id)
 {
 	unsigned int	 g_cli_id_len = 0;
 	unsigned char	*c = iface->cli_id;
@@ -322,13 +321,13 @@ void clientIDsetup(dhcp_interface *iface, const char *g_cli_id)
 	else
 	{
 		*c++ = ETH_ALEN + 1;	        /* length: 6 (MAC Addr) + 1 (# field) */
-		*c++ = (iface->bTokenRing) ? ARPHRD_IEEE802_TR : ARPHRD_ETHER;	/* type: Ethernet address */
+		*c++ = ARPHRD_ETHER;	/* type: Ethernet address */
 		memcpy (c, iface->chaddr, ETH_ALEN);
 		iface->cli_id_len = ETH_ALEN + 3;
 	}
 }
 /*****************************************************************************/
-void releaseDhcpOptions (dhcp_interface *iface)
+void release_dhcp_options (dhcp_interface *iface)
 {
 	register int i;
 	for ( i = 1; i < 256; i++ )
@@ -337,114 +336,13 @@ void releaseDhcpOptions (dhcp_interface *iface)
 			free(iface->dhcp_options.val[i]);
 	}
 
-	memset(&(iface->dhcp_options), 0, sizeof(dhcpOptions));
-}
-/*****************************************************************************/
-#ifdef DEBUG
-static void dumpframe(const char *title, struct packed_ether_header *frame)
-{
-	int i;
-	unsigned char *dp;
-
-	printf("%s:", title);
-	dp = (unsigned char *)frame;
-	for (i = 0; i < 32; i++)
-	{
-		if ((i % 16) == 0)
-			printf("\n");
-		printf("0x%02X ", *dp++);
-	}
-}
-#endif /* DEBUG */
-/*****************************************************************************/
-/***** convert ethernet and token-ring frames *****/
-int eth2tr(struct packed_ether_header *frame, int datalen)
-{
-	struct trh_hdr *phdr;
-	struct trllc *pllc;
-	char trheader[sizeof(struct trh_hdr) - sizeof(phdr->rseg) + sizeof(struct trllc)];
-	int len;
-
-#ifdef DEBUG
-	dumpframe("eth2tr: Incoming eth frame", frame);
-#endif
-	memset(trheader, 0, sizeof(trheader));
-	phdr = (struct trh_hdr *)trheader;
-	phdr->ac = AC;
-	phdr->fc = LLC_FRAME;
-	memcpy(phdr->daddr, frame->ether_dhost, TR_ALEN);
-	memcpy(phdr->saddr, frame->ether_shost, TR_ALEN);
-	if (phdr->daddr[0] & 0x80)
-	{ /* Destination is a broadcast */
-		phdr->rcf = sizeof(phdr->rcf) | htons(TR_RCF_BROADCAST | 0x70); /* Unlimited frame length */
-		pllc = (struct trllc *)&phdr->rseg[0];
-		phdr->saddr[0] |= TR_RII; /* Set source-route indicator */
-		len = sizeof(trheader);
-	}
-	else
-	{
-		pllc = (struct trllc *)&phdr->rcf;
-		len = sizeof(trheader) - sizeof(phdr->rcf);
-	}
-	pllc->dsap = EXTENDED_SAP;
-	pllc->ssap = EXTENDED_SAP;
-	pllc->llc = UI_CMD;
-	pllc->protid[0] = pllc->protid[1] = pllc->protid[2] = 0;
-	pllc->ethertype = frame->ether_type;
-	/* Make room for larger TR header */
-	memmove((char *)(frame + 1) + (len - sizeof(struct packed_ether_header)), frame + 1, datalen);
-	memcpy(frame, trheader, len); /* Install TR header */
-#ifdef DEBUG
-	dumpframe("eth2tr: Outgoing tr frame", frame);
-#endif
-	return len + datalen;
-}
-/*****************************************************************************/
-int tr2eth(struct packed_ether_header *frame)
-{
-	struct trh_hdr hdr;
-	struct trllc *pllc;
-	int hlen = 0;
-
-#ifdef DEBUG
-	dumpframe("tr2eth: Incoming tr frame", frame);
-#endif
-	hdr = *((struct trh_hdr *)frame);
-	if (hdr.saddr[0] & TR_RII)
-	{
-		fake_rif:
-		hlen = hdr.rcf & ntohs(TR_RCF_LEN_MASK);
-	#ifdef DEBUG
-		printf("rcf = 0x%X SR len %d\n", hdr.rcf, hlen);
-	#endif
-		if (hlen < sizeof(hdr.rcf) || (hlen & 1))
-			return 1;
-		hdr.saddr[0] &= ~TR_RII;
-	}
-	pllc = (struct trllc *)(((__u8 *)frame) + sizeof(struct trh_hdr) - TR_MAXRIFLEN + hlen);
-	if (pllc->dsap != EXTENDED_SAP || pllc->llc != UI_CMD)
-	{
-		if (hlen == 0)
-			goto fake_rif;	/* Bug in 2.2.3 kernel */
-	#ifdef DEBUG
-		printf("corrupted TR-IP packet of ui=0x%x and dsap 0x%x discarded\n", pllc->llc, pllc->dsap);
-	#endif
-		return 1;
-	}
-	memcpy(frame->ether_dhost, hdr.daddr, ETH_ALEN);
-	memcpy(frame->ether_shost, hdr.saddr, ETH_ALEN);
-	frame->ether_type = pllc->ethertype;
-	memmove(frame + 1, pllc + 1, IPPACKET_SIZE); /* Move data portion: Overlapping buffer */
-#ifdef DEBUG
-	dumpframe("tr2eth: Outgoing eth frame", frame);
-#endif
-	return 0;
+	memset (&(iface->dhcp_options), 0, sizeof (dhcpOptions));
 }
 /*****************************************************************************/
 /* Subtract the `struct timeval' values X and Y,
    storing the result in RESULT.
    Return 1 if the difference is negative, otherwise 0.  */
-static int timeval_subtract(struct timeval *result, struct timeval *x, struct timeval *y)
+static int timeval_subtract (struct timeval *result, struct timeval *x, struct timeval *y)
 {
 	/* Perform the carry for the later subtraction by updating Y. */
 	if (x->tv_usec < y->tv_usec)
@@ -469,266 +367,299 @@ static int timeval_subtract(struct timeval *result, struct timeval *x, struct ti
 	return x->tv_sec < y->tv_sec;
 }
 /*****************************************************************************/
-int peekfd (dhcp_interface *iface, time_t tv_usec)
+/* Ripped from pump.
+ */
+int verify_checksum(void * buf, int length, void * buf2, int length2)
 {
-	fd_set fs;
-	struct timeval begin;
-	time_t i = tv_usec;
+	unsigned int csum;
+	unsigned short * sp;
 
-	FD_ZERO (&fs);
-	FD_SET (iface->sk, &fs);
-	gettimeofday (&begin, NULL);
+	csum = 0;
+	for (sp = (unsigned short *) buf; length > 0; (length -= 2), sp++)
+		csum += *sp;
+
+	/* this matches rfc 1071, but not Steven's */
+	if (length)
+		csum += *((unsigned char *) sp);
+
+	for (sp = (unsigned short *) buf2; length2 > 0; (length2 -= 2), sp++)
+		csum += *sp;
+
+	/* this matches rfc 1071, but not Steven's */
+	if (length)
+		csum += *((unsigned char *) sp);
+
+	while (csum >> 16)
+		csum = (csum & 0xffff) + (csum >> 16);
+
+	if (csum!=0x0000 && csum != 0xffff)
+		return 0;
+
+	return 1;
+}
+/*****************************************************************************/
+/* "timeout" should be the future point in time when we wish to stop
+ * checking for data on the socket.
+ */
+int peekfd (dhcp_interface *iface, int sk, struct timeval *timeout)
+{
+	struct timeval diff;
+	struct timeval now;
 
 	/* Wake up each second to check whether or not we've been told
-	 * to stop with iface->cease
+	 * to stop with iface->cease and check our timeout.
 	 */
-	while (i > 0)
+	gettimeofday (&now, NULL);
+	syslog (LOG_INFO, "DHCP waiting for data, overall timeout = {%ds, %dus}\n", (int)timeout->tv_sec, (int)timeout->tv_usec);
+	while (timeval_subtract (&diff, timeout, &now) == 0)
 	{
-		struct timeval now;
-		struct timeval diff;
+		fd_set fs;
 		struct timeval wait = {1, 0};
+		syslog (LOG_INFO, "DHCP waiting for data, remaining timeout = {%ds, %dus}\n", (int)diff.tv_sec, (int)diff.tv_usec);
 
-		if ( select (iface->sk+1, &fs, NULL, NULL, &wait) == -1 )
+		FD_ZERO (&fs);
+		FD_SET (sk, &fs);
+
+		if (select (sk+1, &fs, NULL, NULL, &wait) == -1)
 			return RET_DHCP_ERROR;
-		if ( FD_ISSET(iface->sk, &fs) )
+		if (FD_ISSET(sk, &fs))
 			return RET_DHCP_SUCCESS;
-		gettimeofday (&now, NULL);
-		timeval_subtract (&diff, &now, &begin);
-		i = tv_usec - ((diff.tv_sec * 1000000) + diff.tv_usec);
 		if (iface->cease)
 			return RET_DHCP_CEASED;
-	}
+		gettimeofday (&now, NULL);
+	};
 	return RET_DHCP_TIMEOUT;
 }
 /*****************************************************************************/
-int dhcpSendAndRecv (dhcp_interface *iface, unsigned int expected_reply_type,
-				dhcp_msg_build_proc buildUdpIpMsg, udpipMessage **return_msg)
+int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_type,
+				dhcp_msg_build_proc build_dhcp_msg, dhcp_response_return *dhcp_return)
 {
-	udpipMessage		*udp_msg_recv = NULL;
-	struct sockaddr	addr;
-	int				len, err = RET_DHCP_TIMEOUT, local_timeout = 0;
-	int				j = DHCP_INITIAL_RTO / 2;
-	struct timeval		local_begin, current, diff;
-	struct timeval		overall_end;
+	char				*pkt_recv = NULL;
+	int				recv_sk = -1;
+	struct sockaddr_in	addr;
+	int				tries = -1;
+	int				dhcp_send_len, err = RET_DHCP_TIMEOUT;
+	dhcpMessage		*dhcp_send = NULL;
+	struct timeval		recv_timeout, overall_end, diff, current;
 
-	*return_msg = NULL;
+	if (!dhcp_return)
+		return RET_DHCP_ERROR;
+	memset (dhcp_return, 0, sizeof (dhcp_response_return));
 
+	pkt_recv = malloc (sizeof (char) * ETH_FRAME_LEN);
+	if (!pkt_recv)
+		return RET_DHCP_ERROR;
+
+	/* Call the specific DHCP message building routine for this request */
+	if (!(dhcp_send = build_dhcp_msg (iface, &dhcp_send_len, &addr)))
+	{
+		err = RET_DHCP_ERROR;
+		goto out;
+	}
+
+	recv_sk = socket (AF_PACKET, SOCK_DGRAM, ntohs (ETH_P_IP));
+	if (recv_sk < 0)
+	{
+		err = RET_DHCP_ERROR;
+		goto out;
+	}
+
+	/* Setup the time in the future to quit doing DHCP stuff.  If we reach this time,
+	 * we return RET_DHCP_TIMEOUT.
+	 */
 	gettimeofday (&overall_end, NULL);
 	overall_end.tv_sec += iface->client_options->base_timeout;
 
+	/* Send the request, then wait for the reply for a certain period of time
+	 * that increases with each failed request.  Quit when we reach our end time though.
+	 */
+	syslog (LOG_INFO, "DHCP: Starting request loop");
 	do
 	{
-		udpipMessage	*udp_msg_send = buildUdpIpMsg (iface);
-		int			 send_err = 0;
-
-		if (!udp_msg_send)
-			return RET_DHCP_ERROR;
-
-		j += j;
-		if (j > DHCP_MAX_RTO)
-			j = DHCP_MAX_RTO;
-
-		/* Make sure waiting j seconds isn't greater than our overall time left
-		 * on this operation, and clamp j to the overall time left if it is.
-		 */
-		gettimeofday (&current, NULL);
-		if (timeval_subtract (&diff, &overall_end, &current))
-		{
-			free (udp_msg_send);
-			return RET_DHCP_TIMEOUT;
-		}
-		if (j > ((diff.tv_sec * 1000000) + diff.tv_usec))
-			j = (diff.tv_sec * 1000000) + diff.tv_usec;
-
-		if (iface->bTokenRing)      /* Here we convert a Eth frame into an TR frame */
-			len = eth2tr (&(udp_msg_send->ethhdr), sizeof(udpiphdr) + sizeof(dhcpMessage));
-		else
-			len = sizeof (struct packed_ether_header) + sizeof(udpiphdr) + sizeof(dhcpMessage);
-
-		memset (&addr, 0, sizeof(struct sockaddr));
-		memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-		do
-		{
-			send_err = sendto (iface->sk, udp_msg_send, len, MSG_DONTWAIT, &addr, sizeof(struct sockaddr));
-			if (iface->cease || ((send_err == -1) && (errno != EAGAIN)))
-			{
-				free (udp_msg_send);
-				return iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
-			}
-		} while ((send_err == -1) && (errno == EAGAIN));
-
-		free (udp_msg_send);
-		gettimeofday (&local_begin, NULL);
-		err = peekfd (iface, (j + random () % 200000));
-		if (iface->cease || (err == RET_DHCP_CEASED))
-			return RET_DHCP_CEASED;
-	} while ( err == RET_DHCP_TIMEOUT );
-
-	do
-	{
-		struct ip			 ipRecv_local;
+		struct iphdr		*ip_hdr;
+		struct udphdr		*udp_hdr;
 		char				*tmp_ip;
-		const struct udphdr	*udp_msg_recv_hdr;
-		dhcpMessage		*dhcp_msg_recv;
+		dhcpMessage		*dhcp_msg_recv = NULL;
 		int				 reply_type = -1;
 		char				 foobuf[512];
-		int				 i, o;
+		struct sockaddr_ll	 server_hw_addr;
+		int				 o;
+		char				 ethPacket[ETH_FRAME_LEN];
+		int				 len;
 
-		udp_msg_recv = calloc (1, sizeof (udpipMessage));
-		o = sizeof (struct sockaddr);
+		/* Send the DHCP request */
+		syslog (LOG_INFO, "DHCP: Sending request packet...");
 		do
 		{
-			len = recvfrom (iface->sk, udp_msg_recv, sizeof(udpipMessage), MSG_DONTWAIT, (struct sockaddr *)&addr, &o);
-			if (iface->cease || ((len == -1) && (errno != EAGAIN)))
+			err = sendto (iface->sk, dhcp_send, dhcp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
+			if (iface->cease || ((err == -1) && (errno != EAGAIN)))
 			{
-				free (udp_msg_recv);
-				return iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
+				syslog (LOG_INFO, "DHCP: error sending, cease = %d, err = %d, errno = %d", iface->cease, err, errno);
+				err = iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
+				goto out;
 			}
-		} while ((len == -1) && (errno == EAGAIN));
 
-		if (iface->bTokenRing)
-		{    /* Here we convert a TR frame into an Eth frame */
-			if (tr2eth (&(udp_msg_recv->ethhdr)))
+			/* Return if we've exceeded our timeout */
+			gettimeofday (&current, NULL);
+			if (timeval_subtract (&diff, &overall_end, &current) != 0)
 			{
-				free (udp_msg_recv);
-				continue;
+				err = RET_DHCP_TIMEOUT;
+				syslog (LOG_INFO, "DHCP: Send timeout");
+				goto out;
 			}
-		}
+		} while ((err == -1) && (errno == EAGAIN));
+		syslog (LOG_INFO, "DHCP: Sent request packet.");
 
-		gettimeofday (&current, NULL);
-		timeval_subtract (&diff, &current, &local_begin);
-		local_timeout = j - diff.tv_sec * 1000000 - diff.tv_usec + random() % 200000;
-
-		/* Make sure waiting local_timeout seconds isn't greater than our overall time left
-		 * on this operation, and clamp local_timeout to the overall time left if it is.
+		/* Set up the future time at which point to stop waiting for data
+		 * on our socket and try the request again.  If that future point is
+		 * later than our overall DHCP operation timeout (overall_end) then
+		 * clamp the receive timeout to overall_end.
 		 */
-		if (timeval_subtract (&diff, &overall_end, &current))
-		{
-			free (udp_msg_recv);
-			return RET_DHCP_TIMEOUT;
-		}
-		if ((local_timeout*1000000) > ((diff.tv_sec * 1000000) + diff.tv_usec))
-			local_timeout = (diff.tv_sec * 1000000) + diff.tv_usec;
+		tries++;
+		gettimeofday (&recv_timeout, NULL);
+		recv_timeout.tv_sec += (tries * DHCP_INITIAL_RTO);
+		recv_timeout.tv_sec += (random () % 200000);
+		if (timeval_subtract (&diff, &overall_end, &recv_timeout) != 0)
+			memcpy (&recv_timeout, &overall_end, sizeof (struct timeval));
 
-		/* Ignore non-IP packets */
-		if ( udp_msg_recv->ethhdr.ether_type != htons(ETHERTYPE_IP) )
+		/* Wait for some kind of data to appear on the socket */
+		syslog (LOG_INFO, "DHCP: Waiting for reply...");
+		if ((err = peekfd (iface, recv_sk, &recv_timeout) != RET_DHCP_SUCCESS))
 		{
-			free (udp_msg_recv);
-			continue;
+			if (err == RET_DHCP_TIMEOUT)
+				continue;
+			goto out;
 		}
+		syslog (LOG_INFO, "DHCP: Got some data to check for reply packet.");
 
-		tmp_ip = udp_msg_recv->udpipmsg;
-		for (i = 0; i < sizeof (struct ip) - 2; i += 2)
+		/* Peek from the data until we get a full amount or a timeout has occurred */
+		memset (pkt_recv, 0, ETH_FRAME_LEN);
+		o = sizeof (struct sockaddr_ll);
+		do
 		{
-			if ( ( udp_msg_recv->udpipmsg[i] == 0x45 ) && ( udp_msg_recv->udpipmsg[i+1] == 0x00 ) )
+			o = sizeof (server_hw_addr);
+			len = recvfrom (recv_sk, ethPacket, sizeof (ethPacket), MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server_hw_addr, &o);
+			if (iface->cease || ((len == -1) && (errno != EAGAIN)) || (len == 0))
 			{
-				tmp_ip = &(udp_msg_recv->udpipmsg[i]);
-				break;
+				err = iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
+				goto out;
 			}
-		}
 
-		/* Use local copy because ipRecv is not aligned.  */
-		memcpy (&ipRecv_local, ((struct udpiphdr *)tmp_ip)->ip, sizeof(struct ip));
-		udp_msg_recv_hdr = (struct udphdr *)((char*)(((struct udpiphdr*)tmp_ip)->ip)+sizeof(struct ip));
-		if ( ipRecv_local.ip_p != IPPROTO_UDP )
-		{
-			free (udp_msg_recv);
-			continue;
-		}
-
-		if ( iface->bTokenRing && (udp_msg_recv_hdr->uh_dport != htons(DHCP_CLIENT_PORT)))
-		{
-			free (udp_msg_recv);
-			continue;
-		}
-
-		len -= sizeof(struct packed_ether_header);
-		i = (int)ntohs (ipRecv_local.ip_len);
-		if ( len < i )
-		{
-			if ( DebugFlag )
-				syslog(LOG_DEBUG, "corrupted IP packet of size=%d and ip_len=%d discarded\n", len,i);
-			free (udp_msg_recv);
-			continue;
-		}
-
-		len = i - (ipRecv_local.ip_hl << 2);
-		i = (int)ntohs(udp_msg_recv_hdr->uh_ulen);
-		if ( len < i )
-		{
-			if ( DebugFlag )
-				syslog(LOG_DEBUG, "corrupted UDP msg of size=%d and uh_ulen=%d discarded\n", len,i);
-			free (udp_msg_recv);
-			continue;
-		}
-
-		if ( iface->client_options->do_checksum && (len = udpipchk((udpiphdr *)tmp_ip)))
-		{
-			if ( DebugFlag )
+			/* Return if we've exceeded our timeout */
+			gettimeofday (&current, NULL);
+			if (timeval_subtract (&diff, &overall_end, &current) != 0)
 			{
-				switch ( len )
-				{
-					case -1:
-						syslog(LOG_DEBUG, "corrupted IP packet with ip_len=%d discarded\n", (int)ntohs(ipRecv_local.ip_len));
-						break;
-					case -2:
-						syslog(LOG_DEBUG, "corrupted UDP msg with uh_ulen=%d discarded\n", (int)ntohs(udp_msg_recv_hdr->uh_ulen));
-						break;
-				}
+				err = RET_DHCP_TIMEOUT;
+				goto out;
 			}
-			free (udp_msg_recv);
-			continue;
-		}
+			syslog (LOG_INFO, "DHCP: Received data of len %d, looking for at least %d", len, (sizeof (struct iphdr) + sizeof (struct udphdr)));
+		} while (len < (sizeof (struct iphdr) + sizeof (struct udphdr)));
 
-		dhcp_msg_recv = (dhcpMessage *)&(tmp_ip[(ipRecv_local.ip_hl << 2) + sizeof(struct udphdr)]);
-		if ( dhcp_msg_recv->xid != iface->xid )
+		/* Ok, we allegedly have the data we need, so grab it from the queue */
+		o = sizeof (struct sockaddr_ll);
+		len = recvfrom (recv_sk, pkt_recv, ETH_FRAME_LEN, 0, (struct sockaddr *)&server_hw_addr, &o);
+		syslog (LOG_INFO, "DHCP: actual data length was %d", len);
+		if (len < (sizeof (struct iphdr) + sizeof (struct udphdr)))
 		{
-			free (udp_msg_recv);
+			syslog (LOG_INFO, "DHCP: Data length failed minimum length check (should be %d, got %d)", (sizeof (struct iphdr) + sizeof (struct udphdr)), len);
 			continue;
 		}
 
-		if (	dhcp_msg_recv->htype != ARPHRD_ETHER && dhcp_msg_recv->htype != (char)ARPHRD_IEEE802_TR )
+		ip_hdr = (struct iphdr *) pkt_recv;
+		if (!verify_checksum (NULL, 0, ip_hdr, sizeof (struct iphdr)))
 		{
-			if ( DebugFlag )
-				syslog (LOG_DEBUG,"wrong msg htype 0x%X discarded\n", dhcp_msg_recv->htype);
-			free (udp_msg_recv);
+			syslog (LOG_INFO, "DHCP: Reply message had bad IP checksum, won't use it.");
 			continue;
 		}
 
-		if ( dhcp_msg_recv->op != DHCP_BOOTREPLY )
+		if (ntohs (ip_hdr->tot_len) > len)
 		{
-			free (udp_msg_recv);
+			syslog (LOG_INFO, "DHCP: Reply message had mismatch in length (IP header said %d, packet was really %d), won't use it.", ntohs (ip_hdr->tot_len), len);
+			continue;
+		}
+		len = ntohs (ip_hdr->tot_len);
+
+		if (ip_hdr->protocol != IPPROTO_UDP)
+		{
+			syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
 			continue;
 		}
 
-		while ((iface->foo_sk > 0) && recvfrom (iface->foo_sk, (void *)foobuf, sizeof(foobuf), 0, NULL, NULL) != -1);
+		udp_hdr = (struct udphdr *) (pkt_recv + sizeof (struct iphdr));
+		if (ntohs (udp_hdr->source) != DHCP_SERVER_PORT)
+		{
+			syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
+			continue;
+		}
+		if (ntohs (udp_hdr->dest) != DHCP_CLIENT_PORT) 
+		{
+			syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
+			continue;
+		}
+
+		/* Ok, packet appears to be OK */
+		/* Ensure DHCP packet is 0xFF terminated, which isn't the case on Cisco 800 series ISDN router */
+		dhcp_msg_recv = malloc (sizeof (dhcpMessage));
+		memset (dhcp_msg_recv, 0xFF, sizeof (dhcpMessage));
+		memcpy (dhcp_msg_recv, (char *) udp_hdr + sizeof (struct udphdr), len - sizeof (struct iphdr) - sizeof (struct udphdr));
+
+		if (dhcp_msg_recv->xid != iface->xid)
+		{
+			syslog (LOG_INFO, "DHCP: Reply message's XID does not match expected XID (message %d, expected %d), won't use it.", dhcp_msg_recv->xid, iface->xid);
+			free (dhcp_msg_recv);
+			continue;
+		}
+
+		if (dhcp_msg_recv->htype != ARPHRD_ETHER)
+		{
+			if (DebugFlag)
+				syslog (LOG_DEBUG, "DHCP: Reply message's header type was not ARPHRD_ETHER (messgae %d, expected %d), won't use it.", dhcp_msg_recv->htype, ARPHRD_ETHER);
+			free (dhcp_msg_recv);
+			continue;
+		}
+
+		if (dhcp_msg_recv->op != DHCP_BOOTREPLY)
+		{
+			syslog (LOG_INFO, "DHCP: Reply message was not a bootp/DHCP reply, won't use it.");
+			free (dhcp_msg_recv);
+			continue;
+		}
+
+		/* Clear out all data remaining on the interface in preparation for another broadcast if needed */
+		while ((iface->foo_sk > 0) && recvfrom (iface->foo_sk, (void *)foobuf, sizeof (foobuf), 0, NULL, NULL) != -1);
 
 		/* Copy DHCP response options from received packet into local options list */
-		reply_type = parseDhcpMsgRecv (udp_msg_recv, &(iface->dhcp_options));
-		if ( expected_reply_type == reply_type )
+		reply_type = parse_dhcp_reply (ip_hdr, &server_hw_addr, dhcp_msg_recv, &(iface->dhcp_options));
+		if (expected_reply_type == reply_type)
 		{
-			*return_msg = udp_msg_recv;
-			return RET_DHCP_SUCCESS;
+			memcpy (&dhcp_return->server_ip_addr, &(ip_hdr->saddr), 4);
+			memcpy (&dhcp_return->server_hw_addr, &server_hw_addr, ETH_ALEN);
+			memcpy (&dhcp_return->dhcp_msg, dhcp_msg_recv, sizeof (dhcpMessage));
+			free (dhcp_msg_recv);
+			err = RET_DHCP_SUCCESS;
+			goto out;
 		}
-
-		free (udp_msg_recv);
-		udp_msg_recv = NULL;
+		free (dhcp_msg_recv);
 
 		if (reply_type == DHCP_NAK)
 		{
-			if ( iface->dhcp_options.val[dhcpMsg] )
-				syslog(LOG_ERR, "DHCP_NAK server response received: %s\n", (char *)iface->dhcp_options.val[dhcpMsg]);
+			if (iface->dhcp_options.val[dhcpMsg])
+				syslog (LOG_ERR, "DHCP: DHCP_NAK response received: %s.", (char *)iface->dhcp_options.val[dhcpMsg]);
 			else
-				syslog(LOG_ERR, "DHCP_NAK server response received\n");
-			return RET_DHCP_NAK;
+				syslog (LOG_ERR, "DHCP: DHCP_NAK response received.");
+			err = RET_DHCP_NAK;
+			goto out;
 		}
+		gettimeofday (&current, NULL);
+	} while (timeval_subtract (&diff, &overall_end, &current) == 0);
 
-		err = peekfd (iface, local_timeout);
-		if (iface->cease || (err == RET_DHCP_CEASED))
-			return RET_DHCP_CEASED;
-	} while ((local_timeout > 0) && (err == RET_DHCP_SUCCESS));
-
-	return RET_DHCP_TIMEOUT;
+out:
+	free (dhcp_send);
+	if (err != RET_DHCP_SUCCESS)
+		free (pkt_recv);
+	if (recv_sk >= 0)
+		close (recv_sk);
+	return err;
 }
 /*****************************************************************************/
 int dhcp_reboot (dhcp_interface *iface)
@@ -744,19 +675,18 @@ int dhcp_reboot (dhcp_interface *iface)
 
 	if (!iface) return RET_DHCP_ERROR;
 
-	releaseDhcpOptions (iface);
-	return dhcp_request (iface, &buildDhcpReboot);
+	release_dhcp_options (iface);
+	return dhcp_request (iface, &build_dhcp_reboot);
 }
 /*****************************************************************************/
 int dhcp_init (dhcp_interface *iface)
 {
-	udpipMessage	*msg = NULL;
-	dhcpMessage	*dhcp_msg = NULL;
-	int			 err;
+	dhcp_response_return	dhcp_resp;
+	int					err;
 
 	if (!iface) return RET_DHCP_ERROR;
 
-	releaseDhcpOptions (iface);
+	release_dhcp_options (iface);
 
 #ifdef DEBUG
 	syslog (LOG_DEBUG, "ClassID  = \"%s\"\n"
@@ -769,93 +699,84 @@ int dhcp_init (dhcp_interface *iface)
 	if ( DebugFlag )
 		syslog (LOG_INFO, "Broadcasting DHCP_DISCOVER\n");
 	iface->xid = random ();
-	err = dhcpSendAndRecv (iface, DHCP_OFFER, &buildDhcpDiscover, &msg);
+	err = dhcp_handle_transaction (iface, DHCP_OFFER, &build_dhcp_discover, &dhcp_resp);
 	if (err != RET_DHCP_SUCCESS)
 		return err;
 
-	dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-	if ( iface->client_options->send_second_discover )
+	if (iface->client_options->send_second_discover)
 	{
-		udpipMessage	*msg2 = NULL;
+		dhcp_response_return	dhcp_resp2;
 
 		if (DebugFlag)
 			syslog (LOG_INFO, "Broadcasting second DHCP_DISCOVER\n");
 
-		iface->xid = dhcp_msg->xid;
-		err = dhcpSendAndRecv (iface, DHCP_OFFER, &buildDhcpDiscover, &msg2);
+		iface->xid = dhcp_resp.dhcp_msg.xid;
+		err = dhcp_handle_transaction (iface, DHCP_OFFER, &build_dhcp_discover, &dhcp_resp2);
 		if (err == RET_DHCP_SUCCESS)
-		{
-			free (msg);
-			msg = msg2;
-		}
-		dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
+			memcpy (&dhcp_resp, &dhcp_resp2, sizeof (dhcp_response_return));
 	}
 
-	iface->ciaddr = dhcp_msg->yiaddr;
+	iface->ciaddr = dhcp_resp.dhcp_msg.yiaddr;
 	memcpy (&(iface->siaddr), iface->dhcp_options.val[dhcpServerIdentifier], 4);
-	memcpy (iface->shaddr, msg->ethhdr.ether_shost, ETH_ALEN);
-	iface->xid = dhcp_msg->xid;
+	memcpy (iface->shaddr, dhcp_resp.server_hw_addr, ETH_ALEN);
+	iface->xid = dhcp_resp.dhcp_msg.xid;
 
 	/* DHCP_OFFER received */
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
-		syslog (LOG_INFO, "DHCP_OFFER received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_OFFER received from %s (%u.%u.%u.%u)\n", dhcp_resp.dhcp_msg.sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[3]);
 	}
-	free (msg);
 
-	return dhcp_request (iface, &buildDhcpRequest);
+	return dhcp_request (iface, &build_dhcp_request);
 }
 /*****************************************************************************/
 int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 {
-	udpipMessage	*msg = NULL;
-	int			 err;
+	dhcp_response_return	dhcp_resp;
+	int					err;
 
 	/* DHCP state REQUEST: request an address from a _particular_ DHCP server */
 
 	if (!iface) return RET_DHCP_ERROR;
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
 		syslog (LOG_INFO, "Broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 	}
 
-	err = dhcpSendAndRecv (iface, DHCP_ACK, buildDhcpMsg, &msg);
+	err = dhcp_handle_transaction (iface, DHCP_ACK, buildDhcpMsg, &dhcp_resp);
 	if (err != RET_DHCP_SUCCESS)
 		return err;
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
-		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_resp.dhcp_msg.sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[3]);
 	}
 
-	iface->req_sent_time = time (NULL);
-
 #ifdef ARPCHECK
 	/* check if the offered IP address already in use */
-	if ( arpCheck(iface) )
+	if (arpCheck(iface))
 	{
-		if ( DebugFlag )
+		if (DebugFlag)
 			syslog (LOG_INFO, "requested %u.%u.%u.%u address is in use\n",
 				((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 				((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
-		dhcpDecline();
+		dhcpDecline ();
 		iface->ciaddr = 0;
 		return RET_DHCP_ADDRESS_IN_USE;
 	}
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
 		syslog (LOG_INFO, "verified %u.%u.%u.%u address is not in use\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
@@ -865,39 +786,17 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 
 	/* Successfull ACK: Use the fields obtained for future requests */
 	memcpy (&(iface->siaddr), iface->dhcp_options.val[dhcpServerIdentifier], 4);
-	memcpy (iface->shaddr, msg->ethhdr.ether_shost, ETH_ALEN);
-	free (msg);
+	memcpy (iface->shaddr, dhcp_resp.server_hw_addr, ETH_ALEN);
 
 	return RET_DHCP_BOUND;
 }
 /*****************************************************************************/
-#if 0
-int dhcp_bound(dhcp_interface *iface)
-{
-	int i;
-
-	i = iface->req_sent_time + ntohl(*(unsigned int *)(iface->dhcp_options.val[dhcpT1value])) - time (NULL);
-	if ( i > 0 )
-		alarm(i);
-	else
-		return STATE_DHCP_RENEW;
-	sleep (ntohl(*(u_int *)(iface->dhcp_options.val[dhcpT1value])));
-
-	return STATE_DHCP_RENEW;
-}
-#endif
-/*****************************************************************************/
 int dhcp_renew(dhcp_interface *iface)
 {
-	udpipMessage	*msg = NULL;
-	int			 err;
+	dhcp_response_return	dhcp_resp;
+	int					err;
 
 	/* DHCP state RENEW: request renewal of our lease from the original DHCP server */
-
-#if 0
-	i = iface->req_sent_time + ntohl(*(unsigned int *)(iface->dhcp_options.val[dhcpT2value])) - time(NULL);
-#endif
-
 	if (!iface) return RET_DHCP_ERROR;
 
 	if ( DebugFlag )
@@ -910,40 +809,31 @@ int dhcp_renew(dhcp_interface *iface)
 	}
 
 	iface->xid = random();
-	err = dhcpSendAndRecv (iface, DHCP_ACK, &buildDhcpRenew, &msg);
+	err = dhcp_handle_transaction (iface, DHCP_ACK, &build_dhcp_renew, &dhcp_resp);
 	if (err != RET_DHCP_SUCCESS);
 		return err;
 
-	iface->req_sent_time = time (NULL);
-
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
-		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_resp.dhcp_msg.sname,
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[3]);
 	}
-	free (msg);
 
 	return RET_DHCP_BOUND;
 }
 /*****************************************************************************/
 int dhcp_rebind(dhcp_interface *iface)
 {
-	udpipMessage	*msg = NULL;
-	int			 err;
+	dhcp_response_return	dhcp_resp;
+	int					err;
 
 	/* DHCP state REBIND: request renewal of our lease from _any_ DHCP server */
-
-#if 0
-	i = iface->req_sent_time + ntohl(*(unsigned int *)(iface->dhcp_options.val[dhcpIPaddrLeaseTime])) - time(NULL);
-#endif
-
 	if (!iface) return RET_DHCP_ERROR;
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
 		syslog (LOG_INFO,"Broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0],
@@ -953,16 +843,13 @@ int dhcp_rebind(dhcp_interface *iface)
 	}
 
 	iface->xid = random ();
-	err = dhcpSendAndRecv(iface, DHCP_ACK, &buildDhcpRebind, &msg);
+	err = dhcp_handle_transaction(iface, DHCP_ACK, &build_dhcp_rebind, &dhcp_resp);
 	if (err != RET_DHCP_SUCCESS)
 		return err;
 
-	iface->req_sent_time = time (NULL);
-
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
-		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_resp.dhcp_msg.sname,
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -971,22 +858,23 @@ int dhcp_rebind(dhcp_interface *iface)
 
 	/* Successfull ACK: Use the fields obtained for future requests */
 	memcpy (&(iface->siaddr), iface->dhcp_options.val[dhcpServerIdentifier], 4);
-	memcpy (iface->shaddr, msg->ethhdr.ether_shost, ETH_ALEN);
-	free (msg);
+	memcpy (iface->shaddr, dhcp_resp.server_hw_addr, ETH_ALEN);
 
 	return RET_DHCP_BOUND;
 }
 /*****************************************************************************/
 int dhcp_release(dhcp_interface *iface)
 {
-	struct sockaddr addr;
-	udpipMessage	*msg;
+	struct sockaddr_in	addr;
+	socklen_t			addr_len = sizeof (struct sockaddr_in);
+	int				len;
+	dhcpMessage		*msg;
 
 	if ( iface->ciaddr == 0 )
 		return RET_DHCP_ERROR;
 
 	iface->xid = random();
-	if (!(msg = buildDhcpRelease (iface)))
+	if (!(msg = build_dhcp_release (iface, &len, &addr)))
 		return RET_DHCP_ERROR;
 
 	if (DebugFlag)
@@ -998,9 +886,7 @@ int dhcp_release(dhcp_interface *iface)
 			((unsigned char *)&(iface->siaddr))[2], ((unsigned char *)&(iface->siaddr))[3]);
 	}
 
-	memset (&addr, 0, sizeof(struct sockaddr));
-	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-	if ( sendto (iface->sk, msg, sizeof(struct packed_ether_header) + sizeof(udpiphdr) + sizeof(dhcpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
+	if (sendto (iface->sk, msg, sizeof (dhcpMessage), 0, (struct sockaddr *)&addr, addr_len))
 		syslog (LOG_ERR, "dhcpRelease: sendto: %m\n");
 	free (msg);
 
@@ -1013,19 +899,19 @@ int dhcp_release(dhcp_interface *iface)
 #ifdef ARPCHECK
 int dhcp_decline(dhcp_interface *iface)
 {
-	udpipMessage *msg;
-	struct sockaddr addr;
+	struct sockaddr_in	addr;
+	socklen_t			addr_len = sizeof (struct sockaddr_in);
+	int				len;
+	dhcpMessage		*msg;
 
 	iface->xid = random ();
-	if (!(msg = buildDhcpDecline (iface)))
+	if (!(msg = build_dhcp_decline (iface, &len, &addr)))
 		return  RET_DHCP_ERROR;
 
-	memset (&addr, 0, sizeof(struct sockaddr));
-	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-	if ( DebugFlag )
+	if (DebugFlag)
 		syslog (LOG_INFO, "Broadcasting DHCP_DECLINE\n");
 
-	if ( sendto (iface->sk, msg, sizeof(struct packed_ether_header) + sizeof(udpiphdr)+sizeof(dhcpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
+	if (sendto (iface->sk, msg, sizeof (dhcpMessage), 0, &addr, addr_len))
 		syslog (LOG_ERR,"dhcpDecline: sendto: %m\n");
 	free (msg);
 
@@ -1035,46 +921,42 @@ int dhcp_decline(dhcp_interface *iface)
 /*****************************************************************************/
 int dhcp_inform(dhcp_interface *iface)
 {
-	udpipMessage	*msg = NULL;
-	int			 err;
+	dhcp_response_return	dhcp_resp;
+	int					err;
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
 		syslog (LOG_INFO, "Broadcasting DHCP_INFORM for %u.%u.%u.%u\n",
-			((unsigned char *)&(iface->ciaddr))[0],
-			((unsigned char *)&(iface->ciaddr))[1],
-			((unsigned char *)&(iface->ciaddr))[2],
-			((unsigned char *)&(iface->ciaddr))[3]);
+			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
+			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 	}
 
 	iface->xid = random ();
-	err = dhcpSendAndRecv (iface, DHCP_ACK, buildDhcpInform, &msg);
+	err = dhcp_handle_transaction (iface, DHCP_ACK, build_dhcp_inform, &dhcp_resp);
 	if (err != RET_DHCP_SUCCESS)
 		return err;
 
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
-		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_resp.dhcp_msg.sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[3]);
 	}
-	free (msg);
 
 #ifdef ARPCHECK
 	/* check if the offered IP address already in use */
-	if ( arpCheck(iface) )
+	if (arpCheck(iface))
 	{
-		if ( DebugFlag )
+		if (DebugFlag)
 			syslog (LOG_INFO, "Requested %u.%u.%u.%u address is in use\n",
 				((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 				((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 		dhcpDecline (iface);
 		return RET_DHCP_SUCCESS;
 	}
-	if ( DebugFlag )
+	if (DebugFlag)
 	{
 		syslog (LOG_INFO, "Verified %u.%u.%u.%u address is not in use\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
@@ -1097,17 +979,16 @@ char *get_dhcp_option_name (int i)
 }
 
 /*****************************************************************************/
-void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
+void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, dhcpOptions *options)
 {
 	int i,j;
-	dhcpMessage *dhcp_msg = (dhcpMessage *)&(udp_msg->udpipmsg[sizeof(udpiphdr)]);
 
-	syslog (LOG_INFO, "parseDhcpMsgRecv: %d options received:\n", options->num);
+	syslog (LOG_INFO, "debug_dump_dhcp_options: %d options received:\n", options->num);
 	for (i = 1; i < 255; i++)
 	{
-		if ( options->val[i] )
+		if (options->val[i])
 		{
-			switch ( i )
+			switch (i)
 			{
 				case 1: /* subnet mask */
 				case 3: /* routers on subnet */
@@ -1167,20 +1048,18 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 		}
 	}
 
-	syslog (LOG_INFO, "dhcp_msg->yiaddr  = %u.%u.%u.%u\n"
-				"dhcp_msg->siaddr  = %u.%u.%u.%u\n"
-				"dhcp_msg->giaddr  = %u.%u.%u.%u\n"
-				"dhcp_msg->sname   = \"%s\"\n"
-				"ServerHardwareAddr   = %02X.%02X.%02X.%02X.%02X.%02X\n",
+	syslog (LOG_INFO, "dhcp_msg->yiaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->yiaddr)[0], ((unsigned char *)&dhcp_msg->yiaddr)[1],
-				((unsigned char *)&dhcp_msg->yiaddr)[2], ((unsigned char *)&dhcp_msg->yiaddr)[3],
+				((unsigned char *)&dhcp_msg->yiaddr)[2], ((unsigned char *)&dhcp_msg->yiaddr)[3]);
+	syslog (LOG_INFO, "dhcp_msg->siaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->siaddr)[0], ((unsigned char *)&dhcp_msg->siaddr)[1],
-				((unsigned char *)&dhcp_msg->siaddr)[2], ((unsigned char *)&dhcp_msg->siaddr)[3],
+				((unsigned char *)&dhcp_msg->siaddr)[2], ((unsigned char *)&dhcp_msg->siaddr)[3]);
+	syslog (LOG_INFO, "dhcp_msg->giaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->giaddr)[0], ((unsigned char *)&dhcp_msg->giaddr)[1],
-				((unsigned char *)&dhcp_msg->giaddr)[2], ((unsigned char *)&dhcp_msg->giaddr)[3],
-				dhcp_msg->sname,
-				udp_msg->ethhdr.ether_shost[0], udp_msg->ethhdr.ether_shost[1],
-				udp_msg->ethhdr.ether_shost[2], udp_msg->ethhdr.ether_shost[3],
-				udp_msg->ethhdr.ether_shost[4], udp_msg->ethhdr.ether_shost[5]);
+				((unsigned char *)&dhcp_msg->giaddr)[2], ((unsigned char *)&dhcp_msg->giaddr)[3]);
+	syslog (LOG_INFO, "dhcp_msg->sname   = \"%s\"", dhcp_msg->sname);
+	syslog (LOG_INFO, "Server Hardware Address   = %02X.%02X.%02X.%02X.%02X.%02X\n",
+				saddr->sll_addr[0], saddr->sll_addr[1], saddr->sll_addr[2], saddr->sll_addr[3],
+				saddr->sll_addr[4], saddr->sll_addr[5]);
 }
 

@@ -291,6 +291,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 	guint32	 ip4_address = 0;
 	guint32	 ip4_netmask = 0;
 	guint32	 ip4_gateway = 0;
+	guint32	 ip4_broadcast = 0;
 
 	g_return_if_fail (dev != NULL);
 

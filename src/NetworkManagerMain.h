@@ -33,6 +33,8 @@ typedef struct NMData
 {
 	LibHalContext			*hal_ctx;
 	DBusConnection			*dbus_connection;
+	GMainContext			*main_context;
+	GMainLoop				*main_loop;
 	gboolean				 info_daemon_avail;
 	gboolean				 enable_test_devices;
 	gboolean				 starting_up;		/* Hack for not taking down an already-set-up wired device when we launch */

@@ -82,11 +82,9 @@ gboolean nm_system_device_set_ip4_address (NMDevice *dev, int ip4_address)
 	else
 	{
 		success = TRUE;
-		fprintf(stderr, "Your IP address = %u.%u.%u.%u\n",
-				((unsigned char *)&ip4_address)[0],
-				((unsigned char *)&ip4_address)[1],
-				((unsigned char *)&ip4_address)[2],
-				((unsigned char *)&ip4_address)[3]);
+		syslog (LOG_INFO, "Your IP address = %u.%u.%u.%u\n",
+				((unsigned char *)&ip4_address)[0], ((unsigned char *)&ip4_address)[1],
+				((unsigned char *)&ip4_address)[2], ((unsigned char *)&ip4_address)[3]);
 	}
 
 	close (sk);

@@ -207,6 +207,11 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 	} else syslog( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
 }
 
+/* Hal doesn't really give us any way to pass a GMainContext to our
+ * mainloop integration function unfortunately.  So we have to use
+ * a global.
+ */
+GMainContext *main_context = NULL;
 
 /*
  * nm_hal_mainloop_integration
@@ -214,7 +219,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
  */
 static void nm_hal_mainloop_integration (LibHalContext *ctx, DBusConnection * dbus_connection)
 {
-	dbus_connection_setup_with_g_main (dbus_connection, NULL);
+	dbus_connection_setup_with_g_main (dbus_connection, main_context);
 }
 
 
@@ -511,6 +516,9 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->enable_test_devices = enable_test_devices;
 	data->starting_up = TRUE;
 
+	data->main_context = g_main_context_new ();
+	data->main_loop = g_main_loop_new (data->main_context, FALSE);
+
 	return (data);	
 }
 
@@ -536,6 +544,9 @@ static void nm_data_free (NMData *data)
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
+
+	g_object_unref (data->main_loop);
+	g_object_unref (data->main_context);
 
 	memset (data, 0, sizeof (NMData));
 }
@@ -587,12 +598,10 @@ static void nm_print_usage (void)
 int main( int argc, char *argv[] )
 {
 	LibHalContext	*ctx = NULL;
-	guint		 link_source;
-	guint		 policy_source;
-	guint		 wireless_scan_source;
+	guint		 link_source_id, policy_source_id, wscan_source_id;
+	GSource		*link_source, *policy_source, *wscan_source;
 	gboolean		 become_daemon = TRUE;
 	gboolean		 enable_test_devices = FALSE;
-	GMainLoop		*loop  = NULL;
 	
 	if ((int)getuid() != 0)
 	{
@@ -676,6 +685,12 @@ int main( int argc, char *argv[] )
 	nm_data->info_daemon_avail = nm_dbus_is_info_daemon_running (nm_data->dbus_connection);
 	nm_data->update_ap_lists = TRUE;
 
+	/* Right before we init hal, we have to make sure our mainloop integration function
+	 * knows about our GMainContext.  HAL doesn't give us any way to pass that into its
+	 * mainloop integration callback, so its got to be a global.
+	 */
+	main_context = nm_data->main_context;
+
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
 	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
 	{
@@ -700,15 +715,21 @@ int main( int argc, char *argv[] )
 	/* Create a watch function that monitors cards for link status (hal doesn't do
 	 * this for wireless cards yet).
 	 */
-	link_source = g_timeout_add (5000, nm_link_state_monitor, nm_data);
+	link_source = g_timeout_source_new (5000);
+	g_source_set_callback (link_source, nm_link_state_monitor, nm_data, NULL);
+	link_source_id = g_source_attach (link_source, nm_data->main_context);
 
 	/* Another watch function which handles networking state changes and applies
 	 * the correct policy on a change.
 	 */
-	policy_source = g_timeout_add (500, nm_state_modification_monitor, nm_data);
+	policy_source = g_timeout_source_new (500);
+	g_source_set_callback (policy_source, nm_state_modification_monitor, nm_data, NULL);
+	policy_source_id = g_source_attach (policy_source, nm_data->main_context);
 
 	/* Keep a current list of access points */
-	wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
+	wscan_source = g_timeout_source_new (10000);
+	g_source_set_callback (wscan_source, nm_wireless_scan_monitor, nm_data, NULL);
+	wscan_source_id = g_source_attach (wscan_source, nm_data->main_context);
 
 	if (become_daemon && daemon (0, 0) < 0)
 	{
@@ -717,15 +738,14 @@ int main( int argc, char *argv[] )
 	}
 
 	/* Wheeee!!! */
-	loop = g_main_loop_new (NULL, FALSE);
-	g_main_loop_run (loop);
+	g_main_loop_run (nm_data->main_loop);
 
-	syslog (LOG_NOTICE, "exiting");
+	syslog (LOG_NOTICE, "exiting...");
 
 	/* Kill the watch functions */
-	g_source_remove (link_source);
-	g_source_remove (policy_source);
-	g_source_remove (wireless_scan_source);
+	g_source_remove (link_source_id);
+	g_source_remove (policy_source_id);
+	g_source_remove (wscan_source_id);
 
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)

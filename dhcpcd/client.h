@@ -30,14 +30,15 @@
 #include "dhcpcd.h"
 
 
-#define IPPACKET_SIZE		1500
-#define MAGIC_COOKIE		0x63825363
-#define BROADCAST_FLAG		0x8000
-#define MAC_BCAST_ADDR		"\xff\xff\xff\xff\xff\xff"
+#define IPPACKET_SIZE	1500
+#define MAGIC_COOKIE	0x63825363
+#define BROADCAST_FLAG	0x8000
+#define MAC_BCAST_ADDR	"\xff\xff\xff\xff\xff\xff"
+#define IP_BCAST_ADDR	0xFFFFFFFF
 #ifndef AF_PACKET
 #define AF_PACKET		17	/* should have been in socketbits.h */
 #endif
-#define HWADDR_TRIES		3
+#define HWADDR_TRIES	3
 
 /* UDP port numbers for DHCP */
 #define DHCP_SERVER_PORT	67	/* from client to server */
@@ -45,20 +46,21 @@
 
 /* DHCP message OP code */
 #define DHCP_BOOTREQUEST	1
-#define DHCP_BOOTREPLY		2
+#define DHCP_BOOTREPLY	2
 
 /* DHCP message type */
-#define DHCP_DISCOVER		1
+#define DHCP_DISCOVER	1
 #define DHCP_OFFER		2
-#define DHCP_REQUEST		3
-#define DHCP_DECLINE		4
+#define DHCP_REQUEST	3
+#define DHCP_DECLINE	4
 #define DHCP_ACK		5
 #define DHCP_NAK		6
-#define DHCP_RELEASE		7
+#define DHCP_RELEASE	7
 #define DHCP_INFORM		8
-/* DHCP RETRANSMISSION TIMEOUT (microseconds) */
-#define DHCP_INITIAL_RTO	(4*1000000)
-#define DHCP_MAX_RTO		(64*1000000)
+/* DHCP RETRANSMISSION TIMEOUT (seconds) */
+#define DHCP_INITIAL_RTO	(4)
+#define DHCP_MAX_RTO	(64)
+#define DHCP_OPTIONS_LENGTH	312
 
 typedef struct dhcpMessage
 {
@@ -76,23 +78,8 @@ typedef struct dhcpMessage
 	u_char	chaddr[16];	/* client's hardware address */
 	u_char	sname[64];	/* server host name, null terminated string */
 	u_char	file[128];	/* boot file name, null terminated string */
-	u_char	options[312];	/* message options */
+	u_char	options[DHCP_OPTIONS_LENGTH];	/* message options */
 } __attribute__((packed)) dhcpMessage;
-
-struct packed_ether_header
-{
-	u_int8_t	ether_dhost[ETH_ALEN];      /* destination eth addr */
-	u_int8_t	ether_shost[ETH_ALEN];      /* source ether addr    */
-	u_int16_t	ether_type;                 /* packet type ID field */
-} __attribute__((packed));
-
-#define TOKEN_RING_HEADER_PAD		sizeof(struct trh_hdr) + sizeof(struct trllc)
-typedef struct udpipMessage
-{
-	struct packed_ether_header	ethhdr;
-	char						udpipmsg[IPPACKET_SIZE];
-	char						pad_for_tokenring_header[TOKEN_RING_HEADER_PAD];
-} __attribute__((packed)) udpipMessage;
 
 typedef struct dhcpOptions
 {
@@ -110,9 +97,7 @@ typedef struct dhcp_interface
 	int			 sk;
 	int			 foo_sk;
 	short int		 saved_if_flags;
-	int			 bTokenRing;
 	unsigned int	 default_lease_time;
-	time_t		 req_sent_time;
 	struct in_addr	 default_router;
 
 	int			ciaddr;
@@ -120,7 +105,6 @@ typedef struct dhcp_interface
 	int			siaddr;
 	unsigned char	shaddr[ETH_ALEN];
 	unsigned int	xid;
-	unsigned short	ip_id;
 	unsigned char	cls_id[DHCP_CLASS_ID_MAX_LEN];
 	int			cls_id_len;
 	unsigned char	cli_id[DHCP_CLIENT_ID_MAX_LEN];
@@ -202,7 +186,7 @@ static dhcp_option_table	dhcp_opt_table[] =
 	{ -1,				NULL,				-1 }
 };
 
-typedef udpipMessage *(*dhcp_msg_build_proc)(dhcp_interface *);
+typedef dhcpMessage *(*dhcp_msg_build_proc)(dhcp_interface *, int *msg_len, struct sockaddr_in *dest_addr);
 
 int dhcp_reboot(dhcp_interface *iface);
 int dhcp_init(dhcp_interface *iface);

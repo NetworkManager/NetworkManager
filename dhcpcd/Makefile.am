@@ -8,8 +8,6 @@ AM_CPPFLAGS =						\
 noinst_LIBRARIES = libdhcpc.a
 
 libdhcpc_a_SOURCES=	\
-	udpipgen.c	\
-	udpipgen.h	\
 	buildmsg.c	\
 	buildmsg.h	\
 	arp.c		\

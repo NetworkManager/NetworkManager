@@ -23,13 +23,15 @@
 #ifndef BUILDMSG_H
 #define BUILDMSG_H
 
-udpipMessage *buildDhcpDiscover(dhcp_interface *iface);
-udpipMessage *buildDhcpRequest(dhcp_interface *iface);
-udpipMessage *buildDhcpRenew(dhcp_interface *iface);
-udpipMessage *buildDhcpRebind(dhcp_interface *iface);
-udpipMessage *buildDhcpReboot(dhcp_interface *iface);
-udpipMessage *buildDhcpRelease(dhcp_interface *iface);
-udpipMessage *buildDhcpDecline(dhcp_interface *iface);
-udpipMessage *buildDhcpInform(dhcp_interface *iface);
+dhcpMessage *build_dhcp_discover	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+dhcpMessage *build_dhcp_request	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+dhcpMessage *build_dhcp_renew		(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+dhcpMessage *build_dhcp_rebind	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+dhcpMessage *build_dhcp_reboot	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+dhcpMessage *build_dhcp_release	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+#ifdef ARPCHECK
+dhcpMessage *build_dhcp_decline	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
+#endif
+dhcpMessage *build_dhcp_inform	(dhcp_interface *iface, int *msg_len, struct sockaddr_in *dest_addr);
 
 #endif

@@ -1,4 +1,3 @@
-
 INCLUDES = -I${top_srcdir}
 
 AM_CPPFLAGS = 						\

@@ -1617,6 +1617,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		success = nm_device_activate_wireless (dev);
 	else if (nm_device_is_wired (dev))
 		success = nm_device_activation_configure_ip (dev);
+	syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP returned = %d\n", nm_device_get_iface (dev), success);
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
@@ -1624,6 +1625,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 	if (!success)
 	{
+		syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n", nm_device_get_iface (dev));
 		dev->activating = FALSE;
 		dev->just_activated = FALSE;
 		dev->activation_failed = TRUE;
@@ -1635,14 +1637,16 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	dev->activating = FALSE;
 	dev->activation_failed = FALSE;
 	dev->quit_activation = FALSE;
+	syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP successful!\n", nm_device_get_iface (dev));
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
+	{
+		syslog (LOG_DEBUG, "Activation (%s) told to cancel.  Ending activation...\n", nm_device_get_iface (dev));
 		goto out;
+	}
 
-	nm_device_update_ip4_address (dev);
-
-	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
+	syslog (LOG_INFO, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
 
 	if (!nm_device_config_get_use_dhcp (dev) || !dev->dhcp_iface)
 		goto out;
@@ -1658,11 +1662,19 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	g_source_remove (dev->rebind_timeout);
 	g_main_loop_unref (dev->loop);
 	g_main_context_unref (dev->context);
-	dev->context = NULL;
-	dev->loop = NULL;
 
 out:
+	dev->context = NULL;
+	dev->loop = NULL;
+	if (dev->dhcp_iface)
+	{
+		dhcp_interface_free (dev->dhcp_iface);
+		dev->dhcp_iface = NULL;
+	}
+
 	nm_device_unref (dev);
+
+	syslog (LOG_DEBUG, "Activation (%s) ending thread.\n", nm_device_get_iface (dev));
 	return (NULL);
 }
 

@@ -28,6 +28,13 @@
 #include "client.h"
 #include "arp.h"
 
+struct packed_ether_header
+{
+	u_int8_t	ether_dhost[ETH_ALEN];      /* destination eth addr */
+	u_int8_t	ether_shost[ETH_ALEN];      /* source ether addr    */
+	u_int16_t	ether_type;                 /* packet type ID field */
+} __attribute__((packed));
+
 typedef struct arpMessage
 {
   struct packed_ether_header	ethhdr;
@@ -57,14 +64,14 @@ int arpCheck(const dhcp_interface *iface)
 	arpMessage arp_msg_send;
 	arpMessage arp_msg_recv;
 	struct sockaddr addr;
-	int j,i=0,len=0;
+	int j,i=0;
 
 	memset (&arp_msg_send, 0, sizeof(arpMessage));
 	memcpy (arp_msg_send.ethhdr.ether_dhost, MAC_BCAST_ADDR, ETH_ALEN);
 	memcpy (arp_msg_send.ethhdr.ether_shost, iface->chaddr, ETH_ALEN);
 	arp_msg_send.ethhdr.ether_type = htons(ETHERTYPE_ARP);
 
-	arp_msg_send.htype		= (iface->bTokenRing) ? htons(ARPHRD_IEEE802_TR) : htons(ARPHRD_ETHER);
+	arp_msg_send.htype		= htons(ARPHRD_ETHER);
 	arp_msg_send.ptype		= htons(ETHERTYPE_IP);
 	arp_msg_send.hlen		= ETH_ALEN;
 	arp_msg_send.plen		= 4;
@@ -87,11 +94,7 @@ int arpCheck(const dhcp_interface *iface)
 				return 0; /*  5 probes  */
 			memset (&addr, 0, sizeof(struct sockaddr));
 			memcpy (addr.sa_data, iface->iface, strlen (iface->iface));	
-			if ( iface->bTokenRing )
-				len = eth2tr (&arp_msg_send.ethhdr, BasicArpLen(ArpMsgSend));
-			else
-				len = sizeof (arpMessage);
-			if ( sendto(iface->sk, &arp_msg_send, len, 0, &addr, sizeof(struct sockaddr)) == -1 )
+			if ( sendto(iface->sk, &arp_msg_send, sizeof (arpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
 			{
 				syslog(LOG_ERR,"arpCheck: sendto: %m\n");
 				return -1;
@@ -106,11 +109,6 @@ int arpCheck(const dhcp_interface *iface)
 			{
 				syslog(LOG_ERR,"arpCheck: recvfrom: %m\n");
 				return -1;
-			}
-			if ( iface->bTokenRing )
-			{
-				if ( tr2eth (&arp_msg_recv.ethhdr) )
-					continue;
 			}
 
 			if ( arp_msg_recv.ethhdr.ether_type != htons(ETHERTYPE_ARP) )
@@ -161,7 +159,6 @@ int arpRelease(const dhcp_interface *iface)  /* sends UNARP message, cf. RFC1868
 {
 	arpMessage ArpMsgSend;
 	struct sockaddr addr;
-	int len;
 	const int inaddr_broadcast = INADDR_BROADCAST;
 
 	/* build Ethernet header */
@@ -171,7 +168,7 @@ int arpRelease(const dhcp_interface *iface)  /* sends UNARP message, cf. RFC1868
 	ArpMsgSend.ethhdr.ether_type = htons(ETHERTYPE_ARP);
 
 	/* build UNARP message */
-	ArpMsgSend.htype	= (iface->bTokenRing) ? htons(ARPHRD_IEEE802_TR) : htons(ARPHRD_ETHER);
+	ArpMsgSend.htype	= htons(ARPHRD_ETHER);
 	ArpMsgSend.ptype	= htons(ETHERTYPE_IP);
 	ArpMsgSend.plen	= 4;
 	ArpMsgSend.operation= htons(ARPOP_REPLY);
@@ -180,11 +177,7 @@ int arpRelease(const dhcp_interface *iface)  /* sends UNARP message, cf. RFC1868
  
 	memset(&addr,0,sizeof(struct sockaddr));
 	memcpy(addr.sa_data,iface->iface,strlen (iface->iface));
-	if ( iface->bTokenRing )
-		len = eth2tr (&ArpMsgSend.ethhdr, BasicArpLen(ArpMsgSend));
-	else
-		len = sizeof (arpMessage);
-	if ( sendto (iface->sk, &ArpMsgSend, len, 0, &addr, sizeof(struct sockaddr)) == -1 )
+	if ( sendto (iface->sk, &ArpMsgSend, sizeof (arpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
 	{
 		syslog (LOG_ERR,"arpRelease: sendto: %m\n");
 		return -1;
@@ -196,7 +189,6 @@ int arpInform(const dhcp_interface *iface)
 {
 	arpMessage ArpMsgSend;
 	struct sockaddr addr;
-	int len;
 	const int inaddr_broadcast = INADDR_BROADCAST;
 
 	memset (&ArpMsgSend, 0, sizeof(arpMessage));
@@ -204,7 +196,7 @@ int arpInform(const dhcp_interface *iface)
 	memcpy (ArpMsgSend.ethhdr.ether_shost, iface->chaddr, ETH_ALEN);
 	ArpMsgSend.ethhdr.ether_type = htons(ETHERTYPE_ARP);
 
-	ArpMsgSend.htype	= (iface->bTokenRing) ? htons(ARPHRD_IEEE802_TR) : htons(ARPHRD_ETHER);
+	ArpMsgSend.htype	= htons(ARPHRD_ETHER);
 	ArpMsgSend.ptype	= htons(ETHERTYPE_IP);
 	ArpMsgSend.hlen	= ETH_ALEN;
 	ArpMsgSend.plen	= 4;
@@ -216,11 +208,7 @@ int arpInform(const dhcp_interface *iface)
  
 	memset (&addr, 0, sizeof(struct sockaddr));
 	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-	if ( iface->bTokenRing )
-		len = eth2tr(&ArpMsgSend.ethhdr,BasicArpLen(ArpMsgSend));
-	else
-		len = sizeof(arpMessage);
-	if ( sendto(iface->sk,&ArpMsgSend,len,0, &addr,sizeof(struct sockaddr)) == -1 )
+	if ( sendto (iface->sk, &ArpMsgSend, sizeof (arpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
 	{
 		syslog(LOG_ERR,"arpInform: sendto: %m\n");
 		return -1;

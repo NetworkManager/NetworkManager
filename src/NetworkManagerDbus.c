@@ -1653,7 +1653,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	}
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
-	dbus_connection_setup_with_g_main (connection, NULL);
+	dbus_connection_setup_with_g_main (connection, data->main_context);
 
 	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data);
 	if (!success)
