@@ -1,3 +1,17 @@
+2004-08-27  Bryan Clark  <bclark@redhat.com>
+
+	* examples/python/systray/trayiconmodule.c: 
+	* examples/python/systray/trayicon.override: 
+	* examples/python/systray/network_tray.py: 
+	* examples/python/systray/eggtrayicon.h: 
+	* examples/python/systray/eggtrayicon.c: 
+	* examples/python/systray/Makefile: 
+	* examples/python/README: 
+	* examples/python/NetworkManager.py: 
+	* examples/python/NMTester.py: 
+
+	Initial commit of these python example files
+
 Fri Aug 28 2004 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c
