@@ -1,3 +1,12 @@
+2005-01-18  Colin Walters  <walters@redhat.com>
+
+	* named/nm-named-manager.c (generate_named_conf): Many fixes
+	to config file generation.
+	(safer_kill): Remove, was too much trouble for little gain.
+	(nm_named_manager_start): Run named as NM_NAMED_USER.
+
+	* configure.in: Add option --with-named-user.
+
 2005-01-14  Colin Walters  <walters@redhat.com>
 
 	Patch from ed@catmur.co.uk (Ed Catmur)

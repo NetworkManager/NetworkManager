@@ -37,6 +37,10 @@
 #include <syslog.h>
 #include <glib.h>
 
+#ifdef HAVE_SELINUX
+#include <selinux/selinux.h>
+#endif
+
 #ifndef RESOLV_CONF
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
@@ -62,11 +66,9 @@ static void nm_named_manager_get_property (GObject *object,
 					   GValue *value,
 					   GParamSpec *pspec);
 static gboolean rewrite_resolv_conf (NMNamedManager *mgr, GError **error);
-static int safer_kill (const char *path, pid_t pid, int signum);
 
 struct NMNamedManagerPrivate
 {
-	char *named_realpath_binary;
 	GPid named_pid;
 	guint spawn_count;
 	GMainContext *main_context;
@@ -168,8 +170,8 @@ nm_named_manager_dispose (GObject *object)
 		unlink (mgr->priv->named_conf);
 	if (mgr->priv->named_pid_file)
 		unlink (mgr->priv->named_pid_file);
-	if (mgr->priv->named_realpath_binary)
-		safer_kill (mgr->priv->named_realpath_binary, mgr->priv->named_pid, SIGTERM);
+	if (mgr->priv->named_pid > 0)
+		kill (mgr->priv->named_pid, SIGTERM);
 	if (mgr->priv->child_watch)
 		g_source_destroy (mgr->priv->child_watch);
 	if (mgr->priv->main_context)
@@ -289,70 +291,61 @@ gboolean
 generate_named_conf (NMNamedManager *mgr, GError **error)
 {
 #ifndef NM_NO_NAMED
-	char *filename = NULL;
 	int out_fd;
 	char *config_contents_str;
 	char **config_contents;
 	char **line;
 	const char *config_name;
+	gboolean ret;
 
 	config_name = NM_PKGDATADIR "/named.conf";
 
-	if (!mgr->priv->named_conf)
-	{
-		mgr->priv->named_conf = g_build_filename (NM_NAMED_DATA_DIR,
-							  "NetworkManager-named.conf",
-							  NULL);
-		unlink (mgr->priv->named_conf);
-		out_fd = open (mgr->priv->named_conf, O_CREAT|O_EXCL, 0600);
-		if (out_fd < 0)
-		{
-			g_set_error (error,
-				     G_FILE_ERROR,
-				     G_FILE_ERROR_EXIST,
-				     "Couldn't create %s: %s",
-				     mgr->priv->named_conf,
-				     g_strerror (errno));
-			return FALSE;
-		}
-		close (out_fd);
-	}
-
 	if (!mgr->priv->named_pid_file)
-	{
 		mgr->priv->named_pid_file = g_build_filename (NM_NAMED_DATA_DIR,
 							      "NetworkManager-pid-named",
 							      NULL);
-		unlink (mgr->priv->named_pid_file);
-		out_fd = open (mgr->priv->named_pid_file, O_CREAT|O_EXCL, 0600);
-		if (out_fd < 0)
-		{
-			g_set_error (error,
-				     G_FILE_ERROR,
-				     G_FILE_ERROR_EXIST,
-				     "Couldn't create %s: %s",
-				     mgr->priv->named_pid_file,
-				     g_strerror (errno));
-			return FALSE;
-		}
-		close (out_fd);
+	
+	if (!mgr->priv->named_conf)
+		mgr->priv->named_conf = g_build_filename (NM_NAMED_DATA_DIR,
+							  "NetworkManager-named.conf",
+							  NULL);
+	unlink (mgr->priv->named_conf);
+	out_fd = open (mgr->priv->named_conf, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+	if (out_fd < 0)
+	{
+		g_set_error (error,
+			     G_FILE_ERROR,
+			     G_FILE_ERROR_EXIST,
+			     "Couldn't create %s: %s",
+			     mgr->priv->named_conf,
+			     g_strerror (errno));
+		return FALSE;
 	}
+	/* This is needed to work around the Fedora Core 3
+	 * SELinux policy for named.  We need it to be able
+	 * to read the config file created by NetworkManager,
+	 * which runs in unconfined_t
+	 */
+#if 0
+#ifdef HAVE_SELINUX
+	{
+		char *context;
+		if (matchpathcon (mgr->priv->named_conf, 0, &context) < 0)
+			syslog (LOG_WARNING, "matchpathcon(%s) failed: %s",
+				mgr->priv->named_conf, strerror (errno));
+		else if (fsetfilecon(out_fd, context) < 0)
+			syslog (LOG_WARNING, "fsetfilecon failed: %s",
+				strerror (errno));
+	}
+#endif
+#endif
 
 	if (!g_file_get_contents (config_name,
 				  &config_contents_str,
 				  NULL,
 				  error))
 	{
-		return FALSE;
-	}
-
-	out_fd = g_file_open_tmp ("NetworkManager-named.conf-XXXXXX",
-				  &filename,
-				  error);
-
-	if (out_fd < 0)
-	{
-		g_free (config_contents_str);
+		close (out_fd);
 		return FALSE;
 	}
 
@@ -403,38 +396,27 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 			g_free (replacement);
 			continue;
 		replacement_lose:
+			ret = FALSE;
 			g_free (variable);
 			g_free (replacement);
 			goto write_lose;
 		} else {
-			if (write (out_fd, *line, strlen (*line)) < 0)
+			if (write (out_fd, *line, strlen (*line)) < 0) {
+				ret = FALSE;
 				goto write_lose;
-				
+			}
 		}
-		if (write (out_fd, "\n", 1) < 0)
+		if (write (out_fd, "\n", 1) < 0) {
+			ret = FALSE;
 			goto write_lose;
+		}
 	}
 	
-	close (out_fd);
-
-	if (rename (filename, mgr->priv->named_conf) < 0) {
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_SYSTEM,
-			     "Couldn't rename %s to %s: %s",
-			     filename, mgr->priv->named_conf,
-			     g_strerror (errno));
-		return FALSE;
-	}
-
-	g_strfreev (config_contents);
-	return TRUE;
+	ret = TRUE;
 write_lose:
 	close (out_fd);
 	g_strfreev (config_contents);
-	unlink (filename);
-	g_free (filename);
-	return FALSE;
+	return ret;
 #else
 	return rewrite_resolv_conf (mgr, error);
 #endif
@@ -490,12 +472,10 @@ nm_named_manager_start (NMNamedManager *mgr, GError **error)
 	named_argv = g_ptr_array_new ();
 	named_binary = g_getenv ("NM_NAMED_BINARY_PATH") ?
 	  g_getenv ("NM_NAMED_BINARY_PATH") : NM_NAMED_BINARY_PATH;
-	g_free (mgr->priv->named_realpath_binary);
-	mgr->priv->named_realpath_binary = realpath (named_binary, NULL);
-	if (mgr->priv->named_realpath_binary == NULL)
-		mgr->priv->named_realpath_binary = g_strdup (named_binary);
 	g_ptr_array_add (named_argv, (char *) named_binary);
 	g_ptr_array_add (named_argv, "-f");
+	g_ptr_array_add (named_argv, "-u");
+	g_ptr_array_add (named_argv, NM_NAMED_USER);
 	g_ptr_array_add (named_argv, "-c");
 	g_ptr_array_add (named_argv, mgr->priv->named_conf);
 	g_ptr_array_add (named_argv, NULL);
@@ -522,7 +502,7 @@ nm_named_manager_start (NMNamedManager *mgr, GError **error)
 #endif
 	if (!rewrite_resolv_conf (mgr, error))
 	{
-		safer_kill (mgr->priv->named_realpath_binary, mgr->priv->named_pid, SIGTERM);
+		kill (mgr->priv->named_pid, SIGTERM);
 		return FALSE;
 	}
 
@@ -536,7 +516,7 @@ reload_named (NMNamedManager *mgr, GError **error)
 	if (!generate_named_conf (mgr, error))
 		return FALSE;
 #ifndef NM_NO_NAMED
-	if (safer_kill (mgr->priv->named_realpath_binary, mgr->priv->named_pid, SIGHUP) < 0) {
+	if (kill (mgr->priv->named_pid, SIGHUP) < 0) {
 		g_set_error (error,
 			     NM_NAMED_MANAGER_ERROR,
 			     NM_NAMED_MANAGER_ERROR_SYSTEM,
@@ -807,33 +787,4 @@ nm_named_manager_remove_domain_nameserver_ipv4 (NMNamedManager *mgr,
 		return FALSE;
 	
 	return TRUE;
-}
-
-static int
-safer_kill (const char *path, pid_t pid, int signum)
-{
-#ifdef __linux__
-  {
-    char buffer[1024];
-    int len;
-    char *procpath;
-		
-    procpath = g_strdup_printf ("/proc/%d/exe", pid); 
-    len = readlink (procpath, buffer, sizeof (buffer)-1);
-    g_free (procpath);
-    buffer[len] = '\0';
-
-	if (len > 0)
-	{
-		if (strcmp (path, buffer) != 0)
-		{
-			syslog (LOG_ERR, "pid %u with exe \"%s'\" did not match expected exe \"%s\"",
-				(unsigned int) pid, buffer, path);
-			errno = EPERM;
-			return -1;
-		}
-	}	
-  }
-#endif
-  return kill ((pid_t) pid, signum);
 }
