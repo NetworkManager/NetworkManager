@@ -85,7 +85,7 @@ static void set_domain_searches (NMDevice *dev, const char *searches_str)
 {
 	GError *error = NULL;
 	GList *elt;
-	char **searches;
+	char **searches, **s;
 
 	/* Reset our domain search list */
 	for (elt = dev->app_data->domain_search_ids; elt; elt = elt->next)
@@ -103,9 +103,9 @@ static void set_domain_searches (NMDevice *dev, const char *searches_str)
 
 	searches = g_strsplit (searches_str, " ", 0);
 
-	for (; *searches; searches++) 
+	for (s = searches; *s; s++)
 	{
-		const char *search_elt = *searches;
+		const char *search_elt = *s;
 		guint id;
 
 		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding domain search: %s\n", search_elt);
