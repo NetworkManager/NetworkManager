@@ -1,5 +1,10 @@
 2004-10-12 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- Force wireless cards into Infrastructure mode before we use them
+
+2004-10-12 Dan Williams <dcbw@redhat.com>
+
 	* TODO
 		- Remove bit about static IP address support
 

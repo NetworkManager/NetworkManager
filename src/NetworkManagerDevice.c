@@ -1203,7 +1203,22 @@ static gboolean nm_device_activate_wireless (NMDevice *dev, guint *bad_crypt_pac
 	/* If there is a desired AP to connect to, use that essid and possible WEP key */
 	if ((best_ap = nm_device_get_best_ap (dev)) && nm_ap_get_essid (best_ap))
 	{
+		int			sk;
+		struct iwreq	wreq;
+
 		nm_device_bring_down (dev);
+
+		/* Force the card into Managed/Infrastructure mode */
+		sk = iw_sockets_open ();
+		if (sk >= 0)
+		{
+			int err;
+			wreq.u.mode = IW_MODE_INFRA;
+			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWMODE, &wreq);
+			if (err == -1)
+				syslog (LOG_ERR, "nm_device_activate_wireless(%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);	
+			close (sk);
+		}
 
 		/* Disable encryption, then re-enable and set correct key on the card
 		 * if we are going to encrypt traffic.
