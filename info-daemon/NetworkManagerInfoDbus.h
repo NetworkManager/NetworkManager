@@ -45,7 +45,7 @@ const char *	nmi_dbus_nm_get_network_essid			(DBusConnection *connection, const 
 gboolean		nmi_dbus_nm_get_network_encrypted		(DBusConnection *connection, const char *ap_path);
 
 void 		nmi_dbus_return_user_key				(DBusConnection *connection, const char *device,
-											 const char *network, const char *passphrase);
+											 const char *network, const char *passphrase, const char *key_type_string);
 
 void			nmi_dbus_signal_update_network 		(DBusConnection *connection, const char *network, NMINetworkType type);
 

@@ -249,6 +249,7 @@ void set_user_key_for_network (DBusConnection *connection, DBusMessage *message,
 	char		*device;
 	char		*network;
 	char		*passphrase;
+	char		*key_type_string;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (message != NULL);
@@ -258,13 +259,15 @@ void set_user_key_for_network (DBusConnection *connection, DBusMessage *message,
 							DBUS_TYPE_STRING, &device,
 							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_STRING, &passphrase,
+							DBUS_TYPE_STRING, &key_type_string,
 							DBUS_TYPE_INVALID))
 	{
-		fprintf( stderr, "Device was '%s'\nNetwork was '%s'\nPassphrase was '%s'\n", device, network, passphrase);
+		fprintf( stderr, "Device was '%s'\nNetwork was '%s'\nPassphrase was '%s'\nKey type was '%s'\n", device, network, passphrase, key_type_string);
 
 		dbus_free (device);
 		dbus_free (network);
 		dbus_free (passphrase);
+		dbus_free (key_type_string);
 
 		g_main_loop_quit (loop);
 	}

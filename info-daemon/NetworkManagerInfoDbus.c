@@ -114,7 +114,7 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
  *
  */
 void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
-						const char *network, const char *passphrase)
+						const char *network, const char *passphrase, const char *key_type_string)
 {
 	DBusMessage	*message;
 
@@ -133,6 +133,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	if (dbus_message_append_args (message, DBUS_TYPE_STRING, device,
 								DBUS_TYPE_STRING, network,
 								DBUS_TYPE_STRING, passphrase,
+								DBUS_TYPE_STRING, key_type_string,
 								DBUS_TYPE_INVALID))
 	{
 		if (!dbus_connection_send (connection, message, NULL))
@@ -371,7 +372,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 /*
  * nmi_dbus_get_network_key
  *
- * If the specified network exists, get its key from gconf
+ * If the specified network exists, get its key and key type from gconf
  * and pass it back as a dbus message.
  *
  */
@@ -380,7 +381,8 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	DBusMessage		*reply_message = NULL;
 	gchar			*key = NULL;
 	char				*network = NULL;
-	GConfValue		*value;
+	GConfValue		*key_value;
+	GConfValue		*key_type_value;
 	DBusError			 error;
 	NMINetworkType		 type;
 	char				*escaped_network;
@@ -401,19 +403,28 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	/* Grab user-key key for our access point from GConf */
 	escaped_network = gnome_vfs_escape_string (network);
 	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
-	value = gconf_client_get (info->gconf_client, key, NULL);
+	key_value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
+
+	key = g_strdup_printf ("%s/%s/key_type", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	key_type_value = gconf_client_get (info->gconf_client, key, NULL);
+	g_free (key);
+	g_free (escaped_network);
 
 	/* We don't error out if no key was found in gconf, we return blank key */
 	reply_message = dbus_message_new_method_return (message);
-	if (value)
+	if (key_value && key_type_value)
 	{
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (value), DBUS_TYPE_INVALID);
-		gconf_value_free (value);
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (key_value),
+								DBUS_TYPE_STRING, gconf_value_get_string (key_type_value), DBUS_TYPE_INVALID);
 	}
 	else
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+
+	if (key_value)
+		gconf_value_free (key_value);
+	if (key_type_value)
+		gconf_value_free (key_type_value);
 
 	return (reply_message);
 }

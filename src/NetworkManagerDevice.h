@@ -88,7 +88,8 @@ gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);
 gboolean		nm_device_now_scanning			(NMDevice *dev);
 
 void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list,
-											unsigned char *network, unsigned char *key);
+											unsigned char *network, unsigned char *key,
+											NMAPEncMethod enc_method);
 
 void			nm_device_bring_up				(NMDevice *dev);
 void			nm_device_bring_down			(NMDevice *dev);

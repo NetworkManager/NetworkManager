@@ -20,6 +20,8 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+#include <config.h>
+#include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <gtk/gtk.h>
@@ -27,9 +29,21 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#include <libgnomevfs/gnome-vfs-utils.h>
+
+#ifndef _
+#define _(x) dgettext (GETTEXT_PACKAGE, x)
+#define N_(x) x
+#endif
 
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
+
+enum NMIPassphraseDialogKeyTypes
+{
+	KEY_TYPE_128_BIT_PASSPHRASE = 0,
+	KEY_TYPE_128_BIT_RAW_HEX_KEY = 1
+};
 
 
 /*
@@ -66,6 +80,36 @@ void nmi_passphrase_dialog_clear (GtkWidget *dialog, GtkWidget *entry)
 
 
 /*
+ * nmi_passphrase_dialog_key_type_combo_changed
+ *
+ * Change the text of the passphrase entry label to match the selected
+ * key type.
+ *
+ */
+void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
+{
+	GtkLabel		*entry_label;
+	int			 combo_choice;
+	NMIAppInfo	*info = (NMIAppInfo *)user_data;
+
+	g_return_if_fail (info != NULL);
+
+	entry_label = GTK_LABEL (glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry_label"));
+	switch ((combo_choice = gtk_combo_box_get_active (GTK_COMBO_BOX (key_type_combo))))
+	{
+		case KEY_TYPE_128_BIT_PASSPHRASE:
+			gtk_label_set_label (entry_label, _("Passphrase:"));
+			break;
+		case KEY_TYPE_128_BIT_RAW_HEX_KEY:
+			gtk_label_set_label (entry_label, _("Key:"));
+			break;
+		default:
+			break;
+	}
+}
+
+
+/*
  * nmi_passphrase_dialog_ok_clicked
  *
  * OK button handler; grab the passphrase and send it back
@@ -81,32 +125,54 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 
 	if (GTK_WIDGET_TOPLEVEL (dialog))
 	{
-		GtkWidget		*entry = glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry");
-		const char	*passphrase = gtk_entry_get_text (GTK_ENTRY (entry));
+		GtkEntry		*entry = GTK_ENTRY (glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
+		GtkComboBox	*key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (info->passphrase_dialog, "key_type_combo"));
+		int			 key_type = gtk_combo_box_get_active (key_type_combo);
+		const char	*passphrase = gtk_entry_get_text (entry);
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
-		gchar		*key = NULL;
+		char			*key = NULL;
+		char			*key_type_string = NULL;
 		GConfEntry	*gconf_entry;
+		char			*escaped_network;
+
+		switch (key_type)
+		{
+			case KEY_TYPE_128_BIT_PASSPHRASE:
+				key_type_string = "128-bit-passphrase";
+				break;
+			case KEY_TYPE_128_BIT_RAW_HEX_KEY:
+				key_type_string = "128-bit-raw-hex-key";
+				break;
+			default:
+				key_type_string = "";
+				break;
+		}
 
 		/* Tell NetworkManager about the key the user typed in */
-		nmi_dbus_return_user_key (info->connection, device, network, passphrase);
+		nmi_dbus_return_user_key (info->connection, device, network, passphrase, key_type_string);
 
 		/* Update GConf with the new user key */
-		key = g_strdup_printf ("%s/%s", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+		escaped_network = gnome_vfs_escape_string (network);
+		key = g_strdup_printf ("%s/%s", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 		gconf_entry = gconf_client_get_entry (info->gconf_client, key, NULL, TRUE, NULL);
 		g_free (key);
 		if (gconf_entry)
 		{
 			gconf_entry_unref (gconf_entry);
-			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 			gconf_client_set_string (info->gconf_client, key, passphrase, NULL);
 			g_free (key);
-			key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+			key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 			gconf_client_set_string (info->gconf_client, key, network, NULL);
 			g_free (key);
+			key = g_strdup_printf ("%s/%s/key_type", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+			gconf_client_set_string (info->gconf_client, key, key_type_string, NULL);
+			g_free (key);
 		}
+		g_free (escaped_network);
 
-		nmi_passphrase_dialog_clear (dialog, entry);
+		nmi_passphrase_dialog_clear (dialog, GTK_WIDGET (entry));
 	}
 }
 
@@ -130,7 +196,7 @@ void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer us
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 
-		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***");
+		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***", "");
 		nmi_passphrase_dialog_clear (dialog, glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
 	}
 }
@@ -145,8 +211,6 @@ void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer us
 void nmi_passphrase_dialog_show (const char *device, const char *network, NMIAppInfo *info)
 {
 	GtkWidget			*dialog;
-	GtkWidget			*label;
-	const gchar		*label_text;
 
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (device != NULL);
@@ -156,11 +220,11 @@ void nmi_passphrase_dialog_show (const char *device, const char *network, NMIApp
 	nmi_passphrase_dialog_clear (dialog, glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
 
 	/* Insert the Network name into the dialog text */
-	label  = glade_xml_get_widget (info->passphrase_dialog, "label1");
-	label_text = gtk_label_get_label (GTK_LABEL (label));
-	if (label_text)
+	if (info->orig_label_text)
 	{
-		gchar *new_label_text = g_strdup_printf (label_text, network);
+		GtkWidget	*label = glade_xml_get_widget (info->passphrase_dialog, "label1");
+		char		*new_label_text = g_strdup_printf (info->orig_label_text, network);
+
 		gtk_label_set_label (GTK_LABEL (label), new_label_text);
 	}
 
@@ -204,6 +268,8 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 	GtkButton		*ok_button;
 	GtkButton		*cancel_button;
 	GtkEntry		*entry;
+	GtkComboBox	*key_type_combo;
+	GtkLabel		*label;
 
 	info->passphrase_dialog = glade_xml_new(GLADEDIR"/passphrase.glade", NULL, NULL);
 	if (!info->passphrase_dialog)
@@ -223,6 +289,17 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 
 	entry = GTK_ENTRY (glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
 	nmi_passphrase_dialog_clear (dialog, GTK_WIDGET (entry));
+
+	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (info->passphrase_dialog, "key_type_combo"));
+	gtk_combo_box_set_active (key_type_combo, 0);
+	g_signal_connect (G_OBJECT (key_type_combo), "changed", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_key_type_combo_changed), info);
+	nmi_passphrase_dialog_key_type_combo_changed (GTK_WIDGET (key_type_combo), info);
+
+	/* Save original label text to preserve the '%s' and other formatting that gets overwritten
+	 * when the dialog is first shown.
+	 */
+	label = GTK_LABEL (glade_xml_get_widget (info->passphrase_dialog, "label1"));
+	info->orig_label_text = g_strdup (gtk_label_get_label (label));
 
 	return (0);
 }

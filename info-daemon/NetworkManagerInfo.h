@@ -35,6 +35,7 @@
 struct NMIAppInfo
 {
 	GladeXML		*passphrase_dialog;
+	char			*orig_label_text;
 	DBusConnection	*connection;
 	GConfClient	*gconf_client;
 
@@ -46,8 +47,7 @@ struct NMIAppInfo
 	/*
 	GtkWidget	*notification_icon;
 	*/
-	GPid		notification_icon_pid;
-	
+	GPid		notification_icon_pid;	
 };
 typedef struct NMIAppInfo NMIAppInfo;
 

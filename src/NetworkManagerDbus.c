@@ -64,6 +64,25 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
 
 
 /*
+ * nm_dbus_get_enc_method_from_string
+ *
+ * Parse a string and return the encryption method it specifies.
+ *
+ */
+NMAPEncMethod nm_dbus_get_enc_method_from_string (const char *key_type)
+{
+	g_return_val_if_fail (key_type != NULL, NM_AP_ENC_METHOD_UNKNOWN);
+
+	if (!strcmp (key_type, "128-bit-passphrase"))
+		return (NM_AP_ENC_METHOD_128_BIT_PASSPHRASE);
+	else if (!strcmp (key_type, "128-bit-raw-hex-key"))
+		return (NM_AP_ENC_METHOD_128_BIT_HEX_KEY);
+
+	return (NM_AP_ENC_METHOD_UNKNOWN);
+}
+
+
+/*
  * nm_dbus_get_object_path_from_device
  *
  * Copies the object path for a device object.  Caller must free returned string.
@@ -521,7 +540,6 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 								DBUS_TYPE_STRING, nm_ap_get_essid (ap),
 								DBUS_TYPE_INVALID);
 
-fprintf( stderr, "getUserKey\n");
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nm_dbus_get_user_key_for_network(): could not send dbus message");
 
@@ -542,6 +560,7 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 	char		*device;
 	char		*network;
 	char		*passphrase;
+	char		*key_type;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (connection != NULL);
@@ -552,16 +571,21 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 							DBUS_TYPE_STRING, &device,
 							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_STRING, &passphrase,
+							DBUS_TYPE_STRING, &key_type,
 							DBUS_TYPE_INVALID))
 	{
 		NMDevice		*dev;
 
 		if ((dev = nm_get_device_by_iface (data, device)))
-			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase);
+		{
+			NMAPEncMethod	method = nm_dbus_get_enc_method_from_string (key_type);
+			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase, method);
+		}
 
 		dbus_free (device);
 		dbus_free (network);
 		dbus_free (passphrase);
+		dbus_free (key_type);
 	}
 }
 
@@ -653,17 +677,20 @@ char * nm_dbus_get_network_essid (DBusConnection *connection, NMNetworkType type
 /*
  * nm_dbus_get_network_key
  *
- * Get a network's key from NetworkManagerInfo.
+ * Get a network's key and key type from NetworkManagerInfo.
  *
  * NOTE: caller MUST free returned value
  *
  */
-char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, const char *network)
+char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, const char *network, NMAPEncMethod *enc_method)
 {
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
 	char				*key = NULL;
+
+	g_return_val_if_fail (enc_method != NULL, NULL);
+	*enc_method = NM_AP_ENC_METHOD_UNKNOWN;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
@@ -684,25 +711,32 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 	/* Send message and get key back from NetworkManagerInfo */
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
+	{
 		syslog (LOG_ERR, "nm_dbus_get_network_key(): %s raised %s", error.name, error.message);
+		dbus_error_free (&error);
+	}
 	else if (!reply)
 		syslog (LOG_NOTICE, "nm_dbus_get_network_key(): reply was NULL.");
 	else
 	{
-		char	*dbus_string;
+		char	*dbus_key;
+		char *dbus_key_type;
 
 		dbus_error_init (&error);
-		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_key, DBUS_TYPE_STRING, &dbus_key_type, DBUS_TYPE_INVALID))
 		{
-			key = (dbus_string == NULL ? NULL : strdup (dbus_string));
-			dbus_free (dbus_string);
+			key = (dbus_key == NULL ? NULL : strdup (dbus_key));
+			dbus_free (dbus_key);
+			*enc_method = nm_dbus_get_enc_method_from_string (dbus_key_type);
+			dbus_free (dbus_key_type);
 		}
-	}
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
 
-	dbus_message_unref (message);
-	if (reply)
 		dbus_message_unref (reply);
+	}
 
 	return (key);
 }
@@ -1222,7 +1256,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		{
 			if (data->active_device && nm_device_activating (data->active_device))
 			{
-				if (nm_device_now_scanning (data->active_device))
+				if (nm_device_is_wireless (data->active_device) && nm_device_now_scanning (data->active_device))
 					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "scanning", DBUS_TYPE_INVALID);
 				else
 					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);

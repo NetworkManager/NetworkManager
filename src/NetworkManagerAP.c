@@ -37,13 +37,12 @@ struct NMAccessPoint
 	guint16			 rate;
 	gboolean			 encrypted;
 	gboolean			 invalid;
-	NMAPEncMethod		 enc_method;
-	gboolean			 enc_method_good;
 	gboolean			 matched;	// used in ap list diffing
 	gboolean			 trusted;
 
 	/* Things from user prefs */
-	gchar			*enc_key;
+	char				*enc_key;
+	NMAPEncMethod		 enc_method;
 	GTimeVal			 timestamp;
 };
 
@@ -161,14 +160,14 @@ void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
  * Get/set functions for essid
  *
  */
-gchar * nm_ap_get_essid (NMAccessPoint *ap)
+char * nm_ap_get_essid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	return (ap->essid);
 }
 
-void nm_ap_set_essid (NMAccessPoint *ap, gchar * essid)
+void nm_ap_set_essid (NMAccessPoint *ap, char * essid)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -183,14 +182,14 @@ void nm_ap_set_essid (NMAccessPoint *ap, gchar * essid)
  * Get/set functions for encryption key
  *
  */
-gchar * nm_ap_get_enc_key_source (NMAccessPoint *ap)
+char * nm_ap_get_enc_key_source (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	return (ap->enc_key);
 }
 
-void nm_ap_set_enc_key_source (NMAccessPoint *ap, gchar * key)
+void nm_ap_set_enc_key_source (NMAccessPoint *ap, char * key, NMAPEncMethod method)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -198,25 +197,26 @@ void nm_ap_set_enc_key_source (NMAccessPoint *ap, gchar * key)
 		g_free (ap->enc_key);
 
 	ap->enc_key = g_strdup (key);
+	ap->enc_method = method;
 }
 
-gchar *nm_ap_get_enc_key_hashed (NMAccessPoint *ap, NMAPEncMethod method)
+char *nm_ap_get_enc_key_hashed (NMAccessPoint *ap)
 {
-	gchar	*hashed = NULL;
-	char		*source_key;
+	char	*hashed = NULL;
+	char	*source_key;
 
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	source_key = nm_ap_get_enc_key_source (ap);
-	switch (method)
+	switch (ap->enc_method)
 	{
-		case (NM_AP_ENC_METHOD_104_BIT_PASSPHRASE):
+		case (NM_AP_ENC_METHOD_128_BIT_PASSPHRASE):
 			if (source_key)
 				hashed = nm_wireless_128bit_key_from_passphrase (source_key);
 			break;
 
 		case (NM_AP_ENC_METHOD_40_BIT_PASSPHRASE):
-		case (NM_AP_ENC_METHOD_HEX_KEY):
+		case (NM_AP_ENC_METHOD_128_BIT_HEX_KEY):
 		case (NM_AP_ENC_METHOD_UNKNOWN):
 			if (source_key)
 				hashed = g_strdup (source_key);
@@ -376,49 +376,6 @@ void nm_ap_set_matched (NMAccessPoint *ap, gboolean matched)
 
 
 /*
- * Get/set functions for encryption method
- * Given some sort of passphrase/wep key from the user, we try it first
- * as a 104-bit passphrase->key conversion, and fall back from there.  These
- * functions are meant to cache which fallback succeeds so we don't have to
- * do it every time.
- *
- */
-NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, TRUE);
-
-	return (ap->enc_method);
-}
-
-void nm_ap_set_enc_method (NMAccessPoint *ap, NMAPEncMethod enc_method)
-{
-	g_return_if_fail (ap != NULL);
-
-	ap->enc_method = enc_method;
-
-	/* By definition, if the encryption method is "unknown", it cannot be
-	 * "firm" (that is, we know what method we need to use to talk to an ap)
-	 */
-	if (enc_method == NM_AP_ENC_METHOD_UNKNOWN)
-		ap->enc_method_good = FALSE;
-}
-
-gboolean nm_ap_get_enc_method_good (NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, FALSE);
-
-	return (ap->enc_method_good);
-}
-
-void nm_ap_set_enc_method_good (NMAccessPoint *ap, gboolean good)
-{
-	g_return_if_fail (ap != NULL);
-
-	ap->enc_method_good = good;
-}
-
-
-/*
  * Get/Set functions to indicate that an access point is
  * 'trusted'
  *
@@ -435,4 +392,16 @@ void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
 	g_return_if_fail (ap != NULL);
 
 	ap->trusted = trusted;
+}
+
+
+/*
+ * Return the encryption method the user specified for this access point.
+ *
+ */
+NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, TRUE);
+
+	return (ap->enc_method);
 }

@@ -1,3 +1,39 @@
+2004-10-08 Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.[ch]
+	  info-dameon/NetworkManagerInfoDbus.[ch]
+	  info-daemon/NetworkManagerInfoPassphraseDialog.[ch]
+		- Preserve original label text in the passphrase dialog so that
+			it actually gets updated with the new network name the next
+			time around.  Previously, we were overwriting it so you'd get
+			the wrong network name to enter a key for
+		- Add a "Key Type" combo to the passphrase dialog, user selects
+			encryption key type now, type is stored in GConf too
+		- Adjust NM<->NMI DBUS protocol to pass the key type back to NM too
+
+	* src/NetworkManagerAP.[ch]
+		- Remove all the encyption method magic.  It's now set by the user
+			and NetworkManager retrieves the type of encryption key from
+			NetworkManagerInfo
+
+	* src/NetworkManagerAPList.[ch]
+	  src/NetworkManagerDbus.[ch]
+		- Adjust to new way of setting encryption key and method
+		- Pull encryption method down from NMI along with key
+
+	* src/NetworkManagerDevice.[ch]
+		- Removed encryption method fallback magic as the method is now
+			determined by the user.  This greatly simplifies the connection
+			logic.
+		- More robust connection/link logic.  Besides removing the encryption
+			method fallback magic, check whether or not the card is receiving
+			invalidly encrypted packets, which usually indicates that we have
+			a bad WEP key set.
+		- Don't blindly forge ahead when DHCP fails (still not completely fixed)
+
+	* test/nminfotest.c
+		- Test out new "Key Type" stuff in the NMI passphrase dialog
+
 2004-10-07 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.conf

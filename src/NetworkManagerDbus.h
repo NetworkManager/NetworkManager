@@ -66,7 +66,7 @@ void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
 char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType type, const char *network);
 
-char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network);
+char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network, NMAPEncMethod *enc_method);
 
 GTimeVal *	nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
 

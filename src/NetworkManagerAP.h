@@ -31,9 +31,9 @@ typedef enum NMAPEncMethod
 {
 	NM_AP_ENC_METHOD_UNKNOWN = 0,
 	NM_AP_ENC_METHOD_NONE,
-	NM_AP_ENC_METHOD_HEX_KEY,
+	NM_AP_ENC_METHOD_128_BIT_HEX_KEY,
 	NM_AP_ENC_METHOD_40_BIT_PASSPHRASE,
-	NM_AP_ENC_METHOD_104_BIT_PASSPHRASE
+	NM_AP_ENC_METHOD_128_BIT_PASSPHRASE	/* Well, 104-bit really... */
 } NMAPEncMethod;
 
 
@@ -46,12 +46,12 @@ void				nm_ap_ref				(NMAccessPoint *ap);
 const GTimeVal *	nm_ap_get_timestamp		(NMAccessPoint *ap);
 void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
-gchar *			nm_ap_get_essid		(NMAccessPoint *ap);
-void				nm_ap_set_essid		(NMAccessPoint *ap, gchar *essid);
+char *			nm_ap_get_essid		(NMAccessPoint *ap);
+void				nm_ap_set_essid		(NMAccessPoint *ap, char *essid);
 
-gchar *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
-gchar *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap, NMAPEncMethod method);
-void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, gchar *key);
+char *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
+char *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap);
+void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, char *key, NMAPEncMethod method);
 
 gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
@@ -74,13 +74,9 @@ void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
 gboolean			nm_ap_get_matched		(NMAccessPoint *ap);
 void				nm_ap_set_matched		(NMAccessPoint *ap, gboolean matched);
 
-NMAPEncMethod		nm_ap_get_enc_method	(NMAccessPoint *ap);
-void				nm_ap_set_enc_method	(NMAccessPoint *ap, NMAPEncMethod enc_method);
-
-gboolean			nm_ap_get_enc_method_good(NMAccessPoint *ap);
-void				nm_ap_set_enc_method_good(NMAccessPoint *ap, gboolean good);
-
 gboolean			nm_ap_get_trusted		(NMAccessPoint *ap);
 void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
+
+NMAPEncMethod		nm_ap_get_enc_method	(NMAccessPoint *ap);
 
 #endif
