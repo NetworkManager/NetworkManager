@@ -66,10 +66,6 @@
 	#define GTK_STOCK_ABOUT			GTK_STOCK_DIALOG_INFO
 #endif
 
-
-static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
-static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
-static gboolean	nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data);
 static GObject *	nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
 static void		setup_stock (void);
 static void		nmwa_icons_init (NMWirelessApplet *applet);
@@ -505,28 +501,6 @@ void show_warning_dialog (gboolean error, gchar *mesg, ...)
 
 
 /*
- * nmwa_destroy
- *
- * Destroy the applet and clean up its data
- *
- */
-static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
-{
-	if (applet->menu)
-		nmwa_dispose_menu_items (applet);
-
-	if (applet->redraw_timeout_id > 0)
-	{
-		gtk_timeout_remove (applet->redraw_timeout_id);
-		applet->redraw_timeout_id = 0;
-	}
-
-	if (applet->gconf_client)
-		g_object_unref (G_OBJECT (applet->gconf_client));
-}
-
-
-/*
  * nmwa_update_network_timestamp
  *
  * Update the timestamp of a network in GConf.
@@ -660,24 +634,6 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
- * nmwa_menu_show_cb
- *
- * Pop up the wireless networks menu in response to a click on the applet
- *
- */
-static void nmwa_menu_show_cb (GtkWidget *menu, NMWirelessApplet *applet)
-{
-	if (!applet->tooltips)
-		applet->tooltips = gtk_tooltips_new ();
-	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, NULL, NULL);
-
-	nmwa_dispose_menu_items (applet);
-	nmwa_populate_menu (applet);
-	gtk_widget_show (applet->menu);
-}
-
-
-/*
  * nmwa_menu_add_separator_item
  *
  */
@@ -725,22 +681,36 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 
 	if (device->type == DEVICE_TYPE_WIRED_ETHERNET)
 	{
-	     menu_item = nm_menu_wired_new ();
-	     nm_menu_wired_update (NM_MENU_WIRED (menu_item), device, n_devices);
+		NMWiredMenuItem	*item = wired_menu_item_new ();
+		GtkCheckMenuItem	*gtk_item;
+
+		gtk_item = wired_menu_item_get_check_item (item);
+	     wired_menu_item_update (item, device, n_devices);
 		if (applet->active_device == device)
-			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
+			gtk_check_menu_item_set_active (gtk_item, TRUE);
+
+		g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (device->nm_device));
+		g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
+		g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
+
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (gtk_item));
+		gtk_widget_show (GTK_WIDGET (gtk_item));
 	}
 	else
 	{
-	     menu_item = nm_menu_network_new ();
-	     nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, n_devices);
+		NMWirelessMenuItem	*item = wireless_menu_item_new ();
+		GtkMenuItem		*gtk_item;
+
+		gtk_item = wireless_menu_item_get_item (item);
+	     wireless_menu_item_update (item, device, n_devices);
+
+		g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (device->nm_device));
+		g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
+		g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
+
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (gtk_item));
+		gtk_widget_show (GTK_WIDGET (gtk_item));
 	}
-
-	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
-	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
-
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-	gtk_widget_show (menu_item);
 }
 
 
@@ -813,22 +783,26 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	/* Add all networks in our network list to the menu */
 	for (list = dev->networks; list; list = list->next)
 	{
-		GtkWidget *menu_item;
-		WirelessNetwork *net;
+		NMNetworkMenuItem	*item;
+		GtkCheckMenuItem	*gtk_item;
+		WirelessNetwork	*net;
 
 		net = (WirelessNetwork *) list->data;
 
-		menu_item = nm_menu_wireless_new (applet->encryption_size_group);
-		gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+		item = network_menu_item_new (applet->encryption_size_group);
+		gtk_item = network_menu_item_get_check_item (item);
+
+		gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (gtk_item));
 		if (applet->active_device == dev && net->active)
-			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
-		nm_menu_wireless_update (NM_MENU_WIRELESS (menu_item), net, has_encrypted);
+			gtk_check_menu_item_set_active (gtk_item, TRUE);
+		network_menu_item_update (item, net, has_encrypted);
 
-		g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (net->essid));
-		g_object_set_data (G_OBJECT (menu_item), "nm_device", g_strdup (dev->nm_device));
-		g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
+		g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (net->essid));
+		g_object_set_data (G_OBJECT (gtk_item), "nm_device", g_strdup (dev->nm_device));
+		g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
+		g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
 
-		gtk_widget_show (menu_item);
+		gtk_widget_show (GTK_WIDGET (gtk_item));
 	}
 }
 
@@ -945,6 +919,21 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 }
 
 
+static void nmwa_set_scanning_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_enable_scanning (applet, !applet->scanning_enabled);
+}
+
+static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_enable_scanning (applet, !applet->wireless_enabled);
+}
+
+
 /*
  * nmwa_menu_item_data_free
  *
@@ -957,6 +946,7 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 	GtkWidget *menu;
 
 	g_return_if_fail (menu_item != NULL);
+	g_return_if_fail (data != NULL);
 
 	menu = GTK_WIDGET(data);
 
@@ -972,7 +962,13 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 		g_free (tag);
 	}
 
-	gtk_container_remove(GTK_CONTAINER(menu), menu_item);
+	if ((tag = g_object_get_data (G_OBJECT (menu_item), "nm-item-data")))
+	{
+		g_object_set_data (G_OBJECT (menu_item), "nm-item-data", NULL);
+		g_free (tag);
+	}
+
+	gtk_widget_destroy (menu_item);
 }
 
 
@@ -982,51 +978,75 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
  * Destroy the menu and each of its items data tags
  *
  */
-static void nmwa_dispose_menu_items (NMWirelessApplet *applet)
+static void nmwa_dropdown_menu_clear (GtkWidget *menu)
 {
-	g_return_if_fail (applet != NULL);
+	g_return_if_fail (menu != NULL);
 
-	/* Free the "network" data on each menu item */
-	gtk_container_foreach (GTK_CONTAINER (applet->menu), nmwa_menu_item_data_free, applet->menu);
+	/* Free the "network" data on each menu item, and destroy the item */
+	gtk_container_foreach (GTK_CONTAINER (menu), nmwa_menu_item_data_free, menu);
 }
 
 
 /*
- * nmwa_populate_menu
+ * nmwa_dropdown_menu_populate
  *
  * Set up our networks menu from scratch
  *
  */
-static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
+static void nmwa_dropdown_menu_populate (GtkWidget *menu, NMWirelessApplet *applet)
 {
-	GtkWidget		 *menu = applet->menu;
-
-	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_if_fail (menu != NULL);
+	g_return_if_fail (applet != NULL);
 
 	if (applet->applet_state == APPLET_STATE_NO_NM)
-	{
 		nmwa_menu_add_text_item (menu, _("NetworkManager is not running..."));
-		return NULL;
+	else
+		nmwa_menu_add_devices (menu, applet);
+}
+
+
+/*
+ * nmwa_dropdown_menu_show_cb
+ *
+ * Pop up the wireless networks menu
+ *
+ */
+static void nmwa_dropdown_menu_show_cb (GtkWidget *menu, NMWirelessApplet *applet)
+{
+	g_return_if_fail (menu != NULL);
+	g_return_if_fail (applet != NULL);
+
+	if (!applet->tooltips)
+		applet->tooltips = gtk_tooltips_new ();
+	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, NULL, NULL);
+
+	if (applet->dropdown_menu && (menu == applet->dropdown_menu))
+	{
+		nmwa_dropdown_menu_clear (applet->dropdown_menu);
+		nmwa_dropdown_menu_populate (applet->dropdown_menu, applet);
+		gtk_widget_show_all (applet->dropdown_menu);
 	}
-
-	nmwa_menu_add_devices (menu, applet);
-
-	return (menu);
 }
 
-
-static void nmwa_set_scanning_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+/*
+ * nmwa_dropdown_menu_create
+ *
+ * Create the applet's dropdown menu
+ *
+ */
+static GtkWidget *nmwa_dropdown_menu_create (GtkMenuItem *parent, NMWirelessApplet *applet)
 {
-	g_return_if_fail (applet != NULL);
+	GtkWidget	*menu;
 
-	nmwa_dbus_enable_scanning (applet, !applet->scanning_enabled);
-}
+	g_return_val_if_fail (parent != NULL, NULL);
+	g_return_val_if_fail (applet != NULL, NULL);
 
-static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
-{
-	g_return_if_fail (applet != NULL);
+	menu = gtk_menu_new ();
+	gtk_container_set_border_width (GTK_CONTAINER (menu), 0);
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (parent), menu);
+	g_signal_connect (menu, "show", G_CALLBACK (nmwa_dropdown_menu_show_cb), applet);
 
-	nmwa_dbus_enable_scanning (applet, !applet->wireless_enabled);
+	return menu;
 }
 
 
@@ -1134,53 +1154,32 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 
 /*
- * nmwa_setup_widgets
+ * nmwa_theme_change_cb
  *
- * Intialize the applet's widgets and packing, create the initial
- * menu of networks.
+ * Destroy the popdown menu when the theme changes
  *
  */
-static void nmwa_setup_widgets (NMWirelessApplet *applet)
+static void nmwa_theme_change_cb (NMWirelessApplet *applet)
 {
-	GtkWidget      *menu_bar;
-	GtkWidget		*event_box;
+	g_return_if_fail (applet != NULL);
 
-	/* construct pixmap widget */
-	applet->pixmap = gtk_image_new ();
-	applet->event_box = gtk_event_box_new ();
-	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
+	if (applet->dropdown_menu)
+		nmwa_dropdown_menu_clear (applet->dropdown_menu);
 
-	menu_bar = gtk_menu_bar_new ();
-	gtk_container_add (GTK_CONTAINER(applet->event_box), menu_bar);
-
-	applet->toplevel_menu = gtk_menu_item_new();
-	gtk_widget_set_name (applet->toplevel_menu, "ToplevelMenu");
-	gtk_container_set_border_width (GTK_CONTAINER (applet->toplevel_menu), 0);
-	gtk_container_add (GTK_CONTAINER(applet->toplevel_menu), applet->pixmap);
-	gtk_menu_shell_append (GTK_MENU_SHELL(menu_bar), applet->toplevel_menu);
-
-	applet->context_menu = nmwa_context_menu_create (applet);
-	g_signal_connect (applet->toplevel_menu, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press), applet);
-
-	applet->menu = gtk_menu_new ();
-	gtk_menu_item_set_submenu (GTK_MENU_ITEM (applet->toplevel_menu), applet->menu);
-	g_signal_connect (applet->menu, "show", G_CALLBACK (nmwa_menu_show_cb), applet);
-
-	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-
-	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
-
-	gtk_widget_show_all (GTK_WIDGET (applet));
+	if (applet->top_menu_item)
+	{
+		gtk_menu_item_remove_submenu (GTK_MENU_ITEM (applet->top_menu_item));
+		applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
+	}
 }
 
-
 /*
- * nmwa_toplevel_menu_button_press
+ * nmwa_toplevel_menu_button_press_cb
  *
  * Handle right-clicks for the context popup menu
  *
  */
-static gboolean nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+static gboolean nmwa_toplevel_menu_button_press_cb (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
 
@@ -1198,6 +1197,70 @@ static gboolean nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButt
 
 	return (FALSE);
 }
+
+
+/*
+ * nmwa_setup_widgets
+ *
+ * Intialize the applet's widgets and packing, create the initial
+ * menu of networks.
+ *
+ */
+static void nmwa_setup_widgets (NMWirelessApplet *applet)
+{
+	GtkWidget      *menu_bar;
+	GtkWidget		*event_box;
+
+	/* Event box for tooltips */
+	applet->event_box = gtk_event_box_new ();
+	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
+
+	menu_bar = gtk_menu_bar_new ();
+
+	applet->top_menu_item = gtk_menu_item_new();
+	gtk_widget_set_name (applet->top_menu_item, "ToplevelMenu");
+	gtk_container_set_border_width (GTK_CONTAINER (applet->top_menu_item), 0);
+	g_signal_connect (applet->top_menu_item, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press_cb), applet);
+
+	applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
+
+	applet->pixmap = gtk_image_new ();
+
+	/* Set up the widget structure and show the applet */
+	gtk_container_add (GTK_CONTAINER(applet->top_menu_item), applet->pixmap);
+	gtk_menu_shell_append (GTK_MENU_SHELL(menu_bar), applet->top_menu_item);
+	gtk_container_add (GTK_CONTAINER(applet->event_box), menu_bar);
+	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
+	gtk_widget_show_all (GTK_WIDGET (applet));
+
+	applet->context_menu = nmwa_context_menu_create (applet);
+	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+}
+
+
+/*
+ * nmwa_destroy
+ *
+ * Destroy the applet and clean up its data
+ *
+ */
+static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
+{
+	if (applet->dropdown_menu)
+		nmwa_dropdown_menu_clear (applet->dropdown_menu);
+	if (applet->top_menu_item)
+		gtk_menu_item_remove_submenu (GTK_MENU_ITEM (applet->top_menu_item));
+
+	if (applet->redraw_timeout_id > 0)
+	{
+		gtk_timeout_remove (applet->redraw_timeout_id);
+		applet->redraw_timeout_id = 0;
+	}
+
+	if (applet->gconf_client)
+		g_object_unref (G_OBJECT (applet->gconf_client));
+}
+
 
 /*
  * nmwa_get_instance
@@ -1237,7 +1300,8 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	/* Load pixmaps and create applet widgets */
 	nmwa_setup_widgets (applet);
 
-	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy), NULL);
+	g_signal_connect (applet, "destroy", G_CALLBACK (nmwa_destroy), NULL);
+	g_signal_connect (applet, "style-set", G_CALLBACK (nmwa_theme_change_cb), NULL);
 
 	/* Start redraw timeout */
 	nmwa_start_redraw_timeout (applet);
@@ -1283,16 +1347,16 @@ nmwa_icons_free (NMWirelessApplet *applet)
 {
 	gint i;
 
-        g_object_unref (applet->no_nm_icon);
-        g_object_unref (applet->wired_icon);
-        g_object_unref (applet->adhoc_icon);
+	g_object_unref (applet->no_nm_icon);
+	g_object_unref (applet->wired_icon);
+	g_object_unref (applet->adhoc_icon);
 	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->wired_connecting_icons[i]);
-        g_object_unref (applet->wireless_00_icon);
-        g_object_unref (applet->wireless_25_icon);
-        g_object_unref (applet->wireless_50_icon);
-        g_object_unref (applet->wireless_75_icon);
-        g_object_unref (applet->wireless_100_icon);
+	g_object_unref (applet->wireless_00_icon);
+	g_object_unref (applet->wireless_25_icon);
+	g_object_unref (applet->wireless_50_icon);
+	g_object_unref (applet->wireless_75_icon);
+	g_object_unref (applet->wireless_100_icon);
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->wireless_connecting_icons[i]);
 	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)

@@ -22,83 +22,29 @@
 #ifndef MENU_INFO_H
 #define MENU_INFO_H
 
-
-/* We have two widgets that we use here.
- */
 #include <gtk/gtk.h>
 #include "NMWirelessApplet.h"
 
-#define NM_TYPE_MENU_WIRED      (nm_menu_wired_get_type ())
-#define NM_MENU_WIRED(widget)   (G_TYPE_CHECK_INSTANCE_CAST ((widget), NM_TYPE_MENU_WIRED, NMMenuWired))
 
-#define NM_TYPE_MENU_NETWORK    (nm_menu_network_get_type ())
-#define NM_MENU_NETWORK(widget) (G_TYPE_CHECK_INSTANCE_CAST ((widget), NM_TYPE_MENU_NETWORK, NMMenuNetwork))
-
-#define NM_TYPE_MENU_WIRELESS    (nm_menu_wireless_get_type ())
-#define NM_MENU_WIRELESS(widget) (G_TYPE_CHECK_INSTANCE_CAST ((widget), NM_TYPE_MENU_WIRELESS, NMMenuWireless))
+typedef struct NMWiredMenuItem NMWiredMenuItem;
+typedef struct NMWirelessMenuItem NMWirelessMenuItem;
+typedef struct NMNetworkMenuItem NMNetworkMenuItem;
 
 
-typedef struct
-{
-  GtkCheckMenuItemClass parent_class;
-} NMMenuWiredClass;
+NMWiredMenuItem	*wired_menu_item_new (void);
+GtkCheckMenuItem	*wired_menu_item_get_check_item (NMWiredMenuItem *item);
+void				 wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gint n_devices);
 
-typedef struct
-{
-  GtkCheckMenuItem parent;
-  GtkWidget *label;
-} NMMenuWired;
+NMWirelessMenuItem	*wireless_menu_item_new (void);
+GtkMenuItem		*wireless_menu_item_get_item (NMWirelessMenuItem *item);
+void				 wireless_menu_item_update (NMWirelessMenuItem *item, NetworkDevice *dev, const gint n_devices);
 
-
-typedef struct
-{
-  GtkMenuItemClass parent_class;
-} NMMenuNetworkClass;
-
-typedef struct
-{
-  GtkMenuItem parent;
-  GtkWidget *event_box;
-  GtkWidget *label;
-} NMMenuNetwork;
-
-
-typedef struct
-{
-  GtkCheckMenuItemClass parent_class;
-} NMMenuWirelessClass;
-
-typedef struct
-{
-  GtkCheckMenuItem parent;
-  GtkWidget *label;
-  GtkWidget *cell_view;
-  GtkWidget *security_image;
-  GObject *progress_bar;
-} NMMenuWireless;
-
-
-
-GType      nm_menu_wired_get_type (void);
-GtkWidget *nm_menu_wired_new      (void);
-void       nm_menu_wired_update   (NMMenuWired   *menu_wired,
-				   NetworkDevice *network,
-				   gint           n_devices);
-
-GType      nm_menu_network_get_type (void);
-GtkWidget *nm_menu_network_new      (void);
-void       nm_menu_network_update   (NMMenuNetwork   *menu_network,
-				     NetworkDevice   *network,
-				     gint             n_devices);
-
-GType      nm_menu_wireless_get_type (void);
-GtkWidget *nm_menu_wireless_new      (GtkSizeGroup    *encryption_size_group);
-void       nm_menu_wireless_update   (NMMenuWireless  *menu_info,
-				      WirelessNetwork *network,
-				      gboolean         has_encrypted);
+NMNetworkMenuItem	*network_menu_item_new (GtkSizeGroup *encryption_size_group);
+GtkCheckMenuItem	*network_menu_item_get_check_item (NMNetworkMenuItem *item);
+void				 network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted);
 
 /* Helper function; escapes an essid for human readable display. */
-char      *nm_menu_wireless_escape_essid_for_display (const char *essid);
+char      		*nm_menu_network_escape_essid_for_display (const char *essid);
 
 
 #endif /* MENU_INFO_H */

@@ -1,3 +1,12 @@
+2005-02-21  Dan Williams  <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.[ch]
+	  panel-applet/menu-info.[ch]
+		- Give the panel applet some major love: menu items are no longer
+			subclasses of GtkCheckMenuItem, they are actual GtkCheckMenuItems.
+			This allows the applet to actually reflect theme changes correctly,
+			since themeing of subclassed items in GTK _sucks_.
+
 2005-02-18  Dan Williams  <dcbw@redhat.com>
 
 	* libnm_glib/libnm_glib.[ch]

@@ -144,8 +144,8 @@ typedef struct
 
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
-	GtkWidget			*menu;
-	GtkWidget			*toplevel_menu;
+	GtkWidget			*top_menu_item;
+	GtkWidget			*dropdown_menu;
 	GtkWidget			*event_box;
 	GtkSizeGroup        *encryption_size_group;
 	GtkTooltips		*tooltips;

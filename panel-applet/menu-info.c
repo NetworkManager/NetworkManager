@@ -30,6 +30,7 @@
 #include <config.h>
 #endif
 
+#include <stdio.h>
 #include <glib/gi18n.h>
 #include <string.h>
 #include "menu-info.h"
@@ -41,253 +42,225 @@
 
 #include "NMWirelessAppletDbus.h"
 
-static gboolean nm_menu_wired_expose_event    (GtkWidget *widget, GdkEventExpose *event);
-static gboolean nm_menu_wireless_expose_event (GtkWidget *widget, GdkEventExpose *event);
 
+/****************************************************************
+ *   Wired menu item
+ ****************************************************************/
 
-
-G_DEFINE_TYPE (NMMenuWired, nm_menu_wired, GTK_TYPE_CHECK_MENU_ITEM);
-
-
-static void
-nm_menu_wired_init (NMMenuWired *menu_wired)
+struct NMWiredMenuItem
 {
-  menu_wired->label = gtk_label_new (NULL);
-  gtk_misc_set_alignment (GTK_MISC (menu_wired->label), 0.0, 0.5);
-  gtk_container_add (GTK_CONTAINER (menu_wired), menu_wired->label);
-  gtk_widget_show (menu_wired->label);
+	GtkCheckMenuItem	*check_item;
+	GtkLabel			*label;
+};
+
+
+NMWiredMenuItem *wired_menu_item_new (void)
+{
+	NMWiredMenuItem	*item = g_malloc0 (sizeof (NMWiredMenuItem));
+
+	g_return_val_if_fail (item != NULL, NULL);
+
+	item->check_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new ());
+	item->label = GTK_LABEL (gtk_label_new (NULL));
+	gtk_misc_set_alignment (GTK_MISC (item->label), 0.0, 0.5);
+	gtk_container_add (GTK_CONTAINER (item->check_item), GTK_WIDGET (item->label));
+	gtk_widget_show (GTK_WIDGET (item->label));
+
+	return item;
+}
+
+GtkCheckMenuItem *wired_menu_item_get_check_item (NMWiredMenuItem *item)
+{
+	g_return_val_if_fail (item != NULL, NULL);
+
+	return item->check_item;
+}
+
+void wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gint n_devices)
+{
+	gchar *text;
+	gchar *dev_name;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (item != NULL);
+	g_assert (dev->type == DEVICE_TYPE_WIRED_ETHERNET);
+
+	dev_name = dev->hal_name ? dev->hal_name : dev->nm_name;
+
+	if (n_devices > 1)
+		text = g_strdup_printf (_("Wired Network (%s)"), dev_name);
+	else
+		text = g_strdup (_("Wired Network"));
+
+	gtk_label_set_text (GTK_LABEL (item->label), text);
+
+	/* Only dim the item if the device supports carrier detection AND
+	 * we know it doesn't have a link.
+	 */
+	if (dev->supports_carrier_detect == TRUE)
+		gtk_widget_set_sensitive (GTK_WIDGET (item->check_item), dev->link);
 }
 
 
-static void
-nm_menu_wired_class_init (NMMenuWiredClass *klass)
+/****************************************************************
+ *   Wireless menu item
+ ****************************************************************/
+
+struct NMWirelessMenuItem
 {
-    GTK_WIDGET_CLASS (klass)->expose_event = nm_menu_wired_expose_event;
-}
+	GtkMenuItem	*menu_item;
+	GtkLabel		*label;
+};
 
-/* Bad hack */
-static gboolean
-nm_menu_wired_expose_event (GtkWidget *widget, GdkEventExpose *event)
+
+static gboolean label_expose (GtkWidget *widget)
 {
-  gboolean retval;
-  GtkStyle *old_style;
-
-  old_style = NM_MENU_WIRED (widget)->label->style;
-  NM_MENU_WIRED (widget)->label->style = 
-    gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
-			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
-			       GTK_TYPE_LABEL);
-  retval = GTK_WIDGET_CLASS (nm_menu_wired_parent_class)->expose_event (widget, event);
-  NM_MENU_WIRED (widget)->label->style = old_style;
-
-  return retval;
-}
-
-GtkWidget *
-nm_menu_wired_new (void)
-{
-  GtkWidget *retval = g_object_new (nm_menu_wired_get_type (), NULL);
-
-  return retval;
-}
-
-
-void
-nm_menu_wired_update (NMMenuWired   *menu_wired,
-		      NetworkDevice *dev,
-		      gint           n_devices)
-{
-  gchar *text;
-  gchar *dev_name;
-
-  g_assert (dev->type == DEVICE_TYPE_WIRED_ETHERNET);
-
-  dev_name = dev->hal_name ? dev->hal_name : dev->nm_name;
-
-  if (n_devices > 1)
-    text = g_strdup_printf (_("Wired Network (%s)"), dev_name);
-  else
-    text = g_strdup (_("Wired Network"));
-
-  gtk_label_set_text (GTK_LABEL (menu_wired->label), text);
-  /* Only dim the item if the device supports carrier detection AND
-   * we know it doesn't have a link.
-   */
-  if (dev->supports_carrier_detect == TRUE)
-    gtk_widget_set_sensitive (GTK_WIDGET (menu_wired), dev->link);
-}
-
-
-/* NMMenuNetwork */
-G_DEFINE_TYPE (NMMenuNetwork, nm_menu_network, GTK_TYPE_MENU_ITEM);
-
-
-static gboolean
-label_expose (GtkWidget *widget)
-{
-  /* Bad hack to make the label draw normally, instead of insensitive. */
-  widget->state = GTK_STATE_NORMAL;
+	/* Bad hack to make the label draw normally, instead of insensitive. */
+	widget->state = GTK_STATE_NORMAL;
   
-  return FALSE;
+	return FALSE;
 }
 
-static void
-nm_menu_network_init (NMMenuNetwork *menu_network)
+NMWirelessMenuItem *wireless_menu_item_new (void)
 {
-  menu_network->label = gtk_label_new (NULL);
+	NMWirelessMenuItem	*item = g_malloc0 (sizeof (NMWirelessMenuItem));
 
-  /* Make sure it looks slightly different if the label determines the width of the widget */
-  gtk_misc_set_padding (GTK_MISC (menu_network->label), 6, 0);
-  g_signal_connect (menu_network->label, "expose-event", G_CALLBACK (label_expose), NULL);
+	g_return_val_if_fail (item != NULL, NULL);
 
-  gtk_container_add (GTK_CONTAINER (menu_network), menu_network->label);
-  gtk_widget_show (menu_network->label);
+	item->menu_item = GTK_MENU_ITEM (gtk_menu_item_new ());
 
-  gtk_widget_set_sensitive (GTK_WIDGET (menu_network), FALSE);
+	/* Make sure it looks slightly different if the label determines the width of the widget */
+	item->label = GTK_LABEL (gtk_label_new (NULL));
+	gtk_misc_set_padding (GTK_MISC (item->label), 6, 0);
+	g_signal_connect (G_OBJECT (item->label), "expose-event", G_CALLBACK (label_expose), NULL);
+
+	gtk_container_add (GTK_CONTAINER (item->menu_item), GTK_WIDGET (item->label));
+	gtk_widget_show (GTK_WIDGET (item->label));
+
+	gtk_widget_set_sensitive (GTK_WIDGET (item->menu_item), FALSE);
+
+	return item;
+}
+
+GtkMenuItem *wireless_menu_item_get_item (NMWirelessMenuItem *item)
+{
+	g_return_val_if_fail (item != NULL, NULL);
+
+	return item->menu_item;
+}
+
+void wireless_menu_item_update (NMWirelessMenuItem *item, NetworkDevice *dev, const gint n_devices)
+{
+	char *text;
+	const char *dev_name;
+	gint n_essids;
+
+	n_essids = g_slist_length (dev->networks);
+	dev_name = dev->hal_name ? dev->hal_name : dev->nm_name;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (item != NULL);
+	g_assert (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+
+	if (n_devices > 1)
+		text = g_strdup_printf (ngettext ("Wireless Network (%s)", "Wireless Networks (%s)", n_essids), dev_name);
+	else
+		text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
+
+	gtk_label_set_markup (GTK_LABEL (item->label), text);
+	g_free (text);
 }
 
 
-static void
-nm_menu_network_class_init (NMMenuNetworkClass *menu_network)
+/****************************************************************
+ *   Wireless Network menu item
+ ****************************************************************/
+
+struct NMNetworkMenuItem
 {
-  
+	GtkCheckMenuItem	*check_item;
+	GtkLabel			*label;
+	GtkWidget			*cell_view;
+	GtkWidget			*security_image;
+	GObject			*progress_bar;
+};
+
+
+NMNetworkMenuItem *network_menu_item_new (GtkSizeGroup *encryption_size_group)
+{
+	GtkWidget			*hbox;
+	NMNetworkMenuItem	*item = g_malloc0 (sizeof (NMNetworkMenuItem));
+
+	g_return_val_if_fail (item != NULL, NULL);
+
+	item->check_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new ());
+	gtk_check_menu_item_set_draw_as_radio (item->check_item, TRUE);
+
+	hbox = gtk_hbox_new (FALSE, 6);
+	item->label = GTK_LABEL (gtk_label_new (NULL));
+	gtk_misc_set_alignment (GTK_MISC (item->label), 0.0, 0.5);
+
+	item->security_image = gtk_image_new ();
+	gtk_size_group_add_widget (encryption_size_group, item->security_image);
+
+	gtk_container_add (GTK_CONTAINER (item->check_item), hbox);
+	gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (item->label), TRUE, TRUE, 0);
+	item->cell_view = gtk_cell_view_new ();
+	item->progress_bar = g_object_new (GTK_TYPE_CELL_RENDERER_PROGRESS, "text", "", NULL);
+	gtk_cell_renderer_set_fixed_size (GTK_CELL_RENDERER (item->progress_bar), 150, -1);
+	gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (item->cell_view), GTK_CELL_RENDERER (item->progress_bar), TRUE);
+	gtk_box_pack_start (GTK_BOX (hbox), item->cell_view, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (hbox), item->security_image, FALSE, FALSE, 0);
+
+	gtk_widget_show (GTK_WIDGET (item->label));
+	gtk_widget_show (item->cell_view);
+	gtk_widget_show (hbox);
+
+	return item;
 }
 
-GtkWidget *
-nm_menu_network_new (void)
+GtkCheckMenuItem *network_menu_item_get_check_item (NMNetworkMenuItem *item)
 {
-  GtkWidget *retval = g_object_new (nm_menu_network_get_type (), NULL);
+	g_return_val_if_fail (item != NULL, NULL);
 
-  return retval;
-}
-
-
-void
-nm_menu_network_update (NMMenuNetwork *menu_network,
-			NetworkDevice *network,
-			gint           n_devices)
-{
-  char *text, *markup;
-  const char *network_name;
-  gint n_essids;
-
-  n_essids = g_slist_length (network->networks);
-  network_name = network->hal_name ? network->hal_name : network->nm_name;
-
-  g_assert (network->type == DEVICE_TYPE_WIRELESS_ETHERNET);
-
-  if (n_devices > 1)
-    text = g_strdup_printf (ngettext ("Wireless Network (%s)", "Wireless Networks (%s)", n_essids), network_name);
-  else
-    text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
-
-  markup = g_markup_printf_escaped ("<span foreground=\"#aaaaaa\">%s</span>", text);
-  gtk_label_set_markup (GTK_LABEL (menu_network->label), markup);
-  g_free (markup);
-  g_free (text);
-}
-
-/* NMMenuWireless items*/
-G_DEFINE_TYPE (NMMenuWireless, nm_menu_wireless, GTK_TYPE_CHECK_MENU_ITEM);
-
-static void
-nm_menu_wireless_init (NMMenuWireless *menu_info)
-{
-  GtkWidget *hbox;
-
-  gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (menu_info), TRUE);
-  hbox = gtk_hbox_new (FALSE, 6);
-  menu_info->label = gtk_label_new (NULL);
-  gtk_misc_set_alignment (GTK_MISC (menu_info->label), 0.0, 0.5);
-  menu_info->security_image = gtk_image_new ();
-
-  gtk_container_add (GTK_CONTAINER (menu_info), hbox);
-  gtk_box_pack_start (GTK_BOX (hbox), menu_info->label, TRUE, TRUE, 0);
-  menu_info->cell_view = gtk_cell_view_new ();
-  menu_info->progress_bar = g_object_new (GTK_TYPE_CELL_RENDERER_PROGRESS,
-					  "text", "",
-					  NULL);
-  gtk_cell_renderer_set_fixed_size (GTK_CELL_RENDERER (menu_info->progress_bar), 150, -1);
-  gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (menu_info->cell_view),
-			      GTK_CELL_RENDERER (menu_info->progress_bar),
-			      TRUE);
-  gtk_box_pack_start (GTK_BOX (hbox), menu_info->cell_view, FALSE, FALSE, 0);
-  gtk_box_pack_start (GTK_BOX (hbox), menu_info->security_image, FALSE, FALSE, 0);
-
-  gtk_widget_show (menu_info->label);
-  gtk_widget_show (menu_info->cell_view);
-  gtk_widget_show (hbox);
-}
-
-static void
-nm_menu_wireless_class_init (NMMenuWirelessClass *menu_info_class)
-{
-  GTK_WIDGET_CLASS (menu_info_class)->expose_event = nm_menu_wireless_expose_event;
-}
-
-GtkWidget *
-nm_menu_wireless_new (GtkSizeGroup    *encryption_size_group)
-{
-  GtkWidget *retval = g_object_new (nm_menu_wireless_get_type (), NULL);
-
-  gtk_size_group_add_widget (encryption_size_group,
-			     NM_MENU_WIRELESS (retval)->security_image);
-
-  return retval;
-}
-
-/* Bad hack */
-static gboolean
-nm_menu_wireless_expose_event (GtkWidget *widget, GdkEventExpose *event)
-{
-  gboolean retval;
-  GtkStyle *old_style;
-
-  old_style = NM_MENU_WIRELESS (widget)->label->style;
-  NM_MENU_WIRELESS (widget)->label->style = 
-    gtk_rc_get_style_by_paths (gtk_settings_get_default (),
-			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
-			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
-			       GTK_TYPE_LABEL);
-  retval = GTK_WIDGET_CLASS (nm_menu_wireless_parent_class)->expose_event (widget, event);
-  NM_MENU_WIRELESS (widget)->label->style = old_style;
-
-  return retval;
+	return item->check_item;
 }
 
 /* has_encrypted means that the wireless network has an encrypted
  * area, and thus we need to allow for spacing.
  */
-void
-nm_menu_wireless_update (NMMenuWireless  *menu_info,
-			 WirelessNetwork *network,
-			 gboolean         has_encrypted)
+void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted)
 {
-  char *display_essid;
+	char *display_essid;
 
-  display_essid = nm_menu_wireless_escape_essid_for_display (network->essid);
-  gtk_label_set_text (GTK_LABEL (menu_info->label), display_essid);
-  g_free (display_essid);
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (network != NULL);
 
-  g_object_set (G_OBJECT (menu_info->progress_bar),
-		"value", CLAMP ((int) network->strength, 0, 100),
-		NULL);
+	display_essid = nm_menu_network_escape_essid_for_display (network->essid);
+	gtk_label_set_text (GTK_LABEL (item->label), display_essid);
+	g_free (display_essid);
 
-  /* Deal with the encrypted icon */
-  g_object_set (menu_info->security_image, "visible", has_encrypted, NULL);
+	g_object_set (G_OBJECT (item->progress_bar), "value", CLAMP ((int) network->strength, 0, 100), NULL);
 
-  if (network->encrypted)
-    gtk_image_set_from_stock (GTK_IMAGE (menu_info->security_image), "gnome-lockscreen", GTK_ICON_SIZE_MENU);
-  else
-    gtk_image_set_from_stock (GTK_IMAGE (menu_info->security_image), NULL, GTK_ICON_SIZE_MENU);
+	/* Deal with the encrypted icon */
+	g_object_set (item->security_image, "visible", is_encrypted, NULL);
+
+	if (network->encrypted)
+		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), "gnome-lockscreen", GTK_ICON_SIZE_MENU);
+	else
+		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), NULL, GTK_ICON_SIZE_MENU);
 }
 
 
+
+
+/****************************************************************
+ *   Utility stuff
+ ****************************************************************/
+
 /* This is copied from eel.
  */
-static char *
-eel_make_valid_utf8 (const char *name)
+static char *eel_make_valid_utf8 (const char *name)
 {
 	GString *string;
 	const char *remainder, *invalid;
@@ -324,11 +297,10 @@ eel_make_valid_utf8 (const char *name)
 	return g_string_free (string, FALSE);
 }
 
-char *
-nm_menu_wireless_escape_essid_for_display (const char *essid)
+char *nm_menu_network_escape_essid_for_display (const char *essid)
 {
-  if (g_utf8_validate (essid, -1, NULL))
-    return g_strdup (essid);
-  else
-    return eel_make_valid_utf8 (essid);
+	if (g_utf8_validate (essid, -1, NULL))
+		return g_strdup (essid);
+	else
+		return eel_make_valid_utf8 (essid);
 }
