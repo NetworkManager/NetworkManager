@@ -25,7 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
 #include <iwlib.h>
-
+#include <netinet/ether.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
@@ -953,6 +953,124 @@ gboolean nm_dbus_get_network_trusted (DBusConnection *connection, NMNetworkType 
 		dbus_message_unref (reply);
 
 	return (trusted);
+}
+
+
+/*
+ * nm_dbus_get_network_addresses
+ *
+ * Query NetworkManagerInfo for known MAC address of a wireless network
+ *
+ * Returns:	NULL on error of if no MAC address exists for that network
+ *			char array of addresses on success, num_addr = # items
+ *
+ */
+char **nm_dbus_get_network_addresses (DBusConnection *connection, NMNetworkType type, const char *network, int *num_addr)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	DBusMessage		*reply;
+	gboolean			 success = FALSE;
+	char				**list =  NULL;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
+	g_return_val_if_fail (num_addr != NULL, FALSE);
+
+	*num_addr = 0;
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
+						NMI_DBUS_INTERFACE, "getNetworkAddresses");
+	if (!message)
+	{
+		syslog (LOG_ERR, "nm_dbus_get_network_ap_mac_address(): Couldn't allocate the dbus message");
+		return (FALSE);
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
+								DBUS_TYPE_INT32, (int)type,
+								DBUS_TYPE_INVALID);
+
+	/* Send message and get trusted status back from NetworkManagerInfo */
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		/* Ignore the "NoAddresses" error */
+		if (strcmp (error.name, "org.freedesktop.NetworkManagerInfo.NoAddresses"))
+			syslog (LOG_ERR, "nm_dbus_get_network_addresses(): %s raised %s", error.name, error.message);
+		dbus_error_free (&error);
+	}
+	else if (!reply)
+		syslog (LOG_NOTICE, "nm_dbus_get_network_addresses(): reply was NULL.");
+	else
+	{
+		DBusMessageIter	 iter;
+
+		dbus_message_iter_init (reply, &iter);
+		dbus_message_iter_get_string_array (&iter, &list, num_addr);
+		if (*num_addr > 0)
+			success = TRUE;
+	}
+
+	dbus_message_unref (message);
+	if (reply)
+		dbus_message_unref (reply);
+
+	return (list);
+}
+
+
+/*
+ * nm_dbus_add_network_address
+ *
+ * Tell NetworkManagerInfo the MAC address of an AP
+ *
+ * Returns:	FALSE on error
+ *			TRUE on success
+ *
+ */
+gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	gboolean			 success = FALSE;
+	char				 char_addr[20];
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
+	g_return_val_if_fail (addr != NULL, FALSE);
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
+						NMI_DBUS_INTERFACE, "addNetworkAddress");
+	if (!message)
+	{
+		syslog (LOG_ERR, "nm_dbus_add_network_ap_mac_address(): Couldn't allocate the dbus message");
+		return (FALSE);
+	}
+
+	memset (char_addr, 0, 20);
+	ether_ntoa_r (addr, &char_addr[0]);
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
+								DBUS_TYPE_INT32, (int)type,
+								DBUS_TYPE_STRING, &char_addr,
+								DBUS_TYPE_INVALID);
+
+	/* Send message and get trusted status back from NetworkManagerInfo */
+	dbus_error_init (&error);
+	if (!dbus_connection_send (connection, message, NULL))
+	{
+		syslog (LOG_ERR, "nm_dbus_add_network_ap_mac_address(): failed to send dbus message.");
+		dbus_error_free (&error);
+	}
+	else
+		success = TRUE;
+
+	dbus_message_unref (message);
+	return (success);
 }
 
 

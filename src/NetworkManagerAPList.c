@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <dbus/dbus-glib.h>
+#include <netinet/ether.h>
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerUtils.h"
@@ -250,7 +251,34 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
+		GSList	*user_addrs;
+		gboolean	 success = FALSE;
+
 		if (nm_ap_get_address (ap) && (memcmp (addr, nm_ap_get_address (ap), sizeof (struct ether_addr)) == 0))
+			success = TRUE;
+
+		if (!success && (user_addrs = nm_ap_get_user_addresses (ap)))
+		{
+			char		 char_addr[20];
+			GSList	*elem = user_addrs;
+
+			memset (&char_addr[0], 0, 20);
+			ether_ntoa_r (addr, &char_addr[0]);
+			while (elem)
+			{
+				if (elem->data && !strcmp (elem->data, &char_addr[0]))
+				{
+					success = TRUE;
+					break;
+				}
+				elem = g_slist_next (elem);
+			}
+
+			g_slist_foreach (user_addrs, (GFunc)g_free, NULL);
+			g_slist_free (user_addrs);
+		}
+
+		if (success)
 		{
 			found_ap = ap;
 			break;
@@ -284,6 +312,8 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 		char			*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network, &enc_method);
 		GTimeVal		*timestamp = nm_dbus_get_network_timestamp (data->dbus_connection, list->type, network);
 		gboolean		 trusted = nm_dbus_get_network_trusted (data->dbus_connection, list->type, network);
+		int			 num_addrs;
+		char			**addrs = nm_dbus_get_network_addresses (data->dbus_connection, list->type, network, &num_addrs);
 
 		if (timestamp != NULL)
 		{
@@ -304,6 +334,24 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 			else
 				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
 
+			/* Get user addresses, form into a GSList, and stuff into the AP */
+			{
+				GSList	*addr_list = NULL;
+				int		 i;
+
+				if (!addrs)
+					num_addrs = 0;
+
+				for (i = 0; i < num_addrs; i++)
+				{
+					if (addrs[i] && (strlen (addrs[i]) >= 11))
+						addr_list = g_slist_append (addr_list, g_strdup (addrs[i]));
+				}
+				nm_ap_set_user_addresses (ap, addr_list);
+				g_slist_foreach (addr_list, (GFunc)g_free, NULL);
+				g_slist_free (addr_list);
+			}
+
 			if (new)
 			{
 				nm_ap_list_append_ap (list, ap);
@@ -311,6 +359,7 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 			}
 		}
 
+		dbus_free_string_array (addrs);
 		g_free (timestamp);
 		g_free (essid);
 		g_free (key);

@@ -51,7 +51,7 @@ int nm_device_dhcp_run (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, RET_DHCP_ERROR);
 
 	memset (&opts, 0, sizeof (dhcp_client_options));
-	opts.base_timeout = 25;
+	opts.base_timeout = 30;
 
 	iface = nm_device_get_iface (dev);
 	if (!(dhcp_iface = dhcp_interface_init (iface, &opts)))

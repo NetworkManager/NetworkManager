@@ -1399,6 +1399,10 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
 
 	/* Force the card into Managed/Infrastructure mode */
+	nm_device_bring_down (dev);
+	g_usleep (G_USEC_PER_SEC * 4);
+	nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC * 2);
 	nm_device_set_mode_managed (dev);
 	nm_device_set_essid (dev, " ");
 
@@ -1422,7 +1426,6 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
 
 	/* Bring the device up and pause to allow card to associate */
-	nm_device_bring_up (dev);
 	g_usleep (G_USEC_PER_SEC * 5);
 
 	nm_device_update_link_active (dev, FALSE);
@@ -2550,11 +2553,9 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		/* Compose the current access point list for the card based on the past two scans.  This
 		 * is to achieve some stability in the list, since cards don't necessarily return the same
 		 * access point list each scan even if you are standing in the same place.
-		 * Once we have the list, copy in any relevant information from our Allowed list.
 		 */
 		old_ap_list = nm_device_ap_list_get (dev);
 		dev->options.wireless.ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list1, dev->options.wireless.cached_ap_list2);
-		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
 
 		/* If any blank ESSID networks were detected in the current scan, try to match their
 		 * AP MAC address with existing ones in previous scans, and if we get a match, copy the
@@ -2563,7 +2564,13 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		 * its job when the user wanted us to connect to a non-broadcasting network.
 		 */
 		if (have_blank_essids)
+		{
 			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
+			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+		}
+
+		/* Once we have the list, copy in any relevant information from our Allowed list. */
+		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
 
 		/* Furthermore, if we have any "artificial" access points, ie ones that exist but don't show up in
 		 * the scan for some reason, copy those over if we are associated with that access point right now.

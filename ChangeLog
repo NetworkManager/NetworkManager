@@ -1,3 +1,44 @@
+2004-11-17  Dan Williams <dcbw@redhat.com>
+
+	* Cache access point MAC addresses in NetworkManagerInfo after you've explicitly
+		connected to them.  Then, after a scan, match up non-ESSID-broadcasting access
+		points with any cached MAC addresses from NetworkManagerInfo.  Allows us to
+		show known access points that don't broadcast their ESSID in the menus without
+		any user intervention whatsoever.
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- (nmi_dbus_get_network_addresses, nmi_dbus_add_network_address): new functions
+			for dbus method calls "getNetworkAddresses" and "addNetworkAddress"
+
+	* src/NetworkManagerAP.[ch]
+		- Add a "user_addresses" data member to the NMAccessPoint structure
+		- (nm_ap_get_user_addresses, nm_ap_set_user_addresses): new functions for accessing
+			the user_addresses data member
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_get_ap_by_address): check user_addresses list too, instead of just
+			the AP's reported address
+		- (nm_ap_list_update_network): grab the user_addresses list from NetworkManagerInfo
+
+	* src/NetworkManagerDHCP.c
+		- Increase DHCP timeout from 25s -> 30s
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_get_network_addresses, nm_dbus_add_network_address): have NMI get/set
+			user addresses
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_wireless_config): bring down the interface, wait 4s, bring it up,
+			wait 2s, then configure it.  Sometimes Prism54 cards will freeze up with
+			"mgnt tx queue full", seemingly in response to NM controlling the card too much.
+			So, we take the card down to clear it out.
+		- (nm_device_do_normal_scan): Copy over AP ESSIDs from the allowed access point list
+			too, since that's where the user_addresses are
+
+	* src/NetworkManagerPolicy.c
+		- (nm_state_modification_monitor): Tell NMI to add an AP's hardware address to
+			that wireless networks' user_addresses list upon successful activation
+
 2004-11-16  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.[ch]

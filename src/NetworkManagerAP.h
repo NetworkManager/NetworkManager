@@ -73,4 +73,7 @@ void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
 const NMEncKeyType	nm_ap_get_enc_method	(NMAccessPoint *ap);
 
+GSList *			nm_ap_get_user_addresses	(NMAccessPoint *ap);
+void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
+
 #endif

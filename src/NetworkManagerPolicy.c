@@ -130,9 +130,8 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 		element = g_slist_next (element);
 	}
 
-	syslog (LOG_NOTICE, "AUTO: Best wired device = %s", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
-	syslog (LOG_NOTICE, "AUTO: Best wireless device = %s  (%s)", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
-			best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
+	syslog (LOG_NOTICE, "AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
+			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
 
 	if (best_wireless_dev || best_wired_dev)
 	{
@@ -256,13 +255,8 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 			if (data->allowed_ap_list)
 				nm_ap_list_populate (data->allowed_ap_list, data);
-	
-			data->update_ap_lists = FALSE;
-		}
 
-		if (data->notify_device_support)
-		{
-			data->notify_device_support = FALSE;
+			data->update_ap_lists = FALSE;
 		}
 	}
 
@@ -346,6 +340,14 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	else if (data->active_device && nm_device_is_just_activated (data->active_device))
 	{
 		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_NOW_ACTIVE);
+		/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
+		if (nm_device_is_wireless (data->active_device))
+		{
+			struct ether_addr	 addr;
+
+			nm_device_get_ap_address (data->active_device, &addr);
+			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (data->active_device), &addr);
+		}
 		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
 	}
 	else if (data->active_device && nm_device_did_activation_fail (data->active_device))

@@ -211,20 +211,14 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	g_return_val_if_fail (message != NULL, NULL);
 
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
+	if (	   !dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::getNetworks called with invalid arguments.");
 		return (reply_message);
 	}
 
-	if (!nmi_network_type_valid (type))
-	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworks called with an invalid network type %d.", type);
-		return (reply_message);
-	}
- 
 	/* List all allowed access points that gconf knows about */
 	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH, NULL);
 	if (!dir_list)
@@ -262,7 +256,6 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		}
 		g_slist_free (dir_list);
 
-		/* Make sure that there's at least one array element if all the gconf calls failed */
 		if (!value_added)
 		{
 			dbus_message_unref (reply_message);
@@ -496,6 +489,158 @@ static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage 
 
 
 /*
+ * nmi_dbus_get_network_addresses
+ *
+ * If the specified network exists, grabs a list of AP MAC addresses
+ * from gconf and pass it back.
+ *
+ */
+static DBusMessage *nmi_dbus_get_network_addresses (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage		*reply_message = NULL;
+	char				*network = NULL;
+	NMNetworkType		 type;
+	char				*key;
+	GConfValue		*value;
+	DBusError			 error;
+	char				*escaped_network;
+	gboolean			 success = FALSE;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
+		|| (strlen (network) <= 0))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::getNetworkAddresses called with invalid arguments.");
+		return (reply_message);
+	}
+
+	/* Grab user-key key for our access point from GConf */
+	escaped_network = gconf_escape_key (network, strlen (network));
+	key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
+	value = gconf_client_get (info->gconf_client, key, NULL);
+	g_free (key);
+
+	/* We don't error out if no key was found in gconf, we return blank key */
+	reply_message = dbus_message_new_method_return (message);
+	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+	{
+		DBusMessageIter	 iter;
+		DBusMessageIter	 iter_array;
+		GSList			*list = gconf_value_get_list (value);
+		GSList			*elem = list;
+
+		dbus_message_iter_init (reply_message, &iter);
+		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
+
+		while (elem != NULL)
+		{
+			const char *string = gconf_value_get_string ((GConfValue *)elem->data);
+			if (string)
+			{
+				dbus_message_iter_append_string (&iter_array, string);
+				success = TRUE;
+			}
+			elem = g_slist_next (elem);
+		}
+	}
+	gconf_value_free (value);
+
+	if (!success)
+	{
+		dbus_message_unref (reply_message);
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoAddresses",
+						"There were no stored addresses for this wireless network.");
+	}
+
+	return (reply_message);
+}
+
+
+/*
+ * nmi_dbus_add_network_address
+ *
+ * Add an AP's MAC address to a wireless network entry in gconf
+ *
+ */
+static DBusMessage *nmi_dbus_add_network_address (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage		*reply_message = NULL;
+	char				*network = NULL;
+	NMNetworkType		 type;
+	char				*addr;
+	char				*key;
+	GConfValue		*value;
+	DBusError			 error;
+	char				*escaped_network;
+	GSList			*new_mac_list = NULL;
+	gboolean			 found = FALSE;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_STRING, &addr, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
+		|| (strlen (network) <= 0)
+		|| !addr
+		|| (strlen (addr) < 11))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::addNetworkAddress called with invalid arguments.");
+		return (reply_message);
+	}
+
+	/* Grab user-key key for our access point from GConf */
+	escaped_network = gconf_escape_key (network, strlen (network));
+	key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
+	value = gconf_client_get (info->gconf_client, key, NULL);
+
+	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+	{
+		GSList	*elem;
+
+		new_mac_list = gconf_client_get_list (info->gconf_client, key, GCONF_VALUE_STRING, NULL);
+		gconf_value_free (value);
+
+		/* Ensure that the MAC isn't already in the list */
+		elem = new_mac_list;
+		while (elem)
+		{
+			if (elem->data && !strcmp (addr, elem->data))
+			{
+				found = TRUE;
+				break;
+			}
+			elem = g_slist_next (elem);
+		}
+	}
+
+	/* Add the new MAC address to the end of the list */
+	if (!found)
+	{
+		new_mac_list = g_slist_append (new_mac_list, g_strdup (addr));
+		gconf_client_set_list (info->gconf_client, key, GCONF_VALUE_STRING, new_mac_list, NULL);
+	}
+
+	/* Free the list, since gconf_client_set_list deep-copies it */
+	g_slist_foreach (new_mac_list, (GFunc)g_free, NULL);
+	g_slist_free (new_mac_list);
+
+	dbus_free (addr);
+	g_free (key);
+
+	return (NULL);
+}
+
+
+/*
  * nmi_dbus_nmi_message_handler
  *
  * Responds to requests for our services
@@ -558,6 +703,10 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		reply_message = nmi_dbus_get_network_key (info, message);
 	else if (strcmp ("getNetworkTrusted", method) == 0)
 		reply_message = nmi_dbus_get_network_trusted (info, message);
+	else if (strcmp ("getNetworkAddresses", method) == 0)
+		reply_message = nmi_dbus_get_network_addresses (info, message);
+	else if (strcmp ("addNetworkAddress", method) == 0)
+		nmi_dbus_add_network_address (info, message);
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "UnknownMethod",

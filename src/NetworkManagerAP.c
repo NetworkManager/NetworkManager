@@ -45,6 +45,7 @@ struct NMAccessPoint
 	char				*enc_key;
 	NMEncKeyType		 enc_method;
 	GTimeVal			 timestamp;
+	GSList			*user_addresses;
 };
 
 
@@ -133,6 +134,8 @@ void nm_ap_unref (NMAccessPoint *ap)
 		g_free (ap->essid);
 		g_free (ap->address);
 		g_free (ap->enc_key);
+		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
+		g_slist_free (ap->user_addresses);
 
 		ap->essid = NULL;
 		ap->enc_key = NULL;
@@ -441,3 +444,61 @@ const NMEncKeyType nm_ap_get_enc_method (NMAccessPoint *ap)
 
 	return (ap->enc_method);
 }
+
+
+/*
+ * Get/Set functions for user address list
+ *
+ * The internal address list is always "owned" by the AP and
+ * the list returned by nm_ap_get_user_addresses() is a deep copy.
+ * Likewise, when setting the list, a deep copy is made for the
+ * ap's actual list.
+ *
+ */
+GSList *nm_ap_get_user_addresses (NMAccessPoint *ap)
+{
+	GSList	*new = NULL;
+	GSList	*elem = NULL;
+
+	g_return_val_if_fail (ap != NULL, NULL);
+
+	elem = ap->user_addresses;
+	while (elem)
+	{
+		if (elem->data)
+			new = g_slist_append (new, g_strdup (elem->data));
+		elem = g_slist_next (elem);
+	}
+
+	/* Return a _deep__copy_ of the address list */
+	return (new);
+}
+
+void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
+{
+	GSList	*elem = NULL;
+	GSList	*new = NULL;
+
+	g_return_if_fail (ap != NULL);
+
+	/* Free existing list */
+	elem = ap->user_addresses;
+	while (elem)
+	{
+		if (elem->data)
+			g_free (elem->data);
+		elem = g_slist_next (elem);
+	}
+
+	/* Copy new list and set as our own */
+	elem = list;
+	while (elem)
+	{
+		if (elem->data)
+			new = g_slist_append (new, g_strdup (elem->data));
+		elem = g_slist_next (elem);
+	}
+
+	ap->user_addresses = new;
+}
+
