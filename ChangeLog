@@ -1,5 +1,10 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* TODO
+		- Add a couple of items
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* info-daemon/NetworkManagerInfo.c
 		- Update allowed network's GConf key when user enters a WEP key explicitly
 
