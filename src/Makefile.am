@@ -41,8 +41,9 @@ EXTRA_NetworkManager_SOURCES =			\
 		backends/NetworkManagerRedHat.c	\
 		backends/NetworkManagerSlackware.c	\
 		backends/shvar.c				\
-		backends/shvar.h
-
+		backends/shvar.h		\
+		backends/interface_parser.c	\
+		backends/interface_parser.h	
 
 NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) backends/$(SYSTEM_BACKEND_FILE)
 if WITH_GCRYPT

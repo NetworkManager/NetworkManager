@@ -1,5 +1,15 @@
 2004-11-12  Colin Walters  <walters@redhat.com>
 
+	Patches from j bootlab org
+
+	* src/Makefile.am (EXTRA_NetworkManager_SOURCES): 
+	Add interface_parser.[ch].
+
+	* src/backends/NetworkManagerDebian.c (nm_system_device_run_dhcp): Invoke
+	dhclient with "-lf /var/lib/dhcp/dhclient-%s.leases".
+
+2004-11-12  Colin Walters  <walters@redhat.com>
+
 	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_service_init): Delete
 	call to nmi_dbus_is_running too, not necessary anymore.
 	* info-daemon/NetworkManagerInfoDbus.c: Include stdlib.h to
