@@ -1,5 +1,10 @@
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Convert 24x24 icons back to 22x22 and use the 22x22 ones
+
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/gtkcellview.[ch]
 		- Only compile these files for GTK 2.4 or lower, since 
 			GtkCellView is now public in GTK 2.6.  Fixes crasher
