@@ -91,7 +91,8 @@ void			nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key)
 
 void			nm_device_ap_list_add		(NMDevice *dev, NMAccessPoint *ap);
 void			nm_device_ap_list_clear		(NMDevice *dev);
-NMAccessPoint *nm_device_ap_list_get_ap		(NMDevice *dev, int index);
+NMAccessPoint *nm_device_ap_list_get_ap_by_index	(NMDevice *dev, int index);
+NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *essid);
 
 NMDevice *	nm_get_device_by_udi		(NMData *data, const char *udi);
 NMDevice *	nm_get_device_by_iface		(NMData *data, const char *iface);

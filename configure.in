@@ -15,10 +15,15 @@ PKG_CHECK_MODULES(NM, dbus-glib-1 >= 0.20 hal >= 0.2.91 gthread-2.0)
 AC_SUBST(NM_CFLAGS)
 AC_SUBST(NM_LIBS)
 
+PKG_CHECK_MODULES(GLADE, libglade-2.0)
+AC_SUBST(GLADE_CFLAGS)
+AC_SUBST(GLADE_LIBS)
+
 AC_OUTPUT([
 Makefile
 src/Makefile
 dispatcher-daemon/Makefile
+info-daemon/Makefile
 test/Makefile
 initscript/Makefile
 ])

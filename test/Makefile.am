@@ -1,11 +1,10 @@
-INCLUDES = 					   \
-	$(NM_CFLAGS) 			   \
-	-DDBUS_API_SUBJECT_TO_CHANGE		   \
-	-DBINDIR=\"$(bindir)\"			   \
+INCLUDES =						\
+	$(NM_CFLAGS)					\
+	-DDBUS_API_SUBJECT_TO_CHANGE		\
+	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nmclienttest
+noinst_PROGRAMS = nmtest
 
-nmclienttest_SOURCES = nmclienttest.c
-
-nmclienttest_LDADD = $(NM_LIBS)
+nmtest_SOURCES = nmclienttest.c
+nmtest_LDADD = $(NM_LIBS)

@@ -98,7 +98,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap->quality = src_ap->quality;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
-	new_ap->encrypted = new_ap->encrypted;
+	new_ap->encrypted = src_ap->encrypted;
 
 	if (src_ap->wep_key && (strlen (src_ap->wep_key) > 0))
 		new_ap->wep_key = g_strdup (src_ap->wep_key);

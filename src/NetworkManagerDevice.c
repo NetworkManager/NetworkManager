@@ -190,7 +190,8 @@ typedef union NMDeviceOptions
 
 typedef struct NMPendingActionUserKeyOptions
 {
-	unsigned char	*essid;		// ESSID we are waiting for a key for
+	unsigned char		*essid;		// ESSID we are waiting for a key for
+	DBusPendingCall	*pending_call;
 } NMPendingActionUserKeyOptions;
 
 typedef union NMPendingActionOptions
@@ -415,26 +416,8 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 			iwlib_socket = iw_sockets_open ();
 			if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
 			{
-				NMAccessPoint	*ap = nm_device_get_best_ap (dev);
-				unsigned char	*essid = nm_device_get_essid (dev);
-
-				if (ap && essid && (strcmp (essid, nm_ap_get_essid (ap)) == 0))
-				{
-fprintf (stderr, "Best AP: '%s', current AP: '%s'\n", nm_ap_get_essid (ap), nm_device_get_essid (dev));
-					/* If either:
-					 * 1) the associated AP's MAC address is valid, or
-					 * 2) its not valid but encryption is turned on (not valid b/c key might be wrong)
-					 * then we consider there to be a "link"
-					 */
-					if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
-						link_active = TRUE;
-					else if (nm_ap_get_encrypted (ap))
-					{
-						link_active = TRUE;
-						/* Make sure we are at least attempting to get the key */
-						nm_device_pending_action_get_user_key (dev, ap);
-					}
-				}
+				if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
+					link_active = TRUE;
 			}
 			close (iwlib_socket);
 			break;
@@ -802,34 +785,52 @@ gboolean nm_device_activate (NMDevice *dev)
 	/* If its a wireless device, set the ESSID and WEP key */
 	if (nm_device_is_wireless (dev))
 	{
-		NMAccessPoint	*ap = nm_device_get_best_ap (dev);
+		NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
 
 		/* If the card is just inserted, we may not have had a chance to scan yet */
-		if (!ap)
+		if (!best_ap)
 		{
 			nm_device_do_wireless_scan (dev);
-			ap = nm_device_get_best_ap (dev);
+			best_ap = nm_device_get_best_ap (dev);
 		}
 
 		/* If there is a desired AP to connect to, use that essid and possible WEP key */
-		if (ap && nm_ap_get_essid (ap))
+		if (best_ap && nm_ap_get_essid (best_ap))
 		{
 			nm_device_bring_down (dev);
 
-			nm_device_set_essid (dev, nm_ap_get_essid (ap));
+			nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
 			/* Disable WEP */
 			nm_device_set_wep_key (dev, NULL);
-			if (nm_ap_get_wep_key (ap))
-				nm_device_set_wep_key (dev, nm_ap_get_wep_key (ap));
+			if (nm_ap_get_encrypted (best_ap) && nm_ap_get_wep_key (best_ap))
+				nm_device_set_wep_key (dev, nm_ap_get_wep_key (best_ap));
 
-			NM_DEBUG_PRINT_2 ("nm_device_activate(%s) using essid '%s'\n", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+			NM_DEBUG_PRINT_2 ("nm_device_activate(%s) using essid '%s'\n", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
+
+			/* Bring the device up */
+			if (!nm_device_is_up (dev));
+				nm_device_bring_up (dev);
+
+			/* If we don't have a link, it probably means the access point has
+			 * encryption enabled and we don't have the right WEP key.
+			 */
+			nm_device_update_link_active (dev, FALSE);
+			if (    !nm_device_get_link_active (dev)
+				&& !nm_device_need_ap_switch (dev)
+				&& nm_ap_get_encrypted (best_ap))
+			{
+				nm_device_pending_action_get_user_key (dev, best_ap);
+				return (FALSE);
+			}
 		}
 	}
-	
-	/* Bring the device up */
-	if (!nm_device_is_up (dev));
-		nm_device_bring_up (dev);
+	else
+	{
+		/* Bring the device up */
+		if (!nm_device_is_up (dev));
+			nm_device_bring_up (dev);
+	}
 
 	/* Kill the old default route */
 	snprintf (buf, 500, "/sbin/ip route del default");
@@ -871,7 +872,9 @@ gboolean nm_device_activate (NMDevice *dev)
 		snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
 						iface, iface, iface, iface);
 		dhclient_err = system (buf);
-		if (dhclient_err != 0)
+		if (dhclient_err == 0)
+			success = TRUE;
+		else
 		{
 			/* Interfaces cannot be down if they are the active interface,
 			 * otherwise we cannot use them for scanning or link detection.
@@ -885,7 +888,6 @@ gboolean nm_device_activate (NMDevice *dev)
 			}
 
 			nm_device_bring_up (dev);
-			success = FALSE;
 		}
 
 		/* Set the hostname back to what it was before so that X11 doesn't
@@ -958,6 +960,12 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 }
 
 
+/*
+ * nm_device_pending_action
+ *
+ * Returns whether the device is blocking on a pending action or not.
+ *
+ */
 gboolean nm_device_pending_action (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -965,6 +973,14 @@ gboolean nm_device_pending_action (NMDevice *dev)
 	return (dev->pending_action != NM_PENDING_ACTION_NONE);
 }
 
+
+/*
+ * nm_device_pending_action_get_user_key
+ *
+ * Initiate a pending action to retrieve a key from the user, using
+ * NetworkManagerInfo daemon.
+ *
+ */
 void nm_device_pending_action_get_user_key (NMDevice *dev, NMAccessPoint *ap)
 {
 	NMData *data = nm_get_global_data ();
@@ -978,13 +994,19 @@ void nm_device_pending_action_get_user_key (NMDevice *dev, NMAccessPoint *ap)
 	if (dev->pending_action != NM_PENDING_ACTION_NONE)
 		return;
 
-	if (nm_dbus_signal_need_key_for_network (data->dbus_connection, dev, ap) == 0)
-	{
-		dev->pending_action = NM_PENDING_ACTION_GET_USER_KEY;
-		dev->pending_action_options.user_key.essid = g_strdup (nm_ap_get_essid (ap));
-	}
+	dev->pending_action = NM_PENDING_ACTION_GET_USER_KEY;
+	dev->pending_action_options.user_key.essid = g_strdup (nm_ap_get_essid (ap));
+	nm_dbus_get_user_key_for_network (data->dbus_connection, dev, ap, &(dev->pending_action_options.user_key.pending_call));
 }
 
+
+/*
+ * nm_device_pending_action_set_user_key
+ *
+ * Called upon receipt of a NetworkManagerInfo reply with a
+ * user-supplied key.
+ *
+ */
 void nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key)
 {
 	g_return_if_fail (dev != NULL);
@@ -1011,13 +1033,35 @@ void nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key)
 	dev->pending_action = NM_PENDING_ACTION_NONE;
 }
 
+
+/*
+ * nm_device_cancel_pending_action
+ *
+ * Cancel any pending actions a device is blocking on and clean up
+ * those actions' data.
+ *
+ */
 void nm_device_pending_action_cancel (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
+	NMData *data = nm_get_global_data ();
 
-	if (    dev->pending_action == NM_PENDING_ACTION_GET_USER_KEY
-		&& dev->pending_action_options.user_key.essid)
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (dev->pending_action == NM_PENDING_ACTION_GET_USER_KEY)
+	{
+		/* Tell NetworkManagerInfo to cancel the operation, and clean up data related to it */
+#if 0
+		dbus_pending_call_cancel (dev->pending_action_options.user_key.pending_call);
+		dbus_pending_call_unref (dev->pending_action_options.user_key.pending_call);
+#endif
+
 		g_free (dev->pending_action_options.user_key.essid);
+		dev->pending_action_options.user_key.essid = NULL;
+
+		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection);
+	}
+		
 	dev->pending_action = NM_PENDING_ACTION_NONE;
 }
 
@@ -1083,14 +1127,13 @@ void	nm_device_ap_list_clear (NMDevice *dev)
 
 
 /*
- * nm_device_ap_list_get_ap
+ * nm_device_ap_list_get_ap_by_index
  *
  * Get the access point at a specified index in the list
  *
  */
-NMAccessPoint *nm_device_ap_list_get_ap (NMDevice *dev, int index)
+NMAccessPoint *nm_device_ap_list_get_ap_by_index (NMDevice *dev, int index)
 {
-	GSList		*element;
 	NMAccessPoint	*ap = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
@@ -1101,9 +1144,9 @@ NMAccessPoint *nm_device_ap_list_get_ap (NMDevice *dev, int index)
 
 	if (nm_try_acquire_mutex (dev->dev_options.wireless.ap_list_mutex, __FUNCTION__))
 	{
-		int	i = 0;
+		GSList	*element = dev->dev_options.wireless.ap_list;
+		int		 i = 0;
 
-		element = dev->dev_options.wireless.ap_list;
 		while (element)
 		{
 			if (element->data && (index == i))
@@ -1119,6 +1162,43 @@ NMAccessPoint *nm_device_ap_list_get_ap (NMDevice *dev, int index)
 	}
 
 	return (ap);
+}
+
+
+/*
+ * nm_device_ap_list_get_ap_by_essid
+ *
+ * Get the access point for a specific essid
+ *
+ */
+NMAccessPoint *nm_device_ap_list_get_ap_by_essid (NMDevice *dev, const char *essid)
+{
+	NMAccessPoint	*ret_ap = NULL;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (essid != NULL, NULL);
+
+	if (!dev->dev_options.wireless.ap_list)
+		return (NULL);
+
+	if (nm_try_acquire_mutex (dev->dev_options.wireless.ap_list_mutex, __FUNCTION__))
+	{
+		GSList	*element = dev->dev_options.wireless.ap_list;
+		while (element)
+		{
+			NMAccessPoint	*ap = (NMAccessPoint *)(element->data);
+			if (ap && nm_ap_get_essid (ap) && (strcmp (nm_ap_get_essid (ap), essid) == 0))
+			{
+				ret_ap = ap;
+				break;
+			}
+			element = g_slist_next (element);
+		}
+		nm_unlock_mutex (dev->dev_options.wireless.ap_list_mutex, __FUNCTION__);
+	}
+
+	return (ret_ap);
 }
 
 
@@ -1143,10 +1223,8 @@ void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
 	if (dev->dev_options.wireless.best_ap)
 		nm_ap_unref (dev->dev_options.wireless.best_ap);
 
-	/* We create a _copy_ of the AP, because we may need to get a WEP
-	 * key from the user later and we set it on the AP.
-	 */
-	dev->dev_options.wireless.best_ap = nm_ap_new_from_ap (ap);
+	nm_ap_ref (ap);
+	dev->dev_options.wireless.best_ap = ap;
 }
 
 gboolean nm_device_need_ap_switch (NMDevice *dev)
@@ -1243,9 +1321,10 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 					if (highest_priority_ap)
 						nm_ap_unref (highest_priority_ap);
 
-					highest_priority_ap = nm_ap_new_from_ap (nm_ap);
+					highest_priority_ap = nm_ap;
 				}
-				nm_ap_unref (nm_ap);
+				else
+					nm_ap_unref (nm_ap);
 			}
 			tmp_ap = tmp_ap->next;
 		}
@@ -1257,7 +1336,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		if (    highest_priority_ap
 			&& (!nm_device_get_best_ap (dev) || (nm_null_safe_strcmp (nm_device_get_essid (dev), nm_ap_get_essid (highest_priority_ap)) != 0)))
 		{
-			nm_device_set_best_ap (dev, nm_ap_new_from_ap (highest_priority_ap));
+			nm_device_set_best_ap (dev, highest_priority_ap);
 			nm_data_set_state_modified (nm_get_global_data (), TRUE);
 
 			nm_ap_unref (highest_priority_ap);
@@ -1344,7 +1423,7 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 				{
 					NM_DEBUG_PRINT_1 ("AP %s looks good, setting to desired\n", nm_ap_get_essid (ap));
 
-					nm_device_set_best_ap (dev, nm_ap_new_from_ap (ap));
+					nm_device_set_best_ap (dev, ap);
 					nm_data_set_state_modified (nm_get_global_data (), TRUE);
 					break;
 				}

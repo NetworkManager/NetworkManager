@@ -1,3 +1,58 @@
+2004-07-19  Dan Williams <dcbw@redhat.com>
+
+	* Makefile.am
+		- Add info-daemon directory
+
+	* configure.in
+		- Check for glade libs and headers
+		- Add info-daemon directory
+
+	* src/NetworkManagerAP.c
+		- nm_ap_new_from_ap(): Fix bug that resulted in an APs encryption status not getting
+			copied over to the new AP.
+
+	* src/NetworkManagerDbus.c
+	  src/NetworkManagerDbus.h
+		- Deal with nm_device_ap_list_get_ap()->nm_device_ap_list_get_ap_by_index() change
+		- Remove nm_dbus_signal_need_key_for_network()
+		- Add disabled code for asynchronous user wep key callbacks
+		- Add functions for getting, setting, and cancelling user key operations
+		- Remove "setKeyForNetwork" device dbus method call, its on NetworkManager object instead
+		- Add "setKeyForNetwork" dbus method call on NetworkManager object
+
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerDevice.h
+		- nm_device_update_link_active(): revert changes for wireless link detection, the WEP-key-is-wrong
+			logic is in device activation now
+		- nm_device_activate(): for wireless devices, if we can't associate with access point (perhaps
+			key is wrong) trigger get-user-key pending action
+		- Implement get-user-key pending action stuff, tie to dbus messages
+		- Rename nm_device_ap_list_get_ap() -> nm_device_ap_list_get_ap_by_index()
+		- Add nm_device_ap_list_get_ap_by_essid()
+		- Instead of copying "best" access points, ref them instead so that the key we set
+			sticks around
+
+	* src/NetworkManagerPolicy.c
+		- Deal with wrong WEP key, but right access point (and if so, return link_active = TRUE)
+		- Don't cancel pending actions on a device if its the same device as last iteration
+		- Only promote pending_device->active_device if activation was successfull
+
+	* src/Makefile.am
+		- Rename nmclienttest->nmtest
+
+	* info-daemon/Makefile.am
+	  info-daemon/NetworkManagerInfo.c
+	  info-daemon/NetworkManagerInfo.h
+	  info-daemon/NetworkManagerInfoDbus.c
+	  info-daemon/NetworkManagerInfoDbus.h
+	  info-daemon/passphrase.glade
+	  info-daemon/NetworkManagerInfo.conf
+	  info-daemon/keyring.png
+	  	- Import sources for info-daemon, which pops up dialog for passphrase/key when
+	  		NetworkManager asks for it, and also will (soon) provide "allowed" access point
+	  		lists to NetworkManager by proxying user's GConf
+	  
+
 2004-07-15  Dan Williams <dcbw@redhat.com>
 
 	* src/Makefile.am

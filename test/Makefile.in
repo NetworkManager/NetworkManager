@@ -56,6 +56,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GLADE_CFLAGS = @GLADE_CFLAGS@
+GLADE_LIBS = @GLADE_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -108,28 +110,27 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = \
-	$(NM_CFLAGS) 			   \
-	-DDBUS_API_SUBJECT_TO_CHANGE		   \
-	-DBINDIR=\"$(bindir)\"			   \
+	$(NM_CFLAGS)					\
+	-DDBUS_API_SUBJECT_TO_CHANGE		\
+	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
 
-noinst_PROGRAMS = nmclienttest
+noinst_PROGRAMS = nmtest
 
-nmclienttest_SOURCES = nmclienttest.c
-
-nmclienttest_LDADD = $(NM_LIBS)
+nmtest_SOURCES = nmclienttest.c
+nmtest_LDADD = $(NM_LIBS)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = nmclienttest$(EXEEXT)
+noinst_PROGRAMS = nmtest$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_nmclienttest_OBJECTS = nmclienttest.$(OBJEXT)
-nmclienttest_OBJECTS = $(am_nmclienttest_OBJECTS)
-nmclienttest_DEPENDENCIES =
-nmclienttest_LDFLAGS =
+am_nmtest_OBJECTS = nmclienttest.$(OBJEXT)
+nmtest_OBJECTS = $(am_nmtest_OBJECTS)
+nmtest_DEPENDENCIES =
+nmtest_LDFLAGS =
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -139,9 +140,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(nmclienttest_SOURCES)
+DIST_SOURCES = $(nmtest_SOURCES)
 DIST_COMMON = $(srcdir)/Makefile.in Makefile.am
-SOURCES = $(nmclienttest_SOURCES)
+SOURCES = $(nmtest_SOURCES)
 
 all: all-am
 
@@ -155,9 +156,9 @@ Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-nmclienttest$(EXEEXT): $(nmclienttest_OBJECTS) $(nmclienttest_DEPENDENCIES) 
-	@rm -f nmclienttest$(EXEEXT)
-	$(LINK) $(nmclienttest_LDFLAGS) $(nmclienttest_OBJECTS) $(nmclienttest_LDADD) $(LIBS)
+nmtest$(EXEEXT): $(nmtest_OBJECTS) $(nmtest_DEPENDENCIES) 
+	@rm -f nmtest$(EXEEXT)
+	$(LINK) $(nmtest_LDFLAGS) $(nmtest_OBJECTS) $(nmtest_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core

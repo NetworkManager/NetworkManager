@@ -86,6 +86,21 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 		}
 		else if (iface_type == NM_IFACE_TYPE_WIRELESS_ETHERNET)
 		{
+			NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
+
+			/* This deals with the case where the WEP key we have
+			 * for an access point is wrong.  In that case, the
+			 * MAC address of the associated AP will be invalid,
+			 * so link_active will be FALSE.  However, we still want
+			 * to use this card and AP, just need to get the correct
+			 * WEP key from the user via NetworkManagerInfo.
+			 */
+			if (    !link_active
+				&& !nm_device_need_ap_switch (dev)
+				&& best_ap
+				&& nm_ap_get_encrypted (best_ap))
+				link_active = TRUE;
+
 			if (link_active)
 				prio += 1;
 
@@ -164,14 +179,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			if ((best_dev = nm_policy_get_best_device (data)) != NULL)
 				nm_device_ref (best_dev);
 
-			/* Cancel pending device actions on an existing pending device */
-			if (data->pending_device)
-			{
-				nm_device_pending_action_cancel (data->pending_device);
-				nm_device_unref (data->pending_device);
-				data->pending_device = NULL;
-			}
-
 			/* Only do a switch when:
 			 * 1) the best_dev is different from data->active_device, OR
 			 * 2) best_dev is wireless and its access point is not the "best" ap, OR
@@ -181,6 +188,14 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				|| (    best_dev && nm_device_is_wireless (best_dev)
 					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
 			{
+				/* Cancel pending device actions on an existing pending device */
+				if (data->pending_device && (best_dev != data->pending_device))
+				{
+					nm_device_pending_action_cancel (data->pending_device);
+					nm_device_unref (data->pending_device);
+					data->pending_device = NULL;
+				}
+
 				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() set pending_device = %s\n", best_dev ? nm_device_get_iface (best_dev) : "(null)");
 
 				data->pending_device = best_dev;
@@ -208,11 +223,16 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		 */
 		if (!nm_device_pending_action (data->pending_device))
 		{
-			NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() will activate device %s\n", nm_device_get_iface (data->pending_device));
+			/* Only move it from pending -> active if the activation was successfull,
+			 * otherwise keep trying to activate it successfully.
+			 */
+			if (nm_device_activate (data->pending_device))
+			{
+				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() activated device %s\n", nm_device_get_iface (data->pending_device));
 
-			data->active_device = data->pending_device;
-			data->pending_device = NULL;
-			nm_device_activate (data->active_device);
+				data->active_device = data->pending_device;
+				data->pending_device = NULL;
+			}
 		}
 	}
 
