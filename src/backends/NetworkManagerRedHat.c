@@ -114,11 +114,8 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 	if (nm_device_is_test_device (dev))
 		return;
 
-	/* Remove all IP addresses for a device, but leave IPv6 local-scope addresses */
-	buf = g_strdup_printf ("/sbin/ip address flush dev %s scope global", nm_device_get_iface (dev));
-	nm_spawn_process (buf);
-	g_free (buf);
-	buf = g_strdup_printf ("/sbin/ip address flush dev %s scope site", nm_device_get_iface (dev));
+	/* Remove all IP addresses for a device */
+	buf = g_strdup_printf ("/sbin/ip address flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -330,6 +327,33 @@ void nm_system_restart_mdns_responder (void)
 			kill (pid, SIGUSR1);
 		}
 	}
+}
+
+
+/*
+ * nm_system_device_add_ip6_link_address
+ *
+ * Add a default link-local IPv6 address to a device.
+ *
+ */
+void nm_system_device_add_ip6_link_address (NMDevice *dev)
+{
+	char *buf;
+	unsigned char eui[8];
+
+	nm_device_get_hw_address(dev, eui);
+
+	memmove(eui+5, eui+3, 3);
+	eui[3] = 0xff;
+	eui[4] = 0xfe;
+	eui[0] ^= 2;
+
+	/* Add the default link-local IPv6 address to a device */
+	buf = g_strdup_printf ("/sbin/ip -6 address add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
+						eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
+						eui[6], eui[7], nm_device_get_iface (dev));
+	nm_spawn_process (buf);
+	g_free (buf);
 }
 
 

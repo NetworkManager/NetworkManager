@@ -2366,6 +2366,7 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_on
 
 	if (success)
 	{
+		nm_system_device_add_ip6_link_address (dev);
 		nm_system_flush_arp_cache ();
 		nm_system_restart_mdns_responder ();
 	}

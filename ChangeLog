@@ -1,5 +1,20 @@
 2005-02-10  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Dave Woodhouse:
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerSlackware.c
+		- New nm_system_device_add_ip6_link_address() function to add link-local
+			address on an interface.  Stubbed in Debian, Gentoo, and Slackware.
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_device_add_ip6_link_address): implement
+		- (nm_system_device_flush_addresses): revert to previous behavior of
+			flushing all addresses
+
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tom Parker:
 	* src/NetworkManagerDevice.c
 		- Remove the "#include <pci/types.h>" since both the ethtool.h and

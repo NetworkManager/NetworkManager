@@ -221,6 +221,17 @@ void nm_system_restart_mdns_responder (void)
 
 
 /*
+ * nm_system_device_add_ip6_link_address
+ *
+ * Add a default link-local IPv6 address to a device.
+ *
+ */
+void nm_system_device_add_ip6_link_address (NMDevice *dev)
+{
+}
+
+
+/*
  * nm_system_device_update_config_info
  *
  * Retrieve any relevant configuration info for a particular device
