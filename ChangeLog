@@ -1,5 +1,8 @@
 2004-09-09  Bryan Clark  <clarkbw@cvs.gnome.org>
 
+	* info-daemon/passphrase.glade: 
+	set passphrase input to activates_default : True
+
 	* examples/python/systray/network_tray.py
 	(network_tray.sort_networks):
 
