@@ -1,3 +1,11 @@
+2004-09-15  John (J5) Palmieri <johnp@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.conf
+		- Created a more robust security policy for the DBus service
+			- everything is denied by default
+			- root can own and send to the service
+			- users logged in at the console can send to the service
+
 2004-09-13  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
