@@ -13,12 +13,16 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDbus.h		\
 		NetworkManagerDbusUtils.c	\
 		NetworkManagerDbusUtils.h	\
-		nm-dbus-nm.h				\
 		nm-dbus-nm.c				\
-		nm-dbus-device.h			\
+		nm-dbus-nm.h				\
 		nm-dbus-device.c			\
-		nm-dbus-net.h				\
+		nm-dbus-device.h			\
 		nm-dbus-net.c				\
+		nm-dbus-net.h				\
+		nm-dbus-dhcp.c				\
+		nm-dbus-dhcp.h				\
+		nm-dbus-nmi.c				\
+		nm-dbus-nmi.h				\
 		NetworkManagerDHCP.c		\
 		NetworkManagerDHCP.h		\
 		NetworkManagerDevice.c		\

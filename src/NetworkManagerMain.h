@@ -48,6 +48,7 @@ typedef struct NMData
 	NMDbusMethodList		*nm_methods;
 	NMDbusMethodList		*device_methods;
 	NMDbusMethodList		*net_methods;
+	NMDbusMethodList		*dhcp_methods;
 
 	GMainContext			*main_context;
 	GMainLoop				*main_loop;

@@ -31,6 +31,8 @@
 #define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
 #define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
 #define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
+#define	NM_DBUS_PATH_DHCP			"/org/freedesktop/NetworkManager/DhcpOptions"
+#define	NM_DBUS_INTERFACE_DHCP		"org.freedesktop.NetworkManager.DhcpOptions"
 
 #define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
 #define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"

@@ -127,31 +127,31 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 	/* Replace basic info */
 	nm_system_device_set_ip4_address (dev, dev->dhcp_iface->ciaddr);
 
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, subnetMask))
+	if (dhcp_interface_option_present (dev->dhcp_iface, subnetMask))
 	{
-		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, subnetMask), dhcp_individual_value_len (subnetMask));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, subnetMask), dhcp_option_record_len (subnetMask));
 		nm_system_device_set_ip4_netmask (dev, temp);
 	}
 
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, broadcastAddr))
+	if (dhcp_interface_option_present (dev->dhcp_iface, broadcastAddr))
 	{
-		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, broadcastAddr), dhcp_individual_value_len (broadcastAddr));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, broadcastAddr), dhcp_option_record_len (broadcastAddr));
 		nm_system_device_set_ip4_broadcast (dev, temp);
 	}
 
 	/* Default route */
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, routersOnSubnet))
+	if (dhcp_interface_option_present (dev->dhcp_iface, routersOnSubnet))
 	{
-		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, routersOnSubnet), dhcp_individual_value_len (routersOnSubnet));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, routersOnSubnet), dhcp_option_record_len (routersOnSubnet));
 		nm_system_device_set_ip4_default_route (dev, temp);
 	}
 
 	/* Update /etc/resolv.conf */
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dns))
-		set_nameservers (dev, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dns), dhcp_interface_get_dhcp_field_len (dev->dhcp_iface, dns));
+	if (dhcp_interface_option_present (dev->dhcp_iface, dns))
+		set_nameservers (dev, dhcp_interface_option_payload (dev->dhcp_iface, dns), dhcp_interface_option_len (dev->dhcp_iface, dns));
 
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, domainName))
-		set_domain_search (dev, dhcp_interface_get_dhcp_field (dev->dhcp_iface, domainName));
+	if (dhcp_interface_option_present (dev->dhcp_iface, domainName))
+		set_domain_search (dev, dhcp_interface_option_payload (dev->dhcp_iface, domainName));
 }
 
 
@@ -263,14 +263,14 @@ gboolean nm_device_dhcp_setup_timeouts (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dhcpT1value))
+	if (dhcp_interface_option_present (dev->dhcp_iface, dhcpT1value))
 	{
-		memcpy (&t1, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dhcpT1value), sizeof (int));
+		memcpy (&t1, dhcp_interface_option_payload (dev->dhcp_iface, dhcpT1value), sizeof (int));
 		t1 = ntohl (t1);
 	}
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dhcpT2value))
+	if (dhcp_interface_option_present (dev->dhcp_iface, dhcpT2value))
 	{
-		memcpy (&t2, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dhcpT2value), sizeof (int));
+		memcpy (&t2, dhcp_interface_option_payload (dev->dhcp_iface, dhcpT2value), sizeof (int));
 		t2 = ntohl (t2);
 	}
 	if (!t1 || !t2)

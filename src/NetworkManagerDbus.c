@@ -38,6 +38,7 @@
 #include "nm-dbus-nm.h"
 #include "nm-dbus-device.h"
 #include "nm-dbus-net.h"
+#include "nm-dbus-dhcp.h"
 
 
 /*
@@ -980,6 +981,41 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 
 
 /*
+ * nm_dbus_dhcp_message_handler
+ *
+ * Dispatch messages against our NetworkManager DHCP object
+ *
+ * All calls are in the form /NM_DBUS_PATH_DHCP->METHOD (STRING attribute)
+ * For example, /org/freedesktop/NetworkManager/DhcpOptions->getType ("Name Server")
+ *
+ */
+static DBusHandlerResult nm_dbus_dhcp_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	NMData			*data = (NMData *)user_data;
+	gboolean			 handled = TRUE;
+	DBusMessage		*reply = NULL;
+	NMDbusCBData		 cb_data;
+
+	g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (data->dhcp_methods != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+	cb_data.data = data;
+	cb_data.dev = NULL;
+	cb_data.opt_id = -1;
+	handled = nm_dbus_method_dispatch (data->dhcp_methods, connection, message, &cb_data, &reply);
+	if (reply)
+	{
+		dbus_connection_send (connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+}
+
+
+/*
  * nm_dbus_is_info_daemon_running
  *
  * Ask dbus whether or not the info daemon is providing its dbus service
@@ -1008,22 +1044,22 @@ gboolean nm_dbus_is_info_daemon_running (DBusConnection *connection)
  */
 DBusConnection *nm_dbus_init (NMData *data)
 {
-	DBusError		 		 dbus_error;
+	DBusError		 		 error;
 	dbus_bool_t			 success;
 	DBusConnection			*connection;
 	DBusObjectPathVTable	 nm_vtable = {NULL, &nm_dbus_nm_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	 devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};
+	DBusObjectPathVTable	 dhcp_vtable = {NULL, &nm_dbus_dhcp_message_handler, NULL, NULL, NULL, NULL};
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
-	dbus_error_init (&dbus_error);
-	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
-	if ((connection == NULL) || dbus_error_is_set (&dbus_error))
+	dbus_error_init (&error);
+	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
+	if ((connection == NULL) || dbus_error_is_set (&error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
-		if (dbus_error_is_set (&dbus_error))
-			dbus_error_free (&dbus_error);
-		return (NULL);
+		connection = NULL;
+		goto out;
 	}
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
@@ -1032,25 +1068,22 @@ DBusConnection *nm_dbus_init (NMData *data)
 	data->nm_methods = nm_dbus_nm_methods_setup ();
 	data->device_methods = nm_dbus_device_methods_setup ();
 	data->net_methods = nm_dbus_net_methods_setup ();
+	data->dhcp_methods = nm_dbus_dhcp_methods_setup ();
 
-	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data);
-	if (!success)
+	if (    !dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data)
+		|| !dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data)
+		|| !dbus_connection_register_object_path (connection, NM_DBUS_PATH_DHCP, &dhcp_vtable, data))
 	{
-		syslog (LOG_CRIT, "nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?");
-		return (NULL);
-	}
-
-	success = dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data);
-	if (!success)
-	{
-		syslog (LOG_CRIT, "nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?");
-		return (NULL);
+		syslog (LOG_CRIT, "nm_dbus_init() could not register D-BUS handlers.  Cannot continue.");
+		connection = NULL;
+		goto out;
 	}
 
 	if (!dbus_connection_add_filter (connection, nm_dbus_nmi_filter, data, NULL))
 	{
 		syslog (LOG_CRIT, "nm_dbus_init() could not attach a dbus message filter.  The NetworkManager dbus security policy may not be loaded.  Restart dbus?");
-		return (NULL);
+		connection = NULL;
+		goto out;
 	}
 
 	dbus_bus_add_match (connection,
@@ -1058,23 +1091,26 @@ DBusConnection *nm_dbus_init (NMData *data)
 				"interface='" NMI_DBUS_INTERFACE "',"
 				"sender='" NMI_DBUS_SERVICE "',"
 				"path='" NMI_DBUS_PATH "'",
-				&dbus_error);
-	dbus_error_free (&dbus_error);
+				NULL);
 
 	dbus_bus_add_match(connection,
 				"type='signal',"
 				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
 				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
-				&dbus_error);
-	dbus_error_free (&dbus_error);
+				NULL);
 
-	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &dbus_error);
-	if (dbus_error_is_set (&dbus_error))
+	dbus_error_init (&error);
+	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &error);
+	if (dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
-		dbus_error_free (&dbus_error);
-		return (NULL);
+		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
+		connection = NULL;
+		goto out;
 	}
+
+out:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
 
 	return (connection);
 }

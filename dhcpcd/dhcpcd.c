@@ -260,7 +260,7 @@ void dhcp_interface_cease (dhcp_interface *iface)
 }
 
 /*****************************************************************************/
-int dhcp_interface_dhcp_field_exists (dhcp_interface *iface, int val)
+int dhcp_interface_option_present (dhcp_interface *iface, int val)
 {
 	if (!iface)	return 0;
 
@@ -268,7 +268,7 @@ int dhcp_interface_dhcp_field_exists (dhcp_interface *iface, int val)
 }
 
 /*****************************************************************************/
-void *dhcp_interface_get_dhcp_field (dhcp_interface *iface, int val)
+void *dhcp_interface_option_payload (dhcp_interface *iface, int val)
 {
 	if (!iface)	return 0;
 
@@ -276,7 +276,7 @@ void *dhcp_interface_get_dhcp_field (dhcp_interface *iface, int val)
 }
 
 /*****************************************************************************/
-int dhcp_interface_get_dhcp_field_len (dhcp_interface *iface, int val)
+int dhcp_interface_option_len (dhcp_interface *iface, int val)
 {
 	if (!iface)	return 0;
 
@@ -284,11 +284,61 @@ int dhcp_interface_get_dhcp_field_len (dhcp_interface *iface, int val)
 }
 
 /*****************************************************************************/
-int dhcp_individual_value_len (int val)
+int dhcp_option_record_len (int val)
 {
-	if (val <= dhcpClientIdentifier)
-		return (dhcp_opt_table[val].len);
+	if ((val >= 0) && (val < dhcp_opt_table_len))
+		return (dhcp_opt_table[val].len_hint);
 	else
 		return -1;
 }
 
+/*****************************************************************************/
+const char *dhcp_option_name (int val)
+{
+	if ((val >= 0) && (val < dhcp_opt_table_len))
+		return (dhcp_opt_table[val].name);
+	else
+		return NULL;
+}
+
+/*****************************************************************************/
+dhcp_option_type dhcp_option_record_type (int val)
+{
+	if ((val >= 0) && (val < dhcp_opt_table_len))
+		return (dhcp_opt_table[val].type);
+	else
+		return -1;
+}
+
+/* case-insensitive alpha/num string comparison; skips over white space and punctuation */
+static int dhcp_strcmp (const unsigned char *s1, const unsigned char *s2)
+{
+	while (!isalnum(*s1) && (*s1 != 0))
+		s1++;
+	while (!isalnum(*s2) && (*s2 != 0))
+		s2++;
+	while (*s1 != 0) {
+		if (tolower(*s1) != tolower(*s2))
+			return ((tolower(*s1) < tolower(*s2))?-1:1);
+		s1++;
+		s2++;
+		while (!isalnum(*s1) && (*s1 != 0))
+			s1++;
+		while (!isalnum(*s2) && (*s2 != 0))
+			s2++;
+	}
+	if (*s2 != 0)
+		return ((tolower(*s1) < tolower(*s2))?-1:1);
+	return (0);
+}
+
+/*****************************************************************************/
+int dhcp_option_id_by_name (const char *name)
+{
+	int	i;
+
+	for (i = 0; i < dhcp_opt_table_len; i++)
+		if ((dhcp_opt_table[i].name != NULL) && (dhcp_strcmp (name, dhcp_opt_table[i].name) == 0))
+			return (i);
+	return (-1);
+}

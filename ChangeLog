@@ -1,3 +1,29 @@
+2005-02-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Dan Reed:  DHCP options D-BUS API
+		Exposes the DHCP options that a device receives to clients over D-BUS.
+
+	* configure.in
+		- A few cleanups
+
+	* dhcpcd/client.h
+		- Correct names, option length, and types for DHCP options
+
+	* dhcpcd/dhcpcd.[ch]
+		- Clarify function names that access DHCP options & data
+
+	* src/NetworkManagerDHCP.c
+		- Use new DHCP data access functions
+
+	* src/NetworkManagerDbus.c
+		- Message handler for DHCP functions
+
+	* src/nm-dbus-dhcp.[ch] (new)
+		- DHCP dbus methods
+
+	* test/nm-dhcp-opt-test.c
+		- Test DHCP D-BUS API and return all present DHCP options
+
 2005-02-12  Dan Williams  <dcbw@redhat.com>
 
 	* test/Makefile.am

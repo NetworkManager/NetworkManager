@@ -8,9 +8,9 @@ AM_CPPFLAGS =						\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nmtest nminfotest nmtestdevices libnm_glib_test
+noinst_PROGRAMS = nmtest nminfotest nmtestdevices libnm_glib_test nm-dhcp-opt-test
 
-nmtest_SOURCES = nmclienttest.c
+nmtest_SOURCES = nmtest.c
 nmtest_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)
 
 nminfotest_SOURCES = nminfotest.c
@@ -21,3 +21,6 @@ nmtestdevices_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
 
 libnm_glib_test_SOURCES = libnm_glib_test.c
 libnm_glib_test_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) ../libnm_glib/libnm_glib.la
+
+nm_dhcp_opt_test_SOURCES = nm-dhcp-opt-test.c
+nm_dhcp_opt_test_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS)

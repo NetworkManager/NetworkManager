@@ -99,6 +99,18 @@ enum
 	endOption					=	255
 };
 
+typedef enum dhcp_option_type
+{
+	DHCP_OPT_INVALID,
+	DHCP_OPT_ADDRESS,
+	DHCP_OPT_TIME,
+	DHCP_OPT_STRING,
+	DHCP_OPT_COUNT,
+	DHCP_OPT_TOGGLE,
+	DHCP_OPT_BLOB,
+	DHCP_OPT_NUMBER,
+} dhcp_option_type;
+
 /* Return codes */
 #define RET_DHCP_ERROR			0
 #define RET_DHCP_ADDRESS_IN_USE	1
@@ -122,13 +134,16 @@ typedef struct dhcp_client_options
 	int			window;
 } dhcp_client_options;
 
-struct dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *in_opts);
-void dhcp_interface_free (struct dhcp_interface *iface);
-void dhcp_interface_cease (struct dhcp_interface *iface);
+struct dhcp_interface	*dhcp_interface_init		(const char *if_name, dhcp_client_options *in_opts);
+void					 dhcp_interface_free		(struct dhcp_interface *iface);
+void					 dhcp_interface_cease		(struct dhcp_interface *iface);
 
-int dhcp_interface_dhcp_field_exists (struct dhcp_interface *iface, int val);
-int dhcp_interface_get_dhcp_field_len (struct dhcp_interface *iface, int val);
-void *dhcp_interface_get_dhcp_field (struct dhcp_interface *iface, int val);
-int dhcp_individual_value_len (int val);
+int				 dhcp_interface_option_present	(struct dhcp_interface *iface, int val);
+int				 dhcp_interface_option_len		(struct dhcp_interface *iface, int val);
+void				*dhcp_interface_option_payload	(struct dhcp_interface *iface, int val);
+int				 dhcp_option_record_len			(int val);
+dhcp_option_type	 dhcp_option_record_type			(int val);
+int				 dhcp_option_id_by_name			(const char *name);
+const char *		 dhcp_option_name				(int val);
 
 #endif

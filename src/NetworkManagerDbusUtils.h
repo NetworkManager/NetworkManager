@@ -29,12 +29,15 @@
 
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
+#include "dhcpcd/dhcpcd.h"
 
 typedef struct NMDbusCBData
 {
 	NMData		*data;
 	NMDevice		*dev;
 	NMAccessPoint	*ap;
+	int			 opt_id;
+	struct dhcp_interface	*dhcp_iface;
 } NMDbusCBData;
 
 typedef DBusMessage* (*NMDbusMethod) (DBusConnection *, DBusMessage *, NMDbusCBData *);
