@@ -157,6 +157,17 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 		default:
 			break;
 	}
+
+	/*determine if we should hide the notification icon*/
+	gtk_widget_show (GTK_WIDGET (applet));
+	if (g_list_length (applet->devices) == 1 && 
+	    applet->applet_state != APPLET_STATE_NO_NM) {
+		NetworkDevice *nwd;
+		nwd = (NetworkDevice *)applet->devices->data;
+
+		if (nwd->type == DEVICE_TYPE_WIRED_ETHERNET)
+			gtk_widget_hide (GTK_WIDGET (applet)); 
+	}
 }
 
 
