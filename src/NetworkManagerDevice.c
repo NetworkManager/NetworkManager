@@ -174,6 +174,7 @@ typedef struct NMDeviceWirelessOptions
 	gboolean			 supports_wireless_scan;
 	NMAccessPointList	*ap_list;
 	NMAccessPoint		*best_ap;
+	gboolean			 freeze_best_ap;
 } NMDeviceWirelessOptions;
 
 typedef struct NMDeviceWiredOptions
@@ -431,7 +432,8 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 			{
 				nm_ap_list_unref (dev->options.wireless.ap_list);
 				dev->options.wireless.ap_list = NULL;
-				nm_ap_unref (dev->options.wireless.best_ap);
+				if (dev->options.wireless.best_ap)
+					nm_ap_unref (dev->options.wireless.best_ap);
 			}
 			break;
 		}
@@ -1199,7 +1201,7 @@ char * nm_device_get_path_for_ap (NMDevice *dev, NMAccessPoint *ap)
 	{
 		if (list_ap == ap)
 		{
-			path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX,
+			path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
 							nm_device_get_iface (dev), nm_ap_get_essid (ap));
 			break;
 		}
@@ -1255,16 +1257,35 @@ void nm_device_update_best_ap (NMDevice *dev)
 	if (!(ap_list = nm_device_ap_list_get (dev)))
 		return;
 
+	/* Check the trusted list first */
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
 		return;
-
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		if (nm_wireless_is_ap_better (dev->app_data->trusted_ap_list, ap, &highest_priority))
-			best_ap = ap;
+		/* Access points in the "invalid" list cannot be used */
+		if (!nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (ap)))
+			if (nm_wireless_is_ap_better (dev->app_data->trusted_ap_list, ap, &highest_priority))
+				best_ap = ap;
+	}
+	nm_ap_list_iter_free (iter);
+
+	/* If its not in the trusted list, check the preferred list */
+	if (!best_ap)
+	{
+		highest_priority = NM_AP_PRIORITY_WORST;
+
+		if (!(iter = nm_ap_list_iter_new (ap_list)))
+			return;
+		while ((ap = nm_ap_list_iter_next (iter)))
+		{
+			/* Access points in the "invalid" list cannot be used */
+			if (!nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (ap)))
+				if (nm_wireless_is_ap_better (dev->app_data->preferred_ap_list, ap, &highest_priority))
+					best_ap = ap;
+		}
+		nm_ap_list_iter_free (iter);
 	}
 
-	nm_ap_list_iter_free (iter);
 	nm_device_set_best_ap (dev, best_ap);
 }
 
@@ -1314,7 +1335,13 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		}
 
 		/* Clear out the ap list for this device in preparation for any new ones */
-		dev->options.wireless.ap_list = NULL;
+		dev->options.wireless.ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+		if (!(dev->options.wireless.ap_list))
+		{
+			nm_dispose_scan_results (scan_results.result);
+			close (iwlib_socket);
+			return;
+		}
 
 		/* Iterate over scan results and pick a "most" preferred access point. */
 		tmp_ap = scan_results.result;
@@ -1329,7 +1356,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 
 				/* Copy over info from scan to local structure */
 				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
-fprintf( stderr, "SCAN: found ap '%s'\n", tmp_ap->b.essid);
+
 				if (tmp_ap->b.has_key && (tmp_ap->b.key_flags & IW_ENCODE_DISABLED))
 					nm_ap_set_encrypted (nm_ap, FALSE);
 				else
@@ -1345,8 +1372,6 @@ fprintf( stderr, "SCAN: found ap '%s'\n", tmp_ap->b.essid);
 
 				/* Add the AP to the device's AP list */
 				nm_device_ap_list_add (dev, nm_ap);
-
-				nm_ap_unref (nm_ap);
 			}
 			tmp_ap = tmp_ap->next;
 		}
@@ -1360,7 +1385,8 @@ fprintf( stderr, "SCAN: found ap '%s'\n", tmp_ap->b.essid);
 		 */
 		if ((dev == data->active_device) || (dev == data->pending_device))
 			nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
-		nm_ap_list_unref (old_ap_list);
+		if (old_ap_list)
+			nm_ap_list_unref (old_ap_list);
 
 		nm_device_update_best_ap (dev);
 	}

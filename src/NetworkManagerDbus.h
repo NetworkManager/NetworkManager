@@ -27,16 +27,21 @@
 #include <dbus/dbus-glib.h>
 #include "NetworkManagerAPList.h"
 
+#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
 
-#define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
-#define	NM_DBUS_DEVICES_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_DEVICES_NAMESPACE			"org.freedesktop.NetworkManager.Devices"
-#define	NM_DBUS_NMI_OBJECT_PATH				"/org/freedesktop/NetworkManagerInfo"
-#define	NM_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
+#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
+#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
+#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
+#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
+
+#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
+#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
+#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
 
 
 DBusConnection *nm_dbus_init						(NMData *data);
+
+gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
 
 void			nm_dbus_signal_device_no_longer_active	(DBusConnection *connection, NMDevice *dev);
 

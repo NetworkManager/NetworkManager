@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -19,38 +19,18 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_H
-#define NETWORK_MANAGER_H
+#ifndef NM_WIRELESS_APPLET_DBUS_H
+#define NM_WIRELESS_APPLET_DBUS_H
 
-#include <glib.h>
-#include <glib/gthread.h>
 #include <dbus/dbus.h>
-#include <hal/libhal.h>
-#include "NetworkManagerAP.h"
+#include <dbus/dbus-glib.h>
 
-struct NMData
-{
-	LibHalContext			*hal_ctx;
-	DBusConnection			*dbus_connection;
-	gboolean				 info_daemon_avail;
+DBusConnection *	nmwa_dbus_init						(gpointer user_data);
 
-	GSList				*dev_list;
-	GMutex				*dev_list_mutex;
+gboolean			nmwa_dbus_nm_is_running				(DBusConnection *connection);
 
-	struct NMDevice		*active_device;
-	struct NMDevice		*pending_device;
+void				nmwa_dbus_add_networks_to_menu		(DBusConnection *connection, gpointer user_data);
 
-	gboolean				 state_modified;
-	GMutex				*state_modified_mutex;
-
-	gboolean				 update_ap_lists;
-	struct NMAccessPointList	*trusted_ap_list;
-	struct NMAccessPointList	*preferred_ap_list;
-	struct NMAccessPointList	*invalid_ap_list;
-};
-
-typedef struct NMData NMData;
-
-void		 nm_data_set_state_modified	(NMData *data, gboolean modified);
+char *			nmwa_dbus_get_active_wireless_device	(DBusConnection *connection);
 
 #endif

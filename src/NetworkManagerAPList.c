@@ -58,6 +58,13 @@ NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 
 	nm_ap_list_ref (list);
 	list->type = type;
+	list->mutex = g_mutex_new ();
+	if (!list->mutex)
+	{
+		g_free (list);
+		NM_DEBUG_PRINT ("nm_ap_list_new() could not create list mutex\n");
+		return (NULL);
+	}
 
 	return (list);
 }
@@ -151,34 +158,28 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
  */
 NMAccessPoint *nm_ap_list_get_ap_by_essid (NMAccessPointList *list, const char *network)
 {
+	NMAccessPoint	*ap;
 	NMAccessPoint	*found_ap = NULL;
-	GSList		*element;
+	NMAPListIter	*iter;
 
-	g_return_val_if_fail (list != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
 
-	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
-	{
-		NM_DEBUG_PRINT( "nm_ap_list_get_ap_by_essid() could not acquire AP list mutex.\n" );
+	if (!list)
 		return (NULL);
-	}
 
-	/* Find the ap in the list */
-	element = list->ap_list;
-	while (element)
+	if (!(iter = nm_ap_list_iter_new (list)))
+		return (NULL);
+
+	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		NMAccessPoint	*ap = (NMAccessPoint *)(element->data);
-
-		if (ap && (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0))
+		if (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0)
 		{
 			found_ap = ap;
 			break;
 		}
-		element = g_slist_next (element);
 	}
 
-	nm_unlock_mutex (list->mutex, __FUNCTION__);
-
+	nm_ap_list_iter_free (iter);
 	return (found_ap);
 }
 
@@ -266,10 +267,13 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
  */
 void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new)
 {
-	GSList		*element = old->ap_list;
+	GSList		*element = NULL;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
+
+	if (old)
+		element = old->ap_list;
 
 	/* Iterate over each item in the old list and find it in the new list */
 	while (element)
@@ -295,7 +299,11 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 	/* Iterate over the new list and compare to the old list.  Items that aren't already
 	 * matched are by definition new networks.
 	 */
-	element = new->ap_list;
+	if (new)
+		element = new->ap_list;
+	else
+		element = NULL;
+
 	while (element)
 	{
 		NMAccessPoint	*new_ap = (NMAccessPoint *)(element->data);
@@ -349,7 +357,9 @@ NMAccessPoint * nm_ap_list_iter_get_ap (NMAPListIter *iter)
 {
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail (iter->valid, NULL);
-	g_return_val_if_fail (iter->cur_pos != NULL, NULL);
+
+	if (!iter->cur_pos)
+		return (NULL);
 
 	return ((NMAccessPoint *)(iter->cur_pos->data));
 }
@@ -358,7 +368,6 @@ NMAccessPoint * nm_ap_list_iter_get_ap (NMAPListIter *iter)
 NMAccessPoint * nm_ap_list_iter_next (NMAPListIter *iter)
 {
 	g_return_val_if_fail (iter != NULL, NULL);
-	g_return_val_if_fail (iter->cur_pos != NULL, NULL);
 
 	if (iter->valid)
 		iter->cur_pos = g_slist_next (iter->cur_pos);
@@ -367,7 +376,6 @@ NMAccessPoint * nm_ap_list_iter_next (NMAPListIter *iter)
 		iter->valid = TRUE;
 		iter->cur_pos = iter->list->ap_list;
 	}
-
 	return (nm_ap_list_iter_get_ap (iter));
 }
 

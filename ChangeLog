@@ -1,3 +1,26 @@
+2004-08-06  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/*
+		- Add panel applet
+
+	* src/NetworkManagerPolicy.c
+	  src/NetworkManager.c
+		- Get access point lists from NetworkManagerInfo on-demand,
+			and look for ServiceCreate/ServiceDeleted signals to see when
+			we should query NMI for lists
+	* src/NetworkManagerAPList.c
+		- Make sure to init the list's mutex
+		- Convert traversals of the list over to the list iter functions
+
+	* src/NetworkManagerDbus.[ch]
+		- Use more aptly-named path/service/interface constants
+		- Treat both active and pending devices the same for "getActiveDevice"
+		- Add a "status" method returning "connected", "connecting", or "disconnected"
+
+	* src/NetworkManagerDevice.c
+		- Honor "ignored" network list when picking best ap to use
+
+
 2004-08-06  Seth Nickell  <seth@gnome.org>
 
 	* aclocal.m4:

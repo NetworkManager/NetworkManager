@@ -32,6 +32,8 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerAP.h"
+#include "NetworkManagerAPList.h"
+#include "NetworkManagerDbus.h"
 
 gboolean			allowed_ap_worker_exit = FALSE;
 extern gboolean	debug;
@@ -157,6 +159,26 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	gboolean	 modified = FALSE;
 
 	g_return_val_if_fail (data != NULL, TRUE);
+
+	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
+	if (data->info_daemon_avail && data->update_ap_lists)
+	{
+fprintf( stderr, "getting lists from NetworkManagerInfo\n");
+		/* Query info daemon for network lists if its now running */
+		if (data->trusted_ap_list)
+			nm_ap_list_unref (data->trusted_ap_list);
+		data->trusted_ap_list = nm_ap_list_new (NETWORK_TYPE_TRUSTED);
+		if (data->trusted_ap_list)
+			nm_ap_list_populate (data->trusted_ap_list, data);
+
+		if (data->preferred_ap_list)
+			nm_ap_list_unref (data->preferred_ap_list);
+		data->preferred_ap_list = nm_ap_list_new (NETWORK_TYPE_PREFERRED);
+		if (data->preferred_ap_list)
+			nm_ap_list_populate (data->preferred_ap_list, data);
+
+		data->update_ap_lists = FALSE;
+	}
 
 	/* Check global state modified variable, and reset it with
 	 * appropriate locking.

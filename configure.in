@@ -35,6 +35,10 @@ PKG_CHECK_MODULES(OPENSSL, openssl)
 AC_SUBST(OPENSSL_CFLAGS)
 AC_SUBST(0PENSSL_LIBS)
 
+PKG_CHECK_MODULES(PANEL_APPLET, libpanelapplet-2.0)
+AC_SUBST(PANEL_APPLET_CFLAGS)
+AC_SUBST(PANEL_APPLET_LIBS)
+
 PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
 AC_SUBST(LIBGNOMEUI_CFLAFS)
 AC_SUBST(LIBGNOMEUI_LIBS)
@@ -55,6 +59,7 @@ Makefile
 src/Makefile
 dispatcher-daemon/Makefile
 info-daemon/Makefile
+panel-applet/Makefile
 test/Makefile
 initscript/Makefile
 ])

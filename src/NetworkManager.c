@@ -403,7 +403,7 @@ static NMData *nm_data_new (void)
 		return (NULL);
 	}
 
-	/* Initialize the allowed access point list */
+	/* Initialize the access point lists */
 	data->trusted_ap_list = nm_ap_list_new (NETWORK_TYPE_TRUSTED);
 	data->preferred_ap_list = nm_ap_list_new (NETWORK_TYPE_PREFERRED);
 	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
@@ -411,7 +411,7 @@ static NMData *nm_data_new (void)
 	if (!data->trusted_ap_list || !data->preferred_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create trusted ap list mutex.  Whacky stuff going on?\n");
+		NM_DEBUG_PRINT("Could not create access point lists.  Whacky stuff going on?\n");
 		return (NULL);
 	}
 
@@ -603,6 +603,8 @@ int main( int argc, char *argv[] )
 		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
 	}
+	nm_data->info_daemon_avail = nm_dbus_is_info_daemon_running (nm_data->dbus_connection);
+	nm_data->update_ap_lists = TRUE;
 
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
 	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
@@ -612,10 +614,6 @@ int main( int argc, char *argv[] )
 	}
 	nm_data->hal_ctx = ctx;
 	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
-
-	/* Initialize our lists of allowed and ignored access points */
-	nm_ap_list_populate (nm_data->trusted_ap_list, nm_data);
-	nm_ap_list_populate (nm_data->preferred_ap_list, nm_data);
 
 	/* Grab network devices that are already present and add them to our list */
 	nm_add_initial_devices (nm_data);
@@ -628,11 +626,9 @@ int main( int argc, char *argv[] )
 	/* Another watch function which handles networking state changes and applies
 	 * the correct policy on a change.
 	 */
-	policy_source = g_timeout_add (3000, nm_state_modification_monitor, nm_data);
+	policy_source = g_timeout_add (500, nm_state_modification_monitor, nm_data);
 
-	/* Yet another watch function which scans for access points and
-	 * attempts to associate with approved ones in a users' list.
-	 */
+	/* Keep a current list of access points */
 	wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
 
 	/* Watch all devices that HAL knows about for state changes */
