@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004.
 #
-# $Id: sk.po,v 1.1 2004/10/03 12:14:30 marcel Exp $
+# $Id: sk.po,v 1.2 2004/10/10 12:26:15 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-03 13:52+0200\n"
-"PO-Revision-Date: 2004-10-03 14:14+0200\n"
+"POT-Creation-Date: 2004-10-10 14:23+0200\n"
+"PO-Revision-Date: 2004-10-10 14:25+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -30,44 +30,62 @@ msgstr "Upraviť bezdrôtové siete"
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:3
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bitvé heslo\n"
+"128-bitový priamy kľúč v šestnástkovej sústave"
+
+#: info-daemon/passphrase.glade.h:5
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Heslo vyžadované bezdrôtovou "
-"sieťou</span>\n"
+"<span weight=\"bold\" size=\"larger\">Heslo vyžadované bezdrôtovou sieťou</"
+"span>\n"
 "\n"
-"Heslo alebo WEP kľúč je potrebný pre prístup k bezdrôtovej sieti '%s'."
+"Heslo alebo šifrovací kľúč je potrebný pre prístup k bezdrôtovej sieti '%s'."
 
-#: info-daemon/passphrase.glade.h:6
+#: info-daemon/passphrase.glade.h:8
+msgid "Key Type:"
+msgstr "Typ kľúča:"
+
+#: info-daemon/passphrase.glade.h:9
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Heslo:"
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade.h:10
 msgid "Wireless Network Key Required"
 msgstr "Je potrebný kľúč bezdrôtovej siete"
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
+#: info-daemon/passphrase.glade.h:11 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Prihlásenie k sieti"
 
-#: panel-applet/NMWirelessApplet.c:589
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr "Kľúč:"
+
+#: panel-applet/NMWirelessApplet.c:600
 msgid "Other Wireless Networks..."
 msgstr "Ostatné bezdrôtové siete..."
 
-#: panel-applet/NMWirelessApplet.c:699
+#: panel-applet/NMWirelessApplet.c:710
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: panel-applet/NMWirelessApplet.c:816
+#: panel-applet/NMWirelessApplet.c:827
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
-#: panel-applet/NMWirelessApplet.c:955 panel-applet/NMWirelessApplet.c:1007
+#: panel-applet/NMWirelessApplet.c:966 panel-applet/NMWirelessApplet.c:1018
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -96,8 +114,8 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Potvrdenie prihlásenia do bezdrôtovej "
 "siete</span>\n"
 "\n"
-"Zvolili ste si prihlásenie do bezdrôtovej siete '%s'. Ak ste si istý, že táto "
-"bezdrôtová sieť je bezpečná, kliknite na zaškrtávacie pole nižšie a "
+"Zvolili ste si prihlásenie do bezdrôtovej siete '%s'. Ak ste si istý, že "
+"táto bezdrôtová sieť je bezpečná, kliknite na zaškrtávacie pole nižšie a "
 "NetworkManager vás viac nebude obťažovať hlúpymi otázkami, keď sa k nej "
 "budete pripájať."
 
