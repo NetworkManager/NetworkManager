@@ -1,3 +1,8 @@
+2004-11-09  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* POTFILES.in: Add panel-applet/NWManagerOtherNetworkDialog.c
+	* nb.po: Update
+
 2004-11-04  Marcel Telka  <marcel@telka.sk>
 
 	* sk.po: Updated Slovak translation.
