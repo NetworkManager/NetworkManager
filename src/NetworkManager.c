@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
@@ -552,6 +553,12 @@ int main( int argc, char *argv[] )
 	gboolean		 become_daemon = TRUE;
 	gboolean		 enable_test_devices = FALSE;
 	GMainLoop		*loop  = NULL;
+	
+	if ((int)getuid() != 0)
+	{
+		printf( "You must be root to run NetworkManager!\n");
+		return (EXIT_FAILURE);
+	}
 
 	/* Parse options */
 	while (1)

@@ -1144,7 +1144,7 @@ void nm_device_set_mode_adhoc (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
-	/* Force the card into Managed/Infrastructure mode */
+	/* Force the card into Adhoc mode */
 	sk = iw_sockets_open ();
 	if (sk >= 0)
 	{

@@ -1,3 +1,18 @@
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
+	---- We have a website ----
+	http://people.redhat.com/dcbw/NetworkManager
+
+	Patch from Robert Paskowitz:
+	* src/NetworkManager.c
+		- (main): Make sure we are run as root
+	* src/NetworkManagerDevice.c
+		- Fix type in ad-hoc setting function
+
+	Patch from Thom May:
+	* src/backends/NetworkManagerDebian.c
+		- Make Debian backend compile again
+
 2004-10-14 Dan Williams <dcbw@redhat.com>
 
 	* Tagged NetworkManager-0_3
