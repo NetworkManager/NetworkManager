@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2004-09-11 13:32+0200\n"
-"PO-Revision-Date: 2004-09-11 13:30+0200\n"
+"PO-Revision-Date: 2004-09-11 16:50+0200\n"
 "Last-Translator: Martin Willemoes Hansen <mwh@sysrq.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
 "MIME-Version: 1.0\n"
@@ -48,7 +48,7 @@ msgstr "Løsen:"
 
 #: info-daemon/passphrase.glade.h:7
 msgid "Wireless Network Key Required"
-msgstr "Trådløs netværksnøgle krævet"
+msgstr "Nøgle til trådløst netværk påkrævet"
 
 #: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
@@ -72,7 +72,7 @@ msgstr "Netværkforbindelsers"
 
 #: panel-applet/NMWirelessApplet.c:727
 msgid "Other Wireless Network..."
-msgstr "Andet trådløs netværk ..."
+msgstr "Andet trådløst netværk ..."
 
 #: panel-applet/NMWirelessApplet.c:859 panel-applet/NMWirelessApplet.c:919
 msgid ""
