@@ -1,5 +1,10 @@
 2004-10-08 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- Die if NetworkManagerInfo dies, since it manages our lifetime
+
+2004-10-08 Dan Williams <dcbw@redhat.com>
+
 	* info-daemon/NetworkManagerInfo.[ch]
 	  info-dameon/NetworkManagerInfoDbus.[ch]
 	  info-daemon/NetworkManagerInfoPassphraseDialog.[ch]
