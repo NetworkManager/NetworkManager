@@ -38,4 +38,6 @@ void				nm_dbus_signal_device_no_longer_active	(DBusConnection *connection, NMDe
 
 void				nm_dbus_signal_device_now_active		(DBusConnection *connection, NMDevice *dev);
 
+void				nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
+
 #endif

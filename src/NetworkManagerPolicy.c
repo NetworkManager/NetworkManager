@@ -324,7 +324,8 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 					ap = nm_ap_new ();
 					nm_ap_set_priority (ap, prio_num);
 					nm_ap_set_essid (ap, essid);
-					nm_ap_set_wep_key (ap, wep_key);
+					if (strlen (wep_key) > 0)
+						nm_ap_set_wep_key (ap, wep_key);
 
 					data->allowed_ap_list = g_slist_append (data->allowed_ap_list, ap);
 					/*

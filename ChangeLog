@@ -1,3 +1,32 @@
+2004-07-06  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- Add IPv4 address update for active device during link state check
+		- Don't allow wireless cards to be powered up when they are not the
+			active device
+
+	* src/NetworkManagerDbus.c
+	  src/NetworkManagerDbus.h
+		- Add DBUS IPv4 address change signal
+		- Add DBUS IPv4 address get method for devices
+
+	* src/NetworkManagerDevice.c
+		- Make setting the WEP key actually work
+		- Move IP address get/set/update stuff here, per-device
+		- Power down/bring down wireless device when deactivated
+		- For scanning wireless devices, if first scan returned ENODATA, try again
+
+	* src/NetworkManagerPolicy.c
+		- Only set the WEP key for an allowed access point if there is one.
+			We were setting it to be blank if one wasn't specified.
+
+	* src/NetworkManagerUtils.h
+	  src/NetworkManagerUtils.c
+		- Move the IP address stuff to NetworkManagerDevice.c
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Add device IPv4 address change notification stuff
+
 2004-07-05  Dan Williams <dcbw@redhat.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c

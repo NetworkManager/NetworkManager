@@ -414,6 +414,35 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 
 
 /*
+ * nm_dbus_signal_device_ip4_address_change
+ *
+ * Notifies the bus that a particular device's IPv4 address changed.
+ *
+ */
+void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDevice *dev)
+{
+	DBusMessage		*message;
+	unsigned char		*object_path = g_new0 (unsigned char, 100);
+
+	message = dbus_message_new_signal (NM_DBUS_NM_OBJECT_PATH_PREFIX, NM_DBUS_NM_NAMESPACE, "DeviceIP4AddressChange");
+	if (!message)
+	{
+		NM_DEBUG_PRINT ("nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!\n");
+		return;
+	}
+
+	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+	g_free (object_path);
+
+	if (!dbus_connection_send (connection, message, NULL))
+		NM_DEBUG_PRINT ("nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!\n");
+
+	dbus_message_unref (message);
+}
+
+
+/*
  * nm_dbus_devices_handle_networks_request
  *
  * Converts a property request on a _network_ into a dbus message.
@@ -502,6 +531,8 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_iter_append_string (&iter, nm_device_get_iface (dev));
 	else if (strcmp ("getType", request) == 0)
 		dbus_message_iter_append_int32 (&iter, nm_device_get_iface_type (dev));
+	else if (strcmp ("getIP4Address", request) == 0)
+		dbus_message_iter_append_uint32 (&iter, nm_device_get_ip4_address (dev));
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
 		NMAccessPoint		*ap = NULL;

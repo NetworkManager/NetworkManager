@@ -100,11 +100,10 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 				/* Initialize and bring up all new devices */
 				if (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
 				{
-					/* Disable WEP */
+					/* Disable WEP, take device down */
 					nm_device_bring_down (dev);
 					nm_device_set_wep_key (dev, NULL);
 					nm_device_set_essid (dev, NULL);
-					nm_device_bring_up (dev);
 				}
 				else
 				{
@@ -334,19 +333,31 @@ gboolean nm_link_state_monitor (gpointer user_data)
 
 			if (dev)
 			{
-				/* Make sure the device is up first.  It doesn't have to have
-				 * an IP address or anything, but most devices cannot do link
-				 * detection when they are down.
-				 */
-				if (!nm_device_is_up (dev))
-					nm_device_bring_up (dev);
+				if (    dev != data->active_device
+					&& (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET))
+				{
+					/* If its a wireless card, make sure its down.  Saves power. */
+					if (nm_device_is_up (dev))
+						nm_device_bring_down (dev);
+				}
 
-				nm_device_update_link_active (dev, FALSE);
+				if ((nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRED_ETHERNET))
+				{
+					/* Make sure the device is up first.  It doesn't have to have
+					 * an IP address or anything, but most wired devices cannot do link
+					 * detection when they are down.
+					 */
+					if (!nm_device_is_up (dev))
+						nm_device_bring_up (dev);
+
+					nm_device_update_link_active (dev, FALSE);
+				}
 
 				/* Check if the device's IP address has changed
 				 * (ie dhcp lease renew/address change)
 				 */
-				/* Implement me */
+				if (dev == data->active_device)
+					nm_device_update_ip4_address (dev);
 			}
 
 			element = g_slist_next (element);

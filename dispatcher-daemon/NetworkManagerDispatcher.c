@@ -36,10 +36,15 @@ enum NMDAction
 {
 	NMD_DEVICE_DONT_KNOW,
 	NMD_DEVICE_NOW_INACTIVE,
-	NMD_DEVICE_NOW_ACTIVE
+	NMD_DEVICE_NOW_ACTIVE,
+	NMD_DEVICE_IP4_ADDRESS_CHANGE
 };
 typedef enum NMDAction	NMDAction;
 
+#define NIPQUAD(addr)	((unsigned char)(addr)), \
+					((unsigned char)(addr>>8)), \
+					((unsigned char)(addr>>16)), \
+					((unsigned char)(addr>>24))
 
 /*
  * nmd_execute_scripts
@@ -47,7 +52,7 @@ typedef enum NMDAction	NMDAction;
  * Call scripts in /etc/NetworkManager.d when devices go down or up
  *
  */
-void nmd_execute_scripts (NMDAction action, char *iface_name)
+void nmd_execute_scripts (NMDAction action, char *iface_name, guint32 new_ip4_address)
 {
 	DIR			*dir = opendir ("/etc/NetworkManager.d");
 	struct dirent	*ent;
@@ -77,9 +82,16 @@ void nmd_execute_scripts (NMDAction action, char *iface_name)
 				{
 					char cmd[500];
 
-					snprintf (cmd, 499, "%s %s %s", path, iface_name,
-						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
-							(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
+					if ((action == NMD_DEVICE_NOW_INACTIVE) || (action == NMD_DEVICE_NOW_ACTIVE))
+					{
+						snprintf (cmd, 499, "%s %s %s", path, iface_name,
+							(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
+								(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
+					}
+					else if (action == NMD_DEVICE_IP4_ADDRESS_CHANGE)
+					{
+						snprintf (cmd, 499, "%s %s %u.%u.%u.%u", path, iface_name, NIPQUAD (new_ip4_address));
+					}
 					system (cmd);
 				}
 			}
@@ -146,6 +158,55 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 
 
 /*
+ * nmd_get_device_ip4_address
+ *
+ * Queries NetworkManager for the IPv4 address of a device, specified by a device path
+ */
+guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
+{
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	DBusMessageIter iter;
+	DBusError		 error;
+	guint32		 ret_address;
+
+	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						path,
+						"org.freedesktop.NetworkManager",
+						"getIP4Address");
+	if (message == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return (0);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		dbus_message_unref (message);
+		return (0);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "dbus reply message was NULL\n" );
+		dbus_message_unref (message);
+		return (0);
+	}
+
+	/* now analyze reply */
+	dbus_message_iter_init (reply, &iter);
+	ret_address = dbus_message_iter_get_uint32 (&iter);
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	return (ret_address);
+}
+
+
+/*
  * nmd_dbus_filter
  *
  * Handles dbus messages from NetworkManager, dispatches device active/not-active messages
@@ -161,7 +222,9 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 	dbus_error_init (&error);
 	object_path = dbus_message_get_path (message);
 
-	if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNoLongerActive"))
+	if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceIP4AddressChange"))
+		action = NMD_DEVICE_IP4_ADDRESS_CHANGE;
+	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNoLongerActive"))
 		action = NMD_DEVICE_NOW_INACTIVE;
 	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNowActive"))
 		action = NMD_DEVICE_NOW_ACTIVE;
@@ -171,12 +234,21 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_object_path, DBUS_TYPE_INVALID))
 		{
 			char		*dev_iface_name = nmd_get_device_name (connection, dev_object_path);
+			guint32	 dev_ip4_address = nmd_get_device_ip4_address (connection, dev_object_path);
 
-			fprintf (stderr, "Device %s (%s) is now %s.\n", dev_object_path, dev_iface_name,
+			if (action == NMD_DEVICE_NOW_ACTIVE || action == NMD_DEVICE_NOW_INACTIVE)
+			{
+				fprintf (stderr, "Device %s (%s) is now %s.\n", dev_object_path, dev_iface_name,
 						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
 							(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
+			}
+			else if (action == NMD_DEVICE_IP4_ADDRESS_CHANGE)
+			{
+				fprintf (stderr, "Device %s (%s) now has address %u.%u.%u.%u\n", dev_object_path, dev_iface_name,
+							NIPQUAD(dev_ip4_address));
+			}
 
-			nmd_execute_scripts (action, dev_iface_name);
+			nmd_execute_scripts (action, dev_iface_name, dev_ip4_address);
 
 			free (dev_iface_name);
 			dbus_free (dev_object_path);

@@ -48,7 +48,4 @@ gboolean		nm_ethernet_address_is_valid		(struct ether_addr *test_addr);
 
 void			nm_dispose_scan_results			(wireless_scan *result_list);
 
-guint32		nm_get_ipv4_address_for_device	(NMDevice *dev);
-void			nm_get_ipv6_address_for_device	(NMDevice *dev);
-
 #endif
