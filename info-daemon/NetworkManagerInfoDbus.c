@@ -708,26 +708,6 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 }
 
 /*
- * nmi_dbus_is_running
- *
- * Ask dbus whether or not another instance of NetworkManagerInfo is running
- *
- */
-static gboolean nmi_dbus_is_running (DBusConnection *connection)
-{
-	DBusError		error;
-	gboolean		exists;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-
-	dbus_error_init (&error);
-	exists = dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error);
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
-	return (exists);
-}
-
-/*
  * nmi_dbus_nm_is_running
  *
  * Ask dbus whether or not NetworkManager is running
@@ -757,18 +737,24 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 {
 	DBusError		 		 dbus_error;
 	DBusObjectPathVTable	 nmi_vtable = { &nmi_dbus_nmi_unregister_handler, &nmi_dbus_nmi_message_handler, NULL, NULL, NULL, NULL };
+	int acquisition;
 
 	/*return if we are already running in another instance*/
 	if (nmi_dbus_is_running (dbus_connection))
 		return (-1);
 
 	dbus_error_init (&dbus_error);
-	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE, 0, &dbus_error);
+	acquisition = dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE,
+						DBUS_SERVICE_FLAG_PROHIBIT_REPLACEMENT,
+						&dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
 		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
 		dbus_error_free (&dbus_error);
 		return (-1);
+	}
+	if (acquisition & DBUS_SERVICE_REPLY_SERVICE_EXISTS) {
+	     exit (0);
 	}
 
 	if (!nmi_dbus_nm_is_running (dbus_connection))

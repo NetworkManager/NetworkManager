@@ -1,5 +1,15 @@
 2004-11-11  Colin Walters  <walters@verbum.org>
 
+	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_is_running):
+	Delete.
+	(nmi_dbus_service_init): Call dbus_bus_acquire_service with
+	the DBUS_SERVICE_FLAG_PROHIBIT_REPLACEMENT flag, and
+	then check the result for DBUS_SERVICE_REPLY_SERVICE_EXISTS.
+	This avoids a race condition that made it pretty easily
+	possible to get two NetworkManagerInfo daemons running.
+
+2004-11-11  Colin Walters  <walters@verbum.org>
+	
 	* src/NetworkManager.c (main): Use daemon(3).
 
 	* info-daemon/NetworkManagerInfo.c (main): Ditto.
