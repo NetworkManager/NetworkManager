@@ -433,25 +433,9 @@ static gpointer nm_device_worker (gpointer user_data)
 
 	g_main_loop_run (dev->loop);
 
-	if (nm_device_config_get_use_dhcp (dev))
-	{
-		if (dev->renew_timeout > 0)
-			g_source_remove (dev->renew_timeout);
-		if (dev->rebind_timeout > 0)
-			g_source_remove (dev->rebind_timeout);
-	}
-
 	/* Remove any DHCP timeouts that might have been running */
-	if (dev->renew_timeout)
-	{
-		g_source_remove (dev->renew_timeout);
-		dev->renew_timeout = 0;
-	}
-	if (dev->rebind_timeout)
-	{
-		g_source_remove (dev->rebind_timeout);
-		dev->rebind_timeout = 0;
-	}
+	if (nm_device_config_get_use_dhcp (dev))
+		nm_device_dhcp_remove_timeouts (dev);
 
 	g_main_loop_unref (dev->loop);
 	g_main_context_unref (dev->context);
@@ -2526,17 +2510,9 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
 		return (TRUE);
 
-	/* Remove any DHCP timeouts we may have had running */
-	if (dev->renew_timeout > 0)
-	{
-		g_source_remove (dev->renew_timeout);
-		dev->renew_timeout = 0;
-	}
-	if (dev->rebind_timeout > 0)
-	{
-		g_source_remove (dev->rebind_timeout);
-		dev->rebind_timeout = 0;
-	}
+	/* Remove any DHCP timeouts that might have been running */
+	if (nm_device_config_get_use_dhcp (dev))
+		nm_device_dhcp_remove_timeouts (dev);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (dev);

@@ -1,5 +1,14 @@
 2005-02-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerDHCP.[ch]
+		- (nm_device_dhcp_remove_timeouts): new function
+
+	* src/NetworkManagerDevice.c
+		- Use nm_device_dhcp_remove_timeouts() everywhere that we need to
+			remove the DHCP timeouts.
+
+2005-02-21  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 	  panel-applet/menu-info.[ch]
 		- Give the panel applet some major love: menu items are no longer

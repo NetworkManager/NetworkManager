@@ -305,6 +305,30 @@ gboolean nm_device_dhcp_setup_timeouts (NMDevice *dev)
 
 
 /*
+ * nm_device_dhcp_remove_timeouts
+ *
+ * Remove the DHCP renew and rebind timeouts for a device.
+ *
+ */
+void nm_device_dhcp_remove_timeouts (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->renew_timeout > 0)
+	{
+		g_source_destroy (g_main_context_find_source_by_id (dev->context, dev->renew_timeout));
+		dev->renew_timeout = 0;
+	}
+	if (dev->rebind_timeout > 0)
+	{
+		g_source_destroy (g_main_context_find_source_by_id (dev->context, dev->rebind_timeout));
+		dev->renew_timeout = 0;
+	}
+
+}
+
+
+/*
  * nm_device_dhcp_renew
  *
  * Renew a DHCP address.
