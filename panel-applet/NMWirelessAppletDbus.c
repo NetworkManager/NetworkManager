@@ -632,6 +632,30 @@ void nmwa_dbus_set_network (DBusConnection *connection, char *network)
 
 
 /*
+ * nmwa_dbus_set_device
+ *
+ * Tell NetworkManager to use a specific network device that the user picked.
+ *
+ */
+void nmwa_dbus_set_device (DBusConnection *connection, char *device)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (device != NULL);
+
+	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice");
+	if (message)
+	{
+		dbus_message_append_args (message, DBUS_TYPE_STRING, device, DBUS_TYPE_INVALID);
+		dbus_connection_send (connection, message, NULL);
+	}
+	else
+		fprintf (stderr, "nm_dbus_set_device(): Couldn't allocate the dbus message\n");
+}
+
+
+/*
  * wireless_network_free
  *
  * Frees the representation of a wireless network
@@ -906,10 +930,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		dbus_error_init (&error);
 		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
 			&& (strcmp (service, NM_DBUS_SERVICE) == 0) && (applet->applet_state == APPLET_STATE_NO_NM))
-{
 			applet->applet_state = APPLET_STATE_NO_CONNECTION;
-fprintf( stderr, "ServiceCreate    state = (%d)\n", applet->applet_state);
-}
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
 	{

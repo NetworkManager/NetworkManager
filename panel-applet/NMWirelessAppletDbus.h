@@ -42,8 +42,10 @@ enum
 	DEVICE_TYPE_WIRELESS_ETHERNET
 };
 
-gpointer			nmwa_dbus_worker					(gpointer user_data);
+gpointer			nmwa_dbus_worker			(gpointer user_data);
 
-void				nmwa_dbus_set_network				(DBusConnection *connection, char *network);
+void				nmwa_dbus_set_network		(DBusConnection *connection, char *network);
+
+void				nmwa_dbus_set_device		(DBusConnection *connection, char *device);
 
 #endif

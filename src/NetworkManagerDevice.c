@@ -839,7 +839,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	nm_device_ref (dev);
 
 	/* Reset communication flags between worker and main thread */
-	dev->activating = FALSE;
+	dev->activating = TRUE;
 	dev->just_activated = FALSE;
 	dev->quit_activation = FALSE;
 	if (nm_device_is_wireless (dev))
@@ -848,6 +848,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	if (!g_thread_create (nm_device_activation_worker, dev, FALSE, &error))
 	{
 		syslog (LOG_CRIT, "nm_device_activation_begin(): could not create activation worker thread.");
+		dev->activating = FALSE;
 		return (FALSE);
 	}
 
@@ -930,7 +931,6 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
 
 	syslog (LOG_DEBUG, "nm_device_activation_worker (%s) started...", nm_device_get_iface (dev));
-	dev->activating = TRUE;
 
 	/* If its a wireless device, set the ESSID and WEP key */
 	if (nm_device_is_wireless (dev))

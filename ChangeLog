@@ -1,5 +1,20 @@
 Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Remove debugging code
+		- Enable device switching from menus
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- Method for asking NM to switch devices
+
+	* src/NetworkManagerDevice.c
+		- Set dev->activating earlier, avoids race between
+			the dbus signal of "DeviceActivating" and setting
+			dev->activating (which is what NM's "status" method call
+			looks at)
+
+Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 		- Rework menu code to add devices to menu, and to show
 			signal strength for each access point.  Code cleanups

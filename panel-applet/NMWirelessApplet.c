@@ -126,7 +126,6 @@ static void nmwa_redraw (NMWirelessApplet *applet)
  */
 static void nmwa_update_state (NMWirelessApplet *applet)
 {
-fprintf( stderr, "state (%d)\n", applet->applet_state);
 	switch (applet->applet_state)
 	{
 		case (APPLET_STATE_NO_NM):
@@ -430,13 +429,15 @@ void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
-	char				*network;
+	char				*tag;
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
 
-	if ((network = g_object_get_data (G_OBJECT (item), "network")))
-		nmwa_handle_network_choice (applet, network);
+	if ((tag = g_object_get_data (G_OBJECT (item), "network")))
+		nmwa_handle_network_choice (applet, tag);
+	else if ((tag = g_object_get_data (G_OBJECT (item), "device")))
+		nmwa_dbus_set_device (applet->connection, tag);
 }
 
 
@@ -452,9 +453,7 @@ static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *appl
 	GtkWidget		*menu_item;
 
 	nmwa_dispose_menu_items (applet);
-
 	nmwa_populate_menu (applet);
-
 	gtk_widget_show (applet->menu);
 }
 
@@ -716,7 +715,6 @@ GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 
 	g_return_if_fail (applet != NULL);
 
-fprintf( stderr, "populate_menu()   state (%d)\n", applet->applet_state);
 	if (applet->applet_state == APPLET_STATE_NO_NM)
 	{
 		nmwa_menu_add_text_item (menu, _("NetworkManager is not running..."));
