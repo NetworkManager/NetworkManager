@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-03 20:15+0200\n"
-"PO-Revision-Date: 2004-08-28 21:05-0300\n"
+"POT-Creation-Date: 2004-09-09 12:48+0200\n"
+"PO-Revision-Date: 2004-09-09 05:20-0300\n"
 "Last-Translator: Raphael Higino <raphaelh@uai.com.br>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
@@ -23,15 +23,11 @@ msgstr "<span weight=\"bold\">Redes Sem Fio:</span>"
 msgid "Modify Wireless Networks"
 msgstr "Modificar Redes Sem Fio"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: info-daemon/passphrase.glade.h:2
+#: info-daemon/passphrase.glade.h:1
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:4
+#: info-daemon/passphrase.glade.h:3
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -45,43 +41,47 @@ msgstr ""
 "Uma frase secreta ou uma chave WEP é requerida para acessar a rede sem fio '%"
 "s'."
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade.h:6
 msgid "Passphrase:"
 msgstr "Frase Secreta:"
+
+#: info-daemon/passphrase.glade.h:7
+msgid "Wireless Network Key Required"
+msgstr "Chave da Rede Sem Fio Requerida"
 
 #: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Entrar na rede"
 
-#: panel-applet/NMWirelessApplet.c:553
+#: panel-applet/NMWirelessApplet.c:535
 msgid "There are no network devices..."
 msgstr "Não há nenhum dispositivo de rede..."
 
-#: panel-applet/NMWirelessApplet.c:653
+#: panel-applet/NMWirelessApplet.c:635
 msgid "There are no wireless networks..."
 msgstr "Não há nenhum dispositivo sem fio..."
 
-#: panel-applet/NMWirelessApplet.c:656
+#: panel-applet/NMWirelessApplet.c:638
 msgid "Wireless Networks"
 msgstr "Redes Sem Fio"
 
-#: panel-applet/NMWirelessApplet.c:727
+#: panel-applet/NMWirelessApplet.c:709
 msgid "NetworkManager is not running..."
 msgstr "O Gerenciador de Rede não está sendo executado..."
 
-#: panel-applet/NMWirelessApplet.c:731
+#: panel-applet/NMWirelessApplet.c:713
 msgid "Network Connections"
 msgstr "Conexões de Rede"
 
-#: panel-applet/NMWirelessApplet.c:738
+#: panel-applet/NMWirelessApplet.c:720
 msgid "No network connection is currently active..."
 msgstr "Atualmente nenhuma conexão de rede está ativa..."
 
-#: panel-applet/NMWirelessApplet.c:743
+#: panel-applet/NMWirelessApplet.c:725
 msgid "A wired network connection is currently active..."
 msgstr "Atualmente uma conexão por fios está ativa..."
 
-#: panel-applet/NMWirelessApplet.c:886 panel-applet/NMWirelessApplet.c:948
+#: panel-applet/NMWirelessApplet.c:868 panel-applet/NMWirelessApplet.c:930
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -92,6 +92,10 @@ msgstr ""
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
 msgstr "_Sobre..."
+
+#: panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
 
 #: panel-applet/wireless-applet.glade.h:3
 #, no-c-format
