@@ -305,8 +305,6 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	/* Have to bring the device up before checking link status and other stuff */
 	nm_device_bring_up_wait (dev, 0);
 
-	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
-
 	/* Initialize wireless-specific options */
 	if (nm_device_is_wireless (dev))
 	{
