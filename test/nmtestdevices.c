@@ -24,6 +24,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
 

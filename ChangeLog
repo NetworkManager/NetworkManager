@@ -1,5 +1,10 @@
 2004-12-01  Colin Walters  <walters@redhat.com>
 
+	* test/nmtestdevices.c, test/nmclienttest.c: Add missing
+	includes.
+
+2004-12-01  Colin Walters  <walters@redhat.com>
+
 	* panel-applet/NMWirelessAppletDbus.c
 	(nmwa_dbus_update_active_device_strength): Fix missing
 	return value.
