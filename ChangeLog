@@ -10,6 +10,9 @@
 	instead of time_t.
 	(nm_ap_get_timestamp): Update to return GTimeVal.
 	(nm_ap_set_timestamp): Update to take GTimeVal.
+	
+	* src/NetworkManagerDevice.c (nm_device_update_best_ap): Update
+	to handle GTimeVal.
 
 	* src/NetworkManagerAPList.c (nm_ap_list_update_network): Handle
 	GTimeVal change.

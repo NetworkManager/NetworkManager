@@ -1424,7 +1424,7 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
  */
 void nm_device_update_best_ap (NMDevice *dev)
 {
-	time_t			 latest_timestamp = 0;
+	GTimeVal		latest_timestamp;
 	NMAccessPointList	*ap_list;
 	NMAPListIter		*iter;
 	NMAccessPoint		*ap = NULL;
@@ -1436,6 +1436,9 @@ void nm_device_update_best_ap (NMDevice *dev)
 
 	if (!(ap_list = nm_device_ap_list_get (dev)))
 		return;
+
+	latest_timestamp.tv_sec = 0;
+	latest_timestamp.tv_usec = 0;
 
 	/* Iterate over the device's ap list to make sure the current
 	 * "best" ap is still in the device's ap list (so that if its
@@ -1474,13 +1477,14 @@ void nm_device_update_best_ap (NMDevice *dev)
 		if (!nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, ap_essid))
 		{
 			NMAccessPoint	*tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->trusted_ap_list, ap_essid);
+			const GTimeVal *curtime = nm_ap_get_timestamp (tmp_ap);
 
 			/* If it exists in the trusted ap list, and it is more recent than
 			 * access points already tested, make it the best for now.
 			 */
-			if (tmp_ap && (nm_ap_get_timestamp (tmp_ap) > latest_timestamp))
+			if (tmp_ap && (curtime->tv_sec > latest_timestamp.tv_sec))
 			{
-				latest_timestamp = nm_ap_get_timestamp (tmp_ap);
+				latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				best_ap = ap;
 			}
 		}
@@ -1490,7 +1494,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 	/* If its not in the trusted list, check the preferred list */
 	if (!best_ap)
 	{
-		latest_timestamp = 0;
+		latest_timestamp.tv_sec = 0;
 
 		if (!(iter = nm_ap_list_iter_new (ap_list)))
 			return;
@@ -1502,13 +1506,14 @@ void nm_device_update_best_ap (NMDevice *dev)
 			if (!nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, ap_essid))
 			{
 				NMAccessPoint	*tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->preferred_ap_list, ap_essid);
+				const GTimeVal *curtime = nm_ap_get_timestamp (tmp_ap);
 
 				/* If it exists in the preferred ap list, and it is more recent than
 				 * access points already tested, make it the best for now.
 				 */
-				if ( tmp_ap && (nm_ap_get_timestamp (tmp_ap) > latest_timestamp))
+				if ( tmp_ap && (curtime->tv_sec > latest_timestamp.tv_sec))
 				{
-					latest_timestamp = nm_ap_get_timestamp (tmp_ap);
+					latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 					best_ap = ap;
 				}
 			}
