@@ -34,6 +34,7 @@
 #include "NetworkManagerWireless.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerAPList.h"
+#include "backends/NetworkManagerSystem.h"
 
 extern gboolean	debug;
 
@@ -229,7 +230,8 @@ NMDevice *nm_device_new (const char *iface, NMData *app_data)
 	NMDevice	*dev;
 
 	g_return_val_if_fail (iface != NULL, NULL);
-	
+	g_return_val_if_fail (strlen (iface) > 0, NULL);
+
 	dev = g_new0 (NMDevice, 1);
 	if (!dev)
 	{
@@ -892,17 +894,13 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 static gpointer nm_device_activation_worker (gpointer user_data)
 {
 	NMDevice		*dev = (NMDevice *)user_data;
-	unsigned char	 buf[500];
 	unsigned char	 hostname[100] = "\0";
 	int			 host_err;
-	int			 dhclient_err;
-	char			*iface;
-	FILE			*pidfile;
 
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
 
-	syslog( LOG_DEBUG, "nm_device_activation_worker (%s) started...", nm_device_get_iface (dev));
+	syslog (LOG_DEBUG, "nm_device_activation_worker (%s) started...", nm_device_get_iface (dev));
 	dev->activating = TRUE;
 
 	/* If its a wireless device, set the ESSID and WEP key */
@@ -935,7 +933,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 					/* If we were told to quit activation, stop the thread and return */
 					if (dev->quit_activation)
 					{
-						syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1", nm_device_get_iface (dev));
+						syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1", nm_device_get_iface (dev));
 						dev->just_activated = FALSE;
 						nm_device_unref (dev);
 						return (NULL);
@@ -952,12 +950,15 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			/* If we were told to quit activation, stop the thread and return */
 			if (dev->quit_activation)
 			{
-				syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1.5", nm_device_get_iface (dev));
+				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1.5", nm_device_get_iface (dev));
 				dev->just_activated = FALSE;
 				nm_device_unref (dev);
 				return (NULL);
 			}
 		}
+
+		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): using ESSID '%s'", nm_device_get_iface (dev),
+				nm_ap_get_essid (nm_device_get_best_ap (dev)));
 	}
 	else
 	{
@@ -966,28 +967,8 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			nm_device_bring_up (dev);
 	}
 
-	/* Kill the old default route */
-	nm_spawn_process ("/sbin/ip route del default");
-
-	/* Find and kill the previous dhclient process for this interface */
-	iface = nm_device_get_iface (dev);
-	snprintf (buf, 500, "/var/run/dhclient-%s.pid", iface);
-	pidfile = fopen (buf, "r");
-	if (pidfile)
-	{
-		int			len;
-		unsigned char	s_pid[20];
-		pid_t		n_pid = -1;
-
-		memset (s_pid, 0, 20);
-		fgets (s_pid, 19, pidfile);
-		len = strnlen (s_pid, 20);
-		fclose (pidfile);
-
-		n_pid = atoi (s_pid);
-		if (n_pid > 0)
-			kill (n_pid, SIGTERM);
-	}
+	nm_system_delete_default_route ();
+	nm_system_device_stop_dhcp (dev);
 
 	/* If we don't have a "best" ap, don't try to get a DHCP address or restart the name service cache */
 	if (nm_device_is_wired (dev) || (nm_device_is_wireless (dev) && nm_device_get_best_ap (dev)))
@@ -995,20 +976,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		/* Save machine host name */
 		host_err = gethostname (&hostname[0], 100);
 
-		/* Unfortunately, dhclient can take a long time to get a dhcp address
-		 * (for example, bad WEP key so it can't actually talk to the AP).
-		 */
-		snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
-						iface, iface, iface, iface);
-		dhclient_err = nm_spawn_process (buf);
-
-		/* Set the hostname back to what it was before so that X11 doesn't
-		 * puke when the hostname changes, and so users can actually launch stuff.
-		 */
-		if (host_err >= 0)
-			sethostname (hostname, strlen (hostname));
-
-		if (dhclient_err != 0)
+		if (!nm_system_device_run_dhcp (dev))
 		{
 			/* Interfaces cannot be down if they are the active interface,
 			 * otherwise we cannot use them for scanning or link detection.
@@ -1024,30 +992,36 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			nm_device_bring_up (dev);
 		}
 
+		/* Set the hostname back to what it was before so that X11 doesn't
+		 * puke when the hostname changes, and so users can actually launch stuff.
+		 */
+		if (host_err >= 0)
+			sethostname (hostname, strlen (hostname));
+
 		/* If we were told to quit activation, stop the thread and return */
 		if (dev->quit_activation)
 		{
-			syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 2", nm_device_get_iface (dev));
+			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 2", nm_device_get_iface (dev));
 			dev->just_activated = FALSE;
 			nm_device_unref (dev);
 			return (NULL);
 		}
 
-		/* Restart the nameservice caching daemon to make apps aware of new DNS servers */
-		nm_spawn_process ("/sbin/service nscd restart");
+		/* Make system aware of any new DNS settings from resolv.conf */
+		nm_system_update_dns ();
 	}
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (dev->quit_activation)
 	{
-		syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 3", nm_device_get_iface (dev));
+		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 3", nm_device_get_iface (dev));
 		dev->just_activated = FALSE;
 		nm_device_unref (dev);
 		return (NULL);
 	}
 
 	dev->just_activated = TRUE;
-	syslog( LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
+	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
 	nm_device_update_ip4_address (dev);
 
 	dev->activating = FALSE;
@@ -1101,7 +1075,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	syslog( LOG_DEBUG, "nm_device_activation_cancel(%s): canceled", nm_device_get_iface (dev));
+	syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): canceled", nm_device_get_iface (dev));
 	dev->quit_activation = TRUE;
 }
 
@@ -1114,33 +1088,15 @@ void nm_device_activation_cancel (NMDevice *dev)
  */
 gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 {
-	unsigned char		 buf[500];
-	unsigned char		*iface;
-	gboolean			 success = FALSE;
-
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	nm_device_activation_cancel (dev);
 
-	/* Take out any entries in the routing table and any IP address the old interface
-	 * had.
-	 */
-	iface = nm_device_get_iface (dev);
-	if (iface && strlen (iface))
-	{
-		/* Remove routing table entries */
-		snprintf (buf, 500, "/sbin/ip route flush dev %s", iface);
-		nm_spawn_process (buf);
-
-		/* Remove ip address */
-		snprintf (buf, 500, "/sbin/ip address flush dev %s", iface);
-		nm_spawn_process (buf);
-
-		dev->ip4_address = 0;
-
-		success = TRUE;
-	}
+	/* Take out any entries in the routing table and any IP address the old device had. */
+	nm_system_device_flush_routes (dev);
+	nm_system_device_flush_addresses (dev);
+	dev->ip4_address = 0;
 
 	if (!just_added)
 		nm_dbus_signal_device_no_longer_active (dev->app_data->dbus_connection, dev);
@@ -1153,7 +1109,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 		nm_device_bring_down (dev);
 	}
 
-	return (success);
+	return (TRUE);
 }
 
 

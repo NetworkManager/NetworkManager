@@ -39,6 +39,7 @@
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
+#include "backends/NetworkManagerSystem.h"
 
 
 /*
@@ -556,7 +557,7 @@ int main( int argc, char *argv[] )
 	 * the module is loaded, HAL doesn't know its a network device,
 	 * and therefore can't tell us about it.
 	 */
-	nm_spawn_process ("/usr/bin/NMLoadModules");
+	nm_system_load_device_modules ();
 
 	/* Initialize our instance data */
 	nm_data = nm_data_new ();
@@ -594,10 +595,10 @@ int main( int argc, char *argv[] )
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
 	 */
-	nm_spawn_process ("/usr/bin/killall dhclient");
+	nm_system_kill_all_dhcp_daemons ();
 
 	/* Bring up the loopback interface. */
-	nm_enable_loopback ();
+	nm_system_enable_loopback ();
 
 	/* Create a watch function that monitors cards for link status (hal doesn't do
 	 * this for wireless cards yet).
@@ -652,7 +653,7 @@ int main( int argc, char *argv[] )
 
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)
-		g_warning ("hal_shutdown() failed\n");
+		syslog (LOG_NOTICE, "libhal shutdown failed");
 
 	nm_data_free (nm_data);
 

@@ -1,9 +1,42 @@
 AC_PREREQ(2.52)
 
 AC_INIT(NetworkManager, 0.1)
-AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PROG_CC
+AM_PROG_CC_C_O
+
+AC_ARG_WITH(distro,
+[
+        --with-distro: Specify the Linux distribution to target with distro-specific
+                       parts of NetworkManager
+                          --with-distro=RedHat
+                          --with-distro=Gentoo
+],,)
+
+TARGET_DISTRO=
+SYSTEM_BACKEND_FILE=
+if test "z$with_distro" = "z"; then
+	echo "You must specify the Linux distribution to target using --with-distro=<distro>"
+	exit 1
+else
+	case $with_distro in
+		RedHat)
+			TARGET_DISTRO=RedHat
+			SYSTEM_BACKEND_FILE=NetworkManagerRedHat.o
+			;;
+		Gentoo)
+			TARGET_DISTRO=Gentoo
+			SYSTEM_BACKEND_FILE=NetworkManagerGentoo.o
+			;;
+		*)
+			echo "Your distribution is not yet supported!  (patches welcome)"
+			exit 1
+			;;
+	esac
+fi
+AC_SUBST(TARGET_DISTRO)
+AC_SUBST(SYSTEM_BACKEND_FILE)
 
 AC_CHECK_HEADER(iwlib.h, [],
 			[AC_MSG_ERROR(iwlib.h not found. Install wireless-tools.)], [])

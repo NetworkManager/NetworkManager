@@ -10,25 +10,30 @@ INCLUDES = 						\
 
 bin_PROGRAMS = NetworkManager
 
-NetworkManager_SOURCES =				\
-		NetworkManagerAP.c			\
-		NetworkManagerAP.h			\
-		NetworkManagerAPList.c		\
-		NetworkManagerAPList.h		\
-		NetworkManagerDbus.c		\
-		NetworkManagerDbus.h		\
-		NetworkManagerDevice.c		\
-		NetworkManagerDevice.h		\
-		NetworkManager.c			\
-		NetworkManager.h			\
-		NetworkManagerPolicy.c		\
-		NetworkManagerPolicy.h		\
-		NetworkManagerUtils.c		\
-		NetworkManagerUtils.h		\
-		NetworkManagerWireless.c		\
-		NetworkManagerWireless.h
+NetworkManager_SOURCES =					\
+		NetworkManagerAP.c				\
+		NetworkManagerAP.h				\
+		NetworkManagerAPList.c			\
+		NetworkManagerAPList.h			\
+		NetworkManagerDbus.c			\
+		NetworkManagerDbus.h			\
+		NetworkManagerDevice.c			\
+		NetworkManagerDevice.h			\
+		NetworkManager.c				\
+		NetworkManager.h				\
+		NetworkManagerPolicy.c			\
+		NetworkManagerPolicy.h			\
+		NetworkManagerUtils.c			\
+		NetworkManagerUtils.h			\
+		NetworkManagerWireless.c			\
+		NetworkManagerWireless.h			\
+		backends/NetworkManagerSystem.h
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS)
+EXTRA_NetworkManager_SOURCES =			\
+		backends/NetworkManagerRedHat.c	\
+		backends/NetworkManagerGentoo.c
+
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS) backends/$(SYSTEM_BACKEND_FILE)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

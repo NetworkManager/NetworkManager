@@ -1,3 +1,16 @@
+2004-08-23  Dan Williams <dcbw@redhat.com>
+
+	* configure.in
+	  src/Makefile.am
+	  src/NetworkManagerDevice.c
+	  src/NetworkManager.c
+	  src/NetworkManagerUtils.[ch]
+	  src/backends/NetworkManagerSystem.h
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerGentoo.c
+		- Refactor system-specific code into separate backends for
+			each distribution
+
 2004-08-23  Dan Willemsen <dan@willemsen.us>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c

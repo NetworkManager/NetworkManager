@@ -19,29 +19,4 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_UTILS_H
-#define NETWORK_MANAGER_UTILS_H
-
-#include <glib.h>
-#include <stdio.h>
-#include <syslog.h>
-#include <net/ethernet.h>
-#include <iwlib.h>
-
-#include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
-
-gboolean		nm_try_acquire_mutex			(GMutex *mutex, const char *func);
-void			nm_unlock_mutex				(GMutex *mutex, const char *func);
-
-int			nm_null_safe_strcmp				(const char *s1, const char *s2);
-
-int			nm_get_network_control_socket		(void);
-
-gboolean		nm_ethernet_address_is_valid		(struct ether_addr *test_addr);
-
-void			nm_dispose_scan_results			(wireless_scan *result_list);
-
-int			nm_spawn_process				(char *args);
-
-#endif
+#include "NetworkManagerSystem.h"

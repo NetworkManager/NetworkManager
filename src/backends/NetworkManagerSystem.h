@@ -19,29 +19,32 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_UTILS_H
-#define NETWORK_MANAGER_UTILS_H
+#ifndef NETWORK_MANAGER_SYSTEM_H
+#define NETWORK_MANAGER_SYSTEM_H
 
 #include <glib.h>
-#include <stdio.h>
-#include <syslog.h>
-#include <net/ethernet.h>
-#include <iwlib.h>
-
-#include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 
-gboolean		nm_try_acquire_mutex			(GMutex *mutex, const char *func);
-void			nm_unlock_mutex				(GMutex *mutex, const char *func);
 
-int			nm_null_safe_strcmp				(const char *s1, const char *s2);
+/* Prototypes for system/distribution dependent functions */
 
-int			nm_get_network_control_socket		(void);
+gboolean		nm_system_device_run_dhcp		(NMDevice *dev);
 
-gboolean		nm_ethernet_address_is_valid		(struct ether_addr *test_addr);
+void			nm_system_device_stop_dhcp		(NMDevice *dev);
 
-void			nm_dispose_scan_results			(wireless_scan *result_list);
+void			nm_system_device_flush_routes		(NMDevice *dev);
 
-int			nm_spawn_process				(char *args);
+void			nm_system_device_flush_addresses	(NMDevice *dev);
+
+
+void			nm_system_enable_loopback		(void);
+
+void			nm_system_delete_default_route	(void);
+
+void			nm_system_kill_all_dhcp_daemons	(void);
+
+void			nm_system_update_dns			(void);
+
+void			nm_system_load_device_modules		(void);
 
 #endif
