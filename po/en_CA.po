@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-23 19:29-0400\n"
-"PO-Revision-Date: 2004-10-23 14:52-0400\n"
+"POT-Creation-Date: 2004-10-31 15:03-0500\n"
+"PO-Revision-Date: 2004-10-31 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -29,7 +29,7 @@ msgstr "Modify Wireless Networks"
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:2
+#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
 msgid ""
 "128-bit Passphrase\n"
 "128-bit Raw Hex Key"
@@ -52,12 +52,13 @@ msgstr ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 
-#: info-daemon/passphrase.glade.h:8
+#: info-daemon/passphrase.glade.h:8 panel-applet/essid.glade.h:6
 msgid "Key Type:"
 msgstr "Key Type:"
 
 #: info-daemon/passphrase.glade.h:9
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:100
+#: panel-applet/essid.glade.h:7
 msgid "Passphrase:"
 msgstr "Passphrase:"
 
@@ -69,7 +70,7 @@ msgstr "Wireless Network Key Required"
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:103
 msgid "Key:"
 msgstr "Key:"
 
@@ -106,44 +107,31 @@ msgstr "NetworkManager is not running"
 msgid "Scanning for wireless networks..."
 msgstr "Scanning for wireless networks..."
 
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:706 panel-applet/NMWirelessApplet.c:716
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-
-#: panel-applet/NMWirelessApplet.c:731
-msgid "Custom wireless network"
-msgstr "Custom wireless network"
-
-#: panel-applet/NMWirelessApplet.c:732
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr "Enter the ESSID of the wireless network to which you wish to connect."
-
-#: panel-applet/NMWirelessApplet.c:815
+#: panel-applet/NMWirelessApplet.c:657
 msgid "Other Wireless Networks..."
 msgstr "Other Wireless Networks..."
 
-#: panel-applet/NMWirelessApplet.c:926
+#: panel-applet/NMWirelessApplet.c:768
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: panel-applet/NMWirelessApplet.c:1043
+#: panel-applet/NMWirelessApplet.c:885
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/essid.glade.h:2
+#: panel-applet/essid.glade.h:4
 msgid "C_onnect"
 msgstr "C_onnect"
 
-#: panel-applet/essid.glade.h:3
+#: panel-applet/essid.glade.h:5
+msgid "Connect with encryption enabled"
+msgstr "Connect with encryption enabled"
+
+#: panel-applet/essid.glade.h:8
 msgid "Wireless _Adaptor:"
 msgstr "Wireless _Adaptor:"
 
-#: panel-applet/essid.glade.h:4
+#: panel-applet/essid.glade.h:9
 msgid "Wireless _Network:"
 msgstr "Wireless _Network:"
 
@@ -180,3 +168,18 @@ msgstr "Orientation"
 #: examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "The orientation of the tray."
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+
+#~ msgid "Custom wireless network"
+#~ msgstr "Custom wireless network"
+
+#~ msgid ""
+#~ "Enter the ESSID of the wireless network to which you wish to connect."
+#~ msgstr ""
+#~ "Enter the ESSID of the wireless network to which you wish to connect."
