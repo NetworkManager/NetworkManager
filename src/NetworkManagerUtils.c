@@ -260,7 +260,7 @@ static driver_support wired_driver_blacklist[] =
 /*
  * nm_get_device_driver_name
  *
- * Checks either /proc/sys/bus/devices or /var/lib/pcmcia/stab to determine
+ * Checks either /proc/bus/pci/devices or /var/lib/pcmcia/stab to determine
  * which driver is bound to the device.
  *
  */

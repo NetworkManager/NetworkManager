@@ -248,16 +248,24 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	g_return_val_if_fail (data != NULL, TRUE);
 
 	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
-	if (data->info_daemon_avail && data->update_ap_lists)
+	if (data->info_daemon_avail)
 	{
-		/* Query info daemon for network lists if its now running */
-		if (data->allowed_ap_list)
-			nm_ap_list_unref (data->allowed_ap_list);
-		data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-		if (data->allowed_ap_list)
-			nm_ap_list_populate (data->allowed_ap_list, data);
+		if (data->update_ap_lists)
+		{
+			/* Query info daemon for network lists if its now running */
+			if (data->allowed_ap_list)
+				nm_ap_list_unref (data->allowed_ap_list);
+			data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
+			if (data->allowed_ap_list)
+				nm_ap_list_populate (data->allowed_ap_list, data);
+	
+			data->update_ap_lists = FALSE;
+		}
 
-		data->update_ap_lists = FALSE;
+		if (data->notify_device_support)
+		{
+			data->notify_device_support = FALSE;
+		}
 	}
 
 	/* Check global state modified variable, and reset it with

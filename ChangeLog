@@ -1,5 +1,12 @@
 2004-10-21 Dan Williams <dcbw@redhat.com>
 
+	* Add some support for telling NetworkManagerInfo to tell the user
+		that they are using a device that's not fully supported
+
+	* Fix some assertions in debug messages due to null access point args
+
+2004-10-21 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- Don't try to activate/bring up/down unsupported
 			devices

@@ -1399,9 +1399,15 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 			|| (best_ap && (nm_ap_get_encrypted (best_ap) &&
 					(!nm_ap_get_enc_key_source (best_ap) || !strlen (nm_ap_get_enc_key_source (best_ap))))))
 	{
-		syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))\n",
-			!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
-			nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
+		if (best_ap)
+		{
+			syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))",
+				!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
+				nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
+		}
+		else
+			syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=NULL)", !HAVE_LINK (dev, bad_crypt_packets));
+
 
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
