@@ -217,8 +217,10 @@ char * get_object_name (DBusConnection *connection, char *path)
 {
 	int	 ret;
 	char *name = NULL;
+	char *escaped_path = nm_dbus_escape_object_path (path);
 
-	ret = nmwa_dbus_call_nm_method (connection, path, "getName", DBUS_TYPE_STRING, (void *)(&name), NULL);
+	ret = nmwa_dbus_call_nm_method (connection, escaped_path, "getName", DBUS_TYPE_STRING, (void *)(&name), NULL);
+	g_free (escaped_path);
 	if (ret == RETURN_SUCCESS)
 		return (name);
 
@@ -230,8 +232,10 @@ int get_object_signal_strength (DBusConnection *connection, char *path)
 {
 	int	 ret;
 	int strength = -1;
+	char *escaped_path = nm_dbus_escape_object_path (path);
 
-	ret = nmwa_dbus_call_nm_method (connection, path, "getStrength", DBUS_TYPE_INT32, (void *)(&strength), NULL);
+	ret = nmwa_dbus_call_nm_method (connection, escaped_path, "getStrength", DBUS_TYPE_INT32, (void *)(&strength), NULL);
+	g_free (escaped_path);
 	if (ret == RETURN_SUCCESS)
 		return (strength);
 

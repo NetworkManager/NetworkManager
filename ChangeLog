@@ -1,7 +1,7 @@
 2005-03-24  Dan Williams <dcbw@redhat.com>
 
 	* test/nmtest.c
-		- Escape object paths before we shove them through dbus
+		- Escape some forgotten object paths before we shove them through dbus
 
 2005-03-24  Dan Williams <dcbw@redhat.com>
 
