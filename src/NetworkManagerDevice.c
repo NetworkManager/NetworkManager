@@ -979,6 +979,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 					if (dev->quit_activation)
 					{
 						syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1", nm_device_get_iface (dev));
+						dev->activating = FALSE;
 						dev->just_activated = FALSE;
 						nm_device_unref (dev);
 						return (NULL);
@@ -994,6 +995,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			if (dev->quit_activation)
 			{
 				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1.5", nm_device_get_iface (dev));
+				dev->activating = FALSE;
 				dev->just_activated = FALSE;
 				nm_device_unref (dev);
 				return (NULL);
@@ -1048,6 +1050,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		if (dev->quit_activation)
 		{
 			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 2", nm_device_get_iface (dev));
+			dev->activating = FALSE;
 			dev->just_activated = FALSE;
 			nm_device_unref (dev);
 			return (NULL);
@@ -1061,6 +1064,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	if (dev->quit_activation)
 	{
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 3", nm_device_get_iface (dev));
+		dev->activating = FALSE;
 		dev->just_activated = FALSE;
 		nm_device_unref (dev);
 		return (NULL);

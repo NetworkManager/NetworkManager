@@ -130,9 +130,12 @@ fprintf( stderr, "state (%d)\n", applet->applet_state);
 	switch (applet->applet_state)
 	{
 		case (APPLET_STATE_NO_NM):
+			applet->pix_state = PIX_WIRED;	/* FIXME: get a "no NetworkManager" picture */
 			break;
 
 		case (APPLET_STATE_NO_CONNECTION):
+			applet->pix_state = PIX_WIRED;	/* FIXME: get a "no connection" picture */
+			break;
 
 		case (APPLET_STATE_WIRED):
 		case (APPLET_STATE_WIRED_CONNECTING):

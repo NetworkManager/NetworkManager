@@ -1,5 +1,15 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- (nmwa_udpate_state): Set panel icon to "wired" (for lack of better ones)
+			when NM isn't around or when its not connected
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activation_worker): Make sure to reset dev->activating if we get
+			canceled.
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessAppletDbus.c
 		- (nmwa_dbus_get_bool, nmwa_dbus_get_network_encrypted): correct method name
 			for getting encryption, and don't stop on "val" once we've gotten it
