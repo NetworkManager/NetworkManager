@@ -1,5 +1,10 @@
 2005-02-08  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Fix for gtk 2.4
+
+2005-02-08  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Bill Moss
 	* panel-applet/NMWirelessApplet.c
 		- Restore correct ESSID in tooltips

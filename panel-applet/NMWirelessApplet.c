@@ -53,6 +53,14 @@
 
 #define CFG_UPDATE_INTERVAL 1
 
+/* Compat for GTK 2.4 and lower... */
+#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
+	#define GTK_STOCK_MEDIA_PAUSE		GTK_STOCK_STOP
+	#define GTK_STOCK_MEDIA_PLAY		GTK_STOCK_REFRESH
+	#define GTK_STOCK_ABOUT			GTK_STOCK_DIALOG_INFO
+#endif
+
+
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
 static gboolean	nmwa_toplevel_menu_button_press (GtkWidget *widget, GdkEventButton *event, gpointer user_data);
@@ -60,7 +68,7 @@ static GObject *	nmwa_constructor (GType type, guint n_props, GObjectConstructPa
 static void		setup_stock (void);
 static void		nmwa_icons_init (NMWirelessApplet *applet);
 static gboolean	nmwa_fill (NMWirelessApplet *applet);
-static void		nmwa_about_cb (void);
+static void		nmwa_about_cb (NMWirelessApplet *applet);
 static void		nmwa_context_menu_update (NMWirelessApplet *applet);
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
@@ -101,8 +109,12 @@ static GObject *nmwa_constructor (GType type,
 }
 
 
-void nmwa_about_cb (void)
+void nmwa_about_cb (NMWirelessApplet *applet)
 {    
+	GdkPixbuf	*pixbuf;
+	char		*file;
+	GtkWidget	*about_dialog;
+
 	static const gchar *authors[] =
 	{
 		"\nThe Red Hat Desktop Team, including:\n",
@@ -118,6 +130,30 @@ void nmwa_about_cb (void)
 		NULL
 	};
 
+#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
+	/* GTK 2.4 and earlier, have to use libgnome for about dialog */
+	file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP, "gnome-networktool.png", FALSE, NULL);
+	pixbuf = gdk_pixbuf_new_from_file (file, NULL);
+	g_free (file);
+
+	about_dialog = gnome_about_new (
+			_("NetworkManager Applet"),
+			VERSION,
+			_("(C) 2004-2005 Red Hat, Inc."),
+			_("A panel application for managing your network devices & connections."),
+			authors,
+			documenters,
+			NULL,
+			pixbuf);
+	g_object_unref (pixbuf);
+
+	gtk_window_set_screen (GTK_WINDOW (about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet)));
+	g_signal_connect (about_dialog, "destroy", G_CALLBACK (gtk_widget_destroyed), &about_dialog);
+	gtk_widget_show (about_dialog);
+
+#else
+
+	/* GTK 2.6 and later code */
 	gtk_show_about_dialog (NULL,
 		"name",				_("NetworkManager Applet"),
 		"version",			VERSION,
@@ -125,9 +161,10 @@ void nmwa_about_cb (void)
 		"comments",			_("A panel application for managing your network devices & connections."),
 		"authors",			authors,
 		"documenters",			documenters,
-		"translator-credits",	_("translator-credits"),
+		"translator-credits",	NULL,
 		"logo-icon-name",		GTK_STOCK_NETWORK,
 		NULL);
+#endif
 }
 
 
