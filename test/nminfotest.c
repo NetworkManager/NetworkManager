@@ -37,8 +37,7 @@
 typedef enum
 {
 	NETWORK_TYPE_UNKNOWN = 0,
-	NETWORK_TYPE_TRUSTED,
-	NETWORK_TYPE_PREFERRED,
+	NETWORK_TYPE_ALLOWED,
 	NETWORK_TYPE_INVALID,
 	NETWORK_TYPE_DEVICE
 } NMINetworkType;
@@ -95,7 +94,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	return (ret_string);
 }
 
-int get_network_prio (DBusConnection *connection, char *network, NMINetworkType type)
+gboolean get_network_trusted (DBusConnection *connection, char *network, NMINetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -108,7 +107,7 @@ int get_network_prio (DBusConnection *connection, char *network, NMINetworkType 
 	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
 									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
 									NMI_DBUS_NMI_NAMESPACE,
-									"getNetworkPriority");
+									"getNetworkTrusted");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -133,14 +132,17 @@ int get_network_prio (DBusConnection *connection, char *network, NMINetworkType 
 	}
 
 	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	int dbus_type;
-	dbus_type = dbus_message_iter_get_uint32 (&iter);
+	gboolean trusted = FALSE;
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &trusted, DBUS_TYPE_INVALID))
+		trusted = FALSE;
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
-	return (dbus_type);
+	return (trusted);
 }
 
 
@@ -209,7 +211,7 @@ void get_networks_of_type (DBusConnection *connection, NMINetworkType type)
 			char *essid = get_network_string_property (connection, networks[i], "getNetworkEssid", type);
 			char *key = get_network_string_property (connection, networks[i], "getNetworkKey", type);
 
-			fprintf( stderr, "   %d:\t%s\t%s\n", get_network_prio (connection, networks[i], type), essid, key);
+			fprintf(stderr, "   %s\t%s\t%s\n", essid, key, get_network_trusted (connection, networks[i], type) ? "trusted" : "untrusted");
 		}
 	}
 
@@ -345,8 +347,7 @@ int main( int argc, char *argv[] )
 		exit (1);
 	}
 
-	get_networks_of_type (connection, NETWORK_TYPE_TRUSTED);
-	get_networks_of_type (connection, NETWORK_TYPE_PREFERRED);
+	get_networks_of_type (connection, NETWORK_TYPE_ALLOWED);
 	get_networks_of_type (connection, NETWORK_TYPE_DEVICE);
 	get_user_key_for_network (connection);
 

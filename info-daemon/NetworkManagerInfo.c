@@ -37,6 +37,7 @@
 #include <libgnomeui/gnome-ui-init.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <libgnomevfs/gnome-vfs-utils.h>
 #include "config.h"
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
@@ -66,6 +67,7 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 		{
 			char 	*network = g_strdup ((key + path_len));
 			char		*slash_pos;
+			char		*escaped_network;
 
 			/* If its a key under the network name, zero out the slash so we
 			 * are left with only the network name.
@@ -73,7 +75,9 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			if ((slash_pos = strchr (network, '/')))
 				*slash_pos = '\0';
 
+			escaped_network = gnome_vfs_escape_string (network);
 			nmi_dbus_signal_update_network (info->connection, network, NETWORK_TYPE_ALLOWED);
+			g_free (escaped_network);
 			g_free (network);
 		}
 	}

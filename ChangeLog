@@ -1,3 +1,10 @@
+2004-09-30 Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c
+	  info-daemon/NetworkManagerInfoDbus.c
+	  test/nminfotest.c
+		- Escape ESSIDs in gconf
+
 Wed Sep 29 18:18:24 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* configure.in: Add a temporary --enable-notification-icon.  This

@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgnomevfs/gnome-vfs-utils.h>
 
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoDbus.h"
@@ -98,7 +99,6 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
 							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_INVALID))
 	{
-fprintf( stderr, "getUserKey\n");
 		nmi_passphrase_dialog_show (device, network, info);
 
 		dbus_free (device);
@@ -230,10 +230,12 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		 */
 		while (element)
 		{
-			gchar		 key[100];
+			char			 key[100];
 			GConfValue	*value;
+			char			*escaped_network = gnome_vfs_escape_string ((char *)(element->data));
 
-			g_snprintf (&key[0], 99, "%s/essid", (char *)(element->data));
+			g_snprintf (&key[0], 99, "%s/essid", escaped_network);
+			g_free (escaped_network);
 			value = gconf_client_get (info->gconf_client, key, NULL);
 			if (value && gconf_value_get_string (value))
 			{
@@ -275,6 +277,7 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 	GConfValue		*value;
 	DBusError			 error;
 	NMINetworkType		 type;
+	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -290,7 +293,9 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 	}
 
 	/* Grab timestamp key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+	escaped_network = gnome_vfs_escape_string (network);
+	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -326,6 +331,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	GConfValue		*value;
 	DBusError			 error;
 	NMINetworkType		 type;
+	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -341,7 +347,9 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	}
 
 	/* Grab essid key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+	escaped_network = gnome_vfs_escape_string (network);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -377,6 +385,7 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	GConfValue		*value;
 	DBusError			 error;
 	NMINetworkType		 type;
+	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -392,7 +401,9 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	}
 
 	/* Grab user-key key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+	escaped_network = gnome_vfs_escape_string (network);
+	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -425,6 +436,7 @@ static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage 
 	GConfValue		*value;
 	DBusError			 error;
 	NMINetworkType		 type;
+	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -440,7 +452,9 @@ static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage 
 	}
 
 	/* Grab user-key key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+	escaped_network = gnome_vfs_escape_string (network);
+	key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
