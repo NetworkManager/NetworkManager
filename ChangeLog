@@ -1,3 +1,8 @@
+2004-08-13  Dan Williams <dcbw@redhat.com>
+
+	* README
+		- Update with some comments on theory of operation
+
 2004-08-12  Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/passphrase.glade
