@@ -44,20 +44,22 @@ gladedir = $(datadir)/NMWirelessApplet
 glade_DATA = wireless-applet.glade
 
 pixmapdir = $(datadir)/pixmaps/NMWirelessApplet
-pixmap_DATA = no-link-0.png	\
-	wired.png			\
-	wireless.png		\
-	broken-0.png		\
-	signal-1-40.png	\
-	signal-41-60.png	\
-	signal-61-80.png	\
-	signal-81-100.png	\
-	wireless-applet.png	\
-	connect-0.png		\
-	connect-1.png		\
-	connect-2.png		\
-	connect-3.png		\
-	keyring.png		\
+pixmap_DATA =				\
+	no-networkmanager.png	\
+	no-link-0.png			\
+	wired.png				\
+	wireless.png			\
+	broken-0.png			\
+	signal-1-40.png		\
+	signal-41-60.png		\
+	signal-61-80.png		\
+	signal-81-100.png		\
+	wireless-applet.png		\
+	connect-0.png			\
+	connect-1.png			\
+	connect-2.png			\
+	connect-3.png			\
+	keyring.png			\
 	$(NULL)
 
 CLEANFILES = $(server_DATA) *.bak *.gladep

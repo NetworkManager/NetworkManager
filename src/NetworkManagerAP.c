@@ -40,10 +40,11 @@ struct NMAccessPoint
 	NMAPEncMethod		 enc_method;
 	gboolean			 enc_method_good;
 	gboolean			 matched;	// used in ap list diffing
+	gboolean			 trusted;
 
 	/* Things from user prefs */
 	gchar			*enc_key;
-	GTimeVal		timestamp;
+	GTimeVal			 timestamp;
 };
 
 
@@ -222,7 +223,6 @@ gchar *nm_ap_get_enc_key_hashed (NMAccessPoint *ap, NMAPEncMethod method)
 			break;
 
 		default:
-			hashed = NULL;
 			break;
 	}
 
@@ -415,4 +415,24 @@ void nm_ap_set_enc_method_good (NMAccessPoint *ap, gboolean good)
 	g_return_if_fail (ap != NULL);
 
 	ap->enc_method_good = good;
+}
+
+
+/*
+ * Get/Set functions to indicate that an access point is
+ * 'trusted'
+ *
+ */
+gboolean nm_ap_get_trusted (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (ap->trusted);
+}
+
+void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->trusted = trusted;
 }

@@ -1,3 +1,61 @@
+2004-09-08  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/no-networkmanager.png
+	  panel-applet/Makefile.am
+	  panel-applet/NMWirelessApplet.c
+		- Add a "NetworkManager not running" icon and use it
+		- Use new consolidated GConf keys rather than Preferred/Trusted
+
+	* TODO: update
+
+	* info-daemon/NetworkManagerInfo.c
+	  info-daemon/NetworkManagerInfoDbus.[ch]
+	  info-daemon/NetworkManagerInfoPassphraseDialog.c
+		- There are now no longer two separate lists of wireless networks,
+			but one list where each network is "trusted" or not trusted
+		- Add a "getNetworkTrusted" dbus method
+		- "WirelessNetworkUpdate" signal now sent rather than
+			"PreferredNetworkUpdate/TrustedNetworkUpdate" signals
+		- Start freeing some dbus errors (not completed yet)
+
+	* info-daemon/passphrase.glade
+		- Remove the "don't show" hints for pager and taskbar
+		- Add a title since its going to be in the taskbar
+
+	* src/NetworkManager.[ch]
+	  src/NetworkManagerAPList.[ch]
+		- There are now no longer two separate lists of wireless networks,
+			but one list where each network is "trusted" or not trusted
+
+	* src/NetworkManagerAP.[ch]
+		- Add get/set "trusted" accessors and data bit
+
+	* src/NetworkManagerDbus.[ch]
+		- Add function to get "trusted" status of a network from NetworkManagerInfo
+		- Trap new WirelessNetworkUpdate signal rather than old separate signals
+
+	* src/NetworkManagerDevice.[ch]
+		- Add per-device config data (ip4 addr, gateway, netmask) and accessors
+		- (nm_device_new): Get device config from backend when initializing devices
+		- (nm_device_activation_worker): Split out device configuration on
+			activation to deal with static/dynamic IP differences, and try encryption
+			fallbacks on a device if the encryption method for the best AP is not good
+		- (nm_device_update_best_ap): convert to new consolidated access point lists from
+			NetworkManagerInfo, and copy over latest NMI info to best_ap when setting it
+
+	* src/NetworkManagerWireless.c
+		- libgcrypt code wasn't converting the MD5 digest to an ascii string, fix it
+
+	* src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSystem.h
+		- (nm_system_device_update_config_info): Add function to get device configuration
+			from system data in ifcfg-* files
+
+	* src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerSlackware.c
+		- Add stub functions for getting device configuration
+
 2004-09-07  Dan Williams <dcbw@redhat.com>
 
 	* src/backends/NetworkManagerRedhat.c

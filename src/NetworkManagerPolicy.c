@@ -248,17 +248,11 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	if (data->info_daemon_avail && data->update_ap_lists)
 	{
 		/* Query info daemon for network lists if its now running */
-		if (data->trusted_ap_list)
-			nm_ap_list_unref (data->trusted_ap_list);
-		data->trusted_ap_list = nm_ap_list_new (NETWORK_TYPE_TRUSTED);
-		if (data->trusted_ap_list)
-			nm_ap_list_populate (data->trusted_ap_list, data);
-
-		if (data->preferred_ap_list)
-			nm_ap_list_unref (data->preferred_ap_list);
-		data->preferred_ap_list = nm_ap_list_new (NETWORK_TYPE_PREFERRED);
-		if (data->preferred_ap_list)
-			nm_ap_list_populate (data->preferred_ap_list, data);
+		if (data->allowed_ap_list)
+			nm_ap_list_unref (data->allowed_ap_list);
+		data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
+		if (data->allowed_ap_list)
+			nm_ap_list_populate (data->allowed_ap_list, data);
 
 		data->update_ap_lists = FALSE;
 	}

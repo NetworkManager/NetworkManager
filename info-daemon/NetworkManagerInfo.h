@@ -46,7 +46,6 @@ struct NMIAppInfo
 typedef struct NMIAppInfo NMIAppInfo;
 
 #define	NMI_GCONF_WIRELESS_NETWORKING_PATH		"/system/networking/wireless"
-#define	NMI_GCONF_TRUSTED_NETWORKS_PATH		"/system/networking/wireless/trusted_networks"
-#define	NMI_GCONF_PREFERRED_NETWORKS_PATH		"/system/networking/wireless/preferred_networks"
+#define	NMI_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
 #endif

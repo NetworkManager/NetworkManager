@@ -3,19 +3,9 @@ TODO items for NetworkManager
 
 Any of these items are of course fair game for anyone, patches are greatly welcome.  It also serves as a "what still needs to be done" list.
 
-- Honor "cancelled" Wireless Networks
+- More robust diff-ing of Wireless Networks after scans
 
-When a user cancels the request for a WEP key, NetworkManagerInfo returns "***cancelled***" as the WEP key, which we need to trap and honor.  One method to do this could be to add a boolean value 'invalid' to NMAccessPoint, and upon a cancel message set 'invalid' to TRUE.  NM would not attempt to associate with 'invalid' access points.  The 'invalid' marker would be cleared when the AP it was for had any value changed in GConf, or when the AP it was for went out of range.  This means more complicated logic in the wireless scanning, since we have to retain 'invalid' state across scans (the scanned AP list is destroyed every scan).
-
-
-- Alert user of new Wireless Networks
-
-This would again require preserving some state across wireless scans.  We may need to hold the last scan while doing another, and diff the two structures at the end.  We should also send DBUS signals onto the bus when wireless networks appear/disappear from a device.  This would allow the UI portion (NetworkManagerInfo) to pop up some notification, and possibly ask the user whether he/she wants to add new wireless networks to the "allowed network" list
-
-
-- Allow user-chosen Wireless Networks
-
-If the user decides to associate with one particular wireless network, via a wireless network applet or something, we need to temporarily suspend device switching until that wireless network drops out.  One way to do this might be a boolean value in the NMData structure that stops device switching, which would be cleared when the wireless network that the active_device is associated with disappears.
+Currently, after each scan the list of access points is diffed against the previous list.  However, cards may not return the exact same list of access points for two different scans, depending on whether the card has detected traffic from that AP during the second scan or not.  Therefore, we should probably keep a moving list of the past 3 scans, and diff the earliest two against the latest two to get a more stable list of access points.
 
 
 - Access Point link checking thresholds
@@ -23,19 +13,14 @@ If the user decides to associate with one particular wireless network, via a wir
 Wireless link checking could be enhanced to check the signal strength of an access point and switch of the current access point a wireless card is associated with has dropped below say, 20%.
 
 
-- Gracefully recover from dbus/hal and NetworkManagerInfo dropouts
+- Gracefully recover from dbus and hal dropouts
 
-There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  While we don't depend as heavily on NetworkManagerInfo, we need to make sure that we can operate effectively when it's not there.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
+There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
 
 
 - Deal with blank ESSIDs
 
 Access points can be set not to broadcast their ESSIDs, which the client must know.  These appear as blank ESSIDs to cards doing wireless scanning, even though the rest of the AP's information is known (channel, rate, etc).  There has to be a way to deal with this as many companies do not broadcast ESSIDs for security measures.  Workarounds for this practice could include brute-forcing the Allowed Networks list if no suitable wireless network is found to begin with.  Obviously, there would be no way to detect if a WEP key was wrong, because unless the ESSID and WEP key are both correct, we cannot associate with the access point to see if we have a link.  Code exists to do this for wireless cards that do not support wireless scanning, and this code could be adapted.
-
-
-- Shorten standoff time between Pending and Active device promotion
-
-Currently, there is a 2 second wait between when a device is set as the Pending device, to when it may be promoted to Active device.  2 seconds is not technically necessary, the only reason to wait is that the GLib main loop must run at least once to deliver and receive queued up messages.  This wait is also only necessary for wireless cards, where we may need to request a key from the user.  This wait should be eliminated without breaking the Pending/Active device mechanism.
 
 
 - Support static IP addresses

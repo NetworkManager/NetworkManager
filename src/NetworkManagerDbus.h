@@ -70,6 +70,8 @@ char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType ty
 
 GTimeVal *	nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
 
+gboolean		nm_dbus_get_network_trusted			(DBusConnection *connection, NMNetworkType type, const char *network);
+
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 
 #endif

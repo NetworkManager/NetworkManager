@@ -45,7 +45,6 @@
 /*
  * Globals
  */
-static GMainLoop	*loop  = NULL;
 static NMData		*nm_data = NULL;
 extern gboolean	 allowed_ap_worker_exit;
 
@@ -439,19 +438,18 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	if (!data->dev_list_mutex || !data->user_device_mutex || !data->state_modified_mutex)
 	{
 		nm_data_free (data);
-		syslog( LOG_ERR, "Could not initialize data structure locks.");
+		syslog (LOG_ERR, "Could not initialize data structure locks.");
 		return (NULL);
 	}
 
 	/* Initialize the access point lists */
-	data->trusted_ap_list = nm_ap_list_new (NETWORK_TYPE_TRUSTED);
-	data->preferred_ap_list = nm_ap_list_new (NETWORK_TYPE_PREFERRED);
+	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
 
-	if (!data->trusted_ap_list || !data->preferred_ap_list || !data->invalid_ap_list)
+	if (!data->allowed_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
-		syslog( LOG_ERR, "Could not create access point lists.  Whacky stuff going on?");
+		syslog (LOG_ERR, "Could not create access point lists.  Whacky stuff going on?");
 		return (NULL);
 	}
 
@@ -481,8 +479,7 @@ static void nm_data_free (NMData *data)
 	g_mutex_free (data->user_device_mutex);
 	g_mutex_free (data->state_modified_mutex);
 
-	nm_ap_list_unref (data->trusted_ap_list);
-	nm_ap_list_unref (data->preferred_ap_list);
+	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
 	memset (data, 0, sizeof (NMData));
@@ -540,6 +537,7 @@ int main( int argc, char *argv[] )
 	guint		 wireless_scan_source;
 	gboolean		 become_daemon = TRUE;
 	gboolean		 enable_test_devices = FALSE;
+	GMainLoop		*loop  = NULL;
 
 	/* Parse options */
 	while (1)

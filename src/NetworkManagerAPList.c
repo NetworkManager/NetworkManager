@@ -226,13 +226,14 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (network != NULL);
-	g_return_if_fail (((list->type == NETWORK_TYPE_TRUSTED) || (list->type == NETWORK_TYPE_PREFERRED)));
+	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
 
 	/* Get the allowed access point's details from NetworkManagerInfo */
 	if ((essid = nm_dbus_get_network_essid (data->dbus_connection, list->type, network)))
 	{
 		char		*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network);
 		GTimeVal	*timestamp = nm_dbus_get_network_timestamp (data->dbus_connection, list->type, network);
+		gboolean	 trusted = nm_dbus_get_network_trusted (data->dbus_connection, list->type, network);
 
 		if (timestamp != NULL)
 		{
@@ -243,6 +244,7 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 			nm_ap_set_essid (ap, essid);
 			nm_ap_set_enc_key_source (ap, key);
 			nm_ap_set_timestamp (ap, timestamp);
+			nm_ap_set_trusted (ap, trusted);
 			g_free (timestamp);
 		}
 
@@ -271,7 +273,7 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (data != NULL);
-	g_return_if_fail (((list->type == NETWORK_TYPE_TRUSTED) || (list->type == NETWORK_TYPE_PREFERRED)));
+	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
 
 	networks = nm_dbus_get_networks (data->dbus_connection, list->type, &num_networks);
 	if (networks && (num_networks > 0))

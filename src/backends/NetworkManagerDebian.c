@@ -222,3 +222,14 @@ void nm_system_load_device_modules (void)
 }
 
 
+/*
+ * nm_system_device_update_config_info
+ *
+ * Retrieve any relevant configuration info for a particular device
+ * from the system network configuration information.  Clear out existing
+ * info before setting stuff too.
+ *
+ */
+void nm_system_device_update_config_info (NMDevice *dev)
+{
+}

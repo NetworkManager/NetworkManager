@@ -48,8 +48,7 @@ typedef struct NMData
 	GMutex				*state_modified_mutex;
 
 	gboolean				 update_ap_lists;
-	struct NMAccessPointList	*trusted_ap_list;
-	struct NMAccessPointList	*preferred_ap_list;
+	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
 

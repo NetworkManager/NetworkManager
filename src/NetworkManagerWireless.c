@@ -34,23 +34,35 @@
 #include "NetworkManagerUtils.h"
 
 
-static char *
-nm_md5 (const char *buf, size_t len)
+/*
+ * nm_wireless_md5_digest_to_ascii
+ *
+ * Convert an MD5 digest into an ascii string suitable for use
+ * as a WEP key.
+ *
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ *
+ */
+static char *nm_wireless_md5_digest_to_ascii (unsigned char digest[16])
 {
-#ifdef HAVE_GCRYPT
-	char ascii_key[32];
-	gcry_md_hash_buffer (GCRY_MD_MD5, ascii_key, buf, len);
-	return g_strndup (ascii_key, 32);
-#else
-	struct GnomeKeyringMD5Context ctx;
-	char digest[16];
-	
-	gnome_keyring_md5_init (&ctx);
-	gnome_keyring_md5_update (&ctx, buf, len);
-	gnome_keyring_md5_final (digest, &ctx);
-	return gnome_keyring_md5_digest_to_ascii (digest);
-#endif
+	static char	 hex_digits[] = "0123456789abcdef";
+	unsigned char	*res;
+	int			 i;
+
+	res = g_malloc (33);
+	for (i = 0; i < 16; i++)
+	{
+		res[2*i] = hex_digits[digest[i] >> 4];
+		res[2*i+1] = hex_digits[digest[i] & 0xf];
+	}
+
+	/* We chomp it at byte 26, since WEP keys only use 104 bits */
+	res[26] = 0;
+
+	return (res);
 }
+
 
 /*
  * nm_wireless_128bit_key_from_passphrase
@@ -61,9 +73,10 @@ nm_md5 (const char *buf, size_t len)
  */
 char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 {
-	char		 temp_buf [65];
-	int		 passphrase_len;
-	int		 i;
+	char		 	md5_data[65];
+	unsigned char	digest[16];
+	int			passphrase_len;
+	int			i;
 
 	g_return_val_if_fail (passphrase != NULL, NULL);
 
@@ -73,9 +86,17 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 
 	/* Get at least 64 bits */
 	for (i = 0; i < 64; i++)
-		temp_buf [i] = passphrase [i % passphrase_len];
+		md5_data [i] = passphrase [i % passphrase_len];
 
-	return nm_md5 (temp_buf, 64);
+	/* Null terminate md5 data-to-hash and hash it */
+	md5_data[64] = 0;
+#ifdef HAVE_GCRYPT
+	gcry_md_hash_buffer (GCRY_MD_MD5, digest, md5_data, 64);
+#else	
+	gnome_keyring_md5_string (md5_data, digest);
+#endif
+
+	return (nm_wireless_md5_digest_to_ascii (digest));
 }
 
 

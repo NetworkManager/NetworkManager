@@ -707,7 +707,7 @@ GTimeVal *nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkTy
 								DBUS_TYPE_INT32, (int)type,
 								DBUS_TYPE_INVALID);
 
-	/* Send message and get prio back from NetworkManagerInfo */
+	/* Send message and get timestamp back from NetworkManagerInfo */
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
@@ -732,6 +732,64 @@ GTimeVal *nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkTy
 	timestamp->tv_usec = 0;
 
 	return (timestamp);
+}
+
+
+/*
+ * nm_dbus_get_network_trusted
+ *
+ * Get whether or not a network is a "trusted" network from NetworkManagerInfo
+ *
+ * Returns:	FALSE on error or if network is not trusted
+ *			TRUE if the network is trusted
+ *
+ */
+gboolean nm_dbus_get_network_trusted (DBusConnection *connection, NMNetworkType type, const char *network)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	DBusMessage		*reply;
+	gboolean			 trusted = FALSE;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
+						NMI_DBUS_INTERFACE, "getNetworkTrusted");
+	if (!message)
+	{
+		syslog (LOG_ERR, "nm_dbus_get_network_trusted(): Couldn't allocate the dbus message");
+		return (FALSE);
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
+								DBUS_TYPE_INT32, (int)type,
+								DBUS_TYPE_INVALID);
+
+	/* Send message and get trusted status back from NetworkManagerInfo */
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		syslog (LOG_ERR, "nm_dbus_get_network_trusted(): %s raised %s", error.name, error.message);
+		dbus_error_free (&error);
+	}
+	else if (!reply)
+		syslog (LOG_NOTICE, "nm_dbus_get_network_trusted(): reply was NULL.");
+	else
+	{
+		dbus_error_init (&error);
+		dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &trusted, DBUS_TYPE_INVALID);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+	}
+
+	dbus_message_unref (message);
+	if (reply)
+		dbus_message_unref (reply);
+
+	return (trusted);
 }
 
 
@@ -812,11 +870,8 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); */
 
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
-		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "TrustedNetworkUpdate"))
-		list = data->trusted_ap_list;
-	else if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
-			&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "PreferredNetworkUpdate"))
-		list = data->preferred_ap_list;
+		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate"))
+		list = data->allowed_ap_list;
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
 	{
 		char 	*service;

@@ -57,26 +57,11 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 
 	if ((key = gconf_entry_get_key (entry)))
 	{
-		NMINetworkType	type = NETWORK_TYPE_UNKNOWN;
-		int			trusted_path_len = strlen (NMI_GCONF_TRUSTED_NETWORKS_PATH) + 1;
-		int			preferred_path_len = strlen (NMI_GCONF_PREFERRED_NETWORKS_PATH) + 1;
-		int			len;
+		int	path_len = strlen (NMI_GCONF_WIRELESS_NETWORKS_PATH) + 1;
 
-		/* Extract the network name from the key */
-		if (strncmp (NMI_GCONF_TRUSTED_NETWORKS_PATH"/", key, trusted_path_len) == 0)
+		if (strncmp (NMI_GCONF_WIRELESS_NETWORKS_PATH"/", key, path_len) == 0)
 		{
-			type = NETWORK_TYPE_TRUSTED;
-			len = trusted_path_len;
-		}
-		else if (strncmp (NMI_GCONF_PREFERRED_NETWORKS_PATH"/", key, preferred_path_len) == 0)
-		{
-			type = NETWORK_TYPE_PREFERRED;
-			len = preferred_path_len;
-		}
-
-		if (type != NETWORK_TYPE_UNKNOWN)
-		{
-			char 	*network = g_strdup ((key + len));
+			char 	*network = g_strdup ((key + path_len));
 			char		*slash_pos;
 
 			/* If its a key under the network name, zero out the slash so we
@@ -85,7 +70,7 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			if ((slash_pos = strchr (network, '/')))
 				*slash_pos = '\0';
 
-			nmi_dbus_signal_update_network (info->connection, network, type);
+			nmi_dbus_signal_update_network (info->connection, network, NETWORK_TYPE_ALLOWED);
 			g_free (network);
 		}
 	}

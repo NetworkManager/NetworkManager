@@ -38,6 +38,8 @@ void			nm_system_device_flush_routes		(NMDevice *dev);
 
 void			nm_system_device_flush_addresses	(NMDevice *dev);
 
+void			nm_system_device_update_config_info(NMDevice *dev);
+
 
 void			nm_system_enable_loopback		(void);
 

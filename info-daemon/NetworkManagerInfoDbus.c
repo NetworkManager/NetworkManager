@@ -50,9 +50,7 @@
  */
 inline gboolean nmi_network_type_valid (NMINetworkType type)
 {
-	if ((type == NETWORK_TYPE_TRUSTED) || (type == NETWORK_TYPE_PREFERRED))
-		return (TRUE);
-	return (FALSE);
+	return ((type == NETWORK_TYPE_ALLOWED));
 }
 
 
@@ -155,21 +153,14 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 void nmi_dbus_signal_update_network (DBusConnection *connection, const char *network, NMINetworkType type)
 {
 	DBusMessage		*message;
-	const char		*trusted_signal = "TrustedNetworkUpdate";
-	const char		*preferred_signal = "PreferredNetworkUpdate";
-	const char		*signal;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (network != NULL);
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):		signal = trusted_signal; break;
-		case (NETWORK_TYPE_PREFERRED):	signal = preferred_signal; break;
-		default:	return;
-	}
+	if (type != NETWORK_TYPE_ALLOWED)
+		return;
 
-	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, signal);
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	if (!message)
 	{
 		syslog (LOG_ERR, "nmi_dbus_signal_update_network(): Not enough memory for new dbus message!");
@@ -178,7 +169,7 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nmi_dbus_signal_update_network(): Could not raise the '%s' signal!", signal);
+		syslog (LOG_WARNING, "nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
 
 	dbus_message_unref (message);
 }
@@ -199,7 +190,6 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
 	DBusMessageIter	 iter_array;
-	const char		*path;
 	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -220,21 +210,12 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		return (reply_message);
 	}
  
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
-		default: return (NULL);	/* shouldn't get here */
-	}
-
 	/* List all allowed access points that gconf knows about */
-	element = dir_list = gconf_client_all_dirs (info->gconf_client, path, NULL);
-
+	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH, NULL);
 	if (!dir_list)
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
-							"There were are no %s networks stored.",
-							type == NETWORK_TYPE_TRUSTED ? "trusted" : (type == NETWORK_TYPE_PREFERRED ? "preferred" : "unknown"));
+							"There were are no wireless networks stored.");
 	}
 	else
 	{
@@ -271,8 +252,7 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		{
 			dbus_message_unref (reply_message);
 			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
-							"There were are no %s networks stored.",
-							type == NETWORK_TYPE_TRUSTED ? "trusted" : (type == NETWORK_TYPE_PREFERRED ? "preferred" : "unknown"));
+							"There were are no wireless networks stored.");
 		}
 	}
 
@@ -294,7 +274,6 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	const char		*path;
 	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -310,15 +289,8 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 		return (reply_message);
 	}
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
-		default: return (NULL);
-	}
-
 	/* Grab timestamp key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/timestamp", path, network);
+	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -353,7 +325,6 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	const char		*path;
 	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -369,15 +340,8 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 		return (reply_message);
 	}
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
-		default: return (NULL);
-	}
-
 	/* Grab essid key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/essid", path, network);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -412,7 +376,6 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	const char		*path;
 	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -428,15 +391,8 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 		return (reply_message);
 	}
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
-		default: return (NULL);
-	}
-
 	/* Grab user-key key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/key", path, network);
+	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
@@ -449,6 +405,54 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	}
 	else
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+
+	return (reply_message);
+}
+
+
+/*
+ * nmi_dbus_get_network_trusted
+ *
+ * If the specified network exists, get its "trusted" value
+ * from gconf and pass it back.
+ *
+ */
+static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage		*reply_message = NULL;
+	gchar			*key = NULL;
+	char				*network = NULL;
+	GConfValue		*value;
+	DBusError			 error;
+	NMINetworkType		 type;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
+		|| (strlen (network) <= 0))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::getNetworkTrusted called with invalid arguments.");
+		return (reply_message);
+	}
+
+	/* Grab user-key key for our access point from GConf */
+	key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
+	value = gconf_client_get (info->gconf_client, key, NULL);
+	g_free (key);
+
+	/* We don't error out if no key was found in gconf, we return blank key */
+	reply_message = dbus_message_new_method_return (message);
+	if (value)
+	{
+		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, gconf_value_get_bool (value), DBUS_TYPE_INVALID);
+		gconf_value_free (value);
+	}
+	else
+		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, FALSE, DBUS_TYPE_INVALID);
 
 	return (reply_message);
 }
@@ -472,7 +476,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/* syslog (LOG_DEBUG, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path); */
+	syslog (LOG_WARNING, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path);
 
 	if (strcmp ("getKeyForNetwork", method) == 0)
 	{
@@ -494,6 +498,8 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		reply_message = nmi_dbus_get_network_essid (info, message);
 	else if (strcmp ("getNetworkKey", method) == 0)
 		reply_message = nmi_dbus_get_network_key (info, message);
+	else if (strcmp ("getNetworkTrusted", method) == 0)
+		reply_message = nmi_dbus_get_network_trusted (info, message);
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "UnknownMethod",
@@ -581,6 +587,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	if (dbus_error_is_set (&dbus_error))
 	{
 		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
+		dbus_error_free (&dbus_error);
 		return (-1);
 	}
 
@@ -600,7 +607,10 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 				"sender='" NM_DBUS_SERVICE "',"
 				"path='" NM_DBUS_PATH "'", &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
+	{
+		dbus_error_free (&dbus_error);
 		return (-1);
+	}
 
 	return (0);
 }

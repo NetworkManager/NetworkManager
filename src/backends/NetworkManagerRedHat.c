@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <arpa/inet.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
@@ -36,6 +37,7 @@
 void nm_system_init (void)
 {
 }
+
 
 /*
  * nm_system_device_run_dhcp
@@ -160,6 +162,19 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 
 /*
+ * nm_system_device_setup_ip_config
+ *
+ * Set up the device with a particular IPv4 address/netmask/gateway.
+ *
+ */
+void nm_system_device_setup_ip4_config (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (!nm_device_config_get_use_dhcp (dev));
+}
+
+
+/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface
@@ -223,3 +238,88 @@ void nm_system_load_device_modules (void)
 }
 
 
+/*
+ * nm_system_device_update_config_info
+ *
+ * Retrieve any relevant configuration info for a particular device
+ * from the system network configuration information.  Clear out existing
+ * info before setting stuff too.
+ *
+ */
+void nm_system_device_update_config_info (NMDevice *dev)
+{
+	char		*cfg_file_path = NULL;
+	FILE		*file = NULL;
+	char		 buffer[100];
+	gboolean	 data_good = FALSE;
+	gboolean	 use_dhcp = TRUE;
+	guint32	 ip4_address = 0;
+	guint32	 ip4_netmask = 0;
+	guint32	 ip4_gateway = 0;
+
+	g_return_if_fail (dev != NULL);
+
+	/* We use DHCP on an interface unless told not to */
+	nm_device_config_set_use_dhcp (dev, TRUE);
+	nm_device_config_set_ip4_address (dev, 0);
+	nm_device_config_set_ip4_gateway (dev, 0);
+	nm_device_config_set_ip4_netmask (dev, 0);
+
+	/* Red Hat/Fedora Core systems store this information in
+	 * /etc/sysconfig/network-scripts/ifcfg-* where * is the interface
+	 * name.
+	 */
+
+	cfg_file_path = g_strdup_printf ("/etc/sysconfig/network-scripts/ifcfg-%s", nm_device_get_iface (dev));
+	if (!cfg_file_path)
+		return;
+
+	if (!(file = fopen (cfg_file_path, "r")))
+	{
+		g_free (cfg_file_path);
+		return;
+	}
+
+	while (fgets (buffer, 499, file) && !feof (file))
+	{
+		/* Kock off newline if any */
+		g_strstrip (buffer);
+
+		if (strncmp (buffer, "DEVICE=", 7) == 0)
+		{
+			/* Make sure this config file is for this device */
+			if (strcmp (&buffer[7], nm_device_get_iface (dev)) != 0)
+			{
+				syslog (LOG_WARNING, "System config file '%s' was not actually for device '%s'\n",
+						cfg_file_path, nm_device_get_iface (dev));
+				break;
+			}
+			else
+				data_good = TRUE;
+		}
+		else if (strncmp (buffer, "BOOTPROTO=dhcp", 14) == 0)
+			use_dhcp = TRUE;
+		else if (strncmp (buffer, "BOOTPROTO=none", 14) == 0)
+			use_dhcp = FALSE;
+		else if (strncmp (buffer, "IPADDR=", 7) == 0)
+			ip4_address = inet_addr (&buffer[7]);
+		else if (strncmp (buffer, "GATEWAY=", 8) == 0)
+			ip4_gateway = inet_addr (&buffer[8]);
+		else if (strncmp (buffer, "NETMASK=", 8) == 0)
+			ip4_netmask = inet_addr (&buffer[8]);
+	}
+	fclose (file);
+	g_free (cfg_file_path);
+
+	/* If successful, set values on the device */
+	if (data_good)
+	{
+		nm_device_config_set_use_dhcp (dev, use_dhcp);
+		if (ip4_address)
+			nm_device_config_set_ip4_address (dev, ip4_address);
+		if (ip4_gateway)
+			nm_device_config_set_ip4_gateway (dev, ip4_gateway);
+		if (ip4_netmask)
+			nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+	}
+}

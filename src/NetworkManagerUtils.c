@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <linux/sockios.h>
+#include <syslog.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"

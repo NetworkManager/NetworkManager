@@ -91,6 +91,17 @@ void			nm_device_ap_list_clear			(NMDevice *dev);
 struct NMAccessPointList *nm_device_ap_list_get	(NMDevice *dev);
 NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *essid);
 
+/* System config data accessors */
+gboolean		nm_device_config_get_use_dhcp		(NMDevice *dev);
+void			nm_device_config_set_use_dhcp		(NMDevice *dev, gboolean use_dhcp);
+guint32		nm_device_config_get_ip4_address	(NMDevice *dev);
+void			nm_device_config_set_ip4_address	(NMDevice *dev, guint32 addr);
+guint32		nm_device_config_get_ip4_gateway	(NMDevice *dev);
+void			nm_device_config_set_ip4_gateway	(NMDevice *dev, guint32 gateway);
+guint32		nm_device_config_get_ip4_netmask	(NMDevice *dev);
+void			nm_device_config_set_ip4_netmask	(NMDevice *dev, guint32 netmask);
+
+/* Utility routines */
 NMDevice *	nm_get_device_by_udi			(NMData *data, const char *udi);
 NMDevice *	nm_get_device_by_iface			(NMData *data, const char *iface);
 

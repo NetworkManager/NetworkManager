@@ -156,6 +156,19 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 
 /*
+ * nm_system_device_update_config_info
+ *
+ * Retrieve any relevant configuration info for a particular device
+ * from the system network configuration information.  Clear out existing
+ * info before setting stuff too.
+ *
+ */
+void nm_system_device_update_config_info (NMDevice *dev)
+{
+}
+
+
+/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface

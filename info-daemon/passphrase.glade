@@ -6,15 +6,13 @@
 <widget class="GtkDialog" id="passphrase_dialog">
   <property name="border_width">6</property>
   <property name="has_focus">True</property>
-  <property name="title" translatable="yes"> </property>
+  <property name="title" translatable="yes">Wireless Network Key Required</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_CENTER_ALWAYS</property>
   <property name="modal">False</property>
   <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
-  <property name="skip_taskbar_hint">True</property>
-  <property name="skip_pager_hint">True</property>
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_DIALOG</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="has_separator">False</property>

@@ -47,11 +47,11 @@
 #include "NMWirelessAppletDbus.h"
 
 #define CFG_UPDATE_INTERVAL 1
-#define NM_GCONF_TRUSTED_NETWORKS_PATH		"/system/networking/wireless/trusted_networks"
-#define NM_GCONF_PREFERRED_NETWORKS_PATH	"/system/networking/wireless/preferred_networks"
+#define NM_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
 static char * pixmap_names[] =
 {
+	"no-networkmanager.png",
 	"wired.png",
 	"no-link-0.png",
 	"signal-1-40.png",
@@ -127,7 +127,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	switch (applet->applet_state)
 	{
 		case (APPLET_STATE_NO_NM):
-			applet->pix_state = PIX_WIRED;	/* FIXME: get a "no NetworkManager" picture */
+			applet->pix_state = PIX_NO_NETWORKMANAGER;
 			break;
 
 		case (APPLET_STATE_NO_CONNECTION):
@@ -384,34 +384,16 @@ void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 	/* Update GConf to set timestamp for this network, or add it if
 	 * it doesn't already exist.
 	 */
-	key = g_strdup_printf ("%s/%s", NM_GCONF_TRUSTED_NETWORKS_PATH, network);
-	gconf_entry = gconf_client_get_entry (applet->gconf_client, key, NULL, TRUE, NULL);
+
+	/* Update timestamp on network */
+	key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_WIRELESS_NETWORKS_PATH, network);
+	gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
 	g_free (key);
 
-	if (gconf_entry)
-	{
-		/* Update timestamp on existing network in trusted networks */
-		key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_TRUSTED_NETWORKS_PATH, network);
-		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-		g_free (key);
-
-		/* Force-set the essid too so that we have a semi-complete network entry */
-		key = g_strdup_printf ("%s/%s/essid", NM_GCONF_TRUSTED_NETWORKS_PATH, network);
-		gconf_client_set_string (applet->gconf_client, key, network, NULL);
-		g_free (key);
-	}
-	else
-	{
-		/* If its not already in trusted networks, add the chosen network to preferred networks */
-		key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_PREFERRED_NETWORKS_PATH, network);
-		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-		g_free (key);
-
-		/* Force-set the essid too so that we have a semi-complete network entry */
-		key = g_strdup_printf ("%s/%s/essid", NM_GCONF_PREFERRED_NETWORKS_PATH, network);
-		gconf_client_set_string (applet->gconf_client, key, network, NULL);
-		g_free (key);
-	}
+	/* Force-set the essid too so that we have a semi-complete network entry */
+	key = g_strdup_printf ("%s/%s/essid", NM_GCONF_WIRELESS_NETWORKS_PATH, network);
+	gconf_client_set_string (applet->gconf_client, key, network, NULL);
+	g_free (key);
 
 	fprintf (stderr, "Forcing network '%s'\n", network);
 	nmwa_dbus_set_network (applet->connection, network);

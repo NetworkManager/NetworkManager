@@ -92,16 +92,16 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 		nmi_dbus_return_user_key (info->connection, device, network, passphrase);
 
 		/* Update GConf with the new user key */
-		key = g_strdup_printf ("%s/%s", NMI_GCONF_TRUSTED_NETWORKS_PATH, network);
+		key = g_strdup_printf ("%s/%s", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 		gconf_entry = gconf_client_get_entry (info->gconf_client, key, NULL, TRUE, NULL);
 		g_free (key);
 		if (gconf_entry)
 		{
 			gconf_entry_unref (gconf_entry);
-			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_TRUSTED_NETWORKS_PATH, network);
+			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 			gconf_client_set_string (info->gconf_client, key, passphrase, NULL);
 			g_free (key);
-			key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_TRUSTED_NETWORKS_PATH, network);
+			key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network);
 			gconf_client_set_string (info->gconf_client, key, network, NULL);
 			g_free (key);
 		}
