@@ -2,14 +2,14 @@
 # Copyright (C) 2005 Dan Williams <dcbw@redhat.com>
 # This file is distributed under the same license as the NetworkManager package.
 # Hendrik Brandt <heb@gnome-de.org>, 2004.
-# 
+# Frank Arnold <frank@scirocco-5v-turbo.de>, 2005.
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-03 08:08+0100\n"
-"PO-Revision-Date: 2005-02-03 08:06+0100\n"
+"POT-Creation-Date: 2005-02-09 09:00+0100\n"
+"PO-Revision-Date: 2005-02-09 08:58+0100\n"
 "Last-Translator: Frank Arnold <frank@scirocco-5v-turbo.de>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -91,59 +91,105 @@ msgstr ""
 "Um auf das private Netzwerk %s zugreifen zu können, müssen Sie sich zunächst "
 "anmelden"
 
-#: ../panel-applet/NMWirelessApplet.c:313
+#: ../panel-applet/NMWirelessApplet.c:140
+#: ../panel-applet/NMWirelessApplet.c:158
+msgid "NetworkManager Applet"
+msgstr "Netzwerk-Manager-Applet"
+
+#: ../panel-applet/NMWirelessApplet.c:142
+msgid "(C) 2004-2005 Red Hat, Inc."
+msgstr "© 2004-2005 Red Hat, Inc."
+
+#: ../panel-applet/NMWirelessApplet.c:143
+#: ../panel-applet/NMWirelessApplet.c:161
+msgid "A panel application for managing your network devices & connections."
+msgstr ""
+"Eine Panel-Anwendung zur Verwaltung von Netzwerkgeräten und "
+"Netzwerkverbindungen."
+
+#: ../panel-applet/NMWirelessApplet.c:160
+msgid "© 2004-2005 by Red Hat, Inc."
+msgstr "© 2004-2005 Red Hat, Inc."
+
+#: ../panel-applet/NMWirelessApplet.c:377
 msgid "No network connection"
 msgstr "Keine Netzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:318
+#: ../panel-applet/NMWirelessApplet.c:382
 msgid "Wired network connection"
 msgstr "Kabelnetzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:323
+#: ../panel-applet/NMWirelessApplet.c:387
 msgid "Connecting to a wired network..."
 msgstr "Verbindung mit Kabelnetzwerk wird hergestellt..."
 
-#: ../panel-applet/NMWirelessApplet.c:332
+#: ../panel-applet/NMWirelessApplet.c:396
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Verbunden mit einem Ad-Hoc-Funknetzwerk"
 
-#: ../panel-applet/NMWirelessApplet.c:346
+#: ../panel-applet/NMWirelessApplet.c:410
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Funknetzwerkverbindung mit »%s« (%d%%)"
 
-#: ../panel-applet/NMWirelessApplet.c:351
+#: ../panel-applet/NMWirelessApplet.c:415
 msgid "Wireless network connection"
 msgstr "Funknetzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:356
+#: ../panel-applet/NMWirelessApplet.c:420
 #, c-format
 msgid "Connecting to wireless network '%s'..."
 msgstr "Verbindung mit Funknetzwerk »%s« wird hergestellt..."
 
-#: ../panel-applet/NMWirelessApplet.c:362
+#: ../panel-applet/NMWirelessApplet.c:426
 msgid "NetworkManager is not running"
 msgstr "Der Netzwerk-Manager läuft nicht"
 
-#: ../panel-applet/NMWirelessApplet.c:367
+#: ../panel-applet/NMWirelessApplet.c:431
 msgid "Scanning for wireless networks..."
 msgstr "Funknetzwerke werden gesucht..."
 
-#: ../panel-applet/NMWirelessApplet.c:690
+#: ../panel-applet/NMWirelessApplet.c:754
 msgid "Other Wireless Networks..."
 msgstr "Andere Funknetzwerke..."
 
-#: ../panel-applet/NMWirelessApplet.c:711
+#: ../panel-applet/NMWirelessApplet.c:775
 msgid "Create new Wireless Network..."
 msgstr "Neues Funknetzwerk hinzufügen..."
 
-#: ../panel-applet/NMWirelessApplet.c:821
+#: ../panel-applet/NMWirelessApplet.c:885
 msgid "No network devices have been found"
 msgstr "Es wurden keine Netzwerkgeräte gefunden"
 
-#: ../panel-applet/NMWirelessApplet.c:939
+#: ../panel-applet/NMWirelessApplet.c:1003
 msgid "NetworkManager is not running..."
 msgstr "Der Netzwerk-Manager ist nicht aktiv..."
+
+#: ../panel-applet/NMWirelessApplet.c:1047
+#: ../panel-applet/NMWirelessApplet.c:1096
+msgid "Pause Wireless Scanning"
+msgstr "Funknetzwerksuche unterbrechen"
+
+#: ../panel-applet/NMWirelessApplet.c:1052
+msgid "Resume Wireless Scanning"
+msgstr "Funknetzwerksuche wiederaufnehmen"
+
+#: ../panel-applet/NMWirelessApplet.c:1062
+#: ../panel-applet/NMWirelessApplet.c:1102
+msgid "Stop All Wireless Devices"
+msgstr "Alle Funknetzwerkgeräte stoppen"
+
+#: ../panel-applet/NMWirelessApplet.c:1067
+msgid "Start All Wireless Devices"
+msgstr "Alle Funknetzwerkgeräte starten"
+
+#: ../panel-applet/NMWirelessApplet.c:1112
+msgid "Help"
+msgstr "Hilfe"
+
+#: ../panel-applet/NMWirelessApplet.c:1119
+msgid "About"
+msgstr "Info"
 
 #: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
 msgid "Create new wireless network"
@@ -202,20 +248,20 @@ msgstr "Kabelnetzwerk (%s)"
 msgid "Wired Network"
 msgstr "Kabelnetzwerk"
 
-#: ../panel-applet/menu-info.c:177
+#: ../panel-applet/menu-info.c:181
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Funknetzwerk (%s)"
 msgstr[1] "Funknetzwerke (%s)"
 
-#: ../panel-applet/menu-info.c:179
+#: ../panel-applet/menu-info.c:183
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Funknetzwerk"
 msgstr[1] "Funknetzwerke"
 
-#: ../panel-applet/menu-info.c:316
+#: ../panel-applet/menu-info.c:320
 msgid " (invalid Unicode)"
 msgstr "(ungültiger Unicode)"
 
