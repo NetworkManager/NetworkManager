@@ -351,6 +351,8 @@ int main( int argc, char *argv[] )
 {
 	DBusConnection *connection;
 	DBusError		error;
+	char *path;
+	char *status;
 
 	g_type_init ();
 
@@ -362,9 +364,6 @@ int main( int argc, char *argv[] )
 		dbus_error_free (&error);
 		return 1;
 	}
-
-	char *path;
-	char *status;
 
 	status = get_nm_status (connection);
 	if (!status)

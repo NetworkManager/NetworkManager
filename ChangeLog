@@ -1,4 +1,20 @@
 2004-12-01  Colin Walters  <walters@redhat.com>
+	
+	* configure.in: Suck in gcc warnings code from Rhythmbox,
+	but use fewer default flags, and in particular add -Wno-unused,
+	since the codebase has a lot of unused variables.
+
+	* test/nmtestdevices.c (create_device): 
+	* test/nminfotest.c (get_network_string_property) 
+	(get_networks_of_type): 
+	* test/nmclienttest.c (main): 
+	* src/NetworkManagerDbus.c (nm_dbus_create_error_message): 
+	* initscript/NMLaunchHelper.c (get_nm_status): 
+	* info-daemon/NetworkManagerInfoPassphraseDialog.c (update_button_cb): 
+	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_create_error_message): 
+	Fix declarations after statements.
+
+2004-12-01  Colin Walters  <walters@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_return_vpn_password): New method.
 	(nmi_dbus_get_vpn_userpass): New method.

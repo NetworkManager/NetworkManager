@@ -36,6 +36,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	DBusMessage	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	char *string, *ret_string;
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, method);
 	if (message == NULL)
@@ -63,7 +64,6 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	char *string, *ret_string;
 	string = dbus_message_iter_get_string (&iter);
 	if (!string)
 	{
@@ -85,6 +85,7 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 	DBusMessage	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	gboolean trusted = FALSE;
 
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
@@ -114,7 +115,6 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 	}
 
 	/* now analyze reply */
-	gboolean trusted = FALSE;
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &trusted, DBUS_TYPE_INVALID))
 		trusted = FALSE;
@@ -134,6 +134,9 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 	DBusMessage 	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	char **networks;
+	int	num_networks;
+	int i;
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworks");
 	if (message == NULL)
@@ -161,9 +164,6 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	char **networks;
-	int	num_networks;
-
 	if (!dbus_message_iter_get_string_array (&iter, &networks, &num_networks))
 	{
 		fprintf (stderr, "NetworkManagerInfo returned no network list" );
@@ -176,7 +176,6 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 	if (!networks)
 		fprintf( stderr, "No networks found\n" );
 
-	int i;
 	fprintf( stderr, "Networks of type %d:\n", type );
 	for (i = 0; i < num_networks; i++)
 	{

@@ -48,14 +48,18 @@ enum NMIPassphraseDialogKeyTypes
 
 static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 {
+	GtkButton	*button;
+	GtkComboBox	*combo;
+	GtkEntry	*passphrase_entry;
+	const char	*passphrase_text;
 	gboolean		 enable = TRUE;
 
 	g_return_if_fail (xml != NULL);
 
-	GtkButton	*button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
-	GtkComboBox	*combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
-	GtkEntry	*passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
-	const char	*passphrase_text = gtk_entry_get_text (passphrase_entry);
+	button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
+	combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
+	passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
+	passphrase_text = gtk_entry_get_text (passphrase_entry);
 
 	if (passphrase_text[0] == '\000')
 		enable = FALSE;

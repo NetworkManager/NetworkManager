@@ -77,6 +77,7 @@ inline gboolean nmi_network_type_valid (NMNetworkType type)
 static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message, const char *exception_namespace,
 										const char *exception, const char *format, ...)
 {
+	char *exception_text;
 	DBusMessage	*reply_message;
 	va_list		 args;
 	char			 error_text[512];
@@ -86,7 +87,7 @@ static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message, const c
 	vsnprintf (error_text, 512, format, args);
 	va_end (args);
 
-	char *exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
+	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
 	reply_message = dbus_message_new_error (message, exception_text, error_text);
 	g_free (exception_text);
 

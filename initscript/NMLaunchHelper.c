@@ -41,6 +41,7 @@ void get_nm_status (DBusConnection *connection)
 	DBusMessage	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	char *string;
 
 	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
 						"/org/freedesktop/NetworkManager",
@@ -70,7 +71,6 @@ void get_nm_status (DBusConnection *connection)
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	char *string;
 	string = dbus_message_iter_get_string (&iter);
 	if (!string)
 	{

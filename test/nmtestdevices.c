@@ -36,6 +36,7 @@ void create_device (DBusConnection *connection, NMDeviceType type)
 	DBusMessage	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	char *string;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (((type == DEVICE_TYPE_WIRED_ETHERNET) || (type == DEVICE_TYPE_WIRELESS_ETHERNET)));
@@ -67,7 +68,6 @@ void create_device (DBusConnection *connection, NMDeviceType type)
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	char *string;
 	string = dbus_message_iter_get_string (&iter);
 	if (!string)
 	{
