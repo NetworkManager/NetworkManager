@@ -1,0 +1,266 @@
+# French translation of NetworkManager.
+# Copyright (C) 2004-2005 The GNOME Foundation.
+# This file is distributed under the same license as the NetworkManager package.
+#
+# Raphaël Tournoy <lexpas@free.fr>, 2004.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager 0.3.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-02-16 00:21+0100\n"
+"PO-Revision-Date: 2005-02-16 00:11+0100\n"
+"Last-Translator: Raphaël Tournoy <lexpas@free.fr>\n"
+"Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n>1;\n"
+
+#: info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Réseaux sans fil :</span>"
+
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Modifier les réseaux sans fil"
+
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
+
+#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+"Phrase de passe 128 bit (WEP)\n"
+"Clé ASCII (WEP)\n"
+"Clé hexa (WEP)"
+
+#: info-daemon/passphrase.glade.h:6
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Phrase de passe requise par le réseau "
+"sans fil</span>\n"
+"\n"
+"Une phrase de passe ou une clé de chiffrement est requise pour accéder au "
+"réseau sans fil « %s »."
+
+#: info-daemon/passphrase.glade.h:9 panel-applet/essid.glade.h:7
+msgid "Key Type:"
+msgstr "Type de clé :"
+
+#: info-daemon/passphrase.glade.h:10
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
+#: panel-applet/essid.glade.h:8
+msgid "Passphrase:"
+msgstr "Phrase de passe :"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "Wireless Network Key Required"
+msgstr "Clef requise par le réseau sans fil"
+
+#: info-daemon/passphrase.glade.h:12
+msgid "_Login to Network"
+msgstr "_Connexion au réseau"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
+msgid "Ascii Key:"
+msgstr "Clé ASCII :"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
+msgid "Hex Key:"
+msgstr "Clé hexa :"
+
+#: info-daemon/NetworkManagerInfoVPN.c:157
+#, c-format
+msgid "You must log in to access the private network %s"
+msgstr "Vous devez vous connecter pour accéder au réseau privé %s"
+
+#: panel-applet/NMWirelessApplet.c:140 panel-applet/NMWirelessApplet.c:158
+msgid "NetworkManager Applet"
+msgstr "Applet NetworkManager"
+
+#: panel-applet/NMWirelessApplet.c:142
+msgid "(C) 2004-2005 Red Hat, Inc."
+msgstr "© 2004-2005 Red Hat, Inc."
+
+#: panel-applet/NMWirelessApplet.c:143 panel-applet/NMWirelessApplet.c:161
+msgid "A panel application for managing your network devices & connections."
+msgstr ""
+"Une application de tableau de bord pour gérer vos périphériques réseaux et "
+"vox connexions."
+
+#: panel-applet/NMWirelessApplet.c:160
+msgid "(C) 2004-2005 by Red Hat, Inc."
+msgstr "© 2004-2005 by Red Hat, Inc."
+
+#: panel-applet/NMWirelessApplet.c:377
+msgid "No network connection"
+msgstr "Aucune connexion réseau"
+
+#: panel-applet/NMWirelessApplet.c:382
+msgid "Wired network connection"
+msgstr "Connexion à un réseau cablé"
+
+#: panel-applet/NMWirelessApplet.c:387
+msgid "Connecting to a wired network..."
+msgstr "Connexion à un réseau sans fil..."
+
+#: panel-applet/NMWirelessApplet.c:396
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Connecté à un réseau sans fil Ad-Hoc"
+
+#: panel-applet/NMWirelessApplet.c:410
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Connexion au réseau sans fil vers « %s » (%d%%)"
+
+#: panel-applet/NMWirelessApplet.c:415
+msgid "Wireless network connection"
+msgstr "Connexion réseau sans fil"
+
+#: panel-applet/NMWirelessApplet.c:420
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Connexion au réseau sans fil « %s »..."
+
+#: panel-applet/NMWirelessApplet.c:426
+msgid "NetworkManager is not running"
+msgstr "NetworkManager n'est pas lancé"
+
+#: panel-applet/NMWirelessApplet.c:431
+msgid "Scanning for wireless networks..."
+msgstr "Recherche de réseaux sans fil..."
+
+#: panel-applet/NMWirelessApplet.c:754
+msgid "Other Wireless Networks..."
+msgstr "Autres réseaux sans fil..."
+
+#: panel-applet/NMWirelessApplet.c:775
+msgid "Create new Wireless Network..."
+msgstr "Créer un nouveau réseau sans fil..."
+
+#: panel-applet/NMWirelessApplet.c:885
+msgid "No network devices have been found"
+msgstr "Aucun périphérique réseau n'a été détecté"
+
+#: panel-applet/NMWirelessApplet.c:1003
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager n'est pas lancé..."
+
+#: panel-applet/NMWirelessApplet.c:1047 panel-applet/NMWirelessApplet.c:1096
+msgid "Pause Wireless Scanning"
+msgstr "Interrompre la recherche de réseau sans fil"
+
+#: panel-applet/NMWirelessApplet.c:1052
+msgid "Resume Wireless Scanning"
+msgstr "Reprendre la recherche de réseau sans fil"
+
+#: panel-applet/NMWirelessApplet.c:1062 panel-applet/NMWirelessApplet.c:1102
+msgid "Stop All Wireless Devices"
+msgstr "Arrêter tous les périphériques sans fil"
+
+#: panel-applet/NMWirelessApplet.c:1067
+msgid "Start All Wireless Devices"
+msgstr "Démarrer tous les périphériques sans fil"
+
+#: panel-applet/NMWirelessApplet.c:1112
+msgid "Help"
+msgstr "Aide"
+
+#: panel-applet/NMWirelessApplet.c:1119
+msgid "About"
+msgstr "À _propos"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
+msgid "Create new wireless network"
+msgstr "Créer un nouveau réseau sans fil"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Saisissez l'ESSID et les paramètres de sécurité du réseau sans fil que vous "
+"voulez créer."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
+msgid "Custom wireless network"
+msgstr "Réseau sans fil personnalisé"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr ""
+"Saisissez l'ESSID du réseau sans fil auquel vous voulez vous connecter."
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"L'applet NetworkManager n'a pas pu trouver les ressources requises (le "
+"fichier glade n'a pas été trouvé)."
+
+#: panel-applet/essid.glade.h:5
+msgid "C_onnect"
+msgstr "Se _connecter"
+
+#: panel-applet/essid.glade.h:6
+msgid "Connect with encryption enabled"
+msgstr "Se connecter avec le chiffrement activé"
+
+#: panel-applet/essid.glade.h:9
+msgid "Wireless _Adaptor:"
+msgstr "_Adaptateur sans fil :"
+
+#: panel-applet/essid.glade.h:10
+msgid "Wireless _Network:"
+msgstr "Réseau _sans fil :"
+
+#: panel-applet/menu-info.c:109
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Réseau cablé (%s)"
+
+#: panel-applet/menu-info.c:111
+msgid "Wired Network"
+msgstr "Réseau cablé"
+
+#: panel-applet/menu-info.c:181
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Réseau sans fil (%s)"
+msgstr[1] "Réseaux sans fil (%s)"
+
+#: panel-applet/menu-info.c:183
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Réseau sans fil"
+msgstr[1] "Réseaux sans fil"
+
+#: panel-applet/menu-info.c:320
+msgid " (invalid Unicode)"
+msgstr " (Unicode non valide)"
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Orientation"
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "L'orientation de la zone de notification."
