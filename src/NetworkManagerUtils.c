@@ -28,6 +28,7 @@
 #include <stdarg.h>
 #include <sys/time.h>
 #include <string.h>
+#include <signal.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
