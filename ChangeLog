@@ -1,5 +1,12 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_enc_key): always set device to "open" mode instead of
+			turning encryption off, because the Cisco driver doesn't associate
+			with WEP-enabled access points unless we are in "open"
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerWireless.c
 		- Don't try to defererence blank passphrases
 

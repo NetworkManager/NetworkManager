@@ -629,7 +629,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key)
 
 		if (strlen (safe_key) == 0)
 		{
-			wreq.u.data.flags = IW_ENCODE_DISABLED | IW_ENCODE_NOKEY;	/* Disable WEP */
+			wreq.u.data.flags = IW_ENCODE_OPEN | IW_ENCODE_NOKEY;	/* Disable WEP */
 			set_key = TRUE;
 		}
 		else
@@ -933,6 +933,8 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			if ((best_ap = nm_device_get_best_ap (dev)))
 			{
 				/* WEP key we have is wrong, ask user for one */
+fprintf( stderr, "(!switch (%d) || !enc_source (%d)) && is_enc (%d)\n", 
+!nm_device_need_ap_switch (dev), !nm_ap_get_enc_key_source (best_ap), nm_ap_get_encrypted (best_ap));
 				if (    (!nm_device_need_ap_switch (dev) || !nm_ap_get_enc_key_source (best_ap))
 					&& nm_ap_get_encrypted (best_ap))
 				{
@@ -943,6 +945,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 					 */
 					if (nm_ap_get_enc_key_source (best_ap) && !nm_ap_get_enc_method_good (best_ap))
 					{
+fprintf (stderr, "trying encryption method\n");
 						/* Try another method, since the one set before obviously didn't work */
 						switch (nm_ap_get_enc_method (best_ap))
 						{
@@ -965,6 +968,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 					if (ask_for_key)
 					{
+fprintf( stderr, "asking for key\n");
 						dev->options.wireless.user_key_received = FALSE;
 						nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap);
 
@@ -989,7 +993,10 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 				nm_device_activate_wireless (dev);
 			}
 			else
+{
+fprintf (stderr, "sleeping due to no access point\n");
 				g_usleep (G_USEC_PER_SEC * 2);
+}
 
 			/* If we were told to quit activation, stop the thread and return */
 			if (dev->quit_activation)
