@@ -63,6 +63,7 @@ struct NMNamedManagerPrivate
 	GHashTable *domain_ipv4_nameservers; /* char * -> GHashTable(guint -> char *) */
 
 	char *named_conf;
+	char *named_pid_file;
 
 	gboolean disposed;
 };
@@ -102,6 +103,8 @@ nm_named_manager_dispose (GObject *object)
 
 	if (mgr->priv->named_conf)
 		unlink (mgr->priv->named_conf);
+	if (mgr->priv->named_pid_file)
+		unlink (mgr->priv->named_pid_file);
 	if (mgr->priv->named_realpath_binary)
 		safer_kill (mgr->priv->named_realpath_binary, mgr->priv->named_pid, SIGTERM);
 	if (mgr->priv->child_watch_id)
@@ -120,6 +123,7 @@ nm_named_manager_finalize (GObject *object)
 	g_hash_table_destroy (mgr->priv->global_ipv4_nameservers);
 	g_hash_table_destroy (mgr->priv->domain_ipv4_nameservers);
 
+	g_free (mgr->priv->named_pid_file);
 	g_free (mgr->priv->named_conf);
 
 	g_free (mgr->priv);
@@ -234,6 +238,16 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 		close (out_fd);
 	}
 
+	if (!mgr->priv->named_pid_file)
+	{
+		out_fd = g_file_open_tmp ("NetworkManager-named-pid-XXXXXX",
+					  &mgr->priv->named_pid_file,
+					  error);
+		if (out_fd < 0)
+			return FALSE;
+		close (out_fd);
+	}
+
 	if (!g_file_get_contents (config_name,
 				  &config_contents_str,
 				  NULL,
@@ -272,6 +286,8 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 					      variable_end_pos - (variable_pos + 2));
 			if (strcmp ("LOCALSTATEDIR", variable) == 0)
 				replacement = g_strdup (NM_LOCALSTATEDIR);
+			else if (strcmp ("PID_FILE", variable) == 0)
+				replacement = g_strdup (mgr->priv->named_pid_file);
 			else if (strcmp ("FORWARDERS", variable) == 0)
 				replacement = compute_global_forwarders (mgr);
 			else if (strcmp ("DOMAIN_ZONES", variable) == 0)

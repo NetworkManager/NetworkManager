@@ -1,3 +1,11 @@
+2004-01-05  Colin Walters  <walters@redhat.com>
+
+	* named/named.conf: Add PID_FILE.
+
+	* named/nm-named-manager.c: Always generate a pid
+	file, since older BIND versions don't support
+	"pid-file none".
+
 2005-01-01  Satoru SATOH <ss@gnome.gr.jp>
 
 	* configure.in (ALL_LINGUAS): Added ja (Japanese).
