@@ -1,3 +1,9 @@
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
+	* POTFILES.in
+		- Revert the Encoding change since it doesn't seem to work
+			on FC4 or FC3 at the moment.
+
 2005-02-09  Adam Weinberger  <adamw@gnome.org>
 
 	* en_CA.po: Updated Canadian English translation.
