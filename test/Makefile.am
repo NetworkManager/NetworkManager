@@ -20,4 +20,4 @@ nmtestdevices_SOURCES = nmtestdevices.c
 nmtestdevices_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
 
 libnm_glib_test_SOURCES = libnm_glib_test.c
-libnm_glib_test_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) -L${top_srcdir}/libnm_glib -lnm_glib
+libnm_glib_test_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) ../libnm_glib/libnm_glib.la

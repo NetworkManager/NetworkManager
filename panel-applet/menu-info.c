@@ -33,7 +33,11 @@
 #include <libintl.h>
 #include <string.h>
 #include "menu-info.h"
+
+#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
 #include "gtkcellview.h"
+#endif
+
 #include "gtkcellrendererprogress.h"
 #include "NMWirelessAppletDbus.h"
 

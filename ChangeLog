@@ -1,5 +1,15 @@
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/gtkcellview.[ch]
+	  panel-applet/menu-info.c
+		- Fix GTK version checks to be <= rather than <
+
+	* test/Makefile.am
+		- Include the libtool archive of libnm_glib rather than
+			trying to pull in the .so
+
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 	  src/NetworkManagerDevicePrivate.h
 		- Block nm_device_new() until our device's worker thread has had a

@@ -23,7 +23,7 @@
 
 #include <gtk/gtkversion.h>
 
-#if (GTK_MAJOR_VERSION < 2 && GTK_MINOR_VERSION < 6)
+#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
 
 #ifndef __GTK_CELL_VIEW_H__
 #define __GTK_CELL_VIEW_H__
