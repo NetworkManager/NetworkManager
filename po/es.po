@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-06 04:13+0200\n"
+"POT-Creation-Date: 2004-10-14 17:11-0400\n"
 "PO-Revision-Date: 2004-09-09 20:31+0200\n"
 "Last-Translator: Francisco Javier F. Serrador <serrador@cvs.gnome.org>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
@@ -19,101 +19,177 @@ msgstr ""
 "X-Generator: KBabel 1.3.1\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Redes inalámbricas:</span>"
-
-#: info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade:11
 msgid "Modify Wireless Networks"
 msgstr "Modificar redes inalámbricas"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
-msgid " "
-msgstr " "
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Redes inalámbricas:</span>"
 
-#: info-daemon/passphrase.glade.h:2
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade:9
+#, fuzzy
+msgid "Wireless Network Key Required"
+msgstr "Redes inalámbricas"
 
-#: info-daemon/passphrase.glade.h:4
-#, no-c-format
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "_Entrar en la red"
+
+#: info-daemon/passphrase.glade:100
+#, fuzzy
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Contraseña requerida por esta red "
 "inalámbrica</span>\n"
 "\n"
 "Una contraseña o clave WEP para acceder a esta red inalámbrica «%s»."
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade:129
+msgid "Key Type:"
+msgstr ""
+
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+
+#: info-daemon/passphrase.glade:180
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Contraseña:"
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
-msgid "_Login to Network"
-msgstr "_Entrar en la red"
+#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
+msgid "*"
+msgstr "*"
 
-#: panel-applet/NMWirelessApplet.c:553
-msgid "There are no network devices..."
-msgstr "No hay dispositivos de red..."
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:653
-msgid "There are no wireless networks..."
-msgstr "No hay redes inalámbricas..."
-
-#: panel-applet/NMWirelessApplet.c:656
-msgid "Wireless Networks"
-msgstr "Redes inalámbricas"
-
-#: panel-applet/NMWirelessApplet.c:727
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager no se está ejecutando..."
-
-#: panel-applet/NMWirelessApplet.c:731
-msgid "Network Connections"
-msgstr "Conexiones de red"
-
-#: panel-applet/NMWirelessApplet.c:738
-msgid "No network connection is currently active..."
-msgstr "Ninguna conexión de red está activa..."
-
-#: panel-applet/NMWirelessApplet.c:743
-msgid "A wired network connection is currently active..."
-msgstr "Una conexión de red inalámbrica es la conexión activa..."
-
-#: panel-applet/NMWirelessApplet.c:886 panel-applet/NMWirelessApplet.c:948
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessApplet.c:609 panel-applet/NMWirelessApplet.c:619
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr ""
-"La miniaplicación NetworkManager no pudo encontrar algunos archivos de recursos (No "
-"se encontró el archivo de glade)."
+"La miniaplicación NetworkManager no pudo encontrar algunos archivos de "
+"recursos (No se encontró el archivo de glade)."
 
-#: panel-applet/NMWirelessApplet.xml.h:1
-msgid "_About..."
-msgstr "A_cerca de..."
+#: panel-applet/NMWirelessApplet.c:634
+#, fuzzy
+msgid "Custom wireless network"
+msgstr "Redes inalámbricas"
 
-#: panel-applet/wireless-applet.glade.h:3
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen log in to the wireless network '%s'.  If you are sure this "
-"wireless network is secure, click the checkbox below and NetworkManager will "
-"no longer pester you with stupid questions when you connect to it."
+#: panel-applet/NMWirelessApplet.c:635
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Confirmación de entrada a la red inalámbrica</"
-"span>\n"
-"\n"
-"Ha escogido entrar en la red inalámbrica «%s».  Si está seguro de "
-"que esta red es segura , marque la casilla de abajo y NetworkManager "
-"no lo volverá a molestar con este tipo de preguntas nuevamente."
 
-#: panel-applet/wireless-applet.glade.h:6
-msgid "Always Trust this Wireless Network"
-msgstr "Siempre confiar en esta red inalámbrica"
+#: panel-applet/NMWirelessApplet.c:716
+#, fuzzy
+msgid "Other Wireless Networks..."
+msgstr "Redes inalámbricas"
 
+#: panel-applet/NMWirelessApplet.c:827
+msgid "No network devices have been found"
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:944
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager no se está ejecutando..."
+
+#: panel-applet/essid.glade:52
+msgid "C_onnect"
+msgstr ""
+
+#: panel-applet/essid.glade:131
+#, fuzzy
+msgid "Wireless _Network:"
+msgstr "Redes inalámbricas"
+
+#: panel-applet/essid.glade:177
+#, fuzzy
+msgid "Wireless _Adaptor:"
+msgstr "Redes inalámbricas"
+
+#: panel-applet/menu-info.c:101
+#, fuzzy, c-format
+msgid "Wired Network (%s)"
+msgstr "Redes inalámbricas"
+
+#: panel-applet/menu-info.c:103
+#, fuzzy
+msgid "Wired Network"
+msgstr "Redes inalámbricas"
+
+#: panel-applet/menu-info.c:168
+#, fuzzy, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Redes inalámbricas"
+msgstr[1] "Redes inalámbricas"
+
+#: panel-applet/menu-info.c:170
+#, fuzzy
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Redes inalámbricas"
+msgstr[1] "Redes inalámbricas"
+
+#: panel-applet/menu-info.c:307
+msgid " (invalid Unicode)"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr ""
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid "There are no network devices..."
+#~ msgstr "No hay dispositivos de red..."
+
+#~ msgid "There are no wireless networks..."
+#~ msgstr "No hay redes inalámbricas..."
+
+#~ msgid "Network Connections"
+#~ msgstr "Conexiones de red"
+
+#~ msgid "No network connection is currently active..."
+#~ msgstr "Ninguna conexión de red está activa..."
+
+#~ msgid "A wired network connection is currently active..."
+#~ msgstr "Una conexión de red inalámbrica es la conexión activa..."
+
+#~ msgid "_About..."
+#~ msgstr "A_cerca de..."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
+#~ "this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will no longer pester you with stupid questions when you "
+#~ "connect to it."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Confirmación de entrada a la red "
+#~ "inalámbrica</span>\n"
+#~ "\n"
+#~ "Ha escogido entrar en la red inalámbrica «%s».  Si está seguro de que "
+#~ "esta red es segura , marque la casilla de abajo y NetworkManager no lo "
+#~ "volverá a molestar con este tipo de preguntas nuevamente."
+
+#~ msgid "Always Trust this Wireless Network"
+#~ msgstr "Siempre confiar en esta red inalámbrica"

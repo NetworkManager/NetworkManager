@@ -2,13 +2,13 @@
 # Copyright (C) 2004 Free Software Foundation, Inc.
 # Christian Rose <menthos@menthos.com>, 2004.
 #
-# $Id: sv.po,v 1.1 2004/08/26 23:44:48 menthos Exp $
+# $Id: sv.po,v 1.2 2004/10/14 23:13:11 jrb Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-08-27 01:42+0200\n"
+"POT-Creation-Date: 2004-10-14 17:11-0400\n"
 "PO-Revision-Date: 2004-08-27 01:42+0200\n"
 "Last-Translator: Christian Rose <menthos@menthos.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
@@ -16,29 +16,31 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Trådlösa nätverk:</span>"
-
-#: info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade:11
 msgid "Modify Wireless Networks"
 msgstr "Ändra trådlösa nätverk"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
-msgid " "
-msgstr " "
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Trådlösa nätverk:</span>"
 
-#: info-daemon/passphrase.glade.h:2
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade:9
+#, fuzzy
+msgid "Wireless Network Key Required"
+msgstr "Trådlöst nätverk"
 
-#: info-daemon/passphrase.glade.h:4
-#, no-c-format
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "_Logga in på nätverket"
+
+#: info-daemon/passphrase.glade:100
+#, fuzzy
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Lösenfras krävs av det trådlösa "
 "nätverket</span>\n"
@@ -46,35 +48,31 @@ msgstr ""
 "En lösenfras eller en WEP-nyckel krävs för att komma åt det trådlösa "
 "nätverket \"%s\"."
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade:129
+msgid "Key Type:"
+msgstr ""
+
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+
+#: info-daemon/passphrase.glade:180
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Lösenfras:"
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
-msgid "_Login to Network"
-msgstr "_Logga in på nätverket"
+#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
+msgid "*"
+msgstr "*"
 
-#: panel-applet/NMWirelessApplet.c:553
-msgid "There are no network devices..."
-msgstr "Det finns inga nätverksenheter..."
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:648
-msgid "There are no wireless networks..."
-msgstr "Det finns inga trådlösa nätverk..."
-
-#: panel-applet/NMWirelessApplet.c:720
-msgid "NetworkManager is not running..."
-msgstr "Nätverkshanteraren är inte igång..."
-
-#: panel-applet/NMWirelessApplet.c:730
-msgid "No network connection is currently active..."
-msgstr "Ingen nätverksanslutning är aktiv för tillfället..."
-
-#: panel-applet/NMWirelessApplet.c:735
-msgid "A wired network connection is currently active..."
-msgstr "En kabelburen nätverksanslutning är aktiv för tillfället..."
-
-#: panel-applet/NMWirelessApplet.c:939
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessApplet.c:609 panel-applet/NMWirelessApplet.c:619
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -82,49 +80,121 @@ msgstr ""
 "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
 "resurser (glade-filen hittades inte)."
 
-#: panel-applet/NMWirelessApplet.xml.h:1
-msgid "_About..."
-msgstr "_Om..."
+#: panel-applet/NMWirelessApplet.c:634
+#, fuzzy
+msgid "Custom wireless network"
+msgstr "Trådlöst nätverk"
 
-#: panel-applet/wireless-applet.glade.h:3
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen log in to the wireless network '%s'.  If you are sure this "
-"wireless network is secure, click the checkbox below and NetworkManager will "
-"no longer pester you with stupid questions when you connect to it."
+#: panel-applet/NMWirelessApplet.c:635
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst "
-"nätverk</span>\n"
-"\n"
-"Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker på "
-"att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
-"kommer nätverkshanteraren inte längre att besvära dig med dumma frågor när "
-"du ansluter till det."
 
-#: panel-applet/wireless-applet.glade.h:6
-msgid "Always Trust this Wireless Network"
-msgstr "Lita alltid på detta trådlösa nätverk"
+#: panel-applet/NMWirelessApplet.c:716
+#, fuzzy
+msgid "Other Wireless Networks..."
+msgstr "Trådlösa nätverk"
 
-#~ msgid "Wireless Networks:"
-#~ msgstr "Trådlösa nätverk:"
+#: panel-applet/NMWirelessApplet.c:827
+msgid "No network devices have been found"
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:944
+msgid "NetworkManager is not running..."
+msgstr "Nätverkshanteraren är inte igång..."
+
+#: panel-applet/essid.glade:52
+msgid "C_onnect"
+msgstr ""
+
+#: panel-applet/essid.glade:131
+#, fuzzy
+msgid "Wireless _Network:"
+msgstr "Trådlösa nätverk:"
+
+#: panel-applet/essid.glade:177
+#, fuzzy
+msgid "Wireless _Adaptor:"
+msgstr "Trådlösa nätverk:"
+
+#: panel-applet/menu-info.c:101
+#, fuzzy, c-format
+msgid "Wired Network (%s)"
+msgstr "Trådlösa nätverk"
+
+#: panel-applet/menu-info.c:103
+#, fuzzy
+msgid "Wired Network"
+msgstr "Trådlöst nätverk"
+
+#: panel-applet/menu-info.c:168
+#, fuzzy, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Trådlösa nätverk"
+msgstr[1] "Trådlösa nätverk"
+
+#: panel-applet/menu-info.c:170
+#, fuzzy
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Trådlöst nätverk"
+msgstr[1] "Trådlöst nätverk"
+
+#: panel-applet/menu-info.c:307
+msgid " (invalid Unicode)"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr ""
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid "There are no network devices..."
+#~ msgstr "Det finns inga nätverksenheter..."
+
+#~ msgid "There are no wireless networks..."
+#~ msgstr "Det finns inga trådlösa nätverk..."
+
+#~ msgid "No network connection is currently active..."
+#~ msgstr "Ingen nätverksanslutning är aktiv för tillfället..."
+
+#~ msgid "A wired network connection is currently active..."
+#~ msgstr "En kabelburen nätverksanslutning är aktiv för tillfället..."
+
+#~ msgid "_About..."
+#~ msgstr "_Om..."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
+#~ "this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will no longer pester you with stupid questions when you "
+#~ "connect to it."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst "
+#~ "nätverk</span>\n"
+#~ "\n"
+#~ "Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker "
+#~ "på att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
+#~ "kommer nätverkshanteraren inte längre att besvära dig med dumma frågor "
+#~ "när du ansluter till det."
+
+#~ msgid "Always Trust this Wireless Network"
+#~ msgstr "Lita alltid på detta trådlösa nätverk"
 
 #~ msgid "Modify Wireless Network"
 #~ msgstr "Ändra trådlöst nätverk"
 
-#~ msgid "Wireless Networks"
-#~ msgstr "Trådlösa nätverk"
-
-#~ msgid "Wireless Network"
-#~ msgstr "Trådlöst nätverk"
-
 #~ msgid "Wireless networks"
 #~ msgstr "Trådlösa nätverk"
-
-#~ msgid "Wireless network"
-#~ msgstr "Trådlöst nätverk"
 
 #~ msgid "Passphrase Required by Wireless Network"
 #~ msgstr "Lösenfras krävs av det trådlösa nätverket"

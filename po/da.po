@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-11 13:32+0200\n"
+"POT-Creation-Date: 2004-10-14 17:11-0400\n"
 "PO-Revision-Date: 2004-09-11 16:50+0200\n"
 "Last-Translator: Martin Willemoes Hansen <mwh@sysrq.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
@@ -16,25 +16,30 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Trådløse netværk:</span>"
-
-#: info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade:11
 msgid "Modify Wireless Networks"
 msgstr "Ændre trådløse netværk"
 
-#: info-daemon/passphrase.glade.h:1
-msgid "*"
-msgstr "*"
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Trådløse netværk:</span>"
 
-#: info-daemon/passphrase.glade.h:3
-#, no-c-format
+#: info-daemon/passphrase.glade:9
+msgid "Wireless Network Key Required"
+msgstr "Nøgle til trådløst netværk påkrævet"
+
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "_Log på netværk"
+
+#: info-daemon/passphrase.glade:100
+#, fuzzy
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Løsen påkrævet af trådløst netværk</"
 "span>\n"
@@ -42,39 +47,31 @@ msgstr ""
 "Et løsen eller en WEP nøgle er påkrævet for adgang til det trådløse netværk "
 "'%s'."
 
-#: info-daemon/passphrase.glade.h:6
+#: info-daemon/passphrase.glade:129
+msgid "Key Type:"
+msgstr ""
+
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+
+#: info-daemon/passphrase.glade:180
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Løsen:"
 
-#: info-daemon/passphrase.glade.h:7
-msgid "Wireless Network Key Required"
-msgstr "Nøgle til trådløst netværk påkrævet"
+#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
+msgid "*"
+msgstr "*"
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
-msgid "_Login to Network"
-msgstr "_Log på netværk"
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:606
-msgid "There are no wireless networks..."
-msgstr "Der er ingen trådløse netværk..."
-
-#: panel-applet/NMWirelessApplet.c:640
-msgid "There are no network devices..."
-msgstr "Der er ingen netværksenheder..."
-
-#: panel-applet/NMWirelessApplet.c:721
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager kører ikke..."
-
-#: panel-applet/NMWirelessApplet.c:725
-msgid "Network Connections"
-msgstr "Netværkforbindelsers"
-
-#: panel-applet/NMWirelessApplet.c:727
-msgid "Other Wireless Network..."
-msgstr "Andet trådløst netværk ..."
-
-#: panel-applet/NMWirelessApplet.c:859 panel-applet/NMWirelessApplet.c:919
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessApplet.c:609 panel-applet/NMWirelessApplet.c:619
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -82,34 +79,110 @@ msgstr ""
 "NetworkManager panelprogrammet kunne ikke finde nogle krævede resurser "
 "(glade filen blev ikke fundet)."
 
-#: panel-applet/NMWirelessApplet.xml.h:1
-msgid "_About..."
-msgstr "_Om..."
+#: panel-applet/NMWirelessApplet.c:634
+#, fuzzy
+msgid "Custom wireless network"
+msgstr "Ændre trådløse netværk"
 
-#: panel-applet/wireless-applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: panel-applet/wireless-applet.glade.h:3
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen log in to the wireless network '%s'.  If you are sure this "
-"wireless network is secure, click the checkbox below and NetworkManager will "
-"no longer pester you with stupid questions when you connect to it."
+#: panel-applet/NMWirelessApplet.c:635
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Trådløst netværk login bekræftigelse</"
-"span>\n"
-"\n"
-"Du har valgt at logge på det trådløse netværk '%s'.  Hvis du er sikker på at "
-"dette trådløse netværk er sikkert, afkryds nedenstående boks og "
-"NetworkManager vil i fremtiden ikke spørge når du tilslutter dig."
 
-#: panel-applet/wireless-applet.glade.h:6
-msgid "Always Trust this Wireless Network"
-msgstr "Stol altid på dette trådløse netværk"
+#: panel-applet/NMWirelessApplet.c:716
+#, fuzzy
+msgid "Other Wireless Networks..."
+msgstr "Andet trådløst netværk ..."
+
+#: panel-applet/NMWirelessApplet.c:827
+msgid "No network devices have been found"
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:944
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager kører ikke..."
+
+#: panel-applet/essid.glade:52
+msgid "C_onnect"
+msgstr ""
+
+#: panel-applet/essid.glade:131
+#, fuzzy
+msgid "Wireless _Network:"
+msgstr "Ændre trådløse netværk"
+
+#: panel-applet/essid.glade:177
+msgid "Wireless _Adaptor:"
+msgstr ""
+
+#: panel-applet/menu-info.c:101
+#, fuzzy, c-format
+msgid "Wired Network (%s)"
+msgstr "Ændre trådløse netværk"
+
+#: panel-applet/menu-info.c:103
+#, fuzzy
+msgid "Wired Network"
+msgstr "Ændre trådløse netværk"
+
+#: panel-applet/menu-info.c:168
+#, fuzzy, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Ændre trådløse netværk"
+msgstr[1] "Ændre trådløse netværk"
+
+#: panel-applet/menu-info.c:170
+#, fuzzy
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Ændre trådløse netværk"
+msgstr[1] "Ændre trådløse netværk"
+
+#: panel-applet/menu-info.c:307
+msgid " (invalid Unicode)"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr ""
+
+#~ msgid "There are no wireless networks..."
+#~ msgstr "Der er ingen trådløse netværk..."
+
+#~ msgid "There are no network devices..."
+#~ msgstr "Der er ingen netværksenheder..."
+
+#~ msgid "Network Connections"
+#~ msgstr "Netværkforbindelsers"
+
+#~ msgid "_About..."
+#~ msgstr "_Om..."
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
+#~ "this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will no longer pester you with stupid questions when you "
+#~ "connect to it."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Trådløst netværk login "
+#~ "bekræftigelse</span>\n"
+#~ "\n"
+#~ "Du har valgt at logge på det trådløse netværk '%s'.  Hvis du er sikker på "
+#~ "at dette trådløse netværk er sikkert, afkryds nedenstående boks og "
+#~ "NetworkManager vil i fremtiden ikke spørge når du tilslutter dig."
+
+#~ msgid "Always Trust this Wireless Network"
+#~ msgstr "Stol altid på dette trådløse netværk"
 
 #~ msgid "No network connection is currently active..."
 #~ msgstr "Ingen netværksforbindelse er aktiv..."
