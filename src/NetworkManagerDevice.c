@@ -1591,7 +1591,11 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
-	
+
+	if (!nm_device_is_up (dev))
+		nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC);
+
 get_ap:
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
@@ -1609,6 +1613,7 @@ get_ap:
 			goto out;
 	}
 
+	dev->options.wireless.now_scanning = FALSE;
 	if (!nm_ap_get_encrypted (best_ap))
 	{
 		nm_device_set_wireless_config (dev, best_ap, NM_DEVICE_AUTH_METHOD_NONE);
@@ -1722,9 +1727,11 @@ get_ap:
 	{
 		syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): Success!  Connected to access point '%s' and got an IP address.",
 				nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+		nm_ap_unref (best_ap);
 	}
 
 out:
+	dev->options.wireless.now_scanning = FALSE;
 	return (success);
 }
 
@@ -2362,8 +2369,11 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 									struct ether_addr *ap_addr, gboolean *encrypted)
 {
 	gboolean			 success = FALSE;
+	gboolean			 temp_enc = FALSE;
 	struct ether_addr	 addr;
 	NMAccessPoint		*ap = NULL;
+	NMDeviceAuthMethod	 auths[3] = { NM_DEVICE_AUTH_METHOD_SHARED_KEY, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM, NM_DEVICE_AUTH_METHOD_NONE };
+	int				 i;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
@@ -2377,59 +2387,62 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC);
 	nm_device_set_mode_managed (dev);
 
-	if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)) && !nm_ap_get_encrypted (ap))
 	{
-		char *hashed_key = NULL;
-		switch (key_type)
+		auths[0] = NM_DEVICE_AUTH_METHOD_NONE;
+		auths[1] = NM_DEVICE_AUTH_METHOD_SHARED_KEY;
+		auths[2] = NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM;
+	}
+
+	/* Loop through the auth modes */
+	for (i = 0; i < 3; i++)
+	{
+		switch (auths[i])
 		{
-			case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
-				hashed_key = nm_wireless_128bit_key_from_passphrase (key);
-				break;
-			case (NM_ENC_TYPE_ASCII_KEY):
-				if(strlen(key)<=5)
-					hashed_key = nm_wireless_64bit_ascii_to_hex (key);
+			case NM_DEVICE_AUTH_METHOD_SHARED_KEY:
+			case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
+			{
+				temp_enc = TRUE;
+				if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+				{
+					char *hashed_key = NULL;
+					switch (key_type)
+					{
+						case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
+							hashed_key = nm_wireless_128bit_key_from_passphrase (key);
+							break;
+						case (NM_ENC_TYPE_ASCII_KEY):
+							if (strlen (key) <= 5)
+								hashed_key = nm_wireless_64bit_ascii_to_hex (key);
+							else
+								hashed_key = nm_wireless_128bit_ascii_to_hex (key);
+							break;
+						case (NM_ENC_TYPE_HEX_KEY):
+						case (NM_ENC_TYPE_UNKNOWN):
+							hashed_key = g_strdup (key);
+							break;
+						default:
+							break;
+					}
+					nm_device_set_enc_key (dev, hashed_key, auths[i]);
+					g_free (hashed_key);
+				}
 				else
-					hashed_key = nm_wireless_128bit_ascii_to_hex (key);
+					nm_device_set_enc_key (dev, "11111111111111111111111111", auths[i]);
 				break;
-			case (NM_ENC_TYPE_HEX_KEY):
-			case (NM_ENC_TYPE_UNKNOWN):
-				hashed_key = g_strdup (key);
-				break;
+			}
+			case NM_DEVICE_AUTH_METHOD_NONE:
 			default:
+				temp_enc = FALSE;
+				nm_device_set_enc_key (dev, NULL, auths[i]);
 				break;
 		}
-		nm_device_set_enc_key (dev, hashed_key, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
-		g_free (hashed_key);
-	}
-	else
-		nm_device_set_enc_key (dev, "11111111111111111111111111", NM_DEVICE_AUTH_METHOD_SHARED_KEY);
-	nm_device_set_essid (dev, network);
-
-	/* Bring the device up and pause to allow card to associate */
-	g_usleep (G_USEC_PER_SEC * 2);
-
-	nm_device_update_link_active (dev, FALSE);
-	nm_device_get_ap_address (dev, &addr);
-	if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
-	{
-		nm_device_get_ap_address (dev, ap_addr);
-		success = TRUE;
-		*encrypted = TRUE;
-	}
-	else
-	{
-		/* Okay, try again in unencrypted mode */
-
-		/* Force the card into Managed/Infrastructure mode */
-		nm_device_set_mode_managed (dev);
-
-		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
-		nm_device_set_essid (dev, network);
 
 		/* Bring the device up and pause to allow card to associate */
-		nm_device_bring_up (dev);
+		nm_device_set_essid (dev, network);
 		g_usleep (G_USEC_PER_SEC * 2);
 
 		nm_device_update_link_active (dev, FALSE);
@@ -2438,14 +2451,14 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 		{
 			nm_device_get_ap_address (dev, ap_addr);
 			success = TRUE;
-			*encrypted = FALSE;
+			*encrypted = temp_enc;
 		}
 	}
 
 	/* If by some chance we could connect, but in the wrong encryption mode, return the
 	 * encryption status of the access point if its in our scan, since that's more accurate.
 	 */
-	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
+	if (ap)
 		*encrypted = nm_ap_get_encrypted (ap);
 
 	if (success)

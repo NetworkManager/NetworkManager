@@ -1,3 +1,10 @@
+2004-11-16  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activate_wireless): Unref best_ap upon success so we don't
+			leak the structure, better updating of now_scanning status
+		- (nm_device_wireless_network_exists): Rewrite for better/faster checking
+
 2004-11-15  Dan Williams <dcbw@redhat.com>
 
 	Major rework of link detection code.  We now use DHCP
