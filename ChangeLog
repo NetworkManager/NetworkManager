@@ -1,3 +1,13 @@
+2004-07-15  Dan Williams <dcbw@redhat.com>
+
+	* dispatcher-daemon/Makefile.am
+		- Turn on warnings
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Remove unused variables due to warnings
+		- Fix some comments
+		- Print message on receipt of NeedKeyForNetwork signal (testing only)
+
 2004-07-06  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c
