@@ -27,7 +27,7 @@ class NetworkManager:
     NM_SIGNALS = [ "DeviceNoLongerActive",
                    "DeviceNowActive",
                    "DeviceActivating",
-                   "DevicesChanging",
+                   "DevicesChanged",
                    "DeviceIP4AddressChange",
                    "WirelessNetworkDisappeared",
                    "WirelessNetworkAppeared"
@@ -88,7 +88,21 @@ class NetworkManager:
                 pass
         
             try:
-                d["nm.networks"] = nm_device_object.getNetworks(device)
+                d["nm.networks"] = {}
+                networks = nm_device_object.getNetworks(device)
+                for network in networks:
+                    nm_network_object  = self._nm_service.get_object(network,
+                                                                     NM_INTERFACE_DEVICES)
+                    n = {}
+                    n["name"]       = nm_network_object.getName()
+                    n["address"]    = nm_network_object.getAddress()
+                    n["quality"]    = nm_network_object.getQuality()
+                    n["frequency"]  = nm_network_object.getFrequency()
+                    n["rate"]       = nm_network_object.getRate()
+                    n["encrypted"]  = nm_network_object.getEncrypted()
+
+                    d["nm.networks"][network] = n
+
             except DBusException, e:
                 pass
 

@@ -1,5 +1,9 @@
 2004-08-30  Bryan Clark  <clarkbw@cvs.gnome.org>
 
+	* examples/python/NetworkManager.py (NetworkManager.get_device): 
+	changed "nm.networks" into a dict from a list so I can store all
+	the cool information about networks in there
+
 	* examples/python/systray/network_tray.py: 
 	Added nice message when you try to run without running make first
 
