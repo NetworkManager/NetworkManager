@@ -1,3 +1,10 @@
+2005-01-14  Colin Walters  <walters@redhat.com>
+
+	* configure.in: Make named support require passing --with-named.
+
+	* named/nm-named-manager.c: Support writing resolv.conf directly
+	without running named.
+
 2005-01-13  Dan Williams <dcbw@redhat.com>
 
 	* named/nm-named-manager.c
