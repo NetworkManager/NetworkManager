@@ -1,5 +1,11 @@
 2005-02-02  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Display name of wireless network we are connecting to or connected to
+			in the tooltip of the applet
+
+2005-02-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerDHCP.c
 		- Hopefully fix double-default-route problem by cleaning up the default
 			route added by DHCP code right before the DHCP transaction begins

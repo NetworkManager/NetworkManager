@@ -271,9 +271,11 @@ nmwa_update_state (NMWirelessApplet *applet)
 	GdkPixbuf *pixbuf = NULL;
 	gint strength = -1;
 	char *tip = NULL;
+	WirelessNetwork *active_network = NULL;
 
 	g_mutex_lock (applet->data_mutex);
-	if (applet->active_device)
+	if (    applet->active_device
+		&& (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
 	{
 		GSList *list;
 		for (list = applet->active_device->networks; list; list = list->next)
@@ -281,9 +283,13 @@ nmwa_update_state (NMWirelessApplet *applet)
 			WirelessNetwork *network = (WirelessNetwork *) list->data;
 
 			if (network->active)
+			{
 				strength = CLAMP ((int) network->strength, 0, 100);
+				active_network = network;
+			}
 		}
 
+		/* Fall back to old strength if current strength is invalid */
 		if (strength <= 0)
 			strength = applet->active_device->strength;
 	}
@@ -337,7 +343,8 @@ nmwa_update_state (NMWirelessApplet *applet)
 						pixbuf = applet->wireless_25_icon;
 					else
 						pixbuf = applet->wireless_00_icon;
-					tip = g_strdup_printf (_("Wireless network connection (%d%%)"), strength);
+					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
+							active_network ? active_network->essid : "(unknown)", strength);
 				}
 			}
 			else
@@ -346,7 +353,8 @@ nmwa_update_state (NMWirelessApplet *applet)
 
 		case (APPLET_STATE_WIRELESS_CONNECTING):
 			need_animation = TRUE;
-			tip = g_strdup (_("Connecting to a wireless network..."));
+			tip = g_strdup_printf (_("Connecting to wireless network '%s'..."),
+					active_network ? active_network->essid : "(unknown)");
 			break;
 
 		case (APPLET_STATE_NO_NM):
