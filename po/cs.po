@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-08-28 12:08+0200\n"
-"PO-Revision-Date: 2004-08-28 15:13+0200\n"
+"POT-Creation-Date: 2004-09-08 20:17+0200\n"
+"PO-Revision-Date: 2004-09-08 21:29+0200\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -24,15 +24,11 @@ msgstr "<span weight=\"bold\">Bezdrátové sítě:</span>"
 msgid "Modify Wireless Networks"
 msgstr "Upravit bezdrátové sítě"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: info-daemon/passphrase.glade.h:2
+#: info-daemon/passphrase.glade.h:1
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:4
+#: info-daemon/passphrase.glade.h:3
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -44,51 +40,61 @@ msgstr ""
 "\n"
 "Pro přístup k bezdrátové síti '%s' je vyžadováno heslo nebo klíč WEP."
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade.h:6
 msgid "Passphrase:"
 msgstr "Heslo:"
+
+#: info-daemon/passphrase.glade.h:7
+msgid "Wireless Network Key Required"
+msgstr "Je vyžadován klíč bezdrátové sítě"
 
 #: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: panel-applet/NMWirelessApplet.c:559
+#: panel-applet/NMWirelessApplet.c:535
 msgid "There are no network devices..."
 msgstr "Neexistuje žádné síťové zařízení..."
 
-#: panel-applet/NMWirelessApplet.c:659
+#: panel-applet/NMWirelessApplet.c:635
 msgid "There are no wireless networks..."
 msgstr "Neexistuje žádná bezdrátová síť..."
 
-#: panel-applet/NMWirelessApplet.c:662
+#: panel-applet/NMWirelessApplet.c:638
 msgid "Wireless Networks"
 msgstr "Bezdrátové sítě"
 
-#: panel-applet/NMWirelessApplet.c:733
+#: panel-applet/NMWirelessApplet.c:709
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
 
-#: panel-applet/NMWirelessApplet.c:737
+#: panel-applet/NMWirelessApplet.c:713
 msgid "Network Connections"
 msgstr "Připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:744
+#: panel-applet/NMWirelessApplet.c:720
 msgid "No network connection is currently active..."
 msgstr "Momentálně není aktivní žádné připojení k síti..."
 
-#: panel-applet/NMWirelessApplet.c:749
+#: panel-applet/NMWirelessApplet.c:725
 msgid "A wired network connection is currently active..."
 msgstr "Momentálně je aktivní připojení k síti kabelem..."
 
-#: panel-applet/NMWirelessApplet.c:894 panel-applet/NMWirelessApplet.c:956
+#: panel-applet/NMWirelessApplet.c:868 panel-applet/NMWirelessApplet.c:930
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr "Aplet NetworkManager nemohl najít některé vyžadované zdroje (soubor glade nebyl nalezen)."
+msgstr ""
+"Aplet NetworkManager nemohl najít některé vyžadované zdroje (soubor glade "
+"nebyl nalezen)."
 
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
 msgstr "O _aplikaci..."
+
+#: panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
 
 #: panel-applet/wireless-applet.glade.h:3
 #, no-c-format
@@ -100,9 +106,12 @@ msgid ""
 "wireless network is secure, click the checkbox below and NetworkManager will "
 "no longer pester you with stupid questions when you connect to it."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Potvrzení přihlášení k bezdrátové síti</span>\n"
+"<span weight=\"bold\" size=\"larger\">Potvrzení přihlášení k bezdrátové "
+"síti</span>\n"
 "\n"
-"Rozhodli jste se přihlásit k bezdrátové síti '%s'. Pokud jste si jisti, že je tato bezdrátová síť bezpečná, zaškrtněte pole níže a NetworkManager vás už nebude obtěžovat hloupými otázkami, když se k ní připojujete."
+"Rozhodli jste se přihlásit k bezdrátové síti '%s'. Pokud jste si jisti, že "
+"je tato bezdrátová síť bezpečná, zaškrtněte pole níže a NetworkManager vás "
+"už nebude obtěžovat hloupými otázkami, když se k ní připojujete."
 
 #: panel-applet/wireless-applet.glade.h:6
 msgid "Always Trust this Wireless Network"
