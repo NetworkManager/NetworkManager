@@ -77,6 +77,9 @@ void				nm_ap_set_matched		(NMAccessPoint *ap, gboolean matched);
 gboolean			nm_ap_get_trusted		(NMAccessPoint *ap);
 void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 
+gboolean			nm_ap_get_artificial	(NMAccessPoint *ap);
+void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
+
 const NMAPEncMethod	nm_ap_get_enc_method	(NMAccessPoint *ap);
 
 #endif

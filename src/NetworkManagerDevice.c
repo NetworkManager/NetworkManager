@@ -2020,17 +2020,20 @@ void nm_device_update_best_ap (NMDevice *dev)
  * WARNING: will blow away any connection the card currently has.
  *
  */
-gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, struct ether_addr *ap_addr)
+gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, struct ether_addr *ap_addr, gboolean *encrypted)
 {
+	gboolean			success = FALSE;
 	struct ether_addr	addr;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
 	g_return_val_if_fail (ap_addr != NULL, FALSE);
 	g_return_val_if_fail (strlen (network), FALSE);
+	g_return_val_if_fail (encrypted != NULL, FALSE);
 
 	fprintf (stderr, "nm_device_wireless_network_exists () looking for network '%s'...", network);
 
+	*encrypted = FALSE;
 	nm_device_bring_down (dev);
 
 	/* Force the card into Managed/Infrastructure mode */
@@ -2048,14 +2051,40 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
 	{
 		nm_device_get_ap_address (dev, ap_addr);
-		fprintf (stderr, "  found!\n");
-		return (TRUE);
+		success = TRUE;
+		*encrypted = FALSE;
 	}
 	else
 	{
-		fprintf (stderr, "  not found\n");
-		return (FALSE);
+		/* Okay, try again but set the card into encrypted mode this time */
+		nm_device_bring_down (dev);
+
+		/* Force the card into Managed/Infrastructure mode */
+		nm_device_set_mode_managed (dev);
+
+		nm_device_set_enc_key (dev, "11111111111111111111111111");
+		nm_device_set_essid (dev, network);
+
+		/* Bring the device up and pause to allow card to associate */
+		nm_device_bring_up (dev);
+		g_usleep (G_USEC_PER_SEC * 2);
+
+		nm_device_update_link_active (dev, FALSE);
+		nm_device_get_ap_address (dev, &addr);
+		if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
+		{
+			nm_device_get_ap_address (dev, ap_addr);
+			success = TRUE;
+			*encrypted = TRUE;
+		}
 	}
+
+	if (success)
+		fprintf (stderr, "  found!\n");
+	else
+		fprintf (stderr, "  not found\n");
+
+	return (success);
 }
 
 
@@ -2072,6 +2101,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 {
 	struct ether_addr	 ap_addr;
+	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
 	gboolean			 success = FALSE;
 
@@ -2085,23 +2115,32 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 	 * (it might have been a blank ESSID up to this point) and use it.
 	 */
 	nm_device_deactivate (dev, FALSE);
-	if (nm_device_wireless_network_exists (dev, essid, &ap_addr))
+	if (nm_device_wireless_network_exists (dev, essid, &ap_addr, &encrypted))
 	{
 		if (!(ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), essid)))
 		{
-			if ((ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
+			NMAccessPoint *tmp_ap;
+
+			ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr);
+			if (!ap)
 			{
-				NMAccessPoint *tmp_ap;
+				/* Okay, the card didn't see it in the scan, Cisco cards sometimes do this.
+				 * So we make a "fake" access point and add it to the scan list.
+				 */
+				ap = nm_ap_new ();
+				nm_ap_set_encrypted (ap, encrypted);
+				nm_ap_set_artificial (ap, TRUE);
+				nm_ap_set_address (ap, &ap_addr);
+				nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
+			}
 
-				nm_ap_set_essid (ap, essid);
-
-				/* Now that this AP has an essid, copy over encryption keys and whatnot */
-				if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
-				{
-					nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
-					nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
-					nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
-				}
+			/* Now that this AP has an essid, copy over encryption keys and whatnot */
+			nm_ap_set_essid (ap, essid);
+			if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
+			{
+				nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
+				nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
+				nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
 			}
 		}
 	}
@@ -2152,6 +2191,8 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		NMAccessPointList	*old_ap_list = NULL;
 		NMAccessPointList	*temp_list;
 		gboolean			 have_blank_essids = FALSE;
+		NMAPListIter		*iter;
+		NMAccessPoint		*artificial_ap;
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -2242,6 +2283,29 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		 */
 		if (have_blank_essids)
 			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
+
+		/* Furthermore, if we have an "artificial" access points, ie ones that exist but don't show up in
+		 * the scan for some reason, copy those over if we are associated with that access point right now.
+		 * Some Cisco cards don't report non-ESSID-broadcasting access points in their scans even though
+		 * the card associates with that AP just fine.
+		 */
+		if ((iter = nm_ap_list_iter_new (old_ap_list)))
+		{
+			char *essid = nm_device_get_essid (dev);
+
+			while (essid && (artificial_ap = nm_ap_list_iter_next (iter)))
+			{
+				/* Copy over the artificial AP from the old list to the new one if
+				 * its the AP the card is currently associated with.
+				 */
+				if (	    nm_ap_get_essid (artificial_ap)
+					&& !strcmp (essid, nm_ap_get_essid (artificial_ap))
+					&&  nm_ap_get_artificial (artificial_ap))
+					nm_ap_list_append_ap (nm_device_ap_list_get (dev), artificial_ap);
+			}
+			nm_ap_list_iter_free (iter);
+		}
+
 		nm_ap_list_unref (old_ap_list);
 
 		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */

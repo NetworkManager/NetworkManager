@@ -1,5 +1,26 @@
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.[ch]
+		- Add "artificial" get/set functions, set for APs that
+			aren't discovered as part of a scan but instead
+			discovered by force-setting the ESSID
+
+	* src/NetworkManagerDevice.[ch]
+		- (nm_device_wireless_network_exists): pass back whether
+			or not the discovered AP was encrypted.  Also, try
+			falling back to encrypted mode on the card if unencrypted
+			association doesn't work
+		- (nm_device_find_and_use_essid): If the network requested
+			did in fact exists, but it wasn't in our scan list, add
+			an "artificial" entry for it.  Some Cisco cards don't
+			see non-ESSID-broadcasting APs in their scan but can still
+			associate with them if you know the ESSID, this works around
+			that behavior
+		- (nm_device_do_normal_scan): Carry "artificial" APs over from scan
+			to scan if the card is currently associated with that AP
+
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
 	---- We have a website ----
 	http://people.redhat.com/dcbw/NetworkManager
 

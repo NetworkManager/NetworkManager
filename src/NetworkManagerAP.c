@@ -37,8 +37,9 @@ struct NMAccessPoint
 	guint16			 rate;
 	gboolean			 encrypted;
 	gboolean			 invalid;
-	gboolean			 matched;	// used in ap list diffing
+	gboolean			 matched;	/* used in ap list diffing */
 	gboolean			 trusted;
+	gboolean			 artificial; /* Whether or not the AP is from a scan */
 
 	/* Things from user prefs */
 	char				*enc_key;
@@ -402,6 +403,27 @@ void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
 	g_return_if_fail (ap != NULL);
 
 	ap->trusted = trusted;
+}
+
+
+/*
+ * Get/Set functions to indicate that an access point is
+ * 'artificial', ie whether or not it was actually scanned
+ * by the card or not
+ *
+ */
+gboolean nm_ap_get_artificial (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (ap->artificial);
+}
+
+void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->artificial = artificial;
 }
 
 
