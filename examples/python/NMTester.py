@@ -30,7 +30,7 @@ class NMTester(NetworkManager):
 
     def nm_signal_handler(self, interface, signal_name,
                           service, path, message):
-        self._print_device_list()
+        self.print_device_list()
 
     def nmi_signal_handler(self, interface, signal_name,
                           service, path, message):

@@ -1,3 +1,12 @@
+2004-08-30  Bryan Clark  <clarkbw@cvs.gnome.org>
+
+	* examples/python/NetworkManager.py: 
+	Bug fixes to the code so we get all the device information
+	that we need in get_device()
+	
+	* examples/python/NMTester.py: 
+	Fixed _print_device_list to print_device_list
+
 2004-08-29  Seth Nickell  <seth@gnome.org>
 
 	* configure.in:

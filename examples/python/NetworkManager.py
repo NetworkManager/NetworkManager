@@ -102,14 +102,14 @@ class NetworkManager:
 
             if device in self.__devices:
                 for k,v in d.iteritems():
-                    self.__devices[device][k] = [v]                
-                return d
+                    self.__devices[device][k] = v
+                return self.__devices[device]
             else:
                 hal = self._get_hal_info(d["nm.udi"])
                 for k,v in hal.iteritems():
                     d[k] = v
                 self.__devices[device] = d
-                return d
+                return self.__devices[device]
         except:
             return None
         
