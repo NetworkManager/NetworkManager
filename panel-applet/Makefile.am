@@ -33,9 +33,9 @@ NMWirelessApplet_LDADD =		\
 
 serverdir          = $(libdir)/bonobo/servers
 server_in_files    = NMWirelessApplet.server.in
-server_DATA        = $(server_in_files:.server.in=.server)
+server_DATA        = NMWirelessApplet.server
 
-$(server_in_files:.server.in=.server): $(srcdir)/$(server_in_files)
+$(server_DATA): $(srcdir)/$(server_in_files)
 	sed -e "s|\@LIBEXECDIR\@|$(libexecdir)|" $< > $@
 
 uidir = $(datadir)/gnome-2.0/ui
@@ -56,10 +56,10 @@ pixmap_DATA = no-link-0.png	\
 	keyring.png		\
 	$(NULL)
 
-CLEANFILES = $(server_in_files) $(server_DATA) *.bak *.gladep
+CLEANFILES = $(server_DATA) *.bak *.gladep
 
 EXTRA_DIST = 				\
-	$(server_DATA)			\
+	$(server_in_files)		\
 	$(pixmap_DATA)			\
 	$(ui_DATA)			\
 	$(NULL)

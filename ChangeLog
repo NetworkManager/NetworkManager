@@ -1,5 +1,10 @@
 2004-08-13  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/Makefile.am
+		- Fix up cleanfiles and server_DATA/server_in_files
+
+2004-08-13  Dan Williams <dcbw@redhat.com>
+
 	* configure.in
 	  panel-applet/Makefile.am
 		- Fixes to allow distcheck to pass
