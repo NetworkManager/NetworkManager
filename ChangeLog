@@ -1,3 +1,11 @@
+2004-08-09  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDbus.c:
+		- (nm_dbus_nm_get_active_device, nm_dbus_nm_get_devices): Never return an empty object path,
+			instead return an error message
+		- (nm_dbus_devices_handle_request): Return error when getActiveNetwork/getNetworks is called
+			on a wired device.  Also never return an empty object path, instead return an error message
+
 2004-08-06  Seth Nickell  <seth@gnome.org>
 
 	* panel-applet/NMWirelessApplet.c: (nmwa_new):

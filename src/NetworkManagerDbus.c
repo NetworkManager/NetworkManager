@@ -178,22 +178,23 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 	else if (data->pending_device)
 		dev = data->pending_device;
 
-	reply_message = dbus_message_new_method_return (message);
-	if (!reply_message)
-		return (NULL);
-
 	/* Construct object path of "active" device and return it */
 	if (dev)
 	{
-		char *object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-fprintf( stderr, "nm_dbus_nm_get_active_device() appending device '%s'\n", object_path);
+		char *object_path;
+
+		reply_message = dbus_message_new_method_return (message);
+		if (!reply_message)
+			return (NULL);
+
+		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 		g_free (object_path);
 	}
 	else
 	{
-fprintf( stderr, "nm_dbus_nm_get_active_device() appending device none\n");
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoActiveDevice",
+						"There is no currently active device.");
 	}
 
 	return (reply_message);
@@ -217,19 +218,16 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	reply_message = dbus_message_new_method_return (message);
-	if (!reply_message)
+	/* Check for no devices */
+	if (!data->dev_list)
+		return (nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoDevices",
+					"There are no available network devices."));
+
+	if (!(reply_message = dbus_message_new_method_return (message)))
 		return (NULL);
 
 	dbus_message_iter_init (reply_message, &iter);
 	dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
-
-	/* Check for no devices */
-	if (!data->dev_list)
-	{
-		dbus_message_iter_append_string (&iter_array, "");
-		return (reply_message);
-	}
 
 	/* Iterate over device list and grab index of "active device" */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
@@ -252,11 +250,10 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 		}
 
 		/* If by some chance there is a device list, but it has no devices in it
-		 * (something which should never happen), append an empty string like
-		 * there are no devices in the list.
+		 * (something which should never happen), die.
 		 */
 		if (!appended)
-			dbus_message_iter_append_string (&iter_array, "");
+			g_assert ("Device list existed, but no devices were in it.");
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
@@ -1057,6 +1054,15 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		NMAccessPoint	*ap;
 		gboolean		 success = FALSE;
 
+		/* Only wireless devices have an active network */
+		if (!nm_device_is_wireless (dev))
+		{
+			dbus_message_unref (reply_message);
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
+					"Wired devices cannot have active networks.");
+			return (reply_message);
+		}
+
 		if ((ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev))))
 		{
 			if ((object_path = nm_device_get_path_for_ap (dev, ap)))
@@ -1068,7 +1074,11 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		}
 
 		if (!success)
-			dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+		{
+			dbus_message_unref (reply_message);
+			return (nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoActiveNetwork",
+					"The device is not associated with any networks at this time."));
+		}
 	}
 	else if (strcmp ("getNetworks", request) == 0)
 	{
@@ -1079,6 +1089,15 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		NMAccessPointList	*ap_list;
 		NMAPListIter		*list_iter;
 	
+		/* Only wireless devices have networks */
+		if (!nm_device_is_wireless (dev))
+		{
+			dbus_message_unref (reply_message);
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
+					"Wired devices cannot see wireless networks.");
+			return (reply_message);
+		}
+
 		dbus_message_iter_init (reply_message, &iter);
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
 		
@@ -1099,7 +1118,11 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		}
 
 		if (!success)
-			dbus_message_iter_append_string (&iter_array, "");
+		{
+			dbus_message_unref (reply_message);
+			return (nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoActiveNetwork",
+					"The device is not associated with any networks at this time."));
+		}
 	}
 	else
 	{
