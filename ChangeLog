@@ -1,3 +1,8 @@
+Wed Oct 13 John (J5) Palmieri <johnp@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c (nmi_spawn_notification_icon): Stop respawning
+	if the notification icon crashes 5 times within 5 seconds of each respawn 
+
 Tue Oct 12 22:53:04 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c (nmwa_update_state): remove

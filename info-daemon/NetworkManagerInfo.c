@@ -109,19 +109,45 @@ nmi_spawn_notification_icon (NMIAppInfo *info)
 	if (info->notification_icon_watch != NULL)
 		g_source_remove (info->notification_icon_watch);
 
-	/*spawn the panel notification icon*/
-	if (!g_spawn_async (NULL,
-			    notification_icon_cmd,
-			    NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL,
-			    &(info->notification_icon_pid),
-			    &error))
-	{
-		g_warning ("Could not spawn NetworkManager's notification icon (%s)", error->message);
-		g_error_free (error);
-	}
+	if (info->notification_icon_respawn_timer == NULL)
+		info->notification_icon_respawn_timer = g_timer_new();
 	else
-		info->notification_icon_watch = g_child_watch_add (info->notification_icon_pid, on_icon_exit_callback, info);
+	{
+		gdouble elapsed_time;
+		gulong dummy;
 
+		elapsed_time = g_timer_elapsed (info->notification_icon_respawn_timer, &dummy);
+		
+		/*5 seconds between respawns*/
+		if (elapsed_time > 5)
+			info->notification_icon_respawn_counter = 0;
+		else
+			info->notification_icon_respawn_counter++;
+			
+	}
+
+	g_timer_start (info->notification_icon_respawn_timer);
+
+	/*spawn the panel notification icon unless it has crashed numerous times within a time frame*/
+	if (info->notification_icon_respawn_counter < 5) 
+	{
+		if (!g_spawn_async (NULL,
+				    notification_icon_cmd,
+				    NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL,
+				    &(info->notification_icon_pid),
+				    &error))
+		{
+			g_warning ("Could not spawn NetworkManager's notification icon (%s)", error->message);
+			g_error_free (error);
+		}
+		else
+		{
+			info->notification_icon_watch = g_child_watch_add (info->notification_icon_pid, on_icon_exit_callback, info);
+		}
+	} else {
+		g_timer_destroy (info->notification_icon_respawn_timer);
+		info->notification_icon_respawn_timer = NULL;
+	}
 }
 
 #endif
