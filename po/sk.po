@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004.
 #
-# $Id: sk.po,v 1.9 2004/12/05 08:31:02 marcel Exp $
+# $Id: sk.po,v 1.10 2004/12/18 07:54:27 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-05 09:28+0100\n"
-"PO-Revision-Date: 2004-12-05 09:29+0100\n"
+"POT-Creation-Date: 2004-12-18 08:50+0100\n"
+"PO-Revision-Date: 2004-12-18 08:53+0100\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -88,62 +88,81 @@ msgstr "Kľúč v šestnástkovej sústave:"
 msgid "You must log in to access the private network %s"
 msgstr "Musíte sa prihlásiť, aby ste mohli pristupovať k privátnej sieti %s"
 
-#: panel-applet/NMWirelessApplet.c:290
+#: panel-applet/NMWirelessApplet.c:293
 msgid "No network connection"
 msgstr "Bez sieťového spojenia"
 
-#: panel-applet/NMWirelessApplet.c:294
+#: panel-applet/NMWirelessApplet.c:297
 msgid "Wired network connection"
 msgstr "Pripojenie k drôtovej sieti"
 
-#: panel-applet/NMWirelessApplet.c:300
+#: panel-applet/NMWirelessApplet.c:303
 msgid "Connecting to a wired network..."
 msgstr "Pripájanie k drôtovej sieti..."
 
-#: panel-applet/NMWirelessApplet.c:315
+#: panel-applet/NMWirelessApplet.c:311
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Pripájané k bezdrôtovej sieti Ad-Hoc"
+
+#: panel-applet/NMWirelessApplet.c:325
 #, c-format
 msgid "Wireless network connection (%d%%)"
 msgstr "Pripojenie k bezdrôtovej sieti (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:318
+#: panel-applet/NMWirelessApplet.c:329
 msgid "Wireless network connection"
 msgstr "Pripojenie k bezdrôtovej sieti"
 
-#: panel-applet/NMWirelessApplet.c:324
+#: panel-applet/NMWirelessApplet.c:335
 msgid "Connecting to a wireless network..."
 msgstr "Pripájanie k bezdrôtovej sieti..."
 
-#: panel-applet/NMWirelessApplet.c:327
+#: panel-applet/NMWirelessApplet.c:339
 msgid "NetworkManager is not running"
 msgstr "NetworkManager nebeží"
 
-#: panel-applet/NMWirelessApplet.c:333
+#: panel-applet/NMWirelessApplet.c:345
 msgid "Scanning for wireless networks..."
 msgstr "Vyhľadávanie bezdrôtových sietí..."
 
-#: panel-applet/NMWirelessApplet.c:657
+#: panel-applet/NMWirelessApplet.c:667
 msgid "Other Wireless Networks..."
 msgstr "Ostatné bezdrôtové siete..."
 
-#: panel-applet/NMWirelessApplet.c:768
+#: panel-applet/NMWirelessApplet.c:688
+msgid "Create new Wireless Network..."
+msgstr "Vytvoriť novú bezdrôtovú sieť..."
+
+#: panel-applet/NMWirelessApplet.c:798
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: panel-applet/NMWirelessApplet.c:885
+#: panel-applet/NMWirelessApplet.c:916
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:226
+msgid "Create new wireless network"
+msgstr "Vytvoriť novú bezdrôtovú sieť"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:227
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Zadajte ESSID a bezpečnostné nastavenia bezdrôtovej siete, ktorú chcete vytvoriť."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
 msgid "Custom wireless network"
 msgstr "Vlastná bezdrôtová sieť"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Zadajte ESSID bezdrôtovej siete, ku ktorej sa chcete pripojiť."
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:323
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
