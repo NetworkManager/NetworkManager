@@ -1,3 +1,15 @@
+2004-10-06 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.[ch]
+	  src/NetworkManagerDbus.c
+	  doc/NetworkManager DBUS API.txt
+		- Add a new status tag "scanning", which is set when there
+			is no active network connection, but NetworkManager is
+			looking for an access point to associate with
+
+	* panel-applet/main.c
+		- Cast the applet appropriately for gtk_widget_show_all ()
+
 Mon Oct  4 12:55:41 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/eggtrayicon.[ch]:

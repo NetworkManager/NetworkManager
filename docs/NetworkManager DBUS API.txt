@@ -47,6 +47,8 @@ Methods:
 													DHCP request to complete, waiting for an encryption
 													key/passphrase, waiting for a wireless network, etc)
 									"connected"	- there is an active network connection
+									"scanning"	- there is no active network connection, but NetworkManager
+													is looking for an access point to associate with
 									"disconnected"	- there is no network connection
 
 Signals:

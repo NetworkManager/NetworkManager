@@ -14,7 +14,7 @@ main (int argc, char *argv[])
 
 	nmwa = nmwa_new ();
 
-	gtk_widget_show_all (nmwa);
+	gtk_widget_show_all (GTK_WIDGET (nmwa));
 
 	gtk_main ();
 }

@@ -62,6 +62,7 @@ typedef struct NMDeviceWirelessOptions
 	gboolean			 freeze_best_ap;
 
 	gboolean			 user_key_received;
+	gboolean			 now_scanning;
 } NMDeviceWirelessOptions;
 
 /* Wired device specific options */
@@ -103,9 +104,9 @@ struct NMDevice
 	NMDeviceOptions	 options;
 	NMDeviceConfigInfo	 config_info;
 
-	gboolean			 activating;
-	gboolean			 just_activated;
-	gboolean			 quit_activation;
+	gboolean			 activating;		/* Set by main thread before beginning activation */
+	gboolean			 just_activated;	/* Set by activation thread after successful activation */
+	gboolean			 quit_activation;	/* Flag to signal activation thread to stop activating */
 
 	gboolean			 test_device;
 	gboolean			 test_device_up;
@@ -495,7 +496,8 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 	if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
 	{
 		if (    nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data)))
-			&& (nm_device_get_best_ap (dev) && !nm_device_need_ap_switch (dev)))
+			&& nm_device_get_best_ap (dev)
+			&& !nm_device_need_ap_switch (dev))
 			link = TRUE;
 	}
 	close (iwlib_socket);
@@ -615,21 +617,6 @@ char * nm_device_get_essid (NMDevice *dev)
 		}
 		else
 			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
-
-#if 0
-		wreq.u.essid.pointer = (caddr_t) essid;
-		wreq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
-		wreq.u.essid.flags = 0;
-		err = iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWESSID, &wreq);
-		if (err >= 0)
-		{
-			if (dev->options.wireless.cur_essid)
-				g_free (dev->options.wireless.cur_essid);
-			dev->options.wireless.cur_essid = g_strdup (essid);
-		}
-		else
-			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
-#endif
 
 		close (iwlib_socket);
 	}
@@ -1134,7 +1121,10 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	dev->just_activated = FALSE;
 	dev->quit_activation = FALSE;
 	if (nm_device_is_wireless (dev))
+	{
+		dev->options.wireless.now_scanning = FALSE;
 		dev->options.wireless.user_key_received = FALSE;
+	}
 
 	if (!g_thread_create (nm_device_activation_worker, dev, FALSE, &error))
 	{
@@ -1210,10 +1200,9 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 
 		syslog (LOG_INFO, "nm_device_wireless_activate(%s) using essid '%s'", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
-		/* Bring the device up */
-		if (!nm_device_is_up (dev));
-			nm_device_bring_up (dev);
-		g_usleep (G_USEC_PER_SEC / 2);	/* Pause to allow card to associate */
+		/* Bring the device up and pause to allow card to associate*/
+		nm_device_bring_up (dev);
+		g_usleep (G_USEC_PER_SEC * 2);
 
 		nm_device_update_link_active (dev, FALSE);
 		success = TRUE;
@@ -1288,10 +1277,12 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	{
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
+			dev->options.wireless.now_scanning = FALSE;
+
 			fprintf( stderr, "is_enc (%d) && (!enc_source (%d) || !enc_method_good (%d)) && \n", 
-				best_ap ? nm_ap_get_encrypted (best_ap) : FALSE,
+				nm_ap_get_encrypted (best_ap),
 				!!nm_ap_get_enc_key_source (best_ap),
-				best_ap ? nm_ap_get_enc_method_good (best_ap) : FALSE);
+				nm_ap_get_enc_method_good (best_ap));
 
 			/* Since we don't have a link yet, something is bad with the
 			 * encryption key, try falling back to a different method of
@@ -1352,6 +1343,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 		}
 		else
 		{
+			dev->options.wireless.now_scanning = TRUE;
 			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): waiting for an access point.", nm_device_get_iface (dev));
 			g_usleep (G_USEC_PER_SEC * 2);
 		}
@@ -1360,6 +1352,9 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 		if (nm_device_activation_should_cancel (dev))
 			break;
 	}
+
+
+	dev->options.wireless.now_scanning = FALSE;
 }
 
 
@@ -1578,6 +1573,23 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	}
 
 	return (TRUE);
+}
+
+
+/*
+ * nm_device_now_scanning
+ *
+ * Returns whether the device is scanning, awaiting an access point to connect to.
+ * Note that this does NOT get set when the device is actually scanning, just
+ * when it is waiting for a valid access point to connect to.
+ *
+ */
+gboolean nm_device_now_scanning (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+
+	return (dev->options.wireless.now_scanning);
 }
 
 
