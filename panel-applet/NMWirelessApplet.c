@@ -58,6 +58,7 @@
 #include "menu-info.h"
 
 #define CFG_UPDATE_INTERVAL 1
+#define NMWA_GCONF_PATH		"/apps/NetworkManagerNotification"
 
 /* Compat for GTK 2.4 and lower... */
 #if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
@@ -173,6 +174,247 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 					   "logo-icon-name", GTK_STOCK_NETWORK,
 					   NULL);
 #endif
+}
+
+/*
+ * nmwa_driver_notify_get_ignored_list
+ *
+ * Return list of devices for which we are supposed to ignore driver
+ * notifications for from GConf.
+ *
+ */
+GSList *nmwa_driver_notify_get_ignored_list (NMWirelessApplet *applet)
+{
+	char			*key;
+	GConfValue	*value;
+	GSList		*mac_list = NULL;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (applet->gconf_client != NULL, NULL);
+
+	/* Get current list of access point MAC addresses for this AP from GConf */
+	key = g_strdup_printf ("%s/non_notify_cards", NMWA_GCONF_PATH);
+	value = gconf_client_get (applet->gconf_client, key, NULL);
+
+	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+		mac_list = gconf_client_get_list (applet->gconf_client, key, GCONF_VALUE_STRING, NULL);
+
+	if (value)
+		gconf_value_free (value);
+	g_free (key);
+
+	return (mac_list);
+}
+
+
+/*
+ * nmwa_driver_notify_is_device_ignored
+ *
+ * Look in GConf and determine whether or not we are supposed to
+ * ignore driver notifications for a particular device.
+ *
+ */
+gboolean nmwa_driver_notify_is_device_ignored (NMWirelessApplet *applet, NetworkDevice *dev)
+{
+	gboolean		 found = FALSE;
+	GSList		*mac_list = NULL;
+	GSList		*elt;
+
+	g_return_val_if_fail (applet != NULL, TRUE);
+	g_return_val_if_fail (applet->gconf_client != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (dev->addr != NULL, TRUE);
+	g_return_val_if_fail (strlen (dev->addr) > 0, TRUE);
+
+	mac_list = nmwa_driver_notify_get_ignored_list (applet);
+
+	/* Ensure that the MAC isn't already in the list */
+	for (elt = mac_list; elt; elt = g_slist_next (elt))
+	{
+		if (elt->data && !strcmp (dev->addr, elt->data))
+		{
+			found = TRUE;
+			break;
+		}
+	}
+
+	/* Free the list, since gconf_client_set_list deep-copies it */
+	g_slist_foreach (mac_list, (GFunc)g_free, NULL);
+	g_slist_free (mac_list);
+
+	return found;
+}
+
+
+/*
+ * nmwa_driver_notify_ignore_device
+ *
+ * Add a device's MAC address to the list of ones that we ignore
+ * in GConf.  Stores user's pref for "Don't remind me".
+ *
+ */
+void nmwa_driver_notify_ignore_device (NMWirelessApplet *applet, NetworkDevice *dev)
+{
+	gboolean		 found = FALSE;
+	GSList		*new_mac_list = NULL;
+	GSList		*elt;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->gconf_client != NULL);
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->addr != NULL);
+	g_return_if_fail (strlen (dev->addr) > 0);
+
+	new_mac_list = nmwa_driver_notify_get_ignored_list (applet);
+
+	/* Ensure that the MAC isn't already in the list */
+	for (elt = new_mac_list; elt; elt = g_slist_next (elt))
+	{
+		if (elt->data && !strcmp (dev->addr, elt->data))
+		{
+			found = TRUE;
+			break;
+		}
+	}
+
+	/* Add the new MAC address to the end of the list */
+	if (!found)
+	{
+		char *key = g_strdup_printf ("%s/non_notify_cards", NMWA_GCONF_PATH);
+
+		new_mac_list = g_slist_append (new_mac_list, g_strdup (dev->addr));
+		gconf_client_set_list (applet->gconf_client, key, GCONF_VALUE_STRING, new_mac_list, NULL);
+		g_free (key);
+	}
+
+	/* Free the list, since gconf_client_set_list deep-copies it */
+	g_slist_foreach (new_mac_list, (GFunc)g_free, NULL);
+	g_slist_free (new_mac_list);
+}
+
+gboolean nmwa_driver_notify_dialog_delete_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+	gtk_widget_destroy (widget);
+	return FALSE;
+}
+
+gboolean nmwa_driver_notify_dialog_destroy_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+	DriverNotifyCBData	*cb_data = (DriverNotifyCBData *)(user_data);
+	NetworkDevice		*dev;
+
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->xml != NULL, FALSE);
+
+	dev = cb_data->dev;
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	network_device_unref (dev);
+
+	g_object_unref (cb_data->xml);
+	g_free (cb_data);
+
+	return FALSE;
+}
+
+
+gboolean nmwa_driver_notify_ok_cb (GtkButton *button, gpointer user_data)
+{
+	DriverNotifyCBData	*cb_data = (DriverNotifyCBData *)(user_data);
+	NetworkDevice		*dev;
+	NMWirelessApplet	*applet;
+	GtkWidget			*dialog;
+	GtkWidget			*checkbox;
+
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->xml != NULL, FALSE);
+
+	dev = cb_data->dev;
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	applet = cb_data->applet;
+	g_return_val_if_fail (applet != NULL, FALSE);
+
+	checkbox = glade_xml_get_widget (cb_data->xml, "dont_remind_checkbox");
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (checkbox)))
+		nmwa_driver_notify_ignore_device (applet, dev);
+
+	dialog = glade_xml_get_widget (cb_data->xml, "driver_sucks_dialog");
+	gtk_widget_destroy (dialog);
+
+	return FALSE;
+}
+
+
+/*
+ * nmwa_driver_notify
+ *
+ * Notify the user if there's some problem with the driver
+ * of a specific network device.
+ *
+ */
+gboolean nmwa_driver_notify (gpointer user_data)
+{
+	DriverNotifyCBData	*cb_data = (DriverNotifyCBData *)(user_data);
+	NetworkDevice		*dev;
+	NMWirelessApplet	*applet;
+	GtkDialog			*dialog;
+	GtkLabel			*label;
+	char				*label_text = NULL;
+	GtkButton			*button;
+
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+
+	dev = cb_data->dev;
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	applet = cb_data->applet;
+	g_return_val_if_fail (applet != NULL, FALSE);
+	g_return_val_if_fail (applet->glade_file != NULL, FALSE);
+
+	/* If the user has already requested that we ignore notifications for
+	 * this device, don't do anything.
+	 */
+	if (nmwa_driver_notify_is_device_ignored (applet, dev))
+		return FALSE;
+
+	cb_data->xml = glade_xml_new (applet->glade_file, "driver_sucks_dialog", NULL);
+	if (cb_data->xml == NULL)
+	{
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		return FALSE;
+	}
+
+	dialog = GTK_DIALOG (glade_xml_get_widget (cb_data->xml, "driver_sucks_dialog"));
+	g_signal_connect (G_OBJECT (dialog), "destroy-event", GTK_SIGNAL_FUNC (nmwa_driver_notify_dialog_destroy_cb), cb_data);
+	g_signal_connect (G_OBJECT (dialog), "delete-event", GTK_SIGNAL_FUNC (nmwa_driver_notify_dialog_delete_cb), cb_data);
+
+	label = GTK_LABEL (glade_xml_get_widget (cb_data->xml, "driver_sucks_label"));
+	if (dev->driver_support_level == NM_DRIVER_NO_WIRELESS_SCAN)
+	{
+		char	*temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support wireless scanning."),
+						dev->hal_name, dev->nm_name);
+
+		label_text = g_strdup_printf (gtk_label_get_label (label), temp);
+		g_free (temp);
+	}
+	if (dev->driver_support_level == NM_DRIVER_NO_CARRIER_DETECT)
+	{
+		char	*temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support link detection."),
+						dev->hal_name, dev->nm_name);
+
+		label_text = g_strdup_printf (gtk_label_get_label (label), temp);
+		g_free (temp);
+	}
+	if (label_text)
+		gtk_label_set_markup (label, label_text);
+
+	button = GTK_BUTTON (glade_xml_get_widget (cb_data->xml, "ok_button"));
+	g_signal_connect (G_OBJECT (button), "clicked", GTK_SIGNAL_FUNC (nmwa_driver_notify_ok_cb), cb_data);
+
+	gtk_widget_show_all (GTK_WIDGET (dialog));
+
+	return (FALSE);
 }
 
 
@@ -1274,6 +1516,14 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 
 	applet->context_menu = nmwa_context_menu_create (applet);
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
+
+	applet->glade_file = g_build_filename (GLADEDIR, "wireless-applet.glade", NULL);
+	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
+	{
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		g_free (applet->glade_file);
+		applet->glade_file = NULL;
+	}
 }
 
 
@@ -1307,6 +1557,8 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 
 	nmwa_free_gui_data_model (applet);
 	nmwa_free_dbus_data_model (applet);
+
+	g_free (applet->glade_file);
 }
 
 

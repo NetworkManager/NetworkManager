@@ -215,6 +215,9 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	/* Set up the dialog */
 	dialog = GTK_DIALOG (glade_xml_get_widget (xml, "custom_essid_dialog"));
+	if (!dialog)
+		return NULL;
+
 	essid_entry = glade_xml_get_widget (xml, "essid_entry");
 	button = glade_xml_get_widget (xml, "ok_button");
 
@@ -302,26 +305,17 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
 {
 	gchar		*glade_file;
-	GtkDialog	*dialog;
-	GladeXML	*xml;
-	gint		 response;
+	GtkDialog		*dialog;
+	gint			 response;
 	NetworkDevice	*def_dev = NULL;
+	GladeXML		*xml;
 
 	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->glade_file != NULL);
 
-	glade_file = g_build_filename (GLADEDIR, "essid.glade", NULL);
-
-	if (!glade_file || !g_file_test (glade_file, G_FILE_TEST_IS_REGULAR))
-	{
-		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-		return;
-	}
-
-	xml = glade_xml_new (glade_file, NULL, NULL);
-	g_free (glade_file);
+	xml = glade_xml_new (applet->glade_file, NULL, NULL);
 	if (xml == NULL)
 	{
-		/* Reuse the above string to make the translators less angry. */
 		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		return;
 	}

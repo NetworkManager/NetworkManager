@@ -1,5 +1,91 @@
 2005-03-31  Dan Williams <dcbw@redhat.com>
 
+	Tighten up handling of wireless devices that don't support wireless
+	scanning (ie, Orinoco).  Due to restructuring of code, these devices
+	hadn't been doing pseudo-scanning for a while either and would just
+	spin waiting for an access point.  They are now manual devices where
+	the user must choose the access point from the menu every time.  All
+	"allowed" access points are listed in the applet's menu regardless
+	of whether or not they can be seen by the card, since it can't scan
+	anyway.
+
+	* src/NetworkManager.c
+		- (nm_wireless_link_state_handle): new function, but only update
+			the "best" ap for non-scanning devices when its not activating,
+			and when no device is being forced on the card
+		- (nm_link_state_monitor): split wireless link state handling out
+			into separate function
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_copy_allowed_to_dev_list): new function
+		- (nm_device_new): populate non-scanning cards' AP lists with
+			access points from the "allowed" list
+		- (nm_device_new): don't start a scanning timeout for devices that
+			can't scan
+		- (nm_device_activation_schedule_finish): new parameter, should be
+			the AP that failed to be connected to, pass it on to the
+			activation finish function in NetworkManagerPolicy.c
+		- (nm_device_activate_wireless): don't ever try to get a new AP
+			for non-scanning devices, just fail.  The user must choose
+			a new access point manually.
+		- (nm_device_activate): grab the AP that failed connection and
+			pass it on
+		- (nm_device_update_best_ap): Clear the best AP if we don't have
+			a link to it, user must manually choose a new one
+		- (nm_device_do_pseudo_scan): remove function
+		- (nm_device_wireless_process_scan_results): remove bits for non-
+			scanning cards since they never get here
+		- (nm_device_wireless_scan): remove bits for non-scanning devices,
+			and fake the scan list for test devices a bit earlier
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): use the failed_ap that we get
+			passed rather than getting the best_ap from the card, which
+			may have changed since we were scheduled
+		- (nm_policy_allowed_ap_list_update): for non-scanning devices,
+			update their scan list directly from the allowed list when
+			we get updates to the allowed list from NetworkManagerInfo
+
+	* src/NetworkManagerPolicy.h
+		- New member for failed access point in NMActivationResult
+
+  -------------------------------------
+
+	Driver Notification patch: notifies the user when their driver
+		sucks.  Gives them the option to ignore further insertions
+		of the card that has the sucky driver.
+
+	* NetworkManager.h
+		- Remove the SEMI_SUPPORTED member from the NMDriverSupportLevel
+			enum and replace it with NO_CARRIER_DETECT and
+			NO_WIRELESS_SCAN
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Merge essid.glade -> wireless-applet.glade
+		- Implement the "Your driver sucks" notification dialog
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Change stuff from getSupportsCarrierDetect->getDriverSupportLevel
+		- Grab hardware address for each device from NM too
+		- Check whether the driver for each device sucks or not whenever
+			a new device is noticed
+
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c
+		- Deal with stuff being in wireless-applet.glade now rather than essid.glade
+
+	* src/NetworkManager.c
+		- Fix a double-unref on device removal
+
+	* src/NetworkManagerUtils.c
+		- Set appropriate driver support level on a device that doesn't
+			support scanning or carrier detection
+
+	* src/nm-dbus-device.c
+		- New "getHWAddress" dbus method on devices
+		- getSupportsCarrierDetect -> getDriverSupportLevel
+
+2005-03-31  Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- (nm_device_wireless_scan): Fix leak of scan results in some
 			instances

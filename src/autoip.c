@@ -179,6 +179,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
+	char				*temp_addr;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (out_ip != NULL, FALSE);
@@ -203,7 +204,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		goto out;
 	}
 
-	nm_device_get_hw_address (dev, addr.ether_addr_octet);
+	nm_device_get_hw_address (dev, &(addr.ether_addr_octet[0]));
 
 	/* initialize pseudo random selection of IP addresses */
 	srandom ( (addr.ether_addr_octet[ETHER_ADDR_LEN-4] << 24) |

@@ -184,14 +184,13 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				nm_device_set_removed (dev, TRUE);
 				nm_device_deactivate (dev, FALSE);
 				nm_device_worker_thread_stop (dev);
+				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
 				data->dev_list = g_slist_remove_link (data->dev_list, elt);
-				nm_device_unref (elt->data);
 				g_slist_free (elt);
 				nm_policy_schedule_state_update (data);
-				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				break;
 			}
 		}
@@ -407,9 +406,19 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 			 * an active link. If it lost the link,
 			 * find a better access point.
 			 */
-			if ((dev == data->active_device) &&
-			    !nm_device_has_active_link (dev))
-				nm_device_update_best_ap (dev);
+			if (    (dev == data->active_device)
+				&& !nm_device_has_active_link (dev))
+			{
+				if (nm_device_get_supports_wireless_scan (dev))
+					nm_device_update_best_ap (dev);
+				else
+				{
+					if (    !nm_device_is_activating (dev)
+						&& !data->forcing_device
+						&& data->state_modified_idle_id == 0)	
+						nm_device_update_best_ap (dev);
+				}
+			}
 		}
 	}
 	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);

@@ -34,6 +34,24 @@
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
+/*
+ * nm_null_safe_strcmp
+ *
+ * Doesn't freaking segfault if s1/s2 are NULL
+ *
+ */
+int nm_null_safe_strcmp (const char *s1, const char *s2)
+{
+	if (!s1 && !s2)
+		return 0;
+	if (!s1 && s2)
+		return -1;
+	if (s1 && !s2)
+		return 1;
+		
+	return (strcmp (s1, s2));
+}
+
 
 /* FIXME: This just seems like a bad idea. The call_nm_method function
  *        interface should just be changed to handle arrays better.
@@ -302,7 +320,7 @@ static gboolean nmwa_dbus_get_device_link_active (NMWirelessApplet *applet, char
 			break;
 
 		default:
-			break;			
+			break;
 	}
 
 	return (link);
@@ -310,17 +328,17 @@ static gboolean nmwa_dbus_get_device_link_active (NMWirelessApplet *applet, char
 
 
 /*
- * nmwa_dbus_get_device_supports_carrier_detect
+ * nmwa_dbus_get_device_driver_support_level
  *
  * Returns whether or not the device supports carrier detection.
  *
  */
-static gboolean nmwa_dbus_get_device_supports_carrier_detect (NMWirelessApplet *applet, char *net_path)
+static gboolean nmwa_dbus_get_device_driver_support_level (NMWirelessApplet *applet, char *net_path)
 {
-	gboolean	supports_carrier_detect = FALSE;
+	guint32	driver_support_level = FALSE;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, net_path, "getSupportsCarrierDetect",
-				DBUS_TYPE_BOOLEAN, (void **)(&supports_carrier_detect), NULL))
+	switch (nmwa_dbus_call_nm_method (applet->connection, net_path, "getDriverSupportLevel",
+				DBUS_TYPE_UINT32, (void **)(&driver_support_level), NULL))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;
@@ -330,7 +348,31 @@ static gboolean nmwa_dbus_get_device_supports_carrier_detect (NMWirelessApplet *
 			break;			
 	}
 
-	return (supports_carrier_detect);
+	return (driver_support_level);
+}
+
+
+/*
+ * nmwa_dbus_get_hw_addr
+ *
+ * Return the hardware address of a given device
+ *
+ */
+static char * nmwa_dbus_get_hw_addr (NMWirelessApplet *applet, char *dev_path)
+{
+	char *addr = NULL;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, dev_path, "getHWAddress", DBUS_TYPE_STRING, (void **)(&addr), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (addr);
 }
 
 
@@ -953,6 +995,7 @@ void network_device_unref (NetworkDevice *dev)
 		g_free (dev->nm_name);
 		g_free (dev->udi);
 		g_free (dev->hal_name);
+		g_free (dev->addr);
 		g_free (dev);
 		memset (dev, 0, sizeof (NetworkDevice));
 	}
@@ -998,7 +1041,8 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 		dev->nm_device = g_strdup (src->nm_device);
 		dev->type = src->type;
 		dev->link = src->link;
-		dev->supports_carrier_detect = src->supports_carrier_detect;
+		dev->addr = g_strdup (src->addr);
+		dev->driver_support_level = src->driver_support_level;
 		dev->nm_name = g_strdup (src->nm_name);
 		dev->hal_name = g_strdup (src->hal_name);
 		dev->udi = g_strdup (src->udi);
@@ -1231,6 +1275,10 @@ static gboolean nmwa_dbus_update_active_device_strength (gpointer user_data)
 	g_return_val_if_fail (user_data != NULL, FALSE);
 
 	applet = (NMWirelessApplet *)user_data;
+
+	if (applet->applet_state == APPLET_STATE_NO_NM)
+		return TRUE;
+
 	if (applet->gui_active_device && (applet->gui_active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
 	{
 		guint8	strength = nmwa_dbus_get_object_strength (applet, applet->gui_active_device->nm_device);
@@ -1355,6 +1403,73 @@ static void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, DBusM
 
 
 /*
+ * nmwa_dbus_schedule_driver_notification
+ *
+ * Schedule the driver notification routine to run in the main loop.
+ *
+ */
+void nmwa_dbus_schedule_driver_notification (NMWirelessApplet *applet, NetworkDevice *dev)
+{
+	DriverNotifyCBData	*cb_data;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (dev != NULL);
+
+	cb_data = g_malloc0 (sizeof (DriverNotifyCBData));
+	cb_data->applet = applet;
+	cb_data->dev = dev;
+
+	g_idle_add (nmwa_driver_notify, (gpointer)cb_data);
+}
+
+
+/*
+ * nmwa_dbus_check_drivers
+ *
+ * If a device got added, we notify the user if the device's driver
+ * has any problems (no carrier detect, no wireless scanning, etc).
+ *
+ */
+void nmwa_dbus_check_drivers (NMWirelessApplet *applet)
+{
+	GSList	*elt;
+
+	g_return_if_fail (applet != NULL);
+
+	/* For every device that's in the dbus data model but not in
+	 * the gui data model, signal the user.
+	 */
+	for (elt = applet->dbus_device_list; elt; elt = g_slist_next (elt))
+	{
+		NetworkDevice	*dbus_dev = (NetworkDevice *)(elt->data);
+		GSList		*elt2;
+		gboolean		 found = FALSE;
+		
+		for (elt2 = applet->gui_device_list; elt2; elt2 = g_slist_next (elt2))
+		{
+			NetworkDevice	*gui_dev = (NetworkDevice *)(elt2->data);
+
+			if (    !nm_null_safe_strcmp (dbus_dev->nm_device, gui_dev->nm_device)
+				&& !nm_null_safe_strcmp (dbus_dev->addr, gui_dev->addr)
+				&& !nm_null_safe_strcmp (dbus_dev->udi, gui_dev->udi))
+			{
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (    !found
+			&& (    (dbus_dev->driver_support_level == NM_DRIVER_NO_CARRIER_DETECT)
+				|| (dbus_dev->driver_support_level == NM_DRIVER_NO_WIRELESS_SCAN)))
+		{
+			network_device_ref (dbus_dev);
+			nmwa_dbus_schedule_driver_notification (applet, dbus_dev);
+		}
+	}
+}
+
+
+/*
  * sort_devices_function
  *
  * Sort the devices for display...  Wired devices at the top.
@@ -1454,8 +1569,8 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 			{
 				dev->nm_device = g_strdup (devices[i]);
 				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
-				if (dev->type == DEVICE_TYPE_WIRED_ETHERNET)
-					dev->supports_carrier_detect = nmwa_dbus_get_device_supports_carrier_detect (applet, devices[i]);
+				dev->driver_support_level = nmwa_dbus_get_device_driver_support_level (applet, devices[i]);
+				dev->addr = nmwa_dbus_get_hw_addr (applet, devices[i]);
 				dev->link = nmwa_dbus_get_device_link_active (applet, devices[i]);
 				dev->nm_name = g_strdup (name);
 				dev->udi = nmwa_dbus_get_device_udi (applet, devices[i]);
@@ -1486,6 +1601,9 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 
 	/* Sort the devices for display */
 	applet->dbus_device_list = g_slist_sort (applet->dbus_device_list, sort_devices_function);
+
+	/* Notify user of issues with certain cards/drivers */
+	nmwa_dbus_check_drivers (applet);
 
 	/* Now copy the data over to the GUI side */
 	g_mutex_lock (applet->data_mutex);

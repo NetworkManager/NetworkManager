@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
 #include <syslog.h>
+#include <netinet/ether.h>
 
 #include "nm-utils.h"
 #include "NetworkManagerDevice.h"
@@ -98,6 +99,29 @@ static DBusMessage *nm_dbus_device_get_ip4_address (DBusConnection *connection, 
                 address = nm_device_get_ip4_address (dev);
 		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &address, DBUS_TYPE_INVALID);
         }
+
+	return reply;
+}
+
+static DBusMessage *nm_dbus_device_get_hw_address (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	DBusMessage	*reply = NULL;
+	NMDevice		*dev;
+
+	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
+
+	dev = data->dev;
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		struct ether_addr	addr;
+		char				char_addr[20];
+		char				*ptr = &char_addr[0];
+
+		nm_device_get_hw_address (dev, (unsigned char *)&(addr.ether_addr_octet));
+		memset (char_addr, 0, 20);
+		ether_ntoa_r (&addr, &char_addr[0]);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &ptr, DBUS_TYPE_INVALID);
+	}
 
 	return reply;
 }
@@ -279,25 +303,19 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 	return reply;
 }
 
-static DBusMessage *nm_dbus_device_get_supports_carrier_detect (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_device_get_driver_support_level (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
 	NMDevice		*dev;
 
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
-	/* Wired devices only for now */
 	dev = data->dev;
-	if (!nm_device_is_wired (dev))
+	if ((reply = dbus_message_new_method_return (message)))
 	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWired",
-				"Carrier detection is only supported for wired devices.");
+		dbus_uint32_t driver_support_level = nm_device_get_driver_support_level (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &driver_support_level, DBUS_TYPE_INVALID);
 	}
-	else if ((reply = dbus_message_new_method_return (message))) {
-                dbus_bool_t supports_carrier_detect;
-                supports_carrier_detect = nm_device_get_supports_carrier_detect (dev);
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &supports_carrier_detect, DBUS_TYPE_INVALID);
-        }
 
 	return reply;
 }
@@ -343,17 +361,18 @@ NMDbusMethodList *nm_dbus_device_methods_setup (void)
 {
 	NMDbusMethodList	*list = nm_dbus_method_list_new (NULL);
 
-	nm_dbus_method_list_add_method (list, "getName",					nm_dbus_device_get_name);
-	nm_dbus_method_list_add_method (list, "getType",					nm_dbus_device_get_type);
-	nm_dbus_method_list_add_method (list, "getHalUdi",				nm_dbus_device_get_hal_udi);
-	nm_dbus_method_list_add_method (list, "getIP4Address",				nm_dbus_device_get_ip4_address);
-	nm_dbus_method_list_add_method (list, "getMode",					nm_dbus_device_get_mode);
-	nm_dbus_method_list_add_method (list, "getStrength",				nm_dbus_device_get_strength);
-	nm_dbus_method_list_add_method (list, "getActiveNetwork",			nm_dbus_device_get_active_network);
-	nm_dbus_method_list_add_method (list, "getNetworks",				nm_dbus_device_get_networks);
-	nm_dbus_method_list_add_method (list, "getLinkActive",				nm_dbus_device_get_link_active);
-	nm_dbus_method_list_add_method (list, "setLinkActive",				nm_dbus_device_set_link_active);
-	nm_dbus_method_list_add_method (list, "getSupportsCarrierDetect",	nm_dbus_device_get_supports_carrier_detect);
+	nm_dbus_method_list_add_method (list, "getName",				nm_dbus_device_get_name);
+	nm_dbus_method_list_add_method (list, "getType",				nm_dbus_device_get_type);
+	nm_dbus_method_list_add_method (list, "getHalUdi",			nm_dbus_device_get_hal_udi);
+	nm_dbus_method_list_add_method (list, "getIP4Address",			nm_dbus_device_get_ip4_address);
+	nm_dbus_method_list_add_method (list, "getHWAddress",			nm_dbus_device_get_hw_address);
+	nm_dbus_method_list_add_method (list, "getMode",				nm_dbus_device_get_mode);
+	nm_dbus_method_list_add_method (list, "getStrength",			nm_dbus_device_get_strength);
+	nm_dbus_method_list_add_method (list, "getActiveNetwork",		nm_dbus_device_get_active_network);
+	nm_dbus_method_list_add_method (list, "getNetworks",			nm_dbus_device_get_networks);
+	nm_dbus_method_list_add_method (list, "getLinkActive",			nm_dbus_device_get_link_active);
+	nm_dbus_method_list_add_method (list, "setLinkActive",			nm_dbus_device_set_link_active);
+	nm_dbus_method_list_add_method (list, "getDriverSupportLevel",	nm_dbus_device_get_driver_support_level);
 
 	return (list);
 }

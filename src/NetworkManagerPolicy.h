@@ -29,6 +29,7 @@
 typedef struct
 {
 	NMDevice		*dev;
+	NMAccessPoint	*failed_ap;
 	DeviceStatus	 result;
 } NMActivationResult;
 

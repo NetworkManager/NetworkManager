@@ -32,6 +32,7 @@
 #else
 #include "eggtrayicon.h"
 #endif
+#include <net/ethernet.h>
 
 typedef enum
 {
@@ -70,15 +71,14 @@ typedef struct
 	char		*nm_device;
 	int		 type;
 	gboolean	 link;
-	gboolean	 supports_carrier_detect;
+	guint32	 driver_support_level;
+	char		*addr;
 	char		*nm_name;
 	char		*hal_name;
 	char		*udi;
 	gint		 strength;
 	GSList	*networks;
 } NetworkDevice;
-
-
 
 #ifdef BUILD_NOTIFICATION_ICON
 
@@ -107,8 +107,10 @@ typedef struct
 
 	DBusConnection		*connection;
 	GConfClient		*gconf_client;
-	GladeXML			*ui_resources;
+	char				*glade_file;
 	guint			 redraw_timeout_id;
+
+	/* dbus thread stuff */
 	GThread			*dbus_thread;
 	GMainContext		*thread_context;
 	GMainLoop			*thread_loop;
@@ -163,11 +165,18 @@ typedef struct
 
 } NMWirelessApplet;
 
+typedef struct
+{
+	NMWirelessApplet	*applet;
+	NetworkDevice		*dev;
+	GladeXML			*xml;
+} DriverNotifyCBData;
 
 NetworkDevice		*nmwa_get_device_for_nm_device (GSList *dev_list, const char *nm_dev);
 WirelessNetwork	*nmwa_get_net_for_nm_net (NetworkDevice *dev, const char *net_path);
 WirelessNetwork	*nmwa_get_net_by_essid (NetworkDevice *dev, const char *essid);
 NMWirelessApplet	*nmwa_new (void);
 void				 show_warning_dialog (gboolean error, gchar *mesg, ...);
+gboolean			 nmwa_driver_notify (gpointer user_data);
 
 #endif

@@ -234,12 +234,15 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 {
 	NMActivationResult	*result = (NMActivationResult *)user_data;
 	NMDevice			*dev = NULL;
+	NMAccessPoint		*failed_ap = NULL;
 	NMData			*data = NULL;
 
 	g_return_val_if_fail (result != NULL, FALSE);
 
 	if (!(dev = result->dev))
 		goto out;
+
+	failed_ap = result->failed_ap;
 
 	if (!(data = nm_device_get_app_data (dev)))
 		goto out;
@@ -275,22 +278,29 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			nm_dbus_signal_device_status_change (data->dbus_connection, dev, result->result);
 			if (nm_device_is_wireless (dev))
 			{
-				NMAccessPoint *ap = nm_device_get_best_ap (dev);
-				if (ap)
+				if (failed_ap)
 				{
 					/* Add the AP to the invalid list and force a best ap update */
-					nm_ap_list_append_ap (data->invalid_ap_list, ap);
+					nm_ap_list_append_ap (data->invalid_ap_list, failed_ap);
 					nm_device_update_best_ap (dev);
-
-					/* Unref because nm_device_get_best_ap() refs it before returning. */
-					nm_ap_unref (ap);
 				}
-				nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+
+				nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),
+						failed_ap ? nm_ap_get_essid (failed_ap) : "(none)");
+
+				/* Failed AP got reffed by nm_device_get_best_ap() during activation,
+				 * must unref it here.
+				 */
+				if (failed_ap)
+					nm_ap_unref (failed_ap);
 			}
 			else
 				nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
 			if (data->active_device == dev)
+			{
+				nm_device_unref (dev);
 				data->active_device = NULL;
+			}
 			nm_device_deactivate (dev, FALSE);
 			break;
 
@@ -494,12 +504,17 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 		NMDevice	*dev = (NMDevice *)(elt->data);
 		if (nm_device_is_wireless (dev))
 		{
-			/* Once we have the list, copy in any relevant information from our Allowed list and fill
-			 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
-			 * MAC address in our allowed list.
-			 */
-			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), data->allowed_ap_list);
-			nm_ap_list_copy_properties (nm_device_ap_list_get (dev), data->allowed_ap_list);
+			if (nm_device_get_supports_wireless_scan (dev))
+			{
+				/* Once we have the list, copy in any relevant information from our Allowed list and fill
+				 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
+				 * MAC address in our allowed list.
+				 */
+				nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), data->allowed_ap_list);
+				nm_ap_list_copy_properties (nm_device_ap_list_get (dev), data->allowed_ap_list);
+			}
+			else
+				nm_device_copy_allowed_to_dev_list (dev, data->allowed_ap_list);
 		}
 	}	
 
