@@ -526,12 +526,6 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 {
 	NMData *data = user_data;
 
-	/* FIXME: These lines are definitely not great 
-	 * things to have in a signal handler
-	 *
-	 * The fix is to have a pipe that non-signal handling
-	 * code can watch and respond to.
-	 */
 	nm_info ("Caught terminiation signal");
 	if (data->active_device)
 		nm_device_deactivate (data->active_device, FALSE);

@@ -1,5 +1,11 @@
 2005-03-15  Ray Strode  <rstrode@redhat.com>
 
+	* src/NetworkManager.c:
+	(sigterm_pipe_handler):
+	remove bogus FIXME
+
+2005-03-15  Ray Strode  <rstrode@redhat.com>
+
 	* src/NetworkManagerDbus.c:
 	Fix some sign weirdness that gcc4 doesn't like,
 	and add a header file so PPC can hopefully find
