@@ -1,3 +1,13 @@
+2004-12-03  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/Makefile.am
+	* initscript/Debian/NetworkManager
+	* initscript/Gentoo/NetworkManager
+	* initscript/RedHat/NetworkManager
+	* initscript/NMLaunchHelper.c
+		- Remove NMLaunchHelper, if you need to wait until the network
+			comes up, use the dead code from CVS.
+
 2004-12-01  Colin Walters  <walters@redhat.com>
 	
 	* configure.in: Suck in gcc warnings code from Rhythmbox,

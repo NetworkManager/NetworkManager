@@ -36,7 +36,6 @@ start()
 	start-stop-daemon --start --quiet --exec ${processname}
 	eend $?
 	echo $(/bin/pidof NetworkManager) > ${pidfile}
-	NMLaunchHelper
 }
 
 stop()

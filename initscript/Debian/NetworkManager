@@ -34,7 +34,6 @@ test -x $DAEMON || exit 0
 d_start() {
 	start-stop-daemon --start --quiet --pidfile $PIDFILE \
 		--user $USER --exec $DAEMON -- $DAEMON_OPTS
-	NMLaunchHelper
 }
 
 #
