@@ -5,19 +5,21 @@ NetworkManager:
 
  * Lots of fixes, Dan Williams
  * Support static IP addresses, Dan Williams
+ * Support for non-ESSID-broadcasting base stations, Dan Williams
  * Only accept and manager 802.3 and 802.11 devices, Dan Williams
  * Don't blow away an active wired connection on startup, Dan Williams
  * Improve strength calculation, Dan Williams
  * Constantly scanning behavior, Dan Williams
  * add .pc file, Colin Walters
- * move to syslog, Dan Williams
- * Use gnome-keyring, Colin Walters
+ * move to syslog, Dan Willemsen
+ * Improve MD5 hashing of 128-bit passphrases, Colin Walters
  * DBUS API docs, Dan Williams
  * Cleanups, Colin Walters
  * Trusted networks, Dan Williams
  * New Backends:
    - Debian, Thom May and Mark Roach
    - Slackware, Narayan Newton
+ * Fixes and functionality improvements in Gentoo backend, Robert Paskowitz
 
 Python:
 
