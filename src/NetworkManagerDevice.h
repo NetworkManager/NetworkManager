@@ -24,10 +24,11 @@
 
 #include <net/ethernet.h>
 #include "NetworkManager.h"
+#include "NetworkManagerMain.h"
 
 typedef struct NMDevice	NMDevice;
 
-NMDevice *	nm_device_new					(const char *iface, gboolean test_device,
+NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_device,
 											NMDeviceType test_dev_type, NMData *app_data);
 
 void			nm_device_ref					(NMDevice *dev);
@@ -36,9 +37,11 @@ void			nm_device_unref				(NMDevice *dev);
 char *		nm_device_get_udi				(NMDevice *dev);
 void			nm_device_set_udi				(NMDevice *dev, const char *udi);
 
-char *		nm_device_get_iface				(NMDevice *dev);
+const char *	nm_device_get_iface				(NMDevice *dev);
 
 NMDeviceType	nm_device_get_type				(NMDevice *dev);
+NMDriverSupportLevel	nm_device_get_driver_support_level	(NMDevice *dev);
+
 gboolean		nm_device_is_wireless			(NMDevice *dev);
 gboolean		nm_device_is_wired				(NMDevice *dev);
 /* There is no nm_device_set_iface_type() because that's determined when you set the device's iface */
@@ -96,7 +99,7 @@ gboolean		nm_device_find_and_use_essid		(NMDevice *dev, const char *essid);
 
 void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list,
 											unsigned char *network, unsigned char *key,
-											NMAPEncMethod enc_method);
+											NMEncKeyType enc_method);
 
 void			nm_device_bring_up				(NMDevice *dev);
 void			nm_device_bring_down			(NMDevice *dev);

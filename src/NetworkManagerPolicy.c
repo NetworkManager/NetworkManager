@@ -35,7 +35,7 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerDbus.h"
 
-gboolean			allowed_ap_worker_exit = FALSE;
+gboolean	allowed_ap_worker_exit = FALSE;
 
 
 /*
@@ -65,6 +65,13 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 		guint	 prio = 0;
 
 		dev = (NMDevice *)(element->data);
+
+		/* Skip unsupported devices */
+		if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+		{
+			element = g_slist_next (element);
+			continue;
+		}
 
 		dev_type = nm_device_get_type (dev);
 		link_active = nm_device_get_link_active (dev);
@@ -209,6 +216,13 @@ static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock
 	{
 		data->active_device_locked = FALSE;
 		best_dev = nm_policy_auto_get_best_device (data);
+	}
+
+	/* Ensure we support this driver */
+	if (best_dev && (nm_device_get_driver_support_level (best_dev) == NM_DRIVER_UNSUPPORTED))
+	{
+		syslog (LOG_ERR, "nm_policy_get_best_device(): tried to switch to unsupported device '%s'!\n", nm_device_get_iface (best_dev));
+		best_dev == NULL;
 	}
 
 	return (best_dev);

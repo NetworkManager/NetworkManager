@@ -49,7 +49,6 @@
 #include "menu-info.h"
 
 #define CFG_UPDATE_INTERVAL 1
-#define NM_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
@@ -426,12 +425,12 @@ static void nmwa_update_network_timestamp (NMWirelessApplet *applet, const Wirel
 	 */
 
 	/* Update timestamp on network */
-	key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
+	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
 	gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
 	g_free (key);
 
 	/* Force-set the essid too so that we have a semi-complete network entry */
-	key = g_strdup_printf ("%s/%s/essid", NM_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
 	gconf_client_set_string (applet->gconf_client, key, network->essid, NULL);
 	g_free (key);
 }

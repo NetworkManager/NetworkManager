@@ -26,13 +26,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 
-typedef enum
-{
-	NETWORK_TYPE_UNKNOWN = 0,
-	NETWORK_TYPE_ALLOWED,
-	NETWORK_TYPE_INVALID,
-	NETWORK_TYPE_DEVICE
-} NMNetworkType;
 
 typedef struct NMAccessPointList	NMAccessPointList;
 typedef struct NMAPListIter		NMAPListIter;

@@ -26,21 +26,7 @@
 #include "NMWirelessAppletDbus.h"
 #include "NMWirelessApplet.h"
 
-#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
-
-#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
-
-#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
-#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
-#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
-
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
-#define	NM_DBUS_NO_ACTIVE_NET_ERROR		"org.freedesktop.NetworkManager.NoActiveNetwork"
-#define	NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
-#define	NM_DBUS_NO_NETWORKS_ERROR		"org.freedesktop.NetworkManager.NoNetworks"
 
 
 /* dbus doesn't define a DBUS_TYPE_STRING_ARRAY so we fake one here for consistency */

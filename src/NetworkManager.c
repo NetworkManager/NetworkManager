@@ -65,7 +65,7 @@ static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *u
 
 	if (hal_device_property_exists (ctx, udi, "net.interface"))
 	{
-		/* Only use Ethernet and Wireless devices for now (ie not Sharp Zaurus IP-over-USB connections) */
+		/* Only use Ethernet and Wireless devices at the moment */
 		if (hal_device_property_exists (ctx, udi, "info.category"))
 		{
 			char *category = hal_device_get_property_string (ctx, udi, "info.category");
@@ -114,18 +114,15 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	if ((dev = nm_get_device_by_iface (data, iface)))
 		return (NULL);
 
-	if ((dev = nm_device_new (iface, test_device, test_device_type, data)))
+	if ((dev = nm_device_new (iface, udi, test_device, test_device_type, data)))
 	{
-		/* Build up the device structure */
-		nm_device_set_udi (dev, udi);
-
 		/* Attempt to acquire mutex for device list addition.  If acquire fails,
 		 * just ignore the device addition entirely.
 		 */
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			syslog( LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
-				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
+			syslog (LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
+				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired");
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
 
@@ -172,7 +169,6 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 	/* Attempt to acquire mutex for device list deletion.  If acquire fails,
 	 * just ignore the device deletion entirely.
 	 */
-fprintf (stderr, "Remove called fro device %s\n", udi);
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		element = data->dev_list;

@@ -57,9 +57,9 @@ void nm_system_init (void)
  */
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
-	char		*buf;
-	char		*iface;
-	int		 err;
+	char			*buf;
+	const char	*iface;
+	int			 err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -204,7 +204,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	guint32		 broadcast;
 	char			*buf;
 	int			 err;
-	char			*iface;
+	const char	*iface;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);

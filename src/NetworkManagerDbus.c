@@ -64,25 +64,6 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
 
 
 /*
- * nm_dbus_get_enc_method_from_string
- *
- * Parse a string and return the encryption method it specifies.
- *
- */
-NMAPEncMethod nm_dbus_get_enc_method_from_string (const char *key_type)
-{
-	g_return_val_if_fail (key_type != NULL, NM_AP_ENC_METHOD_UNKNOWN);
-
-	if (!strcmp (key_type, "128-bit-passphrase"))
-		return (NM_AP_ENC_METHOD_128_BIT_PASSPHRASE);
-	else if (!strcmp (key_type, "128-bit-raw-hex-key"))
-		return (NM_AP_ENC_METHOD_128_BIT_HEX_KEY);
-
-	return (NM_AP_ENC_METHOD_UNKNOWN);
-}
-
-
-/*
  * nm_dbus_get_object_path_from_device
  *
  * Copies the object path for a device object.  Caller must free returned string.
@@ -290,7 +271,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	dev = nm_dbus_get_device_from_object_path (data, dev_path);
 	dbus_free (dev_path);
-	if (!dev)
+	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
@@ -376,7 +357,7 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 		{
 			NMDevice	*dev = (NMDevice *)(element->data);
 
-			if (dev)
+			if (dev && (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED))
 			{
 				char *object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
 				dbus_message_iter_append_string (&iter_array, object_path);
@@ -654,11 +635,11 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
  */
 static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMessage *message, NMData *data)
 {
-	DBusError	 error;
-	char		*device;
-	char		*network;
-	char		*passphrase;
-	char		*key_type;
+	DBusError		 error;
+	char			*device;
+	char			*network;
+	char			*passphrase;
+	NMEncKeyType	 key_type;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (connection != NULL);
@@ -669,21 +650,17 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 							DBUS_TYPE_STRING, &device,
 							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_STRING, &passphrase,
-							DBUS_TYPE_STRING, &key_type,
+							DBUS_TYPE_INT32, &key_type,
 							DBUS_TYPE_INVALID))
 	{
 		NMDevice		*dev;
 
 		if ((dev = nm_get_device_by_iface (data, device)))
-		{
-			NMAPEncMethod	method = nm_dbus_get_enc_method_from_string (key_type);
-			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase, method);
-		}
+			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase, key_type);
 
 		dbus_free (device);
 		dbus_free (network);
 		dbus_free (passphrase);
-		dbus_free (key_type);
 	}
 }
 
@@ -780,7 +757,7 @@ char * nm_dbus_get_network_essid (DBusConnection *connection, NMNetworkType type
  * NOTE: caller MUST free returned value
  *
  */
-char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, const char *network, NMAPEncMethod *enc_method)
+char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, const char *network, NMEncKeyType *enc_method)
 {
 	DBusMessage		*message;
 	DBusError			 error;
@@ -788,7 +765,7 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 	char				*key = NULL;
 
 	g_return_val_if_fail (enc_method != NULL, NULL);
-	*enc_method = NM_AP_ENC_METHOD_UNKNOWN;
+	*enc_method = NM_ENC_TYPE_UNKNOWN;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
@@ -819,17 +796,16 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 		syslog (LOG_NOTICE, "nm_dbus_get_network_key(): reply was NULL.");
 	else
 	{
-		char	*dbus_key;
-		char *dbus_key_type;
+		char			*dbus_key;
 
 		dbus_error_init (&error);
-		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_key, DBUS_TYPE_STRING, &dbus_key_type, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_key, DBUS_TYPE_INT32, enc_method, DBUS_TYPE_INVALID))
 		{
 			key = (dbus_key == NULL ? NULL : strdup (dbus_key));
 			dbus_free (dbus_key);
-			*enc_method = nm_dbus_get_enc_method_from_string (dbus_key_type);
-			dbus_free (dbus_key_type);
 		}
+		else
+			*enc_method = NM_ENC_TYPE_UNKNOWN;
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
 

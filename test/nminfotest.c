@@ -27,32 +27,17 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define	NMI_DBUS_NMI_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManagerInfo"
-#define	NMI_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
-#define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
+#include "NetworkManager.h"
 
 
-/* MUST match MetworkManager NMNetworkType */
-typedef enum
-{
-	NETWORK_TYPE_UNKNOWN = 0,
-	NETWORK_TYPE_ALLOWED,
-	NETWORK_TYPE_INVALID,
-	NETWORK_TYPE_DEVICE
-} NMINetworkType;
-
-char * get_network_string_property (DBusConnection *connection, char *network, char *method, NMINetworkType type)
+char * get_network_string_property (DBusConnection *connection, char *network, char *method, NMNetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
 
-	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
-									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
-									NMI_DBUS_NMI_NAMESPACE,
-									method);
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, method);
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -94,7 +79,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	return (ret_string);
 }
 
-gboolean get_network_trusted (DBusConnection *connection, char *network, NMINetworkType type)
+gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -104,10 +89,7 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMINetw
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
 
-	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
-									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
-									NMI_DBUS_NMI_NAMESPACE,
-									"getNetworkTrusted");
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworkTrusted");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -146,17 +128,14 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMINetw
 }
 
 
-void get_networks_of_type (DBusConnection *connection, NMINetworkType type)
+void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
 
-	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
-									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
-									NMI_DBUS_NMI_NAMESPACE,
-									"getNetworks");
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworks");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -224,8 +203,7 @@ void get_user_key_for_network (DBusConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE, NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
-						NMI_DBUS_NMI_NAMESPACE, "getKeyForNetwork");
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getKeyForNetwork");
 	if (message == NULL)
 	{
 		fprintf (stderr, "get_user_key_for_network(): Couldn't allocate the dbus message\n");
@@ -336,14 +314,14 @@ int main( int argc, char *argv[] )
 
 	dbus_connection_setup_with_g_main (connection, NULL);
 	dbus_error_init (&error);
-	dbus_bus_acquire_service (connection, NM_DBUS_NM_NAMESPACE, 0, &error);
+	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &error);
 	if (dbus_error_is_set (&error))
 	{
 		fprintf (stderr, "Could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", error.message);
 		exit (1);
 	}
 
-	success = dbus_connection_register_object_path (connection, NM_DBUS_NM_OBJECT_PATH_PREFIX, &vtable, loop);
+	success = dbus_connection_register_object_path (connection, NM_DBUS_INTERFACE, &vtable, loop);
 	if (!success)
 	{
 		fprintf (stderr, "Could not register a handler for NetworkManager.  Not enough memory?\n");

@@ -132,25 +132,25 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 		char			*key = NULL;
-		char			*key_type_string = NULL;
+		int			 key_type_return = NM_ENC_TYPE_UNKNOWN;
 		GConfEntry	*gconf_entry;
 		char			*escaped_network;
 
 		switch (key_type)
 		{
 			case KEY_TYPE_128_BIT_PASSPHRASE:
-				key_type_string = "128-bit-passphrase";
+				key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;
 				break;
 			case KEY_TYPE_128_BIT_RAW_HEX_KEY:
-				key_type_string = "128-bit-raw-hex-key";
+				key_type_return = NM_ENC_TYPE_128_BIT_HEX_KEY;
 				break;
 			default:
-				key_type_string = "";
+				key_type_return = NM_ENC_TYPE_UNKNOWN;
 				break;
 		}
 
 		/* Tell NetworkManager about the key the user typed in */
-		nmi_dbus_return_user_key (info->connection, device, network, passphrase, key_type_string);
+		nmi_dbus_return_user_key (info->connection, device, network, passphrase, key_type_return);
 
 		/* Update GConf with the new user key */
 		escaped_network = gnome_vfs_escape_string (network);
@@ -167,7 +167,7 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 			gconf_client_set_string (info->gconf_client, key, network, NULL);
 			g_free (key);
 			key = g_strdup_printf ("%s/%s/key_type", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-			gconf_client_set_string (info->gconf_client, key, key_type_string, NULL);
+			gconf_client_set_int (info->gconf_client, key, key_type_return, NULL);
 			g_free (key);
 		}
 		g_free (escaped_network);
@@ -196,7 +196,7 @@ void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer us
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 
-		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***", "");
+		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***", NM_ENC_TYPE_UNKNOWN);
 		nmi_passphrase_dialog_clear (dialog, glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
 	}
 }

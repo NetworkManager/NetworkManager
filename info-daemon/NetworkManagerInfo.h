@@ -47,7 +47,7 @@ struct NMIAppInfo
 	/*
 	GtkWidget	*notification_icon;
 	*/
-	GPid			notification_icon_pid;	
+	GPid			notification_icon_pid;
 	guint		notification_icon_watch;
 	guint		notification_icon_respawn_counter;
 	GTimer		*notification_icon_respawn_timer;
@@ -55,8 +55,5 @@ struct NMIAppInfo
 	GSource		*shutdown_timeout;
 };
 typedef struct NMIAppInfo NMIAppInfo;
-
-#define	NMI_GCONF_WIRELESS_NETWORKING_PATH		"/system/networking/wireless"
-#define	NMI_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
 #endif

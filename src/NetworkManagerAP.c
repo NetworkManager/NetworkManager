@@ -43,7 +43,7 @@ struct NMAccessPoint
 
 	/* Things from user prefs */
 	char				*enc_key;
-	NMAPEncMethod		 enc_method;
+	NMEncKeyType		 enc_method;
 	GTimeVal			 timestamp;
 };
 
@@ -174,7 +174,7 @@ char * nm_ap_get_essid (NMAccessPoint *ap)
 	return (ap->essid);
 }
 
-void nm_ap_set_essid (NMAccessPoint *ap, char * essid)
+void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -200,7 +200,7 @@ char * nm_ap_get_enc_key_source (NMAccessPoint *ap)
 	return (ap->enc_key);
 }
 
-void nm_ap_set_enc_key_source (NMAccessPoint *ap, char * key, NMAPEncMethod method)
+void nm_ap_set_enc_key_source (NMAccessPoint *ap, char * key, NMEncKeyType method)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -221,14 +221,15 @@ char *nm_ap_get_enc_key_hashed (NMAccessPoint *ap)
 	source_key = nm_ap_get_enc_key_source (ap);
 	switch (ap->enc_method)
 	{
-		case (NM_AP_ENC_METHOD_128_BIT_PASSPHRASE):
+		case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
 			if (source_key)
 				hashed = nm_wireless_128bit_key_from_passphrase (source_key);
 			break;
 
-		case (NM_AP_ENC_METHOD_40_BIT_PASSPHRASE):
-		case (NM_AP_ENC_METHOD_128_BIT_HEX_KEY):
-		case (NM_AP_ENC_METHOD_UNKNOWN):
+		case (NM_ENC_TYPE_128_BIT_HEX_KEY):
+		case (NM_ENC_TYPE_40_BIT_PASSPHRASE):
+		case (NM_ENC_TYPE_40_BIT_HEX_KEY):
+		case (NM_ENC_TYPE_UNKNOWN):
 			if (source_key)
 				hashed = g_strdup (source_key);
 			break;
@@ -431,7 +432,7 @@ void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
  * Return the encryption method the user specified for this access point.
  *
  */
-const NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
+const NMEncKeyType nm_ap_get_enc_method (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 

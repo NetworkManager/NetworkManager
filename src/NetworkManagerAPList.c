@@ -280,7 +280,7 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 	/* Get the allowed access point's details from NetworkManagerInfo */
 	if ((essid = nm_dbus_get_network_essid (data->dbus_connection, list->type, network)))
 	{
-		NMAPEncMethod	 enc_method;
+		NMEncKeyType	 enc_method;
 		char			*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network, &enc_method);
 		GTimeVal		*timestamp = nm_dbus_get_network_timestamp (data->dbus_connection, list->type, network);
 		gboolean		 trusted = nm_dbus_get_network_trusted (data->dbus_connection, list->type, network);
@@ -302,7 +302,7 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 			if (key && strlen (key))
 				nm_ap_set_enc_key_source (ap, key, enc_method);
 			else
-				nm_ap_set_enc_key_source (ap, NULL, NM_AP_ENC_METHOD_UNKNOWN);
+				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
 
 			if (new)
 			{

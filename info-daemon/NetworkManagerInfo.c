@@ -256,9 +256,9 @@ int main( int argc, char *argv[] )
 	 * get change notifications for our wireless networking data.
 	 */
 	app_info->gconf_client = gconf_client_get_default ();
-	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKING_PATH,
+	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
 						GCONF_CLIENT_PRELOAD_NONE, NULL);
-	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKING_PATH,
+	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
 						nmi_gconf_notify_callback, app_info, NULL, NULL);
 
 	/* Create our own dbus service */

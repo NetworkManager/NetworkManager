@@ -1,3 +1,33 @@
+2004-10-21 Dan Williams <dcbw@redhat.com>
+
+	* NetworkManager.h
+		- New file, now contains commonly used structures and bits
+			for the dbus API of NetworkManager
+
+	* Makefile.am
+		- Deliver NetworkManager.h to ${includedir}/NetworkManager
+
+	* src/NetworkManager.h
+		- Rename -> src/NetworkManagerMain.c
+
+	* Various fixups all around to use NetworkManager.h and new
+		src/NetworkManagerMain.h, remove redundant bits that got
+		moved into NetworkManager.h
+
+	* src/NetworkManagerDevice.[ch]
+	  src/NetworkManagerUtils.[ch]
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManagerDbus.c
+		- Whitelist wireless drivers, and blacklist some wired
+			drivers.  Also blacklist cipsec and ethernet-over-usb
+			devices at this time (RH #135722, RH #135648)
+		- Don't leak unsupported devices out over dbus, or allow
+			them to be set as the active device.  Skip over them
+			during automatic device picking
+
+	* test/nmclienttest.c
+		- Clean up the dbus code a lot
+
 Tue Oct 19 14:20:29 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* configure.in: post release bump.

@@ -24,6 +24,7 @@
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#include "NetworkManager.h"
 #include "NMWirelessApplet.h"
 
 /* Return codes for functions that use dbus */
@@ -34,13 +35,6 @@ enum
 	RETURN_NO_NM = -1
 };
 
-/* Must match NetworkManager device types */
-enum
-{
-	DEVICE_TYPE_DONT_KNOW = 0,
-	DEVICE_TYPE_WIRED_ETHERNET,
-	DEVICE_TYPE_WIRELESS_ETHERNET
-};
 
 gpointer			nmwa_dbus_worker				(gpointer user_data);
 

@@ -19,13 +19,14 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_H
-#define NETWORK_MANAGER_H
+#ifndef NETWORK_MANAGER_MAIN_H
+#define NETWORK_MANAGER_MAIN_H
 
 #include <glib.h>
 #include <glib/gthread.h>
 #include <dbus/dbus.h>
 #include <hal/libhal.h>
+#include "NetworkManager.h"
 #include "NetworkManagerAP.h"
 
 typedef struct NMData
@@ -52,16 +53,6 @@ typedef struct NMData
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
-
-/*
- * Types of NetworkManager devices
- */
-typedef enum NMDeviceType
-{
-	DEVICE_TYPE_DONT_KNOW = 0,
-	DEVICE_TYPE_WIRED_ETHERNET,
-	DEVICE_TYPE_WIRELESS_ETHERNET
-} NMDeviceType;
 
 
 struct NMDevice	*nm_create_device_and_add_to_list	(NMData *data, const char *udi, const char *iface,

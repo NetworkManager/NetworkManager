@@ -24,18 +24,9 @@
 
 #include <glib.h>
 #include <time.h>
+#include "NetworkManager.h"
 
 typedef struct NMAccessPoint NMAccessPoint;
-
-typedef enum NMAPEncMethod
-{
-	NM_AP_ENC_METHOD_UNKNOWN = 0,
-	NM_AP_ENC_METHOD_NONE,
-	NM_AP_ENC_METHOD_128_BIT_HEX_KEY,
-	NM_AP_ENC_METHOD_40_BIT_PASSPHRASE,
-	NM_AP_ENC_METHOD_128_BIT_PASSPHRASE	/* Well, 104-bit really... */
-} NMAPEncMethod;
-
 
 NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
@@ -47,11 +38,11 @@ const GTimeVal *	nm_ap_get_timestamp		(NMAccessPoint *ap);
 void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
 char *			nm_ap_get_essid		(NMAccessPoint *ap);
-void				nm_ap_set_essid		(NMAccessPoint *ap, char *essid);
+void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
 char *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
 char *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap);
-void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, char *key, NMAPEncMethod method);
+void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, char *key, NMEncKeyType type);
 
 gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
@@ -80,6 +71,6 @@ void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 gboolean			nm_ap_get_artificial	(NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
-const NMAPEncMethod	nm_ap_get_enc_method	(NMAccessPoint *ap);
+const NMEncKeyType	nm_ap_get_enc_method	(NMAccessPoint *ap);
 
 #endif

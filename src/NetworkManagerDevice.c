@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "NetworkManager.h"
+#include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDbus.h"
@@ -48,7 +49,7 @@ static gpointer nm_device_activation_worker (gpointer user_data);
 /* Wireless device specific options */
 typedef struct NMDeviceWirelessOptions
 {
-	gchar			*cur_essid;
+	char				*cur_essid;
 	gboolean			 supports_wireless_scan;
 	guint8			 max_quality;
 	guint8			 noise;
@@ -105,9 +106,11 @@ struct NMDevice
 {
 	guint			 refcount;
 
-	gchar			*udi;
-	gchar			*iface;
+	char				*udi;
+	char				*iface;
 	NMDeviceType		 type;
+	NMDriverSupportLevel driver_support_level;
+
 	gboolean			 link_active;
 	guint32			 ip4_address;
 	/* FIXME: ipv6 address too */
@@ -173,7 +176,7 @@ static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 		return (TRUE);
 	
 	iwlib_socket = iw_sockets_open ();
-	error = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+	error = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
 	nm_dispose_scan_results (scan_data.result);
 	if ((error == -1) && (errno == EOPNOTSUPP))
 		can_scan = FALSE;
@@ -266,12 +269,13 @@ NMDevice *nm_get_device_by_iface (NMData *data, const char *iface)
  * argument is ignored for real hardware devices since they are auto-probed.
  *
  */
-NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test_dev_type, NMData *app_data)
+NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, NMDeviceType test_dev_type, NMData *app_data)
 {
 	NMDevice	*dev;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (strlen (iface) > 0, NULL);
+	g_return_val_if_fail (app_data != NULL, NULL);
 
 	/* Test devices must have a valid type specified */
 	if (test_dev && !(test_dev_type != DEVICE_TYPE_DONT_KNOW))
@@ -280,7 +284,7 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 	/* Another check to make sure we don't create a test device unless
 	 * test devices were enabled on the command line.
 	 */
-	if (app_data && !app_data->enable_test_devices && test_dev)
+	if (!app_data->enable_test_devices && test_dev)
 	{
 		syslog (LOG_ERR, "nm_device_new(): attempt to create a test device, but test devices were not enabled"
 					" on the command line.  Will not create the device.\n");
@@ -298,6 +302,7 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 	dev->app_data = app_data;
 	dev->iface = g_strdup (iface);
 	dev->test_device = test_dev;
+	nm_device_set_udi (dev, udi);
 
 	/* Real hardware devices are probed for their type, test devices must have
 	 * their type specified.
@@ -340,6 +345,8 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 		nm_device_do_wireless_scan (dev);
 		nm_device_update_best_ap (dev);
 	}
+
+	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
 
 	/* Grab IP config data for this device from the system configuration files */
 	nm_device_update_ip4_address (dev);
@@ -424,7 +431,7 @@ void nm_device_set_udi (NMDevice *dev, const char *udi)
 /*
  * Get/set functions for iface
  */
-char * nm_device_get_iface (NMDevice *dev)
+const char * nm_device_get_iface (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, NULL);
 
@@ -454,6 +461,17 @@ gboolean nm_device_is_wired (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return (dev->type == DEVICE_TYPE_WIRED_ETHERNET);
+}
+
+
+/*
+ * Accessor for driver support level
+ */
+NMDriverSupportLevel nm_device_get_driver_support_level (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
+
+	return (dev->driver_support_level);
 }
 
 
@@ -1665,7 +1683,7 @@ gboolean nm_device_is_scanning (NMDevice *dev)
  */
 void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *invalid_list,
 									unsigned char *network, unsigned char *key,
-									NMAPEncMethod enc_method)
+									NMEncKeyType enc_method)
 {
 	NMAccessPoint	*best_ap;
 	const char 	*cancel_message = "***canceled***";
@@ -2195,7 +2213,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		NMAPListIter		*iter;
 		NMAccessPoint		*artificial_ap;
 
-		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
+		err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
 		{
 			/* Card hasn't had time yet to compile full access point list.
@@ -2203,7 +2221,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			 * give up.
 			 */
 			g_usleep (G_USEC_PER_SEC / 2);
-			err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
+			err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 			if (err == -1)
 			{
 				close (iwlib_socket);

@@ -25,18 +25,8 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#include "NetworkManager.h"
 #include "NetworkManagerAPList.h"
-
-#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
-
-#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
-
-#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
-#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
-#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
 
 
 typedef enum
@@ -68,7 +58,7 @@ void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
 char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType type, const char *network);
 
-char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network, NMAPEncMethod *enc_method);
+char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network, NMEncKeyType *enc_method);
 
 GTimeVal *	nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
 

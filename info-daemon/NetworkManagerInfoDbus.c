@@ -31,17 +31,6 @@
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
 
-#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
-
-#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
-
-#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
-#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
-#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
-
 
 /*
  * nmi_network_type_valid
@@ -49,7 +38,7 @@
  * Helper to validate network types NMI can deal with
  *
  */
-inline gboolean nmi_network_type_valid (NMINetworkType type)
+inline gboolean nmi_network_type_valid (NMNetworkType type)
 {
 	return ((type == NETWORK_TYPE_ALLOWED));
 }
@@ -114,7 +103,7 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
  *
  */
 void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
-						const char *network, const char *passphrase, const char *key_type_string)
+						const char *network, const char *passphrase, const int key_type)
 {
 	DBusMessage	*message;
 
@@ -133,7 +122,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	if (dbus_message_append_args (message, DBUS_TYPE_STRING, device,
 								DBUS_TYPE_STRING, network,
 								DBUS_TYPE_STRING, passphrase,
-								DBUS_TYPE_STRING, key_type_string,
+								DBUS_TYPE_INT32, key_type,
 								DBUS_TYPE_INVALID))
 	{
 		if (!dbus_connection_send (connection, message, NULL))
@@ -151,7 +140,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
  * allowed/ignored network.
  *
  */
-void nmi_dbus_signal_update_network (DBusConnection *connection, const char *network, NMINetworkType type)
+void nmi_dbus_signal_update_network (DBusConnection *connection, const char *network, NMNetworkType type)
 {
 	DBusMessage		*message;
 
@@ -191,7 +180,7 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
 	DBusMessageIter	 iter_array;
-	NMINetworkType		 type;
+	NMNetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -275,7 +264,7 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	NMINetworkType		 type;
+	NMNetworkType		 type;
 	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -329,7 +318,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	NMINetworkType		 type;
+	NMNetworkType		 type;
 	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -384,7 +373,7 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	GConfValue		*key_value;
 	GConfValue		*key_type_value;
 	DBusError			 error;
-	NMINetworkType		 type;
+	NMNetworkType		 type;
 	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);
@@ -416,10 +405,10 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	if (key_value && key_type_value)
 	{
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (key_value),
-								DBUS_TYPE_STRING, gconf_value_get_string (key_type_value), DBUS_TYPE_INVALID);
+								DBUS_TYPE_INT32, gconf_value_get_int (key_type_value), DBUS_TYPE_INVALID);
 	}
 	else
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INT32, -1, DBUS_TYPE_INVALID);
 
 	if (key_value)
 		gconf_value_free (key_value);
@@ -444,7 +433,7 @@ static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage 
 	char				*network = NULL;
 	GConfValue		*value;
 	DBusError			 error;
-	NMINetworkType		 type;
+	NMNetworkType		 type;
 	char				*escaped_network;
 
 	g_return_val_if_fail (info != NULL, NULL);

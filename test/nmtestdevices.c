@@ -27,20 +27,7 @@
 #include <getopt.h>
 #include <string.h>
 
-/* These MUST correspond to NetworkManager device types */
-typedef enum NMDeviceType
-{
-	DEVICE_TYPE_DONT_KNOW = 0,
-	DEVICE_TYPE_WIRED_ETHERNET,
-	DEVICE_TYPE_WIRELESS_ETHERNET
-} NMDeviceType;
-
-
-#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
-
+#include "NetworkManager.h"
 
 void create_device (DBusConnection *connection, NMDeviceType type)
 {
