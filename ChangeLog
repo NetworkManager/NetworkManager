@@ -1,5 +1,11 @@
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* NetworkManager.h
+		- New signal type NMNetworkStatus in preparation for the "WirelessNetworkUpdate"
+			signal
+
+2005-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* named/nm-named-manager.c
 		- Ensure that pid and watch variables for child named process get cleared out
 			when the child goes away.

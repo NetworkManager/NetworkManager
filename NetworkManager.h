@@ -59,18 +59,6 @@ typedef enum NMDeviceType
 
 
 /*
- * Wireless network types
- */
-typedef enum NMNetworkType
-{
-	NETWORK_TYPE_UNKNOWN = 0,
-	NETWORK_TYPE_ALLOWED,
-	NETWORK_TYPE_INVALID,
-	NETWORK_TYPE_DEVICE
-} NMNetworkType;
-
-
-/*
  * Encryption key types
  */
 typedef enum NMEncKeyType
@@ -104,6 +92,29 @@ typedef enum NMNetworkMode
 	NETWORK_MODE_INFRA,
 	NETWORK_MODE_ADHOC
 } NMNetworkMode;
+
+
+/*
+ * Wireless network update types
+ */
+typedef enum
+{
+	NETWORK_STATUS_DISAPPEARED = 0,
+	NETWORK_STATUS_APPEARED,
+	NETWORK_STATUS_STRENGTH_CHANGED
+} NMNetworkStatus;
+
+
+/*
+ * Wireless network types
+ */
+typedef enum NMNetworkType
+{
+	NETWORK_TYPE_UNKNOWN = 0,
+	NETWORK_TYPE_ALLOWED,
+	NETWORK_TYPE_INVALID,
+	NETWORK_TYPE_DEVICE
+} NMNetworkType;
 
 
 /*
