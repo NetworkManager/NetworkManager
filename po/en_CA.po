@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-08 16:02-0400\n"
-"PO-Revision-Date: 2004=09-08 14:52-0400\n"
+"POT-Creation-Date: 2004-09-10 17:47-0400\n"
+"PO-Revision-Date: 2004=09-10 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -53,35 +53,27 @@ msgstr "Wireless Network Key Required"
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: panel-applet/NMWirelessApplet.c:535
-msgid "There are no network devices..."
-msgstr "There are no network devices..."
-
-#: panel-applet/NMWirelessApplet.c:635
+#: panel-applet/NMWirelessApplet.c:606
 msgid "There are no wireless networks..."
 msgstr "There are no wireless networks..."
 
-#: panel-applet/NMWirelessApplet.c:638
-msgid "Wireless Networks"
-msgstr "Wireless Networks"
+#: panel-applet/NMWirelessApplet.c:640
+msgid "There are no network devices..."
+msgstr "There are no network devices..."
 
-#: panel-applet/NMWirelessApplet.c:709
+#: panel-applet/NMWirelessApplet.c:721
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/NMWirelessApplet.c:713
+#: panel-applet/NMWirelessApplet.c:725
 msgid "Network Connections"
 msgstr "Network Connections"
 
-#: panel-applet/NMWirelessApplet.c:720
-msgid "No network connection is currently active..."
-msgstr "No network connection is currently active..."
+#: panel-applet/NMWirelessApplet.c:727
+msgid "Other Wireless Network..."
+msgstr "Other Wireless Network..."
 
-#: panel-applet/NMWirelessApplet.c:725
-msgid "A wired network connection is currently active..."
-msgstr "A wired network connection is currently active..."
-
-#: panel-applet/NMWirelessApplet.c:868 panel-applet/NMWirelessApplet.c:930
+#: panel-applet/NMWirelessApplet.c:859 panel-applet/NMWirelessApplet.c:919
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
