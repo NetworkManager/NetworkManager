@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-14 17:11-0400\n"
-"PO-Revision-Date: 2004-10-08 14:52-0400\n"
+"POT-Creation-Date: 2004-10-15 11:12-0400\n"
+"PO-Revision-Date: 2004-10-15 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,23 +17,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Modify Wireless Networks"
-
-#: info-daemon/networks.glade:92
+#: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
 msgstr "<span weight=\"bold\">Wireless Networks:</span>"
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "Wireless Network Key Required"
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Modify Wireless Networks"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Login to Network"
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
 
-#: info-daemon/passphrase.glade:100
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+
+#: info-daemon/passphrase.glade.h:5
+#, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -47,26 +52,22 @@ msgstr ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 
-#: info-daemon/passphrase.glade:129
+#: info-daemon/passphrase.glade.h:8
 msgid "Key Type:"
 msgstr "Key Type:"
 
-#: info-daemon/passphrase.glade:150
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-
-#: info-daemon/passphrase.glade:180
+#: info-daemon/passphrase.glade.h:9
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Passphrase:"
 
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade.h:10
+msgid "Wireless Network Key Required"
+msgstr "Wireless Network Key Required"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "_Login to Network"
+msgstr "_Login to Network"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
@@ -82,13 +83,12 @@ msgstr ""
 "file was not found)."
 
 #: panel-applet/NMWirelessApplet.c:634
-#, fuzzy
 msgid "Custom wireless network"
-msgstr "Wireless Network"
+msgstr "Custom wireless network"
 
 #: panel-applet/NMWirelessApplet.c:635
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
+msgstr "Enter the ESSID of the wireless network to which you wish to connect."
 
 #: panel-applet/NMWirelessApplet.c:716
 msgid "Other Wireless Networks..."
@@ -102,17 +102,17 @@ msgstr "No network devices have been found"
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/essid.glade:52
+#: panel-applet/essid.glade.h:2
 msgid "C_onnect"
 msgstr "C_onnect"
 
-#: panel-applet/essid.glade:131
-msgid "Wireless _Network:"
-msgstr "Wireless _Network:"
-
-#: panel-applet/essid.glade:177
+#: panel-applet/essid.glade.h:3
 msgid "Wireless _Adaptor:"
 msgstr "Wireless _Adaptor:"
+
+#: panel-applet/essid.glade.h:4
+msgid "Wireless _Network:"
+msgstr "Wireless _Network:"
 
 #: panel-applet/menu-info.c:101
 #, c-format
