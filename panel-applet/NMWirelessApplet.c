@@ -46,6 +46,7 @@
 
 #include "NMWirelessApplet.h"
 #include "NMWirelessAppletDbus.h"
+#include "NMWirelessAppletOtherNetworkDialog.h"
 #include "menu-info.h"
 
 #define CFG_UPDATE_INTERVAL 1

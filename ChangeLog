@@ -1,5 +1,9 @@
 2004-12-01  Colin Walters  <walters@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c: Add missing include.
+
+2004-12-01  Colin Walters  <walters@redhat.com>
+
 	* src/NetworkManagerWireless.c (nm_wireless_qual_to_percent):
 	Remove useless CLAMP (); the value is unsigned, and the case tests
 	qual->qual < 100, so the value must always be between 0 and 100.
