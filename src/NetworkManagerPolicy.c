@@ -36,7 +36,6 @@
 #include "NetworkManagerDbus.h"
 
 gboolean			allowed_ap_worker_exit = FALSE;
-extern gboolean	debug;
 
 
 /*
@@ -173,7 +172,9 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 	}
 
-	/* Determine whether we need to clear the active device and unlock it. */	
+	/* Determine whether we need to clear the active device and unlock it.
+	 * This occurs if the best device is removed, for example.
+	 */
 	if (!best_dev && data->active_device_locked)
 	{
 		switch (nm_device_get_type (data->active_device))
@@ -196,6 +197,22 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 			default:
 				break;
 		}
+	}
+
+	/* Or, if the current active device is wireless and its "best" access
+	 * point is locked, use that device still.  This happens when the user
+	 * forces a specific wireless network choice.  The "best" ap will have
+	 * already been set and locked by the dbus message handler, so we just
+	 * need to test for a locked "best" ap.
+	 */
+	if (data->active_device && nm_device_is_wireless (data->active_device))
+	{
+		/* Give ourselves a chance to clear the "best" access point if
+		 * its gone out of range and no longer in the device's ap list.
+		 */
+		nm_device_update_best_ap (data->active_device);
+		if (nm_device_get_best_ap_frozen (data->active_device))
+			best_dev = data->active_device;
 	}
 
 	/* Fall back to automatic device picking */
@@ -276,8 +293,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				|| (    best_dev && nm_device_is_wireless (best_dev) && !nm_device_activating (best_dev)
 					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
 			{
-				syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", best_dev ? nm_device_get_iface (best_dev) : "(null)");
-
 				/* Deactivate the old device */
 				if (data->active_device)
 				{
@@ -286,10 +301,14 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 					data->active_device = NULL;
 				}
 
-				/* Begin activation on the new device */
-				nm_device_ref (best_dev);
-				data->active_device = best_dev;
-				nm_device_activation_begin (data->active_device);
+				if (best_dev)
+				{
+					/* Begin activation on the new device */
+					syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", nm_device_get_iface (best_dev));
+					nm_device_ref (best_dev);
+					data->active_device = best_dev;
+					nm_device_activation_begin (data->active_device);
+				}
 			}
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);

@@ -28,8 +28,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 
-extern gboolean	debug;
-
 
 /*#define LOCKING_DEBUG	*/
 

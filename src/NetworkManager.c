@@ -47,75 +47,93 @@
  */
 static GMainLoop	*loop  = NULL;
 static NMData		*nm_data = NULL;
-gboolean			 debug = TRUE;
 extern gboolean	 allowed_ap_worker_exit;
 
 static void nm_data_free (NMData *data);
 
 
 /*
+ * nm_get_device_interface_from_hal
+ *
+ * Queries HAL for the "net.interface" property of a device and returns
+ * it if successful.
+ *
+ */
+static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *udi)
+{
+	char *iface = NULL;
+
+	if (hal_device_property_exists (ctx, udi, "net.interface"))
+	{
+		char *temp = hal_device_get_property_string (ctx, udi, "net.interface");
+		iface = g_strdup (temp);
+		hal_free_string (temp);
+	}
+
+	return (iface);
+}
+
+
+/*
  * nm_create_device_and_add_to_list
  *
- * Create a new NLM device and add it to our device list.
+ * Create a new network device and add it to our device list.
  *
  * Returns:		newly allocated device on success
  *				NULL on failure
  */
-NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
+NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, const char *iface,
+									gboolean test_device, NMDeviceType test_device_type)
 {
 	NMDevice	*dev = NULL;
-	gboolean	 success = FALSE;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (udi  != NULL, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
 
-	if (hal_device_property_exists (data->hal_ctx, udi, "net.interface"))
+	/* If we are called to create a test devices, but test devices weren't enabled
+	 * on the command-line, don't create the device.
+	 */
+	if (!data->enable_test_devices && test_device)
 	{
-		gchar	*iface_name = hal_device_get_property_string (data->hal_ctx, udi, "net.interface");
+		syslog (LOG_ERR, "nm_create_device_and_add_to_list(): attempt to create a test device,"
+					" but test devices were not enabled on the command line.  Will not create the device.\n");
+		return (NULL);
+	}
 
-		/* Make sure the device is not already in the device list */
-		if ((dev = nm_get_device_by_iface (data, iface_name)))
+	/* Make sure the device is not already in the device list */
+	if ((dev = nm_get_device_by_iface (data, iface)))
+		return (NULL);
+
+	if ((dev = nm_device_new (iface, test_device, test_device_type, data)))
+	{
+		/* Build up the device structure */
+		nm_device_set_udi (dev, udi);
+
+		/* Attempt to acquire mutex for device list addition.  If acquire fails,
+		 * just ignore the device addition entirely.
+		 */
+		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			hal_free_string (iface_name);
-			return (NULL);
-		}
+			syslog( LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
+				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
 
-		if ((dev = nm_device_new (iface_name, data)))
-		{
+			data->dev_list = g_slist_append (data->dev_list, dev);
+			nm_device_deactivate (dev, TRUE);
 
-			/* Build up the device structure */
-			nm_device_set_udi (dev, udi);
+			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
-			/* Attempt to acquire mutex for device list addition.  If acquire fails,
-			 * just ignore the device addition entirely.
-			 */
-			if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-			{
-				syslog( LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
-					nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
-
-				data->dev_list = g_slist_append (data->dev_list, dev);
-				nm_device_deactivate (dev, TRUE);
-				success = TRUE;
-
-				nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-			} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
-		} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
-
-		hal_free_string (iface_name);
-
-		if (success)
-		{
-			nm_data_set_state_modified (data, TRUE);
+			nm_data_mark_state_changed (data);
 			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 		}
 		else
 		{
 			/* If we couldn't add the device to our list, free its data. */
+			syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
 			nm_device_unref (dev);
 			dev = NULL;
 		}
-	}
+	} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
 
 	return (dev);
 }
@@ -159,14 +177,14 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 					data->user_device = NULL;
 				}
 
-				nm_device_activation_cancel (dev);
+				nm_device_activation_signal_cancel (dev);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
 				data->dev_list = g_slist_remove_link (data->dev_list, element);
 				nm_device_unref (element->data);
 				g_slist_free (element);
-				nm_data_set_state_modified (data, TRUE);
+				nm_data_mark_state_changed (data);
 				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 
 				break;
@@ -194,7 +212,8 @@ static void nm_hal_mainloop_integration (LibHalContext *ctx, DBusConnection * db
  */
 static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 {
-	NMData		*data = (NMData *)hal_ctx_get_user_data (ctx);
+	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	char		*iface = NULL;
 
 	g_return_if_fail (data != NULL);
 
@@ -204,7 +223,11 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 	 * so this call will fail, and it will actually be added when hal sets the device's
 	 * capabilities a bit later on.
 	 */
-	nm_create_device_and_add_to_list (data, udi);
+	if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
+	{
+		nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+		g_free (iface);
+	}
 }
 
 
@@ -237,7 +260,15 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 	syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
 
 	if (capability && (strcmp (capability, "net.ethernet") == 0))
-		nm_create_device_and_add_to_list (data, udi);
+	{
+		char *iface;
+
+		if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
+		{
+			nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+			g_free (iface);
+		}
+	}
 }
 
 
@@ -282,7 +313,15 @@ static void nm_add_initial_devices (NMData *data)
 	if (net_devices)
 	{
 		for (i = 0; i < num_net_devices; i++)
-			nm_create_device_and_add_to_list (data, net_devices[i]);
+		{
+			char *iface;
+
+			if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, net_devices[i])))
+			{
+				nm_create_device_and_add_to_list (data, net_devices[i], iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+				g_free (iface);
+			}
+		}
 	}
 
 	hal_free_string_array (net_devices);
@@ -382,7 +421,7 @@ static LibHalFunctions hal_functions =
  * Create data structure used in callbacks from libhal.
  *
  */
-static NMData *nm_data_new (void)
+static NMData *nm_data_new (gboolean enable_test_devices)
 {
 	NMData *data;
 	
@@ -417,6 +456,7 @@ static NMData *nm_data_new (void)
 	}
 
 	data->state_modified = TRUE;
+	data->enable_test_devices = enable_test_devices;
 
 	return (data);	
 }
@@ -450,17 +490,17 @@ static void nm_data_free (NMData *data)
 
 
 /*
- * nm_data_set_state_modified
+ * nm_data_mark_state_changed
  *
- * Locked function to protect state modification changes.
+ * Notify our timeout that the networking state has changed in some way.
  *
  */
-void nm_data_set_state_modified (NMData *data, gboolean modified)
+void nm_data_mark_state_changed (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
 	g_mutex_lock (data->state_modified_mutex);
-	data->state_modified = modified;
+	data->state_modified = TRUE;
 	g_mutex_unlock (data->state_modified_mutex);
 }
 
@@ -476,8 +516,9 @@ static void nm_print_usage (void)
 	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--help]\n");
 	fprintf (stderr,
 		"\n"
-		"        --no-daemon    Don't become a daemon\n"
-		"        --help         Show this information and exit\n"
+		"        --no-daemon             Don't become a daemon\n"
+		"        --enable-test-devices   Allow dummy devices to be created via DBUS methods [DEBUG]\n"
+		"        --help                  Show this information and exit\n"
 		"\n"
 		"NetworkManager monitors all network connections and automatically\n"
 		"chooses the best connection to use.  It also allows the user to\n"
@@ -493,11 +534,12 @@ static void nm_print_usage (void)
  */
 int main( int argc, char *argv[] )
 {
-	LibHalContext		*ctx = NULL;
-	guint			 link_source;
-	guint			 policy_source;
-	guint			 wireless_scan_source;
-	gboolean			 become_daemon = TRUE;
+	LibHalContext	*ctx = NULL;
+	guint		 link_source;
+	guint		 policy_source;
+	guint		 wireless_scan_source;
+	gboolean		 become_daemon = TRUE;
+	gboolean		 enable_test_devices = FALSE;
 
 	/* Parse options */
 	while (1)
@@ -507,9 +549,10 @@ int main( int argc, char *argv[] )
 		const char *opt;
 
 		static struct option options[] = {
-			{"no-daemon",	0, NULL, 0},
-			{"help",		0, NULL, 0},
-			{NULL,		0, NULL, 0}
+			{"no-daemon",			0, NULL, 0},
+			{"enable-test-devices",	0, NULL, 0},
+			{"help",				0, NULL, 0},
+			{NULL,				0, NULL, 0}
 		};
 
 		c = getopt_long (argc, argv, "", options, &option_index);
@@ -527,6 +570,8 @@ int main( int argc, char *argv[] )
 				}
 				else if (strcmp (opt, "no-daemon") == 0)
 					become_daemon = FALSE;
+				else if (strcmp (opt, "enable-test-devices") == 0)
+					enable_test_devices = TRUE;
 				break;
 
 			default:
@@ -554,7 +599,7 @@ int main( int argc, char *argv[] )
 	nm_system_load_device_modules ();
 
 	/* Initialize our instance data */
-	nm_data = nm_data_new ();
+	nm_data = nm_data_new (enable_test_devices);
 	if (!nm_data)
 	{
 		syslog( LOG_CRIT, "nm_data_new() failed... Not enough memory?");

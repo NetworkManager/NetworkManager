@@ -54,6 +54,13 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
+	/* Fake it for a test device */
+	if (nm_device_is_test_device (dev))
+	{
+		g_usleep (2000);
+		return (TRUE);
+	}
+
 	/* Unfortunately, dhclient can take a long time to get a dhcp address
 	 * (for example, bad WEP key so it can't actually talk to the AP).
 	 */
@@ -79,6 +86,10 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 	char			 buf [500];
 
 	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
 
 	/* Find and kill the previous dhclient process for this device */
 	snprintf (buf, 500, "/var/run/dhclient-%s.pid", nm_device_get_iface (dev));
@@ -113,6 +124,10 @@ void nm_system_device_flush_routes (NMDevice *dev)
 
 	g_return_if_fail (dev != NULL);
 
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
 	/* Remove routing table entries */
 	snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
@@ -131,7 +146,11 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 	g_return_if_fail (dev != NULL);
 
-	/* Remove routing table entries */
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
+	/* Remove all IP addresses for a device */
 	snprintf (buf, 100, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
 }
@@ -170,7 +189,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
-	nm_spawn_process ("/usr/bin/killall dhclient");
+	nm_spawn_process ("/usr/bin/killall -q dhclient");
 }
 
 
@@ -183,7 +202,8 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-	nm_spawn_process ("/sbin/service nscd restart");
+	if(nm_spawn_process ("/etc/init.d/nscd status"))
+		nm_spawn_process ("/etc/init.d/nscd restart");
 }
 
 

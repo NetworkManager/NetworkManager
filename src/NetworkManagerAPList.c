@@ -26,7 +26,6 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDbus.h"
 
-extern gboolean	debug;
 
 struct NMAccessPointList
 {

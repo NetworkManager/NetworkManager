@@ -26,7 +26,6 @@
 #include <stdarg.h>
 #include <iwlib.h>
 
-extern gboolean debug;
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
@@ -35,6 +34,8 @@ extern gboolean debug;
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 
+
+static int test_dev_num = 0;
 
 /*
  * nm_dbus_create_error_message
@@ -242,7 +243,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		data->user_device = dev;
 
 		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
-		nm_data_set_state_modified (data, TRUE);
+		nm_data_mark_state_changed (data);
 	}
 
 	return (reply_message);
@@ -827,7 +828,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = TRUE;
-			nm_data_set_state_modified (data, TRUE);
+			nm_data_mark_state_changed (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
 		 * may want to know about service signals.
@@ -844,7 +845,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = FALSE;
-			nm_data_set_state_modified (data, TRUE);
+			nm_data_mark_state_changed (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
 		 * may want to know about service signals.
@@ -873,7 +874,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			syslog( LOG_DEBUG, "updating active device's best ap");
 			nm_device_update_best_ap (data->active_device);
-			nm_data_set_state_modified (data, TRUE);
+			nm_data_mark_state_changed (data);
 			syslog( LOG_DEBUG, "Device's best ap now '%s'", nm_ap_get_essid (nm_device_get_best_ap (data->active_device)));
 		}
 		handled = TRUE;
@@ -1068,6 +1069,27 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 					"The device cannot see any wireless networks."));
 		}
 	}
+	else if (strcmp ("getLinkActive", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, nm_device_get_link_active (dev), DBUS_TYPE_INVALID);
+	else if (strcmp ("setLinkActive", request) == 0)
+	{
+		/* Can only set link status for active devices */
+		if (nm_device_is_test_device (dev))
+		{
+			DBusError	error;
+			gboolean	link;
+
+			dbus_error_init (&error);
+			if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &link, DBUS_TYPE_INVALID))
+			{
+				nm_device_set_link_active (dev, link);
+				nm_data_mark_state_changed (data);
+			}
+		}
+		else
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NotTestDevice",
+						"Only test devices can have their link status set manually.");
+	}
 	else
 	{
 		/* Must destroy the allocated message */
@@ -1127,7 +1149,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 					syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
 					nm_device_freeze_best_ap (data->active_device);
 					nm_device_set_best_ap (data->active_device, ap);
-					nm_data_set_state_modified (data, TRUE);
+					nm_data_mark_state_changed (data);
 				}
 				dbus_free (network);
 			}
@@ -1140,8 +1162,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	}
 	else if (strcmp ("status", method) == 0)
 	{
-		reply_message = dbus_message_new_method_return (message);
-		if (reply_message)
+		if ((reply_message = dbus_message_new_method_return (message)))
 		{
 			if (data->active_device && nm_device_activating (data->active_device))
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);
@@ -1149,6 +1170,64 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connected", DBUS_TYPE_INVALID);
 			else
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "disconnected", DBUS_TYPE_INVALID);
+		}
+	}
+	else if (strcmp ("createTestDevice", method) == 0)
+	{
+		DBusError		error;
+		NMDeviceType	type;
+
+		dbus_error_init (&error);
+		if (    dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+			&& ((type == DEVICE_TYPE_WIRED_ETHERNET) || (type == DEVICE_TYPE_WIRELESS_ETHERNET)))
+		{
+			char		*interface = g_strdup_printf ("test%d", test_dev_num);
+			char		*udi = g_strdup_printf ("/test-devices/%s", interface);
+			NMDevice	*dev = NULL;
+
+			dev = nm_create_device_and_add_to_list (data, udi, interface, TRUE, type);
+			test_dev_num++;
+			if ((reply_message = dbus_message_new_method_return (message)))
+			{
+				char		*dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+				g_free (dev_path);
+			}
+			g_free (interface);
+			g_free (udi);
+		}
+		else
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "BadType",
+						"The test device type was invalid.");
+	}
+	else if (strcmp ("removeTestDevice", method) == 0)
+	{
+		DBusError		 error;
+		char			*dev_path;
+
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID))
+		{
+			NMDevice	*dev;
+
+			if ((dev = nm_dbus_get_device_from_object_path (data, dev_path)))
+			{
+				if (nm_device_is_test_device (dev))
+					nm_remove_device_from_list (data, nm_device_get_udi (dev));
+				else
+					reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NotTestDevice",
+								"Only test devices can be removed via dbus calls.");
+			}
+			else
+			{
+				reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
+								"The requested network device does not exist.");
+			}
+		}
+		else
+		{
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceBad",
+						"The device ID was bad.");
 		}
 	}
 	else

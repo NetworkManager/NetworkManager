@@ -33,7 +33,6 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 
-extern gboolean	debug;
 
 static char *
 nm_md5 (const char *buf, size_t len)

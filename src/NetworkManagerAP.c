@@ -23,8 +23,6 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerWireless.h"
 
-extern gboolean	debug;
-
 
 /*
  * Encapsulates Access Point information
@@ -32,7 +30,7 @@ extern gboolean	debug;
 struct NMAccessPoint
 {
 	guint			 refcount;
-	gchar			*essid;
+	char				*essid;
 	struct ether_addr	*address;
 	guint8			 quality;
 	double			 freq;

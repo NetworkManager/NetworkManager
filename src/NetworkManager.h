@@ -28,11 +28,12 @@
 #include <hal/libhal.h>
 #include "NetworkManagerAP.h"
 
-struct NMData
+typedef struct NMData
 {
 	LibHalContext			*hal_ctx;
 	DBusConnection			*dbus_connection;
 	gboolean				 info_daemon_avail;
+	gboolean				 enable_test_devices;
 
 	GSList				*dev_list;
 	GMutex				*dev_list_mutex;
@@ -50,10 +51,24 @@ struct NMData
 	struct NMAccessPointList	*trusted_ap_list;
 	struct NMAccessPointList	*preferred_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
-};
+} NMData;
 
-typedef struct NMData NMData;
+/*
+ * Types of NetworkManager devices
+ */
+typedef enum NMDeviceType
+{
+	DEVICE_TYPE_DONT_KNOW = 0,
+	DEVICE_TYPE_WIRED_ETHERNET,
+	DEVICE_TYPE_WIRELESS_ETHERNET
+} NMDeviceType;
 
-void		 nm_data_set_state_modified	(NMData *data, gboolean modified);
+
+struct NMDevice	*nm_create_device_and_add_to_list	(NMData *data, const char *udi, const char *iface,
+											gboolean test_device, NMDeviceType test_device_type);
+
+void				 nm_remove_device_from_list		(NMData *data, const char *udi);
+
+void		 		 nm_data_mark_state_changed		(NMData *data);
 
 #endif

@@ -64,6 +64,13 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
+	/* Fake it for a test device */
+	if (nm_device_is_test_device (dev))
+	{
+		g_usleep (2000);
+		return (TRUE);
+	}
+
 	iface = nm_device_get_iface (dev);
 	snprintf (buf, 500, "/sbin/dhcpcd %s", iface);
 	err = nm_spawn_process (buf);
@@ -84,6 +91,10 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 	char			 buf [500];
 
 	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
 
 	snprintf (buf, 500, "/var/run/dhcpcd-%s.pid", nm_device_get_iface(dev));
 	pidfile = fopen (buf, "r");
@@ -116,11 +127,15 @@ void nm_system_device_flush_routes (NMDevice *dev)
 
 	g_return_if_fail (dev != NULL);
 
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
 	if (nm_system_gentoo_conf_type == GENTOO_CONF_TYPE_IPROUTE) {
 		snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
 	} else if (nm_system_gentoo_conf_type == GENTOO_CONF_TYPE_IFCONFIG) {
 // FIXME: this command still isn't right
-		snprintf (buf, 100, "/sbin/route del  dev%s", nm_device_get_iface (dev));
+		snprintf (buf, 100, "/sbin/route del dev %s", nm_device_get_iface (dev));
 	} else {
 		snprintf (buf, 100, "/bin/false");
 	}
@@ -138,6 +153,10 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 	char	buf [100];
 
 	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
 
 	if (nm_system_gentoo_conf_type == GENTOO_CONF_TYPE_IPROUTE) {
 		snprintf (buf, 100, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
