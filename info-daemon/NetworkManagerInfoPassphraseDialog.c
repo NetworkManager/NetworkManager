@@ -29,7 +29,6 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
-#include <libgnomevfs/gnome-vfs-utils.h>
 
 #ifndef _
 #define _(x) dgettext (GETTEXT_PACKAGE, x)
@@ -153,7 +152,7 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 		nmi_dbus_return_user_key (info->connection, device, network, passphrase, key_type_return);
 
 		/* Update GConf with the new user key */
-		escaped_network = gnome_vfs_escape_string (network);
+		escaped_network = gconf_escape_key (network, strlen (network));
 		key = g_strdup_printf ("%s/%s", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 		gconf_entry = gconf_client_get_entry (info->gconf_client, key, NULL, TRUE, NULL);
 		g_free (key);

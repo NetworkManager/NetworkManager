@@ -94,8 +94,6 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 		return (NULL);
 	}
 
-	new_ap->refcount = 1;
-
 	if (src_ap->essid && (strlen (src_ap->essid) > 0))
 		new_ap->essid = g_strdup (src_ap->essid);
 	if (src_ap->address)

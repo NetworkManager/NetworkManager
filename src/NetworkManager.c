@@ -47,7 +47,6 @@
  * Globals
  */
 static NMData		*nm_data = NULL;
-extern gboolean	 allowed_ap_worker_exit;
 
 static void nm_data_free (NMData *data);
 

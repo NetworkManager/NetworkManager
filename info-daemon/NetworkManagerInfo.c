@@ -75,7 +75,7 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			/* If its a key under the network name, zero out the slash so we
 			 * are left with only the network name.
 			 */
-			unescaped_network = gnome_vfs_unescape_string (network, "");
+			unescaped_network = gconf_unescape_key (network, strlen (network));
 			if ((slash_pos = strchr (unescaped_network, '/')))
 				*slash_pos = '\0';
 

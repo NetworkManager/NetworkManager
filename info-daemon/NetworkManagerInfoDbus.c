@@ -25,7 +25,6 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <string.h>
-#include <libgnomevfs/gnome-vfs-utils.h>
 
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoDbus.h"
@@ -304,7 +303,7 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 	}
 
 	/* Grab timestamp key for our access point from GConf */
-	escaped_network = gnome_vfs_escape_string (network);
+	escaped_network = gconf_escape_key (network, strlen (network));
 	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
@@ -358,7 +357,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	}
 
 	/* Grab essid key for our access point from GConf */
-	escaped_network = gnome_vfs_escape_string (network);
+	escaped_network = gconf_escape_key (network, strlen (network));
 	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
@@ -413,7 +412,7 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	}
 
 	/* Grab user-key key for our access point from GConf */
-	escaped_network = gnome_vfs_escape_string (network);
+	escaped_network = gconf_escape_key (network, strlen (network));
 	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	key_value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
@@ -473,7 +472,7 @@ static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage 
 	}
 
 	/* Grab user-key key for our access point from GConf */
-	escaped_network = gnome_vfs_escape_string (network);
+	escaped_network = gconf_escape_key (network, strlen (network));
 	key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	g_free (escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);

@@ -1,3 +1,30 @@
+2004-10-27 Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c
+	  info-daemon/NetworkManagerInfoDbus.c
+	  info-daemon/NetworkManagerInfoPassphraseDialog.c
+	  panel-applet/NMWirelessApplet.c
+		- Properly escape gconf keys
+
+	* src/NetworkManager.c
+		- remove unused variables
+
+	* src/NetworkManagerAP.c
+		- (nm_ap_new_from_ap): Don't redundantly set new APs
+			refcount since it got set in nm_ap_new()
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_combine): Give up ownership of newly created
+			access points to the ap list, fixes memleak
+
+	* src/NetworkManagerDevice.c
+		- Remove cached_ap_list4 member since its not really needed
+		- (nm_device_wireless_network_exists): Try to get correct
+			encryption status of a found AP if its already in our
+			device list
+		- (nm_device_do_normal_scan): Clean up scanning a bit, make
+			memory allocs/deallocs a bit clearer and shorter-lived
+
 2004-10-26 Ray Strode <rstrode@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c:

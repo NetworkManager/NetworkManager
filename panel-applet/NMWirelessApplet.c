@@ -431,7 +431,8 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
  */
 static void nmwa_update_network_timestamp (NMWirelessApplet *applet, const WirelessNetwork *network)
 {
-	char			*key;
+	char		*key;
+	char		*escaped_network;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (network != NULL);
@@ -441,14 +442,16 @@ static void nmwa_update_network_timestamp (NMWirelessApplet *applet, const Wirel
 	 */
 
 	/* Update timestamp on network */
-	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
+	escaped_network = gconf_escape_key (network->essid, strlen (network->essid));
+	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
 	g_free (key);
 
 	/* Force-set the essid too so that we have a semi-complete network entry */
-	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	gconf_client_set_string (applet->gconf_client, key, network->essid, NULL);
 	g_free (key);
+	g_free (escaped_network);
 }
 
 

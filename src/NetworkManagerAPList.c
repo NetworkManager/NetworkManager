@@ -379,7 +379,10 @@ NMAccessPointList * nm_ap_list_combine (NMAccessPointList *list1, NMAccessPointL
 		{
 			NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
 			if (new_ap)
+			{
 				nm_ap_list_append_ap (final_list, new_ap);
+				nm_ap_unref (new_ap);
+			}
 		}
 		nm_ap_list_iter_free (iter);
 	}
@@ -393,7 +396,10 @@ NMAccessPointList * nm_ap_list_combine (NMAccessPointList *list1, NMAccessPointL
 			{
 				NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
 				if (new_ap)
+				{
 					nm_ap_list_append_ap (final_list, new_ap);
+					nm_ap_unref (new_ap);
+				}
 			}
 		}
 		nm_ap_list_iter_free (iter);

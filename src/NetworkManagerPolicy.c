@@ -35,8 +35,6 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerDbus.h"
 
-gboolean	allowed_ap_worker_exit = FALSE;
-
 
 /*
  * nm_policy_auto_get_best_device
@@ -59,12 +57,10 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 
 	while (element)
 	{
-		NMDevice	*dev = NULL;
 		guint	 dev_type;
 		gboolean	 link_active;
 		guint	 prio = 0;
-
-		dev = (NMDevice *)(element->data);
+		NMDevice	*dev = (NMDevice *)(element->data);
 
 		/* Skip unsupported devices */
 		if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)

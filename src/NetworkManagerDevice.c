@@ -37,8 +37,6 @@
 #include "NetworkManagerAPList.h"
 #include "backends/NetworkManagerSystem.h"
 
-extern gboolean	debug;
-
 /* Local static prototypes */
 static gboolean mii_get_link (NMDevice *dev);
 static gpointer nm_device_activation_worker (gpointer user_data);
@@ -66,7 +64,6 @@ typedef struct NMDeviceWirelessOptions
 	NMAccessPointList	*cached_ap_list1;
 	NMAccessPointList	*cached_ap_list2;
 	NMAccessPointList	*cached_ap_list3;
-	NMAccessPointList	*cached_ap_list4;
 
 	NMAccessPoint		*best_ap;
 	GMutex			*best_ap_mutex;
@@ -397,8 +394,6 @@ void nm_device_unref (NMDevice *dev)
 				nm_ap_list_unref (dev->options.wireless.cached_ap_list2);
 			if (dev->options.wireless.cached_ap_list3)
 				nm_ap_list_unref (dev->options.wireless.cached_ap_list3);
-			if (dev->options.wireless.cached_ap_list4)
-				nm_ap_list_unref (dev->options.wireless.cached_ap_list4);
 			nm_ap_unref (dev->options.wireless.best_ap);
 			g_mutex_free (dev->options.wireless.best_ap_mutex);
 		}
@@ -2085,8 +2080,9 @@ void nm_device_update_best_ap (NMDevice *dev)
  */
 gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, struct ether_addr *ap_addr, gboolean *encrypted)
 {
-	gboolean			success = FALSE;
-	struct ether_addr	addr;
+	gboolean			 success = FALSE;
+	struct ether_addr	 addr;
+	NMAccessPoint		*ap = NULL;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
@@ -2141,6 +2137,12 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			*encrypted = FALSE;
 		}
 	}
+
+	/* If by some chance we could connect, but in the wrong encryption mode, return the
+	 * encryption status of the access point if its in our scan, since that's more accurate.
+	 */
+	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
+		*encrypted = nm_ap_get_encrypted (ap);
 
 	if (success)
 		fprintf (stderr, "  found! (%s)\n", *encrypted ? "encrypted" : "unencrypted");
@@ -2233,7 +2235,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 	int		 iwlib_socket;
 	NMData	*data;
 
-	g_return_if_fail (dev  != NULL);
+	g_return_if_fail (dev != NULL);
 	g_return_if_fail (dev->app_data != NULL);
 
 	/* Test devices shouldn't get here since we fake the AP list earlier */
@@ -2253,7 +2255,8 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		wireless_scan		*tmp_ap;
 		int				 err;
 		NMAccessPointList	*old_ap_list = NULL;
-		NMAccessPointList	*temp_list;
+		NMAccessPointList	*new_scan_list = NULL;
+		NMAccessPointList	*earliest_scan = NULL;
 		gboolean			 have_blank_essids = FALSE;
 		NMAPListIter		*iter;
 		NMAccessPoint		*artificial_ap;
@@ -2275,8 +2278,8 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		}
 
 		/* New list for current scan data */
-		temp_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
-		if (!temp_list)
+		new_scan_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+		if (!new_scan_list)
 		{
 			nm_dispose_scan_results (scan_results.result);
 			close (iwlib_socket);
@@ -2284,12 +2287,10 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		}
 
 		/* Shift all previous cached scan results and dispose of the oldest one. */
-		if (dev->options.wireless.cached_ap_list4)
-			nm_ap_list_unref (dev->options.wireless.cached_ap_list4);
-		dev->options.wireless.cached_ap_list4 = dev->options.wireless.cached_ap_list3;
+		earliest_scan = dev->options.wireless.cached_ap_list3;
 		dev->options.wireless.cached_ap_list3 = dev->options.wireless.cached_ap_list2;
 		dev->options.wireless.cached_ap_list2 = dev->options.wireless.cached_ap_list1;
-		dev->options.wireless.cached_ap_list1 = temp_list;
+		dev->options.wireless.cached_ap_list1 = new_scan_list;
 
 		/* Iterate over scan results and pick a "most" preferred access point. */
 		tmp_ap = scan_results.result;
@@ -2349,7 +2350,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		if (have_blank_essids)
 			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
 
-		/* Furthermore, if we have an "artificial" access points, ie ones that exist but don't show up in
+		/* Furthermore, if we have any "artificial" access points, ie ones that exist but don't show up in
 		 * the scan for some reason, copy those over if we are associated with that access point right now.
 		 * Some Cisco cards don't report non-ESSID-broadcasting access points in their scans even though
 		 * the card associates with that AP just fine.
@@ -2370,11 +2371,14 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			}
 			nm_ap_list_iter_free (iter);
 		}
-
 		nm_ap_list_unref (old_ap_list);
 
 		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
-		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, dev->options.wireless.cached_ap_list4);
+		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, earliest_scan);
+
+		/* Don't need the 4th scan around any more */
+		if (earliest_scan)
+			nm_ap_list_unref (earliest_scan);
 
 		/* Now do a diff of the old and new networks that we can see, and
 		 * signal any changes over dbus, but only if we are active device.
