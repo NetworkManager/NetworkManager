@@ -1,3 +1,16 @@
+2004-08-25  Seth Nickell  <seth@gnome.org>
+
+        Patch from Matthew Garrett <mjg59@srcf.ucam.org> for adding
+	Debian support.
+	
+	* src/Makefile.am:
+	* src/backends/NetworkManagerDebian.c: (nm_system_device_run_dhcp),
+	(nm_system_device_stop_dhcp), (nm_system_device_flush_routes),
+	(nm_system_device_flush_addresses), (nm_system_enable_loopback),
+	(nm_system_delete_default_route),
+	(nm_system_kill_all_dhcp_daemons), (nm_system_update_dns),
+	(nm_system_load_device_modules):
+
 2004-08-24  Dan Willemsen <dan@willemsen.us>
 
 	* src/NetworkManager.c

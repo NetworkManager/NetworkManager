@@ -30,8 +30,10 @@ NetworkManager_SOURCES =					\
 		backends/NetworkManagerSystem.h
 
 EXTRA_NetworkManager_SOURCES =			\
-		backends/NetworkManagerRedHat.c	\
-		backends/NetworkManagerGentoo.c
+		backends/NetworkManagerDebian.c \
+		backends/NetworkManagerGentoo.c \
+		backends/NetworkManagerRedHat.c
+
 
 NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS) backends/$(SYSTEM_BACKEND_FILE)
 
