@@ -21,7 +21,7 @@
 
 #ifndef NM_WIRELESS_APPLET_H
 #define NM_WIRELESS_APPLET_H
-#include <gnome.h>
+#include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
 #include <glade/glade.h>
 #include <dbus/dbus.h>

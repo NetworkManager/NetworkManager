@@ -174,7 +174,7 @@ msgid "C_onnect"
 msgstr "_Spoji se"
 
 #: panel-applet/essid.glade:132
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Bežični _uređaj:"
 
 #: panel-applet/essid.glade:172

@@ -219,7 +219,7 @@ msgid "Connect with encryption enabled"
 msgstr "Koble til med kryptering"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Trådløst _kort:"
 
 #: panel-applet/essid.glade.h:10

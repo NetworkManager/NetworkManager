@@ -220,7 +220,7 @@ msgid "Connect with encryption enabled"
 msgstr "Připojit se s povoleným šifrováním"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Bezdrátový _adaptér:"
 
 #: panel-applet/essid.glade.h:10

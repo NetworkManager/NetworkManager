@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -39,10 +40,15 @@
 #include <errno.h>
 #include <math.h>
 #include <dirent.h>
-
-#include <gnome.h>
+#include <time.h>
 
 #include <glib/gi18n.h>
+#include <gtk/gtk.h>
+
+#if !GTK_CHECK_VERSION(2,6,0)
+#include <gnome.h>
+#endif
+
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
 
@@ -76,36 +82,36 @@ G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 static void
 nmwa_init (NMWirelessApplet *applet)
 {
-  applet->animation_id = 0;
-  applet->animation_step = 0;
+	applet->animation_id = 0;
+	applet->animation_step = 0;
 
-  setup_stock ();
-  nmwa_icons_init (applet);
-  nmwa_fill (applet);
+	setup_stock ();
+	nmwa_icons_init (applet);
+	nmwa_fill (applet);
 }
 
 static void nmwa_class_init (NMWirelessAppletClass *klass)
 {
-  GObjectClass *gobject_class;
+	GObjectClass *gobject_class;
 
-  gobject_class = G_OBJECT_CLASS (klass);
+	gobject_class = G_OBJECT_CLASS (klass);
 
-  gobject_class->constructor = nmwa_constructor;
+	gobject_class->constructor = nmwa_constructor;
 }
 
 static GObject *nmwa_constructor (GType type,
-		 		  guint n_props,
-				  GObjectConstructParam *construct_props)
+						    guint n_props,
+						    GObjectConstructParam *construct_props)
 {
-  GObject *obj;
-  NMWirelessApplet *applet;
-  NMWirelessAppletClass *klass;
+	GObject *obj;
+	NMWirelessApplet *applet;
+	NMWirelessAppletClass *klass;
 
-  klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
-  obj = G_OBJECT_CLASS (nmwa_parent_class)->constructor (type, n_props, construct_props);
-  applet =  NM_WIRELESS_APPLET (obj);
+	klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
+	obj = G_OBJECT_CLASS (nmwa_parent_class)->constructor (type, n_props, construct_props);
+	applet =  NM_WIRELESS_APPLET (obj);
 
-  return obj;
+	return obj;
 }
 
 
@@ -117,7 +123,7 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 
 	static const gchar *authors[] =
 	{
-		"\nThe Red Hat Desktop Team, including:\n",
+		"The Red Hat Desktop Team, including:\n",
 		"Dan Williams <dcbw@redhat.com>",
 		"Jonathan Blandford <jrb@redhat.com>",
 		"John Palmieri <johnp@redhat.com>",
@@ -130,21 +136,20 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 		NULL
 	};
 
-#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
+#if !GTK_CHECK_VERSION(2,6,0)
 	/* GTK 2.4 and earlier, have to use libgnome for about dialog */
 	file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP, "gnome-networktool.png", FALSE, NULL);
 	pixbuf = gdk_pixbuf_new_from_file (file, NULL);
 	g_free (file);
 
-	about_dialog = gnome_about_new (
-			_("NetworkManager Applet"),
-			VERSION,
-			_("(C) 2004-2005 Red Hat, Inc."),
-			_("A panel application for managing your network devices & connections."),
-			authors,
-			documenters,
-			NULL,
-			pixbuf);
+	about_dialog = gnome_about_new (_("NetworkManager Applet"),
+							  VERSION,
+							  _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
+							  _("Notification area applet for managing your network devices and connections."),
+							  authors,
+							  documenters,
+							  NULL,
+							  pixbuf);
 	g_object_unref (pixbuf);
 
 	gtk_window_set_screen (GTK_WINDOW (about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet)));
@@ -155,15 +160,15 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 
 	/* GTK 2.6 and later code */
 	gtk_show_about_dialog (NULL,
-		"name",				_("NetworkManager Applet"),
-		"version",			VERSION,
-		"copyright",			_("(C) 2004-2005 by Red Hat, Inc."),
-		"comments",			_("A panel application for managing your network devices & connections."),
-		"authors",			authors,
-		"documenters",			documenters,
-		"translator-credits",	NULL,
-		"logo-icon-name",		GTK_STOCK_NETWORK,
-		NULL);
+					   "name", _("NetworkManager Applet"),
+					   "version", VERSION,
+					   "copyright", _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
+					   "comments",	_("Notification area applet for managing your network devices and connections."),
+					   "authors", authors,
+					   "documenters", documenters,
+					   "translator-credits",	NULL,
+					   "logo-icon-name", GTK_STOCK_NETWORK,
+					   NULL);
 #endif
 }
 
@@ -341,8 +346,8 @@ nmwa_update_state (NMWirelessApplet *applet)
 	WirelessNetwork *active_network = NULL;
 
 	g_mutex_lock (applet->data_mutex);
-	if (    applet->active_device
-		&& (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
+	if (applet->active_device
+	    && (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
 	{
 		GSList *list;
 
@@ -655,12 +660,12 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
- * nmwa_toplevel_menu_activate
+ * nmwa_menu_show_cb
  *
  * Pop up the wireless networks menu in response to a click on the applet
  *
  */
-static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *applet)
+static void nmwa_menu_show_cb (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	if (!applet->tooltips)
 		applet->tooltips = gtk_tooltips_new ();
@@ -1153,13 +1158,13 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	gtk_container_set_border_width (GTK_CONTAINER (applet->toplevel_menu), 0);
 	gtk_container_add (GTK_CONTAINER(applet->toplevel_menu), applet->pixmap);
 	gtk_menu_shell_append (GTK_MENU_SHELL(menu_bar), applet->toplevel_menu);
-	g_signal_connect (applet->toplevel_menu, "activate", G_CALLBACK (nmwa_toplevel_menu_activate), applet);
 
 	applet->context_menu = nmwa_context_menu_create (applet);
 	g_signal_connect (applet->toplevel_menu, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press), applet);
 
-	applet->menu = gtk_menu_new();
-	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
+	applet->menu = gtk_menu_new ();
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (applet->toplevel_menu), applet->menu);
+	g_signal_connect (applet->menu, "show", G_CALLBACK (nmwa_menu_show_cb), applet);
 
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 

@@ -232,7 +232,7 @@ msgid "Connect with encryption enabled"
 msgstr "Verschlüsselte Verbindung ist aktiv"
 
 #: ../panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Funknetzwerk_adapter:"
 
 #: ../panel-applet/essid.glade.h:10

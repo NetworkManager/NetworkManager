@@ -112,7 +112,7 @@ msgstr "Wireless Mreže"
 
 #: panel-applet/essid.glade:177
 #, fuzzy
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Wireless Mreže"
 
 #: panel-applet/menu-info.c:101

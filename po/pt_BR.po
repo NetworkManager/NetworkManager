@@ -109,7 +109,7 @@ msgid "Wireless _Network:"
 msgstr "_Rede Sem Fio:"
 
 #: panel-applet/essid.glade:177
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "_Adaptador Sem Fio:"
 
 #: panel-applet/menu-info.c:101

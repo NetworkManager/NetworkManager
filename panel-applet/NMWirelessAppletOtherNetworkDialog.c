@@ -33,8 +33,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <gnome.h>
 #include <glib/gi18n.h>
+#include <gtk/gtk.h>
 #include <glade/glade.h>
 
 #include "NetworkManager.h"
@@ -98,7 +98,7 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);
 }
 
-static GtkTreeModel *create_wireless_adaptor_model (NMWirelessApplet *applet)
+static GtkTreeModel *create_wireless_adapter_model (NMWirelessApplet *applet)
 {
 	GtkListStore	*retval;
 	GSList		*element;
@@ -214,6 +214,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	/* Set up the dialog */
 	dialog = GTK_DIALOG (glade_xml_get_widget (xml, "custom_essid_dialog"));
+	gtk_window_set_default_size (GTK_WINDOW (dialog), 488, -1);
 	essid_entry = glade_xml_get_widget (xml, "essid_entry");
 	button = glade_xml_get_widget (xml, "ok_button");
 
@@ -262,16 +263,16 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	}
 	else if (n_wireless_interfaces == 1)
 	{
-		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_label"));
-		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_combo"));
+		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adapter_label"));
+		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adapter_combo"));
 	}
 	else
 	{
 		GtkWidget *combo;
 		GtkTreeModel *model;
 
-		combo = glade_xml_get_widget (xml, "wireless_adaptor_combo");
-		model = create_wireless_adaptor_model (applet);
+		combo = glade_xml_get_widget (xml, "wireless_adapter_combo");
+		model = create_wireless_adapter_model (applet);
 		gtk_combo_box_set_model (GTK_COMBO_BOX (combo), model);
 
 		/* Select the first one randomly */
@@ -301,15 +302,14 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
 {
 	gchar		*glade_file;
-	GtkDialog		*dialog;
-	GladeXML		*xml;
-	gint			 response;
+	GtkDialog	*dialog;
+	GladeXML	*xml;
+	gint		 response;
 	NetworkDevice	*def_dev = NULL;
 
 	g_return_if_fail (applet != NULL);
 
-	glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
-					"NetworkManagerNotification/essid.glade", FALSE, NULL);
+	glade_file = g_build_filename (GLADEDIR, "essid.glade", NULL);
 
 	if (!glade_file || !g_file_test (glade_file, G_FILE_TEST_IS_REGULAR))
 	{

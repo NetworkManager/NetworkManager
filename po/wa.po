@@ -112,7 +112,7 @@ msgstr "Rantoeles sins fyis"
 
 #: panel-applet/essid.glade:177
 #, fuzzy
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Rantoeles sins fyis"
 
 #: panel-applet/menu-info.c:101

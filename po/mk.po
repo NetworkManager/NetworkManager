@@ -180,7 +180,7 @@ msgid "Connect with encryption enabled"
 msgstr "Врзување со овозможено кодирање"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Безжичен _адаптер:"
 
 #: panel-applet/essid.glade.h:10

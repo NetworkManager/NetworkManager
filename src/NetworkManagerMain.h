@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib/gthread.h>
 #include <dbus/dbus.h>
-#include <hal/libhal.h>
+#include <libhal.h>
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
 #include "nm-named-manager.h"

@@ -36,9 +36,9 @@
 
 #if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
 #include "gtkcellview.h"
+#include "gtkcellrendererprogress.h"
 #endif
 
-#include "gtkcellrendererprogress.h"
 #include "NMWirelessAppletDbus.h"
 
 static gboolean nm_menu_wired_expose_event    (GtkWidget *widget, GdkEventExpose *event);
@@ -208,6 +208,7 @@ nm_menu_wireless_init (NMMenuWireless *menu_info)
   menu_info->progress_bar = g_object_new (GTK_TYPE_CELL_RENDERER_PROGRESS,
 					  "text", "",
 					  NULL);
+  gtk_cell_renderer_set_fixed_size (GTK_CELL_RENDERER (menu_info->progress_bar), 150, -1);
   gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (menu_info->cell_view),
 			      GTK_CELL_RENDERER (menu_info->progress_bar),
 			      TRUE);

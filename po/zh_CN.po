@@ -150,7 +150,7 @@ msgid "Connect with encryption enabled"
 msgstr "启用加密连接"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "无线适配器(_A)："
 
 #: panel-applet/essid.glade.h:10

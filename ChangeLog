@@ -1,3 +1,23 @@
+2005-02-18  Dan Williams  <dcbw@redhat.com>
+
+	* panel-applet/essid.glade
+	  panel-applet/NMWirelessAppletOtherNetworksDialog.c
+		- Correct spelling of "adaptor"->"adapter"
+
+2005-02-18  William Jon McCann  <mccann@jhu.edu>
+
+	* panel-applet/NMWirelessApplet.c: Use GTK_CHECK_VERSION() macro.
+	(nmwa_about_cb): Use standard copyright string.  Update comment
+	text to reflect that it is a notification area applet.  Remove
+	leading newline in authors list.
+	(nmwa_menu_show_cb, nmwa_setup_widgets): Populate menu on show
+	instead of on parent menu item activation.  Fixes #167550.
+
+2005-02-18  William Jon McCann  <mccann@jhu.edu>
+
+	* panel-applet/essid.glade: Capitalize items as per HIG.
+	  Fixes #167632
+
 2005-02-16  William Jon McCann  <mccann@jhu.edu>
 
 	* panel-applet/gtkcellrendererprogress.[ch]: Only compile these

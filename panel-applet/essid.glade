@@ -126,9 +126,9 @@
 		  <property name="column_spacing">6</property>
 
 		  <child>
-		    <widget class="GtkLabel" id="wireless_adaptor_label">
+		    <widget class="GtkLabel" id="wireless_adapter_label">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Wireless _Adaptor:</property>
+		      <property name="label" translatable="yes">Wireless _adapter:</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -138,7 +138,7 @@
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
-		      <property name="mnemonic_widget">wireless_adaptor_combo</property>
+		      <property name="mnemonic_widget">wireless_adapter_combo</property>
 		    </widget>
 		    <packing>
 		      <property name="left_attach">0</property>
@@ -151,7 +151,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkComboBox" id="wireless_adaptor_combo">
+		    <widget class="GtkComboBox" id="wireless_adapter_combo">
 		      <property name="visible">True</property>
 		      <property name="items" translatable="yes"></property>
 		    </widget>
@@ -168,7 +168,7 @@
 		  <child>
 		    <widget class="GtkLabel" id="label2">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Wireless _Network:</property>
+		      <property name="label" translatable="yes">Wireless _network:</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -242,7 +242,7 @@
 			      <child>
 				<widget class="GtkLabel" id="key_type_combo_label">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Key Type:</property>
+				  <property name="label" translatable="yes">Key type:</property>
 				  <property name="use_underline">False</property>
 				  <property name="use_markup">False</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -311,9 +311,9 @@
 			      <child>
 				<widget class="GtkComboBox" id="key_type_combo">
 				  <property name="visible">True</property>
-				  <property name="items" translatable="yes">128-bit Passphrase (WEP)
-Ascii Key (WEP)
-Hex Key (WEP)</property>
+				  <property name="items" translatable="yes">128-bit passphrase (WEP)
+Ascii key (WEP)
+Hex key (WEP)</property>
 				</widget>
 				<packing>
 				  <property name="left_attach">1</property>

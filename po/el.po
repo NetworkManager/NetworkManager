@@ -258,7 +258,7 @@ msgid "Connect with encryption enabled"
 msgstr "Σύνδεση με κρυπτογράφηση"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Ασύρματος _Προσαρμογέας"
 
 #: panel-applet/essid.glade.h:10

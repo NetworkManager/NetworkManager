@@ -224,7 +224,7 @@ msgid "Connect with encryption enabled"
 msgstr "Se connecter avec le chiffrement activé"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "_Adaptateur sans fil :"
 
 #: panel-applet/essid.glade.h:10

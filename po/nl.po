@@ -241,7 +241,7 @@ msgid "Connect with encryption enabled"
 msgstr "Verbinden met versleuteling aangezet"
 
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
 msgstr "Draadloze adapter:"
 
 #: panel-applet/essid.glade.h:10

@@ -221,8 +221,8 @@ msgstr "Connect with encryption enabled"
 
 #
 #: panel-applet/essid.glade.h:9
-msgid "Wireless _Adaptor:"
-msgstr "Wireless _Adaptor:"
+msgid "Wireless _adapter:"
+msgstr "Wireless _adapter:"
 
 #
 #: panel-applet/essid.glade.h:10

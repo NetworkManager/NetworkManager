@@ -22,7 +22,7 @@
 #include <errno.h>
 #include <glib.h>
 #include <dbus/dbus-glib.h>
-#include <hal/libhal.h>
+#include <libhal.h>
 #include <iwlib.h>
 #include <signal.h>
 #include <string.h>

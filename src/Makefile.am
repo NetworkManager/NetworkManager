@@ -52,6 +52,9 @@ NetworkManager_CPPFLAGS = 			\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"			\
 	-DARP_DEBUG
+if WITH_GCRYPT
+NetworkManager_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
+endif
 
 
 if !WITH_GCRYPT

@@ -23,7 +23,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
-#include <hal/libhal.h>
+#include <libhal.h>
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
