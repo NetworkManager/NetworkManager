@@ -1,3 +1,12 @@
+2004-09-22    <clarkbw@cvs.gnome.org>
+
+	* examples/python/NetworkManager.py: 
+	s/Quality/Strength/
+
+	* examples/python/systray/network_tray.py:
+	Lots of little changes and fixes.  been rotting for a while so I
+	figured I'd finally sync them all with CVS
+
 Tue Sep 21 18:05:34 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* configure.in: Add graphics
