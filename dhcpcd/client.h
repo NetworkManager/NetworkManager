@@ -88,6 +88,21 @@ typedef struct dhcpOptions
 	void		*val[256];
 } __attribute__((packed)) dhcpOptions;
 
+struct packed_ether_header
+{
+	u_int8_t	ether_dhost[ETH_ALEN];      /* destination eth addr */
+	u_int8_t	ether_shost[ETH_ALEN];      /* source ether addr    */
+	u_int16_t	ether_type;                 /* packet type ID field */
+} __attribute__((packed));
+
+#define TOKEN_RING_HEADER_PAD		sizeof(struct trh_hdr) + sizeof(struct trllc)
+typedef struct udpipMessage
+{
+	struct packed_ether_header	ethhdr;
+	char						udpipmsg[IPPACKET_SIZE];
+	char						pad_for_tokenring_header[TOKEN_RING_HEADER_PAD];
+} __attribute__((packed)) udpipMessage;
+
 
 typedef struct dhcp_interface
 {
@@ -105,6 +120,7 @@ typedef struct dhcp_interface
 	int			siaddr;
 	unsigned char	shaddr[ETH_ALEN];
 	unsigned int	xid;
+	unsigned short	ip_id;
 	unsigned char	cls_id[DHCP_CLASS_ID_MAX_LEN];
 	int			cls_id_len;
 	unsigned char	cli_id[DHCP_CLIENT_ID_MAX_LEN];
@@ -186,7 +202,7 @@ static dhcp_option_table	dhcp_opt_table[] =
 	{ -1,				NULL,				-1 }
 };
 
-typedef dhcpMessage *(*dhcp_msg_build_proc)(dhcp_interface *, int *msg_len, struct sockaddr_in *dest_addr);
+typedef udpipMessage *(*dhcp_msg_build_proc)(dhcp_interface *, int *msg_len);
 
 int dhcp_reboot(dhcp_interface *iface);
 int dhcp_init(dhcp_interface *iface);

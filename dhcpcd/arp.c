@@ -28,13 +28,6 @@
 #include "client.h"
 #include "arp.h"
 
-struct packed_ether_header
-{
-	u_int8_t	ether_dhost[ETH_ALEN];      /* destination eth addr */
-	u_int8_t	ether_shost[ETH_ALEN];      /* source ether addr    */
-	u_int16_t	ether_type;                 /* packet type ID field */
-} __attribute__((packed));
-
 typedef struct arpMessage
 {
   struct packed_ether_header	ethhdr;

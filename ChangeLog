@@ -1,3 +1,9 @@
+2004-12-15  Dan Williams  <dcbw@redhat.com>
+
+	* Rework the DHCP code again to revert to sending full ethernet frames
+		rather then relying on the kernel to do the right thing with our
+		packets.
+
 2004-12-06  Dan Williams  <dcbw@redhat.com>
 
 	* dhcpcd/client.c

@@ -46,6 +46,7 @@
 #include "client.h"
 #include "buildmsg.h"
 #include "arp.h"
+#include "udpipgen.h"
 
 int DebugFlag = 1;
 #define DEBUG
@@ -282,6 +283,8 @@ void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 
 	if (!iface) return;
 
+	memset (iface->cls_id, 0, DHCP_CLASS_ID_MAX_LEN);
+
 	if (g_cls_id)
 		g_cls_id_len = strlen (g_cls_id);
 
@@ -297,33 +300,34 @@ void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 			syslog (LOG_ERR,"classIDsetup: uname: %m\n");
 		snprintf (iface->cls_id, DHCP_CLASS_ID_MAX_LEN, "%s %s %s",
 				sname.sysname, sname.release, sname.machine);
+		iface->cls_id_len = strlen (iface->cls_id);
 	}
 }
 /*****************************************************************************/
 void client_id_setup (dhcp_interface *iface, const char *g_cli_id)
 {
 	unsigned int	 g_cli_id_len = 0;
-	unsigned char	*c = iface->cli_id;
+	char			*c;
 
 	if (!iface) return;
+
+	memset (iface->cli_id, 0, DHCP_CLIENT_ID_MAX_LEN);
+	c = iface->cli_id;
 
 	if (g_cli_id)
 		g_cli_id_len = strlen (g_cli_id);
 
-	*c++ = dhcpClientIdentifier;
 	if ( g_cli_id_len )
 	{
-		*c++ = g_cli_id_len + 1;	/* 1 for the field below */
-		*c++ = 0;			/* type: string */
+		*c++ = 0;			     /* type: string */
 		memcpy (c, g_cli_id, g_cli_id_len);
-		iface->cli_id_len = g_cli_id_len + 3;
+		iface->cli_id_len = g_cli_id_len + 1;
 	}
 	else
 	{
-		*c++ = ETH_ALEN + 1;	        /* length: 6 (MAC Addr) + 1 (# field) */
 		*c++ = ARPHRD_ETHER;	/* type: Ethernet address */
 		memcpy (c, iface->chaddr, ETH_ALEN);
-		iface->cli_id_len = ETH_ALEN + 3;
+		iface->cli_id_len = ETH_ALEN + 1;
 	}
 }
 /*****************************************************************************/
@@ -438,9 +442,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	int				recv_sk = -1;
 	struct sockaddr_in	addr;
 	int				tries = 0;
-	int				dhcp_send_len, err = RET_DHCP_TIMEOUT;
-	dhcpMessage		*dhcp_send = NULL;
+	int				err = RET_DHCP_TIMEOUT;
 	struct timeval		recv_timeout, overall_end, diff, current;
+	udpipMessage		*udp_send = NULL;
 
 	if (!dhcp_return)
 		return RET_DHCP_ERROR;
@@ -449,13 +453,6 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	pkt_recv = malloc (sizeof (char) * ETH_FRAME_LEN);
 	if (!pkt_recv)
 		return RET_DHCP_ERROR;
-
-	/* Call the specific DHCP message building routine for this request */
-	if (!(dhcp_send = build_dhcp_msg (iface, &dhcp_send_len, &addr)))
-	{
-		err = RET_DHCP_ERROR;
-		goto out;
-	}
 
 	recv_sk = socket (AF_PACKET, SOCK_DGRAM, ntohs (ETH_P_IP));
 	if (recv_sk < 0)
@@ -476,6 +473,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	syslog (LOG_INFO, "DHCP: Starting request loop");
 	do
 	{
+		udpipMessage		*udp_msg_recv = NULL;
 		struct iphdr		*ip_hdr;
 		struct udphdr		*udp_hdr;
 		char				*tmp_ip;
@@ -494,7 +492,19 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		syslog (LOG_INFO, "DHCP: Sending request packet...");
 		do
 		{
-			err = sendto (iface->sk, dhcp_send, dhcp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
+			int				 udp_send_len = 0;
+			struct sockaddr	 addr;
+
+			/* Call the specific DHCP message building routine for this request */
+			if (!(udp_send = build_dhcp_msg (iface, &udp_send_len)))
+			{
+				err = RET_DHCP_ERROR;
+				goto out;
+			}
+
+			memset (&addr, 0, sizeof (struct sockaddr));
+			memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
+			err = sendto (iface->sk, udp_send, udp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
 			if (iface->cease || ((err == -1) && (errno != EAGAIN)))
 			{
 				syslog (LOG_INFO, "DHCP: error sending, cease = %d, err = %d, errno = %d", iface->cease, err, errno);
@@ -657,7 +667,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	} while (timeval_subtract (&diff, &overall_end, &current) == 0);
 
 out:
-	free (dhcp_send);
+	free (udp_send);
 	if (err != RET_DHCP_SUCCESS)
 		free (pkt_recv);
 	if (recv_sk >= 0)
@@ -868,16 +878,16 @@ int dhcp_rebind(dhcp_interface *iface)
 /*****************************************************************************/
 int dhcp_release(dhcp_interface *iface)
 {
-	struct sockaddr_in	addr;
-	socklen_t			addr_len = sizeof (struct sockaddr_in);
-	int				len;
-	dhcpMessage		*msg;
+	udpipMessage	*msg;
+	struct sockaddr addr;
+	socklen_t		addr_len = sizeof (struct sockaddr);
+	int			len;
 
 	if ( iface->ciaddr == 0 )
 		return RET_DHCP_ERROR;
 
 	iface->xid = random();
-	if (!(msg = build_dhcp_release (iface, &len, &addr)))
+	if (!(msg = build_dhcp_release (iface, &len)))
 		return RET_DHCP_ERROR;
 
 	if (DebugFlag)
@@ -889,7 +899,9 @@ int dhcp_release(dhcp_interface *iface)
 			((unsigned char *)&(iface->siaddr))[2], ((unsigned char *)&(iface->siaddr))[3]);
 	}
 
-	if (sendto (iface->sk, msg, sizeof (dhcpMessage), 0, (struct sockaddr *)&addr, addr_len))
+	memset (&addr, 0, sizeof (struct sockaddr));
+	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
+	if (sendto (iface->sk, msg, len, 0, (struct sockaddr *)&addr, addr_len))
 		syslog (LOG_ERR, "dhcpRelease: sendto: %m\n");
 	free (msg);
 
@@ -902,19 +914,21 @@ int dhcp_release(dhcp_interface *iface)
 #ifdef ARPCHECK
 int dhcp_decline(dhcp_interface *iface)
 {
-	struct sockaddr_in	addr;
-	socklen_t			addr_len = sizeof (struct sockaddr_in);
-	int				len;
-	dhcpMessage		*msg;
+	udpipMessage	*msg;
+	struct sockaddr addr;
+	socklen_t		addr_len = sizeof (struct sockaddr);
+	int			len;
 
 	iface->xid = random ();
-	if (!(msg = build_dhcp_decline (iface, &len, &addr)))
+	if (!(msg = build_dhcp_decline (iface, &len)))
 		return  RET_DHCP_ERROR;
 
 	if (DebugFlag)
 		syslog (LOG_INFO, "Broadcasting DHCP_DECLINE\n");
 
-	if (sendto (iface->sk, msg, sizeof (dhcpMessage), 0, &addr, addr_len))
+	memset (&addr, 0, sizeof (struct sockaddr));
+	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
+	if (sendto (iface->sk, msg, len, 0, &addr, addr_len))
 		syslog (LOG_ERR,"dhcpDecline: sendto: %m\n");
 	free (msg);
 

@@ -60,7 +60,6 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 	dhcp_interface		*iface = NULL;
 	dhcp_client_options	*opts = NULL;
 	struct rtentry		route;
-	struct sockaddr_in	*addrp;
 
 	if (!if_name || !in_opts)
 		return NULL;
@@ -78,12 +77,9 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 	memcpy (opts, in_opts, sizeof (dhcp_client_options));
 	iface->client_options = opts;
 
-	class_id_setup (iface, iface->client_options->class_id);
-	client_id_setup (iface, iface->client_options->client_id);
-
 	memset (&ifr, 0, sizeof(struct ifreq));
 	memcpy (ifr.ifr_name, iface->iface, strlen (iface->iface));
-	iface->sk = socket (AF_INET, SOCK_DGRAM, 0);
+	iface->sk = socket (AF_PACKET, SOCK_PACKET, htons(ETH_P_ALL));
 	if (iface->sk == -1)
 	{
 		syslog (LOG_ERR,"dhcp_interface_init: socket: %m\n");
@@ -103,6 +99,9 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 	 */
 	do
 	{
+		struct sockaddr_pkt	sap;
+		struct sockaddr_in	*addrp;
+
 		if ( ioctl (iface->sk, SIOCGIFHWADDR, &ifr) )
 		{
 			syslog(LOG_ERR,"dhcp_interface_init: ioctl SIOCGIFHWADDR: %m\n");
@@ -148,10 +147,11 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 			syslog (LOG_ERR, "dhcp_interface_init: SO_BINDTODEVICE %s (%d) failed: %s", iface->iface, strlen (iface->iface), strerror (errno));
 		}
 
-		memset (&addr, 0, sizeof (addr));
-		addr.sin_family = AF_INET;
-		addr.sin_port = htons (DHCP_CLIENT_PORT);
-		if (bind (iface->sk, (struct sockaddr *)&addr, sizeof(addr)) != 0)
+		memset (&sap, 0, sizeof(sap));
+		sap.spkt_protocol = htons (ETH_P_ALL);
+		memcpy (sap.spkt_device, iface->iface, strlen (iface->iface));
+		sap.spkt_family = AF_PACKET;
+		if ( bind (iface->sk, (void*)&sap, sizeof(struct sockaddr)) == -1 )
 			syslog (LOG_ERR,"dhcp_interface_init: bind: %m\n");
 
 		if (ioctl (iface->sk, SIOCGIFHWADDR, &ifr))
@@ -175,6 +175,9 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 
 	if (setsockopt (iface->foo_sk, SOL_SOCKET, SO_BROADCAST, &o, sizeof(o)))
 		syslog (LOG_ERR,"dhcp_interface_init: setsockopt: %m\n");
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons (DHCP_CLIENT_PORT);
 	if ( bind (iface->foo_sk, (struct sockaddr *)&addr, sizeof(addr)) )
 	{
 		if (errno != EADDRINUSE)
@@ -209,6 +212,14 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 		syslog (LOG_ERR, "dhcp_interface_init: SIOCADDRT failed, errno = %d, dev = %s\n", errno, iface->iface);
 		goto err_out;
 	}
+
+	i = time (NULL) + iface->chaddr[5] + 4*iface->chaddr[4] + 8*iface->chaddr[3] +
+		16*iface->chaddr[2] + 32*iface->chaddr[1] + 64*iface->chaddr[0];
+	srandom (i);
+	iface->ip_id = i & 0xffff;
+
+	class_id_setup (iface, iface->client_options->class_id);
+	client_id_setup (iface, iface->client_options->client_id);
 
 	return iface;
 

@@ -15,7 +15,9 @@ libdhcpc_a_SOURCES=	\
 	client.c		\
 	client.h		\
 	dhcpcd.c		\
-	dhcpcd.h
+	dhcpcd.h		\
+	udpipgen.c	\
+	udpipgen.h
 
 bin_PROGRAMS = dhcp_test
 dhcp_test_SOURCES = dhcp_test.c

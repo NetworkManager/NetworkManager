@@ -1,6 +1,5 @@
 /*
  * dhcpcd - DHCP client daemon -
- * Copyright (C) 1996 - 1997 Yoichi Hariguchi <yoichi@fore.com>
  * Copyright (C) January, 1998 Sergei Viznyuk <sv@phystech.com>
  * 
  * dhcpcd is an RFC2131 and RFC1541 compliant DHCP client daemon.
@@ -20,20 +19,33 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef BUILDMSG_H
-#define BUILDMSG_H
+#ifndef UDPIPGEN_H
+#define UDPIPGEN_H
 
-#include "client.h"
+#include <netinet/ip.h>
+#include <netinet/udp.h>
 
-udpipMessage *build_dhcp_discover	(dhcp_interface *iface, int *msg_len);
-udpipMessage *build_dhcp_request	(dhcp_interface *iface, int *msg_len);
-udpipMessage *build_dhcp_renew	(dhcp_interface *iface, int *msg_len);
-udpipMessage *build_dhcp_rebind	(dhcp_interface *iface, int *msg_len);
-udpipMessage *build_dhcp_reboot	(dhcp_interface *iface, int *msg_len);
-udpipMessage *build_dhcp_release	(dhcp_interface *iface, int *msg_len);
-#ifdef ARPCHECK
-udpipMessage *build_dhcp_decline	(dhcp_interface *iface, int *msg_len);
+#ifndef IPDEFTTL
+#define IPDEFTTL 64
 #endif
-udpipMessage *build_dhcp_inform	(dhcp_interface *iface, int *msg_len);
+
+struct ipovly
+{
+  int ih_next,ih_prev;
+  u_char ih_x1;
+  u_char ih_pr;
+  u_short ih_len;
+  struct in_addr ih_src;
+  struct in_addr ih_dst;
+} __attribute__((packed));
+
+typedef struct udpiphdr
+{
+  char ip[sizeof(struct ip)];
+  char udp[sizeof(struct udphdr)];
+} __attribute__((packed)) udpiphdr;
+
+void udpipgen (udpiphdr *udpip, unsigned int saddr, unsigned int daddr, unsigned short *ip_id, int dhcp_msg_len);
+int udpipchk (udpiphdr *udpip);
 
 #endif
