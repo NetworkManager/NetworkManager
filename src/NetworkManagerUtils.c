@@ -284,7 +284,7 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 			char	buf[200];
 			char	id[9];
 
-			snprintf (&id[0], 9, "%4X%4X", vendor, product);
+			snprintf (&id[0], 9, "%4x%4x", vendor, product);
 			id[8] = '\0';
 			while (fgets (&buf[0], 200, f) && !feof (f))
 			{

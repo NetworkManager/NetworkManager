@@ -348,13 +348,16 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
 
-	/* Grab IP config data for this device from the system configuration files */
-	nm_device_update_ip4_address (dev);
-	nm_system_device_update_config_info (dev);
+	if (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED)
+	{
+		/* Grab IP config data for this device from the system configuration files */
+		nm_device_update_ip4_address (dev);
+		nm_system_device_update_config_info (dev);
 
-	/* Have to bring the device up before checking link status.  */
-	nm_device_bring_up (dev);
-	nm_device_update_link_active (dev, TRUE);
+		/* Have to bring the device up before checking link status.  */
+		nm_device_bring_up (dev);
+		nm_device_update_link_active (dev, TRUE);
+	}
 
 	return (dev);
 }
@@ -1047,6 +1050,9 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		return;
 	}
 
+	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+		return;
+
 	iface_fd = nm_get_network_control_socket ();
 	if (iface_fd < 0)
 		return;
@@ -1209,6 +1215,12 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 		dev->activating = FALSE;
 		dev->just_activated = TRUE;
 		return (TRUE);
+	}
+
+	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+	{
+		dev->activating = FALSE;
+		return (FALSE);
 	}
 
 	/* Reset communication flags between worker and main thread */
@@ -1637,6 +1649,9 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	nm_device_activation_cancel (dev);
+
+	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+		return (TRUE);
 
 	/* Take out any entries in the routing table and any IP address the old device had. */
 	nm_system_device_flush_routes (dev);

@@ -1,5 +1,14 @@
 2004-10-21 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- Don't try to activate/bring up/down unsupported
+			devices
+
+	* src/NetworkManagerUtils.c
+		- Fix case of PCI ID checks for driver support levels
+
+2004-10-21 Dan Williams <dcbw@redhat.com>
+
 	* NetworkManager.h
 		- New file, now contains commonly used structures and bits
 			for the dbus API of NetworkManager
