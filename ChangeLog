@@ -1,5 +1,11 @@
 2004-09-07  Dan Williams <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerRedhat.c
+	  src/backends/NetworkManagerSlackware.c
+		- Use full path to /sbin/ip everywhere
+
+2004-09-07  Dan Williams <dcbw@redhat.com>
+
 	Patch from: Narayan Newton <narayan_newton@yahoo.com>
 
 	* configure.in

@@ -164,7 +164,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 void nm_system_enable_loopback (void)
 {
 	nm_spawn_process ("/sbin/ip link set dev lo up");
-	nm_spawn_process ("ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo label loopback");
+	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo label loopback");
 }
 
 
