@@ -1,3 +1,9 @@
+2005-02-01  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Colin Walters:
+	* named/nm-named-manager.c
+		- Make multi-domain search options work
+
 2005-01-31  Dan Williams  <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c
