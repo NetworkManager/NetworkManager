@@ -1,3 +1,28 @@
+2004-11-22  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevicePrivate.h
+		- Split out the NMDevice struct to a different file so that stuff like
+			NetworkManagerDHCP.c and NetworkManagerSystem.c can use it
+
+	* dhcpcd/client.c
+		- fprintf->syslog
+		- (dhcpSendAndRecv): do non-blocking sends and receives, and check to see if we
+			need to cancel the dhcp request during the send and recv
+
+	* dhcpcd/client.h
+		- Move the DHCP option enum to dhcpcd.h
+
+	* src/NetworkManagerDHCP.c
+		- Split out the actual IP/netmask/etc setting code
+		- New Renew/Rebind functions
+		- New timer setup function for renew/rebind operations
+
+	* src/NetworkManagerDevice.c
+		- For device activation, if we are using DHCP then keep the activation thread
+			alive until device deactivation.  We need to renew/rebind the DHCP address
+			after the T1 (renew) and T2 (rebind) times have expired.
+		- Increase some timeouts after bringing wireless cards up/down
+
 2004-11-17  Dan Williams <dcbw@redhat.com>
 
 	* Cache access point MAC addresses in NetworkManagerInfo after you've explicitly

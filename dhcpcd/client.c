@@ -295,7 +295,7 @@ void classIDsetup(dhcp_interface *iface, const char *g_cls_id)
 	{
 		struct utsname sname;
 		if ( uname(&sname) )
-			syslog(LOG_ERR,"classIDsetup: uname: %m\n");
+			syslog (LOG_ERR,"classIDsetup: uname: %m\n");
 		snprintf (iface->cls_id, DHCP_CLASS_ID_MAX_LEN, "%s %s %s",
 				sname.sysname, sname.release, sname.machine);
 	}
@@ -506,7 +506,7 @@ int dhcpSendAndRecv (dhcp_interface *iface, unsigned int expected_reply_type,
 {
 	udpipMessage		*udp_msg_recv = NULL;
 	struct sockaddr	addr;
-	int				len, err, local_timeout = 0;
+	int				len, err = RET_DHCP_TIMEOUT, local_timeout = 0;
 	int				j = DHCP_INITIAL_RTO / 2;
 	struct timeval		local_begin, current, diff;
 	struct timeval		overall_end;
@@ -519,6 +519,7 @@ int dhcpSendAndRecv (dhcp_interface *iface, unsigned int expected_reply_type,
 	do
 	{
 		udpipMessage	*udp_msg_send = buildUdpIpMsg (iface);
+		int			 send_err = 0;
 
 		if (!udp_msg_send)
 			return RET_DHCP_ERROR;
@@ -546,12 +547,16 @@ int dhcpSendAndRecv (dhcp_interface *iface, unsigned int expected_reply_type,
 
 		memset (&addr, 0, sizeof(struct sockaddr));
 		memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-		if (sendto (iface->sk, udp_msg_send, len, 0, &addr, sizeof(struct sockaddr)) == -1)
+		do
 		{
-			syslog (LOG_ERR,"sendto: %m\n");
-			free (udp_msg_send);
-			return RET_DHCP_ERROR;
-		}
+			send_err = sendto (iface->sk, udp_msg_send, len, MSG_DONTWAIT, &addr, sizeof(struct sockaddr));
+			if (iface->cease || ((send_err == -1) && (errno != EAGAIN)))
+			{
+				free (udp_msg_send);
+				return iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
+			}
+		} while ((send_err == -1) && (errno == EAGAIN));
+
 		free (udp_msg_send);
 		gettimeofday (&local_begin, NULL);
 		err = peekfd (iface, (j + random () % 200000));
@@ -571,13 +576,15 @@ int dhcpSendAndRecv (dhcp_interface *iface, unsigned int expected_reply_type,
 
 		udp_msg_recv = calloc (1, sizeof (udpipMessage));
 		o = sizeof (struct sockaddr);
-		len = recvfrom (iface->sk, udp_msg_recv, sizeof(udpipMessage), 0, (struct sockaddr *)&addr, &o);
-		if (len == -1)
+		do
 		{
-			syslog(LOG_ERR,"recvfrom: %m\n");
-			free (udp_msg_recv);
-			return RET_DHCP_ERROR;
-		}
+			len = recvfrom (iface->sk, udp_msg_recv, sizeof(udpipMessage), MSG_DONTWAIT, (struct sockaddr *)&addr, &o);
+			if (iface->cease || ((len == -1) && (errno != EAGAIN)))
+			{
+				free (udp_msg_recv);
+				return iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
+			}
+		} while ((len == -1) && (errno == EAGAIN));
 
 		if (iface->bTokenRing)
 		{    /* Here we convert a TR frame into an Eth frame */
@@ -752,7 +759,7 @@ int dhcp_init (dhcp_interface *iface)
 	releaseDhcpOptions (iface);
 
 #ifdef DEBUG
-	fprintf(stderr,"ClassID  = \"%s\"\n"
+	syslog (LOG_DEBUG, "ClassID  = \"%s\"\n"
 		"ClientID = \"%u.%u.%u.%02X.%02X.%02X.%02X.%02X.%02X\"\n", iface->cls_id,
 		iface->cli_id[0], iface->cli_id[1], iface->cli_id[2],
 		iface->cli_id[3], iface->cli_id[4], iface->cli_id[5],
@@ -760,7 +767,7 @@ int dhcp_init (dhcp_interface *iface)
 #endif
 
 	if ( DebugFlag )
-		syslog (LOG_DEBUG,"broadcasting DHCP_DISCOVER\n");
+		syslog (LOG_INFO, "Broadcasting DHCP_DISCOVER\n");
 	iface->xid = random ();
 	err = dhcpSendAndRecv (iface, DHCP_OFFER, &buildDhcpDiscover, &msg);
 	if (err != RET_DHCP_SUCCESS)
@@ -772,7 +779,7 @@ int dhcp_init (dhcp_interface *iface)
 		udpipMessage	*msg2 = NULL;
 
 		if (DebugFlag)
-			syslog (LOG_DEBUG,"broadcasting second DHCP_DISCOVER\n");
+			syslog (LOG_INFO, "Broadcasting second DHCP_DISCOVER\n");
 
 		iface->xid = dhcp_msg->xid;
 		err = dhcpSendAndRecv (iface, DHCP_OFFER, &buildDhcpDiscover, &msg2);
@@ -792,7 +799,7 @@ int dhcp_init (dhcp_interface *iface)
 	/* DHCP_OFFER received */
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG,"DHCP_OFFER received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_OFFER received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -814,7 +821,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG,"broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
+		syslog (LOG_INFO, "Broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 	}
@@ -826,7 +833,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 	if ( DebugFlag )
 	{
 		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog(LOG_DEBUG, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -840,7 +847,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 	if ( arpCheck(iface) )
 	{
 		if ( DebugFlag )
-			syslog(LOG_DEBUG, "requested %u.%u.%u.%u address is in use\n",
+			syslog (LOG_INFO, "requested %u.%u.%u.%u address is in use\n",
 				((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 				((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 		dhcpDecline();
@@ -850,7 +857,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG, "verified %u.%u.%u.%u address is not in use\n",
+		syslog (LOG_INFO, "verified %u.%u.%u.%u address is not in use\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 	}
@@ -895,7 +902,7 @@ int dhcp_renew(dhcp_interface *iface)
 
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG,"sending DHCP_REQUEST for %u.%u.%u.%u to %u.%u.%u.%u\n",
+		syslog (LOG_INFO,"Sending DHCP_REQUEST for %u.%u.%u.%u to %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3],
 			((unsigned char *)&(iface->siaddr))[0], ((unsigned char *)&(iface->siaddr))[1],
@@ -912,7 +919,7 @@ int dhcp_renew(dhcp_interface *iface)
 	if ( DebugFlag )
 	{
 		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog(LOG_DEBUG, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -938,7 +945,7 @@ int dhcp_rebind(dhcp_interface *iface)
 
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG,"broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
+		syslog (LOG_INFO,"Broadcasting DHCP_REQUEST for %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0],
 			((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2],
@@ -955,7 +962,7 @@ int dhcp_rebind(dhcp_interface *iface)
 	if ( DebugFlag )
 	{
 		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog(LOG_DEBUG, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 				((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -984,7 +991,7 @@ int dhcp_release(dhcp_interface *iface)
 
 	if (DebugFlag)
 	{
-		syslog(LOG_DEBUG,"sending DHCP_RELEASE for %u.%u.%u.%u to %u.%u.%u.%u\n",
+		syslog (LOG_INFO, "Sending DHCP_RELEASE for %u.%u.%u.%u to %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3],
 			((unsigned char *)&(iface->siaddr))[0], ((unsigned char *)&(iface->siaddr))[1],
@@ -994,7 +1001,7 @@ int dhcp_release(dhcp_interface *iface)
 	memset (&addr, 0, sizeof(struct sockaddr));
 	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
 	if ( sendto (iface->sk, msg, sizeof(struct packed_ether_header) + sizeof(udpiphdr) + sizeof(dhcpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
-		syslog(LOG_ERR,"dhcpRelease: sendto: %m\n");
+		syslog (LOG_ERR, "dhcpRelease: sendto: %m\n");
 	free (msg);
 
 	arpRelease (iface); /* clear ARP cache entries for client IP addr */
@@ -1016,7 +1023,7 @@ int dhcp_decline(dhcp_interface *iface)
 	memset (&addr, 0, sizeof(struct sockaddr));
 	memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
 	if ( DebugFlag )
-		syslog (LOG_DEBUG,"broadcasting DHCP_DECLINE\n");
+		syslog (LOG_INFO, "Broadcasting DHCP_DECLINE\n");
 
 	if ( sendto (iface->sk, msg, sizeof(struct packed_ether_header) + sizeof(udpiphdr)+sizeof(dhcpMessage), 0, &addr, sizeof(struct sockaddr)) == -1 )
 		syslog (LOG_ERR,"dhcpDecline: sendto: %m\n");
@@ -1033,7 +1040,7 @@ int dhcp_inform(dhcp_interface *iface)
 
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG, "broadcasting DHCP_INFORM for %u.%u.%u.%u\n",
+		syslog (LOG_INFO, "Broadcasting DHCP_INFORM for %u.%u.%u.%u\n",
 			((unsigned char *)&(iface->ciaddr))[0],
 			((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2],
@@ -1048,7 +1055,7 @@ int dhcp_inform(dhcp_interface *iface)
 	if ( DebugFlag )
 	{
 		dhcpMessage	*dhcp_msg = (dhcpMessage *)&(msg->udpipmsg[sizeof(udpiphdr)]);
-		syslog(LOG_DEBUG, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
+		syslog (LOG_INFO, "DHCP_ACK received from %s (%u.%u.%u.%u)\n", dhcp_msg->sname,
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[0],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[1],
 			((unsigned char *)(iface->dhcp_options.val[dhcpServerIdentifier]))[2],
@@ -1061,7 +1068,7 @@ int dhcp_inform(dhcp_interface *iface)
 	if ( arpCheck(iface) )
 	{
 		if ( DebugFlag )
-			syslog(LOG_DEBUG, "requested %u.%u.%u.%u address is in use\n",
+			syslog (LOG_INFO, "Requested %u.%u.%u.%u address is in use\n",
 				((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 				((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 		dhcpDecline (iface);
@@ -1069,7 +1076,7 @@ int dhcp_inform(dhcp_interface *iface)
 	}
 	if ( DebugFlag )
 	{
-		syslog(LOG_DEBUG, "verified %u.%u.%u.%u address is not in use\n",
+		syslog (LOG_INFO, "Verified %u.%u.%u.%u address is not in use\n",
 			((unsigned char *)&(iface->ciaddr))[0], ((unsigned char *)&(iface->ciaddr))[1],
 			((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 	}
@@ -1095,7 +1102,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 	int i,j;
 	dhcpMessage *dhcp_msg = (dhcpMessage *)&(udp_msg->udpipmsg[sizeof(udpiphdr)]);
 
-	fprintf (stderr,"parseDhcpMsgRecv: %d options received:\n", options->num);
+	syslog (LOG_INFO, "parseDhcpMsgRecv: %d options received:\n", options->num);
 	for (i = 1; i < 255; i++)
 	{
 		if ( options->val[i] )
@@ -1116,7 +1123,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 					for (j = 0; j < options->len[i]; j += 4)
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						fprintf (stderr,"i=%-2d (%s)  len=%-2d  option = %u.%u.%u.%u\n",
+						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %u.%u.%u.%u\n",
 								i, opt_name, options->len[i],
 								((unsigned char *)options->val[i])[0+j],
 								((unsigned char *)options->val[i])[1+j],
@@ -1132,7 +1139,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 				case 59:/* dhcpT2value */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						fprintf (stderr,"i=%-2d (%s)  len=%-2d  option = %d\n", i, opt_name,
+						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %d\n", i, opt_name,
 							options->len[i], ntohl(*(int *)options->val[i]));
 						free (opt_name);
 					}
@@ -1143,7 +1150,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 				case 53:/* dhcpMessageType */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						fprintf(stderr,"i=%-2d (%s)  len=%-2d  option = %u\n", i, opt_name,
+						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %u\n", i, opt_name,
 							options->len[i],*(unsigned char *)options->val[i]);
 						free (opt_name);
 					}
@@ -1151,7 +1158,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 				default:
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						fprintf(stderr,"i=%-2d (%s)  len=%-2d  option = \"%s\"\n",
+						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = \"%s\"\n",
 							i, opt_name, options->len[i], (char *)options->val[i]);
 						free (opt_name);
 					}
@@ -1160,7 +1167,7 @@ void debug_dump_dhcp_options (udpipMessage *udp_msg, dhcpOptions *options)
 		}
 	}
 
-	fprintf(stderr,"dhcp_msg->yiaddr  = %u.%u.%u.%u\n"
+	syslog (LOG_INFO, "dhcp_msg->yiaddr  = %u.%u.%u.%u\n"
 				"dhcp_msg->siaddr  = %u.%u.%u.%u\n"
 				"dhcp_msg->giaddr  = %u.%u.%u.%u\n"
 				"dhcp_msg->sname   = \"%s\"\n"

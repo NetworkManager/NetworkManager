@@ -289,9 +289,9 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				syslog (LOG_INFO, "    SWITCH: best device changed");
 				do_switch = TRUE;	/* Device changed */
 			}
-			else if (best_dev && nm_device_is_wireless (best_dev))
+			else if (best_dev)
 			{
-				if (!nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
+				if (nm_device_is_wireless (best_dev) && !nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
 				{
 					syslog (LOG_INFO, "    SWITCH: need to associate with new access point");
 					do_switch = TRUE;

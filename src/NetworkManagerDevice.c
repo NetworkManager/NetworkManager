@@ -30,6 +30,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerDevicePrivate.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerWireless.h"
@@ -46,88 +47,6 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev);
 
 /******************************************************/
 
-/* Wireless device specific options */
-typedef struct NMDeviceWirelessOptions
-{
-	char				*cur_essid;
-	gboolean			 supports_wireless_scan;
-	guint8			 max_quality;
-	guint8			 noise;
-	gint8			 strength;
-	gint8			 invalid_strength_counter;
-
-	GMutex			*scan_mutex;
-	/* We keep a couple lists around since wireless cards
-	 * are a bit flakey and don't report the same access
-	 * points every time.  The lists get merged and diffed
-	 * to figure out the "real" list, but the latest_ap_list
-	 * is always the most-current scan.
-	 */
-	NMAccessPointList	*ap_list;
-	NMAccessPointList	*cached_ap_list1;
-	NMAccessPointList	*cached_ap_list2;
-	NMAccessPointList	*cached_ap_list3;
-
-	NMAccessPoint		*best_ap;
-	GMutex			*best_ap_mutex;
-	gboolean			 freeze_best_ap;
-
-	gboolean			 user_key_received;
-	gboolean			 now_scanning;
-} NMDeviceWirelessOptions;
-
-/* Wired device specific options */
-typedef struct NMDeviceWiredOptions
-{
-	int	foo;
-} NMDeviceWiredOptions;
-
-typedef union NMDeviceOptions
-{
-	NMDeviceWirelessOptions	wireless;
-	NMDeviceWiredOptions	wired;
-} NMDeviceOptions;
-
-
-typedef struct NMDeviceConfigInfo
-{
-	gboolean	 use_dhcp;
-	guint32	 ip4_gateway;
-	guint32	 ip4_address;
-	guint32	 ip4_netmask;
-	guint32  ip4_broadcast;
-	/* FIXME: ip6 stuff */
-} NMDeviceConfigInfo;
-
-/*
- * NetworkManager device structure
- */
-struct NMDevice
-{
-	guint			 refcount;
-
-	char					*udi;
-	char					*iface;
-	NMDeviceType			 type;
-	NMDriverSupportLevel	 driver_support_level;
-
-	gboolean				 link_active;
-	guint32				 ip4_address;
-	/* FIXME: ipv6 address too */
-	unsigned char			 hw_addr[ETH_ALEN];
-	NMData				*app_data;
-	NMDeviceOptions		 options;
-	NMDeviceConfigInfo		 config_info;
-	struct dhcp_interface	*dhcp_iface;
-
-	gboolean				 activating;		/* Set by main thread before beginning activation */
-	gboolean				 just_activated;	/* Set by activation thread after successful activation */
-	gboolean				 quit_activation;	/* Flag to signal activation thread to stop activating */
-	gboolean				 activation_failed;	/* Did the activation fail? */
-
-	gboolean				 test_device;
-	gboolean				 test_device_up;
-};
 
 /******************************************************/
 
@@ -1564,6 +1483,10 @@ get_ap:
 		{
 			int	ip_success = FALSE;
 
+			/* If we were told to quit activation, stop the thread and return */
+			if (nm_device_activation_should_cancel (dev))
+				goto out;
+
 			nm_device_set_wireless_config (dev, best_ap, auth);
 			if (!HAVE_LINK (dev) && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
 			{
@@ -1640,7 +1563,7 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev)
 	{
 		int		err;
 
-		err = nm_device_dhcp_run (dev);
+		err = nm_device_dhcp_request (dev);
 		if (err == RET_DHCP_BOUND)
 			success = TRUE;
 		else
@@ -1679,6 +1602,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 {
 	NMDevice		*dev = (NMDevice *)user_data;
 	gboolean		 success = FALSE;
+	GMainContext	*context = NULL;
 
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
@@ -1712,9 +1636,30 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	dev->activation_failed = FALSE;
 	dev->quit_activation = FALSE;
 
+	/* If we were told to quit activation, stop the thread and return */
+	if (nm_device_activation_should_cancel (dev))
+		goto out;
+
 	nm_device_update_ip4_address (dev);
 
 	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
+
+	if (!nm_device_config_get_use_dhcp (dev) || !dev->dhcp_iface)
+		goto out;
+
+	/* We stick around if we need to renew the address with DHCP or something. */
+	dev->context = g_main_context_new ();
+	dev->loop = g_main_loop_new (context, FALSE);
+	nm_device_dhcp_setup_timeouts (dev);
+
+	g_main_loop_run (dev->loop);
+
+	g_source_remove (dev->renew_timeout);
+	g_source_remove (dev->rebind_timeout);
+	g_main_loop_unref (dev->loop);
+	g_main_context_unref (dev->context);
+	dev->context = NULL;
+	dev->loop = NULL;
 
 out:
 	nm_device_unref (dev);
@@ -1819,6 +1764,9 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	nm_device_activation_cancel (dev);
+
+	if (dev->loop)
+		g_main_loop_quit (dev->loop);
 
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
 		return (TRUE);
@@ -2279,9 +2227,10 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 
 	*encrypted = FALSE;
 
-	/* Force the card into Managed/Infrastructure mode */
 	nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC);
+	g_usleep (G_USEC_PER_SEC * 4);
+
+	/* Force the card into Managed/Infrastructure mode */
 	nm_device_set_mode_managed (dev);
 
 	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)) && !nm_ap_get_encrypted (ap))
@@ -2337,7 +2286,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 
 		/* Bring the device up and pause to allow card to associate */
 		nm_device_set_essid (dev, network);
-		g_usleep (G_USEC_PER_SEC * 2);
+		g_usleep (G_USEC_PER_SEC * 3);
 
 		nm_device_update_link_active (dev, FALSE);
 		nm_device_get_ap_address (dev, &addr);

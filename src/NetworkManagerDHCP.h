@@ -24,8 +24,10 @@
 
 #include "../dhcpcd/dhcpcd.h"
 
-
-int		nm_device_dhcp_run			(NMDevice *dev);
+int		nm_device_dhcp_request		(NMDevice *dev);
 void		nm_device_dhcp_cease		(NMDevice *dev);
+gboolean	nm_device_dhcp_setup_timeouts	(NMDevice *dev);
+gboolean	nm_device_dhcp_renew		(gpointer user_data);
+gboolean	nm_device_dhcp_rebind		(gpointer user_data);
 
 #endif

@@ -23,81 +23,98 @@
 #include <stdlib.h>
 #include <string.h>
 #include <glib.h>
+#include <syslog.h>
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerDevicePrivate.h"
 #include "NetworkManagerDHCP.h"
 #include "NetworkManagerSystem.h"
 #include "../dhcpcd/client.h"
 
-/* Accessors to device data that only this file should need */
-dhcp_interface *nm_device_get_dhcp_iface (NMDevice *dev);
-void nm_device_set_dhcp_iface (NMDevice *dev, dhcp_interface *dhcp_iface);
+
+/*
+ * nm_device_dhcp_configure
+ *
+ * Using the results of a DHCP request, configure the device.
+ *
+ */
+static void nm_device_dhcp_configure (NMDevice *dev)
+{
+	int	temp;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->dhcp_iface != NULL);
+
+	/* Replace basic info */
+	nm_system_device_set_ip4_address (dev, dev->dhcp_iface->ciaddr);
+
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, subnetMask))
+	{
+		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, subnetMask), dhcp_individual_value_len (subnetMask));
+		nm_system_device_set_ip4_netmask (dev, temp);
+	}
+
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, subnetMask))
+	{
+		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, broadcastAddr), dhcp_individual_value_len (broadcastAddr));
+		nm_system_device_set_ip4_broadcast (dev, temp);
+	}
+
+	/* Default route */
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, routersOnSubnet))
+	{
+		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, routersOnSubnet), dhcp_individual_value_len (routersOnSubnet));
+		nm_system_device_set_ip4_default_route (dev, temp);
+	}
+
+	/* Update /etc/resolv.conf */
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dns))
+	{
+		nm_system_device_update_resolv_conf (dhcp_interface_get_dhcp_field (dev->dhcp_iface, dns),
+			dhcp_interface_get_dhcp_field_len (dev->dhcp_iface, dns), dhcp_interface_get_dhcp_field (dev->dhcp_iface, domainName));
+	}
+}
 
 
 /*
- * nm_device_dhcp_run
+ * nm_device_dhcp_request
  *
  * Start a DHCP transaction on particular device.
  *
  */
-int nm_device_dhcp_run (NMDevice *dev)
+int nm_device_dhcp_request (NMDevice *dev)
 {
-	dhcp_interface			*dhcp_iface;
 	dhcp_client_options		 opts;
 	int					 err;
-	const char			*iface;
 
 	g_return_val_if_fail (dev != NULL, RET_DHCP_ERROR);
 
+	if (dev->dhcp_iface)
+	{
+		syslog (LOG_ERR, "nm_device_dhcp_request(): device DHCP info exists, but it should have been cleared already.\n");
+		dhcp_interface_free (dev->dhcp_iface);
+	}
+
 	memset (&opts, 0, sizeof (dhcp_client_options));
 	opts.base_timeout = 30;
-
-	iface = nm_device_get_iface (dev);
-	if (!(dhcp_iface = dhcp_interface_init (iface, &opts)))
+	if (!(dev->dhcp_iface = dhcp_interface_init (nm_device_get_iface (dev), &opts)))
 		return RET_DHCP_ERROR;
-	nm_device_set_dhcp_iface (dev, dhcp_iface);
 
 	/* Start off in DHCP INIT state, get a completely new IP address 
 	 * and settings.
 	 */
-	err = dhcp_init (dhcp_iface);
-	if (err == RET_DHCP_BOUND)
+	if ((err = dhcp_init (dev->dhcp_iface)) == RET_DHCP_BOUND)
 	{
-		int	temp;
-
-		/* Replace basic info */
-		nm_system_device_set_ip4_address (dev, dhcp_iface->ciaddr);
-
-		if (dhcp_interface_dhcp_field_exists (dhcp_iface, subnetMask))
-		{
-			memcpy (&temp, dhcp_interface_get_dhcp_field (dhcp_iface, subnetMask), dhcp_individual_value_len (subnetMask));
-			nm_system_device_set_ip4_netmask (dev, temp);
-		}
-
-		if (dhcp_interface_dhcp_field_exists (dhcp_iface, subnetMask))
-		{
-			memcpy (&temp, dhcp_interface_get_dhcp_field (dhcp_iface, broadcastAddr), dhcp_individual_value_len (broadcastAddr));
-			nm_system_device_set_ip4_broadcast (dev, temp);
-		}
-
-		/* Default route */
-		if (dhcp_interface_dhcp_field_exists (dhcp_iface, routersOnSubnet))
-		{
-			memcpy (&temp, dhcp_interface_get_dhcp_field (dhcp_iface, routersOnSubnet), dhcp_individual_value_len (routersOnSubnet));
-			nm_system_device_set_ip4_default_route (dev, temp);
-		}
-
-		/* Update /etc/resolv.conf */
-		if (dhcp_interface_dhcp_field_exists (dhcp_iface, dns))
-		{
-			nm_system_device_update_resolv_conf (dhcp_interface_get_dhcp_field (dhcp_iface, dns),
-				dhcp_interface_get_dhcp_field_len (dhcp_iface, dns), dhcp_interface_get_dhcp_field (dhcp_iface, domainName));
-		}
+		nm_device_dhcp_configure (dev);
+		nm_device_update_ip4_address (dev);
+		nm_device_dhcp_setup_timeouts (dev);
 	}
-
-	dhcp_interface_free (dhcp_iface);
-	nm_device_set_dhcp_iface (dev, NULL);
+	else
+	{
+		dhcp_interface_free (dev->dhcp_iface);
+		dev->dhcp_iface = NULL;
+	}
 
 	return (err);
 }
@@ -112,8 +129,129 @@ int nm_device_dhcp_run (NMDevice *dev)
 void nm_device_dhcp_cease (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_get_dhcp_iface (dev) != NULL);
+	g_return_if_fail (dev->dhcp_iface != NULL);
 
-	dhcp_interface_cease (nm_device_get_dhcp_iface (dev));
+	dhcp_interface_cease (dev->dhcp_iface);
+}
+
+
+/*
+ * nm_device_dhcp_setup_timeouts
+ *
+ * Set up the DHCP renew and rebind timeouts for a device.
+ *
+ * Returns:	FALSE on error
+ *			TRUE on success
+ *
+ */
+gboolean nm_device_dhcp_setup_timeouts (NMDevice *dev)
+{
+	int		 t1 = 0, t2 = 0;
+	GSource	*t1_source, *t2_source;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dhcpT1value))
+	{
+		memcpy (&t1, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dhcpT1value), sizeof (int));
+		t1 = ntohl (t1);
+	}
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dhcpT2value))
+	{
+		memcpy (&t2, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dhcpT2value), sizeof (int));
+		t2 = ntohl (t2);
+	}
+	if (!t1 || !t2)
+	{
+		syslog (LOG_ERR, "DHCP renew/rebind values were 0!  Won't renew lease.");
+		return (FALSE);
+	}
+
+	t1_source = g_timeout_source_new (t1 * 1000);
+	t2_source = g_timeout_source_new (t2 * 1000);
+	g_source_set_callback (t1_source, nm_device_dhcp_renew, dev, NULL);
+	g_source_set_callback (t2_source, nm_device_dhcp_rebind, dev, NULL);
+	dev->renew_timeout = g_source_attach (t1_source, dev->context);
+	dev->rebind_timeout = g_source_attach (t2_source, dev->context);
+
+	return (TRUE);
+}
+
+
+/*
+ * nm_device_dhcp_renew
+ *
+ * Renew a DHCP address.
+ *
+ */
+gboolean nm_device_dhcp_renew (gpointer user_data)
+{
+	NMDevice				*dev = (NMDevice *)user_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+	g_return_val_if_fail (dev->dhcp_iface, FALSE);
+
+	if (dhcp_renew (dev->dhcp_iface) != RET_DHCP_BOUND)
+	{
+		/* If the T1 renewal fails, then we wait around until T2
+		 * for rebind.
+		 */
+		return (FALSE);
+	}
+	else
+	{
+		/* Lease renewed, start timers again from 0 */
+		nm_device_dhcp_setup_timeouts (dev);
+	}
+
+	/* Always return false to remove ourselves, since we just
+	 * set up another timeout above.
+	 */
+	return (FALSE);
+}
+
+
+/*
+ * nm_device_dhcp_renew
+ *
+ * Renew a DHCP address.
+ *
+ */
+gboolean nm_device_dhcp_rebind (gpointer user_data)
+{
+	NMDevice	*dev = (NMDevice *)user_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+	g_return_val_if_fail (dev->dhcp_iface, FALSE);
+
+	if (dhcp_rebind (dev->dhcp_iface) != RET_DHCP_BOUND)
+	{
+		/* T2 rebind failed, so flush the device's address and signal
+		 * that we should find another device to use.
+		 */
+		/* FIXME: technically we should run out the entire lease time before
+		 * flushing the address and getting a new device.  We'll leave that for
+		 * a bit later (do a new timer for entire lease time, blah, blah).
+		 */
+		nm_system_device_flush_addresses (dev);
+		nm_device_update_ip4_address (dev);
+		nm_data_mark_state_changed (dev->app_data);
+		return (FALSE);
+	}
+	else
+	{
+		/* Lease renewed, start timers again from 0 */
+		nm_device_dhcp_setup_timeouts (dev);
+	}
+
+	dhcp_interface_free (dev->dhcp_iface);
+	dev->dhcp_iface = NULL;
+
+	/* Always return false to remove ourselves, since we just
+	 * set up another timeout above.
+	 */
+	return (FALSE);
 }
 

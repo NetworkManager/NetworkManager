@@ -119,7 +119,7 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
  	memcpy (sap.spkt_device, iface->iface, strlen (iface->iface));
 	sap.spkt_family = AF_PACKET;
 	if ( bind (iface->sk, (void*)&sap, sizeof(struct sockaddr)) == -1 )
-        syslog (LOG_ERR,"dhcp_interface_init: bind: %m\n");
+		syslog (LOG_ERR,"dhcp_interface_init: bind: %m\n");
 
 	memcpy (iface->chaddr, ifr.ifr_hwaddr.sa_data, ETH_ALEN);
 	fprintf(stdout,"dhcpcd: MAC address = %02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -167,6 +167,9 @@ void dhcp_interface_free (dhcp_interface *iface)
 {
 	struct ifreq ifr;
 	struct sockaddr_in	*p = (struct sockaddr_in *)&(ifr.ifr_addr);
+
+	if (!iface)
+		return;
 
 	releaseDhcpOptions (iface);
 

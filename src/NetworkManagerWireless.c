@@ -143,6 +143,13 @@ int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
 		/* Atmel driver seems to use qual->qual is the percentage value */
 		percent = CLAMP (qual->qual, 0, 100);
 	}
+	else if (qual->qual == (qual->level - qual->noise))
+	{
+		/* Ok, simple signal : noise ratio.  Prism54 for example. */
+//fprintf (stderr, "20 * log (level / noise) = 20 * log (%d / %d) = %f\n", qual->level, qual->noise, log ((255-qual->level) / (255-qual->noise)) * 100);
+		percent = (int)rint ((log (qual->qual) / log (96)) * 100.0);
+		percent = CLAMP (percent, 0, 100);
+	}
 	else if (qual->qual >= 1)
 	{
 		/* Try it the Gnome Wireless Applet way */
