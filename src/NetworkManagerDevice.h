@@ -107,6 +107,7 @@ void			nm_device_activation_cancel		(NMDevice *dev);
 gboolean		nm_device_is_just_activated		(NMDevice *dev);
 gboolean		nm_device_is_activating			(NMDevice *dev);
 gboolean		nm_device_did_activation_fail		(NMDevice *dev);
+void			nm_device_clear_activation_fail	(NMDevice *dev);
 gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);
 
 gboolean		nm_device_is_scanning			(NMDevice *dev);

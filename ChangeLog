@@ -1,5 +1,14 @@
 2004-11-16  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.[ch]
+		- (nm_device_clear_activation_fail): new function
+
+	* src/NetworkManagerPolicy.c
+		- (nm_state_modification_monitor): clear the activation_failed flag on devices
+			when we've dealt with the failure so the user doesn't get failure-dialog-spammed
+
+2004-11-16  Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- (nm_device_activate_wireless): Unref best_ap upon success so we don't
 			leak the structure, better updating of now_scanning status

@@ -1458,123 +1458,6 @@ gboolean HAVE_LINK (NMDevice *dev)
 	return (nm_device_get_link_active (dev));
 }
 
-#if 0
-/*
- * nm_device_activate_wireless_wait_for_link
- *
- * Spin until we have a wireless link, which may mean
- * requesting a key from the user and trying various hashed
- * iterations of that key.
- *
- */
-void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
-{
-	NMAccessPoint	*best_ap;
-	guint32		 bad_crypt_packets = 0;
-	int			 attempt = 1;
-
-	g_return_if_fail (dev != NULL);
-
-	/* If the card is just inserted, we may not have had a chance to scan yet */
-	best_ap = nm_device_get_best_ap (dev);
-	if (!best_ap)
-	{
-		nm_device_do_wireless_scan (dev);
-		nm_device_update_best_ap (dev);
-		best_ap = nm_device_get_best_ap (dev);
-	}
-
-	/* Wait until we have a link.  Some things that might block us from
-	 * getting one:
-	 * 1) Access point we want to associate with has encryption enabled and
-	 *		we don't have the right encryption key.  If we have a key of some
-	 *		sort, try various passhprase->key hashes of it.  If we don't have
-	 *		a key, ask the user for one and wait until we are canceled (wireless
-	 *		card was ejected or the user plugged the computer into a wired network)
-	 *		or until we get a key back.
-	 * 2) We don't have any access points we wish to associate with yet.  In that case
-	 *		wait for the wireless scan to complete in the other thread and to pick
-	 *		a "best" access point for us.
-	 *
-	 */
-
-	/* There are two ways to check for a good link.  If we are using WEP and Open System
-	 * authentication, then we can associate with the base station regardless of whether the
-	 * WEP key is right or not.  Therefore, we have to monitor the # of packets the card discards
-	 * when its unable to decrypt them, since that gives us some indicator of whether the WEP
-	 * key is wrong.  It seems that right after association, at least one packet is dropped by
-	 * most cards if the WEP key is wrong.
-	 *
-	 * The second and better way (if all cards actually supported it) is to check the MAC address
-	 * the card is associated with.  However, this doesn't tell us if the WEP key is wrong when we
-	 * are using Open System authentication.  Also, not all drivers return an invalid MAC address
-	 * when the card cannot communicate with the access point.
-	 */
-
-	/* Try activating the device with the key and access point we have already */
-	if (best_ap)
-		nm_device_activate_wireless (dev, best_ap, &bad_crypt_packets);
-
-	/* For the link check, ensure that:
-	 * 1) a classic link check is good, ie does the card report a valid associated AP MAC address and is it
-	 *		receiving WEP-enabled packets OK if WEP is on
-	 * 2) we have a best access point, and if that AP is encrypted, that we have a valid encryption key for it
-	 *
-	 * If either of these things fail, we try other access points or we try to retrieve another encrpytion key
-	 * from the user.
-	 *
-	 */
-	while (!HAVE_LINK (dev, bad_crypt_packets) || (best_ap && AP_NEED_KEY (best_ap)))
-	{
-		/* Refresh what we think is the best AP to associate with */
-		if (best_ap)
-			nm_ap_unref (best_ap);
-		if ((best_ap = nm_device_get_best_ap (dev)))
-		{
-			dev->options.wireless.now_scanning = FALSE;
-
-			/* If we don't have a link yet, the encryption key is bad.  Ask the user for a
-			 * new one.
-			 */
-			if (nm_ap_get_encrypted (best_ap))
-			{
-				dev->options.wireless.user_key_received = FALSE;
-				nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap, attempt);
-				attempt++;
-
-				/* Wait for the key to come back */
-				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): asking for user key.", nm_device_get_iface (dev));
-				while (!dev->options.wireless.user_key_received && !dev->quit_activation)
-					g_usleep (G_USEC_PER_SEC / 2);
-	
-				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received.", nm_device_get_iface (dev));
-
-				/* If we were told to quit activation, stop the thread and return */
-				if (nm_device_activation_should_cancel (dev))
-					goto out;
-			}
-
-			/* Try activating again with up-to-date access point and keys */
-			nm_device_activate_wireless (dev, best_ap, &bad_crypt_packets);
-		}
-		else
-		{
-			dev->options.wireless.now_scanning = TRUE;
-			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): waiting for an access point.", nm_device_get_iface (dev));
-			g_usleep (G_USEC_PER_SEC * 2);
-		}
-
-		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_should_cancel (dev))
-			goto out;
-	}
-
-out:
-	if (best_ap)
-		nm_ap_unref (best_ap);
-	dev->options.wireless.now_scanning = FALSE;
-}
-#endif
 
 /*
  * nm_device_activate_wireless
@@ -1883,6 +1766,14 @@ gboolean nm_device_did_activation_fail (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return (dev->activation_failed);
+}
+
+
+void nm_device_clear_activation_fail (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->activation_failed = FALSE;
 }
 
 
