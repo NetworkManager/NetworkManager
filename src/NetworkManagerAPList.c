@@ -164,7 +164,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
  */
 void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 {
-	GSList		*element = NULL;
+	GSList		*elt = NULL;
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
@@ -175,19 +175,17 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 		return;
 	}
 
-	element = list->ap_list;
-	while (element)
+	for (elt = list->ap_list; elt; elt = g_slist_next (elt))
 	{
-		NMAccessPoint	*list_ap = (NMAccessPoint *)(element->data);
+		NMAccessPoint	*list_ap = (NMAccessPoint *)(elt->data);
 
 		if (list_ap == ap)
 		{
-			list->ap_list = g_slist_remove_link (list->ap_list, element);
+			list->ap_list = g_slist_remove_link (list->ap_list, elt);
 			nm_ap_unref (list_ap);
-			g_slist_free (element);
+			g_slist_free (elt);
 			break;
 		}
-		element = g_slist_next (element);
 	}
 	nm_ap_list_unlock (list);
 }
@@ -262,18 +260,17 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 		if (!success && (user_addrs = nm_ap_get_user_addresses (ap)))
 		{
 			char		 char_addr[20];
-			GSList	*elem = user_addrs;
+			GSList	*elt;
 
 			memset (&char_addr[0], 0, 20);
 			ether_ntoa_r (addr, &char_addr[0]);
-			while (elem)
+			for (elt = user_addrs; elt; elt = g_slist_next (elt))
 			{
-				if (elem->data && !strcmp (elem->data, &char_addr[0]))
+				if (elt->data && !strcmp (elt->data, &char_addr[0]))
 				{
 					success = TRUE;
 					break;
 				}
-				elem = g_slist_next (elem);
 			}
 
 			g_slist_foreach (user_addrs, (GFunc)g_free, NULL);

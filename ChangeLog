@@ -1,3 +1,11 @@
+2005-02-09  Dan Williams  <dcbw@redhat.com>
+
+	* Clean up usage of GSList objects and looping through their members
+	* Clean up DHCP rebind/renew timeouts, hopefully they will work correctly
+		now.
+	* Fix problem where even if scanning was turned off, card would still
+		cycle through frequencies.
+
 2005-02-08  Dan Williams  <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c

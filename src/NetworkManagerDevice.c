@@ -131,22 +131,19 @@ static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 NMDevice *nm_get_device_by_udi (NMData *data, const char *udi)
 {
 	NMDevice	*dev = NULL;
-	GSList	*element;
+	GSList	*elt;
 	
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (udi  != NULL, NULL);
 
-	element = data->dev_list;
-	while (element)
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 	{
-		dev = (NMDevice *)(element->data);
+		dev = (NMDevice *)(elt->data);
 		if (dev)
 		{
 			if (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0)
 				break;
 		}
-
-		element = g_slist_next (element);
 	}
 
 	return (dev);
@@ -166,15 +163,14 @@ NMDevice *nm_get_device_by_iface (NMData *data, const char *iface)
 {
 	NMDevice	*iter_dev = NULL;
 	NMDevice	*found_dev = NULL;
-	GSList	*element;
+	GSList	*elt;
 	
 	g_return_val_if_fail (data  != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	element = data->dev_list;
-	while (element)
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 	{
-		iter_dev = (NMDevice *)(element->data);
+		iter_dev = (NMDevice *)(elt->data);
 		if (iter_dev)
 		{
 			if (nm_null_safe_strcmp (nm_device_get_iface (iter_dev), iface) == 0)
@@ -183,8 +179,6 @@ NMDevice *nm_get_device_by_iface (NMData *data, const char *iface)
 				break;
 			}
 		}
-
-		element = g_slist_next (element);
 	}
 
 	return (found_dev);
@@ -390,6 +384,13 @@ gboolean nm_device_unref (NMDevice *dev)
 			g_mutex_free (dev->options.wireless.best_ap_mutex);
 		}
 
+		/* Get rid of DHCP state data */
+		if (dev->dhcp_iface)
+		{
+			dhcp_interface_free (dev->dhcp_iface);
+			dev->dhcp_iface = NULL;
+		}
+
 		g_free (dev->udi);
 		g_free (dev->iface);
 		memset (dev, 0, sizeof (NMDevice));
@@ -440,13 +441,23 @@ static gpointer nm_device_worker (gpointer user_data)
 			g_source_remove (dev->rebind_timeout);
 	}
 
+	/* Remove any DHCP timeouts that might have been running */
+	if (dev->renew_timeout)
+	{
+		g_source_remove (dev->renew_timeout);
+		dev->renew_timeout = 0;
+	}
+	if (dev->rebind_timeout)
+	{
+		g_source_remove (dev->rebind_timeout);
+		dev->rebind_timeout = 0;
+	}
+
 	g_main_loop_unref (dev->loop);
 	g_main_context_unref (dev->context);
 
 	dev->loop = NULL;
 	dev->context = NULL;
-	dev->renew_timeout = 0;
-	dev->rebind_timeout = 0;
 
 	dev->worker_done = TRUE;
 	nm_device_unref (dev);
@@ -2133,6 +2144,9 @@ get_ap:
 	 */
 	nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
+	/* We grab the scan mutex so that scanning cannot screw up our link detection, since
+	 * a scan can change most any attribute on the card for a period of time.
+	 */
 	nm_device_set_now_scanning (dev, FALSE);
 	nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
@@ -2140,7 +2154,7 @@ get_ap:
 	{
 		/* Some Cisco cards (340/350 PCMCIA) don't return non-broadcasting APs
 		 * in their scan results, so we can't know beforehand whether or not the
-		 * AP was encrypted.  So we have to update their encryption status on the fly.
+		 * AP was encrypted.  We have to update their encryption status on the fly.
 		 */
 		if (nm_ap_get_encrypted (best_ap) || nm_ap_is_enc_key_valid (best_ap))
 		{
@@ -2413,19 +2427,9 @@ static gboolean nm_device_activate (gpointer user_data)
 	else
 		syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n", nm_device_get_iface (dev));
 
-	/* Setup DHCP timeouts if we need to renew/rebind at any point */
-	if (nm_device_config_get_use_dhcp (dev) && dev->dhcp_iface)
-		nm_device_dhcp_setup_timeouts (dev);
-
 	finished = TRUE;
 
 out:
-	if (dev->dhcp_iface)
-	{
-		dhcp_interface_free (dev->dhcp_iface);
-		dev->dhcp_iface = NULL;
-	}
-
 	syslog (LOG_DEBUG, "Activation (%s) ended.\n", nm_device_get_iface (dev));
 	dev->activating = FALSE;
 	dev->quit_activation = FALSE;
@@ -2516,10 +2520,22 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
 		return (TRUE);
 
+	/* Remove any DHCP timeouts we may have had running */
+	if (dev->renew_timeout > 0)
+	{
+		g_source_remove (dev->renew_timeout);
+		dev->renew_timeout = 0;
+	}
+	if (dev->rebind_timeout > 0)
+	{
+		g_source_remove (dev->rebind_timeout);
+		dev->rebind_timeout = 0;
+	}
+
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (dev);
 	nm_system_device_flush_addresses (dev);
-	dev->ip4_address = 0;
+	nm_device_update_ip4_address (dev);
 
 	if (!just_added && (dev == dev->app_data->active_device))
 		nm_dbus_signal_device_status_change (dev->app_data->dbus_connection, dev, DEVICE_NO_LONGER_ACTIVE);
@@ -3260,15 +3276,14 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 	/* Devices that don't support scanning have their pseudo-scanning done in
 	 * the main thread anyway.
 	 */
-	if (!nm_device_supports_wireless_scan (dev))
+	if (!nm_device_get_supports_wireless_scan (dev))
 	{
 		nm_device_do_pseudo_scan (dev);
 		return FALSE;
 	}
 
 	/* Translate iwlib scan results to NM access point list */
-	tmp_ap = results->scan_head.result;
-	while (tmp_ap)
+	for (tmp_ap = results->scan_head.result; tmp_ap; tmp_ap = tmp_ap->next)
 	{
 		/* We need at least an ESSID or a MAC address for each access point */
 		if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
@@ -3344,7 +3359,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			}
 			nm_ap_unref (nm_ap);
 		}
-		tmp_ap = tmp_ap->next;
 	}	
 
 	/* If we detected any blank-ESSID access points (ie don't broadcast their ESSID), then try to
@@ -3362,7 +3376,7 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 	{
 		NMAccessPoint	*outdated_ap;
 		GSList		*outdated_list = NULL;
-		GSList		*elem;
+		GSList		*elt;
 		NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
 
 		while ((outdated_ap = nm_ap_list_iter_next (iter)))
@@ -3393,16 +3407,14 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		/* Ok, now remove outdated ones.  We have to do it after the lock
 		 * because nm_ap_list_remove_ap() locks the list too.
 		 */
-		elem = outdated_list;
-		while (elem)
+		for (elt = outdated_list; elt; elt = g_slist_next (elt))
 		{
-			if ((outdated_ap = (NMAccessPoint *)(elem->data)))
+			if ((outdated_ap = (NMAccessPoint *)(elt->data)))
 			{
 				nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, outdated_ap, TRUE);
 				nm_ap_list_remove_ap (nm_device_ap_list_get (dev), outdated_ap);
 				list_changed = TRUE;
 			}
-			elem = g_slist_next (elem);
 		}
 		g_slist_free (outdated_list);
 	}
@@ -3433,7 +3445,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	/* We don't scan on test devices or devices that don't have scanning support */
-	if (dev->test_device || !nm_device_supports_wireless_scan (dev))
+	if (dev->test_device || !nm_device_get_supports_wireless_scan (dev))
 		return FALSE;
 
 	/* Just reschedule ourselves if scanning or all wireless is disabled */

@@ -546,16 +546,14 @@ void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
 GSList *nm_ap_get_user_addresses (const NMAccessPoint *ap)
 {
 	GSList	*new = NULL;
-	GSList	*elem = NULL;
+	GSList	*elt = NULL;
 
 	g_return_val_if_fail (ap != NULL, NULL);
 
-	elem = ap->user_addresses;
-	while (elem)
+	for (elt = ap->user_addresses; elt; elt = g_slist_next (elt))
 	{
-		if (elem->data)
-			new = g_slist_append (new, g_strdup (elem->data));
-		elem = g_slist_next (elem);
+		if (elt->data)
+			new = g_slist_append (new, g_strdup (elt->data));
 	}
 
 	/* Return a _deep__copy_ of the address list */
@@ -564,27 +562,23 @@ GSList *nm_ap_get_user_addresses (const NMAccessPoint *ap)
 
 void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 {
-	GSList	*elem = NULL;
+	GSList	*elt = NULL;
 	GSList	*new = NULL;
 
 	g_return_if_fail (ap != NULL);
 
 	/* Free existing list */
-	elem = ap->user_addresses;
-	while (elem)
+	for (elt = ap->user_addresses; elt; elt = g_slist_next (elt))
 	{
-		if (elem->data)
-			g_free (elem->data);
-		elem = g_slist_next (elem);
+		if (elt->data)
+			g_free (elt->data);
 	}
 
 	/* Copy new list and set as our own */
-	elem = list;
-	while (elem)
+	for (elt = list; elt; elt = g_slist_next (elt))
 	{
-		if (elem->data)
-			new = g_slist_append (new, g_strdup (elem->data));
-		elem = g_slist_next (elem);
+		if (elt->data)
+			new = g_slist_append (new, g_strdup (elt->data));
 	}
 
 	ap->user_addresses = new;

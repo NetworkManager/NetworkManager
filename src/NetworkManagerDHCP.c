@@ -349,6 +349,9 @@ gboolean nm_device_dhcp_rebind (gpointer user_data)
 		nm_system_device_flush_addresses (dev);
 		nm_device_update_ip4_address (dev);
 		nm_policy_schedule_state_update (dev->app_data);
+
+		dhcp_interface_free (dev->dhcp_iface);
+		dev->dhcp_iface = NULL;
 		return (FALSE);
 	}
 	else
@@ -356,9 +359,6 @@ gboolean nm_device_dhcp_rebind (gpointer user_data)
 		/* Lease renewed, start timers again from 0 */
 		nm_device_dhcp_setup_timeouts (dev);
 	}
-
-	dhcp_interface_free (dev->dhcp_iface);
-	dev->dhcp_iface = NULL;
 
 	/* Always return false to remove ourselves, since we just
 	 * set up another timeout above.

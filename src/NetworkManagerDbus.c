@@ -101,12 +101,12 @@ static NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *
 	/* Iterate over device list */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		GSList	*element = data->dev_list;
+		GSList	*elt;
 		char		 compare_path[100];
 
-		while (element)
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 		{
-			if ((dev = (NMDevice *)(element->data)))
+			if ((dev = (NMDevice *)(elt->data)))
 			{
 				snprintf (compare_path, 100, "%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
 				/* Compare against our constructed path, but ignore any trailing elements */
@@ -114,7 +114,6 @@ static NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *
 					break;
 				dev = NULL;
 			}
-			element = g_slist_next (element);
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}

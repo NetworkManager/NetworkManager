@@ -158,8 +158,6 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
  */
 void nm_remove_device_from_list (NMData *data, const char *udi)
 {
-	GSList	*element;
-
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (udi != NULL);
 
@@ -168,10 +166,10 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 	 */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		element = data->dev_list;
-		while (element)
+		GSList	*elt;
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 		{
-			NMDevice	*dev = (NMDevice *)(element->data);
+			NMDevice	*dev = (NMDevice *)(elt->data);
 
 			if (dev && (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0))
 			{
@@ -187,14 +185,13 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
-				data->dev_list = g_slist_remove_link (data->dev_list, element);
-				nm_device_unref (element->data);
-				g_slist_free (element);
+				data->dev_list = g_slist_remove_link (data->dev_list, elt);
+				nm_device_unref (elt->data);
+				g_slist_free (elt);
 				nm_policy_schedule_state_update (data);
 				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				break;
 			}
-			element = g_slist_next (element);
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	} else syslog( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
@@ -426,7 +423,6 @@ void nm_schedule_status_signal_broadcast (NMData *data)
 gboolean nm_link_state_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
-	GSList	*element;
 
 	g_return_val_if_fail (data != NULL, TRUE);
 
@@ -435,10 +431,10 @@ gboolean nm_link_state_monitor (gpointer user_data)
 	 */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		element = data->dev_list;
-		while (element)
+		GSList	*elt;
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 		{
-			NMDevice	*dev = (NMDevice *)(element->data);
+			NMDevice	*dev = (NMDevice *)(elt->data);
 
 			if (dev)
 			{
@@ -455,11 +451,6 @@ gboolean nm_link_state_monitor (gpointer user_data)
 						 */
 						nm_device_update_best_ap (dev);
 					}
-
-					/* Check if the device's IP address has changed
-					 * (ie dhcp lease renew/address change)
-					 */
-					nm_device_update_ip4_address (dev);
 				}
 				else
 				{
@@ -474,8 +465,6 @@ gboolean nm_link_state_monitor (gpointer user_data)
 						nm_system_device_flush_addresses (dev);
 				}
 			}
-
-			element = g_slist_next (element);
 		}
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -610,8 +599,8 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 {
 	NMData *data = user_data;
 	syslog (LOG_NOTICE, "Caught terminiation signal");
-	if (data->active_device && nm_device_is_activating (data->active_device))
-		nm_device_activation_cancel (data->active_device);
+	if (data->active_device)
+		nm_device_deactivate (data->active_device, FALSE);
 	g_main_loop_quit (data->main_loop);
 	return FALSE;
 }
