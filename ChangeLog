@@ -1,3 +1,8 @@
+2005-03-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Peter Jones:
+	- Make stuff work with gcc 4.0
+
 2005-02-28  Maxim Dziumanenko <mvd@mylinux.com.ua>
 
 	* uk.po: Added "uk" (Ukrainian) to ALL_LINGUAS.
