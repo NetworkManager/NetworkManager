@@ -797,6 +797,7 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 	if (link != nm_device_get_link_active (dev))
 	{
 		nm_device_set_link_active (dev, link);
+		nm_dbus_schedule_device_status_change (dev, DEVICE_STATUS_CHANGE);
 		nm_policy_schedule_state_update (dev->app_data);
 	}
 }

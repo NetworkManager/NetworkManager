@@ -107,6 +107,7 @@ nm_menu_wired_update (NMMenuWired   *menu_wired,
     text = g_strdup (_("Wired Network"));
 
   gtk_label_set_text (GTK_LABEL (menu_wired->label), text);
+  gtk_widget_set_sensitive (GTK_WIDGET (menu_wired), network->link);
 }
 
 

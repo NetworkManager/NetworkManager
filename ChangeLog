@@ -1,5 +1,13 @@
 2005-01-21  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.[ch]
+	  panel-applet/NMWirelessAppletDbus.c
+	  panel-applet/menu-info.c
+	  src/NetworkManagerDevice.c
+		- Disable wired devices in the menu when they have no link.
+
+2005-01-21  Dan Williams  <dcbw@redhat.com>
+
 	* Cache last-known-good wireless authentication method in
 		NetworkManagerInfo, and use that method first during
 		wireless device activation.  Should speed up devices that

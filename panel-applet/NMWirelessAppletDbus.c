@@ -257,6 +257,30 @@ static int nmwa_dbus_get_device_type (NMWirelessApplet *applet, char *path, Appl
 
 
 /*
+ * nmwa_dbus_get_device_link_active
+ *
+ * Returns the device's link status
+ *
+ */
+static gboolean nmwa_dbus_get_device_link_active (NMWirelessApplet *applet, char *net_path)
+{
+	gboolean	link = FALSE;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, net_path, "getLinkActive", DBUS_TYPE_BOOLEAN, (void **)(&link), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (link);
+}
+
+
+/*
  * nmwa_dbus_get_object_strength
  *
  * Returns the strength of a given object (device or wireless network)
@@ -971,6 +995,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 			{
 				dev->nm_device = g_strdup (devices[i]);
 				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
+				dev->link = nmwa_dbus_get_device_link_active (applet, devices[i]);
 				dev->nm_name = g_strdup (name);
 				dev->udi = nmwa_dbus_get_device_udi (applet, devices[i]);
 				dev->hal_name = nmwa_dbus_get_hal_device_info (applet->connection, dev->udi);

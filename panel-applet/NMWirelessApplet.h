@@ -69,6 +69,7 @@ typedef struct
 	int		 refcount;
 	char		*nm_device;
 	int		 type;
+	gboolean	 link;
 	char		*nm_name;
 	char		*hal_name;
 	char		*udi;

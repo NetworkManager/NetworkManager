@@ -650,8 +650,8 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 	{
 	     menu_item = nm_menu_wired_new ();
 	     nm_menu_wired_update (NM_MENU_WIRED (menu_item), device, n_devices);
-	     if (applet->active_device == device)
-		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
+		if (applet->active_device == device)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
 	}
 	else
 	{
