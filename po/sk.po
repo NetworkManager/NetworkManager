@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004.
 #
-# $Id: sk.po,v 1.7 2004/11/04 21:31:59 marcel Exp $
+# $Id: sk.po,v 1.8 2004/11/14 21:08:13 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-11-04 22:28+0100\n"
-"PO-Revision-Date: 2004-11-04 22:30+0100\n"
+"POT-Creation-Date: 2004-11-14 22:04+0100\n"
+"PO-Revision-Date: 2004-11-14 22:07+0100\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -59,7 +59,8 @@ msgid "Key Type:"
 msgstr "Typ kľúča:"
 
 #: info-daemon/passphrase.glade.h:10
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:102
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:135
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Heslo:"
@@ -72,11 +73,13 @@ msgstr "Je potrebný kľúč bezdrôtovej siete"
 msgid "_Login to Network"
 msgstr "_Prihlásenie k sieti"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:105
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:138
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
 msgid "Ascii Key:"
 msgstr "Ascii kľúč:"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:108
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:141
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
 msgid "Hex Key:"
 msgstr "Kľúč v šestnástkovej sústave:"
 
@@ -124,6 +127,24 @@ msgstr "Neboli nájdené iné sieťové zariadenia"
 #: panel-applet/NMWirelessApplet.c:884
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
+msgid "Custom wireless network"
+msgstr "Vlastná bezdrôtová sieť"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Zadajte ESSID bezdrôtovej siete, ku ktorej sa chcete pripojiť."
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Applet NetworkManager nemohol nájsť niektoré vyžadované zdroje (súbor glade "
+"nebol nájdený)."
 
 #: panel-applet/essid.glade.h:5
 msgid "C_onnect"
