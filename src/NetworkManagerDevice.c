@@ -1995,7 +1995,6 @@ static void nm_device_do_normal_scan (NMDevice *dev)
  */
 static void nm_device_do_pseudo_scan (NMDevice *dev)
 {
-	NMAccessPointList	*list;
 	NMAPListIter		*iter;
 	NMAccessPoint		*ap;
 
@@ -2007,10 +2006,7 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 
 	nm_device_ref (dev);
 
-	if (!(list = nm_device_ap_list_get (dev)))
-		return;
-
-	if (!(iter = nm_ap_list_iter_new (list)))
+	if (!(iter = nm_ap_list_iter_new (dev->app_data->allowed_ap_list)))
 		return;
 
 	nm_device_set_essid (dev, "");

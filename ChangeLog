@@ -5,6 +5,9 @@
 	  test/nminfotest.c
 		- Escape ESSIDs in gconf
 
+	* src/NetworkManagerDevice.c
+		- Fix pseudo-scanning to use netowrk list from info daemon
+
 Wed Sep 29 18:18:24 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* configure.in: Add a temporary --enable-notification-icon.  This

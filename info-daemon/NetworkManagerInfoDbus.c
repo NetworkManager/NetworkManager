@@ -232,10 +232,8 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 		{
 			char			 key[100];
 			GConfValue	*value;
-			char			*escaped_network = gnome_vfs_escape_string ((char *)(element->data));
 
-			g_snprintf (&key[0], 99, "%s/essid", escaped_network);
-			g_free (escaped_network);
+			g_snprintf (&key[0], 99, "%s/essid", (char *)(element->data));
 			value = gconf_client_get (info->gconf_client, key, NULL);
 			if (value && gconf_value_get_string (value))
 			{
