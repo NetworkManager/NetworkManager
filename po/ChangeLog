@@ -1,0 +1,6 @@
+2004-08-27  Christian Rose  <menthos@menthos.com>
+
+	* .cvsignore: Sorted and added entries.
+	* POTFILES.in: Added missing entries.
+	* NetworkManager.pot: Removed. This is a generated file.
+

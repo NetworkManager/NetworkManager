@@ -1,2 +1,7 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+info-daemon/networks.glade
+info-daemon/passphrase.glade
 panel-applet/NMWirelessApplet.c
+panel-applet/NMWirelessApplet.xml
 panel-applet/wireless-applet.glade
