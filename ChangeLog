@@ -1,5 +1,32 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* Remove various Makefile.in files
+
+	* TODO
+		- Add some more items
+
+	* configure.in
+		- Add checks for OpenSSL/md5 headers and libs
+
+	* src/Makefile.am
+		- Use OpenSSL CFLAGS
+
+	* src/NetworkManagerAP.[ch]
+		- Remove 'stamp' functions, replace with 'invalid' functions
+			to support user cancelling WEP key entry
+
+	* src/NetworkManagerDbus.c
+		- Remove 'stamp' return functions
+		- Treat returned user key as a passphrase and convert to a WEP key,
+			but don't actually use the WEP key yet.  We use the returned user
+			key as a hexadecimal WEP key until we can figure out a UI for
+			passphrase-vs-hex key
+
+	* src/NetworkManagerWireless.[ch]
+		- Add passphrase-to-128bit-key function
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* TODO
 		- Add a couple of items
 

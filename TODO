@@ -22,3 +22,32 @@ If the user decides to associate with one particular wireless network, via a wir
 
 Wireless link checking could be enhanced to check the signal strength of an access point and switch of the current access point a wireless card is associated with has dropped below say, 20%.
 
+
+- Gracefully recover from dbus/hal and NetworkManagerInfo dropouts
+
+There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  While we don't depend as heavily on NetworkManagerInfo, we need to make sure that we can operate effectively when it's not there.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
+
+
+- Deal with blank ESSIDs
+
+Access points can be set not to broadcast their ESSIDs, which the client must know.  These appear as blank ESSIDs to cards doing wireless scanning, even though the rest of the AP's information is known (channel, rate, etc).  There has to be a way to deal with this as many companies do not broadcast ESSIDs for security measures.  Workarounds for this practice could include brute-forcing the Allowed Networks list if no suitable wireless network is found to begin with.  Obviously, there would be no way to detect if a WEP key was wrong, because unless the ESSID and WEP key are both correct, we cannot associate with the access point to see if we have a link.  Code exists to do this for wireless cards that do not support wireless scanning, and this code could be adapted.
+
+- Shorten standoff time between Pending and Active device promotion
+
+Currently, there is a 2 second wait between when a device is set as the Pending device, to when it may be promoted to Active device.  2 seconds is not technically necessary, the only reason to wait is that the GLib main loop must run at least once to deliver and receive queued up messages.  This wait is also only necessary for wireless cards, where we may need to request a key from the user.  This wait should be eliminated without breaking the Pending/Active device mechanism.
+
+
+- Support static IP addresses
+
+We need to support static IP addresses for interfaces.  This should be done by parsing the normal /etc/sysconfig/network-scripts/ifcfg-* files.
+
+
+- Store Allowed Network WEP keys in gnome-keyring
+
+These keys should probably be encrypted, rather than being stored in GConf.
+
+
+- Support 40/64 bit passphrases
+
+Allow user to enter passphrases and convert them to 40/64 bit WEP keys on the fly.  Unfortunately, the algorithm for 40/64 bit passphrases is kind of messy.
+

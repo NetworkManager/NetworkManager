@@ -2,6 +2,7 @@ EXTRA_DIST = NetworkManager.conf
 
 INCLUDES = 						\
 	$(NM_CFLAGS) 			   		\
+	$(OPENSSL_CFLAGS)				\
 	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\
@@ -28,7 +29,7 @@ NetworkManager_SOURCES =				\
 		NetworkManagerWireless.c		\
 		NetworkManagerWireless.h
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB)
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS)
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
 dbusservice_DATA = NetworkManager.conf

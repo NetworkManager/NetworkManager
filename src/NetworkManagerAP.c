@@ -36,8 +36,8 @@ struct NMAccessPoint
 	guint8			 quality;
 	double			 freq;
 	guint16			 rate;
-	time_t			 stamp;
 	gboolean			 encrypted;
+	gboolean			 invalid;
 
 	/* Things from user prefs */
 	gchar			*wep_key;
@@ -305,19 +305,21 @@ void nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
 
 
 /*
- * Get/set functions for timestamp
+ * Get/set functions for "invalid" access points, ie ones
+ * for which a user explicitly does not wish to connect to
+ * (by cancelling requests for WEP key, for example)
  *
  */
-time_t nm_ap_get_stamp (NMAccessPoint *ap)
+gboolean nm_ap_get_invalid (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, 0);
+	g_return_val_if_fail (ap != NULL, TRUE);
 
-	return (ap->stamp);
+	return (ap->invalid);
 }
 
-void nm_ap_set_stamp (NMAccessPoint *ap, time_t stamp)
+void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->stamp = stamp;
+	ap->invalid = invalid;
 }

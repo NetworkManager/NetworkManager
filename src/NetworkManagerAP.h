@@ -60,7 +60,7 @@ void				 nm_ap_set_freq			(NMAccessPoint *ap, double freq);
 guint16			 nm_ap_get_rate			(NMAccessPoint *ap);
 void				 nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 
-time_t			 nm_ap_get_stamp			(NMAccessPoint *ap);
-void				 nm_ap_set_stamp			(NMAccessPoint *ap, time_t stamp);
+gboolean			 nm_ap_get_invalid			(NMAccessPoint *ap);
+void				 nm_ap_set_invalid			(NMAccessPoint *ap, gboolean invalid);
 
 #endif

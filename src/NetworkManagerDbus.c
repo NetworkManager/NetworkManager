@@ -32,6 +32,7 @@ extern gboolean debug;
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
+#include "NetworkManagerWireless.h"
 
 
 /*
@@ -481,6 +482,9 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 		if ((dev = nm_get_device_by_iface (data, device)))
 			nm_device_pending_action_set_user_key (dev, passphrase);
 
+		char *key = nm_wireless_128bit_key_from_passphrase (passphrase);
+		g_free (key);
+
 		dbus_free (device);
 		dbus_free (network);
 		dbus_free (passphrase);
@@ -802,8 +806,6 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 		dbus_message_append_args (reply_message, DBUS_TYPE_DOUBLE, nm_ap_get_freq (ap), DBUS_TYPE_INVALID);
 	else if (strcmp ("getRate", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_rate (ap), DBUS_TYPE_INVALID);
-	else if (strcmp ("getStamp", request) == 0)
-		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_stamp (ap), DBUS_TYPE_INVALID);
 	else
 	{
 		/* Must destroy the allocated message */
