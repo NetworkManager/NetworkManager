@@ -72,7 +72,6 @@ gboolean nm_dbus_method_dispatch (NMDbusMethodList *list, DBusConnection *connec
 	if (!(callback = g_hash_table_lookup (list->methods, method)))
 		return FALSE;
 
-syslog (LOG_ERR, "DBUS calling method '%s'\n",  method);
 	temp_reply = (*callback) (connection, message, (NMDbusCBData *)user_data);
 
 	if (reply)
