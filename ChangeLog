@@ -1,5 +1,11 @@
 2004-07-19  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDbus.c
+		- Switch from indexed device paths to names.  Less code, more efficient.
+			ie "/org/freedesktop/NetworkManager/0" -> "/org/freedesktop/NetworkManager/eth0"
+
+2004-07-19  Dan Williams <dcbw@redhat.com>
+
 	* dispatcher-daemon/NetworkManagerDispatcher.c
 		- (nm_dbus_filter): Remove obsolete response to NeedKeyForNetwork signal
 

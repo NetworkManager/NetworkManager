@@ -65,40 +65,15 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
  * Copies the object path for a device object into a provided buffer
  *
  */
-void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, unsigned int buf_len, gboolean lock_dev_list)
+void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, unsigned int buf_len)
 {
-	NMData	*data = nm_get_global_data ();
-
 	g_return_if_fail (buf != NULL);
 	g_return_if_fail (buf_len > 0);
 	memset (buf, 0, buf_len);
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (data != NULL);
 
-	/* Iterate over device list */
-	if (!lock_dev_list || nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		NMDevice	*list_dev = NULL;
-		GSList	*element = data->dev_list;
-		int		 i = 0;
-
-		while (element)
-		{
-			list_dev = (NMDevice *)(element->data);
-			if (dev == list_dev)
-			{
-				snprintf (buf, buf_len-1, "%s/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, i);
-				break;
-			}
-
-			i++;
-			element = g_slist_next (element);
-		}
-
-		if (lock_dev_list)
-			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	}
+	snprintf (buf, buf_len-1, "%s/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev));
 }
 
 
@@ -108,12 +83,10 @@ void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, uns
  * Returns the device associated with a dbus object path
  *
  */
-NMDevice *nm_dbus_get_device_from_object_path (const char *path, int *dev_index)
+NMDevice *nm_dbus_get_device_from_object_path (const char *path)
 {
 	NMData	*data = nm_get_global_data ();
 	NMDevice	*dev = NULL;
-
-	*dev_index = -1;
 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
@@ -130,23 +103,17 @@ NMDevice *nm_dbus_get_device_from_object_path (const char *path, int *dev_index)
 	{
 		GSList	*element = data->dev_list;
 		char		 compare_path[100];
-		int		 i = 0;
 
 		while (element)
 		{
-			snprintf (compare_path, 100, "%s/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, i);
-
-			/* Compare against our constructed path, but ignore any trailing elements */
-			dev = (NMDevice *)(element->data);
-			if (dev && (strncmp (path, compare_path, strlen (compare_path)) == 0))
+			if ((dev = (NMDevice *)(element->data)))
 			{
-				*dev_index = i;
-				break;
-			}
-			else
+				snprintf (compare_path, 100, "%s/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev));
+				/* Compare against our constructed path, but ignore any trailing elements */
+				if (strncmp (path, compare_path, strlen (compare_path)) == 0)
+					break;
 				dev = NULL;
-
-			i++;
+			}
 			element = g_slist_next (element);
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -162,7 +129,7 @@ NMDevice *nm_dbus_get_device_from_object_path (const char *path, int *dev_index)
  * Returns the network (ap) associated with a dbus object path
  *
  */
-NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev, int dev_index, int *ap_index)
+NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev, int *ap_index)
 {
 	NMAccessPoint	*ap = NULL;
 	int			 i = 0;
@@ -174,7 +141,7 @@ NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice 
 
 	while ((ap = nm_device_ap_list_get_ap_by_index (dev, i)) != NULL)
 	{
-		snprintf (compare_path, 100, "%s/%d/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index, i);
+		snprintf (compare_path, 100, "%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
 		if (strncmp (path, compare_path, strlen (compare_path)) == 0)
 		{
 			*ap_index = i;
@@ -200,70 +167,30 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 {
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
-	NMData			*data;
+	NMData			*data = nm_get_global_data ();
 
-	data = nm_get_global_data ();
 	if (!data)
 	{
 		/* If we can't get our global data, something is really wrong... */
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "NoGlobalData",
 							"NetworkManager couldn't get its global data.");
-		goto end;
+		return (reply_message);
 	}
 
-	if (!data->active_device)
+	reply_message = dbus_message_new_method_return (message);
+	dbus_message_iter_init (reply_message, &iter);
+
+	/* Construct object path of "active" device and return it */
+	if (data->active_device)
 	{
-		reply_message = dbus_message_new_method_return (message);
-		dbus_message_iter_init (reply_message, &iter);
-		dbus_message_iter_append_string (&iter, "");
-
-		goto end;
-	}
-
-	/* Iterate over device list and grab index of "active device" */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		GSList	*element = data->dev_list;
-		int		 i = 0;
-
-		while (element)
-		{
-			NMDevice	*dev = (NMDevice *)(element->data);
-
-			if (dev && (dev == data->active_device))
-			{
-				char *object_path = g_strdup_printf ("%s/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, i);
-
-				reply_message = dbus_message_new_method_return (message);
-				dbus_message_iter_init (reply_message, &iter);
-				dbus_message_iter_append_string (&iter, object_path);
-				g_free (object_path);
-
-				break;
-			}
-
-			i++;
-			element = g_slist_next (element);
-		}
-
-		if (!reply_message)
-		{
-			/* If the active device wasn't in the list, its been removed. */
-			reply_message = dbus_message_new_method_return (message);
-			dbus_message_iter_init (reply_message, &iter);
-			dbus_message_iter_append_string (&iter, "");
-		}
-
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		char *object_path = g_strdup_printf ("%s/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (data->active_device));
+		dbus_message_iter_append_string (&iter, object_path);
+		g_free (object_path);
 	}
 	else
-	{
-		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "Retry",
-						"NetworkManager could not lock device list, try again.");
-	}
+		dbus_message_iter_append_string (&iter, "");
 
-	end:
-		return (reply_message);
+	return (reply_message);
 }
 
 
@@ -305,7 +232,6 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		GSList	*element = data->dev_list;
-		int		 i = 0;
 		gboolean	 appended = FALSE;
 
 		reply_message = dbus_message_new_method_return (message);
@@ -318,13 +244,11 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 
 			if (dev)
 			{
-				char *object_path = g_strdup_printf ("%s/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, i);
+				char *object_path = g_strdup_printf ("%s/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev));
 				dbus_message_iter_append_string (&iter_array, object_path);
 				g_free (object_path);
 				appended = TRUE;
 			}
-
-			i++;
 			element = g_slist_next (element);
 		}
 
@@ -373,7 +297,7 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 		return;
 	}
 
-	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
+	nm_dbus_get_object_path_from_device (dev, object_path, 100);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 	g_free (object_path);
 
@@ -402,7 +326,7 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 		return;
 	}
 
-	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
+	nm_dbus_get_object_path_from_device (dev, object_path, 100);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 	g_free (object_path);
 
@@ -431,7 +355,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 		return;
 	}
 
-	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
+	nm_dbus_get_object_path_from_device (dev, object_path, 100);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 	g_free (object_path);
 
@@ -618,14 +542,14 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection)
  *
  */
 static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *connection, DBusMessage *message,
-									const char *path, const char *request, NMDevice *dev, int dev_index)
+									const char *path, const char *request, NMDevice *dev)
 {
 	NMAccessPoint		*ap;
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
 	int				 ap_index;
 
-	ap = nm_dbus_get_network_from_object_path (path, dev, dev_index, &ap_index);
+	ap = nm_dbus_get_network_from_object_path (path, dev, &ap_index);
 	if (!ap || (ap_index == -1))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "NetworkNotFound",
@@ -678,11 +602,9 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 	NMDevice			*dev;
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
-	int				 dev_index;
 	char				*object_path;
 
-	dev = nm_dbus_get_device_from_object_path (path, &dev_index);
-	if (!dev || (dev_index == -1))
+	if (!(dev = nm_dbus_get_device_from_object_path (path)))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "DeviceNotFound",
 						"The requested network device does not exist.");
@@ -690,11 +612,11 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 	}
 
 	/* Test whether or not the _networks_ of a device were queried instead of the device itself */
-	object_path = g_strdup_printf ("%s/%d/Networks/", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index);
+	object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev));
 	if (strncmp (path, object_path, strlen (object_path)) == 0)
 	{
 		free (object_path);
-		reply_message = nm_dbus_devices_handle_networks_request (connection, message, path, request, dev, dev_index);
+		reply_message = nm_dbus_devices_handle_networks_request (connection, message, path, request, dev);
 		return (reply_message);
 	}
 	free (object_path);
@@ -717,7 +639,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		{
 			if (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_device_get_essid (dev)) == 0)
 			{
-				object_path = g_strdup_printf ("%s/%d/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index, i);
+				object_path = g_strdup_printf ("%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
 				dbus_message_iter_append_string (&iter, object_path);
 				g_free (object_path);
 				break;
@@ -740,7 +662,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 
 		while ((ap = nm_device_ap_list_get_ap_by_index (dev, i)) != NULL)
 		{
-			object_path = g_strdup_printf ("%s/%d/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, dev_index, i);
+			object_path = g_strdup_printf ("%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
 			dbus_message_iter_append_string (&iter_array, object_path);
 			g_free (object_path);
 			
