@@ -1,3 +1,9 @@
+2005-04-06  Dan Williams  <dcbw@redhat.com>
+
+	* dhcpcd/dhcpcd.c
+		- (dhcp_interface_free): fix a file descriptor leak that may have
+			caused network drivers to not unload due to refcounts > 0
+
 2005-04-04  Dan Williams  <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.c
