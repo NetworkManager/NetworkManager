@@ -3,3 +3,4 @@ Makefile.in
 nminfotest
 nmtest
 nmtestdevices
+libnm_glib_test
