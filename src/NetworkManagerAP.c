@@ -21,6 +21,7 @@
 
 #include "NetworkManagerAP.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerWireless.h"
 
 extern gboolean	debug;
 
@@ -39,11 +40,12 @@ struct NMAccessPoint
 	gboolean			 encrypted;
 	gboolean			 invalid;
 	NMAPEncMethod		 enc_method;
+	gboolean			 enc_method_good;
 	gboolean			 matched;	// used in ap list diffing
 
 	/* Things from user prefs */
-	gchar			*wep_key;
-	guint			 priority;
+	gchar			*enc_key;
+	time_t			 timestamp;
 };
 
 
@@ -61,7 +63,7 @@ NMAccessPoint * nm_ap_new (void)
 	if (!ap)
 		syslog( LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" );
 
-	ap->priority = NM_AP_PRIORITY_WORST;
+	ap->timestamp = 0;
 	ap->refcount = 1;
 
 	return (ap);
@@ -102,9 +104,9 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap->rate = src_ap->rate;
 	new_ap->encrypted = src_ap->encrypted;
 
-	if (src_ap->wep_key && (strlen (src_ap->wep_key) > 0))
-		new_ap->wep_key = g_strdup (src_ap->wep_key);
-	new_ap->priority = src_ap->priority;
+	if (src_ap->enc_key && (strlen (src_ap->enc_key) > 0))
+		new_ap->enc_key = g_strdup (src_ap->enc_key);
+	new_ap->timestamp = 0;
 
 	return (new_ap);
 }
@@ -129,10 +131,10 @@ void nm_ap_unref (NMAccessPoint *ap)
 	{
 		g_free (ap->essid);
 		g_free (ap->address);
-		g_free (ap->wep_key);
+		g_free (ap->enc_key);
 
 		ap->essid = NULL;
-		ap->wep_key = NULL;
+		ap->enc_key = NULL;
 
 		g_free (ap);
 	}
@@ -140,21 +142,21 @@ void nm_ap_unref (NMAccessPoint *ap)
 
 
 /*
- * Get/set functions for priority
+ * Get/set functions for timestamp
  *
  */
-guint nm_ap_get_priority (NMAccessPoint *ap)
+time_t nm_ap_get_timestamp (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
-	return (ap->priority);
+	return (ap->timestamp);
 }
 
-void nm_ap_set_priority (NMAccessPoint *ap, guint priority)
+void nm_ap_set_timestamp (NMAccessPoint *ap, time_t timestamp)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->priority = priority;
+	ap->timestamp = timestamp;
 }
 
 
@@ -181,24 +183,54 @@ void nm_ap_set_essid (NMAccessPoint *ap, gchar * essid)
 
 
 /*
- * Get/set functions for WEP key
+ * Get/set functions for encryption key
  *
  */
-gchar * nm_ap_get_wep_key (NMAccessPoint *ap)
+gchar * nm_ap_get_enc_key_source (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
-	return (ap->wep_key);
+	return (ap->enc_key);
 }
 
-void nm_ap_set_wep_key (NMAccessPoint *ap, gchar * wep_key)
+void nm_ap_set_enc_key_source (NMAccessPoint *ap, gchar * key)
 {
 	g_return_if_fail (ap != NULL);
 
-	if (ap->wep_key)
-		g_free (ap->wep_key);
+	if (ap->enc_key)
+		g_free (ap->enc_key);
 
-	ap->wep_key = g_strdup (wep_key);
+	ap->enc_key = g_strdup (key);
+}
+
+gchar *nm_ap_get_enc_key_hashed (NMAccessPoint *ap, NMAPEncMethod method)
+{
+	gchar	*hashed = NULL;
+	char		*source_key;
+
+	g_return_val_if_fail (ap != NULL, NULL);
+
+	source_key = nm_ap_get_enc_key_source (ap);
+	switch (method)
+	{
+		case (NM_AP_ENC_METHOD_104_BIT_PASSPHRASE):
+			if (source_key)
+				hashed = nm_wireless_128bit_key_from_passphrase (source_key);
+			break;
+
+		case (NM_AP_ENC_METHOD_40_BIT_PASSPHRASE):
+		case (NM_AP_ENC_METHOD_HEX_KEY):
+		case (NM_AP_ENC_METHOD_UNKNOWN):
+			if (source_key)
+				hashed = g_strdup (source_key);
+			break;
+
+		default:
+			hashed = NULL;
+			break;
+	}
+
+	return (hashed);
 }
 
 
@@ -367,4 +399,24 @@ void nm_ap_set_enc_method (NMAccessPoint *ap, NMAPEncMethod enc_method)
 	g_return_if_fail (ap != NULL);
 
 	ap->enc_method = enc_method;
+
+	/* By definition, if the encryption method is "unknown", it cannot be
+	 * "firm" (that is, we know what method we need to use to talk to an ap)
+	 */
+	if (enc_method == NM_AP_ENC_METHOD_UNKNOWN)
+		ap->enc_method_good = FALSE;
+}
+
+gboolean nm_ap_get_enc_method_good (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (ap->enc_method_good);
+}
+
+void nm_ap_set_enc_method_good (NMAccessPoint *ap, gboolean good)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->enc_method_good = good;
 }

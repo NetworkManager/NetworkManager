@@ -82,7 +82,7 @@ gboolean		nm_device_get_best_ap_frozen	(NMDevice *dev);
 char *		nm_device_get_path_for_ap	(NMDevice *dev, NMAccessPoint *ap);
 
 /* There is no function to get the WEP key since that's a slight security risk */
-void			nm_device_set_wep_key		(NMDevice *dev, const char *wep_key);
+void			nm_device_set_enc_key		(NMDevice *dev, const char *key);
 
 gboolean		nm_device_activation_begin	(NMDevice *dev);
 void			nm_device_activation_cancel	(NMDevice *dev);

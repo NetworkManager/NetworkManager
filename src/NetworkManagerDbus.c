@@ -34,7 +34,6 @@ extern gboolean debug;
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
-#include "NetworkManagerWireless.h"
 
 
 /*
@@ -337,6 +336,41 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 
 
 /*
+ * nm_dbus_signal_device_now_active
+ *
+ * Notifies the bus that a particular device is newly active.
+ *
+ */
+void nm_dbus_signal_device_activating (DBusConnection *connection, NMDevice *dev)
+{
+	DBusMessage		*message;
+	unsigned char		*dev_path;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (dev != NULL);
+
+	if (!(dev_path = nm_dbus_get_object_path_from_device (dev)))
+		return;
+
+	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceActivating");
+	if (!message)
+	{
+		syslog (LOG_ERR, "nm_dbus_signal_device_activating(): Not enough memory for new dbus message!");
+		g_free (dev_path);
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+	g_free (dev_path);
+
+	if (!dbus_connection_send (connection, message, NULL))
+		syslog (LOG_WARNING, "nm_dbus_signal_device_activating(): Could not raise the DeviceActivating signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
  * nm_dbus_signal_device_ip4_address_change
  *
  * Notifies the bus that a particular device's IPv4 address changed.
@@ -593,9 +627,6 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 		if ((dev = nm_get_device_by_iface (data, device)))
 			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase);
 
-		char *key = nm_wireless_128bit_key_from_passphrase (passphrase);
-		g_free (key);
-
 		dbus_free (device);
 		dbus_free (network);
 		dbus_free (passphrase);
@@ -746,30 +777,30 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 
 
 /*
- * nm_dbus_get_network_priority
+ * nm_dbus_get_network_timestamp
  *
- * Get a network's priority from NetworkManagerInfo
+ * Get a network's timestamp from NetworkManagerInfo
  *
  * Returns:	-1 on error
- *			AP Priority if no error
+ *			timestamp if no error
  *
  */
-gint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType type, const char *network)
+time_t nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkType type, const char *network)
 {
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
-	guint			 priority = -1;
+	time_t			 timestamp = -1;
 
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
 	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, -1);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkPriority");
+						NMI_DBUS_INTERFACE, "getNetworkTimestamp");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_get_network_priority(): Couldn't allocate the dbus message");
+		syslog (LOG_ERR, "nm_dbus_get_network_timestamp(): Couldn't allocate the dbus message");
 		return (-1);
 	}
 
@@ -781,21 +812,21 @@ gint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType typ
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
-		syslog (LOG_ERR, "nm_dbus_get_network_priority(): %s raised %s", error.name, error.message);
+		syslog (LOG_ERR, "nm_dbus_get_network_timestamp(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_priority(): reply was NULL.");
+		syslog (LOG_NOTICE, "nm_dbus_get_network_timestamp(): reply was NULL.");
 	else
 	{
 		dbus_error_init (&error);
-		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &priority, DBUS_TYPE_INVALID))
-			priority = -1;
+		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &timestamp, DBUS_TYPE_INVALID))
+			timestamp = -1;
 	}
 
 	dbus_message_unref (message);
 	if (reply)
 		dbus_message_unref (reply);
 
-	return (priority);
+	return (timestamp);
 }
 
 
@@ -1125,8 +1156,8 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		if (!success)
 		{
 			dbus_message_unref (reply_message);
-			return (nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoActiveNetwork",
-					"The device is not associated with any networks at this time."));
+			return (nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoNetworks",
+					"The device cannot see any wireless networks."));
 		}
 	}
 	else

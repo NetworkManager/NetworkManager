@@ -27,11 +27,10 @@
 
 typedef struct NMAccessPoint NMAccessPoint;
 
-#define	NM_AP_PRIORITY_WORST		1000
-
 typedef enum NMAPEncMethod
 {
-	NM_AP_ENC_METHOD_NONE = 0,
+	NM_AP_ENC_METHOD_UNKNOWN = 0,
+	NM_AP_ENC_METHOD_NONE,
 	NM_AP_ENC_METHOD_HEX_KEY,
 	NM_AP_ENC_METHOD_40_BIT_PASSPHRASE,
 	NM_AP_ENC_METHOD_104_BIT_PASSPHRASE
@@ -44,14 +43,15 @@ NMAccessPoint		*nm_ap_new_from_ap			(NMAccessPoint *ap);
 void				 nm_ap_unref				(NMAccessPoint *ap);
 void				 nm_ap_ref				(NMAccessPoint *ap);
 
-guint			 nm_ap_get_priority			(NMAccessPoint *ap);
-void				 nm_ap_set_priority			(NMAccessPoint *ap, guint priority);
+time_t			 nm_ap_get_timestamp		(NMAccessPoint *ap);
+void				 nm_ap_set_timestamp		(NMAccessPoint *ap, time_t timestamp);
 
 gchar *			 nm_ap_get_essid			(NMAccessPoint *ap);
-void				 nm_ap_set_essid			(NMAccessPoint *ap, gchar * essid);
+void				 nm_ap_set_essid			(NMAccessPoint *ap, gchar *essid);
 
-gchar *			 nm_ap_get_wep_key			(NMAccessPoint *ap);
-void				 nm_ap_set_wep_key			(NMAccessPoint *ap, gchar * wep_key);
+gchar *			 nm_ap_get_enc_key_source	(NMAccessPoint *ap);
+gchar *			 nm_ap_get_enc_key_hashed	(NMAccessPoint *ap, NMAPEncMethod method);
+void				 nm_ap_set_enc_key_source	(NMAccessPoint *ap, gchar *key);
 
 gboolean			 nm_ap_get_encrypted		(NMAccessPoint *ap);
 void				 nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
@@ -76,5 +76,8 @@ void				 nm_ap_set_matched			(NMAccessPoint *ap, gboolean matched);
 
 NMAPEncMethod		 nm_ap_get_enc_method		(NMAccessPoint *ap);
 void				 nm_ap_set_enc_method		(NMAccessPoint *ap, NMAPEncMethod enc_method);
+
+gboolean			 nm_ap_get_enc_method_good	(NMAccessPoint *ap);
+void				 nm_ap_set_enc_method_good	(NMAccessPoint *ap, gboolean good);
 
 #endif

@@ -51,7 +51,7 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 	{
 		if (g_mutex_trylock (mutex))
 		{
-#ifdef LOCKING_DEBUG	
+#ifdef LOCKING_DEBUG
 			if (func) syslog (LOG_DEBUG, "MUTEX: %s got mutex 0x%X", func, mutex);
 #endif
 			return (TRUE);

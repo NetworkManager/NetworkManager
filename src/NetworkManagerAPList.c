@@ -233,17 +233,17 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 	if ((essid = nm_dbus_get_network_essid (data->dbus_connection, list->type, network)))
 	{
 		char		*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network);
-		gint		 priority = nm_dbus_get_network_priority (data->dbus_connection, list->type, network);
+		time_t	 timestamp = nm_dbus_get_network_timestamp (data->dbus_connection, list->type, network);
 
-		if (priority >= 0)
+		if (timestamp >= 0)
 		{
 			/* Find access point in list, if not found create a new AP and add it to the list */
 			if (!(ap = nm_ap_list_get_ap_by_essid (list, network)))
 				nm_ap_list_append_ap (list, (ap = nm_ap_new ()));
 
 			nm_ap_set_essid (ap, essid);
-			nm_ap_set_wep_key (ap, key);
-			nm_ap_set_priority (ap, priority);
+			nm_ap_set_enc_key_source (ap, key);
+			nm_ap_set_timestamp (ap, timestamp);
 		}
 
 		g_free (essid);
@@ -466,8 +466,8 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	syslog (LOG_DEBUG, "AP_LIST_PRINT: printing members of '%s'", name);
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		syslog (LOG_DEBUG, "\t%d)\tessid='%s', prio=%d, key='%s', enc=%d, addr=0x%X, qual=%d, freq=%f, rate=%d, inval=%d",
-				i, nm_ap_get_essid (ap), nm_ap_get_priority (ap), nm_ap_get_wep_key (ap), nm_ap_get_encrypted (ap),
+		syslog (LOG_DEBUG, "\t%d)\tessid='%s', timestamp=%d, key='%s', enc=%d, addr=0x%X, qual=%d, freq=%f, rate=%d, inval=%d",
+				i, nm_ap_get_essid (ap), nm_ap_get_timestamp (ap), nm_ap_get_enc_key_source (ap), nm_ap_get_encrypted (ap),
 				nm_ap_get_address (ap), nm_ap_get_quality (ap), nm_ap_get_freq (ap), nm_ap_get_rate (ap),
 				nm_ap_get_invalid (ap));
 		i++;
