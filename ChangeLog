@@ -1,6 +1,11 @@
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
+		- (nm_device_force_use): Fix possible segfault
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
 		- Use iw_get_ext() where we should rather than iw_set_ext()
 
 2005-03-29  Dan Williams <dcbw@redhat.com>

@@ -3241,9 +3241,11 @@ gboolean nm_device_force_use (gpointer user_data)
 	
 out:
 	/* Function that scheduled us must ref the device */
-	nm_device_unref (cb_data->dev);
+	if (cb_data->dev)
+		nm_device_unref (cb_data->dev);
+	if (app_data)
+		app_data->forcing_device = FALSE;
 
-	app_data->forcing_device = FALSE;
 	g_free (cb_data);
 	return FALSE;
 }
