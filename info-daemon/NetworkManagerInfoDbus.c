@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoDbus.h"
@@ -580,11 +581,28 @@ static DBusMessage *nmi_dbus_add_network_address (NMIAppInfo *info, DBusMessage 
 		return (reply_message);
 	}
 
-	/* Grab user-key key for our access point from GConf */
+	/* Force-set the essid too so that we have a semi-complete network entry */
 	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
+
+	/* If the network doesn't already exist in GConf, add it and set its timestamp to now. */
+	if (!value || (!value && (value->type == GCONF_VALUE_STRING)))
+	{
+		/* Set the essid of the network. */
+		gconf_client_set_string (info->gconf_client, key, network, NULL);
+		g_free (key);
+
+		/* Update timestamp on network */
+		key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+		gconf_client_set_int (info->gconf_client, key, time (NULL), NULL);
+	}
+	g_free (key);
+
+	/* Get current list of access point MAC addresses for this AP from GConf */
+	key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	value = gconf_client_get (info->gconf_client, key, NULL);
+	g_free (escaped_network);
 
 	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
 	{
@@ -671,6 +689,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 			GtkDialog	*dialog;
 			char		*text;
 
+			dbus_error_free (&error);
 			text = g_strdup_printf ( "The requested wireless network '%s' does not appear to be in range.  "
 								"A different wireless network will be used if any are available.", network);
 			dbus_free (network);
@@ -678,7 +697,6 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 			dialog = GTK_DIALOG (gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL));
 			gtk_dialog_run (dialog);
 			gtk_widget_destroy (GTK_WIDGET (dialog));
-			dbus_error_free (&error);
 		}
 	}
 	else if (strcmp ("getNetworks", method) == 0)
@@ -789,6 +807,7 @@ static gboolean nmi_dbus_nm_is_running (DBusConnection *connection)
 		dbus_error_free (&error);
 	return (exists);
 }
+
 
 /*
  * nmi_dbus_service_init

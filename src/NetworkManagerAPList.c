@@ -347,6 +347,10 @@ void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
 
+	/* If NMI isn't running, don't try to talk to it. */
+	if (!nm_dbus_nmi_is_running (data->dbus_connection))
+		return;
+
 	networks = nm_dbus_get_networks (data->dbus_connection, list->type, &num_networks);
 	if (networks && (num_networks > 0))
 	{

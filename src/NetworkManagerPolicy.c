@@ -249,10 +249,22 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
 			if (nm_device_is_wireless (dev))
 			{
-				struct ether_addr	 addr;
+				NMAccessPoint		*ap = NULL;
 
-				nm_device_get_ap_address (dev, &addr);
-				nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (dev), &addr);
+				if ((ap = nm_device_get_best_ap (dev)))
+				{
+					struct ether_addr	 addr;
+
+					nm_device_get_ap_address (dev, &addr);
+					if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
+						nm_ap_set_address (ap, &addr);
+
+					/* Don't store MAC addresses for non-infrastructure networks */
+					if (nm_ap_get_mode (ap) == NETWORK_MODE_INFRA)
+						nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_ap_get_essid (ap), &addr);
+
+					nm_ap_unref (ap);
+				}
 			}
 			syslog (LOG_INFO, "Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
 			break;
@@ -458,7 +470,7 @@ void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data
  */
 static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 {
-	NMData	*data = (NMData *)user_data;
+	NMData		*data = (NMData *)user_data;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -470,6 +482,22 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 	if (data->allowed_ap_list)
 		nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
+
+	/* If the active device doesn't have a best_ap already, make it update to
+	 * get the new data.
+	 */
+	if (    data->active_device
+		&& nm_device_is_activating (data->active_device)
+		&& nm_device_is_wireless (data->active_device))
+	{
+		NMAccessPoint	*best_ap;
+
+		best_ap = nm_device_get_best_ap (data->active_device);
+		if (!best_ap)
+			nm_device_update_best_ap (data->active_device);
+		else
+			nm_ap_unref (best_ap);
+	}
 
 	return (FALSE);
 }

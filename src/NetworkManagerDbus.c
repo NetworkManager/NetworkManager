@@ -1125,6 +1125,27 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 
 
 /*
+ * nm_dbus_nmi_is_running
+ *
+ * Ask dbus whether or not NetworkManagerInfo is running
+ *
+ */
+gboolean nm_dbus_nmi_is_running (DBusConnection *connection)
+{
+	DBusError		error;
+	gboolean		exists;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	dbus_error_init (&error);
+	exists = dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	return (exists);
+}
+
+
+/*
  * nm_dbus_nmi_filter
  *
  * Respond to NetworkManagerInfo signals about changing Allowed Networks

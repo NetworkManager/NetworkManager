@@ -2945,7 +2945,6 @@ typedef struct NMDeviceForceData
 
 static gboolean nm_device_wireless_force_use (NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type)
 {
-	struct ether_addr	 ap_addr;
 	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
 	NMAccessPoint		*tmp_ap = NULL;
@@ -2982,7 +2981,6 @@ static gboolean nm_device_wireless_force_use (NMDevice *dev, const char *essid, 
 		else
 			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_NONE);
 		nm_ap_set_artificial (ap, TRUE);
-		nm_ap_set_address (ap, &ap_addr);
 		nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 		nm_ap_unref (ap);
 	}
@@ -3192,7 +3190,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 		nm_ap_set_strength (nm_ap, fake_qualities[i]);
 		nm_ap_set_freq (nm_ap, fake_freqs[i]);
 
-		/* Merge settings from wireless networks, mainly Keys */
+		/* Merge settings from wireless networks, mainly keys */
 		if ((list_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (nm_ap))))
 		{
 			nm_ap_set_timestamp (nm_ap, nm_ap_get_timestamp (list_ap));

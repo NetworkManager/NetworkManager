@@ -66,6 +66,8 @@ gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkTy
 
 gboolean		nm_dbus_update_network_auth_method		(DBusConnection *connection, const char *network, const NMDeviceAuthMethod auth_method);
 
+gboolean		nm_dbus_nmi_is_running				(DBusConnection *connection);
+
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 
 #endif
