@@ -284,7 +284,7 @@ int dhcp_interface_option_len (dhcp_interface *iface, int val)
 }
 
 /*****************************************************************************/
-int dhcp_option_record_len (int val)
+int dhcp_option_element_len (int val)
 {
 	if ((val >= 0) && (val < dhcp_opt_table_len))
 		return (dhcp_opt_table[val].len_hint);
@@ -302,7 +302,7 @@ const char *dhcp_option_name (int val)
 }
 
 /*****************************************************************************/
-dhcp_option_type dhcp_option_record_type (int val)
+dhcp_option_type dhcp_option_element_type (int val)
 {
 	if ((val >= 0) && (val < dhcp_opt_table_len))
 		return (dhcp_opt_table[val].type);

@@ -144,20 +144,20 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 
 	if (dhcp_interface_option_present (dev->dhcp_iface, subnetMask))
 	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, subnetMask), dhcp_option_record_len (subnetMask));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, subnetMask), dhcp_option_element_len (subnetMask));
 		nm_system_device_set_ip4_netmask (dev, temp);
 	}
 
 	if (dhcp_interface_option_present (dev->dhcp_iface, broadcastAddr))
 	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, broadcastAddr), dhcp_option_record_len (broadcastAddr));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, broadcastAddr), dhcp_option_element_len (broadcastAddr));
 		nm_system_device_set_ip4_broadcast (dev, temp);
 	}
 
 	/* Default route */
 	if (dhcp_interface_option_present (dev->dhcp_iface, routersOnSubnet))
 	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, routersOnSubnet), dhcp_option_record_len (routersOnSubnet));
+		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, routersOnSubnet), dhcp_option_element_len (routersOnSubnet));
 		nm_system_device_set_ip4_default_route (dev, temp);
 	}
 

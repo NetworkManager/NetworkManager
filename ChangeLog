@@ -1,3 +1,24 @@
+2005-03-24  Dan Williams <dcbw@redhat.com>
+
+	* dhcpcd/dhcpcd.[ch]
+	  src/NetworkManagerDHCP.c
+		- Switch names from "*_record_*" -> "*_element_*" to clarify things a bit
+			(ie, dhcp_option_record_len -> dhcp_option_element_len)
+
+	* src/NetworkManagerDbus.c
+		- spacing cleanups
+
+	* src/nm-dbus-dhcp.c
+		- Make the API suck less.  There is now only 1 type of each function,
+			ie only "getInteger" and no longer also "getIntegerv".  All types
+			are returned encapsulated in a DBUS_TYPE_ARRAY, even for options
+			that will never have more than 1 element.  This should simplify
+			things greatly.
+
+	* test/nm-dhcp-opt-test.c
+		- Make the tool not segfault
+		- adapt to new DHCP Options API
+
 2005-03-22  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c

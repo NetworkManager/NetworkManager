@@ -560,16 +560,15 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	DBusError			 error;
 	DBusMessage		*reply;
 	NMAccessPoint		*ap = NULL;
-
-	const char				*essid = NULL;
+	const char		*essid = NULL;
 	gint				 timestamp_secs = -1;
-	gint32                           i;
-	const char				*key = NULL;
+	gint32			 i;
+	const char		*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
 	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 	DBusMessageIter 	 iter;
-        dbus_int32_t             type_as_int32;
+	dbus_int32_t		 type_as_int32;
 	
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
@@ -581,7 +580,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		return (NULL);
 	}
 
-        type_as_int32 = (dbus_int32_t) type;
+	type_as_int32 = (dbus_int32_t) type;
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
 								DBUS_TYPE_INT32, &type_as_int32,
 								DBUS_TYPE_INVALID);

@@ -141,8 +141,8 @@ void					 dhcp_interface_cease		(struct dhcp_interface *iface);
 int				 dhcp_interface_option_present	(struct dhcp_interface *iface, int val);
 int				 dhcp_interface_option_len		(struct dhcp_interface *iface, int val);
 void				*dhcp_interface_option_payload	(struct dhcp_interface *iface, int val);
-int				 dhcp_option_record_len			(int val);
-dhcp_option_type	 dhcp_option_record_type			(int val);
+int				 dhcp_option_element_len			(int val);
+dhcp_option_type	 dhcp_option_element_type		(int val);
 int				 dhcp_option_id_by_name			(const char *name);
 const char *		 dhcp_option_name				(int val);
 
