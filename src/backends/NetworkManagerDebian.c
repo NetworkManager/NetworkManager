@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <arpa/inet.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
@@ -52,8 +53,8 @@ void nm_system_init (void)
  */
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
-	char		 buf [500];
-	char		*iface;
+	char		*buf;
+        char		*iface;
 	int		 err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -69,10 +70,11 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 	 * (for example, bad WEP key so it can't actually talk to the AP).
 	 */
 	iface = nm_device_get_iface (dev);
-	snprintf (buf, 500, "/sbin/dhclient -pf /var/run/dhclient-%s.pid %s\n",
-		  iface, iface);
+	buf = g_strdup_printf ("/sbin/dhclient -pf /var/run/dhclient-%s.pid %s\n",
+		               iface, iface);
 	printf("Running %s",buf);
 	err = nm_spawn_process (buf);
+        g_free (buf);
 	return (err == 0);
 }
 
@@ -88,7 +90,7 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 void nm_system_device_stop_dhcp (NMDevice *dev)
 {
 	FILE			*pidfile;
-	char			 buf [500];
+	char			*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -97,7 +99,8 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		return;
 
 	/* Find and kill the previous dhclient process for this device */
-	snprintf (buf, 500, "/var/run/dhclient-%s.pid", nm_device_get_iface (dev));
+        buf = g_strdup_printf ("/var/run/dhclient-%s.pid", 
+                               nm_device_get_iface (dev));
 	pidfile = fopen (buf, "r");
 	if (pidfile)
 	{
@@ -107,13 +110,14 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 
 		memset (s_pid, 0, 20);
 		fgets (s_pid, 19, pidfile);
-		len = strnlen (s_pid, 20);
+		len = strlen (s_pid);
 		fclose (pidfile);
 
 		n_pid = atoi (s_pid);
 		if (n_pid > 0)
 			kill (n_pid, SIGTERM);
 	}
+        g_free (buf);
 }
 
 
@@ -125,7 +129,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	char	buf [100];
+	char	*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -134,8 +138,10 @@ void nm_system_device_flush_routes (NMDevice *dev)
 		return;
 
 	/* Remove routing table entries */
-	snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip route flush dev %s",
+                               nm_device_get_iface (dev));
 	nm_spawn_process (buf);
+        g_free (buf);
 }
 
 
@@ -147,7 +153,7 @@ void nm_system_device_flush_routes (NMDevice *dev)
  */
 void nm_system_device_flush_addresses (NMDevice *dev)
 {
-	char	buf [100];
+	char	*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -156,8 +162,10 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 		return;
 
 	/* Remove all IP addresses for a device */
-	snprintf (buf, 100, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip address flush dev %s", 
+                               nm_device_get_iface (dev));
 	nm_spawn_process (buf);
+        g_free (buf);
 }
 
 
@@ -172,7 +180,102 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
-	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
+#define IPBITS (sizeof (guint32) * 8)
+        struct in_addr  temp_addr;
+        struct in_addr  temp_addr2;
+        char            *s_tmp;
+        char            *s_tmp2;
+        int             i;
+        guint32         addr;
+        guint32         netmask;
+        guint32         prefix = IPBITS;    /* initialize with # bits in ipv4 address */
+        guint32         broadcast;
+        char            *buf;
+        int             err;
+        char            *iface;
+
+        g_return_val_if_fail (dev != NULL, FALSE);
+        g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
+
+        addr = nm_device_config_get_ip4_address (dev);
+        netmask = nm_device_config_get_ip4_netmask (dev);
+        iface = nm_device_get_iface (dev);
+        broadcast = nm_device_config_get_ip4_broadcast (dev);
+
+        /* get the prefix from the netmask */
+        for (i = 0; i < IPBITS; i++)
+        {
+                if (!(ntohl (netmask) & ((2 << i) - 1)))
+                       prefix--;
+        }
+
+        /* Calculate the broadcast address if the user didn't specify one */
+        if (!broadcast)
+                broadcast = ((addr & (int)netmask) | ~(int)netmask);
+
+        /* 
+         * Try and work out if someone else has our IP
+         * using RFC 2131 Duplicate Address Detection
+         */
+        temp_addr.s_addr = addr;
+        buf = g_strdup_printf ("/sbin/arping -q -D -c 1 -I %s %s", 
+                               iface, inet_ntoa (temp_addr));
+        if ((err = nm_spawn_process (buf)))
+        {
+            syslog (LOG_ERR, "Error: Duplicate address '%s' detected for " 
+                             "device '%s' \n", iface, inet_ntoa (temp_addr));
+            goto error;
+        }
+        g_free (buf);
+
+        /* set our IP address */
+        temp_addr.s_addr = addr;
+        temp_addr2.s_addr = broadcast;
+        s_tmp = g_strdup (inet_ntoa (temp_addr));
+        s_tmp2 = g_strdup (inet_ntoa (temp_addr2));
+        buf = g_strdup_printf ("/sbin/ip addr add %s/%d brd %s dev %s label %s",
+                               s_tmp, prefix, s_tmp2, iface, iface);
+        g_free (s_tmp);
+        g_free (s_tmp2);
+        if ((err = nm_spawn_process (buf)))
+        {
+            syslog (LOG_ERR, "Error: could not set network configuration for "
+                             "device '%s' using command:\n      '%s'",
+                             iface, buf);
+            goto error;
+        }
+        g_free (buf);
+
+        /* Alert other computers of our new address */
+        temp_addr.s_addr = addr;
+        buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface,
+                               inet_ntoa (temp_addr));
+        nm_spawn_process (buf);
+        g_free (buf);
+        g_usleep (G_USEC_PER_SEC * 2);
+        buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface,
+                                inet_ntoa (temp_addr));
+        nm_spawn_process (buf);
+        g_free (buf);
+
+        /* set the default route to be this device's gateway */
+        temp_addr.s_addr = nm_device_config_get_ip4_gateway (dev);
+        buf = g_strdup_printf ("/sbin/ip route replace default via %s dev %s",
+                               inet_ntoa (temp_addr), iface);
+        if ((err = nm_spawn_process (buf)))
+        {
+                syslog (LOG_ERR, "Error: could not set default route using "
+                                 "command:\n    '%s'", buf);
+                goto error;
+        }
+        g_free (buf);
+        return (TRUE);
+        
+error:
+        g_free (buf);
+        nm_system_device_flush_addresses (dev);
+        nm_system_device_flush_routes (dev);
+        return (FALSE);
 }
 
 
@@ -221,7 +324,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
-	nm_spawn_process ("/usr/bin/killall dhclient");
+	nm_spawn_process ("/usr/bin/killall -q dhclient");
 }
 
 

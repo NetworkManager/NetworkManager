@@ -172,6 +172,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 	/* Attempt to acquire mutex for device list deletion.  If acquire fails,
 	 * just ignore the device deletion entirely.
 	 */
+fprintf (stderr, "Remove called fro device %s\n", udi);
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		element = data->dev_list;

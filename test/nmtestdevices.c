@@ -25,6 +25,7 @@
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <string.h>
 
 /* These MUST correspond to NetworkManager device types */
 typedef enum NMDeviceType

@@ -1,3 +1,15 @@
+2004-10-18 Dan Williams <dcbw@redhat.com>
+
+	Patches from Thom May:
+	* test/nmtestdevices.c
+		- Include <string.h>
+	* src/backends/NetworkManagerDebian.c:
+		- (nm_system_device_run_dhcp, nm_system_device_stop_dhcp)
+			(nm_system_device_flush_routes, nm_system_device_flush_addresses)
+			Move to using g_strdup_printf rather than arbitrary buffers
+		- (nm_system_device_setup_static_ip4_config) Implement function.
+		- (nm_system_kill_all_dhcp_daemons) Use killall -q rather than killall
+
 2004-10-17 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c
