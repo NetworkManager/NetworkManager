@@ -30,7 +30,7 @@
 #include "NetworkManagerUtils.h"
 
 
-/*#define LOCKING_DEBUG	*/
+/*#define LOCKING_DEBUG */
 
 /*
  * nm_try_acquire_mutex
@@ -59,6 +59,9 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 		i++;
 	}
 
+#ifdef LOCKING_DEBUG
+	if (func) syslog (LOG_DEBUG, "MUTEX: %s FAILED to get mutex 0x%X", func, mutex);
+#endif
 	return (FALSE);
 }
 

@@ -47,12 +47,14 @@ void				nm_ap_list_append_ap		(NMAccessPointList *list, NMAccessPoint *ap);
 void				nm_ap_list_remove_ap		(NMAccessPointList *list, NMAccessPoint *ap);
 
 NMAccessPoint *	nm_ap_list_get_ap_by_essid	(NMAccessPointList *list, const char *network);
+NMAccessPoint *	nm_ap_list_get_ap_by_address	(NMAccessPointList *list, const struct ether_addr *addr);
 
 void				nm_ap_list_update_network	(NMAccessPointList *list, const char *network, NMData *data);
 
 void				nm_ap_list_populate			(NMAccessPointList *list, NMData *data);
 
-void				nm_ap_list_copy_keys		(NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_properties	(NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_essids_by_address	(NMAccessPointList *dest, NMAccessPointList *source);
 NMAccessPointList *	nm_ap_list_combine			(NMAccessPointList *list1, NMAccessPointList *list2);
 void				nm_ap_list_diff			(NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new);
 

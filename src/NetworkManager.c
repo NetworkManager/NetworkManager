@@ -605,7 +605,7 @@ int main( int argc, char *argv[] )
 	nm_data = nm_data_new (enable_test_devices);
 	if (!nm_data)
 	{
-		syslog( LOG_CRIT, "nm_data_new() failed... Not enough memory?");
+		syslog (LOG_CRIT, "nm_data_new() failed... Not enough memory?");
 		exit (EXIT_FAILURE);
 	}	
 
@@ -613,8 +613,7 @@ int main( int argc, char *argv[] )
 	nm_data->dbus_connection = nm_dbus_init (nm_data);
 	if (!nm_data->dbus_connection)
 	{
-		syslog( LOG_CRIT, "nm_dbus_init() failed, exiting");
-		hal_shutdown (nm_data->hal_ctx);
+		syslog (LOG_CRIT, "nm_dbus_init() failed, exiting.  Either dbus is not running, or the NetworkManager dbus security policy was not loaded.");
 		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
 	}
@@ -624,7 +623,7 @@ int main( int argc, char *argv[] )
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
 	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
 	{
-		syslog( LOG_CRIT, "hal_initialize() failed, exiting...  Make sure the hal daemon is running?");
+		syslog (LOG_CRIT, "hal_initialize() failed, exiting...  Make sure the hal daemon is running?");
 		exit (EXIT_FAILURE);
 	}
 	nm_data->hal_ctx = ctx;

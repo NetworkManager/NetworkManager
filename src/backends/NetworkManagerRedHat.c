@@ -146,6 +146,19 @@ void nm_system_device_flush_routes (NMDevice *dev)
 
 
 /*
+ * nm_system_device_has_active_routes
+ *
+ * Find out whether the specified device has any routes in the routing
+ * table.
+ *
+ */
+gboolean nm_system_device_has_active_routes (NMDevice *dev)
+{
+	return (FALSE);
+}
+
+
+/*
  * nm_system_device_flush_addresses
  *
  * Flush all network addresses associated with a network device

@@ -140,7 +140,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
 
-	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
+	if (!nm_ap_list_lock (list))
 	{
 		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
@@ -149,7 +149,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	nm_ap_ref (ap);
 	list->ap_list = g_slist_append (list->ap_list, ap);
 
-	nm_unlock_mutex (list->mutex, __FUNCTION__);
+	nm_ap_list_unlock (list);
 }
 
 
@@ -166,7 +166,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
 
-	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
+	if (!nm_ap_list_lock (list))
 	{
 		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
@@ -186,8 +186,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 		}
 		element = g_slist_next (element);
 	}
-
-	nm_unlock_mutex (list->mutex, __FUNCTION__);
+	nm_ap_list_unlock (list);
 }
 
 
@@ -204,7 +203,8 @@ NMAccessPoint *nm_ap_list_get_ap_by_essid (NMAccessPointList *list, const char *
 	NMAccessPoint	*found_ap = NULL;
 	NMAPListIter	*iter;
 
-	g_return_val_if_fail (network != NULL, NULL);
+	if (!network)
+		return (NULL);
 
 	if (!list)
 		return (NULL);
@@ -214,14 +214,50 @@ NMAccessPoint *nm_ap_list_get_ap_by_essid (NMAccessPointList *list, const char *
 
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		if (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0)
+		if (nm_ap_get_essid (ap) && (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0))
 		{
 			found_ap = ap;
 			break;
 		}
 	}
-
 	nm_ap_list_iter_free (iter);
+
+	return (found_ap);
+}
+
+
+/*
+ * nm_ap_list_get_ap_by_address
+ *
+ * Search through an access point list and return the access point
+ * that has a given AP address.
+ *
+ */
+NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const struct ether_addr *addr)
+{
+	NMAccessPoint	*ap;
+	NMAccessPoint	*found_ap = NULL;
+	NMAPListIter	*iter;
+
+	if (!addr)
+		return (NULL);
+
+	if (!list)
+		return (NULL);
+
+	if (!(iter = nm_ap_list_iter_new (list)))
+		return (NULL);
+
+	while ((ap = nm_ap_list_iter_next (iter)))
+	{
+		if (nm_ap_get_address (ap) && (memcmp (addr, nm_ap_get_address (ap), sizeof (struct ether_addr)) == 0))
+		{
+			found_ap = ap;
+			break;
+		}
+	}
+	nm_ap_list_iter_free (iter);
+
 	return (found_ap);
 }
 
@@ -258,7 +294,10 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 			nm_ap_set_essid (ap, essid);
 			nm_ap_set_timestamp (ap, timestamp);
 			nm_ap_set_trusted (ap, trusted);
-			nm_ap_set_enc_key_source (ap, key, enc_method);
+			if (key && strlen (key))
+				nm_ap_set_enc_key_source (ap, key, enc_method);
+			else
+				nm_ap_set_enc_key_source (ap, NULL, NM_AP_ENC_METHOD_UNKNOWN);
 		}
 
 		g_free (timestamp);
@@ -360,14 +399,14 @@ NMAccessPointList * nm_ap_list_combine (NMAccessPointList *list1, NMAccessPointL
 
 
 /*
- * nm_ap_list_copy_keys
+ * nm_ap_list_copy_properties
  *
- * Update the keys and encryption methods in one access point list from
+ * Update properties (like encryption keys or timestamps) in one access point list from
  * access points in another list, if the APs in the first list are present
  * in the second.
  *
  */
-void nm_ap_list_copy_keys (NMAccessPointList *dest, NMAccessPointList *source)
+void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *source)
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
@@ -385,6 +424,40 @@ void nm_ap_list_copy_keys (NMAccessPointList *dest, NMAccessPointList *source)
 			{
 				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
 				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_method (src_ap));
+				nm_ap_set_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
+			}
+		}
+		nm_ap_list_iter_free (iter);
+	}
+}
+
+
+/*
+ * nm_ap_list_copy_essids_by_address
+ *
+ * For each blank-essid access point in the destination list, try to find
+ * an access point in the source list that has the same MAC address, and if
+ * its found, copy the source access point's essid to the dest access point.
+ *
+ */
+void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointList *source)
+{
+	NMAPListIter	*iter;
+	NMAccessPoint	*dest_ap;
+
+	g_return_if_fail (dest != NULL);
+	g_return_if_fail (source != NULL);
+
+	if ((iter = nm_ap_list_iter_new (dest)))
+	{
+		while ((dest_ap = nm_ap_list_iter_next (iter)))
+		{
+			NMAccessPoint	*src_ap = NULL;
+
+			if (!nm_ap_get_essid (dest_ap) && (src_ap = nm_ap_list_get_ap_by_address (source, nm_ap_get_address (dest_ap))))
+			{
+				if (nm_ap_get_essid (src_ap))
+					nm_ap_set_essid (dest_ap, nm_ap_get_essid (src_ap));
 			}
 		}
 		nm_ap_list_iter_free (iter);
@@ -424,13 +497,16 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 		{
 			NMAccessPoint	*new_ap = NULL;
 
-			if ((new_ap = nm_ap_list_get_ap_by_essid (new, nm_ap_get_essid (old_ap))))
+			if (nm_ap_get_essid (old_ap))
 			{
-				nm_ap_set_matched (old_ap, TRUE);
-				nm_ap_set_matched (new_ap, TRUE);
+				if ((new_ap = nm_ap_list_get_ap_by_essid (new, nm_ap_get_essid (old_ap))))
+				{
+					nm_ap_set_matched (old_ap, TRUE);
+					nm_ap_set_matched (new_ap, TRUE);
+				}
+				else
+					nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, TRUE);
 			}
-			else
-				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, TRUE);
 		}
 		nm_ap_list_iter_free (iter);
 	}
@@ -442,7 +518,7 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 	{
 		while ((new_ap = nm_ap_list_iter_next (iter)))
 		{
-			if (!nm_ap_get_matched (new_ap))
+			if (!nm_ap_get_matched (new_ap) && nm_ap_get_essid (new_ap))
 				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, new_ap, FALSE);
 		}
 		nm_ap_list_iter_free (iter);

@@ -178,9 +178,13 @@ void nm_ap_set_essid (NMAccessPoint *ap, char * essid)
 	g_return_if_fail (ap != NULL);
 
 	if (ap->essid)
+	{
 		g_free (ap->essid);
+		ap->essid = NULL;
+	}
 
-	ap->essid = g_strdup (essid);
+	if (essid)
+		ap->essid = g_strdup (essid);
 }
 
 

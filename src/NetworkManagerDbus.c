@@ -253,9 +253,9 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 			return (reply_message);
-		}	else fprintf (stderr, "FORCE: device '%s'\n", dev_path);
+		}	else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
 	}
-	else fprintf (stderr, "FORCE: device '%s', network '%s'\n", dev_path, network);
+	else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
 	
 	/* So by now we have a valid device and possibly a network as well */
 
@@ -286,11 +286,34 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			NMAccessPoint	*ap;
 
 			if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
-			{
 				syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
+			else
+			{
+				struct ether_addr	ap_addr;
+
+				syslog (LOG_DEBUG, "Forcing non-scanned AP '%s'", network);
+				/* If the network exists, make sure it has the correct ESSID set
+				 * (it might have been a blank ESSID up to this point) and use it.
+				 */
+				nm_device_deactivate (dev, FALSE);
+				if (nm_device_wireless_network_exists (dev, network, &ap_addr))
+				{
+					if ((ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
+						nm_ap_set_essid (ap, network);
+				}
+			}
+
+			/* If we found a valid access point, use it */
+			if (ap)
+			{
 				nm_device_set_best_ap (dev, ap);
 				nm_device_freeze_best_ap (dev);
 				nm_device_activation_cancel (dev);
+			}
+			else
+			{
+				reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
+					"The requested wireless network is not in range.");
 			}
 		}
 		dbus_free (network);
@@ -1170,11 +1193,14 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 			{
 				while ((ap = nm_ap_list_iter_next (list_iter)))
 				{
-					object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
-							nm_device_get_iface (dev), nm_ap_get_essid (ap));
-					dbus_message_iter_append_string (&iter_array, object_path);
-					g_free (object_path);
-					success = TRUE;
+					if (nm_ap_get_essid (ap))
+					{
+						object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
+								nm_device_get_iface (dev), nm_ap_get_essid (ap));
+						dbus_message_iter_append_string (&iter_array, object_path);
+						g_free (object_path);
+						success = TRUE;
+					}
 				}
 				nm_ap_list_iter_free (list_iter);
 			}
@@ -1449,19 +1475,22 @@ DBusConnection *nm_dbus_init (NMData *data)
 	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data);
 	if (!success)
 	{
-		syslog (LOG_ERR, "nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?");
+		syslog (LOG_CRIT, "nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?");
 		return (NULL);
 	}
 
 	success = dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data);
 	if (!success)
 	{
-		syslog (LOG_ERR, "nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?");
+		syslog (LOG_CRIT, "nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?");
 		return (NULL);
 	}
 
 	if (!dbus_connection_add_filter (connection, nm_dbus_nmi_filter, data, NULL))
+	{
+		syslog (LOG_CRIT, "nm_dbus_init() could not attach a dbus message filter.  The NetworkManager dbus security policy may not be loaded.  Restart dbus?");
 		return (NULL);
+	}
 
 	dbus_bus_add_match (connection,
 				"type='signal',"

@@ -2,6 +2,7 @@
  *
  * Dan Williams <dcbw@redhat.com>
  * Dan Willemsen <dan@willemsen.us>
+ * Robert Paskowitz
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +20,13 @@
  *
  * (C) Copyright 2004 Red Hat, Inc.
  * (C) Copyright 2004 Dan Willemsen
+ * (C) Copyright 2004 Robert Paskowitz
  */
 
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <string.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 
@@ -44,6 +47,12 @@ static GENTOOConfType nm_system_gentoo_conf_type;
 void nm_system_init (void)
 {
 // TODO: autodetect conf type, probably by checking if /sbin/ip exists
+
+/* It's not safe to assume the the iproute stuff exists, but seeing as it 
+ * is far more convinient to flush stuff with /sbin/ip with iproute
+ * I think it would be acceptable to introduce the sys-apps/iproute2
+ * package as a dependancy for Gentoo.
+*/
 	nm_system_gentoo_conf_type = GENTOO_CONF_TYPE_IPROUTE;
 }
 
@@ -135,6 +144,8 @@ void nm_system_device_flush_routes (NMDevice *dev)
 		snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
 	} else if (nm_system_gentoo_conf_type == GENTOO_CONF_TYPE_IFCONFIG) {
 // FIXME: this command still isn't right
+
+/* See note above */
 		snprintf (buf, 100, "/sbin/route del dev %s", nm_device_get_iface (dev));
 	} else {
 		snprintf (buf, 100, "/bin/false");
@@ -162,6 +173,8 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 		snprintf (buf, 100, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
 	} else if (nm_system_gentoo_conf_type == GENTOO_CONF_TYPE_IFCONFIG) {
 // FIXME: find the correct command
+
+/* See note above */
 		snprintf (buf, 100, "/bin/false");
 	} else {
 		snprintf (buf, 100, "/bin/false");
@@ -275,4 +288,129 @@ void nm_system_load_device_modules (void)
  */
 void nm_system_device_update_config_info (NMDevice *dev)
 {
+        char            *cfg_file_path = NULL;
+        FILE            *file = NULL;
+        char            buffer[100];
+        char            confline[100], dhcpline[100], ipline[100];
+        int             ipa, ipb, ipc, ipd;
+	int		nNext =  0, bNext = 0, count = 0;
+        char            *confToken;
+        gboolean         data_good = FALSE;
+        gboolean         use_dhcp = TRUE;
+        guint32  ip4_address = 0;
+        guint32  ip4_netmask = 0;
+        guint32  ip4_gateway = 0;
+
+        g_return_if_fail (dev != NULL);
+
+        /* We use DHCP on an interface unless told not to */
+        nm_device_config_set_use_dhcp (dev, TRUE);
+        nm_device_config_set_ip4_address (dev, 0);
+        nm_device_config_set_ip4_gateway (dev, 0);
+        nm_device_config_set_ip4_netmask (dev, 0);
+
+        /* Gentoo systems store this information in
+         * /etc/conf.d/net, this is for all interfaces.
+         */
+
+        cfg_file_path = g_strdup_printf ("/etc/conf.d/net");
+        if (!cfg_file_path)
+                return;
+
+        if (!(file = fopen (cfg_file_path, "r")))
+        {
+                g_free (cfg_file_path);
+                return;
+        }
+	sprintf(confline, "iface_%s", nm_device_get_iface (dev));
+	sprintf(dhcpline, "iface_%s=\"dhcp\"", nm_device_get_iface (dev));
+        while (fgets (buffer, 499, file) && !feof (file))
+        {
+                /* Kock off newline if any */
+                g_strstrip (buffer);
+
+                if (strncmp (buffer, confline, strlen(confline)) == 0)
+                {
+                        /* Make sure this config file is for this device */
+                        if (strncmp (&buffer[strlen(confline) - strlen(nm_device_get_iface (dev))], 
+						nm_device_get_iface (dev), strlen(nm_device_get_iface (dev))
+						) != 0)
+                        {
+                                syslog (LOG_WARNING, "System config file '%s' does not define device '%s'\n",
+                                                cfg_file_path, nm_device_get_iface (dev));
+                                break;
+                        }
+                        else
+                                data_good = TRUE;
+
+
+                
+			if (strncmp (buffer, dhcpline, strlen(dhcpline)) == 0)
+			{
+				use_dhcp = TRUE;
+			}
+			else
+			{
+				syslog (LOG_WARNING, "Device '%s' is setup as static, and we do not (yet) support that\n",
+						nm_device_get_iface (dev));
+				use_dhcp = FALSE;
+				confToken = strtok(&buffer[strlen(confline) + 2], " ");
+				while (count < 3)
+				{
+					if (nNext == 1 && bNext == 1)
+					{
+						ip4_address = inet_addr (confToken);
+						count++;
+						continue;
+					}
+					if (strcmp(confToken, "netmask") == 0)
+					{
+						confToken = strtok(NULL, " ");
+						ip4_netmask = inet_addr (confToken);
+						count++;
+						nNext = 1;
+					}
+					else if (strcmp(confToken, "broadcast") == 0)
+					{
+						confToken = strtok(NULL, " ");
+						count++;
+						bNext = 1;
+					}
+					else
+					{
+						ip4_address = inet_addr (confToken);
+						count++;
+					}
+					confToken = strtok(NULL, " ");
+				}
+			}
+		}
+		/* If we aren't using dhcp, then try to get the gateway */
+		if (!use_dhcp)
+		{
+			sprintf(ipline, "gateway=\"%s/", nm_device_get_iface (dev));
+			if (strncmp(buffer, ipline, strlen(ipline) - 1) == 0)
+			{
+				sprintf(ipline, "gateway=\"%s/%%d.%%d.%%d.%%d\"", nm_device_get_iface (dev) );
+				sscanf(buffer, ipline, &ipa, &ipb, &ipc, &ipd);
+				sprintf(ipline, "%d.%d.%d.%d", ipa, ipb, ipc, ipd);
+				ip4_gateway = inet_addr (ipline);
+				syslog (LOG_WARNING, "Gateway(%s): %s", nm_device_get_iface (dev), ipline);
+			}
+		}		
+        }
+        fclose (file);
+        g_free (cfg_file_path);
+
+        /* If successful, set values on the device */
+        if (data_good)
+        {
+                nm_device_config_set_use_dhcp (dev, use_dhcp);
+                if (ip4_address)
+                        nm_device_config_set_ip4_address (dev, ip4_address);
+                if (ip4_gateway)
+                        nm_device_config_set_ip4_gateway (dev, ip4_gateway);
+                if (ip4_netmask)
+                        nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+        }
 }

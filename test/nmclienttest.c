@@ -539,6 +539,40 @@ void get_devices (DBusConnection *connection)
 }
 
 
+void set_device_network (DBusConnection *connection, const char *path, const char *network)
+{
+	DBusMessage 	*message;
+	DBusMessage 	*reply;
+	DBusMessageIter iter;
+	DBusError		 error;
+
+	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						"/org/freedesktop/NetworkManager",
+						"org.freedesktop.NetworkManager",
+						"setActiveDevice");
+	if (message == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, path,
+							DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		dbus_message_unref (message);
+		dbus_error_free (&error);
+		return;
+	}
+	else
+		fprintf (stderr, "Success!!\n");
+}
+
+
 int main( int argc, char *argv[] )
 {
 	DBusConnection *connection;
@@ -561,6 +595,12 @@ int main( int argc, char *argv[] )
 	path = get_active_device (connection);
 	get_device_name (connection, path);
 	get_devices (connection);
+	if ((argc == 2) && (get_device_type (connection, path) == 2))
+	{
+		fprintf (stderr, "Attempting to force AP '%s' for device '%s'\n", argv[1], path);
+		set_device_network (connection, path, argv[1]);
+	}
+
 	g_free (path);
 
 	return 0;

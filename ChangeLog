@@ -1,3 +1,64 @@
+2004-10-13 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- Add function to print out applet_state in a readable
+			manner
+
+	* src/NetworkManager.c
+		- (main): Don't segfault when nm_dbus_init() fails, we had
+			a left-over call to hal_shutdown() into which we passed NULL
+
+	* src/NetworkManagerAP.c
+		- (nm_ap_set_essid): Allow NULL essids
+
+	* src/NetworkManagerAPList.[ch]
+		- More use of nm_ap_list_[un]lock ()
+		- (nm_ap_list_get_ap_by_essid): don't warn when looking for a NULL
+			network/essid, just return nothing.  Also skip over NULL
+			essid access points in the list when searching
+		- (nm_ap_list_get_ap_by_address): new function
+		- (nm_ap_list_update_network): set the access point's key source to
+			NULL when the key returned from NetworkManagerInfo is NULL or
+			of 0 length
+		- nm_ap_list_update_keys() -> nm_ap_list_update_properties(), and
+			copy timestamp over too
+		- (nm_ap_list_copy_essids_by_address): new function, attempt to
+			find the correct ESSID for a blank-essid access point by searching
+			through another list and matching access point MAC addresses
+		- (nm_ap_list_diff): exclude blank-essid access points from the diffs
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_nm_set_active_device): deal with random networks the user
+			may specify.  This is mainly for access points that don't
+			broadcast their essid.  So if the user tells us to associate with
+			some random ESSID that's not in our access point list, we find
+			out if the access point does in fact exist (by attempting association
+			and then matching that access point's MAC address with the essid the
+			user gave us) and then we switch to it.
+		- (nm_dbus_devices_handle_request): don't add blank-essid access points
+			to the returned list of networks for the "getNetworks" method
+
+	* src/NetworkManagerDevice.[ch]
+		- Extra debugging info for link detection
+		- (nm_device_ap_list_get_ap_by_address): new function, return an AP
+			based on MAC address
+		- (nm_device_get_path_for_ap): ignore blank-essid access points
+		- (nm_device_wireless_network_exists): new function, find out whether
+			a random ESSID exists by attempting to associate with it
+		- (nm_device_do_normal_scan): allow blank-essid access points in our
+			device list as long as they have an AP MAC address we can use.
+			Also send WirelessNetwork[Dis]Appeared signals for non-active
+			devices too.  Lets the applet update more frequently.
+
+	* src/backends/NetworkManagerGentoo.c
+		- Patch from: Robert Paskowitz
+			- Update backend code for Gentoo
+			- Implement nm_system_device_update_config_info ()
+
+	* test/nmclienttest.c
+		- (set_network_device): new function, takes a command-line argument
+			and tells NetworkManager to use that wireless network
+
 Wed Oct 13 John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c (nmi_spawn_notification_icon): Stop respawning

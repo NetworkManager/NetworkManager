@@ -1298,6 +1298,7 @@ inline gboolean HAVE_LINK (NMDevice *dev, guint32 bad_crypt_packets)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
+fprintf (stderr, "HAVELINK: act=%d && (dev_crypt=%d <= prev_crypt=%d)\n", nm_device_get_link_active (dev), nm_device_get_bad_crypt_packets (dev), bad_crypt_packets);
 	return (nm_device_get_link_active (dev) && (nm_device_get_bad_crypt_packets (dev) <= bad_crypt_packets));
 }
 
@@ -1367,6 +1368,9 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 			|| (best_ap && (nm_ap_get_encrypted (best_ap) &&
 					(!nm_ap_get_enc_key_source (best_ap) || !strlen (nm_ap_get_enc_key_source (best_ap))))))
 	{
+fprintf (stderr, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))\n",
+!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
+nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
 			dev->options.wireless.now_scanning = FALSE;
@@ -1756,6 +1760,29 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_essid (NMDevice *dev, const char *ess
 
 
 /*
+ * nm_device_ap_list_get_ap_by_address
+ *
+ * Get the access point for a specific MAC address
+ *
+ */
+NMAccessPoint *nm_device_ap_list_get_ap_by_address (NMDevice *dev, const struct ether_addr *addr)
+{
+	NMAccessPoint	*ret_ap = NULL;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (addr != NULL, NULL);
+
+	if (!dev->options.wireless.ap_list)
+		return (NULL);
+
+	ret_ap = nm_ap_list_get_ap_by_address (dev->options.wireless.ap_list, addr);
+
+	return (ret_ap);
+}
+
+
+/*
  * nm_device_ap_list_get
  *
  * Return a pointer to the AP list
@@ -1851,7 +1878,10 @@ char * nm_device_get_path_for_ap (NMDevice *dev, NMAccessPoint *ap)
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (ap  != NULL, NULL);
 
-	return (g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap)));
+	if (nm_ap_get_essid (ap))
+		return (g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap)));
+	else
+		return (NULL);
 }
 
 
@@ -1978,6 +2008,59 @@ void nm_device_update_best_ap (NMDevice *dev)
 
 
 /*
+ * nm_device_wireless_network_exists
+ *
+ * Tell the card to explicitly use with a particular essid, and then
+ * see if we can associate with some AP using that ESSID.
+ * Mainly for non-essid-broadcasting APs to figure out whether or not
+ * some random ESSID the user gave us exists or not.
+ *
+ * WARNING: will blow away any connection the card currently has.
+ *
+ */
+gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, struct ether_addr *ap_addr)
+{
+	struct ether_addr	addr;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
+	g_return_val_if_fail (ap_addr != NULL, FALSE);
+	g_return_val_if_fail (strlen (network), FALSE);
+
+	fprintf (stderr, "nm_device_wireless_network_exists () looking for network '%s'...", network);
+
+	nm_device_bring_down (dev);
+
+	/* Force the card into Managed/Infrastructure mode */
+	nm_device_set_mode_managed (dev);
+
+	/* Disable encryption, then re-enable and set correct key on the card
+	 * if we are going to encrypt traffic.
+	 */
+	nm_device_set_enc_key (dev, NULL);
+	nm_device_set_essid (dev, network);
+
+	/* Bring the device up and pause to allow card to associate */
+	nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC * 2);
+
+	nm_device_update_link_active (dev, FALSE);
+	nm_device_get_ap_address (dev, &addr);
+	if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
+	{
+		nm_device_get_ap_address (dev, ap_addr);
+		fprintf (stderr, "  found!\n");
+		return (TRUE);
+	}
+	else
+	{
+		fprintf (stderr, "  not found\n");
+		return (FALSE);
+	}
+}
+
+
+/*
  * nm_device_do_normal_scan
  *
  * Scan for access points on cards that support wireless scanning.
@@ -2009,6 +2092,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		int				 err;
 		NMAccessPointList	*old_ap_list = NULL;
 		NMAccessPointList	*temp_list;
+		gboolean			 have_blank_essids = FALSE;
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -2047,16 +2131,19 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		tmp_ap = scan_results.result;
 		while (tmp_ap)
 		{
-			/* Blank essids usually indicate an AP that is not broadcasting its essid,
-			 * but since its not broadcasting the essid, we cannot use that ap yet.
-			 */
-			if (tmp_ap->b.has_essid && tmp_ap->b.essid_on && (strlen (tmp_ap->b.essid) > 0))
+			/* We need at least an ESSID or a MAC address for each access point */
+			if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
 			{
 				NMAccessPoint		*nm_ap  = nm_ap_new ();
-				NMAccessPoint		*list_ap;
 
 				/* Copy over info from scan to local structure */
-				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
+				if (!tmp_ap->b.has_essid || (tmp_ap->b.essid && !strlen (tmp_ap->b.essid)))
+				{
+					nm_ap_set_essid (nm_ap, NULL);
+					have_blank_essids = TRUE;
+				}
+				else
+					nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
 
 				if (tmp_ap->b.has_key && (tmp_ap->b.key_flags & IW_ENCODE_DISABLED))
 					nm_ap_set_encrypted (nm_ap, FALSE);
@@ -2071,12 +2158,6 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				if (tmp_ap->b.has_freq)
 					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
 
-				/* Merge settings from user-approved wireless networks, mainly encryption keys */
-				if ((list_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (nm_ap))))
-				{
-					nm_ap_set_timestamp (nm_ap, nm_ap_get_timestamp (list_ap));
-					nm_ap_set_enc_key_source (nm_ap, nm_ap_get_enc_key_source (list_ap), nm_ap_get_enc_method (list_ap));
-				}
 				/* Add the AP to the device's AP list */
 				nm_ap_list_append_ap (dev->options.wireless.cached_ap_list1, nm_ap);
 			}
@@ -2085,17 +2166,24 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		nm_dispose_scan_results (scan_results.result);
 		close (iwlib_socket);
 
-		/* Dispose of the old list of available access points the card knows about */
-		if (nm_device_ap_list_get (dev))
-			nm_ap_list_unref (nm_device_ap_list_get (dev));
-
 		/* Compose the current access point list for the card based on the past two scans.  This
 		 * is to achieve some stability in the list, since cards don't necessarily return the same
 		 * access point list each scan even if you are standing in the same place.
 		 * Once we have the list, copy in any relevant information from our Allowed list.
 		 */
+		old_ap_list = nm_device_ap_list_get (dev);
 		dev->options.wireless.ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list1, dev->options.wireless.cached_ap_list2);
-		nm_ap_list_copy_keys (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+
+		/* If any blank ESSID networks were detected in the current scan, try to match their
+		 * AP MAC address with existing ones in previous scans, and if we get a match, copy the
+		 * ESSID over to the newest scan list.  This enures that we keep the known ESSID for that
+		 * base station around as long as possible, which allows nm_device_update_best_ap() to do
+		 * its job when the user wanted us to connect to a non-broadcasting network.
+		 */
+		if (have_blank_essids)
+			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
+		nm_ap_list_unref (old_ap_list);
 
 		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
 		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, dev->options.wireless.cached_ap_list4);
@@ -2103,8 +2191,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		/* Now do a diff of the old and new networks that we can see, and
 		 * signal any changes over dbus, but only if we are active device.
 		 */
-		if (dev == dev->app_data->active_device)
-			nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
+		nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
 		if (old_ap_list)
 			nm_ap_list_unref (old_ap_list);
 	}

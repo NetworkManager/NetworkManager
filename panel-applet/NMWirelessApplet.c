@@ -142,6 +142,39 @@ animation_timeout (NMWirelessApplet *applet)
   return TRUE;
 }
 
+
+inline void print_state (AppletState state)
+{
+	switch (state)
+	{
+		case (APPLET_STATE_NO_NM):
+			g_print ("State: APPLET_STATE_NO_NM\n");
+			break;
+		case (APPLET_STATE_NO_CONNECTION):
+			g_print ("State: APPLET_STATE_NO_CONNECTION\n");
+			break;
+		case (APPLET_STATE_WIRED):
+			g_print ("State: APPLET_STATE_WIRED\n");
+			break;
+		case (APPLET_STATE_WIRED_CONNECTING):
+			g_print ("State: APPLET_STATE_WIRED_CONNECTING\n");
+			break;
+		case (APPLET_STATE_WIRELESS):
+			g_print ("State: APPLET_STATE_WIRELESS\n");
+			break;
+		case (APPLET_STATE_WIRELESS_CONNECTING):
+			g_print ("State: APPLET_STATE_WIRELESS_CONNECTING\n");
+			break;
+		case (APPLET_STATE_WIRELESS_SCANNING):
+			g_print ("State: APPLET_STATE_WIRELESS_SCANNING\n");
+			break;
+		default:
+			g_print ("State: UNKNOWN\n");
+			break;
+    }
+}
+
+
 /*
  * nmwa_update_state
  *
@@ -183,6 +216,7 @@ nmwa_update_state (NMWirelessApplet *applet)
     }
   g_mutex_unlock (applet->data_mutex);
 
+/*  print_state (applet->applet_state); */
   switch (applet->applet_state)
     {
     case (APPLET_STATE_NO_NM):

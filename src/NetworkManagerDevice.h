@@ -59,6 +59,7 @@ void			nm_device_get_ip6_address		(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
 void			nm_device_do_wireless_scan		(NMDevice *dev);
+gboolean		nm_device_wireless_network_exists	(NMDevice *dev, const char *network, struct ether_addr *addr);
 
 void			nm_device_set_mode_managed		(NMDevice *dev);
 void			nm_device_set_mode_adhoc			(NMDevice *dev);
@@ -101,6 +102,7 @@ gboolean		nm_device_is_up				(NMDevice *dev);
 void			nm_device_ap_list_clear			(NMDevice *dev);
 struct NMAccessPointList *nm_device_ap_list_get	(NMDevice *dev);
 NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *essid);
+NMAccessPoint *nm_device_ap_list_get_ap_by_address(NMDevice *dev, const struct ether_addr *addr);
 
 /* System config data accessors */
 gboolean		nm_device_config_get_use_dhcp		(NMDevice *dev);
