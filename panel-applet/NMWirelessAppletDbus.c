@@ -53,6 +53,8 @@ char * nmwa_dbus_get_string (DBusConnection *connection, const char *path, const
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (method != NULL, NULL);
 
+fprintf( stderr, "path = '%s', method = '%s' interface = '%s'\n", path, method, NM_DBUS_INTERFACE);
+
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -85,6 +87,7 @@ char * nmwa_dbus_get_string (DBusConnection *connection, const char *path, const
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+fprintf (stderr, "getstring done\n");
 	return (string);
 }
 
@@ -103,6 +106,8 @@ gint32 nmwa_dbus_get_int (DBusConnection *connection, const char *path, const ch
 	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (path != NULL, 0);
 	g_return_val_if_fail (method != NULL, 0);
+
+fprintf( stderr, "getint() path = '%s', method = '%s' interface = '%s'\n", path, method, NM_DBUS_INTERFACE);
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
 	{
@@ -133,6 +138,7 @@ gint32 nmwa_dbus_get_int (DBusConnection *connection, const char *path, const ch
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+fprintf( stderr, "end getint\n");
 	return (num);
 }
 
@@ -151,6 +157,8 @@ double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const
 	g_return_val_if_fail (connection != NULL, 0);
 	g_return_val_if_fail (path != NULL, 0);
 	g_return_val_if_fail (method != NULL, 0);
+
+fprintf( stderr, "getdouble(): path = '%s', method = '%s' interface = '%s'\n", path, method, NM_DBUS_INTERFACE);
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
 	{
@@ -204,6 +212,8 @@ char **nmwa_dbus_get_string_array (DBusConnection *connection, const char *path,
 	g_return_val_if_fail (method != NULL, NULL);
 	g_return_val_if_fail (num_items != NULL, NULL);
 
+fprintf( stderr, "getstringarray() path = '%s', method = '%s' interface = '%s'\n", path, method, NM_DBUS_INTERFACE);
+
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -234,6 +244,7 @@ char **nmwa_dbus_get_string_array (DBusConnection *connection, const char *path,
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+fprintf( stderr, "getstringarray() done\n");
 	return (array);
 }
 
@@ -253,20 +264,25 @@ char * nmwa_dbus_get_active_wireless_device (DBusConnection *connection)
 
 	if ((active_device = active_device = nmwa_dbus_get_string (connection, NM_DBUS_PATH, "getActiveDevice")))
 	{
-		int		 type;
+		if (strlen (active_device) > 0)
+		{
+			int		 type;
 
-		type = nmwa_dbus_get_int (connection, active_device, "getType");
-		if (type != 2)	/* wireless */
+			type = nmwa_dbus_get_int (connection, active_device, "getType");
+			if (type != 2)	/* wireless */
+			{
+				dbus_free (active_device);
+				active_device = NULL;
+			}
+		}
+		else
 		{
 			dbus_free (active_device);
 			active_device = NULL;
 		}
-else
-fprintf (stderr, "nmwa_dbus_get_active_wireless_device(): device GOOD\n");
 	}
-else
-fprintf (stderr, "nmwa_dbus_get_active_wireless_device(): could not get string from dbus\n");
 
+fprintf( stderr, "get_active_device() returning '%s'\n", active_device);
 	return (active_device);
 }
 
@@ -308,13 +324,19 @@ fprintf( stderr, "!active_network\n");
 	/* Get each of the networks in turn and add them to the menu */
 	if ((networks = nmwa_dbus_get_string_array (connection, active_device, "getNetworks", &num_items)))
 	{
+fprintf ( stderr, "foobar\n");
 		if (strlen (networks[0]) == 0)
+{
+fprintf ( stderr, "foobar2\n");
 			nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
+}
 		else
 		{
+fprintf ( stderr, "foobar3\n");
 			int i;
 			for (i = 0; i < num_items; i++)
 			{
+fprintf ( stderr, "foobar %d\n", i + 10);
 				char *name = nmwa_dbus_get_string (connection, networks[i], "getName");
 				nmwa_add_menu_item (name, (strcmp (networks[i], active_network) == 0), user_data);
 				dbus_free (name);
@@ -325,6 +347,7 @@ fprintf( stderr, "!active_network\n");
 else
 fprintf( stderr, "!networks\n");
 
+fprintf( stderr, "done iwth menu population\n");
 	dbus_free (active_device);
 }
 
@@ -407,7 +430,7 @@ DBusConnection * nmwa_dbus_init (gpointer user_data)
 	if (!dbus_connection_add_filter (connection, nmwa_dbus_filter, user_data, NULL))
 		return (NULL);
 
-	dbus_connection_set_exit_on_disconnect (connection, FALSE);
+//	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, NULL);
 
 	dbus_bus_add_match(connection,

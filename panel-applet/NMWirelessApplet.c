@@ -162,15 +162,24 @@ static int nmwa_timeout_handler (NMWirelessApplet *applet)
 	if (!applet->connection)
 		applet->connection = nmwa_dbus_init (applet);
 
-	if (applet->nm_active && (active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
+	if (applet->nm_active)
 	{
+		if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
+		{
+fprintf( stderr, "showing\n");
 		applet->have_active_device = TRUE;
 		nmwa_update_state (applet);
 		gtk_widget_show (GTK_WIDGET (applet));
 		dbus_free (active_device);
+		}
+		else
+		fprintf( stderr, "timeout_handler(): active_device was nULL\n");
 	}
 	else
+	{
+fprintf( stderr, "hiding\n");
 		gtk_widget_hide (GTK_WIDGET (applet));
+	}
 
   	return (TRUE);
 }
