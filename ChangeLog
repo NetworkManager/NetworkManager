@@ -1,5 +1,13 @@
 2004-09-11  Dan Williams <dcbw@redhat.com>
 
+	* docs/NetworkManager DBUS API.txt
+		- Add an explanation of NM's API
+
+	* src/NetworkManagerDbus.c
+		- Free some more DBusErrors if needed
+
+2004-09-11  Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 	  panel-applet/NMWirelessAppletDbus.c
 		- Start using NetworkDevice/WirelessNetwork structures in more places

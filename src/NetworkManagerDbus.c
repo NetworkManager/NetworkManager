@@ -1366,11 +1366,15 @@ void nm_dbus_devices_unregister_handler (DBusConnection *connection, void *user_
 gboolean nm_dbus_is_info_daemon_running (DBusConnection *connection)
 {
 	DBusError		error;
+	gboolean		running = FALSE;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	dbus_error_init (&error);
-	return (dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error));
+	running = dbus_bus_service_exists (connection, NMI_DBUS_SERVICE, &error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	return (running);
 }
 
 
@@ -1392,9 +1396,11 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_error_init (&dbus_error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
-	if (connection == NULL)
+	if ((connection == NULL) || dbus_error_is_set (&error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
 		return (NULL);
 	}
 
@@ -1435,6 +1441,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	if (dbus_error_is_set (&dbus_error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
+		dbus_error_free (&error);
 		return (NULL);
 	}
 
