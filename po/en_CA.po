@@ -1,15 +1,15 @@
 # Canadian English translation for NetworkManager
-# Copyright (C) Adam Weinberger and the GNOME Foundation
+# Copyright (C) 2004-2005 Adam Weinberger and the GNOME Foundation
 # This file is distributed under the same licence as the NetworkManager package.
-# 2004, Adam Weinberger, <adamw@gnome.org>
+# Adam Weinberger, <adamw@gnome.org>, 2004, 2005.
 #
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-17 20:01-0500\n"
-"PO-Revision-Date: 2004-12-17 14:52-0400\n"
+"POT-Creation-Date: 2005-02-03 14:25-0500\n"
+"PO-Revision-Date: 2005-02-03 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -60,7 +60,7 @@ msgstr "Key Type:"
 
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Passphrase:"
@@ -74,12 +74,12 @@ msgid "_Login to Network"
 msgstr "_Login to Network"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
 msgid "Ascii Key:"
 msgstr "ASCII Key:"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
 msgid "Hex Key:"
 msgstr "Hex Key:"
 
@@ -88,64 +88,65 @@ msgstr "Hex Key:"
 msgid "You must log in to access the private network %s"
 msgstr "You must log in to access the private network %s"
 
-#: panel-applet/NMWirelessApplet.c:293
+#: panel-applet/NMWirelessApplet.c:313
 msgid "No network connection"
 msgstr "No network connection"
 
-#: panel-applet/NMWirelessApplet.c:297
+#: panel-applet/NMWirelessApplet.c:318
 msgid "Wired network connection"
 msgstr "Wired network connection"
 
-#: panel-applet/NMWirelessApplet.c:303
+#: panel-applet/NMWirelessApplet.c:323
 msgid "Connecting to a wired network..."
 msgstr "Connecting to a wired network..."
 
-#: panel-applet/NMWirelessApplet.c:311
+#: panel-applet/NMWirelessApplet.c:332
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Connected to an Ad-Hoc wireless network"
 
-#: panel-applet/NMWirelessApplet.c:325
+#: panel-applet/NMWirelessApplet.c:346
 #, c-format
-msgid "Wireless network connection (%d%%)"
-msgstr "Wireless network connection (%d%%)"
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Wireless network connection to '%s' (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:329
+#: panel-applet/NMWirelessApplet.c:351
 msgid "Wireless network connection"
 msgstr "Wireless network connection"
 
-#: panel-applet/NMWirelessApplet.c:335
-msgid "Connecting to a wireless network..."
-msgstr "Connecting to a wireless network..."
+#: panel-applet/NMWirelessApplet.c:356
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Connecting to wireless network '%s'..."
 
-#: panel-applet/NMWirelessApplet.c:339
+#: panel-applet/NMWirelessApplet.c:362
 msgid "NetworkManager is not running"
 msgstr "NetworkManager is not running"
 
-#: panel-applet/NMWirelessApplet.c:345
+#: panel-applet/NMWirelessApplet.c:367
 msgid "Scanning for wireless networks..."
 msgstr "Scanning for wireless networks..."
 
-#: panel-applet/NMWirelessApplet.c:667
+#: panel-applet/NMWirelessApplet.c:690
 msgid "Other Wireless Networks..."
 msgstr "Other Wireless Networks..."
 
-#: panel-applet/NMWirelessApplet.c:688
+#: panel-applet/NMWirelessApplet.c:711
 msgid "Create new Wireless Network..."
 msgstr "Create new Wireless Network..."
 
-#: panel-applet/NMWirelessApplet.c:798
+#: panel-applet/NMWirelessApplet.c:821
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: panel-applet/NMWirelessApplet.c:916
+#: panel-applet/NMWirelessApplet.c:939
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:226
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
 msgid "Create new wireless network"
 msgstr "Create new wireless network"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:227
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -153,17 +154,17 @@ msgstr ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
 msgid "Custom wireless network"
 msgstr "Custom wireless network"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Enter the ESSID of the wireless network to which you wish to connect."
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:323
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -187,29 +188,29 @@ msgstr "Wireless _Adaptor:"
 msgid "Wireless _Network:"
 msgstr "Wireless _Network:"
 
-#: panel-applet/menu-info.c:101
+#: panel-applet/menu-info.c:109
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Wired Network (%s)"
 
-#: panel-applet/menu-info.c:103
+#: panel-applet/menu-info.c:111
 msgid "Wired Network"
 msgstr "Wired Network"
 
-#: panel-applet/menu-info.c:168
+#: panel-applet/menu-info.c:177
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Wireless Network (%s)"
 msgstr[1] "Wireless Networks (%s)"
 
-#: panel-applet/menu-info.c:170
+#: panel-applet/menu-info.c:179
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Wireless Network"
 msgstr[1] "Wireless Networks"
 
-#: panel-applet/menu-info.c:307
+#: panel-applet/menu-info.c:316
 msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
 
