@@ -172,14 +172,6 @@ static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 	nmwa_update_state (applet);
 	nmwa_redraw (applet);
 
-	if (applet->applet_state != applet->old_state)
-	{
-		if (applet->menu)
-			nmwa_dispose_menu (applet);
-		applet->menu = nmwa_populate_menu (applet);		
-		applet->old_state = applet->applet_state;
-	}
-
   	return (TRUE);
 }
 
@@ -454,7 +446,10 @@ static void nmwa_button_clicked (GtkWidget *button, NMWirelessApplet *applet)
 		gtk_menu_popdown (GTK_MENU (applet->menu));
 	else
 	{
-		nmwa_redraw_timeout (applet);
+		if (applet->menu)
+			nmwa_dispose_menu (applet);
+		applet->menu = nmwa_populate_menu (applet);		
+
 		gtk_menu_popup (GTK_MENU (applet->menu), NULL, NULL, nmwa_get_menu_pos,
 						applet, 0, gtk_get_current_event_time());
 	}

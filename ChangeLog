@@ -1,6 +1,11 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c
+		- Rebuild the menu whenever a user clicks
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
 		- (nmwa_udpate_state): Set panel icon to "wired" (for lack of better ones)
 			when NM isn't around or when its not connected
 

@@ -82,7 +82,6 @@ typedef struct
 	GMutex			*networks_mutex;
 	GSList			*networks;
 	AppletState		 applet_state;
-	AppletState		 old_state;
 
 	/* Direct UI elements */
 	GtkWidget			*pixmap;

@@ -760,22 +760,17 @@ fprintf( stderr, "ServiceCreate    state = (%d)\n", applet->applet_state);
 		dbus_error_init (&error);
 		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
 			&& (strcmp (service, NM_DBUS_SERVICE) == 0))
-{
 			applet->applet_state = APPLET_STATE_NO_NM;
-fprintf( stderr, "ServiceDeleted    state = (%d)\n", applet->applet_state);
-}
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 	{
-fprintf( stderr, "Updating wireless networks\n");
 		nmwa_dbus_update_wireless_network_list (applet);
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
 	{
-fprintf( stderr, "Updating network state\n");
 		nmwa_dbus_update_network_state (applet);
 	}
 	else
