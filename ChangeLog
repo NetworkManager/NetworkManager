@@ -1,3 +1,21 @@
+2005-02-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): Deactivate a device if its activation fails,
+			and NULL out data->active_device so that we have to choose another one.
+			This may make NetworkManager keep attempting to connect to a wired network
+			if it fails, but if it keeps failing the wired network has more problems than
+			just NetworkManager.
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_update_dns): fix to actually run nscd -i hosts when nscd
+			is already running
+
+	* named/nm-named-manager.c
+		- (rewrite_resolv_conf): Call nm_system_update_dns() when not using
+			named so that the distro can flush whatever name service caching
+			daemon it uses
+
 2005-02-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerDHCP.[ch]

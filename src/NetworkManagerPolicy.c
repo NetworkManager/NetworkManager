@@ -282,6 +282,9 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			}
 			else
 				syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
+			if (data->active_device == dev)
+				data->active_device = NULL;
+			nm_device_deactivate (dev, FALSE);
 			break;
 
 		case DEVICE_ACTIVATION_CANCELED:

@@ -283,12 +283,15 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-#if 0
-/* This doesn't acutally seem to work very well... */
-	if(nm_spawn_process ("/etc/init.d/nscd status"))
-		nm_spawn_process ("nscd -i hosts");
-#endif
+#ifdef NM_NO_NAMED
+	if(nm_spawn_process ("/etc/init.d/nscd status") == 0)
+	{
+		syslog (LOG_ERR, "Clearing nscd hosts cache.");
+		nm_spawn_process ("/usr/sbin/nscd -i hosts");
+	}
+#else
 	nm_spawn_process ("/usr/bin/killall -q nscd");
+#endif
 }
 
 

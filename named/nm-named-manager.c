@@ -45,6 +45,9 @@
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
 
+/* From NetworkManagerSystem.h/.c */
+void nm_system_update_dns (void);
+
 enum
 {
 	PROP_0,
@@ -640,6 +643,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 
 	if (rename (tmp_resolv_conf, RESOLV_CONF) < 0)
 		goto lose;
+	nm_system_update_dns ();
 	return TRUE;
 
  lose:
