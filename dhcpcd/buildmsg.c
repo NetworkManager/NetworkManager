@@ -61,22 +61,29 @@ unsigned char *fill_host_and_class_id (dhcp_interface *iface, unsigned char *p)
 	const char	*host_name = iface->client_options->host_name;
 	int			 host_name_len = strlen (host_name);
 
-	if ( host_name_len )
+	if (host_name_len)
 	{
 		*p++ = hostName;
 		*p++ = host_name_len;
 		memcpy (p, host_name, host_name_len);
 		p += host_name_len;
 	}
-	*p++ = dhcpClassIdentifier;
-	*p++ = iface->cls_id_len;
-	memcpy (p, iface->cls_id, iface->cls_id_len);
-	p += iface->cls_id_len;
 
-	*p++ = dhcpClientIdentifier;
-	*p++ = iface->cli_id_len;
-	memcpy (p, iface->cli_id, iface->cli_id_len);
-	p += iface->cli_id_len;
+	if (iface->cls_id_len)
+	{
+		*p++ = dhcpClassIdentifier;
+		*p++ = iface->cls_id_len;
+		memcpy (p, iface->cls_id, iface->cls_id_len);
+		p += iface->cls_id_len;
+	}
+
+	if (iface->cli_id_len)
+	{
+		*p++ = dhcpClientIdentifier;
+		*p++ = iface->cli_id_len;
+		memcpy (p, iface->cli_id, iface->cli_id_len);
+		p += iface->cli_id_len;
+	}
 
 	return p;
 }

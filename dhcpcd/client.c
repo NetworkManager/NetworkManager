@@ -286,6 +286,7 @@ void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 
 	if (!iface) return;
 
+	iface->cls_id_len = 0;
 	memset (iface->cls_id, 0, DHCP_CLASS_ID_MAX_LEN);
 
 	if (g_cls_id)
@@ -296,14 +297,6 @@ void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 		memcpy (iface->cls_id, g_cls_id, g_cls_id_len);
 		iface->cls_id_len = g_cls_id_len;
 	}
-	else
-	{
-		struct utsname sname;
-		if ( uname(&sname) )
-			syslog (LOG_ERR,"class_id_setup(): uname returned an error: %m\n");
-		snprintf (iface->cls_id, DHCP_CLASS_ID_MAX_LEN, "%s", sname.sysname);
-		iface->cls_id_len = strlen (iface->cls_id);
-	}
 }
 /*****************************************************************************/
 void client_id_setup (dhcp_interface *iface, const char *g_cli_id)
@@ -313,6 +306,7 @@ void client_id_setup (dhcp_interface *iface, const char *g_cli_id)
 
 	if (!iface) return;
 
+	iface->cli_id_len = 0;
 	memset (iface->cli_id, 0, DHCP_CLIENT_ID_MAX_LEN);
 	c = iface->cli_id;
 
@@ -324,12 +318,6 @@ void client_id_setup (dhcp_interface *iface, const char *g_cli_id)
 		*c++ = 0;			     /* type: string */
 		memcpy (c, g_cli_id, g_cli_id_len);
 		iface->cli_id_len = g_cli_id_len + 1;
-	}
-	else
-	{
-		*c++ = ARPHRD_ETHER;	/* type: Ethernet address */
-		memcpy (c, iface->chaddr, ETH_ALEN);
-		iface->cli_id_len = ETH_ALEN + 1;
 	}
 }
 /*****************************************************************************/

@@ -208,7 +208,8 @@ int nm_device_dhcp_request (NMDevice *dev)
 	}
 
 	memset (&opts, 0, sizeof (dhcp_client_options));
-	opts.base_timeout = 30;
+	gethostname (&(opts.host_name[0]), DHCP_HOSTNAME_MAX_LEN);
+	opts.base_timeout = 30;	
 	if (!(dev->dhcp_iface = dhcp_interface_init (nm_device_get_iface (dev), &opts)))
 		return RET_DHCP_ERROR;
 

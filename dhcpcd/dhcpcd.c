@@ -72,11 +72,16 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 	iface->sk = -1;
 	iface->foo_sk = -1;
 
+	/* Copy in client-specific options */
 	if (!(opts = calloc (1, sizeof (dhcp_client_options))))
 		goto err_out;
 	memcpy (opts, in_opts, sizeof (dhcp_client_options));
+	opts->host_name[DHCP_HOSTNAME_MAX_LEN - 1] = '\0';
+	opts->class_id[DHCP_CLASS_ID_MAX_LEN - 1] = '\0';
+	opts->client_id[DHCP_CLIENT_ID_MAX_LEN - 1] = '\0';
 	iface->client_options = opts;
 
+	/* Grab a control socket for the device */
 	memset (&ifr, 0, sizeof(struct ifreq));
 	memcpy (ifr.ifr_name, iface->iface, strlen (iface->iface));
 	iface->sk = socket (AF_PACKET, SOCK_PACKET, htons(ETH_P_ALL));

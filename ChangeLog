@@ -1,5 +1,24 @@
 2005-02-10  Dan Williams  <dcbw@redhat.com>
 
+	* dhcpcd/buildmsg.c
+		- (fill_host_and_class_id): only fill in client and class IDs if
+			they are set by callers.
+
+	* dhcpcd/client.c
+		- (class_id_setup): don't autogenerate a class ID, only use one
+			we're given, if any.
+		- (client_id_setup): don't autogenerate a client ID, only use one
+			we're given, if any.
+
+	* dhcpcd/dhcpcd.c
+		- (dhcp_interface_init): ensure that client options are correctly
+			NULL terminated
+
+	* src/NetworkManagerDHCP.c
+		- (nm_device_dhcp_request): pass hostname to dhcp library
+
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
 	* dhcpcd/client.c
 		- #rh147661# Don't send kernel version in DHCP requests
 
