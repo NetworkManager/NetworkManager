@@ -189,7 +189,7 @@ static void nmi_interface_init (NMIAppInfo *info)
 	GtkButton		*cancel_button;
 	GtkEntry		*entry;
 
-	info->xml = glade_xml_new("passphrase.glade", NULL, NULL);
+	info->xml = glade_xml_new(GLADEDIR"/passphrase.glade", NULL, NULL);
 	if (!info->xml)
 	{
 		fprintf (stderr, "Could not open glade file!\n");
@@ -200,10 +200,10 @@ static void nmi_interface_init (NMIAppInfo *info)
 	gtk_widget_hide (dialog);
 
 	ok_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "login_button"));
-	gtk_signal_connect (GTK_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (ok_button_clicked), info);
+	g_signal_connect (GTK_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (ok_button_clicked), info);
 	gtk_widget_grab_default (GTK_WIDGET (ok_button));
 	cancel_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "cancel_button"));
-	gtk_signal_connect (GTK_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (cancel_button_clicked), info);
+	g_signal_connect (GTK_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (cancel_button_clicked), info);
 
 	entry = GTK_ENTRY (glade_xml_get_widget (info->xml, "passphrase_entry"));
 	gtk_entry_set_visibility (entry, FALSE);
@@ -237,9 +237,7 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			gconf_path_len = strlen (NMI_GCONF_ALLOWED_NETWORKS_PATH) + 1;
 
 		/* Extract the network name from the key */
-		if (strncmp (	NMI_GCONF_ALLOWED_NETWORKS_PATH
-					"/",
-					key, gconf_path_len) == 0)
+		if (strncmp (NMI_GCONF_ALLOWED_NETWORKS_PATH"/", key, gconf_path_len) == 0)
 		{
 			char 	*network = g_strdup ((key + gconf_path_len));
 			char		*slash_pos;

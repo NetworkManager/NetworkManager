@@ -1,5 +1,19 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* initscript/.cvsignore
+		- Add
+
+	* info-daemon/Makefile.am
+		- Install .glade files and keyring.png
+		- Fix stupid omission of a \ that caused half the flags not to be
+			passed to gcc
+
+	* info-daemon/NetworkManagerInfo.c
+		- gtk_signal_connect->g_signal_connect
+		- Alert NetworkManagerInfo to new glade file location
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* test/nmclienttest.c
 	  test/nminfotest.c
 		- Add missing <dbus/dbus.h> headers
