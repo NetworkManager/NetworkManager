@@ -1,15 +1,16 @@
 # Dutch translation of NetworkManager
 # Copyright (C) 2004 The Free Software Foundation
-# This file is distributed under the same license as the NetworkManager package.
-# Tino Meinen <a.t.meinen@chello.nl>, 2004.
+# This file is distributed under the same license as the 
+# NetworkManager package.
+# Tino Meinen <a.t.meinen@chello.nl>, 2004, 2005.
 # Daniel van Eeden <daniel_e@dds.nl>, 2004.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-17 19:32+0100\n"
-"PO-Revision-Date: 2004-12-18 00:55+0100\n"
+"POT-Creation-Date: 2005-01-09 11:19+0100\n"
+"PO-Revision-Date: 2005-01-09 15:20+0100\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -91,29 +92,33 @@ msgid "You must log in to access the private network %s"
 msgstr "U moet inloggen voor toegang tot het privénetwerk %s"
 
 # Netwerken
-#: panel-applet/NMWirelessApplet.c:290
+#: panel-applet/NMWirelessApplet.c:293
 msgid "No network connection"
 msgstr "Geen netwerkverbinding"
 
 # bedraad netwerk
-#: panel-applet/NMWirelessApplet.c:294
+#: panel-applet/NMWirelessApplet.c:297
 msgid "Wired network connection"
 msgstr "Bekabelde netwerkverbinding"
 
-#: panel-applet/NMWirelessApplet.c:300
+#: panel-applet/NMWirelessApplet.c:303
 msgid "Connecting to a wired network..."
 msgstr "Verbinden met een bedraad netwerk..."
 
-#: panel-applet/NMWirelessApplet.c:315
+#: panel-applet/NMWirelessApplet.c:311
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Verbonden met een Ad-hoc draadloos netwerk"
+
+#: panel-applet/NMWirelessApplet.c:325
 #, c-format
 msgid "Wireless network connection (%d%%)"
 msgstr "Draadloze netwerkverbinding (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:318
+#: panel-applet/NMWirelessApplet.c:329
 msgid "Wireless network connection"
 msgstr "Draadloze netwerkverbinding"
 
-#: panel-applet/NMWirelessApplet.c:324
+#: panel-applet/NMWirelessApplet.c:335
 msgid "Connecting to a wireless network..."
 msgstr "Verbinden met een draadloos netwerk..."
 
@@ -123,25 +128,25 @@ msgstr "Verbinden met een draadloos netwerk..."
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:327
+#: panel-applet/NMWirelessApplet.c:339
 msgid "NetworkManager is not running"
 msgstr "Geen NetworkManager..."
 
 # scannen voor draadloze netwerken
-#: panel-applet/NMWirelessApplet.c:333
+#: panel-applet/NMWirelessApplet.c:345
 msgid "Scanning for wireless networks..."
 msgstr "Scannen naar draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:655
+#: panel-applet/NMWirelessApplet.c:667
 msgid "Other Wireless Networks..."
 msgstr "Andere draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:676
+#: panel-applet/NMWirelessApplet.c:688
 msgid "Create new Wireless Network..."
 msgstr "Nieuw draadloos netwerk aanmaken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: panel-applet/NMWirelessApplet.c:786
+#: panel-applet/NMWirelessApplet.c:798
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -151,7 +156,7 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:904
+#: panel-applet/NMWirelessApplet.c:916
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
@@ -163,7 +168,9 @@ msgstr "Nieuw draadloos netwerk aanmaken"
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
-msgstr "Geef de ESSID de beveiligingsinstellingen van het draadloos netwerk dat u wilt aanmaken."
+msgstr ""
+"Geef de ESSID de beveiligingsinstellingen van het draadloos netwerk dat u "
+"wilt aanmaken."
 
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
 msgid "Custom wireless network"
