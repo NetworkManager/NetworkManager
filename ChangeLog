@@ -1,5 +1,10 @@
 2005-03-04  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+		- Mark HEAD as 0.4
+
+2005-03-04  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Peter Jones:
 	- Make stuff work with gcc 4.0
 
