@@ -1,5 +1,10 @@
 2004-10-11 Dan Williams <dcbw@redhat.com>
 
+	* TODO
+		- Remove bit about more robust AP diffing since I just implemented it
+
+2004-10-11 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (nm_ap_new, nm_ap_new_from_ap): Don't crash when we don't have
 			enough RAM to allocate new AP structures, but return NULL instead
