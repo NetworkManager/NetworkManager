@@ -1,0 +1,122 @@
+# Dutch translation of NetworkManager
+# Copyright (C) 2004 The Free Software Foundation
+# This file is distributed under the same license as the NetworkManager package.
+# Tino Meinen <a.t.meinen@chello.nl>, 2004.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNOME 2.8\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2004-09-01 12:20+0200\n"
+"PO-Revision-Date: 2004-09-01 18:04+0200\n"
+"Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
+"Language-Team: Dutch <vertaling@nl.linux.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Draadloze netwerken:</span>"
+
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Draadloze netwerken aanpassen"
+
+#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: info-daemon/passphrase.glade.h:2
+msgid "*"
+msgstr "*"
+
+# eigenlijk: om toegang te kunnen verkrijgen tot het draadloze netwerk s
+#: info-daemon/passphrase.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or WEP key is required to access the wireless network '%s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Draadloos netwerk vereist "
+"wachtwoordfrase</span>\n"
+"\n"
+"Een wachtwoordfrase of WEP-key is vereist om het draadloze netwerk '%s' te "
+"kunnen gebruiken."
+
+#: info-daemon/passphrase.glade.h:7
+msgid "Passphrase:"
+msgstr "Wachtwoordfrase:"
+
+#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
+msgid "_Login to Network"
+msgstr "_Aanmelden bij het netwerk"
+
+#: panel-applet/NMWirelessApplet.c:553
+msgid "There are no network devices..."
+msgstr "Er zijn geen netwerkapparaten..."
+
+#: panel-applet/NMWirelessApplet.c:653
+msgid "There are no wireless networks..."
+msgstr "Er zijn geen draadloze netwerken..."
+
+#: panel-applet/NMWirelessApplet.c:656
+msgid "Wireless Networks"
+msgstr "Draadloze netwerken"
+
+# betere vertaling
+# is niet uigevoerd (klinkt als verleden tijd)
+#: panel-applet/NMWirelessApplet.c:727
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager loopt niet..."
+
+# Netwerken
+#: panel-applet/NMWirelessApplet.c:731
+msgid "Network Connections"
+msgstr "Netwerkverbindingen"
+
+# aanwezig/actief
+#: panel-applet/NMWirelessApplet.c:738
+msgid "No network connection is currently active..."
+msgstr "Er is momenteel geen netwerkverbinding actief..."
+
+# een draadloos netwerk aanwezig...
+#: panel-applet/NMWirelessApplet.c:743
+msgid "A wired network connection is currently active..."
+msgstr "Er momenteel een draadloze netwerkverbinding actief..."
+
+#: panel-applet/NMWirelessApplet.c:886 panel-applet/NMWirelessApplet.c:948
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"De NetworkManager applet kon bepaalde vereiste bronnen niet vinden (het "
+"glade bestand is niet gevonden)."
+
+#: panel-applet/NMWirelessApplet.xml.h:1
+msgid "_About..."
+msgstr "In_fo..."
+
+#: panel-applet/wireless-applet.glade.h:3
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Aanmelding bij draadloos netwerk "
+"bevestigen</span>\n"
+"\n"
+"U heeft gekozen om u aan te melden bij het draadloze netwerk '%s'.  Indien u "
+"er zeker van bent dat dit draadloze netwerk veilig is, vink dan onderstaande "
+"optie aan en NetworkManager zal u niet langer vermoeien met stomme vragen "
+"wanneer u zich weer bij dit netwerk aanmeldt."
+
+#: panel-applet/wireless-applet.glade.h:6
+msgid "Always Trust this Wireless Network"
+msgstr "Dit draadloze netwerk altijd vertrouwen"
