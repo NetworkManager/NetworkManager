@@ -1,5 +1,14 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* info-daemon/NetworkManagerInfo.c
+		- Update allowed network's GConf key when user enters a WEP key explicitly
+
+	* info-daemon/NetworkManagerDbus.c
+		- Fix some comments
+		- nmi_dbus_get_allowed_networks(): kill warning
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* initscript/Makefile.in
 		- Remove
 

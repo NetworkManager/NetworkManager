@@ -90,8 +90,24 @@ static void ok_button_clicked (GtkWidget *ok_button, gpointer user_data)
 		const char	*passphrase = gtk_entry_get_text (GTK_ENTRY (entry));
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
+		gchar		*key = NULL;
+		GConfEntry	*gconf_entry;
 
+		/* Tell NetworkManager about the key the user typed in */
 		nmi_dbus_return_user_key (info->connection, device, network, passphrase);
+
+		/* Update GConf with the new user key */
+		key = g_strdup_printf ("%s/%s", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
+		gconf_entry = gconf_client_get_entry (info->gconf_client, key, NULL, TRUE, NULL);
+		g_free (key);
+		if (gconf_entry)
+		{
+			gconf_entry_unref (gconf_entry);
+			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
+			gconf_client_set_string (info->gconf_client, key, passphrase, NULL);
+			g_free (key);
+		}
+
 		nmi_clear_dialog (dialog, entry);
 	}
 }

@@ -193,7 +193,7 @@ static DBusMessage *nmi_dbus_get_allowed_networks (NMIAppInfo *info, DBusMessage
 			gchar		 key[100];
 			GConfValue	*value;
 
-			g_snprintf (&key[0], 99, "%s/essid", element->data);
+			g_snprintf (&key[0], 99, "%s/essid", (char *)(element->data));
 			value = gconf_client_get (info->gconf_client, key, NULL);
 			if (value && gconf_value_get_string (value))
 			{
@@ -242,7 +242,7 @@ static DBusMessage *nmi_dbus_get_allowed_network_prio (NMIAppInfo *info, DBusMes
 		return (reply_message);
 	}
 
-	/* List all allowed access points that gconf knows about */
+	/* Grab priority key for our access point from GConf */
 	key = g_strdup_printf ("%s/%s/priority", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
@@ -290,7 +290,7 @@ static DBusMessage *nmi_dbus_get_allowed_network_essid (NMIAppInfo *info, DBusMe
 		return (reply_message);
 	}
 
-	/* List all allowed access points that gconf knows about */
+	/* Grab essid key for our access point from GConf */
 	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
@@ -338,7 +338,7 @@ static DBusMessage *nmi_dbus_get_allowed_network_key (NMIAppInfo *info, DBusMess
 		return (reply_message);
 	}
 
-	/* List all allowed access points that gconf knows about */
+	/* Grab user-key key for our access point from GConf */
 	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
