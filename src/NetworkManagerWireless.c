@@ -48,9 +48,12 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 	int		 i;
 
 	g_return_val_if_fail (passphrase != NULL, NULL);
-	
-	/* Get at least 64 bits */
+
 	passphrase_len = strlen (passphrase);
+	if (passphrase_len < 1)
+		return (NULL);
+
+	/* Get at least 64 bits */
 	for (i = 0; i < 64; i++)
 		temp_buf [i] = passphrase [i % passphrase_len];
 
