@@ -26,6 +26,14 @@
 #include <dbus/dbus-glib.h>
 #include "NMWirelessApplet.h"
 
+/* Return codes for functions that use dbus */
+enum
+{
+	RETURN_SUCCESS = 1,
+	RETURN_FAILURE = 0,
+	RETURN_NO_NM = -1
+};
+
 /* Must match NetworkManager device types */
 enum
 {
@@ -34,17 +42,7 @@ enum
 	DEVICE_TYPE_WIRELESS_ETHERNET
 };
 
-DBusConnection *	nmwa_dbus_init						(gpointer user_data);
-
-gboolean			nmwa_dbus_nm_is_running				(DBusConnection *connection);
-
-void				nmwa_dbus_add_networks_to_menu		(NMWirelessApplet *applet, GtkWidget *menu);
-
-char *			nmwa_dbus_get_active_device			(DBusConnection *connection);
-
-int				nmwa_dbus_get_device_type			(DBusConnection *connection, char *path);
-
-char *			nmwa_dbus_get_nm_status				(DBusConnection *connection);
+gpointer			nmwa_dbus_worker					(gpointer user_data);
 
 void				nmwa_dbus_set_network				(DBusConnection *connection, char *network);
 

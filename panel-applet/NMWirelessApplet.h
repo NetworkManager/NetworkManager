@@ -27,6 +27,8 @@
 #include <panel-applet-gconf.h>
 #include <gconf/gconf-client.h>
 #include <glade/glade.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 
 typedef enum
 {
@@ -40,42 +42,66 @@ typedef enum
 	PIX_WIRELESS_CONNECT_1,
 	PIX_WIRELESS_CONNECT_2,
 	PIX_WIRELESS_CONNECT_3,
-	PIX_NUMBER,
+	PIX_NUMBER
 } PixmapState;
 
 
+typedef enum
+{
+	APPLET_STATE_NO_NM,
+	APPLET_STATE_NO_CONNECTION,
+	APPLET_STATE_WIRED,
+	APPLET_STATE_WIRED_CONNECTING,
+	APPLET_STATE_WIRELESS,
+	APPLET_STATE_WIRELESS_CONNECTING,
+	APPLET_STATE_IGNORE
+} AppletState;
+
+
+/*
+ * Applet instance data
+ *
+ */
 typedef struct
 {
 	PanelApplet		 base;
 
 	DBusConnection		*connection;
-	gboolean			 nm_active;
 	GConfClient		*gconf_client;
-	GladeXML			*net_dialog;
+	GladeXML			*ui_resources;
+	guint			 redraw_timeout_id;
+	GThread			*dbus_thread;
+	GMainContext		*thread_context;
 
-	PixmapState		 pix_state;
-	/* contains pointers into the images GList.
-	 * 0-100 are for link */
+	PixmapState		 pix_state;	// Index into pixmaps array
 	GdkPixbuf			*pixmaps[PIX_NUMBER];
-	/* pointer to the current used file name */
 	GdkPixbuf			*current_pixbuf;
 	GdkPixbuf			*key_pixbuf;
 
+	/* Data model elements */
+	GMutex			*networks_mutex;
+	GSList			*networks;
+	AppletState		 applet_state;
+	AppletState		 old_state;
+
+	/* Direct UI elements */
 	GtkWidget			*pixmap;
 	GtkWidget			*button;
 	GtkWidget			*box;
 	GtkWidget			*about_dialog;
 	GtkWidget			*menu;
-
-	guint			 timeout_handler_id;
 } NMWirelessApplet;
 
 
-void			nmwa_add_menu_item	(NMWirelessApplet *applet, GtkWidget *menu, char *text, char *tag,
-								gboolean current, gboolean encrypted);
-
-GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
-
-void			nmwa_dispose_menu	(NMWirelessApplet *applet);
+/*
+ * Representation of a wireless network
+ *
+ */
+typedef struct
+{
+	char		*essid;
+	gboolean	 encrypted;
+	gboolean	 active;
+} WirelessNetwork;
 
 #endif

@@ -1,3 +1,54 @@
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/*
+		- Rework the panel applet to do all DBUS communication in a separate
+			thread
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.[ch]
+		- Remove "get_next_priority" function
+
+	* info-daemon/NetworkManagerInfoDbus.[ch]
+		- Convert "priority" functions to "timestamp"
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.[ch]
+		- Add a "enc_method_good" member and accessors to an Access Point
+			to signal when we've found the correct encryption method
+			for an access point
+		- Add a "timestamp" member and accessors, remove "priority" member
+			and accessors (use timestamps instead)
+		- Rename "wep_key"->"enc_key"
+		- (nm_ap_get_enc_key_hashed): new, return the correct mangled key
+			for a specified encryption method using the access points
+			source encryption key/passphrase
+
+	* src/NetworkManagerAPList.c
+		- When updating a network with dbus, grab timestamp now instead of
+			priority
+
+	* src/NetworkManagerDBus.[ch]
+		- Add signal for "DeviceActivating"
+		- Switch priority->timestamp
+
+	* src/NetworkManagerDevice.c
+		- Change references of "wep_key" -> "enc_key" or "key"
+		- Signal DeviceActivating when starting activation
+		- When activating a wireless device, if the access point we are connecting
+			to is encrypted, and we have a source key, try to generate a mangled
+			key and use that (ie, generate real WEP key from a passphrase)
+		- Rework device activation to fallback to other encryption methods if
+			a previous one didn't work (ie, try mangling a key as a 104-bit passphrase
+			first, then if that doesn't work fall back to direct hex key).
+		- (nm_device_update_best_ap): fix a deadlock, and use timestamps instead of
+			priority.  We now prefer the latest access point used, rather than using
+			a priority scheme
+		- (nm_device_do_normal_scan): make the encryption method "unknown" on access
+			points we've just discovered, and merge in correct info from the global
+			access point lists
+
 2004-08-25  Seth Nickell  <seth@gnome.org>
 
         Patch from Matthew Garrett <mjg59@srcf.ucam.org> for adding
@@ -32,7 +83,6 @@
 	  initscript/Gentoo/NetworkManager
 		- Refactored initscript code separately for each
 			distribution
-
 
 2004-08-23  Dan Williams <dcbw@redhat.com>
 

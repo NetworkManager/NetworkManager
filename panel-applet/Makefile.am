@@ -1,5 +1,3 @@
-## Process this file with automake to produce Makefile.in
-
 NULL=
 
 INCLUDES = 							\
@@ -41,6 +39,9 @@ $(server_DATA): $(srcdir)/$(server_in_files)
 uidir = $(datadir)/gnome-2.0/ui
 ui_DATA = NMWirelessApplet.xml
 
+gladedir = $(datadir)/NMWirelessApplet
+glade_DATA = wireless-applet.glade
+
 pixmapdir = $(datadir)/pixmaps/NMWirelessApplet
 pixmap_DATA = no-link-0.png	\
 	wired.png			\
@@ -63,5 +64,6 @@ EXTRA_DIST = 				\
 	$(server_in_files)		\
 	$(pixmap_DATA)			\
 	$(ui_DATA)			\
+	$(glade_DATA)			\
 	$(NULL)
 
