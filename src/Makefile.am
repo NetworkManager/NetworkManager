@@ -20,7 +20,7 @@ NetworkManager_SOURCES =					\
 		NetworkManagerDevice.c			\
 		NetworkManagerDevice.h			\
 		NetworkManager.c				\
-		NetworkManager.h				\
+		NetworkManagerMain.h			\
 		NetworkManagerPolicy.c			\
 		NetworkManagerPolicy.h			\
 		NetworkManagerUtils.c			\
