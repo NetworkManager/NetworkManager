@@ -1,5 +1,8 @@
 2004-08-30  Bryan Clark  <clarkbw@cvs.gnome.org>
 
+	* examples/python/systray/network_tray.py: 
+	Added nice message when you try to run without running make first
+
 	* examples/python/NetworkManager.py: 
 	Bug fixes to the code so we get all the device information
 	that we need in get_device()

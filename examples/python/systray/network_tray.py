@@ -2,8 +2,14 @@
 import pygtk; pygtk.require("2.0")
 import gtk
 import gtk.gdk
-import trayicon
-from NetworkManager import NetworkManager
+
+try:
+    import trayicon
+    from NetworkManager import NetworkManager
+except:
+    print "type 'make' make the necessary modules to run this example"
+    import sys
+    sys.exit(1)
 
 
 class network_tray:
