@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-14 09:11+0100\n"
-"PO-Revision-Date: 2005-02-08 21:01+0100\n"
+"POT-Creation-Date: 2005-02-18 13:09+0100\n"
+"PO-Revision-Date: 2005-02-18 13:09+0100\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -16,19 +16,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../info-daemon/networks.glade.h:1
+#: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
 msgstr "<span weight=\"bold\">Trådløse nettverk:</span>"
 
-#: ../info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade.h:2
 msgid "Modify Wireless Networks"
 msgstr "Endre trådløse nettverk"
 
-#: ../info-daemon/passphrase.glade.h:1 ../panel-applet/essid.glade.h:1
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
 msgid "*"
 msgstr "*"
 
-#: ../info-daemon/passphrase.glade.h:2 ../panel-applet/essid.glade.h:2
+#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "Ascii Key (WEP)\n"
@@ -38,7 +38,7 @@ msgstr ""
 "Ascii-nøkkel (WEP)\n"
 "Heksadesimal nøkkel (WEP)"
 
-#: ../info-daemon/passphrase.glade.h:6
+#: info-daemon/passphrase.glade.h:6
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -53,144 +53,139 @@ msgstr ""
 "Ett passord eller en krypteringsnøkkel kreves for å aksessere trådløst "
 "nettverk «%s»."
 
-#: ../info-daemon/passphrase.glade.h:9 ../panel-applet/essid.glade.h:7
+#: info-daemon/passphrase.glade.h:9 panel-applet/essid.glade.h:7
 msgid "Key Type:"
 msgstr "Type nøkkel:"
 
-#: ../info-daemon/passphrase.glade.h:10
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
-#: ../panel-applet/essid.glade.h:8
+#: info-daemon/passphrase.glade.h:10
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
+#: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Passord:"
 
-#: ../info-daemon/passphrase.glade.h:11
+#: info-daemon/passphrase.glade.h:11
 msgid "Wireless Network Key Required"
 msgstr "Nøkkel for trådløst nettverk kreves"
 
-#: ../info-daemon/passphrase.glade.h:12
+#: info-daemon/passphrase.glade.h:12
 msgid "_Login to Network"
 msgstr "_Logg på nettverk"
 
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
 msgid "Ascii Key:"
 msgstr "Ascii-nøkkel"
 
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
 msgid "Hex Key:"
 msgstr "Heksadesimal nøkkel:"
 
-#: ../info-daemon/NetworkManagerInfoVPN.c:157
+#: info-daemon/NetworkManagerInfoVPN.c:157
 #, c-format
 msgid "You must log in to access the private network %s"
 msgstr "Du må logge inn for å aksessere privat nettverk %s"
 
-#: ../panel-applet/NMWirelessApplet.c:140
-#: ../panel-applet/NMWirelessApplet.c:158
+#: panel-applet/NMWirelessApplet.c:140 panel-applet/NMWirelessApplet.c:158
 msgid "NetworkManager Applet"
 msgstr "NetworkManager panelprogram"
 
-#: ../panel-applet/NMWirelessApplet.c:142
+#: panel-applet/NMWirelessApplet.c:142
 msgid "(C) 2004-2005 Red Hat, Inc."
 msgstr "© 2004-2005 Red Hat, Inc."
 
-#: ../panel-applet/NMWirelessApplet.c:143
-#: ../panel-applet/NMWirelessApplet.c:161
+#: panel-applet/NMWirelessApplet.c:143 panel-applet/NMWirelessApplet.c:161
 msgid "A panel application for managing your network devices & connections."
 msgstr "Et panelprogram for å håndtere nettverksenheter og tilkoblinger."
 
-#: ../panel-applet/NMWirelessApplet.c:160
-#, fuzzy
+#: panel-applet/NMWirelessApplet.c:160
 msgid "(C) 2004-2005 by Red Hat, Inc."
 msgstr "© 2004-2005 Red Hat, Inc."
 
-#: ../panel-applet/NMWirelessApplet.c:377
+#: panel-applet/NMWirelessApplet.c:377
 msgid "No network connection"
 msgstr "Ingen nettverksforbindelse"
 
-#: ../panel-applet/NMWirelessApplet.c:382
+#: panel-applet/NMWirelessApplet.c:382
 msgid "Wired network connection"
 msgstr "Trådløs nettverkforbindelse"
 
-#: ../panel-applet/NMWirelessApplet.c:387
+#: panel-applet/NMWirelessApplet.c:387
 msgid "Connecting to a wired network..."
 msgstr "Kobler til et trådløst nettverk..."
 
-#: ../panel-applet/NMWirelessApplet.c:396
+#: panel-applet/NMWirelessApplet.c:396
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Kobler til et Ad-Hoc trådløst nettverk"
 
-#: ../panel-applet/NMWirelessApplet.c:410
+#: panel-applet/NMWirelessApplet.c:410
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Trådløs nettverksforbindelse til «%s» (%d%%)"
 
-#: ../panel-applet/NMWirelessApplet.c:415
+#: panel-applet/NMWirelessApplet.c:415
 msgid "Wireless network connection"
 msgstr "Trådløs nettverksforbindelse"
 
-#: ../panel-applet/NMWirelessApplet.c:420
+#: panel-applet/NMWirelessApplet.c:420
 #, c-format
 msgid "Connecting to wireless network '%s'..."
 msgstr "Kobler til et trådløst nettverk «%s»..."
 
-#: ../panel-applet/NMWirelessApplet.c:426
+#: panel-applet/NMWirelessApplet.c:426
 msgid "NetworkManager is not running"
 msgstr "NetworkManager kjører ikke"
 
-#: ../panel-applet/NMWirelessApplet.c:431
+#: panel-applet/NMWirelessApplet.c:431
 msgid "Scanning for wireless networks..."
 msgstr "Søker etter trådløse nettverk..."
 
-#: ../panel-applet/NMWirelessApplet.c:754
+#: panel-applet/NMWirelessApplet.c:754
 msgid "Other Wireless Networks..."
 msgstr "Andre trådløse nettverk..."
 
-#: ../panel-applet/NMWirelessApplet.c:775
+#: panel-applet/NMWirelessApplet.c:775
 msgid "Create new Wireless Network..."
 msgstr "Opprett nytt trådløse nettverk..."
 
-#: ../panel-applet/NMWirelessApplet.c:885
+#: panel-applet/NMWirelessApplet.c:885
 msgid "No network devices have been found"
 msgstr "Ingen nettverksenheter ble funnet"
 
-#: ../panel-applet/NMWirelessApplet.c:1003
+#: panel-applet/NMWirelessApplet.c:1003
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager kjører ikke..."
 
-#: ../panel-applet/NMWirelessApplet.c:1047
-#: ../panel-applet/NMWirelessApplet.c:1096
+#: panel-applet/NMWirelessApplet.c:1047 panel-applet/NMWirelessApplet.c:1096
 msgid "Pause Wireless Scanning"
 msgstr "Stopp søk etter trådløse nettverk"
 
-#: ../panel-applet/NMWirelessApplet.c:1052
+#: panel-applet/NMWirelessApplet.c:1052
 msgid "Resume Wireless Scanning"
 msgstr "Gjenoppta søk etter trådløse nettverk"
 
-#: ../panel-applet/NMWirelessApplet.c:1062
-#: ../panel-applet/NMWirelessApplet.c:1102
+#: panel-applet/NMWirelessApplet.c:1062 panel-applet/NMWirelessApplet.c:1102
 msgid "Stop All Wireless Devices"
 msgstr "Stopp alle trådløse enheter"
 
-#: ../panel-applet/NMWirelessApplet.c:1067
+#: panel-applet/NMWirelessApplet.c:1067
 msgid "Start All Wireless Devices"
 msgstr "Start alle trådløse enheter"
 
-#: ../panel-applet/NMWirelessApplet.c:1112
+#: panel-applet/NMWirelessApplet.c:1112
 msgid "Help"
 msgstr "Hjelp"
 
-#: ../panel-applet/NMWirelessApplet.c:1119
+#: panel-applet/NMWirelessApplet.c:1119
 msgid "About"
 msgstr "Om"
 
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
 msgid "Create new wireless network"
 msgstr "Opprett nytt trådløst nettverk"
 
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -198,70 +193,70 @@ msgstr ""
 "Oppgi ESSID og sikkerhetsinnstillinger for det trådløse nettverket du ønsker "
 "å opprette."
 
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
 msgid "Custom wireless network"
 msgstr "Egedefinert trådløst nettverk"
 
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Oppgi ESSID for det trådløse nettverket du ønsker å koble deg til."
 
 #. Reuse the above string to make the translators less angry.
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr ""
 "NetworkManager fant ikke nødvendige ressurser (glade-filen ble ikke funnet)."
 
-#: ../panel-applet/essid.glade.h:5
+#: panel-applet/essid.glade.h:5
 msgid "C_onnect"
 msgstr "K_oble til"
 
-#: ../panel-applet/essid.glade.h:6
+#: panel-applet/essid.glade.h:6
 msgid "Connect with encryption enabled"
 msgstr "Koble til med kryptering"
 
-#: ../panel-applet/essid.glade.h:9
+#: panel-applet/essid.glade.h:9
 msgid "Wireless _Adaptor:"
 msgstr "Trådløst _kort:"
 
-#: ../panel-applet/essid.glade.h:10
+#: panel-applet/essid.glade.h:10
 msgid "Wireless _Network:"
 msgstr "Trådløst _nettverk:"
 
-#: ../panel-applet/menu-info.c:109
+#: panel-applet/menu-info.c:109
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Kablet nettverk (%s)"
 
-#: ../panel-applet/menu-info.c:111
+#: panel-applet/menu-info.c:111
 msgid "Wired Network"
 msgstr "Kablet nettverk"
 
-#: ../panel-applet/menu-info.c:181
+#: panel-applet/menu-info.c:181
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Trådløst nettverk (%s)"
 msgstr[1] "Trådløse nettverk (%s)"
 
-#: ../panel-applet/menu-info.c:183
+#: panel-applet/menu-info.c:183
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Trådløst nettverk"
 msgstr[1] "Trådløse nettverk"
 
-#: ../panel-applet/menu-info.c:320
+#: panel-applet/menu-info.c:320
 msgid " (invalid Unicode)"
 msgstr " (ugyldig Unicode)"
 
-#: ../examples/python/systray/eggtrayicon.c:111
+#: examples/python/systray/eggtrayicon.c:111
 msgid "Orientation"
 msgstr "Orientering"
 
-#: ../examples/python/systray/eggtrayicon.c:112
+#: examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "Orientering for trauet."
 
