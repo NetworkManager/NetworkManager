@@ -1,5 +1,11 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Set ESSID on a gconf trusted network too when force-setting the wireless
+			network to associate with
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/*
 		- Rework the panel applet to do all DBUS communication in a separate
 			thread

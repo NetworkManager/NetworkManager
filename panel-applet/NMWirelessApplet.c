@@ -396,6 +396,11 @@ void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 		key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_TRUSTED_NETWORKS_PATH, network);
 		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
 		g_free (key);
+
+		/* Force-set the essid too so that we have a semi-complete network entry */
+		key = g_strdup_printf ("%s/%s/essid", NM_GCONF_TRUSTED_NETWORKS_PATH, network);
+		gconf_client_set_string (applet->gconf_client, key, network, NULL);
+		g_free (key);
 	}
 	else
 	{
