@@ -279,7 +279,7 @@ void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean encrypted)
  * Return the encryption method the user specified for this access point.
  *
  */
-const NMEncKeyType nm_ap_get_enc_type (const NMAccessPoint *ap)
+NMEncKeyType nm_ap_get_enc_type (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 

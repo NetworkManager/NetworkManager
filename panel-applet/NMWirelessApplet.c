@@ -121,10 +121,16 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 	static const gchar *authors[] =
 	{
 		"The Red Hat Desktop Team, including:\n",
-		"Dan Williams <dcbw@redhat.com>",
 		"Jonathan Blandford <jrb@redhat.com>",
 		"John Palmieri <johnp@redhat.com>",
+		"Ray Strode <rstrode@redhat.com>",
 		"Colin Walters <walters@redhat.com>",
+		"Dan Williams <dcbw@redhat.com>",
+		"\nAnd others, including:\n",
+		"Bill Moss",
+		"Tom Parker",
+		"j@bootlab.org",
+		"Peter Jones <pjones@redhat.com>",
 		NULL
 	};
 

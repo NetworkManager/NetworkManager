@@ -591,8 +591,10 @@ static void nm_data_free (NMData *data)
 
 static void sigterm_handler (int signum)
 {
+        int ignore;
+
 	syslog (LOG_NOTICE, "Caught SIGINT/SIGTERM");
-	write (nm_data->sigterm_pipe[1], "X", 1);
+	ignore = write (nm_data->sigterm_pipe[1], "X", 1);
 }
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
