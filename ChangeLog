@@ -1,5 +1,13 @@
 2004-11-05 Dan Williams <dcbw@redhat.com>
 
+	* info-daemon/NetworkManagerInfoDbus.c
+	  src/NetworkManagerDbus.[ch]
+	  src/NetworkManagerDevice.c
+		- Keep track of the # of attempts to get the WEP key
+			from the user and pass that along to the info daemon
+
+2004-11-05 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 		- Blacklist wireless cards rather than whitelisting them.
 		- Grab driver name from HAL rather than trying to find it

@@ -103,11 +103,13 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
 	DBusError			 error;
 	char				*device = NULL;
 	char				*network = NULL;
+	int				 attempt = 0;
 
 	dbus_error_init (&error);
 	if (dbus_message_get_args (message, &error,
 							DBUS_TYPE_STRING, &device,
 							DBUS_TYPE_STRING, &network,
+							DBUS_TYPE_INT32, &attempt,
 							DBUS_TYPE_INVALID))
 	{
 		nmi_passphrase_dialog_show (device, network, info);

@@ -1392,6 +1392,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 {
 	NMAccessPoint	*best_ap;
 	guint32		 bad_crypt_packets = 0;
+	int			 attempt = 1;
 
 	g_return_if_fail (dev != NULL);
 
@@ -1459,7 +1460,8 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 			if (nm_ap_get_encrypted (best_ap))
 			{
 				dev->options.wireless.user_key_received = FALSE;
-				nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap);
+				nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap, attempt);
+				attempt++;
 
 				/* Wait for the key to come back */
 				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): asking for user key.", nm_device_get_iface (dev));

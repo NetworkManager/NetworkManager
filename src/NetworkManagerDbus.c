@@ -617,7 +617,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
  * Asks NetworkManagerInfo for a user-entered WEP key.
  *
  */
-void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
+void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, int attempt)
 {
 	DBusMessage		*message;
 
@@ -625,6 +625,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (ap != NULL);
 	g_return_if_fail (nm_ap_get_essid (ap) != NULL);
+	g_return_if_fail (attempt > 0);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
 						NMI_DBUS_INTERFACE, "getKeyForNetwork");
@@ -636,6 +637,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, nm_device_get_iface (dev),
 								DBUS_TYPE_STRING, nm_ap_get_essid (ap),
+								DBUS_TYPE_INT32, attempt,
 								DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
