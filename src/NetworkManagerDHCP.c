@@ -165,7 +165,7 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 		set_nameservers (dev, dhcp_interface_option_payload (dev->dhcp_iface, dns), dhcp_interface_option_len (dev->dhcp_iface, dns));
 
 	if (dhcp_interface_option_present (dev->dhcp_iface, domainName))
-		set_domain_search (dev, dhcp_interface_option_payload (dev->dhcp_iface, domainName));
+		set_domain_searches (dev, dhcp_interface_option_payload (dev->dhcp_iface, domainName));
 }
 
 

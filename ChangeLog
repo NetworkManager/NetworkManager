@@ -1,3 +1,10 @@
+2005-02-14  Colin Walters  <walters@verbum.org>
+
+	* src/NetworkManagerDHCP.c (set_domain_searches): Handle space-separated
+	list of domains to search.
+	
+	* src/NetworkManagerMain.h (NMData): Handle multiple domain searches.
+
 2005-02-13  Dan Williams  <dcbw@redhat.com>
 
 	* dhcpcd/client.c
