@@ -1,3 +1,9 @@
+2004-10-08 Dan Williams <dcbw@redaht.com>
+
+	* src/NetworkManagerDevice.c
+		- Be a bit more robust about link checking, ie make sure that
+			the WEP key we were given actually has some data in it
+
 2004-10-08 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c (main):

@@ -1274,8 +1274,19 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	 * are using Open System authentication.  Also, not all drivers return an invalid MAC address
 	 * when the card cannot communicate with the access point.
 	 */
+
+	/* For the link check, ensure that:
+	 * 1) a classic link check is good, ie does the card report a valid associated AP MAC address and is it
+	 *		receiving WEP-enabled packets OK if WEP is on
+	 * 2) we have a best access point, and if that AP is encrypted, that we have a valid encryption key for it
+	 *
+	 * If either of these things fail, we try other access points or we try to retrieve another encrpytion key
+	 * from the user.
+	 *
+	 */
 	while (      !HAVE_LINK (dev, bad_crypt_packets)
-			|| (best_ap && (nm_ap_get_encrypted (best_ap) && !nm_ap_get_enc_key_source (best_ap))))	/* No link if best AP is encrypted but we don't have a key yet */
+			|| (best_ap && (nm_ap_get_encrypted (best_ap) &&
+					(!nm_ap_get_enc_key_source (best_ap) || !strlen (nm_ap_get_enc_key_source (best_ap))))))
 	{
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
