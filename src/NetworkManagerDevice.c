@@ -1090,7 +1090,6 @@ int nm_device_get_bitrate (NMDevice *dev)
 void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 {
 	int				sk;
-	int				err;
 	
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
@@ -1651,7 +1650,6 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 void nm_device_activation_schedule_finish (NMDevice *dev, DeviceStatus activation_result)
 {
 	GSource			*source = NULL;
-	guint			 source_id = 0;
 	NMActivationResult	*result = NULL;
 
 	g_return_if_fail (dev != NULL);
@@ -1680,10 +1678,8 @@ void nm_device_activation_schedule_finish (NMDevice *dev, DeviceStatus activatio
  */
 gboolean nm_device_activation_schedule_start (NMDevice *dev)
 {
-	GError	*error = NULL;
 	NMData	*data = NULL;
 	GSource	*source = NULL;
-	guint	 source_id = 0;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (!dev->activating, TRUE);	/* Return if activation has already begun */
@@ -1818,7 +1814,6 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 {
 	NMDeviceAuthMethod	 auth;
-	gboolean			 success = FALSE;
 	const char		*essid = NULL;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
@@ -2191,7 +2186,6 @@ try_connect:
 
 	while (success == FALSE)
 	{
-		int			 ip_success = FALSE;
 		NMAccessPoint	*tmp_ap = NULL;
 		gboolean		 link = FALSE;
 		gboolean		 adhoc = (nm_ap_get_mode (best_ap) == NETWORK_MODE_ADHOC);
@@ -2364,7 +2358,6 @@ static gboolean nm_device_activate (gpointer user_data)
 	NMDevice			*dev = (NMDevice *)user_data;
 	gboolean			 success = FALSE;
 	gboolean			 finished = FALSE;
-	GMainContext		*context = NULL;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -2941,8 +2934,6 @@ static gboolean nm_device_wireless_force_use (NMDevice *dev, const char *essid, 
 	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
 	NMAccessPoint		*tmp_ap = NULL;
-	gboolean			 success = FALSE;
-	gboolean			 exists = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -3442,7 +3433,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
-			wireless_scan		*tmp_ap;
 			int				 err;
 			NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
 			double			 orig_freq = 0;

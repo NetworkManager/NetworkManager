@@ -512,7 +512,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	sigset_t block_mask;
 	NMData *data;
 	GSource *iosource;
-	GError *error = NULL;
 	
 	data = g_new0 (NMData, 1);
 

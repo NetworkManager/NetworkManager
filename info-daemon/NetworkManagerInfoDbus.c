@@ -742,9 +742,6 @@ gboolean shutdown_callback (gpointer data)
 
 static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	char			*ap_path;
-	char			*dev_path;
-	DBusError		 error;
 	gboolean		 handled = FALSE;
 	NMIAppInfo	*info = (NMIAppInfo *) user_data;
 	gboolean		 appeared = FALSE;

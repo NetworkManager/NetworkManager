@@ -44,7 +44,6 @@ GSList	*mutex_descs = NULL;
 static MutexDesc *nm_find_mutex_desc (GMutex *mutex)
 {
 	GSList	*elt;
-	gboolean	 found = FALSE;
 
 	for (elt = mutex_descs; elt; elt = g_slist_next (elt))
 	{

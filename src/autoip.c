@@ -172,11 +172,9 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 {
 	struct sockaddr	saddr;
 	arpMessage		p;
-	struct ifreq		ifr;
 	struct ether_addr	addr;
 	struct in_addr		ip = {0};
 	int				fd;
-	int				timeout = 0;
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;

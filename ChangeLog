@@ -1,5 +1,9 @@
 2005-02-02  Dan Williams  <dcbw@redhat.com>
 
+	* Clean up unused variables and the like
+
+2005-02-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAPList.c
 		- (nm_ap_list_merge_scanned_ap): merge strength too
 
