@@ -485,7 +485,7 @@ void nmwa_add_menu_item (NMWirelessApplet *applet, GtkWidget *menu, char *text, 
 	label = gtk_label_new (text);
 	if (current)
 	{
-		char *markup = g_strdup_printf ("<span weight=\"bold\">%s (active)</span>", text);
+		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", text);
 		gtk_label_set_markup (GTK_LABEL (label), markup);
 		g_free (markup);
 	}
