@@ -1,3 +1,9 @@
+2004-08-29  Seth Nickell  <seth@gnome.org>
+
+	* configure.in:
+
+	Actually properly setup the Debian backend in configure.
+	
 2004-08-29  Colin Walters  <walters@verbum.org>
 
 	* test/nminfotest.c: Include string.h and stdlib.h.

@@ -48,6 +48,10 @@ else
 			TARGET_DISTRO=Gentoo
 			SYSTEM_BACKEND_FILE=NetworkManagerGentoo.o
 			;;
+		debian)
+			TARGET_DISTRO=Debian
+			SYSTEM_BACKEND_FILE=NetworkManagerDebian.o
+			;;
 		*)
 			echo "Your distribution(${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
