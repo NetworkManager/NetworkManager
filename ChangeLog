@@ -1,5 +1,15 @@
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (nm_poll_and_update_wireless_link_state): make code less indented
+
+	Patch from Bill Moss:
+	* src/NetworkManager.c
+		- (nm_device_update_link_state): Update signal strength on wireless
+			devices every time we update link state too.
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- (nm_device_set_essid): Work around Orinoco cards which need
 			extra time after setting the ESSID

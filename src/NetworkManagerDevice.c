@@ -312,10 +312,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	if (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED)
 	{
 		if (nm_device_is_wireless (dev))
-		{
 			nm_device_update_link_state (dev);
-			nm_device_update_signal_strength (dev);
-		}
 
 		nm_device_update_ip4_address (dev);
 		nm_device_update_hw_address (dev);
@@ -835,6 +832,7 @@ void nm_device_update_link_state (NMDevice *dev)
 	{
 		case DEVICE_TYPE_WIRELESS_ETHERNET:
 			nm_device_set_link_active (dev, nm_device_probe_wireless_link_state (dev));
+			nm_device_update_signal_strength (dev);
 			break;
 
 		case DEVICE_TYPE_WIRED_ETHERNET:

@@ -375,6 +375,8 @@ void nm_schedule_status_signal_broadcast (NMData *data)
  */
 gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 {
+	GSList	*elt;
+
 	g_return_val_if_fail (data != NULL, TRUE);
 
 	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
@@ -383,33 +385,34 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 	/* Attempt to acquire mutex for device list iteration.
 	 * If the acquire fails, just ignore the device deletion entirely.
 	 */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		GSList	*elt;
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+		nm_warning ("could not acquire device list mutex." );
+		return TRUE;
+	}
+
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		NMDevice	*dev = (NMDevice *)(elt->data);
+
+		if (dev && nm_device_is_wireless (dev))
 		{
-			NMDevice	*dev = (NMDevice *)(elt->data);
+			if (!nm_device_is_up (dev))
+				nm_device_bring_up (dev);
 
-			if (dev && nm_device_is_wireless (dev))
-			{
-				if (!nm_device_is_up (dev))
-					nm_device_bring_up (dev);
+			nm_device_update_link_state (dev);
 
-				nm_device_update_link_state (dev);
-
-				/* Is this the currently selected device?
-				 * If so, let's make sure it's still has
-				 * an active link. If it lost the link,
-				 * find a better access point.
-				 */
-				if ((dev == data->active_device) &&
-				    !nm_device_has_active_link (dev))
-					nm_device_update_best_ap (dev);
-			}
+			/* Is this the currently selected device?
+			 * If so, let's make sure it's still has
+			 * an active link. If it lost the link,
+			 * find a better access point.
+			 */
+			if ((dev == data->active_device) &&
+			    !nm_device_has_active_link (dev))
+				nm_device_update_best_ap (dev);
 		}
-
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else nm_warning ("could not acquire device list mutex." );
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	
 	return (TRUE);
 }
