@@ -30,10 +30,9 @@ class network_tray:
 
     def _add_label_item(self, label):
         menuitem = gtk.MenuItem()
-        menuitem.set_right_justified(gtk.TRUE)
         menuitem.set_sensitive(gtk.FALSE)
         gtklabel = gtk.Label()
-        gtklabel.set_justify(gtk.JUSTIFY_RIGHT)
+
         gtklabel.set_markup("<span size=\"small\" foreground=\"#aaaaaa\" weight=\"ultralight\">%s</span>" % label)
         gtklabel.set_selectable(gtk.FALSE)
         hbox = gtk.HBox(homogeneous=gtk.TRUE, spacing=6)
@@ -41,26 +40,48 @@ class network_tray:
         menuitem.add(hbox)
         self._menu.append(menuitem)
         menuitem.show_all()
-        
-    def _add_device_menu_item(self, device, active=gtk.FALSE):
+
+    def _add_other_wireless_item(self):
         menuitem = gtk.MenuItem()
-        hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
-        hbox.pack_start(self._get_icon(device), expand=gtk.FALSE, fill=gtk.FALSE)
-        label = gtk.Label()
-        label.set_justify(gtk.JUSTIFY_LEFT)
-        if active == gtk.TRUE:
-            label.set_markup("<span weight=\"bold\">%s</span>" % device["info.product"])
-        else:
-            label.set_text(device["info.product"])
-        hbox.pack_start(label, expand=gtk.FALSE, fill=gtk.FALSE)
-        menuitem.add(hbox)        
-        hbox.show()
+        menuitem.set_sensitive(gtk.TRUE)
+        gtklabel = gtk.Label()
+        gtklabel.set_alignment(0,0)
+        gtklabel.set_label("Other Wireless Networks...")
+        hbox = gtk.HBox(homogeneous=gtk.TRUE, spacing=6)
+        hbox.pack_end(gtklabel,expand=gtk.TRUE, fill=gtk.TRUE, padding=6)
+        menuitem.add(hbox) 
+        tt = "Add a wireless network that does not appear on the list"
+        self._tooltips.set_tip(menuitem,tt)       
         self._menu.append(menuitem)
         menuitem.show_all()
 
-    def _add_network_menu_item(self, network):
-        menuitem = gtk.MenuItem()
+    def _add_device_menu_item(self, device):
+        if not self._is_wireless(device):
+            menuitem = gtk.RadioMenuItem(group=self.__radio_group)
+            if self._is_active(device):
+                menuitem.set_active(1)
+        else:
+            menuitem = gtk.MenuItem()
+        
+        hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
+        hbox.pack_start(self._get_icon(device), expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        label = gtk.Label()
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        label.set_text(self._get_device_name(device))
+        hbox.pack_start(label, expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        menuitem.add(hbox)        
+        hbox.show()
+        self._menu.append(menuitem)
+        tt = "IP: %d\nProduct Name: %s\nVendor: %s\nDevice Name: %s" % (device["nm.ip4"], device["pci.product"], device["info.vendor"], device["nm.name"] )
+        self._tooltips.set_tip(menuitem,tt)
+        menuitem.show_all()
+        
+    def _add_network_menu_item(self, device, network, active_network):
+        menuitem = gtk.RadioMenuItem(group=self.__radio_group)
         menuitem.set_right_justified(gtk.FALSE)
+        if active_network == gtk.TRUE:
+            menuitem.set_active(1)
+            
         hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
         menuitem.add(hbox)
         label = gtk.Label(network["name"])
@@ -68,20 +89,70 @@ class network_tray:
         label.show()
         hbox.pack_start(label,expand=gtk.TRUE, fill=gtk.TRUE)
         progress = gtk.ProgressBar()
-        progress.set_fraction(network["quality"])
+        progress.set_orientation(gtk.PROGRESS_LEFT_TO_RIGHT)
+        q = self._get_quality(device, network)
+        progress.set_fraction(q)
+#        progress.set_text("%s %%" % int(q*100))
         progress.show()
         hbox.pack_start(progress, expand=gtk.FALSE, fill=gtk.FALSE)
         icon = self._get_encrypted_icon()
         if network["encrypted"] == 1:
             icon.hide()
+            hbox.pack_start(icon,expand=gtk.FALSE, fill=gtk.FALSE)
         else:
             icon.show()
-        hbox.pack_start(icon,expand=gtk.FALSE, fill=gtk.FALSE)
+
         hbox.show()
         self._menu.append(menuitem)
+        tt = "Name: %s\nEncrypted: %d\nRate: %d\nFrequency: %f\nAddress: %s\nQuality: %d" % (network['name'], network['encrypted'], network['rate'],network['frequency'], network['address'], network['quality'])
+        self._tooltips.set_tip(menuitem,tt)
         menuitem.show()
-        
 
+    def _get_quality(self, device, network):
+        if network["quality"] == 0:
+            proc = "/proc/driver/aironet/%s/BSSList" % device["net.interface"]
+            import fileinput
+            for line in fileinput.input(proc):
+                dev_info = line.split()
+                if network["name"] in dev_info:
+                    fileinput.close()
+                    try:
+                        qual =  float(dev_info[4])
+                        q =  float(qual / 100)
+                        return q
+                    except ValueError:
+                        return 0.0
+            fileinput.close()
+        else:
+            return float(network["quality"])
+        return 0.0
+
+    def _get_device_name(self, device):
+        if self._is_wireless(device):
+            if self._nm.number_wireless_devices() > 1:
+                return device["info.product"]
+            else:
+                return "Wireless Network"
+        else:
+            if self._nm.number_wired_devices() > 1:
+                return device["info.product"]
+            else:
+                return "Wired Network"            
+        
+    def _is_wireless(self,dev):
+        if dev["nm.type"] == self._nm.WIRELESS_DEVICE:
+            return gtk.TRUE
+        return gtk.FALSE
+
+    def _is_active(self, dev):
+        return dev["nm.status"] != self._nm.DISCONNECTED
+
+    def _number_wired_devices(self, devices):
+        return self._number_x_devices(devices, self._nm.WIRED_DEVICE)
+    
+    def _number_wireless_devices(self, devices):
+        return self._number_x_devices(devices, self._nm.WIRELESS_DEVICE)
+        
     def _network_event(self, interface, signal_name,
                        service, path, message):
 
@@ -91,25 +162,34 @@ class network_tray:
         devices = self._nm.get_devices()
         active_device = self._nm.get_active_device()
         tt = ""
-        self._add_label_item("Network Connections")
-        for device in devices:
-            if device == active_device:
-                active = gtk.TRUE
-            else:
-                active = gtk.FALSE
 
-            self._add_device_menu_item(device, active)
+        wireless = gtk.FALSE
+        for device in devices:
+
+            if self._is_wireless(device) and wireless == gtk.FALSE:
+                wireless = gtk.TRUE
+                self._add_separator_item()
+                self._add_label_item("Wireless Networks")
+            else:
+                self._add_device_menu_item(device)
             tt = "%s%s [%s]\n"%(tt,device["info.product"],device["nm.status"])
 
-        self._tooltips.set_tip(self._top_level_menu,tt)
+            self._tooltips.set_tip(self._top_level_menu,tt)
 
-        if active_device["nm.type"] == self._nm.WIRELESS_DEVICE:
-            self._add_separator_item()
-            self._add_label_item("Wireless Networks")
-            for name, network in active_device["nm.networks"].iteritems():
-                self._add_network_menu_item(network)
-                
-        
+            if self._is_wireless(device):
+                for name, network in active_device["nm.networks"].iteritems():
+                    try: 
+                        if active_device["nm.active_network"] == name:
+                            active_network = gtk.TRUE
+                        else:
+                            active_network = gtk.FALSE
+                    except:
+                        active_network = gtk.FALSE
+                    self._add_network_menu_item(device,network,active_network)
+
+        if wireless == gtk.TRUE:
+            self._add_other_wireless_item()
+            
         self._current_icon = self._get_icon(active_device)
 
         self._current_icon.show()
@@ -170,7 +250,10 @@ class network_tray:
         self._top_level_menu.add(self._current_icon)
         self._menu_bar.show()
         self._top_level_menu.show()
-        self._menu.show()                
+        self._menu.show()
+
+        self.__radio_group = gtk.RadioMenuItem()
+
 
 if __name__ == "__main__":
     nt = network_tray()

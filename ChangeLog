@@ -1,3 +1,14 @@
+2004-09-08  Bryan Clark  <clarkbw@cvs.gnome.org>
+
+	* examples/python/NetworkManager.py: 
+	added CONNECTED, CONNECTING, and DISCONNECTED states
+	added methods to return number of devices of a single type
+
+	* examples/python/systray/network_tray.py: 
+	did some tweaks to get the menu looking near what it is supposed
+	to look like.  Also did a Airo card hack to make it show the
+	correct AP quality
+
 2004-09-08  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/no-networkmanager.png

@@ -24,6 +24,10 @@ class NetworkManager:
     WIRED_DEVICE    = 1
     WIRELESS_DEVICE = 2
 
+    CONNECTED       = "connected"
+    CONNECTING      = "connecting"
+    DISCONNECTED    = "disconnected"
+
     NM_SIGNALS = [ "DeviceNoLongerActive",
                    "DeviceNowActive",
                    "DeviceActivating",
@@ -107,24 +111,27 @@ class NetworkManager:
                 pass
 
             active_device = self.nm_object.getActiveDevice()
-            active_device_status = self.nm_object.status()
         
             if device == active_device:
-                d["nm.status"] = active_device_status
+                d["nm.status"] = self.nm_object.status()
             else:
-                d["nm.status"] = "not connected"
+                d["nm.status"] = self.DISCONNECTED
 
+            # we already have this device cached, so just update the status
             if device in self.__devices:
                 for k,v in d.iteritems():
                     self.__devices[device][k] = v
-                return self.__devices[device]
+            # it's a new device so get the info from HAL
             else:
                 hal = self._get_hal_info(d["nm.udi"])
                 for k,v in hal.iteritems():
                     d[k] = v
                 self.__devices[device] = d
-                return self.__devices[device]
-        except:
+
+            return self.__devices[device]
+            
+        except Error, e:
+            print e
             return None
         
     """
@@ -148,17 +155,30 @@ class NetworkManager:
     def get_all_devices(self):
         return self.__devices.values()
 
-    def _has_type_device (self, type):
+    def has_type_device (self, type):
         for device in self.get_devices():
             if device["nm.type"] == type:
                 return True
-        return False
+        return False        
 
+    def number_device_types(self, type):
+        count = 0
+        for device in self.get_devices():
+            if device["nm.type"] == type:
+                count = count + 1
+        return count
+
+    def number_wired_devices(self):
+        return self.number_device_types(self.WIRED_DEVICE)
+
+    def number_wireless_devices(self):
+        return self.number_device_types(self.WIRELESS_DEVICE)    
+    
     def has_wired_device(self):
-        return self._has_type_device(WIRED_DEVICE)
+        return self.has_type_device(self.WIRED_DEVICE)
 
     def has_wireless_device(self):
-        return self._has_type_device(WIRELESS_DEVICE)
+        return self.has_type_device(self.WIRELESS_DEVICE)
     
     def _get_hal_info(self, udi):
         hal_devices = self._hal_manager.FindDeviceStringMatch("info.udi",
