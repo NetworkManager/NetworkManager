@@ -39,6 +39,8 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerDHCP.h"
 
+#include "nm-utils.h"
+
 /* Local static prototypes */
 static gpointer nm_device_worker (gpointer user_data);
 static gboolean nm_device_activate (gpointer user_data);
@@ -307,7 +309,11 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 	if (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED)
 	{
-		nm_device_update_link_active (dev);
+		if (nm_device_is_wireless (dev))
+		{
+			nm_device_update_link_state (dev);
+			nm_device_update_signal_strength (dev);
+		}
 
 		nm_device_update_ip4_address (dev);
 		nm_device_update_hw_address (dev);
@@ -610,7 +616,7 @@ NMDriverSupportLevel nm_device_get_driver_support_level (NMDevice *dev)
 /*
  * Get/set functions for link_active
  */
-gboolean nm_device_get_link_active (NMDevice *dev)
+gboolean nm_device_has_active_link (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -621,7 +627,13 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 {
 	g_return_if_fail (dev != NULL);
 
-	dev->link_active = link_active;
+	if (dev->link_active != link_active)
+	{
+		dev->link_active = link_active;
+
+		nm_dbus_schedule_device_status_change (dev, DEVICE_STATUS_CHANGE);
+		nm_policy_schedule_state_update (dev->app_data);
+	}
 }
 
 
@@ -693,7 +705,7 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
-		return (nm_device_get_link_active (dev));
+		return (nm_device_has_active_link (dev));
 
 	if ((sk = iw_sockets_open ()) < 0)
 		return (FALSE);
@@ -730,12 +742,12 @@ out:
 }
 
 /*
- * nm_device_wireless_link_active
+ * nm_device_probe_wireless_link_state
  *
  * Gets the link state of a wireless device
  *
  */
-static gboolean nm_device_wireless_link_active (NMDevice *dev)
+static gboolean nm_device_probe_wireless_link_state (NMDevice *dev)
 {
 	gboolean 		 link = FALSE;
 	NMAccessPoint	*best_ap;
@@ -745,7 +757,7 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
-		return (nm_device_get_link_active (dev));
+		return (nm_device_has_active_link (dev));
 
 	if (!nm_device_wireless_is_associated (dev))
 		return (FALSE);
@@ -765,14 +777,16 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 
 
 /*
- * nm_device_wired_link_active
+ * nm_device_probe_wired_link_state
  *
  * 
  *
  */
-static gboolean nm_device_wired_link_active (NMDevice *dev)
+static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 {
 	gboolean	link = FALSE;
+	gchar *contents, *carrier_path;
+	gsize length;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wired (dev) == TRUE, FALSE);
@@ -780,32 +794,36 @@ static gboolean nm_device_wired_link_active (NMDevice *dev)
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
-		return (nm_device_get_link_active (dev));
+		return (nm_device_has_active_link (dev));
+
+	if (dev->removed)
+		return FALSE;
+
+	carrier_path = g_strdup_printf ("/sys/sys/class/net/%s/carrier", dev->iface);
+	if (g_file_get_contents (carrier_path, &contents, &length, NULL)) {
+		link = (gboolean) atoi (contents);
+		g_free (contents);
+	} else {
+		contents = NULL;
+	}
 
 	/* We say that non-carrier-detect devices always have a link, because
 	 * they never get auto-selected by NM.  User has to force them on us,
 	 * so we just hope the user knows whether or not the cable's plugged in.
 	 */
-	if (dev->options.wired.has_carrier_detect != TRUE)
+	if ((dev->options.wired.has_carrier_detect != TRUE) || (contents == NULL))
 		link = TRUE;
-	else
-	{
-		/* Device has carrier detect, yay! */
-		if (libhal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link", NULL))
-			link = libhal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link", NULL);
-	}
 
 	return (link);
 }
 
-
 /*
- * nm_device_update_link_active
+ * nm_device_update_link_state
  *
  * Updates the link state for a particular device.
  *
  */
-void nm_device_update_link_active (NMDevice *dev)
+void nm_device_update_link_state (NMDevice *dev)
 {
 	gboolean		link = FALSE;
 
@@ -815,26 +833,15 @@ void nm_device_update_link_active (NMDevice *dev)
 	switch (nm_device_get_type (dev))
 	{
 		case DEVICE_TYPE_WIRELESS_ETHERNET:
-			link = nm_device_wireless_link_active (dev);
-			/* Update our current signal strength too */
-			nm_device_update_signal_strength (dev);
+			nm_device_set_link_active (dev, nm_device_probe_wireless_link_state (dev));
 			break;
 
 		case DEVICE_TYPE_WIRED_ETHERNET:
-			link = nm_device_wired_link_active (dev);
+			nm_device_set_link_active (dev, nm_device_probe_wired_link_state (dev));
 			break;
 
 		default:
-			link = nm_device_get_link_active (dev);	/* Can't get link info for this device, so don't change link status */
 			break;
-	}
-
-	/* Update device link status and global state variable if the status changed */
-	if (link != nm_device_get_link_active (dev))
-	{
-		nm_device_set_link_active (dev, link);
-		nm_dbus_schedule_device_status_change (dev, DEVICE_STATUS_CHANGE);
-		nm_policy_schedule_state_update (dev->app_data);
 	}
 }
 
@@ -1155,7 +1162,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 	{
 		struct ether_addr	good_addr = { {0x70, 0x37, 0x03, 0x70, 0x37, 0x03} };
 		struct ether_addr	bad_addr = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00} };
-		gboolean			link = nm_device_get_link_active (dev);
+		gboolean			link = nm_device_has_active_link (dev);
 
 		memcpy ((link ? &good_addr : &bad_addr), &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
 		return;
@@ -2790,8 +2797,15 @@ char * nm_device_get_path_for_ap (NMDevice *dev, NMAccessPoint *ap)
 	g_return_val_if_fail (ap  != NULL, NULL);
 
 	if (nm_ap_get_essid (ap))
-		return (g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap)));
-	else
+	{
+		char *path, *escaped_path;
+
+		path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap));
+		escaped_path = nm_dbus_escape_object_path (path);
+		g_free (path);
+
+		return (escaped_path);
+	} else
 		return (NULL);
 }
 

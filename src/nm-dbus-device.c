@@ -130,7 +130,7 @@ static DBusMessage *nm_dbus_device_get_link_active (DBusConnection *connection, 
 	if ((reply = dbus_message_new_method_return (message))) {
                 dbus_bool_t is_active;
 
-                is_active = nm_device_get_link_active (dev);
+                is_active = nm_device_has_active_link (dev);
 		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &is_active, DBUS_TYPE_INVALID);
         }
 
@@ -186,16 +186,24 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
 			NMAccessPoint	*tmp_ap;
-			char			*object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+			char		*object_path, *escaped_object_path;
+			
+			object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+			escaped_object_path = nm_dbus_escape_object_path (object_path);
+			g_free (object_path);
 
 			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
 				&& (object_path = nm_device_get_path_for_ap (dev, tmp_ap)))
 			{
-				dbus_message_append_args (reply, DBUS_TYPE_STRING, &object_path, DBUS_TYPE_INVALID);
+
+				escaped_object_path = nm_dbus_escape_object_path (object_path);
+				g_free (object_path);
+
+				dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &escaped_object_path, DBUS_TYPE_INVALID);
 				success = TRUE;
 			}
 			nm_ap_unref (best_ap);
-			g_free (object_path);
+			g_free (escaped_object_path);
 		}
 		if (!success)
 		{

@@ -25,6 +25,7 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-net.h"
+#include "nm-utils.h"
 
 /*
  * nm_dbus_get_ap_from_object_path
@@ -37,7 +38,7 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 	NMAccessPoint		*ap = NULL;
 	NMAccessPointList	*ap_list;
 	NMAPListIter		*iter;
-	char			 	 compare_path[100];
+	char			compare_path[100], *escaped_compare_path;
 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
@@ -53,8 +54,14 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 	{
 		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
 				nm_device_get_iface (dev), nm_ap_get_essid (ap));
-		if (strncmp (path, compare_path, strlen (compare_path)) == 0)
+		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
+		if (strncmp (path, escaped_compare_path, 
+		             strlen (escaped_compare_path)) == 0)
+		{
+			g_free (escaped_compare_path);
 			break;
+		}
+		g_free (escaped_compare_path);
 	}
 		
 	nm_ap_list_iter_free (iter);

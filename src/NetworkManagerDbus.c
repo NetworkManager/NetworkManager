@@ -39,6 +39,7 @@
 #include "nm-dbus-device.h"
 #include "nm-dbus-net.h"
 #include "nm-dbus-dhcp.h"
+#include "nm-utils.h"
 
 
 /*
@@ -75,9 +76,15 @@ DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const char *exc
  */
 static unsigned char * nm_dbus_get_object_path_from_device (NMDevice *dev)
 {
+	char *object_path, *escaped_object_path;
+
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	return (g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev)));
+	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+	escaped_object_path = nm_dbus_escape_object_path (object_path);
+	g_free (object_path);
+
+	return escaped_object_path;
 }
 
 
@@ -106,15 +113,21 @@ NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
 	{
 		GSList	*elt;
 		char		 compare_path[100];
+		char    *escaped_compare_path;
 
 		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 		{
 			if ((dev = (NMDevice *)(elt->data)))
 			{
 				snprintf (compare_path, 100, "%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+				escaped_compare_path = nm_dbus_escape_object_path (compare_path);
 				/* Compare against our constructed path, but ignore any trailing elements */
-				if (strncmp (path, compare_path, strlen (compare_path)) == 0)
+				if (strncmp (path, compare_path, strlen (escaped_compare_path)) == 0)
+				{
+					g_free (escaped_compare_path);
 					break;
+				}
+				g_free (escaped_compare_path);
 				dev = NULL;
 			}
 		}
@@ -298,11 +311,11 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 	if (ap && nm_ap_get_essid (ap)) {
                 const char *essid;
                 essid = nm_ap_get_essid (ap);
-		dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, 
+		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, 
                                           DBUS_TYPE_STRING, &essid, 
                                           DBUS_TYPE_INVALID);
         } else
-		dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 
 	if (ap)
 		nm_ap_unref (ap);
@@ -405,7 +418,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
@@ -451,8 +464,8 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	}
 
 	dbus_message_append_args (message,
-							DBUS_TYPE_STRING, &dev_path,
-							DBUS_TYPE_STRING, &ap_path,
+							DBUS_TYPE_OBJECT_PATH, &dev_path,
+							DBUS_TYPE_OBJECT_PATH, &ap_path,
 							DBUS_TYPE_UINT32, &status,
 							DBUS_TYPE_INVALID);
 	g_free (ap_path);
@@ -548,9 +561,9 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	DBusMessage		*reply;
 	NMAccessPoint		*ap = NULL;
 
-	char				*essid = NULL;
+	const char				*essid = NULL;
 	gint				 timestamp_secs = -1;
-	char				*key = NULL;
+	const char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
 	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
@@ -589,6 +602,9 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		goto out;
 	}
 
+	/* FIXME: These argument types need to be validated
+	 */
+
 	dbus_message_iter_init (reply, &iter);
 	dbus_message_iter_get_basic (&iter, &essid);
 	dbus_message_iter_get_basic (&iter, &timestamp_secs);
@@ -618,6 +634,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		nm_ap_set_auth_method (ap, auth_method);
 
 		/* Get user addresses, form into a GSList, and stuff into the AP */
+		if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_ARRAY)
 		{
 			GSList	*addr_list = NULL;
 			DBusMessageIter array_iter;
@@ -673,7 +690,7 @@ gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const c
 	}
 
         auth_method_as_int32 = (dbus_int32_t) auth_method;
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
 								DBUS_TYPE_INT32, &auth_method,
 								DBUS_TYPE_INVALID);
 
@@ -706,7 +723,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 	DBusMessage		*message;
 	DBusError			 error;
 	gboolean			 success = FALSE;
-	char				 char_addr[20];
+	gchar				 *char_addr;
         dbus_int32_t             type_as_int32;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
@@ -722,14 +739,15 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 		return (FALSE);
 	}
 
-	memset (char_addr, 0, 20);
-	ether_ntoa_r (addr, &char_addr[0]);
+	char_addr = g_new0 (gchar, 20);
+	ether_ntoa_r (addr, char_addr);
 
         type_as_int32 = (dbus_int32_t) type;
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, &type_as_int32,
-								DBUS_TYPE_STRING, &char_addr,
-								DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
+				  DBUS_TYPE_INT32, &type_as_int32,
+				  DBUS_TYPE_STRING, &char_addr,
+				  DBUS_TYPE_INVALID);
+	g_free (char_addr);					
 
 	/* Send message and get trusted status back from NetworkManagerInfo */
 	dbus_error_init (&error);
@@ -813,6 +831,8 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 			dbus_message_iter_next(&array_iter);
 		}
 		networks = (gchar **)(buffer->data);
+		if (num_networks != NULL)
+			*num_networks = buffer->len;
 		g_array_free (buffer, FALSE);
 	}
 	
@@ -969,7 +989,7 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 	}
 	else
 	{
-		char			*object_path;
+		char			*object_path, *escaped_object_path;
 		NMDbusCBData	 cb_data;
 
 		cb_data.data = data;
@@ -977,10 +997,13 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 
 		/* Test whether or not the _networks_ of a device were queried instead of the device itself */
 		object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-		if (strncmp (path, object_path, strlen (object_path)) == 0)
+		escaped_object_path = nm_dbus_escape_object_path (object_path);
+		g_free (object_path);
+		if (strncmp (path, escaped_object_path, strlen (escaped_object_path)) == 0)
 			handled = nm_dbus_method_dispatch (data->net_methods, connection, message, &cb_data, &reply);
 		else
 			handled = nm_dbus_method_dispatch (data->device_methods, connection, message, &cb_data, &reply);
+		g_free (escaped_object_path);
 	}
 
 	if (reply)

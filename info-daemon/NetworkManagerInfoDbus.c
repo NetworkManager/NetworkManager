@@ -482,7 +482,9 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 
 		dbus_message_iter_close_container (&iter, &array_iter);
 	}	
-	gconf_value_free (ap_addrs_value);
+
+	if (ap_addrs_value != NULL)
+		gconf_value_free (ap_addrs_value);
 
 	g_free (essid);
 	g_free (key);

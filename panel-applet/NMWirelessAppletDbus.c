@@ -72,7 +72,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 		g_return_val_if_fail (*arg == NULL, RETURN_FAILURE);
 
 	if ((arg_type == NM_DBUS_TYPE_STRING_ARRAY) ||
-            (arg_type == NM_DBUS_TYPE_OBJECT_PATH_ARRAY))
+	    (arg_type == NM_DBUS_TYPE_OBJECT_PATH_ARRAY))
 	{
 		g_return_val_if_fail (item_count != NULL, RETURN_FAILURE);
 		*item_count = 0;
@@ -102,7 +102,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 			ret = RETURN_SUCCESS;
 
 		if ((ret != RETURN_SUCCESS) && (ret != RETURN_NO_NM))
-			fprintf (stderr, "nmwa_dbus_call_nm_method(): %s raised:\n %s\n\n", error.name, error.message);
+			fprintf (stderr, "nmwa_dbus_call_nm_method(): %s raised on method '%s':\n %s\n\n", error.name, method, error.message);
 
 		dbus_error_free (&error);
 		return (ret);
@@ -155,6 +155,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 
 	switch (arg_type)
 	{
+		/*
 		case DBUS_TYPE_OBJECT_PATH:
 			*((char **)(arg)) = nm_dbus_unescape_object_path (dbus_string);
 			break;
@@ -170,9 +171,12 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 			*item_count = num_items;
                         break;
                 }
+		*/
+		case DBUS_TYPE_OBJECT_PATH:
 		case DBUS_TYPE_STRING:
 			*((char **)(arg)) = g_strdup (dbus_string);
 			break;
+                case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
 		case NM_DBUS_TYPE_STRING_ARRAY:
 			*((char ***)(arg)) = g_strdupv (dbus_array);
 			*item_count = num_items;
@@ -234,7 +238,7 @@ static char * nmwa_dbus_get_active_network (NMWirelessApplet *applet, char *dev_
 {
 	char *network = NULL;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, dev_path, "getActiveNetwork", DBUS_TYPE_STRING, (void **)(&network), NULL))
+	switch (nmwa_dbus_call_nm_method (applet->connection, dev_path, "getActiveNetwork", DBUS_TYPE_OBJECT_PATH, (void **)(&network), NULL))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;
@@ -685,7 +689,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev,
                         if (passphrase == NULL)
                                 passphrase = "";
 
-			dbus_message_append_args (message, DBUS_TYPE_STRING, &dev->nm_device,
+			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev->nm_device,
 									DBUS_TYPE_STRING, &network->essid,
 									DBUS_TYPE_STRING, &passphrase,
 									DBUS_TYPE_INT32, &key_type,
@@ -1261,8 +1265,8 @@ static void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, DBusM
 	dbus_error_init (&error);
 	/* Try first time with strength, which is only passed for NETWORK_STATUS_STRENGTH_CHANGED */
 	if (!dbus_message_get_args (message, &error,
-					DBUS_TYPE_STRING, &dev_path,
-					DBUS_TYPE_STRING, &net_path,
+					DBUS_TYPE_OBJECT_PATH, &dev_path,
+					DBUS_TYPE_OBJECT_PATH, &net_path,
 					DBUS_TYPE_UINT32, &status,
 					DBUS_TYPE_INT32, &strength,
 					DBUS_TYPE_INVALID))
@@ -1273,8 +1277,8 @@ static void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, DBusM
 
 		/* Try without strength */
 		if (!dbus_message_get_args (message, &error,
-					DBUS_TYPE_STRING, &dev_path,
-					DBUS_TYPE_STRING, &net_path,
+					DBUS_TYPE_OBJECT_PATH, &dev_path,
+					DBUS_TYPE_OBJECT_PATH, &net_path,
 					DBUS_TYPE_UINT32, &status,
 					DBUS_TYPE_INVALID))
 		{

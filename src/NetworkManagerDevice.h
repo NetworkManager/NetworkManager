@@ -56,9 +56,9 @@ NMData *		nm_device_get_app_data			(const NMDevice *dev);
 gboolean		nm_device_get_removed			(const NMDevice *dev);
 void			nm_device_set_removed			(NMDevice *dev, const gboolean removed);
 
-gboolean		nm_device_get_link_active		(NMDevice *dev);
+gboolean		nm_device_has_active_link		(NMDevice *dev);
 void			nm_device_set_link_active		(NMDevice *dev, const gboolean active);
-void			nm_device_update_link_active		(NMDevice *dev);
+void			nm_device_update_link_state		(NMDevice *dev);
 
 char *		nm_device_get_essid				(NMDevice *dev);
 void			nm_device_set_essid				(NMDevice *dev, const char *essid);

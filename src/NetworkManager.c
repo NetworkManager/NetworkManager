@@ -43,7 +43,9 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
+#include "nm-netlink-monitor.h"
 
+#define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
 
 /*
  * Globals
@@ -54,12 +56,8 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 static void sigterm_handler (int signum);
 static void nm_data_free (NMData *data);
 
-
 /*
  * nm_get_device_interface_from_hal
- *
- * Queries HAL for the "net.interface" property of a device and returns
- * it if successful.
  *
  */
 static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *udi)
@@ -95,7 +93,7 @@ static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *u
  *				NULL on failure
  */
 NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, const char *iface,
-									gboolean test_device, NMDeviceType test_device_type)
+					     gboolean test_device, NMDeviceType test_device_type)
 {
 	NMDevice	*dev = NULL;
 
@@ -110,7 +108,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	if (!data->enable_test_devices && test_device)
 	{
 		syslog (LOG_ERR, "nm_create_device_and_add_to_list(): attempt to create a test device,"
-					" but test devices were not enabled on the command line.  Will not create the device.\n");
+				 " but test devices were not enabled on the command line.  Will not create the device.\n");
 		return (NULL);
 	}
 
@@ -131,6 +129,8 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 			data->dev_list = g_slist_append (data->dev_list, dev);
 			nm_device_deactivate (dev, TRUE);
 
+			nm_device_update_link_state (dev);
+
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 			nm_policy_schedule_state_update (data);
@@ -139,11 +139,11 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		else
 		{
 			/* If we couldn't add the device to our list, free its data. */
-			syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
+			syslog ( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
 			nm_device_unref (dev);
 			dev = NULL;
 		}
-	} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
+	} else syslog ( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
 
 	return (dev);
 }
@@ -194,7 +194,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 			}
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
+	} else syslog ( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
 }
 
 /* Hal doesn't really give us any way to pass a GMainContext to our
@@ -212,7 +212,6 @@ static void nm_hal_mainloop_integration (LibHalContext *ctx, DBusConnection * db
 	dbus_connection_setup_with_g_main (dbus_connection, main_context);
 }
 
-
 /*
  * nm_hal_device_added
  *
@@ -224,7 +223,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog( LOG_DEBUG, "New device added (hal udi is '%s').", udi );
+	syslog ( LOG_DEBUG, "New device added (hal udi is '%s').", udi );
 
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
@@ -248,7 +247,7 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog( LOG_DEBUG, "Device removed (hal udi is '%s').", udi );
+	syslog ( LOG_DEBUG, "Device removed (hal udi is '%s').", udi );
 
 	nm_remove_device_from_list (data, udi);
 }
@@ -264,7 +263,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 	g_return_if_fail (data != NULL);
 
-	/*syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
+	/*syslog ( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
 
 	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
 	{
@@ -285,66 +284,8 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
  */
 static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
-/*	syslog( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
+/*	syslog ( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
 }
-
-
-/*
- * nm_hal_device_property_modified
- *
- */
-static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi, const char *key, dbus_bool_t is_removed, dbus_bool_t is_added)
-{
-	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
-	gboolean	 link = FALSE;
-
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (udi != NULL);
-	g_return_if_fail (key != NULL);
-
-	/*syslog (LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added);*/
-
-	/* Only accept wired ethernet link changes for now */
-	if (is_removed || (strcmp (key, "net.80203.link") != 0))
-		return;
-
-	if (!libhal_device_property_exists (ctx, udi, "net.80203.link", NULL))
-		return;
-
-	link = libhal_device_get_property_bool (ctx, udi, "net.80203.link", NULL);
-
-	/* Attempt to acquire mutex for device link updating.  If acquire fails ignore the event. */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		NMDevice	*dev = NULL;
-		if ((dev = nm_get_device_by_udi (data, udi)) && nm_device_is_wired (dev))
-		{
-			syslog (LOG_DEBUG, "HAL signaled link state change for device %s.", nm_device_get_iface (dev));
-			nm_device_update_link_active (dev);
-
-			/* If the currently active device is locked and wireless, and the wired
-			 * device we just received this property change event for now has a link
-			 * state of TRUE, we want to clear the active device lock so that we switch
-			 * from wireless to wired on the next state update.
-			 *
-			 * This happens when the user has explicitly chosen a wireless network at
-			 * some point, and then comes back and plugs the wired cable in.  Due to the
-			 * active device lock we wouldn't switch back to wired automatically, but 
-			 * this fixes that behavior.
-			 */
-			if (    nm_device_get_link_active (dev)
-				&& data->active_device
-				&& data->active_device_locked
-				&& nm_device_is_wireless (data->active_device))
-			{
-				data->active_device_locked = FALSE;
-				nm_policy_schedule_state_update (data);
-			}
-		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog( LOG_ERR, "nm_hal_device_property_modified() could not acquire device list mutex." );
-}
-
 
 /*
  * nm_add_initial_devices
@@ -424,16 +365,14 @@ void nm_schedule_status_signal_broadcast (NMData *data)
 
 
 /*
- * nm_link_state_monitor
+ * nm_poll_and_update_wireless_link_state
  *
- * Called every 2s to poll cards and determine if they have a link
+ * Called every 2s to poll wireless cards and determine if they have a link
  * or not.
  *
  */
-gboolean nm_link_state_monitor (gpointer user_data)
+gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 {
-	NMData	*data = (NMData *)user_data;
-
 	g_return_val_if_fail (data != NULL, TRUE);
 
 	/* Attempt to acquire mutex for device list iteration.
@@ -446,39 +385,26 @@ gboolean nm_link_state_monitor (gpointer user_data)
 		{
 			NMDevice	*dev = (NMDevice *)(elt->data);
 
-			if (dev)
+			if (dev && nm_device_is_wireless (dev))
 			{
 				if (!nm_device_is_up (dev))
 					nm_device_bring_up (dev);
-				nm_device_update_link_active (dev);
 
-				if (dev == data->active_device)
-				{
-					if (nm_device_is_wireless (dev) && !nm_device_get_link_active (dev))
-					{
-						/* If we loose a link to the access point, then
-						 * look for another access point to connect to.
-						 */
-						nm_device_update_best_ap (dev);
-					}
-				}
-				else
-				{
-					/* Ensure that the device has no IP address or routes.  This will
-					 * sometimes occur when a card gets inserted, and the system
-					 * initscripts will run to bring the card up, but they get around to
-					 * running _after_ we've been notified of insertion and cleared out
-					 * card info already.
-					 */
-					nm_system_device_flush_routes (dev);
-					if (nm_device_get_ip4_address (dev) != 0)
-						nm_system_device_flush_addresses (dev);
-				}
+				nm_device_update_link_state (dev);
+
+				/* Is this the currently selected device?
+				 * If so, let's make sure it's still has
+				 * an active link. If it lost the link,
+				 * find a better access point.
+				 */
+				if ((dev == data->active_device) &&
+				    !nm_device_has_active_link (dev))
+					nm_device_update_best_ap (dev);
 			}
 		}
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog( LOG_ERR, "nm_link_state_monitor() could not acquire device list mutex." );
+	} else syslog ( LOG_ERR, "nm_poll_and_update_wireless_link_state() could not acquire device list mutex." );
 	
 	return (TRUE);
 }
@@ -623,6 +549,114 @@ static void nm_print_usage (void)
 		"\n");
 }
 
+static void
+nm_monitor_wireless_link_state (NMData *data)
+{
+	GSource *link_source;
+	link_source = g_timeout_source_new (NM_WIRELESS_LINK_STATE_POLL_INTERVAL);
+	g_source_set_callback (link_source, 
+			       (GSourceFunc) nm_poll_and_update_wireless_link_state, 
+			       nm_data, NULL);
+	g_source_attach (link_source, nm_data->main_context);
+	g_source_unref (link_source);
+}
+
+static void
+nm_wired_link_activated (NmNetlinkMonitor *monitor,
+			 const gchar 	  *interface_name,
+			 NMData 	  *data)
+{
+	NMDevice *device;
+
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	{
+		device = nm_get_device_by_iface (data, interface_name);
+
+		if (device != NULL)
+		{
+			nm_device_set_link_active (device, TRUE);
+
+			if (nm_device_has_active_link (device)
+				&& data->active_device
+				&& data->active_device_locked
+				&& nm_device_is_wireless (data->active_device))
+			{
+				data->active_device_locked = FALSE;
+				nm_policy_schedule_state_update (data);
+			}
+		}
+		else
+			syslog (LOG_ERR, "unknown wired ethernet interface '%s' activated\n",
+				interface_name);
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	}
+}
+
+static void
+nm_wired_link_deactivated (NmNetlinkMonitor *monitor,
+			   const gchar 	  *interface_name,
+			   NMData 	  *data)
+{
+	NMDevice *device;
+
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	{
+		device = nm_get_device_by_iface (data, interface_name);
+
+		if (device != NULL)
+			nm_device_set_link_active (device, FALSE);
+		else
+			syslog (LOG_ERR, "unknown wired ethernet interface '%s' "
+					 "deactivated\n", interface_name);
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	}
+}
+
+static void
+nm_error_monitoring_wired_link_state (NmNetlinkMonitor *monitor,
+				      GError 	       *error,
+				      NMData	       *data)
+{
+	/* FIXME: Try to handle the error instead of just printing it.
+	 */
+	syslog (LOG_ERR, "error monitoring wired ethernet link state: %s\n",
+		error->message);
+}
+
+static void
+nm_monitor_wired_link_state (NMData *data)
+{
+	GError *error;
+	NmNetlinkMonitor *monitor;
+
+	monitor = nm_netlink_monitor_new ();
+	
+	error = NULL;
+	nm_netlink_monitor_open_connection (monitor, &error);
+
+	if (error != NULL)
+	{
+		syslog (LOG_ERR, "could not monitor wired ethernet devices: %s",
+			error->message);
+		g_error_free (error);
+		g_object_unref (monitor);
+		return;
+	}
+
+	g_signal_connect (G_OBJECT (monitor), "interface-connected",
+			  G_CALLBACK (nm_wired_link_activated), data);
+
+	g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
+			  G_CALLBACK (nm_wired_link_deactivated), data);
+
+	g_signal_connect (G_OBJECT (monitor), "error",
+			  G_CALLBACK (nm_error_monitoring_wired_link_state),
+			  data);
+
+	nm_netlink_monitor_attach (monitor, data->main_context);
+
+	data->netlink_monitor = monitor;
+}
 
 /*
  * main
@@ -766,8 +800,6 @@ int main( int argc, char *argv[] )
 					     nm_hal_device_new_capability);
 	libhal_ctx_set_device_lost_capability (ctx,
 		  			       nm_hal_device_lost_capability);
-	libhal_ctx_set_device_property_modified (ctx,
-		  				 nm_hal_device_property_modified);
 
 	libhal_device_property_watch_all (nm_data->hal_ctx, &dbus_error);
 
@@ -789,10 +821,9 @@ int main( int argc, char *argv[] )
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
 
-	/* Create a watch function that monitors cards for link status. */
-	link_source = g_timeout_source_new (5000);
-	g_source_set_callback (link_source, nm_link_state_monitor, nm_data, NULL);
-	link_source_id = g_source_attach (link_source, nm_data->main_context);
+	/* Create watch functions that monitor cards for link status. */
+	nm_monitor_wireless_link_state (nm_data);
+	nm_monitor_wired_link_state (nm_data);
 
 	if (!nm_named_manager_start (nm_data->named, &error))
 	{
@@ -802,9 +833,6 @@ int main( int argc, char *argv[] )
 
 	/* Wheeee!!! */
 	g_main_loop_run (nm_data->main_loop);
-
-	/* Kill the watch functions */
-	g_source_remove (link_source_id);
 
 	/* Cleanup */
 	if (libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error) != 0) {

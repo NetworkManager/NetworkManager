@@ -38,6 +38,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerWireless.h		\
 		NetworkManagerSystem.c		\
 		NetworkManagerSystem.h		\
+		nm-netlink-monitor.c		\
+		nm-netlink-monitor.h		\
 		autoip.c
 
 NetworkManager_CPPFLAGS = 			\

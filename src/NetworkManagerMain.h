@@ -28,6 +28,7 @@
 #include <libhal.h>
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
+#include "nm-netlink-monitor.h"
 #include "nm-named-manager.h"
 
 typedef struct NMDbusMethodList NMDbusMethodList;
@@ -36,9 +37,11 @@ typedef struct NMDbusMethodList NMDbusMethodList;
 typedef struct NMData
 {
 	GIOChannel			*sigterm_iochannel;
-	int					 sigterm_pipe[2];
+	int				 sigterm_pipe[2];
 
 	LibHalContext			*hal_ctx;
+
+	NmNetlinkMonitor		*netlink_monitor;
 
 	NMNamedManager			*named;
 	GList				*nameserver_ids; /* For now these are global instead of per-device */

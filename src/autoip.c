@@ -124,7 +124,7 @@ static int timeval_subtract (struct timeval *result, struct timeval *x, struct t
 		y->tv_usec += 1000000 * nsec;
 		y->tv_sec -= nsec;
 	}
-
+	
 	/* Compute the time remaining to wait.
 	`tv_usec' is certainly positive. */
 	result->tv_sec = x->tv_sec - y->tv_sec;

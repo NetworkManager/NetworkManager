@@ -1,9 +1,46 @@
+2005-03-11  Ray Strode  <rstrode@redhat.com>
+
+	Third (unfinished, partially working) cut at porting to 
+	dbus 0.30 api and new hal.
+
+	* info-daemon/NetworkManagerInfoDbus.c:
+		don't free null arrays.
+
+	* panel-applet/NMWirelessAppletDbus.c: 
+	* src/nm-dbus-device.c:
+	* src/nm-dbus-net.c: 
+	* src/NetworkManagerDbus.c: more 
+ 	STRING -> OBJECT_PATH fun
+	* src/NetworkManagerDevice.c:
+	* src/NetworkManagerDevice.h:
+	(rename nm_device_get_link_active): rename to 
+	nm_device_has_active_link
+	(nm_device_wireless_link_active): rename to
+	nm_device_probe_wireless_link_state
+	(nm_device_wired_link_active): rename to
+	nm_device_probe_wired_link_state.  Rewrite to
+	use carrier file since hal doesn't maintain
+	link state anymore.
+	(nm_device_update_link_active): rename to
+	nm_device_update_link_state
+	* src/NetworkManagerPolicy.c 
+	  (nm_policy_activation_finish): check for NULL
+	  MAC address.
+
+	* src/Makefile.am:
+	* src/NetworkManagerMain.h: 
+	* src/NetworkManager.c:
+	* src/nm-netlink-monitor.c:
+	* src/nm-netlink-monitor.h: New class to support
+	monitoring wired ethernet link status, since HAL
+	doesn't export that information anymore.
+
 2005-03-09  Ray Strode  <rstrode@redhat.com>
 
 	Second (unfinished, unworking) cut at porting to 
 	dbus 0.30 api.
 
-	* dispatcher-daemon/NetworkManagerDispatcher.c
+	* dispatcher-daemon/NetworkManagerDispatcher.c:
 	* info-daemon/NetworkManagerInfoDbus.c:
 	* panel-applet/NMWirelessAppletDbus.c:
 	* src/NetworkManagerDbusUtils.c:

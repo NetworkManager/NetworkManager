@@ -65,7 +65,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 			continue;
 
 		dev_type = nm_device_get_type (dev);
-		link_active = nm_device_get_link_active (dev);
+		link_active = nm_device_has_active_link (dev);
 
 		if (dev_type == DEVICE_TYPE_WIRED_ETHERNET)
 		{
@@ -181,7 +181,7 @@ static NMDevice * nm_policy_get_best_device (NMDevice *switch_to_dev, NMData *da
 		{
 			/* Wired devices get unlocked only if they have lost their link */
 			case (DEVICE_TYPE_WIRED_ETHERNET):
-				if (nm_device_get_link_active (data->active_device))
+				if (nm_device_has_active_link (data->active_device))
 					best_dev = data->active_device;
 				break;
 
@@ -251,7 +251,7 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 					struct ether_addr	 addr;
 
 					nm_device_get_ap_address (dev, &addr);
-					if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
+					if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 						nm_ap_set_address (ap, &addr);
 
 					/* Don't store MAC addresses for non-infrastructure networks */
