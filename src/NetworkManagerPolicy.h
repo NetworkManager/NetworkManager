@@ -37,6 +37,8 @@ void			nm_policy_schedule_state_update		(NMData *app_data);
 
 void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
 
+void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
+
 gboolean		nm_policy_activation_finish			(gpointer user_data);
 
 #endif

@@ -1,3 +1,22 @@
+2005-01-25  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+		- Check DBUS version in configure, and set the C macros
+			DBUS_VERSION_[MAJOR,MINOR,MICRO]
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Remove #if 0-d section of code that quit NMI if NM went away.
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Trap the "ServiceOwnerChanged" signal that's new in dbus-0.23
+
+	* src/NetworkManager.c
+	  src/NetworkManagerMain.h
+	  src/NetworkManagerDbus.c
+		- Trap the "ServiceOwnerChanged" signal that's new in dbus-0.23
+		- Make updating of our Allowed Wireless Network lists from NMI
+			an idle function in the main thread now, with a high priority.
+
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
 	* panel-applet/gtkcellview.[ch]

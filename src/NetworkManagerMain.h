@@ -44,7 +44,6 @@ typedef struct NMData
 	DBusConnection			*dbus_connection;
 	GMainContext			*main_context;
 	GMainLoop				*main_loop;
-	gboolean				 info_daemon_avail;
 	gboolean				 enable_test_devices;
 
 	guint				 state_modified_idle_id;
@@ -57,7 +56,6 @@ typedef struct NMData
 
 	gboolean				 forcing_device;
 
-	gboolean				 update_ap_lists;
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;

@@ -1132,10 +1132,11 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
  */
 static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	NMData			*data = (NMData *)user_data;
-	const char		*object_path;
-	const char		*method;
-	gboolean			 handled = FALSE;
+	NMData		*data = (NMData *)user_data;
+	const char	*object_path;
+	const char	*method;
+	gboolean		 handled = FALSE;
+	DBusError		 error;
 
 	g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -1147,55 +1148,65 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 
 	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); */
 
+	dbus_error_init (&error);
+
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate"))
 	{
 		char			*network = NULL;
-		DBusError		 error;
 
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
-			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-
-		syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
-		nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
-		dbus_free (network);
-		handled = TRUE;
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+		{
+			/* Update a single wireless network's data */
+			syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
+			nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
+			dbus_free (network);
+			handled = TRUE;
+		}
 	}
+#if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
 	{
+		/* Only for dbus <= 0.22 */
 		char 	*service;
-		DBusError	 error;
 
-		dbus_error_init (&error);
 		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
 			&& (strcmp (service, NMI_DBUS_SERVICE) == 0))
 		{
-			data->update_ap_lists = TRUE;
-			data->info_daemon_avail = TRUE;
-			nm_policy_schedule_state_update (data);
+			nm_policy_schedule_allowed_ap_list_update (data);
 		}
-		/* Don't set handled = TRUE since other filter functions on this dbus connection
-		 * may want to know about service signals.
-		 */
 	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
+#elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceOwnerChanged"))
 	{
+		/* New signal for dbus 0.23... */
 		char 	*service;
-		DBusError	 error;
+		char		*old_owner;
+		char		*new_owner;
 
-		dbus_error_init (&error);
-		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
+		if (    dbus_message_get_args (message, &error,
+									DBUS_TYPE_STRING, &service,
+									DBUS_TYPE_STRING, &old_owner,
+									DBUS_TYPE_STRING, &new_owner,
+									DBUS_TYPE_INVALID)
 			&& (strcmp (service, NMI_DBUS_SERVICE) == 0))
 		{
-			data->update_ap_lists = TRUE;
-			data->info_daemon_avail = FALSE;
-			nm_policy_schedule_state_update (data);
+			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+
+			/* Service didn't used to have an owner, now it does.  Equivalent to
+			 * "ServiceCreated" signal in dbus <= 0.22
+			 */
+			if (!old_owner_good && new_owner_good)
+				nm_policy_schedule_allowed_ap_list_update (data);
 		}
-		/* Don't set handled = TRUE since other filter functions on this dbus connection
-		 * may want to know about service signals.
-		 */
 	}
+#else
+#error "Unrecognized version of DBUS."
+#endif
+
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }

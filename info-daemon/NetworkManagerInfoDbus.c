@@ -766,56 +766,6 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 		dbus_free (dev);
 		dbus_free (net);
 	}
-#if 0
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
-	{
-		char 	*service;
-		DBusError	 error;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
-		{
-			if (strcmp (service, NM_DBUS_SERVICE) == 0)
-			{
-				if (info->shutdown_timeout != NULL) 
-					g_source_destroy (info->shutdown_timeout);
-
-				info->shutdown_timeout = g_timeout_source_new (30000);
-				if (info->shutdown_timeout != NULL)
-				{
-					g_source_set_callback (info->shutdown_timeout,
-							       shutdown_callback,
-							       info,
-							       NULL);
-
-					g_source_attach (info->shutdown_timeout, NULL);
-				}
-			}
-		}
-
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
-	{
-		char 	*service;
-		DBusError	 error;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
-		{
-			if (strcmp (service, NM_DBUS_SERVICE) == 0 && 
-			    info->shutdown_timeout != NULL)
-			{
-				g_source_destroy (info->shutdown_timeout);
-				info->shutdown_timeout = NULL;
-			}	
-		}
-
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-	}
-#endif
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }

@@ -1057,29 +1057,28 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
 	gboolean			 handled = TRUE;
+	DBusError			 error;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
+	dbus_error_init (&error);
+
+#if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
+	/* Old signal names for dbus <= 0.22 */
 	if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
 	{
 		char 	*service;
-		DBusError	 error;
 
-		dbus_error_init (&error);
 		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
 			&& (strcmp (service, NM_DBUS_SERVICE) == 0) && (applet->applet_state == APPLET_STATE_NO_NM))
 			applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
 	{
 		char 	*service;
-		DBusError	 error;
 
-		dbus_error_init (&error);
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
 		{
 			if (strcmp (service, NM_DBUS_SERVICE) == 0)
@@ -1087,9 +1086,43 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			else if (strcmp (service, NMI_DBUS_SERVICE) == 0)
 				gtk_main_quit ();	/* Just die if NetworkManagerInfo dies */
 		}
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
 	}
+#elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceOwnerChanged"))
+	{
+		/* New signal for dbus 0.23... */
+		char 	*service;
+		char		*old_owner;
+		char		*new_owner;
+
+		if (    dbus_message_get_args (message, &error,
+									DBUS_TYPE_STRING, &service,
+									DBUS_TYPE_STRING, &old_owner,
+									DBUS_TYPE_STRING, &new_owner,
+									DBUS_TYPE_INVALID))
+		{
+			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+
+			if (    (strcmp (service, NM_DBUS_SERVICE))
+				&& (!old_owner_good && new_owner_good)	/* Equivalent to old ServiceCreated signal */
+				&& (applet->applet_state == APPLET_STATE_NO_NM))
+			{
+				/* NetworkManager started up */
+				applet->applet_state = APPLET_STATE_NO_CONNECTION;
+			}
+			else if (old_owner_good && !new_owner_good)	/* Equivalent to old ServiceDeleted signal */
+			{
+				if (strcmp (service, NM_DBUS_SERVICE) == 0)
+					applet->applet_state = APPLET_STATE_NO_NM;
+				else if (strcmp (service, NMI_DBUS_SERVICE) == 0)
+					gtk_main_quit ();	/* Die if NetworkManagerInfo dies */
+			}
+		}
+	}
+#else
+#error "Unrecognized version of DBUS."
+#endif
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 	{
@@ -1105,6 +1138,9 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	}
 	else
 		handled = FALSE;
+
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }

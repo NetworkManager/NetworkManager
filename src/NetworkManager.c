@@ -733,8 +733,10 @@ int main( int argc, char *argv[] )
 		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
 	}
-	nm_data->info_daemon_avail = nm_dbus_is_info_daemon_running (nm_data->dbus_connection);
-	nm_data->update_ap_lists = TRUE;
+
+	/* If NMI is running, grab allowed wireless network lists from it ASAP */
+	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
+		nm_policy_schedule_allowed_ap_list_update (nm_data);
 
 	/* Right before we init hal, we have to make sure our mainloop integration function
 	 * knows about our GMainContext.  HAL doesn't give us any way to pass that into its

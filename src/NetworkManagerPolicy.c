@@ -320,19 +320,6 @@ static gboolean nm_policy_state_update (gpointer user_data)
 
 	app_data->state_modified_idle_id = 0;
 
-	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
-	if (app_data->info_daemon_avail && app_data->update_ap_lists)
-	{
-		/* Query info daemon for network lists if its now running */
-		if (app_data->allowed_ap_list)
-			nm_ap_list_unref (app_data->allowed_ap_list);
-		app_data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-		if (app_data->allowed_ap_list)
-			nm_ap_list_populate_from_nmi (app_data->allowed_ap_list, app_data);
-
-		app_data->update_ap_lists = FALSE;
-	}
-
 	/* If we're currently waiting for a force-device operation to complete, don't try
 	 * to change devices.  We'll be notified of what device to switch to explicitly
 	 * when the force-device operation completes.
@@ -455,9 +442,56 @@ void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data
 		g_source_set_callback (source, nm_policy_state_update, cb_data, NULL);
 		app_data->state_modified_idle_id = g_source_attach (source, app_data->main_context);
 		g_source_unref (source);
-
 	}
 
 	g_static_mutex_unlock (&mutex);
 }
 
+
+
+/*
+ * nm_policy_allowed_ap_list_update
+ *
+ * Requery NetworkManagerInfo for a list of updated
+ * allowed wireless networks.
+ *
+ */
+static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
+{
+	NMData	*data = (NMData *)user_data;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	syslog (LOG_INFO, "Updating allowed wireless network lists.");
+
+	/* Query info daemon for network lists if its now running */
+	if (data->allowed_ap_list)
+		nm_ap_list_unref (data->allowed_ap_list);
+	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
+	if (data->allowed_ap_list)
+		nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
+
+	return (FALSE);
+}
+
+
+/*
+ * nm_policy_schedule_allowed_ap_list_update
+ *
+ * Schedule an update of the allowed AP list in the main thread.
+ *
+ */
+void nm_policy_schedule_allowed_ap_list_update (NMData *app_data)
+{
+	GSource	*source = NULL;
+
+	g_return_if_fail (app_data != NULL);
+	g_return_if_fail (app_data->main_context != NULL);
+
+	source = g_idle_source_new ();
+	/* We want this idle source to run before any other idle source */
+	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
+	g_source_attach (source, app_data->main_context);
+	g_source_unref (source);
+}
