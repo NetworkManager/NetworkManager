@@ -43,6 +43,8 @@
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
 
+static void nmi_spawn_notification_icon (NMIAppInfo *info);
+
 
 /*
  * nmi_gconf_notify_callback
@@ -84,6 +86,46 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 }
 
 
+#ifdef BUILD_NOTIFICATION_ICON
+static void 
+on_icon_exit_callback (GPid pid, int status, gpointer data)
+{
+	NMIAppInfo *info;
+	info = (NMIAppInfo *) data;
+
+	nmi_spawn_notification_icon (info);
+}
+
+static void 
+nmi_spawn_notification_icon (NMIAppInfo *info)
+{
+	GError *error;
+
+	gchar *notification_icon_cmd[] = {LIBEXECDIR"/NetworkManagerNotification", NULL};
+
+	if (info->notification_icon_pid > 0)
+		g_spawn_close_pid (info->notification_icon_pid);
+
+	if (info->notification_icon_watch != NULL)
+		g_source_remove (info->notification_icon_watch);
+
+	/*spawn the panel notification icon*/
+	if (!g_spawn_async (NULL,
+			    notification_icon_cmd,
+			    NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL,
+			    &(info->notification_icon_pid),
+			    &error))
+	{
+		g_warning ("Could not spawn NetworkManager's notification icon (%s)", error->message);
+		g_error_free (error);
+	}
+	else
+		info->notification_icon_watch = g_child_watch_add (info->notification_icon_pid, on_icon_exit_callback, info);
+
+}
+
+#endif
+
 /*
  * main
  *
@@ -106,8 +148,6 @@ int main( int argc, char *argv[] )
 		  "Don't detatch from the console and run in the background.", NULL },
 		{ NULL, '\0', 0, NULL, 0, NULL, NULL }
 	};
-
-	gchar *notification_icon_cmd[] = {LIBEXECDIR"/NetworkManagerNotification", NULL};
 
 	options[0].arg = &no_daemon;
 
@@ -193,17 +233,7 @@ int main( int argc, char *argv[] )
 	app_info->notification_icon_pid = 0;
 
 #ifdef BUILD_NOTIFICATION_ICON
-	/*spawn the panel notification icon*/
-	if (!g_spawn_async (NULL,
-			    notification_icon_cmd,
-			    NULL, 0, NULL, NULL,
-			    &(app_info->notification_icon_pid),
-			    &error))
-	{
-		g_warning ("Could not spawn NetworkManager's notification icon (%s)", error->message);
-		g_error_free (error);
-	}
-
+	nmi_spawn_notification_icon (app_info);
 #endif
 
 	if (nmi_passphrase_dialog_init (app_info) != 0)

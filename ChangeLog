@@ -1,3 +1,8 @@
+Tue Oct 12 John (J5) Palmieri <johnp@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c (main):  Add child watch to respawn
+	Notification if it crashes
+
 Fri Oct  8 07:19:55 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.c (nmwa_dbus_get_double): 
