@@ -1,5 +1,17 @@
 2004-10-29 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_network_exists): Actually use the encryption
+			key we got from the applet when attempting to find a wireless network
+		- Don't bring devices down so much since on some cards it triggers
+			firmware hotplugs each time
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_nm_set_active_device): free the passphrase we may have gotten
+			from the caller
+
+2004-10-29 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 		- (nm_hal_device_property_modified): unlock a locked active
 			wireless device when a wired connection gets a link.

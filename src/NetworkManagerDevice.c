@@ -1303,10 +1303,10 @@ static gboolean nm_device_activate_wireless (NMDevice *dev, NMAccessPoint *ap, g
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
 
 	*bad_crypt_packets = 0;
-	nm_device_bring_down (dev);
 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_set_mode_managed (dev);
+	nm_device_set_essid (dev, " ");
 
 	/* Disable encryption, then re-enable and set correct key on the card
 	 * if we are going to encrypt traffic.
@@ -2106,8 +2106,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 	nm_device_set_best_ap (dev, best_ap);
 	if (!best_ap)
 	{
-		nm_device_bring_down (dev);
-		nm_device_set_essid (dev, "");
+		nm_device_set_essid (dev, " ");
 		nm_device_set_enc_key (dev, NULL);
 		nm_device_bring_up (dev);
 	}
@@ -2141,12 +2140,32 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	fprintf (stderr, "nm_device_wireless_network_exists () looking for network '%s'...", network);
 
 	*encrypted = FALSE;
-	nm_device_bring_down (dev);
 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_set_mode_managed (dev);
 
-	nm_device_set_enc_key (dev, "11111111111111111111111111");
+	if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+	{
+		char *hashed_key = NULL;
+		switch (key_type)
+		{
+			case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
+				hashed_key = nm_wireless_128bit_key_from_passphrase (key);
+				break;
+			case (NM_ENC_TYPE_128_BIT_HEX_KEY):
+			case (NM_ENC_TYPE_40_BIT_PASSPHRASE):
+			case (NM_ENC_TYPE_40_BIT_HEX_KEY):
+			case (NM_ENC_TYPE_UNKNOWN):
+				hashed_key = g_strdup (key);
+				break;
+			default:
+				break;
+		}
+		nm_device_set_enc_key (dev, hashed_key);
+		g_free (hashed_key);
+	}
+	else
+		nm_device_set_enc_key (dev, "11111111111111111111111111");
 	nm_device_set_essid (dev, network);
 
 	/* Bring the device up and pause to allow card to associate */
@@ -2164,7 +2183,6 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	else
 	{
 		/* Okay, try again in unencrypted mode */
-		nm_device_bring_down (dev);
 
 		/* Force the card into Managed/Infrastructure mode */
 		nm_device_set_mode_managed (dev);
@@ -2243,8 +2261,6 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 				nm_ap_set_encrypted (ap, encrypted);
 				nm_ap_set_artificial (ap, TRUE);
 				nm_ap_set_address (ap, &ap_addr);
-				if (key_type != NM_ENC_TYPE_UNKNOWN)
-					nm_ap_set_enc_key_source (ap, key, key_type);
 				nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 				nm_ap_unref (ap);
 			}
@@ -2253,25 +2269,20 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 			nm_ap_set_essid (ap, essid);
 			if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
 			{
-				if (key_type != NM_ENC_TYPE_UNKNOWN)
-					nm_ap_set_enc_key_source (ap, key, key_type);
-				else
+				if (key_type == NM_ENC_TYPE_UNKNOWN)
 					nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
 				nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
 				nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
 			}
-		}
-		else
-		{
-			/* Use the encryption key and type the user sent us if its valid */
-			if (key_type != NM_ENC_TYPE_UNKNOWN)
-				nm_ap_set_enc_key_source (ap, key, key_type);
 		}
 	}
 
 	/* If we found a valid access point, use it */
 	if (ap)
 	{
+		/* Use the encryption key and type the user sent us if its valid */
+		if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+			nm_ap_set_enc_key_source (ap, key, key_type);
 		nm_device_set_best_ap (dev, ap);
 		nm_device_freeze_best_ap (dev);
 		nm_device_activation_cancel (dev);

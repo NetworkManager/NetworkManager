@@ -319,6 +319,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 out:
 	dbus_free (network);
+	dbus_free (key);
 	nm_device_unref (dev);
 	return (reply_message);
 }
