@@ -621,14 +621,14 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			if (ntohs (udp_hdr->source) != DHCP_SERVER_PORT)
 			{
 				#ifdef DEBUG
-					syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
+					syslog (LOG_INFO, "DHCP: Reply message's source port (%d) was not the DHCP server port number (%d), won't use it.", ntohs (udp_hdr->source), DHCP_SERVER_PORT);
 				#endif
 				continue;
 			}
 			if (ntohs (udp_hdr->dest) != DHCP_CLIENT_PORT) 
 			{
 				#ifdef DEBUG
-					syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
+					syslog (LOG_INFO, "DHCP: Reply message's destination port (%d) was not the DHCP client port number (%d), won't use it.", ntohs (udp_hdr->dest), DHCP_CLIENT_PORT);
 				#endif
 				continue;
 			}
