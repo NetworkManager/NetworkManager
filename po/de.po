@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-09 09:00+0100\n"
-"PO-Revision-Date: 2005-02-09 08:58+0100\n"
+"POT-Creation-Date: 2005-02-11 12:20+0100\n"
+"PO-Revision-Date: 2005-02-11 12:19+0100\n"
 "Last-Translator: Frank Arnold <frank@scirocco-5v-turbo.de>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -108,7 +108,7 @@ msgstr ""
 "Netzwerkverbindungen."
 
 #: ../panel-applet/NMWirelessApplet.c:160
-msgid "© 2004-2005 by Red Hat, Inc."
+msgid "(C) 2004-2005 by Red Hat, Inc."
 msgstr "© 2004-2005 Red Hat, Inc."
 
 #: ../panel-applet/NMWirelessApplet.c:377
@@ -272,3 +272,6 @@ msgstr "Ausrichtung"
 #: ../examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "Die Ausrichtung des Benachrichtigungsfeldes."
+
+#~ msgid "© 2004-2005 by Red Hat, Inc."
+#~ msgstr "© 2004-2005 Red Hat, Inc."
