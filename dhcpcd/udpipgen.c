@@ -69,9 +69,16 @@ void udpipgen (udpiphdr *udpip, unsigned int saddr, unsigned int daddr, unsigned
 	memcpy (ip,(struct ip *)udpip->ip, sizeof (ip_local));
 	ip->ip_hl = 5;
 	ip->ip_v = IPVERSION;
-	ip->ip_tos = 0;	/* normal service */
+	ip->ip_tos = IPTOS_LOWDELAY;
 	ip->ip_len = htons (dhcp_msg_len + sizeof (udpiphdr));
+
+/* Hmm, since the UDP packets shouldnt' be fragmented, ip_id = 0 */ 
+#if 0
 	ip->ip_id = htons (*ip_id); *ip_id++;
+#else
+	ip->ip_id = 0;
+#endif
+
 	ip->ip_off = 0;
 	ip->ip_ttl = IPDEFTTL; /* time to live, 64 by default */
 	ip->ip_p = IPPROTO_UDP;

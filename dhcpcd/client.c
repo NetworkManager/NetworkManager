@@ -472,13 +472,14 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	 * we return RET_DHCP_TIMEOUT.
 	 */
 	gettimeofday (&overall_end, NULL);
-	overall_end.tv_sec += iface->client_options->base_timeout;
 
 	/* Send the request, then wait for the reply for a certain period of time
 	 * that increases with each failed request.  Quit when we reach our end time though.
 	 */
 #ifdef DEBUG
-	syslog (LOG_INFO, "DHCP: Starting request loop");
+	syslog (LOG_INFO, "DHCP: Starting request loop, overall start_time = {%lds, %ldus}\n",
+		(long)overall_end.tv_sec, (long)overall_end.tv_usec);
+	overall_end.tv_sec += iface->client_options->base_timeout;
 #endif
 	do
 	{
@@ -699,6 +700,8 @@ out:
 		free (pkt_recv);
 	if (recv_sk >= 0)
 		close (recv_sk);
+	if (iface->cease)
+		err = RET_DHCP_CEASED;
 	return err;
 }
 /*****************************************************************************/
@@ -756,6 +759,8 @@ int dhcp_init (dhcp_interface *iface)
 		err = dhcp_handle_transaction (iface, DHCP_OFFER, &build_dhcp_discover, &dhcp_resp2);
 		if (err == RET_DHCP_SUCCESS)
 			memcpy (&dhcp_resp, &dhcp_resp2, sizeof (dhcp_response_return));
+		else if (err == RET_DHCP_CEASED)
+			return err;
 	}
 
 	iface->ciaddr = dhcp_resp.dhcp_msg.yiaddr;
@@ -815,7 +820,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 				((unsigned char *)&(iface->ciaddr))[2], ((unsigned char *)&(iface->ciaddr))[3]);
 		dhcpDecline ();
 		iface->ciaddr = 0;
-		return RET_DHCP_ADDRESS_IN_USE;
+		return iface->cease ? RET_DHCP_CEASED : RET_DHCP_ADDRESS_IN_USE;
 	}
 
 	if (DebugFlag)
@@ -830,7 +835,7 @@ int dhcp_request(dhcp_interface *iface, dhcp_msg_build_proc buildDhcpMsg)
 	memcpy (&(iface->siaddr), iface->dhcp_options.val[dhcpServerIdentifier], 4);
 	memcpy (iface->shaddr, dhcp_resp.server_hw_addr, ETH_ALEN);
 
-	return RET_DHCP_BOUND;
+	return iface->cease ? RET_DHCP_CEASED : RET_DHCP_BOUND;
 }
 /*****************************************************************************/
 int dhcp_renew(dhcp_interface *iface)

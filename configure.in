@@ -2,6 +2,7 @@ AC_PREREQ(2.52)
 
 AC_INIT(NetworkManager, 0.3.3, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
+AM_MAINTAINER_MODE
 
 AM_CONFIG_HEADER(config.h)
 
@@ -36,7 +37,7 @@ AC_CHECK_FUNCS(select socket uname)
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
-ALL_LINGUAS="bs cs da de el en_CA es gu ja nb nl no pa pt_BR sk sq sv wa zh_CN"
+ALL_LINGUAS="bs cs da de el en_CA es gu hr ja nb nl no pa pt_BR sk sq sv wa zh_CN"
 AM_GLIB_GNU_GETTEXT
 
 AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, gentoo, debian, or slackware]))

@@ -46,6 +46,7 @@ static int nm_dbus_dhcp_record_type (int id)
 			return DBUS_TYPE_BYTE;
 	}
 	g_assert_not_reached();
+	return DBUS_TYPE_INVALID;
 }
 
 #define DBUS_REPLY_BYTYPE(Dtype, Ctype) do {																\

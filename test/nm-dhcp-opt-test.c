@@ -57,6 +57,7 @@ static char *dbus_type_to_string (int type)
 			return "string";
 	}
 	g_assert_not_reached ();
+	return NULL;
 }
 
 
@@ -190,8 +191,8 @@ void print_array (DBusConnection *connection, int opt, int opt_type)
 	int			*int32 = NULL;
 	gboolean		*bool = NULL;
 	unsigned char	*byte = NULL;
-	void			*item;
-	char			*method;
+	void			*item = NULL;
+	char			*method = NULL;
 	int			 ret;
 	const char	*name = NULL;
 
@@ -258,7 +259,7 @@ void print_one_item (DBusConnection *connection, int opt, int opt_type)
 	unsigned char	 byte;
 	char			*string = NULL;
 	void			*item = NULL;
-	char			*method;
+	char			*method = NULL;
 	int			 ret;
 	const char	*name = NULL;
 

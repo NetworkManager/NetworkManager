@@ -1,3 +1,17 @@
+2005-02-14  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Peter Jones:
+	* dhcpcd/client.c
+		- Ensure we return RET_DHCP_CEASED everywhere we should
+	* dhcpcd/udpipgen.c
+		- Use faster TOS for IP packets
+		- Don't set ip_id since we're UDP
+
+	Patch from Tomislav Vujec:
+	* src/nm-dbus-dhcp.c
+	  test/nm-dhcp-opt-test.c
+		- Clean up warnings to enable cvs tree compilation.
+
 2005-02-14  Tomislav Vujec  <tvujec@redhat.com>
 
 	* configure.in
