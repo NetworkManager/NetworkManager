@@ -152,7 +152,7 @@ static int nmwa_dbus_get_int (DBusConnection *connection, const char *path, cons
 
 	if (reply == NULL)
 	{
-		fprintf( stderr, "nmwa_dbus_get_int(): dbus reply message was NULL\n" );
+		fprintf (stderr, "nmwa_dbus_get_int(): dbus reply message was NULL\n" );
 		return (RETURN_FAILURE);
 	}
 
@@ -213,7 +213,7 @@ static int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, con
 
 	if (reply == NULL)
 	{
-		fprintf( stderr, "nmwa_dbus_get_bool(): dbus reply message was NULL\n" );
+		fprintf (stderr, "nmwa_dbus_get_bool(): dbus reply message was NULL\n" );
 		return (RETURN_FAILURE);
 	}
 
@@ -287,7 +287,7 @@ static int nmwa_dbus_get_string_array (DBusConnection *connection, const char *p
 
 	if (reply == NULL)
 	{
-		fprintf( stderr, "nmwa_dbus_get_string_array(): dbus reply message was NULL\n" );
+		fprintf (stderr, "nmwa_dbus_get_string_array(): dbus reply message was NULL\n" );
 		return (RETURN_FAILURE);
 	}
 
@@ -606,7 +606,7 @@ static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connectio
 
 	if (reply == NULL)
 	{
-		fprintf( stderr, "nmwa_dbus_get_hal_device_string_property(): dbus reply message was NULL\n" );
+		fprintf (stderr, "nmwa_dbus_get_hal_device_string_property(): dbus reply message was NULL\n" );
 		return (NULL);
 	}
 
@@ -657,7 +657,7 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
 
 	if (reply == NULL)
 	{
-		fprintf( stderr, "nmwa_dbus_get_hal_device_info(): dbus reply message was NULL\n" );
+		fprintf (stderr, "nmwa_dbus_get_hal_device_info(): dbus reply message was NULL\n" );
 		return (NULL);
 	}
 
@@ -693,15 +693,15 @@ void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev,
 	{
 		if ((dev->type == DEVICE_TYPE_WIRELESS_ETHERNET) && network && network->essid)
 		{
-fprintf( stderr, "Forcing device '%s' and network '%s'\n", dev->nm_device, network->essid);
+			fprintf (stderr, "Forcing device '%s' and network '%s'\n", dev->nm_device, network->essid);
 			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
 									DBUS_TYPE_STRING, network->essid, DBUS_TYPE_INVALID);
 		}
 		else
-{
-fprintf( stderr, "Forcing device '%s'\n", dev->nm_device);
+		{
+			fprintf (stderr, "Forcing device '%s'\n", dev->nm_device);
 			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device, DBUS_TYPE_INVALID);
-}
+		}
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
@@ -926,7 +926,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
  * NOTE: caller must lock device list if necessary
  *
  */
-static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWirelessApplet *applet)
+static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, gboolean active_dev, NMWirelessApplet *applet)
 {
 	char		 *active_network = NULL;
 	char		**networks = NULL;
@@ -941,8 +941,7 @@ static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWir
 	if (dev->type != DEVICE_TYPE_WIRELESS_ETHERNET)
 		goto out;
 
-	
-	if (dev == applet->active_device)
+	if (active_dev)
 		active_network = nmwa_dbus_get_active_network (applet, dev->nm_device, APPLET_STATE_IGNORE);
 
 	if (applet->applet_state == APPLET_STATE_NO_NM)
@@ -996,131 +995,19 @@ out:
 
 
 /*
- * nmwa_dbus_update_network_state
- *
- * Update our state based on what NetworkManager's network state is
- *
- */
-static void nmwa_dbus_update_network_state (NMWirelessApplet *applet)
-{
-	char		*nm_status = NULL;
-
-	g_return_if_fail (applet != NULL);
-
-	/* Grab NetworkManager's status */
-	if (!(nm_status = nmwa_dbus_get_nm_status (applet, APPLET_STATE_NO_CONNECTION)))
-		return;
-
-	if (strcmp (nm_status, "scanning") == 0)
-	{
-		applet->applet_state = APPLET_STATE_WIRELESS_SCANNING;
-		goto out;
-	}
-	
-	if (strcmp (nm_status, "disconnected") == 0)
-	{
-		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		goto out;
-	}
-	
-	if (!applet->active_device)
-	{
-		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		goto out;
-	}
-
-	/* If the device is not 802.x, we don't show state for it (yet) */
-	if (    (applet->active_device->type != DEVICE_TYPE_WIRED_ETHERNET)
-		&& (applet->active_device->type != DEVICE_TYPE_WIRELESS_ETHERNET))
-	{
-		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		goto out;
-	}
-	else if (applet->active_device->type == DEVICE_TYPE_WIRED_ETHERNET)
-	{
-		if (strcmp (nm_status, "connecting") == 0)
-			applet->applet_state = APPLET_STATE_WIRED_CONNECTING;
-		else if (strcmp (nm_status, "connected") == 0)
-			applet->applet_state = APPLET_STATE_WIRED;
-	}
-	else if (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-	{
-		if (strcmp (nm_status, "connecting") == 0)
-			applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
-		else if (strcmp (nm_status, "connected") == 0)
-			applet->applet_state = APPLET_STATE_WIRELESS;
-	}
-
-out:
-	dbus_free (nm_status);
-}
-
-
-/*
- * nmwa_dbus_update_active_device
- *
- * Get the active device from NetworkManager
- *
- */
-static void nmwa_dbus_update_active_device (NMWirelessApplet *applet)
-{
-	GSList	*element;
-	char		*nm_act_dev;
-
-	g_return_if_fail (applet != NULL);
-
-	nm_act_dev = nmwa_dbus_get_active_device (applet, APPLET_STATE_IGNORE);
-
-	g_mutex_lock (applet->data_mutex);
-	if (applet->active_device)
-		network_device_unref (applet->active_device);
-	applet->active_device = NULL;
-
-	if (nm_act_dev)
-	{
-		element = applet->devices;
-		while (element)
-		{
-			NetworkDevice	*dev = (NetworkDevice *)(element->data);
-			if (dev)
-			{
-				if (strcmp (dev->nm_device, nm_act_dev) == 0)
-				{
-					applet->active_device = dev;
-					network_device_ref (applet->active_device);
-					break;
-				}
-			}
-			element = g_slist_next (element);
-		}
-	}
-
-	g_mutex_unlock (applet->data_mutex);
-	dbus_free (nm_act_dev);
-}
-
-
-/*
  * nmwa_dbus_update_active_device_strength
  *
  * Update the active device's current wireless network strength
  *
  */
-void nmwa_dbus_update_active_device_strength (NMWirelessApplet *applet)
+static int nmwa_dbus_update_active_device_strength (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
-	g_mutex_lock (applet->data_mutex);
-	if (!applet->active_device)
-	{
-		g_mutex_unlock (applet->data_mutex);
-		return;
-	}
+	if (applet->dbus_active_device && (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
+		applet->dbus_active_device->strength = nmwa_dbus_get_object_strength (applet, applet->dbus_active_device->nm_device);
 
-	if (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-		applet->active_device->strength = nmwa_dbus_get_object_strength (applet, applet->active_device->nm_device);
-
-	g_mutex_unlock (applet->data_mutex);
+	return (TRUE);
 }
 
 
@@ -1132,11 +1019,18 @@ void nmwa_dbus_update_active_device_strength (NMWirelessApplet *applet)
  */
 static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 {
-	char	**devices = NULL;
-	int	  num_items = 0;
-	int	  i;
+	char			**devices = NULL;
+	int			  num_items = 0;
+	int			  i;
+	char			 *nm_act_dev = NULL;
+	GSList		 *device_list = NULL;
+	NetworkDevice	 *active_device = NULL;
+	char			 *nm_status = NULL;
 
 	g_return_if_fail (applet->data_mutex != NULL);
+
+	if (!(nm_status = nmwa_dbus_get_nm_status (applet, APPLET_STATE_NO_CONNECTION)))
+		return;
 
 	switch (nmwa_dbus_get_string_array (applet->connection, NM_DBUS_PATH, "getDevices", &num_items, &devices))
 	{
@@ -1151,14 +1045,11 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	if (!devices)
 		return;
 
-	/* Clear out existing device list */
-	g_mutex_lock (applet->data_mutex);
-	g_slist_foreach (applet->devices, (GFunc) network_device_unref, NULL);
-	g_slist_free (applet->devices);
-	if (applet->active_device)
-		network_device_unref (applet->active_device);
-	applet->active_device = NULL;
-	applet->devices = NULL;
+	if (applet->dbus_active_device)
+		network_device_unref (applet->dbus_active_device);
+	applet->dbus_active_device = NULL;
+
+	nm_act_dev = nmwa_dbus_get_active_device (applet, APPLET_STATE_IGNORE);
 
 	for (i = 0; i < num_items; i++)
 	{
@@ -1181,16 +1072,42 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 					network_device_unref (dev);
 				else
 				{
-					applet->devices = g_slist_append (applet->devices, dev);
-					nmwa_dbus_update_device_wireless_networks (dev, applet);
+					device_list = g_slist_append (device_list, dev);
+					if (nm_act_dev && !strcmp (nm_act_dev, devices[i]))
+					{
+						active_device = dev;
+						network_device_ref (dev);
+						applet->dbus_active_device = dev;
+						network_device_ref (dev);
+						nmwa_dbus_update_device_wireless_networks (dev, TRUE, applet);
+					}
+					else
+						nmwa_dbus_update_device_wireless_networks (dev, FALSE, applet);
 				}
 			}
 		}
 		dbus_free (name);
 	}
+	dbus_free (nm_act_dev);
+	dbus_free_string_array (devices);
+
+	/* Now move the data over to the GUI side */
+	g_mutex_lock (applet->data_mutex);
+	if (applet->device_list)
+	{
+		g_slist_foreach (applet->device_list, (GFunc) network_device_unref, NULL);
+		g_slist_free (applet->device_list);
+	}
+	if (applet->active_device)
+		network_device_unref (applet->active_device);
+	if (applet->nm_status)
+		g_free (applet->nm_status);
+
+	applet->device_list = device_list;
+	applet->active_device = active_device;
+	applet->nm_status = nm_status;
 
 	g_mutex_unlock (applet->data_mutex);
-	dbus_free_string_array (devices);
 }
 
 
@@ -1238,42 +1155,17 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 	{
-		char		*nm_device = NULL;
-		char		*network = NULL;
-		DBusError	 error;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &nm_device,
-				DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
-		{
-			NetworkDevice	*dev;
-
-			if ((dev = nmwa_get_device_for_nm_device (applet, nm_device)))
-			{
-				g_mutex_lock (applet->data_mutex);
-				nmwa_dbus_update_device_wireless_networks (dev, applet);
-				g_mutex_unlock (applet->data_mutex);
-			}
-		}
-
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-
-		dbus_free (nm_device);
-		dbus_free (network);
+		nmwa_dbus_update_devices (applet);
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
 	{
 		nmwa_dbus_update_devices (applet);
-		nmwa_dbus_update_active_device (applet);
-		nmwa_dbus_update_network_state (applet);
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
 	{
 		nmwa_dbus_update_devices (applet);
-		nmwa_dbus_update_active_device (applet);
 	}
 	else
 		handled = FALSE;
@@ -1374,14 +1266,7 @@ static gboolean nmwa_dbus_timeout_worker (gpointer user_data)
 		{
 			applet->applet_state = APPLET_STATE_NO_CONNECTION;
 			nmwa_dbus_update_devices (applet);
-			nmwa_dbus_update_active_device (applet);
-			nmwa_dbus_update_network_state (applet);
 		}
-	}
-	else
-	{
-		nmwa_dbus_update_active_device_strength (applet);
-		/* FIXME: update wireless networks strength in real-time */
 	}
 
 	return (TRUE);
@@ -1401,6 +1286,8 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	GMainLoop			*thread_loop;
 	guint			 timeout_id;
 	GSource			*timeout_source;
+	guint			 strength_id;
+	GSource			*strength_source;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 
@@ -1415,12 +1302,14 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	g_source_set_callback (timeout_source, nmwa_dbus_timeout_worker, applet, NULL);
 	timeout_id = g_source_attach (timeout_source, applet->thread_context);
 
+	strength_source = g_timeout_source_new (1000);
+	g_source_set_callback (strength_source, nmwa_dbus_update_active_device_strength, applet, NULL);
+	strength_id = g_source_attach (strength_source, applet->thread_context);
+
 	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
 		nmwa_dbus_update_devices (applet);
-		nmwa_dbus_update_active_device (applet);
-		nmwa_dbus_update_network_state (applet);
 	}
 	else
 		applet->applet_state = APPLET_STATE_NO_NM;
@@ -1428,6 +1317,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	g_main_loop_run (thread_loop);
 
 	g_source_destroy (timeout_source);
+	g_source_destroy (strength_source);
 
 	return NULL;
 }

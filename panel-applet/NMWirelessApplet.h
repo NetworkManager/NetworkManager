@@ -111,9 +111,11 @@ typedef struct
 
         /* Data model elements */
 	GMutex			*data_mutex;
-	GSList			*devices;
-	NetworkDevice		*active_device;
 	AppletState		 applet_state;
+	GSList			*device_list;
+	NetworkDevice		*active_device;
+	char				*nm_status;
+	NetworkDevice		*dbus_active_device;
 
         GdkPixbuf *no_nm_icon;
         GdkPixbuf *wired_icon;
@@ -137,7 +139,7 @@ typedef struct
 	GtkWidget			*pixmap;
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
-	GtkSizeGroup                    *encryption_size_group;
+	GtkSizeGroup        *encryption_size_group;
 } NMWirelessApplet;
 
 

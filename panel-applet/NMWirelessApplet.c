@@ -98,6 +98,65 @@ static GObject *nmwa_constructor (GType type,
   return obj;
 }
 
+
+/*
+ * nmwa_update_network_state
+ *
+ * Update our state based on what NetworkManager's network state is
+ *
+ */
+static void nmwa_update_network_state (NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	if (!applet->nm_status)
+	{
+		applet->applet_state = APPLET_STATE_NO_CONNECTION;
+		return;
+	}
+
+	if (strcmp (applet->nm_status, "scanning") == 0)
+	{
+		applet->applet_state = APPLET_STATE_WIRELESS_SCANNING;
+		return;
+	}
+	
+	if (strcmp (applet->nm_status, "disconnected") == 0)
+	{
+		applet->applet_state = APPLET_STATE_NO_CONNECTION;
+		return;
+	}
+	
+	if (!applet->active_device)
+	{
+		applet->applet_state = APPLET_STATE_NO_CONNECTION;
+		return;
+	}
+
+	/* If the device is not 802.x, we don't show state for it (yet) */
+	if (    (applet->active_device->type != DEVICE_TYPE_WIRED_ETHERNET)
+		&& (applet->active_device->type != DEVICE_TYPE_WIRELESS_ETHERNET))
+	{
+		applet->applet_state = APPLET_STATE_NO_CONNECTION;
+		return;
+	}
+	else if (applet->active_device->type == DEVICE_TYPE_WIRED_ETHERNET)
+	{
+		if (strcmp (applet->nm_status, "connecting") == 0)
+			applet->applet_state = APPLET_STATE_WIRED_CONNECTING;
+		else if (strcmp (applet->nm_status, "connected") == 0)
+			applet->applet_state = APPLET_STATE_WIRED;
+	}
+	else if (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+	{
+		if (strcmp (applet->nm_status, "connecting") == 0)
+			applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
+		else if (strcmp (applet->nm_status, "connected") == 0)
+			applet->applet_state = APPLET_STATE_WIRELESS;
+	}
+}
+
+
 static gboolean
 animation_timeout (NMWirelessApplet *applet)
 {
@@ -197,15 +256,16 @@ nmwa_update_state (NMWirelessApplet *applet)
 
     }
 
-  if (g_slist_length (applet->devices) == 1 &&
+  if (g_slist_length (applet->device_list) == 1 &&
       applet->applet_state != APPLET_STATE_NO_NM)
     {
-      if (((NetworkDevice *)applet->devices->data)->type == DEVICE_TYPE_WIRED_ETHERNET)
+      if (((NetworkDevice *)applet->device_list->data)->type == DEVICE_TYPE_WIRED_ETHERNET)
 	show_applet = FALSE;
     }
-  g_mutex_unlock (applet->data_mutex);
 
-/*  print_state (applet->applet_state); */
+  nmwa_update_network_state (applet);
+
+  /* print_state (applet->applet_state); */
   switch (applet->applet_state)
     {
     case (APPLET_STATE_NO_CONNECTION):
@@ -247,6 +307,7 @@ nmwa_update_state (NMWirelessApplet *applet)
     default:
       break;
     }
+  g_mutex_unlock (applet->data_mutex);
 
   /*determine if we should hide the notification icon*/
   gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
@@ -411,7 +472,7 @@ NetworkDevice *nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const ch
 	g_return_val_if_fail (strlen (nm_dev), NULL);
 
 	g_mutex_lock (applet->data_mutex);
-	element = applet->devices;
+	element = applet->device_list;
 	while (element)
 	{
 		NetworkDevice	*dev = (NetworkDevice *)(element->data);
@@ -560,7 +621,7 @@ create_wireless_adaptor_model (NMWirelessApplet *applet)
   GSList *element;
 
   retval = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
-  for (element = applet->devices; element; element = element->next)
+  for (element = applet->device_list; element; element = element->next)
     {
       NetworkDevice *network = (NetworkDevice *)(element->data);
 
@@ -637,7 +698,7 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 
   /* Do we have multiple Network cards? */
   g_mutex_lock (applet->data_mutex);
-  for (element = applet->devices; element; element = element->next)
+  for (element = applet->device_list; element; element = element->next)
     {
       NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -822,16 +883,16 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (applet != NULL);
 
 	g_mutex_lock (applet->data_mutex);
-	if (! applet->devices)
+	if (! applet->device_list)
 	{
 		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
 		g_mutex_unlock (applet->data_mutex);
 		return;
 	}
 
-	applet->devices = g_slist_sort (applet->devices, sort_networks_function);
+	applet->device_list = g_slist_sort (applet->device_list, sort_networks_function);
 
-	for (element = applet->devices; element; element = element->next)
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -851,7 +912,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	}
 
 	/* Add all devices in our device list to the menu */
-	for (element = applet->devices; element; element = element->next)
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -1017,8 +1078,9 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 		return (NULL);
 
 	applet->applet_state = APPLET_STATE_NO_NM;
-	applet->devices = NULL;
+	applet->device_list = NULL;
 	applet->active_device = NULL;
+	applet->nm_status = NULL;
 
 	/* Start our dbus thread */
 	if (!(applet->data_mutex = g_mutex_new ()))

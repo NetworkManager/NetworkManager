@@ -1,5 +1,16 @@
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Update our applet state from the GUI thread
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Greatly simplify the locking to make the GUI thread
+			smoother.  Update a private copy of the device list
+			and active device and only when done talking to
+			NetworkManager turn it over to the GUI thread.
+
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.[ch]
 		- Add "artificial" get/set functions, set for APs that
 			aren't discovered as part of a scan but instead
