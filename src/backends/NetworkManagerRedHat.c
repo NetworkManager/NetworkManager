@@ -212,6 +212,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	addr = nm_device_config_get_ip4_address (dev);
 	netmask = nm_device_config_get_ip4_netmask (dev);
 	iface = nm_device_get_iface (dev);
+	broadcast = nm_device_config_get_ip4_broadcast (dev);
 
 	/* Calculate the prefix (# bits stripped off by the netmask) */
 	for (i = 0; i < IPBITS; i++)
@@ -220,8 +221,9 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 			prefix--;
 	}
 
-	/* Calculate the broadcast address */
-	broadcast = ((addr & (int)netmask) | ~(int)netmask);
+	/* Calculate the broadcast address if the user didn't specify one */
+	if (!broadcast)
+		broadcast = ((addr & (int)netmask) | ~(int)netmask);
 
 	/* FIXME: what if some other device is already using our IP address? */
 
@@ -350,6 +352,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 	guint32	 ip4_address = 0;
 	guint32	 ip4_netmask = 0;
 	guint32	 ip4_gateway = 0;
+	guint32	 ip4_broadcast = 0;
 
 	g_return_if_fail (dev != NULL);
 
@@ -358,6 +361,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 	nm_device_config_set_ip4_address (dev, 0);
 	nm_device_config_set_ip4_gateway (dev, 0);
 	nm_device_config_set_ip4_netmask (dev, 0);
+	nm_device_config_set_ip4_broadcast (dev, 0);
 
 	/* Red Hat/Fedora Core systems store this information in
 	 * /etc/sysconfig/network-scripts/ifcfg-* where * is the interface
@@ -425,6 +429,13 @@ void nm_system_device_update_config_info (NMDevice *dev)
 		}
 	}
 
+	buf = svGetValue (file, "BROADCAST");
+	if (buf)
+	{
+		ip4_broadcast = inet_addr (buf);
+		free (buf);
+	}
+
 	if (!use_dhcp && (!ip4_address || !ip4_gateway || !ip4_netmask))
 	{
 		syslog (LOG_ERR, "Error: network configuration for device '%s' was invalid (non-DCHP configuration,"
@@ -440,6 +451,8 @@ void nm_system_device_update_config_info (NMDevice *dev)
 		nm_device_config_set_ip4_gateway (dev, ip4_gateway);
 	if (ip4_netmask)
 		nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+	if (ip4_broadcast)
+		nm_device_config_set_ip4_broadcast (dev, ip4_broadcast);
 
 #if 0
 	syslog (LOG_DEBUG, "------ Config (%s)", nm_device_get_iface (dev));

@@ -194,20 +194,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
-	syslog (LOG_WARN, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
-}
-
-
-/*
- * nm_system_device_update_config_info
- *
- * Retrieve any relevant configuration info for a particular device
- * from the system network configuration information.  Clear out existing
- * info before setting stuff too.
- *
- */
-void nm_system_device_update_config_info (NMDevice *dev)
-{
+	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
 }
 
 
@@ -300,6 +287,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
         guint32  ip4_address = 0;
         guint32  ip4_netmask = 0;
         guint32  ip4_gateway = 0;
+        guint32  ip4_broadcast = 0;
 
         g_return_if_fail (dev != NULL);
 
@@ -308,6 +296,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
         nm_device_config_set_ip4_address (dev, 0);
         nm_device_config_set_ip4_gateway (dev, 0);
         nm_device_config_set_ip4_netmask (dev, 0);
+        nm_device_config_set_ip4_broadcast (dev, 0);
 
         /* Gentoo systems store this information in
          * /etc/conf.d/net, this is for all interfaces.
@@ -351,8 +340,6 @@ void nm_system_device_update_config_info (NMDevice *dev)
 			}
 			else
 			{
-				syslog (LOG_WARNING, "Device '%s' is setup as static, and we do not (yet) support that\n",
-						nm_device_get_iface (dev));
 				use_dhcp = FALSE;
 				confToken = strtok(&buffer[strlen(confline) + 2], " ");
 				while (count < 3)
@@ -373,6 +360,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 					else if (strcmp(confToken, "broadcast") == 0)
 					{
 						confToken = strtok(NULL, " ");
+						ip4_broadcast = inet_addr (confToken);
 						count++;
 						bNext = 1;
 					}
@@ -395,7 +383,6 @@ void nm_system_device_update_config_info (NMDevice *dev)
 				sscanf(buffer, ipline, &ipa, &ipb, &ipc, &ipd);
 				sprintf(ipline, "%d.%d.%d.%d", ipa, ipb, ipc, ipd);
 				ip4_gateway = inet_addr (ipline);
-				syslog (LOG_WARNING, "Gateway(%s): %s", nm_device_get_iface (dev), ipline);
 			}
 		}		
         }
@@ -412,5 +399,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
                         nm_device_config_set_ip4_gateway (dev, ip4_gateway);
                 if (ip4_netmask)
                         nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+                if (ip4_broadcast)
+                        nm_device_config_set_ip4_broadcast (dev, ip4_broadcast);
         }
 }

@@ -172,7 +172,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
-	syslog (LOG_WARN, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
+	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
 }
 
 

@@ -5,6 +5,7 @@ NetworkManager:
 
  * Lots of fixes, Dan Williams
  * Support static IP addresses, Dan Williams
+    - Get broadcast address from config files, Robert Paskowitz
  * Support for non-ESSID-broadcasting base stations, Dan Williams
  * Only accept and manager 802.3 and 802.11 devices, Dan Williams
  * Don't blow away an active wired connection on startup, Dan Williams

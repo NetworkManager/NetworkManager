@@ -1,5 +1,19 @@
 2004-10-14 Dan Williams <dcbw@redhat.com>
 
+	Patch from Robert Paskowitz:
+	* NEWS
+	  src/NetworkManagerDevice.[ch]
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+		- Add support for grabbing and using a broadcast address
+			from system config files
+		- Some Gentoo backend fixes for grabbing network config
+		- Fix LOG_WARN->LOG_WARNING
+
+2004-10-14 Dan Williams <dcbw@redhat.com>
+
 	* NEWS: a few small fixes in the credits
 
 Thu Oct 14 19:12:58 2004  Jonathan Blandford  <jrb@redhat.com>

@@ -94,6 +94,7 @@ typedef struct NMDeviceConfigInfo
 	guint32	 ip4_gateway;
 	guint32	 ip4_address;
 	guint32	 ip4_netmask;
+	guint32  ip4_broadcast;
 	/* FIXME: ip6 stuff */
 } NMDeviceConfigInfo;
 
@@ -2503,6 +2504,19 @@ void nm_device_config_set_ip4_netmask (NMDevice *dev, guint32 netmask)
 	g_return_if_fail (dev != NULL);
 
 	dev->config_info.ip4_netmask = netmask;
+}
+guint32 nm_device_config_get_ip4_broadcast (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, 0);
+
+	return (dev->config_info.ip4_broadcast);
+}
+
+void nm_device_config_set_ip4_broadcast (NMDevice *dev, guint32 broadcast)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->config_info.ip4_broadcast = broadcast;
 }
 
 

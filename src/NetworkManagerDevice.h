@@ -116,6 +116,8 @@ guint32		nm_device_config_get_ip4_gateway	(NMDevice *dev);
 void			nm_device_config_set_ip4_gateway	(NMDevice *dev, guint32 gateway);
 guint32		nm_device_config_get_ip4_netmask	(NMDevice *dev);
 void			nm_device_config_set_ip4_netmask	(NMDevice *dev, guint32 netmask);
+guint32		nm_device_config_get_ip4_broadcast	(NMDevice *dev);
+void			nm_device_config_set_ip4_broadcast	(NMDevice *dev, guint32 broadcast);
 
 /* Utility routines */
 NMDevice *	nm_get_device_by_udi			(NMData *data, const char *udi);
