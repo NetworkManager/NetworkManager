@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-12 20:15+0200\n"
-"PO-Revision-Date: 2004-09-13 00:55+0200\n"
+"POT-Creation-Date: 2004-09-21 20:27+0200\n"
+"PO-Revision-Date: 2004-09-22 02:27+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
@@ -54,36 +54,38 @@ msgstr "Sleutel draadloos netwerk vereist"
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: panel-applet/NMWirelessApplet.c:682
+#: panel-applet/NMWirelessApplet.c:630
 msgid "There are no wireless networks..."
 msgstr "Er zijn geen draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:713
+#: panel-applet/NMWirelessApplet.c:685
 msgid "There are no network devices..."
 msgstr "Er zijn geen netwerkapparaten..."
 
 # betere vertaling
-# is niet uigevoerd (klinkt als verleden tijd)
-#: panel-applet/NMWirelessApplet.c:800
+# is niet uitgevoerd (klinkt als verleden tijd)
+# is niet opgestart
+# NetworkManager loopt niet
+# Geen NetworkManager aanwezig
+# NetworkManager niet aanwezig
+#: panel-applet/NMWirelessApplet.c:773
 msgid "NetworkManager is not running..."
-msgstr "NetworkManager loopt niet..."
+msgstr "Geen NetworkManager..."
 
 # Netwerken
-#: panel-applet/NMWirelessApplet.c:804
+#: panel-applet/NMWirelessApplet.c:777
 msgid "Network Connections"
 msgstr "Netwerkverbindingen"
 
-#: panel-applet/NMWirelessApplet.c:806
+#: panel-applet/NMWirelessApplet.c:779
 msgid "Other Wireless Network..."
 msgstr "Ander draadloze netwerk..."
 
-#: panel-applet/NMWirelessApplet.c:938 panel-applet/NMWirelessApplet.c:998
+#: panel-applet/NMWirelessApplet.c:913 panel-applet/NMWirelessApplet.c:973
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr ""
-"De NetworkManager applet kon bepaalde vereiste bronnen niet vinden (het "
-"glade bestand is niet gevonden)."
+msgstr "De NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het glade bestand is niet gevonden)."
 
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
@@ -115,10 +117,22 @@ msgstr ""
 msgid "Always Trust this Wireless Network"
 msgstr "Dit draadloze netwerk altijd vertrouwen"
 
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Oriëntatie"
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "De oriëntatie van het applet."
+
+#: panel-applet/menu-info.c:158
+msgid " (invalid Unicode)"
+msgstr " (ongeldige Unicode)"
+
 # aanwezig/actief
 #~ msgid "No network connection is currently active..."
 #~ msgstr "Er is momenteel geen netwerkverbinding actief..."
 
 # een draadloos netwerk aanwezig...
 #~ msgid "A wired network connection is currently active..."
-#~ msgstr "Er momenteel een draadloze netwerkverbinding actief..."
+#~ msgstr "Er is momenteel een draadloze netwerkverbinding actief..."
