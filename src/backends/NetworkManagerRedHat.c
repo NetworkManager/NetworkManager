@@ -28,6 +28,13 @@
 #include "NetworkManagerDevice.h"
 
 
+/* Hmm, not good form, but we don't have support
+ * for multiple files for each system-specific
+ * backend yet...
+ */
+#include "shvar.c"
+
+
 /*
  * nm_system_init
  *
@@ -162,15 +169,90 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 
 /*
- * nm_system_device_setup_ip_config
+ * nm_system_device_setup_static_ip4_config
  *
  * Set up the device with a particular IPv4 address/netmask/gateway.
  *
+ * Returns:	TRUE	on success
+ *			FALSE on error
+ *
  */
-void nm_system_device_setup_ip4_config (NMDevice *dev)
+gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (!nm_device_config_get_use_dhcp (dev));
+#define IPBITS	(sizeof (guint32) * 8)
+	struct in_addr	 temp_addr;
+	struct in_addr  temp_addr2;
+	char			*s_tmp;
+	char			*s_tmp2;
+	int			 i;
+	guint32		 addr;
+	guint32		 netmask;
+	guint32		 prefix = IPBITS;	/* initialize with # bits in ip4 address */
+	guint32		 broadcast;
+	char			*buf;
+	int			 err;
+	char			*iface;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
+
+	addr = nm_device_config_get_ip4_address (dev);
+	netmask = nm_device_config_get_ip4_netmask (dev);
+	iface = nm_device_get_iface (dev);
+
+	/* Calculate the prefix (# bits stripped off by the netmask) */
+	for (i = 0; i < IPBITS; i++)
+	{
+		if (!(ntohl (netmask) & ((2 << i) - 1)))
+			prefix--;
+	}
+
+	/* Calculate the broadcast address */
+	broadcast = ((addr & (int)netmask) | ~(int)netmask);
+
+	/* FIXME: what if some other device is already using our IP address? */
+
+	/* Set our IP address */
+	temp_addr.s_addr = addr;
+	temp_addr2.s_addr = broadcast;
+	s_tmp = g_strdup (inet_ntoa (temp_addr));
+	s_tmp2 = g_strdup (inet_ntoa (temp_addr2));
+	buf = g_strdup_printf ("/sbin/ip addr add %s/%d brd %s dev %s label %s", s_tmp, prefix, s_tmp2, iface, iface);
+	g_free (s_tmp);
+	g_free (s_tmp2);
+	if ((err = nm_spawn_process (buf)))
+	{
+		syslog (LOG_ERR, "Error: could not set network configuration for device '%s' using command:\n     '%s'", iface, buf);
+		goto error;
+	}
+	g_free (buf);
+
+	/* Alert other computers of our new address */
+	temp_addr.s_addr = addr;
+	buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
+	nm_spawn_process (buf);
+	g_free (buf);
+	g_usleep (G_USEC_PER_SEC * 2);
+	buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
+	nm_spawn_process (buf);
+	g_free (buf);
+
+	/* Set the default route to be this device's gateway */
+	temp_addr.s_addr = nm_device_config_get_ip4_gateway (dev);
+	buf = g_strdup_printf ("/sbin/ip route replace default via %s dev %s", inet_ntoa (temp_addr), iface);
+	if ((err = nm_spawn_process (buf)))
+	{
+		syslog (LOG_ERR, "Error: could not set default route using command\n     '%s'", buf);
+		goto error;
+	}
+	g_free (buf);
+	return (TRUE);
+
+error:
+	g_free (buf);
+	nm_system_device_flush_addresses (dev);
+	nm_system_device_flush_routes (dev);
+	return (FALSE);
 }
 
 
@@ -183,7 +265,7 @@ void nm_system_device_setup_ip4_config (NMDevice *dev)
 void nm_system_enable_loopback (void)
 {
 	nm_spawn_process ("/sbin/ip link set dev lo up");
-	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo label loopback");
+	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
 }
 
 
@@ -249,9 +331,8 @@ void nm_system_load_device_modules (void)
 void nm_system_device_update_config_info (NMDevice *dev)
 {
 	char		*cfg_file_path = NULL;
-	FILE		*file = NULL;
-	char		 buffer[100];
-	gboolean	 data_good = FALSE;
+	shvarFile *file;
+	char		*buf = NULL;
 	gboolean	 use_dhcp = TRUE;
 	guint32	 ip4_address = 0;
 	guint32	 ip4_netmask = 0;
@@ -274,52 +355,88 @@ void nm_system_device_update_config_info (NMDevice *dev)
 	if (!cfg_file_path)
 		return;
 
-	if (!(file = fopen (cfg_file_path, "r")))
+	if (!(file = svNewFile (cfg_file_path)))
 	{
 		g_free (cfg_file_path);
 		return;
 	}
-
-	while (fgets (buffer, 499, file) && !feof (file))
-	{
-		/* Kock off newline if any */
-		g_strstrip (buffer);
-
-		if (strncmp (buffer, "DEVICE=", 7) == 0)
-		{
-			/* Make sure this config file is for this device */
-			if (strcmp (&buffer[7], nm_device_get_iface (dev)) != 0)
-			{
-				syslog (LOG_WARNING, "System config file '%s' was not actually for device '%s'\n",
-						cfg_file_path, nm_device_get_iface (dev));
-				break;
-			}
-			else
-				data_good = TRUE;
-		}
-		else if (strncmp (buffer, "BOOTPROTO=dhcp", 14) == 0)
-			use_dhcp = TRUE;
-		else if (strncmp (buffer, "BOOTPROTO=none", 14) == 0)
-			use_dhcp = FALSE;
-		else if (strncmp (buffer, "IPADDR=", 7) == 0)
-			ip4_address = inet_addr (&buffer[7]);
-		else if (strncmp (buffer, "GATEWAY=", 8) == 0)
-			ip4_gateway = inet_addr (&buffer[8]);
-		else if (strncmp (buffer, "NETMASK=", 8) == 0)
-			ip4_netmask = inet_addr (&buffer[8]);
-	}
-	fclose (file);
 	g_free (cfg_file_path);
 
-	/* If successful, set values on the device */
-	if (data_good)
+	/* Make sure this config file is for this device */
+	buf = svGetValue (file, "DEVICE");
+	if (!buf || strcmp (buf, nm_device_get_iface (dev)))
 	{
-		nm_device_config_set_use_dhcp (dev, use_dhcp);
-		if (ip4_address)
-			nm_device_config_set_ip4_address (dev, ip4_address);
-		if (ip4_gateway)
-			nm_device_config_set_ip4_gateway (dev, ip4_gateway);
-		if (ip4_netmask)
-			nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+		free (buf);
+		goto out;
 	}
+
+	buf = svGetValue (file, "BOOTPROTO");
+	if (buf)
+	{
+		if (strcmp (buf, "dhcp"))
+			use_dhcp = FALSE;
+		free (buf);
+	}
+
+	buf = svGetValue (file, "IPADDR");
+	if (buf)
+	{
+		ip4_address = inet_addr (buf);
+		free (buf);
+	}
+
+	buf = svGetValue (file, "GATEWAY");
+	if (buf)
+	{
+		ip4_gateway = inet_addr (buf);
+		free (buf);
+	}
+
+	buf = svGetValue (file, "NETMASK");
+	if (buf)
+	{
+		ip4_netmask = inet_addr (buf);
+		free (buf);
+	}
+	else
+	{
+		/* Make a default netmask if we have an IP address */
+		if (ip4_address)
+		{
+			if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 127)
+				ip4_netmask = htonl (0xFF000000);
+			else if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 191)
+				ip4_netmask = htonl (0xFFFF0000);
+			else
+				ip4_netmask = htonl (0xFFFFFF00);
+		}
+	}
+
+	if (!use_dhcp && (!ip4_address || !ip4_gateway || !ip4_netmask))
+	{
+		syslog (LOG_ERR, "Error: network configuration for device '%s' was invalid (non-DCHP configuration,"
+						" but no address/gateway specificed).  Will use DHCP instead.\n", nm_device_get_iface (dev));
+		use_dhcp = TRUE;
+	}
+
+	/* If successful, set values on the device */
+	nm_device_config_set_use_dhcp (dev, use_dhcp);
+	if (ip4_address)
+		nm_device_config_set_ip4_address (dev, ip4_address);
+	if (ip4_gateway)
+		nm_device_config_set_ip4_gateway (dev, ip4_gateway);
+	if (ip4_netmask)
+		nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+
+#if 0
+	syslog (LOG_DEBUG, "------ Config (%s)", nm_device_get_iface (dev));
+	syslog (LOG_DEBUG, "    DHCP=%d\n", use_dhcp);
+	syslog (LOG_DEBUG, "    ADDR=%d\n", ip4_address);
+	syslog (LOG_DEBUG, "    GW=%d\n", ip4_gateway);
+	syslog (LOG_DEBUG, "    NM=%d\n", ip4_netmask);
+	syslog (LOG_DEBUG, "---------------------\n");
+#endif
+
+out:
+	svCloseFile (file);
 }

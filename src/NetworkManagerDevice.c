@@ -1386,8 +1386,7 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev)
 	else
 	{
 		/* Manually set up the device */
-		/* FIXME: implement */
-		syslog (LOG_ERR, "NetworkManager does not currently support static IP addresses\n");
+		success = nm_system_device_setup_static_ip4_config (dev);
 	}
 
 	return (success);

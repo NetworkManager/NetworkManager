@@ -156,6 +156,21 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 
 /*
+ * nm_system_device_setup_static_ip4_config
+ *
+ * Set up the device with a particular IPv4 address/netmask/gateway.
+ *
+ * Returns:	TRUE	on success
+ *			FALSE on error
+ *
+ */
+gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
+{
+	syslog (LOG_WARN, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
+}
+
+
+/*
  * nm_system_device_update_config_info
  *
  * Retrieve any relevant configuration info for a particular device

@@ -1,3 +1,31 @@
+2004-10-12 Dan Williams <dcbw@redhat.com>
+
+	* TODO
+		- Remove bit about static IP address support
+
+	* src/NetworkManagerUtils.c
+		- (nm_spawn_process): Add some error reporting
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activation_configure_ip): hook up to the static config
+			routines in the backends
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_device_update_config_info): use shvar.c routines to
+			parse the config file iformation, not our own
+		- (nm_system_device_setup_static_ip4_config): new function, based
+			heavily on 'ifup' script and 'ipcalc' tool code.  Set up a device
+			with a static IP address and gateway
+
+	* src/backends/shvar.[ch]
+		- Parser (filched from initscripts package) for ifcfg-* files
+
+	* src/backends/NetworkManagerSystem.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerSlackware.c
+		- Stub nm_system_device_update_config_info() and nm_system_device_setup_static_ip4_config()
+
 2004-10-11 Dan Williams <dcbw@redhat.com>
 
 	* TODO

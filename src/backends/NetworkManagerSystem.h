@@ -30,25 +30,26 @@
 
 void			nm_system_init (void);
 
-gboolean		nm_system_device_run_dhcp		(NMDevice *dev);
+gboolean		nm_system_device_run_dhcp				(NMDevice *dev);
 
-void			nm_system_device_stop_dhcp		(NMDevice *dev);
+void			nm_system_device_stop_dhcp				(NMDevice *dev);
 
-void			nm_system_device_flush_routes		(NMDevice *dev);
+void			nm_system_device_flush_routes				(NMDevice *dev);
 
-void			nm_system_device_flush_addresses	(NMDevice *dev);
+void			nm_system_device_flush_addresses			(NMDevice *dev);
 
-void			nm_system_device_update_config_info(NMDevice *dev);
+void			nm_system_device_update_config_info		(NMDevice *dev);
 
+gboolean		nm_system_device_setup_static_ip4_config	(NMDevice *dev);
 
-void			nm_system_enable_loopback		(void);
+void			nm_system_enable_loopback				(void);
 
-void			nm_system_delete_default_route	(void);
+void			nm_system_delete_default_route			(void);
 
-void			nm_system_kill_all_dhcp_daemons	(void);
+void			nm_system_kill_all_dhcp_daemons			(void);
 
-void			nm_system_update_dns			(void);
+void			nm_system_update_dns					(void);
 
-void			nm_system_load_device_modules		(void);
+void			nm_system_load_device_modules				(void);
 
 #endif

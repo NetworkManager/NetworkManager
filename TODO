@@ -18,11 +18,6 @@ There is currently no logic to gracefully recover from a crashed/killed dbus or 
 Access points can be set not to broadcast their ESSIDs, which the client must know.  These appear as blank ESSIDs to cards doing wireless scanning, even though the rest of the AP's information is known (channel, rate, etc).  There has to be a way to deal with this as many companies do not broadcast ESSIDs for security measures.  Workarounds for this practice could include brute-forcing the Allowed Networks list if no suitable wireless network is found to begin with.  Obviously, there would be no way to detect if a WEP key was wrong, because unless the ESSID and WEP key are both correct, we cannot associate with the access point to see if we have a link.  Code exists to do this for wireless cards that do not support wireless scanning, and this code could be adapted.
 
 
-- Support static IP addresses
-
-We need to support static IP addresses for interfaces.  This should be done by parsing the normal /etc/sysconfig/network-scripts/ifcfg-* files.
-
-
 - Store Allowed Network WEP keys in gnome-keyring
 
 These keys should probably be encrypted, rather than being stored in GConf.

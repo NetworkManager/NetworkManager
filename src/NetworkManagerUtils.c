@@ -183,18 +183,26 @@ int nm_spawn_process (char *args)
 	gint		  num_args;
 	char		**argv;
 	int		  exit_status;
+	GError	 *error = NULL;
 	
 	g_return_val_if_fail (args != NULL, -1);
 
 	if (g_shell_parse_argv (args, &num_args, &argv, NULL))
 	{
-		if (g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, NULL))
+		if (g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, &error))
 		{
 			g_strfreev (argv);
 			return (exit_status);
 		}
+		else
+			syslog (LOG_ERR, "nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error->message);
+
 		g_strfreev (argv);
+		if (error)
+			g_error_free (error);
 	}
+		else
+			syslog (LOG_ERR, "nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
 
 	return (-1);
 }
