@@ -126,7 +126,7 @@ gboolean nm_system_device_set_ip4_broadcast (NMDevice *dev, int ip4_broadcast)
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_broadcast;
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFBRDADDR, &ifr) == -1)
-		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask!", iface);
+		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 broadcast address!", iface);
 	else
 		success = TRUE;
 
