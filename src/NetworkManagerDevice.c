@@ -1565,7 +1565,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 
 	nm_device_set_essid (dev, essid);
 
-	syslog (LOG_INFO, "nm_device_wireless_activate(%s) using essid '%s', with %s authentication.",
+	syslog (LOG_INFO, "nm_device_set_wireless_config (%s) using essid '%s', with %s authentication.",
 			nm_device_get_iface (dev), essid, (auth == NM_DEVICE_AUTH_METHOD_NONE) ? "no" :
 				((auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) ? "Open System" :
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
@@ -1744,7 +1744,11 @@ get_ap:
 		/* If its unencrypted and we don't have a link, we can't use this AP.
 		 * If we can't get an IP address off this AP, we can't use it either.
 		 */
-		if (!HAVE_LINK (dev) || !nm_device_activation_configure_ip (dev, FALSE))
+		if (nm_ap_get_mode (best_ap) == NETWORK_MODE_ADHOC)
+		{
+			success = nm_device_activation_configure_ip (dev, TRUE);
+		}
+		else if (!HAVE_LINK (dev) || !nm_device_activation_configure_ip (dev, FALSE))
 		{
 			syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no link to '%s', or couldn't get configure interface for IP.  Trying another access point.",
 					nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
@@ -1754,7 +1758,8 @@ get_ap:
 			nm_device_update_best_ap (dev);
 			goto get_ap;
 		}
-		success = TRUE;
+		else
+			success = TRUE;
 	}
 	else
 	{
