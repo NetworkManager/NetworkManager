@@ -54,6 +54,8 @@ gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
 
 void			nm_dbus_signal_device_status_change	(DBusConnection *connection, NMDevice *dev, DeviceStatus status);
 
+void			nm_dbus_signal_network_status_change	(DBusConnection *connection, NMData *data);
+
 void			nm_dbus_signal_devices_changed		(DBusConnection *connection);
 
 void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);

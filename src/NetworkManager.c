@@ -64,9 +64,18 @@ static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *u
 
 	if (hal_device_property_exists (ctx, udi, "net.interface"))
 	{
-		char *temp = hal_device_get_property_string (ctx, udi, "net.interface");
-		iface = g_strdup (temp);
-		hal_free_string (temp);
+		/* Only use Ethernet and Wireless devices for now (ie not Sharp Zaurus IP-over-USB connections) */
+		if (hal_device_property_exists (ctx, udi, "info.category"))
+		{
+			char *category = hal_device_get_property_string (ctx, udi, "info.category");
+			if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211")))
+			{
+				char *temp = hal_device_get_property_string (ctx, udi, "net.interface");
+				iface = g_strdup (temp);
+				hal_free_string (temp);
+			}
+			hal_free_string (category);
+		}
 	}
 
 	return (iface);

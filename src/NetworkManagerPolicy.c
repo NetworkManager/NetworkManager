@@ -282,7 +282,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 					syslog (LOG_INFO, "    SWITCH: need to associate with new access point");
 					do_switch = TRUE;
 				}
-				else if (!nm_device_is_activating (best_dev) && (nm_device_get_ip4_address (best_dev) == 0))
+				else if (!nm_device_is_activating (best_dev) && !nm_device_get_ip4_address (best_dev))
 				{
 					syslog (LOG_INFO, "    SWITCH: need to get an IP address");
 					do_switch = TRUE;

@@ -253,9 +253,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 			return (reply_message);
-		}	else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
-	}
-	else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
+		} else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
+	} else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
 	
 	/* So by now we have a valid device and possibly a network as well */
 
@@ -267,61 +266,48 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 						"The requested network device does not exist.");
 		return (reply_message);
 	}
+	nm_device_ref (dev);
+
+	/* Make sure network is valid and device is wireless */
+	if (nm_device_is_wireless (dev) && !network)
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManager::setActiveDevice called with invalid arguments.");
+		goto out;
+	}
 
 	if (!(reply_message = dbus_message_new_method_return (message)))
-		return (NULL);
+		goto out;
 
 	/* Notify the state modification handler that we'd like to lock on a specific device */
 	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
 	{
-		if (data->user_device)
-			nm_device_unref (data->user_device);
-
-		nm_device_ref (dev);
-		data->user_device = dev;
+		gboolean	success = TRUE;
 
 		/* If the user specificed a wireless network too, force that as well */
-		if (network && nm_device_is_wireless (dev))
+		if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network))
 		{
-			NMAccessPoint	*ap;
-
-			if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
-				syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
-			else
-			{
-				struct ether_addr	ap_addr;
-
-				syslog (LOG_DEBUG, "Forcing non-scanned AP '%s'", network);
-				/* If the network exists, make sure it has the correct ESSID set
-				 * (it might have been a blank ESSID up to this point) and use it.
-				 */
-				nm_device_deactivate (dev, FALSE);
-				if (nm_device_wireless_network_exists (dev, network, &ap_addr))
-				{
-					if ((ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
-						nm_ap_set_essid (ap, network);
-				}
-			}
-
-			/* If we found a valid access point, use it */
-			if (ap)
-			{
-				nm_device_set_best_ap (dev, ap);
-				nm_device_freeze_best_ap (dev);
-				nm_device_activation_cancel (dev);
-			}
-			else
-			{
-				reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
-					"The requested wireless network is not in range.");
-			}
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
+											"The requested wireless network is not in range.");
+			success = FALSE;
 		}
-		dbus_free (network);
 
+		if (success)
+		{
+			if (data->user_device)
+				nm_device_unref (data->user_device);
+			data->user_device = dev;
+			nm_device_ref (data->user_device);
+		}
 		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
-		nm_data_mark_state_changed (data);
+
+		if (success)
+			nm_data_mark_state_changed (data);
 	}
 
+out:
+	dbus_free (network);
+	nm_device_unref (dev);
 	return (reply_message);
 }
 
@@ -447,6 +433,69 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nm_dbus_network_status_from_data
+ *
+ * Return a network status string based on our network data
+ *
+ * Caller MUST free returned value
+ *
+ */
+static char *nm_dbus_network_status_from_data (NMData *data)
+{
+	char *status = NULL;
+
+	g_return_val_if_fail (data != NULL, NULL);
+
+	if (data->active_device && nm_device_is_activating (data->active_device))
+	{
+		if (nm_device_is_wireless (data->active_device) && nm_device_is_scanning (data->active_device))
+			status = g_strdup ("scanning");
+		else
+			status = g_strdup ("connecting");
+	}
+	else if (data->active_device)
+		status = g_strdup ("connected");
+	else
+		status = g_strdup ("disconnected");
+
+	return (status);
+}
+
+
+/*
+ * nm_dbus_signal_network_status_change
+ *
+ * Signal a change in general network status.
+ *
+ */
+void nm_dbus_signal_network_status_change (DBusConnection *connection, NMData *data)
+{
+	DBusMessage	*message;
+	char			*status = NULL;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "NetworkStatusChange")))
+	{
+		syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
+		return;
+	}
+
+	if ((status = nm_dbus_network_status_from_data (data)))
+	{
+		dbus_message_append_args (message, DBUS_TYPE_STRING, status, DBUS_TYPE_INVALID);
+
+		if (!dbus_connection_send (connection, message, NULL))
+			syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
+		g_free (status);
+	}
 
 	dbus_message_unref (message);
 }
@@ -1278,20 +1327,10 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		nm_dbus_set_user_key_for_network (connection, message, data);
 	else if (strcmp ("status", method) == 0)
 	{
-		if ((reply_message = dbus_message_new_method_return (message)))
-		{
-			if (data->active_device && nm_device_is_activating (data->active_device))
-			{
-				if (nm_device_is_wireless (data->active_device) && nm_device_is_scanning (data->active_device))
-					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "scanning", DBUS_TYPE_INVALID);
-				else
-					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);
-			}
-			else if (data->active_device)
-				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connected", DBUS_TYPE_INVALID);
-			else
-				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "disconnected", DBUS_TYPE_INVALID);
-		}
+		char *status = nm_dbus_network_status_from_data (data);
+		if (status && (reply_message = dbus_message_new_method_return (message)))
+				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, status, DBUS_TYPE_INVALID);
+		g_free (status);
 	}
 	else if (strcmp ("createTestDevice", method) == 0)
 	{
@@ -1399,7 +1438,7 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 
 	/*syslog (LOG_DEBUG, "nm_dbus_devices_message_handler() got method %s for path %s", method, path);*/
 
-	if ((reply_message = nm_dbus_devices_handle_request (connection, data, message, path, method)))
+	if (method && path && (reply_message = nm_dbus_devices_handle_request (connection, data, message, path, method)))
 	{
 		dbus_connection_send (connection, reply_message, NULL);
 		dbus_message_unref (reply_message);

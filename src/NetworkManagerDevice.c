@@ -1298,7 +1298,7 @@ inline gboolean HAVE_LINK (NMDevice *dev, guint32 bad_crypt_packets)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
-fprintf (stderr, "HAVELINK: act=%d && (dev_crypt=%d <= prev_crypt=%d)\n", nm_device_get_link_active (dev), nm_device_get_bad_crypt_packets (dev), bad_crypt_packets);
+	syslog (LOG_NOTICE, "HAVELINK: act=%d && (dev_crypt=%d <= prev_crypt=%d)\n", nm_device_get_link_active (dev), nm_device_get_bad_crypt_packets (dev), bad_crypt_packets);
 	return (nm_device_get_link_active (dev) && (nm_device_get_bad_crypt_packets (dev) <= bad_crypt_packets));
 }
 
@@ -1368,9 +1368,10 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 			|| (best_ap && (nm_ap_get_encrypted (best_ap) &&
 					(!nm_ap_get_enc_key_source (best_ap) || !strlen (nm_ap_get_enc_key_source (best_ap))))))
 	{
-fprintf (stderr, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))\n",
-!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
-nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
+		syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))\n",
+			!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
+			nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
+
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
 			dev->options.wireless.now_scanning = FALSE;
@@ -2034,9 +2035,6 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_set_mode_managed (dev);
 
-	/* Disable encryption, then re-enable and set correct key on the card
-	 * if we are going to encrypt traffic.
-	 */
 	nm_device_set_enc_key (dev, NULL);
 	nm_device_set_essid (dev, network);
 
@@ -2057,6 +2055,66 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 		fprintf (stderr, "  not found\n");
 		return (FALSE);
 	}
+}
+
+
+/*
+ * nm_device_find_and_use_essid
+ *
+ * Given an essid, attempt to associate with that ESSID even if we can't
+ * see it in our scan.  If we successfully find it, mark that network as
+ * our "best" and use it during the next activation.
+ *
+ * Returns:	TRUE on success
+ *			FALSE on failure
+ */
+gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
+{
+	struct ether_addr	 ap_addr;
+	NMAccessPoint		*ap = NULL;
+	gboolean			 success = FALSE;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+	g_return_val_if_fail (essid != NULL, FALSE);
+
+	syslog (LOG_DEBUG, "Forcing AP '%s'", essid);
+	/* If the network exists, make sure it has the correct ESSID set
+	 * (it might have been a blank ESSID up to this point) and use it.
+	 */
+	nm_device_deactivate (dev, FALSE);
+	if (nm_device_wireless_network_exists (dev, essid, &ap_addr))
+	{
+		if (!(ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), essid)))
+		{
+			if ((ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
+			{
+				NMAccessPoint *tmp_ap;
+
+				nm_ap_set_essid (ap, essid);
+
+				/* Now that this AP has an essid, copy over encryption keys and whatnot */
+				if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
+				{
+					nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
+					nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
+					nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
+				}
+			}
+		}
+	}
+
+	/* If we found a valid access point, use it */
+	if (ap)
+	{
+		nm_device_set_best_ap (dev, ap);
+		nm_device_freeze_best_ap (dev);
+		nm_device_activation_cancel (dev);
+		success = TRUE;
+	}
+
+	return (success);
 }
 
 

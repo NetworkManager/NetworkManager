@@ -1,3 +1,19 @@
+2004-10-14 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- Only accept and manager 802.3 and 802.11 devices
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_nm_set_active_device): move most of the actual activation
+			logic into NetworkManagerDevice.c
+		- (nm_dbus_network_status_from_data): new function
+		- (nm_dbus_signal_network_status_change): new function, unused for now
+		- (nm_dbus_nm_message_handler): use nm_dbus_network_status_from_data () now
+
+	* src/NetworkManagerDevice.[ch]
+		- (nm_device_find_and_use_essid): new function.  Search for, and if found use,
+			a random ESSID.
+
 2004-10-14 John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c 
