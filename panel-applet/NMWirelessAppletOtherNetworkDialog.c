@@ -193,7 +193,7 @@ void nmwa_other_network_dialog_enc_check_toggled (GtkWidget *enc_check_button, g
 }
 
 
-static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApplet *applet, NetworkDevice **def_dev)
+static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApplet *applet, NetworkDevice **def_dev, gboolean create_network)
 {
 	GtkDialog		*dialog = NULL;
 	GtkWidget		*essid_entry;
@@ -220,9 +220,18 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	gtk_widget_set_sensitive (button, FALSE);
 	g_signal_connect (essid_entry, "changed", G_CALLBACK (update_button_cb), xml);
 
-	label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
+	if (create_network)
+	{
+		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
+			_("Create new wireless network"),
+			_("Enter the ESSID and security settings of the wireless network you wish to create."));
+	}
+	else
+	{
+		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
 			_("Custom wireless network"),
 			_("Enter the ESSID of the wireless network to which you wish to connect."));
+	}
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
 
 	/* Do we have multiple Network cards? */
@@ -287,7 +296,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 }
 
 
-void nmwa_other_network_dialog_run (NMWirelessApplet *applet)
+void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
 {
 	gchar		*glade_file;
 	GtkDialog		*dialog;
@@ -315,7 +324,7 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet)
 		return;
 	}
 
-	if (!(dialog = nmwa_other_network_dialog_init (xml, applet, &def_dev)))
+	if (!(dialog = nmwa_other_network_dialog_init (xml, applet, &def_dev, create_network)))
 		return;
 
 	/* Run the dialog */
@@ -375,7 +384,10 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet)
 				}
 				applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
 				applet->forcing_device = TRUE;
-				nmwa_dbus_set_device (applet->connection, def_dev, net, nm_key_type, passphrase);
+				if (create_network)
+					nmwa_dbus_create_network (applet->connection, def_dev, net, nm_key_type, passphrase);
+				else
+					nmwa_dbus_set_device (applet->connection, def_dev, net, nm_key_type, passphrase);
 				network_device_unref (def_dev);
 				wireless_network_unref (net);
 			}

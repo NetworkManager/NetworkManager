@@ -727,7 +727,7 @@ int main( int argc, char *argv[] )
 	policy_source_id = g_source_attach (policy_source, nm_data->main_context);
 
 	/* Keep a current list of access points */
-	wscan_source = g_timeout_source_new (10000);
+	wscan_source = g_timeout_source_new (15000);
 	g_source_set_callback (wscan_source, nm_wireless_scan_monitor, nm_data, NULL);
 	wscan_source_id = g_source_attach (wscan_source, nm_data->main_context);
 

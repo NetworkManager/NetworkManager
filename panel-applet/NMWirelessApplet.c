@@ -640,13 +640,11 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 }
 
 
-/* FIXME: We really should break this dialog into its own file.  This function is too long.
- */
-static void
-custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
+static void custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 {
-	nmwa_other_network_dialog_run (applet);
+	nmwa_other_network_dialog_run (applet, FALSE);
 }
+
 
 static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
@@ -662,6 +660,26 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *
   g_signal_connect (menu_item, "activate", G_CALLBACK (custom_essid_item_selected), applet);
 }
 
+
+static void new_network_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
+{
+	nmwa_other_network_dialog_run (applet, TRUE);
+}
+
+
+static void nmwa_menu_add_create_network_item (GtkWidget *menu, NMWirelessApplet *applet)
+{
+  GtkWidget *menu_item;
+  GtkWidget *label;
+
+  menu_item = gtk_menu_item_new ();
+  label = gtk_label_new (_("Create new Wireless Network..."));
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  gtk_container_add (GTK_CONTAINER (menu_item), label);
+  gtk_widget_show_all (menu_item);
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+  g_signal_connect (menu_item, "activate", G_CALLBACK (new_network_item_selected), applet);
+}
 
 /*
  * nmwa_menu_device_add_networks
@@ -813,9 +831,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 	if (n_wireless_interfaces > 0)
 	{
-		/* Add the 'Select a custom esssid entry */
+		/* Add the "Other wireless network..." entry */
 		nmwa_menu_add_separator_item (menu);
 		nmwa_menu_add_custom_essid_item (menu, applet);
+		nmwa_menu_add_create_network_item (menu, applet);
 	}
 
 	g_mutex_unlock (applet->data_mutex);

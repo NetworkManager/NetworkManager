@@ -180,9 +180,9 @@ gboolean nm_system_device_set_ip4_default_route (NMDevice *dev, int ip4_def_rout
 	rtent.rt_window	= 0;
 	rtent.rt_flags		= RTF_UP | RTF_GATEWAY | ( rtent.rt_window ? RTF_WINDOW : 0);
 
-	if ( ioctl (sk, SIOCADDRT, &rtent) == -1 )
+	if (ioctl (sk, SIOCADDRT, &rtent) == -1)
 	{
-		if ( errno == ENETUNREACH )  /* possibly gateway is over the bridge */
+		if (errno == ENETUNREACH)  /* possibly gateway is over the bridge */
 		{                            /* try adding a route to gateway first */
 			struct	rtentry		rtent2;
 			

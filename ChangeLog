@@ -1,3 +1,21 @@
+2004-12-17  Dan Williams  <dcbw@redhat.com>
+
+	* Ad Ad-Hoc networking mode support.  In Ad-Hoc mode, we only try to get
+		link-local addresses instead of doing DHCP.
+
+	* In the panel applet, there's a new "Create new Wireless Network..." item
+
+	* The panel applet also sticks around now even if NetworkManager dies, but
+		it doesn't hide its icon when NM isn't around.  Not hiding the icon is
+		a bug, I'll fix that later.
+
+	* We also don't use 'nscd' anymore in the RH backend, it was impeding name
+		lookups after a switch rather than actually doing them.
+
+	* Clean up some of those warnings in nm_ap_list_* functions
+
+	* Delay between scans changed to 15s instead of 10s
+
 2004-12-15  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tom Parker

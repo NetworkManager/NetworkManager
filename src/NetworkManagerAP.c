@@ -41,6 +41,7 @@ struct NMAccessPoint
 	gboolean			 matched;	/* used in ap list diffing */
 	gboolean			 trusted;
 	gboolean			 artificial; /* Whether or not the AP is from a scan */
+	gboolean			 user_created; /* Whether or not the AP was created by the user with "Create network..." */
 
 	/* Things from user prefs */
 	char				*enc_key;
@@ -104,7 +105,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 		memcpy (new_addr, src_ap->address, sizeof (struct ether_addr));
 		new_ap->address = new_addr;
 	}
-	new_ap->mode = NETWORK_MODE_INFRA;
+	new_ap->mode = src_ap->mode;
 	new_ap->strength = src_ap->strength;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
@@ -453,6 +454,28 @@ void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
 	g_return_if_fail (ap != NULL);
 
 	ap->artificial = artificial;
+}
+
+
+/*
+ * Get/Set functions to indicate that an access point is
+ * user-created, ie whether or not its a network filled with
+ * information from the user and intended to create a new Ad-Hoc
+ * wireless network.
+ *
+ */
+gboolean nm_ap_get_user_created (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	return (ap->user_created);
+}
+
+void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->user_created = user_created;
 }
 
 

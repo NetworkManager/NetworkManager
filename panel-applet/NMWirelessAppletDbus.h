@@ -42,6 +42,10 @@ void				nmwa_dbus_set_device			(DBusConnection *connection, const NetworkDevice 
 												const WirelessNetwork *network, NMEncKeyType key_type,
 												const char *passphrase);
 
+void				nmwa_dbus_create_network			(DBusConnection *connection, const NetworkDevice *dev,
+												const WirelessNetwork *network, NMEncKeyType key_type,
+												const char *passphrase);
+
 WirelessNetwork *	wireless_network_new_with_essid	(const char *essid);
 void				wireless_network_unref			(WirelessNetwork *net);
 

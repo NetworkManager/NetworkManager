@@ -822,6 +822,35 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 		appeared = TRUE;
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 		disappeared = TRUE;
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationFailed"))
+	{
+		char		*dev = NULL;
+		char		*net = NULL;
+		DBusError	 error;
+
+		dbus_error_init (&error);
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
+		{
+			if (dbus_error_is_set (&error))
+				dbus_error_free (&error);
+			dbus_error_init (&error);
+			dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
+		}
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		if (dev && net)
+		{
+			char *string = g_strdup_printf ("Connection to the wireless network '%s' failed.\n", net);
+			nmi_show_warning_dialog (TRUE, string);
+			g_free (string);
+		}
+		else if (dev)
+			nmi_show_warning_dialog (TRUE, "Connection to the wired network failed.\n");
+
+		dbus_free (dev);
+		dbus_free (net);
+	}
+#if 0
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
 	{
 		char 	*service;
@@ -870,55 +899,7 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
 	}
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationFailed"))
-	{
-		char		*dev = NULL;
-		char		*net = NULL;
-		DBusError	 error;
-
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
-		{
-			if (dbus_error_is_set (&error))
-				dbus_error_free (&error);
-			dbus_error_init (&error);
-			dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
-		}
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-		if (dev && net)
-		{
-			char *string = g_strdup_printf ("Connection to the wireless network '%s' failed.\n", net);
-			nmi_show_warning_dialog (TRUE, string);
-			g_free (string);
-		}
-		else if (dev)
-			nmi_show_warning_dialog (TRUE, "Connection to the wired network failed.\n");
-
-		dbus_free (dev);
-		dbus_free (net);
-	}
-
-	if (appeared || disappeared)
-	{
-		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error,
-								DBUS_TYPE_STRING, &dev_path,
-								DBUS_TYPE_STRING, &ap_path,
-								DBUS_TYPE_INVALID))
-		{
-#if 0
-			if (appeared)
-				nmi_new_networks_dialog_add_network (ap_path, info);
-			else if (disappeared)
-				nmi_new_networks_dialog_add_network (ap_path, info);
 #endif
-
-			dbus_free (dev_path);
-			dbus_free (ap_path);
-			handled = TRUE;
-		}
-	}
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
@@ -969,8 +950,10 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	     exit (0);
 	}
 
+#if 0
 	if (!nmi_dbus_nm_is_running (dbus_connection))
 		return (-1);
+#endif
 
 	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_PATH, &nmi_vtable, info))
 	{

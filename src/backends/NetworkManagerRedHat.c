@@ -139,6 +139,29 @@ void nm_system_device_flush_routes (NMDevice *dev)
 
 
 /*
+ * nm_system_device_add_default_route_via_device
+ *
+ * Flush all routes associated with a network device
+ *
+ */
+void nm_system_device_add_default_route_via_device (NMDevice *dev)
+{
+	char	*buf;
+
+	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
+	/* Remove routing table entries */
+	buf = g_strdup_printf ("/sbin/ip route add default dev %s", nm_device_get_iface (dev));
+	nm_spawn_process (buf);
+	g_free (buf);
+}
+
+
+/*
  * nm_system_device_has_active_routes
  *
  * Find out whether the specified device has any routes in the routing
@@ -278,6 +301,20 @@ void nm_system_enable_loopback (void)
 
 
 /*
+ * nm_system_flush_loopback_routes
+ *
+ * Flush all routes associated with the loopback device, because it
+ * sometimes gets the first route for ZeroConf/Link-Local traffic.
+ *
+ */
+void nm_system_flush_loopback_routes (void)
+{
+	/* Remove routing table entries for lo */
+	nm_spawn_process ("/sbin/ip route flush dev lo");
+}
+
+
+/*
  * nm_system_delete_default_route
  *
  * Remove the old default route in preparation for a new one
@@ -286,6 +323,18 @@ void nm_system_enable_loopback (void)
 void nm_system_delete_default_route (void)
 {
 	nm_spawn_process ("/sbin/ip route del default");
+}
+
+
+/*
+ * nm_system_flush_arp_cache
+ *
+ * Flush all entries in the arp cache.
+ *
+ */
+void nm_system_flush_arp_cache (void)
+{
+	nm_spawn_process ("/sbin/ip neigh flush all");
 }
 
 
@@ -310,8 +359,12 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
+#if 0
+/* This doesn't acutally seem to work very well... */
 	if(nm_spawn_process ("/etc/init.d/nscd status"))
 		nm_spawn_process ("nscd -i hosts");
+#endif
+	nm_spawn_process ("/usr/bin/killall -q nscd");
 }
 
 

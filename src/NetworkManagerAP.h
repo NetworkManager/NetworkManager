@@ -74,6 +74,9 @@ void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 gboolean			nm_ap_get_artificial	(NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
+gboolean			nm_ap_get_user_created	(NMAccessPoint *ap);
+void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
+
 const NMEncKeyType	nm_ap_get_enc_method	(NMAccessPoint *ap);
 
 GSList *			nm_ap_get_user_addresses	(NMAccessPoint *ap);

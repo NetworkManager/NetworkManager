@@ -293,12 +293,12 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			{
 				if (nm_device_is_wireless (best_dev) && !nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
 				{
-					syslog (LOG_INFO, "    SWITCH: need to associate with new access point");
+					syslog (LOG_INFO, "    SWITCH: need to associate with new access point or create a wireless network.");
 					do_switch = TRUE;
 				}
 				else if (!nm_device_is_activating (best_dev) && !nm_device_get_ip4_address (best_dev))
 				{
-					syslog (LOG_INFO, "    SWITCH: need to get an IP address");
+					syslog (LOG_INFO, "    SWITCH: need to get an IP address.");
 					do_switch = TRUE;
 				}
 			}

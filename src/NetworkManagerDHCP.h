@@ -29,5 +29,6 @@ void		nm_device_dhcp_cease		(NMDevice *dev);
 gboolean	nm_device_dhcp_setup_timeouts	(NMDevice *dev);
 gboolean	nm_device_dhcp_renew		(gpointer user_data);
 gboolean	nm_device_dhcp_rebind		(gpointer user_data);
+gboolean	nm_device_do_autoip			(NMDevice *dev);
 
 #endif

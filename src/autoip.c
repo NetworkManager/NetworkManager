@@ -59,7 +59,14 @@ static struct ether_addr broadcast_addr = {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
  */
 static void pick(struct in_addr *ip)
 {
-    ip->s_addr = htonl (LINKLOCAL_ADDR | ((abs(random()) % 0xFD00) + 0x0100));
+	ip->s_addr = htonl (LINKLOCAL_ADDR | ((abs(random()) % 0xFD00) + (abs(random()) % 0x0100)));
+
+	/* Make sure we don't use 0xFF or 0x00 anywhere */
+	while (((ip->s_addr & 0x0000FF00) == 0xFF00) || ((ip->s_addr & 0x0000FF00) == 0x0000))
+		ip->s_addr = (ip->s_addr & 0xFFFF00FF) + (abs(random()) && 0xFFFF);
+
+	while (((ip->s_addr & 0x000000FF) == 0xFF) || ((ip->s_addr & 0x000000FF) == 0x00))
+		ip->s_addr = (ip->s_addr & 0xFFFFFF00) + (abs(random()) && 0xFF);
 }
 
 /**
@@ -275,8 +282,15 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 		#ifdef ARP_DEBUG
 			syslog (LOG_ERR, "autoip: (%s) recv arp type=%d, op=%d, ", nm_device_get_iface (dev), ntohs(p.ethhdr.ether_type), ntohs(p.operation));
-			syslog (LOG_ERR, "source=%s %s,", (char *)(p.sHaddr), p.sInaddr);
-			syslog (LOG_ERR, "target=%s %s\n", (char *)(p.tHaddr), p.tInaddr);
+			{
+				struct in_addr a;
+				memcpy (&(a.s_addr), &(p.sInaddr), sizeof (a.s_addr));
+				syslog (LOG_ERR, " source = %s %02X:%02X:%02X:%02X:%02X:%02X, ", inet_ntoa (a),
+					p.sHaddr[0], p.sHaddr[1], p.sHaddr[2], p.sHaddr[3], p.sHaddr[4], p.sHaddr[5]);
+				memcpy (&(a.s_addr), &(p.tInaddr), sizeof (a.s_addr));
+				syslog (LOG_ERR, " target = %s %02X:%02X:%02X:%02X:%02X:%02X\n", inet_ntoa (a),
+					p.tHaddr[0], p.tHaddr[1], p.tHaddr[2], p.tHaddr[3], p.tHaddr[4], p.tHaddr[5]);
+			}
 		#endif
 
 			if (    (ntohs (p.ethhdr.ether_type) == ETHERTYPE_ARP)

@@ -80,6 +80,39 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 
 
 /*
+ * nm_device_do_autoip
+ *
+ * Get and assign a Link Local Address.
+ *
+ */
+gboolean nm_device_do_autoip (NMDevice *dev)
+{
+	struct in_addr		ip;
+	gboolean			success = FALSE;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if ((success = get_autoip (dev, &ip)))
+	{
+		#define LINKLOCAL_BCAST		0xa9feffff
+		int	temp = ip.s_addr;
+
+		nm_system_device_set_ip4_address (dev, temp);
+		temp = ntohl (0xFFFF0000);
+		nm_system_device_set_ip4_netmask (dev, temp);
+		temp = ntohl (LINKLOCAL_BCAST);
+		nm_system_device_set_ip4_broadcast (dev, temp);
+
+		/* Set all traffic to go through the device */
+		nm_system_flush_loopback_routes ();
+		nm_system_device_add_default_route_via_device (dev);
+	}
+
+	return (success);
+}
+
+
+/*
  * nm_device_dhcp_request
  *
  * Start a DHCP transaction on particular device.
@@ -89,7 +122,6 @@ int nm_device_dhcp_request (NMDevice *dev)
 {
 	dhcp_client_options		opts;
 	int					err;
-	struct in_addr			ip;
 
 	g_return_val_if_fail (dev != NULL, RET_DHCP_ERROR);
 
@@ -107,32 +139,16 @@ int nm_device_dhcp_request (NMDevice *dev)
 	/* Start off in DHCP INIT state, get a completely new IP address 
 	 * and settings.
 	 */
-	err = dhcp_init (dev->dhcp_iface);
-	switch (err)
+	if ((err = dhcp_init (dev->dhcp_iface)) == RET_DHCP_BOUND)
 	{
-		case RET_DHCP_BOUND:
-			nm_device_dhcp_configure (dev);
-			nm_device_update_ip4_address (dev);
-			nm_device_dhcp_setup_timeouts (dev);
-			break;
-
-		default:
-			/* DHCP didn't work, so use Link Local addressing */
-			dhcp_interface_free (dev->dhcp_iface);
-			dev->dhcp_iface = NULL;
-			if (get_autoip (dev, &ip))
-			{
-				#define LINKLOCAL_BCAST		0xa9feffff
-				int	temp = ip.s_addr;
-
-				nm_system_device_set_ip4_address (dev, temp);
-				temp = ntohl (0xFFFF0000);
-				nm_system_device_set_ip4_netmask (dev, temp);
-				temp = ntohl (LINKLOCAL_BCAST);
-				nm_system_device_set_ip4_broadcast (dev, temp);
-				err = RET_DHCP_BOUND;
-			}
-			break;
+		nm_device_dhcp_configure (dev);
+		nm_device_update_ip4_address (dev);
+		nm_device_dhcp_setup_timeouts (dev);
+	}
+	else
+	{
+		dhcp_interface_free (dev->dhcp_iface);
+		dev->dhcp_iface = NULL;
 	}
 
 	return (err);

@@ -42,7 +42,7 @@
 /* Local static prototypes */
 static gboolean mii_get_link (NMDevice *dev);
 static gpointer nm_device_activation_worker (gpointer user_data);
-static gboolean nm_device_activation_configure_ip (NMDevice *dev);
+static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_only_autoip);
 
 
 /******************************************************/
@@ -276,11 +276,10 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		nm_device_do_wireless_scan (dev);
 		nm_device_update_best_ap (dev);
 
-		dev->options.wireless.num_freqs = 14;	/* Default, fake something like 802.11b */
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
-			if (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0)
-				dev->options.wireless.num_freqs = range.num_frequency;
+			if (iw_get_range_info (sk, nm_device_get_iface (dev), &(dev->options.wireless.range_info)) == -1)
+				memset (&(dev->options.wireless.range_info), 0, sizeof (struct iw_range));
 			close (sk);
 		}
 	}
@@ -387,7 +386,7 @@ int nm_device_get_association_pause_value (NMDevice *dev)
 	 * has to scan all channels to find our requested AP (which can take a long time
 	 * if it is an A/B/G chipset like the Atheros 5212, for example).
 	 */
-	if (dev->options.wireless.num_freqs > 14)
+	if (dev->options.wireless.range_info.num_frequency > 14)
 		return 10;
 	else
 		return 5;
@@ -710,6 +709,150 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (iwlib_socket);
+	}
+}
+
+
+/*
+ * nm_device_get_frequency
+ *
+ * For wireless devices, get the frequency we broadcast/receive on.
+ *
+ */
+double nm_device_get_frequency (NMDevice *dev)
+{
+	int		sk;
+	int		err;
+	double	freq = 0;
+
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+
+	/* Test devices don't really have a frequency, they always succeed */
+	if (dev->test_device)
+		return 703000000;
+
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		struct iwreq		wrq;
+
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
+		if (err >= 0)
+			freq = iw_freq2float (&wrq.u.freq);
+		if (err == -1)
+			syslog (LOG_ERR, "nm_device_get_frequency(): error getting frequency for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+
+		close (sk);
+	}
+	return (freq);
+}
+
+
+/*
+ * nm_device_set_frequency
+ *
+ * For wireless devices, set the frequency to broadcast/receive on.
+ *
+ */
+void nm_device_set_frequency (NMDevice *dev, const double freq)
+{
+	int				sk;
+	int				err;
+	
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	/* Test devices don't really have a frequency, they always succeed */
+	if (dev->test_device)
+		return;
+
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		struct iwreq		wrq;
+
+		wrq.u.freq.flags = IW_FREQ_FIXED;
+		iw_float2freq (freq, &wrq.u.freq);
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq);
+		if (err == -1)
+			syslog (LOG_ERR, "nm_device_set_frequency(): error setting frequency %f for device %s.  errno = %d", freq, nm_device_get_iface (dev), errno);
+
+		close (sk);
+	}
+}
+
+
+/*
+ * nm_device_get_bitrate
+ *
+ * For wireless devices, get the bitrate to broadcast/receive at.
+ * Returned value is rate in KHz.
+ *
+ */
+int nm_device_get_bitrate (NMDevice *dev)
+{
+	int				sk;
+	int				err = -1;
+	struct iwreq		wrq;
+	
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+
+	/* Test devices don't really have a frequency, they always succeed */
+	if (dev->test_device)
+		return 11;
+
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
+		close (sk);
+	}
+
+	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
+}
+
+
+/*
+ * nm_device_set_bitrate
+ *
+ * For wireless devices, set the bitrate to broadcast/receive at.
+ * Rate argument should be in KHz, or 0 for automatic.
+ *
+ */
+void nm_device_set_bitrate (NMDevice *dev, const int KHz)
+{
+	int				sk;
+	int				err;
+	
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	/* Test devices don't really have a frequency, they always succeed */
+	if (dev->test_device)
+		return;
+
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		struct iwreq		wrq;
+
+		if (KHz != 0)
+		{
+			wrq.u.bitrate.value = KHz * 1000;
+			wrq.u.bitrate.fixed = 1;
+		}
+		else
+		{
+			wrq.u.bitrate.value = -1;
+			wrq.u.bitrate.fixed = 0;
+		}
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
+		if (err == -1)
+			syslog (LOG_ERR, "nm_device_set_bitrate(): error setting bitrate %d KHz for device %s.  errno = %d", KHz, nm_device_get_iface (dev), errno);
+
+		close (sk);
 	}
 }
 
@@ -1188,6 +1331,51 @@ gboolean nm_device_is_up (NMDevice *dev)
 
 
 /*
+ * nm_device_get_mode
+ *
+ * Get managed/infrastructure/adhoc mode on a device (currently wireless only)
+ *
+ */
+NMNetworkMode nm_device_get_mode (NMDevice *dev)
+{
+	int			sk;
+	NMNetworkMode	mode = NETWORK_MODE_UNKNOWN;
+
+	g_return_val_if_fail (dev != NULL, NETWORK_MODE_UNKNOWN);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NETWORK_MODE_UNKNOWN);
+
+	/* Force the card into Managed/Infrastructure mode */
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		struct iwreq	wrq;
+		int			err;
+
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWMODE, &wrq);
+		if (err == 0)
+		{
+			switch (wrq.u.mode)
+			{
+				case IW_MODE_INFRA:
+					mode = NETWORK_MODE_INFRA;
+					break;
+				case IW_MODE_ADHOC:
+					mode = NETWORK_MODE_ADHOC;
+					break;
+				default:
+					break;
+			}
+		}
+		else
+			syslog (LOG_ERR, "nm_device_get_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+		close (sk);
+	}
+
+	return (mode);
+}
+
+
+/*
  * nm_device_set_mode
  *
  * Set managed/infrastructure/adhoc mode on a device (currently wireless only)
@@ -1230,7 +1418,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 			if (err == 0)
 				success = TRUE;
 			else
-				syslog (LOG_ERR, "nm_device_set_mode_managed (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+				syslog (LOG_ERR, "nm_device_set_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
 		}
 		close (sk);
 	}
@@ -1362,6 +1550,11 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 	 */
 	essid = nm_ap_get_essid (ap);
 	nm_device_set_mode (dev, nm_ap_get_mode (ap));
+	nm_device_set_bitrate (dev, 0);
+	if (nm_ap_get_user_created (ap) || (nm_ap_get_freq (ap) && (nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC)))
+	{
+		nm_device_set_frequency (dev, nm_ap_get_freq (ap));
+	}
 	nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 	if (nm_ap_get_encrypted (ap) && nm_ap_get_enc_key_source (ap))
 	{
@@ -1383,6 +1576,13 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 	 */
 	g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
 
+	/* Some cards don't really work well in ad-hoc mode unless you explicitly set the bitrate
+	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information
+	 * from scanned access points out of iwlib, clamp bitrate for these cards at 11Mbps.
+	 */
+	if ((nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC) && (nm_device_get_bitrate (dev) <= 0))
+		nm_device_set_bitrate (dev, 11000);	/* In Kbps */
+
 	nm_device_update_link_active (dev, FALSE);
 	success = TRUE;
 
@@ -1390,7 +1590,89 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 }
 
 
-gboolean AP_NEED_KEY (NMAccessPoint *ap)
+/*
+ * nm_device_activate_wireless_adhoc
+ *
+ * Create an ad-hoc network (rather than associating with one).
+ *
+ */
+static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint *ap)
+{
+	gboolean			 success = FALSE;
+	NMDeviceAuthMethod	 auth = NM_DEVICE_AUTH_METHOD_NONE;
+	NMAPListIter		*iter;
+	NMAccessPoint		*tmp_ap;
+	double			 card_freqs[IW_MAX_FREQUENCIES];
+	int				 num_freqs = 0, i;
+	double			 freq_to_use = 0;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	if (nm_ap_get_encrypted (ap))
+		auth = NM_DEVICE_AUTH_METHOD_SHARED_KEY;
+
+	/* Build our local list of frequencies to whittle down until we find a free one */
+	memset (&card_freqs, 0, sizeof (card_freqs));
+	num_freqs = MIN (dev->options.wireless.range_info.num_frequency, IW_MAX_FREQUENCIES);
+	for (i = 0; i < num_freqs; i++)
+		card_freqs[i] = iw_freq2float (&(dev->options.wireless.range_info.freq[i]));
+
+	/* We need to find a clear wireless channel to use.  We will
+	 * only use 802.11b channels for now.
+	 */
+	iter = nm_ap_list_iter_new (nm_device_ap_list_get (dev));
+	while ((tmp_ap = nm_ap_list_iter_next (iter)))
+	{
+		double ap_freq = nm_ap_get_freq (tmp_ap);
+		for (i = 0; i < num_freqs && ap_freq; i++)
+		{
+			if (card_freqs[i] == ap_freq)
+				card_freqs[i] = 0;
+		}
+	}
+	nm_ap_list_iter_free (iter);
+
+	/* Ok, find the first non-zero freq in our table and use it.
+	 * For now we only try to use a channel in the 802.11b channel
+	 * space so that most everyone can see it.
+	 */
+	for (i = 0; i < num_freqs; i++)
+	{
+		int channel = iw_freq_to_channel (card_freqs[i], &(dev->options.wireless.range_info));
+		if (card_freqs[i] && (channel > 0) && (channel < 15))
+		{
+			freq_to_use = card_freqs[i];
+			break;
+		}
+	}
+
+	/* Hmm, no free channels in 802.11b space.  Pick one more or less randomly */
+	if (!freq_to_use)
+	{
+		double pfreq;
+		int	channel = (int)(random () % 14);
+		int	err;
+
+		err = iw_channel_to_freq (channel, &pfreq, &(dev->options.wireless.range_info));
+		if (err == channel)
+			freq_to_use = pfreq;
+	}
+
+	if (freq_to_use)
+	{
+		nm_ap_set_freq (ap, freq_to_use);
+	
+		syslog (LOG_INFO, "Will create network '%s' with frequency %f.\n", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
+		if ((success = nm_device_set_wireless_config (dev, ap, auth)))
+			success = nm_device_activation_configure_ip (dev, TRUE);
+	}
+
+	return (success);
+}
+
+
+static gboolean AP_NEED_KEY (NMAccessPoint *ap)
 {
 	char *s;
 	int	 len = 0;
@@ -1407,7 +1689,7 @@ gboolean AP_NEED_KEY (NMAccessPoint *ap)
 	return (FALSE);
 }
 
-gboolean HAVE_LINK (NMDevice *dev)
+static gboolean HAVE_LINK (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -1462,7 +1744,7 @@ get_ap:
 		/* If its unencrypted and we don't have a link, we can't use this AP.
 		 * If we can't get an IP address off this AP, we can't use it either.
 		 */
-		if (!HAVE_LINK (dev) || !nm_device_activation_configure_ip (dev))
+		if (!HAVE_LINK (dev) || !nm_device_activation_configure_ip (dev, FALSE))
 		{
 			syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no link to '%s', or couldn't get configure interface for IP.  Trying another access point.",
 					nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
@@ -1524,42 +1806,56 @@ get_ap:
 				goto out;
 
 			nm_device_set_wireless_config (dev, best_ap, auth);
-			if (!HAVE_LINK (dev) && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+
+			/* Link checking and all this fallback doesn't really make sense in ad-hoc mode,
+			 * so only do it for infrastructure mode.
+			 */
+			if (nm_ap_get_mode (best_ap) == NETWORK_MODE_ADHOC)
 			{
-				syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no hardware link to '%s' in Shared Key mode, trying Open System.",
-						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
-				/* Back down to Open System mode */
-				auth--;
-				continue;
+				/* Only do auto-ip on Ad-Hoc connections for now.  We technically
+				 * could do DHCP on them though.
+				 */
+				success = nm_device_activation_configure_ip (dev, TRUE);
 			}
-			else if (!HAVE_LINK (dev))
+			else if (nm_ap_get_mode (best_ap) == NETWORK_MODE_INFRA)
 			{
-				/* Must be in Open System mode and it still didn't work, so
-				 * we'll invalidate the current "best" ap and get another one */
-				syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no hardware link to '%s' in Open System mode, trying another access point.",
-						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
-				nm_ap_set_invalid (best_ap, TRUE);
-				nm_ap_list_append_ap (dev->app_data->invalid_ap_list, best_ap);
-				nm_ap_unref (best_ap);
-				nm_device_update_best_ap (dev);
-				goto get_ap;
-			}
-			ip_success = nm_device_activation_configure_ip (dev);
-			if (!ip_success && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
-			{
-				/* Back down to Open System mode */
-				syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): could not get IP configuration info for '%s' in Shared Key mode, trying Open System.",
-						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
-				auth--;
-				continue;
-			}
-			else if (!ip_success)
-			{
-				/* Open System mode failed, we must have bad WEP key */
-				syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): could not get IP configuration info for '%s' in Open System mode, asking for new key.",
-						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
-				need_key = TRUE;
-				goto need_key;
+				if (!HAVE_LINK (dev) && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+				{
+					syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no hardware link to '%s' in Shared Key mode, trying Open System.",
+							nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+					/* Back down to Open System mode */
+					auth--;
+					continue;
+				}
+				else if (!HAVE_LINK (dev))
+				{
+					/* Must be in Open System mode and it still didn't work, so
+					 * we'll invalidate the current "best" ap and get another one */
+					syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no hardware link to '%s' in Open System mode, trying another access point.",
+							nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+					nm_ap_set_invalid (best_ap, TRUE);
+					nm_ap_list_append_ap (dev->app_data->invalid_ap_list, best_ap);
+					nm_ap_unref (best_ap);
+					nm_device_update_best_ap (dev);
+					goto get_ap;
+				}
+				ip_success = nm_device_activation_configure_ip (dev, FALSE);
+				if (!ip_success && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+				{
+					/* Back down to Open System mode */
+					syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): could not get IP configuration info for '%s' in Shared Key mode, trying Open System.",
+							nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+					auth--;
+					continue;
+				}
+				else if (!ip_success)
+				{
+					/* Open System mode failed, we must have bad WEP key */
+					syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): could not get IP configuration info for '%s' in Open System mode, asking for new key.",
+							nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+					need_key = TRUE;
+					goto need_key;
+				}
 			}
 
 			/* OK, we have a link and we have IP address info, we're good */
@@ -1588,14 +1884,18 @@ out:
  * or manually setting up the IP address, gateway, and default route.
  *
  */
-static gboolean nm_device_activation_configure_ip (NMDevice *dev)
+static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_only_autoip)
 {
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	nm_system_delete_default_route ();
-	if (nm_device_config_get_use_dhcp (dev))
+	if (do_only_autoip)
+	{
+		success = nm_device_do_autoip (dev);
+	}
+	else if (nm_device_config_get_use_dhcp (dev))
 	{
 		int		err;
 
@@ -1624,7 +1924,10 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev)
 	}
 
 	if (success)
+	{
+		nm_system_flush_arp_cache ();
 		nm_system_restart_mdns_responder ();
+	}
 
 	return (success);
 }
@@ -1653,9 +1956,27 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		nm_device_bring_up (dev);
 
 	if (nm_device_is_wireless (dev))
-		success = nm_device_activate_wireless (dev);
+	{
+		gboolean		create_network = FALSE;
+		NMAccessPoint *best_ap = nm_device_get_best_ap (dev);
+
+		if (best_ap)
+		{
+			if (nm_ap_get_user_created (best_ap))
+			{
+				create_network = TRUE;
+				syslog (LOG_INFO, "Creating wireless network '%s'.\n", nm_ap_get_essid (best_ap));
+				success = nm_device_activate_wireless_adhoc (dev, best_ap);
+				syslog (LOG_INFO, "Wireless network creation for '%s' was %s.\n", nm_ap_get_essid (best_ap), success ? "successful" : "unsuccessful");
+			}
+			nm_ap_unref (best_ap);
+		}
+
+		if (!create_network)
+			success = nm_device_activate_wireless (dev);
+	}
 	else if (nm_device_is_wired (dev))
-		success = nm_device_activation_configure_ip (dev);
+		success = nm_device_activation_configure_ip (dev, FALSE);
 	syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP returned = %d\n", nm_device_get_iface (dev), success);
 
 	/* If we were told to quit activation, stop the thread and return */
@@ -1813,6 +2134,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		 */
 		while (nm_device_is_activating (dev))
 			g_usleep (G_USEC_PER_SEC / 2);
+		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelled.", nm_device_get_iface (dev));
 	}
 }
 
@@ -1849,6 +2171,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	{
 		nm_device_set_essid (dev, "");
 		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 	}
 
 	return (TRUE);
@@ -2201,8 +2524,13 @@ void nm_device_update_best_ap (NMDevice *dev)
 		if (best_ap)
 		{
 			char *essid = nm_ap_get_essid (best_ap);
-			if (   !nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, essid)
-				&& nm_device_ap_list_get_ap_by_essid (dev, essid))
+			/* Two reasons to keep the current best_ap:
+			 * 1) Its still valid and we see it in our scan data
+			 * 2) Its an ad-hoc network that we've created (and therefore its not in our scan data)
+			 */
+			if (    (    !nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, essid)
+					&& nm_device_ap_list_get_ap_by_essid (dev, essid))
+				|| nm_ap_get_user_created (best_ap))
 			{
 				nm_ap_unref (best_ap);
 				g_mutex_unlock (dev->options.wireless.best_ap_mutex);
@@ -2281,6 +2609,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	NMAccessPoint		*ap = NULL;
 	NMDeviceAuthMethod	 auths[3] = { NM_DEVICE_AUTH_METHOD_SHARED_KEY, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM, NM_DEVICE_AUTH_METHOD_NONE };
 	int				 i;
+	NMNetworkMode		 mode = NETWORK_MODE_INFRA;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (network != NULL, FALSE);
@@ -2295,74 +2624,95 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	nm_device_bring_up (dev);
 	g_usleep (G_USEC_PER_SEC * 4);
 
-	/* Force the card into Managed/Infrastructure mode */
-	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-
-	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)) && !nm_ap_get_encrypted (ap))
+	if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
 	{
-		auths[0] = NM_DEVICE_AUTH_METHOD_NONE;
-		auths[1] = NM_DEVICE_AUTH_METHOD_SHARED_KEY;
-		auths[2] = NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM;
+		mode = nm_ap_get_mode (ap);
+
+		/* If the access point we're looking for is in our list and we know its
+		 * not encrypted, short-cut our connection fallbacks here and don't even
+		 * try enabling encryption to see if we can connect.
+		 */
+		if (!nm_ap_get_encrypted (ap))
+		{
+			auths[0] = NM_DEVICE_AUTH_METHOD_NONE;
+			auths[1] = NM_DEVICE_AUTH_METHOD_SHARED_KEY;
+			auths[2] = NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM;
+		}
 	}
 
-	/* Loop through the auth modes */
-	for (i = 0; i < 3; i++)
+	/* Two cases here.  Ad-Hoc networks don't have an access point that authenticates or
+	 * that you associate with, we just have to see if we know about the network and then
+	 * set up the card.  So if we know about it, we can use it.  I guess if you don't have
+	 * the right WEP key, you're kind of screwed.
+	 */
+	if (mode == NETWORK_MODE_ADHOC)
 	{
-		switch (auths[i])
-		{
-			case NM_DEVICE_AUTH_METHOD_SHARED_KEY:
-			case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
-			{
-				temp_enc = TRUE;
-				if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
-				{
-					char *hashed_key = NULL;
-					switch (key_type)
-					{
-						case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
-							hashed_key = nm_wireless_128bit_key_from_passphrase (key);
-							break;
-						case (NM_ENC_TYPE_ASCII_KEY):
-							if (strlen (key) <= 5)
-								hashed_key = nm_wireless_64bit_ascii_to_hex (key);
-							else
-								hashed_key = nm_wireless_128bit_ascii_to_hex (key);
-							break;
-						case (NM_ENC_TYPE_HEX_KEY):
-						case (NM_ENC_TYPE_UNKNOWN):
-							hashed_key = g_strdup (key);
-							break;
-						default:
-							break;
-					}
-					nm_device_set_enc_key (dev, hashed_key, auths[i]);
-					g_free (hashed_key);
-				}
-				else
-					nm_device_set_enc_key (dev, "11111111111111111111111111", auths[i]);
-				break;
-			}
-			case NM_DEVICE_AUTH_METHOD_NONE:
-			default:
-				temp_enc = FALSE;
-				nm_device_set_enc_key (dev, NULL, auths[i]);
-				break;
-		}
-
-		/* Pause to allow card to associate.  After we set the ESSID on the card, the card
-		 * has to scan all channels to find our requested AP (which can take a long time
-		 * if it is an A/B/G chipset like the Atheros 5212, for example).
-		 */
-		nm_device_set_essid (dev, network);
-		g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
-
-		nm_device_update_link_active (dev, FALSE);
-		nm_device_get_ap_address (dev, &addr);
-		if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
-		{
-			nm_device_get_ap_address (dev, ap_addr);
+		if (ap)
 			success = TRUE;
-			*encrypted = temp_enc;
+	}
+	else if (mode == NETWORK_MODE_INFRA)
+	{
+		nm_device_set_mode (dev, mode);
+
+		/* Loop through the auth modes */
+		for (i = 0; i < 3; i++)
+		{
+			switch (auths[i])
+			{
+				case NM_DEVICE_AUTH_METHOD_SHARED_KEY:
+				case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
+				{
+					temp_enc = TRUE;
+					if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+					{
+						char *hashed_key = NULL;
+						switch (key_type)
+						{
+							case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
+								hashed_key = nm_wireless_128bit_key_from_passphrase (key);
+								break;
+							case (NM_ENC_TYPE_ASCII_KEY):
+								if (strlen (key) <= 5)
+									hashed_key = nm_wireless_64bit_ascii_to_hex (key);
+								else
+									hashed_key = nm_wireless_128bit_ascii_to_hex (key);
+								break;
+							case (NM_ENC_TYPE_HEX_KEY):
+							case (NM_ENC_TYPE_UNKNOWN):
+								hashed_key = g_strdup (key);
+								break;
+							default:
+								break;
+						}
+						nm_device_set_enc_key (dev, hashed_key, auths[i]);
+						g_free (hashed_key);
+					}
+					else
+						nm_device_set_enc_key (dev, "11111111111111111111111111", auths[i]);
+					break;
+				}
+				case NM_DEVICE_AUTH_METHOD_NONE:
+				default:
+					temp_enc = FALSE;
+					nm_device_set_enc_key (dev, NULL, auths[i]);
+					break;
+			}
+
+			/* Pause to allow card to associate.  After we set the ESSID on the card, the card
+			 * has to scan all channels to find our requested AP (which can take a long time
+			 * if it is an A/B/G chipset like the Atheros 5212, for example).
+			 */
+			nm_device_set_essid (dev, network);
+			g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
+
+			nm_device_update_link_active (dev, FALSE);
+			nm_device_get_ap_address (dev, &addr);
+			if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
+			{
+				nm_device_get_ap_address (dev, ap_addr);
+				success = TRUE;
+				*encrypted = temp_enc;
+			}
 		}
 	}
 
@@ -2467,8 +2817,8 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
  */
 static void nm_device_do_normal_scan (NMDevice *dev)
 {
-	int		 iwlib_socket;
-	NMData	*data;
+	int			 iwlib_socket;
+	NMData		*data;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (dev->app_data != NULL);
@@ -2495,6 +2845,14 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		gboolean			 have_blank_essids = FALSE;
 		NMAPListIter		*iter;
 		NMAccessPoint		*artificial_ap;
+		NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
+		double			 orig_freq;
+		int				 orig_rate;
+
+		orig_mode = nm_device_get_mode (dev);
+		orig_freq = nm_device_get_frequency (dev);
+		orig_rate = nm_device_get_bitrate (dev);
+		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 
 		err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -2508,10 +2866,16 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 			if (err == -1)
 			{
+				nm_device_set_mode (dev, orig_mode);
+				nm_device_set_frequency (dev, orig_freq);
+				nm_device_set_bitrate (dev, orig_rate);
 				close (iwlib_socket);
 				return;
 			}
 		}
+		nm_device_set_mode (dev, orig_mode);
+		nm_device_set_frequency (dev, orig_freq);
+		nm_device_set_bitrate (dev, orig_rate);
 
 		/* New list for current scan data */
 		new_scan_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
@@ -2810,6 +3174,9 @@ static void nm_device_fake_ap_list (NMDevice *dev)
  */
 void nm_device_do_wireless_scan (NMDevice *dev)
 {
+	NMAccessPoint	*best_ap = NULL;
+	gboolean		 do_scan = TRUE;
+
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (dev->app_data != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
@@ -2825,23 +3192,31 @@ void nm_device_do_wireless_scan (NMDevice *dev)
 		return;
 	}
 
-	if (nm_device_get_supports_wireless_scan (dev))
-		nm_device_do_normal_scan (dev);
-	else
+	if ((best_ap = nm_device_get_best_ap (dev)))
 	{
-		struct ether_addr	 ap_addr;
-
-		/* We can't pseudo-scan without switching APs, therefore
-		 * if the card has a valid access point and its an allowed
-		 * access point, don't pseudo-scan for others.
-		 */
-		nm_device_get_ap_address (dev, &ap_addr);
-		if (    !nm_ethernet_address_is_valid (&ap_addr)
-			|| !nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_device_get_essid (dev))
-			|| !nm_device_get_best_ap (dev))
+		/* Don't pseudo-scan when we already have a connection. */
+		if (!nm_device_get_supports_wireless_scan (dev))
 		{
+			struct ether_addr	 ap_addr;
+
+			/* We can't pseudo-scan without switching APs, therefore
+			 * if the card has a valid access point and its an allowed
+			 * access point, don't pseudo-scan for others.
+			 */
+			nm_device_get_ap_address (dev, &ap_addr);
+			if (   nm_ethernet_address_is_valid (&ap_addr)
+				&& nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_device_get_essid (dev)))
+				do_scan = FALSE;
+		}			
+		nm_ap_unref (best_ap);
+	}
+
+	if (do_scan)
+	{
+		if (nm_device_get_supports_wireless_scan (dev))
+			nm_device_do_normal_scan (dev);
+		else
 			nm_device_do_pseudo_scan (dev);
-		}
 	}
 
 	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);

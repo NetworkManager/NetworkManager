@@ -477,8 +477,8 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
 
-	g_return_if_fail (dest != NULL);
-	g_return_if_fail (source != NULL);
+	if (!dest || !source)
+		return;
 
 	if ((iter = nm_ap_list_iter_new (dest)))
 	{
@@ -511,8 +511,8 @@ void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointLi
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
 
-	g_return_if_fail (dest != NULL);
-	g_return_if_fail (source != NULL);
+	if (!dest || !source)
+		return;
 
 	if ((iter = nm_ap_list_iter_new (dest)))
 	{

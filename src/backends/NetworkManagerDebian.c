@@ -453,3 +453,37 @@ void nm_system_load_device_modules (void)
 void nm_system_restart_mdns_responder (void)
 {
 }
+
+/*
+ * nm_system_device_add_default_route_via_device
+ *
+ * Flush all routes associated with a network device
+ *
+ */
+void nm_system_device_add_default_route_via_device (NMDevice *dev)
+{
+}
+ 
+ 
+/*
+ * nm_system_flush_loopback_routes
+ *
+ * Flush all routes associated with the loopback device, because it
+ * sometimes gets the first route for ZeroConf/Link-Local traffic.
+ *
+ */
+void nm_system_flush_loopback_routes (void)
+{
+}
+
+ 
+/*
+ * nm_system_flush_arp_cache
+ *
+ * Flush all entries in the arp cache.
+ *
+ */
+void nm_system_flush_arp_cache (void)
+{
+}
+

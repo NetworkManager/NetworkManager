@@ -549,6 +549,39 @@ void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev,
 
 
 /*
+ * nmwa_dbus_create_network
+ *
+ * Tell NetworkManager to create an Ad-Hoc wireless network
+ *
+ */
+void nmwa_dbus_create_network (DBusConnection *connection, const NetworkDevice *dev, const WirelessNetwork *network,
+						NMEncKeyType key_type, const char *passphrase)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "createWirelessNetwork")))
+	{
+		if (network && network->essid)
+		{
+			fprintf (stderr, "Creating network '%s' %s passphrase on device '%s'.\n", network->essid, passphrase ? "with" : "without", dev->nm_device);
+			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
+									DBUS_TYPE_STRING, network->essid,
+									DBUS_TYPE_STRING, (passphrase ? passphrase : ""),
+									DBUS_TYPE_INT32, key_type,
+									DBUS_TYPE_INVALID);
+		}
+		dbus_connection_send (connection, message, NULL);
+	}
+	else
+		fprintf (stderr, "nm_dbus_set_device(): Couldn't allocate the dbus message\n");
+}
+
+
+/*
  * wireless_network_ref
  *
  * Increment the reference count of the wireless network

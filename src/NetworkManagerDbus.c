@@ -298,7 +298,9 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	/* If the user specificed a wireless network too, force that as well */
 	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network, key, key_type))
+	{
 		nm_dbus_send_network_not_found (data->dbus_connection, network);
+	}
 	else
 	{
 		if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
@@ -311,6 +313,98 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		}
 		else
 			nm_dbus_send_network_not_found (data->dbus_connection, network);
+	}
+
+	/* Have to mark our state changed since we blew away our connection trying out
+	 * the user-requested network.
+	 */
+	nm_data_mark_state_changed (data);
+
+out:
+	dbus_free (network);
+	dbus_free (key);
+	nm_device_unref (dev);
+	return (reply_message);
+}
+
+
+/*
+ * nm_dbus_nm_create_wireless_network
+ *
+ * Create a new wireless network and 
+ *
+ */
+static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connection, DBusMessage *message, NMData *data)
+{
+	NMDevice			*dev = NULL;
+	DBusMessage		*reply_message = NULL;
+	char				*dev_path = NULL;
+	char				*network = NULL;
+	char				*key = NULL;
+	int				 key_type = -1;
+	DBusError			 error;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+	g_return_val_if_fail (data != NULL, NULL);
+
+	/* Try to grab both device _and_ network first, and if that fails then just the device. */
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path,
+							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
+							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+						"NetworkManager::createWirelessNetwork called with invalid arguments.");
+		return (reply_message);
+	} else syslog (LOG_INFO, "Creating network '%s' on device '%s'.", network, dev_path);
+	
+	dev = nm_dbus_get_device_from_object_path (data, dev_path);
+	dbus_free (dev_path);
+	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
+						"The requested network device does not exist.");
+		return (reply_message);
+	}
+	nm_device_ref (dev);
+
+	/* Make sure network is valid and device is wireless */
+	if (!nm_device_is_wireless (dev) || !network)
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManager::createWirelessNetwork called with invalid arguments.");
+		goto out;
+	}
+
+	if (!(reply_message = dbus_message_new_method_return (message)))
+		goto out;
+
+	/* If the user specificed a wireless network too, force that as well */
+	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	{
+		NMAccessPoint	*ap = nm_ap_new ();
+
+		/* Fill in the description of the network to create */
+		nm_ap_set_essid (ap, network);
+		if (key && strlen (key))
+		{
+			nm_ap_set_encrypted (ap, TRUE);
+			nm_ap_set_enc_key_source (ap, key, key_type);
+		}
+		nm_ap_set_mode (ap, NETWORK_MODE_ADHOC);
+		nm_ap_set_user_created (ap, TRUE);
+
+		nm_device_set_best_ap (dev, ap);		
+		nm_device_freeze_best_ap (dev);
+		nm_device_activation_cancel (dev);
+
+		if (data->user_device)
+			nm_device_unref (data->user_device);
+		data->user_device = dev;
+		nm_device_ref (data->user_device);
+
+		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 	}
 
 	/* Have to mark our state changed since we blew away our connection trying out
@@ -1467,6 +1561,8 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		reply_message = nm_dbus_nm_get_devices (connection, message, data);
 	else if (strcmp ("setActiveDevice", method) == 0)
 		nm_dbus_nm_set_active_device (connection, message, data);
+	else if (strcmp ("createWirelessNetwork", method) == 0)
+		nm_dbus_nm_create_wireless_network (connection, message, data);
 	else if (strcmp ("setKeyForNetwork", method) == 0)
 		nm_dbus_set_user_key_for_network (connection, message, data);
 	else if (strcmp ("status", method) == 0)

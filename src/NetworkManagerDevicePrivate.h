@@ -42,7 +42,7 @@ typedef struct NMDeviceWirelessOptions
 	guint8			 noise;
 	gint8			 strength;
 	gint8			 invalid_strength_counter;
-	gint8			 num_freqs;
+	struct iw_range	 range_info;
 
 	GMutex			*scan_mutex;
 	/* We keep a couple lists around since wireless cards
