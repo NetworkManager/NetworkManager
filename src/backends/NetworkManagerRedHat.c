@@ -90,8 +90,8 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		pid_t		n_pid = -1;
 
 		memset (s_pid, 0, 20);
-		fgets (s_pid, 19, pidfile);
-		len = strnlen (s_pid, 20);
+		fgets (s_pid, 20, pidfile);
+		len = strlen (s_pid);
 		fclose (pidfile);
 
 		n_pid = atoi (s_pid);

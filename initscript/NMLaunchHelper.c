@@ -159,7 +159,7 @@ int main( int argc, char *argv[] )
 	/* If NM doesn't get a connection within a reasonable amount of time,
 	 * exit to let bootup continue.
 	 */
-	timeout = g_timeout_add (10000, g_main_loop_quit, loop);
+	timeout = g_timeout_add (10000, (GSourceFunc) g_main_loop_quit, loop);
 
 	g_main_loop_run (loop);
 

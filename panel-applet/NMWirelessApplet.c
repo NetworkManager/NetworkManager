@@ -107,9 +107,6 @@ static GType nmwa_get_type (void)
  */
 static void nmwa_redraw (NMWirelessApplet *applet)
 {
-	const char *label_text;
-	char *tmp;
-
 	if (applet->pixmaps[applet->pix_state] != applet->current_pixbuf)
 	{
 		applet->current_pixbuf = (GdkPixbuf *)applet->pixmaps[applet->pix_state];
@@ -337,7 +334,7 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer data)
 {
 	NMWirelessApplet	*applet = data;
-	GtkRequisition		 reqmenu, reqapplet;
+	GtkRequisition		 reqmenu;
 	gint				 tempx, tempy, width, height;
 	gint				 screen_width, screen_height;
 	
@@ -450,9 +447,6 @@ void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
  */
 static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *applet)
 {
-	GtkWidget      *submenu;
-	GtkWidget		*menu_item;
-
 	nmwa_dispose_menu_items (applet);
 	nmwa_populate_menu (applet);
 	gtk_widget_show (applet->menu);
@@ -482,7 +476,6 @@ void nmwa_menu_add_separator_item (GtkWidget *menu)
 void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
 {
 	GtkWidget		*menu_item;
-	GtkWidget		*label;
 
 	g_return_if_fail (text != NULL);
 	g_return_if_fail (menu != NULL);
@@ -727,12 +720,12 @@ GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 {
 	GtkWidget		 *menu = applet->menu;
 
-	g_return_if_fail (applet != NULL);
+	g_return_val_if_fail (applet != NULL, NULL);
 
 	if (applet->applet_state == APPLET_STATE_NO_NM)
 	{
 		nmwa_menu_add_text_item (menu, _("NetworkManager is not running..."));
-		return;
+		return NULL;
 	}
 
 	nmwa_menu_add_text_item (menu, _("Network Connections"));
@@ -772,8 +765,6 @@ GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
  */
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
-	GtkRequisition	 req;
-	gint			 total_size = 0;
 	gboolean		 horizontal = FALSE;
 	gint			 panel_size;
 	GtkWidget      *menu_bar;

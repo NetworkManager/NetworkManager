@@ -1,5 +1,45 @@
 2004-08-29  Colin Walters  <walters@verbum.org>
 
+	* test/nminfotest.c: Include string.h and stdlib.h.
+	(get_network_string_property, get_networks_of_type): Return NULL.
+
+	* test/nmclienttest.c (get_device_name, get_active_device): Return
+	NULL.
+
+	* src/backends/NetworkManagerRedHat.c (nm_system_device_stop_dhcp): Just
+	use strlen, fgets always NULL-terminates the string.
+
+	* src/NetworkManagerDbus.c (nm_dbus_nmi_filter,
+	dbus_message_get_member): Remove /* in comment.
+
+	* src/NetworkManagerUtils.c (LOCKING_DEBUG): Ditto.
+
+	* src/NetworkManager.c (quit): Unused, delete.
+	(nm_data_free): Cast arg to GFunc.
+
+	* panel-applet/NMWirelessAppletDbus.c: Need to include
+	string.h, and dbus-glib-lowlevel.h (the latter is needed
+	for dbus_connection_setup_with_g_main at present).
+	(nmwa_dbus_update_wireless_network_list): Parenthesize
+	assignment in conditional.
+	(nmwa_dbus_worker): Return NULL.
+
+	* panel-applet/NMWirelessApplet.c (nmwa_redraw)
+	(nmwa_get_menu_pos, nmwa_toplevel_menu_activate)
+	(nmwa_menu_add_text_item, nmwa_setup_widgets): Kill unused variables.
+	(nmwa_populate_menu): Return NULL on failure, instead of just
+	return;
+
+	* initscript/NMLaunchHelper.c (g_timeout_add): Cast arg to GSourceFunc.
+
+	* info-daemon/NetworkManagerInfoNetworksDialog.c (nmi_networks_dialog_init): Kill unused
+	variables.
+
+	* info-daemon/NetworkManagerInfo.c (nmi_print_usage): Unused,
+	delete.
+	
+2004-08-29  Colin Walters  <walters@verbum.org>
+
 	* src/NetworkManagerDbus.c (nm_dbus_get_network_timestamp): Return
 	a GTimeVal instead of time_t.  This is easier to work with,
 	since time_t may be a long or double, we don't know.

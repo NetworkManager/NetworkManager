@@ -20,7 +20,9 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include "NMWirelessAppletDbus.h"
 #include "NMWirelessApplet.h"
 
@@ -834,7 +836,7 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 			 * them here.
 			 */
 			for (j = 0; j < i; j++)
-				if (found = (networks[j] && (strcmp (networks[i], networks[j]) == 0)))
+				if ((found = (networks[j] && (strcmp (networks[i], networks[j]) == 0))))
 					break;
 			if (found)
 				continue;
@@ -1210,4 +1212,6 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	g_main_loop_run (thread_loop);
 
 	g_source_destroy (timeout_source);
+
+	return NULL;
 }

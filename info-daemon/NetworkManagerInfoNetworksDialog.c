@@ -43,12 +43,6 @@
 int nmi_networks_dialog_init (NMIAppInfo *info)
 {
 	GtkWidget			*dialog;
-	GtkWidget			*list_view;
-	GtkButton			*save_button;
-	GtkButton			*cancel_button;
-	GtkCellRenderer	*renderer;
-	GtkTreeViewColumn 	*column;
-	GError			*error = NULL;
 
 	info->networks_dialog = glade_xml_new(GLADEDIR"/networks.glade", NULL, NULL);
 	if (!info->networks_dialog)

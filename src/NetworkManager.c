@@ -48,7 +48,6 @@
 static GMainLoop	*loop  = NULL;
 static NMData		*nm_data = NULL;
 gboolean			 debug = TRUE;
-static gboolean	 quit = FALSE;
 extern gboolean	 allowed_ap_worker_exit;
 
 static void nm_data_free (NMData *data);
@@ -435,7 +434,7 @@ static void nm_data_free (NMData *data)
 
 	nm_device_unref (data->active_device);
 
-	g_slist_foreach (data->dev_list, nm_device_unref, NULL);
+	g_slist_foreach (data->dev_list, (GFunc) nm_device_unref, NULL);
 	g_slist_free (data->dev_list);
 
 	g_mutex_free (data->dev_list_mutex);

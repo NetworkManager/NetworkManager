@@ -93,26 +93,6 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 
 
 /*
- * nmi_print_usage
- *
- * Prints program usage.
- *
- */
-static void nmi_print_usage (void)
-{
-	fprintf (stderr, "\n" "usage : NetworkManagerInfo [--daemon=yes|no] [--help]\n");
-	fprintf (stderr,
-		"\n"
-		"        --daemon=yes|no    Become a daemon\n"
-		"        --help             Show this information and exit\n"
-		"\n"
-		"NetworkManagerInfo responds to NetworkManager requests for allowed access points\n"
-		"and WEP keys.\n"
-		"\n");
-}
-
-
-/*
  * main
  *
  */

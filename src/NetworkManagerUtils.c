@@ -31,7 +31,7 @@
 extern gboolean	debug;
 
 
-/*#define LOCKING_DEBUG	/**/
+/*#define LOCKING_DEBUG	*/
 
 /*
  * nm_try_acquire_mutex

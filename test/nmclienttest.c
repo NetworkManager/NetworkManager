@@ -40,7 +40,7 @@ char * get_active_device (DBusConnection *connection)
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
-		return;
+		return NULL;
 	}
 
 	dbus_error_init (&error);
@@ -49,14 +49,14 @@ char * get_active_device (DBusConnection *connection)
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
 		dbus_message_unref (message);
-		return;
+		return NULL;
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
 		dbus_message_unref (message);
-		return;
+		return NULL;
 	}
 
 	/* now analyze reply */
@@ -66,7 +66,7 @@ char * get_active_device (DBusConnection *connection)
 	if (!string)
 	{
 		fprintf (stderr, "NetworkManager returned a NULL active device object path" );
-		return;
+		return NULL;
 	}
 
 	fprintf (stderr, "Active device: '%s'\n", string );

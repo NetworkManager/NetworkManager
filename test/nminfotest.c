@@ -24,6 +24,8 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define	NMI_DBUS_NMI_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManagerInfo"
 #define	NMI_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
@@ -55,7 +57,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
-		return;
+		return NULL;
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
@@ -65,14 +67,14 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
 		dbus_message_unref (message);
-		return;
+		return NULL;
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
 		dbus_message_unref (message);
-		return;
+		return NULL;
 	}
 
 	/* now analyze reply */
@@ -82,7 +84,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	if (!string)
 	{
 		fprintf (stderr, "NetworkManagerInfo returned a NULL string for method '%s'", method );
-		return;
+		return NULL;
 	}
 	ret_string = g_strdup (string);
 	dbus_free (string);

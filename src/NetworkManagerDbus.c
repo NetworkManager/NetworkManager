@@ -808,7 +808,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	if (!(object_path = dbus_message_get_path (message)))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); /**/
+	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); */
 
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "TrustedNetworkUpdate"))
@@ -1100,7 +1100,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/* syslog (LOG_DEBUG, "nm_dbus_nm_message_handler() got method %s for path %s", method, path); /**/
+	/* syslog (LOG_DEBUG, "nm_dbus_nm_message_handler() got method %s for path %s", method, path); */
 
 	if (strcmp ("getActiveDevice", method) == 0)
 		reply_message = nm_dbus_nm_get_active_device (connection, message, data);
