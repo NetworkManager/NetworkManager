@@ -3,6 +3,8 @@ AC_PREREQ(2.52)
 AC_INIT(NetworkManager, 0.2, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
 
+AM_CONFIG_HEADER(config.h)
+
 AC_PROG_CC
 AM_PROG_CC_C_O
 
@@ -81,9 +83,28 @@ PKG_CHECK_MODULES(GCONF, gconf-2.0)
 AC_SUBST(GCONF_CFLAGS)
 AC_SUBST(GCONF_LIBS)
 
-PKG_CHECK_MODULES(OPENSSL, openssl)
-AC_SUBST(OPENSSL_CFLAGS)
-AC_SUBST(0PENSSL_LIBS)
+
+AC_ARG_WITH(gcrypt, [--with-gcrypt	Use gcrypt library], ac_gcrypt=$withval, ac_gcrypt=auto)
+if test x"$ac_gcrypt" != xno; then
+  AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, no)
+else
+  LIBGCRYPT_CONFIG=no
+fi 
+if test x"$LIBGCRYPT_CONFIG" = xno; then
+   if test x"$ac_gcrypt" = xyes; then
+      AC_MSG_ERROR([gcrypt explicitly requested but not found on system])
+   fi
+   ac_gcrypt=no
+else
+   if test x"$ac_gcrypt" != xno; then
+     AC_DEFINE(HAVE_GCRYPT, 1, [Define if you have libgcrypt])
+     LIBGCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
+     LIBGCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
+     AC_SUBST(LIBGCRYPT_CFLAGS)
+     AC_SUBST(LIBGCRYPT_LIBS)
+   fi
+fi
+AM_CONDITIONAL(WITH_GCRYPT, test x"$ac_gcrypt" != xno)
 
 PKG_CHECK_MODULES(PANEL_APPLET, libpanelapplet-2.0)
 AC_SUBST(PANEL_APPLET_CFLAGS)

@@ -21,7 +21,12 @@
 
 #include <stdio.h>
 #include <iwlib.h>
-#include <openssl/md5.h>
+#include "config.h"
+#ifdef HAVE_GCRYPT
+#include <gcrypt.h>
+#else
+#include "gnome-keyring-md5.h"
+#endif
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerWireless.h"
@@ -30,6 +35,23 @@
 
 extern gboolean	debug;
 
+static char *
+nm_md5 (const char *buf, size_t len)
+{
+#ifdef HAVE_GCRYPT
+	char ascii_key[32];
+	gcry_md_hash_buffer (GCRY_MD_MD5, ascii_key, buf, len);
+	return g_strndup (ascii_key, 32);
+#else
+	struct GnomeKeyringMD5Context ctx;
+	char digest[16];
+	
+	gnome_keyring_md5_init (&ctx);
+	gnome_keyring_md5_update (&ctx, buf, len);
+	gnome_keyring_md5_final (digest, &ctx);
+	return gnome_keyring_md5_digest_to_ascii (digest);
+#endif
+}
 
 /*
  * nm_wireless_128bit_key_from_passphrase
@@ -41,10 +63,7 @@ extern gboolean	debug;
 char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 {
 	char		 temp_buf [65];
-	char		*ascii_key = g_new0 (char, 32);
-	char		*raw_key = g_new0 (char, 16);
 	int		 passphrase_len;
-	MD5_CTX	 md5_ctx;
 	int		 i;
 
 	g_return_val_if_fail (passphrase != NULL, NULL);
@@ -57,23 +76,7 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 	for (i = 0; i < 64; i++)
 		temp_buf [i] = passphrase [i % passphrase_len];
 
-	/* Generate the actual WEP key */
-	MD5_Init (&md5_ctx);
-	MD5_Update (&md5_ctx, (const void *)temp_buf, 64);
-	MD5_Final (raw_key, &md5_ctx);
-
-	/* Convert raw key into ASCII key.  Unfortunately, we must do this
-	 * because we cannot deal with raw keys quite yet.
-	 */
-	for (i = 0; i < 16; i++)
-	{
-		char *temp = g_strdup_printf ("%02x", raw_key [i]);
-		strncat (ascii_key, temp+(strlen(temp)-2), 2);
-		g_free (temp);
-	}
-	ascii_key [26] = '\0';
-
-	return (ascii_key);
+	return nm_md5 (temp_buf, 64);
 }
 
 

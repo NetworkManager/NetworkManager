@@ -1,3 +1,24 @@
+2004-08-29  Colin Walters  <walters@verbum.org>
+
+	* configure.in: Generate config.h.
+
+	* configure.in: Dump dependency on OpenSSL; we can't
+	use it since this package is GPL:
+	http://www.gnome.org/~markmc/openssl-and-the-gpl.html
+	Instead, check for libgcrypt, use it if available,
+	otherwise use included MD5 code.
+
+	* src/gnome-keyring-md5.h, src/gnome-keyring-md5.c:
+	Suck in from gnome-keyring, munge a bit.
+	
+	* src/Makefile.am (NetworkManager_SOURCES) <!WITH_GCRYPT>: Include
+	gnome-keyring-md5.h gnome-keyring-md5.c.
+	(NetworkManager_LDADD) <WITH_GCRYPT>: Add dep on LIBGCRYPT_LIBS.
+
+	* src/NetworkManagerWireless.c (nm_md5): New function, uses
+	libgcrypt or included gnome-keyring md5 bits.
+	(nm_wireless_128bit_key_from_passphrase): Use nm_md5.
+
 2004-08-28  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* configure.in: Add «nb» and «no» to ALL_LINGUAS.

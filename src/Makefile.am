@@ -29,13 +29,20 @@ NetworkManager_SOURCES =					\
 		NetworkManagerWireless.h			\
 		backends/NetworkManagerSystem.h
 
+if !WITH_GCRYPT
+NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
+endif
+
 EXTRA_NetworkManager_SOURCES =			\
 		backends/NetworkManagerDebian.c \
 		backends/NetworkManagerGentoo.c \
 		backends/NetworkManagerRedHat.c
 
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS) backends/$(SYSTEM_BACKEND_FILE)
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) backends/$(SYSTEM_BACKEND_FILE)
+if WITH_GCRYPT
+NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
+endif
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
