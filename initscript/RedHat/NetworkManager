@@ -9,9 +9,6 @@
 # processname: NetworkManager
 # pidfile: /var/run/NetworkManager.pid
 #
-### BEGIN INIT INFO
-# Provides: $network
-### END INIT INFO
 
 # Sanity checks.
 [ -x /usr/bin/NetworkManager ] || exit 1

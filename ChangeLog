@@ -1,7 +1,21 @@
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/RedHat/NetworkManager
+		- Remove the ### BEGIN INIT INFO section, which caused chkconfig
+			to add the NM startup script at priority 50, which was
+			way too early
+
 2005-01-24  Colin Walters  <walters@redhat.com>
 
 	* named/named.conf: Use any port for query source instead of
 	restricting to port 53.
+
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/RedHat/NetworkManager
+		- Remove the ### BEGIN INIT INFO section, which caused chkconfig
+			to add the NM startup script at priority 50, which was
+			way too early
 
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
