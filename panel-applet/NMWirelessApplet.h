@@ -84,6 +84,7 @@ typedef struct
 	GMutex			*data_mutex;
 	GSList			*devices;
 	GSList			*networks;
+	char				*active_device;
 	AppletState		 applet_state;
 
 	/* Direct UI elements */
@@ -115,7 +116,8 @@ typedef struct
 {
 	char		*nm_device;
 	int		 type;
-	char		*name;
+	char		*nm_name;
+	char		*hal_name;
 	char		*udi;
 } NetworkDevice;
 

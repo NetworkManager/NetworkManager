@@ -1,3 +1,13 @@
+Fri Aug 28 2004 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- Make current device bold
+		- Show more user-friendly device name if we got one from hal
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Grab "info.product" key from hal for network devices
+		- Cache the current active device
+
 2004-08-27  Adam Weinberger  <adamw@gnome.org>
 
 	* configure.in: Added en_CA to ALL_LINGUAS.

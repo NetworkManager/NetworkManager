@@ -500,7 +500,7 @@ void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  * Add a network device to the menu
  *
  */
-void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gpointer user_data)
+void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, gpointer user_data)
 {
 	GtkWidget		*menu_item;
 	GtkWidget		*label;
@@ -524,6 +524,12 @@ void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, ch
 	}
 
 	label = gtk_label_new (name);
+	if (current)
+	{
+		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", name);
+		gtk_label_set_markup (GTK_LABEL (label), markup);
+		g_free (markup);
+	}
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 2);
 	gtk_widget_show (label);
@@ -561,7 +567,12 @@ void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 			if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
 			{
 				GdkPixbuf	*icon = (dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? applet->wired_icon : applet->wireless_icon;
-				nmwa_menu_add_device_item (menu, icon, dev->name, dev->nm_device, applet);
+				char		*name_string;
+				gboolean	 current = applet->active_device ? (strcmp (applet->active_device, dev->nm_device) == 0) : FALSE;
+
+				name_string = g_strdup_printf ("%s (%s)", (dev->hal_name ? dev->hal_name : dev->nm_name),
+						(dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? "wired" : "wireless");
+				nmwa_menu_add_device_item (menu, icon, name_string, dev->nm_device, current, applet);
 			}
 
 			element = g_slist_next (element);
@@ -648,6 +659,8 @@ void nmwa_menu_add_networks (GtkWidget *menu, NMWirelessApplet *applet)
 		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
 	else
 	{
+		nmwa_menu_add_text_item (menu, _("Wireless Networks"));
+
 		/* Add all networks in our network list to the menu */
 		while (element)
 		{
@@ -721,6 +734,7 @@ GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 		return;
 	}
 
+	nmwa_menu_add_text_item (menu, _("Network Connections"));
 	nmwa_menu_add_devices (menu, applet);
 	nmwa_menu_add_separator_item (menu);	
 
@@ -877,12 +891,15 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 	applet->ui_resources = glade_xml_new(glade_file, NULL, NULL);
 	if (!applet->ui_resources)
 	{
-		fprintf (stderr, "Could not get our UI resources from the glade file\n");
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found).")); 
 		g_object_unref (G_OBJECT (applet->gconf_client));
 		return (NULL);
 	}
 
 	applet->applet_state = APPLET_STATE_NO_NM;
+	applet->networks = NULL;
+	applet->devices = NULL;
+	applet->active_device = NULL;
 
 	/* Start our dbus thread */
 	if (!(applet->data_mutex = g_mutex_new ()))

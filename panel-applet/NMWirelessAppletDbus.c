@@ -358,7 +358,8 @@ char * nmwa_dbus_get_active_device (NMWirelessApplet *applet, AppletState failur
 			break;
 
 		case (RETURN_FAILURE):
-			applet->applet_state = failure_state;
+			if (failure_state != APPLET_STATE_IGNORE)
+				applet->applet_state = failure_state;
 			break;
 
 		default:
@@ -608,6 +609,98 @@ char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *path, int 
 
 
 /*
+ * nmwa_dbus_get_hal_device_string_property
+ *
+ * Get a string property from a device
+ *
+ */
+char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connection, const char *udi, const char *property_name)
+{
+	DBusError		 error;
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	char			*property = NULL;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
+
+	message = dbus_message_new_method_call ("org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device", "GetPropertyString");
+	if (!message)
+		return (NULL);
+
+	dbus_error_init (&error);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, property_name, DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "nmwa_dbus_get_hal_device_string_property(): %s raised:\n %s\n\n", error.name, error.message);
+		return (NULL);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "nmwa_dbus_get_hal_device_string_property(): dbus reply message was NULL\n" );
+		return (NULL);
+	}
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &property, DBUS_TYPE_INVALID))
+		property = NULL;
+
+	dbus_message_unref (reply);	
+	return (property);
+}
+
+
+/*
+ * nmwa_dbus_get_hal_device_info
+ *
+ * Grab the info.product tag from hal for a specific UDI
+ *
+ */
+char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const char *udi)
+{
+	DBusError		 error;
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	gboolean		 exists = FALSE;
+	char			*info = NULL;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
+
+	message = dbus_message_new_method_call ("org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device", "PropertyExists");
+	if (!message)
+		return (NULL);
+
+	dbus_error_init (&error);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, "info.product", DBUS_TYPE_INVALID);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "nmwa_dbus_get_hal_device_info(): %s raised:\n %s\n\n", error.name, error.message);
+		return (NULL);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "nmwa_dbus_get_hal_device_info(): dbus reply message was NULL\n" );
+		return (NULL);
+	}
+
+	dbus_error_init (&error);
+	if (dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &exists, DBUS_TYPE_INVALID))
+		info = nmwa_dbus_get_hal_device_string_property (connection, udi, "info.product");
+
+	dbus_message_unref (reply);
+	
+	return (info);
+}
+
+
+/*
  * nmwa_dbus_set_network
  *
  * Tell NetworkManager to use a specific network that the user picked.
@@ -836,10 +929,29 @@ static void network_device_free (void *element, void *user_data)
 	if (dev)
 	{
 		g_free (dev->nm_device);
-		g_free (dev->name);
-		g_free (dev->udi);
+		g_free (dev->nm_name);
+		dbus_free (dev->udi);
+		dbus_free (dev->hal_name);
 	}
 	g_free (dev);
+}
+
+
+/*
+ * nmwa_dbus_update_active_device
+ *
+ * Get the active device from NetworkManager
+ *
+ */
+void nmwa_dbus_update_active_device (NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	g_mutex_lock (applet->data_mutex);
+	if (applet->active_device)
+		dbus_free (applet->active_device);
+	applet->active_device = nmwa_dbus_get_active_device (applet, APPLET_STATE_IGNORE);
+	g_mutex_unlock (applet->data_mutex);
 }
 
 
@@ -888,16 +1000,17 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 			{
 				dev->nm_device = g_strdup (devices[i]);
 				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
-				dev->name = g_strdup (name);
+				dev->nm_name = g_strdup (name);
 				dev->udi = nmwa_dbus_get_device_udi (applet, devices[i]);
+				dev->hal_name = nmwa_dbus_get_hal_device_info (applet->connection, dev->udi);
 
 				/* Ensure valid device information */
-				if (!dev->nm_device || !dev->name || !dev->udi || (dev->type == -1))
+				if (!dev->nm_device || !dev->nm_name || !dev->udi || (dev->type == -1))
 					network_device_free (dev, NULL);
 				else
 				{
 					applet->devices = g_slist_append (applet->devices, dev);
-					fprintf( stderr, "Got device '%s', udi '%s'\n", dev->name, dev->udi);
+					fprintf( stderr, "Got device '%s', udi '%s'\n", dev->nm_name, dev->udi);
 				}
 			}
 		}
@@ -952,9 +1065,13 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
 	{
 		nmwa_dbus_update_network_state (applet);
+		nmwa_dbus_update_active_device (applet);
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
+	{
 		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_update_active_device (applet);
+	}
 	else
 		handled = FALSE;
 
@@ -1085,6 +1202,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 		if ((applet->applet_state == APPLET_STATE_WIRELESS) || (applet->applet_state == APPLET_STATE_WIRELESS_CONNECTING))
 			nmwa_dbus_update_wireless_network_list (applet);
 		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_update_active_device (applet);
 	}
 	else
 		applet->applet_state = APPLET_STATE_NO_NM;
