@@ -859,13 +859,13 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	/* If there is a desired AP to connect to, use that essid and possible WEP key */
 	if (best_ap && nm_ap_get_essid (best_ap))
 	{
-		nm_device_bring_down (dev);
-		nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
-
 		/* Disable WEP */
 		nm_device_set_wep_key (dev, NULL);
 		if (nm_ap_get_encrypted (best_ap) && nm_ap_get_wep_key (best_ap))
 			nm_device_set_wep_key (dev, nm_ap_get_wep_key (best_ap));
+
+		nm_device_bring_down (dev);
+		nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
 		NM_DEBUG_PRINT_2 ("nm_device_wireless_activate(%s) using essid '%s'\n", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
@@ -921,7 +921,8 @@ fprintf( stderr, "nm_device_activation_worker (%s) started...\n", nm_device_get_
 			if ((best_ap = nm_device_get_best_ap (dev)))
 			{
 				/* WEP key we have is wrong, ask user for one */
-				if (!nm_device_need_ap_switch (dev) && nm_ap_get_encrypted (best_ap))
+				if (    (!nm_device_need_ap_switch (dev) || !nm_ap_get_wep_key (best_ap))
+					&& nm_ap_get_encrypted (best_ap))
 				{
 					dev->options.wireless.user_key_received = FALSE;
 					nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap);
@@ -939,7 +940,7 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1\n", nm_
 						return (NULL);
 					}
 
-					fprintf (stderr, "nm_device_activation_worker(%s): user key received!\n", nm_device_get_iface (dev));
+fprintf (stderr, "nm_device_activation_worker(%s): user key received!\n", nm_device_get_iface (dev));
 				}
 
 				nm_device_activate_wireless (dev);
@@ -1192,7 +1193,7 @@ void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *inval
 		/* Make sure the "best" ap matches the essid we asked for the key of,
 		 * then set the new key on the access point.
 		 */
-		if (nm_null_safe_strcmp (network, nm_ap_get_essid (best_ap)))
+		if (nm_null_safe_strcmp (network, nm_ap_get_essid (best_ap)) == 0)
 			nm_ap_set_wep_key (best_ap, key);
 	}
 

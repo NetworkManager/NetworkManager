@@ -101,6 +101,9 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_TRUSTED_NETWORKS_PATH, network);
 			gconf_client_set_string (info->gconf_client, key, passphrase, NULL);
 			g_free (key);
+			key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_TRUSTED_NETWORKS_PATH, network);
+			gconf_client_set_string (info->gconf_client, key, network, NULL);
+			g_free (key);
 		}
 
 		nmi_passphrase_dialog_clear (dialog, entry);
@@ -219,9 +222,6 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 	g_signal_connect (G_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_cancel_clicked), info);
 
 	entry = GTK_ENTRY (glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
-	gtk_entry_set_visibility (entry, FALSE);
-	gtk_entry_set_invisible_char (entry, '*');
-
 	nmi_passphrase_dialog_clear (dialog, GTK_WIDGET (entry));
 
 	return (0);

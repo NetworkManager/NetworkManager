@@ -52,7 +52,7 @@
 
 static char * pixmap_names[] =
 {
-	"broken-0.png",
+	"wired.png",
 	"no-link-0.png",
 	"signal-1-40.png",
 	"signal-41-60.png",
@@ -132,6 +132,7 @@ static void nmwa_draw (NMWirelessApplet *applet)
  */
 static void nmwa_update_state (NMWirelessApplet *applet)
 {
+	applet->pix_state = PIX_WIRED;
 	if (applet->nm_active)
 	{
 		char *status = nmwa_dbus_get_nm_status (applet->connection);
@@ -145,12 +146,12 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			{
 				case (DEVICE_TYPE_WIRELESS_ETHERNET):
 					if (strcmp (status, "connected") == 0)
-						applet->pix_state = PIX_SIGNAL_4;
+						applet->pix_state = PIX_WIRELESS_SIGNAL_4;
 					else if (strcmp (status, "connecting") == 0)
 					{
-						if (    (applet->pix_state < PIX_CONNECT_0)
-							|| (applet->pix_state > PIX_CONNECT_2))
-							applet->pix_state = PIX_CONNECT_0;
+						if (    (applet->pix_state < PIX_WIRELESS_CONNECT_0)
+							|| (applet->pix_state > PIX_WIRELESS_CONNECT_2))
+							applet->pix_state = PIX_WIRELESS_CONNECT_0;
 						else
 							applet->pix_state++;
 					}
@@ -158,18 +159,14 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 
 				case (DEVICE_TYPE_WIRED_ETHERNET):
 				default:
-					applet->pix_state = PIX_BROKEN;
+					applet->pix_state = PIX_WIRED;
 					break;
 			}
 		}
-		else
-			applet->pix_state = PIX_BROKEN;
 
 		if (active_device)	dbus_free (active_device);
 		if (status)		dbus_free (status);
 	}
-	else
-		applet->pix_state = PIX_BROKEN;
 
 	nmwa_draw (applet);
 }
@@ -220,7 +217,7 @@ static void nmwa_load_theme (NMWirelessApplet *applet)
 	{
 		pixmapname = g_build_filename (G_DIR_SEPARATOR_S,
 				pixmapdir, pixmap_names[i], NULL);
-		applet->pixmaps[i] = gdk_pixbuf_new_from_file (pixmapname, NULL);
+		applet->pixmaps[i] = gdk_pixbuf_new_from_file_at_size (pixmapname, 32, 16, NULL);
 		g_free (pixmapname);
 	}
 
@@ -578,7 +575,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 
 	/* construct pixmap widget */
 	applet->pixmap = gtk_image_new ();
-	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->pixmaps[PIX_BROKEN]);
+	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->pixmaps[PIX_WIRED]);
 	gtk_widget_size_request (applet->pixmap, &req);
 	gtk_widget_show (applet->pixmap);
 
@@ -691,7 +688,7 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 	}
 #endif
 
-	applet->pix_state = PIX_BROKEN;
+	applet->pix_state = PIX_WIRED;
 	applet->connection = nmwa_dbus_init(applet);
 	applet->nm_active = nmwa_dbus_nm_is_running(applet->connection);
 

@@ -43,8 +43,9 @@ ui_DATA = NMWirelessApplet.xml
 
 pixmapdir = $(datadir)/pixmaps/NMWirelessApplet
 pixmap_DATA = no-link-0.png	\
+	wired.png			\
 	broken-0.png		\
-	signal-1-40.png		\
+	signal-1-40.png	\
 	signal-41-60.png	\
 	signal-61-80.png	\
 	signal-81-100.png	\

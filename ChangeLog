@@ -1,3 +1,29 @@
+2004-08-20  Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfoPassphraseDialog.c
+		- (nmi_passphrase_dialog_ok_clicked): when updating the wep key
+			for a network, set the essid as well since it may not exist yet
+		- (nmi_passphrase_dialog_init): don't star out the passphrase field,
+			since WEP keys/passphrases are long and prone to entry-error
+
+	* panel-applet/Makefile.am
+	  panel-applet/wired.png
+		- Add (pulled from system-config-network temporarily)
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Show wired picture when a wired connection is used
+		- Rename wireless icon enums, adding WIRELESS
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activate_wireless): unset encryption before bringing
+			down the card and setting the essid
+		- (nm_device_activatin_worker): request a key from the user if the
+			AP we are connecting to is encrypted but we don't have a key
+			for it yet
+		- (nm_device_set_user_key_for_network): fix missing '== 0' for a
+			strcmp() that prevented a user-entered key from actually getting
+			used
+
 2004-08-16  Dan Williams <dcbw@redhat.com>
 
 	* initscript/NetworkManager
