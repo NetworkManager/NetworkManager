@@ -46,6 +46,39 @@ enum NMIPassphraseDialogKeyTypes
 	KEY_TYPE_HEX_KEY = 2
 };
 
+static void update_button_cb (GtkWidget *widget, GladeXML *xml)
+{
+	gboolean		 enable = TRUE;
+
+	g_return_if_fail (xml != NULL);
+
+	GtkButton	*button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
+	GtkComboBox	*combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
+	GtkEntry	*passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
+	const char	*passphrase_text = gtk_entry_get_text (passphrase_entry);
+
+	if (passphrase_text[0] == '\000')
+		enable = FALSE;
+	else
+	{
+		int combo_choice = gtk_combo_box_get_active (combo);
+		switch (combo_choice)
+		{
+			case KEY_TYPE_ASCII_KEY:
+				if ((strlen (passphrase_text) != 5) && (strlen (passphrase_text) != 13))
+					enable = FALSE;
+				break;
+			case KEY_TYPE_HEX_KEY:
+				if ((strlen (passphrase_text) != 10) && (strlen (passphrase_text) != 26))
+					enable = FALSE;
+				break;
+			default:
+				break;
+		}
+	}		
+
+	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);
+}
 
 /*
  * nmi_passphrase_dialog_clear
@@ -296,6 +329,8 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 
 	entry = GTK_ENTRY (glade_xml_get_widget (info->passphrase_dialog, "passphrase_entry"));
 	nmi_passphrase_dialog_clear (dialog, GTK_WIDGET (entry));
+	gtk_widget_set_sensitive (GTK_WIDGET (ok_button), FALSE);
+	g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), info->passphrase_dialog);
 
 	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (info->passphrase_dialog, "key_type_combo"));
 	gtk_combo_box_set_active (key_type_combo, 0);

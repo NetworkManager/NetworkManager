@@ -1345,7 +1345,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev, NMAccessPoint *ap, g
 
 	/* Bring the device up and pause to allow card to associate */
 	nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC * 2);
+	g_usleep (G_USEC_PER_SEC * 5);
 
 	nm_device_update_link_active (dev, FALSE);
 	success = TRUE;
@@ -1512,6 +1512,12 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev)
 
 	if (nm_device_config_get_use_dhcp (dev))
 	{
+		/* FIXME
+		 * Bringing the device up and then down evidentally helps with 
+		 * IPv6 for some reason, according to j bootlab org
+		 */
+		nm_device_bring_down (dev);
+		nm_device_bring_up (dev);
 		if (nm_system_device_run_dhcp (dev))
 			success = TRUE;
 		else

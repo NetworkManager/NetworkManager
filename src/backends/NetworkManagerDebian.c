@@ -18,6 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ * (C) Copyright 2004 Tom Parker
  * (C) Copyright 2004 Matthew Garrett
  * (C) Copyright 2004 Red Hat, Inc.
  */
@@ -29,7 +30,12 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
+#include "interface_parser.h"
 
+#define ARPING "/usr/sbin/arping"
+
+/* hacky, but the redhat one does this as well... */
+#include "interface_parser.c"
 
 /*
  * nm_system_init
@@ -54,7 +60,7 @@ void nm_system_init (void)
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
 	char		*buf;
-        char		*iface;
+    const char		*iface;
 	int		 err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -192,7 +198,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
         guint32         broadcast;
         char            *buf;
         int             err;
-        char            *iface;
+        const char            *iface;
 
         g_return_val_if_fail (dev != NULL, FALSE);
         g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
@@ -218,7 +224,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
          * using RFC 2131 Duplicate Address Detection
          */
         temp_addr.s_addr = addr;
-        buf = g_strdup_printf ("/sbin/arping -q -D -c 1 -I %s %s", 
+        buf = g_strdup_printf ("%s -q -D -c 1 -I %s %s",ARPING, 
                                iface, inet_ntoa (temp_addr));
         if ((err = nm_spawn_process (buf)))
         {
@@ -248,12 +254,12 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 
         /* Alert other computers of our new address */
         temp_addr.s_addr = addr;
-        buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface,
+        buf = g_strdup_printf ("%s -q -A -c 1 -I %s %s", ARPING,iface,
                                inet_ntoa (temp_addr));
         nm_spawn_process (buf);
         g_free (buf);
         g_usleep (G_USEC_PER_SEC * 2);
-        buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface,
+        buf = g_strdup_printf ("%s -q -U -c 1 -I %s %s", ARPING, iface,
                                 inet_ntoa (temp_addr));
         nm_spawn_process (buf);
         g_free (buf);
@@ -289,8 +295,97 @@ error:
  */
 void nm_system_device_update_config_info (NMDevice *dev)
 {
-}
+	gboolean	 use_dhcp = TRUE;
+	guint32	 ip4_address = 0;
+	guint32	 ip4_netmask = 0;
+	guint32	 ip4_gateway = 0;
+	guint32	 ip4_broadcast = 0;
+	if_block *curr_device;
+	const char *buf;
 
+	g_return_if_fail (dev != NULL);
+
+	/* We use DHCP on an interface unless told not to */
+	nm_device_config_set_use_dhcp (dev, TRUE);
+	nm_device_config_set_ip4_address (dev, 0);
+	nm_device_config_set_ip4_gateway (dev, 0);
+	nm_device_config_set_ip4_netmask (dev, 0);
+	nm_device_config_set_ip4_broadcast (dev, 0);
+
+
+	ifparser_init();
+
+	/* Make sure this config file is for this device */
+	curr_device = ifparser_getif(nm_device_get_iface (dev));
+	if (curr_device == NULL)
+		goto out;
+
+	buf = ifparser_getkey(curr_device, "inet");
+	if (buf)
+	{
+		if (strcmp (buf, "dhcp")!=0)
+			use_dhcp = FALSE;
+	}
+
+	buf = ifparser_getkey (curr_device, "address");
+	if (buf)
+		ip4_address = inet_addr (buf);
+
+	buf = ifparser_getkey (curr_device, "gateway");
+	if (buf)
+		ip4_gateway = inet_addr (buf);
+
+	buf = ifparser_getkey (curr_device, "netmask");
+	if (buf)
+		ip4_netmask = inet_addr (buf);
+	else
+	{
+		/* Make a default netmask if we have an IP address */
+		if (ip4_address)
+		{
+			if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 127)
+				ip4_netmask = htonl (0xFF000000);
+			else if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 191)
+				ip4_netmask = htonl (0xFFFF0000);
+			else
+				ip4_netmask = htonl (0xFFFFFF00);
+		}
+	}
+
+	buf = ifparser_getkey (curr_device, "broadcast");
+	if (buf)
+		ip4_broadcast = inet_addr (buf);
+
+	if (!use_dhcp && (!ip4_address || !ip4_gateway || !ip4_netmask))
+	{
+		syslog (LOG_ERR, "Error: network configuration for device '%s' was invalid (non-DHCP configuration,"
+						" but no address/gateway specificed).  Will use DHCP instead.\n", nm_device_get_iface (dev));
+		use_dhcp = TRUE;
+	}
+
+	/* If successful, set values on the device */
+	nm_device_config_set_use_dhcp (dev, use_dhcp);
+	if (ip4_address)
+		nm_device_config_set_ip4_address (dev, ip4_address);
+	if (ip4_gateway)
+		nm_device_config_set_ip4_gateway (dev, ip4_gateway);
+	if (ip4_netmask)
+		nm_device_config_set_ip4_netmask (dev, ip4_netmask);
+	if (ip4_broadcast)
+		nm_device_config_set_ip4_broadcast (dev, ip4_broadcast);
+
+#if 0
+	syslog (LOG_DEBUG, "------ Config (%s)", nm_device_get_iface (dev));
+	syslog (LOG_DEBUG, "    DHCP=%d\n", use_dhcp);
+	syslog (LOG_DEBUG, "    ADDR=%d\n", ip4_address);
+	syslog (LOG_DEBUG, "    GW=%d\n", ip4_gateway);
+	syslog (LOG_DEBUG, "    NM=%d\n", ip4_netmask);
+	syslog (LOG_DEBUG, "---------------------\n");
+#endif
+
+out:
+	ifparser_destroy();
+}
 
 /*
  * nm_system_enable_loopback

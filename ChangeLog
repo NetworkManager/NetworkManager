@@ -1,3 +1,22 @@
+2004-11-10 Dan Williams <dcbw@redhat.com>
+
+	Patches from j bootlab org
+	* src/NetworkManagerDevice.c
+		- (nm_device_activate_wireless): wait 5 seconds before attempting to detect
+			whether the card has a link or not, some cards are slow
+		- (nm_device_activation_configure_ip): make ipv6 work a bit better
+
+	* info-daemon/NetworkManagerInfoPassphraseDialog.c
+		- Disable the "Login" button on the passphrase dialog until the user
+			enters a valid passphrase or key
+
+	Patches from Tom Parker <palfrey tevp net>
+	* src/backends/NetworkManagerDebian.c
+		- Add static IP support to the debian backend
+
+	* src/backends/interface_parser.[ch]
+		- Parse debian interface config files
+
 2004-11-08 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
