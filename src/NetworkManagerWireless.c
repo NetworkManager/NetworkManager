@@ -141,7 +141,7 @@ int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
 	if ((nm_device_get_max_quality (dev) == 100) && (qual->qual < 100))
 	{
 		/* Atmel driver seems to use qual->qual is the percentage value */
-		percent = CLAMP (qual->qual, 0, 100);
+		percent = qual->qual;
 	}
 	else if (qual->qual == (qual->level - qual->noise))
 	{
