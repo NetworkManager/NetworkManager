@@ -1,3 +1,16 @@
+2005-01-10  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- Implement "auto" frequency/channel support, since cards like Atheros
+			can't use other frequencies at all when you've told it to use a
+			specific one, even for scanning.
+		- Grab the scan mutex around places where we can't tolerate wireless
+			settings changing underneath us, like nm_device_wireless_network_exists()
+			and nm_device_activate_wireless()
+
+	* src/NetworkManagerWireless.c
+		- Back scan interval off to 20s instead of 14s
+
 2005-01-09  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c

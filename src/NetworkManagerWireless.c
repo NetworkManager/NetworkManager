@@ -312,7 +312,7 @@ gpointer nm_wireless_scan_worker (gpointer user_data)
 	if (!data)
 		return NULL;
 	
-	wscan_source = g_timeout_source_new (14000);
+	wscan_source = g_timeout_source_new (20000);
 	g_source_set_callback (wscan_source, nm_wireless_scan_monitor, data, NULL);
 	wscan_source_id = g_source_attach (wscan_source, data->wscan_ctx);
 	g_source_unref (wscan_source);

@@ -813,6 +813,7 @@ double nm_device_get_frequency (NMDevice *dev)
  * nm_device_set_frequency
  *
  * For wireless devices, set the frequency to broadcast/receive on.
+ * A frequency <= 0 means "auto".
  *
  */
 void nm_device_set_frequency (NMDevice *dev, const double freq)
@@ -835,11 +836,49 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 	{
 		struct iwreq		wrq;
 
-		wrq.u.freq.flags = IW_FREQ_FIXED;
-		iw_float2freq (freq, &wrq.u.freq);
+		if (freq <= 0)
+		{
+			/* Auto */
+			/* People like to make things hard for us.  Even though iwlib/iwconfig say
+			 * that wrq.u.freq.m should be -1 for "auto" mode, nobody actually supports
+			 * that.  Madwifi actually uses "0" to mean "auto".  So, we'll try 0 first
+			 * and if that doesn't work, fall back to the iwconfig method and use -1.
+			 *
+			 * As a further note, it appears that Atheros/Madwifi cards can't go back to
+			 * any-channel operation once you force set the channel on them.  For example,
+			 * if you set a prism54 card to a specific channel, but then set the ESSID to
+			 * something else later, it will scan for the ESSID and switch channels just fine.
+			 * Atheros cards, however, just stay at the channel you previously set and don't
+			 * budge, no matter what you do to them, until you tell them to go back to
+			 * any-channel operation.
+			 */
+			wrq.u.freq.m = 0;
+			wrq.u.freq.e = 0;
+			wrq.u.freq.flags = 0;
+		}
+		else
+		{
+			/* Fixed */
+			wrq.u.freq.flags = IW_FREQ_FIXED;
+			iw_float2freq (freq, &wrq.u.freq);
+		}
 		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq);
 		if (err == -1)
-			syslog (LOG_ERR, "nm_device_set_frequency(): error setting frequency %f for device %s.  errno = %d", freq, nm_device_get_iface (dev), errno);
+		{
+			gboolean	success = FALSE;
+			if ((freq <= 0) && ((errno == -EINVAL) || (errno == -EOPNOTSUPP)))
+			{
+				/* Ok, try "auto" the iwconfig way if the Atheros way didn't work */
+				wrq.u.freq.m = 0;
+				wrq.u.freq.e = 0;
+				wrq.u.freq.flags = 0;
+				if (iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq) != -1)
+					success = TRUE;
+			}
+
+			if (!success)
+				syslog (LOG_ERR, "nm_device_set_frequency(): error setting frequency %f for device %s.  errno = %d", freq, nm_device_get_iface (dev), errno);
+		}
 
 		close (sk);
 	}
@@ -1629,11 +1668,10 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_bring_down (dev);
-	g_usleep (G_USEC_PER_SEC * 4);
+	g_usleep (G_USEC_PER_SEC * 2);
 	nm_device_bring_up (dev);
 	g_usleep (G_USEC_PER_SEC * 2);
 	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-	nm_device_set_essid (dev, " ");
 
 	/* Disable encryption, then re-enable and set correct key on the card
 	 * if we are going to encrypt traffic.
@@ -1641,10 +1679,12 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 	essid = nm_ap_get_essid (ap);
 	nm_device_set_mode (dev, nm_ap_get_mode (ap));
 	nm_device_set_bitrate (dev, 0);
+
 	if (nm_ap_get_user_created (ap) || (nm_ap_get_freq (ap) && (nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC)))
-	{
 		nm_device_set_frequency (dev, nm_ap_get_freq (ap));
-	}
+	else
+		nm_device_set_frequency (dev, 0);	/* auto */
+
 	nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 	if (nm_ap_get_encrypted (ap) && nm_ap_get_enc_key_source (ap))
 	{
@@ -1799,7 +1839,9 @@ static gboolean HAVE_LINK (NMDevice *dev)
 /*
  * nm_device_activate_wireless
  *
- * Activate a wireless ethernet device
+ * Activate a wireless ethernet device.  Locking could be confusing here, pay attention to it.
+ * We grab the scan mutex because scanning requires us to set certain state on the card,
+ * like mode, which could screw up device activation link state checks.
  *
  */
 static gboolean nm_device_activate_wireless (NMDevice *dev)
@@ -1812,6 +1854,11 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
+	/* Grab the scan mutex, we don't want the scan thread to mess up our settings
+	 * during activation and link detection.
+	 */
+	g_mutex_lock (dev->options.wireless.scan_mutex);
+
 	if (!nm_device_is_up (dev))
 		nm_device_bring_up (dev);
 	g_usleep (G_USEC_PER_SEC);
@@ -1821,7 +1868,10 @@ get_ap:
 	if (nm_device_activation_handle_cancel (dev))
 		goto out;
 
-	/* Get a valid "best" access point we should connect to */
+	/* Get a valid "best" access point we should connect to.  We don't hold the scan
+	 * lock here because this might take a while.
+	 */
+	g_mutex_unlock (dev->options.wireless.scan_mutex);
 	while (!(best_ap = nm_device_get_best_ap (dev)))
 	{
 		dev->options.wireless.now_scanning = TRUE;
@@ -1830,8 +1880,13 @@ get_ap:
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_handle_cancel (dev))
+		{
+			/* Wierd as it may seem, we lock here to balance the unlock in out: */
+			g_mutex_lock (dev->options.wireless.scan_mutex);
 			goto out;
+		}
 	}
+	g_mutex_lock (dev->options.wireless.scan_mutex);
 
 	dev->options.wireless.now_scanning = FALSE;
 	if (!nm_ap_get_encrypted (best_ap))
@@ -1853,6 +1908,9 @@ get_ap:
 			nm_ap_list_append_ap (dev->app_data->invalid_ap_list, best_ap);
 			nm_ap_unref (best_ap);
 			nm_device_update_best_ap (dev);
+
+			/* Release scan mutex */
+			g_mutex_unlock (dev->options.wireless.scan_mutex);
 			goto get_ap;
 		}
 		else
@@ -1871,6 +1929,9 @@ get_ap:
 				attempt = 1;
 			strncpy (&last_essid[0], essid, 49);
 
+			/* Don't hold the mutex while waiting for a key */
+			g_mutex_unlock (dev->options.wireless.scan_mutex);
+
 			/* Get a wireless key */
 			dev->options.wireless.user_key_received = FALSE;
 			nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap, attempt);
@@ -1883,6 +1944,9 @@ get_ap:
 				g_usleep (G_USEC_PER_SEC / 2);
 
 			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received.", nm_device_get_iface (dev));
+
+			/* Done waiting, grab lock again */
+			g_mutex_lock (dev->options.wireless.scan_mutex);
 
 			/* If we were told to quit activation, stop the thread and return */
 			if (nm_device_activation_handle_cancel (dev))
@@ -1975,6 +2039,7 @@ get_ap:
 
 out:
 	dev->options.wireless.now_scanning = FALSE;
+	g_mutex_unlock (dev->options.wireless.scan_mutex);
 	return (success);
 }
 
@@ -2644,8 +2709,9 @@ void nm_device_update_best_ap (NMDevice *dev)
 	nm_device_set_best_ap (dev, best_ap);
 	if (!best_ap)
 	{
-		nm_device_set_essid (dev, " ");
+		nm_device_set_frequency (dev, 0);
 		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+		nm_device_set_essid (dev, "");
 		nm_device_bring_up (dev);
 	}
 }
@@ -2763,7 +2829,11 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			/* Pause to allow card to associate.  After we set the ESSID on the card, the card
 			 * has to scan all channels to find our requested AP (which can take a long time
 			 * if it is an A/B/G chipset like the Atheros 5212, for example).
+			 *
+			 * Also make sure to set "auto" frequency so the card doesn't think it has to
+			 * stay locked at the one its at (Atheros cards, again).
 			 */
+			nm_device_set_frequency (dev, 0);
 			nm_device_set_essid (dev, network);
 			g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
 
@@ -2816,13 +2886,22 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 	g_return_val_if_fail (essid != NULL, FALSE);
 
 	syslog (LOG_DEBUG, "Forcing AP '%s'", essid);
+
 	/* If the network exists, make sure it has the correct ESSID set
 	 * (it might have been a blank ESSID up to this point) and use it.
 	 */
 	nm_device_deactivate (dev, FALSE);
 	g_usleep (G_USEC_PER_SEC);
+
+	/* Grab the scanning mutex, since scanning sets some properties on the card
+	 * that can mess our link detection up.
+	 */
+	g_mutex_lock (dev->options.wireless.scan_mutex);
+
 	if (!(exists = nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted)))
 		exists = nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted);
+
+	g_mutex_unlock (dev->options.wireless.scan_mutex);
 
 	if (exists)
 	{
@@ -3210,17 +3289,19 @@ void nm_device_do_wireless_scan (NMDevice *dev, wireless_scan_head *results)
 			wireless_scan		*tmp_ap;
 			int				 err;
 			NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
-			double			 orig_freq;
+			double			 orig_freq = 0;
 			int				 orig_rate;
 
 			orig_mode = nm_device_get_mode (dev);
-			orig_freq = nm_device_get_frequency (dev);
+			if (orig_mode == NETWORK_MODE_ADHOC)
+				orig_freq = nm_device_get_frequency (dev);
 			orig_rate = nm_device_get_bitrate (dev);
 
 			/* Must be in infrastructure mode during scan, otherwise we don't get a full
 			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
 			 */
 			nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+			nm_device_set_frequency (dev, 0);
 
 			err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, results);
 			if ((err == -1) && (errno == ENODATA))
@@ -3236,7 +3317,9 @@ void nm_device_do_wireless_scan (NMDevice *dev, wireless_scan_head *results)
 					results->result = NULL;
 			}
 			nm_device_set_mode (dev, orig_mode);
-			nm_device_set_frequency (dev, orig_freq);
+			/* Only set frequency if ad-hoc mode */
+			if (orig_mode == NETWORK_MODE_ADHOC)
+				nm_device_set_frequency (dev, orig_freq);
 			nm_device_set_bitrate (dev, orig_rate);
 
 			close (sk);
