@@ -1482,9 +1482,6 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		return;
 	}
 
-	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
-		return;
-
 	sk = nm_device_open_sock ();
 	if (sk < 0)
 		return;
