@@ -1,3 +1,15 @@
+2004-10-23 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Place the GtkMenuBar inside a GtkEventBox, and add the Event Box
+			to the applet object, so we can get tooltips
+		- Add tooltips (RH #136866)
+
+	* src/NetworkManagerDevice.c
+		- When trying to find a wireless network, try to connect with encryption
+			turned on first, so that we can more accurately detect whether or not
+			we need to use encryption for the actual association later on
+
 2004-10-21 Dan Williams <dcbw@redhat.com>
 
 	* Add some support for telling NetworkManagerInfo to tell the user

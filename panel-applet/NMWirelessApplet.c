@@ -253,6 +253,7 @@ nmwa_update_state (NMWirelessApplet *applet)
   gboolean need_animation = FALSE;
   GdkPixbuf *pixbuf = NULL;
   gint strength = -1;
+  char *tip = NULL;
 
   g_mutex_lock (applet->data_mutex);
   if (applet->active_device)
@@ -286,14 +287,17 @@ nmwa_update_state (NMWirelessApplet *applet)
     {
     case (APPLET_STATE_NO_CONNECTION):
       show_applet = FALSE;
+      tip = g_strdup (_("No network connection"));
       break;
     case (APPLET_STATE_WIRED):
       pixbuf = applet->wired_icon;
+      tip = g_strdup (_("Wired network connection"));
       break;
     case (APPLET_STATE_WIRED_CONNECTING):
       applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRED_CONNECTING_FRAMES - 1);
       pixbuf = applet->wired_connecting_icons[applet->animation_step];
       need_animation = TRUE;
+      tip = g_strdup (_("Connecting to a wired network..."));
       break;
     case (APPLET_STATE_WIRELESS):
       if (applet->active_device)
@@ -308,22 +312,34 @@ nmwa_update_state (NMWirelessApplet *applet)
 	    pixbuf = applet->wireless_25_icon;
 	  else
 	    pixbuf = applet->wireless_00_icon;
+       tip = g_strdup_printf (_("Wireless network connection (%d%%)"), applet->active_device->strength);
 	}
+     else
+         tip = g_strdup (_("Wireless network connection"));
       break;
     case (APPLET_STATE_WIRELESS_CONNECTING):
       applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_CONNECTING_FRAMES - 1);
       pixbuf = applet->wireless_connecting_icons[applet->animation_step];
       need_animation = TRUE;
+      tip = g_strdup (_("Connecting to a wireless network..."));
       break;
     case (APPLET_STATE_NO_NM):
+      tip = g_strdup (_("NetworkManager is not running"));
     case (APPLET_STATE_WIRELESS_SCANNING):
       applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_SCANNING_FRAMES - 1);
       pixbuf = applet->wireless_scanning_icons[applet->animation_step];
       need_animation = TRUE;
+      if (!tip)
+          tip = g_strdup (_("Scanning for wireless networks..."));
     default:
       break;
     }
   g_mutex_unlock (applet->data_mutex);
+
+  if (!applet->tooltips)
+    applet->tooltips = gtk_tooltips_new ();
+  gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
+  g_free (tip);
 
   /*determine if we should hide the notification icon*/
   gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
@@ -1043,10 +1059,14 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
 	GtkWidget      *menu_bar;
+	GtkWidget		*event_box;
 
 	/* construct pixmap widget */
 	applet->pixmap = gtk_image_new ();
+	applet->event_box = gtk_event_box_new ();
+	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
 	menu_bar = gtk_menu_bar_new ();
+	gtk_container_add (GTK_CONTAINER(applet->event_box), menu_bar);
 	applet->toplevel_menu = gtk_menu_item_new();
 	gtk_widget_set_name (applet->toplevel_menu, "ToplevelMenu");
 	gtk_container_set_border_width (GTK_CONTAINER (applet->toplevel_menu), 0);
@@ -1060,7 +1080,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
-	gtk_container_add (GTK_CONTAINER (applet), menu_bar);
+	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
 
 	gtk_widget_show_all (GTK_WIDGET (applet));
 }
@@ -1103,6 +1123,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->device_list = NULL;
 	applet->active_device = NULL;
 	applet->nm_status = NULL;
+	applet->tooltips = NULL;
 
 	/* Start our dbus thread */
 	if (!(applet->data_mutex = g_mutex_new ()))

@@ -2078,7 +2078,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_set_mode_managed (dev);
 
-	nm_device_set_enc_key (dev, NULL);
+	nm_device_set_enc_key (dev, "11111111111111111111111111");
 	nm_device_set_essid (dev, network);
 
 	/* Bring the device up and pause to allow card to associate */
@@ -2091,17 +2091,17 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	{
 		nm_device_get_ap_address (dev, ap_addr);
 		success = TRUE;
-		*encrypted = FALSE;
+		*encrypted = TRUE;
 	}
 	else
 	{
-		/* Okay, try again but set the card into encrypted mode this time */
+		/* Okay, try again in unencrypted mode */
 		nm_device_bring_down (dev);
 
 		/* Force the card into Managed/Infrastructure mode */
 		nm_device_set_mode_managed (dev);
 
-		nm_device_set_enc_key (dev, "11111111111111111111111111");
+		nm_device_set_enc_key (dev, NULL);
 		nm_device_set_essid (dev, network);
 
 		/* Bring the device up and pause to allow card to associate */
@@ -2114,12 +2114,12 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 		{
 			nm_device_get_ap_address (dev, ap_addr);
 			success = TRUE;
-			*encrypted = TRUE;
+			*encrypted = FALSE;
 		}
 	}
 
 	if (success)
-		fprintf (stderr, "  found!\n");
+		fprintf (stderr, "  found! (%s)\n", *encrypted ? "encrypted" : "unencrypted");
 	else
 		fprintf (stderr, "  not found\n");
 

@@ -140,7 +140,9 @@ typedef struct
 	GtkWidget			*pixmap;
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
+	GtkWidget			*event_box;
 	GtkSizeGroup        *encryption_size_group;
+	GtkTooltips		*tooltips;
 } NMWirelessApplet;
 
 
