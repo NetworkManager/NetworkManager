@@ -8,14 +8,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-25 20:16+0200\n"
-"PO-Revision-Date: 2004-09-26 00:26+0200\n"
-"Last-Translator: Daniel van Eeden <daniel_e@dds.nl>\n"
+"POT-Creation-Date: 2004-10-08 12:02+0200\n"
+"PO-Revision-Date: 2004-10-08 15:41+0200\n"
+"Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
@@ -29,37 +29,51 @@ msgstr "Draadloze netwerken aanpassen"
 msgid "*"
 msgstr "*"
 
-# eigenlijk: om toegang te kunnen verkrijgen tot het draadloze netwerk s
-#: info-daemon/passphrase.glade.h:3
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit wachtwoordfrase\n"
+"128-bit Raw hex sleutel"
+
+# om toegang te kunnen verkrijgen tot het draadloze netwerk s
+# WEP-key voorlopig laten staan ipv versleuteling, mogelijk is het duidelijker
+#: info-daemon/passphrase.glade.h:5
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Draadloos netwerk vereist wachtwoordfrase</span>\n"
 "\n"
 "Een wachtwoordfrase of WEP-key is vereist om toegang te krijgen tot het draadloze netwerk '%s'."
 
-#: info-daemon/passphrase.glade.h:6
+#: info-daemon/passphrase.glade.h:8
+msgid "Key Type:"
+msgstr "Sleuteltype:"
+
+#: info-daemon/passphrase.glade.h:9
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade.h:10
 msgid "Wireless Network Key Required"
 msgstr "Sleutel draadloos netwerk vereist"
 
-#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
+#: info-daemon/passphrase.glade.h:11 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
 #: panel-applet/NMWirelessApplet.c:600
-msgid "Other Wireless Network..."
-msgstr "Ander draadloos netwerk..."
+msgid "Other Wireless Networks..."
+msgstr "Andere draadloze netwerken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: panel-applet/NMWirelessApplet.c:714
+#: panel-applet/NMWirelessApplet.c:710
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -73,11 +87,13 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
-#: panel-applet/NMWirelessApplet.c:965 panel-applet/NMWirelessApplet.c:1025
+#: panel-applet/NMWirelessApplet.c:966 panel-applet/NMWirelessApplet.c:1018
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr "Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het glade bestand is niet gevonden)."
+msgstr ""
+"Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het "
+"glade bestand is niet gevonden)."
 
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
@@ -97,9 +113,13 @@ msgid ""
 "wireless network is secure, click the checkbox below and NetworkManager will "
 "no longer pester you with stupid questions when you connect to it."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Aanmelding bij draadloos netwerk bevestigen</span>\n"
+"<span weight=\"bold\" size=\"larger\">Aanmelding bij draadloos netwerk "
+"bevestigen</span>\n"
 "\n"
-"U heeft gekozen om u aan te melden bij het draadloze netwerk '%s'.  Indien u zeker weet dat dit draadloze netwerk veilig is, vink dan onderstaande optie aan en NetworkManager zal u niet langer vermoeien met stomme vragen wanneer u zich weer bij dit netwerk aanmeldt."
+"U heeft gekozen om u aan te melden bij het draadloze netwerk '%s'.  Indien u "
+"zeker weet dat dit draadloze netwerk veilig is, vink dan onderstaande optie "
+"aan en NetworkManager zal u niet langer vermoeien met stomme vragen wanneer "
+"u zich weer bij dit netwerk aanmeldt."
 
 #: panel-applet/wireless-applet.glade.h:6
 msgid "Always Trust this Wireless Network"
@@ -113,29 +133,29 @@ msgstr "Oriëntatie"
 msgid "The orientation of the tray."
 msgstr "De oriëntatie van het applet."
 
-#: panel-applet/menu-info.c:153
+#: panel-applet/menu-info.c:77
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Bedraad netwerk (%s)"
 
-#: panel-applet/menu-info.c:155
+#: panel-applet/menu-info.c:79
 msgid "Wired Network"
 msgstr "Bedraad netwerk"
 
-#: panel-applet/menu-info.c:159
+#: panel-applet/menu-info.c:143
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Draadloos netwerk (%s)"
 msgstr[1] "Draadloze netwerken (%s)"
 
-#: panel-applet/menu-info.c:161
+#: panel-applet/menu-info.c:145
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Draadloos netwerk"
 msgstr[1] "Draadloze netwerken"
 
-#: panel-applet/menu-info.c:294
+#: panel-applet/menu-info.c:262
 msgid " (invalid Unicode)"
 msgstr " (ongeldige Unicode)"
 
