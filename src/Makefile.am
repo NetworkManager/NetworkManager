@@ -37,7 +37,9 @@ EXTRA_NetworkManager_SOURCES =			\
 		backends/NetworkManagerDebian.c	\
 		backends/NetworkManagerGentoo.c	\
 		backends/NetworkManagerRedHat.c	\
-		backends/NetworkManagerSlackware.c
+		backends/NetworkManagerSlackware.c	\
+		backends/shvar.c				\
+		backends/shvar.h
 
 
 NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) backends/$(SYSTEM_BACKEND_FILE)
