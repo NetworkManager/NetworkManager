@@ -67,17 +67,17 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 		{
 			char 	*network = g_strdup ((key + path_len));
 			char		*slash_pos;
-			char		*escaped_network;
+			char		*unescaped_network;
 
 			/* If its a key under the network name, zero out the slash so we
 			 * are left with only the network name.
 			 */
-			if ((slash_pos = strchr (network, '/')))
+			unescaped_network = gnome_vfs_unescape_string (network, "");
+			if ((slash_pos = strchr (unescaped_network, '/')))
 				*slash_pos = '\0';
 
-			escaped_network = gnome_vfs_escape_string (network);
-			nmi_dbus_signal_update_network (info->connection, network, NETWORK_TYPE_ALLOWED);
-			g_free (escaped_network);
+			nmi_dbus_signal_update_network (info->connection, unescaped_network, NETWORK_TYPE_ALLOWED);
+			g_free (unescaped_network);
 			g_free (network);
 		}
 	}

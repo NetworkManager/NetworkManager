@@ -1,3 +1,14 @@
+2004-10-04 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.[ch]
+		- Add a slightly more robust method of determining if the WEP key
+			is correct or not, by checking the WEP-discarded packet count
+			on the card
+
+	* info-daemon/NetworkManagerInfo.c
+		- (nmi_gconf_notify_callback): Fix GConf essid escaping, should
+			un-escape values we pull out rather than escaping them
+
 2004-10-03  Marcel Telka  <marcel@telka.sk>
 
 	* configure.in (ALL_LINGUAS): Added sk.

@@ -488,7 +488,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	syslog (LOG_WARNING, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path);
+/*	syslog (LOG_WARNING, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path);*/
 
 	if (strcmp ("getKeyForNetwork", method) == 0)
 	{

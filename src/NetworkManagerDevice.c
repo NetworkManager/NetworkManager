@@ -911,6 +911,29 @@ guint8 nm_device_get_max_quality (NMDevice *dev)
 
 
 /*
+ * nm_device_get_bad_crypt_packets
+ *
+ * Return the number of packets the card has dropped because
+ * they could not be successfully decrypted.
+ *
+ */
+guint32 nm_device_get_bad_crypt_packets (NMDevice *dev)
+{
+	iwstats	stats;
+	int		sk;
+	int		err;
+
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+
+	sk = iw_sockets_open ();
+	err = iw_get_stats (sk, nm_device_get_iface (dev), &stats, NULL, FALSE);
+	close (sk);
+	return (err == 0 ? stats.discard.code : 0);
+}
+
+
+/*
  * nm_device_get_ip4_address
  *
  * Get a device's IPv4 address
@@ -1200,6 +1223,15 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 }
 
 
+inline gboolean HAVE_LINK (NMDevice *dev, guint32 bad_crypt_packets)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+
+fprintf (stderr, "PACKETS: dev %d, previous %d\n", nm_device_get_bad_crypt_packets (dev), bad_crypt_packets);
+	return (nm_device_get_link_active (dev) && (nm_device_get_bad_crypt_packets (dev) <= bad_crypt_packets));
+}
+
 /*
  * nm_device_activate_wireless_wait_for_link
  *
@@ -1211,6 +1243,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 {
 	NMAccessPoint	*best_ap;
+	guint32		 bad_crypt_packets = 0;
 
 	g_return_if_fail (dev != NULL);
 
@@ -1222,6 +1255,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	}
 
 	/* Try activating the device with the key and access point we have already */
+	bad_crypt_packets = nm_device_get_bad_crypt_packets (dev);
 	nm_device_activate_wireless (dev);
 
 	/* Wait until we have a link.  Some things that might block us from
@@ -1237,7 +1271,20 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	 *		a "best" access point for us.
 	 *
 	 */
-	while (!nm_device_get_link_active (dev))
+
+	/* There are two ways to check for a good link.  If we are using WEP and Open System
+	 * authentication, then we can associate with the base station regardless of whether the
+	 * WEP key is right or not.  Therefore, we have to monitor the # of packets the card discards
+	 * when its unable to decrypt them, since that gives us some indicator of whether the WEP
+	 * key is wrong.  It seems that right after association, at least one packet is dropped by
+	 * most cards if the WEP key is wrong.
+	 *
+	 * The second and better way (if all cards actually supported it) is to check the MAC address
+	 * the card is associated with.  However, this doesn't tell us if the WEP key is wrong when we
+	 * are using Open System authentication.  Also, not all drivers return an invalid MAC address
+	 * when the card cannot communicate with the access point.
+	 */
+	while (!HAVE_LINK (dev, bad_crypt_packets))
 	{
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
@@ -1299,7 +1346,8 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 					return;
 			}
 
-			/* Try activating again with up-to-date access point and keys */
+			/* Try activating again with up-to-date access point and keys */	
+			bad_crypt_packets = nm_device_get_bad_crypt_packets (dev);
 			nm_device_activate_wireless (dev);
 		}
 		else
