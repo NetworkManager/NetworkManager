@@ -1,3 +1,7 @@
+2005-01-01  Satoru SATOH <ss@gnome.gr.jp>
+
+	* configure.in (ALL_LINGUAS): Added ja (Japanese).
+
 2004-12-22  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
