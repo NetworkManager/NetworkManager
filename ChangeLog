@@ -1,5 +1,13 @@
 2004-08-05  Dan Williams <dcbw@redhat.com>
 
+	* test/nminfotest.c
+		- Update to new NMI dbus API, check different network types
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Update to new NM dbus API, ie network type sent in query message
+
+2004-08-05  Dan Williams <dcbw@redhat.com>
+
 	* An assload of changes
 
 2004-08-02  Dan Williams <dcbw@redhat.com>

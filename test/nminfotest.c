@@ -31,7 +31,17 @@
 #define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
 
 
-char * get_network_string_property (DBusConnection *connection, char *network, char *method)
+/* MUST match MetworkManager NMNetworkType */
+typedef enum
+{
+	NETWORK_TYPE_UNKNOWN = 0,
+	NETWORK_TYPE_TRUSTED,
+	NETWORK_TYPE_PREFERRED,
+	NETWORK_TYPE_INVALID,
+	NETWORK_TYPE_DEVICE
+} NMINetworkType;
+
+char * get_network_string_property (DBusConnection *connection, char *network, char *method, NMINetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -48,9 +58,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 		return;
 	}
 
-	dbus_message_iter_init (message, &iter);
-	dbus_message_iter_append_string (&iter, network);
-
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
@@ -73,7 +81,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	string = dbus_message_iter_get_string (&iter);
 	if (!string)
 	{
-		fprintf (stderr, "NetworkManagerInfo returned a NULL active device object path" );
+		fprintf (stderr, "NetworkManagerInfo returned a NULL string for method '%s'", method );
 		return;
 	}
 	ret_string = g_strdup (string);
@@ -85,7 +93,7 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	return (ret_string);
 }
 
-int get_network_prio (DBusConnection *connection, char *network)
+int get_network_prio (DBusConnection *connection, char *network, NMINetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -98,17 +106,15 @@ int get_network_prio (DBusConnection *connection, char *network)
 	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
 									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
 									NMI_DBUS_NMI_NAMESPACE,
-									"getAllowedNetworkPriority");
+									"getNetworkPriority");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
 		return (-1);
 	}
 
-	dbus_message_iter_init (message, &iter);
-	dbus_message_iter_append_string (&iter, network);
-
 	dbus_error_init (&error);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
@@ -126,17 +132,17 @@ int get_network_prio (DBusConnection *connection, char *network)
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	int	type;
-	type = dbus_message_iter_get_uint32 (&iter);
+	int dbus_type;
+	dbus_type = dbus_message_iter_get_uint32 (&iter);
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
-	return (type);
+	return (dbus_type);
 }
 
 
-void get_allowed_networks (DBusConnection *connection)
+void get_networks_of_type (DBusConnection *connection, NMINetworkType type)
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;
@@ -146,7 +152,7 @@ void get_allowed_networks (DBusConnection *connection)
 	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
 									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
 									NMI_DBUS_NMI_NAMESPACE,
-									"getAllowedNetworks");
+									"getNetworks");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -154,6 +160,7 @@ void get_allowed_networks (DBusConnection *connection)
 	}
 
 	dbus_error_init (&error);
+	dbus_message_append_args (message, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
@@ -183,15 +190,25 @@ void get_allowed_networks (DBusConnection *connection)
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
+	if (!networks)
+		fprintf( stderr, "No networks found\n" );
+
 	int i;
-	fprintf( stderr, "Networks:\n" );
+	fprintf( stderr, "Networks of type %d:\n", type );
 	for (i = 0; i < num_networks; i++)
 	{
-		char *essid = get_network_string_property (connection, networks[i], "getAllowedNetworkEssid");
-		char *key = get_network_string_property (connection, networks[i], "getAllowedNetworkKey");
+		if (strlen (networks[i]) == 0)
+		{
+			fprintf( stderr, "   No networks found\n" );
+			break;
+		}
+		else
+		{
+			char *essid = get_network_string_property (connection, networks[i], "getNetworkEssid", type);
+			char *key = get_network_string_property (connection, networks[i], "getNetworkKey", type);
 
-		fprintf( stderr, "   %d:\t%s\t%s\n",
-				get_network_prio (connection, networks[i]), essid, key);
+			fprintf( stderr, "   %d:\t%s\t%s\n", get_network_prio (connection, networks[i], type), essid, key);
+		}
 	}
 
 	dbus_free_string_array (networks);
@@ -326,7 +343,9 @@ int main( int argc, char *argv[] )
 		exit (1);
 	}
 
-	get_allowed_networks (connection);
+	get_networks_of_type (connection, NETWORK_TYPE_TRUSTED);
+	get_networks_of_type (connection, NETWORK_TYPE_PREFERRED);
+	get_networks_of_type (connection, NETWORK_TYPE_DEVICE);
 	get_user_key_for_network (connection);
 
 	g_main_loop_run (loop);

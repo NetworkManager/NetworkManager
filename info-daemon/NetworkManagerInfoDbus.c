@@ -37,6 +37,14 @@
 #define	NM_DBUS_NM_DEVICES_OBJECT_PATH_PREFIX	"/org/freedesktop/NetworkManager/Devices"
 #define	NM_DBUS_NM_DEVICES_NAMESPACE			"org.freedesktop.NetworkManager.Devices"
 
+inline gboolean nmi_network_type_valid (NMINetworkType type)
+{
+	if ((type == NETWORK_TYPE_TRUSTED) || (type == NETWORK_TYPE_PREFERRED))
+		return (TRUE);
+	return (FALSE);
+}
+
+
 /*
  * nmi_dbus_create_error_message
  *
@@ -60,102 +68,6 @@ static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message, const c
 	g_free (exception_text);
 
 	return (reply_message);
-}
-
-
-/*
- * nmi_dbus_nm_get_network_essid
- *
- * Get the essid of a particular wireless network from NetworkManager.
- *
- */
-const char * nmi_dbus_nm_get_network_essid (DBusConnection *connection, const char *ap_path)
-{
-	DBusMessage	*message;
-	DBusMessage	*reply_message;
-	DBusError		 error;
-	char			*essid;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (ap_path != NULL, NULL);
-
-	message = dbus_message_new_method_call (NM_DBUS_NM_NAMESPACE,
-									ap_path,
-									NM_DBUS_NM_NAMESPACE,
-									"getName");
-	if (!message)
-	{
-		fprintf (stderr, "nmi_dbus_nm_get_network_essid(): couldn't allocate the dbus message\n");
-		return (NULL);
-	}
-
-	dbus_error_init (&error);
-	reply_message = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		fprintf (stderr, "nmi_dbus_nm_get_network_essid(): %s raised:\n %s\n\n", error.name, error.message);
-		return (NULL);
-	}
-
-	if (!reply_message)
-		return (NULL);
-
-	/* now analyze reply */
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (reply_message, &error, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID))
-		essid = NULL;
-
-	dbus_message_unref (reply_message);
-	return (essid);
-}
-
-
-/*
- * nmi_dbus_nm_get_network_encrypted
- *
- * Get whether or not a particular wireless network uses encryption from NetworkManager.
- *
- */
-gboolean nmi_dbus_nm_get_network_encrypted (DBusConnection *connection, const char *ap_path)
-{
-	DBusMessage	*message;
-	DBusMessage	*reply_message;
-	DBusError		 error;
-	gboolean		 encrypted = FALSE;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (ap_path != NULL, FALSE);
-
-	message = dbus_message_new_method_call (NM_DBUS_NM_NAMESPACE,
-									ap_path,
-									NM_DBUS_NM_NAMESPACE,
-									"getEncrypted");
-	if (!message)
-	{
-		fprintf (stderr, "nmi_dbus_get_network_encrypted(): couldn't allocate the dbus message\n");
-		return (FALSE);
-	}
-
-	dbus_error_init (&error);
-	reply_message = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		fprintf (stderr, "nmi_dbus_get_network_encrypted(): %s raised:\n %s\n\n", error.name, error.message);
-		return (FALSE);
-	}
-
-	if (!reply_message)
-		return (FALSE);
-
-	/* now analyze reply */
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (reply_message, &error, DBUS_TYPE_BOOLEAN, &encrypted, DBUS_TYPE_INVALID))
-		encrypted = FALSE;
-
-	dbus_message_unref (reply_message);
-	return (encrypted);
 }
 
 
@@ -235,8 +147,8 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 void nmi_dbus_signal_update_network (DBusConnection *connection, const char *network, NMINetworkType type)
 {
 	DBusMessage		*message;
-	const char		*ignored_signal = "IgnoredNetworkUpdate";
-	const char		*allowed_signal = "AllowedNetworkUpdate";
+	const char		*trusted_signal = "TrustedNetworkUpdate";
+	const char		*preferred_signal = "PreferredNetworkUpdate";
 	const char		*signal;
 
 	g_return_if_fail (connection != NULL);
@@ -244,9 +156,9 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 
 	switch (type)
 	{
-		case (NETWORK_TYPE_TRUSTED):	signal = allowed_signal;	break;
-		case (NETWORK_TYPE_PREFERRED):	signal = ignored_signal; break;
-		default:					return;
+		case (NETWORK_TYPE_TRUSTED):		signal = trusted_signal; break;
+		case (NETWORK_TYPE_PREFERRED):	signal = preferred_signal; break;
+		default:	return;
 	}
 
 	message = dbus_message_new_signal (NMI_DBUS_NMI_OBJECT_PATH_PREFIX, NMI_DBUS_NMI_NAMESPACE, signal);
@@ -267,27 +179,49 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 /*
  * nmi_dbus_get_networks
  *
- * Grab a list of allowed or ignored access points from GConf and return it in the form
+ * Grab a list of access points from GConf and return it in the form
  * of a string array in a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *message, NMINetworkType type)
+static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *message)
 {
 	GSList			*dir_list = NULL;
 	GSList			*element = NULL;
+	DBusError			 error;
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
 	DBusMessageIter	 iter_array;
 	const char		*path;
+	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
+	dbus_error_init (&error);
+	dbus_message_iter_init (message, &iter);
+	type = dbus_message_iter_get_int32 (&iter);
+
+#if 0
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+							"NetworkManagerInfo::getNetworks called with invalid arguments.");
+		return (reply_message);
+	}
+#endif
+
+	if (!nmi_network_type_valid (type))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+							"NetworkManagerInfo::getNetworks called with an invalid network type %d.", type);
+		return (reply_message);
+	}
+ 
 	switch (type)
 	{
-		case (NETWORK_TYPE_TRUSTED):	path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH;	break;
-		default:					return (NULL);
+		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
+		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
+		default: return (NULL);	/* shouldn't get here */
 	}
 
 	/* List all allowed access points that gconf knows about */
@@ -337,11 +271,11 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 /*
  * nmi_dbus_get_network_prio
  *
- * If the specified allowed network exists, get its priority from gconf
+ * If the specified network exists, get its priority from gconf
  * and pass it back as a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *message, NMINetworkType type)
+static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *message)
 {
 	DBusMessage		*reply_message = NULL;
 	gchar			*key = NULL;
@@ -349,24 +283,26 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 	GConfValue		*value;
 	DBusError			 error;
 	const char		*path;
+	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):	path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH;	break;
-		default:					return (NULL);
-	}
-
 	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
-							"NetworkManagerInfo::get*NetworkPriority called with invalid network.");
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+							"NetworkManagerInfo::get*NetworkPriority called with invalid arguments.");
 		return (reply_message);
+	}
+
+	switch (type)
+	{
+		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
+		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
+		default: return (NULL);
 	}
 
 	/* Grab priority key for our access point from GConf */
@@ -394,11 +330,11 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 /*
  * nmi_dbus_get_network_essid
  *
- * If the specified allowed/ignored network exists, get its essid from gconf
+ * If the specified network exists, get its essid from gconf
  * and pass it back as a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *message, NMINetworkType type)
+static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *message)
 {
 	DBusMessage		*reply_message = NULL;
 	gchar			*key = NULL;
@@ -406,24 +342,26 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	GConfValue		*value;
 	DBusError			 error;
 	const char		*path;
+	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):	path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH;	break;
-		default:					return (NULL);
-	}
-
 	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
-							"NetworkManagerInfo::get*NetworkEssid called with invalid network.");
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+							"NetworkManagerInfo::get*NetworkEssid called with invalid arguments.");
 		return (reply_message);
+	}
+
+	switch (type)
+	{
+		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
+		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
+		default: return (NULL);
 	}
 
 	/* Grab essid key for our access point from GConf */
@@ -451,11 +389,11 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 /*
  * nmi_dbus_get_network_key
  *
- * If the specified allowed/ignored network exists, get its key from gconf
+ * If the specified network exists, get its key from gconf
  * and pass it back as a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *message, NMINetworkType type)
+static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *message)
 {
 	DBusMessage		*reply_message = NULL;
 	gchar			*key = NULL;
@@ -463,24 +401,26 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 	GConfValue		*value;
 	DBusError			 error;
 	const char		*path;
+	NMINetworkType		 type;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	switch (type)
-	{
-		case (NETWORK_TYPE_TRUSTED):	path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
-		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH;	break;
-		default:					return (NULL);
-	}
-
 	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
+		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
-							"NetworkManagerInfo::get*NetworkKey called with invalid network.");
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+							"NetworkManagerInfo::get*NetworkKey called with invalid arguments.");
 		return (reply_message);
+	}
+
+	switch (type)
+	{
+		case (NETWORK_TYPE_TRUSTED):		path = NMI_GCONF_TRUSTED_NETWORKS_PATH;	break;
+		case (NETWORK_TYPE_PREFERRED):	path = NMI_GCONF_PREFERRED_NETWORKS_PATH; break;
+		default: return (NULL);
 	}
 
 	/* Grab user-key key for our access point from GConf */
@@ -534,22 +474,14 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		if (GTK_WIDGET_VISIBLE (dialog))
 			nmi_passphrase_dialog_cancel (info);
 	}
-	else if (strcmp ("getAllowedNetworks", method) == 0)
-		reply_message = nmi_dbus_get_networks (info, message, NETWORK_TYPE_TRUSTED);
-	else if (strcmp ("getAllowedNetworkPriority", method) == 0)
-		reply_message = nmi_dbus_get_network_prio (info, message, NETWORK_TYPE_TRUSTED);
-	else if (strcmp ("getAllowedNetworkEssid", method) == 0)
-		reply_message = nmi_dbus_get_network_essid (info, message,NETWORK_TYPE_TRUSTED);
-	else if (strcmp ("getAllowedNetworkKey", method) == 0)
-		reply_message = nmi_dbus_get_network_key (info, message, NETWORK_TYPE_TRUSTED);
-	else if (strcmp ("getIgnoredNetworks", method) == 0)
-		reply_message = nmi_dbus_get_networks (info, message, NETWORK_TYPE_PREFERRED);
-	else if (strcmp ("getIgnoredNetworkPriority", method) == 0)
-		reply_message = nmi_dbus_get_network_prio (info, message, NETWORK_TYPE_PREFERRED);
-	else if (strcmp ("getIgnoredNetworkEssid", method) == 0)
-		reply_message = nmi_dbus_get_network_essid (info, message,NETWORK_TYPE_PREFERRED);
-	else if (strcmp ("getIgnoredNetworkKey", method) == 0)
-		reply_message = nmi_dbus_get_network_key (info, message, NETWORK_TYPE_PREFERRED);
+	else if (strcmp ("getNetworks", method) == 0)
+		reply_message = nmi_dbus_get_networks (info, message);
+	else if (strcmp ("getNetworkPriority", method) == 0)
+		reply_message = nmi_dbus_get_network_prio (info, message);
+	else if (strcmp ("getNetworkEssid", method) == 0)
+		reply_message = nmi_dbus_get_network_essid (info, message);
+	else if (strcmp ("getNetworkKey", method) == 0)
+		reply_message = nmi_dbus_get_network_key (info, message);
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "UnknownMethod",
