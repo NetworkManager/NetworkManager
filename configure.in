@@ -104,6 +104,9 @@ PKG_CHECK_MODULES(GCONF, gconf-2.0)
 AC_SUBST(GCONF_CFLAGS)
 AC_SUBST(GCONF_LIBS)
 
+PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
+AC_SUBST(GNOME_KEYRING_CFLAGS)
+AC_SUBST(GNOME_KEYRING_LIBS)
 
 AC_ARG_WITH(gcrypt, [--with-gcrypt	Use gcrypt library], ac_gcrypt=$withval, ac_gcrypt=auto)
 if test x"$ac_gcrypt" != xno; then

@@ -30,6 +30,7 @@
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
+#include "NetworkManagerInfoVPN.h"
 
 
 /*
@@ -120,6 +121,37 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
 	}
 }
 
+/*
+ * nmi_dbus_get_user_pass
+ *
+ * Request a username/password for VPN login
+ *
+ */
+static void nmi_dbus_get_vpn_userpass (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusError			 error;
+	char				*vpn;
+	char				*username;
+	dbus_bool_t			 retry;
+
+
+	dbus_error_init (&error);
+	if (dbus_message_get_args (message, &error,
+				   DBUS_TYPE_STRING, &vpn,
+				   DBUS_TYPE_STRING, &username,
+				   DBUS_TYPE_BOOLEAN, &retry,
+				   DBUS_TYPE_INVALID))
+	{
+		if (username[0] == '\0') {
+			dbus_free (username);
+			username = NULL;
+		}
+		nmi_vpn_request_password (info, message, vpn, username, retry);
+		dbus_free (vpn);
+		dbus_free (username);
+	}
+}
+
 
 /*
  * nmi_dbus_dbus_return_user_key
@@ -157,6 +189,35 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	dbus_message_unref (message);
 }
 
+/*
+ * nmi_dbus_return_userpass
+ *
+ * Alert caller of the username/password
+ *
+ */
+void nmi_dbus_return_vpn_password (DBusConnection *connection, DBusMessage *message, const char *password)
+{
+	DBusMessage	*reply;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (message != NULL);
+	g_return_if_fail (password != NULL);
+
+	if (password == NULL)
+	{
+		reply = dbus_message_new_error (message, NMI_DBUS_INTERFACE ".Cancelled", "Operation cancelled by user");
+	}
+	else
+	{
+		reply = dbus_message_new_method_return (message);
+		dbus_message_append_args (reply,
+					  DBUS_TYPE_STRING, password,
+					  DBUS_TYPE_INVALID);
+	}
+	dbus_connection_send (connection, reply, NULL);
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+}
 
 /*
  * nmi_dbus_signal_update_network
@@ -671,6 +732,10 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		GtkWidget	*dialog = glade_xml_get_widget (info->passphrase_dialog, "passphrase_dialog");
 		if (GTK_WIDGET_VISIBLE (dialog))
 			nmi_passphrase_dialog_cancel (info);
+	}
+	else if (strcmp ("getVPNUserPass", method) == 0)
+	{
+		nmi_dbus_get_vpn_userpass (info, message);
 	}
 	else if (strcmp ("networkNotFound", method) == 0)
 	{

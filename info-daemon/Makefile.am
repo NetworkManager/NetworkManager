@@ -8,6 +8,7 @@ AM_CPPFLAGS =								\
 	$(GLADE_CFLAGS)							\
 	$(GCONF_CFLAGS)							\
 	$(LIBGNOMEUI_CFLAGS)						\
+	$(GNOME_KEYRING_CFLAGS)						\
 	-Wall								\
 	-DDBUS_API_SUBJECT_TO_CHANGE					\
 	-DG_DISABLE_DEPRECATED						\
@@ -29,6 +30,8 @@ NetworkManagerInfo_SOURCES =	NetworkManagerInfo.h		\
 				NetworkManagerInfoDbus.c				\
 				NetworkManagerInfoPassphraseDialog.c	\
 				NetworkManagerInfoPassphraseDialog.h	\
+				NetworkManagerInfoVPN.c	\
+				NetworkManagerInfoVPN.h	\
 				NetworkManagerInfoNetworksDialog.c		\
 				NetworkManagerInfoNetworksDialog.h
 
@@ -37,6 +40,7 @@ NetworkManagerInfo_LDADD = $(NM_LIBS) 		\
 			   $(GCONF_LIBS) 	\
 			   $(GTK_LIBS) 		\
 			   $(GDK_PIXBUF_LIBS)   \
+			   $(GNOME_KEYRING_LIBS)   \
 			   $(LIBGNOMEUI_LIBS)	
 
 gladedir = $(datadir)/NetworkManagerInfo/glade

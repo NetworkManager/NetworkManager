@@ -1,3 +1,17 @@
+2004-12-01  Colin Walters  <walters@verbum.org>
+
+	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_return_vpn_password): New method.
+	(nmi_dbus_get_vpn_userpass): New method.
+	(nmi_dbus_nmi_message_handler): Invoke it.
+
+	* info-daemon/NetworkManagerInfoDbus.h (nmi_dbus_return_vpn_password): Prototype.
+
+	* info-daemon/NetworkManagerInfoVPN.h,
+	info-daemon/NetworkManagerInfoVPN.c: New files; responds
+	to requests for VPN passwords.
+
+	* configure.in (GNOME_KEYRING_LIBS): Check for gnome-keyring.
+
 2004-12-01  Colin Walters  <walters@redhat.com>
 
 	* test/nmtestdevices.c, test/nmclienttest.c: Add missing
