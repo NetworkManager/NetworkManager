@@ -1,3 +1,7 @@
+2004-11-22  Colin Walters  <walters@redhat.com>
+
+	* dhcpcd/buildmsg.c, dhcpcd/dhcp_test.c: Add missing includes.
+
 2004-11-22  Colin Walters  <walters@verbum.org>
 
 	* src/backends/NetworkManagerRedHat.c (nm_system_update_dns): Run
