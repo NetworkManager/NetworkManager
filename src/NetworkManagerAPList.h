@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include "NetworkManager.h"
+#include "NetworkManagerDevice.h"
 
 NMAccessPoint *nm_ap_list_get_ap_by_essid 	(NMData *data, const char *network);
 
@@ -32,5 +33,7 @@ void			nm_ap_list_update_network	(NMData *data, const char *network);
 void			nm_ap_list_populate			(NMData *data);
 
 void			nm_ap_list_free			(GSList *ap_list);
+
+void			nm_ap_list_diff			(NMData *data, NMDevice *dev, GSList *old, GSList *new);
 
 #endif

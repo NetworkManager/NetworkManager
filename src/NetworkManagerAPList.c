@@ -28,6 +28,38 @@
 
 extern gboolean	debug;
 
+
+/*
+ * nm_ap_list_find_ap_in_list
+ *
+ * Helper routine to find an AP in a list.
+ *
+ */
+static NMAccessPoint * nm_ap_list_find_ap_in_list (GSList *list, const char *network)
+{
+	NMAccessPoint	*found_ap = NULL;
+	GSList		*element = list;
+
+	g_return_val_if_fail (network != NULL, NULL);
+	if (!list)
+		return (NULL);
+
+	while (element)
+	{
+		NMAccessPoint	*ap = (NMAccessPoint *)(element->data);
+
+		if (ap && (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0))
+		{
+			found_ap = ap;
+			break;
+		}
+		element = g_slist_next (element);
+	}
+
+	return (found_ap);
+}
+
+
 /*
  * nm_ap_list_get_ap_by_essid
  *
@@ -44,19 +76,7 @@ NMAccessPoint *nm_ap_list_get_ap_by_essid (NMData *data, const char *network)
 
 	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
 	{
-		GSList	*element = data->allowed_ap_list;
-
-		while (element)
-		{
-			NMAccessPoint	*ap = (NMAccessPoint *)(element->data);
-
-			if (ap && (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0))
-			{
-				found_ap = ap;
-				break;
-			}
-			element = g_slist_next (element);
-		}
+		found_ap = nm_ap_list_find_ap_in_list (data->allowed_ap_list, network);
 		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
 	}
 	else
@@ -156,5 +176,64 @@ void nm_ap_list_free (GSList *ap_list)
 {
 	g_slist_foreach (ap_list, nm_ap_list_element_free, NULL);
 	g_slist_free (ap_list);
+}
+
+
+/*
+ * nm_ap_list_diff
+ *
+ * Takes two ap lists and determines the differences.  For each ap that is present
+ * in the original list, but not in the new list, a WirelessNetworkDisappeared signal is emitted
+ * over DBus.  For each ap in the new list but not in the original, a WirelessNetworkAppeared
+ * signal is emitted.  For each ap that is the same between the lists, the "invalid" flag is copied
+ * over from the old ap to the new ap to preserve "invalid" ap status (ie, user cancelled entering
+ * a WEP key so we cannot connect to it anyway, so why try).
+ *
+ * NOTE: it is assumed that this function is called only ONCE for each list passed into it,
+ *       since the "matched" value on access points in the list are never cleared after the
+ *       ap is initially created.  Therefore, calling this function twice for any given ap list
+ *       may result in undesired behavior.
+ *
+ */
+void nm_ap_list_diff (NMData *data, NMDevice *dev, GSList *old, GSList *new)
+{
+	GSList		*element = old;
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (dev  != NULL);
+
+	/* Iterate over each item in the old list and find it in the new list */
+	while (element)
+	{
+		NMAccessPoint	*old_ap = (NMAccessPoint *)(element->data);
+		NMAccessPoint	*new_ap = NULL;
+
+		if (old_ap)
+		{
+			if ((new_ap = nm_ap_list_find_ap_in_list (new, nm_ap_get_essid (old_ap))))
+			{
+				nm_ap_set_matched (old_ap, TRUE);
+				nm_ap_set_matched (new_ap, TRUE);
+				nm_ap_set_invalid (new_ap, nm_ap_get_invalid (old_ap));
+				nm_ap_set_enc_method (new_ap, nm_ap_get_enc_method (old_ap));
+			}
+			else
+				nm_dbus_signal_wireless_network_disappeared (data->dbus_connection, dev, old_ap);
+		}
+		element = g_slist_next (element);
+	}
+
+	/* Iterate over the new list and compare to the old list.  Items that aren't already
+	 * matched are by definition new networks.
+	 */
+	element = new;
+	while (element)
+	{
+		NMAccessPoint	*new_ap = (NMAccessPoint *)(element->data);
+
+		if (new_ap && !nm_ap_get_matched (new_ap))
+			nm_dbus_signal_wireless_network_appeared (data->dbus_connection, dev, new_ap);
+		element = g_slist_next (element);
+	}
 }
 

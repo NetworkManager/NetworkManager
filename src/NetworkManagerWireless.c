@@ -90,6 +90,10 @@ gboolean nm_wireless_is_most_prefered_ap (NMData *data, NMAccessPoint *ap, int *
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (highest_priority != NULL, FALSE);
 
+	/* If the AP is marked as invalid, of course its not prefered */
+	if (nm_ap_get_invalid (ap))
+		return (FALSE);
+
 	/* Attempt to acquire mutex for device list iteration.
 	 * If the acquire fails, just ignore the scan completely.
 	 */

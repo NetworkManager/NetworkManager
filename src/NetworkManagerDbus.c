@@ -20,6 +20,8 @@
  */
 
 #include <glib.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
 #include <iwlib.h>
@@ -67,7 +69,7 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
  * Copies the object path for a device object into a provided buffer
  *
  */
-void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, unsigned int buf_len)
+static void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, unsigned int buf_len)
 {
 	g_return_if_fail (buf != NULL);
 	g_return_if_fail (buf_len > 0);
@@ -85,7 +87,7 @@ void nm_dbus_get_object_path_from_device (NMDevice *dev, unsigned char *buf, uns
  * Returns the device associated with a dbus object path
  *
  */
-NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
+static NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
 {
 	NMDevice	*dev = NULL;
 
@@ -125,12 +127,32 @@ NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
 
 
 /*
- * nm_dbus_get_network_from_object_path
+ * nm_dbus_get_object_path_from_ap
+ *
+ * Copies the object path for a wireless network into a provided buffer
+ *
+ */
+static void nm_dbus_get_object_path_from_ap (NMDevice *dev, NMAccessPoint *ap, unsigned char *buf, unsigned int buf_len)
+{
+	g_return_if_fail (buf != NULL);
+	g_return_if_fail (buf_len > 0);
+	memset (buf, 0, buf_len);
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (ap  != NULL);
+
+	/* FIXME:  check to make sure the AP is actually in the device's ap_list */
+	snprintf (buf, buf_len-1, "%s/%s/Networks/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), nm_ap_get_essid (ap));
+}
+
+
+/*
+ * nm_dbus_get_ap_from_object_path
  *
  * Returns the network (ap) associated with a dbus object path
  *
  */
-NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev)
+static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevice *dev)
 {
 	NMAccessPoint	*ap = NULL;
 	int			 i = 0;
@@ -356,6 +378,73 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 	dbus_message_unref (message);
 }
 
+
+/*
+ * nm_dbus_signal_wireless_network_appeared
+ *
+ * Notifies the bus that a new wireless network has come into range
+ *
+ */
+void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
+{
+	DBusMessage		*message;
+	unsigned char		*object_path = g_new0 (unsigned char, 100);
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (ap != NULL);
+
+	message = dbus_message_new_signal (NM_DBUS_NM_OBJECT_PATH_PREFIX, NM_DBUS_NM_NAMESPACE, "WirelessNetworkAppeared");
+	if (!message)
+	{
+		NM_DEBUG_PRINT ("nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!\n");
+		return;
+	}
+
+	nm_dbus_get_object_path_from_ap (dev, ap, object_path, 100);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+	g_free (object_path);
+
+	if (!dbus_connection_send (connection, message, NULL))
+		NM_DEBUG_PRINT ("nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!\n");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nm_dbus_signal_wireless_network_disappeared
+ *
+ * Notifies the bus that a new wireless network is no longer in range
+ *
+ */
+void nm_dbus_signal_wireless_network_disappeared (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
+{
+	DBusMessage		*message;
+	unsigned char		*object_path = g_new0 (unsigned char, 100);
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (ap != NULL);
+
+	message = dbus_message_new_signal (NM_DBUS_NM_OBJECT_PATH_PREFIX, NM_DBUS_NM_NAMESPACE, "WirelessNetworkDisappeared");
+	if (!message)
+	{
+		NM_DEBUG_PRINT ("nm_dbus_signal_wireless_network_disappeared(): Not enough memory for new dbus message!\n");
+		return;
+	}
+
+	nm_dbus_get_object_path_from_ap (dev, ap, object_path, 100);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+	g_free (object_path);
+
+	if (!dbus_connection_send (connection, message, NULL))
+		NM_DEBUG_PRINT ("nnm_dbus_signal_wireless_network_disappeared(): Could not raise the WirelessNetworkDisappeared signal!\n");
+
+	dbus_message_unref (message);
+}
+
+
 #if 0
 /*
  * nm_dbus_get_user_key_for_network_callback
@@ -479,8 +568,21 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 							DBUS_TYPE_INVALID))
 	{
 		NMDevice		*dev;
+		const char 	*cancel_message = "***canceled***";
+
 		if ((dev = nm_get_device_by_iface (data, device)))
-			nm_device_pending_action_set_user_key (dev, passphrase);
+		{
+			/* If the user canceled, mark the ap as invalid */
+			if (strncmp (passphrase, cancel_message, strlen (cancel_message)))
+			{
+				NMAccessPoint	*ap = nm_device_ap_list_get_ap_by_essid (dev, network);
+
+				if (ap)
+					nm_ap_set_invalid (ap, TRUE);
+			}
+			else
+				nm_device_pending_action_set_user_key (dev, passphrase);
+		}
 
 		char *key = nm_wireless_128bit_key_from_passphrase (passphrase);
 		g_free (key);
@@ -741,6 +843,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
 	object_path = dbus_message_get_path (message);
+
 	if (!object_path || (strcmp (object_path, NM_DBUS_NMI_OBJECT_PATH) != 0))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
@@ -780,7 +883,7 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 	g_return_val_if_fail (request != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	if (!(ap = nm_dbus_get_network_from_object_path (path, dev)))
+	if (!(ap = nm_dbus_get_ap_from_object_path (path, dev)))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "NetworkNotFound",
 						"The requested network does not exist for this device.");

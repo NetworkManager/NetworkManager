@@ -35,24 +35,28 @@
 #define	NM_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
 
 
-DBusConnection *	nm_dbus_init						(NMData *data);
+DBusConnection *nm_dbus_init						(NMData *data);
 
-void				nm_dbus_signal_device_no_longer_active	(DBusConnection *connection, NMDevice *dev);
+void			nm_dbus_signal_device_no_longer_active	(DBusConnection *connection, NMDevice *dev);
 
-void				nm_dbus_signal_device_now_active		(DBusConnection *connection, NMDevice *dev);
+void			nm_dbus_signal_device_now_active		(DBusConnection *connection, NMDevice *dev);
 
-void				nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
+void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
 
-void				nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, DBusPendingCall **pending);
+void			nm_dbus_signal_wireless_network_appeared	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap);
 
-void				nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
+void			nm_dbus_signal_wireless_network_disappeared	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap);
 
-char *			nm_dbus_get_allowed_network_essid		(DBusConnection *connection, const char *network);
+void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, DBusPendingCall **pending);
 
-char *			nm_dbus_get_allowed_network_key		(DBusConnection *connection, const char *network);
+void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
-guint			nm_dbus_get_allowed_network_priority	(DBusConnection *connection, const char *network);
+char *		nm_dbus_get_allowed_network_essid		(DBusConnection *connection, const char *network);
 
-char **			nm_dbus_get_allowed_networks			(DBusConnection *connection, int *num_networks);
+char *		nm_dbus_get_allowed_network_key		(DBusConnection *connection, const char *network);
+
+guint		nm_dbus_get_allowed_network_priority	(DBusConnection *connection, const char *network);
+
+char **		nm_dbus_get_allowed_networks			(DBusConnection *connection, int *num_networks);
 
 #endif

@@ -22,6 +22,7 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <errno.h>
@@ -132,7 +133,7 @@ static void cancel_button_clicked (GtkWidget *cancel_button, gpointer user_data)
 		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
 		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 
-		nmi_dbus_return_user_key (info->connection, device, network, "***cancelled***");
+		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***");
 		nmi_clear_dialog (dialog, glade_xml_get_widget (info->xml, "passphrase_entry"));
 	}
 }
@@ -216,10 +217,10 @@ static void nmi_interface_init (NMIAppInfo *info)
 	gtk_widget_hide (dialog);
 
 	ok_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "login_button"));
-	g_signal_connect (GTK_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (ok_button_clicked), info);
+	g_signal_connect (G_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (ok_button_clicked), info);
 	gtk_widget_grab_default (GTK_WIDGET (ok_button));
 	cancel_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "cancel_button"));
-	g_signal_connect (GTK_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (cancel_button_clicked), info);
+	g_signal_connect (G_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (cancel_button_clicked), info);
 
 	entry = GTK_ENTRY (glade_xml_get_widget (info->xml, "passphrase_entry"));
 	gtk_entry_set_visibility (entry, FALSE);

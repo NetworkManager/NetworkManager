@@ -33,7 +33,7 @@
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerWireless.h"
 #include "NetworkManagerPolicy.h"
-
+#include "NetworkManagerAPList.h"
 
 extern gboolean	debug;
 
@@ -1095,8 +1095,6 @@ void	nm_device_ap_list_add (NMDevice *dev, NMAccessPoint *ap)
  */
 void	nm_device_ap_list_clear (NMDevice *dev)
 {
-	GSList	*element;
-
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
@@ -1105,19 +1103,7 @@ void	nm_device_ap_list_clear (NMDevice *dev)
 
 	if (nm_try_acquire_mutex (dev->dev_options.wireless.ap_list_mutex, __FUNCTION__))
 	{
-		element = dev->dev_options.wireless.ap_list;
-		while (element)
-		{
-			if (element->data)
-			{
-				nm_ap_unref (element->data);
-				element->data = NULL;
-			}
-
-			element = g_slist_next (element);
-		}
-
-		g_slist_free (dev->dev_options.wireless.ap_list);
+		nm_ap_list_free (dev->dev_options.wireless.ap_list);
 		dev->dev_options.wireless.ap_list = NULL;
 
 		nm_unlock_mutex (dev->dev_options.wireless.ap_list_mutex, __FUNCTION__);
@@ -1202,6 +1188,20 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_essid (NMDevice *dev, const char *ess
 
 
 /*
+ * nm_device_ap_list_get
+ *
+ * Return a pointer to the AP list
+ *
+ */
+static const GSList *nm_device_ap_list_get (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+
+	return (dev->dev_options.wireless.ap_list);
+}
+
+/*
  * Get/Set functions for "best" access point
  *
  */
@@ -1266,9 +1266,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		int				 err;
 		NMAccessPoint		*highest_priority_ap = NULL;
 		int				 highest_priority = NM_AP_PRIORITY_WORST;
-
-		/* Clear out the device's ap list */
-		nm_device_ap_list_clear (dev);
+		GSList			*old_ap_list = nm_device_ap_list_get (dev);
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -1285,6 +1283,9 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				return;
 			}
 		}
+
+		/* Clear out the ap list for this device in preparation for any new ones */
+		dev->dev_options.wireless.ap_list = NULL;
 
 		/* Iterate over scan results and pick a "most" preferred access point. */
 		tmp_ap = scan_results.result;
@@ -1342,6 +1343,12 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			nm_ap_unref (highest_priority_ap);
 		}
 		close (iwlib_socket);
+
+		/* Now do a diff of the old and new networks that we can see, and
+		 * signal any changes over dbus.
+		 */
+		nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
+		nm_ap_list_free (old_ap_list);
 	}
 	else
 		NM_DEBUG_PRINT_1 ("nm_device_do_normal_scan() could not get a control socket for the wireless card %s.\n", nm_device_get_iface (dev) );

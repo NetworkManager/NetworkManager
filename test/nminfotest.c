@@ -21,8 +21,14 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
+
+#define	NMI_DBUS_NMI_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManagerInfo"
+#define	NMI_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
+#define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
+#define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
 
 
 char * get_network_string_property (DBusConnection *connection, char *network, char *method)
@@ -32,10 +38,10 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	DBusMessageIter iter;
 	DBusError		 error;
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-						"/org/freedesktop/NetworkManagerInfo",
-						"org.freedesktop.NetworkManagerInfo",
-						method);
+	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
+									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
+									NMI_DBUS_NMI_NAMESPACE,
+									method);
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -89,10 +95,10 @@ int get_network_prio (DBusConnection *connection, char *network)
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-						"/org/freedesktop/NetworkManagerInfo",
-						"org.freedesktop.NetworkManagerInfo",
-						"getAllowedNetworkPriority");
+	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
+									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
+									NMI_DBUS_NMI_NAMESPACE,
+									"getAllowedNetworkPriority");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -137,10 +143,10 @@ void get_allowed_networks (DBusConnection *connection)
 	DBusMessageIter iter;
 	DBusError		 error;
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-						"/org/freedesktop/NetworkManagerInfo",
-						"org.freedesktop.NetworkManagerInfo",
-						"getAllowedNetworks");
+	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE,
+									NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
+									NMI_DBUS_NMI_NAMESPACE,
+									"getAllowedNetworks");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -191,13 +197,109 @@ void get_allowed_networks (DBusConnection *connection)
 	dbus_free_string_array (networks);
 }
 
+void get_user_key_for_network (DBusConnection *connection)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+
+	message = dbus_message_new_method_call (NMI_DBUS_NMI_NAMESPACE, NMI_DBUS_NMI_OBJECT_PATH_PREFIX,
+						NMI_DBUS_NMI_NAMESPACE, "getKeyForNetwork");
+	if (message == NULL)
+	{
+		fprintf (stderr, "get_user_key_for_network(): Couldn't allocate the dbus message\n");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, "eth1",
+								DBUS_TYPE_STRING, "wireless-ap",
+								DBUS_TYPE_INVALID);
+
+	if (!dbus_connection_send (connection, message, NULL))
+		fprintf (stderr, "get_user_key_for_network(): could not send dbus message\n");
+
+	dbus_message_unref (message);
+}
+
+
+void set_user_key_for_network (DBusConnection *connection, DBusMessage *message, GMainLoop *loop)
+{
+	DBusError	 error;
+	char		*device;
+	char		*network;
+	char		*passphrase;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (message != NULL);
+
+	dbus_error_init (&error);
+	if (dbus_message_get_args (message, &error,
+							DBUS_TYPE_STRING, &device,
+							DBUS_TYPE_STRING, &network,
+							DBUS_TYPE_STRING, &passphrase,
+							DBUS_TYPE_INVALID))
+	{
+		fprintf( stderr, "Device was '%s'\nNetwork was '%s'\nPassphrase was '%s'\n", device, network, passphrase);
+
+		dbus_free (device);
+		dbus_free (network);
+		dbus_free (passphrase);
+
+		g_main_loop_quit (loop);
+	}
+}
+
+
+static DBusHandlerResult nm_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	const char		*method;
+	const char		*path;
+	DBusMessage		*reply_message = NULL;
+	gboolean			 handled = TRUE;
+
+	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+	method = dbus_message_get_member (message);
+	path = dbus_message_get_path (message);
+
+	fprintf (stderr, "nm_dbus_nm_message_handler() got method %s for path %s\n", method, path);
+
+	if (strcmp ("setKeyForNetwork", method) == 0)
+		set_user_key_for_network (connection, message, user_data);
+	else
+		handled = FALSE;
+
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+}
+
+
+/*
+ * nm_dbus_nm_unregister_handler
+ *
+ * Nothing happens here.
+ *
+ */
+void nm_unregister_handler (DBusConnection *connection, void *user_data)
+{
+	/* do nothing */
+}
+
 
 int main( int argc, char *argv[] )
 {
-	DBusConnection *connection;
-	DBusError		error;
+	DBusConnection			*connection;
+	DBusConnection			*connection2;
+	DBusError				 error;
+	DBusObjectPathVTable	 vtable = { &nm_unregister_handler, &nm_message_handler, NULL, NULL, NULL, NULL };
+	dbus_bool_t			 success = FALSE;
+	GMainLoop				*loop = NULL;
+
+	loop = g_main_loop_new (NULL, FALSE);
 
 	g_type_init ();
+	if (!g_thread_supported ())
+		g_thread_init (NULL);
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
@@ -205,10 +307,29 @@ int main( int argc, char *argv[] )
 	{
 		fprintf (stderr, "Error connecting to system bus: %s\n", error.message);
 		dbus_error_free (&error);
-		return 1;
+		exit (1);
+	}
+
+	dbus_connection_setup_with_g_main (connection, NULL);
+	dbus_error_init (&error);
+	dbus_bus_acquire_service (connection, NM_DBUS_NM_NAMESPACE, 0, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "Could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", error.message);
+		exit (1);
+	}
+
+	success = dbus_connection_register_object_path (connection, NM_DBUS_NM_OBJECT_PATH_PREFIX, &vtable, loop);
+	if (!success)
+	{
+		fprintf (stderr, "Could not register a handler for NetworkManager.  Not enough memory?\n");
+		exit (1);
 	}
 
 	get_allowed_networks (connection);
+	get_user_key_for_network (connection);
+
+	g_main_loop_run (loop);
 
 	return 0;
 }

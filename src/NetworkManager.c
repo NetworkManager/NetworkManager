@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <hal/libhal.h>
 #include <getopt.h>
@@ -36,6 +37,7 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerWireless.h"
 #include "NetworkManagerDbus.h"
+#include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 
 
@@ -72,16 +74,13 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 		gchar	*iface_name = hal_device_get_property_string (data->hal_ctx, udi, "net.interface");
 
 		/* Make sure the device is not already in the device list */
-		dev = nm_get_device_by_iface (data, iface_name);
-		if (dev)
+		if ((dev = nm_get_device_by_iface (data, iface_name)))
 		{
-			NM_DEBUG_PRINT_1 ("nm_create_device_and_add_to_list() device %s was already in the list\n", iface_name);
 			hal_free_string (iface_name);
 			return (NULL);
 		}
 
-		dev = nm_device_new (iface_name, data);
-		if (dev)
+		if ((dev = nm_device_new (iface_name, data)))
 		{
 
 			/* Build up the device structure */
@@ -92,8 +91,8 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			 */
 			if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 			{
-				NM_DEBUG_PRINT_3( "nm_create_device_and_add_to_list() adding udi='%s', iface='%s', iface_type=%s\n",
-					nm_device_get_udi (dev), nm_device_get_iface (dev), nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET ? "wireless" : "wired" );
+				NM_DEBUG_PRINT_2( "nm_create_device_and_add_to_list(): adding device '%s' (%s)\n",
+					nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
 
 				data->dev_list = g_slist_append (data->dev_list, dev);
 				nm_device_deactivate (dev, TRUE);
@@ -113,7 +112,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			nm_device_unref (dev);
 			dev = NULL;
 		}
-	} else NM_DEBUG_PRINT_1( "nm_create_device_and_add_to_list(): device %s does not have 'net.interface' property\n", udi );
+	}
 
 	return (dev);
 }
@@ -257,12 +256,12 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 
 
 /*
- * nm_add_current_devices
+ * nm_add_initial_devices
  *
  * Add all devices that hal knows about right now (ie not hotplug devices)
  *
  */
-static void nm_add_current_devices (NMData *data)
+static void nm_add_initial_devices (NMData *data)
 {
 	char		**net_devices;
 	int		  num_net_devices;
@@ -272,8 +271,11 @@ static void nm_add_current_devices (NMData *data)
 	
 	/* Grab a list of network devices */
 	net_devices = hal_find_device_by_capability (data->hal_ctx, "net.ethernet", &num_net_devices);
-	for (i = 0; i < num_net_devices; i++)
-		nm_create_device_and_add_to_list (data, net_devices[i]);
+	if (net_devices)
+	{
+		for (i = 0; i < num_net_devices; i++)
+			nm_create_device_and_add_to_list (data, net_devices[i]);
+	}
 
 	hal_free_string_array (net_devices);
 }
@@ -527,7 +529,7 @@ int main( int argc, char *argv[] )
 				if (strcmp (opt, "help") == 0)
 				{
 					nm_print_usage ();
-					return 0;
+					exit (EXIT_SUCCESS);
 				}
 				else if (strcmp (opt, "daemon") == 0)
 				{
@@ -538,14 +540,14 @@ int main( int argc, char *argv[] )
 					else
 					{
 						nm_print_usage ();
-						return 1;
+						exit (EXIT_FAILURE);
 					}
 				}
 				break;
 
 			default:
 				nm_print_usage ();
-				return 1;
+				exit (EXIT_FAILURE);
 				break;
 		}
 	}
@@ -557,7 +559,7 @@ int main( int argc, char *argv[] )
 		if (chdir ("/") < 0)
 		{
 			fprintf( stderr, "NetworkManager could not chdir to /.  errno=%d", errno);
-			return 1;
+			return (1);
 		}
 
 		child_pid = fork ();
@@ -572,7 +574,7 @@ int main( int argc, char *argv[] )
 				break;
 
 			default:
-				exit (0);
+				exit (EXIT_SUCCESS);
 				break;
 		}
 	}
@@ -581,66 +583,69 @@ int main( int argc, char *argv[] )
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 
-	/* Initialize libhal.  We get a connection to the hal daemon here. */
-	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
-	{
-		NM_DEBUG_PRINT("hal_initialize() failed, exiting...  Make sure the hal daemon is running?\n");
-		exit (1);
-	}
-
 	/* Initialize our instance data */
 	nm_data = nm_data_new ();
 	if (!nm_data)
 	{
 		NM_DEBUG_PRINT("nm_data_new() failed... Not enough memory?\n");
-		exit (1);
+		exit (EXIT_FAILURE);
 	}	
-
-	nm_data->hal_ctx = ctx;
-	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
 
 	/* Create our dbus service */
 	nm_data->dbus_connection = nm_dbus_init (nm_data);
-	if (nm_data->dbus_connection)
+	if (!nm_data->dbus_connection)
 	{
-		/* Initialize our list of allowed access points */
-		nm_ap_list_populate (nm_data);
-
-		/* Grab network devices that are already present and add them to our list */
-		nm_add_current_devices (nm_data);
-
-		/* Create a watch function that monitors cards for link status (hal doesn't do
-		 * this for wireless cards yet).
-		 */
-		link_source = g_timeout_add (5000, nm_link_state_monitor, nm_data);
-
-		/* Another watch function which handles networking state changes and applies
-		 * the correct policy on a change.
-		 */
-		policy_source = g_timeout_add (3000, nm_state_modification_monitor, nm_data);
-
-		/* Yet another watch function which scans for access points and
-		 * attempts to associate with approved ones in a users' list.
-		 */
-		wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
-
-		/* Watch all devices that HAL knows about for state changes */
-		hal_device_property_watch_all (nm_data->hal_ctx);
-
-		/* We run dhclient when we need to, and we don't want any stray ones
-		 * lying around upon launch.
-		 */
-		system ("killall dhclient");
-
-		/* Wheeee!!! */
-		loop = g_main_loop_new (NULL, FALSE);
-		g_main_loop_run (loop);
-
-		/* Kill the watch functions */
-		g_source_remove (link_source);
-		g_source_remove (policy_source);
-		g_source_remove (wireless_scan_source);
+		hal_shutdown (nm_data->hal_ctx);
+		nm_data_free (nm_data);
+		exit (EXIT_FAILURE);
 	}
+
+	/* Initialize libhal.  We get a connection to the hal daemon here. */
+	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
+	{
+		NM_DEBUG_PRINT("hal_initialize() failed, exiting...  Make sure the hal daemon is running?\n");
+		exit (EXIT_FAILURE);
+	}
+	nm_data->hal_ctx = ctx;
+	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
+
+	/* Initialize our list of allowed access points */
+	nm_ap_list_populate (nm_data);
+
+	/* Grab network devices that are already present and add them to our list */
+	nm_add_initial_devices (nm_data);
+
+	/* Create a watch function that monitors cards for link status (hal doesn't do
+	 * this for wireless cards yet).
+	 */
+	link_source = g_timeout_add (5000, nm_link_state_monitor, nm_data);
+
+	/* Another watch function which handles networking state changes and applies
+	 * the correct policy on a change.
+	 */
+	policy_source = g_timeout_add (3000, nm_state_modification_monitor, nm_data);
+
+	/* Yet another watch function which scans for access points and
+	 * attempts to associate with approved ones in a users' list.
+	 */
+	wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
+
+	/* Watch all devices that HAL knows about for state changes */
+	hal_device_property_watch_all (nm_data->hal_ctx);
+
+	/* We run dhclient when we need to, and we don't want any stray ones
+	 * lying around upon launch.
+	 */
+	system ("killall dhclient");
+
+	/* Wheeee!!! */
+	loop = g_main_loop_new (NULL, FALSE);
+	g_main_loop_run (loop);
+
+	/* Kill the watch functions */
+	g_source_remove (link_source);
+	g_source_remove (policy_source);
+	g_source_remove (wireless_scan_source);
 
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)
@@ -648,5 +653,5 @@ int main( int argc, char *argv[] )
 
 	nm_data_free (nm_data);
 
-	return 0;
+	return (0);
 }

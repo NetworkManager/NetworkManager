@@ -38,6 +38,8 @@ struct NMAccessPoint
 	guint16			 rate;
 	gboolean			 encrypted;
 	gboolean			 invalid;
+	NMAPEncMethod		 enc_method;
+	gboolean			 matched;	// used in ap list diffing
 
 	/* Things from user prefs */
 	gchar			*wep_key;
@@ -322,4 +324,47 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 	g_return_if_fail (ap != NULL);
 
 	ap->invalid = invalid;
+}
+
+
+/*
+ * Get/set functions for "matched", which is used by
+ * the ap list diffing functions to speed up the diff
+ *
+ */
+gboolean nm_ap_get_matched (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, TRUE);
+
+	return (ap->matched);
+}
+
+void nm_ap_set_matched (NMAccessPoint *ap, gboolean matched)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->matched = matched;
+}
+
+
+/*
+ * Get/set functions for encryption method
+ * Given some sort of passphrase/wep key from the user, we try it first
+ * as a 104-bit passphrase->key conversion, and fall back from there.  These
+ * functions are meant to cache which fallback succeeds so we don't have to
+ * do it every time.
+ *
+ */
+NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, TRUE);
+
+	return (ap->enc_method);
+}
+
+void nm_ap_set_enc_method (NMAccessPoint *ap, NMAPEncMethod enc_method)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->enc_method = enc_method;
 }

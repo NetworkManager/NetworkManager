@@ -31,6 +31,8 @@
 
 #define	NMI_DBUS_NMI_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManagerInfo"
 #define	NMI_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
+#define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
+#define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
 
 /*
  * nmi_dbus_create_error_message
@@ -100,9 +102,9 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	g_return_if_fail (network != NULL);
 	g_return_if_fail (passphrase != NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
-									"/org/freedesktop/NetworkManager",
-									"org.freedesktop.NetworkManager",
+	message = dbus_message_new_method_call (NM_DBUS_NM_NAMESPACE,
+									NM_DBUS_NM_OBJECT_PATH_PREFIX,
+									NM_DBUS_NM_NAMESPACE,
 									"setKeyForNetwork");
 	if (message == NULL)
 	{
@@ -138,7 +140,7 @@ void nmi_dbus_signal_update_allowed_network (DBusConnection *connection, const c
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (network != NULL);
 
-	message = dbus_message_new_signal ("/org/freedesktop/NetworkManagerInfo", "org.freedesktop.NetworkManagerInfo",
+	message = dbus_message_new_signal (NMI_DBUS_NMI_OBJECT_PATH_PREFIX, NMI_DBUS_NMI_NAMESPACE,
 									"AllowedNetworkUpdate");
 	if (!message)
 	{
@@ -428,6 +430,37 @@ void nmi_dbus_nmi_unregister_handler (DBusConnection *connection, void *user_dat
 }
 
 
+
+static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	char			*ap_object_path;
+	DBusError		 error;
+	gboolean		 handled = FALSE;
+	NMIAppInfo	*info = (NMIAppInfo *) user_data;
+	gboolean		 appeared = FALSE;
+	gboolean		 disappeared = FALSE;
+
+	g_return_val_if_fail (info != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+	if (dbus_message_is_signal (message, NM_DBUS_NM_NAMESPACE, "WirelessNetworkAppeared"))
+		appeared = TRUE;
+	else if (dbus_message_is_signal (message, NM_DBUS_NM_NAMESPACE, "WirelessNetworkDisappeared"))
+		disappeared = TRUE;
+
+	if (appeared || disappeared)
+	{
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &ap_object_path, DBUS_TYPE_INVALID))
+		{
+			dbus_free (ap_object_path);
+			handled = TRUE;
+		}
+	}
+
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+}
+
+
 /*
  * nmi_dbus_service_init
  *
@@ -452,6 +485,18 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 		fprintf (stderr, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?\n");
 		return (-1);
 	}
+
+	if (!dbus_connection_add_filter (dbus_connection, nmi_dbus_filter, info, NULL))
+		return (-1);
+
+	dbus_error_init (&dbus_error);
+	dbus_bus_add_match (dbus_connection,
+				"type='signal',"
+				"interface='"NM_DBUS_NM_NAMESPACE"',"
+				"sender='"NM_DBUS_NM_NAMESPACE"',"
+				"path='"NM_DBUS_NM_OBJECT_PATH_PREFIX"'", &dbus_error);
+	if (dbus_error_is_set (&dbus_error))
+		return (-1);
 
 	return (0);
 }

@@ -1,3 +1,64 @@
+2004-08-02  Dan Williams <dcbw@redhat.com>
+
+	* TODO
+		- new task: proper logging support
+
+	* info-daemon/NetworkManagerInfo.c
+		- Correct spelling of "canceled"
+		- Correct casting of objects for g_signal_connect()
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Add defines for NetworkManager namespace and object path, and use them
+		- Add filter function to trap new signals from NetworkManager:
+			WirelessNetworkAppeared, WirelessNetworkDisappeared
+
+	* info-daemon/passphrase.glade
+		- Change name of "ok" button to "Login to Network..."
+		- Mark invisible
+
+	* src/NetworkManager.c
+		- Code and debug message cleanups
+		- Rename "nm_add_current_devices"->"nm_add_initial_devices"
+		- (nm_add_initial_devices) Check returned string array of devices
+			and don't try to add devices if array is NULL
+		- (main) Initialize libhal a bit later, make code a bit clearer
+
+	* src/NetworkManagerAP.[ch]
+		- New accessor and data member "matched": used to speed up AP list
+			diffing
+		- New accessor and data member "enc_method": will be used during key
+			fallback to cache which passphrase->key conversion actually works
+			so we don't have to do it every time
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_find_ap_in_list) New: find an AP by essid in an AP list
+		- (nm_ap_list_diff) New: given two lists of access points, find the differences
+			between them, and send WirelessNetworkAppeared/Disappeared signals over
+			dbus in response to those differences
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_get_object_path_from_ap) New: given a device and an access point,
+			make an object path for that access point (NOTE that we don't yet check to
+			make sure that access point is actually in the device's AP list yet)
+		- (nm_dbus_get_ap_from_object_path) Renamed from nm_dbus_get_network_from_object_path
+		- (nm_dbus_signal_wireless_network_appeared, nm_dbus_signal_wireless_network_disappeared)
+			New: signal appearance/disappearance of wireless networks
+		- (nm_dbus_set_user_key_for_network) Mark the network/ap as invalid if the user cancelled
+			key entry
+
+	* src/NetworkManagerDevice.[ch]
+		- (nm_device_ap_list_clear) Use nm_ap_list_free rather than doing it ourselves
+		- (nm_device_ap_list_get) New: return the AP list (static function)
+		- (nm_device_do_normal_scan) Destroy old AP list later, so that we can diff the
+			new one resulting from the scan with the old one
+
+	* src/NetworkManagerWireless.c
+		- (nm_wireless_is_most_prefered_ap) "invalid" access points cannot be "best" access points
+
+	* test/nminfotest.c
+		- #define object paths and namespaces and use the #defines rather than static strings
+		- Test out user-key functionality of NetworkManagerInfo too
+
 2004-07-29  Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c

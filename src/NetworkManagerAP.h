@@ -29,6 +29,14 @@ typedef struct NMAccessPoint NMAccessPoint;
 
 #define	NM_AP_PRIORITY_WORST		1000
 
+typedef enum NMAPEncMethod
+{
+	NM_AP_ENC_METHOD_NONE = 0,
+	NM_AP_ENC_METHOD_HEX_KEY,
+	NM_AP_ENC_METHOD_40_BIT_PASSPHRASE,
+	NM_AP_ENC_METHOD_104_BIT_PASSPHRASE
+} NMAPEncMethod;
+
 
 NMAccessPoint		*nm_ap_new				(void);
 NMAccessPoint		*nm_ap_new_from_ap			(NMAccessPoint *ap);
@@ -62,5 +70,11 @@ void				 nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 
 gboolean			 nm_ap_get_invalid			(NMAccessPoint *ap);
 void				 nm_ap_set_invalid			(NMAccessPoint *ap, gboolean invalid);
+
+gboolean			 nm_ap_get_matched			(NMAccessPoint *ap);
+void				 nm_ap_set_matched			(NMAccessPoint *ap, gboolean matched);
+
+NMAPEncMethod		 nm_ap_get_enc_method		(NMAccessPoint *ap);
+void				 nm_ap_set_enc_method		(NMAccessPoint *ap, NMAPEncMethod enc_method);
 
 #endif
