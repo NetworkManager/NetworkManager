@@ -1,5 +1,17 @@
 2004-09-22    <clarkbw@cvs.gnome.org>
 
+	* initscript/Debian/.cvsignore:
+	* initscript/Slackware/.cvsignore:
+	Added new cvsignores for Makefile, Makefile.in
+	
+	* test/.cvsignore:
+	Added nmtestdevices
+	
+	* src/NetworkManagerDevice.c: 
+	* src/NetworkManager.c: 
+	Updated the wireless/wired HAL device strings from net.ethernet to
+	net.80203 or net.80211 depending on wired or wireless respectively
+	
 	* examples/python/NetworkManager.py: 
 	s/Quality/Strength/
 

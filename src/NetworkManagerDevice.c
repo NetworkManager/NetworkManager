@@ -507,7 +507,7 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
  * nm_device_wired_link_active
  *
  * Return the link state of a wired device.  We usually just grab the HAL
- * net.ethernet.link property, but on card insertion we need to check the MII
+ * net.80203.link property, but on card insertion we need to check the MII
  * registers of the card to get a more accurate response, since HAL may not
  * have received a netlink socket link event for the device yet, and therefore
  * will return FALSE when the device really does have a link.
@@ -526,8 +526,8 @@ static gboolean nm_device_wired_link_active (NMDevice *dev, gboolean check_mii)
 
 	if (check_mii)
 		link = mii_get_link (dev);
-	else if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link"))
-		link = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link");
+	else if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link"))
+		link = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.80203.link");
 
 	return (link);
 }

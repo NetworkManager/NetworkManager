@@ -258,7 +258,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 	syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
 
-	if (capability && (strcmp (capability, "net.ethernet") == 0))
+	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
 	{
 		char *iface;
 
@@ -308,7 +308,7 @@ static void nm_add_initial_devices (NMData *data)
 	g_return_if_fail (data != NULL);
 	
 	/* Grab a list of network devices */
-	net_devices = hal_find_device_by_capability (data->hal_ctx, "net.ethernet", &num_net_devices);
+	net_devices = hal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices);
 	if (net_devices)
 	{
 		for (i = 0; i < num_net_devices; i++)

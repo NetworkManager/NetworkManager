@@ -48,19 +48,34 @@ class NetworkManager:
         self.__devices = {}
 
     def __init_dbus__(self):
-        self._bus = dbus.SystemBus()
-        self._nm_service = self._bus.get_service(NM_SERVICE)
-        self.nm_object  = self._nm_service.get_object(NM_PATH,
-                                                      NM_INTERFACE)
+        try:
+            self._bus = dbus.SystemBus()
+            try:
+                self._nm_service = self._bus.get_service(NM_SERVICE)
+                self.nm_object  = self._nm_service.get_object(NM_PATH,
+                                                              NM_INTERFACE)
+            except Exception, e:
+                print "Counldn't get the %s service" % NM_SERVICE
+                print e
+                
+            try:
+                self._nmi_service = self._bus.get_service(NMI_SERVICE)
+                self.nmi_object  = self._nmi_service.get_object(NMI_PATH,
+                                                                NMI_INTERFACE)
+            except Exception, e:
+                print "Counldn't get the %s service" % NMI_SERVICE
+                print e
 
-        self._nmi_service = self._bus.get_service(NMI_SERVICE)
-        self.nmi_object  = self._nmi_service.get_object(NMI_PATH,
-                                                        NMI_INTERFACE)
-
-        self._hal_service = self._bus.get_service(HAL_SERVICE)
-        self._hal_manager = self._hal_service.get_object(HAL_PATH,
-                                                         HAL_INTERFACE)
-
+            try:
+                self._hal_service = self._bus.get_service(HAL_SERVICE)
+                self._hal_manager = self._hal_service.get_object(HAL_PATH,
+                                                                 HAL_INTERFACE)
+            except Exception, e:
+                print "Counldn't get the %s service" % HAL_SERVICE
+                print e
+                
+        except Exception, e:
+            print e
 
     """
     returns dictionary of the active device information
