@@ -1,5 +1,10 @@
 2005-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* libnm_glib/libnm_glib.c
+		- Small cleanup in element list iteration
+
+2005-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerWireless.c
 		- (nm_wireless_qual_to_percent): Fix up wireless quality calculations
 			to be in line with the WEXT quality specification

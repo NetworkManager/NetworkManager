@@ -138,13 +138,11 @@ static void libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 	g_return_if_fail (ctx != NULL);
 
 	g_mutex_lock (ctx->callbacks_lock);
-	elem = ctx->callbacks;
-	while (elem)
+	for (elem = ctx->callbacks; elem; elem = g_slist_next (elem))
 	{
 		libnm_glib_callback *callback = (libnm_glib_callback *)(elem->data);
 		if (callback)
 			libnm_glib_schedule_single_callback (ctx, callback);
-		elem = g_slist_next (elem);
 	}
 	g_mutex_unlock (ctx->callbacks_lock);
 }
