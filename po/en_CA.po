@@ -1,6 +1,6 @@
 # Canadian English translation for NetworkManager
 # Copyright (C) Adam Weinberger and the GNOME Foundation
-# This file is distributed under the same license as the NetworkManager package.
+# This file is distributed under the same licence as the NetworkManager package.
 # 2004, Adam Weinberger, <adamw@gnome.org>
 #
 #
@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-08-27 14:52-0400\n"
-"PO-Revision-Date: 2004=08-27 14:52-0400\n"
+"POT-Creation-Date: 2004-08-28 02:10-0400\n"
+"PO-Revision-Date: 2004=08-28 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -53,27 +53,35 @@ msgstr "Passphrase:"
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: panel-applet/NMWirelessApplet.c:553
+#: panel-applet/NMWirelessApplet.c:559
 msgid "There are no network devices..."
 msgstr "There are no network devices..."
 
-#: panel-applet/NMWirelessApplet.c:648
+#: panel-applet/NMWirelessApplet.c:659
 msgid "There are no wireless networks..."
 msgstr "There are no wireless networks..."
 
-#: panel-applet/NMWirelessApplet.c:720
+#: panel-applet/NMWirelessApplet.c:662
+msgid "Wireless Networks"
+msgstr "Wireless Networks"
+
+#: panel-applet/NMWirelessApplet.c:733
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/NMWirelessApplet.c:730
+#: panel-applet/NMWirelessApplet.c:737
+msgid "Network Connections"
+msgstr "Network Connections"
+
+#: panel-applet/NMWirelessApplet.c:744
 msgid "No network connection is currently active..."
 msgstr "No network connection is currently active..."
 
-#: panel-applet/NMWirelessApplet.c:735
+#: panel-applet/NMWirelessApplet.c:749
 msgid "A wired network connection is currently active..."
 msgstr "A wired network connection is currently active..."
 
-#: panel-applet/NMWirelessApplet.c:939
+#: panel-applet/NMWirelessApplet.c:894 panel-applet/NMWirelessApplet.c:956
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
