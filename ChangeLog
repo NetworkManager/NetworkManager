@@ -1,5 +1,33 @@
 2005-02-11  Dan Williams  <dcbw@redhat.com>
 
+	* dhcpcd/client.c
+		- (dhcp_init): only print out client ID and class ID if they are specified
+
+	* src/NetworkManagerDbus.[ch]
+	  src/nm-dbus-nm.[ch]
+	  src/nm-dbus-device.[ch]
+	  src/nm-dbus-net.[ch]
+		- Move NM, Device, and Net functions to separate files and use the
+			dbus method list stuff in NetworkManagerDbusUtils.c to do
+			method dispatching
+
+	* src/NetworkManagerDbusUtils.c
+		- Add new validate_method called before each dispatch (if present)
+			that can validate the method call
+
+	* src/NetworkManagerWireless.c
+		- (nm_wireless_qual_to_percent): Fix misplaced "!" that caused signal
+			levels never to be evaluated
+
+	Patch from j@bootlab.org
+	* src/NetworkManagerDevice.c
+		- Add typedef for "u64"
+
+	* src/backends/NetworkManagerDebian.c
+		- Copy in Dave Woodhouse's fixes for IPv6
+
+2005-02-11  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Dave Woodhouse for IPv6:
 	* src/NetworkManagerUtils.c
 		- (nm_ethernet_address_is_valid): Check for prism54 dummy MAC address

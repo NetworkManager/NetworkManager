@@ -3618,6 +3618,7 @@ void nm_device_config_set_ip4_broadcast (NMDevice *dev, guint32 broadcast)
 typedef u_int8_t u8;
 typedef u_int16_t u16;
 typedef u_int32_t u32;
+typedef u_int64_t u64;
 
 
 /**************************************/

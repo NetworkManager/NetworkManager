@@ -26,16 +26,20 @@
 
 struct NMDbusMethodList
 {
+	NMDbusMethod	 validate_method;
 	GHashTable	*methods;
 };
 
 
-NMDbusMethodList * nm_dbus_method_list_new (void)
+NMDbusMethodList * nm_dbus_method_list_new (NMDbusMethod validate_method)
 {
 	NMDbusMethodList	*list = g_malloc0 (sizeof (NMDbusMethodList));
 
 	if (list)
+	{
+		list->validate_method = validate_method;
 		list->methods = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+	}
 
 	return list;	
 }
@@ -72,7 +76,13 @@ gboolean nm_dbus_method_dispatch (NMDbusMethodList *list, DBusConnection *connec
 	if (!(callback = g_hash_table_lookup (list->methods, method)))
 		return FALSE;
 
-	temp_reply = (*callback) (connection, message, (NMDbusCBData *)user_data);
+	/* Call the optional validate method first, if it returns NULL then we
+	 * actually dispatch the call.
+	 */
+	if (list->validate_method)
+		temp_reply = (*(list->validate_method)) (connection, message, (NMDbusCBData *)user_data);
+	if (!temp_reply)
+		temp_reply = (*callback) (connection, message, (NMDbusCBData *)user_data);
 
 	if (reply)
 		*reply = temp_reply;

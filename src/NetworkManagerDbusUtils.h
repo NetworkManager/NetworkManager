@@ -28,17 +28,19 @@
 #include <dbus/dbus-glib.h>
 
 #include "NetworkManagerMain.h"
+#include "NetworkManagerDevice.h"
 
 typedef struct NMDbusCBData
 {
-	NMData	*data;
-	NMDevice	*dev;
+	NMData		*data;
+	NMDevice		*dev;
+	NMAccessPoint	*ap;
 } NMDbusCBData;
 
 typedef DBusMessage* (*NMDbusMethod) (DBusConnection *, DBusMessage *, NMDbusCBData *);
 
 
-NMDbusMethodList *	nm_dbus_method_list_new			(void);
+NMDbusMethodList *	nm_dbus_method_list_new			(NMDbusMethod validate_method);
 
 void				nm_dbus_method_list_add_method	(NMDbusMethodList *list, const char *method, NMDbusMethod callback);
 

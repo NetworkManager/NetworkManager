@@ -726,11 +726,13 @@ int dhcp_init (dhcp_interface *iface)
 	release_dhcp_options (iface);
 
 #ifdef DEBUG
-	syslog (LOG_DEBUG, "ClassID  = \"%s\"",  iface->cls_id);
-	syslog (LOG_DEBUG, "ClientID = \"%u.%u.%u.%02X.%02X.%02X.%02X.%02X.%02X\"\n",
-		iface->cli_id[0], iface->cli_id[1], iface->cli_id[2],
-		iface->cli_id[3], iface->cli_id[4], iface->cli_id[5],
-		iface->cli_id[6], iface->cli_id[7], iface->cli_id[8]);
+	if (iface->cls_id_len)
+		syslog (LOG_DEBUG, "ClassID  = \"%s\"",  iface->cls_id);
+	if (iface->cli_id_len)
+		syslog (LOG_DEBUG, "ClientID = \"%u.%u.%u.%02X.%02X.%02X.%02X.%02X.%02X\"\n",
+			iface->cli_id[0], iface->cli_id[1], iface->cli_id[2],
+			iface->cli_id[3], iface->cli_id[4], iface->cli_id[5],
+			iface->cli_id[6], iface->cli_id[7], iface->cli_id[8]);
 #endif
 
 	if ( DebugFlag )
