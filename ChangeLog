@@ -1,5 +1,11 @@
 2004-12-01  Colin Walters  <walters@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+	(nmwa_dbus_update_active_device_strength): Fix missing
+	return value.
+
+2004-12-01  Colin Walters  <walters@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c: Add missing include.
 
 2004-12-01  Colin Walters  <walters@redhat.com>

@@ -843,7 +843,7 @@ static gboolean nmwa_dbus_update_active_device_strength (gpointer user_data)
 {
 	NMWirelessApplet *applet;
 
-	g_return_if_fail (user_data != NULL);
+	g_return_val_if_fail (user_data != NULL, FALSE);
 
 	applet = (NMWirelessApplet *)user_data;
 	if (applet->dbus_active_device && (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
