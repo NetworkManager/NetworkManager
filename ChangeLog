@@ -1,5 +1,10 @@
 2005-01-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- Daemonize earlier so that glib doesn't get confused (?)
+
+2005-01-21  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 	  panel-applet/NMWirelessAppletDbus.c
 	  panel-applet/menu-info.c

@@ -694,6 +694,12 @@ int main( int argc, char *argv[] )
 		}
 	}
 
+	if (become_daemon && daemon (0, 0) < 0)
+	{
+		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
+	     exit (EXIT_FAILURE);
+	}
+
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
@@ -761,12 +767,6 @@ int main( int argc, char *argv[] )
 	link_source = g_timeout_source_new (5000);
 	g_source_set_callback (link_source, nm_link_state_monitor, nm_data, NULL);
 	link_source_id = g_source_attach (link_source, nm_data->main_context);
-
-	if (become_daemon && daemon (0, 0) < 0)
-	{
-		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
-	     exit (EXIT_FAILURE);
-	}
 
 	if (!nm_named_manager_start (nm_data->named, &error))
 	{
