@@ -1,4 +1,8 @@
-2005-04-01  Dan Williams  <dcbw@redhat.com>
+2005-04-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tom Parker: include "nm-utils.h" for backend files that need it
+
+2005-04-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c:
 		- (nm_completion_scan_has_results): restore pre-completion-patch behavior

@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "nm-utils.h"
 
 if_block* first;
 if_block* last;

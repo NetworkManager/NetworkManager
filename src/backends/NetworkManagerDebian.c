@@ -31,6 +31,7 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
 #include "interface_parser.h"
+#include "nm-utils.h"
 
 #define ARPING "/usr/sbin/arping"
 

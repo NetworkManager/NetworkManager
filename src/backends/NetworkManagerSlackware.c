@@ -26,6 +26,7 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
+#include "nm-utils.h"
 
 /*
  *	Mostly a mix of the Gentoo and RedHat Backends
@@ -97,6 +98,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
 	nm_warning ("nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
+	return FALSE;
 }
 
 

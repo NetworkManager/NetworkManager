@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include "nm-utils.h"
 
 /* get strnlen */
 #define __USE_GNU 
