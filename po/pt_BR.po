@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-22 12:24+0200\n"
+"POT-Creation-Date: 2004-10-05 12:33+0200\n"
 "PO-Revision-Date: 2004-09-22 08:56-0300\n"
 "Last-Translator: Raphael Higino <raphaelh@uai.com.br>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
@@ -54,19 +54,19 @@ msgstr "Chave da Rede Sem Fio Requerida"
 msgid "_Login to Network"
 msgstr "_Entrar na rede"
 
-#: panel-applet/NMWirelessApplet.c:598
-msgid "Other Wireless Network..."
-msgstr "Outra Redes Sem Fio..."
+#: panel-applet/NMWirelessApplet.c:589
+msgid "Other Wireless Networks..."
+msgstr "Outras Redes Sem Fio..."
 
-#: panel-applet/NMWirelessApplet.c:677
+#: panel-applet/NMWirelessApplet.c:699
 msgid "No network devices have been found"
 msgstr "Nenhum dispositivo de rede foi encontrado"
 
-#: panel-applet/NMWirelessApplet.c:784
+#: panel-applet/NMWirelessApplet.c:816
 msgid "NetworkManager is not running..."
 msgstr "O Gerenciador de Rede não está sendo executado..."
 
-#: panel-applet/NMWirelessApplet.c:922 panel-applet/NMWirelessApplet.c:982
+#: panel-applet/NMWirelessApplet.c:955 panel-applet/NMWirelessApplet.c:1007
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -112,29 +112,29 @@ msgstr "Orientação"
 msgid "The orientation of the tray."
 msgstr "A orientação da bandeja."
 
-#: panel-applet/menu-info.c:151
+#: panel-applet/menu-info.c:77
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Rede Por Fios (%s)"
 
-#: panel-applet/menu-info.c:153
+#: panel-applet/menu-info.c:79
 msgid "Wired Network"
 msgstr "Rede Por Fios"
 
-#: panel-applet/menu-info.c:157
+#: panel-applet/menu-info.c:143
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Rede Sem Fio (%s)"
 msgstr[1] "Redes Sem Fio (%s)"
 
-#: panel-applet/menu-info.c:159
+#: panel-applet/menu-info.c:145
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Rede Sem Fio"
 msgstr[1] "Redes Sem Fio"
 
-#: panel-applet/menu-info.c:292
+#: panel-applet/menu-info.c:262
 msgid " (invalid Unicode)"
 msgstr " (Unicode inválido)"
 
