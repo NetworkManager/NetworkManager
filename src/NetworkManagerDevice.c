@@ -3921,7 +3921,7 @@ static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 	{
-		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
+		nm_warning ("cannot open socket on interface %s for ethtool detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 
