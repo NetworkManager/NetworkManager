@@ -566,14 +566,14 @@ static void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  * Add a network device to the menu
  *
  */
-static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, gboolean current, gboolean multiple_devices, NMWirelessApplet *applet)
+static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, gboolean current, gint n_devices, NMWirelessApplet *applet)
 {
 	GtkWidget		*menu_item;
 
 	g_return_if_fail (menu != NULL);
 
 	menu_item = nm_menu_network_new (applet->image_size_group);
-	nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, multiple_devices);
+	nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, n_devices);
 	if (applet->active_device == device && device->type == DEVICE_TYPE_WIRED_ETHERNET)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
 
@@ -584,7 +584,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 	gtk_widget_show (menu_item);
 }
 
-static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NetworkDevice *device, NMWirelessApplet *applet)
+static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	GtkWidget *menu_item;
 	GtkWidget *spacer;
@@ -602,8 +602,6 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NetworkDevice *dev
 	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
 
 	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
-	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
-	gtk_widget_set_sensitive (menu_item, FALSE); // FIXME: make this work.
 	gtk_widget_show_all (menu_item);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 }
@@ -655,9 +653,6 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 
 		gtk_widget_show (menu_item);
 	}
-
-	/* Add the 'Select a custom esssid entry */
-	nmwa_menu_add_custom_essid_item (menu, dev, applet);
 }
 
 static int
@@ -748,18 +743,21 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 		if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
 		{
-			gboolean	 current = (dev == applet->active_device);
-			gboolean multiple_devices;
+			gboolean current = (dev == applet->active_device);
+			gint n_devices;
 
 			if (dev->type == DEVICE_TYPE_WIRED_ETHERNET)
-				multiple_devices = (n_wired_interfaces > 1);
+				n_devices = n_wired_interfaces;
 			else if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-				multiple_devices = (n_wireless_interfaces > 1);
+				n_devices = n_wireless_interfaces;
 
-			nmwa_menu_add_device_item (menu, dev, current, multiple_devices, applet);
+			nmwa_menu_add_device_item (menu, dev, current, n_devices, applet);
 			nmwa_menu_device_add_networks (menu, dev, applet);
 		}
 	}
+
+	/* Add the 'Select a custom esssid entry */
+	nmwa_menu_add_custom_essid_item (menu, applet);
 
 	g_mutex_unlock (applet->data_mutex);
 }

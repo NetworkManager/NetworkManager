@@ -1,3 +1,8 @@
+Wed Sep 22 14:05:48 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c: move the custom essid item.
+	Also, get the right device strings.
+
 Wed Sep 22 13:51:45 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/menu-info.c (nm_menu_network_draw_indicator): Flip
