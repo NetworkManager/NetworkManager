@@ -204,23 +204,42 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
  */
 static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DBusMessage *message, NMData *data)
 {
-	NMDevice		*dev = NULL;
-	DBusMessage	*reply_message = NULL;
-	char			*dev_path = NULL;
-	DBusError		 error;
+	NMDevice			*dev = NULL;
+	DBusMessage		*reply_message = NULL;
+	char				*dev_path = NULL;
+	char				*network = NULL;
+	DBusError			 error;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 
+	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID))
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path,
+							DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 	{
-		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+		network = NULL;
+
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+
+		/* So if that failed, try getting just the device */
+		dbus_error_init (&error);
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID))
+		{
+			if (dbus_error_is_set (&error))
+				dbus_error_free (&error);
+
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
-		return (reply_message);
+			return (reply_message);
+		}	else fprintf (stderr, "FORCE: device '%s'\n", dev_path);
 	}
+	else fprintf (stderr, "FORCE: device '%s', network '%s'\n", dev_path, network);
 	
+	/* So by now we have a valid device and possibly a network as well */
+
 	dev = nm_dbus_get_device_from_object_path (data, dev_path);
 	dbus_free (dev_path);
 	if (!dev)
@@ -241,6 +260,21 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		nm_device_ref (dev);
 		data->user_device = dev;
+
+		/* If the user specificed a wireless network too, force that as well */
+		if (network && nm_device_is_wireless (dev))
+		{
+			NMAccessPoint	*ap;
+
+			if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), network)))
+			{
+				syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
+				nm_device_set_best_ap (dev, ap);
+				nm_device_freeze_best_ap (dev);
+				nm_device_activation_cancel (dev);
+			}
+		}
+		dbus_free (network);
 
 		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 		nm_data_mark_state_changed (data);
@@ -1182,36 +1216,6 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		nm_dbus_nm_set_active_device (connection, message, data);
 	else if (strcmp ("setKeyForNetwork", method) == 0)
 		nm_dbus_set_user_key_for_network (connection, message, data);
-	else if (strcmp ("setNetwork", method) == 0)
-	{
-		if (data->active_device && nm_device_is_wireless (data->active_device))
-		{
-			char		*network;
-			DBusError	 error;
-
-			dbus_error_init (&error);
-			if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
-			{
-				NMAccessPoint	*ap;
-
-				if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (data->active_device), network)))
-				{
-					syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
-					nm_device_set_best_ap (data->active_device, ap);
-					nm_device_freeze_best_ap (data->active_device);
-					if (nm_device_activating (data->active_device))
-						nm_device_activation_signal_cancel (data->active_device);
-					nm_data_mark_state_changed (data);
-				}
-				dbus_free (network);
-			}
-		}
-		else
-			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "BadDevice",
-						"A network can only be set when a wireless device is active.");
-
-		handled = TRUE;
-	}
 	else if (strcmp ("status", method) == 0)
 	{
 		if ((reply_message = dbus_message_new_method_return (message)))

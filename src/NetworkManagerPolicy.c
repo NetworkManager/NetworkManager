@@ -149,7 +149,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
  * under certain conditions.
  *
  */
-static NMDevice * nm_policy_get_best_device (NMData *data)
+static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock_on_activate)
 {
 	NMDevice		*best_dev = NULL;
 
@@ -158,6 +158,9 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 	/* Can't lock the active device if you don't have one */
 	if (!data->active_device)
 		data->active_device_locked = FALSE;
+
+	if (should_lock_on_activate)
+		*should_lock_on_activate = FALSE;
 
 	/* If the user told us to switch to a particular device, do it now */
 	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
@@ -168,6 +171,7 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 
 			nm_device_unref (data->user_device);
 			data->user_device = NULL;
+			*should_lock_on_activate = TRUE;
 		}
 		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 	}
@@ -188,7 +192,8 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 				break;
 
 			/* For wireless devices, we only "unlock" them if they are
-			 * removed from the system.
+			 * removed from the system or a different device is "locked"
+			 * by the user.
 			 */
 			case (DEVICE_TYPE_WIRELESS_ETHERNET):
 				best_dev = data->active_device;
@@ -197,18 +202,6 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 			default:
 				break;
 		}
-	}
-
-	/* Or, if the current active device is wireless and its "best" access
-	 * point is locked, use that device still.  This happens when the user
-	 * forces a specific wireless network choice.  The "best" ap will have
-	 * already been set and locked by the dbus message handler, so we just
-	 * need to test for a locked "best" ap.
-	 */
-	if (data->active_device && nm_device_is_wireless (data->active_device))
-	{
-		if (nm_device_get_best_ap_frozen (data->active_device))
-			best_dev = data->active_device;
 	}
 
 	/* Fall back to automatic device picking */
@@ -269,19 +262,34 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	{
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
+			gboolean		 should_lock_on_activate = FALSE;
+			gboolean		 do_switch = FALSE;
 			NMDevice		*best_dev = NULL;
 
-			if ((best_dev = nm_policy_get_best_device (data)))
+			if ((best_dev = nm_policy_get_best_device (data, &should_lock_on_activate)))
 				nm_device_ref (best_dev);
 
-			/* Only do a switch when:
-			 * 1) the best_dev is different from data->active_device, OR
-			 * 2) best_dev is wireless and its access point is not the "best" ap, OR
-			 * 3) best_dev is wireless and its access point is the best, but it doesn't have an IP address
-			 */
-			if (    best_dev != data->active_device
-				|| (    best_dev && nm_device_is_wireless (best_dev) && !nm_device_activating (best_dev)
-					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
+			/* Figure out if we need to change devices or wireless networks */
+			if (best_dev != data->active_device)
+			{
+				syslog (LOG_INFO, "    SWITCH: best device changed");
+				do_switch = TRUE;	/* Device changed */
+			}
+			else if (best_dev && nm_device_is_wireless (best_dev))
+			{
+				if (!nm_device_activating (best_dev) && nm_device_need_ap_switch (best_dev))
+				{
+					syslog (LOG_INFO, "    SWITCH: need to associate with new access point");
+					do_switch = TRUE;
+				}
+				else if (!nm_device_activating (best_dev) && (nm_device_get_ip4_address (best_dev) == 0))
+				{
+					syslog (LOG_INFO, "    SWITCH: need to get an IP address");
+					do_switch = TRUE;
+				}
+			}
+
+			if (do_switch)
 			{
 				/* Deactivate the old device */
 				if (data->active_device)
@@ -298,21 +306,22 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 					nm_device_ref (best_dev);
 					data->active_device = best_dev;
 					nm_device_activation_begin (data->active_device);
+
+					/* nm_policy_get_best_device() signals us that the user forced
+					 * a device upon us and that we should lock the active device.
+					 */
+					if (should_lock_on_activate)
+						data->active_device_locked = TRUE;
 				}
 			}
 
 			if (best_dev)
-			{
-				if (nm_device_activating (best_dev))
-					nm_data_mark_state_changed (data);
-
 				nm_device_unref (best_dev);
-			}
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 		}
 		else
-			syslog( LOG_ERR, "nm_state_modification_monitor() could not get device list mutex");
+			syslog (LOG_ERR, "nm_state_modification_monitor() could not get device list mutex");
 	}
 	else if (data->active_device && nm_device_just_activated (data->active_device))
 	{
@@ -322,149 +331,3 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 
 	return (TRUE);
 }
-
-#if 0
-/*
- * nm_policy_allowed_ap_refresh_worker
- *
- * Worker thread function to periodically refresh the allowed
- * access point list with updated data.
- *
- */
-gpointer nm_policy_allowed_ap_refresh_worker (gpointer user_data)
-{
-	NMData		*data = (NMData *)(user_data);
-	struct timeval	 timeout;
-	
-	g_return_val_if_fail (data != NULL, NULL);
-	
-	/* Simply loop and every 20s update the available allowed ap data */
-	while (!allowed_ap_worker_exit)
-	{
-		int	err;
-
-		timeout.tv_sec = 20;
-		timeout.tv_usec = 0;
-		
-		/* Wait, but don't execute the update if select () returned an error,
-		 * since it may have immediately returned, so that we don't hammer
-		 * GConf (or the hard drive).
-		 */
-		err = select (0, NULL, NULL, NULL, &timeout);
-		if (err >= 0)
-			nm_policy_update_allowed_access_points (data);
-	}
-
-	g_thread_exit (0);
-
-	return (NULL);
-}
-
-
-/*
- * nm_policy_update_allowed_access_points
- *
- * Grabs a list of allowed access points from the user's preferences
- *
- */
-void nm_policy_update_allowed_access_points	(NMData *data)
-{
-#define	NM_ALLOWED_AP_FILE		"/etc/sysconfig/networking/allowed_access_points"
-
-	FILE		*ap_file;
-
-	g_return_if_fail (data != NULL);
-
-	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
-	{
-		ap_file = fopen (NM_ALLOWED_AP_FILE, "r");
-		if (ap_file)
-		{
-			gchar	line[ 500 ];
-			gchar	prio[ 20 ];
-			gchar	essid[ 50 ];
-			gchar	wep_key[ 50 ];
-			
-			/* Free the old list of allowed access points */
-//			nm_data_allowed_ap_list_free (data);
-
-			while (fgets (line, 499, ap_file))
-			{
-				guint	 len = strnlen (line, 499);
-				gchar	*p = &line[0];
-				gchar	*end = strchr (line, '\n');
-				guint	 op = 0;
-
-				strcpy (prio, "\0");
-				strcpy (essid, "\0");
-				strcpy (wep_key, "\0");
-
-				if (end)
-					*end = '\0';
-				else
-					end = p + len - 1;
-
-				while ((end-p > 0) && (*p=='\t'))
-					p++;
-
-				while (end-p > 0)
-				{
-					switch (op)
-					{
-						case 0:
-							strncat (prio, p, 1);
-							break;
-						case 1:
-							strncat (essid, p, 1);
-							break;
-						case 2:
-							strncat (wep_key, p, 1);
-							break;
-						default:
-							break;
-					}
-					p++;
-
-					if ((end-p > 0) && (*p=='\t'))
-					{
-						op++;
-						while ((end-p > 0) && (*p=='\t'))
-							p++;
-					}
-				}
-
-				/* Create a new entry for this essid */
-				if (strlen (essid) > 0)
-				{
-					NMAccessPoint		*ap;
-					guint			 prio_num = atoi (prio);
-
-					if (prio_num < 1)
-						prio_num = NM_AP_PRIORITY_WORST;
-					else if (prio_num > NM_AP_PRIORITY_WORST)
-						prio_num = NM_AP_PRIORITY_WORST;
-
-					ap = nm_ap_new ();
-					nm_ap_set_priority (ap, prio_num);
-					nm_ap_set_essid (ap, essid);
-					if (strlen (wep_key) > 0)
-						nm_ap_set_wep_key (ap, wep_key);
-
-					data->allowed_ap_list = g_slist_append (data->allowed_ap_list, ap);
-					/*
-					syslog( LOG_DEBUG, "FOUND: allowed ap, prio=%d  essid=%s  wep_key=%s", prio_num, essid, wep_key );
-					*/
-				}
-			}
-
-			fclose (ap_file);
-		}
-		else
-			syslog( LOG_WARNING, "nm_policy_update_allowed_access_points() could not open allowed ap list file %s.  errno %d", NM_ALLOWED_AP_FILE, errno );
-	
-		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
-	}
-	else
-		syslog( LOG_ERR, "nm_policy_update_allowed_access_points() could not lock allowed ap list mutex" );
-}
-#endif

@@ -1,3 +1,32 @@
+2004-09-11  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+	  panel-applet/NMWirelessAppletDbus.c
+		- Start using NetworkDevice/WirelessNetwork structures in more places
+		- Update for unified device/network forcing in NetworkManager
+
+	* src/NetworkManager.c
+		- some code consolidation
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_nm_set_active_device): "setActiveDevice" now takes either one
+			or two arguments:  the first is the NM ID of the device to switch to,
+			and the second (optional) argument is the ESSID of a wireless network
+			to use as well.
+		- Get rid of "setNetwork" method due to above change
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_new): perform scan and update best AP on device creation
+		- nm_device_activation_cancel_if_needed()->nm_device_activation_should_cancel()
+		- nm_device_activation_signal_cancel()->nm_device_activation_cancel(), and
+			spin waiting for cancellation to finish before returning
+
+	* src/NetworkManagerPolicy.c
+		- Changes here clarify the situations in which a device switch occurs, and 
+			make sure to keep using a forced device and network if the user gives
+			us one
+		- Remove old unused code
+
 2004-09-11  Martin Willemoes Hansen  <mwh@sysrq.dk>
 
 	* configure.in: Added Danish (da) to ALL_LINGUAS.

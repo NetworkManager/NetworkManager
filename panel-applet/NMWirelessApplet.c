@@ -366,15 +366,12 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
 
 
 /*
- * nmwa_handle_network_choice
+ * nmwa_update_network_timestamp
  *
- * Ask the user whether to add the network they have chosen to the trusted
- * networks list, and then stuff the network into gconf in either the trusted
- * or preferred networks list depending on their choice.  This notifies
- * NetworkInfoManager that the networks list has changed, and it notifies
- * NetworkManager about those changes, triggering an AP switch.
+ * Update the timestamp of a network in GConf.
+ *
  */
-static void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
+static void nmwa_update_network_timestamp (NMWirelessApplet *applet, const WirelessNetwork *network)
 {
 	GConfEntry	*gconf_entry;
 	char			*key;
@@ -387,17 +384,83 @@ static void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 	 */
 
 	/* Update timestamp on network */
-	key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_WIRELESS_NETWORKS_PATH, network);
+	key = g_strdup_printf ("%s/%s/timestamp", NM_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
 	gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
 	g_free (key);
 
 	/* Force-set the essid too so that we have a semi-complete network entry */
-	key = g_strdup_printf ("%s/%s/essid", NM_GCONF_WIRELESS_NETWORKS_PATH, network);
-	gconf_client_set_string (applet->gconf_client, key, network, NULL);
+	key = g_strdup_printf ("%s/%s/essid", NM_GCONF_WIRELESS_NETWORKS_PATH, network->essid);
+	gconf_client_set_string (applet->gconf_client, key, network->essid, NULL);
 	g_free (key);
+}
 
-	fprintf (stderr, "Forcing network '%s'\n", network);
-	nmwa_dbus_set_network (applet->connection, network);
+
+/*
+ * nmwa_get_device_network_for_essid
+ *
+ * Searches the network list for a given network device and returns the
+ * Wireless Network structure corresponding to it.
+ *
+ */
+WirelessNetwork *nmwa_get_device_network_for_essid (NMWirelessApplet *applet, NetworkDevice *dev, const char *essid)
+{
+	WirelessNetwork	*found_network = NULL;
+	GSList			*element;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (essid != NULL, NULL);
+	g_return_val_if_fail (strlen (essid), NULL);
+
+	g_mutex_lock (applet->data_mutex);
+	element = dev->networks;
+	while (element)
+	{
+		WirelessNetwork	*network = (WirelessNetwork *)(element->data);
+		if (network && (strcmp (network->essid, essid) == 0))
+		{
+			found_network = network;
+			break;
+		}
+		element = g_slist_next (element);
+	}
+	g_mutex_unlock (applet->data_mutex);
+
+	return (found_network);
+}
+
+
+/*
+ * nmwa_get_device_for_nm_device
+ *
+ * Searches the device list for a device that matches the
+ * NetworkManager ID given.
+ *
+ */
+NetworkDevice *nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev)
+{
+	NetworkDevice	*found_dev = NULL;
+	GSList		*element;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (nm_dev != NULL, NULL);
+	g_return_val_if_fail (strlen (nm_dev), NULL);
+
+	g_mutex_lock (applet->data_mutex);
+	element = applet->devices;
+	while (element)
+	{
+		NetworkDevice	*dev = (NetworkDevice *)(element->data);
+		if (dev && (strcmp (dev->nm_device, nm_dev) == 0))
+		{
+			found_dev = dev;
+			break;
+		}
+		element = g_slist_next (element);
+	}
+	g_mutex_unlock (applet->data_mutex);
+
+	return (found_dev);
 }
 
 
@@ -410,15 +473,26 @@ static void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+	NetworkDevice		*dev = NULL;
+	WirelessNetwork	*net = NULL;
 	char				*tag;
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
 
 	if ((tag = g_object_get_data (G_OBJECT (item), "network")))
-		nmwa_handle_network_choice (applet, tag);
+	{
+		char	*item_dev = g_object_get_data (G_OBJECT (item), "nm_device");
+
+		if (item_dev && (dev = nmwa_get_device_for_nm_device (applet, item_dev)))
+			if ((net = nmwa_get_device_network_for_essid (applet, dev, tag)))
+				nmwa_update_network_timestamp (applet, net);
+	}
 	else if ((tag = g_object_get_data (G_OBJECT (item), "device")))
-		nmwa_dbus_set_device (applet->connection, tag);
+		dev = nmwa_get_device_for_nm_device (applet, tag);
+
+	if (dev)
+		nmwa_dbus_set_device (applet->connection, dev, net);
 }
 
 
@@ -525,8 +599,8 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *n
  * Add a wireless network menu item
  *
  */
-static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, char *network, gboolean current,
-						gboolean encrypted, guint8 quality, gpointer user_data)
+static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, NetworkDevice *dev,
+								WirelessNetwork *net, gpointer user_data)
 {
 	GtkWidget		*menu_item;
 	GtkWidget		*label;
@@ -535,8 +609,9 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, 
 	GtkWidget		*progress;
 	float		 percent;
 
-	g_return_if_fail (text != NULL);
 	g_return_if_fail (menu != NULL);
+	g_return_if_fail (net != NULL);
+	g_return_if_fail (dev != NULL);
 
 	menu_item = gtk_menu_item_new ();
 	hbox = gtk_hbox_new (FALSE, 5);
@@ -549,10 +624,10 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, 
 	gtk_box_pack_start (GTK_BOX (hbox), foo, FALSE, FALSE, 2);
 	gtk_widget_show (foo);
 
-	label = gtk_label_new (text);
-	if (current)
+	label = gtk_label_new (net->essid);
+	if (net->active)
 	{
-		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", text);
+		char *markup = g_strdup_printf ("<span weight=\"bold\">%s</span>", net->essid);
 		gtk_label_set_markup (GTK_LABEL (label), markup);
 		g_free (markup);
 	}
@@ -561,13 +636,13 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, 
 	gtk_widget_show (label);
 
 	progress = gtk_progress_bar_new ();
-	percent = ((float)quality / (float)0x100);
+	percent = ((float)net->quality / (float)0x100);
 	percent = (percent < 0 ? 0 : (percent > 1.0 ? 1.0 : percent));
 	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (progress), percent);
 	gtk_box_pack_start (GTK_BOX (hbox), progress, TRUE, TRUE, 0);
 	gtk_widget_show (progress);
 
-	if (encrypted)
+	if (net->encrypted)
 	{
 		GtkWidget		*image;
 
@@ -578,7 +653,8 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, 
 		}
 	}
 
-	g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (network));
+	g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (net->essid));
+	g_object_set_data (G_OBJECT (menu_item), "nm_device", g_strdup (dev->nm_device));
 	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), user_data);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
@@ -612,10 +688,7 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 			WirelessNetwork *net = (WirelessNetwork *)(element->data);
 
 			if (net)
-			{
-				nmwa_menu_add_network (menu, applet->key_pixbuf, net->essid,
-						net->essid, net->active, net->encrypted, net->quality, applet);
-			}
+				nmwa_menu_add_network (menu, applet->key_pixbuf, dev, net, applet);
 
 			element = g_slist_next (element);
 		}
@@ -682,6 +755,12 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 	if ((tag = g_object_get_data (G_OBJECT (menu_item), "network")))
 	{
 		g_object_set_data (G_OBJECT (menu_item), "network", NULL);
+		g_free (tag);
+	}
+
+	if ((tag = g_object_get_data (G_OBJECT (menu_item), "nm_device")))
+	{
+		g_object_set_data (G_OBJECT (menu_item), "nm_device", NULL);
 		g_free (tag);
 	}
 

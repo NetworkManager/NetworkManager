@@ -75,7 +75,7 @@ char *		nm_device_get_path_for_ap		(NMDevice *dev, NMAccessPoint *ap);
 void			nm_device_set_enc_key			(NMDevice *dev, const char *key);
 
 gboolean		nm_device_activation_begin		(NMDevice *dev);
-void			nm_device_activation_signal_cancel	(NMDevice *dev);
+void			nm_device_activation_cancel		(NMDevice *dev);
 gboolean		nm_device_just_activated			(NMDevice *dev);
 gboolean		nm_device_activating			(NMDevice *dev);
 gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);

@@ -712,46 +712,32 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
 
 
 /*
- * nmwa_dbus_set_network
- *
- * Tell NetworkManager to use a specific network that the user picked.
- *
- */
-void nmwa_dbus_set_network (DBusConnection *connection, char *network)
-{
-	DBusMessage	*message;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (network != NULL);
-
-	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setNetwork");
-	if (message)
-	{
-		dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
-		dbus_connection_send (connection, message, NULL);
-	}
-	else
-		fprintf (stderr, "nm_dbus_set_network(): Couldn't allocate the dbus message\n");
-}
-
-
-/*
  * nmwa_dbus_set_device
  *
- * Tell NetworkManager to use a specific network device that the user picked.
+ * Tell NetworkManager to use a specific network device that the user picked, and
+ * possibly a specific wireless network too.
  *
  */
-void nmwa_dbus_set_device (DBusConnection *connection, char *device)
+void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev, const WirelessNetwork *network)
 {
 	DBusMessage	*message;
 
 	g_return_if_fail (connection != NULL);
-	g_return_if_fail (device != NULL);
+	g_return_if_fail (dev != NULL);
 
-	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice");
-	if (message)
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
-		dbus_message_append_args (message, DBUS_TYPE_STRING, device, DBUS_TYPE_INVALID);
+		if ((dev->type == DEVICE_TYPE_WIRELESS_ETHERNET) && network && network->essid)
+		{
+fprintf( stderr, "Forcing device '%s' and network '%s'\n", dev->nm_device, network->essid);
+			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
+									DBUS_TYPE_STRING, network->essid, DBUS_TYPE_INVALID);
+		}
+		else
+{
+fprintf( stderr, "Forcing device '%s'\n", dev->nm_device);
+			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device, DBUS_TYPE_INVALID);
+}
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
@@ -1035,40 +1021,6 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 
 
 /*
- * nmwa_dbus_get_device_for_nm_device
- *
- * Searches the device list for a device that matches the
- * NetworkManager ID given.
- *
- */
-static NetworkDevice *nmwa_dbus_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev)
-{
-	NetworkDevice	*found_dev = NULL;
-	GSList		*element;
-
-	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (nm_dev != NULL, NULL);
-	g_return_val_if_fail (strlen (nm_dev), NULL);
-
-	g_mutex_lock (applet->data_mutex);
-	element = applet->devices;
-	while (element)
-	{
-		NetworkDevice	*dev = (NetworkDevice *)(element->data);
-		if (dev && (strcmp (dev->nm_device, nm_dev) == 0))
-		{
-			found_dev = dev;
-			break;
-		}
-		element = g_slist_next (element);
-	}
-	g_mutex_unlock (applet->data_mutex);
-
-	return (found_dev);
-}
-
-
-/*
  * nmwa_dbus_filter
  *
  */
@@ -1114,7 +1066,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		{
 			NetworkDevice	*dev;
 
-			if ((dev = nmwa_dbus_get_device_for_nm_device (applet, nm_device)))
+			if ((dev = nmwa_get_device_for_nm_device (applet, nm_device)))
 			{
 				g_mutex_lock (applet->data_mutex);
 				nmwa_dbus_update_device_wireless_networks (dev, applet);

@@ -320,6 +320,10 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 			return (NULL);
 		}
 		dev->options.wireless.supports_wireless_scan = nm_device_supports_wireless_scan (dev);
+
+		/* Perform an initial wireless scan */
+		nm_device_do_wireless_scan (dev);
+		nm_device_update_best_ap (dev);
 	}
 
 	/* Grab IP config data for this device from the system configuration files */
@@ -999,13 +1003,13 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 
 
 /*
- * nm_device_activation_cancel_if_needed
+ * nm_device_activation_should_cancel
  *
  * Check whether we should stop activation, and if so clean up flags
  * and other random things.
  *
  */
-gboolean nm_device_activation_cancel_if_needed (NMDevice *dev)
+gboolean nm_device_activation_should_cancel (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, TRUE);
 
@@ -1168,7 +1172,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 				}
 
 				/* If we were told to quit activation, stop the thread and return */
-				if (nm_device_activation_cancel_if_needed (dev))
+				if (nm_device_activation_should_cancel (dev))
 					return;
 			}
 
@@ -1182,7 +1186,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 		}
 
 		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_cancel_if_needed (dev))
+		if (nm_device_activation_should_cancel (dev))
 			break;
 	}
 }
@@ -1249,7 +1253,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		nm_device_activate_wireless_wait_for_link (dev);
 
 		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_cancel_if_needed (dev))
+		if (nm_device_activation_should_cancel (dev))
 			return (NULL);
 
 		/* Since we've got a link, the encryption method must be good */
@@ -1283,7 +1287,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			sethostname (hostname, strlen (hostname));
 
 		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_cancel_if_needed (dev))
+		if (nm_device_activation_should_cancel (dev))
 			return (NULL);
 
 		/* Make system aware of any new DNS settings from resolv.conf */
@@ -1291,7 +1295,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	}
 
 	/* If we were told to quit activation, stop the thread and return */
-	if (nm_device_activation_cancel_if_needed (dev))
+	if (nm_device_activation_should_cancel (dev))
 		return (NULL);
 
 	dev->just_activated = TRUE;
@@ -1340,20 +1344,27 @@ gboolean nm_device_activating (NMDevice *dev)
 
 
 /*
- * nm_device_activation_signal_cancel
+ * nm_device_activation_cancel
  *
  * Signal activation worker that it should stop and die.
  *
  */
-void nm_device_activation_signal_cancel (NMDevice *dev)
+void nm_device_activation_cancel (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	if (dev->activating)
+	if (nm_device_activating (dev))
 	{
-		syslog (LOG_DEBUG, "nm_device_activation_signal_cancel(%s): cancelling", nm_device_get_iface (dev));
+		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
 		nm_system_kill_all_dhcp_daemons ();	/* dhcp daemons will block, so have to kill them to return control */
+
+		/* Spin until cancelled.  Possible race conditions or deadlocks here.
+		 * The other problem with waiting here is that we hold up dbus traffic
+		 * that we should respond to.
+		 */
+		while (nm_device_activating (dev))
+			g_usleep (G_USEC_PER_SEC / 2);
 	}
 }
 
@@ -1369,7 +1380,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	nm_device_activation_signal_cancel (dev);
+	nm_device_activation_cancel (dev);
 
 	/* Take out any entries in the routing table and any IP address the old device had. */
 	nm_system_device_flush_routes (dev);

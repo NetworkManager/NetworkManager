@@ -176,7 +176,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 					data->user_device = NULL;
 				}
 
-				nm_device_activation_signal_cancel (dev);
+				nm_device_activation_cancel (dev);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
@@ -353,36 +353,20 @@ gboolean nm_link_state_monitor (gpointer user_data)
 
 			if (dev)
 			{
-				/* Wired cards are always up and active, because otherwise we cannot do
-				 * link detection on them.  A wireless card is only up if it's the active
-				 * device, since we only do scanning and link detection on the active device
-				 * anyway.
-				 */
-				switch (nm_device_get_type (dev))
-				{
-					case DEVICE_TYPE_WIRELESS_ETHERNET:
-						nm_device_update_link_active (dev, FALSE);						
-						if ((dev == data->active_device) && !nm_device_get_link_active (dev))
-						{
-							/* If we loose a link to the access point, then
-							 * look for another access point to connect to.
-							 */
-							nm_device_update_best_ap (dev);
-						}
-						break;
-
-					case DEVICE_TYPE_WIRED_ETHERNET:
-						if (!nm_device_is_up (dev))
-							nm_device_bring_up (dev);
-						nm_device_update_link_active (dev, FALSE);
-						break;
-
-					default:
-						break;
-				}
+				if (!nm_device_is_up (dev))
+					nm_device_bring_up (dev);
+				nm_device_update_link_active (dev, FALSE);						
 
 				if (dev == data->active_device)
 				{
+					if (nm_device_is_wireless (dev) && !nm_device_get_link_active (dev))
+					{
+						/* If we loose a link to the access point, then
+						 * look for another access point to connect to.
+						 */
+						nm_device_update_best_ap (dev);
+					}
+
 					/* Check if the device's IP address has changed
 					 * (ie dhcp lease renew/address change)
 					 */
