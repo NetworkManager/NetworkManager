@@ -26,6 +26,10 @@
  * (C) Copyright 2001, 2002 Free Software Foundation
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -35,8 +39,6 @@
 #include <errno.h>
 #include <math.h>
 #include <dirent.h>
-
-#include "config.h"
 
 #include <gnome.h>
 

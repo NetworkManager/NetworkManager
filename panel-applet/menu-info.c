@@ -25,13 +25,17 @@
  * (C) Copyright 2004 Red Hat, Inc.
  * Copyright (C) 1999, 2000 Eazel, Inc.
  */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libintl.h>
 #include <string.h>
 #include "menu-info.h"
 #include "gtkcellview.h"
 #include "gtkcellrendererprogress.h"
 #include "NMWirelessAppletDbus.h"
-#include <config.h>
 
 static gboolean nm_menu_wired_expose_event    (GtkWidget *widget, GdkEventExpose *event);
 static gboolean nm_menu_wireless_expose_event (GtkWidget *widget, GdkEventExpose *event);

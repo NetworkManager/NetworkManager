@@ -1,3 +1,11 @@
+2005-01-19  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* panel-applet/NMWirelessApplet.c: #include <config.h> must be
+	the first include for working i18n. Also, don't include it in .h files
+	* panel-applet/NMWirelessApplet.h: Same
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c: Same
+	* panel-applet/menu-info.c: Same
+
 2005-01-18  Dan Williams <dcbw@redhat.com>
 
 	* dhcpcd/client.c

@@ -26,10 +26,12 @@
  * (C) Copyright 2001, 2002 Free Software Foundation
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
-
-#include "config.h"
 
 #include <gnome.h>
 #include <libgnomeui/libgnomeui.h>
