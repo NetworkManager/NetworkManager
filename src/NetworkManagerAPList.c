@@ -58,6 +58,7 @@ NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 		syslog (LOG_ERR, "nm_ap_list_new() could not create list mutex");
 		return (NULL);
 	}
+	nm_register_mutex_desc (list->mutex, "AP List Mutex");
 
 	return (list);
 }
@@ -394,6 +395,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 		nm_ap_set_encrypted (list_ap, nm_ap_get_encrypted (merge_ap));
 		nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (merge_ap));
 		nm_ap_set_last_seen (list_ap, nm_ap_get_last_seen (merge_ap));
+		nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
 	}
 	else
 	{

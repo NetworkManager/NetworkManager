@@ -30,7 +30,50 @@
 #include "NetworkManagerUtils.h"
 
 
-/*#define LOCKING_DEBUG */
+typedef struct MutexDesc
+{
+	GMutex	*mutex;
+	char		*desc;
+} MutexDesc;
+
+GSList	*mutex_descs = NULL;
+
+/*#define LOCKING_DEBUG*/
+
+
+static MutexDesc *nm_find_mutex_desc (GMutex *mutex)
+{
+	GSList	*elt;
+	gboolean	 found = FALSE;
+
+	for (elt = mutex_descs; elt; elt = g_slist_next (elt))
+	{
+		MutexDesc	*desc = (MutexDesc *)(elt->data);
+		if (desc && (desc->mutex == mutex))
+			return desc;
+	}
+
+	return NULL;
+}
+
+
+/*
+ * nm_register_mutex_desc
+ * 
+ * Associate a description with a particular mutex.
+ *
+ */
+void nm_register_mutex_desc (GMutex *mutex, char *string)
+{
+	if (!(nm_find_mutex_desc (mutex)))
+	{
+		MutexDesc	*desc = g_malloc0 (sizeof (MutexDesc));
+		desc->mutex = mutex;
+		desc->desc = g_strdup (string);
+		mutex_descs = g_slist_append (mutex_descs, desc);
+	}
+}
+
 
 /*
  * nm_try_acquire_mutex
@@ -42,27 +85,47 @@
  */
 gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 {
-	gint	i = 5;
-
 	g_return_val_if_fail (mutex != NULL, FALSE);
 
-	while (i > 0)
+	if (g_mutex_trylock (mutex))
 	{
-		if (g_mutex_trylock (mutex))
-		{
 #ifdef LOCKING_DEBUG
-			if (func) syslog (LOG_DEBUG, "MUTEX: %s got mutex 0x%X", func, mutex);
-#endif
-			return (TRUE);
+		if (func)
+		{
+			MutexDesc	*desc = nm_find_mutex_desc (mutex);
+			syslog (LOG_DEBUG, "MUTEX: <%s %p> acquired by %s", desc ? desc->desc : "(none)", mutex, func);
 		}
-		g_usleep (G_USEC_PER_SEC / 2);
-		i++;
+#endif
+		return (TRUE);
 	}
 
 #ifdef LOCKING_DEBUG
-	if (func) syslog (LOG_DEBUG, "MUTEX: %s FAILED to get mutex 0x%X", func, mutex);
+	if (func)
+	{
+		MutexDesc	*desc = nm_find_mutex_desc (mutex);
+		syslog (LOG_DEBUG, "MUTEX: <%s %p> FAILED to be acquired by %s", desc ? desc->desc : "(none)", mutex, func);
+	}
 #endif
 	return (FALSE);
+}
+
+
+/*
+ * nm_lock_mutex
+ *
+ * Blocks until a mutex is grabbed, with debugging.
+ *
+ */
+void nm_lock_mutex (GMutex *mutex, const char *func)
+{
+#ifdef LOCKING_DEBUG
+	if (func)
+	{
+		MutexDesc	*desc = nm_find_mutex_desc (mutex);
+		syslog (LOG_DEBUG, "MUTEX: <%s %p> being acquired by %s", desc ? desc->desc : "(none)", mutex, func);
+	}
+#endif
+	g_mutex_lock (mutex);
 }
 
 
@@ -77,7 +140,11 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 	g_return_if_fail (mutex != NULL);
 
 #ifdef LOCKING_DEBUG	
-	if (func) syslog (LOG_DEBUG, "MUTEX: %s released mutex 0x%X", func, mutex);
+	if (func)
+	{
+		MutexDesc	*desc = nm_find_mutex_desc (mutex);
+		syslog (LOG_DEBUG, "MUTEX: <%s %p> released by %s", desc ? desc->desc : "(none)", mutex, func);
+	}
 #endif
 
 	g_mutex_unlock (mutex);

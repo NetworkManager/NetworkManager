@@ -1,5 +1,37 @@
 2005-02-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_merge_scanned_ap): merge strength too
+
+	* src/NetworkManagerUtils.c
+		- (nm_lock_mutex, nm_register_mutex_desc): new calls to facilitate debugging
+			of locking issues by printing out prettier information than g_mutex_lock
+		- Print out names of mutexes registered with nm_register_mutex_desc()
+		- (nm_try_lock_mutex): don't do the waiting thing when trying to lock, causes
+			us to seemingly block here for too long
+
+	* src/NetworkManager.c
+	  src/NetworkManagerAPList.c
+	  src/NetworkManagerDevice.c
+		- Convert to using nm_lock_mutex/nm_unlock_mutex rather than the glib variants
+			so we get better debug information printed
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_devices_handle_request): reduce usage of nm_device_need_ap_switch()
+			since it sometimes has locking side effects
+		- (nm_device_get_association_pause_value): Reduce 802.11a card pause value to 8s
+			from 10s
+		- (nm_device_need_ap_switch): If we can't acquire the scan lock, return saying
+			we don't need a switch.  This gets called often enough that we can't block
+			until the scan mutex is acquired, because we'll block on device activation
+			and a few other things, which hangs main thread for too long.
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): reduce the possiblity that
+			nm_device_need_ap_switch() will be called		
+
+2005-02-02  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Display name of wireless network we are connecting to or connected to
 			in the tooltip of the applet

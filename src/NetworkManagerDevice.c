@@ -263,6 +263,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 			g_free (dev);
 			return (NULL);
 		}
+		nm_register_mutex_desc (dev->options.wireless.scan_mutex, "Scan Mutex");
 
 		if (!(dev->options.wireless.best_ap_mutex = g_mutex_new ()))
 		{
@@ -271,6 +272,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 			g_free (dev);
 			return (NULL);
 		}
+		nm_register_mutex_desc (dev->options.wireless.best_ap_mutex, "Best AP Mutex");
 
 		if (!(dev->options.wireless.ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE)))
 		{
@@ -540,7 +542,7 @@ gint nm_device_get_association_pause_value (NMDevice *dev)
 	 * if it is an A/B/G chipset like the Atheros 5212, for example).
 	 */
 	if (dev->options.wireless.num_freqs > 14)
-		return 10;
+		return 8;
 	else
 		return 5;
 }
@@ -2083,7 +2085,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	/* Grab the scan mutex, we don't want the scan thread to mess up our settings
 	 * during activation and link detection.
 	 */
-	g_mutex_lock (dev->options.wireless.scan_mutex);
+	nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 	if (!nm_device_is_up (dev))
 		nm_device_bring_up (dev);
@@ -2097,7 +2099,7 @@ get_ap:
 	/* Get a valid "best" access point we should connect to.  We don't hold the scan
 	 * lock here because this might take a while.
 	 */
-	g_mutex_unlock (dev->options.wireless.scan_mutex);
+	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 	while (!(best_ap = nm_device_get_best_ap (dev)))
 	{
 		nm_device_set_now_scanning (dev, TRUE);
@@ -2109,7 +2111,7 @@ get_ap:
 		if (nm_device_activation_handle_cancel (dev))
 		{
 			/* Wierd as it may seem, we lock here to balance the unlock in "out:" */
-			g_mutex_lock (dev->options.wireless.scan_mutex);
+			nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 			goto out;
 		}
 		found_ap = TRUE;
@@ -2124,7 +2126,7 @@ get_ap:
 	nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
 	nm_device_set_now_scanning (dev, FALSE);
-	g_mutex_lock (dev->options.wireless.scan_mutex);
+	nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 	if (nm_ap_get_artificial (best_ap))
 	{
@@ -2150,7 +2152,7 @@ need_key:
 		strncpy (&last_essid[0], essid, 49);
 
 		/* Don't hold the mutex while waiting for a key */
-		g_mutex_unlock (dev->options.wireless.scan_mutex);
+		nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 		/* Get a wireless key */
 		dev->options.wireless.user_key_received = FALSE;
@@ -2166,7 +2168,7 @@ need_key:
 		syslog (LOG_DEBUG, "Activation (%s/wireless): user key received.", nm_device_get_iface (dev));
 
 		/* Done waiting, grab lock again */
-		g_mutex_lock (dev->options.wireless.scan_mutex);
+		nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 		/* User may have cancelled the key request, so we need to update our best AP again. */
 		nm_ap_unref (best_ap);
@@ -2290,7 +2292,7 @@ connect_done:
 
 out:
 	nm_device_set_now_scanning (dev, FALSE);
-	g_mutex_unlock (dev->options.wireless.scan_mutex);
+	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 	return (success);
 }
 
@@ -2686,11 +2688,11 @@ NMAccessPoint *nm_device_get_best_ap (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
 
-	g_mutex_lock (dev->options.wireless.best_ap_mutex);
+	nm_lock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 	best_ap = dev->options.wireless.best_ap;
 	/* Callers get a reffed AP */
 	if (best_ap) nm_ap_ref (best_ap);
-	g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+	nm_unlock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 	
 	return (best_ap);
 }
@@ -2700,7 +2702,7 @@ void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
-	g_mutex_lock (dev->options.wireless.best_ap_mutex);
+	nm_lock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 
 	if (dev->options.wireless.best_ap)
 		nm_ap_unref (dev->options.wireless.best_ap);
@@ -2710,7 +2712,7 @@ void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
 
 	dev->options.wireless.best_ap = ap;
 	nm_device_unfreeze_best_ap (dev);
-	g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+	nm_unlock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 }
 
 
@@ -2806,10 +2808,11 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
 
-	/* Since the card's ESSID may change during a scan, we need to
-	 * wait until the scan is done, if one is in-progress.
+	/* Since the card's ESSID may change during a scan, we can't really
+	 * rely on checking the ESSID during that time.
 	 */
-	g_mutex_lock (dev->options.wireless.scan_mutex);
+	if (!nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
+		return FALSE;
 
 	ap = nm_device_get_best_ap (dev);
 	if (nm_null_safe_strcmp (nm_device_get_essid (dev), (ap ? nm_ap_get_essid (ap) : NULL)) != 0)
@@ -2817,7 +2820,7 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
 
 	if (ap)
 		nm_ap_unref (ap);
-	g_mutex_unlock (dev->options.wireless.scan_mutex);
+	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 	return (need_switch);
 }
@@ -2862,7 +2865,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 		/* If its in the device's ap list still, don't change the
 		 * best ap, since its frozen.
 		 */
-		g_mutex_lock (dev->options.wireless.best_ap_mutex);
+		nm_lock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 		if (best_ap)
 		{
 			char *essid = nm_ap_get_essid (best_ap);
@@ -2875,7 +2878,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 				|| nm_ap_get_user_created (best_ap))
 			{
 				nm_ap_unref (best_ap);
-				g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+				nm_unlock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 				return;
 			}
 			nm_ap_unref (best_ap);
@@ -2883,7 +2886,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 
 		/* Otherwise, its gone away and we don't care about it anymore */
 		nm_device_unfreeze_best_ap (dev);
-		g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+		nm_unlock_mutex (dev->options.wireless.best_ap_mutex, __FUNCTION__);
 	}
 
 	if (!(iter = nm_ap_list_iter_new (ap_list)))

@@ -100,9 +100,9 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 			 * WEP key from the user via NetworkManagerInfo.
 			 */
 			if (    !link_active
-				&& !nm_device_need_ap_switch (dev)
 				&& best_ap
-				&& nm_ap_get_encrypted (best_ap))
+				&& nm_ap_get_encrypted (best_ap)
+				&& !nm_device_need_ap_switch (dev))
 				link_active = TRUE;
 
 			if (link_active)

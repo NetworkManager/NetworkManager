@@ -548,6 +548,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 		syslog (LOG_ERR, "Could not initialize data structure locks.");
 		return (NULL);
 	}
+	nm_register_mutex_desc (data->dev_list_mutex, "Device List Mutex");
 
 	/* Initialize the access point lists */
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);

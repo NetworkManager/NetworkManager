@@ -34,7 +34,9 @@
 
 
 gboolean				nm_try_acquire_mutex			(GMutex *mutex, const char *func);
+void					nm_lock_mutex					(GMutex *mutex, const char *func);
 void					nm_unlock_mutex				(GMutex *mutex, const char *func);
+void					nm_register_mutex_desc			(GMutex *mutex, char *string);
 
 int					nm_null_safe_strcmp				(const char *s1, const char *s2);
 

@@ -1359,7 +1359,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 	}
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
-		NMAccessPoint	*ap;
+		NMAccessPoint	*best_ap;
 		gboolean		 success = FALSE;
 
 		/* Only wireless devices have an active network */
@@ -1374,13 +1374,18 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		/* Return the network associated with the ESSID the card is currently associated with,
 		 * if any, and only if that network is the "best" network.
 		 */
-		if (    (ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev)))
-			&& (!nm_device_need_ap_switch (dev))
-			&& (object_path = nm_device_get_path_for_ap (dev, ap)))
+		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
-			dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
-			g_free (object_path);
-			success = TRUE;
+			NMAccessPoint	*tmp_ap;
+
+			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
+				&& (object_path = nm_device_get_path_for_ap (dev, tmp_ap)))
+			{
+				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+				g_free (object_path);
+				success = TRUE;
+			}
+			nm_ap_unref (best_ap);
 		}
 
 		if (!success)
@@ -1505,6 +1510,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	else if (strcmp ("status", method) == 0)
 	{
 		char *status = nm_dbus_network_status_from_data (data);
+
 		if (status && (reply_message = dbus_message_new_method_return (message)))
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, status, DBUS_TYPE_INVALID);
 		g_free (status);
