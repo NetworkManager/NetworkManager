@@ -24,6 +24,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
+#include <signal.h>
 #include <iwlib.h>
 #include <netinet/ether.h>
 
@@ -74,7 +75,7 @@ DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const char *exc
  * Copies the object path for a device object.  Caller must free returned string.
  *
  */
-static unsigned char * nm_dbus_get_object_path_from_device (NMDevice *dev)
+static gchar * nm_dbus_get_object_path_from_device (NMDevice *dev)
 {
 	char *object_path, *escaped_object_path;
 
@@ -263,7 +264,7 @@ void nm_dbus_schedule_device_status_change (NMDevice *dev, DeviceStatus status)
 void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *dev, DeviceStatus status)
 {
 	DBusMessage		*message;
-	unsigned char		*dev_path;
+	gchar		*dev_path;
 	const char		*signal = NULL;
 	NMAccessPoint		*ap = NULL;
 
@@ -402,7 +403,7 @@ void nm_dbus_signal_network_status_change (DBusConnection *connection, NMData *d
 void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDevice *dev)
 {
 	DBusMessage		*message;
-	unsigned char		*dev_path;
+	gchar		*dev_path;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -439,7 +440,6 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	DBusMessage	*message;
 	char			*dev_path;
 	char			*ap_path;
-	const char	*signal;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -1168,7 +1168,6 @@ gboolean nm_dbus_is_info_daemon_running (DBusConnection *connection)
 DBusConnection *nm_dbus_init (NMData *data)
 {
 	DBusError		 		 error;
-	dbus_bool_t			 success;
 	DBusConnection			*connection;
 	DBusObjectPathVTable	 nm_vtable = {NULL, &nm_dbus_nm_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	 devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};

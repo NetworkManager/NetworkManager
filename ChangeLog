@@ -1,19 +1,9 @@
 2005-03-15  Ray Strode  <rstrode@redhat.com>
 
-	Fix a few -Wall -Werror warnings
-
-	* info-daemon/NetworkManagerInfo.c:
-	(main): remove unused loop variable.
-
-	* info-daemon/NetworkManagerInfoDbus.c:
-	(nmi_dbus_nm_is_running): comment out
-	unused static function
-
-	* src/nm-netlink-monitor.c:
-	(receive_pending_bytes):
-	initialize output variables to NULL/0,
-	on function failure (Problem pointed out
-	by Bryan Clark).
+	* src/NetworkManagerDbus.c:
+	Fix some sign weirdness that gcc4 doesn't like,
+	and add a header file so PPC can hopefully find
+	SIGTRAP
 
 2005-03-14  Ray Strode  <rstrode@redhat.com>
 	
