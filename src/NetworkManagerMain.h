@@ -28,10 +28,19 @@
 #include <hal/libhal.h>
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
+#include "nm-named-manager.h"
 
 typedef struct NMData
 {
+	GIOChannel			*sigterm_iochannel;
+	int				sigterm_pipe[2];
+
 	LibHalContext			*hal_ctx;
+
+	NMNamedManager			*named;
+	GList				*nameserver_ids; /* For now these are global instead of per-device */
+	guint				domain_search_id;
+
 	DBusConnection			*dbus_connection;
 	GMainContext			*main_context;
 	GMainLoop				*main_loop;

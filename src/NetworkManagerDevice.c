@@ -318,6 +318,8 @@ void nm_device_unref (NMDevice *dev)
 	dev->refcount--;
 	if (dev->refcount <= 0)
 	{
+		g_main_loop_quit (dev->loop);
+	  
 		nm_device_ap_list_clear (dev);
 		dev->options.wireless.ap_list = NULL;
 

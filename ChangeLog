@@ -1,3 +1,39 @@
+2004-12-21  Colin Walters  <walters@redhat.com>
+
+	* src/NetworkManager.c (nm_data_new): Initialize named.
+	Also, set up a signal handler for SIGINT/SIGTERM, and exit
+	the mainloop when these signals are received.
+	(nm_data_free): Unref named.
+	(sigterm_handler, sigterm_pipe_handler): New functions for
+	exiting mainloop.
+	
+	* src/NetworkManagerMain.h (NMData): Add signal handling and
+	nameserver bits.
+
+	* src/NetworkManager.c (nm_device_unref): Quit device mainloop on
+	unref.
+
+	* src/NetworkManagerDHCP.c (set_nameservers): New function;
+	set nameservers from DHCP response data.
+	(set_domain_search): Set domain search from DHCP response.
+	(nm_device_dhcp_configure): Invoke them.
+
+	* src/NetworkManagerSystem.c
+	(nm_system_device_update_resolv_conf): Delete.  Deleting
+	code is totally sweet.
+
+	* src/Makefile.am (NetworkManager_LDADD): Add libnamed.
+
+	* named/nm-named-manager.h, named/nm-named-manager.c: New files;
+	implements an object which controls a nameserver.  Currently
+	uses bind 9.
+
+	* configure.in: Check for named.
+
+	* Makefile.am (SUBDIRS): Add named dir.
+
+	* named/named.conf: New template config file.
+
 2004-12-20  Colin Walters  <walters@redhat.com>
 
 	* src/NetworkManagerPolicy.c (nm_policy_get_best_device): Fix usage of '=='

@@ -30,10 +30,80 @@
 #include "NetworkManagerDevicePrivate.h"
 #include "NetworkManagerDHCP.h"
 #include "NetworkManagerSystem.h"
+#include "nm-named-manager.h"
 #include "../dhcpcd/client.h"
 
 extern gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip);
 
+static void set_nameservers (NMDevice *dev, void *data, int len)
+{
+	int i;
+	GList *elt;
+	GError *error = NULL;
+
+	/* Reset our nameserver list */
+	for (elt = dev->app_data->nameserver_ids; elt; elt = elt->next)
+	{
+		if (!nm_named_manager_remove_nameserver_ipv4 (dev->app_data->named,
+							      GPOINTER_TO_UINT (elt->data),
+							      &error))
+		{
+			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove nameserver: %s\n", error->message);
+			g_clear_error (&error);
+		}
+	}
+	
+	for (i = 0; data && (i < len-3); i += 4)
+	{
+		char *nameserver;
+		guint id;
+		nameserver = g_strdup_printf ("%u.%u.%u.%u",
+					      ((unsigned char *)data)[i],
+					      ((unsigned char *)data)[i+1],
+					      ((unsigned char *)data)[i+2],
+					      ((unsigned char *)data)[i+3]);
+		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding nameserver: %s\n", nameserver);
+
+		if ((id = nm_named_manager_add_nameserver_ipv4 (dev->app_data->named,
+								nameserver,
+								&error)))
+			dev->app_data->nameserver_ids = g_list_prepend (dev->app_data->nameserver_ids,
+									GUINT_TO_POINTER (id));
+		else
+		{
+			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add nameserver: %s\n", error->message);
+			g_clear_error (&error);
+		}
+		g_free (nameserver);
+	}
+}
+
+static void set_domain_search (NMDevice *dev, const char *domain)
+{
+	GError *error = NULL;
+	guint id;
+
+	if (dev->app_data->domain_search_id
+	    && !nm_named_manager_remove_domain_search (dev->app_data->named,
+						       dev->app_data->domain_search_id,
+						       &error))
+	{
+		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove domain search: %s\n", error->message);
+		g_clear_error (&error);
+	}
+	
+	syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding domain search: %s\n", domain);
+	if ((id = nm_named_manager_add_domain_search (dev->app_data->named,
+						      domain,
+						      &error)))
+		dev->app_data->domain_search_id = id;
+	else
+	{
+		dev->app_data->domain_search_id = 0;
+		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add domain search: %s\n", error->message);
+		g_clear_error (&error);
+	}
+}
 
 /*
  * nm_device_dhcp_configure
@@ -72,10 +142,10 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 
 	/* Update /etc/resolv.conf */
 	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, dns))
-	{
-		nm_system_device_update_resolv_conf (dhcp_interface_get_dhcp_field (dev->dhcp_iface, dns),
-			dhcp_interface_get_dhcp_field_len (dev->dhcp_iface, dns), dhcp_interface_get_dhcp_field (dev->dhcp_iface, domainName));
-	}
+		set_nameservers (dev, dhcp_interface_get_dhcp_field (dev->dhcp_iface, dns), dhcp_interface_get_dhcp_field_len (dev->dhcp_iface, dns));
+
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, domainName))
+		set_domain_search (dev, dhcp_interface_get_dhcp_field (dev->dhcp_iface, domainName));
 }
 
 
@@ -106,9 +176,6 @@ gboolean nm_device_do_autoip (NMDevice *dev)
 		/* Set all traffic to go through the device */
 		nm_system_flush_loopback_routes ();
 		nm_system_device_add_default_route_via_device (dev);
-
-		/* Kill old resolv.conf */
-		nm_system_device_update_resolv_conf (NULL, 0, "");
 	}
 
 	return (success);

@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir}
+INCLUDES = -I${top_srcdir} -I../named
 
 AM_CPPFLAGS = 						\
 	$(NM_CFLAGS) 			   		\
@@ -42,7 +42,7 @@ if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a ../named/libnamed.la
 if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif

@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -41,6 +42,7 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
+#include "nm-named-manager.h"
 
 
 /*
@@ -48,6 +50,8 @@
  */
 static NMData		*nm_data = NULL;
 
+static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
+static void sigterm_handler (int signum);
 static void nm_data_free (NMData *data);
 
 
@@ -481,13 +485,41 @@ static LibHalFunctions hal_functions =
  */
 static NMData *nm_data_new (gboolean enable_test_devices)
 {
+	struct sigaction action;
+	sigset_t block_mask;
 	NMData *data;
+	GSource *iosource;
+	GError *error = NULL;
 	
 	data = g_new0 (NMData, 1);
-	if (!data)
+
+	data->main_context = g_main_context_new ();
+	data->main_loop = g_main_loop_new (data->main_context, FALSE);
+
+	if (pipe(data->sigterm_pipe) < 0)
 	{
-		syslog( LOG_ERR, "Could not allocate our NetworkManager data... Not enough memory?");
-		return (NULL);
+		syslog (LOG_CRIT, "Couldn't create pipe: %s", g_strerror (errno));
+		exit (EXIT_FAILURE);
+	}
+
+	data->sigterm_iochannel = g_io_channel_unix_new (data->sigterm_pipe[0]);
+	iosource = g_io_create_watch (data->sigterm_iochannel, G_IO_IN | G_IO_ERR);
+	g_source_set_callback (iosource, (GSourceFunc) sigterm_pipe_handler, data, NULL);
+	g_source_attach (iosource, data->main_context);
+	g_source_unref (iosource);
+
+	action.sa_handler = sigterm_handler;
+	sigemptyset (&block_mask);
+	action.sa_mask = block_mask;
+	action.sa_flags = 0;
+	sigaction (SIGINT, &action, NULL);
+	sigaction (SIGTERM, &action, NULL);
+
+	data->named = nm_named_manager_new ();
+	if (!nm_named_manager_start (data->named, &error))
+	{
+		syslog (LOG_CRIT, "Couldn't initialize nameserver: %s", error->message);
+		exit (EXIT_FAILURE);
 	}
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
@@ -516,9 +548,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->enable_test_devices = enable_test_devices;
 	data->starting_up = TRUE;
 
-	data->main_context = g_main_context_new ();
-	data->main_loop = g_main_loop_new (data->main_context, FALSE);
-
 	return (data);	
 }
 
@@ -533,6 +562,7 @@ static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
+	g_object_unref (data->named);
 	nm_device_unref (data->active_device);
 
 	g_slist_foreach (data->dev_list, (GFunc) nm_device_unref, NULL);
@@ -567,6 +597,19 @@ void nm_data_mark_state_changed (NMData *data)
 	g_mutex_unlock (data->state_modified_mutex);
 }
 
+static void sigterm_handler (int signum)
+{
+	syslog (LOG_NOTICE, "Caught SIGINT/SIGTERM");
+	write (nm_data->sigterm_pipe[1], "X", 1);
+}
+
+static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
+{
+	NMData *data = user_data;
+	syslog (LOG_NOTICE, "Caught terminiation signal");
+	g_main_loop_quit (data->main_loop);
+	return FALSE;
+}
 
 /*
  * nm_print_usage
@@ -737,6 +780,7 @@ int main( int argc, char *argv[] )
 	     exit (1);
 	}
 
+	syslog (LOG_NOTICE, "running mainloop...");
 	/* Wheeee!!! */
 	g_main_loop_run (nm_data->main_loop);
 
@@ -753,5 +797,5 @@ int main( int argc, char *argv[] )
 
 	nm_data_free (nm_data);
 
-	return (0);
+	exit (0);
 }
