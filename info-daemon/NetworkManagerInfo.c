@@ -184,13 +184,15 @@ int main( int argc, char *argv[] )
 							GNOME_PARAM_HUMAN_READABLE_NAME, "Network Manager User Info Service",
 							NULL);
 
+	openlog("NetworkManagerInfo", (no_daemon) ? LOG_CONS | LOG_PERROR : LOG_CONS, (no_daemon) ? LOG_USER : LOG_DAEMON);
+
 	if (!no_daemon)
 	{
 		int child_pid;
 
 		if (chdir ("/") < 0)
 		{
-			fprintf( stderr, "NetworkManagerInfo could not chdir to /.  errno=%d", errno);
+			syslog( LOG_CRIT, "NetworkManagerInfo could not chdir to /.  errno=%d", errno);
 			return 1;
 		}
 
@@ -198,7 +200,7 @@ int main( int argc, char *argv[] )
 		switch (child_pid)
 		{
 			case -1:
-				fprintf( stderr, "NetworkManagerInfo could not daemonize.  errno = %d\n", errno );
+				syslog( LOG_ERR, "NetworkManagerInfo could not daemonize.  errno = %d", errno );
 				break;
 
 			case 0:
@@ -214,7 +216,7 @@ int main( int argc, char *argv[] )
 	app_info = g_new0 (NMIAppInfo, 1);
 	if (!app_info)
 	{
-		fprintf (stderr, "Not enough memory for application data.\n");
+		syslog (LOG_CRIT, "Not enough memory for application data.");
 		exit (1);
 	}
 
@@ -227,7 +229,7 @@ int main( int argc, char *argv[] )
 	dbus_connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
 	if (dbus_connection == NULL)
 	{
-		fprintf (stderr, "NetworkManagerInfo could not get the system bus.  Make sure the message bus daemon is running?\n");
+		syslog (LOG_CRIT, "NetworkManagerInfo could not get the system bus.  Make sure the message bus daemon is running?");
 		exit (1);
 	}
 	dbus_connection_set_change_sigpipe (TRUE);

@@ -100,7 +100,7 @@ gboolean nm_wireless_scan_monitor (gpointer user_data)
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 	else
-		NM_DEBUG_PRINT( "nm_wireless_scan_monitor() could not acquire device list mutex.\n" );
+		syslog( LOG_ERR, "nm_wireless_scan_monitor() could not acquire device list mutex." );
 	
 	return (TRUE);
 }

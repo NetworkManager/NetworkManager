@@ -126,7 +126,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setKeyForNetwork")))
 	{
-		fprintf (stderr, "nmi_dbus_return_user_key(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nmi_dbus_return_user_key(): Couldn't allocate the dbus message");
 		return;
 	}
 
@@ -137,7 +137,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 								DBUS_TYPE_INVALID))
 	{
 		if (!dbus_connection_send (connection, message, NULL))
-			fprintf (stderr, "nmi_dbus_return_user_key(): dbus could not send the message\n");
+			syslog (LOG_ERR, "nmi_dbus_return_user_key(): dbus could not send the message");
 	}
 
 	dbus_message_unref (message);
@@ -171,13 +171,13 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, signal);
 	if (!message)
 	{
-		fprintf (stderr, "nmi_dbus_signal_update_network(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nmi_dbus_signal_update_network(): Not enough memory for new dbus message!");
 		return;
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		fprintf (stderr, "nmi_dbus_signal_update_network(): Could not raise the '%s' signal!\n", signal);
+		syslog (LOG_WARNING, "nmi_dbus_signal_update_network(): Could not raise the '%s' signal!", signal);
 
 	dbus_message_unref (message);
 }
@@ -471,7 +471,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/* fprintf (stderr, "nmi_dbus_nmi_message_handler() got method %s for path %s\n", method, path); */
+	/* syslog (LOG_DEBUG, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path); */
 
 	if (strcmp ("getKeyForNetwork", method) == 0)
 	{
@@ -579,13 +579,13 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE, 0, &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
-		fprintf (stderr, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", dbus_error.message);
+		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
 		return (-1);
 	}
 
 	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_PATH, &nmi_vtable, info))
 	{
-		fprintf (stderr, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?\n");
+		syslog (LOG_ERR, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
 		return (-1);
 	}
 

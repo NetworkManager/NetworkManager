@@ -52,7 +52,7 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 		if (g_mutex_trylock (mutex))
 		{
 #ifdef LOCKING_DEBUG	
-			if (func) NM_DEBUG_PRINT_2 ("MUTEX: %s got mutex 0x%X\n", func, mutex);
+			if (func) syslog (LOG_DEBUG, "MUTEX: %s got mutex 0x%X", func, mutex);
 #endif
 			return (TRUE);
 		}
@@ -75,7 +75,7 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 	g_return_if_fail (mutex != NULL);
 
 #ifdef LOCKING_DEBUG	
-	if (func) NM_DEBUG_PRINT_2 ("MUTEX: %s released mutex 0x%X\n", func, mutex);
+	if (func) syslog (LOG_DEBUG, "MUTEX: %s released mutex 0x%X", func, mutex);
 #endif
 
 	g_mutex_unlock (mutex);
@@ -123,7 +123,7 @@ int nm_get_network_control_socket (void)
 	if (fd >= 0)
 		return (fd);
 
-	NM_DEBUG_PRINT ("nm_get_network_control_socket() could not get network control socket.\n");
+	syslog (LOG_ERR, "nm_get_network_control_socket() could not get network control socket.");
 	return (-1);
 }
 

@@ -91,7 +91,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			 */
 			if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 			{
-				NM_DEBUG_PRINT_2( "nm_create_device_and_add_to_list(): adding device '%s' (%s)\n",
+				syslog( LOG_INFO, "nm_create_device_and_add_to_list(): adding device '%s' (%s)",
 					nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
 
 				data->dev_list = g_slist_append (data->dev_list, dev);
@@ -99,8 +99,8 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 				success = TRUE;
 
 				nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-			} else NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not acquire device list mutex.\n" );
-		} else NM_DEBUG_PRINT( "nm_create_device_and_add_to_list() could not allocate device data.\n" );
+			} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
+		} else syslog( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
 
 		hal_free_string (iface_name);
 
@@ -164,7 +164,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 			element = g_slist_next (element);
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else NM_DEBUG_PRINT( "nm_remove_device_from_list() could not acquire device list mutex.\n" );
+	} else syslog( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
 }
 
 
@@ -188,7 +188,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	NM_DEBUG_PRINT_1( "nm_hal_device_added() called with udi = %s\n", udi );
+	syslog( LOG_DEBUG, "nm_hal_device_added() called with udi = %s", udi );
 
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
@@ -208,7 +208,7 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	NM_DEBUG_PRINT_1( "nm_hal_device_removed() called with udi = %s\n", udi );
+	syslog( LOG_DEBUG, "nm_hal_device_removed() called with udi = %s", udi );
 
 	nm_remove_device_from_list (data, udi);
 }
@@ -224,7 +224,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 	g_return_if_fail (data != NULL);
 
-	NM_DEBUG_PRINT_2( "nm_hal_device_new_capability() called with udi = %s, capability = %s\n", udi, capability );
+	syslog( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
 
 	if (capability && (strcmp (capability, "net.ethernet") == 0))
 		nm_create_device_and_add_to_list (data, udi);
@@ -237,7 +237,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
  */
 static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
-	NM_DEBUG_PRINT_2( "nm_hal_device_lost_capability() called with udi = %s, capability = %s\n", udi, capability );
+	syslog( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );
 }
 
 
@@ -248,7 +248,7 @@ static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, 
 static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi, const char *key, dbus_bool_t is_removed, dbus_bool_t is_added)
 {
 /*
-	NM_DEBUG_PRINT_4( "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d\n", udi, key, is_removed, is_added );
+	syslog( LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added );
 */
 }
 
@@ -345,7 +345,7 @@ gboolean nm_link_state_monitor (gpointer user_data)
 		}
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else NM_DEBUG_PRINT( "nm_link_state_monitor() could not acquire device list mutex.\n" );
+	} else syslog( LOG_ERR, "nm_link_state_monitor() could not acquire device list mutex." );
 	
 	return (TRUE);
 }
@@ -379,7 +379,7 @@ static NMData *nm_data_new (void)
 	data = g_new0 (NMData, 1);
 	if (!data)
 	{
-		NM_DEBUG_PRINT("Could not allocate our NetworkManager data... Not enough memory?\n");
+		syslog( LOG_ERR, "Could not allocate our NetworkManager data... Not enough memory?");
 		return (NULL);
 	}
 
@@ -388,7 +388,7 @@ static NMData *nm_data_new (void)
 	if (!data->dev_list_mutex)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create device list mutex.  Whacky shit going on?\n");
+		syslog( LOG_ERR, "Could not create device list mutex.  Whacky shit going on?");
 		return (NULL);
 	}
 
@@ -397,7 +397,7 @@ static NMData *nm_data_new (void)
 	if (!data->state_modified_mutex)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create state_modified mutex.  Whacky stuff going on?\n");
+		syslog( LOG_ERR, "Could not create state_modified mutex.  Whacky stuff going on?");
 		return (NULL);
 	}
 
@@ -409,7 +409,7 @@ static NMData *nm_data_new (void)
 	if (!data->trusted_ap_list || !data->preferred_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create access point lists.  Whacky stuff going on?\n");
+		syslog( LOG_ERR, "Could not create access point lists.  Whacky stuff going on?");
 		return (NULL);
 	}
 
@@ -483,7 +483,7 @@ static void nm_print_usage (void)
 	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--help]\n");
 	fprintf (stderr,
 		"\n"
-		"        --no-daemon    Become a daemon\n"
+		"        --no-daemon    Don't become a daemon\n"
 		"        --help         Show this information and exit\n"
 		"\n"
 		"NetworkManager monitors all network connections and automatically\n"
@@ -547,6 +547,9 @@ int main( int argc, char *argv[] )
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 
+	openlog ("NetworkManager", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
+	syslog (LOG_NOTICE, "starting...");
+
 	/* Load all network device kernel modules.
 	 * NOTE: this hack is temporary until device modules get loaded
 	 * on startup by something else.  The problem is that unless
@@ -559,7 +562,7 @@ int main( int argc, char *argv[] )
 	nm_data = nm_data_new ();
 	if (!nm_data)
 	{
-		NM_DEBUG_PRINT("nm_data_new() failed... Not enough memory?\n");
+		syslog( LOG_CRIT, "nm_data_new() failed... Not enough memory?");
 		exit (EXIT_FAILURE);
 	}	
 
@@ -567,6 +570,7 @@ int main( int argc, char *argv[] )
 	nm_data->dbus_connection = nm_dbus_init (nm_data);
 	if (!nm_data->dbus_connection)
 	{
+		syslog( LOG_CRIT, "nm_dbus_init() failed, exiting");
 		hal_shutdown (nm_data->hal_ctx);
 		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
@@ -577,7 +581,7 @@ int main( int argc, char *argv[] )
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
 	if ((ctx = hal_initialize (&hal_functions, FALSE)) == NULL)
 	{
-		NM_DEBUG_PRINT("hal_initialize() failed, exiting...  Make sure the hal daemon is running?\n");
+		syslog( LOG_CRIT, "hal_initialize() failed, exiting...  Make sure the hal daemon is running?");
 		exit (EXIT_FAILURE);
 	}
 	nm_data->hal_ctx = ctx;
@@ -614,7 +618,7 @@ int main( int argc, char *argv[] )
 
 		if (chdir ("/") < 0)
 		{
-			fprintf( stderr, "NetworkManager could not chdir to /.  errno=%d", errno);
+			syslog( LOG_CRIT, "NetworkManager could not chdir to /.  errno=%d", errno);
 			return (1);
 		}
 
@@ -622,7 +626,7 @@ int main( int argc, char *argv[] )
 		switch (child_pid)
 		{
 			case -1:
-				fprintf( stderr, "NetworkManager could not daemonize.  errno = %d\n", errno );
+				syslog( LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno );
 				break;
 
 			case 0:
@@ -638,6 +642,8 @@ int main( int argc, char *argv[] )
 	/* Wheeee!!! */
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);
+
+	syslog (LOG_NOTICE, "exiting");
 
 	/* Kill the watch functions */
 	g_source_remove (link_source);

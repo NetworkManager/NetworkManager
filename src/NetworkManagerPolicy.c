@@ -126,8 +126,8 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 		element = g_slist_next (element);
 	}
 
-	NM_DEBUG_PRINT_1 ("Best wired device = %s\n", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
-	NM_DEBUG_PRINT_2 ("Best wireless device = %s  (%s)\n", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
+	syslog (LOG_NOTICE, "Best wired device = %s", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
+	syslog (LOG_NOTICE, "Best wireless device = %s  (%s)", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
 			best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
 
 	if (best_wireless_dev || best_wired_dev)
@@ -209,7 +209,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				|| (    best_dev && nm_device_is_wireless (best_dev) && !nm_device_activating (best_dev)
 					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
 			{
-				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor(): beginning activation for device '%s'\n", best_dev ? nm_device_get_iface (best_dev) : "(null)");
+				syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", best_dev ? nm_device_get_iface (best_dev) : "(null)");
 
 				/* Deactivate the old device */
 				if (data->active_device)
@@ -228,12 +228,12 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 		}
 		else
-			NM_DEBUG_PRINT("nm_state_modification_monitor() could not get device list mutex\n");
+			syslog( LOG_ERR, "nm_state_modification_monitor() could not get device list mutex");
 	}
 	else if (data->active_device && nm_device_just_activated (data->active_device))
 	{
 		nm_dbus_signal_device_now_active (data->dbus_connection, data->active_device);
-		NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() activated device %s\n", nm_device_get_iface (data->active_device));
+		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
 	}
 
 	return (TRUE);
@@ -368,7 +368,7 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 
 					data->allowed_ap_list = g_slist_append (data->allowed_ap_list, ap);
 					/*
-					NM_DEBUG_PRINT_3( "FOUND: allowed ap, prio=%d  essid=%s  wep_key=%s\n", prio_num, essid, wep_key );
+					syslog( LOG_DEBUG, "FOUND: allowed ap, prio=%d  essid=%s  wep_key=%s", prio_num, essid, wep_key );
 					*/
 				}
 			}
@@ -376,11 +376,11 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 			fclose (ap_file);
 		}
 		else
-			NM_DEBUG_PRINT_2( "nm_policy_update_allowed_access_points() could not open allowed ap list file %s.  errno %d\n", NM_ALLOWED_AP_FILE, errno );
+			syslog( LOG_WARNING, "nm_policy_update_allowed_access_points() could not open allowed ap list file %s.  errno %d", NM_ALLOWED_AP_FILE, errno );
 	
 		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
 	}
 	else
-		NM_DEBUG_PRINT( "nm_policy_update_allowed_access_points() could not lock allowed ap list mutex\n" );
+		syslog( LOG_ERR, "nm_policy_update_allowed_access_points() could not lock allowed ap list mutex" );
 }
 #endif

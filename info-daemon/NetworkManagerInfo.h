@@ -23,6 +23,7 @@
 #ifndef NETWORK_MANAGER_INFO_H
 #define NETWORK_MANAGER_INFO_H
 
+#include <syslog.h>
 #include <gtk/gtk.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <glade/glade.h>

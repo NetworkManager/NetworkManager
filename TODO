@@ -28,13 +28,10 @@ Wireless link checking could be enhanced to check the signal strength of an acce
 There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  While we don't depend as heavily on NetworkManagerInfo, we need to make sure that we can operate effectively when it's not there.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
 
 
-- Proper logging support
-
-We need to replace NM_DEBUG_PRINT with proper logging support to syslog or something.
-
 - Deal with blank ESSIDs
 
 Access points can be set not to broadcast their ESSIDs, which the client must know.  These appear as blank ESSIDs to cards doing wireless scanning, even though the rest of the AP's information is known (channel, rate, etc).  There has to be a way to deal with this as many companies do not broadcast ESSIDs for security measures.  Workarounds for this practice could include brute-forcing the Allowed Networks list if no suitable wireless network is found to begin with.  Obviously, there would be no way to detect if a WEP key was wrong, because unless the ESSID and WEP key are both correct, we cannot associate with the access point to see if we have a link.  Code exists to do this for wireless cards that do not support wireless scanning, and this code could be adapted.
+
 
 - Shorten standoff time between Pending and Active device promotion
 

@@ -55,7 +55,7 @@ NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 	if (!list->mutex)
 	{
 		g_free (list);
-		NM_DEBUG_PRINT ("nm_ap_list_new() could not create list mutex\n");
+		syslog (LOG_ERR, "nm_ap_list_new() could not create list mutex");
 		return (NULL);
 	}
 
@@ -130,7 +130,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
 	{
-		NM_DEBUG_PRINT( "nm_ap_list_append_ap() could not acquire AP list mutex.\n" );
+		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
 	}
 
@@ -156,7 +156,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
 	{
-		NM_DEBUG_PRINT( "nm_ap_list_append_ap() could not acquire AP list mutex.\n" );
+		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
 	}
 
@@ -463,15 +463,15 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	if (!(iter = nm_ap_list_iter_new (list)))
 		return;
 
-	fprintf (stderr, "AP_LIST_PRINT: printing members of '%s'\n", name);
+	syslog (LOG_DEBUG, "AP_LIST_PRINT: printing members of '%s'", name);
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		fprintf (stderr, "\t%d)\tessid='%s', prio=%d, key='%s', enc=%d, addr=0x%X, qual=%d, freq=%f, rate=%d, inval=%d\n",
+		syslog (LOG_DEBUG, "\t%d)\tessid='%s', prio=%d, key='%s', enc=%d, addr=0x%X, qual=%d, freq=%f, rate=%d, inval=%d",
 				i, nm_ap_get_essid (ap), nm_ap_get_priority (ap), nm_ap_get_wep_key (ap), nm_ap_get_encrypted (ap),
 				nm_ap_get_address (ap), nm_ap_get_quality (ap), nm_ap_get_freq (ap), nm_ap_get_rate (ap),
 				nm_ap_get_invalid (ap));
 		i++;
 	}
-	fprintf (stderr, "AP_LIST_PRINT: done\n");
+	syslog (LOG_DEBUG, "AP_LIST_PRINT: done");
 	nm_ap_list_iter_free (iter);
 }

@@ -1,3 +1,22 @@
+2004-08-23  Dan Willemsen <dan@willemsen.us>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+	  info-daemon/NetworkManagerInfo.[ch]
+	  info-daemon/NetworkManagerInfoDbus.c
+	  info-daemon/NetworkManagerInfoPassphraseDialog.c
+	  src/NetworkManager.c
+	  src/NetworkManagerAP.c
+	  src/NetworkManagerAPList.c
+	  src/NetworkManagerDbus.c
+	  src/NetworkManagerDevice.c
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManagerUtils.[ch]
+	  src/NetworkManagerWireless.c
+		- Used syslog functions for logging instead of NM_DEBUG_DISPLAY & fprintf
+
+	* src/NetworkManager.c
+		- Fixed usage wording for --no-daemon
+
 2004-08-23  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c

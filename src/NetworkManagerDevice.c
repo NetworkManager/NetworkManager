@@ -233,7 +233,7 @@ NMDevice *nm_device_new (const char *iface, NMData *app_data)
 	dev = g_new0 (NMDevice, 1);
 	if (!dev)
 	{
-		NM_DEBUG_PRINT("nm_device_new() could not allocate a new device...  Not enough memory?\n");
+		syslog (LOG_ERR, "nm_device_new() could not allocate a new device...  Not enough memory?");
 		return (NULL);
 	}
 
@@ -514,7 +514,7 @@ char * nm_device_get_essid (NMDevice *dev)
 			dev->options.wireless.cur_essid = g_strdup (essid);
 		}
 		else
-			NM_DEBUG_PRINT_2 ("nm_device_get_essid(): error setting ESSID for device %s.  errno = %d\n", nm_device_get_iface (dev), errno);
+			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (iwlib_socket);
 	}
@@ -556,7 +556,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 	
 		err = iw_set_ext (iwlib_socket, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
 		if (err == -1)
-			NM_DEBUG_PRINT_2 ("nm_device_set_essid(): error setting ESSID for device %s.  errno = %d\n", nm_device_get_iface (dev), errno);
+			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (iwlib_socket);
 	}
@@ -645,11 +645,11 @@ void nm_device_set_wep_key (NMDevice *dev, const char *wep_key)
 		{
 			err = iw_set_ext (iwlib_socket, nm_device_get_iface (dev), SIOCSIWENCODE, &wreq);
 			if (err == -1)
-				NM_DEBUG_PRINT_2 ("nm_device_set_wep_key(): error setting key for device %s.  errno = %d\n", nm_device_get_iface (dev), errno);
+				syslog (LOG_ERR, "nm_device_set_wep_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 		}
 
 		close (iwlib_socket);
-	} else NM_DEBUG_PRINT ("nm_device_set_wep_key(): could not get wireless control socket.\n");
+	} else syslog (LOG_ERR, "nm_device_set_wep_key(): could not get wireless control socket.");
 }
 
 
@@ -745,11 +745,11 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 			ifr.ifr_flags |= IFF_UP & flags;
 			err = ioctl (iface_fd, SIOCSIFFLAGS, &ifr);
 			if (err)
-				NM_DEBUG_PRINT_3 ("nm_device_set_up_down() could not bring device %s %s.  errno = %d\n", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
+				syslog (LOG_ERR, "nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
 		}
 	}
 	else
-		NM_DEBUG_PRINT_2 ("nm_device_set_up_down() could not get flags for device %s.  errno = %d\n", nm_device_get_iface (dev), errno );
+		syslog (LOG_ERR, "nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 
 	close (iface_fd);
 }
@@ -792,7 +792,7 @@ gboolean nm_device_is_up (NMDevice *dev)
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
-	NM_DEBUG_PRINT_2 ("nm_device_is_up() could not get flags for device %s.  errno = %d\n", nm_device_get_iface (dev), errno );
+	syslog (LOG_ERR, "nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 	return (FALSE);
 }
 
@@ -825,7 +825,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 
 	if (!g_thread_create (nm_device_activation_worker, dev, FALSE, &error))
 	{
-		NM_DEBUG_PRINT ("nm_device_activation_begin(): could not create activation worker thread.\n");
+		syslog (LOG_CRIT, "nm_device_activation_begin(): could not create activation worker thread.");
 		return (FALSE);
 	}
 
@@ -868,7 +868,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 		nm_device_bring_down (dev);
 		nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
-		NM_DEBUG_PRINT_2 ("nm_device_wireless_activate(%s) using essid '%s'\n", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
+		syslog (LOG_INFO, "nm_device_wireless_activate(%s) using essid '%s'", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
 		/* Bring the device up */
 		if (!nm_device_is_up (dev));
@@ -902,7 +902,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
 
-fprintf( stderr, "nm_device_activation_worker (%s) started...\n", nm_device_get_iface (dev));
+	syslog( LOG_DEBUG, "nm_device_activation_worker (%s) started...", nm_device_get_iface (dev));
 	dev->activating = TRUE;
 
 	/* If its a wireless device, set the ESSID and WEP key */
@@ -935,13 +935,13 @@ fprintf( stderr, "nm_device_activation_worker (%s) started...\n", nm_device_get_
 					/* If we were told to quit activation, stop the thread and return */
 					if (dev->quit_activation)
 					{
-fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1\n", nm_device_get_iface (dev));
+						syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1", nm_device_get_iface (dev));
 						dev->just_activated = FALSE;
 						nm_device_unref (dev);
 						return (NULL);
 					}
 
-fprintf (stderr, "nm_device_activation_worker(%s): user key received!\n", nm_device_get_iface (dev));
+					syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received!", nm_device_get_iface (dev));
 				}
 
 				nm_device_activate_wireless (dev);
@@ -952,7 +952,7 @@ fprintf (stderr, "nm_device_activation_worker(%s): user key received!\n", nm_dev
 			/* If we were told to quit activation, stop the thread and return */
 			if (dev->quit_activation)
 			{
-fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1.5\n", nm_device_get_iface (dev));
+				syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 1.5", nm_device_get_iface (dev));
 				dev->just_activated = FALSE;
 				nm_device_unref (dev);
 				return (NULL);
@@ -1027,7 +1027,7 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 1.5\n", n
 		/* If we were told to quit activation, stop the thread and return */
 		if (dev->quit_activation)
 		{
-fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 2\n", nm_device_get_iface (dev));
+			syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 2", nm_device_get_iface (dev));
 			dev->just_activated = FALSE;
 			nm_device_unref (dev);
 			return (NULL);
@@ -1040,14 +1040,14 @@ fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 2\n", nm_
 	/* If we were told to quit activation, stop the thread and return */
 	if (dev->quit_activation)
 	{
-fprintf( stderr, "nm_device_activation_worker(%s): activation canceled 3\n", nm_device_get_iface (dev));
+		syslog( LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled 3", nm_device_get_iface (dev));
 		dev->just_activated = FALSE;
 		nm_device_unref (dev);
 		return (NULL);
 	}
 
 	dev->just_activated = TRUE;
-fprintf( stderr, "nm_device_activation_worker(%s): device activated\n", nm_device_get_iface (dev));
+	syslog( LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
 	nm_device_update_ip4_address (dev);
 
 	dev->activating = FALSE;
@@ -1101,7 +1101,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-fprintf( stderr, "nm_device_activation_cancel(%s): canceled\n", nm_device_get_iface (dev));
+	syslog( LOG_DEBUG, "nm_device_activation_cancel(%s): canceled", nm_device_get_iface (dev));
 	dev->quit_activation = TRUE;
 }
 
@@ -1607,7 +1607,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		nm_device_update_best_ap (dev);
 	}
 	else
-		NM_DEBUG_PRINT_1 ("nm_device_do_normal_scan() could not get a control socket for the wireless card %s.\n", nm_device_get_iface (dev) );
+		syslog (LOG_ERR, "nm_device_do_normal_scan() could not get a control socket for the wireless card %s.", nm_device_get_iface (dev) );
 }
 
 
@@ -1675,7 +1675,7 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 
 		if (valid)
 		{
-			NM_DEBUG_PRINT_2("%s: setting AP '%s' best\n", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+			syslog(LOG_INFO, "%s: setting AP '%s' best", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
 			nm_device_set_best_ap (dev, ap);
 			nm_data_set_state_modified (dev->app_data, TRUE);
@@ -1746,7 +1746,7 @@ static guint16 mdio_read (int sockfd, struct ifreq *ifr, int location, gboolean 
 	data[1] = location;
 	if (ioctl (sockfd, new_ioctl_nums ? 0x8948 : SIOCDEVPRIVATE + 1, ifr) < 0)
 	{
-		NM_DEBUG_PRINT_2("SIOCGMIIREG on %s failed: %s\n", ifr->ifr_name, strerror (errno));
+		syslog(LOG_ERR, "SIOCGMIIREG on %s failed: %s", ifr->ifr_name, strerror (errno));
 		return -1;
 	}
 	return data[3];
@@ -1763,7 +1763,7 @@ static gboolean mii_get_link (NMDevice *dev)
 	sockfd = socket (AF_INET, SOCK_DGRAM, 0);
 	if (sockfd < 0)
 	{
-		NM_DEBUG_PRINT_2("cannot open socket on interface %s; errno=%d", nm_device_get_iface (dev), errno);
+		syslog (LOG_ERR, "cannot open socket on interface %s; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 
@@ -1774,7 +1774,7 @@ static gboolean mii_get_link (NMDevice *dev)
 		new_ioctl_nums = FALSE;
 	else
 	{
-		NM_DEBUG_PRINT_2("SIOCGMIIPHY on %s failed: %s", ifr.ifr_name, strerror (errno));
+		syslog (LOG_ERR, "SIOCGMIIPHY on %s failed: %s", ifr.ifr_name, strerror (errno));
 		close (sockfd);
 		return (FALSE);
 	}

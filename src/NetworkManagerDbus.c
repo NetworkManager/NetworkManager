@@ -286,7 +286,7 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceNoLongerActive");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_no_longer_active(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nm_dbus_signal_device_no_longer_active(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -295,7 +295,7 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_no_longer_active(): Could not raise the DeviceNoLongerActive signal!\n");
+		syslog (LOG_WARNING, "nm_dbus_signal_device_no_longer_active(): Could not raise the DeviceNoLongerActive signal!");
 
 	dbus_message_unref (message);
 }
@@ -321,7 +321,7 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceNowActive");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_now_active(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nm_dbus_signal_device_now_active(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -330,7 +330,7 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_now_active(): Could not raise the DeviceNowActive signal!\n");
+		syslog (LOG_WARNING, "nm_dbus_signal_device_now_active(): Could not raise the DeviceNowActive signal!");
 
 	dbus_message_unref (message);
 }
@@ -356,7 +356,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceIP4AddressChange");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -365,7 +365,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!\n");
+		syslog (LOG_WARNING, "nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!");
 
 	dbus_message_unref (message);
 }
@@ -399,7 +399,7 @@ void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDev
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkAppeared");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		g_free (ap_path);
 		return;
@@ -413,7 +413,7 @@ void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDev
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!\n");
+		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
 
 	dbus_message_unref (message);
 }
@@ -447,7 +447,7 @@ void nm_dbus_signal_wireless_network_disappeared (DBusConnection *connection, NM
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_signal_wireless_network_disappeared(): Not enough memory for new dbus message!\n");
+		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_disappeared(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		g_free (ap_path);
 		return;
@@ -461,7 +461,7 @@ void nm_dbus_signal_wireless_network_disappeared (DBusConnection *connection, NM
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nnm_dbus_signal_wireless_network_disappeared(): Could not raise the WirelessNetworkDisappeared signal!\n");
+		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_disappeared(): Could not raise the WirelessNetworkDisappeared signal!");
 
 	dbus_message_unref (message);
 }
@@ -492,7 +492,7 @@ void nm_dbus_get_user_key_for_network_callback (DBusPendingCall *pending, void *
 		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID))
 		{
 			nm_device_pending_action_set_user_key (dev, key);
-			fprintf (stderr, "dbus user key callback got key '%s'\n", key );
+			syslog (LOG_DEBUG, "dbus user key callback got key '%s'", key );
 			dbus_free (key);
 			dbus_pending_call_unref (pending);
 		}
@@ -533,7 +533,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 						NMI_DBUS_INTERFACE, "getKeyForNetwork");
 	if (message == NULL)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message");
 		return;
 	}
 
@@ -542,13 +542,13 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 								DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nm_dbus_get_user_key_for_network(): could not send dbus message\n");
+		syslog (LOG_WARNING, "nm_dbus_get_user_key_for_network(): could not send dbus message");
 
 	/* For asynchronous replies, disabled for now */
 #if 0
 	if (!dbus_connection_send_with_reply (connection, message, pending, -1))
 	{
-		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		syslog (LOG_ERR, "%s raised: %s", error.name, error.message);
 		dbus_message_unref (message);
 		return;
 	}
@@ -618,12 +618,12 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection)
 						NMI_DBUS_INTERFACE, "cancelGetKeyForNetwork");
 	if (message == NULL)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_cancel_get_user_key_for_network(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_cancel_get_user_key_for_network(): Couldn't allocate the dbus message");
 		return;
 	}
 
 	if (!dbus_connection_send (connection, message, NULL))
-		NM_DEBUG_PRINT ("nm_dbus_cancel_get_user_key_for_network(): could not send dbus message\n");
+		syslog (LOG_WARNING, "nm_dbus_cancel_get_user_key_for_network(): could not send dbus message");
 
 	dbus_message_unref (message);
 }
@@ -652,7 +652,7 @@ char * nm_dbus_get_network_essid (DBusConnection *connection, NMNetworkType type
 						NMI_DBUS_INTERFACE, "getNetworkEssid");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_get_network_essid(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_get_network_essid(): Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -664,9 +664,9 @@ char * nm_dbus_get_network_essid (DBusConnection *connection, NMNetworkType type
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
-		NM_DEBUG_PRINT_2 ("nm_dbus_get_network_essid(): %s raised %s\n", error.name, error.message)
+		syslog (LOG_ERR, "nm_dbus_get_network_essid(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		NM_DEBUG_PRINT ("nm_dbus_get_network_essid(): reply was NULL.\n")
+		syslog (LOG_NOTICE, "nm_dbus_get_network_essid(): reply was NULL.");
 	else
 	{
 		char	*dbus_string;
@@ -710,7 +710,7 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 						NMI_DBUS_INTERFACE, "getNetworkKey");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_get_network_key(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_get_network_key(): Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -722,9 +722,9 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
-		NM_DEBUG_PRINT_2 ("nm_dbus_get_network_key(): %s raised %s\n", error.name, error.message)
+		syslog (LOG_ERR, "nm_dbus_get_network_key(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		NM_DEBUG_PRINT ("nm_dbus_get_network_key(): reply was NULL.\n")
+		syslog (LOG_NOTICE, "nm_dbus_get_network_key(): reply was NULL.");
 	else
 	{
 		char	*dbus_string;
@@ -769,7 +769,7 @@ gint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType typ
 						NMI_DBUS_INTERFACE, "getNetworkPriority");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_get_network_priority(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_get_network_priority(): Couldn't allocate the dbus message");
 		return (-1);
 	}
 
@@ -781,9 +781,9 @@ gint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType typ
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
-		NM_DEBUG_PRINT_2 ("nm_dbus_get_network_priority(): %s raised %s\n", error.name, error.message)
+		syslog (LOG_ERR, "nm_dbus_get_network_priority(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		NM_DEBUG_PRINT ("nm_dbus_get_network_priority(): reply was NULL.\n")
+		syslog (LOG_NOTICE, "nm_dbus_get_network_priority(): reply was NULL.");
 	else
 	{
 		dbus_error_init (&error);
@@ -822,7 +822,7 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 						NMI_DBUS_INTERFACE, "getNetworks");
 	if (!message)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_get_networks(): Couldn't allocate the dbus message\n");
+		syslog (LOG_ERR, "nm_dbus_get_networks(): Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -832,9 +832,9 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
-		NM_DEBUG_PRINT_2 ("nm_dbus_get_networks(): %s raised %s\n", error.name, error.message)
+		syslog (LOG_ERR, "nm_dbus_get_networks(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		NM_DEBUG_PRINT ("nm_dbus_get_networks(): reply was NULL.\n")
+		syslog (LOG_NOTICE, "nm_dbus_get_networks(): reply was NULL.");
 	else
 	{
 		DBusMessageIter	 iter;
@@ -873,7 +873,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	if (!(object_path = dbus_message_get_path (message)))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	/* NM_DEBUG_PRINT_2 ("nm_dbus_nmi_filter() got method %s for path %s\n", method, object_path); /**/
+	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); /**/
 
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "TrustedNetworkUpdate"))
@@ -925,7 +925,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-fprintf( stderr, "update of network '%s'\n", network);
+		syslog( LOG_DEBUG, "update of network '%s'", network);
 		nm_ap_list_update_network (list, network, data);
 		dbus_free (network);
 
@@ -936,10 +936,10 @@ fprintf( stderr, "update of network '%s'\n", network);
 			&& nm_device_is_wireless (data->active_device)
 			&& !nm_device_activating (data->active_device))
 		{
-fprintf( stderr, "updating active device's best ap\n");
+			syslog( LOG_DEBUG, "updating active device's best ap");
 			nm_device_update_best_ap (data->active_device);
 			nm_data_set_state_modified (data, TRUE);
-fprintf( stderr, "Device's best ap now '%s'\n", nm_ap_get_essid (nm_device_get_best_ap (data->active_device)));
+			syslog( LOG_DEBUG, "Device's best ap now '%s'", nm_ap_get_essid (nm_device_get_best_ap (data->active_device)));
 		}
 		handled = TRUE;
 	}
@@ -1161,7 +1161,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/* NM_DEBUG_PRINT_2 ("nm_dbus_nm_message_handler() got method %s for path %s\n", method, path); /**/
+	/* syslog (LOG_DEBUG, "nm_dbus_nm_message_handler() got method %s for path %s", method, path); /**/
 
 	if (strcmp ("getActiveDevice", method) == 0)
 		reply_message = nm_dbus_nm_get_active_device (connection, message, data);
@@ -1183,7 +1183,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 
 				if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (data->active_device), network)))
 				{
-fprintf (stderr, "Forcing AP '%s'\n", nm_ap_get_essid (ap));
+					syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
 					nm_device_freeze_best_ap (data->active_device);
 					nm_device_set_best_ap (data->active_device, ap);
 					nm_data_set_state_modified (data, TRUE);
@@ -1256,7 +1256,7 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/*NM_DEBUG_PRINT_2 ("nm_dbus_devices_message_handler() got method %s for path %s\n", method, path);*/
+	/*syslog (LOG_DEBUG, "nm_dbus_devices_message_handler() got method %s for path %s", method, path);*/
 
 	if ((reply_message = nm_dbus_devices_handle_request (connection, data, message, path, method)))
 	{
@@ -1318,7 +1318,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
 	if (connection == NULL)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?\n");
+		syslog (LOG_ERR, "nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
 		return (NULL);
 	}
 
@@ -1328,14 +1328,14 @@ DBusConnection *nm_dbus_init (NMData *data)
 	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data);
 	if (!success)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?\n");
+		syslog (LOG_ERR, "nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?");
 		return (NULL);
 	}
 
 	success = dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data);
 	if (!success)
 	{
-		NM_DEBUG_PRINT ("nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?\n");
+		syslog (LOG_ERR, "nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?");
 		return (NULL);
 	}
 
@@ -1358,7 +1358,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
-		NM_DEBUG_PRINT_1 ("nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", dbus_error.message);
+		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
 		return (NULL);
 	}
 

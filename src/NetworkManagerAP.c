@@ -59,7 +59,7 @@ NMAccessPoint * nm_ap_new (void)
 	
 	ap = g_new0 (NMAccessPoint, 1);
 	if (!ap)
-		NM_DEBUG_PRINT( "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" )
+		syslog( LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" );
 
 	ap->priority = NM_AP_PRIORITY_WORST;
 	ap->refcount = 1;
@@ -86,7 +86,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 
 	new_ap = nm_ap_new();
 	if (!new_ap)
-		NM_DEBUG_PRINT( "nm_ap_new_from_uap() could not allocate a new user access point info structure.  Not enough memory?" )
+		syslog( LOG_ERR, "nm_ap_new_from_uap() could not allocate a new user access point info structure.  Not enough memory?" );
 
 	new_ap->refcount = 1;
 

@@ -24,18 +24,12 @@
 
 #include <glib.h>
 #include <stdio.h>
+#include <syslog.h>
 #include <net/ethernet.h>
 #include <iwlib.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
-
-#define NM_DEBUG_PRINT(s)				{ if (debug) fprintf(stderr, s); }
-#define NM_DEBUG_PRINT_1(s, a)			{ if (debug) fprintf(stderr, s, a); }
-#define NM_DEBUG_PRINT_2(s, a, b)			{ if (debug) fprintf(stderr, s, a, b); }
-#define NM_DEBUG_PRINT_3(s, a, b, c)		{ if (debug) fprintf(stderr, s, a, b, c); }
-#define NM_DEBUG_PRINT_4(s, a, b, c, d)		{ if (debug) fprintf(stderr, s, a, b, c, d); }
-
 
 gboolean		nm_try_acquire_mutex			(GMutex *mutex, const char *func);
 void			nm_unlock_mutex				(GMutex *mutex, const char *func);

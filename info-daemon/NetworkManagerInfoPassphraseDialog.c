@@ -208,7 +208,7 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 	info->passphrase_dialog = glade_xml_new(GLADEDIR"/passphrase.glade", NULL, NULL);
 	if (!info->passphrase_dialog)
 	{
-		fprintf (stderr, "Could not open the passphrase dialog glade file!\n");
+		syslog (LOG_ERR, "Could not open the passphrase dialog glade file!");
 		return (-1);
 	}
 	
