@@ -1,5 +1,14 @@
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c
+		- Remove usage of gtk_window_set_default_size()
+
+	* panel-applet/essid.glade
+		- Stick default size here
+		- Add in random crap that current glade wants to add in now
+
+2005-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/backends/NetworkManagerRedHat.c
 		- For non-caching-nameserver/non-named case, ensure that nscd is running
 			and that we actually tell nscd to reload the hosts cache when it changes

@@ -214,7 +214,6 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	/* Set up the dialog */
 	dialog = GTK_DIALOG (glade_xml_get_widget (xml, "custom_essid_dialog"));
-	gtk_window_set_default_size (GTK_WINDOW (dialog), 488, -1);
 	essid_entry = glade_xml_get_widget (xml, "essid_entry");
 	button = glade_xml_get_widget (xml, "ok_button");
 
