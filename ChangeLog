@@ -1,3 +1,16 @@
+2004-11-08 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- Some random fprintf->syslog conversions
+		- (nm_device_wireless_network_exists): double-check for network
+		- (nm_device_find_and_use_essid): Copy over encryption key no matter what
+
+	* src/NetworkManagerWireless.[ch]
+		- (nm_wireless_[128|64]bit_ascii_to_hex): make "ascii" argument unsigned again
+			so that the binary->ascii conversion works (if unsigned, the bitshift
+			will fill with zeros, which is what's required).  Also mask bitshift
+			result with 0xF for futher assurance.
+
 2004-11-06 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerUtils.c

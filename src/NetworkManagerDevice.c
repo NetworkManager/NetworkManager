@@ -2157,11 +2157,12 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	g_return_val_if_fail (strlen (network), FALSE);
 	g_return_val_if_fail (encrypted != NULL, FALSE);
 
-	fprintf (stderr, "nm_device_wireless_network_exists () looking for network '%s'...", network);
+	syslog (LOG_INFO, "nm_device_wireless_network_exists () looking for network '%s'...", network);
 
 	*encrypted = FALSE;
 
 	/* Force the card into Managed/Infrastructure mode */
+	nm_device_bring_up (dev);
 	nm_device_set_mode_managed (dev);
 
 	if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
@@ -2193,7 +2194,6 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 	nm_device_set_essid (dev, network);
 
 	/* Bring the device up and pause to allow card to associate */
-	nm_device_bring_up (dev);
 	g_usleep (G_USEC_PER_SEC * 2);
 
 	nm_device_update_link_active (dev, FALSE);
@@ -2235,9 +2235,9 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 		*encrypted = nm_ap_get_encrypted (ap);
 
 	if (success)
-		fprintf (stderr, "  found! (%s)\n", *encrypted ? "encrypted" : "unencrypted");
+		syslog (LOG_INFO, "  found! (%s)\n", *encrypted ? "encrypted" : "unencrypted");
 	else
-		fprintf (stderr, "  not found\n");
+		syslog (LOG_INFO, "  not found\n");
 
 	return (success);
 }
@@ -2259,6 +2259,7 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
 	gboolean			 success = FALSE;
+	gboolean			 exists = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -2270,12 +2271,14 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 	 * (it might have been a blank ESSID up to this point) and use it.
 	 */
 	nm_device_deactivate (dev, FALSE);
-	if (nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted))
+	g_usleep (G_USEC_PER_SEC);
+	if (!(exists = nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted)))
+		exists = nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted);
+
+	if (exists)
 	{
 		if (!(ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), essid)))
 		{
-			NMAccessPoint *tmp_ap;
-
 			if (!(ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
 			{
 				/* Okay, the card didn't see it in the scan, Cisco cards sometimes do this.
@@ -2288,24 +2291,25 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 				nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 				nm_ap_unref (ap);
 			}
-
-			/* Now that this AP has an essid, copy over encryption keys and whatnot */
 			nm_ap_set_essid (ap, essid);
-			if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
-			{
-				if (key_type == NM_ENC_TYPE_UNKNOWN)
-					nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
-				nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
-				nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
-			}
 		}
 	}
 
 	/* If we found a valid access point, use it */
 	if (ap)
 	{
+		NMAccessPoint *tmp_ap;
+
+		/* Now that this AP has an essid, copy over encryption keys and whatnot */
+		if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (ap))))
+		{
+			nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
+			nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
+			nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
+		}
+
 		/* Use the encryption key and type the user sent us if its valid */
-		if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+		if ((key_type != NM_ENC_TYPE_UNKNOWN) && key && strlen (key))
 			nm_ap_set_enc_key_source (ap, key, key_type);
 		nm_device_set_best_ap (dev, ap);
 		nm_device_freeze_best_ap (dev);

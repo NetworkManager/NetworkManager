@@ -39,7 +39,7 @@
  * Convert an ASCII string into a suitable WEP key.
  *
  */
-char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
+char *nm_wireless_64bit_ascii_to_hex (const unsigned char *ascii)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
 	unsigned char	*res;
@@ -48,7 +48,7 @@ char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
 	res = g_malloc (33);
 	for (i = 0; i < 16; i++)
 	{
-		res[2*i] = hex_digits[ascii[i] >> 4];
+		res[2*i] = hex_digits[(ascii[i] >> 4) & 0xf];
 		res[2*i+1] = hex_digits[ascii[i] & 0xf];
 	}
 
@@ -68,7 +68,7 @@ char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
  *  copyright Red Hat, Inc. under terms of the LGPL.
  *
  */
-char *nm_wireless_128bit_ascii_to_hex (const char *ascii)
+char *nm_wireless_128bit_ascii_to_hex (const unsigned char *ascii)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
 	unsigned char	*res;
@@ -77,10 +77,9 @@ char *nm_wireless_128bit_ascii_to_hex (const char *ascii)
 	res = g_malloc (33);
 	for (i = 0; i < 16; i++)
 	{
-		res[2*i] = hex_digits[ascii[i] >> 4];
+		res[2*i] = hex_digits[(ascii[i] >> 4) & 0xf];
 		res[2*i+1] = hex_digits[ascii[i] & 0xf];
 	}
-
 	/* We chomp it at byte 26, since WEP keys only use 104 bits */
 	res[26] = 0;
 
@@ -116,7 +115,7 @@ char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
 	md5_data[64] = 0;
 #ifdef HAVE_GCRYPT
 	gcry_md_hash_buffer (GCRY_MD_MD5, digest, md5_data, 64);
-#else	
+#else
 	gnome_keyring_md5_string (md5_data, digest);
 #endif
 
