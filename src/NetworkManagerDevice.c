@@ -3690,14 +3690,26 @@ static gboolean nm_completion_scan_has_results (int tries, va_list args)
 	g_return_val_if_fail (scan_results != NULL, TRUE);
 
 	rc = iw_scan(sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
+	*err = FALSE;
 	if (rc == -1 && errno == ETIME)
 	{
-		nm_error ("Warning: the wireless card (%s) requires too much time for scans.  Its driver needs to be fixed.", nm_device_get_iface (dev));
-		scan_results->scan_head.result = NULL;
-		*err = TRUE;
-		return TRUE;
+		/* Scans take time.  iw_scan's timeout is 15 seconds, so if the card hasn't returned
+		 * scan results after two consecutive runs of iw_scan(), the card sucks.
+		 */
+		if (tries >= 1)
+		{
+			nm_warning ("Warning: the wireless card (%s) requires too much time for scans.  Its driver needs to be fixed.", nm_device_get_iface (dev));
+			scan_results->scan_head.result = NULL;
+			*err = TRUE;
+			return TRUE;
+		}
+		else
+		{
+			/* Give the card one more chance to return scan results */
+			scan_results->scan_head.result = NULL;
+			return FALSE;
+		}
 	}
-	*err = FALSE;
 	if ((rc == -1 && errno == ENODATA) || (rc == 0 && scan_results->scan_head.result == NULL))
 	{
 		/* Card hasn't had time yet to compile full access point list.

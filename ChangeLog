@@ -1,3 +1,11 @@
+2005-04-01  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c:
+		- (nm_completion_scan_has_results): restore pre-completion-patch behavior
+			of only erroring after the second consecutive scan times out.  Also
+			don't exit when the card requires more time than we can give it, just
+			log the event and continue.
+
 2005-04-01  Steve Murphy  <murf@e-tools.com>
 
         * configure.in: Added "rw" to ALL_LINGUAS.
