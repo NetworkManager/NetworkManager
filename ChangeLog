@@ -1,5 +1,16 @@
 2005-01-14  Colin Walters  <walters@redhat.com>
 
+	Patch from ed@catmur.co.uk (Ed Catmur)
+
+	* named/nm-named-manager.c: Add "context" property.
+	Use it to add child watch source in specific GMainContext.
+
+	* src/NetworkManager.c (nm_data_new): Initialize
+	named with correct main context.  Start named only
+	after forking.
+
+2005-01-14  Colin Walters  <walters@redhat.com>
+
 	* named/nm-named-manager.c (generate_named_conf): Write config
 	and pid files into NM_NAMED_DATA_DIR; this allows things to
 	work better with FC3 named SELinux policy.  Also fix up silly

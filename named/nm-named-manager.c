@@ -41,12 +41,26 @@
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
 
+enum
+{
+	PROP_0,
+	PROP_CONTEXT,
+};
+
 G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
 
 static void nm_named_manager_finalize (GObject *object);
 static void nm_named_manager_dispose (GObject *object);
 static GObject *nm_named_manager_constructor (GType type, guint n_construct_properties,
 					      GObjectConstructParam *construct_properties);
+static void nm_named_manager_set_property (GObject *object,
+					   guint prop_id,
+					   const GValue *value,
+					   GParamSpec *pspec);
+static void nm_named_manager_get_property (GObject *object,
+					   guint prop_id,
+					   GValue *value,
+					   GParamSpec *pspec);
 static gboolean rewrite_resolv_conf (NMNamedManager *mgr, GError **error);
 static int safer_kill (const char *path, pid_t pid, int signum);
 
@@ -55,8 +69,9 @@ struct NMNamedManagerPrivate
 	char *named_realpath_binary;
 	GPid named_pid;
 	guint spawn_count;
-	guint child_watch_id;
-	guint queued_reload_id;
+	GMainContext *main_context;
+	GSource *child_watch;
+	GSource *queued_reload;
 
 	guint id_serial;
 	GHashTable *domain_searches; /* guint -> char * */
@@ -77,6 +92,15 @@ nm_named_manager_class_init (NMNamedManagerClass *klass)
 	object_class->dispose = nm_named_manager_dispose;
 	object_class->finalize = nm_named_manager_finalize;
 	object_class->constructor = nm_named_manager_constructor;
+	object_class->set_property = nm_named_manager_set_property;
+	object_class->get_property = nm_named_manager_get_property;
+
+	g_object_class_install_property (object_class,
+					 PROP_CONTEXT,
+					 g_param_spec_pointer ("context",
+							       "GMainContext",
+							       "Main context",
+							       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
 static void
@@ -94,6 +118,44 @@ nm_named_manager_init (NMNamedManager *mgr)
 }
 
 static void
+nm_named_manager_set_property (GObject *object,
+			       guint prop_id,
+			       const GValue *value,
+			       GParamSpec *pspec)
+{
+	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
+
+	switch (prop_id)
+	{
+	case PROP_CONTEXT:
+		mgr->priv->main_context = g_value_get_pointer (value);
+		g_main_context_ref (mgr->priv->main_context);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_named_manager_get_property (GObject *object,
+			       guint prop_id,
+			       GValue *value,
+			       GParamSpec *pspec)
+{
+	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
+
+	switch (prop_id)
+	{
+	case PROP_CONTEXT:
+		g_value_set_pointer (value, mgr->priv->main_context);
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
 nm_named_manager_dispose (GObject *object)
 {
 	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
@@ -108,8 +170,10 @@ nm_named_manager_dispose (GObject *object)
 		unlink (mgr->priv->named_pid_file);
 	if (mgr->priv->named_realpath_binary)
 		safer_kill (mgr->priv->named_realpath_binary, mgr->priv->named_pid, SIGTERM);
-	if (mgr->priv->child_watch_id)
-		g_source_remove (mgr->priv->child_watch_id);
+	if (mgr->priv->child_watch)
+		g_source_destroy (mgr->priv->child_watch);
+	if (mgr->priv->main_context)
+		g_main_context_unref (mgr->priv->main_context);
 
 }
 
@@ -143,6 +207,7 @@ nm_named_manager_constructor (GType type, guint n_construct_properties,
 	klass = NM_NAMED_MANAGER_CLASS (g_type_class_peek (NM_TYPE_NAMED_MANAGER));
 
 	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
+
 	mgr = NM_NAMED_MANAGER (parent_class->constructor (type, n_construct_properties,
 							  construct_properties));
 
@@ -151,9 +216,12 @@ nm_named_manager_constructor (GType type, guint n_construct_properties,
 }
 
 NMNamedManager *
-nm_named_manager_new (void)
+nm_named_manager_new (GMainContext *main_context)
 {
-	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
+	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER,
+					       "context",
+					       main_context,
+					       NULL));
 }
 
 GQuark
@@ -317,7 +385,7 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 			else
 			{
 				syslog (LOG_WARNING, "Unknown variable %s in %s",
-					   variable, config_name);
+					variable, config_name);
 				if (write (out_fd, *line, strlen (*line)) < 0)
 					goto replacement_lose;
 			}
@@ -386,8 +454,10 @@ watch_cb (GPid pid, gint status, gpointer data)
 	else
 		syslog (LOG_WARNING, "named died from an unknown cause");
 
-	if (mgr->priv->queued_reload_id > 0)
-		g_source_remove (mgr->priv->queued_reload_id);
+	if (mgr->priv->queued_reload) {
+		g_source_destroy (mgr->priv->queued_reload);
+		mgr->priv->queued_reload = NULL;
+	}
 	
 	/* FIXME - do something with error; need to handle failure to
 	 * respawn */
@@ -440,10 +510,14 @@ nm_named_manager_start (NMNamedManager *mgr, GError **error)
 		return FALSE;
 	}
 	g_ptr_array_free (named_argv, TRUE);
+	syslog (LOG_INFO, "named started with pid %d", pid);
 	mgr->priv->named_pid = pid;
-	if (mgr->priv->child_watch_id)
-		g_source_remove (mgr->priv->child_watch_id);
-	mgr->priv->child_watch_id = g_child_watch_add (pid, watch_cb, mgr);
+	if (mgr->priv->child_watch)
+		g_source_destroy (mgr->priv->child_watch);
+	mgr->priv->child_watch = g_child_watch_source_new (pid);
+	g_source_set_callback (mgr->priv->child_watch, (GSourceFunc) watch_cb, mgr, NULL);
+	g_source_attach (mgr->priv->child_watch, mgr->priv->main_context);
+	g_source_unref (mgr->priv->child_watch);
 
 #endif
 	if (!rewrite_resolv_conf (mgr, error))
@@ -540,7 +614,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 		goto lose;
 	
 	searches = compute_domain_searches (mgr);
-	if (fprintf (f, "%s"," ; generated by NetworkManager, do not edit!\n") < 0) {
+	if (fprintf (f, "%s","; generated by NetworkManager, do not edit!\n") < 0) {
 		g_free (searches);
 		goto lose;
 	}

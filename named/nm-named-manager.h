@@ -63,7 +63,7 @@ typedef struct
 
 GType nm_named_manager_get_type (void);
 
-NMNamedManager * nm_named_manager_new (void);
+NMNamedManager * nm_named_manager_new (GMainContext *main_context);
 
 gboolean nm_named_manager_start (NMNamedManager *mgr, GError **error);
 

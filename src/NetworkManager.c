@@ -553,12 +553,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	sigaction (SIGINT, &action, NULL);
 	sigaction (SIGTERM, &action, NULL);
 
-	data->named = nm_named_manager_new ();
-	if (!nm_named_manager_start (data->named, &error))
-	{
-		syslog (LOG_CRIT, "Couldn't initialize nameserver: %s", error->message);
-		exit (EXIT_FAILURE);
-	}
+	data->named = nm_named_manager_new (data->main_context);
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
@@ -816,6 +811,12 @@ int main( int argc, char *argv[] )
 	{
 		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
 	     exit (1);
+	}
+
+	if (!nm_named_manager_start (nm_data->named, &error))
+	{
+		syslog (LOG_CRIT, "Couldn't initialize nameserver: %s", error->message);
+		exit (EXIT_FAILURE);
 	}
 
 	/* Start the wireless scanning thread and timeout */
