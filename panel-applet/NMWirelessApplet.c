@@ -483,7 +483,6 @@ static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *appl
 static void nmwa_menu_add_separator_item (GtkWidget *menu)
 {
 	GtkWidget	*menu_item;
-
 	menu_item = gtk_separator_menu_item_new ();
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_show (menu_item);
@@ -594,10 +593,10 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
   GtkWidget *entry;
   GtkWidget *button;
   GladeXML *xml;
-  char *essid;
   gint response;
   gint n_wireless_interfaces = 0;
   GSList *element;
+  NetworkDevice *default_dev = NULL;
 
   glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
 					  "NetworkManagerNotification/essid.glade",
@@ -638,7 +637,14 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 
       g_assert (dev);
       if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-	n_wireless_interfaces++;
+        {
+          if (!default_dev)
+            {
+              default_dev = dev;
+              network_device_ref (default_dev);
+            }
+          n_wireless_interfaces++;
+        }
     }
   if (n_wireless_interfaces < 1)
     {
@@ -670,8 +676,24 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 
   if (response == GTK_RESPONSE_OK)
     {
-      essid = gtk_entry_get_text (GTK_ENTRY (entry));
-      /* FIXME: actually set the essid... */
+      char *essid;
+
+      if ((essid = gtk_entry_get_text (GTK_ENTRY (entry))))
+      {
+        WirelessNetwork *net = wireless_network_new_with_essid (essid);
+        /* FIXME: allow picking of the wireless device, we currently just
+         * use the first one found in our device list.
+         *
+         * FIXME: default_dev might have gone away by the time the dialog
+         * gets dismissed and we get here...
+         */
+        if (net)
+          {
+            nmwa_dbus_set_device (applet->connection, default_dev, net);
+            network_device_unref (default_dev);
+            wireless_network_unref (net);
+          }
+      }
     }
 
   gtk_widget_destroy (dialog);

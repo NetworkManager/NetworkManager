@@ -1,3 +1,14 @@
+2004-10-14 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- Expose network_device_[un]ref()
+		- Expose wireless_network_[un]ref()
+		- (wireless_network_new_with_essid): new function, create and return
+			a wireless network with a particular essid
+
+	* panel-applet/NMWirelessApplet.c
+		- Hook up the "other network" dialog to do something
+
 Wed Oct 13 19:31:53 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c: Add an essid dialog.  It

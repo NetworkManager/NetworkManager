@@ -715,7 +715,7 @@ fprintf( stderr, "Forcing device '%s'\n", dev->nm_device);
  * Increment the reference count of the wireless network
  *
  */
-static void wireless_network_ref (WirelessNetwork *net)
+void wireless_network_ref (WirelessNetwork *net)
 {
 	g_return_if_fail (net != NULL);
 
@@ -729,7 +729,7 @@ static void wireless_network_ref (WirelessNetwork *net)
  * Unrefs (and possibly frees) the representation of a wireless network
  *
  */
-static void wireless_network_unref (WirelessNetwork *net)
+void wireless_network_unref (WirelessNetwork *net)
 {
 	g_return_if_fail (net != NULL);
 
@@ -755,6 +755,25 @@ WirelessNetwork *wireless_network_new (void)
 
 	if ((net = g_new0 (WirelessNetwork, 1)))
 		wireless_network_ref (net);
+
+	return (net);
+}
+
+
+/*
+ * wireless_network_new_with_essid
+ *
+ * Create a new wireless network structure
+ *
+ */
+WirelessNetwork *wireless_network_new_with_essid (const char *essid)
+{
+	WirelessNetwork *net = NULL;
+
+	g_return_val_if_fail (essid != NULL, NULL);
+
+	if ((net = wireless_network_new()))
+		net->essid = g_strdup (essid);
 
 	return (net);
 }
@@ -806,7 +825,7 @@ static void network_device_free_wireless_network_list (NetworkDevice *dev)
  * Increment the reference count of the network device
  *
  */
-static void network_device_ref (NetworkDevice *dev)
+void network_device_ref (NetworkDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
@@ -820,7 +839,7 @@ static void network_device_ref (NetworkDevice *dev)
  * Unrefs (and possibly frees) the representation of a network device
  *
  */
-static void network_device_unref (NetworkDevice *dev)
+void network_device_unref (NetworkDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
