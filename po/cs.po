@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-08 20:17+0200\n"
-"PO-Revision-Date: 2004-09-08 21:29+0200\n"
+"POT-Creation-Date: 2004-09-10 12:10+0200\n"
+"PO-Revision-Date: 2004-09-10 16:05+0200\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -52,35 +52,27 @@ msgstr "Je vyžadován klíč bezdrátové sítě"
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: panel-applet/NMWirelessApplet.c:535
-msgid "There are no network devices..."
-msgstr "Neexistuje žádné síťové zařízení..."
-
-#: panel-applet/NMWirelessApplet.c:635
+#: panel-applet/NMWirelessApplet.c:606
 msgid "There are no wireless networks..."
 msgstr "Neexistuje žádná bezdrátová síť..."
 
-#: panel-applet/NMWirelessApplet.c:638
-msgid "Wireless Networks"
-msgstr "Bezdrátové sítě"
+#: panel-applet/NMWirelessApplet.c:640
+msgid "There are no network devices..."
+msgstr "Neexistuje žádné síťové zařízení..."
 
-#: panel-applet/NMWirelessApplet.c:709
+#: panel-applet/NMWirelessApplet.c:721
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
 
-#: panel-applet/NMWirelessApplet.c:713
+#: panel-applet/NMWirelessApplet.c:725
 msgid "Network Connections"
 msgstr "Připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:720
-msgid "No network connection is currently active..."
-msgstr "Momentálně není aktivní žádné připojení k síti..."
+#: panel-applet/NMWirelessApplet.c:727
+msgid "Other Wireless Network..."
+msgstr "Jiná bezdrátová síť..."
 
-#: panel-applet/NMWirelessApplet.c:725
-msgid "A wired network connection is currently active..."
-msgstr "Momentálně je aktivní připojení k síti kabelem..."
-
-#: panel-applet/NMWirelessApplet.c:868 panel-applet/NMWirelessApplet.c:930
+#: panel-applet/NMWirelessApplet.c:859 panel-applet/NMWirelessApplet.c:919
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
