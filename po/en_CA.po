@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-09 03:07-0500\n"
-"PO-Revision-Date: 2005-02-09 14:52-0400\n"
+"POT-Creation-Date: 2005-02-11 11:10-0500\n"
+"PO-Revision-Date: 2005-02-11 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -101,8 +101,8 @@ msgid "A panel application for managing your network devices & connections."
 msgstr "A panel application for managing your network devices & connections."
 
 #: panel-applet/NMWirelessApplet.c:160
-msgid "© 2004-2005 by Red Hat, Inc."
-msgstr "© 2004-2005 by Red Hat, Inc."
+msgid "(C) 2004-2005 by Red Hat, Inc."
+msgstr "(C) 2004-2005 by Red Hat, Inc."
 
 #: panel-applet/NMWirelessApplet.c:377
 msgid "No network connection"
