@@ -31,14 +31,6 @@
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
-typedef struct libnm_glib_callback
-{
-	gint			 id;
-	GMainContext	*ctx;
-	GSourceFunc	 func;
-	gpointer		 user_data;
-} libnm_glib_callback;
-
 struct libnm_glib_ctx
 {
 	unsigned char	 check;
@@ -56,6 +48,15 @@ struct libnm_glib_ctx
 
 	libnm_glib_status	 nm_status;
 };
+
+typedef struct libnm_glib_callback
+{
+	gint					 id;
+	GMainContext			*gmain_ctx;
+	libnm_glib_ctx			*libnm_glib_ctx;
+	libnm_glib_callback_func	 func;
+	gpointer				 user_data;
+} libnm_glib_callback;
 
 
 static void libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx);
@@ -112,21 +113,31 @@ static char *libnm_glib_get_nm_status (DBusConnection *con)
 }
 
 
+static gboolean libnm_glib_callback_helper (gpointer user_data)
+{
+	libnm_glib_callback	*cb_data = (libnm_glib_callback *)user_data;
+
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->func != NULL, FALSE);
+	g_return_val_if_fail (cb_data->libnm_glib_ctx != NULL, FALSE);
+
+	(*(cb_data->func)) (cb_data->libnm_glib_ctx, cb_data->user_data);
+
+	return FALSE; /* never reschedule ourselves */
+}
+
 static void libnm_glib_schedule_single_callback (libnm_glib_ctx *ctx, libnm_glib_callback *callback)
 {
 	GSource				*source;
-	libnm_glib_callback_data	*data;
 
 	g_return_if_fail (ctx != NULL);
 	g_return_if_fail (callback != NULL);
 
-	data = g_malloc0 (sizeof (libnm_glib_callback_data));
-	data->libnm_ctx = ctx;
-	data->user_data = callback->user_data;
+	callback->libnm_glib_ctx = ctx;
 
 	source = g_idle_source_new ();
-	g_source_set_callback (source, callback->func, data, NULL);
-	g_source_attach (source, callback->ctx);
+	g_source_set_callback (source, libnm_glib_callback_helper, callback, NULL);
+	g_source_attach (source, callback->gmain_ctx);
 	g_source_unref (source);
 }
 
@@ -145,14 +156,6 @@ static void libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 			libnm_glib_schedule_single_callback (ctx, callback);
 	}
 	g_mutex_unlock (ctx->callbacks_lock);
-}
-
-
-void libnm_glib_callback_data_free (libnm_glib_callback_data *data)
-{
-	g_return_if_fail (data != NULL);
-
-	g_free (data);
 }
 
 
@@ -528,10 +531,9 @@ libnm_glib_status libnm_glib_get_network_status (const libnm_glib_ctx *ctx)
 }
 
 
-gint libnm_glib_register_callback	(libnm_glib_ctx *ctx, GSourceFunc func, gpointer user_data, GMainContext *g_main_ctx)
+gint libnm_glib_register_callback	(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx)
 {
 	libnm_glib_callback		*callback = NULL;
-	libnm_glib_callback_data	*data = NULL;
 
 	g_return_val_if_fail (ctx != NULL, -1);
 	g_return_val_if_fail (func != NULL, -1);
@@ -542,7 +544,8 @@ gint libnm_glib_register_callback	(libnm_glib_ctx *ctx, GSourceFunc func, gpoint
 
 	callback->id = ctx->callback_id_last++;
 	callback->func = func;
-	callback->ctx = g_main_ctx;
+	callback->gmain_ctx = g_main_ctx;
+	callback->libnm_glib_ctx = ctx;
 	callback->user_data = user_data;
 
 	g_mutex_lock (ctx->callbacks_lock);

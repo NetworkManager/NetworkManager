@@ -1,5 +1,12 @@
 2005-02-18  Dan Williams  <dcbw@redhat.com>
 
+	* libnm_glib/libnm_glib.[ch]
+	  test/libnm_glib_test.c
+		- Clean up libnm_glib API a bit, callback is now passed a libnm_glib_ctx
+			and its data, and doesn't have to free the callback data anymore
+
+2005-02-18  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Revert 2005-02-18 William Jon McCann fix for standard
 			copyright string until it passes 'make distcheck'.

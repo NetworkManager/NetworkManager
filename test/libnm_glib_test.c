@@ -26,15 +26,13 @@
 #include "libnm_glib.h"
 
 
-gboolean status_printer (gpointer user_data)
+void status_printer (libnm_glib_ctx *ctx, gpointer user_data)
 {
-	libnm_glib_callback_data	*data = (libnm_glib_callback_data *)user_data;
 	libnm_glib_status	status;
 
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (data->libnm_ctx != NULL, FALSE);
+	g_return_if_fail (ctx != NULL);
 
-	status = libnm_glib_get_network_status (data->libnm_ctx);
+	status = libnm_glib_get_network_status (ctx);
 	switch (status)
 	{
 		case LIBNM_NO_DBUS:
@@ -56,8 +54,6 @@ gboolean status_printer (gpointer user_data)
 			fprintf (stderr, "Status: unknown\n");
 			break;
 	}
-
-	return FALSE;
 }
 
 

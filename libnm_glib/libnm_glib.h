@@ -39,11 +39,8 @@ typedef enum libnm_glib_status
 
 typedef struct libnm_glib_ctx libnm_glib_ctx;
 
-typedef struct libnm_glib_callback_data
-{
-	libnm_glib_ctx	*libnm_ctx;
-	gpointer		*user_data;
-} libnm_glib_callback_data;
+
+typedef void (*libnm_glib_callback_func) (libnm_glib_ctx *libnm_ctx, gpointer user_data);
 
 
 libnm_glib_ctx		*libnm_glib_init				(void);
@@ -51,8 +48,7 @@ void				 libnm_glib_shutdown			(libnm_glib_ctx *ctx);
 
 libnm_glib_status	 libnm_glib_get_network_status	(const libnm_glib_ctx *ctx);
 
-gint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, GSourceFunc func, gpointer user_data, GMainContext *g_main_ctx);
-void				 libnm_glib_callback_data_free	(libnm_glib_callback_data *data);
+gint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
 void				 libnm_glib_unregister_callback	(libnm_glib_ctx *ctx, gint id);
 
 #ifdef __cplusplus
