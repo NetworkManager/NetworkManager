@@ -508,9 +508,6 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			goto out;
 
 		/* Send the DHCP request */
-	#ifdef DEBUG
-		syslog (LOG_INFO, "DHCP: Sending request packet...");
-	#endif
 		do
 		{
 			int				 udp_send_len = 0;
@@ -540,15 +537,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			if (timeval_subtract (&diff, &overall_end, &current) != 0)
 			{
 				err = RET_DHCP_TIMEOUT;
-			#ifdef DEBUG
-				syslog (LOG_INFO, "DHCP: Send timeout");
-			#endif
 				goto out;
 			}
 		} while ((err == -1) && (errno == EAGAIN));
-	#ifdef DEBUG
-		syslog (LOG_INFO, "DHCP: Sent request packet.");
-	#endif
 
 		/* Set up the future time at which point to stop waiting for data
 		 * on our socket and try the request again.  If that future point is
@@ -563,6 +554,10 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		if (timeval_subtract (&diff, &overall_end, &recv_end) != 0)
 			memcpy (&recv_end, &overall_end, sizeof (struct timeval));
 
+	#ifdef DEBUG
+		syslog (LOG_INFO, "DHCP: Request sent, waiting for reply...");
+	#endif
+
 		/* Packet receive loop */
 		data_good = 0;
 		gettimeofday (&current, NULL);
@@ -573,9 +568,6 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			char		ethPacket[ETH_FRAME_LEN];
 
 			/* Wait for some kind of data to appear on the socket */
-		#ifdef DEBUG
-			syslog (LOG_INFO, "DHCP: Waiting for reply...");
-		#endif
 			if ((err = peekfd (iface, recv_sk, min_data_len, &recv_end)) != RET_DHCP_SUCCESS)
 			{
 				if (err == RET_DHCP_TIMEOUT)
@@ -620,7 +612,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			if (ip_hdr->protocol != IPPROTO_UDP)
 			{
 				#ifdef DEBUG
-					syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
+					syslog (LOG_INFO, "DHCP: Reply message was not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
 				#endif
 				continue;
 			}
@@ -1047,7 +1039,7 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 {
 	int i,j;
 
-	syslog (LOG_INFO, "debug_dump_dhcp_options: %d options received:\n", options->num);
+	syslog (LOG_INFO, "Server replied with %d DHCP options:\n", options->num);
 	for (i = 1; i < 255; i++)
 	{
 		if (options->val[i])
@@ -1068,7 +1060,7 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 					for (j = 0; j < options->len[i]; j += 4)
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %u.%u.%u.%u\n",
+						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %u.%u.%u.%u\n",
 								i, opt_name, options->len[i],
 								((unsigned char *)options->val[i])[0+j],
 								((unsigned char *)options->val[i])[1+j],
@@ -1084,7 +1076,7 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				case 59:/* dhcpT2value */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %d\n", i, opt_name,
+						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %d\n", i, opt_name,
 							options->len[i], ntohl(*(int *)options->val[i]));
 						free (opt_name);
 					}
@@ -1095,7 +1087,7 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				case 53:/* dhcpMessageType */
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = %u\n", i, opt_name,
+						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = %u\n", i, opt_name,
 							options->len[i],*(unsigned char *)options->val[i]);
 						free (opt_name);
 					}
@@ -1103,7 +1095,7 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				default:
 					{
 						char *opt_name = get_dhcp_option_name (i);
-						syslog (LOG_INFO, "i=%-2d (%s)  len=%-2d  option = \"%s\"\n",
+						syslog (LOG_INFO, "\ti=%-2d (%s)  len=%-2d  option = \"%s\"\n",
 							i, opt_name, options->len[i], (char *)options->val[i]);
 						free (opt_name);
 					}
@@ -1112,17 +1104,17 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 		}
 	}
 
-	syslog (LOG_INFO, "dhcp_msg->yiaddr  = %u.%u.%u.%u",
+	syslog (LOG_INFO, "\tdhcp_msg->yiaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->yiaddr)[0], ((unsigned char *)&dhcp_msg->yiaddr)[1],
 				((unsigned char *)&dhcp_msg->yiaddr)[2], ((unsigned char *)&dhcp_msg->yiaddr)[3]);
-	syslog (LOG_INFO, "dhcp_msg->siaddr  = %u.%u.%u.%u",
+	syslog (LOG_INFO, "\tdhcp_msg->siaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->siaddr)[0], ((unsigned char *)&dhcp_msg->siaddr)[1],
 				((unsigned char *)&dhcp_msg->siaddr)[2], ((unsigned char *)&dhcp_msg->siaddr)[3]);
-	syslog (LOG_INFO, "dhcp_msg->giaddr  = %u.%u.%u.%u",
+	syslog (LOG_INFO, "\tdhcp_msg->giaddr  = %u.%u.%u.%u",
 				((unsigned char *)&dhcp_msg->giaddr)[0], ((unsigned char *)&dhcp_msg->giaddr)[1],
 				((unsigned char *)&dhcp_msg->giaddr)[2], ((unsigned char *)&dhcp_msg->giaddr)[3]);
-	syslog (LOG_INFO, "dhcp_msg->sname   = \"%s\"", dhcp_msg->sname);
-	syslog (LOG_INFO, "Server Hardware Address   = %02X.%02X.%02X.%02X.%02X.%02X\n",
+	syslog (LOG_INFO, "\tdhcp_msg->sname   = \"%s\"", dhcp_msg->sname);
+	syslog (LOG_INFO, "\tServer Hardware Address   = %02X.%02X.%02X.%02X.%02X.%02X\n",
 				saddr->sll_addr[0], saddr->sll_addr[1], saddr->sll_addr[2], saddr->sll_addr[3],
 				saddr->sll_addr[4], saddr->sll_addr[5]);
 }
