@@ -1,5 +1,10 @@
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tom Parker <palfrey@tevp.net>
+	* Fix up compile warnings & errors in the wireless applet
+
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Convert 24x24 icons back to 22x22 and use the 22x22 ones
 

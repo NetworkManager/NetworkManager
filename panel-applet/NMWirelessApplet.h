@@ -100,7 +100,9 @@ typedef struct
  */
 typedef struct
 {
+#ifdef BUILD_NOTIFICATION_ICON
 	EggTrayIcon		 parent;
+#endif
 
 	DBusConnection		*connection;
 	GConfClient		*gconf_client;

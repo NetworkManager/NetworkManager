@@ -23,6 +23,7 @@ libnm_notification_applet_la_CPPFLAGS = 	\
 	-DGDK_DISABLE_DEPRECATED				\
 	-DGNOME_DISABLE_DEPRECATED			\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
+	-DVERSION=\"$(VERSION)\" \
 	$(NULL)
 
 libnm_notification_applet_la_SOURCES =	\
