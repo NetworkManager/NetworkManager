@@ -1,3 +1,7 @@
+2004-08-27  Christian Rose  <menthos@menthos.com>
+
+	* configure.in: Added "sv" to ALL_LINGUAS.
+
 Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
 
 	* Tag NetworkManager-0.2
