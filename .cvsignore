@@ -6,3 +6,4 @@ Makefile.in
 NetworkManager-0.1.tar.gz
 autom4te.cache
 aclocal.m4
+mkinstalldirs

@@ -2,6 +2,13 @@ Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
 
 	* Tag NetworkManager-0.2
 
+Thu Aug 26 17:23:16 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* initscripts/Makefile.am
+	* configure.in: Make pass distcheck
+
+	* po/ChangeLog: added
+
 Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c

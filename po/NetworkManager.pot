@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-08-26 15:11-0400\n"
+"POT-Creation-Date: 2004-08-26 17:17-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,23 +16,27 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: panel-applet/NMWirelessApplet.c:563
-msgid "NetworkManager is not running..."
+#: panel-applet/NMWirelessApplet.c:553
+msgid "There are no network devices..."
 msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:568
-msgid "No network connection is currently active..."
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:574
-msgid "A wired network connection is currently active..."
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:584
+#: panel-applet/NMWirelessApplet.c:648
 msgid "There are no wireless networks..."
 msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:800
+#: panel-applet/NMWirelessApplet.c:720
+msgid "NetworkManager is not running..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:730
+msgid "No network connection is currently active..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:735
+msgid "A wired network connection is currently active..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:939
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
