@@ -1,5 +1,10 @@
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* README
+		- Line break the README
+
+2005-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessAppletOtherNetworkDialog.c
 		- Remove usage of gtk_window_set_default_size()
 

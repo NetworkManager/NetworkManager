@@ -1,18 +1,69 @@
 THEORY OF OPERATION:
 
-NetworkManager attempts to keep an active network connection available at all times.  It is intended only for the desktop use-case, and is not intended for usage on servers.  At this time, it does not support static IP addresses on network interfaces, and requires DHCP to be used instead.  The point of NetworkManager is to make networking configuration and setup as painless and automatic as possible.  If using DHCP, NetworkManager is _intended_ to replace default routes, obtain IP addresses from a DHCP server, and change nameservers whenever it sees fit.  If you have special needs, we'd like to hear about them, but understand that NetworkManager is not intended to serve the needs of all users.
+NetworkManager attempts to keep an active network connection available at all
+times.  It is intended only for the desktop use-case, and is not intended for
+usage on servers.  At this time, it does not support static IP addresses on
+network interfaces, and requires DHCP to be used instead.  The point of
+NetworkManager is to make networking configuration and setup as painless and
+automatic as possible.  If using DHCP, NetworkManager is _intended_ to replace
+default routes, obtain IP addresses from a DHCP server, and change nameservers
+whenever it sees fit.  If you have special needs, we'd like to hear about them,
+but understand that NetworkManager is not intended to serve the needs of all
+users.
 
   
-From a list of all adapters currently installed on the system, NetworkManager will first try a wired and then a wireless adapter.  Wireless adapters that support wireless scanning are preferred over ones that cannot.  NetworkManager does not try to keep a connection up as long as possible, meaning that plugging into a wired network will switch the connection to the wired network away from the wireless one.
+From a list of all adapters currently installed on the system, NetworkManager
+will first try a wired and then a wireless adapter.  Wireless adapters that
+support wireless scanning are preferred over ones that cannot.  NetworkManager
+does not try to keep a connection up as long as possible, meaning that plugging
+into a wired network will switch the connection to the wired network away from
+the wireless one.
 
-For wireless networking support, NetworkManager keeps two lists of wireless networks: a Trusted list, and a Preferred list.  The Trusted list contains networks the user specifically adds to it, while the preferred list contains networks the user forces NetworkManager to connect to.  For example, while the company's wireless network and WEP/WPA key would be preloaded into the Trusted Networks list, if the user wished to use the wireless network in a Starbucks, the user would explicitly tell NetworkManager to associate with that network.  NetworkManager does not try to use _any_ available network in the area (a possible security risk), but will associate with any Trusted Network first, and Preferred Networks later.  Preferred Networks are ones the user has explicitly made NetworkManager associate with at some previous time.  So if the user walks into a Starbucks and explicitly asks NetworkManager to associate with that Starbucks network, NetworkManager will remember the Starbucks network information from that point on.  Upon returning to that Starbucks, NetworkManager will attempt to associate _automatically_ with the Starbucks network since it is now in the Preferred Networks list.  The point of this is to ensure that only the user can determine which wireless networks to associate with, and that the user is aware which networks are security risks and which are not.
+For wireless networking support, NetworkManager keeps two lists of wireless
+networks: a Trusted list, and a Preferred list.  The Trusted list contains
+networks the user specifically adds to it, while the preferred list contains
+networks the user forces NetworkManager to connect to.  For example, while the
+company's wireless network and WEP/WPA key would be preloaded into the Trusted
+Networks list, if the user wished to use the wireless network in a Starbucks,
+the user would explicitly tell NetworkManager to associate with that network.
+NetworkManager does not try to use _any_ available network in the area (a
+possible security risk), but will associate with any Trusted Network first, and
+Preferred Networks later.  Preferred Networks are ones the user has explicitly
+made NetworkManager associate with at some previous time.  So if the user walks
+into a Starbucks and explicitly asks NetworkManager to associate with that
+Starbucks network, NetworkManager will remember the Starbucks network
+information from that point on.  Upon returning to that Starbucks,
+NetworkManager will attempt to associate _automatically_ with the Starbucks
+network since it is now in the Preferred Networks list.  The point of this is to
+ensure that only the user can determine which wireless networks to associate
+with, and that the user is aware which networks are security risks and which
+are not.
 
 STRUCTURE:
 
-NetworkManager runs as a root-user system level daemon, since it must manipulate hardware directly.  It communicates over DBUS with at least one other daemon, the info-daemon.  Since Trusted and Preferred Networks are user-specific, there must be some mechanism of getting this information per-user.  NetworkManager cannot store that information as it is user-specific, and therefore communicates over DBUS to the info-daemon which provides those lists.  NetworkManager also provides an API over DBUS for any DBUS-aware application to determine the current state of the network, including available wireless networks the computer is aware of and specific details about those networks.  This API also provides the means for forcing NetworkManager to associate with a specific wireless network.  Use of DBUS allows separation of NetworkManager, which requires no user-interface, and the parts of the user interface which might be desktop environment specific.
+NetworkManager runs as a root-user system level daemon, since it must manipulate
+hardware directly.  It communicates over DBUS with at least one other daemon,
+the info-daemon.  Since Trusted and Preferred Networks are user-specific, there
+must be some mechanism of getting this information per-user.  NetworkManager
+cannot store that information as it is user-specific, and therefore communicates
+over DBUS to the info-daemon which provides those lists.  NetworkManager also
+provides an API over DBUS for any DBUS-aware application to determine the
+current state of the network, including available wireless networks the computer
+is aware of and specific details about those networks.  This API also provides
+the means for forcing NetworkManager to associate with a specific wireless
+network.  Use of DBUS allows separation of NetworkManager, which requires no
+user-interface, and the parts of the user interface which might be desktop
+environment specific.
 
-The info-daemon provides a DBUS service called NetworkManagerInfo, which should provide to NetworkManager the Trusted and Preferred Networks lists upon request.  It also should be able to display a dialog to retrieve a WEP/WPA key or passphrase from the user when NetworkManager requests it.  The GNOME version of NetworkManagerInfo, for example, stores Trusted and Preferred Networks in GConf, and proxies that information to NetworkManager upon request.
+The info-daemon provides a DBUS service called NetworkManagerInfo, which should
+provide to NetworkManager the Trusted and Preferred Networks lists upon request.
+It also should be able to display a dialog to retrieve a WEP/WPA key or
+passphrase from the user when NetworkManager requests it.  The GNOME version of
+NetworkManagerInfo, for example, stores Trusted and Preferred Networks in GConf,
+and proxies that information to NetworkManager upon request.
 
-Other UI bits might include a user-visible application (for example, the included GNOME Panel applet) providing a list of available wireless networks to the user and a means to manually select one to associate with.
+Other UI bits might include a user-visible application (for example, the
+included GNOME Panel applet) providing a list of available wireless networks to
+the user and a means to manually select one to associate with.
 
 
