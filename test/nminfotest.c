@@ -321,7 +321,7 @@ int main( int argc, char *argv[] )
 		exit (1);
 	}
 
-	success = dbus_connection_register_object_path (connection, NM_DBUS_INTERFACE, &vtable, loop);
+	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &vtable, loop);
 	if (!success)
 	{
 		fprintf (stderr, "Could not register a handler for NetworkManager.  Not enough memory?\n");
