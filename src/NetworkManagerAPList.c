@@ -172,7 +172,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 	if (!nm_ap_list_lock (list))
 	{
-		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
+		nm_warning ("nm_ap_list_remove_ap() could not acquire AP list mutex." );
 		return;
 	}
 
@@ -207,7 +207,7 @@ void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network
 
 	if (!nm_ap_list_lock (list))
 	{
-		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
+		nm_warning ("nm_ap_list_remove_ap_by_essid() could not acquire AP list mutex." );
 		return;
 	}
 
