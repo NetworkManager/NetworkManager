@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-04 14:27+0100\n"
-"PO-Revision-Date: 2004-12-04 14:27+0100\n"
+"POT-Creation-Date: 2005-01-19 13:56+0100\n"
+"PO-Revision-Date: 2004-12-25 14:04+0100\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -87,67 +87,95 @@ msgstr "Heksadesimal nøkkel:"
 msgid "You must log in to access the private network %s"
 msgstr "Du må logge inn for å aksessere privat nettverk %s"
 
-#: panel-applet/NMWirelessApplet.c:290
+#: panel-applet/NMWirelessApplet.c:293
 msgid "No network connection"
 msgstr "Ingen nettverksforbindelse"
 
-#: panel-applet/NMWirelessApplet.c:294
+#: panel-applet/NMWirelessApplet.c:297
 msgid "Wired network connection"
 msgstr "Trådløs nettverkforbindelse"
 
-#: panel-applet/NMWirelessApplet.c:300
+#: panel-applet/NMWirelessApplet.c:303
 msgid "Connecting to a wired network..."
 msgstr "Kobler til et trådløst nettverk..."
 
-#: panel-applet/NMWirelessApplet.c:315
+#: panel-applet/NMWirelessApplet.c:311
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Kobler til et Ad-Hoc trådløst nettverk"
+
+#: panel-applet/NMWirelessApplet.c:325
 #, c-format
 msgid "Wireless network connection (%d%%)"
 msgstr "Trådløs nettverksforbindelse (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:318
+#: panel-applet/NMWirelessApplet.c:329
 msgid "Wireless network connection"
 msgstr "Trådløs nettverksforbindelse"
 
-#: panel-applet/NMWirelessApplet.c:324
+#: panel-applet/NMWirelessApplet.c:335
 msgid "Connecting to a wireless network..."
 msgstr "Kobler til et trådløst nettverk..."
 
-#: panel-applet/NMWirelessApplet.c:327
+#: panel-applet/NMWirelessApplet.c:339
 msgid "NetworkManager is not running"
 msgstr "NetworkManager kjører ikke"
 
-#: panel-applet/NMWirelessApplet.c:333
+#: panel-applet/NMWirelessApplet.c:345
 msgid "Scanning for wireless networks..."
 msgstr "Søker etter trådløse nettverk..."
 
-#: panel-applet/NMWirelessApplet.c:657
+#: panel-applet/NMWirelessApplet.c:667
 msgid "Other Wireless Networks..."
 msgstr "Andre trådløse nettverk..."
 
-#: panel-applet/NMWirelessApplet.c:768
+#: panel-applet/NMWirelessApplet.c:688
+msgid "Create new Wireless Network..."
+msgstr "Opprett nytt trådløse nettverk..."
+
+#: panel-applet/NMWirelessApplet.c:798
 msgid "No network devices have been found"
 msgstr "Ingen nettverksenheter ble funnet"
 
-#: panel-applet/NMWirelessApplet.c:885
+#: panel-applet/NMWirelessApplet.c:916
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager kjører ikke..."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:226
+msgid "Create new wireless network"
+msgstr "Opprett nytt trådløst nettverk"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:227
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Oppgi ESSID og sikkerhetsinnstillinger for det trådløse nettverket du ønsker "
+"å opprette."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
 msgid "Custom wireless network"
 msgstr "Egedefinert trådløst nettverk"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Oppgi ESSID for det trådløse nettverket du ønsker å koble deg til."
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:323
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr ""
 "NetworkManager fant ikke nødvendige ressurser (glade-filen ble ikke funnet)."
+
+#: panel-applet/eggtrayicon.c:118 examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Orientering"
+
+#: panel-applet/eggtrayicon.c:119 examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "Orientering for trauet."
 
 #: panel-applet/essid.glade.h:5
 msgid "C_onnect"
@@ -190,11 +218,3 @@ msgstr[1] "Trådløse nettverk"
 #: panel-applet/menu-info.c:307
 msgid " (invalid Unicode)"
 msgstr " (ugyldig Unicode)"
-
-#: examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
-msgstr "Orientering"
-
-#: examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
-msgstr "Orientering for trauet."
