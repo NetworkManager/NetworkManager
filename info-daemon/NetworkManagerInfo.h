@@ -48,6 +48,8 @@ struct NMIAppInfo
 	GtkWidget	*notification_icon;
 	*/
 	GPid		notification_icon_pid;	
+
+	GSource		*shutdown_timeout;
 };
 typedef struct NMIAppInfo NMIAppInfo;
 

@@ -1,5 +1,21 @@
 2004-10-08 John (J5) Palmieri <johnp@redhat.com>
 
+	* info-daemon/NWManagerInfo.h
+		- (struct NetworkManagerInfo): add shutdown_timeout GSource
+
+	* info-daemon/NWManagerInfoDbus.c
+		- (shutdown_callback): new function
+		- (nmi_dbus_filter): Create a 30 second timeout until shutdown
+			if NetworkManager goes away.  Kill the timeout
+			if NetworkManager restarts before the 30 seconds
+			are up.
+		- (nmi_dbus_service_init): 
+			- call gtk_main_quit if NetworkManager is not running
+			- add filters to monitor dbus service creations and
+				deletions
+	
+2004-10-08 John (J5) Palmieri <johnp@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- (nmwa_update_state): Hide notification icon if we are only
 			showing one wired card and no wireless interfaces 
@@ -8,7 +24,7 @@
 	* panel-applet/NMWirelessAppletDbus.c
 		- (nmwa_dbus_filter): changed exit to gtk_main_quit ()
 
-	* panel-applet/NWManagerInfo.c
+	* info-daemon/NWManagerInfo.c
 		- (main): Terminated the notification_icon_cmd array with a NULL
 
 2004-10-08  Hendrik Brandt  <hebra@cvs.gnome.org>

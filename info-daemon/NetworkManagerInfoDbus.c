@@ -550,7 +550,11 @@ void nmi_dbus_nmi_unregister_handler (DBusConnection *connection, void *user_dat
 	/* do nothing */
 }
 
-
+gboolean shutdown_callback (gpointer data)
+{
+	gtk_main_quit ();
+	return FALSE;
+}
 
 static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
@@ -568,6 +572,55 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 		appeared = TRUE;
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 		disappeared = TRUE;
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
+	{
+		char 	*service;
+		DBusError	 error;
+
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
+		{
+			if (strcmp (service, NM_DBUS_SERVICE) == 0)
+			{
+				if (info->shutdown_timeout != NULL) 
+					g_source_destroy (info->shutdown_timeout);
+
+				info->shutdown_timeout = g_timeout_source_new (30000);
+				if (info->shutdown_timeout != NULL)
+				{
+					g_source_set_callback (info->shutdown_timeout,
+							       shutdown_callback,
+							       info,
+							       NULL);
+
+					g_source_attach (info->shutdown_timeout, NULL);
+				}
+			}
+		}
+
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+	}
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
+	{
+		char 	*service;
+		DBusError	 error;
+
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
+		{
+			if (strcmp (service, NM_DBUS_SERVICE) == 0 && 
+			    info->shutdown_timeout != NULL)
+			{
+				g_source_destroy (info->shutdown_timeout);
+				info->shutdown_timeout = NULL;
+			}	
+		}
+
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+
+	}
 
 	if (appeared || disappeared)
 	{
@@ -595,6 +648,26 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 
 
 /*
+ * nmwa_dbus_nm_is_running
+ *
+ * Ask dbus whether or not NetworkManager is running
+ *
+ */
+static gboolean nmi_dbus_nm_is_running (DBusConnection *connection)
+{
+	DBusError		error;
+	gboolean		exists;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	dbus_error_init (&error);
+	exists = dbus_bus_service_exists (connection, NM_DBUS_SERVICE, &error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	return (exists);
+}
+
+/*
  * nmi_dbus_service_init
  *
  * Connect to the system messagebus and register ourselves as a service.
@@ -614,6 +687,9 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 		return (-1);
 	}
 
+	if (!nmi_dbus_nm_is_running (dbus_connection))
+		return (-1);
+
 	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_PATH, &nmi_vtable, info))
 	{
 		syslog (LOG_ERR, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
@@ -629,6 +705,17 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 				"interface='" NM_DBUS_INTERFACE "',"
 				"sender='" NM_DBUS_SERVICE "',"
 				"path='" NM_DBUS_PATH "'", &dbus_error);
+	if (dbus_error_is_set (&dbus_error))
+	{
+		dbus_error_free (&dbus_error);
+		return (-1);
+	}
+
+	dbus_bus_add_match(dbus_connection,
+				"type='signal',"
+				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
+				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
+				&dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
 		dbus_error_free (&dbus_error);
