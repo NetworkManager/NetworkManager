@@ -1,3 +1,12 @@
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
+	* .cvsignore
+	  src/.cvsignore
+	  test/.cvsignore
+	  dispatcher-daemon/.cvsignore
+	  info-daemon/.cvsignore
+		- Add .cvsignore files to reduce noise when diffing
+
 2004-07-24  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.[ch]

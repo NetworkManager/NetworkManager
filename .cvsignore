@@ -1,0 +1,7 @@
+configure
+config.log
+config.status
+Makefile
+Makefile.in
+NetworkManager-0.1.tar.gz
+autom4te.cache
