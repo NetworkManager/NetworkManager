@@ -12,3 +12,13 @@ aclocal.m4
 mkinstalldirs
 stamp-h1
 libtool
+COPYING
+INSTALL
+NetworkManager-0*
+compile
+config.guess
+config.sub
+depcomp
+install-sh
+ltmain.sh
+missing

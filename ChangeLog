@@ -1,3 +1,7 @@
+2004-11-01  Colin Walters  <walters@verbum.org>
+
+	* .cvsignore: Update.
+
 2004-10-29 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
