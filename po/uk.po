@@ -1,0 +1,278 @@
+# Ukrainian translation of NetworkManager
+# Copyright (C) Free Software Foundation, 2005
+# This file is distributed under the same license as the NetworkManager package.
+# Maxim Dziumanenko <mvd@mylinux.com.ua>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-02-25 22:32+0200\n"
+"PO-Revision-Date: 2005-02-25 22:32+0200\n"
+"Last-Translator: Maxim Dziumanenko <mvd@mylinux.com.ua>\n"
+"Language-Team: Ukrainian <uk@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Бездротова мережа:</span>"
+
+#: ../info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Редагування бездротових мереж"
+
+#: ../info-daemon/passphrase.glade.h:1 ../panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
+
+#: ../info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+"128-бітна парольна фраза (WEP)\n"
+"Ascii-ключ (WEP)\n"
+"Шіснадцятвковий ключ (WEP)"
+
+#: ../info-daemon/passphrase.glade.h:6
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Для бездротова мережа потрібна парольна фраза</span>\n"
+"\n"
+"Для доступу до бездротової мережі '%s' необхідна парольна фраза чи ключ шифрування."
+
+#: ../info-daemon/passphrase.glade.h:9
+msgid "Key Type:"
+msgstr "Тип ключа:"
+
+#: ../info-daemon/passphrase.glade.h:10
+#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
+#: ../panel-applet/essid.glade.h:8
+msgid "Passphrase:"
+msgstr "Парольна фраза:"
+
+#: ../info-daemon/passphrase.glade.h:11
+msgid "Wireless Network Key Required"
+msgstr "Вимагається ключ бездротової мережі"
+
+#: ../info-daemon/passphrase.glade.h:12
+msgid "_Login to Network"
+msgstr "_Увійти в мережу"
+
+#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
+msgid "Ascii Key:"
+msgstr "Ascii-ключ:"
+
+#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
+msgid "Hex Key:"
+msgstr "Шістнадцятковий ключ:"
+
+#: ../info-daemon/NetworkManagerInfoVPN.c:157
+#, c-format
+msgid "You must log in to access the private network %s"
+msgstr "Для отримання доступу до приватної мережі %s слід увійти у систему"
+
+#: ../panel-applet/NMWirelessApplet.c:141
+#: ../panel-applet/NMWirelessApplet.c:159
+msgid "NetworkManager Applet"
+msgstr "Аплет NetworkManager"
+
+#: ../panel-applet/NMWirelessApplet.c:143
+#: ../panel-applet/NMWirelessApplet.c:161
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "Авторські права (C) 2004-2005 Red Hat, Inc."
+
+#: ../panel-applet/NMWirelessApplet.c:144
+#: ../panel-applet/NMWirelessApplet.c:162
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"Аплет області сповіщення для керування мережними пристроями та з'єданнями."
+
+#: ../panel-applet/NMWirelessApplet.c:378
+msgid "No network connection"
+msgstr "Немає з'єднання з мережею"
+
+#: ../panel-applet/NMWirelessApplet.c:383
+msgid "Wired network connection"
+msgstr "Дротове з'єднання з мережею"
+
+#: ../panel-applet/NMWirelessApplet.c:388
+msgid "Connecting to a wired network..."
+msgstr "З'єднання з дротовою мережею..."
+
+#: ../panel-applet/NMWirelessApplet.c:397
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "З'єднано з особливою бездротовою мережею"
+
+#: ../panel-applet/NMWirelessApplet.c:411
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Бездротове мережне з'єднання з '%s' (%d%%)"
+
+#: ../panel-applet/NMWirelessApplet.c:416
+msgid "Wireless network connection"
+msgstr "Бездротове мережне з'єднання"
+
+#: ../panel-applet/NMWirelessApplet.c:421
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "З'єднання з бездротовою мережею '%s'..."
+
+#: ../panel-applet/NMWirelessApplet.c:427
+msgid "NetworkManager is not running"
+msgstr "NetworkManager не запущено"
+
+#: ../panel-applet/NMWirelessApplet.c:432
+msgid "Scanning for wireless networks..."
+msgstr "Скануються бездротові мережі..."
+
+#: ../panel-applet/NMWirelessApplet.c:729
+msgid "Other Wireless Networks..."
+msgstr "Інші бездротові мережі..."
+
+#: ../panel-applet/NMWirelessApplet.c:750
+msgid "Create new Wireless Network..."
+msgstr "Створити нову бездротову мережу..."
+
+#: ../panel-applet/NMWirelessApplet.c:864
+msgid "No network devices have been found"
+msgstr "Не було знайдено мережних пристроїв"
+
+#: ../panel-applet/NMWirelessApplet.c:1002
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager не запущено..."
+
+#: ../panel-applet/NMWirelessApplet.c:1072
+#: ../panel-applet/NMWirelessApplet.c:1121
+msgid "Pause Wireless Scanning"
+msgstr "Призупинити сканування бездротових мереж"
+
+#: ../panel-applet/NMWirelessApplet.c:1077
+msgid "Resume Wireless Scanning"
+msgstr "Відновити сканування бездротових мереж"
+
+#: ../panel-applet/NMWirelessApplet.c:1087
+#: ../panel-applet/NMWirelessApplet.c:1127
+msgid "Stop All Wireless Devices"
+msgstr "Зупинити усі бездротові пристрої"
+
+#: ../panel-applet/NMWirelessApplet.c:1092
+msgid "Start All Wireless Devices"
+msgstr "Запустити усі бездротові пристрої"
+
+#: ../panel-applet/NMWirelessApplet.c:1137
+msgid "Help"
+msgstr "Довідка"
+
+#: ../panel-applet/NMWirelessApplet.c:1144
+msgid "About"
+msgstr "Про програму"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+msgid "Create new wireless network"
+msgstr "Створити новий бездротовий пристрій"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:230
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Введіть ESSID та параметри безпеки бездротової мережі, яку ви бажаєте створити."
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
+msgid "Custom wireless network"
+msgstr "Власна бездротова мережа"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:236
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Введіть ESSID бездротової мережі, до якої ви бажаєте з'єднатись."
+
+#. Reuse the above string to make the translators less angry.
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Аплет NetworkManager не може знайти деякі необхідні ресурси (не знайдено файл glade)."
+
+#: ../panel-applet/essid.glade.h:2
+msgid ""
+"128-bit passphrase (WEP)\n"
+"Ascii key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+"128-бітна парольна фраза (WEP)\n"
+"Ascii-ключ (WEP)\n"
+"Шістнадцятковий ключ (WEP)"
+
+#: ../panel-applet/essid.glade.h:5
+msgid "C_onnect"
+msgstr "_З'єднатись"
+
+#: ../panel-applet/essid.glade.h:6
+msgid "Connect with encryption enabled"
+msgstr "З'єднання з увімкненим шифруванням"
+
+#: ../panel-applet/essid.glade.h:7
+msgid "Key type:"
+msgstr "Тип ключа:"
+
+#: ../panel-applet/essid.glade.h:9
+msgid "Wireless _adapter:"
+msgstr "Бездротовий _адаптер:"
+
+#: ../panel-applet/essid.glade.h:10
+msgid "Wireless _network:"
+msgstr "Бездротова _мережа"
+
+#: ../panel-applet/menu-info.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Дротова мережа (%s)"
+
+#: ../panel-applet/menu-info.c:93
+msgid "Wired Network"
+msgstr "Дротова мережа"
+
+#: ../panel-applet/menu-info.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Бездротова мережа (%s)"
+msgstr[1] "Бездротові мережі (%s)"
+msgstr[2] "Бездротові мережі (%s)"
+
+#: ../panel-applet/menu-info.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Бездротова мережа"
+msgstr[1] "Бездротові мережі"
+msgstr[2] "Бездротові мережі"
+
+#: ../panel-applet/menu-info.c:294
+msgid " (invalid Unicode)"
+msgstr " (неправильний Юнікод)"
+
+#: ../examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Орієнтація"
+
+#: ../examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "Орієнтація лотка."
