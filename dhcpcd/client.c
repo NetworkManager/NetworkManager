@@ -479,8 +479,8 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 #ifdef DEBUG
 	syslog (LOG_INFO, "DHCP: Starting request loop, overall start_time = {%lds, %ldus}\n",
 		(long)overall_end.tv_sec, (long)overall_end.tv_usec);
-	overall_end.tv_sec += iface->client_options->base_timeout;
 #endif
+	overall_end.tv_sec += iface->client_options->base_timeout;
 	do
 	{
 		udpipMessage		*udp_msg_recv = NULL;
