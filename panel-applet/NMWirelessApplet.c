@@ -69,6 +69,7 @@ static char *glade_file;
 static void		nmwa_about_cb		(BonoboUIComponent *uic, NMWirelessApplet *applet);
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
+static gboolean	do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event);
 
 static const BonoboUIVerb nmwa_context_menu_verbs [] =
 {
@@ -373,7 +374,7 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
  * NetworkInfoManager that the networks list has changed, and it notifies
  * NetworkManager about those changes, triggering an AP switch.
  */
-void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
+static void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 {
 	GConfEntry	*gconf_entry;
 	char			*key;
@@ -406,7 +407,7 @@ void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
  * Signal function called when user clicks on a menu item
  *
  */
-void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
+static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
 	char				*tag;
@@ -439,7 +440,7 @@ static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *appl
  * nmwa_menu_add_separator_item
  *
  */
-void nmwa_menu_add_separator_item (GtkWidget *menu)
+static void nmwa_menu_add_separator_item (GtkWidget *menu)
 {
 	GtkWidget	*menu_item;
 
@@ -455,7 +456,7 @@ void nmwa_menu_add_separator_item (GtkWidget *menu)
  * Add a non-clickable text item to a menu
  *
  */
-void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
+static void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
 {
 	GtkWidget		*menu_item;
 
@@ -476,7 +477,7 @@ void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  * Add a network device to the menu
  *
  */
-void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, gpointer user_data)
+static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, gpointer user_data)
 {
 	GtkWidget		*menu_item;
 	GtkWidget		*label;
@@ -519,57 +520,18 @@ void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, ch
 
 
 /*
- * nmwa_menu_add_devices
- *
- */
-void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
-{
-	GSList	*element;
-
-	g_return_if_fail (menu != NULL);
-	g_return_if_fail (applet != NULL);
-
-	g_mutex_lock (applet->data_mutex);
-	element = applet->devices;
-	if (!element)
-		nmwa_menu_add_text_item (menu, _("There are no network devices..."));
-	else
-	{
-		/* Add all devices in our device list to the menu */
-		while (element)
-		{
-			NetworkDevice *dev = (NetworkDevice *)(element->data);
-
-			if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
-			{
-				GdkPixbuf	*icon = (dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? applet->wired_icon : applet->wireless_icon;
-				char		*name_string;
-				gboolean	 current = applet->active_device ? (strcmp (applet->active_device, dev->nm_device) == 0) : FALSE;
-
-				name_string = g_strdup_printf ("%s (%s)", (dev->hal_name ? dev->hal_name : dev->nm_name),
-						(dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? "wired" : "wireless");
-				nmwa_menu_add_device_item (menu, icon, name_string, dev->nm_device, current, applet);
-			}
-
-			element = g_slist_next (element);
-		}
-	}
-	g_mutex_unlock (applet->data_mutex);
-}
-
-
-/*
  * nmwa_menu_add_network
  *
  * Add a wireless network menu item
  *
  */
-void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, char *network, gboolean current,
+static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, char *network, gboolean current,
 						gboolean encrypted, guint8 quality, gpointer user_data)
 {
 	GtkWidget		*menu_item;
 	GtkWidget		*label;
 	GtkWidget		*hbox;
+	GtkWidget		*foo;
 	GtkWidget		*progress;
 	float		 percent;
 
@@ -580,6 +542,12 @@ void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, char *n
 	hbox = gtk_hbox_new (FALSE, 5);
 	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
 	gtk_widget_show (hbox);
+
+	/* Add spacing container */
+	foo = gtk_hbox_new (FALSE, 5);
+	gtk_widget_set_size_request (foo, 7, -1);
+	gtk_box_pack_start (GTK_BOX (hbox), foo, FALSE, FALSE, 2);
+	gtk_widget_show (foo);
 
 	label = gtk_label_new (text);
 	if (current)
@@ -619,10 +587,47 @@ void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, char *text, char *n
 
 
 /*
- * nmwa_menu_add_networks
+ * nmwa_menu_device_add_networks
  *
  */
-void nmwa_menu_add_networks (GtkWidget *menu, NMWirelessApplet *applet)
+static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, NMWirelessApplet *applet)
+{
+	GSList	*element;
+
+	g_return_if_fail (menu != NULL);
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (dev != NULL);
+
+	if (dev->type != DEVICE_TYPE_WIRELESS_ETHERNET)
+		return;
+
+	element = dev->networks;
+	if (!element)
+		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
+	else
+	{
+		/* Add all networks in our network list to the menu */
+		while (element)
+		{
+			WirelessNetwork *net = (WirelessNetwork *)(element->data);
+
+			if (net)
+			{
+				nmwa_menu_add_network (menu, applet->key_pixbuf, net->essid,
+						net->essid, net->active, net->encrypted, net->quality, applet);
+			}
+
+			element = g_slist_next (element);
+		}
+	}
+}
+
+
+/*
+ * nmwa_menu_add_devices
+ *
+ */
+static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	GSList	*element;
 
@@ -630,27 +635,34 @@ void nmwa_menu_add_networks (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (applet != NULL);
 
 	g_mutex_lock (applet->data_mutex);
-	element = applet->networks;
+	element = applet->devices;
 	if (!element)
-		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
+		nmwa_menu_add_text_item (menu, _("There are no network devices..."));
 	else
 	{
-		nmwa_menu_add_text_item (menu, _("Wireless Networks"));
-
-		/* Add all networks in our network list to the menu */
+		/* Add all devices in our device list to the menu */
 		while (element)
 		{
-			WirelessNetwork *net = (WirelessNetwork *)(element->data);
+			NetworkDevice *dev = (NetworkDevice *)(element->data);
 
-			if (net)
-				nmwa_menu_add_network (menu, applet->key_pixbuf, net->essid,
-						net->essid, net->active, net->encrypted, net->quality, applet);
+			if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
+			{
+				GdkPixbuf	*icon = (dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? applet->wired_icon : applet->wireless_icon;
+				char		*name_string;
+				gboolean	 current = applet->active_device ? (strcmp (applet->active_device, dev->nm_device) == 0) : FALSE;
 
+				name_string = g_strdup_printf ("%s (%s)", (dev->hal_name ? dev->hal_name : dev->nm_name),
+						(dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? "wired" : "wireless");
+				nmwa_menu_add_device_item (menu, icon, name_string, dev->nm_device, current, applet);
+				nmwa_menu_device_add_networks (menu, dev, applet);
+				nmwa_menu_add_separator_item (menu);	
+			}
 			element = g_slist_next (element);
 		}
 	}
 	g_mutex_unlock (applet->data_mutex);
 }
+
 
 /*
  * nmwa_menu_item_data_free
@@ -683,7 +695,7 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
  * Destroy the menu and each of its items data tags
  *
  */
-void nmwa_dispose_menu_items (NMWirelessApplet *applet)
+static void nmwa_dispose_menu_items (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
@@ -698,7 +710,7 @@ void nmwa_dispose_menu_items (NMWirelessApplet *applet)
  * Set up our networks menu from scratch
  *
  */
-GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
+static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 {
 	GtkWidget		 *menu = applet->menu;
 
@@ -712,27 +724,7 @@ GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 
 	nmwa_menu_add_text_item (menu, _("Network Connections"));
 	nmwa_menu_add_devices (menu, applet);
-	nmwa_menu_add_separator_item (menu);	
-
-	switch (applet->applet_state)
-	{
-		case (APPLET_STATE_NO_CONNECTION):
-			nmwa_menu_add_text_item (menu, _("No network connection is currently active..."));
-			break;
-
-		case (APPLET_STATE_WIRED):
-		case (APPLET_STATE_WIRED_CONNECTING):
-			nmwa_menu_add_text_item (menu, _("A wired network connection is currently active..."));
-			break;
-
-		case (APPLET_STATE_WIRELESS):
-		case (APPLET_STATE_WIRELESS_CONNECTING):
-			nmwa_menu_add_networks (menu, applet);
-			break;
-
-		default:
-			break;
-	}
+	nmwa_menu_add_text_item (menu, _("Other Wireless Network..."));
 
 	return (menu);
 }
@@ -785,6 +777,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 
 	applet->menu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
+	g_signal_connect (applet->menu, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	gtk_widget_show (menu_bar);
 	gtk_widget_show (applet->toplevel_menu);
@@ -810,10 +803,8 @@ static void change_orient_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
 
 static gboolean do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event)
 {
-     printf ("Getting button press\n");
-	/*if (event->button != 1)
+	if (event->button != 1)
 		g_signal_stop_emission_by_name (widget, "button_press_event");
-	*/
 	return (FALSE);
 }
 
@@ -871,7 +862,6 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 	}
 
 	applet->applet_state = APPLET_STATE_NO_NM;
-	applet->networks = NULL;
 	applet->devices = NULL;
 	applet->active_device = NULL;
 
@@ -895,7 +885,6 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 	nmwa_setup_widgets (applet);
 
 	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
-	//g_signal_connect (applet->toplevel_menu, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	panel_applet_setup_menu_from_file (PANEL_APPLET (applet), NULL, "NMWirelessApplet.xml", NULL,
 						nmwa_context_menu_verbs, applet);

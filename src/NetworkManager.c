@@ -361,13 +361,14 @@ gboolean nm_link_state_monitor (gpointer user_data)
 				switch (nm_device_get_type (dev))
 				{
 					case DEVICE_TYPE_WIRELESS_ETHERNET:
-						if (dev != data->active_device)
+						nm_device_update_link_active (dev, FALSE);						
+						if ((dev == data->active_device) && !nm_device_get_link_active (dev))
 						{
-							if (nm_device_is_up (dev))
-								nm_device_bring_down (dev);
+							/* If we loose a link to the access point, then
+							 * look for another access point to connect to.
+							 */
+							nm_device_update_best_ap (dev);
 						}
-						else
-							nm_device_update_link_active (dev, FALSE);						
 						break;
 
 					case DEVICE_TYPE_WIRED_ETHERNET:

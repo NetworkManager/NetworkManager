@@ -84,7 +84,6 @@ typedef struct
 	/* Data model elements */
 	GMutex			*data_mutex;
 	GSList			*devices;
-	GSList			*networks;
 	char				*active_device;
 	AppletState		 applet_state;
 
@@ -103,6 +102,7 @@ typedef struct
  */
 typedef struct
 {
+	char		*nm_name;
 	char		*essid;
 	gboolean	 encrypted;
 	gboolean	 active;
@@ -120,6 +120,7 @@ typedef struct
 	char		*nm_name;
 	char		*hal_name;
 	char		*udi;
+	GSList	*networks;
 } NetworkDevice;
 
 #endif

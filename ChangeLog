@@ -1,3 +1,43 @@
+2004-09-09  Dan Williams <dcbw@redhat.com>
+
+	NOTE: this commit changes the behavior of wireless devices in
+	NetworkManager.  They are now up all the time, scanning all
+	the time.  Only the active device has an IP address and routing
+	information set up however.  Also, NetworkManager will no longer
+	opportunistically switch wireless networks when a better one
+	comes in range, it will remain associated with one wireless network
+	until that one drops out.
+
+	* panel-applet/NMWirelessApplet.c
+	  panel-applet/NMWirelessAppletDbus.c
+		- List all wireless cards and their respective networks
+
+	* src/NMLoadModules
+		- Use full path to /sbin/ip
+
+	* src/NetworkManager.c
+		- Keep wireless devices up all the time so they can scan
+
+	* src/NetworkManagerDbus.c
+		- On a WirelessNetworkUpdate signal from NMI, don't update
+			the "best" AP
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_link_active): clear out the best ap for
+			wireless devices when the link is set to FALSE
+		- Scan on all wireless cards, all the time
+		- (nm_device_activation_worker): split out the wireless card
+			link-waiting code to a separate function
+		- Keep wireless cards up even if device activation fails
+		- Don't update the "best" ap as much
+
+	* src/NetworkManagerPolicy.c
+		- Don't update the best ap when checking if its frozen,
+			let link checking clear out a frozen best ap for us
+
+	* src/NetworkManagerWireless.c
+		- Scan on all wireless cards, all the time
+
 2004-09-09  Francisco Javier F. Serrador  <serrador@cvs.gnome.org>
 
 	* configure.in: Added 'es' (Spanish) to ALL_LINGUAS.
@@ -21,6 +61,7 @@
 	to look like.  Also did a Airo card hack to make it show the
 	correct AP quality
 
+>>>>>>> 1.92
 2004-09-08  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/no-networkmanager.png

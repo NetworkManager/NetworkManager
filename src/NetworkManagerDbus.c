@@ -856,7 +856,6 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	NMData			*data = (NMData *)user_data;
 	const char		*object_path;
 	const char		*method;
-	NMAccessPointList	*list = NULL;
 	gboolean			 handled = FALSE;
 
 	g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -871,7 +870,19 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 
 	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate"))
-		list = data->allowed_ap_list;
+	{
+		char			*network = NULL;
+		DBusError		 error;
+
+		dbus_error_init (&error);
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+		syslog (LOG_DEBUG, "NetowrkManagerInfo triggered update of wireless network '%s'", network);
+		nm_ap_list_update_network (data->allowed_ap_list, network, data);
+		dbus_free (network);
+		handled = TRUE;
+	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
 	{
 		char 	*service;
@@ -905,34 +916,6 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
 		 * may want to know about service signals.
 		 */
-	}
-
-	if (list)
-	{
-		char			*network = NULL;
-		DBusError		 error;
-
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
-			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-
-		syslog( LOG_DEBUG, "update of network '%s'", network);
-		nm_ap_list_update_network (list, network, data);
-		dbus_free (network);
-
-		/* Make sure the currently active device updates its "best" ap
-		 * based on the new preferred/trusted network information.
-		 */
-		if (    data->active_device
-			&& nm_device_is_wireless (data->active_device)
-			&& !nm_device_activating (data->active_device))
-		{
-			syslog( LOG_DEBUG, "updating active device's best ap");
-			nm_device_update_best_ap (data->active_device);
-			nm_data_mark_state_changed (data);
-			syslog( LOG_DEBUG, "Device's best ap now '%s'", nm_ap_get_essid (nm_device_get_best_ap (data->active_device)));
-		}
-		handled = TRUE;
 	}
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -1062,15 +1045,16 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 			return (reply_message);
 		}
 
-		if ((ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev))))
+		/* Return the network associated with the ESSID the card is currently associated with,
+		 * if any, and only if that network is the "best" network.
+		 */
+		if (    (ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev)))
+			&& (!nm_device_need_ap_switch (dev))
+			&& (object_path = nm_device_get_path_for_ap (dev, ap)))
 		{
-			if (    (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_ap_get_essid (nm_device_get_best_ap (dev))) == 0)
-				&& (object_path = nm_device_get_path_for_ap (dev, ap)))
-			{
-				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
-				g_free (object_path);
-				success = TRUE;
-			}
+			dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
+			g_free (object_path);
+			success = TRUE;
 		}
 
 		if (!success)

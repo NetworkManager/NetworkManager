@@ -207,10 +207,6 @@ static NMDevice * nm_policy_get_best_device (NMData *data)
 	 */
 	if (data->active_device && nm_device_is_wireless (data->active_device))
 	{
-		/* Give ourselves a chance to clear the "best" access point if
-		 * its gone out of range and no longer in the device's ap list.
-		 */
-		nm_device_update_best_ap (data->active_device);
 		if (nm_device_get_best_ap_frozen (data->active_device))
 			best_dev = data->active_device;
 	}

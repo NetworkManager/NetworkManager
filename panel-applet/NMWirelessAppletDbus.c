@@ -40,6 +40,10 @@
 #define	DBUS_NO_SERVICE_ERROR		"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 #define	NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
 
+
+static void wireless_network_free (void *element, void *user_data);
+
+
 /*
  * nmwa_dbus_get_string
  *
@@ -50,7 +54,7 @@
  *			RETURN_NO_NM if NetworkManager service no longer exists
  *
  */
-int nmwa_dbus_get_string (DBusConnection *connection, const char *path, const char *method, char **string)
+static int nmwa_dbus_get_string (DBusConnection *connection, const char *path, const char *method, char **string)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -82,6 +86,7 @@ int nmwa_dbus_get_string (DBusConnection *connection, const char *path, const ch
 		else if (strcmp (error.name, NM_DBUS_NO_ACTIVE_NET_ERROR) == 0)
 			ret = RETURN_SUCCESS;
 
+		dbus_error_free (&error);
 		return (ret);
 	}
 
@@ -113,7 +118,7 @@ int nmwa_dbus_get_string (DBusConnection *connection, const char *path, const ch
  *			RETURN_NO_NM if NetworkManager service no longer exists
  *
  */
-int nmwa_dbus_get_int (DBusConnection *connection, const char *path, const char *method, gint32 *num)
+static int nmwa_dbus_get_int (DBusConnection *connection, const char *path, const char *method, gint32 *num)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -142,6 +147,7 @@ int nmwa_dbus_get_int (DBusConnection *connection, const char *path, const char 
 		if (strcmp (error.name, DBUS_NO_SERVICE_ERROR) == 0)
 			ret = RETURN_NO_NM;
 
+		dbus_error_free (&error);
 		return (ret);
 	}
 
@@ -172,7 +178,7 @@ int nmwa_dbus_get_int (DBusConnection *connection, const char *path, const char 
  *			RETURN_NO_NM if NetworkManager service no longer exists
  *
  */
-int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char *method, gboolean *val)
+static int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char *method, gboolean *val)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -200,6 +206,7 @@ int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char
 		if (strcmp (error.name, DBUS_NO_SERVICE_ERROR) == 0)
 			ret = RETURN_NO_NM;
 
+		dbus_error_free (&error);
 		return (ret);
 	}
 
@@ -226,7 +233,7 @@ int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char
  * nmwa_dbus_get_double
  *
  */
-double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const char *method)
+static double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const char *method)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -249,6 +256,7 @@ double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const
 	{
 		fprintf (stderr, "nmwa_dbus_get_double(): %s raised:\n %s\n\n", error.name, error.message);
 		dbus_message_unref (message);
+		dbus_error_free (&error);
 		return (0);
 	}
 
@@ -280,7 +288,7 @@ double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const
  *			RETURN_NO_NM if NetworkManager service no longer exists
  *
  */
-int nmwa_dbus_get_string_array (DBusConnection *connection, const char *path, const char *method,
+static int nmwa_dbus_get_string_array (DBusConnection *connection, const char *path, const char *method,
 							int *num_items, char ***string_array)
 {
 	DBusMessage 	 *message;
@@ -319,6 +327,7 @@ int nmwa_dbus_get_string_array (DBusConnection *connection, const char *path, co
 			ret = RETURN_SUCCESS;
 		}
 
+		dbus_error_free (&error);
 		return (ret);
 	}
 
@@ -349,7 +358,7 @@ int nmwa_dbus_get_string_array (DBusConnection *connection, const char *path, co
  * Returns the object_path of the currently active device, if any.
  *
  */
-char * nmwa_dbus_get_active_device (NMWirelessApplet *applet, AppletState failure_state)
+static char * nmwa_dbus_get_active_device (NMWirelessApplet *applet, AppletState failure_state)
 {
 	char *active_device = NULL;
 
@@ -378,7 +387,7 @@ char * nmwa_dbus_get_active_device (NMWirelessApplet *applet, AppletState failur
  * Returns the object_path of the currently active network of the active device.
  *
  */
-char * nmwa_dbus_get_active_network (NMWirelessApplet *applet, char *dev_path, AppletState failure_state)
+static char * nmwa_dbus_get_active_network (NMWirelessApplet *applet, char *dev_path, AppletState failure_state)
 {
 	char *network = NULL;
 
@@ -407,7 +416,7 @@ char * nmwa_dbus_get_active_network (NMWirelessApplet *applet, char *dev_path, A
  * Returns the device type of the specified device.
  *
  */
-int nmwa_dbus_get_device_type (NMWirelessApplet *applet, char *path, AppletState failure_state)
+static int nmwa_dbus_get_device_type (NMWirelessApplet *applet, char *path, AppletState failure_state)
 {
 	int	type = -1;
 
@@ -435,7 +444,7 @@ int nmwa_dbus_get_device_type (NMWirelessApplet *applet, char *path, AppletState
  * Returns the quality of a given wireless network
  *
  */
-guint8 nmwa_dbus_get_network_quality (NMWirelessApplet *applet, char *path)
+static guint8 nmwa_dbus_get_network_quality (NMWirelessApplet *applet, char *path)
 {
 	int	qual = 0;
 
@@ -459,7 +468,7 @@ guint8 nmwa_dbus_get_network_quality (NMWirelessApplet *applet, char *path)
  * Returns NetworkManager's status
  *
  */
-char * nmwa_dbus_get_nm_status (NMWirelessApplet *applet, AppletState failure_state)
+static char * nmwa_dbus_get_nm_status (NMWirelessApplet *applet, AppletState failure_state)
 {
 	char *status = NULL;
 
@@ -487,7 +496,7 @@ char * nmwa_dbus_get_nm_status (NMWirelessApplet *applet, AppletState failure_st
  * Returns the name of a specified wireless network
  *
  */
-char * nmwa_dbus_get_network_name (NMWirelessApplet *applet, char *net_path)
+static char * nmwa_dbus_get_network_name (NMWirelessApplet *applet, char *net_path)
 {
 	char *name = NULL;
 
@@ -511,7 +520,7 @@ char * nmwa_dbus_get_network_name (NMWirelessApplet *applet, char *net_path)
  * Returns the name of a specified network device
  *
  */
-char * nmwa_dbus_get_device_name (NMWirelessApplet *applet, char *dev_path)
+static char * nmwa_dbus_get_device_name (NMWirelessApplet *applet, char *dev_path)
 {
 	char *name = NULL;
 
@@ -535,7 +544,7 @@ char * nmwa_dbus_get_device_name (NMWirelessApplet *applet, char *dev_path)
  * Returns the HAL udi of a network device
  *
  */
-char * nmwa_dbus_get_device_udi (NMWirelessApplet *applet, char *dev_path)
+static char * nmwa_dbus_get_device_udi (NMWirelessApplet *applet, char *dev_path)
 {
 	char *udi = NULL;
 
@@ -559,7 +568,7 @@ char * nmwa_dbus_get_device_udi (NMWirelessApplet *applet, char *dev_path)
  * Returns whether or not the specified network is encrypted
  *
  */
-gboolean nmwa_dbus_get_network_encrypted (NMWirelessApplet *applet, char *net_path)
+static gboolean nmwa_dbus_get_network_encrypted (NMWirelessApplet *applet, char *net_path)
 {
 	gboolean	enc = FALSE;
 
@@ -583,7 +592,7 @@ gboolean nmwa_dbus_get_network_encrypted (NMWirelessApplet *applet, char *net_pa
  * Returns an array of wireless networks that the specified device knows about.
  *
  */
-char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *path, int *num_items, AppletState failure_state)
+static char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *path, int *num_items, AppletState failure_state)
 {
 	char **array = NULL;
 	int	  items;
@@ -616,7 +625,7 @@ char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *path, int 
  * Get a string property from a device
  *
  */
-char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connection, const char *udi, const char *property_name)
+static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connection, const char *udi, const char *property_name)
 {
 	DBusError		 error;
 	DBusMessage	*message;
@@ -661,7 +670,7 @@ char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connection, cons
  * Grab the info.product tag from hal for a specific UDI
  *
  */
-char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const char *udi)
+static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const char *udi)
 {
 	DBusError		 error;
 	DBusMessage	*message;
@@ -760,63 +769,84 @@ static void wireless_network_free (void *element, void *user_data)
 {
 	WirelessNetwork	*net = (WirelessNetwork *)(element);
 
-	if (net)	g_free (net->essid);
+	g_return_if_fail (net != NULL);
+
+	g_free (net->nm_name);
+	g_free (net->essid);
 	g_free (net);
 }
 
 
 /*
- * nmwa_dbus_update_wireless_network_list
- *
- * Query NetworkManager for the wireless networks the active device
- * knows about, if the active device is wireless.
+ * network_device_free_wireless_network_list
  *
  */
-void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
+static void network_device_free_wireless_network_list (NetworkDevice *dev)
 {
-	char 	 *active_device = NULL;
+	g_return_if_fail (dev != NULL);
+
+	g_slist_foreach (dev->networks, wireless_network_free, NULL);
+	g_slist_free (dev->networks);
+	dev->networks = NULL;	
+}
+
+
+/*
+ * network_device_free
+ *
+ * Frees the representation of a network device
+ *
+ */
+static void network_device_free (void *element, void *user_data)
+{
+	NetworkDevice	*dev = (NetworkDevice *)(element);
+
+	g_return_if_fail (dev != NULL);
+
+	network_device_free_wireless_network_list (dev);
+	g_free (dev->nm_device);
+	g_free (dev->nm_name);
+	dbus_free (dev->udi);
+	dbus_free (dev->hal_name);
+	g_free (dev);
+}
+
+
+/*
+ * nmwa_dbus_update_device_wireless_networks
+ *
+ * Query NetworkManager for the wireless networks a particular device
+ * knows about, if the active device is wireless.
+ *
+ * NOTE: caller must lock device list if necessary
+ *
+ */
+static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWirelessApplet *applet)
+{
 	char		 *active_network = NULL;
 	int		  dev_type;
 	char		**networks = NULL;
 	int		  num_items = 0;
 	int		  i;
 
-	/* Grab the lock for the network list. */
-	g_mutex_lock (applet->data_mutex);
+	g_return_if_fail (dev != NULL);
 
 	/* Clear out existing entries in the list */
-	if (applet->networks)
-	{
-		g_slist_foreach (applet->networks, wireless_network_free, NULL);
-		g_slist_free (applet->networks);
-		applet->networks = NULL;
-	}
-	g_mutex_unlock (applet->data_mutex);
+	if (dev->networks)
+		network_device_free_wireless_network_list (dev);
 
-	if (    (applet->applet_state != APPLET_STATE_WIRELESS)
-		&& (applet->applet_state != APPLET_STATE_WIRELESS_CONNECTING))
-		return;
-
-	if (!(active_device = nmwa_dbus_get_active_device (applet, APPLET_STATE_NO_CONNECTION)))
-		goto out;
-
-	if (    ((dev_type = nmwa_dbus_get_device_type (applet, active_device, APPLET_STATE_NO_CONNECTION)) == -1)
+	if (    ((dev_type = nmwa_dbus_get_device_type (applet, dev->nm_device, APPLET_STATE_NO_CONNECTION)) == -1)
 		|| (dev_type != DEVICE_TYPE_WIRELESS_ETHERNET))
 		goto out;
 
-	active_network = nmwa_dbus_get_active_network (applet, active_device, APPLET_STATE_IGNORE);
+	active_network = nmwa_dbus_get_active_network (applet, dev->nm_device, APPLET_STATE_IGNORE);
 	if (applet->applet_state == APPLET_STATE_NO_NM)
 		goto out;	/* Don't proceed if NetworkManager died during the call to get the active network */
 
 	/* Get each of the networks in turn and add them to the menu */
-	networks = nmwa_dbus_get_device_networks (applet, active_device, &num_items, APPLET_STATE_NO_CONNECTION);
-	if ((applet->applet_state != APPLET_STATE_WIRELESS) && (applet->applet_state != APPLET_STATE_WIRELESS_CONNECTING))
+	networks = nmwa_dbus_get_device_networks (applet, dev->nm_device, &num_items, APPLET_STATE_NO_CONNECTION);
+	if (!networks || (applet->applet_state == APPLET_STATE_NO_NM))
 		goto out;
-
-	if (!networks)
-		goto out;
-
-	g_mutex_lock (applet->data_mutex);
 
 	for (i = 0; i < num_items; i++)
 	{
@@ -825,7 +855,7 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 		if (!(name = nmwa_dbus_get_network_name (applet, networks[i])))
 			break;
 
-		if (name && strlen (name))
+		if (strlen (name))
 		{
 			gboolean	 		 found = FALSE;
 			int		 		 j;
@@ -842,20 +872,20 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 				continue;
 						
 			net = g_new0 (WirelessNetwork, 1);
+			net->nm_name = g_strdup (networks[i]);
 			net->essid = g_strdup (name);
-			net->active = active_network ? (strcmp (networks[i], active_network) == 0) : FALSE;
-			net->encrypted = nmwa_dbus_get_network_encrypted (applet, networks[i]);
-			net->quality = nmwa_dbus_get_network_quality (applet, networks[i]);
+			net->active = active_network ? (strcmp (net->nm_name, active_network) == 0) : FALSE;
+			net->encrypted = nmwa_dbus_get_network_encrypted (applet, net->nm_name);
+			net->quality = nmwa_dbus_get_network_quality (applet, net->nm_name);
 
 			fprintf( stderr, "Adding '%s' active (%d), enc (%d)\n", name, net->active, net->encrypted);
-			applet->networks = g_slist_append (applet->networks, net);
+			dev->networks = g_slist_append (dev->networks, net);
 		}
 		dbus_free (name);
 	}
 	g_mutex_unlock (applet->data_mutex);
 
 out:
-	dbus_free (active_device);
 	dbus_free (active_network);	
 	dbus_free_string_array (networks);
 }
@@ -867,7 +897,7 @@ out:
  * Update our state based on what NetworkManager's network state is
  *
  */
-void nmwa_dbus_update_network_state (NMWirelessApplet *applet)
+static void nmwa_dbus_update_network_state (NMWirelessApplet *applet)
 {
 	char		*active_device = NULL;
 	char		*nm_status = NULL;
@@ -919,33 +949,12 @@ out:
 
 
 /*
- * network_device_free
- *
- * Frees the representation of a network device
- *
- */
-static void network_device_free (void *element, void *user_data)
-{
-	NetworkDevice	*dev = (NetworkDevice *)(element);
-
-	if (dev)
-	{
-		g_free (dev->nm_device);
-		g_free (dev->nm_name);
-		dbus_free (dev->udi);
-		dbus_free (dev->hal_name);
-	}
-	g_free (dev);
-}
-
-
-/*
  * nmwa_dbus_update_active_device
  *
  * Get the active device from NetworkManager
  *
  */
-void nmwa_dbus_update_active_device (NMWirelessApplet *applet)
+static void nmwa_dbus_update_active_device (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
@@ -963,7 +972,7 @@ void nmwa_dbus_update_active_device (NMWirelessApplet *applet)
  * Get a device list from NetworkManager
  *
  */
-void nmwa_dbus_update_devices (NMWirelessApplet *applet)
+static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 {
 	char	**devices = NULL;
 	int	  num_items = 0;
@@ -1013,6 +1022,7 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 				{
 					applet->devices = g_slist_append (applet->devices, dev);
 					fprintf( stderr, "Got device '%s', udi '%s'\n", dev->nm_name, dev->udi);
+					nmwa_dbus_update_device_wireless_networks (dev, applet);
 				}
 			}
 		}
@@ -1021,6 +1031,40 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 
 	g_mutex_unlock (applet->data_mutex);
 	dbus_free_string_array (devices);
+}
+
+
+/*
+ * nmwa_dbus_get_device_for_nm_device
+ *
+ * Searches the device list for a device that matches the
+ * NetworkManager ID given.
+ *
+ */
+static NetworkDevice *nmwa_dbus_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev)
+{
+	NetworkDevice	*found_dev = NULL;
+	GSList		*element;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (nm_dev != NULL, NULL);
+	g_return_val_if_fail (strlen (nm_dev), NULL);
+
+	g_mutex_lock (applet->data_mutex);
+	element = applet->devices;
+	while (element)
+	{
+		NetworkDevice	*dev = (NetworkDevice *)(element->data);
+		if (dev && (strcmp (dev->nm_device, nm_dev) == 0))
+		{
+			found_dev = dev;
+			break;
+		}
+		element = g_slist_next (element);
+	}
+	g_mutex_unlock (applet->data_mutex);
+
+	return (found_dev);
 }
 
 
@@ -1060,7 +1104,29 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 	{
-		nmwa_dbus_update_wireless_network_list (applet);
+		char		*nm_device = NULL;
+		char		*network = NULL;
+		DBusError	 error;
+
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &nm_device,
+				DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+		{
+			NetworkDevice	*dev;
+
+			if ((dev = nmwa_dbus_get_device_for_nm_device (applet, nm_device)))
+			{
+				g_mutex_lock (applet->data_mutex);
+				nmwa_dbus_update_device_wireless_networks (dev, applet);
+				g_mutex_unlock (applet->data_mutex);
+			}
+		}
+
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+
+		dbus_free (nm_device);
+		dbus_free (network);
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
@@ -1087,7 +1153,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
  * Ask dbus whether or not NetworkManager is running
  *
  */
-gboolean nmwa_dbus_nm_is_running (DBusConnection *connection)
+static gboolean nmwa_dbus_nm_is_running (DBusConnection *connection)
 {
 	DBusError		error;
 	gboolean		exists;
@@ -1201,8 +1267,6 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))
 	{
 		nmwa_dbus_update_network_state (applet);
-		if ((applet->applet_state == APPLET_STATE_WIRELESS) || (applet->applet_state == APPLET_STATE_WIRELESS_CONNECTING))
-			nmwa_dbus_update_wireless_network_list (applet);
 		nmwa_dbus_update_devices (applet);
 		nmwa_dbus_update_active_device (applet);
 	}

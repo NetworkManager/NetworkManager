@@ -198,7 +198,10 @@ void get_device_active_network (DBusConnection *connection, char *path)
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
-		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		if (strstr (error.name, "NoActiveNetwork"))
+			fprintf (stderr, "      This device is not associated with a wireless network\n");
+		else
+			fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
 		dbus_message_unref (message);
 		return;
 	}
@@ -305,7 +308,7 @@ int get_device_type (DBusConnection *connection, char *path)
 	int	type;
 	type = dbus_message_iter_get_int32 (&iter);
 
-	fprintf (stderr, "Active device type: '%d'\n", type );
+	fprintf (stderr, "      Device type: '%d'\n", type );
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
@@ -362,7 +365,7 @@ void get_device_networks (DBusConnection *connection, const char *path)
 	dbus_message_unref (message);
 
 	int i;
-	fprintf( stderr, "Networks:\n" );
+	fprintf( stderr, "      Networks:\n" );
 	for (i = 0; i < num_networks; i++)
 	{
 		DBusMessage	*message2;
@@ -408,7 +411,7 @@ void get_device_networks (DBusConnection *connection, const char *path)
 		dbus_message_unref (reply2);
 		dbus_message_unref (message2);
 
-		fprintf( stderr, "   %s (%s)\n", networks[i], string2 );
+		fprintf( stderr, "         %s (%s)\n", networks[i], string2 );
 	}
 
 	dbus_free_string_array (networks);
@@ -465,7 +468,17 @@ void get_devices (DBusConnection *connection)
 	int i;
 	fprintf( stderr, "Devices:\n" );
 	for (i = 0; i < num_devices; i++)
-		fprintf( stderr, "   %s\n", devices[i] );
+	{
+		int	 type;
+
+		fprintf (stderr, "   %s\n", devices[i]);
+		if ((type = get_device_type (connection, devices[i])) == 2)
+		{
+			get_device_active_network (connection, devices[i]);
+			get_device_networks (connection, devices[i]);
+		}
+		fprintf (stderr, "\n");
+	}
 
 	dbus_free_string_array (devices);
 }
@@ -488,18 +501,10 @@ int main( int argc, char *argv[] )
 	}
 
 	char *path;
-	int	 type;
 
 	get_nm_status (connection);
 	path = get_active_device (connection);
 	get_device_name (connection, path);
-	type = get_device_type (connection, path);
-	if (type == 2)
-	{
-		get_device_active_network (connection, path);
-		get_device_networks (connection, path);
-	}
-
 	get_devices (connection);
 	g_free (path);
 

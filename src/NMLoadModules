@@ -48,7 +48,7 @@ for i in $interfaces; do
 	unset DEVICE TYPE SLAVE BRIDGE
 
 	# Load the module
-	LC_ALL= LANG= ip -o link | grep -q $i
+	LC_ALL= LANG= /sbin/ip -o link | grep -q $i
 	if [ "$?" = "1" ]; then
 		alias=`modprobe -c | awk "/^(alias|install)[[:space:]]+$i[[:space:]]/ { print \\$3 }"`
 		if [ -n "$alias" -a "$alias" != "off" -a "$alias" != "/bin/true" ]; then

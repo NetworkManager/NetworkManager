@@ -326,8 +326,7 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 	nm_system_device_update_config_info (dev);
 
 	/* Have to bring the device up before checking link status.  */
-	if (!nm_device_is_up (dev))
-		nm_device_bring_up (dev);
+	nm_device_bring_up (dev);
 	nm_device_update_link_active (dev, TRUE);
 
 	return (dev);
@@ -444,6 +443,8 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 	g_return_if_fail (dev != NULL);
 
 	dev->link_active = link_active;
+	if (!link_active && nm_device_is_wireless (dev))
+		nm_device_set_best_ap (dev, NULL);
 }
 
 
@@ -476,24 +477,11 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	/* Since non-active wireless cards are supposed to be powered off anyway,
-	 * only scan for active/pending device and clear ap_list and best_ap for
-	 * devices that aren't active/pending.
-	 */
-	if (dev != dev->app_data->active_device)
-	{
-		nm_ap_list_unref (dev->options.wireless.ap_list);
-		dev->options.wireless.ap_list = NULL;
-		if (dev->options.wireless.best_ap)
-			nm_ap_unref (dev->options.wireless.best_ap);
-		return (FALSE);
-	}
-
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
 		return (nm_device_get_link_active (dev));
 
-	/* FIXME
+	/*
 	 * For wireless cards, the best indicator of a "link" at this time
 	 * seems to be whether the card has a valid access point MAC address.
 	 * Is there a better way?
@@ -1013,6 +1001,31 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 
 
 /*
+ * nm_device_activation_cancel_if_needed
+ *
+ * Check whether we should stop activation, and if so clean up flags
+ * and other random things.
+ *
+ */
+gboolean nm_device_activation_cancel_if_needed (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	/* If we were told to quit activation, stop the thread and return */
+	if (dev->quit_activation)
+	{
+		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
+		dev->activating = FALSE;
+		dev->just_activated = FALSE;
+		nm_device_unref (dev);
+		return (TRUE);
+	}
+
+	return (FALSE);
+}
+
+
+/*
  * nm_device_activate_wireless
  *
  * Bring up a wireless card with the essid and wep key of its "best" ap
@@ -1029,15 +1042,8 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
-	/* If the card is just inserted, we may not have had a chance to scan yet */
-	if (!(best_ap = nm_device_get_best_ap (dev)))
-	{
-		nm_device_do_wireless_scan (dev);
-		best_ap = nm_device_get_best_ap (dev);
-	}
-
 	/* If there is a desired AP to connect to, use that essid and possible WEP key */
-	if (best_ap && nm_ap_get_essid (best_ap))
+	if ((best_ap = nm_device_get_best_ap (dev)) && nm_ap_get_essid (best_ap))
 	{
 		nm_device_bring_down (dev);
 
@@ -1048,7 +1054,6 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 		if (nm_ap_get_encrypted (best_ap) && nm_ap_get_enc_key_source (best_ap))
 		{
 			char *hashed_key = nm_ap_get_enc_key_hashed (best_ap, nm_ap_get_enc_method (best_ap));
-fprintf( stderr, "hashed key = '%s'\n", hashed_key );
 			nm_device_set_enc_key (dev, hashed_key);
 			g_free (hashed_key);
 		}
@@ -1071,27 +1076,117 @@ fprintf( stderr, "hashed key = '%s'\n", hashed_key );
 
 
 /*
- * nm_device_activation_cancel_if_needed
+ * nm_device_activate_wireless_wait_for_link
  *
- * Check whether we should stop activation, and if so clean up flags
- * and other random things.
+ * Spin until we have a wireless link, which may mean
+ * requesting a key from the user and trying various hashed
+ * iterations of that key.
  *
  */
-gboolean nm_device_activation_cancel_if_needed (NMDevice *dev)
+void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, TRUE);
+	NMAccessPoint	*best_ap;
 
-	/* If we were told to quit activation, stop the thread and return */
-	if (dev->quit_activation)
+	g_return_if_fail (dev != NULL);
+
+	/* If the card is just inserted, we may not have had a chance to scan yet */
+	if (!(best_ap = nm_device_get_best_ap (dev)))
 	{
-		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
-		dev->activating = FALSE;
-		dev->just_activated = FALSE;
-		nm_device_unref (dev);
-		return (TRUE);
+		nm_device_do_wireless_scan (dev);
+		best_ap = nm_device_get_best_ap (dev);
 	}
 
-	return (FALSE);
+	/* Try activating the device with the key and access point we have already */
+	nm_device_activate_wireless (dev);
+
+	/* Wait until we have a link.  Some things that might block us from
+	 * getting one:
+	 * 1) Access point we want to associate with has encryption enabled and
+	 *		we don't have the right encryption key.  If we have a key of some
+	 *		sort, try various passhprase->key hashes of it.  If we don't have
+	 *		a key, ask the user for one and wait until we are canceled (wireless
+	 *		card was ejected or the user plugged the computer into a wired network)
+	 *		or until we get a key back.
+	 * 2) We don't have any access points we wish to associate with yet.  In that case
+	 *		wait for the wireless scan to complete in the other thread and to pick
+	 *		a "best" access point for us.
+	 *
+	 */
+	while (!nm_device_get_link_active (dev))
+	{
+		if ((best_ap = nm_device_get_best_ap (dev)))
+		{
+			fprintf( stderr, "is_enc (%d) && (!enc_source (%d) || !enc_method_good (%d)) && \n", 
+				best_ap ? nm_ap_get_encrypted (best_ap) : FALSE,
+				!!nm_ap_get_enc_key_source (best_ap),
+				best_ap ? nm_ap_get_enc_method_good (best_ap) : FALSE);
+
+			/* Since we don't have a link yet, something is bad with the
+			 * encryption key, try falling back to a different method of
+			 * encryption or asking the user for a new key.
+			 */
+			if (    nm_ap_get_encrypted (best_ap)
+				&& (!nm_ap_get_enc_key_source (best_ap) || !nm_ap_get_enc_method_good (best_ap)))
+			{
+				gboolean	ask_for_key = TRUE;
+
+				/* If we have a key, try all the key/passphrase generation methods
+				 * before asking the user for a key.
+				 */
+				if (nm_ap_get_enc_key_source (best_ap) && !nm_ap_get_enc_method_good (best_ap))
+				{
+					/* Try another method, since the one set in a previous iteration obviously didn't work */
+					switch (nm_ap_get_enc_method (best_ap))
+					{
+						case (NM_AP_ENC_METHOD_UNKNOWN):
+							nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_104_BIT_PASSPHRASE);
+							ask_for_key = FALSE;
+							break;
+						case (NM_AP_ENC_METHOD_104_BIT_PASSPHRASE):
+							nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_40_BIT_PASSPHRASE);
+							ask_for_key = FALSE;
+							break;
+						case (NM_AP_ENC_METHOD_40_BIT_PASSPHRASE):
+							nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_HEX_KEY);
+							ask_for_key = FALSE;
+							break;
+						default:
+							break;
+					}
+				}
+
+				/* If all fallbacks for encryption method fail, ask the user for a new WEP key */
+				if (ask_for_key)
+				{
+					dev->options.wireless.user_key_received = FALSE;
+					nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap);
+
+					/* Wait for the key to come back */
+					syslog (LOG_DEBUG, "nm_device_activation_worker(%s): asking for user key.", nm_device_get_iface (dev));
+					while (!dev->options.wireless.user_key_received && !dev->quit_activation)
+						g_usleep (G_USEC_PER_SEC / 2);
+
+					syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received.", nm_device_get_iface (dev));
+				}
+
+				/* If we were told to quit activation, stop the thread and return */
+				if (nm_device_activation_cancel_if_needed (dev))
+					return;
+			}
+
+			/* Try activating again with up-to-date access point and keys */
+			nm_device_activate_wireless (dev);
+		}
+		else
+		{
+			syslog (LOG_DEBUG, "nm_device_activation_worker(%s): waiting for an access point.", nm_device_get_iface (dev));
+			g_usleep (G_USEC_PER_SEC * 2);
+		}
+
+		/* If we were told to quit activation, stop the thread and return */
+		if (nm_device_activation_cancel_if_needed (dev))
+			break;
+	}
 }
 
 
@@ -1153,88 +1248,11 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	/* If its a wireless device, set the ESSID and WEP key */
 	if (nm_device_is_wireless (dev))
 	{
-		nm_device_activate_wireless (dev);
+		nm_device_activate_wireless_wait_for_link (dev);
 
-		/* If we don't have a link, it probably means the access point has
-		 * encryption enabled and we don't have the right WEP key, or we don't
-		 * have a "best" access point.  Sit around and wait for either the WEP key
-		 * or a good "best" AP.
-		 */
-		while (!nm_device_get_link_active (dev))
-		{
-			NMAccessPoint	*best_ap;
-
-			if ((best_ap = nm_device_get_best_ap (dev)))
-			{
-fprintf( stderr, "(!switch (%d) || !enc_source (%d) || !enc_method_good (%d)) && is_enc (%d)\n", 
-!nm_device_need_ap_switch (dev), !nm_ap_get_enc_key_source (best_ap),
-nm_ap_get_enc_method_good (best_ap), nm_ap_get_encrypted (best_ap));
-				/* Something is bad with the encryption key, try falling back to a different
-				 * method of encryption or asking the user for a new key.
-				 */
-				if (    nm_ap_get_encrypted (best_ap)
-					&& (    !nm_device_need_ap_switch (dev)
-						|| !nm_ap_get_enc_key_source (best_ap)
-						|| !nm_ap_get_enc_method_good (best_ap)))
-				{
-					gboolean	ask_for_key = TRUE;
-
-					/* If we have a key, try all the key/passphrase generation methods
-					 * before asking the user for a key.
-					 */
-					if (nm_ap_get_enc_key_source (best_ap) && !nm_ap_get_enc_method_good (best_ap))
-					{
-						/* Try another method, since the one set in a previous iteration obviously didn't work */
-						switch (nm_ap_get_enc_method (best_ap))
-						{
-							case (NM_AP_ENC_METHOD_UNKNOWN):
-								nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_104_BIT_PASSPHRASE);
-								ask_for_key = FALSE;
-								break;
-							case (NM_AP_ENC_METHOD_104_BIT_PASSPHRASE):
-								nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_40_BIT_PASSPHRASE);
-								ask_for_key = FALSE;
-								break;
-							case (NM_AP_ENC_METHOD_40_BIT_PASSPHRASE):
-								nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_HEX_KEY);
-								ask_for_key = FALSE;
-								break;
-							default:
-								break;
-						}
-					}
-
-					/* If all fallbacks for encryption method fail, ask the user for a new WEP key */
-					if (ask_for_key)
-					{
-						dev->options.wireless.user_key_received = FALSE;
-						nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, best_ap);
-
-						/* Wait for the key to come back */
-						syslog (LOG_DEBUG, "nm_device_activation_worker(%s): asking for user key.", nm_device_get_iface (dev));
-						while (!dev->options.wireless.user_key_received && !dev->quit_activation)
-							g_usleep (G_USEC_PER_SEC / 2);
-
-						syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received.", nm_device_get_iface (dev));
-					}
-
-					/* If we were told to quit activation, stop the thread and return */
-					if (nm_device_activation_cancel_if_needed (dev))
-						return (NULL);
-				}
-
-				nm_device_activate_wireless (dev);
-			}
-			else
-{
-fprintf (stderr, "sleeping due to no access point\n");
-				g_usleep (G_USEC_PER_SEC * 2);
-}
-
-			/* If we were told to quit activation, stop the thread and return */
-			if (nm_device_activation_cancel_if_needed (dev))
-				return (NULL);
-		}
+		/* If we were told to quit activation, stop the thread and return */
+		if (nm_device_activation_cancel_if_needed (dev))
+			return;
 
 		/* Since we've got a link, the encryption method must be good */
 		nm_ap_set_enc_method_good (nm_device_get_best_ap (dev), TRUE);
@@ -1362,12 +1380,11 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	if (!just_added)
 		nm_dbus_signal_device_status_change (dev->app_data->dbus_connection, dev, DEVICE_NO_LONGER_ACTIVE);
 
-	/* Clean up stuff, don't leave the card associated or up */
+	/* Clean up stuff, don't leave the card associated */
 	if (nm_device_is_wireless (dev))
 	{
 		nm_device_set_essid (dev, "");
 		nm_device_set_enc_key (dev, NULL);
-		nm_device_bring_down (dev);
 	}
 
 	return (TRUE);
@@ -1415,9 +1432,9 @@ void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *inval
 		{
 			nm_ap_set_enc_key_source (best_ap, key);
 			nm_ap_set_enc_method (best_ap, NM_AP_ENC_METHOD_UNKNOWN);
+			nm_ap_set_enc_method_good (best_ap, FALSE);
 		}
 	}
-fprintf( stderr, "Got user key\n");
 	dev->options.wireless.user_key_received = TRUE;
 }
 
@@ -1528,6 +1545,7 @@ void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
 		nm_ap_ref (ap);
 
 	dev->options.wireless.best_ap = ap;
+	nm_device_unfreeze_best_ap (dev);
 	g_mutex_unlock (dev->options.wireless.best_ap_mutex);
 }
 
@@ -1607,7 +1625,10 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
 /*
  * nm_device_update_best_ap
  *
- * Recalculate the "best" access point we should be associating with.
+ * Recalculate the "best" access point we should be associating with.  This
+ * function may disrupt the current connection, so it should be called only
+ * when necessary, ie when the current access point is no longer in range
+ * or is for some other reason invalid and should no longer be used.
  *
  */
 void nm_device_update_best_ap (NMDevice *dev)
@@ -1782,6 +1803,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				{
 					nm_ap_set_encrypted (nm_ap, FALSE);
 					nm_ap_set_enc_method (nm_ap, NM_AP_ENC_METHOD_NONE);
+					nm_ap_set_enc_method_good (nm_ap, TRUE);
 				}
 				else
 				{
@@ -1819,8 +1841,6 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
 		if (old_ap_list)
 			nm_ap_list_unref (old_ap_list);
-
-		nm_device_update_best_ap (dev);
 	}
 	else
 		syslog (LOG_ERR, "nm_device_do_normal_scan() could not get a control socket for the wireless card %s.", nm_device_get_iface (dev) );

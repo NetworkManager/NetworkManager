@@ -109,24 +109,29 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 gboolean nm_wireless_scan_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
+	GSList	*element;
+	NMDevice	*dev;
 
 	g_return_val_if_fail (data != NULL, TRUE);
-
-	if (!data->active_device)
-		return (TRUE);
 
 	/* Attempt to acquire mutex so that data->active_device sticks around.
 	 * If the acquire fails, just ignore the scan completely.
 	 */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		if (data->active_device && nm_device_is_wireless (data->active_device))
-			nm_device_do_wireless_scan (data->active_device);
-
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		syslog (LOG_ERR, "nm_wireless_scan_monitor() could not acquire device list mutex." );
+		return (TRUE);
 	}
-	else
-		syslog( LOG_ERR, "nm_wireless_scan_monitor() could not acquire device list mutex." );
+
+	element = data->dev_list;
+	while (element)
+	{
+		if ((dev = (NMDevice *)(element->data)) && nm_device_is_wireless (dev))
+			nm_device_do_wireless_scan (dev);
+		element = g_slist_next (element);
+	}
+
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	
 	return (TRUE);
 }
