@@ -1104,7 +1104,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
 			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
 
-			if (    (strcmp (service, NM_DBUS_SERVICE))
+			if (    (strcmp (service, NM_DBUS_SERVICE) == 0)
 				&& (!old_owner_good && new_owner_good)	/* Equivalent to old ServiceCreated signal */
 				&& (applet->applet_state == APPLET_STATE_NO_NM))
 			{

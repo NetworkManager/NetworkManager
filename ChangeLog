@@ -1,5 +1,15 @@
 2005-01-25  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_filter): Fix dbus 0.23 ServiceOwnerChanged checks
+			so we check for NM_DBUS_SERVICE rather than not for it
+
+	* libnm_glib/libnm_glib.c
+		- (libnm_glib_dbus_filter): Fix for dbus 0.23, trapping
+			ServiceOwnerChanged signal
+
+2005-01-25  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- Check DBUS version in configure, and set the C macros
 			DBUS_VERSION_[MAJOR,MINOR,MICRO]
