@@ -31,6 +31,17 @@
 
 
 /*
+ * nm_system_init
+ *
+ * Initializes the distribution-specific system backend
+ *
+ */
+void nm_system_init (void)
+{
+}
+
+
+/*
  * nm_system_device_run_dhcp
  *
  * Run the dhcp daemon for a particular interface.

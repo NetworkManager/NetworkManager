@@ -139,6 +139,7 @@ test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
 initscript/Gentoo/Makefile
+initscript/Debian/Makefile
 po/Makefile.in
 NetworkManager.pc
 ])

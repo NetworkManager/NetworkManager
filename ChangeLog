@@ -1,3 +1,19 @@
+2004-09-07  Dan Williams <dcbw@redhat.com>
+
+	Patches below from:
+		<j@bootlab.org>
+		Mark Roach <mrroach@okmaybe.com>
+		Thom May <thom@debian.org>
+
+	* configure.in
+	  initscript/Debian/NetworkManager
+	  initscript/Debian/Makefile.am
+		- Initscript for Debian
+
+	* src/backends/NetworkManagerDebian.c
+		- Add missing system init function to allow compilation
+			on Debian
+
 2004-09-03  Raphael Higino <raphaelh@cvs.gnome.org>
 
 	* configure.in: Added 'pt_BR' to ALL_LINGUAS.

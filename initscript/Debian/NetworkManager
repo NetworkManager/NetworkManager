@@ -1,0 +1,73 @@
+#! /bin/sh
+#
+# NetworkManager	NetworkManager daemon
+#				Daemon for automatically switching network 
+#				connections to the best available connection.
+#				This file should be placed in /etc/init.d.
+#
+# Authors:	<j@bootlab.org>
+#			Mark Roach <mrroach@okmaybe.com>
+#			Thom May <thom@debian.org>
+#
+# Version:	@(#)skeleton  2.85-23  28-Jul-2004  miquels@cistron.nl
+#
+
+set -e
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DESC="Network connection manager daemon"
+NAME="NetworkManager"
+DAEMON=/usr/bin/$NAME
+PIDFILE=/var/run/$NAME.pid
+SCRIPTNAME=/etc/init.d/$NAME
+USER=root
+
+# Gracefully exit if the package has been removed.
+test -x $DAEMON || exit 0
+
+# We need /sbin/ip
+[ -x /sbin/ip ] || exit 1
+
+#
+#	Function that starts the daemon/service.
+#
+d_start() {
+	start-stop-daemon --start --quiet --pidfile $PIDFILE \
+		--user $USER --exec $DAEMON -- $DAEMON_OPTS
+	NMLaunchHelper
+}
+
+#
+#	Function that stops the daemon/service.
+#
+d_stop() {
+	start-stop-daemon --stop --quiet --pidfile $PIDFILE \
+		 --oknodo --user $USER --exec $DAEMON
+}
+
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: $NAME"
+	d_start
+	echo "."
+	;;
+  stop)
+	echo -n "Stopping $DESC: $NAME"
+	d_stop
+	echo "."
+	;;
+  restart|force-reload)
+	echo -n "Restarting $DESC: $NAME"
+	d_stop
+	sleep 1
+	d_start
+	echo "."
+	;;
+  *)
+	echo "Usage: $SCRIPTNAME {start|stop|restart|force-reload}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
