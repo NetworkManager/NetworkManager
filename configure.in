@@ -10,18 +10,20 @@ AC_ARG_WITH(distro,
 [
         --with-distro: Specify the Linux distribution to target with distro-specific
                        parts of NetworkManager
-                          --with-distro=RedHat
-                          --with-distro=Gentoo
+                          --with-distro=redhat
+                          --with-distro=gentoo
+                          --with-distro=debian
+                          --with-distro=mandrake
 ],,)
 
 TARGET_DISTRO=
 SYSTEM_BACKEND_FILE=
 if test "z$with_distro" = "z"; then
+	AC_CHECK_FILE(/etc/mandrake-release,with_distro="mandrake")
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
 	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
-	AC_CHECK_FILE(/etc/mandrake-release,with_distro="mandrake")
 fi
 
 if test "z$with_distro" = "z"; then
