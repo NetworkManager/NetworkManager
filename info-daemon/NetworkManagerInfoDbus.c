@@ -280,13 +280,13 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
  
 
 /*
- * nmi_dbus_get_network_prio
+ * nmi_dbus_get_network_timestamp
  *
- * If the specified network exists, get its priority from gconf
+ * If the specified network exists, get its timestamp from gconf
  * and pass it back as a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *message)
+static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessage *message)
 {
 	DBusMessage		*reply_message = NULL;
 	gchar			*key = NULL;
@@ -305,7 +305,7 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::get*NetworkPriority called with invalid arguments.");
+							"NetworkManagerInfo::getNetworkTimestamp called with invalid arguments.");
 		return (reply_message);
 	}
 
@@ -316,21 +316,21 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 		default: return (NULL);
 	}
 
-	/* Grab priority key for our access point from GConf */
-	key = g_strdup_printf ("%s/%s/priority", path, network);
+	/* Grab timestamp key for our access point from GConf */
+	key = g_strdup_printf ("%s/%s/timestamp", path, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
 	if (value)
 	{
 		reply_message = dbus_message_new_method_return (message);
-		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, gconf_value_get_int (value), DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, gconf_value_get_int (value), DBUS_TYPE_INVALID);
 		gconf_value_free (value);
 	}
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
-							"NetworkManagerInfo::get*NetworkPriority could not access data for network '%s'", network);
+							"NetworkManagerInfo::getNetworkTimestamp could not access data for network '%s'", network);
 	}
 
 	dbus_free (network);
@@ -364,7 +364,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::get*NetworkEssid called with invalid arguments.");
+							"NetworkManagerInfo::getNetworkEssid called with invalid arguments.");
 		return (reply_message);
 	}
 
@@ -389,7 +389,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
-							"NetworkManagerInfo::get*NetworkEssid could not access data for network '%s'", network);
+							"NetworkManagerInfo::getNetworkEssid could not access data for network '%s'", network);
 	}
 
 	dbus_free (network);
@@ -423,7 +423,7 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::get*NetworkKey called with invalid arguments.");
+							"NetworkManagerInfo::getNetworkKey called with invalid arguments.");
 		return (reply_message);
 	}
 
@@ -487,8 +487,8 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	}
 	else if (strcmp ("getNetworks", method) == 0)
 		reply_message = nmi_dbus_get_networks (info, message);
-	else if (strcmp ("getNetworkPriority", method) == 0)
-		reply_message = nmi_dbus_get_network_prio (info, message);
+	else if (strcmp ("getNetworkTimestamp", method) == 0)
+		reply_message = nmi_dbus_get_network_timestamp (info, message);
 	else if (strcmp ("getNetworkEssid", method) == 0)
 		reply_message = nmi_dbus_get_network_essid (info, message);
 	else if (strcmp ("getNetworkKey", method) == 0)

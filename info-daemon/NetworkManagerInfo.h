@@ -49,6 +49,4 @@ typedef struct NMIAppInfo NMIAppInfo;
 #define	NMI_GCONF_TRUSTED_NETWORKS_PATH		"/system/networking/wireless/trusted_networks"
 #define	NMI_GCONF_PREFERRED_NETWORKS_PATH		"/system/networking/wireless/preferred_networks"
 
-int		nmi_get_next_priority	(NMIAppInfo *info);
-
 #endif

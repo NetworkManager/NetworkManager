@@ -41,47 +41,6 @@
 
 
 /*
- * nmi_get_next_priority
- *
- * Gets the next available worse priority
- *
- */
-int nmi_get_next_priority (NMIAppInfo *info)
-{
-	GSList	*dir_list = NULL;
-	GSList	*element = NULL;
-	int		 worst_prio = 0;
-
-	g_return_val_if_fail (info != NULL, 999);
-
-	/* List all allowed access points that gconf knows about */
-	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_TRUSTED_NETWORKS_PATH, NULL);
-	if (!dir_list)
-		return (10);
-
-	while (element)
-	{
-		gchar		 key[100];
-		GConfValue	*value;
-
-		g_snprintf (&key[0], 99, "%s/priority", (char *)(element->data));
-		if ((value = gconf_client_get (info->gconf_client, key, NULL)))
-		{
-			if (worst_prio < gconf_value_get_int (value))
-				worst_prio = gconf_value_get_int (value);
-			gconf_value_free (value);
-		}
-
-		g_free (element->data);
-		element = g_slist_next (element);
-	}
-	g_slist_free (dir_list);
-
-	return (worst_prio + 10);
-}
-
-
-/*
  * nmi_gconf_notify_callback
  *
  * Callback from gconf when wireless networking key/values have changed.
