@@ -402,9 +402,9 @@ int nm_device_open_sock (void)
  * to get a link, based on the # of frequencies it has to
  * scan.
  */
-int nm_device_get_association_pause_value (NMDevice *dev)
+gint nm_device_get_association_pause_value (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, 5);
+	g_return_val_if_fail (dev != NULL, -1);
 	g_return_val_if_fail (nm_device_is_wireless (dev), -1);
 
 	/* If the card supports more than 14 channels, we should probably wait
@@ -528,7 +528,7 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
 static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 {
 	struct iwreq	wrq;
-	int				sk;
+	int			sk;
 	gboolean		associated = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -545,22 +545,30 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 	 * address check using this check on IWNAME.  Its faster.
 	 */
 	if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
-		if (strcmp(wrq.u.name, "unassociated"))
-			associated = TRUE;
+	{
+		if (!strcmp(wrq.u.name, "unassociated"))
+		{
+			associated = FALSE;
+			goto out;
+		}
+	}
 
-	/*
-	 * For all other wireless cards, the best indicator of a "link" at this time
-	 * seems to be whether the card has a valid access point MAC address.
-	 * Is there a better way?  Some cards don't work too well with this check, ie
-	 * Lucent WaveLAN.
-	 */
 	if (!associated)
+	{
+		/*
+		 * For all other wireless cards, the best indicator of a "link" at this time
+		 * seems to be whether the card has a valid access point MAC address.
+		 * Is there a better way?  Some cards don't work too well with this check, ie
+		 * Lucent WaveLAN.
+		 */
 		if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
 			if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
 				associated = TRUE;
+	}
 
+out:
 	close (sk);
-	
+
 	return (associated);
 }
 
@@ -679,8 +687,8 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
  */
 char * nm_device_get_essid (NMDevice *dev)
 {
-	int				iwlib_socket;
-	int				err;
+	int	sk;
+	int	err;
 	
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
@@ -702,12 +710,12 @@ char * nm_device_get_essid (NMDevice *dev)
 		return (essid);
 	}
 	
-	iwlib_socket = iw_sockets_open ();
-	if (iwlib_socket >= 0)
+	sk = iw_sockets_open ();
+	if (sk >= 0)
 	{
 		wireless_config	info;
 
-		err = iw_get_basic_config(iwlib_socket, nm_device_get_iface (dev), &info);
+		err = iw_get_basic_config(sk, nm_device_get_iface (dev), &info);
 		if (err >= 0)
 		{
 			if (dev->options.wireless.cur_essid)
@@ -717,7 +725,7 @@ char * nm_device_get_essid (NMDevice *dev)
 		else
 			syslog (LOG_ERR, "nm_device_get_essid(): error getting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
-		close (iwlib_socket);
+		close (sk);
 	}
 
 	return (dev->options.wireless.cur_essid);
@@ -876,7 +884,7 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 					success = TRUE;
 			}
 
-			if (!success && (errno != EOPNOTSUPP) && (errno != EINVAL))
+			if (!success && (errno != EOPNOTSUPP) && (errno != EINVAL) && (errno != EIO))	/* prism54 cards return EIO sometimes */
 				syslog (LOG_ERR, "nm_device_set_frequency(): error setting frequency %f for device %s.  errno = %d", freq, nm_device_get_iface (dev), errno);
 		}
 
@@ -1648,6 +1656,71 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
 
 
 /*
+ * nm_device_wireless_wait_for_link
+ *
+ * Try to be clever about when the wireless card really has associated with the access point.
+ * Return TRUE when we think that it has, and FALSE when we thing it has not associated.
+ *
+ */
+static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *essid)
+{
+	struct timeval	end_time;
+	struct timeval	cur_time;
+	gboolean		link = FALSE;
+	double		last_freq = 0;
+	guint		assoc_count = 0;
+	gint			pause_value;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (time > 0, FALSE);
+
+	pause_value = nm_device_get_association_pause_value (dev);
+	if (pause_value < 1)
+		return FALSE;
+
+	gettimeofday (&end_time, NULL);
+	end_time.tv_sec += pause_value;
+
+	/* We more or less keep asking the driver for the frequency the card is on, and
+	 * when the frequency has stabilized (the driver has to scan channels to find the AP,
+	 * and when it finds the AP it stops scanning) and the MAC is valid, we think we
+	 * have a link.
+	 */
+	gettimeofday (&cur_time, NULL);
+	while (cur_time.tv_sec < end_time.tv_sec)
+	{
+		double	 cur_freq = nm_device_get_frequency (dev);
+		gboolean	 assoc = nm_device_wireless_is_associated (dev);
+		char		*cur_essid = nm_device_get_essid (dev);
+
+		if ((cur_freq == last_freq) && assoc && !strcmp (essid, cur_essid))
+			assoc_count++;
+		else
+			assoc_count = 0;
+		last_freq = cur_freq;
+
+		g_usleep (G_USEC_PER_SEC / 2);
+		if (nm_device_activation_should_cancel (dev))
+			break;
+
+		gettimeofday (&cur_time, NULL);
+		if ((cur_time.tv_sec >= end_time.tv_sec) && (cur_time.tv_usec >= end_time.tv_usec))
+			break;
+
+		/* Assume that if we've been associated this long, we might as well just stop. */
+		if (assoc_count >= 9)
+			break;
+	}
+
+	/* If we've had a reasonable association count, we say we have a link */
+	if (assoc_count > 6)
+		link = TRUE;
+
+	return (link);
+}
+
+
+/*
  * nm_device_activate_wireless
  *
  * Bring up a wireless card with the essid and wep key of its "best" ap
@@ -1700,11 +1773,8 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 				((auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) ? "Open System" :
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
 
-	/* Bring the device up and pause to allow card to associate.  After we set the ESSID
-	 * on the card, the card has to scan all channels to find our requested AP (which can
-	 * take a long time if it is an A/B/G chipset like the Atheros 5212, for example).
-	 */
-	g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
+	/* Bring the device up and pause to allow card to associate. */
+	g_usleep (G_USEC_PER_SEC * 2);
 
 	/* Some cards don't really work well in ad-hoc mode unless you explicitly set the bitrate
 	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information
@@ -1713,10 +1783,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap,
 	if ((nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC) && (nm_device_get_bitrate (dev) <= 0))
 		nm_device_set_bitrate (dev, 11000);	/* In Kbps */
 
-	nm_device_update_link_active (dev, FALSE);
-	success = TRUE;
-
-	return (success);
+	return (TRUE);
 }
 
 
@@ -1900,21 +1967,27 @@ get_ap:
 		{
 			success = nm_device_activation_configure_ip (dev, TRUE);
 		}
-		else if (!HAVE_LINK (dev) || !nm_device_activation_configure_ip (dev, FALSE))
-		{
-			syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no link to '%s', or couldn't get configure interface for IP.  Trying another access point.",
-					nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
-			nm_ap_set_invalid (best_ap, TRUE);
-			nm_ap_list_append_ap (dev->app_data->invalid_ap_list, best_ap);
-			nm_ap_unref (best_ap);
-			nm_device_update_best_ap (dev);
-
-			/* Release scan mutex */
-			g_mutex_unlock (dev->options.wireless.scan_mutex);
-			goto get_ap;
-		}
 		else
-			success = TRUE;
+		{
+			if (    nm_device_wireless_wait_for_link (dev, nm_ap_get_essid (best_ap))
+				&& nm_device_activation_configure_ip (dev, FALSE))
+			{
+				success = TRUE;
+			}
+			else
+			{
+				syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no link to '%s', or couldn't get configure interface for IP.  Trying another access point.",
+						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
+				nm_ap_set_invalid (best_ap, TRUE);
+				nm_ap_list_append_ap (dev->app_data->invalid_ap_list, best_ap);
+				nm_ap_unref (best_ap);
+				nm_device_update_best_ap (dev);
+
+				/* Release scan mutex */
+				g_mutex_unlock (dev->options.wireless.scan_mutex);
+				goto get_ap;
+			}
+		}
 	}
 	else
 	{
@@ -1963,6 +2036,7 @@ get_ap:
 			goto get_ap;
 		}
 
+	try_connect:
 		while (auth > NM_DEVICE_AUTH_METHOD_NONE)
 		{
 			int	ip_success = FALSE;
@@ -1985,7 +2059,11 @@ get_ap:
 			}
 			else if (nm_ap_get_mode (best_ap) == NETWORK_MODE_INFRA)
 			{
-				if (!HAVE_LINK (dev) && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+				gboolean	link = FALSE;
+
+				link = nm_device_wireless_wait_for_link (dev, nm_ap_get_essid (best_ap));
+
+				if (!link && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
 				{
 					syslog (LOG_DEBUG, "nm_device_activate_wireless(%s): no hardware link to '%s' in Shared Key mode, trying Open System.",
 							nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
@@ -1993,7 +2071,7 @@ get_ap:
 					auth--;
 					continue;
 				}
-				else if (!HAVE_LINK (dev))
+				else if (!link)
 				{
 					/* Must be in Open System mode and it still didn't work, so
 					 * we'll invalidate the current "best" ap and get another one */
@@ -2004,8 +2082,7 @@ get_ap:
 					nm_ap_unref (best_ap);
 					nm_device_update_best_ap (dev);
 					goto get_ap;
-				}
-				ip_success = nm_device_activation_configure_ip (dev, FALSE);
+				}				ip_success = nm_device_activation_configure_ip (dev, FALSE);
 				if (!ip_success && (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
 				{
 					/* Back down to Open System mode */
@@ -2791,7 +2868,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 				case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
 				{
 					temp_enc = TRUE;
-					if ((key_type != NM_ENC_TYPE_UNKNOWN) && key)
+					if ((key_type != NM_ENC_TYPE_UNKNOWN) && key && strlen (key))
 					{
 						char *hashed_key = NULL;
 						switch (key_type)
@@ -2835,14 +2912,13 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			 */
 			nm_device_set_frequency (dev, 0);
 			nm_device_set_essid (dev, network);
-			g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
-
-			nm_device_update_link_active (dev, FALSE);
-			if (nm_device_wireless_is_associated (dev) && nm_device_get_essid (dev))
+			g_usleep (G_USEC_PER_SEC * 2);
+			if (nm_device_wireless_wait_for_link (dev, network))
 			{
 				nm_device_get_ap_address (dev, ap_addr);
 				success = TRUE;
 				*encrypted = temp_enc;
+				break;
 			}
 		}
 	}

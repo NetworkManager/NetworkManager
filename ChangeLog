@@ -1,3 +1,11 @@
+2005-01-13  Dan Williams <dcbw@redhat.com>
+
+	* named/nm-named-manager.c
+		- Use syslog(LOG_WARNING) rather than g_warning() (gnome.org #163961)
+
+	* src/NetworkManagerDevice.c
+		- Rework wireless link detection code to be more reliable
+
 2005-01-12  Dan Williams <dcbw@redhat.com>
 
 	* initscripts/RedHat/NetworkManager

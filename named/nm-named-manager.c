@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/param.h>
+#include <syslog.h>
 #include <glib.h>
 
 #ifndef RESOLV_CONF
@@ -294,7 +295,7 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 				replacement = compute_domain_zones (mgr);
 			else
 			{
-				g_warning ("Unknown variable %s in %s",
+				syslog (LOG_WARNING, "Unknown variable %s in %s",
 					   variable, config_name);
 				if (write (out_fd, *line, strlen (*line)) < 0)
 					goto replacement_lose;
@@ -353,13 +354,13 @@ watch_cb (GPid pid, gint status, gpointer data)
 	NMNamedManager *mgr = NM_NAMED_MANAGER (data);
 
 	if (WIFEXITED (status))
-                g_warning ("named exited with error code %d", WEXITSTATUS (status));
+		syslog (LOG_WARNING, "named exited with error code %d", WEXITSTATUS (status));
 	else if (WIFSTOPPED (status)) 
-                g_warning ("named stopped unexpectedly with signal %d", WSTOPSIG (status));
+		syslog (LOG_WARNING, "named stopped unexpectedly with signal %d", WSTOPSIG (status));
 	else if (WIFSIGNALED (status))
-                g_warning ("named died with signal %d", WTERMSIG (status));
+		syslog (LOG_WARNING, "named died with signal %d", WTERMSIG (status));
 	else
-		g_warning ("named died from an unknown cause");
+		syslog (LOG_WARNING, "named died from an unknown cause");
 
 	if (mgr->priv->queued_reload_id > 0)
 		g_source_remove (mgr->priv->queued_reload_id);
@@ -699,15 +700,16 @@ safer_kill (const char *path, pid_t pid, int signum)
     g_free (procpath);
     buffer[len] = '\0';
 
-    if (len > 0) {
-      if (strcmp (path, buffer) != 0) {
-	g_warning ("pid %u with exe \"%s'\" did not match expected exe \"%s\"",
-		   (unsigned int) pid, buffer, path);
-	errno = EPERM;
-	return -1;
-      }
-    }
-		
+	if (len > 0)
+	{
+		if (strcmp (path, buffer) != 0)
+		{
+			syslog (LOG_ERR, "pid %u with exe \"%s'\" did not match expected exe \"%s\"",
+				(unsigned int) pid, buffer, path);
+			errno = EPERM;
+			return -1;
+		}
+	}	
   }
 #endif
   return kill ((pid_t) pid, signum);
