@@ -42,6 +42,7 @@
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
 
+#include "config.h"
 #include "NMWirelessApplet.h"
 #include "NMWirelessAppletDbus.h"
 

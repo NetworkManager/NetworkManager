@@ -1,5 +1,9 @@
 2004-08-29  Colin Walters  <walters@verbum.org>
 
+	* panel-applet/NMWirelessApplet.c: Include config.h.
+
+2004-08-29  Colin Walters  <walters@verbum.org>
+
 	* configure.in: Generate config.h.
 
 	* configure.in: Dump dependency on OpenSSL; we can't
