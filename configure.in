@@ -140,6 +140,7 @@ initscript/Makefile
 initscript/RedHat/Makefile
 initscript/Gentoo/Makefile
 po/Makefile.in
+NetworkManager.pc
 ])
 
 echo

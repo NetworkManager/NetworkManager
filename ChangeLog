@@ -1,5 +1,12 @@
-2004-09-01  Amanpreet Singh Alam<aalam@redhat.com>
-	* configure.in: Punjabi(pa) is add to po/
+2004-09-01  Colin Walters  <walters@verbum.org>
+
+	* NetworkManager.pc.in: New file.
+
+	* Makefile.am, .cvsignore, configure.in: Add NetworkManager.pc.
+
+2004-09-01  Amanpreet Singh Alam  <aalam@redhat.com>
+	
+	* configure.in: Punjabi(pa) is added to po/.
 
 2004-08-31  Dan Williams <dcbw@redhat.com>
 
