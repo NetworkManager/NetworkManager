@@ -36,29 +36,13 @@
 
 typedef enum
 {
-	PIX_NO_NETWORKMANAGER,
-	PIX_WIRED,
-	PIX_WIRELESS_NO_LINK,
-	PIX_WIRELESS_SIGNAL_1,
-	PIX_WIRELESS_SIGNAL_2,
-	PIX_WIRELESS_SIGNAL_3,
-	PIX_WIRELESS_SIGNAL_4,
-	PIX_WIRELESS_CONNECT_0,
-	PIX_WIRELESS_CONNECT_1,
-	PIX_WIRELESS_CONNECT_2,
-	PIX_WIRELESS_CONNECT_3,
-	PIX_NUMBER
-} PixmapState;
-
-
-typedef enum
-{
 	APPLET_STATE_NO_NM,
 	APPLET_STATE_NO_CONNECTION,
 	APPLET_STATE_WIRED,
 	APPLET_STATE_WIRED_CONNECTING,
 	APPLET_STATE_WIRELESS,
 	APPLET_STATE_WIRELESS_CONNECTING,
+	APPLET_STATE_WIRELESS_SCANNING,
 	APPLET_STATE_IGNORE
 } AppletState;
 
@@ -125,19 +109,30 @@ typedef struct
 	GThread			*dbus_thread;
 	GMainContext		*thread_context;
 
-	PixmapState		 pix_state;	// Index into pixmaps array
-	GdkPixbuf			*pixmaps[PIX_NUMBER];
-	GdkPixbuf			*current_pixbuf;
-	GdkPixbuf			*key_pixbuf;
-	GdkPixbuf			*wired_icon;
-	GdkPixbuf			*wireless_icon;
-
-	/* Data model elements */
+        /* Data model elements */
 	GMutex			*data_mutex;
 	GSList			*devices;
 	NetworkDevice		*active_device;
 	AppletState		 applet_state;
-	
+
+        GdkPixbuf *XXno_nm_icon;
+        GdkPixbuf *XXwired_icon;
+#define NUM_WIRED_CONNECTING_FRAMES 4
+        GdkPixbuf *XXwired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
+        GdkPixbuf *XXwireless_00_icon;
+        GdkPixbuf *XXwireless_25_icon;
+        GdkPixbuf *XXwireless_50_icon;
+        GdkPixbuf *XXwireless_75_icon;
+        GdkPixbuf *XXwireless_100_icon;
+#define NUM_WIRELESS_CONNECTING_FRAMES 4
+        GdkPixbuf *XXwireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+#define NUM_WIRELESS_SCANNING_FRAMES 8
+	GdkPixbuf *XXwireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
+
+	/* Animation stuff */
+	int animation_step;
+	guint animation_id;
+
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
 	GtkWidget			*box;
@@ -149,5 +144,6 @@ typedef struct
 
 
 NetworkDevice		*nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);
-NMWirelessApplet	*nmwa_new ();
+NMWirelessApplet	*nmwa_new (void);
+
 #endif

@@ -51,34 +51,20 @@
 #define CFG_UPDATE_INTERVAL 1
 #define NM_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
-static char * pixmap_names[] =
-{
-	"no-networkmanager.png",
-	"wired.png",
-	"no-link-0.png",
-	"signal-1-40.png",
-	"signal-41-60.png",
-	"signal-61-80.png",
-	"signal-81-100.png",
-	"connect-0.png",
-	"connect-1.png",
-	"connect-2.png",
-	"connect-3.png",
-};
-
 static char *glade_file;
-
-static void		nmwa_about_cb		(NMWirelessApplet *applet);
 
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
 static gboolean	do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event);
 static GObject * nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
+static void   setup_stock (void);
+static void nmwa_icons_init (NMWirelessApplet *applet);
+static gboolean nmwa_fill (NMWirelessApplet *applet);
 
 
 #ifndef BUILD_NOTIFICATION_ICON
 static const BonoboUIVerb nmwa_context_menu_verbs [] =
-
+{
 	BONOBO_UI_UNSAFE_VERB ("NMWirelessAbout", nmwa_about_cb),
 	BONOBO_UI_VERB_END
 };
@@ -86,22 +72,75 @@ static const BonoboUIVerb nmwa_context_menu_verbs [] =
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 
-/*
- * nmwa_redraw
- *
- * Actually update the applet's pixmap so that our panel icon reflects
- * the state of the applet
- *
- */
-static void nmwa_redraw (NMWirelessApplet *applet)
+
+static void
+nmwa_init (NMWirelessApplet *applet)
 {
-	if (applet->pixmaps[applet->pix_state] != applet->current_pixbuf)
-	{
-		applet->current_pixbuf = (GdkPixbuf *)applet->pixmaps[applet->pix_state];
-		gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->current_pixbuf);
-	}
+  applet->animation_id = 0;
+  applet->animation_step = 0;
+
+  setup_stock ();
+  nmwa_icons_init (applet);
+  nmwa_fill (applet);
 }
 
+static void nmwa_class_init (NMWirelessAppletClass *klass)
+{
+  GObjectClass *gobject_class;
+
+  gobject_class = G_OBJECT_CLASS (klass);
+
+  gobject_class->constructor = nmwa_constructor;
+}
+
+static GObject *nmwa_constructor (GType type,
+		 		  guint n_props,
+				  GObjectConstructParam *construct_props)
+{
+  GObject *obj;
+  NMWirelessApplet *applet;
+  NMWirelessAppletClass *klass;
+
+  klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
+  obj = G_OBJECT_CLASS (nmwa_parent_class)->constructor (type,
+							 n_props,
+							 construct_props);
+  applet =  NM_WIRELESS_APPLET (obj);
+
+  return obj;
+}
+
+static gboolean
+animation_timeout (NMWirelessApplet *applet)
+{
+  switch (applet->applet_state)
+    {
+    case (APPLET_STATE_WIRED_CONNECTING):
+      applet->animation_step ++;
+      if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
+	applet->animation_step = 0;
+      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+				 applet->XXwired_connecting_icons[applet->animation_step]);
+      break;
+    case (APPLET_STATE_WIRELESS_CONNECTING):
+      applet->animation_step ++;
+      if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
+	applet->animation_step = 0;
+      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+				 applet->XXwireless_connecting_icons[applet->animation_step]);
+      break;
+    case (APPLET_STATE_WIRELESS_SCANNING):
+      applet->animation_step ++;
+      if (applet->animation_step >= NUM_WIRELESS_SCANNING_FRAMES)
+	applet->animation_step = 0;
+      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+				 applet->XXwireless_connecting_icons[applet->animation_step]);
+      break;
+    default:
+      break;
+    }
+  return TRUE;
+}
 
 /*
  * nmwa_update_state
@@ -110,64 +149,98 @@ static void nmwa_redraw (NMWirelessApplet *applet)
  * and what our icon on the panel should look like for each type.
  *
  */
-static void nmwa_update_state (NMWirelessApplet *applet)
+static void
+nmwa_update_state (NMWirelessApplet *applet)
 {
-	switch (applet->applet_state)
+  gboolean show_applet = TRUE;
+  gboolean need_animation = FALSE;
+  GdkPixbuf *pixbuf = NULL;
+  gint strength = -1;
+
+  g_mutex_lock (applet->data_mutex);
+  if (applet->active_device)
+    {
+      GSList *list;
+      for (list = applet->active_device->networks; list; list = list->next)
 	{
-		case (APPLET_STATE_NO_NM):
-			applet->pix_state = PIX_NO_NETWORKMANAGER;
-			break;
+	  WirelessNetwork *network;
 
-		case (APPLET_STATE_NO_CONNECTION):
-			applet->pix_state = PIX_WIRED;	/* FIXME: get a "no connection" picture */
-			break;
-
-		case (APPLET_STATE_WIRED):
-		case (APPLET_STATE_WIRED_CONNECTING):
-			applet->pix_state = PIX_WIRED;
-			break;
-
-		case (APPLET_STATE_WIRELESS):
-			g_mutex_lock (applet->data_mutex);
-			if (applet->active_device)
-			{
-				if (applet->active_device->strength > 75)
-					applet->pix_state = PIX_WIRELESS_SIGNAL_4;
-				else if (applet->active_device->strength > 50)
-					applet->pix_state = PIX_WIRELESS_SIGNAL_3;
-				else if (applet->active_device->strength > 25)
-					applet->pix_state = PIX_WIRELESS_SIGNAL_2;
-				else if (applet->active_device->strength > 0)
-					applet->pix_state = PIX_WIRELESS_SIGNAL_1;
-				else
-					applet->pix_state = PIX_WIRELESS_NO_LINK;
-			}
-			g_mutex_unlock (applet->data_mutex);
-			break;
-
-		case (APPLET_STATE_WIRELESS_CONNECTING):
-			if (applet->pix_state < PIX_WIRELESS_CONNECT_0)
-				applet->pix_state = PIX_WIRELESS_CONNECT_0;
-			else if (applet->pix_state >= PIX_WIRELESS_CONNECT_3)
-				applet->pix_state = PIX_WIRELESS_CONNECT_0;
-			else
-				applet->pix_state++;
-			break;
-
-		default:
-			break;
+	  network = (WirelessNetwork *) list->data;
+	  if (network->active)
+	    strength = CLAMP ((int) network->strength, 0, 100);
 	}
 
-	/*determine if we should hide the notification icon*/
-	gtk_widget_show (GTK_WIDGET (applet));
-	if (g_list_length (applet->devices) == 1 && 
-	    applet->applet_state != APPLET_STATE_NO_NM) {
-		NetworkDevice *nwd;
-		nwd = (NetworkDevice *)applet->devices->data;
+      if (strength == -1)
+	strength = applet->active_device->strength;
 
-		if (nwd->type == DEVICE_TYPE_WIRED_ETHERNET)
-			gtk_widget_hide (GTK_WIDGET (applet)); 
+    }
+
+  if (g_slist_length (applet->devices) == 1 &&
+      applet->applet_state != APPLET_STATE_NO_NM)
+    {
+      if (((NetworkDevice *)applet->devices->data)->type == DEVICE_TYPE_WIRED_ETHERNET)
+	show_applet = FALSE;
+    }
+  g_mutex_unlock (applet->data_mutex);
+
+  g_print ("%d\n", applet->applet_state);
+  switch (applet->applet_state)
+    {
+    case (APPLET_STATE_NO_NM):
+      pixbuf = applet->XXno_nm_icon;
+      break;
+    case (APPLET_STATE_NO_CONNECTION):
+      show_applet = FALSE;
+      break;
+    case (APPLET_STATE_WIRED):
+      pixbuf = applet->XXwired_icon;
+      break;
+    case (APPLET_STATE_WIRED_CONNECTING):
+      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRED_CONNECTING_FRAMES - 1);
+      pixbuf = applet->XXwired_connecting_icons[applet->animation_step];
+      need_animation = TRUE;
+      break;
+    case (APPLET_STATE_WIRELESS):
+      if (applet->active_device)
+	{
+	  if (strength > 75)
+	    pixbuf = applet->XXwireless_100_icon;
+	  else if (strength > 50)
+	    pixbuf = applet->XXwireless_75_icon;
+	  else if (strength > 25)
+	    pixbuf = applet->XXwireless_50_icon;
+	  else if (strength > 0)
+	    pixbuf = applet->XXwireless_25_icon;
+	  else
+	    pixbuf = applet->XXwireless_00_icon;
 	}
+      break;
+    case (APPLET_STATE_WIRELESS_CONNECTING):
+      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_CONNECTING_FRAMES - 1);
+      pixbuf = applet->XXwireless_connecting_icons[applet->animation_step];
+      need_animation = TRUE;
+      break;
+    case (APPLET_STATE_WIRELESS_SCANNING):
+      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_SCANNING_FRAMES - 1);
+      pixbuf = applet->XXwireless_scanning_icons[applet->animation_step];
+      need_animation = TRUE;
+    default:
+      break;
+    }
+
+  /*determine if we should hide the notification icon*/
+  gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
+
+  if (show_applet)
+    gtk_widget_show (GTK_WIDGET (applet));
+  else
+    gtk_widget_hide (GTK_WIDGET (applet));
+
+  if (applet->animation_id)
+    g_source_remove (applet->animation_id);
+  if (need_animation)
+    applet->animation_id =
+      g_timeout_add (125, animation_timeout, applet);
 }
 
 
@@ -176,60 +249,20 @@ static void nmwa_update_state (NMWirelessApplet *applet)
  *
  * Called regularly to update the applet's state and icon in the panel
  *
- */  
+ */
 static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 {
 	nmwa_update_state (applet);
-	nmwa_redraw (applet);
 
   	return (TRUE);
 }
 
 static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
 {
-	applet->redraw_timeout_id = g_timeout_add (CFG_UPDATE_INTERVAL * 1000,
-										(GtkFunction)nmwa_redraw_timeout, applet);
+	applet->redraw_timeout_id =
+	     g_timeout_add (CFG_UPDATE_INTERVAL * 1000, (GtkFunction) nmwa_redraw_timeout, applet);
 }
 
-static void nmwa_cancel_timeout (NMWirelessApplet *applet)
-{
-	g_source_remove (applet->redraw_timeout_id);
-	applet->redraw_timeout_id = -1;
-	nmwa_update_state (applet);
-	nmwa_redraw (applet);
-}
-
-
-static void nmwa_load_theme (NMWirelessApplet *applet)
-{
-	char		*pixmapdir;
-	char		*pixmapname;
-	int		 i;
-	GError	*error = NULL;
-
-	pixmapdir = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP,
-			"NMWirelessApplet/", FALSE, NULL);
-
-	for (i = 0; i < PIX_NUMBER; i++)
-	{
-		pixmapname = g_build_filename (G_DIR_SEPARATOR_S,
-				pixmapdir, pixmap_names[i], NULL);
-		applet->pixmaps[i] = gdk_pixbuf_new_from_file_at_size (pixmapname, 32, 16, NULL);
-		g_free (pixmapname);
-	}
-
-	pixmapname = g_build_filename (G_DIR_SEPARATOR_S, pixmapdir, "keyring.png", NULL);
-	applet->key_pixbuf = gdk_pixbuf_new_from_file_at_size (pixmapname, 16, 16, &error);
-	g_free (pixmapname);
-	pixmapname = g_build_filename (G_DIR_SEPARATOR_S, pixmapdir, "wired.png", NULL);
-	applet->wired_icon = gdk_pixbuf_new_from_file_at_size (pixmapname, 16, 16, &error);
-	g_free (pixmapname);
-	pixmapname = g_build_filename (G_DIR_SEPARATOR_S, pixmapdir, "wireless.png", NULL);
-	applet->wireless_icon = gdk_pixbuf_new_from_file_at_size (pixmapname, 16, 16, &error);
-	g_free (pixmapname);
-
-	g_free (pixmapdir);
-}
 
 
 /*
@@ -238,7 +271,7 @@ static void nmwa_load_theme (NMWirelessApplet *applet)
  * pop up a warning or error dialog with certain text
  *
  */
-static void show_warning_dialog (gboolean error, gchar *mesg, ...) 
+static void show_warning_dialog (gboolean error, gchar *mesg, ...)
 {
 	GtkWidget	*dialog;
 	char		*tmp;
@@ -255,55 +288,6 @@ static void show_warning_dialog (gboolean error, gchar *mesg, ...)
 }
 
 
-/*
- * nmwa_about_cb
- *
- * Display our about dialog
- *
- */
-static void nmwa_about_cb (NMWirelessApplet *applet)
-{
-	GdkPixbuf	*pixbuf;
-	char		*file;
-
-	const gchar *authors[] =
-	{
-		"Dan Williams <dcbw@redhat.com>",
-		"Eskil Heyn Olsen <eskil@eskil.org> (GNOME Wireless Applet)",
-		"Bastien Nocera <hadess@hadess.net> (GNOME Wireless Applet)",
-		NULL
-	};
-
-	if (applet->about_dialog != NULL)
-	{
-		gtk_window_set_screen (GTK_WINDOW (applet->about_dialog), gtk_widget_get_screen (GTK_WIDGET (&applet->parent)));
-		gtk_window_present (GTK_WINDOW (applet->about_dialog));
-		return;
-	}
-
-	file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP, "NMWirelessApplet/wireless-applet.png", FALSE, NULL);
-	pixbuf = gdk_pixbuf_new_from_file (file, NULL);
-	g_free (file);
-
-	applet->about_dialog = gnome_about_new (
-			"Wireless Network Applet",
-			VERSION,
-			"(C) 2004 Red Hat, Inc.\n(C) Copyright 2001, 2002 Free Software Foundation",
-			"This utility shows the status of a wireless networking link.",
-			authors,
-			NULL,
-			NULL,
-			pixbuf);
-
-	g_object_unref (pixbuf);
-
-	gtk_window_set_screen (GTK_WINDOW (applet->about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet)));
-	g_signal_connect (applet->about_dialog, "destroy", G_CALLBACK (gtk_widget_destroyed), &applet->about_dialog);
-	gtk_widget_show (applet->about_dialog);
-
-	return;
-}
-
 
 /*
  * nmwa_destroy
@@ -313,8 +297,6 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
  */
 static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 {
-	int i;
-
 	if (applet->menu)
 		nmwa_dispose_menu_items (applet);
 
@@ -323,9 +305,6 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 		gtk_timeout_remove (applet->redraw_timeout_id);
 		applet->redraw_timeout_id = 0;
 	}
-
-	for (i = 0; i < PIX_NUMBER; i++)
-		g_object_unref (applet->pixmaps[i]);
 
 	if (applet->about_dialog)
 	{
@@ -339,47 +318,6 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 
 
 /*
- * nmwa_get_menu_pos
- *
- * When displaying the popup menu, figure out exactly where to put it on the screen
- *
- */
-static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_in, gpointer data)
-{
-	NMWirelessApplet	*applet = data;
-	GtkRequisition		 reqmenu;
-	gint				 tempx, tempy, width, height;
-	gint				 screen_width, screen_height;
-	
-	gtk_widget_size_request (GTK_WIDGET (menu), &reqmenu);
-	gdk_window_get_origin (GTK_WIDGET (applet)->window, &tempx, &tempy);
-	gdk_window_get_geometry (GTK_WIDGET (applet)->window, NULL, NULL, &width, &height, NULL);
-
-#ifndef BUILD_NOTIFICATION_ICON
-	switch (panel_applet_get_orient (PANEL_APPLET (applet)))
-	{
-		case PANEL_APPLET_ORIENT_DOWN:
-			tempy += height;
-			break;
-		case PANEL_APPLET_ORIENT_UP:
-			tempy -= reqmenu.height;
-			break;
-		case PANEL_APPLET_ORIENT_LEFT:
-			tempx -= reqmenu.width;
-			break;
-		case PANEL_APPLET_ORIENT_RIGHT:
-			tempx += width;
-			break;
-	}
-#endif
-	screen_width = gdk_screen_width ();
-	screen_height = gdk_screen_height ();
-	*x = CLAMP (tempx, 0, MAX (0, screen_width - reqmenu.width));
-	*y = CLAMP (tempy, 0, MAX (0, screen_height - reqmenu.height));
-}
-
-
-/*
  * nmwa_update_network_timestamp
  *
  * Update the timestamp of a network in GConf.
@@ -387,7 +325,6 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
  */
 static void nmwa_update_network_timestamp (NMWirelessApplet *applet, const WirelessNetwork *network)
 {
-	GConfEntry	*gconf_entry;
 	char			*key;
 
 	g_return_if_fail (applet != NULL);
@@ -598,7 +535,7 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *
 
 	menu_item = gtk_menu_item_new ();
 	label = gtk_label_new (_("Other Wireless Networks..."));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); 
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 	gtk_container_add (GTK_CONTAINER (menu_item), label);
 	gtk_widget_show_all (menu_item);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
@@ -741,7 +678,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
 		{
 			gboolean current = (dev == applet->active_device);
-			gint n_devices;
+			gint n_devices = 0;
 
 			if (dev->type == DEVICE_TYPE_WIRED_ETHERNET)
 				n_devices = n_wired_interfaces;
@@ -833,7 +770,6 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 	return (menu);
 }
 
-
 /*
  * mnwa_setup_widgets
  *
@@ -843,38 +779,10 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
  */
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
-	gboolean		 horizontal = FALSE;
-	gint			 panel_size;
 	GtkWidget      *menu_bar;
-
-#if 0 
-	panel_size = panel_applet_get_size (PANEL_APPLET (applet));
-	switch (panel_applet_get_orient(PANEL_APPLET (applet)))
-	{
-		case PANEL_APPLET_ORIENT_LEFT:
-		case PANEL_APPLET_ORIENT_RIGHT:
-			horizontal = FALSE;
-			break;
-		case PANEL_APPLET_ORIENT_UP:
-		case PANEL_APPLET_ORIENT_DOWN:
-			horizontal = TRUE;
-			break;
-	}
-#endif
 
 	/* construct pixmap widget */
 	applet->pixmap = gtk_image_new ();
-	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->pixmaps[PIX_WIRED]);
-	//gtk_widget_size_request (applet->pixmap, &req);
-	gtk_widget_show (applet->pixmap);
-
-	/*
-	if (horizontal)
-		total_size += req.height;
-	else
-		total_size += req.width;
-	*/
-
 	menu_bar = gtk_menu_bar_new ();
 	applet->toplevel_menu = gtk_menu_item_new();
 	gtk_container_add (GTK_CONTAINER(applet->toplevel_menu), applet->pixmap);
@@ -886,13 +794,10 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	g_signal_connect (menu_bar, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
-	gtk_widget_show (menu_bar);
-	gtk_widget_show (applet->toplevel_menu);
-	gtk_widget_show (applet->menu);
 
 	gtk_container_add (GTK_CONTAINER (applet), menu_bar);
 
-	applet->current_pixbuf = NULL;
+	gtk_widget_show_all (GTK_WIDGET (applet));
 	applet->about_dialog = NULL;
 }
 
@@ -914,36 +819,6 @@ static gboolean do_not_eat_button_press (GtkWidget *widget, GdkEventButton *even
 	return (FALSE);
 }
 
-#if 0 
-static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
-				GdkColor *color, GdkPixmap *pixmap, NMWirelessApplet *applet)
-{
-	GtkRcStyle *rc_style = gtk_rc_style_new ();
-
-	return;
-	switch (type)
-	{
-		case PANEL_PIXMAP_BACKGROUND:
-			gtk_widget_modify_style (GTK_WIDGET (applet), rc_style);
-			break;
-
-		case PANEL_COLOR_BACKGROUND:
-			gtk_widget_modify_bg (GTK_WIDGET (applet), GTK_STATE_NORMAL, color);
-			break;
-
-		case PANEL_NO_BACKGROUND:
-			gtk_widget_modify_style (GTK_WIDGET (applet), rc_style);
-			break;
-
-		default:
-			gtk_widget_modify_style (GTK_WIDGET (applet), rc_style);
-			break;
-	}
-
-	gtk_rc_style_unref (rc_style);
-}
-#endif
-
 /*
  * nmwa_get_instance
  *
@@ -963,7 +838,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->ui_resources = glade_xml_new(glade_file, NULL, NULL);
 	if (!applet->ui_resources)
 	{
-		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found).")); 
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		g_object_unref (G_OBJECT (applet->gconf_client));
 		return (NULL);
 	}
@@ -988,7 +863,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	}
 
 	/* Load pixmaps and create applet widgets */
-	nmwa_load_theme (applet);
 	nmwa_setup_widgets (applet);
 
 	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
@@ -998,7 +872,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 						nmwa_context_menu_verbs, applet);
 #endif
 
-	
+
 
 	/* Start redraw timeout */
 	nmwa_start_redraw_timeout (applet);
@@ -1015,7 +889,7 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 		 "NMWirelessApplet/wireless-applet.glade", FALSE, NULL);
 	if (!glade_file)
 	{
-		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found).")); 
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		return (FALSE);
 	}
 
@@ -1038,13 +912,7 @@ setup_stock (void)
 	iset = gtk_icon_set_new ();
 	isource = gtk_icon_source_new ();
 
-	/* Set up custom stock images.  We a bunch of icons. */
-	/* All but gnome-lockscreen are icons we install. */
-	gtk_icon_source_set_icon_name (isource, "nm-");
-	gtk_icon_set_add_source (iset, isource);
-	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);
-	gtk_icon_factory_add_default (ifactory);
-
+	/* we use the lockscreen icon to get a key */
 	gtk_icon_source_set_icon_name (isource, "gnome-lockscreen");
 	gtk_icon_set_add_source (iset, isource);
 	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);
@@ -1053,55 +921,83 @@ setup_stock (void)
 	initted = TRUE;
 }
 
-static gboolean nmwa_factory (NMWirelessApplet *applet, const gchar *iid, gpointer data)
+static void
+nmwa_icons_free (NMWirelessApplet *applet)
 {
-	gboolean retval = FALSE;
+	gint i;
 
-	setup_stock ();
-	if (!strcmp (iid, "OAFIID:NMWirelessApplet"))
-		retval = nmwa_fill (applet);
-
-	return (retval);
+        g_object_unref (applet->XXno_nm_icon);
+        g_object_unref (applet->XXwired_icon);
+	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
+		g_object_unref (applet->XXwired_connecting_icons[i]);
+        g_object_unref (applet->XXwireless_00_icon);
+        g_object_unref (applet->XXwireless_25_icon);
+        g_object_unref (applet->XXwireless_50_icon);
+        g_object_unref (applet->XXwireless_75_icon);
+        g_object_unref (applet->XXwireless_100_icon);
+	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
+		g_object_unref (applet->XXwireless_connecting_icons[i]);
+	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)
+		g_object_unref (applet->XXwireless_scanning_icons[i]);
 }
 
 static void
-nmwa_init (NMWirelessApplet *applet)
+nmwa_icons_load_from_disk (NMWirelessApplet *applet,
+			   GtkIconTheme     *icon_theme)
 {
-	setup_stock ();
-	nmwa_fill (applet);
+	gint icon_size;
+
+	/* Assume icon is square */
+	icon_size = 22;
+
+        applet->XXno_nm_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-broken", icon_size, 0, NULL);
+        applet->XXwired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", icon_size, 0, NULL);
+        applet->XXwired_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting00", icon_size, 0, NULL);
+        applet->XXwired_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", icon_size, 0, NULL);
+        applet->XXwired_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", icon_size, 0, NULL);
+        applet->XXwired_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", icon_size, 0, NULL);
+        applet->XXwireless_00_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-00", icon_size, 0, NULL);
+        applet->XXwireless_25_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-25", icon_size, 0, NULL);
+        applet->XXwireless_50_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-50", icon_size, 0, NULL);
+        applet->XXwireless_75_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-75", icon_size, 0, NULL);
+        applet->XXwireless_100_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-100", icon_size, 0, NULL);
+        applet->XXwireless_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting00", icon_size, 0, NULL);
+        applet->XXwireless_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", icon_size, 0, NULL);
+        applet->XXwireless_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", icon_size, 0, NULL);
+        applet->XXwireless_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-detect00", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-detect01", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-detect02", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-detect03", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[4] = gtk_icon_theme_load_icon (icon_theme, "nm-detect04", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[5] = gtk_icon_theme_load_icon (icon_theme, "nm-detect05", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[6] = gtk_icon_theme_load_icon (icon_theme, "nm-detect06", icon_size, 0, NULL);
+	applet->XXwireless_scanning_icons[7] = gtk_icon_theme_load_icon (icon_theme, "nm-detect07", icon_size, 0, NULL);
 }
 
-static GObjectClass *parent_class = NULL;
-
-static void nmwa_class_init (NMWirelessAppletClass *klass)
+static void
+nmwa_icon_theme_changed (GtkIconTheme     *icon_theme,
+			 NMWirelessApplet *applet)
 {
-	GObjectClass *gobject_class;
-	gobject_class = G_OBJECT_CLASS (klass);
-
-	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (gobject_class));
-
-	gobject_class->constructor = nmwa_constructor;
-
+	nmwa_icons_free (applet);
+	nmwa_icons_load_from_disk (applet, icon_theme);
+	/* FIXME: force redraw */
 }
 
-static GObject *nmwa_constructor (GType type,
-		 		  guint n_props,
-				  GObjectConstructParam *construct_props)
+static void
+nmwa_icons_init (NMWirelessApplet *applet)
 {
-	GObject *obj;
-	NMWirelessApplet *applet;
-	NMWirelessAppletClass *klass;
+	GtkIconTheme *icon_theme;
 
-	klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
-	obj = parent_class->constructor (type,
-                                         n_props,
-                                         construct_props);
-	applet =  NM_WIRELESS_APPLET (obj);
-
-	return obj;	
+	/* FIXME: Do we need to worry about other screens? */
+	icon_theme = gtk_icon_theme_get_default ();
+	nmwa_icons_load_from_disk (applet, icon_theme);
+	g_signal_connect (icon_theme, "changed", nmwa_icon_theme_changed, applet);
 }
 
-NMWirelessApplet *nmwa_new ()
+
+NMWirelessApplet *
+nmwa_new ()
 {
 	return g_object_new (NM_TYPE_WIRELESS_APPLET, "title", "NetworkManager", NULL);
 }

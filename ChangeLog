@@ -1,3 +1,14 @@
+Fri Oct  8 07:19:55 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessAppletDbus.c (nmwa_dbus_get_double): 
+	(nmwa_dbus_get_string): remove unused functions
+
+	* panel-applet/NMWirelessApplet.c (nmwa_about_cb):
+	(nmwa_cancel_timeout), (nmwa_get_menu_pos), (nmwa_factory):
+	remove unused functions
+
+	* panel-applet/NMWirelessApplet.c: Rewrite icon code.
+
 2004-10-12 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.c
@@ -115,7 +126,6 @@
 		- Be a bit more robust about link checking, ie make sure that
 			the WEP key we were given actually has some data in it
 
->>>>>>> 1.127
 2004-10-08 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c (main):

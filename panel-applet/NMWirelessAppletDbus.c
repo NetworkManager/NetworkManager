@@ -41,9 +41,6 @@
 #define	NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
 
 
-static void wireless_network_free (void *element, void *user_data);
-
-
 /*
  * nmwa_dbus_get_string
  *
@@ -233,57 +230,6 @@ static int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, con
 	return (RETURN_SUCCESS);
 }
 
-
-/*
- * nmwa_dbus_get_double
- *
- */
-static double nmwa_dbus_get_double (DBusConnection *connection, const char *path, const char *method)
-{
-	DBusMessage	*message;
-	DBusMessage	*reply;
-	DBusError		 error;
-	double		 num;
-
-	g_return_val_if_fail (connection != NULL, 0);
-	g_return_val_if_fail (path != NULL, 0);
-	g_return_val_if_fail (method != NULL, 0);
-
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
-	{
-		fprintf (stderr, "nmwa_dbus_get_double(): Couldn't allocate the dbus message\n");
-		return (0);
-	}
-
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		fprintf (stderr, "nmwa_dbus_get_double(): %s raised:\n %s\n\n", error.name, error.message);
-		dbus_message_unref (message);
-		dbus_error_free (&error);
-		return (0);
-	}
-
-	if (reply == NULL)
-	{
-		fprintf( stderr, "nmwa_dbus_get_double(): dbus reply message was NULL\n" );
-		return (0);
-	}
-
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_DOUBLE, &num, DBUS_TYPE_INVALID))
-	{
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-		num = 0;
-	}
-
-	dbus_message_unref (reply);
-
-	return (num);
-}
 
 
 /*
@@ -964,7 +910,6 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWirelessApplet *applet)
 {
 	char		 *active_network = NULL;
-	int		  dev_type;
 	char		**networks = NULL;
 	int		  num_items = 0;
 	int		  i;
@@ -1036,7 +981,6 @@ out:
  */
 static void nmwa_dbus_update_network_state (NMWirelessApplet *applet)
 {
-	char		*active_device = NULL;
 	char		*nm_status = NULL;
 
 	g_return_if_fail (applet != NULL);
@@ -1045,6 +989,12 @@ static void nmwa_dbus_update_network_state (NMWirelessApplet *applet)
 	if (!(nm_status = nmwa_dbus_get_nm_status (applet, APPLET_STATE_NO_CONNECTION)))
 		return;
 
+	if (strcmp (nm_status, "scanning") == 0)
+	{
+		applet->applet_state = APPLET_STATE_WIRELESS_SCANNING;
+		goto out;
+	}
+	
 	if (strcmp (nm_status, "disconnected") == 0)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
