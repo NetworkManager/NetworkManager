@@ -23,7 +23,6 @@
 #include <sys/poll.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
-#include <net/if.h>
 #include <linux/sockios.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>

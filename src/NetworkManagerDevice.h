@@ -23,6 +23,7 @@
 #define NETWORK_MANAGER_DEVICE_H
 
 #include <net/ethernet.h>
+#include <iwlib.h>
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 
@@ -41,7 +42,7 @@ NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_
 											NMDeviceType test_dev_type, NMData *app_data);
 
 void			nm_device_ref					(NMDevice *dev);
-void			nm_device_unref				(NMDevice *dev);
+gboolean		nm_device_unref				(NMDevice *dev);
 
 int			nm_device_open_sock				(void);
 
@@ -56,6 +57,8 @@ NMDriverSupportLevel	nm_device_get_driver_support_level	(NMDevice *dev);
 gboolean		nm_device_is_wireless			(NMDevice *dev);
 gboolean		nm_device_is_wired				(NMDevice *dev);
 /* There is no nm_device_set_iface_type() because that's determined when you set the device's iface */
+
+NMData *		nm_device_get_app_data			(const NMDevice *dev);
 
 gboolean		nm_device_get_link_active		(NMDevice *dev);
 void			nm_device_set_link_active		(NMDevice *dev, const gboolean active);
@@ -77,7 +80,8 @@ void			nm_device_update_hw_address		(NMDevice *dev);
 void			nm_device_get_ip6_address		(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
-void			nm_device_do_wireless_scan		(NMDevice *dev);
+void			nm_device_process_scan_results	(NMDevice *dev, struct wireless_scan_head *results);
+void			nm_device_do_wireless_scan		(NMDevice *dev, struct wireless_scan_head *results);
 gboolean		nm_device_wireless_network_exists	(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type,
 												struct ether_addr *addr, gboolean *encrypted);
 
@@ -106,10 +110,7 @@ void			nm_device_set_enc_key			(NMDevice *dev, const char *key, NMDeviceAuthMeth
 gboolean		nm_device_activation_begin		(NMDevice *dev);
 void			nm_device_activation_cancel		(NMDevice *dev);
 gboolean		nm_device_activation_should_cancel	(NMDevice *dev);
-gboolean		nm_device_is_just_activated		(NMDevice *dev);
 gboolean		nm_device_is_activating			(NMDevice *dev);
-gboolean		nm_device_did_activation_fail		(NMDevice *dev);
-void			nm_device_clear_activation_fail	(NMDevice *dev);
 gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);
 
 gboolean		nm_device_is_scanning			(NMDevice *dev);

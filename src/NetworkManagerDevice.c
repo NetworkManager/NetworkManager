@@ -271,10 +271,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		}
 		dev->options.wireless.supports_wireless_scan = nm_device_supports_wireless_scan (dev);
 
-		/* Perform an initial wireless scan */
 		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-		nm_device_do_wireless_scan (dev);
-		nm_device_update_best_ap (dev);
 
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
@@ -311,22 +308,32 @@ void nm_device_ref (NMDevice *dev)
 	dev->refcount++;
 }
 
-void nm_device_unref (NMDevice *dev)
+/*
+ * nm_device_unref
+ *
+ * Decreases the refcount on a device by 1, and if the refcount reaches 0,
+ * deallocates memory used by the device.
+ *
+ * Returns:	FALSE if device was not deallocated
+ *			TRUE if device was deallocated
+ */
+gboolean nm_device_unref (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
+	gboolean	deleted = FALSE;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
 
 	dev->refcount--;
 	if (dev->refcount <= 0)
 	{
-		g_main_loop_quit (dev->loop);
-	  
-		nm_device_ap_list_clear (dev);
-		dev->options.wireless.ap_list = NULL;
+		if (dev->loop)
+			g_main_loop_quit (dev->loop);
 
-		g_free (dev->udi);
-		g_free (dev->iface);
 		if (nm_device_is_wireless (dev))
 		{
+			nm_device_ap_list_clear (dev);
+			dev->options.wireless.ap_list = NULL;
+
 			g_mutex_free (dev->options.wireless.scan_mutex);
 			if (dev->options.wireless.ap_list)
 				nm_ap_list_unref (dev->options.wireless.ap_list);
@@ -340,10 +347,27 @@ void nm_device_unref (NMDevice *dev)
 			g_mutex_free (dev->options.wireless.best_ap_mutex);
 		}
 
+		g_free (dev->udi);
 		dev->udi = NULL;
+		g_free (dev->iface);
 		dev->iface = NULL;
 		g_free (dev);
+		deleted = TRUE;
 	}
+
+	return deleted;
+}
+
+
+/*
+ * nm_device_get_app_data
+ *
+ */
+NMData *nm_device_get_app_data (const NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (dev->app_data);
 }
 
 
@@ -497,16 +521,15 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
 
 
 /*
- * nm_device_wireless_link_active
+ * nm_device_wireless_is_associated
  *
- * Gets the link state of a wireless device
- *
+ * Figure out whether or not we're associated to an access point
  */
-static gboolean nm_device_wireless_link_active (NMDevice *dev)
+static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 {
-	struct iwreq	 wrq;
-	int			 iwlib_socket;
-	gboolean		 link = FALSE;
+	struct iwreq	wrq;
+	int				sk;
+	gboolean		associated = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -515,27 +538,62 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 	if (dev->test_device)
 		return (nm_device_get_link_active (dev));
 
-	/*
-	 * For wireless cards, the best indicator of a "link" at this time
-	 * seems to be whether the card has a valid access point MAC address.
-	 * Is there a better way?
-	 */
-	if ((iwlib_socket = iw_sockets_open ()) < 0)
+	if ((sk = iw_sockets_open ()) < 0)
 		return (FALSE);
 
-	if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
-	{
-		NMAccessPoint	*best_ap;
+	/* Some cards, for example ipw2x00 cards, can short-circuit the MAC
+	 * address check using this check on IWNAME.  Its faster.
+	 */
+	if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
+		if (strcmp(wrq.u.name, "unassociated"))
+			associated = TRUE;
 
-		if ((best_ap = nm_device_get_best_ap (dev)))
-		{
-			if (    nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data)))
-				&& !nm_device_need_ap_switch (dev))
-				link = TRUE;
-			nm_ap_unref (best_ap);
-		}
+	/*
+	 * For all other wireless cards, the best indicator of a "link" at this time
+	 * seems to be whether the card has a valid access point MAC address.
+	 * Is there a better way?  Some cards don't work too well with this check, ie
+	 * Lucent WaveLAN.
+	 */
+	if (!associated)
+		if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
+			if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
+				associated = TRUE;
+
+	close (sk);
+	
+	return (associated);
+}
+
+/*
+ * nm_device_wireless_link_active
+ *
+ * Gets the link state of a wireless device
+ *
+ */
+static gboolean nm_device_wireless_link_active (NMDevice *dev)
+{
+	gboolean 		 link = FALSE;
+	NMAccessPoint	*best_ap;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+
+	/* Test devices have their link state set through DBUS */
+	if (dev->test_device)
+		return (nm_device_get_link_active (dev));
+
+	if (!nm_device_wireless_is_associated (dev))
+		return (FALSE);
+
+	/* If we don't have a "best" ap, we can't logically have a valid link
+	 * that we want to use.
+	 */
+	if ((best_ap = nm_device_get_best_ap (dev)))
+	{
+		if (!nm_device_need_ap_switch (dev))
+			link = TRUE;
+		nm_ap_unref (best_ap);
 	}
-	close (iwlib_socket);
 
 	return (link);
 }
@@ -1430,6 +1488,33 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 
 
 /*
+ * nm_device_activation_schedule_finish
+ *
+ * Schedule an idle routine in the main thread to finish the activation.
+ *
+ */
+void nm_device_activation_schedule_finish (NMDevice *dev, gboolean success)
+{
+	GSource			*source = NULL;
+	guint			 source_id = 0;
+	NMActivationResult	*result = NULL;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->app_data != NULL);
+
+	result = g_malloc0 (sizeof (NMActivationResult));
+	nm_device_ref (dev);	/* Ref device for idle handler */
+	result->dev = dev;
+	result->success = success;
+
+	source = g_idle_source_new ();
+	g_source_set_callback (source, nm_policy_activation_finish, (gpointer)result, NULL);
+	g_source_attach (source, dev->app_data->main_context);
+	g_source_unref (source);
+}
+
+
+/*
  * nm_device_activation_begin
  *
  * Spawn a new thread to handle device activation.
@@ -1447,21 +1532,13 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	g_return_val_if_fail (!dev->activating, TRUE);	/* Return if activation has already begun */
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	/* Ref the device so it doesn't go away while worker function is active */
-	nm_device_ref (dev);
-
-	/* Don't attempt to actually activate if we are just starting NetworkManager and
-	 * we are about to activate a wired device that's already configured.  Plays nicer
-	 * with the system when NM is started after a network is already set up.
-	 *
-	 * FIXME: IPv6 here too, and this really should not be here, it should be part of
-	 * the policy, not the device code itself.
-	 */
-	if (data->starting_up && nm_device_is_wired (data->active_device) && nm_device_get_ip4_address (data->active_device))
+	/* Reset communication flags between worker and main thread */
+	dev->activating = TRUE;
+	dev->quit_activation = FALSE;
+	if (nm_device_is_wireless (dev))
 	{
-		dev->activating = FALSE;
-		dev->just_activated = TRUE;
-		return (TRUE);
+		dev->options.wireless.now_scanning = FALSE;
+		dev->options.wireless.user_key_received = FALSE;
 	}
 
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
@@ -1470,21 +1547,28 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 		return (FALSE);
 	}
 
-	/* Reset communication flags between worker and main thread */
-	dev->activating = TRUE;
-	dev->just_activated = FALSE;
-	dev->quit_activation = FALSE;
-	dev->activation_failed = FALSE;
-	if (nm_device_is_wireless (dev))
+	/* Don't attempt to actually activate if we are just starting NetworkManager and
+	 * we are about to activate a wired device that's already configured.  Plays nicer
+	 * with the system when NM is started after a network is already set up.
+	 *
+	 * FIXME: IPv6 here too, and this really should not be here, it should be part of
+	 * the policy, not the device code itself.
+	 */
+	if (data->starting_up && nm_device_is_wired (dev) && nm_device_get_ip4_address (dev))
 	{
-		dev->options.wireless.now_scanning = FALSE;
-		dev->options.wireless.user_key_received = FALSE;
+		dev->activating = FALSE;
+		nm_device_activation_schedule_finish (dev, TRUE);
+		return (TRUE);
 	}
+
+	/* Ref the device so it doesn't go away while worker function is active */
+	nm_device_ref (dev);
 
 	if (!g_thread_create (nm_device_activation_worker, dev, FALSE, &error))
 	{
 		syslog (LOG_CRIT, "nm_device_activation_begin(): could not create activation worker thread.");
 		dev->activating = FALSE;
+		nm_device_unref (dev);
 		return (FALSE);
 	}
 
@@ -1510,8 +1594,6 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
 	{
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
 		dev->activating = FALSE;
-		dev->just_activated = FALSE;
-		dev->activation_failed = TRUE;
 		dev->quit_activation = FALSE;
 		return (TRUE);
 	}
@@ -1683,8 +1765,15 @@ static gboolean AP_NEED_KEY (NMAccessPoint *ap)
 	if ((s = nm_ap_get_enc_key_source (ap)))
 		len = strlen (s);
 
-	syslog (LOG_NOTICE, "AP_NEED_KEY: is_enc=%d && (!(key_source=%d) || !(strlen=%d))\n", nm_ap_get_encrypted (ap),
-			!!nm_ap_get_enc_key_source (ap), len);
+	if (!nm_ap_get_encrypted (ap))
+		syslog (LOG_NOTICE, "AP_NEED_KEY: access point is unencrypted, no key needed.");
+	else
+	{
+		if (!!nm_ap_get_enc_key_source (ap) && len)
+			syslog (LOG_NOTICE, "AP_NEED_KEY: access point is encrypted, and a key exists.  No new key needed.");
+		else
+			syslog (LOG_NOTICE, "AP_NEED_KEY: access point is encrypted, but NO valid key exists.  New key needed.");
+	}
 	if (nm_ap_get_encrypted (ap) && (!nm_ap_get_enc_key_source (ap) || !len))
 		return (TRUE);
 
@@ -1696,7 +1785,7 @@ static gboolean HAVE_LINK (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
-	syslog (LOG_NOTICE, "HAVELINK: act=%d\n", nm_device_get_link_active (dev));
+	syslog (LOG_NOTICE, "HAVELINK: card appears %s a link to the access point.", nm_device_get_link_active (dev) ? "to have" : "NOT to have");
 	return (nm_device_get_link_active (dev));
 }
 
@@ -1898,13 +1987,6 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_on
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	nm_system_delete_default_route ();
-	/* This will assigne an IPv6 address, if a Router ADVertisement Daemon is pressent */
-	if (!nm_device_is_wireless (dev))
-	{
-		if (nm_device_is_up (dev))
-			nm_device_bring_down (dev);
-		nm_device_bring_up (dev);
-	}
 	if (do_only_autoip)
 	{
 		success = nm_device_do_autoip (dev);
@@ -1956,9 +2038,9 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_on
  */
 static gpointer nm_device_activation_worker (gpointer user_data)
 {
-	NMDevice		*dev = (NMDevice *)user_data;
-	gboolean		 success = FALSE;
-	GMainContext	*context = NULL;
+	NMDevice			*dev = (NMDevice *)user_data;
+	gboolean			 success = FALSE;
+	GMainContext		*context = NULL;
 
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
@@ -2001,27 +2083,23 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	{
 		syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n", nm_device_get_iface (dev));
 		dev->activating = FALSE;
-		dev->just_activated = FALSE;
-		dev->activation_failed = TRUE;
 		dev->quit_activation = FALSE;
 		goto out;
 	}
 
-	dev->just_activated = TRUE;
 	dev->activating = FALSE;
-	dev->activation_failed = FALSE;
 	dev->quit_activation = FALSE;
 	syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP successful!\n", nm_device_get_iface (dev));
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_handle_cancel (dev))
-	{
-		syslog (LOG_DEBUG, "Activation (%s) told to cancel.  Ending activation...\n", nm_device_get_iface (dev));
 		goto out;
-	}
+
+	nm_device_activation_schedule_finish (dev, success);
 
 	syslog (LOG_INFO, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
 
+	/* Don't need to stick around for devices that use Static IP */
 	if (!nm_device_config_get_use_dhcp (dev) || !dev->dhcp_iface)
 		goto out;
 
@@ -2054,27 +2132,6 @@ out:
 
 
 /*
- * nm_device_is_just_activated
- *
- * Check if the device was just activated successfully or not.  If so, clear
- * its just_activated flag and return TRUE.  If its not activated yet, return FALSE.
- *
- */
-gboolean nm_device_is_just_activated (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	if (dev->just_activated)
-	{
-		dev->just_activated = FALSE;
-		return (TRUE);
-	}
-
-	return (FALSE);
-}
-
-
-/*
  * nm_device_is_activating
  *
  * Return whether or not the device is currently activating itself.
@@ -2099,29 +2156,6 @@ gboolean nm_device_activation_should_cancel (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return (dev->quit_activation);
-}
-
-
-/*
- * nm_device_did_activation_fail
- *
- * Return whether or not activation on the device failed (was cancelled or
- * activation process encountered and error)
- *
- */
-gboolean nm_device_did_activation_fail (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	return (dev->activation_failed);
-}
-
-
-void nm_device_clear_activation_fail (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	dev->activation_failed = FALSE;
 }
 
 
@@ -2720,8 +2754,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
 
 			nm_device_update_link_active (dev, FALSE);
-			nm_device_get_ap_address (dev, &addr);
-			if (nm_ethernet_address_is_valid (&addr) && nm_device_get_essid (dev))
+			if (nm_device_wireless_is_associated (dev) && nm_device_get_essid (dev))
 			{
 				nm_device_get_ap_address (dev, ap_addr);
 				success = TRUE;
@@ -2819,221 +2852,7 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const c
 		success = TRUE;
 	}
 
-	return (success);
-}
-
-
-/*
- * nm_device_do_normal_scan
- *
- * Scan for access points on cards that support wireless scanning.
- *
- */
-static void nm_device_do_normal_scan (NMDevice *dev)
-{
-	int			 iwlib_socket;
-	NMData		*data;
-
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->app_data != NULL);
-
-	/* Test devices shouldn't get here since we fake the AP list earlier */
-	g_return_if_fail (!dev->test_device);
-
-	data = (NMData *)dev->app_data;
-
-	/* Device must be up before we can scan */
-	if (!nm_device_is_up (dev))
-		nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC);
-
-	iwlib_socket = iw_sockets_open ();
-	if (iwlib_socket >= 0)
-	{
-		wireless_scan_head	 scan_results = { NULL, 0 };
-		wireless_scan		*tmp_ap;
-		int				 err;
-		NMAccessPointList	*old_ap_list = NULL;
-		NMAccessPointList	*new_scan_list = NULL;
-		NMAccessPointList	*earliest_scan = NULL;
-		gboolean			 have_blank_essids = FALSE;
-		NMAPListIter		*iter;
-		NMAccessPoint		*artificial_ap;
-		NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
-		double			 orig_freq;
-		int				 orig_rate;
-
-		orig_mode = nm_device_get_mode (dev);
-		orig_freq = nm_device_get_frequency (dev);
-		orig_rate = nm_device_get_bitrate (dev);
-		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-
-		err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
-		if ((err == -1) && (errno == ENODATA))
-		{
-			/* Card hasn't had time yet to compile full access point list.
-			 * Give it some more time and scan again.  If that doesn't work
-			 * give up.  Cards that need to scan more channels (Atheros 5212
-			 * based cards, for example) need more time here.
-			 */
-			g_usleep ((G_USEC_PER_SEC * nm_device_get_association_pause_value (dev)) / 2);
-			err = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
-			if (err == -1)
-			{
-				nm_device_set_mode (dev, orig_mode);
-				nm_device_set_frequency (dev, orig_freq);
-				nm_device_set_bitrate (dev, orig_rate);
-				close (iwlib_socket);
-				return;
-			}
-		}
-		nm_device_set_mode (dev, orig_mode);
-		nm_device_set_frequency (dev, orig_freq);
-		nm_device_set_bitrate (dev, orig_rate);
-
-		/* New list for current scan data */
-		new_scan_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
-		if (!new_scan_list)
-		{
-			nm_dispose_scan_results (scan_results.result);
-			close (iwlib_socket);
-			return;
-		}
-
-		/* Shift all previous cached scan results and dispose of the oldest one. */
-		earliest_scan = dev->options.wireless.cached_ap_list3;
-		dev->options.wireless.cached_ap_list3 = dev->options.wireless.cached_ap_list2;
-		dev->options.wireless.cached_ap_list2 = dev->options.wireless.cached_ap_list1;
-		dev->options.wireless.cached_ap_list1 = new_scan_list;
-
-		/* Iterate over scan results and pick a "most" preferred access point. */
-		tmp_ap = scan_results.result;
-		while (tmp_ap)
-		{
-			/* We need at least an ESSID or a MAC address for each access point */
-			if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
-			{
-				NMAccessPoint		*nm_ap  = nm_ap_new ();
-
-				/* Copy over info from scan to local structure */
-
-				/* NOTE: some Cisco products actually broadcast "<hidden>" as their ESSID when they
-				 * are set to not broadcast it, rather than just broadcasting a blank ESSID.
-				 */
-				if (    !tmp_ap->b.has_essid
-					|| (tmp_ap->b.essid && !strlen (tmp_ap->b.essid))
-					|| (tmp_ap->b.essid && !strcmp (tmp_ap->b.essid, "<hidden>")))
-				{
-					nm_ap_set_essid (nm_ap, NULL);
-					have_blank_essids = TRUE;
-				}
-				else
-					nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
-
-				if (tmp_ap->b.has_key && (tmp_ap->b.key_flags & IW_ENCODE_DISABLED))
-					nm_ap_set_encrypted (nm_ap, FALSE);
-				else
-					nm_ap_set_encrypted (nm_ap, TRUE);
-
-				if (tmp_ap->has_ap_addr)
-					nm_ap_set_address (nm_ap, (const struct ether_addr *)(tmp_ap->ap_addr.sa_data));
-
-				if (tmp_ap->b.has_mode)
-				{
-					NMNetworkMode mode = NETWORK_MODE_INFRA;
-					switch (tmp_ap->b.mode)
-					{
-						case IW_MODE_INFRA:
-							mode = NETWORK_MODE_INFRA;
-							break;
-						case IW_MODE_ADHOC:
-							mode = NETWORK_MODE_ADHOC;
-							break;
-						default:
-							mode = NETWORK_MODE_INFRA;
-							break;
-					}
-					nm_ap_set_mode (nm_ap, mode);
-				}
-				else
-					nm_ap_set_mode (nm_ap, NETWORK_MODE_INFRA);
-
-				nm_ap_set_strength (nm_ap, nm_wireless_qual_to_percent (dev, &(tmp_ap->stats.qual)));
-
-				if (tmp_ap->b.has_freq)
-					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
-
-				/* Add the AP to the device's AP list */
-				nm_ap_list_append_ap (dev->options.wireless.cached_ap_list1, nm_ap);
-				nm_ap_unref (nm_ap);
-			}
-			tmp_ap = tmp_ap->next;
-		}
-		nm_dispose_scan_results (scan_results.result);
-		close (iwlib_socket);
-
-		/* Compose the current access point list for the card based on the past two scans.  This
-		 * is to achieve some stability in the list, since cards don't necessarily return the same
-		 * access point list each scan even if you are standing in the same place.
-		 */
-		old_ap_list = nm_device_ap_list_get (dev);
-		dev->options.wireless.ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list1, dev->options.wireless.cached_ap_list2);
-
-		/* If any blank ESSID networks were detected in the current scan, try to match their
-		 * AP MAC address with existing ones in previous scans, and if we get a match, copy the
-		 * ESSID over to the newest scan list.  This enures that we keep the known ESSID for that
-		 * base station around as long as possible, which allows nm_device_update_best_ap() to do
-		 * its job when the user wanted us to connect to a non-broadcasting network.
-		 */
-		if (have_blank_essids)
-		{
-			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
-			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
-		}
-
-		/* Once we have the list, copy in any relevant information from our Allowed list. */
-		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
-
-		/* Furthermore, if we have any "artificial" access points, ie ones that exist but don't show up in
-		 * the scan for some reason, copy those over if we are associated with that access point right now.
-		 * Some Cisco cards don't report non-ESSID-broadcasting access points in their scans even though
-		 * the card associates with that AP just fine.
-		 */
-		if (old_ap_list && (iter = nm_ap_list_iter_new (old_ap_list)))
-		{
-			char *essid = nm_device_get_essid (dev);
-
-			while (essid && (artificial_ap = nm_ap_list_iter_next (iter)))
-			{
-				/* Copy over the artificial AP from the old list to the new one if
-				 * its the AP the card is currently associated with.
-				 */
-				if (	    nm_ap_get_essid (artificial_ap)
-					&& !strcmp (essid, nm_ap_get_essid (artificial_ap))
-					&&  nm_ap_get_artificial (artificial_ap))
-					nm_ap_list_append_ap (nm_device_ap_list_get (dev), artificial_ap);
-			}
-			nm_ap_list_iter_free (iter);
-		}
-		if (old_ap_list)
-			nm_ap_list_unref (old_ap_list);
-
-		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
-		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, earliest_scan);
-
-		/* Don't need the 4th scan around any more */
-		if (earliest_scan)
-			nm_ap_list_unref (earliest_scan);
-
-		/* Now do a diff of the old and new networks that we can see, and
-		 * signal any changes over dbus.
-		 */
-		nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
-		if (old_ap_list)
-			nm_ap_list_unref (old_ap_list);
-	}
-	else
-		syslog (LOG_ERR, "nm_device_do_normal_scan() could not get a control socket for the wireless card %s.", nm_device_get_iface (dev) );
+	return success;
 }
 
 
@@ -3176,7 +2995,175 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 		nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
 	if (old_ap_list)
 		nm_ap_list_unref (old_ap_list);
+}
 
+
+/*
+ * nm_device_process_scan_results
+ *
+ * Process results of an iwscan() into our own AP lists
+ *
+ */
+void nm_device_process_scan_results (NMDevice *dev, wireless_scan_head *results)
+{
+	wireless_scan		*tmp_ap;
+	NMAccessPointList	*old_ap_list = NULL;
+	NMAccessPointList	*new_scan_list = NULL;
+	NMAccessPointList	*earliest_scan = NULL;
+	gboolean			 have_blank_essids = FALSE;
+	NMAPListIter		*iter;
+	NMAccessPoint		*artificial_ap;
+
+	g_return_if_fail (dev != NULL);
+
+	if (!results)
+		return;
+
+	/* Test devices get their info faked */
+	if (dev->test_device)
+	{
+		nm_device_fake_ap_list (dev);
+		return;
+	}
+
+	/* Devices that don't support scanning have their pseudo-scanning done in
+	 * the main thread anyway.
+	 */
+	if (!nm_device_supports_wireless_scan (dev))
+	{
+		nm_device_do_pseudo_scan (dev);
+		return;
+	}
+
+	/* Shift all previous cached scan results and dispose of the oldest one. */
+	earliest_scan = dev->options.wireless.cached_ap_list3;
+	dev->options.wireless.cached_ap_list3 = dev->options.wireless.cached_ap_list2;
+	dev->options.wireless.cached_ap_list2 = dev->options.wireless.cached_ap_list1;
+	dev->options.wireless.cached_ap_list1 = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+
+	/* Iterate over scan results and pick a "most" preferred access point. */
+	tmp_ap = results->result;
+	while (tmp_ap)
+	{
+		/* We need at least an ESSID or a MAC address for each access point */
+		if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
+		{
+			NMAccessPoint		*nm_ap  = nm_ap_new ();
+
+			/* Copy over info from scan to local structure */
+
+			/* ipw2x00 drivers fill in an essid of "<hidden>" if they think the access point
+			 * is hiding its MAC address.  Sigh.
+			 */
+			if (    !tmp_ap->b.has_essid
+				|| (tmp_ap->b.essid && !strlen (tmp_ap->b.essid))
+				|| (tmp_ap->b.essid && !strcmp (tmp_ap->b.essid, "<hidden>")))
+			{
+				nm_ap_set_essid (nm_ap, NULL);
+				have_blank_essids = TRUE;
+			}
+			else
+				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
+
+			if (tmp_ap->b.has_key && (tmp_ap->b.key_flags & IW_ENCODE_DISABLED))
+				nm_ap_set_encrypted (nm_ap, FALSE);
+			else
+				nm_ap_set_encrypted (nm_ap, TRUE);
+
+			if (tmp_ap->has_ap_addr)
+				nm_ap_set_address (nm_ap, (const struct ether_addr *)(tmp_ap->ap_addr.sa_data));
+
+			if (tmp_ap->b.has_mode)
+			{
+				NMNetworkMode mode = NETWORK_MODE_INFRA;
+				switch (tmp_ap->b.mode)
+				{
+					case IW_MODE_INFRA:
+						mode = NETWORK_MODE_INFRA;
+						break;
+					case IW_MODE_ADHOC:
+						mode = NETWORK_MODE_ADHOC;
+						break;
+					default:
+						mode = NETWORK_MODE_INFRA;
+						break;
+				}
+				nm_ap_set_mode (nm_ap, mode);
+			}
+			else
+				nm_ap_set_mode (nm_ap, NETWORK_MODE_INFRA);
+
+			nm_ap_set_strength (nm_ap, nm_wireless_qual_to_percent (dev, &(tmp_ap->stats.qual)));
+
+			if (tmp_ap->b.has_freq)
+				nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
+
+			/* Add the AP to the device's AP list */
+			nm_ap_list_append_ap (dev->options.wireless.cached_ap_list1, nm_ap);
+			nm_ap_unref (nm_ap);
+		}
+		tmp_ap = tmp_ap->next;
+	}	
+
+	/* Compose the current access point list for the card based on the past two scans.  This
+	 * is to achieve some stability in the list, since cards don't necessarily return the same
+	 * access point list each scan even if you are standing in the same place.
+	 */
+	old_ap_list = nm_device_ap_list_get (dev);
+	dev->options.wireless.ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list1, dev->options.wireless.cached_ap_list2);
+
+	/* If any blank ESSID networks were detected in the current scan, try to match their
+	 * AP MAC address with existing ones in previous scans, and if we get a match, copy the
+	 * ESSID over to the newest scan list.  This enures that we keep the known ESSID for that
+	 * base station around as long as possible, which allows nm_device_update_best_ap() to do
+	 * its job when the user wanted us to connect to a non-broadcasting network.
+	 */
+	if (have_blank_essids)
+	{
+		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), old_ap_list);
+		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+	}
+
+	/* Once we have the list, copy in any relevant information from our Allowed list. */
+	nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+
+	/* Furthermore, if we have any "artificial" access points, ie ones that exist but don't show up in
+	 * the scan for some reason, copy those over if we are associated with that access point right now.
+	 * Some Cisco cards don't report non-ESSID-broadcasting access points in their scans even though
+	 * the card associates with that AP just fine.
+	 */
+	if (old_ap_list && (iter = nm_ap_list_iter_new (old_ap_list)))
+	{
+		char *essid = nm_device_get_essid (dev);
+
+		while (essid && (artificial_ap = nm_ap_list_iter_next (iter)))
+		{
+			/* Copy over the artificial AP from the old list to the new one if
+			 * its the AP the card is currently associated with.
+			 */
+			if (	    nm_ap_get_essid (artificial_ap)
+				&& !strcmp (essid, nm_ap_get_essid (artificial_ap))
+				&&  nm_ap_get_artificial (artificial_ap))
+				nm_ap_list_append_ap (nm_device_ap_list_get (dev), artificial_ap);
+		}
+		nm_ap_list_iter_free (iter);
+	}
+	if (old_ap_list)
+		nm_ap_list_unref (old_ap_list);
+
+	/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
+	old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, earliest_scan);
+
+	/* Don't need the 4th scan around any more */
+	if (earliest_scan)
+		nm_ap_list_unref (earliest_scan);
+
+	/* Now do a diff of the old and new networks that we can see, and
+	 * signal any changes over dbus.
+	 */
+	nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
+	if (old_ap_list)
+		nm_ap_list_unref (old_ap_list);
 }
 
 
@@ -3186,54 +3173,62 @@ static void nm_device_fake_ap_list (NMDevice *dev)
  * Get a list of access points this device can see.
  *
  */
-void nm_device_do_wireless_scan (NMDevice *dev)
+void nm_device_do_wireless_scan (NMDevice *dev, wireless_scan_head *results)
 {
-	NMAccessPoint	*best_ap = NULL;
-	gboolean		 do_scan = TRUE;
+	int			 sk;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->app_data != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
 
-	if (!nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
+	/* We don't really scan on test devices or devices that don't have scanning support */
+	if (dev->test_device || !nm_device_supports_wireless_scan (dev))
 		return;
 
-	/* Compose a fake list of access points */
-	if (dev->test_device)
+	/* Grab the scan mutex */
+	if (nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 	{
-		nm_device_fake_ap_list (dev);
-		nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-		return;
-	}
+		/* Device must be up before we can scan */
+		if (!nm_device_is_up (dev))
+			nm_device_bring_up (dev);
+		g_usleep (G_USEC_PER_SEC);
 
-	if ((best_ap = nm_device_get_best_ap (dev)))
-	{
-		/* Don't pseudo-scan when we already have a connection. */
-		if (!nm_device_get_supports_wireless_scan (dev))
+		if ((sk = iw_sockets_open ()) >= 0)
 		{
-			struct ether_addr	 ap_addr;
+			wireless_scan		*tmp_ap;
+			int				 err;
+			NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
+			double			 orig_freq;
+			int				 orig_rate;
 
-			/* We can't pseudo-scan without switching APs, therefore
-			 * if the card has a valid access point and its an allowed
-			 * access point, don't pseudo-scan for others.
+			orig_mode = nm_device_get_mode (dev);
+			orig_freq = nm_device_get_frequency (dev);
+			orig_rate = nm_device_get_bitrate (dev);
+
+			/* Must be in infrastructure mode during scan, otherwise we don't get a full
+			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
 			 */
-			nm_device_get_ap_address (dev, &ap_addr);
-			if (   nm_ethernet_address_is_valid (&ap_addr)
-				&& nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_device_get_essid (dev)))
-				do_scan = FALSE;
-		}			
-		nm_ap_unref (best_ap);
-	}
+			nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 
-	if (do_scan)
-	{
-		if (nm_device_get_supports_wireless_scan (dev))
-			nm_device_do_normal_scan (dev);
-		else
-			nm_device_do_pseudo_scan (dev);
-	}
+			err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, results);
+			if ((err == -1) && (errno == ENODATA))
+			{
+				/* Card hasn't had time yet to compile full access point list.
+				 * Give it some more time and scan again.  If that doesn't work
+				 * give up.  Cards that need to scan more channels (Atheros 5212
+				 * based cards, for example) need more time here.
+				 */
+				g_usleep ((G_USEC_PER_SEC * nm_device_get_association_pause_value (dev)) / 2);
+				err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, results);
+				if (err == -1)
+					results->result = NULL;
+			}
+			nm_device_set_mode (dev, orig_mode);
+			nm_device_set_frequency (dev, orig_freq);
+			nm_device_set_bitrate (dev, orig_rate);
 
-	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+			close (sk);
+		}
+		nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+	}
 }
 
 

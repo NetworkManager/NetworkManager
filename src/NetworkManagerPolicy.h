@@ -25,10 +25,15 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 
+typedef struct
+{
+	NMDevice		*dev;
+	gboolean		 success;
+} NMActivationResult;
+
+
 gboolean		nm_state_modification_monitor			(gpointer user_data);
 
-void			nm_policy_update_allowed_access_points	(NMData *data);
-
-gpointer		nm_policy_allowed_ap_refresh_worker	(gpointer user_data);
+gboolean		nm_policy_activation_finish			(gpointer user_data);
 
 #endif

@@ -33,13 +33,13 @@
 typedef struct NMData
 {
 	GIOChannel			*sigterm_iochannel;
-	int				sigterm_pipe[2];
+	int					 sigterm_pipe[2];
 
 	LibHalContext			*hal_ctx;
 
 	NMNamedManager			*named;
 	GList				*nameserver_ids; /* For now these are global instead of per-device */
-	guint				domain_search_id;
+	guint				 domain_search_id;
 
 	DBusConnection			*dbus_connection;
 	GMainContext			*main_context;
@@ -48,7 +48,13 @@ typedef struct NMData
 	gboolean				 enable_test_devices;
 	gboolean				 starting_up;		/* Hack for not taking down an already-set-up wired device when we launch */
 
-	gboolean				 notify_device_support;
+	/* Main loop for wireless scanning thread */
+	GMainContext			*wscan_ctx;
+	GMainLoop				*wscan_loop;
+	gboolean				 wscan_thread_done;
+
+	guint				 state_modified_idle_id;
+
 	GSList				*dev_list;
 	GMutex				*dev_list_mutex;
 
@@ -57,9 +63,6 @@ typedef struct NMData
 
 	struct NMDevice		*user_device;			/* Holds a device that the user requests NM to use. */
 	GMutex				*user_device_mutex;
-
-	gboolean				 state_modified;
-	GMutex				*state_modified_mutex;
 
 	gboolean				 update_ap_lists;
 	struct NMAccessPointList	*allowed_ap_list;

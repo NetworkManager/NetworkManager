@@ -27,12 +27,20 @@
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerAPList.h"
 
-char *	nm_wireless_64bit_ascii_to_hex	(const unsigned char *ascii);
-char *	nm_wireless_128bit_ascii_to_hex	(const unsigned char *ascii);
+
+typedef struct
+{
+	NMDevice					*dev;
+	struct wireless_scan_head	 results;
+} NMWirelessScanResults;
+
+
+char *	nm_wireless_64bit_ascii_to_hex		(const unsigned char *ascii);
+char *	nm_wireless_128bit_ascii_to_hex		(const unsigned char *ascii);
 char *	nm_wireless_128bit_key_from_passphrase	(const char *passphrase);
 
-gboolean	nm_wireless_scan_monitor				(gpointer user_data);
-
 int		nm_wireless_qual_to_percent			(NMDevice *dev, const struct iw_quality *qual);
+
+gpointer	nm_wireless_scan_worker				(gpointer user_data);
 
 #endif

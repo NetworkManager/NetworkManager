@@ -168,15 +168,15 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 {
-	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
 #define IPBITS  (sizeof (guint32) * 8)
 	struct in_addr	ip_addr, net_addr, broad_addr, gate_addr;
 	int			i, err;
 	guint32		prefix = IPBITS;
-	const char		*iface;
-	char		*buf;
-	char		*addr, *netmask, *broadcast, *gateway;
+	const char	*iface;
+	char			*buf;
+	char			*addr, *netmask, *broadcast, *gateway;
 	
+	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
 	
 	/* Extract the addresses back into strings */
 

@@ -316,7 +316,7 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 	g_return_if_fail (udi != NULL);
 	g_return_if_fail (key != NULL);
 
-	syslog( LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added );
+	//syslog (LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added);
 
 	/* Only accept wired ethernet link changes for now */
 	if (is_removed || (strcmp (key, "net.80203.link")))
@@ -333,6 +333,7 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 		NMDevice	*dev = NULL;
 		if ((dev = nm_get_device_by_udi (data, udi)) && nm_device_is_wired (dev))
 		{
+			syslog (LOG_DEBUG, "HAL signaled link state change for device %s.", nm_device_get_iface (dev));
 			nm_device_update_link_active (dev, FALSE);
 
 			/* If the currently active device is locked and wireless, and the wired
@@ -496,6 +497,10 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->main_context = g_main_context_new ();
 	data->main_loop = g_main_loop_new (data->main_context, FALSE);
 
+	data->wscan_ctx = g_main_context_new ();
+	data->wscan_loop = g_main_loop_new (data->wscan_ctx, FALSE);
+	data->wscan_thread_done = FALSE;
+
 	if (pipe(data->sigterm_pipe) < 0)
 	{
 		syslog (LOG_CRIT, "Couldn't create pipe: %s", g_strerror (errno));
@@ -525,8 +530,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
 	data->user_device_mutex = g_mutex_new ();
-	data->state_modified_mutex = g_mutex_new ();
-	if (!data->dev_list_mutex || !data->user_device_mutex || !data->state_modified_mutex)
+	if (!data->dev_list_mutex || !data->user_device_mutex)
 	{
 		nm_data_free (data);
 		syslog (LOG_ERR, "Could not initialize data structure locks.");
@@ -536,7 +540,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	/* Initialize the access point lists */
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
-
 	if (!data->allowed_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
@@ -544,9 +547,12 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 		return (NULL);
 	}
 
-	data->state_modified = TRUE;
+	data->state_modified_idle_id = 0;
+
 	data->enable_test_devices = enable_test_devices;
 	data->starting_up = TRUE;
+
+	nm_data_mark_state_changed (data);
 
 	return (data);	
 }
@@ -570,13 +576,12 @@ static void nm_data_free (NMData *data)
 
 	g_mutex_free (data->dev_list_mutex);
 	g_mutex_free (data->user_device_mutex);
-	g_mutex_free (data->state_modified_mutex);
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
-	g_object_unref (data->main_loop);
-	g_object_unref (data->main_context);
+	g_main_loop_unref (data->main_loop);
+	g_main_context_unref (data->main_context);
 
 	memset (data, 0, sizeof (NMData));
 }
@@ -585,16 +590,25 @@ static void nm_data_free (NMData *data)
 /*
  * nm_data_mark_state_changed
  *
- * Notify our timeout that the networking state has changed in some way.
+ * Queue up an idle handler to deal with state changes.
  *
  */
 void nm_data_mark_state_changed (NMData *data)
 {
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+
 	g_return_if_fail (data != NULL);
 
-	g_mutex_lock (data->state_modified_mutex);
-	data->state_modified = TRUE;
-	g_mutex_unlock (data->state_modified_mutex);
+	g_static_mutex_lock (&mutex);
+	if (data->state_modified_idle_id == 0)
+	{
+		GSource *source = g_idle_source_new ();
+
+		g_source_set_callback (source, nm_state_modification_monitor, data, NULL);
+		data->state_modified_idle_id = g_source_attach (source, data->main_context);
+		g_source_unref (source);
+	}
+	g_static_mutex_unlock (&mutex);
 }
 
 static void sigterm_handler (int signum)
@@ -641,10 +655,11 @@ static void nm_print_usage (void)
 int main( int argc, char *argv[] )
 {
 	LibHalContext	*ctx = NULL;
-	guint		 link_source_id, policy_source_id, wscan_source_id;
-	GSource		*link_source, *policy_source, *wscan_source;
+	guint		 link_source_id;
+	GSource		*link_source;
 	gboolean		 become_daemon = TRUE;
 	gboolean		 enable_test_devices = FALSE;
+	GError		*error = NULL;
 	
 	if ((int)getuid() != 0)
 	{
@@ -762,34 +777,33 @@ int main( int argc, char *argv[] )
 	g_source_set_callback (link_source, nm_link_state_monitor, nm_data, NULL);
 	link_source_id = g_source_attach (link_source, nm_data->main_context);
 
-	/* Another watch function which handles networking state changes and applies
-	 * the correct policy on a change.
-	 */
-	policy_source = g_timeout_source_new (500);
-	g_source_set_callback (policy_source, nm_state_modification_monitor, nm_data, NULL);
-	policy_source_id = g_source_attach (policy_source, nm_data->main_context);
-
-	/* Keep a current list of access points */
-	wscan_source = g_timeout_source_new (10000);
-	g_source_set_callback (wscan_source, nm_wireless_scan_monitor, nm_data, NULL);
-	wscan_source_id = g_source_attach (wscan_source, nm_data->main_context);
-
 	if (become_daemon && daemon (0, 0) < 0)
 	{
-	     syslog( LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno );
+		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
 	     exit (1);
 	}
 
-	syslog (LOG_NOTICE, "running mainloop...");
-	/* Wheeee!!! */
-	g_main_loop_run (nm_data->main_loop);
+	/* Start the wireless scanning thread and timeout */
+	if (!g_thread_create (nm_wireless_scan_worker, nm_data, FALSE, &error))
+	{
+		syslog (LOG_CRIT, "Could not start wireless scan worker thread.  Exiting. (error: %s)", error ? error->message : "unknown");
+		if (error)
+			g_error_free (error);
+		exit (1);
+	}
 
+	/* Wheeee!!! */
+	syslog (LOG_NOTICE, "running mainloop...");
+	g_main_loop_run (nm_data->main_loop);
 	syslog (LOG_NOTICE, "exiting...");
 
 	/* Kill the watch functions */
 	g_source_remove (link_source_id);
-	g_source_remove (policy_source_id);
-	g_source_remove (wscan_source_id);
+
+	/* Quit and wait for the scan thread */
+	g_main_loop_quit (nm_data->wscan_loop);
+	while (nm_data->wscan_thread_done == FALSE)
+		g_usleep (100);
 
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)

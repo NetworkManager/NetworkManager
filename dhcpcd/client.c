@@ -408,21 +408,26 @@ int verify_checksum(void * buf, int length, void * buf2, int length2)
 /* "timeout" should be the future point in time when we wish to stop
  * checking for data on the socket.
  */
-int peekfd (dhcp_interface *iface, int sk, struct timeval *timeout)
+int peekfd (dhcp_interface *iface, int sk, int min_data, struct timeval *end_time)
 {
 	struct timeval diff;
 	struct timeval now;
+	int recv_data_len = 0;
+	char ethPacket[ETH_FRAME_LEN];
+
+	if (min_data < 1)
+		return RET_DHCP_ERROR;
 
 	/* Wake up each second to check whether or not we've been told
-	 * to stop with iface->cease and check our timeout.
+	 * to stop with iface->cease and check our end time.
 	 */
 	gettimeofday (&now, NULL);
-	syslog (LOG_INFO, "DHCP waiting for data, overall timeout = {%ds, %dus}\n", (int)timeout->tv_sec, (int)timeout->tv_usec);
-	while (timeval_subtract (&diff, timeout, &now) == 0)
+	syslog (LOG_INFO, "DHCP waiting for data, overall end_time = {%ds, %dus}\n", (int)end_time->tv_sec, (int)end_time->tv_usec);
+	while ((timeval_subtract (&diff, end_time, &now) == 0) && !iface->cease && (recv_data_len < min_data))
 	{
 		fd_set fs;
 		struct timeval wait = {1, 0};
-		syslog (LOG_INFO, "DHCP waiting for data, remaining timeout = {%ds, %dus}\n", (int)diff.tv_sec, (int)diff.tv_usec);
+		syslog (LOG_INFO, "DHCP waiting for data of minimum size %d, remaining timeout = {%ds, %dus}\n", min_data, (int)diff.tv_sec, (int)diff.tv_usec);
 
 		FD_ZERO (&fs);
 		FD_SET (sk, &fs);
@@ -430,11 +435,20 @@ int peekfd (dhcp_interface *iface, int sk, struct timeval *timeout)
 		if (select (sk+1, &fs, NULL, NULL, &wait) == -1)
 			return RET_DHCP_ERROR;
 		if (FD_ISSET(sk, &fs))
-			return RET_DHCP_SUCCESS;
-		if (iface->cease)
-			return RET_DHCP_CEASED;
+		{
+			/* Get length of data waiting on the socket */
+			recv_data_len = recvfrom (sk, ethPacket, sizeof (ethPacket), MSG_DONTWAIT | MSG_PEEK, 0, NULL);
+			if ((recv_data_len == -1) && (errno != EAGAIN))
+				return RET_DHCP_ERROR;		/* Return on fatal errors */
+		}
 		gettimeofday (&now, NULL);
 	};
+
+	if (iface->cease)
+		return RET_DHCP_CEASED;
+	else if (recv_data_len >= min_data)
+		return RET_DHCP_SUCCESS;
+
 	return RET_DHCP_TIMEOUT;
 }
 /*****************************************************************************/
@@ -446,7 +460,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	struct sockaddr_in	addr;
 	int				tries = 0;
 	int				err = RET_DHCP_TIMEOUT;
-	struct timeval		recv_timeout, overall_end, diff, current;
+	struct timeval		recv_end, overall_end, diff, current;
 	udpipMessage		*udp_send = NULL;
 
 	if (!dhcp_return)
@@ -477,16 +491,16 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	do
 	{
 		udpipMessage		*udp_msg_recv = NULL;
-		struct iphdr		*ip_hdr;
+		struct iphdr		*ip_hdr = NULL;
 		struct udphdr		*udp_hdr;
 		char				*tmp_ip;
 		dhcpMessage		*dhcp_msg_recv = NULL;
 		int				 reply_type = -1;
 		char				 foobuf[512];
 		struct sockaddr_ll	 server_hw_addr;
-		int				 o;
-		char				 ethPacket[ETH_FRAME_LEN];
-		int				 len;
+		int				 data_good = 0;
+		int min_data_len = (sizeof (struct iphdr) + sizeof (struct udphdr));
+
 
 		if (iface->cease)
 			goto out;
@@ -532,114 +546,106 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		 * clamp the receive timeout to overall_end.
 		 */
 		tries++;
-		gettimeofday (&recv_timeout, NULL);
-		recv_timeout.tv_sec += (tries * DHCP_INITIAL_RTO);
-		recv_timeout.tv_usec += (random () % 200000);
-		if (timeval_subtract (&diff, &overall_end, &recv_timeout) != 0)
-			memcpy (&recv_timeout, &overall_end, sizeof (struct timeval));
+		gettimeofday (&recv_end, NULL);
+		recv_end.tv_sec += (tries * DHCP_INITIAL_RTO);
+		recv_end.tv_usec += (random () % 200000);
+		/* Clamp recv_end to overall_end if its greater than overall_end */
+		if (timeval_subtract (&diff, &overall_end, &recv_end) != 0)
+			memcpy (&recv_end, &overall_end, sizeof (struct timeval));
 
-		/* Wait for some kind of data to appear on the socket */
-		syslog (LOG_INFO, "DHCP: Waiting for reply...");
-		if ((err = peekfd (iface, recv_sk, &recv_timeout)) != RET_DHCP_SUCCESS)
+		/* Packet receive loop */
+		data_good = 0;
+		while ((timeval_subtract (&diff, &overall_end, &recv_end) == 0) && !data_good)
 		{
-			if (err == RET_DHCP_TIMEOUT)
+			int		len;
+			int		o;
+			char		ethPacket[ETH_FRAME_LEN];
+
+			/* Wait for some kind of data to appear on the socket */
+			syslog (LOG_INFO, "DHCP: Waiting for reply...");
+			if ((err = peekfd (iface, recv_sk, min_data_len, &recv_end)) != RET_DHCP_SUCCESS)
+			{
+				if (err == RET_DHCP_TIMEOUT)
+					break;
+				goto out;
+			}
+			syslog (LOG_INFO, "DHCP: Got some data to check for reply packet.");
+
+			/* Ok, we allegedly have the data we need, so grab it from the queue */
+			o = sizeof (struct sockaddr_ll);
+			len = recvfrom (recv_sk, pkt_recv, ETH_FRAME_LEN, 0, (struct sockaddr *)&server_hw_addr, &o);
+			syslog (LOG_INFO, "DHCP: actual data length was %d", len);
+			if (len < (sizeof (struct iphdr) + sizeof (struct udphdr)))
+			{
+				syslog (LOG_INFO, "DHCP: Data length failed minimum length check (should be %d, got %d)", (sizeof (struct iphdr) + sizeof (struct udphdr)), len);
 				continue;
-			goto out;
-		}
-		syslog (LOG_INFO, "DHCP: Got some data to check for reply packet.");
-
-		/* Peek from the data until we get a full amount or a timeout has occurred */
-		memset (pkt_recv, 0, ETH_FRAME_LEN);
-		o = sizeof (struct sockaddr_ll);
-		do
-		{
-			o = sizeof (server_hw_addr);
-			len = recvfrom (recv_sk, ethPacket, sizeof (ethPacket), MSG_DONTWAIT | MSG_PEEK, (struct sockaddr *)&server_hw_addr, &o);
-			if (iface->cease || ((len == -1) && (errno != EAGAIN)) || (len == 0))
-			{
-				err = iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
-				goto out;
 			}
 
-			/* Return if we've exceeded our timeout */
-			gettimeofday (&current, NULL);
-			if (timeval_subtract (&diff, &overall_end, &current) != 0)
+			ip_hdr = (struct iphdr *) pkt_recv;
+			if (!verify_checksum (NULL, 0, ip_hdr, sizeof (struct iphdr)))
 			{
-				err = RET_DHCP_TIMEOUT;
-				goto out;
+				syslog (LOG_INFO, "DHCP: Reply message had bad IP checksum, won't use it.");
+				continue;
 			}
-			syslog (LOG_INFO, "DHCP: Received data of len %d, looking for at least %d", len, (sizeof (struct iphdr) + sizeof (struct udphdr)));
-		} while (len < (sizeof (struct iphdr) + sizeof (struct udphdr)));
 
-		/* Ok, we allegedly have the data we need, so grab it from the queue */
-		o = sizeof (struct sockaddr_ll);
-		len = recvfrom (recv_sk, pkt_recv, ETH_FRAME_LEN, 0, (struct sockaddr *)&server_hw_addr, &o);
-		syslog (LOG_INFO, "DHCP: actual data length was %d", len);
-		if (len < (sizeof (struct iphdr) + sizeof (struct udphdr)))
-		{
-			syslog (LOG_INFO, "DHCP: Data length failed minimum length check (should be %d, got %d)", (sizeof (struct iphdr) + sizeof (struct udphdr)), len);
-			continue;
+			if (ntohs (ip_hdr->tot_len) > len)
+			{
+				syslog (LOG_INFO, "DHCP: Reply message had mismatch in length (IP header said %d, packet was really %d), won't use it.", ntohs (ip_hdr->tot_len), len);
+				continue;
+			}
+			len = ntohs (ip_hdr->tot_len);
+
+			if (ip_hdr->protocol != IPPROTO_UDP)
+			{
+				syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
+				continue;
+			}
+
+			udp_hdr = (struct udphdr *) (pkt_recv + sizeof (struct iphdr));
+			if (ntohs (udp_hdr->source) != DHCP_SERVER_PORT)
+			{
+				syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
+				continue;
+			}
+			if (ntohs (udp_hdr->dest) != DHCP_CLIENT_PORT) 
+			{
+				syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
+				continue;
+			}
+
+			/* Ok, packet appears to be OK */
+			/* Ensure DHCP packet is 0xFF terminated, which isn't the case on Cisco 800 series ISDN router */
+			dhcp_msg_recv = malloc (sizeof (dhcpMessage));
+			memset (dhcp_msg_recv, 0xFF, sizeof (dhcpMessage));
+			memcpy (dhcp_msg_recv, (char *) udp_hdr + sizeof (struct udphdr), len - sizeof (struct iphdr) - sizeof (struct udphdr));
+
+			if (dhcp_msg_recv->xid != iface->xid)
+			{
+				syslog (LOG_INFO, "DHCP: Reply message's XID does not match expected XID (message %d, expected %d), won't use it.", dhcp_msg_recv->xid, iface->xid);
+				free (dhcp_msg_recv);
+				continue;
+			}
+
+			if (dhcp_msg_recv->htype != ARPHRD_ETHER)
+			{
+				if (DebugFlag)
+					syslog (LOG_DEBUG, "DHCP: Reply message's header type was not ARPHRD_ETHER (messgae %d, expected %d), won't use it.", dhcp_msg_recv->htype, ARPHRD_ETHER);
+				free (dhcp_msg_recv);
+				continue;
+			}
+
+			if (dhcp_msg_recv->op != DHCP_BOOTREPLY)
+			{
+				syslog (LOG_INFO, "DHCP: Reply message was not a bootp/DHCP reply, won't use it.");
+				free (dhcp_msg_recv);
+				continue;
+			}
+
+			data_good = 1;
 		}
 
-		ip_hdr = (struct iphdr *) pkt_recv;
-		if (!verify_checksum (NULL, 0, ip_hdr, sizeof (struct iphdr)))
-		{
-			syslog (LOG_INFO, "DHCP: Reply message had bad IP checksum, won't use it.");
+		if (!data_good)
 			continue;
-		}
-
-		if (ntohs (ip_hdr->tot_len) > len)
-		{
-			syslog (LOG_INFO, "DHCP: Reply message had mismatch in length (IP header said %d, packet was really %d), won't use it.", ntohs (ip_hdr->tot_len), len);
-			continue;
-		}
-		len = ntohs (ip_hdr->tot_len);
-
-		if (ip_hdr->protocol != IPPROTO_UDP)
-		{
-			syslog (LOG_INFO, "DHCP: Reply message was not not UDP (ip_hdr->protocol = %d, IPPROTO_UDP = %d), won't use it.", ip_hdr->protocol, IPPROTO_UDP);
-			continue;
-		}
-
-		udp_hdr = (struct udphdr *) (pkt_recv + sizeof (struct iphdr));
-		if (ntohs (udp_hdr->source) != DHCP_SERVER_PORT)
-		{
-			syslog (LOG_INFO, "DHCP: Reply message's source port was not the DHCP server port number, won't use it.");
-			continue;
-		}
-		if (ntohs (udp_hdr->dest) != DHCP_CLIENT_PORT) 
-		{
-			syslog (LOG_INFO, "DHCP: Reply message's destination port was not the DHCP client port number, won't use it.");
-			continue;
-		}
-
-		/* Ok, packet appears to be OK */
-		/* Ensure DHCP packet is 0xFF terminated, which isn't the case on Cisco 800 series ISDN router */
-		dhcp_msg_recv = malloc (sizeof (dhcpMessage));
-		memset (dhcp_msg_recv, 0xFF, sizeof (dhcpMessage));
-		memcpy (dhcp_msg_recv, (char *) udp_hdr + sizeof (struct udphdr), len - sizeof (struct iphdr) - sizeof (struct udphdr));
-
-		if (dhcp_msg_recv->xid != iface->xid)
-		{
-			syslog (LOG_INFO, "DHCP: Reply message's XID does not match expected XID (message %d, expected %d), won't use it.", dhcp_msg_recv->xid, iface->xid);
-			free (dhcp_msg_recv);
-			continue;
-		}
-
-		if (dhcp_msg_recv->htype != ARPHRD_ETHER)
-		{
-			if (DebugFlag)
-				syslog (LOG_DEBUG, "DHCP: Reply message's header type was not ARPHRD_ETHER (messgae %d, expected %d), won't use it.", dhcp_msg_recv->htype, ARPHRD_ETHER);
-			free (dhcp_msg_recv);
-			continue;
-		}
-
-		if (dhcp_msg_recv->op != DHCP_BOOTREPLY)
-		{
-			syslog (LOG_INFO, "DHCP: Reply message was not a bootp/DHCP reply, won't use it.");
-			free (dhcp_msg_recv);
-			continue;
-		}
 
 		/* Clear out all data remaining on the interface in preparation for another broadcast if needed */
 		while ((iface->foo_sk > 0) && recvfrom (iface->foo_sk, (void *)foobuf, sizeof (foobuf), 0, NULL, NULL) != -1);

@@ -1,3 +1,33 @@
+2005-01-07  Dan Williams <dcbw@redhat.com>
+
+	* dhcpcd/client.c
+		- Rework the DHCP client code to be much less chatty when
+			it receives non-DHCP UDP packets during the DHCP run
+			(reported by and preliminary patches from Bill Moss)
+
+	* Move wireless scanning to a separate thread.  This thread forwards the
+		results to the main thread when done where they are integrated into
+		the device's access point lists.  This keeps the main thread (which
+		does all the DBUS communication) from being blocked for long periods
+		of time by wireless scanning.
+
+	* Make state modification an idle routine in the main loop, and trigger
+		state changes rather than polling for them.
+
+	* src/backends/NetworkManagerGentoo.c
+		- Fix up invalid C90 code (reported by Christoph Ruessler)
+
+	* src/NetworkManagerDevice.c
+		- Revert IPv6 patch for wired devices from 2004-12-22 for
+			router advertisements, causing problems and infinite loop
+			during "best" device determination due to link going up/down
+			(reported by Bill Moss)
+
+	Apply patch from Peter Jones
+	* src/NetworkManagerDevice.c
+		- Shortcut for link-checking for ipw2x00 cards
+		- Split out association check into separate routine
+
 2004-01-05  Colin Walters  <walters@redhat.com>
 
 	* named/named.conf: Add PID_FILE.

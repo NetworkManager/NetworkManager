@@ -1270,7 +1270,6 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = TRUE;
-			data->notify_device_support = TRUE;
 			nm_data_mark_state_changed (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
@@ -1288,7 +1287,6 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = FALSE;
-			data->notify_device_support = TRUE;
 			nm_data_mark_state_changed (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection

@@ -28,7 +28,6 @@
 #include <sys/stat.h>
 #include <netinet/in.h>
 #include <net/route.h>
-#include <net/if.h>
 #include <arpa/nameser.h>
 #include <fcntl.h>
 #include <stdio.h>

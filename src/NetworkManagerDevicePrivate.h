@@ -114,9 +114,7 @@ struct NMDevice
 	guint				 rebind_timeout;
 
 	gboolean				 activating;		/* Set by main thread before beginning activation */
-	gboolean				 just_activated;	/* Set by activation thread after successful activation */
 	gboolean				 quit_activation;	/* Flag to signal activation thread to stop activating */
-	gboolean				 activation_failed;	/* Did the activation fail? */
 
 	gboolean				 test_device;
 	gboolean				 test_device_up;

@@ -194,22 +194,64 @@ int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
 
 
 /*
- * nm_wireless_scan_monitor
+ * nm_wireless_process_scan_results
  *
- * Called every 10s to get a list of access points.
+ * Run from main thread to hand scan results off to each device
+ * for processing.
  *
  */
-gboolean nm_wireless_scan_monitor (gpointer user_data)
+static gboolean nm_wireless_process_scan_results (gpointer user_data)
+{
+	GSList	*results = (GSList *)user_data;
+	GSList	*elem = NULL;
+
+	if (!results)
+		return FALSE;
+
+	elem = results;
+	while (elem)
+	{
+		NMWirelessScanResults	*res = (NMWirelessScanResults *)(elem->data);
+
+		nm_device_process_scan_results (res->dev, &(res->results));
+
+		/* Release the scan results */
+		nm_dispose_scan_results (res->results.result);
+		nm_device_unref (res->dev);
+		g_free (res);
+		elem->data = NULL;
+
+		elem = g_slist_next (elem);
+	}
+	g_slist_free (results);
+
+	return FALSE;
+}
+
+
+/*
+ * nm_wireless_scan_monitor
+ *
+ * Called every 10s to get a list of access points from the hardware.  When its got
+ * the list, it schedules an idle handler in the main thread's event loop to actually
+ * integrate the scan results into the NMDevice's access point list.
+ *
+ */
+static gboolean nm_wireless_scan_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
 	GSList	*element;
 	NMDevice	*dev;
+	GSList	*scan_results = NULL;
 
 	g_return_val_if_fail (data != NULL, TRUE);
 
-	/* Attempt to acquire mutex so that data->active_device sticks around.
-	 * If the acquire fails, just ignore the scan completely.
+	/* We don't want to lock the device list for the entire duration of the scanning process
+	 * for all cards.  Scanning can take quite a while.  Therefore, we grab a list of the devices
+	 * and ref each one, then release the device list lock, perform scanning, and pass that list
+	 * to the idle handler in the main thread, along iwth the scanning results.
 	 */
+
 	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		syslog (LOG_ERR, "nm_wireless_scan_monitor() could not acquire device list mutex." );
@@ -220,11 +262,68 @@ gboolean nm_wireless_scan_monitor (gpointer user_data)
 	while (element)
 	{
 		if ((dev = (NMDevice *)(element->data)) && nm_device_is_wireless (dev))
-			nm_device_do_wireless_scan (dev);
+		{
+			NMWirelessScanResults	*scan_res = g_malloc0 (sizeof (NMWirelessScanResults));
+
+			nm_device_ref (dev);
+			scan_res->dev = dev;
+			scan_results = g_slist_append (scan_results, scan_res);
+		}
+		element = g_slist_next (element);
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+	/* Okay, do the actual scanning now. */
+	element = scan_results;
+	while (element)
+	{
+		NMWirelessScanResults *res = (NMWirelessScanResults *)(element->data);
+		nm_device_do_wireless_scan (res->dev, &(res->results));
 		element = g_slist_next (element);
 	}
 
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	/* Schedule an idle handler in the main thread to process the scan results */
+	if (scan_results)
+	{
+		guint	 scan_process_source_id = 0;
+		GSource	*scan_process_source = g_idle_source_new ();
+
+		g_source_set_callback (scan_process_source, nm_wireless_process_scan_results, scan_results, NULL);
+		scan_process_source_id = g_source_attach (scan_process_source, data->main_context);
+		g_source_unref (scan_process_source);
+	}
 	
 	return (TRUE);
 }
+
+
+/*
+ * nm_wireless_scan_worker
+ *
+ * Worker thread main function to handle wireless scanning.
+ *
+ */
+gpointer nm_wireless_scan_worker (gpointer user_data)
+{
+	NMData	*data = (NMData *)user_data;
+	guint	 wscan_source_id = 0;
+	GSource	*wscan_source = NULL;
+
+	if (!data)
+		return NULL;
+	
+	wscan_source = g_timeout_source_new (14000);
+	g_source_set_callback (wscan_source, nm_wireless_scan_monitor, data, NULL);
+	wscan_source_id = g_source_attach (wscan_source, data->wscan_ctx);
+	g_source_unref (wscan_source);
+
+	/* Do an initial scan */
+	nm_wireless_scan_monitor (user_data);
+
+	g_main_loop_run (data->wscan_loop);
+
+	g_source_remove (wscan_source_id);
+	data->wscan_thread_done = TRUE;
+	return NULL;
+}
+

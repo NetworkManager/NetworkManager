@@ -227,153 +227,162 @@ static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock
 
 
 /*
+ * nm_policy_activation_finish
+ *
+ * Finishes up activation by sending out dbus signals, which has to happen
+ * on the main thread.
+ *
+ */
+gboolean nm_policy_activation_finish (gpointer user_data)
+{
+	NMActivationResult	*result = (NMActivationResult *)user_data;
+	NMDevice			*dev = NULL;
+	NMData			*data = NULL;
+
+	g_return_val_if_fail (result != NULL, FALSE);
+
+fprintf (stderr, "Activation Finish called\n");
+	if (!(dev = result->dev))
+		goto out;
+
+	if (!(data = nm_device_get_app_data (dev)))
+		goto out;
+
+	if (result->success)
+	{
+		nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_NOW_ACTIVE);
+		/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
+		if (nm_device_is_wireless (dev))
+		{
+			struct ether_addr	 addr;
+
+			nm_device_get_ap_address (dev, &addr);
+			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (dev), &addr);
+		}
+		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
+	}
+	else
+	{
+		nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ACTIVATION_FAILED);
+		if (nm_device_is_wireless (dev))
+		{
+			NMAccessPoint *ap = nm_device_get_best_ap (dev);
+			if (ap)
+			{
+				/* Add the AP to the invalid list and force a best ap update (list takes ownership of ap) */
+				nm_ap_list_append_ap (data->invalid_ap_list, ap);
+				nm_ap_unref (ap);
+
+				nm_device_update_best_ap (dev);
+
+				/* Unref because nm_device_get_best_ap() refs it before returning. */
+				nm_ap_unref (ap);
+			}
+			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+		}
+		else
+			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s", nm_device_get_iface (dev));
+		nm_data_mark_state_changed (data);
+	}
+
+out:
+	g_free (result);
+	nm_device_unref (dev);
+	return FALSE;
+}
+
+
+/*
  * nm_state_modification_monitor
  *
- * Called every 2s and figures out which interface to switch the active
+ * Figures out which interface to switch the active
  * network connection to if our global network state has changed.
  * Global network state changes are triggered by:
  *    1) insertion/deletion of interfaces
  *    2) link state change of an interface
- *    3) appearance/disappearance of an allowed wireless access point
  *
  */
 gboolean nm_state_modification_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
-	gboolean	 modified = FALSE;
 
-	g_return_val_if_fail (data != NULL, TRUE);
+	g_return_val_if_fail (data != NULL, FALSE);
+
+fprintf (stderr, "State modification monitor called\n");
+	data->state_modified_idle_id = 0;
 
 	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
-	if (data->info_daemon_avail)
+	if (data->info_daemon_avail && data->update_ap_lists)
 	{
-		if (data->update_ap_lists)
-		{
-			/* Query info daemon for network lists if its now running */
-			if (data->allowed_ap_list)
-				nm_ap_list_unref (data->allowed_ap_list);
-			data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-			if (data->allowed_ap_list)
-				nm_ap_list_populate (data->allowed_ap_list, data);
+		/* Query info daemon for network lists if its now running */
+		if (data->allowed_ap_list)
+			nm_ap_list_unref (data->allowed_ap_list);
+		data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
+		if (data->allowed_ap_list)
+			nm_ap_list_populate (data->allowed_ap_list, data);
 
-			data->update_ap_lists = FALSE;
-		}
+		data->update_ap_lists = FALSE;
 	}
 
-	/* Check global state modified variable, and reset it with
-	 * appropriate locking.
-	 */
-	g_mutex_lock (data->state_modified_mutex);
-	modified = data->state_modified;
-	if (data->state_modified)
-		data->state_modified = FALSE;
-	g_mutex_unlock (data->state_modified_mutex);
-
-	/* If any modifications to the data model were made, update
-	 * network state based on policy applied to the data model.
-	 */
-	if (modified)
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+		gboolean		 should_lock_on_activate = FALSE;
+		gboolean		 do_switch = FALSE;
+		NMDevice		*best_dev = NULL;
+
+		if ((best_dev = nm_policy_get_best_device (data, &should_lock_on_activate)))
+			nm_device_ref (best_dev);
+
+		/* Figure out if we need to change devices or wireless networks */
+		if (best_dev != data->active_device)
 		{
-			gboolean		 should_lock_on_activate = FALSE;
-			gboolean		 do_switch = FALSE;
-			NMDevice		*best_dev = NULL;
-
-			if ((best_dev = nm_policy_get_best_device (data, &should_lock_on_activate)))
-				nm_device_ref (best_dev);
-
-			/* Figure out if we need to change devices or wireless networks */
-			if (best_dev != data->active_device)
+			syslog (LOG_INFO, "    SWITCH: best device changed");
+			do_switch = TRUE;	/* Device changed */
+		}
+		else if (best_dev)
+		{
+			if (nm_device_is_wireless (best_dev) && !nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
 			{
-				syslog (LOG_INFO, "    SWITCH: best device changed");
-				do_switch = TRUE;	/* Device changed */
+				syslog (LOG_INFO, "    SWITCH: need to associate with new access point or create a wireless network.");
+				do_switch = TRUE;
 			}
-			else if (best_dev)
+			else if (!nm_device_is_activating (best_dev) && !nm_device_get_ip4_address (best_dev))
 			{
-				if (nm_device_is_wireless (best_dev) && !nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
-				{
-					syslog (LOG_INFO, "    SWITCH: need to associate with new access point or create a wireless network.");
-					do_switch = TRUE;
-				}
-				else if (!nm_device_is_activating (best_dev) && !nm_device_get_ip4_address (best_dev))
-				{
-					syslog (LOG_INFO, "    SWITCH: need to get an IP address.");
-					do_switch = TRUE;
-				}
+				syslog (LOG_INFO, "    SWITCH: need to get an IP address.");
+				do_switch = TRUE;
 			}
+		}
 
-			if (do_switch)
+		if (do_switch)
+		{
+			/* Deactivate the old device */
+			if (data->active_device)
 			{
-				/* Deactivate the old device */
-				if (data->active_device)
-				{
-					nm_device_deactivate (data->active_device, FALSE);
-					nm_device_unref (data->active_device);
-					data->active_device = NULL;
-				}
-
-				if (best_dev)
-				{
-					/* Begin activation on the new device */
-					syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", nm_device_get_iface (best_dev));
-					nm_device_ref (best_dev);
-					data->active_device = best_dev;
-					nm_device_activation_begin (data->active_device);
-
-					/* nm_policy_get_best_device() signals us that the user forced
-					 * a device upon us and that we should lock the active device.
-					 */
-					if (should_lock_on_activate)
-						data->active_device_locked = TRUE;
-				}
+				nm_device_deactivate (data->active_device, FALSE);
+				nm_device_unref (data->active_device);
+				data->active_device = NULL;
 			}
 
 			if (best_dev)
-				nm_device_unref (best_dev);
-
-			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-		}
-		else
-			syslog (LOG_ERR, "nm_state_modification_monitor() could not get device list mutex");
-	}
-	else if (data->active_device && nm_device_is_just_activated (data->active_device))
-	{
-		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_NOW_ACTIVE);
-		/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
-		if (nm_device_is_wireless (data->active_device))
-		{
-			struct ether_addr	 addr;
-
-			nm_device_get_ap_address (data->active_device, &addr);
-			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (data->active_device), &addr);
-		}
-		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
-	}
-	else if (data->active_device && nm_device_did_activation_fail (data->active_device))
-	{
-		nm_device_clear_activation_fail (data->active_device);
-		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_ACTIVATION_FAILED);
-		if (nm_device_is_wireless (data->active_device))
-		{
-			NMAccessPoint *ap = nm_device_get_best_ap (data->active_device);
-			if (ap)
 			{
-				/* Add the AP to the invalid list and force a best ap update */
-				nm_ap_list_append_ap (data->invalid_ap_list, ap);
-				nm_device_update_best_ap (data->active_device);
+				/* Begin activation on the new device */
+				syslog (LOG_INFO, "nm_state_modification_monitor(): beginning activation for device '%s'", nm_device_get_iface (best_dev));
+				nm_device_ref (best_dev);
+				data->active_device = best_dev;
+				nm_device_activation_begin (data->active_device);
 
-				/* Unref once because the list takes ownership, and unref a second time because
-				 * nm_device_get_best_ap() refs it before returning.
+				/* nm_policy_get_best_device() signals us that the user forced
+				 * a device upon us and that we should lock the active device.
 				 */
-				nm_ap_unref (ap);
-				nm_ap_unref (ap);
+				if (should_lock_on_activate)
+					data->active_device_locked = TRUE;
 			}
-			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s (%s)", nm_device_get_iface (data->active_device), ap ? nm_ap_get_essid (ap) : "(none)");
 		}
-		else
-			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s", nm_device_get_iface (data->active_device));
-		nm_data_mark_state_changed (data);
+
+		if (best_dev)
+			nm_device_unref (best_dev);
+
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
 	/* Clear the starting up flag, so we will now take over and have our way with
@@ -382,5 +391,5 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	if (data->starting_up)
 		data->starting_up = FALSE;
 
-	return (TRUE);
+	return (FALSE);
 }
