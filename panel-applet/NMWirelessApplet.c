@@ -67,7 +67,7 @@ static char *glade_file;
 
 static void		nmwa_about_cb		(BonoboUIComponent *uic, NMWirelessApplet *applet);
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
-static void		nmwa_dispose_menu	(NMWirelessApplet *applet);
+static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
 
 static const BonoboUIVerb nmwa_context_menu_verbs [] =
 {
@@ -300,7 +300,7 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 	int i;
 	
 	if (applet->menu)
-		nmwa_dispose_menu (applet);
+		nmwa_dispose_menu_items (applet);
 
 	if (applet->redraw_timeout_id > 0)
 	{
@@ -416,12 +416,12 @@ void nmwa_handle_network_choice (NMWirelessApplet *applet, char *network)
 
 
 /*
- * nmwa_menu_item_activated
+ * nmwa_menu_item_activate
  *
  * Signal function called when user clicks on a menu item
  *
  */
-void nmwa_menu_item_activated (GtkMenuItem *item, gpointer user_data)
+void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
 	char				*network;
@@ -435,24 +435,21 @@ void nmwa_menu_item_activated (GtkMenuItem *item, gpointer user_data)
 
 
 /*
- * nmwa_button_clicked
+ * nmwa_toplevel_menu_activate
  *
  * Pop up the wireless networks menu in response to a click on the applet
  *
  */
-static void nmwa_button_clicked (GtkWidget *button, NMWirelessApplet *applet)
+static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *applet)
 {
-	if (applet->menu && GTK_WIDGET_VISIBLE (applet->menu))
-		gtk_menu_popdown (GTK_MENU (applet->menu));
-	else
-	{
-		if (applet->menu)
-			nmwa_dispose_menu (applet);
-		applet->menu = nmwa_populate_menu (applet);		
+	GtkWidget      *submenu;
+	GtkWidget		*menu_item;
 
-		gtk_menu_popup (GTK_MENU (applet->menu), NULL, NULL, nmwa_get_menu_pos,
-						applet, 0, gtk_get_current_event_time());
-	}
+	nmwa_dispose_menu_items (applet);
+
+	nmwa_populate_menu (applet);
+
+	gtk_widget_show (applet->menu);
 }
 
 
@@ -500,7 +497,7 @@ void nmwa_add_menu_item (NMWirelessApplet *applet, GtkWidget *menu, char *text, 
 	}
 
 	g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (tag));
-	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activated), applet);
+	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_show (menu_item);
@@ -513,33 +510,37 @@ void nmwa_add_menu_item (NMWirelessApplet *applet, GtkWidget *menu, char *text, 
  * Frees the "network" data tag on a menu item we've created
  *
  */
-static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer user_data)
+static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 {
 	char	*tag;
+	GtkWidget *menu;
 
 	g_return_if_fail (menu_item != NULL);
+
+	menu = GTK_WIDGET(data);
 
 	if ((tag = g_object_get_data (G_OBJECT (menu_item), "network")))
 	{
 		g_object_set_data (G_OBJECT (menu_item), "network", NULL);
 		g_free (tag);
 	}
+
+	gtk_container_remove(GTK_CONTAINER(menu), menu_item);
 }
 
 
 /*
- * nmwa_dispose_menu
+ * nmwa_dispose_menu_items
  *
  * Destroy the menu and each of its items data tags
  *
  */
-void nmwa_dispose_menu (NMWirelessApplet *applet)
+void nmwa_dispose_menu_items (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
 	/* Free the "network" data on each menu item */
-	gtk_container_foreach (GTK_CONTAINER (applet->menu), nmwa_menu_item_data_free, NULL);
-	gtk_widget_destroy (applet->menu);
+	gtk_container_foreach (GTK_CONTAINER (applet->menu), nmwa_menu_item_data_free, applet->menu);
 }
 
 
@@ -551,11 +552,10 @@ void nmwa_dispose_menu (NMWirelessApplet *applet)
  */
 GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 {
-	GtkWidget		 *menu;
+	GtkWidget		 *menu = applet->menu;
 
 	g_return_if_fail (applet != NULL);
 
-	menu = gtk_menu_new ();
 fprintf( stderr, "populate_menu()   state (%d)\n", applet->applet_state);
 	switch (applet->applet_state)
 	{
@@ -622,8 +622,8 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	gint			 total_size = 0;
 	gboolean		 horizontal = FALSE;
 	gint			 panel_size;
-	GtkWidget		*menu_item;
-	
+	GtkWidget      *menu_bar;
+
 	panel_size = panel_applet_get_size (PANEL_APPLET (applet));
 	switch (panel_applet_get_orient(PANEL_APPLET (applet)))
 	{
@@ -640,40 +640,33 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	/* construct pixmap widget */
 	applet->pixmap = gtk_image_new ();
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), applet->pixmaps[PIX_WIRED]);
-	gtk_widget_size_request (applet->pixmap, &req);
+	//gtk_widget_size_request (applet->pixmap, &req);
 	gtk_widget_show (applet->pixmap);
 
+	/*
 	if (horizontal)
 		total_size += req.height;
 	else
 		total_size += req.width;
-	
-	/* pack */
-	if (applet->button)
-		gtk_widget_destroy (applet->button);
+	*/
 
-	if (horizontal && (total_size <= panel_size))
-		applet->box = gtk_vbox_new (FALSE, 0);
-	else if (horizontal && (total_size > panel_size))
-		applet->box = gtk_hbox_new (FALSE, 0);
-	else if (!horizontal && (total_size <= panel_size))
-		applet->box = gtk_hbox_new (FALSE, 0);
-	else 
-		applet->box = gtk_vbox_new (FALSE, 0);
+	menu_bar = gtk_menu_bar_new ();
+	applet->toplevel_menu = gtk_menu_item_new();
+	gtk_container_add (GTK_CONTAINER(applet->toplevel_menu), applet->pixmap);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu_bar), applet->toplevel_menu);
+	g_signal_connect(applet->toplevel_menu, "activate", G_CALLBACK(nmwa_toplevel_menu_activate), applet);
 
-	applet->button = gtk_button_new ();
-	g_signal_connect(applet->button, "clicked", G_CALLBACK(nmwa_button_clicked), applet);
-	gtk_button_set_relief (GTK_BUTTON (applet->button), GTK_RELIEF_NONE);
-	gtk_container_add (GTK_CONTAINER(applet->button), applet->box);
+	applet->menu = gtk_menu_new();
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
 
-	gtk_box_pack_start (GTK_BOX (applet->box), applet->pixmap, TRUE, TRUE, 0);
-	gtk_widget_show (applet->button);
-	gtk_widget_show (applet->box);
-	gtk_container_add (GTK_CONTAINER (applet), applet->button);
+	gtk_widget_show (menu_bar);
+	gtk_widget_show (applet->toplevel_menu);
+	gtk_widget_show (applet->menu);
+
+	gtk_container_add (GTK_CONTAINER (applet), menu_bar);
 
 	applet->current_pixbuf = NULL;
 	applet->about_dialog = NULL;
-	applet->menu = NULL;
 }
 
 static void change_size_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
@@ -690,9 +683,10 @@ static void change_orient_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
 
 static gboolean do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event)
 {
-	if (event->button != 1)
+     printf ("Getting button press\n");
+	/*if (event->button != 1)
 		g_signal_stop_emission_by_name (widget, "button_press_event");
-
+	*/
 	return (FALSE);
 }
 
@@ -771,7 +765,7 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 	nmwa_setup_widgets (applet);
 
 	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
-	g_signal_connect (applet->button, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
+	//g_signal_connect (applet->toplevel_menu, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	panel_applet_setup_menu_from_file (PANEL_APPLET (applet), NULL, "NMWirelessApplet.xml", NULL,
 						nmwa_context_menu_verbs, applet);

@@ -85,10 +85,10 @@ typedef struct
 
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
-	GtkWidget			*button;
 	GtkWidget			*box;
 	GtkWidget			*about_dialog;
 	GtkWidget			*menu;
+	GtkWidget			*toplevel_menu;
 } NMWirelessApplet;
 
 

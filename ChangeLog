@@ -1,3 +1,15 @@
+2004-08-26  Seth Nickell  <seth@gnome.org>
+
+	* panel-applet/NMWirelessApplet.c: (nmwa_destroy),
+	(nmwa_menu_item_activate), (nmwa_toplevel_menu_activate),
+	(nmwa_add_menu_item), (nmwa_menu_item_data_free),
+	(nmwa_dispose_menu_items), (nmwa_populate_menu),
+	(nmwa_setup_widgets), (do_not_eat_button_press), (nmwa_new):
+	* panel-applet/NMWirelessApplet.h:
+
+	Use a menu bar instead of a button for the main clickable
+	thingy.
+	
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
