@@ -1,5 +1,9 @@
 2004-10-14 Dan Williams <dcbw@redhat.com>
 
+	* Tagged NetworkManager-0_3
+
+2004-10-14 Dan Williams <dcbw@redhat.com>
+
 	Patch from Robert Paskowitz:
 	* NEWS
 	  src/NetworkManagerDevice.[ch]
