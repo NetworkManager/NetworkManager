@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-03 23:49+0100\n"
-"PO-Revision-Date: 2004-10-03 23:49+0100\n"
+"POT-Creation-Date: 2004-10-13 23:04+0100\n"
+"PO-Revision-Date: 2004-10-13 23:04+0100\n"
 "Last-Translator: David Lodge <dave@cirt.net>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -28,44 +28,61 @@ msgstr "Modify Wireless Networks"
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:3
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+
+#: info-daemon/passphrase.glade.h:5
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%s'."
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
 "\n"
-"A passphrase or WEP key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%s'."
 
-#: info-daemon/passphrase.glade.h:6
+#: info-daemon/passphrase.glade.h:8
+msgid "Key Type:"
+msgstr "Key Type:"
+
+#: info-daemon/passphrase.glade.h:9
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Passphrase:"
 
-#: info-daemon/passphrase.glade.h:7
+#: info-daemon/passphrase.glade.h:10
 msgid "Wireless Network Key Required"
 msgstr "Wireless Network Key Required"
 
-#: info-daemon/passphrase.glade.h:8
+#: info-daemon/passphrase.glade.h:11
 #: panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: panel-applet/NMWirelessApplet.c:589
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr "Key:"
+
+#: panel-applet/NMWirelessApplet.c:564
 msgid "Other Wireless Networks..."
 msgstr "Other Wireless Networks..."
 
-#: panel-applet/NMWirelessApplet.c:699
+#: panel-applet/NMWirelessApplet.c:674
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: panel-applet/NMWirelessApplet.c:816
+#: panel-applet/NMWirelessApplet.c:791
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/NMWirelessApplet.c:955
-#: panel-applet/NMWirelessApplet.c:1007
+#: panel-applet/NMWirelessApplet.c:869
+#: panel-applet/NMWirelessApplet.c:920
 msgid "The NetworkManager Applet could not find some required resources (the glade file was not found)."
 msgstr "The NetworkManager Applet could not find some required resources (the glade file was not found)."
 
@@ -100,16 +117,16 @@ msgstr "Orientation"
 msgid "The orientation of the tray."
 msgstr "The orientation of the tray."
 
-#: panel-applet/menu-info.c:77
+#: panel-applet/menu-info.c:100
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Wired Network (%s)"
 
-#: panel-applet/menu-info.c:79
+#: panel-applet/menu-info.c:102
 msgid "Wired Network"
 msgstr "Wired Network"
 
-#: panel-applet/menu-info.c:143
+#: panel-applet/menu-info.c:167
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
@@ -117,11 +134,13 @@ msgstr[0] "Wireless Network (%s)"
 msgstr[1] "Wireless Networks (%s)"
 
 #
+#: panel-applet/menu-info.c:169
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Wireless Network"
 msgstr[1] "Wireless Networks"
 
+#: panel-applet/menu-info.c:306
 msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
 
