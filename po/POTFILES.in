@@ -2,6 +2,7 @@
 # Please keep this file sorted alphabetically.
 info-daemon/networks.glade
 info-daemon/passphrase.glade
+info-daemon/NetworkManagerInfoPassphraseDialog.c
 panel-applet/NMWirelessApplet.c
 panel-applet/NMWirelessApplet.xml
 panel-applet/wireless-applet.glade
