@@ -2,18 +2,19 @@
 # Copyright (C) 2004 The Free Software Foundation
 # This file is distributed under the same license as the NetworkManager package.
 # Tino Meinen <a.t.meinen@chello.nl>, 2004.
+# Daniel van Eeden <daniel_e@dds.nl>, 2004.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-21 20:27+0200\n"
-"PO-Revision-Date: 2004-09-22 02:27+0200\n"
-"Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
+"POT-Creation-Date: 2004-09-23 12:15+0200\n"
+"PO-Revision-Date: 2004-09-23 14:44+0200\n"
+"Last-Translator: Daniel van Eeden <daniel_e@dds.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+"Content-Transfer-Encoding: 8bit"
 
 #: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
@@ -54,13 +55,13 @@ msgstr "Sleutel draadloos netwerk vereist"
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: panel-applet/NMWirelessApplet.c:630
-msgid "There are no wireless networks..."
-msgstr "Er zijn geen draadloze netwerken..."
+#: panel-applet/NMWirelessApplet.c:600
+msgid "Other Wireless Network..."
+msgstr "Ander draadloze netwerk..."
 
-#: panel-applet/NMWirelessApplet.c:685
-msgid "There are no network devices..."
-msgstr "Er zijn geen netwerkapparaten..."
+#: panel-applet/NMWirelessApplet.c:714
+msgid "No network devices have been found"
+msgstr "Er zijn geen netwerk apparaten geconfigureerd"
 
 # betere vertaling
 # is niet uitgevoerd (klinkt als verleden tijd)
@@ -68,24 +69,17 @@ msgstr "Er zijn geen netwerkapparaten..."
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:773
+#: panel-applet/NMWirelessApplet.c:827
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
-# Netwerken
-#: panel-applet/NMWirelessApplet.c:777
-msgid "Network Connections"
-msgstr "Netwerkverbindingen"
-
-#: panel-applet/NMWirelessApplet.c:779
-msgid "Other Wireless Network..."
-msgstr "Ander draadloze netwerk..."
-
-#: panel-applet/NMWirelessApplet.c:913 panel-applet/NMWirelessApplet.c:973
+#: panel-applet/NMWirelessApplet.c:965 panel-applet/NMWirelessApplet.c:1025
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr "De NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het glade bestand is niet gevonden)."
+msgstr ""
+"De NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het "
+"glade bestand is niet gevonden)."
 
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
@@ -125,9 +119,37 @@ msgstr "Oriëntatie"
 msgid "The orientation of the tray."
 msgstr "De oriëntatie van het applet."
 
-#: panel-applet/menu-info.c:158
+#: panel-applet/menu-info.c:153
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Bedraad netwerk (%s)"
+
+#: panel-applet/menu-info.c:155
+msgid "Wired Network"
+msgstr "Bedraad netwerk"
+
+#: panel-applet/menu-info.c:159
+#, c-format
+msgid "Wireless Network (%s)"
+msgstr "Draadloos netwerk (%s)"
+
+#: panel-applet/menu-info.c:161
+msgid "Wireless Network"
+msgstr "Draadloos netwerk"
+
+#: panel-applet/menu-info.c:294
 msgid " (invalid Unicode)"
 msgstr " (ongeldige Unicode)"
+
+#~ msgid "There are no wireless networks..."
+#~ msgstr "Er zijn geen draadloze netwerken..."
+
+#~ msgid "There are no network devices..."
+#~ msgstr "Er zijn geen netwerkapparaten..."
+
+# Netwerken
+#~ msgid "Network Connections"
+#~ msgstr "Netwerkverbindingen"
 
 # aanwezig/actief
 #~ msgid "No network connection is currently active..."
