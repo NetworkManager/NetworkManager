@@ -1,3 +1,8 @@
+2005-03-26  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_scan): Remove duplicated scanning code
+
 2005-03-25  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c

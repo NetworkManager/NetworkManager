@@ -3735,23 +3735,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 				nm_completion_scan_has_results, NULL,
 				dev, &err, sk, scan_results);
 
-
-			err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
-			if ((err == -1) && (errno == ENODATA))
-			{
-				/* Card hasn't had time yet to compile full access point list.
-				 * Give it some more time and scan again.  If that doesn't work
-				 * give up.
-				 */
-				g_usleep ((G_USEC_PER_SEC * nm_device_get_association_pause_value (dev)) / 2);
-				err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
-				if (err == -1)
-					scan_results->scan_head.result = NULL;
-			}
-			else if ((err == -1) && (errno == ETIME))
-				nm_warning ("The wireless card (%s) requires too much time for scans. "
-					    "Its driver needs to be fixed.", nm_device_get_iface (dev));
-
 			nm_device_set_mode (dev, orig_mode);
 			/* Only set frequency if ad-hoc mode */
 			if (orig_mode == NETWORK_MODE_ADHOC)
