@@ -232,21 +232,41 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 
 	if (!mgr->priv->named_conf)
 	{
-		out_fd = g_file_open_tmp ("NetworkManager-named.conf-XXXXXX",
-					  &mgr->priv->named_conf,
-					  error);
+		mgr->priv->named_conf = g_build_filename (NM_NAMED_DATA_DIR,
+							  "NetworkManager-named.conf",
+							  NULL);
+		unlink (mgr->priv->named_conf);
+		out_fd = open (mgr->priv->named_conf, O_CREAT|O_EXCL, 0600);
 		if (out_fd < 0)
+		{
+			g_set_error (error,
+				     G_FILE_ERROR,
+				     G_FILE_ERROR_EXIST,
+				     "Couldn't create %s: %s",
+				     mgr->priv->named_conf,
+				     g_strerror (errno));
 			return FALSE;
+		}
 		close (out_fd);
 	}
 
 	if (!mgr->priv->named_pid_file)
 	{
-		out_fd = g_file_open_tmp ("NetworkManager-named-pid-XXXXXX",
-					  &mgr->priv->named_pid_file,
-					  error);
+		mgr->priv->named_pid_file = g_build_filename (NM_NAMED_DATA_DIR,
+							      "NetworkManager-pid-named",
+							      NULL);
+		unlink (mgr->priv->named_pid_file);
+		out_fd = open (mgr->priv->named_pid_file, O_CREAT|O_EXCL, 0600);
 		if (out_fd < 0)
+		{
+			g_set_error (error,
+				     G_FILE_ERROR,
+				     G_FILE_ERROR_EXIST,
+				     "Couldn't create %s: %s",
+				     mgr->priv->named_pid_file,
+				     g_strerror (errno));
 			return FALSE;
+		}
 		close (out_fd);
 	}
 
@@ -525,7 +545,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 		goto lose;
 	}
 #ifndef NM_NO_NAMED
-	if (fprintf (f, "%s", "; Use a local caching nameserver controlled by NetworkManager\n", searches, "\nnameserver 127.0.0.1\n") < 0) {
+	if (fprintf (f, "%s%s%s", "; Use a local caching nameserver controlled by NetworkManager\n", searches, "\nnameserver 127.0.0.1\n") < 0) {
 		goto lose;
 	}
 #else

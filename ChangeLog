@@ -1,5 +1,14 @@
 2005-01-14  Colin Walters  <walters@redhat.com>
 
+	* named/nm-named-manager.c (generate_named_conf): Write config
+	and pid files into NM_NAMED_DATA_DIR; this allows things to
+	work better with FC3 named SELinux policy.  Also fix up silly
+	format error.
+
+	* configure.in: Add --with-named-dir option.
+
+2005-01-14  Colin Walters  <walters@redhat.com>
+
 	* configure.in: Make named support require passing --with-named.
 
 	* named/nm-named-manager.c: Support writing resolv.conf directly
