@@ -11,3 +11,4 @@ autom4te.cache
 aclocal.m4
 mkinstalldirs
 stamp-h1
+libtool
