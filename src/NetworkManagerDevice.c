@@ -319,6 +319,12 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev = NULL;
 	}
 
+	/* Block until our device thread has actually had a chance to start. */
+	syslog (LOG_ERR, "nm_device_new(): waiting for device's worker thread to start.\n");
+	while (dev->worker_started == FALSE)
+		g_usleep (G_USEC_PER_SEC / 2);
+	syslog (LOG_ERR, "nm_device_new(): device's worker thread started, continuing.\n");
+
 	return (dev);
 }
 
@@ -391,10 +397,16 @@ static gpointer nm_device_worker (gpointer user_data)
 {
 	NMDevice *dev = (NMDevice *)user_data;
 
-	g_return_val_if_fail (dev != NULL, NULL);
+	if (!dev)
+	{
+		syslog (LOG_CRIT, "nm_device_worker(): received NULL device object, NetworkManager cannot continue.\n");
+		exit (1);
+	}
 
 	dev->context = g_main_context_new ();
 	dev->loop = g_main_loop_new (dev->context, FALSE);
+
+	dev->worker_started = TRUE;
 
 	/* Do an initial wireless scan */
 	if (nm_device_is_wireless (dev))

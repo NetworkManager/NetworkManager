@@ -1,5 +1,13 @@
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerDevicePrivate.h
+		- Block nm_device_new() until our device's worker thread has had a
+			chance to start up.  Fixes a race between main thread and worker
+			thread starting that caused activation requests to get lost.
+
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
 	* initscript/RedHat/NetworkManager
 		- Remove the ### BEGIN INIT INFO section, which caused chkconfig
 			to add the NM startup script at priority 50, which was
