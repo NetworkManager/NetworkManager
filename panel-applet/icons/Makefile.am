@@ -5,7 +5,7 @@ largeicon_DATA=\
 	nm-device-wireless.png
 
 
-smallicondir=${datadir}/icons/hicolor/24x24/apps
+smallicondir=${datadir}/icons/hicolor/22x22/apps
 smallicon_DATA=\
 	nm-device-wired.png	\
 	nm-connecting00.png	\

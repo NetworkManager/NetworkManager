@@ -26,6 +26,7 @@
  * Copyright (C) 1999, 2000 Eazel, Inc.
  */
 #include <libintl.h>
+#include <string.h>
 #include "menu-info.h"
 #include "gtkcellview.h"
 #include "gtkcellrendererprogress.h"

@@ -794,7 +794,7 @@ static void network_device_free_wireless_network_list (NetworkDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	g_slist_foreach (dev->networks, wireless_network_unref, NULL);
+	g_slist_foreach (dev->networks, (GFunc) wireless_network_unref, NULL);
 	g_slist_free (dev->networks);
 	dev->networks = NULL;	
 }
@@ -1131,7 +1131,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 
 	/* Clear out existing device list */
 	g_mutex_lock (applet->data_mutex);
-	g_slist_foreach (applet->devices, network_device_unref, NULL);
+	g_slist_foreach (applet->devices, (GFunc) network_device_unref, NULL);
 	g_slist_free (applet->devices);
 	if (applet->active_device)
 		network_device_unref (applet->active_device);

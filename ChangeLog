@@ -1,3 +1,11 @@
+Wed Oct 13 19:31:53 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c: Add an essid dialog.  It
+	doesn't work yet, but it looks okay.
+
+	* panel-applet/icons/*png: Resize to 22x22 and install in the
+	right place.
+
 2004-10-13 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c

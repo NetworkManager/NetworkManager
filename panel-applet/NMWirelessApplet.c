@@ -51,8 +51,6 @@
 #define CFG_UPDATE_INTERVAL 1
 #define NM_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
-static char *glade_file;
-
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
 static gboolean	do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event);
@@ -61,17 +59,7 @@ static void   setup_stock (void);
 static void nmwa_icons_init (NMWirelessApplet *applet);
 static gboolean nmwa_fill (NMWirelessApplet *applet);
 
-
-#ifndef BUILD_NOTIFICATION_ICON
-static const BonoboUIVerb nmwa_context_menu_verbs [] =
-{
-	BONOBO_UI_UNSAFE_VERB ("NMWirelessAbout", nmwa_about_cb),
-	BONOBO_UI_VERB_END
-};
-#endif
-
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
-
 
 static void
 nmwa_init (NMWirelessApplet *applet)
@@ -482,9 +470,9 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
  */
 static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *applet)
 {
-	nmwa_dispose_menu_items (applet);
-	nmwa_populate_menu (applet);
-	gtk_widget_show (applet->menu);
+  nmwa_dispose_menu_items (applet);
+  nmwa_populate_menu (applet);
+  gtk_widget_show (applet->menu);
 }
 
 
@@ -555,17 +543,153 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 	gtk_widget_show (menu_item);
 }
 
+static void
+update_button_cb (GtkWidget *entry,
+		  GtkWidget *button)
+{
+  const char *text;
+
+  text = gtk_entry_get_text (GTK_ENTRY (entry));
+  if (text[0] == '\000')
+    gtk_widget_set_sensitive (button, FALSE);
+  else
+    gtk_widget_set_sensitive (button, TRUE);
+}
+
+static GtkTreeModel *
+create_wireless_adaptor_model (NMWirelessApplet *applet)
+{
+  GtkListStore *retval;
+  GSList *element;
+
+  retval = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
+  for (element = applet->devices; element; element = element->next)
+    {
+      NetworkDevice *network = (NetworkDevice *)(element->data);
+
+      g_assert (network);
+      if (network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+	{
+	  GtkTreeIter iter;
+	  const char *network_name;
+
+	  network_name = network->hal_name ? network->hal_name : network->nm_name;
+
+	  gtk_list_store_append (retval, &iter);
+	  gtk_list_store_set (retval, &iter,
+			      0, network_name,
+			      1, network,
+			      -1);
+	}
+    }
+
+  return GTK_TREE_MODEL (retval);
+}
+
+static void
+custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
+{
+  gchar *glade_file;
+  GtkWidget *dialog;
+  GtkWidget *entry;
+  GtkWidget *button;
+  GladeXML *xml;
+  char *essid;
+  gint response;
+  gint n_wireless_interfaces = 0;
+  GSList *element;
+
+  glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
+					  "NetworkManagerNotification/essid.glade",
+					  FALSE, NULL);
+
+  if (!glade_file ||
+      !g_file_test (glade_file, G_FILE_TEST_IS_REGULAR))
+    {
+      show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+      return;
+    }
+  
+  xml = glade_xml_new (glade_file, NULL, NULL);
+  g_free (glade_file);
+
+  if (xml == NULL)
+    {
+      /* Reuse the above string to make the translators less angry. */
+      show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+      return;
+    }
+
+  /* Set up the dialog */
+  dialog = glade_xml_get_widget (xml, "custom_essid_dialog");
+  entry = glade_xml_get_widget (xml, "essid_entry");
+  button = glade_xml_get_widget (xml, "ok_button");
+
+  gtk_widget_grab_focus (entry);
+  gtk_entry_set_text (GTK_ENTRY (entry), "");
+  gtk_widget_set_sensitive (button, FALSE);
+  g_signal_connect (entry, "changed", update_button_cb, button);
+  
+  /* Do we have multiple Network cards? */
+  g_mutex_lock (applet->data_mutex);
+  for (element = applet->devices; element; element = element->next)
+    {
+      NetworkDevice *dev = (NetworkDevice *)(element->data);
+
+      g_assert (dev);
+      if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+	n_wireless_interfaces++;
+    }
+  if (n_wireless_interfaces < 1)
+    {
+      g_mutex_unlock (applet->data_mutex);
+      /* Run away!!! */
+      return;
+    }
+  else if (n_wireless_interfaces == 1)
+    {
+      gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_label"));
+      gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_combo"));
+    }
+  else
+    {
+      GtkWidget *combo;
+      GtkTreeModel *model;
+
+      combo = glade_xml_get_widget (xml, "wireless_adaptor_combo");
+      model = create_wireless_adaptor_model (applet);
+      gtk_combo_box_set_model (GTK_COMBO_BOX (combo), model);
+
+      /* Select the first one randomly */
+      gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
+    }
+  g_mutex_unlock (applet->data_mutex);
+  
+  /* Run the dialog */
+  response = gtk_dialog_run (GTK_DIALOG (dialog));
+
+  if (response == GTK_RESPONSE_OK)
+    {
+      essid = gtk_entry_get_text (GTK_ENTRY (entry));
+      /* FIXME: actually set the essid... */
+    }
+
+  gtk_widget_destroy (dialog);
+  g_object_unref (xml);
+}
+
 static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
-	GtkWidget *menu_item;
-	GtkWidget *label;
+  GtkWidget *menu_item;
+  GtkWidget *label;
 
-	menu_item = gtk_menu_item_new ();
-	label = gtk_label_new (_("Other Wireless Networks..."));
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_container_add (GTK_CONTAINER (menu_item), label);
-	gtk_widget_show_all (menu_item);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+  menu_item = gtk_menu_item_new ();
+  label = gtk_label_new (_("Other Wireless Networks..."));
+  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+  gtk_container_add (GTK_CONTAINER (menu_item), label);
+  gtk_widget_show_all (menu_item);
+  gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+  g_signal_connect (menu_item, "activate", custom_essid_item_selected, applet);
 }
 
 
@@ -863,14 +987,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	if (!applet->gconf_client)
 		return (NULL);
 
-	applet->ui_resources = glade_xml_new(glade_file, NULL, NULL);
-	if (!applet->ui_resources)
-	{
-		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-		g_object_unref (G_OBJECT (applet->gconf_client));
-		return (NULL);
-	}
-
 	applet->applet_state = APPLET_STATE_NO_NM;
 	applet->devices = NULL;
 	applet->active_device = NULL;
@@ -879,14 +995,12 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	if (!(applet->data_mutex = g_mutex_new ()))
 	{
 		g_object_unref (G_OBJECT (applet->gconf_client));
-		/* FIXME: free glade file */
 		return (NULL);
 	}
 	if (!(applet->dbus_thread = g_thread_create (nmwa_dbus_worker, applet, FALSE, &error)))
 	{
 		g_mutex_free (applet->data_mutex);
 		g_object_unref (G_OBJECT (applet->gconf_client));
-		/* FIXME: free glade file */
 		return (NULL);
 	}
 
@@ -894,11 +1008,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	nmwa_setup_widgets (applet);
 
 	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
-
-#ifndef BUILD_NOTIFICATION_ICON
-	panel_applet_setup_menu_from_file (PANEL_APPLET (applet), NULL, "NMWirelessApplet.xml", NULL,
-						nmwa_context_menu_verbs, applet);
-#endif
 
 
 
@@ -913,14 +1022,6 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 	gnome_window_icon_set_default_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png");
 
 	glade_gnome_init ();
-	glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
-		 "NMWirelessApplet/wireless-applet.glade", FALSE, NULL);
-	if (!glade_file)
-	{
-		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-		return (FALSE);
-	}
-
 	gtk_widget_show (nmwa_get_instance (applet));
 	return (TRUE);
 }
