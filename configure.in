@@ -13,7 +13,7 @@ AC_PROG_LIBTOOL
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
-ALL_LINGUAS="bs cs da en_CA es gu nb nl no pa pt_BR sq sv wa"
+ALL_LINGUAS="bs cs da en_CA es gu nb nl no pa pt_BR sk sq sv wa"
 AM_GLIB_GNU_GETTEXT
 
 AC_ARG_WITH(distro,

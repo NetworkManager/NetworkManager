@@ -1,3 +1,7 @@
+2004-10-03  Marcel Telka  <marcel@telka.sk>
+
+	* configure.in (ALL_LINGUAS): Added sk.
+
 Fri Oct  1 18:26:03 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/menu-info.c (nm_menu_wired_class_init): update look
