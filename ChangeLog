@@ -1,3 +1,10 @@
+2004-09-09  Bryan Clark  <clarkbw@cvs.gnome.org>
+
+	* examples/python/systray/network_tray.py
+	(network_tray.sort_networks):
+
+	Added support for having wireless always scanning
+
 2004-09-09  Dan Williams <dcbw@redhat.com>
 
 	NOTE: this commit changes the behavior of wireless devices in

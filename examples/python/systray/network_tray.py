@@ -163,6 +163,13 @@ class network_tray:
         active_device = self._nm.get_active_device()
         tt = ""
 
+        def sort_networks(x, y):
+            if x["name"] > y["name"]:
+                print y["name"], x["name"]            
+                return 1
+            print x["name"] ,y["name"]            
+            return -1
+        
         wireless = gtk.FALSE
         for device in devices:
 
@@ -177,9 +184,11 @@ class network_tray:
             self._tooltips.set_tip(self._top_level_menu,tt)
 
             if self._is_wireless(device):
-                for name, network in active_device["nm.networks"].iteritems():
+                device["nm.networks"].values().sort(sort_networks)
+                print device["nm.networks"]
+                for name, network in device["nm.networks"].iteritems():
                     try: 
-                        if active_device["nm.active_network"] == name:
+                        if device["nm.active_network"] == name:
                             active_network = gtk.TRUE
                         else:
                             active_network = gtk.FALSE
