@@ -3456,7 +3456,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		goto reschedule;
 	}
 
-syslog (LOG_ERR, "ABOUT TO SCAN\n");
 	/* Grab the scan mutex */
 	if (nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 	{
