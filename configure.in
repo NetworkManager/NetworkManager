@@ -6,6 +6,12 @@ AM_INIT_AUTOMAKE([subdir-objects])
 AC_PROG_CC
 AM_PROG_CC_C_O
 
+GETTEXT_PACKAGE=NetworkManager
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
+ALL_LINGUAS=""
+AM_GLIB_GNU_GETTEXT
+
 AC_ARG_WITH(distro,
 [
         --with-distro: Specify the Linux distribution to target with distro-specific
@@ -108,6 +114,7 @@ test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
 initscript/Gentoo/Makefile
+po/Makefile.in
 ])
 
 echo

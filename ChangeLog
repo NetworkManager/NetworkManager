@@ -1,3 +1,22 @@
+Thu Aug 26 15:12:36 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* Makefile.am: add po as a supdir
+
+	* autogen.sh: use gnome-autogen.sh
+
+	* initscript/Gentoo/.cvsignore:
+	* initscript/RedHat/.cvsignore: Shut up cvs
+
+	* panel-applet/Makefile.am: Define GNOMELOCALEDIR for bonobo.
+
+	* panel-applet/NMWirelessApplet.c: (nmwa_populate_menu),
+	(nmwa_fill): Use gettext.
+
+	* configure.in: add gettext support
+	* po/.cvsignore:
+	* po/NetworkManager.pot:
+	* po/POTFILES.in:
+
 2004-08-26  Seth Nickell  <seth@gnome.org>
 
 	* panel-applet/NMWirelessApplet.c: (nmwa_destroy),

@@ -2,14 +2,15 @@ NULL=
 
 INCLUDES = 							\
 	$(NM_CFLAGS)						\
-	$(GLADE_CFLAGS)					\
+	$(GLADE_CFLAGS)						\
 	$(DBUS_CFLAGS)						\
 	$(DBUS_GLIB_CFLAGS)					\
-	$(PANEL_APPLET_CFLAGS)				\
-	-DICONDIR=\""$(datadir)/pixmaps"\"		\
-	-DG_DISABLE_DEPRECATED				\
+	$(PANEL_APPLET_CFLAGS)					\
+	-DICONDIR=\""$(datadir)/pixmaps"\"			\
+	-DG_DISABLE_DEPRECATED					\
 	-DGDK_DISABLE_DEPRECATED				\
-	-DGNOME_DISABLE_DEPRECATED			\
+	-DGNOME_DISABLE_DEPRECATED				\
+	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
 	$(NULL)
 
 libexec_PROGRAMS = NMWirelessApplet

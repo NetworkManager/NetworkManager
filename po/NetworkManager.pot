@@ -1,0 +1,61 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2004-08-26 15:11-0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: panel-applet/NMWirelessApplet.c:563
+msgid "NetworkManager is not running..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:568
+msgid "No network connection is currently active..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:574
+msgid "A wired network connection is currently active..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:584
+msgid "There are no wireless networks..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:800
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+
+#: panel-applet/wireless-applet.glade:8
+msgid " "
+msgstr ""
+
+#: panel-applet/wireless-applet.glade:51
+msgid "_Login to Network"
+msgstr ""
+
+#: panel-applet/wireless-applet.glade:100
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+
+#: panel-applet/wireless-applet.glade:124
+msgid "Always Trust this Wireless Network"
+msgstr ""

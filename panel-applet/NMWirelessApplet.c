@@ -560,19 +560,19 @@ fprintf( stderr, "populate_menu()   state (%d)\n", applet->applet_state);
 	switch (applet->applet_state)
 	{
 		case (APPLET_STATE_NO_NM):
-			nmwa_add_menu_item (applet, menu, "NetworkManager is not running...",
-							NULL, FALSE, FALSE);
+			nmwa_add_menu_item (applet, menu, _("NetworkManager is not running..."),
+					    NULL, FALSE, FALSE);
 			break;
 
 		case (APPLET_STATE_NO_CONNECTION):
-			nmwa_add_menu_item (applet, menu, "No network connection is currently active...",
-							NULL, FALSE, FALSE);
+			nmwa_add_menu_item (applet, menu, _("No network connection is currently active..."),
+					    NULL, FALSE, FALSE);
 			break;
 
 		case (APPLET_STATE_WIRED):
 		case (APPLET_STATE_WIRED_CONNECTING):
-			nmwa_add_menu_item (applet, menu, "A wired network connection is currently active...",
-							NULL, FALSE, FALSE);
+			nmwa_add_menu_item (applet, menu, _("A wired network connection is currently active..."),
+					    NULL, FALSE, FALSE);
 			break;
 
 		case (APPLET_STATE_WIRELESS):
@@ -581,8 +581,8 @@ fprintf( stderr, "populate_menu()   state (%d)\n", applet->applet_state);
 			GSList	*element = applet->networks;
 			g_mutex_lock (applet->networks_mutex);
 			if (!element)
-				nmwa_add_menu_item (applet, menu, "There are no wireless networks...",
-								NULL, FALSE, FALSE);
+				nmwa_add_menu_item (applet, menu, _("There are no wireless networks..."),
+						    NULL, FALSE, FALSE);
 			else
 			{
 				/* Add all networks in our network list to the menu */
@@ -797,8 +797,7 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 		 "NMWirelessApplet/wireless-applet.glade", FALSE, NULL);
 	if (!glade_file)
 	{
-		show_warning_dialog (TRUE, "The NetworkManager Applet could not find some required"
-							"resources (the glade file was not found)."); 
+		show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found).")); 
 		return (FALSE);
 	}
 
