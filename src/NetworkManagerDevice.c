@@ -3766,6 +3766,12 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			}
 
 			close (sk);
+
+			if (!scan_results->scan_head.result)
+			{
+				g_free (scan_results);
+				scan_results = NULL;
+			}
 		}
 		nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 	}

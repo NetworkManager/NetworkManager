@@ -1,3 +1,9 @@
+2005-03-31  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_scan): Fix leak of scan results in some
+			instances
+
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c
