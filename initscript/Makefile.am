@@ -1,3 +1,5 @@
+SUBDIRS = $(TARGET_DISTRO)
+
 INCLUDES = 						\
 	$(NM_CFLAGS) 			   		\
 	-Wall						\
@@ -11,8 +13,3 @@ bin_PROGRAMS = NMLaunchHelper
 NMLaunchHelper_SOURCES = NMLaunchHelper.c
 
 NMLaunchHelper_LDADD = $(NM_LIBS)
-
-EXTRA_DIST = NetworkManager
-
-initddir = $(sysconfdir)/rc.d/init.d
-initd_SCRIPTS = NetworkManager

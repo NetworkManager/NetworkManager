@@ -1,3 +1,26 @@
+2004-08-24  Dan Willemsen <dan@willemsen.us>
+
+	* src/NetworkManager.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSystem.h
+		- Implement preliminary Gentoo support, adding a
+			nm_system_init function to the backend specification
+
+	* configure.in
+		- Distribution auto-detection, lowercase any user-fed
+			distribution names
+
+	* initscript/.cvsignore
+	  initscript/Makefile.am
+	  initscript/RedHat/Makefile.am
+	  initscript/RedHat/NetworkManager
+	  initscript/Gentoo/Makefile.am
+	  initscript/Gentoo/NetworkManager
+		- Refactored initscript code separately for each
+			distribution
+
+
 2004-08-23  Dan Williams <dcbw@redhat.com>
 
 	* configure.in

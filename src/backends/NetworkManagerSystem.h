@@ -28,6 +28,8 @@
 
 /* Prototypes for system/distribution dependent functions */
 
+void			nm_system_init (void);
+
 gboolean		nm_system_device_run_dhcp		(NMDevice *dev);
 
 void			nm_system_device_stop_dhcp		(NMDevice *dev);

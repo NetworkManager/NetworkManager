@@ -551,6 +551,8 @@ int main( int argc, char *argv[] )
 	openlog ("NetworkManager", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
 	syslog (LOG_NOTICE, "starting...");
 
+	nm_system_init();
+
 	/* Load all network device kernel modules.
 	 * NOTE: this hack is temporary until device modules get loaded
 	 * on startup by something else.  The problem is that unless

@@ -17,20 +17,29 @@ AC_ARG_WITH(distro,
 TARGET_DISTRO=
 SYSTEM_BACKEND_FILE=
 if test "z$with_distro" = "z"; then
-	echo "You must specify the Linux distribution to target using --with-distro=<distro>"
+	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
+	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
+	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
+	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
+	AC_CHECK_FILE(/etc/mandrake-release,with_distro="mandrake")
+fi
+
+if test "z$with_distro" = "z"; then
+	echo "Linux distribution autodetection failed, you must specify the distribution to target using --with-distro=<distro>"
 	exit 1
 else
+	with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
 	case $with_distro in
-		RedHat)
+		redhat)
 			TARGET_DISTRO=RedHat
 			SYSTEM_BACKEND_FILE=NetworkManagerRedHat.o
 			;;
-		Gentoo)
+		gentoo)
 			TARGET_DISTRO=Gentoo
 			SYSTEM_BACKEND_FILE=NetworkManagerGentoo.o
 			;;
 		*)
-			echo "Your distribution is not yet supported!  (patches welcome)"
+			echo "Your distribution(${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
 			;;
 	esac
@@ -96,3 +105,7 @@ panel-applet/Makefile
 test/Makefile
 initscript/Makefile
 ])
+
+echo
+echo Distribution targeting: ${TARGET_DISTRO}
+echo 'if this is not correct, please specifiy your distro with --with-distro=<distro>'
