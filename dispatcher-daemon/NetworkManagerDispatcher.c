@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <errno.h>
@@ -32,6 +33,12 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <string.h>
+
+#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
+
+#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
+#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
+
 
 enum NMDAction
 {
@@ -112,16 +119,10 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
-	char			*ret_string = NULL;
-	char			*dbus_string;
+	char			*dev_name = NULL;
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
-						path,
-						"org.freedesktop.NetworkManager",
-						"getName");
-	if (message == NULL)
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, "getName")))
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
 		return (NULL);
@@ -144,17 +145,17 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 	}
 
 	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	dbus_string = dbus_message_iter_get_string (&iter);
-	ret_string = (dbus_string == NULL ? NULL : strdup (dbus_string));
-	if (!ret_string)
-		fprintf (stderr, "NetworkManager returned a NULL device name" );
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dev_name, DBUS_TYPE_INVALID))
+	{
+		fprintf (stderr, "There was an error getting the device name from NetworkManager." );
+		dev_name = NULL;
+	}
 
-	dbus_free (dbus_string);
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
-	return (ret_string);
+	return (dev_name);
 }
 
 
@@ -167,15 +168,10 @@ guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
-	guint32		 ret_address;
+	guint32		 address;
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
-						path,
-						"org.freedesktop.NetworkManager",
-						"getIP4Address");
-	if (message == NULL)
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, "getIP4Address")))
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
 		return (0);
@@ -198,12 +194,17 @@ guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
 	}
 
 	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	ret_address = dbus_message_iter_get_uint32 (&iter);
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &address, DBUS_TYPE_INVALID))
+	{
+		fprintf (stderr, "There was an error getting the device's IPv4 address from NetworkManager." );
+		address = 0;
+	}
+
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
-	return (ret_address);
+	return (address);
 }
 
 
@@ -223,11 +224,11 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 	dbus_error_init (&error);
 	object_path = dbus_message_get_path (message);
 
-	if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceIP4AddressChange"))
+	if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceIP4AddressChange"))
 		action = NMD_DEVICE_IP4_ADDRESS_CHANGE;
-	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNoLongerActive"))
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive"))
 		action = NMD_DEVICE_NOW_INACTIVE;
-	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNowActive"))
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive"))
 		action = NMD_DEVICE_NOW_ACTIVE;
 
 	if (action != NMD_DEVICE_DONT_KNOW)
@@ -251,7 +252,7 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 
 			nmd_execute_scripts (action, dev_iface_name, dev_ip4_address);
 
-			free (dev_iface_name);
+			dbus_free (dev_iface_name);
 			dbus_free (dev_object_path);
 
 			handled = TRUE;
@@ -289,9 +290,9 @@ static DBusConnection *nmd_dbus_init (void)
 
 	dbus_bus_add_match (connection,
 				"type='signal',"
-				"interface='org.freedesktop.NetworkManager',"
-				"sender='org.freedesktop.NetworkManager',"
-				"path='/org/freedesktop/NetworkManager'", &error);
+				"interface='" NM_DBUS_INTERFACE "',"
+				"sender='" NM_DBUS_SERVICE "',"
+				"path='" NM_DBUS_PATH "'", &error);
 	if (dbus_error_is_set (&error))
 		return (NULL);
 
