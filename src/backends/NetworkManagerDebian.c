@@ -34,9 +34,6 @@
 
 #define ARPING "/usr/sbin/arping"
 
-/* hacky, but the redhat one does this as well... */
-#include "interface_parser.c"
-
 /*
  * nm_system_init
  *

@@ -1,7 +1,7 @@
 
 INCLUDES = -I${top_srcdir}
 
-CPPFLAGS = 						\
+AM_CPPFLAGS = 						\
 	$(NM_CFLAGS) 			   		\
 	$(OPENSSL_CFLAGS)				\
 	-Wall						\
@@ -42,19 +42,20 @@ if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif
 
-libnmbackend_la_SOURCES = backends/shvar.c	\
-		backends/shvar.h		\
-		backends/interface_parser.c	\
-		backends/interface_parser.h	
+libnmbackend_la_SOURCES =
 
 if TARGET_REDHAT
-libnmbackend_la_SOURCES += backends/NetworkManagerRedHat.c
+libnmbackend_la_SOURCES += backends/NetworkManagerRedHat.c \
+		backends/shvar.c	\
+		backends/shvar.h
 endif
 if TARGET_GENTOO
 libnmbackend_la_SOURCES += backends/NetworkManagerGentoo.c
 endif
 if TARGET_DEBIAN
-libnmbackend_la_SOURCES += backends/NetworkManagerDebian.c
+libnmbackend_la_SOURCES += backends/NetworkManagerDebian.c \
+		backends/interface_parser.c	\
+		backends/interface_parser.h	
 endif
 if TARGET_SLACKWARE
 libnmbackend_la_SOURCES += backends/NetworkManagerSlackware.c

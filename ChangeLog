@@ -1,3 +1,22 @@
+2004-11-13  Colin Walters  <walters@redhat.com>
+
+	Patch from Tom Parker <palfrey@tevp.net>:
+
+	* src/Makefile.am (CPPFLAGS): Switch to AM_CPPFLAGS.
+	
+	* src/backends/NetworkManagerRedHat.c: Switch to
+	including shvar.h instead of shvar.c.
+
+	* src/backends/NetworkManagerDebian.c: Don't include
+	interface_parser.c in source file.
+
+	(libnmbackend_la_SOURCES): Don't include shvar.[ch]
+	and interface_parser.[ch].
+	* src/Makefile.am (libnmbackend_la_SOURCES) <TARGET_REDHAT>:
+	Include shvar.c and shvar.h here.
+	(libnmbackend_la_SOURCES) <TARGET_DEBIAN>: Include
+	interface_parser.c and interface_parser.h here.
+
 2004-11-12  Colin Walters  <walters@redhat.com>
 
 	* configure.in: Strip out TARGET_DISTRO and

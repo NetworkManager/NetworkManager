@@ -26,14 +26,7 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
-
-
-/* Hmm, not good form, but we don't have support
- * for multiple files for each system-specific
- * backend yet...
- */
-#include "shvar.c"
-
+#include "shvar.h"
 
 /*
  * nm_system_init
