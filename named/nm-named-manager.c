@@ -305,6 +305,8 @@ compute_domain_zones (NMNamedManager *mgr)
 gboolean
 generate_named_conf (NMNamedManager *mgr, GError **error)
 {
+	gboolean ret = FALSE;
+
 #ifdef NM_NO_NAMED
 	if (mgr->priv->use_named == FALSE)
 		return rewrite_resolv_conf (mgr, error);
@@ -315,7 +317,6 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 	char **config_contents;
 	char **line;
 	const char *config_name;
-	gboolean ret;
 
 	config_name = NM_PKGDATADIR "/named.conf";
 
@@ -435,8 +436,8 @@ generate_named_conf (NMNamedManager *mgr, GError **error)
 write_lose:
 	close (out_fd);
 	g_strfreev (config_contents);
-	return ret;
 #endif
+	return ret;
 }
 
 static void

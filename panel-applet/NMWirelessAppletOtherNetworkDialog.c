@@ -34,7 +34,7 @@
 #include <stdlib.h>
 
 #include <gnome.h>
-#include <libgnomeui/libgnomeui.h>
+#include <glib/gi18n.h>
 #include <glade/glade.h>
 
 #include "NetworkManager.h"

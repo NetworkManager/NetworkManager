@@ -30,7 +30,7 @@
 #include <config.h>
 #endif
 
-#include <libintl.h>
+#include <glib/gi18n.h>
 #include <string.h>
 #include "menu-info.h"
 

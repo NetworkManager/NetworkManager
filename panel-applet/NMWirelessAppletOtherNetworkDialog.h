@@ -19,7 +19,6 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#include <libgnomeui/libgnomeui.h>
 #include "NMWirelessApplet.h"
 
 

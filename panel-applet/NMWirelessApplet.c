@@ -42,7 +42,7 @@
 
 #include <gnome.h>
 
-#include <libgnomeui/libgnomeui.h>
+#include <glib/gi18n.h>
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
 
@@ -1047,7 +1047,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 
 static gboolean nmwa_fill (NMWirelessApplet *applet)
 {
-	gnome_window_icon_set_default_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png");
+	gtk_window_set_default_icon_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png", NULL);
 
 	glade_gnome_init ();
 	gtk_widget_show (nmwa_get_instance (applet));
