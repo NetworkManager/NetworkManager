@@ -464,6 +464,7 @@ watch_cb (GPid pid, gint status, gpointer data)
 	
 	/* FIXME - do something with error; need to handle failure to
 	 * respawn */
+	mgr->priv->named_pid = 0;
 	nm_named_manager_start (mgr, NULL);
 }
 
@@ -519,11 +520,13 @@ nm_named_manager_start (NMNamedManager *mgr, GError **error)
 	g_source_set_callback (mgr->priv->child_watch, (GSourceFunc) watch_cb, mgr, NULL);
 	g_source_attach (mgr->priv->child_watch, mgr->priv->main_context);
 	g_source_unref (mgr->priv->child_watch);
+	mgr->priv->child_watch = NULL;
 #endif
 
 	if (!rewrite_resolv_conf (mgr, error))
 	{
 		kill (mgr->priv->named_pid, SIGTERM);
+		mgr->priv->named_pid = 0;
 		return FALSE;
 	}
 
