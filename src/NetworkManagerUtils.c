@@ -29,11 +29,23 @@
 #include <sys/time.h>
 #include <string.h>
 #include <signal.h>
+#include <iwlib.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 
+
+struct NMSock
+{
+	int	fd;
+	char *func;
+	char *desc;
+	NMDevice *dev;
+};
+
+static GSList		*sock_list = NULL;
+static GStaticMutex	 sock_list_mutex = G_STATIC_MUTEX_INIT;
 
 typedef struct MutexDesc
 {
@@ -152,6 +164,141 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 #endif
 
 	g_mutex_unlock (mutex);
+}
+
+
+/*
+ * nm_dev_sock_open
+ *
+ * Open a socket to a network device and store some debug info about it.
+ *
+ */
+NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, const char *desc)
+{
+	NMSock	*sock = NULL;
+
+	sock = g_malloc0 (sizeof (NMSock));
+
+	sock->fd = -1;
+
+	switch (type)
+	{
+		case DEV_WIRELESS:
+			sock->fd = iw_sockets_open ();
+			break;
+
+		case DEV_GENERAL:
+			if ((sock->fd = socket (PF_INET, SOCK_DGRAM, 0)) < 0)
+				if ((sock->fd = socket (PF_PACKET, SOCK_DGRAM, 0)) < 0)
+					sock->fd = socket (PF_INET6, SOCK_DGRAM, 0);
+			break;
+
+		case NETWORK_CONTROL:
+			sock->fd = socket (AF_PACKET, SOCK_PACKET, htons (ETH_P_ALL));
+			break;
+
+		default:
+			break;
+	}
+
+	if (sock->fd < 0)
+	{
+		g_free (sock);
+		nm_warning ("Could not open control socket for device '%s'.", dev ? nm_device_get_iface (dev) : "none");
+		return NULL;
+	}
+
+	sock->func = func_name ? g_strdup (func_name) : NULL;
+	sock->desc = desc ? g_strdup (desc) : NULL;
+	sock->dev = dev;
+	if (sock->dev)
+		nm_device_ref (sock->dev);
+
+	/* Add the sock to our global sock list for tracking */
+	g_static_mutex_lock (&sock_list_mutex);
+	sock_list = g_slist_append (sock_list, sock);
+	g_static_mutex_unlock (&sock_list_mutex);
+
+	return sock;
+}
+
+
+/*
+ * nm_dev_sock_close
+ *
+ * Close a socket and free its debug data.
+ *
+ */
+void nm_dev_sock_close (NMSock *sock)
+{
+	GSList	*elt;
+
+	g_return_if_fail (sock != NULL);
+
+	close (sock->fd);
+	g_free (sock->func);
+	g_free (sock->desc);
+	if (sock->dev)
+		nm_device_unref (sock->dev);
+
+	memset (sock, 0, sizeof (NMSock));
+
+	g_static_mutex_lock (&sock_list_mutex);
+	for (elt = sock_list; elt; elt = g_slist_next (elt))
+	{
+		NMSock	*temp_sock = (NMSock *)(elt->data);
+		if (temp_sock == sock)
+		{
+			sock_list = g_slist_remove_link (sock_list, elt);
+			g_slist_free (elt);
+			break;
+		}
+	}
+	g_static_mutex_unlock (&sock_list_mutex);
+
+	g_free (sock);
+}
+
+
+/*
+ * nm_dev_sock_get_fd
+ *
+ * Return the fd associated with an NMSock
+ *
+ */
+int nm_dev_sock_get_fd (NMSock *sock)
+{
+	g_return_val_if_fail (sock != NULL, -1);
+
+	return sock->fd;
+}
+
+
+/*
+ * nm_print_open_socks
+ *
+ * Print a list of currently open and registered NMSocks.
+ *
+ */
+void nm_print_open_socks (void)
+{
+	GSList	*elt = NULL;
+	int		 i = 0;
+
+	nm_debug ("Open Sockets List:");
+	g_static_mutex_lock (&sock_list_mutex);
+	for (elt = sock_list; elt; elt = g_slist_next (elt))
+	{
+		NMSock	*sock = (NMSock *)(elt->data);
+		if (sock)
+		{
+			i++;
+			nm_debug ("  %d: %s fd:%d F:'%s' D:'%s'", i, sock->dev ? nm_device_get_iface (sock->dev) : "",
+				sock->fd, sock->func, sock->desc);
+		}
+	}
+	g_static_mutex_unlock (&sock_list_mutex);
+	nm_debug ("Open Sockets List Done.");
 }
 
 

@@ -34,11 +34,25 @@
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
 
+typedef enum SockType
+{
+	DEV_WIRELESS,
+	DEV_GENERAL,
+	NETWORK_CONTROL
+} SockType;
+
+typedef struct NMSock NMSock;
+
 
 gboolean				nm_try_acquire_mutex			(GMutex *mutex, const char *func);
 void					nm_lock_mutex					(GMutex *mutex, const char *func);
 void					nm_unlock_mutex				(GMutex *mutex, const char *func);
 void					nm_register_mutex_desc			(GMutex *mutex, char *string);
+
+NMSock *				nm_dev_sock_open				(NMDevice *dev, SockType type, const char *func_name, const char *desc);
+void					nm_dev_sock_close				(NMSock *sock);
+int					nm_dev_sock_get_fd				(NMSock *sock);
+void					nm_print_open_socks				(void);
 
 int					nm_null_safe_strcmp				(const char *s1, const char *s2);
 

@@ -33,6 +33,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerMain.h"
+#include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 
 // Times here are in seconds
@@ -57,7 +58,7 @@ static struct ether_addr broadcast_addr = {{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}}
 /**
  * Pick a random link local IP address.
  */
-static void pick(struct in_addr *ip)
+static void pick (struct in_addr *ip)
 {
 	ip->s_addr = htonl (LINKLOCAL_ADDR | ((abs(random()) % 0xFD00) + (abs(random()) % 0x0100)));
 
@@ -175,7 +176,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	arpMessage		p;
 	struct ether_addr	addr;
 	struct in_addr		ip = {0};
-	int				fd;
+	NMSock			*sk;
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
@@ -191,14 +192,14 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	strncpy (saddr.sa_data, nm_device_get_iface (dev), sizeof (saddr.sa_data));
 
 	/* open an ARP socket */
-	if ((fd = socket (PF_PACKET, SOCK_PACKET, htons (ETH_P_ARP))) < 0)
+	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
 	{
 		nm_warning ("%s: Couldn't open network control socket.", nm_device_get_iface (dev));
 		goto out;
 	}
 
 	/* bind to the ARP socket */
-	if (bind (fd, &saddr, sizeof (saddr)) < 0)
+	if (bind (nm_dev_sock_get_fd (sk), &saddr, sizeof (saddr)) < 0)
 	{
 		nm_warning ("%s: Couldn't bind to the device.", nm_device_get_iface (dev));
 		goto out;
@@ -228,7 +229,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		if (nprobes < PROBE_NUM)
 		{
 			nm_info ("autoip: Sending probe #%d for IP address %s.", nprobes, inet_ntoa (ip));
-			arp (fd, &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
+			arp (nm_dev_sock_get_fd (sk), &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
 			nprobes++;
 			gettimeofday (&timeout, NULL);
 			if (nprobes == PROBE_NUM)
@@ -248,7 +249,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		else if (nannounce < ANNOUNCE_NUM)
 		{
 			nm_info ("autoip: Sending announce #%d for IP address %s.", nannounce, inet_ntoa (ip));
-			arp (fd, &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
+			arp (nm_dev_sock_get_fd (sk), &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
 			nannounce++;
 			gettimeofday (&timeout, NULL);
 			timeout.tv_sec += ANNOUNCE_INTERVAL;
@@ -263,7 +264,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		}
 
 		nm_info ("autoip: Waiting for reply...");
-		err = peekfd (dev, fd, &timeout);
+		err = peekfd (dev, nm_dev_sock_get_fd (sk), &timeout);
 		if ((err == RET_DHCP_ERROR) || (err == RET_DHCP_CEASED))
 			goto out;
 
@@ -273,7 +274,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 			nm_info ("autoip: Got some data to check for reply packet.");
 
 			/* read ARP packet */
-			if (recv (fd, &p, sizeof (p), 0) < 0)
+			if (recv (nm_dev_sock_get_fd (sk), &p, sizeof (p), 0) < 0)
 			{
 				nm_warning ("autoip: packet receive failure, ignoring it.");
 				continue;
@@ -310,7 +311,6 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	}
 
 out:
-	if (fd >= 0)
-		close (fd);
+	nm_dev_sock_close (sk);
 	return (success);
 }

@@ -1,5 +1,12 @@
 2005-04-06  Dan Williams  <dcbw@redhat.com>
 
+	Add debug code for socket/file descriptor leaks.  We register every socket
+	that we open (except for stuff in dhcpcd/) for tracking, and print out the
+	list of sockets that we forgot to close on shutdown.  This also consolidates
+	about 4 places where we opened sockets into 1 function in NetworkManagerUtils.c
+
+2005-04-06  Dan Williams  <dcbw@redhat.com>
+
 	* dhcpcd/dhcpcd.c
 		- (dhcp_interface_free): fix a file descriptor leak that may have
 			caused network drivers to not unload due to refcounts > 0

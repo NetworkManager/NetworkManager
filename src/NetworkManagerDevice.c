@@ -76,10 +76,10 @@ typedef struct
  */
 static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 {
-	int		sk;
-	int		err;
-	char		ioctl_buf[64];
-	
+	int		 err = -1;
+	char		 ioctl_buf[64];
+	NMSock	*sk;
+
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	/* We obviously cannot probe test devices (since they don't
@@ -89,11 +89,13 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 		return (FALSE);
 
 	ioctl_buf[63] = 0;
-	strncpy(ioctl_buf, nm_device_get_iface(dev), 63);
+	strncpy (ioctl_buf, nm_device_get_iface(dev), 63);
 
-	sk = iw_sockets_open ();
-	err = ioctl(sk, SIOCGIWNAME, ioctl_buf);
-	close (sk);
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIWNAME, ioctl_buf);
+		nm_dev_sock_close (sk);
+	}
 	return (err == 0);
 }
 
@@ -106,10 +108,10 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
  */
 static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 {
-	int				sk;
-	int				err;
-	gboolean			can_scan = TRUE;
-	wireless_scan_head	scan_data;
+	NMSock			*sk;
+	int				 err;
+	gboolean			 can_scan = TRUE;
+	wireless_scan_head	 scan_data;
 	
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, FALSE);
@@ -117,13 +119,15 @@ static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 	/* A test wireless device can always scan (we generate fake scan data for it) */
 	if (dev->test_device)
 		return (TRUE);
-	
-	sk = iw_sockets_open ();
-	err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
-	nm_dispose_scan_results (scan_data.result);
-	if ((err == -1) && (errno == EOPNOTSUPP))
-		can_scan = FALSE;
-	close (sk);
+
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		err = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+		nm_dispose_scan_results (scan_data.result);
+		if ((err == -1) && (errno == EOPNOTSUPP))
+			can_scan = FALSE;
+		nm_dev_sock_close (sk);
+	}
 	return (can_scan);
 }
 
@@ -308,7 +312,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	/* Initialize wireless-specific options */
 	if (nm_device_is_wireless (dev))
 	{
-		int					sk;
+		NMSock				*sk;
 		NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
 
 		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
@@ -332,10 +336,10 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		if (opts->supports_wireless_scan == FALSE)
 			nm_device_copy_allowed_to_dev_list (dev, app_data->allowed_ap_list);
 
-		if ((sk = iw_sockets_open ()) >= 0)
+		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
 			iwrange	range;
-			if (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0)
+			if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0)
 			{
 				int i;
 
@@ -353,7 +357,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 				for (i = 0; i < opts->num_freqs; i++)
 					opts->freqs[i] = iw_freq2float (&(range.freq[i]));
 			}
-			close (sk);
+			nm_dev_sock_close (sk);
 		}
 	}
 	else if (nm_device_is_wired (dev))
@@ -558,32 +562,6 @@ void nm_device_set_removed (NMDevice *dev, const gboolean removed)
 
 
 /*
- * nm_device_open_sock
- *
- * Get a control socket for network operations.
- *
- */
-int nm_device_open_sock (void)
-{
-	int	fd;
-
-	/* Try to grab a control socket */
-	fd = socket(PF_INET, SOCK_DGRAM, 0);
-	if (fd >= 0)
-	     return (fd);
-	fd = socket(PF_PACKET, SOCK_DGRAM, 0);
-	if (fd >= 0)
-	     return (fd);
-	fd = socket(PF_INET6, SOCK_DGRAM, 0);
-	if (fd >= 0)
-	     return (fd);
-
-	nm_warning ("could not get network control socket.");
-	return (-1);
-}
-
-
-/*
  * Return the amount of time we should wait for the device
  * to get a link, based on the # of frequencies it has to
  * scan.
@@ -757,9 +735,9 @@ gboolean nm_device_get_supports_carrier_detect (NMDevice *dev)
  */
 static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 {
-	struct iwreq	wrq;
-	int			sk;
-	gboolean		associated = FALSE;
+	struct iwreq	 wrq;
+	NMSock		*sk;
+	gboolean		 associated = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -768,13 +746,13 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 	if (dev->test_device)
 		return (nm_device_has_active_link (dev));
 
-	if ((sk = iw_sockets_open ()) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)) == NULL)
 		return (FALSE);
 
 	/* Some cards, for example ipw2x00 cards, can short-circuit the MAC
 	 * address check using this check on IWNAME.  Its faster.
 	 */
-	if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
+	if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
 	{
 		if (!strcmp(wrq.u.name, "unassociated"))
 		{
@@ -791,13 +769,13 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 		 * Is there a better way?  Some cards don't work too well with this check, ie
 		 * Lucent WaveLAN.
 		 */
-		if (iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
+		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
 			if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
 				associated = TRUE;
 	}
 
 out:
-	close (sk);
+	nm_dev_sock_close (sk);
 
 	return (associated);
 }
@@ -917,8 +895,8 @@ void nm_device_update_link_state (NMDevice *dev)
  */
 char * nm_device_get_essid (NMDevice *dev)
 {
-	int	sk;
-	int	err;
+	NMSock	*sk;
+	int		 err;
 	
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
@@ -940,12 +918,11 @@ char * nm_device_get_essid (NMDevice *dev)
 		return (essid);
 	}
 	
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		wireless_config	info;
 
-		err = iw_get_basic_config(sk, nm_device_get_iface (dev), &info);
+		err = iw_get_basic_config (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &info);
 		if (err >= 0)
 		{
 			if (dev->options.wireless.cur_essid)
@@ -955,7 +932,7 @@ char * nm_device_get_essid (NMDevice *dev)
 		else
 			nm_warning ("nm_device_get_essid(): error getting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 
 	return (dev->options.wireless.cur_essid);
@@ -969,10 +946,10 @@ char * nm_device_get_essid (NMDevice *dev)
  */
 void nm_device_set_essid (NMDevice *dev, const char *essid)
 {
-	int				sk;
-	int				err;
-	struct iwreq		wreq;
-	unsigned char		safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
+	NMSock			*sk;
+	int				 err;
+	struct iwreq		 wreq;
+	unsigned char		 safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
 	
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
@@ -995,18 +972,17 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 		safe_essid[IW_ESSID_MAX_SIZE] = '\0';
 	}
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
 		wreq.u.essid.length	 = strlen (safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
 	
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
+		err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
 		if (err == -1)
 			nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
 
-		close (sk);
+		nm_dev_sock_close (sk);
 
 		/* Orinoco cards seem to need extra time here to not screw
 		 * up the firmware, which reboots when you set the ESSID.
@@ -1026,9 +1002,9 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
  */
 double nm_device_get_frequency (NMDevice *dev)
 {
-	int		sk;
-	int		err;
-	double	freq = 0;
+	NMSock	*sk;
+	int		 err;
+	double	 freq = 0;
 
 	g_return_val_if_fail (dev != NULL, 0);
 	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
@@ -1037,18 +1013,17 @@ double nm_device_get_frequency (NMDevice *dev)
 	if (dev->test_device)
 		return 703000000;
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq		wrq;
 
-		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
+		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
 		if (err >= 0)
 			freq = iw_freq2float (&wrq.u.freq);
 		if (err == -1)
 			nm_warning ("nm_device_get_frequency(): error getting frequency for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 	return (freq);
 }
@@ -1063,8 +1038,8 @@ double nm_device_get_frequency (NMDevice *dev)
  */
 void nm_device_set_frequency (NMDevice *dev, const double freq)
 {
-	int				sk;
-	int				err;
+	NMSock	*sk;
+	int		 err;
 	
 	/* HACK FOR NOW */
 	if (freq <= 0)
@@ -1080,8 +1055,7 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 	if (nm_device_get_frequency (dev) == freq)
 		return;
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq		wrq;
 
@@ -1111,7 +1085,7 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 			wrq.u.freq.flags = IW_FREQ_FIXED;
 			iw_float2freq (freq, &wrq.u.freq);
 		}
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq);
+		err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWFREQ, &wrq);
 		if (err == -1)
 		{
 			gboolean	success = FALSE;
@@ -1121,12 +1095,12 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 				wrq.u.freq.m = -1;
 				wrq.u.freq.e = 0;
 				wrq.u.freq.flags = 0;
-				if (iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq) != -1)
+				if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWFREQ, &wrq) != -1)
 					success = TRUE;
 			}
 		}
 
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 }
 
@@ -1140,9 +1114,9 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
  */
 int nm_device_get_bitrate (NMDevice *dev)
 {
-	int				sk;
-	int				err = -1;
-	struct iwreq		wrq;
+	NMSock		*sk;
+	int			 err = -1;
+	struct iwreq	 wrq;
 	
 	g_return_val_if_fail (dev != NULL, 0);
 	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
@@ -1151,11 +1125,10 @@ int nm_device_get_bitrate (NMDevice *dev)
 	if (dev->test_device)
 		return 11;
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
-		close (sk);
+		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
+		nm_dev_sock_close (sk);
 	}
 
 	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
@@ -1171,7 +1144,7 @@ int nm_device_get_bitrate (NMDevice *dev)
  */
 void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 {
-	int				sk;
+	NMSock	*sk;
 	
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
@@ -1183,8 +1156,7 @@ void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 	if (nm_device_get_bitrate (dev) == Mbps)
 		return;
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq		wrq;
 
@@ -1200,9 +1172,9 @@ void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 			wrq.u.bitrate.fixed = 0;
 		}
 		/* Silently fail as not all drivers support setting bitrate yet (ipw2x00 for example) */
-		iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
+		iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
 
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 }
 
@@ -1215,8 +1187,8 @@ void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
  */
 void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 {
-	int			iwlib_socket;
-	struct iwreq	wrq;
+	NMSock		*sk;
+	struct iwreq	 wrq;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (addr != NULL);
@@ -1235,12 +1207,14 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 		return;
 	}
 
-	iwlib_socket = iw_sockets_open ();
-	if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
-		memcpy (addr, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
-	else
-		memset (addr, 0, sizeof (struct ether_addr));
-	close (iwlib_socket);
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
+			memcpy (addr, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
+		else
+			memset (addr, 0, sizeof (struct ether_addr));
+		nm_dev_sock_close (sk);
+	}
 }
 
 
@@ -1255,7 +1229,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
  */
 void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method)
 {
-	int				sk;
+	NMSock			*sk;
 	int				err;
 	struct iwreq		wreq;
 	int				keylen;
@@ -1278,8 +1252,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		safe_key[IW_ENCODING_TOKEN_MAX] = '\0';
 	}
 
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		wreq.u.data.pointer = (caddr_t) NULL;
 		wreq.u.data.length = 0;
@@ -1300,7 +1273,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		{
 			unsigned char		parsed_key[IW_ENCODING_TOKEN_MAX + 1];
 
-			keylen = iw_in_key_full (sk, nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
+			keylen = iw_in_key_full (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
 			if (keylen > 0)
 			{
 				switch (auth_method)
@@ -1323,12 +1296,11 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 
 		if (set_key)
 		{
-			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWENCODE, &wreq);
-			if (err == -1)
+			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWENCODE, &wreq) == -1)
 				nm_warning ("nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 		}
 
-		close (sk);
+		nm_dev_sock_close (sk);
 	} else nm_warning ("nm_device_set_enc_key(): could not get wireless control socket.");
 }
 
@@ -1362,8 +1334,8 @@ gint8 nm_device_get_signal_strength (NMDevice *dev)
  */
 void nm_device_update_signal_strength (NMDevice *dev)
 {
-	gboolean	has_range;
-	int		sk;
+	gboolean	has_range = FALSE;
+	NMSock	*sk;
 	iwrange	range;
 	iwstats	stats;
 	int		percent = -1;
@@ -1392,14 +1364,16 @@ void nm_device_update_signal_strength (NMDevice *dev)
 		goto out;
 	}
 
-	sk = iw_sockets_open ();
-	has_range = (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0);
-	if (iw_get_stats (sk, nm_device_get_iface (dev), &stats, &range, has_range) == 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-		percent = nm_wireless_qual_to_percent (&stats.qual, (const iwqual *)(&dev->options.wireless.max_qual),
-				(const iwqual *)(&dev->options.wireless.avg_qual));
+		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0);
+		if (iw_get_stats (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &stats, &range, has_range) == 0)
+		{
+			percent = nm_wireless_qual_to_percent (&stats.qual, (const iwqual *)(&dev->options.wireless.max_qual),
+					(const iwqual *)(&dev->options.wireless.avg_qual));
+		}
+		nm_dev_sock_close (sk);
 	}
-	close (sk);
 
 	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
 	 * one second and normal strength the next.
@@ -1433,7 +1407,7 @@ void nm_device_update_ip4_address (NMDevice *dev)
 {
 	guint32		new_address;
 	struct ifreq	req;
-	int			sk;
+	NMSock		*sk;
 	int			err;
 	
 	g_return_if_fail (dev  != NULL);
@@ -1447,13 +1421,13 @@ void nm_device_update_ip4_address (NMDevice *dev)
 		return;
 	}
 
-	if ((sk = nm_device_open_sock ()) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return;
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-	err = ioctl (sk, SIOCGIFADDR, &req);
-	close (sk);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFADDR, &req);
+	nm_dev_sock_close (sk);
 	if (err != 0)
 		return;
 
@@ -1499,7 +1473,7 @@ void nm_device_get_hw_address(NMDevice *dev, unsigned char *eth_addr)
 void nm_device_update_hw_address (NMDevice *dev)
 {
 	struct ifreq	req;
-	int			sk;
+	NMSock		*sk;
 	int			err;
 
 	g_return_if_fail (dev  != NULL);
@@ -1513,13 +1487,13 @@ void nm_device_update_hw_address (NMDevice *dev)
 		return;
 	}
 
-	if ((sk = nm_device_open_sock ()) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return;
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-	err = ioctl (sk, SIOCGIFHWADDR, &req);
-	close (sk);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+	nm_dev_sock_close (sk);
 	if (err != 0)
 		return;
 
@@ -1536,7 +1510,7 @@ void nm_device_update_hw_address (NMDevice *dev)
 static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 {
 	struct ifreq	ifr;
-	int			sk;
+	NMSock		*sk;
 	int			err;
 	guint32		flags = up ? IFF_UP : ~IFF_UP;
 
@@ -1549,13 +1523,12 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		return;
 	}
 
-	sk = nm_device_open_sock ();
-	if (sk < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return;
 
 	/* Get flags already there */
 	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-	err = ioctl (sk, SIOCGIFFLAGS, &ifr);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
 	if (!err)
 	{
 		/* If the interface doesn't have those flags already,
@@ -1565,7 +1538,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		{
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
-			if ((err = ioctl (sk, SIOCSIFFLAGS, &ifr)))
+			if ((err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr)))
 				nm_warning ("nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
 		}
 		/* Make sure we have a valid MAC address, some cards reload firmware when they
@@ -1577,7 +1550,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 	else
 		nm_warning ("nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 
-	close (sk);
+	nm_dev_sock_close (sk);
 }
 
 
@@ -1587,7 +1560,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
  */
 gboolean nm_device_is_up (NMDevice *dev)
 {
-	int			sk;
+	NMSock		*sk;
 	struct ifreq	ifr;
 	int			err;
 
@@ -1596,14 +1569,13 @@ gboolean nm_device_is_up (NMDevice *dev)
 	if (dev->test_device)
 		return (dev->test_device_up);
 
-	sk = nm_device_open_sock ();
-	if (sk < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return (FALSE);
 
 	/* Get device's flags */
 	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-	err = ioctl (sk, SIOCGIFFLAGS, &ifr);
-	close (sk);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
+	nm_dev_sock_close (sk);
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
@@ -1708,21 +1680,19 @@ gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
  */
 NMNetworkMode nm_device_get_mode (NMDevice *dev)
 {
-	int			sk;
+	NMSock		*sk;
 	NMNetworkMode	mode = NETWORK_MODE_UNKNOWN;
 
 	g_return_val_if_fail (dev != NULL, NETWORK_MODE_UNKNOWN);
 	g_return_val_if_fail (nm_device_is_wireless (dev), NETWORK_MODE_UNKNOWN);
 
 	/* Force the card into Managed/Infrastructure mode */
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq	wrq;
 		int			err;
 
-		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWMODE, &wrq);
-		if (err == 0)
+		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWMODE, &wrq) == 0)
 		{
 			switch (wrq.u.mode)
 			{
@@ -1738,7 +1708,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 		}
 		else
 			nm_warning ("nm_device_get_mode (%s): error getting card mode.  errno = %d", nm_device_get_iface (dev), errno);				
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 
 	return (mode);
@@ -1753,8 +1723,8 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
  */
 gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 {
-	int			sk;
-	gboolean		success = FALSE;
+	NMSock		*sk;
+	gboolean		 success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -1764,8 +1734,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 		return TRUE;
 
 	/* Force the card into Managed/Infrastructure mode */
-	sk = iw_sockets_open ();
-	if (sk >= 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq	wreq;
 		int			err;
@@ -1787,8 +1756,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 		}
 		if (mode_good)
 		{
-			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWMODE, &wreq);
-			if (err == 0)
+			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWMODE, &wreq) == 0)
 				success = TRUE;
 			else
 				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
@@ -1796,7 +1764,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 					mode == NETWORK_MODE_INFRA ? "Infrastructure" : (mode == NETWORK_MODE_ADHOC ? "adhoc" : "unknown"),
 					errno);
 		}
-		close (sk);
+		nm_dev_sock_close (sk);
 	}
 
 	return (success);
@@ -2114,7 +2082,8 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	int				 num_freqs = 0, i;
 	double			 freq_to_use = 0;
 	iwrange			 range;
-	int				 sk;
+	NMSock			*sk;
+	int				 err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
@@ -2143,15 +2112,13 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	}
 	nm_ap_list_iter_free (iter);
 
-	if ((sk = iw_sockets_open ()) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)) == NULL)
 		return FALSE;
 
-	if (iw_get_range_info (sk, nm_device_get_iface (dev), &range) < 0)
-	{
-		close (sk);
+	err = iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range);
+	nm_dev_sock_close (sk);
+	if (err < 0)
 		return FALSE;
-	}
-	close (sk);
 
 	/* Ok, find the first non-zero freq in our table and use it.
 	 * For now we only try to use a channel in the 802.11b channel
@@ -3686,7 +3653,7 @@ static gboolean nm_completion_scan_has_results (int tries, va_list args)
 {
 	NMDevice				*dev = va_arg (args, NMDevice *);
 	gboolean				*err = va_arg (args, gboolean *);
-	int					 sk = va_arg (args, int);
+	NMSock				*sk = va_arg (args, NMSock *);
 	NMWirelessScanResults	*scan_results = va_arg (args, NMWirelessScanResults *);
 	int					 rc;
 
@@ -3694,7 +3661,7 @@ static gboolean nm_completion_scan_has_results (int tries, va_list args)
 	g_return_val_if_fail (err != NULL, TRUE);
 	g_return_val_if_fail (scan_results != NULL, TRUE);
 
-	rc = iw_scan(sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
+	rc = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
 	*err = FALSE;
 	if (rc == -1 && errno == ETIME)
 	{
@@ -3742,7 +3709,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 {
 	NMWirelessScanCB		*scan_cb = (NMWirelessScanCB *)(user_data);
 	NMDevice 				*dev = NULL;
-	int			 		 sk;
 	NMWirelessScanResults	*scan_results = NULL;
 
 	g_return_val_if_fail (scan_cb != NULL, FALSE);
@@ -3774,7 +3740,8 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	/* Grab the scan mutex */
 	if (nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 	{
-		gboolean devup_err;
+		NMSock	*sk;
+		gboolean	 devup_err;
 
 		/* Device must be up before we can scan */
 		devup_err = nm_device_bring_up_wait(dev, 1);
@@ -3784,7 +3751,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			goto reschedule;
 		}
 
-		if ((sk = iw_sockets_open ()) >= 0)
+		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
 			int			err;
 			NMNetworkMode	orig_mode = NETWORK_MODE_INFRA;
@@ -3818,7 +3785,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 				nm_device_set_bitrate (dev, orig_rate);
 			}
 
-			close (sk);
+			nm_dev_sock_close (sk);
 
 			if (!scan_results->scan_head.result)
 			{
@@ -3945,14 +3912,14 @@ typedef u_int64_t u64;
 
 static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 {
-	int				sk;
+	NMSock			*sk;
 	struct ifreq		ifr;
 	gboolean			supports_ethtool = FALSE;
 	struct ethtool_cmd	edata;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 	{
 		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
@@ -3961,13 +3928,13 @@ static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
-	if (ioctl(sk, SIOCETHTOOL, &ifr) == -1)
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
 	supports_ethtool = TRUE;
 
 out:
-	close (sk);
+	nm_dev_sock_close (sk);
 	return (supports_ethtool);
 }
 
@@ -3978,17 +3945,17 @@ out:
 /**************************************/
 #include <linux/mii.h>
 
-static int mdio_read (int sk, struct ifreq *ifr, int location)
+static int mdio_read (NMSock *sk, struct ifreq *ifr, int location)
 {
 	struct mii_ioctl_data *mii;
 
-	g_return_val_if_fail (sk >= 0, -1);
+	g_return_val_if_fail (sk != NULL, -1);
 	g_return_val_if_fail (ifr != NULL, -1);
 
 	mii = (struct mii_ioctl_data *) &(ifr->ifr_data);
 	mii->reg_num = location;
 
-	if (ioctl (sk, SIOCGMIIREG, ifr) < 0)
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIREG, ifr) < 0)
 		return -1;
 
 	return (mii->val_out);
@@ -3996,29 +3963,29 @@ static int mdio_read (int sk, struct ifreq *ifr, int location)
 
 static gboolean supports_mii_carrier_detect (NMDevice *dev)
 {
-	int			sk;
+	NMSock		*sk;
 	struct ifreq	ifr;
 	int			bmsr;
 	gboolean		supports_mii = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
+	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 	{
 		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 
 	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
-	if (ioctl(sk, SIOCGMIIPHY, &ifr) < 0)
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIPHY, &ifr) < 0)
 		goto out;
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	bmsr = mdio_read(sk, &ifr, MII_BMSR);
+	bmsr = mdio_read (sk, &ifr, MII_BMSR);
 	supports_mii = (bmsr != -1) ? TRUE : FALSE;
 
 out:
-	close (sk);
+	nm_dev_sock_close (sk);
 	return (supports_mii);	
 }
 

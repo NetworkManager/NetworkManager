@@ -925,6 +925,8 @@ int main( int argc, char *argv[] )
 	/* Wheeee!!! */
 	g_main_loop_run (nm_data->main_loop);
 
+	nm_print_open_socks ();
+
 	/* Cleanup */
 	libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error);
 
