@@ -1,4 +1,6 @@
-INCLUDES =						\
+INCLUDES = -I${top_srcdir}
+
+CPPFLAGS =						\
 	$(NM_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\

@@ -1,7 +1,9 @@
 
-INCLUDES = 						\
+INCLUDES = -I${top_srcdir}
+
+CPPFLAGS = 						\
 	$(NM_CFLAGS) 			   		\
-	$(OPENSSL_CFLAGS)				\
+	$(OPENSSL_CFLAGS)				\	
 	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\

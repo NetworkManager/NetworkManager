@@ -3,7 +3,9 @@ SUBDIRS=icons
 NULL=
 NOTIFICATION_ICON_SOURCE=@NOTIFICATION_ICON_SRC@
 
-INCLUDES = 							\
+INCLUDES = -I${top_srcdir}
+
+CPPFLAGS = 							\
 	$(NM_CFLAGS)						\
 	$(GLADE_CFLAGS)						\
 	$(DBUS_CFLAGS)						\

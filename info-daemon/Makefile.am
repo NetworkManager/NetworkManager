@@ -1,5 +1,7 @@
 
-INCLUDES =								\
+INCLUDES = -I${top_srcdir}
+
+CPPFLAGS =								\
 	$(NM_CFLAGS)							\
 	$(GTK_CFLAGS)							\
 	$(GDK_PIXBUF_CFLAGS)						\
