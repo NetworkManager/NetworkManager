@@ -1,3 +1,7 @@
+2004-09-11  Martin Willemoes Hansen  <mwh@sysrq.dk>
+
+	* configure.in: Added Danish (da) to ALL_LINGUAS.
+
 2004-09-09  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.c
