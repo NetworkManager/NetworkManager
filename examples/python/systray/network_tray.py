@@ -173,7 +173,7 @@ class network_tray:
         if self._is_wireless(device):
             try:
                 if self._nm.number_wireless_devices() > 1:
-                    return device["info.product"]
+                    return device["pci.subsys_vendor"]
                 else:
                     return "Wireless Network"
             except:
@@ -260,7 +260,7 @@ class network_tray:
         self._top_level_menu.show()
 
     def _get_encrypted_icon(self):
-        pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/keyring.png")
+        pb = gtk.gdk.pixbuf_new_from_file("/usr/share/icons/hicolor/16x16/stock/generic/stock_keyring.png")
         pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
         _keyring = gtk.Image()
         _keyring.set_from_pixbuf(pb)
@@ -273,19 +273,19 @@ class network_tray:
 
         if active_device:
             if active_device["nm.type"] == self._nm.WIRED_DEVICE:
-                pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/wired.png")
+                pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/icons/nm-device-wired.png")
                 pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
                 _wired_icon = gtk.Image()
                 _wired_icon.set_from_pixbuf(pb)
                 return _wired_icon                
             elif active_device["nm.type"] == self._nm.WIRELESS_DEVICE:
-                pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/wireless-applet.png")
+                pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/icons/nm-device-wireless.png")
                 pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
                 _wireless_icon = gtk.Image()
                 _wireless_icon.set_from_pixbuf(pb)
                 return _wireless_icon                
         else:
-            pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/wireless-applet.png")
+            pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/icons/nm-device-wireless.png")
             pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
             _nothing_icon = gtk.Image()
             _nothing_icon.set_from_pixbuf(pb)

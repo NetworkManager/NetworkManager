@@ -1,3 +1,11 @@
+2004-11-02  Bryan Clark  <clarkbw@cvs.gnome.org>
+
+	* panel-applet/menu-info.c: change from bold text to light
+	colored, may cause problems with some themes, i've tested a lot
+	and they seem fine. 
+
+	* panel-applet/NMWirelessApplet.c: fix strength tooltip
+
 2004-11-01  Colin Walters  <walters@verbum.org>
 
 	* src/NetworkManagerWireless.h, src/NetworkManagerWireless.c

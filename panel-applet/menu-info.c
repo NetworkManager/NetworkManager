@@ -169,7 +169,7 @@ nm_menu_network_update (NMMenuNetwork *menu_network,
   else
     text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
 
-  markup = g_markup_printf_escaped ("<b>%s</b>", text);
+  markup = g_markup_printf_escaped ("<span foreground=\"#aaaaaa\">%s</span>", text);
   gtk_label_set_markup (GTK_LABEL (menu_network->label), markup);
   g_free (markup);
   g_free (text);

@@ -312,7 +312,7 @@ nmwa_update_state (NMWirelessApplet *applet)
 	    pixbuf = applet->wireless_25_icon;
 	  else
 	    pixbuf = applet->wireless_00_icon;
-       tip = g_strdup_printf (_("Wireless network connection (%d%%)"), applet->active_device->strength);
+	  tip = g_strdup_printf (_("Wireless network connection (%d%%)"), strength);
 	}
      else
          tip = g_strdup (_("Wireless network connection"));
