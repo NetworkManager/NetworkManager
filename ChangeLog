@@ -1,3 +1,67 @@
+2004-08-31  Dan Williams <dcbw@redhat.com>
+
+	* Remove 'debug' extern global from all files since we now
+		use syslog()
+
+	* src/NetworkManager.[ch]
+		- Break out routine that get the net.interface property from HAL,
+			removing that logic from nm_create_device_and_add_to_list()
+		- (nm_create_device_and_add_to_list): make this a bit more general so
+			it doesn't do the talking to HAL.  Also add arguments to facilitate
+			the create of test devices.
+		- (nm_data_mark_state_changed): rename from nm_data_set_state_modified()
+		- (nm_data_new, main, nm_print_usage): add new argument "--enable-test-devices"
+			which makes NetworkManager listen for dbus commands to create test
+			devices, which have no backing hardware.  Use when you're on a plane
+			for example, and/or forgot your wireless card at home.  Test devices
+			_cannot_ be created unless NM is started with --enable-test-devices.
+
+	* src/NetworkManagerDbus.[ch]
+		- New "getLinkActive" method for devices
+		- New "setLinkActive" method for devices (only works on test devices)
+		- New "createTestDevice" method on NetworkManager object to create a test
+			device of a specified type (ie wired, wireless).  UDI is created from
+			scratch, as is the interface name.  Only works when NM is started with
+			--enable-test-devices switch.
+		- New "removeTestDevice" method on NetworkManager object which removes a
+			test device.  Only works when NM is started with --enable-test-devices
+
+	* src/NetworkManagerDevice.[ch]
+		- Logic to facilitate test devices.  Add variables to NMDevice struct to indicate
+			whether a device is a test device or not, and what its link status is.
+		- Deal with test devices in most functions.  For those that work directly on hardware
+			special-case test devices.
+		- (nm_device_new): don't create a test device if test devices weren't enabled on the
+			command-line.
+		- (nm_device_update_link_active): split out logic for wired and wireless device link
+			checking to separate functions to facilitate test device link checking.
+		- (nm_device_set_enc_key): Since some drivers for wireless cards are daft and
+			don't make a distinction between System Authentication and Encryption
+			(namely Cisco aironet), we use Open System auth when setting a WEP key
+			on the card.  We don't deal with Shared Key auth yet.
+		- (nm_device_activation_worker): split the activation cancel check logic out into
+			a separate routine nm_device_activation_cancel_if_needed()
+		- (nm_device_activation_signal_cancel): rename from nm_device_activation_cancel()
+		- (nm_device_fake_ap_list): Test wireless devices obviously cannot scan, so create
+			a list of fake access points that they can "see"
+		- (nm_device_is_test_device): return whether or not a device is a test device
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_get_best_device): attempt to deal with wireless network selection,
+			previously if you "locked"/forced NM to use a wireless device but then
+			selected a wireless network for NM to use, it would switch to a wired device.
+			So, if the active device is wireless and it has a "forced" best AP, use it
+			if the "forced" best AP is still valid
+		- (nm_state_modification_monitor): deal with NULL best devices, for example
+			there were no usable network devices, or the last one was removed
+
+	* src/backends/NetworkManager*.c
+		- Deal with test devices, mostly just return success for operations like getting
+			a DHCP address
+
+	* test/nmtestdevices.c
+		- Test tool to create/remove/link-switch test devices
+
 2004-08-30  Bryan Clark  <clarkbw@cvs.gnome.org>
 
 	* examples/python/NetworkManager.py: 
