@@ -468,7 +468,8 @@ void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data
  */
 static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 {
-	NMData		*data = (NMData *)user_data;
+	NMData	*data = (NMData *)user_data;
+	GSList	*elt;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -481,6 +482,20 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	if (data->allowed_ap_list)
 		nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
 
+	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
+	{
+		NMDevice	*dev = (NMDevice *)(elt->data);
+		if (nm_device_is_wireless (dev))
+		{
+			/* Once we have the list, copy in any relevant information from our Allowed list and fill
+			 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
+			 * MAC address in our allowed list.
+			 */
+			nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), data->allowed_ap_list);
+			nm_ap_list_copy_properties (nm_device_ap_list_get (dev), data->allowed_ap_list);
+		}
+	}	
+
 	/* If the active device doesn't have a best_ap already, make it update to
 	 * get the new data.
 	 */
@@ -489,13 +504,6 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 		&& nm_device_is_wireless (data->active_device))
 	{
 		NMAccessPoint	*best_ap;
-
-		/* Once we have the list, copy in any relevant information from our Allowed list and fill
-		 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
-		 * MAC address in our allowed list.
-		 */
-		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
-		nm_ap_list_copy_properties (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
 
 		best_ap = nm_device_get_best_ap (data->active_device);
 		if (!best_ap)

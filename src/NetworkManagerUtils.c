@@ -423,3 +423,214 @@ NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *
 	g_free (driver);
 	return (level);
 }
+
+static inline int nm_timeval_cmp(const struct timeval *a,
+				 const struct timeval *b)
+{
+	int x;
+	x = a->tv_sec - b->tv_sec;
+	x *= G_USEC_PER_SEC;
+	if (x)
+		return x;
+	x = a->tv_usec - b->tv_usec;
+	if (x)
+		return x;
+	return 0;
+}
+
+static inline int nm_timeval_has_passed(const struct timeval *a)
+{
+	struct timeval current;
+
+	gettimeofday(&current, NULL);
+
+	return (nm_timeval_cmp(&current, a) >= 0);
+}
+
+static inline void nm_timeval_add(struct timeval *a,
+				  const struct timeval *b)
+{
+	struct timeval b1;
+
+	memmove(&b1, b, sizeof b1);
+
+	/* normalize a and b to be positive for everything */
+	while (a->tv_usec < 0)
+	{
+		a->tv_sec--;
+		a->tv_usec += G_USEC_PER_SEC;
+	}
+	while (b1.tv_usec < 0)
+	{
+		b1.tv_sec--;
+		b1.tv_usec += G_USEC_PER_SEC;
+	}
+
+	/* now add secs and usecs */
+	a->tv_sec += b1.tv_sec;
+	a->tv_usec += b1.tv_usec;
+
+	/* and handle our overflow */
+	if (a->tv_usec > G_USEC_PER_SEC)
+	{
+		a->tv_sec++;
+		a->tv_usec -= G_USEC_PER_SEC;
+	}
+}
+
+static void nm_v_wait_for_completion_or_timeout(
+		const int max_tries,
+		const struct timeval *max_time,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		va_list args)
+{
+	int try;
+	gboolean finished = FALSE;
+	struct timeval finish_time;
+
+	g_return_if_fail (test_func || action_func);
+
+	if (max_time) {
+		gettimeofday(&finish_time, NULL);
+		nm_timeval_add(&finish_time, max_time);
+	}
+
+	try = -1;
+	while (!finished &&
+		(max_tries == NM_COMPLETION_TRIES_INFINITY || try < max_tries))
+	{
+		if (max_time && nm_timeval_has_passed(&finish_time))
+			break;
+		try++;
+		if (test_func)
+		{
+			finished = (*test_func)(try, args);
+			if (finished)
+				break;
+		}
+
+#if 0
+#define NM_SLEEP_DEBUG
+#endif
+#ifdef NM_SLEEP_DEBUG
+		syslog (LOG_INFO, "sleeping or %d usecs", interval_usecs);
+#endif
+		g_usleep(interval_usecs);
+		if (action_func)
+			finished = (*action_func)(try, args);
+	}
+}
+
+void nm_wait_for_completion_or_timeout(
+	const int max_tries,
+	const struct timeval *max_time,
+	const guint interval_usecs,
+	nm_completion_func test_func,
+	nm_completion_func action_func,
+	...)
+{
+	va_list ap;
+	va_start(ap, action_func);
+
+	nm_v_wait_for_completion_or_timeout(max_tries, max_time,
+					    interval_usecs, test_func,
+					    action_func, ap);
+	va_end(ap);
+}
+
+void nm_wait_for_completion(
+		const int max_tries,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		...)
+{
+	va_list ap;
+	va_start(ap, action_func);
+
+	nm_v_wait_for_completion_or_timeout(max_tries, NULL,
+					    interval_usecs, test_func,
+					    action_func, ap);
+	va_end(ap);
+}
+
+void nm_wait_for_timeout(
+		const struct timeval *max_time,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		...)
+{
+	va_list ap;
+	va_start(ap, action_func);
+
+	nm_v_wait_for_completion_or_timeout(-1, max_time,
+					    interval_usecs, test_func,
+					    action_func, ap);
+	va_end(ap);
+}
+
+/* you can use these, but they're really just examples */
+gboolean nm_completion_boolean_test(int tries, va_list args)
+{
+	gboolean *condition = va_arg(args, gboolean *);
+	char *message = va_arg(args, char *);
+	int log_level = va_arg(args, int);
+	int log_interval = va_arg(args, int);
+
+	g_return_val_if_fail (condition != NULL, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0) || (log_interval != 0 && tries % log_interval == 0))
+			syslog (log_level, message);
+
+	if (*condition)
+		return TRUE;
+	return FALSE;
+}
+
+gboolean nm_completion_boolean_function1_test(int tries, va_list args)
+{
+	nm_completion_boolean_function_1 condition =
+		va_arg(args, nm_completion_boolean_function_1);
+	char *message = va_arg(args, char *);
+	int log_level = va_arg(args, int);
+	int log_interval = va_arg(args, int);
+	u_int64_t arg0 = va_arg(args, unsigned long long);
+
+	g_return_val_if_fail (condition, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0)
+			   || (log_interval != 0 && tries % log_interval == 0))
+			syslog(log_level, message);
+
+	if (!(*condition)(arg0))
+		return TRUE;
+	return FALSE;
+}
+
+gboolean nm_completion_boolean_function2_test(int tries, va_list args)
+{
+	nm_completion_boolean_function_2 condition =
+		va_arg(args, nm_completion_boolean_function_2);
+	char *message = va_arg(args, char *);
+	int log_level = va_arg(args, int);
+	int log_interval = va_arg(args, int);
+	u_int64_t arg0 = va_arg(args, unsigned long long);
+	u_int64_t arg1 = va_arg(args, unsigned long long);
+
+	g_return_val_if_fail (condition, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0)
+			   || (log_interval != 0 && tries % log_interval == 0))
+			syslog(log_level, message);
+
+	if (!(*condition)(arg0, arg1))
+		return TRUE;
+	return FALSE;
+}
+

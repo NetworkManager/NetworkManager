@@ -486,7 +486,8 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, array, num_items,
 									DBUS_TYPE_INVALID);
 	}	
-	gconf_value_free (ap_addrs_value);
+	if (ap_addrs_value)
+		gconf_value_free (ap_addrs_value);
 
 	g_free (essid);
 	g_free (key);
@@ -538,6 +539,8 @@ static DBusMessage *nmi_dbus_update_network_auth_method (NMIAppInfo *info, DBusM
 		gconf_client_set_int (info->gconf_client, key, auth_method, NULL);
 		g_free (key);
 	}
+	if (value)
+		gconf_value_free (value);
 
 	g_free (escaped_network);
 

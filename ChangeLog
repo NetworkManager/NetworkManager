@@ -1,3 +1,52 @@
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* Merge Peter Jones' completion patch, reducing latency and speeding
+		up wait times for device activation and wireless scanning
+
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	Patch from Bill Moss:
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_allowed_ap_list_update): merge properties
+			for all wireless devices on update, not just active device
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- Add some more contributors to the About dialog
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (mdio_read): Fix two bugs that caused all devices to fail
+			the MII carrier detection support checks
+
+2005-03-22  Dan Williams <dcbw@redhat.com>
+
+	Patch from Bill Moss:
+	* src/NetworkManagerInfoDbus.c
+		- (nmi_dbus_update_network_auth_method, nmi_dbus_get_network_properties):
+			free leaked GConf values
+
+2005-03-12  Dan Williams <dcbw@redhat.com>
+
+	Patch from Nathaniel McCallum:
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_wireless_config): Increase timeout for some devices
+
+2005-03-04  Dan Williams <dcbw@redhat.com>
+
+	Patch from Peter Jones:
+	- Make stuff work with gcc 4.0
+
+2005-02-28  Dan Williams <dcbw@redhat.com>
+
+	Tag STABLE_0_3_4_RELEASE
+
+	* configure.in:
+		- Bump version to 0.3.4
+
 2005-02-27  Jim Huang  <jserv@kaffe.org>
 
 	* configure.in: Added "zh_TW" (Traditional Chinese) to ALL_LINGUAS.
