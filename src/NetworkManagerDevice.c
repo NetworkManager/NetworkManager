@@ -335,6 +335,7 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 		dev->options.wireless.supports_wireless_scan = nm_device_supports_wireless_scan (dev);
 
 		/* Perform an initial wireless scan */
+		nm_device_set_mode_managed (dev);
 		nm_device_do_wireless_scan (dev);
 		nm_device_update_best_ap (dev);
 	}
@@ -1101,6 +1102,62 @@ gboolean nm_device_is_up (NMDevice *dev)
 
 
 /*
+ * nm_device_set_mode_managed
+ *
+ * Set managed/infrastructure mode on a device (currently wireless only)
+ *
+ */
+void nm_device_set_mode_managed (NMDevice *dev)
+{
+	int			sk;
+	struct iwreq	wreq;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	/* Force the card into Managed/Infrastructure mode */
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		int err;
+		wreq.u.mode = IW_MODE_INFRA;
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWMODE, &wreq);
+		if (err == -1)
+			syslog (LOG_ERR, "nm_device_set_mode_managed (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);	
+		close (sk);
+	}
+}
+
+
+/*
+ * nm_device_set_mode_adhoc
+ *
+ * Set Ad Hoc mode on a device (currently wireless only)
+ *
+ */
+void nm_device_set_mode_adhoc (NMDevice *dev)
+{
+	int			sk;
+	struct iwreq	wreq;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+
+	/* Force the card into Managed/Infrastructure mode */
+	sk = iw_sockets_open ();
+	if (sk >= 0)
+	{
+		int err;
+		wreq.u.mode = IW_MODE_ADHOC;
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWMODE, &wreq);
+		if (err == -1)
+			syslog (LOG_ERR, "nm_device_set_mode_adhoc (%s): error setting card to Ad Hoc mode.  errno = %d", nm_device_get_iface (dev), errno);	
+		close (sk);
+	}
+}
+
+
+/*
  * nm_device_activation_begin
  *
  * Spawn a new thread to handle device activation.
@@ -1203,22 +1260,10 @@ static gboolean nm_device_activate_wireless (NMDevice *dev, guint *bad_crypt_pac
 	/* If there is a desired AP to connect to, use that essid and possible WEP key */
 	if ((best_ap = nm_device_get_best_ap (dev)) && nm_ap_get_essid (best_ap))
 	{
-		int			sk;
-		struct iwreq	wreq;
-
 		nm_device_bring_down (dev);
 
 		/* Force the card into Managed/Infrastructure mode */
-		sk = iw_sockets_open ();
-		if (sk >= 0)
-		{
-			int err;
-			wreq.u.mode = IW_MODE_INFRA;
-			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWMODE, &wreq);
-			if (err == -1)
-				syslog (LOG_ERR, "nm_device_activate_wireless(%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);	
-			close (sk);
-		}
+		nm_device_set_mode_managed (dev);
 
 		/* Disable encryption, then re-enable and set correct key on the card
 		 * if we are going to encrypt traffic.

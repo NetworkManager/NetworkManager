@@ -796,6 +796,50 @@ static void wireless_network_unref (WirelessNetwork *net)
 	}
 }
 
+
+/*
+ * wireless_network_new
+ *
+ * Create a new wireless network structure
+ *
+ */
+WirelessNetwork *wireless_network_new (void)
+{
+	WirelessNetwork *net = NULL;
+
+	if ((net = g_new0 (WirelessNetwork, 1)))
+		wireless_network_ref (net);
+
+	return (net);
+}
+
+
+/*
+ * wireless_network_copy
+ *
+ * Create a new wireless network structure from an existing one
+ *
+ */
+WirelessNetwork *wireless_network_copy (WirelessNetwork *src)
+{
+	WirelessNetwork *net = NULL;
+
+	g_return_val_if_fail (src != NULL, NULL);
+
+	if ((net = g_new0 (WirelessNetwork, 1)))
+	{
+		wireless_network_ref (net);
+		net->nm_name = g_strdup (src->nm_name);
+		net->essid = g_strdup (src->essid);
+		net->active = src->active;
+		net->encrypted = src->encrypted;
+		net->strength = src->strength;
+	}
+
+	return (net);
+}
+
+
 /*
  * network_device_free_wireless_network_list
  *
@@ -844,6 +888,67 @@ static void network_device_unref (NetworkDevice *dev)
 		dbus_free (dev->hal_name);
 		g_free (dev);
 	}
+}
+
+
+/*
+ * network_device_new
+ *
+ * Create a new network device representation
+ *
+ */
+NetworkDevice *network_device_new (void)
+{
+	NetworkDevice *dev = NULL;
+
+	if ((dev = g_new0 (NetworkDevice, 1)))
+		network_device_ref (dev);
+
+	return (dev);
+}
+
+
+/*
+ * network_device_copy
+ *
+ * Create a new network device representation, filling its
+ * data in from an already existing one.  Deep-copies the
+ * wireless networks too.
+ *
+ */
+NetworkDevice *network_device_copy (NetworkDevice *src)
+{
+	NetworkDevice *dev = NULL;
+
+	g_return_val_if_fail (src != NULL, NULL);
+
+	if ((dev = g_new0 (NetworkDevice, 1)))
+	{
+		GSList	*elem;
+
+		network_device_ref (dev);
+		dev->nm_device = g_strdup (src->nm_device);
+		dev->type = src->type;
+		dev->nm_name = g_strdup (src->nm_name);
+		dev->hal_name = g_strdup (src->hal_name);
+		dev->udi = g_strdup (src->udi);
+		dev->strength = src->strength;
+
+		elem = src->networks;
+		while (elem)
+		{
+			WirelessNetwork *net = (WirelessNetwork *)elem->data;
+			if (net)
+			{
+				WirelessNetwork *copy = wireless_network_copy (net);
+				dev->networks = g_slist_append (dev->networks, copy);
+			}
+
+			elem = g_slist_next (elem);
+		}
+	}
+
+	return (dev);
 }
 
 
@@ -904,8 +1009,8 @@ static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWir
 			if (found)
 				continue;
 						
-			net = g_new0 (WirelessNetwork, 1);
-			wireless_network_ref (net);
+			net = wireless_network_new ();
+			/* FIXME: what if net == NULL? */			
 			net->nm_name = g_strdup (networks[i]);
 			net->essid = g_strdup (name);
 			net->active = active_network ? (strcmp (net->nm_name, active_network) == 0) : FALSE;
@@ -1091,9 +1196,8 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 		{
 			NetworkDevice	*dev;
 
-			if ((dev = g_new0 (NetworkDevice, 1)))
+			if ((dev = network_device_new ()))
 			{
-				network_device_ref (dev);
 				dev->nm_device = g_strdup (devices[i]);
 				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
 				dev->nm_name = g_strdup (name);

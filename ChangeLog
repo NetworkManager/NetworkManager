@@ -1,5 +1,22 @@
 2004-10-12 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- New functions:
+			wireless_network_new
+			wireless_network_copy
+			network_device_new
+			network_device_copy
+
+	* src/NetworkManagerDevice.[ch]
+		- New functions:
+			nm_device_set_mode_managed
+			nm_device_set_mode_adhoc
+		- Use these functions where appropriate
+		- When creating a new wireless device, force the card
+			to managed/Infrastructure mode as soon as possible
+
+2004-10-12 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- Force wireless cards into Infrastructure mode before we use them
 

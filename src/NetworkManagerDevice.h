@@ -60,6 +60,9 @@ void			nm_device_get_ip6_address		(NMDevice *dev);
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
 void			nm_device_do_wireless_scan		(NMDevice *dev);
 
+void			nm_device_set_mode_managed		(NMDevice *dev);
+void			nm_device_set_mode_adhoc			(NMDevice *dev);
+
 gint8		nm_device_get_signal_strength		(NMDevice *dev);
 void			nm_device_update_signal_strength	(NMDevice *dev);
 guint8		nm_device_get_noise				(NMDevice *dev);
