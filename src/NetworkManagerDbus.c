@@ -1017,9 +1017,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	dbus_bool_t			 success;
 	DBusConnection			*connection;
 	DBusObjectPathVTable	 nm_vtable = { &nm_dbus_nm_unregister_handler, &nm_dbus_nm_message_handler, NULL, NULL, NULL, NULL };
-	const char			*nm_path[] = { "org", "freedesktop", "NetworkManager", NULL };
 	DBusObjectPathVTable	 devices_vtable = { &nm_dbus_devices_unregister_handler, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL };
-	const char			*devices_path[] = { "org", "freedesktop", "NetworkManager", "Devices", NULL };
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
@@ -1040,14 +1038,14 @@ DBusConnection *nm_dbus_init (NMData *data)
 		return (NULL);
 	}
 
-	success = dbus_connection_register_object_path (connection, nm_path, &nm_vtable, data);
+	success = dbus_connection_register_object_path (connection, NM_DBUS_NM_OBJECT_PATH_PREFIX, &nm_vtable, data);
 	if (!success)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_init() could not register a handler for NetworkManager.  Not enough memory?\n");
 		return (NULL);
 	}
 
-	success = dbus_connection_register_fallback (connection, devices_path, &devices_vtable, data);
+	success = dbus_connection_register_fallback (connection, NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, &devices_vtable, data);
 	if (!success)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_init() could not register a handler for NetworkManager devices.  Not enough memory?\n");

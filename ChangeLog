@@ -1,3 +1,10 @@
+2004-07-29  Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c
+	  src/NetworkManagerDbus.c
+		- Update to current DBus (ie don't use decomposed paths when registering
+			object paths/fallbacks)
+
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
 	* Remove various Makefile.in files

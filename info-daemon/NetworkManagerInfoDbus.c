@@ -438,7 +438,6 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 {
 	DBusError		 		 dbus_error;
 	DBusObjectPathVTable	 nmi_vtable = { &nmi_dbus_nmi_unregister_handler, &nmi_dbus_nmi_message_handler, NULL, NULL, NULL, NULL };
-	const char			*nmi_path[] = { "org", "freedesktop", "NetworkManagerInfo", NULL };
 
 	dbus_error_init (&dbus_error);
 	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_NMI_NAMESPACE, 0, &dbus_error);
@@ -448,7 +447,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 		return (-1);
 	}
 
-	if (!dbus_connection_register_object_path (dbus_connection, nmi_path, &nmi_vtable, info))
+	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_NMI_OBJECT_PATH_PREFIX, &nmi_vtable, info))
 	{
 		fprintf (stderr, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?\n");
 		return (-1);
