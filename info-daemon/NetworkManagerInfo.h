@@ -27,13 +27,18 @@
 #include <glade/glade.h>
 #include <glib.h>
 #include <dbus/dbus-glib.h>
+#include <gconf/gconf-client.h>
 
 struct NMIAppInfo
 {
 	GladeXML		*xml;
 	DBusConnection	*connection;
+	GConfClient	*gconf_client;
 };
 typedef struct NMIAppInfo NMIAppInfo;
+
+
+#define	NMI_GCONF_WIRELESS_NETWORKING_PATH		"/system/networking/wireless"
 
 
 void			nmi_show_user_key_dialog		(const char *device, const char *network, NMIAppInfo *info);

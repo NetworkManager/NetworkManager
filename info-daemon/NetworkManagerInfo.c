@@ -30,6 +30,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <gconf/gconf-client.h>
 
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
@@ -49,18 +50,18 @@ static void nmi_clear_dialog (GtkWidget *dialog, GtkWidget *entry)
 	g_return_if_fail (dialog != NULL);
 	g_return_if_fail (entry  != NULL);
 
-	data = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("device"));
+	data = g_object_get_data (G_OBJECT (dialog), "device");
 	if (data)
 	{
 		g_free (data);
-		g_object_set_qdata (G_OBJECT (dialog), g_quark_from_static_string ("device"), NULL);
+		g_object_set_data (G_OBJECT (dialog), "device", NULL);
 	}
 
-	data = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("network"));
+	data = g_object_get_data (G_OBJECT (dialog), "network");
 	if (data)
 	{
 		g_free (data);
-		g_object_set_qdata (G_OBJECT (dialog), g_quark_from_static_string ("network"), NULL);
+		g_object_set_data (G_OBJECT (dialog), "network", NULL);
 	}
 
 	gtk_entry_set_text (GTK_ENTRY (entry), "");
@@ -86,8 +87,8 @@ static void ok_button_clicked (GtkWidget *ok_button, gpointer user_data)
 	{
 		GtkWidget		*entry = glade_xml_get_widget (info->xml, "passphrase_entry");
 		const char	*passphrase = gtk_entry_get_text (GTK_ENTRY (entry));
-		const char	*device = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("device"));
-		const char	*network = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("network"));
+		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
+		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 
 		nmi_dbus_return_user_key (info->connection, device, network, passphrase);
 		nmi_clear_dialog (dialog, entry);
@@ -111,8 +112,8 @@ static void cancel_button_clicked (GtkWidget *cancel_button, gpointer user_data)
 
 	if (GTK_WIDGET_TOPLEVEL (dialog))
 	{
-		const char	*device = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("device"));
-		const char	*network = g_object_get_qdata (G_OBJECT (dialog), g_quark_from_static_string ("network"));
+		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
+		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
 
 		nmi_dbus_return_user_key (info->connection, device, network, "***cancelled***");
 		nmi_clear_dialog (dialog, glade_xml_get_widget (info->xml, "passphrase_entry"));
@@ -148,8 +149,8 @@ void nmi_show_user_key_dialog (const char *device, const char *network, NMIAppIn
 		gtk_label_set_label (GTK_LABEL (label), new_label_text);
 	}
 
-	g_object_set_qdata (G_OBJECT (dialog), g_quark_from_static_string ("device"), g_strdup (device));
-	g_object_set_qdata (G_OBJECT (dialog), g_quark_from_static_string ("network"), g_strdup (network));
+	g_object_set_data (G_OBJECT (dialog), "device", g_strdup (device));
+	g_object_set_data (G_OBJECT (dialog), "network", g_strdup (network));
 
 	gtk_widget_show (dialog);
 }
@@ -212,6 +213,20 @@ static void nmi_interface_init (NMIAppInfo *info)
 
 
 /*
+ * nmi_gconf_notify_callback
+ *
+ * Callback from gconf when wireless networking key/values have changed.
+ *
+ */
+void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
+{
+	NMIAppInfo	*info = (NMIAppInfo *)user_data;
+
+	g_return_if_fail (info != NULL);
+}
+
+
+/*
  * nmi_print_usage
  *
  * Prints program usage.
@@ -243,6 +258,7 @@ int main( int argc, char *argv[] )
 	int			 err;
 	NMIAppInfo	*app_info = NULL;
 	GMainLoop		*loop;
+	guint		 notify_id;
 
 	/* Parse options */
 	while (1)
@@ -342,6 +358,15 @@ int main( int argc, char *argv[] )
 	dbus_connection_setup_with_g_main (dbus_connection, NULL);
 	app_info->connection = dbus_connection;
 
+	/* Grab a connection to the GConf daemon.  We also want to
+	 * get change notifications for our wireless networking data.
+	 */
+	app_info->gconf_client = gconf_client_get_default ();
+	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKING_PATH,
+						GCONF_CLIENT_PRELOAD_NONE, NULL);
+	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKING_PATH,
+						nmi_gconf_notify_callback, app_info, NULL, NULL);
+
 	/* Create our own dbus service */
 	err = nmi_dbus_service_init (dbus_connection, app_info);
 	if (err == -1)
@@ -354,6 +379,8 @@ int main( int argc, char *argv[] )
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);
 
+	gconf_client_notify_remove (app_info->gconf_client, notify_id);
+	g_object_unref (G_OBJECT (app_info->gconf_client));
 	g_free (app_info);
 
 	return 0;

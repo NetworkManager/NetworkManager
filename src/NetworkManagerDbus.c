@@ -129,27 +129,21 @@ NMDevice *nm_dbus_get_device_from_object_path (const char *path)
  * Returns the network (ap) associated with a dbus object path
  *
  */
-NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev, int *ap_index)
+NMAccessPoint *nm_dbus_get_network_from_object_path (const char *path, NMDevice *dev)
 {
 	NMAccessPoint	*ap = NULL;
 	int			 i = 0;
 	char			 compare_path[100];
 
-	*ap_index = -1;
-
 	g_return_val_if_fail (path != NULL, NULL);
 
 	while ((ap = nm_device_ap_list_get_ap_by_index (dev, i)) != NULL)
 	{
-		snprintf (compare_path, 100, "%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
+		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX,
+				nm_device_get_iface (dev), nm_ap_get_essid (ap));
 		if (strncmp (path, compare_path, strlen (compare_path)) == 0)
-		{
-			*ap_index = i;
 			break;
-		}
-		else
-			ap = NULL;
-
+		ap = NULL;
 		i++;
 	}
 
@@ -547,10 +541,9 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 	NMAccessPoint		*ap;
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
-	int				 ap_index;
 
-	ap = nm_dbus_get_network_from_object_path (path, dev, &ap_index);
-	if (!ap || (ap_index == -1))
+	ap = nm_dbus_get_network_from_object_path (path, dev);
+	if (!ap)
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "NetworkNotFound",
 						"The requested network does not exist for this device.");
@@ -632,24 +625,16 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_iter_append_uint32 (&iter, nm_device_get_ip4_address (dev));
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
-		NMAccessPoint		*ap = NULL;
-		int				 i = 0;
-	
-		while ((ap = nm_device_ap_list_get_ap_by_index (dev, i)) != NULL)
-		{
-			if (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_device_get_essid (dev)) == 0)
-			{
-				object_path = g_strdup_printf ("%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
-				dbus_message_iter_append_string (&iter, object_path);
-				g_free (object_path);
-				break;
-			}
-			i++;
-			ap = NULL;
-		}
+		NMAccessPoint		*ap = nm_device_ap_list_get_ap_by_essid (dev, nm_device_get_essid (dev));
 
-		/* If we didn't find the devices current network among the known networks, just append a blank item */
-		if (!ap)
+		if (ap)
+		{
+			object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX,
+									nm_device_get_iface (dev), nm_ap_get_essid (ap));
+			dbus_message_iter_append_string (&iter, object_path);
+			g_free (object_path);
+		}
+		else
 			dbus_message_iter_append_string (&iter, "");
 	}
 	else if (strcmp ("getNetworks", request) == 0)
@@ -659,10 +644,10 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		int				 i = 0;
 	
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
-
 		while ((ap = nm_device_ap_list_get_ap_by_index (dev, i)) != NULL)
 		{
-			object_path = g_strdup_printf ("%s/%s/Networks/%d", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX, nm_device_get_iface (dev), i);
+			object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_DEVICES_OBJECT_PATH_PREFIX,
+									nm_device_get_iface (dev), nm_ap_get_essid (ap));
 			dbus_message_iter_append_string (&iter_array, object_path);
 			g_free (object_path);
 			

@@ -4,6 +4,7 @@ INCLUDES = 						\
 	$(NM_CFLAGS) 			   		\
 	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
+	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 

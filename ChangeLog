@@ -1,3 +1,29 @@
+2004-07-22  Dan Williams <dcbw@redhat.com>
+
+	* configure.in
+		- Add checks for GConf libs & headers & flags
+
+	* info-daemon/Makefile.am
+		- Add GConf flags & libs to compile/link stages of NetworkManagerInfo
+
+	* info-daemon/NetworkManagerInfo.[ch]
+		- Don't use gquarks for data storage, just use normal data storage
+		- Add gconf bits to watch /system/networking/wireless/allowed_networks
+
+	* info-daemon/NetworkManagerDbus.[ch]
+		- Add method call for getting allowed networks
+		- Add method calls for getting an allowed network's essid, priority, and key
+		- Hook the method calls up to GConf
+		- Split user key dialog code into separate function (nmi_dbus_get_key_for_network)
+		- nmi_dbus_nmi_message_handler(): make sure to unref the reply message after sending
+		
+	* src/NetworkManagerDbus.[ch]
+		- Switch for enumeration of networks to using essid instead
+
+	* test/Makefile.am
+	  test/nminfotest.c
+	  	- Add test program for NetworkManagerInfo
+
 2004-07-19  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDbus.c
