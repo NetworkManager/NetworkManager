@@ -1,3 +1,15 @@
+2005-03-22  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_wired_link_deactivated): actually ignore netlink events from
+			wireless devices.
+
+2005-03-22  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_wired_link_activated): actually ignore netlink events from
+			wireless devices.
+
 2005-03-17  Dan Williams <dcbw@redhat.com>
 
 	Patch from Tom Parker:

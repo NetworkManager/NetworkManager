@@ -595,9 +595,6 @@ nm_wired_link_activated (NmNetlinkMonitor *monitor,
 				nm_policy_schedule_state_update (data);
 			}
 		}
-		else
-			nm_info ("unknown wired ethernet interface '%s' "
-				"activated\n", interface_name);
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 }
@@ -607,17 +604,12 @@ nm_wired_link_deactivated (NmNetlinkMonitor *monitor,
 			   const gchar 	  *interface_name,
 			   NMData 	  *data)
 {
-	NMDevice *device;
-
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		device = nm_get_device_by_iface (data, interface_name);
+		NMDevice *dev = nm_get_device_by_iface (data, interface_name);
 
-		if (device != NULL)
-			nm_device_set_link_active (device, FALSE);
-		else
-			nm_info ("unknown wired ethernet interface '%s' "
-			        "deactivated\n", interface_name);
+		if ((dev != NULL) && nm_device_is_wired (dev))
+			nm_device_set_link_active (dev, FALSE);
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 }
