@@ -1,6 +1,12 @@
 2005-01-10  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
+		- Minor fixups & corrections to "auto" frequency mode, make it
+			less chatty with syslog
+
+2005-01-10  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
 		- Implement "auto" frequency/channel support, since cards like Atheros
 			can't use other frequencies at all when you've told it to use a
 			specific one, even for scanning.

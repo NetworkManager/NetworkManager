@@ -866,17 +866,17 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 		if (err == -1)
 		{
 			gboolean	success = FALSE;
-			if ((freq <= 0) && ((errno == -EINVAL) || (errno == -EOPNOTSUPP)))
+			if ((freq <= 0) && ((errno == EINVAL) || (errno == EOPNOTSUPP)))
 			{
 				/* Ok, try "auto" the iwconfig way if the Atheros way didn't work */
-				wrq.u.freq.m = 0;
+				wrq.u.freq.m = -1;
 				wrq.u.freq.e = 0;
 				wrq.u.freq.flags = 0;
 				if (iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWFREQ, &wrq) != -1)
 					success = TRUE;
 			}
 
-			if (!success)
+			if (!success && (errno != EOPNOTSUPP) && (errno != EINVAL))
 				syslog (LOG_ERR, "nm_device_set_frequency(): error setting frequency %f for device %s.  errno = %d", freq, nm_device_get_iface (dev), errno);
 		}
 
