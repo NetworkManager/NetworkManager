@@ -3,7 +3,7 @@ INCLUDES = -I${top_srcdir}
 
 CPPFLAGS = 						\
 	$(NM_CFLAGS) 			   		\
-	$(OPENSSL_CFLAGS)				\	
+	$(OPENSSL_CFLAGS)				\
 	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\
@@ -11,6 +11,8 @@ CPPFLAGS = 						\
 	-DDATADIR=\"$(datadir)\"
 
 bin_PROGRAMS = NetworkManager
+
+noinst_LTLIBRARIES = libnmbackend.la
 
 NetworkManager_SOURCES =					\
 		NetworkManagerAP.c				\
@@ -35,20 +37,31 @@ if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-EXTRA_NetworkManager_SOURCES =			\
-		backends/NetworkManagerDebian.c	\
-		backends/NetworkManagerGentoo.c	\
-		backends/NetworkManagerRedHat.c	\
-		backends/NetworkManagerSlackware.c	\
-		backends/shvar.c				\
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la
+if WITH_GCRYPT
+NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
+endif
+
+libnmbackend_la_SOURCES = backends/shvar.c	\
 		backends/shvar.h		\
 		backends/interface_parser.c	\
 		backends/interface_parser.h	
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) backends/$(SYSTEM_BACKEND_FILE)
-if WITH_GCRYPT
-NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
+if TARGET_REDHAT
+libnmbackend_la_SOURCES += backends/NetworkManagerRedHat.c
 endif
+if TARGET_GENTOO
+libnmbackend_la_SOURCES += backends/NetworkManagerGentoo.c
+endif
+if TARGET_DEBIAN
+libnmbackend_la_SOURCES += backends/NetworkManagerDebian.c
+endif
+if TARGET_SLACKWARE
+libnmbackend_la_SOURCES += backends/NetworkManagerSlackware.c
+endif
+
+libnmbackend_la_LIBADD = $(NM_LIBS)
+libnmbackend_la_CPPFLAGS = $(NM_CFLAGS)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

@@ -1,5 +1,16 @@
-SUBDIRS = $(TARGET_DISTRO)
-DIST_SUBDIRS=RedHat Gentoo Debian Slackware
+SUBDIRS = 
+if TARGET_REDHAT
+SUBDIRS += RedHat
+endif
+if TARGET_GENTOO
+SUBDIRS += Gentoo
+endif
+if TARGET_DEBIAN
+SUBDIRS += Debian
+endif
+if TARGET_SLACKWARE
+SUBDIRS += Slackware
+endif
 
 INCLUDES = 						\
 	$(NM_CFLAGS) 			   		\

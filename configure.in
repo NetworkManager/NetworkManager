@@ -27,8 +27,6 @@ AC_ARG_WITH(distro,
                           --with-distro=slackware
 ],,)
 
-TARGET_DISTRO=
-SYSTEM_BACKEND_FILE=
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/mandrake-release,with_distro="mandrake")
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
@@ -37,37 +35,25 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
 	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
 fi
+with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
 
 if test "z$with_distro" = "z"; then
 	echo "Linux distribution autodetection failed, you must specify the distribution to target using --with-distro=<distro>"
 	exit 1
 else
-	with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
 	case $with_distro in
-		redhat)
-			TARGET_DISTRO=RedHat
-			SYSTEM_BACKEND_FILE=NetworkManagerRedHat.o
-			;;
-		gentoo)
-			TARGET_DISTRO=Gentoo
-			SYSTEM_BACKEND_FILE=NetworkManagerGentoo.o
-			;;
-		debian)
-			TARGET_DISTRO=Debian
-			SYSTEM_BACKEND_FILE=NetworkManagerDebian.o
-			;;
-		slackware)
-			TARGET_DISTRO=Slackware
-			SYSTEM_BACKEND_FILE=NetworkManagerSlackware.o
-			;;
+		redhat|gentoo|debian|slackware) ;;
 		*)
 			echo "Your distribution(${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
 			;;
 	esac
 fi
-AC_SUBST(TARGET_DISTRO)
-AC_SUBST(SYSTEM_BACKEND_FILE)
+AM_CONDITIONAL(TARGET_REDHAT, test x"$with_distro" = xredhat)
+AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
+AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
+AM_CONDITIONAL(TARGET_MANDRAKE, test x"$with_distro" = xmandrake)
+AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
 
 AC_CHECK_HEADER(iwlib.h, [],
 			[AC_MSG_ERROR(iwlib.h not found. Install wireless-tools.)], [])
@@ -195,5 +181,5 @@ NetworkManager.pc
 ])
 
 echo
-echo Distribution targeting: ${TARGET_DISTRO}
+echo Distribution targeting: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=<distro>'

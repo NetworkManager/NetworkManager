@@ -1,5 +1,18 @@
 2004-11-12  Colin Walters  <walters@redhat.com>
 
+	* configure.in: Strip out TARGET_DISTRO and
+	SYSTEM_BACKEND_FILE variables.  Switch to Automake
+	conditionals.
+
+	* src/Makefile.am (noinst_LTLIBRARIES): Add libnmbackend.la.
+	(libnmbackend_la_SOURCES): Use Automake conditionals
+	to add distro-specific files.
+
+	* initscript/Makefile.am (SUBDIRS): Update to
+	use conditionals.
+
+2004-11-12  Colin Walters  <walters@redhat.com>
+
 	Patches from j bootlab org
 
 	* src/Makefile.am (EXTRA_NetworkManager_SOURCES): 
