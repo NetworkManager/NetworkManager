@@ -90,6 +90,8 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			 */
 			if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 			{
+				unsigned char	buf[500];
+
 				NM_DEBUG_PRINT_3( "nm_create_device_and_add_to_list() adding udi='%s', iface='%s', iface_type=%s\n",
 					nm_device_get_udi (dev), nm_device_get_iface (dev), nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET ? "wireless" : "wired" );
 
@@ -109,6 +111,15 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 					if (!nm_device_is_up (dev))
 						nm_device_bring_up (dev);
 				}
+
+				/* Remove routing table entries */
+				snprintf (buf, 500, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
+				system (buf);
+
+				/* Remove ip address */
+				snprintf (buf, 500, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
+				system (buf);
+
 				success = TRUE;
 
 				nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);

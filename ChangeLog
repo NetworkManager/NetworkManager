@@ -1,23 +1,38 @@
 2004-06-24  Dan Williams <dcbw@redhat.com>
 
+	* NetworkManager.c
+	    - Spacing cleanups
+	    - Flush device routes and ip addresses when added to the device list
+
+	* NetworkManagerDbus.c
+	    - Spacing cleanups
+	    - Add missing returns in the two signal functions
+	
+	* NetworkManagerPolicy.c
+	    - Spacing and variable cleanups
+
+2004-06-24  Dan Williams <dcbw@redhat.com>
+
 	* Makefile.am
 	  Makefile.in
 	  configure.in
 	  dispatcher-daemon/Makefile.am
 	  dispatcher-daemon/Makefile.in
 	  dispatcher-daemon/NetworkManagerDispatcher.c
-	  
-	    Add a daemon that receives signals from NetworkManager
-	  and will (eventually) call scripts in /etc/somewhere
-	  when devices go up or down.
+	    - Add a daemon that receives signals from NetworkManager
+			and will (eventually) call scripts in /etc/somewhere
+			when devices go up or down.
 	
 	* NetworkManager.c
-	  NetworkManagerDbus.c
-	  
-	    Spacing cleanups.
+	    - Spacing cleanups
+	    - Flush device routes and ip addresses when added to the device list
+
+	* NetworkManagerDbus.c
+	    - Spacing cleanups
+	    - Add missing returns in the two signal functions
 	
 	* NetworkManagerPolicy.c
-	
+	    - Spacing and variable cleanups
 	    - Rename nm_policy_switch_interface->nm_policy_switch_device
 	    - nm_policy_switch_device():
 				Use kill (pid) instead of system ("kill <pid>")

@@ -171,7 +171,7 @@ static void nm_policy_switch_device (NMData *data, NMDevice *switch_to_dev, NMDe
 gboolean nm_state_modification_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
-	gboolean			 modified = FALSE;
+	gboolean	 modified = FALSE;
 
 	g_return_val_if_fail (data != NULL, TRUE);
 
@@ -192,7 +192,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
 			GSList		*element = data->dev_list;
-			NMDevice		*dev = NULL;
 			NMDevice		*best_wired_dev = NULL;
 			guint		 best_wired_prio = 0;
 			NMDevice		*best_wireless_dev = NULL;
@@ -203,9 +202,10 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 
 			while (element)
 			{
-				guint	priority = 0;
-				guint	iface_type;
-				gboolean	link_active;
+				NMDevice	*dev = NULL;
+				guint	 iface_type;
+				gboolean	 link_active;
+				guint	 prio = 0;
 
 				dev = (NMDevice *)(element->data);
 
@@ -214,8 +214,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 
 				if (iface_type == NM_IFACE_TYPE_WIRED_ETHERNET)
 				{
-					guint	prio = 0;
-
 					if (link_active)
 						prio += 1;
 
@@ -223,6 +221,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 						&& (dev == data->active_device)
 						&& link_active)
 						prio += 1;
+
 					if (prio > best_wired_prio)
 					{
 						best_wired_dev = dev;
@@ -231,8 +230,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				}
 				else if (iface_type == NM_IFACE_TYPE_WIRELESS_ETHERNET)
 				{
-					guint	prio = 0;
-
 					if (link_active)
 						prio += 1;
 

@@ -370,6 +370,7 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_signal_device_no_longer_active(): Not enough memory for new dbus message!\n");
+		return;
 	}
 
 	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
@@ -398,6 +399,7 @@ void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_signal_device_now_active(): Not enough memory for new dbus message!\n");
+		return;
 	}
 
 	nm_dbus_get_object_path_from_device (dev, object_path, 100, FALSE);
