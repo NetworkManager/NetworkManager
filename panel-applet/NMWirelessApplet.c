@@ -377,14 +377,13 @@ static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
 }
 
 
-
 /*
  * show_warning_dialog
  *
  * pop up a warning or error dialog with certain text
  *
  */
-static void show_warning_dialog (gboolean error, gchar *mesg, ...)
+void show_warning_dialog (gboolean error, gchar *mesg, ...)
 {
 	GtkWidget	*dialog;
 	char		*tmp;
@@ -555,7 +554,7 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 	{
 		applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
 		applet->forcing_device = TRUE;
-		nmwa_dbus_set_device (applet->connection, dev, net);
+		nmwa_dbus_set_device (applet->connection, dev, net, -1, NULL);
 	}
 }
 
@@ -640,173 +639,13 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 	gtk_widget_show (menu_item);
 }
 
-static void
-update_button_cb (GtkWidget *entry,
-		  GtkWidget *button)
-{
-  const char *text;
-
-  text = gtk_entry_get_text (GTK_ENTRY (entry));
-  if (text[0] == '\000')
-    gtk_widget_set_sensitive (button, FALSE);
-  else
-    gtk_widget_set_sensitive (button, TRUE);
-}
-
-static GtkTreeModel *
-create_wireless_adaptor_model (NMWirelessApplet *applet)
-{
-  GtkListStore *retval;
-  GSList *element;
-
-  retval = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
-  for (element = applet->device_list; element; element = element->next)
-    {
-      NetworkDevice *network = (NetworkDevice *)(element->data);
-
-      g_assert (network);
-      if (network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-	{
-	  GtkTreeIter iter;
-	  const char *network_name;
-
-	  network_name = network->hal_name ? network->hal_name : network->nm_name;
-
-	  gtk_list_store_append (retval, &iter);
-	  gtk_list_store_set (retval, &iter,
-			      0, network_name,
-			      1, network,
-			      -1);
-	}
-    }
-
-  return GTK_TREE_MODEL (retval);
-}
 
 /* FIXME: We really should break this dialog into its own file.  This function is too long.
  */
 static void
 custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 {
-  gchar *glade_file;
-  GtkWidget *dialog;
-  GtkWidget *entry;
-  GtkWidget *button;
-  GladeXML *xml;
-  gint response;
-  gint n_wireless_interfaces = 0;
-  GSList *element;
-  NetworkDevice *default_dev = NULL;
-  char *label;
-
-  glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
-					  "NetworkManagerNotification/essid.glade",
-					  FALSE, NULL);
-
-  if (!glade_file ||
-      !g_file_test (glade_file, G_FILE_TEST_IS_REGULAR))
-    {
-      show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-      return;
-    }
-  
-  xml = glade_xml_new (glade_file, NULL, NULL);
-  g_free (glade_file);
-
-  if (xml == NULL)
-    {
-      /* Reuse the above string to make the translators less angry. */
-      show_warning_dialog (TRUE, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-      return;
-    }
-
-  /* Set up the dialog */
-  dialog = glade_xml_get_widget (xml, "custom_essid_dialog");
-  entry = glade_xml_get_widget (xml, "essid_entry");
-  button = glade_xml_get_widget (xml, "ok_button");
-
-  gtk_widget_grab_focus (entry);
-  gtk_entry_set_text (GTK_ENTRY (entry), "");
-  gtk_widget_set_sensitive (button, FALSE);
-  g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), button);
-
-  label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
-			   _("Custom wireless network"),
-			   _("Enter the ESSID of the wireless network to which you wish to connect."));
-  gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
-
-  /* Do we have multiple Network cards? */
-  g_mutex_lock (applet->data_mutex);
-  for (element = applet->device_list; element; element = element->next)
-    {
-      NetworkDevice *dev = (NetworkDevice *)(element->data);
-
-      g_assert (dev);
-      if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-        {
-          if (!default_dev)
-            {
-              default_dev = dev;
-              network_device_ref (default_dev);
-            }
-          n_wireless_interfaces++;
-        }
-    }
-
-  if (n_wireless_interfaces < 1)
-    {
-      g_mutex_unlock (applet->data_mutex);
-      /* Run away!!! */
-      return;
-    }
-  else if (n_wireless_interfaces == 1)
-    {
-      gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_label"));
-      gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adaptor_combo"));
-    }
-  else
-    {
-      GtkWidget *combo;
-      GtkTreeModel *model;
-
-      combo = glade_xml_get_widget (xml, "wireless_adaptor_combo");
-      model = create_wireless_adaptor_model (applet);
-      gtk_combo_box_set_model (GTK_COMBO_BOX (combo), model);
-
-      /* Select the first one randomly */
-      gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
-    }
-  g_mutex_unlock (applet->data_mutex);
-  
-  /* Run the dialog */
-  response = gtk_dialog_run (GTK_DIALOG (dialog));
-
-  if (response == GTK_RESPONSE_OK)
-    {
-      const char *essid;
-      essid = gtk_entry_get_text (GTK_ENTRY (entry));
-      if (essid[0] != '\000')
-	{
-	  WirelessNetwork *net = wireless_network_new_with_essid (essid);
-	  /* FIXME: allow picking of the wireless device, we currently just
-	   * use the first one found in our device list.
-	   *
-	   * FIXME: default_dev might have gone away by the time the dialog
-	   * gets dismissed and we get here...
-	   */
-	  if (net)
-	    {
-           applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
-           applet->forcing_device = TRUE;
-	      nmwa_dbus_set_device (applet->connection, default_dev, net);
-	      network_device_unref (default_dev);
-	      wireless_network_unref (net);
-	    }
-	}
-    }
-
-  gtk_widget_destroy (dialog);
-  g_object_unref (xml);
+	nmwa_other_network_dialog_run (applet);
 }
 
 static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)

@@ -1,3 +1,37 @@
+2004-10-29 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessAppletOtherNetworksDialog.[ch]
+		- New files, implement the "Other wireless network" dialog
+
+	* panel-applet/NMWirelessApplet.c
+		- Move "other wireless network" dialog to separate file
+
+	* panel-applet/NMWirelessAppletDbus.[ch]
+		- Take key and key_type paramaters for the set_device function
+
+	* panel-applet/essid.glade
+		- Add UI bits for encryption settings
+
+	* src/NetworkManagerDbus.c
+		- Retrieve key and key_type params for "setActiveDevice" method call
+			and pass them on
+		- unref AP returned from nm_device_get_best_ap() when needed
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_get_best_ap): ref the ap before returning it
+		- unref AP returned from nm_device_get_best_ap() when needed
+		- (nm_device_activate_wireless): add "ap" parameter so we don't
+			need to call nm_device_get_best_ap() here, it was pretty much
+			redundant anyway
+		- (AP_NEED_KEY): break second link check condition out into separate
+			function, and fix segfault when ap->enc_key_source was NULL
+		- (nm_device_find_and_use_essid): take key and key_type parameters and
+			pass them along to nm_device_wireless_network_exists().  If the
+			network does exist, set the passed-in key+key_type on the AP
+
+	* src/NetworkManagerPolicy.c
+		- unref AP returned from nm_device_get_best_ap() when needed
+
 2004-10-28 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerUtils.c

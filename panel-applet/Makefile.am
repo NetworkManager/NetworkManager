@@ -26,6 +26,8 @@ libnm_notification_applet_la_SOURCES =	\
 	NMWirelessApplet.h		\
 	NMWirelessAppletDbus.c		\
 	NMWirelessAppletDbus.h		\
+	NMWirelessAppletOtherNetworkDialog.c	\
+	NMWirelessAppletOtherNetworkDialog.h	\
 	menu-info.c			\
 	menu-info.h			\
 	gtkcellview.c			\

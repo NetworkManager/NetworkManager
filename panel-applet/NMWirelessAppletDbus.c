@@ -514,20 +514,27 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
  * possibly a specific wireless network too.
  *
  */
-void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev, const WirelessNetwork *network)
+void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev, const WirelessNetwork *network,
+						NMEncKeyType key_type, const char *passphrase)
 {
 	DBusMessage	*message;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
+	if ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) && !passphrase && (key_type != -1))
+		return;
+
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
 		if ((dev->type == DEVICE_TYPE_WIRELESS_ETHERNET) && network && network->essid)
 		{
-			fprintf (stderr, "Forcing device '%s' and network '%s'\n", dev->nm_device, network->essid);
+			fprintf (stderr, "Forcing device '%s' and network '%s' %s passphrase\n", dev->nm_device, network->essid, passphrase ? "with" : "without");
 			dbus_message_append_args (message, DBUS_TYPE_STRING, dev->nm_device,
-									DBUS_TYPE_STRING, network->essid, DBUS_TYPE_INVALID);
+									DBUS_TYPE_STRING, network->essid,
+									DBUS_TYPE_STRING, (passphrase ? passphrase : ""),
+									DBUS_TYPE_INT32, key_type,
+									DBUS_TYPE_INVALID);
 		}
 		else
 		{

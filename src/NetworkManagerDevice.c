@@ -135,7 +135,7 @@ struct NMDevice
 static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 {
 	int		sk;
-	int		error;
+	int		err;
 	char		ioctl_buf[64];
 	
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -150,9 +150,9 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 	strncpy(ioctl_buf, nm_device_get_iface(dev), 63);
 
 	sk = iw_sockets_open ();
-	error = ioctl(sk, SIOCGIWNAME, ioctl_buf);
+	err = ioctl(sk, SIOCGIWNAME, ioctl_buf);
 	close (sk);
-	return (error == 0);
+	return (err == 0);
 }
 
 
@@ -164,10 +164,10 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
  */
 static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 {
-	int					sk;
-	int					error;
-	gboolean				can_scan = TRUE;
-	wireless_scan_head		scan_data;
+	int				sk;
+	int				err;
+	gboolean			can_scan = TRUE;
+	wireless_scan_head	scan_data;
 	
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, FALSE);
@@ -177,9 +177,9 @@ static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 		return (TRUE);
 	
 	sk = iw_sockets_open ();
-	error = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+	err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
 	nm_dispose_scan_results (scan_data.result);
-	if ((error == -1) && (errno == EOPNOTSUPP))
+	if ((err == -1) && (errno == EOPNOTSUPP))
 		can_scan = FALSE;
 	close (sk);
 	return (can_scan);
@@ -536,10 +536,15 @@ static gboolean nm_device_wireless_link_active (NMDevice *dev)
 	iwlib_socket = iw_sockets_open ();
 	if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
 	{
-		if (    nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data)))
-			&& nm_device_get_best_ap (dev)
-			&& !nm_device_need_ap_switch (dev))
-			link = TRUE;
+		NMAccessPoint	*best_ap;
+
+		if ((best_ap = nm_device_get_best_ap (dev)))
+		{
+			if (    nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data)))
+				&& !nm_device_need_ap_switch (dev))
+				link = TRUE;
+			nm_ap_unref (best_ap);
+		}
 	}
 	close (iwlib_socket);
 
@@ -638,10 +643,16 @@ char * nm_device_get_essid (NMDevice *dev)
 	 */
 	if (dev->test_device)
 	{
-		if (nm_device_get_best_ap (dev))
-			return (nm_ap_get_essid (nm_device_get_best_ap (dev)));
-		else
-			return (dev->options.wireless.cur_essid);
+		NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
+		char			*essid = dev->options.wireless.cur_essid;
+
+		/* Or, if we've got a best ap, use that ESSID instead */
+		if (best_ap)
+		{
+			essid = nm_ap_get_essid (best_ap);
+			nm_ap_unref (best_ap);
+		}
+		return (essid);
 	}
 	
 	iwlib_socket = iw_sockets_open ();
@@ -1281,52 +1292,68 @@ static gboolean nm_device_activation_should_cancel (NMDevice *dev)
  *			FALSE on unsuccessful activation (ie no best AP)
  *
  */
-static gboolean nm_device_activate_wireless (NMDevice *dev, guint *bad_crypt_packets)
+static gboolean nm_device_activate_wireless (NMDevice *dev, NMAccessPoint *ap, guint *bad_crypt_packets)
 {
-	NMAccessPoint	*best_ap;
 	gboolean		 success = FALSE;
+	const char	*essid = NULL;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
 
 	*bad_crypt_packets = 0;
-	/* If there is a desired AP to connect to, use that essid and possible WEP key */
-	if ((best_ap = nm_device_get_best_ap (dev)) && nm_ap_get_essid (best_ap))
+	nm_device_bring_down (dev);
+
+	/* Force the card into Managed/Infrastructure mode */
+	nm_device_set_mode_managed (dev);
+
+	/* Disable encryption, then re-enable and set correct key on the card
+	 * if we are going to encrypt traffic.
+	 */
+	essid = nm_ap_get_essid (ap);
+	nm_device_set_enc_key (dev, NULL);
+	if (nm_ap_get_encrypted (ap) && nm_ap_get_enc_key_source (ap))
 	{
-		nm_device_bring_down (dev);
-
-		/* Force the card into Managed/Infrastructure mode */
-		nm_device_set_mode_managed (dev);
-
-		/* Disable encryption, then re-enable and set correct key on the card
-		 * if we are going to encrypt traffic.
-		 */
-		nm_device_set_enc_key (dev, NULL);
-		if (nm_ap_get_encrypted (best_ap) && nm_ap_get_enc_key_source (best_ap))
-		{
-			char *hashed_key = nm_ap_get_enc_key_hashed (best_ap);
-			nm_device_set_enc_key (dev, hashed_key);
-			g_free (hashed_key);
-		}
-
-		nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
-		*bad_crypt_packets = nm_device_get_bad_crypt_packets (dev);
-
-		syslog (LOG_INFO, "nm_device_wireless_activate(%s) using essid '%s'", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
-
-		/* Bring the device up and pause to allow card to associate */
-		nm_device_bring_up (dev);
-		g_usleep (G_USEC_PER_SEC * 2);
-
-		nm_device_update_link_active (dev, FALSE);
-		success = TRUE;
+		char *hashed_key = nm_ap_get_enc_key_hashed (ap);
+		nm_device_set_enc_key (dev, hashed_key);
+		g_free (hashed_key);
 	}
+
+	nm_device_set_essid (dev, essid);
+	*bad_crypt_packets = nm_device_get_bad_crypt_packets (dev);
+
+	syslog (LOG_INFO, "nm_device_wireless_activate(%s) using essid '%s'", nm_device_get_iface (dev), essid);
+
+	/* Bring the device up and pause to allow card to associate */
+	nm_device_bring_up (dev);
+	g_usleep (G_USEC_PER_SEC * 2);
+
+	nm_device_update_link_active (dev, FALSE);
+	success = TRUE;
 
 	return (success);
 }
 
 
-inline gboolean HAVE_LINK (NMDevice *dev, guint32 bad_crypt_packets)
+gboolean AP_NEED_KEY (NMAccessPoint *ap)
+{
+	char *s;
+	int	 len = 0;
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	if ((s = nm_ap_get_enc_key_source (ap)))
+		len = strlen (s);
+
+	syslog (LOG_NOTICE, "AP_NEED_KEY: is_enc=%d && (!(key_source=%d) || !(strlen=%d))\n", nm_ap_get_encrypted (ap),
+			!!nm_ap_get_enc_key_source (ap), len);
+	if (nm_ap_get_encrypted (ap) && (!nm_ap_get_enc_key_source (ap) || !len))
+		return (TRUE);
+
+	return (FALSE);
+}
+
+gboolean HAVE_LINK (NMDevice *dev, guint32 bad_crypt_packets)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -1351,15 +1378,13 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 
 	/* If the card is just inserted, we may not have had a chance to scan yet */
-	if (!(best_ap = nm_device_get_best_ap (dev)))
+	best_ap = nm_device_get_best_ap (dev);
+	if (!best_ap)
 	{
 		nm_device_do_wireless_scan (dev);
 		nm_device_update_best_ap (dev);
 		best_ap = nm_device_get_best_ap (dev);
 	}
-
-	/* Try activating the device with the key and access point we have already */
-	nm_device_activate_wireless (dev, &bad_crypt_packets);
 
 	/* Wait until we have a link.  Some things that might block us from
 	 * getting one:
@@ -1388,6 +1413,10 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	 * when the card cannot communicate with the access point.
 	 */
 
+	/* Try activating the device with the key and access point we have already */
+	if (best_ap)
+		nm_device_activate_wireless (dev, best_ap, &bad_crypt_packets);
+
 	/* For the link check, ensure that:
 	 * 1) a classic link check is good, ie does the card report a valid associated AP MAC address and is it
 	 *		receiving WEP-enabled packets OK if WEP is on
@@ -1397,20 +1426,11 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 	 * from the user.
 	 *
 	 */
-	while (      !HAVE_LINK (dev, bad_crypt_packets)
-			|| (best_ap && (nm_ap_get_encrypted (best_ap) &&
-					(!nm_ap_get_enc_key_source (best_ap) || !strlen (nm_ap_get_enc_key_source (best_ap))))))
+	while (!HAVE_LINK (dev, bad_crypt_packets) || (best_ap && AP_NEED_KEY (best_ap)))
 	{
+		/* Refresh what we think is the best AP to associate with */
 		if (best_ap)
-		{
-			syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=0x%X && (is_enc=%d && (!source=%d || !len_source=%d)))",
-				!HAVE_LINK (dev, bad_crypt_packets), best_ap, nm_ap_get_encrypted (best_ap), !nm_ap_get_enc_key_source (best_ap),
-				nm_ap_get_enc_key_source (best_ap) ? !strlen (nm_ap_get_enc_key_source (best_ap)) : 0);
-		}
-		else
-			syslog (LOG_NOTICE, "LINK: !HAVE=%d, (best_ap=NULL)", !HAVE_LINK (dev, bad_crypt_packets));
-
-
+			nm_ap_unref (best_ap);
 		if ((best_ap = nm_device_get_best_ap (dev)))
 		{
 			dev->options.wireless.now_scanning = FALSE;
@@ -1432,11 +1452,11 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 
 				/* If we were told to quit activation, stop the thread and return */
 				if (nm_device_activation_should_cancel (dev))
-					return;
+					goto out;
 			}
 
 			/* Try activating again with up-to-date access point and keys */	
-			nm_device_activate_wireless (dev, &bad_crypt_packets);
+			nm_device_activate_wireless (dev, best_ap, &bad_crypt_packets);
 		}
 		else
 		{
@@ -1447,9 +1467,12 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_should_cancel (dev))
-			break;
+			goto out;
 	}
 
+out:
+	if (best_ap)
+		nm_ap_unref (best_ap);
 	dev->options.wireless.now_scanning = FALSE;
 }
 
@@ -1509,6 +1532,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	NMDevice		*dev = (NMDevice *)user_data;
 	unsigned char	 hostname[100] = "\0";
 	int			 host_err;
+	NMAccessPoint	*best_ap = NULL;
 
 	g_return_val_if_fail (dev  != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
@@ -1524,8 +1548,11 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		if (nm_device_activation_should_cancel (dev))
 			goto out;
 
+		best_ap = nm_device_get_best_ap (dev);
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): using ESSID '%s'", nm_device_get_iface (dev),
-				nm_ap_get_essid (nm_device_get_best_ap (dev)));
+				best_ap ? nm_ap_get_essid (best_ap) : "none");
+		if (best_ap)
+			nm_ap_unref (best_ap);
 	}
 	else
 	{
@@ -1538,7 +1565,9 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 	nm_system_device_stop_dhcp (dev);
 
 	/* If we don't have a "best" ap, don't try to get a DHCP address or restart the name service cache */
-	if (nm_device_is_wired (dev) || (nm_device_is_wireless (dev) && nm_device_get_best_ap (dev)))
+	if (nm_device_is_wireless (dev))
+		best_ap = nm_device_get_best_ap (dev);
+	if (nm_device_is_wired (dev) || best_ap)
 	{
 		gboolean	success;
 		/* Save machine host name */
@@ -1569,6 +1598,8 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 		/* Make system aware of any new DNS settings from resolv.conf */
 		nm_system_update_dns ();
 	}
+	if (best_ap)
+		nm_ap_unref (best_ap);
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
@@ -1757,6 +1788,8 @@ void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *inval
 		 */
 		if (nm_null_safe_strcmp (network, nm_ap_get_essid (best_ap)) == 0)
 			nm_ap_set_enc_key_source (best_ap, key, enc_method);
+
+		nm_ap_unref (best_ap);
 	}
 	dev->options.wireless.user_key_received = TRUE;
 }
@@ -1862,6 +1895,8 @@ NMAccessPointList *nm_device_ap_list_get (NMDevice *dev)
 /*
  * Get/Set functions for "best" access point
  *
+ * Caller MUST unref returned access point when done with it.
+ *
  */
 NMAccessPoint *nm_device_get_best_ap (NMDevice *dev)
 {
@@ -1872,6 +1907,8 @@ NMAccessPoint *nm_device_get_best_ap (NMDevice *dev)
 
 	g_mutex_lock (dev->options.wireless.best_ap_mutex);
 	best_ap = dev->options.wireless.best_ap;
+	/* Callers get a reffed AP */
+	if (best_ap) nm_ap_ref (best_ap);
 	g_mutex_unlock (dev->options.wireless.best_ap_mutex);
 	
 	return (best_ap);
@@ -1967,6 +2004,8 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
 	if (nm_null_safe_strcmp (nm_device_get_essid (dev), (ap ? nm_ap_get_essid (ap) : NULL)) != 0)
 		need_switch = TRUE;
 
+	if (ap) nm_ap_unref (ap);
+
 	return (need_switch);
 }
 
@@ -1984,7 +2023,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 {
 	NMAccessPointList	*ap_list;
 	NMAPListIter		*iter;
-	NMAccessPoint		*ap = NULL;
+	NMAccessPoint		*scan_ap = NULL;
 	NMAccessPoint		*best_ap = NULL;
 	NMAccessPoint		*trusted_best_ap = NULL;
 	NMAccessPoint		*untrusted_best_ap = NULL;
@@ -2005,18 +2044,23 @@ void nm_device_update_best_ap (NMDevice *dev)
 	 */
 	if (nm_device_is_best_ap_frozen (dev))
 	{
-		NMAccessPoint *best_ap = nm_device_get_best_ap (dev);
+		best_ap = nm_device_get_best_ap (dev);
 
 		/* If its in the device's ap list still, don't change the
 		 * best ap, since its frozen.
 		 */
 		g_mutex_lock (dev->options.wireless.best_ap_mutex);
-		if (    best_ap
-			&& !nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (best_ap))
-			&& nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
+		if (best_ap)
 		{
-			g_mutex_unlock (dev->options.wireless.best_ap_mutex);
-			return;
+			char *essid = nm_ap_get_essid (best_ap);
+			if (   !nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, essid)
+				&& nm_device_ap_list_get_ap_by_essid (dev, essid))
+			{
+				nm_ap_unref (best_ap);
+				g_mutex_unlock (dev->options.wireless.best_ap_mutex);
+				return;
+			}
+			nm_ap_unref (best_ap);
 		}
 
 		/* Otherwise, its gone away and we don't care about it anymore */
@@ -2026,10 +2070,10 @@ void nm_device_update_best_ap (NMDevice *dev)
 
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
 		return;
-	while ((ap = nm_ap_list_iter_next (iter)))
+	while ((scan_ap = nm_ap_list_iter_next (iter)))
 	{
 		NMAccessPoint	*tmp_ap;
-		char			*ap_essid = nm_ap_get_essid (ap);
+		char			*ap_essid = nm_ap_get_essid (scan_ap);
 
 		/* Access points in the "invalid" list cannot be used */
 		if (nm_ap_list_get_ap_by_essid (dev->app_data->invalid_ap_list, ap_essid))
@@ -2042,14 +2086,14 @@ void nm_device_update_best_ap (NMDevice *dev)
 			if (nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > trusted_latest_timestamp.tv_sec))
 			{
 				trusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
-				trusted_best_ap = ap;
+				trusted_best_ap = scan_ap;
 				/* Merge access point data (mainly to get updated WEP key) */
 				nm_ap_set_enc_key_source (trusted_best_ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
 			}
 			else if (!nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > untrusted_latest_timestamp.tv_sec))
 			{
 				untrusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
-				untrusted_best_ap = ap;
+				untrusted_best_ap = scan_ap;
 				/* Merge access point data (mainly to get updated WEP key) */
 				nm_ap_set_enc_key_source (untrusted_best_ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
 			}
@@ -2060,7 +2104,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 
 	/* If the best ap is NULL, bring device down and clear out its essid and AP */
 	nm_device_set_best_ap (dev, best_ap);
-	if (!nm_device_get_best_ap (dev))
+	if (!best_ap)
 	{
 		nm_device_bring_down (dev);
 		nm_device_set_essid (dev, "");
@@ -2081,7 +2125,8 @@ void nm_device_update_best_ap (NMDevice *dev)
  * WARNING: will blow away any connection the card currently has.
  *
  */
-gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, struct ether_addr *ap_addr, gboolean *encrypted)
+gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type,
+									struct ether_addr *ap_addr, gboolean *encrypted)
 {
 	gboolean			 success = FALSE;
 	struct ether_addr	 addr;
@@ -2166,7 +2211,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
  * Returns:	TRUE on success
  *			FALSE on failure
  */
-gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
+gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type)
 {
 	struct ether_addr	 ap_addr;
 	gboolean			 encrypted = FALSE;
@@ -2183,14 +2228,13 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 	 * (it might have been a blank ESSID up to this point) and use it.
 	 */
 	nm_device_deactivate (dev, FALSE);
-	if (nm_device_wireless_network_exists (dev, essid, &ap_addr, &encrypted))
+	if (nm_device_wireless_network_exists (dev, essid, key, key_type, &ap_addr, &encrypted))
 	{
 		if (!(ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), essid)))
 		{
 			NMAccessPoint *tmp_ap;
 
-			ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr);
-			if (!ap)
+			if (!(ap = nm_device_ap_list_get_ap_by_address (dev, &ap_addr)))
 			{
 				/* Okay, the card didn't see it in the scan, Cisco cards sometimes do this.
 				 * So we make a "fake" access point and add it to the scan list.
@@ -2199,6 +2243,8 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 				nm_ap_set_encrypted (ap, encrypted);
 				nm_ap_set_artificial (ap, TRUE);
 				nm_ap_set_address (ap, &ap_addr);
+				if (key_type != NM_ENC_TYPE_UNKNOWN)
+					nm_ap_set_enc_key_source (ap, key, key_type);
 				nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 				nm_ap_unref (ap);
 			}
@@ -2207,10 +2253,19 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 			nm_ap_set_essid (ap, essid);
 			if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, essid)))
 			{
+				if (key_type != NM_ENC_TYPE_UNKNOWN)
+					nm_ap_set_enc_key_source (ap, key, key_type);
+				else
+					nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
 				nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
-				nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_method (tmp_ap));
 				nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
 			}
+		}
+		else
+		{
+			/* Use the encryption key and type the user sent us if its valid */
+			if (key_type != NM_ENC_TYPE_UNKNOWN)
+				nm_ap_set_enc_key_source (ap, key, key_type);
 		}
 	}
 

@@ -148,5 +148,6 @@ typedef struct
 
 NetworkDevice		*nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);
 NMWirelessApplet	*nmwa_new (void);
+void				 show_warning_dialog (gboolean error, gchar *mesg, ...);
 
 #endif

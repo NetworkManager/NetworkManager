@@ -19,33 +19,13 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NM_WIRELESS_APPLET_DBUS_H
-#define NM_WIRELESS_APPLET_DBUS_H
-
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
-#include "NetworkManager.h"
+#include <libgnomeui/libgnomeui.h>
 #include "NMWirelessApplet.h"
 
-/* Return codes for functions that use dbus */
-enum
-{
-	RETURN_SUCCESS = 1,
-	RETURN_FAILURE = 0,
-	RETURN_NO_NM = -1
-};
 
+#ifndef NM_WIRELESS_APPLET_OTHER_NETWORK_DIALOG_H
+#define NM_WIRELESS_APPLET_OTHER_NETWORK_DIALOG_H
 
-gpointer			nmwa_dbus_worker				(gpointer user_data);
-
-void				nmwa_dbus_set_device			(DBusConnection *connection, const NetworkDevice *dev,
-												const WirelessNetwork *network, NMEncKeyType key_type,
-												const char *passphrase);
-
-WirelessNetwork *	wireless_network_new_with_essid	(const char *essid);
-void				wireless_network_unref			(WirelessNetwork *net);
-
-void				network_device_ref				(NetworkDevice *dev);
-void				network_device_unref			(NetworkDevice *dev);
+void		nmwa_other_network_dialog_run		(NMWirelessApplet *applet);
 
 #endif

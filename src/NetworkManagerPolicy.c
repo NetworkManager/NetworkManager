@@ -123,6 +123,8 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 				best_wireless_dev = dev;
 				best_wireless_prio = prio;
 			}
+			if (best_ap)
+				nm_ap_unref (best_ap);
 		}
 
 		element = g_slist_next (element);
@@ -353,9 +355,9 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		if (nm_device_is_wireless (data->active_device))
 		{
 			ap = nm_device_get_best_ap (data->active_device);
-			nm_ap_ref (ap);
 			/* Add the AP to the invalid list and force a best ap update */
 			nm_ap_list_append_ap (data->invalid_ap_list, ap);
+			nm_ap_unref (ap);
 			nm_device_update_best_ap (data->active_device);
 		}
 		if (ap && nm_ap_get_essid (ap))

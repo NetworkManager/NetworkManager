@@ -238,6 +238,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	DBusMessage		*reply_message = NULL;
 	char				*dev_path = NULL;
 	char				*network = NULL;
+	char				*key = NULL;
+	int				 key_type = -1;
 	DBusError			 error;
 
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -247,9 +249,12 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path,
-							DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
+							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
 		network = NULL;
+		key = NULL;
+		key_type = -1;
 
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
@@ -291,7 +296,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		goto out;
 
 	/* If the user specificed a wireless network too, force that as well */
-	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network))
+	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network, key, key_type))
 		nm_dbus_send_network_not_found (data->dbus_connection, network);
 	else
 	{
@@ -446,6 +451,9 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_STRING, nm_ap_get_essid (ap), DBUS_TYPE_INVALID);
 	else
 		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+
+	if (ap)
+		nm_ap_unref (ap);
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
