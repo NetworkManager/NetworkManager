@@ -216,7 +216,6 @@ int nmwa_dbus_get_bool (DBusConnection *connection, const char *path, const char
 	}
 
 	dbus_message_unref (reply);
-	*val = FALSE;
 	return (RETURN_SUCCESS);
 }
 
@@ -489,7 +488,7 @@ gboolean nmwa_dbus_get_network_encrypted (NMWirelessApplet *applet, char *net_pa
 {
 	gboolean	enc = FALSE;
 
-	switch (nmwa_dbus_get_bool (applet->connection, net_path, "getName", &enc))
+	switch (nmwa_dbus_get_bool (applet->connection, net_path, "getEncrypted", &enc))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;

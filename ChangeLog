@@ -1,5 +1,12 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_get_bool, nmwa_dbus_get_network_encrypted): correct method name
+			for getting encryption, and don't stop on "val" once we've gotten it
+			from NetworkManager.  Short form:  encryption should now show up.
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Set ESSID on a gconf trusted network too when force-setting the wireless
 			network to associate with
