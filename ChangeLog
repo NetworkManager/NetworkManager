@@ -1,5 +1,11 @@
 2005-02-27  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- (nmwa_destroy): Really mean to destroy GUI data model first, then
+			dbus data model, not the GUI data model twice.
+
+2005-02-27  Dan Williams  <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 	  panel-applet/NMWirelessAppletDbus.[ch]
 		- Move to incremental network updates.  Instead of blowing away our list

@@ -1302,7 +1302,7 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 		g_object_unref (G_OBJECT (applet->gconf_client));
 
 	nmwa_free_gui_data_model (applet);
-	nmwa_free_gui_data_model (applet);
+	nmwa_free_dbus_data_model (applet);
 }
 
 
