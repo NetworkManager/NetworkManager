@@ -1512,6 +1512,11 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 			if ((err = ioctl (sk, SIOCSIFFLAGS, &ifr)))
 				syslog (LOG_ERR, "nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
 		}
+		/* Make sure we have a valid MAC address, some cards reload firmware when they
+		 * are brought up.
+		 */
+		if (!nm_ethernet_address_is_valid((struct ether_addr *)dev->hw_addr))
+			nm_device_update_hw_address(dev);
 	}
 	else
 		syslog (LOG_ERR, "nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );

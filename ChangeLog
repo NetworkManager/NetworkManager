@@ -1,3 +1,14 @@
+2005-02-11  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Dave Woodhouse for IPv6:
+	* src/NetworkManagerUtils.c
+		- (nm_ethernet_address_is_valid): Check for prism54 dummy MAC address
+			and multicast addresses
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_up_down): make sure our cached MAC address is up-to-date
+			after bringing up a card.
+
 2005-02-10  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Dave Woodhouse:

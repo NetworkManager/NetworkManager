@@ -182,13 +182,16 @@ gboolean nm_ethernet_address_is_valid (struct ether_addr *test_addr)
 	struct ether_addr	invalid_addr1 = { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
 	struct ether_addr	invalid_addr2 = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00} };
 	struct ether_addr	invalid_addr3 = { {0x44, 0x44, 0x44, 0x44, 0x44, 0x44} };
+	struct ether_addr	invalid_addr4 = { {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00} }; /* prism54 dummy MAC */
 
 	g_return_val_if_fail (test_addr != NULL, FALSE);
 
 	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
 	if (    (memcmp(test_addr, &invalid_addr1, sizeof(struct ether_addr)) != 0)
 		&& (memcmp(test_addr, &invalid_addr2, sizeof(struct ether_addr)) != 0)
-		&& (memcmp(test_addr, &invalid_addr3, sizeof(struct ether_addr)) != 0))
+		&& (memcmp(test_addr, &invalid_addr3, sizeof(struct ether_addr)) != 0)
+		&& (memcmp(test_addr, &invalid_addr4, sizeof(struct ether_addr)) != 0)
+		&& ((test_addr->ether_addr_octet[0] & 1) == 0))			/* Multicast addresses */
 		valid = TRUE;
 
 	return (valid);
