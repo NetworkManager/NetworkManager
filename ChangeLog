@@ -1,5 +1,10 @@
 2004-10-08 Dan Williams <dcbw@redhat.com>
 
+	* info-daemon/NetworkManagerInfo.c (main):
+		- Initialize GError object to NULL
+
+2004-10-08 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessAppletDbus.c
 		- Die if NetworkManagerInfo dies, since it manages our lifetime
 

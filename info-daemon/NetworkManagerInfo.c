@@ -98,7 +98,7 @@ int main( int argc, char *argv[] )
 	NMIAppInfo	*app_info = NULL;
 	GMainLoop		*loop;
 	guint		 notify_id;
-	GError		*error;
+	GError		*error = NULL;
 
 	struct poptOption options[] =
 	{
