@@ -112,6 +112,7 @@ typedef struct
         /* Data model elements */
 	GMutex			*data_mutex;
 	AppletState		 applet_state;
+	gboolean			 forcing_device;
 	GSList			*device_list;
 	NetworkDevice		*active_device;
 	char				*nm_status;

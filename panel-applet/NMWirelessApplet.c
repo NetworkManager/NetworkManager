@@ -534,7 +534,11 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 		dev = nmwa_get_device_for_nm_device (applet, tag);
 
 	if (dev)
+	{
+		applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
+		applet->forcing_device = TRUE;
 		nmwa_dbus_set_device (applet->connection, dev, net);
+	}
 }
 
 
