@@ -424,8 +424,14 @@ DBusConnection * nmwa_dbus_init (gpointer user_data)
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (!connection)
+
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
 		return (NULL);
+	}
+
+	g_assert(connection);
 
 	if (!dbus_connection_add_filter (connection, nmwa_dbus_filter, user_data, NULL))
 		return (NULL);

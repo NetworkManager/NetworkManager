@@ -1268,12 +1268,6 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, NULL);
-	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &dbus_error);
-	if (dbus_error_is_set (&dbus_error))
-	{
-		NM_DEBUG_PRINT_1 ("nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", dbus_error.message);
-		return (NULL);
-	}
 
 	success = dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data);
 	if (!success)
@@ -1304,6 +1298,13 @@ DBusConnection *nm_dbus_init (NMData *data)
 				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
 				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
 				&dbus_error);
+
+	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &dbus_error);
+	if (dbus_error_is_set (&dbus_error))
+	{
+		NM_DEBUG_PRINT_1 ("nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", dbus_error.message);
+		return (NULL);
+	}
 
 	return (connection);
 }

@@ -1,3 +1,20 @@
+2004-08-06  Seth Nickell  <seth@gnome.org>
+
+	* panel-applet/NMWirelessApplet.c: (nmwa_new):
+
+	Check the error code when getting a connection.
+	
+	* panel-applet/NMWirelessAppletDbus.c: (nmwa_dbus_init):
+
+	Check if the NM service exists when initializing (rather than
+	assuming it does not).
+	
+	* src/NetworkManagerDbus.c: (nm_dbus_init):
+
+	Don't acquire the well-known service name until we have
+	registered object/path handlers and can actually receive
+	calls.
+	
 2004-08-06  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/*

@@ -489,7 +489,7 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 
 	applet->connection = nmwa_dbus_init(applet);
 	applet->have_active_device = FALSE;
-	applet->nm_active = FALSE;
+	applet->nm_active = nmwa_dbus_nm_is_running(applet->connection);
 	
 	nmwa_load_theme (applet);
 	nmwa_setup_widgets (applet);
