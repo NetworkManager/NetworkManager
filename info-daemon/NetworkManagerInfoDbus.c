@@ -138,8 +138,6 @@ void nmi_dbus_signal_update_allowed_network (DBusConnection *connection, const c
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (network != NULL);
 
-fprintf( stderr, "nmi_dbus_signal_update_allowed_network() signaling update for '%s'\n", network);
-
 	message = dbus_message_new_signal ("/org/freedesktop/NetworkManagerInfo", "org.freedesktop.NetworkManagerInfo",
 									"AllowedNetworkUpdate");
 	if (!message)

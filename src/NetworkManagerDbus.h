@@ -31,6 +31,8 @@
 #define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
 #define	NM_DBUS_DEVICES_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManager/Devices"
 #define	NM_DBUS_DEVICES_NAMESPACE			"org.freedesktop.NetworkManager.Devices"
+#define	NM_DBUS_NMI_OBJECT_PATH				"/org/freedesktop/NetworkManagerInfo"
+#define	NM_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
 
 
 DBusConnection *	nm_dbus_init						(NMData *data);

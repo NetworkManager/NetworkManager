@@ -418,10 +418,8 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 	g_return_if_fail (ap != NULL);
 	g_return_if_fail (nm_ap_get_essid (ap) != NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-						"/org/freedesktop/NetworkManagerInfo",
-						"org.freedesktop.NetworkManagerInfo",
-						"getKeyForNetwork");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "getKeyForNetwork");
 	if (message == NULL)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message\n");
@@ -501,10 +499,8 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection)
 
 	g_return_if_fail (connection != NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-						"/org/freedesktop/NetworkManagerInfo",
-						"org.freedesktop.NetworkManagerInfo",
-						"cancelGetKeyForNetwork");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "cancelGetKeyForNetwork");
 	if (message == NULL)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_cancel_get_user_key_for_network(): Couldn't allocate the dbus message\n");
@@ -536,10 +532,8 @@ char * nm_dbus_get_allowed_network_essid (DBusConnection *connection, const char
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-									"/org/freedesktop/NetworkManagerInfo",
-									"org.freedesktop.NetworkManagerInfo",
-									"getAllowedNetworkEssid");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "getAllowedNetworkEssid");
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_allowed_network_essid(): Couldn't allocate the dbus message\n");
@@ -593,10 +587,8 @@ char * nm_dbus_get_allowed_network_key (DBusConnection *connection, const char *
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-									"/org/freedesktop/NetworkManagerInfo",
-									"org.freedesktop.NetworkManagerInfo",
-									"getAllowedNetworkKey");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "getAllowedNetworkKey");
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_allowed_network_key(): Couldn't allocate the dbus message\n");
@@ -648,10 +640,8 @@ guint nm_dbus_get_allowed_network_priority (DBusConnection *connection, const ch
 	g_return_val_if_fail (connection != NULL, NM_AP_PRIORITY_WORST);
 	g_return_val_if_fail (network != NULL, NM_AP_PRIORITY_WORST);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-									"/org/freedesktop/NetworkManagerInfo",
-									"org.freedesktop.NetworkManagerInfo",
-									"getAllowedNetworkPriority");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "getAllowedNetworkPriority");
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_allowed_network_priority(): Couldn't allocate the dbus message\n");
@@ -700,10 +690,8 @@ char ** nm_dbus_get_allowed_networks (DBusConnection *connection, int *num_netwo
 	*num_networks = 0;
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManagerInfo",
-									"/org/freedesktop/NetworkManagerInfo",
-									"org.freedesktop.NetworkManagerInfo",
-									"getAllowedNetworks");
+	message = dbus_message_new_method_call (NM_DBUS_NMI_NAMESPACE, NM_DBUS_NMI_OBJECT_PATH,
+						NM_DBUS_NMI_NAMESPACE, "getAllowedNetworks");
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_allowed_networks(): Couldn't allocate the dbus message\n");
@@ -749,20 +737,18 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
 	object_path = dbus_message_get_path (message);
-	if (!object_path || (strcmp (object_path, "/org/freedesktop/NetworkManager") != 0))
+	if (!object_path || (strcmp (object_path, NM_DBUS_NMI_OBJECT_PATH) != 0))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "AllowedNetworkUpdate"))
+	if (dbus_message_is_signal (message, NM_DBUS_NMI_NAMESPACE, "AllowedNetworkUpdate"))
 	{
 		char			*network = NULL;
 		DBusError		 error;
-fprintf( stderr, "nmi_filter(): got signal AllowedNetworkUpdate\n");
 
 		dbus_error_init (&error);
 		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-fprintf( stderr, "nmi_filter(): updating network '%s'\n", network);
 		nm_ap_list_update_network (data, network);
 		dbus_free (network);
 	}
@@ -1071,9 +1057,9 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_bus_add_match (connection,
 				"type='signal',"
-				"interface='org.freedesktop.NetworkManagerInfo',"
-				"sender='org.freedesktop.NetworkManagerInfo',"
-				"path='/org/freedesktop/NetworkManagerInfo'", &dbus_error);
+				"interface='"NM_DBUS_NMI_NAMESPACE"',"
+				"sender='"NM_DBUS_NMI_NAMESPACE"',"
+				"path='"NM_DBUS_NMI_OBJECT_PATH"'", &dbus_error);
 
 	return (connection);
 }

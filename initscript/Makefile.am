@@ -1,4 +1,5 @@
 EXTRA_DIST = NetworkManager
 
-rcddir = $(sysconfdir)/rc.d/init.d
-rcd_DATA = NetworkManager
+initddir = $(sysconfdir)/rc.d/init.d
+
+initd_SCRIPTS = NetworkManager

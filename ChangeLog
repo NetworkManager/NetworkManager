@@ -1,5 +1,21 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* initscript/Makefile.in
+		- Remove
+
+	* initscript/Makefile.am
+		- Add correct rules to install the init.d initscript
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Remove debug fprintf
+
+	* src/NetworkManagerDbus.[ch]
+		- Remove debug fprintfs
+		- Add macros for NetworkManagerInfo object path/namespace
+		- Use said macros instead of constant strings
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* initscript/.cvsignore
 		- Add
 
