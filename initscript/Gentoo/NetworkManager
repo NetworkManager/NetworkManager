@@ -1,0 +1,50 @@
+#!/sbin/runscript
+#
+# NetworkManager:   NetworkManager daemon
+#
+# chkconfig: 345 98 02
+# description:  This is a daemon for automatically switching network \
+#               connections to the best available connection. \
+#
+# processname: NetworkManager
+# pidfile: /var/run/NetworkManager.pid
+#
+### BEGIN INIT INFO
+# Provides: $network
+### END INIT INFO
+
+# Sanity checks.
+[ -x /usr/bin/NetworkManager ] || exit 0
+
+# We need /sbin/ip
+[ -x /sbin/ip ] || exit 0
+
+# so we can rearrange this easily
+processname=/usr/bin/NetworkManager
+pidfile=/var/run/NetworkManager.pid
+
+depend() {
+	need hald
+}
+
+start()
+{
+	if [ -e ${pidfile} ]; then
+		rm -f ${pidfile}
+	fi
+	ebegin "Starting NetworkManager"
+	start-stop-daemon --start --quiet --exec ${processname}
+	eend $?
+	echo $(/bin/pidof NetworkManager) > ${pidfile}
+	NMLaunchHelper
+}
+
+stop()
+{
+	ebegin "Stopping NetworkManager"
+	start-stop-daemon --stop --quiet --exec ${processname} --pidfile ${pidfile}
+	eend $?
+	if [ -e ${pidfile} ]; then
+		rm -f $pidfile
+	fi
+}

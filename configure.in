@@ -104,6 +104,8 @@ info-daemon/Makefile
 panel-applet/Makefile
 test/Makefile
 initscript/Makefile
+initscript/RedHat/Makefile
+initscript/Gentoo/Makefile
 ])
 
 echo
