@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-11-04 16:22-0500\n"
-"PO-Revision-Date: 2004-11-04 14:52-0400\n"
+"POT-Creation-Date: 2004-11-09 17:17-0500\n"
+"PO-Revision-Date: 2004-11-09 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -60,6 +60,7 @@ msgstr "Key Type:"
 
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:102
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Passphrase:"
@@ -73,10 +74,12 @@ msgid "_Login to Network"
 msgstr "_Login to Network"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:105
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
 msgid "Ascii Key:"
 msgstr "ASCII Key:"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:108
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
 msgid "Hex Key:"
 msgstr "Hex Key:"
 
@@ -124,6 +127,24 @@ msgstr "No network devices have been found"
 #: panel-applet/NMWirelessApplet.c:884
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
+msgid "Custom wireless network"
+msgstr "Custom wireless network"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Enter the ESSID of the wireless network to which you wish to connect."
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
 
 #: panel-applet/essid.glade.h:5
 msgid "C_onnect"
