@@ -121,7 +121,10 @@ void nm_ap_list_populate (NMData *data)
 	{
 		int	i;
 		for (i = 0; i < num_networks; i++)
-			nm_ap_list_update_network (data, networks[i]);
+		{
+			if (networks[i] && (strlen (networks[i]) > 0))
+				nm_ap_list_update_network (data, networks[i]);
+		}
 
 		dbus_free_string_array (networks);
 	}

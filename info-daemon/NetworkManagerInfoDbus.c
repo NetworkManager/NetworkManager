@@ -235,7 +235,8 @@ static DBusMessage *nmi_dbus_get_allowed_network_prio (NMIAppInfo *info, DBusMes
 	g_return_val_if_fail (message != NULL, NULL);
 
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkPriority called with invalid network.");
@@ -283,7 +284,8 @@ static DBusMessage *nmi_dbus_get_allowed_network_essid (NMIAppInfo *info, DBusMe
 	g_return_val_if_fail (message != NULL, NULL);
 
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkEssid called with invalid network.");
@@ -331,7 +333,8 @@ static DBusMessage *nmi_dbus_get_allowed_network_key (NMIAppInfo *info, DBusMess
 	g_return_val_if_fail (message != NULL, NULL);
 
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID)
+		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkKey called with invalid network.");
