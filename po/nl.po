@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-14 17:11-0400\n"
-"PO-Revision-Date: 2004-10-10 13:23+0200\n"
+"POT-Creation-Date: 2004-10-14 20:06+0200\n"
+"PO-Revision-Date: 2004-10-15 01:13+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,25 +17,30 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Draadloze netwerken aanpassen"
-
-#: info-daemon/networks.glade:92
+#: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
 msgstr "<span weight=\"bold\">Draadloze netwerken:</span>"
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "Sleutel draadloos netwerk vereist"
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Draadloze netwerken aanpassen"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Aanmelden bij het netwerk"
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
+
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit wachtwoordfrase\n"
+"128-bit Raw hex sleutel"
 
 # om toegang te kunnen verkrijgen tot het draadloze netwerk s
 # WEP-key voorlopig laten staan ipv versleuteling, mogelijk is het duidelijker
-#: info-daemon/passphrase.glade:100
+#: info-daemon/passphrase.glade.h:5
+#, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -49,33 +54,29 @@ msgstr ""
 "Een wachtwoordfrase of WEP-key is vereist om toegang te krijgen tot het "
 "draadloze netwerk '%s'."
 
-#: info-daemon/passphrase.glade:129
+#: info-daemon/passphrase.glade.h:8
 msgid "Key Type:"
 msgstr "Sleuteltype:"
 
-#: info-daemon/passphrase.glade:150
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"128-bit wachtwoordfrase\n"
-"128-bit Raw hex sleutel"
-
-#: info-daemon/passphrase.glade:180
+#: info-daemon/passphrase.glade.h:9
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
 
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade.h:10
+msgid "Wireless Network Key Required"
+msgstr "Sleutel draadloos netwerk vereist"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "_Login to Network"
+msgstr "_Aanmelden bij het netwerk"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
 msgstr "Sleutel:"
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:609 panel-applet/NMWirelessApplet.c:619
+#: panel-applet/NMWirelessApplet.c:608 panel-applet/NMWirelessApplet.c:618
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -83,21 +84,12 @@ msgstr ""
 "Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het "
 "glade bestand is niet gevonden)."
 
-#: panel-applet/NMWirelessApplet.c:634
-#, fuzzy
-msgid "Custom wireless network"
-msgstr "Draadloos netwerk"
-
-#: panel-applet/NMWirelessApplet.c:635
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:716
+#: panel-applet/NMWirelessApplet.c:709
 msgid "Other Wireless Networks..."
 msgstr "Andere draadloze netwerken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: panel-applet/NMWirelessApplet.c:827
+#: panel-applet/NMWirelessApplet.c:820
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -107,23 +99,21 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:944
+#: panel-applet/NMWirelessApplet.c:937
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
-#: panel-applet/essid.glade:52
+#: panel-applet/essid.glade.h:2
 msgid "C_onnect"
-msgstr ""
+msgstr "_Verbinden"
 
-#: panel-applet/essid.glade:131
-#, fuzzy
-msgid "Wireless _Network:"
-msgstr "Draadloos netwerk"
-
-#: panel-applet/essid.glade:177
-#, fuzzy
+#: panel-applet/essid.glade.h:3
 msgid "Wireless _Adaptor:"
-msgstr "Draadloos netwerk"
+msgstr "Draadloze adapter:"
+
+#: panel-applet/essid.glade.h:4
+msgid "Wireless _Network:"
+msgstr "Draadloos _netwerk:"
 
 #: panel-applet/menu-info.c:101
 #, c-format
