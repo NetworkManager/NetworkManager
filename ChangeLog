@@ -1,3 +1,13 @@
+2004-12-22  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- Silently fail when setting bitrate doesn't work
+
+
+	Patch from j@bootlab.org:
+	* src/backends/NetworkManagerDebian
+		- Update backend to match functionality in RedHat backend
+
 2004-12-21  Colin Walters  <walters@verbum.org>
 
 	* panel-applet/NMWirelessAppletDbus.c (nmwa_dbus_update_devices): Correctly

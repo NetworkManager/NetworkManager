@@ -847,12 +847,12 @@ void nm_device_set_bitrate (NMDevice *dev, const int KHz)
 		}
 		else
 		{
+			/* Auto bitrate */
 			wrq.u.bitrate.value = -1;
 			wrq.u.bitrate.fixed = 0;
 		}
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
-		if (err == -1)
-			syslog (LOG_ERR, "nm_device_set_bitrate(): error setting bitrate %d KHz for device %s.  errno = %d", KHz, nm_device_get_iface (dev), errno);
+		/* Silently fail, not all drivers support this yet (ipw2x00 for example) */
+		iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
 
 		close (sk);
 	}

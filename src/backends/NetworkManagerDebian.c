@@ -56,9 +56,9 @@ void nm_system_init (void)
  */
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
-	char		*buf;
-    const char		*iface;
-	int		 err;
+	char			*buf;
+	const char	*iface;
+	int		err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -100,8 +100,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		return;
 
 	/* Find and kill the previous dhclient process for this device */
-        buf = g_strdup_printf ("/var/run/dhclient-%s.pid", 
-                               nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/var/run/dhclient-%s.pid", nm_device_get_iface (dev));
 	pidfile = fopen (buf, "r");
 	if (pidfile)
 	{
@@ -118,7 +117,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		if (n_pid > 0)
 			kill (n_pid, SIGTERM);
 	}
-        g_free (buf);
+	g_free (buf);
 }
 
 
@@ -139,10 +138,32 @@ void nm_system_device_flush_routes (NMDevice *dev)
 		return;
 
 	/* Remove routing table entries */
-	buf = g_strdup_printf ("/sbin/ip route flush dev %s",
-                               nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip route flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
-        g_free (buf);
+	g_free (buf);
+}
+
+
+/*
+ * nm_system_device_add_default_route_via_device
+ *
+ * Add default route to the given device
+ *
+ */
+void nm_system_device_add_default_route_via_device (NMDevice *dev)
+{
+	char	*buf;
+
+	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
+	/* Add default gateway */
+	buf = g_strdup_printf ("/sbin/ip route add default dev %s", nm_device_get_iface (dev));
+	nm_spawn_process (buf);
+	g_free (buf);
 }
 
 
@@ -281,6 +302,106 @@ error:
 
 
 /*
+ * nm_system_enable_loopback
+ *
+ * Bring up the loopback interface
+ *
+ */
+void nm_system_enable_loopback (void)
+{
+	nm_spawn_process ("/sbin/ifup lo");
+}
+
+
+/*
+ * nm_system_flush_loopback_routes
+ *
+ * Flush all routes associated with the loopback device, because it
+ * sometimes gets the first route for ZeroConf/Link-Local traffic.
+ *
+ */
+void nm_system_flush_loopback_routes (void)
+{
+	nm_spawn_process ("/sbin/ip route flush dev lo");
+}
+
+
+/*
+ * nm_system_delete_default_route
+ *
+ * Remove the old default route in preparation for a new one
+ *
+ */
+void nm_system_delete_default_route (void)
+{
+	nm_spawn_process ("/sbin/ip route del default");
+}
+
+
+/*
+ * nm_system_flush_arp_cache
+ *
+ * Flush all entries in the arp cache.
+ *
+ */
+void nm_system_flush_arp_cache (void)
+{
+	nm_spawn_process ("/sbin/ip neigh flush all");
+}
+
+
+/*
+ * nm_system_kill_all_dhcp_daemons
+ *
+ * Kill all DHCP daemons currently running, done at startup.
+ *
+ */
+void nm_system_kill_all_dhcp_daemons (void)
+{
+	nm_spawn_process ("/usr/bin/killall -q dhclient");
+}
+
+
+/*
+ * nm_system_update_dns
+ *
+ * Make glibc/nscd aware of any changes to the resolv.conf file by
+ * restarting nscd.
+ *
+ */
+void nm_system_update_dns (void)
+{
+	nm_spawn_process ("/usr/sbin/invoke-rc.d nscd restart");
+
+}
+
+
+/*
+ * nm_system_load_device_modules
+ *
+ * This is a null op - all our drivers should already be loaded.
+ *
+ */
+void nm_system_load_device_modules (void)
+{
+	return;
+}
+
+
+/*
+ * nm_system_restart_mdns_responder
+ *
+ * Restart the multicast DNS responder so that it knows about new
+ * network interfaces and IP addresses.
+ *
+ */
+void nm_system_restart_mdns_responder (void)
+{
+	nm_spawn_process ("/usr/bin/killall -q -USR1 mDNSResponder");
+}
+
+
+/*
  * nm_system_device_update_config_info
  *
  * Retrieve any relevant configuration info for a particular device
@@ -381,109 +502,3 @@ void nm_system_device_update_config_info (NMDevice *dev)
 out:
 	ifparser_destroy();
 }
-
-/*
- * nm_system_enable_loopback
- *
- * Bring up the loopback interface
- *
- */
-void nm_system_enable_loopback (void)
-{
-	nm_spawn_process ("/sbin/ifup lo");
-}
-
-
-/*
- * nm_system_delete_default_route
- *
- * Remove the old default route in preparation for a new one
- *
- */
-void nm_system_delete_default_route (void)
-{
-	nm_spawn_process ("/sbin/ip route del default");
-}
-
-
-/*
- * nm_system_kill_all_dhcp_daemons
- *
- * Kill all DHCP daemons currently running, done at startup.
- *
- */
-void nm_system_kill_all_dhcp_daemons (void)
-{
-	nm_spawn_process ("/usr/bin/killall -q dhclient");
-}
-
-
-/*
- * nm_system_update_dns
- *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd.
- *
- */
-void nm_system_update_dns (void)
-{
-	nm_spawn_process ("/usr/sbin/invoke-rc.d nscd restart");
-}
-
-
-/*
- * nm_system_load_device_modules
- *
- * This is a null op - all our drivers should already be loaded.
- *
- */
-void nm_system_load_device_modules (void)
-{
-	return;
-}
-
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-}
-
-/*
- * nm_system_device_add_default_route_via_device
- *
- * Flush all routes associated with a network device
- *
- */
-void nm_system_device_add_default_route_via_device (NMDevice *dev)
-{
-}
- 
- 
-/*
- * nm_system_flush_loopback_routes
- *
- * Flush all routes associated with the loopback device, because it
- * sometimes gets the first route for ZeroConf/Link-Local traffic.
- *
- */
-void nm_system_flush_loopback_routes (void)
-{
-}
-
- 
-/*
- * nm_system_flush_arp_cache
- *
- * Flush all entries in the arp cache.
- *
- */
-void nm_system_flush_arp_cache (void)
-{
-}
-
