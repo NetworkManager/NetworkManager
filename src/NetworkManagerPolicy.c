@@ -424,7 +424,7 @@ void nm_policy_schedule_state_update (NMData *app_data)
 
 
 /*
- * nm_policy_schedule_state_update
+ * nm_policy_schedule_device_switch
  *
  * Queue up an idle handler to deal with state changes when we want
  * to force a particular device to be the active device.

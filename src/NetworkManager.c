@@ -572,17 +572,21 @@ nm_wired_link_activated (NmNetlinkMonitor *monitor,
 			 const gchar 	  *interface_name,
 			 NMData 	  *data)
 {
-	NMDevice *device;
-
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		device = nm_get_device_by_iface (data, interface_name);
+		NMDevice *dev = nm_get_device_by_iface (data, interface_name);
 
-		if (device != NULL)
+		/* Don't do anything if we already have a link */
+		if (    (dev != NULL)
+			&& nm_device_is_wired (dev)
+			&& !nm_device_has_active_link (dev))
 		{
-			nm_device_set_link_active (device, TRUE);
+			nm_device_set_link_active (dev, TRUE);
 
-			if (nm_device_has_active_link (device)
+			/* If a network cable just got plugged in, force-switch from a wireless
+			 * to a wired connection.
+			 */
+			if (nm_device_has_active_link (dev)
 				&& data->active_device
 				&& data->active_device_locked
 				&& nm_device_is_wireless (data->active_device))
