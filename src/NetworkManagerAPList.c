@@ -100,7 +100,8 @@ static void nm_ap_list_element_free (void *element, void *user_data)
  */
 void nm_ap_list_unref (NMAccessPointList *list)
 {
-	g_return_if_fail (list != NULL);
+	if (!list)
+		return;
 
 	list->refcount--;
 	if (list->refcount <= 0)
