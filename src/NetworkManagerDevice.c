@@ -211,6 +211,7 @@ struct NMDevice
 	NMPendingAction		 pending_action;
 	NMPendingActionOptions	 pending_action_options;
 	guint32				 ip4_address;
+	NMData				*app_data;
 	/* FIXME: ipv6 address too */
 	NMDeviceOptions		 dev_options;
 };
@@ -222,7 +223,7 @@ struct NMDevice
  * Creates and initializes the structure representation of an NLM device.
  *
  */
-NMDevice *nm_device_new (const char *iface)
+NMDevice *nm_device_new (const char *iface, NMData *app_data)
 {
 	NMDevice	*dev;
 
@@ -236,6 +237,7 @@ NMDevice *nm_device_new (const char *iface)
 	}
 
 	dev->refcount = 1;
+	dev->app_data = app_data;
 	dev->iface = g_strdup (iface);
 	dev->iface_type = nm_device_test_wireless_extensions (dev) ?
 						NM_IFACE_TYPE_WIRELESS_ETHERNET : NM_IFACE_TYPE_WIRED_ETHERNET;
@@ -397,6 +399,7 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 	gboolean		link_active = FALSE;
 
 	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 
 	/* FIXME
 	 * For wireless cards, the best indicator of a "link" at this time
@@ -428,8 +431,8 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 			if (check_mii)
 				link_active = mii_get_link (dev);
 			else
-				if (hal_device_property_exists (nm_get_global_data()->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link"))
-					link_active = hal_device_get_property_bool (nm_get_global_data()->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link");
+				if (hal_device_property_exists (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link"))
+					link_active = hal_device_get_property_bool (dev->app_data->hal_ctx, nm_device_get_udi (dev), "net.ethernet.link");
 			break;
 		}
 
@@ -442,7 +445,7 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 	if (link_active != nm_device_get_link_active (dev))
 	{
 		nm_device_set_link_active (dev, link_active);
-		nm_data_set_state_modified (nm_get_global_data(), TRUE);
+		nm_data_set_state_modified (dev->app_data, TRUE);
 	}
 }
 
@@ -634,13 +637,12 @@ guint32 nm_device_get_ip4_address(NMDevice *dev)
 
 void nm_device_update_ip4_address (NMDevice *dev)
 {
-	NMData		*data = nm_get_global_data ();
 	guint32		 new_address;
 	struct ifreq	 req;
 	int			 socket;
 	
-	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 	g_return_if_fail (nm_device_get_iface (dev) != NULL);
 
 	socket = nm_get_network_control_socket ();
@@ -656,7 +658,7 @@ void nm_device_update_ip4_address (NMDevice *dev)
 	/* If the new address is different, send an IP4AddressChanged signal on the bus */
 	if (new_address != nm_device_get_ip4_address (dev))
 	{
-		nm_dbus_signal_device_ip4_address_change (data->dbus_connection, dev);
+		nm_dbus_signal_device_ip4_address_change (dev->app_data->dbus_connection, dev);
 		dev->ip4_address = new_address;
 	}
 }
@@ -775,12 +777,11 @@ gboolean nm_device_activate (NMDevice *dev)
 	unsigned char	*iface;
 	unsigned char	 hostname[100] = "\0";
 	int			 host_err;
-	NMData		*data = nm_get_global_data ();
 	int			 dhclient_err;
 	FILE			*pidfile;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	/* If its a wireless device, set the ESSID and WEP key */
 	if (nm_device_is_wireless (dev))
@@ -901,7 +902,7 @@ gboolean nm_device_activate (NMDevice *dev)
 		system (buf);
 	}
 
-	nm_dbus_signal_device_now_active (data->dbus_connection, dev);
+	nm_dbus_signal_device_now_active (dev->app_data->dbus_connection, dev);
 	nm_device_update_ip4_address (dev);
 
 	return (success);
@@ -919,10 +920,9 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	unsigned char		 buf[500];
 	unsigned char		*iface;
 	gboolean			 success = FALSE;
-	NMData			*data = nm_get_global_data ();
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	iface = nm_device_get_iface (dev);
 
@@ -946,7 +946,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	}
 
 	if (!just_added)
-		nm_dbus_signal_device_no_longer_active (data->dbus_connection, dev);
+		nm_dbus_signal_device_no_longer_active (dev->app_data->dbus_connection, dev);
 
 	/* Clean up stuff, don't leave the card associated or up */
 	if (nm_device_is_wireless (dev))
@@ -983,10 +983,8 @@ gboolean nm_device_pending_action (NMDevice *dev)
  */
 void nm_device_pending_action_get_user_key (NMDevice *dev, NMAccessPoint *ap)
 {
-	NMData *data = nm_get_global_data ();
-
-	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 	g_return_if_fail (ap != NULL);
 	g_return_if_fail (nm_ap_get_essid (ap) != NULL);
@@ -996,7 +994,7 @@ void nm_device_pending_action_get_user_key (NMDevice *dev, NMAccessPoint *ap)
 
 	dev->pending_action = NM_PENDING_ACTION_GET_USER_KEY;
 	dev->pending_action_options.user_key.essid = g_strdup (nm_ap_get_essid (ap));
-	nm_dbus_get_user_key_for_network (data->dbus_connection, dev, ap, &(dev->pending_action_options.user_key.pending_call));
+	nm_dbus_get_user_key_for_network (dev->app_data->dbus_connection, dev, ap, &(dev->pending_action_options.user_key.pending_call));
 }
 
 
@@ -1043,10 +1041,8 @@ void nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key)
  */
 void nm_device_pending_action_cancel (NMDevice *dev)
 {
-	NMData *data = nm_get_global_data ();
-
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (data != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 
 	if (dev->pending_action == NM_PENDING_ACTION_GET_USER_KEY)
 	{
@@ -1059,7 +1055,7 @@ void nm_device_pending_action_cancel (NMDevice *dev)
 		g_free (dev->pending_action_options.user_key.essid);
 		dev->pending_action_options.user_key.essid = NULL;
 
-		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection);
+		nm_dbus_cancel_get_user_key_for_network (dev->app_data->dbus_connection);
 	}
 		
 	dev->pending_action = NM_PENDING_ACTION_NONE;
@@ -1253,6 +1249,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 	int		iwlib_socket;
 
 	g_return_if_fail (dev  != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 
 	/* Device must be up before we can scan */
 	if (!nm_device_is_up (dev))
@@ -1316,7 +1313,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				/* Add the AP to the device's AP list, no matter if its allowed or not */
 				nm_device_ap_list_add (dev, nm_ap);
 
-				if (nm_wireless_is_most_prefered_ap (nm_ap, &highest_priority))
+				if (nm_wireless_is_most_prefered_ap (dev->app_data, nm_ap, &highest_priority))
 				{
 					if (highest_priority_ap)
 						nm_ap_unref (highest_priority_ap);
@@ -1337,7 +1334,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			&& (!nm_device_get_best_ap (dev) || (nm_null_safe_strcmp (nm_device_get_essid (dev), nm_ap_get_essid (highest_priority_ap)) != 0)))
 		{
 			nm_device_set_best_ap (dev, highest_priority_ap);
-			nm_data_set_state_modified (nm_get_global_data (), TRUE);
+			nm_data_set_state_modified (dev->app_data, TRUE);
 
 			nm_ap_unref (highest_priority_ap);
 		}
@@ -1360,17 +1357,15 @@ static void nm_device_do_normal_scan (NMDevice *dev)
  */
 static void nm_device_do_pseudo_scan (NMDevice *dev)
 {
-	NMData	*data = nm_get_global_data ();
-
-	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 
 	nm_device_ref (dev);
 
 	/* Acquire allowed AP list mutex, silently fail if we cannot */
-	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
+	if (nm_try_acquire_mutex (dev->app_data->allowed_ap_list_mutex, __FUNCTION__))
 	{
-		GSList	*element = data->allowed_ap_list;
+		GSList	*element = dev->app_data->allowed_ap_list;
 		
 		/* Turn off the essid so we can tell if its changed when
 		 * we set it below.
@@ -1424,14 +1419,14 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 					NM_DEBUG_PRINT_1 ("AP %s looks good, setting to desired\n", nm_ap_get_essid (ap));
 
 					nm_device_set_best_ap (dev, ap);
-					nm_data_set_state_modified (nm_get_global_data (), TRUE);
+					nm_data_set_state_modified (dev->app_data, TRUE);
 					break;
 				}
 			}
 			element = g_slist_next (element);
 		}
 
-		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
+		nm_unlock_mutex (dev->app_data->allowed_ap_list_mutex, __FUNCTION__);
 	}
 
 	nm_device_unref (dev);
@@ -1446,9 +1441,6 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
  */
 void nm_device_do_wireless_scan (NMDevice *dev)
 {
-	NMData	*data = nm_get_global_data ();
-
-	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
@@ -1464,7 +1456,7 @@ void nm_device_do_wireless_scan (NMDevice *dev)
 		 */
 		nm_device_get_ap_address (dev, &ap_addr);
 		if (    !nm_ethernet_address_is_valid (&ap_addr)
-			|| !nm_policy_essid_is_allowed (data, nm_device_get_essid (dev))
+			|| !nm_policy_essid_is_allowed (dev->app_data, nm_device_get_essid (dev))
 			|| !nm_device_get_best_ap (dev))
 		{
 			nm_device_do_pseudo_scan (dev);

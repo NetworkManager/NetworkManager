@@ -32,7 +32,7 @@
 #define	NM_DBUS_DEVICES_NAMESPACE			"org.freedesktop.NetworkManager.Devices"
 
 
-DBusConnection *	nm_dbus_init						(void);
+DBusConnection *	nm_dbus_init						(NMData *data);
 
 void				nm_dbus_signal_device_no_longer_active	(DBusConnection *connection, NMDevice *dev);
 

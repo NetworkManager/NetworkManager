@@ -78,7 +78,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 			return (NULL);
 		}
 
-		dev = nm_device_new (iface_name);
+		dev = nm_device_new (iface_name, data);
 		if (dev)
 		{
 
@@ -287,7 +287,7 @@ static void nm_add_current_devices (NMData *data)
 gboolean nm_link_state_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
-	GSList			*element;
+	GSList	*element;
 
 	g_return_val_if_fail (data != NULL, TRUE);
 
@@ -346,38 +346,6 @@ gboolean nm_link_state_monitor (gpointer user_data)
 	} else NM_DEBUG_PRINT( "nm_link_state_monitor() could not acquire device list mutex.\n" );
 	
 	return (TRUE);
-}
-
-
-/*
- * nm_data_allowed_ap_list_free
- *
- * Frees the allowed access point list
- *
- */
-void nm_data_allowed_ap_list_free (NMData *data)
-{
-	GSList	*element;
-
-	g_return_if_fail (data != NULL);
-
-	if (!data->allowed_ap_list)
-		return;
-
-	element = data->allowed_ap_list;
-	while (element)
-	{
-		if (element->data)
-		{
-			nm_ap_unref (element->data);
-			element->data = NULL;
-		}
-
-		element = g_slist_next (element);
-	}
-
-	g_slist_free (data->allowed_ap_list);
-	data->allowed_ap_list = NULL;
 }
 
 
@@ -447,6 +415,19 @@ static NMData *nm_data_new (void)
 
 
 /*
+ * nm_data_allowed_ap_list_element_free
+ *
+ * Frees each member of the allowed access point list before the list is
+ * disposed of. 
+ *
+ */
+static void nm_data_allowed_ap_list_element_free (void *element, void *user_data)
+{
+	nm_ap_unref (element);
+}
+
+
+/*
  * nm_data_dev_list_element_free
  *
  * Frees each member of the device list before the list is
@@ -469,26 +450,18 @@ static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
-	g_slist_foreach (data->dev_list, nm_data_dev_list_element_free, NULL);
-	g_slist_free (data->dev_list);
-	g_mutex_free (data->dev_list_mutex);
 	nm_device_unref (data->active_device);
 	nm_device_unref (data->pending_device);
 
-	nm_data_allowed_ap_list_free (data);
+	g_slist_foreach (data->dev_list, nm_data_dev_list_element_free, NULL);
+	g_slist_free (data->dev_list);
+	g_mutex_free (data->dev_list_mutex);
+
+	g_slist_foreach (data->allowed_ap_list, nm_data_allowed_ap_list_element_free, NULL);
+	g_slist_free (data->allowed_ap_list);
+	g_mutex_free (data->allowed_ap_list_mutex);
 }
 
-
-/*
- * nm_get_global_data
- *
- * Return the global data structure
- *
- */
-NMData * nm_get_global_data (void)
-{
-	return (nm_data);
-}
 
 /*
  * nm_data_set_state_modified
@@ -645,7 +618,7 @@ int main( int argc, char *argv[] )
 	allowed_ap_thread = g_thread_create (nm_policy_allowed_ap_refresh_worker, nm_data, FALSE, NULL);
 
 	/* Create our dbus service */
-	nm_data->dbus_connection = nm_dbus_init ();
+	nm_data->dbus_connection = nm_dbus_init (nm_data);
 	if (nm_data->dbus_connection)
 	{
 		/* Create a watch function that monitors cards for link status (hal doesn't do

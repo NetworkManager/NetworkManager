@@ -37,13 +37,14 @@ extern gboolean	debug;
  * both allowed _and_ has a better priority than highest_priority.
  *
  */
-gboolean nm_wireless_is_most_prefered_ap (NMAccessPoint *ap, int *highest_priority)
+gboolean nm_wireless_is_most_prefered_ap (NMData *data, NMAccessPoint *ap, int *highest_priority)
 {
-	NMData		*data = nm_get_global_data ();
 	GSList		*element;
 	gboolean		 is_most_preferred = FALSE;
 
+	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (highest_priority != NULL, FALSE);
 
 	/* Attempt to acquire mutex for device list iteration.
 	 * If the acquire fails, just ignore the scan completely.

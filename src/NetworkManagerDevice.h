@@ -39,7 +39,7 @@ typedef struct NMDevice		NMDevice;
 typedef enum NMIfaceType		NMIfaceType;
 
 
-NMDevice *	nm_device_new				(const char *iface);
+NMDevice *	nm_device_new				(const char *iface, NMData *app_data);
 
 void			nm_device_ref				(NMDevice *dev);
 void			nm_device_unref			(NMDevice *dev);

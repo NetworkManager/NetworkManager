@@ -45,8 +45,4 @@ typedef struct NMData NMData;
 
 void		 nm_data_set_state_modified	(NMData *data, gboolean modified);
 
-void		 nm_data_allowed_ap_list_free	(NMData *data);
-
-NMData	*nm_get_global_data			(void);
-
 #endif

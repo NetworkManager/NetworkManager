@@ -26,7 +26,7 @@
 #include "NetworkManagerDevice.h"
 
 
-gboolean	nm_wireless_is_most_prefered_ap (NMAccessPoint *ap, int *highest_priority);
+gboolean	nm_wireless_is_most_prefered_ap (NMData *data, NMAccessPoint *ap, int *highest_priority);
 
 gboolean	nm_wireless_scan_monitor	(gpointer user_data);
 

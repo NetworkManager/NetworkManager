@@ -1,3 +1,17 @@
+2004-07-24  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.[ch]
+	  src/NetworkManagerDbus.[ch]
+	  src/NetworkManagerDevice.[ch]
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManagerWireless.[ch]
+		- Add many more g_return_if_fail()/g_return_val_if_fail() checks
+		- Pass the NMData application data structure through all calls
+			that need it so we can get rid of nm_get_global_data()
+		- Change deallocation of the allowed_ap_list GSList in preparation
+			for not completely clearing it every time we get an update,
+			but instead getting incremental updates via GConf/dbus
+
 2004-07-22  Dan Williams <dcbw@redhat.com>
 
 	* configure.in

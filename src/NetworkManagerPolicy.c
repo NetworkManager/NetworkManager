@@ -302,7 +302,7 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 			gchar	wep_key[ 50 ];
 			
 			/* Free the old list of allowed access points */
-			nm_data_allowed_ap_list_free (data);
+//			nm_data_allowed_ap_list_free (data);
 
 			while (fgets (line, 499, ap_file))
 			{
