@@ -1134,10 +1134,7 @@ static DBusMessage *nm_dbus_nm_set_scanning_enabled (DBusConnection *connection,
 
 	dbus_error_init (&err);
 	if (dbus_message_get_args (message, &err, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID))
-	{
 		data->data->scanning_enabled = enabled;
-syslog (LOG_ERR, "Set scanning to %d\n", enabled);
-	}
 
 	return NULL;
 }
