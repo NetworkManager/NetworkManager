@@ -303,26 +303,28 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
  * Blacklist certain wireless devices.
  *
  */
-NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev)
+NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
 {
 	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;
 
-	g_return_val_if_fail (ctx != NULL, FALSE);
-	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (driver != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (*driver == NULL, NM_DRIVER_UNSUPPORTED);
 
 	if ((driver_name = nm_get_device_driver_name (ctx, dev)))
 	{
-		driver_support *driver = &wireless_driver_blacklist[0];
-		while (driver->name != NULL)
+		driver_support *drv;
+		for (drv = &wireless_driver_blacklist[0]; drv->name; drv++)
 		{
-			if (!strcmp (driver->name, driver_name))
+			if (!strcmp (drv->name, driver_name))
 			{
-				level = driver->level;
+				level = drv->level;
 				break;
 			}
-			driver++;
 		}
+		*driver = g_strdup (driver_name);
 		g_free (driver_name);
 	}
 
@@ -336,28 +338,30 @@ NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, N
  * Blacklist certain devices.
  *
  */
-NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDevice *dev)
+NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
 {
 	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;
 	char					*usb_test;
 	char					*udi;
 
-	g_return_val_if_fail (ctx != NULL, FALSE);
-	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (driver != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (*driver == NULL, NM_DRIVER_UNSUPPORTED);
 
 	if ((driver_name = nm_get_device_driver_name (ctx, dev)))
 	{
-		driver_support *driver = &wired_driver_blacklist[0];
-		while (driver->name != NULL)
+		driver_support *drv;
+		for (drv = &wired_driver_blacklist[0]; drv->name; drv++)
 		{
-			if (!strcmp (driver->name, driver_name))
+			if (!strcmp (drv->name, driver_name))
 			{
-				level = driver->level;
+				level = drv->level;
 				break;
 			}
-			driver++;
 		}
+		*driver = g_strdup (driver_name);
 		g_free (driver_name);
 	}
 
@@ -386,28 +390,33 @@ NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDe
  */
 NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *dev)
 {
-	NMDriverSupportLevel	level = NM_DRIVER_UNSUPPORTED;
+	char					*driver = NULL;
+	NMDriverSupportLevel	 level = NM_DRIVER_UNSUPPORTED;
 
 	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
 	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
 
 	if (nm_device_is_wireless (dev))
-		level = nm_get_wireless_driver_support_level (ctx, dev);
+		level = nm_get_wireless_driver_support_level (ctx, dev, &driver);
 	else if (nm_device_is_wired (dev))
-		level = nm_get_wired_driver_support_level (ctx, dev);
+		level = nm_get_wired_driver_support_level (ctx, dev, &driver);
 
 	switch (level)
 	{
 		case NM_DRIVER_SEMI_SUPPORTED:
-			syslog (LOG_INFO, "%s: Driver support level is semi-supported", nm_device_get_iface (dev));
+			syslog (LOG_INFO, "%s: Driver support level for '%s' is semi-supported",
+						nm_device_get_iface (dev), driver);
 			break;
 		case NM_DRIVER_FULLY_SUPPORTED:
-			syslog (LOG_INFO, "%s: Driver support level is fully-supported", nm_device_get_iface (dev));
+			syslog (LOG_INFO, "%s: Driver support level for '%s' is fully-supported",
+						nm_device_get_iface (dev), driver);
 			break;
 		default:
-			syslog (LOG_INFO, "%s: Driver support level is unsupported", nm_device_get_iface (dev));
+			syslog (LOG_INFO, "%s: Driver support level for '%s' is unsupported",
+						nm_device_get_iface (dev), driver);
 			break;
 	}
 
+	g_free (driver);
 	return (level);
 }

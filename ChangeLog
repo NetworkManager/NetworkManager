@@ -1,3 +1,20 @@
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_create_device_and_add_to_list): change the add message slightly
+
+	* src/NetworkManagerUtils.c
+		- (nm_get_wireless_driver_support_level, nm_get_wired_driver_support_level):
+			Return driver name to calling function
+		- (nm_get_driver_support_level): print out the driver a device is using
+			during the support check
+
+	Patch from Dave Woodhouse:
+	* dhcpcd/udpipgen.c
+		- (in_cksum): copy last byte of odd-sized packets into a
+			'u_short' rather than a 'u_char', should fix wrong checksums
+			on big-endian platforms
+
 2005-02-09  Dan Williams  <dcbw@redhat.com>
 
 	* Clean up usage of GSList objects and looping through their members

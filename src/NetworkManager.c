@@ -125,8 +125,8 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		 */
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			syslog (LOG_INFO, "Adding device '%s' (%s) to our list.",
-				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired");
+			syslog (LOG_INFO, "Now managing %s device '%s'.",
+				nm_device_is_wireless (dev) ? "wireless" : "wired", nm_device_get_iface (dev));
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
 			nm_device_deactivate (dev, TRUE);

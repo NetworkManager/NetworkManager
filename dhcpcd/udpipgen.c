@@ -36,7 +36,7 @@ unsigned short in_cksum(unsigned short *addr, int len)
 	}
 	if ( nleft == 1 )
 	{
-		u_char a = 0;
+		u_short a = 0;
 		memcpy(&a,w,1);
 		sum += a;
 	}
