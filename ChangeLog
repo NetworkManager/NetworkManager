@@ -1,5 +1,12 @@
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.[ch]
+		- Fix up corner cases in applet state, making it
+			look more responsive.  Change state to "connecting" when
+			the user is forcing a device too.
+
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerAPList.c
 		- (nm_ap_list_update_network): Disown AP after the list takes ownership
 

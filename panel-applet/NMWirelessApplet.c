@@ -109,11 +109,28 @@ static void nmwa_update_network_state (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
+	if (!applet->connection)
+	{
+		applet->applet_state = APPLET_STATE_NO_NM;
+		return;
+	}
+
+	if (applet->applet_state == APPLET_STATE_NO_NM)
+		return;
+
 	if (!applet->nm_status)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
 		return;
 	}
+
+	if (    applet->forcing_device
+		&& (applet->applet_state == APPLET_STATE_WIRELESS_CONNECTING)
+		&& (strcmp (applet->nm_status, "connected") == 0))
+	{
+		return;
+	}
+	applet->forcing_device = FALSE;
 
 	if (strcmp (applet->nm_status, "scanning") == 0)
 	{
@@ -757,6 +774,8 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 	   */
 	  if (net)
 	    {
+           applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
+           applet->forcing_device = TRUE;
 	      nmwa_dbus_set_device (applet->connection, default_dev, net);
 	      network_device_unref (default_dev);
 	      wireless_network_unref (net);
