@@ -21,7 +21,7 @@
 
 
 #include "interface_parser.h"
-
+#include "NetworkManagerUtils.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,10 +34,8 @@ if_data* last_data;
 void add_block(const char *type, const char* name)
 {
 	if_block *ret = (if_block*)calloc(1,sizeof(struct _if_block));
-	ret->name = (char*)calloc(strlen(name),sizeof(char));
-	strcpy(ret->name, name);
-	ret->type = (char*)calloc(strlen(type),sizeof(char));
-	strcpy(ret->type, type);
+	ret->name = g_strdup(name);
+	ret->type = g_strdup(type);
 	if (first == NULL)
 		first = last = ret;
 	else
@@ -52,10 +50,8 @@ void add_block(const char *type, const char* name)
 void add_data(const char *key,const char *data)
 {
 	if_data *ret = (if_data*)calloc(1,sizeof(struct _if_data));
-	ret->key = (char*)calloc(strlen(key),sizeof(char));
-	strcpy(ret->key,key);
-	ret->data = (char*)calloc(strlen(data),sizeof(char));
-	strcpy(ret->data, data);
+	ret->key = g_strdup(key);
+	ret->data = g_strdup(data);
 	
 	if (last->info == NULL)
 	{
@@ -70,27 +66,34 @@ void add_data(const char *key,const char *data)
 	//printf("added data '%s' with key '%s'\n",data,key);
 }
 
+#define SPACE_OR_TAB(string,ret) {ret = strchr(string,' ');ret=(ret == NULL?strchr(string,'\t'):ret);}
+
 void ifparser_init()
 {
 	FILE *inp = fopen(INTERFACES,"r");
 	int ret = 0;
+	if (inp == NULL)
+	{
+		syslog (LOG_ERR, "Error: Can't open %s\n",INTERFACES);
+		return;
+	}
 	first = last = NULL;
 	while(1)
 	{
 		char *line,rline[255],*space;
+		ret = fscanf(inp,"%255[^\n]\n",rline);
 		if (ret == EOF)
 			break;
-		ret = fscanf(inp,"%255[^\n]\n",rline);
 		line = rline;
 		while(line[0] == ' ')
 			line++;
 		if (line[0]=='#' || line[0]=='\0')
 			continue;
 		
-		space = strchr(line,' ');
+		SPACE_OR_TAB(line,space)
 		if (space == NULL)
 		{
-			fprintf(stderr,"Can't parse line '%s'\n",line);
+            syslog (LOG_ERR, "Error: Can't parse interface line '%s'\n",line);
 			continue;
 		}
 		space[0] = '\0';
@@ -101,7 +104,7 @@ void ifparser_init()
 			char *space2 = strchr(space+1,' ');
 			if (space2 == NULL)
 			{
-				fprintf(stderr,"Can't parse iface line '%s'\n",space+1);
+            	syslog (LOG_ERR, "Error: Can't parse iface line '%s'\n",space+1);
 				continue;
 			}
 			space2[0]='\0';
@@ -112,7 +115,7 @@ void ifparser_init()
 				space = strchr(space2+1,' ');
 				if (space == NULL)
 				{
-					fprintf(stderr,"Can't parse data '%s'\n",space2+1);
+            		syslog (LOG_ERR, "Error: Can't parse data '%s'\n",space2+1);
 					continue;
 				}
 				space[0] = '\0';
