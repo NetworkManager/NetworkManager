@@ -363,7 +363,7 @@ gboolean nm_device_dhcp_renew (gpointer user_data)
 
 
 /*
- * nm_device_dhcp_renew
+ * nm_device_dhcp_rebind
  *
  * Renew a DHCP address.
  *
