@@ -1,0 +1,17 @@
+Guidelines for Contributing:
+
+1) Platform-specific functionality (for example, location of binaries that NetworkManager calls) should be done in a platform-independent manner.  If code currently in NetworkManager does not accomodate that, then the code in NetworkManager needs to be changed to provide that.  For example, if another platform does not use "dhclient" to get DHCP information, a separate function should be created to return a command-line string to call rather than inserting huge if/#ifdef blocks into the current function.
+
+2) Coding standards are more-or-less GNOME coding standards, with these exceptions:
+	a) 5 space tabs  (no 8-space tabs allowed)
+	b) REAL tabs
+	c) Braces are moved to the next line, like:
+		if (foobar)
+		{
+			...
+		}
+	  rather than:
+		if (foobar) {
+			...
+		}
+	d) Limiting line width to 80 characters is frowned upon
