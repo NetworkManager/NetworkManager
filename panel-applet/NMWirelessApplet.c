@@ -162,24 +162,15 @@ static int nmwa_timeout_handler (NMWirelessApplet *applet)
 	if (!applet->connection)
 		applet->connection = nmwa_dbus_init (applet);
 
-	if (applet->nm_active)
+	if (applet->nm_active && (active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
 	{
-		if (active_device = nmwa_dbus_get_active_wireless_device (applet->connection))
-		{
-			applet->have_active_device = TRUE;
-			nmwa_update_state (applet);
-			gtk_widget_show (GTK_WIDGET (applet));
-			show_warning_dialog ("showing... %s", active_device);
-			dbus_free (active_device);
-		}
-		else
-			show_warning_dialog ("didn't get good active device\n");
+		applet->have_active_device = TRUE;
+		nmwa_update_state (applet);
+		gtk_widget_show (GTK_WIDGET (applet));
+		dbus_free (active_device);
 	}
 	else
-	{
-		show_warning_dialog ("hiding...");
 		gtk_widget_hide (GTK_WIDGET (applet));
-	}
 
   	return (TRUE);
 }

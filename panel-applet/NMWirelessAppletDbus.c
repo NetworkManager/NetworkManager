@@ -55,7 +55,7 @@ char * nmwa_dbus_get_string (DBusConnection *connection, const char *path, const
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, method)))
 	{
-		show_warning_dialog ("Couldn't allocate the dbus message\n");
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
 		return (NULL);
 	}
 
@@ -63,14 +63,14 @@ char * nmwa_dbus_get_string (DBusConnection *connection, const char *path, const
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
-		show_warning_dialog ("aaa  %s raised:\n %s\n\n", error.name, error.message);
+		fprintf (stderr, "aaa  %s raised:\n %s\n\n", error.name, error.message);
 		dbus_message_unref (message);
 		return (NULL);
 	}
 
 	if (reply == NULL)
 	{
-		show_warning_dialog ("dbus reply message was NULL\n" );
+		fprintf (stderr, "dbus reply message was NULL\n" );
 		dbus_message_unref (message);
 		return (NULL);
 	}
@@ -78,7 +78,7 @@ char * nmwa_dbus_get_string (DBusConnection *connection, const char *path, const
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &string, DBUS_TYPE_INVALID))
 	{
-		show_warning_dialog ("bbb  %s raised:\n %s\n\n", error.name, error.message);
+		fprintf (stderr, "bbb  %s raised:\n %s\n\n", error.name, error.message);
 		string = NULL;
 	}
 
@@ -258,15 +258,14 @@ char * nmwa_dbus_get_active_wireless_device (DBusConnection *connection)
 		type = nmwa_dbus_get_int (connection, active_device, "getType");
 		if (type != 2)	/* wireless */
 		{
-show_warning_dialog ("nmwa_dbus_get_active_wireless_device(): device was not wireless\n");
 			dbus_free (active_device);
 			active_device = NULL;
 		}
 else
-show_warning_dialog ("nmwa_dbus_get_active_wireless_device(): device GOOD\n");
+fprintf (stderr, "nmwa_dbus_get_active_wireless_device(): device GOOD\n");
 	}
 else
-show_warning_dialog ("nmwa_dbus_get_active_wireless_device(): could not get string from dbus\n");
+fprintf (stderr, "nmwa_dbus_get_active_wireless_device(): could not get string from dbus\n");
 
 	return (active_device);
 }
@@ -288,18 +287,21 @@ void nmwa_dbus_add_networks_to_menu (DBusConnection *connection, gpointer user_d
 	if (!connection)
 	{
 		nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
+fprintf( stderr, "!connection\n");
 		return;
 	}
 
 	if (!(active_device = nmwa_dbus_get_active_wireless_device (connection)))
 	{
 		nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
+fprintf( stderr, "!active_device\n");
 		return;
 	}
-
+fprintf( stderr, "active_device = '%s'\n", active_device);
 	if (!(active_network = nmwa_dbus_get_string (connection, active_device, "getActiveNetwork")))
 	{
 		nmwa_add_menu_item ("No wireless networks found...", FALSE, user_data);
+fprintf( stderr, "!active_network\n");
 		return;
 	}
 
@@ -320,6 +322,8 @@ void nmwa_dbus_add_networks_to_menu (DBusConnection *connection, gpointer user_d
 		}
 		dbus_free_string_array (networks);
 	}
+else
+fprintf( stderr, "!networks\n");
 
 	dbus_free (active_device);
 }
@@ -411,10 +415,6 @@ DBusConnection * nmwa_dbus_init (gpointer user_data)
 				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
 				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
 				&error);
-	if (dbus_error_is_set (&error))
-	{
-		show_warning_dialog ("Could not add match, error: '%s'", error.message);
-	}
 
 	return (connection);
 }

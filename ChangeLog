@@ -20,7 +20,6 @@
 	* src/NetworkManagerDevice.c
 		- Honor "ignored" network list when picking best ap to use
 
-
 2004-08-06  Seth Nickell  <seth@gnome.org>
 
 	* aclocal.m4:
