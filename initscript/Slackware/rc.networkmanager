@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# NetworkManager:   NetworkManager daemon
+#
+# description:  This is a daemon for automatically switching network \
+#               connections to the best available connection. \
+#
+# processname: NetworkManager
+# pidfile: /var/run/NetworkManager.pid
+#
+# We need /sbin/ip
+[ -x /sbin/ip ] || exit 1
+
+processname=NetworkManager
+servicename=NetworkManager
+pidfile=/var/run/NetworkManager.pid
+
+RETVAL=0
+
+start()
+{
+	if [ "`pgrep dbus-daemon-1`" = "" ]; then
+		echo -n "D-BUS must be running to start NetworkManager"
+		exit 1
+	fi
+	if [ "`pgrep hald`" = "" ]; then
+		echo -n "HAL must be running to start NetworkManager"
+		exit 1
+	fi
+ 
+	echo -n $"Starting NetworkManager daemon: "
+	$servicename
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && echo `/sbin/pidof $processname` > $pidfile
+}
+
+stop()
+{
+	echo -n $"Stopping NetworkManager daemon: "
+
+	killall -s TERM $servicename
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ]; then
+		rm -f $pidfile
+	fi
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	restart)
+		stop
+		start
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|restart}"
+		;;
+esac
+exit $RETVAL

@@ -1,5 +1,17 @@
 2004-09-07  Dan Williams <dcbw@redhat.com>
 
+	Patch from: Narayan Newton <narayan_newton@yahoo.com>
+
+	* configure.in
+	  initscript/Makefile.am
+	  initscript/Slackware/Makfile.am
+	  initscript/Slackware/rc.networkmanager
+	  src/Makefile.am
+	  src/backends/NetworkManagerSlackware.c
+		- Add Slackware support
+
+2004-09-07  Dan Williams <dcbw@redhat.com>
+
 	Patches below from:
 		<j@bootlab.org>
 		Mark Roach <mrroach@okmaybe.com>
