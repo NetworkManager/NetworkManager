@@ -306,7 +306,20 @@ nmwa_update_state (NMWirelessApplet *applet)
 	g_mutex_lock (applet->data_mutex);
 	if (    applet->active_device
 		&& (applet->active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
+	{
+		GSList *list;
+
+		/* Grab a pointer the active network (for ESSID) */
+		for (list = applet->active_device->networks; list; list = list->next)
+		{
+			WirelessNetwork *network = (WirelessNetwork *) list->data;
+
+			if (network->active)
+				active_network = network;
+		}
+
 		strength = CLAMP ((int)applet->active_device->strength, 0, 100);
+	}
 
 #if 0
 	/* Only show icon if there's more than one device and at least one is wireless */
