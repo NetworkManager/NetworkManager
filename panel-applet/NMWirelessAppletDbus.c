@@ -981,7 +981,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 						network_device_ref (dev);
 						if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
 						{
-							adhoc = nmwa_dbus_get_object_mode (applet, nm_act_dev);
+							adhoc = (nmwa_dbus_get_object_mode (applet, nm_act_dev) == NETWORK_MODE_ADHOC);
 							nmwa_dbus_update_device_wireless_networks (dev, TRUE, applet);
 						}
 					}

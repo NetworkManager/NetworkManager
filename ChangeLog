@@ -1,3 +1,8 @@
+2004-12-21  Colin Walters  <walters@verbum.org>
+
+	* panel-applet/NMWirelessAppletDbus.c (nmwa_dbus_update_devices): Correctly
+	test for NETWORK_MODE_ADHOC; spotted by: Greg <gonufer@gmail.com>.
+
 2004-12-21  Colin Walters  <walters@redhat.com>
 
 	* configure.in: Correct named detection.
