@@ -1,3 +1,7 @@
+2004-09-09  Ankit Patel <ankit@redhat.com>
+
+	* configure.in: Added 'gu' (Gujarati) to ALL_LINGUAS.
+
 2004-09-09  Pablo Saratxaga  <pablo@mandrakesoft.com>
 
 	* configure.in: Added Walloon (wa) to ALL_LINGUAS.
