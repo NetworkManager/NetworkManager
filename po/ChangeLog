@@ -1,3 +1,9 @@
+2005-02-08  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* POTFILES.in: Add encoding foo
+	* nb.po: Update
+	* no.po: Update
+
 2005-02-04  Miloslav Trmac  <mitr@volny.cz>
 
 	* cs.po: Updated Czech translation.
