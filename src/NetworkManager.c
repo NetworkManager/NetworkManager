@@ -395,6 +395,39 @@ static void nm_add_initial_devices (NMData *data)
 
 
 /*
+ * nm_status_signal_broadcast
+ *
+ */
+static gboolean nm_status_signal_broadcast (gpointer user_data)
+{
+	NMData *data = (NMData *)user_data;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	nm_dbus_signal_network_status_change (data->dbus_connection, data);
+	return FALSE;
+}
+
+
+/*
+ * nm_schedule_status_signal_broadcast
+ *
+ */
+void nm_schedule_status_signal_broadcast (NMData *data)
+{
+	guint	 id = 0;
+	GSource	*source;
+
+	g_return_if_fail (data != NULL);
+
+	source = g_idle_source_new ();
+	g_source_set_callback (source, nm_status_signal_broadcast, data, NULL);
+	id = g_source_attach (source, data->main_context);
+	g_source_unref (source);
+}
+
+
+/*
  * nm_link_state_monitor
  *
  * Called every 2s to poll cards and determine if they have a link

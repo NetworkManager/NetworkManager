@@ -1,3 +1,25 @@
+2005-01-12  Dan Williams <dcbw@redhat.com>
+
+	* libnm_glib/
+		- Client library for applications using glib
+
+	* configure.in
+	  various Makefiles
+		- Split NM_CFLAGS and NM_LIBS into separate variables
+			like DBUS_*, HAL_* and GLIB_*
+
+	* src/NetworkManager.c
+	  src/NetworkManagerMain.h
+		- (nm_schedule_status_signal_broadcast): at the earliest convenience,
+			broadcast a status changed signal over DBUS from the main thread.
+			Still unused anywhere for the moment.
+
+	Patch from j@bootlab.org
+	* panel_applet/NMWirelessAppletDbus.c
+	  src/NetworkManagerDbus.c
+		- Correct INT32->UINT32 mistmatch between NM and the panel applet
+			for the "getMode" method call
+
 2005-01-10  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c

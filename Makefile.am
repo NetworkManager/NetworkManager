@@ -1,4 +1,4 @@
-SUBDIRS = dhcpcd named src dispatcher-daemon $(notification_icon_dir) info-daemon initscript test po
+SUBDIRS = dhcpcd named src libnm_glib dispatcher-daemon $(notification_icon_dir) info-daemon initscript test po
 
 EXTRA_DIST = CONTRIBUTING NetworkManager.pc.in NetworkManager.h
 

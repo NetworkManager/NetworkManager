@@ -58,7 +58,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
 	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
 	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
-	g_return_val_if_fail (((arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_INT32) || (arg_type == DBUS_TYPE_BOOLEAN) || (arg_type == DBUS_TYPE_STRING_ARRAY)), RETURN_FAILURE);
+	g_return_val_if_fail (((arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_INT32) || (arg_type == DBUS_TYPE_UINT32) || (arg_type == DBUS_TYPE_BOOLEAN) || (arg_type == DBUS_TYPE_STRING_ARRAY)), RETURN_FAILURE);
 	g_return_val_if_fail (arg != NULL, RETURN_FAILURE);
 
 	if ((arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_STRING_ARRAY))
@@ -119,6 +119,9 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 		case DBUS_TYPE_INT32:
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &dbus_int, DBUS_TYPE_INVALID);
 			break;
+		case DBUS_TYPE_UINT32:
+			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &dbus_int, DBUS_TYPE_INVALID);
+			break;
 		case DBUS_TYPE_BOOLEAN:
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &dbus_bool, DBUS_TYPE_INVALID);
 			break;
@@ -148,6 +151,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 			*item_count = num_items;
 			break;
 		case DBUS_TYPE_INT32:
+		case DBUS_TYPE_UINT32:
 			*((int *)(arg)) = dbus_int;
 			break;
 		case DBUS_TYPE_BOOLEAN:
@@ -334,7 +338,7 @@ static NMNetworkMode nmwa_dbus_get_object_mode (NMWirelessApplet *applet, char *
 {
 	NMNetworkMode	mode = NETWORK_MODE_INFRA;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, path, "getMode", DBUS_TYPE_INT32, (void **)(&mode), NULL))
+	switch (nmwa_dbus_call_nm_method (applet->connection, path, "getMode", DBUS_TYPE_UINT32, (void **)(&mode), NULL))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;

@@ -300,7 +300,6 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 {
 	NMAccessPoint	*ap = NULL;
 	NMAccessPoint	*list_ap = NULL;
-	char			*essid = NULL;
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (network != NULL);

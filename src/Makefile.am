@@ -1,15 +1,4 @@
-INCLUDES = -I${top_srcdir} -I../named
-
-AM_CPPFLAGS = 						\
-	$(NM_CFLAGS) 			   		\
-	$(OPENSSL_CFLAGS)				\
-	-g							\
-	-Wall						\
-	-DDBUS_API_SUBJECT_TO_CHANGE		\
-	-DG_DISABLE_DEPRECATED			\
-	-DBINDIR=\"$(bindir)\"			\
-	-DDATADIR=\"$(datadir)\"			\
-	-DARP_DEBUG
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/named
 
 bin_PROGRAMS = NetworkManager
 
@@ -26,7 +15,7 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDHCP.h		\
 		NetworkManagerDevice.c		\
 		NetworkManagerDevice.h		\
-		NetworkManagerDevicePrivate.h		\
+		NetworkManagerDevicePrivate.h	\
 		NetworkManager.c			\
 		NetworkManagerMain.h		\
 		NetworkManagerPolicy.c		\
@@ -39,11 +28,25 @@ NetworkManager_SOURCES =				\
 		NetworkManagerSystem.h		\
 		autoip.c
 
+NetworkManager_CPPFLAGS = 			\
+	$(DBUS_CFLAGS)					\
+	$(GTHREAD_CFLAGS)				\
+	$(HAL_CFLAGS)					\
+	$(OPENSSL_CFLAGS)				\
+	-g							\
+	-Wall						\
+	-DDBUS_API_SUBJECT_TO_CHANGE		\
+	-DG_DISABLE_DEPRECATED			\
+	-DBINDIR=\"$(bindir)\"			\
+	-DDATADIR=\"$(datadir)\"			\
+	-DARP_DEBUG
+
+
 if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a ../named/libnamed.la
+NetworkManager_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a ../named/libnamed.la
 if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif
@@ -67,8 +70,8 @@ if TARGET_SLACKWARE
 libnmbackend_la_SOURCES += backends/NetworkManagerSlackware.c
 endif
 
-libnmbackend_la_LIBADD = $(NM_LIBS)
-libnmbackend_la_CPPFLAGS = $(NM_CFLAGS)
+libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
+libnmbackend_la_CFLAGS = $(NetworkManager_CPPFLAGS)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

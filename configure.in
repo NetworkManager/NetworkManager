@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.3.2, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.3.3, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
 
 AM_CONFIG_HEADER(config.h)
@@ -84,9 +84,17 @@ AC_CHECK_LIB(iw, iw_scan, [ IWLIB=-liw ],
 			[AC_MSG_ERROR(wireless-tools 27.pre23 not installed or not functional)], [])
 AC_SUBST(IWLIB)
 
-PKG_CHECK_MODULES(NM, dbus-glib-1 >= 0.20 hal >= 0.2.91 gthread-2.0)
-AC_SUBST(NM_CFLAGS)
-AC_SUBST(NM_LIBS)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.20)
+AC_SUBST(DBUS_CFLAGS)
+AC_SUBST(DBUS_LIBS)
+
+PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
+AC_SUBST(GTHREAD_CFLAGS)
+AC_SUBST(GTHREAD_LIBS)
+
+PKG_CHECK_MODULES(HAL, hal >= 0.2.91)
+AC_SUBST(HAL_CFLAGS)
+AC_SUBST(HAL_LIBS)
 
 PKG_CHECK_MODULES(GTK, gtk+-2.0)
 AC_SUBST(GTK_CFLAGS)
@@ -240,6 +248,7 @@ panel-applet/Makefile
 panel-applet/icons/Makefile
 named/Makefile
 dhcpcd/Makefile
+libnm_glib/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
@@ -248,6 +257,7 @@ initscript/Debian/Makefile
 initscript/Slackware/Makefile
 po/Makefile.in
 NetworkManager.pc
+libnm_glib/libnm_glib.pc
 ])
 
 echo

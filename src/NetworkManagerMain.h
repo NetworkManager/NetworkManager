@@ -70,11 +70,13 @@ typedef struct NMData
 } NMData;
 
 
-struct NMDevice	*nm_create_device_and_add_to_list	(NMData *data, const char *udi, const char *iface,
-											gboolean test_device, NMDeviceType test_device_type);
+struct NMDevice	*nm_create_device_and_add_to_list		(NMData *data, const char *udi, const char *iface,
+												gboolean test_device, NMDeviceType test_device_type);
 
-void				 nm_remove_device_from_list		(NMData *data, const char *udi);
+void				 nm_remove_device_from_list			(NMData *data, const char *udi);
 
-void		 		 nm_data_mark_state_changed		(NMData *data);
+void		 		 nm_data_mark_state_changed			(NMData *data);
+
+void				 nm_schedule_status_signal_broadcast	(NMData *data);
 
 #endif

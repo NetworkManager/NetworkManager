@@ -2,7 +2,8 @@
 INCLUDES = -I${top_srcdir}
 
 AM_CPPFLAGS =								\
-	$(NM_CFLAGS)							\
+	$(DBUS_CFLAGS)							\
+	$(GTHREAD_CFLAGS)						\
 	$(GTK_CFLAGS)							\
 	$(GDK_PIXBUF_CFLAGS)						\
 	$(GLADE_CFLAGS)							\
@@ -35,13 +36,15 @@ NetworkManagerInfo_SOURCES =	NetworkManagerInfo.h		\
 				NetworkManagerInfoNetworksDialog.c		\
 				NetworkManagerInfoNetworksDialog.h
 
-NetworkManagerInfo_LDADD = $(NM_LIBS) 		\
-			   $(GLADE_LIBS) 	\
-			   $(GCONF_LIBS) 	\
-			   $(GTK_LIBS) 		\
-			   $(GDK_PIXBUF_LIBS)   \
-			   $(GNOME_KEYRING_LIBS)   \
-			   $(LIBGNOMEUI_LIBS)	
+NetworkManagerInfo_LDADD =				\
+				$(DBUS_LIBS)			\
+				$(GTHREAD_LIBS)		\
+				$(GLADE_LIBS)			\
+				$(GCONF_LIBS)			\
+				$(GTK_LIBS)			\
+				$(GDK_PIXBUF_LIBS)		\
+				$(GNOME_KEYRING_LIBS)	\
+				$(LIBGNOMEUI_LIBS)	
 
 gladedir = $(datadir)/NetworkManagerInfo/glade
 glade_DATA = passphrase.glade keyring.png networks.glade

@@ -5,23 +5,25 @@ NOTIFICATION_ICON_SOURCE=@NOTIFICATION_ICON_SRC@
 
 INCLUDES = -I${top_srcdir}
 
-AM_CPPFLAGS = 							\
-	$(NM_CFLAGS)						\
-	$(GLADE_CFLAGS)						\
+noinst_LTLIBRARIES = libnm_notification_applet.la
+
+libnm_notification_applet_la_CPPFLAGS = 	\
 	$(DBUS_CFLAGS)						\
+	$(GTHREAD_CFLAGS)					\
+	$(HAL_CFLAGS)						\
 	$(DBUS_GLIB_CFLAGS)					\
+	$(GLADE_CFLAGS)					\
 	$(GTK_CFLAGS)						\
-	$(GCONF_CFLAGS)						\
-	$(LIBGNOMEUI_CFLAGS)					\
-	$(PANEL_APPLET_CFLAGS)					\
-	-DICONDIR=\""$(datadir)/pixmaps"\"			\
-	-DG_DISABLE_DEPRECATED					\
+	$(GCONF_CFLAGS)					\
+	$(LIBGNOMEUI_CFLAGS)				\
+	$(PANEL_APPLET_CFLAGS)				\
+	-DICONDIR=\""$(datadir)/pixmaps"\"		\
+	-DDBUS_API_SUBJECT_TO_CHANGE			\
+	-DG_DISABLE_DEPRECATED				\
 	-DGDK_DISABLE_DEPRECATED				\
-	-DGNOME_DISABLE_DEPRECATED				\
+	-DGNOME_DISABLE_DEPRECATED			\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
 	$(NULL)
-
-noinst_LTLIBRARIES = libnm_notification_applet.la
 
 libnm_notification_applet_la_SOURCES =	\
 	NMWirelessApplet.c		\
@@ -43,11 +45,12 @@ libnm_notification_applet_la_SOURCES +=	\
 	eggtrayicon.h			
 
 libnm_notification_applet_la_LIBADD =	\
-	$(NM_LIBS)			\
-	$(GLADE_LIBS)			\
 	$(DBUS_LIBS)			\
+	$(HAL_LIBS)			\
+	$(GTHREAD_LIBS)		\
+	$(GLADE_LIBS)			\
 	$(DBUS_GLIB_LIBS)		\
-	$(PANEL_APPLET_LIBS)		\
+	$(PANEL_APPLET_LIBS)	\
 	$(GTK_LIBS)			\
 	$(GCONF_LIBS)			\
 	$(LIBGNOMEUI_LIBS)		\
@@ -55,6 +58,7 @@ libnm_notification_applet_la_LIBADD =	\
 
 libexec_PROGRAMS = NetworkManagerNotification
 
+NetworkManagerNotification_CFLAGS = $(libnm_notification_applet_la_CPPFLAGS)
 NetworkManagerNotification_SOURCES = main.c
 NetworkManagerNotification_LDADD = ./libnm_notification_applet.la
 

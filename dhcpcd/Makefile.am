@@ -1,13 +1,12 @@
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/src
 
-AM_CPPFLAGS =					\
-	$(NM_CFLAGS)				\
+noinst_LIBRARIES = libdhcpc.a
+
+libdhcpc_a_CPPFLAGS =			\
 	-DBINDIR=\"$(bindir)\"		\
 	-DDATADIR=\"$(datadir)\"		\
 	-DARP_DEBUG				\
 	-DDEBUG
-
-noinst_LIBRARIES = libdhcpc.a
 
 libdhcpc_a_SOURCES=	\
 	buildmsg.c	\

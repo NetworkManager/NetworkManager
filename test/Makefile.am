@@ -1,18 +1,23 @@
-INCLUDES = -I${top_srcdir}
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/libnm_glib
 
 AM_CPPFLAGS =						\
-	$(NM_CFLAGS)					\
+	$(DBUS_CFLAGS)					\
+	$(GTHREAD_CFLAGS)				\
+	$(HAL_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nmtest nminfotest nmtestdevices
+noinst_PROGRAMS = nmtest nminfotest nmtestdevices libnm_glib_test
 
 nmtest_SOURCES = nmclienttest.c
-nmtest_LDADD = $(NM_LIBS)
+nmtest_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)
 
 nminfotest_SOURCES = nminfotest.c
-nminfotest_LDADD = $(NM_LIBS)
+nminfotest_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
 
 nmtestdevices_SOURCES = nmtestdevices.c
-nmtestdevices_LDADD = $(NM_LIBS)
+nmtestdevices_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
+
+libnm_glib_test_SOURCES = libnm_glib_test.c
+libnm_glib_test_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) -lnm_glib

@@ -1152,7 +1152,7 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 	else if (strcmp ("getEncrypted", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, nm_ap_get_encrypted (ap), DBUS_TYPE_INVALID);
 	else if (strcmp ("getMode", request) == 0)
-		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_mode (ap), DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_ap_get_mode (ap), DBUS_TYPE_INVALID);
 	else
 	{
 		/* Must destroy the allocated message */
