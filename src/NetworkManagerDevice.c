@@ -217,15 +217,15 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	 */
 	if (!app_data->enable_test_devices && test_dev)
 	{
-		syslog (LOG_ERR, "nm_device_new(): attempt to create a test device, but test devices were not enabled"
-					" on the command line.  Will not create the device.\n");
+		nm_warning ("attempt to create a test device, but test devices were not enabled "
+			    "on the command line.  Will not create the device.\n");
 		return (NULL);
 	}
 
 	dev = g_malloc0 (sizeof (NMDevice));
 	if (!dev)
 	{
-		syslog (LOG_ERR, "nm_device_new() could not allocate a new device...  Not enough memory?");
+		nm_warning ("could not allocate a new device...  Not enough memory?");
 		return (NULL);
 	}
 
@@ -324,16 +324,16 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 	if (!g_thread_create (nm_device_worker, dev, FALSE, &error))
 	{
-		syslog (LOG_CRIT, "nm_device_new (): could not create device worker thread. (glib said: '%s')", error->message);
+		nm_error ("could not create device worker thread. (glib said: '%s')", error->message);
 		g_error_free (error);
 		goto err;
 	}
 
 	/* Block until our device thread has actually had a chance to start. */
-	syslog (LOG_ERR, "nm_device_new(): waiting for device's worker thread to start.\n");
+	nm_info ("waiting for device's worker thread to start.\n");
 	while (dev->worker_started == FALSE)
 		g_usleep (G_USEC_PER_SEC / 2);
-	syslog (LOG_ERR, "nm_device_new(): device's worker thread started, continuing.\n");
+	nm_info ("device's worker thread started, continuing.\n");
 
 	return (dev);
 
@@ -420,7 +420,7 @@ static gpointer nm_device_worker (gpointer user_data)
 
 	if (!dev)
 	{
-		syslog (LOG_CRIT, "nm_device_worker(): received NULL device object, NetworkManager cannot continue.\n");
+		nm_error ("received NULL device object, NetworkManager cannot continue.\n");
 		exit (1);
 	}
 
@@ -517,7 +517,7 @@ int nm_device_open_sock (void)
 	if (fd >= 0)
 	     return (fd);
 
-	syslog (LOG_ERR, "nm_device_open_sock () could not get network control socket.");
+	nm_warning ("could not get network control socket.");
 	return (-1);
 }
 
@@ -799,19 +799,17 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 	if (dev->removed)
 		return FALSE;
 
-	carrier_path = g_strdup_printf ("/sys/sys/class/net/%s/carrier", dev->iface);
+	carrier_path = g_strdup_printf ("/sys/class/net/%s/carrier", dev->iface);
 	if (g_file_get_contents (carrier_path, &contents, &length, NULL)) {
 		link = (gboolean) atoi (contents);
 		g_free (contents);
-	} else {
-		contents = NULL;
-	}
+	} 
 
 	/* We say that non-carrier-detect devices always have a link, because
 	 * they never get auto-selected by NM.  User has to force them on us,
 	 * so we just hope the user knows whether or not the cable's plugged in.
 	 */
-	if ((dev->options.wired.has_carrier_detect != TRUE) || (contents == NULL))
+	if (dev->options.wired.has_carrier_detect != TRUE)
 		link = TRUE;
 
 	return (link);
@@ -893,7 +891,7 @@ char * nm_device_get_essid (NMDevice *dev)
 			dev->options.wireless.cur_essid = g_strdup (info.essid);
 		}
 		else
-			syslog (LOG_ERR, "nm_device_get_essid(): error getting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			nm_warning ("nm_device_get_essid(): error getting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (sk);
 	}
@@ -944,7 +942,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 	
 		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
 		if (err == -1)
-			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
+			nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
 
 		close (sk);
 	}
@@ -979,7 +977,7 @@ double nm_device_get_frequency (NMDevice *dev)
 		if (err >= 0)
 			freq = iw_freq2float (&wrq.u.freq);
 		if (err == -1)
-			syslog (LOG_ERR, "nm_device_get_frequency(): error getting frequency for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			nm_warning ("nm_device_get_frequency(): error getting frequency for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (sk);
 	}
@@ -1258,11 +1256,11 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		{
 			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWENCODE, &wreq);
 			if (err == -1)
-				syslog (LOG_ERR, "nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+				nm_warning ("nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 		}
 
 		close (sk);
-	} else syslog (LOG_ERR, "nm_device_set_enc_key(): could not get wireless control socket.");
+	} else nm_warning ("nm_device_set_enc_key(): could not get wireless control socket.");
 }
 
 
@@ -1501,7 +1499,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
 			if ((err = ioctl (sk, SIOCSIFFLAGS, &ifr)))
-				syslog (LOG_ERR, "nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
+				nm_warning ("nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
 		}
 		/* Make sure we have a valid MAC address, some cards reload firmware when they
 		 * are brought up.
@@ -1510,7 +1508,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 			nm_device_update_hw_address(dev);
 	}
 	else
-		syslog (LOG_ERR, "nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
+		nm_warning ("nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 
 	close (sk);
 }
@@ -1556,7 +1554,7 @@ gboolean nm_device_is_up (NMDevice *dev)
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
-	syslog (LOG_ERR, "nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
+	nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 	return (FALSE);
 }
 
@@ -1598,7 +1596,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 			}
 		}
 		else
-			syslog (LOG_ERR, "nm_device_get_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+			nm_warning ("nm_device_get_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
 		close (sk);
 	}
 
@@ -1652,7 +1650,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 			if (err == 0)
 				success = TRUE;
 			else
-				syslog (LOG_ERR, "nm_device_set_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+				nm_warning ("nm_device_set_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
 		}
 		close (sk);
 	}
@@ -1747,7 +1745,7 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
 	/* If we were told to quit activation, stop the thread and return */
 	if (dev->quit_activation)
 	{
-		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
+		nm_debug ("activation of device '%s' canceled.", nm_device_get_iface (dev));
 		if (nm_device_is_wireless (dev))
 			nm_device_set_now_scanning (dev, FALSE);
 		return (TRUE);
@@ -1867,7 +1865,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 		if (auth == NM_DEVICE_AUTH_METHOD_NONE)
 		{
 			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
-			syslog (LOG_ERR, "Activation (%s/wireless): AP '%s' said it was encrypted, but had "
+			nm_warning ("Activation (%s/wireless): AP '%s' said it was encrypted, but had "
 					"'none' for authentication method.  Using Open System authentication method.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap));
 		}
@@ -1879,7 +1877,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 
 	nm_device_set_essid (dev, essid);
 
-	syslog (LOG_INFO, "Activation (%s/wireless): using essid '%s', with %s authentication.",
+	nm_info ("Activation (%s/wireless): using essid '%s', with %s authentication.",
 			nm_device_get_iface (dev), essid, (auth == NM_DEVICE_AUTH_METHOD_NONE) ? "no" :
 				((auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) ? "Open System" :
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
@@ -1983,7 +1981,7 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	{
 		nm_ap_set_freq (ap, freq_to_use);
 	
-		syslog (LOG_INFO, "Will create network '%s' with frequency %f.\n", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
+		nm_info ("Will create network '%s' with frequency %f.\n", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
 		if ((success = nm_device_set_wireless_config (dev, ap)))
 			success = nm_device_activation_configure_ip (dev, TRUE);
 	}
@@ -2003,20 +2001,24 @@ static gboolean AP_NEED_KEY (NMDevice *dev, NMAccessPoint *ap)
 
 	if (!nm_ap_get_encrypted (ap))
 	{
-		syslog (LOG_NOTICE, "Activation (%s/wireless): access point '%s' is unencrypted, no key needed.",
-			nm_device_get_iface (dev), essid ? essid : "(null)");
+		nm_info ("Activation (%s/wireless): access point '%s' is "
+			 "unencrypted, no key needed.", 
+			 nm_device_get_iface (dev), essid ? essid : "(null)");
 	}
 	else
 	{
 		if (nm_ap_is_enc_key_valid (ap))
 		{
-			syslog (LOG_NOTICE, "Activation (%s/wireless): access point '%s' is encrypted, and a key exists.  No new key needed.",
-					nm_device_get_iface (dev), essid ? essid : "(null)");
+			nm_info ("Activation (%s/wireless): access point '%s' "
+				 "is encrypted, and a key exists.  No new key needed.",
+			  	 nm_device_get_iface (dev), essid ? essid : "(null)");
 		}
 		else
 		{
-			syslog (LOG_NOTICE, "Activation (%s/wireless): access point '%s' is encrypted, but NO valid key exists.  New key needed.",
-					nm_device_get_iface (dev), essid ? essid : "(null)");
+			nm_info ("Activation (%s/wireless): access point '%s' "
+				 "is encrypted, but NO valid key exists.  New key needed.",
+				 nm_device_get_iface (dev), 
+				 essid ? essid : "(null)");
 			need_key = TRUE;
 		}
 	}
@@ -2119,7 +2121,7 @@ get_ap:
 	{
 		nm_device_set_now_scanning (dev, TRUE);
 		if (!found_ap)
-			syslog (LOG_ERR, "Activation (%s/wireless): waiting for an access point.", nm_device_get_iface (dev));
+			nm_warning ("Activation (%s/wireless): waiting for an access point.", nm_device_get_iface (dev));
 		g_usleep (G_USEC_PER_SEC * 2);
 
 		/* If we were told to quit activation, stop the thread and return */
@@ -2132,7 +2134,7 @@ get_ap:
 		found_ap = TRUE;
 	}
 	if (found_ap)
-		syslog (LOG_ERR, "Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
+		nm_warning ("Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
 	/* Set ESSID early so that when we send out the DeviceStatusChanged signal below,
 	 * we are able to respond correctly to queries for "getActiveNetwork" against
@@ -2179,11 +2181,11 @@ need_key:
 		need_key = FALSE;
 
 		/* Wait for the key to come back */
-		syslog (LOG_DEBUG, "Activation (%s/wireless): asking for user key.", nm_device_get_iface (dev));
+		nm_debug ("Activation (%s/wireless): asking for user key.", nm_device_get_iface (dev));
 		while (!dev->options.wireless.user_key_received && !dev->quit_activation)
 			g_usleep (G_USEC_PER_SEC / 2);
 
-		syslog (LOG_DEBUG, "Activation (%s/wireless): user key received.", nm_device_get_iface (dev));
+		nm_debug ("Activation (%s/wireless): user key received.", nm_device_get_iface (dev));
 
 		/* Done waiting, grab lock again */
 		nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
@@ -2229,7 +2231,7 @@ try_connect:
 		{
 			if (nm_ap_get_auth_method (best_ap) == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
 			{
-				syslog (LOG_DEBUG, "Activation (%s/wireless): no hardware link to '%s' in Open System mode, trying Shared Key.",
+				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Open System mode, trying Shared Key.",
 						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 				/* Back down to Shared Key mode */
 				nm_ap_set_auth_method (best_ap, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
@@ -2239,12 +2241,12 @@ try_connect:
 			{
 				/* Must be in Open System mode and it still didn't work, so
 				 * we'll invalidate the current "best" ap and get another one */
-				syslog (LOG_DEBUG, "Activation (%s/wireless): no hardware link to '%s' in Shared Key mode, trying another access point.",
+				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Shared Key mode, trying another access point.",
 						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 			}
 			else
 			{
-				syslog (LOG_DEBUG, "Activation (%s/wireless): no hardware link to '%s' in non-encrypted mode.",
+				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in non-encrypted mode.",
 						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 			}
 
@@ -2273,7 +2275,7 @@ try_connect:
 			if ((nm_ap_get_auth_method (best_ap) == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) && !adhoc)
 			{
 				/* Back down to Shared Key mode */
-				syslog (LOG_DEBUG, "Activation (%s/wireless): could not get IP configuration info for '%s' in Open System mode, trying Shared Key.",
+				nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Open System mode, trying Shared Key.",
 						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 				nm_ap_set_auth_method (best_ap, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
 				continue;
@@ -2281,7 +2283,7 @@ try_connect:
 			else if ((nm_ap_get_auth_method (best_ap) == NM_DEVICE_AUTH_METHOD_SHARED_KEY) && !adhoc)
 			{
 				/* Shared Key mode failed, we must have bad WEP key */
-				syslog (LOG_DEBUG, "Activation (%s/wireless): could not get IP configuration info for '%s' in Shared Key mode, asking for new key.",
+				nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Shared Key mode, asking for new key.",
 						nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 				need_key = TRUE;
 				goto need_key;
@@ -2302,7 +2304,7 @@ connect_done:
 
 	if (success)
 	{
-		syslog (LOG_DEBUG, "Activation (%s/wireless): Success!  Connected to access point '%s' and got an IP address.",
+		nm_debug ("Activation (%s/wireless): Success!  Connected to access point '%s' and got an IP address.",
 				nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 		nm_ap_unref (best_ap);
 	}
@@ -2386,7 +2388,7 @@ static gboolean nm_device_activate (gpointer user_data)
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	syslog (LOG_ERR, "Activation (%s) started...", nm_device_get_iface (dev));
+	nm_warning ("Activation (%s) started...", nm_device_get_iface (dev));
 
 	/* Bring the device up */
 	if (!nm_device_is_up (dev));
@@ -2402,9 +2404,9 @@ static gboolean nm_device_activate (gpointer user_data)
 			if (nm_ap_get_user_created (best_ap))
 			{
 				create_network = TRUE;
-				syslog (LOG_INFO, "Creating wireless network '%s'.\n", nm_ap_get_essid (best_ap));
+				nm_info ("Creating wireless network '%s'.\n", nm_ap_get_essid (best_ap));
 				success = nm_device_activate_wireless_adhoc (dev, best_ap);
-				syslog (LOG_INFO, "Wireless network creation for '%s' was %s.\n", nm_ap_get_essid (best_ap), success ? "successful" : "unsuccessful");
+				nm_info ("Wireless network creation for '%s' was %s.\n", nm_ap_get_essid (best_ap), success ? "successful" : "unsuccessful");
 			}
 			nm_ap_unref (best_ap);
 		}
@@ -2420,14 +2422,15 @@ static gboolean nm_device_activate (gpointer user_data)
 		goto out;
 
 	if (success)
-		syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP successful!\n", nm_device_get_iface (dev));
+		nm_info ("Activation (%s) IP configuration/DHCP successful!\n", nm_device_get_iface (dev));
 	else
-		syslog (LOG_DEBUG, "Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n", nm_device_get_iface (dev));
+		nm_info ("Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n",
+			  nm_device_get_iface (dev));
 
 	finished = TRUE;
 
 out:
-	syslog (LOG_DEBUG, "Activation (%s) ended.\n", nm_device_get_iface (dev));
+	nm_debug ("Activation (%s) ended.\n", nm_device_get_iface (dev));
 	dev->activating = FALSE;
 	dev->quit_activation = FALSE;
 	if (finished)
@@ -2477,7 +2480,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 
 	if (nm_device_is_activating (dev))
 	{
-		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
+		nm_debug ("nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
 
 		/* Spin until cancelled.  Possible race conditions or deadlocks here.
@@ -2496,7 +2499,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 
 			g_usleep (G_USEC_PER_SEC / 2);
 		}
-		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelled.", nm_device_get_iface (dev));
+		nm_debug ("nm_device_activation_cancel(%s): cancelled.", nm_device_get_iface (dev));
 	}
 }
 
@@ -2966,7 +2969,7 @@ static gboolean nm_device_wireless_force_use (NMDevice *dev, const char *essid, 
 	if (!essid)
 		return FALSE;
 
-	syslog (LOG_DEBUG, "Forcing AP '%s'", essid);
+	nm_debug ("Forcing AP '%s'", essid);
 
 	if (    key
 		&& strlen (key)
@@ -3142,7 +3145,7 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 
 		if (valid)
 		{
-			syslog(LOG_INFO, "%s: setting AP '%s' best", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+			nm_info ("%s: setting AP '%s' best", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
 			nm_device_set_best_ap (dev, ap);
 			nm_policy_schedule_state_update (dev->app_data);
@@ -3502,7 +3505,8 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 					scan_results->scan_head.result = NULL;
 			}
 			else if ((err == -1) && (errno == ETIME))
-				syslog (LOG_ERR, "Warning: the wireless card (%s) requires too much time for scans.  Its driver needs to be fixed.", nm_device_get_iface (dev));
+				nm_warning ("The wireless card (%s) requires too much time for scans. "
+					    "Its driver needs to be fixed.", nm_device_get_iface (dev));
 
 			nm_device_set_mode (dev, orig_mode);
 			/* Only set frequency if ad-hoc mode */
@@ -3636,7 +3640,7 @@ static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 
 	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		syslog (LOG_ERR, "cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
+		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 
@@ -3687,7 +3691,7 @@ static gboolean supports_mii_carrier_detect (NMDevice *dev)
 
 	if ((sk = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
 	{
-		syslog (LOG_ERR, "cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
+		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d", nm_device_get_iface (dev), errno);
 		return (FALSE);
 	}
 

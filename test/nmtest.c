@@ -296,10 +296,10 @@ void print_device_networks (DBusConnection *connection, const char *path)
 
 		fprintf( stderr, "           %s (%s)  Strength: %d%%\n", networks[i], name,
 				get_object_signal_strength (connection, networks[i]) );
-		dbus_free (name);
+		g_free (name);
 	}
 
-	dbus_free_string_array (networks);
+	g_strfreev (networks);
 }
 
 
@@ -327,7 +327,7 @@ void print_devices (DBusConnection *connection)
 			fprintf (stderr, "       Device type: wireless\n");
 			fprintf (stderr, "       Strength: %d%%\n", get_object_signal_strength (connection, devices[i]));
 			fprintf (stderr, "       Active Network: '%s'\n", active_network);
-			dbus_free (active_network);
+			g_free (active_network);
 			
 			print_device_networks (connection, devices[i]);
 			fprintf (stderr, "\n");
@@ -338,7 +338,7 @@ void print_devices (DBusConnection *connection)
 			fprintf (stderr, "       Device type: unknown\n");
 		fprintf (stderr, "\n");
 	}
-	dbus_free_string_array (devices);
+	g_strfreev (devices);
 }
 
 
@@ -400,7 +400,7 @@ int main( int argc, char *argv[] )
 		return (1);
 	}
 	fprintf (stderr, "NM Status: '%s'\n", status);
-	dbus_free (status);
+	g_free (status);
 
 	path = get_active_device (connection);
 	fprintf (stderr, "Active device: '%s'\n", path ? path : "(none)");
@@ -408,7 +408,7 @@ int main( int argc, char *argv[] )
 	{
 		char *name = get_object_name (connection, path);
 		fprintf (stderr, "Active device name: '%s'\n", name ? name : "(none)");
-		dbus_free (name);
+		g_free (name);
 	}
 
 	print_devices (connection);
@@ -419,7 +419,7 @@ int main( int argc, char *argv[] )
 		set_device_network (connection, path, argv[1]);
 	}
 
-	dbus_free (path);
+	g_free (path);
 
 	return 0;
 }

@@ -41,6 +41,7 @@
 #include <glib.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerDevice.h"
+#include "nm-utils.h"
 
 static int nm_system_open_sock (void)
 {
@@ -51,7 +52,7 @@ static int nm_system_open_sock (void)
 	if (fd >= 0)
 	     return (fd);
 
-	syslog (LOG_ERR, "nm_system_open_sock() could not get network control socket.");
+	nm_warning ("nm_system_open_sock() could not get network control socket.");
 	return (-1);
 }
 
@@ -76,11 +77,11 @@ gboolean nm_system_device_set_ip4_address (NMDevice *dev, int ip4_address)
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_address;
 	if (ioctl (sk, SIOCSIFADDR, &ifr) == -1)
-		syslog (LOG_ERR,"nm_system_device_set_ip4_address (%s): failed to set IPv4 address!", iface);
+		nm_warning ("nm_system_device_set_ip4_address (%s): failed to set IPv4 address!", iface);
 	else
 	{
 		success = TRUE;
-		syslog (LOG_INFO, "Your IP address = %u.%u.%u.%u\n",
+		nm_info ("Your IP address = %u.%u.%u.%u\n",
 				((unsigned char *)&ip4_address)[0], ((unsigned char *)&ip4_address)[1],
 				((unsigned char *)&ip4_address)[2], ((unsigned char *)&ip4_address)[3]);
 	}
@@ -110,7 +111,7 @@ gboolean nm_system_device_set_ip4_netmask (NMDevice *dev, int ip4_netmask)
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_netmask;
 	if (ioctl (sk, SIOCSIFNETMASK, &ifr) == -1)
-		syslog (LOG_ERR,"nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask! errno = %s", iface, strerror (errno));
+		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask! errno = %s", iface, strerror (errno));
 	else
 		success = TRUE;
 
@@ -139,7 +140,7 @@ gboolean nm_system_device_set_ip4_broadcast (NMDevice *dev, int ip4_broadcast)
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_broadcast;
 	if (ioctl (sk, SIOCSIFBRDADDR, &ifr) == -1)
-		syslog (LOG_ERR,"nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask!", iface);
+		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask!", iface);
 	else
 		success = TRUE;
 
@@ -202,11 +203,11 @@ gboolean nm_system_device_set_ip4_default_route (NMDevice *dev, int ip4_def_rout
 				if ( ioctl (sk, SIOCADDRT, &rtent) == 0 )
 					success = TRUE;
 				else
-					syslog (LOG_ERR,"nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+					nm_warning ("nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
 			}
 		}
 		else
-			syslog (LOG_ERR,"nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+			nm_warning ("nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
 	}
 	else
 		success = TRUE;

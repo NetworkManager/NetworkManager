@@ -1433,7 +1433,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 
 	if (!devices)
 	{
-		dbus_free (nm_status);
+		g_free (nm_status);
 		return;
 	}
 
@@ -1479,7 +1479,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 				}
 			}
 		}
-		dbus_free (name);
+		g_free (name);
 	}
 	g_free (nm_act_dev);
 	g_strfreev (devices);

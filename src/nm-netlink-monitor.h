@@ -68,7 +68,8 @@ enum _NmNetlinkMonitorError
 	NM_NETLINK_MONITOR_ERROR_BINDING_TO_SOCKET,
 	NM_NETLINK_MONITOR_ERROR_BAD_SENDER,
 	NM_NETLINK_MONITOR_ERROR_BAD_SOCKET_DATA,
-	NM_NETLINK_MONITOR_ERROR_READING_SOCKET
+	NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
+	NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET
 };
 
 GType	nm_netlink_monitor_get_type	(void)	G_GNUC_CONST;
@@ -84,6 +85,7 @@ void	nm_netlink_monitor_attach	(NmNetlinkMonitor	*monitor,
 					 GMainContext		*context);
 void	nm_netlink_monitor_detach	(NmNetlinkMonitor	*monitor);
 
-void	nm_netlink_monitor_request_status	(NmNetlinkMonitor	*monitor);
+gboolean	nm_netlink_monitor_request_status	(NmNetlinkMonitor *monitor,
+							 GError		**error);
 G_END_DECLS
 #endif  /* NM_NETLINK_MONITOR_H */

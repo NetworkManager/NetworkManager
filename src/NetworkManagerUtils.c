@@ -28,6 +28,7 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 
 
 typedef struct MutexDesc
@@ -92,7 +93,7 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 		if (func)
 		{
 			MutexDesc	*desc = nm_find_mutex_desc (mutex);
-			syslog (LOG_DEBUG, "MUTEX: <%s %p> acquired by %s", desc ? desc->desc : "(none)", mutex, func);
+			nm_debug ("MUTEX: <%s %p> acquired by %s", desc ? desc->desc : "(none)", mutex, func);
 		}
 #endif
 		return (TRUE);
@@ -102,7 +103,7 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 	if (func)
 	{
 		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		syslog (LOG_DEBUG, "MUTEX: <%s %p> FAILED to be acquired by %s", desc ? desc->desc : "(none)", mutex, func);
+		nm_debug ("MUTEX: <%s %p> FAILED to be acquired by %s", desc ? desc->desc : "(none)", mutex, func);
 	}
 #endif
 	return (FALSE);
@@ -121,7 +122,7 @@ void nm_lock_mutex (GMutex *mutex, const char *func)
 	if (func)
 	{
 		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		syslog (LOG_DEBUG, "MUTEX: <%s %p> being acquired by %s", desc ? desc->desc : "(none)", mutex, func);
+		nm_debug ("MUTEX: <%s %p> being acquired by %s", desc ? desc->desc : "(none)", mutex, func);
 	}
 #endif
 	g_mutex_lock (mutex);
@@ -142,7 +143,7 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 	if (func)
 	{
 		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		syslog (LOG_DEBUG, "MUTEX: <%s %p> released by %s", desc ? desc->desc : "(none)", mutex, func);
+		nm_debug ("MUTEX: <%s %p> released by %s", desc ? desc->desc : "(none)", mutex, func);
 	}
 #endif
 
@@ -240,13 +241,13 @@ int nm_spawn_process (char *args)
 		GError *error2 = NULL;
 
 		if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, &so, &se, &exit_status, &error2))
-			syslog (LOG_ERR, "nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error2->message);
+			nm_warning ("nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error2->message);
 
 		if (so)    g_free(so);
 		if (se)    g_free(se);
 		if (argv)  g_strfreev (argv);
 		if (error2) g_error_free (error2);
-	} else syslog (LOG_ERR, "nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
+	} else nm_warning ("nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
 
 	if (error) g_error_free (error);
 
@@ -407,15 +408,15 @@ NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *
 	switch (level)
 	{
 		case NM_DRIVER_SEMI_SUPPORTED:
-			syslog (LOG_INFO, "%s: Driver support level for '%s' is semi-supported",
+			nm_info ("%s: Driver support level for '%s' is semi-supported",
 						nm_device_get_iface (dev), driver);
 			break;
 		case NM_DRIVER_FULLY_SUPPORTED:
-			syslog (LOG_INFO, "%s: Driver support level for '%s' is fully-supported",
+			nm_info ("%s: Driver support level for '%s' is fully-supported",
 						nm_device_get_iface (dev), driver);
 			break;
 		default:
-			syslog (LOG_INFO, "%s: Driver support level for '%s' is unsupported",
+			nm_info ("%s: Driver support level for '%s' is unsupported",
 						nm_device_get_iface (dev), driver);
 			break;
 	}

@@ -37,6 +37,7 @@
 #include <glib/gi18n.h>
 
 #include "nm-netlink-monitor.h"
+#include "nm-utils.h"
 
 #define NM_NETLINK_MONITOR_EVENT_CONDITIONS \
 	((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -225,7 +226,6 @@ nm_netlink_monitor_init (NmNetlinkMonitor *monitor)
 	monitor->priv = G_TYPE_INSTANCE_GET_PRIVATE (monitor, 
 						     NM_TYPE_NETLINK_MONITOR,
 						     NmNetlinkMonitorPrivate);
-
 	monitor->priv->context = NULL;
 	monitor->priv->io_channel = NULL;
 	monitor->priv->event_source = NULL;
@@ -313,10 +313,113 @@ nm_netlink_monitor_detach (NmNetlinkMonitor *monitor)
 	monitor->priv->context = NULL;
 }
 
-void
-nm_netlink_monitor_request_status (NmNetlinkMonitor *monitor)
+gboolean
+nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
+				   GError           **error)
 {
-	
+	typedef struct
+	{
+		struct nlmsghdr  header;
+		struct rtgenmsg  request;
+	} NmNetlinkMonitorStatusPacket;
+	NmNetlinkMonitorStatusPacket packet = { { 0 } };
+	struct sockaddr_nl recipient = { 0 };
+	static guint32 sequence_number;
+	int fd, saved_errno;
+	ssize_t num_bytes_sent;
+	size_t num_bytes_to_send, total_bytes_sent;
+	gdouble max_wait_period, now;
+	const gchar *buffer;
+	GError *socket_error;
+
+	fd = g_io_channel_unix_get_fd (monitor->priv->io_channel);
+
+	recipient.nl_family = AF_NETLINK;
+	recipient.nl_pid = 0; /* going to kernel */
+	recipient.nl_groups = RTMGRP_LINK;
+
+	packet.header.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtgenmsg));
+	packet.header.nlmsg_flags = NLM_F_ROOT | NLM_F_MATCH | NLM_F_REQUEST;
+	packet.header.nlmsg_type = RTM_GETLINK;
+	packet.header.nlmsg_pid = getpid ();
+	/* Might be good to generate a unique sequence number and track
+	   the response */
+	packet.header.nlmsg_seq = sequence_number << 16;
+	sequence_number++;
+
+	packet.request.rtgen_family = AF_UNSPEC;
+
+	nm_get_timestamp (&now);
+
+	/* only block for around 1.5 seconds
+	 * FIXME: maybe too long? */
+	max_wait_period = now + 1.5;
+	num_bytes_sent = 0;
+	buffer = (const gchar *) &packet;
+	num_bytes_to_send = sizeof (packet);
+	total_bytes_sent = 0;
+	socket_error = NULL;
+	do
+	{
+		num_bytes_sent = sendto (fd, 
+					 buffer + total_bytes_sent, 
+					 num_bytes_to_send, 
+					 MSG_DONTWAIT, 
+					 (struct sockaddr *) &recipient,
+					 sizeof (recipient));
+		if (num_bytes_sent < 0)
+		{
+			saved_errno = errno;
+
+			if ((saved_errno == EAGAIN) ||
+			    (saved_errno == EWOULDBLOCK))
+			{
+				nm_get_timestamp (&now);
+				if ((max_wait_period - now) > G_MINDOUBLE)
+				{
+					saved_errno = 0;
+					continue;
+				}
+			}
+
+			socket_error = 
+				g_error_new (NM_NETLINK_MONITOR_ERROR,
+				 	     NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET,
+				             "%s", g_strerror (saved_errno));
+			break;
+		}
+
+		total_bytes_sent += num_bytes_sent;
+		num_bytes_to_send -= num_bytes_sent;
+
+		nm_get_timestamp (&now);
+
+		if ((max_wait_period - now) < G_MINDOUBLE)
+		{
+			socket_error = 
+				g_error_new (NM_NETLINK_MONITOR_ERROR,
+					     NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET,
+					     _("operation took too long"));
+			break;
+		}
+	} while (num_bytes_to_send > 0);
+
+	if (socket_error != NULL)
+	{
+		if (error != NULL)
+			g_propagate_error (error, socket_error);
+		else
+		{
+			g_signal_emit (G_OBJECT (monitor), 
+					nm_netlink_monitor_signals[ERROR],
+					0, socket_error);
+			g_error_free (socket_error);
+		}
+
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -427,7 +530,7 @@ receive_pending_bytes (GIOChannel  *channel,
 	if (saved_errno != 0)
 	{
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-			     NM_NETLINK_MONITOR_ERROR_READING_SOCKET,
+			     NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
 			     _("%s"), g_strerror (saved_errno));
 		succeeded = FALSE;
 		goto out;

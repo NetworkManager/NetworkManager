@@ -22,7 +22,78 @@
 #ifndef NM_UTILS_H
 #define NM_UTILS_H
 
+#include <glib.h>
+#include <execinfo.h>
+
+#define nm_print_backtrace()						\
+G_STMT_START								\
+{									\
+	void *_call_stack[512];						\
+	int  _call_stack_size;						\
+	char **_symbols;						\
+	_call_stack_size = backtrace (_call_stack,			\
+				      G_N_ELEMENTS (_call_stack));	\
+	_symbols = backtrace_symbols (_call_stack, _call_stack_size);	\
+	if (_symbols != NULL)						\
+	{								\
+		int _i;							\
+		_i = 0;							\
+		g_critical ("traceback:\n");				\
+		while (_i < _call_stack_size)				\
+		{							\
+			g_critical ("\t%s\n", _symbols[_i]);		\
+			_i++;						\
+		}							\
+		free (_symbols);					\
+	}								\
+}									\
+G_STMT_END
+
+#define nm_get_timestamp(timestamp)					\
+G_STMT_START								\
+{									\
+	GTimeVal _tv;							\
+	g_get_current_time (&_tv);					\
+	*timestamp = (_tv.tv_sec * (1.0 * G_USEC_PER_SEC) +		\
+		      _tv.tv_usec) / G_USEC_PER_SEC;			\
+}									\
+G_STMT_END
+
+#define nm_info(fmt, args...)						\
+G_STMT_START								\
+{									\
+	g_message ("<information>\t" fmt "\n", ##args);			\
+} G_STMT_END
+
+#define nm_debug(fmt, args...)						\
+G_STMT_START								\
+{									\
+	gdouble _timestamp;						\
+	nm_get_timestamp (&_timestamp);					\
+	g_debug ("<debug info>\t[%f] %s (): " fmt "\n", _timestamp,	\
+		 G_GNUC_PRETTY_FUNCTION, ##args);				\
+} G_STMT_END
+
+#define nm_warning(fmt, args...)					\
+G_STMT_START								\
+{									\
+	g_warning ("<WARNING>\t %s (): " fmt "\n", 			\
+		   G_GNUC_PRETTY_FUNCTION, ##args);			\
+} G_STMT_END
+
+#define nm_error(fmt, args...)						\
+G_STMT_START								\
+{									\
+	gdouble _timestamp;						\
+	nm_get_timestamp (&_timestamp);					\
+	g_critical ("<ERROR>\t[%f] %s (): " fmt "\n", _timestamp,	\
+		    G_GNUC_PRETTY_FUNCTION, ##args);			\
+	nm_print_backtrace ();						\
+	G_BREAKPOINT ();						\
+} G_STMT_END
+
+
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
-#endif
+#endif /* NM_UTILS_H */

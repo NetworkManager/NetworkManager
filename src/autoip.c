@@ -33,6 +33,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerMain.h"
+#include "nm-utils.h"
 
 // Times here are in seconds
 #define LINKLOCAL_ADDR		0xa9fe0000
@@ -98,7 +99,7 @@ static gboolean arp(int fd, struct sockaddr *saddr, int op,
 
 	/* send it */
 	if (sendto (fd, &p, sizeof (p), 0, saddr, sizeof (*saddr)) < 0)
-		syslog (LOG_ERR, "autoip ARP sendto() failed.");
+		nm_warning ("autoip ARP sendto() failed.");
 	else
 		success = TRUE;
 
@@ -146,12 +147,12 @@ static int peekfd (NMDevice *dev, int sk, struct timeval *timeout)
 	 * to stop with iface->cease and check our timeout.
 	 */
 	gettimeofday (&now, NULL);
-//	syslog (LOG_INFO, "autoip waiting for data, overall timeout = {%ds, %dus}\n", (int)timeout->tv_sec, (int)timeout->tv_usec);
+//	nm_info ("autoip waiting for data, overall timeout = {%ds, %dus}\n", (int)timeout->tv_sec, (int)timeout->tv_usec);
 	while (timeval_subtract (&diff, timeout, &now) == 0)
 	{
 		fd_set fs;
 		struct timeval wait = {1, 0};
-//		syslog (LOG_INFO, "autoip waiting for data, remaining timeout = {%ds, %dus}\n", (int)diff.tv_sec, (int)diff.tv_usec);
+//		nm_info ("autoip waiting for data, remaining timeout = {%ds, %dus}\n", (int)diff.tv_sec, (int)diff.tv_usec);
 
 		FD_ZERO (&fs);
 		FD_SET (sk, &fs);
@@ -191,14 +192,14 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	/* open an ARP socket */
 	if ((fd = socket (PF_PACKET, SOCK_PACKET, htons (ETH_P_ARP))) < 0)
 	{
-		syslog (LOG_ERR, "%s: Couldn't open network control socket.", nm_device_get_iface (dev));
+		nm_warning ("%s: Couldn't open network control socket.", nm_device_get_iface (dev));
 		goto out;
 	}
 
 	/* bind to the ARP socket */
 	if (bind (fd, &saddr, sizeof (saddr)) < 0)
 	{
-		syslog (LOG_ERR, "%s: Couldn't bind to the device.", nm_device_get_iface (dev));
+		nm_warning ("%s: Couldn't bind to the device.", nm_device_get_iface (dev));
 		goto out;
 	}
 
@@ -225,7 +226,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 		if (nprobes < PROBE_NUM)
 		{
-			syslog (LOG_INFO, "autoip: Sending probe #%d for IP address %s.", nprobes, inet_ntoa (ip));
+			nm_info ("autoip: Sending probe #%d for IP address %s.", nprobes, inet_ntoa (ip));
 			arp (fd, &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
 			nprobes++;
 			gettimeofday (&timeout, NULL);
@@ -245,7 +246,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		}
 		else if (nannounce < ANNOUNCE_NUM)
 		{
-			syslog (LOG_INFO, "autoip: Sending announce #%d for IP address %s.", nannounce, inet_ntoa (ip));
+			nm_info ("autoip: Sending announce #%d for IP address %s.", nannounce, inet_ntoa (ip));
 			arp (fd, &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
 			nannounce++;
 			gettimeofday (&timeout, NULL);
@@ -260,7 +261,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 			goto out;
 		}
 
-		syslog (LOG_INFO, "autoip: Waiting for reply...");
+		nm_info ("autoip: Waiting for reply...");
 		err = peekfd (dev, fd, &timeout);
 		if ((err == RET_DHCP_ERROR) || (err == RET_DHCP_CEASED))
 			goto out;
@@ -268,24 +269,24 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		/* There's some data waiting for us */
 		if (err == RET_DHCP_SUCCESS)
 		{
-			syslog (LOG_INFO, "autoip: Got some data to check for reply packet.");
+			nm_info ("autoip: Got some data to check for reply packet.");
 
 			/* read ARP packet */
 			if (recv (fd, &p, sizeof (p), 0) < 0)
 			{
-				syslog (LOG_ERR, "autoip: packet receive failure, ignoring it.");
+				nm_warning ("autoip: packet receive failure, ignoring it.");
 				continue;
 			}
 
 		#ifdef ARP_DEBUG
-			syslog (LOG_ERR, "autoip: (%s) recv arp type=%d, op=%d, ", nm_device_get_iface (dev), ntohs(p.ethhdr.ether_type), ntohs(p.operation));
+			nm_warning ("autoip: (%s) recv arp type=%d, op=%d, ", nm_device_get_iface (dev), ntohs(p.ethhdr.ether_type), ntohs(p.operation));
 			{
 				struct in_addr a;
 				memcpy (&(a.s_addr), &(p.sInaddr), sizeof (a.s_addr));
-				syslog (LOG_ERR, " source = %s %02X:%02X:%02X:%02X:%02X:%02X, ", inet_ntoa (a),
+				nm_warning (" source = %s %02X:%02X:%02X:%02X:%02X:%02X, ", inet_ntoa (a),
 					p.sHaddr[0], p.sHaddr[1], p.sHaddr[2], p.sHaddr[3], p.sHaddr[4], p.sHaddr[5]);
 				memcpy (&(a.s_addr), &(p.tInaddr), sizeof (a.s_addr));
-				syslog (LOG_ERR, " target = %s %02X:%02X:%02X:%02X:%02X:%02X\n", inet_ntoa (a),
+				nm_warning (" target = %s %02X:%02X:%02X:%02X:%02X:%02X\n", inet_ntoa (a),
 					p.tHaddr[0], p.tHaddr[1], p.tHaddr[2], p.tHaddr[3], p.tHaddr[4], p.tHaddr[5]);
 			}
 		#endif
@@ -296,7 +297,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 				&& (memcmp (&addr, &p.tHaddr, ETH_ALEN) != 0))
 			{
 			#ifdef ARP_DEBUG
-				syslog(LOG_ERR, "autoip: (%s) ARP conflict for IP address %s.\n", nm_device_get_iface (dev), inet_ntoa(ip));
+				nm_warning ("autoip: (%s) ARP conflict for IP address %s.\n", nm_device_get_iface (dev), inet_ntoa(ip));
 			#endif
 
 				/* Ok, start all over again */

@@ -66,7 +66,6 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &string, DBUS_TYPE_INVALID) && string)
 	{
 		ret_string = g_strdup (string);
-		dbus_free (string);
 	}
 	dbus_message_unref (reply);
 	
@@ -193,7 +192,7 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 		}
 	}
 
-	dbus_free_string_array (networks);
+	g_strfreev (networks);
 }
 
 void get_user_key_for_network (DBusConnection *connection)
@@ -223,10 +222,10 @@ void get_user_key_for_network (DBusConnection *connection)
 void set_user_key_for_network (DBusConnection *connection, DBusMessage *message, GMainLoop *loop)
 {
 	DBusError	 error;
-	char		*device;
-	char		*network;
-	char		*passphrase;
-	char		*key_type_string;
+	const char		*device;
+	const char		*network;
+	const char		*passphrase;
+	const char		*key_type_string;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (message != NULL);
@@ -241,10 +240,6 @@ void set_user_key_for_network (DBusConnection *connection, DBusMessage *message,
 	{
 		fprintf( stderr, "Device was '%s'\nNetwork was '%s'\nPassphrase was '%s'\nKey type was '%s'\n", device, network, passphrase, key_type_string);
 
-		dbus_free (device);
-		dbus_free (network);
-		dbus_free (passphrase);
-		dbus_free (key_type_string);
 
 		g_main_loop_quit (loop);
 	}

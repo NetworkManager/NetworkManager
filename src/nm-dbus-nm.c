@@ -190,8 +190,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 			goto out;
-		} else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
-	} else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
+		} else nm_info ("FORCE: device '%s'", dev_path);
+	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, network);
 
 	dev_path = nm_dbus_unescape_object_path (dev_path);
 	
@@ -224,7 +224,6 @@ out:
 	return (reply);
 }
 
-
 /*
  * nm_dbus_nm_create_wireless_network
  *
@@ -256,7 +255,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 						"NetworkManager::createWirelessNetwork called with invalid arguments.");
 		return (reply);
-	} else syslog (LOG_INFO, "Creating network '%s' on device '%s'.", network, dev_path);
+	} else nm_info ("Creating network '%s' on device '%s'.", network, dev_path);
 
 	dev_path = nm_dbus_unescape_object_path (dev_path);
 	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);

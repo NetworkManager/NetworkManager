@@ -108,7 +108,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	char			*buf;
 	char			*addr, *netmask, *broadcast, *gateway;
 	
-	syslog (LOG_WARNING, "nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
+	nm_warning ("nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
 	
 	/* Extract the addresses back into strings */
 
@@ -129,16 +129,16 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 
 	/* Set the IP/broadcast */
 	buf = g_strdup_printf("/sbin/ip addr add local %s dev %s broadcast %s %s", addr, iface, broadcast, iface);
-	syslog (LOG_WARNING, "Running: %s", buf);
+	nm_warning ("Running: %s", buf);
 	/* Set the gateway */
 	buf = g_strdup_printf("/sbin/ip route replace default dev %s via %s", iface, gateway);
-	syslog (LOG_WARNING, "Running: %s", buf);
+	nm_warning ("Running: %s", buf);
 	
 	/* Inform other computers the we are on network */
 	buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface, addr);
-	syslog (LOG_WARNING, "Running: %s", buf);
+	nm_warning ("Running: %s", buf);
 	buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface, addr);
-	syslog (LOG_WARNING, "Running: %s", buf);
+	nm_warning ("Running: %s", buf);
 	
 	return(TRUE);
 	
@@ -289,7 +289,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 			if (strncmp (&buffer[strlen(confline) - strlen(nm_device_get_iface (dev))], 
 				nm_device_get_iface (dev), strlen(nm_device_get_iface (dev))) != 0)
 				{
-				syslog (LOG_WARNING, "System config file '%s' does not define device '%s'\n",
+				nm_warning ("System config file '%s' does not define device '%s'\n",
                                              cfg_file_path, nm_device_get_iface (dev));
 				break;
 			}

@@ -34,6 +34,7 @@
 #include <sys/types.h>
 
 #include "NetworkManager.h"
+#include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerPolicy.h"
@@ -107,8 +108,9 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	 */
 	if (!data->enable_test_devices && test_device)
 	{
-		syslog (LOG_ERR, "nm_create_device_and_add_to_list(): attempt to create a test device,"
-				 " but test devices were not enabled on the command line.  Will not create the device.\n");
+		nm_warning ("attempted to create a test device, "
+			    "but test devices were not enabled "
+			    "on the command line.");
 		return (NULL);
 	}
 
@@ -123,7 +125,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		 */
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
-			syslog (LOG_INFO, "Now managing %s device '%s'.",
+			nm_info ("Now managing %s device '%s'.",
 				nm_device_is_wireless (dev) ? "wireless" : "wired", nm_device_get_iface (dev));
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
@@ -139,11 +141,11 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		else
 		{
 			/* If we couldn't add the device to our list, free its data. */
-			syslog ( LOG_ERR, "nm_create_device_and_add_to_list() could not acquire device list mutex." );
+			nm_warning ("could not acquire device list mutex." );
 			nm_device_unref (dev);
 			dev = NULL;
 		}
-	} else syslog ( LOG_ERR, "nm_create_device_and_add_to_list() could not allocate device data." );
+	} else nm_warning ("could not allocate device data." );
 
 	return (dev);
 }
@@ -194,7 +196,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 			}
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog ( LOG_ERR, "nm_remove_device_from_list() could not acquire device list mutex." );
+	} else nm_warning ("could not acquire device list mutex." );
 }
 
 /* Hal doesn't really give us any way to pass a GMainContext to our
@@ -223,7 +225,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog ( LOG_DEBUG, "New device added (hal udi is '%s').", udi );
+	nm_debug ("New device added (hal udi is '%s').", udi );
 
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
@@ -247,7 +249,7 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 
 	g_return_if_fail (data != NULL);
 
-	syslog ( LOG_DEBUG, "Device removed (hal udi is '%s').", udi );
+	nm_debug ("Device removed (hal udi is '%s').", udi );
 
 	nm_remove_device_from_list (data, udi);
 }
@@ -263,7 +265,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 	g_return_if_fail (data != NULL);
 
-	/*syslog ( LOG_DEBUG, "nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
+	/*nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
 
 	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
 	{
@@ -284,7 +286,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
  */
 static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
-/*	syslog ( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
+/*	nm_debug ("nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
 }
 
 /*
@@ -308,8 +310,8 @@ static void nm_add_initial_devices (NMData *data)
 	net_devices = libhal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices, &error);
         if (dbus_error_is_set (&error))
           {
-            syslog (LOG_ERR, "nm_add_initial_devices() could not find existing"
-                             "networking devices: %s", error.message);
+            nm_warning ("could not find existing networking devices: %s", 
+	    		error.message);
             dbus_error_free (&error);
           }
 
@@ -404,7 +406,7 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 		}
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog ( LOG_ERR, "nm_poll_and_update_wireless_link_state() could not acquire device list mutex." );
+	} else nm_warning ("could not acquire device list mutex." );
 	
 	return (TRUE);
 }
@@ -429,7 +431,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 
 	if (pipe(data->sigterm_pipe) < 0)
 	{
-		syslog (LOG_CRIT, "Couldn't create pipe: %s", g_strerror (errno));
+		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
 		exit (EXIT_FAILURE);
 	}
 
@@ -453,7 +455,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	if (!data->dev_list_mutex)
 	{
 		nm_data_free (data);
-		syslog (LOG_ERR, "Could not initialize data structure locks.");
+		nm_warning ("could not initialize data structure locks.");
 		return (NULL);
 	}
 	nm_register_mutex_desc (data->dev_list_mutex, "Device List Mutex");
@@ -464,7 +466,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	if (!data->allowed_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
-		syslog (LOG_ERR, "Could not create access point lists.  Whacky stuff going on?");
+		nm_warning ("could not create access point lists.");
 		return (NULL);
 	}
 
@@ -508,19 +510,29 @@ static void nm_data_free (NMData *data)
 	memset (data, 0, sizeof (NMData));
 }
 
-
 static void sigterm_handler (int signum)
 {
         int ignore;
 
-	syslog (LOG_NOTICE, "Caught SIGINT/SIGTERM");
+	/* FIXME: This line is probably not a great 
+	 * thing to have in a signal handler
+	 */
+	nm_info ("Caught SIGINT/SIGTERM");
+
 	ignore = write (nm_data->sigterm_pipe[1], "X", 1);
 }
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
 {
 	NMData *data = user_data;
-	syslog (LOG_NOTICE, "Caught terminiation signal");
+
+	/* FIXME: These lines are definitely not great 
+	 * things to have in a signal handler
+	 *
+	 * The fix is to have a pipe that non-signal handling
+	 * code can watch and respond to.
+	 */
+	nm_info ("Caught terminiation signal");
 	if (data->active_device)
 		nm_device_deactivate (data->active_device, FALSE);
 	g_main_loop_quit (data->main_loop);
@@ -586,8 +598,8 @@ nm_wired_link_activated (NmNetlinkMonitor *monitor,
 			}
 		}
 		else
-			syslog (LOG_ERR, "unknown wired ethernet interface '%s' activated\n",
-				interface_name);
+			nm_info ("unknown wired ethernet interface '%s' "
+				"activated\n", interface_name);
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 }
@@ -606,8 +618,8 @@ nm_wired_link_deactivated (NmNetlinkMonitor *monitor,
 		if (device != NULL)
 			nm_device_set_link_active (device, FALSE);
 		else
-			syslog (LOG_ERR, "unknown wired ethernet interface '%s' "
-					 "deactivated\n", interface_name);
+			nm_info ("unknown wired ethernet interface '%s' "
+			        "deactivated\n", interface_name);
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 }
@@ -619,8 +631,8 @@ nm_error_monitoring_wired_link_state (NmNetlinkMonitor *monitor,
 {
 	/* FIXME: Try to handle the error instead of just printing it.
 	 */
-	syslog (LOG_ERR, "error monitoring wired ethernet link state: %s\n",
-		error->message);
+	nm_warning ("error monitoring wired ethernet link state: %s\n",
+		    error->message);
 }
 
 static void
@@ -636,8 +648,8 @@ nm_monitor_wired_link_state (NMData *data)
 
 	if (error != NULL)
 	{
-		syslog (LOG_ERR, "could not monitor wired ethernet devices: %s",
-			error->message);
+		nm_warning ("could not monitor wired ethernet devices: %s",
+			    error->message);
 		g_error_free (error);
 		g_object_unref (monitor);
 		return;
@@ -655,7 +667,63 @@ nm_monitor_wired_link_state (NMData *data)
 
 	nm_netlink_monitor_attach (monitor, data->main_context);
 
+	/* Request initial status of cards
+	 */
+	nm_netlink_monitor_request_status (monitor, NULL);
+
 	data->netlink_monitor = monitor;
+}
+
+static void
+nm_info_handler (const gchar	*log_domain,
+		GLogLevelFlags	 log_level,
+		const gchar	*message,
+		gboolean 	 is_daemon)
+{
+	int syslog_priority;	
+
+	switch (log_level)
+	{
+		case G_LOG_LEVEL_ERROR:
+			syslog_priority = LOG_CRIT;
+		break;
+
+		case G_LOG_LEVEL_CRITICAL:
+			syslog_priority = LOG_ERR;
+		break;
+
+		case G_LOG_LEVEL_WARNING:
+			syslog_priority = LOG_WARNING;
+		break;
+
+		case G_LOG_LEVEL_MESSAGE:
+			syslog_priority = LOG_NOTICE;
+
+		case G_LOG_LEVEL_DEBUG:
+			syslog_priority = LOG_DEBUG;
+		break;
+
+		case G_LOG_LEVEL_INFO:
+		default:
+			syslog_priority = LOG_INFO;
+		break;
+	}
+
+	syslog (syslog_priority, message);
+}
+
+static void
+nm_set_up_log_handlers (gboolean become_daemon)
+{
+	if (become_daemon)
+		openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
+	else
+		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
+
+	g_log_set_handler (G_LOG_DOMAIN, 
+	                   G_LOG_LEVEL_MASK,
+			   (GLogFunc) nm_info_handler,
+			   GINT_TO_POINTER (become_daemon));
 }
 
 /*
@@ -675,7 +743,7 @@ int main( int argc, char *argv[] )
 	
 	if ((int)getuid() != 0)
 	{
-		printf( "You must be root to run NetworkManager!\n");
+		g_printerr ("You must be root to run NetworkManager!\n");
 		return (EXIT_FAILURE);
 	}
 
@@ -721,8 +789,12 @@ int main( int argc, char *argv[] )
 
 	if (become_daemon && daemon (0, 0) < 0)
 	{
-		syslog (LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno);
-	     exit (EXIT_FAILURE);
+		int saved_errno;
+
+		saved_errno = errno;
+		nm_error ("NetworkManager could not daemonize: %s [error %u]",
+			  g_strerror (saved_errno), saved_errno);
+		exit (EXIT_FAILURE);
 	}
 
 	g_type_init ();
@@ -730,8 +802,8 @@ int main( int argc, char *argv[] )
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
 
-	openlog ("NetworkManager", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
-	syslog (LOG_NOTICE, "starting...");
+	nm_set_up_log_handlers (become_daemon);
+	nm_info ("starting...");
 
 	nm_system_init();
 
@@ -747,7 +819,7 @@ int main( int argc, char *argv[] )
 	nm_data = nm_data_new (enable_test_devices);
 	if (!nm_data)
 	{
-		syslog (LOG_CRIT, "nm_data_new() failed... Not enough memory?");
+		nm_error ("nm_data_new() failed... Not enough memory?");
 		exit (EXIT_FAILURE);
 	}	
 
@@ -755,25 +827,30 @@ int main( int argc, char *argv[] )
 	nm_data->dbus_connection = nm_dbus_init (nm_data);
 	if (!nm_data->dbus_connection)
 	{
-		syslog (LOG_CRIT, "nm_dbus_init() failed, exiting.  Either dbus is not running, or the NetworkManager dbus security policy was not loaded.");
+		nm_error ("nm_dbus_init() failed, exiting. "
+			  "Either dbus is not running, or the "
+			  "NetworkManager dbus security policy "
+			  "was not loaded.");
 		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
 	}
 
-	/* If NMI is running, grab allowed wireless network lists from it ASAP */
+	/* If NMI is running, grab allowed wireless network lists from it ASAP
+	 */
 	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
 
-	/* Right before we init hal, we have to make sure our mainloop integration function
-	 * knows about our GMainContext.  HAL doesn't give us any way to pass that into its
-	 * mainloop integration callback, so its got to be a global.
+	/* Right before we init hal, we have to make sure our mainloop
+	 * integration function knows about our GMainContext.  HAL doesn't give
+	 * us any way to pass that into its mainloop integration callback, so
+	 * its got to be a global.
 	 */
 	main_context = nm_data->main_context;
 
 	/* Initialize libhal.  We get a connection to the hal daemon here. */
 	if ((ctx = libhal_ctx_new()) == NULL)
 	{
-		syslog (LOG_CRIT, "libhal_ctx_new() failed, exiting...");
+		nm_error ("libhal_ctx_new() failed, exiting...");
 		exit (EXIT_FAILURE);
 	}
 
@@ -783,7 +860,9 @@ int main( int argc, char *argv[] )
 
 	dbus_error_init (&dbus_error);
 	if(!libhal_ctx_init (ctx, &dbus_error)) {
-		syslog (LOG_CRIT, "libhal_ctx_init() failed, exiting...  Make sure the hal daemon is running? - %s", dbus_error.message);
+		nm_error ("libhal_ctx_init() failed: %s\n"
+			  "Make sure the hal daemon is running?", 
+			  dbus_error.message);
 
 		dbus_error_free (&dbus_error);
 		exit (EXIT_FAILURE);
@@ -805,12 +884,14 @@ int main( int argc, char *argv[] )
 
 	if (dbus_error_is_set (&dbus_error))
 	{
-		syslog (LOG_CRIT, "libhal_device_property_watch_all(): %s", dbus_error.message);
+		nm_error ("libhal_device_property_watch_all(): %s",
+			  dbus_error.message);
 		dbus_error_free (&dbus_error);
 		exit (EXIT_FAILURE);
 	}
 
-	/* Grab network devices that are already present and add them to our list */
+	/* Grab network devices that are already present and add them to our
+	 * list */
 	nm_add_initial_devices (nm_data);
 
 	/* We run dhclient when we need to, and we don't want any stray ones
@@ -827,7 +908,8 @@ int main( int argc, char *argv[] )
 
 	if (!nm_named_manager_start (nm_data->named, &error))
 	{
-		syslog (LOG_CRIT, "Couldn't initialize nameserver: %s", error->message);
+		nm_error ("couldn't initialize nameserver: %s",
+			  error->message);
 		exit (EXIT_FAILURE);
 	}
 
@@ -835,12 +917,13 @@ int main( int argc, char *argv[] )
 	g_main_loop_run (nm_data->main_loop);
 
 	/* Cleanup */
-	if (libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error) != 0) {
-		syslog (LOG_NOTICE, "Error: libhal shutdown failed - %s", dbus_error.message);
+	libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error);
 
+	if (dbus_error_is_set (&dbus_error)) {
+		nm_warning ("libhal shutdown failed - %s", 
+			    dbus_error.message);
 		dbus_error_free (&dbus_error);
 	}
-
 	libhal_ctx_free (nm_data->hal_ctx);
 
 	nm_data_free (nm_data);

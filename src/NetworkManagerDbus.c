@@ -165,13 +165,13 @@ static gboolean nm_dbus_send_network_not_found (gpointer user_data)
 						NMI_DBUS_INTERFACE, "networkNotFound");
 	if (message == NULL)
 	{
-		syslog (LOG_ERR, "nm_dbus_send_network_not_found(): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_send_network_not_found(): Couldn't allocate the dbus message");
 		goto out;
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &cb_data->net, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (cb_data->app_data->dbus_connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_send_network_not_found(): could not send dbus message");
+		nm_warning ("nm_dbus_send_network_not_found(): could not send dbus message");
 
 	dbus_message_unref (message);
 
@@ -294,13 +294,13 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 			signal = "DeviceActivationFailed";
 			break;
 		default:
-			syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): got a bad signal name");
+			nm_warning ("nm_dbus_signal_device_status_change(): got a bad signal name");
 			return;
 	}
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, signal)))
 	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
+		nm_warning ("nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -322,7 +322,7 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
+		nm_warning ("nm_dbus_signal_device_status_change(): Could not raise the signal!");
 
 	dbus_message_unref (message);
 }
@@ -376,7 +376,7 @@ void nm_dbus_signal_network_status_change (DBusConnection *connection, NMData *d
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "NetworkStatusChange")))
 	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
+		nm_warning ("nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
 		return;
 	}
 
@@ -385,7 +385,7 @@ void nm_dbus_signal_network_status_change (DBusConnection *connection, NMData *d
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &status, DBUS_TYPE_INVALID);
 
 		if (!dbus_connection_send (connection, message, NULL))
-			syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
+			nm_warning ("nm_dbus_signal_device_status_change(): Could not raise the signal!");
 		g_free (status);
 	}
 
@@ -413,7 +413,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceIP4AddressChange");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!");
+		nm_warning ("nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -422,7 +422,7 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!");
+		nm_warning ("nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!");
 
 	dbus_message_unref (message);
 }
@@ -457,7 +457,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
+		nm_warning ("nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		g_free (ap_path);
 		return;
@@ -476,7 +476,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 		dbus_message_append_args (message, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
+		nm_warning ("nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
 
 	dbus_message_unref (message);
 }
@@ -503,7 +503,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 						NMI_DBUS_INTERFACE, "getKeyForNetwork");
 	if (message == NULL)
 	{
-		syslog (LOG_ERR, "nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message");
 		return;
 	}
 
@@ -515,7 +515,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 								DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_get_user_key_for_network(): could not send dbus message");
+		nm_warning ("nm_dbus_get_user_key_for_network(): could not send dbus message");
 
 	dbus_message_unref (message);
 }
@@ -537,12 +537,12 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection)
 						NMI_DBUS_INTERFACE, "cancelGetKeyForNetwork");
 	if (message == NULL)
 	{
-		syslog (LOG_ERR, "nm_dbus_cancel_get_user_key_for_network(): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_cancel_get_user_key_for_network(): Couldn't allocate the dbus message");
 		return;
 	}
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_cancel_get_user_key_for_network(): could not send dbus message");
+		nm_warning ("nm_dbus_cancel_get_user_key_for_network(): could not send dbus message");
 
 	dbus_message_unref (message);
 }
@@ -563,6 +563,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 
 	const char				*essid = NULL;
 	gint				 timestamp_secs = -1;
+	gint32                           i;
 	const char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
@@ -576,7 +577,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworkProperties")))
 	{
-		syslog (LOG_ERR, "nm_dbus_get_network_object(): Couldn't allocate the dbus message");
+		nm_warning ("Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -592,13 +593,13 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 
 	if (dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "nm_dbus_get_network_object(): %s raised '%s'", error.name, error.message);
+		nm_warning ("%s raised '%s'", error.name, error.message);
 		goto out;
 	}
 
 	if (!reply)
 	{
-		syslog (LOG_NOTICE, "nm_dbus_get_network_object(): reply was NULL.");
+		nm_warning ("Reply was NULL.");
 		goto out;
 	}
 
@@ -606,13 +607,73 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	 */
 
 	dbus_message_iter_init (reply, &iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_STRING,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &essid);
-	dbus_message_iter_get_basic (&iter, &timestamp_secs);
+
+	dbus_message_iter_next (&iter);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_INT32,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
+	dbus_message_iter_get_basic (&iter, &i);
+
+	timestamp_secs = (gint32) i;
+
+	dbus_message_iter_next (&iter);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_STRING,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &key);
-	dbus_message_iter_get_basic (&iter, &key_type);
-	dbus_message_iter_get_basic (&iter, &auth_method);
+
+	dbus_message_iter_next (&iter);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_INT32,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
+	dbus_message_iter_get_basic (&iter, &i);
+
+	key_type = (NMEncKeyType) i;
+
+	dbus_message_iter_next (&iter);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_INT32,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
+	dbus_message_iter_get_basic (&iter, &i);
+
+	auth_method = (NMDeviceAuthMethod) i;
+
+	dbus_message_iter_next (&iter);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN)
+	{
+		nm_warning ("Reply had wrong arguments: "
+			    "(expected %u, got %u)\n", DBUS_TYPE_BOOLEAN,
+			    dbus_message_iter_get_arg_type (&iter));
+		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &trusted);
 	
+	dbus_message_iter_next (&iter);
 	if (timestamp_secs > 0)
 	{
 		GTimeVal	*timestamp = g_new0 (GTimeVal, 1);
@@ -636,22 +697,43 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 		/* Get user addresses, form into a GSList, and stuff into the AP */
 		if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_ARRAY)
 		{
-			GSList	*addr_list = NULL;
+			GSList	*addr_list;
 			DBusMessageIter array_iter;
 
 			dbus_message_iter_recurse (&iter, &array_iter);
 
+			addr_list = NULL;
 			while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
 			{
-				gchar *addr;
+				const gchar *addr;
 
 				dbus_message_iter_get_basic (&array_iter, &addr);
-				if (addr && (strlen (addr) >= 11))
-					addr_list = g_slist_append (addr_list, g_strdup (addr));
+
+				if ((addr != NULL) && (strlen (addr) >= 11))
+					addr_list = g_slist_prepend (addr_list, g_strdup (addr));
+				else
+					nm_warning ("Expected hardware address, got '%s'",
+						    addr);
+
+				dbus_message_iter_next (&array_iter);
+			}
+
+			if (dbus_message_iter_get_arg_type (&array_iter) != DBUS_TYPE_INVALID)
+			{
+				nm_warning ("Reply had wrong arguments: "
+				  	    "(expected %u, got %u)", DBUS_TYPE_INVALID,
+					    dbus_message_iter_get_arg_type (&array_iter));
+
+				g_slist_foreach (addr_list, (GFunc) g_free, NULL);
+				g_slist_free (addr_list);
+
+				goto out;
 			}
 			
+			addr_list = g_slist_reverse (addr_list);
 			nm_ap_set_user_addresses (ap, addr_list);
-			g_slist_foreach (addr_list, (GFunc)g_free, NULL);
+
+			g_slist_foreach (addr_list, (GFunc) g_free, NULL);
 			g_slist_free (addr_list);
 		}
 	}
@@ -685,7 +767,7 @@ gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const c
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkAuthMethod");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_update_network_auth_method (): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_update_network_auth_method (): Couldn't allocate the dbus message");
 		return (FALSE);
 	}
 
@@ -698,7 +780,7 @@ gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const c
 	dbus_error_init (&error);
 	if (!dbus_connection_send (connection, message, NULL))
 	{
-		syslog (LOG_ERR, "nm_dbus_update_network_auth_method (): failed to send dbus message.");
+		nm_warning ("nm_dbus_update_network_auth_method (): failed to send dbus message.");
 		dbus_error_free (&error);
 	}
 	else
@@ -735,7 +817,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 						NMI_DBUS_INTERFACE, "addNetworkAddress");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_add_network_ap_mac_address(): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_add_network_ap_mac_address(): Couldn't allocate the dbus message");
 		return (FALSE);
 	}
 
@@ -753,7 +835,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 	dbus_error_init (&error);
 	if (!dbus_connection_send (connection, message, NULL))
 	{
-		syslog (LOG_ERR, "nm_dbus_add_network_ap_mac_address(): failed to send dbus message.");
+		nm_warning ("nm_dbus_add_network_ap_mac_address(): failed to send dbus message.");
 		dbus_error_free (&error);
 	}
 	else
@@ -769,7 +851,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
  *
  * Get all networks of a specific type from NetworkManagerInfo
  *
- * NOTE: caller MUST free returned value using dbus_free_string_array()
+ * NOTE: caller MUST free returned value using g_strfreev()
  *
  */
 char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, int *num_networks)
@@ -788,7 +870,7 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 						NMI_DBUS_INTERFACE, "getNetworks");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nm_dbus_get_networks(): Couldn't allocate the dbus message");
+		nm_warning ("nm_dbus_get_networks(): Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -800,9 +882,9 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
-		syslog (LOG_ERR, "nm_dbus_get_networks(): %s raised %s", error.name, error.message);
+		nm_warning ("nm_dbus_get_networks(): %s raised %s", error.name, error.message);
 	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_networks(): reply was NULL.");
+		nm_info ("nm_dbus_get_networks(): reply was NULL.");
 	else
 	{
 		DBusMessageIter iter, array_iter;
@@ -816,7 +898,8 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 		if (buffer == NULL)
 			return NULL;
 
-		while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING) {
+		while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
+		{
 			const char *value;
 			char *str;
 		
@@ -824,7 +907,10 @@ char ** nm_dbus_get_networks (DBusConnection *connection, NMNetworkType type, in
 			str = g_strdup (value);
 			
 			if (str == NULL)
+			{
+				g_array_free (buffer, TRUE);
 				return NULL;
+			}
 
 			g_array_append_val (buffer, str);
 
@@ -886,7 +972,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 	if (!(object_path = dbus_message_get_path (message)))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	/* syslog (LOG_DEBUG, "nm_dbus_nmi_filter() got method %s for path %s", method, object_path); */
+	/* nm_debug ("nm_dbus_nmi_filter() got method %s for path %s", method, object_path); */
 
 	dbus_error_init (&error);
 
@@ -898,7 +984,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 		{
 			/* Update a single wireless network's data */
-			syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
+			nm_debug ("NetworkManagerInfo triggered update of wireless network '%s'", network);
 			nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
 			handled = TRUE;
 		}
@@ -1094,7 +1180,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
 	if ((connection == NULL) || dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
+		nm_warning ("nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
 		connection = NULL;
 		goto out;
 	}
@@ -1111,14 +1197,14 @@ DBusConnection *nm_dbus_init (NMData *data)
 		|| !dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data)
 		|| !dbus_connection_register_object_path (connection, NM_DBUS_PATH_DHCP, &dhcp_vtable, data))
 	{
-		syslog (LOG_CRIT, "nm_dbus_init() could not register D-BUS handlers.  Cannot continue.");
+		nm_error ("nm_dbus_init() could not register D-BUS handlers.  Cannot continue.");
 		connection = NULL;
 		goto out;
 	}
 
 	if (!dbus_connection_add_filter (connection, nm_dbus_nmi_filter, data, NULL))
 	{
-		syslog (LOG_CRIT, "nm_dbus_init() could not attach a dbus message filter.  The NetworkManager dbus security policy may not be loaded.  Restart dbus?");
+		nm_error ("nm_dbus_init() could not attach a dbus message filter.  The NetworkManager dbus security policy may not be loaded.  Restart dbus?");
 		connection = NULL;
 		goto out;
 	}
@@ -1140,7 +1226,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	dbus_bus_request_name (connection, NM_DBUS_SERVICE, 0, &error);
 	if (dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
+		nm_warning ("nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
 		connection = NULL;
 		goto out;
 	}

@@ -26,6 +26,7 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDbus.h"
+#include "nm-utils.h"
 
 
 struct NMAccessPointList
@@ -55,7 +56,7 @@ NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 	if (!list->mutex)
 	{
 		g_free (list);
-		syslog (LOG_ERR, "nm_ap_list_new() could not create list mutex");
+		nm_warning ("nm_ap_list_new() could not create list mutex");
 		return (NULL);
 	}
 	nm_register_mutex_desc (list->mutex, "AP List Mutex");
@@ -145,7 +146,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 	if (!nm_ap_list_lock (list))
 	{
-		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
+		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
 	}
 
@@ -171,7 +172,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 	if (!nm_ap_list_lock (list))
 	{
-		syslog( LOG_ERR, "nm_ap_list_append_ap() could not acquire AP list mutex." );
+		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
 		return;
 	}
 
@@ -360,7 +361,7 @@ void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
 				nm_ap_list_update_network_from_nmi (list, networks[i], data);
 		}
 
-		dbus_free_string_array (networks);
+		g_strfreev (networks);
 	}
 }
 
@@ -696,16 +697,16 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	if (!(iter = nm_ap_list_iter_new (list)))
 		return;
 
-	syslog (LOG_ERR, "AP_LIST_PRINT: printing members of '%s'", name);
+	nm_warning ("AP_LIST_PRINT: printing members of '%s'", name);
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
 		const GTimeVal *timestamp = nm_ap_get_timestamp (ap);
-		syslog (LOG_ERR, "\t%d)\tobj=%p, essid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, %s=%f, rate=%d, inval=%d, mode=%d",
+		nm_warning ("\t%d)\tobj=%p, essid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, %s=%f, rate=%d, inval=%d, mode=%d",
 				i, ap, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_get_enc_key_source (ap), nm_ap_get_encrypted (ap),
 				nm_ap_get_address (ap), nm_ap_get_strength (ap), (nm_ap_get_freq (ap) < 20) ? "channel" : "freq", nm_ap_get_freq (ap), nm_ap_get_rate (ap),
 				nm_ap_get_invalid (ap), nm_ap_get_mode (ap));
 		i++;
 	}
-	syslog (LOG_ERR, "AP_LIST_PRINT: done");
+	nm_warning ("AP_LIST_PRINT: done");
 	nm_ap_list_iter_free (iter);
 }

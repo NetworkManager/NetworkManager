@@ -40,6 +40,7 @@
 
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoVPN.h"
+#include "nm-utils.h"
 
 int nmi_vpn_init (NMIAppInfo *info)
 {
@@ -90,7 +91,7 @@ static void save_vpn_password (const char *vpn, const char *keyring, const char 
 
 	if (keyring_result != GNOME_KEYRING_RESULT_OK)
 	{
-		syslog (LOG_ERR, "Couldn't store password in keyring, code %d",
+		nm_warning ("Couldn't store password in keyring, code %d",
 			(int) keyring_result);
 	}
 }
@@ -120,7 +121,7 @@ static void response_cb (GtkWidget *dialog, int response, gpointer user_data)
 	username = g_object_get_data (G_OBJECT (passwd_dialog), "NetworkManagerInfoVPN-username");
 	vpn = g_object_get_data (G_OBJECT (passwd_dialog), "NetworkManagerInfoVPN-vpn");
 	password = gnome_password_dialog_get_password (passwd_dialog);
-	syslog (LOG_ERR, "returning VPN vpn_password for %s@%s: %s", username, vpn, password);
+	nm_warning ("returning VPN vpn_password for %s@%s: %s", username, vpn, password);
 	nmi_dbus_return_vpn_password (info->connection, info->vpn_password_message, password);
 	switch (gnome_password_dialog_get_remember (passwd_dialog))
 	{

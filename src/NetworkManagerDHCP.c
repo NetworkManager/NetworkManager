@@ -33,6 +33,7 @@
 #include "NetworkManagerPolicy.h"
 #include "nm-named-manager.h"
 #include "../dhcpcd/client.h"
+#include "nm-utils.h"
 
 extern gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip);
 
@@ -49,7 +50,7 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 							      GPOINTER_TO_UINT (elt->data),
 							      &error))
 		{
-			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove nameserver: %s\n", error->message);
+			nm_warning ("Couldn't remove nameserver: %s\n", error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -65,7 +66,7 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 					      ((unsigned char *)data)[i+1],
 					      ((unsigned char *)data)[i+2],
 					      ((unsigned char *)data)[i+3]);
-		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding nameserver: %s\n", nameserver);
+		nm_warning ("Adding nameserver: %s\n", nameserver);
 
 		if ((id = nm_named_manager_add_nameserver_ipv4 (dev->app_data->named,
 								nameserver,
@@ -74,7 +75,7 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 									GUINT_TO_POINTER (id));
 		else
 		{
-			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add nameserver: %s\n", error->message);
+			nm_warning ("Couldn't add nameserver: %s\n", error->message);
 			g_clear_error (&error);
 		}
 		g_free (nameserver);
@@ -94,7 +95,7 @@ static void set_domain_searches (NMDevice *dev, const char *searches_str)
 							    GPOINTER_TO_UINT (elt->data),
 							    &error))
 		{
-			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove domain search: %s\n", error->message);
+			nm_warning ("Couldn't remove domain search: %s\n", error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -108,14 +109,14 @@ static void set_domain_searches (NMDevice *dev, const char *searches_str)
 		const char *search_elt = *s;
 		guint id;
 
-		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding domain search: %s\n", search_elt);
+		nm_warning ("Adding domain search: %s\n", search_elt);
 		if ((id = nm_named_manager_add_domain_search (dev->app_data->named,
 							      search_elt,
 							      &error)))
 			dev->app_data->domain_search_ids = g_list_append (dev->app_data->domain_search_ids, GUINT_TO_POINTER (id));
 		else
 		{
-			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add domain search: %s\n", error->message);
+			nm_warning ("Couldn't add domain search: %s\n", error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -217,7 +218,7 @@ int nm_device_dhcp_request (NMDevice *dev)
 
 	if (dev->dhcp_iface)
 	{
-		syslog (LOG_ERR, "nm_device_dhcp_request(): device DHCP info exists, but it should have been cleared already.\n");
+		nm_warning ("nm_device_dhcp_request(): device DHCP info exists, but it should have been cleared already.\n");
 		dhcp_interface_free (dev->dhcp_iface);
 	}
 
@@ -289,7 +290,7 @@ gboolean nm_device_dhcp_setup_timeouts (NMDevice *dev)
 	}
 	if (!t1 || !t2)
 	{
-		syslog (LOG_ERR, "DHCP renew/rebind values were 0!  Won't renew lease.");
+		nm_warning ("DHCP renew/rebind values were 0!  Won't renew lease.");
 		return (FALSE);
 	}
 

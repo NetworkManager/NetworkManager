@@ -33,6 +33,7 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerDbus.h"
+#include "nm-utils.h"
 
 
 /*
@@ -128,7 +129,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 	}
 
 #if 0
-	syslog (LOG_NOTICE, "AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
+	nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
 			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
 #endif
 
@@ -208,7 +209,7 @@ static NMDevice * nm_policy_get_best_device (NMDevice *switch_to_dev, NMData *da
 	/* Ensure we support this driver */
 	if (best_dev && (nm_device_get_driver_support_level (best_dev) == NM_DRIVER_UNSUPPORTED))
 	{
-		syslog (LOG_ERR, "nm_policy_get_best_device(): tried to switch to unsupported device '%s'!\n", nm_device_get_iface (best_dev));
+		nm_warning ("nm_policy_get_best_device(): tried to switch to unsupported device '%s'!\n", nm_device_get_iface (best_dev));
 		best_dev = NULL;
 	}
 
@@ -261,7 +262,7 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 					nm_ap_unref (ap);
 				}
 			}
-			syslog (LOG_INFO, "Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
+			nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
 			break;
 
 		case DEVICE_ACTIVATION_FAILED:
@@ -278,10 +279,10 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 					/* Unref because nm_device_get_best_ap() refs it before returning. */
 					nm_ap_unref (ap);
 				}
-				syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+				nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
 			}
 			else
-				syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
+				nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
 			if (data->active_device == dev)
 				data->active_device = NULL;
 			nm_device_deactivate (dev, FALSE);
@@ -352,21 +353,21 @@ static gboolean nm_policy_state_update (gpointer user_data)
 		if (best_dev != app_data->active_device)
 		{
 			if (best_dev)
-				syslog (LOG_INFO, "    SWITCH: best device changed");
+				nm_info ("    SWITCH: best device changed");
 			else
-				syslog (LOG_INFO, "    SWITCH: old device no longer good, but no better device was available");
+				nm_info ("    SWITCH: old device no longer good, but no better device was available");
 			do_switch = TRUE;	/* Device changed */
 		}
 		else if (best_dev)
 		{
 			if (nm_device_is_wireless (best_dev) && !nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
 			{
-				syslog (LOG_INFO, "    SWITCH: need to associate with new access point or create a wireless network.");
+				nm_info ("    SWITCH: need to associate with new access point or create a wireless network.");
 				do_switch = TRUE;
 			}
 			else if (!nm_device_is_activating (best_dev) && !nm_device_get_ip4_address (best_dev))
 			{
-				syslog (LOG_INFO, "    SWITCH: need to get an IP address.");
+				nm_info ("    SWITCH: need to get an IP address.");
 				do_switch = TRUE;
 			}
 		}
@@ -472,7 +473,7 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	syslog (LOG_INFO, "Updating allowed wireless network lists.");
+	nm_info ("Updating allowed wireless network lists.");
 
 	/* Query info daemon for network lists if its now running */
 	if (data->allowed_ap_list)

@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} 
+INCLUDES = -I${top_srcdir}  -I${top_srcdir}/utils
 
 AM_CPPFLAGS =								\
 	$(DBUS_CFLAGS)							\
@@ -43,7 +43,8 @@ NetworkManagerInfo_LDADD =				\
 				$(GTK_LIBS)			\
 				$(GDK_PIXBUF_LIBS)		\
 				$(GNOME_KEYRING_LIBS)	\
-				$(LIBGNOMEUI_LIBS)
+				$(LIBGNOMEUI_LIBS)	\
+				$(top_builddir)/utils/libnmutils.la
 
 
 gladedir = $(datadir)/NetworkManagerInfo/glade

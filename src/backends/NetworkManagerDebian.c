@@ -168,7 +168,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
                                iface, inet_ntoa (temp_addr));
         if ((err = nm_spawn_process (buf)))
         {
-            syslog (LOG_ERR, "Error: Duplicate address '%s' detected for " 
+            nm_warning ("Error: Duplicate address '%s' detected for " 
                              "device '%s' \n", iface, inet_ntoa (temp_addr));
             goto error;
         }
@@ -185,7 +185,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
         g_free (s_tmp2);
         if ((err = nm_spawn_process (buf)))
         {
-            syslog (LOG_ERR, "Error: could not set network configuration for "
+            nm_warning ("Error: could not set network configuration for "
                              "device '%s' using command:\n      '%s'",
                              iface, buf);
             goto error;
@@ -210,7 +210,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
                                inet_ntoa (temp_addr), iface);
         if ((err = nm_spawn_process (buf)))
         {
-                syslog (LOG_ERR, "Error: could not set default route using "
+                nm_warning ("Error: could not set default route using "
                                  "command:\n    '%s'", buf);
                 goto error;
         }
@@ -426,7 +426,7 @@ void nm_system_device_update_config_info (NMDevice *dev)
 
 	if (!use_dhcp && (!ip4_address || !ip4_gateway || !ip4_netmask))
 	{
-		syslog (LOG_ERR, "Error: network configuration for device '%s' was invalid (non-DHCP configuration,"
+		nm_warning ("Error: network configuration for device '%s' was invalid (non-DHCP configuration,"
 						" but no address/gateway specificed).  Will use DHCP instead.\n", nm_device_get_iface (dev));
 		use_dhcp = TRUE;
 	}
@@ -443,12 +443,12 @@ void nm_system_device_update_config_info (NMDevice *dev)
 		nm_device_config_set_ip4_broadcast (dev, ip4_broadcast);
 
 #if 0
-	syslog (LOG_DEBUG, "------ Config (%s)", nm_device_get_iface (dev));
-	syslog (LOG_DEBUG, "    DHCP=%d\n", use_dhcp);
-	syslog (LOG_DEBUG, "    ADDR=%d\n", ip4_address);
-	syslog (LOG_DEBUG, "    GW=%d\n", ip4_gateway);
-	syslog (LOG_DEBUG, "    NM=%d\n", ip4_netmask);
-	syslog (LOG_DEBUG, "---------------------\n");
+	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
+	nm_debug ("    DHCP=%d\n", use_dhcp);
+	nm_debug ("    ADDR=%d\n", ip4_address);
+	nm_debug ("    GW=%d\n", ip4_gateway);
+	nm_debug ("    NM=%d\n", ip4_netmask);
+	nm_debug ("---------------------\n");
 #endif
 
 out:

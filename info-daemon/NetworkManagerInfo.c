@@ -43,6 +43,7 @@
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
+#include "nm-utils.h"
 
 static void nmi_spawn_notification_icon (NMIAppInfo *info);
 
@@ -203,14 +204,14 @@ int main( int argc, char *argv[] )
 
 	if (!no_daemon && daemon (FALSE, FALSE) < 0)
 	{
-		syslog( LOG_ERR, "NetworkManagerInfo could not daemonize.  errno = %d", errno );
+		nm_warning ("NetworkManagerInfo could not daemonize.  errno = %d", errno );
 		exit (1);
 	}
 
 	app_info = g_new0 (NMIAppInfo, 1);
 	if (!app_info)
 	{
-		syslog (LOG_CRIT, "Not enough memory for application data.");
+		nm_error ("Not enough memory for application data.");
 		exit (1);
 	}
 
@@ -223,7 +224,7 @@ int main( int argc, char *argv[] )
 	dbus_connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
 	if (dbus_connection == NULL)
 	{
-		syslog (LOG_CRIT, "NetworkManagerInfo could not get the system bus.  Make sure the message bus daemon is running?");
+		nm_error ("NetworkManagerInfo could not get the system bus.  Make sure the message bus daemon is running?");
 		exit (1);
 	}
 	dbus_connection_set_change_sigpipe (TRUE);

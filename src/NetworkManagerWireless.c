@@ -140,7 +140,7 @@ int nm_wireless_qual_to_percent (const struct iw_quality *qual, const struct iw_
 	g_return_val_if_fail (avg_qual != NULL, -1);
 
 #if IW_QUAL_DEBUG
-syslog (LOG_DEBUG, "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X",
+nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X",
 (__s8)qual->qual, qual->qual, qual->qual, (__s8)qual->level, qual->level, qual->level, (__s8)qual->noise, qual->noise, qual->noise,
 (__s8)max_qual->qual, max_qual->qual, max_qual->qual, (__s8)max_qual->level, max_qual->level, max_qual->level, (__s8)max_qual->noise, max_qual->noise, max_qual->noise);
 #endif
@@ -192,7 +192,7 @@ syslog (LOG_DEBUG, "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** 
 						((double)max_level - (double)level) /
 						((double)max_level - (double)noise)));
 #if IW_QUAL_DEBUG
-		syslog (LOG_DEBUG, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.", level_percent, max_level, level, noise);
+		nm_debug ("QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.", level_percent, max_level, level, noise);
 #endif
 	}
 	else if ((max_qual->level != 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)	/* Valid max_qual->level as upper bound */
@@ -206,7 +206,7 @@ syslog (LOG_DEBUG, "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** 
 		level = CLAMP (level, 0, max_qual->level);
 		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
 #if IW_QUAL_DEBUG
-		syslog (LOG_DEBUG, "QL2: level_percent is %d.  max_level %d, level %d.", level_percent, max_qual->level, level);
+		nm_debug ("QL2: level_percent is %d.  max_level %d, level %d.", level_percent, max_qual->level, level);
 #endif
 	}
 
@@ -215,7 +215,7 @@ syslog (LOG_DEBUG, "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** 
 		percent = level_percent;
 
 #if IW_QUAL_DEBUG
-	syslog (LOG_DEBUG, "QL: Final quality %% is %d (%d).", percent, CLAMP (percent, 0, 100));
+	nm_debug ("QL: Final quality %% is %d (%d).", percent, CLAMP (percent, 0, 100));
 #endif
 	return (CLAMP (percent, 0, 100));
 }

@@ -33,6 +33,7 @@
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
 #include "NetworkManagerInfoVPN.h"
+#include "nm-utils.h"
 
 
 /*
@@ -168,7 +169,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setKeyForNetwork")))
 	{
-		syslog (LOG_ERR, "nmi_dbus_return_user_key(): Couldn't allocate the dbus message");
+		nm_warning ("nmi_dbus_return_user_key(): Couldn't allocate the dbus message");
 		return;
 	}
 
@@ -180,7 +181,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 								DBUS_TYPE_INVALID))
 	{
 		if (!dbus_connection_send (connection, message, NULL))
-			syslog (LOG_ERR, "nmi_dbus_return_user_key(): dbus could not send the message");
+			nm_warning ("nmi_dbus_return_user_key(): dbus could not send the message");
 	}
 
 	dbus_message_unref (message);
@@ -236,13 +237,13 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	if (!message)
 	{
-		syslog (LOG_ERR, "nmi_dbus_signal_update_network(): Not enough memory for new dbus message!");
+		nm_warning ("nmi_dbus_signal_update_network(): Not enough memory for new dbus message!");
 		return;
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
+		nm_warning ("nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
 
 	dbus_message_unref (message);
 }
@@ -349,6 +350,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 
 	char				*essid = NULL;
 	gint				 timestamp = -1;
+	gint32				i;
 	char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
@@ -456,10 +458,13 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 		dbus_message_iter_init_append (reply, &iter);
 
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &timestamp);
+		i = (gint32) timestamp;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &i);
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &key);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &key_type);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &auth_method);
+		i = (gint32) key_type;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &i);
+		i = (gint32) auth_method;
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &i);
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &trusted);
 		
 		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
@@ -654,7 +659,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-/*	syslog (LOG_WARNING, "nmi_dbus_nmi_message_handler() got method %s for path %s", method, path);*/
+/*	nm_warning ("nmi_dbus_nmi_message_handler() got method %s for path %s", method, path);*/
 
 	if (strcmp ("getKeyForNetwork", method) == 0)
 	{
@@ -674,7 +679,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	}
 	else if (strcmp ("networkNotFound", method) == 0)
 	{
-		char		*network;
+		const char		*network;
 		DBusError	 error;
 
 		dbus_error_init (&error);
@@ -686,7 +691,6 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 			dbus_error_free (&error);
 			text = g_strdup_printf ( "The requested wireless network '%s' does not appear to be in range.  "
 								"A different wireless network will be used if any are available.", network);
-			dbus_free (network);
 
 			dialog = GTK_DIALOG (gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL));
 			gtk_dialog_run (dialog);
@@ -816,7 +820,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 						&dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
-		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
+		nm_warning ("nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
 		dbus_error_free (&dbus_error);
 		return (-1);
 	}
@@ -831,7 +835,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 
 	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_PATH, &nmi_vtable, info))
 	{
-		syslog (LOG_ERR, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
+		nm_warning ("nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
 		return (-1);
 	}
 

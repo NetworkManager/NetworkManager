@@ -70,7 +70,7 @@ void nmd_execute_scripts (NMDAction action, char *iface_name, guint32 new_ip4_ad
 
 	if (!dir)
 	{
-		syslog (LOG_ERR, "nmd_execute_scripts(): opendir() could not open /etc/NetworkManager.d.  errno = %d", errno);
+		nm_warning ("nmd_execute_scripts(): opendir() could not open /etc/NetworkManager.d.  errno = %d", errno);
 		return;
 	}
 
@@ -127,7 +127,7 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, "getName")))
 	{
-		syslog (LOG_ERR, "Couldn't allocate the dbus message");
+		nm_warning ("Couldn't allocate the dbus message");
 		return (NULL);
 	}
 
@@ -135,14 +135,14 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "%s raised: %s", error.name, error.message);
+		nm_warning ("%s raised: %s", error.name, error.message);
 		dbus_message_unref (message);
 		return (NULL);
 	}
 
 	if (reply == NULL)
 	{
-		syslog( LOG_ERR, "dbus reply message was NULL" );
+		nm_warning ("dbus reply message was NULL" );
 		dbus_message_unref (message);
 		return (NULL);
 	}
@@ -151,7 +151,7 @@ char * nmd_get_device_name (DBusConnection *connection, char *path)
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dev_name, DBUS_TYPE_INVALID))
 	{
-		syslog (LOG_ERR, "There was an error getting the device name from NetworkManager." );
+		nm_warning ("There was an error getting the device name from NetworkManager." );
 		dev_name = NULL;
 	}
 
@@ -176,7 +176,7 @@ guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
 
 	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, "getIP4Address")))
 	{
-		syslog (LOG_ERR, "Couldn't allocate the dbus message");
+		nm_warning ("Couldn't allocate the dbus message");
 		return (0);
 	}
 
@@ -184,14 +184,14 @@ guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	if (dbus_error_is_set (&error))
 	{
-		syslog (LOG_ERR, "%s raised: %s", error.name, error.message);
+		nm_warning ("%s raised: %s", error.name, error.message);
 		dbus_message_unref (message);
 		return (0);
 	}
 
 	if (reply == NULL)
 	{
-		syslog( LOG_ERR, "dbus reply message was NULL" );
+		nm_warning ("dbus reply message was NULL" );
 		dbus_message_unref (message);
 		return (0);
 	}
@@ -200,7 +200,7 @@ guint32 nmd_get_device_ip4_address (DBusConnection *connection, char *path)
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &address, DBUS_TYPE_INVALID))
 	{
-		syslog (LOG_ERR, "There was an error getting the device's IPv4 address from NetworkManager." );
+		nm_warning ("There was an error getting the device's IPv4 address from NetworkManager." );
 		address = 0;
 	}
 
@@ -248,20 +248,20 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 
 			if (action == NMD_DEVICE_NOW_ACTIVE || action == NMD_DEVICE_NOW_INACTIVE)
 			{
-				syslog (LOG_NOTICE, "Device %s (%s) is now %s.", dev_object_path, dev_iface_name,
+				nm_info ("Device %s (%s) is now %s.", dev_object_path, dev_iface_name,
 						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
 							(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
 			}
 			else if (action == NMD_DEVICE_IP4_ADDRESS_CHANGE)
 			{
-				syslog (LOG_NOTICE, "Device %s (%s) now has address %u.%u.%u.%u", dev_object_path, dev_iface_name,
+				nm_info ("Device %s (%s) now has address %u.%u.%u.%u", dev_object_path, dev_iface_name,
 							NIPQUAD(dev_ip4_address));
 			}
 
 			nmd_execute_scripts (action, dev_iface_name, dev_ip4_address);
 
-			dbus_free (dev_iface_name);
-			dbus_free (dev_object_path);
+			g_free (dev_iface_name);
+			g_free (dev_object_path);
 
 			handled = TRUE;
 		}
@@ -286,7 +286,7 @@ static DBusConnection *nmd_dbus_init (void)
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
 	if (connection == NULL)
 	{
-		syslog (LOG_ERR, "nmd_dbus_init(): could not connect to the message bus.  dbus says: '%s'", error.message);
+		nm_warning ("nmd_dbus_init(): could not connect to the message bus.  dbus says: '%s'", error.message);
 		dbus_error_free (&error);
 		return (NULL);
 	}
@@ -388,7 +388,7 @@ int main( int argc, char *argv[] )
 
 	if (become_daemon && daemon (FALSE, FALSE) < 0)
 	{
-	     syslog( LOG_ERR, "NetworkManagerDispatcher could not daemonize.  errno = %d", errno );
+	     nm_warning ("NetworkManagerDispatcher could not daemonize.  errno = %d", errno );
 	     exit (1);
 	}
 

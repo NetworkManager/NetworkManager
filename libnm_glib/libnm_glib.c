@@ -105,9 +105,8 @@ static char *libnm_glib_get_nm_status (DBusConnection *con)
 		dbus_message_unref (reply);
 		return g_strdup ("error");
 	}
-	dbus_message_unref (reply);
 	ret = g_strdup (status);
-	dbus_free (status);
+	dbus_message_unref (reply);
 
 	return ret;
 }
@@ -298,6 +297,8 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 
 		if (!(dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &status_string, DBUS_TYPE_INVALID)))
 			status_string = g_strdup ("error");
+		else
+			status_string = g_strdup (status_string);
 
 		libnm_glib_update_status (ctx, status_string);
 		g_free (status_string);
@@ -518,7 +519,7 @@ libnm_glib_ctx *libnm_glib_init (void)
 	{
 		char *status_string = libnm_glib_get_nm_status (ctx->dbus_con);
 		libnm_glib_update_status (ctx, status_string);
-		dbus_free (status_string);
+		g_free (status_string);
 	}
 
 	if (!g_thread_create (libnm_glib_dbus_worker, ctx, FALSE, &error))

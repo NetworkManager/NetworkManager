@@ -74,7 +74,7 @@ void ifparser_init()
 	int ret = 0;
 	if (inp == NULL)
 	{
-		syslog (LOG_ERR, "Error: Can't open %s\n",INTERFACES);
+		nm_warning ("Error: Can't open %s\n",INTERFACES);
 		return;
 	}
 	first = last = NULL;
@@ -93,7 +93,7 @@ void ifparser_init()
 		SPACE_OR_TAB(line,space)
 		if (space == NULL)
 		{
-            syslog (LOG_ERR, "Error: Can't parse interface line '%s'\n",line);
+            nm_warning ("Error: Can't parse interface line '%s'\n",line);
 			continue;
 		}
 		space[0] = '\0';
@@ -104,7 +104,7 @@ void ifparser_init()
 			char *space2 = strchr(space+1,' ');
 			if (space2 == NULL)
 			{
-            	syslog (LOG_ERR, "Error: Can't parse iface line '%s'\n",space+1);
+            	nm_warning ("Error: Can't parse iface line '%s'\n",space+1);
 				continue;
 			}
 			space2[0]='\0';
@@ -115,7 +115,7 @@ void ifparser_init()
 				space = strchr(space2+1,' ');
 				if (space == NULL)
 				{
-            		syslog (LOG_ERR, "Error: Can't parse data '%s'\n",space2+1);
+            		nm_warning ("Error: Can't parse data '%s'\n",space2+1);
 					continue;
 				}
 				space[0] = '\0';

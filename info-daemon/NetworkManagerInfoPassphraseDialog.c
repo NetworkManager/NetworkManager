@@ -38,6 +38,7 @@
 
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
+#include "nm-utils.h"
 
 enum NMIPassphraseDialogKeyTypes
 {
@@ -318,7 +319,7 @@ int nmi_passphrase_dialog_init (NMIAppInfo *info)
 	info->passphrase_dialog = glade_xml_new(GLADEDIR"/passphrase.glade", NULL, NULL);
 	if (!info->passphrase_dialog)
 	{
-		syslog (LOG_ERR, "Could not open the passphrase dialog glade file!");
+		nm_warning ("Could not open the passphrase dialog glade file!");
 		return (-1);
 	}
 	

@@ -21,6 +21,7 @@
 
 #include "NetworkManagerAP.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 #include "NetworkManagerWireless.h"
 
 
@@ -67,7 +68,7 @@ NMAccessPoint * nm_ap_new (void)
 	ap = g_new0 (NMAccessPoint, 1);
 	if (!ap)
 	{
-		syslog (LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?");
+		nm_warning ("nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?");
 		return (NULL);
 	}
 
@@ -98,7 +99,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap = nm_ap_new();
 	if (!new_ap)
 	{
-		syslog (LOG_ERR, "nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
+		nm_warning ("nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
 		return (NULL);
 	}
 

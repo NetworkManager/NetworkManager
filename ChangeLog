@@ -1,3 +1,93 @@
+2005-03-14  Ray Strode  <rstrode@redhat.com>
+	
+	Fourth (probably working) cut at porting to
+	dbus 0.30 api and new hal. This cut adds
+	some new logging macros to make debugging
+	easier.
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c:
+	* info-daemon/NetworkmanagerInfo.c:
+	* info-daemon/NetworkManagerInfoPassphraseDialog.c:
+	* info-daemon/NetworkManagerInfoVPN.c:
+	* src/NetworkManager.c:
+	* src/NetworkManagerAP.c:
+	* src/NetworkManagerAPList.c:
+	* src/NetworkManagerDHCP.c:
+	* src/NetworkManagerDbus.c:
+	* src/NetworkManagerDevice.c:
+	* src/NetworkManagerPolicy.c:
+	* src/NetworkManagerSystem.c:
+	* src/NetworkManagerUtils.c:
+	* src/NetworkManagerWireless.c:
+	* src/autoip.c:
+	* src/nm-dbus-nm.c:
+	* src/backends/NetworkManagerDebian.c:
+	* src/backends/NetworkManagerGentoo.c:
+	* src/backends/NetworkManagerRedHat.c:
+	* src/backends/NetworkManagerSlackware.c:
+	use new logging macros.
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c:
+	(nmd_dbus_filter): s/dbus_free/g_free/
+
+	* info-daemon/Makefile.am: link in utils library.
+	* info-daemon/NetworkmanagerInfo.c: use new logging 
+	macros.
+	(nmi_dbus_get_network): don't assume enumerations
+	are 32-bit.
+	(nmi_dbus_nmi_message_handler): don't free what 
+	doesn't belong to us.
+
+	* libnm_glib/libnm_glib.c:
+	(libnm_glib_get_nm_status): 
+	(libnm_glib_init): don't free what doesn't
+	belong to us.
+	(libnm_glib_dbus): strdup result, so it doesn't get
+	lost when message is unref'd.
+
+	* panel-applet/NMWirelessAppletDbus.c:
+	(nmwa_dbus_update_devices): s/dbus_free/g_free/
+
+	* src/NetworkManager.c:
+	(nm_monitor_wired_link_state): request initial status 
+	dump of all cards when we start up, instead of relying
+	on /sys/.../carrier.
+	(nm_info_handler), (nm_set_up_log_handlers): 
+	log handlers to specify what syslog priorites 
+	the logging macros default to.
+
+	* src/NetworkManagerAPList.c: 
+	(nm_ap_list_populate_from_nmi):
+	s/dbus_free_string_array/g_strfreev/
+
+	* src/NetworkManagerDbus.c:
+	(nm_dbus_get_network_object):
+	validate d-bus message argument types.
+	Advance message iterator after reading argument,
+	prepend instead of append to GSList.
+
+	* src/NetworkManagerDevice.c:
+	(nm_device_probe_wired_link_status):
+	remove redundant /sys in /sys path. remove wrong
+	contents == NULL means has carrier assumption.
+
+	* src/nm-netlink-monitor.c 
+	(nm_netlink_monitor_request_status): implement
+	function to ask kernel to dump interface link
+	status over netlink socket.
+
+	* test/*.c: s/dbus_free/g_free/
+
+	* utils/nm-utils.h:
+	(nm_print_backtrace): new macro to print backtrace.
+	(nm_get_timestamp): new macro to get sub-second precise
+	unix timestamp.
+	(nm_info), (nm_debug), (nm_warning), (nm_error):
+	new logging functions. nm_info just prints,
+	nm_debug includes timestamp and function,
+	nm_warning includes function, nm_error includes
+	backtrace and sigtrap.
+
 2005-03-11  Ray Strode  <rstrode@redhat.com>
 
 	Third (unfinished, partially working) cut at porting to 
