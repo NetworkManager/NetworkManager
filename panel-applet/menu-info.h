@@ -36,12 +36,12 @@
 
 typedef struct
 {
-  GtkCheckMenuItemClass parent_class;
+  GtkMenuItemClass parent_class;
 } NMMenuNetworkClass;
 
 typedef struct
 {
-  GtkCheckMenuItem parent;
+  GtkMenuItem parent;
   GtkWidget *image;
   GtkWidget *label;
   int type;
@@ -56,9 +56,8 @@ typedef struct
 typedef struct
 {
   GtkCheckMenuItem parent;
-  GtkWidget *spacer;
-  GtkWidget *cell_view;
   GtkWidget *label;
+  GtkWidget *cell_view;
   GtkWidget *security_image;
   GObject *progress_bar;
 } NMMenuWireless;
@@ -73,8 +72,7 @@ void       nm_menu_network_update   (NMMenuNetwork   *menu_network,
 				     gboolean         multiple_devices);
 
 GType      nm_menu_wireless_get_type (void);
-GtkWidget *nm_menu_wireless_new      (GtkSizeGroup    *image_size_group,
-				      GtkSizeGroup    *encryption_size_group);
+GtkWidget *nm_menu_wireless_new      (GtkSizeGroup    *encryption_size_group);
 void       nm_menu_wireless_update   (NMMenuWireless  *menu_info,
 				      WirelessNetwork *network,
 				      gboolean         has_encrypted);

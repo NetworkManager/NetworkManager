@@ -25,30 +25,26 @@
  * (C) Copyright 2004 Red Hat, Inc.
  * Copyright (C) 1999, 2000 Eazel, Inc.
  */
+#include <libintl.h>
 #include "menu-info.h"
 #include "gtkcellview.h"
 #include "gtkcellrendererprogress.h"
 #include "NMWirelessAppletDbus.h"
 #include <config.h>
 
-G_DEFINE_TYPE (NMMenuNetwork, nm_menu_network, GTK_TYPE_CHECK_MENU_ITEM);
+G_DEFINE_TYPE (NMMenuNetwork, nm_menu_network, GTK_TYPE_MENU_ITEM);
 
-static void nm_menu_network_update_image (NMMenuNetwork *menu_network);
 
 static void
 nm_menu_network_init (NMMenuNetwork *menu_network)
 {
-  GtkWidget *hbox;
+  GtkWidget *eb;
 
-  gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (menu_network), TRUE);
-  hbox = gtk_hbox_new (FALSE, 2);
-  menu_network->image = gtk_image_new ();
-  gtk_box_pack_start (GTK_BOX (hbox), menu_network->image, FALSE, FALSE, 0);
+  eb = gtk_event_box_new ();
   menu_network->label = gtk_label_new (NULL);
-  gtk_misc_set_alignment (GTK_MISC (menu_network->label), 0.0, 0.5);
-  gtk_box_pack_start (GTK_BOX (hbox), menu_network->label, TRUE, TRUE, 0);
-  gtk_container_add (GTK_CONTAINER (menu_network), hbox);
-  gtk_widget_show_all (hbox);
+  gtk_container_add (GTK_CONTAINER (eb), menu_network->label);
+  gtk_container_add (GTK_CONTAINER (menu_network), eb);
+  gtk_widget_show_all (eb);
 }
 
 
@@ -57,32 +53,16 @@ nm_menu_network_style_set (GtkWidget *widget,
 			   GtkStyle  *previous_style)
 {
   GTK_WIDGET_CLASS (nm_menu_network_parent_class)->style_set (widget, previous_style);
-
-  nm_menu_network_update_image (NM_MENU_NETWORK (widget));
-}
-
-static void
-nm_menu_network_draw_indicator (GtkCheckMenuItem *check_menu_item,
-				GdkRectangle	 *area)
-{
-  /* Don't draw the indicator if we're a wireless device */
-  if (NM_MENU_NETWORK (check_menu_item)->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-    return;
-
-  GTK_CHECK_MENU_ITEM_CLASS (nm_menu_network_parent_class)->draw_indicator (check_menu_item, area);
 }
 
 static void
 nm_menu_network_class_init (NMMenuNetworkClass *menu_network)
 {
   GtkWidgetClass *widget_class;
-  GtkCheckMenuItemClass *check_menu_item_class;
 
   widget_class = GTK_WIDGET_CLASS (menu_network);
-  check_menu_item_class = GTK_CHECK_MENU_ITEM_CLASS (menu_network);
 
   widget_class->style_set = nm_menu_network_style_set;
-  check_menu_item_class->draw_indicator = nm_menu_network_draw_indicator;
 }
 
 GtkWidget *
@@ -96,42 +76,6 @@ nm_menu_network_new (GtkSizeGroup *image_size_group)
   return retval;
 }
 
-/* updates the image based on the icon type.  It is called when themes
- * change too as the icon size is theme dependent */
-static void
-nm_menu_network_update_image (NMMenuNetwork *menu_network)
-{
-  GtkIconTheme *icon_theme;
-  GdkPixbuf *icon;
-  const gchar *icon_name = NULL;
-  gint size;
-
-  if (menu_network->type == DEVICE_TYPE_WIRED_ETHERNET)
-    {
-      icon_name = "nm-device-wired";
-    }
-  else if (menu_network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-    {
-      icon_name = "nm-device-wireless";
-    }
-  else
-    {
-      gtk_image_set_from_pixbuf (GTK_IMAGE (menu_network->image), NULL);
-      return;
-    }
-
-  gtk_icon_size_lookup_for_settings (gtk_settings_get_default (),
-				     GTK_ICON_SIZE_MENU,
-				     &size, NULL);
-
-  icon_theme = gtk_icon_theme_get_default ();
-  icon = gtk_icon_theme_load_icon (icon_theme,
-				   icon_name,
-				   size, 0, NULL);
-  gtk_image_set_from_pixbuf (GTK_IMAGE (menu_network->image), icon);
-  if (icon)
-    g_object_unref (icon);
-}
 
 void
 nm_menu_network_update (NMMenuNetwork *menu_network,
@@ -166,12 +110,6 @@ nm_menu_network_update (NMMenuNetwork *menu_network,
     }
   gtk_label_set_text (GTK_LABEL (menu_network->label), text);
   g_free (text);
-  nm_menu_network_update_image (menu_network);
-
-  if (menu_network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-    gtk_widget_set_sensitive (GTK_WIDGET (menu_network), FALSE);
-  else
-    gtk_widget_set_sensitive (GTK_WIDGET (menu_network), TRUE);
 }
 
 /* NMMenuWireless items*/
@@ -183,15 +121,12 @@ nm_menu_wireless_init (NMMenuWireless *menu_info)
   GtkWidget *hbox;
 
   gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (menu_info), TRUE);
-  hbox = gtk_hbox_new (FALSE, 2);
-  menu_info->spacer = gtk_frame_new (NULL);
-  gtk_frame_set_shadow_type (GTK_FRAME (menu_info->spacer), GTK_SHADOW_NONE);
+  hbox = gtk_hbox_new (FALSE, 6);
   menu_info->label = gtk_label_new (NULL);
   gtk_misc_set_alignment (GTK_MISC (menu_info->label), 0.0, 0.5);
   menu_info->security_image = gtk_image_new ();
 
   gtk_container_add (GTK_CONTAINER (menu_info), hbox);
-  gtk_box_pack_start (GTK_BOX (hbox), menu_info->spacer, FALSE, FALSE, 0);
   gtk_box_pack_start (GTK_BOX (hbox), menu_info->label, TRUE, TRUE, 0);
   menu_info->cell_view = gtk_cell_view_new ();
   menu_info->progress_bar = g_object_new (GTK_TYPE_CELL_RENDERER_PROGRESS,
@@ -201,10 +136,8 @@ nm_menu_wireless_init (NMMenuWireless *menu_info)
 			      GTK_CELL_RENDERER (menu_info->progress_bar),
 			      TRUE);
   gtk_box_pack_start (GTK_BOX (hbox), menu_info->cell_view, FALSE, FALSE, 0);
-  gtk_box_pack_end (GTK_BOX (hbox), menu_info->security_image, FALSE, FALSE, 0);
+  gtk_box_pack_start (GTK_BOX (hbox), menu_info->security_image, FALSE, FALSE, 0);
 
-  /* We don't show all the widgets, but we do show a few */
-  gtk_widget_show (menu_info->spacer);
   gtk_widget_show (menu_info->label);
   gtk_widget_show (menu_info->cell_view);
   gtk_widget_show (hbox);
@@ -216,13 +149,10 @@ nm_menu_wireless_class_init (NMMenuWirelessClass *menu_info_class)
 }
 
 GtkWidget *
-nm_menu_wireless_new    (GtkSizeGroup    *image_size_group,
-			 GtkSizeGroup    *encryption_size_group)
+nm_menu_wireless_new (GtkSizeGroup    *encryption_size_group)
 {
   GtkWidget *retval = g_object_new (nm_menu_wireless_get_type (), NULL);
 
-  gtk_size_group_add_widget (image_size_group,
-			     NM_MENU_WIRELESS (retval)->spacer);
   gtk_size_group_add_widget (encryption_size_group,
 			     NM_MENU_WIRELESS (retval)->security_image);
 

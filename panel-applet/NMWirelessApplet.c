@@ -640,8 +640,7 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 
 		net = (WirelessNetwork *) list->data;
 
-		menu_item = nm_menu_wireless_new (applet->image_size_group,
-						  applet->encryption_size_group);
+		menu_item = nm_menu_wireless_new (applet->encryption_size_group);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 		if (applet->active_device == dev && net->active)
 			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
@@ -708,10 +707,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (applet != NULL);
 
 	g_mutex_lock (applet->data_mutex);
-
 	if (! applet->devices)
 	{
 		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
+		g_mutex_unlock (applet->data_mutex);
 		return;
 	}
 
@@ -757,8 +756,11 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	}
 
 	if (n_wireless_interfaces > 0)
+	{
 		/* Add the 'Select a custom esssid entry */
+		nmwa_menu_add_separator_item (menu);
 		nmwa_menu_add_custom_essid_item (menu, applet);
+	}
 
 	g_mutex_unlock (applet->data_mutex);
 }
@@ -919,6 +921,7 @@ static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
 {
 	GtkRcStyle *rc_style = gtk_rc_style_new ();
 
+	return;
 	switch (type)
 	{
 		case PANEL_PIXMAP_BACKGROUND:
