@@ -1,5 +1,10 @@
 2004-08-25  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerWireless.c
+		- Don't try to defererence blank passphrases
+
+2004-08-25  Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Rebuild the menu whenever a user clicks
 
