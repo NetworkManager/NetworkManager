@@ -152,7 +152,7 @@ AC_DEFINE_UNQUOTED(DBUS_SYSTEMD_DIR, "$DBUS_SYS_DIR", [Where system.d dir for DB
 AC_ARG_WITH(named, AC_HELP_STRING([--with-named=<path>], [path to the named binary])) 
 if test "x${with_named}" = x; then
    AC_PATH_PROG(with_named, [named], no)
-   if test "x${with_named}" = x; then
+   if test "x${with_named}" = xno; then
      AC_MSG_ERROR([must specify path to named binary with --with-named])
    fi
 fi

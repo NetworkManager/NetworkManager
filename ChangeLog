@@ -1,5 +1,9 @@
 2004-12-21  Colin Walters  <walters@redhat.com>
 
+	* configure.in: Correct named detection.
+
+2004-12-21  Colin Walters  <walters@redhat.com>
+
 	* src/NetworkManager.c (nm_data_new): Initialize named.
 	Also, set up a signal handler for SIGINT/SIGTERM, and exit
 	the mainloop when these signals are received.
