@@ -515,13 +515,24 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	}
 	else if (strcmp ("networkNotFound", method) == 0)
 	{
-		GtkWidget	*dialog;
+		char		*network;
+		DBusError	 error;
 
-		dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-			"The requested wireless network does not appear to be in range."
-			"  Another wireless network will be used if one is available.", NULL);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		dbus_error_init (&error);
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+		{
+			GtkDialog	*dialog;
+			char		*text;
+
+			text = g_strdup_printf ( "The requested wireless network '%s' does not appear to be in range.  "
+								"A different wireless network will be used if any are available.", network);
+			dbus_free (network);
+
+			dialog = GTK_DIALOG (gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL));
+			gtk_dialog_run (dialog);
+			gtk_widget_destroy (GTK_WIDGET (dialog));
+			dbus_error_free (&error);
+		}
 	}
 	else if (strcmp ("getNetworks", method) == 0)
 		reply_message = nmi_dbus_get_networks (info, message);

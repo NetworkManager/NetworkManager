@@ -1,3 +1,14 @@
+2004-10-17 Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Display name of network in the "network not found" dialog
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_call_nm_method): new function replaces all other
+			nmwa_dbus_get_[string|string_array|int|boolean] methods
+		- nmwa_dbus_get_network_name() and nmwa_dbus_get_device_name()
+			consolidated into nmwa_dbus_get_object_name()
+
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDbus.c
