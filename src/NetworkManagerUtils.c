@@ -265,7 +265,7 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
  */
 NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev)
 {
-	NMDriverSupportLevel	 level = NM_DRIVER_UNSUPPORTED;
+	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;
 
 	g_return_val_if_fail (ctx != NULL, FALSE);
