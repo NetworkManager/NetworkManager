@@ -1,3 +1,9 @@
+2005-02-14  Tomislav Vujec  <tvujec@redhat.com>
+
+	* configure.in
+	  po/hr.po
+		- Add the Croatian locale.
+
 2005-02-14  Colin Walters  <walters@verbum.org>
 
 	* src/NetworkManagerDHCP.c (set_domain_searches): Handle space-separated
