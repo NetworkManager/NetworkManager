@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/named
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/named -I${top_srcdir}/utils
 
 bin_PROGRAMS = NetworkManager
 
@@ -61,7 +61,15 @@ if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-NetworkManager_LDADD = $(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a ../named/libnamed.la
+NetworkManager_LDADD = 						\
+			$(DBUS_LIBS)				\
+			$(GTHREAD_LIBS)				\
+			$(HAL_LIBS)				\
+			$(IWLIB)				\
+			libnmbackend.la				\
+			$(top_builddir)/utils/libnmutils.la	\
+			../dhcpcd/libdhcpc.a			\
+			../named/libnamed.la
 if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif

@@ -35,6 +35,8 @@
 #include <dirent.h>
 #include <string.h>
 
+#include "nm-utils.h"
+
 #define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
 
 #define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
@@ -234,10 +236,15 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 
 	if (action != NMD_DEVICE_DONT_KNOW)
 	{
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_object_path, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_object_path, DBUS_TYPE_INVALID))
 		{
-			char		*dev_iface_name = nmd_get_device_name (connection, dev_object_path);
-			guint32	 dev_ip4_address = nmd_get_device_ip4_address (connection, dev_object_path);
+			char		*dev_iface_name;
+                        guint32	 dev_ip4_address;
+
+                        dev_object_path = nm_dbus_unescape_object_path (dev_object_path);
+
+                        dev_ip4_address = nmd_get_device_ip4_address (connection, dev_object_path);
+                        dev_iface_name = nmd_get_device_name (connection, dev_object_path);
 
 			if (action == NMD_DEVICE_NOW_ACTIVE || action == NMD_DEVICE_NOW_INACTIVE)
 			{

@@ -1,3 +1,29 @@
+2005-03-09  Ray Strode  <rstrode@redhat.com>
+
+	Second (unfinished, unworking) cut at porting to 
+	dbus 0.30 api.
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+	* info-daemon/NetworkManagerInfoDbus.c:
+	* panel-applet/NMWirelessAppletDbus.c:
+	* src/NetworkManagerDbusUtils.c:
+	* src/NetworkManagerDbusUtils.h:
+	* src/nm-dbus-device.c:
+	* src/nm-dbus-nm.c:
+	* test/nmtest.c: support dbus "object path" type
+
+	* configure.in: 
+	* Makefile.am:
+	* info-daemon/Makefile.am:
+	* libnm_glib/Makefile.am:
+	* panel-applet/Makefile.am:
+	* dispatcher-daemon/Makefile.am
+	* src/Makefile.am:
+	* test/Makefile.am:
+	* utils/Makefile.am: 
+	* utils/nm-utils.c: 
+	* utils/nm-utils.h: new utils static lib
+
 2005-03-07  Ray Strode  <rstrode@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c:

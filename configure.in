@@ -264,6 +264,7 @@ fi
 
 AC_OUTPUT([
 Makefile
+utils/Makefile
 src/Makefile
 dispatcher-daemon/Makefile
 info-daemon/Makefile

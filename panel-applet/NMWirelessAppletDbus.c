@@ -30,10 +30,16 @@
 #include "NMWirelessAppletDbus.h"
 #include "NMWirelessApplet.h"
 
+#include "nm-utils.h"
+
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
-#define	DBUS_TYPE_STRING_ARRAY		((int) '$')
+/* FIXME: This just seems like a bad idea. The call_nm_method function
+ *        interface should just be changed to handle arrays better.
+ */
+#define	NM_DBUS_TYPE_STRING_ARRAY       ((DBUS_TYPE_STRING << 8) | DBUS_TYPE_ARRAY)
+#define	NM_DBUS_TYPE_OBJECT_PATH_ARRAY	((DBUS_TYPE_OBJECT_PATH << 8) | DBUS_TYPE_ARRAY)
 
 /*
  * nmwa_dbus_call_nm_method
@@ -52,20 +58,21 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 	char			*dbus_string = NULL;
 	int			 dbus_int = 0;
 	gboolean		 dbus_bool = FALSE;
-	char			**dbus_string_array = NULL;
+	char			**dbus_array = NULL;
 	int			 num_items = 0;
 	dbus_bool_t	 ret = TRUE;
 
 	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
 	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
 	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
-	g_return_val_if_fail (((arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_INT32) || (arg_type == DBUS_TYPE_UINT32) || (arg_type == DBUS_TYPE_BOOLEAN) || (arg_type == DBUS_TYPE_STRING_ARRAY)), RETURN_FAILURE);
+	g_return_val_if_fail (((arg_type == DBUS_TYPE_OBJECT_PATH) || (arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_INT32) || (arg_type == DBUS_TYPE_UINT32) || (arg_type == DBUS_TYPE_BOOLEAN) || (arg_type == NM_DBUS_TYPE_STRING_ARRAY) || (arg_type == NM_DBUS_TYPE_OBJECT_PATH_ARRAY)), RETURN_FAILURE);
 	g_return_val_if_fail (arg != NULL, RETURN_FAILURE);
 
-	if ((arg_type == DBUS_TYPE_STRING) || (arg_type == DBUS_TYPE_STRING_ARRAY))
+	if ((arg_type == DBUS_TYPE_STRING) || (arg_type == NM_DBUS_TYPE_STRING_ARRAY) || (arg_type == DBUS_TYPE_OBJECT_PATH) || (arg_type == NM_DBUS_TYPE_OBJECT_PATH_ARRAY))
 		g_return_val_if_fail (*arg == NULL, RETURN_FAILURE);
 
-	if (arg_type == DBUS_TYPE_STRING_ARRAY)
+	if ((arg_type == NM_DBUS_TYPE_STRING_ARRAY) ||
+            (arg_type == NM_DBUS_TYPE_OBJECT_PATH_ARRAY))
 	{
 		g_return_val_if_fail (item_count != NULL, RETURN_FAILURE);
 		*item_count = 0;
@@ -110,11 +117,17 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 	dbus_error_init (&error);
 	switch (arg_type)
 	{
+		case DBUS_TYPE_OBJECT_PATH:
+			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_OBJECT_PATH, &dbus_string, DBUS_TYPE_INVALID);
+			break;
 		case DBUS_TYPE_STRING:
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID);
 			break;
-		case DBUS_TYPE_STRING_ARRAY:
-			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &dbus_string_array, &num_items, DBUS_TYPE_INVALID);
+		case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
+			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH, &dbus_array, &num_items, DBUS_TYPE_INVALID);
+			break;
+		case NM_DBUS_TYPE_STRING_ARRAY:
+			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &dbus_array, &num_items, DBUS_TYPE_INVALID);
 			break;
 		case DBUS_TYPE_INT32:
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &dbus_int, DBUS_TYPE_INVALID);
@@ -142,13 +155,28 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 
 	switch (arg_type)
 	{
+		case DBUS_TYPE_OBJECT_PATH:
+			*((char **)(arg)) = nm_dbus_unescape_object_path (dbus_string);
+			break;
+                case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
+                {
+                        int i;
+
+                        *((char ***) (arg)) = g_new0 (char *,  num_items + 1);
+
+                        for (i = 0; i < num_items; i++)
+				(*((char ***) (arg)))[i] = nm_dbus_unescape_object_path (dbus_array[i]);
+
+			*item_count = num_items;
+                        break;
+                }
 		case DBUS_TYPE_STRING:
 			*((char **)(arg)) = g_strdup (dbus_string);
 			break;
-		case DBUS_TYPE_STRING_ARRAY:
-			*((char ***)(arg)) = g_strdupv (dbus_string_array);
+		case NM_DBUS_TYPE_STRING_ARRAY:
+			*((char ***)(arg)) = g_strdupv (dbus_array);
 			*item_count = num_items;
-			g_strfreev (dbus_string_array);
+			g_strfreev (dbus_array);
 			break;
 		case DBUS_TYPE_INT32:
 		case DBUS_TYPE_UINT32:
@@ -177,7 +205,7 @@ static char * nmwa_dbus_get_active_device (NMWirelessApplet *applet, AppletState
 {
 	char *active_device = NULL;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getActiveDevice", DBUS_TYPE_STRING, (void **)(&active_device), NULL))
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getActiveDevice", DBUS_TYPE_OBJECT_PATH, (void **)(&active_device), NULL))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;
@@ -501,7 +529,7 @@ static char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *pat
 	char **array = NULL;
 	int	  items;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, path, "getNetworks", DBUS_TYPE_STRING_ARRAY, (void **)(&array), &items))
+	switch (nmwa_dbus_call_nm_method (applet->connection, path, "getNetworks", NM_DBUS_TYPE_OBJECT_PATH_ARRAY, (void **)(&array), &items))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;
@@ -1388,7 +1416,8 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	if (!(nm_status = nmwa_dbus_get_nm_status (applet, APPLET_STATE_NO_CONNECTION)))
 		return;
 
-	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getDevices", DBUS_TYPE_STRING_ARRAY, (void **)(&devices), &num_items))
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH, "getDevices", NM_DBUS_TYPE_OBJECT_PATH_ARRAY, 
+                                          (void **)(&devices), &num_items))
 	{
 		case (RETURN_NO_NM):
 			applet->applet_state = APPLET_STATE_NO_NM;

@@ -3,7 +3,7 @@ SUBDIRS=icons
 NULL=
 NOTIFICATION_ICON_SOURCE=@NOTIFICATION_ICON_SRC@
 
-INCLUDES = -I${top_srcdir}
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
 
 noinst_LTLIBRARIES = libnm_notification_applet.la
 
@@ -65,7 +65,10 @@ libexec_PROGRAMS = NetworkManagerNotification
 
 NetworkManagerNotification_CFLAGS = $(libnm_notification_applet_la_CPPFLAGS)
 NetworkManagerNotification_SOURCES = main.c
-NetworkManagerNotification_LDADD = ./libnm_notification_applet.la
+NetworkManagerNotification_LDADD =						\
+					./libnm_notification_applet.la		\
+					$(top_builddir)/utils/libnmutils.la 
+
 
 CLEANFILES = $(server_DATA) *.bak *.gladep
 

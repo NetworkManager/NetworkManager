@@ -20,7 +20,6 @@
  */
 
 #include <syslog.h>
-#include "NetworkManagerDevice.h"
 #include "NetworkManagerDbusUtils.h"
 
 

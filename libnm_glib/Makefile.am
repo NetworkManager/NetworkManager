@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir}
+INCLUDES = -I${top_srcdir}  -I${top_srcdir}/utils
 
 lib_LTLIBRARIES=libnm_glib.la
 
@@ -14,6 +14,8 @@ libnm_glib_la_SOURCES=	\
 libnm_glib_la_LDFLAGS=	\
 	$(DBUS_LIBS)		\
 	$(GTHREAD_LIBS)
+
+libnm_glib_la_LIBADD = $(top_builddir)/utils/libnmutils.la 
 
 libnm_glib_includedir=$(includedir)/NetworkManager
 

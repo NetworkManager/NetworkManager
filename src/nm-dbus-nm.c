@@ -25,15 +25,12 @@
 #include <dbus/dbus-glib.h>
 #include <stdarg.h>
 
-
 #include "nm-dbus-nm.h"
+#include "nm-utils.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerDbusUtils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
-
-static gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
-static gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
 
 /*
@@ -54,14 +51,16 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 	/* Construct object path of "active" device and return it */
 	if (data->data->active_device)
 	{
-		char *object_path;
+		char *object_path, *escaped_object_path;
 
 		reply = dbus_message_new_method_return (message);
 		if (!reply)
 			return (NULL);
 
 		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (data->data->active_device));
-		dbus_message_append_args (reply, DBUS_TYPE_STRING, &object_path, DBUS_TYPE_INVALID);
+		escaped_object_path = nm_dbus_escape_object_path (object_path);
+		dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &escaped_object_path, DBUS_TYPE_INVALID);
+		g_free (escaped_object_path);
 		g_free (object_path);
 	}
 	else
@@ -107,7 +106,7 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 		GSList	*elt;
 		gboolean	 appended = FALSE;
 
-		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH_AS_STRING, &iter_array);
 
 		for (elt = data->data->dev_list; elt; elt = g_slist_next (elt))
 		{
@@ -116,10 +115,10 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 			if (dev && (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED))
 			{
 				char *object_path, *escaped_object_path;
-                                
-                                object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-                                escaped_object_path = nm_dbus_escape_object_path (object_path);
-                                g_free (object_path);
+				
+				object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+				escaped_object_path = nm_dbus_escape_object_path (object_path);
+				g_free (object_path);
 				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &escaped_object_path);
 				g_free (escaped_object_path);
 				appended = TRUE;
@@ -170,7 +169,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path,
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path,
 							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
 							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
@@ -183,7 +182,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		/* So if that failed, try getting just the device */
 		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID))
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID))
 		{
 			if (dbus_error_is_set (&error))
 				dbus_error_free (&error);
@@ -193,6 +192,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			goto out;
 		} else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
 	} else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
+
+	dev_path = nm_dbus_unescape_object_path (dev_path);
 	
 	/* So by now we have a valid device and possibly a network as well */
 
@@ -218,6 +219,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	nm_device_schedule_force_use (dev, network, key, key_type);
 
 out:
+	g_free (dev_path);
+
 	return (reply);
 }
 
@@ -246,7 +249,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path,
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path,
 							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
 							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
@@ -254,9 +257,10 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 						"NetworkManager::createWirelessNetwork called with invalid arguments.");
 		return (reply);
 	} else syslog (LOG_INFO, "Creating network '%s' on device '%s'.", network, dev_path);
-	
+
+	dev_path = nm_dbus_unescape_object_path (dev_path);
 	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
-	dbus_free (dev_path);
+	g_free (dev_path);
 	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
@@ -322,9 +326,12 @@ static DBusMessage *nm_dbus_nm_create_test_device (DBusConnection *connection, D
 		test_dev_num++;
 		if ((reply = dbus_message_new_method_return (message)))
 		{
-			char		*dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+			char		*dev_path, *escaped_dev_path;
+			dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+			escaped_dev_path = nm_dbus_escape_object_path (dev_path);
 			dbus_message_append_args (reply, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
 			g_free (dev_path);
+			g_free (escaped_dev_path);
 		}
 		g_free (interface);
 		g_free (udi);
@@ -348,6 +355,8 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 	{
 		NMDevice	*dev;
 
+		dev_path = nm_dbus_unescape_object_path (dev_path);
+
 		if ((dev = nm_dbus_get_device_from_object_path (data->data, dev_path)))
 		{
 			if (nm_device_is_test_device (dev))
@@ -361,6 +370,8 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 							"The requested network device does not exist.");
 		}
+
+		g_free (dev_path);
 	}
 	else
 	{
@@ -509,109 +520,4 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "removeTestDevice",		nm_dbus_nm_remove_test_device);
 
 	return (list);
-}
-
-static gchar *nm_dbus_escape_object_path (const gchar *utf8_string)
-{
-	const gchar *p;
-	gchar *object_path;
-	GString *string;
-
-	g_return_val_if_fail (utf8_string != NULL, NULL);	
-	g_return_val_if_fail (g_utf8_validate (utf8_string, -1, NULL), NULL);
-
-	string = g_string_sized_new ((strlen (utf8_string) + 1) * 6);
-
-	for (p = utf8_string; *p != '\0'; p = g_utf8_next_char (p))
-	{
-		gunichar character;
-
-		character = g_utf8_get_char (p);
-
-		if (((character >= ((gunichar) 'a')) && 
-		     (character <= ((gunichar) 'z'))) ||
-		    ((character >= ((gunichar) 'A')) && 
-		     (character <= ((gunichar) 'Z'))) ||
-		    ((character >= ((gunichar) '0')) && 
-		     (character <= ((gunichar) '9'))) ||
-                     (character == ((gunichar) '/')))
-		{
-			g_string_append_c (string, (gchar) character);
-			continue;
-		}
-
-		g_string_append_printf (string, "_%x_", character);
-	}
-
-	object_path = string->str;
-
-	g_string_free (string, FALSE);
-
-	return object_path;
-}
-
-static gchar *nm_dbus_unescape_object_path (const gchar *object_path)
-{
-	const gchar *p;
-	gchar *utf8_string;
-	GString *string;
-
-	g_return_val_if_fail (object_path != NULL, NULL);	
-
-	string = g_string_sized_new (strlen (object_path) + 1);
-
-	for (p = object_path; *p != '\0'; p++)
-	{
-		const gchar *q;
-		gchar *hex_digits, *end, utf8_character[6] = { '\0' };
-		gint utf8_character_size;
-		gunichar character;
-		gulong hex_value;
-
-		if (*p != '_')
-		{
-		    g_string_append_c (string, *p);
-		    continue;
-		}
-
-		q = strchr (p + 1, '_'); 
-
-		if ((q == NULL) || (q == p + 1))
-		{
-		    g_string_free (string, TRUE);
-		    return NULL;
-		}
-
-		hex_digits = g_strndup (p + 1, (q - 1) - p);
-
-		hex_value = strtoul (hex_digits, &end, 16);
-
-		character = (gunichar) hex_value;
-
-		if (((hex_value == G_MAXLONG) && (errno == ERANGE)) ||
-		    (hex_value > G_MAXUINT32) ||
-		    (*end != '\0') ||
-		    (!g_unichar_validate (character)))
-		{
-		    g_free (hex_digits);
-		    g_string_free (string, TRUE);
-		    return NULL;
-		}
-
-		utf8_character_size = 
-			g_unichar_to_utf8 (character, utf8_character);
-
-		g_assert (utf8_character_size > 0);
-
-		g_string_append_len (string, utf8_character,
-				     utf8_character_size);
-
-		p = q;
-	}
-
-	utf8_string = string->str;
-
-	g_string_free (string, FALSE);
-
-	return utf8_string;
 }

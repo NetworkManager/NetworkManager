@@ -27,7 +27,6 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
-#include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
 #include "dhcpcd/dhcpcd.h"
 
