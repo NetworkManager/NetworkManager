@@ -1,3 +1,7 @@
+2004-10-08  Hendrik Brandt  <hebra@cvs.gnome.org>
+
+	* configure.in (ALL_LINGUAS): Added de (German).
+
 2004-10-08 Dan Williams <dcbw@redaht.com>
 
 	* src/NetworkManagerDevice.c
