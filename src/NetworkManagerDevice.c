@@ -811,6 +811,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	GError	*error = NULL;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (!dev->activating, TRUE);	// Return if activation has already begun
 
 	/* Ref the device so it doesn't go away while worker function is active */
 	nm_device_ref (dev);
@@ -1557,6 +1558,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			if (tmp_ap->b.has_essid && tmp_ap->b.essid_on && (strlen (tmp_ap->b.essid) > 0))
 			{
 				NMAccessPoint		*nm_ap  = nm_ap_new ();
+				NMAccessPoint		*list_ap;
 
 				/* Copy over info from scan to local structure */
 				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
@@ -1573,6 +1575,16 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 
 				if (tmp_ap->b.has_freq)
 					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
+
+				/* Merge settings from Preferred/Allowed networks, mainly Keys */
+				list_ap = nm_ap_list_get_ap_by_essid (data->trusted_ap_list, nm_ap_get_essid (nm_ap));
+				if (!list_ap)
+					list_ap = nm_ap_list_get_ap_by_essid (data->preferred_ap_list, nm_ap_get_essid (nm_ap));
+				if (list_ap)
+				{
+					nm_ap_set_priority (nm_ap, nm_ap_get_priority (list_ap));
+					nm_ap_set_wep_key (nm_ap, nm_ap_get_wep_key (list_ap));
+				}
 
 				/* Add the AP to the device's AP list */
 				nm_device_ap_list_add (dev, nm_ap);

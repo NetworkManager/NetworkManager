@@ -37,8 +37,9 @@ struct NMIAppInfo
 	DBusConnection	*connection;
 	GConfClient	*gconf_client;
 
-	GladeXML		*new_networks_dialog;
-	GtkListStore	*nnd_list_store;
+	GladeXML		*networks_dialog;
+	GtkListStore	*networks_list_store;
+
 	GdkPixbuf		*padlock_pixbuf;
 };
 typedef struct NMIAppInfo NMIAppInfo;

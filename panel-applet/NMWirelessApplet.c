@@ -48,7 +48,7 @@
 #include "NMWirelessApplet.h"
 #include "NMWirelessAppletDbus.h"
 
-#define CFG_UPDATE_INTERVAL 2
+#define CFG_UPDATE_INTERVAL 1
 
 static char * pixmap_names[] =
 {
@@ -132,7 +132,6 @@ static void nmwa_draw (NMWirelessApplet *applet)
  */
 static void nmwa_update_state (NMWirelessApplet *applet)
 {
-	applet->pix_state = PIX_WIRED;
 	if (applet->nm_active)
 	{
 		char *status = nmwa_dbus_get_nm_status (applet->connection);

@@ -25,12 +25,14 @@ NetworkManagerInfo_SOURCES =	NetworkManagerInfo.h		\
 				NetworkManagerInfoDbus.h				\
 				NetworkManagerInfoDbus.c				\
 				NetworkManagerInfoPassphraseDialog.c	\
-				NetworkManagerInfoPassphraseDialog.h
+				NetworkManagerInfoPassphraseDialog.h	\
+				NetworkManagerInfoNetworksDialog.c		\
+				NetworkManagerInfoNetworksDialog.h
 
 NetworkManagerInfo_LDADD = $(NM_LIBS) $(GLADE_LIBS) $(GCONF_LIBS) $(GTK_LIBS) $(GDK_PIXBUF_LIBS) $(LIBGNOMEUI_LIBS)
 
 gladedir = $(datadir)/NetworkManagerInfo/glade
-glade_DATA = passphrase.glade keyring.png
+glade_DATA = passphrase.glade keyring.png networks.glade
 
 dbusservicedir=$(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManagerInfo.conf

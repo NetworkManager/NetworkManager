@@ -1,5 +1,19 @@
 2004-08-23  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessApplet.c
+		- Update our state every second to get more responsive panel icon
+		- (nmwa_update_state): remove bogus applet->pix_state = PIX_WIRED that
+			was causing our marching ants status blips to never move when
+			looking for a wireless network
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activation_begin): return if activation has already begun
+		- (nm_device_do_normal_scan): merge WEP key and priority from the
+			trusted/preferred network into the device's access point when the
+			scan list is processed
+
+2004-08-23  Dan Williams <dcbw@redhat.com>
+
 	* initscript/NetworkManager
 		- Use NMLaunchHelper rather than sleeping
 
