@@ -28,7 +28,151 @@
 #include "menu-info.h"
 #include "gtkcellview.h"
 #include "gtkcellrendererprogress.h"
+#include "NMWirelessAppletDbus.h"
+#include <config.h>
 
+G_DEFINE_TYPE (NMMenuNetwork, nm_menu_network, GTK_TYPE_CHECK_MENU_ITEM);
+
+static void nm_menu_network_update_image (NMMenuNetwork *menu_network);
+
+static void
+nm_menu_network_init (NMMenuNetwork *menu_network)
+{
+  GtkWidget *hbox;
+
+  gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (menu_network), TRUE);
+  hbox = gtk_hbox_new (FALSE, 2);
+  menu_network->image = gtk_image_new ();
+  gtk_box_pack_start (GTK_BOX (hbox), menu_network->image, FALSE, FALSE, 0);
+  menu_network->label = gtk_label_new (NULL);
+  gtk_misc_set_alignment (GTK_MISC (menu_network->label), 0.0, 0.5);
+  gtk_box_pack_start (GTK_BOX (hbox), menu_network->label, TRUE, TRUE, 0);
+  gtk_container_add (GTK_CONTAINER (menu_network), hbox);
+  gtk_widget_show_all (hbox);
+}
+
+
+static void
+nm_menu_network_style_set (GtkWidget *widget,
+			   GtkStyle  *previous_style)
+{
+  GTK_WIDGET_CLASS (nm_menu_network_parent_class)->style_set (widget, previous_style);
+
+  nm_menu_network_update_image (NM_MENU_NETWORK (widget));
+}
+
+static void
+nm_menu_network_draw_indicator (GtkCheckMenuItem *check_menu_item,
+				GdkRectangle	 *area)
+{
+  /* Only draw the indicator if we're an ethernet device */
+  if (NM_MENU_NETWORK (check_menu_item)->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+    GTK_CHECK_MENU_ITEM_CLASS (nm_menu_network_parent_class)->draw_indicator (check_menu_item, area);
+}
+
+static void
+nm_menu_network_class_init (NMMenuNetworkClass *menu_network)
+{
+  GtkWidgetClass *widget_class;
+  GtkCheckMenuItemClass *check_menu_item_class;
+
+  widget_class = GTK_WIDGET_CLASS (menu_network);
+  check_menu_item_class = GTK_CHECK_MENU_ITEM_CLASS (menu_network);
+
+  widget_class->style_set = nm_menu_network_style_set;
+  check_menu_item_class->draw_indicator = nm_menu_network_draw_indicator;
+}
+
+GtkWidget *
+nm_menu_network_new (GtkSizeGroup *image_size_group)
+{
+  GtkWidget *retval = g_object_new (nm_menu_network_get_type (), NULL);
+
+  gtk_size_group_add_widget (image_size_group,
+			     NM_MENU_NETWORK (retval)->image);
+
+  return retval;
+}
+
+/* updates the image based on the icon type.  It is called when themes
+ * change too as the icon size is theme dependent */
+static void
+nm_menu_network_update_image (NMMenuNetwork *menu_network)
+{
+  GtkIconTheme *icon_theme;
+  GdkPixbuf *icon;
+  const gchar *icon_name = NULL;
+  gint size;
+
+  if (menu_network->type == DEVICE_TYPE_WIRED_ETHERNET)
+    {
+      icon_name = "nm-device-wired";
+    }
+  else if (menu_network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+    {
+      icon_name = "nm-device-wireless";
+    }
+  else
+    {
+      gtk_image_set_from_pixbuf (GTK_IMAGE (menu_network->image), NULL);
+      return;
+    }
+
+  gtk_icon_size_lookup_for_settings (gtk_settings_get_default (),
+				     GTK_ICON_SIZE_MENU,
+				     &size, NULL);
+
+  icon_theme = gtk_icon_theme_get_default ();
+  icon = gtk_icon_theme_load_icon (icon_theme,
+				   icon_name,
+				   size, 0, NULL);
+  gtk_image_set_from_pixbuf (GTK_IMAGE (menu_network->image), icon);
+  if (icon)
+    g_object_unref (icon);
+}
+
+void
+nm_menu_network_update (NMMenuNetwork *menu_network,
+			NetworkDevice *network,
+			gint           n_devices)
+{
+  char *text;
+  const char *network_name;
+  gint n_essids;
+
+  menu_network->type = network->type;
+  n_essids = g_slist_length (network->networks);
+  network_name = network->hal_name ? network->hal_name : network->nm_name;
+
+  switch (menu_network->type)
+    {
+    case DEVICE_TYPE_WIRED_ETHERNET:
+      if (n_devices > 1)
+	text = g_strdup_printf (_("Wired Network (%s)"), network_name);
+      else
+	text = g_strdup (_("Wired Network"));
+      break;
+    case DEVICE_TYPE_WIRELESS_ETHERNET:
+      if (n_devices > 1)
+	text = g_strdup_printf (ngettext ("Wireless Network (%s)", "Wireless Networks (%s)", n_essids), network_name);
+      else
+	text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
+      break;
+    default:
+      g_assert_not_reached ();
+      break;
+    }
+  gtk_label_set_text (GTK_LABEL (menu_network->label), text);
+  g_free (text);
+  nm_menu_network_update_image (menu_network);
+
+  if (menu_network->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+    gtk_widget_set_sensitive (GTK_WIDGET (menu_network), FALSE);
+  else
+    gtk_widget_set_sensitive (GTK_WIDGET (menu_network), TRUE);
+}
+
+/* NMMenuWireless items*/
 G_DEFINE_TYPE (NMMenuWireless, nm_menu_wireless, GTK_TYPE_CHECK_MENU_ITEM);
 
 static void
@@ -94,19 +238,9 @@ nm_menu_wireless_update (NMMenuWireless  *menu_info,
   char *display_essid;
 
   display_essid = nm_menu_wireless_escape_essid_for_display (network->essid);
-  if (network->active)
-    {
-      char *markup_essid;
-      markup_essid = g_markup_printf_escaped ("<b>%s</b>", display_essid);
-      gtk_label_set_markup (GTK_LABEL (menu_info->label), markup_essid);
-      g_free (markup_essid);
-    }
-  else
-    {
-      gtk_label_set_text (GTK_LABEL (menu_info->label), display_essid);
-    }
-
+  gtk_label_set_text (GTK_LABEL (menu_info->label), display_essid);
   g_free (display_essid);
+
   g_object_set (G_OBJECT (menu_info->progress_bar),
 		"value", CLAMP ((int) network->strength, 0, 100),
 		NULL);

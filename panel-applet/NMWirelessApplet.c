@@ -566,46 +566,44 @@ static void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  * Add a network device to the menu
  *
  */
-static void nmwa_menu_add_device_item (GtkWidget *menu, GdkPixbuf *icon, char *name, char *nm_device, gboolean current, NMWirelessApplet *applet)
+static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, gboolean current, gboolean multiple_devices, NMWirelessApplet *applet)
 {
 	GtkWidget		*menu_item;
-	GtkWidget		*label;
-	GtkWidget		*hbox;
-	GtkWidget		*image;
 
 	g_return_if_fail (menu != NULL);
-	g_return_if_fail (icon != NULL);
-	g_return_if_fail (name != NULL);
-	g_return_if_fail (nm_device != NULL);
 
-	menu_item = gtk_check_menu_item_new ();
-	hbox = gtk_hbox_new (FALSE, 2);
-	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
-	gtk_widget_show (hbox);
+	menu_item = nm_menu_network_new (applet->image_size_group);
+	nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, multiple_devices);
 
-	if ((image = gtk_image_new_from_pixbuf (icon)))
-	{
-		gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
-		gtk_widget_show (image);
-		gtk_size_group_add_widget (applet->image_size_group, image);
-	}
-
-	label = gtk_label_new (name);
-	if (current)
-	{
-		char *markup = g_markup_printf_escaped ("<span weight=\"bold\">%s</span>", name);
-		gtk_label_set_markup (GTK_LABEL (label), markup);
-		g_free (markup);
-	}
-	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
-	gtk_widget_show (label);
-
-	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (nm_device));
+	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
 	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_show (menu_item);
+}
+
+static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NetworkDevice *device, NMWirelessApplet *applet)
+{
+	GtkWidget *menu_item;
+	GtkWidget *spacer;
+	GtkWidget *hbox;
+	GtkWidget *label;
+
+	menu_item = gtk_menu_item_new ();
+	hbox = gtk_hbox_new (FALSE, 2);
+	spacer = gtk_frame_new (NULL);
+	gtk_size_group_add_widget (applet->image_size_group, spacer);
+	gtk_frame_set_shadow_type (GTK_FRAME (spacer), GTK_SHADOW_NONE);
+	gtk_box_pack_start (GTK_BOX (hbox), spacer, FALSE, FALSE, 0);
+	label = gtk_label_new (_("Other Wireless Network..."));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); 
+	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
+
+	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
+	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
+	gtk_widget_set_sensitive (menu_item, FALSE); // FIXME: make this work.
+	gtk_widget_show_all (menu_item);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 }
 
 
@@ -625,23 +623,11 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	if (dev->type != DEVICE_TYPE_WIRELESS_ETHERNET)
 		return;
 
-	if (dev->networks == NULL)
-	{
-		nmwa_menu_add_text_item (menu, _("There are no wireless networks..."));
-		return;
-	}
-
 	/* Check for any security */
 	for (list = dev->networks; list; list = list->next)
 	{
 		WirelessNetwork *network = list->data;
 
-		if (FALSE && !has_encrypted)//BADHACKTOTEST
-		{ // REMOVE!
-			network->encrypted = TRUE; // REMOVE!
-			network->active = TRUE; // REMOVE!
-		} // REMOVE!
-			
 		if (network->encrypted)
 			has_encrypted = TRUE;
 	}
@@ -665,6 +651,9 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 
 		gtk_widget_show (menu_item);
 	}
+
+	/* Add the 'Select a custom esssid entry */
+	nmwa_menu_add_custom_essid_item (menu, dev, applet);
 }
 
 
@@ -675,37 +664,59 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	GSList	*element;
+	gint n_wireless_interfaces = 0;
+	gint n_wired_interfaces = 0;
 
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
 	g_mutex_lock (applet->data_mutex);
-	element = applet->devices;
-	if (!element)
-		nmwa_menu_add_text_item (menu, _("There are no network devices..."));
-	else
+
+	if (! applet->devices)
 	{
-		/* Add all devices in our device list to the menu */
-		while (element)
+		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
+		return;
+	}
+
+	for (element = applet->devices; element; element = element->next)
+	{
+		NetworkDevice *dev = (NetworkDevice *)(element->data);
+
+		g_assert (dev);
+
+		switch (dev->type)
 		{
-			NetworkDevice *dev = (NetworkDevice *)(element->data);
-
-			if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
-			{
-				GdkPixbuf	*icon = (dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? applet->wired_icon : applet->wireless_icon;
-				char		*name_string;
-				gboolean	 current = (dev == applet->active_device);
-
-				name_string = g_strdup_printf ("%s (%s)", (dev->hal_name ? dev->hal_name : dev->nm_name),
-						(dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? "wired" : "wireless");
-				nmwa_menu_add_device_item (menu, icon, name_string, dev->nm_device, current, applet);
-				g_free (name_string);
-				nmwa_menu_device_add_networks (menu, dev, applet);
-				nmwa_menu_add_separator_item (menu);	
-			}
-			element = g_slist_next (element);
+		case DEVICE_TYPE_WIRELESS_ETHERNET:
+			n_wireless_interfaces++;
+			break;
+		case DEVICE_TYPE_WIRED_ETHERNET:
+			n_wired_interfaces++;
+			break;
+		default:
+			break;
 		}
 	}
+
+	/* Add all devices in our device list to the menu */
+	for (element = applet->devices; element; element = element->next)
+	{
+		NetworkDevice *dev = (NetworkDevice *)(element->data);
+
+		if (dev && ((dev->type == DEVICE_TYPE_WIRED_ETHERNET) || (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)))
+		{
+			gboolean	 current = (dev == applet->active_device);
+			gboolean multiple_devices;
+
+			if (dev->type == DEVICE_TYPE_WIRED_ETHERNET)
+				multiple_devices = (n_wired_interfaces > 1);
+			else if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+				multiple_devices = (n_wireless_interfaces > 1);
+
+			nmwa_menu_add_device_item (menu, dev, current, multiple_devices, applet);
+			nmwa_menu_device_add_networks (menu, dev, applet);
+		}
+	}
+
 	g_mutex_unlock (applet->data_mutex);
 }
 
@@ -774,9 +785,7 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 		return NULL;
 	}
 
-	nmwa_menu_add_text_item (menu, _("Network Connections"));
 	nmwa_menu_add_devices (menu, applet);
-	nmwa_menu_add_text_item (menu, _("Other Wireless Network..."));
 
 	return (menu);
 }
@@ -992,6 +1001,14 @@ setup_stock (void)
 	ifactory = gtk_icon_factory_new ();
 	iset = gtk_icon_set_new ();
 	isource = gtk_icon_source_new ();
+
+	/* Set up custom stock images.  We a bunch of icons. */
+	/* All but gnome-lockscreen are icons we install. */
+	gtk_icon_source_set_icon_name (isource, "nm-");
+	gtk_icon_set_add_source (iset, isource);
+	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);
+	gtk_icon_factory_add_default (ifactory);
+
 	gtk_icon_source_set_icon_name (isource, "gnome-lockscreen");
 	gtk_icon_set_add_source (iset, isource);
 	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);

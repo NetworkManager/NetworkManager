@@ -141,6 +141,7 @@ src/Makefile
 dispatcher-daemon/Makefile
 info-daemon/Makefile
 panel-applet/Makefile
+panel-applet/icons/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile

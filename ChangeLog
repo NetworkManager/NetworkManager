@@ -1,3 +1,17 @@
+Tue Sep 21 18:05:34 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* configure.in: Add graphics
+
+	* panel-applet/Makefile.am: Add graphics
+
+	* panel-applet/icons/*: Add graphics
+
+	* panel-applet/NMWirelessApplet.c: Use new menu times to display
+	the icons fully lined up.
+
+	* panel-applet/menu-info.c: 
+	* panel-applet/menu-info.h: Add another menu type.
+
 Fri Sep 17 14:04:34 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c: Redo the menu item code.
