@@ -58,7 +58,7 @@
 #define DHCP_RELEASE	7
 #define DHCP_INFORM		8
 /* DHCP RETRANSMISSION TIMEOUT (seconds) */
-#define DHCP_INITIAL_RTO	(4)
+#define DHCP_INITIAL_RTO	(5)
 #define DHCP_MAX_RTO	(64)
 #define DHCP_OPTIONS_LENGTH	312
 

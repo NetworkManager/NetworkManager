@@ -151,7 +151,7 @@ dhcp_interface *dhcp_interface_init (const char *if_name, dhcp_client_options *i
 		memset (&addr, 0, sizeof (addr));
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons (DHCP_CLIENT_PORT);
-		if ( bind (iface->sk, (struct sockaddr *)&addr, sizeof(addr)) != 0 )
+		if (bind (iface->sk, (struct sockaddr *)&addr, sizeof(addr)) != 0)
 			syslog (LOG_ERR,"dhcp_interface_init: bind: %m\n");
 
 		if (ioctl (iface->sk, SIOCGIFHWADDR, &ifr))

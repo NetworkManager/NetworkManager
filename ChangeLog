@@ -1,3 +1,12 @@
+2004-12-06  Dan Williams  <dcbw@redhat.com>
+
+	* dhcpcd/client.c
+		- Fix some minor errors in dhcp_handle_transaction() that caused
+			unexpected early timeouts of DHCP transactions
+
+	* dhcpcd/client.h
+		- DHCP retransmit time from 4s -> 5s
+
 2004-12-05  Dan Williams  <dcbw@redhat.com>
 
 	* Major rework of the DHCP code, taking some cues from pump.  We don't

@@ -437,7 +437,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 	char				*pkt_recv = NULL;
 	int				recv_sk = -1;
 	struct sockaddr_in	addr;
-	int				tries = -1;
+	int				tries = 0;
 	int				dhcp_send_len, err = RET_DHCP_TIMEOUT;
 	dhcpMessage		*dhcp_send = NULL;
 	struct timeval		recv_timeout, overall_end, diff, current;
@@ -487,6 +487,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		char				 ethPacket[ETH_FRAME_LEN];
 		int				 len;
 
+		if (iface->cease)
+			goto out;
+
 		/* Send the DHCP request */
 		syslog (LOG_INFO, "DHCP: Sending request packet...");
 		do
@@ -518,13 +521,13 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		tries++;
 		gettimeofday (&recv_timeout, NULL);
 		recv_timeout.tv_sec += (tries * DHCP_INITIAL_RTO);
-		recv_timeout.tv_sec += (random () % 200000);
+		recv_timeout.tv_usec += (random () % 200000);
 		if (timeval_subtract (&diff, &overall_end, &recv_timeout) != 0)
 			memcpy (&recv_timeout, &overall_end, sizeof (struct timeval));
 
 		/* Wait for some kind of data to appear on the socket */
 		syslog (LOG_INFO, "DHCP: Waiting for reply...");
-		if ((err = peekfd (iface, recv_sk, &recv_timeout) != RET_DHCP_SUCCESS))
+		if ((err = peekfd (iface, recv_sk, &recv_timeout)) != RET_DHCP_SUCCESS)
 		{
 			if (err == RET_DHCP_TIMEOUT)
 				continue;
