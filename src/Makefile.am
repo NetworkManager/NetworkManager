@@ -13,6 +13,8 @@ bin_PROGRAMS = NetworkManager
 NetworkManager_SOURCES =				\
 		NetworkManagerAP.c			\
 		NetworkManagerAP.h			\
+		NetworkManagerAPList.c		\
+		NetworkManagerAPList.h		\
 		NetworkManagerDbus.c		\
 		NetworkManagerDbus.h		\
 		NetworkManagerDevice.c		\

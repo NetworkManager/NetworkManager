@@ -1,5 +1,4 @@
-/* NetworkManagerInfo -- Manage allowed access points and provide a UI
- *                         for WEP key entry
+/* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -20,19 +19,18 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_INFO_DBUS_SERVICE_H
-#define NETWORK_MANAGER_INFO_DBUS_SERVICE_H
+#ifndef NETWORK_MANAGER_AP_LIST_H
+#define NETWORK_MANAGER_AP_LIST_H
 
 #include <glib.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib.h>
-#include "NetworkManagerInfo.h"
+#include "NetworkManager.h"
 
-int		nmi_dbus_service_init				(DBusConnection *dbus_connection, NMIAppInfo *info);
+NMAccessPoint *nm_ap_list_get_ap_by_essid 	(NMData *data, const char *network);
 
-void 	nmi_dbus_return_user_key				(DBusConnection *connection, const char *device,
-										 const char *network, const char *passphrase);
+void			nm_ap_list_update_network	(NMData *data, const char *network);
 
-void		nmi_dbus_signal_update_allowed_network 	(DBusConnection *connection, const char *network);
+void			nm_ap_list_populate			(NMData *data);
+
+void			nm_ap_list_free			(GSList *ap_list);
 
 #endif

@@ -637,9 +637,10 @@ guint32 nm_device_get_ip4_address(NMDevice *dev)
 
 void nm_device_update_ip4_address (NMDevice *dev)
 {
-	guint32		 new_address;
-	struct ifreq	 req;
-	int			 socket;
+	guint32		new_address;
+	struct ifreq	req;
+	int			socket;
+	int			err;
 	
 	g_return_if_fail (dev  != NULL);
 	g_return_if_fail (dev->app_data != NULL);
@@ -650,7 +651,9 @@ void nm_device_update_ip4_address (NMDevice *dev)
 		return;
 	
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), 16);	// 16 == IF_NAMESIZE
-	if (ioctl (socket, SIOCGIFADDR, &req) != 0)
+	err = ioctl (socket, SIOCGIFADDR, &req);
+	close (socket);
+	if (err != 0)
 		return;
 
 	new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;

@@ -21,6 +21,7 @@
  */
 
 #include <glib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <errno.h>
@@ -221,8 +222,38 @@ static void nmi_interface_init (NMIAppInfo *info)
 void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
 {
 	NMIAppInfo	*info = (NMIAppInfo *)user_data;
+	const char	*key = NULL;
 
+	g_return_if_fail (client != NULL);
+	g_return_if_fail (entry != NULL);
 	g_return_if_fail (info != NULL);
+
+	key = gconf_entry_get_key (entry);
+	if (key)
+	{
+		static int	gconf_path_len = 0;
+
+		if (!gconf_path_len)
+			gconf_path_len = strlen (NMI_GCONF_ALLOWED_NETWORKS_PATH) + 1;
+
+		/* Extract the network name from the key */
+		if (strncmp (	NMI_GCONF_ALLOWED_NETWORKS_PATH
+					"/",
+					key, gconf_path_len) == 0)
+		{
+			char 	*network = g_strdup ((key + gconf_path_len));
+			char		*slash_pos;
+
+			/* If its a key under the network name, zero out the slash so we
+			 * are left with only the network name.
+			 */
+			if ((slash_pos = strchr (network, '/')))
+				*slash_pos = '\0';
+
+			nmi_dbus_signal_update_allowed_network (info->connection, network);
+			g_free (network);
+		}
+	}
 }
 
 

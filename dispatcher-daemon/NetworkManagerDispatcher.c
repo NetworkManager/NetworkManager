@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <getopt.h>
 #include <errno.h>

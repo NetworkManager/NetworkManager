@@ -1,5 +1,49 @@
 2004-07-27  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerAPList.[ch]
+	  src/Makefile.am
+		- Add.  Deal with allowed network list additions, deletions, and updates
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Add missing <dbus/dbus.h> header
+
+	* info-daemon/NetworkManagerInfo.[ch]
+		- Add missing <dbus/dbus.h> header
+		- Implement the GConf notify callback to signal NetworkManager of an allowed
+			network change
+		- Better error checking
+
+	* info-daemon/NetworkManagerInfoDbus.[ch]
+		- Add missing <dbus/dbus.h> header
+		- Convert to using dbus_message_append_args/dbus_message_get_args
+		- Implement nmi_dbus_signal_update_allowed_network() to signal NetworkManager
+			that an allowed network changed.  We don't want to signal on individual
+			keys _inside_ an allowed network really, just want NM to query the info
+			daemon for updated info on all keys.
+		- Better error checking
+
+	* src/NetworkManager.[ch]
+		- Add missing <dbus/dbus.h> header
+		- Move allowed_ap_list free functions to NetworkManagerAPList.[ch]
+		- Zero out NMData structure on free
+		- No longer use a thread for allowed_ap_list updating, instead its now done
+			through dbus queries against NetworkManagerInfo
+		- Populate allowed_ap_list initially before adding existing network devices
+			to the device list, so wireless devices can get their "best" AP
+
+	* src/NetworkManagerDbus.[ch]
+		- Convert to using dbus_message_append_args/dbus_message_get_args
+		- Better error checking
+		- Implement Allowed Network info functions to request allowed network
+			info from NetworkManagerInfo
+		- Implement the filter function to process signals from NetworkManagerInfo
+			about changing allowed networks
+
+	* src/NetworkManagerDevice.c
+		- Fix file descriptor leak in nm_device_update_ip4_address()
+
+2004-07-27  Dan Williams <dcbw@redhat.com>
+
 	* .cvsignore
 	  src/.cvsignore
 	  test/.cvsignore

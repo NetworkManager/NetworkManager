@@ -52,6 +52,7 @@ gboolean nm_wireless_is_most_prefered_ap (NMData *data, NMAccessPoint *ap, int *
 	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
 	{
 		element = data->allowed_ap_list;
+
 		while (element)
 		{
 			NMAccessPoint	*allowed_ap = (NMAccessPoint *)(element->data);

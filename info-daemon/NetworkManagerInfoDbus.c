@@ -21,6 +21,7 @@
  */
 
 #include <glib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,30 +66,21 @@ static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message, const c
  */
 static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message)
 {
-	DBusMessageIter	 iter;
-	char				*dbus_string;
+	DBusError			 error;
 	char				*device = NULL;
 	char				*network = NULL;
 
-	dbus_message_iter_init (message, &iter);
-	/* Grab device */
-	dbus_string = dbus_message_iter_get_string (&iter);
-	device = (dbus_string == NULL ? NULL : strdup (dbus_string));		
-	dbus_free (dbus_string);
-
-	/* Grab network to get key for */
-	if (dbus_message_iter_next (&iter))
+	dbus_error_init (&error);
+	if (dbus_message_get_args (message, &error,
+							DBUS_TYPE_STRING, &device,
+							DBUS_TYPE_STRING, &network,
+							DBUS_TYPE_INVALID))
 	{
-		dbus_string = dbus_message_iter_get_string (&iter);
-		network = (dbus_string == NULL ? NULL : strdup (dbus_string));		
-		dbus_free (dbus_string);
-	}
-
-	if (device && network)
 		nmi_show_user_key_dialog (device, network, info);
 
-	g_free (device);
-	g_free (network);
+		dbus_free (device);
+		dbus_free (network);
+	}
 }
 
 
@@ -102,7 +94,6 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 						const char *network, const char *passphrase)
 {
 	DBusMessage	*message;
-	DBusMessageIter iter;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (device != NULL);
@@ -120,16 +111,48 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	}
 
 	/* Add network name and passphrase */
-	dbus_message_iter_init (message, &iter);
-	dbus_message_iter_append_string (&iter, device);
-	dbus_message_iter_append_string (&iter, network);
-	dbus_message_iter_append_string (&iter, passphrase);
-
-	if (!dbus_connection_send (connection, message, NULL))
+	if (dbus_message_append_args (message, DBUS_TYPE_STRING, device,
+								DBUS_TYPE_STRING, network,
+								DBUS_TYPE_STRING, passphrase,
+								DBUS_TYPE_INVALID))
 	{
-		fprintf (stderr, "nmi_dbus_return_user_key(): dbus could not send the message\n");
+		if (!dbus_connection_send (connection, message, NULL))
+			fprintf (stderr, "nmi_dbus_return_user_key(): dbus could not send the message\n");
+	}
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nmi_dbus_signal_update_allowed_network
+ *
+ * Signal NetworkManager that it needs to update info associated with a particular
+ * allowed network.
+ *
+ */
+void nmi_dbus_signal_update_allowed_network (DBusConnection *connection, const char *network)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (network != NULL);
+
+fprintf( stderr, "nmi_dbus_signal_update_allowed_network() signaling update for '%s'\n", network);
+
+	message = dbus_message_new_signal ("/org/freedesktop/NetworkManagerInfo", "org.freedesktop.NetworkManagerInfo",
+									"AllowedNetworkUpdate");
+	if (!message)
+	{
+		fprintf (stderr, "nmi_dbus_signal_update_allowed_network(): Not enough memory for new dbus message!\n");
 		return;
 	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (connection, message, NULL))
+		fprintf (stderr, "nmi_dbus_signal_update_allowed_network(): Could not raise the AllowedNetworkUpdate signal!\n");
+
+	dbus_message_unref (message);
 }
 
 
@@ -147,12 +170,12 @@ static DBusMessage *nmi_dbus_get_allowed_networks (NMIAppInfo *info, DBusMessage
 	DBusMessage		*reply_message = NULL;
 	DBusMessageIter	 iter;
 	DBusMessageIter	 iter_array;
-	gchar			*path = NULL;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
 
 	/* List all allowed access points that gconf knows about */
-	path = g_strdup_printf ("%s/allowed_networks", NMI_GCONF_WIRELESS_NETWORKING_PATH);
-	element = dir_list = gconf_client_all_dirs (info->gconf_client, path, NULL);
-	g_free (path);
+	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_ALLOWED_NETWORKS_PATH, NULL);
 
 	reply_message = dbus_message_new_method_return (message);
 	dbus_message_iter_init (reply_message, &iter);
@@ -208,11 +231,13 @@ static DBusMessage *nmi_dbus_get_allowed_network_prio (NMIAppInfo *info, DBusMes
 	gchar			*key = NULL;
 	char				*network = NULL;
 	GConfValue		*value;
-	DBusMessageIter	 iter;
+	DBusError			 error;
 
-	dbus_message_iter_init (message, &iter);
-	network = dbus_message_iter_get_string (&iter);
-	if (!network)
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkPriority called with invalid network.");
@@ -220,15 +245,14 @@ static DBusMessage *nmi_dbus_get_allowed_network_prio (NMIAppInfo *info, DBusMes
 	}
 
 	/* List all allowed access points that gconf knows about */
-	key = g_strdup_printf ("%s/allowed_networks/%s/priority", NMI_GCONF_WIRELESS_NETWORKING_PATH, network);
+	key = g_strdup_printf ("%s/%s/priority", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
 	if (value)
 	{
 		reply_message = dbus_message_new_method_return (message);
-		dbus_message_iter_init (reply_message, &iter);
-		dbus_message_iter_append_uint32 (&iter, gconf_value_get_int (value));
+		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, gconf_value_get_int (value), DBUS_TYPE_INVALID);
 		gconf_value_free (value);
 	}
 	else
@@ -237,6 +261,7 @@ static DBusMessage *nmi_dbus_get_allowed_network_prio (NMIAppInfo *info, DBusMes
 							"NetworkManagerInfo::getAllowedNetworkPriority could not access data for network '%s'", network);
 	}
 
+	dbus_free (network);
 	return (reply_message);
 }
 
@@ -254,11 +279,13 @@ static DBusMessage *nmi_dbus_get_allowed_network_essid (NMIAppInfo *info, DBusMe
 	gchar			*key = NULL;
 	char				*network = NULL;
 	GConfValue		*value;
-	DBusMessageIter	 iter;
+	DBusError			 error;
 
-	dbus_message_iter_init (message, &iter);
-	network = dbus_message_iter_get_string (&iter);
-	if (!network)
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkEssid called with invalid network.");
@@ -266,15 +293,14 @@ static DBusMessage *nmi_dbus_get_allowed_network_essid (NMIAppInfo *info, DBusMe
 	}
 
 	/* List all allowed access points that gconf knows about */
-	key = g_strdup_printf ("%s/allowed_networks/%s/essid", NMI_GCONF_WIRELESS_NETWORKING_PATH, network);
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
 	if (value)
 	{
 		reply_message = dbus_message_new_method_return (message);
-		dbus_message_iter_init (reply_message, &iter);
-		dbus_message_iter_append_string (&iter, gconf_value_get_string (value));
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (value), DBUS_TYPE_INVALID);
 		gconf_value_free (value);
 	}
 	else
@@ -283,6 +309,7 @@ static DBusMessage *nmi_dbus_get_allowed_network_essid (NMIAppInfo *info, DBusMe
 							"NetworkManagerInfo::getAllowedNetworkEssid could not access data for network '%s'", network);
 	}
 
+	dbus_free (network);
 	return (reply_message);
 }
 
@@ -300,11 +327,13 @@ static DBusMessage *nmi_dbus_get_allowed_network_key (NMIAppInfo *info, DBusMess
 	gchar			*key = NULL;
 	char				*network = NULL;
 	GConfValue		*value;
-	DBusMessageIter	 iter;
+	DBusError			 error;
 
-	dbus_message_iter_init (message, &iter);
-	network = dbus_message_iter_get_string (&iter);
-	if (!network)
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidNetwork",
 							"NetworkManagerInfo::getAllowedNetworkKey called with invalid network.");
@@ -312,21 +341,19 @@ static DBusMessage *nmi_dbus_get_allowed_network_key (NMIAppInfo *info, DBusMess
 	}
 
 	/* List all allowed access points that gconf knows about */
-	key = g_strdup_printf ("%s/allowed_networks/%s/key", NMI_GCONF_WIRELESS_NETWORKING_PATH, network);
+	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
 	value = gconf_client_get (info->gconf_client, key, NULL);
 	g_free (key);
 
-	/* In the case of the key, we don't error out if no key was found in gconf */
+	/* We don't error out if no key was found in gconf, we return blank key */
 	reply_message = dbus_message_new_method_return (message);
-	dbus_message_iter_init (reply_message, &iter);
-
 	if (value)
 	{
-		dbus_message_iter_append_string (&iter, gconf_value_get_string (value));
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (value), DBUS_TYPE_INVALID);
 		gconf_value_free (value);
 	}
 	else
-		dbus_message_iter_append_string (&iter, "");
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INVALID);
 
 	return (reply_message);
 }

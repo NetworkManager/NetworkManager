@@ -24,6 +24,7 @@
 
 #include <glib.h>
 #include <glib/gthread.h>
+#include <dbus/dbus.h>
 #include <hal/libhal.h>
 #include "NetworkManagerAP.h"
 

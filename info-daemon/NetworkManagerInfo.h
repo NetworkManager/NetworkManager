@@ -26,6 +26,7 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <glib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <gconf/gconf-client.h>
 
@@ -39,6 +40,7 @@ typedef struct NMIAppInfo NMIAppInfo;
 
 
 #define	NMI_GCONF_WIRELESS_NETWORKING_PATH		"/system/networking/wireless"
+#define	NMI_GCONF_ALLOWED_NETWORKS_PATH		"/system/networking/wireless/allowed_networks"
 
 
 void			nmi_show_user_key_dialog		(const char *device, const char *network, NMIAppInfo *info);

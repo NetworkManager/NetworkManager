@@ -23,6 +23,7 @@
 #define NETWORK_MANAGER_DBUS_H
 
 #include <glib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 
 
@@ -43,5 +44,13 @@ void				nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMD
 void				nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, DBusPendingCall **pending);
 
 void				nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
+
+char *			nm_dbus_get_allowed_network_essid		(DBusConnection *connection, const char *network);
+
+char *			nm_dbus_get_allowed_network_key		(DBusConnection *connection, const char *network);
+
+guint			nm_dbus_get_allowed_network_priority	(DBusConnection *connection, const char *network);
+
+char **			nm_dbus_get_allowed_networks			(DBusConnection *connection, int *num_networks);
 
 #endif
