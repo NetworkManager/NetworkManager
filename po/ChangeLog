@@ -1,3 +1,7 @@
+Mon Sep 20 11:22:16 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* POTFILES.in: add panel-applet/menu-info.c
+
 2004-09-15  Laurent Dhima  <laurenti@alblinux.net>
 
 	* sq.po: Updated Albanian translation.
