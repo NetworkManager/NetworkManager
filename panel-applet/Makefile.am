@@ -35,7 +35,7 @@ serverdir          = $(libdir)/bonobo/servers
 server_in_files    = NMWirelessApplet.server.in
 server_DATA        = $(server_in_files:.server.in=.server)
 
-$(server_in_files:.server.in=.server): $(server_in_files)
+$(server_in_files:.server.in=.server): $(srcdir)/$(server_in_files)
 	sed -e "s|\@LIBEXECDIR\@|$(libexecdir)|" $< > $@
 
 uidir = $(datadir)/gnome-2.0/ui

@@ -1,5 +1,11 @@
 2004-08-13  Dan Williams <dcbw@redhat.com>
 
+	* configure.in
+	  panel-applet/Makefile.am
+		- Fixes to allow distcheck to pass
+
+2004-08-13  Dan Williams <dcbw@redhat.com>
+
 	* CONTRIBUTING
 		- Add
 
