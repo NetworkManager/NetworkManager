@@ -1,0 +1,300 @@
+# translation of el.po to 
+# translation of NetworkManager.HEAD.po to 
+# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# Nikos Charonitakis <charosn@her.forthnet.gr>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: el\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-02-12 15:06+0200\n"
+"PO-Revision-Date: 2005-02-12 14:59+0200\n"
+"Last-Translator: Nikos Charonitakis <charosn@her.forthnet.gr>\n"
+"Language-Team:  <team@gnome.gr>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.9.1\n"
+
+#: info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Ασύρματα Δίκτυα:</span>"
+
+#: info-daemon/networks.glade.h:2
+#, fuzzy
+msgid "Modify Wireless Networks"
+msgstr "Ασύρματη"
+
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
+
+#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
+#, fuzzy
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr "Πλήκτρο Πλήκτρο"
+
+#: info-daemon/passphrase.glade.h:6
+#, fuzzy, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\"> από Ασύρματη Δίκτυο</span> ο είναι."
+
+#: info-daemon/passphrase.glade.h:9 panel-applet/essid.glade.h:7
+#, fuzzy
+msgid "Key Type:"
+msgstr ""
+"Πλήκτρο #-#-#-#-#  evolution.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  file-roller.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  gnome-control-center.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  gnome-system-tools.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  gnome-utils.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  nautilus.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  nautilus-media.HEAD.el.po (el)  #-#-#-#-#\n"
+"Τύπος\n"
+"#-#-#-#-#  procman.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Είδος:"
+
+#: info-daemon/passphrase.glade.h:10
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
+#: panel-applet/essid.glade.h:8
+msgid "Passphrase:"
+msgstr ""
+
+#: info-daemon/passphrase.glade.h:11
+#, fuzzy
+msgid "Wireless Network Key Required"
+msgstr "Ασύρματη Δίκτυο Πλήκτρο"
+
+#: info-daemon/passphrase.glade.h:12
+msgid "_Login to Network"
+msgstr "_Είσοδος στο Δίκτυο"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
+msgid "Ascii Key:"
+msgstr "Πλήκτρο Ascii:"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
+msgid "Hex Key:"
+msgstr "Πλήκτρο Hex:"
+
+#: info-daemon/NetworkManagerInfoVPN.c:157
+#, fuzzy, c-format
+msgid "You must log in to access the private network %s"
+msgstr "Εσύ in"
+
+#: panel-applet/NMWirelessApplet.c:140 panel-applet/NMWirelessApplet.c:158
+msgid "NetworkManager Applet"
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:142
+#, fuzzy
+msgid "(C) 2004-2005 Red Hat, Inc."
+msgstr "C Κόκκινο."
+
+#: panel-applet/NMWirelessApplet.c:143 panel-applet/NMWirelessApplet.c:161
+#, fuzzy
+msgid "A panel application for managing your network devices & connections."
+msgstr "A ταμπλώ εφαρμογή για."
+
+#: panel-applet/NMWirelessApplet.c:160
+#, fuzzy
+msgid "(C) 2004-2005 by Red Hat, Inc."
+msgstr "C από Κόκκινο."
+
+#: panel-applet/NMWirelessApplet.c:377
+#, fuzzy
+msgid "No network connection"
+msgstr "Όχι"
+
+#: panel-applet/NMWirelessApplet.c:382
+msgid "Wired network connection"
+msgstr "Ενσύρματη σύνδεση δικτύου"
+
+#: panel-applet/NMWirelessApplet.c:387
+#, fuzzy
+msgid "Connecting to a wired network..."
+msgstr "a."
+
+#: panel-applet/NMWirelessApplet.c:396
+#, fuzzy
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Συνδεδεμένο"
+
+#: panel-applet/NMWirelessApplet.c:410
+#, fuzzy, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Ασύρματη"
+
+#: panel-applet/NMWirelessApplet.c:415
+msgid "Wireless network connection"
+msgstr "Ασύρματη σύνδεση δικτύου"
+
+#: panel-applet/NMWirelessApplet.c:420
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:426
+#, fuzzy
+msgid "NetworkManager is not running"
+msgstr "είναι not"
+
+#: panel-applet/NMWirelessApplet.c:431
+#, fuzzy
+msgid "Scanning for wireless networks..."
+msgstr "για."
+
+#: panel-applet/NMWirelessApplet.c:754
+#, fuzzy
+msgid "Other Wireless Networks..."
+msgstr ""
+"#-#-#-#-#  eog.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Άλλο\n"
+"#-#-#-#-#  evolution.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Άλλο\n"
+"#-#-#-#-#  ggv.HEAD.el.po (el)  #-#-#-#-#\n"
+"Άλλα\n"
+"#-#-#-#-#  gnome-desktop.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Άλλο\n"
+"#-#-#-#-#  gnome-media.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Άλλο\n"
+"#-#-#-#-#  libgnomeprintui.gnome-2-8.el.po (el)  #-#-#-#-#\n"
+"Άλλο Ασύρματη."
+
+#: panel-applet/NMWirelessApplet.c:775
+msgid "Create new Wireless Network..."
+msgstr "Δημιουργία νέου Ασύρματου Δικτύου..."
+
+#: panel-applet/NMWirelessApplet.c:885
+msgid "No network devices have been found"
+msgstr "Δε βρέθηκαν συσκευές δικτύου"
+
+#: panel-applet/NMWirelessApplet.c:1003
+#, fuzzy
+msgid "NetworkManager is not running..."
+msgstr "είναι not."
+
+#: panel-applet/NMWirelessApplet.c:1047 panel-applet/NMWirelessApplet.c:1096
+#, fuzzy
+msgid "Pause Wireless Scanning"
+msgstr "Παύση Ασύρματη"
+
+#: panel-applet/NMWirelessApplet.c:1052
+#, fuzzy
+msgid "Resume Wireless Scanning"
+msgstr "Ασύρματη"
+
+#: panel-applet/NMWirelessApplet.c:1062 panel-applet/NMWirelessApplet.c:1102
+msgid "Stop All Wireless Devices"
+msgstr "Διακοπή Όλων Των Ασύρματων Συσκευών"
+
+#: panel-applet/NMWirelessApplet.c:1067
+msgid "Start All Wireless Devices"
+msgstr "Έναρξη Όλων των Ασύρματων Συσκευών"
+
+#: panel-applet/NMWirelessApplet.c:1112
+msgid "Help"
+msgstr "Βοήθεια"
+
+#: panel-applet/NMWirelessApplet.c:1119
+msgid "About"
+msgstr "Περί"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
+msgid "Create new wireless network"
+msgstr "Δημιουργία νέου ασύρματου Δικτύου"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+#, fuzzy
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr "Enter και από."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
+msgid "Custom wireless network"
+msgstr "Προσαρμοσμένο ασύρματο δίκτυο"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
+#, fuzzy
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Enter από."
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+#, fuzzy
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr "not εύρεση not."
+
+#: panel-applet/essid.glade.h:5
+msgid "C_onnect"
+msgstr "Σύν_δεση"
+
+#: panel-applet/essid.glade.h:6
+msgid "Connect with encryption enabled"
+msgstr "Σύνδεση με κρυπτογράφηση"
+
+#: panel-applet/essid.glade.h:9
+msgid "Wireless _Adaptor:"
+msgstr "Ασύρματος _Προσαρμογέας"
+
+#: panel-applet/essid.glade.h:10
+msgid "Wireless _Network:"
+msgstr "Ασύρματο _Δίκτυο:"
+
+#: panel-applet/menu-info.c:109
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Ενσύρματο Δίκτυο (%s)"
+
+#: panel-applet/menu-info.c:111
+msgid "Wired Network"
+msgstr "Ενσύρματο Δίκτυο"
+
+#: panel-applet/menu-info.c:181
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Ασύρματο Δίκτυο (%s)"
+msgstr[1] "Ασύρματα Δίκτυα (%s)"
+
+#: panel-applet/menu-info.c:183
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Ασύρματο Δίκτυο"
+msgstr[1] "Ασύρματα Δίκτυα"
+
+#: panel-applet/menu-info.c:320
+msgid " (invalid Unicode)"
+msgstr " (μη έγκυρο Unicode)"
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Προσανατολισμός"
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "Ο προσανατολισμός του συρταριού."
