@@ -1,3 +1,11 @@
+2005-01-24  Dan Williams  <dcbw@redhat.com>
+
+	* panel-applet/gtkcellview.[ch]
+		- Only compile these files for GTK 2.4 or lower, since 
+			GtkCellView is now public in GTK 2.6.  Fixes crasher
+			when choosing "Other Wireless Networks" from the panel
+			applet menu
+
 2005-01-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c

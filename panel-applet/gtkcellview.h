@@ -17,6 +17,14 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/* GtkCellView is public in GTK 2.6, but not in GTK 2.4.  We can't include
+ * this private copy of GtkCellView when using GTK 2.6 due to link-time errors.
+ */
+
+#include <gtk/gtkversion.h>
+
+#if (GTK_MAJOR_VERSION < 2 && GTK_MINOR_VERSION < 6)
+
 #ifndef __GTK_CELL_VIEW_H__
 #define __GTK_CELL_VIEW_H__
 
@@ -82,3 +90,6 @@ GList            *gtk_cell_view_get_cell_renderers      (GtkCellView     *cellvi
 G_END_DECLS
 
 #endif /* __GTK_CELL_VIEW_H__ */
+
+
+#endif /* GTK < 2.6 check */
