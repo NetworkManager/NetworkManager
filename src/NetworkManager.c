@@ -543,36 +543,17 @@ int main( int argc, char *argv[] )
 		}
 	}
 
-	if (become_daemon)
-	{
-		int child_pid;
-
-		if (chdir ("/") < 0)
-		{
-			fprintf( stderr, "NetworkManager could not chdir to /.  errno=%d", errno);
-			return (1);
-		}
-
-		child_pid = fork ();
-		switch (child_pid)
-		{
-			case -1:
-				fprintf( stderr, "NetworkManager could not daemonize.  errno = %d\n", errno );
-				break;
-
-			case 0:
-				/* Child */
-				break;
-
-			default:
-				exit (EXIT_SUCCESS);
-				break;
-		}
-	}
-
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
+
+	/* Load all network device kernel modules.
+	 * NOTE: this hack is temporary until device modules get loaded
+	 * on startup by something else.  The problem is that unless
+	 * the module is loaded, HAL doesn't know its a network device,
+	 * and therefore can't tell us about it.
+	 */
+	nm_spawn_process ("/usr/bin/NMLoadModules");
 
 	/* Initialize our instance data */
 	nm_data = nm_data_new ();
@@ -601,9 +582,18 @@ int main( int argc, char *argv[] )
 	}
 	nm_data->hal_ctx = ctx;
 	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
+	hal_device_property_watch_all (nm_data->hal_ctx);
 
 	/* Grab network devices that are already present and add them to our list */
 	nm_add_initial_devices (nm_data);
+
+	/* We run dhclient when we need to, and we don't want any stray ones
+	 * lying around upon launch.
+	 */
+	nm_spawn_process ("/usr/bin/killall dhclient");
+
+	/* Bring up the loopback interface. */
+	nm_enable_loopback ();
 
 	/* Create a watch function that monitors cards for link status (hal doesn't do
 	 * this for wireless cards yet).
@@ -618,13 +608,32 @@ int main( int argc, char *argv[] )
 	/* Keep a current list of access points */
 	wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
 
-	/* Watch all devices that HAL knows about for state changes */
-	hal_device_property_watch_all (nm_data->hal_ctx);
+	if (become_daemon)
+	{
+		int child_pid;
 
-	/* We run dhclient when we need to, and we don't want any stray ones
-	 * lying around upon launch.
-	 */
-	nm_spawn_process ("/usr/bin/killall dhclient");
+		if (chdir ("/") < 0)
+		{
+			fprintf( stderr, "NetworkManager could not chdir to /.  errno=%d", errno);
+			return (1);
+		}
+
+		child_pid = fork ();
+		switch (child_pid)
+		{
+			case -1:
+				fprintf( stderr, "NetworkManager could not daemonize.  errno = %d\n", errno );
+				break;
+
+			case 0:
+				/* Child */
+				break;
+
+			default:
+				exit (EXIT_SUCCESS);
+				break;
+		}
+	}
 
 	/* Wheeee!!! */
 	loop = g_main_loop_new (NULL, FALSE);

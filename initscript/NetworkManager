@@ -9,9 +9,15 @@
 # processname: NetworkManager
 # pidfile: /var/run/NetworkManager.pid
 #
+### BEGIN INIT INFO
+# Provides: $network
+### END INIT INFO
 
 # Sanity checks.
-[ -x /usr/bin/NetworkManager ] || exit 0
+[ -x /usr/bin/NetworkManager ] || exit 1
+
+# We need /sbin/ip
+[ -x /sbin/ip ] || exit 1
 
 # Source function library.
 . /etc/rc.d/init.d/functions
@@ -19,53 +25,58 @@
 # so we can rearrange this easily
 processname=NetworkManager
 servicename=NetworkManager
+pidfile=/var/run/NetworkManager.pid
 
 RETVAL=0
 
-start() {
-    echo -n $"Starting NetworkManager daemon: "
-    daemon --check $servicename $processname
-    RETVAL=$?
-    echo
-    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > /var/run/NetworkManager.pid
+start()
+{
+	action $"Setting network parameters: " sysctl -e -p /etc/sysctl.conf
+	echo -n $"Starting NetworkManager daemon: "
+	daemon --check $servicename $processname
+	sleep 4
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > $pidfile
 }
 
-stop() {
-    echo -n $"Stopping NetworkManager daemon: "
+stop()
+{
+	echo -n $"Stopping NetworkManager daemon: "
 
-    killproc $servicename -TERM
-    RETVAL=$?
-    echo
-    if [ $RETVAL -eq 0 ]; then
-        rm -f /var/lock/subsys/$servicename
-        rm -f /var/run/NetworkManager.pid
-    fi
+	killproc $servicename -TERM
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ]; then
+		rm -f /var/lock/subsys/$servicename
+		rm -f $pidfile
+	fi
 }
 
 # See how we were called.
 case "$1" in
-    start)
-        start
-        ;;
-    stop)
-        stop
-        ;;
-    status)
-        status $processname
-        RETVAL=$?
-        ;;
-    restart)
-        stop
-        start
-        ;;
-    condrestart)
-        if [ -f /var/lock/subsys/$servicename ]; then
-            stop
-            start
-        fi
-        ;;
-    *)
-        echo $"Usage: $0 {start|stop|status|restart|condrestart}"
-        ;;
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	status)
+		status $processname
+		RETVAL=$?
+		;;
+	restart)
+		stop
+		start
+		;;
+	condrestart)
+		if [ -f /var/lock/subsys/$servicename ]; then
+			stop
+			start
+		fi
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+		;;
 esac
 exit $RETVAL

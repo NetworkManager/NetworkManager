@@ -1,3 +1,22 @@
+2004-08-16  Dan Williams <dcbw@redhat.com>
+
+	* initscript/NetworkManager
+		- Check for /sbin/ip
+		- Do sysctl magic that network service does
+		- sleep 4s after start to allow network time to come up [hack]
+
+	* src/Makefile.am
+	  src/NMLoadModules
+		- Load all network device kernel modules (hal doesn't know devices
+			are ethernet until the module is loaded, and therefore we don't know)
+
+	* src/NetworkManager.c
+		- (main): daemonize later, launch NMLoadModules to alert HAL of our
+			network devices, and bring up the loopback device explicitly
+
+	* src/NetworkManagerUtils.[ch]
+		- (nm_enable_loopback): new function
+
 2004-08-13  Dan Williams <dcbw@redhat.com>
 
 	* configure.in

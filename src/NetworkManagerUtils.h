@@ -50,4 +50,6 @@ void			nm_dispose_scan_results			(wireless_scan *result_list);
 
 int			nm_spawn_process				(char *args);
 
+void			nm_enable_loopback				(void);
+
 #endif

@@ -199,3 +199,17 @@ int nm_spawn_process (char *args)
 
 	return (-1);
 }
+
+
+/*
+ * nm_enable_loopback
+ *
+ * Bring up the loopback interface
+ *
+ */
+void nm_enable_loopback (void)
+{
+	nm_spawn_process ("/sbin/ip link set dev lo up");
+	nm_spawn_process ("ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo label loopback");
+}
+

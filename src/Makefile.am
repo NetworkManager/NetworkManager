@@ -33,4 +33,7 @@ NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS)
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
-EXTRA_DIST = $(dbusservice_DATA)
+helperdir = $(bindir)
+helper_SCRIPTS = NMLoadModules
+
+EXTRA_DIST = $(dbusservice_DATA) $(helper_SCRIPTS)
