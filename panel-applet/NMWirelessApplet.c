@@ -756,8 +756,9 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		}
 	}
 
-	/* Add the 'Select a custom esssid entry */
-	nmwa_menu_add_custom_essid_item (menu, applet);
+	if (n_wireless_interfaces > 0)
+		/* Add the 'Select a custom esssid entry */
+		nmwa_menu_add_custom_essid_item (menu, applet);
 
 	g_mutex_unlock (applet->data_mutex);
 }

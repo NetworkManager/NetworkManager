@@ -1,3 +1,8 @@
+Wed Sep 22 14:19:48 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c: Only add essid's if we actually
+	have a wireless card.
+
 Wed Sep 22 14:05:48 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c: move the custom essid item.
