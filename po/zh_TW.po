@@ -1,0 +1,281 @@
+# Traditional translation of NetworkManager.
+# Copyright (C) 2004-2005 The GNOME Foundation.
+# This file is distributed under the same license as the NetworkManager package.
+#
+# Jim Huang <jserv@kaffe.org>, 2005
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager 0.3.3\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-02-23 12:04+0800\n"
+"PO-Revision-Date: 2005-02-23 23:52+0800\n"
+"Last-Translator: Jim Huang <jserv@kaffe.org>\n"
+"Language-Team: Traditioanl Chinese <zh@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: info-daemon/networks.glade:11
+msgid "Modify Wireless Networks"
+msgstr "修改無線網路"
+
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">無線網路列表：</span>"
+
+#: info-daemon/passphrase.glade:9
+msgid "Wireless Network Key Required"
+msgstr "需要無線網路金鑰"
+
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "登入網路 (_L)"
+
+#: info-daemon/passphrase.glade:100
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">無線網路需要密碼</span>\n"
+"\n"
+"為了存取無線網路「%s」，需要一組密碼或者加密過的金鑰"
+"s'."
+
+
+#: info-daemon/passphrase.glade:129
+msgid "Key Type:"
+msgstr "金鑰型態："
+
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+"128 位元密碼 (WEP)\n"
+"Ascii 金鑰 (WEP)\n"
+"Hex 金鑰 (WEP)"
+
+#: info-daemon/passphrase.glade:181
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
+#: panel-applet/essid.glade:269
+msgid "Passphrase:"
+msgstr ""
+
+#: info-daemon/passphrase.glade:209 panel-applet/essid.glade:202
+#: panel-applet/essid.glade:299
+msgid "*"
+msgstr ""
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
+msgid "Ascii Key:"
+msgstr "Ascii 金鑰："
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
+msgid "Hex Key:"
+msgstr "Hex 金鑰："
+
+#: info-daemon/NetworkManagerInfoVPN.c:157
+#, c-format
+msgid "You must log in to access the private network %s"
+msgstr "為了存取私有網路「%s」，你必須先行登入"
+
+#: panel-applet/NMWirelessApplet.c:141 panel-applet/NMWirelessApplet.c:159
+msgid "NetworkManager Applet"
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:143 panel-applet/NMWirelessApplet.c:161
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:144 panel-applet/NMWirelessApplet.c:162
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"管理網路裝置與連線的工具程式"
+
+#: panel-applet/NMWirelessApplet.c:378
+msgid "No network connection"
+msgstr "沒有網路連線"
+
+#: panel-applet/NMWirelessApplet.c:383
+msgid "Wired network connection"
+msgstr "有線網路連線"
+
+#: panel-applet/NMWirelessApplet.c:388
+msgid "Connecting to a wired network..."
+msgstr "正在連線到有線網路"
+
+#: panel-applet/NMWirelessApplet.c:397
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "已連線到一個 Ad-Hoc 無線網路"
+
+#: panel-applet/NMWirelessApplet.c:411
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "無線網路連結於「%s」(%d%%)"
+
+#: panel-applet/NMWirelessApplet.c:416
+msgid "Wireless network connection"
+msgstr "無線網路連線"
+
+#: panel-applet/NMWirelessApplet.c:421
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "正在連線到無線網路「%s」..."
+
+#: panel-applet/NMWirelessApplet.c:427
+msgid "NetworkManager is not running"
+msgstr "NetworkManager 並未啟動"
+
+#: panel-applet/NMWirelessApplet.c:432
+msgid "Scanning for wireless networks..."
+msgstr "掃描無線網路中..."
+
+#: panel-applet/NMWirelessApplet.c:729
+msgid "Other Wireless Networks..."
+msgstr "其餘無線網路..."
+
+#: panel-applet/NMWirelessApplet.c:750
+msgid "Create new Wireless Network..."
+msgstr "建立新的無線網路..."
+
+#: panel-applet/NMWirelessApplet.c:864
+msgid "No network devices have been found"
+msgstr "沒有找到任何網路裝置"
+
+#: panel-applet/NMWirelessApplet.c:1002
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager 並未啟動..."
+
+#: panel-applet/NMWirelessApplet.c:1072 panel-applet/NMWirelessApplet.c:1121
+msgid "Pause Wireless Scanning"
+msgstr "暫停無線網路掃描動作"
+
+#: panel-applet/NMWirelessApplet.c:1077
+msgid "Resume Wireless Scanning"
+msgstr "繼續無線網路掃描"
+
+#: panel-applet/NMWirelessApplet.c:1087 panel-applet/NMWirelessApplet.c:1127
+msgid "Stop All Wireless Devices"
+msgstr "停止所有無腺網路裝置"
+
+#: panel-applet/NMWirelessApplet.c:1092
+msgid "Start All Wireless Devices"
+msgstr "啟動所有無腺網路裝置"
+
+#: panel-applet/NMWirelessApplet.c:1137
+msgid "Help"
+msgstr "輔助"
+
+#: panel-applet/NMWirelessApplet.c:1144
+msgid "About"
+msgstr "關於"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
+msgid "Create new wireless network"
+msgstr "建立新的無線網路"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:230
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"輸入 ESSID 與無線網路的安全行設定"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
+msgid "Custom wireless network"
+msgstr "自訂無線網路"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:236
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr ""
+"輸入你所要連線的無線網路 ESSID"
+
+#. Reuse the above string to make the translators less angry.
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"NeworkManager 無法找到某些資源 (glade 當遺失了)"
+
+#: panel-applet/essid.glade:52
+msgid "C_onnect"
+msgstr ""
+"連線 (_o)"
+
+#: panel-applet/essid.glade:131
+msgid "Wireless _adapter:"
+msgstr ""
+"無線網路裝置：(_a)"
+
+#: panel-applet/essid.glade:171
+msgid "Wireless _network:"
+msgstr ""
+"無線網路 (_n)"
+
+#: panel-applet/essid.glade:245
+msgid "Key type:"
+msgstr ""
+"金鑰型態："
+
+#: panel-applet/essid.glade:314
+msgid ""
+"128-bit passphrase (WEP)\n"
+"Ascii key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+"128 位元密碼 (WEP)\n"
+"Ascii 金鑰 (WEP)\n"
+"Hex 金鑰 (WEP)"
+
+#: panel-applet/essid.glade:336
+msgid "Connect with encryption enabled"
+msgstr ""
+"啟動加密連線"
+
+#: panel-applet/menu-info.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr ""
+"有線網路 (%s)"
+
+#: panel-applet/menu-info.c:93
+msgid "Wired Network"
+msgstr ""
+"有線網路"
+
+#: panel-applet/menu-info.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "無線網路 (%S)"
+msgstr[1] "無線網路 (%s)"
+
+#: panel-applet/menu-info.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "無線網路"
+msgstr[1] "無線網路"
+
+#: panel-applet/menu-info.c:294
+msgid " (invalid Unicode)"
+msgstr ""
+
+#: examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "方位"
+
+#: examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "系統圖示的方位"
