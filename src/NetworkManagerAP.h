@@ -43,6 +43,10 @@ void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 char *			nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
 char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
 void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
+const NMEncKeyType	nm_ap_get_enc_type		(const NMAccessPoint *ap);
+
+NMDeviceAuthMethod	nm_ap_get_auth_method	(const NMAccessPoint *ap);
+void				nm_ap_set_auth_method	(NMAccessPoint *ap, const NMDeviceAuthMethod auth_method);
 
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
@@ -80,9 +84,11 @@ void				nm_ap_set_last_seen		(NMAccessPoint *ap, const GTimeVal *last_seen);
 gboolean			nm_ap_get_user_created	(const NMAccessPoint *ap);
 void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 
-const NMEncKeyType	nm_ap_get_enc_method	(const NMAccessPoint *ap);
-
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
+
+/* Helper */
+gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
+gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
 
 #endif

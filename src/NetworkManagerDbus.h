@@ -35,7 +35,9 @@ typedef enum
 	DEVICE_NO_LONGER_ACTIVE,
 	DEVICE_ACTIVATING,
 	DEVICE_ACTIVATION_FAILED,
-	DEVICE_LIST_CHANGE
+	DEVICE_ACTIVATION_CANCELED,
+	DEVICE_LIST_CHANGE,
+	DEVICE_STATUS_CHANGE
 } DeviceStatus;
 
 
@@ -43,11 +45,12 @@ DBusConnection *nm_dbus_init						(NMData *data);
 
 gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
 
+void			nm_dbus_schedule_device_status_change	(NMDevice *dev, DeviceStatus status);
 void			nm_dbus_signal_device_status_change	(DBusConnection *connection, NMDevice *dev, DeviceStatus status);
 
-void			nm_dbus_signal_network_status_change	(DBusConnection *connection, NMData *data);
+void			nm_dbus_schedule_network_not_found_signal	(NMData *data, const char *network);
 
-void			nm_dbus_signal_devices_changed		(DBusConnection *connection);
+void			nm_dbus_signal_network_status_change	(DBusConnection *connection, NMData *data);
 
 void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
 
@@ -60,6 +63,8 @@ void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
 
 gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
+
+gboolean		nm_dbus_update_network_auth_method		(DBusConnection *connection, const char *network, const NMDeviceAuthMethod auth_method);
 
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 

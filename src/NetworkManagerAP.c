@@ -48,7 +48,8 @@ struct NMAccessPoint
 	/* Things from user prefs/NetworkManagerInfo */
 	gboolean			 trusted;
 	char				*enc_key;
-	NMEncKeyType		 enc_method;
+	NMEncKeyType		 enc_type;
+	NMDeviceAuthMethod	 auth_method;
 	GTimeVal			 timestamp;
 	GSList			*user_addresses;
 };
@@ -71,6 +72,7 @@ NMAccessPoint * nm_ap_new (void)
 	}
 
 	ap->mode = NETWORK_MODE_INFRA;
+	ap->auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 	ap->refcount = 1;
 
 	return (ap);
@@ -207,7 +209,7 @@ char * nm_ap_get_enc_key_source (const NMAccessPoint *ap)
 	return (ap->enc_key);
 }
 
-void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType method)
+void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType type)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -215,7 +217,7 @@ void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType
 		g_free (ap->enc_key);
 
 	ap->enc_key = g_strdup (key);
-	ap->enc_method = method;
+	ap->enc_type = type;
 }
 
 char *nm_ap_get_enc_key_hashed (const NMAccessPoint *ap)
@@ -226,7 +228,7 @@ char *nm_ap_get_enc_key_hashed (const NMAccessPoint *ap)
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	source_key = nm_ap_get_enc_key_source (ap);
-	switch (ap->enc_method)
+	switch (ap->enc_type)
 	{
 		case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
 			if (source_key)
@@ -270,6 +272,37 @@ void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean encrypted)
 	g_return_if_fail (ap != NULL);
 
 	ap->encrypted = encrypted;
+}
+
+
+/*
+ * Return the encryption method the user specified for this access point.
+ *
+ */
+const NMEncKeyType nm_ap_get_enc_type (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, TRUE);
+
+	return (ap->enc_type);
+}
+
+
+/*
+ * Get/set functions for auth_method
+ *
+ */
+NMDeviceAuthMethod nm_ap_get_auth_method (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, NM_DEVICE_AUTH_METHOD_UNKNOWN);
+
+	return (ap->auth_method);
+}
+
+void nm_ap_set_auth_method (NMAccessPoint *ap, NMDeviceAuthMethod auth_method)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->auth_method = auth_method;
 }
 
 
@@ -502,18 +535,6 @@ void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
 
 
 /*
- * Return the encryption method the user specified for this access point.
- *
- */
-const NMEncKeyType nm_ap_get_enc_method (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, TRUE);
-
-	return (ap->enc_method);
-}
-
-
-/*
  * Get/Set functions for user address list
  *
  * The internal address list is always "owned" by the AP and
@@ -569,3 +590,30 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 	ap->user_addresses = new;
 }
 
+
+gboolean nm_ap_is_enc_key_valid (NMAccessPoint *ap)
+{
+	const char		*key;
+	NMEncKeyType		 key_type;
+
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	key = nm_ap_get_enc_key_source (ap);
+	key_type = nm_ap_get_enc_type (ap);
+
+	if (nm_is_enc_key_valid (key, key_type))
+		return TRUE;
+
+	return FALSE;
+}
+
+gboolean nm_is_enc_key_valid (const char *key, NMEncKeyType key_type)
+{
+	if (    key
+		&& strlen (key)
+		&& (key_type != NM_ENC_TYPE_UNKNOWN)
+		&& (key_type != NM_ENC_TYPE_NONE))
+		return TRUE;
+
+	return FALSE;
+}

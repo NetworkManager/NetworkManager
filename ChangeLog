@@ -1,5 +1,30 @@
 2005-01-21  Dan Williams  <dcbw@redhat.com>
 
+	* Cache last-known-good wireless authentication method in
+		NetworkManagerInfo, and use that method first during
+		wireless device activation.  Should speed up devices that
+		need Shared Key authentication method since Open System is
+		now the default.
+
+	* Remove the hack to not do full activation on wired connections
+		that are active when we launch, it causes too many problems
+		with name resolution and was a hack in the first place.
+
+	* Re-work wireless device activation again somewhat to have a
+		clearer chain of events and to use last-known-good
+		authentication method of the access point.  Also provide
+		better status throughout activation to ensure the applet
+		can tell the user exactly what's going on.
+
+	* Remove the "find wireless network" code and now simply attempt
+		to activate with that access point.  This reduces the delay
+		between selecting "Other wireless Network" and actually
+		connecting to that network.
+
+	* Correctly stop the device's worker thread when its removed.
+
+2005-01-21  Dan Williams  <dcbw@redhat.com>
+
 	* dhcpcd/client.c
 		- Clean up some of the debug messages
 

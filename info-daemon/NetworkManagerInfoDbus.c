@@ -352,6 +352,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
+	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -405,6 +406,15 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	}
 	g_free (gconf_key);
 
+	/* Grab the network's last authentication mode, if known */
+	gconf_key = g_strdup_printf ("%s/%s/auth_method", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		auth_method = gconf_value_get_int (value);
+		gconf_value_free (value);
+	}
+	g_free (gconf_key);
+
 	/* Grab the network's trusted status */
 	gconf_key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
 	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
@@ -451,6 +461,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 		dbus_message_iter_append_int32  (&iter, timestamp);
 		dbus_message_iter_append_string (&iter, key);
 		dbus_message_iter_append_int32  (&iter, key_type);
+		dbus_message_iter_append_int32  (&iter, auth_method);
 		dbus_message_iter_append_boolean(&iter, trusted);
 
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
@@ -484,6 +495,54 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	g_free (escaped_network);
 	dbus_free (network);
 	return (reply_message);
+}
+
+
+/*
+ * nmi_dbus_update_network_auth_method
+ *
+ * Update a network's authentication method entry in gconf
+ *
+ */
+static DBusMessage *nmi_dbus_update_network_auth_method (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage		*reply_message = NULL;
+	char				*network = NULL;
+	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	char				*key;
+	GConfValue		*value;
+	DBusError			 error;
+	char				*escaped_network;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &auth_method, DBUS_TYPE_INVALID)
+		|| (strlen (network) <= 0)
+		|| (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN))
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::updateNetworkAuthMethod called with invalid arguments.");
+		return (reply_message);
+	}
+
+	/* Ensure the access point exists in GConf */
+	escaped_network = gconf_escape_key (network, strlen (network));
+	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	value = gconf_client_get (info->gconf_client, key, NULL);
+	g_free (key);
+
+	if (value && (value->type == GCONF_VALUE_STRING))
+	{
+		key = g_strdup_printf ("%s/%s/auth_method", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+		gconf_client_set_int (info->gconf_client, key, auth_method, NULL);
+		g_free (key);
+	}
+
+	g_free (escaped_network);
+
+	return (NULL);
 }
 
 
@@ -626,6 +685,8 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		reply_message = nmi_dbus_get_networks (info, message);
 	else if (strcmp ("getNetworkProperties", method) == 0)
 		reply_message = nmi_dbus_get_network_properties (info, message);
+	else if (strcmp ("updateNetworkAuthMethod", method) == 0)
+		nmi_dbus_update_network_auth_method (info, message);
 	else if (strcmp ("addNetworkAddress", method) == 0)
 		nmi_dbus_add_network_address (info, message);
 	else

@@ -312,15 +312,16 @@ void nm_ap_list_update_network_from_nmi (NMAccessPointList *list, const char *ne
 			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
 			nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
 			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
-			nm_ap_set_enc_key_source (list_ap, nm_ap_get_enc_key_source (ap), nm_ap_get_enc_method (ap));
+			nm_ap_set_enc_key_source (list_ap, nm_ap_get_enc_key_source (ap), nm_ap_get_enc_type (ap));
+			nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (ap));
 			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
 		}
 		else
 		{
 			/* New AP, just add it to the list */
 			nm_ap_list_append_ap (list, ap);
-			nm_ap_unref (ap);
 		}
+		nm_ap_unref (ap);
 	}
 	else
 	{
@@ -387,6 +388,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 	{
 		/* Merge some properties on the AP that are new from scan to scan. */
 		nm_ap_set_encrypted (list_ap, nm_ap_get_encrypted (merge_ap));
+		nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (merge_ap));
 		nm_ap_set_last_seen (list_ap, nm_ap_get_last_seen (merge_ap));
 	}
 	else
@@ -425,7 +427,17 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 			if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
 			{
 				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
-				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_method (src_ap));
+				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_type (src_ap));
+				if (nm_ap_get_auth_method (src_ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN)
+				{
+					/* Ensure that we don't set the NONE auth method from the src_ap
+					 * if the dest_ap has encryption enabled.
+					 */
+					if (nm_ap_get_encrypted (dest_ap)  && (nm_ap_get_auth_method (src_ap) != NM_DEVICE_AUTH_METHOD_NONE))
+						nm_ap_set_auth_method (dest_ap, nm_ap_get_auth_method (src_ap));
+					else if (!nm_ap_get_encrypted (dest_ap))
+						nm_ap_set_auth_method (dest_ap, NM_DEVICE_AUTH_METHOD_NONE);
+				}
 				nm_ap_set_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
 			}
 		}

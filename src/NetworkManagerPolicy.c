@@ -155,7 +155,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data)
  * under certain conditions.
  *
  */
-static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock_on_activate)
+static NMDevice * nm_policy_get_best_device (NMDevice *switch_to_dev, NMData *data, gboolean *should_lock_on_activate)
 {
 	NMDevice		*best_dev = NULL;
 
@@ -168,18 +168,11 @@ static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock
 	if (should_lock_on_activate)
 		*should_lock_on_activate = FALSE;
 
-	/* If the user told us to switch to a particular device, do it now */
-	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	/* Prefer a device forced on us by the user */
+	if (switch_to_dev && !nm_device_get_removed (switch_to_dev))
 	{
-		if (data->user_device)
-		{
-			best_dev = data->user_device;
-
-			nm_device_unref (data->user_device);
-			data->user_device = NULL;
-			*should_lock_on_activate = TRUE;
-		}
-		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
+		best_dev = switch_to_dev;
+		*should_lock_on_activate = TRUE;
 	}
 
 	/* Determine whether we need to clear the active device and unlock it.
@@ -249,48 +242,59 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 	if (!(data = nm_device_get_app_data (dev)))
 		goto out;
 
-	if (result->success)
+	switch (result->result)
 	{
-		nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_NOW_ACTIVE);
-		/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
-		if (nm_device_is_wireless (dev))
-		{
-			struct ether_addr	 addr;
-
-			nm_device_get_ap_address (dev, &addr);
-			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (dev), &addr);
-		}
-		syslog (LOG_INFO, "Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
-	}
-	else
-	{
-		nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ACTIVATION_FAILED);
-		if (nm_device_is_wireless (dev))
-		{
-			NMAccessPoint *ap = nm_device_get_best_ap (dev);
-			if (ap)
+		case DEVICE_NOW_ACTIVE:
+			nm_dbus_signal_device_status_change (data->dbus_connection, dev, result->result);
+			/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
+			if (nm_device_is_wireless (dev))
 			{
-				/* Add the AP to the invalid list and force a best ap update (list takes ownership of ap) */
-				nm_ap_list_append_ap (data->invalid_ap_list, ap);
-				nm_ap_unref (ap);
+				struct ether_addr	 addr;
 
-				nm_device_update_best_ap (dev);
-
-				/* Unref because nm_device_get_best_ap() refs it before returning. */
-				nm_ap_unref (ap);
+				nm_device_get_ap_address (dev, &addr);
+				nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_device_get_essid (dev), &addr);
 			}
-			syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
-		}
-		else
-			syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
-		nm_data_mark_state_changed (data);
+			syslog (LOG_INFO, "Activation (%s) successful, device activated.", nm_device_get_iface (data->active_device));
+			break;
+
+		case DEVICE_ACTIVATION_FAILED:
+			nm_dbus_signal_device_status_change (data->dbus_connection, dev, result->result);
+			if (nm_device_is_wireless (dev))
+			{
+				NMAccessPoint *ap = nm_device_get_best_ap (dev);
+				if (ap)
+				{
+					/* Add the AP to the invalid list and force a best ap update */
+					nm_ap_list_append_ap (data->invalid_ap_list, ap);
+					nm_device_update_best_ap (dev);
+
+					/* Unref because nm_device_get_best_ap() refs it before returning. */
+					nm_ap_unref (ap);
+				}
+				syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+			}
+			else
+				syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
+			break;
+
+		case DEVICE_ACTIVATION_CANCELED:
+		default:
+			break;
 	}
+
+	nm_policy_schedule_state_update (data);
 
 out:
 	nm_device_unref (dev);
 	g_free (result);
 	return FALSE;
 }
+
+typedef struct NMStateUpdateData
+{
+	NMDevice	*switch_to_dev;
+	NMData	*app_data;
+} NMStateUpdateData;
 
 
 /*
@@ -303,40 +307,57 @@ out:
  *    2) link state change of an interface
  *
  */
-gboolean nm_state_modification_monitor (gpointer user_data)
+static gboolean nm_policy_state_update (gpointer user_data)
 {
-	NMData	*data = (NMData *)user_data;
+	NMStateUpdateData	*cb_data = (NMStateUpdateData *)user_data;
+	NMData			*app_data;
 
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (cb_data != NULL, FALSE);
 
-	data->state_modified_idle_id = 0;
+	app_data = cb_data->app_data;
+	if (!app_data)
+		goto out;
+
+	app_data->state_modified_idle_id = 0;
 
 	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
-	if (data->info_daemon_avail && data->update_ap_lists)
+	if (app_data->info_daemon_avail && app_data->update_ap_lists)
 	{
 		/* Query info daemon for network lists if its now running */
-		if (data->allowed_ap_list)
-			nm_ap_list_unref (data->allowed_ap_list);
-		data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-		if (data->allowed_ap_list)
-			nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
+		if (app_data->allowed_ap_list)
+			nm_ap_list_unref (app_data->allowed_ap_list);
+		app_data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
+		if (app_data->allowed_ap_list)
+			nm_ap_list_populate_from_nmi (app_data->allowed_ap_list, app_data);
 
-		data->update_ap_lists = FALSE;
+		app_data->update_ap_lists = FALSE;
 	}
 
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	/* If we're currently waiting for a force-device operation to complete, don't try
+	 * to change devices.  We'll be notified of what device to switch to explicitly
+	 * when the force-device operation completes.
+	 */
+	if (!cb_data->switch_to_dev && app_data->forcing_device)
+		goto out;
+
+	app_data->forcing_device = FALSE;
+
+	if (nm_try_acquire_mutex (app_data->dev_list_mutex, __FUNCTION__))
 	{
 		gboolean		 should_lock_on_activate = FALSE;
 		gboolean		 do_switch = FALSE;
 		NMDevice		*best_dev = NULL;
 
-		if ((best_dev = nm_policy_get_best_device (data, &should_lock_on_activate)))
+		if ((best_dev = nm_policy_get_best_device (cb_data->switch_to_dev, app_data, &should_lock_on_activate)))
 			nm_device_ref (best_dev);
 
 		/* Figure out if we need to change devices or wireless networks */
-		if (best_dev != data->active_device)
+		if (best_dev != app_data->active_device)
 		{
-			syslog (LOG_INFO, "    SWITCH: best device changed");
+			if (best_dev)
+				syslog (LOG_INFO, "    SWITCH: best device changed");
+			else
+				syslog (LOG_INFO, "    SWITCH: old device no longer good, but no better device was available");
 			do_switch = TRUE;	/* Device changed */
 		}
 		else if (best_dev)
@@ -356,39 +377,87 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		if (do_switch)
 		{
 			/* Deactivate the old device */
-			if (data->active_device)
+			if (app_data->active_device)
 			{
-				nm_device_deactivate (data->active_device, FALSE);
-				nm_device_unref (data->active_device);
-				data->active_device = NULL;
+				nm_device_deactivate (app_data->active_device, FALSE);
+				nm_device_unref (app_data->active_device);
+				app_data->active_device = NULL;
 			}
 
 			if (best_dev)
 			{
 				/* Begin activation on the new device */
 				nm_device_ref (best_dev);
-				data->active_device = best_dev;
-				nm_device_activation_schedule_start (data->active_device);
+				app_data->active_device = best_dev;
+				nm_device_activation_schedule_start (app_data->active_device);
 
 				/* nm_policy_get_best_device() signals us that the user forced
 				 * a device upon us and that we should lock the active device.
 				 */
 				if (should_lock_on_activate)
-					data->active_device_locked = TRUE;
+					app_data->active_device_locked = TRUE;
 			}
 		}
 
 		if (best_dev)
 			nm_device_unref (best_dev);
 
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 	}
 
-	/* Clear the starting up flag, so we will now take over and have our way with
-	 * any device we find out about.
-	 */
-	if (data->starting_up)
-		data->starting_up = FALSE;
-
+out:
+	g_free (cb_data);
 	return (FALSE);
 }
+
+
+/*
+ * nm_policy_schedule_state_update
+ *
+ * Queue up an idle handler to deal with state changes.
+ *
+ */
+void nm_policy_schedule_state_update (NMData *app_data)
+{
+	g_return_if_fail (app_data != NULL);
+
+	nm_policy_schedule_device_switch (NULL, app_data);
+}
+
+
+/*
+ * nm_policy_schedule_state_update
+ *
+ * Queue up an idle handler to deal with state changes when we want
+ * to force a particular device to be the active device.
+ *
+ */
+void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data)
+{
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+
+	g_return_if_fail (app_data != NULL);
+
+	g_static_mutex_lock (&mutex);
+
+	/* Don't queue the idle handler if switch_to_dev is NULL and there's already
+	 * an idle handler queued.  Always queue the idle handler if we were passed
+	 * a switch_to_dev.
+	 */
+	if (switch_to_dev || (app_data->state_modified_idle_id == 0))
+	{
+		GSource			*source = g_idle_source_new ();
+		NMStateUpdateData	*cb_data = g_malloc0 (sizeof (NMStateUpdateData));
+
+		cb_data->switch_to_dev = switch_to_dev;
+		cb_data->app_data = app_data;
+
+		g_source_set_callback (source, nm_policy_state_update, cb_data, NULL);
+		app_data->state_modified_idle_id = g_source_attach (source, app_data->main_context);
+		g_source_unref (source);
+
+	}
+
+	g_static_mutex_unlock (&mutex);
+}
+

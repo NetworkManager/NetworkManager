@@ -27,14 +27,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 
-typedef enum NMDeviceAuthMethod
-{
-	NM_DEVICE_AUTH_METHOD_UNKNOWN = 0,
-	NM_DEVICE_AUTH_METHOD_NONE,
-	NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM,
-	NM_DEVICE_AUTH_METHOD_SHARED_KEY
-} NMDeviceAuthMethod;
-
 
 typedef struct NMDevice	NMDevice;
 
@@ -43,6 +35,7 @@ NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_
 
 void			nm_device_ref					(NMDevice *dev);
 gboolean		nm_device_unref				(NMDevice *dev);
+void			nm_device_worker_thread_stop		(NMDevice *dev);
 
 int			nm_device_open_sock				(void);
 
@@ -59,6 +52,9 @@ gboolean		nm_device_is_wired				(NMDevice *dev);
 /* There is no nm_device_set_iface_type() because that's determined when you set the device's iface */
 
 NMData *		nm_device_get_app_data			(const NMDevice *dev);
+
+gboolean		nm_device_get_removed			(const NMDevice *dev);
+void			nm_device_set_removed			(NMDevice *dev, const gboolean removed);
 
 gboolean		nm_device_get_link_active		(NMDevice *dev);
 void			nm_device_set_link_active		(NMDevice *dev, const gboolean active);
@@ -111,13 +107,13 @@ gboolean		nm_device_activation_should_cancel	(NMDevice *dev);
 gboolean		nm_device_is_activating			(NMDevice *dev);
 gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);
 
-gboolean		nm_device_is_scanning			(NMDevice *dev);
+gboolean		nm_device_get_now_scanning		(NMDevice *dev);
 
-gboolean		nm_device_find_and_use_essid		(NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type);
+void			nm_device_schedule_force_use		(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type);
 
 void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list,
 											unsigned char *network, unsigned char *key,
-											NMEncKeyType enc_method);
+											NMEncKeyType enc_type);
 
 void			nm_device_bring_up				(NMDevice *dev);
 void			nm_device_bring_down			(NMDevice *dev);

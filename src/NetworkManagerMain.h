@@ -46,12 +46,6 @@ typedef struct NMData
 	GMainLoop				*main_loop;
 	gboolean				 info_daemon_avail;
 	gboolean				 enable_test_devices;
-	gboolean				 starting_up;		/* Hack for not taking down an already-set-up wired device when we launch */
-
-	/* Main loop for wireless scanning thread */
-	GMainContext			*wscan_ctx;
-	GMainLoop				*wscan_loop;
-	gboolean				 wscan_thread_done;
 
 	guint				 state_modified_idle_id;
 
@@ -61,8 +55,7 @@ typedef struct NMData
 	struct NMDevice		*active_device;
 	gboolean				 active_device_locked;
 
-	struct NMDevice		*user_device;			/* Holds a device that the user requests NM to use. */
-	GMutex				*user_device_mutex;
+	gboolean				 forcing_device;
 
 	gboolean				 update_ap_lists;
 	struct NMAccessPointList	*allowed_ap_list;
@@ -74,8 +67,6 @@ struct NMDevice	*nm_create_device_and_add_to_list		(NMData *data, const char *ud
 												gboolean test_device, NMDeviceType test_device_type);
 
 void				 nm_remove_device_from_list			(NMData *data, const char *udi);
-
-void		 		 nm_data_mark_state_changed			(NMData *data);
 
 void				 nm_schedule_status_signal_broadcast	(NMData *data);
 

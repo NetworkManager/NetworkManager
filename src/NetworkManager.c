@@ -128,18 +128,11 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired");
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
-
-			/* We don't take down wired devices that are already set up when NetworkManager gets
-			 * launched.  Plays better with the system.
-			 *
-			 * FIXME: IPv6 here too
-			 */
-			if (!(data->starting_up && nm_device_is_wired (dev) && nm_device_get_ip4_address (dev)))
-				nm_device_deactivate (dev, TRUE);
+			nm_device_deactivate (dev, TRUE);
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
-			nm_data_mark_state_changed (data);
+			nm_policy_schedule_state_update (data);
 			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 		}
 		else
@@ -187,20 +180,16 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 					data->active_device_locked = FALSE;
 				}
 
-				if (data->user_device && (dev == data->user_device))
-				{
-					nm_device_unref (data->user_device);
-					data->user_device = NULL;
-				}
-
-				nm_device_activation_cancel (dev);
+				nm_device_set_removed (dev, TRUE);
+				nm_device_deactivate (dev, FALSE);
+				nm_device_worker_thread_stop (dev);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
 				data->dev_list = g_slist_remove_link (data->dev_list, element);
 				nm_device_unref (element->data);
 				g_slist_free (element);
-				nm_data_mark_state_changed (data);
+				nm_policy_schedule_state_update (data);
 				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				break;
 			}
@@ -351,7 +340,7 @@ static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi
 				&& nm_device_is_wireless (data->active_device))
 			{
 				data->active_device_locked = FALSE;
-				nm_data_mark_state_changed (data);
+				nm_policy_schedule_state_update (data);
 			}
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -529,10 +518,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->main_context = g_main_context_new ();
 	data->main_loop = g_main_loop_new (data->main_context, FALSE);
 
-	data->wscan_ctx = g_main_context_new ();
-	data->wscan_loop = g_main_loop_new (data->wscan_ctx, FALSE);
-	data->wscan_thread_done = FALSE;
-
 	if (pipe(data->sigterm_pipe) < 0)
 	{
 		syslog (LOG_CRIT, "Couldn't create pipe: %s", g_strerror (errno));
@@ -556,8 +541,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
-	data->user_device_mutex = g_mutex_new ();
-	if (!data->dev_list_mutex || !data->user_device_mutex)
+	if (!data->dev_list_mutex)
 	{
 		nm_data_free (data);
 		syslog (LOG_ERR, "Could not initialize data structure locks.");
@@ -577,9 +561,8 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->state_modified_idle_id = 0;
 
 	data->enable_test_devices = enable_test_devices;
-	data->starting_up = TRUE;
 
-	nm_data_mark_state_changed (data);
+	nm_policy_schedule_state_update (data);
 
 	return (data);	
 }
@@ -602,7 +585,6 @@ static void nm_data_free (NMData *data)
 	g_slist_free (data->dev_list);
 
 	g_mutex_free (data->dev_list_mutex);
-	g_mutex_free (data->user_device_mutex);
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
@@ -613,30 +595,6 @@ static void nm_data_free (NMData *data)
 	memset (data, 0, sizeof (NMData));
 }
 
-
-/*
- * nm_data_mark_state_changed
- *
- * Queue up an idle handler to deal with state changes.
- *
- */
-void nm_data_mark_state_changed (NMData *data)
-{
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
-
-	g_return_if_fail (data != NULL);
-
-	g_static_mutex_lock (&mutex);
-	if (data->state_modified_idle_id == 0)
-	{
-		GSource *source = g_idle_source_new ();
-
-		g_source_set_callback (source, nm_state_modification_monitor, data, NULL);
-		data->state_modified_idle_id = g_source_attach (source, data->main_context);
-		g_source_unref (source);
-	}
-	g_static_mutex_unlock (&mutex);
-}
 
 static void sigterm_handler (int signum)
 {

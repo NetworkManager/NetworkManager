@@ -105,6 +105,18 @@ typedef enum NMNetworkMode
 
 
 /*
+ * Authentication modes
+ */
+typedef enum NMDeviceAuthMethod
+{
+	NM_DEVICE_AUTH_METHOD_UNKNOWN = 0,
+	NM_DEVICE_AUTH_METHOD_NONE,
+	NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM,
+	NM_DEVICE_AUTH_METHOD_SHARED_KEY
+} NMDeviceAuthMethod;
+
+
+/*
  * Info-daemon specific preference locations
  */
 #define NMI_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"

@@ -30,6 +30,7 @@
 #include "NetworkManagerDevicePrivate.h"
 #include "NetworkManagerDHCP.h"
 #include "NetworkManagerSystem.h"
+#include "NetworkManagerPolicy.h"
 #include "nm-named-manager.h"
 #include "../dhcpcd/client.h"
 
@@ -344,7 +345,7 @@ gboolean nm_device_dhcp_rebind (gpointer user_data)
 		 */
 		nm_system_device_flush_addresses (dev);
 		nm_device_update_ip4_address (dev);
-		nm_data_mark_state_changed (dev->app_data);
+		nm_policy_schedule_state_update (dev->app_data);
 		return (FALSE);
 	}
 	else

@@ -33,6 +33,7 @@
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
+#include "NetworkManagerPolicy.h"
 
 
 static int test_dev_num = 0;
@@ -196,6 +197,12 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 }
 
 
+typedef struct NMNetNotFoundData
+{
+	NMData	*app_data;
+	char		*net;
+} NMNetNotFoundData;
+
 /*
  * nm_dbus_send_network_not_found
  *
@@ -203,26 +210,52 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
  * not found.
  *
  */
-void nm_dbus_send_network_not_found (DBusConnection *connection, const char *network)
+static gboolean nm_dbus_send_network_not_found (gpointer user_data)
 {
+	NMNetNotFoundData	*cb_data = (NMNetNotFoundData *)user_data;
 	DBusMessage		*message;
 
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (network != NULL);
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+
+	if (!cb_data->app_data || !cb_data->app_data->dbus_connection || !cb_data->net)
+		goto out;
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
 						NMI_DBUS_INTERFACE, "networkNotFound");
 	if (message == NULL)
 	{
 		syslog (LOG_ERR, "nm_dbus_send_network_not_found(): Couldn't allocate the dbus message");
-		return;
+		goto out;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (connection, message, NULL))
+	dbus_message_append_args (message, DBUS_TYPE_STRING, cb_data->net, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (cb_data->app_data->dbus_connection, message, NULL))
 		syslog (LOG_WARNING, "nm_dbus_send_network_not_found(): could not send dbus message");
 
 	dbus_message_unref (message);
+
+out:
+	g_free (cb_data);
+	return (FALSE);
+}
+
+
+void nm_dbus_schedule_network_not_found_signal (NMData *data, const char *network)
+{
+	NMNetNotFoundData	*cb_data;
+	GSource			*source;
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (network != NULL);
+
+	cb_data = g_malloc0 (sizeof (NMNetNotFoundData));
+	cb_data->app_data = data;
+	cb_data->net = g_strdup (network);
+	
+	source = g_idle_source_new ();
+	g_source_set_callback (source, nm_dbus_send_network_not_found, cb_data, NULL);
+	g_source_attach (source, data->main_context);
+	g_source_unref (source);
 }
 
 
@@ -269,19 +302,18 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
-			return (reply_message);
+			goto out;
 		} else syslog (LOG_INFO, "FORCE: device '%s'", dev_path);
 	} else syslog (LOG_INFO, "FORCE: device '%s', network '%s'", dev_path, network);
 	
 	/* So by now we have a valid device and possibly a network as well */
 
 	dev = nm_dbus_get_device_from_object_path (data, dev_path);
-	dbus_free (dev_path);
 	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
 	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
-		return (reply_message);
+		goto out;
 	}
 	nm_device_ref (dev);
 
@@ -293,37 +325,14 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		goto out;
 	}
 
-	if (!(reply_message = dbus_message_new_method_return (message)))
-		goto out;
-
-	/* If the user specificed a wireless network too, force that as well */
-	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network, key, key_type))
-	{
-		nm_dbus_send_network_not_found (data->dbus_connection, network);
-	}
-	else
-	{
-		if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
-		{
-			if (data->user_device)
-				nm_device_unref (data->user_device);
-			data->user_device = dev;
-			nm_device_ref (data->user_device);
-			nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
-		}
-		else
-			nm_dbus_send_network_not_found (data->dbus_connection, network);
-	}
-
-	/* Have to mark our state changed since we blew away our connection trying out
-	 * the user-requested network.
-	 */
-	nm_data_mark_state_changed (data);
+	data->forcing_device = TRUE;
+	nm_device_deactivate (dev, FALSE);
+	nm_device_schedule_force_use (dev, network, key, key_type);
 
 out:
+	dbus_free (dev_path);
 	dbus_free (network);
 	dbus_free (key);
-	nm_device_unref (dev);
 	return (reply_message);
 }
 
@@ -339,6 +348,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	NMDevice			*dev = NULL;
 	DBusMessage		*reply_message = NULL;
 	char				*dev_path = NULL;
+	NMAccessPoint		*new_ap = NULL;
 	char				*network = NULL;
 	char				*key = NULL;
 	int				 key_type = -1;
@@ -380,37 +390,27 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	if (!(reply_message = dbus_message_new_method_return (message)))
 		goto out;
 
-	/* If the user specificed a wireless network too, force that as well */
-	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	data->forcing_device = TRUE;
+
+	new_ap = nm_ap_new ();
+
+	/* Fill in the description of the network to create */
+	nm_ap_set_essid (new_ap, network);
+	if (nm_is_enc_key_valid (key, key_type))
 	{
-		NMAccessPoint	*ap = nm_ap_new ();
-
-		/* Fill in the description of the network to create */
-		nm_ap_set_essid (ap, network);
-		if (key && strlen (key))
-		{
-			nm_ap_set_encrypted (ap, TRUE);
-			nm_ap_set_enc_key_source (ap, key, key_type);
-		}
-		nm_ap_set_mode (ap, NETWORK_MODE_ADHOC);
-		nm_ap_set_user_created (ap, TRUE);
-
-		nm_device_set_best_ap (dev, ap);		
-		nm_device_freeze_best_ap (dev);
-		nm_device_activation_cancel (dev);
-
-		if (data->user_device)
-			nm_device_unref (data->user_device);
-		data->user_device = dev;
-		nm_device_ref (data->user_device);
-
-		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
+		nm_ap_set_encrypted (new_ap, TRUE);
+		nm_ap_set_enc_key_source (new_ap, key, key_type);
+		nm_ap_set_auth_method (new_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 	}
+	nm_ap_set_mode (new_ap, NETWORK_MODE_ADHOC);
+	nm_ap_set_user_created (new_ap, TRUE);
 
-	/* Have to mark our state changed since we blew away our connection trying out
-	 * the user-requested network.
-	 */
-	nm_data_mark_state_changed (data);
+	nm_device_set_best_ap (dev, new_ap);		
+	nm_device_freeze_best_ap (dev);
+	nm_device_activation_cancel (dev);
+
+	/* Schedule this device to be used next. */
+	nm_policy_schedule_device_switch (dev, data);
 
 out:
 	dbus_free (network);
@@ -490,6 +490,53 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 /* Handler code */
 /*-------------------------------------------------------------*/
 
+typedef struct NMStatusChangeData
+{
+	NMDevice		*dev;
+	DeviceStatus	 status;
+} NMStatusChangeData;
+
+
+static gboolean nm_dbus_device_status_change_helper (gpointer user_data)
+{
+	NMStatusChangeData	*data = (NMStatusChangeData *)user_data;
+	NMData			*app_data;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	if (!data->dev || !nm_device_get_app_data (data->dev))
+		goto out;
+
+	app_data = nm_device_get_app_data (data->dev);
+	nm_dbus_signal_device_status_change (app_data->dbus_connection, data->dev, data->status);
+
+out:
+	g_free (data);
+	return FALSE;
+}
+
+void nm_dbus_schedule_device_status_change (NMDevice *dev, DeviceStatus status)
+{
+	NMStatusChangeData	*data = NULL;
+	GSource			*source;
+	guint			 source_id = 0;
+	NMData			*app_data;
+
+	g_return_if_fail (dev != NULL);
+
+	app_data = nm_device_get_app_data (dev);
+	g_return_if_fail (app_data != NULL);
+	
+	data = g_malloc0 (sizeof (NMStatusChangeData));
+	data->dev = dev;
+	data->status = status;
+
+	source = g_idle_source_new ();
+	g_source_set_callback (source, nm_dbus_device_status_change_helper, data, NULL);
+	source_id = g_source_attach (source, app_data->main_context);
+	g_source_unref (source);
+}
+
 
 /*
  * nm_dbus_signal_device_status_change
@@ -524,6 +571,9 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 			break;
 		case (DEVICE_LIST_CHANGE):
 			signal = "DevicesChanged";
+			break;
+		case (DEVICE_STATUS_CHANGE):
+			signal = "DeviceStatusChanged";
 			break;
 		case (DEVICE_ACTIVATION_FAILED):
 			signal = "DeviceActivationFailed";
@@ -573,9 +623,11 @@ static char *nm_dbus_network_status_from_data (NMData *data)
 
 	g_return_val_if_fail (data != NULL, NULL);
 
-	if (data->active_device && nm_device_is_activating (data->active_device))
+	if (data->forcing_device)
+		status = g_strdup ("scanning");
+	else if (data->active_device && nm_device_is_activating (data->active_device))
 	{
-		if (nm_device_is_wireless (data->active_device) && nm_device_is_scanning (data->active_device))
+		if (nm_device_is_wireless (data->active_device) && nm_device_get_now_scanning (data->active_device))
 			status = g_strdup ("scanning");
 		else
 			status = g_strdup ("connecting");
@@ -826,6 +878,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 	char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
+	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 	char				**addrs = NULL;
 	gint				 num_addr = -1;
 	
@@ -866,6 +919,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 								DBUS_TYPE_INT32, &timestamp_secs,
 								DBUS_TYPE_STRING, &key,
 								DBUS_TYPE_INT32, &key_type,
+								DBUS_TYPE_INT32, &auth_method,
 								DBUS_TYPE_BOOLEAN, &trusted,
 								DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &addrs, &num_addr,
 								DBUS_TYPE_INVALID);
@@ -889,6 +943,7 @@ NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetwork
 				nm_ap_set_enc_key_source (ap, key, key_type);
 			else
 				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
+			nm_ap_set_auth_method (ap, auth_method);
 
 			/* Get user addresses, form into a GSList, and stuff into the AP */
 			{
@@ -920,6 +975,48 @@ out:
 		dbus_message_unref (reply);
 
 	return (ap);
+}
+
+
+/*
+ * nm_dbus_update_network_auth_method
+ *
+ * Tell NetworkManagerInfo the updated auth_method of the AP
+ *
+ */
+gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const char *network, const NMDeviceAuthMethod auth_method)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	gboolean			 success = FALSE;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
+	g_return_val_if_fail (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkAuthMethod");
+	if (!message)
+	{
+		syslog (LOG_ERR, "nm_dbus_update_network_auth_method (): Couldn't allocate the dbus message");
+		return (FALSE);
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
+								DBUS_TYPE_INT32, (int)auth_method,
+								DBUS_TYPE_INVALID);
+
+	/* Send message and get trusted status back from NetworkManagerInfo */
+	dbus_error_init (&error);
+	if (!dbus_connection_send (connection, message, NULL))
+	{
+		syslog (LOG_ERR, "nm_dbus_update_network_auth_method (): failed to send dbus message.");
+		dbus_error_free (&error);
+	}
+	else
+		success = TRUE;
+
+	dbus_message_unref (message);
+	return (success);
 }
 
 
@@ -1076,7 +1173,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = TRUE;
-			nm_data_mark_state_changed (data);
+			nm_policy_schedule_state_update (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
 		 * may want to know about service signals.
@@ -1093,7 +1190,7 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		{
 			data->update_ap_lists = TRUE;
 			data->info_daemon_avail = FALSE;
-			nm_data_mark_state_changed (data);
+			nm_policy_schedule_state_update (data);
 		}
 		/* Don't set handled = TRUE since other filter functions on this dbus connection
 		 * may want to know about service signals.
@@ -1322,7 +1419,7 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 			if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &link, DBUS_TYPE_INVALID))
 			{
 				nm_device_set_link_active (dev, link);
-				nm_data_mark_state_changed (data);
+				nm_policy_schedule_state_update (data);
 			}
 		}
 		else

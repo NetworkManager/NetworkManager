@@ -90,6 +90,7 @@ struct NMDevice
 	char					*iface;
 	NMDeviceType			 type;
 	NMDriverSupportLevel	 driver_support_level;
+	gboolean				 removed;
 
 	gboolean				 link_active;
 	guint32				 ip4_address;

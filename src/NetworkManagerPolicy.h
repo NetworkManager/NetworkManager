@@ -24,15 +24,18 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerDbus.h"
 
 typedef struct
 {
 	NMDevice		*dev;
-	gboolean		 success;
+	DeviceStatus	 result;
 } NMActivationResult;
 
 
-gboolean		nm_state_modification_monitor			(gpointer user_data);
+void			nm_policy_schedule_state_update		(NMData *app_data);
+
+void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
 
 gboolean		nm_policy_activation_finish			(gpointer user_data);
 
