@@ -162,23 +162,22 @@ static int nmwa_timeout_handler (NMWirelessApplet *applet)
 	if (!applet->connection)
 		applet->connection = nmwa_dbus_init (applet);
 
-	if (applet->nm_active)
-	{
-		if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
-		{
-fprintf( stderr, "showing\n");
-		applet->have_active_device = TRUE;
-		nmwa_update_state (applet);
-		gtk_widget_show (GTK_WIDGET (applet));
-		dbus_free (active_device);
-		}
-		else
-		fprintf( stderr, "timeout_handler(): active_device was nULL\n");
-	}
-	else
-	{
-fprintf( stderr, "hiding\n");
-		gtk_widget_hide (GTK_WIDGET (applet));
+	if (applet->nm_active) {
+	  fprintf( stderr, "NM is present {\n");
+	  if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection))) {
+	    applet->have_active_device = TRUE;
+	    nmwa_update_state (applet);
+	    fprintf( stderr, "  A wireless device was active, showing applet\n");
+	    gtk_widget_show (GTK_WIDGET (applet));
+	    dbus_free (active_device);
+	  } else {
+	    fprintf( stderr, "  A wireless device was not active, hiding applet\n");
+	    gtk_widget_hide (GTK_WIDGET (applet));
+	  }
+	  fprintf( stderr, "}\n\n");
+	} else {
+	  fprintf( stderr, "NM is *not* present\n");
+	  gtk_widget_hide (GTK_WIDGET (applet));
 	}
 
   	return (TRUE);
@@ -316,8 +315,12 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
 
 static void nmwa_button_clicked (GtkWidget *button, NMWirelessApplet *applet)
 {
-	if (GTK_WIDGET_VISIBLE (applet->menu))
-		gtk_menu_popdown (GTK_MENU (applet->menu));
+	if (applet->menu != NULL) 
+	{
+	  gtk_menu_popdown (GTK_MENU (applet->menu));
+	  g_object_unref(G_OBJECT(applet->menu));
+	  applet->menu = NULL;
+	}
 	else
 	{
 		applet->menu = nmwa_populate_menu (applet);
@@ -361,13 +364,12 @@ static GtkWidget * nmwa_populate_menu (NMWirelessApplet *applet)
 	int		 	  num_networks;
 	char			**networks;
 
+	g_assert(applet->nm_active);
 	g_return_if_fail (applet != NULL);
 
 	menu = gtk_menu_new ();
-	if (applet->nm_active)
-		nmwa_dbus_add_networks_to_menu (applet->connection, menu);
-	else
-		nmwa_add_menu_item ("No Wireless Networks found...", FALSE, menu);
+
+	nmwa_dbus_add_networks_to_menu (applet->connection, menu);
 
 	return (menu);
 }
@@ -431,9 +433,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->current_pixbuf = NULL;
 	applet->about_dialog = NULL;
 
-	if (applet->menu)
-		gtk_widget_destroy (applet->menu);
-	applet->menu = nmwa_populate_menu (applet);
+	applet->menu = NULL;
 }
 
 static void change_size_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
@@ -486,6 +486,8 @@ static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
 static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 {
 	panel_applet_set_flags (PANEL_APPLET (applet), PANEL_APPLET_EXPAND_MINOR);
+
+	gtk_widget_hide(GTK_WIDGET(applet));
 
 	applet->connection = nmwa_dbus_init(applet);
 	applet->have_active_device = FALSE;

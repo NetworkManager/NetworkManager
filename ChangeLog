@@ -1,3 +1,17 @@
+2004-08-09  Seth Nickell  <seth@gnome.org>
+
+	* panel-applet/NMWirelessApplet.c: (nmwa_timeout_handler),
+	(nmwa_button_clicked), (nmwa_populate_menu), (nmwa_setup_widgets),
+	(nmwa_new):
+	* src/NetworkManagerDbus.c: (nm_dbus_nmi_filter):
+
+	Don't load the menus until clicked on (also removes a call outside
+	normal code paths at first load).
+
+	Hide applet when NM is not present.
+	
+	Improve printf debugging stuff.
+	
 2004-08-09  Dan Williams <dcbw@redhat.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c:
