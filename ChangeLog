@@ -1,5 +1,10 @@
 2005-01-18  Colin Walters  <walters@redhat.com>
 
+	* src/NetworkManagerDHCP.c (set_nameservers): Free and clear list
+	of older nameservers.
+
+2005-01-18  Colin Walters  <walters@redhat.com>
+
 	* named/nm-named-manager.c (generate_named_conf): Many fixes
 	to config file generation.
 	(safer_kill): Remove, was too much trouble for little gain.

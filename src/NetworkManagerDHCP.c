@@ -52,6 +52,8 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 			g_clear_error (&error);
 		}
 	}
+	g_list_free (dev->app_data->nameserver_ids);
+	dev->app_data->nameserver_ids = NULL;
 	
 	for (i = 0; data && (i < len-3); i += 4)
 	{
