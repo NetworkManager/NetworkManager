@@ -586,7 +586,7 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE, 0, &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
-		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
+		syslog (LOG_ERR, "nmi_dbus_service_init() could not acquire service %s.  dbus_bus_acquire_service() says: '%s'", NMI_DBUS_SERVICE, dbus_error.message);
 		dbus_error_free (&dbus_error);
 		return (-1);
 	}

@@ -1,3 +1,12 @@
+2004-09-28  Bryan Clark  <clarkbw@cvs.gnome.org>
+
+	Changes from J5
+	
+	* info-daemon/NetworkManagerInfo.conf: fixed own permissions
+
+	* info-daemon/NetworkManagerInfoDbus.c: added service name to
+	syslog output
+
 Wed Sep 22 14:19:48 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c: Only add essid's if we actually
