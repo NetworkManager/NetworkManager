@@ -65,9 +65,11 @@ static void
 nm_menu_network_draw_indicator (GtkCheckMenuItem *check_menu_item,
 				GdkRectangle	 *area)
 {
-  /* Only draw the indicator if we're an ethernet device */
+  /* Don't draw the indicator if we're a wireless device */
   if (NM_MENU_NETWORK (check_menu_item)->type == DEVICE_TYPE_WIRELESS_ETHERNET)
-    GTK_CHECK_MENU_ITEM_CLASS (nm_menu_network_parent_class)->draw_indicator (check_menu_item, area);
+    return;
+
+  GTK_CHECK_MENU_ITEM_CLASS (nm_menu_network_parent_class)->draw_indicator (check_menu_item, area);
 }
 
 static void

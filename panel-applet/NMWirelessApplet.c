@@ -574,6 +574,8 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 
 	menu_item = nm_menu_network_new (applet->image_size_group);
 	nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, multiple_devices);
+	if (applet->active_device == device && device->type == DEVICE_TYPE_WIRED_ETHERNET)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
 
 	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
 	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
@@ -643,6 +645,8 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 		menu_item = nm_menu_wireless_new (applet->image_size_group,
 						  applet->encryption_size_group);
 		gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+		if (applet->active_device == dev && net->active)
+			gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
 		nm_menu_wireless_update (NM_MENU_WIRELESS (menu_item), net, has_encrypted);
 
 		g_object_set_data (G_OBJECT (menu_item), "network", g_strdup (net->essid));
@@ -656,6 +660,44 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	nmwa_menu_add_custom_essid_item (menu, dev, applet);
 }
 
+static int
+sort_networks_function (gconstpointer a, gconstpointer b)
+{
+	NetworkDevice *dev_a = (NetworkDevice *) a;
+	NetworkDevice *dev_b = (NetworkDevice *) b;
+	char *name_a;
+	char *name_b;
+
+	if (dev_a->hal_name)
+		name_a = dev_a->hal_name;
+	else if (dev_a->nm_name)
+		name_a = dev_a->nm_name;
+	else
+		name_a = "";
+
+	if (dev_b->hal_name)
+		name_b = dev_b->hal_name;
+	else if (dev_b->nm_name)
+		name_b = dev_b->nm_name;
+	else
+		name_b = "";
+
+	if (dev_a->type == dev_b->type)
+	{
+		return strcmp (name_a, name_b);
+	}
+	if (dev_a->type == DEVICE_TYPE_WIRED_ETHERNET)
+		return -1;
+	if (dev_b->type == DEVICE_TYPE_WIRED_ETHERNET)
+		return 1;
+	if (dev_a->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		return -1;
+	if (dev_b->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		return 1;
+
+	/* Unknown device types.  Sort by name only at this point. */
+	return strcmp (name_a, name_b);
+}
 
 /*
  * nmwa_menu_add_devices
@@ -677,6 +719,8 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
 		return;
 	}
+
+	applet->devices = g_slist_sort (applet->devices, sort_networks_function);
 
 	for (element = applet->devices; element; element = element->next)
 	{

@@ -1,3 +1,11 @@
+Wed Sep 22 13:51:45 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/menu-info.c (nm_menu_network_draw_indicator): Flip
+	the logic to make this right.
+
+	* panel-applet/NMWirelessApplet.c (sort_networks_function): sort
+	devices so that wired networks are always first.
+
 2004-09-22    <clarkbw@cvs.gnome.org>
 
 	* initscript/Debian/.cvsignore:
