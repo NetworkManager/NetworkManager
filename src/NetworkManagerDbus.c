@@ -1396,11 +1396,11 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_error_init (&dbus_error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &dbus_error);
-	if ((connection == NULL) || dbus_error_is_set (&error))
+	if ((connection == NULL) || dbus_error_is_set (&dbus_error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
+		if (dbus_error_is_set (&dbus_error))
+			dbus_error_free (&dbus_error);
 		return (NULL);
 	}
 
@@ -1430,18 +1430,20 @@ DBusConnection *nm_dbus_init (NMData *data)
 				"sender='" NMI_DBUS_SERVICE "',"
 				"path='" NMI_DBUS_PATH "'",
 				&dbus_error);
+	dbus_error_free (&dbus_error);
 
 	dbus_bus_add_match(connection,
 				"type='signal',"
 				"interface='" DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS "',"
 				"sender='" DBUS_SERVICE_ORG_FREEDESKTOP_DBUS "'",
 				&dbus_error);
+	dbus_error_free (&dbus_error);
 
 	dbus_bus_acquire_service (connection, NM_DBUS_SERVICE, 0, &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
 		syslog (LOG_ERR, "nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", dbus_error.message);
-		dbus_error_free (&error);
+		dbus_error_free (&dbus_error);
 		return (NULL);
 	}
 

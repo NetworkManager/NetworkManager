@@ -1,5 +1,15 @@
 2004-09-11  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- Fix race condition between initscripts and NM on card insertion
+			which could cause a card to keep an IP address and routes around
+			even when it was not the active device
+
+	* src/NetworkManagerDbus.c
+		- Fix compile errors, free more DBusErrors
+
+2004-09-11  Dan Williams <dcbw@redhat.com>
+
 	* docs/NetworkManager DBUS API.txt
 		- Add an explanation of NM's API
 

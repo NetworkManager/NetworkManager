@@ -372,6 +372,18 @@ gboolean nm_link_state_monitor (gpointer user_data)
 					 */
 					nm_device_update_ip4_address (dev);
 				}
+				else
+				{
+					/* Ensure that the device has no IP address or routes.  This will
+					 * sometimes occur when a card gets inserted, and the system
+					 * initscripts will run to bring the card up, but they get around to
+					 * running _after_ we've been notified of insertion and cleared out
+					 * card info already.
+					 */
+					nm_system_device_flush_routes (dev);
+					if (nm_device_get_ip4_address (dev) != 0)
+						nm_system_device_flush_addresses (dev);
+				}
 			}
 
 			element = g_slist_next (element);
