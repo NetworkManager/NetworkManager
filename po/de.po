@@ -9,32 +9,37 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager cvs\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-19 13:38-0400\n"
-"PO-Revision-Date: 2004-10-08 18:31+0200\n"
+"POT-Creation-Date: 2004-10-22 22:17+0200\n"
+"PO-Revision-Date: 2004-10-22 22:19+0200\n"
 "Last-Translator: Hendrik Brandt <eru@gmx.li>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Funknetzwerke bearbeiten"
-
-#: info-daemon/networks.glade:92
+#: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
 msgstr "<span weight=\"bold\">Funknetzwerke:</span>"
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "Schlüssel für Funknetzwerk benötigt"
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Funknetzwerke bearbeiten"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Am Netzwerk anmelden"
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
 
-#: info-daemon/passphrase.glade:100
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit Passwort\n"
+"128-bit Reiner Hexadezimalschlüssel"
+
+#: info-daemon/passphrase.glade.h:5
+#, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -49,33 +54,29 @@ msgstr ""
 "dem Funknetzwerk »%s« benötigt.A passphrase or encryption key is required to "
 "access the wireless network '%s'."
 
-#: info-daemon/passphrase.glade:129
+#: info-daemon/passphrase.glade.h:8
 msgid "Key Type:"
 msgstr "Schlüsseltyp:"
 
-#: info-daemon/passphrase.glade:150
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"128-bit Passwort\n"
-"128-bit Reiner Hexadezimalschlüssel"
-
-#: info-daemon/passphrase.glade:180
+#: info-daemon/passphrase.glade.h:9
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Passwort:"
 
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade.h:10
+msgid "Wireless Network Key Required"
+msgstr "Schlüssel für Funknetzwerk benötigt"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "_Login to Network"
+msgstr "_Am Netzwerk anmelden"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
 msgstr "Schlüssel:"
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:691 panel-applet/NMWirelessApplet.c:701
+#: panel-applet/NMWirelessApplet.c:690 panel-applet/NMWirelessApplet.c:700
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -83,40 +84,37 @@ msgstr ""
 "Das Netzwerk-Manager-Applet konnten eine benötigte Ressource nicht finden "
 "(Die Glade-Datei wurde nicht gefunden)."
 
-#: panel-applet/NMWirelessApplet.c:716
-#, fuzzy
+#: panel-applet/NMWirelessApplet.c:715
 msgid "Custom wireless network"
-msgstr "Funknetzwerk"
+msgstr "Benutzerdefiniertes Funknetzwerk"
 
-#: panel-applet/NMWirelessApplet.c:717
+#: panel-applet/NMWirelessApplet.c:716
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
+msgstr "Bitte geben Sie die ESSID für das drahtlose Netzwerk mit dem Sie sich verbinden möchten ein."
 
-#: panel-applet/NMWirelessApplet.c:800
+#: panel-applet/NMWirelessApplet.c:799
 msgid "Other Wireless Networks..."
 msgstr "Andere Funknetzwerke..."
 
-#: panel-applet/NMWirelessApplet.c:911
+#: panel-applet/NMWirelessApplet.c:910
 msgid "No network devices have been found"
 msgstr "Es wurden keine Netzwerkgeräte gefunden"
 
-#: panel-applet/NMWirelessApplet.c:1028
+#: panel-applet/NMWirelessApplet.c:1027
 msgid "NetworkManager is not running..."
 msgstr "Der Netzwerk-Manager ist nicht aktiv..."
 
-#: panel-applet/essid.glade:52
+#: panel-applet/essid.glade.h:2
 msgid "C_onnect"
-msgstr ""
+msgstr "_Verbinden"
 
-#: panel-applet/essid.glade:131
-#, fuzzy
-msgid "Wireless _Network:"
-msgstr "Funknetzwerk"
-
-#: panel-applet/essid.glade:177
-#, fuzzy
+#: panel-applet/essid.glade.h:3
 msgid "Wireless _Adaptor:"
-msgstr "Funknetzwerk"
+msgstr "Funknetzwerk_adapter:"
+
+#: panel-applet/essid.glade.h:4
+msgid "Wireless _Network:"
+msgstr "_Funknetzwerk:"
 
 #: panel-applet/menu-info.c:101
 #, c-format
@@ -152,28 +150,3 @@ msgstr "Ausrichtung"
 msgid "The orientation of the tray."
 msgstr "Die Ausrichtung des Benachrichtigungsfeldes."
 
-#~ msgid "_About..."
-#~ msgstr "_Info"
-
-#~ msgid " "
-#~ msgstr " "
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
-#~ "this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will no longer pester you with stupid questions when you "
-#~ "connect to it."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Anmeldebestätigung an ein "
-#~ "Funknetzwerk</span>\n"
-#~ "\n"
-#~ "Sie beabsichtigen sich mit dem Funknetzwerk »%s« zu verbinden. Wenn Sie "
-#~ "glauben, dass dieses Netzwerk sicher ist, können Sie das Auswahlfeld "
-#~ "unten anklicken, so das in Zukunft diese Sicherheitsabfrage nicht mehr "
-#~ "erscheint."
-
-#~ msgid "Always Trust this Wireless Network"
-#~ msgstr "Diesem Funknetzwerk immer vertrauen"
