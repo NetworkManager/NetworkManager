@@ -1,3 +1,10 @@
+2004-11-12  Colin Walters  <walters@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_service_init): Delete
+	call to nmi_dbus_is_running too, not necessary anymore.
+	* info-daemon/NetworkManagerInfoDbus.c: Include stdlib.h to
+	pick up exit().
+
 2004-11-11  Colin Walters  <walters@verbum.org>
 
 	* info-daemon/NetworkManagerInfoDbus.c (nmi_dbus_is_running):

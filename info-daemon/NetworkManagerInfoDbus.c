@@ -24,6 +24,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "NetworkManagerInfo.h"
@@ -738,10 +739,6 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	DBusError		 		 dbus_error;
 	DBusObjectPathVTable	 nmi_vtable = { &nmi_dbus_nmi_unregister_handler, &nmi_dbus_nmi_message_handler, NULL, NULL, NULL, NULL };
 	int acquisition;
-
-	/*return if we are already running in another instance*/
-	if (nmi_dbus_is_running (dbus_connection))
-		return (-1);
 
 	dbus_error_init (&dbus_error);
 	acquisition = dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE,
