@@ -1,3 +1,33 @@
+2004-09-09  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Pull fresh devices and networks from NM when wireless networks
+			change.  Provides faster feedback of a forced wireless network
+
+	* src/NetworkManagerDbus.c
+		- Return error when "getMaxQuality" is called on a wired device
+		- Make best_ap freezing actually work again, and signal cancellation
+			of activation if there's already a device activation when the user
+			freezes the best_ap
+
+	* src/NetworkManagerDevice.c
+		- Don't clear out the best_ap for wireless devices when the link goes
+			down, that's done elsewhere
+		- Kill any dhcp daemons when cancelling device activation since they
+			may be stuck waiting for a DHCP address, and since we're cancelling
+			activation we don't care about that anymore
+
+	* src/NetworkManagerPolicy.c
+		- Make sure to unref the device we ref earlier (we refed it to make sure
+			it stuck around during device activation and such)
+		- If we were going to change the best device, but its activating currently
+			(and therefore the change didn't occur due to the check earlier)
+			we mark the state changed to we come back to it later when device
+			activation has canceled and its no longer activating
+
+	* src/backends/NetworkManagerRedHat.c
+		- SIGKILL dhcp daemons rather than SIGTERM-ing them
+
 2004-09-09  Bryan Clark  <clarkbw@cvs.gnome.org>
 
 	* info-daemon/passphrase.glade: 

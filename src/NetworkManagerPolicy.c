@@ -301,6 +301,14 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				}
 			}
 
+			if (best_dev)
+			{
+				if (nm_device_activating (best_dev))
+					nm_data_mark_state_changed (data);
+
+				nm_device_unref (best_dev);
+			}
+
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 		}
 		else

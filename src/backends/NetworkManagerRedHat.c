@@ -109,7 +109,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 
 		n_pid = atoi (s_pid);
 		if (n_pid > 0)
-			kill (n_pid, SIGTERM);
+			kill (n_pid, SIGKILL);
 	}
 	g_free (buf);
 }

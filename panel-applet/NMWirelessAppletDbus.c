@@ -1133,6 +1133,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
 	{
 		nmwa_dbus_update_network_state (applet);
+		nmwa_dbus_update_devices (applet);
 		nmwa_dbus_update_active_device (applet);
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))

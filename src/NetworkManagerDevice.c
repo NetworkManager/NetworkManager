@@ -443,8 +443,6 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 	g_return_if_fail (dev != NULL);
 
 	dev->link_active = link_active;
-	if (!link_active && nm_device_is_wireless (dev))
-		nm_device_set_best_ap (dev, NULL);
 }
 
 
@@ -1252,7 +1250,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_cancel_if_needed (dev))
-			return;
+			return (NULL);
 
 		/* Since we've got a link, the encryption method must be good */
 		nm_ap_set_enc_method_good (nm_device_get_best_ap (dev), TRUE);
@@ -1353,8 +1351,9 @@ void nm_device_activation_signal_cancel (NMDevice *dev)
 
 	if (dev->activating)
 	{
-		syslog (LOG_DEBUG, "nm_device_activation_signal_cancel(%s): canceled", nm_device_get_iface (dev));
+		syslog (LOG_DEBUG, "nm_device_activation_signal_cancel(%s): cancelling", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
+		nm_system_kill_all_dhcp_daemons ();	/* dhcp daemons will block, so have to kill them to return control */
 	}
 }
 
@@ -1715,6 +1714,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 	{
 		nm_device_bring_down (dev);
 		nm_device_set_essid (dev, "");
+		nm_device_set_enc_key (dev, NULL);
 		nm_device_bring_up (dev);
 	}
 }

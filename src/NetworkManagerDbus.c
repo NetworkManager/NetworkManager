@@ -1030,7 +1030,18 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 	else if (strcmp ("getIP4Address", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_ip4_address (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getMaxQuality", request) == 0)
+	{
+		/* Only wireless devices have an active network */
+		if (!nm_device_is_wireless (dev))
+		{
+			dbus_message_unref (reply_message);
+			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
+					"Wired devices cannot have wireless networks.");
+			return (reply_message);
+		}
+
 		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_max_quality (dev), DBUS_TYPE_INVALID);
+	}
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
 		NMAccessPoint	*ap;
@@ -1186,8 +1197,10 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 				if ((ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (data->active_device), network)))
 				{
 					syslog (LOG_DEBUG, "Forcing AP '%s'", nm_ap_get_essid (ap));
-					nm_device_freeze_best_ap (data->active_device);
 					nm_device_set_best_ap (data->active_device, ap);
+					nm_device_freeze_best_ap (data->active_device);
+					if (nm_device_activating (data->active_device))
+						nm_device_activation_signal_cancel (data->active_device);
 					nm_data_mark_state_changed (data);
 				}
 				dbus_free (network);
