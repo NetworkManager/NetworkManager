@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-08 12:02+0200\n"
-"PO-Revision-Date: 2004-10-08 15:41+0200\n"
+"POT-Creation-Date: 2004-10-10 04:04+0200\n"
+"PO-Revision-Date: 2004-10-10 13:23+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
@@ -48,15 +48,18 @@ msgid ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Draadloos netwerk vereist wachtwoordfrase</span>\n"
+"<span weight=\"bold\" size=\"larger\">Draadloos netwerk vereist "
+"wachtwoordfrase</span>\n"
 "\n"
-"Een wachtwoordfrase of WEP-key is vereist om toegang te krijgen tot het draadloze netwerk '%s'."
+"Een wachtwoordfrase of WEP-key is vereist om toegang te krijgen tot het "
+"draadloze netwerk '%s'."
 
 #: info-daemon/passphrase.glade.h:8
 msgid "Key Type:"
 msgstr "Sleuteltype:"
 
 #: info-daemon/passphrase.glade.h:9
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
 
@@ -67,6 +70,10 @@ msgstr "Sleutel draadloos netwerk vereist"
 #: info-daemon/passphrase.glade.h:11 panel-applet/wireless-applet.glade.h:7
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+msgid "Key:"
+msgstr "Sleutel:"
 
 #: panel-applet/NMWirelessApplet.c:600
 msgid "Other Wireless Networks..."
