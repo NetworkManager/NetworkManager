@@ -138,7 +138,8 @@ unsigned char *fill_server_id (unsigned int *server_id, unsigned char *p)
 /*****************************************************************************/
 unsigned char *fill_message_type (unsigned char request, unsigned char *p)
 {
-	const unsigned short dhcpMsgSize = htons (sizeof (dhcpMessage));
+#define MAX_DHCP_MSG_SIZE	576
+	const unsigned short dhcpMsgSize = htons (MAX_DHCP_MSG_SIZE);
 
 	*p++ = dhcpMessageType;
 	*p++ = 1;
@@ -147,6 +148,15 @@ unsigned char *fill_message_type (unsigned char request, unsigned char *p)
 	*p++ = 2;
 	memcpy (p, &dhcpMsgSize, 2);
 	p += 2;
+	return p;
+}
+/*****************************************************************************/
+unsigned char *fill_padding (dhcpMessage *start, unsigned char *p)
+{
+#define PAD_STOP	304	/* DHCP messages must be at least 300 bytes long.  +4 for good measure */
+
+	while ((char *)p - (char *)start < PAD_STOP)
+		*p++ = 0;
 	return p;
 }
 /*****************************************************************************/
@@ -171,9 +181,9 @@ udpipMessage *build_dhcp_discover (dhcp_interface *iface, int *msg_len)
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
 	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), 0, INADDR_BROADCAST, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)p - (char *)udp_msg;
@@ -198,10 +208,10 @@ udpipMessage *build_dhcp_request (dhcp_interface *iface, int *msg_len)
 		p = fill_lease_time (iface->dhcp_options.val[dhcpIPaddrLeaseTime], p);
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), 0, INADDR_BROADCAST, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -224,9 +234,10 @@ udpipMessage *build_dhcp_renew (dhcp_interface *iface, int *msg_len)
 #endif
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
-	p++;
+	/* build UDP/IP header */
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), iface->ciaddr, iface->siaddr, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -247,10 +258,10 @@ udpipMessage *build_dhcp_rebind (dhcp_interface *iface, int *msg_len)
 		p = fill_lease_time (iface->dhcp_options.val[dhcpIPaddrLeaseTime], p);
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), iface->ciaddr, INADDR_BROADCAST, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -274,10 +285,10 @@ udpipMessage *build_dhcp_reboot (dhcp_interface *iface, int *msg_len)
 	p = fill_lease_time (&lease_time, p);
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), 0, INADDR_BROADCAST, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -299,10 +310,10 @@ udpipMessage *build_dhcp_release (dhcp_interface *iface, int *msg_len)
 	p = fill_server_id (iface->dhcp_options.val[dhcpServerIdentifier], p);
 	memcpy(p, iface->cli_id, iface->cli_id_len);
 	p += iface->cli_id_len;
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), iface->ciaddr, iface->siaddr, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -328,10 +339,10 @@ udpipMessage *build_dhcp_decline (dhcp_interface *iface, int *msg_len)
 		p = fill_requested_ipaddr (iface, p);
 	memcpy (p, iface->cli_id, iface->cli_id_len);
 	p += iface->cli_id_len;
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen ((udpiphdr *)(udp_msg->udpipmsg), 0, iface->siaddr, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
@@ -351,10 +362,10 @@ udpipMessage *build_dhcp_inform (dhcp_interface *iface, int *msg_len)
 	p = fill_message_type (DHCP_INFORM, p);
 	p = fill_param_request (p);
 	p = fill_host_and_class_id (iface, p);
-	*p = endOption;
+	*p++ = endOption;
+	p = fill_padding (dhcp_msg, p);
 
 	/* build UDP/IP header */
-	p++;
 	dhcp_msg_len = (char *)p - (char *)dhcp_msg;
 	udpipgen((udpiphdr *)(udp_msg->udpipmsg), 0, INADDR_BROADCAST, &iface->ip_id, dhcp_msg_len);
 	*msg_len = (char *)(p++) - (char *)udp_msg;
