@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.2)
+AC_INIT(NetworkManager, 0.2, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
 
 AC_PROG_CC
