@@ -32,6 +32,9 @@
 #include "NMWirelessAppletDbus.h"
 #include <config.h>
 
+static gboolean nm_menu_wired_expose_event    (GtkWidget *widget, GdkEventExpose *event);
+static gboolean nm_menu_wireless_expose_event (GtkWidget *widget, GdkEventExpose *event);
+
 
 
 G_DEFINE_TYPE (NMMenuWired, nm_menu_wired, GTK_TYPE_CHECK_MENU_ITEM);
@@ -50,6 +53,26 @@ nm_menu_wired_init (NMMenuWired *menu_wired)
 static void
 nm_menu_wired_class_init (NMMenuWiredClass *klass)
 {
+    GTK_WIDGET_CLASS (klass)->expose_event = nm_menu_wired_expose_event;
+}
+
+/* Bad hack */
+static gboolean
+nm_menu_wired_expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+  gboolean retval;
+  GtkStyle *old_style;
+
+  old_style = NM_MENU_WIRED (widget)->label->style;
+  NM_MENU_WIRED (widget)->label->style = 
+    gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
+			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
+			       GTK_TYPE_LABEL);
+  retval = GTK_WIDGET_CLASS (nm_menu_wired_parent_class)->expose_event (widget, event);
+  NM_MENU_WIRED (widget)->label->style = old_style;
+
+  return retval;
 }
 
 GtkWidget *
@@ -114,6 +137,7 @@ nm_menu_network_init (NMMenuNetwork *menu_network)
 static void
 nm_menu_network_class_init (NMMenuNetworkClass *menu_network)
 {
+  
 }
 
 GtkWidget *
@@ -184,6 +208,7 @@ nm_menu_wireless_init (NMMenuWireless *menu_info)
 static void
 nm_menu_wireless_class_init (NMMenuWirelessClass *menu_info_class)
 {
+  GTK_WIDGET_CLASS (menu_info_class)->expose_event = nm_menu_wireless_expose_event;
 }
 
 GtkWidget *
@@ -193,6 +218,25 @@ nm_menu_wireless_new (GtkSizeGroup    *encryption_size_group)
 
   gtk_size_group_add_widget (encryption_size_group,
 			     NM_MENU_WIRELESS (retval)->security_image);
+
+  return retval;
+}
+
+/* Bad hack */
+static gboolean
+nm_menu_wireless_expose_event (GtkWidget *widget, GdkEventExpose *event)
+{
+  gboolean retval;
+  GtkStyle *old_style;
+
+  old_style = NM_MENU_WIRELESS (widget)->label->style;
+  NM_MENU_WIRELESS (widget)->label->style = 
+    gtk_rc_get_style_by_paths (gtk_settings_get_default (),
+			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
+			       "GtkWindow.GtkMenu.GtkMenuItem.GtkLabel",
+			       GTK_TYPE_LABEL);
+  retval = GTK_WIDGET_CLASS (nm_menu_wireless_parent_class)->expose_event (widget, event);
+  NM_MENU_WIRELESS (widget)->label->style = old_style;
 
   return retval;
 }

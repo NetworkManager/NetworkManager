@@ -1,3 +1,18 @@
+Tue Oct 12 22:44:15 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.h: Change the name of the icons.
+
+	* panel-applet/NMWirelessApplet.c: (animation_timeout),
+	(nmwa_update_state), (nmwa_destroy), (nmwa_setup_widgets),
+	(nmwa_icons_free), (nmwa_icons_load_from_disk), (nmwa_icons_init):
+	Change the name of the icons.
+
+	* panel-applet/menu-info.c: (nm_menu_wired_class_init),
+	(nm_menu_wired_expose_event), (nm_menu_network_class_init),
+	(nm_menu_wireless_class_init), (nm_menu_wireless_new),
+	(nm_menu_wireless_expose_event): Really bad hack to get the style
+	to draw in the right color.
+
 Tue Oct 12 John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c (main):  Add child watch to respawn

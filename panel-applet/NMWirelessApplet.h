@@ -115,19 +115,19 @@ typedef struct
 	NetworkDevice		*active_device;
 	AppletState		 applet_state;
 
-        GdkPixbuf *XXno_nm_icon;
-        GdkPixbuf *XXwired_icon;
+        GdkPixbuf *no_nm_icon;
+        GdkPixbuf *wired_icon;
 #define NUM_WIRED_CONNECTING_FRAMES 4
-        GdkPixbuf *XXwired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
-        GdkPixbuf *XXwireless_00_icon;
-        GdkPixbuf *XXwireless_25_icon;
-        GdkPixbuf *XXwireless_50_icon;
-        GdkPixbuf *XXwireless_75_icon;
-        GdkPixbuf *XXwireless_100_icon;
+        GdkPixbuf *wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
+        GdkPixbuf *wireless_00_icon;
+        GdkPixbuf *wireless_25_icon;
+        GdkPixbuf *wireless_50_icon;
+        GdkPixbuf *wireless_75_icon;
+        GdkPixbuf *wireless_100_icon;
 #define NUM_WIRELESS_CONNECTING_FRAMES 4
-        GdkPixbuf *XXwireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+        GdkPixbuf *wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
 #define NUM_WIRELESS_SCANNING_FRAMES 8
-	GdkPixbuf *XXwireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
+	GdkPixbuf *wireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
 
 	/* Animation stuff */
 	int animation_step;
@@ -135,8 +135,6 @@ typedef struct
 
 	/* Direct UI elements */
 	GtkWidget			*pixmap;
-	GtkWidget			*box;
-	GtkWidget			*about_dialog;
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
 	GtkSizeGroup                    *encryption_size_group;
