@@ -941,7 +941,9 @@ static void nmwa_dbus_update_device_wireless_networks (NetworkDevice *dev, NMWir
 	if (dev->type != DEVICE_TYPE_WIRELESS_ETHERNET)
 		goto out;
 
-	active_network = nmwa_dbus_get_active_network (applet, dev->nm_device, APPLET_STATE_IGNORE);
+	
+	if (dev->active)
+		active_network = nmwa_dbus_get_active_network (applet, dev->nm_device, APPLET_STATE_IGNORE);
 	if (applet->applet_state == APPLET_STATE_NO_NM)
 		goto out;	/* Don't proceed if NetworkManager died during the call to get the active network */
 

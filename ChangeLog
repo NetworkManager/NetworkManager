@@ -1,3 +1,8 @@
+Thu Oct 14 16:47:12 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessAppletDbus.c
+	(nmwa_dbus_update_device_wireless_networks): remove warnings.
+
 Thu Oct 14 16:40:39 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c (animation_timeout): Make
