@@ -1,3 +1,8 @@
+2005-01-24  Colin Walters  <walters@redhat.com>
+
+	* named/named.conf: Use any port for query source instead of
+	restricting to port 53.
+
 2005-01-24  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tom Parker <palfrey@tevp.net>
