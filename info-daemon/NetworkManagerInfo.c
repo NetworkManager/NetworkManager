@@ -33,7 +33,8 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
-
+#include <libgnome/gnome-init.h>
+#include <libgnomeui/gnome-ui-init.h>
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
@@ -158,7 +159,8 @@ static void nmi_print_usage (void)
  */
 int main( int argc, char *argv[] )
 {
-	gboolean		 become_daemon = TRUE;
+ 	GnomeProgram 	*program;
+	gboolean		 no_daemon;
 	DBusError		 dbus_error;
 	DBusConnection	*dbus_connection;
 	int			 err;
@@ -166,54 +168,22 @@ int main( int argc, char *argv[] )
 	GMainLoop		*loop;
 	guint		 notify_id;
 
-	/* Parse options */
-	while (1)
-	{
-		int c;
-		int option_index = 0;
-		const char *opt;
+	struct poptOption options[] = {
+		{ "no-daemon", 'n', POPT_ARG_NONE, NULL, 0,
+		  "Don't detatch from the console and run in the background.", NULL },
+		{ NULL, '\0', 0, NULL, 0, NULL, NULL }
+	};
 
-		static struct option options[] = {
-			{"daemon",	1, NULL, 0},
-			{"help",		0, NULL, 0},
-			{NULL,		0, NULL, 0}
-		};
+	options[0].arg = &no_daemon;
 
-		c = getopt_long (argc, argv, "", options, &option_index);
-		if (c == -1)
-			break;
+	program = gnome_program_init ("NetworkManagerInfo", VERSION,
+							LIBGNOMEUI_MODULE, argc, argv,
+							GNOME_PROGRAM_STANDARD_PROPERTIES,
+							GNOME_PARAM_POPT_TABLE, options,
+							GNOME_PARAM_HUMAN_READABLE_NAME, "Network Manager User Info Service",
+							NULL);
 
-		switch (c)
-		{
-			case 0:
-				opt = options[option_index].name;
-				if (strcmp (opt, "help") == 0)
-				{
-					nmi_print_usage ();
-					return 0;
-				}
-				else if (strcmp (opt, "daemon") == 0)
-				{
-					if (strcmp ("yes", optarg) == 0)
-						become_daemon = TRUE;
-					else if (strcmp ("no", optarg) == 0)
-						become_daemon = FALSE;
-					else
-					{
-						nmi_print_usage ();
-						return 1;
-					}
-				}
-				break;
-
-			default:
-				nmi_print_usage ();
-				return 1;
-				break;
-		}
-	}
-
-	if (become_daemon)
+	if (!no_daemon)
 	{
 		int child_pid;
 

@@ -28,9 +28,9 @@ fi
 	DIE=1
 }
 
-if automake-1.7 --version < /dev/null > /dev/null 2>&1 ; then
-    AUTOMAKE=automake-1.7
-    ACLOCAL=aclocal-1.7
+if automake --version < /dev/null > /dev/null 2>&1 ; then
+    AUTOMAKE=automake
+    ACLOCAL=aclocal
 else
 	echo
 	echo "You must have automake 1.7.x installed to compile $PROJECT."

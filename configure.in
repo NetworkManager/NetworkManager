@@ -35,6 +35,10 @@ PKG_CHECK_MODULES(OPENSSL, openssl)
 AC_SUBST(OPENSSL_CFLAGS)
 AC_SUBST(0PENSSL_LIBS)
 
+PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
+AC_SUBST(LIBGNOMEUI_CFLAFS)
+AC_SUBST(LIBGNOMEUI_LIBS)
+
 # taken from hal
 AC_ARG_WITH(dbus-sys, [  --with-dbus-sys=<dir>   where D-BUS system.d directory is])
 
