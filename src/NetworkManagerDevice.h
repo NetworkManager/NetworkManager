@@ -66,6 +66,8 @@ void			nm_device_set_essid				(NMDevice *dev, const char *essid);
 
 void			nm_device_get_ap_address			(NMDevice *dev, struct ether_addr *addr);
 
+NMNetworkMode	nm_device_get_mode				(NMDevice *dev);
+
 guint32		nm_device_get_ip4_address		(NMDevice *dev);
 void			nm_device_update_ip4_address		(NMDevice *dev);
 

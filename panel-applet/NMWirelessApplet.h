@@ -113,6 +113,7 @@ typedef struct
 	GMutex			*data_mutex;
 	AppletState		 applet_state;
 	gboolean			 forcing_device;
+	gboolean			 is_adhoc;
 	GSList			*device_list;
 	NetworkDevice		*active_device;
 	char				*nm_status;
@@ -120,6 +121,7 @@ typedef struct
 
         GdkPixbuf *no_nm_icon;
         GdkPixbuf *wired_icon;
+        GdkPixbuf *adhoc_icon;
 #define NUM_WIRED_CONNECTING_FRAMES 4
         GdkPixbuf *wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
         GdkPixbuf *wireless_00_icon;

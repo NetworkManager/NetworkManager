@@ -8,6 +8,7 @@ largeicon_DATA=\
 smallicondir=${datadir}/icons/hicolor/22x22/apps
 smallicon_DATA=\
 	nm-device-wired.png	\
+	nm-adhoc.png		\
 	nm-connecting00.png	\
 	nm-connecting01.png	\
 	nm-connecting02.png	\

@@ -1347,6 +1347,8 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_rate (ap), DBUS_TYPE_INVALID);
 	else if (strcmp ("getEncrypted", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, nm_ap_get_encrypted (ap), DBUS_TYPE_INVALID);
+	else if (strcmp ("getMode", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_mode (ap), DBUS_TYPE_INVALID);
 	else
 	{
 		/* Must destroy the allocated message */
@@ -1407,6 +1409,8 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, nm_device_get_udi (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getIP4Address", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_ip4_address (dev), DBUS_TYPE_INVALID);
+	else if (strcmp ("getMode", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_mode (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getStrength", request) == 0)
 	{
 		/* Only wireless devices have signal strength */

@@ -325,6 +325,30 @@ static char * nmwa_dbus_get_object_name (NMWirelessApplet *applet, char *path)
 
 
 /*
+ * nmwa_dbus_get_object_mode
+ *
+ * Returns the mode (ie Ad-Hoc, Infrastructure) of a specified object (wireless network, device, etc)
+ *
+ */
+static NMNetworkMode nmwa_dbus_get_object_mode (NMWirelessApplet *applet, char *path)
+{
+	NMNetworkMode	mode = NETWORK_MODE_INFRA;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, path, "getMode", DBUS_TYPE_INT32, (void **)(&mode), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (mode);
+}
+
+
+/*
  * nmwa_dbus_get_device_udi
  *
  * Returns the HAL udi of a network device
@@ -901,6 +925,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	GSList		 *device_list = NULL;
 	NetworkDevice	 *active_device = NULL;
 	char			 *nm_status = NULL;
+	gboolean		  adhoc = FALSE;
 
 	g_return_if_fail (applet->data_mutex != NULL);
 
@@ -954,7 +979,11 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 						network_device_ref (dev);
 						applet->dbus_active_device = dev;
 						network_device_ref (dev);
-						nmwa_dbus_update_device_wireless_networks (dev, TRUE, applet);
+						if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+						{
+							adhoc = nmwa_dbus_get_object_mode (applet, nm_act_dev);
+							nmwa_dbus_update_device_wireless_networks (dev, TRUE, applet);
+						}
 					}
 					else
 						nmwa_dbus_update_device_wireless_networks (dev, FALSE, applet);
@@ -981,6 +1010,7 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	applet->device_list = device_list;
 	applet->active_device = active_device;
 	applet->nm_status = nm_status;
+	applet->is_adhoc = adhoc;
 
 	g_mutex_unlock (applet->data_mutex);
 }
