@@ -2,6 +2,14 @@
 
 	Patch from Tom Parker <palfrey@tevp.net>:
 
+	* src/NetworkManagerDevice.c
+		- Less output to console when no access
+			points are found during a scan
+
+2004-11-15  Dan Williams <dcbw@redhat.com>
+
+	Patch from Tom Parker <palfrey@tevp.net>:
+
 	* src/backends/interface_parser.c
 		- Use g_strdup ()
 		- Check for inp == NULL

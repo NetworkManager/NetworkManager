@@ -2458,7 +2458,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		 * Some Cisco cards don't report non-ESSID-broadcasting access points in their scans even though
 		 * the card associates with that AP just fine.
 		 */
-		if ((iter = nm_ap_list_iter_new (old_ap_list)))
+		if (old_ap_list && (iter = nm_ap_list_iter_new (old_ap_list)))
 		{
 			char *essid = nm_device_get_essid (dev);
 
@@ -2474,7 +2474,8 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			}
 			nm_ap_list_iter_free (iter);
 		}
-		nm_ap_list_unref (old_ap_list);
+		if (old_ap_list)
+			nm_ap_list_unref (old_ap_list);
 
 		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
 		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, earliest_scan);
