@@ -1,3 +1,10 @@
+2005-02-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bill Moss:
+	* panel-applet/NMWirelessAppletDbus.c
+		- Make sure strength for current access point is up-to-date when we
+			update the gui data model
+
 2005-02-27  Alessio Frusciante  <algol@firenze.linux.it>
 
 	* configure.in: Added "it" (Italian) to ALL_LINGUAS.

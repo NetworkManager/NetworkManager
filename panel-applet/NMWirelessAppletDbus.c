@@ -1180,6 +1180,32 @@ void nmwa_copy_data_model (NMWirelessApplet *applet)
 
 
 /*
+ * nmwa_dbus_update_active_device_strength
+ *
+ * Update the active device's current wireless network strength
+ *
+ */
+static gboolean nmwa_dbus_update_active_device_strength (gpointer user_data)
+{
+	NMWirelessApplet *applet;
+
+	g_return_val_if_fail (user_data != NULL, FALSE);
+
+	applet = (NMWirelessApplet *)user_data;
+	if (applet->gui_active_device && (applet->gui_active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
+	{
+		guint8	strength = nmwa_dbus_get_object_strength (applet, applet->gui_active_device->nm_device);
+
+		applet->gui_active_device->strength = strength;
+		if (applet->gui_active_device == applet->dbus_active_device)
+			applet->dbus_active_device->strength = strength;
+	}
+
+	return (TRUE);
+}
+
+
+/*
  * nmwa_dbus_device_update_one_network
  *
  * Update one wireless network
@@ -1283,34 +1309,9 @@ static void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, DBusM
 			g_mutex_lock (applet->data_mutex);
 			nmwa_copy_data_model (applet);
 			g_mutex_unlock (applet->data_mutex);
+			nmwa_dbus_update_active_device_strength (applet);
 		}
 	}
-}
-
-
-/*
- * nmwa_dbus_update_active_device_strength
- *
- * Update the active device's current wireless network strength
- *
- */
-static gboolean nmwa_dbus_update_active_device_strength (gpointer user_data)
-{
-	NMWirelessApplet *applet;
-
-	g_return_val_if_fail (user_data != NULL, FALSE);
-
-	applet = (NMWirelessApplet *)user_data;
-	if (applet->gui_active_device && (applet->gui_active_device->type == DEVICE_TYPE_WIRELESS_ETHERNET))
-	{
-		guint8	strength = nmwa_dbus_get_object_strength (applet, applet->gui_active_device->nm_device);
-
-		applet->gui_active_device->strength = strength;
-		if (applet->gui_active_device == applet->dbus_active_device)
-			applet->dbus_active_device->strength = strength;
-	}
-
-	return (TRUE);
 }
 
 
