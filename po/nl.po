@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-11 20:15+0200\n"
-"PO-Revision-Date: 2004-09-12 03:17+0200\n"
+"POT-Creation-Date: 2004-09-12 20:15+0200\n"
+"PO-Revision-Date: 2004-09-13 00:55+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@nl.linux.org>\n"
 "MIME-Version: 1.0\n"
@@ -54,31 +54,30 @@ msgstr "Sleutel draadloos netwerk vereist"
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: panel-applet/NMWirelessApplet.c:606
+#: panel-applet/NMWirelessApplet.c:682
 msgid "There are no wireless networks..."
 msgstr "Er zijn geen draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:640
+#: panel-applet/NMWirelessApplet.c:713
 msgid "There are no network devices..."
 msgstr "Er zijn geen netwerkapparaten..."
 
 # betere vertaling
 # is niet uigevoerd (klinkt als verleden tijd)
-#: panel-applet/NMWirelessApplet.c:721
+#: panel-applet/NMWirelessApplet.c:800
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager loopt niet..."
 
 # Netwerken
-#: panel-applet/NMWirelessApplet.c:725
+#: panel-applet/NMWirelessApplet.c:804
 msgid "Network Connections"
 msgstr "Netwerkverbindingen"
 
-#: panel-applet/NMWirelessApplet.c:727
-#, fuzzy
+#: panel-applet/NMWirelessApplet.c:806
 msgid "Other Wireless Network..."
-msgstr "Draadloze netwerken"
+msgstr "Ander draadloze netwerk..."
 
-#: panel-applet/NMWirelessApplet.c:859 panel-applet/NMWirelessApplet.c:919
+#: panel-applet/NMWirelessApplet.c:938 panel-applet/NMWirelessApplet.c:998
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
