@@ -1,5 +1,12 @@
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDbus.c
+	  info-daemon/NetworkManagerInfoDbus.c
+		- Display an error dialog when the user tries to use an
+			"Other wireless network" that's not found.
+
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 		- Fix up corner cases in applet state, making it
 			look more responsive.  Change state to "connecting" when

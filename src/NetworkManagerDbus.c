@@ -215,6 +215,36 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 
 
 /*
+ * nm_dbus_send_network_not_found
+ *
+ * Tell the info-daemon to alert the user that a requested network was
+ * not found.
+ *
+ */
+void nm_dbus_send_network_not_found (DBusConnection *connection, const char *network)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (network != NULL);
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
+						NMI_DBUS_INTERFACE, "networkNotFound");
+	if (message == NULL)
+	{
+		syslog (LOG_ERR, "nm_dbus_send_network_not_found(): Couldn't allocate the dbus message");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (connection, message, NULL))
+		syslog (LOG_WARNING, "nm_dbus_send_network_not_found(): could not send dbus message");
+
+	dbus_message_unref (message);
+}
+
+
+/*
  * nm_dbus_nm_set_active_device
  *
  * Notify the state modification handler that we want to lock to a specific
@@ -281,10 +311,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	/* If the user specificed a wireless network too, force that as well */
 	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network))
-	{
-		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
-										"The requested wireless network is not in range.");
-	}
+		nm_dbus_send_network_not_found (data->dbus_connection, network);
 	else
 	{
 		if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
@@ -295,6 +322,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			nm_device_ref (data->user_device);
 			nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 		}
+		else
+			nm_dbus_send_network_not_found (data->dbus_connection, network);
 	}
 
 	/* Have to mark our state changed since we blew away our connection trying out

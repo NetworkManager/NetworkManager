@@ -513,6 +513,16 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		if (GTK_WIDGET_VISIBLE (dialog))
 			nmi_passphrase_dialog_cancel (info);
 	}
+	else if (strcmp ("networkNotFound", method) == 0)
+	{
+		GtkWidget	*dialog;
+
+		dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+			"The requested wireless network does not appear to be in range."
+			"  Another wireless network will be used if one is available.", NULL);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+	}
 	else if (strcmp ("getNetworks", method) == 0)
 		reply_message = nmi_dbus_get_networks (info, message);
 	else if (strcmp ("getNetworkTimestamp", method) == 0)

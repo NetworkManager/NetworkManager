@@ -180,7 +180,6 @@ int main( int argc, char *argv[] )
 	NMIAppInfo	*app_info = NULL;
 	GMainLoop		*loop;
 	guint		 notify_id;
-	GError		*error = NULL;
 
 	struct poptOption options[] =
 	{
@@ -302,11 +301,9 @@ int main( int argc, char *argv[] )
 
 	gtk_main ();
 
-	
 	if (app_info->notification_icon_pid > 0)
 		kill (app_info->notification_icon_pid, SIGTERM);
 
-	
 	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
 	gconf_client_notify_remove (app_info->gconf_client, notify_id);

@@ -47,7 +47,7 @@ struct NMIAppInfo
 	/*
 	GtkWidget	*notification_icon;
 	*/
-	GPid		notification_icon_pid;	
+	GPid			notification_icon_pid;	
 	guint		notification_icon_watch;
 	guint		notification_icon_respawn_counter;
 	GTimer		*notification_icon_respawn_timer;
