@@ -379,31 +379,10 @@ int main( int argc, char *argv[] )
 
 	openlog("NetworkManagerDispatcher", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
 
-	if (become_daemon)
+	if (become_daemon && daemon (FALSE, FALSE) < 0)
 	{
-		int child_pid;
-
-		if (chdir ("/") < 0)
-		{
-			syslog( LOG_CRIT, "NetworkManagerDispatcher could not chdir to /.  errno=%d", errno);
-			return 1;
-		}
-
-		child_pid = fork ();
-		switch (child_pid)
-		{
-			case -1:
-				syslog( LOG_ERR, "NetworkManagerDispatcher could not daemonize.  errno = %d", errno );
-				break;
-
-			case 0:
-				/* Child */
-				break;
-
-			default:
-				exit (0);
-				break;
-		}
+	     syslog( LOG_ERR, "NetworkManagerDispatcher could not daemonize.  errno = %d", errno );
+	     exit (1);
 	}
 
 	g_type_init ();

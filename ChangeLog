@@ -1,3 +1,11 @@
+2004-11-11  Colin Walters  <walters@verbum.org>
+
+	* src/NetworkManager.c (main): Use daemon(3).
+
+	* info-daemon/NetworkManagerInfo.c (main): Ditto.
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c (main): Ditto.
+
 2004-11-10 Dan Williams <dcbw@redhat.com>
 
 	Patches from j bootlab org

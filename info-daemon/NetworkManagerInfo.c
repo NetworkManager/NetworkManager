@@ -201,31 +201,10 @@ int main( int argc, char *argv[] )
 
 	openlog("NetworkManagerInfo", (no_daemon) ? LOG_CONS | LOG_PERROR : LOG_CONS, (no_daemon) ? LOG_USER : LOG_DAEMON);
 
-	if (!no_daemon)
+	if (!no_daemon && daemon (FALSE, FALSE) < 0)
 	{
-		int child_pid;
-
-		if (chdir ("/") < 0)
-		{
-			syslog( LOG_CRIT, "NetworkManagerInfo could not chdir to /.  errno=%d", errno);
-			return 1;
-		}
-
-		child_pid = fork ();
-		switch (child_pid)
-		{
-			case -1:
-				syslog( LOG_ERR, "NetworkManagerInfo could not daemonize.  errno = %d", errno );
-				break;
-
-			case 0:
-				/* Child */
-				break;
-
-			default:
-				exit (0);
-				break;
-		}
+		syslog( LOG_ERR, "NetworkManagerInfo could not daemonize.  errno = %d", errno );
+		exit (1);
 	}
 
 	app_info = g_new0 (NMIAppInfo, 1);

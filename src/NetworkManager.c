@@ -710,31 +710,10 @@ int main( int argc, char *argv[] )
 	/* Keep a current list of access points */
 	wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
 
-	if (become_daemon)
+	if (become_daemon && daemon (0, 0) < 0)
 	{
-		int child_pid;
-
-		if (chdir ("/") < 0)
-		{
-			syslog( LOG_CRIT, "NetworkManager could not chdir to /.  errno=%d", errno);
-			return (1);
-		}
-
-		child_pid = fork ();
-		switch (child_pid)
-		{
-			case -1:
-				syslog( LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno );
-				break;
-
-			case 0:
-				/* Child */
-				break;
-
-			default:
-				exit (EXIT_SUCCESS);
-				break;
-		}
+	     syslog( LOG_ERR, "NetworkManager could not daemonize.  errno = %d", errno );
+	     exit (1);
 	}
 
 	/* Wheeee!!! */
