@@ -322,7 +322,6 @@ static DBusMessage *nm_dbus_dhcp_get_generic (DBusConnection *connection, DBusMe
 static DBusMessage *nm_dbus_dhcp_get_name (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage			*reply = NULL;
-	struct dhcp_interface	*dhcp_iface;
 
 	g_return_val_if_fail (data && data->data && (data->opt_id >= 0) && (data->dhcp_iface != NULL) && connection && message, NULL);
 
@@ -346,7 +345,6 @@ static DBusMessage *nm_dbus_dhcp_validate (DBusConnection *connection, DBusMessa
 	int			 id;
 	char			*attribute = NULL;
 	gboolean		 success = FALSE;
-	NMDevice		*dev;
 	struct dhcp_interface	*dhcp_iface;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
