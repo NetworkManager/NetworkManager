@@ -1,3 +1,36 @@
+Thu Aug 26 2004 Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Rework menu code to add devices to menu, and to show
+			signal strength for each access point.  Code cleanups
+			too.
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Grab network devices from NetworkManager too
+		- Grab quality information from NM for wireless networks
+
+	* src/NetworkManagerDbus.[ch]
+		- Add dbus methods for getting the HAL UDI from a device and
+			for getting its base quality, if its wireless
+		- Consolidate some functions (wireless network notifications,
+			device notifications)
+		- Add method for requesting NM to use a particular device
+
+	* src/NetworkManager.c
+		- Change for function consolidations from NetworkManagerDbus.c
+		- Implement active device locking and user-requested devices
+			(ie, tell NM to use a particular device instead of the one
+			it autochose)
+
+	* src/NetworkManagerDevice.c
+		- Add method for getting the base quality of a device, if its
+			wireless
+		- Grab device base quailty info from iwlib during scans
+
+	* src/NetworkManagerPolicy.c
+		- Use a user-requested device rather than the auto-chosen device
+			if we are told to
+
 Thu Aug 26 15:12:36 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* Makefile.am: add po as a supdir

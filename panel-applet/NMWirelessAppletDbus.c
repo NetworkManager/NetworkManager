@@ -427,6 +427,30 @@ int nmwa_dbus_get_device_type (NMWirelessApplet *applet, char *path, AppletState
 
 
 /*
+ * nmwa_dbus_get_network_quality
+ *
+ * Returns the quality of a given wireless network
+ *
+ */
+guint8 nmwa_dbus_get_network_quality (NMWirelessApplet *applet, char *path)
+{
+	int	qual = 0;
+
+	switch (nmwa_dbus_get_int (applet->connection, path, "getQuality", &qual))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (qual);
+}
+
+
+/*
  * nmwa_dbus_get_nm_status
  *
  * Returns NetworkManager's status
@@ -475,6 +499,54 @@ char * nmwa_dbus_get_network_name (NMWirelessApplet *applet, char *net_path)
 	}
 
 	return (name);
+}
+
+
+/*
+ * nmwa_dbus_get_device_name
+ *
+ * Returns the name of a specified network device
+ *
+ */
+char * nmwa_dbus_get_device_name (NMWirelessApplet *applet, char *dev_path)
+{
+	char *name = NULL;
+
+	switch (nmwa_dbus_get_string (applet->connection, dev_path, "getName", &name))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (name);
+}
+
+
+/*
+ * nmwa_dbus_get_device_udi
+ *
+ * Returns the HAL udi of a network device
+ *
+ */
+char * nmwa_dbus_get_device_udi (NMWirelessApplet *applet, char *dev_path)
+{
+	char *udi = NULL;
+
+	switch (nmwa_dbus_get_string (applet->connection, dev_path, "getHalUdi", &udi))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (udi);
 }
 
 
@@ -591,7 +663,7 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 	int		  i;
 
 	/* Grab the lock for the network list. */
-	g_mutex_lock (applet->networks_mutex);
+	g_mutex_lock (applet->data_mutex);
 
 	/* Clear out existing entries in the list */
 	if (applet->networks)
@@ -600,7 +672,7 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 		g_slist_free (applet->networks);
 		applet->networks = NULL;
 	}
-	g_mutex_unlock (applet->networks_mutex);
+	g_mutex_unlock (applet->data_mutex);
 
 	if (    (applet->applet_state != APPLET_STATE_WIRELESS)
 		&& (applet->applet_state != APPLET_STATE_WIRELESS_CONNECTING))
@@ -625,7 +697,7 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 	if (!networks)
 		goto out;
 
-	g_mutex_lock (applet->networks_mutex);
+	g_mutex_lock (applet->data_mutex);
 
 	for (i = 0; i < num_items; i++)
 	{
@@ -654,13 +726,14 @@ void nmwa_dbus_update_wireless_network_list (NMWirelessApplet *applet)
 			net->essid = g_strdup (name);
 			net->active = active_network ? (strcmp (networks[i], active_network) == 0) : FALSE;
 			net->encrypted = nmwa_dbus_get_network_encrypted (applet, networks[i]);
-	
+			net->quality = nmwa_dbus_get_network_quality (applet, networks[i]);
+
 			fprintf( stderr, "Adding '%s' active (%d), enc (%d)\n", name, net->active, net->encrypted);
 			applet->networks = g_slist_append (applet->networks, net);
 		}
 		dbus_free (name);
 	}
-	g_mutex_unlock (applet->networks_mutex);
+	g_mutex_unlock (applet->data_mutex);
 
 out:
 	dbus_free (active_device);
@@ -727,6 +800,92 @@ out:
 
 
 /*
+ * network_device_free
+ *
+ * Frees the representation of a network device
+ *
+ */
+static void network_device_free (void *element, void *user_data)
+{
+	NetworkDevice	*dev = (NetworkDevice *)(element);
+
+	if (dev)
+	{
+		g_free (dev->nm_device);
+		g_free (dev->name);
+		g_free (dev->udi);
+	}
+	g_free (dev);
+}
+
+
+/*
+ * nmwa_dbus_update_devices
+ *
+ * Get a device list from NetworkManager
+ *
+ */
+void nmwa_dbus_update_devices (NMWirelessApplet *applet)
+{
+	char	**devices = NULL;
+	int	  num_items = 0;
+	int	  i;
+
+	g_return_if_fail (applet->data_mutex != NULL);
+
+	switch (nmwa_dbus_get_string_array (applet->connection, NM_DBUS_PATH, "getDevices", &num_items, &devices))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;
+	}
+
+	if (!devices)
+		return;
+
+	/* Clear out existing device list */
+	g_mutex_lock (applet->data_mutex);
+	g_slist_foreach (applet->devices, network_device_free, NULL);
+	g_slist_free (applet->devices);
+	applet->devices = NULL;
+
+	for (i = 0; i < num_items; i++)
+	{
+		char	*name = nmwa_dbus_get_device_name (applet, devices [i]);
+
+		if (name && strlen (name))
+		{
+			NetworkDevice	*dev;
+
+			if ((dev = g_new0 (NetworkDevice, 1)))
+			{
+				dev->nm_device = g_strdup (devices[i]);
+				dev->type = nmwa_dbus_get_device_type (applet, devices[i], APPLET_STATE_NO_CONNECTION);
+				dev->name = g_strdup (name);
+				dev->udi = nmwa_dbus_get_device_udi (applet, devices[i]);
+
+				/* Ensure valid device information */
+				if (!dev->nm_device || !dev->name || !dev->udi || (dev->type == -1))
+					network_device_free (dev, NULL);
+				else
+				{
+					applet->devices = g_slist_append (applet->devices, dev);
+					fprintf( stderr, "Got device '%s', udi '%s'\n", dev->name, dev->udi);
+				}
+			}
+		}
+		dbus_free (name);
+	}
+
+	g_mutex_unlock (applet->data_mutex);
+	dbus_free_string_array (devices);
+}
+
+
+/*
  * nmwa_dbus_filter
  *
  */
@@ -773,6 +932,8 @@ fprintf( stderr, "ServiceCreate    state = (%d)\n", applet->applet_state);
 	{
 		nmwa_dbus_update_network_state (applet);
 	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
+		nmwa_dbus_update_devices (applet);
 	else
 		handled = FALSE;
 
@@ -902,6 +1063,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 		nmwa_dbus_update_network_state (applet);
 		if ((applet->applet_state == APPLET_STATE_WIRELESS) || (applet->applet_state == APPLET_STATE_WIRELESS_CONNECTING))
 			nmwa_dbus_update_wireless_network_list (applet);
+		nmwa_dbus_update_devices (applet);
 	}
 	else
 		applet->applet_state = APPLET_STATE_NO_NM;

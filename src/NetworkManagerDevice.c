@@ -50,8 +50,9 @@ typedef struct NMDeviceWirelessOptions
 {
 	gchar			*cur_essid;
 	gboolean			 supports_wireless_scan;
-	GMutex			*scan_mutex;
+	guint8			 max_quality;
 
+	GMutex			*scan_mutex;
 	NMAccessPointList	*ap_list;
 
 	NMAccessPoint		*best_ap;
@@ -658,6 +659,21 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key)
 
 
 /*
+ * nm_device_get_max_quality
+ *
+ * Get the quality baseline of a wireless device.
+ *
+ */
+guint8 nm_device_get_max_quality (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+
+	return (dev->options.wireless.max_quality);
+}
+
+
+/*
  * nm_device_get_ip4_address
  *
  * Get a device's IPv4 address
@@ -835,7 +851,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 		return (FALSE);
 	}
 
-	nm_dbus_signal_device_activating (data->dbus_connection, dev);
+	nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ACTIVATING);
 
 	return (TRUE);
 }
@@ -1156,7 +1172,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	dev->ip4_address = 0;
 
 	if (!just_added)
-		nm_dbus_signal_device_no_longer_active (dev->app_data->dbus_connection, dev);
+		nm_dbus_signal_device_status_change (dev->app_data->dbus_connection, dev, DEVICE_NO_LONGER_ACTIVE);
 
 	/* Clean up stuff, don't leave the card associated or up */
 	if (nm_device_is_wireless (dev))
@@ -1538,6 +1554,13 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		wireless_scan		*tmp_ap;
 		int				 err;
 		NMAccessPointList	*old_ap_list = nm_device_ap_list_get (dev);
+		gboolean			 has_range;
+		iwrange			 range;
+		iwstats			 stats;
+
+		has_range = (iw_get_range_info (iwlib_socket, nm_device_get_iface (dev), &range) < 0) ? FALSE : TRUE;
+		if (!iw_get_stats (iwlib_socket, nm_device_get_iface (dev), &stats, &range, has_range))
+			dev->options.wireless.max_quality = range.max_qual.qual;
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))

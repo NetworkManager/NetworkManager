@@ -77,9 +77,12 @@ typedef struct
 	GdkPixbuf			*pixmaps[PIX_NUMBER];
 	GdkPixbuf			*current_pixbuf;
 	GdkPixbuf			*key_pixbuf;
+	GdkPixbuf			*wired_icon;
+	GdkPixbuf			*wireless_icon;
 
 	/* Data model elements */
-	GMutex			*networks_mutex;
+	GMutex			*data_mutex;
+	GSList			*devices;
 	GSList			*networks;
 	AppletState		 applet_state;
 
@@ -101,6 +104,19 @@ typedef struct
 	char		*essid;
 	gboolean	 encrypted;
 	gboolean	 active;
+	guint8	 quality;
 } WirelessNetwork;
+
+/*
+ * Representation of network device
+ *
+ */
+typedef struct
+{
+	char		*nm_device;
+	int		 type;
+	char		*name;
+	char		*udi;
+} NetworkDevice;
 
 #endif

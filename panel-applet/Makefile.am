@@ -46,6 +46,7 @@ glade_DATA = wireless-applet.glade
 pixmapdir = $(datadir)/pixmaps/NMWirelessApplet
 pixmap_DATA = no-link-0.png	\
 	wired.png			\
+	wireless.png		\
 	broken-0.png		\
 	signal-1-40.png	\
 	signal-41-60.png	\

@@ -70,6 +70,7 @@ void			nm_device_get_ip6_address	(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
 void			nm_device_do_wireless_scan	(NMDevice *dev);
+guint8		nm_device_get_max_quality	(NMDevice *dev);
 
 NMAccessPoint *nm_device_get_best_ap		(NMDevice *dev);
 void			nm_device_set_best_ap		(NMDevice *dev, NMAccessPoint *ap);

@@ -106,7 +106,10 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi)
 		hal_free_string (iface_name);
 
 		if (success)
+		{
 			nm_data_set_state_modified (data, TRUE);
+			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
+		}
 		else
 		{
 			/* If we couldn't add the device to our list, free its data. */
@@ -143,24 +146,31 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 		{
 			NMDevice	*dev = (NMDevice *)(element->data);
 
-			if (dev)
+			if (dev && (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0))
 			{
-				if (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0)
+				if (data->active_device && (dev == data->active_device))
 				{
-					if (data->active_device && (dev == data->active_device))
-						data->active_device = NULL;
-
-					nm_device_activation_cancel (dev);
-					nm_device_unref (dev);
-
-					/* Remove the device entry from the device list and free its data */
-					data->dev_list = g_slist_remove_link (data->dev_list, element);
-					nm_device_unref (element->data);
-					g_slist_free (element);
-					nm_data_set_state_modified (data, TRUE);
-
-					break;
+					data->active_device = NULL;
+					data->active_device_locked = FALSE;
 				}
+
+				if (data->user_device && (dev == data->user_device))
+				{
+					nm_device_unref (data->user_device);
+					data->user_device = NULL;
+				}
+
+				nm_device_activation_cancel (dev);
+				nm_device_unref (dev);
+
+				/* Remove the device entry from the device list and free its data */
+				data->dev_list = g_slist_remove_link (data->dev_list, element);
+				nm_device_unref (element->data);
+				g_slist_free (element);
+				nm_data_set_state_modified (data, TRUE);
+				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
+
+				break;
 			}
 			element = g_slist_next (element);
 		}
@@ -386,19 +396,12 @@ static NMData *nm_data_new (void)
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
-	if (!data->dev_list_mutex)
-	{
-		nm_data_free (data);
-		syslog( LOG_ERR, "Could not create device list mutex.  Whacky shit going on?");
-		return (NULL);
-	}
-
-	/* Initialize the state modified mutex. */
+	data->user_device_mutex = g_mutex_new ();
 	data->state_modified_mutex = g_mutex_new ();
-	if (!data->state_modified_mutex)
+	if (!data->dev_list_mutex || !data->user_device_mutex || !data->state_modified_mutex)
 	{
 		nm_data_free (data);
-		syslog( LOG_ERR, "Could not create state_modified mutex.  Whacky stuff going on?");
+		syslog( LOG_ERR, "Could not initialize data structure locks.");
 		return (NULL);
 	}
 
@@ -421,19 +424,6 @@ static NMData *nm_data_new (void)
 
 
 /*
- * nm_data_dev_list_element_free
- *
- * Frees each member of the device list before the list is
- * disposed of. 
- *
- */
-static void nm_data_dev_list_element_free (void *element, void *user_data)
-{
-	nm_device_unref (element);
-}
-
-
-/*
  * nm_data_free
  *
  *   Free data structure used in callbacks.
@@ -445,9 +435,12 @@ static void nm_data_free (NMData *data)
 
 	nm_device_unref (data->active_device);
 
-	g_slist_foreach (data->dev_list, nm_data_dev_list_element_free, NULL);
+	g_slist_foreach (data->dev_list, nm_device_unref, NULL);
 	g_slist_free (data->dev_list);
+
 	g_mutex_free (data->dev_list_mutex);
+	g_mutex_free (data->user_device_mutex);
+	g_mutex_free (data->state_modified_mutex);
 
 	nm_ap_list_unref (data->trusted_ap_list);
 	nm_ap_list_unref (data->preferred_ap_list);

@@ -40,13 +40,13 @@ extern gboolean	debug;
 
 
 /*
- * nm_policy_get_best_device
+ * nm_policy_auto_get_best_device
  *
- * Filter all the devices and find the best device to use as the
- * link.  NOTE: caller must lock the device list if needed.
+ * Find the best device to use, regardless of whether we are
+ * "locked" on one device at this time.
  *
  */
-NMDevice * nm_policy_get_best_device (NMData *data)
+static NMDevice * nm_policy_auto_get_best_device (NMData *data)
 {
 	GSList		*element;
 	NMDevice		*best_wired_dev = NULL;
@@ -126,8 +126,8 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 		element = g_slist_next (element);
 	}
 
-	syslog (LOG_NOTICE, "Best wired device = %s", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
-	syslog (LOG_NOTICE, "Best wireless device = %s  (%s)", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
+	syslog (LOG_NOTICE, "AUTO: Best wired device = %s", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
+	syslog (LOG_NOTICE, "AUTO: Best wireless device = %s  (%s)", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
 			best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
 
 	if (best_wireless_dev || best_wired_dev)
@@ -139,6 +139,73 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 	}
 
 	return (highest_priority_dev);
+}
+
+
+/*
+ * nm_policy_get_best_device
+ *
+ * Find the best device to use, taking into account if we are
+ * "locked" on one device or not.  That lock may also be cleared
+ * under certain conditions.
+ *
+ */
+static NMDevice * nm_policy_get_best_device (NMData *data)
+{
+	NMDevice		*best_dev = NULL;
+
+	g_return_val_if_fail (data != NULL, NULL);
+
+	/* Can't lock the active device if you don't have one */
+	if (!data->active_device)
+		data->active_device_locked = FALSE;
+
+	/* If the user told us to switch to a particular device, do it now */
+	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	{
+		if (data->user_device)
+		{
+			best_dev = data->user_device;
+
+			nm_device_unref (data->user_device);
+			data->user_device = NULL;
+		}
+		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
+	}
+
+	/* Determine whether we need to clear the active device and unlock it. */	
+	if (!best_dev && data->active_device_locked)
+	{
+		switch (nm_device_get_type (data->active_device))
+		{
+			/* If the active device was a wired device, and it no
+			 * longer has a link, switch to auto mode.
+			 */
+			case (DEVICE_TYPE_WIRED_ETHERNET):
+				if (nm_device_get_link_active (data->active_device))
+					best_dev = data->active_device;
+				break;
+
+			/* For wireless devices, we only "unlock" them if they are
+			 * removed from the system.
+			 */
+			case (DEVICE_TYPE_WIRELESS_ETHERNET):
+				best_dev = data->active_device;
+				break;
+
+			default:
+				break;
+		}
+	}
+
+	/* Fall back to automatic device picking */
+	if (!best_dev)
+	{
+		data->active_device_locked = FALSE;
+		best_dev = nm_policy_auto_get_best_device (data);
+	}
+
+	return (best_dev);
 }
 
 
@@ -232,7 +299,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	}
 	else if (data->active_device && nm_device_just_activated (data->active_device))
 	{
-		nm_dbus_signal_device_now_active (data->dbus_connection, data->active_device);
+		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_NOW_ACTIVE);
 		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
 	}
 

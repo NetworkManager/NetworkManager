@@ -38,6 +38,10 @@ struct NMData
 	GMutex				*dev_list_mutex;
 
 	struct NMDevice		*active_device;
+	gboolean				 active_device_locked;
+
+	struct NMDevice		*user_device;			/* Holds a device that the user requests NM to use. */
+	GMutex				*user_device_mutex;
 
 	gboolean				 state_modified;
 	GMutex				*state_modified_mutex;

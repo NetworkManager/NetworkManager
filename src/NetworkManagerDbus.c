@@ -195,6 +195,61 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 
 
 /*
+ * nm_dbus_nm_set_active_device
+ *
+ * Notify the state modification handler that we want to lock to a specific
+ * device.
+ *
+ */
+static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DBusMessage *message, NMData *data)
+{
+	NMDevice		*dev = NULL;
+	DBusMessage	*reply_message = NULL;
+	char			*dev_path = NULL;
+	DBusError		 error;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+	g_return_val_if_fail (data != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID))
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManager::setActiveDevice called with invalid arguments.");
+		return (reply_message);
+	}
+	
+	dev = nm_dbus_get_device_from_object_path (data, dev_path);
+	dbus_free (dev_path);
+	if (!dev)
+	{
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
+						"The requested network device does not exist.");
+		return (reply_message);
+	}
+
+	if (!(reply_message = dbus_message_new_method_return (message)))
+		return (NULL);
+
+	/* Notify the state modification handler that we'd like to lock on a specific device */
+	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	{
+		if (data->user_device)
+			nm_device_unref (data->user_device);
+
+		nm_device_ref (dev);
+		data->user_device = dev;
+
+		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
+		nm_data_set_state_modified (data, TRUE);
+	}
+
+	return (reply_message);
+}
+
+
+/*
  * nm_dbus_nm_get_devices
  *
  * Returns a string array of object paths corresponding to the
@@ -266,15 +321,17 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 
 
 /*
- * nm_dbus_signal_device_no_longer_active
+ * nm_dbus_signal_device_status_change
  *
- * Notifies the bus that a particular device is no longer active.
+ * Notifies the bus that a particular device has had a status change, either
+ * active or no longer active
  *
  */
-void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevice *dev)
+void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *dev, DeviceStatus status)
 {
 	DBusMessage		*message;
 	unsigned char		*dev_path;
+	unsigned char		*signal = NULL;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -282,10 +339,28 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 	if (!(dev_path = nm_dbus_get_object_path_from_device (dev)))
 		return;
 
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceNoLongerActive");
-	if (!message)
+	switch (status)
 	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_no_longer_active(): Not enough memory for new dbus message!");
+		case (DEVICE_NO_LONGER_ACTIVE):
+			signal = "DeviceNoLongerActive";
+			break;
+		case (DEVICE_NOW_ACTIVE):
+			signal = "DeviceNowActive";
+			break;
+		case (DEVICE_ACTIVATING):
+			signal = "DeviceActivating";
+			break;
+		case (DEVICE_LIST_CHANGE):
+			signal = "DevicesChanged";
+			break;
+		default:
+			syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): got a bad signal name");
+			return;
+	}
+
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, signal)))
+	{
+		syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		return;
 	}
@@ -294,77 +369,7 @@ void nm_dbus_signal_device_no_longer_active (DBusConnection *connection, NMDevic
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_signal_device_no_longer_active(): Could not raise the DeviceNoLongerActive signal!");
-
-	dbus_message_unref (message);
-}
-
-
-/*
- * nm_dbus_signal_device_now_active
- *
- * Notifies the bus that a particular device is newly active.
- *
- */
-void nm_dbus_signal_device_now_active (DBusConnection *connection, NMDevice *dev)
-{
-	DBusMessage		*message;
-	unsigned char		*dev_path;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (dev != NULL);
-
-	if (!(dev_path = nm_dbus_get_object_path_from_device (dev)))
-		return;
-
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceNowActive");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_now_active(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		return;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
-	g_free (dev_path);
-
-	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_signal_device_now_active(): Could not raise the DeviceNowActive signal!");
-
-	dbus_message_unref (message);
-}
-
-
-/*
- * nm_dbus_signal_device_now_active
- *
- * Notifies the bus that a particular device is newly active.
- *
- */
-void nm_dbus_signal_device_activating (DBusConnection *connection, NMDevice *dev)
-{
-	DBusMessage		*message;
-	unsigned char		*dev_path;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (dev != NULL);
-
-	if (!(dev_path = nm_dbus_get_object_path_from_device (dev)))
-		return;
-
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceActivating");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_signal_device_activating(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		return;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
-	g_free (dev_path);
-
-	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nm_dbus_signal_device_activating(): Could not raise the DeviceActivating signal!");
+		syslog (LOG_WARNING, "nm_dbus_signal_device_status_change(): Could not raise the signal!");
 
 	dbus_message_unref (message);
 }
@@ -406,12 +411,12 @@ void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDev
 
 
 /*
- * nm_dbus_signal_wireless_network_appeared
+ * nm_dbus_signal_wireless_network_change
  *
  * Notifies the bus that a new wireless network has come into range
  *
  */
-void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
+void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, gboolean gone)
 {
 	DBusMessage	*message;
 	char			*dev_path;
@@ -430,7 +435,8 @@ void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDev
 		return;
 	}
 
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkAppeared");
+	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE,
+								(gone ? "WirelessNetworkDisappeared" : "WirelessNetworkAppeared"));
 	if (!message)
 	{
 		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
@@ -452,101 +458,6 @@ void nm_dbus_signal_wireless_network_appeared (DBusConnection *connection, NMDev
 	dbus_message_unref (message);
 }
 
-
-/*
- * nm_dbus_signal_wireless_network_disappeared
- *
- * Notifies the bus that a new wireless network is no longer in range
- *
- */
-void nm_dbus_signal_wireless_network_disappeared (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
-{
-	DBusMessage		*message;
-	unsigned char		*dev_path;
-	unsigned char		*ap_path;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (ap != NULL);
-
-	if (!(dev_path = nm_dbus_get_object_path_from_device (dev)))
-		return;
-
-	if (!(ap_path = nm_device_get_path_for_ap (dev, ap)))
-	{
-		g_free (dev_path);
-		return;
-	}
-
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_signal_wireless_network_disappeared(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		g_free (ap_path);
-		return;
-	}
-
-	dbus_message_append_args (message,
-							DBUS_TYPE_STRING, dev_path,
-							DBUS_TYPE_STRING, ap_path,
-							DBUS_TYPE_INVALID);
-	g_free (ap_path);
-	g_free (dev_path);
-
-	if (!dbus_connection_send (connection, message, NULL))
-		syslog (LOG_WARNING, "nnm_dbus_signal_wireless_network_disappeared(): Could not raise the WirelessNetworkDisappeared signal!");
-
-	dbus_message_unref (message);
-}
-
-
-#if 0
-/*
- * nm_dbus_get_user_key_for_network_callback
- *
- * Called from the DBus Pending Call upon receipt of a reply
- * message from NetworkManagerInfo.
- *
- */
-void nm_dbus_get_user_key_for_network_callback (DBusPendingCall *pending, void *user_data)
-{
-	char				*key = NULL;
-	DBusMessage		*reply;
-	NMDevice			*dev = (NMDevice *)user_data;
-
-	g_return_if_fail (dev != NULL);
-
-	reply = dbus_pending_call_get_reply (pending);
-	if (reply && !dbus_message_is_error (reply, DBUS_ERROR_NO_REPLY))
-	{
-		DBusError	error;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &key, DBUS_TYPE_INVALID))
-		{
-			nm_device_pending_action_set_user_key (dev, key);
-			syslog (LOG_DEBUG, "dbus user key callback got key '%s'", key );
-			dbus_free (key);
-			dbus_pending_call_unref (pending);
-		}
-	}
-}
-
-
-/*
- * nm_dbus_get_user_key_for_network_data_free
- *
- * Frees data used during the user key pending action
- *
- */
-void nm_dbus_get_user_key_for_network_data_free (void *user_data)
-{
-	g_return_if_fail (user_data != NULL);
-
-	nm_device_unref ((NMDevice *)user_data);
-}
-#endif
 
 /*
  * nm_dbus_get_user_key_for_network
@@ -575,23 +486,9 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev
 								DBUS_TYPE_STRING, nm_ap_get_essid (ap),
 								DBUS_TYPE_INVALID);
 
+fprintf( stderr, "getUserKey\n");
 	if (!dbus_connection_send (connection, message, NULL))
 		syslog (LOG_WARNING, "nm_dbus_get_user_key_for_network(): could not send dbus message");
-
-	/* For asynchronous replies, disabled for now */
-#if 0
-	if (!dbus_connection_send_with_reply (connection, message, pending, -1))
-	{
-		syslog (LOG_ERR, "%s raised: %s", error.name, error.message);
-		dbus_message_unref (message);
-		return;
-	}
-
-	nm_device_ref (dev);
-	dbus_pending_call_ref (*pending);
-	dbus_pending_call_set_notify (*pending, &nm_dbus_get_user_key_for_network_callback,
-							(void *)dev, &nm_dbus_get_user_key_for_network_data_free);
-#endif
 
 	dbus_message_unref (message);
 }
@@ -1082,8 +979,12 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, nm_device_get_iface (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getType", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_device_get_type (dev), DBUS_TYPE_INVALID);
+	else if (strcmp ("getHalUdi", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, nm_device_get_udi (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getIP4Address", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_ip4_address (dev), DBUS_TYPE_INVALID);
+	else if (strcmp ("getMaxQuality", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_max_quality (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{
 		NMAccessPoint	*ap;
@@ -1198,6 +1099,8 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		reply_message = nm_dbus_nm_get_active_device (connection, message, data);
 	else if (strcmp ("getDevices", method) == 0)
 		reply_message = nm_dbus_nm_get_devices (connection, message, data);
+	else if (strcmp ("setActiveDevice", method) == 0)
+		nm_dbus_nm_set_active_device (connection, message, data);
 	else if (strcmp ("setKeyForNetwork", method) == 0)
 		nm_dbus_set_user_key_for_network (connection, message, data);
 	else if (strcmp ("setNetwork", method) == 0)

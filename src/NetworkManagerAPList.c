@@ -328,7 +328,7 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 				nm_ap_set_enc_method (new_ap, nm_ap_get_enc_method (old_ap));
 			}
 			else
-				nm_dbus_signal_wireless_network_disappeared (data->dbus_connection, dev, old_ap);
+				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, TRUE);
 		}
 		nm_ap_list_iter_free (iter);
 	}
@@ -341,7 +341,7 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 		while ((new_ap = nm_ap_list_iter_next (iter)))
 		{
 			if (!nm_ap_get_matched (new_ap))
-				nm_dbus_signal_wireless_network_appeared (data->dbus_connection, dev, new_ap);
+				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, new_ap, FALSE);
 		}
 		nm_ap_list_iter_free (iter);
 	}

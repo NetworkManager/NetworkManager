@@ -100,6 +100,7 @@ static void nmi_dbus_get_key_for_network (NMIAppInfo *info, DBusMessage *message
 							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_INVALID))
 	{
+fprintf( stderr, "getUserKey\n");
 		nmi_passphrase_dialog_show (device, network, info);
 
 		dbus_free (device);
