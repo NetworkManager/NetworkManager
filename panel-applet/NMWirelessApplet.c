@@ -117,6 +117,7 @@ animation_timeout (NMWirelessApplet *applet)
       gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
 				 applet->wireless_connecting_icons[applet->animation_step]);
       break;
+    case (APPLET_STATE_NO_NM):
     case (APPLET_STATE_WIRELESS_SCANNING):
       applet->animation_step ++;
       if (applet->animation_step >= NUM_WIRELESS_SCANNING_FRAMES)
@@ -207,9 +208,6 @@ nmwa_update_state (NMWirelessApplet *applet)
 /*  print_state (applet->applet_state); */
   switch (applet->applet_state)
     {
-    case (APPLET_STATE_NO_NM):
-      pixbuf = applet->no_nm_icon;
-      break;
     case (APPLET_STATE_NO_CONNECTION):
       show_applet = FALSE;
       break;
@@ -241,6 +239,7 @@ nmwa_update_state (NMWirelessApplet *applet)
       pixbuf = applet->wireless_connecting_icons[applet->animation_step];
       need_animation = TRUE;
       break;
+    case (APPLET_STATE_NO_NM):
     case (APPLET_STATE_WIRELESS_SCANNING):
       applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_SCANNING_FRAMES - 1);
       pixbuf = applet->wireless_scanning_icons[applet->animation_step];
@@ -301,13 +300,12 @@ static void show_warning_dialog (gboolean error, gchar *mesg, ...)
 	va_start (ap,mesg);
 	tmp = g_strdup_vprintf (mesg,ap);
 	dialog = gtk_message_dialog_new (NULL, 0, error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_WARNING,
-								GTK_BUTTONS_OK, mesg, NULL);
+					 GTK_BUTTONS_OK, mesg, NULL);
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
 	g_free (tmp);
 	va_end (ap);
 }
-
 
 
 /*
@@ -585,6 +583,8 @@ create_wireless_adaptor_model (NMWirelessApplet *applet)
   return GTK_TREE_MODEL (retval);
 }
 
+/* FIXME: We really should break this dialog into its own file.  This function is too long.
+ */
 static void
 custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 {
@@ -597,6 +597,7 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
   gint n_wireless_interfaces = 0;
   GSList *element;
   NetworkDevice *default_dev = NULL;
+  char *label;
 
   glade_file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_DATADIR,
 					  "NetworkManagerNotification/essid.glade",
@@ -628,7 +629,12 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
   gtk_entry_set_text (GTK_ENTRY (entry), "");
   gtk_widget_set_sensitive (button, FALSE);
   g_signal_connect (entry, "changed", update_button_cb, button);
-  
+
+  label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
+			   _("Custom wireless network"),
+			   _("Enter the ESSID of the wireless network to which you wish to connect."));
+  gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
+
   /* Do we have multiple Network cards? */
   g_mutex_lock (applet->data_mutex);
   for (element = applet->devices; element; element = element->next)
@@ -646,6 +652,7 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
           n_wireless_interfaces++;
         }
     }
+
   if (n_wireless_interfaces < 1)
     {
       g_mutex_unlock (applet->data_mutex);
@@ -676,24 +683,24 @@ custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *applet)
 
   if (response == GTK_RESPONSE_OK)
     {
-      char *essid;
-
-      if ((essid = gtk_entry_get_text (GTK_ENTRY (entry))))
-      {
-        WirelessNetwork *net = wireless_network_new_with_essid (essid);
-        /* FIXME: allow picking of the wireless device, we currently just
-         * use the first one found in our device list.
-         *
-         * FIXME: default_dev might have gone away by the time the dialog
-         * gets dismissed and we get here...
-         */
-        if (net)
-          {
-            nmwa_dbus_set_device (applet->connection, default_dev, net);
-            network_device_unref (default_dev);
-            wireless_network_unref (net);
-          }
-      }
+      const char *essid;
+      essid = gtk_entry_get_text (GTK_ENTRY (entry));
+      if (essid[0] != '\000')
+	{
+	  WirelessNetwork *net = wireless_network_new_with_essid (essid);
+	  /* FIXME: allow picking of the wireless device, we currently just
+	   * use the first one found in our device list.
+	   *
+	   * FIXME: default_dev might have gone away by the time the dialog
+	   * gets dismissed and we get here...
+	   */
+	  if (net)
+	    {
+	      nmwa_dbus_set_device (applet->connection, default_dev, net);
+	      network_device_unref (default_dev);
+	      wireless_network_unref (net);
+	    }
+	}
     }
 
   gtk_widget_destroy (dialog);

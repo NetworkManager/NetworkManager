@@ -1,3 +1,11 @@
+Thu Oct 14 16:40:39 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c (animation_timeout): Make
+	applet->state == APPLET_STATE_NO_NM animation.
+
+	* panel-applet/NMWirelessApplet.c (custom_essid_item_selected):
+	set the text correctly.
+
 2004-10-14 Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c
@@ -320,7 +328,6 @@ Fri Oct  8 07:19:55 2004  Jonathan Blandford  <jrb@redhat.com>
 	* panel-applet/main.c
 		- Cast the applet appropriately for gtk_widget_show_all ()
 
->>>>>>> 1.125
 Mon Oct  4 12:55:41 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/eggtrayicon.[ch]:
@@ -664,7 +671,6 @@ Fri Sep 17 14:04:34 2004  Jonathan Blandford  <jrb@redhat.com>
 	to look like.  Also did a Airo card hack to make it show the
 	correct AP quality
 
->>>>>>> 1.92
 2004-09-08  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/no-networkmanager.png
