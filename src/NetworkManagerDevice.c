@@ -3325,6 +3325,13 @@ static gboolean nm_device_wireless_force_use (NMDevice *dev, const char *essid, 
 		nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 		nm_ap_unref (ap);
 	}
+	else
+	{
+		/* If the AP is in the ignore list, we have to remove it since
+		 * the User Knows What's Best.
+		 */
+		nm_ap_list_remove_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (ap));
+	}
 
 	/* Now that this AP has an essid, copy over encryption keys and whatnot */
 	if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (ap))))

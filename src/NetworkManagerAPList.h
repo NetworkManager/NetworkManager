@@ -38,6 +38,7 @@ gboolean			nm_ap_list_is_empty				(NMAccessPointList *list);
 
 void				nm_ap_list_append_ap			(NMAccessPointList *list, NMAccessPoint *ap);
 void				nm_ap_list_remove_ap			(NMAccessPointList *list, NMAccessPoint *ap);
+void				nm_ap_list_remove_ap_by_essid		(NMAccessPointList *list, const char *network);
 
 NMAccessPoint *	nm_ap_list_get_ap_by_essid		(NMAccessPointList *list, const char *network);
 NMAccessPoint *	nm_ap_list_get_ap_by_address		(NMAccessPointList *list, const struct ether_addr *addr);

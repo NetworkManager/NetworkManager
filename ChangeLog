@@ -1,5 +1,20 @@
 2005-04-04  Dan Williams  <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_call_nm_method): remove some commented code
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_remove_ap_by_essid): new function
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_force_use): remove access points from the ignore list
+			when the user forces them
+
+	* src/nm-dbus-device.c
+		- (nm_dbus_device_get_active_network): fix up escaping of object paths
+
+2005-04-04  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tom Parker: include "nm-utils.h" for backend files that need it
 
 2005-04-04  Dan Williams  <dcbw@redhat.com>

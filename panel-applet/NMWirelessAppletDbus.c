@@ -173,28 +173,11 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 
 	switch (arg_type)
 	{
-		/*
-		case DBUS_TYPE_OBJECT_PATH:
-			*((char **)(arg)) = nm_dbus_unescape_object_path (dbus_string);
-			break;
-                case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
-                {
-                        int i;
-
-                        *((char ***) (arg)) = g_new0 (char *,  num_items + 1);
-
-                        for (i = 0; i < num_items; i++)
-				(*((char ***) (arg)))[i] = nm_dbus_unescape_object_path (dbus_array[i]);
-
-			*item_count = num_items;
-                        break;
-                }
-		*/
 		case DBUS_TYPE_OBJECT_PATH:
 		case DBUS_TYPE_STRING:
 			*((char **)(arg)) = g_strdup (dbus_string);
 			break;
-                case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
+		case NM_DBUS_TYPE_OBJECT_PATH_ARRAY:
 		case NM_DBUS_TYPE_STRING_ARRAY:
 			*((char ***)(arg)) = g_strdupv (dbus_array);
 			*item_count = num_items;
