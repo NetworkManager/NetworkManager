@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-09-21 18:27-0400\n"
-"PO-Revision-Date: 2004=09-21 14:52-0400\n"
+"POT-Creation-Date: 2004-10-02 00:13-0400\n"
+"PO-Revision-Date: 2004-10-02 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@FreeBSD.org>\n"
 "MIME-Version: 1.0\n"
@@ -54,19 +54,19 @@ msgstr "Wireless Network Key Required"
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: panel-applet/NMWirelessApplet.c:598
-msgid "Other Wireless Network..."
-msgstr "Other Wireless Network..."
+#: panel-applet/NMWirelessApplet.c:589
+msgid "Other Wireless Networks..."
+msgstr "Other Wireless Networks..."
 
-#: panel-applet/NMWirelessApplet.c:677
+#: panel-applet/NMWirelessApplet.c:699
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: panel-applet/NMWirelessApplet.c:784
+#: panel-applet/NMWirelessApplet.c:816
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
-#: panel-applet/NMWirelessApplet.c:922 panel-applet/NMWirelessApplet.c:982
+#: panel-applet/NMWirelessApplet.c:955 panel-applet/NMWirelessApplet.c:1007
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -111,28 +111,28 @@ msgstr "Orientation"
 msgid "The orientation of the tray."
 msgstr "The orientation of the tray."
 
-#: panel-applet/menu-info.c:151
+#: panel-applet/menu-info.c:77
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Wired Network (%s)"
 
-#: panel-applet/menu-info.c:153
+#: panel-applet/menu-info.c:79
 msgid "Wired Network"
 msgstr "Wired Network"
 
-#: panel-applet/menu-info.c:157
+#: panel-applet/menu-info.c:143
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Wireless Network (%s)"
 msgstr[1] "Wireless Networks (%s)"
 
-#: panel-applet/menu-info.c:159
+#: panel-applet/menu-info.c:145
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Wireless Network"
 msgstr[1] "Wireless Networks"
 
-#: panel-applet/menu-info.c:292
+#: panel-applet/menu-info.c:262
 msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
