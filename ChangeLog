@@ -1,3 +1,8 @@
+2004-12-20  Colin Walters  <walters@redhat.com>
+
+	* src/NetworkManagerPolicy.c (nm_policy_get_best_device): Fix usage of '=='
+	instead of '='.
+
 2004-12-17  Dan Williams  <dcbw@redhat.com>
 
 	* Ad Ad-Hoc networking mode support.  In Ad-Hoc mode, we only try to get

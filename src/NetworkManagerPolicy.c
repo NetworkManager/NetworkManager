@@ -219,7 +219,7 @@ static NMDevice * nm_policy_get_best_device (NMData *data, gboolean *should_lock
 	if (best_dev && (nm_device_get_driver_support_level (best_dev) == NM_DRIVER_UNSUPPORTED))
 	{
 		syslog (LOG_ERR, "nm_policy_get_best_device(): tried to switch to unsupported device '%s'!\n", nm_device_get_iface (best_dev));
-		best_dev == NULL;
+		best_dev = NULL;
 	}
 
 	return (best_dev);
