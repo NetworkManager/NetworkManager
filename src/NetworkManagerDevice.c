@@ -55,7 +55,17 @@ typedef struct NMDeviceWirelessOptions
 	gint8			 strength;
 
 	GMutex			*scan_mutex;
+	/* We keep a couple lists around since wireless cards
+	 * are a bit flakey and don't report the same access
+	 * points every time.  The lists get merged and diffed
+	 * to figure out the "real" list, but the latest_ap_list
+	 * is always the most-current scan.
+	 */
 	NMAccessPointList	*ap_list;
+	NMAccessPointList	*cached_ap_list1;
+	NMAccessPointList	*cached_ap_list2;
+	NMAccessPointList	*cached_ap_list3;
+	NMAccessPointList	*cached_ap_list4;
 
 	NMAccessPoint		*best_ap;
 	GMutex			*best_ap_mutex;
@@ -366,7 +376,16 @@ void nm_device_unref (NMDevice *dev)
 		if (nm_device_is_wireless (dev))
 		{
 			g_mutex_free (dev->options.wireless.scan_mutex);
-			nm_ap_list_unref (dev->options.wireless.ap_list);
+			if (dev->options.wireless.ap_list)
+				nm_ap_list_unref (dev->options.wireless.ap_list);
+			if (dev->options.wireless.cached_ap_list1)
+				nm_ap_list_unref (dev->options.wireless.cached_ap_list1);
+			if (dev->options.wireless.cached_ap_list2)
+				nm_ap_list_unref (dev->options.wireless.cached_ap_list2);
+			if (dev->options.wireless.cached_ap_list3)
+				nm_ap_list_unref (dev->options.wireless.cached_ap_list3);
+			if (dev->options.wireless.cached_ap_list4)
+				nm_ap_list_unref (dev->options.wireless.cached_ap_list4);
 			nm_ap_unref (dev->options.wireless.best_ap);
 			g_mutex_free (dev->options.wireless.best_ap_mutex);
 		}
@@ -1463,13 +1482,13 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 
 /*
- * nm_device_just_activated
+ * nm_device_is_just_activated
  *
  * Check if the device was just activated successfully or not.  If so, clear
  * its just_activated flag and return TRUE.  If its not activated yet, return FALSE.
  *
  */
-gboolean nm_device_just_activated (NMDevice *dev)
+gboolean nm_device_is_just_activated (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -1484,12 +1503,12 @@ gboolean nm_device_just_activated (NMDevice *dev)
 
 
 /*
- * nm_device_activating
+ * nm_device_is_activating
  *
  * Return whether or not the device is currently activating itself.
  *
  */
-gboolean nm_device_activating (NMDevice *dev)
+gboolean nm_device_is_activating (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -1507,7 +1526,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	if (nm_device_activating (dev))
+	if (nm_device_is_activating (dev))
 	{
 		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
@@ -1517,7 +1536,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		 * The other problem with waiting here is that we hold up dbus traffic
 		 * that we should respond to.
 		 */
-		while (nm_device_activating (dev))
+		while (nm_device_is_activating (dev))
 			g_usleep (G_USEC_PER_SEC / 2);
 	}
 }
@@ -1556,14 +1575,14 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 
 
 /*
- * nm_device_now_scanning
+ * nm_device_is_scanning
  *
  * Returns whether the device is scanning, awaiting an access point to connect to.
  * Note that this does NOT get set when the device is actually scanning, just
  * when it is waiting for a valid access point to connect to.
  *
  */
-gboolean nm_device_now_scanning (NMDevice *dev)
+gboolean nm_device_is_scanning (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -1751,7 +1770,7 @@ void nm_device_unfreeze_best_ap (NMDevice *dev)
 	dev->options.wireless.freeze_best_ap = FALSE;
 }
 
-gboolean nm_device_get_best_ap_frozen (NMDevice *dev)
+gboolean nm_device_is_best_ap_frozen (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
@@ -1832,7 +1851,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 	 * not, we can "unfreeze" the best ap if its been frozen already).
 	 * If it is, we don't change the best ap here.
 	 */
-	if (nm_device_get_best_ap_frozen (dev))
+	if (nm_device_is_best_ap_frozen (dev))
 	{
 		NMAccessPoint *best_ap = nm_device_get_best_ap (dev);
 
@@ -1929,7 +1948,8 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		wireless_scan_head	 scan_results = { NULL, 0 };
 		wireless_scan		*tmp_ap;
 		int				 err;
-		NMAccessPointList	*old_ap_list = nm_device_ap_list_get (dev);
+		NMAccessPointList	*old_ap_list = NULL;
+		NMAccessPointList	*temp_list;
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -1947,14 +1967,22 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			}
 		}
 
-		/* Clear out the ap list for this device in preparation for any new ones */
-		dev->options.wireless.ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
-		if (!(dev->options.wireless.ap_list))
+		/* New list for current scan data */
+		temp_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+		if (!temp_list)
 		{
 			nm_dispose_scan_results (scan_results.result);
 			close (iwlib_socket);
 			return;
 		}
+
+		/* Shift all previous cached scan results and dispose of the oldest one. */
+		if (dev->options.wireless.cached_ap_list4)
+			nm_ap_list_unref (dev->options.wireless.cached_ap_list4);
+		dev->options.wireless.cached_ap_list4 = dev->options.wireless.cached_ap_list3;
+		dev->options.wireless.cached_ap_list3 = dev->options.wireless.cached_ap_list2;
+		dev->options.wireless.cached_ap_list2 = dev->options.wireless.cached_ap_list1;
+		dev->options.wireless.cached_ap_list1 = temp_list;
 
 		/* Iterate over scan results and pick a "most" preferred access point. */
 		tmp_ap = scan_results.result;
@@ -1984,24 +2012,39 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				if (tmp_ap->b.has_freq)
 					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
 
-				/* Merge settings from wireless networks, mainly Keys */
+				/* Merge settings from user-approved wireless networks, mainly encryption keys */
 				if ((list_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (nm_ap))))
 				{
 					nm_ap_set_timestamp (nm_ap, nm_ap_get_timestamp (list_ap));
 					nm_ap_set_enc_key_source (nm_ap, nm_ap_get_enc_key_source (list_ap), nm_ap_get_enc_method (list_ap));
 				}
 				/* Add the AP to the device's AP list */
-				nm_device_ap_list_add_ap (dev, nm_ap);
+				nm_ap_list_append_ap (dev->options.wireless.cached_ap_list1, nm_ap);
 			}
 			tmp_ap = tmp_ap->next;
 		}
 		nm_dispose_scan_results (scan_results.result);
 		close (iwlib_socket);
 
+		/* Dispose of the old list of available access points the card knows about */
+		if (nm_device_ap_list_get (dev))
+			nm_ap_list_unref (nm_device_ap_list_get (dev));
+
+		/* Compose the current access point list for the card based on the past two scans.  This
+		 * is to achieve some stability in the list, since cards don't necessarily return the same
+		 * access point list each scan even if you are standing in the same place.
+		 * Once we have the list, copy in any relevant information from our Allowed list.
+		 */
+		dev->options.wireless.ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list1, dev->options.wireless.cached_ap_list2);
+		nm_ap_list_copy_keys (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+
+		/* Generate the "old" list from the 3rd and 4th oldest scans we've done */
+		old_ap_list = nm_ap_list_combine (dev->options.wireless.cached_ap_list3, dev->options.wireless.cached_ap_list4);
+
 		/* Now do a diff of the old and new networks that we can see, and
 		 * signal any changes over dbus, but only if we are active device.
 		 */
-		if (dev == data->active_device)
+		if (dev == dev->app_data->active_device)
 			nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
 		if (old_ap_list)
 			nm_ap_list_unref (old_ap_list);

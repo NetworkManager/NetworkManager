@@ -1254,9 +1254,9 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	{
 		if ((reply_message = dbus_message_new_method_return (message)))
 		{
-			if (data->active_device && nm_device_activating (data->active_device))
+			if (data->active_device && nm_device_is_activating (data->active_device))
 			{
-				if (nm_device_is_wireless (data->active_device) && nm_device_now_scanning (data->active_device))
+				if (nm_device_is_wireless (data->active_device) && nm_device_is_scanning (data->active_device))
 					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "scanning", DBUS_TYPE_INVALID);
 				else
 					dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);

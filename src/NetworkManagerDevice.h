@@ -72,7 +72,7 @@ void			nm_device_update_best_ap			(NMDevice *dev);
 gboolean		nm_device_need_ap_switch			(NMDevice *dev);
 void			nm_device_freeze_best_ap			(NMDevice *dev);
 void			nm_device_unfreeze_best_ap		(NMDevice *dev);
-gboolean		nm_device_get_best_ap_frozen		(NMDevice *dev);
+gboolean		nm_device_is_best_ap_frozen		(NMDevice *dev);
 
 char *		nm_device_get_path_for_ap		(NMDevice *dev, NMAccessPoint *ap);
 
@@ -81,11 +81,11 @@ void			nm_device_set_enc_key			(NMDevice *dev, const char *key);
 
 gboolean		nm_device_activation_begin		(NMDevice *dev);
 void			nm_device_activation_cancel		(NMDevice *dev);
-gboolean		nm_device_just_activated			(NMDevice *dev);
-gboolean		nm_device_activating			(NMDevice *dev);
+gboolean		nm_device_is_just_activated		(NMDevice *dev);
+gboolean		nm_device_is_activating			(NMDevice *dev);
 gboolean		nm_device_deactivate			(NMDevice *dev, gboolean just_added);
 
-gboolean		nm_device_now_scanning			(NMDevice *dev);
+gboolean		nm_device_is_scanning			(NMDevice *dev);
 
 void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list,
 											unsigned char *network, unsigned char *key,

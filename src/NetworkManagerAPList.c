@@ -117,6 +117,19 @@ void nm_ap_list_unref (NMAccessPointList *list)
 
 
 /*
+ * nm_ap_list_is_empty
+ *
+ * Returns whether or not the access point list has any access points
+ * in it.
+ *
+ */
+gboolean nm_ap_list_is_empty (NMAccessPointList *list)
+{
+	return ((list->ap_list == NULL));
+}
+
+
+/*
  * nm_ap_list_append_ap
  *
  * Helper to append an AP to an ap list of a certain type.
@@ -292,6 +305,94 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
 
 
 /*
+ * nm_ap_list_combine
+ *
+ * Combine two access point lists into one.  This is a simple OR operation, where each
+ * unique access point in either list is present in the final, combined list.
+ *
+ * NOTE: locks NMAccessPointList arguments
+ */
+NMAccessPointList * nm_ap_list_combine (NMAccessPointList *list1, NMAccessPointList *list2)
+{
+	NMAccessPointList	*final_list = NULL;
+	NMAPListIter		*iter;
+	NMAccessPoint		*ap;
+
+	final_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+	if (!final_list)
+		return (NULL);
+
+	/* Add all APs in the first list */
+	if (list1 && (iter = nm_ap_list_iter_new (list1)))
+	{
+		while ((ap = nm_ap_list_iter_next (iter)))
+		{
+			NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
+			if (new_ap)
+				nm_ap_list_append_ap (final_list, new_ap);
+		}
+		nm_ap_list_iter_free (iter);
+	}
+
+	/* Add all APs in the second list not already added from the first */
+	if (list2 && (iter = nm_ap_list_iter_new (list2)))
+	{
+		while ((ap = nm_ap_list_iter_next (iter)))
+		{
+			if (!nm_ap_list_get_ap_by_essid (final_list, nm_ap_get_essid (ap)))
+			{
+				NMAccessPoint	*new_ap = nm_ap_new_from_ap (ap);
+				if (new_ap)
+					nm_ap_list_append_ap (final_list, new_ap);
+			}
+		}
+		nm_ap_list_iter_free (iter);
+	}
+
+	if (nm_ap_list_is_empty (final_list))
+	{
+		nm_ap_list_unref (final_list);
+		final_list = NULL;
+	}
+
+	return (final_list);
+}
+
+
+/*
+ * nm_ap_list_copy_keys
+ *
+ * Update the keys and encryption methods in one access point list from
+ * access points in another list, if the APs in the first list are present
+ * in the second.
+ *
+ */
+void nm_ap_list_copy_keys (NMAccessPointList *dest, NMAccessPointList *source)
+{
+	NMAPListIter	*iter;
+	NMAccessPoint	*dest_ap;
+
+	g_return_if_fail (dest != NULL);
+	g_return_if_fail (source != NULL);
+
+	if ((iter = nm_ap_list_iter_new (dest)))
+	{
+		while ((dest_ap = nm_ap_list_iter_next (iter)))
+		{
+			NMAccessPoint	*src_ap = NULL;
+
+			if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
+			{
+				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
+				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_method (src_ap));
+			}
+		}
+		nm_ap_list_iter_free (iter);
+	}
+}
+
+
+/*
  * nm_ap_list_diff
  *
  * Takes two ap lists and determines the differences.  For each ap that is present
@@ -327,7 +428,6 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 			{
 				nm_ap_set_matched (old_ap, TRUE);
 				nm_ap_set_matched (new_ap, TRUE);
-				nm_ap_set_invalid (new_ap, nm_ap_get_invalid (old_ap));
 			}
 			else
 				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, TRUE);

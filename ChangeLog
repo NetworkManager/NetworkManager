@@ -1,3 +1,26 @@
+2004-10-11 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+		- (nm_ap_new, nm_ap_new_from_ap): Don't crash when we don't have
+			enough RAM to allocate new AP structures, but return NULL instead
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_is_empty): new function
+		- (nm_ap_list_combine): new function, combine two access point lists
+		- (nm_ap_list_copy_keys): new function, copy keys from one list
+			into another
+
+	* src/NetworkManagerDevice.[ch]
+		- Rename some functions to be clearer:
+			nm_device_get_best_ap_frozen -> nm_device_is_best_ap_frozen
+			nm_device_just_activated     -> nm_device_is_just_activated
+			nm_device_activating         -> nm_device_is_activating
+			nm_device_now_scanning       -> nm_device_is_scanning
+		- Cache the last 4 scans so that the access point list is more stable.
+			We combine the lastest two scans and use that as the AP list,
+			and diff that combined list against the combination of the earliest
+			two cached scans for the WirelessNetworkAppeared/Dissappeared signals
+
 2004-10-08 John (J5) Palmieri <johnp@redhat.com>
 
 	* info-daemon/NWManagerInfo.h

@@ -59,7 +59,10 @@ NMAccessPoint * nm_ap_new (void)
 	
 	ap = g_new0 (NMAccessPoint, 1);
 	if (!ap)
-		syslog( LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" );
+	{
+		syslog (LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?");
+		return (NULL);
+	}
 
 	ap->refcount = 1;
 
@@ -85,7 +88,10 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 
 	new_ap = nm_ap_new();
 	if (!new_ap)
-		syslog( LOG_ERR, "nm_ap_new_from_uap() could not allocate a new user access point info structure.  Not enough memory?" );
+	{
+		syslog (LOG_ERR, "nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
+		return (NULL);
+	}
 
 	new_ap->refcount = 1;
 
@@ -399,7 +405,7 @@ void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
  * Return the encryption method the user specified for this access point.
  *
  */
-NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
+const NMAPEncMethod nm_ap_get_enc_method (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, TRUE);
 

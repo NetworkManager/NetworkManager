@@ -277,12 +277,12 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			}
 			else if (best_dev && nm_device_is_wireless (best_dev))
 			{
-				if (!nm_device_activating (best_dev) && nm_device_need_ap_switch (best_dev))
+				if (!nm_device_is_activating (best_dev) && nm_device_need_ap_switch (best_dev))
 				{
 					syslog (LOG_INFO, "    SWITCH: need to associate with new access point");
 					do_switch = TRUE;
 				}
-				else if (!nm_device_activating (best_dev) && (nm_device_get_ip4_address (best_dev) == 0))
+				else if (!nm_device_is_activating (best_dev) && (nm_device_get_ip4_address (best_dev) == 0))
 				{
 					syslog (LOG_INFO, "    SWITCH: need to get an IP address");
 					do_switch = TRUE;
@@ -323,7 +323,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		else
 			syslog (LOG_ERR, "nm_state_modification_monitor() could not get device list mutex");
 	}
-	else if (data->active_device && nm_device_just_activated (data->active_device))
+	else if (data->active_device && nm_device_is_just_activated (data->active_device))
 	{
 		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_NOW_ACTIVE);
 		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
