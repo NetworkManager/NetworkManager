@@ -1263,6 +1263,8 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 
 	g_return_val_if_fail (applet != NULL, NULL);
 
+	dbus_g_thread_init ();
+
 	if (!(applet->thread_context = g_main_context_new ()))
 		return (NULL);
 	if (!(thread_loop = g_main_loop_new (applet->thread_context, FALSE)))

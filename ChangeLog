@@ -1,3 +1,41 @@
+2005-01-29  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/RedHat/NetworkManager
+		- Don't spit out sysctl stuff to console
+
+	* libnm_glib/libnm_glib.c
+		- (libnm_glib_init): call dbus_g_thread_init()
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_worker): call dbus_g_thread_init()
+
+	* src/NetworkManager.c
+		- (main): call dbus_g_thread_init()
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_print_members): use LOG_ERR instead of LOG_DEBUG
+			so we can actually see what's there in a normal syslog
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_activate_wireless): print out the "waiting for access point"
+			message only once, then say what access point we actually got after
+			the wait.
+		- (nm_device_need_ap_switch): If a scan is in progress when we're in this
+			function, wait until the scan is done.  Scans may change the ESSID of
+			the card, making this function think we need to switch access points
+		- (nm_device_wireless_process_scan_results): for artificial access points
+			don't check against the card's ESSID, but the best_ap's ESSID.  This
+			prevents collisions with the scanning code, which may change the card's
+			ESSID and cause the access point to get dropped from the device's AP
+			list.  Also increase the keep-around time to 2m from 60s since the max
+			scan interval could be 60s in some cases.
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): Don't add invalid MAC addresses to GConf
+		- (nm_policy_allowed_ap_list_update): When we update, make sure we copy over
+			the new properties and ESSIDs to the device's AP list.  Fixes some races
+			between NM and NMI.
+
 2005-01-27  Dan Williams  <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c

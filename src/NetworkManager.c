@@ -703,6 +703,7 @@ int main( int argc, char *argv[] )
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
+	dbus_g_thread_init ();
 
 	openlog ("NetworkManager", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
 	syslog (LOG_NOTICE, "starting...");

@@ -260,7 +260,7 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 						nm_ap_set_address (ap, &addr);
 
 					/* Don't store MAC addresses for non-infrastructure networks */
-					if (nm_ap_get_mode (ap) == NETWORK_MODE_INFRA)
+					if ((nm_ap_get_mode (ap) == NETWORK_MODE_INFRA) && nm_ethernet_address_is_valid (&addr))
 						nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_ap_get_essid (ap), &addr);
 
 					nm_ap_unref (ap);
@@ -491,6 +491,13 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 		&& nm_device_is_wireless (data->active_device))
 	{
 		NMAccessPoint	*best_ap;
+
+		/* Once we have the list, copy in any relevant information from our Allowed list and fill
+		 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
+		 * MAC address in our allowed list.
+		 */
+		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
+		nm_ap_list_copy_properties (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
 
 		best_ap = nm_device_get_best_ap (data->active_device);
 		if (!best_ap)

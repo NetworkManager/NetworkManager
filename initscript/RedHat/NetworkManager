@@ -28,7 +28,8 @@ RETVAL=0
 
 start()
 {
-	action $"Setting network parameters: " sysctl -e -p /etc/sysctl.conf
+	echo $"Setting network parameters... "
+	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
 	echo -n $"Starting NetworkManager daemon: "
 	daemon --check $servicename $processname
 	RETVAL=$?

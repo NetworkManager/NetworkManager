@@ -472,6 +472,7 @@ libnm_glib_ctx *libnm_glib_init (void)
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
+	dbus_g_thread_init ();
 
 	ctx = libnm_glib_ctx_new();
 	if (!ctx)

@@ -1845,7 +1845,7 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 
 
 /*
- * nm_device_activate_wireless
+ * nm_device_set_wireless_config
  *
  * Bring up a wireless card with the essid and wep key of its "best" ap
  *
@@ -2097,6 +2097,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	guint8			 attempt = 1;
 	char				 last_essid [50] = "\0";
 	gboolean			 need_key = FALSE;
+	gboolean			 found_ap = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -2122,7 +2123,8 @@ get_ap:
 	while (!(best_ap = nm_device_get_best_ap (dev)))
 	{
 		nm_device_set_now_scanning (dev, TRUE);
-		syslog (LOG_DEBUG, "Activation (%s/wireless): waiting for an access point.", nm_device_get_iface (dev));
+		if (!found_ap)
+			syslog (LOG_ERR, "Activation (%s/wireless): waiting for an access point.", nm_device_get_iface (dev));
 		g_usleep (G_USEC_PER_SEC * 2);
 
 		/* If we were told to quit activation, stop the thread and return */
@@ -2132,7 +2134,10 @@ get_ap:
 			g_mutex_lock (dev->options.wireless.scan_mutex);
 			goto out;
 		}
+		found_ap = TRUE;
 	}
+	if (found_ap)
+		syslog (LOG_ERR, "Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
 	/* Set ESSID early so that when we send out the DeviceStatusChanged signal below,
 	 * we are able to respond correctly to queries for "getActiveNetwork" against
@@ -2384,7 +2389,7 @@ static gboolean nm_device_activate (gpointer user_data)
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	syslog (LOG_DEBUG, "Activation (%s) started...", nm_device_get_iface (dev));
+	syslog (LOG_ERR, "Activation (%s) started...", nm_device_get_iface (dev));
 
 	/* Bring the device up */
 	if (!nm_device_is_up (dev));
@@ -2822,11 +2827,19 @@ gboolean nm_device_need_ap_switch (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 
+
+	/* Since the card's ESSID may change during a scan, we need to
+	 * wait until the scan is done, if one is in-progress.
+	 */
+	g_mutex_lock (dev->options.wireless.scan_mutex);
+
 	ap = nm_device_get_best_ap (dev);
 	if (nm_null_safe_strcmp (nm_device_get_essid (dev), (ap ? nm_ap_get_essid (ap) : NULL)) != 0)
 		need_switch = TRUE;
 
-	if (ap) nm_ap_unref (ap);
+	if (ap)
+		nm_ap_unref (ap);
+	g_mutex_unlock (dev->options.wireless.scan_mutex);
 
 	return (need_switch);
 }
@@ -2929,7 +2942,6 @@ void nm_device_update_best_ap (NMDevice *dev)
 	best_ap = trusted_best_ap ? trusted_best_ap : untrusted_best_ap;
 	nm_ap_list_iter_free (iter);
 
-	/* If the best ap is NULL, bring device down and clear out its essid and AP */
 	nm_device_set_best_ap (dev, best_ap);
 }
 
@@ -3362,28 +3374,32 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		NMAccessPoint	*outdated_ap;
 		GSList		*outdated_list = NULL;
 		GSList		*elem;
-		char 		*essid = nm_device_get_essid (dev);
+		NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
 
 		while ((outdated_ap = nm_ap_list_iter_next (iter)))
 		{
-			const GTimeVal *ap_time = nm_ap_get_last_seen (outdated_ap);
-			gboolean	keep_around = FALSE;
+			const GTimeVal	*ap_time = nm_ap_get_last_seen (outdated_ap);
+			gboolean		 keep_around = FALSE;
 
-			/* We don't add an "artifical" APs to the outdated list if it is the
+			/* We don't add "artifical" APs to the outdated list if it is the
 			 * one the card is currently associated with.
 			 * Some Cisco cards don't report non-ESSID-broadcasting access points
 			 * in their scans even though the card associates with that AP just fine.
 			 */
 			if (	    nm_ap_get_essid (outdated_ap)
-				&& !strcmp (essid, nm_ap_get_essid (outdated_ap))
+				&&  (best_ap && (nm_null_safe_strcmp (nm_ap_get_essid (best_ap), nm_ap_get_essid (outdated_ap))) == 0)
 				&&  nm_ap_get_artificial (outdated_ap))
 				keep_around = TRUE;
 
 			/* Eh, we don't care about sub-second time resolution. */
-			if ((ap_time->tv_sec + 60 < cur_time.tv_sec) && !keep_around)
+			if ((ap_time->tv_sec + 120 < cur_time.tv_sec) && !keep_around)
 				outdated_list = g_slist_append (outdated_list, outdated_ap);
 		}
 		nm_ap_list_iter_free (iter);
+
+		/* nm_device_get_best_ap() refs the ap */
+		if (best_ap)
+			nm_ap_unref (best_ap);
 
 		/* Ok, now remove outdated ones.  We have to do it after the lock
 		 * because nm_ap_list_remove_ap() locks the list too.
