@@ -93,7 +93,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 		else if (!strcmp (error.name, NM_DBUS_NO_NETWORKS_ERROR))
 			ret = RETURN_SUCCESS;
 
-		if (ret != RETURN_SUCCESS)
+		if ((ret != RETURN_SUCCESS) && (ret != RETURN_NO_NM))
 			fprintf (stderr, "nmwa_dbus_call_nm_method(): %s raised:\n %s\n\n", error.name, error.message);
 
 		dbus_error_free (&error);

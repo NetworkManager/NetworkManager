@@ -33,6 +33,29 @@
 
 
 /*
+ * nmi_show_warning_dialog
+ *
+ * pop up a warning or error dialog with certain text
+ *
+ */
+static void nmi_show_warning_dialog (gboolean error, gchar *mesg, ...)
+{
+	GtkWidget	*dialog;
+	char		*tmp;
+	va_list	 ap;
+
+	va_start (ap,mesg);
+	tmp = g_strdup_vprintf (mesg,ap);
+	dialog = gtk_message_dialog_new (NULL, 0, error ? GTK_MESSAGE_ERROR : GTK_MESSAGE_WARNING,
+					 GTK_BUTTONS_OK, mesg, NULL);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+	g_free (tmp);
+	va_end (ap);
+}
+
+
+/*
  * nmi_network_type_valid
  *
  * Helper to validate network types NMI can deal with
@@ -629,7 +652,34 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationFailed"))
+	{
+		char		*dev = NULL;
+		char		*net = NULL;
+		DBusError	 error;
 
+		dbus_error_init (&error);
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
+		{
+			if (dbus_error_is_set (&error))
+				dbus_error_free (&error);
+			dbus_error_init (&error);
+			dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
+		}
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		if (dev && net)
+		{
+			char *string = g_strdup_printf ("Connection to the wireless network '%s' failed.\n", net);
+			nmi_show_warning_dialog (TRUE, string);
+			g_free (string);
+		}
+		else if (dev)
+			nmi_show_warning_dialog (TRUE, "Connection to the wired network failed.\n");
+
+		dbus_free (dev);
+		dbus_free (net);
 	}
 
 	if (appeared || disappeared)

@@ -402,6 +402,7 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 	DBusMessage		*message;
 	unsigned char		*dev_path;
 	unsigned char		*signal = NULL;
+	NMAccessPoint		*ap = NULL;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -423,6 +424,9 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 		case (DEVICE_LIST_CHANGE):
 			signal = "DevicesChanged";
 			break;
+		case (DEVICE_ACTIVATION_FAILED):
+			signal = "DeviceActivationFailed";
+			break;
 		default:
 			syslog (LOG_ERR, "nm_dbus_signal_device_status_change(): got a bad signal name");
 			return;
@@ -435,7 +439,13 @@ void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
+	if ((status == DEVICE_ACTIVATION_FAILED) && nm_device_is_wireless (dev))
+		ap = nm_device_get_best_ap (dev);
+	/* If the device was wireless, attach the name of the wireless network that failed to activate */
+	if (ap && nm_ap_get_essid (ap))
+		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_STRING, nm_ap_get_essid (ap), DBUS_TYPE_INVALID);
+	else
+		dbus_message_append_args (message, DBUS_TYPE_STRING, dev_path, DBUS_TYPE_INVALID);
 	g_free (dev_path);
 
 	if (!dbus_connection_send (connection, message, NULL))

@@ -65,6 +65,10 @@ Signals:
 	Name:	DevicesChanged				Signals that a device was either added or removed from the system
 	Args:	1) Device object			(DBUS_TYPE_STRING)	- The device which was added or removed
 
+	Name:	DeviceActivationFailed		Signals that activation for a device could not complete (dhcp failed or so)
+	Args:	1) Device object			(DBUS_TYPE_STRING)	- The device for which activation failed
+			2) Network name			(DBUS_TYPE_STRING, optional) - ESSID of failed wireless network
+
 NOTE: the following 3 Signals are likely to change in the near future
 
 	Name:	DeviceIP4AddressChange		Signals that a device's IPv4 address was changed

@@ -350,6 +350,26 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_NOW_ACTIVE);
 		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
 	}
+	else if (data->active_device && nm_device_did_activation_fail (data->active_device))
+	{
+		NMAccessPoint *ap = NULL;
+		nm_dbus_signal_device_status_change (data->dbus_connection, data->active_device, DEVICE_ACTIVATION_FAILED);
+		if (nm_device_is_wireless (data->active_device))
+		{
+			ap = nm_device_get_best_ap (data->active_device);
+			nm_ap_ref (ap);
+			/* Add the AP to the invalid list and force a best ap update */
+			nm_ap_list_append_ap (data->invalid_ap_list, ap);
+			nm_device_update_best_ap (data->active_device);
+		}
+		if (ap && nm_ap_get_essid (ap))
+			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s (%s)", nm_device_get_iface (data->active_device), nm_ap_get_essid (ap));
+		else
+			syslog (LOG_INFO, "nm_state_modification_monitor() failed to activate device %s", nm_device_get_iface (data->active_device));
+		nm_data_mark_state_changed (data);
+		if (ap)
+			nm_ap_unref (ap);
+	}
 
 	/* Clear the starting up flag, so we will now take over and have our way with
 	 * any device we find out about.

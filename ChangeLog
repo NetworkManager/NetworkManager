@@ -1,5 +1,30 @@
 2004-10-23 Dan Williams <dcbw@redhat.com>
 
+	* info-daemon/NetworkManagerInfoDbus.c
+		- Trap the "DeviceActivationFailed" signal
+
+	* docs/NetworkManager DBUS API.txt
+		- Add "DeviceActivationFailed" signal
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Quash the "NetworkManager service not available" message
+
+	* src/NetworkManagerDbus.[ch]
+		- Add the "DeviceActivationFailed" signal
+
+	* src/NetworkManagerDevice.c
+		- Add support for activation_failed flag
+		- Fix deadlock where activation thread didn't clean itself up, making
+			main thread still believe it was alive forever (didn't reset activation
+			flags like activating, just_activated, etc when IP configuration
+			failed)
+
+	* src/NetworkManagerPolicy.c
+		- Implement logic for DeviceActivationFailed signal, and when activation fails
+			for wireless networks, try to fall back to some other access point
+
+2004-10-23 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.[ch]
 		- Place the GtkMenuBar inside a GtkEventBox, and add the Event Box
 			to the applet object, so we can get tooltips

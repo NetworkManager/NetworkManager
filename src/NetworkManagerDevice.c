@@ -121,6 +121,7 @@ struct NMDevice
 	gboolean			 activating;		/* Set by main thread before beginning activation */
 	gboolean			 just_activated;	/* Set by activation thread after successful activation */
 	gboolean			 quit_activation;	/* Flag to signal activation thread to stop activating */
+	gboolean			 activation_failed;	/* Did the activation fail? */
 
 	gboolean			 test_device;
 	gboolean			 test_device_up;
@@ -812,7 +813,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key)
 			keylen = iw_in_key_full(iwlib_socket, nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
 			if (keylen > 0)
 			{
-				wreq.u.data.flags |= IW_ENCODE_RESTRICTED;		// FIXME: what about restricted/Shared Key?
+				wreq.u.data.flags |= IW_ENCODE_RESTRICTED;		/* FIXME: what about restricted/Shared Key? */
 				wreq.u.data.pointer	=  (caddr_t) &parsed_key;
 				wreq.u.data.length	=  keylen;
 				set_key = TRUE;
@@ -997,7 +998,7 @@ void nm_device_update_ip4_address (NMDevice *dev)
 	if (socket < 0)
 		return;
 	
-	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), 16);	// 16 == IF_NAMESIZE
+	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), 16);	/* 16 == IF_NAMESIZE */
 	err = ioctl (socket, SIOCGIFADDR, &req);
 	close (socket);
 	if (err != 0)
@@ -1197,7 +1198,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	NMData	*data = (NMData *)dev->app_data;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (!dev->activating, TRUE);	// Return if activation has already begun
+	g_return_val_if_fail (!dev->activating, TRUE);	/* Return if activation has already begun */
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	/* Ref the device so it doesn't go away while worker function is active */
@@ -1227,6 +1228,7 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	dev->activating = TRUE;
 	dev->just_activated = FALSE;
 	dev->quit_activation = FALSE;
+	dev->activation_failed = FALSE;
 	if (nm_device_is_wireless (dev))
 	{
 		dev->options.wireless.now_scanning = FALSE;
@@ -1263,6 +1265,8 @@ static gboolean nm_device_activation_should_cancel (NMDevice *dev)
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
 		dev->activating = FALSE;
 		dev->just_activated = FALSE;
+		dev->activation_failed = TRUE;
+		dev->quit_activation = FALSE;
 		return (TRUE);
 	}
 
@@ -1520,10 +1524,7 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_should_cancel (dev))
-		{
-			nm_device_unref (dev);
-			return (NULL);
-		}
+			goto out;
 
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): using ESSID '%s'", nm_device_get_iface (dev),
 				nm_ap_get_essid (nm_device_get_best_ap (dev)));
@@ -1555,10 +1556,16 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 			sethostname (hostname, strlen (hostname));
 
 		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_should_cancel (dev) || !success)
+		if (nm_device_activation_should_cancel (dev))
+			goto out;
+
+		if (!success)
 		{
-			nm_device_unref (dev);
-			return (NULL);
+			dev->activating = FALSE;
+			dev->just_activated = FALSE;
+			dev->activation_failed = TRUE;
+			dev->quit_activation = FALSE;
+			goto out;
 		}
 
 		/* Make system aware of any new DNS settings from resolv.conf */
@@ -1567,16 +1574,18 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
-	{
-		nm_device_unref (dev);
-		return (NULL);
-	}
+		goto out;
 
-	dev->just_activated = TRUE;
-	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
 	nm_device_update_ip4_address (dev);
 
+	dev->just_activated = TRUE;
 	dev->activating = FALSE;
+	dev->activation_failed = FALSE;
+	dev->quit_activation = FALSE;
+
+	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));
+
+out:
 	nm_device_unref (dev);
 	return (NULL);
 }
@@ -1614,6 +1623,21 @@ gboolean nm_device_is_activating (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return (dev->activating);
+}
+
+
+/*
+ * nm_device_did_activation_fail
+ *
+ * Return whether or not activation on the device failed (was cancelled or
+ * activation process encountered and error)
+ *
+ */
+gboolean nm_device_did_activation_fail (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (dev->activation_failed);
 }
 
 
