@@ -1068,11 +1068,9 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
-			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
-	{
-		nmwa_dbus_update_devices (applet);
-	}
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceStatusChanged")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
 	{
 		nmwa_dbus_update_devices (applet);
 	}

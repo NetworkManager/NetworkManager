@@ -109,47 +109,41 @@ static GObject *nmwa_constructor (GType type,
  */
 static void nmwa_update_network_state (NMWirelessApplet *applet)
 {
+	static AppletState	old_state = 0;
+
 	g_return_if_fail (applet != NULL);
 
 	if (!applet->connection)
 	{
 		applet->applet_state = APPLET_STATE_NO_NM;
-		return;
+		goto out;
 	}
 
 	if (applet->applet_state == APPLET_STATE_NO_NM)
-		return;
+		goto out;
 
 	if (!applet->nm_status)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		return;
+		goto out;
 	}
-
-	if (    applet->forcing_device
-		&& (applet->applet_state == APPLET_STATE_WIRELESS_CONNECTING)
-		&& (strcmp (applet->nm_status, "connected") == 0))
-	{
-		return;
-	}
-	applet->forcing_device = FALSE;
 
 	if (strcmp (applet->nm_status, "scanning") == 0)
 	{
 		applet->applet_state = APPLET_STATE_WIRELESS_SCANNING;
-		return;
+		goto out;
 	}
 	
 	if (strcmp (applet->nm_status, "disconnected") == 0)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		return;
+		goto out;
 	}
 	
 	if (!applet->active_device)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		return;
+		goto out;
 	}
 
 	/* If the device is not 802.x, we don't show state for it (yet) */
@@ -157,7 +151,6 @@ static void nmwa_update_network_state (NMWirelessApplet *applet)
 		&& (applet->active_device->type != DEVICE_TYPE_WIRELESS_ETHERNET))
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
-		return;
 	}
 	else if (applet->active_device->type == DEVICE_TYPE_WIRED_ETHERNET)
 	{
@@ -173,40 +166,61 @@ static void nmwa_update_network_state (NMWirelessApplet *applet)
 		else if (strcmp (applet->nm_status, "connected") == 0)
 			applet->applet_state = APPLET_STATE_WIRELESS;
 	}
+
+out:
+	if (applet->applet_state != old_state)
+	{
+		applet->animation_step = 0;
+		if (applet->applet_state == APPLET_STATE_NO_NM)
+		{
+			/* We can only do this because we are called with
+			 * the applet->data_mutex locked.
+			 */
+			g_free (applet->nm_status);
+			applet->nm_status = NULL;
+		}
+		old_state = applet->applet_state;
+	}
 }
 
 
 static gboolean
 animation_timeout (NMWirelessApplet *applet)
 {
-  switch (applet->applet_state)
-    {
-    case (APPLET_STATE_WIRED_CONNECTING):
-      applet->animation_step ++;
-      if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
-	applet->animation_step = 0;
-      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-				 applet->wired_connecting_icons[applet->animation_step]);
-      break;
-    case (APPLET_STATE_WIRELESS_CONNECTING):
-      applet->animation_step ++;
-      if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
-	applet->animation_step = 0;
-      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-				 applet->wireless_connecting_icons[applet->animation_step]);
-      break;
-    case (APPLET_STATE_NO_NM):
-    case (APPLET_STATE_WIRELESS_SCANNING):
-      applet->animation_step ++;
-      if (applet->animation_step >= NUM_WIRELESS_SCANNING_FRAMES)
-	applet->animation_step = 0;
-      gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-				 applet->wireless_scanning_icons[applet->animation_step]);
-      break;
-    default:
-      break;
-    }
-  return TRUE;
+	switch (applet->applet_state)
+	{
+		case (APPLET_STATE_WIRED_CONNECTING):
+			if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
+				applet->animation_step = 0;
+			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+					applet->wired_connecting_icons[applet->animation_step]);
+			applet->animation_step ++;
+			break;
+
+		case (APPLET_STATE_WIRELESS_CONNECTING):
+			if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
+				applet->animation_step = 0;
+			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+					applet->wireless_connecting_icons[applet->animation_step]);
+			applet->animation_step ++;
+			break;
+
+		case (APPLET_STATE_NO_NM):
+			applet->animation_step = 0;
+			break;
+
+		case (APPLET_STATE_WIRELESS_SCANNING):
+			if (applet->animation_step >= NUM_WIRELESS_SCANNING_FRAMES)
+				applet->animation_step = 0;
+			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
+					applet->wireless_scanning_icons[applet->animation_step]);
+			applet->animation_step ++;
+			break;
+
+		default:
+			break;
+	}
+	return TRUE;
 }
 
 
@@ -252,122 +266,121 @@ inline void print_state (AppletState state)
 static void
 nmwa_update_state (NMWirelessApplet *applet)
 {
-  gboolean show_applet = TRUE;
-  gboolean need_animation = FALSE;
-  GdkPixbuf *pixbuf = NULL;
-  gint strength = -1;
-  char *tip = NULL;
+	gboolean show_applet = TRUE;
+	gboolean need_animation = FALSE;
+	GdkPixbuf *pixbuf = NULL;
+	gint strength = -1;
+	char *tip = NULL;
 
-  g_mutex_lock (applet->data_mutex);
-  if (applet->active_device)
-    {
-      GSList *list;
-      for (list = applet->active_device->networks; list; list = list->next)
+	g_mutex_lock (applet->data_mutex);
+	if (applet->active_device)
 	{
-	  WirelessNetwork *network;
+		GSList *list;
+		for (list = applet->active_device->networks; list; list = list->next)
+		{
+			WirelessNetwork *network = (WirelessNetwork *) list->data;
 
-	  network = (WirelessNetwork *) list->data;
-	  if (network->active)
-	    strength = CLAMP ((int) network->strength, 0, 100);
+			if (network->active)
+				strength = CLAMP ((int) network->strength, 0, 100);
+		}
+
+		if (strength <= 0)
+			strength = applet->active_device->strength;
 	}
-
-      if (strength <= 0)
-	strength = applet->active_device->strength;
-    }
 
 #if 0
-  /* Only show icon if there's more than one device and at least one is wireless */
-  if (g_slist_length (applet->device_list) == 1 &&
-      applet->applet_state != APPLET_STATE_NO_NM)
-    {
-      if (((NetworkDevice *)applet->device_list->data)->type == DEVICE_TYPE_WIRED_ETHERNET)
-	show_applet = FALSE;
-    }
+	/* Only show icon if there's more than one device and at least one is wireless */
+	if (g_slist_length (applet->device_list) == 1 && applet->applet_state != APPLET_STATE_NO_NM)
+	{
+		if (((NetworkDevice *)applet->device_list->data)->type == DEVICE_TYPE_WIRED_ETHERNET)
+			show_applet = FALSE;
+	}
 #endif
 
-  nmwa_update_network_state (applet);
+	nmwa_update_network_state (applet);
 
-  /* print_state (applet->applet_state); */
-  switch (applet->applet_state)
-    {
-    case (APPLET_STATE_NO_CONNECTION):
-      show_applet = FALSE;
-      tip = g_strdup (_("No network connection"));
-      break;
-    case (APPLET_STATE_WIRED):
-      pixbuf = applet->wired_icon;
-      tip = g_strdup (_("Wired network connection"));
-      break;
-    case (APPLET_STATE_WIRED_CONNECTING):
-      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRED_CONNECTING_FRAMES - 1);
-      pixbuf = applet->wired_connecting_icons[applet->animation_step];
-      need_animation = TRUE;
-      tip = g_strdup (_("Connecting to a wired network..."));
-      break;
-    case (APPLET_STATE_WIRELESS):
-      if (applet->active_device)
+	/* print_state (applet->applet_state); */
+	switch (applet->applet_state)
 	{
-	  if (applet->is_adhoc)
-	  {
-	    pixbuf = applet->adhoc_icon;
-	    tip = g_strdup_printf (_("Connected to an Ad-Hoc wireless network"));
-	  }
-	  else
-	  {
-	    if (strength > 75)
-	      pixbuf = applet->wireless_100_icon;
-	    else if (strength > 50)
-	      pixbuf = applet->wireless_75_icon;
-	    else if (strength > 25)
-	      pixbuf = applet->wireless_50_icon;
-	    else if (strength > 0)
-	      pixbuf = applet->wireless_25_icon;
-	    else
-	      pixbuf = applet->wireless_00_icon;
-	    tip = g_strdup_printf (_("Wireless network connection (%d%%)"), strength);
-	  }
+		case (APPLET_STATE_NO_CONNECTION):
+			show_applet = FALSE;
+			tip = g_strdup (_("No network connection"));
+			break;
+
+		case (APPLET_STATE_WIRED):
+			pixbuf = applet->wired_icon;
+			tip = g_strdup (_("Wired network connection"));
+			break;
+
+		case (APPLET_STATE_WIRED_CONNECTING):
+			need_animation = TRUE;
+			tip = g_strdup (_("Connecting to a wired network..."));
+			break;
+
+		case (APPLET_STATE_WIRELESS):
+			if (applet->active_device)
+			{
+				if (applet->is_adhoc)
+				{
+					pixbuf = applet->adhoc_icon;
+					tip = g_strdup (_("Connected to an Ad-Hoc wireless network"));
+				}
+				else
+				{
+					if (strength > 75)
+						pixbuf = applet->wireless_100_icon;
+					else if (strength > 50)
+						pixbuf = applet->wireless_75_icon;
+					else if (strength > 25)
+						pixbuf = applet->wireless_50_icon;
+					else if (strength > 0)
+						pixbuf = applet->wireless_25_icon;
+					else
+						pixbuf = applet->wireless_00_icon;
+					tip = g_strdup_printf (_("Wireless network connection (%d%%)"), strength);
+				}
+			}
+			else
+				tip = g_strdup (_("Wireless network connection"));
+			break;
+
+		case (APPLET_STATE_WIRELESS_CONNECTING):
+			need_animation = TRUE;
+			tip = g_strdup (_("Connecting to a wireless network..."));
+			break;
+
+		case (APPLET_STATE_NO_NM):
+			show_applet = FALSE;
+			tip = g_strdup (_("NetworkManager is not running"));
+			break;
+
+		case (APPLET_STATE_WIRELESS_SCANNING):
+			need_animation = TRUE;
+			tip = g_strdup (_("Scanning for wireless networks..."));
+			break;
+
+		default:
+			break;
 	}
-     else
-         tip = g_strdup (_("Wireless network connection"));
-      break;
-    case (APPLET_STATE_WIRELESS_CONNECTING):
-      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_CONNECTING_FRAMES - 1);
-      pixbuf = applet->wireless_connecting_icons[applet->animation_step];
-      need_animation = TRUE;
-      tip = g_strdup (_("Connecting to a wireless network..."));
-      break;
-    case (APPLET_STATE_NO_NM):
-      show_applet = FALSE;
-      tip = g_strdup (_("NetworkManager is not running"));
-    case (APPLET_STATE_WIRELESS_SCANNING):
-      applet->animation_step = CLAMP (applet->animation_step, 0, NUM_WIRELESS_SCANNING_FRAMES - 1);
-      pixbuf = applet->wireless_scanning_icons[applet->animation_step];
-      need_animation = TRUE;
-      if (!tip)
-          tip = g_strdup (_("Scanning for wireless networks..."));
-    default:
-      break;
-    }
-  g_mutex_unlock (applet->data_mutex);
+	g_mutex_unlock (applet->data_mutex);
 
-  if (!applet->tooltips)
-    applet->tooltips = gtk_tooltips_new ();
-  gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
-  g_free (tip);
+	if (!applet->tooltips)
+		applet->tooltips = gtk_tooltips_new ();
+	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
+	g_free (tip);
 
-  gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
+	/*determine if we should hide the notification icon*/
+	if (show_applet)
+		gtk_widget_show (GTK_WIDGET (applet));
+	else
+		gtk_widget_hide (GTK_WIDGET (applet));
 
-  /*determine if we should hide the notification icon*/
-  if (show_applet)
-    gtk_widget_show (GTK_WIDGET (applet));
-  else
-    gtk_widget_hide (GTK_WIDGET (applet));
-
-  if (applet->animation_id)
-    g_source_remove (applet->animation_id);
-  if (need_animation)
-    applet->animation_id =
-      g_timeout_add (125, (GSourceFunc) (animation_timeout), applet);
+	if (applet->animation_id)
+		g_source_remove (applet->animation_id);
+	if (need_animation)
+		applet->animation_id = g_timeout_add (100, (GSourceFunc) (animation_timeout), applet);
+	else
+		gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
 }
 
 
@@ -387,7 +400,7 @@ static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
 {
 	applet->redraw_timeout_id =
-	     g_timeout_add (CFG_UPDATE_INTERVAL * 1000, (GtkFunction) nmwa_redraw_timeout, applet);
+		g_timeout_add (CFG_UPDATE_INTERVAL * 1000, (GtkFunction) nmwa_redraw_timeout, applet);
 }
 
 
@@ -565,11 +578,7 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 		dev = nmwa_get_device_for_nm_device (applet, tag);
 
 	if (dev)
-	{
-		applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
-		applet->forcing_device = TRUE;
 		nmwa_dbus_set_device (applet->connection, dev, net, -1, NULL);
-	}
 }
 
 
@@ -581,9 +590,13 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
  */
 static void nmwa_toplevel_menu_activate (GtkWidget *menu, NMWirelessApplet *applet)
 {
-  nmwa_dispose_menu_items (applet);
-  nmwa_populate_menu (applet);
-  gtk_widget_show (applet->menu);
+	if (!applet->tooltips)
+		applet->tooltips = gtk_tooltips_new ();
+	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, NULL, NULL);
+
+	nmwa_dispose_menu_items (applet);
+	nmwa_populate_menu (applet);
+	gtk_widget_show (applet->menu);
 }
 
 
@@ -1016,9 +1029,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	/* Load pixmaps and create applet widgets */
 	nmwa_setup_widgets (applet);
 
-	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
-
-
+	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy), NULL);
 
 	/* Start redraw timeout */
 	nmwa_start_redraw_timeout (applet);
@@ -1081,38 +1092,58 @@ nmwa_icons_free (NMWirelessApplet *applet)
 }
 
 static void
-nmwa_icons_load_from_disk (NMWirelessApplet *applet,
-			   GtkIconTheme     *icon_theme)
+nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 {
-	gint icon_size;
+	/* Assume icons are square */
+	gint con_icon_size = 24;
+	gint norm_icon_size = 22;
 
-	/* Assume icon is square */
-	icon_size = 22;
-
-	applet->no_nm_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-broken", icon_size, 0, NULL);
-	applet->wired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", icon_size, 0, NULL);
-	applet->adhoc_icon = gtk_icon_theme_load_icon (icon_theme, "nm-adhoc", icon_size, 0, NULL);
-	applet->wired_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting00", icon_size, 0, NULL);
-	applet->wired_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", icon_size, 0, NULL);
-	applet->wired_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", icon_size, 0, NULL);
-	applet->wired_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", icon_size, 0, NULL);
-	applet->wireless_00_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-00", icon_size, 0, NULL);
-	applet->wireless_25_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-25", icon_size, 0, NULL);
-	applet->wireless_50_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-50", icon_size, 0, NULL);
-	applet->wireless_75_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-75", icon_size, 0, NULL);
-	applet->wireless_100_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-100", icon_size, 0, NULL);
-	applet->wireless_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting00", icon_size, 0, NULL);
-	applet->wireless_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", icon_size, 0, NULL);
-	applet->wireless_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", icon_size, 0, NULL);
-	applet->wireless_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-detect00", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-detect01", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-detect02", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-detect03", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[4] = gtk_icon_theme_load_icon (icon_theme, "nm-detect04", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[5] = gtk_icon_theme_load_icon (icon_theme, "nm-detect05", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[6] = gtk_icon_theme_load_icon (icon_theme, "nm-detect06", icon_size, 0, NULL);
-	applet->wireless_scanning_icons[7] = gtk_icon_theme_load_icon (icon_theme, "nm-detect07", icon_size, 0, NULL);
+	applet->no_nm_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-broken", norm_icon_size, 0, NULL);
+	applet->wired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", norm_icon_size, 0, NULL);
+	applet->adhoc_icon = gtk_icon_theme_load_icon (icon_theme, "nm-adhoc", norm_icon_size, 0, NULL);
+	applet->wired_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting04", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[4] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting05", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[5] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting06", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[6] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting07", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[7] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting08", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[8] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting09", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[9] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting10", con_icon_size, 0, NULL);
+	applet->wired_connecting_icons[10] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting11", con_icon_size, 0, NULL);
+	applet->wireless_00_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-00", norm_icon_size, 0, NULL);
+	applet->wireless_25_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-25", norm_icon_size, 0, NULL);
+	applet->wireless_50_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-50", norm_icon_size, 0, NULL);
+	applet->wireless_75_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-75", norm_icon_size, 0, NULL);
+	applet->wireless_100_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-100", norm_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting02", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting03", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting04", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[4] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting05", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[5] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting06", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[6] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting07", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[7] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting08", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[8] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting09", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[9] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting10", con_icon_size, 0, NULL);
+	applet->wireless_connecting_icons[10] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting11", con_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-detect01", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[1] = gtk_icon_theme_load_icon (icon_theme, "nm-detect02", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[2] = gtk_icon_theme_load_icon (icon_theme, "nm-detect03", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[3] = gtk_icon_theme_load_icon (icon_theme, "nm-detect04", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[4] = gtk_icon_theme_load_icon (icon_theme, "nm-detect05", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[5] = gtk_icon_theme_load_icon (icon_theme, "nm-detect06", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[6] = gtk_icon_theme_load_icon (icon_theme, "nm-detect07", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[7] = gtk_icon_theme_load_icon (icon_theme, "nm-detect08", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[8] = gtk_icon_theme_load_icon (icon_theme, "nm-detect09", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[9] = gtk_icon_theme_load_icon (icon_theme, "nm-detect10", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[10] = gtk_icon_theme_load_icon (icon_theme, "nm-detect11", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[11] = gtk_icon_theme_load_icon (icon_theme, "nm-detect12", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[12] = gtk_icon_theme_load_icon (icon_theme, "nm-detect13", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[13] = gtk_icon_theme_load_icon (icon_theme, "nm-detect14", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[14] = gtk_icon_theme_load_icon (icon_theme, "nm-detect15", norm_icon_size, 0, NULL);
+	applet->wireless_scanning_icons[15] = gtk_icon_theme_load_icon (icon_theme, "nm-detect16", norm_icon_size, 0, NULL);
 }
 
 static void

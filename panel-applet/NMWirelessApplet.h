@@ -111,26 +111,25 @@ typedef struct
         /* Data model elements */
 	GMutex			*data_mutex;
 	AppletState		 applet_state;
-	gboolean			 forcing_device;
 	gboolean			 is_adhoc;
 	GSList			*device_list;
 	NetworkDevice		*active_device;
 	char				*nm_status;
 	NetworkDevice		*dbus_active_device;
 
-        GdkPixbuf *no_nm_icon;
-        GdkPixbuf *wired_icon;
-        GdkPixbuf *adhoc_icon;
-#define NUM_WIRED_CONNECTING_FRAMES 4
-        GdkPixbuf *wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
-        GdkPixbuf *wireless_00_icon;
-        GdkPixbuf *wireless_25_icon;
-        GdkPixbuf *wireless_50_icon;
-        GdkPixbuf *wireless_75_icon;
-        GdkPixbuf *wireless_100_icon;
-#define NUM_WIRELESS_CONNECTING_FRAMES 4
-        GdkPixbuf *wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
-#define NUM_WIRELESS_SCANNING_FRAMES 8
+	GdkPixbuf *no_nm_icon;
+	GdkPixbuf *wired_icon;
+	GdkPixbuf *adhoc_icon;
+#define NUM_WIRED_CONNECTING_FRAMES 11
+	GdkPixbuf *wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
+	GdkPixbuf *wireless_00_icon;
+	GdkPixbuf *wireless_25_icon;
+	GdkPixbuf *wireless_50_icon;
+	GdkPixbuf *wireless_75_icon;
+	GdkPixbuf *wireless_100_icon;
+#define NUM_WIRELESS_CONNECTING_FRAMES 11
+	GdkPixbuf *wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+#define NUM_WIRELESS_SCANNING_FRAMES 16
 	GdkPixbuf *wireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
 
 	/* Animation stuff */

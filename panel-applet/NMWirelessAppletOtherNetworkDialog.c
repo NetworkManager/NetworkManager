@@ -384,8 +384,6 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 						nm_key_type = NM_ENC_TYPE_UNKNOWN;
 						break;
 				}
-				applet->applet_state = APPLET_STATE_WIRELESS_CONNECTING;
-				applet->forcing_device = TRUE;
 				if (create_network)
 					nmwa_dbus_create_network (applet->connection, def_dev, net, nm_key_type, passphrase);
 				else

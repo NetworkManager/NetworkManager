@@ -1,3 +1,10 @@
+2005-01-21  Dan Williams  <dcbw@redhat.com>
+
+	* Add new icons, more frames of animation
+	* Remove some hacks to get the panel applet to display correct
+		status, an NM update will soon follow that will fix the
+		real issue.
+
 2005-01-19  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* panel-applet/NMWirelessApplet.c: #include <config.h> must be
