@@ -112,7 +112,7 @@ gboolean nm_system_device_set_ip4_netmask (NMDevice *dev, int ip4_netmask)
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_netmask;
 	if (ioctl (sk, SIOCSIFNETMASK, &ifr) == -1)
-		syslog (LOG_ERR,"nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask!", iface);
+		syslog (LOG_ERR,"nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask! errno = %s", iface, strerror (errno));
 	else
 		success = TRUE;
 

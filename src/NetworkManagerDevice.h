@@ -79,8 +79,7 @@ void			nm_device_do_wireless_scan		(NMDevice *dev);
 gboolean		nm_device_wireless_network_exists	(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type,
 												struct ether_addr *addr, gboolean *encrypted);
 
-void			nm_device_set_mode_managed		(NMDevice *dev);
-void			nm_device_set_mode_adhoc			(NMDevice *dev);
+gboolean		nm_device_set_mode				(NMDevice *dev, const NMNetworkMode mode);
 
 gint8		nm_device_get_signal_strength		(NMDevice *dev);
 void			nm_device_update_signal_strength	(NMDevice *dev);
@@ -104,6 +103,7 @@ void			nm_device_set_enc_key			(NMDevice *dev, const char *key, NMDeviceAuthMeth
 
 gboolean		nm_device_activation_begin		(NMDevice *dev);
 void			nm_device_activation_cancel		(NMDevice *dev);
+gboolean		nm_device_activation_should_cancel	(NMDevice *dev);
 gboolean		nm_device_is_just_activated		(NMDevice *dev);
 gboolean		nm_device_is_activating			(NMDevice *dev);
 gboolean		nm_device_did_activation_fail		(NMDevice *dev);

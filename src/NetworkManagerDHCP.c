@@ -32,6 +32,8 @@
 #include "NetworkManagerSystem.h"
 #include "../dhcpcd/client.h"
 
+extern gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip);
+
 
 /*
  * nm_device_dhcp_configure
@@ -55,7 +57,7 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 		nm_system_device_set_ip4_netmask (dev, temp);
 	}
 
-	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, subnetMask))
+	if (dhcp_interface_dhcp_field_exists (dev->dhcp_iface, broadcastAddr))
 	{
 		memcpy (&temp, dhcp_interface_get_dhcp_field (dev->dhcp_iface, broadcastAddr), dhcp_individual_value_len (broadcastAddr));
 		nm_system_device_set_ip4_broadcast (dev, temp);
@@ -85,8 +87,9 @@ static void nm_device_dhcp_configure (NMDevice *dev)
  */
 int nm_device_dhcp_request (NMDevice *dev)
 {
-	dhcp_client_options		 opts;
-	int					 err;
+	dhcp_client_options		opts;
+	int					err;
+	struct in_addr			ip;
 
 	g_return_val_if_fail (dev != NULL, RET_DHCP_ERROR);
 
@@ -104,16 +107,32 @@ int nm_device_dhcp_request (NMDevice *dev)
 	/* Start off in DHCP INIT state, get a completely new IP address 
 	 * and settings.
 	 */
-	if ((err = dhcp_init (dev->dhcp_iface)) == RET_DHCP_BOUND)
+	err = dhcp_init (dev->dhcp_iface);
+	switch (err)
 	{
-		nm_device_dhcp_configure (dev);
-		nm_device_update_ip4_address (dev);
-		nm_device_dhcp_setup_timeouts (dev);
-	}
-	else
-	{
-		dhcp_interface_free (dev->dhcp_iface);
-		dev->dhcp_iface = NULL;
+		case RET_DHCP_BOUND:
+			nm_device_dhcp_configure (dev);
+			nm_device_update_ip4_address (dev);
+			nm_device_dhcp_setup_timeouts (dev);
+			break;
+
+		default:
+			/* DHCP didn't work, so use Link Local addressing */
+			dhcp_interface_free (dev->dhcp_iface);
+			dev->dhcp_iface = NULL;
+			if (get_autoip (dev, &ip))
+			{
+				#define LINKLOCAL_BCAST		0xa9feffff
+				int	temp = ip.s_addr;
+
+				nm_system_device_set_ip4_address (dev, temp);
+				temp = ntohl (0xFFFF0000);
+				nm_system_device_set_ip4_netmask (dev, temp);
+				temp = ntohl (LINKLOCAL_BCAST);
+				nm_system_device_set_ip4_broadcast (dev, temp);
+				err = RET_DHCP_BOUND;
+			}
+			break;
 	}
 
 	return (err);

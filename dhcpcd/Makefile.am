@@ -1,9 +1,11 @@
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/src
 
-AM_CPPFLAGS =						\
-	$(NM_CFLAGS)					\
-	-DBINDIR=\"$(bindir)\"			\
-	-DDATADIR=\"$(datadir)\"
+AM_CPPFLAGS =					\
+	$(NM_CFLAGS)				\
+	-DBINDIR=\"$(bindir)\"		\
+	-DDATADIR=\"$(datadir)\"		\
+	-DARP_DEBUG				\
+	-DDEBUG
 
 noinst_LIBRARIES = libdhcpc.a
 

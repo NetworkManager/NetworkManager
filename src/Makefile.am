@@ -7,7 +7,8 @@ AM_CPPFLAGS = 						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\
-	-DDATADIR=\"$(datadir)\"
+	-DDATADIR=\"$(datadir)\"			\
+	-DARP_DEBUG
 
 bin_PROGRAMS = NetworkManager
 
@@ -34,7 +35,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerWireless.c		\
 		NetworkManagerWireless.h		\
 		NetworkManagerSystem.c		\
-		NetworkManagerSystem.h
+		NetworkManagerSystem.h		\
+		autoip.c
 
 if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h

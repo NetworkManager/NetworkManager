@@ -329,6 +329,31 @@ void nm_system_load_device_modules (void)
 
 
 /*
+ * nm_system_restart_mdns_responder
+ *
+ * Restart the multicast DNS responder so that it knows about new
+ * network interfaces and IP addresses.
+ *
+ */
+void nm_system_restart_mdns_responder (void)
+{
+	FILE 		*fp  = NULL;
+
+	if ((fp = fopen ("/var/run/mDNSResponder.pid", "rt")))
+	{
+		int pid;
+		int res = fscanf (fp, "%d", &pid);
+		fclose (fp);
+		if (res == 1)
+		{
+			syslog (LOG_INFO, "Restarting mDNSResponder.\n");
+			kill (pid, SIGUSR1);
+		}
+	}
+}
+
+
+/*
  * nm_system_device_update_config_info
  *
  * Retrieve any relevant configuration info for a particular device

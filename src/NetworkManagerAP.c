@@ -32,6 +32,7 @@ struct NMAccessPoint
 	guint			 refcount;
 	char				*essid;
 	struct ether_addr	*address;
+	NMNetworkMode		 mode;
 	gint8			 strength;
 	double			 freq;
 	guint16			 rate;
@@ -66,6 +67,7 @@ NMAccessPoint * nm_ap_new (void)
 		return (NULL);
 	}
 
+	ap->mode = NETWORK_MODE_INFRA;
 	ap->refcount = 1;
 
 	return (ap);
@@ -102,6 +104,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 		memcpy (new_addr, src_ap->address, sizeof (struct ether_addr));
 		new_ap->address = new_addr;
 	}
+	new_ap->mode = NETWORK_MODE_INFRA;
 	new_ap->strength = src_ap->strength;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
@@ -296,6 +299,25 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 
 
 /*
+ * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
+ *
+ */
+NMNetworkMode nm_ap_get_mode (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, NETWORK_MODE_UNKNOWN);
+
+	return (ap->mode);
+}
+
+void nm_ap_set_mode (NMAccessPoint *ap, const NMNetworkMode mode)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->mode = mode;
+}
+
+
+/*
  * Get/set functions for strength
  *
  */
@@ -306,7 +328,7 @@ gint8 nm_ap_get_strength (NMAccessPoint *ap)
 	return (ap->strength);
 }
 
-void  nm_ap_set_strength (NMAccessPoint *ap, gint8 strength)
+void  nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -325,7 +347,7 @@ double nm_ap_get_freq (NMAccessPoint *ap)
 	return (ap->freq);
 }
 
-void nm_ap_set_freq (NMAccessPoint *ap, double freq)
+void nm_ap_set_freq (NMAccessPoint *ap, const double freq)
 {
 	g_return_if_fail (ap != NULL);
 

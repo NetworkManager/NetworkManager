@@ -48,8 +48,11 @@
 #include "arp.h"
 #include "udpipgen.h"
 
+#ifdef DEBUG
 int DebugFlag = 1;
-#define DEBUG
+#else
+int DebugFlag = 0;
+#endif
 
 typedef struct dhcp_response_return
 {
@@ -984,6 +987,8 @@ int dhcp_inform(dhcp_interface *iface)
 	return RET_DHCP_SUCCESS;
 }
 
+#ifdef DEBUG
+
 /*****************************************************************************/
 char *get_dhcp_option_name (int i)
 {
@@ -1080,3 +1085,4 @@ void debug_dump_dhcp_options (struct sockaddr_ll *saddr, dhcpMessage *dhcp_msg, 
 				saddr->sll_addr[4], saddr->sll_addr[5]);
 }
 
+#endif

@@ -1,5 +1,17 @@
 2004-12-15  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tom Parker
+	* Add autoip/Link Local Addressing support when we fail to get a DHCP
+		address
+
+	* Longer pause after setting ESSID on cards that support a larger number
+		of channels to give the card time to find the right channel
+
+	* Add system hook to restart mDNSResponder (or whatever the local implementation
+		of Multicast DNS is) when we activate interfaces
+
+2004-12-15  Dan Williams  <dcbw@redhat.com>
+
 	* Rework the DHCP code again to revert to sending full ethernet frames
 		rather then relying on the kernel to do the right thing with our
 		packets.

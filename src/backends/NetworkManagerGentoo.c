@@ -25,8 +25,13 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <arpa/inet.h>
 #include <signal.h>
+
+/* get strnlen */
+#define __USE_GNU 
 #include <string.h>
+
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 
@@ -56,7 +61,7 @@ void nm_system_init (void)
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
 	char		 buf [500];
-	char 		*iface;
+	const char 		*iface;
 	int		 err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -168,7 +173,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	struct in_addr	ip_addr, net_addr, broad_addr, gate_addr;
 	int			i, err;
 	guint32		prefix = IPBITS;
-	char		*iface;
+	const char		*iface;
 	char		*buf;
 	char		*addr, *netmask, *broadcast, *gateway;
 	
@@ -268,6 +273,20 @@ void nm_system_update_dns (void)
 void nm_system_load_device_modules (void)
 {
 }
+
+
+
+/*
+ * nm_system_restart_mdns_responder
+ *
+ * Restart the multicast DNS responder so that it knows about new
+ * network interfaces and IP addresses.
+ *
+ */
+void nm_system_restart_mdns_responder (void)
+{
+}
+
 
 /*
  * nm_system_device_update_config_info

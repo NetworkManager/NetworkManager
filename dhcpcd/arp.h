@@ -23,6 +23,24 @@
 #ifndef ARP_H
 #define ARP_H
 
+#include "client.h"
+
+typedef struct arpMessage
+{
+	struct packed_ether_header	ethhdr;
+	u_short htype;	/* hardware type (must be ARPHRD_ETHER) */
+	u_short ptype;	/* protocol type (must be ETHERTYPE_IP) */
+	u_char  hlen;		/* hardware address length (must be 6) */
+	u_char  plen;		/* protocol address length (must be 4) */
+	u_short operation;	/* ARP opcode */
+	u_char  sHaddr[ETH_ALEN];	/* sender's hardware address */
+	u_char  sInaddr[4];	/* sender's IP address */
+	u_char  tHaddr[ETH_ALEN];	/* target's hardware address */
+	u_char  tInaddr[4];	/* target's IP address */
+	u_char  pad[18];	/* pad for min. Ethernet payload (60 bytes) */
+} __attribute__((packed)) arpMessage;
+
+
 #ifdef ARPCHECK
 int arpCheck(const dhcp_interface *iface);
 #endif

@@ -59,7 +59,7 @@ typedef enum NMDeviceType
 /*
  * Wireless network types
  */
-typedef enum
+typedef enum NMNetworkType
 {
 	NETWORK_TYPE_UNKNOWN = 0,
 	NETWORK_TYPE_ALLOWED,
@@ -91,6 +91,17 @@ typedef enum NMDriverSupportLevel
 	NM_DRIVER_SEMI_SUPPORTED,
 	NM_DRIVER_FULLY_SUPPORTED
 } NMDriverSupportLevel;
+
+
+/*
+ * Wireless network modes
+ */
+typedef enum NMNetworkMode
+{
+	NETWORK_MODE_UNKNOWN = 0,
+	NETWORK_MODE_INFRA,
+	NETWORK_MODE_ADHOC
+} NMNetworkMode;
 
 
 /*
