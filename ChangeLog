@@ -1,5 +1,11 @@
 2005-03-31  Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletDbus.c
+		- Fix device names now that hal has changed device parenting for
+			network devices.
+
+2005-03-31  Dan Williams <dcbw@redhat.com>
+
 	Tighten up handling of wireless devices that don't support wireless
 	scanning (ie, Orinoco).  Due to restructuring of code, these devices
 	hadn't been doing pseudo-scanning for a while either and would just

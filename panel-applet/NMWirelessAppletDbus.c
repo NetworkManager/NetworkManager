@@ -628,7 +628,6 @@ static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connectio
 		dbus_error_free (&error);
 		return (NULL);
 	}
-
 	if (reply == NULL)
 	{
 		fprintf (stderr, "nmwa_dbus_get_hal_device_string_property(): dbus reply message was NULL\n" );
@@ -640,7 +639,6 @@ static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connectio
 	{
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
-		dbus_property = NULL;
 	}
 	else
 		property = g_strdup (dbus_property);
@@ -662,43 +660,17 @@ static char *nmwa_dbus_get_hal_device_info (DBusConnection *connection, const ch
 	DBusMessage	*message;
 	DBusMessage	*reply;
 	gboolean		 exists = FALSE;
+	char			*parent = NULL;
 	char			*info = NULL;
-        const char *product;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
 
-	message = dbus_message_new_method_call ("org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device", "PropertyExists");
-	if (!message)
-		return (NULL);
-
-	dbus_error_init (&error);
-        product = "info.product";
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &product, DBUS_TYPE_INVALID);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
+	if ((parent = nmwa_dbus_get_hal_device_string_property (connection, udi, "info.parent")))
 	{
-		fprintf (stderr, "nmwa_dbus_get_hal_device_info(): %s raised:\n %s\n\n", error.name, error.message);
-		dbus_error_free (&error);
-		return (NULL);
+		info = nmwa_dbus_get_hal_device_string_property (connection, parent, "info.product");
+		g_free (parent);
 	}
-
-	if (reply == NULL)
-	{
-		fprintf (stderr, "nmwa_dbus_get_hal_device_info(): dbus reply message was NULL\n" );
-		return (NULL);
-	}
-
-	dbus_error_init (&error);
-	if (dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &exists, DBUS_TYPE_INVALID))
-	{
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-		info = nmwa_dbus_get_hal_device_string_property (connection, udi, "info.product");
-	}
-
-	dbus_message_unref (reply);
 	
 	return (info);
 }
