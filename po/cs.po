@@ -1,15 +1,15 @@
 # Czech translation of NetworkManager.
-# Copyright (C) 2004 NetworkManager'S COPYRIGHT HOLDER
-# Copyright (C) 2004 Miloslav Trmac <mitr@volny.cz>
+# Copyright (C) 2004, 2005 NetworkManager'S COPYRIGHT HOLDER
+# Copyright (C) 2004, 2005 Miloslav Trmac <mitr@volny.cz>
 # This file is distributed under the same license as the NetworkManager package.
-# Miloslav Trmac <mitr@volny.cz>, 2004.
+# Miloslav Trmac <mitr@volny.cz>, 2004, 2005.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-12-19 11:31+0100\n"
-"PO-Revision-Date: 2004-12-19 13:03+0100\n"
+"POT-Creation-Date: 2005-02-04 12:18+0100\n"
+"PO-Revision-Date: 2005-02-04 13:25+0100\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -59,7 +59,7 @@ msgstr "Typ klíče:"
 
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Heslo:"
@@ -73,12 +73,12 @@ msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
 msgid "Ascii Key:"
 msgstr "Klíč v ascii:"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
 msgid "Hex Key:"
 msgstr "Klíč šestnáctkově:"
 
@@ -87,80 +87,83 @@ msgstr "Klíč šestnáctkově:"
 msgid "You must log in to access the private network %s"
 msgstr "Pro přístup k soukromé síti %s se musíte přihlásit"
 
-#: panel-applet/NMWirelessApplet.c:293
+#: panel-applet/NMWirelessApplet.c:313
 msgid "No network connection"
 msgstr "Žádné připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:297
+#: panel-applet/NMWirelessApplet.c:318
 msgid "Wired network connection"
 msgstr "Drátové připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:303
+#: panel-applet/NMWirelessApplet.c:323
 msgid "Connecting to a wired network..."
 msgstr "Připojuji se k drátové síti..."
 
-#: panel-applet/NMWirelessApplet.c:311
+#: panel-applet/NMWirelessApplet.c:332
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Připojen k ad-hoc bezdrátové síti"
 
-#: panel-applet/NMWirelessApplet.c:325
+#: panel-applet/NMWirelessApplet.c:346
 #, c-format
-msgid "Wireless network connection (%d%%)"
-msgstr "Bezdrátové připojení k síti (%d%%)"
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Bezdrátové připojení k '%s' (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:329
+#: panel-applet/NMWirelessApplet.c:351
 msgid "Wireless network connection"
 msgstr "Bezdrátové připojení k síti"
 
-#: panel-applet/NMWirelessApplet.c:335
-msgid "Connecting to a wireless network..."
-msgstr "Připojuji se k bezdrátové síti..."
+#: panel-applet/NMWirelessApplet.c:356
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Připojuji se k bezdrátové síti '%s' ..."
 
-#: panel-applet/NMWirelessApplet.c:339
+#: panel-applet/NMWirelessApplet.c:362
 msgid "NetworkManager is not running"
 msgstr "NetworkManager neběží"
 
-#: panel-applet/NMWirelessApplet.c:345
+#: panel-applet/NMWirelessApplet.c:367
 msgid "Scanning for wireless networks..."
 msgstr "Hledám bezdrátové sítě..."
 
-#: panel-applet/NMWirelessApplet.c:667
+#: panel-applet/NMWirelessApplet.c:690
 msgid "Other Wireless Networks..."
 msgstr "Jiné bezdrátové sítě..."
 
-#: panel-applet/NMWirelessApplet.c:688
+#: panel-applet/NMWirelessApplet.c:711
 msgid "Create new Wireless Network..."
 msgstr "Vytvořit novou bezdrátovou síť..."
 
-#: panel-applet/NMWirelessApplet.c:798
+#: panel-applet/NMWirelessApplet.c:821
 msgid "No network devices have been found"
 msgstr "Nebylo nalezeno žádné síťové zařízení"
 
-#: panel-applet/NMWirelessApplet.c:916
+#: panel-applet/NMWirelessApplet.c:939
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:226
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
 msgid "Create new wireless network"
 msgstr "Vytvořit novou bezdrátovou síť"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:227
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
-msgstr "Zadejte ESSID a nastavení zabezpečení bezdrátové sítě, kterou chcete vytvořit."
+msgstr ""
+"Zadejte ESSID a nastavení zabezpečení bezdrátové sítě, kterou chcete "
+"vytvořit."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
 msgid "Custom wireless network"
 msgstr "Vlastní bezdrátová síť"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Zadejte ESSID bezdrátové sítě, ke které se chcete připojit."
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:323
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -184,16 +187,16 @@ msgstr "Bezdrátový _adaptér:"
 msgid "Wireless _Network:"
 msgstr "Bezdrátová _síť:"
 
-#: panel-applet/menu-info.c:101
+#: panel-applet/menu-info.c:109
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Drátová síť (%s)"
 
-#: panel-applet/menu-info.c:103
+#: panel-applet/menu-info.c:111
 msgid "Wired Network"
 msgstr "Drátová síť"
 
-#: panel-applet/menu-info.c:168
+#: panel-applet/menu-info.c:177
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
@@ -201,14 +204,14 @@ msgstr[0] "Bezdrátová síť (%s)"
 msgstr[1] "Bezdrátové sítě (%s)"
 msgstr[2] "Bezdrátové sítě (%s)"
 
-#: panel-applet/menu-info.c:170
+#: panel-applet/menu-info.c:179
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Bezdrátová síť"
 msgstr[1] "Bezdrátové sítě"
 msgstr[2] "Bezdrátové sítě"
 
-#: panel-applet/menu-info.c:307
+#: panel-applet/menu-info.c:316
 msgid " (invalid Unicode)"
 msgstr " (neplatné Unicode)"
 
