@@ -217,38 +217,17 @@ typedef struct driver_support
 	NMDriverSupportLevel level;
 } driver_support;
 
-/* The list of wireless drivers we support and how well we support each */
-static driver_support wireless_driver_support_list[] =
+
+/* Blacklist of unsupported wireless drivers */
+static driver_support wireless_driver_blacklist[] =
 {
-/* Fully supported drivers */
-	{"airo_cs",		NM_DRIVER_FULLY_SUPPORTED},
-	{"airo",			NM_DRIVER_FULLY_SUPPORTED},
-	{"atmel_cs",		NM_DRIVER_FULLY_SUPPORTED},
-	{"atmel",			NM_DRIVER_FULLY_SUPPORTED},
-	{"atmel_pci",		NM_DRIVER_FULLY_SUPPORTED},
-	{"prism54",		NM_DRIVER_FULLY_SUPPORTED},
-	{"wl3501_cs",		NM_DRIVER_FULLY_SUPPORTED},
-	{"ipw2100",		NM_DRIVER_FULLY_SUPPORTED},
-	{"ipw2200",		NM_DRIVER_FULLY_SUPPORTED},
-	{"ath_pci",		NM_DRIVER_FULLY_SUPPORTED},
-	{"ath_cs",		NM_DRIVER_FULLY_SUPPORTED},
-/* Semi-supported drivers, for example ones that don't support
- * wireless scanning yet in-kernel
- */
-	{"hermes",		NM_DRIVER_SEMI_SUPPORTED},
-	{"netwave_cs",		NM_DRIVER_SEMI_SUPPORTED},
-	{"orinoco_cs",		NM_DRIVER_SEMI_SUPPORTED},
-	{"orinoco",		NM_DRIVER_SEMI_SUPPORTED},
-	{"orinoco_pci",	NM_DRIVER_SEMI_SUPPORTED},
-	{"orinoco_plx",	NM_DRIVER_SEMI_SUPPORTED},
-	{"orinoco_tmd",	NM_DRIVER_SEMI_SUPPORTED},
-	{"wavelan_cs",		NM_DRIVER_SEMI_SUPPORTED},
-	{"wavelan",		NM_DRIVER_SEMI_SUPPORTED},
 	{NULL,			NM_DRIVER_UNSUPPORTED}
 };
 
 
-/* Blacklist of unsupported wired drivers */
+/* Blacklist of unsupported wired drivers.  Drivers/cards that don't support
+ * link detection should be blacklisted.
+ */
 static driver_support wired_driver_blacklist[] =
 {
 /* Completely unsupported drivers */
@@ -256,122 +235,23 @@ static driver_support wired_driver_blacklist[] =
 };
 
 
-
 /*
  * nm_get_device_driver_name
  *
- * Checks either /proc/bus/pci/devices or /var/lib/pcmcia/stab to determine
- * which driver is bound to the device.
  *
  */
 char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 {
-	FILE					*f;
-	char					*driver_name = NULL;
-	int					 vendor;
-	int					 product;
+	char	*udi = NULL;
+	char	*driver_name = NULL;
 
 	g_return_val_if_fail (ctx != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	vendor = hal_device_get_property_int (ctx, nm_device_get_udi (dev), "pci.vendor_id");
-	product = hal_device_get_property_int (ctx, nm_device_get_udi (dev), "pci.product_id");
-
-	if (vendor && product)
+	if (    (udi = nm_device_get_udi (dev))
+		&& hal_device_property_exists (ctx, udi, "net.linux.driver"))
 	{
-		if ((f = fopen ("/proc/bus/pci/devices", "r")))
-		{
-			char	buf[200];
-			char	id[9];
-
-			snprintf (&id[0], 9, "%4x%4x", vendor, product);
-			id[8] = '\0';
-			while (fgets (&buf[0], 200, f) && !feof (f))
-			{
-				char *p;
-				char s[9];
-				int len;
-
-				/* Whack newline */
-				buf[199] = '\0';
-				len = strlen (buf);
-				if ((buf[len-1] == '\n') || (buf[len-1] == '\r'))
-				{
-					buf[len-1] = '\0';
-					len--;
-				}
-
-				p = strchr (buf, '\t');
-				s[8] = '\0';
-				strncpy (&s[0], p+1, 8);
-
-				if (!strcmp (&s[0], &id[0]))
-				{
-					/* Yay, we've got a match.  Pull the driver name from the
-					 * last word in the line.
-					 */
-					char *m = strrchr (&buf[0], '\t');
-					if (m && (m > &buf[0]) && (m < &buf[len]))
-					{
-						driver_name = strdup (m+1);
-						syslog (LOG_INFO, "PCI driver for '%s' is '%s'", nm_device_get_iface (dev), driver_name);
-						break;
-					}
-				}
-			}
-			fclose (f);
-		}
-	}
-
-	/* Might be a PCMCIA card, try /var/lib/pcmcia/stab and match the interface name.
-	 *
-	 * stab has a format like this:
-	 *   Socket 0: Belkin F5D6020 rev.2
-	 *   0       network atmel_cs        0       eth2
-	 *   Socket 1: Belkin-5020
-	 *   1       network pcnet_cs        0       eth1
-	 */
-	if (!driver_name && (f = fopen ("/var/lib/pcmcia/stab", "r")))
-	{
-		char	buf[200];
-
-		while (fgets (&buf[0], 200, f) && !feof (f))
-		{
-			int len;
-			char *p;
-
-			/* Whack newline */
-			buf[199] = '\0';
-			len = strlen (buf);
-			if ((buf[len-1] == '\n') || (buf[len-1] == '\r'))
-			{
-				buf[len-1] = '\0';
-				len--;
-			}
-
-			/* Ignore lines that start with "Socket" */
-			if (strncmp (&buf[0], "Socket", 6) && (p = strrchr (&buf[0], '\t')))
-			{
-				/* See if this device's interface matches our device's interface */
-				if (!strcmp (++p, nm_device_get_iface (dev)))
-				{
-					char *end;
-					/* Pull out driver name by seeking to _second_ tab */
-					if ((p = strchr (&buf[0], '\t')) && *(p++) && (p = strchr (p, '\t')))
-					{
-						p++;
-						end = strchr (p, '\t');
-						if (p && end)
-						{
-							*end = '\0';
-							driver_name = strdup (p);
-							syslog (LOG_INFO, "PCMCIA driver for '%s' is '%s'", nm_device_get_iface (dev), driver_name);
-						}
-					}
-				}
-			}
-		}
-		fclose (f);
+		driver_name = hal_device_get_property_string (ctx, udi, "net.linux.driver");
 	}
 
 	return (driver_name);
@@ -380,8 +260,7 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 /*
  * nm_get_wireless_driver_support_level
  *
- * Checks either /proc/sys/bus/devices or /var/lib/pcmcia/stab to determine
- * wether or not the card's driver is supported and how well, using a whitelist.
+ * Blacklist certain wireless devices.
  *
  */
 NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev)
@@ -394,7 +273,7 @@ NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, N
 
 	if ((driver_name = nm_get_device_driver_name (ctx, dev)))
 	{
-		driver_support *driver = &wireless_driver_support_list[0];
+		driver_support *driver = &wireless_driver_blacklist[0];
 		while (driver->name != NULL)
 		{
 			if (!strcmp (driver->name, driver_name))

@@ -1,3 +1,10 @@
+2004-11-05 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+		- Blacklist wireless cards rather than whitelisting them.
+		- Grab driver name from HAL rather than trying to find it
+			ourselves.
+
 2004-11-03 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletOtherNetworkDialog.c,
