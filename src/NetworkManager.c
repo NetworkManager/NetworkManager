@@ -290,7 +290,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
  */
 static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
-	syslog( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );
+/*	syslog( LOG_DEBUG, "nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
 }
 
 
@@ -300,9 +300,53 @@ static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, 
  */
 static void nm_hal_device_property_modified (LibHalContext *ctx, const char *udi, const char *key, dbus_bool_t is_removed, dbus_bool_t is_added)
 {
-/*
+	NMData	*data = (NMData *)hal_ctx_get_user_data (ctx);
+	gboolean	 link = FALSE;
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (udi != NULL);
+	g_return_if_fail (key != NULL);
+
 	syslog( LOG_DEBUG, "nm_hal_device_property_modified() called with udi = %s, key = %s, is_removed = %d, is_added = %d", udi, key, is_removed, is_added );
-*/
+
+	/* Only accept wired ethernet link changes for now */
+	if (is_removed || (strcmp (key, "net.80203.link")))
+		return;
+
+	if (!hal_device_property_exists (ctx, udi, "net.80203.link"))
+		return;
+
+	link = hal_device_get_property_bool (ctx, udi, "net.80203.link");
+
+	/* Attempt to acquire mutex for device link updating.  If acquire fails ignore the event. */
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	{
+		NMDevice	*dev = NULL;
+		if ((dev = nm_get_device_by_udi (data, udi)) && nm_device_is_wired (dev))
+		{
+			nm_device_update_link_active (dev, FALSE);
+
+			/* If the currently active device is locked and wireless, and the wired
+			 * device we just received this property change event for now has a link
+			 * state of TRUE, we want to clear the active device lock so that we switch
+			 * from wireless to wired on the next state update.
+			 *
+			 * This happens when the user has explicitly chosen a wireless network at
+			 * some point, and then comes back and plugs the wired cable in.  Due to the
+			 * active device lock we wouldn't switch back to wired automatically, but 
+			 * this fixes that behavior.
+			 */
+			if (    nm_device_get_link_active (dev)
+				&& data->active_device
+				&& data->active_device_locked
+				&& nm_device_is_wireless (data->active_device))
+			{
+				data->active_device_locked = FALSE;
+				nm_data_mark_state_changed (data);
+			}
+		}
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	} else syslog( LOG_ERR, "nm_hal_device_property_modified() could not acquire device list mutex." );
 }
 
 

@@ -1,5 +1,13 @@
 2004-10-29 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (nm_hal_device_property_modified): unlock a locked active
+			wireless device when a wired connection gets a link.
+			(Means you'll switch to wired whenever you plug in no
+			matter what).
+
+2004-10-29 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessAppletOtherNetworksDialog.[ch]
 		- New files, implement the "Other wireless network" dialog
 
