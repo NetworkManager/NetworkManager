@@ -20,6 +20,6 @@ libdhcpc_a_SOURCES=	\
 	udpipgen.c	\
 	udpipgen.h
 
-bin_PROGRAMS = dhcp_test
+noinst_PROGRAMS = dhcp_test
 dhcp_test_SOURCES = dhcp_test.c
 dhcp_test_LDADD = libdhcpc.a
