@@ -61,7 +61,6 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 	char			**dbus_string_array = NULL;
 	int			 num_items = 0;
 	dbus_bool_t	 ret = TRUE;
-	DBusMessageIter iter;
 
 	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
 	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
@@ -121,8 +120,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID);
 			break;
 		case DBUS_TYPE_STRING_ARRAY:
-			dbus_message_iter_init (reply, &iter);
-			ret = dbus_message_iter_get_string_array (&iter, &dbus_string_array, &num_items);
+			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &dbus_string_array, &num_items, DBUS_TYPE_INVALID);
 			break;
 		case DBUS_TYPE_INT32:
 			ret = dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &dbus_int, DBUS_TYPE_INVALID);
@@ -317,7 +315,6 @@ void set_device_network (DBusConnection *connection, const char *path, const cha
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
 
 	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",

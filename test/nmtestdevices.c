@@ -34,7 +34,6 @@ void create_device (DBusConnection *connection, NMDeviceType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
 	char *string;
 
@@ -51,35 +50,34 @@ void create_device (DBusConnection *connection, NMDeviceType type)
 	dbus_error_init (&error);
 	dbus_message_append_args (message, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
 		dbus_error_free (&error);
-		dbus_message_unref (message);
 		return;
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
-		dbus_message_unref (message);
 		return;
 	}
 
-	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	string = dbus_message_iter_get_string (&iter);
-	if (!string)
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &string, DBUS_TYPE_INVALID) || !string)
 	{
 		fprintf (stderr, "NetworkManager returned a NULL test device ID, test device could not be created." );
+		dbus_message_unref (reply);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
 		return;
 	}
 
 	fprintf (stderr, "New test device ID: '%s'\n", string );
 
-	dbus_free (string);
 	dbus_message_unref (reply);
-	dbus_message_unref (message);
+	dbus_free (string);
 }
 
 

@@ -34,9 +34,9 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
-	char *string, *ret_string;
+	char			*string = NULL;
+	char			*ret_string = NULL;
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, method);
 	if (message == NULL)
@@ -48,33 +48,33 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
-		dbus_message_unref (message);
+		dbus_error_free (&error);
 		return NULL;
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
-		dbus_message_unref (message);
 		return NULL;
 	}
 
-	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	string = dbus_message_iter_get_string (&iter);
-	if (!string)
+	dbus_error_init (&error);
+	if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &string, DBUS_TYPE_INVALID) && string)
 	{
-		fprintf (stderr, "NetworkManagerInfo returned a NULL string for method '%s'", method );
-		return NULL;
+		ret_string = g_strdup (string);
+		dbus_free (string);
 	}
-	ret_string = g_strdup (string);
-	dbus_free (string);
-
 	dbus_message_unref (reply);
-	dbus_message_unref (message);
+	
+	if (!string)
+		fprintf (stderr, "NetworkManagerInfo returned a NULL string for method '%s'", method );
+
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
 
 	return (ret_string);
 }
@@ -83,9 +83,8 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
-	gboolean trusted = FALSE;
+	gboolean		 trusted = FALSE;
 
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
@@ -100,17 +99,18 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 	dbus_error_init (&error);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
-		dbus_message_unref (message);
+		dbus_error_free (&error);
+		dbus_message_unref (reply);
 		return (-1);
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
-		dbus_message_unref (message);
 		return (-1);
 	}
 
@@ -122,7 +122,6 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 		dbus_error_free (&error);
 
 	dbus_message_unref (reply);
-	dbus_message_unref (message);
 
 	return (trusted);
 }
@@ -148,30 +147,31 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 	dbus_error_init (&error);
 	dbus_message_append_args (message, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
 		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
-		dbus_message_unref (message);
+		dbus_error_free (&error);
 		return;
 	}
 
 	if (reply == NULL)
 	{
 		fprintf( stderr, "dbus reply message was NULL\n" );
-		dbus_message_unref (message);
 		return;
 	}
 
 	/* now analyze reply */
-	dbus_message_iter_init (reply, &iter);
-	if (!dbus_message_iter_get_string_array (&iter, &networks, &num_networks))
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING,
+				&networks, &num_networks, DBUS_TYPE_INVALID))
 	{
 		fprintf (stderr, "NetworkManagerInfo returned no network list" );
+		dbus_message_unref (reply);
 		return;
 	}
 
 	dbus_message_unref (reply);
-	dbus_message_unref (message);
 
 	if (!networks)
 		fprintf( stderr, "No networks found\n" );
@@ -275,24 +275,12 @@ static DBusHandlerResult nm_message_handler (DBusConnection *connection, DBusMes
 }
 
 
-/*
- * nm_dbus_nm_unregister_handler
- *
- * Nothing happens here.
- *
- */
-void nm_unregister_handler (DBusConnection *connection, void *user_data)
-{
-	/* do nothing */
-}
-
-
 int main( int argc, char *argv[] )
 {
 	DBusConnection			*connection;
 	DBusConnection			*connection2;
 	DBusError				 error;
-	DBusObjectPathVTable	 vtable = { &nm_unregister_handler, &nm_message_handler, NULL, NULL, NULL, NULL };
+	DBusObjectPathVTable	 vtable = { NULL, &nm_message_handler, NULL, NULL, NULL, NULL };
 	dbus_bool_t			 success = FALSE;
 	GMainLoop				*loop = NULL;
 

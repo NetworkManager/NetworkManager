@@ -339,7 +339,7 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
  */
 static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessage *message)
 {
-	DBusMessage		*reply_message = NULL;
+	DBusMessage		*reply = NULL;
 	gchar			*gconf_key = NULL;
 	char				*network = NULL;
 	GConfValue		*value;
@@ -363,9 +363,9 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::getNetworkProperties called with invalid arguments.");
-		return (reply_message);
+		return (reply);
 	}
 
 	escaped_network = gconf_escape_key (network, strlen (network));
@@ -434,59 +434,57 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	{
 		if (!essid)
 		{
-			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+			reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::getNetworkProperties could not access essid for network '%s'", network);
 		}
 		else if (timestamp < 0)
 		{
-			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+			reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::getNetworkProperties could not access timestamp for network '%s'", network);
 		}
 		else if (key_type < 0)
 		{
-			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+			reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::getNetworkProperties could not access key_type for network '%s'", network);
 		}
 	}
 	else
 	{
-		DBusMessageIter	 iter;
-		DBusMessageIter	 iter_array;
-		gboolean			 success = FALSE;
-
-		reply_message = dbus_message_new_method_return (message);
-		dbus_message_iter_init (reply_message, &iter);
-
-		/* Add general properties to dbus reply */
-		dbus_message_iter_append_string (&iter, essid);
-		dbus_message_iter_append_int32  (&iter, timestamp);
-		dbus_message_iter_append_string (&iter, key);
-		dbus_message_iter_append_int32  (&iter, key_type);
-		dbus_message_iter_append_int32  (&iter, auth_method);
-		dbus_message_iter_append_boolean(&iter, trusted);
-
-		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
+		char				**array = NULL;
+		int				 num_items = 0;
 
 		/* Add a string array of access point MAC addresses if the array is valid */
-		if (ap_addrs_value && (ap_addrs_value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (ap_addrs_value) == GCONF_VALUE_STRING))
+		if (    ap_addrs_value
+			&& (ap_addrs_value->type == GCONF_VALUE_LIST)
+			&& (gconf_value_get_list_type (ap_addrs_value) == GCONF_VALUE_STRING))
 		{
-			GSList			*list = gconf_value_get_list (ap_addrs_value);
-			GSList			*elem = list;
+			GSList	*list = gconf_value_get_list (ap_addrs_value);
+			GSList	*elt;
+			int		 i;
 
-			while (elem != NULL)
+			num_items = g_slist_length (list); 
+			if (num_items > 0)
+				array = g_malloc0 (sizeof (char *) * num_items);
+
+			for (elt = list, i = 0; elt; elt = g_slist_next (elt), i++)
 			{
-				const char *string = gconf_value_get_string ((GConfValue *)elem->data);
-				if (string)
-				{
-					dbus_message_iter_append_string (&iter_array, string);
-					success = TRUE;
-				}
-				elem = g_slist_next (elem);
+				const char *string;
+				if ((string = gconf_value_get_string ((GConfValue *)elt->data)))
+					array[i] = g_strdup (string);
 			}
 		}
 
-		if (!success)
-			dbus_message_iter_append_string (&iter_array, "");
+		reply = dbus_message_new_method_return (message);
+
+		/* Add general properties to dbus reply */
+		dbus_message_append_args (reply,   DBUS_TYPE_STRING, essid,
+									DBUS_TYPE_INT32, timestamp,
+									DBUS_TYPE_STRING, key,
+									DBUS_TYPE_INT32, key_type,
+									DBUS_TYPE_INT32, auth_method,
+									DBUS_TYPE_BOOLEAN, trusted,
+									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, array, num_items,
+									DBUS_TYPE_INVALID);
 	}	
 	gconf_value_free (ap_addrs_value);
 
@@ -495,7 +493,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 
 	g_free (escaped_network);
 	dbus_free (network);
-	return (reply_message);
+	return (reply);
 }
 
 

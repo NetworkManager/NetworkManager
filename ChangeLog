@@ -1,5 +1,21 @@
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* info-daemon/NetworkManagerInfoDbus.c
+		- (nmi_dbus_get_network_properties): whack usage of DbusMessageIter
+
+	* test/nminfotest.c
+		- Whack usage of DbusMessageIter
+		- Clean up DbusError and DbusMessage handling and freeing
+		- Remove unused unregister handler
+
+	* test/nmtest.c
+		- Whack usage of DbusMessageIter
+
+	* test/nmtestdevices.c
+		- Whack usage of DbusMessageIter
+
+2005-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* NetworkManager.h
 		- New signal type NMNetworkStatus in preparation for the "WirelessNetworkUpdate"
 			signal
