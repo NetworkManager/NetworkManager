@@ -1,4 +1,3 @@
-EXTRA_DIST = NetworkManager.conf
 
 INCLUDES = 						\
 	$(NM_CFLAGS) 			   		\
@@ -31,6 +30,7 @@ NetworkManager_SOURCES =				\
 
 NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) $(OPENSSL_LIBS)
 
-dbusservicedir = $(sysconfdir)/dbus-1/system.d
+dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
+EXTRA_DIST = $(dbusservice_DATA)

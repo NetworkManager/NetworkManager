@@ -27,6 +27,17 @@ PKG_CHECK_MODULES(OPENSSL, openssl)
 AC_SUBST(OPENSSL_CFLAGS)
 AC_SUBST(0PENSSL_LIBS)
 
+# taken from hal
+AC_ARG_WITH(dbus-sys, [  --with-dbus-sys=<dir>   where D-BUS system.d directory is])
+
+if ! test -z "$with_dbus_sys" ; then
+    DBUS_SYS_DIR="$with_dbus_sys"
+else
+    DBUS_SYS_DIR="$SYSCONFDIR/dbus-1/system.d"
+fi
+AC_SUBST(DBUS_SYS_DIR)
+AC_DEFINE_UNQUOTED(DBUS_SYSTEMD_DIR, "$DBUS_SYS_DIR", [Where system.d dir for DBUS is])
+
 AC_OUTPUT([
 Makefile
 src/Makefile
