@@ -107,7 +107,7 @@ int main( int argc, char *argv[] )
 		{ NULL, '\0', 0, NULL, 0, NULL, NULL }
 	};
 
-	gchar *notification_icon_cmd[] = {LIBEXECDIR"/NetworkManagerNotification"};
+	gchar *notification_icon_cmd[] = {LIBEXECDIR"/NetworkManagerNotification", NULL};
 
 	options[0].arg = &no_daemon;
 

@@ -1154,7 +1154,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			if (strcmp (service, NM_DBUS_SERVICE) == 0)
 				applet->applet_state = APPLET_STATE_NO_NM;
 			else if (strcmp (service, NMI_DBUS_SERVICE) == 0)
-				exit (1);	/* Just die if NetworkManagerInfo dies */
+				gtk_main_quit ();	/* Just die if NetworkManagerInfo dies */
 		}
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);

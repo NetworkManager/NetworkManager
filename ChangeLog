@@ -1,3 +1,16 @@
+2004-10-08 John (J5) Palmieri <johnp@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- (nmwa_update_state): Hide notification icon if we are only
+			showing one wired card and no wireless interfaces 
+			(Red Hat Bug #134895)
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- (nmwa_dbus_filter): changed exit to gtk_main_quit ()
+
+	* panel-applet/NWManagerInfo.c
+		- (main): Terminated the notification_icon_cmd array with a NULL
+
 2004-10-08  Hendrik Brandt  <hebra@cvs.gnome.org>
 
 	* configure.in (ALL_LINGUAS): Added de (German).
@@ -8,6 +21,7 @@
 		- Be a bit more robust about link checking, ie make sure that
 			the WEP key we were given actually has some data in it
 
+>>>>>>> 1.127
 2004-10-08 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c (main):
@@ -71,6 +85,7 @@
 	* panel-applet/main.c
 		- Cast the applet appropriately for gtk_widget_show_all ()
 
+>>>>>>> 1.125
 Mon Oct  4 12:55:41 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/eggtrayicon.[ch]:
