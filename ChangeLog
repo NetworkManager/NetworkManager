@@ -1,3 +1,7 @@
+2004-09-03  Raphael Higino <raphaelh@cvs.gnome.org>
+
+	* configure.in: Added 'pt_BR' to ALL_LINGUAS.
+
 2004-09-03  Akagic Amila <bono@linux.org.ba>
 
 	* configure.in: Added 'bs' to ALL_LINGUAS.
