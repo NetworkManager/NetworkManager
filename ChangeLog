@@ -1,3 +1,9 @@
+2005-02-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerWireless.c
+		- (nm_wireless_qual_to_percent): Fix up wireless quality calculations
+			to be in line with the WEXT quality specification
+
 2005-02-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Nathan Fredrickson <nathan@silverorange.com>

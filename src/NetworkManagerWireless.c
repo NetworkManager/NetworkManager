@@ -132,45 +132,81 @@ char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
  */
 int nm_wireless_qual_to_percent (const struct iw_quality *qual, const struct iw_quality *max_qual, const struct iw_quality *avg_qual)
 {
-	int	percent = -1;
+	int		percent = -1;
+	int		level_percent = -1;
 
 	g_return_val_if_fail (qual != NULL, -1);
 	g_return_val_if_fail (max_qual != NULL, -1);
 	g_return_val_if_fail (avg_qual != NULL, -1);
 
-	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is */
+/*
+syslog (LOG_DEBUG, "QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X",
+(__s8)qual->qual, qual->qual, qual->qual, (__s8)qual->level, qual->level, qual->level, (__s8)qual->noise, qual->noise, qual->noise,
+(__s8)max_qual->qual, max_qual->qual, max_qual->qual, (__s8)max_qual->level, max_qual->level, max_qual->level, (__s8)max_qual->noise, max_qual->noise, max_qual->noise);
+*/
+
+	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
+	 * Drivers that fill in quality values MUST treat them as percentages, ie the "Link Quality" MUST be 
+	 * bounded by 0 and max_qual->qual, and MUST change in a linear fashion.  Within those bounds, drivers
+	 * are free to use whatever they want to calculate "Link Quality".
+	 */
 	if ((max_qual->qual != 0) && !(max_qual->updated & IW_QUAL_QUAL_INVALID) && !(qual->updated & IW_QUAL_QUAL_INVALID))
-	{
 		percent = (int)(100 * ((double)qual->qual / (double)max_qual->qual));
-	}
-	else
+
+	/* If the driver doesn't specify a complete and valid quality, we have two options:
+	 *
+	 * 1) dBm: driver must specify max_qual->level = 0, and have valid values for
+	 *        qual->level and (qual->noise OR max_qual->noise)
+	 * 2) raw RSSI: driver must specify max_qual->level > 0, and have valid values for
+	 *        qual->level and max_qual->level
+	 *
+	 * This is the WEXT spec.  If this interpretation is wrong, I'll fix it.  Otherwise,
+	 * If drivers don't conform to it, they are wrong and need to be fixed.
+	 */
+
+	/* Absolute power values (dBm) */
+	if (    (max_qual->level == 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)		/* Valid max_qual->level == 0 */
+		&& !(qual->updated & IW_QUAL_LEVEL_INVALID)								/* Must have valid qual->level */
+		&& (    ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))	/* Must have valid max_qual->noise */
+			|| ((qual->noise > 0) && (!qual->updated & IW_QUAL_NOISE_INVALID)))		/*    OR valid qual->noise */
+	   )
 	{
-		if((qual->level > max_qual->level) && (qual->noise != 0))
-		{
-			int	level = -1;
-			int	noise = -1;
+		/* Reasonable fallbacks for dumb drivers that don't specify either level. */
+		#define FALLBACK_NOISE_FLOOR_DBM	-90
+		#define FALLBACK_SIGNAL_MAX_DBM	-20
+		int	max_level = FALLBACK_SIGNAL_MAX_DBM;
+		int	noise = FALLBACK_NOISE_FLOOR_DBM;
+		int	level = qual->level - 0x100;
 
-			/* Signal level is in dBm  (absolute power measurement) */
-			if (!(qual->updated & IW_QUAL_LEVEL_INVALID))
-				level = qual->level - 0x100;
+		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
 
-			/* Deal with noise level in dBm (absolute power measurement) */
-			if (!(qual->updated & IW_QUAL_NOISE_INVALID))
-				noise = qual->noise - 0x100;
+		if ((qual->noise > 0) && (!qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = qual->noise - 0x100;
+		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
+			noise = max_qual->noise - 0x100;
+		noise = CLAMP (noise, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
 
-			/* Try a sort of signal-to-noise ratio */
-			percent = abs((int)rint(10 * log ((double)level / ((double)level + (double)noise))));
-		}
-		else if (!(max_qual->level & IW_QUAL_LEVEL_INVALID) && (max_qual->level != 0))
-		{
-			/* Signal level is relavtive (0 -> max) */
-			if (!(qual->updated & IW_QUAL_LEVEL_INVALID))
-			{
-				percent = (int)(100 * ((double)qual->level / (double)max_qual->level));
-			}
-		}
+		/* A sort of signal-to-noise ratio calculation */
+		level_percent = (int)(100 - 70 *(
+						((double)max_level - (double)level) /
+						((double)max_level - (double)noise)));
+/*		syslog (LOG_DEBUG, "QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.", level_percent, max_level, level, noise);*/
+	}
+	else if ((max_qual->level != 0) && !(max_qual->updated & IW_QUAL_LEVEL_INVALID)	/* Valid max_qual->level as upper bound */
+			&& !(qual->updated & IW_QUAL_LEVEL_INVALID))
+	{
+		int	level = qual->level;
+
+		/* Signal level is relavtive (0 -> max_qual->level) */
+		level = CLAMP (level, 0, max_qual->level);
+		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
+/*		syslog (LOG_DEBUG, "QL2: level_percent is %d.  max_level %d, level %d.", level_percent, max_qual->level, level);*/
 	}
 
-	percent = CLAMP (percent, 0, 100);
-	return (percent);
+	/* If the quality percent was 0 or doesn't exist, then try to use signal levels instead */
+	if ((percent < 1) && (level_percent >= 0))
+		percent = level_percent;
+
+/* syslog (LOG_DEBUG, "QL: Final quality %% is %d (%d).", percent, CLAMP (percent, 0, 100));*/
+	return (CLAMP (percent, 0, 100));
 }
