@@ -1,3 +1,9 @@
+2004-09-02  Colin Walters  <walters@verbum.org>
+
+	* src/backends/NetworkManagerRedHat.c (nm_system_device_run_dhcp)
+	(nm_system_device_stop_dhcp, nm_system_device_flush_routes): Use
+	g_strdup_printf instead of arbitrarily sized buffers.
+
 2004-09-01  Colin Walters  <walters@verbum.org>
 
 	* NetworkManager.pc.in: New file.

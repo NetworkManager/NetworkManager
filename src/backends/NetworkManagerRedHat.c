@@ -48,7 +48,7 @@ void nm_system_init (void)
  */
 gboolean nm_system_device_run_dhcp (NMDevice *dev)
 {
-	char		 buf [500];
+	char		*buf;
 	char		*iface;
 	int		 err;
 
@@ -65,9 +65,9 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 	 * (for example, bad WEP key so it can't actually talk to the AP).
 	 */
 	iface = nm_device_get_iface (dev);
-	snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
-						iface, iface, iface, iface);
+	buf = g_strdup_printf ("/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n", iface, iface, iface, iface);
 	err = nm_spawn_process (buf);
+	g_free (buf);
 	return (err == 0);
 }
 
@@ -83,7 +83,7 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 void nm_system_device_stop_dhcp (NMDevice *dev)
 {
 	FILE			*pidfile;
-	char			 buf [500];
+	char			*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -92,7 +92,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		return;
 
 	/* Find and kill the previous dhclient process for this device */
-	snprintf (buf, 500, "/var/run/dhclient-%s.pid", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/var/run/dhclient-%s.pid", nm_device_get_iface (dev));
 	pidfile = fopen (buf, "r");
 	if (pidfile)
 	{
@@ -109,6 +109,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
 		if (n_pid > 0)
 			kill (n_pid, SIGTERM);
 	}
+	g_free (buf);
 }
 
 
@@ -120,7 +121,7 @@ void nm_system_device_stop_dhcp (NMDevice *dev)
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	char	buf [100];
+	char	*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -129,8 +130,9 @@ void nm_system_device_flush_routes (NMDevice *dev)
 		return;
 
 	/* Remove routing table entries */
-	snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip route flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
+	g_free (buf);
 }
 
 
@@ -142,7 +144,7 @@ void nm_system_device_flush_routes (NMDevice *dev)
  */
 void nm_system_device_flush_addresses (NMDevice *dev)
 {
-	char	buf [100];
+	char	*buf;
 
 	g_return_if_fail (dev != NULL);
 
@@ -151,8 +153,9 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 		return;
 
 	/* Remove all IP addresses for a device */
-	snprintf (buf, 100, "/sbin/ip address flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip address flush dev %s", nm_device_get_iface (dev));
 	nm_spawn_process (buf);
+	g_free (buf);
 }
 
 
