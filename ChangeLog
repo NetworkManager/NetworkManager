@@ -1,5 +1,12 @@
 2005-02-10  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tom Parker:
+	* src/NetworkManagerDevice.c
+		- Remove the "#include <pci/types.h>" since both the ethtool.h and
+			mii.h headers are broken, and instead use our own typedefs
+
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
 	* dhcpcd/buildmsg.c
 		- (fill_host_and_class_id): only fill in client and class IDs if
 			they are set by callers.
