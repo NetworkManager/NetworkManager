@@ -134,9 +134,9 @@ struct NMDevice
  */
 static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 {
-	int		iwlib_socket;
+	int		sk;
 	int		error;
-	iwstats	stats;
+	char		ioctl_buf[64];
 	
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -146,9 +146,12 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 	if (dev->test_device)
 		return (FALSE);
 
-	iwlib_socket = iw_sockets_open ();
-	error = iw_get_stats (iwlib_socket, nm_device_get_iface (dev), &stats, NULL, FALSE);
-	close (iwlib_socket);
+	ioctl_buf[63] = 0;
+	strncpy(ioctl_buf, nm_device_get_iface(dev), 63);
+
+	sk = iw_sockets_open ();
+	error = ioctl(sk, SIOCGIWNAME, ioctl_buf);
+	close (sk);
 	return (error == 0);
 }
 
@@ -161,7 +164,7 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
  */
 static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 {
-	int					iwlib_socket;
+	int					sk;
 	int					error;
 	gboolean				can_scan = TRUE;
 	wireless_scan_head		scan_data;
@@ -173,12 +176,12 @@ static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
 	if (dev->test_device)
 		return (TRUE);
 	
-	iwlib_socket = iw_sockets_open ();
-	error = iw_scan (iwlib_socket, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+	sk = iw_sockets_open ();
+	error = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
 	nm_dispose_scan_results (scan_data.result);
 	if ((error == -1) && (errno == EOPNOTSUPP))
 		can_scan = FALSE;
-	close (iwlib_socket);
+	close (sk);
 	return (can_scan);
 }
 

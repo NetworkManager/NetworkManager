@@ -1,3 +1,20 @@
+2004-10-28 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+		- (nm_spawn_process): Fix a potential dereference of NULL
+
+	Patches from Peter Jones:
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_test_wireless_extensions): Better check for
+			wireless devices
+
+	* src/NetworkManagerUtils.c
+		- (nm_spawn_process): Pass in valid stdout and stderr so
+			executed programs don't randomly SIGPIPE and fail
+		- (nm_get_wired_driver_support_level): quash hal warning
+			when checking for USB ethernet device
+
 2004-10-27 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfo.c

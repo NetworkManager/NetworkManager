@@ -184,30 +184,30 @@ void nm_dispose_scan_results (wireless_scan *result_list)
 int nm_spawn_process (char *args)
 {
 	gint		  num_args;
-	char		**argv;
-	int		  exit_status;
+	char		**argv = NULL;
+	int		  exit_status = -1;
 	GError	 *error = NULL;
-	
+	char		 *so = NULL;
+	char		 *se = NULL;
+
 	g_return_val_if_fail (args != NULL, -1);
 
-	if (g_shell_parse_argv (args, &num_args, &argv, NULL))
+	if (g_shell_parse_argv (args, &num_args, &argv, &error))
 	{
-		if (g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &exit_status, &error))
-		{
-			g_strfreev (argv);
-			return (exit_status);
-		}
-		else
-			syslog (LOG_ERR, "nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error->message);
+		GError *error2 = NULL;
 
-		g_strfreev (argv);
-		if (error)
-			g_error_free (error);
-	}
-		else
-			syslog (LOG_ERR, "nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
+		if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, &so, &se, &exit_status, &error2))
+			syslog (LOG_ERR, "nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error2->message);
 
-	return (-1);
+		if (so)    g_free(so);
+		if (se)    g_free(se);
+		if (argv)  g_strfreev (argv);
+		if (error2) g_error_free (error2);
+	} else syslog (LOG_ERR, "nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
+
+	if (error) g_error_free (error);
+
+	return (exit_status);
 }
 
 
@@ -422,6 +422,7 @@ NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDe
 	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;
 	char					*usb_test;
+	char					*udi;
 
 	g_return_val_if_fail (ctx != NULL, FALSE);
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -446,7 +447,9 @@ NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDe
 		level = NM_DRIVER_UNSUPPORTED;
 
 	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
-	if ((usb_test = hal_device_get_property_string (ctx, nm_device_get_udi (dev), "usb.interface.class")))
+	udi = nm_device_get_udi (dev);
+	if (    hal_device_property_exists (ctx, udi, "usb.interface.class")
+		&& (usb_test = hal_device_get_property_string (ctx, udi, "usb.interface.class")))
 	{
 		hal_free_string (usb_test);
 		level = NM_DRIVER_UNSUPPORTED;
