@@ -536,7 +536,8 @@ receive_pending_bytes (GIOChannel  *channel,
 		goto out;
 	}
 
-	if (pending_bytes->len > 0)
+out:
+	if ((pending_bytes->len > 0) && succeeded)
 	{
 		if (str_return)
 			*str_return = pending_bytes->str;
@@ -556,7 +557,6 @@ receive_pending_bytes (GIOChannel  *channel,
 			*length = 0;
 	}
 
-out:
 	if (pending_bytes != NULL)
 		g_string_free (pending_bytes, TRUE);
 	return succeeded;

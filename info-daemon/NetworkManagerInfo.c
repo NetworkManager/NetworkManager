@@ -179,7 +179,6 @@ int main( int argc, char *argv[] )
 	DBusConnection	*dbus_connection;
 	int			 err;
 	NMIAppInfo	*app_info = NULL;
-	GMainLoop		*loop;
 	guint		 notify_id;
 
 	struct poptOption options[] =

@@ -1,3 +1,20 @@
+2005-03-15  Ray Strode  <rstrode@redhat.com>
+
+	Fix a few -Wall -Werror warnings
+
+	* info-daemon/NetworkManagerInfo.c:
+	(main): remove unused loop variable.
+
+	* info-daemon/NetworkManagerInfoDbus.c:
+	(nmi_dbus_nm_is_running): comment out
+	unused static function
+
+	* src/nm-netlink-monitor.c:
+	(receive_pending_bytes):
+	initialize output variables to NULL/0,
+	on function failure (Problem pointed out
+	by Bryan Clark).
+
 2005-03-14  Ray Strode  <rstrode@redhat.com>
 	
 	Fourth (probably working) cut at porting to

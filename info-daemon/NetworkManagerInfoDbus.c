@@ -781,6 +781,7 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
+#if 0
 /*
  * nmi_dbus_nm_is_running
  *
@@ -800,6 +801,7 @@ static gboolean nmi_dbus_nm_is_running (DBusConnection *connection)
 		dbus_error_free (&error);
 	return (exists);
 }
+#endif
 
 
 /*
