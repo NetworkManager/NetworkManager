@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-01-09 11:19+0100\n"
-"PO-Revision-Date: 2005-01-09 15:20+0100\n"
+"POT-Creation-Date: 2005-02-17 14:36+0100\n"
+"PO-Revision-Date: 2005-02-17 22:05+0100\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -63,7 +63,7 @@ msgstr "Sleuteltype:"
 
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
 #: panel-applet/essid.glade.h:8
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
@@ -77,12 +77,12 @@ msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
 msgid "Ascii Key:"
 msgstr "ASCII-sleutel:"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
 msgid "Hex Key:"
 msgstr "Hex-sleutel:"
 
@@ -91,36 +91,53 @@ msgstr "Hex-sleutel:"
 msgid "You must log in to access the private network %s"
 msgstr "U moet inloggen voor toegang tot het privénetwerk %s"
 
+#: panel-applet/NMWirelessApplet.c:140 panel-applet/NMWirelessApplet.c:158
+msgid "NetworkManager Applet"
+msgstr "NetworkManager applet"
+
+#: panel-applet/NMWirelessApplet.c:142
+msgid "(C) 2004-2005 Red Hat, Inc."
+msgstr "© 2004-2005 Red Hat, Inc."
+
+#: panel-applet/NMWirelessApplet.c:143 panel-applet/NMWirelessApplet.c:161
+msgid "A panel application for managing your network devices & connections."
+msgstr "Een paneeltoepassing voor het beheer van uw netwerkapparaten en verbindingen"
+
+#: panel-applet/NMWirelessApplet.c:160
+msgid "(C) 2004-2005 by Red Hat, Inc."
+msgstr "© 2004-2005 door Red Hat, Inc."
+
 # Netwerken
-#: panel-applet/NMWirelessApplet.c:293
+#: panel-applet/NMWirelessApplet.c:377
 msgid "No network connection"
 msgstr "Geen netwerkverbinding"
 
 # bedraad netwerk
-#: panel-applet/NMWirelessApplet.c:297
+#: panel-applet/NMWirelessApplet.c:382
 msgid "Wired network connection"
 msgstr "Bekabelde netwerkverbinding"
 
-#: panel-applet/NMWirelessApplet.c:303
+#: panel-applet/NMWirelessApplet.c:387
 msgid "Connecting to a wired network..."
 msgstr "Verbinden met een bedraad netwerk..."
 
-#: panel-applet/NMWirelessApplet.c:311
+#: panel-applet/NMWirelessApplet.c:396
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Verbonden met een Ad-hoc draadloos netwerk"
 
-#: panel-applet/NMWirelessApplet.c:325
+#: panel-applet/NMWirelessApplet.c:410
 #, c-format
-msgid "Wireless network connection (%d%%)"
-msgstr "Draadloze netwerkverbinding (%d%%)"
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Draadloze netwerkverbinding met '%s' (%d%%)"
 
-#: panel-applet/NMWirelessApplet.c:329
+#: panel-applet/NMWirelessApplet.c:415
 msgid "Wireless network connection"
 msgstr "Draadloze netwerkverbinding"
 
-#: panel-applet/NMWirelessApplet.c:335
-msgid "Connecting to a wireless network..."
-msgstr "Verbinden met een draadloos netwerk..."
+#: panel-applet/NMWirelessApplet.c:420
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Verbinden met draadloos netwerk '%s'..."
 
 # betere vertaling
 # is niet uitgevoerd (klinkt als verleden tijd)
@@ -128,25 +145,25 @@ msgstr "Verbinden met een draadloos netwerk..."
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:339
+#: panel-applet/NMWirelessApplet.c:426
 msgid "NetworkManager is not running"
 msgstr "Geen NetworkManager..."
 
 # scannen voor draadloze netwerken
-#: panel-applet/NMWirelessApplet.c:345
+#: panel-applet/NMWirelessApplet.c:431
 msgid "Scanning for wireless networks..."
 msgstr "Scannen naar draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:667
+#: panel-applet/NMWirelessApplet.c:754
 msgid "Other Wireless Networks..."
 msgstr "Andere draadloze netwerken..."
 
-#: panel-applet/NMWirelessApplet.c:688
+#: panel-applet/NMWirelessApplet.c:775
 msgid "Create new Wireless Network..."
 msgstr "Nieuw draadloos netwerk aanmaken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: panel-applet/NMWirelessApplet.c:798
+#: panel-applet/NMWirelessApplet.c:885
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -156,15 +173,39 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:916
+#: panel-applet/NMWirelessApplet.c:1003
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:226
+#: panel-applet/NMWirelessApplet.c:1047 panel-applet/NMWirelessApplet.c:1096
+msgid "Pause Wireless Scanning"
+msgstr "Draadloos scannen pauzeren"
+
+#: panel-applet/NMWirelessApplet.c:1052
+msgid "Resume Wireless Scanning"
+msgstr "Draadloos scannen hervatten"
+
+#: panel-applet/NMWirelessApplet.c:1062 panel-applet/NMWirelessApplet.c:1102
+msgid "Stop All Wireless Devices"
+msgstr "Alle draadloze apparaten stoppen"
+
+#: panel-applet/NMWirelessApplet.c:1067
+msgid "Start All Wireless Devices"
+msgstr "Alle draadloze apparaten starten"
+
+#: panel-applet/NMWirelessApplet.c:1112
+msgid "Help"
+msgstr "Hulp"
+
+#: panel-applet/NMWirelessApplet.c:1119
+msgid "About"
+msgstr "In_fo"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:228
 msgid "Create new wireless network"
 msgstr "Nieuw draadloos netwerk aanmaken"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:227
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -172,18 +213,18 @@ msgstr ""
 "Geef de ESSID de beveiligingsinstellingen van het draadloos netwerk dat u "
 "wilt aanmaken."
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:234
 msgid "Custom wireless network"
 msgstr "Aangepast draadloos netwerk"
 
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
 "Geef de ESSID van het draadloos netwerk waarmee u verbinding wilt maken."
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:323
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -207,29 +248,29 @@ msgstr "Draadloze adapter:"
 msgid "Wireless _Network:"
 msgstr "Draadloos _netwerk:"
 
-#: panel-applet/menu-info.c:101
+#: panel-applet/menu-info.c:109
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Bedraad netwerk (%s)"
 
-#: panel-applet/menu-info.c:103
+#: panel-applet/menu-info.c:111
 msgid "Wired Network"
 msgstr "Bedraad netwerk"
 
-#: panel-applet/menu-info.c:168
+#: panel-applet/menu-info.c:181
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Draadloos netwerk (%s)"
 msgstr[1] "Draadloze netwerken (%s)"
 
-#: panel-applet/menu-info.c:170
+#: panel-applet/menu-info.c:183
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Draadloos netwerk"
 msgstr[1] "Draadloze netwerken"
 
-#: panel-applet/menu-info.c:307
+#: panel-applet/menu-info.c:320
 msgid " (invalid Unicode)"
 msgstr " (ongeldige Unicode)"
 
@@ -240,9 +281,6 @@ msgstr "Oriëntatie"
 #: examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "De oriëntatie van het applet."
-
-#~ msgid "_About..."
-#~ msgstr "In_fo..."
 
 #~ msgid " "
 #~ msgstr " "
