@@ -44,7 +44,7 @@ static GMainLoop	*loop  = NULL;
 static NMData		*nm_data = NULL;
 gboolean			 debug = TRUE;
 static gboolean	 quit = FALSE;
-
+extern gboolean	 allowed_ap_worker_exit;
 
 static void nm_data_free (NMData *data);
 
@@ -342,6 +342,11 @@ gboolean nm_link_state_monitor (gpointer user_data)
 					nm_device_bring_up (dev);
 
 				nm_device_update_link_active (dev, FALSE);
+
+				/* Check if the device's IP address has changed
+				 * (ie dhcp lease renew/address change)
+				 */
+				/* Implement me */
 			}
 
 			element = g_slist_next (element);
@@ -482,7 +487,6 @@ static void nm_data_free (NMData *data)
 	nm_device_unref (data->active_device);
 
 	nm_data_allowed_ap_list_free (data);
-	nm_ap_unref (data->desired_ap);
 }
 
 
@@ -546,6 +550,7 @@ int main( int argc, char *argv[] )
 	guint			 policy_source;
 	guint			 wireless_scan_source;
 	gboolean			 become_daemon = TRUE;
+	GThread			*allowed_ap_thread = NULL;
 
 	/* Parse options */
 	while (1)
@@ -649,6 +654,7 @@ int main( int argc, char *argv[] )
 
 	/* Initialize our list of allowed access points */
 	nm_policy_update_allowed_access_points (nm_data);
+	allowed_ap_thread = g_thread_create (nm_policy_allowed_ap_refresh_worker, nm_data, FALSE, NULL);
 
 	/* Create our dbus service */
 	nm_data->dbus_connection = nm_dbus_init ();
@@ -670,19 +676,19 @@ int main( int argc, char *argv[] )
 		wireless_scan_source = g_timeout_add (10000, nm_wireless_scan_monitor, nm_data);
 
 		/* Watch all devices that HAL knows about for state changes */
-		/* Don't need this now because our polling function takes care of it and
-		 * HAL drops the ball for some cards.
-		 */
 		hal_device_property_watch_all (nm_data->hal_ctx);
 
-		/* Since we do what dhclient does, and do it better, kill dhclient */
+		/* We run dhclient when we need to, and we don't want any stray ones
+		 * lying around upon launch.
+		 */
 		system ("killall dhclient");
 
-		/* Run the main loop, all events processed by callbacks from libhal. */
+		/* Wheeee!!! */
 		loop = g_main_loop_new (NULL, FALSE);
 		g_main_loop_run (loop);
 
-		/* Kill the watch functions */
+		/* Kill the watch functions & threads */
+		allowed_ap_worker_exit = TRUE;
 		g_source_remove (link_source);
 		g_source_remove (policy_source);
 		g_source_remove (wireless_scan_source);

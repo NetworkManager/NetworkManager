@@ -23,6 +23,7 @@
 #define NETWORK_MANAGER_DEVICE_H
 
 #include "NetworkManager.h"
+#include <net/ethernet.h>
 
 /*
  * Types of NetworkManager devices
@@ -53,17 +54,28 @@ NMIfaceType	nm_device_get_iface_type		(NMDevice *dev);
 
 gboolean		nm_device_get_link_active	(NMDevice *dev);
 void			nm_device_set_link_active	(NMDevice *dev, const gboolean active);
-gboolean		nm_device_update_link_active	(NMDevice *dev, gboolean check_mii);
-
-gboolean		nm_device_check_link_status	(NMDevice *dev);
+void			nm_device_update_link_active	(NMDevice *dev, gboolean check_mii);
 
 char *		nm_device_get_essid			(NMDevice *dev);
 void			nm_device_set_essid			(NMDevice *dev, const char *essid);
 
+void			nm_device_get_ap_address		(NMDevice *dev, struct ether_addr *addr);
+
+guint32		nm_device_get_ip4_address	(NMDevice *dev);
+void			nm_device_update_ip4_address	(NMDevice *dev);
+
+void			nm_device_get_ip6_address	(NMDevice *dev);
+
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
+void			nm_device_do_wireless_scan	(NMDevice *dev);
+NMAccessPoint *nm_device_get_best_ap		(NMDevice *dev);
+void			nm_device_set_best_ap		(NMDevice *dev, NMAccessPoint *ap);
 
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_wep_key		(NMDevice *dev, const char *wep_key);
+
+gboolean		nm_device_deactivate		(NMDevice *dev);
+gboolean		nm_device_activate			(NMDevice *dev);
 
 void			nm_device_bring_up			(NMDevice *dev);
 void			nm_device_bring_down		(NMDevice *dev);

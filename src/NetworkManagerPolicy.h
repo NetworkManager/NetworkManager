@@ -25,8 +25,12 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 
-gboolean		 nm_state_modification_monitor			(gpointer user_data);
+gboolean		nm_state_modification_monitor			(gpointer user_data);
 
-void			 nm_policy_update_allowed_access_points		(NMData *data);
+void			nm_policy_update_allowed_access_points	(NMData *data);
+
+gboolean		nm_policy_essid_is_allowed			(NMData *data, const unsigned char *essid);
+
+gpointer		nm_policy_allowed_ap_refresh_worker	(gpointer user_data);
 
 #endif

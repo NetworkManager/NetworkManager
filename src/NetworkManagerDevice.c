@@ -24,8 +24,6 @@
 #include <dbus/dbus-glib.h>
 #include <hal/libhal.h>
 #include <iwlib.h>
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
@@ -165,6 +163,7 @@ typedef struct NMDeviceWirelessOptions
 	gboolean				 supports_wireless_scan;
 	GMutex				*ap_list_mutex;
 	GSList				*ap_list;
+	NMAccessPoint			*best_ap;
 } NMDeviceWirelessOptions;
 
 typedef struct NMDeviceWiredOptions
@@ -188,6 +187,8 @@ struct NMDevice
 	gchar			*iface;
 	NMIfaceType		 iface_type;
 	gboolean			 link_active;
+	guint32			 ip_address;
+	/* FIXME: ipv6 address too */
 	NMDeviceOptions	 dev_options;
 };
 
@@ -263,6 +264,7 @@ void nm_device_unref (NMDevice *dev)
 		{
 			g_free (dev->dev_options.wireless.cur_essid);
 			g_mutex_free (dev->dev_options.wireless.ap_list_mutex);
+			nm_ap_unref (dev->dev_options.wireless.best_ap);
 		}
 
 		dev->udi = NULL;
@@ -350,11 +352,11 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
  * Updates the link state for a particular device.
  *
  */
-gboolean nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
+void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 {
 	gboolean		link_active = FALSE;
 
-	g_return_val_if_fail (dev  != NULL, FALSE);
+	g_return_if_fail (dev != NULL);
 
 	/* FIXME
 	 * For wireless cards, the best indicator of a "link" at this time
@@ -371,23 +373,7 @@ gboolean nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 
 			iwlib_socket = iw_sockets_open ();
 			if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
-			{
-				struct ether_addr	invalid_addr1;
-				struct ether_addr	invalid_addr2;
-				struct ether_addr	invalid_addr3;
-				struct ether_addr	ap_addr;
-
-				/* Compare the AP address the card has with invalid ethernet MAC addresses.
-				 */
-				memcpy (&ap_addr, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
-				memset (&invalid_addr1, 0xFF, sizeof(struct ether_addr));
-				memset (&invalid_addr2, 0x00, sizeof(struct ether_addr));
-				memset (&invalid_addr2, 0x44, sizeof(struct ether_addr));
-				if (    (memcmp(&ap_addr, &invalid_addr1, sizeof(struct ether_addr)) != 0)
-					&& (memcmp(&ap_addr, &invalid_addr2, sizeof(struct ether_addr)) != 0)
-					&& (memcmp(&ap_addr, &invalid_addr3, sizeof(struct ether_addr)) != 0))
-					link_active = TRUE;
-			}
+				link_active = nm_ethernet_address_is_valid (&(wrq.u.ap_addr.sa_data));
 			close (iwlib_socket);
 			break;
 		}
@@ -413,7 +399,6 @@ gboolean nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 		nm_device_set_link_active (dev, link_active);
 		nm_data_set_state_modified (nm_get_global_data(), TRUE);
 	}
-	return (link_active);
 }
 
 
@@ -500,6 +485,30 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 
 
 /*
+ * nm_device_get_ap_address
+ *
+ * If a device is wireless, get the access point's ethernet address
+ * that the card is associated with.
+ */
+void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
+{
+	int			iwlib_socket;
+	struct iwreq	wrq;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (addr != NULL);
+
+	/* Do we have a valid MAC address? */
+	iwlib_socket = iw_sockets_open ();
+	if (iw_get_ext (iwlib_socket, nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
+		memcpy (addr, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
+	else
+		memset (addr, 0, sizeof (struct ether_addr));
+	close (iwlib_socket);
+}
+
+
+/*
  * nm_device_set_wep_key
  *
  * If a device is wireless, set the WEP key that it should use.
@@ -561,6 +570,46 @@ void nm_device_set_wep_key (NMDevice *dev, const char *wep_key)
 
 		close (iwlib_socket);
 	}
+}
+
+
+/*
+ * nm_device_get_ip4_address
+ *
+ * Get a device's IPv4 address
+ *
+ */
+guint32 nm_device_get_ip4_address(NMDevice *dev)
+{
+	struct ifreq		 req;
+	int				 socket;
+	
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_get_iface (dev) != NULL, 0);
+
+	socket = nm_get_network_control_socket ();
+	if (socket < 0)
+		return (0);
+	
+	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), 16);	// 16 == IF_NAMESIZE
+	if (ioctl (socket, SIOCGIFADDR, &req) != 0)
+		return (0);
+
+	return (((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr);
+}
+
+
+/*
+ * nm_device_get_ip6_address
+ *
+ * Get a device's IPv6 address
+ *
+ */
+void nm_device_get_ip6_address(NMDevice *dev)
+{
+	/* FIXME
+	 * Implement
+	 */
 }
 
 
@@ -652,6 +701,158 @@ gboolean nm_device_is_up (NMDevice *dev)
 
 
 /*
+ * nm_device_activate
+ *
+ * Activate the device, bringing it up and getting it an
+ * IP address.
+ *
+ */
+gboolean nm_device_activate (NMDevice *dev)
+{
+	unsigned char	 buf[500];
+	gboolean		 success = FALSE;
+	unsigned char	*iface;
+	unsigned char	 hostname[500] = "\0";
+	int			 host_err;
+	NMData		*data = nm_get_global_data ();
+	int			 dhclient_err;
+	FILE			*pidfile;
+
+	g_return_val_if_fail (dev  != NULL, FALSE);
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	/* If its a wireless device, set the ESSID and WEP key */
+	if (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
+	{
+		NMAccessPoint	*ap = nm_device_get_best_ap (dev);
+
+		/* If the card is just inserted, we may not have had a chance to scan yet */
+		if (!ap)
+		{
+			nm_device_do_wireless_scan (dev);
+			ap = nm_device_get_best_ap (dev);
+		}
+
+		/* If there is a desired AP to connect to, use that essid and possible WEP key */
+		if (nm_ap_get_essid (ap) != NULL)
+		{
+			nm_device_bring_down (dev);
+
+			nm_device_set_essid (dev, nm_ap_get_essid (ap));
+
+			/* Disable WEP */
+			nm_device_set_wep_key (dev, NULL);
+			if (nm_ap_get_wep_key (ap))
+				nm_device_set_wep_key (dev, nm_ap_get_wep_key (ap));
+		}
+		NM_DEBUG_PRINT_2 ("nm_device_activate(%s) using essid '%s'\n", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+	}
+	
+	/* Bring the device up */
+	if (!nm_device_is_up (dev));
+		nm_device_bring_up (dev);
+
+	/* Kill the old default route */
+	snprintf (buf, 500, "/sbin/ip route del default");
+	system (buf);
+
+	/* Find and kill the previous dhclient process for this interface */
+	iface = nm_device_get_iface (dev);
+	snprintf (buf, 500, "/var/run/dhclient-%s.pid", iface);
+	pidfile = fopen (buf, "r");
+	if (pidfile)
+	{
+		int			len;
+		unsigned char	s_pid[20];
+		pid_t		n_pid = -1;
+
+		memset (s_pid, 0, 20);
+		fgets (s_pid, 19, pidfile);
+		len = strnlen (s_pid, 20);
+		fclose (pidfile);
+
+		n_pid = atoi (s_pid);
+		if (n_pid > 0)
+			kill (n_pid, 9);
+	}
+
+	snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
+					iface, iface, iface, iface);
+	dhclient_err = system (buf);
+	if (dhclient_err != 0)
+	{
+		/* Interfaces cannot be down if they are the active interface,
+		 * otherwise we cannot use them for scanning or link detection.
+		 * If dhclient doesn't get a DHCP address, it will take the interface
+		 * down, so we reactivate it here.
+		 */
+		if (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
+		{
+			nm_device_set_essid (dev, "");
+			nm_device_set_wep_key (dev, NULL);
+		}
+
+		nm_device_bring_up (dev);
+		success = FALSE;
+	}
+
+	/* Set the hostname back to what it was before so that X11 doesn't
+	 * puke when the hostname changes, and so users can actually launch stuff.
+	 */
+	if (host_err >= 0)
+		sethostname (hostname, strlen (hostname));
+
+	/* Restart the nameservice caching daemon to make apps aware of new DNS servers */
+	snprintf (buf, 500, "/sbin/service nscd restart");
+	system (buf);
+
+	nm_dbus_signal_device_now_active (data->dbus_connection, dev);
+
+	return (success);
+}
+
+
+/*
+ * nm_device_deactivate
+ *
+ * Remove a device's routing table entries and IP address.
+ *
+ */
+gboolean nm_device_deactivate (NMDevice *dev)
+{
+	unsigned char		 buf[500];
+	unsigned char		*iface;
+	gboolean			 success = FALSE;
+	NMData			*data = nm_get_global_data ();
+
+	g_return_val_if_fail (dev  != NULL, FALSE);
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	iface = nm_device_get_iface (dev);
+
+	/* Take out any entries in the routing table and any IP address the old interface
+	 * had.
+	 */
+	if (iface && strlen (iface))
+	{
+		/* Remove routing table entries */
+		snprintf (buf, 500, "/sbin/ip route flush dev %s", iface);
+		system (buf);
+
+		/* Remove ip address */
+		snprintf (buf, 500, "/sbin/ip address flush dev %s", iface);
+		system (buf);
+
+		success = TRUE;
+	}
+
+	nm_dbus_signal_device_no_longer_active (data->dbus_connection, dev);
+
+	return (success);
+}
+
+
+/*
  * nm_device_ap_list_add
  *
  * Add an access point to the devices internal AP list.
@@ -712,7 +913,7 @@ void	nm_device_ap_list_clear (NMDevice *dev)
 
 
 /*
- * nm_device_ap_list_get_copy
+ * nm_device_ap_list_get_ap
  *
  * Copy the list of ESSIDs
  *
@@ -748,6 +949,255 @@ NMAccessPoint *nm_device_ap_list_get_ap (NMDevice *dev, int index)
 	}
 
 	return (ap);
+}
+
+
+/*
+ * Get/Set functions for "best" access point
+ *
+ */
+NMAccessPoint *nm_device_get_best_ap (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET, NULL);
+
+	return (dev->dev_options.wireless.best_ap);
+}
+
+void nm_device_set_best_ap (NMDevice *dev, NMAccessPoint *ap)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (ap  != NULL);
+	g_return_if_fail (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET);
+
+	if (dev->dev_options.wireless.best_ap)
+		nm_ap_unref (dev->dev_options.wireless.best_ap);
+
+	nm_ap_ref (ap);
+	dev->dev_options.wireless.best_ap = ap;
+}
+
+
+/*
+ * nm_device_do_normal_scan
+ *
+ * Scan for access points on cards that support wireless scanning.
+ *
+ */
+static void nm_device_do_normal_scan (NMDevice *dev)
+{
+	int		iwlib_socket;
+
+	g_return_if_fail (dev  != NULL);
+
+	/* Device must be up before we can scan */
+	if (!nm_device_is_up (dev))
+		nm_device_bring_up (dev);
+
+	iwlib_socket = iw_sockets_open ();
+	if (iwlib_socket >= 0)
+	{
+		wireless_scan_head	 scan_results = { NULL, 0 };
+		wireless_scan		*tmp_ap;
+		int				 err;
+		NMAccessPoint		*highest_priority_ap = NULL;
+		int				 highest_priority = NM_AP_PRIORITY_WORST;
+
+		/* Clear out the device's ap list */
+		nm_device_ap_list_clear (dev);
+
+		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
+
+		/* Iterate over scan results and pick a "most" preferred access point. */
+		tmp_ap = scan_results.result;
+		while (tmp_ap)
+		{
+			/* Blank essids usually indicate an AP that is not broadcasting its essid,
+			 * but since its not broadcasting the essid, we cannot use that ap yet.
+			 */
+			if (tmp_ap->b.has_essid && tmp_ap->b.essid_on && (strlen (tmp_ap->b.essid) > 0))
+			{
+				NMAccessPoint		*nm_ap  = nm_ap_new ();
+
+				/* Copy over info from scan to local structure */
+				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
+
+				if (tmp_ap->has_ap_addr)
+				{
+					char		buf[20];
+
+					memset (&buf[0], 0, 20);
+					iw_ether_ntop((const struct ether_addr *) (tmp_ap->ap_addr.sa_data), &buf[0]);
+					nm_ap_set_address (nm_ap, buf);
+				}
+
+				nm_ap_set_quality (nm_ap, tmp_ap->stats.qual.qual);
+
+				if (tmp_ap->b.has_freq)
+					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
+
+				/* Add the AP to the device's AP list, no matter if its allowed or not */
+				nm_device_ap_list_add (dev, nm_ap);
+
+				if (nm_wireless_is_most_prefered_ap (nm_ap, &highest_priority))
+				{
+					if (highest_priority_ap)
+						nm_ap_unref (highest_priority_ap);
+
+					highest_priority_ap = nm_ap_new_from_ap (nm_ap);
+				}
+				nm_ap_unref (nm_ap);
+			}
+			tmp_ap = tmp_ap->next;
+		}
+		nm_dispose_scan_results (scan_results.result);
+
+		/* If we have the "most" preferred access point, and its different than the current
+		 * access point, switch to it during the next cycle.
+		 */
+		if (    highest_priority_ap
+			&& (!nm_device_get_best_ap (dev) || (nm_null_safe_strcmp (nm_device_get_essid (dev), nm_ap_get_essid (highest_priority_ap)) != 0)))
+		{
+			nm_device_set_best_ap (dev, nm_ap_new_from_ap (highest_priority_ap));
+			nm_data_set_state_modified (nm_get_global_data (), TRUE);
+
+			nm_ap_unref (highest_priority_ap);
+		}
+		close (iwlib_socket);
+	}
+	else
+		NM_DEBUG_PRINT_1 ("nm_device_do_normal_scan() could not get a control socket for the wireless card %s.\n", nm_device_get_iface (dev) );
+}
+
+
+/*
+ * nm_device_do_pseudo_scan
+ *
+ * Brute-force the allowed access point list to find one that works, if any.
+ *
+ * FIXME
+ * There's probably a better way to do the non-scanning access point discovery
+ * than brute forcing it like this, but that makes the state machine here oh so
+ * much more complicated.
+ */
+static void nm_device_do_pseudo_scan (NMDevice *dev)
+{
+	NMData	*data = nm_get_global_data ();
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (dev  != NULL);
+
+	nm_device_ref (dev);
+
+fprintf (stderr, "Begining try all\n" );
+	/* Acquire allowed AP list mutex, silently fail if we cannot */
+	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
+	{
+		GSList	*element = data->allowed_ap_list;
+		
+		/* Turn off the essid so we can tell if its changed when
+		 * we set it below.
+		 */
+		nm_device_set_essid (dev, "");
+
+		while (element)
+		{
+			NMAccessPoint		*ap = (NMAccessPoint *)(element->data);
+
+			/* Attempt to associate with this access point */
+			if (ap)
+			{
+				struct iwreq		wrq;
+				int				iwlib_socket;
+				gboolean			valid = FALSE;
+				struct ether_addr	save_ap_addr;
+				struct ether_addr	cur_ap_addr;
+
+fprintf( stderr, "Looking at AP %s\n", nm_ap_get_essid (ap) );
+
+				if (!nm_device_is_up (dev));
+					nm_device_bring_up (dev);
+
+				/* Save the MAC address */
+				nm_device_get_ap_address (dev, &save_ap_addr);
+
+				nm_device_set_essid (dev, nm_ap_get_essid (ap));
+				if (nm_ap_get_wep_key (ap))
+					nm_device_set_wep_key (dev, nm_ap_get_wep_key (ap));
+				else
+					nm_device_set_wep_key (dev, NULL);
+
+				/* Wait a bit for association */
+				g_usleep (G_USEC_PER_SEC * 2);
+
+				/* Do we have a valid MAC address? */
+				nm_device_get_ap_address (dev, &cur_ap_addr);
+				valid = nm_ethernet_address_is_valid (&cur_ap_addr);
+fprintf( stderr, "Current ap ether is: %s   save = %s\n", iw_ether_ntoa (&cur_ap_addr), iw_ether_ntoa(&save_ap_addr));
+
+				/* If the ap address we had before, and the ap address we
+				 * have now, are the same, AP is invalid.  Certain cards (orinoco)
+				 * will let the essid change, but the the card won't actually de-associate
+				 * from the previous access point if it can't associate with the new one
+				 * (ie signal too weak, etc).
+				 */
+				if (valid && (memcmp (&save_ap_addr, &cur_ap_addr, sizeof (struct ether_addr)) == 0))
+					valid = FALSE;
+
+				/* FIXME
+				 * We should probably lock access to data->desired_ap
+				 */
+				if (valid)
+				{
+fprintf( stderr, "AP %s looks good, setting to desired\n", nm_ap_get_essid (ap));
+					nm_device_set_best_ap (dev, nm_ap_new_from_ap (ap));
+					nm_data_set_state_modified (nm_get_global_data (), TRUE);
+					break;
+				}
+			}
+			element = g_slist_next (element);
+		}
+
+		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
+fprintf( stderr, "Try all done.\n");
+	}
+
+	nm_device_unref (dev);
+}
+
+
+/*
+ * nm_device_do_wireless_scan
+ *
+ * Get a list of access points this device can see.
+ *
+ */
+void nm_device_do_wireless_scan (NMDevice *dev)
+{
+	NMData	*data = nm_get_global_data ();
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (dev  != NULL);
+	g_return_if_fail (nm_device_get_iface_type (dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET);
+
+	if (nm_device_get_supports_wireless_scan (dev))
+		nm_device_do_normal_scan (dev);
+	else
+	{
+		struct ether_addr	 ap_addr;
+
+		/* We can't pseudo-scan without switching APs, therefore
+		 * if the card has a valid access point and its an allowed
+		 * access point, don't pseudo-scan for others.
+		 */
+		nm_device_get_ap_address (dev, &ap_addr);
+		if (    !nm_ethernet_address_is_valid (&ap_addr)
+			|| !nm_policy_essid_is_allowed (data, nm_device_get_essid (dev))
+			|| !nm_device_get_best_ap (dev))
+		{
+			nm_device_do_pseudo_scan (dev);
+		}
+	}
 }
 
 

@@ -58,7 +58,7 @@ void nmd_execute_scripts (NMDAction action, char *iface_name)
 		return;
 	}
 
-	while (dir)
+	do
 	{
 		errno = 0;
 		if ((ent = readdir (dir)) != NULL)
@@ -83,9 +83,8 @@ void nmd_execute_scripts (NMDAction action, char *iface_name)
 					system (cmd);
 				}
 			}
-			else fprintf( stderr, "d_name = %s, errno = %d\n", ent->d_name, errno);
 		}
-	}
+	} while (ent);
 
 	closedir (dir);
 }
@@ -173,7 +172,9 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 		{
 			char		*dev_iface_name = nmd_get_device_name (connection, dev_object_path);
 
-			fprintf (stderr, "Device %s (%s) now has state %d.\n", dev_object_path, dev_iface_name, action);
+			fprintf (stderr, "Device %s (%s) is now %s.\n", dev_object_path, dev_iface_name,
+						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
+							(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
 
 			nmd_execute_scripts (action, dev_iface_name);
 

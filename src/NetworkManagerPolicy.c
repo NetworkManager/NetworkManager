@@ -1,3 +1,4 @@
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -26,135 +27,14 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <fcntl.h>
+#include <sys/select.h>
 
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerAP.h"
 
+gboolean			allowed_ap_worker_exit = FALSE;
 extern gboolean	debug;
-
-
-/*
- * nm_policy_activate_device
- *
- * Performs interface switching and related networking goo.
- *
- */
-static void nm_policy_switch_device (NMData *data, NMDevice *switch_to_dev, NMDevice *old_dev)
-{
-	unsigned char			 buf[500];
-	unsigned char			 hostname[500] = "\0";
-	const unsigned char		*new_iface;
-	int					 host_err;
-	int					 dhclient_err;
-	FILE					*pidfile;
-
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (switch_to_dev != NULL);
-	g_return_if_fail (nm_device_get_iface (switch_to_dev));
-	g_return_if_fail (strlen (nm_device_get_iface (switch_to_dev)) >= 0);
-
-	/* If its a wireless device, set the ESSID and WEP key */
-	if (nm_device_get_iface_type (switch_to_dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
-	{
-		/* If there is a desired AP to connect to, use that essid and possible WEP key */
-		if (    data->desired_ap
-			&& (nm_ap_get_essid (data->desired_ap) != NULL))
-		{
-			nm_device_bring_down (switch_to_dev);
-
-			nm_device_set_essid (switch_to_dev, nm_ap_get_essid (data->desired_ap));
-
-			/* Disable WEP */
-			nm_device_set_wep_key (switch_to_dev, NULL);
-			if (nm_ap_get_wep_key (data->desired_ap))
-				nm_device_set_wep_key (switch_to_dev, nm_ap_get_wep_key (data->desired_ap));
-		}
-		else
-		{
-			/* If the card isn't up, bring it up so that we can scan.  We may be too early here to have
-			 * gotten all the scanning results, and therefore have no desired_ap.  Just wait.
-			 */
-			if (!nm_device_is_up (switch_to_dev));
-				nm_device_bring_up (switch_to_dev);
-
-			NM_DEBUG_PRINT ("nm_policy_activate_interface() could not find a desired AP.  Card doesn't support scanning?\n");
-			return;		/* Don't associate with any non-allowed access points */
-		}
-
-		NM_DEBUG_PRINT_1 ("nm_policy_activate_interface() using essid '%s'\n", nm_ap_get_essid (data->desired_ap));
-	}
-
-	host_err = gethostname (hostname, 500);
-
-	/* Take out any entries in the routing table and any IP address the old interface
-	 * had.
-	 */
-	if (old_dev && strlen (nm_device_get_iface (old_dev)))
-	{
-		/* Remove routing table entries */
-		snprintf (buf, 500, "/sbin/ip route flush dev %s", nm_device_get_iface (old_dev));
-		system (buf);
-
-		/* Remove ip address */
-		snprintf (buf, 500, "/sbin/ip address flush dev %s", nm_device_get_iface (old_dev));
-		system (buf);
-	}
-
-	/* Bring the device up */
-	if (!nm_device_is_up (switch_to_dev));
-		nm_device_bring_up (switch_to_dev);
-
-	/* Kill the old default route */
-	snprintf (buf, 500, "/sbin/ip route del default");
-	system (buf);
-
-	/* Find and kill the previous dhclient process for this interface */
-	new_iface = nm_device_get_iface (switch_to_dev);
-	snprintf (buf, 500, "/var/run/dhclient-%s.pid", new_iface);
-	pidfile = fopen (buf, "r");
-	if (pidfile)
-	{
-		int			len;
-		unsigned char	s_pid[20];
-		pid_t		n_pid = -1;
-
-		memset (s_pid, 0, 20);
-		fgets (s_pid, 19, pidfile);
-		len = strnlen (s_pid, 20);
-		fclose (pidfile);
-
-		n_pid = atoi (s_pid);
-		if (n_pid > 0)
-			kill (n_pid, 9);
-	}
-
-	snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
-					new_iface, new_iface, new_iface, new_iface);
-	dhclient_err = system (buf);
-	if (dhclient_err != 0)
-	{
-		/* Wireless devices cannot be down if they are the active interface,
-		 * otherwise we cannot use them for scanning.
-		 */
-		if (nm_device_get_iface_type (switch_to_dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
-		{
-			nm_device_set_essid (switch_to_dev, "");
-			nm_device_set_wep_key (switch_to_dev, NULL);
-			nm_device_bring_up (switch_to_dev);
-		}
-	}
-
-	/* Set the hostname back to what it was before so that X11 doesn't
-	 * puke when the hostname changes, so that users can actually launch stuff.
-	 */
-	if (host_err >= 0)
-		sethostname (hostname, strlen (hostname));
-
-	/* Restart the nameservice caching daemon to make apps aware of new DNS servers */
-	snprintf (buf, 500, "/sbin/service nscd restart");
-	system (buf);
-}
 
 
 /*
@@ -276,13 +156,11 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			 */
 			if (nm_device_get_iface_type (highest_priority_dev) == NM_IFACE_TYPE_WIRELESS_ETHERNET)
 			{
-				/* If we don't yet have a desired AP, attempt to get one. */
-				if (!data->desired_ap)
-					nm_wireless_do_scan (data, highest_priority_dev);
+				NMAccessPoint	*ap = nm_device_get_best_ap (highest_priority_dev);
 
-				if (    data->desired_ap
-					&& (nm_null_safe_strcmp (nm_device_get_essid (highest_priority_dev), nm_ap_get_essid (data->desired_ap)) != 0)
-					&& (strlen (nm_ap_get_essid (data->desired_ap)) > 0))
+				if (    ap
+					&& (nm_null_safe_strcmp (nm_device_get_essid (highest_priority_dev), nm_ap_get_essid (ap)) != 0)
+					&& (strlen (nm_ap_get_essid (ap)) > 0))
 						essid_change_needed = TRUE;
 			}
 
@@ -302,9 +180,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				 * after a main loop iteration, we make a much more complicated state machine.
 				 */
 				if (data->active_device)
-					nm_dbus_signal_device_no_longer_active (data->dbus_connection, data->active_device);
-
-				nm_policy_switch_device (data, highest_priority_dev, data->active_device);
+					nm_device_deactivate (data->active_device);
 
 				if (data->active_device)
 					nm_device_unref (data->active_device);
@@ -312,7 +188,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 				data->active_device = highest_priority_dev;
 				nm_device_ref (data->active_device);
 
-				nm_dbus_signal_device_now_active (data->dbus_connection, data->active_device);
+				nm_device_activate (data->active_device);
 
 				NM_DEBUG_PRINT ("**** Switched.\n");
 			}
@@ -324,6 +200,41 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	}
 
 	return (TRUE);
+}
+
+
+/*
+ * nm_policy_allowed_ap_refresh_worker
+ *
+ * Worker thread function to periodically refresh the allowed
+ * access point list with updated data.
+ *
+ */
+gpointer nm_policy_allowed_ap_refresh_worker (gpointer user_data)
+{
+	NMData		*data = (NMData *)(user_data);
+	struct timeval	 timeout;
+	
+	g_return_if_fail (data != NULL);
+	
+	/* Simply loop and every 20s update the available allowed ap data */
+	while (!allowed_ap_worker_exit)
+	{
+		int	err;
+
+		timeout.tv_sec = 20;
+		timeout.tv_usec = 0;
+		
+		/* Wait, but don't execute the update if select () returned an error,
+		 * since it may have immediately returned, so that we don't hammer
+		 * GConf (or the hard drive).
+		 */
+		err = select (0, NULL, NULL, NULL, &timeout);
+		if (err >= 0)
+			nm_policy_update_allowed_access_points (data);
+	}
+
+	g_thread_exit (0);
 }
 
 
@@ -341,7 +252,7 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 
 	g_return_if_fail (data != NULL);
 
-	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, NULL))
+	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
 	{
 		ap_file = fopen (NM_ALLOWED_AP_FILE, "r");
 		if (ap_file)
@@ -425,11 +336,49 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 			fclose (ap_file);
 		}
 		else
-			NM_DEBUG_PRINT_1( "nm_policy_update_allowed_access_points() could not open and lock allowed ap list file %s.  errno %d\n", NM_ALLOWED_AP_FILE );
+			NM_DEBUG_PRINT_2( "nm_policy_update_allowed_access_points() could not open allowed ap list file %s.  errno %d\n", NM_ALLOWED_AP_FILE, errno );
 	
-		nm_unlock_mutex (data->allowed_ap_list_mutex, NULL);
+		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
 	}
 	else
 		NM_DEBUG_PRINT( "nm_policy_update_allowed_access_points() could not lock allowed ap list mutex\n" );
 }
 
+
+/*
+ * nm_policy_essid_is_allowed
+ *
+ * Searches for a specific essid in the list of allowed access points.
+ */
+gboolean nm_policy_essid_is_allowed (NMData *data, const unsigned char *essid)
+{
+	gboolean	allowed = FALSE;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (essid != NULL, FALSE);
+
+	if (strlen (essid) <= 0)
+		return FALSE;
+
+	/* Acquire allowed AP list mutex, silently fail if we cannot */
+	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
+	{
+		GSList	*element = data->allowed_ap_list;
+		
+		while (element)
+		{
+			NMAccessPoint		*ap = (NMAccessPoint *)(element->data);
+
+			if (ap && (nm_null_safe_strcmp (nm_ap_get_essid (ap), essid) == 0))
+			{
+				allowed = TRUE;
+				break;
+			}
+			element = g_slist_next (element);
+		}
+
+		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
+	}
+
+	return (allowed);
+}

@@ -1,3 +1,42 @@
+2004-07-05  Dan Williams <dcbw@redhat.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- A bit more descriptive state message
+		- Don't segfault when reading directory
+
+	* src/NetworkManager.h
+		- Remove NMData desired_ap member, its now
+			per-device rather than global
+
+	* src/NetworkManager.c
+		- Remove references to desired_ap
+		- Move the allowed AP list refresh stuff into a thread
+
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerDevice.h
+		- Each wireless device now has a "best ap"
+		- Make device activate/deactivate functions per-device
+		- Make wireless scanning per-device
+		- Add IPv4 address discover functions, stub IPv6 ones
+		- Move ethernet address validation functions to NetworkManagerUtils.c
+		- Add wireless access point accessor function
+		- Get/Set functions for "best ap"
+
+	* src/NetworkManagerPolicy.c
+		- Move activate/deactivate stuff into NetworkManagerDevice.c, per-device
+		- Deal with per-device "best ap" rather than data->desired_apa
+		- Implement allowed access point worker thread
+		- Add nm_policy_essid_is_allowed() function
+
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+	  	- Add nm_ethernet_address_is_valid() function
+		- Add IPv4/IPv6 address get functions
+
+	* src/NetworkManagerWireless.c
+	  src/NetworkManagerWireless.h
+		- Move scanning stuff into NetworkManagerDevice.c, per-device
+
 2004-06-29  Dan Williams <dcbw@redhat.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c

@@ -37,7 +37,6 @@ struct NMData
 	GMutex					*state_modified_mutex;
 	GSList					*allowed_ap_list;
 	GMutex					*allowed_ap_list_mutex;
-	NMAccessPoint				*desired_ap;
 	DBusConnection				*dbus_connection;
 };
 
