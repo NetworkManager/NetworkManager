@@ -32,6 +32,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/if.h>
 #include <linux/unistd.h>
+#include <unistd.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>

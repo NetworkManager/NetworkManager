@@ -1883,7 +1883,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
 
 	/* Bring the device up and pause to allow card to associate. */
-	g_usleep (G_USEC_PER_SEC * 2);
+	g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
 
 	/* Some cards don't really work well in ad-hoc mode unless you explicitly set the bitrate
 	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information

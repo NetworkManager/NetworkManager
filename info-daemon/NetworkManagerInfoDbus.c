@@ -540,6 +540,8 @@ static DBusMessage *nmi_dbus_update_network_auth_method (NMIAppInfo *info, DBusM
 		gconf_client_set_int (info->gconf_client, key, auth_method, NULL);
 		g_free (key);
 	}
+	if (value)
+		gconf_value_free (value);
 
 	g_free (escaped_network);
 

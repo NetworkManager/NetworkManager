@@ -1,3 +1,16 @@
+2005-03-17  Dan Williams <dcbw@redhat.com>
+
+	Patch from Tom Parker:
+	* src/nm-netlink-monitor.c
+		- Include unistd.h
+	* info-daemon/NetworkManagerInfoDbus.c
+		- (nmi_dbus_update_network_auth_method): free GConf values
+
+	Patch from Nathaniel McCallum <npmccallum@gentoo.org>:
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_wireless_config): wait for successful
+			association longer for some cards (Atheros a/b/g)
+
 2005-03-15  Ray Strode  <rstrode@redhat.com>
 
 	* src/NetworkManager.c:
