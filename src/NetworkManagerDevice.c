@@ -225,7 +225,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		return (NULL);
 	}
 
-	dev = g_new0 (NMDevice, 1);
+	dev = g_malloc0 (sizeof (NMDevice));
 	if (!dev)
 	{
 		syslog (LOG_ERR, "nm_device_new() could not allocate a new device...  Not enough memory?");
@@ -253,7 +253,6 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	/* Initialize wireless-specific options */
 	if (nm_device_is_wireless (dev))
 	{
-		iwrange	range;
 		int		sk;
 
 		dev->options.wireless.scan_interval = 20;
@@ -286,8 +285,25 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
-			if (iw_get_range_info (sk, nm_device_get_iface (dev), &(dev->options.wireless.range_info)) == -1)
-				memset (&(dev->options.wireless.range_info), 0, sizeof (struct iw_range));
+			iwrange	range;
+			if (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0)
+			{
+				int i;
+
+				dev->options.wireless.max_qual.qual = range.max_qual.qual;
+				dev->options.wireless.max_qual.level = range.max_qual.level;
+				dev->options.wireless.max_qual.noise = range.max_qual.noise;
+				dev->options.wireless.max_qual.updated = range.max_qual.updated;
+
+				dev->options.wireless.avg_qual.qual = range.avg_qual.qual;
+				dev->options.wireless.avg_qual.level = range.avg_qual.level;
+				dev->options.wireless.avg_qual.noise = range.avg_qual.noise;
+				dev->options.wireless.avg_qual.updated = range.avg_qual.updated;
+
+				dev->options.wireless.num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
+				for (i = 0; i < dev->options.wireless.num_freqs; i++)
+					dev->options.wireless.freqs[i] = iw_freq2float (&(range.freq[i]));
+			}
 			close (sk);
 		}
 	}
@@ -365,7 +381,6 @@ gboolean nm_device_unref (NMDevice *dev)
 		if (nm_device_is_wireless (dev))
 		{
 			nm_device_ap_list_clear (dev);
-			dev->options.wireless.ap_list = NULL;
 
 			g_mutex_free (dev->options.wireless.scan_mutex);
 			if (dev->options.wireless.ap_list)
@@ -376,9 +391,8 @@ gboolean nm_device_unref (NMDevice *dev)
 		}
 
 		g_free (dev->udi);
-		dev->udi = NULL;
 		g_free (dev->iface);
-		dev->iface = NULL;
+		memset (dev, 0, sizeof (NMDevice));
 		g_free (dev);
 		deleted = TRUE;
 	}
@@ -525,7 +539,7 @@ gint nm_device_get_association_pause_value (NMDevice *dev)
 	 * has to scan all channels to find our requested AP (which can take a long time
 	 * if it is an A/B/G chipset like the Atheros 5212, for example).
 	 */
-	if (dev->options.wireless.range_info.num_frequency > 14)
+	if (dev->options.wireless.num_freqs > 14)
 		return 10;
 	else
 		return 5;
@@ -1049,7 +1063,7 @@ int nm_device_get_bitrate (NMDevice *dev)
 	g_return_val_if_fail (dev != NULL, 0);
 	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
 
-	/* Test devices don't really have a frequency, they always succeed */
+	/* Test devices don't really have a bitrate, they always succeed */
 	if (dev->test_device)
 		return 11;
 
@@ -1275,36 +1289,32 @@ void nm_device_update_signal_strength (NMDevice *dev)
 	g_return_if_fail (nm_device_is_wireless (dev));
 	g_return_if_fail (dev->app_data != NULL);
 
+	/* Grab the scan lock since our strength is meaningless during a scan. */
+	if (!nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
+		return;
+
 	/* If we aren't the active device, we don't really have a signal strength
 	 * that would mean anything.
 	 */
 	if (dev != dev->app_data->active_device)
 	{
 		dev->options.wireless.strength = -1;
-		return;
+		goto out;
 	}
 
 	/* Fake a value for test devices */
 	if (dev->test_device)
 	{
 		dev->options.wireless.strength = 75;
-		return;
+		goto out;
 	}
 
 	sk = iw_sockets_open ();
 	has_range = (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0);
 	if (iw_get_stats (sk, nm_device_get_iface (dev), &stats, &range, has_range) == 0)
 	{
-		/* Update our max quality while we're at it */
-		dev->options.wireless.max_quality = range.max_qual.level;
-		dev->options.wireless.noise = stats.qual.noise;
-		percent = nm_wireless_qual_to_percent (dev, &(stats.qual));
-	}
-	else
-	{
-		dev->options.wireless.max_quality = -1;
-		dev->options.wireless.noise = -1;
-		percent = -1;
+		percent = nm_wireless_qual_to_percent (&stats.qual, (const iwqual *)(&dev->options.wireless.max_qual),
+				(const iwqual *)(&dev->options.wireless.avg_qual));
 	}
 	close (sk);
 
@@ -1317,59 +1327,9 @@ void nm_device_update_signal_strength (NMDevice *dev)
 		dev->options.wireless.invalid_strength_counter = 0;
 
 	dev->options.wireless.strength = percent;
-}
 
-
-/*
- * nm_device_get_noise
- *
- * Get the current noise level of a wireless device.
- *
- */
-guint8 nm_device_get_noise (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
-
-	return (dev->options.wireless.noise);
-}
-
-
-/*
- * nm_device_get_max_quality
- *
- * Get the quality maximum of a wireless device.
- *
- */
-guint8 nm_device_get_max_quality (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
-
-	return (dev->options.wireless.max_quality);
-}
-
-
-/*
- * nm_device_get_bad_crypt_packets
- *
- * Return the number of packets the card has dropped because
- * they could not be successfully decrypted.
- *
- */
-guint32 nm_device_get_bad_crypt_packets (NMDevice *dev)
-{
-	iwstats	stats;
-	int		sk;
-	int		err;
-
-	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
-
-	sk = iw_sockets_open ();
-	err = iw_get_stats (sk, nm_device_get_iface (dev), &stats, NULL, FALSE);
-	close (sk);
-	return (err == 0 ? stats.discard.code : 0);
+out:
+	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 }
 
 
@@ -1936,6 +1896,8 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	double			 card_freqs[IW_MAX_FREQUENCIES];
 	int				 num_freqs = 0, i;
 	double			 freq_to_use = 0;
+	iwrange			 range;
+	int				 sk;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
@@ -1945,9 +1907,9 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 
 	/* Build our local list of frequencies to whittle down until we find a free one */
 	memset (&card_freqs, 0, sizeof (card_freqs));
-	num_freqs = MIN (dev->options.wireless.range_info.num_frequency, IW_MAX_FREQUENCIES);
+	num_freqs = MIN (dev->options.wireless.num_freqs, IW_MAX_FREQUENCIES);
 	for (i = 0; i < num_freqs; i++)
-		card_freqs[i] = iw_freq2float (&(dev->options.wireless.range_info.freq[i]));
+		card_freqs[i] = dev->options.wireless.freqs[i];
 
 	/* We need to find a clear wireless channel to use.  We will
 	 * only use 802.11b channels for now.
@@ -1964,13 +1926,23 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	}
 	nm_ap_list_iter_free (iter);
 
+	if ((sk = iw_sockets_open ()) < 0)
+		return FALSE;
+
+	if (iw_get_range_info (sk, nm_device_get_iface (dev), &range) < 0)
+	{
+		close (sk);
+		return FALSE;
+	}
+	close (sk);
+
 	/* Ok, find the first non-zero freq in our table and use it.
 	 * For now we only try to use a channel in the 802.11b channel
 	 * space so that most everyone can see it.
 	 */
 	for (i = 0; i < num_freqs; i++)
 	{
-		int channel = iw_freq_to_channel (card_freqs[i], &(dev->options.wireless.range_info));
+		int channel = iw_freq_to_channel (card_freqs[i], &range);
 		if (card_freqs[i] && (channel > 0) && (channel < 15))
 		{
 			freq_to_use = card_freqs[i];
@@ -1985,7 +1957,7 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 		int	channel = (int)(random () % 14);
 		int	err;
 
-		err = iw_channel_to_freq (channel, &pfreq, &(dev->options.wireless.range_info));
+		err = iw_channel_to_freq (channel, &pfreq, &range);
 		if (err == channel)
 			freq_to_use = pfreq;
 	}
@@ -2039,20 +2011,26 @@ static gboolean AP_NEED_KEY (NMDevice *dev, NMAccessPoint *ap)
 /*
  * get_initial_auth_method
  *
- * Ensure the auth method the AP reports is valid for its encryption mode.
+ * Update the auth method of the AP from the last-known-good one saved in the allowed list
+ * (which is found from NMI) and ensure that its valid with the encryption status of the AP.
  *
  */
-static NMDeviceAuthMethod get_initial_auth_method (NMAccessPoint *ap)
+static NMDeviceAuthMethod get_initial_auth_method (NMAccessPoint *ap, NMAccessPointList *allowed_list)
 {
 	g_return_val_if_fail (ap != NULL, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 
 	if (nm_ap_get_encrypted (ap))
 	{
-		NMDeviceAuthMethod	auth = nm_ap_get_auth_method (ap);
+		NMDeviceAuthMethod	 auth = nm_ap_get_auth_method (ap);
+		NMAccessPoint		*allowed_ap = nm_ap_list_get_ap_by_essid (allowed_list, nm_ap_get_essid (ap));
+		
+		/* Prefer default auth method if we found one for this AP in our allowed list. */
+		if (allowed_ap)
+			auth = nm_ap_get_auth_method (allowed_ap);
 
 		if (    (auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
 			|| (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
-			return (nm_ap_get_auth_method (ap));
+			return (auth);
 		else
 			return (NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 	}
@@ -2207,7 +2185,7 @@ need_key:
 
 try_connect:
 	/* Initial authentication method */
-	nm_ap_set_auth_method (best_ap, get_initial_auth_method (best_ap));
+	nm_ap_set_auth_method (best_ap, get_initial_auth_method (best_ap, dev->app_data->allowed_ap_list));
 
 	while (success == FALSE)
 	{
@@ -3289,6 +3267,7 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
 		{
 			NMAccessPoint		*nm_ap  = nm_ap_new ();
+			int				 percent;
 
 			/* Copy over info from scan to local structure */
 
@@ -3339,7 +3318,10 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			else
 				nm_ap_set_mode (nm_ap, NETWORK_MODE_INFRA);
 
-			nm_ap_set_strength (nm_ap, nm_wireless_qual_to_percent (dev, &(tmp_ap->stats.qual)));
+			percent = nm_wireless_qual_to_percent (&(tmp_ap->stats.qual),
+							(const iwqual *)(&dev->options.wireless.max_qual),
+							(const iwqual *)(&dev->options.wireless.avg_qual));
+			nm_ap_set_strength (nm_ap, percent);
 
 			if (tmp_ap->b.has_freq)
 				nm_ap_set_freq (nm_ap, tmp_ap->b.freq);

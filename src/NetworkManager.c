@@ -102,6 +102,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (udi  != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (strlen (iface) > 0, NULL);
 
 	/* If we are called to create a test devices, but test devices weren't enabled
 	 * on the command-line, don't create the device.

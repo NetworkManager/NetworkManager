@@ -665,13 +665,13 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	if (strcmp ("getKeyForNetwork", method) == 0)
 	{
 		GtkWidget	*dialog = glade_xml_get_widget (info->passphrase_dialog, "passphrase_dialog");
-		if (!GTK_WIDGET_VISIBLE (dialog))
+		if (dialog && !GTK_WIDGET_VISIBLE (dialog))
 			nmi_dbus_get_key_for_network (info, message);
 	}
 	else if (strcmp ("cancelGetKeyForNetwork", method) == 0)
 	{
 		GtkWidget	*dialog = glade_xml_get_widget (info->passphrase_dialog, "passphrase_dialog");
-		if (GTK_WIDGET_VISIBLE (dialog))
+		if (dialog && GTK_WIDGET_VISIBLE (dialog))
 			nmi_passphrase_dialog_cancel (info);
 	}
 	else if (strcmp ("getVPNUserPass", method) == 0)

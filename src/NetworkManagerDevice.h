@@ -83,9 +83,6 @@ gboolean		nm_device_set_mode				(NMDevice *dev, const NMNetworkMode mode);
 
 gint8		nm_device_get_signal_strength		(NMDevice *dev);
 void			nm_device_update_signal_strength	(NMDevice *dev);
-guint8		nm_device_get_noise				(NMDevice *dev);
-guint8		nm_device_get_max_quality		(NMDevice *dev);
-guint32 		nm_device_get_bad_crypt_packets	(NMDevice *dev);
 
 NMAccessPoint *nm_device_get_best_ap			(NMDevice *dev);
 void			nm_device_set_best_ap			(NMDevice *dev, NMAccessPoint *ap);

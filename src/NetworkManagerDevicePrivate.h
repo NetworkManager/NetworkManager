@@ -36,13 +36,15 @@
 /* Wireless device specific options */
 typedef struct NMDeviceWirelessOptions
 {
-	char				*cur_essid;
+	char				*cur_essid;	/* Mainly for test devices */
 	gboolean			 supports_wireless_scan;
-	guint8			 max_quality;
-	guint8			 noise;
 	gint8			 strength;
 	gint8			 invalid_strength_counter;
-	struct iw_range	 range_info;
+	iwqual			 max_qual;
+	iwqual			 avg_qual;
+
+	gint8			 num_freqs;
+	double			 freqs[IW_MAX_FREQUENCIES];
 
 	GMutex			*scan_mutex;
 	NMAccessPointList	*ap_list;
@@ -59,7 +61,8 @@ typedef struct NMDeviceWirelessOptions
 /* Wired device specific options */
 typedef struct NMDeviceWiredOptions
 {
-	int	foo;
+	guint			 link_watch_id;
+	guint			 foo;
 } NMDeviceWiredOptions;
 
 typedef union NMDeviceOptions

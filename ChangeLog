@@ -1,3 +1,33 @@
+2005-01-31  Dan Williams  <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- (nmi_dbus_nmi_message_handler): make sure 'dialog' exists before using it
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_new): Don't store the entire range struct, use only what we need
+			(which is currently avg_quality, max_quality, and frequencies).  Also
+			zero device structure when we've free'd it to maybe expose errors down
+			the line.
+		- (nm_device_update_signal_strength): grab the scan mutex before getting
+			quality data from the card since quality will be useless during a scan.
+			Call updated wireless qual-to-percent function with values stored in
+			nm_device_new() earlier.
+		- Remove some unused functions (nm_device_get_max_quality(), nm_device_get_noise(),
+			nm_device_get_bad_crypt_packets())
+		- (nm_device_activate_wireless_adhoc): use new frequency values we go in
+			nm_device_new()
+		- (get_initial_auth_method): always use the Auth method that's in the allowed
+			list if available.  Problem was this: when the WEP key is wrong, NM will
+			try OS then SK modes, and then get stuck in SK mode after that.  This
+			should reset it.
+		- (nm_device_wireless_process_scan_results): work with new qual-to-percent
+			function
+
+	* src/NetworkManagerWireless.c
+		- (nm_wireless_qual_to_percent): try to make this function actually work and
+			mimic iwlib behavior.  Use card's idea of quality divided by max_qual
+			if that's all present, otherwise fall back to signal-to-noise ratios.
+
 2005-01-29  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager
