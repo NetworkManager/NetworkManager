@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-17 04:45+0200\n"
+"POT-Creation-Date: 2004-10-19 13:38-0400\n"
 "PO-Revision-Date: 2004-09-22 08:56-0300\n"
 "Last-Translator: Raphael Higino <raphaelh@uai.com.br>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
@@ -16,28 +16,23 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Redes Sem Fio:</span>"
-
-#: info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade:11
 msgid "Modify Wireless Networks"
 msgstr "Modificar Redes Sem Fio"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
-msgid "*"
-msgstr "*"
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Redes Sem Fio:</span>"
 
-#: info-daemon/passphrase.glade.h:2
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"Frase Secreta de 128 bits\n"
-"Chave Hexa Bruta de 128 bits"
+#: info-daemon/passphrase.glade:9
+msgid "Wireless Network Key Required"
+msgstr "Chave da Rede Sem Fio Requerida"
 
-#: info-daemon/passphrase.glade.h:5
-#, no-c-format
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "_Entrar na rede"
+
+#: info-daemon/passphrase.glade:100
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -51,22 +46,26 @@ msgstr ""
 "Uma frase secreta ou uma chave de criptografia é requerida para acessar a "
 "rede sem fio '%s'."
 
-#: info-daemon/passphrase.glade.h:8
+#: info-daemon/passphrase.glade:129
 msgid "Key Type:"
 msgstr "Tipo de Chave:"
 
-#: info-daemon/passphrase.glade.h:9
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"Frase Secreta de 128 bits\n"
+"Chave Hexa Bruta de 128 bits"
+
+#: info-daemon/passphrase.glade:180
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Frase Secreta:"
 
-#: info-daemon/passphrase.glade.h:10
-msgid "Wireless Network Key Required"
-msgstr "Chave da Rede Sem Fio Requerida"
-
-#: info-daemon/passphrase.glade.h:11
-msgid "_Login to Network"
-msgstr "_Entrar na rede"
+#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
+msgid "*"
+msgstr "*"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
@@ -101,17 +100,17 @@ msgstr "Nenhum dispositivo de rede foi encontrado"
 msgid "NetworkManager is not running..."
 msgstr "O Gerenciador de Rede não está sendo executado..."
 
-#: panel-applet/essid.glade.h:2
+#: panel-applet/essid.glade:52
 msgid "C_onnect"
 msgstr "C_onectar"
 
-#: panel-applet/essid.glade.h:3
-msgid "Wireless _Adaptor:"
-msgstr "_Adaptador Sem Fio:"
-
-#: panel-applet/essid.glade.h:4
+#: panel-applet/essid.glade:131
 msgid "Wireless _Network:"
 msgstr "_Rede Sem Fio:"
+
+#: panel-applet/essid.glade:177
+msgid "Wireless _Adaptor:"
+msgstr "_Adaptador Sem Fio:"
 
 #: panel-applet/menu-info.c:101
 #, c-format

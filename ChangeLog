@@ -1,3 +1,8 @@
+Tue Oct 19 14:19:24 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* configure.in:
+	* NEWS: Released NetworkManager-0.3.1
+
 2004-10-18 Dan Williams <dcbw@redhat.com>
 
 	Patches from Thom May:

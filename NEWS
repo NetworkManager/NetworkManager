@@ -1,3 +1,23 @@
+============================================
+NetworkManager-0.3.1
+Overview of changes since NetworkManager-0.3
+============================================
+
+NetworkManager:
+
+ * Debian backend fixes, Thom May
+ * Build fixes, Thom May
+ * Better handling of encrypted devices, Dan Williams
+ * Better handling of user-selected access points, Dan Williams
+
+NetworkManagerNotification:
+
+ * Simplified D-Bus code, Dan Williams
+ * Better error handling and feedback, Dan Williams
+ * Greatly simplify the locking to UI smoother, Dan Williams
+
+============================================
+NetworkManager-0.3.0
 Overview of changes since NetworkManager-0.2
 ============================================
 
@@ -49,7 +69,7 @@ Translations:
        Martin Willemoes Hansen
        Hendrik Brandt
 
-NetworkManagerApplet:
+NetworkManagerNotification:
 
  * Complete rewrite, Jonathan Blandford and John Palmieri
    - Now a Notification area

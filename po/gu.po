@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-14 17:11-0400\n"
+"POT-Creation-Date: 2004-10-19 13:38-0400\n"
 "PO-Revision-Date: 2004-09-09 14:24+0530\n"
 "Last-Translator: Ankit Patel <ankit@redhat.com>\n"
 "Language-Team: Gujarati\n"
@@ -72,31 +72,31 @@ msgid "Key:"
 msgstr ""
 
 #. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:609 panel-applet/NMWirelessApplet.c:619
+#: panel-applet/NMWirelessApplet.c:691 panel-applet/NMWirelessApplet.c:701
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr "નેટવર્ક વ્યવસ્થાપક એપ્લેટ અમુક જરુરી સ્રોતો શોધી શકી નહિં (glade ફાઈલ મળી નથી)."
 
-#: panel-applet/NMWirelessApplet.c:634
+#: panel-applet/NMWirelessApplet.c:716
 #, fuzzy
 msgid "Custom wireless network"
 msgstr "વાયરલેસ નેટવર્કો"
 
-#: panel-applet/NMWirelessApplet.c:635
+#: panel-applet/NMWirelessApplet.c:717
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:716
+#: panel-applet/NMWirelessApplet.c:800
 #, fuzzy
 msgid "Other Wireless Networks..."
 msgstr "વાયરલેસ નેટવર્કો"
 
-#: panel-applet/NMWirelessApplet.c:827
+#: panel-applet/NMWirelessApplet.c:911
 msgid "No network devices have been found"
 msgstr ""
 
-#: panel-applet/NMWirelessApplet.c:944
+#: panel-applet/NMWirelessApplet.c:1028
 msgid "NetworkManager is not running..."
 msgstr "નેટવર્ક વ્યવસ્થાપક ચાલતું નથી..."
 

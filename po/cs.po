@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-18 06:13+0200\n"
+"POT-Creation-Date: 2004-10-19 13:38-0400\n"
 "PO-Revision-Date: 2004-10-18 11:50+0200\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
@@ -18,28 +18,23 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
 "10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Bezdrátové sítě:</span>"
-
-#: info-daemon/networks.glade.h:2
+#: info-daemon/networks.glade:11
 msgid "Modify Wireless Networks"
 msgstr "Upravit bezdrátové sítě"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
-msgid "*"
-msgstr "*"
+#: info-daemon/networks.glade:92
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Bezdrátové sítě:</span>"
 
-#: info-daemon/passphrase.glade.h:2
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"128-bitové heslo\n"
-"128-bitový klíč šestnáctkově"
+#: info-daemon/passphrase.glade:9
+msgid "Wireless Network Key Required"
+msgstr "Je vyžadován klíč bezdrátové sítě"
 
-#: info-daemon/passphrase.glade.h:5
-#, no-c-format
+#: info-daemon/passphrase.glade:52
+msgid "_Login to Network"
+msgstr "_Přihlásit se k síti"
+
+#: info-daemon/passphrase.glade:100
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -51,22 +46,26 @@ msgstr ""
 "\n"
 "Pro přístup k bezdrátové síti '%s' je vyžadováno heslo nebo šifrovací klíč."
 
-#: info-daemon/passphrase.glade.h:8
+#: info-daemon/passphrase.glade:129
 msgid "Key Type:"
 msgstr "Typ klíče:"
 
-#: info-daemon/passphrase.glade.h:9
+#: info-daemon/passphrase.glade:150
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bitové heslo\n"
+"128-bitový klíč šestnáctkově"
+
+#: info-daemon/passphrase.glade:180
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Heslo:"
 
-#: info-daemon/passphrase.glade.h:10
-msgid "Wireless Network Key Required"
-msgstr "Je vyžadován klíč bezdrátové sítě"
-
-#: info-daemon/passphrase.glade.h:11
-msgid "_Login to Network"
-msgstr "_Přihlásit se k síti"
+#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
+msgid "*"
+msgstr "*"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
@@ -101,17 +100,17 @@ msgstr "Nebylo nalezeno žádné síťové zařízení"
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
 
-#: panel-applet/essid.glade.h:2
+#: panel-applet/essid.glade:52
 msgid "C_onnect"
 msgstr "_Připojit"
 
-#: panel-applet/essid.glade.h:3
-msgid "Wireless _Adaptor:"
-msgstr "Bezdrátový _adaptér:"
-
-#: panel-applet/essid.glade.h:4
+#: panel-applet/essid.glade:131
 msgid "Wireless _Network:"
 msgstr "Bezdrátová _síť:"
+
+#: panel-applet/essid.glade:177
+msgid "Wireless _Adaptor:"
+msgstr "Bezdrátový _adaptér:"
 
 #: panel-applet/menu-info.c:101
 #, c-format
