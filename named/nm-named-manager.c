@@ -36,7 +36,7 @@
 #include <sys/param.h>
 #include <syslog.h>
 #include <glib.h>
-#include "utils/nm-utils.h"
+#include "nm-utils.h"
 
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>

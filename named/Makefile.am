@@ -4,6 +4,8 @@ namedconfdir = $(pkgdatadir)
 
 EXTRA_DIST = $(namedconf_DATA)
 
+INCLUDES = -I${top_srcdir}/utils
+
 noinst_LTLIBRARIES = libnamed.la
 
 libnamed_la_SOURCES = nm-named-manager.h nm-named-manager.c
