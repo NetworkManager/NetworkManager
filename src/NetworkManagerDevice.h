@@ -26,6 +26,15 @@
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 
+typedef enum NMDeviceAuthMethod
+{
+	NM_DEVICE_AUTH_METHOD_UNKNOWN = 0,
+	NM_DEVICE_AUTH_METHOD_NONE,
+	NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM,
+	NM_DEVICE_AUTH_METHOD_SHARED_KEY
+} NMDeviceAuthMethod;
+
+
 typedef struct NMDevice	NMDevice;
 
 NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_device,
@@ -86,7 +95,7 @@ gboolean		nm_device_is_best_ap_frozen		(NMDevice *dev);
 char *		nm_device_get_path_for_ap		(NMDevice *dev, NMAccessPoint *ap);
 
 /* There is no function to get the WEP key since that's a slight security risk */
-void			nm_device_set_enc_key			(NMDevice *dev, const char *key);
+void			nm_device_set_enc_key			(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);
 
 gboolean		nm_device_activation_begin		(NMDevice *dev);
 void			nm_device_activation_cancel		(NMDevice *dev);

@@ -772,7 +772,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
  *		NOTE that at this time, the key must be the raw HEX key, not
  *		a passphrase.
  */
-void nm_device_set_enc_key (NMDevice *dev, const char *key)
+void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method)
 {
 	int				iwlib_socket;
 	int				err;
@@ -822,7 +822,18 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key)
 			keylen = iw_in_key_full(iwlib_socket, nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
 			if (keylen > 0)
 			{
-				wreq.u.data.flags |= IW_ENCODE_RESTRICTED;		/* FIXME: what about restricted/Shared Key? */
+				switch (auth_method)
+				{
+					case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
+						wreq.u.data.flags |= IW_ENCODE_OPEN;
+						break;
+					case NM_DEVICE_AUTH_METHOD_SHARED_KEY:
+						wreq.u.data.flags |= IW_ENCODE_RESTRICTED;
+						break;
+					default:
+						wreq.u.data.flags |= IW_ENCODE_RESTRICTED;
+						break;
+				}
 				wreq.u.data.pointer	=  (caddr_t) &parsed_key;
 				wreq.u.data.length	=  keylen;
 				set_key = TRUE;
@@ -1312,11 +1323,11 @@ static gboolean nm_device_activate_wireless (NMDevice *dev, NMAccessPoint *ap, g
 	 * if we are going to encrypt traffic.
 	 */
 	essid = nm_ap_get_essid (ap);
-	nm_device_set_enc_key (dev, NULL);
+	nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 	if (nm_ap_get_encrypted (ap) && nm_ap_get_enc_key_source (ap))
 	{
 		char *hashed_key = nm_ap_get_enc_key_hashed (ap);
-		nm_device_set_enc_key (dev, hashed_key);
+		nm_device_set_enc_key (dev, hashed_key, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
 		g_free (hashed_key);
 	}
 
@@ -1447,7 +1458,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): asking for user key.", nm_device_get_iface (dev));
 				while (!dev->options.wireless.user_key_received && !dev->quit_activation)
 					g_usleep (G_USEC_PER_SEC / 2);
-
+	
 				syslog (LOG_DEBUG, "nm_device_activation_worker(%s): user key received.", nm_device_get_iface (dev));
 
 				/* If we were told to quit activation, stop the thread and return */
@@ -1455,7 +1466,7 @@ void nm_device_activate_wireless_wait_for_link (NMDevice *dev)
 					goto out;
 			}
 
-			/* Try activating again with up-to-date access point and keys */	
+			/* Try activating again with up-to-date access point and keys */
 			nm_device_activate_wireless (dev, best_ap, &bad_crypt_packets);
 		}
 		else
@@ -1504,7 +1515,7 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev)
 			if (nm_device_is_wireless (dev))
 			{
 				nm_device_set_essid (dev, "");
-				nm_device_set_enc_key (dev, NULL);
+				nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 			}
 
 			nm_device_bring_up (dev);
@@ -1724,7 +1735,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	if (nm_device_is_wireless (dev))
 	{
 		nm_device_set_essid (dev, "");
-		nm_device_set_enc_key (dev, NULL);
+		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 	}
 
 	return (TRUE);
@@ -2107,7 +2118,7 @@ void nm_device_update_best_ap (NMDevice *dev)
 	if (!best_ap)
 	{
 		nm_device_set_essid (dev, " ");
-		nm_device_set_enc_key (dev, NULL);
+		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 		nm_device_bring_up (dev);
 	}
 }
@@ -2161,11 +2172,11 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			default:
 				break;
 		}
-		nm_device_set_enc_key (dev, hashed_key);
+		nm_device_set_enc_key (dev, hashed_key, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
 		g_free (hashed_key);
 	}
 	else
-		nm_device_set_enc_key (dev, "11111111111111111111111111");
+		nm_device_set_enc_key (dev, "11111111111111111111111111", NM_DEVICE_AUTH_METHOD_SHARED_KEY);
 	nm_device_set_essid (dev, network);
 
 	/* Bring the device up and pause to allow card to associate */
@@ -2187,7 +2198,7 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 		/* Force the card into Managed/Infrastructure mode */
 		nm_device_set_mode_managed (dev);
 
-		nm_device_set_enc_key (dev, NULL);
+		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 		nm_device_set_essid (dev, network);
 
 		/* Bring the device up and pause to allow card to associate */
@@ -2504,11 +2515,11 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 		if (nm_ap_get_enc_key_source (ap))
 		{
 			char *hashed_key = nm_ap_get_enc_key_hashed (ap);
-			nm_device_set_enc_key (dev, hashed_key);
+			nm_device_set_enc_key (dev, hashed_key, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
 			g_free (hashed_key);
 		}
 		else
-			nm_device_set_enc_key (dev, NULL);
+			nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 
 		/* Wait a bit for association */
 		g_usleep (G_USEC_PER_SEC);
