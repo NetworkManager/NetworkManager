@@ -27,6 +27,8 @@
 #include <syslog.h>
 #include <net/ethernet.h>
 #include <iwlib.h>
+#include <sys/time.h>
+#include <stdarg.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
@@ -47,5 +49,39 @@ void					nm_dispose_scan_results			(wireless_scan *result_list);
 int					nm_spawn_process				(char *args);
 
 NMDriverSupportLevel	nm_get_driver_support_level		(LibHalContext *ctx, NMDevice *dev);
+
+#define NM_COMPLETION_TRIES_INFINITY -1
+
+typedef gboolean (*nm_completion_func)(int tries, va_list args);
+typedef gboolean (*nm_completion_boolean_function_1)(u_int64_t arg);
+typedef gboolean (*nm_completion_boolean_function_2)(
+	u_int64_t arg0, u_int64_t arg1);
+
+void nm_wait_for_completion(
+	const int max_tries,
+	const guint interval_usecs,
+	nm_completion_func test_func,
+	nm_completion_func action_func,
+	...);
+
+void nm_wait_for_completion_or_timeout(
+	const int max_tries,
+	const struct timeval *max_time,
+	const guint interval_usecs,
+	nm_completion_func test_func,
+	nm_completion_func action_func,
+	...);
+
+void nm_wait_for_timeout(
+	const struct timeval *max_time,
+	const guint interval_usecs,
+	nm_completion_func test_func,
+	nm_completion_func action_func,
+	...);
+
+gboolean nm_completion_boolean_test(int tries, va_list args);
+gboolean nm_completion_boolean_function1_test(int tries, va_list args);
+gboolean nm_completion_boolean_function2_test(int tries, va_list args);
+#define nm_completion_boolean_function_test nm_completion_boolean_function1_test
 
 #endif

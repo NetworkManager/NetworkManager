@@ -343,6 +343,8 @@ char *nm_dbus_network_status_from_data (NMData *data)
 
 	g_return_val_if_fail (data != NULL, NULL);
 
+	if (data->asleep == TRUE)
+		status = g_strdup ("asleep");
 	if (data->forcing_device)
 		status = g_strdup ("scanning");
 	else if (data->active_device && nm_device_is_activating (data->active_device))

@@ -36,6 +36,7 @@
 #include <sys/param.h>
 #include <syslog.h>
 #include <glib.h>
+#include "utils/nm-utils.h"
 
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
@@ -512,7 +513,7 @@ nm_named_manager_start (NMNamedManager *mgr, GError **error)
 		return FALSE;
 	}
 	g_ptr_array_free (named_argv, TRUE);
-	syslog (LOG_INFO, "named started with pid %d", pid);
+	nm_info ("named started with pid %d", pid);
 	mgr->priv->named_pid = pid;
 	if (mgr->priv->child_watch)
 		g_source_destroy (mgr->priv->child_watch);

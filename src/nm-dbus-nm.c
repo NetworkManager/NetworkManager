@@ -460,8 +460,25 @@ static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 	dbus_error_init (&err);
 	if (dbus_message_get_args (message, &err, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID))
 	{
-		data->data->wireless_enabled = enabled;
-		nm_policy_schedule_state_update (data->data);
+		GSList	*elt;
+		NMData	*app_data;
+
+		app_data = data->data;
+		app_data->wireless_enabled = enabled;
+
+		/* Physically down all wireless devices */
+		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
+		{
+			NMDevice	*dev = (NMDevice *)(elt->data);
+			if (nm_device_is_wireless (dev))
+			{
+				nm_device_deactivate (dev, FALSE);
+				nm_device_bring_down (dev);
+			}
+		}
+		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		nm_policy_schedule_state_update (app_data);
 	}
 
 	return NULL;
@@ -477,6 +494,51 @@ static DBusMessage *nm_dbus_nm_get_wireless_enabled (DBusConnection *connection,
 		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &data->data->wireless_enabled, DBUS_TYPE_INVALID);
 
 	return reply;
+}
+
+static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	GSList	*elt;
+	NMData	*app_data;
+
+	g_return_val_if_fail (data && data->data && connection && message, NULL);
+
+	app_data = data->data;
+	if (app_data->asleep == FALSE)
+	{
+		app_data->asleep = TRUE;
+
+		/* Physically down all devices */
+		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
+		{
+			NMDevice	*dev = (NMDevice *)(elt->data);
+
+			nm_device_deactivate (dev, FALSE);
+			nm_device_bring_down (dev);
+		}
+		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		nm_policy_schedule_state_update (app_data);
+	}
+
+	return NULL;
+}
+
+static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	GSList	*elt;
+	NMData	*app_data;
+
+	g_return_val_if_fail (data && data->data && connection && message, NULL);
+
+	app_data = data->data;
+	if (app_data->asleep == TRUE)
+	{
+		app_data->asleep = FALSE;
+		nm_policy_schedule_state_update (app_data);
+	}
+
+	return NULL;
 }
 
 static DBusMessage *nm_dbus_nm_get_status (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
@@ -514,6 +576,8 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getScanningEnabled",		nm_dbus_nm_get_scanning_enabled);
 	nm_dbus_method_list_add_method (list, "setWirelessEnabled",		nm_dbus_nm_set_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "getWirelessEnabled",		nm_dbus_nm_get_wireless_enabled);
+	nm_dbus_method_list_add_method (list, "sleep",				nm_dbus_nm_sleep);
+	nm_dbus_method_list_add_method (list, "wake",				nm_dbus_nm_wake);
 	nm_dbus_method_list_add_method (list, "status",				nm_dbus_nm_get_status);
 	nm_dbus_method_list_add_method (list, "createTestDevice",		nm_dbus_nm_create_test_device);
 	nm_dbus_method_list_add_method (list, "removeTestDevice",		nm_dbus_nm_remove_test_device);

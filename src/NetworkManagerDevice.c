@@ -48,6 +48,8 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_on
 static gboolean nm_device_wireless_scan (gpointer user_data);
 static gboolean supports_mii_carrier_detect (NMDevice *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice *dev);
+static gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable);
+static gboolean nm_device_activation_handle_cancel (NMDevice *dev);
 
 typedef struct
 {
@@ -218,7 +220,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	if (!app_data->enable_test_devices && test_dev)
 	{
 		nm_warning ("attempt to create a test device, but test devices were not enabled "
-			    "on the command line.  Will not create the device.\n");
+			    "on the command line.  Will not create the device.");
 		return (NULL);
 	}
 
@@ -252,8 +254,8 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		goto err;
 
 	/* Have to bring the device up before checking link status and other stuff */
-	nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC);
+	nm_device_bring_up_wait (dev, 0);
+
 	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
 
 	/* Initialize wireless-specific options */
@@ -330,10 +332,12 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	}
 
 	/* Block until our device thread has actually had a chance to start. */
-	nm_info ("waiting for device's worker thread to start.\n");
-	while (dev->worker_started == FALSE)
-		g_usleep (G_USEC_PER_SEC / 2);
-	nm_info ("device's worker thread started, continuing.\n");
+	nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY,
+			G_USEC_PER_SEC / 20, nm_completion_boolean_test, NULL,
+			&dev->worker_started,
+			"nm_device_new(): waiting for device's worker thread to start",
+			LOG_INFO, 0);
+	nm_info ("nm_device_new(): device's worker thread started, continuing.");
 
 	return (dev);
 
@@ -373,10 +377,8 @@ gboolean nm_device_unref (NMDevice *dev)
 	dev->refcount--;
 	if (dev->refcount <= 0)
 	{
-		if (dev->loop)
-			g_main_loop_quit (dev->loop);
-		while (dev->worker_done == FALSE)
-			g_usleep (300);
+		nm_device_worker_thread_stop (dev);
+		nm_device_bring_down (dev);
 
 		if (nm_device_is_wireless (dev))
 		{
@@ -420,11 +422,9 @@ static gpointer nm_device_worker (gpointer user_data)
 
 	if (!dev)
 	{
-		nm_error ("received NULL device object, NetworkManager cannot continue.\n");
+		nm_error ("received NULL device object, NetworkManager cannot continue.");
 		exit (1);
 	}
-
-	dev->worker_started = TRUE;
 
 	/* Do an initial wireless scan */
 	if (nm_device_is_wireless (dev))
@@ -437,6 +437,7 @@ static gpointer nm_device_worker (gpointer user_data)
 		g_source_unref (source);
 	}
 
+	dev->worker_started = TRUE;
 	g_main_loop_run (dev->loop);
 
 	/* Remove any DHCP timeouts that might have been running */
@@ -460,9 +461,11 @@ void nm_device_worker_thread_stop (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	g_main_loop_quit (dev->loop);
-	while (dev->worker_done == FALSE)
-		g_usleep (G_USEC_PER_SEC / 2);
+	if (dev->loop)
+		g_main_loop_quit (dev->loop);
+	nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY, 300,
+			nm_completion_boolean_test, NULL, &dev->worker_done,
+			NULL, NULL, 0);
 }
 
 
@@ -1518,20 +1521,6 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
  * Interface state functions: bring up, down, check
  *
  */
-void nm_device_bring_up (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_device_set_up_down (dev, TRUE);
-}
-
-void nm_device_bring_down (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_device_set_up_down (dev, FALSE);
-}
-
 gboolean nm_device_is_up (NMDevice *dev)
 {
 	int			sk;
@@ -1556,6 +1545,94 @@ gboolean nm_device_is_up (NMDevice *dev)
 
 	nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 	return (FALSE);
+}
+
+/* I really wish nm_v_wait_for_completion_or_timeout could translate these
+ * to first class args instead of a va_list, so these helpers could be nice
+ * and _tiny_.
+ *
+ * ... and we can probably do that with __builtin_apply(), or libffi,
+ * but that's kindof cheating. */
+gboolean nm_completion_device_is_up_test(int tries, va_list args)
+{
+	NMDevice *dev = va_arg(args, NMDevice *);
+	gboolean *err = va_arg(args, gboolean *);
+	gboolean cancelable = va_arg(args, gboolean);
+
+	g_return_val_if_fail(dev != NULL, TRUE);
+	g_return_val_if_fail(err != NULL, TRUE);
+
+	*err = FALSE;
+	if (cancelable && nm_device_activation_handle_cancel(dev)) {
+		*err = TRUE;
+		return TRUE;
+	}
+	if (nm_device_is_up (dev))
+		return TRUE;
+	return FALSE;
+}
+
+void nm_device_bring_up (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	nm_device_set_up_down (dev, TRUE);
+}
+
+gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable)
+{
+	gboolean err = FALSE;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	nm_device_bring_up (dev);
+	nm_wait_for_completion(400, G_USEC_PER_SEC / 200, NULL,
+			nm_completion_device_is_up_test, dev,
+			&err, cancelable);
+	if (err)
+		syslog (LOG_INFO, "failed to bring device up");
+	return err;
+}
+
+void nm_device_bring_down (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	nm_device_set_up_down (dev, FALSE);
+}
+
+gboolean nm_completion_device_is_down_test(int tries, va_list args)
+{
+	NMDevice *dev = va_arg(args, NMDevice *);
+	gboolean *err = va_arg(args, gboolean *);
+	gboolean cancelable = va_arg(args, gboolean);
+
+	g_return_val_if_fail(dev != NULL, TRUE);
+	g_return_val_if_fail(err != NULL, TRUE);
+
+	*err = FALSE;
+	if (cancelable && nm_device_activation_handle_cancel(dev)) {
+		*err = TRUE;
+		return TRUE;
+	}
+	if (!nm_device_is_up (dev))
+		return TRUE;
+	return FALSE;
+}
+
+gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
+{
+	gboolean err = FALSE;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	nm_device_bring_down (dev);
+	nm_wait_for_completion(400, G_USEC_PER_SEC / 200, NULL,
+			nm_completion_device_is_down_test, dev,
+			&err, cancelable);
+	if (err)
+		syslog (LOG_INFO, "failed to bring device down");
+	return err;
 }
 
 
@@ -1755,6 +1832,47 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
 }
 
 
+static gboolean nm_dwwfl_test (int tries, va_list args)
+{
+	NMDevice *dev = va_arg (args, NMDevice *);
+	guint *assoc_count = va_arg (args, guint *);
+	double *last_freq = va_arg (args, double *);
+	char *essid = va_arg (args, char *);
+	int required = va_arg (args, int);
+
+	double cur_freq = nm_device_get_frequency (dev);
+	gboolean assoc = nm_device_wireless_is_associated (dev);
+	const char * cur_essid = nm_device_get_essid (dev);
+
+	/* If we've been cancelled, return that we should stop */
+	if (nm_device_activation_should_cancel (dev))
+		return TRUE;
+
+	/* If we're on the same frequency and essid, and we're associated,
+	 * increment the count for how many iterations we've been associated;
+	 * otherwise start over. */
+	/* XXX floating point comparison this way is dangerous, IIRC */
+	if ((cur_freq == *last_freq) && assoc && !strcmp (essid, cur_essid))
+	{
+		(*assoc_count)++;
+	}
+	else
+	{
+		*assoc_count = 0;
+		*last_freq = cur_freq;
+	}
+
+	/* If we're told to cancel, return that we're finished.
+	 * If we've the frequency has been stable for more than the required
+	 * interval, return that we're finished.
+	 * Otherwise, we're not finished. */
+	if (nm_device_activation_should_cancel (dev) || *assoc_count >= required)
+		return TRUE;
+
+	return FALSE;
+}
+
+
 /*
  * nm_device_wireless_wait_for_link
  *
@@ -1764,59 +1882,73 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
  */
 static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *essid)
 {
-	struct timeval	end_time;
-	struct timeval	cur_time;
-	gboolean		link = FALSE;
+	guint		assoc = 0;
 	double		last_freq = 0;
 	guint		assoc_count = 0;
-	gint			pause_value;
+	struct timeval	timeout = { .tv_sec = 0, .tv_usec = 0 };
+
+	/* we want to sleep for a very short amount of time, to minimize
+	 * hysteresis on the boundaries of our required time.  But we
+	 * also want the maximum to be based on what the card */
+	const guint	delay = 30;
+	const guint	required_tries = 10;
+	const guint	min_delay = 2 * (required_tries / delay);
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (time > 0, FALSE);
 
-	pause_value = nm_device_get_association_pause_value (dev);
-	if (pause_value < 1)
-		return FALSE;
+	/* for cards which don't scan many frequencies, this will return 
+	 * 5 seconds, which we'll bump up to 6 seconds below.  Oh well. */
+	timeout.tv_sec = (time_t)nm_device_get_association_pause_value (dev);
 
-	gettimeofday (&end_time, NULL);
-	end_time.tv_sec += pause_value;
+	/* Refuse to to have a timeout that's _less_ than twice the total time
+	 * required before calling a link valid */
+	if (timeout.tv_sec < min_delay)
+		timeout.tv_sec = min_delay;
 
-	/* We more or less keep asking the driver for the frequency the card is on, and
-	 * when the frequency has stabilized (the driver has to scan channels to find the AP,
-	 * and when it finds the AP it stops scanning) and the MAC is valid, we think we
-	 * have a link.
-	 */
-	gettimeofday (&cur_time, NULL);
-	while (cur_time.tv_sec < end_time.tv_sec)
-	{
-		double	 cur_freq = nm_device_get_frequency (dev);
-		gboolean	 assoc = nm_device_wireless_is_associated (dev);
-		char		*cur_essid = nm_device_get_essid (dev);
-
-		if ((cur_freq == last_freq) && assoc && !strcmp (essid, cur_essid))
-			assoc_count++;
-		else
-			assoc_count = 0;
-		last_freq = cur_freq;
-
-		g_usleep (G_USEC_PER_SEC / 2);
-		if (nm_device_activation_should_cancel (dev))
-			break;
-
-		gettimeofday (&cur_time, NULL);
-		if ((cur_time.tv_sec >= end_time.tv_sec) && (cur_time.tv_usec >= end_time.tv_usec))
-			break;
-
-		/* Assume that if we've been associated this long, we might as well just stop. */
-		if (assoc_count >= 9)
-			break;
-	}
+	/* We more or less keep asking the driver for the frequency the
+	 * card is listening on until it connects to an AP.  Once it's 
+	 * associated, the driver stops scanning.  To detect that, we look
+	 * for the essid and frequency to remain constant for 3 seconds.
+	 * When it remains constant, we assume it's a real link. */
+	nm_wait_for_timeout (&timeout, G_USEC_PER_SEC / delay,
+			    nm_dwwfl_test, nm_dwwfl_test, dev, &assoc,
+			    &last_freq, essid, required_tries * 2);
 
 	/* If we've had a reasonable association count, we say we have a link */
-	if (assoc_count > 6)
-		link = TRUE;
+	if (assoc > required_tries)
+		return TRUE;
+	return FALSE;
+}
 
-	return (link);
+
+static gboolean nm_device_link_test(int tries, va_list args)
+{
+	NMDevice *dev = va_arg(args, NMDevice *);
+	gboolean *err = va_arg(args, gboolean *);
+
+	g_return_val_if_fail(dev != NULL, TRUE);
+	g_return_val_if_fail(err != NULL, TRUE);
+
+	if (nm_device_wireless_is_associated (dev) && nm_device_get_essid (dev))
+	{
+		*err = FALSE;
+		return TRUE;
+	}
+	*err = TRUE;
+	return FALSE;
+}
+ 
+static gboolean nm_device_is_up_and_associated_wait (NMDevice *dev, int timeout, int interval)
+{
+	gboolean err;
+	const gint delay = (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev)) / interval;
+	const gint max_cycles = timeout * interval;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	nm_wait_for_completion (max_cycles, delay, NULL, nm_device_link_test, dev, &err);
+	return !err;
 }
 
 
@@ -1841,10 +1973,9 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	g_return_val_if_fail (nm_ap_get_auth_method (ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
 
 	/* Force the card into Managed/Infrastructure mode */
-	nm_device_bring_down (dev);
-	g_usleep (G_USEC_PER_SEC * 2);
-	nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC * 2);
+	nm_device_bring_down_wait (dev, 0);
+	nm_device_bring_up_wait (dev, 0);
+
 	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 
 	essid = nm_ap_get_essid (ap);
@@ -1882,8 +2013,11 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 				((auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) ? "Open System" :
 				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
 
-	/* Bring the device up and pause to allow card to associate. */
-	g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
+	/* Bring the device up and pause to allow card to associate.  After we set the ESSID
+	 * on the card, the card has to scan all channels to find our requested AP (which can
+	 * take a long time if it is an A/B/G chipset like the Atheros 5212, for example).
+	 */
+	nm_device_is_up_and_associated_wait (dev, 2, 100);
 
 	/* Some cards don't really work well in ad-hoc mode unless you explicitly set the bitrate
 	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information
@@ -1981,7 +2115,7 @@ static gboolean nm_device_activate_wireless_adhoc (NMDevice *dev, NMAccessPoint 
 	{
 		nm_ap_set_freq (ap, freq_to_use);
 	
-		nm_info ("Will create network '%s' with frequency %f.\n", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
+		nm_info ("Will create network '%s' with frequency %f.", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
 		if ((success = nm_device_set_wireless_config (dev, ap)))
 			success = nm_device_activation_configure_ip (dev, TRUE);
 	}
@@ -2079,6 +2213,41 @@ void invalidate_ap (NMDevice *dev, NMAccessPoint *ap)
 }
 
 
+/* this gets called without the scan mutex held */
+static gboolean nm_wa_test (int tries, va_list args)
+{
+	NMDevice *dev = va_arg(args, NMDevice *);
+	NMAccessPoint **best_ap = va_arg(args, NMAccessPoint **);
+	gboolean *err = va_arg(args, gboolean *);
+
+	g_return_val_if_fail(dev != NULL, TRUE);
+	g_return_val_if_fail(best_ap != NULL, TRUE);
+	g_return_val_if_fail(err != NULL, TRUE);
+
+	*err = TRUE;
+	if (nm_device_activation_handle_cancel(dev))
+		return TRUE;
+
+	if (tries % 100 == 0)
+		nm_info ("Activation (%s/wireless): waiting for access point. (attempt %d)", nm_device_get_iface(dev), tries);
+
+	*best_ap = nm_device_get_best_ap(dev);
+	if (*best_ap) {
+		/* Set ESSID early so that when we send out the
+		 * DeviceStatusChanged signal below, we are able to 
+		 * respond correctly to queries for "getActiveNetwork"
+		 * against our device.  nm_device_get_path_for_ap() uses 
+		 * the /card's/ AP, not the best_ap. */
+		nm_device_set_essid (dev, nm_ap_get_essid (*best_ap));
+		nm_device_set_now_scanning (dev, FALSE);
+		*err = FALSE;
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+
 /*
  * nm_device_activate_wireless
  *
@@ -2089,12 +2258,13 @@ void invalidate_ap (NMDevice *dev, NMAccessPoint *ap)
  */
 static gboolean nm_device_activate_wireless (NMDevice *dev)
 {
-	NMAccessPoint		*best_ap;
+	NMAccessPoint		*best_ap = NULL;
 	gboolean			 success = FALSE;
 	guint8			 attempt = 1;
 	char				 last_essid [50] = "\0";
 	gboolean			 need_key = FALSE;
 	gboolean			 found_ap = FALSE;
+	gboolean			 err = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
@@ -2104,9 +2274,7 @@ static gboolean nm_device_activate_wireless (NMDevice *dev)
 	 */
 	nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
-	if (!nm_device_is_up (dev))
-		nm_device_bring_up (dev);
-	g_usleep (G_USEC_PER_SEC);
+	nm_device_bring_up_wait (dev, 1);
 
 get_ap:
 	/* If we were told to quit activation, stop the thread and return */
@@ -2117,24 +2285,19 @@ get_ap:
 	 * lock here because this might take a while.
 	 */
 	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-	while (!(best_ap = nm_device_get_best_ap (dev)))
-	{
-		nm_device_set_now_scanning (dev, TRUE);
-		if (!found_ap)
-			nm_warning ("Activation (%s/wireless): waiting for an access point.", nm_device_get_iface (dev));
-		g_usleep (G_USEC_PER_SEC * 2);
 
-		/* If we were told to quit activation, stop the thread and return */
-		if (nm_device_activation_handle_cancel (dev))
-		{
-			/* Wierd as it may seem, we lock here to balance the unlock in "out:" */
-			nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-			goto out;
-		}
-		found_ap = TRUE;
+	/* Get a valid "best" access point we should connect to. */
+	nm_device_set_now_scanning (dev, TRUE);
+
+	/* at most wait 10 seconds, but check every 50th to see if we're done */
+	nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 50, nm_wa_test, NULL, dev, &best_ap, &err);
+	if (err)
+	{
+		/* Wierd as it may seem, we lock here to balance the unlock in "out:" */
+		nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+		goto out;
 	}
-	if (found_ap)
-		nm_warning ("Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
+	nm_info ("Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
 
 	/* Set ESSID early so that when we send out the DeviceStatusChanged signal below,
 	 * we are able to respond correctly to queries for "getActiveNetwork" against
@@ -2164,6 +2327,8 @@ get_ap:
 	need_key = AP_NEED_KEY (dev, best_ap);
 
 need_key:
+	if (nm_device_activation_handle_cancel (dev))
+		goto out;
 	if (need_key)
 	{
 		char	*essid = nm_ap_get_essid (best_ap);
@@ -2259,8 +2424,15 @@ try_connect:
 		 * and also for Open System mode (where you cannot know WEP key is wrong ever), we try to
 		 * do DHCP and if that fails, fall back to next auth mode and try again.
 		 */
+		success = FALSE;
 		if ((success = nm_device_activation_configure_ip (dev, adhoc)))
 		{
+			if (nm_device_activation_handle_cancel (dev))
+			{
+				success = FALSE;
+				goto out;
+			}
+
 			/* Cache the last known good auth method in both NetworkManagerInfo and our allowed AP list */
 			nm_dbus_update_network_auth_method (dev->app_data->dbus_connection, nm_ap_get_essid (best_ap), nm_ap_get_auth_method (best_ap));
 			if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (best_ap))))
@@ -2268,7 +2440,6 @@ try_connect:
 		}
 		else
 		{
-			/* If we were told to quit activation, stop the thread and return */
 			if (nm_device_activation_handle_cancel (dev))
 				goto out;
 
@@ -2300,11 +2471,14 @@ try_connect:
 connect_done:
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_handle_cancel (dev))
+	{
+		success = FALSE;
 		goto out;
+	}
 
 	if (success)
 	{
-		nm_debug ("Activation (%s/wireless): Success!  Connected to access point '%s' and got an IP address.",
+		nm_info ("Activation (%s/wireless): Success!  Connected to access point '%s' and got an IP address.",
 				nm_device_get_iface (dev), nm_ap_get_essid (best_ap) ? nm_ap_get_essid (best_ap) : "(none)");
 		nm_ap_unref (best_ap);
 	}
@@ -2388,7 +2562,7 @@ static gboolean nm_device_activate (gpointer user_data)
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	nm_warning ("Activation (%s) started...", nm_device_get_iface (dev));
+	nm_info ("Activation (%s) started...", nm_device_get_iface (dev));
 
 	/* Bring the device up */
 	if (!nm_device_is_up (dev));
@@ -2404,9 +2578,9 @@ static gboolean nm_device_activate (gpointer user_data)
 			if (nm_ap_get_user_created (best_ap))
 			{
 				create_network = TRUE;
-				nm_info ("Creating wireless network '%s'.\n", nm_ap_get_essid (best_ap));
+				nm_info ("Creating wireless network '%s'.", nm_ap_get_essid (best_ap));
 				success = nm_device_activate_wireless_adhoc (dev, best_ap);
-				nm_info ("Wireless network creation for '%s' was %s.\n", nm_ap_get_essid (best_ap), success ? "successful" : "unsuccessful");
+				nm_info ("Wireless network creation for '%s' was %s.", nm_ap_get_essid (best_ap), success ? "successful" : "unsuccessful");
 			}
 			nm_ap_unref (best_ap);
 		}
@@ -2422,15 +2596,15 @@ static gboolean nm_device_activate (gpointer user_data)
 		goto out;
 
 	if (success)
-		nm_info ("Activation (%s) IP configuration/DHCP successful!\n", nm_device_get_iface (dev));
+		nm_info ("Activation (%s) IP configuration/DHCP successful!", nm_device_get_iface (dev));
 	else
-		nm_info ("Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...\n",
+		nm_info ("Activation (%s) IP configuration/DHCP unsuccessful!  Ending activation...",
 			  nm_device_get_iface (dev));
 
 	finished = TRUE;
 
 out:
-	nm_debug ("Activation (%s) ended.\n", nm_device_get_iface (dev));
+	nm_info ("Activation (%s) ended.", nm_device_get_iface (dev));
 	dev->activating = FALSE;
 	dev->quit_activation = FALSE;
 	if (finished)
@@ -2468,6 +2642,35 @@ gboolean nm_device_activation_should_cancel (NMDevice *dev)
 }
 
 
+static gboolean nm_ac_test (int tries, va_list args)
+{
+	NMDevice *dev = va_arg (args, NMDevice *);
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	if (tries == 0 && nm_device_get_dhcp_iface (dev))
+		nm_device_dhcp_cease (dev);
+	
+	if (nm_device_is_activating(dev))
+	{
+		/* Nice race here between quit activation and dhcp.  We may
+		 * not have started DHCP when we're told to quit activation,
+		 * so we need to keep signalling dhcp to quit, which it will 
+		 * pick up whenever it starts.
+		 *
+		 * This should really be taken care of a better way.
+		 */
+		if (nm_device_get_dhcp_iface (dev))
+			nm_device_dhcp_cease (dev);
+		if (tries % 20 == 0)
+			nm_debug ("Activation (%s/wireless): waiting on dhcp to cease or device to finish activation", nm_device_get_iface(dev));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
 /*
  * nm_device_activation_cancel
  *
@@ -2480,26 +2683,16 @@ void nm_device_activation_cancel (NMDevice *dev)
 
 	if (nm_device_is_activating (dev))
 	{
-		nm_debug ("nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
+		nm_debug ("Activation (%s/wireless): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
 
 		/* Spin until cancelled.  Possible race conditions or deadlocks here.
 		 * The other problem with waiting here is that we hold up dbus traffic
 		 * that we should respond to.
 		 */
-		while (nm_device_is_activating (dev))
-		{
-			/* Nice race here between quit activation and dhcp.  We may not have
-			 * started DHCP when we're told to quit activation, so we need to keep
-			 * signalling dhcp to quit, which it will pick up whenever it starts.
-			 * This should really be taken care of a better way.
-			 */
-			if (dev->dhcp_iface)
-				nm_device_dhcp_cease (dev);
-
-			g_usleep (G_USEC_PER_SEC / 2);
-		}
-		nm_debug ("nm_device_activation_cancel(%s): cancelled.", nm_device_get_iface (dev));
+		nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY,
+				G_USEC_PER_SEC / 20, nm_ac_test, NULL, dev);
+		nm_debug ("Activation (%s/wireless): cancelled.", nm_device_get_iface(dev));
 	}
 }
 
@@ -3128,7 +3321,7 @@ static void nm_device_do_pseudo_scan (NMDevice *dev)
 		nm_device_set_essid (dev, nm_ap_get_essid (ap));
 
 		/* Wait a bit for association */
-		g_usleep (G_USEC_PER_SEC * nm_device_get_association_pause_value (dev));
+		nm_device_is_up_and_associated_wait (dev, 2, 100);
 
 		/* Do we have a valid MAC address? */
 		nm_device_get_ap_address (dev, &cur_ap_addr);
@@ -3436,6 +3629,44 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 }
 
 
+static gboolean nm_completion_scan_has_results (int tries, va_list args)
+{
+	NMDevice				*dev = va_arg (args, NMDevice *);
+	gboolean				*err = va_arg (args, gboolean *);
+	int					 sk = va_arg (args, int);
+	NMWirelessScanResults	*scan_results = va_arg (args, NMWirelessScanResults *);
+	int					 rc;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
+	g_return_val_if_fail (scan_results != NULL, TRUE);
+
+	rc = iw_scan(sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
+	if (rc == -1 && errno == ETIME)
+	{
+		nm_error ("Warning: the wireless card (%s) requires too much time for scans.  Its driver needs to be fixed.", nm_device_get_iface (dev));
+		scan_results->scan_head.result = NULL;
+		*err = TRUE;
+		return TRUE;
+	}
+	*err = FALSE;
+	if ((rc == -1 && errno == ENODATA) || (rc == 0 && scan_results->scan_head.result == NULL))
+	{
+		/* Card hasn't had time yet to compile full access point list.
+		 * Give it some more time and scan again.  If that doesn't
+		 * work, we eventually give up.  */
+		scan_results->scan_head.result = NULL;
+		return FALSE;
+	}
+	else if (rc == -1)
+	{
+		scan_results->scan_head.result = NULL;
+		return TRUE;
+	}
+	return TRUE;
+}
+
+
 /*
  * nm_device_wireless_scan
  *
@@ -3457,7 +3688,8 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 
 	/* Just reschedule ourselves if scanning or all wireless is disabled */
 	if (    (dev->app_data->scanning_enabled == FALSE)
-		|| (dev->app_data->wireless_enabled == FALSE))
+		|| (dev->app_data->wireless_enabled == FALSE)
+		|| (dev->app_data->asleep == TRUE))
 	{
 		dev->options.wireless.scan_interval = 10;
 		goto reschedule;
@@ -3466,17 +3698,24 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	/* Grab the scan mutex */
 	if (nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 	{
+		gboolean devup_err;
+
 		/* Device must be up before we can scan */
-		if (!nm_device_is_up (dev))
-			nm_device_bring_up (dev);
-		g_usleep (G_USEC_PER_SEC);
+		devup_err = nm_device_bring_up_wait(dev, 1);
+		if (devup_err)
+		{
+			nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+			nm_device_wireless_schedule_scan (dev);
+			return FALSE;
+		}
 
 		if ((sk = iw_sockets_open ()) >= 0)
 		{
-			int				 err;
-			NMNetworkMode		 orig_mode = NETWORK_MODE_INFRA;
-			double			 orig_freq = 0;
-			int				 orig_rate = 0;
+			int			err;
+			NMNetworkMode	orig_mode = NETWORK_MODE_INFRA;
+			double		orig_freq = 0;
+			int			orig_rate = 0;
+			const int		max_wait = G_USEC_PER_SEC * nm_device_get_association_pause_value (dev) /2;
 
 			orig_mode = nm_device_get_mode (dev);
 			if (orig_mode == NETWORK_MODE_ADHOC)
@@ -3492,6 +3731,11 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			nm_device_set_frequency (dev, 0);
 
 			scan_results = g_malloc0 (sizeof (NMWirelessScanResults));
+			nm_wait_for_completion(max_wait, max_wait/20,
+				nm_completion_scan_has_results, NULL,
+				dev, &err, sk, scan_results);
+
+
 			err = iw_scan (sk, (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
 			if ((err == -1) && (errno == ENODATA))
 			{

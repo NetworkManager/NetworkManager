@@ -130,6 +130,7 @@ typedef struct
 	char				*dbus_nm_status;
 
 	GdkPixbuf			*no_nm_icon;
+	GdkPixbuf			*no_connection_icon;
 	GdkPixbuf			*wired_icon;
 	GdkPixbuf			*adhoc_icon;
 #define NUM_WIRED_CONNECTING_FRAMES 11

@@ -121,10 +121,16 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 	static const gchar *authors[] =
 	{
 		"The Red Hat Desktop Team, including:\n",
-		"Dan Williams <dcbw@redhat.com>",
 		"Jonathan Blandford <jrb@redhat.com>",
 		"John Palmieri <johnp@redhat.com>",
+		"Ray Strode <rstrode@redhat.com>",
 		"Colin Walters <walters@redhat.com>",
+		"Dan Williams <dcbw@redhat.com>",
+		"\nAnd others, including:\n",
+		"Bill Moss",
+		"Tom Parker",
+		"j@bootlab.org",
+		"Peter Jones <pjones@redhat.com>",
 		NULL
 	};
 
@@ -375,7 +381,7 @@ nmwa_update_state (NMWirelessApplet *applet)
 	switch (applet->applet_state)
 	{
 		case (APPLET_STATE_NO_CONNECTION):
-			show_applet = FALSE;
+			pixbuf = applet->no_connection_icon;
 			tip = g_strdup (_("No network connection"));
 			break;
 
@@ -959,7 +965,7 @@ static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *a
 {
 	g_return_if_fail (applet != NULL);
 
-	nmwa_dbus_enable_scanning (applet, !applet->wireless_enabled);
+	nmwa_dbus_enable_wireless (applet, !applet->wireless_enabled);
 }
 
 
@@ -1130,7 +1136,6 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
 	gtk_menu_shell_insert (GTK_MENU_SHELL (applet->context_menu), applet->stop_wireless_item, 1);
-	gtk_widget_set_sensitive (GTK_WIDGET (applet->stop_wireless_item), FALSE);
 	gtk_widget_show_all (applet->stop_wireless_item);
 
 	g_mutex_unlock (applet->data_mutex);
@@ -1164,7 +1169,6 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
-	gtk_widget_set_sensitive (GTK_WIDGET (applet->stop_wireless_item), FALSE);
 
 	menu_item = gtk_separator_menu_item_new ();
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
@@ -1395,6 +1399,7 @@ nmwa_icons_free (NMWirelessApplet *applet)
 	gint i;
 
 	g_object_unref (applet->no_nm_icon);
+	g_object_unref (applet->no_connection_icon);
 	g_object_unref (applet->wired_icon);
 	g_object_unref (applet->adhoc_icon);
 	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
@@ -1417,6 +1422,7 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	gint icon_size = 22;
 
 	applet->no_nm_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-broken", icon_size, 0, NULL);
+	applet->no_connection_icon = gtk_icon_theme_load_icon (icon_theme, "nm-no-connection", icon_size, 0, NULL);
 	applet->wired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", icon_size, 0, NULL);
 	applet->adhoc_icon = gtk_icon_theme_load_icon (icon_theme, "nm-adhoc", icon_size, 0, NULL);
 	applet->wired_connecting_icons[0] = gtk_icon_theme_load_icon (icon_theme, "nm-connecting01", icon_size, 0, NULL);

@@ -50,7 +50,7 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 							      GPOINTER_TO_UINT (elt->data),
 							      &error))
 		{
-			nm_warning ("Couldn't remove nameserver: %s\n", error->message);
+			nm_warning ("Couldn't remove nameserver: %s", error->message);
 			g_clear_error (&error);
 		}
 	}
@@ -66,7 +66,7 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 					      ((unsigned char *)data)[i+1],
 					      ((unsigned char *)data)[i+2],
 					      ((unsigned char *)data)[i+3]);
-		nm_warning ("Adding nameserver: %s\n", nameserver);
+		nm_info ("Adding nameserver: %s", nameserver);
 
 		if ((id = nm_named_manager_add_nameserver_ipv4 (dev->app_data->named,
 								nameserver,

@@ -65,6 +65,12 @@ G_STMT_START								\
 	g_message ("<information>\t" fmt "\n", ##args);			\
 } G_STMT_END
 
+#define nm_info_str(fmt_str, args...)						\
+G_STMT_START								\
+{									\
+	g_message ("<information>\t%s\n", fmt_str, ##args);			\
+} G_STMT_END
+
 #define nm_debug(fmt, args...)						\
 G_STMT_START								\
 {									\
@@ -74,11 +80,27 @@ G_STMT_START								\
 		 G_GNUC_PRETTY_FUNCTION, ##args);				\
 } G_STMT_END
 
+#define nm_debug_str(fmt_str, args...)						\
+G_STMT_START								\
+{									\
+	gdouble _timestamp;						\
+	nm_get_timestamp (&_timestamp);					\
+	g_debug ("<debug info>\t[%f] %s (): %s\n", _timestamp,	\
+		 G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);				\
+} G_STMT_END
+
 #define nm_warning(fmt, args...)					\
 G_STMT_START								\
 {									\
 	g_warning ("<WARNING>\t %s (): " fmt "\n", 			\
 		   G_GNUC_PRETTY_FUNCTION, ##args);			\
+} G_STMT_END
+
+#define nm_warning_str(fmt_str, args...)					\
+G_STMT_START								\
+{									\
+	g_warning ("<WARNING>\t %s (): %s\n", 			\
+		   G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);			\
 } G_STMT_END
 
 #define nm_error(fmt, args...)						\
@@ -92,6 +114,16 @@ G_STMT_START								\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
+#define nm_error_str(fmt_str, args...)						\
+G_STMT_START								\
+{									\
+	gdouble _timestamp;						\
+	nm_get_timestamp (&_timestamp);					\
+	g_critical ("<ERROR>\t[%f] %s (): %s\n", _timestamp,	\
+		    G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);			\
+	nm_print_backtrace ();						\
+	G_BREAKPOINT ();						\
+} G_STMT_END
 
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);

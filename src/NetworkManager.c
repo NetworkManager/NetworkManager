@@ -377,6 +377,9 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 {
 	g_return_val_if_fail (data != NULL, TRUE);
 
+	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
+		return (TRUE);
+
 	/* Attempt to acquire mutex for device list iteration.
 	 * If the acquire fails, just ignore the device deletion entirely.
 	 */

@@ -333,7 +333,7 @@ void nm_system_restart_mdns_responder (void)
 		fclose (fp);
 		if (res == 1)
 		{
-			nm_info ("Restarting mDNSResponder.\n");
+			nm_info ("Restarting mDNSResponder.");
 			kill (pid, SIGUSR1);
 		}
 	}

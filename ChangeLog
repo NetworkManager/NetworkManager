@@ -1,3 +1,44 @@
+2005-03-25  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- (nmwa_about_cb): Add some more contributors
+		- (nmwa_update_state): show the applet when there's no connection
+		- Enable the "Stop/Resume all wireless devices" option in the
+			context menu
+		- New "no connection" icon
+
+	* src/NetworkManager.c
+		- (nm_poll_and_update_wireless_link_state): don't do anything if
+			wireless is disabled or we're asleep
+
+	* src/NetworkManagerDHCP.c
+		- Remove trailing "\n" on debug messages
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_network_status_from_data): new state "asleep"
+
+	* src/NetworkManagerDevice.c
+		- Merge most of Peter Jones' "completion" patch that greatly reduces
+			latency and wait times for most operations
+		- (nm_device_wireless_scan): Don't scan when asleep
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_get_best_device): return no device when asleep
+		- (nm_policy_allowed_ap_list_update): From Bill Moss: merge properties
+			for all wireless devices on update, not just active device
+
+	* src/NetworkManagerUtils.c
+		- Merge Peter Jones' "completion" patch
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_set_wireless_enabled): bring down wireless devices when
+			we're told to disable them
+		- (nm_dbus_nm_sleep, nm_dbus_nm_wake): new functions for sleep/wake
+
+	* utils/nm-utils.h
+		- New variants of the warn/info/error/debug print functions that can take
+			variables rather than static strings
+
 2005-03-24  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerUtils.c
