@@ -1,1 +1,1 @@
-SUBDIRS = src initscript test
+SUBDIRS = src dispatcher-daemon initscript test

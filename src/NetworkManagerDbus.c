@@ -567,25 +567,19 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	NM_DEBUG_PRINT_2 ("nm_dbus_devices_message_handler() got method %s for path %s\n", method, path);
+	/* NM_DEBUG_PRINT_2 ("nm_dbus_nm_message_handler() got method %s for path %s\n", method, path); */
 
 	if (strcmp ("getActiveDevice", method) == 0)
-	{
 		reply_message = nm_dbus_nm_get_active_device (connection, message);
-	}
 	else if (strcmp ("getDevices", method) == 0)
-	{
 		reply_message = nm_dbus_nm_get_devices (connection, message);
-	}
 	else
-	{
 		reply_message = nm_dbus_create_error_message (message, NM_DBUS_NM_NAMESPACE, "UnknownMethod",
 							"NetworkManager knows nothing about the method %s for object %s", method, path);
-	}
 
 	dbus_connection_send (connection, reply_message, NULL);
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return (DBUS_HANDLER_RESULT_HANDLED);
 }
 
 
@@ -616,12 +610,12 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
 
-	/* NM_DEBUG_PRINT_2 ("nm_dbus_nm_message_handler() got method %s for path %s\n", method, path); */
+	/* NM_DEBUG_PRINT_2 ("nm_dbus_devices_message_handler() got method %s for path %s\n", method, path); */
 
 	reply_message = nm_dbus_devices_handle_request (connection, message, path, method);
 	dbus_connection_send (connection, reply_message, NULL);
 
-	return DBUS_HANDLER_RESULT_HANDLED;
+	return (DBUS_HANDLER_RESULT_HANDLED);
 }
 
 

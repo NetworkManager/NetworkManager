@@ -17,7 +17,8 @@ AC_SUBST(NM_LIBS)
 
 AC_OUTPUT([
 Makefile
-test/Makefile
 src/Makefile
+dispatcher-daemon/Makefile
+test/Makefile
 initscript/Makefile
 ])

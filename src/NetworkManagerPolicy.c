@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <fcntl.h>
 
 #include "NetworkManagerPolicy.h"
@@ -34,12 +35,12 @@ extern gboolean	debug;
 
 
 /*
- * nm_policy_activate_interface
+ * nm_policy_activate_device
  *
  * Performs interface switching and related networking goo.
  *
  */
-static void nm_policy_switch_interface (NMData *data, NMDevice *switch_to_dev, NMDevice *old_dev)
+static void nm_policy_switch_device (NMData *data, NMDevice *switch_to_dev, NMDevice *old_dev)
 {
 	unsigned char			 buf[500];
 	unsigned char			 hostname[500] = "\0";
@@ -47,7 +48,6 @@ static void nm_policy_switch_interface (NMData *data, NMDevice *switch_to_dev, N
 	int					 host_err;
 	int					 dhclient_err;
 	FILE					*pidfile;
-	unsigned char			 pid[20];
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (switch_to_dev != NULL);
@@ -115,18 +115,18 @@ static void nm_policy_switch_interface (NMData *data, NMDevice *switch_to_dev, N
 	pidfile = fopen (buf, "r");
 	if (pidfile)
 	{
-		int	len;
+		int			len;
+		unsigned char	s_pid[20];
+		pid_t		n_pid = -1;
 
-		fgets (pid, 20, pidfile);
-		len = strnlen (buf, 20);
-		if (len >= 20)
-			pid[0] = '\0';
-		else
-			pid[len-1] = '\0';
+		memset (s_pid, 0, 20);
+		fgets (s_pid, 19, pidfile);
+		len = strnlen (s_pid, 20);
 		fclose (pidfile);
 
-		snprintf (buf, 500, "kill -9 %s", pid);
-		system (buf);
+		n_pid = atoi (s_pid);
+		if (n_pid > 0)
+			kill (n_pid, 9);
 	}
 
 	snprintf (buf, 500, "/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n",
@@ -255,7 +255,8 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 			}
 
 			NM_DEBUG_PRINT_1 ("Best wired device = %s\n", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)");
-			NM_DEBUG_PRINT_1 ("Best wireless device = %s\n", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)");
+			NM_DEBUG_PRINT_2 ("Best wireless device = %s  (%s)\n", best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)",
+						best_wireless_dev ? nm_device_get_essid (best_wireless_dev) : "null" );
 
 			if (best_wireless_dev || best_wired_dev)
 			{
@@ -290,27 +291,27 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 
 			/* If the highest priority device is different than data->active_device, switch the connection. */
 			if (    essid_change_needed
-				|| (!data->active_device || (highest_priority_dev == data->active_device)))
+				|| (!data->active_device || (highest_priority_dev != data->active_device)))
 			{
-
 				NM_DEBUG_PRINT_2 ("**** Switching active interface from '%s' to '%s'\n",
 						data->active_device ? nm_device_get_iface (data->active_device) : "(null)",
 						nm_device_get_iface (highest_priority_dev));
 
 				/* FIXME
-				 * How long should we wait between the signal to the bus,
-				 * and deactivating the device?
+				 * We should probably wait a bit before forcibly changing connections
+				 * after we send the signal.  However, dbus delivers its messages in the
+				 * glib main loop.  If we call g_main_context_iteration(), we can deadlock
+				 * but if we split this function into two steps and execute the second half,
+				 * after a main loop iteration, we make a much more complicated state machine.
 				 */
 				if (data->active_device)
-				{
 					nm_dbus_signal_device_no_longer_active (data->dbus_connection, data->active_device);
-					sleep (2);
-				}
 
-				nm_policy_switch_interface (data, highest_priority_dev, data->active_device);
+				nm_policy_switch_device (data, highest_priority_dev, data->active_device);
 
 				if (data->active_device)
 					nm_device_unref (data->active_device);
+
 				data->active_device = highest_priority_dev;
 				nm_device_ref (data->active_device);
 
@@ -405,7 +406,7 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 				if (strlen (essid) > 0)
 				{
 					NMAccessPoint		*ap;
-					guint						 prio_num = atoi (prio);
+					guint			 prio_num = atoi (prio);
 
 					if (prio_num < 1)
 						prio_num = NM_AP_PRIORITY_WORST;

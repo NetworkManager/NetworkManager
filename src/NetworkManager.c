@@ -46,7 +46,6 @@ gboolean			 debug = TRUE;
 static gboolean	 quit = FALSE;
 
 
-
 static void nm_data_free (NMData *data);
 
 

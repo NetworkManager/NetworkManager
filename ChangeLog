@@ -1,3 +1,31 @@
 2004-06-24  Dan Williams <dcbw@redhat.com>
 
+	* Makefile.am
+	  Makefile.in
+	  configure.in
+	  dispatcher-daemon/Makefile.am
+	  dispatcher-daemon/Makefile.in
+	  dispatcher-daemon/NetworkManagerDispatcher.c
+	  
+	    Add a daemon that receives signals from NetworkManager
+	  and will (eventually) call scripts in /etc/somewhere
+	  when devices go up or down.
+	
+	* NetworkManager.c
+	  NetworkManagerDbus.c
+	  
+	    Spacing cleanups.
+	
+	* NetworkManagerPolicy.c
+	
+	    - Rename nm_policy_switch_interface->nm_policy_switch_device
+	    - nm_policy_switch_device():
+				Use kill (pid) instead of system ("kill <pid>")
+	    - nm_state_modification_monitor():
+				Add wireless essid to output of debug statements
+				Correct typo in device compare to switch or not (should be !=)
+				Don't sleep after sending "no longer active" signal, was useless
+
+2004-06-24  Dan Williams <dcbw@redhat.com>
+
 	* Initial import
