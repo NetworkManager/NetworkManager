@@ -41,7 +41,8 @@
 enum NMIPassphraseDialogKeyTypes
 {
 	KEY_TYPE_128_BIT_PASSPHRASE = 0,
-	KEY_TYPE_128_BIT_RAW_HEX_KEY = 1
+	KEY_TYPE_ASCII_KEY = 1,
+	KEY_TYPE_HEX_KEY = 2
 };
 
 
@@ -99,8 +100,11 @@ void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gp
 		case KEY_TYPE_128_BIT_PASSPHRASE:
 			gtk_label_set_label (entry_label, _("Passphrase:"));
 			break;
-		case KEY_TYPE_128_BIT_RAW_HEX_KEY:
-			gtk_label_set_label (entry_label, _("Key:"));
+		case KEY_TYPE_ASCII_KEY:
+			gtk_label_set_label (entry_label, _("Ascii Key:"));
+			break;
+		case KEY_TYPE_HEX_KEY:
+			gtk_label_set_label (entry_label, _("Hex Key:"));
 			break;
 		default:
 			break;
@@ -140,8 +144,11 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 			case KEY_TYPE_128_BIT_PASSPHRASE:
 				key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;
 				break;
-			case KEY_TYPE_128_BIT_RAW_HEX_KEY:
-				key_type_return = NM_ENC_TYPE_128_BIT_HEX_KEY;
+			case KEY_TYPE_ASCII_KEY:
+				key_type_return = NM_ENC_TYPE_ASCII_KEY;
+				break;
+			case KEY_TYPE_HEX_KEY:
+				key_type_return = NM_ENC_TYPE_HEX_KEY;
 				break;
 			default:
 				key_type_return = NM_ENC_TYPE_UNKNOWN;

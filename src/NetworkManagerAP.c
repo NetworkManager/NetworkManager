@@ -223,10 +223,15 @@ char *nm_ap_get_enc_key_hashed (NMAccessPoint *ap)
 			if (source_key)
 				hashed = nm_wireless_128bit_key_from_passphrase (source_key);
 			break;
-
-		case (NM_ENC_TYPE_128_BIT_HEX_KEY):
-		case (NM_ENC_TYPE_40_BIT_PASSPHRASE):
-		case (NM_ENC_TYPE_40_BIT_HEX_KEY):
+		case (NM_ENC_TYPE_ASCII_KEY):
+			if (source_key){
+				if(strlen(source_key)<=5)
+					hashed = nm_wireless_64bit_ascii_to_hex (source_key);
+				else
+					hashed = nm_wireless_128bit_ascii_to_hex (source_key);
+			}
+			break;
+		case (NM_ENC_TYPE_HEX_KEY):
 		case (NM_ENC_TYPE_UNKNOWN):
 			if (source_key)
 				hashed = g_strdup (source_key);

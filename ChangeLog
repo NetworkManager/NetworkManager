@@ -1,5 +1,37 @@
 2004-11-03 Dan Williams <dcbw@redhat.com>
 
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c,
+		- Disable OK button until valid data is entered
+			for encryption stuff too
+
+	* panel-applet/NMWirelessApplet.c
+		- Report card strength for current AP if the card
+			doesn't report strength data for scanned access
+			points
+
+	* src/NetworkManagerDevice.c
+		- Smooth out cards reported quality, Atmel card was
+			intermittently reporting no quality data but soon
+			recovers
+
+	* src/NetworkManagerWireless.c
+		- Better quality data percentage calculation.  Atmel
+			cards (mine at least) seem to report the quality
+			in percentage format already, so honor that
+
+	Patch from <j@bootlab.org>
+	* NetworkManager.h
+	  info-daemon/NetworkManagerInfoPassphraseDialog.c
+	  info-daemon/passphrase.glade
+	  panel-applet/NMWirelessAppletOtherNetworkDialog.c
+	  panel-applet/essid.glade
+	  src/NetworkManagerAP.c
+	  src/NetworkManagerDevice.c
+	  src/NetworkManagerWireless.[ch]
+		- Support ASCII WEP keys, in both 40/64 bit and 104/128 bit
+
+2004-11-03 Dan Williams <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.[ch]
 		- (nm_device_set_enc_key): Add parameter to set Authentication
 			Mode (Open System, Shared Key, or None).  We're still using

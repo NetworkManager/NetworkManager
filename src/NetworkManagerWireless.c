@@ -33,18 +33,13 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 
-
 /*
- * nm_wireless_md5_digest_to_ascii
+ * nm_wireless_64bit_ascii_to_hex
  *
- * Convert an MD5 digest into an ascii string suitable for use
- * as a WEP key.
- *
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
+ * Convert an ASCII string into a suitable WEP key.
  *
  */
-static char *nm_wireless_md5_digest_to_ascii (unsigned char digest[16])
+char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
 	unsigned char	*res;
@@ -53,8 +48,37 @@ static char *nm_wireless_md5_digest_to_ascii (unsigned char digest[16])
 	res = g_malloc (33);
 	for (i = 0; i < 16; i++)
 	{
-		res[2*i] = hex_digits[digest[i] >> 4];
-		res[2*i+1] = hex_digits[digest[i] & 0xf];
+		res[2*i] = hex_digits[ascii[i] >> 4];
+		res[2*i+1] = hex_digits[ascii[i] & 0xf];
+	}
+
+	/* We chomp it at byte 10, since WEP keys only use 40 bits */
+	res[10] = 0;
+	return (res);
+}
+
+
+/*
+ * nm_wireless_128bit_ascii_to_hex
+ *
+ * Convert an ascii string into a suitable string for use
+ * as a WEP key.
+ *
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ *
+ */
+char *nm_wireless_128bit_ascii_to_hex (const char *ascii)
+{
+	static char	 hex_digits[] = "0123456789abcdef";
+	unsigned char	*res;
+	int			 i;
+
+	res = g_malloc (33);
+	for (i = 0; i < 16; i++)
+	{
+		res[2*i] = hex_digits[ascii[i] >> 4];
+		res[2*i+1] = hex_digits[ascii[i] & 0xf];
 	}
 
 	/* We chomp it at byte 26, since WEP keys only use 104 bits */
@@ -96,7 +120,7 @@ char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
 	gnome_keyring_md5_string (md5_data, digest);
 #endif
 
-	return (nm_wireless_md5_digest_to_ascii (digest));
+	return (nm_wireless_128bit_ascii_to_hex (digest));
 }
 
 
@@ -115,8 +139,14 @@ int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
 	g_return_val_if_fail (qual != NULL, -1);
 
 	/* Try using the card's idea of the signal quality first */
-	if (qual->qual >= 1)
+	if ((nm_device_get_max_quality (dev) == 100) && (qual->qual < 100))
 	{
+		/* Atmel driver seems to use qual->qual is the percentage value */
+		percent = CLAMP (qual->qual, 0, 100);
+	}
+	else if (qual->qual >= 1)
+	{
+		/* Try it the Gnome Wireless Applet way */
 		percent = (int)rint ((log (qual->qual) / log (94)) * 100.0);
 		percent = CLAMP (percent, 0, 100);
 	}
@@ -129,7 +159,7 @@ int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
 		/* If the statistics are in dBm or relative */
 		if(qual->level > nm_device_get_max_quality (dev))
 		{
-			#define	BEST_SIGNAL	85		/* In dBm, stuck card next to AP, this is what I got :) */
+			#define	BEST_SIGNAL	85		/* In dBm, stuck card next to AP, this is what I got */
 
 			/* Values in dBm  (absolute power measurement) */
 			if (qual->level > 0)

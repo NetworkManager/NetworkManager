@@ -52,6 +52,7 @@ typedef struct NMDeviceWirelessOptions
 	guint8			 max_quality;
 	guint8			 noise;
 	gint8			 strength;
+	gint8			 invalid_strength_counter;
 
 	GMutex			*scan_mutex;
 	/* We keep a couple lists around since wireless cards
@@ -894,13 +895,11 @@ void nm_device_update_signal_strength (NMDevice *dev)
 	/* If we aren't the active device, we don't really have a signal strength
 	 * that would mean anything.
 	 */
-#if 0
 	if (dev != dev->app_data->active_device)
 	{
 		dev->options.wireless.strength = -1;
 		return;
 	}
-#endif
 
 	/* Fake a value for test devices */
 	if (dev->test_device)
@@ -925,6 +924,14 @@ void nm_device_update_signal_strength (NMDevice *dev)
 		percent = -1;
 	}
 	close (iwlib_socket);
+
+	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
+	 * one second and normal strength the next.
+	 */
+	if ((percent == -1) && (++dev->options.wireless.invalid_strength_counter <= 3))
+		percent = dev->options.wireless.strength;
+	else
+		dev->options.wireless.invalid_strength_counter = 0;
 
 	dev->options.wireless.strength = percent;
 }
@@ -2163,9 +2170,13 @@ gboolean nm_device_wireless_network_exists (NMDevice *dev, const char *network, 
 			case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
 				hashed_key = nm_wireless_128bit_key_from_passphrase (key);
 				break;
-			case (NM_ENC_TYPE_128_BIT_HEX_KEY):
-			case (NM_ENC_TYPE_40_BIT_PASSPHRASE):
-			case (NM_ENC_TYPE_40_BIT_HEX_KEY):
+			case (NM_ENC_TYPE_ASCII_KEY):
+				if(strlen(key)<=5)
+					hashed_key = nm_wireless_64bit_ascii_to_hex (key);
+				else
+					hashed_key = nm_wireless_128bit_ascii_to_hex (key);
+				break;
+			case (NM_ENC_TYPE_HEX_KEY):
 			case (NM_ENC_TYPE_UNKNOWN):
 				hashed_key = g_strdup (key);
 				break;

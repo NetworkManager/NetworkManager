@@ -435,7 +435,6 @@ gtk_cell_view_expose (GtkWidget      *widget,
       gdk_draw_rectangle (GTK_WIDGET (cellview)->window,
                           gc,
                           TRUE,
-
                           /*0, 0,*/
                           widget->allocation.x,
                           widget->allocation.y,

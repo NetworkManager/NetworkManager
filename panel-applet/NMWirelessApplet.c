@@ -268,9 +268,8 @@ nmwa_update_state (NMWirelessApplet *applet)
 	    strength = CLAMP ((int) network->strength, 0, 100);
 	}
 
-      if (strength == -1)
+      if (strength <= 0)
 	strength = applet->active_device->strength;
-
     }
 
   if (g_slist_length (applet->device_list) == 1 &&

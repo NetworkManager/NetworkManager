@@ -312,8 +312,9 @@
 			      <child>
 				<widget class="GtkComboBox" id="key_type_combo">
 				  <property name="visible">True</property>
-				  <property name="items" translatable="yes">128-bit Passphrase
-128-bit Raw Hex Key</property>
+				  <property name="items" translatable="yes">128-bit Passphrase (WEP)
+Ascii Key (WEP)
+Hex Key (WEP)</property>
 				</widget>
 				<packing>
 				  <property name="left_attach">1</property>
