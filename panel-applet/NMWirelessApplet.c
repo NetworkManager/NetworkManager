@@ -560,10 +560,18 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 
 	g_return_if_fail (menu != NULL);
 
-	menu_item = nm_menu_network_new (applet->image_size_group);
-	nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, n_devices);
-	if (applet->active_device == device && device->type == DEVICE_TYPE_WIRED_ETHERNET)
+	if (device->type == DEVICE_TYPE_WIRED_ETHERNET)
+	{
+	     menu_item = nm_menu_wired_new ();
+	     nm_menu_wired_update (NM_MENU_WIRED (menu_item), device, n_devices);
+	     if (applet->active_device == device)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), TRUE);
+	}
+	else
+	{
+	     menu_item = nm_menu_network_new ();
+	     nm_menu_network_update (NM_MENU_NETWORK (menu_item), device, n_devices);
+	}
 
 	g_object_set_data (G_OBJECT (menu_item), "device", g_strdup (device->nm_device));
 	g_signal_connect(G_OBJECT (menu_item), "activate", G_CALLBACK(nmwa_menu_item_activate), applet);
@@ -575,21 +583,12 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	GtkWidget *menu_item;
-	GtkWidget *spacer;
-	GtkWidget *hbox;
 	GtkWidget *label;
 
 	menu_item = gtk_menu_item_new ();
-	hbox = gtk_hbox_new (FALSE, 2);
-	spacer = gtk_frame_new (NULL);
-	gtk_size_group_add_widget (applet->image_size_group, spacer);
-	gtk_frame_set_shadow_type (GTK_FRAME (spacer), GTK_SHADOW_NONE);
-	gtk_box_pack_start (GTK_BOX (hbox), spacer, FALSE, FALSE, 0);
-	label = gtk_label_new (_("Other Wireless Network..."));
+	label = gtk_label_new (_("Other Wireless Networks..."));
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5); 
-	gtk_box_pack_start (GTK_BOX (hbox), label, TRUE, TRUE, 0);
-
-	gtk_container_add (GTK_CONTAINER (menu_item), hbox);
+	gtk_container_add (GTK_CONTAINER (menu_item), label);
 	gtk_widget_show_all (menu_item);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 }
@@ -875,7 +874,6 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
 	g_signal_connect (menu_bar, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
-	applet->image_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 	gtk_widget_show (menu_bar);
 	gtk_widget_show (applet->toplevel_menu);

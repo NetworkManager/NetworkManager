@@ -32,46 +32,94 @@
 #include "NMWirelessAppletDbus.h"
 #include <config.h>
 
+
+
+G_DEFINE_TYPE (NMMenuWired, nm_menu_wired, GTK_TYPE_CHECK_MENU_ITEM);
+
+
+static void
+nm_menu_wired_init (NMMenuWired *menu_wired)
+{
+  menu_wired->label = gtk_label_new (NULL);
+  gtk_misc_set_alignment (GTK_MISC (menu_wired->label), 0.0, 0.5);
+  gtk_container_add (GTK_CONTAINER (menu_wired), menu_wired->label);
+  gtk_widget_show (menu_wired->label);
+}
+
+
+static void
+nm_menu_wired_class_init (NMMenuWiredClass *klass)
+{
+}
+
+GtkWidget *
+nm_menu_wired_new (void)
+{
+  GtkWidget *retval = g_object_new (nm_menu_wired_get_type (), NULL);
+
+  return retval;
+}
+
+
+void
+nm_menu_wired_update (NMMenuWired   *menu_wired,
+		      NetworkDevice *network,
+		      gint           n_devices)
+{
+  gchar *text;
+  gchar *network_name;
+
+  g_assert (network->type == DEVICE_TYPE_WIRED_ETHERNET);
+
+  network_name = network->hal_name ? network->hal_name : network->nm_name;
+
+  if (n_devices > 1)
+    text = g_strdup_printf (_("Wired Network (%s)"), network_name);
+  else
+    text = g_strdup (_("Wired Network"));
+
+  gtk_label_set_text (GTK_LABEL (menu_wired->label), text);
+}
+
+
+/* NMMenuNetwork */
 G_DEFINE_TYPE (NMMenuNetwork, nm_menu_network, GTK_TYPE_MENU_ITEM);
 
+
+static gboolean
+label_expose (GtkWidget *widget)
+{
+  /* Bad hack to make the label draw normally, instead of insensitive. */
+  widget->state = GTK_STATE_NORMAL;
+  
+  return FALSE;
+}
 
 static void
 nm_menu_network_init (NMMenuNetwork *menu_network)
 {
-  GtkWidget *eb;
-
-  eb = gtk_event_box_new ();
   menu_network->label = gtk_label_new (NULL);
-  gtk_container_add (GTK_CONTAINER (eb), menu_network->label);
-  gtk_container_add (GTK_CONTAINER (menu_network), eb);
-  gtk_widget_show_all (eb);
+
+  /* Make sure it looks slightly different if the label determines the width of the widget */
+  gtk_misc_set_padding (GTK_MISC (menu_network->label), 6, 0);
+  g_signal_connect (menu_network->label, "expose-event", G_CALLBACK (label_expose), NULL);
+
+  gtk_container_add (GTK_CONTAINER (menu_network), menu_network->label);
+  gtk_widget_show (menu_network->label);
+
+  gtk_widget_set_sensitive (GTK_WIDGET (menu_network), FALSE);
 }
 
-
-static void
-nm_menu_network_style_set (GtkWidget *widget,
-			   GtkStyle  *previous_style)
-{
-  GTK_WIDGET_CLASS (nm_menu_network_parent_class)->style_set (widget, previous_style);
-}
 
 static void
 nm_menu_network_class_init (NMMenuNetworkClass *menu_network)
 {
-  GtkWidgetClass *widget_class;
-
-  widget_class = GTK_WIDGET_CLASS (menu_network);
-
-  widget_class->style_set = nm_menu_network_style_set;
 }
 
 GtkWidget *
-nm_menu_network_new (GtkSizeGroup *image_size_group)
+nm_menu_network_new (void)
 {
   GtkWidget *retval = g_object_new (nm_menu_network_get_type (), NULL);
-
-  gtk_size_group_add_widget (image_size_group,
-			     NM_MENU_NETWORK (retval)->image);
 
   return retval;
 }
@@ -82,33 +130,23 @@ nm_menu_network_update (NMMenuNetwork *menu_network,
 			NetworkDevice *network,
 			gint           n_devices)
 {
-  char *text;
+  char *text, *markup;
   const char *network_name;
   gint n_essids;
 
-  menu_network->type = network->type;
   n_essids = g_slist_length (network->networks);
   network_name = network->hal_name ? network->hal_name : network->nm_name;
 
-  switch (menu_network->type)
-    {
-    case DEVICE_TYPE_WIRED_ETHERNET:
-      if (n_devices > 1)
-	text = g_strdup_printf (_("Wired Network (%s)"), network_name);
-      else
-	text = g_strdup (_("Wired Network"));
-      break;
-    case DEVICE_TYPE_WIRELESS_ETHERNET:
-      if (n_devices > 1)
-	text = g_strdup_printf (ngettext ("Wireless Network (%s)", "Wireless Networks (%s)", n_essids), network_name);
-      else
-	text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
-      break;
-    default:
-      g_assert_not_reached ();
-      break;
-    }
-  gtk_label_set_text (GTK_LABEL (menu_network->label), text);
+  g_assert (network->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+
+  if (n_devices > 1)
+    text = g_strdup_printf (ngettext ("Wireless Network (%s)", "Wireless Networks (%s)", n_essids), network_name);
+  else
+    text = g_strdup (ngettext ("Wireless Network", "Wireless Networks", n_essids));
+
+  markup = g_markup_printf_escaped ("<b>%s</b>", text);
+  gtk_label_set_markup (GTK_LABEL (menu_network->label), markup);
+  g_free (markup);
   g_free (text);
 }
 

@@ -144,7 +144,6 @@ typedef struct
 	GtkWidget			*about_dialog;
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
-	GtkSizeGroup                    *image_size_group;
 	GtkSizeGroup                    *encryption_size_group;
 } NMWirelessApplet;
 
