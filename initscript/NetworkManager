@@ -34,7 +34,7 @@ start()
 	action $"Setting network parameters: " sysctl -e -p /etc/sysctl.conf
 	echo -n $"Starting NetworkManager daemon: "
 	daemon --check $servicename $processname
-	sleep 4
+	NMLaunchHelper
 	RETVAL=$?
 	echo
 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > $pidfile

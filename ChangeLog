@@ -1,3 +1,16 @@
+2004-08-23  Dan Williams <dcbw@redhat.com>
+
+	* initscript/NetworkManager
+		- Use NMLaunchHelper rather than sleeping
+
+	* initscript/NMLaunchHelper.c
+	  Makefile.am
+		- Add helper program that exits only when NM activates a device,
+			or 10 seconds have passed, whichever happens first.  This
+			stops the boot processes until we have a network connection,
+			which NM can't do because it daemonizes and brings the connection
+			up in the background.  Allows stuff like NFS to not die.
+
 2004-08-20  Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoPassphraseDialog.c
