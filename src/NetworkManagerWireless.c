@@ -101,6 +101,63 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 
 
 /*
+ * nm_wireless_stats_to_percent
+ *
+ * Convert an iw_stats structure from a scan or the card into
+ * a magical signal strength percentage.
+ *
+ */
+int nm_wireless_qual_to_percent (NMDevice *dev, const struct iw_quality *qual)
+{
+	int	percent = -1;
+
+	g_return_val_if_fail (dev != NULL, -1);
+	g_return_val_if_fail (qual != NULL, -1);
+
+	/* Try using the card's idea of the signal quality first */
+	if (qual->qual >= 1)
+	{
+		percent = (int)rint ((log (qual->qual) / log (94)) * 100.0);
+		percent = CLAMP (percent, 0, 100);
+	}
+
+	/* If that failed, try to calculate the signal quality based on other
+	 * values, like Signal-to-Noise ratio.
+	 */
+	if (((percent == -1) || (percent == 0)))
+	{
+		/* If the statistics are in dBm or relative */
+		if(qual->level > nm_device_get_max_quality (dev))
+		{
+			#define	BEST_SIGNAL	85		/* In dBm, stuck card next to AP, this is what I got :) */
+
+			/* Values in dBm  (absolute power measurement) */
+			if (qual->level > 0)
+				percent = (int)rint ((double)(((256 - qual->level) / (double)BEST_SIGNAL) * 100));
+		}
+		else
+		{
+/* FIXME
+ * Not quite sure what to do here...  Above we have a "100% strength" number
+ * empirically derived, but I don't have any cards that trigger this code below...
+ */
+#if 0
+			/* Relative values (0 -> max) */
+			qual_rel = qual->level;
+			qual_max_rel = range->max_qual.level;
+			noise_rel = qual->noise;
+			noise_max_rel = range->max_qual.noise;
+#else
+			percent = -1;
+#endif
+		}
+	}
+
+	return (percent);
+}
+
+
+/*
  * nm_wireless_scan_monitor
  *
  * Called every 10s to get a list of access points.

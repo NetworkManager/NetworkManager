@@ -995,8 +995,8 @@ static DBusMessage *nm_dbus_devices_handle_networks_request (DBusConnection *con
 		iw_ether_ntop((const struct ether_addr *) (nm_ap_get_address (ap)), &buf[0]);
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, &buf[0], DBUS_TYPE_INVALID);
 	}
-	else if (strcmp ("getQuality", request) == 0)
-		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_quality (ap), DBUS_TYPE_INVALID);
+	else if (strcmp ("getStrength", request) == 0)
+		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_ap_get_strength (ap), DBUS_TYPE_INVALID);
 	else if (strcmp ("getFrequency", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_DOUBLE, nm_ap_get_freq (ap), DBUS_TYPE_INVALID);
 	else if (strcmp ("getRate", request) == 0)
@@ -1063,18 +1063,18 @@ static DBusMessage *nm_dbus_devices_handle_request (DBusConnection *connection, 
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, nm_device_get_udi (dev), DBUS_TYPE_INVALID);
 	else if (strcmp ("getIP4Address", request) == 0)
 		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_ip4_address (dev), DBUS_TYPE_INVALID);
-	else if (strcmp ("getMaxQuality", request) == 0)
+	else if (strcmp ("getStrength", request) == 0)
 	{
-		/* Only wireless devices have an active network */
+		/* Only wireless devices have signal strength */
 		if (!nm_device_is_wireless (dev))
 		{
 			dbus_message_unref (reply_message);
 			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
-					"Wired devices cannot have wireless networks.");
+					"Wired devices cannot have signal strength.");
 			return (reply_message);
 		}
 
-		dbus_message_append_args (reply_message, DBUS_TYPE_UINT32, nm_device_get_max_quality (dev), DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, nm_device_get_signal_strength (dev), DBUS_TYPE_INVALID);
 	}
 	else if (strcmp ("getActiveNetwork", request) == 0)
 	{

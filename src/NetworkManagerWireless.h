@@ -22,6 +22,7 @@
 #ifndef NETWORK_MANAGER_WIRELESS_H
 #define NETWORK_MANAGER_WIRELESS_H
 
+#include <iwlib.h>
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerAPList.h"
@@ -29,5 +30,7 @@
 char *	nm_wireless_128bit_key_from_passphrase	(char *passphrase);
 
 gboolean	nm_wireless_scan_monitor				(gpointer user_data);
+
+int		nm_wireless_qual_to_percent			(NMDevice *dev, const struct iw_quality *qual);
 
 #endif

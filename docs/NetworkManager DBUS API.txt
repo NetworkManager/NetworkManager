@@ -122,11 +122,9 @@ Methods:
 												Wired: no cable plugged in
 												Wireless: no base station, or bad encryption key
 
-	Name:	getMaxQuality		(Wireless only) Returns the maximum quality level of the wireless device, from
-								which a program may calculate a signal strength percentage based on this
-								number and the quality of an individual Network object
+	Name:	getStrength		(Wireless only) Return the strength percentage of the current wireless network
 	Args:	(none)
-	Returns:	DBUS_TYPE_UINT32			The maximum quality any wireless network can have
+	Returns:	DBUS_TYPE_INT32			The strength percentage of the current wireless network
 
 
 	Name:	getActiveNetwork	(Wireless only) Returns the Network object indentifier of the wireless network
@@ -164,9 +162,9 @@ Methods:
 	Returns:	DBUS_TYPE_STRING
 
 
-	Name:	getQuality		Returns the quality of this wirless network
+	Name:	getStrength		Return the strength percentage of the current wireless network
 	Args:	(none)
-	Returns:	DBUS_TYPE_INT32			A number between 0 and the device's Maximum Quality
+	Returns:	DBUS_TYPE_INT32			The strength percentage of the current wireless network
 
 
 	Name:	getFrequency		Returns the frequency/channel this wireless network

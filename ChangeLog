@@ -1,3 +1,43 @@
+2004-09-13  Dan Williams <dcbw@redhat.com>
+
+	* TODO: fix typo
+
+	* docs/NetworkManager DBUS API.txt
+		- Update for new signal strength changes
+
+	* panel-applet/NMWirelessApplet.c
+		- Make panel icon show strength of the current connection
+		- Cleanups and memleak fixes
+
+	* panel-applet/NMWirelessApplet.h
+		- Add data members for signal strength on devices and networks
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Free more DBusErrors
+		- Update for new signal strength changes
+		- Make devices and networks more like real objects, use ref/unref methods
+		- Actually unlock the mutex when updating the active device
+
+	* src/NetworkManagerAP.c
+		- Change AP functions and data members from "quality"->"strength"
+
+	* src/NetworkManagerDbus.c
+		- Kill "getMaxQuality" and "getQuality" methods
+		- Add "getStrength" methods for Networks and Devices
+
+	* src/NetworkManagerDevice.[ch]
+		- Add accessors for device strength
+		- Add functions to update strength for a device.  Note that not all drivers
+			actually support signal strength for scanned access points (Atmel drivers
+			being one)
+		- Calculate signal strength for each AP during scan
+
+	* src/NetworkManagerWireless.[ch]
+		- Add function to return signal strength % from a device and a raw quality struct
+
+	* test/nmclienttest.c
+		- Update for new signal strength changes
+
 2004-09-11  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c

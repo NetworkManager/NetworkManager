@@ -51,6 +51,8 @@ typedef struct NMDeviceWirelessOptions
 	gchar			*cur_essid;
 	gboolean			 supports_wireless_scan;
 	guint8			 max_quality;
+	guint8			 noise;
+	gint8			 strength;
 
 	GMutex			*scan_mutex;
 	NMAccessPointList	*ap_list;
@@ -548,6 +550,8 @@ void nm_device_update_link_active (NMDevice *dev, gboolean check_mii)
 	{
 		case DEVICE_TYPE_WIRELESS_ETHERNET:
 			link = nm_device_wireless_link_active (dev);
+			/* Update our current signal strength too */
+			nm_device_update_signal_strength (dev);
 			break;
 
 		case DEVICE_TYPE_WIRED_ETHERNET:
@@ -786,9 +790,102 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key)
 
 
 /*
+ * nm_device_get_signal_strength
+ *
+ * Get the current signal strength of a wireless device.  This only works when
+ * the card is associated with an access point, so will only work for the
+ * active device.
+ *
+ * Returns:	-1 on error
+ *			0 - 100  strength percentage of the connection to the current access point
+ *
+ */
+gint8 nm_device_get_signal_strength (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, -1);
+	g_return_val_if_fail (nm_device_is_wireless (dev), -1);
+
+	return (dev->options.wireless.strength);
+}
+
+
+/*
+ * nm_device_update_signal_strength
+ *
+ * Update the device's idea of the strength of its connection to the
+ * current access point.
+ *
+ */
+void nm_device_update_signal_strength (NMDevice *dev)
+{
+	gboolean	has_range;
+	int		iwlib_socket;
+	iwrange	range;
+	iwstats	stats;
+	int		percent = -1;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (dev->app_data != NULL);
+
+	/* If we aren't the active device, we don't really have a signal strength
+	 * that would mean anything.
+	 */
+#if 0
+	if (dev != dev->app_data->active_device)
+	{
+		dev->options.wireless.strength = -1;
+		return;
+	}
+#endif
+
+	/* Fake a value for test devices */
+	if (dev->test_device)
+	{
+		dev->options.wireless.strength = 75;
+		return;
+	}
+
+	iwlib_socket = iw_sockets_open ();
+	has_range = (iw_get_range_info (iwlib_socket, nm_device_get_iface (dev), &range) >= 0);
+	if (iw_get_stats (iwlib_socket, nm_device_get_iface (dev), &stats, &range, has_range) == 0)
+	{
+		/* Update our max quality while we're at it */
+		dev->options.wireless.max_quality = range.max_qual.level;
+		dev->options.wireless.noise = stats.qual.noise;
+		percent = nm_wireless_qual_to_percent (dev, &(stats.qual));
+	}
+	else
+	{
+		dev->options.wireless.max_quality = -1;
+		dev->options.wireless.noise = -1;
+		percent = -1;
+	}
+	close (iwlib_socket);
+
+	dev->options.wireless.strength = percent;
+}
+
+
+/*
+ * nm_device_get_noise
+ *
+ * Get the current noise level of a wireless device.
+ *
+ */
+guint8 nm_device_get_noise (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+
+	return (dev->options.wireless.noise);
+}
+
+
+/*
  * nm_device_get_max_quality
  *
- * Get the quality baseline of a wireless device.
+ * Get the quality maximum of a wireless device.
  *
  */
 guint8 nm_device_get_max_quality (NMDevice *dev)
@@ -1762,13 +1859,6 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 		wireless_scan		*tmp_ap;
 		int				 err;
 		NMAccessPointList	*old_ap_list = nm_device_ap_list_get (dev);
-		gboolean			 has_range;
-		iwrange			 range;
-		iwstats			 stats;
-
-		has_range = (iw_get_range_info (iwlib_socket, nm_device_get_iface (dev), &range) < 0) ? FALSE : TRUE;
-		if (!iw_get_stats (iwlib_socket, nm_device_get_iface (dev), &stats, &range, has_range))
-			dev->options.wireless.max_quality = range.max_qual.qual;
 
 		err = iw_scan (iwlib_socket, nm_device_get_iface (dev), WIRELESS_EXT, &scan_results);
 		if ((err == -1) && (errno == ENODATA))
@@ -1825,7 +1915,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 				if (tmp_ap->has_ap_addr)
 					nm_ap_set_address (nm_ap, (const struct ether_addr *)(tmp_ap->ap_addr.sa_data));
 
-				nm_ap_set_quality (nm_ap, tmp_ap->stats.qual.qual);
+				nm_ap_set_strength (nm_ap, nm_wireless_qual_to_percent (dev, &(tmp_ap->stats.qual)));
 
 				if (tmp_ap->b.has_freq)
 					nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
@@ -1985,7 +2075,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 		}
 
 		nm_ap_set_address (nm_ap, (const struct ether_addr *)(&fake_addrs[i]));
-		nm_ap_set_quality (nm_ap, fake_qualities[i]);
+		nm_ap_set_strength (nm_ap, fake_qualities[i]);
 		nm_ap_set_freq (nm_ap, fake_freqs[i]);
 
 		/* Merge settings from wireless networks, mainly Keys */

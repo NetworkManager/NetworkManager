@@ -38,16 +38,16 @@ typedef enum NMAPEncMethod
 
 
 NMAccessPoint *	nm_ap_new				(void);
-NMAccessPoint *	nm_ap_new_from_ap			(NMAccessPoint *ap);
+NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 
-void				nm_ap_unref				(NMAccessPoint *ap);
+void				nm_ap_unref			(NMAccessPoint *ap);
 void				nm_ap_ref				(NMAccessPoint *ap);
 
 const GTimeVal *	nm_ap_get_timestamp		(NMAccessPoint *ap);
 void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
-gchar *			nm_ap_get_essid			(NMAccessPoint *ap);
-void				nm_ap_set_essid			(NMAccessPoint *ap, gchar *essid);
+gchar *			nm_ap_get_essid		(NMAccessPoint *ap);
+void				nm_ap_set_essid		(NMAccessPoint *ap, gchar *essid);
 
 gchar *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
 gchar *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap, NMAPEncMethod method);
@@ -56,11 +56,11 @@ void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, gchar *key);
 gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
 
-struct ether_addr *	nm_ap_get_address			(NMAccessPoint *ap);
-void				nm_ap_set_address			(NMAccessPoint *ap, const struct ether_addr *addr);
+struct ether_addr *	nm_ap_get_address		(NMAccessPoint *ap);
+void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
-guint8			nm_ap_get_quality			(NMAccessPoint *ap);
-void				nm_ap_set_quality			(NMAccessPoint *ap, guint8 quality);
+gint8			nm_ap_get_strength		(NMAccessPoint *ap);
+void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 
 double			nm_ap_get_freq			(NMAccessPoint *ap);
 void				nm_ap_set_freq			(NMAccessPoint *ap, double freq);
@@ -68,19 +68,19 @@ void				nm_ap_set_freq			(NMAccessPoint *ap, double freq);
 guint16			nm_ap_get_rate			(NMAccessPoint *ap);
 void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 
-gboolean			nm_ap_get_invalid			(NMAccessPoint *ap);
-void				nm_ap_set_invalid			(NMAccessPoint *ap, gboolean invalid);
+gboolean			nm_ap_get_invalid		(NMAccessPoint *ap);
+void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
 
-gboolean			nm_ap_get_matched			(NMAccessPoint *ap);
-void				nm_ap_set_matched			(NMAccessPoint *ap, gboolean matched);
+gboolean			nm_ap_get_matched		(NMAccessPoint *ap);
+void				nm_ap_set_matched		(NMAccessPoint *ap, gboolean matched);
 
-NMAPEncMethod		nm_ap_get_enc_method		(NMAccessPoint *ap);
-void				nm_ap_set_enc_method		(NMAccessPoint *ap, NMAPEncMethod enc_method);
+NMAPEncMethod		nm_ap_get_enc_method	(NMAccessPoint *ap);
+void				nm_ap_set_enc_method	(NMAccessPoint *ap, NMAPEncMethod enc_method);
 
-gboolean			nm_ap_get_enc_method_good	(NMAccessPoint *ap);
-void				nm_ap_set_enc_method_good	(NMAccessPoint *ap, gboolean good);
+gboolean			nm_ap_get_enc_method_good(NMAccessPoint *ap);
+void				nm_ap_set_enc_method_good(NMAccessPoint *ap, gboolean good);
 
-gboolean			nm_ap_get_trusted			(NMAccessPoint *ap);
-void				nm_ap_set_trusted			(NMAccessPoint *ap, gboolean trusted);
+gboolean			nm_ap_get_trusted		(NMAccessPoint *ap);
+void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 
 #endif

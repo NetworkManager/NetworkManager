@@ -128,6 +128,49 @@ void get_device_name (DBusConnection *connection, char *path)
 	dbus_message_unref (message);
 }
 
+
+int get_object_signal_strength (DBusConnection *connection, char *path)
+{
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	DBusMessageIter iter;
+	DBusError		 error;
+
+	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						path,
+						"org.freedesktop.NetworkManager.Devices",
+						"getStrength");
+	if (message == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return (0);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		return (0);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "dbus reply message was NULL\n" );
+		return (0);
+	}
+
+	/* now analyze reply */
+	dbus_message_iter_init (reply, &iter);
+	int qual = dbus_message_iter_get_int32 (&iter);
+
+	dbus_message_unref (reply);
+
+	return (qual);
+}
+
+
 void get_nm_status (DBusConnection *connection)
 {
 	DBusMessage	*message;
@@ -305,15 +348,59 @@ int get_device_type (DBusConnection *connection, char *path)
 
 	/* now analyze reply */
 	dbus_message_iter_init (reply, &iter);
-	int	type;
-	type = dbus_message_iter_get_int32 (&iter);
-
-	fprintf (stderr, "      Device type: '%d'\n", type );
+	int	type = dbus_message_iter_get_int32 (&iter);
 
 	dbus_message_unref (reply);
 	dbus_message_unref (message);
 
 	return (type);
+}
+
+
+const char * get_network_name (DBusConnection *connection, const char *path)
+{
+	DBusMessage	*message2;
+	DBusMessage	*reply2;
+	DBusMessageIter iter2;
+	DBusError		 error2;
+
+	message2 = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						path,
+						"org.freedesktop.NetworkManager",
+						"getName");
+	if (message2 == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return (NULL);
+	}
+
+	dbus_error_init (&error2);
+	reply2 = dbus_connection_send_with_reply_and_block (connection, message2, -1, &error2);
+	dbus_message_unref (message2);
+	if (dbus_error_is_set (&error2))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error2.name, error2.message);
+		return (NULL);
+	}
+
+	if (reply2 == NULL)
+	{
+		fprintf( stderr, "dbus reply message was NULL\n" );
+		return (NULL);
+	}
+
+	/* now analyze reply */
+	dbus_message_iter_init (reply2, &iter2);
+	const char *string2 = dbus_message_iter_get_string (&iter2);
+	if (!string2)
+	{
+		fprintf (stderr, "NetworkManager returned a NULL network name" );
+		return (NULL);
+	}
+
+	dbus_message_unref (reply2);
+
+	return (string2);
 }
 
 
@@ -368,50 +455,11 @@ void get_device_networks (DBusConnection *connection, const char *path)
 	fprintf( stderr, "      Networks:\n" );
 	for (i = 0; i < num_networks; i++)
 	{
-		DBusMessage	*message2;
-		DBusMessage	*reply2;
-		DBusMessageIter iter2;
-		DBusError		 error2;
+		const char *name = get_network_name (connection, networks[i]);
 
-		message2 = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
-							networks[i],
-							"org.freedesktop.NetworkManager",
-							"getName");
-		if (message2 == NULL)
-		{
-			fprintf (stderr, "Couldn't allocate the dbus message\n");
-			return;
-		}
-
-		dbus_error_init (&error2);
-		reply2 = dbus_connection_send_with_reply_and_block (connection, message2, -1, &error2);
-		if (dbus_error_is_set (&error2))
-		{
-			fprintf (stderr, "%s raised:\n %s\n\n", error2.name, error2.message);
-			dbus_message_unref (message2);
-			return;
-		}
-	
-		if (reply2 == NULL)
-		{
-			fprintf( stderr, "dbus reply message was NULL\n" );
-			dbus_message_unref (message2);
-			return;
-		}
-	
-		/* now analyze reply */
-		dbus_message_iter_init (reply2, &iter2);
-		const char *string2 = dbus_message_iter_get_string (&iter2);
-		if (!string2)
-		{
-			fprintf (stderr, "NetworkManager returned a NULL active device object path" );
-			return;
-		}
-	
-		dbus_message_unref (reply2);
-		dbus_message_unref (message2);
-
-		fprintf( stderr, "         %s (%s)\n", networks[i], string2 );
+		fprintf( stderr, "         %s (%s)  Strength: %d%%\n", networks[i], name,
+				get_object_signal_strength (connection, networks[i]) );
+		dbus_free (name);
 	}
 
 	dbus_free_string_array (networks);
@@ -471,13 +519,20 @@ void get_devices (DBusConnection *connection)
 	{
 		int	 type;
 
-		fprintf (stderr, "   %s\n", devices[i]);
+		fprintf (stderr, "   %s", devices[i]);
 		if ((type = get_device_type (connection, devices[i])) == 2)
 		{
+			fprintf (stderr, "   Strength: %d%%\n", get_object_signal_strength (connection, devices[i]));
+			fprintf (stderr, "      Device type: '%d'\n", type );
 			get_device_active_network (connection, devices[i]);
 			get_device_networks (connection, devices[i]);
+			fprintf (stderr, "\n");
 		}
-		fprintf (stderr, "\n");
+		else
+		{
+			fprintf (stderr, "\n      Device type: '%d'\n", type );
+			fprintf (stderr, "\n");
+		}
 	}
 
 	dbus_free_string_array (devices);

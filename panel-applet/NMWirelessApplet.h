@@ -60,6 +60,37 @@ typedef enum
 
 
 /*
+ * Representation of a wireless network
+ *
+ */
+typedef struct
+{
+	int		 refcount;
+	char		*nm_name;
+	char		*essid;
+	gboolean	 encrypted;
+	gboolean	 active;
+	gint8	 strength;
+} WirelessNetwork;
+
+/*
+ * Representation of network device
+ *
+ */
+typedef struct
+{
+	int		 refcount;
+	char		*nm_device;
+	int		 type;
+	char		*nm_name;
+	char		*hal_name;
+	char		*udi;
+	gint		 strength;
+	GSList	*networks;
+} NetworkDevice;
+
+
+/*
  * Applet instance data
  *
  */
@@ -84,7 +115,7 @@ typedef struct
 	/* Data model elements */
 	GMutex			*data_mutex;
 	GSList			*devices;
-	char				*active_device;
+	NetworkDevice		*active_device;
 	AppletState		 applet_state;
 
 	/* Direct UI elements */
@@ -94,34 +125,6 @@ typedef struct
 	GtkWidget			*menu;
 	GtkWidget			*toplevel_menu;
 } NMWirelessApplet;
-
-
-/*
- * Representation of a wireless network
- *
- */
-typedef struct
-{
-	char		*nm_name;
-	char		*essid;
-	gboolean	 encrypted;
-	gboolean	 active;
-	guint8	 quality;
-} WirelessNetwork;
-
-/*
- * Representation of network device
- *
- */
-typedef struct
-{
-	char		*nm_device;
-	int		 type;
-	char		*nm_name;
-	char		*hal_name;
-	char		*udi;
-	GSList	*networks;
-} NetworkDevice;
 
 
 NetworkDevice *nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);

@@ -141,7 +141,21 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			break;
 
 		case (APPLET_STATE_WIRELESS):
-			applet->pix_state = PIX_WIRELESS_SIGNAL_4;
+			g_mutex_lock (applet->data_mutex);
+			if (applet->active_device)
+			{
+				if (applet->active_device->strength > 75)
+					applet->pix_state = PIX_WIRELESS_SIGNAL_4;
+				else if (applet->active_device->strength > 50)
+					applet->pix_state = PIX_WIRELESS_SIGNAL_3;
+				else if (applet->active_device->strength > 25)
+					applet->pix_state = PIX_WIRELESS_SIGNAL_2;
+				else if (applet->active_device->strength > 0)
+					applet->pix_state = PIX_WIRELESS_SIGNAL_1;
+				else
+					applet->pix_state = PIX_WIRELESS_NO_LINK;
+			}
+			g_mutex_unlock (applet->data_mutex);
 			break;
 
 		case (APPLET_STATE_WIRELESS_CONNECTING):
@@ -302,7 +316,7 @@ static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 {
 	int i;
-	
+
 	if (applet->menu)
 		nmwa_dispose_menu_items (applet);
 
@@ -636,7 +650,7 @@ static void nmwa_menu_add_network (GtkWidget *menu, GdkPixbuf *key, NetworkDevic
 	gtk_widget_show (label);
 
 	progress = gtk_progress_bar_new ();
-	percent = ((float)net->quality / (float)0x100);
+	percent = ((float)net->strength / (float)100);
 	percent = (percent < 0 ? 0 : (percent > 1.0 ? 1.0 : percent));
 	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (progress), percent);
 	gtk_box_pack_start (GTK_BOX (hbox), progress, TRUE, TRUE, 0);
@@ -722,11 +736,12 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 			{
 				GdkPixbuf	*icon = (dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? applet->wired_icon : applet->wireless_icon;
 				char		*name_string;
-				gboolean	 current = applet->active_device ? (strcmp (applet->active_device, dev->nm_device) == 0) : FALSE;
+				gboolean	 current = (dev == applet->active_device);
 
 				name_string = g_strdup_printf ("%s (%s)", (dev->hal_name ? dev->hal_name : dev->nm_name),
 						(dev->type == DEVICE_TYPE_WIRED_ETHERNET) ? "wired" : "wireless");
 				nmwa_menu_add_device_item (menu, icon, name_string, dev->nm_device, current, applet);
+				g_free (name_string);
 				nmwa_menu_device_add_networks (menu, dev, applet);
 				nmwa_menu_add_separator_item (menu);	
 			}

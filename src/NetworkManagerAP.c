@@ -32,7 +32,7 @@ struct NMAccessPoint
 	guint			 refcount;
 	char				*essid;
 	struct ether_addr	*address;
-	guint8			 quality;
+	gint8			 strength;
 	double			 freq;
 	guint16			 rate;
 	gboolean			 encrypted;
@@ -97,7 +97,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 		memcpy (new_addr, src_ap->address, sizeof (struct ether_addr));
 		new_ap->address = new_addr;
 	}
-	new_ap->quality = src_ap->quality;
+	new_ap->strength = src_ap->strength;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
 	new_ap->encrypted = src_ap->encrypted;
@@ -278,21 +278,21 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 
 
 /*
- * Get/set functions for quality
+ * Get/set functions for strength
  *
  */
-guint8 nm_ap_get_quality (NMAccessPoint *ap)
+gint8 nm_ap_get_strength (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
-	return (ap->quality);
+	return (ap->strength);
 }
 
-void  nm_ap_set_quality (NMAccessPoint *ap, guint8 quality)
+void  nm_ap_set_strength (NMAccessPoint *ap, gint8 strength)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->quality = quality;
+	ap->strength = strength;
 }
 
 
