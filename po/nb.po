@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-19 13:38-0400\n"
-"PO-Revision-Date: 2004-10-08 12:38+0200\n"
+"POT-Creation-Date: 2004-10-20 14:15+0200\n"
+"PO-Revision-Date: 2004-10-20 14:18+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -16,23 +16,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Endre trådløse nettverk"
-
-#: info-daemon/networks.glade:92
+#: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
 msgstr "<span weight=\"bold\">Trådløse nettverk:</span>"
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "Nøkkel for trådløst nettverk kreves"
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Endre trådløse nettverk"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Logg på nettverk"
+#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
+msgid "*"
+msgstr "*"
 
-#: info-daemon/passphrase.glade:100
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase\n"
+"128-bit Raw Hex Key"
+msgstr ""
+"128-bit passord\n"
+"128-bit heksadesimal nøkkel"
+
+#: info-daemon/passphrase.glade.h:5
+#, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -46,26 +51,22 @@ msgstr ""
 "Ett passord eller en krypteringsnøkkel kreves for å aksessere trådløst "
 "nettverk «%s»."
 
-#: info-daemon/passphrase.glade:129
+#: info-daemon/passphrase.glade.h:8
 msgid "Key Type:"
 msgstr "Type nøkkel:"
 
-#: info-daemon/passphrase.glade:150
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
-"128-bit passord\n"
-"128-bit heksadesimal nøkkel"
-
-#: info-daemon/passphrase.glade:180
+#: info-daemon/passphrase.glade.h:9
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
 msgid "Passphrase:"
 msgstr "Passord:"
 
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
+#: info-daemon/passphrase.glade.h:10
+msgid "Wireless Network Key Required"
+msgstr "Nøkkel for trådløst nettverk kreves"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "_Login to Network"
+msgstr "_Logg på nettverk"
 
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
 msgid "Key:"
@@ -81,13 +82,12 @@ msgstr ""
 "ressursene (.glade-filen ble ikke funnet)."
 
 #: panel-applet/NMWirelessApplet.c:716
-#, fuzzy
 msgid "Custom wireless network"
-msgstr "Trådløst nettverk"
+msgstr "Egendefinert trådløst nettverk"
 
 #: panel-applet/NMWirelessApplet.c:717
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
+msgstr "Oppgi ESSID for det trådløse nettverket du ønsker å koble deg til."
 
 #: panel-applet/NMWirelessApplet.c:800
 msgid "Other Wireless Networks..."
@@ -101,19 +101,17 @@ msgstr "Ingen nettverksenheter ble funnet"
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager kjører ikke..."
 
-#: panel-applet/essid.glade:52
+#: panel-applet/essid.glade.h:2
 msgid "C_onnect"
-msgstr ""
+msgstr "K_oble til"
 
-#: panel-applet/essid.glade:131
-#, fuzzy
-msgid "Wireless _Network:"
-msgstr "Trådløst nettverk"
-
-#: panel-applet/essid.glade:177
-#, fuzzy
+#: panel-applet/essid.glade.h:3
 msgid "Wireless _Adaptor:"
-msgstr "Trådløst nettverk"
+msgstr "Trådløst _kort:"
+
+#: panel-applet/essid.glade.h:4
+msgid "Wireless _Network:"
+msgstr "Trådløst _nettverk:"
 
 #: panel-applet/menu-info.c:101
 #, c-format
