@@ -121,6 +121,9 @@ static void nm_device_dhcp_configure (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (dev->dhcp_iface != NULL);
 
+	/* DHCP sets up a default route for the device, we need to remove that. */
+	nm_system_device_flush_routes (dev);
+
 	/* Replace basic info */
 	nm_system_device_set_ip4_address (dev, dev->dhcp_iface->ciaddr);
 

@@ -1,5 +1,11 @@
 2005-02-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerDHCP.c
+		- Hopefully fix double-default-route problem by cleaning up the default
+			route added by DHCP code right before the DHCP transaction begins
+
+2005-02-02  Dan Williams  <dcbw@redhat.com>
+
 	* named/nm-named-manager.c
 		- Write out valid resolv.conf when we exit
 
