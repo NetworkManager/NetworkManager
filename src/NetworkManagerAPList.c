@@ -299,76 +299,35 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NMData *data)
 {
 	NMAccessPoint	*ap = NULL;
+	NMAccessPoint	*list_ap = NULL;
 	char			*essid = NULL;
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (network != NULL);
 	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
 
-	/* Get the allowed access point's details from NetworkManagerInfo */
-	if ((essid = nm_dbus_get_network_essid (data->dbus_connection, list->type, network)))
+	if ((ap = nm_dbus_get_network_object (data->dbus_connection, list->type, network)))
 	{
-		NMEncKeyType	 enc_method;
-		char			*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network, &enc_method);
-		GTimeVal		*timestamp = nm_dbus_get_network_timestamp (data->dbus_connection, list->type, network);
-		gboolean		 trusted = nm_dbus_get_network_trusted (data->dbus_connection, list->type, network);
-		int			 num_addrs;
-		char			**addrs = nm_dbus_get_network_addresses (data->dbus_connection, list->type, network, &num_addrs);
-
-		if (timestamp != NULL)
+		if ((list_ap = nm_ap_list_get_ap_by_essid (list, network)))
 		{
-			gboolean	new = FALSE;
-
-			/* Find access point in list, if not found create a new AP and add it to the list */
-			if (!(ap = nm_ap_list_get_ap_by_essid (list, network)))
-			{
-				ap = nm_ap_new ();
-				new = TRUE;
-			}
-
-			nm_ap_set_essid (ap, essid);
-			nm_ap_set_timestamp (ap, timestamp);
-			nm_ap_set_trusted (ap, trusted);
-			if (key && strlen (key))
-				nm_ap_set_enc_key_source (ap, key, enc_method);
-			else
-				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
-
-			/* Get user addresses, form into a GSList, and stuff into the AP */
-			{
-				GSList	*addr_list = NULL;
-				int		 i;
-
-				if (!addrs)
-					num_addrs = 0;
-
-				for (i = 0; i < num_addrs; i++)
-				{
-					if (addrs[i] && (strlen (addrs[i]) >= 11))
-						addr_list = g_slist_append (addr_list, g_strdup (addrs[i]));
-				}
-				nm_ap_set_user_addresses (ap, addr_list);
-				g_slist_foreach (addr_list, (GFunc)g_free, NULL);
-				g_slist_free (addr_list);
-			}
-
-			if (new)
-			{
-				nm_ap_list_append_ap (list, ap);
-				nm_ap_unref (ap);
-			}
+			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
+			nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
+			nm_ap_set_enc_key_source (list_ap, nm_ap_get_enc_key_source (ap), nm_ap_get_enc_method (ap));
+			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
 		}
-
-		dbus_free_string_array (addrs);
-		g_free (timestamp);
-		g_free (essid);
-		g_free (key);
+		else
+		{
+			/* New AP, just add it to the list */
+			nm_ap_list_append_ap (list, ap);
+			nm_ap_unref (ap);
+		}
 	}
 	else
 	{
 		/* AP got deleted, remove it from our list */
-		if ((ap = nm_ap_list_get_ap_by_essid (list, network)))
-			nm_ap_list_remove_ap (list, ap);
+		if ((list_ap = nm_ap_list_get_ap_by_essid (list, network)))
+			nm_ap_list_remove_ap (list, list_ap);
 	}
 }
 

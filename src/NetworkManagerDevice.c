@@ -2173,15 +2173,23 @@ void nm_device_activation_cancel (NMDevice *dev)
 	{
 		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
-		if (dev->dhcp_iface)
-			nm_device_dhcp_cease (dev);
 
 		/* Spin until cancelled.  Possible race conditions or deadlocks here.
 		 * The other problem with waiting here is that we hold up dbus traffic
 		 * that we should respond to.
 		 */
 		while (nm_device_is_activating (dev))
+		{
+			/* Nice race here between quit activation and dhcp.  We may not have
+			 * started DHCP when we're told to quit activation, so we need to keep
+			 * signalling dhcp to quit, which it will pick up whenever it starts.
+			 * This should really be taken care of a better way.
+			 */
+			if (dev->dhcp_iface)
+				nm_device_dhcp_cease (dev);
+
 			g_usleep (G_USEC_PER_SEC / 2);
+		}
 		syslog (LOG_DEBUG, "nm_device_activation_cancel(%s): cancelled.", nm_device_get_iface (dev));
 	}
 }

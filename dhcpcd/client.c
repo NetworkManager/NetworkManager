@@ -555,7 +555,8 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 
 		/* Packet receive loop */
 		data_good = 0;
-		while ((timeval_subtract (&diff, &overall_end, &recv_end) == 0) && !data_good)
+		gettimeofday (&current, NULL);
+		while ((timeval_subtract (&diff, &recv_end, &current) == 0) && !data_good)
 		{
 			int		len;
 			int		o;
@@ -570,6 +571,8 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 				goto out;
 			}
 			syslog (LOG_INFO, "DHCP: Got some data to check for reply packet.");
+
+			gettimeofday (&current, NULL);
 
 			/* Ok, we allegedly have the data we need, so grab it from the queue */
 			o = sizeof (struct sockaddr_ll);

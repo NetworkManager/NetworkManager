@@ -808,312 +808,118 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection)
 
 
 /*
- * nm_dbus_get_network_essid
+ * nm_dbus_get_network_properties
  *
- * Get a network's essid from NetworkManagerInfo
- *
- * NOTE: caller MUST free returned value
+ * Get a wireless network from NetworkManagerInfo
  *
  */
-char * nm_dbus_get_network_essid (DBusConnection *connection, NMNetworkType type, const char *network)
-{
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
-	char				*essid = NULL;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (network != NULL, NULL);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NULL);
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkEssid");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_essid(): Couldn't allocate the dbus message");
-		return (NULL);
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
-								DBUS_TYPE_INVALID);
-
-	/* Send message and get essid back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	if (dbus_error_is_set (&error))
-		syslog (LOG_ERR, "nm_dbus_get_network_essid(): %s raised %s", error.name, error.message);
-	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_essid(): reply was NULL.");
-	else
-	{
-		char	*dbus_string;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID))
-		{
-			essid = (dbus_string == NULL ? NULL : strdup (dbus_string));
-			dbus_free (dbus_string);
-		}
-	}
-
-	dbus_message_unref (message);
-	if (reply)
-		dbus_message_unref (reply);
-
-	return (essid);
-}
-
-
-/*
- * nm_dbus_get_network_key
- *
- * Get a network's key and key type from NetworkManagerInfo.
- *
- * NOTE: caller MUST free returned value
- *
- */
-char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, const char *network, NMEncKeyType *enc_method)
-{
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
-	char				*key = NULL;
-
-	g_return_val_if_fail (enc_method != NULL, NULL);
-	*enc_method = NM_ENC_TYPE_UNKNOWN;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (network != NULL, NULL);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NULL);
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkKey");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_key(): Couldn't allocate the dbus message");
-		return (NULL);
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
-								DBUS_TYPE_INVALID);
-
-	/* Send message and get key back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_key(): %s raised %s", error.name, error.message);
-		dbus_error_free (&error);
-	}
-	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_key(): reply was NULL.");
-	else
-	{
-		char			*dbus_key;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_key, DBUS_TYPE_INT32, enc_method, DBUS_TYPE_INVALID))
-		{
-			key = (dbus_key == NULL ? NULL : strdup (dbus_key));
-			dbus_free (dbus_key);
-		}
-		else
-			*enc_method = NM_ENC_TYPE_UNKNOWN;
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-
-		dbus_message_unref (reply);
-	}
-
-	return (key);
-}
-
-
-/*
- * nm_dbus_get_network_timestamp
- *
- * Get a network's timestamp from NetworkManagerInfo
- *
- * Returns:	NULL on error
- *			timestamp if no error
- *
- */
-GTimeVal *nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkType type, const char *network)
-{
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
-	guint32			timestamp_secs;
-	GTimeVal		*timestamp;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (network != NULL, NULL);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NULL);
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkTimestamp");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_timestamp(): Couldn't allocate the dbus message");
-		return NULL;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
-								DBUS_TYPE_INVALID);
-
-	/* Send message and get timestamp back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	if (dbus_error_is_set (&error))
-		syslog (LOG_ERR, "nm_dbus_get_network_timestamp(): %s raised %s", error.name, error.message);
-	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_timestamp(): reply was NULL.");
-	else
-	{
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &timestamp_secs, DBUS_TYPE_INVALID))
-			timestamp_secs = -1;
-	}
-
-	dbus_message_unref (message);
-	if (reply)
-		dbus_message_unref (reply);
-
-	if (timestamp_secs < 0)
-		return NULL;
-	timestamp = g_new0 (GTimeVal, 1);
-	timestamp->tv_sec = timestamp_secs;
-	timestamp->tv_usec = 0;
-
-	return (timestamp);
-}
-
-
-/*
- * nm_dbus_get_network_trusted
- *
- * Get whether or not a network is a "trusted" network from NetworkManagerInfo
- *
- * Returns:	FALSE on error or if network is not trusted
- *			TRUE if the network is trusted
- *
- */
-gboolean nm_dbus_get_network_trusted (DBusConnection *connection, NMNetworkType type, const char *network)
-{
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
-	gboolean			 trusted = FALSE;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkTrusted");
-	if (!message)
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_trusted(): Couldn't allocate the dbus message");
-		return (FALSE);
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
-								DBUS_TYPE_INT32, (int)type,
-								DBUS_TYPE_INVALID);
-
-	/* Send message and get trusted status back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	if (dbus_error_is_set (&error))
-	{
-		syslog (LOG_ERR, "nm_dbus_get_network_trusted(): %s raised %s", error.name, error.message);
-		dbus_error_free (&error);
-	}
-	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_trusted(): reply was NULL.");
-	else
-	{
-		dbus_error_init (&error);
-		dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, &trusted, DBUS_TYPE_INVALID);
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-	}
-
-	dbus_message_unref (message);
-	if (reply)
-		dbus_message_unref (reply);
-
-	return (trusted);
-}
-
-
-/*
- * nm_dbus_get_network_addresses
- *
- * Query NetworkManagerInfo for known MAC address of a wireless network
- *
- * Returns:	NULL on error of if no MAC address exists for that network
- *			char array of addresses on success, num_addr = # items
- *
- */
-char **nm_dbus_get_network_addresses (DBusConnection *connection, NMNetworkType type, const char *network, int *num_addr)
+NMAccessPoint *nm_dbus_get_network_object (DBusConnection *connection, NMNetworkType type, const char *network)
 {
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
 	gboolean			 success = FALSE;
-	char				**list =  NULL;
+	NMAccessPoint		*ap = NULL;
 
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
-	g_return_val_if_fail (num_addr != NULL, FALSE);
+	char				*essid = NULL;
+	gint				 timestamp_secs = -1;
+	char				*key = NULL;
+	NMEncKeyType		 key_type = -1;
+	gboolean			 trusted = FALSE;
+	char				**addrs = NULL;
+	gint				 num_addr = -1;
+	
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (network != NULL, NULL);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NULL);
 
-	*num_addr = 0;
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "getNetworkAddresses");
-	if (!message)
+	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworkProperties")))
 	{
-		syslog (LOG_ERR, "nm_dbus_get_network_ap_mac_address(): Couldn't allocate the dbus message");
-		return (FALSE);
+		syslog (LOG_ERR, "nm_dbus_get_network_object(): Couldn't allocate the dbus message");
+		return (NULL);
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
 								DBUS_TYPE_INT32, (int)type,
 								DBUS_TYPE_INVALID);
 
-	/* Send message and get trusted status back from NetworkManagerInfo */
+	/* Send message and get properties back from NetworkManagerInfo */
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+
 	if (dbus_error_is_set (&error))
 	{
-		/* Ignore the "NoAddresses" error */
-		if (strcmp (error.name, "org.freedesktop.NetworkManagerInfo.NoAddresses"))
-			syslog (LOG_ERR, "nm_dbus_get_network_addresses(): %s raised %s", error.name, error.message);
-		dbus_error_free (&error);
+		syslog (LOG_ERR, "nm_dbus_get_network_object(): %s raised '%s'", error.name, error.message);
+		goto out;
 	}
-	else if (!reply)
-		syslog (LOG_NOTICE, "nm_dbus_get_network_addresses(): reply was NULL.");
-	else
+
+	if (!reply)
 	{
-		DBusMessageIter	 iter;
-
-		dbus_message_iter_init (reply, &iter);
-		dbus_message_iter_get_string_array (&iter, &list, num_addr);
-		if (*num_addr > 0)
-			success = TRUE;
+		syslog (LOG_NOTICE, "nm_dbus_get_network_object(): reply was NULL.");
+		goto out;
 	}
 
-	dbus_message_unref (message);
+	dbus_error_init (&error);
+	success = dbus_message_get_args (reply, &error,
+								DBUS_TYPE_STRING, &essid,
+								DBUS_TYPE_INT32, &timestamp_secs,
+								DBUS_TYPE_STRING, &key,
+								DBUS_TYPE_INT32, &key_type,
+								DBUS_TYPE_BOOLEAN, &trusted,
+								DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &addrs, &num_addr,
+								DBUS_TYPE_INVALID);
+	if (success)
+	{
+		if (timestamp_secs > 0)
+		{
+			GTimeVal	*timestamp = g_new0 (GTimeVal, 1);
+
+			ap = nm_ap_new ();
+			nm_ap_set_essid (ap, essid);
+
+			timestamp->tv_sec = timestamp_secs;
+			timestamp->tv_usec = 0;
+			nm_ap_set_timestamp (ap, timestamp);
+			g_free (timestamp);
+
+			nm_ap_set_trusted (ap, trusted);
+
+			if (key && strlen (key))
+				nm_ap_set_enc_key_source (ap, key, key_type);
+			else
+				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
+
+			/* Get user addresses, form into a GSList, and stuff into the AP */
+			{
+				GSList	*addr_list = NULL;
+				int		 i;
+
+				if (!addrs)
+					num_addr = 0;
+
+				for (i = 0; i < num_addr; i++)
+				{
+					if (addrs[i] && (strlen (addrs[i]) >= 11))
+						addr_list = g_slist_append (addr_list, g_strdup (addrs[i]));
+				}
+				nm_ap_set_user_addresses (ap, addr_list);
+				g_slist_foreach (addr_list, (GFunc)g_free, NULL);
+				g_slist_free (addr_list);
+			}
+		}
+		dbus_free_string_array (addrs);
+		g_free (essid);
+		g_free (key);
+	}
+	else
+		syslog (LOG_ERR, "nm_dbus_get_network_object(): bad data, %s raised %s", error.name, error.message);
+
+out:
 	if (reply)
 		dbus_message_unref (reply);
 
-	return (list);
+	return (ap);
 }
 
 

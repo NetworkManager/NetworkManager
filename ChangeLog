@@ -1,3 +1,23 @@
+2005-01-09  Dan Williams <dcbw@redhat.com>
+
+	* dhcpcd/client.c
+		- Use correct timeout value
+
+	* info-daemon/NetworkManagerInfoDbus.c
+	  src/NetworkManagerDbus.c
+		- Consolidate communication between NM and NMI by doing only 1 dbus
+			method call to get Wireless Network info from NMI instead of 6
+
+	* src/NetworkManager.c
+		- Make sure to cancel activation when we receive a SIGTERM, otherwise
+			when we didn't have an AP to use, we'd wait for one forever without
+			quitting
+
+	* src/NetworkManagerDevice.c
+		- nm_device_activation_cancel(): Fix a race between dhcp and quitting
+			activation, dhcp might not have started yet but we don't quit activation
+			before starting it, so the quit signal gets lost
+
 2005-01-07  Dan Williams <dcbw@redhat.com>
 
 	* dhcpcd/client.c

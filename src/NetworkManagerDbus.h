@@ -57,11 +57,8 @@ void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *
 
 void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
-char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType type, const char *network);
-char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network, NMEncKeyType *enc_method);
-GTimeVal *	nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
-gboolean		nm_dbus_get_network_trusted			(DBusConnection *connection, NMNetworkType type, const char *network);
-char **		nm_dbus_get_network_addresses			(DBusConnection *connection, NMNetworkType type, const char *network, int *num_addr);
+NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
+
 gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
 
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);

@@ -621,6 +621,8 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 {
 	NMData *data = user_data;
 	syslog (LOG_NOTICE, "Caught terminiation signal");
+	if (data->active_device && nm_device_is_activating (data->active_device))
+		nm_device_activation_cancel (data->active_device);
 	g_main_loop_quit (data->main_loop);
 	return FALSE;
 }

@@ -328,24 +328,30 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 
 	return (reply_message);
 }
- 
+
 
 /*
- * nmi_dbus_get_network_timestamp
+ * nmi_dbus_get_network
  *
- * If the specified network exists, get its timestamp from gconf
- * and pass it back as a dbus message.
+ * Returns the properties of a specific wireless network from gconf
  *
  */
-static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessage *message)
+static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessage *message)
 {
 	DBusMessage		*reply_message = NULL;
-	gchar			*key = NULL;
+	gchar			*gconf_key = NULL;
 	char				*network = NULL;
 	GConfValue		*value;
+	GConfValue		*ap_addrs_value;
 	DBusError			 error;
 	NMNetworkType		 type;
 	char				*escaped_network;
+
+	char				*essid = NULL;
+	gint				 timestamp = -1;
+	char				*key = NULL;
+	NMEncKeyType		 key_type = -1;
+	gboolean			 trusted = FALSE;
 
 	g_return_val_if_fail (info != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -356,270 +362,127 @@ static DBusMessage *nmi_dbus_get_network_timestamp (NMIAppInfo *info, DBusMessag
 		|| (strlen (network) <= 0))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworkTimestamp called with invalid arguments.");
+							"NetworkManagerInfo::getNetworkProperties called with invalid arguments.");
 		return (reply_message);
 	}
 
-	/* Grab timestamp key for our access point from GConf */
 	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
-	value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
-
-	if (value)
-	{
-		reply_message = dbus_message_new_method_return (message);
-		dbus_message_append_args (reply_message, DBUS_TYPE_INT32, gconf_value_get_int (value), DBUS_TYPE_INVALID);
-		gconf_value_free (value);
-	}
-	else
-	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
-							"NetworkManagerInfo::getNetworkTimestamp could not access data for network '%s'", network);
-	}
-
-	dbus_free (network);
-	return (reply_message);
-}
-
-
-/*
- * nmi_dbus_get_network_essid
- *
- * If the specified network exists, get its essid from gconf
- * and pass it back as a dbus message.
- *
- */
-static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *message)
-{
-	DBusMessage		*reply_message = NULL;
-	gchar			*key = NULL;
-	char				*network = NULL;
-	GConfValue		*value;
-	DBusError			 error;
-	NMNetworkType		 type;
-	char				*escaped_network;
-
-	g_return_val_if_fail (info != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0))
-	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworkEssid called with invalid arguments.");
-		return (reply_message);
-	}
 
 	/* Grab essid key for our access point from GConf */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
-	value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
-
-	if (value)
+	gconf_key = g_strdup_printf ("%s/%s/essid", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
 	{
-		reply_message = dbus_message_new_method_return (message);
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (value), DBUS_TYPE_INVALID);
+		essid = g_strdup (gconf_value_get_string (value));
+		gconf_value_free (value);
+	}
+	g_free (gconf_key);
+
+	/* Grab timestamp key for our access point from GConf */
+	gconf_key = g_strdup_printf ("%s/%s/timestamp", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		timestamp = gconf_value_get_int (value);
+		gconf_value_free (value);
+	}	
+	g_free (gconf_key);
+
+	/* Grab user-key key for our access point from GConf */
+	gconf_key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		key = g_strdup (gconf_value_get_string (value));
 		gconf_value_free (value);
 	}
 	else
+		key = g_strdup ("");
+	g_free (gconf_key);
+
+	gconf_key = g_strdup_printf ("%s/%s/key_type", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
-							"NetworkManagerInfo::getNetworkEssid could not access data for network '%s'", network);
-	}
-
-	dbus_free (network);
-	return (reply_message);
-}
-
-
-/*
- * nmi_dbus_get_network_key
- *
- * If the specified network exists, get its key and key type from gconf
- * and pass it back as a dbus message.
- *
- */
-static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *message)
-{
-	DBusMessage		*reply_message = NULL;
-	gchar			*key = NULL;
-	char				*network = NULL;
-	GConfValue		*key_value;
-	GConfValue		*key_type_value;
-	DBusError			 error;
-	NMNetworkType		 type;
-	char				*escaped_network;
-
-	g_return_val_if_fail (info != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0))
-	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworkKey called with invalid arguments.");
-		return (reply_message);
-	}
-
-	/* Grab user-key key for our access point from GConf */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/key", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	key_value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
-
-	key = g_strdup_printf ("%s/%s/key_type", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	key_type_value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
-	g_free (escaped_network);
-
-	/* We don't error out if no key was found in gconf, we return blank key */
-	reply_message = dbus_message_new_method_return (message);
-	if (key_value && key_type_value)
-	{
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, gconf_value_get_string (key_value),
-								DBUS_TYPE_INT32, gconf_value_get_int (key_type_value), DBUS_TYPE_INVALID);
-	}
-	else
-		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "", DBUS_TYPE_INT32, -1, DBUS_TYPE_INVALID);
-
-	if (key_value)
-		gconf_value_free (key_value);
-	if (key_type_value)
-		gconf_value_free (key_type_value);
-
-	return (reply_message);
-}
-
-
-/*
- * nmi_dbus_get_network_trusted
- *
- * If the specified network exists, get its "trusted" value
- * from gconf and pass it back.
- *
- */
-static DBusMessage *nmi_dbus_get_network_trusted (NMIAppInfo *info, DBusMessage *message)
-{
-	DBusMessage		*reply_message = NULL;
-	gchar			*key = NULL;
-	char				*network = NULL;
-	GConfValue		*value;
-	DBusError			 error;
-	NMNetworkType		 type;
-	char				*escaped_network;
-
-	g_return_val_if_fail (info != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0))
-	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworkTrusted called with invalid arguments.");
-		return (reply_message);
-	}
-
-	/* Grab user-key key for our access point from GConf */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
-	value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
-
-	/* We don't error out if no key was found in gconf, we return blank key */
-	reply_message = dbus_message_new_method_return (message);
-	if (value)
-	{
-		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, gconf_value_get_bool (value), DBUS_TYPE_INVALID);
+		key_type = gconf_value_get_int (value);
 		gconf_value_free (value);
 	}
-	else
-		dbus_message_append_args (reply_message, DBUS_TYPE_BOOLEAN, FALSE, DBUS_TYPE_INVALID);
+	g_free (gconf_key);
 
-	return (reply_message);
-}
-
-
-/*
- * nmi_dbus_get_network_addresses
- *
- * If the specified network exists, grabs a list of AP MAC addresses
- * from gconf and pass it back.
- *
- */
-static DBusMessage *nmi_dbus_get_network_addresses (NMIAppInfo *info, DBusMessage *message)
-{
-	DBusMessage		*reply_message = NULL;
-	char				*network = NULL;
-	NMNetworkType		 type;
-	char				*key;
-	GConfValue		*value;
-	DBusError			 error;
-	char				*escaped_network;
-	gboolean			 success = FALSE;
-
-	g_return_val_if_fail (info != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0))
+	/* Grab the network's trusted status */
+	gconf_key = g_strdup_printf ("%s/%s/trusted", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getNetworkAddresses called with invalid arguments.");
-		return (reply_message);
+		trusted = gconf_value_get_bool (value);
+		gconf_value_free (value);
 	}
+	g_free (gconf_key);
 
-	/* Grab user-key key for our access point from GConf */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
-	g_free (escaped_network);
-	value = gconf_client_get (info->gconf_client, key, NULL);
-	g_free (key);
+	/* Grab the list of stored AP MAC addresses */
+	gconf_key = g_strdup_printf ("%s/%s/addresses", NMI_GCONF_WIRELESS_NETWORKS_PATH, escaped_network);
+	ap_addrs_value = gconf_client_get (info->gconf_client, gconf_key, NULL);
+	g_free (gconf_key);
 
-	/* We don't error out if no key was found in gconf, we return blank key */
-	reply_message = dbus_message_new_method_return (message);
-	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+	if (!essid || (timestamp < 0) || (key_type < 0))
+	{
+		if (!essid)
+		{
+			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+							"NetworkManagerInfo::getNetworkProperties could not access essid for network '%s'", network);
+		}
+		else if (timestamp < 0)
+		{
+			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+							"NetworkManagerInfo::getNetworkProperties could not access timestamp for network '%s'", network);
+		}
+		else if (key_type < 0)
+		{
+			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
+							"NetworkManagerInfo::getNetworkProperties could not access key_type for network '%s'", network);
+		}
+	}
+	else
 	{
 		DBusMessageIter	 iter;
 		DBusMessageIter	 iter_array;
-		GSList			*list = gconf_value_get_list (value);
-		GSList			*elem = list;
+		gboolean			 success = FALSE;
 
+		reply_message = dbus_message_new_method_return (message);
 		dbus_message_iter_init (reply_message, &iter);
+
+		/* Add general properties to dbus reply */
+		dbus_message_iter_append_string (&iter, essid);
+		dbus_message_iter_append_int32  (&iter, timestamp);
+		dbus_message_iter_append_string (&iter, key);
+		dbus_message_iter_append_int32  (&iter, key_type);
+		dbus_message_iter_append_boolean(&iter, trusted);
+
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
 
-		while (elem != NULL)
+		/* Add a string array of access point MAC addresses if the array is valid */
+		if (ap_addrs_value && (ap_addrs_value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (ap_addrs_value) == GCONF_VALUE_STRING))
 		{
-			const char *string = gconf_value_get_string ((GConfValue *)elem->data);
-			if (string)
+			GSList			*list = gconf_value_get_list (ap_addrs_value);
+			GSList			*elem = list;
+
+			while (elem != NULL)
 			{
-				dbus_message_iter_append_string (&iter_array, string);
-				success = TRUE;
+				const char *string = gconf_value_get_string ((GConfValue *)elem->data);
+				if (string)
+				{
+					dbus_message_iter_append_string (&iter_array, string);
+					success = TRUE;
+				}
+				elem = g_slist_next (elem);
 			}
-			elem = g_slist_next (elem);
 		}
-	}
-	gconf_value_free (value);
 
-	if (!success)
-	{
-		dbus_message_unref (reply_message);
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoAddresses",
-						"There were no stored addresses for this wireless network.");
-	}
+		if (!success)
+			dbus_message_iter_append_string (&iter_array, "");
+	}	
+	gconf_value_free (ap_addrs_value);
 
+	g_free (essid);
+	g_free (key);
+
+	g_free (escaped_network);
+	dbus_free (network);
 	return (reply_message);
 }
 
@@ -761,16 +624,8 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 	}
 	else if (strcmp ("getNetworks", method) == 0)
 		reply_message = nmi_dbus_get_networks (info, message);
-	else if (strcmp ("getNetworkTimestamp", method) == 0)
-		reply_message = nmi_dbus_get_network_timestamp (info, message);
-	else if (strcmp ("getNetworkEssid", method) == 0)
-		reply_message = nmi_dbus_get_network_essid (info, message);
-	else if (strcmp ("getNetworkKey", method) == 0)
-		reply_message = nmi_dbus_get_network_key (info, message);
-	else if (strcmp ("getNetworkTrusted", method) == 0)
-		reply_message = nmi_dbus_get_network_trusted (info, message);
-	else if (strcmp ("getNetworkAddresses", method) == 0)
-		reply_message = nmi_dbus_get_network_addresses (info, message);
+	else if (strcmp ("getNetworkProperties", method) == 0)
+		reply_message = nmi_dbus_get_network_properties (info, message);
 	else if (strcmp ("addNetworkAddress", method) == 0)
 		nmi_dbus_add_network_address (info, message);
 	else
