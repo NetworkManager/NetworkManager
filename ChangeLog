@@ -1,3 +1,67 @@
+2004-08-11  Dan Williams <dcbw@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c:
+		- (main): clean up Seth's code style
+
+	* info-daemon/NetworkManagerInfoDbus.c:
+		- Use the more aptly-named path/service/interface constants from NetworkManager
+		- Don't return empty strings ("") as object paths ever, instead return errors
+
+	* panel-applet/NMWirelessApplet.c:
+		- Clean up Seth's code style
+
+	* src/NetworkManager.[ch]
+		- (nm_remove_device_from_list): remove anything having to do with pending_device
+		- (main, nm_print_usage): change --daemon=[yes|no] -> --no-daemon
+
+	* src/NetworkManagerAPList.[ch]
+		- Move Iter struct right above the iter functions to preserve opacity
+		- (nm_ap_list_remove_ap): implement
+		- (nm_ap_list_update_network): deal with errors returned from nm_dbus_get_network_priority(),
+			remove AP if NetworkManagerInfo doesn't know anything about it
+		- (nm_ap_list_diff): user NMAPList iterators
+		- (nm_ap_list_print_members): implement debugging function
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_nm_get_active_device): remove anything to do with pending_device
+		- (nm_dbus_get_user_key_for_network): remove DBusPendingCall stuff (unused),
+			and move the actual key setting stuff into NetworkManagerDevice.c
+		- (nm_dbus_get_network_priority): return -1 now on errors
+		- (nm_dbus_nmi_filter): fix strcmp() error that caused PreferredNetworkUpdate signals to
+			get lost, and force the active device to update its "best" ap when AP lists change
+		- (nm_dbus_nm_message_handler): Update conditions for returning "connecting" for a "status"
+			method call due to pending_device member removal
+
+	* src/NetworkManagerDevice.[ch]
+		- Move NMDevice structure to the top
+		- Add a wireless scan mutex and a best_ap mutex to the Wireless Options structure
+		- Remove Pending Action stuff from everywhere
+		- (nm_device_activation_*): We now "begin" activation and start a thread to do the
+			activation for us.  This thread blocks until all conditions for activation have
+			been met (ie for wireless devices, we need a valid WEP key and a "best" ap), and
+			then setup up the interface and runs dhclient.  We have to do this because there
+			is no guaruntee how long dhclient takes, and while we are blocking on it, we cannot
+			run our main loop and respond to dbus method calls or HAL device removals/inserts
+		- (nm_device_set_user_key_for_network): Move logic here from NetworkManagerDbus.c so we
+			can tell nm_device_activation_worker() that we've got a key
+		- (nm_device_*_best_ap): lock access to best_ap member of Wireless Options structure
+		- (nm_device_get_path_for_ap): dumb it down so the list doesn't lock against itself when
+			diffing (AP appear/disappear signal functions make sure the AP is actually in the device's list)
+		- (nm_device_update_best_ap): move logic from nm_wireless_is_ap_better() here
+
+	* src/NetworkManagerPolicy.c
+		- Remove anything to do with pending_device
+		- Adjust device activation to deal with activation-in-worker-thread
+
+	* src/NetworkManagerUtils.c
+		- Clean up locking debugging a bit
+
+	* src/NetworkManagerWireless.[ch]
+		- (nm_wireless_is_ap_better): remove, stick logic in nm_device_update_best_ap().  This function
+			was badly named and is better as a device function
+
+	* panel-applet/.cvsignore: add
+
 2004-08-09  Seth Nickell  <seth@gnome.org>
 
 	* panel-applet/NMWirelessApplet.c: (nmwa_timeout_handler),

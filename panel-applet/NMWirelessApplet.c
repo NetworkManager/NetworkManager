@@ -162,22 +162,28 @@ static int nmwa_timeout_handler (NMWirelessApplet *applet)
 	if (!applet->connection)
 		applet->connection = nmwa_dbus_init (applet);
 
-	if (applet->nm_active) {
-	  fprintf( stderr, "NM is present {\n");
-	  if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection))) {
-	    applet->have_active_device = TRUE;
-	    nmwa_update_state (applet);
-	    fprintf( stderr, "  A wireless device was active, showing applet\n");
-	    gtk_widget_show (GTK_WIDGET (applet));
-	    dbus_free (active_device);
-	  } else {
-	    fprintf( stderr, "  A wireless device was not active, hiding applet\n");
-	    gtk_widget_hide (GTK_WIDGET (applet));
-	  }
-	  fprintf( stderr, "}\n\n");
-	} else {
-	  fprintf( stderr, "NM is *not* present\n");
-	  gtk_widget_hide (GTK_WIDGET (applet));
+	if (applet->nm_active)
+	{
+		fprintf( stderr, "NM is present {\n");
+		if ((active_device = nmwa_dbus_get_active_wireless_device (applet->connection)))
+		{
+			applet->have_active_device = TRUE;
+			nmwa_update_state (applet);
+			fprintf( stderr, "  A wireless device was active, showing applet\n");
+			gtk_widget_show (GTK_WIDGET (applet));
+			dbus_free (active_device);
+		}
+		else
+		{
+			fprintf( stderr, "  A wireless device was not active, hiding applet\n");
+			gtk_widget_hide (GTK_WIDGET (applet));
+		}
+		fprintf( stderr, "}\n\n");
+	}
+	else
+	{
+		fprintf( stderr, "NM is *not* present\n");
+		gtk_widget_hide (GTK_WIDGET (applet));
 	}
 
   	return (TRUE);

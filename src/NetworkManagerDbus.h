@@ -53,7 +53,7 @@ void			nm_dbus_signal_wireless_network_appeared	(DBusConnection *connection, NMD
 
 void			nm_dbus_signal_wireless_network_disappeared	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap);
 
-void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, DBusPendingCall **pending);
+void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap);
 
 void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
@@ -61,7 +61,7 @@ char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType t
 
 char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network);
 
-guint		nm_dbus_get_network_priority			(DBusConnection *connection, NMNetworkType type, const char *network);
+gint			nm_dbus_get_network_priority			(DBusConnection *connection, NMNetworkType type, const char *network);
 
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 

@@ -163,7 +163,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
 	if (data->info_daemon_avail && data->update_ap_lists)
 	{
-fprintf( stderr, "getting lists from NetworkManagerInfo\n");
 		/* Query info daemon for network lists if its now running */
 		if (data->trusted_ap_list)
 			nm_ap_list_unref (data->trusted_ap_list);
@@ -198,7 +197,7 @@ fprintf( stderr, "getting lists from NetworkManagerInfo\n");
 		{
 			NMDevice		*best_dev = NULL;
 
-			if ((best_dev = nm_policy_get_best_device (data)) != NULL)
+			if ((best_dev = nm_policy_get_best_device (data)))
 				nm_device_ref (best_dev);
 
 			/* Only do a switch when:
@@ -207,22 +206,10 @@ fprintf( stderr, "getting lists from NetworkManagerInfo\n");
 			 * 3) best_dev is wireless and its access point is the best, but it doesn't have an IP address
 			 */
 			if (    best_dev != data->active_device
-				|| (    best_dev && nm_device_is_wireless (best_dev)
+				|| (    best_dev && nm_device_is_wireless (best_dev) && !nm_device_activating (best_dev)
 					&& (nm_device_need_ap_switch (best_dev) || (nm_device_get_ip4_address (best_dev) == 0))))
 			{
-				/* Cancel pending device actions on an existing pending device */
-				if (data->pending_device && (best_dev != data->pending_device))
-				{
-					nm_device_pending_action_cancel (data->pending_device);
-					nm_device_unref (data->pending_device);
-					data->pending_device = NULL;
-				}
-
-				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() set pending_device = %s\n", best_dev ? nm_device_get_iface (best_dev) : "(null)");
-
-				data->pending_device = best_dev;
-				if (data->pending_device && !nm_device_is_up (data->pending_device))
-					nm_device_bring_up (data->pending_device);
+				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor(): beginning activation for device '%s'\n", best_dev ? nm_device_get_iface (best_dev) : "(null)");
 
 				/* Deactivate the old device */
 				if (data->active_device)
@@ -231,6 +218,11 @@ fprintf( stderr, "getting lists from NetworkManagerInfo\n");
 					nm_device_unref (data->active_device);
 					data->active_device = NULL;
 				}
+
+				/* Begin activation on the new device */
+				nm_device_ref (best_dev);
+				data->active_device = best_dev;
+				nm_device_activation_begin (data->active_device);
 			}
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -238,24 +230,10 @@ fprintf( stderr, "getting lists from NetworkManagerInfo\n");
 		else
 			NM_DEBUG_PRINT("nm_state_modification_monitor() could not get device list mutex\n");
 	}
-	else if (data->pending_device)
+	else if (data->active_device && nm_device_just_activated (data->active_device))
 	{
-		/* If there are pending device actions, don't switch to the device, but
-		 * wait for the actions to complete.
-		 */
-		if (!nm_device_pending_action (data->pending_device))
-		{
-			/* Only move it from pending -> active if the activation was successfull,
-			 * otherwise keep trying to activate it successfully.
-			 */
-			if (nm_device_activate (data->pending_device))
-			{
-				NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() activated device %s\n", nm_device_get_iface (data->pending_device));
-
-				data->active_device = data->pending_device;
-				data->pending_device = NULL;
-			}
-		}
+		nm_dbus_signal_device_now_active (data->dbus_connection, data->active_device);
+		NM_DEBUG_PRINT_1 ("nm_state_modification_monitor() activated device %s\n", nm_device_get_iface (data->active_device));
 	}
 
 	return (TRUE);

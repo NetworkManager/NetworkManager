@@ -31,6 +31,8 @@
 extern gboolean	debug;
 
 
+/*#define LOCKING_DEBUG	/**/
+
 /*
  * nm_try_acquire_mutex
  *
@@ -49,13 +51,12 @@ gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
 	{
 		if (g_mutex_trylock (mutex))
 		{
-/*
-			if (func)
-				NM_DEBUG_PRINT_1 ("MUTEX: %s got mutex\n", func);
-*/
+#ifdef LOCKING_DEBUG	
+			if (func) NM_DEBUG_PRINT_2 ("MUTEX: %s got mutex 0x%X\n", func, mutex);
+#endif
 			return (TRUE);
 		}
-		usleep (500);
+		g_usleep (G_USEC_PER_SEC / 2);
 		i++;
 	}
 
@@ -73,10 +74,10 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 {
 	g_return_if_fail (mutex != NULL);
 
-/*
-	if (func)
-		NM_DEBUG_PRINT_1 ("MUTEX: %s released mutex\n", func);
-*/
+#ifdef LOCKING_DEBUG	
+	if (func) NM_DEBUG_PRINT_2 ("MUTEX: %s released mutex 0x%X\n", func, mutex);
+#endif
+
 	g_mutex_unlock (mutex);
 }
 

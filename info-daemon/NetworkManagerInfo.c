@@ -168,7 +168,8 @@ int main( int argc, char *argv[] )
 	GMainLoop		*loop;
 	guint		 notify_id;
 
-	struct poptOption options[] = {
+	struct poptOption options[] =
+	{
 		{ "no-daemon", 'n', POPT_ARG_NONE, NULL, 0,
 		  "Don't detatch from the console and run in the background.", NULL },
 		{ NULL, '\0', 0, NULL, 0, NULL, NULL }

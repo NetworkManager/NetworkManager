@@ -75,49 +75,6 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 
 
 /*
- * nm_wireless_is_ap_better
- *
- * For a given AP, filter it through the allowed list and return TRUE if its
- * both allowed _and_ has a better priority than highest_priority.
- *
- */
-gboolean nm_wireless_is_ap_better (NMAccessPointList *list, NMAccessPoint *ap, int *highest_priority)
-{
-	NMAPListIter		*iter;
-	NMAccessPoint		*list_ap;
-	gboolean			 better = FALSE;
-
-	g_return_val_if_fail (list != NULL, FALSE);
-	g_return_val_if_fail (ap != NULL, FALSE);
-	g_return_val_if_fail (highest_priority != NULL, FALSE);
-
-	/* If the AP is marked as invalid, of course its not preferred */
-	if (nm_ap_get_invalid (ap))
-		return (FALSE);
-
-	if (!(iter = nm_ap_list_iter_new (list)))
-		return (FALSE);
-
-	while ((list_ap = nm_ap_list_iter_next (iter)))
-	{
-		/* If the essid of the scanned ap matches one in our allowed list, and this AP is
-		 * a higher priority than one we may possibly have already found.
-		 */
-		if (    (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), nm_ap_get_essid (ap)) == 0)
-			&& (nm_ap_get_priority (list_ap) < *highest_priority))
-		{
-			*highest_priority = nm_ap_get_priority (list_ap);
-			better = TRUE;
-			break;
-		}
-	}
-
-	nm_ap_list_iter_free (iter);
-	return (better);
-}
-
-
-/*
  * nm_wireless_scan_monitor
  *
  * Called every 10s to get a list of access points.

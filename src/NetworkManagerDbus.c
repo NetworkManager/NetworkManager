@@ -167,19 +167,13 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DBusMessage *message, NMData *data)
 {
 	DBusMessage	*reply_message = NULL;
-	NMDevice		*dev = NULL;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	if (data->active_device)
-		dev = data->active_device;
-	else if (data->pending_device)
-		dev = data->pending_device;
-
 	/* Construct object path of "active" device and return it */
-	if (dev)
+	if (data->active_device)
 	{
 		char *object_path;
 
@@ -187,7 +181,7 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 		if (!reply_message)
 			return (NULL);
 
-		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (data->active_device));
 		dbus_message_append_args (reply_message, DBUS_TYPE_STRING, object_path, DBUS_TYPE_INVALID);
 		g_free (object_path);
 	}
@@ -526,8 +520,7 @@ void nm_dbus_get_user_key_for_network_data_free (void *user_data)
  * Asks NetworkManagerInfo for a user-entered WEP key.
  *
  */
-void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap,
-								DBusPendingCall **pending)
+void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap)
 {
 	DBusMessage		*message;
 
@@ -596,27 +589,9 @@ static void nm_dbus_set_user_key_for_network (DBusConnection *connection, DBusMe
 							DBUS_TYPE_INVALID))
 	{
 		NMDevice		*dev;
-		const char 	*cancel_message = "***canceled***";
 
 		if ((dev = nm_get_device_by_iface (data, device)))
-		{
-			/* If the user canceled, mark the ap as invalid */
-			if (strncmp (passphrase, cancel_message, strlen (cancel_message)) == 0)
-			{
-				NMAccessPoint	*ap;
-
-				if ((ap = nm_device_ap_list_get_ap_by_essid (dev, network)))
-				{
-					NMAccessPoint	*invalid_ap = nm_ap_new_from_ap (ap);
-					nm_ap_list_append_ap (data->invalid_ap_list, invalid_ap);
-
-					nm_device_pending_action_cancel (dev);
-					nm_device_update_best_ap (dev);
-				}
-			}
-			else
-				nm_device_pending_action_set_user_key (dev, passphrase);
-		}
+			nm_device_set_user_key_for_network (dev, data->invalid_ap_list, network, passphrase);
 
 		char *key = nm_wireless_128bit_key_from_passphrase (passphrase);
 		g_free (key);
@@ -775,24 +750,27 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
  *
  * Get a network's priority from NetworkManagerInfo
  *
+ * Returns:	-1 on error
+ *			AP Priority if no error
+ *
  */
-guint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType type, const char *network)
+gint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType type, const char *network)
 {
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
-	guint			 priority = NM_AP_PRIORITY_WORST;
+	guint			 priority = -1;
 
-	g_return_val_if_fail (connection != NULL, NM_AP_PRIORITY_WORST);
-	g_return_val_if_fail (network != NULL, NM_AP_PRIORITY_WORST);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NM_AP_PRIORITY_WORST);
+	g_return_val_if_fail (connection != NULL, -1);
+	g_return_val_if_fail (network != NULL, -1);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, -1);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
 						NMI_DBUS_INTERFACE, "getNetworkPriority");
 	if (!message)
 	{
 		NM_DEBUG_PRINT ("nm_dbus_get_network_priority(): Couldn't allocate the dbus message\n");
-		return (NM_AP_PRIORITY_WORST);
+		return (-1);
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
@@ -810,7 +788,7 @@ guint nm_dbus_get_network_priority (DBusConnection *connection, NMNetworkType ty
 	{
 		dbus_error_init (&error);
 		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &priority, DBUS_TYPE_INVALID))
-			priority = NM_AP_PRIORITY_WORST;
+			priority = -1;
 	}
 
 	dbus_message_unref (message);
@@ -883,21 +861,24 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 {
 	NMData			*data = (NMData *)user_data;
 	const char		*object_path;
+	const char		*method;
 	NMAccessPointList	*list = NULL;
+	gboolean			 handled = FALSE;
 
 	g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	printf ("NMI Filter called\n");
-
+	method = dbus_message_get_member (message);
 	if (!(object_path = dbus_message_get_path (message)))
 		return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	if (    (strcmp (object_path, NMI_DBUS_PATH) != 0)
+	NM_DEBUG_PRINT_2 ("nm_dbus_nmi_filter() got method %s for path %s\n", method, object_path);
+
+	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "TrustedNetworkUpdate"))
 		list = data->trusted_ap_list;
-	else if (    (strcmp (object_path, NMI_DBUS_PATH) != 0)
+	else if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
 			&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "PreferredNetworkUpdate"))
 		list = data->preferred_ap_list;
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
@@ -913,6 +894,9 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			data->info_daemon_avail = TRUE;
 			nm_data_set_state_modified (data, TRUE);
 		}
+		/* Don't set handled = TRUE since other filter functions on this dbus connection
+		 * may want to know about service signals.
+		 */
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceDeleted"))
 	{
@@ -927,6 +911,9 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			data->info_daemon_avail = FALSE;
 			nm_data_set_state_modified (data, TRUE);
 		}
+		/* Don't set handled = TRUE since other filter functions on this dbus connection
+		 * may want to know about service signals.
+		 */
 	}
 
 	if (list)
@@ -938,11 +925,26 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 			return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
+fprintf( stderr, "update of network '%s'\n", network);
 		nm_ap_list_update_network (list, network, data);
 		dbus_free (network);
+
+		/* Make sure the currently active device updates its "best" ap
+		 * based on the new preferred/trusted network information.
+		 */
+		if (    data->active_device
+			&& nm_device_is_wireless (data->active_device)
+			&& !nm_device_activating (data->active_device))
+		{
+fprintf( stderr, "updating active device's best ap\n");
+			nm_device_update_best_ap (data->active_device);
+			nm_data_set_state_modified (data, TRUE);
+fprintf( stderr, "Device's best ap now '%s'\n", nm_ap_get_essid (nm_device_get_best_ap (data->active_device)));
+		}
+		handled = TRUE;
 	}
 
-	return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
 
@@ -1173,7 +1175,7 @@ static DBusHandlerResult nm_dbus_nm_message_handler (DBusConnection *connection,
 		{
 			if (data->active_device)
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connected", DBUS_TYPE_INVALID);
-			else if (!data->active_device && data->pending_device)
+			if (data->active_device && nm_device_activating (data->active_device))
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "connecting", DBUS_TYPE_INVALID);
 			else
 				dbus_message_append_args (reply_message, DBUS_TYPE_STRING, "disconnected", DBUS_TYPE_INVALID);

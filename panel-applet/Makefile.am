@@ -41,7 +41,7 @@ $(server_in_files:.server.in=.server): $(server_in_files)
 uidir = $(datadir)/gnome-2.0/ui
 ui_DATA = NMWirelessApplet.xml
 
-pixmapdir = $(datadir)/pixmaps/NMWirelessApplet/
+pixmapdir = $(datadir)/pixmaps/NMWirelessApplet
 pixmap_DATA = no-link-0.png	\
 	broken-0.png		\
 	signal-1-40.png		\

@@ -30,13 +30,24 @@
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
 
-#define	NMI_DBUS_NMI_OBJECT_PATH_PREFIX		"/org/freedesktop/NetworkManagerInfo"
-#define	NMI_DBUS_NMI_NAMESPACE				"org.freedesktop.NetworkManagerInfo"
-#define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
-#define	NM_DBUS_NM_NAMESPACE				"org.freedesktop.NetworkManager"
-#define	NM_DBUS_NM_DEVICES_OBJECT_PATH_PREFIX	"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_NM_DEVICES_NAMESPACE			"org.freedesktop.NetworkManager.Devices"
+#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
 
+#define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
+#define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
+#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
+#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
+
+#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
+#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
+#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
+
+
+/*
+ * nmi_network_type_valid
+ *
+ * Helper to validate network types NMI can deal with
+ *
+ */
 inline gboolean nmi_network_type_valid (NMINetworkType type)
 {
 	if ((type == NETWORK_TYPE_TRUSTED) || (type == NETWORK_TYPE_PREFERRED))
@@ -113,11 +124,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, const char *device,
 	g_return_if_fail (network != NULL);
 	g_return_if_fail (passphrase != NULL);
 
-	message = dbus_message_new_method_call (NM_DBUS_NM_NAMESPACE,
-									NM_DBUS_NM_OBJECT_PATH_PREFIX,
-									NM_DBUS_NM_NAMESPACE,
-									"setKeyForNetwork");
-	if (message == NULL)
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setKeyForNetwork")))
 	{
 		fprintf (stderr, "nmi_dbus_return_user_key(): Couldn't allocate the dbus message\n");
 		return;
@@ -161,7 +168,7 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 		default:	return;
 	}
 
-	message = dbus_message_new_signal (NMI_DBUS_NMI_OBJECT_PATH_PREFIX, NMI_DBUS_NMI_NAMESPACE, signal);
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, signal);
 	if (!message)
 	{
 		fprintf (stderr, "nmi_dbus_signal_update_network(): Not enough memory for new dbus message!\n");
@@ -200,14 +207,14 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::getNetworks called with invalid arguments.");
 		return (reply_message);
 	}
 
 	if (!nmi_network_type_valid (type))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::getNetworks called with an invalid network type %d.", type);
 		return (reply_message);
 	}
@@ -222,15 +229,19 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	/* List all allowed access points that gconf knows about */
 	element = dir_list = gconf_client_all_dirs (info->gconf_client, path, NULL);
 
-	reply_message = dbus_message_new_method_return (message);
-	dbus_message_iter_init (reply_message, &iter);
-	dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
-
 	if (!dir_list)
-		dbus_message_iter_append_string (&iter_array, "");
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
+							"There were are no %s networks stored.",
+							type == NETWORK_TYPE_TRUSTED ? "trusted" : (type == NETWORK_TYPE_PREFERRED ? "preferred" : "unknown"));
+	}
 	else
 	{
 		gboolean	value_added = FALSE;
+
+		reply_message = dbus_message_new_method_return (message);
+		dbus_message_iter_init (reply_message, &iter);
+		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
 
 		/* Append the essid of every allowed or ignored access point we know of 
 		 * to a string array in the dbus message.
@@ -256,7 +267,12 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 
 		/* Make sure that there's at least one array element if all the gconf calls failed */
 		if (!value_added)
-			dbus_message_iter_append_string (&iter_array, "");
+		{
+			dbus_message_unref (reply_message);
+			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
+							"There were are no %s networks stored.",
+							type == NETWORK_TYPE_TRUSTED ? "trusted" : (type == NETWORK_TYPE_PREFERRED ? "preferred" : "unknown"));
+		}
 	}
 
 	return (reply_message);
@@ -288,7 +304,7 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::get*NetworkPriority called with invalid arguments.");
 		return (reply_message);
 	}
@@ -313,7 +329,7 @@ static DBusMessage *nmi_dbus_get_network_prio (NMIAppInfo *info, DBusMessage *me
 	}
 	else
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "BadNetworkData",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::get*NetworkPriority could not access data for network '%s'", network);
 	}
 
@@ -347,7 +363,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::get*NetworkEssid called with invalid arguments.");
 		return (reply_message);
 	}
@@ -372,7 +388,7 @@ static DBusMessage *nmi_dbus_get_network_essid (NMIAppInfo *info, DBusMessage *m
 	}
 	else
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "BadNetworkData",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::get*NetworkEssid could not access data for network '%s'", network);
 	}
 
@@ -406,7 +422,7 @@ static DBusMessage *nmi_dbus_get_network_key (NMIAppInfo *info, DBusMessage *mes
 		|| !nmi_network_type_valid (type)
 		|| (strlen (network) <= 0))
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManagerInfo::get*NetworkKey called with invalid arguments.");
 		return (reply_message);
 	}
@@ -479,7 +495,7 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		reply_message = nmi_dbus_get_network_key (info, message);
 	else
 	{
-		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "UnknownMethod",
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "UnknownMethod",
 							"NetworkManagerInfo knows nothing about the method %s for object %s", method, path);
 	}
 
@@ -518,9 +534,9 @@ static DBusHandlerResult nmi_dbus_filter (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (info != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	if (dbus_message_is_signal (message, NM_DBUS_NM_NAMESPACE, "WirelessNetworkAppeared"))
+	if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared"))
 		appeared = TRUE;
-	else if (dbus_message_is_signal (message, NM_DBUS_NM_NAMESPACE, "WirelessNetworkDisappeared"))
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
 		disappeared = TRUE;
 
 	if (appeared || disappeared)
@@ -560,14 +576,14 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	DBusObjectPathVTable	 nmi_vtable = { &nmi_dbus_nmi_unregister_handler, &nmi_dbus_nmi_message_handler, NULL, NULL, NULL, NULL };
 
 	dbus_error_init (&dbus_error);
-	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_NMI_NAMESPACE, 0, &dbus_error);
+	dbus_bus_acquire_service (dbus_connection, NMI_DBUS_SERVICE, 0, &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 	{
 		fprintf (stderr, "nmi_dbus_service_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'\n", dbus_error.message);
 		return (-1);
 	}
 
-	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_NMI_OBJECT_PATH_PREFIX, &nmi_vtable, info))
+	if (!dbus_connection_register_object_path (dbus_connection, NMI_DBUS_PATH, &nmi_vtable, info))
 	{
 		fprintf (stderr, "nmi_dbus_service_init() could not register a handler for NetworkManagerInfo.  Not enough memory?\n");
 		return (-1);
@@ -579,9 +595,9 @@ int nmi_dbus_service_init (DBusConnection *dbus_connection, NMIAppInfo *info)
 	dbus_error_init (&dbus_error);
 	dbus_bus_add_match (dbus_connection,
 				"type='signal',"
-				"interface='"NM_DBUS_NM_NAMESPACE"',"
-				"sender='"NM_DBUS_NM_NAMESPACE"',"
-				"path='"NM_DBUS_NM_OBJECT_PATH_PREFIX"'", &dbus_error);
+				"interface='" NM_DBUS_INTERFACE "',"
+				"sender='" NM_DBUS_SERVICE "',"
+				"path='" NM_DBUS_PATH "'", &dbus_error);
 	if (dbus_error_is_set (&dbus_error))
 		return (-1);
 

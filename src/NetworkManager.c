@@ -148,10 +148,8 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				{
 					if (data->active_device && (dev == data->active_device))
 						data->active_device = NULL;
-					else if (data->pending_device && (dev == data->pending_device))
-						data->pending_device = NULL;
 
-					nm_device_pending_action_cancel (dev);
+					nm_device_activation_cancel (dev);
 					nm_device_unref (dev);
 
 					/* Remove the device entry from the device list and free its data */
@@ -445,7 +443,6 @@ static void nm_data_free (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	nm_device_unref (data->active_device);
-	nm_device_unref (data->pending_device);
 
 	g_slist_foreach (data->dev_list, nm_data_dev_list_element_free, NULL);
 	g_slist_free (data->dev_list);
@@ -483,11 +480,11 @@ void nm_data_set_state_modified (NMData *data, gboolean modified)
  */
 static void nm_print_usage (void)
 {
-	fprintf (stderr, "\n" "usage : NetworkManager [--daemon=yes|no] [--help]\n");
+	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--help]\n");
 	fprintf (stderr,
 		"\n"
-		"        --daemon=yes|no    Become a daemon\n"
-		"        --help             Show this information and exit\n"
+		"        --no-daemon    Become a daemon\n"
+		"        --help         Show this information and exit\n"
 		"\n"
 		"NetworkManager monitors all network connections and automatically\n"
 		"chooses the best connection to use.  It also allows the user to\n"
@@ -517,7 +514,7 @@ int main( int argc, char *argv[] )
 		const char *opt;
 
 		static struct option options[] = {
-			{"daemon",	1, NULL, 0},
+			{"no-daemon",	0, NULL, 0},
 			{"help",		0, NULL, 0},
 			{NULL,		0, NULL, 0}
 		};
@@ -535,18 +532,8 @@ int main( int argc, char *argv[] )
 					nm_print_usage ();
 					exit (EXIT_SUCCESS);
 				}
-				else if (strcmp (opt, "daemon") == 0)
-				{
-					if (strcmp ("yes", optarg) == 0)
-						become_daemon = TRUE;
-					else if (strcmp ("no", optarg) == 0)
-						become_daemon = FALSE;
-					else
-					{
-						nm_print_usage ();
-						exit (EXIT_FAILURE);
-					}
-				}
+				else if (strcmp (opt, "no-daemon") == 0)
+					become_daemon = FALSE;
 				break;
 
 			default:

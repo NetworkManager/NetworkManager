@@ -37,13 +37,6 @@ struct NMAccessPointList
 };
 
 
-struct NMAPListIter
-{
-	NMAccessPointList	*list;
-	GSList			*cur_pos;
-	gboolean			 valid;
-};
-
 /*
  * nm_ap_list_new
  *
@@ -148,6 +141,43 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 }
 
 
+/*
+ * nm_ap_list_remove_ap
+ *
+ * Helper to remove an AP to an ap list of a certain type.
+ *
+ */
+void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
+{
+	GSList		*element = NULL;
+
+	g_return_if_fail (list != NULL);
+	g_return_if_fail (ap != NULL);
+
+	if (!nm_try_acquire_mutex (list->mutex, __FUNCTION__))
+	{
+		NM_DEBUG_PRINT( "nm_ap_list_append_ap() could not acquire AP list mutex.\n" );
+		return;
+	}
+
+	element = list->ap_list;
+	while (element)
+	{
+		NMAccessPoint	*list_ap = (NMAccessPoint *)(element->data);
+
+		if (list_ap == ap)
+		{
+			list->ap_list = g_slist_remove_link (list->ap_list, element);
+			nm_ap_unref (list_ap);
+			g_slist_free (element);
+			break;
+		}
+		element = g_slist_next (element);
+	}
+
+	nm_unlock_mutex (list->mutex, __FUNCTION__);
+}
+
 
 /*
  * nm_ap_list_get_ap_by_essid
@@ -199,22 +229,31 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 	g_return_if_fail (network != NULL);
 	g_return_if_fail (((list->type == NETWORK_TYPE_TRUSTED) || (list->type == NETWORK_TYPE_PREFERRED)));
 
-	/* Find access point in list, if not found create a new AP and add it to the list */
-	if (!(ap = nm_ap_list_get_ap_by_essid (list, network)))
-		nm_ap_list_append_ap (list, (ap = nm_ap_new ()));
-
 	/* Get the allowed access point's details from NetworkManagerInfo */
 	if ((essid = nm_dbus_get_network_essid (data->dbus_connection, list->type, network)))
 	{
 		char		*key = nm_dbus_get_network_key (data->dbus_connection, list->type, network);
-		guint	 priority = nm_dbus_get_network_priority (data->dbus_connection, list->type, network);
+		gint		 priority = nm_dbus_get_network_priority (data->dbus_connection, list->type, network);
 
-		nm_ap_set_essid (ap, essid);
-		nm_ap_set_wep_key (ap, key);
-		nm_ap_set_priority (ap, priority);
+		if (priority >= 0)
+		{
+			/* Find access point in list, if not found create a new AP and add it to the list */
+			if (!(ap = nm_ap_list_get_ap_by_essid (list, network)))
+				nm_ap_list_append_ap (list, (ap = nm_ap_new ()));
+
+			nm_ap_set_essid (ap, essid);
+			nm_ap_set_wep_key (ap, key);
+			nm_ap_set_priority (ap, priority);
+		}
 
 		g_free (essid);
 		g_free (key);
+	}
+	else
+	{
+		/* AP got deleted, remove it from our list */
+		if ((ap = nm_ap_list_get_ap_by_essid (list, network)))
+			nm_ap_list_remove_ap (list, ap);
 	}
 }
 
@@ -267,22 +306,20 @@ void nm_ap_list_populate (NMAccessPointList *list, NMData *data)
  */
 void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new)
 {
-	GSList		*element = NULL;
+	NMAPListIter	*iter;
+	NMAccessPoint	*old_ap;
+	NMAccessPoint	*new_ap;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
 
-	if (old)
-		element = old->ap_list;
-
 	/* Iterate over each item in the old list and find it in the new list */
-	while (element)
+	if (old && (iter = nm_ap_list_iter_new (old)))
 	{
-		NMAccessPoint	*old_ap = (NMAccessPoint *)(element->data);
-		NMAccessPoint	*new_ap = NULL;
-
-		if (old_ap)
+		while ((old_ap = nm_ap_list_iter_next (iter)))
 		{
+			NMAccessPoint	*new_ap = NULL;
+
 			if ((new_ap = nm_ap_list_get_ap_by_essid (new, nm_ap_get_essid (old_ap))))
 			{
 				nm_ap_set_matched (old_ap, TRUE);
@@ -293,27 +330,30 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 			else
 				nm_dbus_signal_wireless_network_disappeared (data->dbus_connection, dev, old_ap);
 		}
-		element = g_slist_next (element);
+		nm_ap_list_iter_free (iter);
 	}
 
 	/* Iterate over the new list and compare to the old list.  Items that aren't already
 	 * matched are by definition new networks.
 	 */
-	if (new)
-		element = new->ap_list;
-	else
-		element = NULL;
-
-	while (element)
+	if (new && (iter = nm_ap_list_iter_new (new)))
 	{
-		NMAccessPoint	*new_ap = (NMAccessPoint *)(element->data);
-
-		if (new_ap && !nm_ap_get_matched (new_ap))
-			nm_dbus_signal_wireless_network_appeared (data->dbus_connection, dev, new_ap);
-		element = g_slist_next (element);
+		while ((new_ap = nm_ap_list_iter_next (iter)))
+		{
+			if (!nm_ap_get_matched (new_ap))
+				nm_dbus_signal_wireless_network_appeared (data->dbus_connection, dev, new_ap);
+		}
+		nm_ap_list_iter_free (iter);
 	}
 }
 
+
+/*
+ * nm_ap_list_lock
+ *
+ * Grab exclusive access to an access point list
+ *
+ */
 gboolean nm_ap_list_lock (NMAccessPointList *list)
 {
 	g_return_val_if_fail (list != NULL, FALSE);
@@ -322,12 +362,27 @@ gboolean nm_ap_list_lock (NMAccessPointList *list)
 }
 
 
+/*
+ * nm_ap_list_unlock
+ *
+ * Give up access to an access point list
+ *
+ */
 void nm_ap_list_unlock (NMAccessPointList *list)
 {
 	g_return_if_fail (list != NULL);
 
 	nm_unlock_mutex (list->mutex, __FUNCTION__);
 }
+
+
+
+struct NMAPListIter
+{
+	NMAccessPointList	*list;
+	GSList			*cur_pos;
+	gboolean			 valid;
+};
 
 
 NMAPListIter * nm_ap_list_iter_new (NMAccessPointList *list)
@@ -386,4 +441,36 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
 
 	nm_ap_list_unlock (iter->list);
 	g_free (iter);
+}
+
+
+/*
+ * nm_ap_list_print_members
+ *
+ * Print the information about each access point in an AP list
+ *
+ */
+void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
+{
+	NMAccessPoint	*ap;
+	NMAPListIter	*iter;
+	int			 i = 0;
+
+	g_return_if_fail (list != NULL);
+	g_return_if_fail (name != NULL);
+
+	if (!(iter = nm_ap_list_iter_new (list)))
+		return;
+
+	fprintf (stderr, "AP_LIST_PRINT: printing members of '%s'\n", name);
+	while ((ap = nm_ap_list_iter_next (iter)))
+	{
+		fprintf (stderr, "\t%d)\tessid='%s', prio=%d, key='%s', enc=%d, addr=0x%X, qual=%d, freq=%f, rate=%d, inval=%d\n",
+				i, nm_ap_get_essid (ap), nm_ap_get_priority (ap), nm_ap_get_wep_key (ap), nm_ap_get_encrypted (ap),
+				nm_ap_get_address (ap), nm_ap_get_quality (ap), nm_ap_get_freq (ap), nm_ap_get_rate (ap),
+				nm_ap_get_invalid (ap));
+		i++;
+	}
+	fprintf (stderr, "AP_LIST_PRINT: done\n");
+	nm_ap_list_iter_free (iter);
 }
