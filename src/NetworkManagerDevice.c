@@ -605,6 +605,19 @@ char * nm_device_get_essid (NMDevice *dev)
 	iwlib_socket = iw_sockets_open ();
 	if (iwlib_socket >= 0)
 	{
+		wireless_config	info;
+
+		err = iw_get_basic_config(iwlib_socket, nm_device_get_iface (dev), &info);
+		if (err >= 0)
+		{
+			if (dev->options.wireless.cur_essid)
+				g_free (dev->options.wireless.cur_essid);
+			dev->options.wireless.cur_essid = g_strdup (info.essid);
+		}
+		else
+			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+
+#if 0
 		wreq.u.essid.pointer = (caddr_t) essid;
 		wreq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
 		wreq.u.essid.flags = 0;
@@ -617,6 +630,7 @@ char * nm_device_get_essid (NMDevice *dev)
 		}
 		else
 			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+#endif
 
 		close (iwlib_socket);
 	}

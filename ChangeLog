@@ -1,5 +1,12 @@
 2004-09-13  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- (nm_device_get_essid): use iw_get_basic_config() rather than
+			iw_get_ext (SIOCGIWESSID) since prism54 cards don't like
+			the latter
+
+2004-09-13  Dan Williams <dcbw@redhat.com>
+
 	* TODO: fix typo
 
 	* docs/NetworkManager DBUS API.txt
