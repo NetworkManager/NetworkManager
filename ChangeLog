@@ -1,6 +1,11 @@
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
+		- Use iw_get_ext() where we should rather than iw_set_ext()
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
 		- (nm_device_set_up_down): remove check for unsupported devices
 			that caused NM to not bring devices up when they were
 			added to the device list.

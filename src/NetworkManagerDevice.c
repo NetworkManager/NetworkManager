@@ -976,7 +976,7 @@ double nm_device_get_frequency (NMDevice *dev)
 	{
 		struct iwreq		wrq;
 
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
+		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
 		if (err >= 0)
 			freq = iw_freq2float (&wrq.u.freq);
 		if (err == -1)
@@ -1088,7 +1088,7 @@ int nm_device_get_bitrate (NMDevice *dev)
 	sk = iw_sockets_open ();
 	if (sk >= 0)
 	{
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
+		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
 		close (sk);
 	}
 
@@ -1654,7 +1654,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 		struct iwreq	wrq;
 		int			err;
 
-		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCGIWMODE, &wrq);
+		err = iw_get_ext (sk, nm_device_get_iface (dev), SIOCGIWMODE, &wrq);
 		if (err == 0)
 		{
 			switch (wrq.u.mode)
@@ -1670,7 +1670,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 			}
 		}
 		else
-			nm_warning ("nm_device_get_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+			nm_warning ("nm_device_get_mode (%s): error getting card mode.  errno = %d", nm_device_get_iface (dev), errno);				
 		close (sk);
 	}
 
@@ -1724,7 +1724,10 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 			if (err == 0)
 				success = TRUE;
 			else
-				nm_warning ("nm_device_set_mode (%s): error setting card to Infrastructure mode.  errno = %d", nm_device_get_iface (dev), errno);				
+				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
+					nm_device_get_iface (dev),
+					mode == NETWORK_MODE_INFRA ? "Infrastructure" : (mode == NETWORK_MODE_ADHOC ? "adhoc" : "unknown"),
+					errno);
 		}
 		close (sk);
 	}
