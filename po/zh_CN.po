@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Funda Wang <fundawang@linux.net.cn>, 2004.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2004-08-27 12:07+0200\n"
+"PO-Revision-Date: 2004-08-27 20:44+0800\n"
+"Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
+"Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">无线网络：</span>"
+
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "修改无线网络"
+
+#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: info-daemon/passphrase.glade.h:2
+msgid "*"
+msgstr "*"
+
+#: info-daemon/passphrase.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or WEP key is required to access the wireless network '%s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">无线网络需要密码句</span>\n"
+"\n"
+"要访问无线网络“%s”，需要提供密码句或 WEP 密钥。"
+
+#: info-daemon/passphrase.glade.h:7
+msgid "Passphrase:"
+msgstr "密码句："
+
+#: info-daemon/passphrase.glade.h:8 panel-applet/wireless-applet.glade.h:7
+msgid "_Login to Network"
+msgstr "登录到网络(_L)"
+
+#: panel-applet/NMWirelessApplet.c:553
+msgid "There are no network devices..."
+msgstr "没有网络设备..."
+
+#: panel-applet/NMWirelessApplet.c:648
+msgid "There are no wireless networks..."
+msgstr "没有无线网络..."
+
+#: panel-applet/NMWirelessApplet.c:720
+msgid "NetworkManager is not running..."
+msgstr "网络管理器未运行..."
+
+#: panel-applet/NMWirelessApplet.c:730
+msgid "No network connection is currently active..."
+msgstr "目前没有激活的网络连接..."
+
+#: panel-applet/NMWirelessApplet.c:735
+msgid "A wired network connection is currently active..."
+msgstr "有线网络目前已激活..."
+
+#: panel-applet/NMWirelessApplet.c:939
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"网络管理器小程序找不到所需的资源(glade 文件未找到)。"
+
+#: panel-applet/NMWirelessApplet.xml.h:1
+msgid "_About..."
+msgstr "关于(_A)..."
+
+#: panel-applet/wireless-applet.glade.h:3
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">无线网络登录确认</span>\n"
+"\n"
+"您已经选择了登录到无线网络“%s”。如果您确定此无线网络是安全的，"
+"请单击下面的复选框，网络管理器日后就不会在您连接的时候请求确认了。"
+
+#: panel-applet/wireless-applet.glade.h:6
+msgid "Always Trust this Wireless Network"
+msgstr "总是相信此无线网络"
