@@ -209,7 +209,7 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 
 		dbus_message_iter_init (reply, &iter);
 		dbus_message_iter_append_array (&iter, &iter_array, DBUS_TYPE_STRING);
-		
+
 		if ((ap_list = nm_device_ap_list_get (dev)))
 		{
 			if ((list_iter = nm_ap_list_iter_new (ap_list)))
