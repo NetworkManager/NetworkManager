@@ -1,5 +1,11 @@
 2004-11-05 Dan Williams <dcbw@redhat.com>
 
+	Patch from Robert Paskowitz:
+	* src/backends/NetworkManagerGentoo.c
+		- Update static IP config code
+
+2004-11-05 Dan Williams <dcbw@redhat.com>
+
 	* info-daemon/NetworkManagerInfoDbus.c
 	  src/NetworkManagerDbus.[ch]
 	  src/NetworkManagerDevice.c
