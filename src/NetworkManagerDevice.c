@@ -3895,13 +3895,13 @@ static int mdio_read (int sk, struct ifreq *ifr, int location)
 {
 	struct mii_ioctl_data *mii;
 
-	g_return_val_if_fail (sk < 0, -1);
+	g_return_val_if_fail (sk >= 0, -1);
 	g_return_val_if_fail (ifr != NULL, -1);
 
 	mii = (struct mii_ioctl_data *) &(ifr->ifr_data);
 	mii->reg_num = location;
 
-	if (ioctl (sk, SIOCGMIIREG, &ifr) < 0)
+	if (ioctl (sk, SIOCGMIIREG, ifr) < 0)
 		return -1;
 
 	return (mii->val_out);
