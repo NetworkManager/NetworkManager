@@ -1,3 +1,9 @@
+2004-10-26 John (J5) Palmieri <johnp@redhat.com>
+
+	* info-daemon/NetworkManagerInfoDbus.c
+		- (nmi_dbus_is_running): New function for determining if nmi is already running
+		- (nmi_dbus_service_init): exit if another instance of nmi is already running
+
 2004-10-23 Dan Williams <dcbw@redhat.com>
 
 	* info-daemon/NetworkManagerInfoDbus.c
