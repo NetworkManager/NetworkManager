@@ -147,6 +147,18 @@ class NetworkManager:
     """
     def get_all_devices(self):
         return self.__devices.values()
+
+    def _has_type_device (self, type):
+        for device in self.get_devices():
+            if device["nm.type"] == type:
+                return True
+        return False
+
+    def has_wired_device(self):
+        return self._has_type_device(WIRED_DEVICE)
+
+    def has_wireless_device(self):
+        return self._has_type_device(WIRELESS_DEVICE)
     
     def _get_hal_info(self, udi):
         hal_devices = self._hal_manager.FindDeviceStringMatch("info.udi",
