@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-24 19:24+0200\n"
-"PO-Revision-Date: 2004-10-24 23:28+0200\n"
+"POT-Creation-Date: 2004-10-31 12:36+0100\n"
+"PO-Revision-Date: 2004-10-31 21:06+0100\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -29,7 +29,7 @@ msgstr "Draadloze netwerken aanpassen"
 msgid "*"
 msgstr "*"
 
-#: info-daemon/passphrase.glade.h:2
+#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
 msgid ""
 "128-bit Passphrase\n"
 "128-bit Raw Hex Key"
@@ -54,12 +54,13 @@ msgstr ""
 "Een wachtwoordfrase of WEP-key is vereist om toegang te krijgen tot het "
 "draadloze netwerk '%s'."
 
-#: info-daemon/passphrase.glade.h:8
+#: info-daemon/passphrase.glade.h:8 panel-applet/essid.glade.h:6
 msgid "Key Type:"
 msgstr "Sleuteltype:"
 
 #: info-daemon/passphrase.glade.h:9
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:100
+#: panel-applet/essid.glade.h:7
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
 
@@ -71,7 +72,7 @@ msgstr "Sleutel draadloos netwerk vereist"
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:103
 msgid "Key:"
 msgstr "Sleutel:"
 
@@ -117,30 +118,12 @@ msgstr "Geen NetworkManager..."
 msgid "Scanning for wireless networks..."
 msgstr "Scannen naar draadloze netwerken..."
 
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:706 panel-applet/NMWirelessApplet.c:716
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het "
-"glade bestand is niet gevonden)."
-
-#: panel-applet/NMWirelessApplet.c:731
-msgid "Custom wireless network"
-msgstr "Aangepast draadloos netwerk"
-
-#: panel-applet/NMWirelessApplet.c:732
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
-"Geef de ESSID van het draadloos netwerk waarmee u verbinding wilt maken."
-
-#: panel-applet/NMWirelessApplet.c:815
+#: panel-applet/NMWirelessApplet.c:657
 msgid "Other Wireless Networks..."
 msgstr "Andere draadloze netwerken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: panel-applet/NMWirelessApplet.c:926
+#: panel-applet/NMWirelessApplet.c:768
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -150,19 +133,23 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: panel-applet/NMWirelessApplet.c:1043
+#: panel-applet/NMWirelessApplet.c:885
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
-#: panel-applet/essid.glade.h:2
+#: panel-applet/essid.glade.h:4
 msgid "C_onnect"
 msgstr "_Verbinden"
 
-#: panel-applet/essid.glade.h:3
+#: panel-applet/essid.glade.h:5
+msgid "Connect with encryption enabled"
+msgstr "Verbinden met versleuteling aangezet"
+
+#: panel-applet/essid.glade.h:8
 msgid "Wireless _Adaptor:"
 msgstr "Draadloze adapter:"
 
-#: panel-applet/essid.glade.h:4
+#: panel-applet/essid.glade.h:9
 msgid "Wireless _Network:"
 msgstr "Draadloos _netwerk:"
 
@@ -199,6 +186,21 @@ msgstr "Oriëntatie"
 #: examples/python/systray/eggtrayicon.c:112
 msgid "The orientation of the tray."
 msgstr "De oriëntatie van het applet."
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden (het "
+#~ "glade bestand is niet gevonden)."
+
+#~ msgid "Custom wireless network"
+#~ msgstr "Aangepast draadloos netwerk"
+
+#~ msgid ""
+#~ "Enter the ESSID of the wireless network to which you wish to connect."
+#~ msgstr ""
+#~ "Geef de ESSID van het draadloos netwerk waarmee u verbinding wilt maken."
 
 #~ msgid "_About..."
 #~ msgstr "In_fo..."
