@@ -183,7 +183,6 @@ nmwa_update_state (NMWirelessApplet *applet)
     }
   g_mutex_unlock (applet->data_mutex);
 
-  g_print ("%d\n", applet->applet_state);
   switch (applet->applet_state)
     {
     case (APPLET_STATE_NO_NM):

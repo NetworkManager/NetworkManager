@@ -1,3 +1,8 @@
+Tue Oct 12 22:53:04 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c (nmwa_update_state): remove
+	g_print.
+
 Tue Oct 12 22:44:15 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.h: Change the name of the icons.
