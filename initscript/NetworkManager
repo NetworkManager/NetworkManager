@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# NetworkManager:   NetworkManager daemon
+#
+# chkconfig: 345 98 02
+# description:  This is a daemon for automatically switching network \
+#               connections to the best available connection. \
+#
+# processname: NetworkManager
+# pidfile: /var/run/NetworkManager.pid
+#
+
+# Sanity checks.
+[ -x /usr/bin/NetworkManager ] || exit 0
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# so we can rearrange this easily
+processname=NetworkManager
+servicename=NetworkManager
+
+RETVAL=0
+
+start() {
+    echo -n $"Starting NetworkManager daemon: "
+    daemon --check $servicename $processname
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > /var/run/NetworkManager.pid
+}
+
+stop() {
+    echo -n $"Stopping NetworkManager daemon: "
+
+    killproc $servicename -TERM
+    RETVAL=$?
+    echo
+    if [ $RETVAL -eq 0 ]; then
+        rm -f /var/lock/subsys/$servicename
+        rm -f /var/run/NetworkManager.pid
+    fi
+}
+
+# See how we were called.
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $processname
+        RETVAL=$?
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    condrestart)
+        if [ -f /var/lock/subsys/$servicename ]; then
+            stop
+            start
+        fi
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+        ;;
+esac
+exit $RETVAL

@@ -1,0 +1,23 @@
+AC_PREREQ(2.52)
+
+AC_INIT(NetworkManager, 0.1)
+AM_INIT_AUTOMAKE(AC_PACKAGE_NAME, AC_PACKAGE_VERSION)
+
+AC_PROG_CC
+
+AC_CHECK_HEADER(iwlib.h, [],
+			[AC_MSG_ERROR(iwlib.h not found. Install wireless-tools.)], [])
+AC_CHECK_LIB(iw, iw_scan, [ IWLIB=-liw ],
+			[AC_MSG_ERROR(wireless-tools 27.pre23 not installed or not functional)], [])
+AC_SUBST(IWLIB)
+
+PKG_CHECK_MODULES(NM, dbus-glib-1 >= 0.20 hal >= 0.2.91 gthread-2.0)
+AC_SUBST(NM_CFLAGS)
+AC_SUBST(NM_LIBS)
+
+AC_OUTPUT([
+Makefile
+test/Makefile
+src/Makefile
+initscript/Makefile
+])
