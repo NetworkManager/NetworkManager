@@ -1,6 +1,11 @@
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
+		- Merge one more bit of Peter Jones' completion patch
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
 		- (nm_device_force_use): Fix possible segfault
 
 2005-03-29  Dan Williams <dcbw@redhat.com>

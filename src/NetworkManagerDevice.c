@@ -2216,9 +2216,9 @@ void invalidate_ap (NMDevice *dev, NMAccessPoint *ap)
 /* this gets called without the scan mutex held */
 static gboolean nm_wa_test (int tries, va_list args)
 {
-	NMDevice *dev = va_arg(args, NMDevice *);
-	NMAccessPoint **best_ap = va_arg(args, NMAccessPoint **);
-	gboolean *err = va_arg(args, gboolean *);
+	NMDevice *dev = va_arg (args, NMDevice *);
+	NMAccessPoint **best_ap = va_arg (args, NMAccessPoint **);
+	gboolean *err = va_arg (args, gboolean *);
 
 	g_return_val_if_fail(dev != NULL, TRUE);
 	g_return_val_if_fail(best_ap != NULL, TRUE);
@@ -2232,7 +2232,8 @@ static gboolean nm_wa_test (int tries, va_list args)
 		nm_info ("Activation (%s/wireless): waiting for access point. (attempt %d)", nm_device_get_iface(dev), tries);
 
 	*best_ap = nm_device_get_best_ap(dev);
-	if (*best_ap) {
+	if (*best_ap)
+	{
 		/* Set ESSID early so that when we send out the
 		 * DeviceStatusChanged signal below, we are able to 
 		 * respond correctly to queries for "getActiveNetwork"
@@ -2244,6 +2245,27 @@ static gboolean nm_wa_test (int tries, va_list args)
 		return TRUE;
 	}
 
+	return FALSE;
+}
+
+
+static gboolean nm_dukr_test (int tries, va_list args)
+{
+	NMDevice	*dev = va_arg (args, NMDevice *);
+	gboolean	*err = va_arg (args, gboolean *);
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
+
+	*err = TRUE;
+
+	if (nm_device_activation_handle_cancel (dev))
+		return TRUE;
+	if (dev->options.wireless.user_key_received)
+	{
+		*err = FALSE;
+		return TRUE;
+	}
 	return FALSE;
 }
 
@@ -2289,8 +2311,8 @@ get_ap:
 	/* Get a valid "best" access point we should connect to. */
 	nm_device_set_now_scanning (dev, TRUE);
 
-	/* at most wait 10 seconds, but check every 50th to see if we're done */
-	nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 50, nm_wa_test, NULL, dev, &best_ap, &err);
+	/* Get an access point to connect to */
+	nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 50, nm_wa_test, NULL, dev, &best_ap, &err);
 	if (err)
 	{
 		/* Wierd as it may seem, we lock here to balance the unlock in "out:" */
@@ -2298,12 +2320,6 @@ get_ap:
 		goto out;
 	}
 	nm_info ("Activation (%s/wireless): found access point '%s' to use.", nm_device_get_iface (dev), nm_ap_get_essid (best_ap));
-
-	/* Set ESSID early so that when we send out the DeviceStatusChanged signal below,
-	 * we are able to respond correctly to queries for "getActiveNetwork" against
-	 * our device.  nm_device_get_path_for_ap() uses the /card's/ AP, not the best_ap.
-	 */
-	nm_device_set_essid (dev, nm_ap_get_essid (best_ap));
 
 	/* We grab the scan mutex so that scanning cannot screw up our link detection, since
 	 * a scan can change most any attribute on the card for a period of time.
@@ -2347,9 +2363,8 @@ need_key:
 
 		/* Wait for the key to come back */
 		nm_debug ("Activation (%s/wireless): asking for user key.", nm_device_get_iface (dev));
-		while (!dev->options.wireless.user_key_received && !dev->quit_activation)
-			g_usleep (G_USEC_PER_SEC / 2);
-
+		nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 20,
+							nm_dukr_test, nm_dukr_test, dev, &err);
 		nm_debug ("Activation (%s/wireless): user key received.", nm_device_get_iface (dev));
 
 		/* Done waiting, grab lock again */
