@@ -3,6 +3,7 @@
 info-daemon/networks.glade
 info-daemon/passphrase.glade
 info-daemon/NetworkManagerInfoPassphraseDialog.c
+info-daemon/NetworkManagerInfoVPN.c
 panel-applet/NMWirelessApplet.c
 panel-applet/NMWirelessAppletOtherNetworkDialog.c
 panel-applet/essid.glade
