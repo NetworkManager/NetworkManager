@@ -42,6 +42,12 @@ struct NMIAppInfo
 	GtkListStore	*networks_list_store;
 
 	GdkPixbuf		*padlock_pixbuf;
+
+	/*
+	GtkWidget	*notification_icon;
+	*/
+	GPid		notification_icon_pid;
+	
 };
 typedef struct NMIAppInfo NMIAppInfo;
 

@@ -21,14 +21,18 @@
 
 #ifndef NM_WIRELESS_APPLET_H
 #define NM_WIRELESS_APPLET_H
-
+#include "config.h"
 #include <gnome.h>
-#include <panel-applet.h>
-#include <panel-applet-gconf.h>
 #include <gconf/gconf-client.h>
 #include <glade/glade.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#ifndef BUILD_NOTIFICATION_ICON
+#include <panel-applet.h>
+#include <panel-applet-gconf.h>
+#else
+#include "eggtrayicon.h"
+#endif
 
 typedef enum
 {
@@ -90,13 +94,29 @@ typedef struct
 } NetworkDevice;
 
 
+
+#ifdef BUILD_NOTIFICATION_ICON
+
+#define NM_TYPE_WIRELESS_APPLET (nmwa_get_type())
+#define NM_WIRELESS_APPLET(object) (G_TYPE_CHECK_INSTANCE_CAST((object), NM_TYPE_WIRELESS_APPLET, NMWirelessApplet))
+#define NM_WIRELESS_APPLET_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIRELESS_APPLET, NMWirelessAppletClass))
+#define NM_IS_WIRELESS_APPLET(object) (G_TYPE_CHECK_INSTANCE_TYPE((object), NM_TYPE_WIRELESS_APPLET))
+#define NM_IS_WIRELESS_APPLET_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_WIRELESS_APPLET))
+#define NM_WIRELESS_APPLET_GET_CLASS(object) (G_TYPE_INSTANCE_GET_CLASS((object), NM_TYPE_WIRELESS_APPLET, NMWirelessAppletClass))
+
+typedef struct
+{
+	EggTrayIconClass	parent_class;
+} NMWirelessAppletClass; 
+#endif
+
 /*
  * Applet instance data
  *
  */
 typedef struct
 {
-	PanelApplet		 base;
+	EggTrayIcon		 parent;
 
 	DBusConnection		*connection;
 	GConfClient		*gconf_client;
@@ -129,6 +149,6 @@ typedef struct
 } NMWirelessApplet;
 
 
-NetworkDevice *nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);
-
+NetworkDevice		*nmwa_get_device_for_nm_device (NMWirelessApplet *applet, const char *nm_dev);
+NMWirelessApplet	*nmwa_new ();
 #endif

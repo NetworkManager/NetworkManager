@@ -8,6 +8,8 @@ AM_CONFIG_HEADER(config.h)
 AC_PROG_CC
 AM_PROG_CC_C_O
 
+AC_PROG_LIBTOOL
+
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
@@ -134,6 +136,46 @@ else
 fi
 AC_SUBST(DBUS_SYS_DIR)
 AC_DEFINE_UNQUOTED(DBUS_SYSTEMD_DIR, "$DBUS_SYS_DIR", [Where system.d dir for DBUS is])
+
+AC_ARG_ENABLE(notification-icon,	[ --enable-notification-icon	builds the wireless applet as a notification icon], enable_notification_icon=$enableval, enable_notification_icon=yes)
+
+AM_CONDITIONAL(BUILD_NOTIFICATION_ICON, test x$enable_notification_icon = xyes)
+if test x$enable_notification_icon == xyes ; then
+	AC_DEFINE_UNQUOTED(BUILD_NOTIFICATION_ICON, "$BUILD_NOTIFICATION_ICON", [Should we build the notification icon instead of the applet])
+	notification_icon_dir="panel-applet"
+	AC_SUBST(notification_icon_dir)
+fi
+
+#### find the actual value for $prefix that we'll end up with
+##   (I know this is broken and should be done in the Makefile, but
+##    that's a major pain and almost nobody actually seems to care)
+REAL_PREFIX=
+if test "x$prefix" = "xNONE"; then
+  REAL_PREFIX=$ac_default_prefix
+else
+  REAL_PREFIX=$prefix
+fi
+
+## temporarily change prefix and exec_prefix
+old_prefix=$prefix
+prefix=$REAL_PREFIX
+
+if test "x$exec_prefix" = xNONE ; then
+   REAL_EXEC_PREFIX=$REAL_PREFIX
+else
+   REAL_EXEC_PREFIX=$exec_prefix
+fi
+old_exec_prefix=$exec_prefix
+exec_prefix=$REAL_EXEC_PREFIX
+
+BINDIR_TMP="$bindir"
+EXPANDED_BINDIR=`eval echo $BINDIR_TMP`
+AC_SUBST(EXPANDED_BINDIR)
+AC_DEFINE_UNQUOTED(EXPANDED_BINDIR, "$EXPANDED_BINDIR", [Where the executables are installed])
+
+## put prefix and exec_prefix back
+prefix=$old_prefix
+exec_prefix=$old_exec_prefix
 
 AC_OUTPUT([
 Makefile

@@ -1,3 +1,16 @@
+Wed Sep 29 18:18:24 2004  Jonathan Blandford  <jrb@redhat.com>
+
+	* configure.in: Add a temporary --enable-notification-icon.  This
+	will prolly go away.
+
+	* info-daemon/Makefile.am:
+	* info-daemon/NetworkManagerInfo.c:
+	* info-daemon/NetworkManagerInfo.h: Use a notification icon.
+
+	* panel-applet/Makefile.am:
+	* panel-applet/NMWirelessApplet.c: Turn into a notification icon
+	* panel-applet/NMWirelessApplet.h:
+
 Tue Sep 28 16:35:20 2004  Jonathan Blandford  <jrb@redhat.com>
 
 	* panel-applet/NMWirelessApplet.c: Fix deadlock.  Add a separator

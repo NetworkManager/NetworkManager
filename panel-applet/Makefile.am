@@ -1,12 +1,16 @@
 SUBDIRS=icons
 
 NULL=
+NOTIFICATION_ICON_SOURCE=@NOTIFICATION_ICON_SRC@
 
 INCLUDES = 							\
 	$(NM_CFLAGS)						\
 	$(GLADE_CFLAGS)						\
 	$(DBUS_CFLAGS)						\
 	$(DBUS_GLIB_CFLAGS)					\
+	$(GTK_CFLAGS)						\
+	$(GCONF_CFLAGS)						\
+	$(LIBGNOMEUI_CFLAGS)					\
 	$(PANEL_APPLET_CFLAGS)					\
 	-DICONDIR=\""$(datadir)/pixmaps"\"			\
 	-DG_DISABLE_DEPRECATED					\
@@ -15,11 +19,11 @@ INCLUDES = 							\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"	\
 	$(NULL)
 
-libexec_PROGRAMS = NMWirelessApplet
+noinst_LTLIBRARIES = libnm_notification_applet.la
 
-NMWirelessApplet_SOURCES =		\
-	NMWirelessApplet.c			\
-	NMWirelessApplet.h			\
+libnm_notification_applet_la_SOURCES =	\
+	NMWirelessApplet.c		\
+	NMWirelessApplet.h		\
 	NMWirelessAppletDbus.c		\
 	NMWirelessAppletDbus.h		\
 	menu-info.c			\
@@ -30,20 +34,25 @@ NMWirelessApplet_SOURCES =		\
 	gtkcellrendererprogress.h	\
 	$(NULL)
 
-NMWirelessApplet_LDADD =		\
+libnm_notification_applet_la_SOURCES +=	\
+	eggtrayicon.c			\
+	eggtrayicon.h			
+
+libnm_notification_applet_la_LIBADD =	\
 	$(NM_LIBS)			\
-	$(LIBGLADE_LIBS)		\
+	$(GLADE_LIBS)			\
 	$(DBUS_LIBS)			\
 	$(DBUS_GLIB_LIBS)		\
-	$(PANEL_APPLET_LIBS)	\
+	$(PANEL_APPLET_LIBS)		\
+	$(GTK_LIBS)			\
+	$(GCONF_LIBS)			\
+	$(LIBGNOMEUI_LIBS)		\
 	$(NULL)
 
-serverdir          = $(libdir)/bonobo/servers
-server_in_files    = NMWirelessApplet.server.in
-server_DATA        = NMWirelessApplet.server
+libexec_PROGRAMS = NetworkManagerNotification
 
-$(server_DATA): $(srcdir)/$(server_in_files)
-	sed -e "s|\@LIBEXECDIR\@|$(libexecdir)|" $< > $@
+NetworkManagerNotification_SOURCES = main.c
+NetworkManagerNotification_LDADD = ./libnm_notification_applet.la
 
 uidir = $(datadir)/gnome-2.0/ui
 ui_DATA = NMWirelessApplet.xml
@@ -73,7 +82,6 @@ pixmap_DATA =				\
 CLEANFILES = $(server_DATA) *.bak *.gladep
 
 EXTRA_DIST = 				\
-	$(server_in_files)		\
 	$(pixmap_DATA)			\
 	$(ui_DATA)			\
 	$(glade_DATA)			\

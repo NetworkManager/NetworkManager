@@ -35,6 +35,9 @@
 #include <gconf/gconf-client.h>
 #include <libgnome/gnome-init.h>
 #include <libgnomeui/gnome-ui-init.h>
+#include <sys/types.h>
+#include <signal.h>
+#include "config.h"
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
 #include "NetworkManagerInfoPassphraseDialog.h"
@@ -91,6 +94,7 @@ int main( int argc, char *argv[] )
 	NMIAppInfo	*app_info = NULL;
 	GMainLoop		*loop;
 	guint		 notify_id;
+	GError		*error;
 
 	struct poptOption options[] =
 	{
@@ -98,6 +102,8 @@ int main( int argc, char *argv[] )
 		  "Don't detatch from the console and run in the background.", NULL },
 		{ NULL, '\0', 0, NULL, 0, NULL, NULL }
 	};
+
+	gchar *notification_icon_cmd[] = {LIBEXECDIR"/NetworkManagerNotification"};
 
 	options[0].arg = &no_daemon;
 
@@ -175,16 +181,38 @@ int main( int argc, char *argv[] )
 	if (err == -1)
 		exit (1);
 
-	gtk_init (&argc, &argv);
+	gnome_program_init ("NetworkManagerInfo", VERSION, LIBGNOMEUI_MODULE,
+			   argc, argv,
+			   GNOME_PARAM_NONE);
+
+
+	app_info->notification_icon_pid = 0;
+
+#ifdef BUILD_NOTIFICATION_ICON
+	/*spawn the panel notification icon*/
+	if (!g_spawn_async (NULL,
+			    notification_icon_cmd,
+			    NULL, 0, NULL, NULL,
+			    &(app_info->notification_icon_pid),
+			    &error))
+	{
+		g_warning ("Could not spawn NetworkManager's notification icon (%s)", error->message);
+		g_error_free (error);
+	}
+
+#endif
 
 	if (nmi_passphrase_dialog_init (app_info) != 0)
 		exit (1);
 
-	loop = g_main_loop_new (NULL, FALSE);
-	g_main_loop_run (loop);
+	gtk_main ();
+
+	if (app_info->notification_icon_pid > 0)
+		kill (app_info->notification_icon_pid, SIGTERM);
 
 	gconf_client_notify_remove (app_info->gconf_client, notify_id);
 	g_object_unref (G_OBJECT (app_info->gconf_client));
+	/*g_object_unref (app_info->notification_icon);*/
 	g_free (app_info);
 
 	return 0;

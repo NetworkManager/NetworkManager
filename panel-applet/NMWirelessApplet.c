@@ -36,13 +36,14 @@
 #include <math.h>
 #include <dirent.h>
 
+#include "config.h"
+
 #include <gnome.h>
-#include <panel-applet.h>
-#include <panel-applet-gconf.h>
+
+#include <libgnomeui/libgnomeui.h>
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
 
-#include "config.h"
 #include "NMWirelessApplet.h"
 #include "NMWirelessAppletDbus.h"
 #include "menu-info.h"
@@ -67,38 +68,23 @@ static char * pixmap_names[] =
 
 static char *glade_file;
 
-static void		nmwa_about_cb		(BonoboUIComponent *uic, NMWirelessApplet *applet);
+static void		nmwa_about_cb		(NMWirelessApplet *applet);
+
 static GtkWidget *	nmwa_populate_menu	(NMWirelessApplet *applet);
 static void		nmwa_dispose_menu_items (NMWirelessApplet *applet);
 static gboolean	do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event);
+static GObject * nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
 
+
+#ifndef BUILD_NOTIFICATION_ICON
 static const BonoboUIVerb nmwa_context_menu_verbs [] =
-{
+
 	BONOBO_UI_UNSAFE_VERB ("NMWirelessAbout", nmwa_about_cb),
 	BONOBO_UI_VERB_END
 };
+#endif
 
-
-static GType nmwa_get_type (void)
-{
-	static GType type = 0;
-
-	if (!type)
-	{
-		static const GTypeInfo info =
-		{
-			sizeof (PanelAppletClass),
-			NULL, NULL, NULL, NULL, NULL,
-			sizeof (NMWirelessApplet),
-			0, NULL, NULL
-		};
-
-		type = g_type_register_static (PANEL_TYPE_APPLET, "NMWirelessApplet", &info, 0);
-	}
-
-	return (type);
-}
-
+G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 
 /*
  * nmwa_redraw
@@ -264,7 +250,7 @@ static void show_warning_dialog (gboolean error, gchar *mesg, ...)
  * Display our about dialog
  *
  */
-static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
+static void nmwa_about_cb (NMWirelessApplet *applet)
 {
 	GdkPixbuf	*pixbuf;
 	char		*file;
@@ -279,7 +265,7 @@ static void nmwa_about_cb (BonoboUIComponent *uic, NMWirelessApplet *applet)
 
 	if (applet->about_dialog != NULL)
 	{
-		gtk_window_set_screen (GTK_WINDOW (applet->about_dialog), gtk_widget_get_screen (GTK_WIDGET (&applet->base)));
+		gtk_window_set_screen (GTK_WINDOW (applet->about_dialog), gtk_widget_get_screen (GTK_WIDGET (&applet->parent)));
 		gtk_window_present (GTK_WINDOW (applet->about_dialog));
 		return;
 	}
@@ -358,6 +344,7 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
 	gdk_window_get_origin (GTK_WIDGET (applet)->window, &tempx, &tempy);
 	gdk_window_get_geometry (GTK_WIDGET (applet)->window, NULL, NULL, &width, &height, NULL);
 
+#ifndef BUILD_NOTIFICATION_ICON
 	switch (panel_applet_get_orient (PANEL_APPLET (applet)))
 	{
 		case PANEL_APPLET_ORIENT_DOWN:
@@ -373,6 +360,7 @@ static void nmwa_get_menu_pos (GtkMenu *menu, gint *x, gint *y, gboolean *push_i
 			tempx += width;
 			break;
 	}
+#endif
 	screen_width = gdk_screen_width ();
 	screen_height = gdk_screen_height ();
 	*x = CLAMP (tempx, 0, MAX (0, screen_width - reqmenu.width));
@@ -849,6 +837,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	gint			 panel_size;
 	GtkWidget      *menu_bar;
 
+#if 0 
 	panel_size = panel_applet_get_size (PANEL_APPLET (applet));
 	switch (panel_applet_get_orient(PANEL_APPLET (applet)))
 	{
@@ -861,6 +850,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 			horizontal = TRUE;
 			break;
 	}
+#endif
 
 	/* construct pixmap widget */
 	applet->pixmap = gtk_image_new ();
@@ -883,7 +873,7 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 
 	applet->menu = gtk_menu_new();
 	gtk_menu_item_set_submenu (GTK_MENU_ITEM(applet->toplevel_menu), applet->menu);
-	g_signal_connect (applet->menu, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
+	g_signal_connect (menu_bar, "button_press_event", G_CALLBACK (do_not_eat_button_press), NULL);
 
 	applet->image_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
@@ -897,25 +887,25 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->about_dialog = NULL;
 }
 
-static void change_size_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
-{
-	nmwa_setup_widgets (applet);
-	nmwa_redraw_timeout (applet);
-}
-
-static void change_orient_cb(PanelApplet *pa, gint s, NMWirelessApplet *applet)
-{
-	nmwa_setup_widgets (applet);
-	nmwa_redraw_timeout (applet);
-}
 
 static gboolean do_not_eat_button_press (GtkWidget *widget, GdkEventButton *event)
 {
+	/* Don't worry about this for now
+	   We can use it if we need a contectual menu
+
 	if (event->button != 1)
 		g_signal_stop_emission_by_name (widget, "button_press_event");
+
+	if (event->button == 3) {
+		g_message ("3nd button pressed");
+		return (TRUE);
+	}
+	*/
+
 	return (FALSE);
 }
 
+#if 0 
 static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
 				GdkColor *color, GdkPixmap *pixmap, NMWirelessApplet *applet)
 {
@@ -943,19 +933,18 @@ static void change_background_cb(PanelApplet *a, PanelAppletBackgroundType type,
 
 	gtk_rc_style_unref (rc_style);
 }
-
+#endif
 
 /*
- * nmwa_new
+ * nmwa_get_instance
  *
  * Create the initial instance of our wireless applet
  *
  */
-static GtkWidget * nmwa_new (NMWirelessApplet *applet)
+static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 {
 	GError	*error = NULL;
 
-	panel_applet_set_flags (PANEL_APPLET (applet), PANEL_APPLET_EXPAND_MINOR);
 	gtk_widget_hide(GTK_WIDGET(applet));
 
 	applet->gconf_client = gconf_client_get_default ();
@@ -995,20 +984,12 @@ static GtkWidget * nmwa_new (NMWirelessApplet *applet)
 
 	g_signal_connect (applet,"destroy", G_CALLBACK (nmwa_destroy),NULL);
 
+#ifndef BUILD_NOTIFICATION_ICON
 	panel_applet_setup_menu_from_file (PANEL_APPLET (applet), NULL, "NMWirelessApplet.xml", NULL,
 						nmwa_context_menu_verbs, applet);
+#endif
 
-	if (panel_applet_get_locked_down (PANEL_APPLET (applet)))
-	{
-		BonoboUIComponent *popup_component;
-
-		popup_component = panel_applet_get_popup_component (PANEL_APPLET (applet));
-		bonobo_ui_component_set_prop (popup_component, "/commands/NMWirelessApplet", "hidden", "1", NULL);
-	}
-
-	g_signal_connect (G_OBJECT (applet), "change_size", G_CALLBACK (change_size_cb), applet);
-	g_signal_connect (G_OBJECT (applet), "change_orient", G_CALLBACK (change_orient_cb), applet);
- 	g_signal_connect (G_OBJECT (applet), "change_background", G_CALLBACK (change_background_cb), applet);
+	
 
 	/* Start redraw timeout */
 	nmwa_start_redraw_timeout (applet);
@@ -1029,7 +1010,7 @@ static gboolean nmwa_fill (NMWirelessApplet *applet)
 		return (FALSE);
 	}
 
-	gtk_widget_show (nmwa_new (applet));
+	gtk_widget_show (nmwa_get_instance (applet));
 	return (TRUE);
 }
 
@@ -1074,10 +1055,45 @@ static gboolean nmwa_factory (NMWirelessApplet *applet, const gchar *iid, gpoint
 	return (retval);
 }
 
-PANEL_APPLET_BONOBO_FACTORY ("OAFIID:NMWirelessApplet_Factory",
-		nmwa_get_type (),
-		"wireless",
-		"0",
-		(PanelAppletFactoryCallback) nmwa_factory,
-		NULL)
+static void
+nmwa_init (NMWirelessApplet *applet)
+{
+	setup_stock ();
+	nmwa_fill (applet);
+}
+
+static GObjectClass *parent_class = NULL;
+
+static void nmwa_class_init (NMWirelessAppletClass *klass)
+{
+	GObjectClass *gobject_class;
+	gobject_class = G_OBJECT_CLASS (klass);
+
+	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (gobject_class));
+
+	gobject_class->constructor = nmwa_constructor;
+
+}
+
+static GObject *nmwa_constructor (GType type,
+		 		  guint n_props,
+				  GObjectConstructParam *construct_props)
+{
+	GObject *obj;
+	NMWirelessApplet *applet;
+	NMWirelessAppletClass *klass;
+
+	klass = NM_WIRELESS_APPLET_CLASS (g_type_class_peek (type));
+	obj = parent_class->constructor (type,
+                                         n_props,
+                                         construct_props);
+	applet =  NM_WIRELESS_APPLET (obj);
+
+	return obj;	
+}
+
+NMWirelessApplet *nmwa_new ()
+{
+	return g_object_new (NM_TYPE_WIRELESS_APPLET, "title", "NetworkManager", NULL);
+}
 
