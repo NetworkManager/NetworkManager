@@ -1,5 +1,16 @@
 2004-10-15 Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_update_network): Disown AP after the list takes ownership
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_nm_set_active_device): Simplify the device setting logic
+
+	* src/NetworkManagerDevice.c
+		- Disown APs after the device's AP list takes ownership
+
+2004-10-15 Dan Williams <dcbw@redhat.com>
+
 	* panel-applet/NMWirelessApplet.c
 		- Update our applet state from the GUI thread
 

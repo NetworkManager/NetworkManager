@@ -287,9 +287,14 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 
 		if (timestamp != NULL)
 		{
+			gboolean	new = FALSE;
+
 			/* Find access point in list, if not found create a new AP and add it to the list */
 			if (!(ap = nm_ap_list_get_ap_by_essid (list, network)))
-				nm_ap_list_append_ap (list, (ap = nm_ap_new ()));
+			{
+				ap = nm_ap_new ();
+				new = TRUE;
+			}
 
 			nm_ap_set_essid (ap, essid);
 			nm_ap_set_timestamp (ap, timestamp);
@@ -298,6 +303,12 @@ void nm_ap_list_update_network (NMAccessPointList *list, const char *network, NM
 				nm_ap_set_enc_key_source (ap, key, enc_method);
 			else
 				nm_ap_set_enc_key_source (ap, NULL, NM_AP_ENC_METHOD_UNKNOWN);
+
+			if (new)
+			{
+				nm_ap_list_append_ap (list, ap);
+				nm_ap_unref (ap);
+			}
 		}
 
 		g_free (timestamp);

@@ -279,31 +279,28 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	if (!(reply_message = dbus_message_new_method_return (message)))
 		goto out;
 
-	/* Notify the state modification handler that we'd like to lock on a specific device */
-	if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
+	/* If the user specificed a wireless network too, force that as well */
+	if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network))
 	{
-		gboolean	success = TRUE;
-
-		/* If the user specificed a wireless network too, force that as well */
-		if (nm_device_is_wireless (dev) && !nm_device_find_and_use_essid (dev, network))
-		{
-			reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
-											"The requested wireless network is not in range.");
-			success = FALSE;
-		}
-
-		if (success)
+		reply_message = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NetworkNotFound",
+										"The requested wireless network is not in range.");
+	}
+	else
+	{
+		if (nm_try_acquire_mutex (data->user_device_mutex, __FUNCTION__))
 		{
 			if (data->user_device)
 				nm_device_unref (data->user_device);
 			data->user_device = dev;
 			nm_device_ref (data->user_device);
+			nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
 		}
-		nm_unlock_mutex (data->user_device_mutex, __FUNCTION__);
-
-		if (success)
-			nm_data_mark_state_changed (data);
 	}
+
+	/* Have to mark our state changed since we blew away our connection trying out
+	 * the user-requested network.
+	 */
+	nm_data_mark_state_changed (data);
 
 out:
 	dbus_free (network);

@@ -2132,6 +2132,7 @@ gboolean nm_device_find_and_use_essid (NMDevice *dev, const char *essid)
 				nm_ap_set_artificial (ap, TRUE);
 				nm_ap_set_address (ap, &ap_addr);
 				nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
+				nm_ap_unref (ap);
 			}
 
 			/* Now that this AP has an essid, copy over encryption keys and whatnot */
@@ -2260,6 +2261,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 
 				/* Add the AP to the device's AP list */
 				nm_ap_list_append_ap (dev->options.wireless.cached_ap_list1, nm_ap);
+				nm_ap_unref (nm_ap);
 			}
 			tmp_ap = tmp_ap->next;
 		}
