@@ -71,7 +71,7 @@ static char *nm_wireless_md5_digest_to_ascii (unsigned char digest[16])
  * MD5 algorithm.
  *
  */
-char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
+char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
 {
 	char		 	md5_data[65];
 	unsigned char	digest[16];

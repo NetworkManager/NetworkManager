@@ -27,7 +27,7 @@
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerAPList.h"
 
-char *	nm_wireless_128bit_key_from_passphrase	(char *passphrase);
+char *	nm_wireless_128bit_key_from_passphrase	(const char *passphrase);
 
 gboolean	nm_wireless_scan_monitor				(gpointer user_data);
 

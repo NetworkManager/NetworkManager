@@ -42,7 +42,7 @@ void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
 char *			nm_ap_get_enc_key_source	(NMAccessPoint *ap);
 char *			nm_ap_get_enc_key_hashed	(NMAccessPoint *ap);
-void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, char *key, NMEncKeyType type);
+void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
 
 gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);

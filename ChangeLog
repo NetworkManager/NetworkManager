@@ -1,5 +1,13 @@
 2004-11-01  Colin Walters  <walters@verbum.org>
 
+	* src/NetworkManagerWireless.h, src/NetworkManagerWireless.c
+	(nm_wireless_128bit_key_from_passphrase): Add const.
+
+	* src/NetworkManagerAP.h, src/NetworkManagerAP.c
+	(nm_ap_set_enc_key_source): Add const.
+	
+2004-11-01  Colin Walters  <walters@verbum.org>
+
 	* .cvsignore: Update.
 
 2004-10-29 Dan Williams <dcbw@redhat.com>

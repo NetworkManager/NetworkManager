@@ -198,7 +198,7 @@ char * nm_ap_get_enc_key_source (NMAccessPoint *ap)
 	return (ap->enc_key);
 }
 
-void nm_ap_set_enc_key_source (NMAccessPoint *ap, char * key, NMEncKeyType method)
+void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType method)
 {
 	g_return_if_fail (ap != NULL);
 
