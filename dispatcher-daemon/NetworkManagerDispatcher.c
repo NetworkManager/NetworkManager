@@ -228,8 +228,6 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 		action = NMD_DEVICE_NOW_INACTIVE;
 	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNowActive"))
 		action = NMD_DEVICE_NOW_ACTIVE;
-	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "NeedKeyForNetwork"))
-		fprintf (stderr, "NeedKeyForNetwork\n");
 
 	if (action != NMD_DEVICE_DONT_KNOW)
 	{
@@ -408,8 +406,7 @@ int main( int argc, char *argv[] )
 		g_thread_init (NULL);
 
 	/* Connect to the NetworkManager dbus service and run the main loop */
-	connection = nmd_dbus_init ();
-	if (connection)
+	if ((connection = nmd_dbus_init ()))
 	{
 		loop = g_main_loop_new (NULL, FALSE);
 		g_main_loop_run (loop);
