@@ -57,6 +57,11 @@ typedef struct
 	struct wireless_scan_head	 scan_head;
 } NMWirelessScanResults;
 
+typedef struct
+{
+	NMDevice		*dev;
+	gboolean		 reschedule;
+} NMWirelessScanCB;
 
 /******************************************************/
 
@@ -479,10 +484,15 @@ static gpointer nm_device_worker (gpointer user_data)
 	/* Start the scanning timeout for devices that can do scanning */
 	if (nm_device_is_wireless (dev) && nm_device_get_supports_wireless_scan (dev))
 	{
-		GSource	*source = g_idle_source_new ();
-		guint	 source_id = 0;
+		GSource			*source = g_idle_source_new ();
+		guint			 source_id = 0;
+		NMWirelessScanCB	*scan_cb;
 
-		g_source_set_callback (source, nm_device_wireless_scan, dev, NULL);
+		scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
+		scan_cb->dev = dev;
+		scan_cb->reschedule = TRUE;
+
+		g_source_set_callback (source, nm_device_wireless_scan, scan_cb, NULL);
 		source_id = g_source_attach (source, dev->context);
 		g_source_unref (source);
 	}
@@ -2304,6 +2314,25 @@ static gboolean nm_wa_test (int tries, va_list args)
 		*err = FALSE;
 		return TRUE;
 	}
+	else
+	{
+		/* Since scanning runs in the device thread, we block scans
+		 * during device activation.  So we need to run a scan periodically
+		 * during activation too.
+		 */
+		GTimeVal			 cur_time;
+
+		/* If the last scan was done more than 15s before, do another one. */
+		g_get_current_time (&cur_time);
+		if (cur_time.tv_sec >= dev->options.wireless.last_scan + 15)
+		{
+			NMWirelessScanCB	*scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
+
+			scan_cb->dev = dev;
+			scan_cb->reschedule = FALSE;
+			nm_device_wireless_scan (scan_cb);
+		}
+	}
 
 	return FALSE;
 }
@@ -3452,14 +3481,19 @@ static void nm_device_fake_ap_list (NMDevice *dev)
  */
 static void nm_device_wireless_schedule_scan (NMDevice *dev)
 {
-	GSource	*wscan_source;
-	guint	 wscan_source_id;
+	GSource			*wscan_source;
+	guint			 wscan_source_id;
+	NMWirelessScanCB	*scan_cb;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
+	scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
+	scan_cb->dev = dev;
+	scan_cb->reschedule = TRUE;
+
 	wscan_source = g_timeout_source_new (dev->options.wireless.scan_interval * 1000);
-	g_source_set_callback (wscan_source, nm_device_wireless_scan, dev, NULL);
+	g_source_set_callback (wscan_source, nm_device_wireless_scan, scan_cb, NULL);
 	wscan_source_id = g_source_attach (wscan_source, dev->context);
 	g_source_unref (wscan_source);
 }
@@ -3570,7 +3604,7 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			{
 				/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes
 				 * strength.
-				*/
+				 */
 				if (new)
 				{
 					nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap,
@@ -3689,12 +3723,19 @@ static gboolean nm_completion_scan_has_results (int tries, va_list args)
  */
 static gboolean nm_device_wireless_scan (gpointer user_data)
 {
-	NMDevice 				*dev = (NMDevice *)(user_data);
+	NMWirelessScanCB		*scan_cb = (NMWirelessScanCB *)(user_data);
+	NMDevice 				*dev = NULL;
 	int			 		 sk;
 	NMWirelessScanResults	*scan_results = NULL;
 
-	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+	g_return_val_if_fail (scan_cb != NULL, FALSE);
+
+	dev = scan_cb->dev;
+	if (!dev || !dev->app_data)
+	{
+		g_free (scan_cb);
+		return FALSE;
+	}
 
 	/* Just reschedule ourselves if scanning or all wireless is disabled */
 	if (    (dev->app_data->scanning_enabled == FALSE)
@@ -3723,8 +3764,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		if (devup_err)
 		{
 			nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-			nm_device_wireless_schedule_scan (dev);
-			return FALSE;
+			goto reschedule;
 		}
 
 		if ((sk = iw_sockets_open ()) >= 0)
@@ -3780,17 +3820,23 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	{
 		guint	 scan_process_source_id = 0;
 		GSource	*scan_process_source = g_idle_source_new ();
+		GTimeVal	 cur_time;
 
 		scan_results->dev = dev;
 		g_source_set_callback (scan_process_source, nm_device_wireless_process_scan_results, scan_results, NULL);
 		scan_process_source_id = g_source_attach (scan_process_source, dev->app_data->main_context);
 		g_source_unref (scan_process_source);
+
+		g_get_current_time (&cur_time);
+		dev->options.wireless.last_scan = cur_time.tv_sec;
 	}
 
 reschedule:
 	/* Make sure we reschedule ourselves so we keep scanning */
-	nm_device_wireless_schedule_scan (dev);
+	if (scan_cb->reschedule)
+		nm_device_wireless_schedule_scan (dev);
 
+	g_free (scan_cb);
 	return FALSE;
 }
 

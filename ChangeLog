@@ -1,5 +1,22 @@
 2005-04-01  Dan Williams <dcbw@redhat.com>
 
+	Perform scans during device activation, if needed.  Both activation 
+	and scans run in the same GMainContext.  Therefore, if an access point
+	is not found by the time the device starts activation, it will not
+	be available until after activation.  We now try to scan during
+	activation (in nm_wa_test) every 15s so that all available access
+	points are more likely to be found and available for the activation
+	procedure.
+
+	Also change nm_wireless_link_state_handle() to only update the "best"
+	AP if we are not forcing a device and if we are not about to change
+	state.  This attempts to work around a race when forcing a device,
+	where the forced AP would get cleared out too soon by the link state
+	checking timeout in the main thread, and the activation attempt with
+	that AP would fail.
+
+2005-04-01  Dan Williams <dcbw@redhat.com>
+
 	* po/POTFILES.in
 		- Update with new translatables
 

@@ -409,8 +409,12 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 			if (    (dev == data->active_device)
 				&& !nm_device_has_active_link (dev))
 			{
-				if (nm_device_get_supports_wireless_scan (dev))
+				if (    nm_device_get_supports_wireless_scan (dev)
+					&& !data->forcing_device
+					&& data->state_modified_idle_id == 0)	
+				{
 					nm_device_update_best_ap (dev);
+				}
 				else
 				{
 					if (    !nm_device_is_activating (dev)
