@@ -1,5 +1,11 @@
 2005-03-24  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+		- (nm_get_device_driver_name): driver names are now on the parents of
+			"Network Interface" objects, so look for them there
+
+2005-03-24  Dan Williams <dcbw@redhat.com>
+
 	* test/nmtest.c
 		- Escape some forgotten object paths before we shove them through dbus
 

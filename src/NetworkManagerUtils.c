@@ -292,10 +292,12 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 	g_return_val_if_fail (ctx != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	if (    (udi = nm_device_get_udi (dev))
-		&& libhal_device_property_exists (ctx, udi, "net.linux.driver", NULL))
+	if ((udi = nm_device_get_udi (dev)))
 	{
-		driver_name = libhal_device_get_property_string (ctx, udi, "net.linux.driver", NULL);
+		char *parent_udi = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+
+		if (parent_udi && libhal_device_property_exists (ctx, parent_udi, "info.linux.driver", NULL))
+			driver_name = libhal_device_get_property_string (ctx, parent_udi, "info.linux.driver", NULL);
 	}
 
 	return (driver_name);
