@@ -6,7 +6,8 @@ import gtk.gdk
 try:
     import trayicon
     from NetworkManager import NetworkManager
-except:
+except ImportError, e:
+    print e
     print "type 'make' make the necessary modules to run this example"
     import sys
     sys.exit(1)
@@ -24,9 +25,27 @@ class network_tray:
                                                  self._network_event)
 
         self._network_event(None, None, None,None,None)
+
+    def _wired_network_cb(self, menuitem, event, device_name):
+        return
+        print menuitem, event, device_name
+        try:
+            self._nm.nm_object.setActiveDevice(device_name)
+        except Exception, e:
+            print e
+        
+    def _wireless_network_cb(self, menuitem, event, device_name, network_name):
+        return
+        print menuitem, event, device_name, network_name
+        try:
+            self._nm.nm_object.setActiveDevice(device_name, network_name)
+        except Exception, e:
+            print e
         
     def _add_separator_item(self):
-        self._menu.append(gtk.SeparatorMenuItem())
+        sep = gtk.SeparatorMenuItem()
+        sep.show()
+        self._menu.append(sep)
 
     def _add_label_item(self, label):
         menuitem = gtk.MenuItem()
@@ -55,13 +74,13 @@ class network_tray:
         self._menu.append(menuitem)
         menuitem.show_all()
 
-    def _add_device_menu_item(self, device):
-        if not self._is_wireless(device):
-            menuitem = gtk.RadioMenuItem(group=self.__radio_group)
-            if self._is_active(device):
-                menuitem.set_active(1)
-        else:
-            menuitem = gtk.MenuItem()
+    def _add_wired_device_menu_item(self, device):
+        menuitem = gtk.RadioMenuItem(group=self.__radio_group)
+        if self._is_active(device):
+            menuitem.set_active(1)
+
+        menuitem.connect("button-press-event",self._wired_network_cb,
+                         device["nm.device"])
         
         hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
         hbox.pack_start(self._get_icon(device), expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
@@ -72,7 +91,46 @@ class network_tray:
         menuitem.add(hbox)        
         hbox.show()
         self._menu.append(menuitem)
-        tt = "IP: %d\nProduct Name: %s\nVendor: %s\nDevice Name: %s" % (device["nm.ip4"], device["pci.product"], device["info.vendor"], device["nm.name"] )
+        try:
+            tt = "IP: %d\nProduct Name: %s\nVendor: %s\nDevice Name: %s" % (device["nm.ip4"], device["pci.product"], device["info.vendor"], device["nm.name"] )
+            self._tooltips.set_tip(menuitem,tt)
+        except:
+            pass
+        menuitem.show_all()
+
+    def _add_wireless_device_menu_item(self, device, generic=gtk.FALSE):
+        menuitem = gtk.MenuItem()
+
+        hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
+        hbox.pack_start(self._get_icon(device), expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        label = gtk.Label()
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        label.set_markup("<span foreground=\"#aaaaaa\">%s</span>" % self._get_device_name(device))
+        label.set_selectable(gtk.FALSE)        
+        hbox.pack_start(label, expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        menuitem.add(hbox)
+        hbox.show()
+        self._menu.append(menuitem)
+        try:
+            tt = "IP: %d\nProduct Name: %s\nVendor: %s\nDevice Name: %s" % (device["nm.ip4"], device["pci.product"], device["info.vendor"], device["nm.name"] )
+            self._tooltips.set_tip(menuitem,tt)
+        except:
+            pass
+        menuitem.show_all()
+
+    def _add_vpn_menu_item(self):
+        menuitem = gtk.CheckMenuItem()
+        
+        hbox = gtk.HBox(homogeneous=gtk.FALSE, spacing=6)
+        hbox.pack_start(self._get_vpn_icon(), expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        label = gtk.Label()
+        label.set_justify(gtk.JUSTIFY_LEFT)
+        label.set_text("Virtual Private Network")
+        hbox.pack_start(label, expand=gtk.FALSE, fill=gtk.FALSE, padding=6)
+        menuitem.add(hbox)        
+        hbox.show()
+        self._menu.append(menuitem)
+        tt = "Use a Virtual Private Network to securely connect to your companies internal system"
         self._tooltips.set_tip(menuitem,tt)
         menuitem.show_all()
         
@@ -90,9 +148,9 @@ class network_tray:
         hbox.pack_start(label,expand=gtk.TRUE, fill=gtk.TRUE)
         progress = gtk.ProgressBar()
         progress.set_orientation(gtk.PROGRESS_LEFT_TO_RIGHT)
-        q = self._get_quality(device, network)
-        progress.set_fraction(q)
-#        progress.set_text("%s %%" % int(q*100))
+        strength = float(network["strength"] * .01)
+        progress.set_fraction(strength)
+#        progress.set_text("%s%%" % int(strength*100))
         progress.show()
         hbox.pack_start(progress, expand=gtk.FALSE, fill=gtk.FALSE)
         icon = self._get_encrypted_icon()
@@ -104,40 +162,29 @@ class network_tray:
 
         hbox.show()
         self._menu.append(menuitem)
-        tt = "Name: %s\nEncrypted: %d\nRate: %d\nFrequency: %f\nAddress: %s\nQuality: %d" % (network['name'], network['encrypted'], network['rate'],network['frequency'], network['address'], network['quality'])
+        tt = "Name: %s\nEncrypted: %d\nRate: %d\nFrequency: %f\nAddress: %s\nStrength: %1.2f" % (network['name'], network['encrypted'], network['rate'],network['frequency'], network['address'], strength)
         self._tooltips.set_tip(menuitem,tt)
+        menuitem.connect("button-press-event", self._wireless_network_cb,
+                         device["nm.device"], network["network"])
         menuitem.show()
 
-    def _get_quality(self, device, network):
-        if network["quality"] == 0:
-            proc = "/proc/driver/aironet/%s/BSSList" % device["net.interface"]
-            import fileinput
-            for line in fileinput.input(proc):
-                dev_info = line.split()
-                if network["name"] in dev_info:
-                    fileinput.close()
-                    try:
-                        qual =  float(dev_info[4])
-                        q =  float(qual / 100)
-                        return q
-                    except ValueError:
-                        return 0.0
-            fileinput.close()
-        else:
-            return float(network["quality"])
-        return 0.0
-
     def _get_device_name(self, device):
+
         if self._is_wireless(device):
-            if self._nm.number_wireless_devices() > 1:
-                return device["info.product"]
-            else:
-                return "Wireless Network"
+            try:
+                if self._nm.number_wireless_devices() > 1:
+                    return device["info.product"]
+                else:
+                    return "Wireless Network"
+            except:
+                return "Wireless PCMCIA Card"
         else:
-            if self._nm.number_wired_devices() > 1:
-                return device["info.product"]
-            else:
-                return "Wired Network"            
+            try:
+                if self._nm.number_wired_devices() > 1:
+                    return device["info.product"]
+            except:
+                pass
+            return "Wired Network"
         
     def _is_wireless(self,dev):
         if dev["nm.type"] == self._nm.WIRELESS_DEVICE:
@@ -145,14 +192,12 @@ class network_tray:
         return gtk.FALSE
 
     def _is_active(self, dev):
-        return dev["nm.status"] != self._nm.DISCONNECTED
+        try:
+            if dev["nm.link_active"] == 1:
+                return gtk.TRUE
+        except:
+            return gtk.FALSE
 
-    def _number_wired_devices(self, devices):
-        return self._number_x_devices(devices, self._nm.WIRED_DEVICE)
-    
-    def _number_wireless_devices(self, devices):
-        return self._number_x_devices(devices, self._nm.WIRELESS_DEVICE)
-        
     def _network_event(self, interface, signal_name,
                        service, path, message):
 
@@ -161,31 +206,35 @@ class network_tray:
         
         devices = self._nm.get_devices()
         active_device = self._nm.get_active_device()
-        tt = ""
+
+        def sort_devs(x, y):
+            if x["nm.type"] > y["nm.type"]:
+                return 1
+            elif x["nm.type"] < y["nm.type"]:
+                return -1
+            elif x["nm.link_active"] > y["nm.link_active"]:
+                return 1
+            elif x["nm.link_active"] < y["nm.link_active"]:
+                return -1
+            return 0
 
         def sort_networks(x, y):
-            if x["name"] > y["name"]:
-                print y["name"], x["name"]            
+            if x.lower() < y.lower():
                 return 1
-            print x["name"] ,y["name"]            
             return -1
-        
-        wireless = gtk.FALSE
+
+        type = 0
+        devices.sort(sort_devs)
         for device in devices:
-
-            if self._is_wireless(device) and wireless == gtk.FALSE:
-                wireless = gtk.TRUE
-                self._add_separator_item()
-                self._add_label_item("Wireless Networks")
-            else:
-                self._add_device_menu_item(device)
-            tt = "%s%s [%s]\n"%(tt,device["info.product"],device["nm.status"])
-
-            self._tooltips.set_tip(self._top_level_menu,tt)
-
+            
             if self._is_wireless(device):
-                device["nm.networks"].values().sort(sort_networks)
-                print device["nm.networks"]
+                type = device["nm.type"]
+                if self._nm.number_wireless_devices() > 1:
+                    self._add_wireless_device_menu_item(device)
+                else:
+                    self._add_wireless_device_menu_item(device, gtk.FALSE)
+
+                device["nm.networks"].keys().sort(sort_networks)
                 for name, network in device["nm.networks"].iteritems():
                     try: 
                         if device["nm.active_network"] == name:
@@ -195,10 +244,16 @@ class network_tray:
                     except:
                         active_network = gtk.FALSE
                     self._add_network_menu_item(device,network,active_network)
+                
+            else:
+                if type == self._nm.WIRELESS_DEVICE:
+                    self._add_separator_item()
+                self._add_wired_device_menu_item(device)
 
-        if wireless == gtk.TRUE:
-            self._add_other_wireless_item()
-            
+
+        self._add_other_wireless_item()
+#        self._add_vpn_menu_item()
+        
         self._current_icon = self._get_icon(active_device)
 
         self._current_icon.show()
@@ -206,23 +261,26 @@ class network_tray:
 
     def _get_encrypted_icon(self):
         pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/keyring.png")
-        pb = pb.scale_simple(24,24,gtk.gdk.INTERP_NEAREST)
+        pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
         _keyring = gtk.Image()
         _keyring.set_from_pixbuf(pb)
         return _keyring
-        
+
+    def _get_vpn_icon(self):
+        return self._get_encrypted_icon()
+    
     def _get_icon(self, active_device):
 
         if active_device:
             if active_device["nm.type"] == self._nm.WIRED_DEVICE:
                 pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/wired.png")
-                pb = pb.scale_simple(24,24,gtk.gdk.INTERP_NEAREST)
+                pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
                 _wired_icon = gtk.Image()
                 _wired_icon.set_from_pixbuf(pb)
                 return _wired_icon                
             elif active_device["nm.type"] == self._nm.WIRELESS_DEVICE:
                 pb = gtk.gdk.pixbuf_new_from_file("../../../panel-applet/wireless-applet.png")
-                pb = pb.scale_simple(24,24,gtk.gdk.INTERP_NEAREST)
+                pb = pb.scale_simple(16,16,gtk.gdk.INTERP_NEAREST)
                 _wireless_icon = gtk.Image()
                 _wireless_icon.set_from_pixbuf(pb)
                 return _wireless_icon                

@@ -77,30 +77,33 @@ class NetworkManager:
     """
     def get_device(self, device):
         try:
-            nm_device_object  = self._nm_service.get_object(device,
-                                                            NM_INTERFACE_DEVICES)
+            nm_dev_obj  = self._nm_service.get_object(device,
+                                                      NM_INTERFACE_DEVICES)
             d = {}
-            d["nm.name"] = nm_device_object.getName(device)
-            d["nm.type"] = nm_device_object.getType(device)
-            d["nm.udi"]  = nm_device_object.getHalUdi(device)
-            d["nm.ip4"]  = nm_device_object.getIP4Address(device)
-            d["nm.quality"] = nm_device_object.getMaxQuality(device)
-        
+            d["nm.device"]      = device
+            d["nm.name"]        = nm_dev_obj.getName(device)
+            d["nm.type"]        = nm_dev_obj.getType(device)
+            d["nm.udi"]         = nm_dev_obj.getHalUdi(device)
+            d["nm.ip4"]         = nm_dev_obj.getIP4Address(device)
+            d["nm.link_active"] = nm_dev_obj.getLinkActive(device)
+            
             try:
-                d["nm.active_network"] = nm_device_object.getActiveNetwork(device)
+                d["nm.active_network"] = nm_dev_obj.getActiveNetwork(device)
+                d["nm.strength"] = nm_dev_obj.getStrength(device)
             except DBusException, e:
                 pass
         
             try:
                 d["nm.networks"] = {}
-                networks = nm_device_object.getNetworks(device)
+                networks = nm_dev_obj.getNetworks(device)
                 for network in networks:
                     nm_network_object  = self._nm_service.get_object(network,
                                                                      NM_INTERFACE_DEVICES)
                     n = {}
+                    n["network"]    = network
                     n["name"]       = nm_network_object.getName()
                     n["address"]    = nm_network_object.getAddress()
-                    n["quality"]    = nm_network_object.getQuality()
+                    n["strength"]    = nm_network_object.getStrength()
                     n["frequency"]  = nm_network_object.getFrequency()
                     n["rate"]       = nm_network_object.getRate()
                     n["encrypted"]  = nm_network_object.getEncrypted()
@@ -130,10 +133,10 @@ class NetworkManager:
 
             return self.__devices[device]
             
-        except Error, e:
+        except Exception, e:
             print e
             return None
-        
+
     """
     Returns list of dictionary objects of all active devices
     Returns empty list if no active devices
@@ -172,7 +175,7 @@ class NetworkManager:
         return self.number_device_types(self.WIRED_DEVICE)
 
     def number_wireless_devices(self):
-        return self.number_device_types(self.WIRELESS_DEVICE)    
+        return self.number_device_types(self.WIRELESS_DEVICE)
     
     def has_wired_device(self):
         return self.has_type_device(self.WIRED_DEVICE)
