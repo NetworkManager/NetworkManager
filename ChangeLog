@@ -1,5 +1,11 @@
 2005-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerRedHat.c
+		- For non-caching-nameserver/non-named case, ensure that nscd is running
+			and that we actually tell nscd to reload the hosts cache when it changes
+
+2005-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* info-daemon/NetworkManagerInfoDbus.c
 		- (nmi_dbus_get_network_properties): whack usage of DbusMessageIter
 
