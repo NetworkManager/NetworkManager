@@ -76,7 +76,7 @@ gboolean nm_system_device_run_dhcp (NMDevice *dev)
 	 * (for example, bad WEP key so it can't actually talk to the AP).
 	 */
 	iface = nm_device_get_iface (dev);
-	buf = g_strdup_printf ("/sbin/dhclient -1 -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n", iface, iface, iface, iface);
+	buf = g_strdup_printf ("/sbin/dhclient -q -lf /var/lib/dhcp/dhclient-%s.leases -pf /var/run/dhclient-%s.pid -cf /etc/dhclient-%s.conf %s\n", iface, iface, iface, iface);
 	err = nm_spawn_process (buf);
 	g_free (buf);
 	return (err == 0);
