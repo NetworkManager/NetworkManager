@@ -1,0 +1,359 @@
+# SOME DESCRIPTIVE TITLE.
+# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# Gabor Kelemen <kelemeng@gnome.hu>, 2005.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager.HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-04-03 03:42+0200\n"
+"PO-Revision-Date: 2005-04-06 20:29+0200\n"
+"Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
+"Language-Team: Hungarian <gnome@gnome.hu>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=1; plural=0;\n"
+"X-Generator: KBabel 1.10\n"
+
+#: info-daemon/networks.glade.h:1
+msgid "<span weight=\"bold\">Wireless Networks:</span>"
+msgstr "<span weight=\"bold\">Vezeték nélküli hálózatok:</span>"
+
+#: info-daemon/networks.glade.h:2
+msgid "Modify Wireless Networks"
+msgstr "Vezeték nélküli hálózatok módosítása"
+
+#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:2
+msgid "*"
+msgstr "*"
+
+#: info-daemon/passphrase.glade.h:2
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+"128-bites Jelmondat (WEP)\n"
+"Ascii Kulcs (WEP)\n"
+"Hex Kulcs (WEP)"
+
+#: info-daemon/passphrase.glade.h:6
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">A vezeték nélküli hálózat jelszót igényel</span>\n"
+"\n"
+"A(z) %s vezeték nélküli hálózathoz való hozzáféréshez jelszó vagy titkosítási kulcs szükséges."
+
+#: info-daemon/passphrase.glade.h:9
+msgid "Key Type:"
+msgstr "Kulcs típusa:"
+
+#: info-daemon/passphrase.glade.h:10
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:140
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
+#: panel-applet/essid.glade.h:7 panel-applet/wireless-applet.glade.h:19
+msgid "Passphrase:"
+msgstr "Jelmondat:"
+
+#: info-daemon/passphrase.glade.h:11
+msgid "Wireless Network Key Required"
+msgstr "Vezeték nélküli hálózat kulcs szükséges"
+
+#: info-daemon/passphrase.glade.h:12 panel-applet/wireless-applet.glade.h:22
+msgid "_Login to Network"
+msgstr "_Bejelentkezés a hálózatba"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:143
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
+msgid "Ascii Key:"
+msgstr "Ascii Kulcs:"
+
+#: info-daemon/NetworkManagerInfoPassphraseDialog.c:146
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:156
+msgid "Hex Key:"
+msgstr "Hex Kulcs:"
+
+#: info-daemon/NetworkManagerInfoVPN.c:158
+#, c-format
+msgid "You must log in to access the private network %s"
+msgstr "Be kell jelentkeznie a(z) %s magánhálózat eléréséhez "
+
+#: panel-applet/NMWirelessApplet.c:149 panel-applet/NMWirelessApplet.c:167
+msgid "NetworkManager Applet"
+msgstr "NetworkManager kisalkalmazás"
+
+#: panel-applet/NMWirelessApplet.c:151 panel-applet/NMWirelessApplet.c:169
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "Copyright (C) 2004-2005 Red Hat, Inc."
+
+#: panel-applet/NMWirelessApplet.c:152 panel-applet/NMWirelessApplet.c:170
+msgid "Notification area applet for managing your network devices and connections."
+msgstr "Értesítési terület kisalkalmazás a hálózati eszközök és kapcsolatok kezelésére."
+
+#: panel-applet/NMWirelessApplet.c:384 panel-applet/NMWirelessApplet.c:1523
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:319
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr "A NetworkManager kisalkalmazás nem talál néhány szükséges glade fájlt."
+
+#: panel-applet/NMWirelessApplet.c:395
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "A(z) \"%s (%s)\" hálózati eszköz nem támogatja a vezeték nélküli keresést."
+
+#: panel-applet/NMWirelessApplet.c:403
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "A(z) \"%s (%s)\" hálózati eszköz nem támogatja a kapcsolatfelismerést."
+
+#: panel-applet/NMWirelessApplet.c:627
+msgid "No network connection"
+msgstr "Nincs hálózati kapcsolat"
+
+#: panel-applet/NMWirelessApplet.c:632
+msgid "Wired network connection"
+msgstr "Vezetékes hálózati kapcsolat"
+
+#: panel-applet/NMWirelessApplet.c:637
+msgid "Connecting to a wired network..."
+msgstr "Kapcsolódás vezetékes hálózathoz..."
+
+#: panel-applet/NMWirelessApplet.c:646
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Ad-hoc vezeték nélküli hálózathoz kapcsolódva"
+
+#: panel-applet/NMWirelessApplet.c:660
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Vezeték nélküli hálózati kapcsolat a következővel: \"%s\" (%d%%)"
+
+#: panel-applet/NMWirelessApplet.c:665
+msgid "Wireless network connection"
+msgstr "Vezeték nélküli hálózati kapcsolat"
+
+#: panel-applet/NMWirelessApplet.c:670
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Kapcsolódás \"%s\" vezeték nélküli hálózathoz..."
+
+#: panel-applet/NMWirelessApplet.c:676
+msgid "NetworkManager is not running"
+msgstr "A NetworkManager nem fut"
+
+#: panel-applet/NMWirelessApplet.c:681
+msgid "Scanning for wireless networks..."
+msgstr "Vezeték nélküli hálózatok keresése..."
+
+#: panel-applet/NMWirelessApplet.c:1046
+msgid "Other Wireless Networks..."
+msgstr "Egyéb vezeték nélküli hálózatok..."
+
+#: panel-applet/NMWirelessApplet.c:1067
+msgid "Create new Wireless Network..."
+msgstr "Új vezeték nélküli hálózat létrehozása..."
+
+#: panel-applet/NMWirelessApplet.c:1143
+msgid "No network devices have been found"
+msgstr "Nem találtam hálózati eszközöket"
+
+#: panel-applet/NMWirelessApplet.c:1285
+msgid "NetworkManager is not running..."
+msgstr "A NetworkManager nem fut..."
+
+#: panel-applet/NMWirelessApplet.c:1355 panel-applet/NMWirelessApplet.c:1403
+msgid "Pause Wireless Scanning"
+msgstr "Vezeték nélküli keresés szüneteltetése"
+
+#: panel-applet/NMWirelessApplet.c:1360
+msgid "Resume Wireless Scanning"
+msgstr "Vezeték nélküli keresés folytatása"
+
+#: panel-applet/NMWirelessApplet.c:1370 panel-applet/NMWirelessApplet.c:1409
+msgid "Stop All Wireless Devices"
+msgstr "Az összes vezeték nélküli eszköz leállítása"
+
+#: panel-applet/NMWirelessApplet.c:1375
+msgid "Start All Wireless Devices"
+msgstr "Az összes vezeték nélküli eszköz elindítása"
+
+#: panel-applet/NMWirelessApplet.c:1418
+msgid "Help"
+msgstr "Súgó"
+
+#: panel-applet/NMWirelessApplet.c:1425
+msgid "About"
+msgstr "Névjegy"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
+msgid "Create new wireless network"
+msgstr "Új vezeték nélküli hálózat létrehozása"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr "Adja meg a létrehozandó vezeték nélküli hálózat ESSID-jét és biztonsági beállításait."
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:238
+msgid "Custom wireless network"
+msgstr "Egyéni vezeték nélküli hálózat"
+
+#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:239
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Adja meg azon vezeték nélküli hálózat ESSID-jét, melyhez kapcsolódni kíván."
+
+#: panel-applet/essid.glade.h:1 panel-applet/wireless-applet.glade.h:3
+msgid ""
+"128-bit passphrase (WEP)\n"
+"Ascii key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+"128-bites jelmondat (WEP)\n"
+"Ascii kulcs (WEP)\n"
+"Hex kulcs (WEP)"
+
+#: panel-applet/essid.glade.h:4 panel-applet/wireless-applet.glade.h:15
+msgid "C_onnect"
+msgstr "Kapcs_olódás"
+
+#: panel-applet/essid.glade.h:5 panel-applet/wireless-applet.glade.h:16
+msgid "Connect with encryption enabled"
+msgstr "Kapcsolódás bekapcsolt titkosítással"
+
+#: panel-applet/essid.glade.h:6 panel-applet/wireless-applet.glade.h:18
+msgid "Key type:"
+msgstr "Kulcs típusa:"
+
+#: panel-applet/essid.glade.h:8 panel-applet/wireless-applet.glade.h:20
+msgid "Wireless _adapter:"
+msgstr "Vezeték nélküli csatoló:"
+
+#: panel-applet/essid.glade.h:9 panel-applet/wireless-applet.glade.h:21
+msgid "Wireless _network:"
+msgstr "Vezeték nélküli hálózat:"
+
+#: panel-applet/menu-info.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Vezetékes hálózat (%s)"
+
+#: panel-applet/menu-info.c:93
+msgid "Wired Network"
+msgstr "Vezetékes hálózat"
+
+#: panel-applet/menu-info.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Vezeték nélküli hálózat (%s)"
+msgstr[1] "Vezeték nélküli hálózatok (%s)"
+
+#: panel-applet/menu-info.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Vezeték nélküli hálózat"
+msgstr[1] "Vezeték nélküli hálózatok"
+
+#: panel-applet/menu-info.c:294
+msgid " (invalid Unicode)"
+msgstr " (érvénytelen Unicode)"
+
+#: examples/python/systray/eggtrayicon.c:111 panel-applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr "Tájolás"
+
+#: examples/python/systray/eggtrayicon.c:112 panel-applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr "A tálca tájolása."
+
+#: panel-applet/NMWirelessApplet.xml.h:1
+msgid "_About..."
+msgstr "_Névjegy..."
+
+#: panel-applet/gtkcellrendererprogress.c:243
+#: panel-applet/gtkcellrendererprogress.c:301
+#, c-format
+msgid "progress bar label|%d %%"
+msgstr "%d %%"
+
+#: panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: panel-applet/wireless-applet.glade.h:7
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Csökkentett működőképességű hálózat</span>\n"
+"\n"
+"%s  nem lesz teljesen működőképes."
+
+#: panel-applet/wireless-applet.glade.h:11
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Vezeték nélküli hálózatba bejelentkezés megerősítése</span>\n"
+"\n"
+"A(z) \"%s\" vezeték nélküli hálózatba való bejelentkezést választotta. Ha biztos abban, hogy ez a vezeték nélküli hálózat biztonságos, kattintson az alábbi jelölőnégyzetre és a NetworkManager nem fogja többé hülye kérdésekkel zaklatni, ha kapcsolódik hozzá."
+
+#: panel-applet/wireless-applet.glade.h:14
+msgid "Always Trust this Wireless Network"
+msgstr "Mindig megbízom ebben a vezeték nélküli hálózatban"
+
+#: panel-applet/wireless-applet.glade.h:17
+msgid "Don't remind me again"
+msgstr "Ne emlékezzen rám"
+
+#: panel-applet/wireless-applet.glade.h:23
+msgid "_OK"
+msgstr "_OK"
+
+#: src/nm-netlink-monitor.c:154
+#, c-format
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "nem lehet netlink foglalatot létrehozni a vezetékes ethernet kártyák megfigyelésére - %s"
+
+#: src/nm-netlink-monitor.c:172
+#, c-format
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "nem lehet kapcsolódni a netlink foglalathoz a vezetékes ethernet kártyák megfigyelésére - %s"
+
+#: src/nm-netlink-monitor.c:403
+msgid "operation took too long"
+msgstr "a művelet túl sokáig tartott"
+
+#: src/nm-netlink-monitor.c:500
+msgid "received data from wrong type of sender"
+msgstr "téves feladótól érkezett adat"
+
+#: src/nm-netlink-monitor.c:513
+msgid "received data from unexpected sender"
+msgstr "nem várt feladótól érkezett adat"
+
+#: src/nm-netlink-monitor.c:535
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: src/nm-netlink-monitor.c:644
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "túl sok adat lett átküldve a foglalaton és egy része elveszett"
+
