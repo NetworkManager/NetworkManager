@@ -1,3 +1,8 @@
+2005-04-01  Dan Williams <dcbw@redhat.com>
+
+	* po/POTFILES.in
+		- Update with new translatables
+
 2005-03-31  Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.c

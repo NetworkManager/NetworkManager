@@ -9,3 +9,9 @@ panel-applet/NMWirelessAppletOtherNetworkDialog.c
 panel-applet/essid.glade
 panel-applet/menu-info.c
 examples/python/systray/eggtrayicon.c
+panel-applet/NMWirelessApplet.xml
+panel-applet/eggtrayicon.c
+panel-applet/gtkcellrendererprogress.c
+panel-applet/gtkcellview.c
+panel-applet/wireless-applet.glade
+src/nm-netlink-monitor.c
