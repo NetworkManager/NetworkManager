@@ -20,6 +20,7 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+#include <libgnomeui/gnome-client.h>
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -106,7 +107,7 @@ nmi_spawn_notification_icon (NMIAppInfo *info)
 	if (info->notification_icon_pid > 0)
 		g_spawn_close_pid (info->notification_icon_pid);
 
-	if (info->notification_icon_watch != NULL)
+	if (info->notification_icon_watch != 0)
 		g_source_remove (info->notification_icon_watch);
 
 	if (info->notification_icon_respawn_timer == NULL)
@@ -152,6 +153,17 @@ nmi_spawn_notification_icon (NMIAppInfo *info)
 
 #endif
 
+static void session_die (GnomeClient *client, gpointer client_data)
+{
+        gtk_main_quit ();
+}
+
+static gboolean session_save (GnomeClient *client, gpointer client_data)
+{
+        return TRUE;
+}
+
+
 /*
  * main
  *
@@ -159,6 +171,8 @@ nmi_spawn_notification_icon (NMIAppInfo *info)
 int main( int argc, char *argv[] )
 {
  	GnomeProgram 	*program;
+	GnomeClient *client;
+	GPtrArray *restart_argv;
 	gboolean		 no_daemon;
 	DBusError		 dbus_error;
 	DBusConnection	*dbus_connection;
@@ -183,6 +197,8 @@ int main( int argc, char *argv[] )
 							GNOME_PARAM_POPT_TABLE, options,
 							GNOME_PARAM_HUMAN_READABLE_NAME, "Network Manager User Info Service",
 							NULL);
+
+	client = gnome_master_client ();
 
 	openlog("NetworkManagerInfo", (no_daemon) ? LOG_CONS | LOG_PERROR : LOG_CONS, (no_daemon) ? LOG_USER : LOG_DAEMON);
 
@@ -262,13 +278,36 @@ int main( int argc, char *argv[] )
 	nmi_spawn_notification_icon (app_info);
 #endif
 
+	restart_argv = g_ptr_array_new ();
+        g_ptr_array_add (restart_argv, g_get_prgname ());
+        gnome_client_set_restart_command (client, restart_argv->len, (char**) restart_argv->pdata);
+        g_ptr_array_free (restart_argv, TRUE);
+        gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
+
 	if (nmi_passphrase_dialog_init (app_info) != 0)
+	{
+		gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 		exit (1);
+	}
+
+	g_signal_connect (client,
+                          "save_yourself",
+                          G_CALLBACK (session_save),
+                          NULL);
+
+        g_signal_connect (client,
+                          "die",
+                          G_CALLBACK (session_die),
+                          NULL);
 
 	gtk_main ();
 
+	
 	if (app_info->notification_icon_pid > 0)
 		kill (app_info->notification_icon_pid, SIGTERM);
+
+	
+	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
 	gconf_client_notify_remove (app_info->gconf_client, notify_id);
 	g_object_unref (G_OBJECT (app_info->gconf_client));

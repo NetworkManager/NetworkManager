@@ -1,3 +1,8 @@
+2004-10-14 John (J5) Palmieri <johnp@redhat.com>
+
+	* info-daemon/NetworkManagerInfo.c 
+		- (main): Added session management
+
 2004-10-14 Dan Williams <dcbw@redhat.com>
 
 	* panel-applet/NMWirelessAppletDbus.[ch]
