@@ -304,14 +304,14 @@ void nm_system_kill_all_dhcp_daemons (void)
 /*
  * nm_system_update_dns
  *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd.
+ * Invalidate the nscd host cache, if it exists, since
+ * we changed resolv.conf.
  *
  */
 void nm_system_update_dns (void)
 {
 	if(nm_spawn_process ("/etc/init.d/nscd status"))
-		nm_spawn_process ("/etc/init.d/nscd restart");
+		nm_spawn_process ("nscd -i hosts");
 }
 
 

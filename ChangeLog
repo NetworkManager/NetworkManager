@@ -1,5 +1,11 @@
 2004-11-22  Colin Walters  <walters@verbum.org>
 
+	* src/backends/NetworkManagerRedHat.c (nm_system_update_dns): Run
+	"nscd -i hosts" to invalidate the host cache instead of restarting nscd,
+	which is essentially a noop since nscd caches hosts on disk too.
+	
+2004-11-22  Colin Walters  <walters@redhat.com>
+
 	* src/Makefile.am (NetworkManager_SOURCES): Add
 	NetworkManagerDevicePrivate.h.
 
