@@ -5,7 +5,6 @@
 
 <widget class="GtkDialog" id="custom_essid_dialog">
   <property name="border_width">6</property>
-  <property name="width_request">488</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>

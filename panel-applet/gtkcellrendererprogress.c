@@ -25,6 +25,13 @@
  * GTK+ at ftp://ftp.gtk.org/pub/gtk/. 
  */
 
+/* GtkCellRendererProgress is public in GTK 2.6, but not in GTK 2.4.
+ */
+
+#include <gtk/gtkversion.h>
+
+#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
+
 #include <stdlib.h>
 
 #include "gtkcellrendererprogress.h"
@@ -377,3 +384,4 @@ gtk_cell_renderer_progress_render (GtkCellRenderer *cell,
   g_object_unref (G_OBJECT (gc));
 }
 
+#endif /* GTK < 2.6 check */

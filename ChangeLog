@@ -1,3 +1,10 @@
+2005-02-16  William Jon McCann  <mccann@jhu.edu>
+
+	* panel-applet/gtkcellrendererprogress.[ch]: Only compile these
+	files for GTK 2.4 or lower, since now public in GTK 2.6.
+
+	* panel-applet/essid.glade: Don't specify window size.
+	
 2005-02-17  Dan Williams  <dcbw@redhat.com>
 
 	Caught by Bill Moss:
