@@ -1,5 +1,13 @@
 2005-01-09  Dan Williams <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- Don't set mode/freq/bitrate if that mode/freq/bitrate is
+			already set.  Stops some drivers like Atmel from continually
+			reloading the firmware, which they do upon every configuration
+			change.
+
+2005-01-09  Dan Williams <dcbw@redhat.com>
+
 	* dhcpcd/client.c
 		- Use correct timeout value
 

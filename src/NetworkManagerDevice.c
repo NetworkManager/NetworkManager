@@ -731,7 +731,7 @@ char * nm_device_get_essid (NMDevice *dev)
  */
 void nm_device_set_essid (NMDevice *dev, const char *essid)
 {
-	int				iwlib_socket;
+	int				sk;
 	int				err;
 	struct iwreq		wreq;
 	unsigned char		safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
@@ -757,18 +757,18 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 		safe_essid[IW_ESSID_MAX_SIZE] = '\0';
 	}
 
-	iwlib_socket = iw_sockets_open ();
-	if (iwlib_socket >= 0)
+	sk = iw_sockets_open ();
+	if (sk >= 0)
 	{
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
 		wreq.u.essid.length	 = strlen (safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
 	
-		err = iw_set_ext (iwlib_socket, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
+		err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
 		if (err == -1)
 			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
 
-		close (iwlib_socket);
+		close (sk);
 	}
 }
 
@@ -825,6 +825,9 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 
 	/* Test devices don't really have a frequency, they always succeed */
 	if (dev->test_device)
+		return;
+
+	if (nm_device_get_frequency (dev) == freq)
 		return;
 
 	sk = iw_sockets_open ();
@@ -891,6 +894,9 @@ void nm_device_set_bitrate (NMDevice *dev, const int KHz)
 
 	/* Test devices don't really have a frequency, they always succeed */
 	if (dev->test_device)
+		return;
+
+	if (nm_device_get_bitrate (dev) == KHz)
 		return;
 
 	sk = iw_sockets_open ();
@@ -965,7 +971,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
  */
 void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method)
 {
-	int				iwlib_socket;
+	int				sk;
 	int				err;
 	struct iwreq		wreq;
 	int				keylen;
@@ -988,8 +994,8 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		safe_key[IW_ENCODING_TOKEN_MAX] = '\0';
 	}
 
-	iwlib_socket = iw_sockets_open ();
-	if (iwlib_socket >= 0)
+	sk = iw_sockets_open ();
+	if (sk >= 0)
 	{
 		wreq.u.data.pointer = (caddr_t) NULL;
 		wreq.u.data.length = 0;
@@ -1010,7 +1016,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		{
 			unsigned char		parsed_key[IW_ENCODING_TOKEN_MAX + 1];
 
-			keylen = iw_in_key_full(iwlib_socket, nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
+			keylen = iw_in_key_full (sk, nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
 			if (keylen > 0)
 			{
 				switch (auth_method)
@@ -1033,12 +1039,12 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 
 		if (set_key)
 		{
-			err = iw_set_ext (iwlib_socket, nm_device_get_iface (dev), SIOCSIWENCODE, &wreq);
+			err = iw_set_ext (sk, nm_device_get_iface (dev), SIOCSIWENCODE, &wreq);
 			if (err == -1)
 				syslog (LOG_ERR, "nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 		}
 
-		close (iwlib_socket);
+		close (sk);
 	} else syslog (LOG_ERR, "nm_device_set_enc_key(): could not get wireless control socket.");
 }
 
@@ -1073,7 +1079,7 @@ gint8 nm_device_get_signal_strength (NMDevice *dev)
 void nm_device_update_signal_strength (NMDevice *dev)
 {
 	gboolean	has_range;
-	int		iwlib_socket;
+	int		sk;
 	iwrange	range;
 	iwstats	stats;
 	int		percent = -1;
@@ -1098,9 +1104,9 @@ void nm_device_update_signal_strength (NMDevice *dev)
 		return;
 	}
 
-	iwlib_socket = iw_sockets_open ();
-	has_range = (iw_get_range_info (iwlib_socket, nm_device_get_iface (dev), &range) >= 0);
-	if (iw_get_stats (iwlib_socket, nm_device_get_iface (dev), &stats, &range, has_range) == 0)
+	sk = iw_sockets_open ();
+	has_range = (iw_get_range_info (sk, nm_device_get_iface (dev), &range) >= 0);
+	if (iw_get_stats (sk, nm_device_get_iface (dev), &stats, &range, has_range) == 0)
 	{
 		/* Update our max quality while we're at it */
 		dev->options.wireless.max_quality = range.max_qual.level;
@@ -1113,7 +1119,7 @@ void nm_device_update_signal_strength (NMDevice *dev)
 		dev->options.wireless.noise = -1;
 		percent = -1;
 	}
-	close (iwlib_socket);
+	close (sk);
 
 	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
 	 * one second and normal strength the next.
@@ -1197,7 +1203,7 @@ void nm_device_update_ip4_address (NMDevice *dev)
 {
 	guint32		new_address;
 	struct ifreq	req;
-	int			socket;
+	int			sk;
 	int			err;
 	
 	g_return_if_fail (dev  != NULL);
@@ -1211,14 +1217,13 @@ void nm_device_update_ip4_address (NMDevice *dev)
 		return;
 	}
 
-	socket = nm_device_open_sock ();
-	if (socket < 0)
+	if ((sk = nm_device_open_sock ()) < 0)
 		return;
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-	err = ioctl (socket, SIOCGIFADDR, &req);
-	close (socket);
+	err = ioctl (sk, SIOCGIFADDR, &req);
+	close (sk);
 	if (err != 0)
 		return;
 
@@ -1263,9 +1268,9 @@ void nm_device_get_hw_address(NMDevice *dev, unsigned char hw_addr[ETH_ALEN])
 void nm_device_update_hw_address (NMDevice *dev)
 {
 	struct ifreq	req;
-	int			socket;
+	int			sk;
 	int			err;
-	
+
 	g_return_if_fail (dev  != NULL);
 	g_return_if_fail (dev->app_data != NULL);
 	g_return_if_fail (nm_device_get_iface (dev) != NULL);
@@ -1277,14 +1282,13 @@ void nm_device_update_hw_address (NMDevice *dev)
 		return;
 	}
 
-	socket = nm_device_open_sock ();
-	if (socket < 0)
+	if ((sk = nm_device_open_sock ()) < 0)
 		return;
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-	err = ioctl (socket, SIOCGIFHWADDR, &req);
-	close (socket);
+	err = ioctl (sk, SIOCGIFHWADDR, &req);
+	close (sk);
 	if (err != 0)
 		return;
 
@@ -1301,7 +1305,7 @@ void nm_device_update_hw_address (NMDevice *dev)
 static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 {
 	struct ifreq	ifr;
-	int			iface_fd;
+	int			sk;
 	int			err;
 	guint32		flags = up ? IFF_UP : ~IFF_UP;
 
@@ -1317,13 +1321,13 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
 		return;
 
-	iface_fd = nm_device_open_sock ();
-	if (iface_fd < 0)
+	sk = nm_device_open_sock ();
+	if (sk < 0)
 		return;
 
 	/* Get flags already there */
 	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-	err = ioctl (iface_fd, SIOCGIFFLAGS, &ifr);
+	err = ioctl (sk, SIOCGIFFLAGS, &ifr);
 	if (!err)
 	{
 		/* If the interface doesn't have those flags already,
@@ -1333,15 +1337,14 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		{
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
-			err = ioctl (iface_fd, SIOCSIFFLAGS, &ifr);
-			if (err)
+			if ((err = ioctl (sk, SIOCSIFFLAGS, &ifr)))
 				syslog (LOG_ERR, "nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
 		}
 	}
 	else
 		syslog (LOG_ERR, "nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
 
-	close (iface_fd);
+	close (sk);
 }
 
 
@@ -1365,7 +1368,7 @@ void nm_device_bring_down (NMDevice *dev)
 
 gboolean nm_device_is_up (NMDevice *dev)
 {
-	int			iface_fd;
+	int			sk;
 	struct ifreq	ifr;
 	int			err;
 
@@ -1374,14 +1377,14 @@ gboolean nm_device_is_up (NMDevice *dev)
 	if (dev->test_device)
 		return (dev->test_device_up);
 
-	iface_fd = nm_device_open_sock ();
-	if (iface_fd < 0)
+	sk = nm_device_open_sock ();
+	if (sk < 0)
 		return (FALSE);
 
 	/* Get device's flags */
 	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-	err = ioctl (iface_fd, SIOCGIFFLAGS, &ifr);
-	close (iface_fd);
+	err = ioctl (sk, SIOCGIFFLAGS, &ifr);
+	close (sk);
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
@@ -1449,6 +1452,9 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
 	g_return_val_if_fail ((mode == NETWORK_MODE_INFRA) || (mode == NETWORK_MODE_ADHOC), FALSE);
+
+	if (nm_device_get_mode (dev) == mode)
+		return TRUE;
 
 	/* Force the card into Managed/Infrastructure mode */
 	sk = iw_sockets_open ();
