@@ -106,6 +106,9 @@ gboolean nm_device_do_autoip (NMDevice *dev)
 		/* Set all traffic to go through the device */
 		nm_system_flush_loopback_routes ();
 		nm_system_device_add_default_route_via_device (dev);
+
+		/* Kill old resolv.conf */
+		nm_system_device_update_resolv_conf (NULL, 0, "");
 	}
 
 	return (success);

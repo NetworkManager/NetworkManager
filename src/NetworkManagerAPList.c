@@ -711,10 +711,10 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
 		const GTimeVal *timestamp = nm_ap_get_timestamp (ap);
-		syslog (LOG_DEBUG, "\t%d)\tessid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, freq=%f, rate=%d, inval=%d",
-				i, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_get_enc_key_source (ap), nm_ap_get_encrypted (ap),
+		syslog (LOG_DEBUG, "\t%d)\tobj=%p, essid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, freq=%f, rate=%d, inval=%d, mode=%d",
+				i, ap, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_get_enc_key_source (ap), nm_ap_get_encrypted (ap),
 				nm_ap_get_address (ap), nm_ap_get_strength (ap), nm_ap_get_freq (ap), nm_ap_get_rate (ap),
-				nm_ap_get_invalid (ap));
+				nm_ap_get_invalid (ap), nm_ap_get_mode (ap));
 		i++;
 	}
 	syslog (LOG_DEBUG, "AP_LIST_PRINT: done");

@@ -655,7 +655,7 @@ char * nm_device_get_essid (NMDevice *dev)
 			dev->options.wireless.cur_essid = g_strdup (info.essid);
 		}
 		else
-			syslog (LOG_ERR, "nm_device_get_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			syslog (LOG_ERR, "nm_device_get_essid(): error getting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 
 		close (iwlib_socket);
 	}
@@ -706,7 +706,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 	
 		err = iw_set_ext (iwlib_socket, nm_device_get_iface (dev), SIOCSIWESSID, &wreq);
 		if (err == -1)
-			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			syslog (LOG_ERR, "nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
 
 		close (iwlib_socket);
 	}
@@ -3017,7 +3017,7 @@ static void nm_device_do_normal_scan (NMDevice *dev)
 			nm_ap_list_unref (earliest_scan);
 
 		/* Now do a diff of the old and new networks that we can see, and
-		 * signal any changes over dbus, but only if we are active device.
+		 * signal any changes over dbus.
 		 */
 		nm_ap_list_diff (dev->app_data, dev, old_ap_list, nm_device_ap_list_get (dev));
 		if (old_ap_list)
