@@ -1,3 +1,6 @@
+2004-09-01  Amanpreet Singh Alam<aalam@redhat.com>
+	* configure.in: Punjabi(pa) is add to po/
+
 2004-08-31  Dan Williams <dcbw@redhat.com>
 
 	* Remove 'debug' extern global from all files since we now
