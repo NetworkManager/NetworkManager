@@ -1,5 +1,12 @@
 2005-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* test/Makefile.am
+	  test/nmclienttest.c
+	  test/nmtest.c
+		- Move nmclienttest.c -> nmtest.c
+
+2005-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* dhcpcd/buildmsg.c
 		- Pad DHCP packets until they are at least 300 bytes in size.
 
