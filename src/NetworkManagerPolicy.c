@@ -241,7 +241,6 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 
 	g_return_val_if_fail (result != NULL, FALSE);
 
-fprintf (stderr, "Activation Finish called\n");
 	if (!(dev = result->dev))
 		goto out;
 
@@ -308,7 +307,6 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-fprintf (stderr, "State modification monitor called\n");
 	data->state_modified_idle_id = 0;
 
 	/* If the info daemon is now running, get our trusted/preferred ap lists from it */
