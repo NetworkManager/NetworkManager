@@ -4,9 +4,12 @@
 		- Silently fail when setting bitrate doesn't work
 
 
-	Patch from j@bootlab.org:
+	Patches from j@bootlab.org:
 	* src/backends/NetworkManagerDebian
 		- Update backend to match functionality in RedHat backend
+	* src/NetworkManagerDevice.c
+		- Take down then bring up wired devices after connection so
+		they send out ipv6 router advertisements
 
 2004-12-21  Colin Walters  <walters@verbum.org>
 

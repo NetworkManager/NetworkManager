@@ -1898,6 +1898,13 @@ static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_on
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	nm_system_delete_default_route ();
+	/* This will assigne an IPv6 address, if a Router ADVertisement Daemon is pressent */
+	if (!nm_device_is_wireless (dev))
+	{
+		if (nm_device_is_up (dev))
+			nm_device_bring_down (dev);
+		nm_device_bring_up (dev);
+	}
 	if (do_only_autoip)
 	{
 		success = nm_device_do_autoip (dev);
