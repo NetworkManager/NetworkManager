@@ -1,5 +1,22 @@
 2005-02-10  Dan Williams  <dcbw@redhat.com>
 
+	* dhcpcd/client.c
+		- #rh147661# Don't send kernel version in DHCP requests
+
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+		- Remove the nm_system_device_run_dhcp() and nm_system_device_stop_dhcp()
+			functions, they are no longer used anyway
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_device_flush_addresses): only flush "scope global" and "scope site"
+			addresses in an attempt to keep IPv6 local-scope addresses around
+
+2005-02-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 		- (nm_create_device_and_add_to_list): change the add message slightly
 

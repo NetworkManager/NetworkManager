@@ -31,8 +31,6 @@
  */
 
 void			nm_system_init (void);
-gboolean		nm_system_device_run_dhcp				(NMDevice *dev);
-void			nm_system_device_stop_dhcp				(NMDevice *dev);
 gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 void			nm_system_device_flush_routes				(NMDevice *dev);
 void			nm_system_device_add_default_route_via_device(NMDevice *dev);

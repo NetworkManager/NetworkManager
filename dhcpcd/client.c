@@ -300,9 +300,8 @@ void class_id_setup (dhcp_interface *iface, const char *g_cls_id)
 	{
 		struct utsname sname;
 		if ( uname(&sname) )
-			syslog (LOG_ERR,"classIDsetup: uname: %m\n");
-		snprintf (iface->cls_id, DHCP_CLASS_ID_MAX_LEN, "%s %s %s",
-				sname.sysname, sname.release, sname.machine);
+			syslog (LOG_ERR,"class_id_setup(): uname returned an error: %m\n");
+		snprintf (iface->cls_id, DHCP_CLASS_ID_MAX_LEN, "%s", sname.sysname);
 		iface->cls_id_len = strlen (iface->cls_id);
 	}
 }
