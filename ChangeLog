@@ -1,5 +1,23 @@
 2004-11-15  Dan Williams <dcbw@redhat.com>
 
+	Major rework of link detection code.  We now use DHCP
+	as part of the link detection which proves to be much more robust,
+	and also supports Open System authentication for wireless networks.
+
+	We no longer use external DHCP client programs.  Instead, we use 
+	our own DHCP client, based on substantially reworked bits of 'dhcpcd'
+	which was written by:
+		Yoichi Hariguchi <yoichi@fore.com>
+		Sergei Viznyuk <sv@phystech.com>
+		http://www.phystech.com/download/
+	It resides in the "dhcpcd" directory and was refactored into a general
+	purpose DHCP client library by me.
+
+	Also misc fixes (CPPFLAGS->AM_CPPFLAGS, move some stuff around),
+	move src/backends/NetworkManagerSystem.h -> src/NetworkManagerSystem.h
+
+2004-11-15  Dan Williams <dcbw@redhat.com>
+
 	Patch from Tom Parker <palfrey@tevp.net>:
 
 	* src/NetworkManagerDevice.c

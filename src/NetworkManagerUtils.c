@@ -105,32 +105,6 @@ int nm_null_safe_strcmp (const char *s1, const char *s2)
 
 
 /*
- * nm_get_network_control_socket
- *
- * Get a control socket for network operations.
- *
- */
-int nm_get_network_control_socket (void)
-{
-	int	fd;
-
-	/* Try to grab a control socket */
-	fd = socket(PF_INET, SOCK_DGRAM, 0);
-	if (fd >= 0)
-		return (fd);
-	fd = socket(PF_PACKET, SOCK_DGRAM, 0);
-	if (fd >= 0)
-		return (fd);
-	fd = socket(PF_INET6, SOCK_DGRAM, 0);
-	if (fd >= 0)
-		return (fd);
-
-	syslog (LOG_ERR, "nm_get_network_control_socket() could not get network control socket.");
-	return (-1);
-}
-
-
-/*
  * nm_ethernet_address_is_valid
  *
  * Compares an ethernet address against known invalid addresses.

@@ -1,0 +1,276 @@
+0. Introduction
+
+This is an RFC2131,RFC2132, and RFC1541 compliant DHCP client daemon.
+RFC1541 was obsoleted by RFC2131, but there are still some RFC1541 compliant
+DHCP servers. dhcpcd gets an IP address and other information from a
+corresponding DHCP server, configures the network interface
+automatically, and tries to renew the lease time according to RFC2131
+or RFC1541 depending on the command line option.
+
+dhcpcd-1.3 has been reported to compile
+on Intel,PPC, and Alpha-based Linux platforms
+providing glibc-2.0.5 or later has been
+installed. Please refer to the Notes below for details.
+
+dhcpcd-1.3 has been reported as compatible with DHCP servers
+used by the following network service providers:
+
+1. Time Warner RoadRunner http://www.rr.com/
+2. MediaOne (now AT&T Broadband) http://www.attbroadband.com/
+3. Comcast.Net, formerly @Home Networks http://www.comcast.net/
+4. France Telecom ADSL http://www.wanadoo.fr/
+5. USWest.net DSL (now Qwest) http://www.uswest.com/
+6. France CyberCable http://www.cybercable.fr/
+7. BellSouth ADSL http://www.bellsouth.net/
+8. BCtel Multimedia Gateway ADSL http://www.bctel.net/
+9. Cogeco Cable Canada http://www.cogeco.ca/
+10.Sympatico High Speed Edition ADSL http://www.hse.sympatico.ca/
+11.Adelphia PowerLink http://powerlink.adelphia.net/
+12.Videotron, Canada http://www.videotron.ca/
+13.Access Cable, Nova Scotia, Canada http://www.accesscable.net/
+14.A2000 Cable, Netherlands http://www.a2000.nl/
+15.Tele-Communications, Inc http://www.tci.com/
+16.Telenet, Belgium http://www.telenet.be/
+17.Telekabel Wien, Austria http://www.telekabel.at/
+18.RMCnet, France http://www.rmcnet.fr/
+19.Retecal, Spain http://www.retecal.es/
+20.TVD, Belgium  http://www.tvd.net/
+21.Optimum Online, NY  http://www.optimumonline.com/
+22.Knology Comm.  http://www.knology.com/
+23.Highpernet, Switzeland. http://www.highpernet.ch/
+24.TeledisNet, Belgium. http://www.teledisnet.be/
+25.Southwestern Bell DSL. http://www.swbell.net/
+26.Brutele, Belgium.  http://www.brutele.be/
+27.Telus, Canada.  http://www.telusplanet.net/
+28.Chello, Netherlands.  http://www.chello.nl/
+29.RCN. http://www.rcn.com/
+30.Pandora, Belgium. http://www.pandora.be/
+31.Armstrong's Cable Services, PA. http://www.zbzoom.net/
+32.21st Century, Chicago. http://www.21stcentury.net/
+33.Supercable, Spain. http://www.supercable.es/
+34.Primacom, Germany. http://www.primacom.net/
+35.Click! Network, Tacoma, WA. http://www.click-network.com/
+36.Telocity, Cupertino, CA. http://www.telocity.com/
+37.Charter Communications. http://www.chartercom.com/
+38.Tebenet, Netherlands. http://www.tebenet.nl/
+39.ZoomTown, Cincinnati, OH. http://www.zoomtown.com/
+40.Telecom New Zealand Jetstream ADSL. http://www.telecom.co.nz/
+41.Belgacom Turboline ADSL. http://www.turboline.be/
+42.ISP Channel. http://www.ispchannel.com/
+43.Telia.Com Sweden. http://www.telia.com/
+44.Netcabo Portugal. http://www.netcabo.pt/
+45.CyberCity xDSL, Denmark. http://www.cybercity.dk/
+46.Tokyo Metallic Comm. http://www.metallic.co.jp/
+47.Telenor, Norway. http://www.telenor.no/
+48.Telstra, Austria. http://www.telstra.com/
+49.Look Wireless, Montreal. http://www.look.ca/
+50.Virtua, Brazil. http://www.virtua.com.br/
+51.Verizon DSL. http://www.verizon.com/dsl/
+52.Sonera, Netherlands. http://www.soneraplaza.nl/
+53.NTL, UK. http://www.ntl.co.uk/cablemodems/
+54.Telewest, UK. http://www.telewest.co.uk/
+55.VTR, Chile. http://www.vtr.net/
+56.Millennium Digital Media. http://www.mdm.net/
+57.Madritel, Spain. http://www.madritel.es/
+58.Cistron Telecom, Netherlands. http://www.cistron.nl/
+59.Cox Express, Las Vegas. http://www.cox.com/
+60.Cablecom GMBH, Switzerland. http://www.hispeed.ch/
+61.Elektro Ablasser Hausmannstaetten, Austria. http://www.catv4u.at/
+62.Kiva Networking, Indiana. http://www.kiva.net/
+63.Blueyonder, UK. http://www.blueyonder.co.uk/
+64.Salzburg-Online, Austria. http://www.salzburg-online.at/
+65.Cablenet, Colombia. http://www.cable.net.co/
+66.i-Cable, Hong Kong. http://www.i-cable.com/
+67.Shaw High Speed. http://www.shaw.ca/
+68.Rogers Communications. http://www.rogers.com/
+69.Chello, France. http://www.chello.fr/
+70.Acesserapido, Brazil. http://www.acesserapido.com.br/
+71.Wirefire. http://www.wirefire.com/
+72.Ajato, Brazil. http://www.ajato.com.br/
+73.TDC/TeleDanmark, Denmark. http://www.teledanmark.dk/
+74.Telstra Bigpond Broadband ADSL, Australia. http://www.bigpond.com.au/
+75.Eastern Connecticut Cable. http://www.myeastern.com/
+76.ADSL Brazil Telecom. http://www.internetturbo.com.br/
+77.InsightBB.com. http://www.insightbb.com/ 
+78.S?derhamn Teknikpark AB, Sweden. http://www.teknikpark.se/
+79.Tele 2, Sweden. http://www.tele2.se/
+
+if you have been successfully using dhcpcd-1.3
+on your network please report the fact along
+with network provider's name/URL/whatever and dhcpcd version
+to the author <sv@phystech.com>.
+
+dhcpcd-1.3 primary web site is
+http://www.phystech.com/download/
+ftp://ftp.phystech.com/pub/
+
+1. Install
+
+Make sure your kernel is compiled with support for SOCK_PACKET
+(CONFIG_PACKET option). Cd to source distribution directory. Do
+./configure --prefix=/
+Please note the GNU default installation --prefix=/usr/local
+is not what most users want for dhcpcd installation.
+Edit Makefile to customize compile time options.
+Do 'make' followed by 'make install'.
+To enable dhcpcd error logging add the following line to your
+/etc/syslog.conf file:
+local0.*          /var/log/dhcpcd.log
+and then refresh syslogd daemon:
+kill -1 `cat /var/run/syslogd.pid`
+
+  Note 1.
+    to compile dhcpcd-1.3.X you have to install glibc-2.0.5 or later.
+    dhcpcd-1.3.X might not compile under libc.5.
+    If you don't have glibc installed you can use the precompiled
+    binary included with the distribution.
+    If you are trying to compile dhcpcd yourself and getting error
+    "cannot find net/ethernet.h file", you don't have glibc
+    installed.
+
+  Note 2.
+    some releases of GNU C compiler, notably 
+    gcc-2.8.1 are buggy. The same goes for egcs as of 05/10/99.
+    If you have compiled dhcpcd with gcc-2.8.1 or egcs you may
+    get the following errors in dhcpcd.log file:
+    May  4 12:43:03 dhcpcd[423]: corrupted UDP msg with uh_ulen=319 in_cksum=-2 discarded
+    and dhcpcd won't work. The workaround is to compile dhcpcd without
+    -O2 in Makefile.
+
+  Note 3.
+    if you are trying to run dhcpcd and are getting the following error in
+    the log file:
+    dhcpcd[xx]: dhcpStart: socket(): Invalid argument
+    it means you kernel is compiled without support for SOCK_PACKET
+    (CONFIG_PACKET option).
+
+  Note 4.
+    if your dhcpcd binary compiles fine and runs OK with "--help" flag
+    only and otherwise immediately coredumps with "Segmentation Fault" 
+    error then delete /etc/dhcpc/dhcpcd-<interface>.cache file and
+    try running dhcpcd again. There is a chance your dhcpcd cache file
+    is from old version of dhcpcd.
+
+  Note 5.
+    If you replace your network card or upgrade to a different version of
+    dhcpcd you might not be able to obtain the same old IP address from
+    DHCP server. This is because the DHCP server identifies clients by
+    ClientID DHCP option which by default is MAC address of the network
+    card. The work around is to use -I ClientID  option with some
+    unique "ClientID" string.
+    Also, upgrading to a different version of dhcpcd invalidates *.cache
+    file where dhcpcd stores IP address which it tries to renew on restart.
+
+2. How to Use It
+
+Invoke the client by typing 'dhcpcd'. Note you should NOT
+explicitly put it in the background with the '&' character -
+background processing is automatic unless 'dhcpcd' was
+compiled with -DDEBUG flag. Dhcpcd will fork into background
+as soon as it configures the interface. By default, dhcpcd will
+attach to 'eth0' unless you explicitly give an interface name on the
+command line.
+The example below demonstrates dhcpcd usage in a case where
+linux box serves as a router/firewall for the local network 192.168.12.0.
+
+if dhcpcd eth1; then
+  inetd
+  /usr/sbin/sendmail -bd
+  httpd
+  echo 1 > /proc/sys/net/ipv4/ip_forward
+  modprobe ip_tables
+  modprobe iptable_nat
+  modprobe iptable_filter
+  modprobe ipt_MASQUERADE
+  modprobe ip_nat_ftp
+  modprobe ip_conntrack_ftp
+  iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+else
+  echo "****  Unable to configure eth0"
+fi
+
+The bootup process will wait until 'dhcpcd' configures
+interface or until dhcpcd times out before proceeding further.
+
+Any time dhcpcd configures or shuts down interface it will try to
+execute <ConfigDir>/dhcpcd.exe script with appropriate
+parameters passed. The exact pathname of the executable script can be
+changed with "-c ExecFilePath" dhcpcd option. The <ConfigDir>
+directory can be specified with "-L <ConfigDir>" option, otherwise
+it defaults to /etc/dhcpc/. The dhcpcd.exe script invokation is:
+<ConfigDir>/dhcpcd.exe <HostInfoFilePath> <up|down|new> [-d]
+where <HostInfoFilePath> is actually <ConfigDir>/dhcpcd-<interface>.info
+file; optional parameter [-d] is a debug flag passed if dhcpcd has
+been invoked with -d flag.  The second parameter to dhcpcd.exe script is
+"up" if the interface has been configured with the same IP
+address as before reboot, "down" if the interface has been shut
+down, "new" if the interface has been configured with new IP address.
+
+3. Supported DHCP Options
+
+The current version of dhcpcd supports the following DHCP options:
+
+  o lease time
+  o renewal (T1) time
+  o rebind (T2) time
+  o netmask
+  o broadcast address
+  o router
+  o dns
+  o host name
+  o domain name
+  o nis domain name
+  o nis servers
+  o ntp servers
+  o static routes
+
+5. Cache File
+
+dhcpcd saves the assigned IP address into the file
+<ConfigDir>/dhcpcd-<interface>.cache (the word <interface> is actually
+replaced with the interface name like eth0, etc. to which dhcpcd is
+attached) so that it can try to use that IP address when it is invoked
+next time. Remove the file <ConfigDir>/dhcpcd-<interface>.cache before
+you invoke dhcpcd unless you like using the previously assigned IP
+address.
+
+6. Information File
+
+dhcpcd writes the configuration information into
+<ConfigDir>/dhcpcd-<interface>.info file. The word <interface> is actually
+replaced with the interface name like eth0, etc. to which dhcpcd is
+attached. That file may be included into a Bourne or Korn shell script
+to set an environment variables like e.g. HOSTNAME, DOMAIN, NETMASK, etc.
+The supplied sample <ConfigDir>/dhcpcd.exe script demonstrates usage
+of <ConfigDir>/dhcpcd-<interface>.info file.
+
+7. Other Information
+
+dhcpcd sends DHCP_RELEASE message to the DHCP server, deletes the
+<ConfigDir>/dhcpcd-<interface>.cache file and brings the attached
+network interface down when it gets SIGHUP signal. It will
+not send DHCP_RELEASE message and will not delete
+<ConfigDir>/dhcpcd-<interface>.cache file in a case it gets
+SIGTERM as normally happens upon reboot.
+
+dhcpcd may be used to obtain multiple IP addresses for the same
+dummy interface providing one invokes dhcpcd with
+-I ClientID -L ConfigDir -T -c ExecFilePath
+options where ClientID and ConfigDir are unique to each of the requested
+IP addresses. The same way it can be used to obtain IP addresses
+for virtual interfaces, e.g. eth0:1
+
+dhcpcd currently supports only Ethernet link protocol.
+
+8. In case dhcpcd does not work:
+   Run 'dhcpcd -d' and mail me the relevant messages
+   from /var/log/dhcpcd.log file. Also run
+   tcpdump -evvn -i eth0
+   and mail me the results of that.
+   If the things are too bad for you,
+   uncomment -DDEBUG flag in Makefile
+   and recompile 'dhcpcd'. Run 'dhcpcd -d'
+   and mail me what you see.
+
+Sergei Viznyuk <sv@phystech.com>
+

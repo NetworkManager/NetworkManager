@@ -14,30 +14,33 @@ bin_PROGRAMS = NetworkManager
 
 noinst_LTLIBRARIES = libnmbackend.la
 
-NetworkManager_SOURCES =					\
-		NetworkManagerAP.c				\
-		NetworkManagerAP.h				\
-		NetworkManagerAPList.c			\
-		NetworkManagerAPList.h			\
-		NetworkManagerDbus.c			\
-		NetworkManagerDbus.h			\
-		NetworkManagerDevice.c			\
-		NetworkManagerDevice.h			\
-		NetworkManager.c				\
-		NetworkManagerMain.h			\
-		NetworkManagerPolicy.c			\
-		NetworkManagerPolicy.h			\
-		NetworkManagerUtils.c			\
-		NetworkManagerUtils.h			\
-		NetworkManagerWireless.c			\
-		NetworkManagerWireless.h			\
-		backends/NetworkManagerSystem.h
+NetworkManager_SOURCES =				\
+		NetworkManagerAP.c			\
+		NetworkManagerAP.h			\
+		NetworkManagerAPList.c		\
+		NetworkManagerAPList.h		\
+		NetworkManagerDbus.c		\
+		NetworkManagerDbus.h		\
+		NetworkManagerDHCP.c		\
+		NetworkManagerDHCP.h		\
+		NetworkManagerDevice.c		\
+		NetworkManagerDevice.h		\
+		NetworkManager.c			\
+		NetworkManagerMain.h		\
+		NetworkManagerPolicy.c		\
+		NetworkManagerPolicy.h		\
+		NetworkManagerUtils.c		\
+		NetworkManagerUtils.h		\
+		NetworkManagerWireless.c		\
+		NetworkManagerWireless.h		\
+		NetworkManagerSystem.c		\
+		NetworkManagerSystem.h
 
 if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la
+NetworkManager_LDADD = $(NM_LIBS) $(IWLIB) libnmbackend.la ../dhcpcd/libdhcpc.a
 if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif

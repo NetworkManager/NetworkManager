@@ -26,31 +26,29 @@
 #include "NetworkManagerDevice.h"
 
 
-/* Prototypes for system/distribution dependent functions */
+/* Prototypes for system/distribution dependent functions,
+ * implemented in the backend files in backends/ directory
+ */
 
 void			nm_system_init (void);
-
 gboolean		nm_system_device_run_dhcp				(NMDevice *dev);
-
 void			nm_system_device_stop_dhcp				(NMDevice *dev);
-
 gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 void			nm_system_device_flush_routes				(NMDevice *dev);
-
 void			nm_system_device_flush_addresses			(NMDevice *dev);
-
 void			nm_system_device_update_config_info		(NMDevice *dev);
-
 gboolean		nm_system_device_setup_static_ip4_config	(NMDevice *dev);
-
 void			nm_system_enable_loopback				(void);
-
 void			nm_system_delete_default_route			(void);
-
 void			nm_system_kill_all_dhcp_daemons			(void);
-
 void			nm_system_update_dns					(void);
-
 void			nm_system_load_device_modules				(void);
+
+/* Prototyps for system-layer network functions (ie setting IP address, etc) */
+gboolean		nm_system_device_set_ip4_address			(NMDevice *dev, int ip4_address);
+gboolean		nm_system_device_set_ip4_netmask			(NMDevice *dev, int ip4_netmask);
+gboolean		nm_system_device_set_ip4_broadcast			(NMDevice *dev, int ip4_broadcast);
+gboolean		nm_system_device_set_ip4_default_route		(NMDevice *dev, int ip4_def_route);
+gboolean		nm_system_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 
 #endif

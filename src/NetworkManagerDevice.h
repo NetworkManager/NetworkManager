@@ -43,6 +43,8 @@ NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_
 void			nm_device_ref					(NMDevice *dev);
 void			nm_device_unref				(NMDevice *dev);
 
+int			nm_device_open_sock				(void);
+
 char *		nm_device_get_udi				(NMDevice *dev);
 void			nm_device_set_udi				(NMDevice *dev, const char *udi);
 
@@ -66,6 +68,9 @@ void			nm_device_get_ap_address			(NMDevice *dev, struct ether_addr *addr);
 
 guint32		nm_device_get_ip4_address		(NMDevice *dev);
 void			nm_device_update_ip4_address		(NMDevice *dev);
+
+void			nm_device_get_hw_address			(NMDevice *dev, unsigned char hw_addr[ETH_ALEN]);
+void			nm_device_update_hw_address		(NMDevice *dev);
 
 void			nm_device_get_ip6_address		(NMDevice *dev);
 

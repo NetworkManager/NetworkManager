@@ -5,7 +5,7 @@ NOTIFICATION_ICON_SOURCE=@NOTIFICATION_ICON_SRC@
 
 INCLUDES = -I${top_srcdir}
 
-CPPFLAGS = 							\
+AM_CPPFLAGS = 							\
 	$(NM_CFLAGS)						\
 	$(GLADE_CFLAGS)						\
 	$(DBUS_CFLAGS)						\

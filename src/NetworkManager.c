@@ -40,7 +40,7 @@
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
-#include "backends/NetworkManagerSystem.h"
+#include "NetworkManagerSystem.h"
 
 
 /*
