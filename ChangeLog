@@ -1,3 +1,8 @@
+2004-06-29  Dan Williams <dcbw@redhat.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Implement script callout functionality
+
 2004-06-24  Dan Williams <dcbw@redhat.com>
 
 	* NetworkManager.c

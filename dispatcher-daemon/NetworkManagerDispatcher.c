@@ -28,40 +28,159 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 
-/* Globals */
-DBusConnection		*connection = NULL;
+enum NMDAction
+{
+	NMD_DEVICE_DONT_KNOW,
+	NMD_DEVICE_NOW_INACTIVE,
+	NMD_DEVICE_NOW_ACTIVE
+};
+typedef enum NMDAction	NMDAction;
 
 
+/*
+ * nmd_execute_scripts
+ *
+ * Call scripts in /etc/NetworkManager.d when devices go down or up
+ *
+ */
+void nmd_execute_scripts (NMDAction action, char *iface_name)
+{
+	DIR			*dir = opendir ("/etc/NetworkManager.d");
+	struct dirent	*ent;
+
+	if (!dir)
+	{
+		fprintf (stderr, "nmd_execute_scripts(): opendir() could not open /etc/NetworkManager.d.  errno = %d\n", errno);
+		return;
+	}
+
+	while (dir)
+	{
+		errno = 0;
+		if ((ent = readdir (dir)) != NULL)
+		{
+			struct stat	s;
+			char			path[500];
+
+			snprintf (path, 499, "/etc/NetworkManager.d/%s", ent->d_name);
+			if ((ent->d_name[0] != '.') && (stat (path, &s) == 0))
+			{
+				/* FIXME
+				 * We should check the permissions and only execute files that
+				 * are 0700 or 0500.
+				 */
+				if (S_ISREG (s.st_mode) && !S_ISLNK (s.st_mode) && (s.st_uid == 0))
+				{
+					char cmd[500];
+
+					snprintf (cmd, 499, "%s %s %s", path, iface_name,
+						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
+							(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
+					system (cmd);
+				}
+			}
+			else fprintf( stderr, "d_name = %s, errno = %d\n", ent->d_name, errno);
+		}
+	}
+
+	closedir (dir);
+}
+
+
+/*
+ * nmd_get_device_name
+ *
+ * Queries NetworkManager for the name of a device, specified by a device path
+ */
+char * nmd_get_device_name (DBusConnection *connection, char *path)
+{
+	DBusMessage	*message;
+	DBusMessage	*reply;
+	DBusMessageIter iter;
+	DBusError		 error;
+	char			*ret_string = NULL;
+	char			*dbus_string;
+
+	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
+						path,
+						"org.freedesktop.NetworkManager",
+						"getName");
+	if (message == NULL)
+	{
+		fprintf (stderr, "Couldn't allocate the dbus message\n");
+		return (NULL);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	if (dbus_error_is_set (&error))
+	{
+		fprintf (stderr, "%s raised:\n %s\n\n", error.name, error.message);
+		dbus_message_unref (message);
+		return (NULL);
+	}
+
+	if (reply == NULL)
+	{
+		fprintf( stderr, "dbus reply message was NULL\n" );
+		dbus_message_unref (message);
+		return (NULL);
+	}
+
+	/* now analyze reply */
+	dbus_message_iter_init (reply, &iter);
+	dbus_string = dbus_message_iter_get_string (&iter);
+	ret_string = (dbus_string == NULL ? NULL : strdup (dbus_string));
+	if (!ret_string)
+		fprintf (stderr, "NetworkManager returned a NULL device name" );
+
+	dbus_free (dbus_string);
+	dbus_message_unref (reply);
+	dbus_message_unref (message);
+
+	return (ret_string);
+}
+
+
+/*
+ * nmd_dbus_filter
+ *
+ * Handles dbus messages from NetworkManager, dispatches device active/not-active messages
+ */
 static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	const char	*object_path;
 	DBusError		 error;
 	char			*dev_object_path = NULL;
 	gboolean		 handled = FALSE;
+	NMDAction		 action = NMD_DEVICE_DONT_KNOW;
 
 	dbus_error_init (&error);
 	object_path = dbus_message_get_path (message);
 
-	fprintf (stderr, "*** in filter_func, object_path=%s\n", object_path);
-
 	if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNoLongerActive"))
-	{
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_object_path, DBUS_TYPE_INVALID))
-		{
-fprintf (stderr, "Device %s no longer active\n", dev_object_path);
-			handled = TRUE;
-			dbus_free (dev_object_path);
-		}
-	}
+		action = NMD_DEVICE_NOW_INACTIVE;
 	else if (dbus_message_is_signal (message, "org.freedesktop.NetworkManager", "DeviceNowActive"))
+		action = NMD_DEVICE_NOW_ACTIVE;
+
+	if (action != NMD_DEVICE_DONT_KNOW)
 	{
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev_object_path, DBUS_TYPE_INVALID))
 		{
-fprintf (stderr, "Device %s now active\n", dev_object_path);
-			handled = TRUE;
+			char		*dev_iface_name = nmd_get_device_name (connection, dev_object_path);
+
+			fprintf (stderr, "Device %s (%s) now has state %d.\n", dev_object_path, dev_iface_name, action);
+
+			nmd_execute_scripts (action, dev_iface_name);
+
+			free (dev_iface_name);
 			dbus_free (dev_object_path);
+
+			handled = TRUE;
 		}
 	}
 
@@ -133,6 +252,7 @@ int main( int argc, char *argv[] )
 {
 	gboolean		 become_daemon = TRUE;
 	GMainLoop		*loop  = NULL;
+	DBusConnection	*connection = NULL;
 
 	/* Parse options */
 	while (1)
