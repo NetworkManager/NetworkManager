@@ -45,7 +45,7 @@ struct NMAccessPoint
 
 	/* Things from user prefs */
 	gchar			*enc_key;
-	time_t			 timestamp;
+	GTimeVal		timestamp;
 };
 
 
@@ -63,7 +63,6 @@ NMAccessPoint * nm_ap_new (void)
 	if (!ap)
 		syslog( LOG_ERR, "nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?" );
 
-	ap->timestamp = 0;
 	ap->refcount = 1;
 
 	return (ap);
@@ -106,7 +105,6 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 
 	if (src_ap->enc_key && (strlen (src_ap->enc_key) > 0))
 		new_ap->enc_key = g_strdup (src_ap->enc_key);
-	new_ap->timestamp = 0;
 
 	return (new_ap);
 }
@@ -145,18 +143,18 @@ void nm_ap_unref (NMAccessPoint *ap)
  * Get/set functions for timestamp
  *
  */
-time_t nm_ap_get_timestamp (NMAccessPoint *ap)
+const GTimeVal *nm_ap_get_timestamp (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, 0);
 
-	return (ap->timestamp);
+	return (&ap->timestamp);
 }
 
-void nm_ap_set_timestamp (NMAccessPoint *ap, time_t timestamp)
+void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->timestamp = timestamp;
+	ap->timestamp = *timestamp;
 }
 
 

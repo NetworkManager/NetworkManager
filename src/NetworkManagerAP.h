@@ -43,8 +43,8 @@ NMAccessPoint		*nm_ap_new_from_ap			(NMAccessPoint *ap);
 void				 nm_ap_unref				(NMAccessPoint *ap);
 void				 nm_ap_ref				(NMAccessPoint *ap);
 
-time_t			 nm_ap_get_timestamp		(NMAccessPoint *ap);
-void				 nm_ap_set_timestamp		(NMAccessPoint *ap, time_t timestamp);
+const GTimeVal *	nm_ap_get_timestamp		(NMAccessPoint *ap);
+void				 nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
 gchar *			 nm_ap_get_essid			(NMAccessPoint *ap);
 void				 nm_ap_set_essid			(NMAccessPoint *ap, gchar *essid);

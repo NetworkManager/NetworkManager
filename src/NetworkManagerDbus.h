@@ -68,7 +68,7 @@ char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType t
 
 char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network);
 
-time_t		nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
+GTimeVal *	nm_dbus_get_network_timestamp			(DBusConnection *connection, NMNetworkType type, const char *network);
 
 char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 

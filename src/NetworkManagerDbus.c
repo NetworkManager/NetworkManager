@@ -678,27 +678,28 @@ char * nm_dbus_get_network_key (DBusConnection *connection, NMNetworkType type, 
  *
  * Get a network's timestamp from NetworkManagerInfo
  *
- * Returns:	-1 on error
+ * Returns:	NULL on error
  *			timestamp if no error
  *
  */
-time_t nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkType type, const char *network)
+GTimeVal *nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkType type, const char *network)
 {
 	DBusMessage		*message;
 	DBusError			 error;
 	DBusMessage		*reply;
-	time_t			 timestamp = -1;
+	guint32			timestamp_secs;
+	GTimeVal		*timestamp;
 
-	g_return_val_if_fail (connection != NULL, -1);
-	g_return_val_if_fail (network != NULL, -1);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, -1);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (network != NULL, NULL);
+	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, NULL);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
 						NMI_DBUS_INTERFACE, "getNetworkTimestamp");
 	if (!message)
 	{
 		syslog (LOG_ERR, "nm_dbus_get_network_timestamp(): Couldn't allocate the dbus message");
-		return (-1);
+		return NULL;
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, network,
@@ -715,13 +716,19 @@ time_t nm_dbus_get_network_timestamp (DBusConnection *connection, NMNetworkType 
 	else
 	{
 		dbus_error_init (&error);
-		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &timestamp, DBUS_TYPE_INVALID))
-			timestamp = -1;
+		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, &timestamp_secs, DBUS_TYPE_INVALID))
+			timestamp_secs = -1;
 	}
 
 	dbus_message_unref (message);
 	if (reply)
 		dbus_message_unref (reply);
+
+	if (timestamp_secs < 0)
+		return NULL;
+	timestamp = g_new0 (GTimeVal, 1);
+	timestamp->tv_sec = timestamp_secs;
+	timestamp->tv_usec = 0;
 
 	return (timestamp);
 }

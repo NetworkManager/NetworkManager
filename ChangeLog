@@ -1,5 +1,22 @@
 2004-08-29  Colin Walters  <walters@verbum.org>
 
+	* src/NetworkManagerDbus.c (nm_dbus_get_network_timestamp): Return
+	a GTimeVal instead of time_t.  This is easier to work with,
+	since time_t may be a long or double, we don't know.
+
+	* src/NetworkManagerDbus.h: Update prototype.
+	
+	* src/NetworkManagerAP.c (struct NMAccessPoint): Store a GTimeVal
+	instead of time_t.
+	(nm_ap_get_timestamp): Update to return GTimeVal.
+	(nm_ap_set_timestamp): Update to take GTimeVal.
+
+	* src/NetworkManagerAPList.c (nm_ap_list_update_network): Handle
+	GTimeVal change.
+	(nm_ap_list_print_members): Fix warnings in printf format.
+
+2004-08-29  Colin Walters  <walters@verbum.org>
+	
 	* panel-applet/NMWirelessApplet.c: Include config.h.
 
 2004-08-29  Colin Walters  <walters@verbum.org>
