@@ -24,10 +24,11 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerAPList.h"
 
 char *	nm_wireless_128bit_key_from_passphrase	(char *passphrase);
 
-gboolean	nm_wireless_is_most_prefered_ap		(NMData *data, NMAccessPoint *ap, int *highest_priority);
+gboolean	nm_wireless_is_ap_better				(NMAccessPointList *list, NMAccessPoint *ap, int *highest_priority);
 
 gboolean	nm_wireless_scan_monitor				(gpointer user_data);
 

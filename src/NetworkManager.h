@@ -30,16 +30,17 @@
 
 struct NMData
 {
-	LibHalContext				*hal_ctx;
-	GSList					*dev_list;
-	GMutex					*dev_list_mutex;
-	struct NMDevice			*active_device;
-	struct NMDevice			*pending_device;
-	gboolean					 state_modified;
-	GMutex					*state_modified_mutex;
-	GSList					*allowed_ap_list;
-	GMutex					*allowed_ap_list_mutex;
-	DBusConnection				*dbus_connection;
+	LibHalContext			*hal_ctx;
+	GSList				*dev_list;
+	GMutex				*dev_list_mutex;
+	struct NMDevice		*active_device;
+	struct NMDevice		*pending_device;
+	gboolean				 state_modified;
+	GMutex				*state_modified_mutex;
+	struct NMAccessPointList	*trusted_ap_list;
+	struct NMAccessPointList	*preferred_ap_list;
+	struct NMAccessPointList	*invalid_ap_list;
+	DBusConnection			*dbus_connection;
 };
 
 typedef struct NMData NMData;

@@ -22,21 +22,21 @@
 #ifndef NETWORK_MANAGER_DEVICE_H
 #define NETWORK_MANAGER_DEVICE_H
 
-#include "NetworkManager.h"
 #include <net/ethernet.h>
+#include "NetworkManager.h"
 
 /*
  * Types of NetworkManager devices
  */
-enum NMIfaceType
+enum NMDeviceType
 {
-	NM_IFACE_TYPE_DONT_KNOW = 0,
-	NM_IFACE_TYPE_WIRED_ETHERNET,
-	NM_IFACE_TYPE_WIRELESS_ETHERNET
+	DEVICE_TYPE_DONT_KNOW = 0,
+	DEVICE_TYPE_WIRED_ETHERNET,
+	DEVICE_TYPE_WIRELESS_ETHERNET
 };
 
 typedef struct NMDevice		NMDevice;
-typedef enum NMIfaceType		NMIfaceType;
+typedef enum NMDeviceType	NMDeviceType;
 
 
 NMDevice *	nm_device_new				(const char *iface, NMData *app_data);
@@ -49,7 +49,7 @@ void			nm_device_set_udi			(NMDevice *dev, const char *udi);
 
 char *		nm_device_get_iface			(NMDevice *dev);
 
-NMIfaceType	nm_device_get_iface_type		(NMDevice *dev);
+NMDeviceType	nm_device_get_type			(NMDevice *dev);
 gboolean		nm_device_is_wireless		(NMDevice *dev);
 gboolean		nm_device_is_wired			(NMDevice *dev);
 /* There is no nm_device_set_iface_type() because that's determined when you set the device's iface */
@@ -70,9 +70,13 @@ void			nm_device_get_ip6_address	(NMDevice *dev);
 
 gboolean		nm_device_get_supports_wireless_scan (NMDevice *dev);
 void			nm_device_do_wireless_scan	(NMDevice *dev);
+
 NMAccessPoint *nm_device_get_best_ap		(NMDevice *dev);
 void			nm_device_set_best_ap		(NMDevice *dev, NMAccessPoint *ap);
+void			nm_device_update_best_ap		(NMDevice *dev);
 gboolean		nm_device_need_ap_switch		(NMDevice *dev);
+
+char *		nm_device_get_path_for_ap	(NMDevice *dev, NMAccessPoint *ap);
 
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_wep_key		(NMDevice *dev, const char *wep_key);
@@ -91,7 +95,7 @@ void			nm_device_pending_action_set_user_key (NMDevice *dev, unsigned char *key)
 
 void			nm_device_ap_list_add		(NMDevice *dev, NMAccessPoint *ap);
 void			nm_device_ap_list_clear		(NMDevice *dev);
-NMAccessPoint *nm_device_ap_list_get_ap_by_index	(NMDevice *dev, int index);
+struct NMAccessPointList *nm_device_ap_list_get	(NMDevice *dev);
 NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *essid);
 
 NMDevice *	nm_get_device_by_udi		(NMData *data, const char *udi);

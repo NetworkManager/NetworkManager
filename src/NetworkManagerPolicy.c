@@ -59,16 +59,16 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 	while (element)
 	{
 		NMDevice	*dev = NULL;
-		guint	 iface_type;
+		guint	 dev_type;
 		gboolean	 link_active;
 		guint	 prio = 0;
 
 		dev = (NMDevice *)(element->data);
 
-		iface_type = nm_device_get_iface_type (dev);
+		dev_type = nm_device_get_type (dev);
 		link_active = nm_device_get_link_active (dev);
 
-		if (iface_type == NM_IFACE_TYPE_WIRED_ETHERNET)
+		if (dev_type == DEVICE_TYPE_WIRED_ETHERNET)
 		{
 			if (link_active)
 				prio += 1;
@@ -84,7 +84,7 @@ NMDevice * nm_policy_get_best_device (NMData *data)
 				best_wired_prio = prio;
 			}
 		}
-		else if (iface_type == NM_IFACE_TYPE_WIRELESS_ETHERNET)
+		else if (dev_type == DEVICE_TYPE_WIRELESS_ETHERNET)
 		{
 			NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
 
@@ -239,7 +239,7 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 	return (TRUE);
 }
 
-
+#if 0
 /*
  * nm_policy_allowed_ap_refresh_worker
  *
@@ -383,42 +383,4 @@ void nm_policy_update_allowed_access_points	(NMData *data)
 	else
 		NM_DEBUG_PRINT( "nm_policy_update_allowed_access_points() could not lock allowed ap list mutex\n" );
 }
-
-
-/*
- * nm_policy_essid_is_allowed
- *
- * Searches for a specific essid in the list of allowed access points.
- */
-gboolean nm_policy_essid_is_allowed (NMData *data, const unsigned char *essid)
-{
-	gboolean	allowed = FALSE;
-
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (essid != NULL, FALSE);
-
-	if (strlen (essid) <= 0)
-		return FALSE;
-
-	/* Acquire allowed AP list mutex, silently fail if we cannot */
-	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
-	{
-		GSList	*element = data->allowed_ap_list;
-		
-		while (element)
-		{
-			NMAccessPoint		*ap = (NMAccessPoint *)(element->data);
-
-			if (ap && (nm_null_safe_strcmp (nm_ap_get_essid (ap), essid) == 0))
-			{
-				allowed = TRUE;
-				break;
-			}
-			element = g_slist_next (element);
-		}
-
-		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
-	}
-
-	return (allowed);
-}
+#endif

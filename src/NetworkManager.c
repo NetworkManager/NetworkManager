@@ -312,9 +312,9 @@ gboolean nm_link_state_monitor (gpointer user_data)
 				 * device, since we only do scanning and link detection on the active device
 				 * anyway.
 				 */
-				switch (nm_device_get_iface_type (dev))
+				switch (nm_device_get_type (dev))
 				{
-					case NM_IFACE_TYPE_WIRELESS_ETHERNET:
+					case DEVICE_TYPE_WIRELESS_ETHERNET:
 						if (dev != data->active_device)
 						{
 							if (nm_device_is_up (dev))
@@ -324,7 +324,7 @@ gboolean nm_link_state_monitor (gpointer user_data)
 							nm_device_update_link_active (dev, FALSE);						
 						break;
 
-					case NM_IFACE_TYPE_WIRED_ETHERNET:
+					case DEVICE_TYPE_WIRED_ETHERNET:
 						if (!nm_device_is_up (dev))
 							nm_device_bring_up (dev);
 						nm_device_update_link_active (dev, FALSE);
@@ -399,19 +399,22 @@ static NMData *nm_data_new (void)
 	if (!data->state_modified_mutex)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create state_modified mutex.  Whacky shit going on?\n");
+		NM_DEBUG_PRINT("Could not create state_modified mutex.  Whacky stuff going on?\n");
 		return (NULL);
 	}
 
-	/* Initialize the allowed access point list mutex */
-	data->allowed_ap_list_mutex = g_mutex_new ();
-	if (!data->allowed_ap_list_mutex)
+	/* Initialize the allowed access point list */
+	data->trusted_ap_list = nm_ap_list_new (NETWORK_TYPE_TRUSTED);
+	data->preferred_ap_list = nm_ap_list_new (NETWORK_TYPE_PREFERRED);
+	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
+
+	if (!data->trusted_ap_list || !data->preferred_ap_list || !data->invalid_ap_list)
 	{
 		nm_data_free (data);
-		NM_DEBUG_PRINT("Could not create state_modified mutex.  Whacky shit going on?\n");
+		NM_DEBUG_PRINT("Could not create trusted ap list mutex.  Whacky stuff going on?\n");
 		return (NULL);
 	}
-	
+
 	data->state_modified = TRUE;
 
 	return (data);	
@@ -448,8 +451,9 @@ static void nm_data_free (NMData *data)
 	g_slist_free (data->dev_list);
 	g_mutex_free (data->dev_list_mutex);
 
-	nm_ap_list_free (data->allowed_ap_list);
-	g_mutex_free (data->allowed_ap_list_mutex);
+	nm_ap_list_unref (data->trusted_ap_list);
+	nm_ap_list_unref (data->preferred_ap_list);
+	nm_ap_list_unref (data->invalid_ap_list);
 
 	memset (data, 0, sizeof (NMData));
 }
@@ -609,8 +613,9 @@ int main( int argc, char *argv[] )
 	nm_data->hal_ctx = ctx;
 	hal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
 
-	/* Initialize our list of allowed access points */
-	nm_ap_list_populate (nm_data);
+	/* Initialize our lists of allowed and ignored access points */
+	nm_ap_list_populate (nm_data->trusted_ap_list, nm_data);
+	nm_ap_list_populate (nm_data->preferred_ap_list, nm_data);
 
 	/* Grab network devices that are already present and add them to our list */
 	nm_add_initial_devices (nm_data);

@@ -36,197 +36,47 @@
 
 #include "NetworkManagerInfoDbus.h"
 #include "NetworkManagerInfo.h"
+#include "NetworkManagerInfoPassphraseDialog.h"
 
 
 /*
- * nmi_clear_dialog
+ * nmi_get_next_priority
  *
- * Return dialog to its original state; clear out any network or device qdatas,
- * clear the passphrase entry, and hide the dialog.
- *
- */
-static void nmi_clear_dialog (GtkWidget *dialog, GtkWidget *entry)
-{
-	char 	*data;
-
-	g_return_if_fail (dialog != NULL);
-	g_return_if_fail (entry  != NULL);
-
-	data = g_object_get_data (G_OBJECT (dialog), "device");
-	if (data)
-	{
-		g_free (data);
-		g_object_set_data (G_OBJECT (dialog), "device", NULL);
-	}
-
-	data = g_object_get_data (G_OBJECT (dialog), "network");
-	if (data)
-	{
-		g_free (data);
-		g_object_set_data (G_OBJECT (dialog), "network", NULL);
-	}
-
-	gtk_entry_set_text (GTK_ENTRY (entry), "");
-	gtk_widget_hide (dialog);
-}
-
-
-/*
- * ok_button_clicked
- *
- * OK button handler; grab the passphrase and send it back
- * to NetworkManager.  Get rid of the dialog.
+ * Gets the next available worse priority
  *
  */
-static void ok_button_clicked (GtkWidget *ok_button, gpointer user_data)
+int nmi_get_next_priority (NMIAppInfo *info)
 {
-	GtkWidget		*dialog = gtk_widget_get_toplevel (ok_button);
-	NMIAppInfo	*info = (NMIAppInfo *)user_data;
+	GSList	*dir_list = NULL;
+	GSList	*element = NULL;
+	int		 worst_prio = 0;
 
-	g_return_if_fail (info != NULL);
+	g_return_val_if_fail (info != NULL, 999);
 
-	if (GTK_WIDGET_TOPLEVEL (dialog))
+	/* List all allowed access points that gconf knows about */
+	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_TRUSTED_NETWORKS_PATH, NULL);
+	if (!dir_list)
+		return (10);
+
+	while (element)
 	{
-		GtkWidget		*entry = glade_xml_get_widget (info->xml, "passphrase_entry");
-		const char	*passphrase = gtk_entry_get_text (GTK_ENTRY (entry));
-		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
-		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
-		gchar		*key = NULL;
-		GConfEntry	*gconf_entry;
+		gchar		 key[100];
+		GConfValue	*value;
 
-		/* Tell NetworkManager about the key the user typed in */
-		nmi_dbus_return_user_key (info->connection, device, network, passphrase);
-
-		/* Update GConf with the new user key */
-		key = g_strdup_printf ("%s/%s", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
-		gconf_entry = gconf_client_get_entry (info->gconf_client, key, NULL, TRUE, NULL);
-		g_free (key);
-		if (gconf_entry)
+		g_snprintf (&key[0], 99, "%s/priority", (char *)(element->data));
+		if ((value = gconf_client_get (info->gconf_client, key, NULL)))
 		{
-			gconf_entry_unref (gconf_entry);
-			key = g_strdup_printf ("%s/%s/key", NMI_GCONF_ALLOWED_NETWORKS_PATH, network);
-			gconf_client_set_string (info->gconf_client, key, passphrase, NULL);
-			g_free (key);
+			if (worst_prio < gconf_value_get_int (value))
+				worst_prio = gconf_value_get_int (value);
+			gconf_value_free (value);
 		}
 
-		nmi_clear_dialog (dialog, entry);
+		g_free (element->data);
+		element = g_slist_next (element);
 	}
-}
+	g_slist_free (dir_list);
 
-
-/*
- * cancel_button_clicked
- *
- * Cancel button handler; return a cancellation message to NetworkManager
- * and get rid of the dialog.
- *
- */
-static void cancel_button_clicked (GtkWidget *cancel_button, gpointer user_data)
-{
-	GtkWidget 	*dialog = gtk_widget_get_toplevel (cancel_button);
-	NMIAppInfo	*info = (NMIAppInfo *)user_data;
-
-	g_return_if_fail (info != NULL);
-
-	if (GTK_WIDGET_TOPLEVEL (dialog))
-	{
-		const char	*device = g_object_get_data (G_OBJECT (dialog), "device");
-		const char	*network = g_object_get_data (G_OBJECT (dialog), "network");
-
-		nmi_dbus_return_user_key (info->connection, device, network, "***canceled***");
-		nmi_clear_dialog (dialog, glade_xml_get_widget (info->xml, "passphrase_entry"));
-	}
-}
-
-
-/*
- * nmi_show_user_key_dialog
- *
- * Pop up the user key dialog in response to a dbus message
- *
- */
-void nmi_show_user_key_dialog (const char *device, const char *network, NMIAppInfo *info)
-{
-	GtkWidget			*dialog;
-	GtkWidget			*label;
-	const gchar		*label_text;
-
-	g_return_if_fail (info != NULL);
-	g_return_if_fail (device != NULL);
-	g_return_if_fail (network != NULL);
-
-	dialog = glade_xml_get_widget (info->xml, "passphrase_dialog");
-	nmi_clear_dialog (dialog, glade_xml_get_widget (info->xml, "passphrase_entry"));
-
-	/* Insert the Network name into the dialog text */
-	label  = glade_xml_get_widget (info->xml, "label1");
-	label_text = gtk_label_get_label (GTK_LABEL (label));
-	if (label_text)
-	{
-		gchar *new_label_text = g_strdup_printf (label_text, network);
-		gtk_label_set_label (GTK_LABEL (label), new_label_text);
-	}
-
-	g_object_set_data (G_OBJECT (dialog), "device", g_strdup (device));
-	g_object_set_data (G_OBJECT (dialog), "network", g_strdup (network));
-
-	gtk_widget_show (dialog);
-}
-
-
-/*
- * nmi_cancel_user_key_dialog
- *
- * Cancel and hide any user key dialog that might be up
- *
- */
-void nmi_cancel_user_key_dialog (NMIAppInfo *info)
-{
-	GtkWidget		*dialog;
-	GtkWidget		*entry;
-
-	g_return_if_fail (info != NULL);
-
-	dialog = glade_xml_get_widget (info->xml, "passphrase_dialog");
-	entry  = glade_xml_get_widget (info->xml, "passphrase_entry");
-	nmi_clear_dialog (dialog, entry);
-}
-
-
-/*
- * nmi_interface_init
- *
- * Initialize the UI pieces of NMI.
- *
- */
-static void nmi_interface_init (NMIAppInfo *info)
-{
-	GtkWidget		*dialog;
-	GtkButton		*ok_button;
-	GtkButton		*cancel_button;
-	GtkEntry		*entry;
-
-	info->xml = glade_xml_new(GLADEDIR"/passphrase.glade", NULL, NULL);
-	if (!info->xml)
-	{
-		fprintf (stderr, "Could not open glade file!\n");
-		exit (1);
-	}
-	
-	dialog = glade_xml_get_widget (info->xml, "passphrase_dialog");
-	gtk_widget_hide (dialog);
-
-	ok_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "login_button"));
-	g_signal_connect (G_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (ok_button_clicked), info);
-	gtk_widget_grab_default (GTK_WIDGET (ok_button));
-	cancel_button = GTK_BUTTON (glade_xml_get_widget (info->xml, "cancel_button"));
-	g_signal_connect (G_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (cancel_button_clicked), info);
-
-	entry = GTK_ENTRY (glade_xml_get_widget (info->xml, "passphrase_entry"));
-	gtk_entry_set_visibility (entry, FALSE);
-	gtk_entry_set_invisible_char (entry, '*');
-
-	nmi_clear_dialog (dialog, GTK_WIDGET (entry));
+	return (worst_prio + 10);
 }
 
 
@@ -245,18 +95,28 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 	g_return_if_fail (entry != NULL);
 	g_return_if_fail (info != NULL);
 
-	key = gconf_entry_get_key (entry);
-	if (key)
+	if ((key = gconf_entry_get_key (entry)))
 	{
-		static int	gconf_path_len = 0;
-
-		if (!gconf_path_len)
-			gconf_path_len = strlen (NMI_GCONF_ALLOWED_NETWORKS_PATH) + 1;
+		NMINetworkType	type = NETWORK_TYPE_UNKNOWN;
+		int			trusted_path_len = strlen (NMI_GCONF_TRUSTED_NETWORKS_PATH) + 1;
+		int			preferred_path_len = strlen (NMI_GCONF_PREFERRED_NETWORKS_PATH) + 1;
+		int			len;
 
 		/* Extract the network name from the key */
-		if (strncmp (NMI_GCONF_ALLOWED_NETWORKS_PATH"/", key, gconf_path_len) == 0)
+		if (strncmp (NMI_GCONF_TRUSTED_NETWORKS_PATH"/", key, trusted_path_len) == 0)
 		{
-			char 	*network = g_strdup ((key + gconf_path_len));
+			type = NETWORK_TYPE_TRUSTED;
+			len = trusted_path_len;
+		}
+		else if (strncmp (NMI_GCONF_PREFERRED_NETWORKS_PATH"/", key, preferred_path_len) == 0)
+		{
+			type = NETWORK_TYPE_PREFERRED;
+			len = preferred_path_len;
+		}
+
+		if (type != NETWORK_TYPE_UNKNOWN)
+		{
+			char 	*network = g_strdup ((key + len));
 			char		*slash_pos;
 
 			/* If its a key under the network name, zero out the slash so we
@@ -265,7 +125,7 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			if ((slash_pos = strchr (network, '/')))
 				*slash_pos = '\0';
 
-			nmi_dbus_signal_update_allowed_network (info->connection, network);
+			nmi_dbus_signal_update_network (info->connection, network, type);
 			g_free (network);
 		}
 	}
@@ -420,7 +280,8 @@ int main( int argc, char *argv[] )
 
 	gtk_init (&argc, &argv);
 
-	nmi_interface_init (app_info);
+	if (nmi_passphrase_dialog_init (app_info) != 0)
+		exit (1);
 
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);

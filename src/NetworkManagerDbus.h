@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
+#include "NetworkManagerAPList.h"
 
 
 #define	NM_DBUS_NM_OBJECT_PATH_PREFIX			"/org/freedesktop/NetworkManager"
@@ -51,12 +52,12 @@ void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *
 
 void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
-char *		nm_dbus_get_allowed_network_essid		(DBusConnection *connection, const char *network);
+char *		nm_dbus_get_network_essid			(DBusConnection *connection, NMNetworkType type, const char *network);
 
-char *		nm_dbus_get_allowed_network_key		(DBusConnection *connection, const char *network);
+char *		nm_dbus_get_network_key				(DBusConnection *connection, NMNetworkType type, const char *network);
 
-guint		nm_dbus_get_allowed_network_priority	(DBusConnection *connection, const char *network);
+guint		nm_dbus_get_network_priority			(DBusConnection *connection, NMNetworkType type, const char *network);
 
-char **		nm_dbus_get_allowed_networks			(DBusConnection *connection, int *num_networks);
+char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
 
 #endif

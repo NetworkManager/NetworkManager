@@ -24,6 +24,7 @@
 #define NETWORK_MANAGER_INFO_H
 
 #include <gtk/gtk.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 #include <glade/glade.h>
 #include <glib.h>
 #include <dbus/dbus.h>
@@ -32,18 +33,20 @@
 
 struct NMIAppInfo
 {
-	GladeXML		*xml;
+	GladeXML		*passphrase_dialog;
 	DBusConnection	*connection;
 	GConfClient	*gconf_client;
+
+	GladeXML		*new_networks_dialog;
+	GtkListStore	*nnd_list_store;
+	GdkPixbuf		*padlock_pixbuf;
 };
 typedef struct NMIAppInfo NMIAppInfo;
 
-
 #define	NMI_GCONF_WIRELESS_NETWORKING_PATH		"/system/networking/wireless"
-#define	NMI_GCONF_ALLOWED_NETWORKS_PATH		"/system/networking/wireless/allowed_networks"
+#define	NMI_GCONF_TRUSTED_NETWORKS_PATH		"/system/networking/wireless/trusted_networks"
+#define	NMI_GCONF_PREFERRED_NETWORKS_PATH		"/system/networking/wireless/preferred_networks"
 
-
-void			nmi_show_user_key_dialog		(const char *device, const char *network, NMIAppInfo *info);
-void			nmi_cancel_user_key_dialog	(NMIAppInfo *info);
+int		nmi_get_next_priority	(NMIAppInfo *info);
 
 #endif

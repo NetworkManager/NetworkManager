@@ -75,56 +75,45 @@ char *nm_wireless_128bit_key_from_passphrase	(char *passphrase)
 
 
 /*
- * nm_wireless_is_most_prefered_ap
+ * nm_wireless_is_ap_better
  *
  * For a given AP, filter it through the allowed list and return TRUE if its
  * both allowed _and_ has a better priority than highest_priority.
  *
  */
-gboolean nm_wireless_is_most_prefered_ap (NMData *data, NMAccessPoint *ap, int *highest_priority)
+gboolean nm_wireless_is_ap_better (NMAccessPointList *list, NMAccessPoint *ap, int *highest_priority)
 {
-	GSList		*element;
-	gboolean		 is_most_preferred = FALSE;
+	NMAPListIter		*iter;
+	NMAccessPoint		*list_ap;
+	gboolean			 better = FALSE;
 
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (list != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (highest_priority != NULL, FALSE);
 
-	/* If the AP is marked as invalid, of course its not prefered */
+	/* If the AP is marked as invalid, of course its not preferred */
 	if (nm_ap_get_invalid (ap))
 		return (FALSE);
 
-	/* Attempt to acquire mutex for device list iteration.
-	 * If the acquire fails, just ignore the scan completely.
-	 */
-	if (nm_try_acquire_mutex (data->allowed_ap_list_mutex, __FUNCTION__))
+	if (!(iter = nm_ap_list_iter_new (list)))
+		return (FALSE);
+
+	while ((list_ap = nm_ap_list_iter_next (iter)))
 	{
-		element = data->allowed_ap_list;
-
-		while (element)
+		/* If the essid of the scanned ap matches one in our allowed list, and this AP is
+		 * a higher priority than one we may possibly have already found.
+		 */
+		if (    (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), nm_ap_get_essid (ap)) == 0)
+			&& (nm_ap_get_priority (list_ap) < *highest_priority))
 		{
-			NMAccessPoint	*allowed_ap = (NMAccessPoint *)(element->data);
-
-			/* If the essid of the scanned ap matches one in our allowed list, and this AP is
-			 * a higher priority than one we may possibly have already found.
-			 */
-			if (    allowed_ap
-				&& (nm_null_safe_strcmp (nm_ap_get_essid (allowed_ap), nm_ap_get_essid (ap)) == 0)
-				&& (nm_ap_get_priority (allowed_ap) < *highest_priority))
-			{
-				*highest_priority = nm_ap_get_priority (allowed_ap);
-				is_most_preferred = TRUE;
-				break;
-			}
-
-			element = g_slist_next (element);
+			*highest_priority = nm_ap_get_priority (list_ap);
+			better = TRUE;
+			break;
 		}
-		nm_unlock_mutex (data->allowed_ap_list_mutex, __FUNCTION__);
 	}
-	else
-		NM_DEBUG_PRINT( "nm_wireless_is_most_prefered_ap() could not acquire allowed access point mutex.\n" );
-	
-	return (is_most_preferred);
+
+	nm_ap_list_iter_free (iter);
+	return (better);
 }
 
 
@@ -148,7 +137,7 @@ gboolean nm_wireless_scan_monitor (gpointer user_data)
 	 */
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		if (data->active_device && (nm_device_get_iface_type (data->active_device) == NM_IFACE_TYPE_WIRELESS_ETHERNET))
+		if (data->active_device && nm_device_is_wireless (data->active_device))
 			nm_device_do_wireless_scan (data->active_device);
 
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
