@@ -118,7 +118,14 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 				nm_device_get_iface (dev), nm_device_is_wireless (dev) ? "wireless" : "wired" );
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
-			nm_device_deactivate (dev, TRUE);
+
+			/* We don't take down wired devices that are already set up when NetworkManager gets
+			 * launched.  Plays better with the system.
+			 *
+			 * FIXME: IPv6 here too
+			 */
+			if (!(data->starting_up && nm_device_is_wired (dev) && nm_device_get_ip4_address (dev)))
+				nm_device_deactivate (dev, TRUE);
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
@@ -452,6 +459,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 
 	data->state_modified = TRUE;
 	data->enable_test_devices = enable_test_devices;
+	data->starting_up = TRUE;
 
 	return (data);	
 }

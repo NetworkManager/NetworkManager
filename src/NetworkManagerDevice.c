@@ -329,6 +329,7 @@ NMDevice *nm_device_new (const char *iface, gboolean test_dev, NMDeviceType test
 	}
 
 	/* Grab IP config data for this device from the system configuration files */
+	nm_device_update_ip4_address (dev);
 	nm_system_device_update_config_info (dev);
 
 	/* Have to bring the device up before checking link status.  */
@@ -585,8 +586,6 @@ char * nm_device_get_essid (NMDevice *dev)
 {
 	int				iwlib_socket;
 	int				err;
-	struct iwreq		wreq;
-	char				essid[IW_ESSID_MAX_SIZE + 1];
 	
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
@@ -1093,6 +1092,20 @@ gboolean nm_device_activation_begin (NMDevice *dev)
 	/* Ref the device so it doesn't go away while worker function is active */
 	nm_device_ref (dev);
 
+	/* Don't attempt to actually activate if we are just starting NetworkManager and
+	 * we are about to activate a wired device that's already configured.  Plays nicer
+	 * with the system when NM is started after a network is already set up.
+	 *
+	 * FIXME: IPv6 here too, and this really should not be here, it should be part of
+	 * the policy, not the device code itself.
+	 */
+	if (data->starting_up && nm_device_is_wired (data->active_device) && nm_device_get_ip4_address (data->active_device))
+	{
+		dev->activating = FALSE;
+		dev->just_activated = TRUE;
+		return (TRUE);
+	}
+
 	/* Reset communication flags between worker and main thread */
 	dev->activating = TRUE;
 	dev->just_activated = FALSE;
@@ -1130,7 +1143,6 @@ gboolean nm_device_activation_should_cancel (NMDevice *dev)
 		syslog (LOG_DEBUG, "nm_device_activation_worker(%s): activation canceled.", nm_device_get_iface (dev));
 		dev->activating = FALSE;
 		dev->just_activated = FALSE;
-		nm_device_unref (dev);
 		return (TRUE);
 	}
 
@@ -1365,7 +1377,10 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_should_cancel (dev))
+		{
+			nm_device_unref (dev);
 			return (NULL);
+		}
 
 		/* Since we've got a link, the encryption method must be good */
 		nm_ap_set_enc_method_good (nm_device_get_best_ap (dev), TRUE);
@@ -1399,7 +1414,10 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 		/* If we were told to quit activation, stop the thread and return */
 		if (nm_device_activation_should_cancel (dev))
+		{
+			nm_device_unref (dev);
 			return (NULL);
+		}
 
 		/* Make system aware of any new DNS settings from resolv.conf */
 		nm_system_update_dns ();
@@ -1407,7 +1425,10 @@ static gpointer nm_device_activation_worker (gpointer user_data)
 
 	/* If we were told to quit activation, stop the thread and return */
 	if (nm_device_activation_should_cancel (dev))
+	{
+		nm_device_unref (dev);
 		return (NULL);
+	}
 
 	dev->just_activated = TRUE;
 	syslog (LOG_DEBUG, "nm_device_activation_worker(%s): device activated", nm_device_get_iface (dev));

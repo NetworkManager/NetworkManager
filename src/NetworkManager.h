@@ -34,6 +34,7 @@ typedef struct NMData
 	DBusConnection			*dbus_connection;
 	gboolean				 info_daemon_avail;
 	gboolean				 enable_test_devices;
+	gboolean				 starting_up;		/* Hack for not taking down an already-set-up wired device when we launch */
 
 	GSList				*dev_list;
 	GMutex				*dev_list_mutex;

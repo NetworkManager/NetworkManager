@@ -1,3 +1,10 @@
+2004-09-28 Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+	  src/NetworkManagerDevice.c
+	  src/NetworkManagerPolicy.c
+		- Don't blow away an active wired connection on startup
+
 2004-09-28  Bryan Clark  <clarkbw@cvs.gnome.org>
 
 	Changes from J5

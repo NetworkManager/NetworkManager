@@ -329,5 +329,11 @@ gboolean nm_state_modification_monitor (gpointer user_data)
 		syslog (LOG_INFO, "nm_state_modification_monitor() activated device %s", nm_device_get_iface (data->active_device));
 	}
 
+	/* Clear the starting up flag, so we will now take over and have our way with
+	 * any device we find out about.
+	 */
+	if (data->starting_up)
+		data->starting_up = FALSE;
+
 	return (TRUE);
 }
