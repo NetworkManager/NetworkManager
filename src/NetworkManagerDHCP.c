@@ -81,31 +81,45 @@ static void set_nameservers (NMDevice *dev, void *data, int len)
 	}
 }
 
-static void set_domain_search (NMDevice *dev, const char *domain)
+static void set_domain_searches (NMDevice *dev, const char *searches_str)
 {
 	GError *error = NULL;
-	guint id;
+	GList *elt;
+	char **searches;
 
-	if (dev->app_data->domain_search_id
-	    && !nm_named_manager_remove_domain_search (dev->app_data->named,
-						       dev->app_data->domain_search_id,
-						       &error))
+	/* Reset our domain search list */
+	for (elt = dev->app_data->domain_search_ids; elt; elt = elt->next)
 	{
-		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove domain search: %s\n", error->message);
-		g_clear_error (&error);
+		if (!nm_named_manager_remove_domain_search (dev->app_data->named,
+							    GPOINTER_TO_UINT (elt->data),
+							    &error))
+		{
+			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't remove domain search: %s\n", error->message);
+			g_clear_error (&error);
+		}
 	}
-	
-	syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding domain search: %s\n", domain);
-	if ((id = nm_named_manager_add_domain_search (dev->app_data->named,
-						      domain,
-						      &error)))
-		dev->app_data->domain_search_id = id;
-	else
+	g_list_free (dev->app_data->domain_search_ids);
+	dev->app_data->domain_search_ids = NULL;
+
+	searches = g_strsplit (searches_str, " ", 0);
+
+	for (; *searches; searches++) 
 	{
-		dev->app_data->domain_search_id = 0;
-		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add domain search: %s\n", error->message);
-		g_clear_error (&error);
+		const char *search_elt = *searches;
+		guint id;
+
+		syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Adding domain search: %s\n", search_elt);
+		if ((id = nm_named_manager_add_domain_search (dev->app_data->named,
+							      search_elt,
+							      &error)))
+			dev->app_data->domain_search_ids = g_list_append (dev->app_data->domain_search_ids, GUINT_TO_POINTER (id));
+		else
+		{
+			syslog (LOG_ERR, G_GNUC_PRETTY_FUNCTION ": Couldn't add domain search: %s\n", error->message);
+			g_clear_error (&error);
+		}
 	}
+	g_strfreev (searches);
 }
 
 /*

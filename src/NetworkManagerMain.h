@@ -42,7 +42,7 @@ typedef struct NMData
 
 	NMNamedManager			*named;
 	GList				*nameserver_ids; /* For now these are global instead of per-device */
-	guint				 domain_search_id;
+	GList				*domain_search_ids;
 
 	DBusConnection			*dbus_connection;
 	NMDbusMethodList		*nm_methods;
