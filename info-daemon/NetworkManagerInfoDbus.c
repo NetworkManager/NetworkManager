@@ -198,17 +198,12 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 	g_return_val_if_fail (message != NULL, NULL);
 
 	dbus_error_init (&error);
-	dbus_message_iter_init (message, &iter);
-	type = dbus_message_iter_get_int32 (&iter);
-
-#if 0
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type))
+	if (!dbus_message_get_args (message, &error, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_NMI_NAMESPACE, "InvalidArguments",
 							"NetworkManagerInfo::getNetworks called with invalid arguments.");
 		return (reply_message);
 	}
-#endif
 
 	if (!nmi_network_type_valid (type))
 	{
