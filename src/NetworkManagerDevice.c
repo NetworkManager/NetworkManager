@@ -948,6 +948,13 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 			nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
 
 		close (sk);
+
+		/* Orinoco cards seem to need extra time here to not screw
+		 * up the firmware, which reboots when you set the ESSID.
+		 * Unfortunately, there's no way to know when the card is back up
+		 * again.  Sigh...
+		 */
+		sleep (2);
 	}
 }
 

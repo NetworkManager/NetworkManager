@@ -1,6 +1,12 @@
 2005-03-29  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
+		- (nm_device_set_essid): Work around Orinoco cards which need
+			extra time after setting the ESSID
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
 		- Merge one more bit of Peter Jones' completion patch
 
 2005-03-29  Dan Williams <dcbw@redhat.com>
