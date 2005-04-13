@@ -4,20 +4,20 @@
 # Copyright (C) Spanish translation for NetworkManager
 # This file is distributed under the same license as the NetworkManager package.
 # Antonio Ognio <antonio@linux.org.pe>, 2004.
-# Francisco Javier F. Serrador <serrador@cvs.gnome.org>, 2004.
+# Francisco Javier F. Serrador <serrador@cvs.gnome.org>, 2004, 2005.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-03-26 18:58+0100\n"
-"PO-Revision-Date: 2005-03-26 19:02+0100\n"
-"Last-Translator: Francisco Javier F. Serrador <serrador@cvs.gnome.org>\n"
+"POT-Creation-Date: 2005-04-14 00:13+0200\n"
+"PO-Revision-Date: 2005-04-11 11:34+0200\n"
+"Last-Translator: Lucas Vieites <lucas@asixinformatica.com>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.3.1\n"
+"X-Generator: KBabel 1.10\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
 #: ../info-daemon/networks.glade.h:1
@@ -29,6 +29,7 @@ msgid "Modify Wireless Networks"
 msgstr "Modificar redes inalámbricas"
 
 #: ../info-daemon/passphrase.glade.h:1
+#: ../panel-applet/wireless-applet.glade.h:2
 msgid "*"
 msgstr "*"
 
@@ -64,7 +65,7 @@ msgstr "Tipo de clave:"
 #: ../info-daemon/passphrase.glade.h:10
 #: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:140
 #: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
-#: ../panel-applet/essid.glade.h:7
+#: ../panel-applet/essid.glade.h:7 ../panel-applet/wireless-applet.glade.h:19
 msgid "Passphrase:"
 msgstr "Contraseña:"
 
@@ -73,6 +74,7 @@ msgid "Wireless Network Key Required"
 msgstr "Clave requerida para la red inalámbrica"
 
 #: ../info-daemon/passphrase.glade.h:12
+#: ../panel-applet/wireless-applet.glade.h:22
 msgid "_Login to Network"
 msgstr "_Entrar en la red"
 
@@ -91,126 +93,27 @@ msgstr "Clave Hex:"
 msgid "You must log in to access the private network %s"
 msgstr "Debe iniciar sesión para acceder a la red privada %s"
 
-#: ../panel-applet/NMWirelessApplet.c:148
-#: ../panel-applet/NMWirelessApplet.c:166
+#: ../panel-applet/NMWirelessApplet.c:149
+#: ../panel-applet/NMWirelessApplet.c:167
 msgid "NetworkManager Applet"
 msgstr "Miniaplicación NetworkManager"
 
-#: ../panel-applet/NMWirelessApplet.c:150
-#: ../panel-applet/NMWirelessApplet.c:168
+#: ../panel-applet/NMWirelessApplet.c:151
+#: ../panel-applet/NMWirelessApplet.c:169
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
-#: ../panel-applet/NMWirelessApplet.c:151
-#: ../panel-applet/NMWirelessApplet.c:169
+#: ../panel-applet/NMWirelessApplet.c:152
+#: ../panel-applet/NMWirelessApplet.c:170
 msgid ""
 "Notification area applet for managing your network devices and connections."
-msgstr "Miniaplicación del área de notificación para administrar sus dispositivos de red y conexiones."
-
-#: ../panel-applet/NMWirelessApplet.c:385
-msgid "No network connection"
-msgstr "Sin conexión de red"
-
-#: ../panel-applet/NMWirelessApplet.c:390
-msgid "Wired network connection"
-msgstr "Conexión de red cableada"
-
-#: ../panel-applet/NMWirelessApplet.c:395
-msgid "Connecting to a wired network..."
-msgstr "Conectando a una red cableada..."
-
-#: ../panel-applet/NMWirelessApplet.c:404
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Conectando con una red inalámbrica Ad-Hoc..."
-
-#: ../panel-applet/NMWirelessApplet.c:418
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Conexión de red inalámbrica a «%s» (%d%%)"
-
-#: ../panel-applet/NMWirelessApplet.c:423
-msgid "Wireless network connection"
-msgstr "Conexión a red inalámbrica"
-
-#: ../panel-applet/NMWirelessApplet.c:428
-#, c-format
-msgid "Connecting to wireless network '%s'..."
-msgstr "Conectando con la red inalámbrica «%s»..."
-
-#: ../panel-applet/NMWirelessApplet.c:434
-msgid "NetworkManager is not running"
-msgstr "NetworkManager no se está ejecutando"
-
-#: ../panel-applet/NMWirelessApplet.c:439
-msgid "Scanning for wireless networks..."
-msgstr "Buscando redes inalámbricas..."
-
-#: ../panel-applet/NMWirelessApplet.c:804
-msgid "Other Wireless Networks..."
-msgstr "Otras redes inalámbricas..."
-
-#: ../panel-applet/NMWirelessApplet.c:825
-msgid "Create new Wireless Network..."
-msgstr "Crear una red inalámbrica nueva..."
-
-#: ../panel-applet/NMWirelessApplet.c:901
-msgid "No network devices have been found"
-msgstr "No se ha encontrado ningún dispositivo de red"
-
-#: ../panel-applet/NMWirelessApplet.c:1043
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager no se está ejecutando..."
-
-#: ../panel-applet/NMWirelessApplet.c:1113
-#: ../panel-applet/NMWirelessApplet.c:1161
-msgid "Pause Wireless Scanning"
-msgstr "Pausar la detección inalámbrica"
-
-#: ../panel-applet/NMWirelessApplet.c:1118
-msgid "Resume Wireless Scanning"
-msgstr "Continuar la detección inalámbrica"
-
-#: ../panel-applet/NMWirelessApplet.c:1128
-#: ../panel-applet/NMWirelessApplet.c:1167
-msgid "Stop All Wireless Devices"
-msgstr "Detener todos los dispositivos inalámbricos"
-
-#: ../panel-applet/NMWirelessApplet.c:1133
-msgid "Start All Wireless Devices"
-msgstr "Iniciar todos los dispositivos inalámbricos"
-
-#: ../panel-applet/NMWirelessApplet.c:1176
-msgid "Help"
-msgstr "Ayuda"
-
-#: ../panel-applet/NMWirelessApplet.c:1183
-msgid "About"
-msgstr "Acerca de"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
-msgid "Create new wireless network"
-msgstr "Crea una red inalámbricas nueva"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:230
-msgid ""
-"Enter the ESSID and security settings of the wireless network you wish to "
-"create."
 msgstr ""
-"Introduzca el ESSID y las opcione de seguridad de la red inalámbrica que "
-"quiere crear."
+"Miniaplicación del área de notificación para administrar sus dispositivos de "
+"red y conexiones."
 
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
-msgid "Custom wireless network"
-msgstr "Red inalámbricas personalizada"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:236
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
-"Introduzca el ESSID de la red inalámbrica con la que quiere conectarse."
-
-#. Reuse the above string to make the translators less angry.
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
+#: ../panel-applet/NMWirelessApplet.c:384
+#: ../panel-applet/NMWirelessApplet.c:1523
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:319
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -218,7 +121,121 @@ msgstr ""
 "La miniaplicación NetworkManager no pudo encontrar algunos archivos de "
 "recursos (No se encontró el archivo de glade)."
 
-#: ../panel-applet/essid.glade.h:1
+#: ../panel-applet/NMWirelessApplet.c:395
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr ""
+"El dispositivo de red \"%s (%s)\" no puede realizar búsquedas de redes "
+"inalámbricas."
+
+#: ../panel-applet/NMWirelessApplet.c:403
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr ""
+"El dispositivo de red \"%s (%s)\" no puede realizar detección de enlaces."
+
+#: ../panel-applet/NMWirelessApplet.c:627
+msgid "No network connection"
+msgstr "Sin conexión de red"
+
+#: ../panel-applet/NMWirelessApplet.c:632
+msgid "Wired network connection"
+msgstr "Conexión de red cableada"
+
+#: ../panel-applet/NMWirelessApplet.c:637
+msgid "Connecting to a wired network..."
+msgstr "Conectando a una red cableada..."
+
+#: ../panel-applet/NMWirelessApplet.c:646
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Conectando con una red inalámbrica Ad-Hoc..."
+
+#: ../panel-applet/NMWirelessApplet.c:660
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Conexión de red inalámbrica a «%s» (%d%%)"
+
+#: ../panel-applet/NMWirelessApplet.c:665
+msgid "Wireless network connection"
+msgstr "Conexión a red inalámbrica"
+
+#: ../panel-applet/NMWirelessApplet.c:670
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Conectando con la red inalámbrica «%s»..."
+
+#: ../panel-applet/NMWirelessApplet.c:676
+msgid "NetworkManager is not running"
+msgstr "NetworkManager no se está ejecutando"
+
+#: ../panel-applet/NMWirelessApplet.c:681
+msgid "Scanning for wireless networks..."
+msgstr "Buscando redes inalámbricas..."
+
+#: ../panel-applet/NMWirelessApplet.c:1046
+msgid "Other Wireless Networks..."
+msgstr "Otras redes inalámbricas..."
+
+#: ../panel-applet/NMWirelessApplet.c:1067
+msgid "Create new Wireless Network..."
+msgstr "Crear una red inalámbrica nueva..."
+
+#: ../panel-applet/NMWirelessApplet.c:1143
+msgid "No network devices have been found"
+msgstr "No se ha encontrado ningún dispositivo de red"
+
+#: ../panel-applet/NMWirelessApplet.c:1285
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager no se está ejecutando..."
+
+#: ../panel-applet/NMWirelessApplet.c:1355
+#: ../panel-applet/NMWirelessApplet.c:1403
+msgid "Pause Wireless Scanning"
+msgstr "Pausar la detección inalámbrica"
+
+#: ../panel-applet/NMWirelessApplet.c:1360
+msgid "Resume Wireless Scanning"
+msgstr "Continuar la detección inalámbrica"
+
+#: ../panel-applet/NMWirelessApplet.c:1370
+#: ../panel-applet/NMWirelessApplet.c:1409
+msgid "Stop All Wireless Devices"
+msgstr "Detener todos los dispositivos inalámbricos"
+
+#: ../panel-applet/NMWirelessApplet.c:1375
+msgid "Start All Wireless Devices"
+msgstr "Iniciar todos los dispositivos inalámbricos"
+
+#: ../panel-applet/NMWirelessApplet.c:1418
+msgid "Help"
+msgstr "Ayuda"
+
+#: ../panel-applet/NMWirelessApplet.c:1425
+msgid "About"
+msgstr "Acerca de"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:232
+msgid "Create new wireless network"
+msgstr "Crea una red inalámbricas nueva"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:233
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Introduzca el ESSID y las opcione de seguridad de la red inalámbrica que "
+"quiere crear."
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:238
+msgid "Custom wireless network"
+msgstr "Red inalámbricas personalizada"
+
+#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:239
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr ""
+"Introduzca el ESSID de la red inalámbrica con la que quiere conectarse."
+
+#: ../panel-applet/essid.glade.h:1 ../panel-applet/wireless-applet.glade.h:3
 msgid ""
 "128-bit passphrase (WEP)\n"
 "Ascii key (WEP)\n"
@@ -228,23 +245,23 @@ msgstr ""
 "Clave Ascii (WEP)\n"
 "Clave Hex (WEP)"
 
-#: ../panel-applet/essid.glade.h:4
+#: ../panel-applet/essid.glade.h:4 ../panel-applet/wireless-applet.glade.h:15
 msgid "C_onnect"
 msgstr "_Conectar"
 
-#: ../panel-applet/essid.glade.h:5
+#: ../panel-applet/essid.glade.h:5 ../panel-applet/wireless-applet.glade.h:16
 msgid "Connect with encryption enabled"
 msgstr "Conexión con encriptado activada"
 
-#: ../panel-applet/essid.glade.h:6
+#: ../panel-applet/essid.glade.h:6 ../panel-applet/wireless-applet.glade.h:18
 msgid "Key type:"
 msgstr "Tipo de clave:"
 
-#: ../panel-applet/essid.glade.h:8
+#: ../panel-applet/essid.glade.h:8 ../panel-applet/wireless-applet.glade.h:20
 msgid "Wireless _adapter:"
 msgstr "_Adaptador inalámbrico:"
 
-#: ../panel-applet/essid.glade.h:9
+#: ../panel-applet/essid.glade.h:9 ../panel-applet/wireless-applet.glade.h:21
 msgid "Wireless _network:"
 msgstr "_Red inalámbrica:"
 
@@ -275,40 +292,103 @@ msgid " (invalid Unicode)"
 msgstr "(Unicode inválido)"
 
 #: ../examples/python/systray/eggtrayicon.c:111
+#: ../panel-applet/eggtrayicon.c:118
 msgid "Orientation"
 msgstr "Orientación"
 
 #: ../examples/python/systray/eggtrayicon.c:112
+#: ../panel-applet/eggtrayicon.c:119
 msgid "The orientation of the tray."
 msgstr "La orientación del área de notificación."
 
-#~ msgid " "
-#~ msgstr " "
+#: ../panel-applet/NMWirelessApplet.xml.h:1
+msgid "_About..."
+msgstr "_Acerca de..."
 
-#~ msgid "There are no network devices..."
-#~ msgstr "No hay dispositivos de red..."
+#: ../panel-applet/gtkcellrendererprogress.c:243
+#: ../panel-applet/gtkcellrendererprogress.c:301
+#, c-format
+msgid "progress bar label|%d %%"
+msgstr "etiqueta de parra de progreso|%d %%"
 
-#~ msgid "No network connection is currently active..."
-#~ msgstr "Ninguna conexión de red está activa..."
+#: ../panel-applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
 
-#~ msgid "A wired network connection is currently active..."
-#~ msgstr "Una conexión de red inalámbrica es la conexión activa..."
+#: ../panel-applet/wireless-applet.glade.h:7
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Funcionalidad de red reducida</span>\n"
+"\n"
+"%s No será completamente funcional."
 
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
-#~ "this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will no longer pester you with stupid questions when you "
-#~ "connect to it."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Confirmación de entrada a la red "
-#~ "inalámbrica</span>\n"
-#~ "\n"
-#~ "Ha escogido entrar en la red inalámbrica «%s».  Si está seguro de que "
-#~ "esta red es segura , marque la casilla de abajo y NetworkManager no lo "
-#~ "volverá a molestar con este tipo de preguntas nuevamente."
+#: ../panel-applet/wireless-applet.glade.h:11
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Confirmación de entrada a la red "
+"inalámbrica</span>\n"
+"\n"
+"Ha escogido entrar en la red inalámbrica «%s».  Si está seguro de que esta "
+"red es segura , marque la casilla de abajo y NetworkManager no lo volverá a "
+"molestar con este tipo de preguntas nuevamente."
 
-#~ msgid "Always Trust this Wireless Network"
-#~ msgstr "Siempre confiar en esta red inalámbrica"
+#: ../panel-applet/wireless-applet.glade.h:14
+msgid "Always Trust this Wireless Network"
+msgstr "Siempre confiar en esta red inalámbrica"
+
+#: ../panel-applet/wireless-applet.glade.h:17
+msgid "Don't remind me again"
+msgstr "No me lo vuelvas a recordar"
+
+#: ../panel-applet/wireless-applet.glade.h:23
+msgid "_OK"
+msgstr "_Aceptar"
+
+#: ../src/nm-netlink-monitor.c:154
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"no puede crear un socket netlink para monitorizar dispositivos ethernet con "
+"cable - %s"
+
+#: ../src/nm-netlink-monitor.c:172
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"no se puede asociar al socket netlink para monitorizar dispositivos ethernet "
+"con cable - %s"
+
+#: ../src/nm-netlink-monitor.c:403
+msgid "operation took too long"
+msgstr "la operación duró demasiado"
+
+#: ../src/nm-netlink-monitor.c:500
+msgid "received data from wrong type of sender"
+msgstr "se han recibido datos con un tipo de emisor incorrecto"
+
+#: ../src/nm-netlink-monitor.c:513
+msgid "received data from unexpected sender"
+msgstr "se han recibido datos de un emisor inesperado"
+
+#: ../src/nm-netlink-monitor.c:535
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: ../src/nm-netlink-monitor.c:644
+msgid "too much data was sent over socket and some of it was lost"
+msgstr ""
+"se han enviado demasiados datos a través del socket y algunos de perdieron"
