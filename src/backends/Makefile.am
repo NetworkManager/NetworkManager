@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} -I./named-manager -I./vpn-manager -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/src -I${top_srcdir}/utils
 
 noinst_LTLIBRARIES = libnmbackend.la
 
@@ -25,6 +25,16 @@ libnmbackend_la_SOURCES +=	NetworkManagerSlackware.c
 endif
 
 libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
-libnmbackend_la_CFLAGS = $(NetworkManager_CPPFLAGS)
+libnmbackend_la_CFLAGS =	$(DBUS_CFLAGS)					\
+					$(GTHREAD_CFLAGS)				\
+					$(HAL_CFLAGS)					\
+					-g							\
+					-Wall						\
+					-DDBUS_API_SUBJECT_TO_CHANGE		\
+					-DG_DISABLE_DEPRECATED			\
+					-DBINDIR=\"$(bindir)\"			\
+					-DDATADIR=\"$(datadir)\"			\
+					-DSYSCONFDIR=\"$(sysconfdir)\"
+
 
 

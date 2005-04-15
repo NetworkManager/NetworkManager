@@ -1,5 +1,9 @@
 2005-04-15  Dan Williams  <dcbw@redhat.com>
 
+	- Fixes to pass 'make distcheck'
+
+2005-04-15  Dan Williams  <dcbw@redhat.com>
+
 	Initial VPN Support
 		- supports 'vpnc'
 		- reworks device IP configuration, backend files have changed and will need

@@ -1,6 +1,6 @@
 SUBDIRS=named-manager vpn-manager backends
 
-INCLUDES = -I${top_srcdir} -I./named-manager -I./vpn-manager -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/utils
 
 bin_PROGRAMS = NetworkManager
 
