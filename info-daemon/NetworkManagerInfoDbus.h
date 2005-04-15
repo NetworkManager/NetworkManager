@@ -43,4 +43,6 @@ void 		nmi_dbus_return_vpn_password (DBusConnection *connection, DBusMessage *me
 
 void			nmi_dbus_signal_update_network 		(DBusConnection *connection, const char *network, NMNetworkType type);
 
+void			nmi_dbus_signal_update_vpn_connection	(DBusConnection *connection, const char *name);
+
 #endif

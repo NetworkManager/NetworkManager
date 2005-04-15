@@ -37,169 +37,33 @@
 
 extern gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip);
 
-static void set_nameservers (NMDevice *dev, void *data, int len)
-{
-	int i;
-	GList *elt;
-	GError *error = NULL;
-
-	/* Reset our nameserver list */
-	for (elt = dev->app_data->nameserver_ids; elt; elt = elt->next)
-	{
-		if (!nm_named_manager_remove_nameserver_ipv4 (dev->app_data->named,
-							      GPOINTER_TO_UINT (elt->data),
-							      &error))
-		{
-			nm_warning ("Couldn't remove nameserver: %s", error->message);
-			g_clear_error (&error);
-		}
-	}
-	g_list_free (dev->app_data->nameserver_ids);
-	dev->app_data->nameserver_ids = NULL;
-	
-	for (i = 0; data && (i < len-3); i += 4)
-	{
-		char *nameserver;
-		guint id;
-		nameserver = g_strdup_printf ("%u.%u.%u.%u",
-					      ((unsigned char *)data)[i],
-					      ((unsigned char *)data)[i+1],
-					      ((unsigned char *)data)[i+2],
-					      ((unsigned char *)data)[i+3]);
-		nm_info ("Adding nameserver: %s", nameserver);
-
-		if ((id = nm_named_manager_add_nameserver_ipv4 (dev->app_data->named,
-								nameserver,
-								&error)))
-			dev->app_data->nameserver_ids = g_list_prepend (dev->app_data->nameserver_ids,
-									GUINT_TO_POINTER (id));
-		else
-		{
-			nm_warning ("Couldn't add nameserver: %s\n", error->message);
-			g_clear_error (&error);
-		}
-		g_free (nameserver);
-	}
-}
-
-static void set_domain_searches (NMDevice *dev, const char *searches_str)
-{
-	GError *error = NULL;
-	GList *elt;
-	char **searches, **s;
-
-	/* Reset our domain search list */
-	for (elt = dev->app_data->domain_search_ids; elt; elt = elt->next)
-	{
-		if (!nm_named_manager_remove_domain_search (dev->app_data->named,
-							    GPOINTER_TO_UINT (elt->data),
-							    &error))
-		{
-			nm_warning ("Couldn't remove domain search: %s\n", error->message);
-			g_clear_error (&error);
-		}
-	}
-	g_list_free (dev->app_data->domain_search_ids);
-	dev->app_data->domain_search_ids = NULL;
-
-	searches = g_strsplit (searches_str, " ", 0);
-
-	for (s = searches; *s; s++)
-	{
-		const char *search_elt = *s;
-		guint id;
-
-		nm_warning ("Adding domain search: %s\n", search_elt);
-		if ((id = nm_named_manager_add_domain_search (dev->app_data->named,
-							      search_elt,
-							      &error)))
-			dev->app_data->domain_search_ids = g_list_append (dev->app_data->domain_search_ids, GUINT_TO_POINTER (id));
-		else
-		{
-			nm_warning ("Couldn't add domain search: %s\n", error->message);
-			g_clear_error (&error);
-		}
-	}
-	g_strfreev (searches);
-}
-
 /*
- * nm_device_dhcp_configure
+ * nm_device_new_ip4_autoip_config
  *
- * Using the results of a DHCP request, configure the device.
+ * Build up an IP config with a Link Local address
  *
  */
-static void nm_device_dhcp_configure (NMDevice *dev)
-{
-	int	temp;
-
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->dhcp_iface != NULL);
-
-	/* DHCP sets up a default route for the device, we need to remove that. */
-	nm_system_device_flush_routes (dev);
-
-	/* Replace basic info */
-	nm_system_device_set_ip4_address (dev, dev->dhcp_iface->ciaddr);
-
-	if (dhcp_interface_option_present (dev->dhcp_iface, subnetMask))
-	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, subnetMask), dhcp_option_element_len (subnetMask));
-		nm_system_device_set_ip4_netmask (dev, temp);
-	}
-
-	if (dhcp_interface_option_present (dev->dhcp_iface, broadcastAddr))
-	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, broadcastAddr), dhcp_option_element_len (broadcastAddr));
-		nm_system_device_set_ip4_broadcast (dev, temp);
-	}
-
-	/* Default route */
-	if (dhcp_interface_option_present (dev->dhcp_iface, routersOnSubnet))
-	{
-		memcpy (&temp, dhcp_interface_option_payload (dev->dhcp_iface, routersOnSubnet), dhcp_option_element_len (routersOnSubnet));
-		nm_system_device_set_ip4_default_route (dev, temp);
-	}
-
-	/* Update /etc/resolv.conf */
-	if (dhcp_interface_option_present (dev->dhcp_iface, dns))
-		set_nameservers (dev, dhcp_interface_option_payload (dev->dhcp_iface, dns), dhcp_interface_option_len (dev->dhcp_iface, dns));
-
-	if (dhcp_interface_option_present (dev->dhcp_iface, domainName))
-		set_domain_searches (dev, dhcp_interface_option_payload (dev->dhcp_iface, domainName));
-}
-
-
-/*
- * nm_device_do_autoip
- *
- * Get and assign a Link Local Address.
- *
- */
-gboolean nm_device_do_autoip (NMDevice *dev)
+NMIP4Config *nm_device_new_ip4_autoip_config (NMDevice *dev)
 {
 	struct in_addr		ip;
-	gboolean			success = FALSE;
+	NMIP4Config *		config = NULL;
 
-	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (dev != NULL, NULL);
 
-	if ((success = get_autoip (dev, &ip)))
+	if (get_autoip (dev, &ip))
 	{
 		#define LINKLOCAL_BCAST		0xa9feffff
 		int	temp = ip.s_addr;
 
-		nm_system_device_set_ip4_address (dev, temp);
-		temp = ntohl (0xFFFF0000);
-		nm_system_device_set_ip4_netmask (dev, temp);
-		temp = ntohl (LINKLOCAL_BCAST);
-		nm_system_device_set_ip4_broadcast (dev, temp);
+		config = nm_ip4_config_new ();
 
-		/* Set all traffic to go through the device */
-		nm_system_flush_loopback_routes ();
-		nm_system_device_add_default_route_via_device (dev);
+		nm_ip4_config_set_address (config, (guint32)(ip.s_addr));
+		nm_ip4_config_set_netmask (config, (guint32)(ntohl (0xFFFF0000)));
+		nm_ip4_config_set_broadcast (config, (guint32)(ntohl (LINKLOCAL_BCAST)));
+		nm_ip4_config_set_gateway (config, 0);
 	}
 
-	return (success);
+	return config;
 }
 
 
@@ -209,7 +73,7 @@ gboolean nm_device_do_autoip (NMDevice *dev)
  * Start a DHCP transaction on particular device.
  *
  */
-int nm_device_dhcp_request (NMDevice *dev)
+static int nm_device_dhcp_request (NMDevice *dev)
 {
 	dhcp_client_options		opts;
 	int					err;
@@ -232,18 +96,84 @@ int nm_device_dhcp_request (NMDevice *dev)
 	 * and settings.
 	 */
 	if ((err = dhcp_init (dev->dhcp_iface)) == RET_DHCP_BOUND)
-	{
-		nm_device_dhcp_configure (dev);
-		nm_device_update_ip4_address (dev);
 		nm_device_dhcp_setup_timeouts (dev);
-	}
 	else
 	{
 		dhcp_interface_free (dev->dhcp_iface);
 		dev->dhcp_iface = NULL;
 	}
 
-	return (err);
+	return err;
+}
+
+
+/*
+ * nm_device_new_ip4_dhcp_config
+ *
+ * Get IPv4 configuration info via DHCP, running the DHCP
+ * transaction if necessary.
+ *
+ */
+NMIP4Config *nm_device_new_ip4_dhcp_config (NMDevice *dev)
+{
+	NMIP4Config *	config = NULL;
+	int			err;
+	dhcp_interface *dhcp_info = NULL;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	err = nm_device_dhcp_request (dev);
+	dhcp_info = dev->dhcp_iface;
+	if ((err == RET_DHCP_BOUND) && dev->dhcp_iface)
+	{
+		guint32	temp;
+
+		config = nm_ip4_config_new ();
+
+		nm_ip4_config_set_address (config, dhcp_info->ciaddr);
+
+		if (dhcp_interface_option_present (dhcp_info, subnetMask))
+		{
+			memcpy (&temp, dhcp_interface_option_payload (dhcp_info, subnetMask), dhcp_option_element_len (subnetMask));
+			nm_ip4_config_set_netmask (config, temp);
+		}
+
+		if (dhcp_interface_option_present (dhcp_info, broadcastAddr))
+		{
+			memcpy (&temp, dhcp_interface_option_payload (dhcp_info, broadcastAddr), dhcp_option_element_len (broadcastAddr));
+			nm_ip4_config_set_broadcast (config, temp);
+		}
+
+		/* Default route */
+		if (dhcp_interface_option_present (dhcp_info, routersOnSubnet))
+		{
+			memcpy (&temp, dhcp_interface_option_payload (dhcp_info, routersOnSubnet), dhcp_option_element_len (routersOnSubnet));
+			nm_ip4_config_set_gateway (config, temp);
+		}
+
+		/* Update /etc/resolv.conf */
+		if (dhcp_interface_option_present (dhcp_info, dns))
+		{
+			guint32 *data = dhcp_interface_option_payload (dhcp_info, dns);
+			int len = dhcp_interface_option_len (dhcp_info, dns) / sizeof (guint32);
+
+			for (temp = 0; temp < len; temp++)
+				nm_ip4_config_add_nameserver (config, data[temp]);
+		}
+
+		if (dhcp_interface_option_present (dhcp_info, domainName))
+		{
+			char **searches = g_strsplit (dhcp_interface_option_payload (dev->dhcp_iface, domainName), " ", 0);
+			char **s;
+
+			for (s = searches; *s; s++)
+				nm_ip4_config_add_domain (config, *s);
+
+			g_strfreev (searches);
+		}
+	}
+
+	return config;
 }
 
 
@@ -348,7 +278,7 @@ gboolean nm_device_dhcp_renew (gpointer user_data)
 		/* If the T1 renewal fails, then we wait around until T2
 		 * for rebind.
 		 */
-		return (FALSE);
+		return FALSE;
 	}
 	else
 	{
@@ -359,7 +289,7 @@ gboolean nm_device_dhcp_renew (gpointer user_data)
 	/* Always return false to remove ourselves, since we just
 	 * set up another timeout above.
 	 */
-	return (FALSE);
+	return FALSE;
 }
 
 
@@ -392,7 +322,7 @@ gboolean nm_device_dhcp_rebind (gpointer user_data)
 
 		dhcp_interface_free (dev->dhcp_iface);
 		dev->dhcp_iface = NULL;
-		return (FALSE);
+		return FALSE;
 	}
 	else
 	{
@@ -403,6 +333,6 @@ gboolean nm_device_dhcp_rebind (gpointer user_data)
 	/* Always return false to remove ourselves, since we just
 	 * set up another timeout above.
 	 */
-	return (FALSE);
+	return FALSE;
 }
 

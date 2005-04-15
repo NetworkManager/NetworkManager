@@ -77,4 +77,6 @@ NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
 
 char *		nm_dbus_network_status_from_data		(NMData *data);
 
+DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
+
 #endif

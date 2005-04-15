@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
 #include <errno.h>
@@ -38,7 +38,8 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerDHCP.h"
-
+#include "nm-ip4-config.h"
+#include "nm-vpn-manager.h"
 #include "nm-utils.h"
 
 /* Local static prototypes */
@@ -289,6 +290,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	dev->iface = g_strdup (iface);
 	dev->test_device = test_dev;
 	nm_device_set_udi (dev, udi);
+	dev->use_dhcp = TRUE;
 
 	/* Real hardware devices are probed for their type, test devices must have
 	 * their type specified.
@@ -378,7 +380,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		nm_device_update_hw_address (dev);
 
 		/* Grab IP config data for this device from the system configuration files */
-		nm_system_device_update_config_info (dev);
+		dev->system_config_data = nm_system_device_get_system_config (dev);
 	}
 
 	if (!g_thread_create (nm_device_worker, dev, FALSE, &error))
@@ -456,6 +458,10 @@ gboolean nm_device_unref (NMDevice *dev)
 			dev->dhcp_iface = NULL;
 		}
 
+		nm_system_device_free_system_config (dev, dev->system_config_data);
+		if (dev->ip4_config)
+			nm_ip4_config_unref (dev->ip4_config);
+
 		g_free (dev->udi);
 		g_free (dev->iface);
 		memset (dev, 0, sizeof (NMDevice));
@@ -503,7 +509,7 @@ static gpointer nm_device_worker (gpointer user_data)
 	g_main_loop_run (dev->loop);
 
 	/* Remove any DHCP timeouts that might have been running */
-	if (nm_device_config_get_use_dhcp (dev))
+	if (nm_device_get_use_dhcp (dev))
 		nm_device_dhcp_remove_timeouts (dev);
 
 	g_main_loop_unref (dev->loop);
@@ -1509,11 +1515,6 @@ void nm_device_update_hw_address (NMDevice *dev)
  */
 static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 {
-	struct ifreq	ifr;
-	NMSock		*sk;
-	int			err;
-	guint32		flags = up ? IFF_UP : ~IFF_UP;
-
 	g_return_if_fail (dev != NULL);
 
 	/* Test devices do whatever we tell them to do */
@@ -1523,34 +1524,13 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
 		return;
 	}
 
-	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
-		return;
+	nm_system_device_set_up_down (dev, up);
 
-	/* Get flags already there */
-	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
-	if (!err)
-	{
-		/* If the interface doesn't have those flags already,
-		 * set them on it.
-		 */
-		if ((ifr.ifr_flags^flags) & IFF_UP)
-		{
-			ifr.ifr_flags &= ~IFF_UP;
-			ifr.ifr_flags |= IFF_UP & flags;
-			if ((err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr)))
-				nm_warning ("nm_device_set_up_down() could not bring device %s %s.  errno = %d", nm_device_get_iface (dev), (up ? "up" : "down"), errno );
-		}
-		/* Make sure we have a valid MAC address, some cards reload firmware when they
-		 * are brought up.
-		 */
-		if (!nm_ethernet_address_is_valid((struct ether_addr *)dev->hw_addr))
-			nm_device_update_hw_address(dev);
-	}
-	else
-		nm_warning ("nm_device_set_up_down() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
-
-	nm_dev_sock_close (sk);
+	/* Make sure we have a valid MAC address, some cards reload firmware when they
+	 * are brought up.
+	 */
+	if (!nm_ethernet_address_is_valid ((struct ether_addr *)dev->hw_addr))
+		nm_device_update_hw_address (dev);
 }
 
 
@@ -2580,51 +2560,48 @@ out:
  */
 static gboolean nm_device_activation_configure_ip (NMDevice *dev, gboolean do_only_autoip)
 {
-	gboolean success = FALSE;
+	NMIP4Config *	ip4_config;
+	gboolean		success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	nm_system_delete_default_route ();
 	if (do_only_autoip)
-	{
-		success = nm_device_do_autoip (dev);
-	}
-	else if (nm_device_config_get_use_dhcp (dev))
-	{
-		int		err;
+		ip4_config = nm_device_new_ip4_autoip_config (dev);
+	else if (nm_device_get_use_dhcp (dev))
+		ip4_config = nm_device_new_ip4_dhcp_config (dev);
+	else
+		ip4_config = nm_system_device_new_ip4_system_config (dev);
 
-		err = nm_device_dhcp_request (dev);
-		if (err == RET_DHCP_BOUND)
-			success = TRUE;
-		else
+	if (ip4_config)
+	{
+		/* Set IP4Config on the device */
+		nm_device_set_ip4_config (dev, ip4_config);
+		if ((success = nm_system_device_set_from_ip4_config (dev)))
 		{
-			/* Interfaces cannot be down if they are the active interface,
-			 * otherwise we cannot use them for scanning or link detection.
-			 */
-			if (nm_device_is_wireless (dev))
-			{
-				nm_device_set_essid (dev, "");
-				nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
-			}
+			if (do_only_autoip)
+				nm_system_flush_loopback_routes ();
 
-			if (!nm_device_is_up (dev))
-				nm_device_bring_up (dev);
+			nm_device_update_ip4_address (dev);
+			nm_system_device_add_ip6_link_address (dev);
+			nm_system_restart_mdns_responder ();
 		}
 	}
 	else
 	{
-		/* Manually set up the device */
-		success = nm_system_device_setup_static_ip4_config (dev);
+		/* Interfaces cannot be down if they are the active interface,
+		 * otherwise we cannot use them for scanning or link detection.
+		 */
+		if (nm_device_is_wireless (dev))
+		{
+			nm_device_set_essid (dev, "");
+			nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+		}
+
+		if (!nm_device_is_up (dev))
+			nm_device_bring_up (dev);
 	}
 
-	if (success)
-	{
-		nm_system_device_add_ip6_link_address (dev);
-		nm_system_flush_arp_cache ();
-		nm_system_restart_mdns_responder ();
-	}
-
-	return (success);
+	return success;
 }
 
 
@@ -2792,6 +2769,8 @@ void nm_device_activation_cancel (NMDevice *dev)
  */
 gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 {
+	NMIP4Config *config;
+
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
@@ -2801,8 +2780,18 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 		return (TRUE);
 
 	/* Remove any DHCP timeouts that might have been running */
-	if (nm_device_config_get_use_dhcp (dev))
+	if (nm_device_get_use_dhcp (dev))
 		nm_device_dhcp_remove_timeouts (dev);
+
+	nm_vpn_manager_deactivate_vpn_connection (dev->app_data->vpn_manager);
+
+	/* Remove any device nameservers and domains */
+	if ((config = nm_device_get_ip4_config (dev)))
+	{
+		nm_system_remove_ip4_config_nameservers (dev->app_data->named, config);
+		nm_system_remove_ip4_config_search_domains (dev->app_data->named, config);
+		nm_device_set_ip4_config (dev, NULL);
+	}
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (dev);
@@ -3825,75 +3814,57 @@ reschedule:
 }
 
 
-/* System config data accessors */
+/* IP Configuration stuff */
 
-gboolean nm_device_config_get_use_dhcp (NMDevice *dev)
+gboolean nm_device_get_use_dhcp (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (dev->config_info.use_dhcp);
+	return dev->use_dhcp;
 }
 
-void nm_device_config_set_use_dhcp (NMDevice *dev, gboolean use_dhcp)
+void nm_device_set_use_dhcp (NMDevice *dev, gboolean use_dhcp)
 {
 	g_return_if_fail (dev != NULL);
 
-	dev->config_info.use_dhcp = use_dhcp;
+	dev->use_dhcp = use_dhcp;
 }
 
-guint32 nm_device_config_get_ip4_address (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, 0);
 
-	return (dev->config_info.ip4_address);
+NMIP4Config *nm_device_get_ip4_config (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return dev->ip4_config;
 }
 
-void nm_device_config_set_ip4_address (NMDevice *dev, guint32 addr)
+
+void nm_device_set_ip4_config (NMDevice *dev, NMIP4Config *config)
 {
+	NMIP4Config *old_config;
+
 	g_return_if_fail (dev != NULL);
 
-	dev->config_info.ip4_address = addr;
+	old_config = dev->ip4_config;
+	if (config)
+		nm_ip4_config_ref (config);
+	dev->ip4_config = config;
+	if (old_config)
+		nm_ip4_config_unref (old_config);
 }
 
-guint32 nm_device_config_get_ip4_gateway (NMDevice *dev)
+
+/*
+ * nm_device_get_system_config_data
+ *
+ * Return distro-specific system configuration data for this device.
+ *
+ */
+void *nm_device_get_system_config_data (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, 0);
+	g_return_val_if_fail (dev != NULL, NULL);
 
-	return (dev->config_info.ip4_gateway);
-}
-
-void nm_device_config_set_ip4_gateway (NMDevice *dev, guint32 gateway)
-{
-	g_return_if_fail (dev != NULL);
-
-	dev->config_info.ip4_gateway = gateway;
-}
-
-guint32 nm_device_config_get_ip4_netmask (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, 0);
-
-	return (dev->config_info.ip4_netmask);
-}
-
-void nm_device_config_set_ip4_netmask (NMDevice *dev, guint32 netmask)
-{
-	g_return_if_fail (dev != NULL);
-
-	dev->config_info.ip4_netmask = netmask;
-}
-guint32 nm_device_config_get_ip4_broadcast (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, 0);
-
-	return (dev->config_info.ip4_broadcast);
-}
-
-void nm_device_config_set_ip4_broadcast (NMDevice *dev, guint32 broadcast)
-{
-	g_return_if_fail (dev != NULL);
-
-	dev->config_info.ip4_broadcast = broadcast;
+	return dev->system_config_data;
 }
 
 
@@ -4008,3 +3979,4 @@ gboolean nm_device_is_test_device (NMDevice *dev)
 
 	return (dev->test_device);
 }
+

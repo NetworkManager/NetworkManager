@@ -32,26 +32,27 @@
 #include "nm-named-manager.h"
 
 typedef struct NMDbusMethodList NMDbusMethodList;
+typedef struct NMVPNManager NMVPNManager;
 
 
 typedef struct NMData
 {
 	GIOChannel			*sigterm_iochannel;
-	int				 sigterm_pipe[2];
+	int					 sigterm_pipe[2];
 
 	LibHalContext			*hal_ctx;
 
 	NmNetlinkMonitor		*netlink_monitor;
 
 	NMNamedManager			*named;
-	GList				*nameserver_ids; /* For now these are global instead of per-device */
-	GList				*domain_search_ids;
+	NMVPNManager			*vpn_manager;
 
 	DBusConnection			*dbus_connection;
 	NMDbusMethodList		*nm_methods;
 	NMDbusMethodList		*device_methods;
 	NMDbusMethodList		*net_methods;
 	NMDbusMethodList		*dhcp_methods;
+	NMDbusMethodList		*vpn_methods;
 
 	GMainContext			*main_context;
 	GMainLoop				*main_loop;

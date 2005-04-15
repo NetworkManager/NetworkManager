@@ -35,7 +35,6 @@
 #include "NetworkManagerInfoVPN.h"
 #include "nm-utils.h"
 
-
 /*
  * nmi_show_warning_dialog
  *
@@ -332,7 +331,7 @@ static DBusMessage *nmi_dbus_get_networks (NMIAppInfo *info, DBusMessage *messag
 
 
 /*
- * nmi_dbus_get_network
+ * nmi_dbus_get_network_properties
  *
  * Returns the properties of a specific wireless network from gconf
  *
@@ -495,6 +494,279 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 	g_free (key);
 
 	g_free (escaped_network);
+	return (reply);
+}
+
+
+/*
+ * nmi_dbus_signal_update_vpn_connection
+ *
+ * Signal NetworkManager that it needs to update info associated with a particular
+ * VPN connection.
+ *
+ */
+void nmi_dbus_signal_update_vpn_connection (DBusConnection *connection, const char *name)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (name != NULL);
+
+	if (!(message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "VPNConnectionUpdate")))
+	{
+		nm_warning ("nmi_dbus_signal_update_vpn_connection(): Not enough memory for new dbus message!");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (connection, message, NULL))
+		nm_warning ("nmi_dbus_signal_update_vpn_connection(): Could not raise the 'VPNConnectionUpdate' signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nmi_dbus_get_vpn_connections
+ *
+ * Grab a list of VPN connections from GConf and return it in the form
+ * of a string array in a dbus message.
+ *
+ */
+static DBusMessage *nmi_dbus_get_vpn_connections (NMIAppInfo *info, DBusMessage *message)
+{
+	GSList			*dir_list = NULL;
+	GSList			*element = NULL;
+	DBusError			 error;
+	DBusMessage		*reply_message = NULL;
+	DBusMessageIter	 iter;
+	DBusMessageIter	 iter_array;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+
+	/* List all VPN connections that gconf knows about */
+	element = dir_list = gconf_client_all_dirs (info->gconf_client, NMI_GCONF_VPN_CONNECTIONS_PATH, NULL);
+	if (!dir_list)
+	{
+		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoVPNConnections",
+							"There are no VPN connections stored.");
+	}
+	else
+	{
+		gboolean	value_added = FALSE;
+
+		reply_message = dbus_message_new_method_return (message);
+		dbus_message_iter_init_append (reply_message, &iter);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+
+		/* Append the essid of every allowed or ignored access point we know of 
+		 * to a string array in the dbus message.
+		 */
+		while (element)
+		{
+			char			 key[100];
+			GConfValue	*value;
+
+			g_snprintf (&key[0], 99, "%s/name", (char *)(element->data));
+			value = gconf_client_get (info->gconf_client, key, NULL);
+			if (value && gconf_value_get_string (value))
+			{
+				const gchar *essid;
+				essid = gconf_value_get_string (value);
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &essid);
+				value_added = TRUE;
+				gconf_value_free (value);
+			}
+
+			g_free (element->data);
+			element = element->next;
+		}
+		g_slist_free (dir_list);
+
+		dbus_message_iter_close_container (&iter, &iter_array);
+
+		if (!value_added)
+		{
+			dbus_message_unref (reply_message);
+			reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoVPNConnections",
+							"There are no VPN connections stored.");
+		}
+	}
+
+	return (reply_message);
+}
+
+
+/*
+ * nmi_dbus_get_vpn_connection_properties
+ *
+ * Returns the properties of a specific VPN connection from gconf
+ *
+ */
+static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage	*reply = NULL;
+	gchar		*gconf_key = NULL;
+	char			*vpn_connection = NULL;
+	GConfValue	*value;
+	DBusError		 error;
+	char			*escaped_name;
+	char			*name = NULL;
+	char 		*service_name = NULL;
+	char			*user_name = NULL;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &vpn_connection, DBUS_TYPE_INVALID)
+		|| (strlen (vpn_connection) <= 0))
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::getVPNConnectionProperties called with invalid arguments.");
+		return (reply);
+	}
+
+	escaped_name = gconf_escape_key (vpn_connection, strlen (vpn_connection));
+
+	/* User-visible name of connection */
+	gconf_key = g_strdup_printf ("%s/%s/name", NMI_GCONF_VPN_CONNECTIONS_PATH, escaped_name);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		name = g_strdup (gconf_value_get_string (value));
+		gconf_value_free (value);
+	}
+	g_free (gconf_key);
+
+	/* Service name of connection */
+	gconf_key = g_strdup_printf ("%s/%s/service_name", NMI_GCONF_VPN_CONNECTIONS_PATH, escaped_name);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		service_name = g_strdup (gconf_value_get_string (value));
+		gconf_value_free (value);
+	}
+	g_free (gconf_key);
+
+	/* User name of connection */
+	gconf_key = g_strdup_printf ("%s/%s/user_name", NMI_GCONF_VPN_CONNECTIONS_PATH, escaped_name);
+	if ((value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		user_name = g_strdup (gconf_value_get_string (value));
+		gconf_value_free (value);
+	}
+	g_free (gconf_key);
+
+	if (!name)
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionProperties could not access the name for connection '%s'", vpn_connection);
+	}
+	else if (!service_name)
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionProperties could not access the service name for connection '%s'", vpn_connection);
+	}
+	else if (!user_name)
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionProperties could not access the user name for connection '%s'", vpn_connection);
+	}
+	else
+	{
+		DBusMessageIter 		iter, array_iter;
+
+		reply = dbus_message_new_method_return (message);
+		dbus_message_iter_init_append (reply, &iter);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &service_name);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &user_name);
+	}	
+
+	g_free (user_name);
+	g_free (service_name);
+	g_free (name);
+	g_free (escaped_name);
+
+	return (reply);
+}
+
+
+/*
+ * nmi_dbus_get_vpn_connection_vpn_data
+ *
+ * Returns vpn-daemon specific properties for a particular VPN connection.
+ *
+ */
+static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage		*reply = NULL;
+	gchar			*gconf_key = NULL;
+	char				*name = NULL;
+	GConfValue		*vpn_data_value = NULL;
+	GConfValue		*value = NULL;
+	DBusError			 error;
+	char				*escaped_name;
+	DBusMessageIter 	 iter, array_iter;
+	GSList			*elt;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID)
+		|| (strlen (name) <= 0))
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::getVPNConnectionVPNData called with invalid arguments.");
+		return reply;
+	}
+
+	escaped_name = gconf_escape_key (name, strlen (name));
+
+	/* User-visible name of connection */
+	gconf_key = g_strdup_printf ("%s/%s/name", NMI_GCONF_VPN_CONNECTIONS_PATH, escaped_name);
+	if (!(value = gconf_client_get (info->gconf_client, gconf_key, NULL)))
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionVPNData could not access the name for connection '%s'", name);
+		return reply;
+	}
+	gconf_value_free (value);
+	g_free (gconf_key);
+
+	/* Grab vpn-daemon specific data */
+	gconf_key = g_strdup_printf ("%s/%s/vpn_data", NMI_GCONF_VPN_CONNECTIONS_PATH, escaped_name);
+	if (!(vpn_data_value = gconf_client_get (info->gconf_client, gconf_key, NULL))
+		|| !(vpn_data_value->type == GCONF_VALUE_LIST)
+		|| !(gconf_value_get_list_type (vpn_data_value) == GCONF_VALUE_STRING))
+	{
+		reply = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionVPNData could not access the VPN data for connection '%s'", name);
+		if (vpn_data_value)
+			gconf_value_free (vpn_data_value);
+		return reply;
+	}
+	g_free (gconf_key);
+
+	reply = dbus_message_new_method_return (message);
+	dbus_message_iter_init_append (reply, &iter);
+	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
+
+	for (elt = gconf_value_get_list (vpn_data_value); elt; elt = g_slist_next (elt))
+	{
+		const char *string = gconf_value_get_string ((GConfValue *)elt->data);
+		if (string)
+			dbus_message_iter_append_basic (&array_iter, DBUS_TYPE_STRING, &string);
+	}
+
+	dbus_message_iter_close_container (&iter, &array_iter);
+
+	gconf_value_free (vpn_data_value);
+	g_free (escaped_name);
+
 	return (reply);
 }
 
@@ -707,6 +979,12 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 		nmi_dbus_update_network_auth_method (info, message);
 	else if (strcmp ("addNetworkAddress", method) == 0)
 		nmi_dbus_add_network_address (info, message);
+	else if (strcmp ("getVPNConnections", method) == 0)
+		reply_message = nmi_dbus_get_vpn_connections (info, message);
+	else if (strcmp ("getVPNConnectionProperties", method) == 0)
+		reply_message = nmi_dbus_get_vpn_connection_properties (info, message);
+	else if (strcmp ("getVPNConnectionVPNData", method) == 0)
+		reply_message = nmi_dbus_get_vpn_connection_vpn_data (info, message);
 	else
 	{
 		reply_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "UnknownMethod",

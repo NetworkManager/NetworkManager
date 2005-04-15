@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -19,19 +19,21 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_DHCP_H
-#define NETWORK_MANAGER_DHCP_H
+#ifndef NMWA_VPN_CONNECTION_H
+#define NMWA_VPN_CONNECTION_H
 
-#include "../dhcpcd/dhcpcd.h"
+#include "NMWirelessApplet.h"
 
-void		nm_device_dhcp_cease		(NMDevice *dev);
-gboolean	nm_device_dhcp_setup_timeouts	(NMDevice *dev);
-void		nm_device_dhcp_remove_timeouts(NMDevice *dev);
-gboolean	nm_device_dhcp_renew		(gpointer user_data);
-gboolean	nm_device_dhcp_rebind		(gpointer user_data);
+VPNConnection *	nmwa_vpn_connection_new			(const char *name, const char *func);
+VPNConnection *	nmwa_vpn_connection_copy			(VPNConnection *vpn, const char *func);
+void				nmwa_vpn_connection_ref			(VPNConnection *vpn, const char *func);
+void				nmwa_vpn_connection_unref		(VPNConnection *vpn, const char *func);
 
+const char *		nmwa_vpn_connection_get_name		(VPNConnection *vpn);
 
-NMIP4Config *	nm_device_new_ip4_autoip_config	(NMDevice *dev);
-NMIP4Config *	nm_device_new_ip4_dhcp_config		(NMDevice *dev);
+const char *		nmwa_vpn_connection_get_user_name	(VPNConnection *vpn);
+void				nmwa_vpn_connection_set_user_name	(VPNConnection *vpn, const char *user_name);
+
+VPNConnection *	nmwa_vpn_connection_find_by_name	(GSList *list, const char *name);
 
 #endif

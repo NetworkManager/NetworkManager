@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
 #include <errno.h>
@@ -65,22 +65,13 @@ typedef struct NMDeviceWiredOptions
 	gboolean			 has_carrier_detect;
 } NMDeviceWiredOptions;
 
+/* General options structure */
 typedef union NMDeviceOptions
 {
 	NMDeviceWirelessOptions	wireless;
 	NMDeviceWiredOptions	wired;
 } NMDeviceOptions;
 
-
-typedef struct NMDeviceConfigInfo
-{
-	gboolean	 use_dhcp;
-	guint32	 ip4_gateway;
-	guint32	 ip4_address;
-	guint32	 ip4_netmask;
-	guint32  ip4_broadcast;
-	/* FIXME: ip6 stuff */
-} NMDeviceConfigInfo;
 
 /*
  * NetworkManager device structure
@@ -101,8 +92,12 @@ struct NMDevice
 	unsigned char			 hw_addr[ETH_ALEN];
 	NMData				*app_data;
 	NMDeviceOptions		 options;
-	NMDeviceConfigInfo		 config_info;
-	struct dhcp_interface	*dhcp_iface;
+
+	/* IP configuration info */
+	void *				 system_config_data;	/* Distro-specific config data (parsed config file, etc) */
+	gboolean				 use_dhcp;
+	NMIP4Config *			 ip4_config;			/* Config from DHCP, PPP, or system config files */
+	struct dhcp_interface *	 dhcp_iface;
 
 	GMainContext			*context;
 	GMainLoop				*loop;

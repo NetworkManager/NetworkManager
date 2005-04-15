@@ -42,6 +42,7 @@ smallicon_DATA=		\
 	nm-signal-50.png	\
 	nm-signal-75.png	\
 	nm-signal-100.png	\
+	nm-vpn-lock.png	\
 	$(NULL)
 
 EXTRA_DIST=\

@@ -1,8 +1,8 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/named -I${top_srcdir}/utils
+SUBDIRS=named-manager vpn-manager backends
+
+INCLUDES = -I${top_srcdir} -I./named-manager -I./vpn-manager -I${top_srcdir}/utils
 
 bin_PROGRAMS = NetworkManager
-
-noinst_LTLIBRARIES = libnmbackend.la
 
 NetworkManager_SOURCES =				\
 		NetworkManagerAP.c			\
@@ -28,6 +28,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDevice.c		\
 		NetworkManagerDevice.h		\
 		NetworkManagerDevicePrivate.h	\
+		nm-ip4-config.c			\
+		nm-ip4-config.h			\
 		NetworkManager.c			\
 		NetworkManagerMain.h		\
 		NetworkManagerPolicy.c		\
@@ -53,6 +55,7 @@ NetworkManager_CPPFLAGS = 			\
 	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"			\
+	-DSYSCONFDIR=\"$(sysconfdir)\"	\
 	-DARP_DEBUG
 if WITH_GCRYPT
 NetworkManager_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
@@ -63,40 +66,20 @@ if !WITH_GCRYPT
 NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-NetworkManager_LDADD = 						\
-			$(DBUS_LIBS)				\
-			$(GTHREAD_LIBS)				\
-			$(HAL_LIBS)				\
-			$(IWLIB)				\
-			libnmbackend.la				\
+NetworkManager_LDADD = 							\
+			$(DBUS_LIBS)						\
+			$(GTHREAD_LIBS)					\
+			$(HAL_LIBS)						\
+			$(IWLIB)							\
 			$(top_builddir)/utils/libnmutils.la	\
-			../dhcpcd/libdhcpc.a			\
-			../named/libnamed.la
+			../dhcpcd/libdhcpc.a				\
+			./named-manager/libnamed-manager.la	\
+			./vpn-manager/libvpn-manager.la		\
+			./backends/libnmbackend.la
+
 if WITH_GCRYPT
 NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
 endif
-
-libnmbackend_la_SOURCES =
-
-if TARGET_REDHAT
-libnmbackend_la_SOURCES += backends/NetworkManagerRedHat.c \
-		backends/shvar.c	\
-		backends/shvar.h
-endif
-if TARGET_GENTOO
-libnmbackend_la_SOURCES += backends/NetworkManagerGentoo.c
-endif
-if TARGET_DEBIAN
-libnmbackend_la_SOURCES += backends/NetworkManagerDebian.c \
-		backends/interface_parser.c	\
-		backends/interface_parser.h	
-endif
-if TARGET_SLACKWARE
-libnmbackend_la_SOURCES += backends/NetworkManagerSlackware.c
-endif
-
-libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
-libnmbackend_la_CFLAGS = $(NetworkManager_CPPFLAGS)
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

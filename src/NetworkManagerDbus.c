@@ -40,6 +40,7 @@
 #include "nm-dbus-device.h"
 #include "nm-dbus-net.h"
 #include "nm-dbus-dhcp.h"
+#include "nm-dbus-vpn.h"
 #include "nm-utils.h"
 
 
@@ -199,7 +200,6 @@ void nm_dbus_schedule_network_not_found_signal (NMData *data, const char *networ
 	g_source_attach (source, data->main_context);
 	g_source_unref (source);
 }
-
 
 
 /*-------------------------------------------------------------*/
@@ -459,7 +459,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	if (!message)
 	{
-		nm_warning ("nm_dbus_signal_wireless_network_appeared(): Not enough memory for new dbus message!");
+		nm_warning ("nm_dbus_signal_wireless_network_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
 		g_free (ap_path);
 		return;
@@ -478,7 +478,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 		dbus_message_append_args (message, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nnm_dbus_signal_wireless_network_appeared(): Could not raise the WirelessNetworkAppeared signal!");
+		nm_warning ("nm_dbus_signal_wireless_network_change(): Could not raise the WirelessNetworkAppeared signal!");
 
 	dbus_message_unref (message);
 }
@@ -952,12 +952,12 @@ gboolean nm_dbus_nmi_is_running (DBusConnection *connection)
 
 
 /*
- * nm_dbus_nmi_filter
+ * nm_dbus_signal_filter
  *
  * Respond to NetworkManagerInfo signals about changing Allowed Networks
  *
  */
-static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
+static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	NMData		*data = (NMData *)user_data;
 	const char	*object_path;
@@ -990,25 +990,52 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			handled = TRUE;
 		}
 	}
+	else if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
+		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "VPNConnectionUpdate"))
+	{
+		char	*name = NULL;
+
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID))
+		{
+			NMVPNConnection *vpn;
+
+			/* Update a single VPN connection's data */
+			nm_debug ("NetworkManagerInfo triggered update of VPN connection '%s'", name);
+			vpn = nm_dbus_vpn_add_one_connection (data->dbus_connection, name, data->vpn_manager);
+			if (vpn)
+				nm_dbus_vpn_signal_vpn_connection_update (data->dbus_connection, vpn);
+			handled = TRUE;
+		}
+	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
 		char 	*service;
 		char		*old_owner;
 		char		*new_owner;
 
-		if (    dbus_message_get_args (message, &error,
-									DBUS_TYPE_STRING, &service,
-									DBUS_TYPE_STRING, &old_owner,
-									DBUS_TYPE_STRING, &new_owner,
-									DBUS_TYPE_INVALID)
-			&& (strcmp (service, NMI_DBUS_SERVICE) == 0))
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_STRING, &old_owner,
+									DBUS_TYPE_STRING, &new_owner, DBUS_TYPE_INVALID))
 		{
-			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
-			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+			if (strcmp (service, NMI_DBUS_SERVICE) == 0)
+			{
+				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
 
-			if (!old_owner_good && new_owner_good)
-				nm_policy_schedule_allowed_ap_list_update (data);
+				if (!old_owner_good && new_owner_good) /* NMI just appeared */
+				{
+					nm_policy_schedule_allowed_ap_list_update (data);
+					nm_dbus_vpn_schedule_vpn_connections_update (data);
+				}
+			}
+			else if (nm_vpn_manager_process_name_owner_changed (data->vpn_manager, service, old_owner, new_owner) == TRUE)
+			{
+				/* Processed by the VPN manager */
+			}
 		}
+	}
+	else if (nm_vpn_manager_process_signal (data->vpn_manager, message) == TRUE)
+	{
+		/* Processed by the VPN manager */
 	}
 
 	if (dbus_error_is_set (&error))
@@ -1070,10 +1097,7 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 	path = dbus_message_get_path (message);
 
 	if (!(dev = nm_dbus_get_device_from_object_path (data, path)))
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
-						"The requested network device does not exist.");
-	}
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound", "The requested network device does not exist.");
 	else
 	{
 		char			*object_path, *escaped_object_path;
@@ -1140,6 +1164,38 @@ static DBusHandlerResult nm_dbus_dhcp_message_handler (DBusConnection *connectio
 
 
 /*
+ * nm_dbus_vpn_message_handler
+ *
+ * Dispatch messages against our NetworkManager VPNConnections object
+ *
+ */
+static DBusHandlerResult nm_dbus_vpn_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	NMData			*data = (NMData *)user_data;
+	gboolean			 handled = TRUE;
+	DBusMessage		*reply = NULL;
+	NMDbusCBData		 cb_data;
+
+	g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (data->vpn_methods != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+	cb_data.data = data;
+	cb_data.dev = NULL;
+	cb_data.opt_id = -1;
+	handled = nm_dbus_method_dispatch (data->vpn_methods, connection, message, &cb_data, &reply);
+	if (reply)
+	{
+		dbus_connection_send (connection, reply, NULL);
+		dbus_message_unref (reply);
+	}
+
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+}
+
+
+/*
  * nm_dbus_is_info_daemon_running
  *
  * Ask dbus whether or not the info daemon is providing its dbus service
@@ -1173,6 +1229,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	DBusObjectPathVTable	 nm_vtable = {NULL, &nm_dbus_nm_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	 devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	 dhcp_vtable = {NULL, &nm_dbus_dhcp_message_handler, NULL, NULL, NULL, NULL};
+	DBusObjectPathVTable	 vpn_vtable = {NULL, &nm_dbus_vpn_message_handler, NULL, NULL, NULL, NULL};
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
@@ -1192,17 +1249,19 @@ DBusConnection *nm_dbus_init (NMData *data)
 	data->device_methods = nm_dbus_device_methods_setup ();
 	data->net_methods = nm_dbus_net_methods_setup ();
 	data->dhcp_methods = nm_dbus_dhcp_methods_setup ();
+	data->vpn_methods = nm_dbus_vpn_methods_setup ();
 
 	if (    !dbus_connection_register_object_path (connection, NM_DBUS_PATH, &nm_vtable, data)
 		|| !dbus_connection_register_fallback (connection, NM_DBUS_PATH_DEVICES, &devices_vtable, data)
-		|| !dbus_connection_register_object_path (connection, NM_DBUS_PATH_DHCP, &dhcp_vtable, data))
+		|| !dbus_connection_register_object_path (connection, NM_DBUS_PATH_DHCP, &dhcp_vtable, data)
+		|| !dbus_connection_register_object_path (connection, NM_DBUS_PATH_VPN, &vpn_vtable, data))
 	{
 		nm_error ("nm_dbus_init() could not register D-BUS handlers.  Cannot continue.");
 		connection = NULL;
 		goto out;
 	}
 
-	if (!dbus_connection_add_filter (connection, nm_dbus_nmi_filter, data, NULL))
+	if (!dbus_connection_add_filter (connection, nm_dbus_signal_filter, data, NULL))
 	{
 		nm_error ("nm_dbus_init() could not attach a dbus message filter.  The NetworkManager dbus security policy may not be loaded.  Restart dbus?");
 		connection = NULL;

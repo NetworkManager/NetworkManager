@@ -1,3 +1,14 @@
+2005-04-15  Dan Williams  <dcbw@redhat.com>
+
+	Initial VPN Support
+		- supports 'vpnc'
+		- reworks device IP configuration, backend files have changed and will need
+			to be updated for all distributions.  I will try to do what I can for
+			them, but I cannot test them.
+
+	- Move named directory to src/named-manager
+	- Make backends directory self-contained
+
 2005-04-06  Dan Williams  <dcbw@redhat.com>
 
 	Add debug code for socket/file descriptor leaks.  We register every socket

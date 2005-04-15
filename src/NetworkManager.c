@@ -44,6 +44,7 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
+#include "nm-dbus-vpn.h"
 #include "nm-netlink-monitor.h"
 
 #define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
@@ -512,7 +513,9 @@ static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
+	nm_vpn_manager_dispose (data->vpn_manager);
 	g_object_unref (data->named);
+
 	nm_device_unref (data->active_device);
 
 	g_slist_foreach (data->dev_list, (GFunc) nm_device_unref, NULL);
@@ -844,10 +847,14 @@ int main( int argc, char *argv[] )
 		exit (EXIT_FAILURE);
 	}
 
-	/* If NMI is running, grab allowed wireless network lists from it ASAP
-	 */
+	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
+
+	/* If NMI is running, grab allowed wireless network lists from it ASAP */
 	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
+	{
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
+		nm_dbus_vpn_schedule_vpn_connections_update (nm_data);
+	}
 
 	/* Right before we init hal, we have to make sure our mainloop
 	 * integration function knows about our GMainContext.  HAL doesn't give
@@ -865,7 +872,7 @@ int main( int argc, char *argv[] )
 
 	nm_hal_mainloop_integration (ctx, nm_data->dbus_connection); 
 
-        libhal_ctx_set_dbus_connection (ctx, nm_data->dbus_connection);
+	libhal_ctx_set_dbus_connection (ctx, nm_data->dbus_connection);
 
 	dbus_error_init (&dbus_error);
 	if(!libhal_ctx_init (ctx, &dbus_error)) {
@@ -929,7 +936,6 @@ int main( int argc, char *argv[] )
 
 	/* Cleanup */
 	libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error);
-
 	if (dbus_error_is_set (&dbus_error)) {
 		nm_warning ("libhal shutdown failed - %s", 
 			    dbus_error.message);

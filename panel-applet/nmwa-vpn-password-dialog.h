@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -19,19 +19,11 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_DHCP_H
-#define NETWORK_MANAGER_DHCP_H
+#ifndef NMWA_VPN_PASSWORD_DIALOG_H
+#define NMWA_VPN_PASSWORD_DIALOG_H
 
-#include "../dhcpcd/dhcpcd.h"
+#include "NMWirelessApplet.h"
 
-void		nm_device_dhcp_cease		(NMDevice *dev);
-gboolean	nm_device_dhcp_setup_timeouts	(NMDevice *dev);
-void		nm_device_dhcp_remove_timeouts(NMDevice *dev);
-gboolean	nm_device_dhcp_renew		(gpointer user_data);
-gboolean	nm_device_dhcp_rebind		(gpointer user_data);
-
-
-NMIP4Config *	nm_device_new_ip4_autoip_config	(NMDevice *dev);
-NMIP4Config *	nm_device_new_ip4_dhcp_config		(NMDevice *dev);
+char 	*nmwa_vpn_request_password			(NMWirelessApplet *applet, const char *vpn, const char *username, gboolean retry);
 
 #endif

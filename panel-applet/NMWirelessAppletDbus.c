@@ -29,6 +29,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include "NMWirelessAppletDbus.h"
 #include "NMWirelessApplet.h"
+#include "nmwa-vpn-connection.h"
 
 #include "nm-utils.h"
 
@@ -117,6 +118,10 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 		else if (!strcmp (error.name, NM_DBUS_NO_ACTIVE_DEVICE_ERROR))
 			ret = RETURN_SUCCESS;
 		else if (!strcmp (error.name, NM_DBUS_NO_NETWORKS_ERROR))
+			ret = RETURN_SUCCESS;
+		else if (!strcmp (error.name, NM_DBUS_NO_ACTIVE_VPN_CONNECTION))
+			ret = RETURN_SUCCESS;
+		else if (!strcmp (error.name, NM_DBUS_NO_VPN_CONNECTIONS))
 			ret = RETURN_SUCCESS;
 
 		if ((ret != RETURN_SUCCESS) && (ret != RETURN_NO_NM))
@@ -255,6 +260,30 @@ static char * nmwa_dbus_get_active_network (NMWirelessApplet *applet, char *dev_
 	}
 
 	return (network);
+}
+
+
+/*
+ * nmwa_dbus_get_active_vpn_connection
+ *
+ * Return the name of the currently active VPN connection.
+ *
+ */
+static char * nmwa_dbus_get_active_vpn_connection (NMWirelessApplet *applet)
+{
+	char *name = NULL;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH_VPN, "getActiveVPNConnection", DBUS_TYPE_STRING, (void **)(&name), NULL))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (name);
 }
 
 
@@ -581,6 +610,35 @@ static char **nmwa_dbus_get_device_networks (NMWirelessApplet *applet, char *pat
 
 
 /*
+ * nmwa_dbus_get_vpn_connections
+ *
+ * Returns an array of wireless networks that the specified device knows about.
+ *
+ */
+static char **nmwa_dbus_get_vpn_connections (NMWirelessApplet *applet, int *num_items)
+{
+	char **array = NULL;
+	int	  items;
+
+	switch (nmwa_dbus_call_nm_method (applet->connection, NM_DBUS_PATH_VPN, "getVPNConnections", NM_DBUS_TYPE_STRING_ARRAY, (void **)(&array), &items))
+	{
+		case (RETURN_NO_NM):
+			applet->applet_state = APPLET_STATE_NO_NM;
+			break;
+
+		case (RETURN_SUCCESS):
+			*num_items = items;
+			break;
+
+		default:
+			break;			
+	}
+
+	return (array);
+}
+
+
+/*
  * nmwa_dbus_get_hal_device_string_property
  *
  * Get a string property from a device
@@ -701,6 +759,54 @@ void nmwa_dbus_set_device (DBusConnection *connection, const NetworkDevice *dev,
 	}
 	else
 		fprintf (stderr, "nm_dbus_set_device(): Couldn't allocate the dbus message\n");
+}
+
+
+/*
+ * nmwa_dbus_vpn_activate_connection
+ *
+ * Tell NetworkManager to activate a particular VPN connection.
+ *
+ */
+void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *name, const char *password)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (name != NULL);
+	g_return_if_fail (password != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "activateVPNConnection")))
+	{
+		fprintf (stderr, "Activating VPN connection '%s'.\n", name);
+
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &password, DBUS_TYPE_INVALID);
+		dbus_connection_send (connection, message, NULL);
+	}
+	else
+		fprintf (stderr, "nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message\n");
+}
+
+
+/*
+ * nmwa_dbus_deactivate_vpn_connection
+ *
+ * Tell NetworkManager to deactivate the currently active VPN connection.
+ *
+ */
+void nmwa_dbus_vpn_deactivate_connection (DBusConnection *connection)
+{
+	DBusMessage	*message;
+
+	g_return_if_fail (connection != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "deactivateVPNConnection")))
+	{
+		fprintf (stderr, "Deactivating the current VPN connection.\n");
+		dbus_connection_send (connection, message, NULL);
+	}
+	else
+		fprintf (stderr, "nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message\n");
 }
 
 
@@ -1149,6 +1255,17 @@ void nmwa_free_gui_data_model (NMWirelessApplet *applet)
 		g_free (applet->gui_nm_status);
 		applet->gui_nm_status = NULL;
 	}
+
+	if (applet->gui_active_vpn)
+		nmwa_vpn_connection_unref (applet->gui_active_vpn, __FUNCTION__);
+	applet->gui_active_vpn = NULL;
+
+	if (applet->gui_vpn_connections)
+	{
+		g_slist_foreach (applet->gui_vpn_connections, (GFunc) nmwa_vpn_connection_unref, (gpointer)__FUNCTION__);
+		g_slist_free (applet->gui_vpn_connections);
+		applet->gui_vpn_connections = NULL;
+	}
 }
 
 
@@ -1171,6 +1288,17 @@ void nmwa_free_dbus_data_model (NMWirelessApplet *applet)
 	{
 		g_free (applet->dbus_nm_status);
 		applet->dbus_nm_status = NULL;
+	}
+
+	if (applet->dbus_active_vpn)
+		nmwa_vpn_connection_unref (applet->dbus_active_vpn, __FUNCTION__);
+	applet->dbus_active_vpn = NULL;
+
+	if (applet->dbus_vpn_connections)
+	{
+		g_slist_foreach (applet->dbus_vpn_connections, (GFunc) nmwa_vpn_connection_unref, (gpointer)__FUNCTION__);
+		g_slist_free (applet->dbus_vpn_connections);
+		applet->dbus_vpn_connections = NULL;
 	}
 }
 
@@ -1214,6 +1342,23 @@ void nmwa_copy_data_model (NMWirelessApplet *applet)
 	/* active_device is just a pointer into the device list, no need to deep-copy it */
 	applet->gui_active_device = act_dev;
 	applet->gui_nm_status = g_strdup (applet->dbus_nm_status);
+
+	/* Deep-copy VPN connections to GUI data model */
+	for (elt = applet->dbus_vpn_connections; elt; elt = g_slist_next (elt))
+	{
+		VPNConnection	*src_vpn = elt->data;
+		VPNConnection	*new_vpn = nmwa_vpn_connection_copy (src_vpn, __FUNCTION__);
+
+		if (new_vpn)
+		{
+			applet->gui_vpn_connections = g_slist_append (applet->gui_vpn_connections, new_vpn);
+			if (applet->dbus_active_vpn == src_vpn)
+			{
+				nmwa_vpn_connection_ref (new_vpn, __FUNCTION__);
+				applet->gui_active_vpn = new_vpn;
+			}
+		}
+	}
 }
 
 
@@ -1470,6 +1615,17 @@ sort_devices_function (gconstpointer a, gconstpointer b)
 }
 
 
+static void nmwa_dbus_lock_and_copy_data_model (NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	/* Now copy the data over to the GUI side */
+	g_mutex_lock (applet->data_mutex);
+	nmwa_copy_data_model (applet);
+	g_mutex_unlock (applet->data_mutex);
+}
+
+
 /*
  * nmwa_dbus_update_devices
  *
@@ -1484,6 +1640,8 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	gboolean		  adhoc = FALSE;
 	char			 *nm_act_dev;
 	char			 *nm_status;
+	gboolean		  scanning_enabled;
+	gboolean		  wireless_enabled;
 
 	g_return_if_fail (applet->data_mutex != NULL);
 
@@ -1560,15 +1718,124 @@ static void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	/* Notify user of issues with certain cards/drivers */
 	nmwa_dbus_check_drivers (applet);
 
-	/* Now copy the data over to the GUI side */
-	g_mutex_lock (applet->data_mutex);
-
-	nmwa_copy_data_model (applet);
 	applet->is_adhoc = adhoc;
 	applet->scanning_enabled = nmwa_dbus_get_scanning_enabled (applet);
 	applet->wireless_enabled = nmwa_dbus_get_wireless_enabled (applet);
+}
 
-	g_mutex_unlock (applet->data_mutex);
+
+/*
+ * nmwa_dbus_update_one_vpn_connection
+ *
+ * Grab properties of one VPN connection from NetworkManager.
+ *
+ */
+void nmwa_dbus_update_one_vpn_connection (DBusConnection *connection, const char *name, NMWirelessApplet *applet, gboolean is_active)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	DBusMessage		*reply;
+	const char		*user_name = NULL;
+	DBusMessageIter 	 iter;
+	
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (name != NULL);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnectionProperties")))
+	{
+		nm_warning ("Couldn't allocate the dbus message");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+
+	/* Send message and get properties back from NetworkManager */
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nmwa_dbus_update_one_vpn_connection(): %s raised %s", error.name, error.message);
+		goto out;
+	}
+	else if (!reply)
+		goto out;
+	else
+	{
+		VPNConnection		*vpn;
+
+		dbus_message_iter_init (reply, &iter);
+
+		/* Skip name, we already know it */
+		dbus_message_iter_next (&iter);
+
+		if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		{
+			nm_warning ("Reply had wrong arguments: "
+				    "(expected %u, got %u)\n", DBUS_TYPE_STRING,
+				    dbus_message_iter_get_arg_type (&iter));
+			goto out;
+		}
+		dbus_message_iter_get_basic (&iter, &user_name);
+
+		if (!(vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, name)))
+		{
+			vpn = nmwa_vpn_connection_new (name, __FUNCTION__);
+			nmwa_vpn_connection_set_user_name (vpn, user_name);
+			applet->dbus_vpn_connections = g_slist_append (applet->dbus_vpn_connections, vpn);
+		}
+		else
+			nmwa_vpn_connection_set_user_name (vpn, user_name);
+
+		if (is_active)
+		{
+			nmwa_vpn_connection_ref (vpn, __FUNCTION__);
+			applet->dbus_active_vpn = vpn;
+		}
+	}
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+}
+
+
+/*
+ * nmwa_dbus_update_vpn_connections
+ *
+ * Grab a list of all VPN connections from NetworkManager.
+ *
+ */
+static void nmwa_dbus_update_vpn_connections (NMWirelessApplet *applet)
+{
+	char **names;
+	int	  num_items = 0;
+	char  *active;
+
+	g_return_if_fail (applet != NULL);
+
+	g_slist_foreach (applet->dbus_vpn_connections, (GFunc) nmwa_vpn_connection_unref, (gpointer)__FUNCTION__);
+	g_slist_free (applet->dbus_vpn_connections);
+	applet->dbus_vpn_connections = NULL;
+
+	if (applet->dbus_active_vpn)
+		nmwa_vpn_connection_unref (applet->dbus_active_vpn, __FUNCTION__);
+	applet->dbus_active_vpn = NULL;
+
+	active = nmwa_dbus_get_active_vpn_connection (applet);
+	if ((names = nmwa_dbus_get_vpn_connections (applet, &num_items)))
+	{
+		int i;
+
+		for (i = 0; i < num_items; i++)
+		{
+			gboolean is_active = active ? (strcmp (active, names[i]) == 0) : FALSE;
+			nmwa_dbus_update_one_vpn_connection (applet->connection, names[i], applet, is_active);
+		}
+		g_strfreev (names);
+	}
+	g_free (active);
 }
 
 
@@ -1594,11 +1861,11 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		char		*old_owner;
 		char		*new_owner;
 
-		if (    dbus_message_get_args (message, &error,
-									DBUS_TYPE_STRING, &service,
-									DBUS_TYPE_STRING, &old_owner,
-									DBUS_TYPE_STRING, &new_owner,
-									DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (message, &error,
+								DBUS_TYPE_STRING, &service,
+								DBUS_TYPE_STRING, &old_owner,
+								DBUS_TYPE_STRING, &new_owner,
+								DBUS_TYPE_INVALID))
 		{
 			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
 			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
@@ -1621,6 +1888,16 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkUpdate"))
 		nmwa_dbus_device_update_one_network (applet, message);
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionUpdate"))
+	{
+		char *name;
+
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID))
+		{
+			nmwa_dbus_update_one_vpn_connection (applet->connection, name, applet, FALSE);
+			nmwa_dbus_lock_and_copy_data_model (applet);
+		}
+	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating")
@@ -1628,6 +1905,29 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DevicesChanged"))
 	{
 		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_update_vpn_connections (applet);
+		nmwa_dbus_lock_and_copy_data_model (applet);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionChange"))
+	{
+		nmwa_dbus_update_vpn_connections (applet);
+		nmwa_dbus_lock_and_copy_data_model (applet);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginFailed"))
+	{
+		char *vpn_name;
+		char *error_msg;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
+			nmwa_schedule_vpn_login_failure_dialog (applet, vpn_name, error_msg);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginBanner"))
+	{
+		char *vpn_name;
+		char *banner;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &banner, DBUS_TYPE_INVALID))
+			nmwa_schedule_vpn_login_banner_dialog (applet, vpn_name, banner);
 	}
 	else
 		handled = FALSE;
@@ -1706,6 +2006,15 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
 
+	dbus_bus_add_match(connection,
+				"type='signal',"
+				"interface='" NM_DBUS_INTERFACE_VPN "',"
+				"path='" NM_DBUS_PATH_VPN "',"
+				"sender='" NM_DBUS_SERVICE "'",
+				&error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+
 	return (connection);
 }
 
@@ -1731,6 +2040,8 @@ static gboolean nmwa_dbus_timeout_worker (gpointer user_data)
 		{
 			applet->applet_state = APPLET_STATE_NO_CONNECTION;
 			nmwa_dbus_update_devices (applet);
+			nmwa_dbus_update_vpn_connections (applet);
+			nmwa_dbus_lock_and_copy_data_model (applet);
 		}
 	}
 
@@ -1776,6 +2087,8 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	{
 		applet->applet_state = APPLET_STATE_NO_CONNECTION;
 		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_update_vpn_connections (applet);
+		nmwa_dbus_lock_and_copy_data_model (applet);
 	}
 	else
 		applet->applet_state = APPLET_STATE_NO_NM;

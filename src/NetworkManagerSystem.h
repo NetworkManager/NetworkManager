@@ -32,10 +32,16 @@
 
 void			nm_system_init (void);
 gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
+
 void			nm_system_device_flush_routes				(NMDevice *dev);
+void			nm_system_device_flush_routes_with_iface	(const char *iface);
+
 void			nm_system_device_add_default_route_via_device(NMDevice *dev);
+void			nm_system_device_add_default_route_via_device_with_iface(const char *iface);
+
 void			nm_system_device_flush_addresses			(NMDevice *dev);
-void			nm_system_device_update_config_info		(NMDevice *dev);
+void			nm_system_device_flush_addresses_with_iface	(const char *iface);
+
 gboolean		nm_system_device_setup_static_ip4_config	(NMDevice *dev);
 void			nm_system_enable_loopback				(void);
 void			nm_system_flush_loopback_routes			(void);
@@ -47,11 +53,22 @@ void			nm_system_load_device_modules				(void);
 void			nm_system_restart_mdns_responder			(void);
 void			nm_system_device_add_ip6_link_address 		(NMDevice *dev);
 
-/* Prototyps for system-layer network functions (ie setting IP address, etc) */
-gboolean		nm_system_device_set_ip4_address			(NMDevice *dev, int ip4_address);
-gboolean		nm_system_device_set_ip4_netmask			(NMDevice *dev, int ip4_netmask);
-gboolean		nm_system_device_set_ip4_broadcast			(NMDevice *dev, int ip4_broadcast);
-gboolean		nm_system_device_set_ip4_default_route		(NMDevice *dev, int ip4_def_route);
+void *		nm_system_device_get_system_config			(NMDevice *dev);
+void			nm_system_device_free_system_config		(NMDevice *dev, void *system_config_data);
+NMIP4Config *	nm_system_device_new_ip4_system_config		(NMDevice *dev);
+
+gboolean		nm_system_device_get_use_dhcp				(NMDevice *dev);
+
+/* Prototypes for system-layer network functions (ie setting IP address, etc) */
+void			nm_system_remove_ip4_config_nameservers		(NMNamedManager *named, NMIP4Config *config);
+void			nm_system_remove_ip4_config_search_domains	(NMNamedManager *named, NMIP4Config *config);
+
+gboolean		nm_system_device_set_from_ip4_config		(NMDevice *dev);
+gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config);
+
+gboolean		nm_system_device_set_up_down				(NMDevice *dev, gboolean up);
+gboolean		nm_system_device_set_up_down_with_iface		(NMDevice *dev, const char *iface, gboolean up);
+
 gboolean		nm_system_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 
 #endif

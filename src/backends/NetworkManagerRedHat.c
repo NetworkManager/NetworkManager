@@ -39,10 +39,6 @@ void nm_system_init (void)
 {
 	/* Kill any dhclients lying around */
 	nm_system_kill_all_dhcp_daemons ();
-
-	/* Stop nifd since we respawn mDNSResponder ourselves */
-	if (nm_spawn_process ("/etc/init.d/nifd status") != 0)
-		nm_spawn_process ("/etc/init.d/nifd stop");
 }
 
 
@@ -54,16 +50,30 @@ void nm_system_init (void)
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	char	*buf;
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
 	if (nm_device_is_test_device (dev))
 		return;
 
+	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
+}
+
+
+/*
+ * nm_system_device_flush_routes_with_iface
+ *
+ * Flush all routes associated with a network device
+ *
+ */
+void nm_system_device_flush_routes_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
 	/* Remove routing table entries */
-	buf = g_strdup_printf ("/sbin/ip route flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip route flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -72,21 +82,35 @@ void nm_system_device_flush_routes (NMDevice *dev)
 /*
  * nm_system_device_add_default_route_via_device
  *
- * Flush all routes associated with a network device
+ * Add default route to the given device
  *
  */
 void nm_system_device_add_default_route_via_device (NMDevice *dev)
 {
-	char	*buf;
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
 	if (nm_device_is_test_device (dev))
 		return;
 
-	/* Remove routing table entries */
-	buf = g_strdup_printf ("/sbin/ip route add default dev %s", nm_device_get_iface (dev));
+	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
+}
+
+
+/*
+ * nm_system_device_add_default_route_via_device_with_iface
+ *
+ * Add default route to the given device
+ *
+ */
+void nm_system_device_add_default_route_via_device_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
+	/* Add default gateway */
+	buf = g_strdup_printf ("/sbin/ip route add default dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -113,82 +137,36 @@ gboolean nm_system_device_has_active_routes (NMDevice *dev)
  */
 void nm_system_device_flush_addresses (NMDevice *dev)
 {
-	char	*buf;
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
 	if (nm_device_is_test_device (dev))
 		return;
 
+	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
+}
+
+
+/*
+ * nm_system_device_flush_addresses_with_iface
+ *
+ * Flush all network addresses associated with a network device
+ *
+ */
+void nm_system_device_flush_addresses_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
 	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf ("/sbin/ip address flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip address flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
 
 
-/*
- * nm_system_device_setup_static_ip4_config
- *
- * Set up the device with a particular IPv4 address/netmask/gateway.
- *
- * Returns:	TRUE	on success
- *			FALSE on error
- *
- */
-gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
-{
-#define IPBITS	(sizeof (guint32) * 8)
-	struct in_addr	 temp_addr;
-	struct in_addr  temp_addr2;
-	char			*s_tmp;
-	char			*s_tmp2;
-	int			 i;
-	guint32		 addr;
-	guint32		 netmask;
-	guint32		 prefix = IPBITS;	/* initialize with # bits in ip4 address */
-	guint32		 broadcast;
-	char			*buf;
-	int			 err;
-	const char	*iface;
-
-	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
-
-	addr = nm_device_config_get_ip4_address (dev);
-	netmask = nm_device_config_get_ip4_netmask (dev);
-	iface = nm_device_get_iface (dev);
-	broadcast = nm_device_config_get_ip4_broadcast (dev);
-
-	/* Calculate the prefix (# bits stripped off by the netmask) */
-	for (i = 0; i < IPBITS; i++)
-	{
-		if (!(ntohl (netmask) & ((2 << i) - 1)))
-			prefix--;
-	}
-
-	/* Calculate the broadcast address if the user didn't specify one */
-	if (!broadcast)
-		broadcast = ((addr & (int)netmask) | ~(int)netmask);
-
-	/* FIXME: what if some other device is already using our IP address? */
-
-	/* Set our IP address */
-	temp_addr.s_addr = addr;
-	temp_addr2.s_addr = broadcast;
-	s_tmp = g_strdup (inet_ntoa (temp_addr));
-	s_tmp2 = g_strdup (inet_ntoa (temp_addr2));
-	buf = g_strdup_printf ("/sbin/ip addr add %s/%d brd %s dev %s label %s", s_tmp, prefix, s_tmp2, iface, iface);
-	g_free (s_tmp);
-	g_free (s_tmp2);
-	if ((err = nm_spawn_process (buf)))
-	{
-		nm_warning ("Error: could not set network configuration for device '%s' using command:\n     '%s'", iface, buf);
-		goto error;
-	}
-	g_free (buf);
-
+#if 0
 	/* Alert other computers of our new address */
 	temp_addr.s_addr = addr;
 	buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
@@ -198,24 +176,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
 	nm_spawn_process (buf);
 	g_free (buf);
-
-	/* Set the default route to be this device's gateway */
-	temp_addr.s_addr = nm_device_config_get_ip4_gateway (dev);
-	buf = g_strdup_printf ("/sbin/ip route replace default via %s dev %s", inet_ntoa (temp_addr), iface);
-	if ((err = nm_spawn_process (buf)))
-	{
-		nm_warning ("Error: could not set default route using command\n     '%s'", buf);
-		goto error;
-	}
-	g_free (buf);
-	return (TRUE);
-
-error:
-	g_free (buf);
-	nm_system_device_flush_addresses (dev);
-	nm_system_device_flush_routes (dev);
-	return (FALSE);
-}
+#endif
 
 
 /*
@@ -294,7 +255,7 @@ void nm_system_update_dns (void)
 	if (nm_spawn_process ("/etc/init.d/nscd status") != 0)
 		nm_spawn_process ("/etc/init.d/nscd restart");
 
-	nm_warning ("Clearing nscd hosts cache.");
+	nm_info ("Clearing nscd hosts cache.");
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
 #else
 	nm_spawn_process ("/usr/bin/killall -q nscd");
@@ -368,47 +329,44 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 }
 
 
+typedef struct RHSystemConfigData
+{
+	NMIP4Config *	config;
+	gboolean		use_dhcp;
+} RHSystemConfigData;
+
 /*
- * nm_system_device_update_config_info
+ * nm_system_device_get_system_config
  *
- * Retrieve any relevant configuration info for a particular device
- * from the system network configuration information.  Clear out existing
- * info before setting stuff too.
+ * Read in the config file for a device.
  *
  */
-void nm_system_device_update_config_info (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
-	char		*cfg_file_path = NULL;
-	shvarFile *file;
-	char		*buf = NULL;
-	gboolean	 use_dhcp = TRUE;
-	guint32	 ip4_address = 0;
-	guint32	 ip4_netmask = 0;
-	guint32	 ip4_gateway = 0;
-	guint32	 ip4_broadcast = 0;
+	char *				cfg_file_path = NULL;
+	shvarFile *			file;
+	char *				buf = NULL;
+	RHSystemConfigData *	sys_data = NULL;
+	gboolean				error = FALSE;
 
-	g_return_if_fail (dev != NULL);
-
-	/* We use DHCP on an interface unless told not to */
-	nm_device_config_set_use_dhcp (dev, TRUE);
-	nm_device_config_set_ip4_address (dev, 0);
-	nm_device_config_set_ip4_gateway (dev, 0);
-	nm_device_config_set_ip4_netmask (dev, 0);
-	nm_device_config_set_ip4_broadcast (dev, 0);
+	g_return_val_if_fail (dev != NULL, NULL);
 
 	/* Red Hat/Fedora Core systems store this information in
 	 * /etc/sysconfig/network-scripts/ifcfg-* where * is the interface
 	 * name.
 	 */
 
+	sys_data = g_malloc0 (sizeof (RHSystemConfigData));
+	sys_data->use_dhcp = TRUE;
+
 	cfg_file_path = g_strdup_printf ("/etc/sysconfig/network-scripts/ifcfg-%s", nm_device_get_iface (dev));
 	if (!cfg_file_path)
-		return;
+		return sys_data;
 
 	if (!(file = svNewFile (cfg_file_path)))
 	{
 		g_free (cfg_file_path);
-		return;
+		return sys_data;
 	}
 	g_free (cfg_file_path);
 
@@ -420,82 +378,148 @@ void nm_system_device_update_config_info (NMDevice *dev)
 		goto out;
 	}
 
-	buf = svGetValue (file, "BOOTPROTO");
-	if (buf)
+	if ((buf = svGetValue (file, "BOOTPROTO")))
 	{
-		if (strcmp (buf, "dhcp"))
-			use_dhcp = FALSE;
+		if (strcasecmp (buf, "dhcp"))
+			sys_data->use_dhcp = FALSE;
 		free (buf);
 	}
 
-	buf = svGetValue (file, "IPADDR");
-	if (buf)
-	{
-		ip4_address = inet_addr (buf);
-		free (buf);
-	}
+	sys_data->config = nm_ip4_config_new ();
 
-	buf = svGetValue (file, "GATEWAY");
-	if (buf)
+	if (!(sys_data->use_dhcp))
 	{
-		ip4_gateway = inet_addr (buf);
-		free (buf);
-	}
-
-	buf = svGetValue (file, "NETMASK");
-	if (buf)
-	{
-		ip4_netmask = inet_addr (buf);
-		free (buf);
-	}
-	else
-	{
-		/* Make a default netmask if we have an IP address */
-		if (ip4_address)
+		if ((buf = svGetValue (file, "IPADDR")))
 		{
-			if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 127)
-				ip4_netmask = htonl (0xFF000000);
-			else if (((ntohl (ip4_address) & 0xFF000000) >> 24) <= 191)
-				ip4_netmask = htonl (0xFFFF0000);
+			nm_ip4_config_set_address (sys_data->config, inet_addr (buf));
+			free (buf);
+		}
+		else
+		{
+			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
+						"but no IP address specified.  Will use DHCP instead.", nm_device_get_iface (dev));
+			error = TRUE;
+			goto out;
+		}
+
+		if ((buf = svGetValue (file, "GATEWAY")))
+		{
+			nm_ip4_config_set_gateway (sys_data->config, inet_addr (buf));
+			free (buf);
+		}
+		else
+		{
+			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
+						"but no gateway specified.  Will use DHCP instead.", nm_device_get_iface (dev));
+			error = TRUE;
+			goto out;
+		}
+
+		if ((buf = svGetValue (file, "NETMASK")))
+		{
+			nm_ip4_config_set_netmask (sys_data->config, inet_addr (buf));
+			free (buf);
+		}
+		else
+		{
+			guint32	addr = nm_ip4_config_get_address (sys_data->config);
+
+			/* Make a default netmask if we have an IP address */
+			if (((ntohl (addr) & 0xFF000000) >> 24) <= 127)
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFF000000));
+			else if (((ntohl (addr) & 0xFF000000) >> 24) <= 191)
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFF0000));
 			else
-				ip4_netmask = htonl (0xFFFFFF00);
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFFFF00));
+		}
+
+		if ((buf = svGetValue (file, "BROADCAST")))
+		{
+			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (buf));
+			free (buf);
+		}
+		else
+		{
+			guint32 broadcast = ((nm_ip4_config_get_address (sys_data->config) & nm_ip4_config_get_netmask (sys_data->config))
+									| ~nm_ip4_config_get_netmask (sys_data->config));
+			nm_ip4_config_set_broadcast (sys_data->config, broadcast);
 		}
 	}
 
-	buf = svGetValue (file, "BROADCAST");
-	if (buf)
-	{
-		ip4_broadcast = inet_addr (buf);
-		free (buf);
-	}
-
-	if (!use_dhcp && (!ip4_address || !ip4_gateway || !ip4_netmask))
-	{
-		nm_warning ("Error: network configuration for device '%s' was invalid (non-DCHP configuration,"
-						" but no address/gateway specificed).  Will use DHCP instead.\n", nm_device_get_iface (dev));
-		use_dhcp = TRUE;
-	}
-
-	/* If successful, set values on the device */
-	nm_device_config_set_use_dhcp (dev, use_dhcp);
-	if (ip4_address)
-		nm_device_config_set_ip4_address (dev, ip4_address);
-	if (ip4_gateway)
-		nm_device_config_set_ip4_gateway (dev, ip4_gateway);
-	if (ip4_netmask)
-		nm_device_config_set_ip4_netmask (dev, ip4_netmask);
-	if (ip4_broadcast)
-		nm_device_config_set_ip4_broadcast (dev, ip4_broadcast);
-
 #if 0
 	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
-	nm_debug ("    DHCP=%d\n", use_dhcp);
-	nm_debug ("    ADDR=%d\n", ip4_address);
-	nm_debug ("    GW=%d\n", ip4_gateway);
-	nm_debug ("    NM=%d\n", ip4_netmask);
+	nm_debug ("    DHCP=%d\n", sys_data->use_dhcp);
+	nm_debug ("    ADDR=%d\n", nm_ip4_config_get_address (sys_data->config));
+	nm_debug ("    GW=%d\n", nm_ip4_config_get_gateway (sys_data->config));
+	nm_debug ("    NM=%d\n", nm_ip4_config_get_netmask (sys_data->config));
 	nm_debug ("---------------------\n");
 #endif
 
 out:
 	svCloseFile (file);
+
+	if (error)
+	{
+		sys_data->use_dhcp = TRUE;
+		/* Clear out the config */
+		nm_ip4_config_unref (sys_data->config);
+		sys_data->config = NULL;
+	}
+
+	return (void *)sys_data;
 }
+
+
+/*
+ * nm_system_device_free_system_config
+ *
+ * Free stored system config data
+ *
+ */
+void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
+{
+	RHSystemConfigData *sys_data = (RHSystemConfigData *)system_config_data;
+
+	g_return_if_fail (dev != NULL);
+
+	if (!sys_data)
+		return;
+
+	if (sys_data->config)
+		nm_ip4_config_unref (sys_data->config);
+}
+
+
+/*
+ * nm_system_device_get_use_dhcp
+ *
+ * Return whether the distro-specific system config tells us to use
+ * dhcp for this device.
+ *
+ */
+gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
+{
+	RHSystemConfigData	*sys_data;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->use_dhcp;
+
+	return TRUE;
+}
+
+
+NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
+{
+	RHSystemConfigData	*sys_data;
+	NMIP4Config		*new_config = NULL;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		new_config = nm_ip4_config_copy (sys_data->config);
+
+	return new_config;
+}
+

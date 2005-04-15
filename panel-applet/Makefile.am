@@ -20,6 +20,7 @@ libnm_notification_applet_la_CPPFLAGS = 		\
 	$(GCONF_CFLAGS)					\
 	$(LIBGNOMEUI_CFLAGS)				\
 	$(PANEL_APPLET_CFLAGS)				\
+	$(GNOMEKEYRING_CFLAGS)				\
 	-DICONDIR=\""$(datadir)/pixmaps"\"		\
 	-DGLADEDIR=\""$(gladedir)"\"			\
 	-DDBUS_API_SUBJECT_TO_CHANGE			\
@@ -43,6 +44,10 @@ libnm_notification_applet_la_SOURCES =	\
 	gtkcellview.h			\
 	gtkcellrendererprogress.c	\
 	gtkcellrendererprogress.h	\
+	nmwa-vpn-password-dialog.c	\
+	nmwa-vpn-password-dialog.h	\
+	nmwa-vpn-connection.c		\
+	nmwa-vpn-connection.h		\
 	$(NULL)
 
 libnm_notification_applet_la_SOURCES +=	\
@@ -59,6 +64,7 @@ libnm_notification_applet_la_LIBADD =	\
 	$(GTK_LIBS)			\
 	$(GCONF_LIBS)			\
 	$(LIBGNOMEUI_LIBS)		\
+	$(GNOMEKEYRING_LIBS)	\
 	$(NULL)
 
 libexec_PROGRAMS = NetworkManagerNotification

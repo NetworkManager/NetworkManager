@@ -32,6 +32,8 @@
 #include <dbus/dbus-glib.h>
 #include <gconf/gconf-client.h>
 
+#define NMI_GCONF_VPN_CONNECTIONS_PATH	"/system/networking/vpn_connections"
+
 struct NMIAppInfo
 {
 	GladeXML		*passphrase_dialog;

@@ -26,9 +26,11 @@
 #include <iwlib.h>
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
+#include "nm-ip4-config.h"
 
 
 typedef struct NMDevice	NMDevice;
+
 
 NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_device,
 											NMDeviceType test_dev_type, NMData *app_data);
@@ -123,17 +125,13 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *ess
 NMAccessPoint *nm_device_ap_list_get_ap_by_address(NMDevice *dev, const struct ether_addr *addr);
 void			nm_device_copy_allowed_to_dev_list	(NMDevice *dev, struct NMAccessPointList *allowed_list);
 
-/* System config data accessors */
-gboolean		nm_device_config_get_use_dhcp		(NMDevice *dev);
-void			nm_device_config_set_use_dhcp		(NMDevice *dev, gboolean use_dhcp);
-guint32		nm_device_config_get_ip4_address	(NMDevice *dev);
-void			nm_device_config_set_ip4_address	(NMDevice *dev, guint32 addr);
-guint32		nm_device_config_get_ip4_gateway	(NMDevice *dev);
-void			nm_device_config_set_ip4_gateway	(NMDevice *dev, guint32 gateway);
-guint32		nm_device_config_get_ip4_netmask	(NMDevice *dev);
-void			nm_device_config_set_ip4_netmask	(NMDevice *dev, guint32 netmask);
-guint32		nm_device_config_get_ip4_broadcast	(NMDevice *dev);
-void			nm_device_config_set_ip4_broadcast	(NMDevice *dev, guint32 broadcast);
+gboolean		nm_device_get_use_dhcp			(NMDevice *dev);
+void			nm_device_set_use_dhcp			(NMDevice *dev, gboolean use_dhcp);
+
+NMIP4Config *	nm_device_get_ip4_config			(NMDevice *dev);
+void			nm_device_set_ip4_config			(NMDevice *dev, NMIP4Config *config);
+
+void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 /* Utility routines */
 NMDevice *	nm_get_device_by_udi			(NMData *data, const char *udi);

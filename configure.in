@@ -169,6 +169,10 @@ PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
 AC_SUBST(LIBGNOMEUI_CFLAGS) # is this even needed? it was typed incorrectly before
 AC_SUBST(LIBGNOMEUI_LIBS)
 
+PKG_CHECK_MODULES(GNOMEKEYRING, gnome-keyring-1)
+AC_SUBST(GNOMEKEYRING_CFLAGS) # is this even needed? it was typed incorrectly before
+AC_SUBST(GNOMEKEYRING_LIBS)
+
 AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
 
 if ! test -z "$with_dbus_sys" ; then
@@ -266,11 +270,13 @@ AC_OUTPUT([
 Makefile
 utils/Makefile
 src/Makefile
+src/named-manager/Makefile
+src/vpn-manager/Makefile
+src/backends/Makefile
 dispatcher-daemon/Makefile
 info-daemon/Makefile
 panel-applet/Makefile
 panel-applet/icons/Makefile
-named/Makefile
 dhcpcd/Makefile
 libnm_glib/Makefile
 test/Makefile
@@ -282,6 +288,8 @@ initscript/Slackware/Makefile
 po/Makefile.in
 NetworkManager.pc
 libnm_glib/libnm_glib.pc
+vpn-daemons/Makefile
+vpn-daemons/vpnc/Makefile
 ])
 
 echo

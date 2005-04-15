@@ -80,6 +80,10 @@ typedef struct
 	GSList	*networks;
 } NetworkDevice;
 
+
+typedef struct VPNConnection VPNConnection;
+
+
 #ifdef BUILD_NOTIFICATION_ICON
 
 #define NM_TYPE_WIRELESS_APPLET (nmwa_get_type())
@@ -126,10 +130,14 @@ typedef struct
 	GSList			*gui_device_list;
 	NetworkDevice		*gui_active_device;
 	char				*gui_nm_status;
+	GSList			*gui_vpn_connections;
+	VPNConnection		*gui_active_vpn;
 
 	GSList			*dbus_device_list;
 	NetworkDevice		*dbus_active_device;
 	char				*dbus_nm_status;
+	GSList			*dbus_vpn_connections;
+	VPNConnection		*dbus_active_vpn;
 
 	GdkPixbuf			*no_nm_icon;
 	GdkPixbuf			*no_connection_icon;
@@ -146,6 +154,7 @@ typedef struct
 	GdkPixbuf			*wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
 #define NUM_WIRELESS_SCANNING_FRAMES 16
 	GdkPixbuf			*wireless_scanning_icons[NUM_WIRELESS_SCANNING_FRAMES];
+	GdkPixbuf			*vpn_lock_icon;
 
 	/* Animation stuff */
 	int				 animation_step;
@@ -155,6 +164,7 @@ typedef struct
 	GtkWidget			*pixmap;
 	GtkWidget			*top_menu_item;
 	GtkWidget			*dropdown_menu;
+	GtkWidget			*vpn_menu;
 	GtkWidget			*event_box;
 	GtkSizeGroup        *encryption_size_group;
 	GtkTooltips		*tooltips;
@@ -172,11 +182,13 @@ typedef struct
 	GladeXML			*xml;
 } DriverNotifyCBData;
 
-NetworkDevice		*nmwa_get_device_for_nm_device (GSList *dev_list, const char *nm_dev);
-WirelessNetwork	*nmwa_get_net_for_nm_net (NetworkDevice *dev, const char *net_path);
-WirelessNetwork	*nmwa_get_net_by_essid (NetworkDevice *dev, const char *essid);
-NMWirelessApplet	*nmwa_new (void);
-void				 show_warning_dialog (gboolean error, gchar *mesg, ...);
-gboolean			 nmwa_driver_notify (gpointer user_data);
+NetworkDevice *	nmwa_get_device_for_nm_device			(GSList *dev_list, const char *nm_dev);
+WirelessNetwork *	nmwa_get_net_for_nm_net				(NetworkDevice *dev, const char *net_path);
+WirelessNetwork *	nmwa_get_net_by_essid				(NetworkDevice *dev, const char *essid);
+NMWirelessApplet *	nmwa_new							(void);
+void				show_warning_dialog					(gboolean error, gchar *mesg, ...);
+gboolean			nmwa_driver_notify					(gpointer user_data);
+void				nmwa_schedule_vpn_login_failure_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *error_msg);
+void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
 
 #endif

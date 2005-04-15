@@ -49,12 +49,12 @@ static void nmi_spawn_notification_icon (NMIAppInfo *info);
 
 
 /*
- * nmi_gconf_notify_callback
+ * nmi_gconf_networks_notify_callback
  *
  * Callback from gconf when wireless networking key/values have changed.
  *
  */
-void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
+static void nmi_gconf_networks_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
 {
 	NMIAppInfo	*info = (NMIAppInfo *)user_data;
 	const char	*key = NULL;
@@ -83,6 +83,46 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 			nmi_dbus_signal_update_network (info->connection, unescaped_network, NETWORK_TYPE_ALLOWED);
 			g_free (unescaped_network);
 			g_free (network);
+		}
+	}
+}
+
+
+/*
+ * nmi_gconf_vpn_connections_notify_callback
+ *
+ * Callback from gconf when VPN connection values have changed.
+ *
+ */
+static void nmi_gconf_vpn_connections_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
+{
+	NMIAppInfo	*info = (NMIAppInfo *)user_data;
+	const char	*key = NULL;
+
+	g_return_if_fail (client != NULL);
+	g_return_if_fail (entry != NULL);
+	g_return_if_fail (info != NULL);
+
+	if ((key = gconf_entry_get_key (entry)))
+	{
+		int	path_len = strlen (NMI_GCONF_VPN_CONNECTIONS_PATH) + 1;
+
+		if (strncmp (NMI_GCONF_VPN_CONNECTIONS_PATH"/", key, path_len) == 0)
+		{
+			char 	*name = g_strdup ((key + path_len));
+			char		*slash_pos;
+			char		*unescaped_name;
+
+			/* If its a key under the the VPN name, zero out the slash so we
+			 * are left with only the VPN name.
+			 */
+			unescaped_name = gconf_unescape_key (name, strlen (name));
+			if ((slash_pos = strchr (unescaped_name, '/')))
+				*slash_pos = '\0';
+
+			nmi_dbus_signal_update_vpn_connection (info->connection, unescaped_name);
+			g_free (unescaped_name);
+			g_free (name);
 		}
 	}
 }
@@ -238,7 +278,9 @@ int main( int argc, char *argv[] )
 	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
 						GCONF_CLIENT_PRELOAD_NONE, NULL);
 	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
-						nmi_gconf_notify_callback, app_info, NULL, NULL);
+						nmi_gconf_networks_notify_callback, app_info, NULL, NULL);
+	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_VPN_CONNECTIONS_PATH,
+						nmi_gconf_vpn_connections_notify_callback, app_info, NULL, NULL);
 
 	/* Create our own dbus service */
 	err = nmi_dbus_service_init (dbus_connection, app_info);

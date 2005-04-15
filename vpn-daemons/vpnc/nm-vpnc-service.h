@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* nm-vpnc-service - vpnc integration with NetworkManager
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -16,22 +16,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_DHCP_H
-#define NETWORK_MANAGER_DHCP_H
+#ifndef NM_VPNC_SERVICE_H
+#define NM_VPNC_SERVICE_H
 
-#include "../dhcpcd/dhcpcd.h"
-
-void		nm_device_dhcp_cease		(NMDevice *dev);
-gboolean	nm_device_dhcp_setup_timeouts	(NMDevice *dev);
-void		nm_device_dhcp_remove_timeouts(NMDevice *dev);
-gboolean	nm_device_dhcp_renew		(gpointer user_data);
-gboolean	nm_device_dhcp_rebind		(gpointer user_data);
-
-
-NMIP4Config *	nm_device_new_ip4_autoip_config	(NMDevice *dev);
-NMIP4Config *	nm_device_new_ip4_dhcp_config		(NMDevice *dev);
+#define NM_DBUS_SERVICE_VPNC		"org.freedesktop.vpnc"
+#define NM_DBUS_INTERFACE_VPNC	"org.freedesktop.vpnc"
+#define NM_DBUS_PATH_VPNC		"/org/freedesktop/vpnc"
 
 #endif

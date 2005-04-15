@@ -516,7 +516,7 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 			else
 				nm_device_copy_allowed_to_dev_list (dev, data->allowed_ap_list);
 		}
-	}	
+	}
 
 	/* If the active device doesn't have a best_ap already, make it update to
 	 * get the new data.

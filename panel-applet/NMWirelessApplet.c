@@ -56,6 +56,8 @@
 #include "NMWirelessAppletDbus.h"
 #include "NMWirelessAppletOtherNetworkDialog.h"
 #include "menu-info.h"
+#include "nmwa-vpn-password-dialog.h"
+#include "nmwa-vpn-connection.h"
 
 #define CFG_UPDATE_INTERVAL 1
 #define NMWA_GCONF_PATH		"/apps/NetworkManagerNotification"
@@ -175,6 +177,119 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 					   NULL);
 #endif
 }
+
+
+static void vpn_login_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
+{
+	char *message;
+
+	if ((message = g_object_get_data (G_OBJECT (dialog), "message")))
+	{
+		g_object_set_data (G_OBJECT (dialog), "message", NULL);
+		g_free (message);
+	}
+
+	gtk_widget_destroy (dialog);
+}
+
+
+/*
+ * nmwa_show_vpn_login_failure_dialog
+ *
+ * Present the VPN login failure dialog.
+ *
+ */
+static gboolean nmwa_show_vpn_login_failure_dialog (char *message)
+{
+	GtkWidget	*dialog;
+
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, message, NULL);
+	g_signal_connect (dialog, "response", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
+	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
+	g_object_set_data (G_OBJECT (dialog), "message", message);
+	gtk_widget_show_all (dialog);
+
+	return FALSE;
+}
+
+
+/*
+ * nmwa_schedule_vpn_login_failure_dialog
+ *
+ * Schedule display of the VPN Login Failure dialog.
+ *
+ */
+void nmwa_schedule_vpn_login_failure_dialog (NMWirelessApplet *applet, const char *vpn_name, const char *error_msg)
+{
+	char *msg;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (vpn_name != NULL);
+	g_return_if_fail (error_msg != NULL);
+
+	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not connection to the"
+						"VPN connection '%s' due to a login failure.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_failure_dialog, msg);
+}
+
+
+static void vpn_login_banner_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
+{
+	char *message;
+
+	if ((message = g_object_get_data (G_OBJECT (dialog), "message")))
+	{
+		g_object_set_data (G_OBJECT (dialog), "message", NULL);
+		g_free (message);
+	}
+
+	gtk_widget_destroy (dialog);
+}
+
+
+/*
+ * nmwa_show_vpn_login_banner_dialog
+ *
+ * Present the VPN login banner dialog.
+ *
+ */
+static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
+{
+	GtkWidget	*dialog;
+
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, message, NULL);
+	g_signal_connect (dialog, "response", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
+	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
+	g_object_set_data (G_OBJECT (dialog), "message", message);
+	gtk_widget_show_all (dialog);
+
+	return FALSE;
+}
+
+
+/*
+ * nmwa_schedule_vpn_login_banner_dialog
+ *
+ * Schedule display of the VPN Login Banner dialog.
+ *
+ */
+void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char *vpn_name, const char *banner)
+{
+	char *msg;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (vpn_name != NULL);
+	g_return_if_fail (banner != NULL);
+
+	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n\n"
+						"VPN connection '%s' said:\n\n\"%s\""), vpn_name, banner);
+	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_failure_dialog, msg);
+}
+
 
 /*
  * nmwa_driver_notify_get_ignored_list
@@ -501,6 +616,29 @@ out:
 }
 
 
+static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *new_icon)
+{
+	GdkPixbuf	*composite;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (new_icon != NULL);
+
+	composite = gdk_pixbuf_copy (new_icon);
+
+	if (applet->gui_active_vpn)
+	{
+		int dest_x = gdk_pixbuf_get_width (new_icon) - gdk_pixbuf_get_width (applet->vpn_lock_icon);
+		int dest_y = gdk_pixbuf_get_height (new_icon) - gdk_pixbuf_get_height (applet->vpn_lock_icon) - 2;
+
+		gdk_pixbuf_composite (applet->vpn_lock_icon, composite, dest_x, dest_y, gdk_pixbuf_get_width (applet->vpn_lock_icon),
+							gdk_pixbuf_get_height (applet->vpn_lock_icon), dest_x, dest_y, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
+	}
+
+	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
+	g_object_unref (composite);
+}
+
+
 static gboolean
 animation_timeout (NMWirelessApplet *applet)
 {
@@ -509,16 +647,14 @@ animation_timeout (NMWirelessApplet *applet)
 		case (APPLET_STATE_WIRED_CONNECTING):
 			if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
 				applet->animation_step = 0;
-			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-					applet->wired_connecting_icons[applet->animation_step]);
+			nmwa_set_icon (applet, applet->wired_connecting_icons[applet->animation_step]);
 			applet->animation_step ++;
 			break;
 
 		case (APPLET_STATE_WIRELESS_CONNECTING):
 			if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
 				applet->animation_step = 0;
-			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-					applet->wireless_connecting_icons[applet->animation_step]);
+			nmwa_set_icon (applet, applet->wireless_connecting_icons[applet->animation_step]);
 			applet->animation_step ++;
 			break;
 
@@ -529,8 +665,7 @@ animation_timeout (NMWirelessApplet *applet)
 		case (APPLET_STATE_WIRELESS_SCANNING):
 			if (applet->animation_step >= NUM_WIRELESS_SCANNING_FRAMES)
 				applet->animation_step = 0;
-			gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap),
-					applet->wireless_scanning_icons[applet->animation_step]);
+			nmwa_set_icon (applet, applet->wireless_scanning_icons[applet->animation_step]);
 			applet->animation_step ++;
 			break;
 
@@ -580,11 +715,11 @@ inline void print_state (AppletState state)
  * and what our icon on the panel should look like for each type.
  *
  */
-static void
-nmwa_update_state (NMWirelessApplet *applet)
+static void nmwa_update_state (NMWirelessApplet *applet)
 {
 	gboolean show_applet = TRUE;
 	gboolean need_animation = FALSE;
+	gboolean active_vpn = FALSE;
 	GdkPixbuf *pixbuf = NULL;
 	gint strength = -1;
 	char *tip = NULL;
@@ -702,7 +837,7 @@ nmwa_update_state (NMWirelessApplet *applet)
 	if (need_animation)
 		applet->animation_id = g_timeout_add (100, (GSourceFunc) (animation_timeout), applet);
 	else
-		gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), pixbuf);
+		nmwa_set_icon (applet, pixbuf);
 }
 
 
@@ -951,6 +1086,55 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
+ * nmwa_menu_vpn_item_activate
+ *
+ * Signal function called when user clicks on a VPN menu item
+ *
+ */
+static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+	char				*tag;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	if ((tag = g_object_get_data (G_OBJECT (item), "vpn")))
+	{
+		VPNConnection	*vpn = (VPNConnection *)tag;
+		const char	*name = nmwa_vpn_connection_get_name (vpn);
+		char			*password = NULL;
+
+		if (vpn != applet->gui_active_vpn)
+		{
+			if ((password = nmwa_vpn_request_password (applet, name, nmwa_vpn_connection_get_user_name (vpn), FALSE)))
+			{
+				nmwa_dbus_vpn_activate_connection (applet->connection, name, password);
+				g_free (password);
+			}
+		}
+	}
+}
+
+
+/*
+ * nmwa_menu_disconnect_vpn_item_activate
+ *
+ * Signal function called when user clicks on a VPN menu item
+ *
+ */
+static void nmwa_menu_disconnect_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_vpn_deactivate_connection (applet->connection);
+}
+
+
+/*
  * nmwa_menu_add_separator_item
  *
  */
@@ -1117,10 +1301,59 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 		g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (net->essid));
 		g_object_set_data (G_OBJECT (gtk_item), "nm_device", g_strdup (dev->nm_device));
 		g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
-		g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
+		g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
 
 		gtk_widget_show (GTK_WIDGET (gtk_item));
 	}
+}
+
+
+/*
+ * nmwa_menu_add_devices
+ *
+ */
+static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
+{
+	GtkMenuItem	*item;
+	GtkMenu		*vpn_menu;
+	GtkMenuItem	*other_item;
+	GSList		*elt;
+
+	g_return_if_fail (menu != NULL);
+	g_return_if_fail (applet != NULL);
+
+	item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("VPN Connections")));
+
+	vpn_menu = GTK_MENU (gtk_menu_new ());
+	for (elt = applet->gui_vpn_connections; elt; elt = g_slist_next (elt))
+	{
+		GtkCheckMenuItem	*vpn_item;
+		VPNConnection		*vpn = elt->data;
+		const char		*vpn_name = nmwa_vpn_connection_get_name (vpn);
+
+		vpn_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new_with_label (vpn_name));
+		nmwa_vpn_connection_ref (vpn, __FUNCTION__);
+		g_object_set_data (G_OBJECT (vpn_item), "vpn", vpn);
+
+		if (applet->gui_active_vpn && (strcmp (vpn_name, nmwa_vpn_connection_get_name (applet->gui_active_vpn)) == 0))
+			gtk_check_menu_item_set_active (vpn_item, TRUE);
+
+		g_signal_connect (G_OBJECT (vpn_item), "activate", G_CALLBACK (nmwa_menu_vpn_item_activate), applet);
+		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (vpn_item));
+	}
+	other_item = GTK_MENU_ITEM (gtk_separator_menu_item_new ());
+	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
+
+	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Disconnect VPN...")));
+	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_disconnect_vpn_item_activate), applet);
+	if (!applet->gui_active_vpn)
+		gtk_widget_set_sensitive (GTK_WIDGET (other_item), FALSE);
+	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
+
+	gtk_menu_item_set_submenu (item, GTK_WIDGET (vpn_menu));
+
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (item));
+	gtk_widget_show_all (GTK_WIDGET (item));
 }
 
 
@@ -1184,6 +1417,9 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		}
 	}
 
+	nmwa_menu_add_separator_item (menu);
+	nmwa_menu_add_vpn_menu (menu, applet);
+
 	if (n_wireless_interfaces > 0)
 	{
 		/* Add the "Other wireless network..." entry */
@@ -1220,12 +1456,10 @@ static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *a
 static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 {
 	char	*tag;
-	GtkWidget *menu;
+	GtkMenu	*menu;
 
 	g_return_if_fail (menu_item != NULL);
 	g_return_if_fail (data != NULL);
-
-	menu = GTK_WIDGET(data);
 
 	if ((tag = g_object_get_data (G_OBJECT (menu_item), "network")))
 	{
@@ -1250,6 +1484,21 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 		g_object_set_data (G_OBJECT (menu_item), "device", NULL);
 		g_free (tag);
 	}
+
+	if ((tag = g_object_get_data (G_OBJECT (menu_item), "vpn")))
+	{
+		g_object_set_data (G_OBJECT (menu_item), "vpn", NULL);
+		nmwa_vpn_connection_unref ((VPNConnection *)tag, __FUNCTION__);
+	}
+
+	if ((tag = g_object_get_data (G_OBJECT (menu_item), "disconnect")))
+	{
+		g_object_set_data (G_OBJECT (menu_item), "disconnect", NULL);
+		g_free (tag);
+	}
+
+	if ((menu = GTK_MENU (gtk_menu_item_get_submenu (GTK_MENU_ITEM (menu_item)))))
+		gtk_container_foreach (GTK_CONTAINER (menu), nmwa_menu_item_data_free, menu);
 
 	gtk_widget_destroy (menu_item);
 }
@@ -1665,6 +1914,7 @@ nmwa_icons_free (NMWirelessApplet *applet)
 		g_object_unref (applet->wireless_connecting_icons[i]);
 	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)
 		g_object_unref (applet->wireless_scanning_icons[i]);
+	g_object_unref (applet->vpn_lock_icon);
 }
 
 static void
@@ -1720,6 +1970,7 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	applet->wireless_scanning_icons[13] = gtk_icon_theme_load_icon (icon_theme, "nm-detect14", icon_size, 0, NULL);
 	applet->wireless_scanning_icons[14] = gtk_icon_theme_load_icon (icon_theme, "nm-detect15", icon_size, 0, NULL);
 	applet->wireless_scanning_icons[15] = gtk_icon_theme_load_icon (icon_theme, "nm-detect16", icon_size, 0, NULL);
+	applet->vpn_lock_icon = gtk_icon_theme_load_icon (icon_theme, "nm-vpn-lock", icon_size, 0, NULL);
 }
 
 static void
