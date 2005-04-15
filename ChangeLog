@@ -1,5 +1,14 @@
 2005-04-15  Dan Williams  <dcbw@redhat.com>
 
+	Patches from Tom Parker:
+	- Fix memleaks
+	- Join with worker thread rather than polling for its exit
+
+	Patch from Bill Moss:
+	- Cull duplicate ESSIDs from the scan list, taking highest strength AP
+
+2005-04-15  Dan Williams  <dcbw@redhat.com>
+
 	- Fixes to pass 'make distcheck'
 
 2005-04-15  Dan Williams  <dcbw@redhat.com>

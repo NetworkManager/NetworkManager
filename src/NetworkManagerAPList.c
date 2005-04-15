@@ -116,6 +116,7 @@ void nm_ap_list_unref (NMAccessPointList *list)
 			nm_unlock_mutex (list->mutex, __FUNCTION__);
 
 		g_mutex_free (list->mutex);
+		g_free(list);
 	}
 }
 
@@ -224,6 +225,80 @@ void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network
 		}
 	}
 	nm_ap_list_unlock (list);
+}
+
+/* nm_ap_list_remove_duplicate_essids
+ *
+ */
+void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
+{
+	NMAccessPoint   *removal_ap;
+	NMAccessPoint   *list_ap_max;
+	GSList          *elt_i = NULL;	
+	GSList          *elt_j = NULL;
+	GSList		*elt_max = NULL;
+	GSList          *removal_list = NULL;
+	GSList          *elt;
+	gint8            max_strength = 0;
+	gint8            strengthj = 0;
+
+	g_return_if_fail (list != NULL);
+
+	if (!nm_ap_list_lock (list))
+	{
+		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
+		return;
+	}
+
+	for (elt_i = list->ap_list; elt_i; elt_i = g_slist_next (elt_i))
+	{
+		NMAccessPoint   *list_ap_i = (NMAccessPoint *)(elt_i->data);
+		gboolean         found = FALSE;
+
+		for (elt_j = list->ap_list; elt_j < elt_i; elt_j = g_slist_next (elt_j))
+		{
+			NMAccessPoint   *list_ap_j = (NMAccessPoint *)(elt_j->data);
+
+			if ((found = (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0)))
+				break;
+		}
+
+		if (found)
+			continue;
+
+		elt_max = elt_i;
+		list_ap_max = (NMAccessPoint *)(elt_i->data);
+		max_strength = nm_ap_get_strength (list_ap_i);
+
+		for (elt_j = g_slist_next (elt_i); elt_j; elt_j = g_slist_next (elt_j))
+		{
+			NMAccessPoint   *list_ap_j = (NMAccessPoint *)(elt_j->data);
+
+			strengthj = nm_ap_get_strength (list_ap_j);
+			if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0)
+			{
+				if (strengthj > max_strength)
+				{
+					removal_list = g_slist_append (removal_list, list_ap_max);
+					list_ap_max = list_ap_j;
+					max_strength = strengthj;
+				}
+				else
+					removal_list = g_slist_append (removal_list, list_ap_j);
+			}
+		}
+	}
+	nm_ap_list_unlock (list);
+
+	for (elt = removal_list; elt; elt = g_slist_next (elt))
+	{
+		if ((removal_ap = (NMAccessPoint *)(elt->data)))
+		{
+			nm_ap_list_remove_ap (list, removal_ap);
+		}
+	}
+	g_slist_free (removal_list);
+
 }
 
 
@@ -416,49 +491,70 @@ void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
 gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *merge_ap,
 				gboolean *new, gboolean *strength_changed)
 {
-	NMAccessPoint	*list_ap;
-	gboolean		 success = FALSE;
+	NMAccessPoint   *list_ap_addr, *list_ap_essid;
+	gboolean                 success = FALSE;
 
 	g_return_val_if_fail (list != NULL, FALSE);
 	g_return_val_if_fail (merge_ap != NULL, FALSE);
 	g_return_val_if_fail (new != NULL, FALSE);
 	g_return_val_if_fail (strength_changed != NULL, FALSE);
 
-	if (!(list_ap = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
-		list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap));
-
-	if (list_ap)
+	if ((list_ap_addr = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
 	{
-		const GTimeVal	*merge_ap_seen = nm_ap_get_last_seen (merge_ap);
-		const GTimeVal *list_ap_seen = nm_ap_get_last_seen (list_ap);
 
-		/* Merge some properties on the AP that are new from scan to scan. */
-		nm_ap_set_encrypted (list_ap, nm_ap_get_encrypted (merge_ap));
-		nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (merge_ap));
+		/* First, we check for an address match. If the merge AP has the
+		 * same address as a list AP, the merge AP and the list AP
+		 * must be the same physical AP. The list AP properties must be from
+		 * a previous scan so the time_last_seen's are not equal.
+		 * Update encryption, authentication method,
+		 * strength, and the time_last_seen. */
 
-		/* Don't update the strength on the existing AP if the timestamp is
-		 * the same as the AP we're going to merge (which means that they were
-		 * found in the same scan, have the same ESSID, but are different APs)
-		 * and the existing AP's strength is greater than the one we're about
-		 * to merge.  This helps keep the ESSID's reported strength that of the
-		 * strongest AP we can see.
-		 */
-		if (!(    (list_ap_seen->tv_sec == merge_ap_seen->tv_sec)
-			  && (nm_ap_get_strength (list_ap) > nm_ap_get_strength (merge_ap))))
+		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const GTimeVal *list_ap_addr_seen = nm_ap_get_last_seen (list_ap_addr);
+
+		nm_ap_set_encrypted (list_ap_addr, nm_ap_get_encrypted (merge_ap));
+		nm_ap_set_auth_method (list_ap_addr, nm_ap_get_auth_method (merge_ap));
+		if  (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap_addr))
 		{
-			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
+			nm_ap_set_strength (list_ap_addr, nm_ap_get_strength (merge_ap));
+		*strength_changed = TRUE;
+		}
+		nm_ap_set_last_seen (list_ap_addr, merge_ap_seen);
+	}
+	else if ((list_ap_essid = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
+	{
+
+		/* Second, we check for an ESSID match. In this case,
+       		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
+		 * encryption and authentication method. Update the strength and address
+		 * except when the time_last_seen of the list AP is the same as the
+		 * time_last_seen of the merge AP and the strength of the list AP is greater
+		 * than or equal to the strength of the merge AP. If the time_last_seen's are
+		 * equal, the merge AP and the list AP come from the same scan.
+		 * Update the time_last_seen. */
+
+		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const GTimeVal *list_ap_essid_seen = nm_ap_get_last_seen (list_ap_essid);
+
+		nm_ap_set_encrypted (list_ap_essid, nm_ap_get_encrypted (merge_ap));
+		nm_ap_set_auth_method (list_ap_essid, nm_ap_get_auth_method (merge_ap));
+
+		if (!((list_ap_essid_seen->tv_sec == merge_ap_seen->tv_sec)
+			&& (nm_ap_get_strength (list_ap_essid) >= nm_ap_get_strength (merge_ap))))
+		{
+			nm_ap_set_strength (list_ap_essid, nm_ap_get_strength (merge_ap));
+			nm_ap_set_address (list_ap_essid, nm_ap_get_address (merge_ap)); 
 			*strength_changed = TRUE;
 		}
-
-		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+		nm_ap_set_last_seen (list_ap_essid, merge_ap_seen);
 	}
 	else
 	{
-		/* Add the whole AP, list takes ownership. */
+		/* Add the merge AP to the list. */
+
 		nm_ap_list_append_ap (list, merge_ap);
 		*new = TRUE;
 	}
-
 	return TRUE;
 }
 

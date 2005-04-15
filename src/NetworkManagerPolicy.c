@@ -515,6 +515,8 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 			}
 			else
 				nm_device_copy_allowed_to_dev_list (dev, data->allowed_ap_list);
+
+			nm_ap_list_remove_duplicate_essids (nm_device_ap_list_get (dev));
 		}
 	}
 

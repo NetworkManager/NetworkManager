@@ -101,7 +101,7 @@ struct NMDevice
 
 	GMainContext			*context;
 	GMainLoop				*loop;
-	gboolean				 worker_done;
+	GThread					*worker;
 	gboolean				 worker_started;
 	guint		 		 renew_timeout;
 	guint				 rebind_timeout;

@@ -383,7 +383,8 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev->system_config_data = nm_system_device_get_system_config (dev);
 	}
 
-	if (!g_thread_create (nm_device_worker, dev, FALSE, &error))
+	dev->worker = g_thread_create (nm_device_worker, dev, TRUE, &error);
+	if (!dev->worker)
 	{
 		nm_error ("could not create device worker thread. (glib said: '%s')", error->message);
 		g_error_free (error);
@@ -518,7 +519,6 @@ static gpointer nm_device_worker (gpointer user_data)
 	dev->loop = NULL;
 	dev->context = NULL;
 
-	dev->worker_done = TRUE;
 	nm_device_unref (dev);
 
 	return NULL;
@@ -531,9 +531,8 @@ void nm_device_worker_thread_stop (NMDevice *dev)
 
 	if (dev->loop)
 		g_main_loop_quit (dev->loop);
-	nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY, 300,
-			nm_completion_boolean_test, NULL, &dev->worker_done,
-			NULL, NULL, 0);
+	g_thread_join(dev->worker);
+	dev->worker = NULL;
 }
 
 
@@ -848,7 +847,8 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 	if (g_file_get_contents (carrier_path, &contents, &length, NULL)) {
 		link = (gboolean) atoi (contents);
 		g_free (contents);
-	} 
+	}
+	g_free(carrier_path);
 
 	/* We say that non-carrier-detect devices always have a link, because
 	 * they never get auto-selected by NM.  User has to force them on us,

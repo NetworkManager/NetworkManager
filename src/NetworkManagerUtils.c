@@ -448,6 +448,7 @@ char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 
 		if (parent_udi && libhal_device_property_exists (ctx, parent_udi, "info.linux.driver", NULL))
 			driver_name = libhal_device_get_property_string (ctx, parent_udi, "info.linux.driver", NULL);
+		g_free(parent_udi);
 	}
 
 	return (driver_name);

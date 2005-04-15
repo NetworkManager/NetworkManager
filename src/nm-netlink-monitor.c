@@ -569,7 +569,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 				  NmNetlinkMonitor *monitor)
 {
 	GError *error;
-	gchar *received_bytes;
+	gchar *received_bytes=NULL;
 	gboolean processing_is_done;
 	gsize num_received_bytes;
 	guint num_bytes_to_process;
@@ -711,6 +711,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 			g_free (interface_name);
 		}
 	}
+	g_free(received_bytes);
 
 	return TRUE;
 }

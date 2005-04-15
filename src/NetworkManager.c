@@ -529,6 +529,8 @@ static void nm_data_free (NMData *data)
 	g_main_loop_unref (data->main_loop);
 	g_main_context_unref (data->main_context);
 
+	g_io_channel_unref(data->sigterm_iochannel);
+
 	memset (data, 0, sizeof (NMData));
 }
 
