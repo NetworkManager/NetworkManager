@@ -229,7 +229,7 @@ void nmwa_schedule_vpn_login_failure_dialog (NMWirelessApplet *applet, const cha
 	g_return_if_fail (vpn_name != NULL);
 	g_return_if_fail (error_msg != NULL);
 
-	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not connection to the"
+	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not start the "
 						"VPN connection '%s' due to a login failure.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
 	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_failure_dialog, msg);
 }
