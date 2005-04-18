@@ -195,60 +195,7 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 		dbus_connection_disconnect (ctx->dbus_con);
 		libnm_glib_schedule_dbus_watcher (ctx);
 	}
-#if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceCreated"))
-	{
-		char 	*service;
-
-		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
-			&& (strcmp (service, NM_DBUS_SERVICE) == 0))
-		{
-			char *status_string = libnm_glib_get_nm_status (ctx->dbus_con);
-			libnm_glib_update_status (ctx, status_string);
-			g_free (status_string);
-		}
-	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceDeleted"))
-	{
-		char 	*service;
-
-		if (    dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID)
-			&& (strcmp (service, NM_DBUS_SERVICE) == 0))
-		{
-			ctx->nm_status = LIBNM_NO_NETWORKMANAGER;
-		}
-	}
-#elif (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 23)
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "ServiceOwnerChanged"))
-	{
-		/* New signal for dbus 0.23... */
-		char 	*service;
-		char		*old_owner;
-		char		*new_owner;
-
-		if (    dbus_message_get_args (message, &error,
-									DBUS_TYPE_STRING, &service,
-									DBUS_TYPE_STRING, &old_owner,
-									DBUS_TYPE_STRING, &new_owner,
-									DBUS_TYPE_INVALID))
-		{
-			if (strcmp (service, NM_DBUS_SERVICE) == 0)
-			{
-				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
-				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
-
-				if (!old_owner_good && new_owner_good)	/* Equivalent to old ServiceCreated signal */
-				{
-					char *status_string = libnm_glib_get_nm_status (ctx->dbus_con);
-					libnm_glib_update_status (ctx, status_string);
-					g_free (status_string);
-				}
-				else if (old_owner_good && !new_owner_good)	/* Equivalent to old ServiceDeleted signal */
-					ctx->nm_status = LIBNM_NO_NETWORKMANAGER;
-			}
-		}
-	}
-#elif ((DBUS_VERSION_MAJOR == 0) && ((DBUS_VERSION_MINOR == 30) || (DBUS_VERSION_MINOR == 31)))
+#if ((DBUS_VERSION_MAJOR == 0) && ((DBUS_VERSION_MINOR == 30) || (DBUS_VERSION_MINOR == 31) || (DBUS_VERSION_MINOR == 32)))
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
 		/* New signal for dbus 0.23... */

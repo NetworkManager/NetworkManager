@@ -1,5 +1,10 @@
 2005-04-15  Dan Williams  <dcbw@redhat.com>
 
+	* libnm_glib/libnm_glib: Fix up for dbus-0.32, and remove
+		code for dbus 0.2x versions
+
+2005-04-15  Dan Williams  <dcbw@redhat.com>
+
 	Patches from Tom Parker:
 	- Fix memleaks
 	- Join with worker thread rather than polling for its exit
