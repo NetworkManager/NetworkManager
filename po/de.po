@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-04-02 09:34+0200\n"
-"PO-Revision-Date: 2005-04-02 09:33+0200\n"
+"POT-Creation-Date: 2005-04-19 09:47+0200\n"
+"PO-Revision-Date: 2005-04-19 09:46+0200\n"
 "Last-Translator: Frank Arnold <frank@scirocco-5v-turbo.de>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -93,26 +93,57 @@ msgstr ""
 "Um auf das private Netzwerk %s zugreifen zu können, müssen Sie sich zunächst "
 "anmelden"
 
-#: ../panel-applet/NMWirelessApplet.c:149
-#: ../panel-applet/NMWirelessApplet.c:167
+#: ../panel-applet/NMWirelessApplet.c:151
+#: ../panel-applet/NMWirelessApplet.c:169
 msgid "NetworkManager Applet"
 msgstr "Netzwerk-Manager-Applet"
 
-#: ../panel-applet/NMWirelessApplet.c:151
-#: ../panel-applet/NMWirelessApplet.c:169
+#: ../panel-applet/NMWirelessApplet.c:153
+#: ../panel-applet/NMWirelessApplet.c:171
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "Copyright (c) 2004-2005 Red Hat, Inc."
 
-#: ../panel-applet/NMWirelessApplet.c:152
-#: ../panel-applet/NMWirelessApplet.c:170
+#: ../panel-applet/NMWirelessApplet.c:154
+#: ../panel-applet/NMWirelessApplet.c:172
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr ""
 "Ein Applet für das Benachrichtigungsfeld, mit dem Sie Ihre Netzwerkgeräten "
 "und Netzwerkverbindungen verwalten können."
 
-#: ../panel-applet/NMWirelessApplet.c:384
-#: ../panel-applet/NMWirelessApplet.c:1523
+#: ../panel-applet/NMWirelessApplet.c:232
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a login failure.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Fehler bei der VPN-Anmeldung</span>\n"
+"\n"
+"Die VPN-Verbindung »%s« konnte infolge eines Fehlers beim Anmelden nicht "
+"hergestellt werden.\n"
+"\n"
+"Nachricht des VPN-Dienstes: »%s«"
+
+#: ../panel-applet/NMWirelessApplet.c:288
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
+"\n"
+"VPN connection '%s' said:\n"
+"\n"
+"\"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">VPN-Anmeldungsnachricht</span>\n"
+"\n"
+"Nachricht der VPN-Verbindung »%s«:\n"
+"\n"
+"»%s«"
+
+#: ../panel-applet/NMWirelessApplet.c:499
+#: ../panel-applet/NMWirelessApplet.c:1772
 #: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:319
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
@@ -121,93 +152,101 @@ msgstr ""
 "Das Netzwerk-Manager-Applet konnten eine benötigte Ressource nicht finden "
 "(Die Glade-Datei wurde nicht gefunden)."
 
-#: ../panel-applet/NMWirelessApplet.c:395
+#: ../panel-applet/NMWirelessApplet.c:510
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Das Netzwerkgerät »%s (%s)« unterstützt keine Funknetzwerksuche."
 
-#: ../panel-applet/NMWirelessApplet.c:403
+#: ../panel-applet/NMWirelessApplet.c:518
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Das Netzwerkgerät »%s (%s)« unterstützt keine Link-Erkennung."
 
-#: ../panel-applet/NMWirelessApplet.c:627
+#: ../panel-applet/NMWirelessApplet.c:762
 msgid "No network connection"
 msgstr "Keine Netzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:632
+#: ../panel-applet/NMWirelessApplet.c:767
 msgid "Wired network connection"
 msgstr "Kabelnetzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:637
+#: ../panel-applet/NMWirelessApplet.c:772
 msgid "Connecting to a wired network..."
 msgstr "Verbindung mit Kabelnetzwerk wird hergestellt..."
 
-#: ../panel-applet/NMWirelessApplet.c:646
+#: ../panel-applet/NMWirelessApplet.c:781
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Verbunden mit einem Ad-Hoc-Funknetzwerk"
 
-#: ../panel-applet/NMWirelessApplet.c:660
+#: ../panel-applet/NMWirelessApplet.c:795
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Funknetzwerkverbindung mit »%s« (%d%%)"
 
-#: ../panel-applet/NMWirelessApplet.c:665
+#: ../panel-applet/NMWirelessApplet.c:800
 msgid "Wireless network connection"
 msgstr "Funknetzwerkverbindung"
 
-#: ../panel-applet/NMWirelessApplet.c:670
+#: ../panel-applet/NMWirelessApplet.c:805
 #, c-format
 msgid "Connecting to wireless network '%s'..."
 msgstr "Verbindung mit Funknetzwerk »%s« wird hergestellt..."
 
-#: ../panel-applet/NMWirelessApplet.c:676
+#: ../panel-applet/NMWirelessApplet.c:811
 msgid "NetworkManager is not running"
 msgstr "Der Netzwerk-Manager läuft nicht"
 
-#: ../panel-applet/NMWirelessApplet.c:681
+#: ../panel-applet/NMWirelessApplet.c:816
 msgid "Scanning for wireless networks..."
 msgstr "Funknetzwerke werden gesucht..."
 
-#: ../panel-applet/NMWirelessApplet.c:1046
+#: ../panel-applet/NMWirelessApplet.c:1230
 msgid "Other Wireless Networks..."
 msgstr "Andere Funknetzwerke..."
 
-#: ../panel-applet/NMWirelessApplet.c:1067
+#: ../panel-applet/NMWirelessApplet.c:1251
 msgid "Create new Wireless Network..."
 msgstr "Neues Funknetzwerk hinzufügen..."
 
-#: ../panel-applet/NMWirelessApplet.c:1143
+#: ../panel-applet/NMWirelessApplet.c:1325
+msgid "VPN Connections"
+msgstr "VPN-Verbindungen"
+
+#: ../panel-applet/NMWirelessApplet.c:1347
+msgid "Disconnect VPN..."
+msgstr "VPN trennen..."
+
+#: ../panel-applet/NMWirelessApplet.c:1376
 msgid "No network devices have been found"
 msgstr "Es wurden keine Netzwerkgeräte gefunden"
 
-#: ../panel-applet/NMWirelessApplet.c:1285
+#: ../panel-applet/NMWirelessApplet.c:1534
 msgid "NetworkManager is not running..."
 msgstr "Der Netzwerk-Manager ist nicht aktiv..."
 
-#: ../panel-applet/NMWirelessApplet.c:1355
-#: ../panel-applet/NMWirelessApplet.c:1403
+#: ../panel-applet/NMWirelessApplet.c:1604
+#: ../panel-applet/NMWirelessApplet.c:1652
 msgid "Pause Wireless Scanning"
 msgstr "Funknetzwerksuche unterbrechen"
 
-#: ../panel-applet/NMWirelessApplet.c:1360
+#: ../panel-applet/NMWirelessApplet.c:1609
 msgid "Resume Wireless Scanning"
 msgstr "Funknetzwerksuche wiederaufnehmen"
 
-#: ../panel-applet/NMWirelessApplet.c:1370
-#: ../panel-applet/NMWirelessApplet.c:1409
+#: ../panel-applet/NMWirelessApplet.c:1619
+#: ../panel-applet/NMWirelessApplet.c:1658
 msgid "Stop All Wireless Devices"
 msgstr "Alle Funknetzwerkgeräte stoppen"
 
-#: ../panel-applet/NMWirelessApplet.c:1375
+#: ../panel-applet/NMWirelessApplet.c:1624
 msgid "Start All Wireless Devices"
 msgstr "Alle Funknetzwerkgeräte starten"
 
-#: ../panel-applet/NMWirelessApplet.c:1418
+#: ../panel-applet/NMWirelessApplet.c:1667
 msgid "Help"
 msgstr "Hilfe"
 
-#: ../panel-applet/NMWirelessApplet.c:1425
+#: ../panel-applet/NMWirelessApplet.c:1674
 msgid "About"
 msgstr "Info"
 
