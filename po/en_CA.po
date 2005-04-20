@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-04-16 13:57-0400\n"
-"PO-Revision-Date: 2005-04-16 14:52-0400\n"
+"POT-Creation-Date: 2005-04-19 23:40-0400\n"
+"PO-Revision-Date: 2005-04-19 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -321,19 +321,19 @@ msgstr[1] "Wireless Networks"
 msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
 
-#: ../examples/python/systray/eggtrayicon.c:111
-#: ../panel-applet/eggtrayicon.c:118
-msgid "Orientation"
-msgstr "Orientation"
-
-#: ../examples/python/systray/eggtrayicon.c:112
-#: ../panel-applet/eggtrayicon.c:119
-msgid "The orientation of the tray."
-msgstr "The orientation of the tray."
-
 #: ../panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
 msgstr "_About..."
+
+#: ../panel-applet/eggtrayicon.c:118
+#: ../examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Orientation"
+
+#: ../panel-applet/eggtrayicon.c:119
+#: ../examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "The orientation of the tray."
 
 #: ../panel-applet/gtkcellrendererprogress.c:243
 #: ../panel-applet/gtkcellrendererprogress.c:301
@@ -384,6 +384,11 @@ msgstr "Don't remind me again"
 #: ../panel-applet/wireless-applet.glade.h:23
 msgid "_OK"
 msgstr "_OK"
+
+#: ../panel-applet/nmwa-vpn-password-dialog.c:105
+#, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "You must log in to access the Virtual Private Network '%s'."
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
