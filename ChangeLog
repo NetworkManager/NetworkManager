@@ -1,3 +1,7 @@
+2005-04-22  Pawan chitrakar  <pawan@nplinux.org>
+
+	* configure.in: Added ne in ALL_LINGUAS
+
 2005-04-15  Dan Williams  <dcbw@redhat.com>
 
 	* libnm_glib/libnm_glib: Fix up for dbus-0.32, and remove
