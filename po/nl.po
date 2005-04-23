@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-04-18 19:47+0000\n"
-"PO-Revision-Date: 2005-04-19 01:15+0200\n"
+"POT-Creation-Date: 2005-04-23 11:55+0000\n"
+"PO-Revision-Date: 2005-04-23 15:16+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -342,19 +342,19 @@ msgstr[1] "Draadloze netwerken"
 msgid " (invalid Unicode)"
 msgstr " (ongeldige Unicode)"
 
-#: ../examples/python/systray/eggtrayicon.c:111
-#: ../panel-applet/eggtrayicon.c:118
-msgid "Orientation"
-msgstr "Oriëntatie"
-
-#: ../examples/python/systray/eggtrayicon.c:112
-#: ../panel-applet/eggtrayicon.c:119
-msgid "The orientation of the tray."
-msgstr "De oriëntatie van het applet."
-
 #: ../panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
 msgstr "In_fo..."
+
+#: ../panel-applet/eggtrayicon.c:118
+#: ../examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "Oriëntatie"
+
+#: ../panel-applet/eggtrayicon.c:119
+#: ../examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "De oriëntatie van het applet."
 
 #: ../panel-applet/gtkcellrendererprogress.c:243
 #: ../panel-applet/gtkcellrendererprogress.c:301
@@ -408,6 +408,12 @@ msgstr "Niet meer tonen"
 #: ../panel-applet/wireless-applet.glade.h:23
 msgid "_OK"
 msgstr "_OK"
+
+# privénetwerk
+#: ../panel-applet/nmwa-vpn-password-dialog.c:105
+#, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "U moet inloggen voor toegang tot het Virtual Private Network '%s'."
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
