@@ -243,16 +243,16 @@ int get_object_signal_strength (DBusConnection *connection, char *path)
 }
 
 
-char * get_nm_status (DBusConnection *connection)
+NMState get_nm_state (DBusConnection *connection)
 {
-	int	 ret;
-	char *status = NULL;
+	int	 	ret;
+	NMState	state;
 
-	ret = nmwa_dbus_call_nm_method (connection, NM_DBUS_PATH, "status", DBUS_TYPE_STRING, (void *)(&status), NULL);
+	ret = nmwa_dbus_call_nm_method (connection, NM_DBUS_PATH, "state", DBUS_TYPE_UINT32, (void *)(&state), NULL);
 	if (ret == RETURN_SUCCESS)
-		return (status);
+		return (state);
 
-	return (NULL);
+	return (NM_STATE_UNKNOWN);
 }
 
 
@@ -383,8 +383,8 @@ int main( int argc, char *argv[] )
 {
 	DBusConnection *connection;
 	DBusError		error;
-	char *path;
-	char *status;
+	char *		path;
+	NMState		state;
 
 	g_type_init ();
 
@@ -397,14 +397,13 @@ int main( int argc, char *argv[] )
 		return 1;
 	}
 
-	status = get_nm_status (connection);
-	if (!status)
+	state = get_nm_state (connection);
+	if (state == NM_STATE_UNKNOWN)
 	{
-		fprintf (stderr, "NetworkManager appears not to be running (could not get its status).  Will exit.\n");
+		fprintf (stderr, "NetworkManager appears not to be running (could not get its state).  Will exit.\n");
 		return (1);
 	}
-	fprintf (stderr, "NM Status: '%s'\n", status);
-	g_free (status);
+	fprintf (stderr, "NM State: '%u'\n", state);
 
 	path = get_active_device (connection);
 	fprintf (stderr, "Active device: '%s'\n", path ? path : "(none)");

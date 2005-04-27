@@ -193,15 +193,6 @@ AC_DEFINE_UNQUOTED(NM_NAMED_BINARY_PATH, "$with_named", [Define to path of named
 AC_DEFINE_UNQUOTED(NM_NAMED_DATA_DIR, "$with_named_dir", [Define to path of named data directory])
 AC_DEFINE_UNQUOTED(NM_NAMED_USER, "$with_named_user", [Define to named username])
 
-AC_ARG_ENABLE(notification-icon, AC_HELP_STRING([--enable-notification-icon], [builds the wireless applet as a notification icon]), enable_notification_icon=$enableval, enable_notification_icon=yes)
-
-AM_CONDITIONAL(BUILD_NOTIFICATION_ICON, test x$enable_notification_icon = xyes)
-if test x$enable_notification_icon == xyes ; then
-	AC_DEFINE_UNQUOTED(BUILD_NOTIFICATION_ICON, "$BUILD_NOTIFICATION_ICON", [Should we build the notification icon instead of the applet])
-	notification_icon_dir="panel-applet"
-	AC_SUBST(notification_icon_dir)
-fi
-
 #### find the actual value for $prefix that we'll end up with
 ##   (I know this is broken and should be done in the Makefile, but
 ##    that's a major pain and almost nobody actually seems to care)
@@ -274,11 +265,14 @@ src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/backends/Makefile
 dispatcher-daemon/Makefile
-info-daemon/Makefile
+gnome/Makefile
+gnome/applet/Makefile
+gnome/applet/icons/Makefile
+gnome/libnm_glib/libnm_glib.pc
+gnome/libnm_glib/Makefile
 panel-applet/Makefile
 panel-applet/icons/Makefile
 dhcpcd/Makefile
-libnm_glib/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
@@ -287,7 +281,6 @@ initscript/Debian/Makefile
 initscript/Slackware/Makefile
 po/Makefile.in
 NetworkManager.pc
-libnm_glib/libnm_glib.pc
 vpn-daemons/Makefile
 vpn-daemons/vpnc/Makefile
 ])

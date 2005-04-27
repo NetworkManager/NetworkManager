@@ -1,0 +1,755 @@
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
+ *
+ * Dan Williams <dcbw@redhat.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * (C) Copyright 2004 Red Hat, Inc.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <glib.h>
+#include <glib/gi18n.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
+#include "applet.h"
+#include "applet-dbus.h"
+#include "applet-dbus-devices.h"
+#include "applet-dbus-vpn.h"
+#include "applet-dbus-info.h"
+#include "vpn-connection.h"
+#include "nm-utils.h"
+
+#define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
+
+
+/*
+ * nmi_dbus_create_error_message
+ *
+ * Convenience function to make a DBus error message
+ *
+ */
+DBusMessage *nmwa_dbus_create_error_message (DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...)
+{
+	char *		exception_text;
+	DBusMessage *	reply_message;
+	va_list		args;
+	char			error_text[512];
+
+
+	va_start (args, format);
+	vsnprintf (error_text, 512, format, args);
+	va_end (args);
+
+	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
+	reply_message = dbus_message_new_error (message, exception_text, error_text);
+	g_free (exception_text);
+
+	return (reply_message);
+}
+
+
+/*
+ * deal_with_dbus_error
+ *
+ * Ignore some common dbus errors
+ *
+ */
+static int deal_with_dbus_error (const char *function, const char *method, DBusError *error)
+{
+	int	ret = RETURN_FAILURE;
+
+	if (!strcmp (error->name, DBUS_NO_SERVICE_ERROR))
+		ret = RETURN_NO_NM;
+	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_NET_ERROR))
+		ret = RETURN_SUCCESS;
+	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_DEVICE_ERROR))
+		ret = RETURN_SUCCESS;
+	else if (!strcmp (error->name, NM_DBUS_NO_NETWORKS_ERROR))
+		ret = RETURN_SUCCESS;
+	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_VPN_CONNECTION))
+		ret = RETURN_SUCCESS;
+	else if (!strcmp (error->name, NM_DBUS_NO_VPN_CONNECTIONS))
+		ret = RETURN_SUCCESS;
+
+	if ((ret != RETURN_SUCCESS) && (ret != RETURN_NO_NM))
+		nm_warning ("%s(): %s raised on method '%s':\n %s\n\n", function, error->name, method, error->message);
+
+	return ret;
+}
+
+/*
+ * nmwa_dbus_call_method_string
+ *
+ * Do a method call on NetworkManager that returns a string.
+ *
+ * Returns:	RETURN_SUCCESS on success
+ *			RETURN_FAILURE on failure
+ *			RETURN_NO_NM if NetworkManager service no longer exists
+ */
+int nmwa_dbus_call_method_string (DBusConnection *con, const char *path, const char *interface, const char *method, gboolean is_obj_path, char **string)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+	char *		dbus_string = NULL;
+
+	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (string != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (*string == NULL, RETURN_FAILURE);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, interface, method)))
+	{
+		nm_warning ("nmwa_dbus_call_method_string(): Couldn't allocate the dbus message\n");
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		int ret = deal_with_dbus_error (__FUNCTION__, method, &error);
+		dbus_error_free (&error);
+		return (ret);
+	}
+
+	if (reply == NULL)
+	{
+		nm_warning ("nmwa_dbus_call_method_string(): dbus reply message was NULL\n" );
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	dbus_message_get_args (reply, &error, is_obj_path ? DBUS_TYPE_OBJECT_PATH : DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nmwa_dbus_call_method_string(): error while getting args: name='%s' message='%s'\n", error.name, error.message);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		dbus_message_unref (reply);
+		return (RETURN_FAILURE);
+	}
+
+	*string = g_strdup (dbus_string);
+
+	dbus_message_unref (reply);
+	return (RETURN_SUCCESS);
+}
+
+/*
+ * nmwa_dbus_call_method_uint32
+ *
+ * Do a method call on NetworkManager that returns a DBUS_TYPE_UINT32.
+ *
+ * Returns:	RETURN_SUCCESS on success
+ *			RETURN_FAILURE on failure
+ *			RETURN_NO_NM if NetworkManager service no longer exists
+ */
+int nmwa_dbus_call_method_uint32 (DBusConnection *con, const char *path, const char *interface, const char *method, guint32 *num)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+
+	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (num != NULL, RETURN_FAILURE);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, interface, method)))
+	{
+		nm_warning ("nmwa_dbus_call_method_uint32(): Couldn't allocate the dbus message\n");
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		int ret = deal_with_dbus_error (__FUNCTION__, method, &error);
+		dbus_error_free (&error);
+		return (ret);
+	}
+
+	if (reply == NULL)
+	{
+		nm_warning ("nmwa_dbus_call_method_uint32(): dbus reply message was NULL\n" );
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, num, DBUS_TYPE_INVALID);
+	dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nnmwa_dbus_call_method_uint32(): error while getting args: name='%s' message='%s'\n", error.name, error.message);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		return (RETURN_FAILURE);
+	}
+
+	return (RETURN_SUCCESS);
+}
+
+/*
+ * nmwa_dbus_call_method_int32
+ *
+ * Do a method call on NetworkManager that returns a DBUS_TYPE_INT32.
+ *
+ * Returns:	RETURN_SUCCESS on success
+ *			RETURN_FAILURE on failure
+ *			RETURN_NO_NM if NetworkManager service no longer exists
+ */
+int nmwa_dbus_call_method_int32 (DBusConnection *con, const char *path, const char *interface, const char *method, gint32 *num)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+
+	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (num != NULL, RETURN_FAILURE);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, interface, method)))
+	{
+		nm_warning ("nmwa_dbus_call_method_int32(): Couldn't allocate the dbus message\n");
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		int ret = deal_with_dbus_error (__FUNCTION__, method, &error);
+		dbus_error_free (&error);
+		return (ret);
+	}
+
+	if (reply == NULL)
+	{
+		nm_warning ("nmwa_dbus_call_method_int32(): dbus reply message was NULL\n" );
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	dbus_message_get_args (reply, &error, DBUS_TYPE_INT32, num, DBUS_TYPE_INVALID);
+	dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nnmwa_dbus_call_method_int32(): error while getting args: name='%s' message='%s'\n", error.name, error.message);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		return (RETURN_FAILURE);
+	}
+
+	return (RETURN_SUCCESS);
+}
+
+
+/*
+ * nmwa_dbus_call_method_boolean
+ *
+ * Do a method call on NetworkManager that returns a DBUS_TYPE_BOOLEAN.
+ *
+ * Returns:	RETURN_SUCCESS on success
+ *			RETURN_FAILURE on failure
+ *			RETURN_NO_NM if NetworkManager service no longer exists
+ */
+int nmwa_dbus_call_method_boolean (DBusConnection *con, const char *path, const char *interface, const char *method, gboolean *num)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+
+	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (num != NULL, RETURN_FAILURE);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, interface, method)))
+	{
+		nm_warning ("nmwa_dbus_call_method_boolean(): Couldn't allocate the dbus message\n");
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		int ret = deal_with_dbus_error (__FUNCTION__, method, &error);
+		dbus_error_free (&error);
+		return (ret);
+	}
+
+	if (reply == NULL)
+	{
+		nm_warning ("nmwa_dbus_call_method_boolean(): dbus reply message was NULL\n" );
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	dbus_message_get_args (reply, &error, DBUS_TYPE_BOOLEAN, num, DBUS_TYPE_INVALID);
+	dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nnmwa_dbus_call_method_boolean(): error while getting args: name='%s' message='%s'\n", error.name, error.message);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		return (RETURN_FAILURE);
+	}
+
+	return (RETURN_SUCCESS);
+}
+
+
+/*
+ * nmwa_dbus_call_method_string_array
+ *
+ * Do a method call on NetworkManager that returns a string array.
+ *
+ * Returns:	RETURN_SUCCESS on success
+ *			RETURN_FAILURE on failure
+ *			RETURN_NO_NM if NetworkManager service no longer exists
+ */
+int nmwa_dbus_call_method_string_array (DBusConnection *con, const char *path, const char *interface, const char *method,
+							gboolean is_obj_path, char ***array, guint32 *array_len)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+	char **		dbus_array;
+	int			dbus_array_len;
+
+	g_return_val_if_fail (con != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (path != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (method != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (array != NULL, RETURN_FAILURE);
+	g_return_val_if_fail (*array == NULL, RETURN_FAILURE);
+	g_return_val_if_fail (array_len != NULL, RETURN_FAILURE);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, interface, method)))
+	{
+		nm_warning ("nmwa_dbus_call_method_string_array(): Couldn't allocate the dbus message\n");
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+	{
+		int ret = deal_with_dbus_error (__FUNCTION__, method, &error);
+		dbus_error_free (&error);
+		return (ret);
+	}
+
+	if (reply == NULL)
+	{
+		nm_warning ("nmwa_dbus_call_method_string_array(): dbus reply message was NULL\n" );
+		return (RETURN_FAILURE);
+	}
+
+	dbus_error_init (&error);
+	dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, is_obj_path ? DBUS_TYPE_OBJECT_PATH : DBUS_TYPE_STRING, &dbus_array, &dbus_array_len, DBUS_TYPE_INVALID);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nnmwa_dbus_call_method_string_array(): error while getting args: name='%s' message='%s'\n", error.name, error.message);
+		dbus_message_unref (reply);
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		return (RETURN_FAILURE);
+	}
+
+	*array = g_strdupv (dbus_array);
+	*array_len = dbus_array_len;
+	dbus_free_string_array (dbus_array);
+
+	dbus_message_unref (reply);
+	return (RETURN_SUCCESS);
+}
+
+
+
+/*
+ * nmwa_dbus_filter
+ *
+ */
+static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+	gboolean			 handled = TRUE;
+	DBusError			 error;
+
+	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+
+	dbus_error_init (&error);
+
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
+	{
+		char 	*service;
+		char		*old_owner;
+		char		*new_owner;
+
+		if (dbus_message_get_args (message, &error,
+								DBUS_TYPE_STRING, &service,
+								DBUS_TYPE_STRING, &old_owner,
+								DBUS_TYPE_STRING, &new_owner,
+								DBUS_TYPE_INVALID))
+		{
+			if (strcmp (service, NM_DBUS_SERVICE) == 0)
+			{
+				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+
+				if (!old_owner_good && new_owner_good && !applet->nm_running)
+				{
+					/* NetworkManager started up */
+					applet->nm_running = TRUE;
+					applet->gui_nm_state = NM_STATE_DISCONNECTED;
+					applet->dbus_nm_state = NM_STATE_DISCONNECTED;
+					nmwa_dbus_update_nm_state (applet);
+					nmwa_dbus_update_devices (applet);
+					nmwa_dbus_vpn_update_vpn_connections (applet);
+				}
+				else if (old_owner_good && !new_owner_good)
+						applet->nm_running = FALSE;
+			}
+		}
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, NM_DBUS_SIGNAL_STATE_CHANGE))
+	{
+		NMState	state = NM_STATE_UNKNOWN;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
+		{
+			/* If we've switched to connecting, update the active device to ensure that we have
+			 * valid wireless network information for it.
+			 */
+			if (   (state == NM_STATE_CONNECTING)
+				&& applet->dbus_active_device
+				&& (network_device_get_type (applet->dbus_active_device) == DEVICE_TYPE_WIRELESS_ETHERNET))
+			{
+				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (applet->dbus_active_device));
+			}
+			applet->dbus_nm_state = state;
+			applet->gui_nm_state = state;
+		}
+	}
+	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceAdded")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
+	{
+		char *path = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &path, DBUS_TYPE_INVALID))
+			nmwa_dbus_device_update_one_device (applet, path);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceRemoved"))
+	{
+		char *path = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &path, DBUS_TYPE_INVALID))
+			nmwa_dbus_device_remove_one_device (applet, path);
+	}
+	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionAdded")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionUpdate"))	/* VPN connection properties changed */
+	{
+		char *name = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID))
+			nmwa_dbus_vpn_update_one_vpn_connection (applet, name);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionChange"))	/* Active VPN connection changed */
+	{
+		nmwa_dbus_vpn_get_active_vpn_connection (applet);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionRemoved"))
+	{
+		char *name = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID))
+			nmwa_dbus_vpn_remove_one_vpn_connection (applet, name);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkAppeared"))
+	{
+		char *dev_path = NULL;
+		char *net_path = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_OBJECT_PATH, &net_path, DBUS_TYPE_INVALID))
+			nmwa_dbus_device_update_one_network (applet, dev_path, net_path, NULL);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkDisappeared"))
+	{
+		char *dev_path = NULL;
+		char *net_path = NULL;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_OBJECT_PATH, &net_path, DBUS_TYPE_INVALID))
+			nmwa_dbus_device_remove_one_network (applet, dev_path, net_path);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "WirelessNetworkStrengthChanged"))
+	{
+		char *	dev_path = NULL;
+		char *	net_path = NULL;
+		int		strength = -1;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_OBJECT_PATH, &net_path, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID))
+		{
+			/* FIXME  actually use strength rather than querying all network properties */
+			nmwa_dbus_device_update_one_network (applet, dev_path, net_path, NULL);
+		}
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginFailed"))
+	{
+		char *vpn_name;
+		char *error_msg;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
+			nmwa_schedule_vpn_login_failure_dialog (applet, vpn_name, error_msg);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginBanner"))
+	{
+		char *vpn_name;
+		char *banner;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &banner, DBUS_TYPE_INVALID))
+			nmwa_schedule_vpn_login_banner_dialog (applet, vpn_name, banner);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationFailed"))
+	{
+		char		*dev = NULL;
+		char		*net = NULL;
+		DBusError	 error;
+
+		dbus_error_init (&error);
+		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
+		{
+			if (dbus_error_is_set (&error))
+				dbus_error_free (&error);
+			dbus_error_init (&error);
+			dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
+		}
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		if (dev && net)
+		{
+			char *string = g_strdup_printf (_("Connection to the wireless network '%s' failed.\n"), net);
+			nmwa_schedule_warning_dialog (applet, string);
+			g_free (string);
+		}
+		else if (dev)
+			nmwa_schedule_warning_dialog (applet, _("Connection to the wired network failed.\n"));
+	}
+	else
+		handled = FALSE;
+
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
+}
+
+
+/*
+ * nmwa_dbus_nm_is_running
+ *
+ * Ask dbus whether or not NetworkManager is running
+ *
+ */
+static gboolean nmwa_dbus_nm_is_running (DBusConnection *connection)
+{
+	DBusError		error;
+	gboolean		exists;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	dbus_error_init (&error);
+	exists = dbus_bus_name_has_owner (connection, NM_DBUS_SERVICE, &error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	return (exists);
+}
+
+
+/*
+ * nmwa_dbus_init
+ *
+ * Initialize a connection to NetworkManager if we can get one
+ *
+ */
+static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *context)
+{
+	DBusConnection	*		connection = NULL;
+	DBusError		 		error;
+	DBusObjectPathVTable	vtable = { NULL, &nmi_dbus_info_message_handler, NULL, NULL, NULL, NULL };
+	int					acquisition;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (context != NULL, NULL);
+
+	dbus_error_init (&error);
+	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("%s raised:\n %s\n\n", error.name, error.message);
+		dbus_error_free (&error);
+		return NULL;
+	}
+
+	dbus_error_init (&error);
+	acquisition = dbus_bus_request_name (connection, NMI_DBUS_SERVICE, DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT, &error);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("nmwa_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
+		dbus_error_free (&error);
+		return NULL;
+	}
+	if (acquisition == DBUS_REQUEST_NAME_REPLY_EXISTS)
+	     return NULL;
+
+	if (!dbus_connection_register_object_path (connection, NMI_DBUS_PATH, &vtable, applet))
+	{
+		nm_warning ("nmwa_dbus_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
+		return NULL;
+	}
+
+	if (!dbus_connection_add_filter (connection, nmwa_dbus_filter, applet, NULL))
+		return NULL;
+
+	dbus_connection_set_exit_on_disconnect (connection, FALSE);
+	dbus_connection_setup_with_g_main (connection, context);
+
+	dbus_bus_add_match(connection,
+				"type='signal',"
+				"interface='" DBUS_INTERFACE_DBUS "',"
+				"sender='" DBUS_SERVICE_DBUS "'",
+				&error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+
+	dbus_bus_add_match(connection,
+				"type='signal',"
+				"interface='" NM_DBUS_INTERFACE "',"
+				"path='" NM_DBUS_PATH "',"
+				"sender='" NM_DBUS_SERVICE "'",
+				&error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+
+	dbus_bus_add_match(connection,
+				"type='signal',"
+				"interface='" NM_DBUS_INTERFACE_VPN "',"
+				"path='" NM_DBUS_PATH_VPN "',"
+				"sender='" NM_DBUS_SERVICE "'",
+				&error);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+
+	return (connection);
+}
+
+
+/*
+ * nmwa_dbus_connection_watcher
+ *
+ * Try to reconnect if we ever get disconnected from the bus
+ *
+ */
+static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+
+	g_return_val_if_fail (applet != NULL, TRUE);
+
+	if (!applet->connection)
+	{
+		if ((applet->connection = nmwa_dbus_init (applet, applet->thread_context)))
+		{
+			applet->nm_running = nmwa_dbus_nm_is_running (applet->connection);
+			applet->dbus_nm_state = NM_STATE_DISCONNECTED;
+			nmwa_dbus_update_nm_state (applet);
+			nmwa_dbus_update_devices (applet);
+			nmwa_dbus_vpn_update_vpn_connections (applet);
+		}
+	}
+
+	return (TRUE);
+}
+
+
+/*
+ * nmwa_dbus_worker
+ *
+ * Thread worker function that periodically grabs the NetworkManager state
+ * and updates our local applet state to reflect that.
+ *
+ */
+gpointer nmwa_dbus_worker (gpointer user_data)
+{
+	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
+	GSource *			timeout_source;
+	GSource *			strength_source;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+
+	dbus_g_thread_init ();
+
+	if (!(applet->thread_context = g_main_context_new ()))
+		return (NULL);
+	if (!(applet->thread_loop = g_main_loop_new (applet->thread_context, FALSE)))
+		return (NULL);
+
+	applet->connection = nmwa_dbus_init (applet, applet->thread_context);
+
+	timeout_source = g_timeout_source_new (2000);
+	g_source_set_callback (timeout_source, nmwa_dbus_connection_watcher, applet, NULL);
+	g_source_attach (timeout_source, applet->thread_context);
+
+	strength_source = g_timeout_source_new (2000);
+	g_source_set_callback (strength_source, (GSourceFunc) nmwa_dbus_update_active_device_strength, applet, NULL);
+	g_source_attach (strength_source, applet->thread_context);
+
+	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))
+	{
+		applet->nm_running = TRUE;
+		nmwa_dbus_update_nm_state (applet);
+		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_vpn_update_vpn_connections (applet);
+	}
+
+	g_main_loop_run (applet->thread_loop);
+
+	g_source_destroy (timeout_source);
+#if 0
+	g_source_destroy (strength_source);
+#endif
+
+	return NULL;
+}

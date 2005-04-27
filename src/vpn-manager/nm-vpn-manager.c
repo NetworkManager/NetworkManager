@@ -112,7 +112,9 @@ void nm_vpn_manager_clear_connections (NMVPNManager *manager)
 {
 	g_return_if_fail (manager != NULL);
 
-	g_slist_foreach (manager->connections, (GFunc)nm_vpn_connection_unref, NULL);
+	g_slist_foreach (manager->connections, (GFunc) nm_vpn_connection_unref, NULL);
+	g_slist_free (manager->connections);
+	manager->connections = NULL;
 }
 
 
@@ -134,7 +136,7 @@ static NMVPNService *find_service_by_name (NMVPNManager *manager, const char *se
 	{
 		if ((service = (NMVPNService *)(elt->data)))
 		{
-			const char *search_name = nm_vpn_service_get_name (service);
+			const char *search_name = nm_vpn_service_get_service_name (service);
 			if (search_name && (strcmp (service_name, search_name) == 0))
 				break;
 		}
@@ -193,7 +195,7 @@ static void nm_vpn_manager_set_active_vpn_connection (NMVPNManager *manager, NMV
 	if ((active = nm_vpn_manager_get_active_vpn_connection (manager)))
 	{
 		service = nm_vpn_connection_get_service (active);
-		if (service && (service_name = nm_vpn_service_get_name (service)))
+		if (service && (service_name = nm_vpn_service_get_service_name (service)))
 		{
 			/* Remove any previous watch on this VPN connection's service name */
 			match_string = g_strdup_printf ("type='signal',"
@@ -216,7 +218,6 @@ static void nm_vpn_manager_set_active_vpn_connection (NMVPNManager *manager, NMV
 
 	if (manager->active_device)
 	{
-nm_info ("Clearing active VPN device '%s'.", manager->active_device);
 		nm_system_device_set_up_down_with_iface (NULL, manager->active_device, FALSE);
 		nm_system_device_flush_routes_with_iface (manager->active_device);
 		nm_system_device_flush_addresses_with_iface (manager->active_device);
@@ -231,7 +232,7 @@ nm_info ("Clearing active VPN device '%s'.", manager->active_device);
 		return;
 
 	service = nm_vpn_connection_get_service (con);
-	if (!service || !(service_name = nm_vpn_service_get_name (service)))
+	if (!service || !(service_name = nm_vpn_service_get_service_name (service)))
 	{
 		nm_warning ("VPN connection could not be set active because it didn't have a VPN service.");
 		return;
@@ -292,6 +293,24 @@ NMVPNConnection *nm_vpn_manager_add_connection (NMVPNManager *manager, const cha
 	}
 
 	return connection;
+}
+
+
+/*
+ * nm_vpn_manager_remove_connection
+ *
+ * Remove a VPN connection.
+ *
+ */
+void nm_vpn_manager_remove_connection (NMVPNManager *manager, NMVPNConnection *vpn)
+{
+	GSList *	elt;
+
+	g_return_if_fail (manager != NULL);
+	g_return_if_fail (vpn != NULL);
+
+	manager->connections = g_slist_remove (manager->connections, vpn);
+	nm_vpn_connection_unref (vpn);
 }
 
 
@@ -519,7 +538,7 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
 		return FALSE;
 
 	service = nm_vpn_connection_get_service (active);
-	if (!service || !(service_name = nm_vpn_service_get_name (service)))
+	if (!service || !(service_name = nm_vpn_service_get_service_name (service)))
 		return FALSE;
 
 	temp_op = construct_op_from_service_name (service_name);
@@ -588,7 +607,7 @@ gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const
 	}
 
 	/* Can't handle the signal if its not from our active VPN service */
-	if (strcmp (nm_vpn_service_get_name (service), changed_service_name) != 0)
+	if (strcmp (nm_vpn_service_get_service_name (service), changed_service_name) != 0)
 	{
 		nm_vpn_connection_unref (active);
 		return FALSE;
@@ -641,7 +660,7 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	nm_vpn_manager_set_active_vpn_connection (manager, NULL);
 
 	/* Construct a new method call with the correct service and object path */
-	if (!(service = nm_vpn_connection_get_service (vpn)) || !(service_name = nm_vpn_service_get_name (service)))
+	if (!(service = nm_vpn_connection_get_service (vpn)) || !(service_name = nm_vpn_service_get_service_name (service)))
 		return;
 
 	nm_vpn_manager_set_active_vpn_connection (manager, vpn);
@@ -716,7 +735,7 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
 
 	/* Construct a new method call with the correct service and object path */
 	service = nm_vpn_connection_get_service (active);
-	service_name = nm_vpn_service_get_name (service);
+	service_name = nm_vpn_service_get_service_name (service);
 	op = construct_op_from_service_name (service_name);
 	message = dbus_message_new_method_call (service_name, op, service_name, "stopConnection");
 	g_free (op);
@@ -763,16 +782,18 @@ static GSList *nm_vpn_manager_load_services (void)
 
 				if (split_contents)
 				{
-					int			 i, len;
-					NMVPNService	*service = nm_vpn_service_new ();
-					gboolean		 have_name = FALSE;
-					gboolean		 have_program = FALSE;
+					int			i, len;
+					NMVPNService *	service = nm_vpn_service_new ();
+					gboolean		have_name = FALSE;
+					gboolean		have_service = FALSE;
+					gboolean		have_program = FALSE;
 
 					len = g_strv_length (split_contents);
 					for (i = 0; i < len; i++)
 					{
 						char *line = split_contents[i];
 
+						#define NAME_TAG "name="
 						#define SERVICE_TAG "service="
 						#define PROGRAM_TAG "program="
 
@@ -781,44 +802,61 @@ static GSList *nm_vpn_manager_load_services (void)
 						/* Comment lines begin with # */
 						if (line[0] == '#') continue;
 
-						if (strlen (line) > 8)
+						if ((strncmp (line, NAME_TAG, strlen (NAME_TAG)) == 0) && !have_name)
 						{
-							if ((strncmp (line, SERVICE_TAG, strlen (SERVICE_TAG)) == 0) && !have_name)
-							{
-								char *service_name = g_strdup (line+strlen (SERVICE_TAG));
+							char *	name = g_strdup (line+strlen (NAME_TAG));
+							GSList *	dup_elt;
+							gboolean	found = FALSE;
 
-								/* Deny the load if the service name is NetworkManager or NetworkManagerInfo. */
-								if (strcmp (service_name, NM_DBUS_SERVICE) && strcmp (service_name, NM_DBUS_SERVICE))
-									nm_vpn_service_set_name (service, (const char *)service_name);
-								else
-									nm_warning ("VPN service name matched NetworkManager or NetworkManagerInfo service names, "
-												"which is not allowed and might be malicious.");
-								g_free (service_name);
-								have_name = TRUE;
-							}
-							else if ((strncmp (line, PROGRAM_TAG, strlen (PROGRAM_TAG)) == 0) && !have_program)
+							for (dup_elt = list; dup_elt; dup_elt = g_slist_next (dup_elt))
 							{
-								gboolean	program_ok = FALSE;
-								if ((strlen (line) >= strlen (PROGRAM_TAG) + 1))
+								NMVPNService	*dup_svc = (NMVPNService *)(dup_elt->data);
+								if (dup_svc && nm_vpn_service_get_name (dup_svc) && !strcmp (nm_vpn_service_get_name (dup_svc), name))
 								{
-									if ((*(line+strlen (PROGRAM_TAG)) == '/') && (*(line+strlen (line)-1) != '/'))
-									{
-										nm_vpn_service_set_program (service, (const char *)(line+strlen (PROGRAM_TAG)));
-										program_ok = TRUE;
-									}
+									found = TRUE;
+									break;
 								}
-								if (!program_ok)
-									nm_warning ("WARNING: VPN program '%s' invalid in file '%s'", line, file_path);
-								have_program = TRUE;
 							}
+							if (!found)
+								nm_vpn_service_set_name (service, (const char *)name);
+							g_free (name);
+							have_name = TRUE;
+						}
+						else if ((strncmp (line, SERVICE_TAG, strlen (SERVICE_TAG)) == 0) && !have_service)
+						{
+							char *service_name = g_strdup (line+strlen (SERVICE_TAG));
+
+							/* Deny the load if the service name is NetworkManager or NetworkManagerInfo. */
+							if (strcmp (service_name, NM_DBUS_SERVICE) && strcmp (service_name, NM_DBUS_SERVICE))
+								nm_vpn_service_set_service_name (service, (const char *)service_name);
+							else
+								nm_warning ("VPN service name matched NetworkManager or NetworkManagerInfo service names, "
+											"which is not allowed and might be malicious.");
+							g_free (service_name);
+							have_service = TRUE;
+						}
+						else if ((strncmp (line, PROGRAM_TAG, strlen (PROGRAM_TAG)) == 0) && !have_program)
+						{
+							gboolean	program_ok = FALSE;
+							if ((strlen (line) >= strlen (PROGRAM_TAG) + 1))
+							{
+								if ((*(line+strlen (PROGRAM_TAG)) == '/') && (*(line+strlen (line)-1) != '/'))
+								{
+									nm_vpn_service_set_program (service, (const char *)(line+strlen (PROGRAM_TAG)));
+									program_ok = TRUE;
+								}
+							}
+							if (!program_ok)
+								nm_warning ("WARNING: VPN program '%s' invalid in file '%s'", line, file_path);
+							have_program = TRUE;
 						}
 					}
 					g_strfreev (split_contents);
 
-					if (nm_vpn_service_get_name (service) && nm_vpn_service_get_program (service))
+					if (nm_vpn_service_get_name (service) && nm_vpn_service_get_service_name (service) && nm_vpn_service_get_program (service))
 					{
-						nm_info ("Adding VPN service '%s' with program '%s'", nm_vpn_service_get_name (service),
-									nm_vpn_service_get_program (service));
+						nm_info ("Adding VPN service '%s' with name '%s' and program '%s'", nm_vpn_service_get_service_name (service),
+									nm_vpn_service_get_name (service), nm_vpn_service_get_program (service));
 						list = g_slist_append (list, service);
 					}
 					else

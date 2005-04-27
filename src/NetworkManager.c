@@ -137,7 +137,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 			nm_policy_schedule_state_update (data);
-			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
+			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ADDED);
 		}
 		else
 		{
@@ -185,7 +185,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				nm_device_set_removed (dev, TRUE);
 				nm_device_deactivate (dev, FALSE);
 				nm_device_worker_thread_stop (dev);
-				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
+				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_REMOVED);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
@@ -334,25 +334,25 @@ static void nm_add_initial_devices (NMData *data)
 
 
 /*
- * nm_status_signal_broadcast
+ * nm_state_change_signal_broadcast
  *
  */
-static gboolean nm_status_signal_broadcast (gpointer user_data)
+static gboolean nm_state_change_signal_broadcast (gpointer user_data)
 {
 	NMData *data = (NMData *)user_data;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	nm_dbus_signal_network_status_change (data->dbus_connection, data);
+	nm_dbus_signal_state_change (data->dbus_connection, data);
 	return FALSE;
 }
 
 
 /*
- * nm_schedule_status_signal_broadcast
+ * nm_schedule_state_change_signal_broadcast
  *
  */
-void nm_schedule_status_signal_broadcast (NMData *data)
+void nm_schedule_state_change_signal_broadcast (NMData *data)
 {
 	guint	 id = 0;
 	GSource	*source;
@@ -360,7 +360,7 @@ void nm_schedule_status_signal_broadcast (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	source = g_idle_source_new ();
-	g_source_set_callback (source, nm_status_signal_broadcast, data, NULL);
+	g_source_set_callback (source, nm_state_change_signal_broadcast, data, NULL);
 	id = g_source_attach (source, data->main_context);
 	g_source_unref (source);
 }
@@ -930,6 +930,8 @@ int main( int argc, char *argv[] )
 			  error->message);
 		exit (EXIT_FAILURE);
 	}
+
+	nm_schedule_state_change_signal_broadcast (nm_data);
 
 	/* Wheeee!!! */
 	g_main_loop_run (nm_data->main_loop);

@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -19,28 +19,21 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_POLICY_H
-#define NETWORK_MANAGER_POLICY_H
+#ifndef VPN_CONNECTION_H
+#define VPN_CONNECTION_H
 
-#include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
-#include "NetworkManagerDbus.h"
+#include "applet.h"
 
-typedef struct
-{
-	NMDevice		*dev;
-	NMAccessPoint	*failed_ap;
-	DeviceStatus	 result;
-} NMActivationResult;
+VPNConnection *	nmwa_vpn_connection_new			(const char *name);
+VPNConnection *	nmwa_vpn_connection_copy			(VPNConnection *vpn);
+void				nmwa_vpn_connection_ref			(VPNConnection *vpn);
+void				nmwa_vpn_connection_unref		(VPNConnection *vpn);
 
+const char *		nmwa_vpn_connection_get_name		(VPNConnection *vpn);
 
-void			nm_policy_schedule_state_update		(NMData *app_data);
+const char *		nmwa_vpn_connection_get_user_name	(VPNConnection *vpn);
+void				nmwa_vpn_connection_set_user_name	(VPNConnection *vpn, const char *user_name);
 
-void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
-
-void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
-void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
-
-gboolean		nm_policy_activation_finish			(gpointer user_data);
+VPNConnection *	nmwa_vpn_connection_find_by_name	(GSList *list, const char *name);
 
 #endif

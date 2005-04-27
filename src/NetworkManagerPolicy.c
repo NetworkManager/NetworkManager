@@ -309,6 +309,7 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			break;
 	}
 
+	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_state_update (data);
 
 out:
@@ -325,7 +326,7 @@ typedef struct NMStateUpdateData
 
 
 /*
- * nm_state_modification_monitor
+ * nm_policy_state_update
  *
  * Figures out which interface to switch the active
  * network connection to if our global network state has changed.
@@ -475,6 +476,7 @@ void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data
 }
 
 
+static gboolean allowed_list_update_pending = FALSE;
 
 /*
  * nm_policy_allowed_ap_list_update
@@ -488,6 +490,8 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	NMData	*data = (NMData *)user_data;
 	GSList	*elt;
 
+	allowed_list_update_pending = FALSE;
+
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	nm_info ("Updating allowed wireless network lists.");
@@ -495,9 +499,61 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	/* Query info daemon for network lists if its now running */
 	if (data->allowed_ap_list)
 		nm_ap_list_unref (data->allowed_ap_list);
-	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-	if (data->allowed_ap_list)
-		nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
+	if ((data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED)))
+		nm_dbus_update_allowed_networks (data->dbus_connection, data->allowed_ap_list, data);
+
+	return (FALSE);
+}
+
+
+/*
+ * nm_policy_schedule_allowed_ap_list_update
+ *
+ * Schedule an update of the allowed AP list in the main thread.
+ *
+ */
+void nm_policy_schedule_allowed_ap_list_update (NMData *app_data)
+{
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+
+	g_return_if_fail (app_data != NULL);
+	g_return_if_fail (app_data->main_context != NULL);
+
+	g_static_mutex_lock (&mutex);
+
+	if (allowed_list_update_pending == FALSE)
+	{
+		GSource *source = g_idle_source_new ();
+		/* We want this idle source to run before any other idle source */
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+		g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
+		g_source_attach (source, app_data->main_context);
+		g_source_unref (source);
+
+		allowed_list_update_pending = TRUE;
+	}
+
+	g_static_mutex_unlock (&mutex);
+}
+
+
+static gboolean device_list_update_pending = FALSE;
+
+/*
+ * nm_policy_device_list_update_from_allowed_list
+ *
+ * Requery NetworkManagerInfo for a list of updated
+ * allowed wireless networks.
+ *
+ */
+static gboolean nm_policy_device_list_update_from_allowed_list (gpointer user_data)
+{
+	NMData	*data = (NMData *)user_data;
+	GSList	*elt;
+
+	device_list_update_pending = FALSE;
+
+	g_return_val_if_fail (data != NULL, FALSE);
 
 	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
 	{
@@ -541,22 +597,33 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 
 
 /*
- * nm_policy_schedule_allowed_ap_list_update
+ * nm_policy_schedule_device_ap_lists_update_from_allowed
  *
- * Schedule an update of the allowed AP list in the main thread.
+ * Schedule an update of each wireless device's AP list from
+ * the allowed list, in the main thread.
  *
  */
-void nm_policy_schedule_allowed_ap_list_update (NMData *app_data)
+void nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
 {
-	GSource	*source = NULL;
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 
 	g_return_if_fail (app_data != NULL);
 	g_return_if_fail (app_data->main_context != NULL);
 
-	source = g_idle_source_new ();
-	/* We want this idle source to run before any other idle source */
-	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
-	g_source_attach (source, app_data->main_context);
-	g_source_unref (source);
+	g_static_mutex_lock (&mutex);
+
+	if (device_list_update_pending == FALSE)
+	{
+		GSource	*source = g_idle_source_new ();
+
+		/* We want this idle source to run before any other idle source */
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+		g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
+		g_source_attach (source, app_data->main_context);
+		g_source_unref (source);
+
+		device_list_update_pending = TRUE;
+	}
+
+	g_static_mutex_unlock (&mutex);
 }

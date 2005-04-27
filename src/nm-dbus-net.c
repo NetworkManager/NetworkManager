@@ -221,6 +221,44 @@ static DBusMessage *nm_dbus_net_get_mode (DBusConnection *connection, DBusMessag
 }
 
 
+static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	DBusMessage	*reply = NULL;
+
+	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
+
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		char *		op = nm_dbus_get_object_path_for_network (data->dev, data->ap);
+		const char *	essid = nm_ap_get_essid (data->ap);
+		char			hw_addr_buf[20];
+		char *		hw_addr_buf_ptr = &hw_addr_buf[0];
+		dbus_int32_t	strength = nm_ap_get_strength (data->ap);
+		double 		freq = nm_ap_get_freq (data->ap);
+		dbus_int32_t	rate = nm_ap_get_rate (data->ap);
+		dbus_bool_t	enc = nm_ap_get_encrypted (data->ap);
+		dbus_uint32_t	mode = nm_ap_get_mode (data->ap);
+
+		memset (&hw_addr_buf[0], 0, 20);
+		if (nm_ap_get_address (data->ap))
+			iw_ether_ntop((const struct ether_addr *) (nm_ap_get_address (data->ap)), &hw_addr_buf[0]);
+
+		dbus_message_append_args (reply,	DBUS_TYPE_OBJECT_PATH, &op,
+									DBUS_TYPE_STRING, &essid,
+									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
+									DBUS_TYPE_INT32,  &strength,
+									DBUS_TYPE_DOUBLE, &freq,
+									DBUS_TYPE_INT32,  &rate,
+									DBUS_TYPE_BOOLEAN,&enc,
+									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INVALID);
+		g_free (op);
+	}
+
+	return reply;
+}
+
+
 /*
  * nm_dbus_net_methods_setup
  *
@@ -231,6 +269,8 @@ static DBusMessage *nm_dbus_net_get_mode (DBusConnection *connection, DBusMessag
 NMDbusMethodList *nm_dbus_net_methods_setup (void)
 {
 	NMDbusMethodList	*list = nm_dbus_method_list_new (nm_dbus_net_validate);
+
+	nm_dbus_method_list_add_method (list, "getProperties",		nm_dbus_net_get_properties);
 
 	nm_dbus_method_list_add_method (list, "getName",			nm_dbus_net_get_name);
 	nm_dbus_method_list_add_method (list, "getAddress",		nm_dbus_net_get_address);

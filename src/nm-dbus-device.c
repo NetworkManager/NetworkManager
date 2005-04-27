@@ -34,6 +34,7 @@
 #include "NetworkManagerPolicy.h"
 #include "nm-dbus-device.h"
 
+
 static DBusMessage *nm_dbus_device_get_name (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
@@ -213,7 +214,7 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 			char *object_path = NULL;
 
 			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
-				&& (object_path = nm_device_get_path_for_ap (dev, tmp_ap)))
+				&& (object_path = nm_dbus_get_object_path_for_network (dev, tmp_ap)))
 			{
 				dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &object_path, DBUS_TYPE_INVALID);
 				g_free (object_path);
@@ -268,12 +269,8 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 				{
 					if (nm_ap_get_essid (ap))
 					{
-						object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
-								nm_device_get_iface (dev), nm_ap_get_essid (ap));
-						escaped_object_path = nm_dbus_escape_object_path (object_path);
-						g_free (object_path);
-						dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH,
-                                                                                &escaped_object_path);
+						escaped_object_path = nm_dbus_get_object_path_for_network (dev, ap);
+						dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &escaped_object_path);
 						g_free (escaped_object_path);
 						success = TRUE;
 					}
@@ -342,6 +339,99 @@ static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, 
 	return reply;
 }
 
+static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	DBusMessage	*reply = NULL;
+	NMDevice		*dev;
+
+	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
+
+	dev = data->dev;
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		char *			op = nm_dbus_get_object_path_for_device (dev);
+		const char *		iface = nm_device_get_iface (dev);
+		dbus_uint32_t		type = (dbus_uint32_t) nm_device_get_type (dev);
+		const char *		udi = nm_device_get_udi (dev);
+		dbus_uint32_t		ip4_address = (dbus_uint32_t) nm_device_get_ip4_address (dev);
+		struct ether_addr	hw_addr;
+		char				hw_addr_buf[20];
+		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
+		dbus_uint32_t		mode = 0;
+		dbus_int32_t		strength = -1;
+		NMAccessPoint *	best_ap;
+		char *			active_network_path = NULL;
+		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
+		dbus_uint32_t		driver_support_level = (dbus_uint32_t) nm_device_get_driver_support_level (dev);
+		char **			networks = NULL;
+		int				num_networks = 0;
+
+		nm_device_get_hw_address (dev, (unsigned char *)&(hw_addr.ether_addr_octet));
+		memset (hw_addr_buf, 0, 20);
+		ether_ntoa_r (&hw_addr, &hw_addr_buf[0]);
+
+		if (nm_device_is_wireless (dev))
+		{
+			NMAccessPointList *	ap_list;
+			NMAPListIter *		iter;
+
+			strength = (dbus_int32_t) nm_device_get_signal_strength (dev);
+			mode = (dbus_uint32_t) nm_device_get_mode (dev);
+
+			if ((best_ap = nm_device_get_best_ap (dev)))
+			{
+				NMAccessPoint	*tmp_ap;
+
+				if ((tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap))))
+					active_network_path = nm_dbus_get_object_path_for_network (dev, tmp_ap);
+				nm_ap_unref (best_ap);
+			}
+
+			ap_list = nm_device_ap_list_get (dev);
+			if (ap_list && (num_networks = nm_ap_list_size (ap_list)))
+			{
+				if ((iter = nm_ap_list_iter_new (ap_list)))
+				{
+					int				i = 0;
+					NMAccessPoint *	ap;
+
+					networks = g_malloc0 (sizeof (char *) * (num_networks + 1));
+					while ((ap = nm_ap_list_iter_next (iter)))
+					{
+						char *ap_op = nm_dbus_get_object_path_for_network (dev, ap);
+						if (ap_op)
+							networks[i++] = ap_op;
+					}
+					num_networks = i;	/* # actually added to array, since we can have NULL essid access points */
+
+					nm_ap_list_iter_free (iter);
+				}
+			}
+		}
+		if (!active_network_path)
+			active_network_path = g_strdup ("");
+
+		dbus_message_append_args (reply,	DBUS_TYPE_OBJECT_PATH, &op,
+									DBUS_TYPE_STRING, &iface,
+									DBUS_TYPE_UINT32, &type,
+									DBUS_TYPE_STRING, &udi,
+									DBUS_TYPE_UINT32, &ip4_address,
+									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
+									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &strength,
+									DBUS_TYPE_BOOLEAN,&link_active,
+									DBUS_TYPE_UINT32, &driver_support_level,
+									DBUS_TYPE_STRING, &active_network_path,
+									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, num_networks,
+									DBUS_TYPE_INVALID);
+		g_free (op);
+		g_free (active_network_path);
+		g_strfreev (networks);
+	}
+
+	return reply;
+}
+
 
 /*
  * nm_dbus_device_methods_setup
@@ -352,6 +442,8 @@ static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, 
 NMDbusMethodList *nm_dbus_device_methods_setup (void)
 {
 	NMDbusMethodList	*list = nm_dbus_method_list_new (NULL);
+
+	nm_dbus_method_list_add_method (list, "getProperties",			nm_dbus_device_get_properties);
 
 	nm_dbus_method_list_add_method (list, "getName",				nm_dbus_device_get_name);
 	nm_dbus_method_list_add_method (list, "getType",				nm_dbus_device_get_type);

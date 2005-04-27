@@ -51,17 +51,14 @@ static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DB
 	/* Construct object path of "active" device and return it */
 	if (data->data->active_device)
 	{
-		char *object_path, *escaped_object_path;
+		char *op;
 
-		reply = dbus_message_new_method_return (message);
-		if (!reply)
+		if (!(reply = dbus_message_new_method_return (message)))
 			return (NULL);
 
-		object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (data->data->active_device));
-		escaped_object_path = nm_dbus_escape_object_path (object_path);
-		dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &escaped_object_path, DBUS_TYPE_INVALID);
-		g_free (escaped_object_path);
-		g_free (object_path);
+		op = nm_dbus_get_object_path_for_device (data->data->active_device);
+		dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &op, DBUS_TYPE_INVALID);
+		g_free (op);
 	}
 	else
 	{
@@ -114,13 +111,10 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 
 			if (dev && (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED))
 			{
-				char *object_path, *escaped_object_path;
-				
-				object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-				escaped_object_path = nm_dbus_escape_object_path (object_path);
-				g_free (object_path);
-				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &escaped_object_path);
-				g_free (escaped_object_path);
+				char *op = nm_dbus_get_object_path_for_device (dev);
+
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &op);
+				g_free (op);
 				appended = TRUE;
 			}
 		}
@@ -154,13 +148,14 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
  */
 static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	NMDevice			*dev = NULL;
-	DBusMessage		*reply = NULL;
-	char				*dev_path = NULL;
-	char				*network = NULL;
-	char				*key = NULL;
-	int				 key_type = -1;
-	DBusError			 error;
+	NMDevice *		dev = NULL;
+	DBusMessage *		reply = NULL;
+	char *			dev_path = NULL;
+	char *			net_path = NULL;
+	const char *		key = NULL;
+	const int			key_type = -1;
+	DBusError			error;
+	NMAccessPoint *	ap = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -169,14 +164,11 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path,
-							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
-							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
+	if (!dbus_message_get_args (message, &error,	DBUS_TYPE_OBJECT_PATH, &dev_path,
+										DBUS_TYPE_OBJECT_PATH, &net_path,
+										DBUS_TYPE_STRING, &key,
+										DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
-		network = NULL;
-		key = NULL;
-		key_type = -1;
-
 		if (dbus_error_is_set (&error))
 			dbus_error_free (&error);
 
@@ -191,35 +183,43 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 			goto out;
 		} else nm_info ("FORCE: device '%s'", dev_path);
-	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, network);
+	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, net_path);
 
-	dev_path = nm_dbus_unescape_object_path (dev_path);
-	
 	/* So by now we have a valid device and possibly a network as well */
-
+	dev_path = nm_dbus_unescape_object_path (dev_path);
 	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
+	g_free (dev_path);
 	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
 		goto out;
 	}
-	nm_device_ref (dev);
+
+	if (net_path)
+	{
+		net_path = nm_dbus_unescape_object_path (net_path);
+		ap = nm_device_ap_list_get_ap_by_obj_path (dev, net_path);
+		g_free (net_path);
+	}
 
 	/* Make sure network is valid and device is wireless */
-	if (nm_device_is_wireless (dev) && !network)
+	if (nm_device_is_wireless (dev) && !ap)
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 		goto out;
 	}
 
+	nm_device_ref (dev);
+
 	data->data->forcing_device = TRUE;
 	nm_device_deactivate (dev, FALSE);
-	nm_device_schedule_force_use (dev, network, key, key_type);
+
+	nm_schedule_state_change_signal_broadcast (data->data);
+	nm_device_schedule_force_use (dev, nm_ap_get_essid (ap), key, key_type);
 
 out:
-	g_free (dev_path);
 
 	return (reply);
 }
@@ -249,8 +249,9 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path,
-							DBUS_TYPE_STRING, &network, DBUS_TYPE_STRING, &key,
-							DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
+										DBUS_TYPE_STRING, &network,
+										DBUS_TYPE_STRING, &key,
+										DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 						"NetworkManager::createWirelessNetwork called with invalid arguments.");
@@ -385,45 +386,6 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 }
 
 
-/*
- * nm_dbus_nm_set_user_key_for_network
- *
- * In response to a NetworkManagerInfo message, sets the WEP key
- * for a particular wireless AP/network
- *
- */
-static DBusMessage * nm_dbus_nm_set_user_key_for_network (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	DBusError		 error;
-	char			*device;
-	char			*network;
-	char			*passphrase;
-	NMEncKeyType	 key_type;
-
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (data->data != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	dbus_error_init (&error);
-	if (dbus_message_get_args (message, &error,
-							DBUS_TYPE_STRING, &device,
-							DBUS_TYPE_STRING, &network,
-							DBUS_TYPE_STRING, &passphrase,
-							DBUS_TYPE_INT32, &key_type,
-							DBUS_TYPE_INVALID))
-	{
-		NMDevice		*dev;
-
-		if ((dev = nm_get_device_by_iface (data->data, device)))
-			nm_device_set_user_key_for_network (dev, data->data->invalid_ap_list, network, passphrase, key_type);
-
-	}
-
-	return (NULL);
-}
-
-
 static DBusMessage *nm_dbus_nm_set_scanning_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	gboolean	enabled = FALSE;
@@ -518,6 +480,8 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 			nm_device_bring_down (dev);
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+
+		nm_schedule_state_change_signal_broadcast (app_data);
 		nm_policy_schedule_state_update (app_data);
 	}
 
@@ -535,23 +499,24 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 	if (app_data->asleep == TRUE)
 	{
 		app_data->asleep = FALSE;
+
+		nm_schedule_state_change_signal_broadcast (app_data);
 		nm_policy_schedule_state_update (app_data);
 	}
 
 	return NULL;
 }
 
-static DBusMessage *nm_dbus_nm_get_status (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_nm_get_state (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	DBusMessage	*reply = NULL;
-	char 		*status;
+	DBusMessage *	reply = NULL;
+	NMState		state;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
 
-	status = nm_dbus_network_status_from_data (data->data);
-	if (status && (reply = dbus_message_new_method_return (message)))
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, &status, DBUS_TYPE_INVALID);
-	g_free (status);
+	state = nm_get_app_state_from_data (data->data);
+	if ((reply = dbus_message_new_method_return (message)))
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
 
 	return reply;
 }
@@ -571,14 +536,13 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getDevices",			nm_dbus_nm_get_devices);
 	nm_dbus_method_list_add_method (list, "setActiveDevice",		nm_dbus_nm_set_active_device);
 	nm_dbus_method_list_add_method (list, "createWirelessNetwork",	nm_dbus_nm_create_wireless_network);
-	nm_dbus_method_list_add_method (list, "setKeyForNetwork",		nm_dbus_nm_set_user_key_for_network);
 	nm_dbus_method_list_add_method (list, "setScanningEnabled",		nm_dbus_nm_set_scanning_enabled);
 	nm_dbus_method_list_add_method (list, "getScanningEnabled",		nm_dbus_nm_get_scanning_enabled);
 	nm_dbus_method_list_add_method (list, "setWirelessEnabled",		nm_dbus_nm_set_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "getWirelessEnabled",		nm_dbus_nm_get_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "sleep",				nm_dbus_nm_sleep);
 	nm_dbus_method_list_add_method (list, "wake",				nm_dbus_nm_wake);
-	nm_dbus_method_list_add_method (list, "status",				nm_dbus_nm_get_status);
+	nm_dbus_method_list_add_method (list, "state",				nm_dbus_nm_get_state);
 	nm_dbus_method_list_add_method (list, "createTestDevice",		nm_dbus_nm_create_test_device);
 	nm_dbus_method_list_add_method (list, "removeTestDevice",		nm_dbus_nm_remove_test_device);
 

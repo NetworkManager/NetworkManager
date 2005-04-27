@@ -36,21 +36,32 @@ typedef enum
 	DEVICE_ACTIVATING,
 	DEVICE_ACTIVATION_FAILED,
 	DEVICE_ACTIVATION_CANCELED,
-	DEVICE_LIST_CHANGE,
-	DEVICE_STATUS_CHANGE
+	DEVICE_ADDED,
+	DEVICE_REMOVED
 } DeviceStatus;
+
+
+static inline gboolean message_is_error (DBusMessage *msg)
+{
+	g_return_val_if_fail (msg != NULL, FALSE);
+
+	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
+}
 
 
 DBusConnection *nm_dbus_init						(NMData *data);
 
 gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
 
+char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
+char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
+
 void			nm_dbus_schedule_device_status_change	(NMDevice *dev, DeviceStatus status);
 void			nm_dbus_signal_device_status_change	(DBusConnection *connection, NMDevice *dev, DeviceStatus status);
 
 void			nm_dbus_schedule_network_not_found_signal	(NMData *data, const char *network);
 
-void			nm_dbus_signal_network_status_change	(DBusConnection *connection, NMData *data);
+void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 
 void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDevice *dev);
 
@@ -68,14 +79,14 @@ gboolean		nm_dbus_update_network_auth_method		(DBusConnection *connection, const
 
 gboolean		nm_dbus_nmi_is_running				(DBusConnection *connection);
 
-char **		nm_dbus_get_networks				(DBusConnection *connection, NMNetworkType type, int *num_networks);
+void			nm_dbus_update_allowed_networks		(DBusConnection *connection, NMAccessPointList *list, NMData *data);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace,
 												const char *exception, const char *format, ...);
 
 NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
 
-char *		nm_dbus_network_status_from_data		(NMData *data);
+NMState		nm_get_app_state_from_data			(NMData *data);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
 

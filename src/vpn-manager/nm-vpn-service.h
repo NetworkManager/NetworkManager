@@ -29,20 +29,23 @@
 
 typedef struct NMVPNService NMVPNService;
 
-NMVPNService *		nm_vpn_service_new			(void);
+NMVPNService *		nm_vpn_service_new				(void);
 
-void				nm_vpn_service_ref			(NMVPNService *service);
-void				nm_vpn_service_unref		(NMVPNService *service);
+void				nm_vpn_service_ref				(NMVPNService *service);
+void				nm_vpn_service_unref			(NMVPNService *service);
 
-const char *		nm_vpn_service_get_name		(NMVPNService *service);
-void				nm_vpn_service_set_name		(NMVPNService *service, const char *name);
+const char *		nm_vpn_service_get_name			(NMVPNService *service);
+void				nm_vpn_service_set_name			(NMVPNService *service, const char *name);
 
-const char *		nm_vpn_service_get_program	(NMVPNService *service);
-void				nm_vpn_service_set_program	(NMVPNService *service, const char *program);
+const char *		nm_vpn_service_get_service_name	(NMVPNService *service);
+void				nm_vpn_service_set_service_name	(NMVPNService *service, const char *name);
 
-NMVPNState		nm_vpn_service_get_state		(NMVPNService *service);
-void				nm_vpn_service_set_state		(NMVPNService *service, const NMVPNState state);
+const char *		nm_vpn_service_get_program		(NMVPNService *service);
+void				nm_vpn_service_set_program		(NMVPNService *service, const char *program);
 
-gboolean			nm_vpn_service_exec_daemon	(NMVPNService *service);
+NMVPNState		nm_vpn_service_get_state			(NMVPNService *service);
+void				nm_vpn_service_set_state			(NMVPNService *service, const NMVPNState state);
+
+gboolean			nm_vpn_service_exec_daemon		(NMVPNService *service);
 
 #endif

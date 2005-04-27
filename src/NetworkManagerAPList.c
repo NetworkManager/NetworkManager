@@ -122,6 +122,31 @@ void nm_ap_list_unref (NMAccessPointList *list)
 
 
 /*
+ * nm_ap_list_size
+ *
+ * Return size of the access point list
+ *
+ */
+guint nm_ap_list_size (NMAccessPointList *list)
+{
+	guint size;
+
+	g_return_val_if_fail (list != NULL, 0);
+
+	if (!nm_ap_list_lock (list))
+	{
+		nm_warning ("nm_ap_list_size() could not acquire AP list mutex." );
+		return 0;
+	}
+
+	size = g_slist_length (list->ap_list);
+	nm_ap_list_unlock (list);
+
+	return size;
+}
+
+
+/*
  * nm_ap_list_is_empty
  *
  * Returns whether or not the access point list has any access points
@@ -293,9 +318,7 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 	for (elt = removal_list; elt; elt = g_slist_next (elt))
 	{
 		if ((removal_ap = (NMAccessPoint *)(elt->data)))
-		{
 			nm_ap_list_remove_ap (list, removal_ap);
-		}
 	}
 	g_slist_free (removal_list);
 
@@ -401,82 +424,6 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 
 
 /*
- * nm_ap_list_update_network_from_nmi
- *
- * Given a network ID, get its information from NetworkManagerInfo
- *
- */
-void nm_ap_list_update_network_from_nmi (NMAccessPointList *list, const char *network, NMData *data)
-{
-	NMAccessPoint	*ap = NULL;
-	NMAccessPoint	*list_ap = NULL;
-
-	g_return_if_fail (list != NULL);
-	g_return_if_fail (network != NULL);
-	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
-
-	if ((ap = nm_dbus_get_network_object (data->dbus_connection, list->type, network)))
-	{
-		if ((list_ap = nm_ap_list_get_ap_by_essid (list, network)))
-		{
-			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
-			nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
-			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
-			nm_ap_set_enc_key_source (list_ap, nm_ap_get_enc_key_source (ap), nm_ap_get_enc_type (ap));
-			nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (ap));
-			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
-		}
-		else
-		{
-			/* New AP, just add it to the list */
-			nm_ap_list_append_ap (list, ap);
-		}
-		nm_ap_unref (ap);
-	}
-	else
-	{
-		/* AP got deleted, remove it from our list */
-		if ((list_ap = nm_ap_list_get_ap_by_essid (list, network)))
-			nm_ap_list_remove_ap (list, list_ap);
-	}
-}
-
-
-/*
- * nm_ap_list_populate_from_nmi
- *
- * Populate an initial list of allowed access points
- *
- */
-void nm_ap_list_populate_from_nmi (NMAccessPointList *list, NMData *data)
-{
-	char		**networks;
-	int		  num_networks;	
-
-	g_return_if_fail (list != NULL);
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (list->type == NETWORK_TYPE_ALLOWED);
-
-	/* If NMI isn't running, don't try to talk to it. */
-	if (!nm_dbus_nmi_is_running (data->dbus_connection))
-		return;
-
-	networks = nm_dbus_get_networks (data->dbus_connection, list->type, &num_networks);
-	if (networks && (num_networks > 0))
-	{
-		int	i;
-		for (i = 0; i < num_networks; i++)
-		{
-			if (networks[i] && (strlen (networks[i]) > 0))
-				nm_ap_list_update_network_from_nmi (list, networks[i], data);
-		}
-
-		g_strfreev (networks);
-	}
-}
-
-
-/*
  * nm_ap_list_merge_scanned_ap
  *
  * Given an AP list and an access point, merge the access point into the list.
@@ -517,7 +464,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 		if  (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap_addr))
 		{
 			nm_ap_set_strength (list_ap_addr, nm_ap_get_strength (merge_ap));
-		*strength_changed = TRUE;
+			*strength_changed = TRUE;
 		}
 		nm_ap_set_last_seen (list_ap_addr, merge_ap_seen);
 	}
@@ -525,7 +472,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 	{
 
 		/* Second, we check for an ESSID match. In this case,
-       		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
+		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
 		 * encryption and authentication method. Update the strength and address
 		 * except when the time_last_seen of the list AP is the same as the
 		 * time_last_seen of the merge AP and the strength of the list AP is greater
@@ -710,6 +657,20 @@ void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAcc
 		}
 		nm_ap_list_iter_free (iter);
 	}
+}
+
+
+/*
+ * nm_ap_list_get_type
+ *
+ * Return the type of an AP list
+ *
+ */
+NMNetworkType nm_ap_list_get_type (NMAccessPointList *list)
+{
+	g_return_val_if_fail (list != NULL, NETWORK_TYPE_UNKNOWN);
+
+	return (list->type);
 }
 
 

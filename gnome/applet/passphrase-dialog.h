@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -16,31 +16,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_POLICY_H
-#define NETWORK_MANAGER_POLICY_H
+#ifndef PASSPHRASE_DIALOG_H
+#define PASSPHRASE_DIALOG_H
 
-#include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
-#include "NetworkManagerDbus.h"
+#include "applet.h"
+#include "nm-device.h"
+#include "wireless-network.h"
 
-typedef struct
-{
-	NMDevice		*dev;
-	NMAccessPoint	*failed_ap;
-	DeviceStatus	 result;
-} NMActivationResult;
+GtkWidget *	nmi_passphrase_dialog_init	(NMWirelessApplet *applet);
 
+void			nmi_passphrase_dialog_destroy	(GtkWidget *dialog);
 
-void			nm_policy_schedule_state_update		(NMData *app_data);
+void			nmi_passphrase_dialog_show	(GtkWidget *dialog, NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message);
 
-void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
-
-void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
-void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
-
-gboolean		nm_policy_activation_finish			(gpointer user_data);
+void			nmi_passphrase_dialog_cancel	(GtkWidget *dialog);
 
 #endif

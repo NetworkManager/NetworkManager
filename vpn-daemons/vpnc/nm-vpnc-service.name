@@ -1,2 +1,3 @@
+name=vpnc
 service=org.freedesktop.vpnc
 program=/usr/bin/nm-vpnc-service

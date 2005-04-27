@@ -34,11 +34,10 @@
 /*
  * nm_dbus_vpn_signal_vpn_connection_update
  *
- * Notifies the bus that a VPN connection has been added, deleted, or
- * changed properties.
+ * Notifies the bus that a VPN connection's properties have changed.
  *
  */
-void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnection *vpn)
+void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnection *vpn, const char *signal)
 {
 	DBusMessage	*message;
 	const char	*vpn_name;
@@ -46,7 +45,7 @@ void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnect
 	g_return_if_fail (con != NULL);
 	g_return_if_fail (vpn != NULL);
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "VPNConnectionUpdate")))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, signal)))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
@@ -55,7 +54,7 @@ void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnect
 	vpn_name = nm_vpn_connection_get_name (vpn);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (con, message, NULL))
-		nm_warning ("Could not raise the VPNConnectionUpdate signal!");
+		nm_warning ("Could not raise the %s signal!", signal);
 
 	dbus_message_unref (message);
 }
@@ -233,74 +232,187 @@ static char ** nm_dbus_vpn_get_vpn_data (DBusConnection *connection, NMVPNConnec
 }
 
 
+typedef struct UpdateOneVPNCBData
+{
+	NMData *	data;
+	char *	vpn;
+} UpdateOneVPNCBData;
+
+
+void free_update_one_vpn_cb_data (UpdateOneVPNCBData *data)
+{
+	if (data)
+		g_free (data->vpn);
+	g_free (data);
+}
+
 /*
- * nm_dbus_vpn_add_one_connection
+ * nm_dbus_vpn_update_one_connection_cb
  *
  * Retrieve and add to our VPN Manager one VPN connection from NMI.
  *
  */
-NMVPNConnection *nm_dbus_vpn_add_one_connection (DBusConnection *con, const char *name, NMVPNManager *vpn_manager)
+void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *user_data)
 {
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
-	const char		*con_name = NULL;
-	const char		*service_name = NULL;
-	const char		*user_name = NULL;
-	DBusMessageIter 	 iter;
-	NMVPNConnection	*vpn = NULL;
+	UpdateOneVPNCBData *	cb_data = (UpdateOneVPNCBData *) user_data;
+	DBusMessage *			reply;
+	const char *			con_name = NULL;
+	const char *			service_name = NULL;
+	const char *			user_name = NULL;
 	
-	g_return_val_if_fail (con != NULL, NULL);
-	g_return_val_if_fail (name != NULL, NULL);
-	g_return_val_if_fail (vpn_manager != NULL, NULL);
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (cb_data != NULL);
+	g_return_if_fail (cb_data->data != NULL);
+	g_return_if_fail (cb_data->data->vpn_manager != NULL);
 
-	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionProperties")))
-	{
-		nm_warning ("Couldn't allocate the dbus message");
-		return NULL;
-	}
+	dbus_pending_call_ref (pcall);
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-
-	/* Send message and get properties back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (con, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("nm_dbus_add_one_vpn_connections(): %s raised %s", error.name, error.message);
-		goto out;
-	}
-	if (!reply)
+	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
-	dbus_error_init (&error);
-	if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &con_name, DBUS_TYPE_STRING, &service_name,
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (dbus_message_is_error (reply, "BadVPNConnectionData"))
+	{
+		NMVPNConnection *vpn = nm_vpn_manager_find_connection_by_name (cb_data->data->vpn_manager, cb_data->vpn);
+
+		nm_vpn_connection_ref (vpn);
+		nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
+		nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, "VPNConnectionRemoved");
+		nm_vpn_connection_unref (vpn);
+		goto out;
+	}
+
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &con_name, DBUS_TYPE_STRING, &service_name,
 									DBUS_TYPE_STRING, &user_name, DBUS_TYPE_INVALID))
 	{
-		vpn = nm_vpn_manager_add_connection (vpn_manager, con_name, service_name, user_name);
+		NMVPNConnection *	vpn;
+		gboolean			new = TRUE;
+
+		if ((vpn = nm_vpn_manager_find_connection_by_name (cb_data->data->vpn_manager, con_name)))
+		{
+			nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
+			new = FALSE;
+		}
+
+		vpn = nm_vpn_manager_add_connection (cb_data->data->vpn_manager, con_name, service_name, user_name);
+		nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, new ? "VPNConnectionAdded" : "VPNConnectionUpdate");
 	}
 	dbus_message_unref (reply);
 
 out:
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
-
-	return vpn;
+	dbus_pending_call_unref (pcall);
 }
 
 
 /*
- * nm_dbus_vpn_connections_update
+ * nm_dbus_vpn_connections_update_cb
+ *
+ * Async callback from nnm_dbus_vpn_connections_update
+ *
+ */
+static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *user_data)
+{
+	NMData *			data = (NMData *) user_data;
+	DBusMessage *		reply;
+	DBusMessageIter	iter, array_iter;
+
+	g_return_if_fail (pcall);
+	g_return_if_fail (data != NULL);
+
+	dbus_pending_call_ref (pcall);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (message_is_error (reply))
+		goto out;
+
+	nm_info ("Updating VPN Connections...");
+
+	dbus_message_iter_init (reply, &iter);
+	dbus_message_iter_recurse (&iter, &array_iter);
+	while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
+	{
+		DBusMessage *	message;
+		const char *	value;
+
+		dbus_message_iter_get_basic (&array_iter, &value);
+
+		if ((message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionProperties")))
+		{
+			DBusPendingCall *		vpn_pcall = NULL;
+
+			dbus_message_append_args (message, DBUS_TYPE_STRING, &value, DBUS_TYPE_INVALID);
+			dbus_connection_send_with_reply (data->dbus_connection, message, &vpn_pcall, -1);
+			dbus_message_unref (message);
+			if (vpn_pcall)
+			{
+				UpdateOneVPNCBData *	vpn_cb_data = g_malloc0 (sizeof (UpdateOneVPNCBData));
+
+				vpn_cb_data->data = data;
+				vpn_cb_data->vpn = g_strdup (value);
+				dbus_pending_call_set_notify (vpn_pcall, nm_dbus_vpn_update_one_connection_cb, vpn_cb_data, (DBusFreeFunction) free_update_one_vpn_cb_data);
+			}
+		}
+		dbus_message_iter_next (&array_iter);
+	}
+	dbus_message_unref (reply);
+
+out:
+	dbus_pending_call_unref (pcall);
+}
+
+
+/*
+ * nm_dbus_vpn_update_one_vpn_connection
+ *
+ * Update one VPN connection
+ *
+ */
+void nm_dbus_vpn_update_one_vpn_connection (DBusConnection *connection, const char *vpn, NMData *data)
+{
+	DBusMessage *			message;
+	DBusPendingCall *		pcall = NULL;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (vpn != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionProperties")))
+	{
+		nm_warning ("nm_dbus_update_one_vpn_connection(): Couldn't allocate the dbus message");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn, DBUS_TYPE_INVALID);
+	dbus_connection_send_with_reply (connection, message, &pcall, -1);
+	dbus_message_unref (message);
+	if (pcall)
+	{
+		UpdateOneVPNCBData *	cb_data = g_malloc0 (sizeof (UpdateOneVPNCBData));
+
+		cb_data->data = data;
+		cb_data->vpn = g_strdup (vpn);
+		dbus_pending_call_set_notify (pcall, nm_dbus_vpn_update_one_connection_cb, cb_data, (DBusFreeFunction) free_update_one_vpn_cb_data);
+	}
+}
+
+
+/*
+ * nm_dbus_vpn_connections_update_from_nmi
  *
  * Update VPN connections from NetworkManagerInfo.
  *
  */
-gboolean nm_dbus_vpn_connections_update (NMData *data)
+static gboolean nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 {
-	DBusMessage		*message;
-	DBusError			 error;
-	DBusMessage		*reply;
+	DBusMessage *		message;
+	DBusPendingCall *	pcall;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->dbus_connection != NULL, FALSE);
@@ -315,34 +427,13 @@ gboolean nm_dbus_vpn_connections_update (NMData *data)
 		return FALSE;
 	}
 
-	/* Send message and get essid back from NetworkManagerInfo */
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (data->dbus_connection, message, -1, &error);
+	dbus_connection_send_with_reply (data->dbus_connection, message, &pcall, -1);
 	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-		nm_warning ("nm_dbus_vpn_connections_update(): %s raised %s", error.name, error.message);
-	else if (!reply)
-		nm_info ("nm_dbus_vpn_connections_update(): reply was NULL.");
-	else
+	if (pcall)
 	{
-		DBusMessageIter iter, array_iter;
-
-		dbus_message_iter_init (reply, &iter);
-		dbus_message_iter_recurse (&iter, &array_iter);
-		while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
-		{
-			const char *value;
-			NMVPNConnection *vpn;
-
-			dbus_message_iter_get_basic (&array_iter, &value);
-			if ((vpn = nm_dbus_vpn_add_one_connection (data->dbus_connection, value, data->vpn_manager)))
-				nm_dbus_vpn_signal_vpn_connection_update (data->dbus_connection, vpn);
-			dbus_message_iter_next(&array_iter);
-		}
+		dbus_pending_call_set_notify (pcall, nm_dbus_vpn_connections_update_cb, data, NULL);
+		dbus_pending_call_block (pcall);
 	}
-	
-	if (reply)
-		dbus_message_unref (reply);
 
 	return FALSE;
 }
@@ -364,7 +455,7 @@ void nm_dbus_vpn_schedule_vpn_connections_update (NMData *app_data)
 	source = g_idle_source_new ();
 	/* We want this idle source to run before any other idle source */
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, (GSourceFunc) nm_dbus_vpn_connections_update, app_data, NULL);
+	g_source_set_callback (source, (GSourceFunc) nm_dbus_vpn_connections_update_from_nmi, app_data, NULL);
 	g_source_attach (source, app_data->main_context);
 	g_source_unref (source);
 }
@@ -407,15 +498,7 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connections (DBusConnection *connection,
 	if (!(reply = dbus_message_new_method_return (message)))
 		goto out;
 
-	dbus_message_iter_init_append (reply, &iter);
-	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
-	
-	for (i = 0; i < num_names; i++)
-	{
-		dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &vpn_names[i]);
-	}
-
-	dbus_message_iter_close_container (&iter, &iter_array);
+	dbus_message_append_args (reply, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &vpn_names, num_names, DBUS_TYPE_INVALID);
 
 out:
 	if (vpn_names)
@@ -465,7 +548,7 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
 	}
 
 	if (!good)
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "InvalidVPNConnections", "No VPN connection with that name was found.");
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "InvalidVPNConnection", "No VPN connection with that name was found.");
 
 	return reply;
 }
@@ -538,7 +621,7 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 				NMVPNService		*service = nm_vpn_connection_get_service (vpn);;
 
 				nm_info ("Will activate VPN connection '%s', service '%s', user_name '%s', vpn_data '%s'.",
-					name, nm_vpn_service_get_name (service), nm_vpn_connection_get_user_name (vpn), joined_string);
+					name, nm_vpn_service_get_service_name (service), nm_vpn_connection_get_user_name (vpn), joined_string);
 				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, password, items, item_count);
 
 				g_free (joined_string);

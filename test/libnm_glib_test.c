@@ -28,12 +28,12 @@
 
 void status_printer (libnm_glib_ctx *ctx, gpointer user_data)
 {
-	libnm_glib_status	status;
+	libnm_glib_state	state;
 
 	g_return_if_fail (ctx != NULL);
 
-	status = libnm_glib_get_network_status (ctx);
-	switch (status)
+	state = libnm_glib_get_network_state (ctx);
+	switch (state)
 	{
 		case LIBNM_NO_DBUS:
 			fprintf (stderr, "Status: No DBUS\n");

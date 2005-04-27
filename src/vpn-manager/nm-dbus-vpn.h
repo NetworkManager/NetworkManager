@@ -27,10 +27,10 @@
 #include "nm-vpn-connection.h"
 
 
-NMVPNConnection *	nm_dbus_vpn_add_one_connection			(DBusConnection *con, const char *name, NMVPNManager *vpn_manager);
 void				nm_dbus_vpn_schedule_vpn_connections_update	(NMData *app_data);
+void				nm_dbus_vpn_update_one_vpn_connection		(DBusConnection *connection, const char *vpn, NMData *data);
 
-void				nm_dbus_vpn_signal_vpn_connection_update	(DBusConnection *con, NMVPNConnection *vpn);
+void				nm_dbus_vpn_signal_vpn_connection_update	(DBusConnection *con, NMVPNConnection *vpn, const char *signal);
 void				nm_dbus_vpn_signal_vpn_connection_change	(DBusConnection *con, NMVPNConnection *vpn);
 void				nm_dbus_vpn_signal_vpn_login_failed		(DBusConnection *con, NMVPNConnection *vpn, const char *error_msg);
 void				nm_dbus_vpn_signal_vpn_login_banner		(DBusConnection *con, NMVPNConnection *vpn, const char *banner);

@@ -44,12 +44,14 @@
 /*
  * Some common errors
  */
-#define NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
-#define NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
+#define NM_DBUS_NO_DEVICES_ERROR		"org.freedesktop.NetworkManager.NoDevices"
 #define NM_DBUS_NO_NETWORKS_ERROR		"org.freedesktop.NetworkManager.NoNetworks"
+#define NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
+#define NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
 
 #define NM_DBUS_NO_ACTIVE_VPN_CONNECTION	"org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
 #define NM_DBUS_NO_VPN_CONNECTIONS			"org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
+#define NM_DBUS_INVALID_VPN_CONNECTION		"org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
 
 #define NM_DBUS_VPN_STARTING_IN_PROGRESS	"StartingInProgress"
 #define NM_DBUS_VPN_ALREADY_STARTED		"AlreadyStarted"
@@ -58,10 +60,34 @@
 #define NM_DBUS_VPN_WRONG_STATE			"WrongState"
 #define NM_DBUS_VPN_BAD_ARGUMENTS			"BadArguments"
 
+
+/*
+ * VPN daemon signals
+ */
 #define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED		"LoginFailed"
 #define NM_DBUS_VPN_SIGNAL_CONFIG_BAD		"ConfigurationBad"
 #define NM_DBUS_VPN_SIGNAL_STATE_CHANGE		"StateChange"
 #define NM_DBUS_VPN_SIGNAL_IP4_CONFIG		"IP4Config"
+
+
+/*
+ * NetworkManager signals
+ */
+#define NM_DBUS_SIGNAL_STATE_CHANGE		"StateChange"
+
+
+/*
+ * Types of NetworkManager devices
+ */
+typedef enum NMState
+{
+	NM_STATE_UNKNOWN = 0,
+	NM_STATE_ASLEEP,
+	NM_STATE_SCANNING,
+	NM_STATE_CONNECTING,
+	NM_STATE_CONNECTED,
+	NM_STATE_DISCONNECTED
+} NMState;
 
 
 /*
@@ -160,11 +186,5 @@ typedef enum NMVPNState
 	NM_VPN_STATE_STOPPING,
 	NM_VPN_STATE_STOPPED
 } NMVPNState;
-
-
-/*
- * Info-daemon specific preference locations
- */
-#define NMI_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
 
 #endif

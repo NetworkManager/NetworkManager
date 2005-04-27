@@ -1,4 +1,5 @@
-/* NetworkManager -- Network link manager
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -16,31 +17,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004-2005 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_POLICY_H
-#define NETWORK_MANAGER_POLICY_H
+#ifndef APPLET_DBUS_INFO_H
+#define APPLET_DBUS_INFO_H
 
-#include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
-#include "NetworkManagerDbus.h"
+#include <dbus/dbus.h>
+#include "nm-device.h"
+#include "wireless-network.h"
 
-typedef struct
-{
-	NMDevice		*dev;
-	NMAccessPoint	*failed_ap;
-	DeviceStatus	 result;
-} NMActivationResult;
+DBusHandlerResult		nmi_dbus_info_message_handler			(DBusConnection *connection, DBusMessage *message, void *user_data);
 
-
-void			nm_policy_schedule_state_update		(NMData *app_data);
-
-void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
-
-void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
-void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
-
-gboolean		nm_policy_activation_finish			(gpointer user_data);
+void					nmi_dbus_return_user_key				(DBusConnection *connection, DBusMessage *message, const char *passphrase, const int key_type);
 
 #endif

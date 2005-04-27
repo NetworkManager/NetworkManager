@@ -49,8 +49,6 @@ NetworkManager_CPPFLAGS = 			\
 	$(GTHREAD_CFLAGS)				\
 	$(HAL_CFLAGS)					\
 	$(OPENSSL_CFLAGS)				\
-	-g							\
-	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\

@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/libnm_glib -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/gnome/libnm_glib -I${top_srcdir}/utils
 
 AM_CPPFLAGS =						\
 	$(DBUS_CFLAGS)					\
@@ -26,7 +26,7 @@ nmtestdevices_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
 libnm_glib_test_SOURCES = libnm_glib_test.c
 libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
 			$(top_builddir)/utils/libnmutils.la \
-			../libnm_glib/libnm_glib.la
+			../gnome/libnm_glib/libnm_glib.la
 
 
 nm_dhcp_opt_test_SOURCES = nm-dhcp-opt-test.c

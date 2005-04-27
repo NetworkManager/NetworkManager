@@ -1,4 +1,4 @@
-/* NetworkManager -- Network link manager
+/* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
  *
@@ -19,28 +19,11 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_POLICY_H
-#define NETWORK_MANAGER_POLICY_H
+#ifndef VPN_PASSWORD_DIALOG_H
+#define VPN_PASSWORD_DIALOG_H
 
-#include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
-#include "NetworkManagerDbus.h"
+#include "applet.h"
 
-typedef struct
-{
-	NMDevice		*dev;
-	NMAccessPoint	*failed_ap;
-	DeviceStatus	 result;
-} NMActivationResult;
-
-
-void			nm_policy_schedule_state_update		(NMData *app_data);
-
-void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
-
-void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
-void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
-
-gboolean		nm_policy_activation_finish			(gpointer user_data);
+char 	*nmwa_vpn_request_password			(NMWirelessApplet *applet, const char *vpn, const char *username, gboolean retry);
 
 #endif

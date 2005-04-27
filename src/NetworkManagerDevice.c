@@ -152,8 +152,7 @@ NMDevice *nm_get_device_by_udi (NMData *data, const char *udi)
 
 	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 	{
-		dev = (NMDevice *)(elt->data);
-		if (dev)
+		if ((dev = (NMDevice *)(elt->data)))
 		{
 			if (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0)
 				break;
@@ -674,8 +673,6 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 	if (dev->link_active != link_active)
 	{
 		dev->link_active = link_active;
-
-		nm_dbus_schedule_device_status_change (dev, DEVICE_STATUS_CHANGE);
 		nm_policy_schedule_state_update (dev->app_data);
 	}
 }
@@ -702,7 +699,7 @@ void nm_device_set_now_scanning (NMDevice *dev, const gboolean now_scanning)
 	old_val = nm_device_get_now_scanning (dev);
 	dev->options.wireless.now_scanning = now_scanning;
 	if (old_val != now_scanning)
-		nm_dbus_schedule_device_status_change (dev, DEVICE_STATUS_CHANGE);
+		nm_schedule_state_change_signal_broadcast (dev->app_data);
 }
 
 
@@ -757,6 +754,7 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 	/* Some cards, for example ipw2x00 cards, can short-circuit the MAC
 	 * address check using this check on IWNAME.  Its faster.
 	 */
+	memset (&wrq, 0, sizeof (struct iwreq));
 	if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
 	{
 		if (!strcmp(wrq.u.name, "unassociated"))
@@ -1372,6 +1370,8 @@ void nm_device_update_signal_strength (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
+		memset (&range, 0, sizeof (iwrange));
+		memset (&stats, 0, sizeof (iwstats));
 		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0);
 		if (iw_get_stats (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &stats, &range, has_range) == 0)
 		{
@@ -1575,11 +1575,11 @@ gboolean nm_completion_device_is_up_test(int tries, va_list args)
 	gboolean *err = va_arg(args, gboolean *);
 	gboolean cancelable = va_arg(args, gboolean);
 
-	g_return_val_if_fail(dev != NULL, TRUE);
-	g_return_val_if_fail(err != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
 
 	*err = FALSE;
-	if (cancelable && nm_device_activation_handle_cancel(dev)) {
+	if (cancelable && nm_device_activation_handle_cancel (dev)) {
 		*err = TRUE;
 		return TRUE;
 	}
@@ -1617,17 +1617,17 @@ void nm_device_bring_down (NMDevice *dev)
 	nm_device_set_up_down (dev, FALSE);
 }
 
-gboolean nm_completion_device_is_down_test(int tries, va_list args)
+gboolean nm_completion_device_is_down_test (int tries, va_list args)
 {
 	NMDevice *dev = va_arg(args, NMDevice *);
 	gboolean *err = va_arg(args, gboolean *);
 	gboolean cancelable = va_arg(args, gboolean);
 
-	g_return_val_if_fail(dev != NULL, TRUE);
-	g_return_val_if_fail(err != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
 
 	*err = FALSE;
-	if (cancelable && nm_device_activation_handle_cancel(dev)) {
+	if (cancelable && nm_device_activation_handle_cancel (dev)) {
 		*err = TRUE;
 		return TRUE;
 	}
@@ -1672,6 +1672,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 		struct iwreq	wrq;
 		int			err;
 
+		memset (&wrq, 0, sizeof (struct iwreq));
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWMODE, &wrq) == 0)
 		{
 			switch (wrq.u.mode)
@@ -1818,6 +1819,7 @@ gboolean nm_device_activation_schedule_start (NMDevice *dev)
 	g_source_attach (source, dev->context);
 	g_source_unref (source);
 
+	nm_schedule_state_change_signal_broadcast (data);
 	nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ACTIVATING);
 
 	return (TRUE);
@@ -1835,7 +1837,7 @@ static gboolean nm_device_activation_handle_cancel (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, TRUE);
 
-	/* If we were told to quit activation, stop the thread and return */
+	/* If we were told to quit activation, stop activation and return */
 	if (dev->quit_activation)
 	{
 		nm_debug ("activation of device '%s' canceled.", nm_device_get_iface (dev));
@@ -1943,8 +1945,8 @@ static gboolean nm_device_link_test(int tries, va_list args)
 	NMDevice *dev = va_arg(args, NMDevice *);
 	gboolean *err = va_arg(args, gboolean *);
 
-	g_return_val_if_fail(dev != NULL, TRUE);
-	g_return_val_if_fail(err != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
 
 	if (nm_device_wireless_is_associated (dev) && nm_device_get_essid (dev))
 	{
@@ -2235,12 +2237,12 @@ static gboolean nm_wa_test (int tries, va_list args)
 	NMAccessPoint **best_ap = va_arg (args, NMAccessPoint **);
 	gboolean *err = va_arg (args, gboolean *);
 
-	g_return_val_if_fail(dev != NULL, TRUE);
-	g_return_val_if_fail(best_ap != NULL, TRUE);
-	g_return_val_if_fail(err != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (best_ap != NULL, TRUE);
+	g_return_val_if_fail (err != NULL, TRUE);
 
 	*err = TRUE;
-	if (nm_device_activation_handle_cancel(dev))
+	if (nm_device_activation_handle_cancel (dev))
 		return TRUE;
 
 	if (tries % 100 == 0)
@@ -2249,11 +2251,9 @@ static gboolean nm_wa_test (int tries, va_list args)
 	*best_ap = nm_device_get_best_ap(dev);
 	if (*best_ap)
 	{
-		/* Set ESSID early so that when we send out the
-		 * DeviceStatusChanged signal below, we are able to 
-		 * respond correctly to queries for "getActiveNetwork"
-		 * against our device.  nm_device_get_path_for_ap() uses 
-		 * the /card's/ AP, not the best_ap. */
+		/* Set ESSID early so that when we send out the DeviceStatusChanged signal below, we are able to 
+		 * respond correctly to queries for "getActiveNetwork" against our device.
+		 */
 		nm_device_set_essid (dev, nm_ap_get_essid (*best_ap));
 		nm_device_set_now_scanning (dev, FALSE);
 		*err = FALSE;
@@ -2757,6 +2757,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		nm_wait_for_completion(NM_COMPLETION_TRIES_INFINITY,
 				G_USEC_PER_SEC / 20, nm_ac_test, NULL, dev);
 		nm_debug ("Activation (%s/wireless): cancelled.", nm_device_get_iface(dev));
+		nm_schedule_state_change_signal_broadcast (dev->app_data);
 	}
 }
 
@@ -2822,7 +2823,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
  *
  */
 void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *invalid_list,
-									unsigned char *network, unsigned char *key,
+									NMAccessPoint *ap, unsigned char *key,
 									NMEncKeyType enc_type)
 {
 	NMAccessPoint	*best_ap;
@@ -2830,20 +2831,16 @@ void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *inval
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
-	g_return_if_fail (network != NULL);
+	g_return_if_fail (ap != NULL);
 	g_return_if_fail (key != NULL);
 
 	/* If the user canceled, mark the ap as invalid */
 	if (strncmp (key, cancel_message, strlen (cancel_message)) == 0)
 	{
-		NMAccessPoint	*ap;
+		NMAccessPoint	*invalid_ap = nm_ap_new_from_ap (ap);
 
-		if ((ap = nm_device_ap_list_get_ap_by_essid (dev, network)))
-		{
-			NMAccessPoint	*invalid_ap = nm_ap_new_from_ap (ap);
-			if (invalid_list)
-				nm_ap_list_append_ap (invalid_list, invalid_ap);
-		}
+		if (invalid_list)
+			nm_ap_list_append_ap (invalid_list, invalid_ap);
 
 		nm_device_update_best_ap (dev);
 	}
@@ -2852,7 +2849,7 @@ void nm_device_set_user_key_for_network (NMDevice *dev, NMAccessPointList *inval
 		/* Make sure the "best" ap matches the essid we asked for the key of,
 		 * then set the new key on the access point.
 		 */
-		if (nm_null_safe_strcmp (network, nm_ap_get_essid (best_ap)) == 0)
+		if (nm_null_safe_strcmp (nm_ap_get_essid (ap), nm_ap_get_essid (best_ap)) == 0)
 			nm_ap_set_enc_key_source (best_ap, key, enc_type);
 
 		nm_ap_unref (best_ap);
@@ -2939,6 +2936,44 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_address (NMDevice *dev, const struct 
 		return (NULL);
 
 	ret_ap = nm_ap_list_get_ap_by_address (dev->options.wireless.ap_list, addr);
+
+	return (ret_ap);
+}
+
+
+/*
+ * nm_device_ap_list_get_ap_by_obj_path
+ *
+ * Get the access point for a dbus object path.  Requires an _unescaped_
+ * object path.
+ *
+ */
+NMAccessPoint *nm_device_ap_list_get_ap_by_obj_path (NMDevice *dev, const char *obj_path)
+{
+	NMAccessPoint *	ret_ap = NULL;
+	char *			built_path;
+	char *			dev_path;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (obj_path != NULL, NULL);
+
+	if (!dev->options.wireless.ap_list)
+		return (NULL);
+
+	dev_path = nm_dbus_get_object_path_for_device (dev);
+	dev_path = nm_dbus_unescape_object_path (dev_path);
+	built_path = g_strdup_printf ("%s/Networks/", dev_path);
+	g_free (dev_path);
+
+	if (strncmp (built_path, obj_path, strlen (built_path)) == 0)
+	{
+		char *essid = g_strdup (obj_path + strlen (built_path));
+
+		ret_ap = nm_ap_list_get_ap_by_essid (dev->options.wireless.ap_list, essid);
+		g_free (essid);
+	}
+	g_free (built_path);
 
 	return (ret_ap);
 }
@@ -3052,33 +3087,6 @@ void nm_device_set_dhcp_iface (NMDevice *dev, struct dhcp_interface *dhcp_iface)
 	 */
 
 	dev->dhcp_iface = dhcp_iface;
-}
-
-
-/*
- * nm_device_get_path_for_ap
- *
- * Return the object path for an access point.
- *
- * NOTE: assumes the access point is actually in the device's access point list.
- *
- */
-char * nm_device_get_path_for_ap (NMDevice *dev, NMAccessPoint *ap)
-{
-	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (ap  != NULL, NULL);
-
-	if (nm_ap_get_essid (ap))
-	{
-		char *path, *escaped_path;
-
-		path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap));
-		escaped_path = nm_dbus_escape_object_path (path);
-		g_free (path);
-
-		return (escaped_path);
-	} else
-		return (NULL);
 }
 
 

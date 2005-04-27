@@ -96,8 +96,6 @@ void			nm_device_unfreeze_best_ap		(NMDevice *dev);
 gboolean		nm_device_is_best_ap_frozen		(NMDevice *dev);
 struct dhcp_interface *nm_device_get_dhcp_iface	(NMDevice *dev);
 
-char *		nm_device_get_path_for_ap		(NMDevice *dev, NMAccessPoint *ap);
-
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_enc_key			(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);
 
@@ -111,9 +109,8 @@ gboolean		nm_device_get_now_scanning		(NMDevice *dev);
 
 void			nm_device_schedule_force_use		(NMDevice *dev, const char *network, const char *key, NMEncKeyType key_type);
 
-void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list,
-											unsigned char *network, unsigned char *key,
-											NMEncKeyType enc_type);
+void			nm_device_set_user_key_for_network	(NMDevice *dev, struct NMAccessPointList *invalid_list, NMAccessPoint *ap,
+											unsigned char *key, NMEncKeyType enc_type);
 
 void			nm_device_bring_up				(NMDevice *dev);
 void			nm_device_bring_down			(NMDevice *dev);
@@ -123,6 +120,7 @@ void			nm_device_ap_list_clear			(NMDevice *dev);
 struct NMAccessPointList *nm_device_ap_list_get	(NMDevice *dev);
 NMAccessPoint *nm_device_ap_list_get_ap_by_essid	(NMDevice *dev, const char *essid);
 NMAccessPoint *nm_device_ap_list_get_ap_by_address(NMDevice *dev, const struct ether_addr *addr);
+NMAccessPoint *nm_device_ap_list_get_ap_by_obj_path(NMDevice *dev, const char *obj_path);
 void			nm_device_copy_allowed_to_dev_list	(NMDevice *dev, struct NMAccessPointList *allowed_list);
 
 gboolean		nm_device_get_use_dhcp			(NMDevice *dev);

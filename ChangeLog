@@ -1,3 +1,13 @@
+2005-04-27  Dan Williams  <dcbw@redhat.com>
+
+	* Merge the applet and the info-daemon, and move the converged
+		applet under gnome/applet
+	* Move libnm_glib to gnome/libnm_glib
+	* Convert most dbus calls between the applet, info-daemon, and NM
+		into async calls
+	* Fix a few things valgrind noticed
+	* Make NM broadcast state more reliably
+
 2005-04-22  Pawan chitrakar  <pawan@nplinux.org>
 
 	* configure.in: Added ne in ALL_LINGUAS

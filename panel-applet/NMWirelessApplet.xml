@@ -1,8 +1,0 @@
-<Root>
-   <popups>
-      <popup name="button3">
-         <menuitem name="Wireless About Item" verb="NMWirelessAbout" _label="_About..."
-                   pixtype="stock" pixname="gnome-stock-about"/>
-      </popup>
-   </popups>
-</Root>

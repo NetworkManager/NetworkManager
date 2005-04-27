@@ -30,6 +30,7 @@ struct NMVPNService
 {
 	int			 refcount;
 	char			*name;
+	char			*service;
 	char			*program;
 	NMVPNState	 state;
 };
@@ -61,6 +62,7 @@ void nm_vpn_service_unref (NMVPNService *service)
 	if (service->refcount <= 0)
 	{
 		g_free (service->name);
+		g_free (service->service);
 		g_free (service->program);
 		memset (service, 0, sizeof (NMVPNService));
 		g_free (service);
@@ -83,6 +85,24 @@ void nm_vpn_service_set_name (NMVPNService *service, const char *name)
 	if (service->name)
 		g_free (service->name);
 	service->name = g_strdup (name);
+}
+
+
+const char *nm_vpn_service_get_service_name (NMVPNService *service)
+{
+	g_return_val_if_fail (service != NULL, NULL);
+
+	return service->service;
+}
+
+
+void nm_vpn_service_set_service_name (NMVPNService *service, const char *name)
+{
+	g_return_if_fail (service != NULL);
+
+	if (service->service)
+		g_free (service->service);
+	service->service = g_strdup (name);
 }
 
 
@@ -138,12 +158,12 @@ gboolean nm_vpn_service_exec_daemon (NMVPNService *service)
 	if (!g_spawn_async (NULL, (char **) vpn_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))
 	{
 		g_ptr_array_free (vpn_argv, TRUE);
-		nm_warning ("Could not activate the VPN service '%s'.  error: '%s'.", nm_vpn_service_get_name (service), error->message);
+		nm_warning ("Could not activate the VPN service '%s'.  error: '%s'.", nm_vpn_service_get_service_name (service), error->message);
 		g_error_free (error);
 		return FALSE;
 	}
 	g_ptr_array_free (vpn_argv, TRUE);
-	nm_info ("Activated the VPN service '%s' with PID %d.", nm_vpn_service_get_name (service), pid);
+	nm_info ("Activated the VPN service '%s' with PID %d.", nm_vpn_service_get_service_name (service), pid);
 
 	/* Wait a bit for the daemon to start up */
 	/* FIXME: don't sleep, keep retrying dbus message or something */
