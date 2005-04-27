@@ -270,8 +270,6 @@ gnome/applet/Makefile
 gnome/applet/icons/Makefile
 gnome/libnm_glib/libnm_glib.pc
 gnome/libnm_glib/Makefile
-panel-applet/Makefile
-panel-applet/icons/Makefile
 dhcpcd/Makefile
 test/Makefile
 initscript/Makefile
