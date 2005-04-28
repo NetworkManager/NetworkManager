@@ -1141,7 +1141,7 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
  * possibly a specific wireless network too.
  *
  */
-void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, WirelessNetwork *net,
+void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
 						NMEncKeyType key_type, const char *passphrase)
 {
 	DBusMessage	*message;
@@ -1155,17 +1155,16 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, Wirel
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
 		const char *dev_path = network_device_get_nm_path (dev);
-		const char *net_path = net ? wireless_network_get_nm_path (net) : NULL;
 
-		if ((network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET) && net && net_path)
+		if ((network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET) && essid)
 		{
-			nm_info ("Forcing device '%s' and network '%s' %s passphrase\n", dev_path, wireless_network_get_essid (net), passphrase ? "with" : "without");
+			nm_info ("Forcing device '%s' and network '%s' %s passphrase\n", dev_path, essid, passphrase ? "with" : "without");
 
 			if (passphrase == NULL)
 				passphrase = "";
 
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
-										DBUS_TYPE_OBJECT_PATH, &net_path,
+										DBUS_TYPE_STRING, &essid,
 										DBUS_TYPE_STRING, &passphrase,
 										DBUS_TYPE_INT32, &key_type,
 										DBUS_TYPE_INVALID);

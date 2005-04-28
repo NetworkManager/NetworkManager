@@ -151,11 +151,9 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path = NULL;
-	char *			net_path = NULL;
+	const char *		essid = NULL;
 	const char *		key = NULL;
 	const int			key_type = -1;
-	DBusError			error;
-	NMAccessPoint *	ap = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -163,27 +161,19 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	g_return_val_if_fail (data->data != NULL, NULL);
 
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error,	DBUS_TYPE_OBJECT_PATH, &dev_path,
-										DBUS_TYPE_OBJECT_PATH, &net_path,
+	if (!dbus_message_get_args (message, NULL,	DBUS_TYPE_OBJECT_PATH, &dev_path,
+										DBUS_TYPE_STRING, &essid,
 										DBUS_TYPE_STRING, &key,
 										DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
 	{
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-
 		/* So if that failed, try getting just the device */
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID))
+		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID))
 		{
-			if (dbus_error_is_set (&error))
-				dbus_error_free (&error);
-
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
 			goto out;
 		} else nm_info ("FORCE: device '%s'", dev_path);
-	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, net_path);
+	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, essid);
 
 	/* So by now we have a valid device and possibly a network as well */
 	dev_path = nm_dbus_unescape_object_path (dev_path);
@@ -196,15 +186,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		goto out;
 	}
 
-	if (net_path)
-	{
-		net_path = nm_dbus_unescape_object_path (net_path);
-		ap = nm_device_ap_list_get_ap_by_obj_path (dev, net_path);
-		g_free (net_path);
-	}
-
 	/* Make sure network is valid and device is wireless */
-	if (nm_device_is_wireless (dev) && !ap)
+	if (nm_device_is_wireless (dev) && !essid)
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
@@ -217,7 +200,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	nm_device_deactivate (dev, FALSE);
 
 	nm_schedule_state_change_signal_broadcast (data->data);
-	nm_device_schedule_force_use (dev, nm_ap_get_essid (ap), key, key_type);
+	nm_device_schedule_force_use (dev, essid, key, key_type);
 
 out:
 

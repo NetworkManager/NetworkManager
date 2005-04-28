@@ -348,7 +348,6 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 		if (essid[0] != '\000')
 		{
 			NMEncKeyType		nm_key_type;
-			WirelessNetwork *	net = network_device_get_wireless_network_by_essid (def_dev, essid);
 
 			/* FIXME: allow picking of the wireless device, we currently just
 			 * use the first one found in our device list.
@@ -375,10 +374,8 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 			if (create_network)
 				nmwa_dbus_create_network (applet->connection, def_dev, essid, nm_key_type, passphrase);
 			else
-				nmwa_dbus_set_device (applet->connection, def_dev, net, nm_key_type, passphrase);
+				nmwa_dbus_set_device (applet->connection, def_dev, essid, nm_key_type, passphrase);
 
-			if (net)
-				wireless_network_unref (net);
 			network_device_unref (def_dev);
 		}
 	}

@@ -1,5 +1,10 @@
 2005-04-27  Dan Williams  <dcbw@redhat.com>
 
+	* Fix choosing of wireless networks and "Other wireless network..." from the applet
+	* Warn and exit if icons cannot be found
+
+2005-04-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tom Parker:
 	* Update debian backend
 

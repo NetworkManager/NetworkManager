@@ -102,7 +102,6 @@ typedef struct
 	GSList *			dbus_vpn_connections;
 	VPNConnection *	dbus_active_vpn;
 
-	GdkPixbuf *		no_nm_icon;
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;
 	GdkPixbuf *		adhoc_icon;

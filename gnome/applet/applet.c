@@ -914,7 +914,7 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 
 	if (dev)
 	{
-		nmwa_dbus_set_device (applet->connection, dev, net, -1, NULL);
+		nmwa_dbus_set_device (applet->connection, dev, wireless_network_get_essid (net), -1, NULL);
 		network_device_unref (dev);
 	}
 }
@@ -1887,7 +1887,6 @@ static void nmwa_icons_free (NMWirelessApplet *applet)
 {
 	gint i;
 
-	g_object_unref (applet->no_nm_icon);
 	g_object_unref (applet->no_connection_icon);
 	g_object_unref (applet->wired_icon);
 	g_object_unref (applet->adhoc_icon);
@@ -1914,11 +1913,11 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 {
 	char *	name;
 	int		i;
+	gboolean	success = TRUE;
 
 	/* Assume icons are square */
 	gint icon_size = 22;
 
-	applet->no_nm_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-broken", icon_size, 0, NULL);
 	applet->no_connection_icon = gtk_icon_theme_load_icon (icon_theme, "nm-no-connection", icon_size, 0, NULL);
 	applet->wired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", icon_size, 0, NULL);
 	applet->adhoc_icon = gtk_icon_theme_load_icon (icon_theme, "nm-adhoc", icon_size, 0, NULL);
@@ -1930,11 +1929,18 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	applet->wireless_75_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-75", icon_size, 0, NULL);
 	applet->wireless_100_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-100", icon_size, 0, NULL);
 
+	if (!applet->no_connection_icon || !applet->wired_icon || !applet->adhoc_icon || !applet->vpn_lock_icon
+		|| !applet->wireless_00_icon || !applet->wireless_25_icon || !applet->wireless_50_icon || !applet->wireless_75_icon
+		|| !applet->wireless_100_icon)
+		success = FALSE;
+
 	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
 	{
 		name = g_strdup_printf ("nm-connecting%02d", i+1);
 		applet->wired_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
+		if (!applet->wired_connecting_icons[i])
+			success = FALSE;
 	}
 
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
@@ -1942,6 +1948,8 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 		name = g_strdup_printf ("nm-connecting%02d", i+1);
 		applet->wireless_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
+		if (!applet->wireless_connecting_icons[i])
+			success = FALSE;
 	}
 
 	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)
@@ -1949,6 +1957,14 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 		name = g_strdup_printf ("nm-detect%02d", i+1);
 		applet->wireless_scanning_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
+		if (!applet->wireless_scanning_icons[i])
+			success = FALSE;
+	}
+
+	if (!success)
+	{
+		show_warning_dialog (_("The NetworkManager applet could not find some required resources.  It cannot continue.\n"));
+		exit (1);
 	}
 }
 
