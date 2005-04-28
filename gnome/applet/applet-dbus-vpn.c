@@ -68,7 +68,7 @@ void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, void *u
 		goto out;
 	}
 
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_OBJECT_PATH, &act_vpn, DBUS_TYPE_INVALID))
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &act_vpn, DBUS_TYPE_INVALID))
 	{
 		g_free (applet->dbus_active_vpn_name);
 		applet->dbus_active_vpn_name = g_strdup (act_vpn);
