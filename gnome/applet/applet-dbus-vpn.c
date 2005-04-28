@@ -64,6 +64,13 @@ void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, void *u
 	if (    dbus_message_is_error (reply, NM_DBUS_NO_ACTIVE_VPN_CONNECTION)
 		|| dbus_message_is_error (reply, NM_DBUS_NO_VPN_CONNECTIONS))
 	{
+		/* Remove the active VPN connection if one exists */
+		if (applet->dbus_active_vpn_name)
+		{
+			g_free (applet->dbus_active_vpn_name);
+			applet->dbus_active_vpn_name = NULL;
+		}
+
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -71,7 +78,10 @@ void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, void *u
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &act_vpn, DBUS_TYPE_INVALID))
 	{
 		g_free (applet->dbus_active_vpn_name);
-		applet->dbus_active_vpn_name = g_strdup (act_vpn);
+		if (strlen (act_vpn))
+			applet->dbus_active_vpn_name = g_strdup (act_vpn);
+		else
+			applet->dbus_active_vpn_name = NULL;
 	}
 	dbus_message_unref (reply);
 
@@ -160,15 +170,10 @@ void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 		{
 			VPNConnection * vpn;
 
-			if ((vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, cb_data->name)))
+			if (applet->dbus_active_vpn_name && cb_data->name && !strcmp (applet->dbus_active_vpn_name, cb_data->name))
 			{
-				applet->dbus_vpn_connections = g_slist_remove (applet->dbus_vpn_connections, vpn);
-				nmwa_vpn_connection_unref (vpn);
-				if (applet->dbus_active_vpn == vpn);
-				{
-					nmwa_vpn_connection_unref (vpn);
-					applet->dbus_active_vpn = NULL;
-				}
+				g_free (applet->dbus_active_vpn_name);
+				applet->dbus_active_vpn_name = NULL;
 			}
 		}
 
@@ -328,12 +333,12 @@ void nmwa_dbus_vpn_remove_one_vpn_connection (NMWirelessApplet *applet, const ch
 	if ((vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, vpn_name)))
 	{
 		applet->dbus_vpn_connections = g_slist_remove (applet->dbus_vpn_connections, vpn);
-		nmwa_vpn_connection_unref (vpn);
-		if (applet->dbus_active_vpn == vpn)
+		if (!strcmp (applet->dbus_active_vpn_name, nmwa_vpn_connection_get_name (vpn)))
 		{
-			nmwa_vpn_connection_unref (vpn);
-			applet->dbus_active_vpn = NULL;
+			g_free (applet->dbus_active_vpn_name);
+			applet->dbus_active_vpn_name = NULL;
 		}
+		nmwa_vpn_connection_unref (vpn);
 		nmwa_dbus_vpn_schedule_copy (applet);
 	}
 }
@@ -356,12 +361,12 @@ static gboolean nmwa_dbus_vpn_connections_lock_and_copy (NMWirelessApplet *apple
 	/* Only copy over if we have a complete data model */
 	if (g_slist_length (applet->vpn_pending_call_list) == 0)
 	{
-		GSList *	elt;
+		VPNConnection *	act_vpn = NULL;
+		GSList *			elt;
 
 		/* Match up the active vpn with a device in the list */
-		if (applet->dbus_active_vpn_name &&
-				(applet->dbus_active_vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, applet->dbus_active_vpn_name)))
-			nmwa_vpn_connection_ref (applet->dbus_active_vpn);
+		if (applet->dbus_active_vpn_name)
+			act_vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, applet->dbus_active_vpn_name);
 
 		/* Now copy the data over to the GUI side */
 		g_mutex_lock (applet->data_mutex);
@@ -378,7 +383,7 @@ static gboolean nmwa_dbus_vpn_connections_lock_and_copy (NMWirelessApplet *apple
 			if (new_vpn)
 			{
 				applet->gui_vpn_connections = g_slist_append (applet->gui_vpn_connections, new_vpn);
-				if (applet->dbus_active_vpn == src_vpn)
+				if (src_vpn == act_vpn)
 				{
 					nmwa_vpn_connection_ref (new_vpn);
 					applet->gui_active_vpn = new_vpn;
@@ -437,10 +442,6 @@ static void nmwa_free_dbus_vpn_connections (NMWirelessApplet *applet)
 	GSList	*elt;
 
 	g_return_if_fail (applet != NULL);
-
-	if (applet->dbus_active_vpn)
-		nmwa_vpn_connection_unref (applet->dbus_active_vpn);
-	applet->dbus_active_vpn = NULL;
 
 	g_free (applet->dbus_active_vpn_name);
 	applet->dbus_active_vpn_name = NULL;

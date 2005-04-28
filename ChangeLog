@@ -1,5 +1,16 @@
 2005-04-27  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-vpn.c
+	  gnome/applet/applet.c
+	  gnome/applet/applet.h
+		- Fix up active VPN handling so that we reliably know when a VPN
+			connection has been deactivated
+
+	* src/vpn-manager/nm-vpn-manager.c
+		- Remove duplicate VPNConnectionChange signal
+
+2005-04-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Peter Jones:
 	* Remove usage of varargs to fix crashes on PPC (RH #154336)
 

@@ -751,7 +751,6 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
 
 out:
 	nm_vpn_manager_set_active_vpn_connection (manager, NULL);
-	nm_dbus_vpn_signal_vpn_connection_change (manager->app_data->dbus_connection, NULL);
 	nm_vpn_connection_unref (active);
 
 	if (manager->app_data->active_device)

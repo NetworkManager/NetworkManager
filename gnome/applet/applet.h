@@ -100,7 +100,6 @@ typedef struct
 	GSList *			vpn_pending_call_list;
 	char *			dbus_active_vpn_name;
 	GSList *			dbus_vpn_connections;
-	VPNConnection *	dbus_active_vpn;
 
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;

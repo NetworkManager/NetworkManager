@@ -1798,7 +1798,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->dbus_active_device = NULL;
 	applet->dbus_active_device_path = NULL;
 	applet->dbus_active_vpn_name = NULL;
-	applet->dbus_active_vpn = NULL;
 	applet->dbus_vpn_connections = NULL;
 	applet->dbus_nm_state = NM_STATE_DISCONNECTED;
 	applet->vpn_pending_call_list = NULL;
