@@ -1,5 +1,14 @@
 2005-04-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Peter Jones:
+	* Remove usage of varargs to fix crashes on PPC (RH #154336)
+
+	Patch from Bill Moss:
+	* src/NetworkManagerSystem.c
+		- Fix checking of return value from ioctl()
+
+2005-04-27  Dan Williams  <dcbw@redhat.com>
+
 	* Fix choosing of wireless networks and "Other wireless network..." from the applet
 	* Warn and exit if icons cannot be found
 

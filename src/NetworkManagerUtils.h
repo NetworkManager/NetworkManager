@@ -66,7 +66,9 @@ NMDriverSupportLevel	nm_get_driver_support_level		(LibHalContext *ctx, NMDevice 
 
 #define NM_COMPLETION_TRIES_INFINITY -1
 
-typedef gboolean (*nm_completion_func)(int tries, va_list args);
+typedef void * nm_completion_args[8];
+
+typedef gboolean (*nm_completion_func)(int tries, nm_completion_args args);
 typedef gboolean (*nm_completion_boolean_function_1)(u_int64_t arg);
 typedef gboolean (*nm_completion_boolean_function_2)(
 	u_int64_t arg0, u_int64_t arg1);
@@ -76,7 +78,7 @@ void nm_wait_for_completion(
 	const guint interval_usecs,
 	nm_completion_func test_func,
 	nm_completion_func action_func,
-	...);
+	nm_completion_args args);
 
 void nm_wait_for_completion_or_timeout(
 	const int max_tries,
@@ -84,18 +86,20 @@ void nm_wait_for_completion_or_timeout(
 	const guint interval_usecs,
 	nm_completion_func test_func,
 	nm_completion_func action_func,
-	...);
+	nm_completion_args args);
 
 void nm_wait_for_timeout(
 	const struct timeval *max_time,
 	const guint interval_usecs,
 	nm_completion_func test_func,
 	nm_completion_func action_func,
-	...);
+	nm_completion_args args);
 
-gboolean nm_completion_boolean_test(int tries, va_list args);
-gboolean nm_completion_boolean_function1_test(int tries, va_list args);
-gboolean nm_completion_boolean_function2_test(int tries, va_list args);
+gboolean nm_completion_boolean_test(int tries, nm_completion_args args);
+gboolean nm_completion_boolean_function1_test(int tries,
+		nm_completion_args args);
+gboolean nm_completion_boolean_function2_test(int tries,
+		nm_completion_args args);
 #define nm_completion_boolean_function_test nm_completion_boolean_function1_test
 
 #endif

@@ -277,19 +277,19 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 	/* Get flags already there */
 	memset (&ifr, 0, sizeof (struct ifreq));
 	memcpy (ifr.ifr_name, iface, strlen (iface));
-	if (!ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr))
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr) == -1)
+		nm_warning ("nm_system_device_set_up_down_with_iface() could not get flags for device %s.  errno = %d", iface, errno );
+	else
 	{
 		/* If the interface doesn't have those flags already, set them on it. */
 		if ((ifr.ifr_flags^flags) & IFF_UP)
 		{
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
-			if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr))
+			if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr) == -1)
 				nm_warning ("nm_system_device_set_up_down_with_iface() could not bring device %s %s.  errno = %d", iface, (up ? "up" : "down"), errno);
 		}
 	}
-	else
-		nm_warning ("nm_system_device_set_up_down_with_iface() could not get flags for device %s.  errno = %d", iface, errno );
 
 	nm_dev_sock_close (sk);
 	return success;
