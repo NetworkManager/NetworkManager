@@ -1,5 +1,10 @@
 2005-04-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tom Parker:
+	* Update debian backend
+
+2005-04-27  Dan Williams  <dcbw@redhat.com>
+
 	* Merge the applet and the info-daemon, and move the converged
 		applet under gnome/applet
 	* Move libnm_glib to gnome/libnm_glib
