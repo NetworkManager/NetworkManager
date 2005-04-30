@@ -1,18 +1,15 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-info-daemon/networks.glade
-info-daemon/passphrase.glade
-info-daemon/NetworkManagerInfoPassphraseDialog.c
-info-daemon/NetworkManagerInfoVPN.c
-panel-applet/NMWirelessApplet.c
-panel-applet/NMWirelessAppletOtherNetworkDialog.c
-panel-applet/essid.glade
-panel-applet/menu-info.c
-panel-applet/NMWirelessApplet.xml
-panel-applet/eggtrayicon.c
-panel-applet/gtkcellrendererprogress.c
-panel-applet/gtkcellview.c
-panel-applet/wireless-applet.glade
-panel-applet/nmwa-vpn-password-dialog.c
-src/nm-netlink-monitor.c
 examples/python/systray/eggtrayicon.c
+gnome/applet/applet-dbus-info.c
+gnome/applet/applet-dbus.c
+gnome/applet/applet.c
+gnome/applet/eggtrayicon.c
+gnome/applet/gtkcellrendererprogress.c
+gnome/applet/gtkcellview.c
+gnome/applet/menu-items.c
+gnome/applet/other-network-dialog.c
+gnome/applet/passphrase-dialog.c
+gnome/applet/vpn-password-dialog.c
+gnome/applet/wireless-applet.glade
+src/nm-netlink-monitor.c

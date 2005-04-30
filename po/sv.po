@@ -1,40 +1,285 @@
 # Swedish messages for NetworkManager.
-# Copyright (C) 2004 Free Software Foundation, Inc.
-# Christian Rose <menthos@menthos.com>, 2004.
+# Copyright (C) 2004, 2005 Free Software Foundation, Inc.
+# Christian Rose <menthos@menthos.com>, 2004, 2005.
 #
-# $Id: sv.po,v 1.4 2005/02/18 18:15:53 dcbw Exp $
+# $Id: sv.po,v 1.5 2005/04/30 10:55:28 menthos Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-19 13:38-0400\n"
-"PO-Revision-Date: 2004-08-27 01:42+0200\n"
+"POT-Creation-Date: 2005-04-30 12:53+0200\n"
+"PO-Revision-Date: 2005-04-30 12:53+0200\n"
 "Last-Translator: Christian Rose <menthos@menthos.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "Ändra trådlösa nätverk"
+#: examples/python/systray/eggtrayicon.c:111 gnome/applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr ""
 
-#: info-daemon/networks.glade:92
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Trådlösa nätverk:</span>"
+#: examples/python/systray/eggtrayicon.c:112 gnome/applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr ""
 
-#: info-daemon/passphrase.glade:9
+#: gnome/applet/applet-dbus-info.c:853
+#, c-format
+msgid ""
+"The requested wireless network '%s' does not appear to be in range.  A "
+"different wireless network will be used if any are available."
+msgstr ""
+
+#: gnome/applet/applet-dbus.c:563
+#, c-format
+msgid "Connection to the wireless network '%s' failed.\n"
+msgstr ""
+
+#: gnome/applet/applet-dbus.c:568
+msgid "Connection to the wired network failed.\n"
+msgstr ""
+
+#: gnome/applet/applet.c:169 gnome/applet/applet.c:187
+msgid "NetworkManager Applet"
+msgstr "Panelprogram för nätverkshantering"
+
+#: gnome/applet/applet.c:171 gnome/applet/applet.c:189
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "Copyright © 2004-2005 Red Hat, Inc."
+
+#: gnome/applet/applet.c:172 gnome/applet/applet.c:190
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+
+#: gnome/applet/applet.c:250
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a login failure.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+
+#: gnome/applet/applet.c:306
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
+"\n"
+"VPN connection '%s' said:\n"
+"\n"
+"\"%s\""
+msgstr ""
+
+#: gnome/applet/applet.c:523 gnome/applet/applet.c:1817
+#: gnome/applet/other-network-dialog.c:315
+#: gnome/applet/passphrase-dialog.c:366
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
+"resurser (glade-filen hittades inte)."
+
+#: gnome/applet/applet.c:536
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr ""
+
+#: gnome/applet/applet.c:543
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr ""
+
+#: gnome/applet/applet.c:666
+msgid "NetworkManager is not running"
+msgstr "Nätverkshanteraren är inte igång"
+
+#: gnome/applet/applet.c:677
+msgid "No network connection"
+msgstr "Ingen nätverksanslutning"
+
+#: gnome/applet/applet.c:684
+msgid "Wired network connection"
+msgstr "Trådbunden nätverksanslutning"
+
+#: gnome/applet/applet.c:691
 #, fuzzy
-msgid "Wireless Network Key Required"
+msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Trådlöst nätverk"
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "_Logga in på nätverket"
+#: gnome/applet/applet.c:705
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Trådlös nätverksanslutning till \"%s\" (%d%%)"
 
-#: info-daemon/passphrase.glade:100
-#, fuzzy
+#: gnome/applet/applet.c:713
+msgid "Connecting to a wired network..."
+msgstr "Ansluter till ett trådbundet nätverk..."
+
+#: gnome/applet/applet.c:715
+#, c-format
+msgid "Connecting to wireless network '%s'..."
+msgstr "Ansluter till det trådlösa nätverket \"%s\"..."
+
+#: gnome/applet/applet.c:722
+msgid "Scanning for wireless networks..."
+msgstr "Söker efter trådlösa nätverk..."
+
+#: gnome/applet/applet.c:1072
+msgid "Other Wireless Networks..."
+msgstr "Andra trådlösa nätverk..."
+
+#: gnome/applet/applet.c:1093
+msgid "Create new Wireless Network..."
+msgstr "Skapa nytt trådlöst nätverk..."
+
+#: gnome/applet/applet.c:1206
+msgid "VPN Connections"
+msgstr "VPN-anslutningar"
+
+#: gnome/applet/applet.c:1228
+msgid "Disconnect VPN..."
+msgstr "Koppla från VPN..."
+
+#: gnome/applet/applet.c:1257
+msgid "No network devices have been found"
+msgstr "Inga nätverksenheter har hittats"
+
+#: gnome/applet/applet.c:1427
+msgid "NetworkManager is not running..."
+msgstr "Nätverkshanteraren är inte igång..."
+
+#: gnome/applet/applet.c:1497 gnome/applet/applet.c:1545
+msgid "Pause Wireless Scanning"
+msgstr "Gör paus i sökning efter trådlösa nätverk"
+
+#: gnome/applet/applet.c:1502
+msgid "Resume Wireless Scanning"
+msgstr "Återuppta sökning efter trådlösa nätverk"
+
+#: gnome/applet/applet.c:1512 gnome/applet/applet.c:1551
+msgid "Stop All Wireless Devices"
+msgstr "Stoppa alla trådlösa enheter"
+
+#: gnome/applet/applet.c:1517
+msgid "Start All Wireless Devices"
+msgstr "Starta alla trådlösa enheter"
+
+#: gnome/applet/applet.c:1560
+msgid "Help"
+msgstr "Hjälp"
+
+#: gnome/applet/applet.c:1567
+msgid "About"
+msgstr "Om"
+
+#: gnome/applet/applet.c:1965
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr ""
+"Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
+"resurser. Det kan inte fortsätta.\n"
+
+#: gnome/applet/gtkcellrendererprogress.c:243
+#: gnome/applet/gtkcellrendererprogress.c:301
+#, c-format
+msgid "progress bar label|%d %%"
+msgstr "%d %%"
+
+#: gnome/applet/menu-items.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Trådbundet nätverk (%s)"
+
+#: gnome/applet/menu-items.c:93
+msgid "Wired Network"
+msgstr "Trådbundet nätverk"
+
+#: gnome/applet/menu-items.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Trådlöst nätverk (%s)"
+msgstr[1] "Trådlösa nätverk (%s)"
+
+#: gnome/applet/menu-items.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Trådlöst nätverk"
+msgstr[1] "Trådlösa nätverk"
+
+#: gnome/applet/menu-items.c:294
+msgid " (invalid Unicode)"
+msgstr " (ogiltig Unicode)"
+
+#: gnome/applet/other-network-dialog.c:148
+#: gnome/applet/passphrase-dialog.c:164
+#: gnome/applet/wireless-applet.glade.h:27
+msgid "Passphrase:"
+msgstr "Lösenfras:"
+
+#: gnome/applet/other-network-dialog.c:151
+#: gnome/applet/passphrase-dialog.c:167
+msgid "Ascii Key:"
+msgstr "Ascii-nyckel:"
+
+#: gnome/applet/other-network-dialog.c:154
+#: gnome/applet/passphrase-dialog.c:170
+msgid "Hex Key:"
+msgstr "Hexadecimal nyckel:"
+
+#: gnome/applet/other-network-dialog.c:229
+msgid "Create new wireless network"
+msgstr "Skapa nytt trådlöst nätverk"
+
+#: gnome/applet/other-network-dialog.c:230
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+
+#: gnome/applet/other-network-dialog.c:235
+msgid "Custom wireless network"
+msgstr "Anpassat trådlöst nätverk"
+
+#: gnome/applet/other-network-dialog.c:236
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Ange ESSID för det trådlösa nätverk som du vill ansluta till."
+
+#: gnome/applet/vpn-password-dialog.c:105
+#, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "Du måsta logga in för att komma åt VPN-nätverket \"%s\"."
+
+#: gnome/applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: gnome/applet/wireless-applet.glade.h:2
+msgid "*"
+msgstr "*"
+
+#: gnome/applet/wireless-applet.glade.h:3
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+
+#: gnome/applet/wireless-applet.glade.h:6
+msgid ""
+"128-bit passphrase (WEP)\n"
+"Ascii key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+
+#: gnome/applet/wireless-applet.glade.h:10
+#, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
 "Network</span>\n"
@@ -45,150 +290,169 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Lösenfras krävs av det trådlösa "
 "nätverket</span>\n"
 "\n"
-"En lösenfras eller en WEP-nyckel krävs för att komma åt det trådlösa "
+"En lösenfras eller en krypteringsnyckel krävs för att komma åt det trådlösa "
 "nätverket \"%s\"."
 
-#: info-daemon/passphrase.glade:129
-msgid "Key Type:"
-msgstr ""
-
-#: info-daemon/passphrase.glade:150
+#: gnome/applet/wireless-applet.glade.h:14
+#, no-c-format
 msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
 msgstr ""
 
-#: info-daemon/passphrase.glade:180
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
-msgid "Passphrase:"
-msgstr "Lösenfras:"
-
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
-
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
-msgid "Key:"
-msgstr ""
-
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:691 panel-applet/NMWirelessApplet.c:701
+#: gnome/applet/wireless-applet.glade.h:18
+#, no-c-format
 msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
 msgstr ""
-"Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
-"resurser (glade-filen hittades inte)."
+"<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst "
+"nätverk</span>\n"
+"\n"
+"Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker på "
+"att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
+"kommer nätverkshanteraren inte längre att besvära dig med dumma frågor när "
+"du ansluter till det."
 
-#: panel-applet/NMWirelessApplet.c:716
-#, fuzzy
-msgid "Custom wireless network"
-msgstr "Trådlöst nätverk"
+#: gnome/applet/wireless-applet.glade.h:21
+msgid "Always Trust this Wireless Network"
+msgstr "Lita alltid på detta trådlösa nätverk"
 
-#: panel-applet/NMWirelessApplet.c:717
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:800
-#, fuzzy
-msgid "Other Wireless Networks..."
-msgstr "Trådlösa nätverk"
-
-#: panel-applet/NMWirelessApplet.c:911
-msgid "No network devices have been found"
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:1028
-msgid "NetworkManager is not running..."
-msgstr "Nätverkshanteraren är inte igång..."
-
-#: panel-applet/essid.glade:52
+#: gnome/applet/wireless-applet.glade.h:22
 msgid "C_onnect"
-msgstr ""
+msgstr "_Anslut"
 
-#: panel-applet/essid.glade:131
-#, fuzzy
-msgid "Wireless _Network:"
-msgstr "Trådlösa nätverk:"
+#: gnome/applet/wireless-applet.glade.h:23
+msgid "Connect with encryption enabled"
+msgstr "Anslut med kryptering aktiverad"
 
-#: panel-applet/essid.glade:177
-#, fuzzy
+#: gnome/applet/wireless-applet.glade.h:24
+msgid "Don't remind me again"
+msgstr "Påminn mig inte igen"
+
+#: gnome/applet/wireless-applet.glade.h:25
+msgid "Key Type:"
+msgstr "Nyckeltyp:"
+
+#: gnome/applet/wireless-applet.glade.h:26
+msgid "Key type:"
+msgstr "Nyckeltyp:"
+
+#: gnome/applet/wireless-applet.glade.h:28
+msgid "Wireless Network Key Required"
+msgstr "Nyckel krävs för det trådlösa nätverket"
+
+#: gnome/applet/wireless-applet.glade.h:29
 msgid "Wireless _adapter:"
-msgstr "Trådlösa nätverk:"
+msgstr "Trådlös _nätverksadapter:"
 
-#: panel-applet/menu-info.c:101
-#, fuzzy, c-format
-msgid "Wired Network (%s)"
-msgstr "Trådlösa nätverk"
+#: gnome/applet/wireless-applet.glade.h:30
+msgid "Wireless _network:"
+msgstr "Trådlöst _nätverk:"
 
-#: panel-applet/menu-info.c:103
-#, fuzzy
-msgid "Wired Network"
-msgstr "Trådlöst nätverk"
+#: gnome/applet/wireless-applet.glade.h:31
+msgid "_Login to Network"
+msgstr "_Logga in på nätverket"
 
-#: panel-applet/menu-info.c:168
-#, fuzzy, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Trådlösa nätverk"
-msgstr[1] "Trådlösa nätverk"
+#: gnome/applet/wireless-applet.glade.h:32
+msgid "_OK"
+msgstr "_OK"
 
-#: panel-applet/menu-info.c:170
-#, fuzzy
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Trådlöst nätverk"
-msgstr[1] "Trådlöst nätverk"
-
-#: panel-applet/menu-info.c:307
-msgid " (invalid Unicode)"
+#: src/nm-netlink-monitor.c:154
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 
-#: examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
+#: src/nm-netlink-monitor.c:172
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 
-#: examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
+#: src/nm-netlink-monitor.c:403
+msgid "operation took too long"
 msgstr ""
 
-#~ msgid " "
-#~ msgstr " "
+#: src/nm-netlink-monitor.c:500
+msgid "received data from wrong type of sender"
+msgstr ""
+
+#: src/nm-netlink-monitor.c:513
+msgid "received data from unexpected sender"
+msgstr ""
+
+#: src/nm-netlink-monitor.c:535
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: src/nm-netlink-monitor.c:644
+msgid "too much data was sent over socket and some of it was lost"
+msgstr ""
+
+#~ msgid "Copyright © 2004-2005 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2005 Red Hat, Inc."
+
+#~ msgid "Copyright (C) 2004-2006 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2006 Red Hat, Inc."
+
+#~ msgid "Copyright © 2004-2006 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2006 Red Hat, Inc."
+
+#~ msgid "Copyright (C) 2004-2007 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2007 Red Hat, Inc."
+
+#~ msgid "Copyright © 2004-2007 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2007 Red Hat, Inc."
+
+#~ msgid "Copyright (C) 2004-2008 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2008 Red Hat, Inc."
+
+#~ msgid "Copyright © 2004-2008 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2008 Red Hat, Inc."
+
+#~ msgid "Other Wireless Networks"
+#~ msgstr "Andra trådlösa nätverk"
+
+#~ msgid "Create new Wireless Network"
+#~ msgstr "Skapa nytt trådlöst nätverk"
+
+#~ msgid "VPN"
+#~ msgstr "VPN"
+
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue."
+#~ msgstr ""
+#~ "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
+#~ "resurser. Det kan inte fortsätta."
+
+#~ msgid "Create new wireless network..."
+#~ msgstr "Skapa nytt trådlöst nätverk..."
+
+#~ msgid "Wireless network:"
+#~ msgstr "Trådlöst nätverk:"
+
+#~ msgid "Modify Wireless Networks"
+#~ msgstr "Ändra trådlösa nätverk"
+
+#~ msgid "<span weight=\"bold\">Wireless Networks:</span>"
+#~ msgstr "<span weight=\"bold\">Trådlösa nätverk:</span>"
 
 #~ msgid "There are no network devices..."
 #~ msgstr "Det finns inga nätverksenheter..."
-
-#~ msgid "There are no wireless networks..."
-#~ msgstr "Det finns inga trådlösa nätverk..."
-
-#~ msgid "No network connection is currently active..."
-#~ msgstr "Ingen nätverksanslutning är aktiv för tillfället..."
 
 #~ msgid "A wired network connection is currently active..."
 #~ msgstr "En kabelburen nätverksanslutning är aktiv för tillfället..."
 
 #~ msgid "_About..."
 #~ msgstr "_Om..."
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
-#~ "this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will no longer pester you with stupid questions when you "
-#~ "connect to it."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst "
-#~ "nätverk</span>\n"
-#~ "\n"
-#~ "Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker "
-#~ "på att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
-#~ "kommer nätverkshanteraren inte längre att besvära dig med dumma frågor "
-#~ "när du ansluter till det."
-
-#~ msgid "Always Trust this Wireless Network"
-#~ msgstr "Lita alltid på detta trådlösa nätverk"
 
 #~ msgid "Modify Wireless Network"
 #~ msgstr "Ändra trådlöst nätverk"
@@ -213,9 +477,6 @@ msgstr ""
 
 #~ msgid "_About"
 #~ msgstr "_Om"
-
-#~ msgid "About"
-#~ msgstr "Om"
 
 #~ msgid "Wireless Network Login Confirmation"
 #~ msgstr "Inloggningsbekräftelse för trådlöst nätverk"
