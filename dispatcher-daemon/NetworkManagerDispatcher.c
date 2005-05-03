@@ -91,6 +91,7 @@ void nmd_execute_scripts (NMDAction action, char *iface_name, guint32 new_ip4_ad
 				 */
 				if (S_ISREG (s.st_mode) && !S_ISLNK (s.st_mode) && (s.st_uid == 0))
 				{
+                                        int x;
 					char cmd[500];
 
 					if ((action == NMD_DEVICE_NOW_INACTIVE) || (action == NMD_DEVICE_NOW_ACTIVE))
@@ -103,7 +104,7 @@ void nmd_execute_scripts (NMDAction action, char *iface_name, guint32 new_ip4_ad
 					{
 						snprintf (cmd, 499, "%s %s %u.%u.%u.%u", path, iface_name, NIPQUAD (new_ip4_address));
 					}
-					system (cmd);
+					x = system (cmd);
 				}
 			}
 		}
