@@ -71,14 +71,13 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 		NetworkDevice *dev = NULL;
 		WirelessNetwork *net = NULL;
 
+		g_mutex_lock (applet->data_mutex);
 		if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, dev_path)))
 		{
 			if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
-			{
-				nmi_passphrase_dialog_show (applet->passphrase_dialog, dev, net, message);
-				success = TRUE;
-			}
+				success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
 		}
+		g_mutex_unlock (applet->data_mutex);
 	}
 
 	if (!success)
@@ -837,7 +836,7 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 	if (strcmp ("getKeyForNetwork", method) == 0)
 		reply = nmi_dbus_get_key_for_network (applet, message);
 	else if (strcmp ("cancelGetKeyForNetwork", method) == 0)
-		nmi_passphrase_dialog_cancel (applet->passphrase_dialog);
+		nmi_passphrase_dialog_schedule_cancel (applet);
 	else if (strcmp ("networkNotFound", method) == 0)
 	{
 		const char *	network;

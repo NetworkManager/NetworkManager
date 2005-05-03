@@ -1,6 +1,6 @@
-SUBDIRS=named-manager vpn-manager backends
+SUBDIRS=named-manager vpn-manager dhcp-manager backends
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/src/dhcp-manager -I${top_srcdir}/utils
 
 bin_PROGRAMS = NetworkManager
 
@@ -19,12 +19,8 @@ NetworkManager_SOURCES =				\
 		nm-dbus-device.h			\
 		nm-dbus-net.c				\
 		nm-dbus-net.h				\
-		nm-dbus-dhcp.c				\
-		nm-dbus-dhcp.h				\
 		nm-dbus-nmi.c				\
 		nm-dbus-nmi.h				\
-		NetworkManagerDHCP.c		\
-		NetworkManagerDHCP.h		\
 		NetworkManagerDevice.c		\
 		NetworkManagerDevice.h		\
 		NetworkManagerDevicePrivate.h	\
@@ -42,7 +38,10 @@ NetworkManager_SOURCES =				\
 		NetworkManagerSystem.h		\
 		nm-netlink-monitor.c		\
 		nm-netlink-monitor.h		\
-		autoip.c
+		nm-activation-request.c		\
+		nm-activation-request.h		\
+		autoip.c					\
+		autoip.h
 
 NetworkManager_CPPFLAGS = 			\
 	$(DBUS_CFLAGS)					\
@@ -70,9 +69,9 @@ NetworkManager_LDADD = 							\
 			$(HAL_LIBS)						\
 			$(IWLIB)							\
 			$(top_builddir)/utils/libnmutils.la	\
-			../dhcpcd/libdhcpc.a				\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\
+			./dhcp-manager/libdhcp-manager.la		\
 			./backends/libnmbackend.la
 
 if WITH_GCRYPT

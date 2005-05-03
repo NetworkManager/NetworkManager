@@ -327,7 +327,7 @@ int nm_null_safe_strcmp (const char *s1, const char *s2)
  * Compares an ethernet address against known invalid addresses.
  *
  */
-gboolean nm_ethernet_address_is_valid (struct ether_addr *test_addr)
+gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 {
 	gboolean			valid = FALSE;
 	struct ether_addr	invalid_addr1 = { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
@@ -678,9 +678,7 @@ static void nm_v_wait_for_completion_or_timeout(
 				break;
 		}
 
-#if 0
-#define NM_SLEEP_DEBUG
-#endif
+/* #define NM_SLEEP_DEBUG */
 #ifdef NM_SLEEP_DEBUG
 		syslog (LOG_INFO, "sleeping or %d usecs", interval_usecs);
 #endif

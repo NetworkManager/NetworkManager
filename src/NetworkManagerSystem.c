@@ -204,8 +204,8 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	sleep (1);
 	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0);
 
-	set_nameservers (app_data->named, config);
-	set_search_domains (app_data->named, config);
+	set_nameservers (app_data->named_manager, config);
+	set_search_domains (app_data->named_manager, config);
 
 	return TRUE;
 }
@@ -544,11 +544,11 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 				if (ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent) == 0 )
 					success = TRUE;
 				else
-					nm_warning ("nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+					nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! errno = %d", iface, errno);
 			}
 		}
 		else
-			nm_warning ("nm_system_device_set_ip4_default_route (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+			nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! errno = %d", iface, errno);
 	}
 	else
 		success = TRUE;

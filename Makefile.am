@@ -1,4 +1,4 @@
-SUBDIRS = utils dhcpcd src dispatcher-daemon gnome vpn-daemons initscript test po
+SUBDIRS = utils src dispatcher-daemon gnome vpn-daemons initscript test po
 
 EXTRA_DIST = CONTRIBUTING NetworkManager.pc.in NetworkManager.h
 

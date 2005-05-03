@@ -179,6 +179,7 @@ void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
  */
 char * nm_ap_get_essid (const NMAccessPoint *ap)
 {
+	g_assert (ap);
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	return (ap->essid);
@@ -311,7 +312,7 @@ void nm_ap_set_auth_method (NMAccessPoint *ap, NMDeviceAuthMethod auth_method)
  * Get/set functions for address
  *
  */
-struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
+const struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 

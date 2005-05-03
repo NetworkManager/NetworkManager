@@ -26,12 +26,12 @@
 #include "nm-device.h"
 #include "wireless-network.h"
 
-GtkWidget *	nmi_passphrase_dialog_init	(NMWirelessApplet *applet);
+GtkWidget *	nmi_passphrase_dialog_init			(NMWirelessApplet *applet);
 
-void			nmi_passphrase_dialog_destroy	(GtkWidget *dialog);
+void			nmi_passphrase_dialog_destroy			(GtkWidget *dialog);
 
-void			nmi_passphrase_dialog_show	(GtkWidget *dialog, NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message);
+gboolean		nmi_passphrase_dialog_schedule_show	(NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message, NMWirelessApplet *applet);
 
-void			nmi_passphrase_dialog_cancel	(GtkWidget *dialog);
+void			nmi_passphrase_dialog_schedule_cancel	(NMWirelessApplet *applet);
 
 #endif

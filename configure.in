@@ -263,6 +263,7 @@ utils/Makefile
 src/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
+src/dhcp-manager/Makefile
 src/backends/Makefile
 dispatcher-daemon/Makefile
 gnome/Makefile
@@ -270,7 +271,6 @@ gnome/applet/Makefile
 gnome/applet/icons/Makefile
 gnome/libnm_glib/libnm_glib.pc
 gnome/libnm_glib/Makefile
-dhcpcd/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile

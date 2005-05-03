@@ -51,7 +51,7 @@ void				nm_ap_set_auth_method	(NMAccessPoint *ap, const NMDeviceAuthMethod auth_
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
 
-struct ether_addr *	nm_ap_get_address		(const NMAccessPoint *ap);
+const struct ether_addr *	nm_ap_get_address		(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
 NMNetworkMode		nm_ap_get_mode			(const NMAccessPoint *ap);

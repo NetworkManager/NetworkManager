@@ -36,6 +36,7 @@
 #include "applet-dbus-vpn.h"
 #include "applet-dbus-info.h"
 #include "vpn-connection.h"
+#include "passphrase-dialog.h"
 #include "nm-utils.h"
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
@@ -439,7 +440,10 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 					nmwa_dbus_vpn_update_vpn_connections (applet);
 				}
 				else if (old_owner_good && !new_owner_good)
-						applet->nm_running = FALSE;
+				{
+					applet->nm_running = FALSE;
+					nmi_passphrase_dialog_schedule_cancel (applet);
+				}
 			}
 		}
 	}
@@ -449,14 +453,16 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 
 		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
 		{
+			NetworkDevice *act_dev = nmwa_get_first_active_device (applet->dbus_device_list);
+
 			/* If we've switched to connecting, update the active device to ensure that we have
 			 * valid wireless network information for it.
 			 */
 			if (   (state == NM_STATE_CONNECTING)
-				&& applet->dbus_active_device
-				&& (network_device_get_type (applet->dbus_active_device) == DEVICE_TYPE_WIRELESS_ETHERNET))
+				&& act_dev
+				&& (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET))
 			{
-				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (applet->dbus_active_device));
+				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (act_dev));
 			}
 			applet->dbus_nm_state = state;
 			applet->gui_nm_state = state;
@@ -733,7 +739,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 	g_source_attach (timeout_source, applet->thread_context);
 
 	strength_source = g_timeout_source_new (2000);
-	g_source_set_callback (strength_source, (GSourceFunc) nmwa_dbus_update_active_device_strength, applet, NULL);
+	g_source_set_callback (strength_source, (GSourceFunc) nmwa_dbus_update_device_strength, applet, NULL);
 	g_source_attach (strength_source, applet->thread_context);
 
 	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))

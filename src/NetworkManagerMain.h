@@ -31,53 +31,67 @@
 #include "nm-netlink-monitor.h"
 #include "nm-named-manager.h"
 
-typedef struct NMDbusMethodList NMDbusMethodList;
-typedef struct NMVPNManager NMVPNManager;
 
+typedef enum NMIntState
+{
+	NM_INT_STATE_UNKNOWN = 0,
+	NM_INT_STATE_ASLEEP,
+	NM_INT_STATE_CONFIGURE_AP,
+	NM_INT_STATE_CONFIGURE_DEV,
+	NM_INT_STATE_CONFIGURE_IP,
+	NM_INT_STATE_CONNECTED,
+	NM_INT_STATE_DISCONNECTED
+} NMIntState;
+
+
+typedef struct NMDbusMethodList NMDbusMethodList;
+typedef struct NMActRequest NMActRequest;
+typedef struct NMVPNManager NMVPNManager;
+typedef struct NMDHCPManager NMDHCPManager;
+
+#define DHCP_SERVICE_NAME	"com.redhat.dhcp"
+#define DHCP_OBJECT_PATH		"/com/redhat/dhcp"
 
 typedef struct NMData
 {
-	GIOChannel			*sigterm_iochannel;
-	int					 sigterm_pipe[2];
+	GIOChannel *			sigterm_iochannel;
+	int					sigterm_pipe[2];
 
-	LibHalContext			*hal_ctx;
+	LibHalContext *		hal_ctx;
 
-	NmNetlinkMonitor		*netlink_monitor;
+	NmNetlinkMonitor *		netlink_monitor;
 
-	NMNamedManager			*named;
-	NMVPNManager			*vpn_manager;
+	NMNamedManager *		named_manager;
+	NMVPNManager *			vpn_manager;
+	NMDHCPManager *		dhcp_manager;
 
-	DBusConnection			*dbus_connection;
-	NMDbusMethodList		*nm_methods;
-	NMDbusMethodList		*device_methods;
-	NMDbusMethodList		*net_methods;
-	NMDbusMethodList		*dhcp_methods;
-	NMDbusMethodList		*vpn_methods;
+	DBusConnection *		dbus_connection;
+	NMDbusMethodList *		nm_methods;
+	NMDbusMethodList *		device_methods;
+	NMDbusMethodList *		net_methods;
+	NMDbusMethodList *		vpn_methods;
 
-	GMainContext			*main_context;
-	GMainLoop				*main_loop;
-	gboolean				 enable_test_devices;
+	GMainContext *			main_context;
+	GMainLoop *			main_loop;
+	gboolean				enable_test_devices;
 
-	guint				 state_modified_idle_id;
+	guint				dev_change_check_idle_id;
 
-	GSList				*dev_list;
-	GMutex				*dev_list_mutex;
+	GSList *				dev_list;
+	GMutex *				dev_list_mutex;
 
-	struct NMDevice		*active_device;
-	gboolean				 active_device_locked;
-
-	gboolean				 forcing_device;
-
-	gboolean				 scanning_enabled;
-	gboolean				 wireless_enabled;
-	gboolean				 asleep;
+	gboolean				scanning_enabled;
+	gboolean				wireless_enabled;
+	gboolean				asleep;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
 
 
-struct NMDevice	*nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
+struct NMDevice *	nm_get_active_device					(NMData *data);
+
+struct NMDevice *	nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
 														gboolean test_device, NMDeviceType test_device_type);
 
 void				 nm_remove_device_from_list				(NMData *data, const char *udi);

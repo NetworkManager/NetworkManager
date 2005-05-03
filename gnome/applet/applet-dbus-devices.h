@@ -32,11 +32,10 @@
 
 void			nmwa_dbus_update_one_vpn_connection		(DBusConnection *connection, const char *name, NMWirelessApplet *applet, gboolean is_active);
 void			nmwa_dbus_update_vpn_connections			(NMWirelessApplet *applet);
-gboolean		nmwa_dbus_update_active_device_strength		(NMWirelessApplet *applet);
+gboolean		nmwa_dbus_update_device_strength			(NMWirelessApplet *applet);
 
 void			nmwa_dbus_update_nm_state				(NMWirelessApplet *applet);
 
-void			nmwa_dbus_get_active_device				(NMWirelessApplet *applet);
 void			nmwa_dbus_update_devices					(NMWirelessApplet *applet);
 void			nmwa_dbus_device_update_one_device			(NMWirelessApplet *applet, const char *dev_path);
 void			nmwa_dbus_device_remove_one_device			(NMWirelessApplet *applet, const char *dev_path);

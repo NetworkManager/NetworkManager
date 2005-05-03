@@ -282,30 +282,39 @@ void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer us
 }
 
 
+typedef struct PPDialogCBData
+{
+	NMWirelessApplet *	applet;
+	NetworkDevice *	dev;
+	WirelessNetwork *	net;
+	DBusMessage *		message;
+} PPDialogCBData;
+
 /*
  * nmi_passphrase_dialog_show
  *
  * Pop up the user key dialog in response to a dbus message
  *
  */
-void nmi_passphrase_dialog_show (GtkWidget *dialog, NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message)
+static gboolean nmi_passphrase_dialog_show (PPDialogCBData *cb_data)
 {
-	GladeXML *	dialog_xml;
-	const char *	orig_label_text;
+	GtkWidget *		dialog;
+	GladeXML *		dialog_xml;
+	const char *		orig_label_text;
 
-	g_return_if_fail (dialog != NULL);
-	g_return_if_fail (dev != NULL);
-	g_return_if_fail (net != NULL);
-	g_return_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL);
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->applet != NULL, FALSE);
+	g_return_val_if_fail (cb_data->dev != NULL, FALSE);
+	g_return_val_if_fail (cb_data->net != NULL, FALSE);
+
+	dialog = cb_data->applet->passphrase_dialog;
+	g_return_val_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL, FALSE);
 
 	if (GTK_WIDGET_VISIBLE (dialog))
-		return;
+		return FALSE;
 
 	if (!(orig_label_text = g_object_get_data (G_OBJECT (dialog), "orig-label-text")))
-		return;
-
-	network_device_ref (dev);
-	wireless_network_ref (net);
+		return FALSE;
 
 	nmi_passphrase_dialog_clear (dialog);
 
@@ -313,17 +322,48 @@ void nmi_passphrase_dialog_show (GtkWidget *dialog, NetworkDevice *dev, Wireless
 	if (orig_label_text)
 	{
 		GtkWidget *	label = glade_xml_get_widget (dialog_xml, "label1");
-		char *		new_label_text = g_strdup_printf (orig_label_text, wireless_network_get_essid (net));
+		char *		new_label_text = g_strdup_printf (orig_label_text, wireless_network_get_essid (cb_data->net));
 
 		gtk_label_set_label (GTK_LABEL (label), new_label_text);
 	}
 
-	g_object_set_data (G_OBJECT (dialog), "device", dev);
-	g_object_set_data (G_OBJECT (dialog), "network", net);
-	dbus_message_ref (message);
-	g_object_set_data (G_OBJECT (dialog), "dbus-message", message);
+	g_object_set_data (G_OBJECT (dialog), "device", cb_data->dev);
+	g_object_set_data (G_OBJECT (dialog), "network", cb_data->net);
+	g_object_set_data (G_OBJECT (dialog), "dbus-message", cb_data->message);
 
 	gtk_widget_show (dialog);
+
+	return FALSE;
+}
+
+
+/*
+ * nmi_passphrase_dialog_schedule_show
+ *
+ * Schedule the passphrase dialog to show
+ *
+ */
+gboolean nmi_passphrase_dialog_schedule_show (NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message, NMWirelessApplet *applet)
+{
+	PPDialogCBData *	cb_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (net != NULL, FALSE);
+	g_return_val_if_fail (message != NULL, FALSE);
+	g_return_val_if_fail (applet != NULL, FALSE);
+
+	cb_data = g_malloc0 (sizeof (PPDialogCBData));
+	network_device_ref (dev);
+	cb_data->dev = dev;
+	wireless_network_ref (net);
+	cb_data->net = net;
+	cb_data->applet = applet;
+	dbus_message_ref (message);
+	cb_data->message = message;
+
+	g_idle_add ((GSourceFunc) nmi_passphrase_dialog_show, cb_data);
+
+	return TRUE;
 }
 
 
@@ -333,12 +373,31 @@ void nmi_passphrase_dialog_show (GtkWidget *dialog, NetworkDevice *dev, Wireless
  * Cancel and hide any user key dialog that might be up
  *
  */
-void nmi_passphrase_dialog_cancel (GtkWidget *dialog)
+static gboolean nmi_passphrase_dialog_cancel (NMWirelessApplet *applet)
 {
-	g_return_if_fail (dialog != NULL);
+	GtkWidget *dialog;
+
+	g_return_val_if_fail (applet != NULL, FALSE);
+	dialog = applet->passphrase_dialog;
 
 	if (GTK_WIDGET_VISIBLE (dialog))
 		nmi_passphrase_dialog_clear (dialog);
+
+	return FALSE;
+}
+
+
+/*
+ * nmi_passphrase_dialog_schedule_cancel
+ *
+ * Schedule the passphrase dialog cancellation
+ *
+ */
+void nmi_passphrase_dialog_schedule_cancel (NMWirelessApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	g_idle_add ((GSourceFunc) nmi_passphrase_dialog_cancel, applet);
 }
 
 

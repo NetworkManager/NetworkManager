@@ -73,6 +73,9 @@ void					network_device_set_hal_udi				(NetworkDevice *dev, const char *hal_udi)
 gboolean				network_device_get_link					(NetworkDevice *dev);
 void					network_device_set_link					(NetworkDevice *dev, gboolean link);
 
+gboolean				network_device_get_active				(NetworkDevice *dev);
+void					network_device_set_active				(NetworkDevice *dev, gboolean active);
+
 const char *			network_device_get_desc					(NetworkDevice *dev);
 void					network_device_set_desc					(NetworkDevice *dev, const char *desc);
 

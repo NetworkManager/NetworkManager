@@ -46,6 +46,7 @@
 #include "nm-named-manager.h"
 #include "nm-dbus-vpn.h"
 #include "nm-netlink-monitor.h"
+#include "nm-dhcp-manager.h"
 
 #define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
 
@@ -132,11 +133,9 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 			data->dev_list = g_slist_append (data->dev_list, dev);
 			nm_device_deactivate (dev, TRUE);
 
-			nm_device_update_link_state (dev);
-
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
-			nm_policy_schedule_state_update (data);
+			nm_policy_schedule_device_change_check (data);
 			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ADDED);
 		}
 		else
@@ -176,28 +175,50 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 
 			if (dev && (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0))
 			{
-				if (data->active_device && (dev == data->active_device))
-				{
-					data->active_device = NULL;
-					data->active_device_locked = FALSE;
-				}
-
 				nm_device_set_removed (dev, TRUE);
 				nm_device_deactivate (dev, FALSE);
 				nm_device_worker_thread_stop (dev);
 				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_REMOVED);
+
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
 				data->dev_list = g_slist_remove_link (data->dev_list, elt);
 				g_slist_free (elt);
-				nm_policy_schedule_state_update (data);
+				nm_policy_schedule_device_change_check (data);
 				break;
 			}
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	} else nm_warning ("could not acquire device list mutex." );
 }
+
+
+/*
+ * nm_get_active_device
+ *
+ * Return the currently active device.
+ *
+ */
+NMDevice *nm_get_active_device (NMData *data)
+{
+	NMDevice *	dev = NULL;
+	GSList *		elt;
+	
+	g_return_val_if_fail (data != NULL, NULL);
+
+	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		if ((dev = (NMDevice *)(elt->data)) && nm_device_get_act_request (dev))
+			break;
+		dev = NULL;
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+	return dev;
+}
+
 
 /* Hal doesn't really give us any way to pass a GMainContext to our
  * mainloop integration function unfortunately.  So we have to use
@@ -281,15 +302,6 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 
 /*
- * nm_hal_device_lost_capability
- *
- */
-static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, const char *capability)
-{
-/*	nm_debug ("nm_hal_device_lost_capability() called with udi = %s, capability = %s", udi, capability );*/
-}
-
-/*
  * nm_add_initial_devices
  *
  * Add all devices that hal knows about right now (ie not hotplug devices)
@@ -297,23 +309,21 @@ static void nm_hal_device_lost_capability (LibHalContext *ctx, const char *udi, 
  */
 static void nm_add_initial_devices (NMData *data)
 {
-	char		**net_devices;
-	int		  num_net_devices;
-	int		  i;
-
-        DBusError error;
+	char **	net_devices;
+	int		num_net_devices;
+	int		i;
+	DBusError	error;
 
 	g_return_if_fail (data != NULL);
 	
-        dbus_error_init (&error);
+	dbus_error_init (&error);
 	/* Grab a list of network devices */
 	net_devices = libhal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices, &error);
-        if (dbus_error_is_set (&error))
-          {
-            nm_warning ("could not find existing networking devices: %s", 
-	    		error.message);
-            dbus_error_free (&error);
-          }
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("could not find existing networking devices: %s", error.message);
+		dbus_error_free (&error);
+	}
 
 	if (net_devices)
 	{
@@ -367,71 +377,6 @@ void nm_schedule_state_change_signal_broadcast (NMData *data)
 
 
 /*
- * nm_poll_and_update_wireless_link_state
- *
- * Called every 2s to poll wireless cards and determine if they have a link
- * or not.
- *
- */
-gboolean nm_poll_and_update_wireless_link_state (NMData *data)
-{
-	GSList	*elt;
-
-	g_return_val_if_fail (data != NULL, TRUE);
-
-	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
-		return (TRUE);
-
-	/* Attempt to acquire mutex for device list iteration.
-	 * If the acquire fails, just ignore the device deletion entirely.
-	 */
-	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		nm_warning ("could not acquire device list mutex." );
-		return TRUE;
-	}
-
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
-		NMDevice	*dev = (NMDevice *)(elt->data);
-
-		if (dev && nm_device_is_wireless (dev))
-		{
-			if (!nm_device_is_up (dev))
-				nm_device_bring_up (dev);
-
-			nm_device_update_link_state (dev);
-
-			/* Is this the currently selected device?
-			 * If so, let's make sure it's still has
-			 * an active link. If it lost the link,
-			 * find a better access point.
-			 */
-			if (    (dev == data->active_device)
-				&& !nm_device_has_active_link (dev))
-			{
-				if (    nm_device_get_supports_wireless_scan (dev)
-					&& !data->forcing_device
-					&& data->state_modified_idle_id == 0)	
-				{
-					nm_device_update_best_ap (dev);
-				}
-				else
-				{
-					if (    !nm_device_is_activating (dev)
-						&& !data->forcing_device
-						&& data->state_modified_idle_id == 0)	
-						nm_device_update_best_ap (dev);
-				}
-			}
-		}
-	}
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	
-	return (TRUE);
-}
-
-/*
  * nm_data_new
  *
  * Create data structure used in callbacks from libhal.
@@ -439,10 +384,10 @@ gboolean nm_poll_and_update_wireless_link_state (NMData *data)
  */
 static NMData *nm_data_new (gboolean enable_test_devices)
 {
-	struct sigaction action;
-	sigset_t block_mask;
-	NMData *data;
-	GSource *iosource;
+	struct sigaction	action;
+	sigset_t			block_mask;
+	NMData *			data;
+	GSource *			iosource;
 	
 	data = g_new0 (NMData, 1);
 
@@ -468,7 +413,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	sigaction (SIGINT, &action, NULL);
 	sigaction (SIGTERM, &action, NULL);
 
-	data->named = nm_named_manager_new (data->main_context);
+	data->named_manager = nm_named_manager_new (data->main_context);
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
@@ -490,16 +435,24 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 		return (NULL);
 	}
 
-	data->state_modified_idle_id = 0;
-
 	data->enable_test_devices = enable_test_devices;
 
 	data->scanning_enabled = TRUE;
 	data->wireless_enabled = TRUE;
 
-	nm_policy_schedule_state_update (data);
+	nm_policy_schedule_device_change_check (data);
 
 	return (data);	
+}
+
+
+void device_stop_and_free (NMDevice *dev, gpointer user_data)
+{
+	g_return_if_fail (dev != NULL);
+
+	nm_device_set_removed (dev, TRUE);
+	nm_device_deactivate (dev, FALSE);
+	nm_device_unref (dev);
 }
 
 
@@ -514,12 +467,14 @@ static void nm_data_free (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	nm_vpn_manager_dispose (data->vpn_manager);
-	g_object_unref (data->named);
+	nm_dhcp_manager_dispose (data->dhcp_manager);
+	g_object_unref (data->named_manager);
 
-	nm_device_unref (data->active_device);
-
-	g_slist_foreach (data->dev_list, (GFunc) nm_device_unref, NULL);
+	/* Stop and destroy all devices */
+	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
+	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
 	g_slist_free (data->dev_list);
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 	g_mutex_free (data->dev_list_mutex);
 
@@ -548,11 +503,10 @@ static void sigterm_handler (int signum)
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
 {
-	NMData *data = user_data;
+	NMData *		data = user_data;
+	NMDevice *	act_dev = NULL;
 
 	nm_info ("Caught terminiation signal");
-	if (data->active_device)
-		nm_device_deactivate (data->active_device, FALSE);
 	g_main_loop_quit (data->main_loop);
 	return FALSE;
 }
@@ -579,6 +533,46 @@ static void nm_print_usage (void)
 		"\n");
 }
 
+/*
+ * nm_poll_and_update_wireless_link_state
+ *
+ * Called every 2s to poll wireless cards and determine if they have a link
+ * or not.
+ *
+ */
+gboolean nm_poll_and_update_wireless_link_state (NMData *data)
+{
+	GSList	*elt;
+
+	g_return_val_if_fail (data != NULL, TRUE);
+
+	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
+		return (TRUE);
+
+	/* Attempt to acquire mutex for device list iteration.
+	 * If the acquire fails, just ignore the device deletion entirely.
+	 */
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	{
+		nm_warning ("could not acquire device list mutex." );
+		return TRUE;
+	}
+
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		NMDevice	*dev = (NMDevice *)(elt->data);
+
+		if (dev && nm_device_is_wireless (dev) && !nm_device_is_activating (dev))
+		{
+			nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
+			nm_device_update_signal_strength (dev);
+		}
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	
+	return (TRUE);
+}
+
 static void
 nm_monitor_wireless_link_state (NMData *data)
 {
@@ -586,7 +580,7 @@ nm_monitor_wireless_link_state (NMData *data)
 	link_source = g_timeout_source_new (NM_WIRELESS_LINK_STATE_POLL_INTERVAL);
 	g_source_set_callback (link_source, 
 			       (GSourceFunc) nm_poll_and_update_wireless_link_state, 
-			       nm_data, NULL);
+			       data, NULL);
 	g_source_attach (link_source, nm_data->main_context);
 	g_source_unref (link_source);
 }
@@ -601,23 +595,14 @@ nm_wired_link_activated (NmNetlinkMonitor *monitor,
 		NMDevice *dev = nm_get_device_by_iface (data, interface_name);
 
 		/* Don't do anything if we already have a link */
-		if (    (dev != NULL)
+		if (    dev
 			&& nm_device_is_wired (dev)
 			&& !nm_device_has_active_link (dev))
 		{
-			nm_device_set_link_active (dev, TRUE);
+			NMDevice *act_dev =  NULL;
 
-			/* If a network cable just got plugged in, force-switch from a wireless
-			 * to a wired connection.
-			 */
-			if (nm_device_has_active_link (dev)
-				&& data->active_device
-				&& data->active_device_locked
-				&& nm_device_is_wireless (data->active_device))
-			{
-				data->active_device_locked = FALSE;
-				nm_policy_schedule_state_update (data);
-			}
+			nm_device_set_link_active (dev, TRUE);
+			nm_policy_schedule_device_change_check (data);
 		}
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
@@ -849,7 +834,9 @@ int main( int argc, char *argv[] )
 		exit (EXIT_FAILURE);
 	}
 
+	/* Need to happen after DBUS is initialized */
 	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
+	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data);
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
 	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
@@ -873,11 +860,10 @@ int main( int argc, char *argv[] )
 	}
 
 	nm_hal_mainloop_integration (ctx, nm_data->dbus_connection); 
-
 	libhal_ctx_set_dbus_connection (ctx, nm_data->dbus_connection);
-
 	dbus_error_init (&dbus_error);
-	if(!libhal_ctx_init (ctx, &dbus_error)) {
+	if(!libhal_ctx_init (ctx, &dbus_error))
+	{
 		nm_error ("libhal_ctx_init() failed: %s\n"
 			  "Make sure the hal daemon is running?", 
 			  dbus_error.message);
@@ -888,22 +874,13 @@ int main( int argc, char *argv[] )
 
 	nm_data->hal_ctx = ctx;
 	libhal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
-
-	libhal_ctx_set_device_added (ctx,
-				     nm_hal_device_added);
-	libhal_ctx_set_device_removed (ctx,
-		  		       nm_hal_device_removed);
-	libhal_ctx_set_device_new_capability (ctx,
-					     nm_hal_device_new_capability);
-	libhal_ctx_set_device_lost_capability (ctx,
-		  			       nm_hal_device_lost_capability);
-
+	libhal_ctx_set_device_added (ctx, nm_hal_device_added);
+	libhal_ctx_set_device_removed (ctx, nm_hal_device_removed);
+	libhal_ctx_set_device_new_capability (ctx, nm_hal_device_new_capability);
 	libhal_device_property_watch_all (nm_data->hal_ctx, &dbus_error);
-
 	if (dbus_error_is_set (&dbus_error))
 	{
-		nm_error ("libhal_device_property_watch_all(): %s",
-			  dbus_error.message);
+		nm_error ("libhal_device_property_watch_all(): %s", dbus_error.message);
 		dbus_error_free (&dbus_error);
 		exit (EXIT_FAILURE);
 	}
@@ -915,7 +892,7 @@ int main( int argc, char *argv[] )
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
 	 */
-	nm_system_kill_all_dhcp_daemons ();
+//	nm_system_kill_all_dhcp_daemons ();
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
@@ -924,7 +901,7 @@ int main( int argc, char *argv[] )
 	nm_monitor_wireless_link_state (nm_data);
 	nm_monitor_wired_link_state (nm_data);
 
-	if (!nm_named_manager_start (nm_data->named, &error))
+	if (!nm_named_manager_start (nm_data->named_manager, &error))
 	{
 		nm_error ("couldn't initialize nameserver: %s",
 			  error->message);
@@ -940,9 +917,9 @@ int main( int argc, char *argv[] )
 
 	/* Cleanup */
 	libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error);
-	if (dbus_error_is_set (&dbus_error)) {
-		nm_warning ("libhal shutdown failed - %s", 
-			    dbus_error.message);
+	if (dbus_error_is_set (&dbus_error))
+	{
+		nm_warning ("libhal shutdown failed - %s", dbus_error.message);
 		dbus_error_free (&dbus_error);
 	}
 	libhal_ctx_free (nm_data->hal_ctx);

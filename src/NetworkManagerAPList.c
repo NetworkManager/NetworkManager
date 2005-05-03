@@ -498,7 +498,6 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 	else
 	{
 		/* Add the merge AP to the list. */
-
 		nm_ap_list_append_ap (list, merge_ap);
 		*new = TRUE;
 	}

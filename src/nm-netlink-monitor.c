@@ -268,12 +268,6 @@ nm_netlink_monitor_new (void)
 	return NM_NETLINK_MONITOR (instance);
 }
 
-static void
-nm_netlink_monitor_clear_event_source (NmNetlinkMonitor *monitor)
-{
-	monitor->priv->event_source = NULL;
-}
-
 void
 nm_netlink_monitor_attach (NmNetlinkMonitor *monitor, 
 			   GMainContext     *context)
@@ -296,7 +290,7 @@ nm_netlink_monitor_attach (NmNetlinkMonitor *monitor,
 			       (GSourceFunc) nm_netlink_monitor_event_handler,
 			       monitor, 
 			       (GDestroyNotify) 
-			       nm_netlink_monitor_clear_event_source);
+			       g_nullify_pointer);
 	g_source_attach (event_source, context);
 	monitor->priv->event_source = event_source;
 }

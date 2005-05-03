@@ -375,10 +375,12 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
   char *buf;
   char *addr;
+  struct ether_addr hw_addr;
   unsigned char eui[8];
 
-  nm_device_get_hw_address(dev, &eui[0]);
+  nm_device_get_hw_address(dev, &hw_addr);
 
+  memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
   memmove(eui+5, eui+3, 3);
   eui[3] = 0xff;
   eui[4] = 0xfe;

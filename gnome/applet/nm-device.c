@@ -37,6 +37,7 @@ struct NetworkDevice
 	char *				desc;
 	char *				nm_path;
 	NMDeviceType			type;
+	gboolean				active;
 	gboolean				link;
 	NMDriverSupportLevel	driver_support_level;
 	char *				addr;
@@ -95,6 +96,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 		dev->iface = g_strdup (src->iface);
 		dev->desc = g_strdup (src->desc);
 		dev->udi = g_strdup (src->udi);
+		dev->active = src->active;
 		dev->strength = src->strength;
 
 		for (elt = src->networks; elt; elt = g_slist_next (elt))
@@ -466,6 +468,23 @@ void network_device_set_link (NetworkDevice *dev, gboolean link)
 	g_return_if_fail (dev != NULL);
 
 	dev->link = link;
+}
+
+/*
+ * Accessors for active
+ */
+gboolean network_device_get_active (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (dev->active);
+}
+
+void network_device_set_active (NetworkDevice *dev, gboolean active)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->active = active;
 }
 
 /*

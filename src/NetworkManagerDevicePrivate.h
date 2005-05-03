@@ -36,27 +36,20 @@
 /* Wireless device specific options */
 typedef struct NMDeviceWirelessOptions
 {
-	char				*cur_essid;	/* Mainly for test devices */
-	gboolean			 supports_wireless_scan;
-	gint8			 strength;
-	gint8			 invalid_strength_counter;
-	iwqual			 max_qual;
-	iwqual			 avg_qual;
+	char *			cur_essid;	/* Mainly for test devices */
+	gboolean			supports_wireless_scan;
+	gint8			strength;
+	gint8			invalid_strength_counter;
+	iwqual			max_qual;
+	iwqual			avg_qual;
 
-	gint8			 num_freqs;
-	double			 freqs[IW_MAX_FREQUENCIES];
+	gint8			num_freqs;
+	double			freqs[IW_MAX_FREQUENCIES];
 
-	GMutex			*scan_mutex;
-	NMAccessPointList	*ap_list;
-	guint8			 scan_interval; /* seconds */
-	guint32			 last_scan;
-
-	NMAccessPoint		*best_ap;
-	GMutex			*best_ap_mutex;
-	gboolean			 freeze_best_ap;
-
-	gboolean			 user_key_received;
-	gboolean			 now_scanning;
+	GMutex *			scan_mutex;
+	NMAccessPointList *	ap_list;
+	guint8			scan_interval; /* seconds */
+	guint32			last_scan;
 } NMDeviceWirelessOptions;
 
 /* Wired device specific options */
@@ -78,38 +71,37 @@ typedef union NMDeviceOptions
  */
 struct NMDevice
 {
-	guint			 refcount;
+	guint			 	refcount;
 
-	char					*udi;
-	char					*iface;
-	NMDeviceType			 type;
-	NMDriverSupportLevel	 driver_support_level;
-	gboolean				 removed;
+	char *				udi;
+	char *				iface;
+	NMDeviceType			type;
+	NMDriverSupportLevel	driver_support_level;
+	gboolean				removed;
 
-	gboolean				 link_active;
-	guint32				 ip4_address;
+	gboolean				link_active;
+	guint32				ip4_address;
 	/* FIXME: ipv6 address too */
-	unsigned char			 hw_addr[ETH_ALEN];
-	NMData				*app_data;
-	NMDeviceOptions		 options;
+	struct ether_addr		hw_addr;
+	NMData *				app_data;
+	NMDeviceOptions		options;
 
 	/* IP configuration info */
-	void *				 system_config_data;	/* Distro-specific config data (parsed config file, etc) */
-	gboolean				 use_dhcp;
-	NMIP4Config *			 ip4_config;			/* Config from DHCP, PPP, or system config files */
-	struct dhcp_interface *	 dhcp_iface;
+	void *				system_config_data;	/* Distro-specific config data (parsed config file, etc) */
+	gboolean				use_dhcp;
+	NMIP4Config *			ip4_config;			/* Config from DHCP, PPP, or system config files */
 
-	GMainContext			*context;
-	GMainLoop				*loop;
-	GThread					*worker;
-	gboolean				 worker_started;
-	guint		 		 renew_timeout;
-	guint				 rebind_timeout;
+	GMainContext *			context;
+	GMainLoop *			loop;
+	GThread *				worker;
+	gboolean				worker_started;
+	guint		 		renew_timeout;
+	guint				rebind_timeout;
 
-	gboolean				 activating;		/* Set by main thread before beginning activation */
-	gboolean				 quit_activation;	/* Flag to signal activation thread to stop activating */
+	NMActRequest *			act_request;
+	gboolean				quit_activation;	/* Flag to signal activation thread to stop activating */
 
-	gboolean				 test_device;
-	gboolean				 test_device_up;
+	gboolean				test_device;
+	gboolean				test_device_up;
 };
 

@@ -118,7 +118,7 @@ static DBusMessage *nm_dbus_device_get_hw_address (DBusConnection *connection, D
 		char				char_addr[20];
 		char				*ptr = &char_addr[0];
 
-		nm_device_get_hw_address (dev, (unsigned char *)&(addr.ether_addr_octet));
+		nm_device_get_hw_address (dev, &addr);
 		memset (char_addr, 0, 20);
 		ether_ntoa_r (&addr, &char_addr[0]);
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &ptr, DBUS_TYPE_INVALID);
@@ -203,24 +203,21 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 	}
 	else if ((reply = dbus_message_new_method_return (message)))
 	{
-		NMAccessPoint	*best_ap;
+		NMActRequest *		req = nm_device_get_act_request (dev);
+		NMAccessPoint *	ap;
 
-		/* Return the network associated with the ESSID the card is currently associated with,
-		 * if any, and only if that network is the "best" network.
-		 */
-		if ((best_ap = nm_device_get_best_ap (dev)))
+		if (req && (ap = nm_act_request_get_ap (req)))
 		{
-			NMAccessPoint	*tmp_ap;
-			char *object_path = NULL;
+			NMAccessPoint *tmp_ap;
+			char *		object_path = NULL;
 
-			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap)))
+			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (ap)))
 				&& (object_path = nm_dbus_get_object_path_for_network (dev, tmp_ap)))
 			{
 				dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &object_path, DBUS_TYPE_INVALID);
 				g_free (object_path);
 				success = TRUE;
 			}
-			nm_ap_unref (best_ap);
 		}
 		if (!success)
 		{
@@ -332,7 +329,7 @@ static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, 
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &link, DBUS_TYPE_INVALID))
 		{
 			nm_device_set_link_active (dev, link);
-			nm_policy_schedule_state_update (data->data);
+			nm_policy_schedule_device_change_check (data->data);
 		}
 	}
 
@@ -359,32 +356,33 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
 		dbus_uint32_t		mode = 0;
 		dbus_int32_t		strength = -1;
-		NMAccessPoint *	best_ap;
 		char *			active_network_path = NULL;
 		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
 		dbus_uint32_t		driver_support_level = (dbus_uint32_t) nm_device_get_driver_support_level (dev);
 		char **			networks = NULL;
 		int				num_networks = 0;
+		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
 
-		nm_device_get_hw_address (dev, (unsigned char *)&(hw_addr.ether_addr_octet));
+		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
 		ether_ntoa_r (&hw_addr, &hw_addr_buf[0]);
 
 		if (nm_device_is_wireless (dev))
 		{
+			NMActRequest *		req = nm_device_get_act_request (dev);
+			NMAccessPoint *	ap;
 			NMAccessPointList *	ap_list;
 			NMAPListIter *		iter;
 
 			strength = (dbus_int32_t) nm_device_get_signal_strength (dev);
 			mode = (dbus_uint32_t) nm_device_get_mode (dev);
 
-			if ((best_ap = nm_device_get_best_ap (dev)))
+			if (req && (ap = nm_act_request_get_ap (req)))
 			{
 				NMAccessPoint	*tmp_ap;
 
-				if ((tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (best_ap))))
+				if ((tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (ap))))
 					active_network_path = nm_dbus_get_object_path_for_network (dev, tmp_ap);
-				nm_ap_unref (best_ap);
 			}
 
 			ap_list = nm_device_ap_list_get (dev);
@@ -415,6 +413,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_STRING, &iface,
 									DBUS_TYPE_UINT32, &type,
 									DBUS_TYPE_STRING, &udi,
+									DBUS_TYPE_BOOLEAN,&active,
 									DBUS_TYPE_UINT32, &ip4_address,
 									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
 									DBUS_TYPE_UINT32, &mode,

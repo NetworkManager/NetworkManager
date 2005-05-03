@@ -85,13 +85,10 @@ typedef struct
 	gboolean			nm_running;
 
 	GSList *			gui_device_list;
-	NetworkDevice *	gui_active_device;
 	NMState			gui_nm_state;
 
 	GSList *			dev_pending_call_list;
 	GSList *			dbus_device_list;
-	NetworkDevice *	dbus_active_device;
-	char *			dbus_active_device_path;
 	NMState			dbus_nm_state;
 
 	GSList *			gui_vpn_connections;
@@ -150,6 +147,8 @@ void				nmwa_schedule_warning_dialog			(NMWirelessApplet *applet, const char *ms
 gboolean			nmwa_driver_notify					(gpointer user_data);
 void				nmwa_schedule_vpn_login_failure_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *error_msg);
 void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
+
+NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 

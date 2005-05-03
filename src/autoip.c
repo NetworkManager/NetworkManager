@@ -29,7 +29,6 @@
 #include <syslog.h>
 #include <glib.h>
 #include <unistd.h>
-#include "../dhcpcd/arp.h"
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerMain.h"
@@ -47,6 +46,31 @@
 #define ANNOUNCE_WAIT		2
 
 #define FAILURE_TIMEOUT		14
+
+
+typedef struct EtherHeader
+{
+	u_int8_t	ether_dhost[ETH_ALEN];      /* destination eth addr */
+	u_int8_t	ether_shost[ETH_ALEN];      /* source ether addr    */
+	u_int16_t	ether_type;                 /* packet type ID field */
+} __attribute__((packed)) EtherHeader;
+
+
+typedef struct ARPMessage
+{
+	EtherHeader	ethhdr;
+	u_short		htype;			/* hardware type (must be ARPHRD_ETHER) */
+	u_short		ptype;			/* protocol type (must be ETHERTYPE_IP) */
+	u_char		hlen;			/* hardware address length (must be 6) */
+	u_char		plen;			/* protocol address length (must be 4) */
+	u_short		operation;		/* ARP opcode */
+	u_char		sHaddr[ETH_ALEN];	/* sender's hardware address */
+	u_char		sInaddr[4];		/* sender's IP address */
+	u_char		tHaddr[ETH_ALEN];	/* target's hardware address */
+	u_char		tInaddr[4];		/* target's IP address */
+	u_char		pad[18];			/* pad for min. Ethernet payload (60 bytes) */
+} __attribute__((packed)) ARPMessage;
+
 
 // Times here are in seconds
 #define ARP_DEFAULT_LEASETIME	100
@@ -77,7 +101,7 @@ static gboolean arp(int fd, struct sockaddr *saddr, int op,
                 struct ether_addr *source_addr, struct in_addr source_ip,
                 struct ether_addr *target_addr, struct in_addr target_ip)
 {
-	struct arpMessage p;
+	struct ARPMessage p;
 	gboolean success = FALSE;
 
 	memset (&p, 0, sizeof (p));
@@ -104,7 +128,7 @@ static gboolean arp(int fd, struct sockaddr *saddr, int op,
 	else
 		success = TRUE;
 
-	return (success);
+	return success;
 }
 
 /*****************************************************************************/
@@ -135,6 +159,15 @@ static int timeval_subtract (struct timeval *result, struct timeval *x, struct t
 	/* Return 1 if result is negative. */
 	return x->tv_sec < y->tv_sec;
 }
+
+enum return_vals
+{
+	RET_ERROR = 0,
+	RET_TIMEOUT,
+	RET_CEASED,
+	RET_SUCCESS
+};
+
 /*****************************************************************************/
 /* "timeout" should be the future point in time when we wish to stop
  * checking for data on the socket.
@@ -159,21 +192,21 @@ static int peekfd (NMDevice *dev, int sk, struct timeval *timeout)
 		FD_SET (sk, &fs);
 
 		if (select (sk+1, &fs, NULL, NULL, &wait) == -1)
-			return RET_DHCP_ERROR;
+			return RET_ERROR;
 		if (FD_ISSET(sk, &fs))
-			return RET_DHCP_SUCCESS;
+			return RET_SUCCESS;
 		if (nm_device_activation_should_cancel (dev))
-			return RET_DHCP_CEASED;
+			return RET_CEASED;
 		gettimeofday (&now, NULL);
 	};
-	return RET_DHCP_TIMEOUT;
+	return RET_TIMEOUT;
 }
 
 
 gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 {
 	struct sockaddr	saddr;
-	arpMessage		p;
+	ARPMessage		p;
 	struct ether_addr	addr;
 	struct in_addr		ip = {0};
 	NMSock			*sk;
@@ -205,7 +238,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		goto out;
 	}
 
-	nm_device_get_hw_address (dev, &(addr.ether_addr_octet[0]));
+	nm_device_get_hw_address (dev, &addr);
 
 	/* initialize pseudo random selection of IP addresses */
 	srandom ( (addr.ether_addr_octet[ETHER_ADDR_LEN-4] << 24) |
@@ -265,11 +298,11 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 		nm_info ("autoip: Waiting for reply...");
 		err = peekfd (dev, nm_dev_sock_get_fd (sk), &timeout);
-		if ((err == RET_DHCP_ERROR) || (err == RET_DHCP_CEASED))
+		if ((err == RET_ERROR) || (err == RET_CEASED))
 			goto out;
 
 		/* There's some data waiting for us */
-		if (err == RET_DHCP_SUCCESS)
+		if (err == RET_SUCCESS)
 		{
 			nm_info ("autoip: Got some data to check for reply packet.");
 
@@ -312,5 +345,5 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 out:
 	nm_dev_sock_close (sk);
-	return (success);
+	return success;
 }

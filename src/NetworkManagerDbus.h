@@ -52,6 +52,7 @@ static inline gboolean message_is_error (DBusMessage *msg)
 DBusConnection *nm_dbus_init						(NMData *data);
 
 gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
+char *		get_name_owner						(DBusConnection *con, const char *name);
 
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
 char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
@@ -67,9 +68,9 @@ void			nm_dbus_signal_device_ip4_address_change(DBusConnection *connection, NMDe
 
 void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint8 strength);
 
-void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, int attempt);
+void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMActRequest *req);
 
-void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
+void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection, NMActRequest *req);
 
 NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
 

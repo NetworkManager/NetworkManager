@@ -34,43 +34,6 @@
 
 
 /*
- * nm_dbus_nm_get_active_device
- *
- * Returns the object path of the currently active device
- *
- */
-static DBusMessage *nm_dbus_nm_get_active_device (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	DBusMessage	*reply = NULL;
-
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (data->data != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	/* Construct object path of "active" device and return it */
-	if (data->data->active_device)
-	{
-		char *op;
-
-		if (!(reply = dbus_message_new_method_return (message)))
-			return (NULL);
-
-		op = nm_dbus_get_object_path_for_device (data->data->active_device);
-		dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &op, DBUS_TYPE_INVALID);
-		g_free (op);
-	}
-	else
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NoActiveDevice",
-						"There is no currently active device.");
-	}
-
-	return (reply);
-}
-
-
-/*
  * nm_dbus_nm_get_devices
  *
  * Returns a string array of object paths corresponding to the
@@ -154,6 +117,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	const char *		essid = NULL;
 	const char *		key = NULL;
 	const int			key_type = -1;
+	NMActRequest *		req = NULL;
+	NMAccessPoint *	ap = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -194,17 +159,16 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		goto out;
 	}
 
-	nm_device_ref (dev);
-
-	data->data->forcing_device = TRUE;
 	nm_device_deactivate (dev, FALSE);
 
 	nm_schedule_state_change_signal_broadcast (data->data);
-	nm_device_schedule_force_use (dev, essid, key, key_type);
+
+	if (nm_device_is_wireless (dev))
+		ap = nm_device_wireless_get_activation_ap (dev, essid, key, key_type);
+	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
 
 out:
-
-	return (reply);
+	return reply;
 }
 
 /*
@@ -260,8 +224,6 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 		goto out;
 	}
 
-	data->data->forcing_device = TRUE;
-
 	new_ap = nm_ap_new ();
 
 	/* Fill in the description of the network to create */
@@ -275,12 +237,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	nm_ap_set_mode (new_ap, NETWORK_MODE_ADHOC);
 	nm_ap_set_user_created (new_ap, TRUE);
 
-	nm_device_set_best_ap (dev, new_ap);		
-	nm_device_freeze_best_ap (dev);
-	nm_device_activation_cancel (dev);
-
-	/* Schedule this device to be used next. */
-	nm_policy_schedule_device_switch (dev, data->data);
+	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, new_ap, TRUE));
 
 out:
 	nm_device_unref (dev);
@@ -423,7 +380,7 @@ static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 			}
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
-		nm_policy_schedule_state_update (app_data);
+		nm_policy_schedule_device_change_check (data->data);
 	}
 
 	return NULL;
@@ -465,7 +422,7 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 
 		nm_schedule_state_change_signal_broadcast (app_data);
-		nm_policy_schedule_state_update (app_data);
+		nm_policy_schedule_device_change_check (data->data);
 	}
 
 	return NULL;
@@ -484,7 +441,7 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 		app_data->asleep = FALSE;
 
 		nm_schedule_state_change_signal_broadcast (app_data);
-		nm_policy_schedule_state_update (app_data);
+		nm_policy_schedule_device_change_check (data->data);
 	}
 
 	return NULL;
@@ -515,7 +472,6 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 {
 	NMDbusMethodList	*list = nm_dbus_method_list_new (NULL);
 
-	nm_dbus_method_list_add_method (list, "getActiveDevice",		nm_dbus_nm_get_active_device);
 	nm_dbus_method_list_add_method (list, "getDevices",			nm_dbus_nm_get_devices);
 	nm_dbus_method_list_add_method (list, "setActiveDevice",		nm_dbus_nm_set_active_device);
 	nm_dbus_method_list_add_method (list, "createWirelessNetwork",	nm_dbus_nm_create_wireless_network);

@@ -1,3 +1,35 @@
+2005-05-03  Dan Williams  <dcbw@redhat.com>
+
+	* Kill dhcpcd.  We now use "dhcdbd", a dbus daemon that controls dhclient.
+	  This means that NetworkManager shouldn't have DHCP issues anymore.  It also
+	  means you need dhcdbd, which you can get here (get the latest one):
+
+		http://people.redhat.com/jvdias/dhcdbd/
+
+	  Technically NetworkManager can use any DHCP daemon that uses the same DBUS
+	  interface as dhcdbd.
+
+	* Rewrite device activation to facilitate the new DHCP infrastructure and
+	  future improvements.  Its now "activation request" based, ie there is a single
+	  activation request composed of the device, access point, and other info which
+	  follows the entire activation process.  There are 5 stages of the activation
+	  process which correspond to:
+
+		1) Device preparation
+		2) Device configuration (bring it up, set ESSID/Key/etc)
+		3) IP Config Start (fire off DHCP if we're using it)
+		4) IP Config Get (grab config from DHCP or static config files)
+		5) IP Config Commit (set device's IP address, DNS, etc)
+
+	  Note that there is no longer a "scanning" step, since the access point must
+	  be known _before_ activation starts.  If the access point drops out or does
+	  not exist for some reason, the entire activation process fails and must be
+	  restarted for a different access point or device.
+
+	Patch from Bill Moss:
+	* gnome/applet/applet.c
+		- Fix type of vpn_failure dialog -> vpn_banner dialog
+
 2005-04-27  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-vpn.c

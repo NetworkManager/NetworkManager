@@ -25,22 +25,16 @@
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerDbus.h"
+#include "nm-activation-request.h"
 
-typedef struct
-{
-	NMDevice		*dev;
-	NMAccessPoint	*failed_ap;
-	DeviceStatus	 result;
-} NMActivationResult;
+void			nm_policy_schedule_device_change_check	(NMData *data);
 
-
-void			nm_policy_schedule_state_update		(NMData *app_data);
-
-void			nm_policy_schedule_device_switch		(NMDevice *dev, NMData *app_data);
+void			nm_policy_schedule_device_activation	(NMActRequest *req);
 
 void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
 void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
 
-gboolean		nm_policy_activation_finish			(gpointer user_data);
+void			nm_policy_schedule_activation_finish	(NMActRequest *req);
+void			nm_policy_schedule_activation_failed	(NMActRequest *req);
 
 #endif

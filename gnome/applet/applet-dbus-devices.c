@@ -39,76 +39,6 @@ void nmwa_dbus_devices_schedule_copy (NMWirelessApplet *applet);
 
 
 /*
- * nmwa_dbus_get_active_device_cb
- *
- * Callback from nmwa_dbus_get_active_device
- *
- */
-void nmwa_dbus_get_active_device_cb (DBusPendingCall *pcall, void *user_data)
-{
-	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
-	const char *		act_dev;
-
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-		goto out;
-
-	if (dbus_message_is_error (reply, NM_DBUS_NO_ACTIVE_DEVICE_ERROR))
-	{
-		dbus_message_unref (reply);
-		goto out;
-	}
-
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_OBJECT_PATH, &act_dev, DBUS_TYPE_INVALID))
-	{
-		g_free (applet->dbus_active_device_path);
-		applet->dbus_active_device_path = g_strdup (act_dev);
-	}
-	dbus_message_unref (reply);
-
-out:
-	applet->dev_pending_call_list = g_slist_remove (applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (applet);
-
-	dbus_pending_call_unref (pcall);
-}
-
-
-/*
- * nmwa_dbus_get_active_device
- *
- * Get the active device from NetworkManager
- *
- */
-void nmwa_dbus_get_active_device (NMWirelessApplet *applet)
-{
-	DBusMessage *		message;
-	DBusPendingCall *	pcall = NULL;
-
-	g_return_if_fail (applet != NULL);
-
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getActiveDevice")))
-	{
-		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
-		if (pcall)
-		{
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_get_active_device_cb, applet, NULL);
-			applet->dev_pending_call_list = g_slist_append (applet->dev_pending_call_list, pcall);
-		}
-	}
-}
-
-
-/*
  * nmwa_dbus_nm_state_cb
  *
  * Callback from nmwa_dbus_update_nm_state
@@ -604,11 +534,6 @@ void nmwa_free_gui_data_model (NMWirelessApplet *applet)
 		g_slist_free (applet->gui_device_list);
 		applet->gui_device_list = NULL;
 	}
-	if (applet->gui_active_device)
-	{
-		network_device_unref (applet->gui_active_device);
-		applet->gui_active_device = NULL;
-	}
 }
 
 
@@ -624,13 +549,6 @@ void nmwa_free_dbus_data_model (NMWirelessApplet *applet)
 		g_slist_free (applet->dbus_device_list);
 		applet->dbus_device_list = NULL;
 	}
-	if (applet->dbus_active_device)
-	{
-		network_device_unref (applet->dbus_active_device);
-		applet->dbus_active_device = NULL;
-	}
-	g_free (applet->dbus_active_device_path);
-	applet->dbus_active_device_path = NULL;
 }
 
 
@@ -657,21 +575,9 @@ void nmwa_copy_data_model (NMWirelessApplet *applet)
 		NetworkDevice	*dst = network_device_copy (src);
 
 		if (dst)
-		{
-			/* Transfer ownership of device to list, don't need to unref it */
 			applet->gui_device_list = g_slist_append (applet->gui_device_list, dst);
-
-			/* Make sure we get the right active device for the gui data model */
-			if (applet->dbus_active_device == src)
-			{
-				network_device_ref (dst);
-				act_dev = dst;
-			}
-		}
 	}
 
-	/* active_device is just a pointer into the device list, no need to deep-copy it */
-	applet->gui_active_device = act_dev;
 	applet->gui_nm_state = applet->dbus_nm_state;
 }
 
@@ -919,6 +825,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 	const char *		iface = NULL;
 	dbus_uint32_t		type = 0;
 	const char *		udi = NULL;
+	dbus_bool_t		active = FALSE;
 	dbus_uint32_t		ip4_address = 0;
 	const char *		hw_addr = NULL;
 	dbus_uint32_t		mode = 0;
@@ -950,6 +857,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 									DBUS_TYPE_STRING, &iface,
 									DBUS_TYPE_UINT32, &type,
 									DBUS_TYPE_STRING, &udi,
+									DBUS_TYPE_BOOLEAN,&active,
 									DBUS_TYPE_UINT32, &ip4_address,
 									DBUS_TYPE_STRING, &hw_addr,
 									DBUS_TYPE_UINT32, &mode,
@@ -965,6 +873,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 
 		network_device_set_hal_udi (dev, udi);
 		network_device_set_address (dev, hw_addr);
+		network_device_set_active (dev, active);
 		network_device_set_link (dev, link_active);
 		network_device_set_driver_support_level (dev, driver_support_level);
 
@@ -1020,8 +929,6 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (dev_path != NULL);
-
-	nmwa_dbus_get_active_device (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
@@ -1097,8 +1004,6 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	g_return_if_fail (applet->data_mutex != NULL);
 
 	nmwa_free_dbus_data_model (applet);
-
-	nmwa_dbus_get_active_device (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
 	{
@@ -1281,7 +1186,7 @@ void free_strength_cb_data (StrengthCBData *data)
 /*
  * nmwa_dbus_update_device_strength_cb
  *
- * nmwa_dbus_update_active_device_strength callback.
+ * nmwa_dbus_update_device_strength callback.
  *
  */
 void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_data)
@@ -1313,17 +1218,15 @@ void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_dat
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID))
 	{
+		NetworkDevice *dev;
+
 		/* Update strength on dbus active device */
-		if (    cb_data->dev_path
-			&& applet->dbus_active_device
-			&& !strcmp (cb_data->dev_path, network_device_get_nm_path (applet->dbus_active_device)))
-			network_device_set_strength (applet->dbus_active_device, strength);
+		if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, cb_data->dev_path)))
+			network_device_set_strength (dev, strength);
 
 		/* Update strength on gui active device too */
-		if (    cb_data->dev_path
-			&& applet->gui_active_device
-			&& !strcmp (cb_data->dev_path, network_device_get_nm_path (applet->gui_active_device)))
-			network_device_set_strength (applet->gui_active_device, strength);
+		if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, cb_data->dev_path)))
+			network_device_set_strength (dev, strength);
 	}
 	dbus_message_unref (reply);
 
@@ -1332,13 +1235,38 @@ out:
 }
 
 
+static void get_each_device_strength (NetworkDevice *dev, NMWirelessApplet *applet)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (network_device_get_active (dev))
+	{
+		DBusMessage *		message;
+		DBusPendingCall *	pcall;
+
+		if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, network_device_get_nm_path (dev), NM_DBUS_INTERFACE_DEVICES, "getStrength")))
+		{
+			dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+			dbus_message_unref (message);
+			if (pcall)
+			{
+				StrengthCBData *	cb_data = g_malloc0 (sizeof (StrengthCBData));
+
+				cb_data->applet = applet;
+				cb_data->dev_path = g_strdup (network_device_get_nm_path (dev));
+				dbus_pending_call_set_notify (pcall, nmwa_dbus_update_device_strength_cb, cb_data, (DBusFreeFunction) free_strength_cb_data);
+			}
+		}
+	}
+}
+
 /*
- * nmwa_dbus_update_active_device_strength
+ * nmwa_dbus_update_device_strength
  *
- * Update the active device's strength.
+ * Update the each active device's strength.
  *
  */
-gboolean nmwa_dbus_update_active_device_strength (NMWirelessApplet *applet)
+gboolean nmwa_dbus_update_device_strength (NMWirelessApplet *applet)
 {
 	NetworkDevice *	dev;
 	DBusMessage *		message;
@@ -1346,22 +1274,7 @@ gboolean nmwa_dbus_update_active_device_strength (NMWirelessApplet *applet)
 
 	g_return_val_if_fail (applet != NULL, TRUE);
 
-	if (!(dev = applet->dbus_active_device))
-		return TRUE;
-
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, network_device_get_nm_path (dev), NM_DBUS_INTERFACE_DEVICES, "getStrength")))
-	{
-		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
-		if (pcall)
-		{
-			StrengthCBData *	cb_data = g_malloc0 (sizeof (StrengthCBData));
-
-			cb_data->applet = applet;
-			cb_data->dev_path = g_strdup (network_device_get_nm_path (dev));
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_device_strength_cb, cb_data, (DBusFreeFunction) free_strength_cb_data);
-		}
-	}
+	g_slist_foreach (applet->dbus_device_list, (GFunc) get_each_device_strength, applet);
 
 	return TRUE;
 }
@@ -1435,17 +1348,12 @@ static gboolean nmwa_dbus_devices_lock_and_copy (NMWirelessApplet *applet)
 		/* Sort the devices for display */
 		applet->dbus_device_list = g_slist_sort (applet->dbus_device_list, sort_devices_function);
 
-		/* Match up the active device path with a device in the list */
-		if (applet->dbus_active_device_path &&
-				(applet->dbus_active_device = nmwa_get_device_for_nm_device (applet->dbus_device_list, applet->dbus_active_device_path)))
-			network_device_ref (applet->dbus_active_device);
-
 		/* Now copy the data over to the GUI side */
 		g_mutex_lock (applet->data_mutex);
 		nmwa_copy_data_model (applet);
 		g_mutex_unlock (applet->data_mutex);
 
-		nmwa_dbus_update_active_device_strength (applet);
+		nmwa_dbus_update_device_strength (applet);
 	}
 
 	return FALSE;

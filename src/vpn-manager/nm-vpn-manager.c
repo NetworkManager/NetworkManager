@@ -33,6 +33,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-vpn-service.h"
 #include "nm-dbus-vpn.h"
+#include "nm-activation-request.h"
 #include "nm-utils.h"
 
 #define VPN_SERVICE_FILE_PATH		SYSCONFDIR"/NetworkManager/VPN"
@@ -86,8 +87,8 @@ void nm_vpn_manager_dispose (NMVPNManager *manager)
 
 	if (manager->active_config)
 	{
-		nm_system_remove_ip4_config_nameservers (manager->app_data->named, manager->active_config);
-		nm_system_remove_ip4_config_search_domains (manager->app_data->named, manager->active_config);
+		nm_system_remove_ip4_config_nameservers (manager->app_data->named_manager, manager->active_config);
+		nm_system_remove_ip4_config_search_domains (manager->app_data->named_manager, manager->active_config);
 		nm_ip4_config_unref (manager->active_config);
 	}
 
@@ -210,8 +211,8 @@ static void nm_vpn_manager_set_active_vpn_connection (NMVPNManager *manager, NMV
 
 	if (manager->active_config)
 	{
-		nm_system_remove_ip4_config_nameservers (manager->app_data->named, manager->active_config);
-		nm_system_remove_ip4_config_search_domains (manager->app_data->named, manager->active_config);
+		nm_system_remove_ip4_config_nameservers (manager->app_data->named_manager, manager->active_config);
+		nm_system_remove_ip4_config_search_domains (manager->app_data->named_manager, manager->active_config);
 		nm_ip4_config_unref (manager->active_config);
 		manager->active_config = NULL;
 	}
@@ -430,10 +431,14 @@ void nm_vpn_manager_handle_ip4_config_signal (NMVPNManager *manager, DBusMessage
 
 		manager->active_device = g_strdup (tundev);
 		manager->active_config = config;
-		nm_system_vpn_device_set_from_ip4_config (manager->app_data->named, manager->app_data->active_device,
-											manager->active_device, manager->active_config);
-		if (login_banner && strlen (login_banner))
-			nm_dbus_vpn_signal_vpn_login_banner (manager->app_data->dbus_connection, con, login_banner);
+		vpn_dev = nm_get_active_device (manager->app_data);
+		if (vpn_dev)
+		{
+			nm_system_vpn_device_set_from_ip4_config (manager->app_data->named_manager, vpn_dev,
+												manager->active_device, manager->active_config);
+			if (login_banner && strlen (login_banner))
+				nm_dbus_vpn_signal_vpn_login_banner (manager->app_data->dbus_connection, con, login_banner);
+		}
 	}
 }
 
@@ -720,12 +725,13 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
  */
 void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
 {
-	DBusMessage		*message;
-	char				*op;
-	NMVPNService		*service;
-	const char		*service_name;
-	NMVPNConnection	*active;
-	NMIP4Config		*config;
+	DBusMessage *		message;
+	char *			op;
+	NMVPNService *		service;
+	const char *		service_name;
+	NMVPNConnection *	active;
+	NMIP4Config *		config;
+	NMDevice *		dev;
 
 	g_return_if_fail (manager != NULL);
 
@@ -753,8 +759,8 @@ out:
 	nm_vpn_manager_set_active_vpn_connection (manager, NULL);
 	nm_vpn_connection_unref (active);
 
-	if (manager->app_data->active_device)
-		nm_system_device_set_from_ip4_config (manager->app_data->active_device);
+	if ((dev = nm_get_active_device (manager->app_data)))
+		nm_system_device_set_from_ip4_config (dev);
 }
 
 
