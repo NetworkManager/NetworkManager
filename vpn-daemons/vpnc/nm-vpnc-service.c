@@ -394,7 +394,7 @@ static gboolean nm_vpnc_config_file_generate (const char *user_name, const char 
 {
 	char		*string;
 	int		 out_fd;
-	int		 i;
+	int		 i, x;
 
 	g_return_val_if_fail (user_name != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
@@ -409,17 +409,17 @@ static gboolean nm_vpnc_config_file_generate (const char *user_name, const char 
 	}
 
 	string = g_strdup_printf ("Xauth username %s\n", user_name);
-	write (out_fd, string, strlen (string));
+	x = write (out_fd, string, strlen (string));
 	g_free (string);
 	
 	string = g_strdup_printf ("Xauth password %s\n", password);
-	write (out_fd, string, strlen (string));
+	x = write (out_fd, string, strlen (string));
 	g_free (string);
 
 	for (i = 0; i < num_items; i++)
 	{
 		char *temp = g_strdup_printf ("%s\n", data_items[i]);
-		write (out_fd, temp, strlen (temp));
+		x = write (out_fd, temp, strlen (temp));
 		g_free (temp);
 		string++;
 	}
