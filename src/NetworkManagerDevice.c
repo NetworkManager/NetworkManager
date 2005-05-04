@@ -780,20 +780,12 @@ static gboolean nm_device_probe_wireless_link_state (NMDevice *dev)
 	if (dev->test_device)
 		return nm_device_has_active_link (dev);
 
-	/* If there's a scan in progress, pulling the ESSID off the card will yield
-	 * completely useless results.  Therefore, just return the current link
-	 * state so nothing changes.
-	 */
-	if (!nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
-		return nm_device_has_active_link (dev);
-
 	if ((best_ap = nm_device_get_best_ap (dev)))
 	{
 		link = link_to_specific_ap (dev, best_ap);
 		nm_ap_unref (best_ap);
 	}
 
-	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 	return link;
 }
 

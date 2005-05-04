@@ -59,6 +59,9 @@ static gboolean nm_system_device_set_ip4_netmask_with_iface			(NMDevice *dev, co
 static gboolean nm_system_device_set_ip4_broadcast				(NMDevice *dev, int ip4_broadcast);
 static gboolean nm_system_device_set_ip4_broadcast_with_iface		(NMDevice *dev, const char *iface, int ip4_broadcast);
 
+static gboolean nm_system_device_set_mtu					(NMDevice *dev, guint16 in_mtu);
+static gboolean nm_system_device_set_mtu_with_iface				(NMDevice *dev, const char *iface, guint16 in_mtu);
+
 static gboolean nm_system_device_set_ip4_route					(NMDevice *dev, int ip4_gateway, int ip4_dest, int ip4_netmask);
 static gboolean nm_system_device_set_ip4_route_with_iface			(NMDevice *dev, const char *iface, int ip4_gateway, int ip4_dest, int ip4_netmask);
 
@@ -237,6 +240,7 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 	nm_system_device_set_ip4_address_with_iface (NULL, iface, nm_ip4_config_get_address (config));
 	nm_system_device_set_ip4_ptp_address_with_iface (NULL, iface, nm_ip4_config_get_address (config));
 	nm_system_device_set_ip4_netmask_with_iface (NULL, iface, nm_ip4_config_get_netmask (config));
+	nm_system_device_set_mtu_with_iface (NULL, iface, 1412); 
 	sleep (1);
 	nm_system_delete_default_route ();
 	nm_system_device_flush_routes_with_iface (iface);
@@ -491,6 +495,42 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return nm_system_device_set_ip4_route_with_iface (dev, nm_device_get_iface (dev), ip4_gateway, ip4_dest, ip4_netmask);
+}
+
+/*
+ * nm_system_device_set_mtu
+ *
+ * Set the MTU on a device.
+ *
+ */
+static gboolean nm_system_device_set_mtu (NMDevice *dev, guint16 in_mtu)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return nm_system_device_set_mtu_with_iface (dev, nm_device_get_iface (dev), in_mtu);
+}
+
+static gboolean nm_system_device_set_mtu_with_iface (NMDevice *dev, const char *iface, guint16 in_mtu)
+{
+	struct ifreq             ifr;
+	NMSock                  *sk;
+	gboolean                         success = FALSE;
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+
+	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
+		return FALSE;
+
+	memset (&ifr, 0, sizeof (struct ifreq));
+	memcpy (ifr.ifr_name, iface, strlen (iface));
+	ifr.ifr_mtu = in_mtu;
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFMTU, &ifr) == -1)
+		nm_warning ("nm_system_device_set_mtu (%s): failed to set mtu! errno = %s", iface, strerror (errno));
+	else
+		success = TRUE;
+
+	nm_dev_sock_close (sk);
+	return (success);
 }
 
 static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const char *iface, int ip4_gateway, int ip4_dest, int ip4_netmask)
