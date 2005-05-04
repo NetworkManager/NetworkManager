@@ -352,10 +352,7 @@ void set_device_network (DBusConnection *connection, const char *path, const cha
 	DBusMessage 	*reply;
 	DBusError		 error;
 
-	message = dbus_message_new_method_call ("org.freedesktop.NetworkManager",
-						"/org/freedesktop/NetworkManager",
-						"org.freedesktop.NetworkManager",
-						"setActiveDevice");
+	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");
@@ -403,7 +400,7 @@ int main( int argc, char *argv[] )
 		fprintf (stderr, "NetworkManager appears not to be running (could not get its state).  Will exit.\n");
 		return (1);
 	}
-	fprintf (stderr, "NM State: '%u'\n", state);
+	fprintf (stderr, "NM State: %u\n", state);
 
 	path = get_active_device (connection);
 	fprintf (stderr, "Active device: '%s'\n", path ? path : "(none)");

@@ -1,3 +1,10 @@
+2005-05-04  Dan Williams  <dcbw@redhat.com>
+
+	* Remove NM_STATE_SCANNING from NetworkManager.h and applet code
+
+	* Fix some holes in device activation and retaining the currently connected
+		access point
+
 2005-05-03  Dan Williams  <dcbw@redhat.com>
 
 	* Kill dhcpcd.  We now use "dhcdbd", a dbus daemon that controls dhclient.

@@ -165,7 +165,8 @@ static void libnm_glib_update_state (libnm_glib_ctx *ctx, NMState state)
 			ctx->nm_state = LIBNM_ACTIVE_NETWORK_CONNECTION;
 			break;
 
-		case NM_STATE_SCANNING:
+		case NM_STATE_ASLEEP:
+		case NM_STATE_CONNECTING:
 		case NM_STATE_DISCONNECTED:
 			ctx->nm_state = LIBNM_NO_NETWORK_CONNECTION;
 			break;

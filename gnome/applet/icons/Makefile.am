@@ -21,22 +21,6 @@ smallicon_DATA=		\
 	nm-connecting09.png	\
 	nm-connecting10.png	\
 	nm-connecting11.png	\
-	nm-detect01.png	\
-	nm-detect02.png	\
-	nm-detect03.png	\
-	nm-detect04.png	\
-	nm-detect05.png	\
-	nm-detect06.png	\
-	nm-detect07.png	\
-	nm-detect08.png	\
-	nm-detect09.png	\
-	nm-detect10.png	\
-	nm-detect11.png	\
-	nm-detect12.png	\
-	nm-detect13.png	\
-	nm-detect14.png	\
-	nm-detect15.png	\
-	nm-detect16.png	\
 	nm-signal-00.png	\
 	nm-signal-25.png	\
 	nm-signal-50.png	\

@@ -170,7 +170,8 @@ guint8 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *d
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
-		nm_info ("Error from dhcdbd on 'reason' request because: name '%s', message '%s'.", error.name, error.message);
+		if (strcmp (error.name, "org.freedesktop.DBus.Error.UnknownMethod") != 0)
+			nm_info ("Error from dhcdbd on 'reason' request because: name '%s', message '%s'.", error.name, error.message);
 		dbus_error_free (&error);
 	}
 	if (reply)
@@ -207,9 +208,9 @@ gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
 
 	if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
 	{
-		nm_device_activate_schedule_stage4_ip_config_timeout (req);
 		nm_act_request_set_dhcp_timeout (req, 0);
 		nm_dhcp_manager_cancel_transaction (data->dhcp_manager, req);
+		nm_device_activate_schedule_stage4_ip_config_timeout (req);
 	}
 
 	return FALSE;
@@ -260,15 +261,15 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 
 	dbus_message_append_args (message, DBUS_TYPE_UINT32, &opt1, DBUS_TYPE_UINT32, &opt2, DBUS_TYPE_INVALID);
 	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (manager->data->dbus_connection, message, -1, &error);
+	if ((reply = dbus_connection_send_with_reply_and_block (manager->data->dbus_connection, message, -1, &error)))
+		dbus_message_unref (reply);
+	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
 	{
 		nm_info ("Couldn't send DHCP 'up' message because: name '%s', message '%s'.", error.name, error.message);
 		dbus_error_free (&error);
+		return FALSE;
 	}
-	if (reply)
-		dbus_message_unref (reply);
-	dbus_message_unref (message);
 
 	/* Set up a timeout on the transaction to kill it after 25s */
 	source = g_timeout_source_new (25000);
@@ -595,6 +596,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 
 					case 9:		/* FAIL */
 					case 13:		/* ABEND */
+//					case 14:		/* END */
 						if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_policy_schedule_activation_failed (req);

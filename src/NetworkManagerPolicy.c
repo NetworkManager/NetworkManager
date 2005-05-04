@@ -178,6 +178,8 @@ void nm_policy_schedule_activation_failed (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
+	nm_act_request_set_stage (req, ACT_STAGE_FAILED);
+
 	source = g_idle_source_new ();
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
 	g_source_set_callback (source, (GSourceFunc) nm_policy_activation_failed, req, NULL);
@@ -223,7 +225,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		dev_type = nm_device_get_type (dev);
 		link_active = nm_device_has_active_link (dev);
 
-		if (dev_type == DEVICE_TYPE_WIRED_ETHERNET)
+		if (nm_device_is_wired (dev))
 		{
 			/* We never automatically choose devices that don't support carrier detect */
 			if (!nm_device_get_supports_carrier_detect (dev))
@@ -241,7 +243,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 				best_wired_prio = prio;
 			}
 		}
-		else if ((dev_type == DEVICE_TYPE_WIRELESS_ETHERNET) && data->wireless_enabled)
+		else if (nm_device_is_wireless (dev) && data->wireless_enabled)
 		{
 			if (link_active)
 				prio += 1;
@@ -253,6 +255,10 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 
 			if (nm_device_get_act_request (dev) && link_active)
 				prio += 3;
+
+			/* Stick with an already active non-scanning device if the user chose one */
+			if (!nm_device_get_supports_wireless_scan (dev) && nm_device_get_act_request (dev))
+				prio += 2;
 
 			if (prio > best_wireless_prio)
 			{
@@ -612,7 +618,7 @@ void nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
 
 		/* We want this idle source to run before any other idle source */
 		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-		g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
+		g_source_set_callback (source, (GSourceFunc) nm_policy_device_list_update_from_allowed_list, app_data, NULL);
 		g_source_attach (source, app_data->main_context);
 		g_source_unref (source);
 

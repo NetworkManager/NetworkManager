@@ -51,6 +51,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data);
 static gboolean supports_mii_carrier_detect (NMDevice *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice *dev);
 static gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable);
+static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap);
 
 static void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req);
 static void nm_device_activate_schedule_stage2_device_config (NMActRequest *req);
@@ -786,17 +787,10 @@ static gboolean nm_device_probe_wireless_link_state (NMDevice *dev)
 	if (!nm_try_acquire_mutex (dev->options.wireless.scan_mutex, __FUNCTION__))
 		return nm_device_has_active_link (dev);
 
-	if (nm_device_wireless_is_associated (dev))
+	if ((best_ap = nm_device_get_best_ap (dev)))
 	{
-		/* If we don't have a "best" ap, or that's not the AP we are currently
-		 * using, then we can't logically have a valid link.
-		 */
-		if ((best_ap = nm_device_get_best_ap (dev)))
-		{
-			if (nm_device_get_essid (dev) && nm_ap_get_essid (best_ap))
-				link = (strcmp (nm_device_get_essid (dev), nm_ap_get_essid (best_ap)) == 0);
-			nm_ap_unref (best_ap);
-		}
+		link = link_to_specific_ap (dev, best_ap);
+		nm_ap_unref (best_ap);
 	}
 
 	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
@@ -903,7 +897,7 @@ char * nm_device_get_essid (NMDevice *dev)
 			essid = nm_ap_get_essid (best_ap);
 			nm_ap_unref (best_ap);
 		}
-		return (essid);
+		return essid;
 	}
 	
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
@@ -1800,10 +1794,11 @@ gboolean nm_device_activation_start (NMActRequest *req)
 	g_return_val_if_fail (req != NULL, FALSE);
 
 	data = nm_act_request_get_data (req);
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_assert (data);
 
 	dev = nm_act_request_get_dev (req);
-	g_return_val_if_fail (dev != NULL, FALSE);
+	g_assert (dev);
+
 	g_return_val_if_fail (!nm_device_is_activating (dev), TRUE);	/* Return if activation has already begun */
 
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
@@ -1875,11 +1870,11 @@ void nm_device_schedule_activation_handle_cancel (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
+	nm_info ("Activation (%s) cancellation handler scheduled...", nm_device_get_iface (dev));
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activation_handle_cancel, req, NULL);
 	g_source_attach (source, dev->context);
 	g_source_unref (source);
-	nm_info ("Activation (%s) cancellation handler scheduled...", nm_device_get_iface (dev));
 }
 
 
@@ -1953,7 +1948,7 @@ static gboolean nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	if (nm_device_is_wireless (dev))
 	{
 		ap = nm_act_request_get_ap (req);
-		g_return_val_if_fail (ap != NULL, FALSE);
+		g_assert (ap);
 
 		if (nm_ap_get_artificial (ap))
 		{
@@ -2176,12 +2171,18 @@ static void nm_device_wireless_configure_adhoc (NMActRequest *req)
 	nm_ap_list_iter_free (iter);
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)) == NULL)
+	{
+		nm_policy_schedule_activation_failed (req);
 		return;
+	}
 
 	err = iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range);
 	nm_dev_sock_close (sk);
 	if (err < 0)
+	{
+		nm_policy_schedule_activation_failed (req);
 		return;
+	}
 
 	/* Ok, find the first non-zero freq in our table and use it.
 	 * For now we only try to use a channel in the 802.11b channel
@@ -2209,23 +2210,24 @@ static void nm_device_wireless_configure_adhoc (NMActRequest *req)
 			freq_to_use = pfreq;
 	}
 
-	if (freq_to_use)
+	if (!freq_to_use)
 	{
-		nm_ap_set_freq (ap, freq_to_use);
-	
-		nm_info ("Will create network '%s' with frequency %f.", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
-		nm_device_set_wireless_config (dev, ap);
-
-		if (nm_device_activation_should_cancel (dev))
-		{
-			nm_device_schedule_activation_handle_cancel (req);
-			return;
-		}
-
-		nm_device_activate_schedule_stage3_ip_config_start (req);
-	}
-	else
 		nm_policy_schedule_activation_failed (req);
+		return;
+	}
+
+	nm_ap_set_freq (ap, freq_to_use);
+
+	nm_info ("Will create network '%s' with frequency %f.", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
+	nm_device_set_wireless_config (dev, ap);
+
+	if (nm_device_activation_should_cancel (dev))
+	{
+		nm_device_schedule_activation_handle_cancel (req);
+		return;
+	}
+
+	nm_device_activate_schedule_stage3_ip_config_start (req);
 }
 
 
@@ -2333,8 +2335,7 @@ static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 
 	if (!nm_ap_get_encrypted (ap))
 	{
-		nm_info ("Activation (%s/wireless): access point '%s' is "
-			 "unencrypted, no key needed.", 
+		nm_info ("Activation (%s/wireless): access point '%s' is unencrypted, no key needed.", 
 			 nm_device_get_iface (dev), essid ? essid : "(null)");
 	}
 	else
@@ -2355,7 +2356,7 @@ static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 		}
 	}
 
-	return (need_key);
+	return need_key;
 }
 
 
@@ -2587,7 +2588,8 @@ static gboolean nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	if (!(ap && nm_ap_get_user_created (ap)) && nm_device_get_use_dhcp (dev))
 	{
 		/* Begin a DHCP transaction on the interface */
-		nm_dhcp_manager_begin_transaction (data->dhcp_manager, req);
+		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
+			nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 
@@ -2677,13 +2679,16 @@ static gboolean nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	g_return_val_if_fail (req != NULL, FALSE);
 
 	data = nm_act_request_get_data (req);
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_assert (data);
 
 	dev = nm_act_request_get_dev (req);
-	g_return_val_if_fail (dev != NULL, FALSE);
+	g_assert (data);
 
 	if (nm_device_is_wireless (dev))
+	{
 		ap = nm_act_request_get_ap (req);
+		g_assert (ap);
+	}
 
 	nm_info ("Activation (%s) Stage 4 (IP Configure Get) started...", nm_device_get_iface (dev));
 
@@ -2909,6 +2914,7 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_policy_schedule_activation_failed (req);
 
 out:
+	nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 	nm_info ("Activation (%s) Stage 5 (IP Configure Commit) complete.", nm_device_get_iface (dev));
 	return FALSE;
 }
@@ -2949,6 +2955,7 @@ gboolean nm_device_is_activating (NMDevice *dev)
 {
 	NMActRequest *	req;
 	NMActStage	stage;
+	gboolean		activating = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -2956,10 +2963,26 @@ gboolean nm_device_is_activating (NMDevice *dev)
 		return FALSE;
 
 	stage = nm_act_request_get_stage (req);
-	if ((stage != ACT_STAGE_UNKNOWN) && (stage != ACT_STAGE_ACTIVATED))
-		return TRUE;
+	switch (stage)
+	{
+		case ACT_STAGE_DEVICE_PREPARE:
+		case ACT_STAGE_DEVICE_CONFIG:
+		case ACT_STAGE_NEED_USER_KEY:
+		case ACT_STAGE_IP_CONFIG_START:
+		case ACT_STAGE_IP_CONFIG_GET:
+		case ACT_STAGE_IP_CONFIG_COMMIT:
+			activating = TRUE;
+			break;
 
-	return FALSE;
+		case ACT_STAGE_ACTIVATED:
+		case ACT_STAGE_FAILED:
+		case ACT_STAGE_CANCELLED:
+		case ACT_STAGE_UNKNOWN:
+		default:
+			break;
+	}
+
+	return activating;
 }
 
 
@@ -2985,7 +3008,6 @@ static gboolean nm_ac_test (int tries, nm_completion_args args)
 
 	if (nm_device_is_activating (dev))
 	{
-		/* FIXME: stop any ongoing DHCP transactions */
 		if (tries % 20 == 0)
 			nm_debug ("Activation (%s/wireless): waiting on dhcp to cease or device to finish activation", nm_device_get_iface(dev));
 		return FALSE;
@@ -3010,7 +3032,8 @@ void nm_device_activation_cancel (NMDevice *dev)
 
 	if (nm_device_is_activating (dev))
 	{
-		NMActRequest *req = nm_device_get_act_request (dev);
+		NMActRequest *	req = nm_device_get_act_request (dev);
+		gboolean		clear_act_request = FALSE;
 
 		nm_debug ("Activation (%s/wireless): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
@@ -3019,12 +3042,16 @@ void nm_device_activation_cancel (NMDevice *dev)
 		if (nm_act_request_get_stage (req) == ACT_STAGE_NEED_USER_KEY)
 		{
 			nm_dbus_cancel_get_user_key_for_network (dev->app_data->dbus_connection, req);
-			dev->act_request = NULL;
-			nm_act_request_unref (req);
+			clear_act_request = TRUE;
 		}
 		else if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
 		{
 			nm_dhcp_manager_cancel_transaction (dev->app_data->dhcp_manager, req);
+			clear_act_request = TRUE;
+		}
+
+		if (clear_act_request)
+		{
 			dev->act_request = NULL;
 			nm_act_request_unref (req);
 		}
@@ -3134,7 +3161,16 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 	}
 	else
 	{
+		NMAccessPoint * allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap));
+
+		/* Start off at Open System auth mode with the new key */
+		nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 		nm_ap_set_enc_key_source (ap, key, enc_type);
+
+		/* Be sure to update NMI with the new auth mode */
+		nm_ap_set_auth_method (allowed_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+		nm_dbus_update_network_auth_method (data->dbus_connection, nm_ap_get_essid (allowed_ap), nm_ap_get_auth_method (allowed_ap));
+
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
 }
@@ -3275,6 +3311,23 @@ NMAccessPointList *nm_device_ap_list_get (NMDevice *dev)
 	return (dev->options.wireless.ap_list);
 }
 
+
+static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap)
+{
+	gboolean link = FALSE;
+
+	if (nm_device_wireless_is_associated (dev))
+	{
+		char *	dev_essid = nm_device_get_essid (dev);
+		char *	ap_essid = nm_ap_get_essid (ap);
+
+		if (dev_essid && ap_essid)
+			link = (strcmp (dev_essid, ap_essid) == 0);
+	}
+
+	return link;
+}
+
 /*
  * nm_device_update_best_ap
  *
@@ -3307,10 +3360,8 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 	if (!(ap_list = nm_device_ap_list_get (dev)))
 		return NULL;
 
-	/* Iterate over the device's ap list to make sure the current
-	 * "best" ap is still in the device's ap list (so that if its
-	 * not, we can "unfreeze" the best ap if its been frozen already).
-	 * If it is, we don't change the best ap here.
+	/* We prefer the currently selected access point if its user-chosen or if there
+	 * is still a hardware link to it.
 	 */
 	if ((req = nm_device_get_act_request (dev)))
 	{
@@ -3323,8 +3374,14 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 				keep = TRUE;
 			else if (nm_act_request_get_user_requested (req))
 				keep = TRUE;
-			else if (nm_device_has_active_link (dev))
-				keep = TRUE;
+			else
+			{
+				/* Checking hardware's ESSID during a scan is doesn't work. */
+				nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+				if (link_to_specific_ap (dev, cur_ap))
+					keep = TRUE;
+				nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+			}
 
 			/* Only keep if its not in the invalid list and its _is_ in our scaned list */
 			if ( keep
@@ -3662,10 +3719,17 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 	g_get_current_time (&cur_time);
 	if (nm_device_ap_list_get (dev) && (iter = nm_ap_list_iter_new (nm_device_ap_list_get (dev))))
 	{
-		NMAccessPoint	*outdated_ap;
-		GSList		*outdated_list = NULL;
-		GSList		*elt;
-		NMAccessPoint	*best_ap = nm_device_get_best_ap (dev);
+		NMAccessPoint *outdated_ap;
+		GSList *		outdated_list = NULL;
+		GSList *		elt;
+		NMActRequest *	req = nm_device_get_act_request (dev);
+		NMAccessPoint *cur_ap = NULL;
+
+		if (req)
+		{
+			cur_ap = nm_act_request_get_ap (req);
+			g_assert (cur_ap);
+		}
 
 		while ((outdated_ap = nm_ap_list_iter_next (iter)))
 		{
@@ -3674,17 +3738,13 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 
 			/* Don't ever get prune the AP we're currently associated with */
 			if (	    nm_ap_get_essid (outdated_ap)
-				&&  (best_ap && (nm_null_safe_strcmp (nm_ap_get_essid (best_ap), nm_ap_get_essid (outdated_ap))) == 0))
+				&&  (cur_ap && (nm_null_safe_strcmp (nm_ap_get_essid (cur_ap), nm_ap_get_essid (outdated_ap))) == 0))
 				keep_around = TRUE;
 
 			if (!keep_around && (ap_time->tv_sec + 120 < cur_time.tv_sec))
 				outdated_list = g_slist_append (outdated_list, outdated_ap);
 		}
 		nm_ap_list_iter_free (iter);
-
-		/* nm_device_get_best_ap() refs the ap */
-		if (best_ap)
-			nm_ap_unref (best_ap);
 
 		/* Ok, now remove outdated ones.  We have to do it after the lock
 		 * because nm_ap_list_remove_ap() locks the list too.

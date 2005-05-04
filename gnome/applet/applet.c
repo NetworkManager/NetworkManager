@@ -739,11 +739,6 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			need_animation = TRUE;
 			break;
 
-		case NM_STATE_SCANNING:
-			need_animation = TRUE;
-			tip = g_strdup (_("Scanning for wireless networks..."));
-			break;
-
 		default:
 			break;
 	}
@@ -1920,9 +1915,6 @@ static void nmwa_icons_free (NMWirelessApplet *applet)
 
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->wireless_connecting_icons[i]);
-
-	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)
-		g_object_unref (applet->wireless_scanning_icons[i]);
 }
 
 static void
@@ -1966,15 +1958,6 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 		applet->wireless_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
 		if (!applet->wireless_connecting_icons[i])
-			success = FALSE;
-	}
-
-	for (i = 0; i < NUM_WIRELESS_SCANNING_FRAMES; i++)
-	{
-		name = g_strdup_printf ("nm-detect%02d", i+1);
-		applet->wireless_scanning_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
-		g_free (name);
-		if (!applet->wireless_scanning_icons[i])
 			success = FALSE;
 	}
 
