@@ -85,5 +85,6 @@ dbusservice_DATA = nm-applet.conf
 CLEANFILES = $(server_DATA) *.bak *.gladep
 
 EXTRA_DIST = 				\
+	$(dbusservice_DATA)		\
 	$(glade_DATA)			\
 	$(NULL)
