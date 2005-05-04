@@ -40,8 +40,7 @@ NetworkManager_SOURCES =				\
 		nm-netlink-monitor.h		\
 		nm-activation-request.c		\
 		nm-activation-request.h		\
-		autoip.c					\
-		autoip.h
+		autoip.c
 
 NetworkManager_CPPFLAGS = 			\
 	$(DBUS_CFLAGS)					\
