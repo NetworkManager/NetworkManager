@@ -1,5 +1,11 @@
 2005-05-05  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bill Moss:
+	* gnome/libnm_glib/libnm_glib.c
+		- Fix for dbus-0.33
+
+2005-05-05  Dan Williams  <dcbw@redhat.com>
+
 	Suggestion from Bill Moss:
 	* src/NetworkManagerSystem.c
 		- (nm_system_device_set_up_down_with_iface): ignore ENODEV
