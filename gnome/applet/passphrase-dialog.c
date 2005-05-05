@@ -301,6 +301,7 @@ static gboolean nmi_passphrase_dialog_show (PPDialogCBData *cb_data)
 	GtkWidget *		dialog;
 	GladeXML *		dialog_xml;
 	const char *		orig_label_text;
+	guint32			timestamp;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 	g_return_val_if_fail (cb_data->applet != NULL, FALSE);
@@ -332,6 +333,10 @@ static gboolean nmi_passphrase_dialog_show (PPDialogCBData *cb_data)
 	g_object_set_data (G_OBJECT (dialog), "dbus-message", cb_data->message);
 
 	gtk_widget_show (dialog);
+
+	/* Bash focus-stealing prevention in the face */
+	timestamp = gdk_x11_get_server_time (dialog->window);
+	gdk_x11_window_set_user_time (dialog->window, timestamp);
 
 	return FALSE;
 }

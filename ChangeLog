@@ -1,5 +1,13 @@
 2005-05-05  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/main.c
+		- Fix session management so the applet is actually managed now
+
+	* gnome/applet/passphrase-dialog.c
+		- (nmi_passphrase_dialog_show): bash focus-stealing prevention in the face
+
+2005-05-05  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Bill Moss:
 	* gnome/libnm_glib/libnm_glib.c
 		- Fix for dbus-0.33

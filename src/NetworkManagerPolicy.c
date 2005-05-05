@@ -279,8 +279,10 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 			highest_priority_dev = NULL;
 	}
 
+#if 0
 	nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
 			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", (best_wireless_dev && *ap) ? nm_ap_get_essid (*ap) : "null" );
+#endif
 
 	return highest_priority_dev;
 }

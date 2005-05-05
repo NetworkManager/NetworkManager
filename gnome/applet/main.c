@@ -43,17 +43,13 @@ int main (int argc, char *argv[])
 {
 	NMWirelessApplet *	nmwa;
 	GnomeClient *		client;
-	GPtrArray *		restart_argv;
 
 	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
 			    GNOME_PARAM_NONE);
 
 	client = gnome_master_client ();
-	restart_argv = g_ptr_array_new ();
-	g_ptr_array_add (restart_argv, g_get_prgname ());
-	gnome_client_set_restart_command (client, restart_argv->len, (char**) restart_argv->pdata);
-	g_ptr_array_free (restart_argv, TRUE);
+	gnome_client_set_restart_command (client, argc, argv);
 	gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
 
 	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);

@@ -245,6 +245,7 @@ static void vpn_login_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_
 static gboolean nmwa_show_vpn_login_failure_dialog (char *message)
 {
 	GtkWidget	*dialog;
+	guint32	 timestamp;
 
 	g_return_val_if_fail (message != NULL, FALSE);
 
@@ -253,6 +254,10 @@ static gboolean nmwa_show_vpn_login_failure_dialog (char *message)
 	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
 	g_object_set_data (G_OBJECT (dialog), "message", message);
 	gtk_widget_show_all (dialog);
+
+	/* Bash focus-stealing prevention in the face */
+	timestamp = gdk_x11_get_server_time (dialog->window);
+	gdk_x11_window_set_user_time (dialog->window, timestamp);
 
 	return FALSE;
 }
@@ -301,6 +306,7 @@ static void vpn_login_banner_dialog_close_cb (GtkWidget *dialog, gpointer user_d
 static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
 {
 	GtkWidget	*dialog;
+	guint32	 timestamp;
 
 	g_return_val_if_fail (message != NULL, FALSE);
 
@@ -309,6 +315,10 @@ static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
 	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_banner_dialog_close_cb), NULL);
 	g_object_set_data (G_OBJECT (dialog), "message", message);
 	gtk_widget_show_all (dialog);
+
+	/* Bash focus-stealing prevention in the face */
+	timestamp = gdk_x11_get_server_time (dialog->window);
+	gdk_x11_window_set_user_time (dialog->window, timestamp);
 
 	return FALSE;
 }
