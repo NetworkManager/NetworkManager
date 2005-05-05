@@ -466,10 +466,6 @@ static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
-	nm_vpn_manager_dispose (data->vpn_manager);
-	nm_dhcp_manager_dispose (data->dhcp_manager);
-	g_object_unref (data->named_manager);
-
 	/* Stop and destroy all devices */
 	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
 	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
@@ -480,6 +476,10 @@ static void nm_data_free (NMData *data)
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
+
+	nm_vpn_manager_dispose (data->vpn_manager);
+	nm_dhcp_manager_dispose (data->dhcp_manager);
+	g_object_unref (data->named_manager);
 
 	g_main_loop_unref (data->main_loop);
 	g_main_context_unref (data->main_context);
@@ -542,39 +542,48 @@ static void nm_print_usage (void)
  */
 gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 {
-	GSList	*elt;
+	GSList *		elt;
+	GSList *		copy = NULL;
+	NMDevice *	dev;
 
 	g_return_val_if_fail (data != NULL, TRUE);
 
 	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
 		return (TRUE);
 
-	/* Attempt to acquire mutex for device list iteration.
-	 * If the acquire fails, just ignore the device deletion entirely.
-	 */
-	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	/* Copy device list and ref devices to keep them around */
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		nm_warning ("could not acquire device list mutex." );
-		return TRUE;
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+		{
+			if ((dev = (NMDevice *)(elt->data)))
+			{
+				nm_device_ref (dev);
+				copy = g_slist_append (copy, dev);
+			}
+		}
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	for (elt = copy; elt; elt = g_slist_next (elt))
 	{
-		NMDevice	*dev = (NMDevice *)(elt->data);
-
-		if (dev && nm_device_is_wireless (dev) && !nm_device_is_activating (dev))
+		if ((dev = (NMDevice *)(elt->data)))
 		{
-			nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
-			nm_device_update_signal_strength (dev);
+			if (nm_device_is_wireless (dev) && !nm_device_is_activating (dev))
+			{
+				nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
+				nm_device_update_signal_strength (dev);
+			}
+			nm_device_unref (dev);
 		}
 	}
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+	g_slist_free (copy);
 	
-	return (TRUE);
+	return TRUE;
 }
 
-static void
-nm_monitor_wireless_link_state (NMData *data)
+static void nm_monitor_wireless_link_state (NMData *data)
 {
 	GSource *link_source;
 	link_source = g_timeout_source_new (NM_WIRELESS_LINK_STATE_POLL_INTERVAL);
@@ -585,46 +594,52 @@ nm_monitor_wireless_link_state (NMData *data)
 	g_source_unref (link_source);
 }
 
-static void
-nm_wired_link_activated (NmNetlinkMonitor *monitor,
-			 const gchar 	  *interface_name,
-			 NMData 	  *data)
+static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
 {
+	NMDevice *dev = NULL;
+
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		NMDevice *dev = nm_get_device_by_iface (data, interface_name);
+		if ((dev = nm_get_device_by_iface (data, interface_name)))
+			nm_device_ref (dev);
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	}
 
-		/* Don't do anything if we already have a link */
-		if (    dev
-			&& nm_device_is_wired (dev)
-			&& !nm_device_has_active_link (dev))
+	/* Don't do anything if we already have a link */
+	if (dev)
+	{
+		if (nm_device_is_wired (dev) && !nm_device_has_active_link (dev))
 		{
 			NMDevice *act_dev =  NULL;
 
 			nm_device_set_link_active (dev, TRUE);
 			nm_policy_schedule_device_change_check (data);
 		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		nm_device_unref (dev);
 	}
 }
 
-static void
-nm_wired_link_deactivated (NmNetlinkMonitor *monitor,
-			   const gchar 	  *interface_name,
-			   NMData 	  *data)
+static void nm_device_link_deactivated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
 {
+	NMDevice *dev = NULL;
+
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		NMDevice *dev = nm_get_device_by_iface (data, interface_name);
-
-		if ((dev != NULL) && nm_device_is_wired (dev))
-			nm_device_set_link_active (dev, FALSE);
+		if ((dev = nm_get_device_by_iface (data, interface_name)))
+			nm_device_ref (dev);
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	}
+
+	if (dev)
+	{
+		if (nm_device_is_wired (dev))
+			nm_device_set_link_active (dev, FALSE);
+		nm_device_unref (dev);
 	}
 }
 
 static void
-nm_error_monitoring_wired_link_state (NmNetlinkMonitor *monitor,
+nm_error_monitoring_device_link_state (NmNetlinkMonitor *monitor,
 				      GError 	       *error,
 				      NMData	       *data)
 {
@@ -655,13 +670,13 @@ nm_monitor_wired_link_state (NMData *data)
 	}
 
 	g_signal_connect (G_OBJECT (monitor), "interface-connected",
-			  G_CALLBACK (nm_wired_link_activated), data);
+			  G_CALLBACK (nm_device_link_activated), data);
 
 	g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
-			  G_CALLBACK (nm_wired_link_deactivated), data);
+			  G_CALLBACK (nm_device_link_deactivated), data);
 
 	g_signal_connect (G_OBJECT (monitor), "error",
-			  G_CALLBACK (nm_error_monitoring_wired_link_state),
+			  G_CALLBACK (nm_error_monitoring_device_link_state),
 			  data);
 
 	nm_netlink_monitor_attach (monitor, data->main_context);

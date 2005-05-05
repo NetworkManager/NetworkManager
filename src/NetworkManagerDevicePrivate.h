@@ -43,6 +43,8 @@ typedef struct NMDeviceWirelessOptions
 	iwqual			max_qual;
 	iwqual			avg_qual;
 
+	guint			failed_link_count;
+
 	gint8			num_freqs;
 	double			freqs[IW_MAX_FREQUENCIES];
 

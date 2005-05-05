@@ -291,7 +291,10 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
 			if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr) == -1)
-				nm_warning ("nm_system_device_set_up_down_with_iface() could not bring device %s %s.  errno = %d", iface, (up ? "up" : "down"), errno);
+			{
+				if (errno != ENODEV)
+					nm_warning ("nm_system_device_set_up_down_with_iface() could not bring device %s %s.  errno = %d", iface, (up ? "up" : "down"), errno);
+			}
 		}
 	}
 

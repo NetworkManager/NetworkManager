@@ -51,7 +51,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data);
 static gboolean supports_mii_carrier_detect (NMDevice *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice *dev);
 static gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable);
-static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap);
+static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap, gboolean default_link);
 
 static void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req);
 static void nm_device_activate_schedule_stage2_device_config (NMActRequest *req);
@@ -664,13 +664,38 @@ gboolean nm_device_has_active_link (NMDevice *dev)
 void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 {
 	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->app_data != NULL);
 
 	if (dev->link_active != link_active)
 	{
 		dev->link_active = link_active;
-		if (!link_active)
+
+		/* Deactivate a currently active device */
+		if (!link_active && nm_device_get_act_request (dev))
+		{
 			nm_device_deactivate (dev, FALSE);
-		nm_policy_schedule_device_change_check (dev->app_data);
+			nm_policy_schedule_device_change_check (dev->app_data);
+		}
+		else if (link_active && !nm_device_get_act_request (dev))
+		{
+			NMDevice *act_dev = nm_get_active_device (dev->app_data);
+
+			/* If there is no currently active device, or the currently active device
+			 * is wireless, and the device that's had the link change->active is wired,
+			 * activate the wired device.
+			 */
+			if (    nm_device_is_wired (dev)
+				&& ((act_dev && nm_device_is_wireless (act_dev)) || !act_dev))
+			{
+				NMActRequest *act_req = nm_act_request_new (dev->app_data, dev, NULL, TRUE); /* TRUE = user requested */
+
+				if (act_req)
+				{
+					nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (dev));
+					nm_policy_schedule_device_activation (act_req);
+				}
+			}
+		}
 	}
 }
 
@@ -782,7 +807,7 @@ static gboolean nm_device_probe_wireless_link_state (NMDevice *dev)
 
 	if ((best_ap = nm_device_get_best_ap (dev)))
 	{
-		link = link_to_specific_ap (dev, best_ap);
+		link = link_to_specific_ap (dev, best_ap, TRUE);
 		nm_ap_unref (best_ap);
 	}
 
@@ -827,7 +852,7 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 	if (dev->options.wired.has_carrier_detect != TRUE)
 		link = TRUE;
 
-	return (link);
+	return link;
 }
 
 
@@ -1836,6 +1861,7 @@ gboolean nm_device_activation_handle_cancel (NMActRequest *req)
 		dev->act_request = NULL;
 		nm_act_request_unref (req);
 	}
+	nm_schedule_state_change_signal_broadcast (dev->app_data);
 
 	nm_info ("Activation (%s) cancellation handled.", nm_device_get_iface (dev));
 	return FALSE;
@@ -2047,6 +2073,8 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_auth_method (ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
+
+	dev->options.wireless.failed_link_count = 0;
 
 	/* Force the card into Managed/Infrastructure mode */
 	nm_device_bring_down_wait (dev, 0);
@@ -3304,17 +3332,32 @@ NMAccessPointList *nm_device_ap_list_get (NMDevice *dev)
 }
 
 
-static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap)
+static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap, gboolean default_link)
 {
 	gboolean link = FALSE;
+
+	/* Checking hardware's ESSID during a scan is doesn't work. */
+	nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 
 	if (nm_device_wireless_is_associated (dev))
 	{
 		char *	dev_essid = nm_device_get_essid (dev);
 		char *	ap_essid = nm_ap_get_essid (ap);
 
-		if (dev_essid && ap_essid)
-			link = (strcmp (dev_essid, ap_essid) == 0);
+		if (dev_essid && ap_essid && !strcmp (dev_essid, ap_essid))
+		{
+			dev->options.wireless.failed_link_count = 0;
+			link = TRUE;
+		}
+	}
+
+	nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
+
+	if (!link)
+	{
+		dev->options.wireless.failed_link_count++;
+		if (dev->options.wireless.failed_link_count < 3)
+			link = default_link;
 	}
 
 	return link;
@@ -3366,14 +3409,8 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 				keep = TRUE;
 			else if (nm_act_request_get_user_requested (req))
 				keep = TRUE;
-			else
-			{
-				/* Checking hardware's ESSID during a scan is doesn't work. */
-				nm_lock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-				if (link_to_specific_ap (dev, cur_ap))
-					keep = TRUE;
-				nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
-			}
+			else if (link_to_specific_ap (dev, cur_ap, TRUE))
+				keep = TRUE;
 
 			/* Only keep if its not in the invalid list and its _is_ in our scaned list */
 			if ( keep

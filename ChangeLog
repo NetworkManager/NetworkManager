@@ -1,3 +1,29 @@
+2005-05-05  Dan Williams  <dcbw@redhat.com>
+
+	Suggestion from Bill Moss:
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_up_down_with_iface): ignore ENODEV
+
+
+	* src/NetworkManager.c
+		- (nm_data_free): move destruction of the various managers after
+			release of device list, because deactivating and freeing a device
+			requires at least the named manager
+		- (nm_poll_and_update_wireless_link_state):
+		  (nm_device_link_activated):
+		  (nm_device_link_deactivated):
+			don't grab the device list lock when actually updating device
+			link status or strength, since nm_device_set_link_active()
+			needs to call nm_get_active_device(), which also locks the device list.
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_link_active): if a device's link switches from off->on,
+			and it's wired, and the active device is wireless (or there is no
+			active device), activate the new device whose link just came on
+		- (link_to_specific_ap): try to smooth over intermittency in wireless links
+			my only calling the link to the current ap "failed" when more than 2
+			consecutive link checks have failed
+
 2005-05-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c
