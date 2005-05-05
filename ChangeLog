@@ -1,3 +1,8 @@
+2005-05-05  Ray Strode  <rstrode@redhat.com>
+
+	* src/nm-netlink-monitor.c:
+		- Use clear_event_source instead of g_nullify_pointer() again.
+
 2005-05-05  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/main.c
