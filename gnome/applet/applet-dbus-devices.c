@@ -835,6 +835,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 	dbus_uint32_t		driver_support_level = 0;
 	char **			networks = NULL;
 	int				num_networks = 0;
+	NMActStage		act_stage = NM_ACT_STAGE_UNKNOWN;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
@@ -858,6 +859,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 									DBUS_TYPE_UINT32, &type,
 									DBUS_TYPE_STRING, &udi,
 									DBUS_TYPE_BOOLEAN,&active,
+									DBUS_TYPE_UINT32, &act_stage,
 									DBUS_TYPE_UINT32, &ip4_address,
 									DBUS_TYPE_STRING, &hw_addr,
 									DBUS_TYPE_UINT32, &mode,
@@ -876,6 +878,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 		network_device_set_active (dev, active);
 		network_device_set_link (dev, link_active);
 		network_device_set_driver_support_level (dev, driver_support_level);
+		network_device_set_act_stage (dev, act_stage);
 
 		/* If the device already exists in our list for some reason, remove it so we
 		 * can add the new one with updated data.
@@ -1054,14 +1057,14 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if ((network_device_get_type (dev) == DEVICE_TYPE_WIRED_ETHERNET) && !passphrase && (key_type != -1))
+	if (network_device_is_wired (dev) && !passphrase && (key_type != -1))
 		return;
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
 		const char *dev_path = network_device_get_nm_path (dev);
 
-		if ((network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET) && essid)
+		if (network_device_is_wireless (dev) && essid)
 		{
 			nm_info ("Forcing device '%s' and network '%s' %s passphrase\n", dev_path, essid, passphrase ? "with" : "without");
 
@@ -1100,7 +1103,7 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (essid != NULL);
-	g_return_if_fail (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (network_device_is_wireless (dev));
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "createWirelessNetwork")))
 	{
@@ -1312,13 +1315,13 @@ sort_devices_function (gconstpointer a, gconstpointer b)
 	{
 		return strcmp (name_a, name_b);
 	}
-	if (network_device_get_type (dev_a) == DEVICE_TYPE_WIRED_ETHERNET)
+	if (network_device_is_wired (dev_a))
 		return -1;
-	if (network_device_get_type (dev_b) == DEVICE_TYPE_WIRED_ETHERNET)
+	if (network_device_is_wired (dev_b))
 		return 1;
-	if (network_device_get_type (dev_a) == DEVICE_TYPE_WIRELESS_ETHERNET)
+	if (network_device_is_wireless (dev_a))
 		return -1;
-	if (network_device_get_type (dev_b) == DEVICE_TYPE_WIRELESS_ETHERNET)
+	if (network_device_is_wireless (dev_b))
 		return 1;
 
 	/* Unknown device types.  Sort by name only at this point. */

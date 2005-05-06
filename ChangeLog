@@ -1,3 +1,9 @@
+2005-05-05  Dan Williams  <dcbw@redhat.com>
+
+	* Expose activation stages to NetworkManager clients, like the applet
+	* Add Diana's progress icons to the applet, cued off NM activation stage
+	* Use more descriptive tooltips, cued off NM activation stage
+
 2005-05-05  Ray Strode  <rstrode@redhat.com>
 
 	* src/nm-netlink-monitor.c:

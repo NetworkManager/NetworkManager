@@ -618,7 +618,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 		if (dbus_connection_send_with_reply (connection, message, &pcall, INT_MAX) && pcall)
 		{
 			nm_act_request_ref (req);
-			nm_act_request_set_stage (req, ACT_STAGE_NEED_USER_KEY);
+			nm_act_request_set_stage (req, NM_ACT_STAGE_NEED_USER_KEY);
 			nm_act_request_set_user_key_pending_call (req, pcall);
 			dbus_pending_call_set_notify (pcall, (DBusPendingCallNotifyFunction) nm_dbus_get_user_key_for_network_cb, req, NULL);
 		}

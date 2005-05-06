@@ -101,6 +101,8 @@ typedef struct
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;
 	GdkPixbuf *		adhoc_icon;
+#define NUM_PROGRESS_FRAMES 11
+	GdkPixbuf *		progress_icons[NUM_PROGRESS_FRAMES];
 #define NUM_WIRED_CONNECTING_FRAMES 11
 	GdkPixbuf *		wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
 	GdkPixbuf *		wireless_00_icon;
@@ -117,7 +119,9 @@ typedef struct
 	guint			animation_id;
 
 	/* Direct UI elements */
+	GtkWidget *		icon_box;
 	GtkWidget *		pixmap;
+	GtkWidget *		progress_bar;
 	GtkWidget *		top_menu_item;
 	GtkWidget *		dropdown_menu;
 	GtkWidget *		vpn_menu;

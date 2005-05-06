@@ -362,6 +362,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		char **			networks = NULL;
 		int				num_networks = 0;
 		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
+		NMActStage		act_stage = active ? nm_act_request_get_stage (nm_device_get_act_request (dev)) : NM_ACT_STAGE_UNKNOWN;
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
@@ -414,6 +415,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_UINT32, &type,
 									DBUS_TYPE_STRING, &udi,
 									DBUS_TYPE_BOOLEAN,&active,
+									DBUS_TYPE_UINT32, &act_stage,
 									DBUS_TYPE_UINT32, &ip4_address,
 									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
 									DBUS_TYPE_UINT32, &mode,

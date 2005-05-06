@@ -21,6 +21,18 @@ smallicon_DATA=		\
 	nm-connecting09.png	\
 	nm-connecting10.png	\
 	nm-connecting11.png	\
+	nm-progress11.png	\
+	nm-progress01.png	\
+	nm-progress02.png	\
+	nm-progress03.png	\
+	nm-progress04.png	\
+	nm-progress05.png	\
+	nm-progress06.png	\
+	nm-progress07.png	\
+	nm-progress08.png	\
+	nm-progress09.png	\
+	nm-progress10.png	\
+	nm-progress11.png	\
 	nm-signal-00.png	\
 	nm-signal-25.png	\
 	nm-signal-50.png	\

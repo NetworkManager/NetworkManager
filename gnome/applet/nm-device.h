@@ -37,6 +37,9 @@ NetworkDevice *		network_device_copy						(NetworkDevice *src);
 void					network_device_ref						(NetworkDevice *dev);
 void					network_device_unref					(NetworkDevice *dev);
 
+gboolean				network_device_is_wired					(NetworkDevice *dev);
+gboolean				network_device_is_wireless				(NetworkDevice *dev);
+
 NMDeviceType			network_device_get_type					(NetworkDevice *dev);
 
 WirelessNetwork *		network_device_get_wireless_network_by_essid	(NetworkDevice *dev, const char *essid);
@@ -78,5 +81,8 @@ void					network_device_set_active				(NetworkDevice *dev, gboolean active);
 
 const char *			network_device_get_desc					(NetworkDevice *dev);
 void					network_device_set_desc					(NetworkDevice *dev, const char *desc);
+
+NMActStage			network_device_get_act_stage				(NetworkDevice *dev);
+void					network_device_set_act_stage				(NetworkDevice *dev, NMActStage act_stage);
 
 #endif

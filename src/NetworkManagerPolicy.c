@@ -73,7 +73,7 @@ gboolean nm_policy_activation_finish (NMActRequest *req)
 			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_ap_get_essid (ap), &addr);
 	}
 
-	nm_act_request_set_stage (req, ACT_STAGE_ACTIVATED);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_ACTIVATED);
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
 
 	nm_schedule_state_change_signal_broadcast (data);
@@ -178,7 +178,7 @@ void nm_policy_schedule_activation_failed (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_FAILED);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_FAILED);
 
 	source = g_idle_source_new ();
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);

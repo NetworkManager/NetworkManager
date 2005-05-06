@@ -31,20 +31,6 @@
 #include "nm-ip4-config.h"
 
 
-typedef enum NMActStage
-{
-	ACT_STAGE_UNKNOWN = 0,
-	ACT_STAGE_DEVICE_PREPARE,
-	ACT_STAGE_DEVICE_CONFIG,
-	ACT_STAGE_NEED_USER_KEY,
-	ACT_STAGE_IP_CONFIG_START,
-	ACT_STAGE_IP_CONFIG_GET,
-	ACT_STAGE_IP_CONFIG_COMMIT,
-	ACT_STAGE_ACTIVATED,
-	ACT_STAGE_FAILED,
-	ACT_STAGE_CANCELLED
-} NMActStage;
-
 
 NMActRequest *		nm_act_request_new				(NMData *data, NMDevice *dev, NMAccessPoint *ap, gboolean user_requested);
 void				nm_act_request_ref				(NMActRequest *req);

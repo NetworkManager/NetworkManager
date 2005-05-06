@@ -44,6 +44,7 @@ struct NetworkDevice
 	char *				udi;
 	gint					strength;
 	GSList *				networks;
+	NMActStage			act_stage;
 };
 
 
@@ -97,6 +98,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 		dev->desc = g_strdup (src->desc);
 		dev->udi = g_strdup (src->udi);
 		dev->active = src->active;
+		dev->act_stage = src->act_stage;
 		dev->strength = src->strength;
 
 		for (elt = src->networks; elt; elt = g_slist_next (elt))
@@ -151,6 +153,22 @@ void network_device_unref (NetworkDevice *dev)
 		g_free (dev);
 		memset (dev, 0, sizeof (NetworkDevice));
 	}
+}
+
+
+gboolean network_device_is_wired (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (network_device_get_type (dev) == DEVICE_TYPE_WIRED_ETHERNET);
+}
+
+
+gboolean network_device_is_wireless (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET);
 }
 
 
@@ -508,5 +526,22 @@ void network_device_set_desc (NetworkDevice *dev, const char *desc)
 	}
 	if (desc)
 		dev->desc = g_strdup (desc);
+}
+
+/*
+ * Accessors for activation stage
+ */
+NMActStage network_device_get_act_stage (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (dev->act_stage);
+}
+
+void network_device_set_act_stage (NetworkDevice *dev, NMActStage act_stage)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->act_stage = act_stage;
 }
 

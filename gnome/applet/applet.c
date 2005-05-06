@@ -622,6 +622,17 @@ static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *new_icon)
 }
 
 
+static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_icon)
+{
+	g_return_if_fail (applet != NULL);
+
+	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->progress_bar), progress_icon);
+	if (!progress_icon)
+		gtk_widget_hide (applet->progress_bar);
+	else
+		gtk_widget_show (applet->progress_bar);
+}
+
 /*
  * animation_timeout
  *
@@ -642,7 +653,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	switch (applet->gui_nm_state)
 	{
 		case NM_STATE_CONNECTING:
-			if (act_dev && (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET))
+			if (act_dev && network_device_is_wireless (act_dev))
 			{
 				if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
 					applet->animation_step = 0;
@@ -665,6 +676,82 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 }
 
 
+static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDevice *dev, WirelessNetwork *net, char **tip)
+{
+	const char *essid;
+	const char *iface;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (tip != NULL, NULL);
+
+	iface = network_device_get_iface (dev);
+	essid = net ? wireless_network_get_essid (net) : NULL;
+	switch (network_device_get_act_stage (dev))
+	{
+		case NM_ACT_STAGE_DEVICE_PREPARE:
+		{
+			if (network_device_is_wired (dev))
+				*tip = g_strdup_printf (_("Preparing device %s for the wired network..."), iface);
+			else if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Preparing device %s for the wireless network '%s'..."), iface, essid);
+			return applet->progress_icons[1];
+		}
+
+		case NM_ACT_STAGE_DEVICE_CONFIG:
+		{
+			if (network_device_is_wired (dev))
+				*tip = g_strdup_printf (_("Configuring device %s for the wired network..."), iface);
+			else if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Configuring device %s for the wireless network '%s'..."), iface, essid);
+			return applet->progress_icons[3];
+		}
+
+		case NM_ACT_STAGE_NEED_USER_KEY:
+		{
+			if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Waiting for Network Key for the wireless network '%s'..."), essid);
+			return applet->progress_icons[4];
+		}
+
+		case NM_ACT_STAGE_IP_CONFIG_START:
+		{
+			if (network_device_is_wired (dev))
+				*tip = g_strdup_printf (_("Requesting a network address from the wired network..."));
+			else if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Requesting a network address from the wireless network '%s'..."), essid);
+			return applet->progress_icons[5];
+		}
+
+		case NM_ACT_STAGE_IP_CONFIG_GET:
+		{
+			if (network_device_is_wired (dev))
+				*tip = g_strdup_printf (_("Requesting a network address from the wired network..."));
+			else if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Requesting a network address from the wireless network '%s'..."), essid);
+			return applet->progress_icons[8];
+		}
+
+		case NM_ACT_STAGE_IP_CONFIG_COMMIT:
+		{
+			if (network_device_is_wired (dev))
+				*tip = g_strdup_printf (_("Finishing connection to the wired network..."));
+			else if (network_device_is_wireless (dev))
+				*tip = g_strdup_printf (_("Finishing connection to the wireless network '%s'..."), essid);
+			return applet->progress_icons[10];
+		}
+
+		default:
+		case NM_ACT_STAGE_ACTIVATED:
+		case NM_ACT_STAGE_FAILED:
+		case NM_ACT_STAGE_CANCELLED:
+		case NM_ACT_STAGE_UNKNOWN:
+			break;
+	}
+	return NULL;
+}
+
+
 /*
  * nmwa_update_state
  *
@@ -678,6 +765,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	gboolean			need_animation = FALSE;
 	gboolean			active_vpn = FALSE;
 	GdkPixbuf *		pixbuf = NULL;
+	GdkPixbuf *		progress = NULL;
 	gint				strength = -1;
 	char *			tip = NULL;
 	WirelessNetwork *	active_network = NULL;
@@ -686,7 +774,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	g_mutex_lock (applet->data_mutex);
 
 	act_dev = nmwa_get_first_active_device (applet->gui_device_list);
-	if (act_dev && (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET))
+	if (act_dev && network_device_is_wireless (act_dev))
 	{
 		active_network = network_device_get_active_wireless_network (act_dev);
 		strength = CLAMP ((int)network_device_get_strength (act_dev), 0, 100);
@@ -710,12 +798,12 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			break;
 
 		case NM_STATE_CONNECTED:
-			if (network_device_get_type (act_dev) == DEVICE_TYPE_WIRED_ETHERNET)
+			if (network_device_is_wired (act_dev))
 			{
 				pixbuf = applet->wired_icon;
 				tip = g_strdup (_("Wired network connection"));
 			}
-			else if (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
+			else if (network_device_is_wireless (act_dev))
 			{
 				if (applet->is_adhoc)
 				{
@@ -741,11 +829,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			break;
 
 		case NM_STATE_CONNECTING:
-			if (network_device_get_type (act_dev) == DEVICE_TYPE_WIRED_ETHERNET)
-				tip = g_strdup (_("Connecting to a wired network..."));
-			else if (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
-				tip = g_strdup_printf (_("Connecting to wireless network '%s'..."),
-									active_network ? wireless_network_get_essid (active_network) : "(unknown)");
+			progress = nmwa_act_stage_to_pixbuf (applet, act_dev, active_network, &tip);
 			need_animation = TRUE;
 			break;
 
@@ -760,6 +844,8 @@ done:
 		applet->tooltips = gtk_tooltips_new ();
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
 	g_free (tip);
+
+	nmwa_set_progress (applet, progress);	
 
 	if (applet->animation_id)
 		g_source_remove (applet->animation_id);
@@ -1198,7 +1284,7 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if (network_device_get_type (dev) != DEVICE_TYPE_WIRELESS_ETHERNET)
+	if (!network_device_is_wireless (dev))
 		return;
 
 	/* Check for any security */
@@ -1674,11 +1760,17 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
 
 	applet->pixmap = gtk_image_new ();
+	applet->progress_bar = gtk_image_new ();
+
+	applet->icon_box = gtk_hbox_new (FALSE, 3);
+	gtk_container_set_border_width (GTK_CONTAINER (applet->icon_box), 0);
 
 	/* Set up the widget structure and show the applet */
-	gtk_container_add (GTK_CONTAINER(applet->top_menu_item), applet->pixmap);
-	gtk_menu_shell_append (GTK_MENU_SHELL(menu_bar), applet->top_menu_item);
-	gtk_container_add (GTK_CONTAINER(applet->event_box), menu_bar);
+	gtk_container_add (GTK_CONTAINER (applet->icon_box), applet->progress_bar);
+	gtk_container_add (GTK_CONTAINER (applet->icon_box), applet->pixmap);
+	gtk_container_add (GTK_CONTAINER (applet->top_menu_item), applet->icon_box);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), applet->top_menu_item);
+	gtk_container_add (GTK_CONTAINER (applet->event_box), menu_bar);
 	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
 	gtk_widget_show_all (GTK_WIDGET (applet));
 
@@ -1932,7 +2024,7 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 {
 	char *	name;
 	int		i;
-	gboolean	success = TRUE;
+	gboolean	success = FALSE;
 
 	/* Assume icons are square */
 	gint icon_size = 22;
@@ -1951,7 +2043,16 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	if (!applet->no_connection_icon || !applet->wired_icon || !applet->adhoc_icon || !applet->vpn_lock_icon
 		|| !applet->wireless_00_icon || !applet->wireless_25_icon || !applet->wireless_50_icon || !applet->wireless_75_icon
 		|| !applet->wireless_100_icon)
-		success = FALSE;
+		goto out;
+
+	for (i = 0; i < NUM_PROGRESS_FRAMES; i++)
+	{
+		name = g_strdup_printf ("nm-progress%02d", i+1);
+		applet->progress_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
+		g_free (name);
+		if (!applet->progress_icons[i])
+			goto out;
+	}
 
 	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
 	{
@@ -1959,7 +2060,7 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 		applet->wired_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
 		if (!applet->wired_connecting_icons[i])
-			success = FALSE;
+			goto out;
 	}
 
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
@@ -1968,9 +2069,12 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 		applet->wireless_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
 		g_free (name);
 		if (!applet->wireless_connecting_icons[i])
-			success = FALSE;
+			goto out;
 	}
 
+	success = TRUE;
+
+out:
 	if (!success)
 	{
 		show_warning_dialog (_("The NetworkManager applet could not find some required resources.  It cannot continue.\n"));

@@ -111,7 +111,7 @@ static GtkTreeModel *create_wireless_adapter_model (NMWirelessApplet *applet)
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
 		g_assert (dev);
-		if (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (network_device_is_wireless (dev))
 		{
 			GtkTreeIter iter;
 			const char *dev_name;
@@ -244,7 +244,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
 		g_assert (dev);
-		if (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (network_device_is_wireless (dev))
 		{
 			if (!*def_dev)
 			{

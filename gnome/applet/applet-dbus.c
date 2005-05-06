@@ -404,13 +404,23 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
 	gboolean			 handled = TRUE;
-	DBusError			 error;
+
+	const char *		object_path;
+	const char *		member;
+	const char *		interface;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	dbus_error_init (&error);
+	if (!(object_path = dbus_message_get_path (message)))
+		return FALSE;
+	if (!(member = dbus_message_get_member (message)))
+		return FALSE;
+	if (!(interface = dbus_message_get_interface (message)))
+		return FALSE;
+
+/*	nm_info ("signal(): got signal op='%s' member='%s' interface='%s'", object_path, member, interface); */
 
 	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
@@ -418,7 +428,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		char		*old_owner;
 		char		*new_owner;
 
-		if (dbus_message_get_args (message, &error,
+		if (dbus_message_get_args (message, NULL,
 								DBUS_TYPE_STRING, &service,
 								DBUS_TYPE_STRING, &old_owner,
 								DBUS_TYPE_STRING, &new_owner,
@@ -460,7 +470,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			 */
 			if (   (state == NM_STATE_CONNECTING)
 				&& act_dev
-				&& (network_device_get_type (act_dev) == DEVICE_TYPE_WIRELESS_ETHERNET))
+				&& network_device_is_wireless (act_dev))
 			{
 				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (act_dev));
 			}
@@ -552,18 +562,10 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	{
 		char		*dev = NULL;
 		char		*net = NULL;
-		DBusError	 error;
 
-		dbus_error_init (&error);
-		if (!dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
-		{
-			if (dbus_error_is_set (&error))
-				dbus_error_free (&error);
-			dbus_error_init (&error);
-			dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
-		}
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
+		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &dev, DBUS_TYPE_STRING, &net, DBUS_TYPE_INVALID))
+			dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &dev, DBUS_TYPE_INVALID);
+
 		if (dev && net)
 		{
 			char *string = g_strdup_printf (_("Connection to the wireless network '%s' failed.\n"), net);
@@ -573,11 +575,24 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		else if (dev)
 			nmwa_schedule_warning_dialog (applet, _("Connection to the wired network failed.\n"));
 	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationStage"))
+	{
+		char *		dev_path = NULL;
+		NMActStage	stage;
+
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_UINT32, &stage, DBUS_TYPE_INVALID))
+		{
+			NetworkDevice *dev;
+
+			if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, dev_path)))
+				network_device_set_act_stage (dev, stage);
+
+			if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, dev_path)))
+				network_device_set_act_stage (dev, stage);
+		}
+	}
 	else
 		handled = FALSE;
-
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }

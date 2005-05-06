@@ -83,7 +83,7 @@ void wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gi
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (item != NULL);
-	g_assert (network_device_get_type (dev) == DEVICE_TYPE_WIRED_ETHERNET);
+	g_assert (network_device_is_wired (dev));
 
 	dev_name = network_device_get_desc (dev) ? network_device_get_desc (dev) : network_device_get_iface (dev);
 
@@ -157,7 +157,7 @@ void wireless_menu_item_update (NMWirelessMenuItem *item, NetworkDevice *dev, co
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (item != NULL);
-	g_assert (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_assert (network_device_is_wireless (dev));
 
 	n_essids = network_device_get_num_wireless_networks (dev);
 	dev_name = network_device_get_desc (dev) ? network_device_get_desc (dev) : network_device_get_iface (dev);

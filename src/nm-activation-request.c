@@ -22,8 +22,10 @@
 
 #include <glib.h>
 #include <string.h>
+#include <dbus/dbus.h>
 #include "nm-activation-request.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerDbus.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 
@@ -160,16 +162,40 @@ void nm_act_request_set_ip4_config (NMActRequest *req, NMIP4Config *ip4_config)
 
 NMActStage nm_act_request_get_stage (NMActRequest *req)
 {
-	g_return_val_if_fail (req != NULL, ACT_STAGE_UNKNOWN);
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_UNKNOWN);
 
 	return req->stage;
 }
 
 void nm_act_request_set_stage (NMActRequest *req, NMActStage stage)
 {
+	DBusMessage *		message;
+	char *			dev_path;
+
 	g_return_if_fail (req != NULL);
 
 	req->stage = stage;
+
+	g_return_if_fail (req->data);
+	g_return_if_fail (req->dev);
+
+	if (!(dev_path = nm_dbus_get_object_path_for_device (req->dev)))
+		return;
+
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceActivationStage")))
+	{
+		nm_warning ("nm_act_request_set_stage(): Not enough memory for new dbus message!");
+		g_free (dev_path);
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_UINT32, &stage, DBUS_TYPE_INVALID);
+	g_free (dev_path);
+
+	if (!dbus_connection_send (req->data->dbus_connection, message, NULL))
+		nm_warning ("nm_act_request_set_stage(): Could not raise the signal!");
+
+	dbus_message_unref (message);
 }
 
 DBusPendingCall * nm_act_request_get_user_key_pending_call (NMActRequest *req)

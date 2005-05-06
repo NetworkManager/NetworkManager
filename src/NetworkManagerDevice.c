@@ -1827,7 +1827,7 @@ gboolean nm_device_activation_start (NMActRequest *req)
 
 	nm_info ("Activation (%s) started...", nm_device_get_iface (dev));
 
-	nm_act_request_set_stage (req, ACT_STAGE_DEVICE_PREPARE);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	nm_device_activate_schedule_stage1_device_prepare (req);
 
 	nm_schedule_state_change_signal_broadcast (data);
@@ -2011,7 +2011,7 @@ void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_DEVICE_PREPARE);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	nm_info ("Activation (%s) Stage 1 (Device Prepare) scheduled...", nm_device_get_iface (dev));
 
 	source = g_idle_source_new ();
@@ -2462,7 +2462,7 @@ static void nm_device_wireless_configure (NMActRequest *req)
 		nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) successful.  Connected to access point '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 		nm_device_activate_schedule_stage3_ip_config_start (req);
 	}
-	else if (!nm_device_activation_should_cancel (dev) && (nm_act_request_get_stage (req) != ACT_STAGE_NEED_USER_KEY))
+	else if (!nm_device_activation_should_cancel (dev) && (nm_act_request_get_stage (req) != NM_ACT_STAGE_NEED_USER_KEY))
 		nm_policy_schedule_activation_failed (req);
 }
 
@@ -2563,7 +2563,7 @@ void nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_DEVICE_CONFIG);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_CONFIG);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage2_device_config, req, NULL);
@@ -2643,7 +2643,7 @@ static void nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *re
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_IP_CONFIG_START);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_START);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage3_ip_config_start, req, NULL);
@@ -2775,7 +2775,7 @@ void nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_IP_CONFIG_GET);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
 	nm_info ("Activation (%s) Stage 4 (IP Configure Get) scheduled...", nm_device_get_iface (dev));
 
 	source = g_idle_source_new ();
@@ -2869,7 +2869,7 @@ void nm_device_activate_schedule_stage4_ip_config_timeout (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_IP_CONFIG_GET);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage4_ip_config_timeout, req, NULL);
@@ -2955,7 +2955,7 @@ static void nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *r
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_act_request_set_stage (req, ACT_STAGE_IP_CONFIG_COMMIT);
+	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_COMMIT);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage5_ip_config_commit, req, NULL);
@@ -2985,19 +2985,19 @@ gboolean nm_device_is_activating (NMDevice *dev)
 	stage = nm_act_request_get_stage (req);
 	switch (stage)
 	{
-		case ACT_STAGE_DEVICE_PREPARE:
-		case ACT_STAGE_DEVICE_CONFIG:
-		case ACT_STAGE_NEED_USER_KEY:
-		case ACT_STAGE_IP_CONFIG_START:
-		case ACT_STAGE_IP_CONFIG_GET:
-		case ACT_STAGE_IP_CONFIG_COMMIT:
+		case NM_ACT_STAGE_DEVICE_PREPARE:
+		case NM_ACT_STAGE_DEVICE_CONFIG:
+		case NM_ACT_STAGE_NEED_USER_KEY:
+		case NM_ACT_STAGE_IP_CONFIG_START:
+		case NM_ACT_STAGE_IP_CONFIG_GET:
+		case NM_ACT_STAGE_IP_CONFIG_COMMIT:
 			activating = TRUE;
 			break;
 
-		case ACT_STAGE_ACTIVATED:
-		case ACT_STAGE_FAILED:
-		case ACT_STAGE_CANCELLED:
-		case ACT_STAGE_UNKNOWN:
+		case NM_ACT_STAGE_ACTIVATED:
+		case NM_ACT_STAGE_FAILED:
+		case NM_ACT_STAGE_CANCELLED:
+		case NM_ACT_STAGE_UNKNOWN:
 		default:
 			break;
 	}
@@ -3059,12 +3059,12 @@ void nm_device_activation_cancel (NMDevice *dev)
 		dev->quit_activation = TRUE;
 
 		/* If the device is waiting for DHCP or a user key, force its current request to stop. */
-		if (nm_act_request_get_stage (req) == ACT_STAGE_NEED_USER_KEY)
+		if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
 		{
 			nm_dbus_cancel_get_user_key_for_network (dev->app_data->dbus_connection, req);
 			clear_act_request = TRUE;
 		}
-		else if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
+		else if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 		{
 			nm_dhcp_manager_cancel_transaction (dev->app_data->dhcp_manager, req);
 			clear_act_request = TRUE;

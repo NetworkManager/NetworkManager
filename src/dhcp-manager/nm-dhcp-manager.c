@@ -206,7 +206,7 @@ gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
 
 	nm_info ("Device '%s' DHCP transaction took too long (>25s), stopping it.", nm_device_get_iface (dev));
 
-	if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
+	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 	{
 		nm_act_request_set_dhcp_timeout (req, 0);
 		nm_dhcp_manager_cancel_transaction (data->dhcp_manager, req);
@@ -579,7 +579,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 					case 3:		/* RENEW */
 					case 4:		/* REBOOT */
 					case 5:		/* REBIND */
-						if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
+						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_get (req);
 							remove_timeout (manager, req);
@@ -587,7 +587,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 						break;
 
 					case 8:		/* TIMEOUT - timed out trying to contact server */
-						if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
+						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_timeout (req);
 							remove_timeout (manager, req);
@@ -597,7 +597,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 					case 9:		/* FAIL */
 					case 13:		/* ABEND */
 //					case 14:		/* END */
-						if (nm_act_request_get_stage (req) == ACT_STAGE_IP_CONFIG_START)
+						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_policy_schedule_activation_failed (req);
 							remove_timeout (manager, req);
