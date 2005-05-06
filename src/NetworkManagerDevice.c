@@ -525,8 +525,11 @@ void nm_device_worker_thread_stop (NMDevice *dev)
 
 	if (dev->loop)
 		g_main_loop_quit (dev->loop);
-	g_thread_join(dev->worker);
-	dev->worker = NULL;
+	if (dev->worker)
+	{
+		g_thread_join (dev->worker);
+		dev->worker = NULL;
+	}
 }
 
 
@@ -678,24 +681,35 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 		}
 		else if (link_active && !nm_device_get_act_request (dev))
 		{
-			NMDevice *act_dev = nm_get_active_device (dev->app_data);
+			NMDevice *	act_dev = nm_get_active_device (dev->app_data);
+			NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
 
-			/* If there is no currently active device, or the currently active device
-			 * is wireless, and the device that's had the link change->active is wired,
-			 * activate the wired device.
+			/* Should we switch to this device now that it has a link?
+			 *
+			 * Only auto-switch for wired devices, AND...
+			 *
+			 * only switch to fully-supported devices, since ones that don't have carrier detection
+			 * capability usually report the carrier as "always on" even if its not really on.  User
+			 * must manually choose semi-supported devices.
+			 *
 			 */
-			if (    nm_device_is_wired (dev)
-				&& ((act_dev && nm_device_is_wireless (act_dev)) || !act_dev))
+			if (nm_device_is_wired (dev) && (nm_device_get_driver_support_level (dev) == NM_DRIVER_FULLY_SUPPORTED))
 			{
-				NMActRequest *act_req = nm_act_request_new (dev->app_data, dev, NULL, TRUE); /* TRUE = user requested */
+				gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
+				NMActRequest *	act_req;
 
-				if (act_req)
+				/* If active device is wireless, switch to this one */
+				if (act_dev && nm_device_is_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
+					do_switch = TRUE;
+
+				if (do_switch && (act_req = nm_act_request_new (dev->app_data, dev, NULL, TRUE)))
 				{
 					nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (dev));
 					nm_policy_schedule_device_activation (act_req);
 				}
 			}
 		}
+		nm_dbus_schedule_device_status_change_signal	(dev->app_data, dev, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 	}
 }
 
@@ -984,7 +998,10 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 	nm_info ("%s: About to SET IWESSID.", nm_device_get_iface (dev));
 #endif
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWESSID, &wreq)) == -1)
-			nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
+		{
+			if (errno != ENODEV)
+				nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d", safe_essid, nm_device_get_iface (dev), errno);
+		}
 
 		nm_dev_sock_close (sk);
 
@@ -1318,7 +1335,10 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 	nm_info ("%s: About to SET IWENCODE.", nm_device_get_iface (dev));
 #endif
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWENCODE, &wreq) == -1)
-				nm_warning ("nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			{
+				if (errno != ENODEV)
+					nm_warning ("nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+			}
 		}
 
 		nm_dev_sock_close (sk);
@@ -1569,7 +1589,7 @@ static void nm_device_set_up_down (NMDevice *dev, gboolean up)
  */
 gboolean nm_device_is_up (NMDevice *dev)
 {
-	NMSock		*sk;
+	NMSock *		sk;
 	struct ifreq	ifr;
 	int			err;
 
@@ -1591,8 +1611,10 @@ gboolean nm_device_is_up (NMDevice *dev)
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
-	nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
-	return (FALSE);
+	if (errno != ENODEV)
+		nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", nm_device_get_iface (dev), errno );
+
+	return FALSE;
 }
 
 /* I really wish nm_v_wait_for_completion_or_timeout could translate these
@@ -1782,10 +1804,13 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWMODE, &wreq) == 0)
 				success = TRUE;
 			else
-				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
-					nm_device_get_iface (dev),
-					mode == NETWORK_MODE_INFRA ? "Infrastructure" : (mode == NETWORK_MODE_ADHOC ? "adhoc" : "unknown"),
-					errno);
+			{
+				if (errno != ENODEV)
+					nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
+						nm_device_get_iface (dev),
+						mode == NETWORK_MODE_INFRA ? "Infrastructure" : (mode == NETWORK_MODE_ADHOC ? "adhoc" : "unknown"),
+						errno);
+			}
 		}
 		nm_dev_sock_close (sk);
 	}
@@ -1831,7 +1856,7 @@ gboolean nm_device_activation_start (NMActRequest *req)
 	nm_device_activate_schedule_stage1_device_prepare (req);
 
 	nm_schedule_state_change_signal_broadcast (data);
-	nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ACTIVATING);
+	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ACTIVATING);
 
 	return TRUE;
 }
@@ -3108,6 +3133,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 
 	if (dev->act_request)
 	{
+		nm_dhcp_manager_cancel_transaction (dev->app_data->dhcp_manager, dev->act_request);
 		nm_act_request_unref (dev->act_request);
 		dev->act_request = NULL;
 	}
@@ -3131,7 +3157,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	nm_device_update_ip4_address (dev);
 
 	if (!just_added)
-		nm_dbus_signal_device_status_change (dev->app_data->dbus_connection, dev, DEVICE_NO_LONGER_ACTIVE);
+		nm_dbus_schedule_device_status_change_signal (dev->app_data, dev, NULL, DEVICE_NO_LONGER_ACTIVE);
 
 	/* Clean up stuff, don't leave the card associated */
 	if (nm_device_is_wireless (dev))

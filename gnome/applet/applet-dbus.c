@@ -420,7 +420,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	if (!(interface = dbus_message_get_interface (message)))
 		return FALSE;
 
-/*	nm_info ("signal(): got signal op='%s' member='%s' interface='%s'", object_path, member, interface); */
+	/* nm_info ("signal(): got signal op='%s' member='%s' interface='%s'", object_path, member, interface); */
 
 	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
@@ -481,7 +481,9 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceAdded")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
-			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating"))
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceCarrierOn")
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceCarrierOff"))
 	{
 		char *path = NULL;
 
@@ -584,10 +586,10 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		{
 			NetworkDevice *dev;
 
-			if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, dev_path)))
+			if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
 				network_device_set_act_stage (dev, stage);
 
-			if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, dev_path)))
+			if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, dev_path)))
 				network_device_set_act_stage (dev, stage);
 		}
 	}

@@ -532,12 +532,13 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	DriverNotifyCBData *	cb_data = (DriverNotifyCBData *)(user_data);
 	NetworkDevice *		dev;
 	NMWirelessApplet *		applet;
-	GtkDialog *			dialog;
+	GtkWidget *			dialog;
 	GtkLabel *			label;
 	char *				label_text = NULL;
 	char *				temp = NULL;
 	GtkButton *			button;
 	NMDriverSupportLevel	support_level;
+	guint32				timestamp;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 
@@ -559,7 +560,7 @@ gboolean nmwa_driver_notify (gpointer user_data)
 		goto out;
 	}
 
-	dialog = GTK_DIALOG (glade_xml_get_widget (cb_data->xml, "driver_sucks_dialog"));
+	dialog = glade_xml_get_widget (cb_data->xml, "driver_sucks_dialog");
 	g_signal_connect (G_OBJECT (dialog), "destroy-event", GTK_SIGNAL_FUNC (nmwa_driver_notify_dialog_destroy_cb), cb_data);
 	g_signal_connect (G_OBJECT (dialog), "delete-event", GTK_SIGNAL_FUNC (nmwa_driver_notify_dialog_delete_cb), cb_data);
 
@@ -592,6 +593,10 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	g_signal_connect (G_OBJECT (button), "clicked", GTK_SIGNAL_FUNC (nmwa_driver_notify_ok_cb), cb_data);
 
 	gtk_widget_show_all (GTK_WIDGET (dialog));
+
+	/* Bash focus-stealing prevention in the face */
+	timestamp = gdk_x11_get_server_time (dialog->window);
+	gdk_x11_window_set_user_time (dialog->window, timestamp);
 
 out:
 	network_device_unref (cb_data->dev);
@@ -703,7 +708,7 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 			if (network_device_is_wired (dev))
 				*tip = g_strdup_printf (_("Configuring device %s for the wired network..."), iface);
 			else if (network_device_is_wireless (dev))
-				*tip = g_strdup_printf (_("Configuring device %s for the wireless network '%s'..."), iface, essid);
+				*tip = g_strdup_printf (_("Attempting to join the wireless network '%s'..."), essid);
 			return applet->progress_icons[3];
 		}
 
@@ -964,18 +969,18 @@ static void nmwa_update_network_timestamp (NMWirelessApplet *applet, WirelessNet
  * NetworkManager ID given.
  *
  */
-NetworkDevice *nmwa_get_device_for_nm_device (GSList *dev_list, const char *nm_dev)
+NetworkDevice *nmwa_get_device_for_nm_path (GSList *dev_list, const char *nm_path)
 {
 	NetworkDevice	*found_dev = NULL;
 	GSList		*elt;
 
-	g_return_val_if_fail (nm_dev != NULL, NULL);
-	g_return_val_if_fail (strlen (nm_dev), NULL);
+	g_return_val_if_fail (nm_path != NULL, NULL);
+	g_return_val_if_fail (strlen (nm_path), NULL);
 
 	for (elt = dev_list; elt; elt = g_slist_next (elt))
 	{
 		NetworkDevice	*dev = (NetworkDevice *)(elt->data);
-		if (dev && (strcmp (network_device_get_nm_path (dev), nm_dev) == 0))
+		if (dev && (strcmp (network_device_get_nm_path (dev), nm_path) == 0))
 		{
 			found_dev = dev;
 			break;
@@ -1002,34 +1007,25 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
 
+	if (!(tag = g_object_get_data (G_OBJECT (item), "device")))
+		return;
+
+	g_mutex_lock (applet->data_mutex);
+	if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, tag)))
+		network_device_ref (dev);
+	g_mutex_unlock (applet->data_mutex);
+
+	if (!dev)
+		return;
+
 	if ((tag = g_object_get_data (G_OBJECT (item), "network")))
 	{
-		char	*item_dev = g_object_get_data (G_OBJECT (item), "nm_device");
-
-		g_mutex_lock (applet->data_mutex);
-		if (item_dev && (dev = nmwa_get_device_for_nm_device (applet->gui_device_list, item_dev)))
-		{
-			network_device_ref (dev);
-			g_mutex_unlock (applet->data_mutex);
-			if ((net = network_device_get_wireless_network_by_essid (dev, tag)))
-				nmwa_update_network_timestamp (applet, net);
-		}
-		else
-			g_mutex_unlock (applet->data_mutex);
-	}
-	else if ((tag = g_object_get_data (G_OBJECT (item), "device")))
-	{
-		g_mutex_lock (applet->data_mutex);
-		dev = nmwa_get_device_for_nm_device (applet->gui_device_list, tag);
-		network_device_ref (dev);
-		g_mutex_unlock (applet->data_mutex);
+		if ((net = network_device_get_wireless_network_by_essid (dev, tag)))
+			nmwa_update_network_timestamp (applet, net);
 	}
 
-	if (dev)
-	{
-		nmwa_dbus_set_device (applet->connection, dev, wireless_network_get_essid (net), -1, NULL);
-		network_device_unref (dev);
-	}
+	nmwa_dbus_set_device (applet->connection, dev, net ? wireless_network_get_essid (net) : NULL, -1, NULL);
+	network_device_unref (dev);
 }
 
 
@@ -1140,7 +1136,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 			if (network_device_get_active (device))
 				gtk_check_menu_item_set_active (gtk_item, TRUE);
 
-			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_iface (device)));
+			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (device)));
 			g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
 			g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
 
@@ -1155,7 +1151,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 			GtkMenuItem *gtk_item = wireless_menu_item_get_item (item);
 		     wireless_menu_item_update (item, device, n_devices);
 
-			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_iface (device)));
+			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (device)));
 			g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
 			g_signal_connect(G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), applet);
 
@@ -1245,7 +1241,7 @@ void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointe
 	network_menu_item_update (item, net, cb_data->has_encrypted);
 
 	g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (wireless_network_get_essid (net)));
-	g_object_set_data (G_OBJECT (gtk_item), "nm_device", g_strdup (network_device_get_nm_path (dev)));
+	g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (dev)));
 	g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
 	g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nmwa_menu_item_activate), cb_data->applet);
 
@@ -1469,12 +1465,6 @@ static void nmwa_menu_item_data_free (GtkWidget *menu_item, gpointer data)
 	if ((tag = g_object_get_data (G_OBJECT (menu_item), "network")))
 	{
 		g_object_set_data (G_OBJECT (menu_item), "network", NULL);
-		g_free (tag);
-	}
-
-	if ((tag = g_object_get_data (G_OBJECT (menu_item), "nm_device")))
-	{
-		g_object_set_data (G_OBJECT (menu_item), "nm_device", NULL);
 		g_free (tag);
 	}
 

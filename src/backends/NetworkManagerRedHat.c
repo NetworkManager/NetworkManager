@@ -360,7 +360,7 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	sys_data = g_malloc0 (sizeof (RHSystemConfigData));
 	sys_data->use_dhcp = TRUE;
 
-	cfg_file_path = g_strdup_printf ("/etc/sysconfig/network-scripts/ifcfg-%s", nm_device_get_iface (dev));
+	cfg_file_path = g_strdup_printf (SYSCONFDIR"/sysconfig/network-scripts/ifcfg-%s", nm_device_get_iface (dev));
 	if (!cfg_file_path)
 		return sys_data;
 

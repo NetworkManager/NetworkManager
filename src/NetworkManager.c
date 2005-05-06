@@ -136,7 +136,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 			nm_policy_schedule_device_change_check (data);
-			nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_ADDED);
+			nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ADDED);
 		}
 		else
 		{
@@ -178,7 +178,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				nm_device_set_removed (dev, TRUE);
 				nm_device_deactivate (dev, FALSE);
 				nm_device_worker_thread_stop (dev);
-				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_REMOVED);
+				nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
 
 				nm_device_unref (dev);
 

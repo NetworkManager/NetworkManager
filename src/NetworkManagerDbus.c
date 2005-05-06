@@ -165,190 +165,121 @@ NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
 }
 
 
-typedef struct NMNetNotFoundData
-{
-	NMData	*app_data;
-	char		*net;
-} NMNetNotFoundData;
-
-/*
- * nm_dbus_send_network_not_found
- *
- * Tell the info-daemon to alert the user that a requested network was
- * not found.
- *
- */
-static gboolean nm_dbus_send_network_not_found (gpointer user_data)
-{
-	NMNetNotFoundData	*cb_data = (NMNetNotFoundData *)user_data;
-	DBusMessage		*message;
-
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-
-	if (!cb_data->app_data || !cb_data->app_data->dbus_connection || !cb_data->net)
-		goto out;
-
-	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH,
-						NMI_DBUS_INTERFACE, "networkNotFound");
-	if (message == NULL)
-	{
-		nm_warning ("nm_dbus_send_network_not_found(): Couldn't allocate the dbus message");
-		goto out;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &cb_data->net, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (cb_data->app_data->dbus_connection, message, NULL))
-		nm_warning ("nm_dbus_send_network_not_found(): could not send dbus message");
-
-	dbus_message_unref (message);
-
-out:
-	g_free (cb_data);
-	return (FALSE);
-}
-
-
-void nm_dbus_schedule_network_not_found_signal (NMData *data, const char *network)
-{
-	NMNetNotFoundData	*cb_data;
-	GSource			*source;
-
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (network != NULL);
-
-	cb_data = g_malloc0 (sizeof (NMNetNotFoundData));
-	cb_data->app_data = data;
-	cb_data->net = g_strdup (network);
-	
-	source = g_idle_source_new ();
-	g_source_set_callback (source, nm_dbus_send_network_not_found, cb_data, NULL);
-	g_source_attach (source, data->main_context);
-	g_source_unref (source);
-}
-
-
 /*-------------------------------------------------------------*/
 /* Handler code */
 /*-------------------------------------------------------------*/
 
 typedef struct NMStatusChangeData
 {
-	NMDevice		*dev;
-	DeviceStatus	 status;
+	NMData *			data;
+	NMDevice *		dev;
+	NMAccessPoint *	ap;
+	DeviceStatus	 	status;
 } NMStatusChangeData;
 
 
-static gboolean nm_dbus_device_status_change_helper (gpointer user_data)
+typedef struct
 {
-	NMStatusChangeData	*data = (NMStatusChangeData *)user_data;
-	NMData			*app_data;
+	DeviceStatus	status;
+	const char *	signal;
+} DeviceStatusSignals;
 
-	g_return_val_if_fail (data != NULL, FALSE);
-
-	if (!data->dev || !nm_device_get_app_data (data->dev))
-		goto out;
-
-	app_data = nm_device_get_app_data (data->dev);
-	nm_dbus_signal_device_status_change (app_data->dbus_connection, data->dev, data->status);
-
-out:
-	g_free (data);
-	return FALSE;
-}
-
-void nm_dbus_schedule_device_status_change (NMDevice *dev, DeviceStatus status)
+static DeviceStatusSignals dev_status_signals[] = 
 {
-	NMStatusChangeData	*data = NULL;
-	GSource			*source;
-	guint			 source_id = 0;
-	NMData			*app_data;
-
-	g_return_if_fail (dev != NULL);
-
-	app_data = nm_device_get_app_data (dev);
-	g_return_if_fail (app_data != NULL);
-	
-	data = g_malloc0 (sizeof (NMStatusChangeData));
-	data->dev = dev;
-	data->status = status;
-
-	source = g_idle_source_new ();
-	g_source_set_callback (source, nm_dbus_device_status_change_helper, data, NULL);
-	source_id = g_source_attach (source, app_data->main_context);
-	g_source_unref (source);
-}
-
+	{ DEVICE_NO_LONGER_ACTIVE, 	"DeviceNoLongerActive"	},
+	{ DEVICE_NOW_ACTIVE,		"DeviceNowActive"		},
+	{ DEVICE_ACTIVATING,		"DeviceActivating"		},
+	{ DEVICE_ACTIVATION_FAILED,	"DeviceActivationFailed"	},
+	{ DEVICE_ADDED,			"DeviceAdded"			},
+	{ DEVICE_REMOVED,			"DeviceRemoved"		},
+	{ DEVICE_CARRIER_ON,		"DeviceCarrierOn"		},
+	{ DEVICE_CARRIER_OFF,		"DeviceCarrierOff"		},
+	{ DEVICE_STATUS_INVALID,		NULL					}
+};
 
 /*
  * nm_dbus_signal_device_status_change
  *
- * Notifies the bus that a particular device has had a status change, either
- * active or no longer active
+ * Notifies the bus that a particular device has had a status change
  *
  */
-void nm_dbus_signal_device_status_change (DBusConnection *connection, NMDevice *dev, DeviceStatus status)
+static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 {
+	NMStatusChangeData *cb_data = (NMStatusChangeData *)user_data;
 	DBusMessage *		message;
 	char *			dev_path;
 	const char *		signal = NULL;
-	NMAccessPoint *	ap = NULL;
+	int				i = 0;
 
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (dev != NULL);
+	g_return_val_if_fail (cb_data->data, FALSE);
+	g_return_val_if_fail (cb_data->data->dbus_connection, FALSE);
+	g_return_val_if_fail (cb_data->dev, FALSE);
 
-	if (!(dev_path = nm_dbus_get_object_path_for_device (dev)))
-		return;
+	while ((dev_status_signals[i].status != DEVICE_STATUS_INVALID) && (dev_status_signals[i].status != cb_data->status))
+		i++;
 
-	switch (status)
-	{
-		case DEVICE_NO_LONGER_ACTIVE:
-			signal = "DeviceNoLongerActive";
-			break;
-		case DEVICE_NOW_ACTIVE:
-			signal = "DeviceNowActive";
-			break;
-		case DEVICE_ACTIVATING:
-			signal = "DeviceActivating";
-			break;
-		case DEVICE_ACTIVATION_FAILED:
-			signal = "DeviceActivationFailed";
-			break;
-		case DEVICE_ADDED:
-			signal = "DeviceAdded";
-			break;
-		case DEVICE_REMOVED:
-			signal = "DeviceRemoved";
-			break;
-		default:
-			nm_warning ("nm_dbus_signal_device_status_change(): got a bad signal name");
-			return;
-	}
+	if (!(signal = dev_status_signals[i].signal))
+		return FALSE;
+
+	if (!(dev_path = nm_dbus_get_object_path_for_device (cb_data->dev)))
+		return FALSE;
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, signal)))
 	{
 		nm_warning ("nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
-		return;
+		return FALSE;
 	}
 
 	/* If the device was wireless, attach the name of the wireless network that failed to activate */
-	if (ap && nm_ap_get_essid (ap))
+	if (cb_data->ap)
 	{
-		const char *essid = nm_ap_get_essid (ap);
-		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
+		const char *essid = nm_ap_get_essid (cb_data->ap);
+		if (essid)
+			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
+		nm_ap_unref (cb_data->ap);
 	}
 	else
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 
-	if (ap)
-		nm_ap_unref (ap);
-
 	g_free (dev_path);
 
-	if (!dbus_connection_send (connection, message, NULL))
+	if (!dbus_connection_send (cb_data->data->dbus_connection, message, NULL))
 		nm_warning ("nm_dbus_signal_device_status_change(): Could not raise the signal!");
 
 	dbus_message_unref (message);
+
+	nm_device_unref (cb_data->dev);
+	g_free (cb_data);
+
+	return FALSE;
+}
+
+
+void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status)
+{
+	NMStatusChangeData	*cb_data = NULL;
+	GSource			*source;
+
+	g_return_if_fail (data != NULL);
+	g_return_if_fail (dev != NULL);
+
+	cb_data = g_malloc0 (sizeof (NMStatusChangeData));
+	nm_device_ref (dev);
+	cb_data->data = data;
+	cb_data->dev = dev;
+	if (ap)
+	{
+		nm_ap_ref (ap);
+		cb_data->ap = ap;
+	}
+	cb_data->status = status;
+
+	source = g_idle_source_new ();
+	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	g_source_set_callback (source, nm_dbus_signal_device_status_change, cb_data, NULL);
+	g_source_attach (source, data->main_context);
+	g_source_unref (source);
 }
 
 

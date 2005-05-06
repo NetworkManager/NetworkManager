@@ -718,7 +718,7 @@ void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		NetworkDevice *	dev;
 
-		if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, cb_data->dev_op)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, cb_data->dev_op)))
 		{
 			WirelessNetwork *	net = wireless_network_new (essid, op);
 			WirelessNetwork *	tmp_net;
@@ -798,7 +798,7 @@ void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *
 	g_return_if_fail (dev_path != NULL);
 	g_return_if_fail (net_path != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, dev_path)))
+	if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
 	{
 		WirelessNetwork *	net;
 
@@ -871,7 +871,7 @@ void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *dev = network_device_new (iface, type, op);
-		NetworkDevice *tmp_dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, op);
+		NetworkDevice *tmp_dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, op);
 
 		network_device_set_hal_udi (dev, udi);
 		network_device_set_address (dev, hw_addr);
@@ -1033,7 +1033,7 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
 
 	g_return_if_fail (applet != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, dev_path)))
+	if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
 	{
 		applet->dbus_device_list = g_slist_remove (applet->dbus_device_list, dev);
 		network_device_unref (dev);
@@ -1057,7 +1057,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if (network_device_is_wired (dev) && !passphrase && (key_type != -1))
+	if (network_device_is_wireless (dev) && !passphrase && (key_type != -1))
 		return;
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
@@ -1224,11 +1224,11 @@ void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_dat
 		NetworkDevice *dev;
 
 		/* Update strength on dbus active device */
-		if ((dev = nmwa_get_device_for_nm_device (applet->dbus_device_list, cb_data->dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, cb_data->dev_path)))
 			network_device_set_strength (dev, strength);
 
 		/* Update strength on gui active device too */
-		if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, cb_data->dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, cb_data->dev_path)))
 			network_device_set_strength (dev, strength);
 	}
 	dbus_message_unref (reply);

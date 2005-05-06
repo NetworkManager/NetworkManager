@@ -31,13 +31,16 @@
 
 typedef enum
 {
+	DEVICE_STATUS_INVALID,
 	DEVICE_NOW_ACTIVE,
 	DEVICE_NO_LONGER_ACTIVE,
 	DEVICE_ACTIVATING,
 	DEVICE_ACTIVATION_FAILED,
 	DEVICE_ACTIVATION_CANCELED,
 	DEVICE_ADDED,
-	DEVICE_REMOVED
+	DEVICE_REMOVED,
+	DEVICE_CARRIER_ON,
+	DEVICE_CARRIER_OFF
 } DeviceStatus;
 
 
@@ -57,10 +60,7 @@ char *		get_name_owner						(DBusConnection *con, const char *name);
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
 char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
 
-void			nm_dbus_schedule_device_status_change	(NMDevice *dev, DeviceStatus status);
-void			nm_dbus_signal_device_status_change	(DBusConnection *connection, NMDevice *dev, DeviceStatus status);
-
-void			nm_dbus_schedule_network_not_found_signal	(NMData *data, const char *network);
+void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status);
 
 void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 

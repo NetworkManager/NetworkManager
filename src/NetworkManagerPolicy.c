@@ -138,7 +138,7 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 			 * that failed, not one that we've automatically found and connected to.
 			 */
 			if (nm_act_request_get_user_requested (req))
-				nm_dbus_schedule_network_not_found_signal (data, nm_ap_get_essid (ap));
+				nm_dbus_schedule_device_status_change_signal	(data, dev, ap, DEVICE_ACTIVATION_FAILED);
 
 			/* Add the AP to the invalid list and force a best ap update */
 			nm_ap_set_invalid (ap, TRUE);
@@ -149,7 +149,10 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 				ap ? nm_ap_get_essid (ap) : "(none)");
 	}
 	else
+	{
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
+		nm_dbus_schedule_device_status_change_signal	(data, dev, NULL, DEVICE_ACTIVATION_FAILED);
+	}
 
 	nm_device_deactivate (dev, FALSE);
 	nm_schedule_state_change_signal_broadcast (data);
@@ -218,8 +221,8 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		guint	 prio = 0;
 		NMDevice	*dev = (NMDevice *)(elt->data);
 
-		/* Skip unsupported devices */
-		if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+		/* Skip devices that can't do carrier detect or can't do wireless scanning */
+		if (nm_device_get_driver_support_level (dev) != NM_DRIVER_FULLY_SUPPORTED)
 			continue;
 
 		dev_type = nm_device_get_type (dev);
@@ -315,11 +318,24 @@ static gboolean nm_policy_device_change_check (NMData *data)
 	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		return FALSE;
 
-	/* Don't interrupt a currently activating device. */
-	if (old_dev && nm_device_is_activating (old_dev))
+	if (old_dev)
 	{
-		nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
-		goto out;
+		/* Don't interrupt a currently activating device. */
+		if (nm_device_is_activating (old_dev))
+		{
+			nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
+			goto out;
+		}
+
+		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
+		 * explicitly choose to move to another device, we're not going to move for them.
+		 */
+		if (nm_device_get_driver_support_level (old_dev) != NM_DRIVER_FULLY_SUPPORTED)
+		{
+			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
+				nm_device_get_iface (old_dev));
+			goto out;
+		}
 	}
 
 	new_dev = nm_policy_auto_get_best_device (data, &ap);

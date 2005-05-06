@@ -143,7 +143,7 @@ typedef struct
 	GladeXML *		xml;
 } DriverNotifyCBData;
 
-NetworkDevice *	nmwa_get_device_for_nm_device			(GSList *dev_list, const char *nm_dev);
+NetworkDevice *	nmwa_get_device_for_nm_path			(GSList *dev_list, const char *nm_dev);
 NMWirelessApplet *	nmwa_new							(void);
 void				nmwa_schedule_warning_dialog			(NMWirelessApplet *applet, const char *msg);
 gboolean			nmwa_driver_notify					(gpointer user_data);

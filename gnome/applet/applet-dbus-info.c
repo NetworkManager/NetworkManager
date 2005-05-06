@@ -72,7 +72,7 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 		WirelessNetwork *net = NULL;
 
 		g_mutex_lock (applet->data_mutex);
-		if ((dev = nmwa_get_device_for_nm_device (applet->gui_device_list, dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, dev_path)))
 		{
 			if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
 				success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);

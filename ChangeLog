@@ -1,3 +1,63 @@
+2005-05-06  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-device.c
+	  gnome/applet/applet-dbus-info.c
+	  gnome/applet/applet-dbus.c
+	  gnome/applet/applet.c
+	  gnome/applet/applet.h
+		- (nmwa_get_device_for_nm_device) -> (nmwa_get_device_for_nm_path)
+
+	* gnome/applet/applet-dbus.c
+		- (nmwa_dbus_filter): trap DeviceCarrierOn/DeviceCarrierOff signals
+			so we notice when wired device's carriers come back on.  Should
+			fix issue with wired devices being grayed out even if the cable
+			is in, for devices that support carrier detection.
+
+	* gnome/applet/applet.c
+		- (nmwa_driver_notify): bash focus-stealing prevention in the face
+		- (nmwa_act_stage_to_pixbuf): Clarify wireless ACT_STAGE_DEVICE_CONFIG
+			tooltip message
+		- (nmwa_menu_item_activate, nmwa_menu_add_device_item, nmwa_menu_item_data_free):
+			Fix situation where applet wouldn't respond to menu selections
+
+	* src/NetworkManager.c
+	  src/NetworkManagerDevice.c
+	  src/NetworkManagerDbus.c
+	  src/NetworkManagerDbus.h
+		- (nm_dbus_signal_device_status_change) -> (nm_dbus_schedule_device_status_change_signal)
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_send_network_not_found, nm_dbus_schedule_network_not_found_signal):
+			Remove, no longer used or relevant
+		- (nm_dbus_signal_device_status_change): Better signal enum->string matching
+		- (nm_dbus_schedule_device_status_change_signal): add
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_worker_thread_stop): don't try to join a NULL worker thread
+		- (nm_device_set_link_active): Fix up switching for non-carrier-detect devices,
+			ie don't deactivate them unless explicitly told to by the user.  Also send
+			CARRIER_OFF / CARRIER_ON signals when link changes
+		- (nm_device_set_essid, nm_device_set_enc_key, nm_device_is_up, nm_device_set_mode):
+			Don't print error message when device is no longer around
+		- (nm_device_deactivate): kill any current DHCP process attached to this device,
+			not just during activation
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): Ignore semi-supported devices completely from
+			auto-device-selection.
+		- (nm_policy_device_change_check): Don't interrupt semi-supported devices
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_up_down_with_iface): Quiet first warning message when device
+			is no longer present (Bill Moss)
+
+	* src/backends/shvar.c
+		- (svOpenFile): Open read-only to make SELinux happy
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_device_get_system_config): Use SYSCONFDIR rather than hardcoding
+			the path to the ifcfg-* files
+
 2005-05-05  Dan Williams  <dcbw@redhat.com>
 
 	* Expose activation stages to NetworkManager clients, like the applet

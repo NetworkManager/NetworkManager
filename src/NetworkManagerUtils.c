@@ -432,9 +432,10 @@ static driver_support wired_driver_blacklist[] =
 /*
  * nm_get_device_driver_name
  *
+ * Get the device's driver name from HAL.
  *
  */
-char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
+static char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
 {
 	char	*udi = NULL;
 	char	*driver_name = NULL;

@@ -282,7 +282,10 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 	memset (&ifr, 0, sizeof (struct ifreq));
 	memcpy (ifr.ifr_name, iface, strlen (iface));
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr) == -1)
-		nm_warning ("nm_system_device_set_up_down_with_iface() could not get flags for device %s.  errno = %d", iface, errno );
+	{
+		if (errno != ENODEV)
+			nm_warning ("nm_system_device_set_up_down_with_iface() could not get flags for device %s.  errno = %d", iface, errno );
+	}
 	else
 	{
 		/* If the interface doesn't have those flags already, set them on it. */
