@@ -1,5 +1,12 @@
 2005-05-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerWireless.c
+		- (nm_wireless_qual_to_percent): Fix #if -> #ifdef, print out the "updated"
+			value of WEXT quality structures, and add a debug message when we cannot
+			determine any quality % at all
+
+2005-05-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- (nm_dhcp_manager_begin_transaction): Tell dhclient to release leases when
 			it goes down.

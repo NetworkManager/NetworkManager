@@ -140,10 +140,16 @@ int nm_wireless_qual_to_percent (const struct iw_quality *qual, const struct iw_
 	g_return_val_if_fail (max_qual != NULL, -1);
 	g_return_val_if_fail (avg_qual != NULL, -1);
 
-#if IW_QUAL_DEBUG
-nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X",
-(__s8)qual->qual, qual->qual, qual->qual, (__s8)qual->level, qual->level, qual->level, (__s8)qual->noise, qual->noise, qual->noise,
-(__s8)max_qual->qual, max_qual->qual, max_qual->qual, (__s8)max_qual->level, max_qual->level, max_qual->level, (__s8)max_qual->noise, max_qual->noise, max_qual->noise);
+#ifdef IW_QUAL_DEBUG
+nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X  ** MAX: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X, updated: 0x%X",
+(__s8)qual->qual, qual->qual, qual->qual,
+(__s8)qual->level, qual->level, qual->level,
+(__s8)qual->noise, qual->noise, qual->noise,
+qual->updated,
+(__s8)max_qual->qual, max_qual->qual, max_qual->qual,
+(__s8)max_qual->level, max_qual->level, max_qual->level,
+(__s8)max_qual->noise, max_qual->noise, max_qual->noise,
+max_qual->updated);
 #endif
 
 	/* Try using the card's idea of the signal quality first as long as it tells us what the max quality is.
@@ -192,7 +198,7 @@ nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual
 		level_percent = (int)(100 - 70 *(
 						((double)max_level - (double)level) /
 						((double)max_level - (double)noise)));
-#if IW_QUAL_DEBUG
+#ifdef IW_QUAL_DEBUG
 		nm_debug ("QL1: level_percent is %d.  max_level %d, level %d, noise_floor %d.", level_percent, max_level, level, noise);
 #endif
 	}
@@ -206,8 +212,14 @@ nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual
 		/* Signal level is relavtive (0 -> max_qual->level) */
 		level = CLAMP (level, 0, max_qual->level);
 		level_percent = (int)(100 * ((double)level / (double)max_qual->level));
-#if IW_QUAL_DEBUG
+#ifdef IW_QUAL_DEBUG
 		nm_debug ("QL2: level_percent is %d.  max_level %d, level %d.", level_percent, max_qual->level, level);
+#endif
+	}
+	else if (percent == -1)
+	{
+#ifdef IW_QUAL_DEBUG
+		nm_debug ("QL: Could not get quality %% value from driver.  Driver is probably buggy.");
 #endif
 	}
 
@@ -215,7 +227,7 @@ nm_debug ("QL: qual %d/%u/0x%X, level %d/%u/0x%X, noise %d/%u/0x%X  ** MAX: qual
 	if ((percent < 1) && (level_percent >= 0))
 		percent = level_percent;
 
-#if IW_QUAL_DEBUG
+#ifdef IW_QUAL_DEBUG
 	nm_debug ("QL: Final quality percent is %d (%d).", percent, CLAMP (percent, 0, 100));
 #endif
 	return (CLAMP (percent, 0, 100));
