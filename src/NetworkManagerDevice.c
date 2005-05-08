@@ -847,17 +847,18 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
-		return (nm_device_has_active_link (dev));
+		return nm_device_has_active_link (dev);
 
 	if (dev->removed)
 		return FALSE;
 
 	carrier_path = g_strdup_printf ("/sys/class/net/%s/carrier", dev->iface);
-	if (g_file_get_contents (carrier_path, &contents, &length, NULL)) {
+	if (g_file_get_contents (carrier_path, &contents, &length, NULL))
+	{
 		link = (gboolean) atoi (contents);
 		g_free (contents);
 	}
-	g_free(carrier_path);
+	g_free (carrier_path);
 
 	/* We say that non-carrier-detect devices always have a link, because
 	 * they never get auto-selected by NM.  User has to force them on us,
@@ -2953,13 +2954,14 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 			if ((tmp_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
 				nm_ap_set_auth_method (tmp_ap, nm_ap_get_auth_method (ap));
 		}
+
 		nm_policy_schedule_activation_finish (req);
+		nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 	}
 	else
 		nm_policy_schedule_activation_failed (req);
 
 out:
-	nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 	nm_info ("Activation (%s) Stage 5 (IP Configure Commit) complete.", nm_device_get_iface (dev));
 	return FALSE;
 }
@@ -3054,7 +3056,7 @@ static gboolean nm_ac_test (int tries, nm_completion_args args)
 	if (nm_device_is_activating (dev))
 	{
 		if (tries % 20 == 0)
-			nm_debug ("Activation (%s/wireless): waiting on dhcp to cease or device to finish activation", nm_device_get_iface(dev));
+			nm_info ("Activation (%s): waiting for device to cancel activation.", nm_device_get_iface(dev));
 		return FALSE;
 	}
 

@@ -1,5 +1,21 @@
 2005-05-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): Don't set NM_ACT_STAGE_ACTIVATED here, instead...
+		- (nm_policy_schedule_activation_finish): Set NM_ACT_STAGE_ACTIVATED here to
+			fix a situation where NM is told to terminate and the device stops activation,
+			but the main thread isn't aware of that because it would never have run
+			nm_policy_activation_finish() to set the ACTIVATED flag, because the main loop
+			had already quit.
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_probe_wired_link_state): cosmetic fixes
+		- (nm_device_activate_stage5_ip_config_commit): Don't check link state if
+			we've failed to activate or been canceled.
+		- (nm_ac_test): nm_debug -> nm_info for "waiting for device to cancel" message
+
+2005-05-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerWireless.c
 		- (nm_wireless_qual_to_percent): Fix #if -> #ifdef, print out the "updated"
 			value of WEXT quality structures, and add a debug message when we cannot
