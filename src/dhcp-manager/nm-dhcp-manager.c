@@ -225,7 +225,7 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 	NMDevice *		dev;
 	char *			path;
 	const guint32		opt1 = 31;	/* turns off ALL actions and dhclient-script just writes options to dhcdbd */
-	const guint32		opt2 = 0;		/* dhclient is run in ONE SHOT mode */
+	const guint32		opt2 = 2;		/* dhclient is run in ONE SHOT mode and releases existing leases when brought down */
 	GSource *			source;
 
 	g_return_val_if_fail (manager != NULL, FALSE);
