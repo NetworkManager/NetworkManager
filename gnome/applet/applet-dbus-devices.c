@@ -1057,9 +1057,6 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if (network_device_is_wireless (dev) && !passphrase && (key_type != -1))
-		return;
-
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
 		const char *dev_path = network_device_get_nm_path (dev);

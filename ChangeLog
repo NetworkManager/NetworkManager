@@ -1,3 +1,10 @@
+2005-05-10  Dan Williams  <dcbw@redhat.com>
+
+    * gnome/applet/applet-dbus-device.c
+        - (nmwa_dbus_set_device): remove check for valid key and key type, which 
+            prevented just entering ESSID and leaving key and key type up to
+            NetworkManager (which should have them already cached)
+
 2005-05-08  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
