@@ -239,13 +239,13 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 	{
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_object_path, DBUS_TYPE_INVALID))
 		{
-			char		*dev_iface_name;
-                        guint32	 dev_ip4_address;
+			char *   dev_iface_name;
+			guint32 dev_ip4_address;
 
-                        dev_object_path = nm_dbus_unescape_object_path (dev_object_path);
+			dev_object_path = nm_dbus_unescape_object_path (dev_object_path);
 
-                        dev_ip4_address = nmd_get_device_ip4_address (connection, dev_object_path);
-                        dev_iface_name = nmd_get_device_name (connection, dev_object_path);
+			dev_ip4_address = nmd_get_device_ip4_address (connection, dev_object_path);
+			dev_iface_name = nmd_get_device_name (connection, dev_object_path);
 
 			if (action == NMD_DEVICE_NOW_ACTIVE || action == NMD_DEVICE_NOW_INACTIVE)
 			{
