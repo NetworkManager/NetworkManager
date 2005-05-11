@@ -341,7 +341,7 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	GPid			pid;
 	const char *	vpnc_binary;
 	GPtrArray *	vpnc_argv;
-	GError *		error;
+	GError *		error = NULL;
 	gboolean		success = FALSE;
 	GSource *		vpnc_watch;
 
@@ -366,6 +366,7 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	{
 		g_ptr_array_free (vpnc_argv, TRUE);
 		nm_warning ("vpnc failed to start.  error: '%s'", error->message);
+		g_error_free(error);
 		return FALSE;
 	}
 	g_ptr_array_free (vpnc_argv, TRUE);
@@ -392,13 +393,35 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
  */
 static gboolean nm_vpnc_config_file_generate (const char *user_name, const char *password, const char **data_items, const int num_items)
 {
-	char		*string;
-	int		 out_fd;
-	int		 i, x;
+	char *	string;
+	int		out_fd;
+	int		i, x;
+	char *	dirname;
+	char *	cmd;
+	int		ret;
 
 	g_return_val_if_fail (user_name != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (data_items != NULL, FALSE);
+
+	/* Ensure that the config file's directory exists */
+	dirname = g_path_get_dirname (NM_VPNC_CONFIG_FILE_PATH);
+	if (!dirname || !strlen (dirname))
+	{
+		nm_warning ("Could not get dirname for vpnc config file path '%s'.", NM_VPNC_CONFIG_FILE_PATH);
+		return FALSE;
+	}
+
+	cmd = g_strdup_printf ("/bin/mkdir -p -m 700 %s", dirname);
+	ret = system (cmd);
+	if ((ret == -1) || (WEXITSTATUS(ret) != 0))
+	{
+		nm_warning ("Could not create dirname for vpnc config file path '%s'.", NM_VPNC_CONFIG_FILE_PATH);
+		g_free (cmd);
+		g_free (dirname);
+		return FALSE;
+	}
+	g_free (cmd);
 
 	unlink (NM_VPNC_CONFIG_FILE_PATH);
 	out_fd = open (NM_VPNC_CONFIG_FILE_PATH, O_WRONLY|O_CREAT|O_TRUNC, 0600);

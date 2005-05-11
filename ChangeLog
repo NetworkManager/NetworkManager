@@ -1,3 +1,10 @@
+2005-05-11  Dan Williams  <dcbw@redhat.com>
+
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- (nm_vpnc_start_vpnc_binary): NULL-ify GError before using it
+		- (nm_vpnc_config_file_generate): Attempt to ensure that the path for the config
+			file exists before trying to write it out.
+
 2005-05-10  Dan Williams  <dcbw@redhat.com>
 
     * gnome/applet/applet-dbus-device.c
