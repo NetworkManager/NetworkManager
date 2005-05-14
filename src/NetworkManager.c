@@ -446,7 +446,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 }
 
 
-void device_stop_and_free (NMDevice *dev, gpointer user_data)
+static void device_stop_and_free (NMDevice *dev, gpointer user_data)
 {
 	g_return_if_fail (dev != NULL);
 
@@ -465,6 +465,10 @@ void device_stop_and_free (NMDevice *dev, gpointer user_data)
 static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
+
+	/* Kill any active VPN connection */
+	if (nm_vpn_manager_get_active_vpn_connection (data->vpn_manager))
+		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager);
 
 	/* Stop and destroy all devices */
 	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);

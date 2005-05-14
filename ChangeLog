@@ -1,5 +1,13 @@
 2005-05-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (device_stop_and_free): Deactivate VPN connections before deactivating devices,
+			fixes a deadlock on shutdown with a VPN connection active.  This function locks
+			the device list, as does nm_get_active_device() which is called from
+			nm_vpn_manager_deactivate_vpn_connection().
+
+2005-05-14  Dan Williams  <dcbw@redhat.com>
+
 	* NetworkManager.h
 		- Add signals for VPN Launch and Connect failures
 
