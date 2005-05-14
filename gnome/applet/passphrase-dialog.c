@@ -59,11 +59,11 @@ static GladeXML *get_dialog_xml (GtkWidget *dialog)
 
 static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 {
-	GtkButton	*button;
-	GtkComboBox	*combo;
-	GtkEntry	*passphrase_entry;
-	const char	*passphrase_text;
-	gboolean		 enable = TRUE;
+	GtkButton	*	button;
+	GtkComboBox *	combo;
+	GtkEntry	*	passphrase_entry;
+	const char *	passphrase_text;
+	gboolean		enable = FALSE;
 
 	g_return_if_fail (xml != NULL);
 
@@ -72,25 +72,23 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 	passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
 	passphrase_text = gtk_entry_get_text (passphrase_entry);
 
-	if (passphrase_text[0] == '\000')
-		enable = FALSE;
-	else
+	switch (gtk_combo_box_get_active (combo))
 	{
-		int combo_choice = gtk_combo_box_get_active (combo);
-		switch (combo_choice)
-		{
-			case KEY_TYPE_ASCII_KEY:
-				if ((strlen (passphrase_text) != 5) && (strlen (passphrase_text) != 13))
-					enable = FALSE;
-				break;
-			case KEY_TYPE_HEX_KEY:
-				if ((strlen (passphrase_text) != 10) && (strlen (passphrase_text) != 26))
-					enable = FALSE;
-				break;
-			default:
-				break;
-		}
-	}		
+		case KEY_TYPE_128_BIT_PASSPHRASE:
+			if (strlen (passphrase_text) > 0)
+				enable = TRUE;
+			break;
+		case KEY_TYPE_ASCII_KEY:
+			if ((strlen (passphrase_text) == 5) || (strlen (passphrase_text) == 13))
+				enable = TRUE;
+			break;
+		case KEY_TYPE_HEX_KEY:
+			if ((strlen (passphrase_text) == 10) || (strlen (passphrase_text) == 26))
+				enable = TRUE;
+			break;
+		default:
+			break;
+	}
 
 	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);
 }

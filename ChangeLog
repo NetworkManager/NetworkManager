@@ -1,3 +1,41 @@
+2005-05-14  Dan Williams  <dcbw@redhat.com>
+
+	* NetworkManager.h
+		- Add signals for VPN Launch and Connect failures
+
+	* gnome/applet/applet-dbus.c
+		- (nmwa_dbus_filter): Trap new VPN launch & connect failure signals
+
+	* gnome/applet/applet.c
+		- (nmwa_show_vpn_failure_dialog): generalize old nmwa_show_vpn_login_failure_dialog()
+			function to handle all VPN failure messages
+		- (nmwa_schedule_vpn_failure_dialog): generalize old  nmwa_schedule_vpn_login_failure_dialog()
+			function to hanlde all VPN failure  messages
+		- (show_warning_dialog): work around focus-stealing prevention
+
+	* gnome/applet/other-network-dialog.c
+	  gnome/applet/passphrase-dialog.c
+		- (update_button_cb): Make sure the OK button is enabled when it should be, fixes
+			problem where it never enabled for ASCII Key and Hex Key types
+
+	* gnome/applet/wireless-applet.glade
+		- Add window title to Other Wireless Network Dialog
+
+	* src/vpn-manager/nm-dbus-vpn.c
+		- (nm_dbus_vpn_signal_vpn_failed): generalize old nm_dbus_vpn_signal_vpn_login_failed()
+			function to handle all VPN failure messages
+
+	* src/vpn-manager/nm-vpn-manager.c
+		- (nm_vpn_manager_process_signal): trap and proxy VPN launch & connect failure signals too
+
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- (nm_vpnc_dbus_signal_launch_failed): new function
+		- (nm_vpnc_dbus_signal_connect_failed): new function
+		- (nm_vpnc_helper_timer_cb): signal connect failure on timeout
+		- (vpnc_watch_cb): signal connection failure when vpnc exits with connection failure
+		- (nm_vpnc_start_vpnc_binary): search a number of locations for vpnc
+		- (nm_vpnc_dbus_handle_start): send launch failure signal when we fail to launch vpnc
+
 2005-05-11  Dan Williams  <dcbw@redhat.com>
 
 	* vpn-daemons/vpnc/nm-vpnc-service.c

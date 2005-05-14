@@ -39,7 +39,14 @@
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
 
-#define VPNC_BINARY_PATH_DEFAULT	"/usr/sbin/vpnc"
+
+static char *vpnc_binary_paths[] =
+{
+	"/usr/sbin/vpnc",
+	"/sbin/vpnc",
+	NULL
+};
+
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
 #define NM_VPNC_PID_FILE_PATH		LOCALSTATEDIR"/run/vpnc/pid"
 #define NM_VPNC_CONFIG_FILE_PATH	LOCALSTATEDIR"/run/vpnc/nm-vpnc-service-vpnc.conf"
@@ -98,6 +105,60 @@ static void nm_vpnc_dbus_signal_login_failed (NmVpncData *data)
 	g_return_if_fail (data != NULL);
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)))
+	{
+		nm_warning ("Not enough memory for new dbus message!");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (data->con, message, NULL))
+		nm_warning ("Could not raise the signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nm_vpnc_dbus_signal_launch_failed
+ *
+ * Signal the bus that we couldn't launch the VPN daemon.
+ *
+ */
+static void nm_vpnc_dbus_signal_launch_failed (NmVpncData *data)
+{
+	DBusMessage	*message;
+	const char	*error_msg = "The VPN login failed because the VPN program could not be started.";
+
+	g_return_if_fail (data != NULL);
+
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)))
+	{
+		nm_warning ("Not enough memory for new dbus message!");
+		return;
+	}
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (data->con, message, NULL))
+		nm_warning ("Could not raise the signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nm_vpnc_dbus_signal_connect_failed
+ *
+ * Signal the bus that VPN daemon failed to connect to the VPN concentrator.
+ *
+ */
+static void nm_vpnc_dbus_signal_connect_failed (NmVpncData *data)
+{
+	DBusMessage	*message;
+	const char	*error_msg = "The VPN login failed because the VPN program could not connect to the VPN server.";
+
+	g_return_if_fail (data != NULL);
+
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED)))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
@@ -218,6 +279,7 @@ static gboolean nm_vpnc_helper_timer_cb (NmVpncData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	nm_vpnc_dbus_signal_connect_failed (data);
 	nm_vpnc_dbus_handle_stop_vpn (data);
 
 	return FALSE;
@@ -287,11 +349,12 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 	/* Must be after data->state is set since signals use data->state */
 	switch (error)
 	{
-		case 2:	/* Couldn't log in */
+		case 2:	/* Couldn't log in due to bad user/pass */
 			nm_vpnc_dbus_signal_login_failed (data);
 			break;
 
 		case 1:	/* Other error (couldn't bind to address, etc) */
+			nm_vpnc_dbus_signal_connect_failed (data);
 			break;
 
 		case 0:	/* Success, vpnc has daemonized */
@@ -339,7 +402,7 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 {
 	GPid			pid;
-	const char *	vpnc_binary;
+	char **		vpnc_binary = NULL;
 	GPtrArray *	vpnc_argv;
 	GError *		error = NULL;
 	gboolean		success = FALSE;
@@ -351,9 +414,23 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 
 	unlink (NM_VPNC_PID_FILE_PATH);
 
+	/* Find vpnc */
+	vpnc_binary = vpnc_binary_paths;
+	while (*vpnc_binary != NULL)
+	{
+		if (g_file_test (*vpnc_binary, G_FILE_TEST_EXISTS))
+			break;
+		vpnc_binary++;
+	}
+
+	if (!*vpnc_binary)
+	{
+		nm_info ("Could not find vpnc binary.");
+		return FALSE;
+	}
+
 	vpnc_argv = g_ptr_array_new ();
-	vpnc_binary = g_getenv ("VPNC_BINARY_PATH") ? g_getenv ("VPNC_BINARY_PATH") : VPNC_BINARY_PATH_DEFAULT;
-	g_ptr_array_add (vpnc_argv, (char *) vpnc_binary);
+	g_ptr_array_add (vpnc_argv, (char *) (*vpnc_binary));
 	g_ptr_array_add (vpnc_argv, "--script");
 	g_ptr_array_add (vpnc_argv, NM_VPNC_HELPER_PATH);
 	g_ptr_array_add (vpnc_argv, "--pid-file");
@@ -493,7 +570,10 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, DBusMessage
 	if (nm_vpnc_config_file_generate (user_name, password, data_items, num_items))
 		success = nm_vpnc_start_vpnc_binary (data);
 	if (!success)
+	{
+		nm_vpnc_dbus_signal_launch_failed (data);
 		nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
+	}
 
 out:
 	return success;

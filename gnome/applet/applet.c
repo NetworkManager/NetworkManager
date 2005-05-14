@@ -222,14 +222,30 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 }
 
 
-static void vpn_login_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
+typedef struct DialogCBData
 {
-	char *message;
+	char *msg;
+	char *title;
+} DialogCBData;
 
-	if ((message = g_object_get_data (G_OBJECT (dialog), "message")))
+static void free_dialog_cb_data (DialogCBData *data)
+{
+	g_return_if_fail (data != NULL);
+
+	g_free (data->msg);
+	g_free (data->title);
+	memset (data, 0, sizeof (DialogCBData));
+	g_free (data);
+}
+
+static void vpn_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
+{
+	DialogCBData *data;
+
+	if ((data = g_object_get_data (G_OBJECT (dialog), "data")))
 	{
-		g_object_set_data (G_OBJECT (dialog), "message", NULL);
-		g_free (message);
+		g_object_set_data (G_OBJECT (dialog), "data", NULL);
+		free_dialog_cb_data (data);
 	}
 
 	gtk_widget_destroy (dialog);
@@ -237,22 +253,25 @@ static void vpn_login_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_
 
 
 /*
- * nmwa_show_vpn_login_failure_dialog
+ * nmwa_show_vpn_failure_dialog
  *
- * Present the VPN login failure dialog.
+ * Present the VPN failure dialog.
  *
  */
-static gboolean nmwa_show_vpn_login_failure_dialog (char *message)
+static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
 {
 	GtkWidget	*dialog;
 	guint32	 timestamp;
 
-	g_return_val_if_fail (message != NULL, FALSE);
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
+	g_return_val_if_fail (cb_data->title != NULL, FALSE);
 
-	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, message, NULL);
-	g_signal_connect (dialog, "response", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
-	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_failure_dialog_close_cb), NULL);
-	g_object_set_data (G_OBJECT (dialog), "message", message);
+	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, cb_data->msg, NULL);
+	gtk_window_set_title (GTK_WINDOW (dialog), cb_data->title);
+	g_signal_connect (dialog, "response", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
+	g_signal_connect (dialog, "close", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
+	g_object_set_data (G_OBJECT (dialog), "data", cb_data);
 	gtk_widget_show_all (dialog);
 
 	/* Bash focus-stealing prevention in the face */
@@ -264,22 +283,43 @@ static gboolean nmwa_show_vpn_login_failure_dialog (char *message)
 
 
 /*
- * nmwa_schedule_vpn_login_failure_dialog
+ * nmwa_schedule_vpn_failure_dialog
  *
- * Schedule display of the VPN Login Failure dialog.
+ * Schedule display of the VPN Failure dialog.
  *
  */
-void nmwa_schedule_vpn_login_failure_dialog (NMWirelessApplet *applet, const char *vpn_name, const char *error_msg)
+void nmwa_schedule_vpn_failure_dialog (NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg)
 {
-	char *msg;
+	DialogCBData *cb_data = NULL;
 
 	g_return_if_fail (applet != NULL);
+	g_return_if_fail (member != NULL);
 	g_return_if_fail (vpn_name != NULL);
 	g_return_if_fail (error_msg != NULL);
 
-	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not start the "
+	cb_data = g_malloc0 (sizeof (DialogCBData));
+	cb_data->title = g_strdup (_("VPN Error"));
+
+	if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
+	{
+		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not start the "
 						"VPN connection '%s' due to a login failure.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
-	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_failure_dialog, msg);
+	}
+	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED))
+	{
+		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Start Failure</span>\n\nCould not start the "
+						"VPN connection '%s' due to a failure launching the VPN program.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+	}
+	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
+	{
+		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n\nCould not start the "
+						"VPN connection '%s' due to a connection error.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+	}
+
+	if (cb_data->msg)
+		g_idle_add ((GSourceFunc) nmwa_show_vpn_failure_dialog, cb_data);
+	else
+		free_dialog_cb_data (cb_data);
 }
 
 
@@ -897,13 +937,20 @@ static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
  * pop up a warning or error dialog with certain text
  *
  */
-gboolean show_warning_dialog (gchar *mesg)
+gboolean show_warning_dialog (char *mesg)
 {
 	GtkWidget	*	dialog;
+	guint32		timestamp;
 
 	dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, mesg, NULL);
+
+	/* Bash focus-stealing prevention in the face */
+	timestamp = gdk_x11_get_server_time (dialog->window);
+	gdk_x11_window_set_user_time (dialog->window, timestamp);
+
 	gtk_dialog_run (GTK_DIALOG (dialog));
 	gtk_widget_destroy (dialog);
+	g_free (mesg);
 
 	return FALSE;
 }
@@ -923,7 +970,7 @@ void nmwa_schedule_warning_dialog (NMWirelessApplet *applet, const char *msg)
 	g_return_if_fail (msg != NULL);
 
 	lcl_msg = g_strdup (msg);
-	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_failure_dialog, lcl_msg);
+	g_idle_add ((GSourceFunc) show_warning_dialog, lcl_msg);
 }
 
 

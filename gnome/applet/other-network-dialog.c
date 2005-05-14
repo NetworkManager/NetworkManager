@@ -52,11 +52,11 @@ enum NMWAEncryptionKeyTypes
 
 static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 {
-	gboolean		 enable = TRUE;
-	const char	*text;
-	GtkButton		*button;
-	GtkEntry		*essid_entry;
-	GtkCheckButton	*enc_check_button;
+	gboolean			enable = FALSE;
+	const char *		text;
+	GtkButton *		button;
+	GtkEntry *		essid_entry;
+	GtkCheckButton *	enc_check_button;
 
 	g_return_if_fail (xml != NULL);
 
@@ -64,36 +64,36 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 	button = GTK_BUTTON (glade_xml_get_widget (xml, "ok_button"));
 	enc_check_button = GTK_CHECK_BUTTON (glade_xml_get_widget (xml, "use_encryption_checkbox"));
 	
+	/* An ESSID is required */
 	text = gtk_entry_get_text (essid_entry);
-	if (text[0] == '\000')
-		enable = FALSE;
+	if (text && strlen (text) > 0)
+		enable = TRUE;
 
-	/* If we're using encryptin, validate the settings */
-	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (enc_check_button)))
+	/* If we're using encryption, validate the settings */
+	if (enable && gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (enc_check_button)))
 	{
-		GtkComboBox	*combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
-		GtkEntry		*passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
-		const char	*passphrase_text = gtk_entry_get_text (passphrase_entry);
+		GtkComboBox *	combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
+		GtkEntry *	passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
+		const char *	passphrase_text = gtk_entry_get_text (passphrase_entry);
 
-		if (passphrase_text[0] == '\000')
-			enable = FALSE;
-		else
+		enable = FALSE;
+		switch (gtk_combo_box_get_active (combo))
 		{
-			int combo_choice = gtk_combo_box_get_active (combo);
-			switch (combo_choice)
-			{
-				case KEY_TYPE_ASCII_KEY:
-					if ((strlen (passphrase_text) != 5) && (strlen (passphrase_text) != 13))
-						enable = FALSE;
-					break;
-				case KEY_TYPE_HEX_KEY:
-					if ((strlen (passphrase_text) != 10) && (strlen (passphrase_text) != 26))
-						enable = FALSE;
-					break;
-				default:
-					break;
-			}
-		}		
+			case KEY_TYPE_128_BIT_PASSPHRASE:
+				if (strlen (passphrase_text) > 0)
+					enable = TRUE;
+				break;
+			case KEY_TYPE_ASCII_KEY:
+				if ((strlen (passphrase_text) == 5) || (strlen (passphrase_text) == 13))
+					enable = TRUE;
+				break;
+			case KEY_TYPE_HEX_KEY:
+				if ((strlen (passphrase_text) == 10) || (strlen (passphrase_text) == 26))
+					enable = TRUE;
+				break;
+			default:
+				break;
+		}
 	}
 
 	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);

@@ -544,15 +544,17 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			nmwa_dbus_device_update_one_network (applet, dev_path, net_path, NULL);
 		}
 	}
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginFailed"))
+	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
+			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
 	{
 		char *vpn_name;
 		char *error_msg;
 
 		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
-			nmwa_schedule_vpn_login_failure_dialog (applet, vpn_name, error_msg);
+			nmwa_schedule_vpn_failure_dialog (applet, member, vpn_name, error_msg);
 	}
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNLoginBanner"))
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LOGIN_BANNER))
 	{
 		char *vpn_name;
 		char *banner;

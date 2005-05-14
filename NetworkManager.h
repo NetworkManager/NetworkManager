@@ -64,7 +64,10 @@
 /*
  * VPN daemon signals
  */
+#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER		"LoginBanner"
 #define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED		"LoginFailed"
+#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED	"LaunchFailed"
+#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED	"ConnectFailed"
 #define NM_DBUS_VPN_SIGNAL_CONFIG_BAD		"ConfigurationBad"
 #define NM_DBUS_VPN_SIGNAL_STATE_CHANGE		"StateChange"
 #define NM_DBUS_VPN_SIGNAL_IP4_CONFIG		"IP4Config"

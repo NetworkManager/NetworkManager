@@ -527,16 +527,20 @@ static char *construct_op_from_service_name (const char *service_name)
  */
 gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *message)
 {
-	const char		*object_path;
-	const char		*temp_op;
-	NMVPNConnection	*active;
-	NMVPNService		*service;
-	const char		*service_name;
+	const char *		object_path;
+	const char *		member;
+	const char *		temp_op;
+	NMVPNConnection *	active;
+	NMVPNService *		service;
+	const char *		service_name;
 
 	g_return_val_if_fail (manager != NULL, FALSE);
 	g_return_val_if_fail (message != NULL, FALSE);
 
 	if (!(object_path = dbus_message_get_path (message)))
+		return FALSE;
+
+	if (!(member = dbus_message_get_member (message)))
 		return FALSE;
 
 	if (!(active = nm_vpn_manager_get_active_vpn_connection (manager)))
@@ -550,15 +554,17 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
 	if (!temp_op || (strcmp (object_path, temp_op) != 0))
 		return FALSE;
 
-	if (dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
+	if (    dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
+		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
+		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
 	{
 		char *error_msg;
 		char *blank_msg = "";
 
 		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
 			error_msg = blank_msg;
-		nm_warning ("VPN Login failed for service '%s' with message '%s'.", service_name, error_msg);
-		nm_dbus_vpn_signal_vpn_login_failed (manager->app_data->dbus_connection, active, error_msg);
+		nm_warning ("VPN failed for service '%s', signal '%s', with message '%s'.", service_name, member, error_msg);
+		nm_dbus_vpn_signal_vpn_failed (manager->app_data->dbus_connection, member, active, error_msg);
 	}
 	else if (dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_STATE_CHANGE))
 	{

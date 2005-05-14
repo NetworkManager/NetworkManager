@@ -32,7 +32,7 @@ void				nm_dbus_vpn_update_one_vpn_connection		(DBusConnection *connection, cons
 
 void				nm_dbus_vpn_signal_vpn_connection_update	(DBusConnection *con, NMVPNConnection *vpn, const char *signal);
 void				nm_dbus_vpn_signal_vpn_connection_change	(DBusConnection *con, NMVPNConnection *vpn);
-void				nm_dbus_vpn_signal_vpn_login_failed		(DBusConnection *con, NMVPNConnection *vpn, const char *error_msg);
+void				nm_dbus_vpn_signal_vpn_failed				(DBusConnection *con, const char *signal, NMVPNConnection *vpn, const char *error_msg);
 void				nm_dbus_vpn_signal_vpn_login_banner		(DBusConnection *con, NMVPNConnection *vpn, const char *banner);
 
 NMDbusMethodList *	nm_dbus_vpn_methods_setup				(void);

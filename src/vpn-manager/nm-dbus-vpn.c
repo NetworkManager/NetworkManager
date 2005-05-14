@@ -92,21 +92,22 @@ void nm_dbus_vpn_signal_vpn_connection_change (DBusConnection *con, NMVPNConnect
 
 
 /*
- * nnm_dbus_vpn_signal_vpn_login_failed
+ * nnm_dbus_vpn_signal_vpn_failure
  *
- * Pass the VPN Login Failure message from the daemon to the bus.
+ * Proxy a VPN Failure message from the vpn daemon to the bus.
  *
  */
-void nm_dbus_vpn_signal_vpn_login_failed (DBusConnection *con, NMVPNConnection *vpn, const char *error_msg)
+void nm_dbus_vpn_signal_vpn_failed (DBusConnection *con, const char *signal, NMVPNConnection *vpn, const char *error_msg)
 {
 	DBusMessage	*message;
 	const char	*vpn_name;
 
 	g_return_if_fail (con != NULL);
+	g_return_if_fail (signal != NULL);
 	g_return_if_fail (vpn != NULL);
 	g_return_if_fail (error_msg != NULL);
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "VPNLoginFailed")))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, signal)))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
@@ -115,7 +116,7 @@ void nm_dbus_vpn_signal_vpn_login_failed (DBusConnection *con, NMVPNConnection *
 	vpn_name = nm_vpn_connection_get_name (vpn);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (con, message, NULL))
-		nm_warning ("Could not raise the VPNLoginFailed signal!");
+		nm_warning ("Could not raise the %s signal!", signal);
 
 	dbus_message_unref (message);
 }
@@ -136,7 +137,7 @@ void nm_dbus_vpn_signal_vpn_login_banner (DBusConnection *con, NMVPNConnection *
 	g_return_if_fail (vpn != NULL);
 	g_return_if_fail (banner != NULL);
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "VPNLoginBanner")))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LOGIN_BANNER)))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
