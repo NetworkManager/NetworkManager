@@ -1,3 +1,7 @@
+2005-05-14  Pawan Chitrakar  <pawan@mpp.org.np>
+
+	* ne.po: Upadated Nepali translation
+
 2005-05-13  Adam Weinberger  <adamw@gnome.org>
 
 	* en_CA.po: Updated Canadian English translation.
@@ -37,6 +41,7 @@
 
 	* nl.po: Translation updated by Tino Meinen.
 
+>>>>>>> 1.149
 2005-04-22  Pawan Chitrakar  <pawan@mpp.org.np>
 
 	* ne.po: Added Nepali translation

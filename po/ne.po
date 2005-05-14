@@ -6,8 +6,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
-"Report-Msgid-Bugs-To: <info@mpp.org.np>\n"
-"POT-Creation-Date: 2005-04-04 03:42+0200\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-05-14 14:36+0545\n"
 "PO-Revision-Date: 2005-04-11 10:13+0000\n"
 "Last-Translator: Jyotsna Shrestha <jyoshrestha@hotmail.com>\n"
 "Language-Team: Nepali <info@mpp.org.np>\n"
@@ -19,9 +19,7 @@ msgstr ""
 
 #: info-daemon/networks.glade.h:1
 msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr ""
-"<span weight=\"bold\">ताररहित "
-"संजाल:</span>"
+msgstr "<span weight=\"bold\">ताररहित संजाल:</span>"
 
 #: info-daemon/networks.glade.h:2
 msgid "Modify Wireless Networks"
@@ -50,8 +48,8 @@ msgid ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 msgstr ""
-"<span weight=\"bold\" "
-"size=\"larger\">गुजरिएकोवाक्य चाहियो ताररहित संजाल</span> बाट\n"
+"<span weight=\"bold\" size=\"larger\">गुजरिएकोवाक्य चाहियो ताररहित संजाल</span> "
+"बाट\n"
 "\n"
 "गुजरिएकोवाक्य र गुप्तिकरण कुन्ज ताररहित संजाल '%s' प्रवेशको लागी चाहिन्छ।"
 
@@ -89,110 +87,140 @@ msgstr "हेक्स कुन्ज:"
 msgid "You must log in to access the private network %s"
 msgstr "तपाईले निजि संजाल %s मा प्रवेशको लागी लगइन गर्नुपर्छ।"
 
-#: panel-applet/NMWirelessApplet.c:149 panel-applet/NMWirelessApplet.c:167
+#: panel-applet/NMWirelessApplet.c:151 panel-applet/NMWirelessApplet.c:169
 msgid "NetworkManager Applet"
 msgstr "संजालप्रबन्धक एप्लेट"
 
-#: panel-applet/NMWirelessApplet.c:151 panel-applet/NMWirelessApplet.c:169
+#: panel-applet/NMWirelessApplet.c:153 panel-applet/NMWirelessApplet.c:171
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "सर्वाधिकार (C) २००४-२००५ रेड ह्याट, आइएनसि।"
 
-#: panel-applet/NMWirelessApplet.c:152 panel-applet/NMWirelessApplet.c:170
-msgid "Notification area applet for managing your network devices and connections."
+#: panel-applet/NMWirelessApplet.c:154 panel-applet/NMWirelessApplet.c:172
+msgid ""
+"Notification area applet for managing your network devices and connections."
 msgstr "तपाईको संजाल यन्त्रहरू र जडानहरू प्रबन्धको लागी चेतावनी क्षेत्र एपप्लेट"
 
-#: panel-applet/NMWirelessApplet.c:384 panel-applet/NMWirelessApplet.c:1523
+#: panel-applet/NMWirelessApplet.c:232
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a login failure.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:288
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
+"\n"
+"VPN connection '%s' said:\n"
+"\n"
+"\"%s\""
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:499 panel-applet/NMWirelessApplet.c:1772
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:319
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr "संजालप्रबन्धक एपप्लेटले केहि आवश्यक स्रोतहरू फेला पार्नसकेन (ग्लेड फाइल फेला परेन)।"
 
-#: panel-applet/NMWirelessApplet.c:395
+#: panel-applet/NMWirelessApplet.c:510
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "संजाल साधन \"%s (%s)\" ले ताररहित स्क्यानिङलाई समर्थन गरेन।"
 
-#: panel-applet/NMWirelessApplet.c:403
+#: panel-applet/NMWirelessApplet.c:518
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "संजाल साधन \"%s (%s)\" ले सम्पर्क अनुसन्धान समर्थन गरेन।"
 
-#: panel-applet/NMWirelessApplet.c:627
+#: panel-applet/NMWirelessApplet.c:762
 msgid "No network connection"
 msgstr "संजाल जडान छैन"
 
-#: panel-applet/NMWirelessApplet.c:632
+#: panel-applet/NMWirelessApplet.c:767
 msgid "Wired network connection"
 msgstr "तारसहित संजाल जडान"
 
-#: panel-applet/NMWirelessApplet.c:637
+#: panel-applet/NMWirelessApplet.c:772
 msgid "Connecting to a wired network..."
 msgstr "तारसहित संजालमा सम्पर्क गरिदै..."
 
-#: panel-applet/NMWirelessApplet.c:646
+#: panel-applet/NMWirelessApplet.c:781
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "एड-एचओसि ताररहित संजालमा सम्पर्क स्थापना गरियो।"
 
-#: panel-applet/NMWirelessApplet.c:660
+#: panel-applet/NMWirelessApplet.c:795
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "'%s' (%d%%) मा ताररहित संजाल सम्पर्क"
 
-#: panel-applet/NMWirelessApplet.c:665
+#: panel-applet/NMWirelessApplet.c:800
 msgid "Wireless network connection"
 msgstr "ताररहित संजाल सम्पर्क"
 
-#: panel-applet/NMWirelessApplet.c:670
+#: panel-applet/NMWirelessApplet.c:805
 #, c-format
 msgid "Connecting to wireless network '%s'..."
 msgstr "ताररहित संजाल '%s' सम्पर्क गरिदै..."
 
-#: panel-applet/NMWirelessApplet.c:676
+#: panel-applet/NMWirelessApplet.c:811
 msgid "NetworkManager is not running"
 msgstr "संजालप्रबन्धक संचालन भईराखेको छैन।"
 
-#: panel-applet/NMWirelessApplet.c:681
+#: panel-applet/NMWirelessApplet.c:816
 msgid "Scanning for wireless networks..."
 msgstr "ताररहित संजालको लागी स्क्यानिङ गरिदै॰॰॰"
 
-#: panel-applet/NMWirelessApplet.c:1046
+#: panel-applet/NMWirelessApplet.c:1230
 msgid "Other Wireless Networks..."
 msgstr "अन्य ताररहित संजालहरू॰॰॰"
 
-#: panel-applet/NMWirelessApplet.c:1067
+#: panel-applet/NMWirelessApplet.c:1251
 msgid "Create new Wireless Network..."
 msgstr "नयाँ ताररहित सञ्जाल सृजना॰॰॰"
 
-#: panel-applet/NMWirelessApplet.c:1143
+#: panel-applet/NMWirelessApplet.c:1325
+#, fuzzy
+msgid "VPN Connections"
+msgstr "संजाल जडान छैन"
+
+#: panel-applet/NMWirelessApplet.c:1347
+msgid "Disconnect VPN..."
+msgstr ""
+
+#: panel-applet/NMWirelessApplet.c:1376
 msgid "No network devices have been found"
 msgstr "संजाल साधन फेला परेको छैन।"
 
-#: panel-applet/NMWirelessApplet.c:1285
+#: panel-applet/NMWirelessApplet.c:1534
 msgid "NetworkManager is not running..."
 msgstr "संजालप्रबन्धक संचालन भईराखेको छैन॰॰॰"
 
-#: panel-applet/NMWirelessApplet.c:1355 panel-applet/NMWirelessApplet.c:1403
+#: panel-applet/NMWirelessApplet.c:1604 panel-applet/NMWirelessApplet.c:1652
 msgid "Pause Wireless Scanning"
 msgstr "ताररहित स्क्यानिङ रोक्नुहोला"
 
-#: panel-applet/NMWirelessApplet.c:1360
+#: panel-applet/NMWirelessApplet.c:1609
 msgid "Resume Wireless Scanning"
 msgstr "ताररहित स्क्यानिङ फेरी शुरू गर्नुहोला"
 
-#: panel-applet/NMWirelessApplet.c:1370 panel-applet/NMWirelessApplet.c:1409
+#: panel-applet/NMWirelessApplet.c:1619 panel-applet/NMWirelessApplet.c:1658
 msgid "Stop All Wireless Devices"
 msgstr "सबै ताररहित यन्त्रहरु रोक्नुहोला।"
 
-#: panel-applet/NMWirelessApplet.c:1375
+#: panel-applet/NMWirelessApplet.c:1624
 msgid "Start All Wireless Devices"
 msgstr "सबै ताररहित यन्त्रहरु शुरू गर्नुहोला।"
 
-#: panel-applet/NMWirelessApplet.c:1418
+#: panel-applet/NMWirelessApplet.c:1667
 msgid "Help"
 msgstr "मद्दत॒"
 
-#: panel-applet/NMWirelessApplet.c:1425
+#: panel-applet/NMWirelessApplet.c:1674
 msgid "About"
 msgstr "बारेमा॒"
 
@@ -204,7 +232,9 @@ msgstr "नयाँ ताररहित संजाल सृजना ग�
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
-msgstr "तपाईले सृजना गर्न चहानुभएको ताररहित संजालको ई एस एस आई डि र सुरक्षा मिलान प्रवेश गराउनुहोला।"
+msgstr ""
+"तपाईले सृजना गर्न चहानुभएको ताररहित संजालको ई एस एस आई डि र सुरक्षा मिलान प्रवेश "
+"गराउनुहोला।"
 
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:238
 msgid "Custom wireless network"
@@ -270,23 +300,17 @@ msgstr[1] "ताररहित सञ्जालहरू"
 msgid " (invalid Unicode)"
 msgstr " (अमान्य यूनिकोड)"
 
-#: examples/python/systray/eggtrayicon.c:111 panel-applet/eggtrayicon.c:118
-msgid "Orientation"
-msgstr "अभिमुखीकरण॒"
-
-#: examples/python/systray/eggtrayicon.c:112 panel-applet/eggtrayicon.c:119
-msgid "The orientation of the tray."
-msgstr "ट्रेको अभिमुखीकरण॒"
-
 #: panel-applet/NMWirelessApplet.xml.h:1
 msgid "_About..."
 msgstr "बारेमा॒"
 
-#: panel-applet/gtkcellrendererprogress.c:243
-#: panel-applet/gtkcellrendererprogress.c:301
-#, c-format
-msgid "progress bar label|%d %%"
-msgstr "प्रगति बार तह|%d %%"
+#: panel-applet/eggtrayicon.c:118 examples/python/systray/eggtrayicon.c:111
+msgid "Orientation"
+msgstr "अभिमुखीकरण॒"
+
+#: panel-applet/eggtrayicon.c:119 examples/python/systray/eggtrayicon.c:112
+msgid "The orientation of the tray."
+msgstr "ट्रेको अभिमुखीकरण॒"
 
 #: panel-applet/wireless-applet.glade.h:1
 msgid " "
@@ -313,10 +337,11 @@ msgid ""
 "wireless network is secure, click the checkbox below and NetworkManager will "
 "no longer pester you with stupid questions when you connect to it."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">ताररहित संजाल लगइन प्रमाणित</"
-"span>\n"
+"<span weight=\"bold\" size=\"larger\">ताररहित संजाल लगइन प्रमाणित</span>\n"
 "\n"
-"तपाईले ताररहित संजाल '%s' मा लगइन छान्नु भएको छ। यदि तपाई निश्चिन्त हुनुहुन्छ कि ताररहित संजाल सुरक्षित छ, तलको जाँच बाकसमा क्लिक गर्नुहोला र संजाल प्रबन्धकले मन्द प्रश्नहरूले तपाईलाई दु:ख दिंदैन जब तपाई यससंग जोडिनुहुन्छ।."
+"तपाईले ताररहित संजाल '%s' मा लगइन छान्नु भएको छ। यदि तपाई निश्चिन्त हुनुहुन्छ कि "
+"ताररहित संजाल सुरक्षित छ, तलको जाँच बाकसमा क्लिक गर्नुहोला र संजाल प्रबन्धकले मन्द "
+"प्रश्नहरूले तपाईलाई दु:ख दिंदैन जब तपाई यससंग जोडिनुहुन्छ।."
 
 #: panel-applet/wireless-applet.glade.h:14
 msgid "Always Trust this Wireless Network"
@@ -330,14 +355,21 @@ msgstr "मलाई फेरि नसम्झाउनुहोला।"
 msgid "_OK"
 msgstr "ठीक छ॒"
 
+#: panel-applet/nmwa-vpn-password-dialog.c:105
+#, fuzzy, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "तपाईले निजि संजाल %s मा प्रवेशको लागी लगइन गर्नुपर्छ।"
+
 #: src/nm-netlink-monitor.c:154
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr "मानिटरिङ तारसहित ईथरनेट यन्त्र - %s को लागी नेटलिङ्क सकेट सृजना गर्न असक्षम"
 
 #: src/nm-netlink-monitor.c:172
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr "मानिटरिङ तारसहित ईथरनेट यन्त्र - %s को लागी नेटलिङ्क सकेट संयोजन गर्न असक्षम"
 
 #: src/nm-netlink-monitor.c:403
@@ -361,3 +393,5 @@ msgstr "%s"
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "सकेट माथी धेरै डाटाहरू पठाईयो र त्यसमध्ये केहि हरायो।"
 
+#~ msgid "progress bar label|%d %%"
+#~ msgstr "प्रगति बार तह|%d %%"
