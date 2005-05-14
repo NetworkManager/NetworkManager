@@ -1,6 +1,6 @@
-# Hungarian translation of NetworkManager
-# This file is distributed under the same license as the NetworkManager package.
-# Copyright (C) 2005, The Free Software Foundation, Inc.
+# SOME DESCRIPTIVE TITLE.
+# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
 # Gabor Kelemen <kelemeng@gnome.hu>, 2005.
 #
 msgid ""
@@ -32,7 +32,7 @@ msgstr "A tálca tájolása."
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
 "different wireless network will be used if any are available."
-msgstr "A kért \"%s\" vezetékes hálózat nincs a hatótávolságon belül. Egy másik vezeték nélküli hálózat lesz használva, ha elérhető."
+msgstr "A kért \"%s\" vezetékes hálózat nincs a hatótávolságon belül. Egy másik vezetéknélküli hálózat lesz használva, ha elérhető."
 
 #: ../gnome/applet/applet-dbus.c:573
 #, c-format
