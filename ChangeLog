@@ -1,3 +1,12 @@
+2005-05-15  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+		- Check for dhcdbd and error if its not found
+
+	* src/dhcp-manager/Makefile.am
+	  src/dhcp-manager/nm-dhcp-manager.c
+		- Use path to dhcdbd that configure found
+
 2005-05-14  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/nm-device.c

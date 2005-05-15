@@ -193,6 +193,12 @@ AC_DEFINE_UNQUOTED(NM_NAMED_BINARY_PATH, "$with_named", [Define to path of named
 AC_DEFINE_UNQUOTED(NM_NAMED_DATA_DIR, "$with_named_dir", [Define to path of named data directory])
 AC_DEFINE_UNQUOTED(NM_NAMED_USER, "$with_named_user", [Define to named username])
 
+AC_PATH_PROG(DHCDBD_BINARY_PATH, dhcdbd)
+if ! test -x "$DHCDBD_BINARY_PATH"; then
+	AC_MSG_ERROR(dhcdbd was not installed.  See http://people.redhat.com/jvdias/dhcdbd)
+fi
+AC_SUBST(DHCDBD_BINARY_PATH)
+
 #### find the actual value for $prefix that we'll end up with
 ##   (I know this is broken and should be done in the Makefile, but
 ##    that's a major pain and almost nobody actually seems to care)

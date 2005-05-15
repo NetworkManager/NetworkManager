@@ -31,8 +31,6 @@
 #include <arpa/inet.h>
 
 
-#define DHCP_DAEMON_PROGRAM	"/sbin/dhcdbd"
-
 struct NMDHCPManager
 {
 	NMData *		data;
@@ -87,19 +85,19 @@ static gboolean nm_dhcp_manager_exec_daemon (NMDHCPManager *manager)
 	g_return_val_if_fail (manager != NULL, FALSE);
 
 	dhcp_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhcp_argv, DHCP_DAEMON_PROGRAM);
+	g_ptr_array_add (dhcp_argv, DHCDBD_BINARY_PATH);
 	g_ptr_array_add (dhcp_argv, "--system");
 	g_ptr_array_add (dhcp_argv, NULL);
 
 	if (!g_spawn_async ("/", (char **) dhcp_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))
 	{
 		g_ptr_array_free (dhcp_argv, TRUE);
-		nm_warning ("Could not activate the DHCP daemon " DHCP_DAEMON_PROGRAM ".  error: '%s'.", error->message);
+		nm_warning ("Could not activate the DHCP daemon " DHCDBD_BINARY_PATH ".  error: '%s'.", error->message);
 		g_error_free (error);
 		return FALSE;
 	}
 	g_ptr_array_free (dhcp_argv, TRUE);
-	nm_info ("Activated the DHCP daemon " DHCP_DAEMON_PROGRAM " with PID %d.", pid);
+	nm_info ("Activated the DHCP daemon " DHCDBD_BINARY_PATH " with PID %d.", pid);
 
 	return TRUE;
 }
