@@ -1343,10 +1343,21 @@ static gboolean nmwa_dbus_devices_lock_and_copy (NMWirelessApplet *applet)
 	/* Only copy over if we have a complete data model */
 	if (g_slist_length (applet->dev_pending_call_list) == 0)
 	{
+		GSList *elt;
+
 		nmwa_dbus_check_drivers (applet);
 
 		/* Sort the devices for display */
 		applet->dbus_device_list = g_slist_sort (applet->dbus_device_list, sort_devices_function);
+
+		/* Sort the wireless networks of each device */
+		for (elt = applet->dbus_device_list; elt; elt = g_slist_next (elt))
+		{
+			NetworkDevice *dev = (NetworkDevice *)(elt->data);
+
+			if (dev && network_device_is_wireless (dev))
+				network_device_sort_wireless_networks (dev);
+		}
 
 		/* Now copy the data over to the GUI side */
 		g_mutex_lock (applet->data_mutex);

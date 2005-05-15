@@ -53,6 +53,8 @@ void					network_device_add_wireless_network		(NetworkDevice *dev, WirelessNetwo
 void					network_device_remove_wireless_network		(NetworkDevice *dev, WirelessNetwork *net);
 void					network_device_clear_wireless_networks		(NetworkDevice *dev);
 
+void					network_device_sort_wireless_networks		(NetworkDevice *dev);
+
 guint				network_device_get_num_wireless_networks	(NetworkDevice *dev);
 
 const char *			network_device_get_address				(NetworkDevice *dev);

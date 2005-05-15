@@ -344,6 +344,37 @@ void network_device_remove_wireless_network (NetworkDevice *dev, WirelessNetwork
 }
 
 
+static int sort_networks_function (WirelessNetwork *a, WirelessNetwork *b)
+{
+	const char *name_a = wireless_network_get_essid (a);
+	const char *name_b = wireless_network_get_essid (b);
+
+	if (name_a && !name_b)
+		return -1;
+	else if (!name_a && name_b)
+		return 1;
+	else if (!name_a && !name_b)
+		return 0;
+	else
+		return strcasecmp (name_a, name_b);
+}
+
+
+/*
+ * network_device_sort_wireless_networks
+ *
+ * Alphabetize the wireless networks list
+ *
+ */
+void network_device_sort_wireless_networks (NetworkDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+
+	dev->networks = g_slist_sort (dev->networks, (GCompareFunc) sort_networks_function);
+}
+
+
 /*
  * network_device_get_num_wireless_networks
  *
