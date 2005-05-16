@@ -1,3 +1,11 @@
+2005-05-15  Dan Williams  <dcbw@redhat.com>
+
+	From Filip Miletic:
+	* po/sr.po
+	  po/sr@Latn.po
+	  configure.in
+		- Serbian translation added
+
 2005-05-15  Miloslav Trmac  <mitr@volny.cz>
 
 	* cs.po: Updated Czech translation.
@@ -65,7 +73,6 @@
 
 	* nl.po: Translation updated by Tino Meinen.
 
->>>>>>> 1.149
 2005-04-22  Pawan Chitrakar  <pawan@mpp.org.np>
 
 	* ne.po: Added Nepali translation

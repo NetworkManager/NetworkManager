@@ -37,7 +37,7 @@ AC_CHECK_FUNCS(select socket uname)
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
-ALL_LINGUAS="bs cs da de el en_CA es fr gu hr hu it ja nb ne nl no pa pt_BR rw sk sq sv uk wa zh_CN zh_TW"
+ALL_LINGUAS="bs cs da de el en_CA es fr gu hr hu it ja nb ne nl no pa pt_BR rw sk sq sr sr@Latn sv uk wa zh_CN zh_TW"
 AM_GLIB_GNU_GETTEXT
 
 AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, gentoo, debian, or slackware]))

@@ -1,0 +1,437 @@
+# Serbian Cyrillic and Latin translations for NetworkManager
+# Copyright (C) 2004-2005 GNOME Foundation
+# This file is distributed under the same licence as the NetworkManager package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2005-05-13 16:11-0400\n"
+"PO-Revision-Date: 2005-05-14 18:47+02:00\n"
+"Last-Translator: Filip Miletic <f dot miletic at ewi dot tudelft dot nl>\n"
+"Language-Team: Serbian <gnu@prevod.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3;    plural=n%10==1 && n%100!=11 ? 0 :    n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+#: examples/python/systray/eggtrayicon.c:111 gnome/applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr "Усмерење"
+
+# Потребан је бољи превод за ово
+#: examples/python/systray/eggtrayicon.c:112 gnome/applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr "Усмерење обавештајне зоне."
+
+#: gnome/applet/applet-dbus-info.c:852
+#, c-format
+msgid ""
+"The requested wireless network '%s' does not appear to be in range.  A "
+"different wireless network will be used if any are available."
+msgstr "Тражена бежична мрежа „%s“ није у домету. Биће коришћена друга бежична мрежа ако је расположива."
+
+#: gnome/applet/applet-dbus.c:573
+#, c-format
+msgid "Connection to the wireless network '%s' failed.\n"
+msgstr "Неуспела веза са бежичном мрежом „%s“.\n"
+
+#: gnome/applet/applet-dbus.c:578
+msgid "Connection to the wired network failed.\n"
+msgstr "Неуспела веза са жичаном мрежом.\n"
+
+#: gnome/applet/applet.c:194 gnome/applet/applet.c:212
+msgid "NetworkManager Applet"
+msgstr "Аплет Управник мреже"
+
+#: gnome/applet/applet.c:196 gnome/applet/applet.c:214
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "Copyright (C) 2004-2005 Red Hat, Inc."
+
+#: gnome/applet/applet.c:197 gnome/applet/applet.c:215
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr "Аплет за обавештајну зону за управљање мрежним уређајима и везама."
+
+#: gnome/applet/applet.c:280
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a login failure.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Пријава на VPN није успела</span>\n"
+"\n"
+"VPN веза са мрежом „%s“ није остварена јер пријава није успела.\n"
+"\n"
+"Порука VPN сервиса је била : „%s“"
+
+#: gnome/applet/applet.c:341
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
+"\n"
+"VPN connection '%s' said:\n"
+"\n"
+"\"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Порука при пријави на VPN</span>\n"
+"\n"
+"Порука VPN везе „%s“ је:\n"
+"\n"
+"„%s“"
+
+#: gnome/applet/applet.c:559 gnome/applet/applet.c:1922
+#: gnome/applet/other-network-dialog.c:315
+#: gnome/applet/passphrase-dialog.c:430
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr "Аплет Управник мреже није могао да пронађе неке од потребних ресурса (глејд датотека није пронађена)."
+
+#: gnome/applet/applet.c:572
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "Мрежни уређај „%s (%s)“ не подржава потрагу за бежичним мрежама."
+
+#: gnome/applet/applet.c:579
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "Мрежни уређај „%s (%s)“ не подржава откривање везе."
+
+#: gnome/applet/applet.c:700
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "Припрема уређаја %s за жичану мрежу..."
+
+#: gnome/applet/applet.c:702
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "Припрема уређаја %s за бежичну мрежу „%s“..."
+
+#: gnome/applet/applet.c:709
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "Подешавање уређаја %s за бежичну мрежу..."
+
+#: gnome/applet/applet.c:711
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "Покушај приступа бежичној мрежи „%s“..."
+
+#: gnome/applet/applet.c:718
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "Чекање на мрежни кључ за бежичну мрежу „%s“..."
+
+#: gnome/applet/applet.c:725 gnome/applet/applet.c:734
+msgid "Requesting a network address from the wired network..."
+msgstr "Потраживање мрежне адресе за жичану мрежу..."
+
+#: gnome/applet/applet.c:727 gnome/applet/applet.c:736
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "Потраживање мрежне адресе за бежичну мрежу „%s“..."
+
+#: gnome/applet/applet.c:743
+msgid "Finishing connection to the wired network..."
+msgstr "Обустављање везе са жичаном мрежом..."
+
+#: gnome/applet/applet.c:745
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "Обустављање везе са бежичном мрежом „%s“..."
+
+#: gnome/applet/applet.c:791
+msgid "NetworkManager is not running"
+msgstr "Управљач мреже није покренут"
+
+#: gnome/applet/applet.c:802
+msgid "No network connection"
+msgstr "Нема мрежних веза"
+
+#: gnome/applet/applet.c:809
+msgid "Wired network connection"
+msgstr "Бежична мрежна веза"
+
+# FIXME Ад-хок
+#: gnome/applet/applet.c:816
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Повезан са ад-хок бежичном мрежом"
+
+#: gnome/applet/applet.c:830
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Бежична мрежна веза са „%s“ (%d%%)"
+
+#: gnome/applet/applet.c:1181
+msgid "Other Wireless Networks..."
+msgstr "Остале бежичне мреже..."
+
+#: gnome/applet/applet.c:1202
+msgid "Create new Wireless Network..."
+msgstr "Направи нову бежичну мрежу..."
+
+#: gnome/applet/applet.c:1315
+msgid "VPN Connections"
+msgstr "VPN везе"
+
+#: gnome/applet/applet.c:1337
+msgid "Disconnect VPN..."
+msgstr "Искључи VPN..."
+
+#: gnome/applet/applet.c:1366
+msgid "No network devices have been found"
+msgstr "Није пронађен ниједан мрежни уређај"
+
+#: gnome/applet/applet.c:1529
+msgid "NetworkManager is not running..."
+msgstr "Управљач мрежом није покренут..."
+
+#: gnome/applet/applet.c:1599 gnome/applet/applet.c:1647
+msgid "Pause Wireless Scanning"
+msgstr "Обустави тражење бежичне мреже"
+
+#: gnome/applet/applet.c:1604
+msgid "Resume Wireless Scanning"
+msgstr "Настави тражење бежичне мреже"
+
+#: gnome/applet/applet.c:1614 gnome/applet/applet.c:1653
+msgid "Stop All Wireless Devices"
+msgstr "Заустави све бежичне уређаје"
+
+#: gnome/applet/applet.c:1619
+msgid "Start All Wireless Devices"
+msgstr "Покрени све бежичне уређаје"
+
+#: gnome/applet/applet.c:1662
+msgid "Help"
+msgstr "Помоћ"
+
+#: gnome/applet/applet.c:1669
+msgid "About"
+msgstr "О програму"
+
+#: gnome/applet/applet.c:2070
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr "Управљач мрежом није успео да пронађе неопходне ресурсе и не може да настави рад.\n"
+
+#: gnome/applet/gtkcellrendererprogress.c:243
+#: gnome/applet/gtkcellrendererprogress.c:301
+#, c-format
+msgid "progress bar label|%d %%"
+msgstr "%d %%"
+
+#: gnome/applet/menu-items.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Жичана мрежа (%s)"
+
+#: gnome/applet/menu-items.c:93
+msgid "Wired Network"
+msgstr "Жичана мрежа"
+
+#: gnome/applet/menu-items.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Бежична мрежа (%s)"
+msgstr[1] "Бежичне мреже (%s)"
+msgstr[2] "Бежичних мрежа (%s)"
+
+#: gnome/applet/menu-items.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Бежична мрежа"
+msgstr[1] "Бежичне мреже"
+msgstr[2] "Бежичне мреже"
+
+#: gnome/applet/menu-items.c:294
+msgid " (invalid Unicode)"
+msgstr " (неисправан Уникод)"
+
+#: gnome/applet/other-network-dialog.c:148
+#: gnome/applet/passphrase-dialog.c:164
+#: gnome/applet/wireless-applet.glade.h:27
+msgid "Passphrase:"
+msgstr "Лозинка:"
+
+#: gnome/applet/other-network-dialog.c:151
+#: gnome/applet/passphrase-dialog.c:167
+msgid "Ascii Key:"
+msgstr "АСКРИ кључ:"
+
+#: gnome/applet/other-network-dialog.c:154
+#: gnome/applet/passphrase-dialog.c:170
+msgid "Hex Key:"
+msgstr "Хекса кључ:"
+
+#: gnome/applet/other-network-dialog.c:229
+msgid "Create new wireless network"
+msgstr "Направи нову бежичну мрежу"
+
+#: gnome/applet/other-network-dialog.c:230
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr "Унесите ESSID и безбедносне поставке бежичне мреже коју желите да начините."
+
+#: gnome/applet/other-network-dialog.c:235
+msgid "Custom wireless network"
+msgstr "Корисничка бежична мрежа"
+
+#: gnome/applet/other-network-dialog.c:236
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Унесите ESSID бежичне мреже са којом желите да се повежете."
+
+#: gnome/applet/vpn-password-dialog.c:105
+#, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "Морате бити пријављени како бисте користили виртуелну приватну мрежу „%s“."
+
+#: gnome/applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: gnome/applet/wireless-applet.glade.h:2
+msgid "*"
+msgstr "*"
+
+#: gnome/applet/wireless-applet.glade.h:3
+msgid ""
+"128-bit Passphrase (WEP)\n"
+"Ascii Key (WEP)\n"
+"Hex Key (WEP)"
+msgstr ""
+"128-битни кључ (WEP)\n"
+"АСКРИ кључ (WEP)\n"
+"Хекс кључ (WEP)"
+
+#: gnome/applet/wireless-applet.glade.h:6
+msgid ""
+"128-bit passphrase (WEP)\n"
+"Ascii key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+"128-битни кључ (WEP)\n"
+"АСКРИ кључ (WEP)\n"
+"Хекс кључ (WEP)"
+
+#: gnome/applet/wireless-applet.glade.h:10
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Бежична мрежа захтева лозинку</span>\n"
+"\n"
+" Лозинка или кључ за шифровање су неопходни за приступ бежичној мрежи „%s“."
+
+#: gnome/applet/wireless-applet.glade.h:14
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Смањена употребна вредност мреже</span>\n"
+"\n"
+"%s неће бити сасвим употребљива."
+
+#: gnome/applet/wireless-applet.glade.h:18
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Потврда пријаве на мрежу</span>\n"
+"\n"
+"Желите да се пријавите на мрежу „%s“. Ако сте сигурни да је ова бежична мрежа безбедна, обележите кућицу испод и Управник мреже вам више неће постављати сувишна питања при пријави на ову мрежу."
+
+#: gnome/applet/wireless-applet.glade.h:21
+msgid "Always Trust this Wireless Network"
+msgstr "Увек поклони поверење бежичној мрежи"
+
+#: gnome/applet/wireless-applet.glade.h:22
+msgid "C_onnect"
+msgstr "П_овежи се"
+
+#: gnome/applet/wireless-applet.glade.h:23
+msgid "Connect with encryption enabled"
+msgstr "Повежи се и укључи шифровање"
+
+#: gnome/applet/wireless-applet.glade.h:24
+msgid "Don't remind me again"
+msgstr "Не подсећај ме више"
+
+#: gnome/applet/wireless-applet.glade.h:25
+msgid "Key Type:"
+msgstr "Врста кључа:"
+
+#: gnome/applet/wireless-applet.glade.h:26
+msgid "Key type:"
+msgstr "Врста кључа:"
+
+#: gnome/applet/wireless-applet.glade.h:28
+msgid "Wireless Network Key Required"
+msgstr "Потребан је кључ за бежичну мрежу"
+
+#: gnome/applet/wireless-applet.glade.h:29
+msgid "Wireless _adapter:"
+msgstr "Бежични _уређај:"
+
+#: gnome/applet/wireless-applet.glade.h:30
+msgid "Wireless _network:"
+msgstr "Бежична _мрежа:"
+
+#: gnome/applet/wireless-applet.glade.h:31
+msgid "_Login to Network"
+msgstr "_Умрежи се"
+
+#: gnome/applet/wireless-applet.glade.h:32
+msgid "_OK"
+msgstr "_У реду"
+
+#: src/nm-netlink-monitor.c:154
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "Није могуће направити утичницу за посматрање жичаног мрежног уређаја - %s"
+
+#: src/nm-netlink-monitor.c:172
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "Није могуће повезати се на утичницу за посматрање жичаног мрежног уређаја - %s"
+
+#: src/nm-netlink-monitor.c:404
+msgid "operation took too long"
+msgstr "Потрага је предуго трајала"
+
+#: src/nm-netlink-monitor.c:501
+msgid "received data from wrong type of sender"
+msgstr "Примљени су подаци погрешног типа од пошиљаоца"
+
+#: src/nm-netlink-monitor.c:514
+msgid "received data from unexpected sender"
+msgstr "Примљени су подаци од неочекиваног пошиљаоца"
+
+#: src/nm-netlink-monitor.c:536
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: src/nm-netlink-monitor.c:645
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "Сувише података је послато кроз утичницу и нешто од њих је изгубљено"
