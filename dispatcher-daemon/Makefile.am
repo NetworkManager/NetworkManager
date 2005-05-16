@@ -3,7 +3,7 @@ NULL=
 
 bin_PROGRAMS = NetworkManagerDispatcher
 
-NetworkManagerDispatcher_CFLAGS = 	\
+NetworkManagerDispatcher_CPPFLAGS = 	\
 	$(DBUS_CFLAGS)					\
 	$(GTHREAD_CFLAGS)				\
 	-Wall						\
