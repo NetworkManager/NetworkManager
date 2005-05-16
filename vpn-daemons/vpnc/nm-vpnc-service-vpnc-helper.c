@@ -220,6 +220,7 @@ int main( int argc, char *argv[] )
 {
 	DBusConnection *	con;
 	DBusError			error;
+	char *			reason = NULL;
 	char *			vpn_gateway = NULL;
 	char *			tundev = NULL;
 	char *			internal_ip4_address = NULL;
@@ -241,6 +242,13 @@ int main( int argc, char *argv[] )
 		exit (1);
 	}
 	dbus_connection_set_exit_on_disconnect (con, FALSE);
+
+	/* vpnc 0.3.3 gives us a "reason" code.  If we are given one,
+	 * don't proceed unless its "connect".
+	 */
+	reason = getenv ("reason");
+	if (reason && strcmp (reason, "connect") != 0)
+		exit (0);
 
 	vpn_gateway = getenv ("VPNGATEWAY");
 	tundev = getenv ("TUNDEV");

@@ -1,5 +1,11 @@
 2005-05-16  Dan Williams  <dcbw@redhat.com>
 
+	* vpn-daemons/vpnc/nm-vpnc-service-vpnc-helper.c
+		- (main): Work correctly with vpnc 0.3.3 by exiting if the "reason" code
+			is not "connect"
+
+2005-05-16  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tomislav Vujec <tvujec@redhat.com>
 	* gnome/applet/applet-dbus-info.c
 		- (nmi_dbus_get_vpn_connection_routes): new function, pull routes out of
