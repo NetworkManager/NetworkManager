@@ -243,14 +243,14 @@ static DBusConnection *nmd_dbus_init (void)
  */
 static void nmd_print_usage (void)
 {
-	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--daemon=yes|no] [--help]\n");
+	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--no-daemon] [--help]\n");
 	fprintf (stderr,
 		"\n"
-		"        --daemon=yes|no    Become a daemon\n"
+		"        --no-daemon        Become a daemon\n"
 		"        --help             Show this information and exit\n"
 		"\n"
 		"NetworkManagerDispatcher listens for device messages from NetworkManager\n"
-		"and runs scripts in /etc/networkmanager.\n"
+		"and runs scripts in " NM_SCRIPT_DIR "\n"
 		"\n");
 }
 
@@ -273,7 +273,7 @@ int main( int argc, char *argv[] )
 		const char *opt;
 
 		static struct option options[] = {
-			{"daemon",	1, NULL, 0},
+			{"no-daemon",	0, NULL, 0},
 			{"help",		0, NULL, 0},
 			{NULL,		0, NULL, 0}
 		};
@@ -291,17 +291,12 @@ int main( int argc, char *argv[] )
 					nmd_print_usage ();
 					return 0;
 				}
-				else if (strcmp (opt, "daemon") == 0)
+				else if (strcmp (opt, "no-daemon") == 0)
+					become_daemon = FALSE;
+				else
 				{
-					if (strcmp ("yes", optarg) == 0)
-						become_daemon = TRUE;
-					else if (strcmp ("no", optarg) == 0)
-						become_daemon = FALSE;
-					else
-					{
-						nmd_print_usage ();
-						return 1;
-					}
+					nmd_print_usage ();
+					return 1;
 				}
 				break;
 

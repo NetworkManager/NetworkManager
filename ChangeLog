@@ -1,5 +1,12 @@
 2005-05-15  Dan Williams  <dcbw@redhat.com>
 
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- (main): sync arguments with NetworkManager and the applet, now use
+			"--no-daemon" rather than "daemon=no"
+		- (nmd_print_usage): Fix script path in usage message
+
+2005-05-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.[ch]
 	  src/NetworkManagerPolicy.c
 	  src/NetworkManager.c
