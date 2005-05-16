@@ -162,7 +162,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		goto out;
 	}
 
-	nm_device_deactivate (dev, FALSE);
+	nm_device_deactivate (dev);
 
 	nm_schedule_state_change_signal_broadcast (data->data);
 
@@ -378,7 +378,7 @@ static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 			NMDevice	*dev = (NMDevice *)(elt->data);
 			if (nm_device_is_wireless (dev))
 			{
-				nm_device_deactivate (dev, FALSE);
+				nm_device_deactivate (dev);
 				nm_device_bring_down (dev);
 			}
 		}
@@ -419,7 +419,7 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 		{
 			NMDevice	*dev = (NMDevice *)(elt->data);
 
-			nm_device_deactivate (dev, FALSE);
+			nm_device_deactivate (dev);
 			nm_device_bring_down (dev);
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);

@@ -131,7 +131,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 				nm_device_is_wireless (dev) ? "wireless" : "wired", nm_device_get_iface (dev));
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
-			nm_device_deactivate (dev, TRUE);
+			nm_device_deactivate (dev);
 
 			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
@@ -176,7 +176,7 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 			if (dev && (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0))
 			{
 				nm_device_set_removed (dev, TRUE);
-				nm_device_deactivate (dev, FALSE);
+				nm_device_deactivate (dev);
 				nm_device_worker_thread_stop (dev);
 				nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
 
@@ -451,7 +451,7 @@ static void device_stop_and_free (NMDevice *dev, gpointer user_data)
 	g_return_if_fail (dev != NULL);
 
 	nm_device_set_removed (dev, TRUE);
-	nm_device_deactivate (dev, FALSE);
+	nm_device_deactivate (dev);
 	nm_device_unref (dev);
 }
 

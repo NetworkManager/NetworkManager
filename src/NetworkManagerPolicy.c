@@ -74,6 +74,7 @@ gboolean nm_policy_activation_finish (NMActRequest *req)
 	}
 
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
+	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
 
 out:
@@ -154,7 +155,7 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 		nm_dbus_schedule_device_status_change_signal	(data, dev, NULL, DEVICE_ACTIVATION_FAILED);
 	}
 
-	nm_device_deactivate (dev, FALSE);
+	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_device_change_check (data);
 
@@ -372,7 +373,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 	{
 		/* Terminate current connection */
 		nm_info ("SWITCH: terminating current connection '%s' because it's no longer valid.", nm_device_get_iface (old_dev));
-		nm_device_deactivate (old_dev, FALSE);
+		nm_device_deactivate (old_dev);
 		do_switch = TRUE;
 	}
 	else if (old_dev && new_dev)
@@ -466,7 +467,7 @@ static gboolean nm_policy_device_activation (NMActRequest *req)
 	g_assert (data);
 
 	if ((old_dev = nm_get_active_device (data)))
-		nm_device_deactivate (old_dev, FALSE);
+		nm_device_deactivate (old_dev);
 
 	new_dev = nm_act_request_get_dev (req);
 	if (nm_device_is_activating (new_dev))

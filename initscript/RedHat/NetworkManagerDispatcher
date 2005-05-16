@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# NetworkManager:   NetworkManagerDispatcher daemon
+#
+# chkconfig: - 98 02
+# description: This daemon automatically runs scripts when NetworkManager \
+#              changes the network state.
+#
+# processname: NetworkManagerDispatcher
+# pidfile: /var/run/NetworkManagerDispatcher.pid
+#
+
+# Sanity checks.
+[ -x /usr/bin/NetworkManagerDispatcher ] || exit 1
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# so we can rearrange this easily
+processname=NetworkManagerDispatcher
+servicename=NetworkManagerDispatcher
+pidfile=/var/run/NetworkManagerDispatcher.pid
+
+RETVAL=0
+
+start()
+{
+	echo -n $"Starting NetworkManagerDispatcher daemon: "
+	daemon --check $servicename $processname
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > $pidfile
+}
+
+stop()
+{
+	echo -n $"Stopping NetworkManagerDispatcher daemon: "
+
+	killproc $servicename -TERM
+	RETVAL=$?
+	echo
+	if [ $RETVAL -eq 0 ]; then
+		rm -f /var/lock/subsys/$servicename
+		rm -f $pidfile
+	fi
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	status)
+		status $processname
+		RETVAL=$?
+		;;
+	restart)
+		stop
+		start
+		;;
+	condrestart)
+		if [ -f /var/lock/subsys/$servicename ]; then
+			stop
+			start
+		fi
+		;;
+	*)
+		echo $"Usage: $0 {start|stop|status|restart|condrestart}"
+		;;
+esac
+exit $RETVAL

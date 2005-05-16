@@ -676,7 +676,7 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 		/* Deactivate a currently active device */
 		if (!link_active && nm_device_get_act_request (dev))
 		{
-			nm_device_deactivate (dev, FALSE);
+			nm_device_deactivate (dev);
 			nm_policy_schedule_device_change_check (dev->app_data);
 		}
 		else if (link_active && !nm_device_get_act_request (dev))
@@ -1485,13 +1485,8 @@ void nm_device_update_ip4_address (NMDevice *dev)
 		return;
 
 	new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
-
-	/* If the new address is different, send an IP4AddressChanged signal on the bus */
 	if (new_address != nm_device_get_ip4_address (dev))
-	{
-		nm_dbus_signal_device_ip4_address_change (dev->app_data->dbus_connection, dev);
 		dev->ip4_address = new_address;
-	}
 }
 
 
@@ -3121,7 +3116,7 @@ void nm_device_activation_cancel (NMDevice *dev)
  * Remove a device's routing table entries and IP address.
  *
  */
-gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
+gboolean nm_device_deactivate (NMDevice *dev)
 {
 	NMIP4Config *	config;
 
@@ -3129,6 +3124,12 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	nm_info ("Deactivating device %s.", nm_device_get_iface (dev));
+
+	if (dev->act_request)
+	{
+		/* Only send if the device is actually active */
+		nm_dbus_schedule_device_status_change_signal (dev->app_data, dev, NULL, DEVICE_NO_LONGER_ACTIVE);
+	}
 
 	if (nm_device_is_activating (dev))
 		nm_device_activation_cancel (dev);
@@ -3141,7 +3142,7 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	}
 
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
-		return (TRUE);
+		return TRUE;
 
 	nm_vpn_manager_deactivate_vpn_connection (dev->app_data->vpn_manager);
 
@@ -3157,9 +3158,6 @@ gboolean nm_device_deactivate (NMDevice *dev, gboolean just_added)
 	nm_system_device_flush_routes (dev);
 	nm_system_device_flush_addresses (dev);
 	nm_device_update_ip4_address (dev);
-
-	if (!just_added)
-		nm_dbus_schedule_device_status_change_signal (dev->app_data, dev, NULL, DEVICE_NO_LONGER_ACTIVE);
 
 	/* Clean up stuff, don't leave the card associated */
 	if (nm_device_is_wireless (dev))

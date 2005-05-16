@@ -343,42 +343,6 @@ void nm_dbus_signal_state_change (DBusConnection *connection, NMData *data)
 	dbus_message_unref (message);
 }
 
-
-/*
- * nm_dbus_signal_device_ip4_address_change
- *
- * Notifies the bus that a particular device's IPv4 address changed.
- *
- */
-void nm_dbus_signal_device_ip4_address_change (DBusConnection *connection, NMDevice *dev)
-{
-	DBusMessage		*message;
-	gchar		*dev_path;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (dev != NULL);
-
-	if (!(dev_path = nm_dbus_get_object_path_for_device (dev)))
-		return;
-
-	message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceIP4AddressChange");
-	if (!message)
-	{
-		nm_warning ("nm_dbus_signal_device_ip4_address_change(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		return;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
-	g_free (dev_path);
-
-	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nm_dbus_signal_device_ip4_address_change(): Could not raise the IP4AddressChange signal!");
-
-	dbus_message_unref (message);
-}
-
-
 /*
  * nm_dbus_signal_wireless_network_change
  *

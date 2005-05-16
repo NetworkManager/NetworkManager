@@ -1,5 +1,43 @@
 2005-05-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.[ch]
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManager.c
+	  src/nm-dbus-nm.c
+		- Remove the "just_added" parameter from nm_device_deactivate().  We no
+			longer send the DeviceNoLongerActive signal unconditionally, but only
+			when the device is actually active.
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- (nmd_execute_scripts): convert to GLib directory functions from opendir(),
+			and simplify the logic
+		- (nmd_get_device_name): copy value from dbus reply so we don't segfault when
+			we free it later on
+
+	* initscript/RedHat/Makefile.am
+	  initscript/RedHat/NetworkManagerDispatcher
+		- Add initscript for NetworkManagerDispatcher
+
+
+	Patch from Bill Moss:
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Remove IP4AddressChange signal code including nmd_get_device_ip4_address()
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_signal_device_ip4_address_change): remove.  If the device goes up,
+			and DeviceNowActive gets signaled, then the device has a new IP address
+			anyway.  There's no need for a separate signal.
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_update_ip4_address): Don't send IP4AddressChange signal
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): Send DeviceNowActive signal when the device
+			activates successfully.  This kind of went missing when I reworked the
+			activation code.
+
+2005-05-15  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- Check for dhcdbd and error if its not found
 
