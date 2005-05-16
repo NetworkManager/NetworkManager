@@ -434,10 +434,15 @@ void nm_vpn_manager_handle_ip4_config_signal (NMVPNManager *manager, DBusMessage
 		vpn_dev = nm_get_active_device (manager->app_data);
 		if (vpn_dev)
 		{
+			int num_routes = -1;
+			char **routes = nm_dbus_vpn_get_routes (manager->app_data->dbus_connection, con, &num_routes);
+		
 			nm_system_vpn_device_set_from_ip4_config (manager->app_data->named_manager, vpn_dev,
-												manager->active_device, manager->active_config);
+												manager->active_device, manager->active_config,
+												routes, num_routes);
 			if (login_banner && strlen (login_banner))
 				nm_dbus_vpn_signal_vpn_login_banner (manager->app_data->dbus_connection, con, login_banner);
+			g_strfreev(routes);
 		}
 	}
 }

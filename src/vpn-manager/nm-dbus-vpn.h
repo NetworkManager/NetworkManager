@@ -35,6 +35,8 @@ void				nm_dbus_vpn_signal_vpn_connection_change	(DBusConnection *con, NMVPNConn
 void				nm_dbus_vpn_signal_vpn_failed				(DBusConnection *con, const char *signal, NMVPNConnection *vpn, const char *error_msg);
 void				nm_dbus_vpn_signal_vpn_login_banner		(DBusConnection *con, NMVPNConnection *vpn, const char *banner);
 
+char **			nm_dbus_vpn_get_routes					(DBusConnection *connection, NMVPNConnection *vpn, int *num_items);
+
 NMDbusMethodList *	nm_dbus_vpn_methods_setup				(void);
 
 #endif

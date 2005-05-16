@@ -1,3 +1,28 @@
+2005-05-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tomislav Vujec <tvujec@redhat.com>
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_get_vpn_connection_routes): new function, pull routes out of
+			GConf and pass them to NetworkManager.  New key is 'routes' under
+			the VPN connection, and should be a string list
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_vpn_device_set_from_ip4_config): if user-defined routes exist,
+			set them on the device when we set the rest of the VPN config.  Ensure
+			they are in the correct format since they are passed directly to the
+			command line.
+
+	* src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerDebian.c
+		- (nm_system_device_add_route_via_device_with_iface): new function
+
+	* src/vpn-manager/nm-dbus-vpn.c
+		- (nm_dbus_vpn_get_routes): grab VPN routes from NetworkManagerInfo
+
+	* src/vpn-manager/nm-vpn-manager.c
+		- (nm_vpn_manager_handle_ip4_config_signal): grab routes from NMI and pass
+			them into the IP4 config functions
+
 2005-05-15  Dan Williams  <dcbw@redhat.com>
 
 	From Filip Miletic:

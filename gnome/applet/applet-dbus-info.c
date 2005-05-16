@@ -668,6 +668,82 @@ static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *appl
 	return (reply);
 }
 
+/*
+ * nmi_dbus_get_vpn_connection_routes
+ *
+ * Returns routes for a particular VPN connection.
+ *
+ */
+static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet, DBusMessage *message)
+{
+	DBusMessage		*reply = NULL;
+	gchar			*gconf_key = NULL;
+	char				*name = NULL;
+	GConfValue		*routes_value = NULL;
+	GConfValue		*value = NULL;
+	DBusError			 error;
+	char				*escaped_name;
+	DBusMessageIter 	 iter, array_iter;
+	GSList			*elt;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	dbus_error_init (&error);
+	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID)
+		|| (strlen (name) <= 0))
+	{
+		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManagerInfo::getVPNConnectionRoutes called with invalid arguments.");
+		return reply;
+	}
+
+	escaped_name = gconf_escape_key (name, strlen (name));
+
+	/* User-visible name of connection */
+	gconf_key = g_strdup_printf ("%s/%s/name", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
+	if (!(value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
+	{
+		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionRoutes could not access the name for connection '%s'", name);
+		return reply;
+	}
+	gconf_value_free (value);
+	g_free (gconf_key);
+
+	/* Grab vpn-daemon specific data */
+	gconf_key = g_strdup_printf ("%s/%s/routes", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
+	if (!(routes_value = gconf_client_get (applet->gconf_client, gconf_key, NULL))
+		|| !(routes_value->type == GCONF_VALUE_LIST)
+		|| !(gconf_value_get_list_type (routes_value) == GCONF_VALUE_STRING))
+	{
+		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+						"NetworkManagerInfo::getVPNConnectionRoutes could not access the routes for connection '%s'", name);
+		if (routes_value)
+			gconf_value_free (routes_value);
+		return reply;
+	}
+	g_free (gconf_key);
+
+	reply = dbus_message_new_method_return (message);
+	dbus_message_iter_init_append (reply, &iter);
+	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
+
+	for (elt = gconf_value_get_list (routes_value); elt; elt = g_slist_next (elt))
+	{
+		const char *string = gconf_value_get_string ((GConfValue *)elt->data);
+		if (string)
+			dbus_message_iter_append_basic (&array_iter, DBUS_TYPE_STRING, &string);
+	}
+
+	dbus_message_iter_close_container (&iter, &array_iter);
+
+	gconf_value_free (routes_value);
+	g_free (escaped_name);
+
+	return (reply);
+}
+
 
 /*
  * nmi_dbus_update_network_auth_method
@@ -871,6 +947,8 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		reply = nmi_dbus_get_vpn_connection_properties (applet, message);
 	else if (strcmp ("getVPNConnectionVPNData", method) == 0)
 		reply = nmi_dbus_get_vpn_connection_vpn_data (applet, message);
+	else if (strcmp ("getVPNConnectionRoutes", method) == 0)
+		reply = nmi_dbus_get_vpn_connection_routes (applet, message);
 
 	if (reply)
 	{

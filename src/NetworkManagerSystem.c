@@ -215,12 +215,88 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 
 
 /*
+ * validate_ip4_route
+ *
+ * Ensure that IP4 routes are in the correct format
+ *
+ */
+static char *validate_ip4_route (const char *route)
+{
+	char *		ret = NULL;
+	char *		temp = NULL;
+	int			slash_pos = -1;
+	char *		p = NULL;
+	int			len, i;
+	int			dot_count = 0;
+	gboolean		have_slash = FALSE;
+	struct in_addr	addr;
+
+	g_return_val_if_fail (route != NULL, NULL);
+
+	len = strlen (route);
+	/* Minimum length, ie 1.1.1.1/8 */
+	if (len < 9)
+		return NULL;
+
+	for (i = 0; i < len; i++)
+	{
+		/* Ensure there is only one slash */
+		if (route[i] == '/')
+		{
+			if (have_slash)
+				goto out;
+
+			have_slash = TRUE;
+			slash_pos = i;
+			continue;
+		}
+
+		if (route[i] == '.')
+		{
+			if (dot_count >= 4)
+				goto out;
+
+			dot_count++;
+			continue;
+		}
+
+		if (!isdigit (route[i]))
+			goto out;
+	}
+
+	/* Make sure there is at least one slash and 3 dots */
+	if (!have_slash || !slash_pos || (dot_count != 3))
+		goto out;
+
+	/* Valid IP address part */
+	temp = g_strdup (route);
+	temp[slash_pos] = '\0';
+	memset (&addr, 0, sizeof (struct in_addr));
+	if (inet_aton (temp, &addr) == 0)
+		goto out;
+
+	/* Ensure the network # is valid */
+	p = temp + slash_pos + 1;
+	i = (int) strtol (p, NULL, 10);
+	if ((i < 0) || (i > 32))
+		goto out;
+
+	/* Success! */
+	ret = g_strdup (route);
+
+out:
+	g_free (temp);
+	return ret;
+}
+
+
+/*
  * nm_system_vpn_device_set_from_ip4_config
  *
  * Set IPv4 configuration of a VPN device from an NMIP4Config object.
  *
  */
-gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config)
+gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes)
 {
 	gboolean		success = FALSE;
 	NMIP4Config *	ad_config = NULL;
@@ -242,9 +318,34 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 	nm_system_device_set_ip4_netmask_with_iface (NULL, iface, nm_ip4_config_get_netmask (config));
 	nm_system_device_set_mtu_with_iface (NULL, iface, 1412); 
 	sleep (1);
-	nm_system_delete_default_route ();
 	nm_system_device_flush_routes_with_iface (iface);
-	nm_system_device_add_default_route_via_device_with_iface (iface);
+	if (num_routes <= 0)
+	{
+		nm_system_delete_default_route ();
+		nm_system_device_add_default_route_via_device_with_iface (iface);
+	}
+	else
+	{
+		int i;
+		for (i = 0; i < num_routes; i++)
+		{
+			char *valid_ip4_route;
+
+			/* Make sure the route is valid, otherwise it's a security risk as the route
+			 * text is simply taken from the user, and passed directly to system().  If
+			 * we did not check the route, think of:
+			 *
+			 *     system("/sbin/ip route add `rm -rf /` dev eth0")
+			 *
+			 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
+			 */
+			if ((valid_ip4_route = validate_ip4_route (routes[i])))
+			{
+				nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
+				g_free (valid_ip4_route);
+			}
+		}
+	}
 
 	set_nameservers (named, config);
 	set_search_domains (named, config);

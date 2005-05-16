@@ -233,6 +233,87 @@ static char ** nm_dbus_vpn_get_vpn_data (DBusConnection *connection, NMVPNConnec
 }
 
 
+/*
+ * nm_dbus_vpn_get_routes
+ *
+ * Get VPN routes from NMI for a vpn connection
+ *
+ * NOTE: caller MUST free returned value using g_strfreev()
+ *
+ */
+char ** nm_dbus_vpn_get_routes (DBusConnection *connection, NMVPNConnection *vpn, int *num_items)
+{
+	DBusMessage		*message;
+	DBusError			 error;
+	DBusMessage		*reply;
+	char			    **routes = NULL;
+	const char		*vpn_name;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (vpn != NULL, NULL);
+	g_return_val_if_fail (num_items != NULL, NULL);
+
+	*num_items = -1;
+
+	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionRoutes")))
+	{
+		nm_warning ("nm_dbus_vpn_get_routes(): Couldn't allocate the dbus message");
+		return (NULL);
+	}
+
+	vpn_name = nm_vpn_connection_get_name (vpn);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_INVALID);
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+		nm_warning ("nm_dbus_vpn_get_routes(): %s raised %s", error.name, error.message);
+	else if (!reply)
+		nm_info ("nm_dbus_vpn_get_routes(): reply was NULL.");
+	else
+	{
+		DBusMessageIter iter, array_iter;
+		GArray *buffer;
+
+		dbus_message_iter_init (reply, &iter);
+		dbus_message_iter_recurse (&iter, &array_iter);
+
+		buffer = g_array_new (TRUE, TRUE, sizeof (gchar *));
+
+		if (buffer == NULL)
+			return NULL;
+
+		while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
+		{
+			const char *value;
+			char *str;
+		
+			dbus_message_iter_get_basic (&array_iter, &value);
+			str = g_strdup (value);
+			
+			if (str == NULL)
+			{
+				g_array_free (buffer, TRUE);
+				return NULL;
+			}
+
+			g_array_append_val (buffer, str);
+
+			dbus_message_iter_next (&array_iter);
+		}
+		routes = (gchar **)(buffer->data);
+		*num_items = buffer->len;
+		g_array_free (buffer, FALSE);
+	}
+	
+	if (reply)
+		dbus_message_unref (reply);
+
+	return (routes);
+}
+
+
 typedef struct UpdateOneVPNCBData
 {
 	NMData *	data;

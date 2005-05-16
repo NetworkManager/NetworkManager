@@ -39,6 +39,8 @@ void			nm_system_device_flush_routes_with_iface	(const char *iface);
 void			nm_system_device_add_default_route_via_device(NMDevice *dev);
 void			nm_system_device_add_default_route_via_device_with_iface(const char *iface);
 
+void			nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route);
+
 void			nm_system_device_flush_addresses			(NMDevice *dev);
 void			nm_system_device_flush_addresses_with_iface	(const char *iface);
 
@@ -64,7 +66,7 @@ void			nm_system_remove_ip4_config_nameservers		(NMNamedManager *named, NMIP4Con
 void			nm_system_remove_ip4_config_search_domains	(NMNamedManager *named, NMIP4Config *config);
 
 gboolean		nm_system_device_set_from_ip4_config		(NMDevice *dev);
-gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config);
+gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev, gboolean up);
 gboolean		nm_system_device_set_up_down_with_iface		(NMDevice *dev, const char *iface, gboolean up);
