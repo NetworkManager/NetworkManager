@@ -6,7 +6,7 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
 
 libexec_PROGRAMS = nm-applet
 
-nm_applet_CFLAGS =					\
+nm_applet_CPPFLAGS =				\
 	$(DBUS_CFLAGS)					\
 	$(GTHREAD_CFLAGS)				\
 	$(HAL_CFLAGS)					\
