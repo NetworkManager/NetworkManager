@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #include "NetworkManager.h"
 #include "nm-vpnc-service.h"
@@ -49,7 +50,6 @@ static char *vpnc_binary_paths[] =
 
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
 #define NM_VPNC_PID_FILE_PATH		LOCALSTATEDIR"/run/vpnc/pid"
-#define NM_VPNC_CONFIG_FILE_PATH	LOCALSTATEDIR"/run/vpnc/nm-vpnc-service-vpnc.conf"
 
 typedef struct NmVpncData
 {
@@ -75,7 +75,7 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
 										const char *exception, const char *format, ...)
 {
 	char *exception_text;
-	DBusMessage	*reply_message;
+	DBusMessage	*reply;
 	va_list		 args;
 	char			 error_text[512];
 
@@ -84,81 +84,42 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
 	va_end (args);
 
 	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
-	reply_message = dbus_message_new_error (message, exception_text, error_text);
+	reply = dbus_message_new_error (message, exception_text, error_text);
 	g_free (exception_text);
 
-	return (reply_message);
+	return (reply);
 }
 
 
 /*
- * nm_vpnc_dbus_signal_login_failed
+ * nm_vpnc_dbus_signal_failure
  *
- * Signal the bus that VPN login failed.
+ * Signal the bus that some VPN operation failed.
  *
  */
-static void nm_vpnc_dbus_signal_login_failed (NmVpncData *data)
+static void nm_vpnc_dbus_signal_failure (NmVpncData *data, const char *signal)
 {
 	DBusMessage	*message;
-	const char	*error_msg = "The VPN login failed because the user name and password were not accepted.";
+	const char	*error_msg = NULL;
 
 	g_return_if_fail (data != NULL);
+	g_return_if_fail (signal != NULL);
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)))
-	{
-		nm_warning ("Not enough memory for new dbus message!");
+	if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
+		error_msg = "The VPN login failed because the user name and password were not accepted.";
+	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED))
+		error_msg = "The VPN login failed because the VPN program could not be started.";
+	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
+		error_msg = "The VPN login failed because the VPN program could not connect to the VPN server.";
+	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD))
+		error_msg = "The VPN login failed because the VPN configuration options were invalid.";
+	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
+		error_msg = "The VPN login failed because the VPN program received an invalid configuration from the VPN server.";
+
+	if (!error_msg)
 		return;
-	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (data->con, message, NULL))
-		nm_warning ("Could not raise the signal!");
-
-	dbus_message_unref (message);
-}
-
-
-/*
- * nm_vpnc_dbus_signal_launch_failed
- *
- * Signal the bus that we couldn't launch the VPN daemon.
- *
- */
-static void nm_vpnc_dbus_signal_launch_failed (NmVpncData *data)
-{
-	DBusMessage	*message;
-	const char	*error_msg = "The VPN login failed because the VPN program could not be started.";
-
-	g_return_if_fail (data != NULL);
-
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)))
-	{
-		nm_warning ("Not enough memory for new dbus message!");
-		return;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (data->con, message, NULL))
-		nm_warning ("Could not raise the signal!");
-
-	dbus_message_unref (message);
-}
-
-
-/*
- * nm_vpnc_dbus_signal_connect_failed
- *
- * Signal the bus that VPN daemon failed to connect to the VPN concentrator.
- *
- */
-static void nm_vpnc_dbus_signal_connect_failed (NmVpncData *data)
-{
-	DBusMessage	*message;
-	const char	*error_msg = "The VPN login failed because the VPN program could not connect to the VPN server.";
-
-	g_return_if_fail (data != NULL);
-
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED)))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, signal)))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
@@ -279,7 +240,7 @@ static gboolean nm_vpnc_helper_timer_cb (NmVpncData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	nm_vpnc_dbus_signal_connect_failed (data);
+	nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
 	nm_vpnc_dbus_handle_stop_vpn (data);
 
 	return FALSE;
@@ -299,7 +260,7 @@ static void nm_vpnc_schedule_helper_timer (NmVpncData *data)
 	g_return_if_fail (data != NULL);
 
 	if (data->helper_timer == 0)
-		data->helper_timer = g_timeout_add (7000, (GSourceFunc) nm_vpnc_helper_timer_cb, data);
+		data->helper_timer = g_timeout_add (10000, (GSourceFunc) nm_vpnc_helper_timer_cb, data);
 }
 
 
@@ -333,7 +294,8 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 	if (WIFEXITED (status))
 	{
 		error = WEXITSTATUS (status);
-		nm_warning ("vpnc exited with error code %d", error);
+		if (error != 0)
+			nm_warning ("vpnc exited with error code %d", error);
 	}
 	else if (WIFSTOPPED (status))
 		nm_warning ("vpnc stopped unexpectedly with signal %d", WSTOPSIG (status));
@@ -350,11 +312,11 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 	switch (error)
 	{
 		case 2:	/* Couldn't log in due to bad user/pass */
-			nm_vpnc_dbus_signal_login_failed (data);
+			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
 			break;
 
 		case 1:	/* Other error (couldn't bind to address, etc) */
-			nm_vpnc_dbus_signal_connect_failed (data);
+			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
 			break;
 
 		case 0:	/* Success, vpnc has daemonized */
@@ -369,14 +331,14 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 					nm_info ("vpnc daemon's PID is %d\n", data->pid);
 					g_free (contents);
 				}
+				else
+					nm_warning ("Could not read vpnc daemon's PID file.");
 			}
 			break;
 
 		default:
 			break;
 	}
-
-	unlink (NM_VPNC_CONFIG_FILE_PATH);
 
 	/* If vpnc did not daemonize (due to errors), we quit after a bit */
 	if (data->pid <= 0)
@@ -399,7 +361,7 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
  * Start the vpnc binary with a set of arguments and a config file.
  *
  */
-static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
+static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 {
 	GPid			pid;
 	char **		vpnc_binary = NULL;
@@ -407,8 +369,9 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	GError *		error = NULL;
 	gboolean		success = FALSE;
 	GSource *		vpnc_watch;
+	gint			stdin_fd = -1;
 
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (data != NULL, -1);
 
 	data->pid = 0;
 
@@ -426,25 +389,23 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	if (!*vpnc_binary)
 	{
 		nm_info ("Could not find vpnc binary.");
-		return FALSE;
+		return -1;
 	}
 
 	vpnc_argv = g_ptr_array_new ();
 	g_ptr_array_add (vpnc_argv, (char *) (*vpnc_binary));
-	g_ptr_array_add (vpnc_argv, "--script");
-	g_ptr_array_add (vpnc_argv, NM_VPNC_HELPER_PATH);
-	g_ptr_array_add (vpnc_argv, "--pid-file");
-	g_ptr_array_add (vpnc_argv, NM_VPNC_PID_FILE_PATH);
-	g_ptr_array_add (vpnc_argv, NM_VPNC_CONFIG_FILE_PATH);
+	g_ptr_array_add (vpnc_argv, "--non-inter");
+	g_ptr_array_add (vpnc_argv, "-");
 	g_ptr_array_add (vpnc_argv, NULL);
 
-	if (!g_spawn_async (NULL, (char **) vpnc_argv->pdata, NULL,
-				G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &error))
+	if (!g_spawn_async_with_pipes (NULL, (char **) vpnc_argv->pdata, NULL,
+				G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &stdin_fd,
+				NULL, NULL, &error))
 	{
 		g_ptr_array_free (vpnc_argv, TRUE);
 		nm_warning ("vpnc failed to start.  error: '%s'", error->message);
 		g_error_free(error);
-		return FALSE;
+		return -1;
 	}
 	g_ptr_array_free (vpnc_argv, TRUE);
 
@@ -458,20 +419,19 @@ static gboolean nm_vpnc_start_vpnc_binary (NmVpncData *data)
 
 	nm_vpnc_schedule_helper_timer (data);
 
-	return TRUE;
+	return stdin_fd;
 }
 
 
 /*
- * nm_vpnc_config_file_generate
+ * nm_vpnc_config_write
  *
- * Generate a vpnc config file.
+ * Write the vpnc config to the vpnc process' stdin pipe
  *
  */
-static gboolean nm_vpnc_config_file_generate (const char *user_name, const char *password, const char **data_items, const int num_items)
+static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, const char *password, char **data_items, const int num_items)
 {
 	char *	string;
-	int		out_fd;
 	int		i, x;
 	char *	dirname;
 	char *	cmd;
@@ -481,54 +441,136 @@ static gboolean nm_vpnc_config_file_generate (const char *user_name, const char 
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (data_items != NULL, FALSE);
 
-	/* Ensure that the config file's directory exists */
-	dirname = g_path_get_dirname (NM_VPNC_CONFIG_FILE_PATH);
-	if (!dirname || !strlen (dirname))
-	{
-		nm_warning ("Could not get dirname for vpnc config file path '%s'.", NM_VPNC_CONFIG_FILE_PATH);
-		return FALSE;
-	}
+	string = g_strdup ("Script " NM_VPNC_HELPER_PATH "\n");
+	x = write (vpnc_fd, string, strlen (string));
+	g_free (string);
 
-	cmd = g_strdup_printf ("/bin/mkdir -p -m 700 %s", dirname);
-	ret = system (cmd);
-	if ((ret == -1) || (WEXITSTATUS(ret) != 0))
-	{
-		nm_warning ("Could not create dirname for vpnc config file path '%s'.", NM_VPNC_CONFIG_FILE_PATH);
-		g_free (cmd);
-		g_free (dirname);
-		return FALSE;
-	}
-	g_free (cmd);
-
-	unlink (NM_VPNC_CONFIG_FILE_PATH);
-	out_fd = open (NM_VPNC_CONFIG_FILE_PATH, O_WRONLY|O_CREAT|O_TRUNC, 0600);
-	if (out_fd < 0)
-	{
-		nm_warning ("Could not create vpnc config file '%s'.", NM_VPNC_CONFIG_FILE_PATH);
-		return FALSE;
-	}
+	string = g_strdup ("Pidfile " NM_VPNC_PID_FILE_PATH "\n");
+	x = write (vpnc_fd, string, strlen (string));
+	g_free (string);
 
 	string = g_strdup_printf ("Xauth username %s\n", user_name);
-	x = write (out_fd, string, strlen (string));
+	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 	
 	string = g_strdup_printf ("Xauth password %s\n", password);
-	x = write (out_fd, string, strlen (string));
+	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
-	for (i = 0; i < num_items; i++)
+	for (i = 0; i < num_items; i += 2)
 	{
-		char *temp = g_strdup_printf ("%s\n", data_items[i]);
-		x = write (out_fd, temp, strlen (temp));
-		g_free (temp);
-		string++;
+		char *line = g_strdup_printf ("%s %s\n", data_items[i], data_items[i+1]);
+		x = write (vpnc_fd, line, strlen (line));
+		g_free (line);
 	}
-
-	close (out_fd);
 
 	return TRUE;
 }
 
+
+typedef enum OptType
+{
+	OPT_TYPE_UNKNOWN = 0,
+	OPT_TYPE_ADDRESS,
+	OPT_TYPE_ASCII,
+	OPT_TYPE_NONE
+} OptType;
+
+typedef struct Option
+{
+	const char *name;
+	OptType type;
+} Option;
+
+/*
+ * nm_vpnc_config_options_validate
+ *
+ * Make sure the config options are sane
+ *
+ */
+static gboolean nm_vpnc_config_options_validate (char **data_items, int num_items)
+{
+	Option	allowed_opts[] = {	{ "IPSec gateway",		OPT_TYPE_ADDRESS },
+							{ "IPSec ID",			OPT_TYPE_ASCII },
+							{ "IPSec secret",		OPT_TYPE_ASCII },
+							{ "UDP Encapsulate",	OPT_TYPE_NONE },
+							{ "Domain",			OPT_TYPE_ASCII },
+							{ "IKE DH Group",		OPT_TYPE_ASCII },
+							{ "Perfect Forward Secrecy", OPT_TYPE_ASCII },
+							{ "Application Version",	OPT_TYPE_ASCII },
+							{ NULL,				OPT_TYPE_UNKNOWN } };
+
+	char **		item;
+	unsigned int	i;
+
+	g_return_val_if_fail (data_items != NULL, FALSE);
+	g_return_val_if_fail (num_items >= 2, FALSE);
+
+	/* Must be an even numbers of config options */
+	if ((num_items % 2) != 0)
+	{
+		nm_warning ("The number of VPN config options was not even.");
+		return FALSE;
+	}
+
+	for (i = 0; i < num_items; i += 2)
+	{
+		Option *opt = NULL;
+		unsigned int t, len;
+		char *opt_value;
+		struct in_addr addr;
+
+		if (!data_items[i] || !data_items[i+1])
+			return FALSE;
+		opt_value = data_items[i+1];
+
+		/* Find the option in the allowed list */
+		for (t = 0; t < sizeof (allowed_opts) / sizeof (Option); t++)
+		{
+			opt = &allowed_opts[t];
+			if (opt->name && !strcmp (opt->name, data_items[i]))
+				break;
+		}
+		if (!opt->name)	/* not found */
+		{
+			nm_warning ("VPN option '%s' is not allowed.", data_items[i]);
+			return FALSE;
+		}
+
+		/* Don't allow control characters at all */
+		len = strlen (opt_value);
+		for (t = 0; t < len; t++)
+		{
+			if (iscntrl (opt_value[t]))
+			{
+				nm_warning ("There were invalid characters in the VPN option '%s' - '%s'.", data_items[i], opt_value);
+				return FALSE;
+			}
+		}
+
+		/* Validate the option's data */
+		switch (opt->type)
+		{
+			case OPT_TYPE_ASCII:
+				/* What other characters should we reject?? */
+				break;
+
+			case OPT_TYPE_NONE:
+				/* These have blank data */
+				break;
+
+			case OPT_TYPE_ADDRESS:
+				/* Can be any legal hostname or IP address */
+				break;
+
+			default:
+				return FALSE;
+				break;
+		}
+	}
+
+	return TRUE;
+}
 
 /*
  * nm_vpnc_dbus_handle_start_vpn
@@ -536,19 +578,21 @@ static gboolean nm_vpnc_config_file_generate (const char *user_name, const char 
  * Parse message arguments and start the VPN connection.
  *
  */
-static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, DBusMessage **reply, NmVpncData *data)
+static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData *data)
 {
-	const char		**data_items = NULL;
-	int				  num_items = -1;
-	const char		 *name = NULL;
-	const char		 *user_name = NULL;
-	const char		 *password = NULL;
-	DBusError			  error;
-	gboolean			  success = FALSE;
+	char **		data_items = NULL;
+	int			num_items = -1;
+	const char *	name = NULL;
+	const char *	user_name = NULL;
+	const char *	password = NULL;
+	DBusError		error;
+	gboolean		success = FALSE;
+	gint			vpnc_fd = -1;	
 
 	g_return_val_if_fail (message != NULL, FALSE);
 	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (reply != NULL, FALSE);
+
+	nm_vpnc_set_state (data, NM_VPN_STATE_STARTING);
 
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (message, &error,
@@ -559,23 +603,31 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, DBusMessage
 							DBUS_TYPE_INVALID))
 	{
 		nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
+		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
 		dbus_error_free (&error);
-		*reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_BAD_ARGUMENTS,
-					"Could not process the request because its arguments were invalid.");
+		goto out;
+	}
+
+	if (!nm_vpnc_config_options_validate (data_items, num_items))
+	{
+		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
 		goto out;
 	}
 
 	/* Now we can finally try to activate the VPN */
-	nm_vpnc_set_state (data, NM_VPN_STATE_STARTING);
-	if (nm_vpnc_config_file_generate (user_name, password, data_items, num_items))
-		success = nm_vpnc_start_vpnc_binary (data);
-	if (!success)
+	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (data)) >= 0)
 	{
-		nm_vpnc_dbus_signal_launch_failed (data);
-		nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
+		if (nm_vpnc_config_write (vpnc_fd, user_name, password, data_items, num_items))
+			success = TRUE;
+		else
+			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED);
+		close (vpnc_fd);
 	}
 
 out:
+	dbus_free_string_array (data_items);
+	if (!success)
+		nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
 	return success;
 }
 
@@ -640,9 +692,8 @@ static DBusMessage *nm_vpnc_dbus_start_vpn (DBusConnection *con, DBusMessage *me
 
 		case NM_VPN_STATE_STOPPED:
 			nm_vpnc_cancel_quit_timer (data);
-			nm_vpnc_dbus_handle_start_vpn (message, &reply, data);
-			if (!reply)
-				reply = dbus_message_new_method_return (message);
+			nm_vpnc_dbus_handle_start_vpn (message, data);
+			reply = dbus_message_new_method_return (message);
 			break;
 
 		default:
@@ -740,7 +791,7 @@ static void nm_vpnc_dbus_process_helper_config_error (DBusConnection *con, DBusM
 	if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_item, DBUS_TYPE_INVALID))
 	{
 		nm_warning ("vpnc helper did not receive adequate configuration information from vpnc.  It is missing '%s'.", error_item);
-		/* Signal NetworkManager */
+		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD);
 	}
 
 	nm_vpnc_cancel_helper_timer (data);

@@ -1,3 +1,49 @@
+2005-05-20  Dan Williams <dcbw@redhat.com>
+
+	* NetworkManager.h
+		- Differentiate VPN config signals between bad VPN config options
+			and bad IP config
+
+	* gnome/applet/applet-dbus-info.h
+		- Add prototypes for wireless network and vpn connection update functions
+
+	* gnome/applet/applet-dbus.c
+		- (nmwa_dbus_filter): trap new VPN config error signals from NetworkManager
+
+	* gnome/applet/applet.c
+		- (nmwa_schedule_vpn_failure_dialog): new dialog text for new VPN config
+			error signals
+		- (nmwa_gconf_networks_notify_cb): re-enable wireless network change notify
+			propogation to NetworkManager
+		- (nmwa_gconf_vpn_connections_notify_cb): re-enable vpn connection change
+			notify propogation to NetworkManager
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_update_one_allowed_network): make sure to specify which AP list we
+			are updating so a network can be removed from it if necessary
+
+	* src/vpn-manager/nm-vpn-manager.c
+		- (nm_vpn_manager_process_signal): trap new vpn config error signals
+
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- (nm_vpnc_dbus_signal_failure): generalize function for all VPN error signals
+		- (nm_vpnc_dbus_signal_launch_failed): remove
+		- (nm_vpnc_dbus_signal_connect_failed): remove
+		- (nm_vpnc_helper_timer_cb): update for new generalized error signal function
+		- (nm_vpnc_schedule_helper_timer): increase timeout to 10s
+		- (vpnc_watch_cb): don't whine about exit code if vpnc exited cleanly, update
+			for new generalized error signal function, remove config file stuff
+		- (nm_vpnc_start_vpnc_binary): grab a stdin pipe to vpnc after spawning it so
+			we can write configuration options to it
+		- (nm_vpnc_config_file_generate): removed
+		- (nm_vpnc_config_write): write configuration options to the vpnc stdin pipe
+		- (nm_vpnc_config_options_validate): validate the config options we receive
+			from NetworkManager to block potential exploits
+		- (nm_vpnc_dbus_handle_start_vpn): call option validation function before
+			starting vpnc
+		- (nm_vpnc_dbus_process_helper_config_error): actually propogate config error
+			to NetworkManager
+
 2005-05-16  Dan Williams  <dcbw@redhat.com>
 
 	* vpn-daemons/vpnc/nm-vpnc-service-vpnc-helper.c

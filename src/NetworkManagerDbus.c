@@ -909,6 +909,7 @@ static void nm_dbus_update_one_allowed_network (DBusConnection *connection, cons
 	cb_data = g_malloc0 (sizeof (GetOneNetworkCBData));
 	cb_data->data = data;
 	cb_data->network = g_strdup (network);
+	cb_data->list = data->allowed_ap_list;
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
 	dbus_connection_send_with_reply (connection, message, &pcall, -1);

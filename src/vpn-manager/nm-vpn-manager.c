@@ -561,7 +561,9 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
 
 	if (    dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
 		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
-		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
+		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED)
+		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD)
+		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
 	{
 		char *error_msg;
 		char *blank_msg = "";

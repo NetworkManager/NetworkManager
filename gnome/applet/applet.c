@@ -56,6 +56,7 @@
 #include "applet-dbus.h"
 #include "applet-dbus-devices.h"
 #include "applet-dbus-vpn.h"
+#include "applet-dbus-info.h"
 #include "other-network-dialog.h"
 #include "passphrase-dialog.h"
 #include "menu-items.h"
@@ -314,6 +315,17 @@ void nmwa_schedule_vpn_failure_dialog (NMWirelessApplet *applet, const char *mem
 	{
 		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n\nCould not start the "
 						"VPN connection '%s' due to a connection error.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+	}
+	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD))
+	{
+		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n\nThe "
+						"VPN connection '%s' was not correctly configured.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+	}
+	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
+	{
+		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n\nCould not start the "
+						"VPN connection '%s' because the VPN server did not return an adequate network configuration.\n\n"
+						"The VPN service said: \"%s\""), vpn_name, error_msg);
 	}
 
 	if (cb_data->msg)
@@ -1847,7 +1859,7 @@ static void nmwa_gconf_networks_notify_callback (GConfClient *client, guint conn
 			if ((slash_pos = strchr (unescaped_network, '/')))
 				*slash_pos = '\0';
 
-//			nmi_dbus_signal_update_network (applet->connection, unescaped_network, NETWORK_TYPE_ALLOWED);
+			nmi_dbus_signal_update_network (applet->connection, unescaped_network, NETWORK_TYPE_ALLOWED);
 			g_free (unescaped_network);
 			g_free (network);
 		}
@@ -1887,7 +1899,7 @@ static void nmwa_gconf_vpn_connections_notify_callback (GConfClient *client, gui
 			if ((slash_pos = strchr (unescaped_name, '/')))
 				*slash_pos = '\0';
 
-//			nmi_dbus_signal_update_vpn_connection (info->connection, unescaped_name);
+			nmi_dbus_signal_update_vpn_connection (applet->connection, unescaped_name);
 			g_free (unescaped_name);
 			g_free (name);
 		}
