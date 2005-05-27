@@ -322,7 +322,10 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 		case 0:	/* Success, vpnc has daemonized */
 			{
 				GPid	daemon_pid;
-				char *contents;
+				char *  contents;
+
+				/* vpnc is a bit slow to write the PID file */
+				sleep(1);
 
 				/* Grab the vpnc daemon's PID from its pidfile */
 				if (g_file_get_contents (NM_VPNC_PID_FILE_PATH, &contents, NULL, NULL))

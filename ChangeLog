@@ -1,3 +1,9 @@
+2005-05-27  Dan Williams <dcbw@redhat.com>
+
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- (vpnc_watch_cb): wait a bit before trying to read vpnc's pidfile.
+			Should fix the bug where the VPN connection terminates the first time.
+
 2005-05-20  Dan Williams <dcbw@redhat.com>
 
 	* NetworkManager.h
