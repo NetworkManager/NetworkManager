@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-02-25 22:32+0200\n"
-"PO-Revision-Date: 2005-02-25 22:32+0200\n"
+"POT-Creation-Date: 2005-06-07 03:01+0300\n"
+"PO-Revision-Date: 2005-06-07 03:32+0200\n"
 "Last-Translator: Maxim Dziumanenko <mvd@mylinux.com.ua>\n"
 "Language-Team: Ukrainian <uk@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,19 +17,365 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
 "10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ../info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">Бездротова мережа:</span>"
+#: ../examples/python/systray/eggtrayicon.c:111
+#: ../gnome/applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr "Орієнтація"
 
-#: ../info-daemon/networks.glade.h:2
-msgid "Modify Wireless Networks"
-msgstr "Редагування бездротових мереж"
+#: ../examples/python/systray/eggtrayicon.c:112
+#: ../gnome/applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr "Орієнтація лотка."
 
-#: ../info-daemon/passphrase.glade.h:1 ../panel-applet/essid.glade.h:1
-msgid "*"
-msgstr "*"
+#: ../gnome/applet/applet-dbus-info.c:928
+#, c-format
+msgid ""
+"The requested wireless network '%s' does not appear to be in range.  A "
+"different wireless network will be used if any are available."
+msgstr ""
+"Запитане бездротове з'єднання '%s' поза межами. Будуть використовуватись "
+"різні бездротові з'єднання, з тих які будуть доступні."
+""
 
-#: ../info-daemon/passphrase.glade.h:2
+#: ../gnome/applet/applet-dbus.c:577
+#, c-format
+msgid "Connection to the wireless network '%s' failed.\n"
+msgstr "Помилка з'єднання з бездротовою мережею '%s'.\n"
+
+#: ../gnome/applet/applet-dbus.c:582
+msgid "Connection to the wired network failed.\n"
+msgstr "Помилка з'єднання з дротовою мережею.\n"
+
+#: ../gnome/applet/applet.c:195 ../gnome/applet/applet.c:213
+msgid "NetworkManager Applet"
+msgstr "Аплет NetworkManager"
+
+#: ../gnome/applet/applet.c:197 ../gnome/applet/applet.c:215
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "Авторські права (C) 2004-2005 Red Hat, Inc."
+
+#: ../gnome/applet/applet.c:198 ../gnome/applet/applet.c:216
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"Аплет області сповіщення для керування мережними пристроями та з'єднаннями."
+
+#: ../gnome/applet/applet.c:302
+msgid "VPN Error"
+msgstr "Помилка VPN"
+
+#: ../gnome/applet/applet.c:306
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a login failure.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Помилка входу у VPN</span>\n"
+"\n"
+"Через помилку входу не вдається запустити VPN-з'єднання '%s'.\n"
+"\n"
+"Повідомлення служби VPN: \"%s\""
+
+#: ../gnome/applet/applet.c:311
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Start Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a failure launching the VPN "
+"program.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Помилка запуску VPN</span>\n"
+"\n"
+"Не вдається запустити VPN-з'єднання '%s' через помилку запуску програми VPN.\n"
+"\n"
+"Повідомлення служби VPN: \"%s\""
+
+#: ../gnome/applet/applet.c:316
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' due to a connection error.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Помилка з'єднання VPN</span>\n"
+"\n"
+"Не вдається відкрити VPN-з'єднання '%s' через помилку з'єднання.\n"
+"\n"
+"Повідомлення служби VPN: \"%s\""
+
+#: ../gnome/applet/applet.c:321
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n"
+"\n"
+"The VPN connection '%s' was not correctly configured.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Помилка налаштовування VPN</span>\n"
+"\n"
+"VPN-з'єднання '%s' некоректно налаштовано.\n"
+"\n"
+"Повідомлення служби VPN: \"%s\""
+
+#: ../gnome/applet/applet.c:326
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
+"\n"
+"Could not start the VPN connection '%s' because the VPN server did not "
+"return an adequate network configuration.\n"
+"\n"
+"The VPN service said: \"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Помилка з'єднання VPN</span>\n"
+"\n"
+"Не вдається запустити VPN-з'єднання '%s', тому що VPN-сервер не "
+"повернув належної конфігурації мережі.\n"
+"\n"
+"Повідомлення служби VPN: \"%s\""
+
+#: ../gnome/applet/applet.c:393
+#, c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
+"\n"
+"VPN connection '%s' said:\n"
+"\n"
+"\"%s\""
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Повідомлення входу VPN</span>\n"
+"\n"
+"Повідомлення VPN-з'єднання '%s':\n"
+"\n"
+"\"%s\""
+
+#: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:1981
+#: ../gnome/applet/other-network-dialog.c:315
+#: ../gnome/applet/passphrase-dialog.c:428
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Аплет NetworkManager не може знайти деякі необхідні ресурси (не знайдено "
+"файл glade)."
+
+#: ../gnome/applet/applet.c:624
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "Мережний пристрій \"%s (%s)\" не підтримує сканування бездротової мережі."
+
+#: ../gnome/applet/applet.c:631
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "Мережний пристрій \"%s (%s)\" не підтримує виявлення зв'язку."
+
+#: ../gnome/applet/applet.c:752
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "Пристрій %s готується до з'єднання з дротовою мережею..."
+
+#: ../gnome/applet/applet.c:754
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "Пристрій %s готується до з'єднання з бездротовою мережею '%s'..."
+
+#: ../gnome/applet/applet.c:761
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "Пристрій %s налаштовується для дротової мережі..."
+
+#: ../gnome/applet/applet.c:763
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "Спроба з'єднатись з бездротовою мережею '%s'..."
+
+#: ../gnome/applet/applet.c:770
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "Очікується мережний ключ бездротової мережі '%s'..."
+
+#: ../gnome/applet/applet.c:777 ../gnome/applet/applet.c:786
+msgid "Requesting a network address from the wired network..."
+msgstr "Запитується мережна адреса дротової мережі..."
+
+#: ../gnome/applet/applet.c:779 ../gnome/applet/applet.c:788
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "Запитується мережна адреса бездротової мережі '%s'..."
+
+#: ../gnome/applet/applet.c:795
+msgid "Finishing connection to the wired network..."
+msgstr "Завершується з'єднання з дротовою мережею..."
+
+#: ../gnome/applet/applet.c:797
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "Завершується з'єднання з бездротовою мережею '%s'..."
+
+#: ../gnome/applet/applet.c:843
+msgid "NetworkManager is not running"
+msgstr "NetworkManager не запущено"
+
+#: ../gnome/applet/applet.c:854
+msgid "No network connection"
+msgstr "Немає з'єднання з мережею"
+
+#: ../gnome/applet/applet.c:861
+msgid "Wired network connection"
+msgstr "Дротове з'єднання з мережею"
+
+#: ../gnome/applet/applet.c:868
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "З'єднано з особливою бездротовою мережею"
+
+#: ../gnome/applet/applet.c:882
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Бездротове мережне з'єднання з '%s' (%d%%)"
+
+#: ../gnome/applet/applet.c:1240
+msgid "Other Wireless Networks..."
+msgstr "Інші бездротові мережі..."
+
+#: ../gnome/applet/applet.c:1261
+msgid "Create new Wireless Network..."
+msgstr "Створити нову бездротову мережу..."
+
+#: ../gnome/applet/applet.c:1374
+msgid "VPN Connections"
+msgstr "Налаштовування VPN"
+
+#: ../gnome/applet/applet.c:1396
+msgid "Disconnect VPN..."
+msgstr "Від'єднання від VPN..."
+
+#: ../gnome/applet/applet.c:1425
+msgid "No network devices have been found"
+msgstr "Не було знайдено мережних пристроїв"
+
+#: ../gnome/applet/applet.c:1588
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager не запущено..."
+
+#: ../gnome/applet/applet.c:1658 ../gnome/applet/applet.c:1706
+msgid "Pause Wireless Scanning"
+msgstr "Призупинити сканування бездротових мереж"
+
+#: ../gnome/applet/applet.c:1663
+msgid "Resume Wireless Scanning"
+msgstr "Відновити сканування бездротових мереж"
+
+#: ../gnome/applet/applet.c:1673 ../gnome/applet/applet.c:1712
+msgid "Stop All Wireless Devices"
+msgstr "Зупинити усі бездротові пристрої"
+
+#: ../gnome/applet/applet.c:1678
+msgid "Start All Wireless Devices"
+msgstr "Запустити усі бездротові пристрої"
+
+#: ../gnome/applet/applet.c:1721
+msgid "Help"
+msgstr "Довідка"
+
+#: ../gnome/applet/applet.c:1728
+msgid "About"
+msgstr "Про програму"
+
+#: ../gnome/applet/applet.c:2129
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr ""
+"Аплет NetworkManager не може знайти деякі необхідні ресурси.  Продовжувати роботу неможливо.\n"
+
+#: ../gnome/applet/gtkcellrendererprogress.c:243
+#: ../gnome/applet/gtkcellrendererprogress.c:301
+#, c-format
+msgid "progress bar label|%d %%"
+msgstr "|%d %%"
+
+#: ../gnome/applet/menu-items.c:91
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Дротова мережа (%s)"
+
+#: ../gnome/applet/menu-items.c:93
+msgid "Wired Network"
+msgstr "Дротова мережа"
+
+#: ../gnome/applet/menu-items.c:166
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Бездротова мережа (%s)"
+msgstr[1] "Бездротові мережі (%s)"
+msgstr[2] "Бездротові мережі (%s)"
+
+#: ../gnome/applet/menu-items.c:168
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Бездротова мережа"
+msgstr[1] "Бездротові мережі"
+msgstr[2] "Бездротові мережі"
+
+#: ../gnome/applet/menu-items.c:294
+msgid " (invalid Unicode)"
+msgstr " (неправильний Юнікод)"
+
+#: ../gnome/applet/other-network-dialog.c:148
+#: ../gnome/applet/passphrase-dialog.c:162
+#: ../gnome/applet/wireless-applet.glade.h:27
+msgid "Passphrase:"
+msgstr "Парольна фраза:"
+
+#: ../gnome/applet/other-network-dialog.c:151
+#: ../gnome/applet/passphrase-dialog.c:165
+msgid "Ascii Key:"
+msgstr "Ascii-ключ:"
+
+#: ../gnome/applet/other-network-dialog.c:154
+#: ../gnome/applet/passphrase-dialog.c:168
+msgid "Hex Key:"
+msgstr "Шістнадцятковий ключ:"
+
+#: ../gnome/applet/other-network-dialog.c:229
+msgid "Create new wireless network"
+msgstr "Створити новий бездротовий пристрій"
+
+#: ../gnome/applet/other-network-dialog.c:230
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Введіть ESSID та параметри безпеки бездротової мережі, яку ви бажаєте "
+"створити."
+
+#: ../gnome/applet/other-network-dialog.c:235
+msgid "Custom wireless network"
+msgstr "Власна бездротова мережа"
+
+#: ../gnome/applet/other-network-dialog.c:236
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "Введіть ESSID бездротової мережі, до якої ви бажаєте з'єднатись."
+
+#: ../gnome/applet/vpn-password-dialog.c:105
+#, c-format
+msgid "You must log in to access the Virtual Private Network '%s'."
+msgstr "Для отримання доступу до віртуальної приватної мережі %s слід увійти у систему."
+
+#: ../gnome/applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "Ascii Key (WEP)\n"
@@ -39,179 +385,7 @@ msgstr ""
 "Ascii-ключ (WEP)\n"
 "Шіснадцятвковий ключ (WEP)"
 
-#: ../info-daemon/passphrase.glade.h:6
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Для бездротова мережа потрібна парольна фраза</span>\n"
-"\n"
-"Для доступу до бездротової мережі '%s' необхідна парольна фраза чи ключ шифрування."
-
-#: ../info-daemon/passphrase.glade.h:9
-msgid "Key Type:"
-msgstr "Тип ключа:"
-
-#: ../info-daemon/passphrase.glade.h:10
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:139
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:149
-#: ../panel-applet/essid.glade.h:8
-msgid "Passphrase:"
-msgstr "Парольна фраза:"
-
-#: ../info-daemon/passphrase.glade.h:11
-msgid "Wireless Network Key Required"
-msgstr "Вимагається ключ бездротової мережі"
-
-#: ../info-daemon/passphrase.glade.h:12
-msgid "_Login to Network"
-msgstr "_Увійти в мережу"
-
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:142
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:152
-msgid "Ascii Key:"
-msgstr "Ascii-ключ:"
-
-#: ../info-daemon/NetworkManagerInfoPassphraseDialog.c:145
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:155
-msgid "Hex Key:"
-msgstr "Шістнадцятковий ключ:"
-
-#: ../info-daemon/NetworkManagerInfoVPN.c:157
-#, c-format
-msgid "You must log in to access the private network %s"
-msgstr "Для отримання доступу до приватної мережі %s слід увійти у систему"
-
-#: ../panel-applet/NMWirelessApplet.c:141
-#: ../panel-applet/NMWirelessApplet.c:159
-msgid "NetworkManager Applet"
-msgstr "Аплет NetworkManager"
-
-#: ../panel-applet/NMWirelessApplet.c:143
-#: ../panel-applet/NMWirelessApplet.c:161
-msgid "Copyright (C) 2004-2005 Red Hat, Inc."
-msgstr "Авторські права (C) 2004-2005 Red Hat, Inc."
-
-#: ../panel-applet/NMWirelessApplet.c:144
-#: ../panel-applet/NMWirelessApplet.c:162
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr ""
-"Аплет області сповіщення для керування мережними пристроями та з'єданнями."
-
-#: ../panel-applet/NMWirelessApplet.c:378
-msgid "No network connection"
-msgstr "Немає з'єднання з мережею"
-
-#: ../panel-applet/NMWirelessApplet.c:383
-msgid "Wired network connection"
-msgstr "Дротове з'єднання з мережею"
-
-#: ../panel-applet/NMWirelessApplet.c:388
-msgid "Connecting to a wired network..."
-msgstr "З'єднання з дротовою мережею..."
-
-#: ../panel-applet/NMWirelessApplet.c:397
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "З'єднано з особливою бездротовою мережею"
-
-#: ../panel-applet/NMWirelessApplet.c:411
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Бездротове мережне з'єднання з '%s' (%d%%)"
-
-#: ../panel-applet/NMWirelessApplet.c:416
-msgid "Wireless network connection"
-msgstr "Бездротове мережне з'єднання"
-
-#: ../panel-applet/NMWirelessApplet.c:421
-#, c-format
-msgid "Connecting to wireless network '%s'..."
-msgstr "З'єднання з бездротовою мережею '%s'..."
-
-#: ../panel-applet/NMWirelessApplet.c:427
-msgid "NetworkManager is not running"
-msgstr "NetworkManager не запущено"
-
-#: ../panel-applet/NMWirelessApplet.c:432
-msgid "Scanning for wireless networks..."
-msgstr "Скануються бездротові мережі..."
-
-#: ../panel-applet/NMWirelessApplet.c:729
-msgid "Other Wireless Networks..."
-msgstr "Інші бездротові мережі..."
-
-#: ../panel-applet/NMWirelessApplet.c:750
-msgid "Create new Wireless Network..."
-msgstr "Створити нову бездротову мережу..."
-
-#: ../panel-applet/NMWirelessApplet.c:864
-msgid "No network devices have been found"
-msgstr "Не було знайдено мережних пристроїв"
-
-#: ../panel-applet/NMWirelessApplet.c:1002
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager не запущено..."
-
-#: ../panel-applet/NMWirelessApplet.c:1072
-#: ../panel-applet/NMWirelessApplet.c:1121
-msgid "Pause Wireless Scanning"
-msgstr "Призупинити сканування бездротових мереж"
-
-#: ../panel-applet/NMWirelessApplet.c:1077
-msgid "Resume Wireless Scanning"
-msgstr "Відновити сканування бездротових мереж"
-
-#: ../panel-applet/NMWirelessApplet.c:1087
-#: ../panel-applet/NMWirelessApplet.c:1127
-msgid "Stop All Wireless Devices"
-msgstr "Зупинити усі бездротові пристрої"
-
-#: ../panel-applet/NMWirelessApplet.c:1092
-msgid "Start All Wireless Devices"
-msgstr "Запустити усі бездротові пристрої"
-
-#: ../panel-applet/NMWirelessApplet.c:1137
-msgid "Help"
-msgstr "Довідка"
-
-#: ../panel-applet/NMWirelessApplet.c:1144
-msgid "About"
-msgstr "Про програму"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:229
-msgid "Create new wireless network"
-msgstr "Створити новий бездротовий пристрій"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:230
-msgid ""
-"Enter the ESSID and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Введіть ESSID та параметри безпеки бездротової мережі, яку ви бажаєте створити."
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:235
-msgid "Custom wireless network"
-msgstr "Власна бездротова мережа"
-
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:236
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr "Введіть ESSID бездротової мережі, до якої ви бажаєте з'єднатись."
-
-#. Reuse the above string to make the translators less angry.
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:316
-#: ../panel-applet/NMWirelessAppletOtherNetworkDialog.c:325
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"Аплет NetworkManager не може знайти деякі необхідні ресурси (не знайдено файл glade)."
-
-#: ../panel-applet/essid.glade.h:2
+#: ../gnome/applet/wireless-applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "Ascii key (WEP)\n"
@@ -221,58 +395,128 @@ msgstr ""
 "Ascii-ключ (WEP)\n"
 "Шістнадцятковий ключ (WEP)"
 
-#: ../panel-applet/essid.glade.h:5
+#: ../gnome/applet/wireless-applet.glade.h:9
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Для бездротової мережі потрібна "
+"парольна фраза</span>\n"
+"\n"
+"Для доступу до бездротової мережі '%s' необхідна парольна фраза чи ключ "
+"шифрування."
+
+#: ../gnome/applet/wireless-applet.glade.h:13
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Скорочена мережна функціональність</span>\n"
+"\n"
+"%s  Програма не повністю функціональна."
+
+#: ../gnome/applet/wireless-applet.glade.h:17
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen log in to the wireless network '%s'.  If you are sure this "
+"wireless network is secure, click the checkbox below and NetworkManager will "
+"no longer pester you with stupid questions when you connect to it."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Параметри вхожу у бездротову мережу</"
+"span>\n"
+"\n"
+"Ви входите у бездротову мережу '%s'. Якщо ви впевнені, що вона безпечна, "
+"відмітьте поле нижче, та NetworkManager надалі "
+"не буде набридати обридлими запитаннями при з'єднанні."
+
+#: ../gnome/applet/wireless-applet.glade.h:20
+msgid "Always Trust this Wireless Network"
+msgstr "Завжди довіряти бездротовій мережі"
+
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "C_onnect"
 msgstr "_З'єднатись"
 
-#: ../panel-applet/essid.glade.h:6
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "Connect with encryption enabled"
 msgstr "З'єднання з увімкненим шифруванням"
 
-#: ../panel-applet/essid.glade.h:7
+#: ../gnome/applet/wireless-applet.glade.h:23
+msgid "Don't remind me again"
+msgstr "Не нагадувати надалі"
+
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid "Key Type:"
+msgstr "Тип ключа:"
+
+#: ../gnome/applet/wireless-applet.glade.h:25
 msgid "Key type:"
 msgstr "Тип ключа:"
 
-#: ../panel-applet/essid.glade.h:9
+#: ../gnome/applet/wireless-applet.glade.h:26
+msgid "Other Wireless Network..."
+msgstr "Інша бездротова мережа..."
+
+#: ../gnome/applet/wireless-applet.glade.h:28
+msgid "Wireless Network Key Required"
+msgstr "Вимагається ключ бездротової мережі"
+
+#: ../gnome/applet/wireless-applet.glade.h:29
 msgid "Wireless _adapter:"
 msgstr "Бездротовий _адаптер:"
 
-#: ../panel-applet/essid.glade.h:10
+#: ../gnome/applet/wireless-applet.glade.h:30
 msgid "Wireless _network:"
 msgstr "Бездротова _мережа"
 
-#: ../panel-applet/menu-info.c:91
+#: ../gnome/applet/wireless-applet.glade.h:31
+msgid "_Login to Network"
+msgstr "_Увійти в мережу"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
+msgid "_OK"
+msgstr "_Гаразд"
+
+#: ../src/nm-netlink-monitor.c:154
 #, c-format
-msgid "Wired Network (%s)"
-msgstr "Дротова мережа (%s)"
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"не вдається створити мережний сокет для контролю пристрою ethernet - %s"
 
-#: ../panel-applet/menu-info.c:93
-msgid "Wired Network"
-msgstr "Дротова мережа"
-
-#: ../panel-applet/menu-info.c:166
+#: ../src/nm-netlink-monitor.c:172
 #, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Бездротова мережа (%s)"
-msgstr[1] "Бездротові мережі (%s)"
-msgstr[2] "Бездротові мережі (%s)"
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"не вдається прив'язатись до мережного сокету для контролю пристрою ethernet - %s"
 
-#: ../panel-applet/menu-info.c:168
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Бездротова мережа"
-msgstr[1] "Бездротові мережі"
-msgstr[2] "Бездротові мережі"
+#: ../src/nm-netlink-monitor.c:404
+msgid "operation took too long"
+msgstr "операція виконується надто довго"
 
-#: ../panel-applet/menu-info.c:294
-msgid " (invalid Unicode)"
-msgstr " (неправильний Юнікод)"
+#: ../src/nm-netlink-monitor.c:501
+msgid "received data from wrong type of sender"
+msgstr "отримано дані з неправильним типом відправника"
 
-#: ../examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
-msgstr "Орієнтація"
+#: ../src/nm-netlink-monitor.c:514
+msgid "received data from unexpected sender"
+msgstr "отримано дані з несподіваним відправником"
 
-#: ../examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
-msgstr "Орієнтація лотка."
+#: ../src/nm-netlink-monitor.c:536
+#, c-format
+msgid "%s"
+msgstr "%s"
+
+#: ../src/nm-netlink-monitor.c:645
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "через сокет надто багато даних надіслано, та частину з них втрачено"
