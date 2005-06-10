@@ -66,7 +66,7 @@ NetworkDevice *network_device_new (const char *iface, NMDeviceType type, const c
 		dev->nm_path = g_strdup (nm_path);
 	}
 
-	return (dev);
+	return dev;
 }
 
 
@@ -112,7 +112,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 		}
 	}
 
-	return (dev);
+	return dev;
 }
 
 
