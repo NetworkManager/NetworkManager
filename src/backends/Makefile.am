@@ -10,6 +10,12 @@ libnmbackend_la_SOURCES +=	NetworkManagerRedHat.c	\
 						shvar.h
 endif
 
+if TARGET_SUSE
+libnmbackend_la_SOURCES +=	NetworkManagerSuSE.c				\
+						shvar.c				\
+						shvar.h
+endif
+
 if TARGET_GENTOO
 libnmbackend_la_SOURCES +=	NetworkManagerGentoo.c
 endif
@@ -35,6 +41,4 @@ libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					-DBINDIR=\"$(bindir)\"			\
 					-DDATADIR=\"$(datadir)\"			\
 					-DSYSCONFDIR=\"$(sysconfdir)\"
-
-
 

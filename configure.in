@@ -40,10 +40,10 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
 ALL_LINGUAS="bs cs da de el en_CA es fr gu hr hu it ja nb ne nl no pa pt_BR rw sk sq sr sr@Latn sv uk wa zh_CN zh_TW"
 AM_GLIB_GNU_GETTEXT
 
-AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, gentoo, debian, or slackware]))
+AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, or slackware]))
 if test "z$with_distro" = "z"; then
-	AC_CHECK_FILE(/etc/mandrake-release,with_distro="mandrake")
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
+	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
 	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
 	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
@@ -56,7 +56,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|gentoo|debian|slackware) ;;
+		redhat|suse|gentoo|debian|slackware) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -64,9 +64,9 @@ else
 	esac
 fi
 AM_CONDITIONAL(TARGET_REDHAT, test x"$with_distro" = xredhat)
+AM_CONDITIONAL(TARGET_SUSE, test x"$with_distro" = xsuse)
 AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
 AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
-AM_CONDITIONAL(TARGET_MANDRAKE, test x"$with_distro" = xmandrake)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
 
 AC_CHECK_HEADER(iwlib.h, [],

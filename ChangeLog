@@ -1,5 +1,13 @@
 2005-06-09  Dan Williams <dcbw@redhat.com>
 
+	Patch from Kay Sievers and Robert Love:
+	* configure.in
+	  src/backends/Makefile.am
+	  src/backends/NetworkManagerSuSE.c
+		- Add SuSE support
+
+2005-06-09  Dan Williams <dcbw@redhat.com>
+
 	* NetworkManager.h
 		- Add NMWirelessScanMethod enum for scan methods
 
