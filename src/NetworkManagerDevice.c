@@ -3029,6 +3029,47 @@ gboolean nm_device_is_activating (NMDevice *dev)
 
 
 /*
+ * nm_device_is_activated
+ *
+ * Return whether or not the device is successfully activated.
+ *
+ */
+gboolean nm_device_is_activated (NMDevice *dev)
+{
+	NMActRequest *	req;
+	NMActStage	stage;
+	gboolean		activated = FALSE;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if (!(req = nm_device_get_act_request (dev)))
+		return FALSE;
+
+	stage = nm_act_request_get_stage (req);
+	switch (stage)
+	{
+		case NM_ACT_STAGE_ACTIVATED:
+			activated = TRUE;
+			break;
+
+		case NM_ACT_STAGE_DEVICE_PREPARE:
+		case NM_ACT_STAGE_DEVICE_CONFIG:
+		case NM_ACT_STAGE_NEED_USER_KEY:
+		case NM_ACT_STAGE_IP_CONFIG_START:
+		case NM_ACT_STAGE_IP_CONFIG_GET:
+		case NM_ACT_STAGE_IP_CONFIG_COMMIT:
+		case NM_ACT_STAGE_FAILED:
+		case NM_ACT_STAGE_CANCELLED:
+		case NM_ACT_STAGE_UNKNOWN:
+		default:
+			break;
+	}
+
+	return activated;
+}
+
+
+/*
  * nm_device_activation_should_cancel
  *
  * Return whether or not we've been told to cancel activation
@@ -3899,9 +3940,21 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		return FALSE;
 	}
 
-	/* Just reschedule ourselves if scanning or all wireless is disabled */
-	if (    (dev->app_data->scanning_enabled == FALSE)
-		|| (dev->app_data->wireless_enabled == FALSE)
+	/* Reschedule if scanning is off, or if scanning is AUTO and we are
+	 * associated to an access point.
+	 */
+	if (    (dev->app_data->scanning_method == NM_SCAN_METHOD_OFF)
+		|| (    (dev->app_data->scanning_method == NM_SCAN_METHOD_AUTO)
+			&& nm_device_is_activated (dev)))
+	{
+		dev->options.wireless.scan_interval = 10;
+		goto reschedule;
+	}
+
+	/* Reschedule ourselves if all wireless is disabled, we're asleep,
+	 * or we are currently activating.
+	 */
+	if (    (dev->app_data->wireless_enabled == FALSE)
 		|| (dev->app_data->asleep == TRUE)
 		|| (nm_device_is_activating (dev) == TRUE))
 	{

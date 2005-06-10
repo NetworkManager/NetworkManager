@@ -209,4 +209,16 @@ typedef enum NMActStage
 } NMActStage;
 
 
+/*
+ * Wireless scanning methods
+ *
+ */
+typedef enum NMWirelessScanMethod
+{
+	NM_SCAN_METHOD_UNKNOWN = 0,
+	NM_SCAN_METHOD_ON,
+	NM_SCAN_METHOD_OFF,
+	NM_SCAN_METHOD_AUTO
+} NMWirelessScanMethod;
+
 #endif

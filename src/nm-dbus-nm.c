@@ -329,28 +329,14 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 }
 
 
-static DBusMessage *nm_dbus_nm_set_scanning_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	gboolean	enabled = FALSE;
-	DBusError	err;
-
-	g_return_val_if_fail (data && data->data && connection && message, NULL);
-
-	dbus_error_init (&err);
-	if (dbus_message_get_args (message, &err, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID))
-		data->data->scanning_enabled = enabled;
-
-	return NULL;
-}
-
-static DBusMessage *nm_dbus_nm_get_scanning_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_nm_get_wireless_scan_method (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
 
 	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &data->data->scanning_enabled, DBUS_TYPE_INVALID);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &data->data->scanning_method, DBUS_TYPE_INVALID);
 	
 	return reply;
 }
@@ -478,8 +464,7 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getDevices",			nm_dbus_nm_get_devices);
 	nm_dbus_method_list_add_method (list, "setActiveDevice",		nm_dbus_nm_set_active_device);
 	nm_dbus_method_list_add_method (list, "createWirelessNetwork",	nm_dbus_nm_create_wireless_network);
-	nm_dbus_method_list_add_method (list, "setScanningEnabled",		nm_dbus_nm_set_scanning_enabled);
-	nm_dbus_method_list_add_method (list, "getScanningEnabled",		nm_dbus_nm_get_scanning_enabled);
+	nm_dbus_method_list_add_method (list, "getWirelessScanMethod",	nm_dbus_nm_get_wireless_scan_method);
 	nm_dbus_method_list_add_method (list, "setWirelessEnabled",		nm_dbus_nm_set_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "getWirelessEnabled",		nm_dbus_nm_get_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "sleep",				nm_dbus_nm_sleep);

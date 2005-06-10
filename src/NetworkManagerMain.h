@@ -80,7 +80,7 @@ typedef struct NMData
 	GSList *				dev_list;
 	GMutex *				dev_list_mutex;
 
-	gboolean				scanning_enabled;
+	NMWirelessScanMethod	scanning_method;
 	gboolean				wireless_enabled;
 	gboolean				asleep;
 

@@ -37,6 +37,7 @@
  * Preference locations
  */
 #define GCONF_PATH_WIRELESS_NETWORKS	"/system/networking/wireless/networks"
+#define GCONF_PATH_WIRELESS			"/system/networking/wireless"
 #define GCONF_PATH_VPN_CONNECTIONS		"/system/networking/vpn_connections"
 #define GCONF_PATH_PREFS				"/apps/NetworkManagerApplet"
 
@@ -66,7 +67,7 @@ typedef struct
 
 	DBusConnection *	connection;
 	GConfClient *		gconf_client;
-	guint		 	gconf_net_notify_id;
+	guint		 	gconf_prefs_notify_id;
 	guint		 	gconf_vpn_notify_id;
 	char	*			glade_file;
 	guint			redraw_timeout_id;
@@ -80,7 +81,7 @@ typedef struct
         /* Data model elements */
 	GMutex *			data_mutex;
 	gboolean			is_adhoc;
-	gboolean			scanning_enabled;
+	NMWirelessScanMethod	scan_method;
 	gboolean			wireless_enabled;
 	gboolean			nm_running;
 
@@ -130,7 +131,8 @@ typedef struct
 	GtkTooltips *		tooltips;
 
 	GtkWidget *		context_menu;
-	GtkWidget *		pause_scanning_item;
+	GtkWidget *		scanning_item;
+	GtkWidget *		scanning_menu;
 	GtkWidget *		stop_wireless_item;
 
 	GtkWidget *		passphrase_dialog;
@@ -151,6 +153,8 @@ void				nmwa_schedule_vpn_failure_dialog		(NMWirelessApplet *applet, const char 
 void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
 
 NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
+
+NMWirelessScanMethod	nmwa_gconf_get_wireless_scan_method	(NMWirelessApplet *applet);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 

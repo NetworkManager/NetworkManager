@@ -1137,6 +1137,50 @@ static void nmwa_menu_disconnect_vpn_item_activate (GtkMenuItem *item, gpointer 
 }
 
 
+static void scanning_menu_update (GtkWidget *menu_item, GtkCheckMenuItem *active_item)
+{
+	g_return_if_fail (active_item != NULL);
+
+	g_object_set_data (G_OBJECT (menu_item), "block-activate", GINT_TO_POINTER(1));
+	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (menu_item), (GTK_CHECK_MENU_ITEM (menu_item) == active_item) ? TRUE : FALSE);
+	g_object_set_data (G_OBJECT (menu_item), "block-activate", GINT_TO_POINTER(0));
+}
+
+
+/*
+ * nmwa_menu_scanning_item_activate
+ *
+ * Handle a request to change scanning behavior
+ *
+ */
+static void nmwa_menu_scanning_item_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
+	char *			tag;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	if ((tag = g_object_get_data (G_OBJECT (item), "block-activate")))
+		if (GPOINTER_TO_INT(tag) == 1)
+			return;
+
+	if ((tag = g_object_get_data (G_OBJECT (item), "scan_method")))
+	{
+		NMWirelessScanMethod	method = GPOINTER_TO_UINT (tag);
+
+		if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+			gconf_client_set_int (applet->gconf_client, GCONF_PATH_WIRELESS "/scan_method", method, NULL);
+	}
+
+	/* Check only this menu item */
+	if (!applet->scanning_menu)
+		return;
+
+	gtk_container_foreach (GTK_CONTAINER (applet->scanning_menu), (GtkCallback) scanning_menu_update, (gpointer) item);
+}
+
+
 /*
  * nmwa_menu_add_separator_item
  *
@@ -1492,13 +1536,6 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 }
 
 
-static void nmwa_set_scanning_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
-{
-	g_return_if_fail (applet != NULL);
-
-	nmwa_dbus_enable_scanning (applet, !applet->scanning_enabled);
-}
-
 static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
@@ -1645,28 +1682,11 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 	GtkWidget *image;	
 
 	g_return_if_fail (applet != NULL);
-	g_return_if_fail (applet->pause_scanning_item != NULL);
 	g_return_if_fail (applet->stop_wireless_item != NULL);
 
 	g_mutex_lock (applet->data_mutex);
 
-	gtk_widget_destroy (applet->pause_scanning_item);
 	gtk_widget_destroy (applet->stop_wireless_item);
-
-	if (applet->scanning_enabled)
-	{
-		applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Pause Wireless Scanning"));
-		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_MENU);
-	}
-	else
-	{
-		applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Resume Wireless Scanning"));
-		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_MENU);
-	}
-	g_signal_connect (G_OBJECT (applet->pause_scanning_item), "activate", G_CALLBACK (nmwa_set_scanning_enabled_cb), applet);
-	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->pause_scanning_item), image);
-	gtk_menu_shell_insert (GTK_MENU_SHELL (applet->context_menu), applet->pause_scanning_item, 0);
-	gtk_widget_show_all (applet->pause_scanning_item);
 
 	if (applet->wireless_enabled)
 	{
@@ -1698,25 +1718,49 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	GtkWidget	*menu;
 	GtkWidget	*menu_item;
 	GtkWidget *image;
+	GtkWidget *scanning_subitem;
 	
 	g_return_val_if_fail (applet != NULL, NULL);
 
 	menu = gtk_menu_new ();
 
-	applet->pause_scanning_item = gtk_image_menu_item_new_with_label (_("Pause Wireless Scanning"));
-	g_signal_connect (G_OBJECT (applet->pause_scanning_item), "activate", G_CALLBACK (nmwa_set_scanning_enabled_cb), applet);
-	image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PAUSE, GTK_ICON_SIZE_MENU);
-	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->pause_scanning_item), image);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->pause_scanning_item);
+	/* Construct the wireless scanning submenu */
+	applet->scan_method = nmwa_gconf_get_wireless_scan_method (applet);
+	applet->scanning_item = gtk_menu_item_new_with_label (_("Wireless Scanning"));
+	applet->scanning_menu = gtk_menu_new ();
 
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("On")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GUINT_TO_POINTER (NM_SCAN_METHOD_ON));
+	if (applet->scan_method == NM_SCAN_METHOD_ON)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
+	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
+
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Off")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_OFF));
+	if (applet->scan_method == NM_SCAN_METHOD_OFF)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
+	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
+
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Automatic")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_AUTO));
+	if (applet->scan_method == NM_SCAN_METHOD_AUTO)
+		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
+	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
+
+	gtk_menu_item_set_submenu (GTK_MENU_ITEM (applet->scanning_item), applet->scanning_menu);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->scanning_item);
+
+	/* Stop All Wireless Devices item */
 	applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Stop All Wireless Devices"));
 	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
 
-	menu_item = gtk_separator_menu_item_new ();
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	nmwa_menu_add_separator_item (menu);
 
 	menu_item = gtk_image_menu_item_new_with_label (_("Help"));
 /*	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_help_cb), applet); */
@@ -1827,13 +1871,45 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 }
 
+
 /*
- * nmwa_gconf_networks_notify_callback
+ * nmwa_gconf_get_wireless_scan_method
  *
- * Callback from gconf when wireless networking key/values have changed.
+ * Grab the wireless scan method from GConf
  *
  */
-static void nmwa_gconf_networks_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
+NMWirelessScanMethod nmwa_gconf_get_wireless_scan_method (NMWirelessApplet *applet)
+{
+	NMWirelessScanMethod	method = NM_SCAN_METHOD_ON;
+	GConfEntry *			entry;
+
+	g_return_val_if_fail (applet, NM_SCAN_METHOD_ON);
+	g_return_val_if_fail (applet->gconf_client, NM_SCAN_METHOD_ON);
+
+	if ((entry = gconf_client_get_entry (applet->gconf_client, GCONF_PATH_WIRELESS "/scan_method", NULL, TRUE, NULL)))
+	{
+		GConfValue *	value = gconf_entry_get_value (entry);
+
+		if (value && (value->type == GCONF_VALUE_INT))
+		{
+			NMWirelessScanMethod	temp_method = gconf_value_get_int (value);
+
+			if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+				method = temp_method;
+		}
+	}
+
+	return method;
+}
+
+
+/*
+ * nmwa_gconf_info_notify_callback
+ *
+ * Callback from gconf when wireless key/values have changed.
+ *
+ */
+static void nmwa_gconf_info_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
 {
 	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
 	const char *		key = NULL;
@@ -1844,11 +1920,23 @@ static void nmwa_gconf_networks_notify_callback (GConfClient *client, guint conn
 
 	if ((key = gconf_entry_get_key (entry)))
 	{
-		int	path_len = strlen (GCONF_PATH_WIRELESS_NETWORKS) + 1;
+		int	net_path_len = strlen (GCONF_PATH_WIRELESS_NETWORKS) + 1;
 
-		if (strncmp (GCONF_PATH_WIRELESS_NETWORKS"/", key, path_len) == 0)
+		if (strcmp (GCONF_PATH_WIRELESS "/scan_method", key) == 0)
 		{
-			char 	*network = g_strdup ((key + path_len));
+			GConfValue *	value = gconf_entry_get_value (entry);
+
+			if (value && (value->type == GCONF_VALUE_INT))
+			{
+				NMWirelessScanMethod	method = gconf_value_get_int (value);
+
+				if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+					nmi_dbus_signal_update_scan_method (applet->connection);
+			}
+		}
+		if (strncmp (GCONF_PATH_WIRELESS_NETWORKS"/", key, net_path_len) == 0)
+		{
+			char 	*network = g_strdup ((key + net_path_len));
 			char		*slash_pos;
 			char		*unescaped_network;
 
@@ -1941,7 +2029,7 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 
 	g_free (applet->glade_file);
 
-	gconf_client_notify_remove (applet->gconf_client, applet->gconf_net_notify_id);
+	gconf_client_notify_remove (applet->gconf_client, applet->gconf_prefs_notify_id);
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_vpn_notify_id);
 	g_object_unref (G_OBJECT (applet->gconf_client));
 }
@@ -1974,6 +2062,8 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->thread_context = NULL;
 	applet->thread_loop = NULL;
 	applet->thread_done = FALSE;
+	applet->scanning_menu = NULL;
+	applet->scanning_item = NULL;
 
 	applet->glade_file = g_build_filename (GLADEDIR, "wireless-applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
@@ -1990,9 +2080,9 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	if (!applet->gconf_client)
 		return NULL;
 
-	gconf_client_add_dir (applet->gconf_client, GCONF_PATH_WIRELESS_NETWORKS, GCONF_CLIENT_PRELOAD_NONE, NULL);
-	applet->gconf_net_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_WIRELESS_NETWORKS,
-						nmwa_gconf_networks_notify_callback, applet, NULL, NULL);
+	gconf_client_add_dir (applet->gconf_client, GCONF_PATH_WIRELESS, GCONF_CLIENT_PRELOAD_NONE, NULL);
+	applet->gconf_prefs_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_WIRELESS,
+						nmwa_gconf_info_notify_callback, applet, NULL, NULL);
 
 	gconf_client_add_dir (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS, GCONF_CLIENT_PRELOAD_NONE, NULL);
 	applet->gconf_vpn_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS,

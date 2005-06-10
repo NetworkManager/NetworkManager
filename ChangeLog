@@ -1,6 +1,72 @@
 2005-06-09  Dan Williams <dcbw@redhat.com>
 
 	* NetworkManager.h
+		- Add NMWirelessScanMethod enum for scan methods
+
+	* gnome/applet/applet-dbus-devices.c
+		- (nmwa_dbus_update_scanning_enabled_cb): remove
+		- (nmwa_dbus_update_scanning_enabled): remove
+		- (nmwa_dbus_update_devices): don't call nmwa_dbus_update_scanning_enabled() anymore
+			since it got removed
+		- (nmwa_dbus_enable_scanning): remove
+
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_signal_update_scan_method): new function, signal NetworkManager to
+			update the wireless scanning method from NMI
+		- (nmi_dbus_get_wireless_scan_method): new function, return wireless scanning
+			method value to NetworkManager
+		- (nmi_dbus_info_message_handler): respond to the "getWirelessScanMethod" method call
+
+	* gnome/applet/applet-dbus-info.h
+		- Add prototype for nmi_dbus_signal_update_scan_method
+
+	* gnome/applet/applet.c
+		- (scanning_menu_update): new function, update one GtkCheckMenuItem from the
+			Wireless Scanning menu based on current wireless scan method
+		- (nmwa_menu_scanning_item_activate): new function, callback for GTK "activate"
+			signal for Wireless Scanning menu items, tell NetworkManager the new method
+			and update our menu items to make sure the right one is checked
+		- (nmwa_set_scanning_enabled_cb): remove
+		- (nmwa_context_menu_update): remove references to pause_scanning_item
+		- (nmwa_context_menu_create): remove pause_scanning_item, and add new Wireless
+			Scanning menu item
+		- (nmwa_gconf_get_wireless_scan_method): new method, pull wireless scanning method
+			from GConf
+		- nmwa_gconf_networks_notify_callback -> nmwa_gconf_info_notify_callback: generalize
+			so we get notified of preference values too
+		- (nmwa_get_instance): monitor GCONF_PATH_WIRELESS rather than GCONF_PATH_WIRELESS_NETWORKS
+
+	* gnome/applet/applet.h
+		- GCONF_PATH_WIRELESS added, one level below GCONF_PATH_WIRELESS_NETWORKS
+		- Add wireless scan method member to applet data
+		- Remove pause_scanning_item, add Wireless Scanning submenu
+
+	* src/NetworkManager.c
+		- (nm_data_new): default to NM_SCAN_METHOD_ON
+		- (main): grab scanning method from NMI if we can
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_update_wireless_scan_method_cb): new function, callback from
+			nm_dbus_update_wireless_scan_method()
+		- (nm_dbus_update_wireless_scan_method): new function to grab scanning method
+			from NMI
+		- (nm_dbus_nmi_is_running): redundant function, removed
+		- (nm_dbus_signal_filter): trap "WirelessScanMethodUpdate" signal, grab scanning method
+			when NMI comes back
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_is_activated): return TRUE if the device is activated
+		- (nm_device_wireless_scan): don't scan if the scan method is OFF, or if its AUTO
+			and we are activated
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_set_scanning_enabled): removed
+		- nm_dbus_nm_get_scanning_enabled -> nm_dbus_nm_get_wireless_scan_method
+		- (nm_dbus_nm_methods_setup): remove [get | set] ScanningEnabled and add "getWirelessScanMethod"
+
+2005-06-09  Dan Williams <dcbw@redhat.com>
+
+	* NetworkManager.h
 	  src/vpn-manager/nm-vpn-service.c
 		- NM_VPN_STATE_ERROR -> NM_VPN_STATE_UNKNOWN (more consistent with other enums)
 

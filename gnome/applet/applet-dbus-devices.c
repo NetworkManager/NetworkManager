@@ -109,67 +109,6 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 
 
 /*
- * nmwa_dbus_update_scanning_enabled_cb
- *
- * Callback from nmwa_dbus_update_scanning_enabled
- *
- */
-void nmwa_dbus_update_scanning_enabled_cb (DBusPendingCall *pcall, void *user_data)
-{
-	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
-	gboolean			scanning_enabled;
-
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-		goto out;
-
-	if (message_is_error (reply))
-	{
-		dbus_message_unref (reply);
-		goto out;
-	}
-
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_BOOLEAN, &scanning_enabled, DBUS_TYPE_INVALID))
-		applet->scanning_enabled = scanning_enabled;
-	dbus_message_unref (reply);
-
-out:
-	dbus_pending_call_unref (pcall);
-}
-
-
-/*
- * nmwa_dbus_update_scanning_enabled
- *
- * Get the scanning_enabled value from NetworkManager
- *
- */
-void nmwa_dbus_update_scanning_enabled (NMWirelessApplet *applet)
-{
-	DBusMessage *		message;
-	DBusPendingCall *	pcall = NULL;
-
-	g_return_if_fail (applet != NULL);
-
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getScanningEnabled")))
-	{
-		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
-		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_scanning_enabled_cb, applet, NULL);
-	}
-}
-
-
-/*
  * nmwa_dbus_update_wireless_enabled_cb
  *
  * Callback from nmwa_dbus_update_wireless_enabled
@@ -1016,7 +955,6 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
 	}
 
-	nmwa_dbus_update_scanning_enabled (applet);
 	nmwa_dbus_update_wireless_enabled (applet);
 }
 
@@ -1121,28 +1059,6 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 	}
 	else
 		nm_warning ("nmwa_dbus_set_device(): Couldn't allocate the dbus message\n");
-}
-
-
-/*
- * nmwa_dbus_enable_scanning
- *
- * Tell NetworkManager to start/stop scanning.
- *
- */
-void nmwa_dbus_enable_scanning (NMWirelessApplet *applet, gboolean enabled)
-{
-	DBusMessage	*message;
-
-	g_return_if_fail (applet != NULL);
-	g_return_if_fail (applet->connection != NULL);
-
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setScanningEnabled")))
-	{
-		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID);
-		dbus_connection_send (applet->connection, message, NULL);
-		nmwa_dbus_update_scanning_enabled (applet);
-	}
 }
 
 

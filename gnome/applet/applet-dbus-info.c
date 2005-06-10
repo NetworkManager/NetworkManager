@@ -115,6 +115,55 @@ void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message,
 
 
 /*
+ * nmi_dbus_signal_update_scan_method
+ *
+ * Signal NetworkManager that it needs to update its wireless scanning method
+ *
+ */
+void nmi_dbus_signal_update_scan_method (DBusConnection *connection)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessScanMethodUpdate");
+	if (!message)
+	{
+		nm_warning ("nmi_dbus_signal_update_scan_method(): Not enough memory for new dbus message!");
+		return;
+	}
+
+	if (!dbus_connection_send (connection, message, NULL))
+		nm_warning ("nmi_dbus_signal_update_scan_method(): Could not raise the 'WirelessScanMethodUpdate' signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nmi_dbus_get_wireless_scan_method
+ *
+ * Tell NetworkManager what wireless scanning method it should use
+ *
+ */
+static DBusMessage *nmi_dbus_get_wireless_scan_method (NMWirelessApplet *applet, DBusMessage *message)
+{
+	DBusMessage *			reply = NULL;
+	NMWirelessScanMethod	method = NM_SCAN_METHOD_ON;
+	GConfEntry *			entry;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	method = nmwa_gconf_get_wireless_scan_method (applet);
+	reply = dbus_message_new_method_return (message);
+	dbus_message_append_args (reply, DBUS_TYPE_UINT32, &method, DBUS_TYPE_INVALID);
+
+	return (reply);
+}
+
+
+/*
  * nmi_dbus_signal_update_network
  *
  * Signal NetworkManager that it needs to update info associated with a particular
@@ -913,6 +962,7 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		reply = nmi_dbus_get_key_for_network (applet, message);
 	else if (strcmp ("cancelGetKeyForNetwork", method) == 0)
 		nmi_passphrase_dialog_schedule_cancel (applet);
+#if 0  /* Not used at this time */
 	else if (strcmp ("networkNotFound", method) == 0)
 	{
 		const char *	network;
@@ -933,6 +983,9 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 			gtk_widget_destroy (GTK_WIDGET (dialog));
 		}
 	}
+#endif
+	else if (strcmp ("getWirelessScanMethod", method) == 0)
+		reply = nmi_dbus_get_wireless_scan_method (applet, message);
 	else if (strcmp ("getNetworks", method) == 0)
 		reply = nmi_dbus_get_networks (applet, message);
 	else if (strcmp ("getNetworkProperties", method) == 0)
