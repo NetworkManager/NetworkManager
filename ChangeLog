@@ -1,3 +1,9 @@
+2005-06-09  Dan Williams <dcbw@redhat.com>
+
+	* NetworkManager.h
+	  src/vpn-manager/nm-vpn-service.c
+		- NM_VPN_STATE_ERROR -> NM_VPN_STATE_UNKNOWN (more consistent with other enums)
+
 2005-05-27  Dan Williams <dcbw@redhat.com>
 
 	* vpn-daemons/vpnc/nm-vpnc-service.c

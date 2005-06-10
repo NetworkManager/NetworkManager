@@ -181,7 +181,7 @@ typedef enum NMDeviceAuthMethod
  */
 typedef enum NMVPNState
 {
-	NM_VPN_STATE_ERROR = 0,
+	NM_VPN_STATE_UNKNOWN = 0,
 	NM_VPN_STATE_INIT,
 	NM_VPN_STATE_SHUTDOWN,
 	NM_VPN_STATE_STARTING,

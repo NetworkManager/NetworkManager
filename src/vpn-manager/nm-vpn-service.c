@@ -126,7 +126,7 @@ void nm_vpn_service_set_program (NMVPNService *service, const char *program)
 
 NMVPNState nm_vpn_service_get_state (NMVPNService *service)
 {
-	g_return_val_if_fail (service != NULL, NM_VPN_STATE_ERROR);
+	g_return_val_if_fail (service != NULL, NM_VPN_STATE_UNKNOWN);
 
 	return service->state;
 }
