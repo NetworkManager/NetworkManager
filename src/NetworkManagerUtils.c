@@ -732,8 +732,8 @@ gboolean nm_completion_boolean_test(int tries, nm_completion_args args)
 {
 	gboolean *condition = (gboolean *)args[0];
 	char *message = (char *)args[1];
-	int log_level = (int)args[2];
-	int log_interval = (int)args[3];
+	int log_level = GPOINTER_TO_INT (args[2]);
+	int log_interval = GPOINTER_TO_INT (args[3]);
 
 	g_return_val_if_fail (condition != NULL, TRUE);
 
@@ -760,8 +760,8 @@ gboolean nm_completion_boolean_function1_test(int tries,
 {
 	nm_completion_boolean_function_1 condition = args[0];
 	char *message = args[1];
-	int log_level = (int)args[2];
-	int log_interval = (int)args[3];
+	int log_level = GPOINTER_TO_INT (args[2]);
+	int log_interval = GPOINTER_TO_INT (args[3]);
 	u_int64_t arg0;
 	
 	memcpy(&arg0, &args[4], sizeof (arg0));
@@ -783,8 +783,8 @@ gboolean nm_completion_boolean_function2_test(int tries,
 {
 	nm_completion_boolean_function_2 condition = args[0];
 	char *message = args[1];
-	int log_level = (int)args[2];
-	int log_interval = (int)args[3];
+	int log_level = GPOINTER_TO_INT (args[2]);
+	int log_interval = GPOINTER_TO_INT (args[3]);
 	u_int64_t arg0, arg1;
 
 	memcpy(&arg0, &args[4], sizeof (arg0));

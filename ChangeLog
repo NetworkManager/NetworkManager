@@ -1,5 +1,12 @@
 2005-06-09  Dan Williams <dcbw@redhat.com>
 
+	Patch from Robert Love:
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerUtils.c
+		- 64-bit build fixes
+
+2005-06-09  Dan Williams <dcbw@redhat.com>
+
 	Patch from Kay Sievers and Robert Love:
 	* configure.in
 	  src/backends/Makefile.am

@@ -1620,7 +1620,7 @@ gboolean nm_completion_device_is_up_test (int tries, nm_completion_args args)
 {
 	NMDevice *dev = args[0];
 	gboolean *err = args[1];
-	gboolean cancelable = (gboolean)args[2];
+	gboolean cancelable = GPOINTER_TO_INT (args[2]);
 
 	g_return_val_if_fail (dev != NULL, TRUE);
 	g_return_val_if_fail (err != NULL, TRUE);
@@ -1653,7 +1653,7 @@ gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable)
 
 	args[0] = dev;
 	args[1] = &err;
-	args[2] = (void *)cancelable;
+	args[2] = GINT_TO_POINTER (cancelable);
 	nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
 	if (err)
 		nm_info ("failed to bring device up");
@@ -1671,7 +1671,7 @@ gboolean nm_completion_device_is_down_test (int tries, nm_completion_args args)
 {
 	NMDevice *dev = args[0];
 	gboolean *err = args[1];
-	gboolean cancelable = (gboolean)args[2];
+	gboolean cancelable = GPOINTER_TO_INT (args[2]);
 
 	g_return_val_if_fail (dev != NULL, TRUE);
 	g_return_val_if_fail (err != NULL, TRUE);
@@ -1697,7 +1697,7 @@ gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
 
 	args[0] = dev;
 	args[1] = &err;
-	args[2] = (void *)cancelable;
+	args[2] = GINT_TO_POINTER (cancelable);
 	nm_wait_for_completion(400, G_USEC_PER_SEC / 200, NULL,
 			nm_completion_device_is_down_test, args);
 	if (err)
@@ -2278,7 +2278,7 @@ static gboolean nm_dwwfl_test (int tries, nm_completion_args args)
 	guint *		assoc_count = args[1];
 	double *		last_freq = args[2];
 	char *		essid = args[3];
-	int			required = (int) args[4];
+	int			required = GPOINTER_TO_INT (args[4]);
 
 	double		cur_freq = nm_device_get_frequency (dev);
 	gboolean		assoc = nm_device_wireless_is_associated (dev);
