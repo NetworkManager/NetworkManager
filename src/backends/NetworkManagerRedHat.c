@@ -355,6 +355,106 @@ typedef struct RHSystemConfigData
 	gboolean		use_dhcp;
 } RHSystemConfigData;
 
+
+/*
+ * get_current_profile_name
+ *
+ * Retrieve the current network profile, if any
+ *
+ */
+static char *get_current_profile_name (void)
+{
+	shvarFile *	file;
+	char *		buf;
+
+	if (!(file = svNewFile (SYSCONFDIR"/sysconfig/network")))
+		return NULL;
+
+	buf = svGetValue (file, "CURRENT_PROFILE");
+	if (!buf)
+		buf = strdup ("default");
+	svCloseFile (file);
+
+	return buf;
+}
+
+
+/*
+ * set_ip4_config_from_resolv_conf
+ *
+ * Add nameservers and search names from a resolv.conf format file.
+ *
+ */
+static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config)
+{
+	char *	contents = NULL;
+	char **	split_contents = NULL;
+	int		i, len;
+
+	g_return_if_fail (filename != NULL);
+	g_return_if_fail (ip4_config != NULL);
+
+	if (!g_file_get_contents (filename, &contents, NULL, NULL) || (contents == NULL))
+		return;
+
+	if (!(split_contents = g_strsplit (contents, "\n", 0)))
+		goto out;
+	
+	len = g_strv_length (split_contents);
+	for (i = 0; i < len; i++)
+	{
+		char *line = split_contents[i];
+
+		/* Ignore comments */
+		if (!line || (line[0] == ';'))
+			continue;
+
+		line = g_strstrip (line);
+		if ((strncmp (line, "search", 6) == 0) && (strlen (line) > 6))
+		{
+			char *searches = g_strdup (line + 7);
+			char **split_searches = NULL;
+
+			if (!searches || !strlen (searches))
+				continue;
+
+			/* Allow space-separated search domains */
+			if (split_searches == g_strsplit (searches, " ", 0))
+			{
+				int m, srch_len;
+
+				srch_len = g_strv_length (split_searches);
+				for (m = 0; m < srch_len; m++)
+				{
+					if (split_searches[m])
+						nm_ip4_config_add_domain	(ip4_config, split_searches[m]);
+				}
+				g_strfreev (split_searches);
+			}
+			else
+			{
+				/* Only 1 item, add the whole line */
+				nm_ip4_config_add_domain	(ip4_config, searches);
+			}
+
+			g_free (searches);
+		}
+		else if ((strncmp (line, "nameserver", 10) == 0) && (strlen (line) > 10))
+		{
+			guint32	addr = (guint32) (inet_addr (line + 11));
+
+			if (addr != (guint32) -1)
+				nm_ip4_config_add_nameserver (ip4_config, addr);
+		}
+	}
+
+	g_strfreev (split_contents);
+
+out:
+	g_free (contents);
+}
+
+
 /*
  * nm_system_device_get_system_config
  *
@@ -465,6 +565,21 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 			nm_ip4_config_set_broadcast (sys_data->config, broadcast);
 		}
 	}
+
+	/* If we're using Static IP, grab DNS servers from the profile's config file */
+	if (!sys_data->use_dhcp)
+	{
+		char * cur_profile_name = get_current_profile_name ();
+
+		if (cur_profile_name)
+		{
+			char *filename = g_strdup_printf (SYSCONFDIR"/sysconfig/networking/profiles/%s/resolv.conf", cur_profile_name);
+			
+			set_ip4_config_from_resolv_conf (filename, sys_data->config);
+			g_free (filename);
+			g_free (cur_profile_name);
+		}
+	}	
 
 #if 0
 	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));

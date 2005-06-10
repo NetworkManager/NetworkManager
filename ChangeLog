@@ -1,3 +1,13 @@
+2005-06-10  Dan Williams <dcbw@redhat.com>
+
+	* src/backends/NetworkManagerRedHat.c
+		- (get_current_profile_name): new function, grab current network profile name from
+			/etc/sysconfig/network
+		- (set_ip4_config_from_resolv_conf): new function, parse a resolv.conf and
+			update an IP4 Config structure's settings from it
+		- (nm_system_device_get_system_config): if we're using static IP on this device,
+			get DNS info from current network profile
+
 2005-06-09  Dan Williams <dcbw@redhat.com>
 
 	Patch from Robert Love:
