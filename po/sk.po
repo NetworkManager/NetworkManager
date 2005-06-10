@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.18 2005/06/01 04:13:01 marcel Exp $
+# $Id: sk.po,v 1.19 2005/06/10 20:15:47 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-01 06:08+0200\n"
-"PO-Revision-Date: 2005-06-01 06:11+0200\n"
+"POT-Creation-Date: 2005-06-10 22:14+0200\n"
+"PO-Revision-Date: 2005-06-10 22:15+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -28,7 +28,7 @@ msgstr "Orientácia"
 msgid "The orientation of the tray."
 msgstr "Orientácia systémovej lišty."
 
-#: ../gnome/applet/applet-dbus-info.c:928
+#: ../gnome/applet/applet-dbus-info.c:978
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -158,7 +158,7 @@ msgstr ""
 "\n"
 "\"%s\""
 
-#: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:1981
+#: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:2071
 #: ../gnome/applet/other-network-dialog.c:315
 #: ../gnome/applet/passphrase-dialog.c:428
 msgid ""
@@ -242,55 +242,64 @@ msgstr "Pripájané k bezdrôtovej sieti Ad-Hoc"
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Bezdrôtové sieťové pripojenie k '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1240
+#: ../gnome/applet/applet.c:1284
 msgid "Other Wireless Networks..."
 msgstr "Ostatné bezdrôtové siete..."
 
-#: ../gnome/applet/applet.c:1261
+#: ../gnome/applet/applet.c:1305
 msgid "Create new Wireless Network..."
 msgstr "Vytvoriť novú bezdrôtovú sieť..."
 
-#: ../gnome/applet/applet.c:1374
+#: ../gnome/applet/applet.c:1418
 msgid "VPN Connections"
 msgstr "VPN spojenia"
 
-#: ../gnome/applet/applet.c:1396
+#: ../gnome/applet/applet.c:1440
 msgid "Disconnect VPN..."
 msgstr "Odpojiť VPN..."
 
-#: ../gnome/applet/applet.c:1425
+#: ../gnome/applet/applet.c:1469
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: ../gnome/applet/applet.c:1588
+#: ../gnome/applet/applet.c:1625
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
-#: ../gnome/applet/applet.c:1658 ../gnome/applet/applet.c:1706
-msgid "Pause Wireless Scanning"
-msgstr "Pozastaviť bezdrôtové prehľadávanie"
-
-#: ../gnome/applet/applet.c:1663
-msgid "Resume Wireless Scanning"
-msgstr "Obnoviť bezdrôtové prehľadávanie"
-
-#: ../gnome/applet/applet.c:1673 ../gnome/applet/applet.c:1712
+#. Stop All Wireless Devices item
+#: ../gnome/applet/applet.c:1693 ../gnome/applet/applet.c:1757
 msgid "Stop All Wireless Devices"
 msgstr "Zastaviť všetky bezdrôtové zariadenia"
 
-#: ../gnome/applet/applet.c:1678
+#: ../gnome/applet/applet.c:1698
 msgid "Start All Wireless Devices"
 msgstr "Spustiť všetky bezdrôtové zariadenia"
 
-#: ../gnome/applet/applet.c:1721
+#: ../gnome/applet/applet.c:1729
+msgid "Wireless Scanning"
+msgstr "Bezdrôtové prehľadávanie"
+
+#: ../gnome/applet/applet.c:1732
+msgid "On"
+msgstr "Zapnuté"
+
+#: ../gnome/applet/applet.c:1739
+msgid "Off"
+msgstr "Vypnuté"
+
+#: ../gnome/applet/applet.c:1746
+msgid "Automatic"
+msgstr "Automatické"
+
+#: ../gnome/applet/applet.c:1765
 msgid "Help"
 msgstr "Pomocník"
 
-#: ../gnome/applet/applet.c:1728
+#: ../gnome/applet/applet.c:1772
 msgid "About"
 msgstr "O programe"
 
-#: ../gnome/applet/applet.c:2129
+#: ../gnome/applet/applet.c:2219
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
