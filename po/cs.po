@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-05-29 04:03+0000\n"
-"PO-Revision-Date: 2005-05-29 14:04+0200\n"
+"POT-Creation-Date: 2005-06-12 03:59+0000\n"
+"PO-Revision-Date: 2005-06-12 15:32+0200\n"
 "Last-Translator: Miloslav Trmac <mitr@volny.cz>\n"
 "Language-Team: Czech <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -28,7 +28,7 @@ msgstr "Orientace"
 msgid "The orientation of the tray."
 msgstr "Orientace oznamovací oblasti."
 
-#: ../gnome/applet/applet-dbus-info.c:928
+#: ../gnome/applet/applet-dbus-info.c:978
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -137,7 +137,8 @@ msgid ""
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Chyba při připojování k VPN</span>\n"
 "\n"
-"Nemohu spustit připojení k VPN '%s', protože VPN server nevrátil odpovídající nastavení sítě.\n"
+"Nemohu spustit připojení k VPN '%s', protože VPN server nevrátil "
+"odpovídající nastavení sítě.\n"
 "\n"
 "Služba VPN řekla: \"%s\""
 
@@ -156,7 +157,7 @@ msgstr ""
 "\n"
 "\"%s\""
 
-#: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:1981
+#: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:2071
 #: ../gnome/applet/other-network-dialog.c:315
 #: ../gnome/applet/passphrase-dialog.c:428
 msgid ""
@@ -240,55 +241,64 @@ msgstr "Připojen k ad-hoc bezdrátové síti"
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Bezdrátové připojení k '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1240
+#: ../gnome/applet/applet.c:1284
 msgid "Other Wireless Networks..."
 msgstr "Jiné bezdrátové sítě..."
 
-#: ../gnome/applet/applet.c:1261
+#: ../gnome/applet/applet.c:1305
 msgid "Create new Wireless Network..."
 msgstr "Vytvořit novou bezdrátovou síť..."
 
-#: ../gnome/applet/applet.c:1374
+#: ../gnome/applet/applet.c:1418
 msgid "VPN Connections"
 msgstr "Připojení k VPN"
 
-#: ../gnome/applet/applet.c:1396
+#: ../gnome/applet/applet.c:1440
 msgid "Disconnect VPN..."
 msgstr "Odpojit VPN..."
 
-#: ../gnome/applet/applet.c:1425
+#: ../gnome/applet/applet.c:1469
 msgid "No network devices have been found"
 msgstr "Nebylo nalezeno žádné síťové zařízení"
 
-#: ../gnome/applet/applet.c:1588
+#: ../gnome/applet/applet.c:1625
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager neběží..."
 
-#: ../gnome/applet/applet.c:1658 ../gnome/applet/applet.c:1706
-msgid "Pause Wireless Scanning"
-msgstr "Pozastavit bezdrátové hledání"
-
-#: ../gnome/applet/applet.c:1663
-msgid "Resume Wireless Scanning"
-msgstr "Pokračovat v bezdrátovém hledání"
-
-#: ../gnome/applet/applet.c:1673 ../gnome/applet/applet.c:1712
+#. Stop All Wireless Devices item
+#: ../gnome/applet/applet.c:1693 ../gnome/applet/applet.c:1757
 msgid "Stop All Wireless Devices"
 msgstr "Zastavit všechna bezdrátová zařízení"
 
-#: ../gnome/applet/applet.c:1678
+#: ../gnome/applet/applet.c:1698
 msgid "Start All Wireless Devices"
 msgstr "Spustit všechna bezdrátová zařízení"
 
-#: ../gnome/applet/applet.c:1721
+#: ../gnome/applet/applet.c:1729
+msgid "Wireless Scanning"
+msgstr "Bezdrátové hledání"
+
+#: ../gnome/applet/applet.c:1732
+msgid "On"
+msgstr "Zapnuto"
+
+#: ../gnome/applet/applet.c:1739
+msgid "Off"
+msgstr "Vypnuto"
+
+#: ../gnome/applet/applet.c:1746
+msgid "Automatic"
+msgstr "Automatické"
+
+#: ../gnome/applet/applet.c:1765
 msgid "Help"
 msgstr "Nápověda"
 
-#: ../gnome/applet/applet.c:1728
+#: ../gnome/applet/applet.c:1772
 msgid "About"
 msgstr "O aplikaci"
 
-#: ../gnome/applet/applet.c:2129
+#: ../gnome/applet/applet.c:2219
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -520,6 +530,9 @@ msgstr "%s"
 #: ../src/nm-netlink-monitor.c:645
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "po socketu bylo posláno příliš mnoho dat a některá byla ztracena"
+
+#~ msgid "Resume Wireless Scanning"
+#~ msgstr "Pokračovat v bezdrátovém hledání"
 
 #~ msgid "Configuring device %s for the wireless network '%s'..."
 #~ msgstr "Nastavuji zařízení %s pro bezdrátovou síť '%s' ..."
