@@ -60,7 +60,4 @@ void			nmwa_dbus_enable_wireless			(NMWirelessApplet *applet, gboolean enabled);
 void			nmwa_free_gui_data_model				(NMWirelessApplet *applet);
 void			nmwa_free_dbus_data_model			(NMWirelessApplet *applet);
 
-void			nmwa_dbus_vpn_activate_connection		(DBusConnection *connection, const char *name, const char *password);
-void			nmwa_dbus_vpn_deactivate_connection	(DBusConnection *connection);
-
 #endif

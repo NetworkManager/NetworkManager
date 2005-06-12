@@ -115,6 +115,10 @@ PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
 AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
 
+PKG_CHECK_MODULES(GMODULE, gmodule-2.0)
+AC_SUBST(GMODULE_CFLAGS)
+AC_SUBST(GMODULE_LIBS)
+
 PKG_CHECK_MODULES(HAL, hal >= 0.2.91)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
@@ -277,6 +281,7 @@ gnome/applet/Makefile
 gnome/applet/icons/Makefile
 gnome/libnm_glib/libnm_glib.pc
 gnome/libnm_glib/Makefile
+gnome/vpn-properties/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
@@ -285,8 +290,6 @@ initscript/Debian/Makefile
 initscript/Slackware/Makefile
 po/Makefile.in
 NetworkManager.pc
-vpn-daemons/Makefile
-vpn-daemons/vpnc/Makefile
 ])
 
 echo

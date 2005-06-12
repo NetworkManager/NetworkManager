@@ -494,6 +494,8 @@ static DBusMessage *nmi_dbus_get_vpn_connections (NMWirelessApplet *applet, DBus
 
 	dbus_error_init (&error);
 
+	/*g_debug ("entering nmi_dbus_get_vpn_connections");*/
+
 	/* List all VPN connections that gconf knows about */
 	element = dir_list = gconf_client_all_dirs (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS, NULL);
 	if (!dir_list)
@@ -524,9 +526,11 @@ static DBusMessage *nmi_dbus_get_vpn_connections (NMWirelessApplet *applet, DBus
 				const gchar *essid;
 				essid = gconf_value_get_string (value);
 				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &essid);
+				/*g_debug ("vpnid = '%s'", essid);*/
 				value_added = TRUE;
 				gconf_value_free (value);
 			}
+
 
 			g_free (element->data);
 			element = element->next;
@@ -563,7 +567,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 	char			*escaped_name;
 	char			*name = NULL;
 	char 		*service_name = NULL;
-	char			*user_name = NULL;
+	const char     *user_name = NULL;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -579,12 +583,15 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 
 	escaped_name = gconf_escape_key (vpn_connection, strlen (vpn_connection));
 
+	/*g_debug ("entering nmi_dbus_get_vpn_connection_properties for '%s'", escaped_name);*/
+
 	/* User-visible name of connection */
 	gconf_key = g_strdup_printf ("%s/%s/name", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
 	if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
 	{
 		name = g_strdup (gconf_value_get_string (value));
 		gconf_value_free (value);
+		/*g_debug ("name '%s'", name);*/
 	}
 	g_free (gconf_key);
 
@@ -594,32 +601,24 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 	{
 		service_name = g_strdup (gconf_value_get_string (value));
 		gconf_value_free (value);
+		/*g_debug ("service '%s'", service_name);*/
 	}
 	g_free (gconf_key);
 
-	/* User name of connection */
-	gconf_key = g_strdup_printf ("%s/%s/user_name", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
-	if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
-	{
-		user_name = g_strdup (gconf_value_get_string (value));
-		gconf_value_free (value);
-	}
-	g_free (gconf_key);
+	/* User name of connection - use the logged in user */
+	user_name = g_get_user_name ();
 
 	if (!name)
 	{
 		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionProperties could not access the name for connection '%s'", vpn_connection);
+		/*g_warning ("BadVPNConnectionData for '%s'", escaped_name);*/
 	}
 	else if (!service_name)
 	{
 		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionProperties could not access the service name for connection '%s'", vpn_connection);
-	}
-	else if (!user_name)
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
-						"NetworkManagerInfo::getVPNConnectionProperties could not access the user name for connection '%s'", vpn_connection);
+		/*g_warning ("BadVPNConnectionData for '%s'", escaped_name);*/
 	}
 	else
 	{
@@ -632,7 +631,6 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &user_name);
 	}	
 
-	g_free (user_name);
 	g_free (service_name);
 	g_free (name);
 	g_free (escaped_name);

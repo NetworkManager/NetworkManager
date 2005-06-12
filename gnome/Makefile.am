@@ -1,1 +1,2 @@
-SUBDIRS = applet libnm_glib
+SUBDIRS = applet libnm_glib vpn-properties
+

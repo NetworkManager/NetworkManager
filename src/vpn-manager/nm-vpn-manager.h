@@ -34,7 +34,7 @@ void				nm_vpn_manager_dispose					(NMVPNManager *manager);
 
 NMVPNConnection *	nm_vpn_manager_get_active_vpn_connection	(NMVPNManager *manager);
 
-void				nm_vpn_manager_activate_vpn_connection		(NMVPNManager *manager, NMVPNConnection *vpn, const char *password, char **data_items, int count);
+void				nm_vpn_manager_activate_vpn_connection		(NMVPNManager *manager, NMVPNConnection *vpn, char **password_items, int password_count, char **data_items, int count);
 void				nm_vpn_manager_deactivate_vpn_connection	(NMVPNManager *manager);
 
 NMVPNConnection *	nm_vpn_manager_find_connection_by_name		(NMVPNManager *manager, const char *con_name);

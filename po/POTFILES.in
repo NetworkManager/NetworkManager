@@ -12,4 +12,6 @@ gnome/applet/other-network-dialog.c
 gnome/applet/passphrase-dialog.c
 gnome/applet/vpn-password-dialog.c
 gnome/applet/wireless-applet.glade
+gnome/vpn-properties/nm-vpn-properties.c
+gnome/vpn-properties/nm-vpn-properties.glade
 src/nm-netlink-monitor.c

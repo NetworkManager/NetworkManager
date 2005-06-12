@@ -27,6 +27,8 @@
 
 #include <gtk/gtk.h>
 #include <libgnomeui/libgnomeui.h>
+#include <glib/gi18n-lib.h>
+
 #include "applet.h"
 
 static void session_die (GnomeClient *client, gpointer client_data)
@@ -54,6 +56,10 @@ int main (int argc, char *argv[])
 
 	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);
 	g_signal_connect (client, "die", G_CALLBACK (session_die), NULL);
+
+	bindtextdomain (GETTEXT_PACKAGE, NULL);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
 
 	nmwa = nmwa_new ();
 

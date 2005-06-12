@@ -655,7 +655,7 @@ gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const
  * launching that daemon if necessary.
  *
  */
-void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnection *vpn, const char *password, char **data_items, int count)
+void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnection *vpn, char **password_items, int password_count, char **data_items, int count)
 {
 	DBusMessage		*message;
 	DBusMessage		*reply;
@@ -672,7 +672,7 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	g_return_if_fail (manager->app_data != NULL);
 	g_return_if_fail (manager->app_data->dbus_connection != NULL);
 	g_return_if_fail (vpn != NULL);
-	g_return_if_fail (password != NULL);
+	g_return_if_fail (password_items != NULL);
 	g_return_if_fail (data_items != NULL);
 
 	nm_vpn_manager_set_active_vpn_connection (manager, NULL);
@@ -708,10 +708,10 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	user_name = nm_vpn_connection_get_user_name (vpn);
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &name,
-								DBUS_TYPE_STRING, &user_name,
-								DBUS_TYPE_STRING, &password,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, count,
-								DBUS_TYPE_INVALID);
+				  DBUS_TYPE_STRING, &user_name,
+				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &password_items, password_count,
+				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, count,
+				  DBUS_TYPE_INVALID);
 
 	/* Send the message to the daemon again, now that its running. */
 	dbus_error_init (&error);

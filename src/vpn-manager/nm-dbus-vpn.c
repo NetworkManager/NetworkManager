@@ -622,9 +622,13 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
 	{
 		if ((vpn_con = nm_vpn_manager_find_connection_by_name (data->data->vpn_manager, name)))
 		{
-			const char *user_name = nm_vpn_connection_get_user_name (vpn_con);
+			const char *user_name;
+			const char *service;
 
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_INVALID);
+			user_name = nm_vpn_connection_get_user_name (vpn_con);
+			service = nm_vpn_service_get_service_name (nm_vpn_connection_get_service (vpn_con));
+
+			dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID);
 			good = TRUE;
 		}
 	}
@@ -681,7 +685,8 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 	DBusMessage		*reply = NULL;
 	DBusError			 error;
 	const char		*name;
-	const char		*password;
+	char                    **passwords;
+	int                     num_passwords;
 	NMVPNConnection	*vpn;
 
 	g_return_val_if_fail (data != NULL, NULL);
@@ -689,9 +694,11 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
+	nm_info ("Entering");
+
 	dbus_error_init (&error);
-	if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &password, DBUS_TYPE_INVALID))
-	{
+
+	if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &passwords, &num_passwords, DBUS_TYPE_INVALID))	{
 		if ((vpn = nm_vpn_manager_find_connection_by_name (data->data->vpn_manager, name)))
 		{
 			int	item_count = -1;
@@ -704,12 +711,16 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 
 				nm_info ("Will activate VPN connection '%s', service '%s', user_name '%s', vpn_data '%s'.",
 					name, nm_vpn_service_get_service_name (service), nm_vpn_connection_get_user_name (vpn), joined_string);
-				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, password, items, item_count);
+				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, passwords, num_passwords, items, item_count);
 
 				g_free (joined_string);
 				g_strfreev (items);
 			}
+		} else {
+			nm_warning ("Cannot find name '%s'", name);
 		}
+	} else {
+		nm_warning ("Syntax error receiving nm_dbus_vpn_activate_connection");
 	}
 
 	return NULL;

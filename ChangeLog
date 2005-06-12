@@ -1,3 +1,94 @@
+2005-06-12  David Zeuthen  <davidz@redhat.com>
+
+	* gnome/vpn-properties/nm-vpn-ui-interface.h: New file
+
+	* gnome/vpn-properties/nm-vpn-properties.glade: New file
+
+	* gnome/vpn-properties/nm-vpn-properties.c: New file
+
+	* gnome/vpn-properties/Makefile.am: New file
+
+	* src/vpn-manager/nm-vpn-manager.h: Rework prototypes to take an
+	array of passwords
+
+	* src/vpn-manager/nm-vpn-manager.c
+	(nm_vpn_manager_activate_vpn_connection): Take an array of passwords
+	instead of just a single one
+
+	* src/vpn-manager/nm-dbus-vpn.c:
+	(nm_dbus_vpn_get_vpn_connection_properties): Also append service_name
+	here
+	(nm_dbus_vpn_activate_connection): Rework to take an array of passwords
+
+	* gnome/applet/vpn-password-dialog.h (nmwa_vpn_request_password): 
+	Change the interface here to give a list of passwords. Also, don't
+	require username, but do require service
+
+	* gnome/applet/vpn-password-dialog.c: Look up the VPN .name files for
+	the binary for the auth-dialog and use that instead of putting up a
+	dialog asking for a single password
+
+	* gnome/applet/vpn-connection.[ch]: Don't remember the user_name,
+	however do remember the service
+
+	* gnome/applet/main.c (main): Setup i18n
+
+	* gnome/applet/applet.c (nmwa_update_state): Add a line "VPN
+	connection to '%s'" to the tooltip if we are connected using VPN
+	(nmwa_menu_vpn_item_activate): Check last_attempt_success gconf
+	key to determine whether we the auth-dialog needs to
+	reprompt. Also cope with the fact that the auth-dialog now returns
+	an array of passwords.
+	(nmwa_menu_configure_vpn_item_activate): New handler for
+	"Configure VPN..." menu item
+	(nmwa_menu_add_vpn_menu): Add the "Configure VPN..." menu item
+	(is_vpn_available): New function to determine if we got any
+	NM-compatible VPN software installed
+	(nmwa_menu_add_devices): Use is_vpn_available to add VPN menu
+	items only if we have NM-compatible VPN software installed
+	(nmwa_gconf_vpn_connections_notify_callback): Slightly rework the
+	logic for detecting when VPN connections are removed
+
+	* gnome/applet/applet-dbus.h: Removed the prototypes for 
+	nmwa_dbus_vpn_activate_connection, nmwa_dbus_vpn_deactivate_connection
+	since these are defined elsewhere
+
+	* gnome/applet/applet-dbus.c (set_vpn_last_attempt_status): New
+	function used to keep track of whether the last attempt succeded
+	(nmwa_dbus_filter): Update last_attempt according to whether the
+	VPN connection could be established or not
+
+	* gnome/applet/applet-dbus-vpn.h (nmwa_dbus_vpn_deactivate_connection): 
+	Change prototype to take an array of passwords, not just a single
+	password
+
+	* gnome/applet/applet-dbus-vpn.c (nmwa_dbus_vpn_properties_cb): Only
+	update service, not user
+	(nmwa_dbus_vpn_remove_one_vpn_connection): Check that applet->
+	dbus_active_vpn_name is not NULL before using it
+	(nmwa_dbus_vpn_activate_connection): Send the passwords as a
+	string array instead of assuming a single password
+
+	* gnome/applet/applet-dbus-info.c:
+	(nmi_dbus_get_vpn_connection_properties): Use the logged in user for
+	user name; don't read from gconf
+
+	* gnome/applet/Makefile.am: Also export SYSCONFDIR and 
+	VPN_NAME_FILES_DIR
+
+	* gnome/Makefile.am (SUBDIRS): Add vpn-properties
+
+	* configure.in: Add checks for gmodule-2.0.
+	Generate gnome/vpn-properties/Makefile. Don't generate any Makefile's
+	in vpn-daemons nor vpn-daemons/vpnc. We have separate autotooled
+	projects under vpn-daemons now.	 See vpn-daemons/vpnc/Changelog
+	for details
+
+	* vpn-daemons/Makefile.am: Removed
+
+	* vpn-daemons/README: New file to describe extensions points for VPN
+	software
+
 2005-06-10  Dan Williams <dcbw@redhat.com>
 
 	* src/backends/NetworkManagerRedHat.c

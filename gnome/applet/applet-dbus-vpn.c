@@ -147,7 +147,8 @@ void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 	VpnPropsCBData *	cb_data = user_data;
 	NMWirelessApplet *	applet;
 	const char *		name;
-	const char *		user_name;
+	const char *        user_name;
+	const char *        service;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -181,17 +182,19 @@ void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 		goto out;
 	}
 
-	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_INVALID))
+	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID))
 	{
 		VPNConnection *	vpn;
 
-		/* If its already there, update the user_name, otherwise add it to the list */
+		/* If its already there, update the service, otherwise add it to the list */
 		if ((vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, name)))
-			nmwa_vpn_connection_set_user_name (vpn, user_name);
+		{
+			nmwa_vpn_connection_set_service (vpn, service);
+		}
 		else
 		{
 			vpn = nmwa_vpn_connection_new (name);
-			nmwa_vpn_connection_set_user_name (vpn, user_name);
+			nmwa_vpn_connection_set_service (vpn, service);
 			applet->dbus_vpn_connections = g_slist_append (applet->dbus_vpn_connections, vpn);
 		}
 	}
@@ -333,7 +336,8 @@ void nmwa_dbus_vpn_remove_one_vpn_connection (NMWirelessApplet *applet, const ch
 	if ((vpn = nmwa_vpn_connection_find_by_name (applet->dbus_vpn_connections, vpn_name)))
 	{
 		applet->dbus_vpn_connections = g_slist_remove (applet->dbus_vpn_connections, vpn);
-		if (!strcmp (applet->dbus_active_vpn_name, nmwa_vpn_connection_get_name (vpn)))
+		if (applet->dbus_active_vpn_name != NULL &&
+		    !strcmp (applet->dbus_active_vpn_name, nmwa_vpn_connection_get_name (vpn)))
 		{
 			g_free (applet->dbus_active_vpn_name);
 			applet->dbus_active_vpn_name = NULL;
@@ -461,19 +465,29 @@ static void nmwa_free_dbus_vpn_connections (NMWirelessApplet *applet)
  * Tell NetworkManager to activate a particular VPN connection.
  *
  */
-void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *name, const char *password)
+void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *name, GSList *passwords)
 {
 	DBusMessage	*message;
+	DBusMessageIter	 iter;
+	DBusMessageIter	 iter_array;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (name != NULL);
-	g_return_if_fail (password != NULL);
+	g_return_if_fail (passwords != NULL);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "activateVPNConnection")))
 	{
-		nm_info ("Activating VPN connection '%s'.\n", name);
+		GSList *i;
 
-		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &password, DBUS_TYPE_INVALID);
+		nm_info ("Activating VPN connection '%s'.\n", name);
+		dbus_message_iter_init_append (message, &iter);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+
+		for (i = passwords; i != NULL; i = g_slist_next (i)) {
+			dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &(i->data));
+		}
+		dbus_message_iter_close_container (&iter, &iter_array);
 		dbus_connection_send (connection, message, NULL);
 	}
 	else

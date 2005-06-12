@@ -29,106 +29,182 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
-#include <gnome-keyring.h>
-#include <libgnomeui/gnome-password-dialog.h>
-
-#ifndef _
-#define _(x) dgettext (GETTEXT_PACKAGE, x)
-#define N_(x) x
-#endif
+#include <glib/gi18n-lib.h>
 
 #include "applet.h"
 #include "vpn-password-dialog.h"
 #include "nm-utils.h"
 
-static gboolean lookup_pass (const char *vpn, const char *username, char **password)
+static void 
+child_finished_cb (GPid pid, gint status, gpointer userdata)
 {
-	GList *result;
+	int *child_status = (gboolean *) userdata;
 
-	if (gnome_keyring_find_network_password_sync (username,
-						      NULL,
-						      vpn,
-						      NULL,
-						      "vpn",
-						      NULL,
-						      0,
-						      &result) != GNOME_KEYRING_RESULT_OK)
-		return FALSE;
-
-	if (result)
-	{
-		GnomeKeyringNetworkPasswordData *data = result->data;
-		*password = g_strdup (data->password);
-		gnome_keyring_network_password_list_free (result);
-		return TRUE;
-	}
-	return FALSE;
+	*child_status = status;
 }
 
-static void save_vpn_password (const char *vpn, const char *keyring, const char *username, const char *password)
+static gboolean 
+child_stdout_data_cb (GIOChannel *source, GIOCondition condition, gpointer userdata)
 {
-	guint32 item_id;
-	GnomeKeyringResult keyring_result;
+	char *str;
+	GSList **passwords = (GSList **) userdata;
 
-	keyring_result = gnome_keyring_set_network_password_sync (NULL,
-								  username,
-								  NULL,
-								  vpn,
-								  NULL,
-								  "vpn",
-								  NULL,
-								  0,
-								  password,
-								  &item_id);
+	if (! (condition & G_IO_IN))
+		goto out;
 
-	if (keyring_result != GNOME_KEYRING_RESULT_OK)
-	{
-		nm_warning ("Couldn't store password in keyring, code %d",
-			(int) keyring_result);
-	}
-}
+	if (g_io_channel_read_line (source, &str, NULL, NULL, NULL) == G_IO_STATUS_NORMAL) {
+		int len;
 
-char *nmwa_vpn_request_password (NMWirelessApplet *applet, const char *vpn, const char *username, gboolean retry)
-{
-	GtkWidget	*dialog;
-	char		*prompt;
-	char		*password = NULL;
-
-	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (vpn != NULL, NULL);
-	g_return_val_if_fail (username != NULL, NULL);
-
-	/* Use the system user name, since the VPN might have a different user name */
-	if (!retry && lookup_pass (vpn, g_get_user_name (), &password))
-		return password;
-	
-	prompt = g_strdup_printf (_("You must log in to access the Virtual Private Network '%s'."), vpn);
-	dialog = gnome_password_dialog_new ("", prompt, username, NULL, FALSE);
-	g_free (prompt);
-
-	gnome_password_dialog_set_show_username (GNOME_PASSWORD_DIALOG (dialog), TRUE);
-	gnome_password_dialog_set_readonly_username (GNOME_PASSWORD_DIALOG (dialog), TRUE);
-	gnome_password_dialog_set_show_userpass_buttons (GNOME_PASSWORD_DIALOG (dialog), FALSE);
-	gnome_password_dialog_set_show_domain (GNOME_PASSWORD_DIALOG (dialog), FALSE);
-	gnome_password_dialog_set_show_remember (GNOME_PASSWORD_DIALOG (dialog), TRUE);
-	gtk_widget_show (dialog);
-
-	if (gnome_password_dialog_run_and_block (GNOME_PASSWORD_DIALOG (dialog)))
-	{
-		password = gnome_password_dialog_get_password (GNOME_PASSWORD_DIALOG (dialog));
-		switch (gnome_password_dialog_get_remember (GNOME_PASSWORD_DIALOG (dialog)))
-		{
-			case GNOME_PASSWORD_DIALOG_REMEMBER_SESSION:
-				save_vpn_password (vpn, "session", username, password);
-				break;
-			case GNOME_PASSWORD_DIALOG_REMEMBER_FOREVER:
-				save_vpn_password (vpn, NULL, username, password);
-				break;
-			default:
-				break;
+		len = strlen (str);
+		if (len > 0) {
+			/* remove terminating newline */
+			str[len - 1] = '\0';
+			*passwords = g_slist_append (*passwords, str);
 		}
 	}
 
-	gtk_widget_destroy (dialog);
-	return password;
+out:
+	return TRUE;
+}
+
+GSList *
+nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const char *service, gboolean retry)
+{
+	char       *argv[] = {NULL /*"/usr/libexec/nm-vpnc-auth-dialog"*/, 
+			      "-n", NULL /*"davidznet42"*/, 
+			      "-s", NULL /*"org.freedesktop.vpnc"*/, 
+			      "-r",
+			      NULL};
+	GSList     *passwords = NULL;
+	int         child_stdout;
+	GPid        child_pid;
+	int         child_status;
+	GIOChannel *child_stdout_channel;
+	guint       child_stdout_channel_eventid;
+	GDir       *dir;
+	char       *auth_dialog_binary;
+
+	auth_dialog_binary = NULL;
+
+	/* find the auth-dialog binary */
+	if ((dir = g_dir_open (VPN_NAME_FILES_DIR, 0, NULL)) != NULL) {
+		const char *f;
+
+		while (auth_dialog_binary == NULL && (f = g_dir_read_name (dir)) != NULL) {
+			char *path;
+			GKeyFile *keyfile;
+
+			if (!g_str_has_suffix (f, ".name"))
+				continue;
+
+			path = g_strdup_printf ("%s/%s", VPN_NAME_FILES_DIR, f);
+
+			keyfile = g_key_file_new ();
+			if (g_key_file_load_from_file (keyfile, path, 0, NULL)) {
+				char *thisservice;
+
+				if ((thisservice = g_key_file_get_string (keyfile, 
+									  "VPN Connection", 
+									  "service", NULL)) != NULL &&
+				    strcmp (thisservice, service) == 0) {
+
+					auth_dialog_binary = g_key_file_get_string (keyfile, 
+										    "GNOME", 
+										    "auth-dialog", NULL);
+				}
+
+				g_free (thisservice);
+			}
+			g_key_file_free (keyfile);
+			g_free (path);
+		}
+		g_dir_close (dir);
+	}
+
+	if (auth_dialog_binary == NULL) {
+		/* could find auth-dialog */
+		GtkWidget *dialog;
+
+		dialog = gtk_message_dialog_new (NULL,
+						 GTK_DIALOG_DESTROY_WITH_PARENT,
+						 GTK_MESSAGE_ERROR,
+						 GTK_BUTTONS_CLOSE,
+						 _("Cannot start VPN connection '%s'"),
+						 name);
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+  _("Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."),
+							  service);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+		goto out;
+	}
+
+	/* Fix up parameters with what we got */
+	argv[0] = auth_dialog_binary;
+	argv[2] = (char *) name;
+	argv[4] = (char *) service;
+	if (!retry)
+		argv[5] = NULL;
+
+	nm_debug ("retry = %d", retry);
+
+	child_status = -1;
+
+	if (!g_spawn_async_with_pipes (NULL,                       /* working_directory */
+				       argv,                       /* argv */
+				       NULL,                       /* envp */
+				       G_SPAWN_DO_NOT_REAP_CHILD,  /* flags */
+				       NULL,                       /* child_setup */
+				       NULL,                       /* user_data */
+				       &child_pid,                 /* child_pid */
+				       NULL,                       /* standard_input */
+				       &child_stdout,              /* standard_output */
+				       NULL,                       /* standard_error */
+				       NULL)) {                    /* error */
+		/* could not spawn */
+		GtkWidget *dialog;
+
+		dialog = gtk_message_dialog_new (NULL,
+						 GTK_DIALOG_DESTROY_WITH_PARENT,
+						 GTK_MESSAGE_ERROR,
+						 GTK_BUTTONS_CLOSE,
+						 _("Cannot start VPN connection '%s'"),
+						 name);
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+  _("There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."),
+							  service);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+		goto out;
+	}
+
+	/* catch when child is reaped */
+	g_child_watch_add (child_pid, child_finished_cb, (gpointer) &child_status);
+
+	/* listen to what child has to say */
+	child_stdout_channel = g_io_channel_unix_new (child_stdout);
+	child_stdout_channel_eventid = g_io_add_watch (child_stdout_channel, G_IO_IN, child_stdout_data_cb, &passwords);
+	g_io_channel_set_encoding (child_stdout_channel, NULL, NULL);
+
+	/* recurse mainloop here until the child is finished (child_status is set in child_finished_cb) */
+	while (child_status == -1) {
+		g_main_context_iteration (NULL, TRUE);
+	}
+
+	g_spawn_close_pid (child_pid);
+	g_source_remove (child_stdout_channel_eventid);
+	g_io_channel_unref (child_stdout_channel);
+
+	if (child_status != 0) {
+		if (passwords != NULL) {
+			g_slist_foreach (passwords, (GFunc)g_free, NULL);
+			g_slist_free (passwords);
+			passwords = NULL;
+		}
+	}		
+
+out:
+	g_free (auth_dialog_binary);
+
+	return passwords;
 }

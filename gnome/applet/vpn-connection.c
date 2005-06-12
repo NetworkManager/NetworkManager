@@ -27,7 +27,7 @@ struct VPNConnection
 {
 	int   refcount;
 	char	*name;
-	char *user_name;
+	char *service;
 };
 
 
@@ -54,7 +54,7 @@ VPNConnection *nmwa_vpn_connection_copy (VPNConnection *src_vpn)
 	dst_vpn = g_malloc0 (sizeof (VPNConnection));
 	dst_vpn->refcount = 1;
 	dst_vpn->name = g_strdup (src_vpn->name);
-	dst_vpn->user_name = src_vpn->user_name ? g_strdup (src_vpn->user_name) : NULL;
+	dst_vpn->service = src_vpn->service ? g_strdup (src_vpn->service) : NULL;
 	
 	return dst_vpn;
 }
@@ -76,7 +76,7 @@ void nmwa_vpn_connection_unref (VPNConnection *vpn)
 	if (vpn->refcount <= 0)
 	{
 		g_free (vpn->name);
-		g_free (vpn->user_name);
+		g_free (vpn->service);
 		memset (vpn, 0, sizeof (VPNConnection));
 		g_free (vpn);
 	}
@@ -90,22 +90,21 @@ const char *nmwa_vpn_connection_get_name (VPNConnection *vpn)
 	return vpn->name;
 }
 
-
-const char *nmwa_vpn_connection_get_user_name (VPNConnection *vpn)
+const char *nmwa_vpn_connection_get_service (VPNConnection *vpn)
 {
 	g_return_val_if_fail (vpn != NULL, NULL);
 
-	return vpn->user_name;
+	return vpn->service;
 }
 
 
-void nmwa_vpn_connection_set_user_name (VPNConnection *vpn, const char *user_name)
+void nmwa_vpn_connection_set_service (VPNConnection *vpn, const char *service)
 {
 	g_return_if_fail (vpn != NULL);
-	g_return_if_fail (user_name != NULL);
+	g_return_if_fail (service != NULL);
 
-	g_free (vpn->user_name);
-	vpn->user_name = g_strdup (user_name);
+	g_free (vpn->service);
+	vpn->service = g_strdup (service);
 }
 
 

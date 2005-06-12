@@ -42,8 +42,8 @@
 #include <dirent.h>
 #include <time.h>
 
-#include <glib/gi18n.h>
 #include <gtk/gtk.h>
+#include <glib/gi18n.h>
 
 #if !GTK_CHECK_VERSION(2,6,0)
 #include <gnome.h>
@@ -62,6 +62,7 @@
 #include "menu-items.h"
 #include "vpn-password-dialog.h"
 #include "vpn-connection.h"
+#include "nm-utils.h"
 
 /* Compat for GTK 2.4 and lower... */
 #if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
@@ -899,6 +900,18 @@ done:
 
 	if (!applet->tooltips)
 		applet->tooltips = gtk_tooltips_new ();
+
+	if (applet->gui_active_vpn != NULL) {
+		char *newtip;
+		char *vpntip;
+
+		vpntip = g_strdup_printf (_("VPN connection to '%s'"), nmwa_vpn_connection_get_name (applet->gui_active_vpn));
+		newtip = g_strconcat (tip, "\n", vpntip, NULL);
+		g_free (vpntip);
+		g_free (tip);
+		tip = newtip;
+	}
+
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
 	g_free (tip);
 
@@ -1106,14 +1119,32 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 	{
 		VPNConnection	*vpn = (VPNConnection *)tag;
 		const char	*name = nmwa_vpn_connection_get_name (vpn);
-		char			*password = NULL;
+		GSList         *passwords;
 
 		if (vpn != applet->gui_active_vpn)
 		{
-			if ((password = nmwa_vpn_request_password (applet, name, nmwa_vpn_connection_get_user_name (vpn), FALSE)))
+			char *gconf_key;
+			char *escaped_name;
+			gboolean last_attempt_success;
+			gboolean reprompt;
+
+			escaped_name = gconf_escape_key (name, strlen (name));
+			gconf_key = g_strdup_printf ("%s/%s/last_attempt_success", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
+			last_attempt_success = gconf_client_get_bool (applet->gconf_client, gconf_key, NULL);
+			g_free (gconf_key);
+			g_free (escaped_name);
+
+			reprompt = ! last_attempt_success; /* it's obvious, but.. */
+
+			if ((passwords = nmwa_vpn_request_password (applet, 
+											    name, 
+											    nmwa_vpn_connection_get_service (vpn), 
+											    reprompt)) != NULL)
 			{
-				nmwa_dbus_vpn_activate_connection (applet->connection, name, password);
-				g_free (password);
+				nmwa_dbus_vpn_activate_connection (applet->connection, name, passwords);
+
+				g_slist_foreach (passwords, (GFunc)g_free, NULL);
+				g_slist_free (passwords);
 			}
 		}
 	}
@@ -1121,9 +1152,26 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
+ * nmwa_menu_configure_vpn_item_activate
+ *
+ * Signal function called when user clicks "Configure VPN..."
+ *
+ */
+static void nmwa_menu_configure_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
+	char *argv[2] = {BINDIR "/nm-vpn-properties", NULL};
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	g_spawn_async (NULL, argv, NULL, 0, NULL, NULL, NULL, NULL);
+}
+
+/*
  * nmwa_menu_disconnect_vpn_item_activate
  *
- * Signal function called when user clicks on a VPN menu item
+ * Signal function called when user clicks "Disconnect VPN..."
  *
  */
 static void nmwa_menu_disconnect_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
@@ -1437,6 +1485,10 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	other_item = GTK_MENU_ITEM (gtk_separator_menu_item_new ());
 	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
 
+	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Configure VPN...")));
+	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_configure_vpn_item_activate), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
+
 	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Disconnect VPN...")));
 	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_disconnect_vpn_item_activate), applet);
 	if (!applet->gui_active_vpn)
@@ -1449,6 +1501,27 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	gtk_widget_show_all (GTK_WIDGET (item));
 }
 
+
+/** Returns TRUE if, and only if, we have VPN support installed
+ *
+ *  Algorithm: just check whether any .name files exist in
+ *  /etc/NetworkManager/VPN
+ */
+static gboolean is_vpn_available (void)
+{
+	GDir *dir;
+	gboolean result;
+
+	result = FALSE;
+	if ((dir = g_dir_open (VPN_NAME_FILES_DIR, 0, NULL)) != NULL) {
+		const char *f;
+		if (g_dir_read_name (dir) != NULL)
+			result = TRUE;
+		g_dir_close (dir);
+	}
+
+	return result;
+}
 
 /*
  * nmwa_menu_add_devices
@@ -1521,8 +1594,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		}
 	}
 
-	nmwa_menu_add_separator_item (menu);
-	nmwa_menu_add_vpn_menu (menu, applet);
+	if (is_vpn_available ()) {
+		nmwa_menu_add_separator_item (menu);
+		nmwa_menu_add_vpn_menu (menu, applet);
+	}
 
 	if (n_wireless_interfaces > 0)
 	{
@@ -1966,6 +2041,8 @@ static void nmwa_gconf_vpn_connections_notify_callback (GConfClient *client, gui
 	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
 	const char *		key = NULL;
 
+	/*g_debug ("Entering nmwa_gconf_vpn_connections_notify_callback, key='%s'", gconf_entry_get_key (entry));*/
+
 	g_return_if_fail (client != NULL);
 	g_return_if_fail (entry != NULL);
 	g_return_if_fail (applet != NULL);
@@ -1976,21 +2053,37 @@ static void nmwa_gconf_vpn_connections_notify_callback (GConfClient *client, gui
 
 		if (strncmp (GCONF_PATH_VPN_CONNECTIONS"/", key, path_len) == 0)
 		{
-			char 	*name = g_strdup ((key + path_len));
-			char		*slash_pos;
-			char		*unescaped_name;
+			char 	 *name = g_strdup ((key + path_len));
+			char		 *slash_pos;
+			char	 	 *unescaped_name;
+			char       *name_path;
+			GConfValue *value;
 
 			/* If its a key under the the VPN name, zero out the slash so we
 			 * are left with only the VPN name.
 			 */
-			unescaped_name = gconf_unescape_key (name, strlen (name));
-			if ((slash_pos = strchr (unescaped_name, '/')))
+			if ((slash_pos = strchr (name, '/')))
 				*slash_pos = '\0';
+			unescaped_name = gconf_unescape_key (name, strlen (name));
+
+			/* Check here if the name entry is gone so we can remove the conn from the UI */
+			name_path = g_strdup_printf ("%s/%s/name", GCONF_PATH_VPN_CONNECTIONS, name);
+			gconf_client_clear_cache (client);
+			value = gconf_client_get (client, name_path, NULL);
+			if (value == NULL) {
+				/*g_debug ("removing '%s' from UI", name_path);*/
+				nmwa_dbus_vpn_remove_one_vpn_connection (applet, unescaped_name);
+			} else {
+				gconf_value_free (value);
+			}
+			g_free (name_path);
 
 			nmi_dbus_signal_update_vpn_connection (applet->connection, unescaped_name);
+
 			g_free (unescaped_name);
 			g_free (name);
 		}
+
 	}
 }
 
