@@ -1,0 +1,63 @@
+2005-06-12  David Zeuthen  <davidz@redhat.com>
+
+	* doc/example-vpnc-system-wide-connection.sh: New file
+
+	* properties/nm-vpnc-dialog.glade: New file
+
+	* properties/nm-vpnc.c: New file
+
+	* properties/Makefile.am: New file
+
+	* auth-dialog/Makefile.am: New file
+
+	* auth-dialog/gnome-two-password-dialog.[ch]: New files, based
+	on gnome-password-dialog.[ch] from libgnomeui
+
+	* auth-dialog/main.c: New file
+
+	* po/POTFILES.in, po/ChangeLog, da.po: New files
+
+	* Makefile.am: Add src, auth-dialog, propertes and po
+
+	* autogen.sh: New file
+
+	* configure.in: New file
+
+	* acinclude.m4: New file
+
+	* README: New file
+
+	* NEWS: New file
+
+	* ChangeLog: New file
+
+	* AUTHORS: New file
+
+	* nm-vpnc-service.name.in: Based on nm-vpnc-service.name. Reworked
+	to sport multiple sections and have the paths to the auth-dialog 
+	binary and properties shared object
+
+	* nm-vpnc-service.name: Deleted and replaced by 
+	nm-vpnc-service.name.in
+
+	* nm-vpnc-service.conf: Rename from org.freedesktop.vpn to 
+	org.freedesktop.NetworkManager.vpnc
+
+	* src/nm-vpnc-service.h: Rename from org.freedesktop.vpn to 
+	org.freedesktop.NetworkManager.vpnc (New file)
+
+	* src/nm-vpnc-service.c: Use the system-installed
+	NetworkManager.h instead. Setup i18n. (New file)
+	(nm_vpnc_config_write): Rework to cope with passwords being
+	an array.
+	(nm_vpnc_config_options_validate): Add "Xauth username" to list
+	of allowed options
+	(nm_vpnc_dbus_handle_start_vpn): Passwords is now an array.
+
+	* src/nm-vpnc-service-vpnc-helper.c: Use the system-installed
+	NetworkManager.h instead (New file)
+
+	* nm-vpn-service.[ch], nm-vpn-service-vpnc-helper.c: Moved in src
+
+	* src/nm-utils.[ch]: For now, a local copy duplicated from utils/ in
+	the NM project

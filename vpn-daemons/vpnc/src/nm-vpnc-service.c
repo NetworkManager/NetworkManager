@@ -19,7 +19,12 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#include <glib.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -36,7 +41,8 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include "NetworkManager.h"
+#include <NetworkManager/NetworkManager.h>
+
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
 
@@ -106,15 +112,15 @@ static void nm_vpnc_dbus_signal_failure (NmVpncData *data, const char *signal)
 	g_return_if_fail (signal != NULL);
 
 	if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
-		error_msg = "The VPN login failed because the user name and password were not accepted.";
+		error_msg = _("The VPN login failed because the user name and password were not accepted.");
 	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED))
-		error_msg = "The VPN login failed because the VPN program could not be started.";
+		error_msg = _("The VPN login failed because the VPN program could not be started.");
 	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
-		error_msg = "The VPN login failed because the VPN program could not connect to the VPN server.";
+		error_msg = _("The VPN login failed because the VPN program could not connect to the VPN server.");
 	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD))
-		error_msg = "The VPN login failed because the VPN configuration options were invalid.";
+		error_msg = _("The VPN login failed because the VPN configuration options were invalid.");
 	else if (!strcmp (signal, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
-		error_msg = "The VPN login failed because the VPN program received an invalid configuration from the VPN server.";
+		error_msg = _("The VPN login failed because the VPN program received an invalid configuration from the VPN server.");
 
 	if (!error_msg)
 		return;
@@ -432,17 +438,19 @@ static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
  * Write the vpnc config to the vpnc process' stdin pipe
  *
  */
-static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, const char *password, char **data_items, const int num_items)
+static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char **password_items, const int num_passwords, char **data_items, const int num_items)
 {
 	char *	string;
-	int		i, x;
+	int     i, x;
 	char *	dirname;
 	char *	cmd;
-	int		ret;
+	int	ret;
+	gboolean has_user_name = FALSE;
 
 	g_return_val_if_fail (user_name != NULL, FALSE);
-	g_return_val_if_fail (password != NULL, FALSE);
+	g_return_val_if_fail (password_items != NULL, FALSE);
 	g_return_val_if_fail (data_items != NULL, FALSE);
+	g_return_val_if_fail (num_passwords == 2, FALSE);
 
 	string = g_strdup ("Script " NM_VPNC_HELPER_PATH "\n");
 	x = write (vpnc_fd, string, strlen (string));
@@ -451,12 +459,12 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, cons
 	string = g_strdup ("Pidfile " NM_VPNC_PID_FILE_PATH "\n");
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
-
-	string = g_strdup_printf ("Xauth username %s\n", user_name);
+	
+	string = g_strdup_printf ("IPSec secret %s\n", password_items[0]);
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
-	
-	string = g_strdup_printf ("Xauth password %s\n", password);
+
+	string = g_strdup_printf ("Xauth password %s\n", password_items[1]);
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
@@ -465,6 +473,15 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, cons
 		char *line = g_strdup_printf ("%s %s\n", data_items[i], data_items[i+1]);
 		x = write (vpnc_fd, line, strlen (line));
 		g_free (line);
+		if (strcmp (data_items[i], "Xauth username") == 0)
+			has_user_name = TRUE;
+	}
+
+	/* if user name isn't specified, use the name of the logged in user */
+	if (!has_user_name) {
+		string = g_strdup_printf ("Xauth username %s\n", user_name);
+		x = write (vpnc_fd, string, strlen (string));
+		g_free (string);
 	}
 
 	return TRUE;
@@ -494,14 +511,15 @@ typedef struct Option
 static gboolean nm_vpnc_config_options_validate (char **data_items, int num_items)
 {
 	Option	allowed_opts[] = {	{ "IPSec gateway",		OPT_TYPE_ADDRESS },
-							{ "IPSec ID",			OPT_TYPE_ASCII },
-							{ "IPSec secret",		OPT_TYPE_ASCII },
-							{ "UDP Encapsulate",	OPT_TYPE_NONE },
-							{ "Domain",			OPT_TYPE_ASCII },
-							{ "IKE DH Group",		OPT_TYPE_ASCII },
-							{ "Perfect Forward Secrecy", OPT_TYPE_ASCII },
-							{ "Application Version",	OPT_TYPE_ASCII },
-							{ NULL,				OPT_TYPE_UNKNOWN } };
+					{ "IPSec ID",			OPT_TYPE_ASCII },
+					{ "IPSec secret",		OPT_TYPE_ASCII },
+					{ "Xauth username",		OPT_TYPE_ASCII },
+					{ "UDP Encapsulate",	OPT_TYPE_NONE },
+					{ "Domain",			OPT_TYPE_ASCII },
+					{ "IKE DH Group",		OPT_TYPE_ASCII },
+					{ "Perfect Forward Secrecy", OPT_TYPE_ASCII },
+					{ "Application Version",	OPT_TYPE_ASCII },
+					{ NULL,				OPT_TYPE_UNKNOWN } };
 
 	char **		item;
 	unsigned int	i;
@@ -584,10 +602,11 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData *data)
 {
 	char **		data_items = NULL;
-	int			num_items = -1;
+	int		num_items = -1;
+	char **		password_items = NULL;
+	int		num_passwords = -1;
 	const char *	name = NULL;
 	const char *	user_name = NULL;
-	const char *	password = NULL;
 	DBusError		error;
 	gboolean		success = FALSE;
 	gint			vpnc_fd = -1;	
@@ -599,11 +618,11 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData 
 
 	dbus_error_init (&error);
 	if (!dbus_message_get_args (message, &error,
-							DBUS_TYPE_STRING, &name,
-							DBUS_TYPE_STRING, &user_name,
-							DBUS_TYPE_STRING, &password,
-							DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, &num_items,
-							DBUS_TYPE_INVALID))
+				    DBUS_TYPE_STRING, &name,
+				    DBUS_TYPE_STRING, &user_name,
+				    DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &password_items, &num_passwords,
+				    DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, &num_items,
+				    DBUS_TYPE_INVALID))
 	{
 		nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
 		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
@@ -620,7 +639,7 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData 
 	/* Now we can finally try to activate the VPN */
 	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (data)) >= 0)
 	{
-		if (nm_vpnc_config_write (vpnc_fd, user_name, password, data_items, num_items))
+		if (nm_vpnc_config_write (vpnc_fd, user_name, password_items, num_passwords, data_items, num_items))
 			success = TRUE;
 		else
 			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED);

@@ -22,8 +22,8 @@
 #ifndef NM_VPNC_SERVICE_H
 #define NM_VPNC_SERVICE_H
 
-#define NM_DBUS_SERVICE_VPNC		"org.freedesktop.vpnc"
-#define NM_DBUS_INTERFACE_VPNC	"org.freedesktop.vpnc"
-#define NM_DBUS_PATH_VPNC		"/org/freedesktop/vpnc"
+#define NM_DBUS_SERVICE_VPNC	"org.freedesktop.NetworkManager.vpnc"
+#define NM_DBUS_INTERFACE_VPNC	"org.freedesktop.NetworkManager.vpnc"
+#define NM_DBUS_PATH_VPNC	"/org/freedesktop/NetworkManager/vpnc"
 
 #endif
