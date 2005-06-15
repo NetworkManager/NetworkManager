@@ -608,6 +608,27 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 		nm_ip4_config_unref (sys_data->config);
 }
 
+
+/*
+ * nm_system_device_get_use_dhcp
+ *
+ * Return whether the distro-specific system config tells us to use
+ * dhcp for this device.
+ *
+ */
+gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
+{
+	DebSystemConfigData	*sys_data;
+
+	g_return_val_if_fail (dev != NULL, TRUE);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->use_dhcp;
+
+	return TRUE;
+}
+
+
 NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 {
 	DebSystemConfigData	*sys_data;

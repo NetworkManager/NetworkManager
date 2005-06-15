@@ -383,6 +383,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 		/* Grab IP config data for this device from the system configuration files */
 		dev->system_config_data = nm_system_device_get_system_config (dev);
+		dev->use_dhcp = nm_system_device_get_use_dhcp (dev);
 	}
 
 	dev->worker = g_thread_create (nm_device_worker, dev, TRUE, &error);

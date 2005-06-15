@@ -345,6 +345,82 @@ typedef struct SuSESystemConfigData
 } SuSESystemConfigData;
 
 /*
+ * set_ip4_config_from_resolv_conf
+ *
+ * Add nameservers and search names from a resolv.conf format file.
+ *
+ */
+static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config)
+{
+	char *	contents = NULL;
+	char **	split_contents = NULL;
+	int		i, len;
+
+	g_return_if_fail (filename != NULL);
+	g_return_if_fail (ip4_config != NULL);
+
+	if (!g_file_get_contents (filename, &contents, NULL, NULL) || (contents == NULL))
+		return;
+
+	if (!(split_contents = g_strsplit (contents, "\n", 0)))
+		goto out;
+	
+	len = g_strv_length (split_contents);
+	for (i = 0; i < len; i++)
+	{
+		char *line = split_contents[i];
+
+		/* Ignore comments */
+		if (!line || (line[0] == ';'))
+			continue;
+
+		line = g_strstrip (line);
+		if ((strncmp (line, "search", 6) == 0) && (strlen (line) > 6))
+		{
+			char *searches = g_strdup (line + 7);
+			char **split_searches = NULL;
+
+			if (!searches || !strlen (searches))
+				continue;
+
+			/* Allow space-separated search domains */
+			if (split_searches == g_strsplit (searches, " ", 0))
+			{
+				int m, srch_len;
+
+				srch_len = g_strv_length (split_searches);
+				for (m = 0; m < srch_len; m++)
+				{
+					if (split_searches[m])
+						nm_ip4_config_add_domain	(ip4_config, split_searches[m]);
+				}
+				g_strfreev (split_searches);
+			}
+			else
+			{
+				/* Only 1 item, add the whole line */
+				nm_ip4_config_add_domain	(ip4_config, searches);
+			}
+
+			g_free (searches);
+		}
+		else if ((strncmp (line, "nameserver", 10) == 0) && (strlen (line) > 10))
+		{
+			guint32	addr = (guint32) (inet_addr (line + 11));
+
+			if (addr != (guint32) -1)
+				nm_ip4_config_add_nameserver (ip4_config, addr);
+		}
+	}
+
+	g_strfreev (split_contents);
+
+out:
+	g_free (contents);
+}
+
+
+/*
  * nm_system_device_get_system_config
  *
  * Read in the config file for a device.
@@ -362,10 +438,13 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	FILE *f = NULL;
 	char buffer[512];
 	gboolean error = FALSE;
+	int i, len;
+	struct in_addr temp_addr;
+	char *ip_str;
 
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	/* SuSE store this information in /etc/sysconfig/network/ifcfg-<MAC address> */
+	/* SuSE stores this information usually in /etc/sysconfig/network/ifcfg-*-<MAC address> */
 
 	sys_data = g_malloc0 (sizeof (SuSESystemConfigData));
 	sys_data->use_dhcp = TRUE;
@@ -410,6 +489,7 @@ found:
 
 	if ((buf = svGetValue (file, "BOOTPROTO")))
 	{
+		nm_debug ("BOOTPROTO=%s", buf);
 		if (strcasecmp (buf, "dhcp"))
 			sys_data->use_dhcp = FALSE;
 		free (buf);
@@ -485,6 +565,8 @@ found:
 			error = TRUE;
 			goto out;
 		}
+
+		set_ip4_config_from_resolv_conf (SYSCONFDIR"/resolv.conf", sys_data->config);
 	}
 
 out:
@@ -492,6 +574,7 @@ out:
 
 	if (error)
 	{
+		nm_debug ("error, enable dhcp");
 		sys_data->use_dhcp = TRUE;
 		/* Clear out the config */
 		nm_ip4_config_unref (sys_data->config);
@@ -499,10 +582,33 @@ out:
 	}
 
 	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
-	nm_debug ("    DHCP=%u", sys_data->use_dhcp);
-	nm_debug ("    ADDR=0x%08x", GUINT_FROM_BE(nm_ip4_config_get_address (sys_data->config)));
-	nm_debug ("    GW=  0x%08x", GUINT_FROM_BE(nm_ip4_config_get_gateway (sys_data->config)));
-	nm_debug ("    NM=  0x%08x", GUINT_FROM_BE(nm_ip4_config_get_netmask (sys_data->config)));
+	nm_debug ("dhcp=%u", sys_data->use_dhcp);
+
+	temp_addr.s_addr = nm_ip4_config_get_address (sys_data->config);
+	ip_str = g_strdup (inet_ntoa (temp_addr));
+	nm_debug ("addr=%s", ip_str);
+	g_free (ip_str);
+
+	temp_addr.s_addr = nm_ip4_config_get_gateway (sys_data->config);
+	ip_str = g_strdup (inet_ntoa (temp_addr));
+	nm_debug ("gw=%s", ip_str);
+	g_free (ip_str);
+
+	temp_addr.s_addr = nm_ip4_config_get_netmask (sys_data->config);
+	ip_str = g_strdup (inet_ntoa (temp_addr));
+	nm_debug ("mask=%s", ip_str);
+	g_free (ip_str);
+
+	len = nm_ip4_config_get_num_nameservers (sys_data->config);
+	for (i = 0; i < len; i++)
+	{
+		guint		ns_addr = nm_ip4_config_get_nameserver (sys_data->config, i);
+
+		temp_addr.s_addr = ns_addr;
+		ip_str = g_strdup (inet_ntoa (temp_addr));
+		nm_debug ("ns_%u=%s", i, ip_str);
+		g_free (ip_str);
+	}
 	nm_debug ("---------------------\n");
 
 	return (void *)sys_data;

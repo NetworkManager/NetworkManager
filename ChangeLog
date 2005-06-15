@@ -1,5 +1,18 @@
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerDebian.c
+		- Add nm_system_device_get_use_dhcp() to debian backend
+
+	Patch from Kay Sievers:
+	* src/backends/NetworkManagerSuSE.c
+		- Update debian backend for static IP nameservers
+
+	* src/NetworkManagerDevice.c
+		- Actually set the device to use static IP or DHCP rather
+			than always DHCP
+
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
 	Patch from Thom May:
 	* src/backends/NetworkManagerDebian.c
 		- Update debian backend for static IP nameservers
