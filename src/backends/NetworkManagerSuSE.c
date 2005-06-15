@@ -384,7 +384,7 @@ static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *
 				continue;
 
 			/* Allow space-separated search domains */
-			if (split_searches == g_strsplit (searches, " ", 0))
+			if (split_searches = g_strsplit (searches, " ", 0))
 			{
 				int m, srch_len;
 

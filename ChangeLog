@@ -1,5 +1,12 @@
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerSuSE.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerDebian.c
+		- (set_ip4_config_from_resolv_conf): Fix typo I made, '==' -> '='
+
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
 	* src/backends/NetworkManagerDebian.c
 		- Add nm_system_device_get_use_dhcp() to debian backend
 
