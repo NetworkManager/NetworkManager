@@ -1,5 +1,11 @@
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
+	Patch from Thom May:
+	* src/backends/NetworkManagerDebian.c
+		- Update debian backend for static IP nameservers
+
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
 	Patches from Robert Love:
 	* gnome/applet/wireless-applet.glade
 		- Tighten up wording
