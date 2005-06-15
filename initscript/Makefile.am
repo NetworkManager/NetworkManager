@@ -11,3 +11,6 @@ endif
 if TARGET_SLACKWARE
 SUBDIRS += Slackware
 endif
+if TARGET_SUSE
+SUBDIRS += SUSE
+endif

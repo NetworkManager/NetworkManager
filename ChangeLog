@@ -1,3 +1,18 @@
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
+	Patches from Robert Love:
+	* gnome/applet/wireless-applet.glade
+		- Tighten up wording
+
+	* src/NetworkManagerDevice.c
+		- Remove misplaced ';'
+
+	* configure.in
+	  initscript/Makefile.am
+	  initscript/SUSE/Makefile.am
+	  initscript/SUSE/networkmanager
+		- Add SUSE initscript
+
 2005-06-12  David Zeuthen  <davidz@redhat.com>
 
 	* gnome/vpn-properties/nm-vpn-ui-interface.h: New file

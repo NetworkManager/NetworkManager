@@ -612,6 +612,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 	 */
 	num_bytes_to_process = (guint) num_received_bytes;
 
+	/* FIXME: This cannot be true */
 	if (num_bytes_to_process < 0)
 		return TRUE;
 

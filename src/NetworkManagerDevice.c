@@ -2540,7 +2540,7 @@ static gboolean nm_device_activate_stage2_device_config (NMActRequest *req)
 	nm_info ("Activation (%s) Stage 2 (Device Configure) starting...", nm_device_get_iface (dev));
 
 	/* Bring the device up */
-	if (!nm_device_is_up (dev));
+	if (!nm_device_is_up (dev))
 		nm_device_bring_up (dev);
 
 	if (nm_device_activation_should_cancel (dev))

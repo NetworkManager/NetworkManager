@@ -288,6 +288,7 @@ initscript/RedHat/Makefile
 initscript/Gentoo/Makefile
 initscript/Debian/Makefile
 initscript/Slackware/Makefile
+initscript/SUSE/Makefile
 po/Makefile.in
 NetworkManager.pc
 ])
