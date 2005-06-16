@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-12 09:24-0400\n"
+"POT-Creation-Date: 2005-06-16 14:01-0400\n"
 "PO-Revision-Date: 2005-06-11 23:21-0400\n"
 "Last-Translator: David Zeuthen <davidz@redhat.com>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
@@ -61,21 +61,26 @@ msgstr "Brugerverifikation til privat netværk"
 msgid "_Group Password:"
 msgstr "_Gruppe nøgle:"
 
-#: properties/nm-vpnc.c:76
+#: properties/nm-vpnc.c:81
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Kompatibel Cisco VPN klient (vpnc)"
 
-#: properties/nm-vpnc.c:402
-#, fuzzy, c-format
+#: properties/nm-vpnc.c:446
+#, c-format
 msgid "\tUsername:  %s\n"
 msgstr "\tBrugernavn:  %s\n"
 
-#: properties/nm-vpnc.c:403
+#: properties/nm-vpnc.c:447
 #, c-format
 msgid "\tRoutes:  %s\n"
 msgstr "\tRuter:  %s\n"
 
-#: properties/nm-vpnc.c:406
+#: properties/nm-vpnc.c:448
+#, c-format
+msgid "\tDomain:  %s\n"
+msgstr "\tDomæne:  %s\n"
+
+#: properties/nm-vpnc.c:451
 #, c-format
 msgid ""
 "The following vpnc VPN connection will be created:\n"
@@ -84,7 +89,7 @@ msgid ""
 "\n"
 "\tGateway:  %s\n"
 "\tGroup Name:  %s\n"
-"%s%s\n"
+"%s%s%s\n"
 "The connection details can be changed using the \"Edit\" button.\n"
 msgstr ""
 "Flg. private netværks forbindelse via vpnc vil blive oprettet:\n"
@@ -96,7 +101,7 @@ msgstr ""
 "%s%s\n"
 "Detaljer for forbindelsen kan senere redigeres vha. \"Redigér\" knappen\n"
 
-#: properties/nm-vpnc.c:431
+#: properties/nm-vpnc.c:478
 msgid "Select file to import"
 msgstr "Vælg fil der skal importeres"
 
@@ -141,14 +146,18 @@ msgid "Override user name"
 msgstr "Overskriv brugernavn"
 
 #: properties/nm-vpnc-dialog.glade:537
+msgid "Use domain for authentication"
+msgstr "Brug domæne til brugerverifikation"
+
+#: properties/nm-vpnc-dialog.glade:613
 msgid "Only use VPN connection for these addresses"
 msgstr "Brug kun det private netværk til flg. adresser"
 
-#: properties/nm-vpnc-dialog.glade:592
+#: properties/nm-vpnc-dialog.glade:668
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>eksempel: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: properties/nm-vpnc-dialog.glade:715
+#: properties/nm-vpnc-dialog.glade:791
 msgid "_Import..."
 msgstr "_Importér..."
 

@@ -49,6 +49,8 @@ struct _NetworkManagerVpnUIImpl {
 	GtkEntry *w_group_name;
 	GtkCheckButton *w_use_alternate_username;
 	GtkEntry *w_username;
+	GtkCheckButton *w_use_domain;
+	GtkEntry *w_domain;
 	GtkCheckButton *w_use_routes;
 	GtkEntry *w_routes;
 	GtkExpander *w_opt_info_expander;
@@ -63,10 +65,13 @@ vpnc_clear_widget (NetworkManagerVpnUIImpl *impl)
 	gtk_entry_set_text (impl->w_group_name, "");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), FALSE);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), FALSE);
 	gtk_entry_set_text (impl->w_username, "");
 	gtk_entry_set_text (impl->w_routes, "");
+	gtk_entry_set_text (impl->w_domain, "");
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), FALSE);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), FALSE);
 	gtk_expander_set_expanded (impl->w_opt_info_expander, FALSE);
 }
 
@@ -111,6 +116,11 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 			gtk_entry_set_text (impl->w_username, value);
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
 			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
+			should_expand = TRUE;
+		} else if (strcmp (key, "Domain") == 0) {
+			gtk_entry_set_text (impl->w_domain, value);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
+			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
 			should_expand = TRUE;
 		}
 	}
@@ -158,12 +168,16 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	const char *secret;
 	gboolean use_alternate_username;
 	const char *username;
+	gboolean use_domain;
+	const char *domain;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
 	groupname              = gtk_entry_get_text (impl->w_group_name);
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
+	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	domain                 = gtk_entry_get_text (impl->w_domain);
 
 	data = NULL;
 	data = g_slist_append (data, g_strdup ("IPSec gateway"));
@@ -173,6 +187,10 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	if (use_alternate_username) {
 		data = g_slist_append (data, g_strdup ("Xauth username"));
 		data = g_slist_append (data, g_strdup (username));
+	}
+	if (use_domain) {
+		data = g_slist_append (data, g_strdup ("Domain"));
+		data = g_slist_append (data, g_strdup (domain));
 	}
 
 	return data;
@@ -244,6 +262,8 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	const char *username;
 	gboolean use_routes;
 	const char *routes_entry;
+	gboolean use_domain;
+	const char *domain_entry;
 
 	is_valid = FALSE;
 
@@ -254,13 +274,16 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
 	routes_entry           = gtk_entry_get_text (impl->w_routes);
+	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	domain_entry           = gtk_entry_get_text (impl->w_domain);
 
 	/* initial sanity checking */
 	if (strlen (connectionname) > 0 &&
 	    strlen (gateway) > 0 &&
 	    strlen (groupname) > 0 &&
 	    ((!use_alternate_username) || (use_alternate_username && strlen (username) > 0)) &&
-	    ((!use_routes) || (use_routes && strlen (routes_entry) > 0)))
+	    ((!use_routes) || (use_routes && strlen (routes_entry) > 0)) &&
+	    ((!use_domain) || (use_domain && strlen (domain_entry) > 0)))
 		is_valid = TRUE;
 
 	/* validate gateway: can be a hostname or an IP; do not allow spaces or tabs */
@@ -352,6 +375,22 @@ use_routes_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 }
 
 static void 
+use_domain_toggled (GtkToggleButton *togglebutton, gpointer user_data)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), 
+				  gtk_toggle_button_get_active (togglebutton));
+
+	if (impl->callback != NULL) {
+		gboolean is_valid;
+
+		is_valid = impl_is_valid (&(impl->parent));
+		impl->callback (&(impl->parent), is_valid, impl->callback_user_data);
+	}
+}
+
+static void 
 editable_changed (GtkEditable *editable, gpointer user_data)
 {
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
@@ -382,6 +421,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 	static char buf[512];
 	static char buf2[128];
 	static char buf3[128];
+	static char buf4[128];
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
 	const char *connectionname;
 	const char *gateway;
@@ -390,6 +430,8 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 	const char *username;
 	gboolean use_routes;
 	const char *routes;
+	gboolean use_domain;
+	const char *domain;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
@@ -398,9 +440,12 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
 	routes                 = gtk_entry_get_text (impl->w_routes);
+	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	domain                 = gtk_entry_get_text (impl->w_domain);
 
 	g_snprintf (buf2, sizeof (buf2), _("\tUsername:  %s\n"), username);
 	g_snprintf (buf3, sizeof (buf2), _("\tRoutes:  %s\n"), routes);
+	g_snprintf (buf4, sizeof (buf4), _("\tDomain:  %s\n"), domain);
 
 	g_snprintf (buf, sizeof (buf), 
 		    _("The following vpnc VPN connection will be created:\n"
@@ -411,12 +456,14 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 		      "\tGroup Name:  %s\n"
 		      "%s"
 		      "%s"
+		      "%s"
 		      "\n"
 		      "The connection details can be changed using the \"Edit\" button.\n"),
 		    connectionname,
 		    gateway,
 		    groupname,
 		    use_alternate_username ? buf2 : "",
+		    use_domain ? buf4 : "",
 		    use_routes ? buf3 : "");
 
 	return buf;
@@ -472,6 +519,8 @@ impl_get_object (void)
 	impl->w_username               = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-username"));
 	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-routes"));
 	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-routes"));
+	impl->w_use_domain             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-domain"));
+	impl->w_domain                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-domain"));
 	impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml, 
 									     "vpnc-optional-information-expander"));
 	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
@@ -484,6 +533,9 @@ impl_get_object (void)
 	gtk_signal_connect (GTK_OBJECT (impl->w_use_routes), 
 			    "toggled", GTK_SIGNAL_FUNC (use_routes_toggled), impl);
 
+	gtk_signal_connect (GTK_OBJECT (impl->w_use_domain), 
+			    "toggled", GTK_SIGNAL_FUNC (use_domain_toggled), impl);
+
 	gtk_signal_connect (GTK_OBJECT (impl->w_connection_name), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 	gtk_signal_connect (GTK_OBJECT (impl->w_gateway), 
@@ -493,6 +545,8 @@ impl_get_object (void)
 	gtk_signal_connect (GTK_OBJECT (impl->w_username), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 	gtk_signal_connect (GTK_OBJECT (impl->w_routes), 
+			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_domain), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 

@@ -1,3 +1,18 @@
+2005-06-16  David Zeuthen  <davidz@redhat.com>
+
+	* properties/nm-vpnc.c: Include w_use_domain and w_domain
+	(impl_get_widget): Reset w_domain, w_use_domain
+	(impl_get_properties): Also pass Domain option if applicable
+	(impl_is_valid): Add validation code for Domain
+	(use_domain_toggled): New function
+	(impl_get_confirmation_details): Also put out info about Domain if
+	applicable
+	(impl_get_object): Get w_domain, w_use_domain widgets and set
+	up event listeners for them
+
+	* properties/nm-vpnc-dialog.glade: Added the Domain optional
+	setting
+
 2005-06-12  David Zeuthen  <davidz@redhat.com>
 
 	* doc/example-vpnc-system-wide-connection.sh: New file
