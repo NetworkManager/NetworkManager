@@ -5,8 +5,6 @@ gnome/applet/applet-dbus-info.c
 gnome/applet/applet-dbus.c
 gnome/applet/applet.c
 gnome/applet/eggtrayicon.c
-gnome/applet/gtkcellrendererprogress.c
-gnome/applet/gtkcellview.c
 gnome/applet/menu-items.c
 gnome/applet/other-network-dialog.c
 gnome/applet/passphrase-dialog.c

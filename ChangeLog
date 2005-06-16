@@ -1,3 +1,8 @@
+2005-06-16  Robert Love  <rml@novell.com>
+
+	* po/POTFILES.in
+		- remove gtkcell* files
+
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
 	Patch from Robert Love: make the applet stetic
