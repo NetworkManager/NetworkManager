@@ -1,7 +1,7 @@
 #! /bin/sh
 ### BEGIN INIT INFO
 # Provides:       NetworkManager
-# Required-Start: $network $dbus
+# Required-Start: $network dbus hal
 # Default-Start:  3 4 5
 # Default-Stop:   0 1 2 6
 # Description: NetworkManager, a network and wireless connection manager

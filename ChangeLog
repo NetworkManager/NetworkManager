@@ -1,5 +1,11 @@
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
+	Patch from Robert Love:
+	* initscript/SUSE/networkmanager
+		- Fix typo
+
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
 	* src/backends/NetworkManagerSuSE.c
 	  src/backends/NetworkManagerRedHat.c
 	  src/backends/NetworkManagerDebian.c
