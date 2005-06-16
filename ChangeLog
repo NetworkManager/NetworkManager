@@ -1,5 +1,22 @@
 2005-06-15  Dan Williams <dcbw@redhat.com>
 
+	Patch from Robert Love: make the applet stetic
+
+	* gnome/applet/Makefile.am
+		- Don't compile the gtkcellview and gtkcellrendererprogress files
+
+	* gnome/applet/gtkcellview.h
+	  gnome/applet/gtkcellview.c
+	  gnome/applet/gtkcellrendererprogress.h
+	  gnome/applet/gtkcellrendererprogress.c
+		- Removed
+
+	* gnome/applet/menu-items.c
+		- Progress bars are 5:1 size ratio
+		- Use GTK progress bars rather than internal ones
+
+2005-06-15  Dan Williams <dcbw@redhat.com>
+
 	Patch from Robert Love:
 	* initscript/SUSE/networkmanager
 		- Fix typo

@@ -33,13 +33,8 @@
 #include <stdio.h>
 #include <glib/gi18n.h>
 #include <string.h>
+
 #include "menu-items.h"
-
-#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
-#include "gtkcellview.h"
-#include "gtkcellrendererprogress.h"
-#endif
-
 #include "applet-dbus.h"
 
 
@@ -180,9 +175,8 @@ struct NMNetworkMenuItem
 {
 	GtkCheckMenuItem	*check_item;
 	GtkLabel			*label;
-	GtkWidget			*cell_view;
+	GtkWidget			*progress;
 	GtkWidget			*security_image;
-	GObject			*progress_bar;
 };
 
 
@@ -190,6 +184,11 @@ NMNetworkMenuItem *network_menu_item_new (GtkSizeGroup *encryption_size_group)
 {
 	GtkWidget			*hbox;
 	NMNetworkMenuItem	*item = g_malloc0 (sizeof (NMNetworkMenuItem));
+	PangoFontDescription *fontdesc;
+	PangoFontMetrics *metrics;
+	PangoContext *context;
+	PangoLanguage *lang;
+	int ascent;	
 
 	g_return_val_if_fail (item != NULL, NULL);
 
@@ -205,15 +204,25 @@ NMNetworkMenuItem *network_menu_item_new (GtkSizeGroup *encryption_size_group)
 
 	gtk_container_add (GTK_CONTAINER (item->check_item), hbox);
 	gtk_box_pack_start (GTK_BOX (hbox), GTK_WIDGET (item->label), TRUE, TRUE, 0);
-	item->cell_view = gtk_cell_view_new ();
-	item->progress_bar = g_object_new (GTK_TYPE_CELL_RENDERER_PROGRESS, "text", "", NULL);
-	gtk_cell_renderer_set_fixed_size (GTK_CELL_RENDERER (item->progress_bar), 150, -1);
-	gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (item->cell_view), GTK_CELL_RENDERER (item->progress_bar), TRUE);
-	gtk_box_pack_start (GTK_BOX (hbox), item->cell_view, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (hbox), item->security_image, FALSE, FALSE, 0);
 
+	item->progress = gtk_progress_bar_new ();
+	
+	/* get the font ascent for the current font and language */
+	context = gtk_widget_get_pango_context (item->progress);
+	fontdesc = pango_context_get_font_description (context);
+	lang = pango_context_get_language (context);
+	metrics = pango_context_get_metrics (context, fontdesc, lang);
+	ascent = pango_font_metrics_get_ascent (metrics) * 1.5 / PANGO_SCALE;
+	pango_font_metrics_unref (metrics);
+
+	/* size our progress bar to be five ascents long, one high */
+	gtk_widget_set_size_request (item->progress, ascent * 5, ascent / 2);
+
+	gtk_box_pack_end (GTK_BOX (hbox), item->progress, FALSE, TRUE, 0);
+
 	gtk_widget_show (GTK_WIDGET (item->label));
-	gtk_widget_show (item->cell_view);
+	gtk_widget_show (item->progress);
 	gtk_widget_show (hbox);
 
 	return item;
@@ -232,6 +241,7 @@ GtkCheckMenuItem *network_menu_item_get_check_item (NMNetworkMenuItem *item)
 void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted)
 {
 	char *display_essid;
+	gdouble percent;
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (network != NULL);
@@ -240,7 +250,8 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 	gtk_label_set_text (GTK_LABEL (item->label), display_essid);
 	g_free (display_essid);
 
-	g_object_set (G_OBJECT (item->progress_bar), "value", CLAMP ((int) wireless_network_get_strength (network), 0, 100), NULL);
+	percent = (double) CLAMP (wireless_network_get_strength (network), 0, 100) / 100.0;
+	gtk_progress_set_percentage (GTK_PROGRESS (item->progress), percent);
 
 	/* Deal with the encrypted icon */
 	g_object_set (item->security_image, "visible", is_encrypted, NULL);

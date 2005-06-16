@@ -52,10 +52,6 @@ nm_applet_SOURCES =			\
 	passphrase-dialog.h		\
 	menu-items.c			\
 	menu-items.h			\
-	gtkcellview.c			\
-	gtkcellview.h			\
-	gtkcellrendererprogress.c	\
-	gtkcellrendererprogress.h	\
 	eggtrayicon.c			\
 	eggtrayicon.h			\
 	vpn-password-dialog.c		\
