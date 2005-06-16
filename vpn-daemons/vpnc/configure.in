@@ -76,16 +76,6 @@ PKG_CHECK_MODULES(GNOMEKEYRING, gnome-keyring-1)
 AC_SUBST(GNOMEKEYRING_CFLAGS)
 AC_SUBST(GNOMEKEYRING_LIBS)
 
-AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
-
-if ! test -z "$with_dbus_sys" ; then
-    DBUS_SYS_DIR="$with_dbus_sys"
-else
-    DBUS_SYS_DIR="${sysconfdir}/dbus-1/system.d"
-fi
-AC_SUBST(DBUS_SYS_DIR)
-AC_DEFINE_UNQUOTED(DBUS_SYSTEMD_DIR, "$DBUS_SYS_DIR", [Where system.d dir for DBUS is])
-
 AS_AC_EXPAND(LOCALSTATEDIR, $localstatedir)
 AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
 AS_AC_EXPAND(DATADIR, $datadir)

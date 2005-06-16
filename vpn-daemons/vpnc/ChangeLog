@@ -1,5 +1,12 @@
 2005-06-16  David Zeuthen  <davidz@redhat.com>
 
+	* Makefile.am (dbusservicedir): Adjust to use $(sysconfdir)
+
+	* configure.in: Don't do the DBUS_SYS_DIR thing since it's always
+	at $(sysconfdir)/dbus-1/system.d
+
+2005-06-16  David Zeuthen  <davidz@redhat.com>
+
 	* properties/nm-vpnc.c: Include w_use_domain and w_domain
 	(impl_get_widget): Reset w_domain, w_use_domain
 	(impl_get_properties): Also pass Domain option if applicable
