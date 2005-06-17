@@ -1,5 +1,12 @@
 2005-06-16  Dan Williams <dcbw@redhat.com>
 
+    Patch from Robert Love:
+    * gnome/applet/menu-items.c
+        - (network_menu_item_new): pass -1 as wireless network
+            menu items height size request rather than ascent / 2
+
+2005-06-16  Dan Williams <dcbw@redhat.com>
+
 	* Clean up wording in Wireless Scan Methods menu items and constants
 
 2005-06-16  Robert Love  <rml@novell.com>
