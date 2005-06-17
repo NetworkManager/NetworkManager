@@ -2,6 +2,7 @@
 # Please keep this file sorted alphabetically.
 auth-dialog/gnome-two-password-dialog.c
 auth-dialog/main.c
+nm-vpnc.desktop.in
 properties/nm-vpnc.c
 properties/nm-vpnc-dialog.glade
 src/nm-vpnc-service.c

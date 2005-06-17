@@ -29,6 +29,8 @@
 #include <string.h>
 #include <glade/glade.h>
 
+#define NM_VPN_API_SUBJECT_TO_CHANGE
+
 #include <NetworkManager/nm-vpn-ui-interface.h>
 
 typedef struct _NetworkManagerVpnUIImpl NetworkManagerVpnUIImpl;
@@ -469,9 +471,119 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 	return buf;
 }
 
+static gboolean
+import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
+{
+	char *basename;
+	GKeyFile *keyfile;
+	gboolean file_is_good;
+
+	/*printf ("path='%s'\n", path);*/
+
+	file_is_good = FALSE;
+	basename = g_path_get_basename (path);
+
+	keyfile = g_key_file_new ();
+	if (g_key_file_load_from_file (keyfile, path, 0, NULL)) {
+		char *connectionname = NULL;
+		char *gateway = NULL;
+		char *groupname = NULL;
+		char *username = NULL;
+		char *domain = NULL;
+		char *tunneling_mode = NULL;
+		char *routes = NULL;
+		gboolean should_expand;
+
+		if ((connectionname = g_key_file_get_string (keyfile, "main", "Description", NULL)) == NULL)
+			goto error;
+		if ((gateway = g_key_file_get_string (keyfile, "main", "Host", NULL)) == NULL)
+			goto error;
+		if ((groupname = g_key_file_get_string (keyfile, "main", "GroupName", NULL)) == NULL)
+			goto error;
+		if ((username = g_key_file_get_string (keyfile, "main", "Username", NULL)) == NULL)
+			goto error;
+		if ((domain = g_key_file_get_string (keyfile, "main", "NTDomain", NULL)) == NULL)
+			goto error;
+		if ((tunneling_mode = g_key_file_get_string (keyfile, "main", "TunnelingMode", NULL)) == NULL)
+			goto error;
+
+		/* may not exist */
+		if ((routes = g_key_file_get_string (keyfile, "main", "X-NM-Routes", NULL)) == NULL)
+			routes = g_strdup ("");
+
+		/* sanity check data */
+		if (! (strlen (connectionname) > 0 &&
+		       strlen (gateway) > 0 &&
+		       strlen (groupname) > 0))
+			goto error;
+
+		gtk_entry_set_text (impl->w_connection_name, connectionname);
+		gtk_entry_set_text (impl->w_gateway, gateway);
+		gtk_entry_set_text (impl->w_group_name, groupname);
+
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), strlen (username) > 0);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), strlen (routes) > 0);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), strlen (domain) > 0);
+		gtk_entry_set_text (impl->w_username, username);
+		gtk_entry_set_text (impl->w_routes, routes);
+		gtk_entry_set_text (impl->w_domain, domain);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), strlen (username) > 0);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), strlen (routes) > 0);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), strlen (username) > 0);
+
+		should_expand = (strlen (username) > 0) || (strlen (domain) > 0) || (strlen (routes) > 0);
+		gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
+
+		/* If applicable, put up warning that TCP tunneling will be disabled */
+		if (strcmp (tunneling_mode, "1") == 0) {
+			GtkWidget *dialog;
+
+			dialog = gtk_message_dialog_new (NULL,
+							 GTK_DIALOG_DESTROY_WITH_PARENT,
+							 GTK_MESSAGE_WARNING,
+							 GTK_BUTTONS_CLOSE,
+							 _("TCP tunneling not supported"));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+								  _("The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n\nThe connection can still be created, with TCP tunneling disabled, however it may not work as expected."), basename);
+			gtk_dialog_run (GTK_DIALOG (dialog));
+			gtk_widget_destroy (dialog);
+		}
+
+		file_is_good = TRUE;
+
+	error:
+		g_free (connectionname);
+		g_free (gateway);
+		g_free (groupname);
+		g_free (username);
+		g_free (domain);
+		g_free (tunneling_mode);
+	}
+	g_key_file_free (keyfile);
+
+	if (!file_is_good) {
+		GtkWidget *dialog;
+		
+		dialog = gtk_message_dialog_new (NULL,
+						 GTK_DIALOG_DESTROY_WITH_PARENT,
+						 GTK_MESSAGE_WARNING,
+						 GTK_BUTTONS_CLOSE,
+						 _("Cannot import settings"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+							  _("The VPN settings file '%s' does not contain valid data."), basename);
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+	}
+
+	g_free (basename);
+
+	return file_is_good;
+}
+
 static void
 import_button_clicked (GtkButton *button, gpointer user_data)
 {
+	char *filename = NULL;
 	GtkWidget *dialog;
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
 
@@ -484,15 +596,199 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
 	{
-		char *filename;
 		
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		//printf ("User selected '%s'\n", filename);
-		g_free (filename);
+		/*printf ("User selected '%s'\n", filename);*/
+
 	}
 	
 	gtk_widget_destroy (dialog);
-      
+
+	if (filename != NULL) {
+		import_from_file (impl, filename);
+		g_free (filename);
+	}      
+}
+
+static gboolean 
+impl_can_export (NetworkManagerVpnUI *self)
+{
+	return TRUE;
+}
+
+static gboolean 
+impl_import_file (NetworkManagerVpnUI *self, const char *path)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+
+	return import_from_file (impl, path);
+}
+
+static void
+export_to_file (NetworkManagerVpnUIImpl *impl, const char *path, 
+		GSList *properties, GSList *routes, const char *connection_name)
+{
+	FILE *f;
+	GSList *i;
+	const char *gateway = NULL;
+	const char *groupname = NULL;
+	const char *username = NULL;
+	const char *domain = NULL;
+	char *routes_str = NULL;
+
+	/*printf ("in export_to_file; path='%s'\n", path);*/
+
+	for (i = properties; i != NULL && g_slist_next (i) != NULL; i = g_slist_next (g_slist_next (i))) {
+		const char *key;
+		const char *value;
+
+		key = i->data;
+		value = (g_slist_next (i))->data;
+
+		if (strcmp (key, "IPSec gateway") == 0) {
+			gateway = value;
+		} else if (strcmp (key, "IPSec ID") == 0) {
+			groupname = value;
+		} else if (strcmp (key, "Xauth username") == 0) {
+			username = value;
+		} else if (strcmp (key, "Domain") == 0) {
+			domain = value;
+		}
+	}
+
+
+	if (routes != NULL) {
+		GString *str;
+
+		str = g_string_new ("X-NM-Routes=");
+		for (i = routes; i != NULL; i = g_slist_next (i)) {
+			const char *route;
+			
+			if (i != routes)
+				g_string_append_c (str, ' ');
+			
+			route = (const char *) i->data;
+			g_string_append (str, route);
+		}
+
+		g_string_append_c (str, '\n');
+
+		routes_str = g_string_free (str, FALSE);
+	}
+
+	f = fopen (path, "w");
+	if (f == NULL)
+		goto out;
+
+	fprintf (f, 
+		 "[main]\n"
+		 "Description=%s\n"
+		 "Host=%s\n"
+		 "AuthType=1\n"
+		 "GroupName=%s\n"
+		 "GroupPwd=\n"
+		 "EnableISPConnect=0\n"
+		 "ISPConnectType=0\n"
+		 "ISPConnect=\n"
+		 "ISPCommand=\n"
+		 "Username=%s\n"
+		 "SaveUserPassword=0\n"
+		 "EnableBackup=0\n"
+		 "BackupServer=\n"
+		 "EnableNat=1\n"
+		 "CertStore=0\n"
+		 "CertName=\n"
+		 "CertPath=\n"
+		 "CertSubjectName=\n"
+		 "CertSerialHash=\n"
+		 "DHGroup=2\n"
+		 "ForceKeepAlives=0\n"
+		 "enc_GroupPwd=\n"
+		 "UserPassword=\n"
+		 "enc_UserPassword=\n"
+		 "NTDomain=%s\n"
+		 "EnableMSLogon=0\n"
+		 "MSLogonType=0\n"
+		 "TunnelingMode=0\n"
+		 "TcpTunnelingPort=10000\n"
+		 "PeerTimeout=90\n"
+		 "EnableLocalLAN=1\n"
+		 "SendCertChain=0\n"
+		 "VerifyCertDN=\n"
+		 "EnableSplitDNS=1\n"
+		 "SPPhonebook=\n"
+		 "%s",
+		 /* Description */ connection_name,
+		 /* Host */        gateway,
+		 /* GroupName */   groupname,
+		 /* Username */    username != NULL ? username : "",
+		 /* NTDomain */    domain != NULL ? domain : "",
+		 /* X-NM-Routes */ routes_str != NULL ? routes_str : "");
+
+	fclose (f);
+out:
+
+	g_free (routes_str);
+}
+
+
+static gboolean 
+impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, const char *connection_name)
+{
+	char *suggested_name;
+	char *path = NULL;
+	GtkWidget *dialog;
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+
+	/*printf ("in impl_export\n");*/
+
+	dialog = gtk_file_chooser_dialog_new (_("Save as..."),
+					      NULL,
+					      GTK_FILE_CHOOSER_ACTION_SAVE,
+					      GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					      NULL);
+
+	suggested_name = g_strdup_printf ("%s.pcf", connection_name);
+	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), suggested_name);
+	g_free (suggested_name);
+
+	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+		
+		path = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+		/*printf ("User selected '%s'\n", path);*/
+
+	}
+	
+	gtk_widget_destroy (dialog);
+
+	if (path != NULL) {
+		if (g_file_test (path, G_FILE_TEST_EXISTS)) {
+			int response;
+			GtkWidget *dialog;
+
+			dialog = gtk_message_dialog_new (NULL,
+							 GTK_DIALOG_DESTROY_WITH_PARENT,
+							 GTK_MESSAGE_QUESTION,
+							 GTK_BUTTONS_CANCEL,
+							 _("A file named \"%s\" already exists."), path);
+			gtk_dialog_add_buttons (GTK_DIALOG (dialog), "_Replace", GTK_RESPONSE_OK, NULL);
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+								  _("Do you want to replace it with the one you are saving?"));
+			response = gtk_dialog_run (GTK_DIALOG (dialog));
+			gtk_widget_destroy (dialog);
+			if (response != GTK_RESPONSE_OK)
+				goto out;
+		}
+
+		export_to_file (impl, path, properties, routes, connection_name);
+	}      
+
+out:
+	g_free (path);
+
+	return TRUE;
 }
 
 static NetworkManagerVpnUI* 
@@ -567,6 +863,9 @@ impl_get_object (void)
 	impl->parent.set_validity_changed_callback = impl_set_validity_changed_callback;
 	impl->parent.is_valid                      = impl_is_valid;
 	impl->parent.get_confirmation_details      = impl_get_confirmation_details;
+	impl->parent.can_export                    = impl_can_export;
+	impl->parent.import_file                   = impl_import_file;
+	impl->parent.export                        = impl_export;
 	impl->parent.data = impl;
 	
 	return &(impl->parent);

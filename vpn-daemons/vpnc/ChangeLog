@@ -1,3 +1,22 @@
+2005-06-17  David Zeuthen  <davidz@redhat.com>
+
+	* properties/nm-vpnc.c: Add new NM_VPN_API_SUBJECT_TO_CHANGE so we
+	can include nm-vpn-ui-interface.h.
+	(import_from_file): New function
+	(import_button_clicked): Actually Implement this function
+	(impl_can_export): New function
+	(impl_import_file): New function
+	(export_to_file): New function
+	(impl_export): New function
+	(impl_get_object): Add function pointers for can_export, import_file
+	and export
+
+	* nm-vpnc.desktop.in: New file
+
+	* configure.in: Add AC_PROG_INTLTOOL
+
+	* Makefile.am: Add rules for building the .desktop file
+
 2005-06-16  David Zeuthen  <davidz@redhat.com>
 
 	* Makefile.am (dbusservicedir): Adjust to use $(sysconfdir)
