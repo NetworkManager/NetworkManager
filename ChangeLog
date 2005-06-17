@@ -1,3 +1,29 @@
+2005-06-17  David Zeuthen  <davidz@redhat.com>
+
+	* gnome/vpn-properties/nm-vpn-ui-interface.h: Require users of this
+	API to define NM_VPN_API_SUBJECT_TO_CHANGE to acknowledge API churn.
+	Also add new methods can_export, import_file and export.
+
+	* gnome/vpn-properties/nm-vpn-properties.glade: Add an Export button
+	to the main UI
+
+	* gnome/vpn-properties/nm-vpn-properties.c:
+	Define NM_VPN_API_SUBJECT_TO_CHANGE so we can actually include
+	nm-vpn-ui-interface.h.
+	(update_edit_del_sensitivity): Also update "Export" sensitivity
+	(add_vpn_connection): Also add new SVC_NAME column
+	(import_settings): New function
+	(retrieve_data_from_selected_connection): New function
+	(edit_cb): Use retrieve_data_from_selected_connection to simplify
+	this function
+	(export_cb): New function
+	(init_app): Also setup the "export" widget
+	(main): Support the --import-service and --import-file commandline
+	arguments
+
+	* gnome/libnm_glib/libnm_glib.c (libnm_glib_dbus_filter): Also support
+	D-BUS 0.34
+
 2005-06-16  Dan Williams <dcbw@redhat.com>
 
     Patch from Robert Love:

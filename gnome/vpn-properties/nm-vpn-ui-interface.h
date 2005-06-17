@@ -32,6 +32,10 @@
 #ifndef NM_VPN_UI_INTERFACE_H
 #define NM_VPN_UI_INTERFACE_H
 
+#ifndef NM_VPN_API_SUBJECT_TO_CHANGE
+#error "Please define NM_VPN_API_SUBJECT_TO_CHANGE to acknowledge your understanding that NetworkManager hasn't reached 1.0 and is subject to protocol and API churn. See the README for a full explanation."
+#endif
+
 #include <gtk/gtk.h>
 
 struct _NetworkManagerVpnUI;
@@ -63,6 +67,12 @@ struct _NetworkManagerVpnUI {
 	GSList *(*get_properties) (NetworkManagerVpnUI *self);
 
 	GSList *(*get_routes) (NetworkManagerVpnUI *self);
+
+	gboolean (*can_export) (NetworkManagerVpnUI *self);
+
+	gboolean (*import_file) (NetworkManagerVpnUI *self, const char *path);
+
+	gboolean (*export) (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, const char *connection_name);
 
 	gpointer data;
 };
