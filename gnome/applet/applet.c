@@ -1217,7 +1217,8 @@ static void nmwa_menu_scanning_item_activate (GtkMenuItem *item, gpointer user_d
 	{
 		NMWirelessScanMethod	method = GPOINTER_TO_UINT (tag);
 
-		if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+		if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER)
+			|| (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
 			gconf_client_set_int (applet->gconf_client, GCONF_PATH_WIRELESS "/scan_method", method, NULL);
 	}
 
@@ -1801,26 +1802,26 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 	/* Construct the wireless scanning submenu */
 	applet->scan_method = nmwa_gconf_get_wireless_scan_method (applet);
-	applet->scanning_item = gtk_menu_item_new_with_label (_("Wireless Scanning"));
+	applet->scanning_item = gtk_menu_item_new_with_label (_("Wireless Network Discovery"));
 	applet->scanning_menu = gtk_menu_new ();
 
-	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("On")));
-	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GUINT_TO_POINTER (NM_SCAN_METHOD_ON));
-	if (applet->scan_method == NM_SCAN_METHOD_ON)
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Always Search")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GUINT_TO_POINTER (NM_SCAN_METHOD_ALWAYS));
+	if (applet->scan_method == NM_SCAN_METHOD_ALWAYS)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
 	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
 
-	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Off")));
-	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_OFF));
-	if (applet->scan_method == NM_SCAN_METHOD_OFF)
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Search Only When Disconnected")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_WHEN_UNASSOCIATED));
+	if (applet->scan_method == NM_SCAN_METHOD_WHEN_UNASSOCIATED)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
 	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
 
-	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Automatic")));
-	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_AUTO));
-	if (applet->scan_method == NM_SCAN_METHOD_AUTO)
+	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Never Search")));
+	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_NEVER));
+	if (applet->scan_method == NM_SCAN_METHOD_NEVER)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
 	g_signal_connect (G_OBJECT (scanning_subitem), "activate", G_CALLBACK (nmwa_menu_scanning_item_activate), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
@@ -1955,11 +1956,11 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
  */
 NMWirelessScanMethod nmwa_gconf_get_wireless_scan_method (NMWirelessApplet *applet)
 {
-	NMWirelessScanMethod	method = NM_SCAN_METHOD_ON;
+	NMWirelessScanMethod	method = NM_SCAN_METHOD_ALWAYS;
 	GConfEntry *			entry;
 
-	g_return_val_if_fail (applet, NM_SCAN_METHOD_ON);
-	g_return_val_if_fail (applet->gconf_client, NM_SCAN_METHOD_ON);
+	g_return_val_if_fail (applet, NM_SCAN_METHOD_ALWAYS);
+	g_return_val_if_fail (applet->gconf_client, NM_SCAN_METHOD_ALWAYS);
 
 	if ((entry = gconf_client_get_entry (applet->gconf_client, GCONF_PATH_WIRELESS "/scan_method", NULL, TRUE, NULL)))
 	{
@@ -1969,7 +1970,8 @@ NMWirelessScanMethod nmwa_gconf_get_wireless_scan_method (NMWirelessApplet *appl
 		{
 			NMWirelessScanMethod	temp_method = gconf_value_get_int (value);
 
-			if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+			if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER)
+				|| (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
 				method = temp_method;
 		}
 	}
@@ -2005,7 +2007,8 @@ static void nmwa_gconf_info_notify_callback (GConfClient *client, guint connecti
 			{
 				NMWirelessScanMethod	method = gconf_value_get_int (value);
 
-				if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+				if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER)
+					|| (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
 					nmi_dbus_signal_update_scan_method (applet->connection);
 			}
 		}

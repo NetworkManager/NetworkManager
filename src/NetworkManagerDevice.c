@@ -3944,8 +3944,8 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	/* Reschedule if scanning is off, or if scanning is AUTO and we are
 	 * associated to an access point.
 	 */
-	if (    (dev->app_data->scanning_method == NM_SCAN_METHOD_OFF)
-		|| (    (dev->app_data->scanning_method == NM_SCAN_METHOD_AUTO)
+	if (    (dev->app_data->scanning_method == NM_SCAN_METHOD_NEVER)
+		|| (    (dev->app_data->scanning_method == NM_SCAN_METHOD_WHEN_UNASSOCIATED)
 			&& nm_device_is_activated (dev)))
 	{
 		dev->options.wireless.scan_interval = 10;

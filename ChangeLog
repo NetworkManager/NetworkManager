@@ -1,3 +1,7 @@
+2005-06-16  Dan Williams <dcbw@redhat.com>
+
+	* Clean up wording in Wireless Scan Methods menu items and constants
+
 2005-06-16  Robert Love  <rml@novell.com>
 
 	* po/POTFILES.in

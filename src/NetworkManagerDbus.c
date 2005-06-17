@@ -585,7 +585,8 @@ static void nm_dbus_update_wireless_scan_method_cb (DBusPendingCall *pcall, NMDa
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &method, DBUS_TYPE_INVALID))
 	{
-		if ((method == NM_SCAN_METHOD_ON) || (method == NM_SCAN_METHOD_OFF) || (method == NM_SCAN_METHOD_AUTO))
+		if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER)
+				|| (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
 			data->scanning_method = method;
 	}
 	dbus_message_unref (reply);
