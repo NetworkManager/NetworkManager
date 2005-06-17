@@ -1330,7 +1330,7 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *
   GtkWidget *label;
 
   menu_item = gtk_menu_item_new ();
-  label = gtk_label_new (_("Other Wireless Networks..."));
+  label = gtk_label_new (_("Connect to Other Wireless Network..."));
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_container_add (GTK_CONTAINER (menu_item), label);
   gtk_widget_show_all (menu_item);
@@ -1351,7 +1351,7 @@ static void nmwa_menu_add_create_network_item (GtkWidget *menu, NMWirelessApplet
   GtkWidget *label;
 
   menu_item = gtk_menu_item_new ();
-  label = gtk_label_new (_("Create new Wireless Network..."));
+  label = gtk_label_new (_("Create New Wireless Network..."));
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_container_add (GTK_CONTAINER (menu_item), label);
   gtk_widget_show_all (menu_item);

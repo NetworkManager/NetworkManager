@@ -1,3 +1,9 @@
+2005-06-16  Dan Williams <dcbw@redhat.com>
+
+	Patch from Robert Love:
+	* gnome/applet/applet.c
+		- Beautify some applet menu item names
+
 2005-06-17  David Zeuthen  <davidz@redhat.com>
 
 	* gnome/vpn-properties/nm-vpn-ui-interface.h: Require users of this
@@ -26,10 +32,10 @@
 
 2005-06-16  Dan Williams <dcbw@redhat.com>
 
-    Patch from Robert Love:
-    * gnome/applet/menu-items.c
-        - (network_menu_item_new): pass -1 as wireless network
-            menu items height size request rather than ascent / 2
+	Patch from Robert Love:
+	* gnome/applet/menu-items.c
+		- (network_menu_item_new): pass -1 as wireless network
+			menu items height size request rather than ascent / 2
 
 2005-06-16  Dan Williams <dcbw@redhat.com>
 
