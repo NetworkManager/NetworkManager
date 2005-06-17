@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.21 2005/06/17 04:46:21 marcel Exp $
+# $Id: sk.po,v 1.22 2005/06/17 21:45:38 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-17 06:39+0200\n"
-"PO-Revision-Date: 2005-06-17 06:45+0200\n"
+"POT-Creation-Date: 2005-06-17 23:43+0200\n"
+"PO-Revision-Date: 2005-06-17 23:44+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -248,11 +248,11 @@ msgid "VPN connection to '%s'"
 msgstr "VPN spojenie s '%s'"
 
 #: ../gnome/applet/applet.c:1333
-msgid "Other Wireless Networks..."
-msgstr "Ostatné bezdrôtové siete..."
+msgid "Connect to Other Wireless Network..."
+msgstr "Pripojiť sa k inej bezdrôtovej sieti..."
 
 #: ../gnome/applet/applet.c:1354
-msgid "Create new Wireless Network..."
+msgid "Create New Wireless Network..."
 msgstr "Vytvoriť novú bezdrôtovú sieť..."
 
 #: ../gnome/applet/applet.c:1467
@@ -541,8 +541,8 @@ msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
 msgstr ""
-"Nepodarilo sa nájsť použiteľný softvér pre pre VPN spojenie typu '%"
-"s' na import súboru '%s'. Spojte sa so správcom vášho systému."
+"Nepodarilo sa nájsť použiteľný softvér pre pre VPN spojenie typu '%s' na "
+"import súboru '%s'. Spojte sa so správcom vášho systému."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:570
 #, c-format
