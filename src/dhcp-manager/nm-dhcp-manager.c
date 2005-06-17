@@ -313,7 +313,6 @@ void nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager, NMActRequest *r
 
 	if (manager->running && !state_is_down (nm_act_request_get_dhcp_state (req)))
 	{
-		guint		id;
 		DBusMessage *	message;
 		char *		path = g_strdup_printf (DHCP_OBJECT_PATH"/%s", nm_device_get_iface (dev));
 
@@ -543,8 +542,6 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	const char *		object_path;
 	const char *		member;
 	const char *		interface;
-	const char *		temp_op;
-	const char *		service_name;
 	gboolean			handled = FALSE;
 	NMDevice *		dev;
 	NMActRequest *		req = NULL;

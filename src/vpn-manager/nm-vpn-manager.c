@@ -273,7 +273,6 @@ NMVPNConnection *nm_vpn_manager_add_connection (NMVPNManager *manager, const cha
 	service = find_service_by_name (manager, service_name);
 	if (service && (connection = nm_vpn_connection_new (name, user_name, service)))
 	{
-		gboolean	 found = FALSE;
 		GSList	*elt;
 
 		/* Remove the existing connection if found */
@@ -305,8 +304,6 @@ NMVPNConnection *nm_vpn_manager_add_connection (NMVPNManager *manager, const cha
  */
 void nm_vpn_manager_remove_connection (NMVPNManager *manager, NMVPNConnection *vpn)
 {
-	GSList *	elt;
-
 	g_return_if_fail (manager != NULL);
 	g_return_if_fail (vpn != NULL);
 
@@ -401,7 +398,6 @@ void nm_vpn_manager_handle_ip4_config_signal (NMVPNManager *manager, DBusMessage
 		NMIP4Config *	config;
 		NMDevice *	vpn_dev;
 		guint32		i;
-		guint32		broadcast;
 
 #if 0
 		print_vpn_config (ip4_vpn_gateway, tundev, ip4_internal_address, ip4_internal_netmask,
@@ -664,8 +660,6 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	const char		*service_name;
 	const char		*name;
 	const char		*user_name;
-	DBusMessageIter	 iter, array_iter;
-	int				 i, len;
 	DBusError			 error;
 
 	g_return_if_fail (manager != NULL);
@@ -743,7 +737,6 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
 	NMVPNService *		service;
 	const char *		service_name;
 	NMVPNConnection *	active;
-	NMIP4Config *		config;
 	NMDevice *		dev;
 
 	g_return_if_fail (manager != NULL);
