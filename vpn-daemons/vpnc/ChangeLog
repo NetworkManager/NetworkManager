@@ -1,5 +1,10 @@
 2005-06-17  David Zeuthen  <davidz@redhat.com>
 
+	* configure.in, Makefile.am: Various fixes such that 'make distcheck'
+	actually succeeds
+
+2005-06-17  David Zeuthen  <davidz@redhat.com>
+
 	* properties/nm-vpnc.c: Add new NM_VPN_API_SUBJECT_TO_CHANGE so we
 	can include nm-vpn-ui-interface.h.
 	(import_from_file): New function
