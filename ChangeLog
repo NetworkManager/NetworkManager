@@ -1,3 +1,8 @@
+2005-06-17  Robert Love  <rml@novell.com>
+
+	* initscript/SUSE/networkmanager: Change the Provides and default
+	run levels
+
 2005-06-16  Dan Williams <dcbw@redhat.com>
 
 	Patch from Robert Love:
