@@ -64,8 +64,9 @@ typedef struct NMData
 
 	gboolean				 forcing_device;
 
-	gboolean				 scanning_enabled;
+	NMWirelessScanMethod	 scanning_method;
 	gboolean				 wireless_enabled;
+	gboolean				 asleep;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;

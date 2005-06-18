@@ -49,12 +49,18 @@ svOpenFile(const char *name, gboolean create)
 
     s = g_malloc0(sizeof(shvarFile));
 
+#if 0
     s->fd = open(name, O_RDWR); /* NOT O_CREAT */
     if (s->fd == -1) {
 	/* try read-only */
 	s->fd = open(name, O_RDONLY); /* NOT O_CREAT */
 	if (s->fd != -1) closefd = 1;
     }
+#else
+    /* try read-only */
+    s->fd = open(name, O_RDONLY); /* NOT O_CREAT */
+    if (s->fd != -1) closefd = 1;
+#endif
     s->fileName = g_strdup(name);
 
     if (s->fd != -1) {

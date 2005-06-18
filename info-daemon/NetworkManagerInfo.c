@@ -47,13 +47,45 @@
 static void nmi_spawn_notification_icon (NMIAppInfo *info);
 
 
+
 /*
- * nmi_gconf_notify_callback
+ * nmi_gconf_get_wireless_scan_method
  *
- * Callback from gconf when wireless networking key/values have changed.
+ * Grab the wireless scan method from GConf
  *
  */
-void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
+NMWirelessScanMethod nmi_gconf_get_wireless_scan_method (NMIAppInfo *info)
+{
+	NMWirelessScanMethod	method = NM_SCAN_METHOD_ALWAYS;
+	GConfEntry *			entry;
+
+	g_return_val_if_fail (info, NM_SCAN_METHOD_ALWAYS);
+	g_return_val_if_fail (info->gconf_client, NM_SCAN_METHOD_ALWAYS);
+
+	if ((entry = gconf_client_get_entry (info->gconf_client, NMI_GCONF_WIRELESS_PATH "/scan_method", NULL, TRUE, NULL)))
+	{
+		GConfValue *	value = gconf_entry_get_value (entry);
+
+		if (value && (value->type == GCONF_VALUE_INT))
+		{
+			NMWirelessScanMethod	temp_method = gconf_value_get_int (value);
+
+			if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER) || (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
+				method = temp_method;
+		}
+	}
+
+	return method;
+}
+
+
+/*
+ * nmi_gconf_prefs_notify_callback
+ *
+ * Callback from gconf when wireless key/values have changed.
+ *
+ */
+void nmi_gconf_prefs_notify_callback (GConfClient *client, guint connection_id, GConfEntry *entry, gpointer user_data)
 {
 	NMIAppInfo	*info = (NMIAppInfo *)user_data;
 	const char	*key = NULL;
@@ -64,11 +96,23 @@ void nmi_gconf_notify_callback (GConfClient *client, guint connection_id, GConfE
 
 	if ((key = gconf_entry_get_key (entry)))
 	{
-		int	path_len = strlen (NMI_GCONF_WIRELESS_NETWORKS_PATH) + 1;
+		int	net_path_len = strlen (NMI_GCONF_WIRELESS_PATH) + 1;
 
-		if (strncmp (NMI_GCONF_WIRELESS_NETWORKS_PATH"/", key, path_len) == 0)
+		if (strcmp (NMI_GCONF_WIRELESS_PATH "/scan_method", key) == 0)
 		{
-			char 	*network = g_strdup ((key + path_len));
+			GConfValue *	value = gconf_entry_get_value (entry);
+
+			if (value && (value->type == GCONF_VALUE_INT))
+			{
+				NMWirelessScanMethod	method = gconf_value_get_int (value);
+
+				if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER) || (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
+					nmi_dbus_signal_update_scan_method (info->connection);
+			}
+		}
+		if (strncmp (NMI_GCONF_WIRELESS_NETWORKS_PATH"/", key, net_path_len) == 0)
+		{
+			char 	*network = g_strdup ((key + net_path_len));
 			char		*slash_pos;
 			char		*unescaped_network;
 
@@ -178,7 +222,6 @@ int main( int argc, char *argv[] )
 	DBusConnection	*dbus_connection;
 	int			 err;
 	NMIAppInfo	*app_info = NULL;
-	GMainLoop		*loop;
 	guint		 notify_id;
 
 	struct poptOption options[] =
@@ -235,10 +278,9 @@ int main( int argc, char *argv[] )
 	 * get change notifications for our wireless networking data.
 	 */
 	app_info->gconf_client = gconf_client_get_default ();
-	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
-						GCONF_CLIENT_PRELOAD_NONE, NULL);
-	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_NETWORKS_PATH,
-						nmi_gconf_notify_callback, app_info, NULL, NULL);
+	gconf_client_add_dir (app_info->gconf_client, NMI_GCONF_WIRELESS_PATH, GCONF_CLIENT_PRELOAD_NONE, NULL);
+	notify_id = gconf_client_notify_add (app_info->gconf_client, NMI_GCONF_WIRELESS_PATH,
+						nmi_gconf_prefs_notify_callback, app_info, NULL, NULL);
 
 	/* Create our own dbus service */
 	err = nmi_dbus_service_init (dbus_connection, app_info);

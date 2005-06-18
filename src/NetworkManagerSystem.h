@@ -52,6 +52,9 @@ gboolean		nm_system_device_set_ip4_address			(NMDevice *dev, int ip4_address);
 gboolean		nm_system_device_set_ip4_netmask			(NMDevice *dev, int ip4_netmask);
 gboolean		nm_system_device_set_ip4_broadcast			(NMDevice *dev, int ip4_broadcast);
 gboolean		nm_system_device_set_ip4_default_route		(NMDevice *dev, int ip4_def_route);
-gboolean		nm_system_device_update_resolv_conf		(void *data, int len, const char *domain_name);
+gboolean		nm_system_device_add_ip4_nameserver		(NMDevice *dev, guint32 ip4_nameserver);
+void			nm_system_device_clear_ip4_nameservers		(NMDevice *dev);
+gboolean		nm_system_device_add_domain_search			(NMDevice *dev, const char *search);
+void			nm_system_device_clear_domain_searches		(NMDevice *dev);
 
 #endif

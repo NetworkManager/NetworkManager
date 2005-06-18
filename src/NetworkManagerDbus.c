@@ -325,6 +325,8 @@ char *nm_dbus_network_status_from_data (NMData *data)
 
 	g_return_val_if_fail (data != NULL, NULL);
 
+	if (data->asleep == TRUE)
+		status = g_strdup ("asleep");
 	if (data->forcing_device)
 		status = g_strdup ("scanning");
 	else if (data->active_device && nm_device_is_activating (data->active_device))
@@ -422,7 +424,6 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	DBusMessage	*message;
 	char			*dev_path;
 	char			*ap_path;
-	const char	*signal;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -648,6 +649,44 @@ out:
 
 
 /*
+ * nm_dbus_update_wireless_scan_method
+ *
+ * Get the wireless scan method from NetworkManagerInfo
+ *
+ */
+void nm_dbus_update_wireless_scan_method (DBusConnection *connection, NMData *data)
+{
+	DBusMessage *		message = NULL;
+	DBusMessage *		reply = NULL;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getWirelessScanMethod")))
+	{
+		syslog (LOG_WARNING, "nm_dbus_update_wireless_scan_method(): Couldn't allocate the dbus message");
+		return;
+	}
+
+	if ((reply = dbus_connection_send_with_reply_and_block (connection, message, -1, NULL)))
+	{
+		NMWirelessScanMethod	method;
+
+		if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &method, DBUS_TYPE_INVALID))
+		{
+			if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER) || (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
+				data->scanning_method = method;
+		}
+		dbus_message_unref (reply);
+	}
+	else
+		syslog (LOG_WARNING, "nm_dbus_update_wireless_scan_method(): could not send dbus message");
+
+	dbus_message_unref (message);
+}
+
+
+/*
  * nm_dbus_update_network_auth_method
  *
  * Tell NetworkManagerInfo the updated auth_method of the AP
@@ -841,19 +880,23 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 
 	dbus_error_init (&error);
 
-	if (    (strcmp (object_path, NMI_DBUS_PATH) == 0)
-		&& dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate"))
+	if (strcmp (object_path, NMI_DBUS_PATH) == 0)
 	{
-		char			*network = NULL;
-
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+		if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate"))
 		{
-			/* Update a single wireless network's data */
-			syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
-			nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
-			dbus_free (network);
-			handled = TRUE;
+			char *	network = NULL;
+
+			if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
+			{
+				/* Update a single wireless network's data */
+				syslog (LOG_DEBUG, "NetworkManagerInfo triggered update of wireless network '%s'", network);
+				nm_ap_list_update_network_from_nmi (data->allowed_ap_list, network, data);
+				dbus_free (network);
+				handled = TRUE;
+			}
 		}
+		else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessScanMethodUpdate"))
+			nm_dbus_update_wireless_scan_method (connection, data);
 	}
 #if (DBUS_VERSION_MAJOR == 0 && DBUS_VERSION_MINOR == 22)
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_ORG_FREEDESKTOP_DBUS, "ServiceCreated"))
@@ -889,7 +932,10 @@ static DBusHandlerResult nm_dbus_nmi_filter (DBusConnection *connection, DBusMes
 			 * "ServiceCreated" signal in dbus <= 0.22
 			 */
 			if (!old_owner_good && new_owner_good)
+			{
 				nm_policy_schedule_allowed_ap_list_update (data);
+				nm_dbus_update_wireless_scan_method (connection, data);
+			}
 		}
 	}
 #else
@@ -1051,7 +1097,6 @@ gboolean nm_dbus_is_info_daemon_running (DBusConnection *connection)
 DBusConnection *nm_dbus_init (NMData *data)
 {
 	DBusError		 		 error;
-	dbus_bool_t			 success;
 	DBusConnection			*connection;
 	DBusObjectPathVTable	 nm_vtable = {NULL, &nm_dbus_nm_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	 devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};

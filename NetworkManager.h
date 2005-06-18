@@ -78,7 +78,8 @@ typedef enum NMEncKeyType
 typedef enum NMDriverSupportLevel
 {
 	NM_DRIVER_UNSUPPORTED = 0,
-	NM_DRIVER_SEMI_SUPPORTED,
+	NM_DRIVER_NO_CARRIER_DETECT,
+	NM_DRIVER_NO_WIRELESS_SCAN,
 	NM_DRIVER_FULLY_SUPPORTED
 } NMDriverSupportLevel;
 
@@ -132,6 +133,19 @@ typedef enum NMDeviceAuthMethod
 /*
  * Info-daemon specific preference locations
  */
-#define NMI_GCONF_WIRELESS_NETWORKS_PATH		"/system/networking/wireless/networks"
+#define NMI_GCONF_WIRELESS_NETWORKS_PATH	"/system/networking/wireless/networks"
+#define NMI_GCONF_WIRELESS_PATH			"/system/networking/wireless"
+
+/*
+ * Wireless scanning methods
+ *
+ */
+typedef enum NMWirelessScanMethod
+{
+	NM_SCAN_METHOD_UNKNOWN = 0,
+	NM_SCAN_METHOD_ALWAYS,
+	NM_SCAN_METHOD_NEVER,
+	NM_SCAN_METHOD_WHEN_UNASSOCIATED
+} NMWirelessScanMethod;
 
 #endif

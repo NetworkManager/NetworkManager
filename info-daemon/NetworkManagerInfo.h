@@ -31,6 +31,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <gconf/gconf-client.h>
+#include "NetworkManager.h"
 
 struct NMIAppInfo
 {
@@ -57,5 +58,7 @@ struct NMIAppInfo
 	GSource		*shutdown_timeout;
 };
 typedef struct NMIAppInfo NMIAppInfo;
+
+NMWirelessScanMethod nmi_gconf_get_wireless_scan_method (NMIAppInfo *info);
 
 #endif

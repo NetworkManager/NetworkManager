@@ -165,6 +165,12 @@ static NMDevice * nm_policy_get_best_device (NMDevice *switch_to_dev, NMData *da
 	if (should_lock_on_activate)
 		*should_lock_on_activate = FALSE;
 
+	if (data->asleep == TRUE)
+	{
+		data->active_device_locked = FALSE;
+		return NULL;
+	}
+
 	/* Prefer a device forced on us by the user */
 	if (switch_to_dev && !nm_device_get_removed (switch_to_dev))
 	{
@@ -227,12 +233,15 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 {
 	NMActivationResult	*result = (NMActivationResult *)user_data;
 	NMDevice			*dev = NULL;
+	NMAccessPoint		*failed_ap = NULL;
 	NMData			*data = NULL;
 
 	g_return_val_if_fail (result != NULL, FALSE);
 
 	if (!(dev = result->dev))
 		goto out;
+
+	failed_ap = result->failed_ap;
 
 	if (!(data = nm_device_get_app_data (dev)))
 		goto out;
@@ -268,22 +277,29 @@ gboolean nm_policy_activation_finish (gpointer user_data)
 			nm_dbus_signal_device_status_change (data->dbus_connection, dev, result->result);
 			if (nm_device_is_wireless (dev))
 			{
-				NMAccessPoint *ap = nm_device_get_best_ap (dev);
-				if (ap)
+				if (failed_ap)
 				{
 					/* Add the AP to the invalid list and force a best ap update */
-					nm_ap_list_append_ap (data->invalid_ap_list, ap);
+					nm_ap_list_append_ap (data->invalid_ap_list, failed_ap);
 					nm_device_update_best_ap (dev);
-
-					/* Unref because nm_device_get_best_ap() refs it before returning. */
-					nm_ap_unref (ap);
 				}
-				syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev), ap ? nm_ap_get_essid (ap) : "(none)");
+
+				syslog (LOG_INFO, "Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),
+						failed_ap ? nm_ap_get_essid (failed_ap) : "(none)");
+
+				/* Failed AP got reffed by nm_device_get_best_ap() during activation,
+				 * must unref it here.
+				 */
+				if (failed_ap)
+					nm_ap_unref (failed_ap);
 			}
 			else
 				syslog (LOG_INFO, "Activation (%s) failed.", nm_device_get_iface (dev));
 			if (data->active_device == dev)
+			{
+				nm_device_unref (dev);
 				data->active_device = NULL;
+			}
 			nm_device_deactivate (dev, FALSE);
 			break;
 
@@ -468,7 +484,8 @@ void nm_policy_schedule_device_switch (NMDevice *switch_to_dev, NMData *app_data
  */
 static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 {
-	NMData		*data = (NMData *)user_data;
+	NMData	*data = (NMData *)user_data;
+	GSList	*elt;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -481,6 +498,27 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	if (data->allowed_ap_list)
 		nm_ap_list_populate_from_nmi (data->allowed_ap_list, data);
 
+	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
+	{
+		NMDevice	*dev = (NMDevice *)(elt->data);
+		if (nm_device_is_wireless (dev))
+		{
+			if (nm_device_get_supports_wireless_scan (dev))
+			{
+				/* Once we have the list, copy in any relevant information from our Allowed list and fill
+				 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
+				 * MAC address in our allowed list.
+				 */
+				nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), data->allowed_ap_list);
+				nm_ap_list_copy_properties (nm_device_ap_list_get (dev), data->allowed_ap_list);
+			}
+			else
+				nm_device_copy_allowed_to_dev_list (dev, data->allowed_ap_list);
+
+			nm_ap_list_remove_duplicate_essids (nm_device_ap_list_get (dev));
+		}
+	}	
+
 	/* If the active device doesn't have a best_ap already, make it update to
 	 * get the new data.
 	 */
@@ -489,13 +527,6 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 		&& nm_device_is_wireless (data->active_device))
 	{
 		NMAccessPoint	*best_ap;
-
-		/* Once we have the list, copy in any relevant information from our Allowed list and fill
-		 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
-		 * MAC address in our allowed list.
-		 */
-		nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
-		nm_ap_list_copy_properties (nm_device_ap_list_get (data->active_device), data->allowed_ap_list);
 
 		best_ap = nm_device_get_best_ap (data->active_device);
 		if (!best_ap)

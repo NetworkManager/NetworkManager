@@ -222,6 +222,55 @@ void nmi_dbus_return_vpn_password (DBusConnection *connection, DBusMessage *mess
 }
 
 /*
+ * nmi_dbus_signal_update_scan_method
+ *
+ * Signal NetworkManager that it needs to update its wireless scanning method
+ *
+ */
+void nmi_dbus_signal_update_scan_method (DBusConnection *connection)
+{
+	DBusMessage		*message;
+
+	g_return_if_fail (connection != NULL);
+
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessScanMethodUpdate");
+	if (!message)
+	{
+		syslog (LOG_WARNING, "nmi_dbus_signal_update_scan_method(): Not enough memory for new dbus message!");
+		return;
+	}
+
+	if (!dbus_connection_send (connection, message, NULL))
+		syslog (LOG_WARNING, "nmi_dbus_signal_update_scan_method(): Could not raise the 'WirelessScanMethodUpdate' signal!");
+
+	dbus_message_unref (message);
+}
+
+
+/*
+ * nmi_dbus_get_wireless_scan_method
+ *
+ * Tell NetworkManager what wireless scanning method it should use
+ *
+ */
+static DBusMessage *nmi_dbus_get_wireless_scan_method (NMIAppInfo *info, DBusMessage *message)
+{
+	DBusMessage *			reply = NULL;
+	NMWirelessScanMethod	method = NM_SCAN_METHOD_ALWAYS;
+	GConfEntry *			entry;
+
+	g_return_val_if_fail (info != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	method = nmi_gconf_get_wireless_scan_method (info);
+	reply = dbus_message_new_method_return (message);
+	dbus_message_append_args (reply, DBUS_TYPE_UINT32, &method, DBUS_TYPE_INVALID);
+
+	return (reply);
+}
+
+
+/*
  * nmi_dbus_signal_update_network
  *
  * Signal NetworkManager that it needs to update info associated with a particular
@@ -486,7 +535,8 @@ static DBusMessage *nmi_dbus_get_network_properties (NMIAppInfo *info, DBusMessa
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, array, num_items,
 									DBUS_TYPE_INVALID);
 	}	
-	gconf_value_free (ap_addrs_value);
+	if (ap_addrs_value)
+		gconf_value_free (ap_addrs_value);
 
 	g_free (essid);
 	g_free (key);
@@ -538,6 +588,8 @@ static DBusMessage *nmi_dbus_update_network_auth_method (NMIAppInfo *info, DBusM
 		gconf_client_set_int (info->gconf_client, key, auth_method, NULL);
 		g_free (key);
 	}
+	if (value)
+		gconf_value_free (value);
 
 	g_free (escaped_network);
 
@@ -697,6 +749,8 @@ static DBusHandlerResult nmi_dbus_nmi_message_handler (DBusConnection *connectio
 			gtk_widget_destroy (GTK_WIDGET (dialog));
 		}
 	}
+	else if (strcmp ("getWirelessScanMethod", method) == 0)
+		reply_message = nmi_dbus_get_wireless_scan_method (info, message);
 	else if (strcmp ("getNetworks", method) == 0)
 		reply_message = nmi_dbus_get_networks (info, message);
 	else if (strcmp ("getNetworkProperties", method) == 0)

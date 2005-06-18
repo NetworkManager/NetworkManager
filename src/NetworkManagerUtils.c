@@ -25,10 +25,25 @@
 #include <sys/socket.h>
 #include <linux/sockios.h>
 #include <syslog.h>
+#include <stdarg.h>
+#include <sys/time.h>
+#include <string.h>
+#include <iwlib.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 
+
+struct NMSock
+{
+	int	fd;
+	char *func;
+	char *desc;
+	NMDevice *dev;
+};
+
+static GSList		*sock_list = NULL;
+static GStaticMutex	 sock_list_mutex = G_STATIC_MUTEX_INIT;
 
 typedef struct MutexDesc
 {
@@ -151,6 +166,141 @@ void nm_unlock_mutex (GMutex *mutex, const char *func)
 
 
 /*
+ * nm_dev_sock_open
+ *
+ * Open a socket to a network device and store some debug info about it.
+ *
+ */
+NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, const char *desc)
+{
+	NMSock	*sock = NULL;
+
+	sock = g_malloc0 (sizeof (NMSock));
+
+	sock->fd = -1;
+
+	switch (type)
+	{
+		case DEV_WIRELESS:
+			sock->fd = iw_sockets_open ();
+			break;
+
+		case DEV_GENERAL:
+			if ((sock->fd = socket (PF_INET, SOCK_DGRAM, 0)) < 0)
+				if ((sock->fd = socket (PF_PACKET, SOCK_DGRAM, 0)) < 0)
+					sock->fd = socket (PF_INET6, SOCK_DGRAM, 0);
+			break;
+
+		case NETWORK_CONTROL:
+			sock->fd = socket (AF_PACKET, SOCK_PACKET, htons (ETH_P_ALL));
+			break;
+
+		default:
+			break;
+	}
+
+	if (sock->fd < 0)
+	{
+		g_free (sock);
+		syslog (LOG_ERR, "Could not open control socket for device '%s'.", dev ? nm_device_get_iface (dev) : "none");
+		return NULL;
+	}
+
+	sock->func = func_name ? g_strdup (func_name) : NULL;
+	sock->desc = desc ? g_strdup (desc) : NULL;
+	sock->dev = dev;
+	if (sock->dev)
+		nm_device_ref (sock->dev);
+
+	/* Add the sock to our global sock list for tracking */
+	g_static_mutex_lock (&sock_list_mutex);
+	sock_list = g_slist_append (sock_list, sock);
+	g_static_mutex_unlock (&sock_list_mutex);
+
+	return sock;
+}
+
+
+/*
+ * nm_dev_sock_close
+ *
+ * Close a socket and free its debug data.
+ *
+ */
+void nm_dev_sock_close (NMSock *sock)
+{
+	GSList	*elt;
+
+	g_return_if_fail (sock != NULL);
+
+	close (sock->fd);
+	g_free (sock->func);
+	g_free (sock->desc);
+	if (sock->dev)
+		nm_device_unref (sock->dev);
+
+	memset (sock, 0, sizeof (NMSock));
+
+	g_static_mutex_lock (&sock_list_mutex);
+	for (elt = sock_list; elt; elt = g_slist_next (elt))
+	{
+		NMSock	*temp_sock = (NMSock *)(elt->data);
+		if (temp_sock == sock)
+		{
+			sock_list = g_slist_remove_link (sock_list, elt);
+			g_slist_free (elt);
+			break;
+		}
+	}
+	g_static_mutex_unlock (&sock_list_mutex);
+
+	g_free (sock);
+}
+
+
+/*
+ * nm_dev_sock_get_fd
+ *
+ * Return the fd associated with an NMSock
+ *
+ */
+int nm_dev_sock_get_fd (NMSock *sock)
+{
+	g_return_val_if_fail (sock != NULL, -1);
+
+	return sock->fd;
+}
+
+
+/*
+ * nm_print_open_socks
+ *
+ * Print a list of currently open and registered NMSocks.
+ *
+ */
+void nm_print_open_socks (void)
+{
+	GSList	*elt = NULL;
+	int		 i = 0;
+
+	syslog (LOG_DEBUG, "Open Sockets List:");
+	g_static_mutex_lock (&sock_list_mutex);
+	for (elt = sock_list; elt; elt = g_slist_next (elt))
+	{
+		NMSock	*sock = (NMSock *)(elt->data);
+		if (sock)
+		{
+			i++;
+			syslog (LOG_DEBUG, "  %d: %s fd:%d F:'%s' D:'%s'", i, sock->dev ? nm_device_get_iface (sock->dev) : "",
+				sock->fd, sock->func, sock->desc);
+		}
+	}
+	g_static_mutex_unlock (&sock_list_mutex);
+	syslog (LOG_DEBUG, "Open Sockets List Done.");
+}
+
+
+/*
  * nm_null_safe_strcmp
  *
  * Doesn't freaking segfault if s1/s2 are NULL
@@ -167,7 +317,6 @@ int nm_null_safe_strcmp (const char *s1, const char *s2)
 		
 	return (strcmp (s1, s2));
 }
-
 
 
 /*
@@ -331,6 +480,10 @@ NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, N
 		g_free (driver_name);
 	}
 
+	/* Check for carrier detection support */
+	if ((level != NM_DRIVER_UNSUPPORTED) && !nm_device_get_supports_wireless_scan (dev))
+		level = NM_DRIVER_NO_WIRELESS_SCAN;
+
 	return (level);
 }
 
@@ -381,6 +534,10 @@ NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDe
 		level = NM_DRIVER_UNSUPPORTED;
 	}
 
+	/* Check for carrier detection support */
+	if ((level != NM_DRIVER_UNSUPPORTED) && !nm_device_get_supports_carrier_detect(dev))
+		level = NM_DRIVER_NO_CARRIER_DETECT;
+
 	return (level);
 }
 
@@ -406,8 +563,13 @@ NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *
 
 	switch (level)
 	{
-		case NM_DRIVER_SEMI_SUPPORTED:
-			syslog (LOG_INFO, "%s: Driver support level for '%s' is semi-supported",
+		case NM_DRIVER_NO_CARRIER_DETECT:
+			syslog (LOG_INFO, "%s: Driver '%s' does not support carrier detection.\n"
+						"\tYou must switch to it manually.", nm_device_get_iface (dev), driver);
+			break;
+		case NM_DRIVER_NO_WIRELESS_SCAN:
+			syslog (LOG_INFO, "%s: Driver '%s' does not support wireless scanning.\n"
+						"\tNetworkManager will not be able to fully use the card.",
 						nm_device_get_iface (dev), driver);
 			break;
 		case NM_DRIVER_FULLY_SUPPORTED:
@@ -423,3 +585,207 @@ NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *
 	g_free (driver);
 	return (level);
 }
+
+static inline int nm_timeval_cmp(const struct timeval *a,
+				 const struct timeval *b)
+{
+	int x;
+	x = a->tv_sec - b->tv_sec;
+	x *= G_USEC_PER_SEC;
+	if (x)
+		return x;
+	x = a->tv_usec - b->tv_usec;
+	if (x)
+		return x;
+	return 0;
+}
+
+static inline int nm_timeval_has_passed(const struct timeval *a)
+{
+	struct timeval current;
+
+	gettimeofday(&current, NULL);
+
+	return (nm_timeval_cmp(&current, a) >= 0);
+}
+
+static inline void nm_timeval_add(struct timeval *a,
+				  const struct timeval *b)
+{
+	struct timeval b1;
+
+	memmove(&b1, b, sizeof b1);
+
+	/* normalize a and b to be positive for everything */
+	while (a->tv_usec < 0)
+	{
+		a->tv_sec--;
+		a->tv_usec += G_USEC_PER_SEC;
+	}
+	while (b1.tv_usec < 0)
+	{
+		b1.tv_sec--;
+		b1.tv_usec += G_USEC_PER_SEC;
+	}
+
+	/* now add secs and usecs */
+	a->tv_sec += b1.tv_sec;
+	a->tv_usec += b1.tv_usec;
+
+	/* and handle our overflow */
+	if (a->tv_usec > G_USEC_PER_SEC)
+	{
+		a->tv_sec++;
+		a->tv_usec -= G_USEC_PER_SEC;
+	}
+}
+
+static void nm_v_wait_for_completion_or_timeout(
+		const int max_tries,
+		const struct timeval *max_time,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		nm_completion_args args)
+{
+	int try;
+	gboolean finished = FALSE;
+	struct timeval finish_time;
+
+	g_return_if_fail (test_func || action_func);
+
+	if (max_time) {
+		gettimeofday(&finish_time, NULL);
+		nm_timeval_add(&finish_time, max_time);
+	}
+
+	try = -1;
+	while (!finished &&
+		(max_tries == NM_COMPLETION_TRIES_INFINITY || try < max_tries))
+	{
+		if (max_time && nm_timeval_has_passed(&finish_time))
+			break;
+		try++;
+		if (test_func)
+		{
+			finished = (*test_func)(try, args);
+			if (finished)
+				break;
+		}
+
+#if 0
+#define NM_SLEEP_DEBUG
+#endif
+#ifdef NM_SLEEP_DEBUG
+		syslog (LOG_INFO, "sleeping or %d usecs", interval_usecs);
+#endif
+		g_usleep(interval_usecs);
+		if (action_func)
+			finished = (*action_func)(try, args);
+	}
+}
+
+/* these should probably be moved to NetworkManagerUtils.h as macros
+ * since they don't do varargs stuff any more */
+void nm_wait_for_completion_or_timeout(
+	const int max_tries,
+	const struct timeval *max_time,
+	const guint interval_usecs,
+	nm_completion_func test_func,
+	nm_completion_func action_func,
+	nm_completion_args args)
+{
+	nm_v_wait_for_completion_or_timeout(max_tries, max_time,
+					    interval_usecs, test_func,
+					    action_func, args);
+}
+
+void nm_wait_for_completion(
+		const int max_tries,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		nm_completion_args args)
+{
+	nm_v_wait_for_completion_or_timeout(max_tries, NULL,
+					    interval_usecs, test_func,
+					    action_func, args);
+}
+
+void nm_wait_for_timeout(
+		const struct timeval *max_time,
+		const guint interval_usecs,
+		nm_completion_func test_func,
+		nm_completion_func action_func,
+		nm_completion_args args)
+{
+	nm_v_wait_for_completion_or_timeout(-1, max_time, interval_usecs,
+			test_func, action_func, args);
+}
+
+/* you can use these, but they're really just examples */
+gboolean nm_completion_boolean_test(int tries, nm_completion_args args)
+{
+	gboolean *condition = (gboolean *)args[0];
+	char *message = (char *)args[1];
+	int log_level = (int)args[2];
+	int log_interval = (int)args[3];
+
+	g_return_val_if_fail (condition != NULL, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0) || (log_interval != 0 && tries % log_interval == 0))
+			syslog (log_level, message);
+
+	if (*condition)
+		return TRUE;
+	return FALSE;
+}
+
+gboolean nm_completion_boolean_function1_test(int tries,
+		nm_completion_args args)
+{
+	nm_completion_boolean_function_1 condition = args[0];
+	char *message = args[1];
+	int log_level = (int)args[2];
+	int log_interval = (int)args[3];
+	u_int64_t arg0;
+	
+	memcpy(&arg0, &args[4], sizeof (arg0));
+
+	g_return_val_if_fail (condition, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0)
+			   || (log_interval != 0 && tries % log_interval == 0))
+			syslog(log_level, message);
+
+	if (!(*condition)(arg0))
+		return TRUE;
+	return FALSE;
+}
+
+gboolean nm_completion_boolean_function2_test(int tries,
+		nm_completion_args args)
+{
+	nm_completion_boolean_function_2 condition = args[0];
+	char *message = args[1];
+	int log_level = (int)args[2];
+	int log_interval = (int)args[3];
+	u_int64_t arg0, arg1;
+
+	memcpy(&arg0, &args[4], sizeof (arg0));
+	memcpy(&arg1, &args[4]+sizeof (arg0), sizeof (arg1));
+
+	g_return_val_if_fail (condition, TRUE);
+
+	if (message)
+		if ((log_interval == 0 && tries == 0)
+			   || (log_interval != 0 && tries % log_interval == 0))
+			syslog(log_level, message);
+
+	if (!(*condition)(arg0, arg1))
+		return TRUE;
+	return FALSE;
+}
+

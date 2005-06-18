@@ -51,6 +51,7 @@ NetworkManager_CPPFLAGS = 			\
 	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"			\
+	-DSYSCONFDIR=\"$(sysconfdir)\"	\
 	-DARP_DEBUG
 if WITH_GCRYPT
 NetworkManager_CPPFLAGS += $(LIBGCRYPT_CFLAGS)

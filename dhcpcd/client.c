@@ -492,8 +492,8 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 		char				 foobuf[512];
 		struct sockaddr_ll	 server_hw_addr;
 		int				 data_good = 0;
-		int min_data_len = (sizeof (struct iphdr) + sizeof (struct udphdr));
-
+		int				 min_data_len = (sizeof (struct iphdr) + sizeof (struct udphdr));
+		int				 int_err = RET_DHCP_TIMEOUT;
 
 		if (iface->cease)
 			goto out;
@@ -513,11 +513,11 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 
 			memset (&addr, 0, sizeof (struct sockaddr));
 			memcpy (addr.sa_data, iface->iface, strlen (iface->iface));
-			err = sendto (iface->sk, udp_send, udp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
-			if (iface->cease || ((err == -1) && (errno != EAGAIN)))
+			int_err = sendto (iface->sk, udp_send, udp_send_len, MSG_DONTWAIT, (struct sockaddr *)&addr, sizeof (struct sockaddr));
+			if (iface->cease || ((int_err == -1) && (errno != EAGAIN)))
 			{
 			#ifdef DEBUG
-				syslog (LOG_INFO, "DHCP: error sending, cease = %d, err = %d, errno = %d", iface->cease, err, errno);
+				syslog (LOG_INFO, "DHCP: error sending, cease = %d, err = %d, errno = %d", iface->cease, int_err, errno);
 			#endif
 				err = iface->cease ? RET_DHCP_CEASED : RET_DHCP_ERROR;
 				goto out;
@@ -530,7 +530,7 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 				err = RET_DHCP_TIMEOUT;
 				goto out;
 			}
-		} while ((err == -1) && (errno == EAGAIN));
+		} while ((int_err == -1) && (errno == EAGAIN));
 
 		/* Set up the future time at which point to stop waiting for data
 		 * on our socket and try the request again.  If that future point is
@@ -559,9 +559,9 @@ int dhcp_handle_transaction (dhcp_interface *iface, unsigned int expected_reply_
 			char		ethPacket[ETH_FRAME_LEN];
 
 			/* Wait for some kind of data to appear on the socket */
-			if ((err = peekfd (iface, recv_sk, min_data_len, &recv_end)) != RET_DHCP_SUCCESS)
+			if ((int_err = peekfd (iface, recv_sk, min_data_len, &recv_end)) != RET_DHCP_SUCCESS)
 			{
-				if (err == RET_DHCP_TIMEOUT)
+				if (int_err == RET_DHCP_TIMEOUT)
 					break;
 				goto out;
 			}

@@ -245,6 +245,8 @@ void dhcp_interface_free (dhcp_interface *iface)
 
 	if (iface->foo_sk >= 0)
 		close (iface->foo_sk);
+	if (iface->sk)
+		close (iface->sk);
 	free (iface->iface);
 	free (iface->client_options);
 	free (iface);

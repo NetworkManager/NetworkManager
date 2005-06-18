@@ -128,6 +128,102 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 
 
 /*
+ * get_current_profile_name
+ *
+ * Retrieve the current network profile, if any
+ *
+ */
+static char *get_current_profile_name (void)
+{
+	shvarFile *	file;
+	char *		buf;
+
+	if (!(file = svNewFile (SYSCONFDIR"/sysconfig/network")))
+		return NULL;
+
+	buf = svGetValue (file, "CURRENT_PROFILE");
+	if (!buf)
+		buf = strdup ("default");
+	svCloseFile (file);
+
+	return buf;
+}
+
+
+/*
+ * set_ip4_config_from_resolv_conf
+ *
+ * Add nameservers and search names from a resolv.conf format file.
+ *
+ */
+static void set_ip4_config_from_resolv_conf (NMDevice *dev, const char *filename)
+{
+	char *	contents = NULL;
+	char **	split_contents = NULL;
+	char **	split_line = NULL;
+	int		i, len;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (filename != NULL);
+
+	if (!g_file_get_contents (filename, &contents, NULL, NULL) || (contents == NULL))
+		return;
+
+	if (!(split_contents = g_strsplit (contents, "\n", 0)))
+		goto out;
+
+	for (split_line = split_contents; *split_line; split_line++)
+	{
+		char *line = *split_line;
+
+		/* Ignore comments */
+		if (!line || (line[0] == ';'))
+			continue;
+
+		line = g_strstrip (line);
+		if ((strncmp (line, "search", 6) == 0) && (strlen (line) > 6))
+		{
+			char *searches = g_strdup (line + 7);
+			char **split_searches = NULL;
+
+			if (!searches || !strlen (searches))
+				continue;
+
+			/* Allow space-separated search domains */
+			if ((split_searches = g_strsplit (searches, " ", 0)))
+			{
+				char **item = NULL;
+				int m, srch_len;
+
+				for (item = split_searches; *item; item++)
+					nm_system_device_add_domain_search (dev, *item);
+				g_strfreev (split_searches);
+			}
+			else
+			{
+				/* Only 1 item, add the whole line */
+				nm_system_device_add_domain_search (dev, searches);
+			}
+
+			g_free (searches);
+		}
+		else if ((strncmp (line, "nameserver", 10) == 0) && (strlen (line) > 10))
+		{
+			guint32	addr = (guint32) (inet_addr (line + 11));
+
+			if (addr != (guint32) -1)
+				nm_system_device_add_ip4_nameserver (dev, addr);
+		}
+	}
+
+	g_strfreev (split_contents);
+
+out:
+	g_free (contents);
+}
+
+
+/*
  * nm_system_device_setup_static_ip4_config
  *
  * Set up the device with a particular IPv4 address/netmask/gateway.
@@ -151,6 +247,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	char			*buf;
 	int			 err;
 	const char	*iface;
+	char * cur_profile_name = get_current_profile_name ();
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
@@ -207,6 +304,16 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 		goto error;
 	}
 	g_free (buf);
+
+	if (cur_profile_name)
+	{
+		char *filename = g_strdup_printf (SYSCONFDIR"/sysconfig/networking/profiles/%s/resolv.conf", cur_profile_name);
+		
+		set_ip4_config_from_resolv_conf (dev, filename);
+		g_free (filename);
+		g_free (cur_profile_name);
+	}
+
 	return (TRUE);
 
 error:
@@ -350,7 +457,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	char *buf;
 	unsigned char eui[8];
 
-	nm_device_get_hw_address(dev, eui);
+	nm_device_get_hw_address(dev, &eui[0]);
 
 	memmove(eui+5, eui+3, 3);
 	eui[3] = 0xff;

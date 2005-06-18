@@ -182,14 +182,13 @@ void nm_remove_device_from_list (NMData *data, const char *udi)
 				nm_device_set_removed (dev, TRUE);
 				nm_device_deactivate (dev, FALSE);
 				nm_device_worker_thread_stop (dev);
+				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				nm_device_unref (dev);
 
 				/* Remove the device entry from the device list and free its data */
 				data->dev_list = g_slist_remove_link (data->dev_list, elt);
-				nm_device_unref (elt->data);
 				g_slist_free (elt);
 				nm_policy_schedule_state_update (data);
-				nm_dbus_signal_device_status_change (data->dbus_connection, dev, DEVICE_LIST_CHANGE);
 				break;
 			}
 		}
@@ -413,6 +412,32 @@ void nm_schedule_status_signal_broadcast (NMData *data)
 }
 
 
+void nm_wireless_link_state_handle (NMDevice *dev, NMData *data)
+{
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (!nm_device_get_link_active (dev))
+	{
+		if (    nm_device_get_supports_wireless_scan (dev)
+			&& !data->forcing_device
+			&& data->state_modified_idle_id == 0)	
+		{
+			nm_device_update_best_ap (dev);
+		}
+		else
+		{
+			/* If we loose a link to the access point, then
+			 * look for another access point to connect to.
+			 */
+			if (    !nm_device_is_activating (dev)
+				&& !data->forcing_device
+				&& data->state_modified_idle_id == 0)	
+				nm_device_update_best_ap (dev);
+		}
+	}
+}
+
 /*
  * nm_link_state_monitor
  *
@@ -423,52 +448,52 @@ void nm_schedule_status_signal_broadcast (NMData *data)
 gboolean nm_link_state_monitor (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
+	GSList	*elt;
 
 	g_return_val_if_fail (data != NULL, TRUE);
+
+	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
+		return (TRUE);
 
 	/* Attempt to acquire mutex for device list iteration.
 	 * If the acquire fails, just ignore the device deletion entirely.
 	 */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
-		GSList	*elt;
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+		syslog(LOG_ERR, "nm_link_state_monitor() could not acquire device list mutex.");
+		return TRUE;
+	}
+
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		NMDevice	*dev = (NMDevice *)(elt->data);
+
+		if (dev)
 		{
-			NMDevice	*dev = (NMDevice *)(elt->data);
+			if (!nm_device_is_up (dev))
+				nm_device_bring_up (dev);
+			nm_device_update_link_active (dev);
 
-			if (dev)
+			if (dev == data->active_device)
 			{
-				if (!nm_device_is_up (dev))
-					nm_device_bring_up (dev);
-				nm_device_update_link_active (dev);
-
-				if (dev == data->active_device)
-				{
-					if (nm_device_is_wireless (dev) && !nm_device_get_link_active (dev))
-					{
-						/* If we loose a link to the access point, then
-						 * look for another access point to connect to.
-						 */
-						nm_device_update_best_ap (dev);
-					}
-				}
-				else
-				{
-					/* Ensure that the device has no IP address or routes.  This will
-					 * sometimes occur when a card gets inserted, and the system
-					 * initscripts will run to bring the card up, but they get around to
-					 * running _after_ we've been notified of insertion and cleared out
-					 * card info already.
-					 */
-					nm_system_device_flush_routes (dev);
-					if (nm_device_get_ip4_address (dev) != 0)
-						nm_system_device_flush_addresses (dev);
-				}
+				if (nm_device_is_wireless (dev))
+					nm_wireless_link_state_handle (dev, data);
+			}
+			else
+			{
+				/* Ensure that the device has no IP address or routes.  This will
+				 * sometimes occur when a card gets inserted, and the system
+				 * initscripts will run to bring the card up, but they get around to
+				 * running _after_ we've been notified of insertion and cleared out
+				 * card info already.
+				 */
+				nm_system_device_flush_routes (dev);
+				if (nm_device_get_ip4_address (dev) != 0)
+					nm_system_device_flush_addresses (dev);
 			}
 		}
-
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else syslog( LOG_ERR, "nm_link_state_monitor() could not acquire device list mutex." );
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	
 	return (TRUE);
 }
@@ -552,7 +577,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 
 	data->enable_test_devices = enable_test_devices;
 
-	data->scanning_enabled = TRUE;
+	data->scanning_method = NM_SCAN_METHOD_ALWAYS;
 	data->wireless_enabled = TRUE;
 
 	nm_policy_schedule_state_update (data);
@@ -585,14 +610,18 @@ static void nm_data_free (NMData *data)
 	g_main_loop_unref (data->main_loop);
 	g_main_context_unref (data->main_context);
 
+	g_io_channel_unref(data->sigterm_iochannel);
+
 	memset (data, 0, sizeof (NMData));
 }
 
 
 static void sigterm_handler (int signum)
 {
+        int ignore;
+
 	syslog (LOG_NOTICE, "Caught SIGINT/SIGTERM");
-	write (nm_data->sigterm_pipe[1], "X", 1);
+	ignore = write (nm_data->sigterm_pipe[1], "X", 1);
 }
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
@@ -730,7 +759,10 @@ int main( int argc, char *argv[] )
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
 	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
+	{
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
+		nm_dbus_update_wireless_scan_method (nm_data->dbus_connection, nm_data);
+	}
 
 	/* Right before we init hal, we have to make sure our mainloop integration function
 	 * knows about our GMainContext.  HAL doesn't give us any way to pass that into its
@@ -775,6 +807,8 @@ int main( int argc, char *argv[] )
 
 	/* Kill the watch functions */
 	g_source_remove (link_source_id);
+
+	nm_print_open_socks ();
 
 	/* Cleanup */
 	if (hal_shutdown (nm_data->hal_ctx) != 0)

@@ -49,6 +49,7 @@ typedef struct NMDeviceWirelessOptions
 	GMutex			*scan_mutex;
 	NMAccessPointList	*ap_list;
 	guint8			 scan_interval; /* seconds */
+	guint32			 last_scan;
 
 	NMAccessPoint		*best_ap;
 	GMutex			*best_ap_mutex;
@@ -105,7 +106,7 @@ struct NMDevice
 
 	GMainContext			*context;
 	GMainLoop				*loop;
-	gboolean				 worker_done;
+	GThread					*worker;
 	gboolean				 worker_started;
 	guint		 		 renew_timeout;
 	guint				 rebind_timeout;

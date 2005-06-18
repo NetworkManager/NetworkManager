@@ -41,6 +41,8 @@ void 		nmi_dbus_return_user_key				(DBusConnection *connection, const char *devi
 
 void 		nmi_dbus_return_vpn_password (DBusConnection *connection, DBusMessage *message, const char *password);
 
+void			nmi_dbus_signal_update_scan_method		(DBusConnection *connection);
+
 void			nmi_dbus_signal_update_network 		(DBusConnection *connection, const char *network, NMNetworkType type);
 
 #endif

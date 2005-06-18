@@ -1,3 +1,313 @@
+2005-06-17  Dan Williams <dcbw@redhat.com>
+
+	* Tag 0.3.5 release
+
+2005-06-17  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Alphabetize wireless networks in the applet menu
+
+2005-06-17  Dan Williams <dcbw@redhat.com>
+
+	Backport Wireless Scan Methods from HEAD
+
+2005-06-17  Dan Williams <dcbw@redhat.com>
+
+	Backport static IP DNS fixup patch from HEAD
+
+2005-06-17  Dan Williams <dcbw@redhat.com>
+
+	Backport Robert Love's applet beautification patch from HEAD
+
+2005-05-16  Dan Williams <dcbw@redhat.com>
+
+	* Remove unused variables
+
+2005-05-16  Dan Williams  <dcbw@redhat.com>
+
+	* dhcpcd/client.c
+		- (dhcp_handle_transaction): Fix condition that may have resulted
+			in incorrect return of RET_DHCP_SUCCESS when we really timed out.
+
+2005-05-05  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-dbus-nm.c: Fix misuse of a g_assert() (Colin Walters)
+
+	Patch from Bill Moss:
+	* src/NetworkManagerDevice.c:
+		- (nm_device_set_up_down): Fix return value checking of ioctl()
+	* src/NetworkManagerPolicy.c:
+		- (nm_policy_allowed_ap_list_update): Improve handling of
+			non-ESSID broadcasting access points
+	* src/NetworkManagerAPList.c:
+		- (nm_ap_list_remove_duplicate_essids):
+		  (nm_ap_list_merge_scanned_ap):
+			Improve handling of non-ESSID broadcasting access points
+
+	Patch from Tom Parker:
+	* src/NetworkManagerDevice.c:
+		- Use g_thread_join() rather than spinning when shutting down
+			device worker threads
+	* src/NetworkMangaer.c:
+		- (nm_data_free): unref the signal handler GIOChannel
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_unref): don't leak the list object
+
+	Patch from Peter Jones:
+		- Remove usage of varargs so that we work on PPC too
+
+2005-04-06  Dan Williams  <dcbw@redhat.com>
+
+	Add debug code for socket/file descriptor leaks.  We register every socket
+	that we open (except for stuff in dhcpcd/) for tracking, and print out the
+	list of sockets that we forgot to close on shutdown.  This also consolidates
+	about 4 places where we opened sockets into 1 function in NetworkManagerUtils.c
+
+2005-04-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_remove_ap_by_essid): new function
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_force_use): remove access points from the ignore list
+			when the user forces them
+
+2005-04-06  Dan Williams  <dcbw@redhat.com>
+
+	* dhcpcd/dhcpcd.c
+		- (dhcp_interface_free): fix a file descriptor leak that may have
+			caused network drivers to not unload due to refcounts > 0
+
+2005-04-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c:
+		- (nm_completion_scan_has_results): restore pre-completion-patch behavior
+			of only erroring after the second consecutive scan times out.  Also
+			don't exit when the card requires more time than we can give it, just
+			log the event and continue.
+
+2005-04-01  Dan Williams <dcbw@redhat.com>
+
+	Perform scans during device activation, if needed.  Both activation 
+	and scans run in the same GMainContext.  Therefore, if an access point
+	is not found by the time the device starts activation, it will not
+	be available until after activation.  We now try to scan during
+	activation (in nm_wa_test) every 15s so that all available access
+	points are more likely to be found and available for the activation
+	procedure.
+
+	Also change nm_wireless_link_state_handle() to only update the "best"
+	AP if we are not forcing a device and if we are not about to change
+	state.  This attempts to work around a race when forcing a device,
+	where the forced AP would get cleared out too soon by the link state
+	checking timeout in the main thread, and the activation attempt with
+	that AP would fail.
+
+2005-04-01  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_print_members): print out MAC addresses in text for,
+			not as a hex number
+
+2005-04-01  Dan Williams <dcbw@redhat.com>
+
+	* po/POTFILES.in
+		- Update with new translatables
+
+2005-03-31  Dan Williams <dcbw@redhat.com>
+
+	Tighten up handling of wireless devices that don't support wireless
+	scanning (ie, Orinoco).  Due to restructuring of code, these devices
+	hadn't been doing pseudo-scanning for a while either and would just
+	spin waiting for an access point.  They are now manual devices where
+	the user must choose the access point from the menu every time.  All
+	"allowed" access points are listed in the applet's menu regardless
+	of whether or not they can be seen by the card, since it can't scan
+	anyway.
+
+	* src/NetworkManager.c
+		- (nm_wireless_link_state_handle): new function, but only update
+			the "best" ap for non-scanning devices when its not activating,
+			and when no device is being forced on the card
+		- (nm_link_state_monitor): split wireless link state handling out
+			into separate function
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_copy_allowed_to_dev_list): new function
+		- (nm_device_new): populate non-scanning cards' AP lists with
+			access points from the "allowed" list
+		- (nm_device_new): don't start a scanning timeout for devices that
+			can't scan
+		- (nm_device_activation_schedule_finish): new parameter, should be
+			the AP that failed to be connected to, pass it on to the
+			activation finish function in NetworkManagerPolicy.c
+		- (nm_device_activate_wireless): don't ever try to get a new AP
+			for non-scanning devices, just fail.  The user must choose
+			a new access point manually.
+		- (nm_device_activate): grab the AP that failed connection and
+			pass it on
+		- (nm_device_update_best_ap): Clear the best AP if we don't have
+			a link to it, user must manually choose a new one
+		- (nm_device_do_pseudo_scan): remove function
+		- (nm_device_wireless_process_scan_results): remove bits for non-
+			scanning cards since they never get here
+		- (nm_device_wireless_scan): remove bits for non-scanning devices,
+			and fake the scan list for test devices a bit earlier
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): use the failed_ap that we get
+			passed rather than getting the best_ap from the card, which
+			may have changed since we were scheduled
+		- (nm_policy_allowed_ap_list_update): for non-scanning devices,
+			update their scan list directly from the allowed list when
+			we get updates to the allowed list from NetworkManagerInfo
+
+	* src/NetworkManagerPolicy.h
+		- New member for failed access point in NMActivationResult
+
+2005-03-31  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_scan): Fix leak of scan results in some
+			instances
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_essid): Work around Orinoco cards which need
+			extra time after setting the ESSID
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- Merge one more bit of Peter Jones' completion patch
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_force_use): Fix possible segfault
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- Use iw_get_ext() where we should rather than iw_set_ext()
+
+2005-03-29  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_up_down): remove check for unsupported devices
+			that caused NM to not bring devices up when they were
+			added to the device list.
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	Driver Notification patch: notifies the user when their driver
+		sucks.  Gives them the option to ignore further insertions
+		of the card that has the sucky driver.
+
+	* NetworkManager.h
+		- Remove the SEMI_SUPPORTED member from the NMDriverSupportLevel
+			enum and replace it with NO_CARRIER_DETECT and
+			NO_WIRELESS_SCAN
+
+	* panel-applet/NMWirelessApplet.[ch]
+		- Merge essid.glade -> wireless-applet.glade
+		- Implement the "Your driver sucks" notification dialog
+
+	* panel-applet/NMWirelessAppletDbus.c
+		- Change stuff from getSupportsCarrierDetect->getDriverSupportLevel
+		- Grab hardware address for each device from NM too
+		- Check whether the driver for each device sucks or not whenever
+			a new device is noticed
+
+	* panel-applet/NMWirelessAppletOtherNetworkDialog.c
+		- Deal with stuff being in wireless-applet.glade now rather than essid.glade
+
+	* src/NetworkManager.c
+		- Fix a double-unref on device removal
+
+	* src/NetworkManagerUtils.c
+		- Set appropriate driver support level on a device that doesn't
+			support scanning or carrier detection
+
+	* src/nm-dbus-device.c
+		- New "getHWAddress" dbus method on devices
+		- getSupportsCarrierDetect -> getDriverSupportLevel
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	Merge sleep functionality from HEAD
+
+	* panel-applet/NMWirelessApplet.c
+		- Applet now sticks around when there is no connection
+		- Hook up the "Stop/Start all wireless devices" function
+
+	* src/NetworkManager.c
+		- Don't perform wireless link state updates when asleep or
+			when wireless devices are stopped
+
+	* src/NetworkManagerDbus.c
+		- New "status" value: "asleep"
+
+	* src/NetworkManagerDevice.c
+		- Don't do wireless scans when asleep
+
+	* src/NetworkManagerPolicy.c
+		- When asleep, return no "best" device
+
+	* src/nm-dbus-nm.c
+		- New sleep/wake dbus APIs
+		- Actually hook up the wireless enable stuff so that stopping
+			all wireless devices works
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* Merge Peter Jones' completion patch, reducing latency and speeding
+		up wait times for device activation and wireless scanning
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	Patch from Bill Moss:
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_allowed_ap_list_update): merge properties
+			for all wireless devices on update, not just active device
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* panel-applet/NMWirelessApplet.c
+		- Add some more contributors to the About dialog
+
+2005-03-28  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManagerDevice.c
+		- (mdio_read): Fix two bugs that caused all devices to fail
+			the MII carrier detection support checks
+
+2005-03-22  Dan Williams <dcbw@redhat.com>
+
+	Patch from Bill Moss:
+	* src/NetworkManagerInfoDbus.c
+		- (nmi_dbus_update_network_auth_method, nmi_dbus_get_network_properties):
+			free leaked GConf values
+
+2005-03-12  Dan Williams <dcbw@redhat.com>
+
+	Patch from Nathaniel McCallum:
+	* src/NetworkManagerDevice.c
+		- (nm_device_set_wireless_config): Increase timeout for some devices
+
+2005-03-04  Dan Williams <dcbw@redhat.com>
+
+	Patch from Peter Jones:
+	- Make stuff work with gcc 4.0
+
+2005-02-28  Dan Williams <dcbw@redhat.com>
+
+	Tag STABLE_0_3_4_RELEASE
+
+	* configure.in:
+		- Bump version to 0.3.4
+
 2005-02-27  Jim Huang  <jserv@kaffe.org>
 
 	* configure.in: Added "zh_TW" (Traditional Chinese) to ALL_LINGUAS.

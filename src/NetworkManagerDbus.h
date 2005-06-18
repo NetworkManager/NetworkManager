@@ -60,6 +60,8 @@ void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMDevice *
 
 void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection);
 
+void			nm_dbus_update_wireless_scan_method	(DBusConnection *connection, NMData *data);
+
 NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
 
 gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
