@@ -3873,8 +3873,8 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		g_slist_free (outdated_list);
 	}
 
-	/* If the list changed, decrease our wireless scanning interval */
-	if (list_changed)
+	/* If the list changed or we are unassociated, decrease our wireless scanning interval */
+	if (list_changed || !nm_device_is_activated (dev))
 		dev->options.wireless.scan_interval = 20;
 	else
 		dev->options.wireless.scan_interval = MIN (60, dev->options.wireless.scan_interval + 10);

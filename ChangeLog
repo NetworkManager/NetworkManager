@@ -1,5 +1,11 @@
 2005-06-19  Dan Williams <dcbw@redhat.com>
 
+    * src/NetworkManagerDevice.c
+        - (nm_device_wireless_process_scan_results): scan every 20s when
+            disconnected and scanning is ALWAYS_SCAN or WHEN_UNASSOCIATED
+
+2005-06-19  Dan Williams <dcbw@redhat.com>
+
     * WEXT_DEBUG->IOCTL_DEBUG, extend checking to all ioctl() calls
 
 2005-06-18  Ray Strode <rstrode@redhat.com>
