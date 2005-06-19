@@ -1,3 +1,10 @@
+2005-06-18  Ray Strode <rstrode@redhat.com>
+
+	* src/nm-netlink-monitor.c 
+	(nm_netlink_monitor_event_handler): remove bogus < 0
+	check on unsigned value and return early if the kernel
+	didn't send any bytes.
+
 2005-06-17  Robert Love  <rml@novell.com>
 
 	* initscript/SUSE/networkmanager: Change the Provides and default

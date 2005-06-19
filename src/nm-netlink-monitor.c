@@ -607,14 +607,13 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 		return FALSE;
 	}
 
+	if (num_received_bytes == 0)
+		return TRUE;
+
 	/* Why does NLMSG_* use unsigned ints instead of unsigned longs
 	 * or size_t?
 	 */
 	num_bytes_to_process = (guint) num_received_bytes;
-
-	/* FIXME: This cannot be true */
-	if (num_bytes_to_process < 0)
-		return TRUE;
 
 	processing_is_done = FALSE;
 	for (header = (struct nlmsghdr *) received_bytes;
