@@ -28,6 +28,7 @@
 #include "NetworkManagerMain.h"
 #include "nm-ip4-config.h"
 
+/* #define IOCTL_DEBUG /* */
 
 typedef struct NMDevice	NMDevice;
 

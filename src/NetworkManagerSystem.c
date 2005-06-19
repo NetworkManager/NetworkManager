@@ -373,6 +373,7 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 	guint32		flags = up ? IFF_UP : ~IFF_UP;
 	NMSock *		sk;
 	gboolean		success = FALSE;
+	int			err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -382,7 +383,15 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 	/* Get flags already there */
 	memset (&ifr, 0, sizeof (struct ifreq));
 	memcpy (ifr.ifr_name, iface, strlen (iface));
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to GET IFFLAGS\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET IFFLAGS\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 	{
 		if (errno != ENODEV)
 			nm_warning ("nm_system_device_set_up_down_with_iface() could not get flags for device %s.  errno = %d", iface, errno );
@@ -394,7 +403,16 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 		{
 			ifr.ifr_flags &= ~IFF_UP;
 			ifr.ifr_flags |= IFF_UP & flags;
-			if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr) == -1)
+
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to SET IFFLAGS\n", nm_device_get_iface (dev));
+#endif
+			err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr);
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to SET IFFLAGS\n", nm_device_get_iface (dev));
+#endif
+
+			if (err == -1)
 			{
 				if (errno != ENODEV)
 					nm_warning ("nm_system_device_set_up_down_with_iface() could not bring device %s %s.  errno = %d", iface, (up ? "up" : "down"), errno);
@@ -422,10 +440,11 @@ static gboolean nm_system_device_set_ip4_address (NMDevice *dev, int ip4_address
 
 static gboolean nm_system_device_set_ip4_address_with_iface (NMDevice *dev, const char *iface, int ip4_address)
 {
-	struct ifreq		 ifr;
-	NMSock			*sk;
-	gboolean			 success = FALSE;
-	struct sockaddr_in	*p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	struct ifreq		ifr;
+	NMSock *			sk;
+	gboolean			success = FALSE;
+	struct sockaddr_in *p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	int				err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -436,7 +455,16 @@ static gboolean nm_system_device_set_ip4_address_with_iface (NMDevice *dev, cons
 	memcpy (ifr.ifr_name, iface, strlen (iface));
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_address;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFADDR, &ifr) == -1)
+
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFADDR\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFADDR, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFADDR\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 		nm_warning ("nm_system_device_set_ip4_address_by_iface (%s): failed to set IPv4 address!", iface);
 	else
 	{
@@ -447,7 +475,7 @@ static gboolean nm_system_device_set_ip4_address_with_iface (NMDevice *dev, cons
 	}
 
 	nm_dev_sock_close (sk);
-	return (success);
+	return success;
 }
 
 
@@ -466,10 +494,11 @@ static gboolean nm_system_device_set_ip4_ptp_address (NMDevice *dev, int ip4_ptp
 
 static gboolean nm_system_device_set_ip4_ptp_address_with_iface (NMDevice *dev, const char *iface, int ip4_ptp_address)
 {
-	struct ifreq		 ifr;
-	NMSock			*sk;
-	gboolean			 success = FALSE;
-	struct sockaddr_in	*p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	struct ifreq		ifr;
+	NMSock *			sk;
+	gboolean			success = FALSE;
+	struct sockaddr_in *p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	int				err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -482,7 +511,15 @@ static gboolean nm_system_device_set_ip4_ptp_address_with_iface (NMDevice *dev, 
 	p->sin_port = 0;
 	p->sin_addr.s_addr = ip4_ptp_address;
 
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFDSTADDR, &ifr) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFDSTADDR\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFDSTADDR, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFDSTADDR\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 		nm_warning ("nm_system_device_set_ip4_ptp_address (%s): failed to set IPv4 point-to-point address!", iface);
 	else
 	{
@@ -490,11 +527,29 @@ static gboolean nm_system_device_set_ip4_ptp_address_with_iface (NMDevice *dev, 
 
 		memset (&ifr2, 0, sizeof (struct ifreq));
 		memcpy (ifr2.ifr_name, iface, strlen (iface));
-		if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr2) >= 0)
+
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET IFFLAGS (ptp)\n", nm_device_get_iface (dev));
+#endif
+		err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr2);
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET IFFLAGS (ptp)\n", nm_device_get_iface (dev));
+#endif
+
+		if (err >= 0)
 		{
 			memcpy (ifr2.ifr_name, iface, strlen (iface));
 			ifr2.ifr_flags |= IFF_POINTOPOINT;
-			if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr2) >= 0)
+
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to SET IFFLAGS (ptp)\n", nm_device_get_iface (dev));
+#endif
+			err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFFLAGS, &ifr2);
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to SET IFFLAGS (ptp)\n", nm_device_get_iface (dev));
+#endif
+
+			if (err >= 0)
 			{
 				success = TRUE;
 				nm_info ("Your Point-to-Point IP address = %u.%u.%u.%u",
@@ -528,10 +583,11 @@ static gboolean nm_system_device_set_ip4_netmask (NMDevice *dev, int ip4_netmask
 
 static gboolean nm_system_device_set_ip4_netmask_with_iface (NMDevice *dev, const char *iface, int ip4_netmask)
 {
-	struct ifreq		 ifr;
-	NMSock			*sk;
-	gboolean			 success = FALSE;
-	struct sockaddr_in	*p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	struct ifreq		ifr;
+	NMSock *			sk;
+	gboolean			success = FALSE;
+	struct sockaddr_in *p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	int				err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -542,13 +598,21 @@ static gboolean nm_system_device_set_ip4_netmask_with_iface (NMDevice *dev, cons
 	memcpy (ifr.ifr_name, iface, strlen (iface));
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_netmask;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFNETMASK, &ifr) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFNETMASK\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFNETMASK, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFNETMASK\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 netmask! errno = %s", iface, strerror (errno));
 	else
 		success = TRUE;
 
 	nm_dev_sock_close (sk);
-	return (success);
+	return success;
 }
 
 
@@ -567,10 +631,11 @@ static gboolean nm_system_device_set_ip4_broadcast (NMDevice *dev, int ip4_broad
 
 static gboolean nm_system_device_set_ip4_broadcast_with_iface (NMDevice *dev, const char *iface, int ip4_broadcast)
 {
-	struct ifreq		 ifr;
-	NMSock			*sk;
-	gboolean			 success = FALSE;
-	struct sockaddr_in	*p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	struct ifreq		ifr;
+	NMSock *			sk;
+	gboolean			success = FALSE;
+	struct sockaddr_in *p = (struct sockaddr_in *)&(ifr.ifr_addr);
+	int				err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -581,13 +646,21 @@ static gboolean nm_system_device_set_ip4_broadcast_with_iface (NMDevice *dev, co
 	memcpy (ifr.ifr_name, iface, strlen (iface));
 	p->sin_family = AF_INET;
 	p->sin_addr.s_addr = ip4_broadcast;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFBRDADDR, &ifr) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFBRDADDR\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFBRDADDR, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFBRDADDR\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 		nm_warning ("nm_system_device_set_ip4_netmask (%s): failed to set IPv4 broadcast address!", iface);
 	else
 		success = TRUE;
 
 	nm_dev_sock_close (sk);
-	return (success);
+	return success;
 }
 
 
@@ -619,9 +692,10 @@ static gboolean nm_system_device_set_mtu (NMDevice *dev, guint16 in_mtu)
 
 static gboolean nm_system_device_set_mtu_with_iface (NMDevice *dev, const char *iface, guint16 in_mtu)
 {
-	struct ifreq             ifr;
-	NMSock                  *sk;
-	gboolean                         success = FALSE;
+	struct ifreq   ifr;
+	NMSock *		sk;
+	gboolean		success = FALSE;
+	int			err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -631,13 +705,21 @@ static gboolean nm_system_device_set_mtu_with_iface (NMDevice *dev, const char *
 	memset (&ifr, 0, sizeof (struct ifreq));
 	memcpy (ifr.ifr_name, iface, strlen (iface));
 	ifr.ifr_mtu = in_mtu;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCSIFMTU, &ifr) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFMTU\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCSIFMTU, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to SET IFMTU\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 		nm_warning ("nm_system_device_set_mtu (%s): failed to set mtu! errno = %s", iface, strerror (errno));
 	else
 		success = TRUE;
 
 	nm_dev_sock_close (sk);
-	return (success);
+	return success;
 }
 
 static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const char *iface, int ip4_gateway, int ip4_dest, int ip4_netmask)
@@ -646,6 +728,7 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 	gboolean			success = FALSE;
 	struct rtentry		rtent;
 	struct sockaddr_in *p;
+	int				err;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -667,7 +750,15 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 	rtent.rt_window	= 0;
 	rtent.rt_flags		= RTF_UP | RTF_GATEWAY | (rtent.rt_window ? RTF_WINDOW : 0);
 
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent) == -1)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
 	{
 		if (errno == ENETUNREACH)	/* possibly gateway is over the bridge */
 		{						/* try adding a route to gateway first */
@@ -686,9 +777,25 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 			rtent2.rt_metric	= 0;
 			rtent2.rt_flags	= RTF_UP | RTF_HOST;
 
-			if (ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2) == 0 )
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
+#endif
+			err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
+#endif
+
+			if (err == 0)
 			{
-				if (ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent) == 0 )
+#ifdef IOCTL_DEBUG
+				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
+#endif
+				err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
+#ifdef IOCTL_DEBUG
+				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
+#endif
+
+				if (err == 0)
 					success = TRUE;
 				else
 					nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! errno = %d", iface, errno);

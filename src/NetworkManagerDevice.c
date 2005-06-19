@@ -100,7 +100,13 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET IWNAME\n", nm_device_get_iface (dev));
+#endif
 		err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIWNAME, ioctl_buf);
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: Done with GET IWNAME\n", nm_device_get_iface (dev));
+#endif
 		nm_dev_sock_close (sk);
 	}
 	return (err == 0);
@@ -767,7 +773,7 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 	 * address check using this check on IWNAME.  Its faster.
 	 */
 	memset (&wrq, 0, sizeof (struct iwreq));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWNAME.", nm_device_get_iface (dev));
 #endif
 	if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWNAME, &wrq) >= 0)
@@ -787,7 +793,7 @@ static gboolean nm_device_wireless_is_associated (NMDevice *dev)
 		 * Is there a better way?  Some cards don't work too well with this check, ie
 		 * Lucent WaveLAN.
 		 */
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWAP.", nm_device_get_iface (dev));
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
@@ -937,7 +943,7 @@ char * nm_device_get_essid (NMDevice *dev)
 	{
 		wireless_config	info;
 
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 		nm_info ("%s: About to GET 'basic config' for ESSID.", nm_device_get_iface (dev));
 #endif
 		err = iw_get_basic_config (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &info);
@@ -996,7 +1002,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 		wreq.u.essid.length	 = strlen (safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
 	
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWESSID.", nm_device_get_iface (dev));
 #endif
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWESSID, &wreq)) == -1)
@@ -1040,7 +1046,7 @@ double nm_device_get_frequency (NMDevice *dev)
 	{
 		struct iwreq		wrq;
 
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWFREQ.", nm_device_get_iface (dev));
 #endif
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
@@ -1111,7 +1117,7 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
 			wrq.u.freq.flags = IW_FREQ_FIXED;
 			iw_float2freq (freq, &wrq.u.freq);
 		}
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWFREQ.", nm_device_get_iface (dev));
 #endif
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWFREQ, &wrq)) == -1)
@@ -1155,7 +1161,7 @@ int nm_device_get_bitrate (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWRATE.", nm_device_get_iface (dev));
 #endif
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
@@ -1203,7 +1209,7 @@ void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 			wrq.u.bitrate.fixed = 0;
 		}
 		/* Silently fail as not all drivers support setting bitrate yet (ipw2x00 for example) */
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWRATE.", nm_device_get_iface (dev));
 #endif
 		iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
@@ -1245,7 +1251,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWAP.", nm_device_get_iface (dev));
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWAP, &wrq) >= 0)
@@ -1333,7 +1339,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 
 		if (set_key)
 		{
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWENCODE.", nm_device_get_iface (dev));
 #endif
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWENCODE, &wreq) == -1)
@@ -1411,11 +1417,11 @@ void nm_device_update_signal_strength (NMDevice *dev)
 	{
 		memset (&range, 0, sizeof (iwrange));
 		memset (&stats, 0, sizeof (iwstats));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET 'iwrange'.", nm_device_get_iface (dev));
 #endif
 		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0);
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET 'iwstats'.", nm_device_get_iface (dev));
 #endif
 		if (iw_get_stats (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &stats, &range, has_range) == 0)
@@ -1477,10 +1483,13 @@ void nm_device_update_ip4_address (NMDevice *dev)
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFADDR.", nm_device_get_iface (dev));
 #endif
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFADDR, &req);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET IFADDR.", nm_device_get_iface (dev));
+#endif
 	nm_dev_sock_close (sk);
 	if (err != 0)
 		return;
@@ -1541,10 +1550,13 @@ void nm_device_update_hw_address (NMDevice *dev)
 	
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFHWADDR.", nm_device_get_iface (dev));
 #endif
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET IFHWADDR.", nm_device_get_iface (dev));
+#endif
 	nm_dev_sock_close (sk);
 	if (err != 0)
 		return;
@@ -1600,10 +1612,13 @@ gboolean nm_device_is_up (NMDevice *dev)
 
 	/* Get device's flags */
 	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFFLAGS.", nm_device_get_iface (dev));
 #endif
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET IFFLAGS.", nm_device_get_iface (dev));
+#endif
 	nm_dev_sock_close (sk);
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
@@ -1728,7 +1743,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 		int			err;
 
 		memset (&wrq, 0, sizeof (struct iwreq));
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IWMODE.", nm_device_get_iface (dev));
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWMODE, &wrq) == 0)
@@ -1795,7 +1810,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 		}
 		if (mode_good)
 		{
-#ifdef WEXT_DEBUG
+#ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWMODE.", nm_device_get_iface (dev));
 #endif
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWMODE, &wreq) == 0)
@@ -4150,12 +4165,18 @@ static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to ETHTOOL\n", nm_device_get_iface (dev));
+#endif
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
 	supports_ethtool = TRUE;
 
 out:
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with ETHTOOL\n", nm_device_get_iface (dev));
+#endif
 	nm_dev_sock_close (sk);
 	return (supports_ethtool);
 }
@@ -4167,9 +4188,10 @@ out:
 /**************************************/
 #include <linux/mii.h>
 
-static int mdio_read (NMSock *sk, struct ifreq *ifr, int location)
+static int mdio_read (NMDevice *dev, NMSock *sk, struct ifreq *ifr, int location)
 {
 	struct mii_ioctl_data *mii;
+	int val = -1;
 
 	g_return_val_if_fail (sk != NULL, -1);
 	g_return_val_if_fail (ifr != NULL, -1);
@@ -4177,18 +4199,25 @@ static int mdio_read (NMSock *sk, struct ifreq *ifr, int location)
 	mii = (struct mii_ioctl_data *) &(ifr->ifr_data);
 	mii->reg_num = location;
 
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIREG, ifr) < 0)
-		return -1;
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to GET MIIREG\n", nm_device_get_iface (dev));
+#endif
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIREG, ifr) >= 0)
+		val = mii->val_out;
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET MIIREG\n", nm_device_get_iface (dev));
+#endif
 
-	return (mii->val_out);
+	return val;
 }
 
 static gboolean supports_mii_carrier_detect (NMDevice *dev)
 {
-	NMSock		*sk;
+	NMSock *		sk;
 	struct ifreq	ifr;
 	int			bmsr;
 	gboolean		supports_mii = FALSE;
+	int			err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -4199,16 +4228,23 @@ static gboolean supports_mii_carrier_detect (NMDevice *dev)
 	}
 
 	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIPHY, &ifr) < 0)
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to GET MIIPHY\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIPHY, &ifr);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: Done with GET MIIPHY\n", nm_device_get_iface (dev));
+#endif
+	if (err < 0)
 		goto out;
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	bmsr = mdio_read (sk, &ifr, MII_BMSR);
+	bmsr = mdio_read (dev, sk, &ifr, MII_BMSR);
 	supports_mii = (bmsr != -1) ? TRUE : FALSE;
 
 out:
 	nm_dev_sock_close (sk);
-	return (supports_mii);	
+	return supports_mii;	
 }
 
 /****************************************/

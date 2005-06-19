@@ -1,3 +1,7 @@
+2005-06-19  Dan Williams <dcbw@redhat.com>
+
+    * WEXT_DEBUG->IOCTL_DEBUG, extend checking to all ioctl() calls
+
 2005-06-18  Ray Strode <rstrode@redhat.com>
 
 	* src/nm-netlink-monitor.c 
