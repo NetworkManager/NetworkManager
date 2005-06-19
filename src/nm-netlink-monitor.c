@@ -576,14 +576,14 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 	guint num_bytes_to_process;
 	struct nlmsghdr *header;
 
-	if (io_condition == NM_NETLINK_MONITOR_ERROR_CONDITIONS)
+	if (io_condition & NM_NETLINK_MONITOR_ERROR_CONDITIONS)
 		return nm_netlink_monitor_error_handler (channel, io_condition, monitor);
-	else if (io_condition == NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)
+	else if (io_condition & NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)
 		return nm_netlink_monitor_disconnect_handler (channel, io_condition, monitor);
 
 	g_return_val_if_fail (!(io_condition &
 			        ~(NM_NETLINK_MONITOR_EVENT_CONDITIONS)),
-			      TRUE);
+			      FALSE);
 
 	error = NULL;
 
@@ -712,7 +712,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 			g_free (interface_name);
 		}
 	}
-	g_free(received_bytes);
+	g_free (received_bytes);
 
 	return TRUE;
 }
@@ -722,9 +722,20 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 				  GIOCondition      io_condition,
 				  NmNetlinkMonitor *monitor)
 {
+	GError *socket_error;
+ 
 	g_return_val_if_fail (!(io_condition &
 			      ~(NM_NETLINK_MONITOR_ERROR_CONDITIONS)),
-			      TRUE);
+			      FALSE);
+
+	socket_error = 
+	    g_error_new (NM_NETLINK_MONITOR_ERROR,
+                         NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
+			 _("error occured while waiting for data on socket"));
+
+	g_signal_emit (G_OBJECT (monitor), 
+		       nm_netlink_monitor_signals[ERROR],
+		       0, socket_error);
 	return TRUE;
 }
 
@@ -736,6 +747,6 @@ nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
 
 	g_return_val_if_fail (!(io_condition & 
 			      ~(NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)),
-			      TRUE);
+			      FALSE);
 	return FALSE;
 }

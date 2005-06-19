@@ -1,6 +1,24 @@
 2005-06-18  Ray Strode <rstrode@redhat.com>
 
 	* src/nm-netlink-monitor.c 
+	(nm_netlink_monitor_event_handler): check for the presence
+	of either error condition not both. 
+	
+	(nm_netlink_monitor_error_handler): emit error signal if
+	error occurs.
+
+	(nm_netlink_monitor_event_handler),
+	(nm_netlink_monitor_error_handler),
+	(nm_netlink_monitor_disconnect_handler): if an 
+	assertion fails disconnect the event handler to prevent 
+	infinite loops.
+
+	* src/nm-netlink-monitor.h: add new error condition
+	NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA
+
+2005-06-18  Ray Strode <rstrode@redhat.com>
+
+	* src/nm-netlink-monitor.c 
 	(nm_netlink_monitor_event_handler): remove bogus < 0
 	check on unsigned value and return early if the kernel
 	didn't send any bytes.
