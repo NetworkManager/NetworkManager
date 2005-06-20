@@ -22,3 +22,6 @@ depcomp
 install-sh
 ltmain.sh
 missing
+intltool-extract
+intltool-merge
+intltool-update
