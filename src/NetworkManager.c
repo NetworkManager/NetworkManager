@@ -315,7 +315,7 @@ static void nm_add_initial_devices (NMData *data)
 	DBusError	error;
 
 	g_return_if_fail (data != NULL);
-	
+
 	dbus_error_init (&error);
 	/* Grab a list of network devices */
 	net_devices = libhal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices, &error);
