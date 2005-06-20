@@ -1,12 +1,23 @@
+2005-06-20  Robert Love  <rml@novell.com>
+
+	* Makefile.am: Add missing intltool-foo.in generated files to
+	  EXTRA_DIST so that 'distcheck' works.  Also add DISTCLEANFILES
+	  with the start of stuff to cleanup on 'distclea'.
+	* configure.in: add AC_PROG_INTLTOOL macro so that we do the intltool
+	  stuff right and 'distcheck' works.
+	* po/POTFILES.in: Remove examples/python/systray/eggtrayicon.c.  If
+	  we keep it, we need to add all of examples/* to EXTRA_DIST and do
+	  Makefile.am for each.  And systray/Makefile needs to be redone.
+
 2005-06-19  Dan Williams <dcbw@redhat.com>
 
-    * src/NetworkManagerDevice.c
-        - (nm_device_wireless_process_scan_results): scan every 20s when
-            disconnected and scanning is ALWAYS_SCAN or WHEN_UNASSOCIATED
+	* src/NetworkManagerDevice.c
+	- (nm_device_wireless_process_scan_results): scan every 20s when
+	  disconnected and scanning is ALWAYS_SCAN or WHEN_UNASSOCIATED
 
 2005-06-19  Dan Williams <dcbw@redhat.com>
 
-    * WEXT_DEBUG->IOCTL_DEBUG, extend checking to all ioctl() calls
+	* WEXT_DEBUG->IOCTL_DEBUG, extend checking to all ioctl() calls
 
 2005-06-18  Ray Strode <rstrode@redhat.com>
 

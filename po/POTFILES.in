@@ -1,6 +1,5 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-examples/python/systray/eggtrayicon.c
 gnome/applet/applet-dbus-info.c
 gnome/applet/applet-dbus.c
 gnome/applet/applet.c
