@@ -1,7 +1,9 @@
-/* NetworkManager -- Network link manager
+/*
+ * NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
  * Kay Sievers <kay.sievers@suse.de>
+ * Robert Love <rml@novell.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +28,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
@@ -317,7 +320,6 @@ void nm_system_restart_mdns_responder (void)
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
 	char *buf;
-	char	*addr;
 	struct ether_addr hw_addr;
 	unsigned char eui[8];
 
@@ -438,7 +440,8 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	FILE *f = NULL;
 	char buffer[512];
 	gboolean error = FALSE;
-	int i, len;
+	unsigned int i;
+	int len;
 	struct in_addr temp_addr;
 	char *ip_str;
 
@@ -519,12 +522,12 @@ found:
 		}
 		else
 		{
-			guint32	addr = nm_ip4_config_get_address (sys_data->config);
+			guint32	ip4addr = nm_ip4_config_get_address (sys_data->config);
 
 			/* Make a default netmask if we have an IP address */
-			if (((ntohl (addr) & 0xFF000000) >> 24) <= 127)
+			if (((ntohl (ip4addr) & 0xFF000000) >> 24) <= 127)
 				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFF000000));
-			else if (((ntohl (addr) & 0xFF000000) >> 24) <= 191)
+			else if (((ntohl (ip4addr) & 0xFF000000) >> 24) <= 191)
 				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFF0000));
 			else
 				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFFFF00));
@@ -602,7 +605,7 @@ out:
 	len = nm_ip4_config_get_num_nameservers (sys_data->config);
 	for (i = 0; i < len; i++)
 	{
-		guint		ns_addr = nm_ip4_config_get_nameserver (sys_data->config, i);
+		guint ns_addr = nm_ip4_config_get_nameserver (sys_data->config, i);
 
 		temp_addr.s_addr = ns_addr;
 		ip_str = g_strdup (inet_ntoa (temp_addr));

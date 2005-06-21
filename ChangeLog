@@ -1,6 +1,7 @@
 2005-06-21  Robert Love <rml@novell.com>
 
-	* initscript/SUSE/networkmanager: update
+	* initscript/SUSE/networkmanager: update.
+	* src/backends/NetworkManagerSuSE.c: cleanup.
 
 2005-06-21  Robert Love <rml@novell.com>
 
