@@ -711,7 +711,7 @@ typedef struct GetOneNetworkCBData
 } GetOneNetworkCBData;
 
 
-void free_get_one_network_cb_data (GetOneNetworkCBData *data)
+static void free_get_one_network_cb_data (GetOneNetworkCBData *data)
 {
 	if (data)
 	{
@@ -731,7 +731,7 @@ typedef struct GetNetworksCBData
 } GetNetworksCBData;
 
 
-void free_get_networks_cb_data (GetNetworksCBData *data)
+static void free_get_networks_cb_data (GetNetworksCBData *data)
 {
 	if (data)
 	{
@@ -748,7 +748,7 @@ void free_get_networks_cb_data (GetNetworksCBData *data)
  * Add a new NMAccessPoint to the allowed list with the correct properties
  *
  */
-void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data)
+static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data)
 {
 	GetOneNetworkCBData *	cb_data = (GetOneNetworkCBData *)user_data;
 	DBusMessage *			reply;
@@ -856,7 +856,7 @@ out:
  * Async callback from nm_dbus_get_networks
  *
  */
-void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
+static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	DBusMessageIter	iter, array_iter;

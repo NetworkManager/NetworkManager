@@ -404,7 +404,7 @@ void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char
  * notifications for from GConf.
  *
  */
-GSList *nmwa_driver_notify_get_ignored_list (NMWirelessApplet *applet)
+static GSList *nmwa_driver_notify_get_ignored_list (NMWirelessApplet *applet)
 {
 	char			*key;
 	GConfValue	*value;
@@ -435,7 +435,7 @@ GSList *nmwa_driver_notify_get_ignored_list (NMWirelessApplet *applet)
  * ignore driver notifications for a particular device.
  *
  */
-gboolean nmwa_driver_notify_is_device_ignored (NMWirelessApplet *applet, NetworkDevice *dev)
+static gboolean nmwa_driver_notify_is_device_ignored (NMWirelessApplet *applet, NetworkDevice *dev)
 {
 	gboolean		found = FALSE;
 	GSList *		mac_list = NULL;
@@ -477,7 +477,7 @@ gboolean nmwa_driver_notify_is_device_ignored (NMWirelessApplet *applet, Network
  * in GConf.  Stores user's pref for "Don't remind me".
  *
  */
-void nmwa_driver_notify_ignore_device (NMWirelessApplet *applet, NetworkDevice *dev)
+static void nmwa_driver_notify_ignore_device (NMWirelessApplet *applet, NetworkDevice *dev)
 {
 	gboolean		found = FALSE;
 	GSList *		new_mac_list = NULL;
@@ -519,13 +519,13 @@ void nmwa_driver_notify_ignore_device (NMWirelessApplet *applet, NetworkDevice *
 	g_slist_free (new_mac_list);
 }
 
-gboolean nmwa_driver_notify_dialog_delete_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
+static gboolean nmwa_driver_notify_dialog_delete_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
 	gtk_widget_destroy (widget);
 	return FALSE;
 }
 
-gboolean nmwa_driver_notify_dialog_destroy_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
+static gboolean nmwa_driver_notify_dialog_destroy_cb (GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
 	DriverNotifyCBData	*cb_data = (DriverNotifyCBData *)(user_data);
 	NetworkDevice		*dev;
@@ -545,7 +545,7 @@ gboolean nmwa_driver_notify_dialog_destroy_cb (GtkWidget *widget, GdkEvent *even
 }
 
 
-gboolean nmwa_driver_notify_ok_cb (GtkButton *button, gpointer user_data)
+static gboolean nmwa_driver_notify_ok_cb (GtkButton *button, gpointer user_data)
 {
 	DriverNotifyCBData	*cb_data = (DriverNotifyCBData *)(user_data);
 	NetworkDevice		*dev;
@@ -962,7 +962,7 @@ static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
  * pop up a warning or error dialog with certain text
  *
  */
-gboolean show_warning_dialog (char *mesg)
+static gboolean show_warning_dialog (char *mesg)
 {
 	GtkWidget	*	dialog;
 	guint32		timestamp;
@@ -1372,7 +1372,7 @@ typedef struct AddNetworksCB
  * nmwa_add_networks_helper
  *
  */
-void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointer user_data)
+static void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointer user_data)
 {
 	AddNetworksCB *	cb_data = (AddNetworksCB *)user_data;
 	NMNetworkMenuItem *	item;
@@ -1405,7 +1405,7 @@ void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointe
  * nmwa_has_encrypted_networks_helper
  *
  */
-void nmwa_has_encrypted_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointer user_data)
+static void nmwa_has_encrypted_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointer user_data)
 {
 	gboolean * has_encrypted = user_data;
 

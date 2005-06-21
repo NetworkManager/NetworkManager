@@ -82,6 +82,9 @@ gboolean
 nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 				    GError	     **error);
 
+void
+nm_netlink_monitor_close_connection (NmNetlinkMonitor  *monitor);
+
 void	nm_netlink_monitor_attach	(NmNetlinkMonitor	*monitor,
 					 GMainContext		*context);
 void	nm_netlink_monitor_detach	(NmNetlinkMonitor	*monitor);

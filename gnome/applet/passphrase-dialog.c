@@ -100,7 +100,7 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
  * clear the passphrase entry, and hide the dialog.
  *
  */
-void nmi_passphrase_dialog_clear (GtkWidget *dialog)
+static void nmi_passphrase_dialog_clear (GtkWidget *dialog)
 {
 	char *		data;
 	GtkWidget *	entry = NULL;
@@ -143,7 +143,7 @@ void nmi_passphrase_dialog_clear (GtkWidget *dialog)
  * key type.
  *
  */
-void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
+static void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
 {
 	GtkWidget *	dialog = gtk_widget_get_toplevel (key_type_combo);
 
@@ -181,7 +181,7 @@ void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gp
  * to NetworkManager.  Get rid of the dialog.
  *
  */
-void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
+static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
 {
 	GtkWidget *		dialog = gtk_widget_get_toplevel (ok_button);
 	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
@@ -261,7 +261,7 @@ void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
  * and get rid of the dialog.
  *
  */
-void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer user_data)
+static void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer user_data)
 {
 	GtkWidget *		dialog = gtk_widget_get_toplevel (cancel_button);
 	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;

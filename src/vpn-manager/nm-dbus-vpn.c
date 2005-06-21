@@ -321,7 +321,7 @@ typedef struct UpdateOneVPNCBData
 } UpdateOneVPNCBData;
 
 
-void free_update_one_vpn_cb_data (UpdateOneVPNCBData *data)
+static void free_update_one_vpn_cb_data (UpdateOneVPNCBData *data)
 {
 	if (data)
 		g_free (data->vpn);
@@ -334,7 +334,7 @@ void free_update_one_vpn_cb_data (UpdateOneVPNCBData *data)
  * Retrieve and add to our VPN Manager one VPN connection from NMI.
  *
  */
-void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *user_data)
+static void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *user_data)
 {
 	UpdateOneVPNCBData *	cb_data = (UpdateOneVPNCBData *) user_data;
 	DBusMessage *			reply;
@@ -601,7 +601,6 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
 	DBusMessage		*reply = NULL;
 	DBusError			 error;
 	const char		*name;
-	const char		*user_name;
 	gboolean			 good = FALSE;
 	NMVPNConnection	*vpn_con;
 

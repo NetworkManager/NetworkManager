@@ -461,7 +461,7 @@ static char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
  * Blacklist certain wireless devices.
  *
  */
-NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
+static NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
 {
 	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;
@@ -500,7 +500,7 @@ NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, N
  * Blacklist certain devices.
  *
  */
-NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
+static NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
 {
 	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
 	char					*driver_name = NULL;

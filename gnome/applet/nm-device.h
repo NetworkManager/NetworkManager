@@ -70,8 +70,6 @@ const char *			network_device_get_nm_path				(NetworkDevice *dev);
 gint					network_device_get_strength				(NetworkDevice *dev);
 void					network_device_set_strength				(NetworkDevice *dev, gint strength);
 
-const char *			network_device_get_iface					(NetworkDevice *dev);
-
 const char *			network_device_get_hal_udi				(NetworkDevice *dev);
 void					network_device_set_hal_udi				(NetworkDevice *dev, const char *hal_udi);
 

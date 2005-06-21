@@ -133,7 +133,7 @@ static GtkTreeModel *create_wireless_adapter_model (NMWirelessApplet *applet)
  * key type.
  *
  */
-void nmwa_other_network_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
+static void nmwa_other_network_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
 {
 	GtkLabel		*entry_label;
 	int			 combo_choice;
@@ -168,7 +168,7 @@ void nmwa_other_network_dialog_key_type_combo_changed (GtkWidget *key_type_combo
  * widget's status.
  *
  */
-void nmwa_other_network_dialog_enc_check_toggled (GtkWidget *enc_check_button, gpointer user_data)
+static void nmwa_other_network_dialog_enc_check_toggled (GtkWidget *enc_check_button, gpointer user_data)
 {
 	GladeXML		*xml = (GladeXML *)user_data;
 	GtkComboBox	*combo;

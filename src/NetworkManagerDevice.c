@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <string.h>
 
+#include "autoip.h"
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDevice.h"
@@ -42,8 +43,6 @@
 #include "nm-dhcp-manager.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
-
-extern gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip);
 
 /* Local static prototypes */
 static gpointer nm_device_worker (gpointer user_data);
@@ -575,7 +574,7 @@ void nm_device_set_removed (NMDevice *dev, const gboolean removed)
  * to get a link, based on the # of frequencies it has to
  * scan.
  */
-gint nm_device_get_association_pause_value (NMDevice *dev)
+static gint nm_device_get_association_pause_value (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, -1);
 	g_return_val_if_fail (nm_device_is_wireless (dev), -1);
@@ -1029,7 +1028,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
  * For wireless devices, get the frequency we broadcast/receive on.
  *
  */
-double nm_device_get_frequency (NMDevice *dev)
+static double nm_device_get_frequency (NMDevice *dev)
 {
 	NMSock	*sk;
 	int		 err;
@@ -1068,7 +1067,7 @@ double nm_device_get_frequency (NMDevice *dev)
  * A frequency <= 0 means "auto".
  *
  */
-void nm_device_set_frequency (NMDevice *dev, const double freq)
+static void nm_device_set_frequency (NMDevice *dev, const double freq)
 {
 	NMSock	*sk;
 	int		 err;
@@ -1146,7 +1145,7 @@ void nm_device_set_frequency (NMDevice *dev, const double freq)
  * Returned value is rate in KHz.
  *
  */
-int nm_device_get_bitrate (NMDevice *dev)
+static int nm_device_get_bitrate (NMDevice *dev)
 {
 	NMSock		*sk;
 	int			 err = -1;
@@ -1179,7 +1178,7 @@ int nm_device_get_bitrate (NMDevice *dev)
  * Rate argument should be in Mbps (mega-bits per second), or 0 for automatic.
  *
  */
-void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
+static void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 {
 	NMSock	*sk;
 	
@@ -1632,7 +1631,7 @@ gboolean nm_device_is_up (NMDevice *dev)
 /* I really wish nm_v_wait_for_completion_or_timeout could translate these
  * to first class args instead of a all this void * arg stuff, so these
  * helpers could be nice and _tiny_. */
-gboolean nm_completion_device_is_up_test (int tries, nm_completion_args args)
+static gboolean nm_completion_device_is_up_test (int tries, nm_completion_args args)
 {
 	NMDevice *dev = args[0];
 	gboolean *err = args[1];
@@ -1683,7 +1682,7 @@ void nm_device_bring_down (NMDevice *dev)
 	nm_device_set_up_down (dev, FALSE);
 }
 
-gboolean nm_completion_device_is_down_test (int tries, nm_completion_args args)
+static gboolean nm_completion_device_is_down_test (int tries, nm_completion_args args)
 {
 	NMDevice *dev = args[0];
 	gboolean *err = args[1];
@@ -1702,7 +1701,7 @@ gboolean nm_completion_device_is_down_test (int tries, nm_completion_args args)
 	return FALSE;
 }
 
-gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
+static gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
 {
 	gboolean err = FALSE;
 	nm_completion_args args;
@@ -1880,7 +1879,7 @@ gboolean nm_device_activation_start (NMActRequest *req)
  * Cancel activation on a device and clean up.
  *
  */
-gboolean nm_device_activation_handle_cancel (NMActRequest *req)
+static gboolean nm_device_activation_handle_cancel (NMActRequest *req)
 {
 	NMDevice *		dev;
 	NMData *			data;
@@ -1911,7 +1910,7 @@ gboolean nm_device_activation_handle_cancel (NMActRequest *req)
  * Schedule the activation cancel handler
  *
  */
-void nm_device_schedule_activation_handle_cancel (NMActRequest *req)
+static void nm_device_schedule_activation_handle_cancel (NMActRequest *req)
 {
 	NMDevice *	dev;
 	NMData *		data;
@@ -3050,7 +3049,7 @@ gboolean nm_device_is_activating (NMDevice *dev)
  * Return whether or not the device is successfully activated.
  *
  */
-gboolean nm_device_is_activated (NMDevice *dev)
+static gboolean nm_device_is_activated (NMDevice *dev)
 {
 	NMActRequest *	req;
 	NMActStage	stage;

@@ -205,7 +205,7 @@ nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 	return TRUE;
 }
 
-void
+static void
 nm_netlink_monitor_close_connection (NmNetlinkMonitor  *monitor)
 {
 	g_return_if_fail (monitor->priv->io_channel != NULL);

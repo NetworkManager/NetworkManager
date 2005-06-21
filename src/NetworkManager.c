@@ -544,7 +544,7 @@ static void nm_print_usage (void)
  * or not.
  *
  */
-gboolean nm_poll_and_update_wireless_link_state (NMData *data)
+static gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 {
 	GSList *		elt;
 	GSList *		copy = NULL;

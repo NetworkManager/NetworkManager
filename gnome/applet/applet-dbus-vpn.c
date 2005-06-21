@@ -44,7 +44,7 @@ static void nmwa_dbus_vpn_schedule_copy (NMWirelessApplet *applet);
  * Callback from nmwa_dbus_vpn_get_active_vpn_connection
  *
  */
-void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
@@ -125,7 +125,7 @@ typedef struct VpnPropsCBData
 	char *			name;
 } VpnPropsCBData;
 
-void free_vpn_props_cb_data (VpnPropsCBData *data)
+static void free_vpn_props_cb_data (VpnPropsCBData *data)
 {
 	if (data)
 	{
@@ -141,7 +141,7 @@ void free_vpn_props_cb_data (VpnPropsCBData *data)
  * Callback for each VPN connection we called "getVPNConnectionProperties" on.
  *
  */
-void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	VpnPropsCBData *	cb_data = user_data;
@@ -248,7 +248,7 @@ void nmwa_dbus_vpn_update_one_vpn_connection (NMWirelessApplet *applet, const ch
  * nmwa_dbus_vpn_update_vpn_connections callback.
  *
  */
-void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;

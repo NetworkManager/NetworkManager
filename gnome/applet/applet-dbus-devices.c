@@ -44,7 +44,7 @@ void nmwa_dbus_devices_schedule_copy (NMWirelessApplet *applet);
  * Callback from nmwa_dbus_update_nm_state
  *
  */
-void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
@@ -114,7 +114,7 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
  * Callback from nmwa_dbus_update_wireless_enabled
  *
  */
-void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
@@ -152,7 +152,7 @@ out:
  * Get the wireless_enabled value from NetworkManager
  *
  */
-void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
+static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -227,7 +227,7 @@ typedef struct HalInfoCBData
 	char *			vendor;
 } HalInfoCBData;
 
-void free_hal_info_cb_data (HalInfoCBData *cb_data)
+static void free_hal_info_cb_data (HalInfoCBData *cb_data)
 {
 	if (cb_data)
 	{
@@ -497,7 +497,7 @@ void nmwa_free_dbus_data_model (NMWirelessApplet *applet)
  * Copy the dbus data model over to the gui data model
  *
  */
-void nmwa_copy_data_model (NMWirelessApplet *applet)
+static void nmwa_copy_data_model (NMWirelessApplet *applet)
 {
 	GSList		*elt;
 	NetworkDevice	*act_dev = NULL;
@@ -527,7 +527,7 @@ void nmwa_copy_data_model (NMWirelessApplet *applet)
  * Schedule the driver notification routine to run in the main loop.
  *
  */
-void nmwa_dbus_schedule_driver_notification (NMWirelessApplet *applet, NetworkDevice *dev)
+static void nmwa_dbus_schedule_driver_notification (NMWirelessApplet *applet, NetworkDevice *dev)
 {
 	DriverNotifyCBData	*cb_data;
 
@@ -550,7 +550,7 @@ void nmwa_dbus_schedule_driver_notification (NMWirelessApplet *applet, NetworkDe
  * has any problems (no carrier detect, no wireless scanning, etc).
  *
  */
-void nmwa_dbus_check_drivers (NMWirelessApplet *applet)
+static void nmwa_dbus_check_drivers (NMWirelessApplet *applet)
 {
 	GSList	*elt;
 
@@ -593,7 +593,7 @@ typedef struct NetPropCBData
 	NMWirelessApplet *	applet;
 } NetPropCBData;
 
-void free_net_prop_cb_data (NetPropCBData *data)
+static void free_net_prop_cb_data (NetPropCBData *data)
 {
 	if (data)
 	{
@@ -610,7 +610,7 @@ void free_net_prop_cb_data (NetPropCBData *data)
  * Callback for each network we called "getProperties" on in nmwa_dbus_device_properties_cb().
  *
  */
-void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NetPropCBData *	cb_data = (NetPropCBData *) user_data;
@@ -756,7 +756,7 @@ void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *
  * Callback for each device we called "getProperties" on in nmwa_dbus_update_devices_cb().
  *
  */
-void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
@@ -891,7 +891,7 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
  * nmwa_dbus_update_devices callback.
  *
  */
-void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
@@ -1091,7 +1091,7 @@ typedef struct StrengthCBData
 } StrengthCBData;
 
 
-void free_strength_cb_data (StrengthCBData *data)
+static void free_strength_cb_data (StrengthCBData *data)
 {
 	if (data)
 		g_free (data->dev_path);
@@ -1105,7 +1105,7 @@ void free_strength_cb_data (StrengthCBData *data)
  * nmwa_dbus_update_device_strength callback.
  *
  */
-void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_data)
+static void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	StrengthCBData *	cb_data = user_data;

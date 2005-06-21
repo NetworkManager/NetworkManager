@@ -80,9 +80,6 @@ gboolean		nm_dbus_update_network_auth_method		(DBusConnection *connection, const
 
 void			nm_dbus_update_allowed_networks		(DBusConnection *connection, NMAccessPointList *list, NMData *data);
 
-DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace,
-												const char *exception, const char *format, ...);
-
 NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
 
 NMState		nm_get_app_state_from_data			(NMData *data);

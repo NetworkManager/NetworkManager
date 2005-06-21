@@ -43,7 +43,7 @@
  * Helper to validate network types NMI can deal with
  *
  */
-inline gboolean nmi_network_type_valid (NMNetworkType type)
+static inline gboolean nmi_network_type_valid (NMNetworkType type)
 {
 	return ((type == NETWORK_TYPE_ALLOWED));
 }
@@ -377,6 +377,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 	ap_addrs_value = gconf_client_get (applet->gconf_client, gconf_key, NULL);
 	g_free (gconf_key);
 
+	/* FIXME: key_type is always nonnegative as it is unsigned */
 	if (!essid || (timestamp < 0) || (key_type < 0))
 	{
 		if (!essid)
@@ -389,6 +390,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 			reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",
 							"NetworkManagerInfo::getNetworkProperties could not access timestamp for network '%s'", network);
 		}
+		/* FIXME: key_type is always nonnegative as it is unsigned */
 		else if (key_type < 0)
 		{
 			reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadNetworkData",

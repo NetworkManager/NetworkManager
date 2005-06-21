@@ -44,7 +44,7 @@
  * on the main thread.
  *
  */
-gboolean nm_policy_activation_finish (NMActRequest *req)
+static gboolean nm_policy_activation_finish (NMActRequest *req)
 {
 	NMDevice			*dev = NULL;
 	NMAccessPoint		*ap = NULL;

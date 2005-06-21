@@ -34,6 +34,7 @@
 #include "NetworkManagerMain.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "autoip.h"
 
 // Times here are in seconds
 #define LINKLOCAL_ADDR		0xa9fe0000
