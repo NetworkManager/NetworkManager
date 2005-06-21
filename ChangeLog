@@ -1,5 +1,9 @@
 2005-06-21  Robert Love <rml@novell.com>
 
+	* initscript/SUSE/networkmanager: update
+
+2005-06-21  Robert Love <rml@novell.com>
+
 	* gnome/applet/applet.c: use menu mnemonics.
 	* gnome/applet/menu-items.c: (ditto)
 

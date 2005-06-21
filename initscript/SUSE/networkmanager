@@ -3,11 +3,11 @@
 # Provides:       networkmanager
 # Required-Start: $network dbus hal
 # Default-Start:  3 5
-# Default-Stop:   0 1 2 6
+# Default-Stop:
 # Description: NetworkManager, a network and wireless connection manager
 ### END INIT INFO
 
-NETWORKMANAGER_BIN=/opt/gnome/bin/NetworkManager
+NETWORKMANAGER_BIN=/usr/bin/NetworkManager
 test -x $NETWORKMANAGER_BIN || exit 5
 
 . /etc/rc.status
