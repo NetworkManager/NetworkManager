@@ -1,3 +1,8 @@
+2005-06-21  Robert Love <rml@novell.com>
+
+	* gnome/applet/applet.c: use menu mnemonics.
+	* gnome/applet/menu-items.c: (ditto)
+
 2005-06-21  Robert Love  <rml@novell.com>
 
 	* applet/applet-dbus-devices.c: mark non-static functions static.

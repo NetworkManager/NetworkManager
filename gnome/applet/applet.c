@@ -161,7 +161,7 @@ static GObject *nmwa_constructor (GType type, guint n_props, GObjectConstructPar
 
 
 void nmwa_about_cb (NMWirelessApplet *applet)
-{    
+{
 	GdkPixbuf	*pixbuf;
 	char		*file;
 	GtkWidget	*about_dialog;
@@ -222,7 +222,6 @@ void nmwa_about_cb (NMWirelessApplet *applet)
 					   NULL);
 #endif
 }
-
 
 typedef struct DialogCBData
 {
@@ -1330,7 +1329,7 @@ static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *
   GtkWidget *label;
 
   menu_item = gtk_menu_item_new ();
-  label = gtk_label_new (_("Connect to Other Wireless Network..."));
+  label = gtk_label_new_with_mnemonic (_("_Connect to Other Wireless Network..."));
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_container_add (GTK_CONTAINER (menu_item), label);
   gtk_widget_show_all (menu_item);
@@ -1351,7 +1350,7 @@ static void nmwa_menu_add_create_network_item (GtkWidget *menu, NMWirelessApplet
   GtkWidget *label;
 
   menu_item = gtk_menu_item_new ();
-  label = gtk_label_new (_("Create New Wireless Network..."));
+  label = gtk_label_new_with_mnemonic (_("Create _New Wireless Network..."));
   gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
   gtk_container_add (GTK_CONTAINER (menu_item), label);
   gtk_widget_show_all (menu_item);
@@ -1766,12 +1765,12 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 
 	if (applet->wireless_enabled)
 	{
-		applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Stop All Wireless Devices"));
+		applet->stop_wireless_item = gtk_image_menu_item_new_with_mnemonic (_("_Stop All Wireless Devices"));
 		image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
 	}
 	else
 	{
-		applet->stop_wireless_item = gtk_image_menu_item_new_with_label (_("Start All Wireless Devices"));
+		applet->stop_wireless_item = gtk_image_menu_item_new_with_mnemonic (_("_Start All Wireless Devices"));
 		image = gtk_image_new_from_stock (GTK_STOCK_MEDIA_PLAY, GTK_ICON_SIZE_MENU);
 	}
 	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
@@ -1802,7 +1801,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 	/* Construct the wireless scanning submenu */
 	applet->scan_method = nmwa_gconf_get_wireless_scan_method (applet);
-	applet->scanning_item = gtk_menu_item_new_with_label (_("Wireless Network Discovery"));
+	applet->scanning_item = gtk_menu_item_new_with_mnemonic (_("_Wireless Network Discovery"));
 	applet->scanning_menu = gtk_menu_new ();
 
 	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Always Search")));
@@ -1838,14 +1837,14 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 	nmwa_menu_add_separator_item (menu);
 
-	menu_item = gtk_image_menu_item_new_with_label (_("Help"));
+	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_Help"));
 /*	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_help_cb), applet); */
 	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_set_sensitive (GTK_WIDGET (menu_item), FALSE);
 
-	menu_item = gtk_image_menu_item_new_with_label (_("About"));
+	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_About"));
 	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_about_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_ABOUT, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);

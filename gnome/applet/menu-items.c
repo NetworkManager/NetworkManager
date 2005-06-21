@@ -85,9 +85,9 @@ void wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gi
 	if (n_devices > 1)
 		text = g_strdup_printf (_("Wired Network (%s)"), dev_name);
 	else
-		text = g_strdup (_("Wired Network"));
+		text = g_strdup (_("_Wired Network"));
 
-	gtk_label_set_text (GTK_LABEL (item->label), text);
+	gtk_label_set_text_with_mnemonic (GTK_LABEL (item->label), text);
 
 	/* Only dim the item if the device supports carrier detection AND
 	 * we know it doesn't have a link.
