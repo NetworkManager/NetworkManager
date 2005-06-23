@@ -1,5 +1,10 @@
 2005-06-23  David Zeuthen  <davidz@redhat.com>
 
+	* auth-dialog/main.c (main): Print two newlines when the passwords
+	are dumped and wait for the parent to tell us on stdin to die.
+
+2005-06-23  David Zeuthen  <davidz@redhat.com>
+
 	* properties/nm-vpnc.c (import_from_file): Allow "Description=" to be
 	the empty string (reported by Bill Moss <bmoss@clemson.edu>).
 

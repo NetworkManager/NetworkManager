@@ -236,6 +236,7 @@ main (int argc, char *argv[])
 			{ "service", 's', 0, G_OPTION_ARG_STRING, &vpn_service, "VPN service type", NULL},
 			{ NULL }
 		};
+	char buf[1];
 
 	bindtextdomain (GETTEXT_PACKAGE, NULL);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -271,11 +272,15 @@ main (int argc, char *argv[])
 		char *password = (char *) i->data;
 		printf ("%s\n", password);
 	}
+	printf ("\n\n");
 	/* for good measure, flush stdout since Kansas is going Bye-Bye */
 	fflush (stdout);
 
 	g_slist_foreach (passwords, (GFunc)g_free, NULL);
 	g_slist_free (passwords);
+
+	/* wait for data on stdin  */
+	fread (buf, sizeof (char), sizeof (buf), stdin);
 
 out:
 	g_option_context_free (context);
