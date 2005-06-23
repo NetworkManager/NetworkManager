@@ -512,8 +512,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 			routes = g_strdup ("");
 
 		/* sanity check data */
-		if (! (strlen (connectionname) > 0 &&
-		       strlen (gateway) > 0 &&
+		if (! (strlen (gateway) > 0 &&
 		       strlen (groupname) > 0))
 			goto error;
 

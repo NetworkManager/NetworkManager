@@ -1,3 +1,8 @@
+2005-06-23  David Zeuthen  <davidz@redhat.com>
+
+	* properties/nm-vpnc.c (import_from_file): Allow "Description=" to be
+	the empty string (reported by Bill Moss <bmoss@clemson.edu>).
+
 2005-06-17  David Zeuthen  <davidz@redhat.com>
 
 	* configure.in, Makefile.am: Various fixes such that 'make distcheck'
