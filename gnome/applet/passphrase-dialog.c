@@ -27,6 +27,7 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <glib.h>
+#include <gnome-keyring.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -236,13 +237,39 @@ static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer use
 		g_free (key);
 		if (gconf_entry)
 		{
+			GnomeKeyringAttributeList *attributes;
+			GnomeKeyringAttribute attr;
+			GnomeKeyringResult ret;
+			const char *essid, *name;
+			guint32 item_id;
+
+			/* Setup a request to the keyring to save the network passphrase */
+			essid = wireless_network_get_essid (net);
+			name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+			attributes = gnome_keyring_attribute_list_new ();
+			attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
+			attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
+			attr.value.string = g_strdup (essid);
+			g_array_append_val (attributes, attr);
+
+			ret = gnome_keyring_item_create_sync (NULL,
+										   GNOME_KEYRING_ITEM_GENERIC_SECRET,
+										   name,
+										   attributes,
+										   passphrase,
+										   TRUE,
+										   &item_id);
+			if (ret != GNOME_KEYRING_RESULT_OK)
+				g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
+			else
+				gnome_keyring_attribute_list_free (attributes);
+
 			gconf_entry_unref (gconf_entry);
-			key = g_strdup_printf ("%s/%s/key", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-			gconf_client_set_string (applet->gconf_client, key, passphrase, NULL);
-			g_free (key);
+
 			key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-			gconf_client_set_string (applet->gconf_client, key, wireless_network_get_essid (net), NULL);
+			gconf_client_set_string (applet->gconf_client, key, essid, NULL);
 			g_free (key);
+
 			key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 			gconf_client_set_int (applet->gconf_client, key, key_type_return, NULL);
 			g_free (key);

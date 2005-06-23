@@ -1,5 +1,10 @@
 2005-06-23  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-info.c: gnome keyring support!
+	* gnome/applet/passphrase-dialog.c: more of that keyring!
+
+2005-06-23  Robert Love  <rml@novell.com>
+
 	* configure.in: remove extraneous GNOMEKEYRING directives.
 	* gnome/applet/Makefile.am: s/GNOMEKEYRING/GNOME_KEYRING/.
 	* gnome/applet/applet.c: nmwa_icons_init: make style local.

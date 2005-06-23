@@ -29,6 +29,8 @@
 #include <dbus/dbus.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <gnome-keyring.h>
+
 #include "NetworkManager.h"
 #include "applet.h"
 #include "applet-dbus.h"
@@ -293,13 +295,14 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 	DBusError			 error;
 	NMNetworkType		 type;
 	char				*escaped_network;
-
 	char				*essid = NULL;
 	gint				 timestamp = -1;
-	gint32				i;
+	gint32			 i;
 	char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
+	GList			*found_list = NULL;
+	GnomeKeyringResult	 ret;
 	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 
 	g_return_val_if_fail (applet != NULL, NULL);
@@ -335,16 +338,21 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 	}	
 	g_free (gconf_key);
 
-	/* Grab user-key key for our access point from GConf */
-	gconf_key = g_strdup_printf ("%s/%s/key", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
+	/* Get the essid key, if any, from the keyring */
+	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+								   &found_list,
+								   "essid",
+								   GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+								   essid,
+								   NULL);
+	if (ret == GNOME_KEYRING_RESULT_OK)
 	{
-		key = g_strdup (gconf_value_get_string (value));
-		gconf_value_free (value);
+		GnomeKeyringFound *found = found_list->data;
+		key = g_strdup (found->secret);
+		gnome_keyring_found_list_free (found_list);
 	}
 	else
 		key = g_strdup ("");
-	g_free (gconf_key);
 
 	gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
