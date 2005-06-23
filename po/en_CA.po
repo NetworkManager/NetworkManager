@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-23 19:04-0400\n"
+"POT-Creation-Date: 2005-06-23 19:07-0400\n"
 "PO-Revision-Date: 2005-06-23 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
@@ -690,6 +690,5 @@ msgid "too much data was sent over socket and some of it was lost"
 msgstr "Too much data was sent over socket and some of it was lost"
 
 #: src/nm-netlink-monitor.c:734
-msgid "error occured while waiting for data on socket"
+msgid "error occurred while waiting for data on socket"
 msgstr "error occurred while waiting for data on socket"
-
