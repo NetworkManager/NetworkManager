@@ -1,3 +1,19 @@
+2005-06-23  Dan Williams <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+	  src/NetworkManagerMain.h
+		- (nm_get_hal_ctx): new function, move Hal initialization code here
+		- (nm_hal_init): new function, init libhal context then add devices
+		- (nm_hal_deinit): new function, clean up libhal context
+		- (nm_data_free): Move Hal cleanup here
+		- (main): check whether Hal is running, and if so, get a list of
+			network devices from it
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_signal_filter): trap NameOwnerChanged signals for Hal,
+			and when it appears, get a list of network devices from it.  If
+			Hal goes away, clean up the libhal context
+
 2005-06-22  Robert Love  <rml@novell.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c: fix FIXME: check

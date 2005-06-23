@@ -1061,11 +1061,11 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &service, DBUS_TYPE_STRING, &old_owner,
 									DBUS_TYPE_STRING, &new_owner, DBUS_TYPE_INVALID))
 		{
+			gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
+			gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
+
 			if (strcmp (service, NMI_DBUS_SERVICE) == 0)
 			{
-				gboolean old_owner_good = (old_owner && (strlen (old_owner) > 0));
-				gboolean new_owner_good = (new_owner && (strlen (new_owner) > 0));
-
 				if (!old_owner_good && new_owner_good) /* NMI just appeared */
 				{
 					char *match = get_nmi_match_string (new_owner);
@@ -1082,6 +1082,13 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 					dbus_bus_remove_match (connection, match, NULL);
 					g_free (match);
 				}
+			}
+			else if (strcmp (service, "org.freedesktop.Hal") == 0)
+			{
+				if (!old_owner_good && new_owner_good) /* Hal just appeared */
+					nm_hal_init (data);
+				else if (old_owner_good && !new_owner_good)	/* Hal went away */
+					nm_hal_deinit (data);
 			}
 			else if (nm_dhcp_manager_process_name_owner_changed (data->dhcp_manager, service, old_owner, new_owner) == TRUE)
 			{
@@ -1273,7 +1280,6 @@ char *get_name_owner (DBusConnection *con, const char *name)
 		dbus_message_unref (message);
 	}
 
-fprintf (stderr, "GetNameOwner returning owner '%s' for name '%s'.\n", owner, name);
 	return owner;
 }
 

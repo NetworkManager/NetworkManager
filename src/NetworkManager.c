@@ -490,6 +490,8 @@ static void nm_data_free (NMData *data)
 
 	g_io_channel_unref(data->sigterm_iochannel);
 
+	nm_hal_deinit (data);
+
 	memset (data, 0, sizeof (NMData));
 }
 
@@ -744,20 +746,95 @@ nm_set_up_log_handlers (gboolean become_daemon)
 			   GINT_TO_POINTER (become_daemon));
 }
 
+
+static LibHalContext *nm_get_hal_ctx (NMData *data)
+{
+	LibHalContext *	ctx = NULL;
+	DBusError			error;
+
+	g_return_val_if_fail (data != NULL, NULL);
+
+	/* Initialize libhal.  We get a connection to the hal daemon here. */
+	if ((ctx = libhal_ctx_new()) == NULL)
+	{
+		nm_error ("libhal_ctx_new() failed, exiting...");
+		return NULL;
+	}
+
+	nm_hal_mainloop_integration (ctx, data->dbus_connection); 
+	libhal_ctx_set_dbus_connection (ctx, data->dbus_connection);
+	dbus_error_init (&error);
+	if(!libhal_ctx_init (ctx, &error))
+	{
+		nm_error ("libhal_ctx_init() failed: %s\n"
+			  "Make sure the hal daemon is running?", 
+			  error.message);
+
+		dbus_error_free (&error);
+		libhal_ctx_free (ctx);
+		return NULL;
+	}
+
+	libhal_ctx_set_user_data (ctx, data);
+	libhal_ctx_set_device_added (ctx, nm_hal_device_added);
+	libhal_ctx_set_device_removed (ctx, nm_hal_device_removed);
+	libhal_ctx_set_device_new_capability (ctx, nm_hal_device_new_capability);
+
+	dbus_error_init (&error);
+	libhal_device_property_watch_all (ctx, &error);
+	if (dbus_error_is_set (&error))
+	{
+		nm_error ("libhal_device_property_watch_all(): %s", error.message);
+		dbus_error_free (&error);
+		libhal_ctx_free (ctx);
+	}
+
+	return ctx;
+}
+
+
+void nm_hal_init (NMData *data)
+{
+	g_return_if_fail (data != NULL);
+
+	if ((data->hal_ctx = nm_get_hal_ctx (data)))
+		nm_add_initial_devices (data);
+}
+
+
+void nm_hal_deinit (NMData *data)
+{
+	g_return_if_fail (data != NULL);
+
+	if (data->hal_ctx)
+	{
+		DBusError error;
+
+		dbus_error_init (&error);
+		libhal_ctx_shutdown (data->hal_ctx, &error);
+		if (dbus_error_is_set (&error))
+		{
+			nm_warning ("libhal shutdown failed - %s", error.message);
+			dbus_error_free (&error);
+		}
+		libhal_ctx_free (data->hal_ctx);
+		data->hal_ctx = NULL;
+	}
+}
+
 /*
  * main
  *
  */
 int main( int argc, char *argv[] )
 {
-	LibHalContext	*ctx = NULL;
-	guint		 link_source_id;
-	GSource		*link_source;
-	gboolean		 become_daemon = TRUE;
-	gboolean		 enable_test_devices = FALSE;
-	GError		*error = NULL;
-	DBusError 	dbus_error;
-
+	guint		link_source_id;
+	GSource *		link_source;
+	gboolean		become_daemon = TRUE;
+	gboolean		enable_test_devices = FALSE;
+	GError *		error = NULL;
+	DBusError		dbus_error;
+	char *		owner;
 	
 	if ((int)getuid() != 0)
 	{
@@ -872,42 +949,9 @@ int main( int argc, char *argv[] )
 	 */
 	main_context = nm_data->main_context;
 
-	/* Initialize libhal.  We get a connection to the hal daemon here. */
-	if ((ctx = libhal_ctx_new()) == NULL)
-	{
-		nm_error ("libhal_ctx_new() failed, exiting...");
-		exit (EXIT_FAILURE);
-	}
-
-	nm_hal_mainloop_integration (ctx, nm_data->dbus_connection); 
-	libhal_ctx_set_dbus_connection (ctx, nm_data->dbus_connection);
-	dbus_error_init (&dbus_error);
-	if(!libhal_ctx_init (ctx, &dbus_error))
-	{
-		nm_error ("libhal_ctx_init() failed: %s\n"
-			  "Make sure the hal daemon is running?", 
-			  dbus_error.message);
-
-		dbus_error_free (&dbus_error);
-		exit (EXIT_FAILURE);
-	}
-
-	nm_data->hal_ctx = ctx;
-	libhal_ctx_set_user_data (nm_data->hal_ctx, nm_data);
-	libhal_ctx_set_device_added (ctx, nm_hal_device_added);
-	libhal_ctx_set_device_removed (ctx, nm_hal_device_removed);
-	libhal_ctx_set_device_new_capability (ctx, nm_hal_device_new_capability);
-	libhal_device_property_watch_all (nm_data->hal_ctx, &dbus_error);
-	if (dbus_error_is_set (&dbus_error))
-	{
-		nm_error ("libhal_device_property_watch_all(): %s", dbus_error.message);
-		dbus_error_free (&dbus_error);
-		exit (EXIT_FAILURE);
-	}
-
-	/* Grab network devices that are already present and add them to our
-	 * list */
-	nm_add_initial_devices (nm_data);
+	/* If Hal is around, grab a device list from it */
+	if ((owner = get_name_owner (nm_data->dbus_connection, "org.freedesktop.Hal")))
+		nm_hal_init (nm_data);
 
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
@@ -934,16 +978,6 @@ int main( int argc, char *argv[] )
 	g_main_loop_run (nm_data->main_loop);
 
 	nm_print_open_socks ();
-
-	/* Cleanup */
-	libhal_ctx_shutdown (nm_data->hal_ctx, &dbus_error);
-	if (dbus_error_is_set (&dbus_error))
-	{
-		nm_warning ("libhal shutdown failed - %s", dbus_error.message);
-		dbus_error_free (&dbus_error);
-	}
-	libhal_ctx_free (nm_data->hal_ctx);
-
 	nm_data_free (nm_data);
 
 	exit (0);
