@@ -16,7 +16,7 @@ nm_applet_CPPFLAGS =							\
 	$(GCONF_CFLAGS)							\
 	$(LIBGNOMEUI_CFLAGS)						\
 	$(PANEL_APPLET_CFLAGS)						\
-	$(GNOMEKEYRING_CFLAGS)						\
+	$(GNOME_KEYRING_CFLAGS)						\
 	-DICONDIR=\""$(datadir)/pixmaps"\"				\
 	-DGLADEDIR=\""$(gladedir)"\"					\
 	-DBINDIR=\""$(bindir)"\"					\
@@ -70,7 +70,7 @@ nm_applet_LDADD =						\
 	$(GTK_LIBS)						\
 	$(GCONF_LIBS)						\
 	$(LIBGNOMEUI_LIBS)					\
-	$(GNOMEKEYRING_LIBS)				\
+	$(GNOME_KEYRING_LIBS)				\
 	$(top_builddir)/utils/libnmutils.la	\
 	$(NULL)
 

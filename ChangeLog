@@ -1,5 +1,12 @@
 2005-06-23  Robert Love  <rml@novell.com>
 
+	* configure.in: remove extraneous GNOMEKEYRING directives.
+	* gnome/applet/Makefile.am: s/GNOMEKEYRING/GNOME_KEYRING/.
+	* gnome/applet/applet.c: nmwa_icons_init: make style local.
+	* gnome/applet/passphrase-dialog.c: whitespace.
+
+2005-06-23  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerDevice.c: division in assignment was flipped.
 
 2005-06-23  David Zeuthen  <david@fubar.dk>

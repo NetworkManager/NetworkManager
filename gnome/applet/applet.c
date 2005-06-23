@@ -2323,24 +2323,23 @@ static void nmwa_icon_theme_changed (GtkIconTheme *icon_theme, NMWirelessApplet 
 	/* FIXME: force redraw */
 }
 
-const gchar *style = " \
-style \"MenuBar\" \
-{ \
-  GtkMenuBar::shadow_type = GTK_SHADOW_NONE \
-  GtkMenuBar::internal-padding = 0 \
-} \
-style \"MenuItem\" \
-{ \
-  xthickness=0 \
-  ythickness=0 \
-} \
-class \"GtkMenuBar\" style \"MenuBar\"\
-widget \"*ToplevelMenu*\" style \"MenuItem\"\
-";
-
 static void nmwa_icons_init (NMWirelessApplet *applet)
 {
 	GtkIconTheme *icon_theme;
+	const gchar *style = " \
+		style \"MenuBar\" \
+		{ \
+			GtkMenuBar::shadow_type = GTK_SHADOW_NONE \
+			GtkMenuBar::internal-padding = 0 \
+		} \
+		style \"MenuItem\" \
+		{ \
+			xthickness=0 \
+			ythickness=0 \
+		} \
+		class \"GtkMenuBar\" style \"MenuBar\"\
+		widget \"*ToplevelMenu*\" style \"MenuItem\"\
+		";	
 
 	/* FIXME: Do we need to worry about other screens? */
 	gtk_rc_parse_string (style);

@@ -428,7 +428,7 @@ GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
 		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		return NULL;
 	}
-	
+
 	dialog = glade_xml_get_widget (dialog_xml, "passphrase_dialog");
 	gtk_widget_hide (dialog);
 
