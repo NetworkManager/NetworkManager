@@ -731,7 +731,7 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 	socket_error = 
 	    g_error_new (NM_NETLINK_MONITOR_ERROR,
                          NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
-			 _("error occured while waiting for data on socket"));
+			 _("error occurred while waiting for data on socket"));
 
 	g_signal_emit (G_OBJECT (monitor), 
 		       nm_netlink_monitor_signals[ERROR],
