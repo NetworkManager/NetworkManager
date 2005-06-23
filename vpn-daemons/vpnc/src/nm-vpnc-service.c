@@ -331,7 +331,7 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 				char *  contents;
 
 				/* vpnc is a bit slow to write the PID file */
-				sleep(1);
+				sleep (2);
 
 				/* Grab the vpnc daemon's PID from its pidfile */
 				if (g_file_get_contents (NM_VPNC_PID_FILE_PATH, &contents, NULL, NULL))
