@@ -1,3 +1,11 @@
+2005-06-23  David Zeuthen  <david@fubar.dk>
+
+	* gnome/applet/vpn-password-dialog.c (child_stdout_data_cb): Send a
+	signal to the child to indicate that we got what we wanted when we
+	see two new-lines right after each other.
+	(nmwa_vpn_request_password): Pass a structure with several members
+	instead of just the passwords
+
 2005-06-23  Dan Williams <dcbw@redhat.com>
 
 	* src/NetworkManager.c

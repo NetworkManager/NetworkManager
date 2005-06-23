@@ -30,10 +30,18 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <glib/gi18n-lib.h>
+#include <unistd.h>
 
 #include "applet.h"
 #include "vpn-password-dialog.h"
 #include "nm-utils.h"
+
+
+typedef struct {
+	GSList **passwords;
+	int child_stdin;
+	int num_newlines;
+} IOUserData;
 
 static void 
 child_finished_cb (GPid pid, gint status, gpointer userdata)
@@ -47,7 +55,8 @@ static gboolean
 child_stdout_data_cb (GIOChannel *source, GIOCondition condition, gpointer userdata)
 {
 	char *str;
-	GSList **passwords = (GSList **) userdata;
+	IOUserData *io_user_data = (IOUserData *) userdata;
+	GSList **passwords = (GSList **) io_user_data->passwords;
 
 	if (! (condition & G_IO_IN))
 		goto out;
@@ -56,9 +65,18 @@ child_stdout_data_cb (GIOChannel *source, GIOCondition condition, gpointer userd
 		int len;
 
 		len = strlen (str);
-		if (len > 0) {
+		if (len == 1 && str[0] == '\n') {
+
+			/* on second line with a newline newline */
+			if (++io_user_data->num_newlines == 2) {
+				char buf[1];
+				/* terminate the child */
+				write (io_user_data->child_stdin, buf, sizeof (buf));
+			}			
+		} else if (len > 0) {
 			/* remove terminating newline */
 			str[len - 1] = '\0';
+
 			*passwords = g_slist_append (*passwords, str);
 		}
 	}
@@ -76,6 +94,7 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 			      "-r",
 			      NULL};
 	GSList     *passwords = NULL;
+	int         child_stdin;
 	int         child_stdout;
 	GPid        child_pid;
 	int         child_status;
@@ -83,6 +102,7 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 	guint       child_stdout_channel_eventid;
 	GDir       *dir;
 	char       *auth_dialog_binary;
+	IOUserData io_user_data;
 
 	auth_dialog_binary = NULL;
 
@@ -157,7 +177,7 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 				       NULL,                       /* child_setup */
 				       NULL,                       /* user_data */
 				       &child_pid,                 /* child_pid */
-				       NULL,                       /* standard_input */
+				       &child_stdin,               /* standard_input */
 				       &child_stdout,              /* standard_output */
 				       NULL,                       /* standard_error */
 				       NULL)) {                    /* error */
@@ -181,9 +201,14 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 	/* catch when child is reaped */
 	g_child_watch_add (child_pid, child_finished_cb, (gpointer) &child_status);
 
+	io_user_data.passwords = &passwords;
+	io_user_data.child_stdin = child_stdin;
+	io_user_data.num_newlines = 0;
+
 	/* listen to what child has to say */
 	child_stdout_channel = g_io_channel_unix_new (child_stdout);
-	child_stdout_channel_eventid = g_io_add_watch (child_stdout_channel, G_IO_IN, child_stdout_data_cb, &passwords);
+	child_stdout_channel_eventid = g_io_add_watch (child_stdout_channel, G_IO_IN, child_stdout_data_cb, 
+						       &io_user_data);
 	g_io_channel_set_encoding (child_stdout_channel, NULL, NULL);
 
 	/* recurse mainloop here until the child is finished (child_status is set in child_finished_cb) */
