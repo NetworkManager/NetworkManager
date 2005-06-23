@@ -1,4 +1,9 @@
-2005-06-21  Robert Love <rml@novell.com>
+2005-06-22  Robert Love  <rml@novell.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c: fix FIXME: check
+	  permissions of scripts before executing.
+
+2005-06-21  Robert Love  <rml@novell.com>
 
 	* initscript/SUSE/networkmanager: update.
 	* src/backends/NetworkManagerSuSE.c: cleanup.

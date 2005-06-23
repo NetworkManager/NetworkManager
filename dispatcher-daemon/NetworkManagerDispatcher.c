@@ -50,13 +50,40 @@ typedef enum NMDAction	NMDAction;
 
 #define NM_SCRIPT_DIR	"/etc/NetworkManager/dispatcher.d"
 
+
+/*
+ * nmd_permission_check
+ *
+ * Verify that the given script has the permissions we want.  Specifically,
+ * very that the file is
+ *	- A regular file.
+ *	- Owned by root.
+ *	- Not writable by the group or by other.
+ *	- Not setuid.
+ *	- Executable by the owner.
+ *
+ */
+static inline gboolean nmd_permission_check (struct stat *s)
+{
+	if (!S_ISREG (s->st_mode))
+		return FALSE;
+	if (s->st_uid != 0)
+		return FALSE;
+	if (s->st_mode & (S_IWGRP|S_IWOTH|S_ISUID))
+		return FALSE;
+	if (!(s->st_mode & S_IXUSR))
+		return FALSE;
+	return TRUE;
+}
+
+
 /*
  * nmd_execute_scripts
  *
  * Call scripts in /etc/NetworkManager.d when devices go down or up
  *
  */
-void nmd_execute_scripts (NMDAction action, char *iface_name)
+static void nmd_execute_scripts (NMDAction action, char *iface_name)
 {
 	GDir *		dir;
 	const char *	file_name;
@@ -82,17 +109,15 @@ void nmd_execute_scripts (NMDAction action, char *iface_name)
 
 		if ((file_name[0] != '.') && (stat (file_path, &s) == 0))
 		{
-			/* FIXME
-			 * We should check the permissions and only execute files that
-			 * are 0700 or 0500.
-			 */
-			if (S_ISREG (s.st_mode) && !S_ISLNK (s.st_mode) && (s.st_uid == 0))
+			if (nmd_permission_check (&s))
 			{
-				int x;
 				char *cmd;
+				int ret;
 
 				cmd = g_strdup_printf ("%s %s %s", file_path, iface_name, char_act);
-				x = system (cmd);
+				ret = system (cmd);
+				if (ret == -1)
+					nm_warning ("nmd_execute_scripts(): system() failed with errno = %d", errno);
 				g_free (cmd);
 			}
 		}
@@ -109,7 +134,7 @@ void nmd_execute_scripts (NMDAction action, char *iface_name)
  *
  * Queries NetworkManager for the name of a device, specified by a device path
  */
-char * nmd_get_device_name (DBusConnection *connection, char *path)
+static char * nmd_get_device_name (DBusConnection *connection, char *path)
 {
 	DBusMessage *	message;
 	DBusMessage *	reply;
@@ -259,7 +284,7 @@ static void nmd_print_usage (void)
  * main
  *
  */
-int main( int argc, char *argv[] )
+int main (int argc, char *argv[])
 {
 	gboolean		 become_daemon = TRUE;
 	GMainLoop		*loop  = NULL;
