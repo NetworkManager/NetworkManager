@@ -1,3 +1,7 @@
+2005-06-23  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: division in assignment was flipped.
+
 2005-06-23  David Zeuthen  <david@fubar.dk>
 
 	* gnome/applet/vpn-password-dialog.c (child_stdout_data_cb): Send a

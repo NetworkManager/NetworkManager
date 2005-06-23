@@ -2348,7 +2348,7 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 	 * also want the maximum to be based on what the card */
 	const guint	delay = 30;
 	const guint	required_tries = 10;
-	const guint	min_delay = 2 * (required_tries / delay);
+	const guint	min_delay = 2 * (delay / required_tries);
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
