@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.23 2005/06/21 21:34:00 marcel Exp $
+# $Id: sk.po,v 1.24 2005/06/25 10:19:13 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-21 23:31+0200\n"
-"PO-Revision-Date: 2005-06-21 23:33+0200\n"
+"POT-Creation-Date: 2005-06-25 12:16+0200\n"
+"PO-Revision-Date: 2005-06-25 12:17+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural= (n==1) ? 1 : (n>=2 && n<=4) ? 2 : 0;\n"
 
-#: ../gnome/applet/applet-dbus-info.c:978
+#: ../gnome/applet/applet-dbus-info.c:986
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -150,7 +150,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:611 ../gnome/applet/applet.c:2166
 #: ../gnome/applet/other-network-dialog.c:315
-#: ../gnome/applet/passphrase-dialog.c:428
+#: ../gnome/applet/passphrase-dialog.c:455
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -348,18 +348,18 @@ msgid " (invalid Unicode)"
 msgstr " (neplatný Unikód)"
 
 #: ../gnome/applet/other-network-dialog.c:148
-#: ../gnome/applet/passphrase-dialog.c:162
+#: ../gnome/applet/passphrase-dialog.c:163
 #: ../gnome/applet/wireless-applet.glade.h:27
 msgid "Passphrase:"
 msgstr "Heslo:"
 
 #: ../gnome/applet/other-network-dialog.c:151
-#: ../gnome/applet/passphrase-dialog.c:165
+#: ../gnome/applet/passphrase-dialog.c:166
 msgid "Ascii Key:"
 msgstr "Ascii kľúč:"
 
 #: ../gnome/applet/other-network-dialog.c:154
-#: ../gnome/applet/passphrase-dialog.c:168
+#: ../gnome/applet/passphrase-dialog.c:169
 msgid "Hex Key:"
 msgstr "Kľúč v šestnástkovej sústave:"
 
@@ -383,13 +383,18 @@ msgstr "Vlastná bezdrôtová sieť"
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Zadajte ESSID bezdrôtovej siete, ku ktorej sa chcete pripojiť."
 
-#: ../gnome/applet/vpn-password-dialog.c:132
-#: ../gnome/applet/vpn-password-dialog.c:171
+#: ../gnome/applet/passphrase-dialog.c:248
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "Heslo pre bezdrôtovú sieť %s"
+
+#: ../gnome/applet/vpn-password-dialog.c:152
+#: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "Nepodarilo sa spustiť VPN spojenie '%s'"
 
-#: ../gnome/applet/vpn-password-dialog.c:135
+#: ../gnome/applet/vpn-password-dialog.c:155
 #, c-format
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
@@ -398,7 +403,7 @@ msgstr ""
 "Nepodarilo sa nájsť dialógové okno overenia totožnosti pre VPN spojenie typu "
 "'%s'. Spojte sa s vašim správcom systému."
 
-#: ../gnome/applet/vpn-password-dialog.c:174
+#: ../gnome/applet/vpn-password-dialog.c:194
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
@@ -690,5 +695,5 @@ msgstr ""
 "príliš veľa dát bolo odoslaných cez zásuvku a niektoré z nich boli stratené"
 
 #: ../src/nm-netlink-monitor.c:734
-msgid "error occured while waiting for data on socket"
+msgid "error occurred while waiting for data on socket"
 msgstr "vyskytla sa chyba pri čakaní na dáta zo zásuvky"
