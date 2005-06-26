@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-21 23:15+0200\n"
-"PO-Revision-Date: 2005-06-21 23:16+0200\n"
+"POT-Creation-Date: 2005-06-26 20:48+0200\n"
+"PO-Revision-Date: 2005-06-26 21:14+0200\n"
 "Last-Translator: Frank Arnold <frank@scirocco-5v-turbo.de>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,7 +17,15 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);"
 
-#: gnome/applet/applet-dbus-info.c:978
+#: examples/python/systray/eggtrayicon.c:111 gnome/applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr "Ausrichtung"
+
+#: examples/python/systray/eggtrayicon.c:112 gnome/applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr "Die Ausrichtung des Benachrichtigungsfeldes."
+
+#: gnome/applet/applet-dbus-info.c:986
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -152,7 +160,7 @@ msgstr ""
 
 #: gnome/applet/applet.c:611 gnome/applet/applet.c:2166
 #: gnome/applet/other-network-dialog.c:315
-#: gnome/applet/passphrase-dialog.c:428
+#: gnome/applet/passphrase-dialog.c:455
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -313,14 +321,6 @@ msgstr ""
 "Das Netzwerk-Manager-Applet konnte benötigte Ressourcen nicht finden und "
 "kann deshalb nicht fortfahren.\n"
 
-#: gnome/applet/eggtrayicon.c:118
-msgid "Orientation"
-msgstr "Ausrichtung"
-
-#: gnome/applet/eggtrayicon.c:119
-msgid "The orientation of the tray."
-msgstr "Die Ausrichtung des Benachrichtigungsfeldes."
-
 #: gnome/applet/menu-items.c:86
 #, c-format
 msgid "Wired Network (%s)"
@@ -348,18 +348,18 @@ msgid " (invalid Unicode)"
 msgstr " (ungültiger Unicode)"
 
 #: gnome/applet/other-network-dialog.c:148
-#: gnome/applet/passphrase-dialog.c:162
+#: gnome/applet/passphrase-dialog.c:163
 #: gnome/applet/wireless-applet.glade.h:27
 msgid "Passphrase:"
 msgstr "Passwort:"
 
 #: gnome/applet/other-network-dialog.c:151
-#: gnome/applet/passphrase-dialog.c:165
+#: gnome/applet/passphrase-dialog.c:166
 msgid "Ascii Key:"
 msgstr "ASCII-Schlüssel:"
 
 #: gnome/applet/other-network-dialog.c:154
-#: gnome/applet/passphrase-dialog.c:168
+#: gnome/applet/passphrase-dialog.c:169
 msgid "Hex Key:"
 msgstr "Hexadezimalschlüssel:"
 
@@ -385,13 +385,18 @@ msgstr ""
 "Bitte geben Sie die ESSID für das drahtlose Netzwerk mit dem Sie sich "
 "verbinden möchten ein."
 
-#: gnome/applet/vpn-password-dialog.c:132
-#: gnome/applet/vpn-password-dialog.c:171
+#: gnome/applet/passphrase-dialog.c:248
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "Passwort für Funknetzwerk %s"
+
+#: gnome/applet/vpn-password-dialog.c:152
+#: gnome/applet/vpn-password-dialog.c:191
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "VPN-Verbindung »%s« konnte nicht gestartet werden"
 
-#: gnome/applet/vpn-password-dialog.c:135
+#: gnome/applet/vpn-password-dialog.c:155
 #, c-format
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
@@ -401,7 +406,7 @@ msgstr ""
 "gefunden werden. Bitte setzen Sie sich mit Ihrem Systemadministrator in "
 "Verbindung."
 
-#: gnome/applet/vpn-password-dialog.c:174
+#: gnome/applet/vpn-password-dialog.c:194
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
@@ -701,6 +706,222 @@ msgstr ""
 "verloren gegangen"
 
 #: src/nm-netlink-monitor.c:734
-msgid "error occured while waiting for data on socket"
+msgid "error occurred while waiting for data on socket"
 msgstr "Während des Wartens auf Daten am Socket, ist ein Fehler aufgetreten"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "_Zweites Passwort:"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Benutzername:"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_Domäne:"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Passwort:"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "_Anonym verbinden"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "Verbinden als_Benutzer:"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:466
+msgid "Remember password for this session"
+msgstr "Passwort für diese Sitzung merken"
+
+#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:468
+msgid "Save password in keyring"
+msgstr "Passwort im Schlüsselbund speichern"
+
+#: vpn-daemons/vpnc/auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Zu müssen sich authentifizieren, um Zugriff auf das virtuelle private Netzwerk »%s« zu erhalten."
+
+#: vpn-daemons/vpnc/auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "VPN authentifizieren"
+
+#: vpn-daemons/vpnc/auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "_Gruppenpasswort:"
+
+#: vpn-daemons/vpnc/nm-vpnc.desktop.in.h:1
+msgid "VPN Connection Manager (vpnc)"
+msgstr "VPN-Verbindungs-Manager (vpnc)"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Verbindungsname</b>"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Optional Information</b>"
+msgstr "<b>Optionale Informationen</b>"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required Information</b>"
+msgstr "<b>Notwendige Informationen</b>"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:4
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>Beispiel: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:5
+msgid "Gateway:"
+msgstr "Gateway:"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:6
+msgid "Group Name:"
+msgstr "Gruppenname:"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr "Name für die Verbindung zu diesem privaten Netzwerk, z.B. "
+"»Campus-Netzwerk« oder »Firmennetz«"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:8
+msgid "Only use VPN connection for these addresses"
+msgstr "VPN-Verbindung nur für diese Adressen verwenden"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:9
+msgid "Override user name"
+msgstr "Benutzername überschreiben"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:10
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr "Bitte geben Sie die von Ihrem Systemadministrator bereitgestellten Informationen ein. "
+"Geben Sie hier nicht Ihr Passwort ein, da Sie nach diesem beim Verbindungsaufbau gefragt werden."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:11
+msgid "Use domain for authentication"
+msgstr "Domäne für Authentifikation verwenden"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:12
+msgid "_Import..."
+msgstr "_Importieren..."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Kompatibler Cisco-VPN-Client (vpnc)"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:448
+#, c-format
+msgid "\tUsername:  %s\n"
+msgstr "\tBenutzername:  %s\n"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:449
+#, c-format
+msgid "\tRoutes:  %s\n"
+msgstr "\tRouten:  %s\n"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:450
+#, c-format
+msgid "\tDomain:  %s\n"
+msgstr "\tDomäne:  %s\n"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:453
+#, c-format
+msgid ""
+"The following vpnc VPN connection will be created:\n"
+"\n"
+"\tName:  %s\n"
+"\n"
+"\tGateway:  %s\n"
+"\tGroup Name:  %s\n"
+"%s%s%s\n"
+"The connection details can be changed using the \"Edit\" button.\n"
+msgstr ""
+"Die folgende vpnc-VPN-Verbindung wird nun erstellt:\n"
+"\n"
+"\tName:  %s\n"
+"\n"
+"\tGateway:  %s\n"
+"\tGruppenname:  %s\n"
+"%s%s%s\n"
+"Die Verbindungseigenschaften können über »Bearbeiten« geändert werden.\n"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:544
+msgid "TCP tunneling not supported"
+msgstr "TPC-Tunneling wird nicht unterstützt"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:546
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr "Die VPN-Einstellungsdatei »%s« legt fest, das VPN-Datenverkehr über TCP getunnelt werden soll. "
+"Dies wird derzeit jedoch nicht in der vpnc-Software unterstützt.\n"
+"\n"
+"Die Verbindung kann trotzdem hergestellt werden, mit abgeschaltetem TCP-Tunneling, allerdings "
+"kann es dadurch zu Funktionsstörungen kommen."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:570
+msgid "Cannot import settings"
+msgstr "Einstellungen konnte nicht importiert werden"
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:572
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "Die VPN-Einstellungendatei »%s« enthält keine gültigen Daten."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:589
+msgid "Select file to import"
+msgstr "Datei für Import auswählen"
+
+#. printf ("in impl_export\n");
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:744
+msgid "Save as..."
+msgstr "Speichern unter..."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:774
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Eine Datei mit dem Namen »%s« existiert bereits."
+
+#: vpn-daemons/vpnc/properties/nm-vpnc.c:777
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Möchten Sie diese durch die aktuelle ersetzen?"
+
+#: vpn-daemons/vpnc/src/nm-vpnc-service.c:115
+msgid ""
+"The VPN login failed because the user name and password were not accepted."
+msgstr "Das VPN-Login ist fehlgeschlagen, da der Benutzername und das Passwort "
+"nicht akzeptiert wurden."
+
+#: vpn-daemons/vpnc/src/nm-vpnc-service.c:117
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "Das VPN-Login ist fehlgeschlagen, da das VPN-Programm nicht gestartet werden konnte."
+
+#: vpn-daemons/vpnc/src/nm-vpnc-service.c:119
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr "Das VPN-Login ist fehlgeschlagen, da sich das VPN-Programm nicht mit dem VPN-Server verbinden konnte."
+
+#: vpn-daemons/vpnc/src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr "Das VPN-Login ist fehlgeschlagen, da die VPN-Konfiguration ungültige Optionen enthält."
+
+#: vpn-daemons/vpnc/src/nm-vpnc-service.c:123
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "Das VPN-Login ist fehlgeschlagen, da das VPN-Programm eine fehlerhafte Konfiguration "
+"vom VPN-Server empfangen hat."
 
