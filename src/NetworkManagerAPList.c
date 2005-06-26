@@ -261,7 +261,7 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 	NMAccessPoint   *list_ap_max;
 	GSList          *elt_i = NULL;	
 	GSList          *elt_j = NULL;
-	GSList		*elt_max = NULL;
+	GSList          *elt_max = NULL;
 	GSList          *removal_list = NULL;
 	GSList          *elt;
 	gint8            max_strength = 0;
