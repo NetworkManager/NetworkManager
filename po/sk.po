@@ -3,20 +3,30 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.24 2005/06/25 10:19:13 marcel Exp $
+# $Id: sk.po,v 1.25 2005/06/26 06:40:45 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-25 12:16+0200\n"
-"PO-Revision-Date: 2005-06-25 12:17+0200\n"
+"POT-Creation-Date: 2005-06-26 08:01+0200\n"
+"PO-Revision-Date: 2005-06-26 08:38+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural= (n==1) ? 1 : (n>=2 && n<=4) ? 2 : 0;\n"
+
+#: ../examples/python/systray/eggtrayicon.c:111
+#: ../gnome/applet/eggtrayicon.c:118
+msgid "Orientation"
+msgstr "Orientácia"
+
+#: ../examples/python/systray/eggtrayicon.c:112
+#: ../gnome/applet/eggtrayicon.c:119
+msgid "The orientation of the tray."
+msgstr "Orientácia systémovej lišty."
 
 #: ../gnome/applet/applet-dbus-info.c:986
 #, c-format
@@ -310,14 +320,6 @@ msgid ""
 msgstr ""
 "Applet NetworkManager nemohol nájsť niektoré vyžadované zdroje. Nemôže "
 "pokračovať.\n"
-
-#: ../gnome/applet/eggtrayicon.c:118
-msgid "Orientation"
-msgstr "Orientácia"
-
-#: ../gnome/applet/eggtrayicon.c:119
-msgid "The orientation of the tray."
-msgstr "Orientácia systémovej lišty."
 
 #: ../gnome/applet/menu-items.c:86
 #, c-format
@@ -697,3 +699,223 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:734
 msgid "error occurred while waiting for data on socket"
 msgstr "vyskytla sa chyba pri čakaní na dáta zo zásuvky"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "Ď_alšie heslo:"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Meno používateľa:"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_Doména:"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Heslo:"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "Pripojiť sa _anonymne"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "Pripojiť sa ako _používateľ:"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:466
+msgid "Remember password for this session"
+msgstr "Zapamätať heslo pre toto sedenie"
+
+#: ../vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:468
+msgid "Save password in keyring"
+msgstr "Uložiť heslo na zväzok kľúčov"
+
+#: ../vpn-daemons/vpnc/auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Pre prístup k Virtuálnej privátnej sieti '%s' je potrebné overiť vašu totožnosť."
+
+#: ../vpn-daemons/vpnc/auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "Overiť totožnosť VPN"
+
+#: ../vpn-daemons/vpnc/auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "_Skupinové heslo:"
+
+#: ../vpn-daemons/vpnc/nm-vpnc.desktop.in.h:1
+msgid "VPN Connection Manager (vpnc)"
+msgstr "Správca spojení VPN (vpnc)"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Názov spojenia</b>"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Optional Information</b>"
+msgstr "<b>Voliteľné informácie</b>"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required Information</b>"
+msgstr "<b>Vyžadované informácie</b>"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:4
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>príklad: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:5
+msgid "Gateway:"
+msgstr "Brána:"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:6
+msgid "Group Name:"
+msgstr "Názov skupiny:"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Názov, použitý na identifikáciu spojenia k privátnej sieti, napr. \"Školská VPN\" "
+"alebo \"Firemná sieť\""
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:8
+msgid "Only use VPN connection for these addresses"
+msgstr "Používať VPN spojenie len pre tieto adresy"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:9
+msgid "Override user name"
+msgstr "Prekryť meno používateľa"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:10
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Prosím, dole zadajte informácie poskytnuté vašim správcom systému. Nezadávajte tu "
+"vaše heslo, pretože bude od vás vyžiadané pri pripájaní."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:11
+msgid "Use domain for authentication"
+msgstr "Použiť doménu pre overenie totožnosti"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:12
+msgid "_Import..."
+msgstr "_Importovať..."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Klient kompatibilný s Cisco VPN (vpnc)"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:448
+#, c-format
+msgid "\tUsername:  %s\n"
+msgstr "\tMeno používateľa:  %s\n"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:449
+#, c-format
+msgid "\tRoutes:  %s\n"
+msgstr "\tSmerovanie:  %s\n"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:450
+#, c-format
+msgid "\tDomain:  %s\n"
+msgstr "\tDoména:  %s\n"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:453
+#, c-format
+msgid ""
+"The following vpnc VPN connection will be created:\n"
+"\n"
+"\tName:  %s\n"
+"\n"
+"\tGateway:  %s\n"
+"\tGroup Name:  %s\n"
+"%s%s%s\n"
+"The connection details can be changed using the \"Edit\" button.\n"
+msgstr ""
+"Bude vytvorené nasledujúce vpnc VPN spojenie:\n"
+"\n"
+"\tNázov:  %s\n"
+"\n"
+"\tBrána:  %s\n"
+"\tNázov skupiny:  %s\n"
+"%s%s%s\n"
+"Podrobnosti spojenia je možné zmeniť pomocou tlačidla \"Upraviť\".\n"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:544
+msgid "TCP tunneling not supported"
+msgstr "TCP tunelovanie nie je podporované"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:546
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"Súbor VPN nastavení '%s' určuje, že VPN komunikácia má byť tunelovaná "
+"cez TCP, ktoré nie je momentálne podporované v softvéri vpnc.\n"
+"\n"
+"Spojenie môže byť aj tak vytvorené s deaktivovaným TCP tunelovaním, avšak "
+"nemusí fungovať ako očakávate."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:570
+msgid "Cannot import settings"
+msgstr "Nepodarilo sa importovať nastavenia"
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:572
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "Súbor s nastaveniami VPN '%s' neobsahuje platné údaje."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:589
+msgid "Select file to import"
+msgstr "Vybrať súbor pre import"
+
+#. printf ("in impl_export\n");
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:744
+msgid "Save as..."
+msgstr "Uložiť ako..."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:774
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Súbor s názvom \"%s\" už existuje."
+
+#: ../vpn-daemons/vpnc/properties/nm-vpnc.c:777
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Chcete ho nahradiť tým, ktorý práve ukladáte?"
+
+#: ../vpn-daemons/vpnc/src/nm-vpnc-service.c:115
+msgid ""
+"The VPN login failed because the user name and password were not accepted."
+msgstr "VPN prihlásenie zlyhalo, pretože meno používateľa a heslo neboli akceptované."
+
+#: ../vpn-daemons/vpnc/src/nm-vpnc-service.c:117
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "VPN prihlásenie zlyhalo, pretože VPN program nebolo možné spustiť."
+
+#: ../vpn-daemons/vpnc/src/nm-vpnc-service.c:119
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"VPN prihlásenie zlyhalo, pretože VPN program sa nemohol spojiť s VPN serverom."
+
+#: ../vpn-daemons/vpnc/src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+"VPN prihlásenie zlyhalo, pretože voľby VPN konfigurácie boli neplatné."
+
+#: ../vpn-daemons/vpnc/src/nm-vpnc-service.c:123
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
+"VPN prihlásenie zlyhalo, pretože VPN program prijal neplatnú konfiguráciu z VPN servera."
