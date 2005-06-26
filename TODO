@@ -13,11 +13,6 @@ Wireless link checking could be enhanced to check the signal strength of an acce
 There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
 
 
-- Store Allowed Network WEP keys in gnome-keyring
-
-These keys should probably be encrypted, rather than being stored in GConf.
-
-
 - Support 40/64 bit passphrases
 
 Allow user to enter passphrases and convert them to 40/64 bit WEP keys on the fly.  Unfortunately, the algorithm for 40/64 bit passphrases is kind of messy.
