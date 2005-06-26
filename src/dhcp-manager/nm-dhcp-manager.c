@@ -485,7 +485,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		goto out;
 
 	get_ip4_string (manager, dev, "domain_name", &domain_names);
-		
+
 	nm_info ("Retrieved the following IP4 configuration from the DHCP daemon:");
 
 	ip4_config = nm_ip4_config_new ();
