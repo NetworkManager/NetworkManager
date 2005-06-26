@@ -1,3 +1,8 @@
+2005-06-26  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: be specific about which device in
+	  nm_info() message.
+
 2005-06-23  Adam Weinberger  <adamw@gnome.org>
 
 	* src/nm-netlink-monitor.c: correct spelling error.

@@ -1671,7 +1671,7 @@ gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable)
 	args[2] = GINT_TO_POINTER (cancelable);
 	nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
 	if (err)
-		nm_info ("failed to bring device up");
+		nm_info ("failed to bring up device %s", dev->iface);
 	return err;
 }
 
@@ -1716,7 +1716,7 @@ static gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
 	nm_wait_for_completion(400, G_USEC_PER_SEC / 200, NULL,
 			nm_completion_device_is_down_test, args);
 	if (err)
-		nm_info ("failed to bring device down");
+		nm_info ("failed to bring down device %s", dev->iface);
 	return err;
 }
 
