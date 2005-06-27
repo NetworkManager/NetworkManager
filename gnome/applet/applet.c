@@ -1805,6 +1805,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	applet->scanning_menu = gtk_menu_new ();
 
 	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Always Search")));
+	gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);	
 	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GUINT_TO_POINTER (NM_SCAN_METHOD_ALWAYS));
 	if (applet->scan_method == NM_SCAN_METHOD_ALWAYS)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
@@ -1812,6 +1813,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
 
 	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Search Only When Disconnected")));
+	gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);	
 	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_WHEN_UNASSOCIATED));
 	if (applet->scan_method == NM_SCAN_METHOD_WHEN_UNASSOCIATED)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);
@@ -1819,6 +1821,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	gtk_menu_shell_append (GTK_MENU_SHELL (applet->scanning_menu), GTK_WIDGET (scanning_subitem));
 
 	scanning_subitem = GTK_WIDGET (gtk_check_menu_item_new_with_label (_("Never Search")));
+	gtk_check_menu_item_set_draw_as_radio (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);	
 	g_object_set_data (G_OBJECT (scanning_subitem), "scan_method", GINT_TO_POINTER (NM_SCAN_METHOD_NEVER));
 	if (applet->scan_method == NM_SCAN_METHOD_NEVER)
 		gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (scanning_subitem), TRUE);

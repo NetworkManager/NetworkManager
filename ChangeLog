@@ -1,3 +1,8 @@
+2005-06-27  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: make the 'Wireless Network Discovery' menu
+	  items radios.
+
 2005-06-26  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDevice.c: be specific about which device in
