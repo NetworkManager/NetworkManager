@@ -290,11 +290,6 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	}
 
 	dev = g_malloc0 (sizeof (NMDevice));
-	if (!dev)
-	{
-		nm_warning ("could not allocate a new device...  Not enough memory?");
-		return (NULL);
-	}
 
 	dev->refcount = 2; /* 1 for starters, and another 1 for the worker thread */
 	dev->app_data = app_data;

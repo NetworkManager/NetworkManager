@@ -1,3 +1,7 @@
+2005-06-30  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: g_malloc0 cannot fail.
+
 2005-06-27  Robert Love  <rml@novell.com>
 
 	* src/nm-dbus-nm.c: fix "setWirelessEnabled" call for the enabling
