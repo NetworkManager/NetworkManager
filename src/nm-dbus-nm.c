@@ -401,6 +401,8 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 	app_data = data->data;
 	if (app_data->asleep == FALSE)
 	{
+		nm_info ("Going to sleep.");
+
 		app_data->asleep = TRUE;
 
 		/* Physically down all devices */
@@ -431,6 +433,7 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 	app_data = data->data;
 	if (app_data->asleep == TRUE)
 	{
+		nm_info  ("Waking up from sleep.");
 		app_data->asleep = FALSE;
 
 		nm_schedule_state_change_signal_broadcast (app_data);
