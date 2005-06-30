@@ -1,5 +1,11 @@
 2005-06-30  Robert Love  <rml@novell.com>
 
+	* gnome/vpn-properties/nm-vpn-properties.c: display an error dialog and
+	  then exit if the glade file is not found.  currently the application
+	  just hangs.
+
+2005-06-30  Robert Love  <rml@novell.com>
+
 	* src/nm-dbus-nm.c: Patch by Bill Moss <bmoss@clemson.edu> to
 	  explicitly up all interfaces on wake from sleep.
 

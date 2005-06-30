@@ -918,7 +918,7 @@ out:
 
 #define VPN_NAME_FILES_DIR "/etc/NetworkManager/VPN"
 
-static void
+static gboolean
 init_app (void)
 {
 	GtkWidget *w;
@@ -941,6 +941,21 @@ init_app (void)
 	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-vpn-properties.glade");
 	xml = glade_xml_new (glade_file, NULL, NULL);
 	g_free (glade_file);
+	if (!xml) {
+		GtkWidget *dialog;
+
+		dialog = gtk_message_dialog_new (NULL,
+						 GTK_DIALOG_DESTROY_WITH_PARENT,
+						 GTK_MESSAGE_ERROR,
+						 GTK_BUTTONS_CLOSE,
+						 _("Unable to load"));
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+		   _("Cannot find some needed resources (the glade file)!"));
+		gtk_dialog_run (GTK_DIALOG (dialog));
+		gtk_widget_destroy (dialog);
+
+		return FALSE;
+	}
 
 	/* Load all VPN UI modules by inspecting .name files */
 	vpn_types = NULL;
@@ -1068,6 +1083,8 @@ init_app (void)
 
 	/* update "Edit" and "Delete" for current selection */
 	update_edit_del_sensitivity ();
+
+	return TRUE;
 }
 
 
@@ -1121,7 +1138,10 @@ main (int argc, char *argv[])
 
 	glade_gnome_init ();
 
-	init_app ();
+	if (init_app () == FALSE) {
+		ret = 1;
+		goto out;
+	}
 
 	if (do_import) {
 		import_settings (import_svc, import_file);		
