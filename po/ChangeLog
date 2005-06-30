@@ -1,7 +1,9 @@
-2005-06-30  Robert Lov  <rml@novell.com>
+2005-06-30  Robert Love <rml@novell.com>
 
 	* POTFILES.in: remove examples/ translatable files as they are not
-	  part of the official dist and thus break "make distcheck"
+	  part of the official dist and thus break "make distcheck".  Also
+	  remove vpn-daemons/ translatable files as they are included in that
+	  directories own po/POTFILES.in file (and it breaks "make distcheck").
 
 2005-06-28  Kjartan Maraas  <kmaraas@gnome.org>
 

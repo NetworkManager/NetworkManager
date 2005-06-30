@@ -12,9 +12,3 @@ gnome/applet/wireless-applet.glade
 gnome/vpn-properties/nm-vpn-properties.c
 gnome/vpn-properties/nm-vpn-properties.glade
 src/nm-netlink-monitor.c
-vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c
-vpn-daemons/vpnc/auth-dialog/main.c
-vpn-daemons/vpnc/nm-vpnc.desktop.in
-vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade
-vpn-daemons/vpnc/properties/nm-vpnc.c
-vpn-daemons/vpnc/src/nm-vpnc-service.c
