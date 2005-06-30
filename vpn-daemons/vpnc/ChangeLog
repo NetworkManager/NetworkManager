@@ -1,3 +1,7 @@
+2005-06-29  David Zeuthen  <davidz@redhat.com>
+
+	* configure.in: Bump version to 0.2
+
 2005-06-23  David Zeuthen  <davidz@redhat.com>
 
 	* src/nm-vpnc-service.c (vpnc_watch_cb): Some users report even
