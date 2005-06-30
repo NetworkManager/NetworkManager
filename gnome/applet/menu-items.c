@@ -20,10 +20,10 @@
  *     Authors: Darin Adler <darin@eazel.com>
  * 	    Pavel Cisler <pavel@eazel.com>
  * 	    Mike Fleming  <mfleming@eazel.com>
- *          John Sullivan <sullivan@eazel.com>
+ *       John Sullivan <sullivan@eazel.com>
  *
  * (C) Copyright 2004 Red Hat, Inc.
- * Copyright (C) 1999, 2000 Eazel, Inc.
+ * (C) Copyright 1999, 2000 Eazel, Inc.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -74,16 +74,20 @@ GtkCheckMenuItem *wired_menu_item_get_check_item (NMWiredMenuItem *item)
 void wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gint n_devices)
 {
 	char *text;
-	const char *dev_name;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (item != NULL);
 	g_assert (network_device_is_wired (dev));
 
-	dev_name = network_device_get_desc (dev) ? network_device_get_desc (dev) : network_device_get_iface (dev);
-
 	if (n_devices > 1)
+	{
+		const char *dev_name;
+
+		dev_name = network_device_get_desc (dev);
+		if (!dev_name)
+			dev_name = network_device_get_iface (dev);
 		text = g_strdup_printf (_("Wired Network (%s)"), dev_name);
+	}
 	else
 		text = g_strdup (_("_Wired Network"));
 
