@@ -3,6 +3,8 @@
 	* src/NetworkManagerDevice.c: g_malloc0 cannot fail.
 	* src/nm-dbus-nm.c: print when we sleep and wake up.
 	* gnome/applet/menu-items.c: whitespace, misc. cleanup.
+	* configure.in: look in "/usr/sbin" for dhcdbd, too. (it shouldn't be
+	  in /sbin unless D-BUS is, folks).
 
 2005-06-27  Robert Love  <rml@novell.com>
 
