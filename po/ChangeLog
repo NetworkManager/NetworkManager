@@ -1,3 +1,8 @@
+2005-06-30  Robert Lov  <rml@novell.com>
+
+	* POTFILES.in: remove examples/ translatable files as they are not
+	  part of the official dist and thus break "make distcheck"
+
 2005-06-28  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* nb.po: Updated Norwegian bokmål translation.
