@@ -11,9 +11,13 @@ desktop_in_files = nm-vpnc.desktop.in
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
 
+icondir = $(datadir)/icons/hicolor/48x48/apps
+icon_DATA = gnome-mime-application-x-cisco-vpn-settings.png
+
 EXTRA_DIST = $(nmvpnservice_DATA) \
              $(dbusservice_DATA)  \
              $(desktop_in_files)  \
+             $(icon_DATA)         \
              intltool-extract.in  \
              intltool-merge.in    \
              intltool-update.in
