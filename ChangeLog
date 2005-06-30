@@ -5,6 +5,7 @@
 	* gnome/applet/menu-items.c: whitespace, misc. cleanup.
 	* configure.in: look in "/usr/sbin" for dhcdbd, too. (it shouldn't be
 	  in /sbin unless D-BUS is, folks).
+	* README: update to reflect nm-applet replacing NetworkManagerInfo.
 
 2005-06-27  Robert Love  <rml@novell.com>
 

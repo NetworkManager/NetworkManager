@@ -42,28 +42,23 @@ are not.
 STRUCTURE:
 
 NetworkManager runs as a root-user system level daemon, since it must manipulate
-hardware directly.  It communicates over DBUS with at least one other daemon,
-the info-daemon.  Since Trusted and Preferred Networks are user-specific, there
-must be some mechanism of getting this information per-user.  NetworkManager
-cannot store that information as it is user-specific, and therefore communicates
-over DBUS to the info-daemon which provides those lists.  NetworkManager also
-provides an API over DBUS for any DBUS-aware application to determine the
-current state of the network, including available wireless networks the computer
-is aware of and specific details about those networks.  This API also provides
-the means for forcing NetworkManager to associate with a specific wireless
-network.  Use of DBUS allows separation of NetworkManager, which requires no
-user-interface, and the parts of the user interface which might be desktop
-environment specific.
+hardware directly.  It communicates over DBUS with a desktop-level per-user
+process, nm-applet.  Since Trusted and Preferred Networks are user-specific,
+there must be some mechanism of getting this information per-user.
+NetworkManager cannot store that information as it is user-specific, and
+therefore communicates over DBUS to the user daemon which provides those lists.
+NetworkManager also provides an API over DBUS for any DBUS-aware application to
+determine the current state of the network, including available wireless
+networks the computer is aware of and specific details about those networks.
+This API also provides the means for forcing NetworkManager to associate with a
+specific wireless network.  Use of DBUS allows separation of NetworkManager,
+which requires no user-interface, and the parts of the user interface which
+might be desktop environment specific.
 
-The info-daemon provides a DBUS service called NetworkManagerInfo, which should
+The nm-applet provides a DBUS service called NetworkManagerInfo, which should
 provide to NetworkManager the Trusted and Preferred Networks lists upon request.
 It also should be able to display a dialog to retrieve a WEP/WPA key or
 passphrase from the user when NetworkManager requests it.  The GNOME version of
 NetworkManagerInfo, for example, stores Trusted and Preferred Networks in GConf,
 and proxies that information to NetworkManager upon request.
-
-Other UI bits might include a user-visible application (for example, the
-included GNOME Panel applet) providing a list of available wireless networks to
-the user and a means to manually select one to associate with.
-
 
