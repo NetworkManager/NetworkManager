@@ -33,6 +33,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <ctype.h>
@@ -41,6 +42,12 @@
 #include <math.h>
 #include <dirent.h>
 #include <time.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/un.h>
+#include <net/if.h>
 
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
@@ -159,8 +166,181 @@ static GObject *nmwa_constructor (GType type, guint n_props, GObjectConstructPar
 	return obj;
 }
 
+static GtkWidget * get_label (GtkWidget *info_dialog, GladeXML *xml, const char *name)
+{
+	GtkWidget *label;
 
-void nmwa_about_cb (NMWirelessApplet *applet)
+	if (xml != NULL)
+	{
+		label = glade_xml_get_widget (xml, name);
+		g_object_set_data (G_OBJECT (info_dialog), name, label);
+	}
+	else
+		label = g_object_get_data (G_OBJECT (info_dialog), name);
+
+	return label;
+}
+
+static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
+{
+	GtkWidget *error_dialog;
+	char *msg;
+	
+	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
+					   _("Error displaying connection information: "), err);
+	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog),
+											 0, GTK_MESSAGE_ERROR,
+											 GTK_BUTTONS_OK, msg);
+	gtk_dialog_run (GTK_DIALOG (error_dialog));
+	gtk_widget_destroy (error_dialog);
+	g_free (msg);
+}
+
+static gboolean nmwa_update_info (NMWirelessApplet *applet)
+{
+	GtkWidget *info_dialog;
+	char *addr = NULL, *mask = NULL, *broadcast = NULL;
+	char *dest = NULL, *mac = NULL, *iface_and_type = NULL;
+	GtkWidget *label;
+	struct ifreq ifr;
+	int fd, flags;
+	gboolean ret_val = TRUE;
+	const char *iface;
+	NetworkDevice *dev;
+	gboolean ret = TRUE;
+
+	info_dialog = glade_xml_get_widget (applet->info_dialog_xml, "info_dialog");
+	if (!info_dialog)
+	{
+		char *err = g_strdup (_("Could not find some required resources (the glade file)!"));
+		nmwa_show_socket_err (info_dialog, err);
+		g_free (err);
+		return FALSE;
+	}
+
+	dev = nmwa_get_first_active_device (applet->gui_device_list);
+	iface = network_device_get_iface (dev);
+	if (!dev || !iface)
+	{
+		char *err = g_strdup (_("No active connections!"));
+		nmwa_show_socket_err (info_dialog, err);
+		g_free (err);
+		return FALSE;
+	}
+
+	fd = socket (AF_INET, SOCK_DGRAM, 0);
+	if (fd < 0)
+	{
+		char *err = g_strdup (_("Could not open socket!"));
+		nmwa_show_socket_err (info_dialog, err);
+		g_free (err);
+		return FALSE;
+	}
+
+	ifr.ifr_addr.sa_family = AF_INET;
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (ioctl (fd, SIOCGIFADDR, &ifr) == 0)
+		addr = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0)
+	{
+		char *err = g_strdup (_("Failed to get information about the interface!"));
+		nmwa_show_socket_err (info_dialog, err);
+		g_free (err);
+		ret = FALSE;
+		goto out;
+	}
+	flags = ifr.ifr_flags;
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (flags & IFF_BROADCAST && ioctl (fd, SIOCGIFBRDADDR, &ifr) == 0)
+		broadcast = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_broadaddr)->sin_addr));
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (ioctl (fd, SIOCGIFNETMASK, &ifr) == 0)
+		mask = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (flags & IFF_POINTOPOINT && ioctl (fd, SIOCGIFDSTADDR, &ifr) == 0)
+		dest = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_addr));
+
+	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
+	if (ioctl (fd, SIOCGIFHWADDR, &ifr) == 0)
+		mac = g_strdup_printf ("%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[0],
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[1],
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[2],
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[3],
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[4],
+		       (unsigned char) ifr.ifr_hwaddr.sa_data[5]);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
+	gtk_label_set_text (GTK_LABEL (label), iface);
+	if (network_device_is_wired (dev))
+		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
+	else
+		iface_and_type = g_strdup_printf (_("Wireless Ethernet (%s)"), iface);	
+	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-ip-address");
+	gtk_label_set_text (GTK_LABEL (label), addr);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-destination-address");
+	if (flags & IFF_POINTOPOINT)
+	{
+		gtk_label_set_text (GTK_LABEL (label), dest);
+		gtk_widget_show (label);
+	}
+	else
+		gtk_widget_hide (label);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-destination-address-label");
+	if (flags & IFF_POINTOPOINT)
+	{
+		gtk_label_set_text (GTK_LABEL (label), dest);
+		gtk_widget_show (label);
+	}
+	else
+		gtk_widget_hide (label);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-broadcast-address");
+	gtk_label_set_text (GTK_LABEL (label), broadcast);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-subnet-mask");
+	gtk_label_set_text (GTK_LABEL (label), mask);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-hardware-address");
+	gtk_label_set_text (GTK_LABEL (label), mac);
+
+out:
+	close (fd);
+	g_free (addr);
+	g_free (broadcast);
+	g_free (mask);
+	g_free (dest);
+	g_free (iface_and_type);
+	g_free (mac);
+
+	return ret;
+}
+
+static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
+{
+	GtkWidget *info_dialog;
+
+	info_dialog = glade_xml_get_widget (applet->info_dialog_xml, "info_dialog");
+
+	if (nmwa_update_info (applet))
+	{
+		gtk_window_present (GTK_WINDOW (info_dialog));
+		gtk_dialog_run (GTK_DIALOG (info_dialog));
+		gtk_widget_hide (GTK_WIDGET (info_dialog));
+	}
+}
+
+static void nmwa_about_cb (NMWirelessApplet *applet)
 {
 	GdkPixbuf	*pixbuf;
 	char		*file;
@@ -1794,7 +1974,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	GtkWidget	*menu_item;
 	GtkWidget *image;
 	GtkWidget *scanning_subitem;
-	
+
 	g_return_val_if_fail (applet != NULL, NULL);
 
 	menu = gtk_menu_new ();
@@ -1837,6 +2017,12 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	image = gtk_image_new_from_stock (GTK_STOCK_STOP, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
+
+	menu_item = gtk_image_menu_item_new_with_mnemonic (_("Connection _Information"));
+	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_show_info_cb), applet);
+	image = gtk_image_new_from_stock (GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 
 	nmwa_menu_add_separator_item (menu);
 
@@ -2172,6 +2358,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 		return NULL;
 	}
 
+	applet->info_dialog_xml = glade_xml_new (applet->glade_file, "info_dialog", NULL);
 	applet->passphrase_dialog = nmi_passphrase_dialog_init (applet);
 
 	applet->gconf_client = gconf_client_get_default ();

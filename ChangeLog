@@ -1,5 +1,12 @@
 2005-06-30  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: Add right-click menu item "Connection Info"
+	  with information about the currently active connection.
+	* gnome/applet/applet.h: (ditto)
+	* gnome/applet/wireless-applet.glade: (ditto), new file
+
+2005-06-30  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerDevice.c: g_malloc0 cannot fail.
 	* src/nm-dbus-nm.c: print when we sleep and wake up.
 	* gnome/applet/menu-items.c: whitespace, misc. cleanup.

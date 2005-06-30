@@ -78,7 +78,7 @@ typedef struct
 	GMainLoop *		thread_loop;
 	gboolean			thread_done;
 
-        /* Data model elements */
+	/* Data model elements */
 	GMutex *			data_mutex;
 	gboolean			is_adhoc;
 	NMWirelessScanMethod	scan_method;
@@ -136,6 +136,7 @@ typedef struct
 	GtkWidget *		stop_wireless_item;
 
 	GtkWidget *		passphrase_dialog;
+	GladeXML *		info_dialog_xml;
 } NMWirelessApplet;
 
 typedef struct
