@@ -354,11 +354,13 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 		"Ray Strode <rstrode@redhat.com>",
 		"Colin Walters <walters@redhat.com>",
 		"Dan Williams <dcbw@redhat.com>",
+		"David Zeuthen <davidz@redhat.com>",
 		"\nAnd others, including:\n",
 		"Bill Moss",
 		"Tom Parker",
 		"j@bootlab.org",
 		"Peter Jones <pjones@redhat.com>",
+		"Robert Love <rml@novell.com>",
 		NULL
 	};
 
@@ -1343,7 +1345,7 @@ static void nmwa_menu_configure_vpn_item_activate (GtkMenuItem *item, gpointer u
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
-
+printf("dog=%s %s\n", argv[0], argv[1]);
 	g_spawn_async (NULL, argv, NULL, 0, NULL, NULL, NULL, NULL);
 }
 
