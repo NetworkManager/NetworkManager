@@ -436,6 +436,16 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 		nm_info  ("Waking up from sleep.");
 		app_data->asleep = FALSE;
 
+		/* Physically up all devices */
+		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
+		{
+			NMDevice *dev = (NMDevice *)(elt->data);
+
+			nm_device_bring_up (dev);
+		}
+		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+
 		nm_schedule_state_change_signal_broadcast (app_data);
 		nm_policy_schedule_device_change_check (data->data);
 	}
