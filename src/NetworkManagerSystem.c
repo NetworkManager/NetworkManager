@@ -798,11 +798,11 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 				if (err == 0)
 					success = TRUE;
 				else
-					nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+					nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! error = %s", iface, strerror (errno));
 			}
 		}
 		else
-			nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! errno = %d", iface, errno);
+			nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! error = %s", iface, strerror (errno));
 	}
 	else
 		success = TRUE;
