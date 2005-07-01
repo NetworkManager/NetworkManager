@@ -5,5 +5,14 @@ nm-vpnc-service-vpnc-helper
 aclocal.m4
 autom4te.cache
 config.h.in
+config.h
+config.log
+config.status
+intltool-extract
+intltool-merge
+intltool-update
+libtool
+nm-vpnc-service.name
+stamp-h1
 configure
 mkinstalldirs
