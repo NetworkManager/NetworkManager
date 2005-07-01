@@ -1,3 +1,7 @@
+2005-07-01  Hendrik Brandt  <heb@gnome-de.org>
+
+	* de.po: Updated German translation.
+
 2005-06-30  Robert Love <rml@novell.com>
 
 	* POTFILES.in: remove examples/ translatable files as they are not
