@@ -1179,7 +1179,7 @@ static void get_each_device_strength (NetworkDevice *dev, NMWirelessApplet *appl
 /*
  * nmwa_dbus_update_device_strength
  *
- * Update the each active device's strength.
+ * Update each active device's strength.
  *
  */
 gboolean nmwa_dbus_update_device_strength (NMWirelessApplet *applet)
