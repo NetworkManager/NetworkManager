@@ -1,6 +1,11 @@
+2005-07-05  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: use link-local (autoip) on DHCP failure
+	  on wired or unencrypted wireless.
+
 2005-07-01  Robert Love  <rml@novell.com>
 
-	* src/NetworkManagersystem.c: Print the error via strerror().
+	* src/NetworkManagerSystem.c: Print the error via strerror().
 
 2005-06-30  Robert Love  <rml@novell.com>
 

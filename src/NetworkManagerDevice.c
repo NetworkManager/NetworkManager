@@ -2845,7 +2845,11 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	}
 
 	if (nm_device_is_wired (dev))
-		nm_policy_schedule_activation_failed (req);
+	{
+		/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
+		nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
+		ip4_config = nm_device_new_ip4_autoip_config (dev);
+	}
 	else if (nm_device_is_wireless (dev))
 	{
 		NMAccessPoint *ap = nm_act_request_get_ap (req);
@@ -2873,9 +2877,19 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 		}
 		else
 		{
-			/* If DHCP fails on an unencrypted access point, we're done */
-			nm_policy_schedule_activation_failed (req);
+			/*
+			 * Wireless, not encrypted, no DHCP Reply.  Try Zeroconf.  We do not do this in
+			 * the encrypted case, because the problem could be (and more likely is) a bad key.
+			 */
+			nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
+			ip4_config = nm_device_new_ip4_autoip_config (dev);
 		}
+	}
+
+	if (ip4_config)
+	{
+		nm_act_request_set_ip4_config (req, ip4_config);
+		nm_device_activate_schedule_stage5_ip_config_commit (req);
 	}
 
 out:
