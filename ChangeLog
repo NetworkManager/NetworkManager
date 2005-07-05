@@ -1,5 +1,10 @@
 2005-07-05  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerSystem.c: bail out if asked to set a gateway of
+	  zero.
+
+2005-07-05  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerDevice.c: use link-local (autoip) on DHCP failure
 	  on wired or unencrypted wireless.
 

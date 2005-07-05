@@ -732,6 +732,14 @@ static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const 
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
+	/*
+	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
+	 * way of saying "no route" so we just return here.  Hopefully the
+	 * caller flushed the routes, first.
+	 */
+	if (ip4_gateway == 0)
+		return TRUE;
+
 	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
 		return FALSE;
 
