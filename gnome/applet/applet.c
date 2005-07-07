@@ -1664,8 +1664,13 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 		g_signal_connect (G_OBJECT (vpn_item), "activate", G_CALLBACK (nmwa_menu_vpn_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (vpn_item));
 	}
-	other_item = GTK_MENU_ITEM (gtk_separator_menu_item_new ());
-	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
+
+	/* Draw a seperator, but only if we have VPN connections above it */
+	if (applet->gui_vpn_connections)
+	{
+		other_item = GTK_MENU_ITEM (gtk_separator_menu_item_new ());
+		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
+	}
 
 	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Configure VPN...")));
 	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_configure_vpn_item_activate), applet);

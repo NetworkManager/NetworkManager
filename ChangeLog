@@ -1,5 +1,10 @@
 2005-07-07  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: do not draw the VPN menu's seperator if there
+	  are not any VPN connections above it.
+
+2005-07-07  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: whoops, left some "dog" debugging code in.
 
 2005-07-05  Robert Love  <rml@novell.com>
