@@ -1345,7 +1345,7 @@ static void nmwa_menu_configure_vpn_item_activate (GtkMenuItem *item, gpointer u
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
-printf("dog=%s %s\n", argv[0], argv[1]);
+
 	g_spawn_async (NULL, argv, NULL, 0, NULL, NULL, NULL, NULL);
 }
 
