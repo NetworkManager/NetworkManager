@@ -61,11 +61,11 @@ int main (int argc, char *argv[])
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	nmwa = nmwa_new ();
-
-	gtk_widget_show_all (GTK_WIDGET (nmwa));
-
-	gtk_main ();
+	if ((nmwa = nmwa_new ()))
+	{
+		gtk_widget_show_all (GTK_WIDGET (nmwa));
+		gtk_main ();
+	}
 
 	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 

@@ -51,6 +51,7 @@
 
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
+#include <libgnomeui/libgnomeui.h>
 
 #if !GTK_CHECK_VERSION(2,6,0)
 #include <gnome.h>
@@ -80,7 +81,7 @@
 
 static GObject *	nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
 static void		setup_stock (void);
-static void		nmwa_icons_init (NMWirelessApplet *applet);
+static gboolean	nmwa_icons_init (NMWirelessApplet *applet);
 static void		nmwa_icons_free (NMWirelessApplet *applet);
 static void		nmwa_about_cb (NMWirelessApplet *applet);
 static void		nmwa_context_menu_update (NMWirelessApplet *applet);
@@ -139,7 +140,8 @@ static void nmwa_init (NMWirelessApplet *applet)
 	glade_gnome_init ();
 
 	setup_stock ();
-	nmwa_icons_init (applet);
+	if (!nmwa_icons_init (applet))
+		return;
 
 /*	gtk_window_set_default_icon_from_file (ICONDIR"/NMWirelessApplet/wireless-applet.png", NULL); */
 	gtk_widget_show (nmwa_get_instance (applet));
@@ -1149,6 +1151,7 @@ static gboolean show_warning_dialog (char *mesg)
 	guint32		timestamp;
 
 	dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, mesg, NULL);
+	gtk_widget_realize (dialog);
 
 	/* Bash focus-stealing prevention in the face */
 	timestamp = gdk_x11_get_server_time (dialog->window);
@@ -2359,7 +2362,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->glade_file = g_build_filename (GLADEDIR, "wireless-applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
 	{
-		show_warning_dialog (_("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		g_free (applet->glade_file);
 		applet->glade_file = NULL;
 		return NULL;
@@ -2450,7 +2453,19 @@ static void nmwa_icons_free (NMWirelessApplet *applet)
 		g_object_unref (applet->wireless_connecting_icons[i]);
 }
 
-static void
+#define ICON_LOAD(x, y)	\
+	{		\
+		GError *err = NULL; \
+		x = gtk_icon_theme_load_icon (icon_theme, y, icon_size, 0, &err); \
+		if (x == NULL) { \
+			success = FALSE; \
+			g_warning ("Icon %s missing: %s", y, err->message); \
+			g_error_free (err); \
+			goto out; \
+		} \
+	}
+
+static gboolean
 nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 {
 	char *	name;
@@ -2460,47 +2475,36 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	/* Assume icons are square */
 	gint icon_size = 22;
 
-	applet->no_connection_icon = gtk_icon_theme_load_icon (icon_theme, "nm-no-connection", icon_size, 0, NULL);
-	applet->wired_icon = gtk_icon_theme_load_icon (icon_theme, "nm-device-wired", icon_size, 0, NULL);
-	applet->adhoc_icon = gtk_icon_theme_load_icon (icon_theme, "nm-adhoc", icon_size, 0, NULL);
-	applet->vpn_lock_icon = gtk_icon_theme_load_icon (icon_theme, "nm-vpn-lock", icon_size, 0, NULL);
+	ICON_LOAD(applet->no_connection_icon, "nm-no-connection");
+	ICON_LOAD(applet->wired_icon, "nm-device-wired");
+	ICON_LOAD(applet->adhoc_icon, "nm-adhoc");
+	ICON_LOAD(applet->vpn_lock_icon, "nm-vpn-lock");
 
-	applet->wireless_00_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-00", icon_size, 0, NULL);
-	applet->wireless_25_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-25", icon_size, 0, NULL);
-	applet->wireless_50_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-50", icon_size, 0, NULL);
-	applet->wireless_75_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-75", icon_size, 0, NULL);
-	applet->wireless_100_icon = gtk_icon_theme_load_icon (icon_theme, "nm-signal-100", icon_size, 0, NULL);
-
-	if (!applet->no_connection_icon || !applet->wired_icon || !applet->adhoc_icon || !applet->vpn_lock_icon
-		|| !applet->wireless_00_icon || !applet->wireless_25_icon || !applet->wireless_50_icon || !applet->wireless_75_icon
-		|| !applet->wireless_100_icon)
-		goto out;
+	ICON_LOAD(applet->wireless_00_icon, "nm-signal-00");
+	ICON_LOAD(applet->wireless_25_icon, "nm-signal-25");
+	ICON_LOAD(applet->wireless_50_icon, "nm-signal-50");
+	ICON_LOAD(applet->wireless_75_icon, "nm-signal-75");
+	ICON_LOAD(applet->wireless_100_icon, "nm-signal-100");
 
 	for (i = 0; i < NUM_PROGRESS_FRAMES; i++)
 	{
 		name = g_strdup_printf ("nm-progress%02d", i+1);
-		applet->progress_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
+		ICON_LOAD(applet->progress_icons[i], name);
 		g_free (name);
-		if (!applet->progress_icons[i])
-			goto out;
 	}
 
 	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
 	{
 		name = g_strdup_printf ("nm-connecting%02d", i+1);
-		applet->wired_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
+		ICON_LOAD(applet->wired_connecting_icons[i], name);
 		g_free (name);
-		if (!applet->wired_connecting_icons[i])
-			goto out;
 	}
 
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
 	{
 		name = g_strdup_printf ("nm-connecting%02d", i+1);
-		applet->wireless_connecting_icons[i] = gtk_icon_theme_load_icon (icon_theme, name, icon_size, 0, NULL);
+		ICON_LOAD(applet->wireless_connecting_icons[i], name);
 		g_free (name);
-		if (!applet->wireless_connecting_icons[i])
-			goto out;
 	}
 
 	success = TRUE;
@@ -2508,9 +2512,11 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 out:
 	if (!success)
 	{
-		show_warning_dialog (_("The NetworkManager applet could not find some required resources.  It cannot continue.\n"));
-		exit (1);
+		char *msg = g_strdup(_("The NetworkManager applet could not find some required resources.  It cannot continue.\n"));
+		show_warning_dialog (msg);
 	}
+
+	return success;
 }
 
 static void nmwa_icon_theme_changed (GtkIconTheme *icon_theme, NMWirelessApplet *applet)
@@ -2520,7 +2526,7 @@ static void nmwa_icon_theme_changed (GtkIconTheme *icon_theme, NMWirelessApplet 
 	/* FIXME: force redraw */
 }
 
-static void nmwa_icons_init (NMWirelessApplet *applet)
+static gboolean nmwa_icons_init (NMWirelessApplet *applet)
 {
 	GtkIconTheme *icon_theme;
 	const gchar *style = " \
@@ -2542,8 +2548,10 @@ static void nmwa_icons_init (NMWirelessApplet *applet)
 	gtk_rc_parse_string (style);
 
 	icon_theme = gtk_icon_theme_get_default ();
-	nmwa_icons_load_from_disk (applet, icon_theme);
+	if (!nmwa_icons_load_from_disk (applet, icon_theme))
+		return FALSE;
 	g_signal_connect (icon_theme, "changed", G_CALLBACK (nmwa_icon_theme_changed), applet);
+	return TRUE;
 }
 
 

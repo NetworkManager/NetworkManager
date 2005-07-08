@@ -1,3 +1,9 @@
+2005-07-07  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bastien Nocera:
+	* gnome/applet/applet.c
+		- Fix up error reporting when icons or glade files are missing
+
 2005-07-07  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: do not draw the VPN menu's seperator if there
