@@ -52,14 +52,21 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
+		int len;
+
 		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
 				nm_device_get_iface (dev), nm_ap_get_essid (ap));
 		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
-		if (strncmp (path, escaped_compare_path, 
-		             strlen (escaped_compare_path)) == 0)
+
+		len = strlen(escaped_compare_path);
+		if (strncmp (path, escaped_compare_path, len) == 0)
 		{
-			g_free (escaped_compare_path);
-			break;
+			/* Differentiate between 'foo' and 'foo-a' */
+			if (path[len] == '\0' || path[len] == '/')
+			{
+				g_free (escaped_compare_path);
+				break;
+			}
 		}
 		g_free (escaped_compare_path);
 	}

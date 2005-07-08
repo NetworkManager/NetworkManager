@@ -1,5 +1,11 @@
 2005-07-07  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Derek Atkins <warlord@MIT.EDU>
+	* src/nm-dbus-net.c:
+		- (nm_dbus_get_ap_from_object_path): differentiate similar ESSIDs
+
+2005-07-07  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Jos Dehaes <jos_dehaes@fastmail.fm>
 	* src/backends/NetworkManagerGentoo.c
 		- Gentoo backend Static IP nameserver fixes
