@@ -358,7 +358,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 		"Dan Williams <dcbw@redhat.com>",
 		"David Zeuthen <davidz@redhat.com>",
 		"\nAnd others, including:\n",
-		"Bill Moss",
+		"Bill Moss <bmoss@clemson.edu>",
 		"Tom Parker",
 		"j@bootlab.org",
 		"Peter Jones <pjones@redhat.com>",
