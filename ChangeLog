@@ -1,5 +1,12 @@
 2005-07-07  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Jos Dehaes <jos_dehaes@fastmail.fm>
+	* src/backends/NetworkManagerGentoo.c
+		- Gentoo backend Static IP nameserver fixes
+		- General Gentoo backend goodness
+
+2005-07-07  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Bastien Nocera:
 	* gnome/applet/applet.c
 		- Fix up error reporting when icons or glade files are missing
