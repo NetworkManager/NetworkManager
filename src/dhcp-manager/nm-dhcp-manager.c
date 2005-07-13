@@ -85,8 +85,8 @@ static gboolean nm_dhcp_manager_exec_daemon (NMDHCPManager *manager)
 	g_return_val_if_fail (manager != NULL, FALSE);
 
 	dhcp_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhcp_argv, DHCDBD_BINARY_PATH);
-	g_ptr_array_add (dhcp_argv, "--system");
+	g_ptr_array_add (dhcp_argv, (gpointer) DHCDBD_BINARY_PATH);
+	g_ptr_array_add (dhcp_argv, (gpointer) "--system");
 	g_ptr_array_add (dhcp_argv, NULL);
 
 	if (!g_spawn_async ("/", (char **) dhcp_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))

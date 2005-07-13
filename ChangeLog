@@ -1,3 +1,8 @@
+2005-07-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Ray Strode <halfline@gmail.com>
+	* Random cleanups for strict CFLAGS
+
 2005-07-07  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Derek Atkins <warlord@MIT.EDU>

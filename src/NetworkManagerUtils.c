@@ -79,7 +79,7 @@ static MutexDesc *nm_find_mutex_desc (GMutex *mutex)
  * Associate a description with a particular mutex.
  *
  */
-void nm_register_mutex_desc (GMutex *mutex, char *string)
+void nm_register_mutex_desc (GMutex *mutex, const char *string)
 {
 	if (!(nm_find_mutex_desc (mutex)))
 	{
@@ -375,7 +375,7 @@ void nm_dispose_scan_results (wireless_scan *result_list)
  * Wrap g_spawn_sync in a usable manner
  *
  */
-int nm_spawn_process (char *args)
+int nm_spawn_process (const char *args)
 {
 	gint		  num_args;
 	char		**argv = NULL;

@@ -562,10 +562,9 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
 		|| dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
 	{
 		char *error_msg;
-		char *blank_msg = "";
 
 		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
-			error_msg = blank_msg;
+			error_msg = (char *) "";
 		nm_warning ("VPN failed for service '%s', signal '%s', with message '%s'.", service_name, member, error_msg);
 		nm_dbus_vpn_signal_vpn_failed (manager->app_data->dbus_connection, member, active, error_msg);
 	}

@@ -30,13 +30,14 @@
 #include "NetworkManager.h"
 
 
-char * get_network_string_property (DBusConnection *connection, char *network, char *method, NMNetworkType type)
+static char * get_network_string_property (DBusConnection *connection, const char *network, const char *method, NMNetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
 	DBusError		 error;
 	char			*string = NULL;
 	char			*ret_string = NULL;
+	gint32		type_as_int;
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, method);
 	if (message == NULL)
@@ -45,7 +46,8 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 		return NULL;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
+	type_as_int = (gint32) type;
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int, DBUS_TYPE_INVALID);
 	dbus_error_init (&error);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
@@ -78,12 +80,13 @@ char * get_network_string_property (DBusConnection *connection, char *network, c
 	return (ret_string);
 }
 
-gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetworkType type)
+static gboolean get_network_trusted (DBusConnection *connection, const char *network, NMNetworkType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
 	DBusError		 error;
 	gboolean		 trusted = FALSE;
+	gint32		type_as_int;
 
 	g_return_val_if_fail (connection != NULL, -1);
 	g_return_val_if_fail (network != NULL, -1);
@@ -96,7 +99,8 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 	}
 
 	dbus_error_init (&error);
-	dbus_message_append_args (message, DBUS_TYPE_STRING, network, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
+	type_as_int = (gint32) type;
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
@@ -126,12 +130,13 @@ gboolean get_network_trusted (DBusConnection *connection, char *network, NMNetwo
 }
 
 
-void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
+static void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;
 	DBusMessageIter iter;
 	DBusError		 error;
+	gint32		type_as_int;
 	char **networks;
 	int	num_networks;
 	int i;
@@ -144,7 +149,8 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 	}
 
 	dbus_error_init (&error);
-	dbus_message_append_args (message, DBUS_TYPE_INT32, type, DBUS_TYPE_INVALID);
+	type_as_int = (gint32) type;
+	dbus_message_append_args (message, DBUS_TYPE_INT32, &type_as_int, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
 	dbus_message_unref (message);
 	if (dbus_error_is_set (&error))
@@ -195,7 +201,7 @@ void get_networks_of_type (DBusConnection *connection, NMNetworkType type)
 	g_strfreev (networks);
 }
 
-void get_user_key_for_network (DBusConnection *connection)
+static void get_user_key_for_network (DBusConnection *connection)
 {
 	DBusMessage		*message;
 
@@ -219,7 +225,7 @@ void get_user_key_for_network (DBusConnection *connection)
 }
 
 
-void set_user_key_for_network (DBusConnection *connection, DBusMessage *message, GMainLoop *loop)
+static void set_user_key_for_network (DBusConnection *connection, DBusMessage *message, GMainLoop *loop)
 {
 	DBusError	 error;
 	const char		*device;

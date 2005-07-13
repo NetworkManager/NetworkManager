@@ -88,7 +88,7 @@ out:
 GSList *
 nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const char *service, gboolean retry)
 {
-	char       *argv[] = {NULL /*"/usr/libexec/nm-vpnc-auth-dialog"*/, 
+	const char       *argv[] = {NULL /*"/usr/libexec/nm-vpnc-auth-dialog"*/, 
 			      "-n", NULL /*"davidznet42"*/, 
 			      "-s", NULL /*"org.freedesktop.vpnc"*/, 
 			      "-r",
@@ -161,8 +161,8 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 
 	/* Fix up parameters with what we got */
 	argv[0] = auth_dialog_binary;
-	argv[2] = (char *) name;
-	argv[4] = (char *) service;
+	argv[2] = name;
+	argv[4] = service;
 	if (!retry)
 		argv[5] = NULL;
 
@@ -171,7 +171,7 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 	child_status = -1;
 
 	if (!g_spawn_async_with_pipes (NULL,                       /* working_directory */
-				       argv,                       /* argv */
+				       (gchar **) argv,            /* argv */
 				       NULL,                       /* envp */
 				       G_SPAWN_DO_NOT_REAP_CHILD,  /* flags */
 				       NULL,                       /* child_setup */

@@ -1344,12 +1344,12 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 static void nmwa_menu_configure_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
-	char *argv[2] = {BINDIR "/nm-vpn-properties", NULL};
+	const char *argv[] = { BINDIR "/nm-vpn-properties", NULL};
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
 
-	g_spawn_async (NULL, argv, NULL, 0, NULL, NULL, NULL, NULL);
+	g_spawn_async (NULL, (gchar **) argv, NULL, 0, NULL, NULL, NULL, NULL);
 }
 
 /*

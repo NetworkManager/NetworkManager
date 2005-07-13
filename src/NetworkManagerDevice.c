@@ -396,9 +396,9 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 	/* Block until our device thread has actually had a chance to start. */
 	args[0] = &dev->worker_started;
-	args[1] = "nm_device_new(): waiting for device's worker thread to start";
-	args[2] = (void *)LOG_INFO;
-	args[3] = 0;
+	args[1] = (gpointer) "nm_device_new(): waiting for device's worker thread to start";
+	args[2] = GINT_TO_POINTER (LOG_INFO);
+	args[3] = GINT_TO_POINTER (0);
 	nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY,
 			G_USEC_PER_SEC / 20, nm_completion_boolean_test, NULL, args);
 
@@ -3637,7 +3637,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 	int				i;
 	NMAccessPointList *	old_ap_list = nm_device_ap_list_get (dev);
 
-	char				*fake_essids[NUM_FAKE_APS] = { "green", "bay", "packers", "rule" };
+	const char		*fake_essids[NUM_FAKE_APS] = { "green", "bay", "packers", "rule" };
 	struct ether_addr	 fake_addrs[NUM_FAKE_APS] =  {{{0x70, 0x37, 0x03, 0x70, 0x37, 0x03}},
 											{{0x12, 0x34, 0x56, 0x78, 0x90, 0xab}},
 											{{0xcd, 0xef, 0x12, 0x34, 0x56, 0x78}},
