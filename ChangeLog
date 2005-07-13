@@ -1,6 +1,12 @@
 2005-07-13  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Ray Strode <halfline@gmail.com>
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- Don't let vpnc daemonize, fixes some races with PID file reading
+
+2005-07-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Ray Strode <halfline@gmail.com>
 	* Random cleanups for strict CFLAGS
 
 2005-07-07  Dan Williams  <dcbw@redhat.com>

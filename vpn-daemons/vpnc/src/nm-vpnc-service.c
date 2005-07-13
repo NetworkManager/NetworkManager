@@ -47,7 +47,7 @@
 #include "nm-utils.h"
 
 
-static char *vpnc_binary_paths[] =
+static const char *vpnc_binary_paths[] =
 {
 	"/usr/sbin/vpnc",
 	"/sbin/vpnc",
@@ -55,7 +55,6 @@ static char *vpnc_binary_paths[] =
 };
 
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
-#define NM_VPNC_PID_FILE_PATH		LOCALSTATEDIR"/run/vpnc/pid"
 
 typedef struct NmVpncData
 {
@@ -325,38 +324,12 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
 			break;
 
-		case 0:	/* Success, vpnc has daemonized */
-			{
-				GPid	daemon_pid;
-				char *  contents;
-
-				/* vpnc is a bit slow to write the PID file */
-				sleep (2);
-
-				/* Grab the vpnc daemon's PID from its pidfile */
-				if (g_file_get_contents (NM_VPNC_PID_FILE_PATH, &contents, NULL, NULL))
-				{
-					data->pid = atoi (g_strstrip (contents));
-					nm_info ("vpnc daemon's PID is %d\n", data->pid);
-					g_free (contents);
-				}
-				else
-					nm_warning ("Could not read vpnc daemon's PID file.");
-			}
-			break;
-
 		default:
 			break;
 	}
 
-	/* If vpnc did not daemonize (due to errors), we quit after a bit */
-	if (data->pid <= 0)
-	{
-		nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
-		unlink (NM_VPNC_PID_FILE_PATH);
-
-		nm_vpnc_schedule_quit_timer (data, 10000);
-	}
+	nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
+	nm_vpnc_schedule_quit_timer (data, 10000);
 
 	/* State change from STARTING->STARTED happens when we get successful
 	 * ip4 config info from the helper.
@@ -373,7 +346,7 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 {
 	GPid			pid;
-	char **		vpnc_binary = NULL;
+	const char **		vpnc_binary = NULL;
 	GPtrArray *	vpnc_argv;
 	GError *		error = NULL;
 	gboolean		success = FALSE;
@@ -383,8 +356,6 @@ static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	g_return_val_if_fail (data != NULL, -1);
 
 	data->pid = 0;
-
-	unlink (NM_VPNC_PID_FILE_PATH);
 
 	/* Find vpnc */
 	vpnc_binary = vpnc_binary_paths;
@@ -402,9 +373,10 @@ static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	}
 
 	vpnc_argv = g_ptr_array_new ();
-	g_ptr_array_add (vpnc_argv, (char *) (*vpnc_binary));
-	g_ptr_array_add (vpnc_argv, "--non-inter");
-	g_ptr_array_add (vpnc_argv, "-");
+	g_ptr_array_add (vpnc_argv, (gpointer) (*vpnc_binary));
+	g_ptr_array_add (vpnc_argv, (gpointer) "--non-inter");
+	g_ptr_array_add (vpnc_argv, (gpointer) "--no-detach");
+	g_ptr_array_add (vpnc_argv, (gpointer) "-");
 	g_ptr_array_add (vpnc_argv, NULL);
 
 	if (!g_spawn_async_with_pipes (NULL, (char **) vpnc_argv->pdata, NULL,
@@ -456,10 +428,6 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
-	string = g_strdup ("Pidfile " NM_VPNC_PID_FILE_PATH "\n");
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
-	
 	string = g_strdup_printf ("IPSec secret %s\n", password_items[0]);
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
