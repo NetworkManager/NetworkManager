@@ -163,7 +163,7 @@ static void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_co
 				gtk_label_set_label (entry_label, _("Passphrase:"));
 				break;
 			case KEY_TYPE_ASCII_KEY:
-				gtk_label_set_label (entry_label, _("Ascii Key:"));
+				gtk_label_set_label (entry_label, _("ASCII Key:"));
 				break;
 			case KEY_TYPE_HEX_KEY:
 				gtk_label_set_label (entry_label, _("Hex Key:"));
