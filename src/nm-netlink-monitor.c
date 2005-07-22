@@ -263,7 +263,7 @@ nm_netlink_monitor_new (void)
 {
 	GObject *instance;
 
-	instance = g_object_new (NM_TYPE_NETLINK_MONITOR, NULL);
+	instance = g_object_new (NM_TYPE_NETLINK_MONITOR, NULL, NULL);
 
 	return NM_NETLINK_MONITOR (instance);
 }
