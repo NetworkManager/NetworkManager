@@ -1,12 +1,16 @@
 2005-07-22  Robert Love  <rml@novell.com>
 
+	* gnome/libnm_glib/libnm_glib.c: support D-BUS version 0.35, too
+
+2005-07-22  Robert Love  <rml@novell.com>
+
 	* src/nm-netlink-monitor.c: g_object_new() needs at least three
 	  parameters (gcc 4.0.2 warning fix).
 
 2005-07-18  Robert Love  <rml@novell.com>
 
 	Suggested by Aaron Bockover (abockover@novell.com)
-	* gnome/applet/other-network-dialog.c: "ASCII is an acronym" --
+	* gnome/applet/other-network-dialog.c: ASCII is an acronym, thus
 	  s/Ascii/ASCII
 	* gnome/applet/passphrase-dialog.c: ditto
 	* gnome/applet/wireless-applet.glade: ditto
