@@ -263,7 +263,7 @@ nm_netlink_monitor_new (void)
 {
 	GObject *instance;
 
-	instance = g_object_new (NM_TYPE_NETLINK_MONITOR, NULL, NULL);
+	instance = g_object_new (NM_TYPE_NETLINK_MONITOR, NULL);
 
 	return NM_NETLINK_MONITOR (instance);
 }
@@ -273,7 +273,6 @@ nm_netlink_monitor_clear_event_source (NmNetlinkMonitor *monitor)
 {
 	monitor->priv->event_source = NULL;
 }
-
 
 void
 nm_netlink_monitor_attach (NmNetlinkMonitor *monitor, 
