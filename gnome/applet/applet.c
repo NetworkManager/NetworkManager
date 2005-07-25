@@ -1468,9 +1468,11 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 		{
 			NMWiredMenuItem *item = wired_menu_item_new ();
 			GtkCheckMenuItem *gtk_item = wired_menu_item_get_check_item (item);
-		     wired_menu_item_update (item, device, n_devices);
+
+			wired_menu_item_update (item, device, n_devices);
 			if (network_device_get_active (device))
 				gtk_check_menu_item_set_active (gtk_item, TRUE);
+			gtk_check_menu_item_set_draw_as_radio (gtk_item, TRUE);
 
 			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (device)));
 			g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
@@ -1485,6 +1487,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 		{
 			NMWirelessMenuItem *item = wireless_menu_item_new ();
 			GtkMenuItem *gtk_item = wireless_menu_item_get_item (item);
+
 		     wireless_menu_item_update (item, device, n_devices);
 
 			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (device)));

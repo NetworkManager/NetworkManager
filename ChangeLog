@@ -1,3 +1,9 @@
+2005-07-25  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: make the "Wired" menu item a radio button,
+	  in the same group as the wireless networks, since they are all
+	  mutually exclusive.
+
 2005-07-24  Ray Strode  <rstrode@redhat.com>
 
 	* src/nm-netlink-monitor.c (nm_netlink_monitor_new): 
