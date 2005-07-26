@@ -17,7 +17,9 @@ libnmbackend_la_SOURCES +=	NetworkManagerSuSE.c				\
 endif
 
 if TARGET_GENTOO
-libnmbackend_la_SOURCES +=	NetworkManagerGentoo.c
+libnmbackend_la_SOURCES +=	NetworkManagerGentoo.c		\
+						shvar.c				\
+						shvar.h
 endif
 
 if TARGET_DEBIAN

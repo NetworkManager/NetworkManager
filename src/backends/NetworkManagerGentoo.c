@@ -25,16 +25,14 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include <arpa/inet.h>
 #include <signal.h>
-#include "nm-utils.h"
 
-/* get strnlen */
-#define __USE_GNU 
-#include <string.h>
-
+#include <arpa/inet.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerDevice.h"
+#include "nm-utils.h"
+#include "shvar.h"
 
 /*
  * nm_system_init
@@ -44,10 +42,8 @@
  */
 void nm_system_init (void)
 {
-	/* While dhcpcd is the client of choice, it's not forced upon the user
-	 * So we should probably put in a check for available clients, and
-	 * modify our commands appropriatly.
-	 */
+	/* Kill any dhclients lying around */
+	nm_system_kill_all_dhcp_daemons ();
 }
 
 /*
@@ -86,6 +82,19 @@ void nm_system_device_flush_routes_with_iface (const char *iface)
 }
 
 /*
+ * nm_system_device_has_active_routes
+ *
+ * Find out whether the specified device has any routes in the routing
+ * table.
+ *
+ */
+gboolean nm_system_device_has_active_routes (NMDevice *dev)
+{
+	return (FALSE);
+}
+
+
+/*
  * nm_system_device_flush_addresses
  *
  * Flush all network addresses associated with a network device
@@ -120,6 +129,18 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 	g_free (buf);
 }
 
+#if 0
+	/* Alert other computers of our new address */
+	temp_addr.s_addr = addr;
+	buf = g_strdup_printf ("/sbin/arping -q -A -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
+	nm_spawn_process (buf);
+	g_free (buf);
+	g_usleep (G_USEC_PER_SEC * 2);
+	buf = g_strdup_printf ("/sbin/arping -q -U -c 1 -I %s %s", iface, inet_ntoa (temp_addr));
+	nm_spawn_process (buf);
+	g_free (buf);
+#endif
+
 /*
  * nm_system_device_add_route_via_device_with_iface
  *
@@ -147,8 +168,21 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
  */
 void nm_system_enable_loopback (void)
 {
-	nm_spawn_process ("/sbin/ip link set dev lo up");
-	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo label loopback");
+	nm_spawn_process("/etc/init.d/net.lo start");
+}
+
+
+/*
+ * nm_system_flush_loopback_routes
+ *
+ * Flush all routes associated with the loopback device, because it
+ * sometimes gets the first route for ZeroConf/Link-Local traffic.
+ *
+ */
+void nm_system_flush_loopback_routes (void)
+{
+	/* Remove routing table entries for lo */
+	nm_spawn_process ("/sbin/ip route flush dev lo");
 }
 
 /*
@@ -163,6 +197,19 @@ void nm_system_delete_default_route (void)
 }
 
 /*
+ * nm_system_flush_arp_cache
+ *
+ * Flush all entries in the arp cache.
+ *
+ */
+void nm_system_flush_arp_cache (void)
+{
+	nm_spawn_process ("/sbin/ip neigh flush all");
+}
+
+
+
+/*
  * nm_system_kill_all_dhcp_daemons
  *
  * Kill all DHCP daemons currently running, done at startup
@@ -170,7 +217,6 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
-	nm_spawn_process ("/usr/bin/killall -q dhcpcd");
 }
 
 /*
@@ -182,8 +228,12 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-	if(nm_spawn_process ("/etc/init.d/nscd status"))
+ #ifdef NM_NO_NAMED
+	if (nm_spawn_process ("/etc/init.d/nscd status") != 0)
 		nm_spawn_process ("/etc/init.d/nscd restart");
+ #else
+	nm_spawn_process("/usr/sbin/killall -q nscd");
+ #endif	
 }
 
 /*
@@ -192,6 +242,7 @@ void nm_system_update_dns (void)
  * Loads any network adapter kernel modules, these should already be loaded
  * by /etc/modules.autoload.d/kernel-2.x
  *
+ * Gentoo should have all modules loaded.
  */
 void nm_system_load_device_modules (void)
 {
@@ -208,6 +259,9 @@ void nm_system_load_device_modules (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
+	nm_spawn_process("/etc/init.d/mDNSResponder stop");
+	nm_spawn_process("/etc/init.d/mDNSResponder zap");
+	nm_spawn_process("/etc/init.d/mDNSResponder start");
 }
 
 
@@ -219,6 +273,25 @@ void nm_system_restart_mdns_responder (void)
  */
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
+	char *buf;
+	char *addr;
+	struct ether_addr hw_addr;
+	unsigned char eui[8];
+	
+	nm_device_get_hw_address(dev, &hw_addr);
+	
+	memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
+	memmove (eui+5, eui+3, 3);
+	eui[3] = 0xff;
+	eui[4] = 0xfe;
+	eui[0] ^= 2;
+	
+	/* Add the default link-local IPv6 address to a device */
+	buf = g_strdup_printf("/sbin/ip -6 address add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s", 
+						eui[0], eui[1], eui[2], eui[3], eui[4], eui[5], 
+						eui[6], eui[7], nm_device_get_iface(dev));
+	nm_spawn_process(buf);
+	g_free(buf);
 }
 
 typedef struct GentooSystemConfigData
@@ -403,31 +476,6 @@ void nm_system_device_add_default_route_via_device_with_iface (const char *iface
 	g_free (buf);
 }
  
-/*
- * nm_system_flush_loopback_routes
- *
- * Flush all routes associated with the loopback device, because it
- * sometimes gets the first route for ZeroConf/Link-Local traffic.
- *
- */
-void nm_system_flush_loopback_routes (void)
-{
-	/* Remove routing table entries for lo */
-	nm_spawn_process ("/sbin/ip route flush dev lo");
-}
-
- 
-/*
- * nm_system_flush_arp_cache
- *
- * Flush all entries in the arp cache.
- *
- */
-void nm_system_flush_arp_cache (void)
-{
-	nm_spawn_process ("/sbin/ip neigh flush all");
-}
-
 void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
 {
 	GentooSystemConfigData *sys_data = (GentooSystemConfigData *)system_config_data;

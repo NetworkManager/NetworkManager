@@ -1,3 +1,10 @@
+2005-07-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Steev <steev@steev.net>:
+	* src/backends/NetworkManagerGentoo.c
+	  src/backends/Makefile.am
+		- Fix up Gentoo backend
+
 2005-07-26  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: misc. cleanup
