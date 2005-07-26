@@ -150,7 +150,7 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
  */
 gboolean nm_system_device_has_active_routes (NMDevice *dev)
 {
-	return (FALSE);
+	return FALSE;
 }
 
 
@@ -180,7 +180,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 void nm_system_device_flush_addresses_with_iface (const char *iface)
 {
-	char	*buf;
+	char *buf;
 
 	g_return_if_fail (iface != NULL);
 
@@ -277,8 +277,7 @@ void nm_system_update_dns (void)
 /*
  * nm_system_load_device_modules
  *
- * Load any network adapter kernel modules that we need to, since Fedora doesn't
- * autoload them at this time.
+ * Load any network adapter kernel modules that we need.
  *
  */
 void nm_system_load_device_modules (void)
@@ -295,19 +294,22 @@ void nm_system_load_device_modules (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-	FILE 		*fp  = NULL;
+	pid_t pid;
+	FILE *fp;
+	int res;
 
-	if ((fp = fopen ("/var/run/mdnsd.pid", "rt")))
+	fp = fopen ("/var/run/mdnsd.pid", "rt");
+	if (!fp)
+		return;
+
+	res = fscanf (fp, "%d", &pid);
+	if (res == 1)
 	{
-		int pid;
-		int res = fscanf (fp, "%d", &pid);
-		fclose (fp);
-		if (res == 1)
-		{
-			nm_info ("Restarting mdnsd.");
-			kill (pid, SIGUSR1);
-		}
+		nm_info ("Restarting mdnsd (pid=%d).", pid);
+		kill (pid, SIGUSR1);
 	}
+
+	fclose (fp);
 }
 
 
@@ -323,7 +325,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	struct ether_addr hw_addr;
 	unsigned char eui[8];
 
-	nm_device_get_hw_address(dev, &hw_addr);
+	nm_device_get_hw_address (dev, &hw_addr);
 
 	memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
 	memmove (eui+5, eui+3, 3);
@@ -354,9 +356,9 @@ typedef struct SuSESystemConfigData
  */
 static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config)
 {
-	char *	contents = NULL;
-	char **	split_contents = NULL;
-	int		i, len;
+	char *contents = NULL;
+	char **split_contents = NULL;
+	int i, len;
 
 	g_return_if_fail (filename != NULL);
 	g_return_if_fail (ip4_config != NULL);
@@ -614,7 +616,7 @@ out:
 	}
 	nm_debug ("---------------------\n");
 
-	return (void *)sys_data;
+	return sys_data;
 }
 
 
@@ -647,7 +649,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
  */
 gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 {
-	SuSESystemConfigData	*sys_data;
+	SuSESystemConfigData *sys_data;
 
 	g_return_val_if_fail (dev != NULL, TRUE);
 
@@ -660,8 +662,8 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 
 NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 {
-	SuSESystemConfigData	*sys_data;
-	NMIP4Config		*new_config = NULL;
+	SuSESystemConfigData *sys_data;
+	NMIP4Config *new_config = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
 

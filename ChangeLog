@@ -1,3 +1,7 @@
+2005-07-26  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: misc. cleanup
+
 2005-07-25  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: make the "Wired" menu item a radio button,
