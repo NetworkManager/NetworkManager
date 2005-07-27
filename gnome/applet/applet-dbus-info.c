@@ -95,11 +95,12 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
  * Alert NetworkManager of the new user key
  *
  */
-void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message, const char *passphrase, const int key_type)
+void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type)
 {
 	DBusMessage *	reply;
 	const char *	dev_path;
 	const char *	net_path;
+	const int		tmp_key_type = (int)key_type;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (passphrase != NULL);
@@ -110,7 +111,7 @@ void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message,
 		return;
 	}
 
-	dbus_message_append_args (reply, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID);
+	dbus_message_append_args (reply, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &tmp_key_type, DBUS_TYPE_INVALID);
 	dbus_connection_send (connection, reply, NULL);
 	dbus_message_unref (reply);
 }

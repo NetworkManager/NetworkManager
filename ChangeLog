@@ -1,3 +1,17 @@
+2005-07-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-dbus-nm.c
+	  src/nm-dbus-net.c
+		- Random cleanups of spacing
+
+	* gnome/applet/applet.h
+	  gnome/applet/other-network-dialog.c
+	  gnome/applet/passphrase-dialog.c
+		- Conslidate usage of NMWAEncryptionKeyTypes enum
+
+	Patch from Bill Moss:
+		- Make Other Wireless Networks work again with encryption keys
+
 2005-07-26  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Steev <steev@steev.net>:

@@ -36,14 +36,7 @@
 #include "applet-dbus-info.h"
 #include "passphrase-dialog.h"
 #include "nm-utils.h"
-
-enum NMIPassphraseDialogKeyTypes
-{
-	KEY_TYPE_128_BIT_PASSPHRASE = 0,
-	KEY_TYPE_ASCII_KEY = 1,
-	KEY_TYPE_HEX_KEY = 2
-};
-
+#include "NetworkManager.h"
 
 static GladeXML *get_dialog_xml (GtkWidget *dialog)
 {
@@ -194,13 +187,12 @@ static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer use
 		GladeXML *		dialog_xml;
 		GtkEntry *		entry;
 		GtkComboBox *		key_type_combo;
-		int				key_type;
 		const char *		passphrase;
 		NetworkDevice *	dev = g_object_get_data (G_OBJECT (dialog), "device");
 		WirelessNetwork *	net = g_object_get_data (G_OBJECT (dialog), "network");
 		DBusMessage *		message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
 		char *			key = NULL;
-		int				key_type_return = NM_ENC_TYPE_UNKNOWN;
+		NMEncKeyType		key_type_return = NM_ENC_TYPE_UNKNOWN;
 		GConfEntry *		gconf_entry;
 		char *			escaped_network;
 
@@ -208,10 +200,9 @@ static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer use
 
 		entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
 		key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
-		key_type = gtk_combo_box_get_active (key_type_combo);
 		passphrase = gtk_entry_get_text (entry);
 
-		switch (key_type)
+		switch (gtk_combo_box_get_active (key_type_combo))
 		{
 			case KEY_TYPE_128_BIT_PASSPHRASE:
 				key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;

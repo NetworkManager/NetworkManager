@@ -102,11 +102,11 @@ static DBusMessage *nm_dbus_net_get_name (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message))) {
-                const char *essid;
-                essid = nm_ap_get_essid (data->ap);
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		const char *essid = nm_ap_get_essid (data->ap);
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
-        }
+	}
 
 	return reply;
 }

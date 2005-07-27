@@ -43,12 +43,6 @@
 #include "applet-dbus-devices.h"
 #include "other-network-dialog.h"
 
-enum NMWAEncryptionKeyTypes
-{
-	KEY_TYPE_128_BIT_PASSPHRASE = 0,
-	KEY_TYPE_ASCII_KEY = 1,
-	KEY_TYPE_HEX_KEY = 2
-};
 
 static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 {
@@ -217,6 +211,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	essid_entry = glade_xml_get_widget (xml, "essid_entry");
 	button = glade_xml_get_widget (xml, "ok_button");
+	gtk_widget_grab_default (GTK_WIDGET (button));
 
 	gtk_widget_grab_focus (essid_entry);
 	gtk_entry_set_text (GTK_ENTRY (essid_entry), "");

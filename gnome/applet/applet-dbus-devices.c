@@ -988,7 +988,7 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
  *
  */
 void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
-						NMEncKeyType key_type, const char *passphrase)
+						const NMEncKeyType key_type, const char *passphrase)
 {
 	DBusMessage	*message;
 
@@ -1001,7 +1001,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 
 		if (network_device_is_wireless (dev) && essid)
 		{
-			nm_info ("Forcing device '%s' and network '%s' %s passphrase\n", dev_path, essid, passphrase ? "with" : "without");
+			int tmp_key_type = (int)key_type;
 
 			if (passphrase == NULL)
 				passphrase = "";
@@ -1009,7 +1009,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 										DBUS_TYPE_STRING, &essid,
 										DBUS_TYPE_STRING, &passphrase,
-										DBUS_TYPE_INT32, &key_type,
+										DBUS_TYPE_INT32, &tmp_key_type,
 										DBUS_TYPE_INVALID);
 		}
 		else

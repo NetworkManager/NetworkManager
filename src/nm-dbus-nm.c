@@ -31,6 +31,7 @@
 #include "NetworkManagerDbusUtils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
+#include "NetworkManager.h"
 
 
 /*
@@ -117,9 +118,9 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path = NULL;
-	const char *		essid = NULL;
-	const char *		key = NULL;
-	const int			key_type = -1;
+	char *			essid = NULL;
+	char *			key = NULL;
+	int				key_type = -1;
 	NMActRequest *		req = NULL;
 	NMAccessPoint *	ap = NULL;
 
@@ -167,7 +168,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	nm_schedule_state_change_signal_broadcast (data->data);
 
 	if (nm_device_is_wireless (dev))
-		ap = nm_device_wireless_get_activation_ap (dev, essid, key, key_type);
+		ap = nm_device_wireless_get_activation_ap (dev, essid, key, (NMEncKeyType)key_type);
 	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
 
 out:
@@ -182,14 +183,14 @@ out:
  */
 static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	NMDevice			*dev = NULL;
-	DBusMessage		*reply = NULL;
-	char				*dev_path = NULL;
-	NMAccessPoint		*new_ap = NULL;
-	char				*network = NULL;
-	char				*key = NULL;
-	int				 key_type = -1;
-	DBusError			 error;
+	NMDevice *		dev = NULL;
+	DBusMessage *		reply = NULL;
+	char *			dev_path = NULL;
+	NMAccessPoint *	new_ap = NULL;
+	char *			network = NULL;
+	char *			key = NULL;
+	int				key_type = -1;
+	DBusError			error;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -205,7 +206,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 						"NetworkManager::createWirelessNetwork called with invalid arguments.");
-		return (reply);
+		return reply;
 	} else nm_info ("Creating network '%s' on device '%s'.", network, dev_path);
 
 	dev_path = nm_dbus_unescape_object_path (dev_path);
@@ -215,7 +216,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
-		return (reply);
+		return reply;
 	}
 	nm_device_ref (dev);
 
@@ -231,10 +232,10 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 
 	/* Fill in the description of the network to create */
 	nm_ap_set_essid (new_ap, network);
-	if (nm_is_enc_key_valid (key, key_type))
+	if (nm_is_enc_key_valid (key, (NMEncKeyType)key_type))
 	{
 		nm_ap_set_encrypted (new_ap, TRUE);
-		nm_ap_set_enc_key_source (new_ap, key, key_type);
+		nm_ap_set_enc_key_source (new_ap, key, (NMEncKeyType)key_type);
 		nm_ap_set_auth_method (new_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 	}
 	nm_ap_set_mode (new_ap, NETWORK_MODE_ADHOC);
@@ -244,7 +245,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 
 out:
 	nm_device_unref (dev);
-	return (reply);
+	return reply;
 }
 
 
