@@ -729,7 +729,7 @@ nm_info_handler (const gchar	*log_domain,
 		break;
 	}
 
-	syslog (syslog_priority, message);
+	syslog (syslog_priority, "%s", message);
 }
 
 static void

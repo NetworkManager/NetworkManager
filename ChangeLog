@@ -1,3 +1,8 @@
+2005-07-29  Ray Strode  <rstrode@redhat.com>
+
+	* src/NetworkManager.c (nm_info_handler): don't use input as format
+	string (Spotted by Ian Jackson).
+
 2005-07-27  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-dbus-nm.c
