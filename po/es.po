@@ -1,3 +1,4 @@
+# translation of NetworkManager.HEAD.es.po to
 # translation of NetworkManager.HEAD.es.po to Español
 # traducción de es.po al Spanish
 # traducción de NetworkManager.HEAD.po al Spanish
@@ -12,17 +13,17 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD.es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-12 04:10+0000\n"
-"PO-Revision-Date: 2005-07-19 11:30+0200\n"
-"Last-Translator: Lucas Vieites Fariña <lucas@asixinformatica.com>\n"
-"Language-Team: Español <traductores@es.gnome.org>\n"
+"POT-Creation-Date: 2005-07-29 12:11+0000\n"
+"PO-Revision-Date: 2005-07-29 17:39+0200\n"
+"Last-Translator: \n"
+"Language-Team:  <en@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.10\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: ../gnome/applet/applet-dbus-info.c:986
+#: ../gnome/applet/applet-dbus-info.c:987
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -182,9 +183,9 @@ msgstr ""
 "\n"
 "\"%s\""
 
-#: ../gnome/applet/applet.c:795 ../gnome/applet/applet.c:2365
-#: ../gnome/applet/other-network-dialog.c:315
-#: ../gnome/applet/passphrase-dialog.c:455
+#: ../gnome/applet/applet.c:795 ../gnome/applet/applet.c:2368
+#: ../gnome/applet/other-network-dialog.c:310
+#: ../gnome/applet/passphrase-dialog.c:446
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -273,77 +274,77 @@ msgstr "Conexión de red inalámbrica a «%s» (%d%%)"
 msgid "VPN connection to '%s'"
 msgstr "Conexión VPN a «%s»"
 
-#: ../gnome/applet/applet.c:1517
+#: ../gnome/applet/applet.c:1520
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Conectar a otra red inalámbrica..."
 
-#: ../gnome/applet/applet.c:1538
+#: ../gnome/applet/applet.c:1541
 msgid "Create _New Wireless Network..."
 msgstr "Crear una red inalámbrica _nueva..."
 
-#: ../gnome/applet/applet.c:1651
+#: ../gnome/applet/applet.c:1654
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "Conexiones VPN"
 
-#: ../gnome/applet/applet.c:1678
+#: ../gnome/applet/applet.c:1681
 msgid "Configure VPN..."
 msgstr "Configurar VPN..."
 
-#: ../gnome/applet/applet.c:1682
+#: ../gnome/applet/applet.c:1685
 msgid "Disconnect VPN..."
 msgstr "Desconectar VPN..."
 
-#: ../gnome/applet/applet.c:1732
+#: ../gnome/applet/applet.c:1735
 msgid "No network devices have been found"
 msgstr "No se ha encontrado ningún dispositivo de red"
 
-#: ../gnome/applet/applet.c:1890
+#: ../gnome/applet/applet.c:1893
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager no se está ejecutando..."
 
-#: ../gnome/applet/applet.c:1958
+#: ../gnome/applet/applet.c:1961
 msgid "_Stop All Wireless Devices"
 msgstr "_Detener todos los dispositivos inalámbricos"
 
-#: ../gnome/applet/applet.c:1963
+#: ../gnome/applet/applet.c:1966
 msgid "_Start All Wireless Devices"
 msgstr "_Iniciar todos los dispositivos inalámbricos"
 
-#: ../gnome/applet/applet.c:1994
+#: ../gnome/applet/applet.c:1997
 msgid "_Wireless Network Discovery"
 msgstr "Descubrir red _inalámbrica"
 
-#: ../gnome/applet/applet.c:1997
+#: ../gnome/applet/applet.c:2000
 msgid "Always Search"
 msgstr "Buscar siempre"
 
-#: ../gnome/applet/applet.c:2005
+#: ../gnome/applet/applet.c:2008
 msgid "Search Only When Disconnected"
 msgstr "Buscar sólo si está desconectado"
 
-#: ../gnome/applet/applet.c:2013
+#: ../gnome/applet/applet.c:2016
 msgid "Never Search"
 msgstr "Nunca buscar"
 
 #. Stop All Wireless Devices item
-#: ../gnome/applet/applet.c:2025
+#: ../gnome/applet/applet.c:2028
 msgid "Stop All Wireless Devices"
 msgstr "Detener todos los dispositivos inalámbricos"
 
-#: ../gnome/applet/applet.c:2031
+#: ../gnome/applet/applet.c:2034
 msgid "Connection _Information"
 msgstr "_Información acerca de la conexión"
 
-#: ../gnome/applet/applet.c:2039
+#: ../gnome/applet/applet.c:2042
 msgid "_Help"
 msgstr "A_yuda"
 
-#: ../gnome/applet/applet.c:2046
+#: ../gnome/applet/applet.c:2049
 msgid "_About"
 msgstr "_Acerca de"
 
-#: ../gnome/applet/applet.c:2515
+#: ../gnome/applet/applet.c:2518
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -385,27 +386,27 @@ msgstr[1] "Redes inalámbricas"
 msgid " (invalid Unicode)"
 msgstr "(Unicode inválido)"
 
-#: ../gnome/applet/other-network-dialog.c:148
-#: ../gnome/applet/passphrase-dialog.c:163
+#: ../gnome/applet/other-network-dialog.c:142
+#: ../gnome/applet/passphrase-dialog.c:156
 #: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Contraseña:"
 
-#: ../gnome/applet/other-network-dialog.c:151
-#: ../gnome/applet/passphrase-dialog.c:166
-msgid "Ascii Key:"
+#: ../gnome/applet/other-network-dialog.c:145
+#: ../gnome/applet/passphrase-dialog.c:159
+msgid "ASCII Key:"
 msgstr "Clave Ascii:"
 
-#: ../gnome/applet/other-network-dialog.c:154
-#: ../gnome/applet/passphrase-dialog.c:169
+#: ../gnome/applet/other-network-dialog.c:148
+#: ../gnome/applet/passphrase-dialog.c:162
 msgid "Hex Key:"
 msgstr "Clave Hex:"
 
-#: ../gnome/applet/other-network-dialog.c:229
+#: ../gnome/applet/other-network-dialog.c:224
 msgid "Create new wireless network"
 msgstr "Crea una red inalámbricas nueva"
 
-#: ../gnome/applet/other-network-dialog.c:230
+#: ../gnome/applet/other-network-dialog.c:225
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -413,15 +414,15 @@ msgstr ""
 "Introduzca el ESSID y las opcione de seguridad de la red inalámbrica que "
 "quiere crear."
 
-#: ../gnome/applet/other-network-dialog.c:235
+#: ../gnome/applet/other-network-dialog.c:230
 msgid "Custom wireless network"
 msgstr "Red inalámbricas personalizada"
 
-#: ../gnome/applet/other-network-dialog.c:236
+#: ../gnome/applet/other-network-dialog.c:231
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Introduzca el ESSID de la red inalámbrica con la que quiere conectarse."
 
-#: ../gnome/applet/passphrase-dialog.c:248
+#: ../gnome/applet/passphrase-dialog.c:239
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Frase de paso para la red inalámbrica %s"
@@ -438,15 +439,17 @@ msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
 "Contact your system administrator."
 msgstr ""
-"No se ha podido encontrar el diálogo de autenticación para el tipo de conexión VPN «%s». "
-"Póngase en contacto con su administrador de sistemas."
+"No se ha podido encontrar el diálogo de autenticación para el tipo de "
+"conexión VPN «%s». Póngase en contacto con su administrador de sistemas."
 
 #: ../gnome/applet/vpn-password-dialog.c:194
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
 "type '%s'. Contact your system administrator."
-msgstr "Ha habido un problema al iniciar el diálogo de autenticación para el tipo de conexión VPN «%s». Póngase en contacto con su administrador de sistemas."
+msgstr ""
+"Ha habido un problema al iniciar el diálogo de autenticación para el tipo de "
+"conexión VPN «%s». Póngase en contacto con su administrador de sistemas."
 
 #: ../gnome/applet/wireless-applet.glade.h:1
 msgid " "
@@ -455,7 +458,7 @@ msgstr " "
 #: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
-"Ascii Key (WEP)\n"
+"ASCII Key (WEP)\n"
 "Hex Key (WEP)"
 msgstr ""
 "Frase de paso de 128 bits (WEP)\n"
@@ -465,7 +468,7 @@ msgstr ""
 #: ../gnome/applet/wireless-applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
-"Ascii key (WEP)\n"
+"ASCII key (WEP)\n"
 "Hex key (WEP)"
 msgstr ""
 "Frase de paso de 128 bits (WEP)\n"
@@ -474,7 +477,9 @@ msgstr ""
 
 #: ../gnome/applet/wireless-applet.glade.h:8
 msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr "<span weight=\"bold\" size=\"larger\">Información de la conexión activa</span>"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Información de la conexión activa</"
+"span>"
 
 #: ../gnome/applet/wireless-applet.glade.h:10
 #, no-c-format
@@ -603,7 +608,9 @@ msgstr "No se puede añadir una conexión VPN"
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr "No se ha encontrado software VPN adecuado en su sistema. Póngase en contacto con su administrador de sistemas."
+msgstr ""
+"No se ha encontrado software VPN adecuado en su sistema. Póngase en contacto "
+"con su administrador de sistemas."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:428
 msgid "Cannot import VPN connection"
@@ -614,7 +621,10 @@ msgstr "No se puede importar la conexión VPN"
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr "No se ha podido encontrar software adecuado para la conexión VPN de tipo «%s» para importar el archivo «%s». Póngase en contacto con su administrador de sistemas."
+msgstr ""
+"No se ha podido encontrar software adecuado para la conexión VPN de tipo «%"
+"s» para importar el archivo «%s». Póngase en contacto con su administrador "
+"de sistemas."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:570
 #, c-format
@@ -626,7 +636,9 @@ msgstr "Ha ocurrido un error al recuperar la conexión VPN «%s»"
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr "No se han encontrado los archivos de la IU para la conexión VPN de tipo «%s». Póngase en contacto con su administrador de sistemas."
+msgstr ""
+"No se han encontrado los archivos de la IU para la conexión VPN de tipo «%"
+"s». Póngase en contacto con su administrador de sistemas."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:733
 #, c-format
@@ -639,7 +651,9 @@ msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr "Se perderá toda la información de la conexión VPN «%s» y necesitará que su administrador de sistemas le proporcione información para crear una conexión."
+msgstr ""
+"Se perderá toda la información de la conexión VPN «%s» y necesitará que su "
+"administrador de sistemas le proporcione información para crear una conexión."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:951
 msgid "Unable to load"
@@ -682,7 +696,9 @@ msgstr "Eliminar la conexión VPN seleccionada"
 msgid ""
 "Dependent on the private network you want to connect to, you need to select "
 "what type of connection you want to create."
-msgstr "Debe seleccionar qué tipo de conexión desea crear dependiendo de la red privada a la que quiere conectar."
+msgstr ""
+"Debe seleccionar qué tipo de conexión desea crear dependiendo de la red "
+"privada a la que quiere conectar."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "E_xport"
@@ -716,9 +732,11 @@ msgid ""
 "It will require some information, such as IP addresses and secrets, that "
 "will probably be provided by your system administrator as appropriate."
 msgstr ""
-"Este asistente le guiará a través de la creación de una nueva conexión VPN a una red privada.\n"
+"Este asistente le guiará a través de la creación de una nueva conexión VPN a "
+"una red privada.\n"
 "\n"
-"Necesitará alguna información como, por ejemplo, direcciones IP y secretos, que probablemente le serán proporcionados por su administrador de sistemas."
+"Necesitará alguna información como, por ejemplo, direcciones IP y secretos, "
+"que probablemente le serán proporcionados por su administrador de sistemas."
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
@@ -734,28 +752,28 @@ msgstr ""
 "no se puede asociar al socket netlink para monitorizar dispositivos ethernet "
 "con cable - %s"
 
-#: ../src/nm-netlink-monitor.c:404
+#: ../src/nm-netlink-monitor.c:403
 msgid "operation took too long"
 msgstr "la operación duró demasiado"
 
-#: ../src/nm-netlink-monitor.c:501
+#: ../src/nm-netlink-monitor.c:500
 msgid "received data from wrong type of sender"
 msgstr "se han recibido datos con un tipo de emisor incorrecto"
 
-#: ../src/nm-netlink-monitor.c:514
+#: ../src/nm-netlink-monitor.c:513
 msgid "received data from unexpected sender"
 msgstr "se han recibido datos de un emisor inesperado"
 
-#: ../src/nm-netlink-monitor.c:536
+#: ../src/nm-netlink-monitor.c:535
 #, c-format
 msgid "%s"
 msgstr "%s"
 
-#: ../src/nm-netlink-monitor.c:645
+#: ../src/nm-netlink-monitor.c:644
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "se han enviado demasiados datos a través del socket y algunos de perdieron"
 
-#: ../src/nm-netlink-monitor.c:734
+#: ../src/nm-netlink-monitor.c:733
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
