@@ -1,3 +1,8 @@
+2005-08-04  Robert Love  <rml@novell.com>
+
+	* gnome/applet/other-network-dialog.c: fix leak. "label" needs to be
+	  freed.
+
 2005-08-04  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c

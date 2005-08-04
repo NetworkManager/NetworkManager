@@ -231,6 +231,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 			_("Enter the ESSID of the wireless network to which you wish to connect."));
 	}
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
+	g_free (label);
 
 	/* Do we have multiple Network cards? */
 	g_mutex_lock (applet->data_mutex);
