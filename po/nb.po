@@ -1,23 +1,29 @@
-# translation of nb.po to Norwegian Bokmal
-# This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# translation of NetworkManager to Norwegian Bokmal
+# This file is distributed under the same license as the NetworkManager package.
+# Copyright (C) 2004, 2005 Red Hat, Inc.
+# Kjartan Maraas <kmaraas@gnome.org>, 2004-2005.
 # Terance Edward Sola <terance@lyse.net>, 2005.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: nb\n"
+"Project-Id-Version: NetworkManager 0.1.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-04 14:26+0200\n"
-"PO-Revision-Date: 2005-07-04 14:39+0200\n"
-"Last-Translator: Terance Edward Sola <terance@lyse.net>\n"
+"POT-Creation-Date: 2005-08-04 16:29+0200\n"
+"PO-Revision-Date: 2005-08-04 16:38+0200\n"
+"Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmal <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: KBabel 1.10\n"
 
-#: ../gnome/applet/applet-dbus-info.c:986
+#. Setup a request to the keyring to save the network passphrase
+#: ../gnome/applet/applet-dbus-info.c:842
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "Passord for trådløst nettverk %s"
+
+#: ../gnome/applet/applet-dbus-info.c:1052
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -35,53 +41,54 @@ msgstr "Tilkobling til trådløst nettverk «%s» feilet.\n"
 msgid "Connection to the wired network failed.\n"
 msgstr "Tilkobling til trådløst nettverk feilet.\n"
 
-#: ../gnome/applet/applet.c:190
+#: ../gnome/applet/applet.c:192
 msgid "Error displaying connection information: "
 msgstr "Feil under visning av tilkoblingsinformasjon:"
 
-#: ../gnome/applet/applet.c:215
+#: ../gnome/applet/applet.c:217
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Fant ikke nødvendige ressurser (glade-filen)."
 
-#: ../gnome/applet/applet.c:225
+#: ../gnome/applet/applet.c:227
 msgid "No active connections!"
 msgstr "Ingen aktive tilkoblinger!"
 
-#: ../gnome/applet/applet.c:234
+#: ../gnome/applet/applet.c:236
 msgid "Could not open socket!"
 msgstr "Kunne ikke åpne sokkel!"
 
-#: ../gnome/applet/applet.c:249
+#: ../gnome/applet/applet.c:251
 msgid "Failed to get information about the interface!"
 msgstr "Fikk ikke informasjon om grensesnittet!"
 
-#: ../gnome/applet/applet.c:282
+#: ../gnome/applet/applet.c:284
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Kablet nettverk (%s)"
 
-#: ../gnome/applet/applet.c:284
+#: ../gnome/applet/applet.c:286
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Trådløst nettverk (%s)"
 
-#: ../gnome/applet/applet.c:378 ../gnome/applet/applet.c:396
+#: ../gnome/applet/applet.c:380 ../gnome/applet/applet.c:398
 msgid "NetworkManager Applet"
 msgstr "NetworkManager panelprogram"
 
-#: ../gnome/applet/applet.c:380 ../gnome/applet/applet.c:398
+#: ../gnome/applet/applet.c:382 ../gnome/applet/applet.c:400
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "Opphavsrett © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:381 ../gnome/applet/applet.c:399
-msgid "Notification area applet for managing your network devices and connections."
+#: ../gnome/applet/applet.c:383 ../gnome/applet/applet.c:401
+msgid ""
+"Notification area applet for managing your network devices and connections."
 msgstr "Et panelprogram for å håndtere nettverksenheter og tilkoblinger."
 
-#: ../gnome/applet/applet.c:484
+#: ../gnome/applet/applet.c:486
 msgid "VPN Error"
 msgstr "Feil med VPN"
 
-#: ../gnome/applet/applet.c:488
+#: ../gnome/applet/applet.c:490
 #, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
@@ -96,8 +103,8 @@ msgstr ""
 "\n"
 "Melding fra VPN-tjenesten: «%s»"
 
-#: ../gnome/applet/applet.c:493
-#, fuzzy, c-format
+#: ../gnome/applet/applet.c:495
+#, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Start Failure</span>\n"
 "\n"
@@ -106,14 +113,14 @@ msgid ""
 "\n"
 "The VPN service said: \"%s\""
 msgstr ""
-"<span weight=\"bold\" size\"larger\">Feil med VPN-pålogging</span>\n"
+"<span weight=\"bold\" size\"larger\">Feil med start av VPN</span>\n"
 "\n"
-"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved pålogging.\n"
+"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved oppstart av VPN-programmet.\n"
 "\n"
 "Melding fra VPN-tjenesten: «%s»"
 
-#: ../gnome/applet/applet.c:498
-#, fuzzy, c-format
+#: ../gnome/applet/applet.c:500
+#, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
 "\n"
@@ -121,14 +128,14 @@ msgid ""
 "\n"
 "The VPN service said: \"%s\""
 msgstr ""
-"<span weight=\"bold\" size\"larger\">Feil med VPN-pålogging</span>\n"
+"<span weight=\"bold\" size\"larger\">Feil med VPN-tilkobling</span>\n"
 "\n"
-"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved pålogging.\n"
+"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved tilkobling.\n"
 "\n"
 "Melding fra VPN-tjenesten: «%s»"
 
-#: ../gnome/applet/applet.c:503
-#, fuzzy, c-format
+#: ../gnome/applet/applet.c:505
+#, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n"
 "\n"
@@ -136,14 +143,14 @@ msgid ""
 "\n"
 "The VPN service said: \"%s\""
 msgstr ""
-"<span weight=\"bold\" size\"larger\">Feil med VPN-pålogging</span>\n"
+"<span weight=\"bold\" size\"larger\">Feil med konfigurasjon av VPN</span>\n"
 "\n"
-"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved pålogging.\n"
+"VPN-tilkobling «%s» er ikke korrekt konfigurert.\n"
 "\n"
 "Melding fra VPN-tjenesten: «%s»"
 
-#: ../gnome/applet/applet.c:508
-#, fuzzy, c-format
+#: ../gnome/applet/applet.c:510
+#, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
 "\n"
@@ -152,13 +159,13 @@ msgid ""
 "\n"
 "The VPN service said: \"%s\""
 msgstr ""
-"<span weight=\"bold\" size\"larger\">Feil med VPN-pålogging</span>\n"
+"<span weight=\"bold\" size\"larger\">Feil med VPN-tilkobling</span>\n"
 "\n"
-"Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved pålogging.\n"
+"Kunne ikke starte VPN-tilkobling «%s» fordi VPN-tjeneren ikke returnerte riktig nettverkskonfigurasjon.\n"
 "\n"
 "Melding fra VPN-tjenesten: «%s»"
 
-#: ../gnome/applet/applet.c:575
+#: ../gnome/applet/applet.c:577
 #, c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n"
@@ -173,164 +180,166 @@ msgstr ""
 "\n"
 "«%s»"
 
-#: ../gnome/applet/applet.c:793 ../gnome/applet/applet.c:2357
-#: ../gnome/applet/other-network-dialog.c:315
-#: ../gnome/applet/passphrase-dialog.c:455
+#: ../gnome/applet/applet.c:795 ../gnome/applet/applet.c:2368
+#: ../gnome/applet/other-network-dialog.c:310
+#: ../gnome/applet/passphrase-dialog.c:397
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr "NetworkManager fant ikke nødvendige ressurser (glade-filen ble ikke funnet)."
+msgstr ""
+"NetworkManager fant ikke nødvendige ressurser (glade-filen ble ikke funnet)."
 
-#: ../gnome/applet/applet.c:806
+#: ../gnome/applet/applet.c:808
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Nettverksenheten «%s (%s)» støtter ikke søk etter trådløse nettverk."
 
-#: ../gnome/applet/applet.c:813
+#: ../gnome/applet/applet.c:815
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "Nettverksenheten «%s (%s)» støtter ikke informasjon om tilkoblet status."
+msgstr ""
+"Nettverksenheten «%s (%s)» støtter ikke informasjon om tilkoblet status."
 
-#: ../gnome/applet/applet.c:934
+#: ../gnome/applet/applet.c:936
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Klargjør enhet %s for det trådløse nettverket..."
 
-#: ../gnome/applet/applet.c:936
+#: ../gnome/applet/applet.c:938
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Klargjør enhet %s for trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:943
+#: ../gnome/applet/applet.c:945
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Konfigurerer enhet %s for kablet nettverk..."
 
-#: ../gnome/applet/applet.c:945
+#: ../gnome/applet/applet.c:947
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Forsøker å bruke trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:952
+#: ../gnome/applet/applet.c:954
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Venter på nettverksnøkkel for trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:959 ../gnome/applet/applet.c:968
+#: ../gnome/applet/applet.c:961 ../gnome/applet/applet.c:970
 msgid "Requesting a network address from the wired network..."
 msgstr "Ber om en nettverksadresse fra kablet nettverk..."
 
-#: ../gnome/applet/applet.c:961 ../gnome/applet/applet.c:970
+#: ../gnome/applet/applet.c:963 ../gnome/applet/applet.c:972
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Ber om en nettverksadresse fra trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:977
+#: ../gnome/applet/applet.c:979
 msgid "Finishing connection to the wired network..."
 msgstr "Fullfører tilkobling til kablet nettverk..."
 
-#: ../gnome/applet/applet.c:979
+#: ../gnome/applet/applet.c:981
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Fullfører tilkobling til trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:1025
+#: ../gnome/applet/applet.c:1027
 msgid "NetworkManager is not running"
 msgstr "NetworkManager kjører ikke"
 
-#: ../gnome/applet/applet.c:1036
+#: ../gnome/applet/applet.c:1038
 msgid "No network connection"
 msgstr "Ingen nettverksforbindelse"
 
-#: ../gnome/applet/applet.c:1043
+#: ../gnome/applet/applet.c:1045
 msgid "Wired network connection"
 msgstr "Trådløs nettverkforbindelse"
 
-#: ../gnome/applet/applet.c:1050
+#: ../gnome/applet/applet.c:1052
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Kobler til et Ad-Hoc trådløst nettverk"
 
-#: ../gnome/applet/applet.c:1064
+#: ../gnome/applet/applet.c:1066
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Trådløs nettverksforbindelse til «%s» (%d%%)"
 
-#: ../gnome/applet/applet.c:1089
+#: ../gnome/applet/applet.c:1091
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-tilkobling til «%s»"
 
-#: ../gnome/applet/applet.c:1514
+#: ../gnome/applet/applet.c:1520
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Koble til annet trådløst nettverk..."
 
-#: ../gnome/applet/applet.c:1535
+#: ../gnome/applet/applet.c:1541
 msgid "Create _New Wireless Network..."
 msgstr "Opprett _nytt trådløst nettverk..."
 
-#: ../gnome/applet/applet.c:1648
+#: ../gnome/applet/applet.c:1654
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN-tilkoblinger"
 
-#: ../gnome/applet/applet.c:1670
+#: ../gnome/applet/applet.c:1681
 msgid "Configure VPN..."
 msgstr "Konfigurer VPN..."
 
-#: ../gnome/applet/applet.c:1674
+#: ../gnome/applet/applet.c:1685
 msgid "Disconnect VPN..."
 msgstr "Koble fra VPN..."
 
-#: ../gnome/applet/applet.c:1724
+#: ../gnome/applet/applet.c:1735
 msgid "No network devices have been found"
 msgstr "Ingen nettverksenheter ble funnet"
 
-#: ../gnome/applet/applet.c:1882
+#: ../gnome/applet/applet.c:1893
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager kjører ikke..."
 
-#: ../gnome/applet/applet.c:1950
+#: ../gnome/applet/applet.c:1961
 msgid "_Stop All Wireless Devices"
 msgstr "_Stopp alle trådløse enheter"
 
-#: ../gnome/applet/applet.c:1955
+#: ../gnome/applet/applet.c:1966
 msgid "_Start All Wireless Devices"
 msgstr "S_tart alle trådløse enheter"
 
-#: ../gnome/applet/applet.c:1986
+#: ../gnome/applet/applet.c:1997
 msgid "_Wireless Network Discovery"
 msgstr "Sø_k etter trådløse nettverk"
 
-#: ../gnome/applet/applet.c:1989
+#: ../gnome/applet/applet.c:2000
 msgid "Always Search"
 msgstr "Alltid søk"
 
-#: ../gnome/applet/applet.c:1997
+#: ../gnome/applet/applet.c:2008
 msgid "Search Only When Disconnected"
 msgstr "Søk kun når frakoblet"
 
-#: ../gnome/applet/applet.c:2005
+#: ../gnome/applet/applet.c:2016
 msgid "Never Search"
 msgstr "Aldri søk"
 
 #. Stop All Wireless Devices item
-#: ../gnome/applet/applet.c:2017
+#: ../gnome/applet/applet.c:2028
 msgid "Stop All Wireless Devices"
 msgstr "Stopp alle trådløse enheter"
 
-#: ../gnome/applet/applet.c:2023
+#: ../gnome/applet/applet.c:2034
 msgid "Connection _Information"
 msgstr "Tilkoblings_informasjon"
 
-#: ../gnome/applet/applet.c:2031
+#: ../gnome/applet/applet.c:2042
 msgid "_Help"
 msgstr "_Hjelp"
 
-#: ../gnome/applet/applet.c:2038
+#: ../gnome/applet/applet.c:2049
 msgid "_About"
 msgstr "_Om"
 
-#: ../gnome/applet/applet.c:2506
+#: ../gnome/applet/applet.c:2518
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -372,27 +381,27 @@ msgstr[1] "Trådløse nettverk"
 msgid " (invalid Unicode)"
 msgstr " (ugyldig Unicode)"
 
-#: ../gnome/applet/other-network-dialog.c:148
-#: ../gnome/applet/passphrase-dialog.c:163
+#: ../gnome/applet/other-network-dialog.c:142
+#: ../gnome/applet/passphrase-dialog.c:156
 #: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Passord:"
 
-#: ../gnome/applet/other-network-dialog.c:151
-#: ../gnome/applet/passphrase-dialog.c:166
-msgid "Ascii Key:"
-msgstr "Ascii-nøkkel"
+#: ../gnome/applet/other-network-dialog.c:145
+#: ../gnome/applet/passphrase-dialog.c:159
+msgid "ASCII Key:"
+msgstr "ASCII-nøkkel:"
 
-#: ../gnome/applet/other-network-dialog.c:154
-#: ../gnome/applet/passphrase-dialog.c:169
+#: ../gnome/applet/other-network-dialog.c:148
+#: ../gnome/applet/passphrase-dialog.c:162
 msgid "Hex Key:"
 msgstr "Heksadesimal nøkkel:"
 
-#: ../gnome/applet/other-network-dialog.c:229
+#: ../gnome/applet/other-network-dialog.c:224
 msgid "Create new wireless network"
 msgstr "Opprett nytt trådløst nettverk"
 
-#: ../gnome/applet/other-network-dialog.c:230
+#: ../gnome/applet/other-network-dialog.c:225
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -400,18 +409,13 @@ msgstr ""
 "Oppgi ESSID og sikkerhetsinnstillinger for det trådløse nettverket du ønsker "
 "å opprette."
 
-#: ../gnome/applet/other-network-dialog.c:235
+#: ../gnome/applet/other-network-dialog.c:230
 msgid "Custom wireless network"
 msgstr "Egedefinert trådløst nettverk"
 
-#: ../gnome/applet/other-network-dialog.c:236
+#: ../gnome/applet/other-network-dialog.c:231
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Oppgi ESSID for det trådløse nettverket du ønsker å koble deg til."
-
-#: ../gnome/applet/passphrase-dialog.c:248
-#, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "Passord for trådløst nettverk %s"
 
 #: ../gnome/applet/vpn-password-dialog.c:152
 #: ../gnome/applet/vpn-password-dialog.c:191
@@ -425,8 +429,8 @@ msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
 "Contact your system administrator."
 msgstr ""
-"Fant ikke autentiseringsdialogen for VPN tilkoblingstypen «%s». "
-"Kontakt din systemadministrator."
+"Fant ikke autentiseringsdialogen for VPN tilkoblingstypen «%s». Kontakt din "
+"systemadministrator."
 
 #: ../gnome/applet/vpn-password-dialog.c:194
 #, c-format
@@ -444,32 +448,27 @@ msgstr " "
 #: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
-"Ascii Key (WEP)\n"
+"ASCII Key (WEP)\n"
 "Hex Key (WEP)"
 msgstr ""
 "128-bit passord (WEP)\n"
-"Ascii-nøkkel (WEP)\n"
+"ASCII-nøkkel (WEP)\n"
 "Heksadesimal nøkkel (WEP)"
 
 #: ../gnome/applet/wireless-applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
-"Ascii key (WEP)\n"
+"ASCII key (WEP)\n"
 "Hex key (WEP)"
 msgstr ""
 "128-bit passord (WEP)\n"
-"Ascii-nøkkel (WEP)\n"
+"ASCII-nøkkel (WEP)\n"
 "Heksadesimal nøkkel (WEP)"
 
 #: ../gnome/applet/wireless-applet.glade.h:8
-#, fuzzy
-msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Påloggingsmelding for VPN</span>\n"
-"\n"
-"Melding fra VPN-tilkobling: «%s»\n"
-"\n"
-"«%s»"
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">Informasjon om aktiv tilkobling</span>"
 
 #: ../gnome/applet/wireless-applet.glade.h:10
 #, no-c-format
@@ -569,7 +568,7 @@ msgstr "Annet trådløst nettverk..."
 
 #: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Subnet Mask:"
-msgstr ""
+msgstr "Subnettmaske:"
 
 #: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Wireless Network Key Required"
@@ -612,7 +611,7 @@ msgstr "Kan ikke importere VPN-tilkobling"
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr ""
+msgstr "Kan ikke finne passende programvare for VPN-tilkobling av type «%s» for import av fil «%s». Kontakt din sysstemadministrator."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:570
 #, c-format
@@ -624,7 +623,7 @@ msgstr "Feil under henting av VPN tilkobling «%s»"
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr ""
+msgstr "Kunne ikke finne brukergrensesnittfiler for VPN-tilkobling type «%s». Kontakt din systemadministrator."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:733
 #, c-format
@@ -637,7 +636,7 @@ msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr ""
+msgstr "All informasjon om VPN-tilkobling «%s» vil gå tapt og du vil kanskje trenge hjelp fra din systemadministrator for å opprette en ny tilkobling."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:951
 msgid "Unable to load"
@@ -716,43 +715,47 @@ msgid ""
 "It will require some information, such as IP addresses and secrets, that "
 "will probably be provided by your system administrator as appropriate."
 msgstr ""
+"Denne assistenten vil hjelpe deg gjennom oppretting av en ny VPN-tilkobling.\n"
+"\n"
+"Du vil trenge en del informasjon slik som IP-adresse og passord. Du vil sannsynligvis kunne få denne informasjonen fra din systemadministrator."
 
-#: ../src/nm-netlink-monitor.c:154
+#: ../src/nm-netlink-monitor.c:159
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "kan ikke opprette netlink-plugg for overvåking av kablede ethernet-enheter - "
 "%s"
 
-#: ../src/nm-netlink-monitor.c:172
+#: ../src/nm-netlink-monitor.c:177
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "kan ikke binde til netlink-plugg for overvåking av kablede ethernet-enheter "
 "- %s"
 
-#: ../src/nm-netlink-monitor.c:404
+#: ../src/nm-netlink-monitor.c:408
 msgid "operation took too long"
 msgstr "operasjonen tok for lang tid"
 
-#: ../src/nm-netlink-monitor.c:501
+#: ../src/nm-netlink-monitor.c:505
 msgid "received data from wrong type of sender"
 msgstr "mottok data fra feil type avsender"
 
-#: ../src/nm-netlink-monitor.c:514
+#: ../src/nm-netlink-monitor.c:518
 msgid "received data from unexpected sender"
 msgstr "mottok data fra uventet avsender"
 
-#: ../src/nm-netlink-monitor.c:536
+#: ../src/nm-netlink-monitor.c:540
 #, c-format
 msgid "%s"
 msgstr "%s"
 
-#: ../src/nm-netlink-monitor.c:645
+#: ../src/nm-netlink-monitor.c:649
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "for mye data ble sendt over pluggen og noe data gikk tapt"
 
-#: ../src/nm-netlink-monitor.c:734
+#: ../src/nm-netlink-monitor.c:738
 msgid "error occurred while waiting for data on socket"
 msgstr "det skjedde en feil under venting på data på sokkel"
-
