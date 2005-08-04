@@ -28,14 +28,18 @@
 #include "wireless-network.h"
 #include "NetworkManager.h"
 
-DBusHandlerResult		nmi_dbus_info_message_handler			(DBusConnection *connection, DBusMessage *message, void *user_data);
+DBusHandlerResult	nmi_dbus_info_message_handler			(DBusConnection *connection, DBusMessage *message, void *user_data);
 
-void					nmi_dbus_return_user_key				(DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type);
+void				nmi_dbus_return_user_key				(DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type);
 
-void					nmi_dbus_signal_update_scan_method		(DBusConnection *connection);
+void				nmi_dbus_signal_update_scan_method		(DBusConnection *connection);
 
-void					nmi_dbus_signal_update_network		(DBusConnection *connection, const char *network, NMNetworkType type);
+void				nmi_dbus_signal_update_network		(DBusConnection *connection, const char *network, NMNetworkType type);
 
-void					nmi_dbus_signal_update_vpn_connection	(DBusConnection *connection, const char *name);
+void				nmi_dbus_signal_update_vpn_connection	(DBusConnection *connection, const char *name);
+
+void				nmi_save_network_info				(NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
+													const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method);
+
 
 #endif

@@ -2968,8 +2968,10 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 			NMAccessPoint *ap = nm_act_request_get_ap (req);
 			NMAccessPoint *tmp_ap;
 
-			/* Cache the last known good auth method in both NetworkManagerInfo and our allowed AP list */
-			nm_dbus_update_network_auth_method (data->dbus_connection, nm_ap_get_essid (ap), nm_ap_get_auth_method (ap));
+			/* Cache details in the info-daemon since the connect was successful */
+			nm_dbus_update_network_info (data->dbus_connection, ap);
+
+			/* Cache the correct auth method in our AP list too */
 			if ((tmp_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
 				nm_ap_set_auth_method (tmp_ap, nm_ap_get_auth_method (ap));
 		}
@@ -3280,7 +3282,7 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 
 		/* Be sure to update NMI with the new auth mode */
 		nm_ap_set_auth_method (allowed_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
-		nm_dbus_update_network_auth_method (data->dbus_connection, nm_ap_get_essid (allowed_ap), nm_ap_get_auth_method (allowed_ap));
+		nm_dbus_update_network_info (data->dbus_connection, allowed_ap);
 
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}

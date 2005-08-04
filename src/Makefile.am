@@ -40,7 +40,7 @@ NetworkManager_SOURCES =				\
 		nm-netlink-monitor.h		\
 		nm-activation-request.c		\
 		nm-activation-request.h		\
-		autoip.c			\
+		autoip.c					\
 		autoip.h
 
 NetworkManager_CPPFLAGS = 			\

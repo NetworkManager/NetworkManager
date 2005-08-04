@@ -200,7 +200,6 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 		dbus_connection_disconnect (ctx->dbus_con);
 		libnm_glib_schedule_dbus_watcher (ctx);
 	}
-#if ((DBUS_VERSION_MAJOR == 0) && ((DBUS_VERSION_MINOR == 30) || (DBUS_VERSION_MINOR == 31) || (DBUS_VERSION_MINOR == 32) || (DBUS_VERSION_MINOR == 33) || (DBUS_VERSION_MINOR == 34) || (DBUS_VERSION_MINOR == 35)))
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
 		/* New signal for dbus 0.23... */
@@ -226,10 +225,6 @@ static DBusHandlerResult libnm_glib_dbus_filter (DBusConnection *connection, DBu
 			}
 		}
 	}
-
-#else
-#error "Unrecognized version of DBUS."
-#endif
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive")
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivating")

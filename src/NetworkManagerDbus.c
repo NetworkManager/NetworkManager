@@ -626,35 +626,50 @@ void nm_dbus_update_wireless_scan_method (DBusConnection *connection, NMData *da
 
 
 /*
- * nm_dbus_update_network_auth_method
+ * nm_dbus_update_network_info
  *
- * Tell NetworkManagerInfo the updated auth_method of the AP
+ * Tell NetworkManagerInfo the updated info of the AP
  *
  */
-gboolean nm_dbus_update_network_auth_method (DBusConnection *connection, const char *network, const NMDeviceAuthMethod auth_method)
+gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap)
 {
 	DBusMessage *	message;
 	gboolean		success = FALSE;
-	dbus_int32_t	auth_method_as_int32 = (dbus_int32_t) auth_method;
+	dbus_int32_t	auth_method;
+	const char *	essid;
+	const char *	enc_key_source;
+	dbus_int32_t	enc_key_type;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
+	g_return_val_if_fail (ap != NULL, FALSE);
 
-	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkAuthMethod")))
+	auth_method = nm_ap_get_auth_method (ap);
+	if (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN)
+		return FALSE;
+
+	essid = nm_ap_get_essid (ap);
+	if (!(enc_key_source = nm_ap_get_enc_key_source (ap)))
+		enc_key_source = "";
+	enc_key_type = nm_ap_get_enc_type (ap);
+
+	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkInfo")))
 	{
-		nm_warning ("nm_dbus_update_network_auth_method (): Couldn't allocate the dbus message");
-		return (FALSE);
+		nm_warning ("nm_dbus_update_network_info(): Couldn't allocate the dbus message");
+		return FALSE;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &auth_method, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &essid,
+								DBUS_TYPE_STRING, &enc_key_source,
+								DBUS_TYPE_INT32, &enc_key_type,
+								DBUS_TYPE_INT32, &auth_method,
+								DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nm_dbus_update_network_auth_method (): failed to send dbus message.");
+		nm_warning ("nm_dbus_update_network_info(): failed to send dbus message.");
 	else
 		success = TRUE;
 
 	dbus_message_unref (message);
-	return (success);
+	return success;
 }
 
 

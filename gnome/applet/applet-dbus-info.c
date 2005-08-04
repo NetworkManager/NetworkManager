@@ -804,52 +804,114 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
 
 
 /*
- * nmi_dbus_update_network_auth_method
+ * nmi_save_network_info
  *
- * Update a network's authentication method entry in gconf
+ * Save information about a wireless network in gconf and the gnome keyring.
  *
  */
-static DBusMessage *nmi_dbus_update_network_auth_method (NMWirelessApplet *applet, DBusMessage *message)
+void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
+			const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method)
 {
-	DBusMessage		*reply_message = NULL;
-	char				*network = NULL;
-	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
-	char				*key;
-	GConfValue		*value;
-	DBusError			 error;
-	char				*escaped_network;
+	char *		key;
+	GConfEntry *	gconf_entry;
+	char *		escaped_network;
 
-	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (essid != NULL);
 
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &auth_method, DBUS_TYPE_INVALID)
-		|| (strlen (network) <= 0)
-		|| (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN))
-	{
-		reply_message = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::updateNetworkAuthMethod called with invalid arguments.");
-		return (reply_message);
-	}
-
-	/* Ensure the access point exists in GConf */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	value = gconf_client_get (applet->gconf_client, key, NULL);
+	escaped_network = gconf_escape_key (essid, strlen (essid));
+	key = g_strdup_printf ("%s/%s", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+	gconf_entry = gconf_client_get_entry (applet->gconf_client, key, NULL, TRUE, NULL);
 	g_free (key);
 
-	if (value && (value->type == GCONF_VALUE_STRING))
+	if (gconf_entry)
 	{
-		key = g_strdup_printf ("%s/%s/auth_method", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-		gconf_client_set_int (applet->gconf_client, key, auth_method, NULL);
+		GnomeKeyringAttributeList *attributes;
+		GnomeKeyringAttribute attr;
+		GnomeKeyringResult ret;
+		const char *name;
+		guint32 item_id;
+
+		if (enc_key_source && strlen (enc_key_source)
+			&& (enc_key_type != NM_ENC_TYPE_UNKNOWN) && (enc_key_type != NM_ENC_TYPE_NONE))
+		{
+			/* Setup a request to the keyring to save the network passphrase */
+			name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+			attributes = gnome_keyring_attribute_list_new ();
+			attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
+			attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
+			attr.value.string = g_strdup (essid);
+			g_array_append_val (attributes, attr);
+
+			ret = gnome_keyring_item_create_sync (NULL,
+										   GNOME_KEYRING_ITEM_GENERIC_SECRET,
+										   name,
+										   attributes,
+										   enc_key_source,
+										   TRUE,
+										   &item_id);
+			if (ret != GNOME_KEYRING_RESULT_OK)
+				g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
+			else
+				gnome_keyring_attribute_list_free (attributes);
+		}
+
+		gconf_entry_unref (gconf_entry);
+
+		key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		gconf_client_set_string (applet->gconf_client, key, essid, NULL);
 		g_free (key);
+
+		key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		gconf_client_set_int (applet->gconf_client, key, (int)enc_key_type, NULL);
+		g_free (key);
+
+		if (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN)
+		{
+			key = g_strdup_printf ("%s/%s/auth_method", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+			gconf_client_set_int (applet->gconf_client, key, auth_method, NULL);
+			g_free (key);
+		}
 	}
-	if (value)
-		gconf_value_free (value);
-
 	g_free (escaped_network);
+}
 
-	return (NULL);
+
+
+/*
+ * nmi_dbus_update_network_info
+ *
+ * Update a network's authentication method and encryption key in gconf & the keyring
+ *
+ */
+static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage *message)
+{
+	DBusMessage *		reply_message = NULL;
+	char *			network = NULL;
+	NMDeviceAuthMethod	auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	char *			enc_key_source = NULL;
+	int				enc_key_type = -1;
+	char *			key;
+	GConfValue *		value;
+	DBusError			error;
+	char *			escaped_network;
+	dbus_bool_t		args_good;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (message != NULL);
+
+	dbus_error_init (&error);
+	args_good = dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network,
+											  DBUS_TYPE_STRING, &enc_key_source,
+											  DBUS_TYPE_INT32, &enc_key_type,
+											  DBUS_TYPE_INT32, &auth_method,
+											  DBUS_TYPE_INVALID);
+	if (!args_good || (strlen (network) <= 0) || (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN))
+		return;
+	if (enc_key_source && strlen (enc_key_source) && ((enc_key_type == NM_ENC_TYPE_UNKNOWN) || (enc_key_type == NM_ENC_TYPE_NONE)))
+		return;
+
+	nmi_save_network_info (applet, network, enc_key_source, (NMEncKeyType) enc_key_type, auth_method);
 }
 
 
@@ -999,8 +1061,8 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		reply = nmi_dbus_get_networks (applet, message);
 	else if (strcmp ("getNetworkProperties", method) == 0)
 		reply = nmi_dbus_get_network_properties (applet, message);
-	else if (strcmp ("updateNetworkAuthMethod", method) == 0)
-		nmi_dbus_update_network_auth_method (applet, message);
+	else if (strcmp ("updateNetworkInfo", method) == 0)
+		nmi_dbus_update_network_info (applet, message);
 	else if (strcmp ("addNetworkAddress", method) == 0)
 		nmi_dbus_add_network_address (applet, message);
 	else if (strcmp ("getVPNConnections", method) == 0)

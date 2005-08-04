@@ -40,7 +40,7 @@ void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 char *			nm_ap_get_essid		(const NMAccessPoint *ap);
 void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
-char *			nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
+const char *		nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
 char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
 void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
 NMEncKeyType	nm_ap_get_enc_type		(const NMAccessPoint *ap);

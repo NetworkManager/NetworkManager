@@ -204,7 +204,7 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
  * Get/set functions for encryption key
  *
  */
-char * nm_ap_get_enc_key_source (const NMAccessPoint *ap)
+const char * nm_ap_get_enc_key_source (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
@@ -224,8 +224,8 @@ void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType
 
 char *nm_ap_get_enc_key_hashed (const NMAccessPoint *ap)
 {
-	char	*hashed = NULL;
-	char	*source_key;
+	char	*		hashed = NULL;
+	const char *	source_key;
 
 	g_return_val_if_fail (ap != NULL, NULL);
 

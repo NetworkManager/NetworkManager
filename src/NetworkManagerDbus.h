@@ -76,7 +76,7 @@ NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetwo
 
 gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
 
-gboolean		nm_dbus_update_network_auth_method		(DBusConnection *connection, const char *network, const NMDeviceAuthMethod auth_method);
+gboolean		nm_dbus_update_network_info			(DBusConnection *connection, NMAccessPoint *ap);
 
 void			nm_dbus_update_allowed_networks		(DBusConnection *connection, NMAccessPointList *list, NMData *data);
 

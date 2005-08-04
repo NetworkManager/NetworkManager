@@ -1,3 +1,31 @@
+2005-08-04  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-info.c
+	  gnome/applet/applet-dbus-info.h
+		- (nmi_dbus_update_network_auth_method->nmi_save_network_info): generalize
+			to store key, key type, and auth method rather than just auth method
+		- (nmi_dbus_update_network_info): new function
+		- (nmi_dbus_info_message_handler): updateNetworkAuthMethod -> updateNetworkInfo
+
+	* gnome/applet/passphrase-dialog.c
+		- (nmi_passphrase_dialog_ok_clicked): call nmi_save_network_info() instead
+			of saving the info ourselves
+
+	* gnome/libnm_glib/libnm_glib.c
+		- Remove the stupid version check for dbus
+
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- (nm_ap_get_enc_key_source): return 'const char *' rather than 'char *'
+
+	* src/NetworkManagerDbus.c
+	  src/NetworkManagerDbus.h
+		- (nm_dbus_update_network_auth_method -> nm_dbus_update_network_info): Update
+			more than just the auth method
+
+	* src/NetworkManagerDevice.c
+		- Update network info at the appropriate times
+
 2005-07-29  Ray Strode  <rstrode@redhat.com>
 
 	* src/NetworkManager.c (nm_info_handler): don't use input as format
