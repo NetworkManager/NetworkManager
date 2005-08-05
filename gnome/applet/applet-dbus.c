@@ -461,6 +461,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 					applet->dbus_nm_state = NM_STATE_DISCONNECTED;
 					nmwa_dbus_update_nm_state (applet);
 					nmwa_dbus_update_devices (applet);
+					nmwa_dbus_update_dialup (applet);
 					nmwa_dbus_vpn_update_vpn_connections (applet);
 				}
 				else if (old_owner_good && !new_owner_good)
@@ -743,6 +744,7 @@ static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
 			applet->dbus_nm_state = NM_STATE_DISCONNECTED;
 			nmwa_dbus_update_nm_state (applet);
 			nmwa_dbus_update_devices (applet);
+			nmwa_dbus_update_dialup (applet);
 			nmwa_dbus_vpn_update_vpn_connections (applet);
 		}
 	}
@@ -788,6 +790,7 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 		applet->nm_running = TRUE;
 		nmwa_dbus_update_nm_state (applet);
 		nmwa_dbus_update_devices (applet);
+		nmwa_dbus_update_dialup (applet);
 		nmwa_dbus_vpn_update_vpn_connections (applet);
 	}
 

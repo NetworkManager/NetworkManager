@@ -84,6 +84,9 @@ typedef struct NMData
 	gboolean				wireless_enabled;
 	gboolean				asleep;
 
+	GSList *				dialup_list;
+	GMutex *				dialup_list_mutex;
+
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;

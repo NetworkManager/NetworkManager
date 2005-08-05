@@ -827,7 +827,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 			applet->dbus_device_list = g_slist_remove (applet->dbus_device_list, tmp_dev);
 			network_device_unref (tmp_dev);
 		}
-		
+
 		applet->dbus_device_list = g_slist_append (applet->dbus_device_list, dev);
 
 		nmwa_dbus_update_device_info_from_hal (dev, applet);
@@ -933,9 +933,100 @@ out:
 
 
 /*
+ * nmwa_dbus_update_dialup_cb
+ *
+ * nmwa_dbus_update_dialup DBUS callback.
+ *
+ */
+static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
+{
+	DBusMessage *reply;
+	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
+	char **dialup_devices;
+	int num_devices;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (applet != NULL);
+
+	dbus_pending_call_ref (pcall);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (dbus_message_is_error (reply, NM_DBUS_NO_DIALUP_ERROR))
+	{
+		dbus_message_unref (reply);
+		goto out;
+	}
+
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &dialup_devices, &num_devices, DBUS_TYPE_INVALID))
+	{
+		char **item;
+		GSList *elt;
+
+		for (elt = applet->dialup_list; elt; elt = g_slist_next (elt))
+			g_free (elt->data);
+		if (applet->dialup_list)
+		{
+			g_slist_free (applet->dialup_list);
+			applet->dialup_list = NULL;
+		}
+
+		for (item = dialup_devices; *item; item++)
+			applet->dialup_list = g_slist_append (applet->dialup_list, g_strdup (*item));
+
+		dbus_free_string_array (dialup_devices);
+	}
+	dbus_message_unref (reply);
+
+out:
+	dbus_pending_call_unref (pcall);
+}
+
+
+/*
+ * nmwa_dbus_dialup_activate_connection
+ *
+ * Tell NetworkManager to activate a particular dialup connection.
+ *
+ */
+void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char *name)
+{
+	DBusMessage *message;
+	DBusMessageIter iter;
+	DBusMessageIter iter_array;
+
+	g_return_if_fail (name != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "activateDialup")))
+	{
+		nm_info ("Activating dialup connection '%s'.", name);
+#if 0
+		dbus_message_iter_init_append (message, &iter);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+
+		for (i = passwords; i != NULL; i = g_slist_next (i)) {
+			dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &(i->data));
+		}
+		dbus_message_iter_close_container (&iter, &iter_array);
+#endif
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
+		if (!dbus_connection_send (applet->connection, message, NULL))
+			nm_warning ("nmwa_dbus_activate_dialup_connection(): Could not send activateDialup message!");
+	}
+	else
+		nm_warning ("nmwa_dbus_activate_dialup_connection(): Couldn't allocate the dbus message!");
+}
+
+
+/*
  * nmwa_dbus_update_devices
  *
- * Do a full update of network devices and wireless networks.
+ * Do a full update of network devices, wireless networks, and dial up devices.
  *
  */
 void nmwa_dbus_update_devices (NMWirelessApplet *applet)
@@ -954,8 +1045,32 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
 	}
-
 	nmwa_dbus_update_wireless_enabled (applet);
+}
+
+
+/*
+ * nmwa_dbus_update_dialup
+ *
+ * Do an update of dial up devices.
+ *
+ */
+void nmwa_dbus_update_dialup (NMWirelessApplet *applet)
+{
+	DBusMessage *message;
+	DBusPendingCall *pcall;
+
+	g_return_if_fail (applet->data_mutex != NULL);
+
+	nmwa_free_dbus_data_model (applet);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDialup")))
+	{
+		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+		dbus_message_unref (message);
+		if (pcall)
+			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_dialup_cb, applet, NULL);
+	}
 }
 
 

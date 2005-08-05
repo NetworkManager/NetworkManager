@@ -100,6 +100,8 @@ typedef struct
 	GSList *			dbus_device_list;
 	NMState			dbus_nm_state;
 
+	GSList *			dialup_list;
+
 	GSList *			gui_vpn_connections;
 	VPNConnection *	gui_active_vpn;
 

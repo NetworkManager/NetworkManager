@@ -1,5 +1,20 @@
 2005-08-05  Robert Love  <rml@novell.com>
 
+	* NetworkManager.h,
+	  gnome/applet/applet-dbus-devices.c,
+	  gnome/applet/applet-dbus-devices.h,
+	  gnome/applet/applet-dbus.c,
+	  gnome/applet/applet.c,
+	  gnome/applet/applet.h,
+	  src/NetworkManager.c,
+	  src/NetworkManagerMain.h,
+	  src/NetworkManagerSystem.h,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSuSE.c,
+	  src/nm-dbus-nm.c: basic dialup support using distro infrastructure
+
+2005-08-05  Robert Love  <rml@novell.com>
+
 	* gnome/applet/other-network-dialog.c: default the adhoc network to the
 	  machine's hostname to make adhoc creation idiot-proof.
 

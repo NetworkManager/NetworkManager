@@ -658,3 +658,17 @@ NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 	return new_config;
 }
 
+
+void nm_system_deactivate_all_dialup (GSList *list)
+{
+}
+
+gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
+{
+	return FALSE;
+}
+
+GSList * nm_system_get_dialup_config (void)
+{
+	return NULL;
+}

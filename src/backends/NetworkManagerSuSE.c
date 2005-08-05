@@ -32,6 +32,7 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDevice.h"
+#include "NetworkManagerDialup.h"
 #include "nm-utils.h"
 #include "shvar.h"
 
@@ -673,3 +674,97 @@ NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 	return new_config;
 }
 
+
+void nm_system_deactivate_all_dialup (GSList *list)
+{
+	GSList *elt;
+
+	for (elt = list; elt; elt = g_slist_next (elt))
+	{
+		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
+		char *cmd;
+
+		cmd = g_strdup_printf ("/sbin/ifdown %s", (char *) config->data);
+		nm_spawn_process (cmd);
+		g_free (cmd);
+	}
+}
+
+
+gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
+{
+	GSList *elt;
+	gboolean ret = FALSE;
+
+	for (elt = list; elt; elt = g_slist_next (elt))
+	{
+		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
+		if (strcmp (dialup, config->name) == 0)
+		{
+			char *cmd;
+
+			nm_info ("Activating dialup device %s (%s) ...", dialup, (char *) config->data);
+			cmd = g_strdup_printf ("/sbin/ifup %s", (char *) config->data);
+			nm_spawn_process (cmd);
+			g_free (cmd);
+			ret = TRUE;
+			break;
+		}
+	}
+
+	return ret;
+}
+
+
+/*
+ * nm_system_get_dialup_config
+ *
+ * Enumerate dial up options on this system, allocate NMDialUpConfig's,
+ * fill them out, and return.
+ *
+ */
+GSList * nm_system_get_dialup_config (void)
+{
+	GSList *list = NULL;
+	const char *dentry;
+	unsigned int i = 0;
+	size_t len;
+	GError *err;
+	GDir *dir;
+
+	dir = g_dir_open (SYSCONFDIR "/sysconfig/network", 0, &err);
+	if (!dir)
+	{
+		nm_warning ("Could not open directory " SYSCONFDIR "/sysconfig/network: %s", err->message);
+		return NULL;
+	}
+
+	while ((dentry = g_dir_read_name (dir)))
+	{
+		NMDialUpConfig *config;
+
+		/* we only want modems */
+		if (!g_str_has_prefix (dentry, "ifcfg-modem"))
+			continue;
+
+		config = g_malloc (sizeof (NMDialUpConfig));
+		config->name = g_strdup_printf ("Modem (#%d)", i++);
+		config->data = g_strdup (dentry + 6);	/* skip the "ifcfg-" prefix */
+
+		list = g_slist_append (list, config);
+
+		nm_info ("Found dial up configuration for %s: %s", config->name, (char *) config->data);
+	}
+
+	/* Hack: Go back and remove the "(#0)" if there is only one device */
+	if (i == 1)
+	{
+		NMDialUpConfig *config = (NMDialUpConfig *) list->data;
+		g_free (config->name);
+		config->name = g_strdup ("Modem");
+	}
+
+	g_dir_close (dir);
+
+	return list;
+}

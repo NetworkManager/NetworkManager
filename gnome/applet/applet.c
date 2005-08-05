@@ -1336,6 +1336,28 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
+ * nmwa_menu_dialup_item_activate
+ *
+ * Signal function called when user clicks on a dialup menu item
+ *
+ */
+static void nmwa_menu_dialup_item_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
+	const char *dialup;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	dialup = g_object_get_data (G_OBJECT (item), "dialup");
+	if (!dialup)
+		return;
+
+	nmwa_dbus_dialup_activate_connection (applet, dialup);
+}
+
+
+/*
  * nmwa_menu_configure_vpn_item_activate
  *
  * Signal function called when user clicks "Configure VPN..."
@@ -1695,6 +1717,39 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 }
 
 
+static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet)
+{
+	GtkMenuItem *item;
+	GtkMenu *dialup_menu;
+	GtkMenuItem *other_item;
+	GSList *elt;
+
+	g_return_if_fail (menu != NULL);
+	g_return_if_fail (applet != NULL);
+
+	item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Dial Up")));
+
+	dialup_menu = GTK_MENU (gtk_menu_new ());
+	for (elt = applet->dialup_list; elt; elt = g_slist_next (elt))
+	{
+		GtkMenuItem *dialup_item;
+		char *name = elt->data;
+		const char *label;
+
+		label = g_strdup_printf ("Connect via %s...", name);
+		dialup_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
+		g_object_set_data (G_OBJECT (dialup_item), "dialup", name);
+
+		g_signal_connect (G_OBJECT (dialup_item), "activate", G_CALLBACK (nmwa_menu_dialup_item_activate), applet);
+		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (dialup_item));
+	}
+
+	gtk_menu_item_set_submenu (item, GTK_WIDGET (dialup_menu));
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (item));
+	gtk_widget_show_all (GTK_WIDGET (item));
+}
+
+
 /** Returns TRUE if, and only if, we have VPN support installed
  *
  *  Algorithm: just check whether any .name files exist in
@@ -1787,9 +1842,16 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		}
 	}
 
-	if (is_vpn_available ()) {
+	if (is_vpn_available ())
+	{
 		nmwa_menu_add_separator_item (menu);
 		nmwa_menu_add_vpn_menu (menu, applet);
+	}
+
+	if (applet->dialup_list)
+	{
+		nmwa_menu_add_separator_item (menu);
+		nmwa_menu_add_dialup_menu (menu, applet);
 	}
 
 	if (n_wireless_interfaces > 0)
@@ -2354,6 +2416,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->gui_device_list = NULL;
 	applet->gui_active_vpn = NULL;
 	applet->gui_vpn_connections = NULL;
+	applet->dialup_list = NULL;
 	applet->gui_nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
 	applet->thread_context = NULL;

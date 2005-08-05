@@ -417,13 +417,15 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
-	if (!data->dev_list_mutex)
+	data->dialup_list_mutex = g_mutex_new ();
+	if (!data->dev_list_mutex || !data->dialup_list_mutex)
 	{
 		nm_data_free (data);
 		nm_warning ("could not initialize data structure locks.");
 		return (NULL);
 	}
 	nm_register_mutex_desc (data->dev_list_mutex, "Device List Mutex");
+	nm_register_mutex_desc (data->dialup_list_mutex, "DialUp List Mutex");
 
 	/* Initialize the access point lists */
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
@@ -964,6 +966,9 @@ int main( int argc, char *argv[] )
 	/* Create watch functions that monitor cards for link status. */
 	nm_monitor_wireless_link_state (nm_data);
 	nm_monitor_wired_link_state (nm_data);
+
+	/* Get modems, ISDN, and so on's configuration from the system */
+	nm_data->dialup_list = nm_system_get_dialup_config ();
 
 	if (!nm_named_manager_start (nm_data->named_manager, &error))
 	{
