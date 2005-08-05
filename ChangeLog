@@ -1,3 +1,8 @@
+2005-08-05  Robert Love  <rml@novell.com>
+
+	* gnome/applet/other-network-dialog.c: default the adhoc network to the
+	  machine's hostname to make adhoc creation idiot-proof.
+
 2005-08-04  Robert Love  <rml@novell.com>
 
 	* gnome/applet/other-network-dialog.c: fix leak. "label" needs to be

@@ -32,6 +32,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -214,15 +215,25 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	gtk_widget_grab_default (GTK_WIDGET (button));
 
 	gtk_widget_grab_focus (essid_entry);
-	gtk_entry_set_text (GTK_ENTRY (essid_entry), "");
 	gtk_widget_set_sensitive (button, FALSE);
 	g_signal_connect (essid_entry, "changed", G_CALLBACK (update_button_cb), xml);
 
 	if (create_network)
 	{
-		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
+		char hostname[HOST_NAME_MAX] = "hostname";
+
+		gethostname (hostname, HOST_NAME_MAX);
+		hostname[HOST_NAME_MAX-1] = '\n';	/* unspecified whether a truncated hostname is terminated */
+
+		gtk_entry_set_text (GTK_ENTRY (essid_entry), hostname);
+		gtk_editable_set_position (GTK_EDITABLE (essid_entry), -1);
+
+		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s\n\n%s %s%s",
 			_("Create new wireless network"),
-			_("Enter the ESSID and security settings of the wireless network you wish to create."));
+			_("Enter the ESSID and security settings of the wireless network you wish to create."),
+			_("By default, the ESSID is set to your computer's name,"),
+			hostname,
+			_(", with no encryption enabled."));
 	}
 	else
 	{
