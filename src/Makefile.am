@@ -12,6 +12,7 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDbus.c		\
 		NetworkManagerDbus.h		\
 		NetworkManagerDbusUtils.c	\
+		NetworkManagerDialup.h		\
 		NetworkManagerDbusUtils.h	\
 		nm-dbus-nm.c				\
 		nm-dbus-nm.h				\
