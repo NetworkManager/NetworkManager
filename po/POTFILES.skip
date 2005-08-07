@@ -1,0 +1,7 @@
+examples/python/systray/eggtrayicon.c
+vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c
+vpn-daemons/vpnc/auth-dialog/main.c
+vpn-daemons/vpnc/nm-vpnc.desktop.in
+vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade
+vpn-daemons/vpnc/properties/nm-vpnc.c
+vpn-daemons/vpnc/src/nm-vpnc-service.c
