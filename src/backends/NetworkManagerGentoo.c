@@ -229,7 +229,7 @@ void nm_system_kill_all_dhcp_daemons (void)
 void nm_system_update_dns (void)
 {
  #ifdef NM_NO_NAMED
-	if (nm_spawn_process ("/etc/init.d/nscd status") != 0)
+	if (nm_spawn_process ("/etc/init.d/nscd status") == 0)
 		nm_spawn_process ("/etc/init.d/nscd restart");
  #else
 	nm_spawn_process("/usr/sbin/killall -q nscd");
