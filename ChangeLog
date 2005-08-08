@@ -1,5 +1,11 @@
 2005-08-08  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Steev <steev@steev.net>:
+	* src/backends/NetworkManagerGentoo.c
+		- Stub new dialup backend functions
+
+2005-08-08  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Colin Slater:
 	* src/backends/NetworkManagerGentoo.c
 		- (nm_system_update_dns): Fix exit status check for restarting

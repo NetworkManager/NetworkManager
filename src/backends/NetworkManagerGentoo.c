@@ -514,3 +514,24 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 
 	return TRUE;
 }
+
+void nm_system_deactivate_all_dialup (GSList *list)
+{
+}
+
+gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
+{
+            return FALSE;
+}
+
+/*
+ *  nm_system_get_dialup_config
+ *  
+ *  Enumerate dial up options on this system, allocate NMDialUpConfig's,
+ *  fill them out, and return.
+ *  
+ */
+GSList * nm_system_get_dialup_config (void)
+{
+            return NULL;
+}
