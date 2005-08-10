@@ -17,3 +17,5 @@ stamp-h1
 configure
 mkinstalldirs
 nm-vpnc.desktop
+COPYING
+INSTALL
