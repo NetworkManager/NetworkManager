@@ -1,3 +1,13 @@
+2005-08-10  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bill Moss <bmoss@clemson.edu>
+	* Consolidate writes of access point information updates to the info daemon
+		so that we only do it when the connection to the access point was
+		successful.  Also consolidates updates to GConf in the Gnome applet.
+
+	* src/nm-netlink-monitor.c
+		- Silence compile warning when calling g_object_new()
+
 2005-08-08  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Steev <steev@steev.net>:

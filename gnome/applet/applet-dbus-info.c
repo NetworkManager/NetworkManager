@@ -866,6 +866,10 @@ void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const c
 		gconf_client_set_int (applet->gconf_client, key, (int)enc_key_type, NULL);
 		g_free (key);
 
+		key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
+		g_free (key);
+
 		if (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN)
 		{
 			key = g_strdup_printf ("%s/%s/auth_method", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);

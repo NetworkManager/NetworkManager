@@ -217,7 +217,6 @@ static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer use
 
 		/* Tell NetworkManager about the key the user typed in */
 		nmi_dbus_return_user_key (applet->connection, message, passphrase, key_type_return);
-		nmi_save_network_info (applet, wireless_network_get_essid(net), passphrase, key_type_return, NM_DEVICE_AUTH_METHOD_UNKNOWN);
 		nmi_passphrase_dialog_clear (dialog);
 	}
 }
