@@ -2391,6 +2391,8 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_prefs_notify_id);
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_vpn_notify_id);
 	g_object_unref (G_OBJECT (applet->gconf_client));
+
+	exit (EXIT_SUCCESS);
 }
 
 
@@ -2455,7 +2457,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 		g_object_unref (G_OBJECT (applet->gconf_client));
 		return NULL;
 	}
-	if (!(applet->dbus_thread = g_thread_create (nmwa_dbus_worker, applet, FALSE, &error)))
+	if (!(applet->dbus_thread = g_thread_create (nmwa_dbus_worker, applet, TRUE, &error)))
 	{
 		g_mutex_free (applet->data_mutex);
 		g_object_unref (G_OBJECT (applet->gconf_client));
