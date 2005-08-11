@@ -479,7 +479,11 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		goto out;
 
 	if (!get_ip4_uint32s (manager, dev, "routers", &ip4_gateway, &count) || !count)
-		goto out;
+	{
+		/* If DHCP doesn't have a 'routers', just use the DHCP server's address as our gateway for now */
+		if (!get_ip4_uint32s (manager, dev, "dhcp_server_identifier", &ip4_gateway, &count) || !count)
+			goto out;
+	}
 
 	if (!get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers) || !num_ip4_nameservers)
 		goto out;

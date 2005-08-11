@@ -1,3 +1,10 @@
+2005-08-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get_ip4_config): if for some reason we don't get
+			an gateway returned from DHCP, try to use the address of the DHCP
+			server as the gateway instead.  Found by Ralf Ertzinger.
+
 2005-08-10  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Make applet->dbus_thread joinable so we can
