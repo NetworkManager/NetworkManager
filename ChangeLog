@@ -1,5 +1,9 @@
 2005-08-11  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: mark string as translatable.
+
+2005-08-11  Robert Love  <rml@novell.com>
+
 	* initscript/SUSE/networkmanager: update.
 
 2005-08-11  Dan Williams  <dcbw@redhat.com>
