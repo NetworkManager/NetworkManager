@@ -1,3 +1,7 @@
+2005-08-11  Robert Love  <rml@novell.com>
+
+	* initscript/SUSE/networkmanager: update.
+
 2005-08-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-dhcp-manager.c

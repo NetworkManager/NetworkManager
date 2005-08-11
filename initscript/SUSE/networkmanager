@@ -1,4 +1,5 @@
 #! /bin/sh
+
 ### BEGIN INIT INFO
 # Provides:       networkmanager
 # Required-Start: $network dbus hal
@@ -14,34 +15,35 @@ test -x $NETWORKMANAGER_BIN || exit 5
 rc_reset
 
 case "$1" in
-    start)
-        echo -n "Starting the NetworkManager"
-        startproc $NETWORKMANAGER_BIN
-	rc_status -v
-        ;;
-    stop)
-        echo -n "Shutting down the NetworkManager"
-        killproc -TERM $NETWORKMANAGER_BIN
-	rc_status -v
-        ;;
-    restart)
-        $0 stop
-        $0 start
-	rc_status
-        ;;
-    force-reload|reload)
-        echo -n "Reloading the NetworkManager"
-        killproc -HUP $NETWORKMANAGER_BIN
-	rc_status -v
-        ;;
-    status)
-        echo -n "Checking for the NetworkManager: "
-        checkproc $NETWORKMANAGER_BIN
-        rc_status -v
-        ;;
-    *)
-        echo "Usage: $0 {start|stop|status|restart|force-reload|reload}"
-        exit 1
-        ;;
+	start)
+		checkproc $NETWORKMANAGER_BIN
+		if [ $? = 0 ]; then
+			echo -n "NetworkManager already running"
+			rc_status -v
+			rc_exit
+		fi
+		echo -n "Starting the NetworkManager"
+		startproc $NETWORKMANAGER_BIN
+		rc_status -v
+		;;
+	stop)
+		echo -n "Shutting down the NetworkManager"
+		killproc -TERM $NETWORKMANAGER_BIN
+		rc_status -v
+		;;
+	restart)
+		$0 stop
+		$0 start
+		rc_status
+		;;
+	status)
+		echo -n "Checking for the NetworkManager: "
+		checkproc $NETWORKMANAGER_BIN
+		rc_status -v
+		;;
+	*)
+		echo "Usage: $0 {start|stop|status|restart}"
+		exit 1
+		;;
 esac
 
