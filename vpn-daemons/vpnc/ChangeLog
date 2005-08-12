@@ -1,3 +1,7 @@
+2005-08-12  Robert Love  <rml@novell.com>
+
+	* configure.in: add 'sv' translation
+
 2005-06-29  David Zeuthen  <davidz@redhat.com>
 
 	* configure.in: Bump version to 0.2
