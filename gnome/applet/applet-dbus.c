@@ -595,12 +595,12 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 
 		if (dev && net)
 		{
-			char *string = g_strdup_printf (_("Connection to the wireless network '%s' failed.\n"), net);
+			char *string = g_strdup_printf (_("Connection to the wireless network '%s' failed."), net);
 			nmwa_schedule_warning_dialog (applet, string);
 			g_free (string);
 		}
 		else if (dev)
-			nmwa_schedule_warning_dialog (applet, _("Connection to the wired network failed.\n"));
+			nmwa_schedule_warning_dialog (applet, _("Connection to the wired network failed."));
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationStage"))
 	{

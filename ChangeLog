@@ -1,5 +1,7 @@
 2005-08-12  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus.c: remove newlines from translatable
+	  strings--not needed here anyway. (fix b.g.o #309011)
 	* src/nm-netlink.monitor.c: don't translate "%s" (fix b.g.o #172391)
 
 2005-08-11  Robert Love  <rml@novell.com>
