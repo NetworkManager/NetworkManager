@@ -1,3 +1,7 @@
+2005-08-12  Robert Love  <rml@novell.com>
+
+	* src/nm-netlink.monitor.c: don't translate "%s" (fix b.g.o #172391)
+
 2005-08-11  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: mark string as translatable.

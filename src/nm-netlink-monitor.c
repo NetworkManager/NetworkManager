@@ -532,7 +532,7 @@ receive_pending_bytes (GIOChannel  *channel,
 	{
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
 			     NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
-			     _("%s"), g_strerror (saved_errno));
+			     "%s", g_strerror (saved_errno));
 		succeeded = FALSE;
 		goto out;
 	}
