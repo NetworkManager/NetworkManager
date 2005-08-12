@@ -1,3 +1,8 @@
+2005-08-12  Robert Love  <rml@novell.com>
+
+	* sv.po: move NetworkManager-vpn translations to their po/
+	* POTFILES.skip: add another vpn-daemons/ file
+
 2005-08-10  Maxim Dziumanenko <mvd@mylinux.ua>
 
 	* uk.po:  Updated Ukrainian translation.

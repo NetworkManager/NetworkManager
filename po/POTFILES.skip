@@ -5,3 +5,5 @@ vpn-daemons/vpnc/nm-vpnc.desktop.in
 vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade
 vpn-daemons/vpnc/properties/nm-vpnc.c
 vpn-daemons/vpnc/src/nm-vpnc-service.c
+vpn-daemons/vpnc/src/nm-vpnc-service-vpnc-helper.c
+vpn-daemons/vpnc/src/nm-utils.c
