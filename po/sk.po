@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.29 2005/08/06 09:04:28 marcel Exp $
+# $Id: sk.po,v 1.30 2005/08/13 03:33:33 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-08-06 09:57+0200\n"
-"PO-Revision-Date: 2005-08-06 11:03+0200\n"
+"POT-Creation-Date: 2005-08-13 05:29+0200\n"
+"PO-Revision-Date: 2005-08-13 05:31+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -24,7 +24,7 @@ msgstr ""
 msgid "Passphrase for wireless network %s"
 msgstr "Heslo pre bezdrôtovú sieť %s"
 
-#: ../gnome/applet/applet-dbus-info.c:1049
+#: ../gnome/applet/applet-dbus-info.c:1053
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -35,12 +35,12 @@ msgstr ""
 
 #: ../gnome/applet/applet-dbus.c:598
 #, c-format
-msgid "Connection to the wireless network '%s' failed.\n"
-msgstr "Pripájanie k bezdrôtovej sieti '%s' zlyhalo.\n"
+msgid "Connection to the wireless network '%s' failed."
+msgstr "Pripájanie k bezdrôtovej sieti '%s' zlyhalo."
 
 #: ../gnome/applet/applet-dbus.c:603
-msgid "Connection to the wired network failed.\n"
-msgstr "Pripájanie k drôtovej sieti zlyhalo.\n"
+msgid "Connection to the wired network failed."
+msgstr "Pripájanie k drôtovej sieti zlyhalo."
 
 #: ../gnome/applet/applet.c:192
 msgid "Error displaying connection information: "
@@ -184,9 +184,9 @@ msgstr ""
 "\n"
 "\"%s\""
 
-#: ../gnome/applet/applet.c:795 ../gnome/applet/applet.c:2431
+#: ../gnome/applet/applet.c:795 ../gnome/applet/applet.c:2433
 #: ../gnome/applet/other-network-dialog.c:322
-#: ../gnome/applet/passphrase-dialog.c:397
+#: ../gnome/applet/passphrase-dialog.c:396
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -298,6 +298,11 @@ msgstr "Odpojiť VPN..."
 msgid "Dial Up"
 msgstr "Vytáčané pripojenie"
 
+#: ../gnome/applet/applet.c:1739
+#, c-format
+msgid "Connect via %s..."
+msgstr "Pripojiť cez %s..."
+
 #: ../gnome/applet/applet.c:1790
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
@@ -347,7 +352,7 @@ msgstr "_Pomocník"
 msgid "_About"
 msgstr "_O programe"
 
-#: ../gnome/applet/applet.c:2581
+#: ../gnome/applet/applet.c:2583
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -772,11 +777,6 @@ msgstr "prijaté dáta od zlého typu odosielateľa"
 #: ../src/nm-netlink-monitor.c:513
 msgid "received data from unexpected sender"
 msgstr "prijaté dáta od neočakávaného odosielateľa"
-
-#: ../src/nm-netlink-monitor.c:535
-#, c-format
-msgid "%s"
-msgstr "%s"
 
 #: ../src/nm-netlink-monitor.c:644
 msgid "too much data was sent over socket and some of it was lost"
