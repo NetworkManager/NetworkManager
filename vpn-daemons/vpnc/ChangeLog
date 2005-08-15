@@ -1,3 +1,8 @@
+2005-08-14  Christopher Aillon  <caillon@redhat.com>
+
+	* src/nm-vpn-service.c:  Use UDP Encapsulation, to allow
+	multiple VPN connections from the same network
+
 2005-08-12  Robert Love  <rml@novell.com>
 
 	* configure.in: add 'sv' translation

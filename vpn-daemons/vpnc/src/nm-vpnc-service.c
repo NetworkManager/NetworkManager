@@ -55,6 +55,7 @@ static const char *vpnc_binary_paths[] =
 };
 
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
+#define NM_VPNC_UDP_ENCAPSULATION_PORT	0 /* random port */
 
 typedef struct NmVpncData
 {
@@ -428,6 +429,14 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
+	string = g_strdup ("UDP Encapsulate\n");
+	x = write (vpnc_fd, string, strlen (string));
+	g_free (string);
+
+	string = g_strdup_printf ("UDP Encapsulation Port %s\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
+	x = write (vpnc_fd, string, strlen (string));
+	g_free (string);
+
 	string = g_strdup_printf ("IPSec secret %s\n", password_items[0]);
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
@@ -483,6 +492,7 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 					{ "IPSec secret",		OPT_TYPE_ASCII },
 					{ "Xauth username",		OPT_TYPE_ASCII },
 					{ "UDP Encapsulate",	OPT_TYPE_NONE },
+					{ "UDP Encapsulation Port",	OPT_TYPE_ASCII },
 					{ "Domain",			OPT_TYPE_ASCII },
 					{ "IKE DH Group",		OPT_TYPE_ASCII },
 					{ "Perfect Forward Secrecy", OPT_TYPE_ASCII },
