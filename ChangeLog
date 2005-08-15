@@ -1,3 +1,13 @@
+2005-08-15  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c:
+	* gnome/vpn-properties/nm-vpn-ui-interface.h:
+	* vpn-daemons/vpnc/properties/nm-vpnc.c:
+	Makeshift fix to remove newlines from translatable strings.
+	Note that we now return an allocated string, so callers of
+	get_confirmation_details () must now call g_free () on the
+	result. (fixes #309033).
+
 2005-08-12  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-dbus.c: remove newlines from translatable

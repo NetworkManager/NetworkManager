@@ -59,8 +59,11 @@ struct _NetworkManagerVpnUI {
 
 	gboolean (*is_valid) (NetworkManagerVpnUI *self);
 
-	const char *(*get_confirmation_details)(NetworkManagerVpnUI *self);
-
+	/*
+	 * get_confirmation_details:
+	 * retval is allocated and must be freed
+	 */
+	void (*get_confirmation_details)(NetworkManagerVpnUI *self, gchar **retval);
 
 	char *(*get_connection_name) (NetworkManagerVpnUI *self);
 

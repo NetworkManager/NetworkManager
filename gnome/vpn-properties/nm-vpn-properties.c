@@ -310,12 +310,14 @@ static void vpn_druid_vpn_confirm_page_prepare (GnomeDruidPage *druidpage,
 
 	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
 	if (vpn_ui != NULL) {
-		const char *confirm_text;
+		gchar *confirm_text;
 
-		confirm_text = vpn_ui->get_confirmation_details (vpn_ui);
+		vpn_ui->get_confirmation_details (vpn_ui, &confirm_text);
 		
 		gnome_druid_page_edge_set_text (druid_confirm_page,
 						confirm_text);
+
+		g_free (confirm_text);
 	}
 }
 

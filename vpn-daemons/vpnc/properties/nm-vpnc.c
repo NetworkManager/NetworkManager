@@ -417,13 +417,10 @@ impl_set_validity_changed_callback (NetworkManagerVpnUI *self,
 	impl->callback_user_data = user_data;
 }
 
-static const char *
-impl_get_confirmation_details (NetworkManagerVpnUI *self)
+static void
+impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 {
-	static char buf[512];
-	static char buf2[128];
-	static char buf3[128];
-	static char buf4[128];
+	GString *buf;
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
 	const char *connectionname;
 	const char *gateway;
@@ -445,30 +442,37 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self)
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
 	domain                 = gtk_entry_get_text (impl->w_domain);
 
-	g_snprintf (buf2, sizeof (buf2), _("\tUsername:  %s\n"), username);
-	g_snprintf (buf3, sizeof (buf2), _("\tRoutes:  %s\n"), routes);
-	g_snprintf (buf4, sizeof (buf4), _("\tDomain:  %s\n"), domain);
+	buf = g_string_sized_new (512);
 
-	g_snprintf (buf, sizeof (buf), 
-		    _("The following vpnc VPN connection will be created:\n"
-		      "\n"
-		      "\tName:  %s\n"
-		      "\n"
-		      "\tGateway:  %s\n"
-		      "\tGroup Name:  %s\n"
-		      "%s"
-		      "%s"
-		      "%s"
-		      "\n"
-		      "The connection details can be changed using the \"Edit\" button.\n"),
-		    connectionname,
-		    gateway,
-		    groupname,
-		    use_alternate_username ? buf2 : "",
-		    use_domain ? buf4 : "",
-		    use_routes ? buf3 : "");
+	g_string_append (buf, _("The following vpnc VPN connection will be created:"));
+	g_string_append (buf, "\n\n\t");
+	g_string_append_printf (buf, _("Name:  %s"), connectionname);
+	g_string_append (buf, "\n\n\t");
 
-	return buf;
+	g_string_append_printf (buf, _("Gateway:  %s"), gateway);
+	g_string_append (buf, "\n\t");
+	g_string_append_printf (buf, _("Group Name:  %s"), groupname);
+
+	if (use_alternate_username) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Username:  %s"), username);
+	}
+
+	if (use_domain) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Domain:  %s"), domain);
+	}
+
+	if (use_routes) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Routes:  %s"), routes);
+	}
+
+	g_string_append (buf, "\n\n");
+	g_string_append (buf, _("The connection details can be changed using the \"Edit\" button."));
+	g_string_append (buf, "\n");
+
+	*retval = g_string_free (buf, FALSE);
 }
 
 static gboolean
