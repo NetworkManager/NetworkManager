@@ -433,7 +433,7 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
-	string = g_strdup_printf ("UDP Encapsulation Port %s\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
+	string = g_strdup_printf ("UDP Encapsulation Port %d\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
 	x = write (vpnc_fd, string, strlen (string));
 	g_free (string);
 
