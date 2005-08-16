@@ -1,3 +1,9 @@
+2005-08-16  Robert Love  <rml@novell.com>
+
+	Patch from j@bootlab.org
+	* src/backends/NetworkManagerDebian.c, src/backends/interface_parser.c,
+	  src/backends/interface_parser.h: Debian dialup support.
+
 2005-08-16  Christopher Aillon  <caillon@redhat.com>
 
 	* vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade:

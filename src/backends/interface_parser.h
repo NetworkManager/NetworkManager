@@ -45,6 +45,7 @@ void ifparser_destroy();
 
 const char* ifparser_interfaces();
 if_block *ifparser_getif(const char* iface);
+if_block *ifparser_getfirst();
 const char *ifparser_getkey(if_block* iface, const char *key);
 
 #endif

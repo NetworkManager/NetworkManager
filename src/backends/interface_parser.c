@@ -162,6 +162,11 @@ void ifparser_destroy()
 	first = last = NULL;
 }
 
+if_block *ifparser_getfirst()
+{
+	return first;
+}
+
 if_block *ifparser_getif(const char* iface)
 {
 	if_block *curr = first;
