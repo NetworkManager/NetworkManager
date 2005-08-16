@@ -2108,7 +2108,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 	menu_item = gtk_image_menu_item_new_with_mnemonic (_("Connection _Information"));
 	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_show_info_cb), applet);
-	image = gtk_image_new_from_stock (GTK_STOCK_PROPERTIES, GTK_ICON_SIZE_MENU);
+	image = gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 
