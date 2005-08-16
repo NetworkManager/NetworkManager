@@ -1,3 +1,5 @@
+AUTOMAKE_OPTIONS = foreign
+
 SUBDIRS = src auth-dialog properties po
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d

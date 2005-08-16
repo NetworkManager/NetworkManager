@@ -1,3 +1,10 @@
+2005-08-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from j@bootlab.org
+	* vpn-daemons/vpnc/Makefile.am: Fix for autoreconf
+
+	* configure.in: allow specifying the path to dhcdbd
+
 2005-08-16  Robert Love  <rml@novell.com>
 
 	Patch from j@bootlab.org
