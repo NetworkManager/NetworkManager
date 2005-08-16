@@ -717,6 +717,42 @@ gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 
 
 /*
+ * verify_and_return_provider - given a provider identifier, verify that it is able to dial without
+ * prompting and return the provider name.  On failure, return NULL.  Caller is responsible for
+ * free'ing the return.
+*/
+static char * verify_and_return_provider (const char *provider)
+{
+	shvarFile *file;
+	char *name, *buf = NULL;
+	int ret;
+
+	name = g_strdup_printf ("/etc/sysconfig/network/providers/%s", provider);
+
+	file = svNewFile (name);
+	if (!file)
+		goto out_gfree;
+
+	buf = svGetValue (file, "ASKPASSWORD");
+	if (!buf)
+		goto out_close;
+	ret = strcmp (buf, "no");
+	free (buf);
+	if (ret)
+		goto out_close;
+
+	buf = svGetValue (file, "PROVIDER");
+
+out_close:
+	svCloseFile (file);
+out_gfree:
+	g_free (name);
+
+	return buf;
+}
+
+
+/*
  * nm_system_get_dialup_config
  *
  * Enumerate dial up options on this system, allocate NMDialUpConfig's,
@@ -742,26 +778,42 @@ GSList * nm_system_get_dialup_config (void)
 	while ((dentry = g_dir_read_name (dir)))
 	{
 		NMDialUpConfig *config;
+		shvarFile *modem_file;
+		char *name, *buf, *provider_name;
 
 		/* we only want modems */
 		if (!g_str_has_prefix (dentry, "ifcfg-modem"))
 			continue;
 
+		/* open the configuration file */
+		name = g_strdup_printf ("/etc/sysconfig/network/%s", dentry);
+		modem_file = svNewFile (name);
+		if (!modem_file)
+			 goto out_gfree;
+		/* get the name of the provider used for this entry */
+		buf = svGetValue (modem_file, "PROVIDER");
+		if (!buf)
+			 goto out_close;
+
+		provider_name = verify_and_return_provider (buf);
+		if (!provider_name)
+			 goto out_free;
+
 		config = g_malloc (sizeof (NMDialUpConfig));
-		config->name = g_strdup_printf ("Modem (#%d)", i++);
+		config->name = g_strdup_printf ("%s via Modem", provider_name);
 		config->data = g_strdup (dentry + 6);	/* skip the "ifcfg-" prefix */
 
 		list = g_slist_append (list, config);
 
 		nm_info ("Found dial up configuration for %s: %s", config->name, (char *) config->data);
-	}
 
-	/* Hack: Go back and remove the "(#0)" if there is only one device */
-	if (i == 1)
-	{
-		NMDialUpConfig *config = (NMDialUpConfig *) list->data;
-		g_free (config->name);
-		config->name = g_strdup ("Modem");
+		free (provider_name);
+out_free:
+		free (buf);
+out_close:
+		svCloseFile (modem_file);
+out_gfree:
+		g_free (name);
 	}
 
 	g_dir_close (dir);

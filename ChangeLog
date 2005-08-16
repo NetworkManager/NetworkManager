@@ -1,3 +1,8 @@
+2005-08-16  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: improve the SUSE-backend dial up
+	  support.
+
 2005-08-16  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c: Split markup out of translatable strings

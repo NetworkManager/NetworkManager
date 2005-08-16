@@ -1749,7 +1749,7 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 		char *name = elt->data;
 		const char *label;
 
-		label = g_strdup_printf (_("Connect via %s..."), name);
+		label = g_strdup_printf (_("Connect to %s..."), name);
 		dialup_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
 		g_object_set_data (G_OBJECT (dialup_item), "dialup", name);
 
