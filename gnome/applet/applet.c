@@ -1740,7 +1740,7 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
-	item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Dial Up")));
+	item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_Dial Up Connections")));
 
 	dialup_menu = GTK_MENU (gtk_menu_new ());
 	for (elt = applet->dialup_list; elt; elt = g_slist_next (elt))
@@ -1793,6 +1793,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	GSList	*element;
 	gint n_wireless_interfaces = 0;
 	gint n_wired_interfaces = 0;
+	gboolean vpn_available, dialup_available;
 
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
@@ -1855,16 +1856,16 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		}
 	}
 
-	if (is_vpn_available ())
+	/* Add the VPN and Dial Up menus and their associated seperator */
+	vpn_available = is_vpn_available ();
+	dialup_available = !! applet->dialup_list;
+	if (vpn_available || dialup_available)
 	{
 		nmwa_menu_add_separator_item (menu);
-		nmwa_menu_add_vpn_menu (menu, applet);
-	}
-
-	if (applet->dialup_list)
-	{
-		nmwa_menu_add_separator_item (menu);
-		nmwa_menu_add_dialup_menu (menu, applet);
+		if (vpn_available)
+			nmwa_menu_add_vpn_menu (menu, applet);
+		if (dialup_available)
+			nmwa_menu_add_dialup_menu (menu, applet);
 	}
 
 	if (n_wireless_interfaces > 0)

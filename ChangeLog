@@ -1,5 +1,9 @@
 2005-08-16  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: Better "Dial Up" menu item.
+
+2005-08-16  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: use GTK_STOCK_INFO not PROPERTIES for the
 	  "Connection Information" menu item.
 
