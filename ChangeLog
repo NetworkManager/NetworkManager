@@ -1,3 +1,10 @@
+2005-08-16  Christopher Aillon  <caillon@redhat.com>
+
+	* vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade:
+	* gnome/applet/applet.c: Add some mnemonics for VPNC
+
+	* vpn-daemons/.cvsignore: fix this up a little bit
+
 2005-08-16  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: improve the SUSE-backend dial up

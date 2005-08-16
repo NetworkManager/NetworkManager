@@ -1686,7 +1686,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
-	item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("VPN Connections")));
+	item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_VPN Connections")));
 
 	vpn_menu = GTK_MENU (gtk_menu_new ());
 	for (elt = applet->gui_vpn_connections; elt; elt = g_slist_next (elt))
@@ -1713,11 +1713,11 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
 	}
 
-	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Configure VPN...")));
+	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_Configure VPN...")));
 	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_configure_vpn_item_activate), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
 
-	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (_("Disconnect VPN...")));
+	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_Disconnect VPN...")));
 	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_disconnect_vpn_item_activate), applet);
 	if (!applet->gui_active_vpn)
 		gtk_widget_set_sensitive (GTK_WIDGET (other_item), FALSE);
