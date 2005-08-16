@@ -476,6 +476,9 @@ static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
 void nmwa_schedule_vpn_failure_dialog (NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg)
 {
 	DialogCBData *cb_data = NULL;
+	gchar *error_head = NULL;
+	gchar *error_desc = NULL;
+	gchar *error_data = NULL;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (member != NULL);
@@ -487,35 +490,45 @@ void nmwa_schedule_vpn_failure_dialog (NMWirelessApplet *applet, const char *mem
 
 	if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
 	{
-		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n\nCould not start the "
-						"VPN connection '%s' due to a login failure.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+		error_head = g_strdup (_("VPN Login Failure"));
+		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a login failure."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED))
 	{
-		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Start Failure</span>\n\nCould not start the "
-						"VPN connection '%s' due to a failure launching the VPN program.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+		error_head = g_strdup (_("VPN Start Failure"));
+		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a failure launching the VPN program."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
 	{
-		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n\nCould not start the "
-						"VPN connection '%s' due to a connection error.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+		error_head = g_strdup (_("VPN Connect Failure"));
+		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a connection error."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD))
 	{
-		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n\nThe "
-						"VPN connection '%s' was not correctly configured.\n\nThe VPN service said: \"%s\""), vpn_name, error_msg);
+		error_head = g_strdup (_("VPN Configuration Error"));
+		error_desc = g_strdup_printf (_("The VPN connection '%s' was not correctly configured."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
 	{
-		cb_data->msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n\nCould not start the "
-						"VPN connection '%s' because the VPN server did not return an adequate network configuration.\n\n"
-						"The VPN service said: \"%s\""), vpn_name, error_msg);
+		error_head = g_strdup (_("VPN Connect Failure"));
+		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."), vpn_name);
+	}
+	else
+	{
+		free_dialog_cb_data (cb_data);
+		return;
 	}
 
-	if (cb_data->msg)
-		g_idle_add ((GSourceFunc) nmwa_show_vpn_failure_dialog, cb_data);
-	else
-		free_dialog_cb_data (cb_data);
+	error_data = g_strdup_printf (_("The VPN service said: \"%s\""), error_msg);
+
+	cb_data->msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
+					"%s\n\n%s", error_head, error_desc, error_data);
+
+	g_free (error_head);
+	g_free (error_desc);
+	g_free (error_data);
+
+	g_idle_add ((GSourceFunc) nmwa_show_vpn_failure_dialog, cb_data);
 }
 
 
