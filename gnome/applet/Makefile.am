@@ -4,40 +4,40 @@ NULL=
 
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
 
-libexec_PROGRAMS = nm-applet
+bin_PROGRAMS = nm-applet
 
-nm_applet_CPPFLAGS =							\
+nm_applet_CPPFLAGS =						\
 	$(DBUS_CFLAGS)							\
 	$(GTHREAD_CFLAGS)						\
 	$(HAL_CFLAGS)							\
 	$(DBUS_GLIB_CFLAGS)						\
-	$(GLADE_CFLAGS)							\
+	$(GLADE_CFLAGS)						\
 	$(GTK_CFLAGS)							\
-	$(GCONF_CFLAGS)							\
-	$(LIBGNOMEUI_CFLAGS)						\
-	$(PANEL_APPLET_CFLAGS)						\
-	$(GNOME_KEYRING_CFLAGS)						\
-	-DICONDIR=\""$(datadir)/pixmaps"\"				\
-	-DGLADEDIR=\""$(gladedir)"\"					\
+	$(GCONF_CFLAGS)						\
+	$(LIBGNOMEUI_CFLAGS)					\
+	$(PANEL_APPLET_CFLAGS)					\
+	$(GNOME_KEYRING_CFLAGS)					\
+	-DICONDIR=\""$(datadir)/pixmaps"\"			\
+	-DGLADEDIR=\""$(gladedir)"\"				\
 	-DBINDIR=\""$(bindir)"\"					\
-	-DSYSCONFDIR=\""$(sysconfdir)"\"				\
+	-DSYSCONFDIR=\""$(sysconfdir)"\"			\
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"	\
-	-DDBUS_API_SUBJECT_TO_CHANGE					\
-	-DG_DISABLE_DEPRECATED						\
+	-DDBUS_API_SUBJECT_TO_CHANGE				\
+	-DG_DISABLE_DEPRECATED					\
 	-DGDK_DISABLE_DEPRECATED					\
-	-DGNOME_DISABLE_DEPRECATED					\
+	-DGNOME_DISABLE_DEPRECATED				\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"		\
 	-DVERSION=\"$(VERSION)\"					\
 	$(NULL)
 
 nm_applet_SOURCES =			\
 	main.c				\
-	applet.c			\
-	applet.h			\
+	applet.c				\
+	applet.h				\
 	applet-dbus.c			\
 	applet-dbus.h			\
-	applet-dbus-devices.c		\
-	applet-dbus-devices.h		\
+	applet-dbus-devices.c	\
+	applet-dbus-devices.h	\
 	applet-dbus-vpn.c		\
 	applet-dbus-vpn.h		\
 	applet-dbus-info.c		\
@@ -46,16 +46,16 @@ nm_applet_SOURCES =			\
 	wireless-network.h		\
 	nm-device.c			\
 	nm-device.h			\
-	other-network-dialog.c		\
-	other-network-dialog.h		\
+	other-network-dialog.c	\
+	other-network-dialog.h	\
 	passphrase-dialog.c		\
 	passphrase-dialog.h		\
 	menu-items.c			\
 	menu-items.h			\
 	eggtrayicon.c			\
 	eggtrayicon.h			\
-	vpn-password-dialog.c		\
-	vpn-password-dialog.h		\
+	vpn-password-dialog.c	\
+	vpn-password-dialog.h	\
 	vpn-connection.c		\
 	vpn-connection.h		\
 	$(NULL)
@@ -75,7 +75,7 @@ nm_applet_LDADD =						\
 	$(NULL)
 
 
-gladedir = $(datadir)/NetworkManagerNotification
+gladedir = $(datadir)/nm-applet
 glade_DATA = wireless-applet.glade keyring.png
 
 dbusservicedir = $(DBUS_SYS_DIR)
