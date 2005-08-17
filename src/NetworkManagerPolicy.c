@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
 #include <stdio.h>
@@ -63,10 +63,10 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	{
 		struct ether_addr	addr;
 		NMAccessPoint *	ap = nm_act_request_get_ap (req);
-		NMAccessPoint *tmp_ap;
+		NMAccessPoint *	tmp_ap;
 
 		/* Cache details in the info-daemon since the connect was successful */
-		nm_dbus_update_network_info (data->dbus_connection, ap);
+		nm_dbus_update_network_info (data->dbus_connection, ap, nm_act_request_get_user_requested (req));
 
 		/* Cache the correct auth method in our AP list too */
 		if ((tmp_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))

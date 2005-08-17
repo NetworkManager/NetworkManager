@@ -809,8 +809,9 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
  * Save information about a wireless network in gconf and the gnome keyring.
  *
  */
-void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
-			const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method)
+static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
+			const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method,
+			gboolean user_requested)
 {
 	char *		key;
 	GConfEntry *	gconf_entry;
@@ -866,9 +867,15 @@ void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const c
 		gconf_client_set_int (applet->gconf_client, key, (int)enc_key_type, NULL);
 		g_free (key);
 
-		key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-		g_free (key);
+		/* We only update the timestamp if the user requested a particular network, not if
+		 * NetworkManager decided to switch access points by itself.
+		 */
+		if (user_requested)
+		{
+			key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+			gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
+			g_free (key);
+		}
 
 		if (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN)
 		{
@@ -896,6 +903,7 @@ static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage 
 	char *			enc_key_source = NULL;
 	int				enc_key_type = -1;
 	char *			key;
+	gboolean			user_requested;
 	GConfValue *		value;
 	DBusError			error;
 	char *			escaped_network;
@@ -909,13 +917,14 @@ static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage 
 											  DBUS_TYPE_STRING, &enc_key_source,
 											  DBUS_TYPE_INT32, &enc_key_type,
 											  DBUS_TYPE_INT32, &auth_method,
+											  DBUS_TYPE_BOOLEAN, &user_requested,
 											  DBUS_TYPE_INVALID);
 	if (!args_good || (strlen (network) <= 0) || (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN))
 		return;
 	if (enc_key_source && strlen (enc_key_source) && ((enc_key_type == NM_ENC_TYPE_UNKNOWN) || (enc_key_type == NM_ENC_TYPE_NONE)))
 		return;
 
-	nmi_save_network_info (applet, network, enc_key_source, (NMEncKeyType) enc_key_type, auth_method);
+	nmi_save_network_info (applet, network, enc_key_source, (NMEncKeyType) enc_key_type, auth_method, user_requested);
 }
 
 

@@ -1197,41 +1197,6 @@ void nmwa_schedule_warning_dialog (NMWirelessApplet *applet, const char *msg)
 
 
 /*
- * nmwa_update_network_timestamp
- *
- * Update the timestamp of a network in GConf.
- *
- */
-static void nmwa_update_network_timestamp (NMWirelessApplet *applet, WirelessNetwork *network)
-{
-	char *		key;
-	char *		escaped_network;
-	const char *	net_essid;
-
-	g_return_if_fail (applet != NULL);
-	g_return_if_fail (network != NULL);
-
-	net_essid = wireless_network_get_essid (network);
-
-	/* Update GConf to set timestamp for this network, or add it if
-	 * it doesn't already exist.
-	 */
-
-	/* Update timestamp on network */
-	escaped_network = gconf_escape_key (net_essid, strlen (net_essid));
-	key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-	g_free (key);
-
-	/* Force-set the essid too so that we have a semi-complete network entry */
-	key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	gconf_client_set_string (applet->gconf_client, key, net_essid, NULL);
-	g_free (key);
-	g_free (escaped_network);
-}
-
-
-/*
  * nmwa_get_device_for_nm_device
  *
  * Searches the device list for a device that matches the
@@ -1288,10 +1253,7 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 		return;
 
 	if ((tag = g_object_get_data (G_OBJECT (item), "network")))
-	{
-		if ((net = network_device_get_wireless_network_by_essid (dev, tag)))
-			nmwa_update_network_timestamp (applet, net);
-	}
+		net = network_device_get_wireless_network_by_essid (dev, tag);
 
 	nmwa_dbus_set_device (applet->connection, dev, net ? wireless_network_get_essid (net) : NULL, -1, NULL);
 	network_device_unref (dev);

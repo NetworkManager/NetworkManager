@@ -631,7 +631,7 @@ void nm_dbus_update_wireless_scan_method (DBusConnection *connection, NMData *da
  * Tell NetworkManagerInfo the updated info of the AP
  *
  */
-gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap)
+gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, gboolean user_requested)
 {
 	DBusMessage *	message;
 	gboolean		success = FALSE;
@@ -662,6 +662,7 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 								DBUS_TYPE_STRING, &enc_key_source,
 								DBUS_TYPE_INT32, &enc_key_type,
 								DBUS_TYPE_INT32, &auth_method,
+								DBUS_TYPE_BOOLEAN, &user_requested,
 								DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
 		nm_warning ("nm_dbus_update_network_info(): failed to send dbus message.");

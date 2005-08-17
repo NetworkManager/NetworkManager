@@ -1,3 +1,26 @@
+2005-08-17  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bill Moss <bmoss@clemson.edu>
+
+	* gnome/applet/applet-dbus-info.[ch]
+		- (nmi_save_network_info): save timestamp for network if it
+			was a change requested by the user
+		- (nmi_dbus_update_network_info): get user_requested from dbus
+			message and pass to nmi_save_network_info()
+
+	* gnome/applet/applet.c
+		- (nmwa_update_network_timestamp): remove
+		- (nmwa_menu_item_activate): don't set timestamp on networks
+			here, only after a successful connect in nmi_save_network_info()
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_update_network_info): pass user_requested into the 
+			dbus message
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): pass user_requested to
+			nm_dbus_update_network_info()
+
 2005-08-16  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Better "Dial Up" menu item.

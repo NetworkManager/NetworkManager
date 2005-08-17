@@ -38,8 +38,4 @@ void				nmi_dbus_signal_update_network		(DBusConnection *connection, const char 
 
 void				nmi_dbus_signal_update_vpn_connection	(DBusConnection *connection, const char *name);
 
-void				nmi_save_network_info				(NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
-													const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method);
-
-
 #endif
