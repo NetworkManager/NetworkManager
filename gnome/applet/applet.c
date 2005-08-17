@@ -590,7 +590,7 @@ void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char
 
 	msg2 = g_strdup_printf (_("VPN connection '%s' said:"), vpn_name);
 	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
-						"%s\n\n\"%s\""), , _("VPN Login Message"), msg2, banner);
+						"%s\n\n\"%s\""), _("VPN Login Message"), msg2, banner);
 	g_free (msg2);
 
 	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_banner_dialog, msg);
