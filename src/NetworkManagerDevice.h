@@ -90,10 +90,6 @@ void			nm_device_update_signal_strength		(NMDevice *dev);
 
 NMAccessPoint *nm_device_get_best_ap				(NMDevice *dev);
 
-void			nm_device_freeze_best_ap				(NMDevice *dev);
-void			nm_device_unfreeze_best_ap			(NMDevice *dev);
-gboolean		nm_device_is_best_ap_frozen			(NMDevice *dev);
-
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_enc_key				(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);
 
