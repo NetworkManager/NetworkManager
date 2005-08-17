@@ -552,11 +552,8 @@ void nm_dbus_vpn_schedule_vpn_connections_update (NMData *app_data)
 static DBusMessage *nm_dbus_vpn_get_vpn_connections (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage		*reply = NULL;
-	DBusMessageIter	 iter;
-	DBusMessageIter	 iter_array;
 	char				**vpn_names = NULL;
 	int				 num_names;
-	int				 i;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
@@ -681,7 +678,6 @@ static DBusMessage *nm_dbus_vpn_get_active_vpn_connection (DBusConnection *conne
  */
 static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	DBusMessage		*reply = NULL;
 	DBusError			 error;
 	const char		*name;
 	char                    **passwords;
@@ -734,8 +730,6 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
  */
 static DBusMessage *nm_dbus_vpn_deactivate_connection (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	NMVPNConnection	*vpn_con;
-
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
