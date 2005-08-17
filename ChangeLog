@@ -1,5 +1,11 @@
 2005-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/icons/nm-no-connection.png
+	  gnome/applet/icons/nm-device-wired.png
+		- Use Diana's new RJ45 connector icons
+
+2005-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): clarify switching rules if
 			both new and old devices are valid; mainly, don't switch
