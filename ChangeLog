@@ -1,5 +1,13 @@
 2005-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): clarify switching rules if
+			both new and old devices are valid; mainly, don't switch
+			away from user-requested wireless connection back to a wired
+			one
+
+2005-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/Makefile.am
 		- Relocate the applet to /usr/bin since it is no longer
 			executed by anything, but directly by the user

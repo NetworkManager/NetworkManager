@@ -386,23 +386,44 @@ static gboolean nm_policy_device_change_check (NMData *data)
 	}
 	else if (old_dev && new_dev)
 	{
-		if (old_dev != new_dev)
-		{
-			nm_info ("SWITCH: found better connection '%s' than current connection '%s'.", nm_device_get_iface (new_dev), nm_device_get_iface (old_dev));
-			do_switch = TRUE;
-		}
-		else if ((old_dev == new_dev) && nm_device_is_wireless (new_dev))
-		{
-			NMAccessPoint *old_ap = nm_act_request_get_ap (nm_device_get_act_request (old_dev));
+		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
+		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
 
-			/* Stick with the current access point unless we don't have a link to it anymore */
-
-			/* Schedule new activation if the currently associated access point is not the "best" one */
-			if (strcmp (nm_ap_get_essid (old_ap), nm_ap_get_essid (ap)) != 0)
+		if (nm_device_is_wired (old_dev))
+		{
+			/* Only switch if the old device was not user requested, and we are either switching to
+			 * a new device.  Note that new_dev will never be wireless since automatic device picking
+			 * above will prefer a wired device to a wireless device.
+			 */
+			if (!old_user_requested && (new_dev != old_dev))
 			{
-				nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.", nm_device_get_iface (new_dev), nm_ap_get_essid (ap),
-							nm_device_get_iface (old_dev), nm_ap_get_essid (old_ap));
+				nm_info ("SWITCH: found better connection '%s' than current connection '%s'.", nm_device_get_iface (new_dev), nm_device_get_iface (old_dev));
 				do_switch = TRUE;
+			}
+		}
+		else if (nm_device_is_wireless (old_dev))
+		{
+			/* Only switch if the old device's wireless config is invalid */
+			if (nm_device_is_wireless (new_dev))
+			{
+				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
+				const char *	old_essid = nm_ap_get_essid (old_ap);
+				const char *	new_essid = nm_ap_get_essid (ap);
+
+				/* Schedule new activation if the currently associated access point is not the "best" one
+				 * or we've lost the link to the old access point.
+				 */
+				if ((strcmp (old_essid, new_essid) != 0) || !nm_device_has_active_link (old_dev))
+				{
+					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.", nm_device_get_iface (new_dev),
+								new_essid, nm_device_get_iface (old_dev), old_essid);
+					do_switch = TRUE;
+				}
+			}
+			else if (nm_device_is_wired (new_dev))
+			{
+				if (!nm_device_has_active_link (old_dev))
+					do_switch = TRUE;
 			}
 		}
 	}
