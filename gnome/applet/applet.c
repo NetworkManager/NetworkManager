@@ -582,13 +582,17 @@ static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
 void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char *vpn_name, const char *banner)
 {
 	char *msg;
+	char *msg2;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (vpn_name != NULL);
 	g_return_if_fail (banner != NULL);
 
-	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">VPN Login Message</span>\n\n"
-						"VPN connection '%s' said:\n\n\"%s\""), vpn_name, banner);
+	msg2 = g_strdup_printf (_("VPN connection '%s' said:"), vpn_name);
+	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
+						"%s\n\n\"%s\""), , _("VPN Login Message"), msg2, banner);
+	g_free (msg2);
+
 	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_banner_dialog, msg);
 }
 
