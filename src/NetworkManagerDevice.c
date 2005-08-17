@@ -2313,7 +2313,7 @@ static gboolean nm_dwwfl_test (int tries, nm_completion_args args)
 	}
 
 	/* If we're told to cancel, return that we're finished.
-	 * If we've the frequency has been stable for more than the required
+	 * If the card's frequency has been stable for more than the required
 	 * interval, return that we're finished.
 	 * Otherwise, we're not finished. */
 	if (nm_device_activation_should_cancel (dev) || (*assoc_count >= required))
@@ -2441,7 +2441,7 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 	if (ap_need_key (dev, ap))
 	{
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req);
+		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
 		return;
 	}
 
@@ -2475,7 +2475,7 @@ static void nm_device_wireless_configure (NMActRequest *req)
 				/* Didn't work in Shared Key either. */
 				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Shared Key mode, need correct key?",
 						nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-				nm_dbus_get_user_key_for_network (data->dbus_connection, req);
+				nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 				break;
 			}
 			else
@@ -2873,7 +2873,7 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 			/* Shared Key mode failed, we must have bad WEP key */
 			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Shared Key mode, asking for new key.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			nm_dbus_get_user_key_for_network (data->dbus_connection, req);
+			nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 		}
 		else
 		{

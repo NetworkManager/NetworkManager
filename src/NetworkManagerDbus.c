@@ -468,10 +468,10 @@ out:
 /*
  * nm_dbus_get_user_key_for_network
  *
- * Asks NetworkManagerInfo for a user-entered WEP key.
+ * Asks the info-daemon for a user-entered WEP key.
  *
  */
-void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest *req)
+void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest *req, const gboolean new_key)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall;
@@ -509,6 +509,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 									DBUS_TYPE_OBJECT_PATH, &net_path,
 									DBUS_TYPE_INT32, &attempt,
+									DBUS_TYPE_BOOLEAN, &new_key,
 									DBUS_TYPE_INVALID);
 		if (dbus_connection_send_with_reply (connection, message, &pcall, INT_MAX) && pcall)
 		{
@@ -631,7 +632,7 @@ void nm_dbus_update_wireless_scan_method (DBusConnection *connection, NMData *da
  * Tell NetworkManagerInfo the updated info of the AP
  *
  */
-gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, gboolean user_requested)
+gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested)
 {
 	DBusMessage *	message;
 	gboolean		success = FALSE;
@@ -802,7 +803,6 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	dbus_error_init (&error);
 	if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &essid,
 									  DBUS_TYPE_INT32, &timestamp_secs,
-									  DBUS_TYPE_STRING, &key,
 									  DBUS_TYPE_INT32, &key_type,
 									  DBUS_TYPE_INT32, &auth_method,
 									  DBUS_TYPE_BOOLEAN, &trusted,
@@ -826,12 +826,10 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 			g_free (timestamp);
 
 			nm_ap_set_trusted (ap, trusted);
-
-			if (key && strlen (key)) 
-				nm_ap_set_enc_key_source (ap, key, key_type);
-			else
-				nm_ap_set_enc_key_source (ap, NULL, NM_ENC_TYPE_UNKNOWN);
 			nm_ap_set_auth_method (ap, auth_method);
+
+			/* We get the actual key when we try to connect, use NULL for now. */
+			nm_ap_set_enc_key_source (ap, NULL, key_type);
 
 			for (i = 0; i < num_addresses; i++)
 				if (strlen (addresses[i]) >= 11)

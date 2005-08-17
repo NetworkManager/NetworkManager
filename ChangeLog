@@ -1,5 +1,37 @@
 2005-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_get_key_for_network): Grab new "new_key" parameter
+			from the dbus message, which tells us to unconditionally
+			ask the user for a new key.  Otherwise, we pull the key from
+			the keyring and return it.  If we fail to get the key from the
+			keyring, we ask the user for a new key.
+		- (nmi_dbus_get_network_key): new function to grab the key for
+			an essid from the keyring.
+		- (nmi_dbus_get_network_properties): don't access the keyring here.
+			Also, don't return any key in the dbus message.
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_get_user_key_for_network): Add "new_key" parameter to
+			indicate that we unconditionally want a new key.  This function
+			is now also used to get keys from the info-daemon which are
+			pre-stored, not just for asking the user for a new key.  The
+			"new_key" parameter indicates whether or not we wish to ask the
+			user for a new key.
+		- (nm_dbus_get_network_data_cb): we no longer get a key from the
+			info-daemon in the return message, so use NULL instead.  The
+			key will be filled in at connect time by calling
+			nm_dbus_get_user_key_for_network()
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_configure): update for "new_key" param to
+			nm_dbus_get_user_key_for_network().  We initially set new_key
+			to FALSE to see if we have a stored key in the info-daemon, but
+			if the connection is unsuccessful at this stage we request a
+			new one
+
+2005-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/icons/nm-no-connection.png
 	  gnome/applet/icons/nm-device-wired.png
 		- Use Diana's new RJ45 connector icons

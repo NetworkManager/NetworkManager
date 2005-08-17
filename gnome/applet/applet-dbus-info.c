@@ -39,6 +39,9 @@
 #include "nm-utils.h"
 
 
+static char *nmi_dbus_get_network_key (NMWirelessApplet *applet, WirelessNetwork *net);
+
+
 /*
  * nmi_network_type_valid
  *
@@ -62,21 +65,56 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 	char *		dev_path = NULL;
 	char *		net_path = NULL;
 	int			attempt = 0;
+	gboolean		new_key = FALSE;
 	gboolean		success = FALSE;
 
 	if (dbus_message_get_args (message, NULL,
 							DBUS_TYPE_OBJECT_PATH, &dev_path,
 							DBUS_TYPE_OBJECT_PATH, &net_path,
 							DBUS_TYPE_INT32, &attempt,
+							DBUS_TYPE_BOOLEAN, &new_key,
 							DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *dev = NULL;
 		WirelessNetwork *net = NULL;
 
 		g_mutex_lock (applet->data_mutex);
-		if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, dev_path))
+			&& (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
 		{
-			if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
+			/* Try to get the key from the keyring.  If we fail, ask for a new key. */
+			if (!new_key)
+			{
+				char *key;
+
+				if ((key = nmi_dbus_get_network_key (applet, net)))
+				{
+					char *		gconf_key;
+					char *		escaped_network;
+					const char *	essid = wireless_network_get_essid (net);
+					GConfValue *	value;
+					NMEncKeyType	key_type = -1;
+
+					/* Grab key type from GConf since we need it for return message */
+					escaped_network = gconf_escape_key (essid, strlen (essid));
+					gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+					g_free (escaped_network);
+					if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
+					{
+						key_type = gconf_value_get_int (value);
+						gconf_value_free (value);
+					}
+					g_free (gconf_key);
+
+					nmi_dbus_return_user_key (applet->connection, message, key, key_type);
+					g_free (key);
+					success = TRUE;
+				}
+				else
+					new_key = TRUE;
+			}
+
+			if (new_key)
 				success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
 		}
 		g_mutex_unlock (applet->data_mutex);
@@ -281,6 +319,43 @@ static DBusMessage *nmi_dbus_get_networks (NMWirelessApplet *applet, DBusMessage
 
 
 /*
+ * nmi_dbus_get_network_key
+ *
+ * Grab the network's key from the keyring.
+ *
+ */
+static char *nmi_dbus_get_network_key (NMWirelessApplet *applet, WirelessNetwork *net)
+{
+	GnomeKeyringResult	ret;
+	GList *			found_list = NULL;
+	char *			key = NULL;
+	const char *		essid;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (net != NULL, NULL);
+
+	essid = wireless_network_get_essid (net);
+	g_return_val_if_fail (essid != NULL, NULL);
+
+	/* Get the essid key, if any, from the keyring */
+	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+								   &found_list,
+								   "essid",
+								   GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+								   essid,
+								   NULL);
+	if (ret == GNOME_KEYRING_RESULT_OK)
+	{
+		GnomeKeyringFound *found = found_list->data;
+		key = g_strdup (found->secret);
+		gnome_keyring_found_list_free (found_list);
+	}
+
+	return key;
+}
+
+
+/*
  * nmi_dbus_get_network_properties
  *
  * Returns the properties of a specific wireless network from gconf
@@ -299,11 +374,8 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 	char				*essid = NULL;
 	gint				 timestamp = -1;
 	gint32			 i;
-	char				*key = NULL;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
-	GList			*found_list = NULL;
-	GnomeKeyringResult	 ret;
 	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 
 	g_return_val_if_fail (applet != NULL, NULL);
@@ -338,22 +410,6 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 		gconf_value_free (value);
 	}	
 	g_free (gconf_key);
-
-	/* Get the essid key, if any, from the keyring */
-	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
-								   &found_list,
-								   "essid",
-								   GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-								   essid,
-								   NULL);
-	if (ret == GNOME_KEYRING_RESULT_OK)
-	{
-		GnomeKeyringFound *found = found_list->data;
-		key = g_strdup (found->secret);
-		gnome_keyring_found_list_free (found_list);
-	}
-	else
-		key = g_strdup ("");
 
 	gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
@@ -417,7 +473,6 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
 		i = (gint32) timestamp;
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &i);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &key);
 		i = (gint32) key_type;
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &i);
 		i = (gint32) auth_method;
@@ -449,10 +504,9 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 		gconf_value_free (ap_addrs_value);
 
 	g_free (essid);
-	g_free (key);
-
 	g_free (escaped_network);
-	return (reply);
+
+	return reply;
 }
 
 
