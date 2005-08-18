@@ -1,3 +1,19 @@
+2005-08-18  Christopher Aillon <caillon@redhat.com>
+
+	* initscript/Gentoo/NetworkManager:
+	* initscript/RedHat/NetworkManager:
+	* initscript/RedHat/NetworkManagerDispatcher:
+	* initscript/SUSE/networkmanager:
+	CVS remove these in place of .in replacements
+
+	* configure.in:
+	* initscript/Gentoo/NetworkManager.in:
+	* initscript/RedHat/NetworkManager.in:
+	* initscript/RedHat/NetworkManagerDispatcher.in:
+	* initscript/SUSE/networkmanager.in:
+	These scripts now are generated so they work still when
+	NM is built using a bindir other than /usr/bin
+
 2005-08-18  Dan Williams <dcbw@redhat.com>
 
 	* gnome/applet/main.c
