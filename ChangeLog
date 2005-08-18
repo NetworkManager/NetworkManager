@@ -1,3 +1,9 @@
+2005-08-18  Dan Williams <dcbw@redhat.com>
+
+    * gnome/applet/main.c
+        - Add new "--no-session" parameter that disables applet
+            session management, ie for testing
+
 2005-08-18  Christopher Aillon <caillon@redhat.com>
 
 	* gnome/applet/other-network-dialog.c:
