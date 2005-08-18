@@ -288,10 +288,14 @@ gnome/vpn-properties/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
+initscript/RedHat/NetworkManager
+initscript/RedHat/NetworkManagerDispatcher
 initscript/Gentoo/Makefile
+initscript/Gentoo/NetworkManager
 initscript/Debian/Makefile
 initscript/Slackware/Makefile
 initscript/SUSE/Makefile
+initscript/SUSE/networkmanager
 po/Makefile.in
 NetworkManager.pc
 ])

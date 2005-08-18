@@ -13,14 +13,20 @@
 # Provides: $network
 ### END INIT INFO
 
+prefix=@prefix@
+exec_prefix=@prefix@
+bindir=@bindir@
+
+NETWORKMANAGER_BIN=${bindir}/NetworkManager
+
 # Sanity checks.
-[ -x /usr/bin/NetworkManager ] || exit 0
+[ -x $NETWORKMANAGER_BIN ] || exit 0
 
 # We need /sbin/ip
 [ -x /sbin/ip ] || exit 0
 
 # so we can rearrange this easily
-processname=/usr/bin/NetworkManager
+processname=$NETWORKMANAGER_BIN
 pidfile=/var/run/NetworkManager.pid
 
 depend() {

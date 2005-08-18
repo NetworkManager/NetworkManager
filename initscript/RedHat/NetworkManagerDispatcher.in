@@ -10,8 +10,14 @@
 # pidfile: /var/run/NetworkManagerDispatcher.pid
 #
 
+prefix=@prefix@
+exec_prefix=@prefix@
+bindir=@bindir@
+
+NETWORKMANAGERDISPATCHER_BIN=${bindir}/NetworkManagerDispatcher
+
 # Sanity checks.
-[ -x /usr/bin/NetworkManagerDispatcher ] || exit 1
+[ -x $NETWORKMANAGERDISPATCHER_BIN ] || exit 1
 
 # Source function library.
 . /etc/rc.d/init.d/functions

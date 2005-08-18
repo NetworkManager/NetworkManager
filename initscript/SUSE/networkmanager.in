@@ -8,7 +8,11 @@
 # Description: NetworkManager, a network and wireless connection manager
 ### END INIT INFO
 
-NETWORKMANAGER_BIN=/usr/bin/NetworkManager
+prefix=@prefix@
+exec_prefix=@prefix@
+bindir=@bindir@
+
+NETWORKMANAGER_BIN=${bindir}/NetworkManager
 test -x $NETWORKMANAGER_BIN || exit 5
 
 . /etc/rc.status
