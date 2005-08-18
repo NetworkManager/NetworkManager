@@ -46,26 +46,17 @@ int main (int argc, char *argv[])
 {
 	NMWirelessApplet *	nmwa;
 	GnomeClient *		client = NULL;
-    int                 i;
-    gboolean            session = TRUE;
 
 	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
 			    GNOME_PARAM_NONE);
 
-    for (i = 0; i < argc; i++)
-        if (strcmp (argv[i], "--no-session") == 0)
-            session = FALSE;
-
-    if (session)
-    {
     	client = gnome_master_client ();
     	gnome_client_set_restart_command (client, argc, argv);
     	gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
 
     	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);
     	g_signal_connect (client, "die", G_CALLBACK (session_die), NULL);
-    }
 
 	bindtextdomain (GETTEXT_PACKAGE, NULL);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -77,7 +68,6 @@ int main (int argc, char *argv[])
 		gtk_main ();
 	}
 
-    if (session)
     	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
 	return 0;

@@ -1,5 +1,11 @@
 2005-08-18  Dan Williams <dcbw@redhat.com>
 
+	* gnome/applet/main.c
+		- Revert previous change for --no-session since
+			--sm-disable does the same thing
+
+2005-08-18  Dan Williams <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-info.c
 		- (nmi_dbus_create_error_message): new function
 		- (nmi_dbus_get_key_for_network): correctly use dbus error creation
