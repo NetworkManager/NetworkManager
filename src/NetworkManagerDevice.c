@@ -3130,7 +3130,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		NMActRequest *	req = nm_device_get_act_request (dev);
 		gboolean		clear_act_request = FALSE;
 
-		nm_debug ("Activation (%s/wireless): cancelling...", nm_device_get_iface (dev));
+		nm_info ("Activation (%s): cancelling...", nm_device_get_iface (dev));
 		dev->quit_activation = TRUE;
 
 		/* If the device is waiting for DHCP or a user key, force its current request to stop. */
@@ -3157,7 +3157,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		 */
 		args[0] = dev;
 		nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 20, nm_ac_test, NULL, args);
-		nm_debug ("Activation (%s/wireless): cancelled.", nm_device_get_iface(dev));
+		nm_info ("Activation (%s): cancelled.", nm_device_get_iface(dev));
 		nm_schedule_state_change_signal_broadcast (dev->app_data);
 	}
 }

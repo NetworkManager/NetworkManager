@@ -448,7 +448,15 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 
 	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
 	{
-		/* FIXME: stop activation for this device if the dialog couldn't show */
+		/* FIXME: since we're not marking the device as invalid, its a fair bet
+		 * that NM will just try to reactivate the device again, and may fail
+		 * to get the user key in exactly the same way, which ends up right back
+		 * here...  ad nauseum.  Figure out how to deal with a failure here.
+		 */
+		if (nm_device_is_activating (dev))
+			nm_device_activation_cancel (dev);
+		nm_policy_schedule_device_change_check (data);
+
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -481,6 +489,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	gint32			attempt = 1;
 	char *			dev_path;
 	char *			net_path;
+	char *			essid;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (req != NULL);
@@ -494,7 +503,8 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	nm_info ("Activation (%s) New wireless user key requested for network '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+	essid = nm_ap_get_essid (ap);
+	nm_info ("Activation (%s) New wireless user key requested for network '%s'.", nm_device_get_iface (dev), essid);
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getKeyForNetwork")))
 	{
@@ -508,6 +518,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	{
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 									DBUS_TYPE_OBJECT_PATH, &net_path,
+									DBUS_TYPE_STRING, &essid,
 									DBUS_TYPE_INT32, &attempt,
 									DBUS_TYPE_BOOLEAN, &new_key,
 									DBUS_TYPE_INVALID);
@@ -523,6 +534,11 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	} else nm_warning ("nm_dbus_get_user_key_for_network(): bad object path data");
 	g_free (net_path);
 	g_free (dev_path);
+
+	/* FIXME: figure out how to deal with a failure here, otherwise
+	 * we just hang in the activation process and nothing happens
+	 * until the user cancels stuff.
+	 */
 
 	dbus_message_unref (message);
 }

@@ -1,8 +1,28 @@
 2005-08-18  Dan Williams <dcbw@redhat.com>
 
-    * gnome/applet/main.c
-        - Add new "--no-session" parameter that disables applet
-            session management, ie for testing
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_create_error_message): new function
+		- (nmi_dbus_get_key_for_network): correctly use dbus error creation
+			functions.  Also don't check for both device _and_ network before
+			asking for a user's key, because we may not have gotten all our
+			networks back from NM quite yet (due to the dbus pending calls
+			coming in later).  Fixes a hang in NM/nm-applet.
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_get_user_key_for_network_cb): handle error conditions in a
+			slightly more sane manner, even though we are still broken for
+			certain other error conditions.
+		- (nm_dbus_get_user_key_for_network): need to pass the network's essid
+			to the info-daemon too
+
+	* src/NetworkManagerDevice.c
+		- Fix some debug messages to be info messages instead
+
+2005-08-18  Dan Williams <dcbw@redhat.com>
+
+	* gnome/applet/main.c
+		- Add new "--no-session" parameter that disables applet
+			session management, ie for testing
 
 2005-08-18  Christopher Aillon <caillon@redhat.com>
 
