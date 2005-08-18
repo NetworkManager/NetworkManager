@@ -656,7 +656,7 @@ Hex key (WEP)</property>
 			<widget class="GtkCheckButton" id="use_encryption_checkbox">
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">Connect with encryption enabled</property>
+			  <property name="label" translatable="yes">Connect with _encryption enabled</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
@@ -830,8 +830,8 @@ A passphrase or encryption key is required to access the wireless network '%s'.<
 		  <child>
 		    <widget class="GtkLabel" id="label3">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Key Type:</property>
-		      <property name="use_underline">False</property>
+		      <property name="label" translatable="yes">_Key Type:</property>
+		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
 		      <property name="wrap">False</property>
@@ -888,8 +888,8 @@ Hex Key (WEP)</property>
 		  <child>
 		    <widget class="GtkLabel" id="passphrase_entry_label">
 		      <property name="visible">True</property>
-		      <property name="label" translatable="yes">Passphrase:</property>
-		      <property name="use_underline">False</property>
+		      <property name="label" translatable="yes">_Passphrase:</property>
+		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
 		      <property name="wrap">False</property>
