@@ -203,7 +203,12 @@ static void get_networks_of_type (DBusConnection *connection, NMNetworkType type
 
 static void get_user_key_for_network (DBusConnection *connection)
 {
-	DBusMessage		*message;
+	DBusMessage *	message;
+	const char *	dev_path = NM_DBUS_PATH_DEVICES"/eth1";
+	const char *	net_path = NM_DBUS_PATH_DEVICES"/Networks/wireless-ap";
+	const char *	essid = "wireless-ap";
+	const int		attempts = 0;
+	const gboolean	new_key = FALSE;
 
 	g_return_if_fail (connection != NULL);
 
@@ -214,8 +219,11 @@ static void get_user_key_for_network (DBusConnection *connection)
 		return;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, "eth1",
-								DBUS_TYPE_STRING, "wireless-ap",
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &dev_path,
+								DBUS_TYPE_STRING, &net_path,
+								DBUS_TYPE_STRING, &essid,
+								DBUS_TYPE_INT32, &attempts,
+								DBUS_TYPE_BOOLEAN, &new_key,
 								DBUS_TYPE_INVALID);
 
 	if (!dbus_connection_send (connection, message, NULL))
@@ -227,24 +235,20 @@ static void get_user_key_for_network (DBusConnection *connection)
 
 static void set_user_key_for_network (DBusConnection *connection, DBusMessage *message, GMainLoop *loop)
 {
-	DBusError	 error;
-	const char		*device;
-	const char		*network;
-	const char		*passphrase;
-	const char		*key_type_string;
+	DBusError		error;
+	char *		passphrase;
+	int			key_type = -1;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (message != NULL);
 
 	dbus_error_init (&error);
 	if (dbus_message_get_args (message, &error,
-							DBUS_TYPE_STRING, &device,
-							DBUS_TYPE_STRING, &network,
 							DBUS_TYPE_STRING, &passphrase,
-							DBUS_TYPE_STRING, &key_type_string,
+							DBUS_TYPE_STRING, &key_type,
 							DBUS_TYPE_INVALID))
 	{
-		fprintf( stderr, "Device was '%s'\nNetwork was '%s'\nPassphrase was '%s'\nKey type was '%s'\n", device, network, passphrase, key_type_string);
+		fprintf( stderr, "Passphrase was '%s'\nKey type was %d\n", passphrase, key_type);
 
 
 		g_main_loop_quit (loop);
