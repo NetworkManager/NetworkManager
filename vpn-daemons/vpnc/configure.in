@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager-vpnc, 0.2, dcbw@redhat.com, NetworkManager-vpnc)
+AC_INIT(NetworkManager-vpnc, 0.3, dcbw@redhat.com, NetworkManager-vpnc)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 
@@ -52,7 +52,7 @@ PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.30)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-PKG_CHECK_MODULES(NETWORK_MANAGER, NetworkManager >= 0.4)
+PKG_CHECK_MODULES(NETWORK_MANAGER, NetworkManager >= 0.4.1)
 AC_SUBST(NETWORK_MANAGER_CFLAGS)
 AC_SUBST(NETWORK_MANAGER_LIBS)
 
