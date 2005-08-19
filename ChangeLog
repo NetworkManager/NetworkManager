@@ -1,3 +1,12 @@
+2005-08-19  Dan Williams <dcbw@redhat.com>
+
+	* vpn-daemons/vpnc/nm-vpnc-service.c
+		- (vpnc_watch_cb): remove no-longer-relevant comment
+		- (write_config_option): new function, helper to write
+			config options to vpnc's stdin
+		- (nm_vpnc_config_write): use the new helper, make the
+			code shorter
+
 2005-08-19  Christopher Aillon <caillon@redhat.com>
 
 	* gnome/applet/passphrase-dialog.c:

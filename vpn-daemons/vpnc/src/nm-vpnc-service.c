@@ -331,10 +331,6 @@ static void vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
 	nm_vpnc_schedule_quit_timer (data, 10000);
-
-	/* State change from STARTING->STARTED happens when we get successful
-	 * ip4 config info from the helper.
-	 */
 }
 
 
@@ -406,12 +402,32 @@ static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 
 
 /*
+ * write_config_option
+ *
+ * Helper that writes a formatted string to an fd
+ *
+ */
+static inline void write_config_option (int fd, const char *format, ...)
+{
+	char * 	string;
+	va_list	args;
+	int		x;
+
+	va_start (args, format);
+	string = g_strdup_vprintf (format, args);
+	x = write (fd, string, strlen (string));
+	g_free (string);
+	va_end (args);
+}
+
+/*
  * nm_vpnc_config_write
  *
  * Write the vpnc config to the vpnc process' stdin pipe
  *
  */
-static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char **password_items, const int num_passwords, char **data_items, const int num_items)
+static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char **password_items,
+							const int num_passwords, char **data_items, const int num_items)
 {
 	char *	string;
 	int     i, x;
@@ -425,41 +441,22 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 	g_return_val_if_fail (data_items != NULL, FALSE);
 	g_return_val_if_fail (num_passwords == 2, FALSE);
 
-	string = g_strdup ("Script " NM_VPNC_HELPER_PATH "\n");
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
-
-	string = g_strdup ("UDP Encapsulate\n");
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
-
-	string = g_strdup_printf ("UDP Encapsulation Port %d\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
-
-	string = g_strdup_printf ("IPSec secret %s\n", password_items[0]);
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
-
-	string = g_strdup_printf ("Xauth password %s\n", password_items[1]);
-	x = write (vpnc_fd, string, strlen (string));
-	g_free (string);
+	write_config_option (vpnc_fd, "Script " NM_VPNC_HELPER_PATH "\n");
+	write_config_option (vpnc_fd, "UDP Encapsulate\n");
+	write_config_option (vpnc_fd, "UDP Encapsulation Port %d\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
+	write_config_option (vpnc_fd, "IPSec secret %s\n", password_items[0]);
+	write_config_option (vpnc_fd, "Xauth password %s\n", password_items[1]);
 
 	for (i = 0; i < num_items; i += 2)
 	{
-		char *line = g_strdup_printf ("%s %s\n", data_items[i], data_items[i+1]);
-		x = write (vpnc_fd, line, strlen (line));
-		g_free (line);
+		write_config_option (vpnc_fd, "%s %s\n", data_items[i], data_items[i+1]);
 		if (strcmp (data_items[i], "Xauth username") == 0)
 			has_user_name = TRUE;
 	}
 
 	/* if user name isn't specified, use the name of the logged in user */
-	if (!has_user_name) {
-		string = g_strdup_printf ("Xauth username %s\n", user_name);
-		x = write (vpnc_fd, string, strlen (string));
-		g_free (string);
-	}
+	if (!has_user_name)
+		write_config_option (vpnc_fd, "Xauth username %s\n", user_name);
 
 	return TRUE;
 }
