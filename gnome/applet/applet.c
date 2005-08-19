@@ -351,6 +351,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 	static const gchar *authors[] =
 	{
 		"The Red Hat Desktop Team, including:\n",
+		"Christopher Aillon <caillon@redhat.com>",
 		"Jonathan Blandford <jrb@redhat.com>",
 		"John Palmieri <johnp@redhat.com>",
 		"Ray Strode <rstrode@redhat.com>",
@@ -363,6 +364,12 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 		"j@bootlab.org",
 		"Peter Jones <pjones@redhat.com>",
 		"Robert Love <rml@novell.com>",
+		NULL
+	};
+
+	static const gchar *artists[] =
+	{
+		"Diana Fong <dfong@redhat.com>",
 		NULL
 	};
 
@@ -400,6 +407,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 					   "copyright", _("Copyright (C) 2004-2005 Red Hat, Inc."),
 					   "comments",	_("Notification area applet for managing your network devices and connections."),
 					   "authors", authors,
+					   "artists", artists,
 					   "documenters", documenters,
 					   "translator-credits",	NULL,
 					   "logo-icon-name", GTK_STOCK_NETWORK,
