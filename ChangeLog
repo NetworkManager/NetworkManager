@@ -1,3 +1,9 @@
+2005-08-19  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/other-network-dialog.c:
+	* gnome/applet/wireless-applet.glade:
+	Also need mnemonic widgets, and underline enabled.
+
 2005-08-19  Dan Williams <dcbw@redhat.com>
 
 	* vpn-daemons/vpnc/nm-vpnc-service.c

@@ -555,8 +555,9 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 			      <child>
 				<widget class="GtkLabel" id="key_type_combo_label">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Key type:</property>
-				  <property name="use_underline">False</property>
+				  <property name="label" translatable="yes">_Key type:</property>
+				  <property name="mnemonic_widget">key_type_combo</property>
+				  <property name="use_underline">True</property>
 				  <property name="use_markup">False</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
 				  <property name="wrap">False</property>
@@ -583,7 +584,8 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 			      <child>
 				<widget class="GtkLabel" id="passphrase_entry_label">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Passphrase:</property>
+				  <property name="label" translatable="yes">_Passphrase:</property>
+				  <property name="mnemonic_widget">passphrase_entry</property>
 				  <property name="use_underline">False</property>
 				  <property name="use_markup">False</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -831,6 +833,7 @@ A passphrase or encryption key is required to access the wireless network '%s'.<
 		    <widget class="GtkLabel" id="label3">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Key Type:</property>
+		      <property name="mnemonic_widget">key_type_combo</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -889,6 +892,7 @@ Hex Key (WEP)</property>
 		    <widget class="GtkLabel" id="passphrase_entry_label">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Passphrase:</property>
+		      <property name="mnemonic_widget">passphrase_entry</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>

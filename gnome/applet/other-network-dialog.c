@@ -140,13 +140,13 @@ static void nmwa_other_network_dialog_key_type_combo_changed (GtkWidget *key_typ
 	switch ((combo_choice = gtk_combo_box_get_active (GTK_COMBO_BOX (key_type_combo))))
 	{
 		case KEY_TYPE_128_BIT_PASSPHRASE:
-			gtk_label_set_label (entry_label, _("_Passphrase:"));
+			gtk_label_set_text_with_mnemonic (entry_label, _("_Passphrase:"));
 			break;
 		case KEY_TYPE_ASCII_KEY:
-			gtk_label_set_label (entry_label, _("_ASCII Key:"));
+			gtk_label_set_text_with_mnemonic (entry_label, _("_ASCII Key:"));
 			break;
 		case KEY_TYPE_HEX_KEY:
-			gtk_label_set_label (entry_label, _("_Hex Key:"));
+			gtk_label_set_text_with_mnemonic (entry_label, _("_Hex Key:"));
 			break;
 		default:
 			break;
