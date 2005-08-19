@@ -169,82 +169,72 @@ static void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_co
 
 
 /*
- * nmi_passphrase_dialog_ok_clicked
+ * nmi_passphrase_dialog_response_received
  *
- * OK button handler; grab the passphrase and send it back
- * to NetworkManager.  Get rid of the dialog.
- *
+ * response handler; grab the passphrase and return it
+ * to NetworkManager if it was given to us, else return
+ * a cancellation message to NetworkManager.
+ * Either way, get rid of the dialog.
  */
-static void nmi_passphrase_dialog_ok_clicked (GtkWidget *ok_button, gpointer user_data)
-{
-	GtkWidget *		dialog = gtk_widget_get_toplevel (ok_button);
-	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
-
-	g_return_if_fail (applet != NULL);
-
-	if (GTK_WIDGET_TOPLEVEL (dialog))
-	{
-		GladeXML *		dialog_xml;
-		GtkEntry *		entry;
-		GtkComboBox *		key_type_combo;
-		const char *		passphrase;
-		NetworkDevice *	dev = g_object_get_data (G_OBJECT (dialog), "device");
-		WirelessNetwork *	net = g_object_get_data (G_OBJECT (dialog), "network");
-		DBusMessage *		message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
-		NMEncKeyType		key_type_return = NM_ENC_TYPE_UNKNOWN;
-
-		g_return_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL);
-
-		entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
-		key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
-		passphrase = gtk_entry_get_text (entry);
-
-		switch (gtk_combo_box_get_active (key_type_combo))
-		{
-			case KEY_TYPE_128_BIT_PASSPHRASE:
-				key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;
-				break;
-			case KEY_TYPE_ASCII_KEY:
-				key_type_return = NM_ENC_TYPE_ASCII_KEY;
-				break;
-			case KEY_TYPE_HEX_KEY:
-				key_type_return = NM_ENC_TYPE_HEX_KEY;
-				break;
-			default:
-				key_type_return = NM_ENC_TYPE_UNKNOWN;
-				break;
-		}
-
-		/* Tell NetworkManager about the key the user typed in */
-		nmi_dbus_return_user_key (applet->connection, message, passphrase, key_type_return);
-		nmi_passphrase_dialog_clear (dialog);
-	}
-}
-
-
-/*
- * nmi_passphrase_dialog_cancel_clicked
- *
- * Cancel button handler; return a cancellation message to NetworkManager
- * and get rid of the dialog.
- *
- */
-static void nmi_passphrase_dialog_cancel_clicked (GtkWidget *cancel_button, gpointer user_data)
+static void nmi_passphrase_dialog_response_received (GtkWidget *cancel_button, gint response, gpointer user_data)
 {
 	GtkWidget *		dialog = gtk_widget_get_toplevel (cancel_button);
 	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
 
+	GladeXML *		dialog_xml;
+	GtkEntry *		entry;
+	GtkComboBox *		key_type_combo;
+	const char *		passphrase;
+	NetworkDevice *		dev;
+	WirelessNetwork *	net;
+	DBusMessage *		message;
+	NMEncKeyType		key_type_return;
+
 	g_return_if_fail (applet != NULL);
 
-	if (GTK_WIDGET_TOPLEVEL (dialog))
+	if (! GTK_WIDGET_TOPLEVEL (dialog))
+		return;
+
+	if (response != GTK_RESPONSE_OK)
 	{
-		NetworkDevice *	dev = g_object_get_data (G_OBJECT (dialog), "device");
-		WirelessNetwork *	net = g_object_get_data (G_OBJECT (dialog), "network");
 		DBusMessage *		message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
 
 		nmi_dbus_return_user_key (applet->connection, message, "***canceled***", NM_ENC_TYPE_UNKNOWN);
 		nmi_passphrase_dialog_clear (dialog);
+
+		return;
 	}
+
+	dev = g_object_get_data (G_OBJECT (dialog), "device");
+	net = g_object_get_data (G_OBJECT (dialog), "network");
+	message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
+	key_type_return = NM_ENC_TYPE_UNKNOWN;
+
+	g_return_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL);
+
+	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
+	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
+	passphrase = gtk_entry_get_text (entry);
+
+	switch (gtk_combo_box_get_active (key_type_combo))
+	{
+		case KEY_TYPE_128_BIT_PASSPHRASE:
+			key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;
+			break;
+		case KEY_TYPE_ASCII_KEY:
+			key_type_return = NM_ENC_TYPE_ASCII_KEY;
+			break;
+		case KEY_TYPE_HEX_KEY:
+			key_type_return = NM_ENC_TYPE_HEX_KEY;
+			break;
+		default:
+			key_type_return = NM_ENC_TYPE_UNKNOWN;
+			break;
+	}
+
+	/* Tell NetworkManager about the key the user typed in */
+	nmi_dbus_return_user_key (applet->connection, message, passphrase, key_type_return);
+	nmi_passphrase_dialog_clear (dialog);
 }
 
 
@@ -410,11 +400,10 @@ GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
 
 	g_object_set_data (G_OBJECT (dialog), "orig-label-text", orig_label_text);
 
+	g_signal_connect (G_OBJECT (dialog), "response", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_response_received), applet);
+
 	ok_button = GTK_BUTTON (glade_xml_get_widget (dialog_xml, "login_button"));
-	g_signal_connect (G_OBJECT (ok_button), "clicked", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_ok_clicked), applet);
 	gtk_widget_grab_default (GTK_WIDGET (ok_button));
-	cancel_button = GTK_BUTTON (glade_xml_get_widget (dialog_xml, "cancel_button"));
-	g_signal_connect (G_OBJECT (cancel_button), "clicked", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_cancel_clicked), applet);
 
 	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
 	nmi_passphrase_dialog_clear (dialog);

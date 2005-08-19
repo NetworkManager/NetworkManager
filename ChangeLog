@@ -1,3 +1,10 @@
+2005-08-19  Christopher Aillon <caillon@redhat.com>
+
+	* gnome/applet/passphrase-dialog.c:
+	* gnome/applet/wireless-applet.glade:
+	Make the passphrase dialog response based, and treat
+	responses other than OK (such as Esc, [X]) as a cancel.
+
 2005-08-18  Christopher Aillon <caillon@redhat.com>
 
 	* initscript/Gentoo/NetworkManager:
