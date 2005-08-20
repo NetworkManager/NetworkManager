@@ -234,12 +234,16 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 			_("By default, the ESSID is set to your computer's name,"),
 			hostname,
 			_(", with no encryption enabled."));
+
+		gtk_window_set_title (GTK_WINDOW(dialog), _("Create New Wireless Network"));
 	}
 	else
 	{
 		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
 			_("Custom wireless network"),
 			_("Enter the ESSID of the wireless network to which you wish to connect."));
+
+		gtk_window_set_title (GTK_WINDOW(dialog), _("Connect to Other Wireless Network"));
 	}
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
 	g_free (label);

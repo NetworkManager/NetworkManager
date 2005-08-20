@@ -126,7 +126,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		<widget class="GtkCheckButton" id="trust_checkbutton">
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>
-		  <property name="label" translatable="yes">Always Trust this Wireless Network</property>
+		  <property name="label" translatable="yes">_Always Trust this Wireless Network</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
 		  <property name="focus_on_click">True</property>
@@ -191,7 +191,8 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 	      <property name="can_default">True</property>
 	      <property name="has_default">True</property>
 	      <property name="can_focus">True</property>
-	      <property name="label" translatable="yes">_OK</property>
+	      <property name="label">gtk-ok</property>
+	      <property name="use_stock">True</property>
 	      <property name="use_underline">True</property>
 	      <property name="relief">GTK_RELIEF_NORMAL</property>
 	      <property name="focus_on_click">True</property>
@@ -268,7 +269,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		<widget class="GtkCheckButton" id="dont_remind_checkbox">
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>
-		  <property name="label" translatable="yes">Don't remind me again</property>
+		  <property name="label" translatable="yes">_Don't remind me again</property>
 		  <property name="use_underline">True</property>
 		  <property name="relief">GTK_RELIEF_NORMAL</property>
 		  <property name="focus_on_click">True</property>
@@ -586,7 +587,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 				  <property name="visible">True</property>
 				  <property name="label" translatable="yes">_Passphrase:</property>
 				  <property name="mnemonic_widget">passphrase_entry</property>
-				  <property name="use_underline">False</property>
+				  <property name="use_underline">True</property>
 				  <property name="use_markup">False</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
 				  <property name="wrap">False</property>

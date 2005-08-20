@@ -1,3 +1,14 @@
+2005-08-20  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/other-network-dialog.c:
+	The "Create New Network" and "Connect to Other Network"
+	dialogs share alot of code, but shouldn't share a window
+	title.  Give them different ones.
+
+	* gnome/applet/wireless-applet.glade:
+	* vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:
+	Some more minor UI tweaks.
+
 2005-08-19  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/other-network-dialog.c:
