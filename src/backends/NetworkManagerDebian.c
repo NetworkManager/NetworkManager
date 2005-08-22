@@ -531,6 +531,8 @@ void* nm_system_device_get_system_config (NMDevice *dev)
 			sys_data->use_dhcp = FALSE;
 	}
 
+	sys_data->config = nm_ip4_config_new ();
+
 	buf = ifparser_getkey (curr_device, "address");
 	if (buf)
 		nm_ip4_config_set_address (sys_data->config, inet_addr (buf));
@@ -570,10 +572,10 @@ void* nm_system_device_get_system_config (NMDevice *dev)
 
 #if 0
 	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
-	nm_debug ("    DHCP=%d\n", use_dhcp);
-	nm_debug ("    ADDR=%d\n", ip4_address);
-	nm_debug ("    GW=%d\n", ip4_gateway);
-	nm_debug ("    NM=%d\n", ip4_netmask);
+	nm_debug ("    DHCP=%s\n", sys_data->use_dhcp);
+	nm_debug ("    ADDR=%d\n", nm_ip4_config_get_address (sys_data->config));
+	nm_debug ("    GW=%d\n", nm_ip4_config_get_gateway (sys_data->config));
+	nm_debug ("    NM=%d\n", nm_ip4_config_get_netmask (sys_data->config));
 	nm_debug ("---------------------\n");
 #endif
 
