@@ -320,6 +320,12 @@ void nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager, NMActRequest *r
 		{
 			dbus_connection_send (manager->data->dbus_connection, message, NULL);
 			dbus_message_unref (message);
+
+			/* Give dhcdbd/dhclient some time to send out a RELEASE if they like */
+			/* FIXME: we should really monitor the interface's DHCP state by waiting
+			 * for dhcdbd to tell us the device is "down" rather than sleeping here.
+			 */
+			sleep (1);
 		}
 		g_free (path);
 

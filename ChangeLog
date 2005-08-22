@@ -1,5 +1,12 @@
 2005-08-22  Dan Williams <dcbw@redhat.com>
 
+	Patch by Bill Moss <bmoss@clemson.edu>
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_cancel_transaction): Give dhcdbd/dhclient
+			some time to send out a RELEASE if they like
+
+2005-08-22  Dan Williams <dcbw@redhat.com>
+
 	Noticed by Bill Moss <bmoss@clemson.edu>
 	* src/NetworkManagerDbus.c
 		- (nm_dbus_get_user_key_for_network_cb): deactivate the device

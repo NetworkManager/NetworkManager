@@ -3188,6 +3188,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	 */
 	if (dev->act_request)
 	{
+ 		nm_dhcp_manager_cancel_transaction (dev->app_data->dhcp_manager, dev->act_request);
 		nm_act_request_unref (dev->act_request);
 		dev->act_request = NULL;
 	}
