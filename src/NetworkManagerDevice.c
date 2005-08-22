@@ -4001,7 +4001,10 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			NMNetworkMode	orig_mode = NETWORK_MODE_INFRA;
 			double		orig_freq = 0;
 			int			orig_rate = 0;
-			const int		max_wait = G_USEC_PER_SEC * nm_device_get_association_pause_value (dev) /2;
+			const int		interval = 20;
+			const int		assoc_pause = nm_device_get_association_pause_value (dev);
+			const int		delay = (G_USEC_PER_SEC * assoc_pause) / interval;
+			const int		max_tries = assoc_pause * interval;
 			nm_completion_args args;
 
 			orig_mode = nm_device_get_mode (dev);
@@ -4023,8 +4026,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			args[1] = &err;
 			args[2] = sk;
 			args[3] = scan_results;
-			nm_wait_for_completion(max_wait, max_wait/20,
-				nm_completion_scan_has_results, NULL, args);
+			nm_wait_for_completion (max_tries, delay, nm_completion_scan_has_results, NULL, args);
 
 			nm_device_set_mode (dev, orig_mode);
 			/* Only set frequency if ad-hoc mode */
