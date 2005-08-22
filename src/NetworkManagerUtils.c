@@ -681,7 +681,7 @@ static void nm_v_wait_for_completion_or_timeout(
 
 /* #define NM_SLEEP_DEBUG */
 #ifdef NM_SLEEP_DEBUG
-		syslog (LOG_INFO, "sleeping or %d usecs", interval_usecs);
+		syslog (LOG_INFO, "sleeping for %d usecs", interval_usecs);
 #endif
 		g_usleep(interval_usecs);
 		if (action_func)
@@ -723,8 +723,8 @@ void nm_wait_for_timeout(
 		nm_completion_func action_func,
 		nm_completion_args args)
 {
-	nm_v_wait_for_completion_or_timeout(-1, max_time, interval_usecs,
-			test_func, action_func, args);
+	nm_v_wait_for_completion_or_timeout(NM_COMPLETION_TRIES_INFINITY, max_time,
+			interval_usecs, test_func, action_func, args);
 }
 
 /* you can use these, but they're really just examples */
