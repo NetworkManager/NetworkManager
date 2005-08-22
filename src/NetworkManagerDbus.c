@@ -453,19 +453,16 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 		 * to get the user key in exactly the same way, which ends up right back
 		 * here...  ad nauseum.  Figure out how to deal with a failure here.
 		 */
-		if (nm_device_is_activating (dev))
-			nm_device_activation_cancel (dev);
+		nm_device_deactivate (dev);
 		nm_policy_schedule_device_change_check (data);
-
-		dbus_message_unref (reply);
-		goto out;
 	}
-
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
-		nm_device_set_user_key_for_network (req, passphrase, key_type);
+	else
+	{
+		if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
+			nm_device_set_user_key_for_network (req, passphrase, key_type);
+		nm_act_request_set_user_key_pending_call (req, NULL);
+	}
 	dbus_message_unref (reply);
-
-	nm_act_request_set_user_key_pending_call (req, NULL);
 
 out:
 	nm_act_request_unref (req);

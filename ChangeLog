@@ -1,6 +1,18 @@
 2005-08-22  Dan Williams <dcbw@redhat.com>
 
 	Noticed by Bill Moss <bmoss@clemson.edu>
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_get_user_key_for_network_cb): deactivate the device
+			instead of just cancelling its activation
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_deactivate): some small cleanups
+		- (nm_device_set_user_key_for_network): deactivate the device
+			instead of just cancelling its activation
+
+2005-08-22  Dan Williams <dcbw@redhat.com>
+
+	Noticed by Bill Moss <bmoss@clemson.edu>
 	* src/NetworkManagerDevice.c
 		- (nm_device_wireless_scan): fix scan timeout, we were
 			waiting way too long for scans to complete

@@ -3178,18 +3178,16 @@ gboolean nm_device_deactivate (NMDevice *dev)
 
 	nm_info ("Deactivating device %s.", nm_device_get_iface (dev));
 
-	if (dev->act_request)
-	{
-		/* Only send if the device is actually active */
+	if (nm_device_is_activated (dev))
 		nm_dbus_schedule_device_status_change_signal (dev->app_data, dev, NULL, DEVICE_NO_LONGER_ACTIVE);
-	}
-
-	if (nm_device_is_activating (dev))
+	else if (nm_device_is_activating (dev))
 		nm_device_activation_cancel (dev);
 
+	/* Tear down an existing activation request, which may not have happened
+	 * in nm_device_activation_cancel() above, for various reasons.
+	 */
 	if (dev->act_request)
 	{
-		nm_dhcp_manager_cancel_transaction (dev->app_data->dhcp_manager, dev->act_request);
 		nm_act_request_unref (dev->act_request);
 		dev->act_request = NULL;
 	}
@@ -3254,9 +3252,8 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 	if (strncmp (key, cancel_message, strlen (cancel_message)) == 0)
 	{
 		nm_ap_list_append_ap (data->invalid_ap_list, ap);
+		nm_device_deactivate (dev);
 		nm_policy_schedule_device_change_check (data);
-		if (req == nm_device_get_act_request (dev))
-			nm_device_schedule_activation_handle_cancel (req);
 	}
 	else
 	{
