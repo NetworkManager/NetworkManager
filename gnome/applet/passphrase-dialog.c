@@ -27,7 +27,6 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <glib.h>
-#include <gnome-keyring.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
