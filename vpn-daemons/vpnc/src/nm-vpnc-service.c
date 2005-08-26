@@ -915,6 +915,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 		}
 
 		dbus_message_unref (signal);
+		nm_vpnc_set_state (data, NM_VPN_STATE_STARTED);
 		success = TRUE;
 	}
 

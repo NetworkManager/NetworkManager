@@ -30,10 +30,9 @@
 void		nmwa_dbus_vpn_update_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);
 void		nmwa_dbus_vpn_update_vpn_connections			(NMWirelessApplet *applet);
 void		nmwa_dbus_vpn_remove_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);
-void		nmwa_dbus_vpn_get_active_vpn_connection			(NMWirelessApplet *applet);
 
 void		nmwa_dbus_vpn_activate_connection				(DBusConnection *connection, const char *name, GSList *passwords);
 void		nmwa_dbus_vpn_deactivate_connection			(DBusConnection *connection);
-
+void 		nmwa_dbus_vpn_update_vpn_connection_state		(NMWirelessApplet *applet, const char *vpn_name, NMVPNState vpn_state);
 
 #endif

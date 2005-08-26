@@ -226,8 +226,6 @@ static void nm_vpn_manager_set_active_vpn_connection (NMVPNManager *manager, NMV
 		manager->active_device = NULL;
 	}
 
-	nm_dbus_vpn_signal_vpn_connection_change (manager->app_data->dbus_connection, con);
-
 	/* If passed NULL (clear active connection) there's nothing more to do */
 	if (!con)
 		return;
@@ -570,13 +568,17 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
 	}
 	else if (dbus_message_is_signal (message, service_name, NM_DBUS_VPN_SIGNAL_STATE_CHANGE))
 	{
-		NMVPNState	old_state;
-		NMVPNState	new_state;
+		dbus_uint32_t old_state_int;
+		dbus_uint32_t new_state_int;
 
-		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &old_state, DBUS_TYPE_UINT32, &new_state, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &old_state_int, DBUS_TYPE_UINT32, &new_state_int, DBUS_TYPE_INVALID))
 		{
+			NMVPNState	old_state = (NMVPNState) old_state_int;
+			NMVPNState	new_state = (NMVPNState) new_state_int;
+
 			nm_info ("VPN service '%s' signaled new state %d, old state %d.", service_name, new_state, old_state);
 			nm_vpn_service_set_state (service, new_state);
+			nm_dbus_vpn_signal_vpn_connection_state_change (manager->app_data->dbus_connection, active);
 
 			/* If the VPN daemon state is now stopped and it was starting, clear the active connection */
 			if (((new_state == NM_VPN_STATE_STOPPED) || (new_state == NM_VPN_STATE_SHUTDOWN) || (new_state == NM_VPN_STATE_STOPPING))
@@ -634,8 +636,7 @@ gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const
 	{
 		/* VPN service went away. */
 		nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
-		nm_vpn_manager_set_active_vpn_connection (manager, NULL);
-		nm_dbus_vpn_signal_vpn_connection_change (manager->app_data->dbus_connection, active);
+		nm_dbus_vpn_signal_vpn_connection_state_change (manager->app_data->dbus_connection, active);
 	}
 
 	nm_vpn_connection_unref (active);
@@ -761,7 +762,6 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
 	dbus_message_unref (message);
 
 out:
-	nm_vpn_manager_set_active_vpn_connection (manager, NULL);
 	nm_vpn_connection_unref (active);
 
 	if ((dev = nm_get_active_device (manager->app_data)))

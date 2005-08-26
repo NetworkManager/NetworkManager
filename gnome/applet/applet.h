@@ -103,10 +103,8 @@ typedef struct
 	GSList *			dialup_list;
 
 	GSList *			gui_vpn_connections;
-	VPNConnection *	gui_active_vpn;
 
 	GSList *			vpn_pending_call_list;
-	char *			dbus_active_vpn_name;
 	GSList *			dbus_vpn_connections;
 
 	GdkPixbuf *		no_connection_icon;

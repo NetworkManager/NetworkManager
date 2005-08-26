@@ -59,33 +59,34 @@ void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnect
 	dbus_message_unref (message);
 }
 
-
 /*
- * nm_dbus_vpn_signal_vpn_connection_change
+ * nm_dbus_vpn_signal_vpn_connection_state_change
  *
- * Notifies the bus that the current VPN connection, if any, has changed.
- *
+ * Notifies the bus that a VPN connection's state has changed.
  */
-void nm_dbus_vpn_signal_vpn_connection_change (DBusConnection *con, NMVPNConnection *vpn)
+void nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *con, NMVPNConnection *vpn)
 {
 	DBusMessage	*message;
 	const char	*vpn_name;
+	NMVPNService	*service;
+	NMVPNState	vpn_state;
 
 	g_return_if_fail (con != NULL);
+	g_return_if_fail (vpn != NULL);
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "VPNConnectionChange")))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "VPNConnectionStateChange")))
 	{
 		nm_warning ("Not enough memory for new dbus message!");
 		return;
 	}
 
-	if (vpn)
-		vpn_name = nm_vpn_connection_get_name (vpn);
-	else
-		vpn_name = "";
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_INVALID);
+	vpn_name = nm_vpn_connection_get_name (vpn);
+	service = nm_vpn_connection_get_service (vpn);
+	vpn_state = nm_vpn_service_get_state (service);
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_UINT32, &vpn_state, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (con, message, NULL))
-		nm_warning ("Could not raise the VPNConnectionChange signal!");
+		nm_warning ("Could not raise the VPNConnectionStateChange signal!");
 
 	dbus_message_unref (message);
 }
@@ -619,52 +620,22 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
 		if ((vpn_con = nm_vpn_manager_find_connection_by_name (data->data->vpn_manager, name)))
 		{
 			const char *user_name;
-			const char *service;
+			const char *service_name;
+			NMVPNService *service;
+			NMVPNState state;
 
 			user_name = nm_vpn_connection_get_user_name (vpn_con);
-			service = nm_vpn_service_get_service_name (nm_vpn_connection_get_service (vpn_con));
+			service = nm_vpn_connection_get_service (vpn_con);
+			service_name = nm_vpn_service_get_service_name (service);
+			state = nm_vpn_service_get_state (service);
 
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_STRING, &service, DBUS_TYPE_INVALID);
+			dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_STRING, &service_name, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
 			good = TRUE;
 		}
 	}
 
 	if (!good)
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "InvalidVPNConnection", "No VPN connection with that name was found.");
-
-	return reply;
-}
-
-
-/*
- * nm_dbus_vpn_get_active_vpn_connection
- *
- * Return the name of the currently active VPN connection.
- *
- */
-static DBusMessage *nm_dbus_vpn_get_active_vpn_connection (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	DBusMessage		*reply = NULL;
-	const char		*name;
-	NMVPNConnection	*vpn = NULL;
-
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (data->data != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	/* Check for no VPN Manager */
-	if (!data->data->vpn_manager)
-		return nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "NoVPNConnections", "There are no available VPN connections.");
-
-	if (!(vpn = nm_vpn_manager_get_active_vpn_connection (data->data->vpn_manager)))
-		return nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "NoActiveVPNConnection", "There is no active VPN connection.");
-
-	if (!(reply = dbus_message_new_method_return (message)))
-		return NULL;
-
-	name = nm_vpn_connection_get_name (vpn);
-	dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 
 	return reply;
 }
@@ -755,7 +726,6 @@ NMDbusMethodList *nm_dbus_vpn_methods_setup (void)
 
 	nm_dbus_method_list_add_method (list, "getVPNConnections",			nm_dbus_vpn_get_vpn_connections);
 	nm_dbus_method_list_add_method (list, "getVPNConnectionProperties",	nm_dbus_vpn_get_vpn_connection_properties);
-	nm_dbus_method_list_add_method (list, "getActiveVPNConnection",		nm_dbus_vpn_get_active_vpn_connection);
 	nm_dbus_method_list_add_method (list, "activateVPNConnection",		nm_dbus_vpn_activate_connection);
 	nm_dbus_method_list_add_method (list, "deactivateVPNConnection",		nm_dbus_vpn_deactivate_connection);
 

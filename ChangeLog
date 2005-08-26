@@ -1,12 +1,24 @@
+2005-08-26  Christopher Aillon  <caillon@redhat.com>
+
+	* Fix up VPN state handling between the applet and NetworkManager,
+		so that the applet doesn't show a VPN as connected when one
+		really is not
+			- The applet no longer has a pointer to the active VPN's
+				name, but tracks each VPNs state individually
+			- NM no longer has a "getActiveVPNConnection" method
+			- NM no longer broadcasts the "VPNConnectionChange" signal
+			- NM now broadcasts a "VPNConnectionStateChange" signal
+				whenever the state of a VPN changes
+
 2005-08-26  Dan Williams <dcbw@redhat.com>
 
-    * gnome/applet/applet-dbus-devices.c
-      gnome/applet/applet-dbus-vpn.c
-        - Remove calls to dbus_pending_call_ref() because we already
-            "own" the pending call
-        - Remove calls to dbus_pending_call_get_completed() because
-            when we are in the callback, the pending call is completed
-            by definition
+	* gnome/applet/applet-dbus-devices.c
+	  gnome/applet/applet-dbus-vpn.c
+		- Remove calls to dbus_pending_call_ref() because we already
+			"own" the pending call
+		- Remove calls to dbus_pending_call_get_completed() because
+			when we are in the callback, the pending call is completed
+			by definition
 
 2005-08-22  Dan Williams <dcbw@redhat.com>
 

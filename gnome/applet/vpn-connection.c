@@ -28,6 +28,7 @@ struct VPNConnection
 	int   refcount;
 	char	*name;
 	char *service;
+	NMVPNState state;
 };
 
 
@@ -55,7 +56,8 @@ VPNConnection *nmwa_vpn_connection_copy (VPNConnection *src_vpn)
 	dst_vpn->refcount = 1;
 	dst_vpn->name = g_strdup (src_vpn->name);
 	dst_vpn->service = src_vpn->service ? g_strdup (src_vpn->service) : NULL;
-	
+	dst_vpn->state = src_vpn->state;
+
 	return dst_vpn;
 }
 
@@ -134,4 +136,16 @@ VPNConnection *nmwa_vpn_connection_find_by_name (GSList *list, const char *name)
 	return vpn;	
 }
 
+NMVPNState nmwa_vpn_connection_get_state (VPNConnection *vpn)
+{
+	g_return_val_if_fail (vpn != NULL, NM_VPN_STATE_UNKNOWN);
 
+	return vpn->state;
+}
+
+void nmwa_vpn_connection_set_state (VPNConnection *vpn, NMVPNState state)
+{
+	g_return_if_fail (vpn != NULL);
+
+	vpn->state = state;
+}

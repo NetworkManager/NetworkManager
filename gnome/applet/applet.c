@@ -597,8 +597,8 @@ void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char
 	g_return_if_fail (banner != NULL);
 
 	msg2 = g_strdup_printf (_("VPN connection '%s' said:"), vpn_name);
-	msg = g_strdup_printf (_("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
-						"%s\n\n\"%s\""), _("VPN Login Message"), msg2, banner);
+	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s\n\n\"%s\"",
+					_("VPN Login Message"), msg2, banner);
 	g_free (msg2);
 
 	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_banner_dialog, msg);
@@ -865,16 +865,39 @@ out:
 }
 
 
+VPNConnection* nmwa_get_active_vpn_connection (NMWirelessApplet *applet)
+{
+	VPNConnection	*vpn;
+	NMVPNState	vpn_state;
+	GSList		*elt;
+
+	elt = applet->gui_vpn_connections;
+
+	for (; elt; elt = g_slist_next (elt))
+	{
+		vpn = (VPNConnection*) elt->data;
+		vpn_state = nmwa_vpn_connection_get_state (vpn);
+		if (vpn_state == NM_VPN_STATE_STARTED)
+			return vpn;
+	}
+
+	return NULL;
+}
+
+
 static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *new_icon)
 {
 	GdkPixbuf	*composite;
+	VPNConnection	*vpn;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (new_icon != NULL);
 
 	composite = gdk_pixbuf_copy (new_icon);
 
-	if (applet->gui_active_vpn)
+	vpn = nmwa_get_active_vpn_connection (applet);
+
+	if (vpn)
 	{
 		int dest_x = gdk_pixbuf_get_width (new_icon) - gdk_pixbuf_get_width (applet->vpn_lock_icon);
 		int dest_y = gdk_pixbuf_get_height (new_icon) - gdk_pixbuf_get_height (applet->vpn_lock_icon) - 2;
@@ -1029,13 +1052,13 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 {
 	gboolean			show_applet = TRUE;
 	gboolean			need_animation = FALSE;
-	gboolean			active_vpn = FALSE;
 	GdkPixbuf *		pixbuf = NULL;
 	GdkPixbuf *		progress = NULL;
 	gint				strength = -1;
 	char *			tip = NULL;
 	WirelessNetwork *	active_network = NULL;
 	NetworkDevice *	act_dev = NULL;
+	VPNConnection		*vpn;
 
 	g_mutex_lock (applet->data_mutex);
 
@@ -1109,11 +1132,12 @@ done:
 	if (!applet->tooltips)
 		applet->tooltips = gtk_tooltips_new ();
 
-	if (applet->gui_active_vpn != NULL) {
+	vpn = nmwa_get_active_vpn_connection (applet);
+	if (vpn != NULL) {
 		char *newtip;
 		char *vpntip;
 
-		vpntip = g_strdup_printf (_("VPN connection to '%s'"), nmwa_vpn_connection_get_name (applet->gui_active_vpn));
+		vpntip = g_strdup_printf (_("VPN connection to '%s'"), nmwa_vpn_connection_get_name (vpn));
 		newtip = g_strconcat (tip, "\n", vpntip, NULL);
 		g_free (vpntip);
 		g_free (tip);
@@ -1292,7 +1316,8 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 		const char	*name = nmwa_vpn_connection_get_name (vpn);
 		GSList         *passwords;
 
-		if (vpn != applet->gui_active_vpn)
+		VPNConnection	*active_vpn = nmwa_get_active_vpn_connection (applet);
+		if (vpn != active_vpn)
 		{
 			char *gconf_key;
 			char *escaped_name;
@@ -1656,6 +1681,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	GtkMenu		*vpn_menu;
 	GtkMenuItem	*other_item;
 	GSList		*elt;
+	VPNConnection	*active_vpn;
 
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
@@ -1663,6 +1689,8 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_VPN Connections")));
 
 	vpn_menu = GTK_MENU (gtk_menu_new ());
+	active_vpn = nmwa_get_active_vpn_connection (applet);
+
 	for (elt = applet->gui_vpn_connections; elt; elt = g_slist_next (elt))
 	{
 		GtkCheckMenuItem	*vpn_item;
@@ -1673,7 +1701,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 		nmwa_vpn_connection_ref (vpn);
 		g_object_set_data (G_OBJECT (vpn_item), "vpn", vpn);
 
-		if (applet->gui_active_vpn && (strcmp (vpn_name, nmwa_vpn_connection_get_name (applet->gui_active_vpn)) == 0))
+		if (active_vpn && active_vpn == vpn)
 			gtk_check_menu_item_set_active (vpn_item, TRUE);
 
 		g_signal_connect (G_OBJECT (vpn_item), "activate", G_CALLBACK (nmwa_menu_vpn_item_activate), applet);
@@ -1693,7 +1721,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 
 	other_item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_Disconnect VPN...")));
 	g_signal_connect (G_OBJECT (other_item), "activate", G_CALLBACK (nmwa_menu_disconnect_vpn_item_activate), applet);
-	if (!applet->gui_active_vpn)
+	if (!active_vpn)
 		gtk_widget_set_sensitive (GTK_WIDGET (other_item), FALSE);
 	gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
 
@@ -2399,12 +2427,10 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->nm_running = FALSE;
 	applet->dev_pending_call_list = NULL;
 	applet->dbus_device_list = NULL;
-	applet->dbus_active_vpn_name = NULL;
 	applet->dbus_vpn_connections = NULL;
 	applet->dbus_nm_state = NM_STATE_DISCONNECTED;
 	applet->vpn_pending_call_list = NULL;
 	applet->gui_device_list = NULL;
-	applet->gui_active_vpn = NULL;
 	applet->gui_vpn_connections = NULL;
 	applet->dialup_list = NULL;
 	applet->gui_nm_state = NM_STATE_DISCONNECTED;
