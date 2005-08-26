@@ -53,11 +53,6 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -122,11 +117,6 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -259,11 +249,6 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->parent_op != NULL);
 	g_return_if_fail (cb_data->vendor != NULL);
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -306,11 +291,6 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->dev != NULL);
 	g_return_if_fail (cb_data->parent_op != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -374,11 +354,6 @@ static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data != NULL);
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->dev != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -631,11 +606,6 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 
 	applet = cb_data->applet;
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -779,11 +749,6 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -901,11 +866,6 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -947,11 +907,6 @@ static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -1232,11 +1187,6 @@ static void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *u
 
 	applet = cb_data->applet;
 	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;

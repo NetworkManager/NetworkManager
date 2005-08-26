@@ -53,11 +53,6 @@ static void nmwa_dbus_vpn_get_active_vpn_connection_cb (DBusPendingCall *pcall, 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -155,12 +150,7 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->name != NULL);
 
-	dbus_pending_call_ref (pcall);
-
 	applet = cb_data->applet;
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -257,11 +247,6 @@ static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, voi
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
-
-	dbus_pending_call_ref (pcall);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;

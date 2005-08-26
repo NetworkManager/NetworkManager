@@ -1,3 +1,13 @@
+2005-08-26  Dan Williams <dcbw@redhat.com>
+
+    * gnome/applet/applet-dbus-devices.c
+      gnome/applet/applet-dbus-vpn.c
+        - Remove calls to dbus_pending_call_ref() because we already
+            "own" the pending call
+        - Remove calls to dbus_pending_call_get_completed() because
+            when we are in the callback, the pending call is completed
+            by definition
+
 2005-08-22  Dan Williams <dcbw@redhat.com>
 
 	Patch by Bill Moss <bmoss@clemson.edu>
