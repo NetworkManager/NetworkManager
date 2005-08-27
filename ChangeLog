@@ -1,3 +1,7 @@
+2005-08-27  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
+
+	* configure.in: Added "ca" to ALL_LINGUAS.
+
 2005-08-26  Christopher Aillon  <caillon@redhat.com>
 
 	* Fix up VPN state handling between the applet and NetworkManager,
