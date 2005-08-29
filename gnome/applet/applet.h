@@ -80,32 +80,16 @@ typedef struct
 	char	*			glade_file;
 	guint			redraw_timeout_id;
 
-	/* dbus thread stuff */
-	GThread *			dbus_thread;
-	GMainContext *		thread_context;
-	GMainLoop *		thread_loop;
-	gboolean			thread_done;
-
 	/* Data model elements */
-	GMutex *			data_mutex;
 	gboolean			is_adhoc;
 	NMWirelessScanMethod	scan_method;
 	gboolean			wireless_enabled;
 	gboolean			nm_running;
 
-	GSList *			gui_device_list;
-	NMState			gui_nm_state;
-
-	GSList *			dev_pending_call_list;
-	GSList *			dbus_device_list;
-	NMState			dbus_nm_state;
-
+	NMState			nm_state;
+	GSList *			device_list;
 	GSList *			dialup_list;
-
-	GSList *			gui_vpn_connections;
-
-	GSList *			vpn_pending_call_list;
-	GSList *			dbus_vpn_connections;
+	GSList *			vpn_connections;
 
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;

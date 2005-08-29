@@ -100,8 +100,8 @@ static GtkTreeModel *create_wireless_adapter_model (NMWirelessApplet *applet)
 	GSList		*element;
 
 	retval = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_POINTER);
-	/* We should have already locked applet->data_mutex */
-	for (element = applet->gui_device_list; element; element = element->next)
+
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -255,8 +255,7 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	g_free (label);
 
 	/* Do we have multiple Network cards? */
-	g_mutex_lock (applet->data_mutex);
-	for (element = applet->gui_device_list; element; element = element->next)
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -274,7 +273,6 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	if (n_wireless_interfaces < 1)
  	{
-		g_mutex_unlock (applet->data_mutex);
 		/* Run away!!! */
 		return (NULL);
 	}
@@ -295,7 +293,6 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 		/* Select the first one randomly */
 		gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
 	}
-	g_mutex_unlock (applet->data_mutex);
 
 	/* Uncheck the "use encryption" checkbox and disable relevant encryption widgets */
 	enc_check_button = GTK_CHECK_BUTTON (glade_xml_get_widget (xml, "use_encryption_checkbox"));

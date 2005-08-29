@@ -135,7 +135,7 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 	{
 		NetworkDevice *dev = NULL;
 
-		if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 		{
 			WirelessNetwork *net = NULL;
 

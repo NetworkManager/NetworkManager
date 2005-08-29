@@ -220,7 +220,7 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		return FALSE;
 	}
 
-	dev = nmwa_get_first_active_device (applet->gui_device_list);
+	dev = nmwa_get_first_active_device (applet->device_list);
 	iface = network_device_get_iface (dev);
 	if (!dev || !iface)
 	{
@@ -871,7 +871,7 @@ VPNConnection* nmwa_get_active_vpn_connection (NMWirelessApplet *applet)
 	NMVPNState	vpn_state;
 	GSList		*elt;
 
-	elt = applet->gui_vpn_connections;
+	elt = applet->vpn_connections;
 
 	for (; elt; elt = g_slist_next (elt))
 	{
@@ -931,7 +931,7 @@ static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_ico
  */
 static gboolean animation_timeout (NMWirelessApplet *applet)
 {
-	NetworkDevice *act_dev = nmwa_get_first_active_device (applet->dbus_device_list);
+	NetworkDevice *act_dev = nmwa_get_first_active_device (applet->device_list);
 
 	if (!applet->nm_running)
 	{
@@ -939,7 +939,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 		return TRUE;
 	}
 
-	switch (applet->gui_nm_state)
+	switch (applet->nm_state)
 	{
 		case NM_STATE_CONNECTING:
 			if (act_dev && network_device_is_wireless (act_dev))
@@ -1060,9 +1060,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	NetworkDevice *	act_dev = NULL;
 	VPNConnection		*vpn;
 
-	g_mutex_lock (applet->data_mutex);
-
-	act_dev = nmwa_get_first_active_device (applet->gui_device_list);
+	act_dev = nmwa_get_first_active_device (applet->device_list);
 	if (act_dev && network_device_is_wireless (act_dev))
 	{
 		active_network = network_device_get_active_wireless_network (act_dev);
@@ -1077,9 +1075,9 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	}
 
 	if (!act_dev)
-		applet->gui_nm_state = NM_STATE_DISCONNECTED;
+		applet->nm_state = NM_STATE_DISCONNECTED;
 
-	switch (applet->gui_nm_state)
+	switch (applet->nm_state)
 	{
 		case NM_STATE_DISCONNECTED:
 			pixbuf = applet->no_connection_icon;
@@ -1127,8 +1125,6 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	}
 
 done:
-	g_mutex_unlock (applet->data_mutex);
-
 	if (!applet->tooltips)
 		applet->tooltips = gtk_tooltips_new ();
 
@@ -1280,10 +1276,8 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 	if (!(tag = g_object_get_data (G_OBJECT (item), "device")))
 		return;
 
-	g_mutex_lock (applet->data_mutex);
-	if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, tag)))
+	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, tag)))
 		network_device_ref (dev);
-	g_mutex_unlock (applet->data_mutex);
 
 	if (!dev)
 		return;
@@ -1691,7 +1685,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	vpn_menu = GTK_MENU (gtk_menu_new ());
 	active_vpn = nmwa_get_active_vpn_connection (applet);
 
-	for (elt = applet->gui_vpn_connections; elt; elt = g_slist_next (elt))
+	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
 	{
 		GtkCheckMenuItem	*vpn_item;
 		VPNConnection		*vpn = elt->data;
@@ -1712,7 +1706,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	}
 
 	/* Draw a seperator, but only if we have VPN connections above it */
-	if (applet->gui_vpn_connections)
+	if (applet->vpn_connections)
 	{
 		other_item = GTK_MENU_ITEM (gtk_separator_menu_item_new ());
 		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (other_item));
@@ -1803,15 +1797,13 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
-	g_mutex_lock (applet->data_mutex);
-	if (! applet->gui_device_list)
+	if (! applet->device_list)
 	{
 		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
-		g_mutex_unlock (applet->data_mutex);
 		return;
 	}
 
-	for (element = applet->gui_device_list; element; element = element->next)
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -1831,7 +1823,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	}
 
 	/* Add all devices in our device list to the menu */
-	for (element = applet->gui_device_list; element; element = element->next)
+	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
 
@@ -1880,8 +1872,6 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		nmwa_menu_add_custom_essid_item (menu, applet);
 		nmwa_menu_add_create_network_item (menu, applet);
 	}
-
-	g_mutex_unlock (applet->data_mutex);
 }
 
 
@@ -2033,8 +2023,6 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (applet->stop_wireless_item != NULL);
 
-	g_mutex_lock (applet->data_mutex);
-
 	gtk_widget_destroy (applet->stop_wireless_item);
 
 	if (applet->wireless_enabled)
@@ -2051,8 +2039,6 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->stop_wireless_item), image);
 	gtk_menu_shell_insert (GTK_MENU_SHELL (applet->context_menu), applet->stop_wireless_item, 1);
 	gtk_widget_show_all (applet->stop_wireless_item);
-
-	g_mutex_unlock (applet->data_mutex);
 }
 
 
@@ -2396,14 +2382,10 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 		applet->redraw_timeout_id = 0;
 	}
 
-	g_main_loop_quit (applet->thread_loop);
-	g_thread_join (applet->dbus_thread);
-
 	if (applet->gconf_client)
 		g_object_unref (G_OBJECT (applet->gconf_client));
 
-	nmwa_free_gui_data_model (applet);
-	nmwa_free_dbus_data_model (applet);
+	nmwa_free_data_model (applet);
 
 	g_free (applet->glade_file);
 
@@ -2428,19 +2410,11 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	gtk_widget_hide (GTK_WIDGET (applet));
 
 	applet->nm_running = FALSE;
-	applet->dev_pending_call_list = NULL;
-	applet->dbus_device_list = NULL;
-	applet->dbus_vpn_connections = NULL;
-	applet->dbus_nm_state = NM_STATE_DISCONNECTED;
-	applet->vpn_pending_call_list = NULL;
-	applet->gui_device_list = NULL;
-	applet->gui_vpn_connections = NULL;
+	applet->device_list = NULL;
+	applet->vpn_connections = NULL;
 	applet->dialup_list = NULL;
-	applet->gui_nm_state = NM_STATE_DISCONNECTED;
+	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
-	applet->thread_context = NULL;
-	applet->thread_loop = NULL;
-	applet->thread_done = FALSE;
 	applet->scanning_menu = NULL;
 	applet->scanning_item = NULL;
 
@@ -2468,18 +2442,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->gconf_vpn_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS,
 						nmwa_gconf_vpn_connections_notify_callback, applet, NULL, NULL);
 
-	/* Start our dbus thread */
-	if (!(applet->data_mutex = g_mutex_new ()))
-	{
-		g_object_unref (G_OBJECT (applet->gconf_client));
-		return NULL;
-	}
-	if (!(applet->dbus_thread = g_thread_create (nmwa_dbus_worker, applet, TRUE, &error)))
-	{
-		g_mutex_free (applet->data_mutex);
-		g_object_unref (G_OBJECT (applet->gconf_client));
-		return NULL;
-	}
+	nmwa_dbus_init_helper (applet);
 
 	/* Load pixmaps and create applet widgets */
 	nmwa_setup_widgets (applet);

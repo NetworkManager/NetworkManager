@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+	/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -35,8 +35,6 @@
 #include "vpn-connection.h"
 #include "nm-utils.h"
 
-void nmwa_dbus_devices_schedule_copy (NMWirelessApplet *applet);
-
 
 /*
  * nmwa_dbus_nm_state_cb
@@ -63,16 +61,11 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 	}
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID))
-	{
-		applet->dbus_nm_state = nm_state;
-		applet->gui_nm_state = nm_state;
-	}
+		applet->nm_state = nm_state;
+
 	dbus_message_unref (reply);
 
 out:
-	applet->dev_pending_call_list = g_slist_remove (applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -95,10 +88,7 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		dbus_message_unref (message);
 		if (pcall)
-		{
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_nm_state_cb, applet, NULL);
-			applet->dev_pending_call_list = g_slist_append (applet->dev_pending_call_list, pcall);
-		}
 	}
 }
 
@@ -267,9 +257,6 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 	dbus_message_unref (reply);
 
 out:
-	cb_data->applet->dev_pending_call_list = g_slist_remove (cb_data->applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (cb_data->applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -324,16 +311,12 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 				product_cb_data->parent_op = g_strdup (cb_data->parent_op);
 				product_cb_data->vendor = g_strdup (info_vendor);
 				dbus_pending_call_set_notify (product_pcall, hal_info_product_cb, product_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
-				cb_data->applet->dev_pending_call_list = g_slist_append (cb_data->applet->dev_pending_call_list, product_pcall);
 			}
 		}
 	}
 	dbus_message_unref (reply);
 
 out:
-	cb_data->applet->dev_pending_call_list = g_slist_remove (cb_data->applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (cb_data->applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -387,16 +370,12 @@ static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
 				vendor_cb_data->dev = cb_data->dev;
 				vendor_cb_data->parent_op = g_strdup (op);
 				dbus_pending_call_set_notify (vendor_pcall, hal_info_vendor_cb, vendor_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
-				cb_data->applet->dev_pending_call_list = g_slist_append (cb_data->applet->dev_pending_call_list, vendor_pcall);
 			}
 		}
 	}
 	dbus_message_unref (reply);
 
 out:
-	cb_data->applet->dev_pending_call_list = g_slist_remove (cb_data->applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (cb_data->applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -432,67 +411,21 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 			network_device_ref (dev);
 			cb_data->dev = dev;
 			dbus_pending_call_set_notify (pcall, hal_info_parent_cb, cb_data, (DBusFreeFunction) free_hal_info_cb_data);
-			applet->dev_pending_call_list = g_slist_append (applet->dev_pending_call_list, pcall);
 		}
 	}
 }
 
 
-void nmwa_free_gui_data_model (NMWirelessApplet *applet)
+void nmwa_free_data_model (NMWirelessApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
-	if (applet->gui_device_list)
+	if (applet->device_list)
 	{
-		g_slist_foreach (applet->gui_device_list, (GFunc) network_device_unref, NULL);
-		g_slist_free (applet->gui_device_list);
-		applet->gui_device_list = NULL;
+		g_slist_foreach (applet->device_list, (GFunc) network_device_unref, NULL);
+		g_slist_free (applet->device_list);
+		applet->device_list = NULL;
 	}
-}
-
-
-void nmwa_free_dbus_data_model (NMWirelessApplet *applet)
-{
-	GSList	*elt;
-
-	g_return_if_fail (applet != NULL);
-
-	if (applet->dbus_device_list)
-	{
-		g_slist_foreach (applet->dbus_device_list, (GFunc) network_device_unref, NULL);
-		g_slist_free (applet->dbus_device_list);
-		applet->dbus_device_list = NULL;
-	}
-}
-
-
-/*
- * nmwa_copy_data_model
- *
- * Copy the dbus data model over to the gui data model
- *
- */
-static void nmwa_copy_data_model (NMWirelessApplet *applet)
-{
-	GSList		*elt;
-	NetworkDevice	*act_dev = NULL;
-
-	g_return_if_fail (applet != NULL);
-
-	/* Free the existing GUI data model. */
-	nmwa_free_gui_data_model (applet);
-
-	/* Deep-copy network devices to GUI data model */
-	for (elt = applet->dbus_device_list; elt; elt = g_slist_next (elt))
-	{
-		NetworkDevice	*src = (NetworkDevice *)(elt->data);
-		NetworkDevice	*dst = network_device_copy (src);
-
-		if (dst)
-			applet->gui_device_list = g_slist_append (applet->gui_device_list, dst);
-	}
-
-	applet->gui_nm_state = applet->dbus_nm_state;
 }
 
 
@@ -534,13 +467,13 @@ static void nmwa_dbus_check_drivers (NMWirelessApplet *applet)
 	/* For every device that's in the dbus data model but not in
 	 * the gui data model, signal the user.
 	 */
-	for (elt = applet->dbus_device_list; elt; elt = g_slist_next (elt))
+	for (elt = applet->device_list; elt; elt = g_slist_next (elt))
 	{
 		NetworkDevice	*dbus_dev = (NetworkDevice *)(elt->data);
 		GSList		*elt2;
 		gboolean		 found = FALSE;
 		
-		for (elt2 = applet->gui_device_list; elt2; elt2 = g_slist_next (elt2))
+		for (elt2 = applet->device_list; elt2; elt2 = g_slist_next (elt2))
 		{
 			NetworkDevice	*gui_dev = (NetworkDevice *)(elt2->data);
 
@@ -627,7 +560,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	{
 		NetworkDevice *	dev;
 
-		if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, cb_data->dev_op)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_op)))
 		{
 			WirelessNetwork *	net = wireless_network_new (essid, op);
 			WirelessNetwork *	tmp_net;
@@ -653,9 +586,6 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	dbus_message_unref (reply);
 
 out:
-	applet->dev_pending_call_list = g_slist_remove (applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -687,7 +617,6 @@ void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *
 			cb_data->act_net = (active_net_path && strlen (active_net_path)) ? g_strdup (active_net_path) : NULL;
 			cb_data->applet = applet;
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_net_properties_cb, cb_data, (DBusFreeFunction) free_net_prop_cb_data);
-			applet->dev_pending_call_list = g_slist_append (applet->dev_pending_call_list, pcall);
 		}
 	}
 }
@@ -707,15 +636,12 @@ void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *
 	g_return_if_fail (dev_path != NULL);
 	g_return_if_fail (net_path != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
+	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
 		WirelessNetwork *	net;
 
 		if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
-		{
 			network_device_remove_wireless_network (dev, net);
-			nmwa_dbus_devices_schedule_copy (applet);
-		}
 	}
 }
 
@@ -775,7 +701,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *dev = network_device_new (iface, type, op);
-		NetworkDevice *tmp_dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, op);
+		NetworkDevice *tmp_dev = nmwa_get_device_for_nm_path (applet->device_list, op);
 
 		network_device_set_hal_udi (dev, udi);
 		network_device_set_address (dev, hw_addr);
@@ -789,11 +715,11 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 		 */
 		if (tmp_dev)
 		{
-			applet->dbus_device_list = g_slist_remove (applet->dbus_device_list, tmp_dev);
+			applet->device_list = g_slist_remove (applet->device_list, tmp_dev);
 			network_device_unref (tmp_dev);
 		}
 
-		applet->dbus_device_list = g_slist_append (applet->dbus_device_list, dev);
+		applet->device_list = g_slist_append (applet->device_list, dev);
 
 		nmwa_dbus_update_device_info_from_hal (dev, applet);
 
@@ -816,9 +742,6 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	dbus_message_unref (reply);
 
 out:
-	applet->dev_pending_call_list = g_slist_remove (applet->dev_pending_call_list, pcall);
-	nmwa_dbus_devices_schedule_copy (applet);
-
 	dbus_pending_call_unref (pcall);
 }
 
@@ -842,10 +765,7 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		dbus_message_unref (message);
 		if (pcall)
-		{
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_properties_cb, applet, NULL);
-			applet->dev_pending_call_list = g_slist_append (applet->dev_pending_call_list, pcall);
-		}
 	}
 }
 
@@ -989,9 +909,7 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	DBusMessage *		message;
 	DBusPendingCall *	pcall;
 
-	g_return_if_fail (applet->data_mutex != NULL);
-
-	nmwa_free_dbus_data_model (applet);
+	nmwa_free_data_model (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
 	{
@@ -1015,9 +933,7 @@ void nmwa_dbus_update_dialup (NMWirelessApplet *applet)
 	DBusMessage *message;
 	DBusPendingCall *pcall;
 
-	g_return_if_fail (applet->data_mutex != NULL);
-
-	nmwa_free_dbus_data_model (applet);
+	nmwa_free_data_model (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDialup")))
 	{
@@ -1041,11 +957,10 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
 
 	g_return_if_fail (applet != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
+	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
-		applet->dbus_device_list = g_slist_remove (applet->dbus_device_list, dev);
+		applet->device_list = g_slist_remove (applet->device_list, dev);
 		network_device_unref (dev);
-		nmwa_dbus_devices_schedule_copy (applet);
 	}
 }
 
@@ -1202,11 +1117,11 @@ static void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *u
 		NetworkDevice *dev;
 
 		/* Update strength on dbus active device */
-		if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, cb_data->dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_path)))
 			network_device_set_strength (dev, strength);
 
 		/* Update strength on gui active device too */
-		if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, cb_data->dev_path)))
+		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_path)))
 			network_device_set_strength (dev, strength);
 	}
 	dbus_message_unref (reply);
@@ -1255,7 +1170,7 @@ gboolean nmwa_dbus_update_device_strength (NMWirelessApplet *applet)
 
 	g_return_val_if_fail (applet != NULL, TRUE);
 
-	g_slist_foreach (applet->dbus_device_list, (GFunc) get_each_device_strength, applet);
+	g_slist_foreach (applet->device_list, (GFunc) get_each_device_strength, applet);
 
 	return TRUE;
 }
@@ -1304,72 +1219,5 @@ sort_devices_function (gconstpointer a, gconstpointer b)
 
 	/* Unknown device types.  Sort by name only at this point. */
 	return strcmp (name_a, name_b);
-}
-
-
-static int devices_copy_idle_id = 0;
-
-/*
- * nmwa_dbus_devices_lock_and_copy
- *
- * Copy our network model over to the GUI thread.
- *
- */
-static gboolean nmwa_dbus_devices_lock_and_copy (NMWirelessApplet *applet)
-{
-	devices_copy_idle_id = 0;
-
-	g_return_val_if_fail (applet != NULL, FALSE);
-
-	/* Only copy over if we have a complete data model */
-	if (g_slist_length (applet->dev_pending_call_list) == 0)
-	{
-		GSList *elt;
-
-		nmwa_dbus_check_drivers (applet);
-
-		/* Sort the devices for display */
-		applet->dbus_device_list = g_slist_sort (applet->dbus_device_list, sort_devices_function);
-
-		/* Sort the wireless networks of each device */
-		for (elt = applet->dbus_device_list; elt; elt = g_slist_next (elt))
-		{
-			NetworkDevice *dev = (NetworkDevice *)(elt->data);
-
-			if (dev && network_device_is_wireless (dev))
-				network_device_sort_wireless_networks (dev);
-		}
-
-		/* Now copy the data over to the GUI side */
-		g_mutex_lock (applet->data_mutex);
-		nmwa_copy_data_model (applet);
-		g_mutex_unlock (applet->data_mutex);
-
-		nmwa_dbus_update_device_strength (applet);
-	}
-
-	return FALSE;
-}
-
-/*
- * nmwa_dbus_devices_schedule_copy
- *
- * Schedule a copy of our model over to the gui thread, batching copy requests.
- *
- */
-void nmwa_dbus_devices_schedule_copy (NMWirelessApplet *applet)
-{
-	g_return_if_fail (applet != NULL);
-
-	if (devices_copy_idle_id == 0)
-	{
-		GSource	*source = g_idle_source_new ();
-
-		/* We want this idle source to run before any other idle source */
-		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-		g_source_set_callback (source, (GSourceFunc) nmwa_dbus_devices_lock_and_copy, applet, NULL);
-		devices_copy_idle_id = g_source_attach (source, applet->thread_context);
-		g_source_unref (source);
-	}
 }
 

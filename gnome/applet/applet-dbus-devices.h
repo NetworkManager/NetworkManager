@@ -48,4 +48,6 @@ void			nmwa_dbus_device_remove_one_network		(NMWirelessApplet *applet, const cha
 void			nmwa_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, NMEncKeyType key_type, const char *passphrase);
 void			nmwa_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, NMEncKeyType key_type, const char *passphrase);
 
+void			nmwa_free_data_model					(NMWirelessApplet *applet);
+
 #endif

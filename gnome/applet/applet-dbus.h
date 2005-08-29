@@ -51,7 +51,7 @@ int			nmwa_dbus_call_method_string_array		(DBusConnection *con, const char *path
 
 DBusMessage *	nmwa_dbus_create_error_message		(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
 
-gpointer		nmwa_dbus_worker					(gpointer user_data);
+void			nmwa_dbus_init_helper				(NMWirelessApplet *applet);
 
 void			nmwa_dbus_enable_scanning			(NMWirelessApplet *applet, gboolean enabled);
 

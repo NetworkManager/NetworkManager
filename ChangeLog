@@ -1,3 +1,12 @@
+2005-08-29  Dan Williams  <dcbw@redhat.com>
+
+    * gnome/applet/*
+        - Don't use threads any more.  Anything that blocks
+            (like gtk_dialog_run()) will  have to get fixed up which
+            should happen quickly.  We really only had threads to make
+            the animation smooth, and when everything got converted over
+            to DBus Pending Calls, the need for threads kind of went away
+
 2005-08-29  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c: Draw VPN connections as radio items

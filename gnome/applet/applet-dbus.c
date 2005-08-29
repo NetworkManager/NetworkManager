@@ -457,8 +457,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				{
 					/* NetworkManager started up */
 					applet->nm_running = TRUE;
-					applet->gui_nm_state = NM_STATE_DISCONNECTED;
-					applet->dbus_nm_state = NM_STATE_DISCONNECTED;
+					applet->nm_state = NM_STATE_DISCONNECTED;
 					nmwa_dbus_update_nm_state (applet);
 					nmwa_dbus_update_devices (applet);
 					nmwa_dbus_update_dialup (applet);
@@ -478,7 +477,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 
 		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
 		{
-			NetworkDevice *act_dev = nmwa_get_first_active_device (applet->dbus_device_list);
+			NetworkDevice *act_dev = nmwa_get_first_active_device (applet->device_list);
 
 			/* If we've switched to connecting, update the active device to ensure that we have
 			 * valid wireless network information for it.
@@ -489,8 +488,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			{
 				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (act_dev));
 			}
-			applet->dbus_nm_state = state;
-			applet->gui_nm_state = state;
+			applet->nm_state = state;
 		}
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceAdded")
@@ -618,10 +616,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		{
 			NetworkDevice *dev;
 
-			if ((dev = nmwa_get_device_for_nm_path (applet->dbus_device_list, dev_path)))
-				network_device_set_act_stage (dev, stage);
-
-			if ((dev = nmwa_get_device_for_nm_path (applet->gui_device_list, dev_path)))
+			if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 				network_device_set_act_stage (dev, stage);
 		}
 	}
@@ -659,7 +654,7 @@ static gboolean nmwa_dbus_nm_is_running (DBusConnection *connection)
  * Initialize a connection to NetworkManager if we can get one
  *
  */
-static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *context)
+static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet)
 {
 	DBusConnection	*		connection = NULL;
 	DBusError		 		error;
@@ -667,7 +662,6 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *
 	int					acquisition;
 
 	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (context != NULL, NULL);
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
@@ -699,7 +693,7 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet, GMainContext *
 		return NULL;
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
-	dbus_connection_setup_with_g_main (connection, context);
+	dbus_connection_setup_with_g_main (connection, NULL);
 
 	dbus_bus_add_match(connection,
 				"type='signal',"
@@ -745,10 +739,10 @@ static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
 
 	if (!applet->connection)
 	{
-		if ((applet->connection = nmwa_dbus_init (applet, applet->thread_context)))
+		if ((applet->connection = nmwa_dbus_init (applet)))
 		{
 			applet->nm_running = nmwa_dbus_nm_is_running (applet->connection);
-			applet->dbus_nm_state = NM_STATE_DISCONNECTED;
+			applet->nm_state = NM_STATE_DISCONNECTED;
 			nmwa_dbus_update_nm_state (applet);
 			nmwa_dbus_update_devices (applet);
 			nmwa_dbus_update_dialup (applet);
@@ -767,30 +761,24 @@ static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
  * and updates our local applet state to reflect that.
  *
  */
-gpointer nmwa_dbus_worker (gpointer user_data)
+void nmwa_dbus_init_helper (NMWirelessApplet *applet)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
 	GSource *			timeout_source;
 	GSource *			strength_source;
 
-	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_if_fail (applet != NULL);
 
 	dbus_g_thread_init ();
 
-	if (!(applet->thread_context = g_main_context_new ()))
-		return (NULL);
-	if (!(applet->thread_loop = g_main_loop_new (applet->thread_context, FALSE)))
-		return (NULL);
-
-	applet->connection = nmwa_dbus_init (applet, applet->thread_context);
+	applet->connection = nmwa_dbus_init (applet);
 
 	timeout_source = g_timeout_source_new (2000);
 	g_source_set_callback (timeout_source, nmwa_dbus_connection_watcher, applet, NULL);
-	g_source_attach (timeout_source, applet->thread_context);
+	g_source_attach (timeout_source, NULL);
 
 	strength_source = g_timeout_source_new (2000);
 	g_source_set_callback (strength_source, (GSourceFunc) nmwa_dbus_update_device_strength, applet, NULL);
-	g_source_attach (strength_source, applet->thread_context);
+	g_source_attach (strength_source, NULL);
 
 	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))
 	{
@@ -800,13 +788,4 @@ gpointer nmwa_dbus_worker (gpointer user_data)
 		nmwa_dbus_update_dialup (applet);
 		nmwa_dbus_vpn_update_vpn_connections (applet);
 	}
-
-	g_main_loop_run (applet->thread_loop);
-
-	g_source_destroy (timeout_source);
-#if 0
-	g_source_destroy (strength_source);
-#endif
-
-	return NULL;
 }
