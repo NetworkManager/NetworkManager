@@ -1,3 +1,9 @@
+2005-08-29  Dan Williams  <dcbw@redhat.com>
+
+	Patch from j@bootlab.org
+	- Make --without-named work
+	- Make --with-dhcdbd work correctly
+
 2005-08-27  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* configure.in: Added "ca" to ALL_LINGUAS.

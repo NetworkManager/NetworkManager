@@ -190,20 +190,23 @@ AC_DEFINE_UNQUOTED(DBUS_SYSTEMD_DIR, "$DBUS_SYS_DIR", [Where system.d dir for DB
 AC_ARG_WITH(named, AC_HELP_STRING([--with-named=PATH], [path to the named binary])) 
 AC_ARG_WITH(named_dir, AC_HELP_STRING([--with-named-dir=PATH], [path to the named data directory])) 
 AC_ARG_WITH(named_user, AC_HELP_STRING([--with-named-user=USERNAME], [named username])) 
-if test "x${with_named}" = x; then
+if test "x${with_named}" = "x" -o "x${with_named}" = xno; then
    AC_DEFINE(NM_NO_NAMED,,[Define if you want to disable named support])
 fi
 AC_DEFINE_UNQUOTED(NM_NAMED_BINARY_PATH, "$with_named", [Define to path of named binary])
 AC_DEFINE_UNQUOTED(NM_NAMED_DATA_DIR, "$with_named_dir", [Define to path of named data directory])
 AC_DEFINE_UNQUOTED(NM_NAMED_USER, "$with_named_user", [Define to named username])
 
-AC_ARG_WITH(DHCDBD_BINARY_PATH, AC_HELP_STRING([--with-dhcdbd=/path/to/dhcdbd], [path to dhcdbd])) 
-if test "x${DHCDBD_BINARY_PATH}" = x; then
+AC_ARG_WITH(dhcdbd, AC_HELP_STRING([--with-dhcdbd=/path/to/dhcdbd], [path to dhcdbd])) 
+if test "x${with_dhcdbd}" = x; then
   AC_PATH_PROG(DHCDBD_BINARY_PATH, dhcdbd, [], $PATH:/sbin:/usr/sbin)
   if ! test -x "$DHCDBD_BINARY_PATH"; then
 	AC_MSG_ERROR(dhcdbd was not installed.  See http://people.redhat.com/jvdias/dhcdbd)
   fi
+else
+  DHCDBD_BINARY_PATH="$with_dhcdbd"
 fi
+AC_DEFINE_UNQUOTED(DHCDBD_BINARY_PATH, "$DHCDBD_BINARY_PATH", [Define to path of dhcdbd binary])
 AC_SUBST(DHCDBD_BINARY_PATH)
 
 #### find the actual value for $prefix that we'll end up with

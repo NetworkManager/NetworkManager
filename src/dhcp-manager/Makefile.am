@@ -8,7 +8,6 @@ libdhcp_manager_la_SOURCES =	nm-dhcp-manager.c	\
 libdhcp_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 						$(GTHREAD_CFLAGS)				\
 						$(HAL_CFLAGS)					\
-						-DDHCDBD_BINARY_PATH=\"$(DHCDBD_BINARY_PATH)\" \
 						-g							\
 						-Wall						\
 						-DDBUS_API_SUBJECT_TO_CHANGE		\
