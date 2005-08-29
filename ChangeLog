@@ -1,3 +1,10 @@
+2005-08-29  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet.c: Draw VPN connections as radio items
+	since we don't yet support multiple VPNs.
+	* gnome/applet/other-network-dialog.c: Use stock icon for Connect
+	* gnome/vpn-properties/nm-vpn-properties.c: Use stock icon for Delete
+
 2005-08-29  Dan Williams  <dcbw@redhat.com>
 
 	Patch from j@bootlab.org

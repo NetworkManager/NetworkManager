@@ -733,7 +733,7 @@ delete_cb (GtkButton *button, gpointer user_data)
 					 GTK_MESSAGE_WARNING,
 					 GTK_BUTTONS_CANCEL,
 					 _("Delete VPN connection \"%s\"?"), conn_name);
-	gtk_dialog_add_buttons (GTK_DIALOG (dialog), "_Delete", GTK_RESPONSE_OK, NULL);
+	gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_DELETE, GTK_RESPONSE_OK, NULL);
 	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
 						  _("All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."), conn_name);
 	response = gtk_dialog_run (GTK_DIALOG (dialog));

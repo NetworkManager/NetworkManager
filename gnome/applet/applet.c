@@ -1698,6 +1698,9 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 		const char		*vpn_name = nmwa_vpn_connection_get_name (vpn);
 
 		vpn_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new_with_label (vpn_name));
+		/* temporarily do this until we support multiple VPN connections */
+		gtk_check_menu_item_set_draw_as_radio (vpn_item, TRUE);
+
 		nmwa_vpn_connection_ref (vpn);
 		g_object_set_data (G_OBJECT (vpn_item), "vpn", vpn);
 

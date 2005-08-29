@@ -213,6 +213,12 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	essid_entry = glade_xml_get_widget (xml, "essid_entry");
 	button = glade_xml_get_widget (xml, "ok_button");
 	gtk_widget_grab_default (GTK_WIDGET (button));
+#if GTK_CHECK_VERSION(2,6,0)
+	{
+		GtkWidget *connect_image = gtk_image_new_from_stock (GTK_STOCK_CONNECT, GTK_ICON_SIZE_BUTTON);
+		gtk_button_set_image (GTK_BUTTON (button), connect_image);
+	}
+#endif
 
 	gtk_widget_grab_focus (essid_entry);
 	gtk_widget_set_sensitive (button, FALSE);
