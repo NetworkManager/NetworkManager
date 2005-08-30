@@ -176,7 +176,7 @@ static void print_usage (void)
 		"This tool allows you to tell NetworkManager to create and manipulate fake 'test' devices.  This\n"
 		"is useful in sitation where you may not have a particular device but still want to test\n"
 		"NetworkManager out with it (For example, you forgot your wireless card at home and now you're\n"
-		"taking a trip and want to hack on NM, and you're on a plane so you could use the wireless\n"
+		"taking a trip and want to hack on NM, and you're on a plane so you couldn't use the wireless\n"
 		"card anyway).\n"
 		"\n");
 }
@@ -192,6 +192,11 @@ int main( int argc, char *argv[] )
 	gboolean		 make_link_active = FALSE;
 	gboolean		 make_link_inactive = FALSE;
 	NMDeviceType	 dev_type = DEVICE_TYPE_DONT_KNOW;
+
+	if (argc < 2) {
+		print_usage ();
+		exit (0);
+	}
 
 	/* Parse options */
 	while (1)
