@@ -149,56 +149,6 @@ static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
 }
 
 
-/*
- * nmwa_dbus_get_hal_device_string_property
- *
- * Get a string property from a device
- *
- */
-static char *nmwa_dbus_get_hal_device_string_property (DBusConnection *connection, const char *udi, const char *property_name)
-{
-	DBusError		 error;
-	DBusMessage	*message;
-	DBusMessage	*reply;
-	char			*dbus_property = NULL;
-	char			*property = NULL;
-
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (udi != NULL, NULL);
-
-	if (!(message = dbus_message_new_method_call ("org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device", "GetPropertyString")))
-		return (NULL);
-
-	dbus_error_init (&error);
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &property_name, DBUS_TYPE_INVALID);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("nmwa_dbus_get_hal_device_string_property(): %s raised:\n %s\n\n", error.name, error.message);
-		dbus_error_free (&error);
-		return (NULL);
-	}
-	if (reply == NULL)
-	{
-		nm_warning ("nmwa_dbus_get_hal_device_string_property(): dbus reply message was NULL\n" );
-		return (NULL);
-	}
-
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_property, DBUS_TYPE_INVALID))
-	{
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-	}
-	else
-		property = g_strdup (dbus_property);
-
-	dbus_message_unref (reply);	
-	return (property);
-}
-
-
 typedef struct HalInfoCBData
 {
 	NMWirelessApplet *	applet;

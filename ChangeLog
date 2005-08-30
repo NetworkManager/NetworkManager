@@ -1,5 +1,10 @@
 2005-08-30  Dan Williams  <dcbw@redhat.com>
 
+     * gnome/applet/applet-dbus-devices.c
+		- Remove nmwa_dbus_get_hal_device_string_property(); unused
+
+2005-08-30  Dan Williams  <dcbw@redhat.com>
+
      * gnome/applet/applet-dbus.[ch]
 		- Remove all the nmwa_dbus_call_method_xxxx functions since
 			they weren't being used anyway
