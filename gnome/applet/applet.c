@@ -226,8 +226,10 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		return FALSE;
 	}
 
-	dev = nmwa_get_first_active_device (applet->device_list);
-	iface = network_device_get_iface (dev);
+	
+	if ((dev = nmwa_get_first_active_device (applet->device_list)))
+		iface = network_device_get_iface (dev);
+
 	if (!dev || !iface)
 	{
 		char *err = g_strdup (_("No active connections!"));
@@ -285,7 +287,6 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		       (unsigned char) ifr.ifr_hwaddr.sa_data[5]);
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
-	gtk_label_set_text (GTK_LABEL (label), iface);
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
 	else

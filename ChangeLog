@@ -1,5 +1,11 @@
 2005-08-30  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/wireless-applet.glade
+		- HIG-ify the Other Wireless Networks dialog a bit more
+		- Fix some potential segfaults in the info dialog
+
+2005-08-30  Dan Williams  <dcbw@redhat.com>
+
      * gnome/applet/applet-dbus-devices.c
 		- Remove nmwa_dbus_get_hal_device_string_property(); unused
 
