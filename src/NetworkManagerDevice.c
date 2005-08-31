@@ -4001,7 +4001,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			int			orig_rate = 0;
 			const int		interval = 20;
 			const int		assoc_pause = nm_device_get_association_pause_value (dev);
-			const int		delay = (G_USEC_PER_SEC * assoc_pause) / interval;
+			const int		delay = G_USEC_PER_SEC / interval;
 			const int		max_tries = assoc_pause * interval;
 			nm_completion_args args;
 

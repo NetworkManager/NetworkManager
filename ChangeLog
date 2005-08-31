@@ -1,3 +1,9 @@
+2005-08-31  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bill Moss <bmoss@clemson.edu>
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_scan): fix scan timeout values
+
 2005-08-30  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/wireless-applet.glade
