@@ -1,5 +1,11 @@
 2005-09-01  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bill Nottingham <notting@redhat.com>
+	* src/backends/NetworkManagerRedHat.c
+		- Add initial dialup support to Red Hat/Fedora backend
+
+2005-09-01  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-devices.c
 		- Sort both wireless networks and devices again, which got
 			broken when removing threading
