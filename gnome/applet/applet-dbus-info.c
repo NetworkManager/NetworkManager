@@ -1130,16 +1130,16 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		dbus_error_init (&error);
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
 		{
-			GtkDialog	*dialog;
+			GtkWidget	*dialog;
 			char		*text;
 
 			dbus_error_free (&error);
 			text = g_strdup_printf (_("The requested wireless network '%s' does not appear to be in range.  "
 								 "A different wireless network will be used if any are available."), network);
 
-			dialog = GTK_DIALOG (gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL));
-			gtk_dialog_run (dialog);
-			gtk_widget_destroy (GTK_WIDGET (dialog));
+			dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL);
+			gtk_window_present (GTK_WINDOW (dialog));
+			g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
 		}
 	}
 #endif

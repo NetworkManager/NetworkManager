@@ -312,29 +312,22 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	return (dialog);
 }
 
-
-void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
+typedef struct OtherNetworkDialogCBData
 {
-	gchar		*glade_file;
-	GtkDialog		*dialog;
-	gint			 response;
-	NetworkDevice	*def_dev = NULL;
-	GladeXML		*xml;
+	NMWirelessApplet 	*applet;
+	NetworkDevice		*dev;
+	GladeXML 		*xml;
+	gboolean		create;
+} OtherNetworkDialogCBData;
 
-	g_return_if_fail (applet != NULL);
-	g_return_if_fail (applet->glade_file != NULL);
 
-	if (!(xml = glade_xml_new (applet->glade_file, "custom_essid_dialog", NULL)))
-	{
-		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
-		return;
-	}
-
-	if (!(dialog = nmwa_other_network_dialog_init (xml, applet, &def_dev, create_network)))
-		return;
-
-	/* Run the dialog */
-	response = gtk_dialog_run (dialog);
+static void nmwa_other_network_dialog_response_cb (GtkDialog *dialog, gint response, gpointer data)
+{
+	OtherNetworkDialogCBData *cb_data = (OtherNetworkDialogCBData*) data;
+	GladeXML 	*xml = cb_data->xml;
+	NetworkDevice	*def_dev = cb_data->dev;
+	NMWirelessApplet	*applet = cb_data->applet;
+	gboolean	create_network = cb_data->create;
 
 	if (response == GTK_RESPONSE_OK)
 	{
@@ -396,4 +389,35 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 
 	gtk_widget_destroy (GTK_WIDGET (dialog));
 	g_object_unref (xml);
+	g_free (data);
+}
+
+void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
+{
+	GtkDialog		*dialog;
+	NetworkDevice		*def_dev = NULL;
+	GladeXML		*xml;
+	OtherNetworkDialogCBData	*cb_data;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->glade_file != NULL);
+
+	if (!(xml = glade_xml_new (applet->glade_file, "custom_essid_dialog", NULL)))
+	{
+		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		return;
+	}
+
+	if (!(dialog = nmwa_other_network_dialog_init (xml, applet, &def_dev, create_network)))
+		return;
+
+	cb_data = g_malloc0 (sizeof (OtherNetworkDialogCBData));
+	network_device_ref (def_dev);
+	cb_data->dev = def_dev;
+	cb_data->applet = applet;
+	cb_data->xml = xml;
+	cb_data->create = create_network;
+
+	gtk_window_present (GTK_WINDOW (dialog));
+	g_signal_connect (dialog, "response", G_CALLBACK (nmwa_other_network_dialog_response_cb), (gpointer) cb_data);
 }

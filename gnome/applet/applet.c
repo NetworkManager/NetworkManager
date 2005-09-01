@@ -196,12 +196,10 @@ static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 	
 	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
 					   _("Error displaying connection information: "), err);
-	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog),
-											 0, GTK_MESSAGE_ERROR,
-											 GTK_BUTTONS_OK, msg);
-	gtk_dialog_run (GTK_DIALOG (error_dialog));
-	gtk_widget_destroy (error_dialog);
+	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
 	g_free (msg);
+	gtk_window_present (GTK_WINDOW (error_dialog));
+	g_signal_connect_swapped (error_dialog, "response", G_CALLBACK (gtk_widget_destroy), error_dialog);
 }
 
 static gboolean nmwa_update_info (NMWirelessApplet *applet)
@@ -344,8 +342,7 @@ static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
 	if (nmwa_update_info (applet))
 	{
 		gtk_window_present (GTK_WINDOW (info_dialog));
-		gtk_dialog_run (GTK_DIALOG (info_dialog));
-		gtk_widget_hide (GTK_WIDGET (info_dialog));
+		g_signal_connect_swapped (info_dialog, "response", G_CALLBACK (gtk_widget_hide), info_dialog);
 	}
 }
 
@@ -1209,8 +1206,8 @@ static gboolean show_warning_dialog (char *mesg)
 	timestamp = gdk_x11_get_server_time (dialog->window);
 	gdk_x11_window_set_user_time (dialog->window, timestamp);
 
-	gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
+	gtk_window_present (GTK_WINDOW (dialog));
+	g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
 	g_free (mesg);
 
 	return FALSE;

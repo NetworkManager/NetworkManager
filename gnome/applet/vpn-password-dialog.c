@@ -154,8 +154,8 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
   _("Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."),
 							  service);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_window_present (GTK_WINDOW (dialog));
+		g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
 		goto out;
 	}
 
@@ -193,8 +193,8 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
   _("There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."),
 							  service);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_window_present (GTK_WINDOW (dialog));
+		g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
 		goto out;
 	}
 
