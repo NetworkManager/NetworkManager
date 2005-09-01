@@ -211,7 +211,7 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	struct ifreq ifr;
 	int fd, flags;
 	gboolean ret_val = TRUE;
-	const char *iface;
+	const char *iface = NULL;
 	NetworkDevice *dev;
 	gboolean ret = TRUE;
 

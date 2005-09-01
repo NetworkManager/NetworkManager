@@ -1,3 +1,8 @@
+2005-09-01  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: nmwa_update_info: iface is used uninitialized
+	  and the check "!iface" in the error case is probably never true.
+
 2005-09-01  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bill Nottingham <notting@redhat.com>
