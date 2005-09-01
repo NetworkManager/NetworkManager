@@ -1,3 +1,9 @@
+2005-09-01  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.c
+		- Sort both wireless networks and devices again, which got
+			broken when removing threading
+
 2005-09-01  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:

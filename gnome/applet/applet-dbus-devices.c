@@ -528,9 +528,10 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 			wireless_network_set_strength (net, strength);
 			if (act_net && strlen (act_net) && (strcmp (act_net, op) == 0))
 				wireless_network_set_active (net, TRUE);
+			g_free (act_net);
 
 			network_device_add_wireless_network (dev, net);
-			g_free (act_net);
+            network_device_sort_wireless_networks (dev);
 		}
 	}
 	dbus_message_unref (reply);
@@ -593,6 +594,52 @@ void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *
 		if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
 			network_device_remove_wireless_network (dev, net);
 	}
+}
+
+
+/*
+ * sort_devices_function
+ *
+ * Sort the devices for display...  Wired devices at the top.
+ *
+ */
+static int
+sort_devices_function (gconstpointer a, gconstpointer b)
+{
+	NetworkDevice *dev_a = (NetworkDevice *) a;
+	NetworkDevice *dev_b = (NetworkDevice *) b;
+	const char *name_a;
+	const char *name_b;
+
+	if (network_device_get_desc (dev_a))
+		name_a = network_device_get_desc (dev_a);
+	else if (network_device_get_nm_path (dev_a))
+		name_a = network_device_get_nm_path (dev_a);
+	else
+		name_a = "";
+
+	if (network_device_get_desc (dev_b))
+		name_b = network_device_get_desc (dev_b);
+	else if (network_device_get_nm_path (dev_b))
+		name_b = network_device_get_nm_path (dev_b);
+	else
+		name_b = "";
+
+	if (network_device_get_type (dev_a) == network_device_get_type (dev_b))
+	{
+		return strcmp (name_a, name_b);
+	}
+	if (network_device_is_wired (dev_a))
+		return -1;
+	if (network_device_is_wired (dev_b))
+		return 1;
+	if (network_device_is_wireless (dev_a))
+		return -1;
+	if (network_device_is_wireless (dev_b))
+		return 1;
+
+	/* Unknown device types.  Sort by name only at this point. */
+	return strcmp (name_a, name_b);
 }
 
 
@@ -669,8 +716,6 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 			network_device_unref (tmp_dev);
 		}
 
-		applet->device_list = g_slist_append (applet->device_list, dev);
-
 		nmwa_dbus_update_device_info_from_hal (dev, applet);
 
 		if (type == DEVICE_TYPE_WIRELESS_ETHERNET)
@@ -686,8 +731,10 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 					nmwa_dbus_device_update_one_network (applet, op, *item, active_network_path);
 			}
 		}
-
 		dbus_free_string_array (networks);
+
+		applet->device_list = g_slist_append (applet->device_list, dev);
+		applet->device_list = g_slist_sort (applet->device_list, (GCompareFunc) sort_devices_function);
 	}
 	dbus_message_unref (reply);
 
@@ -1123,51 +1170,5 @@ gboolean nmwa_dbus_update_device_strength (NMWirelessApplet *applet)
 	g_slist_foreach (applet->device_list, (GFunc) get_each_device_strength, applet);
 
 	return TRUE;
-}
-
-
-/*
- * sort_devices_function
- *
- * Sort the devices for display...  Wired devices at the top.
- *
- */
-static int
-sort_devices_function (gconstpointer a, gconstpointer b)
-{
-	NetworkDevice *dev_a = (NetworkDevice *) a;
-	NetworkDevice *dev_b = (NetworkDevice *) b;
-	const char *name_a;
-	const char *name_b;
-
-	if (network_device_get_desc (dev_a))
-		name_a = network_device_get_desc (dev_a);
-	else if (network_device_get_nm_path (dev_a))
-		name_a = network_device_get_nm_path (dev_a);
-	else
-		name_a = "";
-
-	if (network_device_get_desc (dev_b))
-		name_b = network_device_get_desc (dev_b);
-	else if (network_device_get_nm_path (dev_b))
-		name_b = network_device_get_nm_path (dev_b);
-	else
-		name_b = "";
-
-	if (network_device_get_type (dev_a) == network_device_get_type (dev_b))
-	{
-		return strcmp (name_a, name_b);
-	}
-	if (network_device_is_wired (dev_a))
-		return -1;
-	if (network_device_is_wired (dev_b))
-		return 1;
-	if (network_device_is_wireless (dev_a))
-		return -1;
-	if (network_device_is_wireless (dev_b))
-		return 1;
-
-	/* Unknown device types.  Sort by name only at this point. */
-	return strcmp (name_a, name_b);
 }
 
