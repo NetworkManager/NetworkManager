@@ -763,8 +763,6 @@ GSList * nm_system_get_dialup_config (void)
 {
 	GSList *list = NULL;
 	const char *dentry;
-	unsigned int i = 0;
-	size_t len;
 	GError *err;
 	GDir *dir;
 
