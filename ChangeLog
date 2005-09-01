@@ -1,5 +1,9 @@
 2005-09-01  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet.c:
+	Only show the "Stop/Start All Wireless Devices" menuitem
+	if we actually have wireless devices.
+
 	* gnome/applet/applet-dbus-info.c:
 	* gnome/applet/applet.c:
 	* gnome/applet/other-network-dialog.c:

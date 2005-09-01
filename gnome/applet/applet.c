@@ -2022,12 +2022,30 @@ static GtkWidget *nmwa_dropdown_menu_create (GtkMenuItem *parent, NMWirelessAppl
  */
 static void nmwa_context_menu_update (NMWirelessApplet *applet)
 {
-	GtkWidget *image;	
+	GtkWidget *image;
+	GSList *element;
+	gboolean have_wireless = FALSE;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (applet->stop_wireless_item != NULL);
 
 	gtk_widget_destroy (applet->stop_wireless_item);
+
+	for (element = applet->device_list; element; element = element->next)
+	{
+		NetworkDevice *dev = (NetworkDevice *)(element->data);
+
+		g_assert (dev);
+
+		if (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
+		{
+			have_wireless = TRUE;
+			break;
+		}
+	}
+
+	if (!have_wireless)
+		return;
 
 	if (applet->wireless_enabled)
 	{
