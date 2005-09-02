@@ -696,7 +696,7 @@ gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 				ret = TRUE;
 			} else {
 				/* FIXME: Decode errors into something sensible */
-				nm_error ("Couldn't activate dialup device %s (%s) - %d", dialup, (char *) config->data, status);
+				nm_warning ("Couldn't activate dialup device %s (%s) - %d", dialup, (char *) config->data, status);
 				ret = FALSE;
 			}
 			break;

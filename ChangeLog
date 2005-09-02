@@ -1,3 +1,7 @@
+2005-09-02  Bill Nottingham  <notting@redhat.com>
+
+	* src/backends/NetworkManagerRedHat.c: use nm_warning, not nm_error
+
 2005-09-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
