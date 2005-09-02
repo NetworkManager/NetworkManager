@@ -1,3 +1,19 @@
+2005-09-01  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_remove_device_from_list): rename to nm_remove_device
+		- (nm_hal_device_removed): call nm_remove_device()
+
+	* src/NetworkManagerDevice.c
+		- Change the NMWirelessScanCB member 'reschedule' which
+			wasn't used to 'force' to indicate that we need to
+			force a scan when adding a device
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_sleep): Deactivate all devices and remove them
+			from the device list
+		- (nm_dbus_nm_wake): Re-add all devices to the device list
+
 2005-09-01  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: nmwa_update_info: iface is used uninitialized

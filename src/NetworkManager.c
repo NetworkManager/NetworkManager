@@ -152,45 +152,25 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 
 
 /*
- * nm_remove_device_from_list
+ * nm_remove_device
  *
- * Searches for a device entry in the NLM device list by udi,
- * and if found, removes that element from the list and frees
- * its data.
+ * Removes a particular device from the device list.  Requires that
+ * the device list is locked, if needed.
  */
-void nm_remove_device_from_list (NMData *data, const char *udi)
+void nm_remove_device (NMData *data, NMDevice *dev)
 {
 	g_return_if_fail (data != NULL);
-	g_return_if_fail (udi != NULL);
+	g_return_if_fail (dev != NULL);
 
-	/* Attempt to acquire mutex for device list deletion.  If acquire fails,
-	 * just ignore the device deletion entirely.
-	 */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		GSList	*elt;
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-		{
-			NMDevice	*dev = (NMDevice *)(elt->data);
+	nm_device_set_removed (dev, TRUE);
+	nm_device_deactivate (dev);
+	nm_device_worker_thread_stop (dev);
+	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
 
-			if (dev && (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0))
-			{
-				nm_device_set_removed (dev, TRUE);
-				nm_device_deactivate (dev);
-				nm_device_worker_thread_stop (dev);
-				nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
+	nm_device_unref (dev);
 
-				nm_device_unref (dev);
-
-				/* Remove the device entry from the device list and free its data */
-				data->dev_list = g_slist_remove_link (data->dev_list, elt);
-				g_slist_free (elt);
-				nm_policy_schedule_device_change_check (data);
-				break;
-			}
-		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else nm_warning ("could not acquire device list mutex." );
+	/* Remove the device entry from the device list and free its data */
+	data->dev_list = g_slist_remove (data->dev_list, dev);
 }
 
 
@@ -267,12 +247,22 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 {
 	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
+	NMDevice	*dev;
 
 	g_return_if_fail (data != NULL);
 
 	nm_debug ("Device removed (hal udi is '%s').", udi );
 
-	nm_remove_device_from_list (data, udi);
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+		return;
+
+	if ((dev = nm_get_device_by_udi (data, udi)))
+	{
+		nm_remove_device (data, dev);
+		nm_policy_schedule_device_change_check (data);
+	}
+
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 }
 
 
@@ -307,7 +297,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
  * Add all devices that hal knows about right now (ie not hotplug devices)
  *
  */
-static void nm_add_initial_devices (NMData *data)
+void nm_add_initial_devices (NMData *data)
 {
 	char **	net_devices;
 	int		num_net_devices;

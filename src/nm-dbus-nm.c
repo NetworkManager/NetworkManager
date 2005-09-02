@@ -386,7 +386,7 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 		if ((dev = nm_dbus_get_device_from_object_path (data->data, dev_path)))
 		{
 			if (nm_device_is_test_device (dev))
-				nm_remove_device_from_list (data->data, nm_device_get_udi (dev));
+				nm_remove_device (data->data, dev);
 			else
 				reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "NotTestDevice",
 							"Only test devices can be removed via dbus calls.");
@@ -488,14 +488,14 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 
 		app_data->asleep = TRUE;
 
-		/* Physically down all devices */
+		/* Remove all devices from the device list */
 		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
-		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
+		while (g_slist_length (app_data->dev_list))
 		{
-			NMDevice	*dev = (NMDevice *)(elt->data);
+			NMDevice	*dev = (NMDevice *)(app_data->dev_list->data);
 
-			nm_device_deactivate (dev);
-			nm_device_bring_down (dev);
+			fprintf (stderr, "dev %p\n", dev);
+			nm_remove_device (app_data, dev);
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 
@@ -523,15 +523,7 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 		nm_info  ("Waking up from sleep.");
 		app_data->asleep = FALSE;
 
-		/* Physically up all devices */
-		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
-		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
-		{
-			NMDevice *dev = (NMDevice *)(elt->data);
-
-			nm_device_bring_up (dev);
-		}
-		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		nm_add_initial_devices (app_data);
 
 		nm_schedule_state_change_signal_broadcast (app_data);
 		nm_policy_schedule_device_change_check (data->data);

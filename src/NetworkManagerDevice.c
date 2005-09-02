@@ -65,8 +65,8 @@ typedef struct
 
 typedef struct
 {
-	NMDevice		*dev;
-	gboolean		 reschedule;
+	NMDevice *	dev;
+	gboolean		force;
 } NMWirelessScanCB;
 
 /******************************************************/
@@ -498,7 +498,7 @@ static gpointer nm_device_worker (gpointer user_data)
 
 		scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
 		scan_cb->dev = dev;
-		scan_cb->reschedule = TRUE;
+		scan_cb->force = TRUE;
 
 		g_source_set_callback (source, nm_device_wireless_scan, scan_cb, NULL);
 		source_id = g_source_attach (source, dev->context);
@@ -3688,7 +3688,7 @@ static void nm_device_wireless_schedule_scan (NMDevice *dev)
 
 	scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
 	scan_cb->dev = dev;
-	scan_cb->reschedule = TRUE;
+	scan_cb->force = FALSE;
 
 	wscan_source = g_timeout_source_new (dev->options.wireless.scan_interval * 1000);
 	g_source_set_callback (wscan_source, nm_device_wireless_scan, scan_cb, NULL);
@@ -3952,9 +3952,10 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	/* Reschedule if scanning is off, or if scanning is AUTO and we are
 	 * associated to an access point.
 	 */
-	if (    (dev->app_data->scanning_method == NM_SCAN_METHOD_NEVER)
+	if (    ((dev->app_data->scanning_method == NM_SCAN_METHOD_NEVER)
 		|| (    (dev->app_data->scanning_method == NM_SCAN_METHOD_WHEN_UNASSOCIATED)
 			&& nm_device_is_activated (dev)))
+		&& !scan_cb->force)
 	{
 		dev->options.wireless.scan_interval = 10;
 		goto reschedule;
@@ -4067,8 +4068,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 
 reschedule:
 	/* Make sure we reschedule ourselves so we keep scanning */
-	if (scan_cb->reschedule)
-		nm_device_wireless_schedule_scan (dev);
+	nm_device_wireless_schedule_scan (dev);
 
 	g_free (scan_cb);
 	return FALSE;
