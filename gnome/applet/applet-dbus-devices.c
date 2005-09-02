@@ -847,9 +847,8 @@ static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 			applet->dialup_list = NULL;
 		}
 
-		for (item = dialup_devices; *item; item++) {
+		for (item = dialup_devices; *item; item++)
 			applet->dialup_list = g_slist_append (applet->dialup_list, g_strdup (*item));
-		}
 
 		dbus_free_string_array (dialup_devices);
 	}
