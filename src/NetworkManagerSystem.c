@@ -417,6 +417,8 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 				if (errno != ENODEV)
 					nm_warning ("nm_system_device_set_up_down_with_iface() could not bring device %s %s.  errno = %d", iface, (up ? "up" : "down"), errno);
 			}
+			else
+				success = TRUE;
 		}
 	}
 
