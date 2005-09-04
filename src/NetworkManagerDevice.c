@@ -3159,6 +3159,7 @@ void nm_device_activation_cancel (NMDevice *dev)
 		nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY, G_USEC_PER_SEC / 20, nm_ac_test, NULL, args);
 		nm_info ("Activation (%s): cancelled.", nm_device_get_iface(dev));
 		nm_schedule_state_change_signal_broadcast (dev->app_data);
+		dev->quit_activation = FALSE;
 	}
 }
 

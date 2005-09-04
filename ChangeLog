@@ -1,5 +1,11 @@
 2005-09-04  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bill Nottingham <notting@redhat.com>
+	* src/NetworkManagerDevice.c
+		- (nm_device_activation_cancel): reset the quit_activation flag
+
+2005-09-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 		- (nm_act_request_unref): actually free the structure,
 			which we didn't seem to be doing before
