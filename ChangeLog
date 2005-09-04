@@ -1,3 +1,9 @@
+2005-09-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from John Palmieri <johnp@redhat.com>
+	* gnome/applet/nm-device.c
+		- (nm_device_unref): clear network_device's memory _before_ freeing it
+
 2005-09-02  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c: Use a check menu item for Wireless Enabled

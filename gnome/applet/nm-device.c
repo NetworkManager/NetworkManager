@@ -150,8 +150,8 @@ void network_device_unref (NetworkDevice *dev)
 		g_free (dev->udi);
 		g_free (dev->desc);
 		g_free (dev->addr);
-		g_free (dev);
 		memset (dev, 0, sizeof (NetworkDevice));
+		g_free (dev);
 	}
 }
 
