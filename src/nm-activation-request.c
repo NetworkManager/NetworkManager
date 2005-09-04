@@ -87,7 +87,8 @@ void nm_act_request_unref (NMActRequest *req)
 {
 	g_return_if_fail (req != NULL);
 
-	if (req->refcount == 1)
+	req->refcount--;
+	if (req->refcount <= 0)
 	{
 		nm_device_unref (req->dev);
 		if (req->ap)
@@ -100,9 +101,8 @@ void nm_act_request_unref (NMActRequest *req)
 		}
 
 		memset (req, 0, sizeof (NMActRequest));
+		g_free (req);
 	}
-	else
-		req->refcount--;
 }
 
 NMDevice * nm_act_request_get_dev (NMActRequest *req)

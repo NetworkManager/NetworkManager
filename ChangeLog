@@ -1,5 +1,11 @@
 2005-09-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+		- (nm_act_request_unref): actually free the structure,
+			which we didn't seem to be doing before
+
+2005-09-04  Dan Williams  <dcbw@redhat.com>
+
 	Patch from John Palmieri <johnp@redhat.com>
 	* gnome/applet/applet-dbus-devices.c
 		- Fix up unreffing of DBusMessage objects
