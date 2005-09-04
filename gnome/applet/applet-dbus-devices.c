@@ -352,7 +352,6 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 		{
 			HalInfoCBData *	cb_data = g_malloc0 (sizeof (HalInfoCBData));
@@ -362,6 +361,7 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 			cb_data->dev = dev;
 			dbus_pending_call_set_notify (pcall, hal_info_parent_cb, cb_data, (DBusFreeFunction) free_hal_info_cb_data);
 		}
+		dbus_message_unref (message);
 	}
 }
 
@@ -531,7 +531,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 			g_free (act_net);
 
 			network_device_add_wireless_network (dev, net);
-            network_device_sort_wireless_networks (dev);
+			network_device_sort_wireless_networks (dev);
 		}
 	}
 	dbus_message_unref (reply);
@@ -559,7 +559,6 @@ void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, net_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 		{
 			NetPropCBData * cb_data = g_malloc0 (sizeof (NetPropCBData));
@@ -569,6 +568,7 @@ void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *
 			cb_data->applet = applet;
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_net_properties_cb, cb_data, (DBusFreeFunction) free_net_prop_cb_data);
 		}
+		dbus_message_unref (message);
 	}
 }
 
@@ -760,9 +760,9 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_properties_cb, applet, NULL);
+		dbus_message_unref (message);
 	}
 }
 
@@ -889,6 +889,7 @@ void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
 			nm_warning ("nmwa_dbus_activate_dialup_connection(): Could not send activateDialup message!");
+		dbus_message_unref (message);
 	}
 	else
 		nm_warning ("nmwa_dbus_activate_dialup_connection(): Couldn't allocate the dbus message!");
@@ -911,9 +912,9 @@ void nmwa_dbus_update_devices (NMWirelessApplet *applet)
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
+		dbus_message_unref (message);
 	}
 	nmwa_dbus_update_wireless_enabled (applet);
 }
@@ -935,9 +936,9 @@ void nmwa_dbus_update_dialup (NMWirelessApplet *applet)
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDialup")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_dialup_cb, applet, NULL);
+		dbus_message_unref (message);
 	}
 }
 
@@ -1000,6 +1001,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 		}
 		dbus_connection_send (connection, message, NULL);
+		dbus_message_unref (message);
 	}
 	else
 		nm_warning ("nmwa_dbus_set_device(): Couldn't allocate the dbus message\n");
@@ -1038,6 +1040,7 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 									DBUS_TYPE_INVALID);
 			dbus_connection_send (connection, message, NULL);
 		}
+		dbus_message_unref (message);
 	}
 	else
 		nm_warning ("nmwa_dbus_set_device(): Couldn't allocate the dbus message\n");
@@ -1062,6 +1065,7 @@ void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
 		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID);
 		dbus_connection_send (applet->connection, message, NULL);
 		nmwa_dbus_update_wireless_enabled (applet);
+		dbus_message_unref (message);
 	}
 }
 
@@ -1140,7 +1144,6 @@ static void get_each_device_strength (NetworkDevice *dev, NMWirelessApplet *appl
 		if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, network_device_get_nm_path (dev), NM_DBUS_INTERFACE_DEVICES, "getStrength")))
 		{
 			dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-			dbus_message_unref (message);
 			if (pcall)
 			{
 				StrengthCBData *	cb_data = g_malloc0 (sizeof (StrengthCBData));
@@ -1149,6 +1152,7 @@ static void get_each_device_strength (NetworkDevice *dev, NMWirelessApplet *appl
 				cb_data->dev_path = g_strdup (network_device_get_nm_path (dev));
 				dbus_pending_call_set_notify (pcall, nmwa_dbus_update_device_strength_cb, cb_data, (DBusFreeFunction) free_strength_cb_data);
 			}
+			dbus_message_unref (message);
 		}
 	}
 }
