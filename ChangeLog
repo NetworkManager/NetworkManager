@@ -1,3 +1,8 @@
+2005-09-05  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.c: Remove duplicate call to
+	network_device_set_strength
+
 2005-09-04  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bill Nottingham <notting@redhat.com>

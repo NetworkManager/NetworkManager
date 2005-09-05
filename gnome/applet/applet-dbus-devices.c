@@ -1117,11 +1117,7 @@ static void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *u
 	{
 		NetworkDevice *dev;
 
-		/* Update strength on dbus active device */
-		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_path)))
-			network_device_set_strength (dev, strength);
-
-		/* Update strength on gui active device too */
+		/* Update strength on device */
 		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_path)))
 			network_device_set_strength (dev, strength);
 	}
