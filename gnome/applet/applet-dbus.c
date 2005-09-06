@@ -263,10 +263,14 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		int		strength = -1;
 
 		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_OBJECT_PATH, &net_path, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID))
-		{
-			/* FIXME  actually use strength rather than querying all network properties */
-			nmwa_dbus_device_update_one_network (applet, dev_path, net_path, NULL);
-		}
+			nmwa_dbus_update_strength (applet, dev_path, net_path, strength);
+	}
+	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceStrengthChanged"))
+	{
+		char *dev_path = NULL;
+		int strength = -1;
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID))
+			nmwa_dbus_update_strength (applet, dev_path, NULL, strength);
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
 			|| dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
@@ -468,7 +472,6 @@ static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
 void nmwa_dbus_init_helper (NMWirelessApplet *applet)
 {
 	GSource *			timeout_source;
-	GSource *			strength_source;
 
 	g_return_if_fail (applet != NULL);
 
@@ -480,10 +483,6 @@ void nmwa_dbus_init_helper (NMWirelessApplet *applet)
 	g_source_set_callback (timeout_source, nmwa_dbus_connection_watcher, applet, NULL);
 	g_source_attach (timeout_source, NULL);
 
-	strength_source = g_timeout_source_new (2000);
-	g_source_set_callback (strength_source, (GSourceFunc) nmwa_dbus_update_device_strength, applet, NULL);
-	g_source_attach (strength_source, NULL);
-
 	if (applet->connection && nmwa_dbus_nm_is_running (applet->connection))
 	{
 		applet->nm_running = TRUE;
@@ -492,4 +491,6 @@ void nmwa_dbus_init_helper (NMWirelessApplet *applet)
 		nmwa_dbus_update_dialup (applet);
 		nmwa_dbus_vpn_update_vpn_connections (applet);
 	}
+
+	g_source_unref (timeout_source);
 }

@@ -1,4 +1,4 @@
-	/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -1069,106 +1069,22 @@ void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
 	}
 }
 
-
-typedef struct StrengthCBData
+void nmwa_dbus_update_strength (NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength)
 {
-	NMWirelessApplet *	applet;
-	char *			dev_path;
-} StrengthCBData;
+	NetworkDevice *dev;
 
-
-static void free_strength_cb_data (StrengthCBData *data)
-{
-	if (data)
-		g_free (data->dev_path);
-	g_free (data);
-}
-
-
-/*
- * nmwa_dbus_update_device_strength_cb
- *
- * nmwa_dbus_update_device_strength callback.
- *
- */
-static void nmwa_dbus_update_device_strength_cb (DBusPendingCall *pcall, void *user_data)
-{
-	DBusMessage *		reply;
-	StrengthCBData *	cb_data = user_data;
-	NMWirelessApplet *	applet;
-	int				strength;
-
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (cb_data != NULL);
-
-	applet = cb_data->applet;
 	g_return_if_fail (applet != NULL);
 
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-		goto out;
-
-	if (message_is_error (reply))
+	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
-		dbus_message_unref (reply);
-		goto out;
-	}
+		if (net_path != NULL)
+		{
+			WirelessNetwork *net;
 
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID))
-	{
-		NetworkDevice *dev;
-
-		/* Update strength on device */
-		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_path)))
+			if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
+				wireless_network_set_strength (net, strength);
+		}
+		else
 			network_device_set_strength (dev, strength);
 	}
-	dbus_message_unref (reply);
-
-out:
-	dbus_pending_call_unref (pcall);
 }
-
-
-static void get_each_device_strength (NetworkDevice *dev, NMWirelessApplet *applet)
-{
-	g_return_if_fail (dev != NULL);
-
-	if (network_device_get_active (dev))
-	{
-		DBusMessage *		message;
-		DBusPendingCall *	pcall;
-
-		if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, network_device_get_nm_path (dev), NM_DBUS_INTERFACE_DEVICES, "getStrength")))
-		{
-			dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-			if (pcall)
-			{
-				StrengthCBData *	cb_data = g_malloc0 (sizeof (StrengthCBData));
-
-				cb_data->applet = applet;
-				cb_data->dev_path = g_strdup (network_device_get_nm_path (dev));
-				dbus_pending_call_set_notify (pcall, nmwa_dbus_update_device_strength_cb, cb_data, (DBusFreeFunction) free_strength_cb_data);
-			}
-			dbus_message_unref (message);
-		}
-	}
-}
-
-/*
- * nmwa_dbus_update_device_strength
- *
- * Update each active device's strength.
- *
- */
-gboolean nmwa_dbus_update_device_strength (NMWirelessApplet *applet)
-{
-	NetworkDevice *	dev;
-	DBusMessage *		message;
-	DBusPendingCall *	pcall;
-
-	g_return_val_if_fail (applet != NULL, TRUE);
-
-	g_slist_foreach (applet->device_list, (GFunc) get_each_device_strength, applet);
-
-	return TRUE;
-}
-

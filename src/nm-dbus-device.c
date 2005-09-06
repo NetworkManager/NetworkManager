@@ -162,30 +162,6 @@ static DBusMessage *nm_dbus_device_get_link_active (DBusConnection *connection, 
 	return reply;
 }
 
-static DBusMessage *nm_dbus_device_get_strength (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	DBusMessage	*reply = NULL;
-	NMDevice		*dev;
-
-	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
-
-	/* Only wireless devices have signal strength */
-	dev = data->dev;
-	if (!nm_device_is_wireless (dev))
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
-				"Wired devices cannot have signal strength.");
-	}
-	else if ((reply = dbus_message_new_method_return (message))) {
-                dbus_int32_t strength;
-
-                strength = nm_device_get_signal_strength (dev);
-		dbus_message_append_args (reply, DBUS_TYPE_INT32, &strength, DBUS_TYPE_INVALID);
-        }
-
-	return reply;
-}
-
 static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
@@ -452,7 +428,6 @@ NMDbusMethodList *nm_dbus_device_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getIP4Address",			nm_dbus_device_get_ip4_address);
 	nm_dbus_method_list_add_method (list, "getHWAddress",			nm_dbus_device_get_hw_address);
 	nm_dbus_method_list_add_method (list, "getMode",				nm_dbus_device_get_mode);
-	nm_dbus_method_list_add_method (list, "getStrength",			nm_dbus_device_get_strength);
 	nm_dbus_method_list_add_method (list, "getActiveNetwork",		nm_dbus_device_get_active_network);
 	nm_dbus_method_list_add_method (list, "getNetworks",			nm_dbus_device_get_networks);
 	nm_dbus_method_list_add_method (list, "getLinkActive",			nm_dbus_device_get_link_active);

@@ -1434,6 +1434,9 @@ void nm_device_update_signal_strength (NMDevice *dev)
 	else
 		dev->options.wireless.invalid_strength_counter = 0;
 
+	if (percent != dev->options.wireless.strength)
+		nm_dbus_signal_device_strength_change (dev->app_data->dbus_connection, dev, percent);
+
 	dev->options.wireless.strength = percent;
 
 out:
