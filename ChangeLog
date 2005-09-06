@@ -1,3 +1,10 @@
+2005-09-06  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tomislav Vujec <tvujec@redhat.com>
+	* src/NetworkManagerDevice.c
+		- (nm_get_device_by_udi): don't return a device when we
+			actually didn't find what we were looking for
+
 2005-09-06  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.c:
