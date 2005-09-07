@@ -31,7 +31,6 @@
 	Make NM push updates about active device strength when it changes,
 	rather than having the applet poll every 2s.
 
-
 2005-09-05  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.c: Remove duplicate call to
