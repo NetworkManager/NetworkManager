@@ -47,18 +47,16 @@ struct WirelessNetwork
  */
 WirelessNetwork *wireless_network_new (const char *essid, const char *nm_path)
 {
-	WirelessNetwork *net = NULL;
+	WirelessNetwork *net;
 
 	g_return_val_if_fail (essid != NULL, NULL);
 	g_return_val_if_fail (nm_path != NULL, NULL);
 
-	if ((net = g_malloc0 (sizeof (WirelessNetwork))))
-	{
-		net->essid = g_strdup (essid);
-		net->nm_path = g_strdup (nm_path);
-	}
+	net = g_malloc0 (sizeof (WirelessNetwork));
+	net->essid = g_strdup (essid);
+	net->nm_path = g_strdup (nm_path);
 
-	return (net);
+	return net;
 }
 
 
@@ -70,21 +68,19 @@ WirelessNetwork *wireless_network_new (const char *essid, const char *nm_path)
  */
 WirelessNetwork *wireless_network_copy (WirelessNetwork *src)
 {
-	WirelessNetwork *net = NULL;
+	WirelessNetwork *net;
 
 	g_return_val_if_fail (src != NULL, NULL);
 
-	if ((net = g_malloc0 (sizeof (WirelessNetwork))))
-	{
-		net->refcount = 1;
-		net->nm_path = g_strdup (src->nm_path);
-		net->essid = g_strdup (src->essid);
-		net->active = src->active;
-		net->encrypted = src->encrypted;
-		net->strength = src->strength;
-	}
+	net = g_malloc0 (sizeof (WirelessNetwork));
+	net->refcount = 1;
+	net->nm_path = g_strdup (src->nm_path);
+	net->essid = g_strdup (src->essid);
+	net->active = src->active;
+	net->encrypted = src->encrypted;
+	net->strength = src->strength;
 
-	return (net);
+	return net;
 }
 
 

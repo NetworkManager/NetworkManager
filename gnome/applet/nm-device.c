@@ -56,15 +56,12 @@ struct NetworkDevice
  */
 NetworkDevice *network_device_new (const char *iface, NMDeviceType type, const char *nm_path)
 {
-	NetworkDevice *dev = NULL;
+	NetworkDevice *dev = g_malloc0 (sizeof (NetworkDevice));
 
-	if ((dev = g_malloc0 (sizeof (NetworkDevice))))
-	{
-		dev->refcount = 1;
-		dev->iface = g_strdup (iface);
-		dev->type = type;
-		dev->nm_path = g_strdup (nm_path);
-	}
+	dev->refcount = 1;
+	dev->iface = g_strdup (iface);
+	dev->type = type;
+	dev->nm_path = g_strdup (nm_path);
 
 	return dev;
 }
@@ -80,35 +77,33 @@ NetworkDevice *network_device_new (const char *iface, NMDeviceType type, const c
  */
 NetworkDevice *network_device_copy (NetworkDevice *src)
 {
-	NetworkDevice *dev = NULL;
+	NetworkDevice	*dev;
+	GSList		*elt;
 
 	g_return_val_if_fail (src != NULL, NULL);
 
-	if ((dev = g_malloc0 (sizeof (NetworkDevice))))
+	dev = g_malloc0 (sizeof (NetworkDevice));
+
+	network_device_ref (dev);
+	dev->nm_path = g_strdup (src->nm_path);
+	dev->type = src->type;
+	dev->link = src->link;
+	dev->addr = g_strdup (src->addr);
+	dev->driver_support_level = src->driver_support_level;
+	dev->iface = g_strdup (src->iface);
+	dev->desc = g_strdup (src->desc);
+	dev->udi = g_strdup (src->udi);
+	dev->active = src->active;
+	dev->act_stage = src->act_stage;
+	dev->strength = src->strength;
+
+	for (elt = src->networks; elt; elt = g_slist_next (elt))
 	{
-		GSList	*elt;
-
-		network_device_ref (dev);
-		dev->nm_path = g_strdup (src->nm_path);
-		dev->type = src->type;
-		dev->link = src->link;
-		dev->addr = g_strdup (src->addr);
-		dev->driver_support_level = src->driver_support_level;
-		dev->iface = g_strdup (src->iface);
-		dev->desc = g_strdup (src->desc);
-		dev->udi = g_strdup (src->udi);
-		dev->active = src->active;
-		dev->act_stage = src->act_stage;
-		dev->strength = src->strength;
-
-		for (elt = src->networks; elt; elt = g_slist_next (elt))
+		WirelessNetwork *net = (WirelessNetwork *)elt->data;
+		if (net)
 		{
-			WirelessNetwork *net = (WirelessNetwork *)elt->data;
-			if (net)
-			{
-				WirelessNetwork *copy = wireless_network_copy (net);
-				dev->networks = g_slist_append (dev->networks, copy);
-			}
+			WirelessNetwork *copy = wireless_network_copy (net);
+			dev->networks = g_slist_append (dev->networks, copy);
 		}
 	}
 

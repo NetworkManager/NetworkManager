@@ -1,3 +1,13 @@
+2005-09-07  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/menu-items.c:
+	* gnome/applet/nm-device.c:
+	* gnome/applet/wireless-network.c:
+	* gnome/libnm_glib/libnm_glib.c:
+	* src/NetworkManagerDbusUtils.c:
+	* vpn-daemons/vpnc/src/nm-vpnc-service.c:
+	g_malloc0 doesn't return NULL
+
 2005-09-06  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tomislav Vujec <tvujec@redhat.com>

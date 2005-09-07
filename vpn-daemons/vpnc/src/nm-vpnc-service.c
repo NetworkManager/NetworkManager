@@ -1127,11 +1127,8 @@ int main( int argc, char *argv[] )
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 
-	if (!(vpn_data = g_malloc0 (sizeof (NmVpncData))))
-	{
-		nm_warning ("Not enough memory to initialize.");
-		exit (1);
-	}
+	vpn_data = g_malloc0 (sizeof (NmVpncData));
+
 	vpn_data->state = NM_VPN_STATE_INIT;
 
 	vpn_data->loop = g_main_loop_new (NULL, FALSE);

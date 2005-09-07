@@ -34,11 +34,8 @@ NMDbusMethodList * nm_dbus_method_list_new (NMDbusMethod validate_method)
 {
 	NMDbusMethodList	*list = g_malloc0 (sizeof (NMDbusMethodList));
 
-	if (list)
-	{
-		list->validate_method = validate_method;
-		list->methods = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-	}
+	list->validate_method = validate_method;
+	list->methods = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	return list;	
 }

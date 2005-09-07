@@ -411,9 +411,6 @@ static libnm_glib_ctx *libnm_glib_ctx_new (void)
 {
 	libnm_glib_ctx *ctx = g_malloc0 (sizeof (libnm_glib_ctx));
 
-	if (!ctx)
-		return NULL;
-
 	if (!(ctx->g_main_ctx = g_main_context_new ()))
 		goto error;
 	if (!(ctx->g_main_loop = g_main_loop_new (ctx->g_main_ctx, FALSE)))
@@ -500,8 +497,6 @@ gint libnm_glib_register_callback	(libnm_glib_ctx *ctx, libnm_glib_callback_func
 	g_return_val_if_fail (func != NULL, -1);
 	
 	callback = g_malloc0 (sizeof (libnm_glib_callback));
-	if (!callback)
-		return -1;
 
 	callback->id = ctx->callback_id_last++;
 	callback->func = func;

@@ -53,8 +53,6 @@ NMWiredMenuItem *wired_menu_item_new (void)
 {
 	NMWiredMenuItem	*item = g_malloc0 (sizeof (NMWiredMenuItem));
 
-	g_return_val_if_fail (item != NULL, NULL);
-
 	item->check_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new ());
 	item->label = GTK_LABEL (gtk_label_new (NULL));
 	gtk_misc_set_alignment (GTK_MISC (item->label), 0.0, 0.5);
@@ -124,8 +122,6 @@ NMWirelessMenuItem *wireless_menu_item_new (void)
 {
 	NMWirelessMenuItem	*item = g_malloc0 (sizeof (NMWirelessMenuItem));
 
-	g_return_val_if_fail (item != NULL, NULL);
-
 	item->menu_item = GTK_MENU_ITEM (gtk_menu_item_new ());
 
 	/* Make sure it looks slightly different if the label determines the width of the widget */
@@ -193,8 +189,6 @@ NMNetworkMenuItem *network_menu_item_new (GtkSizeGroup *encryption_size_group)
 	PangoContext *context;
 	PangoLanguage *lang;
 	int ascent;	
-
-	g_return_val_if_fail (item != NULL, NULL);
 
 	item->check_item = GTK_CHECK_MENU_ITEM (gtk_check_menu_item_new ());
 	gtk_check_menu_item_set_draw_as_radio (item->check_item, TRUE);
