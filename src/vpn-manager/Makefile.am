@@ -9,7 +9,9 @@ libvpn_manager_la_SOURCES =	nm-dbus-vpn.c			\
 						nm-vpn-manager.c		\
 						nm-vpn-manager.h		\
 						nm-vpn-service.c		\
-						nm-vpn-service.h
+						nm-vpn-service.h		\
+						nm-vpn-act-request.c	\
+						nm-vpn-act-request.h
 
 libvpn_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 						$(GTHREAD_CFLAGS)				\

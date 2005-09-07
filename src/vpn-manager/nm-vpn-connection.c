@@ -22,34 +22,56 @@
 #include <glib.h>
 #include <string.h>
 #include "nm-vpn-connection.h"
+#include "nm-dbus-vpn.h"
+#include "NetworkManagerSystem.h"
 
 
 struct NMVPNConnection
 {
-	int			 refcount;
-	char			*name;
-	char			*user_name;
-	NMVPNService	*service;
+	int			refcount;
+
+	/* Won't change over life of object */
+	char *		name;
+	char *		user_name;
+	char *		service_name;
+
+	NMNamedManager *named_manager;
+	DBusConnection *dbus_connection;
+
+	/* Change when connection is activated/deactivated */
+	NMDevice *	parent_dev;
+	NMIP4Config *	ip4_config;
+	char *		vpn_iface;
 };
 
 
-NMVPNConnection *nm_vpn_connection_new (const char *name, const char *user_name, NMVPNService *service)
+static void	nm_vpn_connection_set_vpn_iface	(NMVPNConnection *con, const char *vpn_iface);
+static void	nm_vpn_connection_set_ip4_config	(NMVPNConnection *con, NMIP4Config *ip4_config);
+static void	nm_vpn_connection_set_parent_device(NMVPNConnection *con, NMDevice *parent_dev);
+
+
+NMVPNConnection *nm_vpn_connection_new (const char *name, const char *user_name, const char *service_name,
+								NMNamedManager *named_manager, DBusConnection *dbus_connection)
 {
 	NMVPNConnection	*connection;
 
 	g_return_val_if_fail (name != NULL, NULL);
 	g_return_val_if_fail (user_name != NULL, NULL);
-	g_return_val_if_fail (service != NULL, NULL);
-
+	g_return_val_if_fail (service_name != NULL, NULL);
+	g_return_val_if_fail (named_manager != NULL, NULL);
+	g_return_val_if_fail (dbus_connection != NULL, NULL);
 
 	connection = g_malloc0 (sizeof (NMVPNConnection));
 	connection->refcount = 1;
 
 	connection->name = g_strdup (name);
 	connection->user_name = g_strdup (user_name);
+	connection->service_name = g_strdup (service_name);
 
-	nm_vpn_service_ref (service);
-	connection->service = service;
+	g_object_ref (named_manager);
+	connection->named_manager = named_manager;
+
+	connection->dbus_connection = dbus_connection;
 
 	return connection;
 }
@@ -71,12 +93,83 @@ void nm_vpn_connection_unref (NMVPNConnection *connection)
 	{
 		g_free (connection->name);
 		g_free (connection->user_name);
-		nm_vpn_service_unref (connection->service);
+		g_free (connection->service_name);
+
+		if (connection->parent_dev)
+			nm_device_unref (connection->parent_dev);
+		if (connection->ip4_config)
+			nm_ip4_config_unref (connection->ip4_config);
+		g_free (connection->vpn_iface);
+
+		g_object_unref (connection->named_manager);
 
 		memset (connection, 0, sizeof (NMVPNConnection));
 		g_free (connection);
 	}
 }
+
+
+void nm_vpn_connection_activate (NMVPNConnection *connection)
+{
+	g_return_if_fail (connection != NULL);
+
+	/* Nothing done here yet */
+}
+
+
+gboolean nm_vpn_connection_set_config (NMVPNConnection *connection, const char *vpn_iface, NMDevice *dev, NMIP4Config *ip4_config)
+{
+	gboolean	success = FALSE;
+	int		num_routes = -1;
+	char **	routes;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (vpn_iface != NULL, FALSE);
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (ip4_config != NULL, FALSE);
+
+	nm_vpn_connection_set_vpn_iface (connection, vpn_iface);
+	nm_vpn_connection_set_parent_device (connection, dev);
+	nm_vpn_connection_set_ip4_config (connection, ip4_config);
+
+	routes = nm_dbus_vpn_get_routes (connection->dbus_connection, connection, &num_routes);
+	nm_system_vpn_device_set_from_ip4_config (connection->named_manager, connection->parent_dev,
+				connection->vpn_iface, connection->ip4_config, routes, num_routes);
+	g_strfreev(routes);
+	success = TRUE;
+
+	return success;
+}
+
+
+void nm_vpn_connection_deactivate (NMVPNConnection *connection)
+{
+	g_return_if_fail (connection != NULL);
+
+	if (connection->ip4_config)
+	{
+		nm_system_remove_ip4_config_nameservers (connection->named_manager, connection->ip4_config);
+		nm_system_remove_ip4_config_search_domains (connection->named_manager, connection->ip4_config);
+	}
+
+	if (connection->vpn_iface)
+	{
+		nm_system_device_set_up_down_with_iface (NULL, connection->vpn_iface, FALSE);
+		nm_system_device_flush_routes_with_iface (connection->vpn_iface);
+		nm_system_device_flush_addresses_with_iface (connection->vpn_iface);
+	}
+
+	if (connection->ip4_config)
+	{
+		/* Reset routes, nameservers, and domains of the currently active device */
+		nm_system_device_set_from_ip4_config (connection->parent_dev);
+	}
+
+	nm_vpn_connection_set_ip4_config (connection, NULL);
+	nm_vpn_connection_set_vpn_iface (connection, NULL);
+	nm_vpn_connection_set_parent_device (connection, NULL);
+}
+
 
 const char *nm_vpn_connection_get_name (NMVPNConnection *connection)
 {
@@ -92,10 +185,58 @@ const char *nm_vpn_connection_get_user_name (NMVPNConnection *connection)
 	return connection->user_name;
 }
 
-NMVPNService *nm_vpn_connection_get_service (NMVPNConnection *connection)
+const char  *nm_vpn_connection_get_service_name (NMVPNConnection *connection)
 {
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	return connection->service;
+	return connection->service_name;
 }
 
+
+static void nm_vpn_connection_set_vpn_iface (NMVPNConnection *con, const char *vpn_iface)
+{
+	g_return_if_fail (con != NULL);
+
+	if (con->vpn_iface)
+	{
+		g_free (con->vpn_iface);
+		con->vpn_iface = NULL;
+	}
+
+	if (vpn_iface)
+		con->vpn_iface = g_strdup (vpn_iface);
+}
+
+static void nm_vpn_connection_set_ip4_config (NMVPNConnection *con, NMIP4Config *ip4_config)
+{
+	g_return_if_fail (con != NULL);
+
+	if (con->ip4_config)
+	{
+		nm_ip4_config_unref (con->ip4_config);
+		con->ip4_config = NULL;
+	}
+
+	if (ip4_config)
+	{
+		nm_ip4_config_ref (ip4_config);
+		con->ip4_config = ip4_config;
+	}
+}
+
+static void nm_vpn_connection_set_parent_device (NMVPNConnection *con, NMDevice *parent_dev)
+{
+	g_return_if_fail (con != NULL);
+
+	if (con->parent_dev)
+	{
+		nm_device_unref (con->parent_dev);
+		con->parent_dev = NULL;
+	}
+
+	if (parent_dev)
+	{
+		nm_device_ref (parent_dev);
+		con->parent_dev = parent_dev;
+	}
+}

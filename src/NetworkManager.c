@@ -459,7 +459,7 @@ static void nm_data_free (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	/* Kill any active VPN connection */
-	if (nm_vpn_manager_get_active_vpn_connection (data->vpn_manager))
+	if (nm_vpn_manager_get_vpn_act_request (data->vpn_manager))
 		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager);
 
 	/* Stop and destroy all devices */

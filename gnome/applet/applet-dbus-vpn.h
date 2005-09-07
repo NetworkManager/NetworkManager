@@ -33,6 +33,6 @@ void		nmwa_dbus_vpn_remove_one_vpn_connection			(NMWirelessApplet *applet, const
 
 void		nmwa_dbus_vpn_activate_connection				(DBusConnection *connection, const char *name, GSList *passwords);
 void		nmwa_dbus_vpn_deactivate_connection			(DBusConnection *connection);
-void 		nmwa_dbus_vpn_update_vpn_connection_state		(NMWirelessApplet *applet, const char *vpn_name, NMVPNState vpn_state);
+void		nmwa_dbus_vpn_update_vpn_connection_state		(NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_state);
 
 #endif

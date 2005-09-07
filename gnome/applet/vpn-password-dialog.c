@@ -166,8 +166,6 @@ nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const cha
 	if (!retry)
 		argv[5] = NULL;
 
-	nm_debug ("retry = %d", retry);
-
 	child_status = -1;
 
 	if (!g_spawn_async_with_pipes (NULL,                       /* working_directory */

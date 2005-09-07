@@ -146,6 +146,7 @@ void				nmwa_schedule_vpn_failure_dialog		(NMWirelessApplet *applet, const char 
 void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
 
 NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
+VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
 
 NMWirelessScanMethod	nmwa_gconf_get_wireless_scan_method	(NMWirelessApplet *applet);
 

@@ -46,6 +46,7 @@ typedef enum NMIntState
 
 typedef struct NMDbusMethodList NMDbusMethodList;
 typedef struct NMActRequest NMActRequest;
+typedef struct NMVPNActRequest NMVPNActRequest;
 typedef struct NMVPNManager NMVPNManager;
 typedef struct NMDHCPManager NMDHCPManager;
 

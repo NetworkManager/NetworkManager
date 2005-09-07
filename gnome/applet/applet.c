@@ -869,19 +869,23 @@ out:
 }
 
 
-VPNConnection* nmwa_get_active_vpn_connection (NMWirelessApplet *applet)
+/*
+ * nmwa_get_first_active_vpn_connection
+ *
+ * Return the first active VPN connection, if any.
+ *
+ */
+VPNConnection *nmwa_get_first_active_vpn_connection (NMWirelessApplet *applet)
 {
-	VPNConnection	*vpn;
-	NMVPNState	vpn_state;
-	GSList		*elt;
+	VPNConnection *	vpn;
+	NMVPNActStage		vpn_state;
+	GSList *			elt;
 
-	elt = applet->vpn_connections;
-
-	for (; elt; elt = g_slist_next (elt))
+	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
 	{
 		vpn = (VPNConnection*) elt->data;
 		vpn_state = nmwa_vpn_connection_get_state (vpn);
-		if (vpn_state == NM_VPN_STATE_STARTED)
+		if (vpn_state == NM_VPN_ACT_STAGE_ACTIVATED)
 			return vpn;
 	}
 
@@ -899,7 +903,7 @@ static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *new_icon)
 
 	composite = gdk_pixbuf_copy (new_icon);
 
-	vpn = nmwa_get_active_vpn_connection (applet);
+	vpn = nmwa_get_first_active_vpn_connection (applet);
 
 	if (vpn)
 	{
@@ -1132,8 +1136,9 @@ done:
 	if (!applet->tooltips)
 		applet->tooltips = gtk_tooltips_new ();
 
-	vpn = nmwa_get_active_vpn_connection (applet);
-	if (vpn != NULL) {
+	vpn = nmwa_get_first_active_vpn_connection (applet);
+	if (vpn != NULL)
+	{
 		char *newtip;
 		char *vpntip;
 
@@ -1313,8 +1318,8 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 		VPNConnection	*vpn = (VPNConnection *)tag;
 		const char	*name = nmwa_vpn_connection_get_name (vpn);
 		GSList         *passwords;
+		VPNConnection	*active_vpn = nmwa_get_first_active_vpn_connection (applet);
 
-		VPNConnection	*active_vpn = nmwa_get_active_vpn_connection (applet);
 		if (vpn != active_vpn)
 		{
 			char *gconf_key;
@@ -1687,7 +1692,7 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 	item = GTK_MENU_ITEM (gtk_menu_item_new_with_mnemonic (_("_VPN Connections")));
 
 	vpn_menu = GTK_MENU (gtk_menu_new ());
-	active_vpn = nmwa_get_active_vpn_connection (applet);
+	active_vpn = nmwa_get_first_active_vpn_connection (applet);
 
 	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
 	{

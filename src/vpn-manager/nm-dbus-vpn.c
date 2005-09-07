@@ -28,6 +28,8 @@
 #include "nm-dbus-vpn.h"
 #include "nm-vpn-manager.h"
 #include "nm-vpn-connection.h"
+#include "nm-vpn-service.h"
+#include "nm-vpn-act-request.h"
 #include "nm-utils.h"
 
 
@@ -64,12 +66,11 @@ void nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *con, NMVPNConnect
  *
  * Notifies the bus that a VPN connection's state has changed.
  */
-void nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *con, NMVPNConnection *vpn)
+void nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *con, NMVPNConnection *vpn, NMVPNActStage new_stage)
 {
-	DBusMessage	*message;
-	const char	*vpn_name;
-	NMVPNService	*service;
-	NMVPNState	vpn_state;
+	DBusMessage *	message;
+	const char *	vpn_name;
+	dbus_uint32_t	int_stage = (dbus_uint32_t) new_stage;
 
 	g_return_if_fail (con != NULL);
 	g_return_if_fail (vpn != NULL);
@@ -81,10 +82,7 @@ void nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *con, NMVPNC
 	}
 
 	vpn_name = nm_vpn_connection_get_name (vpn);
-	service = nm_vpn_connection_get_service (vpn);
-	vpn_state = nm_vpn_service_get_state (service);
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_UINT32, &vpn_state, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_UINT32, &int_stage, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (con, message, NULL))
 		nm_warning ("Could not raise the VPNConnectionStateChange signal!");
 
@@ -358,12 +356,16 @@ static void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *
 
 	if (dbus_message_is_error (reply, "BadVPNConnectionData"))
 	{
-		NMVPNConnection *vpn = nm_vpn_manager_find_connection_by_name (cb_data->data->vpn_manager, cb_data->vpn);
+		NMVPNConnection *vpn;
 
-		nm_vpn_connection_ref (vpn);
-		nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
-		nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, "VPNConnectionRemoved");
-		nm_vpn_connection_unref (vpn);
+		/* Bad VPN, remove it from our VPN connection list */
+		if ((vpn = nm_vpn_manager_find_connection_by_name (cb_data->data->vpn_manager, cb_data->vpn)))
+		{
+			nm_vpn_connection_ref (vpn);
+			nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
+			nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, "VPNConnectionRemoved");
+			nm_vpn_connection_unref (vpn);
+		}
 		goto out;
 	}
 
@@ -375,11 +377,19 @@ static void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *
 
 		if ((vpn = nm_vpn_manager_find_connection_by_name (cb_data->data->vpn_manager, con_name)))
 		{
-			nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
-			new = FALSE;
+			const char *vpn_service_name = nm_vpn_connection_get_service_name (vpn);
+
+			/* If all attributes of the existing connection are the same as the one we get from NMI,
+			 * don't do anything.
+			 */
+			if (strcmp (vpn_service_name, service_name) || strcmp (nm_vpn_connection_get_user_name (vpn), user_name))
+				nm_vpn_manager_remove_connection (cb_data->data->vpn_manager, vpn);
+			else
+				new = FALSE;
 		}
 
-		vpn = nm_vpn_manager_add_connection (cb_data->data->vpn_manager, con_name, service_name, user_name);
+		if (new)
+			vpn = nm_vpn_manager_add_connection (cb_data->data->vpn_manager, con_name, service_name, user_name);
 		nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, new ? "VPNConnectionAdded" : "VPNConnectionUpdate");
 	}
 	dbus_message_unref (reply);
@@ -388,6 +398,9 @@ out:
 	dbus_pending_call_unref (pcall);
 }
 
+
+/* Should only be used by nm_dbus_vpn_connections_update_cb() */
+GSList *nm_vpn_manager_vpn_connection_list_copy (NMVPNManager *manager);
 
 /*
  * nm_dbus_vpn_connections_update_cb
@@ -400,6 +413,8 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 	NMData *			data = (NMData *) user_data;
 	DBusMessage *		reply;
 	DBusMessageIter	iter, array_iter;
+	GSList *			remove_list = NULL;
+	GSList *			elt;
 
 	g_return_if_fail (pcall);
 	g_return_if_fail (data != NULL);
@@ -417,20 +432,27 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 
 	nm_info ("Updating VPN Connections...");
 
+	remove_list = nm_vpn_manager_vpn_connection_list_copy (data->vpn_manager);
+
 	dbus_message_iter_init (reply, &iter);
 	dbus_message_iter_recurse (&iter, &array_iter);
 	while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
 	{
-		DBusMessage *	message;
-		const char *	value;
+		DBusMessage *		message;
+		const char *		con_name;
+		NMVPNConnection *	vpn;
 
-		dbus_message_iter_get_basic (&array_iter, &value);
+		dbus_message_iter_get_basic (&array_iter, &con_name);
+
+		/* If the connection already exists, remove it from the remove list */
+		if ((vpn = nm_vpn_manager_find_connection_by_name (data->vpn_manager, con_name)))
+			remove_list = g_slist_remove (remove_list, vpn);
 
 		if ((message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionProperties")))
 		{
 			DBusPendingCall *		vpn_pcall = NULL;
 
-			dbus_message_append_args (message, DBUS_TYPE_STRING, &value, DBUS_TYPE_INVALID);
+			dbus_message_append_args (message, DBUS_TYPE_STRING, &con_name, DBUS_TYPE_INVALID);
 			dbus_connection_send_with_reply (data->dbus_connection, message, &vpn_pcall, -1);
 			dbus_message_unref (message);
 			if (vpn_pcall)
@@ -438,13 +460,22 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 				UpdateOneVPNCBData *	vpn_cb_data = g_malloc0 (sizeof (UpdateOneVPNCBData));
 
 				vpn_cb_data->data = data;
-				vpn_cb_data->vpn = g_strdup (value);
+				vpn_cb_data->vpn = g_strdup (con_name);
 				dbus_pending_call_set_notify (vpn_pcall, nm_dbus_vpn_update_one_connection_cb, vpn_cb_data, (DBusFreeFunction) free_update_one_vpn_cb_data);
 			}
 		}
 		dbus_message_iter_next (&array_iter);
 	}
 	dbus_message_unref (reply);
+
+	/* VPN connections left in the remove list aren't known by NMI, therefore we delete them */
+	for (elt = remove_list; elt; elt = g_slist_next (elt))
+	{
+		nm_vpn_manager_remove_connection (data->vpn_manager, elt->data);
+		nm_vpn_connection_unref (elt->data);
+	}
+
+	g_slist_free (remove_list);
 
 out:
 	dbus_pending_call_unref (pcall);
@@ -500,9 +531,6 @@ static gboolean nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->dbus_connection != NULL, FALSE);
 	g_return_val_if_fail (data->vpn_manager != NULL, FALSE);
-
-	/* Clear all existing connections in preparation for new ones */
-	nm_vpn_manager_clear_connections (data->vpn_manager);
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnections")))
 	{
@@ -596,19 +624,19 @@ out:
  */
 static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	DBusMessage		*reply = NULL;
-	DBusError			 error;
-	const char		*name;
-	gboolean			 good = FALSE;
-	NMVPNConnection	*vpn_con;
+	DBusMessage *		reply = NULL;
+	DBusError			error;
+	const char *		name;
+	gboolean			good = FALSE;
+	NMVPNManager *		manager;
+	NMVPNConnection *	vpn;
 
 	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (data->data != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (data->data != NULL, NULL);	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
 	/* Check for no VPN Manager */
-	if (!data->data->vpn_manager)
+	if (!(manager = data->data->vpn_manager))
 		return nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPN, "NoVPNConnections", "There are no available VPN connections.");
 
 	if (!(reply = dbus_message_new_method_return (message)))
@@ -617,20 +645,26 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
 	dbus_error_init (&error);
 	if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID))
 	{
-		if ((vpn_con = nm_vpn_manager_find_connection_by_name (data->data->vpn_manager, name)))
+		if ((vpn = nm_vpn_manager_find_connection_by_name (manager, name)))
 		{
-			const char *user_name;
-			const char *service_name;
-			NMVPNService *service;
-			NMVPNState state;
+			const char *	user_name;
+			const char *	service_name;
+			NMVPNService *	service;
 
-			user_name = nm_vpn_connection_get_user_name (vpn_con);
-			service = nm_vpn_connection_get_service (vpn_con);
-			service_name = nm_vpn_service_get_service_name (service);
-			state = nm_vpn_service_get_state (service);
+			user_name = nm_vpn_connection_get_user_name (vpn);
+			service_name = nm_vpn_connection_get_service_name (vpn);
+			if ((service = nm_vpn_manager_find_service_by_name (data->data->vpn_manager, service_name)))
+			{
+				NMVPNActRequest *	req = nm_vpn_manager_get_vpn_act_request (manager);
+				dbus_uint32_t		stage = (dbus_uint32_t) NM_VPN_ACT_STAGE_DISCONNECTED;
 
-			dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name, DBUS_TYPE_STRING, &service_name, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
-			good = TRUE;
+				if (req && (nm_vpn_act_request_get_connection (req) == vpn))
+					stage = nm_vpn_act_request_get_stage (req);
+
+				dbus_message_append_args (reply, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name,
+								DBUS_TYPE_STRING, &service_name, DBUS_TYPE_UINT32, &stage, DBUS_TYPE_INVALID);
+				good = TRUE;
+			}
 		}
 	}
 
@@ -649,22 +683,21 @@ static DBusMessage *nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *c
  */
 static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	DBusError			 error;
-	const char		*name;
-	char                    **passwords;
-	int                     num_passwords;
-	NMVPNConnection	*vpn;
+	DBusError			error;
+	const char *		name;
+	char **			passwords;
+	int				num_passwords;
+	NMVPNConnection *	vpn;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	nm_info ("Entering");
-
 	dbus_error_init (&error);
 
-	if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &passwords, &num_passwords, DBUS_TYPE_INVALID))	{
+	if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &passwords, &num_passwords, DBUS_TYPE_INVALID))
+	{
 		if ((vpn = nm_vpn_manager_find_connection_by_name (data->data->vpn_manager, name)))
 		{
 			int	item_count = -1;
@@ -672,21 +705,20 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 
 			if ((items = nm_dbus_vpn_get_vpn_data (connection, vpn, &item_count)))
 			{
-				char				*joined_string = g_strjoinv (" / ", items);
-				NMVPNService		*service = nm_vpn_connection_get_service (vpn);;
+				char *	joined_string = g_strjoinv (" / ", items);
 
 				nm_info ("Will activate VPN connection '%s', service '%s', user_name '%s', vpn_data '%s'.",
-					name, nm_vpn_service_get_service_name (service), nm_vpn_connection_get_user_name (vpn), joined_string);
+					name, nm_vpn_connection_get_service_name (vpn), nm_vpn_connection_get_user_name (vpn), joined_string);
 				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, passwords, num_passwords, items, item_count);
 
 				g_free (joined_string);
 				g_strfreev (items);
 			}
 		} else {
-			nm_warning ("Cannot find name '%s'", name);
+			nm_warning ("nm_dbus_vpn_activate_connection(): cannot find VPN connection '%s'", name);
 		}
 	} else {
-		nm_warning ("Syntax error receiving nm_dbus_vpn_activate_connection");
+		nm_warning ("nm_dbus_vpn_activate_connection(): syntax error in method arguments");
 	}
 
 	return NULL;
@@ -701,12 +733,22 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
  */
 static DBusMessage *nm_dbus_vpn_deactivate_connection (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
+	NMVPNActRequest *req;
+	NMVPNConnection *vpn;
+
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	nm_info ("Will deactivate the current VPN connection.");
+	if (!(req = nm_vpn_manager_get_vpn_act_request (data->data->vpn_manager)))
+		return NULL;
+
+	vpn = nm_vpn_act_request_get_connection (req);
+	g_assert (vpn);
+
+	nm_info ("Will deactivate the VPN connection '%s', service '%s'.", nm_vpn_connection_get_name (vpn),
+						nm_vpn_connection_get_service_name (vpn));
 	nm_vpn_manager_deactivate_vpn_connection (data->data->vpn_manager);
 
 	return NULL;

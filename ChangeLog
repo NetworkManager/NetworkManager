@@ -1,3 +1,7 @@
+2005-09-07  Dan Williams  <dcbw@redhat.com>
+
+	* The great VPN Manager rewrite of 2005
+
 2005-09-07  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/menu-items.c:

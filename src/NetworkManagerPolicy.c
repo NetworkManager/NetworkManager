@@ -413,10 +413,12 @@ static gboolean nm_policy_device_change_check (NMData *data)
 				/* Schedule new activation if the currently associated access point is not the "best" one
 				 * or we've lost the link to the old access point.
 				 */
-				if ((strcmp (old_essid, new_essid) != 0) || !nm_device_has_active_link (old_dev))
+				gboolean es = (strcmp (old_essid, new_essid) != 0);
+				gboolean link = nm_device_has_active_link (old_dev);
+				if (es || !link)
 				{
-					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.", nm_device_get_iface (new_dev),
-								new_essid, nm_device_get_iface (old_dev), old_essid);
+					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.  essid=%d, link=%d", nm_device_get_iface (new_dev),
+								new_essid, nm_device_get_iface (old_dev), old_essid, es, link);
 					do_switch = TRUE;
 				}
 			}

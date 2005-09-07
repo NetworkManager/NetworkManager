@@ -20,17 +20,23 @@
 #ifndef NM_VPN_CONNECTION_H
 #define NM_VPN_CONNECTION_H
 
-#include "nm-vpn-service.h"
+#include "NetworkManagerDevice.h"
 
 typedef struct NMVPNConnection NMVPNConnection;
 
 
-NMVPNConnection	*nm_vpn_connection_new			(const char *name, const char *user_name, NMVPNService *service);
-void				 nm_vpn_connection_ref			(NMVPNConnection *connection);
-void				 nm_vpn_connection_unref			(NMVPNConnection *connection);
+NMVPNConnection *	nm_vpn_connection_new			(const char *name, const char *user_name, const char *service_name,
+												NMNamedManager *named_manager, DBusConnection *dbus_connection);
+void				nm_vpn_connection_ref			(NMVPNConnection *con);
+void				nm_vpn_connection_unref			(NMVPNConnection *con);
 
-const char *		 nm_vpn_connection_get_name			(NMVPNConnection *connection);
-const char *		 nm_vpn_connection_get_user_name		(NMVPNConnection *connection);
-NMVPNService *		 nm_vpn_connection_get_service		(NMVPNConnection *connection);
+const char *		nm_vpn_connection_get_name		(NMVPNConnection *con);
+const char *		nm_vpn_connection_get_user_name	(NMVPNConnection *con);
+const char *		nm_vpn_connection_get_service_name	(NMVPNConnection *con);
+
+void				nm_vpn_connection_activate		(NMVPNConnection *con);
+void				nm_vpn_connection_deactivate		(NMVPNConnection *con);
+
+gboolean			nm_vpn_connection_set_config		(NMVPNConnection *con, const char *vpn_iface, NMDevice *dev, NMIP4Config *ip4_config);
 
 #endif  /* NM_VPN_MANAGER_H */

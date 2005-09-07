@@ -1024,6 +1024,7 @@ static DBusHandlerResult nm_vpnc_dbus_filter (DBusConnection *con, DBusMessage *
 			{
 				/* If NM goes away, we don't stick around */
 				nm_vpnc_dbus_handle_stop_vpn (data);
+				g_main_loop_quit (data->loop);
 			}
 		}
 	}

@@ -25,27 +25,32 @@
 
 #include <dbus/dbus.h>
 #include "NetworkManager.h"
-
+#include "NetworkManagerMain.h"
+#include "nm-vpn-connection.h"
 
 typedef struct NMVPNService NMVPNService;
 
-NMVPNService *		nm_vpn_service_new				(void);
 
-void				nm_vpn_service_ref				(NMVPNService *service);
-void				nm_vpn_service_unref			(NMVPNService *service);
+NMVPNService *	nm_vpn_service_new				(NMVPNManager *manager, NMData *app_data);
 
-const char *		nm_vpn_service_get_name			(NMVPNService *service);
-void				nm_vpn_service_set_name			(NMVPNService *service, const char *name);
+void			nm_vpn_service_ref				(NMVPNService *service);
+void			nm_vpn_service_unref			(NMVPNService *service);
 
-const char *		nm_vpn_service_get_service_name	(NMVPNService *service);
-void				nm_vpn_service_set_service_name	(NMVPNService *service, const char *name);
+const char *	nm_vpn_service_get_name			(NMVPNService *service);
+void			nm_vpn_service_set_name			(NMVPNService *service, const char *name);
 
-const char *		nm_vpn_service_get_program		(NMVPNService *service);
-void				nm_vpn_service_set_program		(NMVPNService *service, const char *program);
+const char *	nm_vpn_service_get_service_name	(NMVPNService *service);
+void			nm_vpn_service_set_service_name	(NMVPNService *service, const char *name);
 
-NMVPNState		nm_vpn_service_get_state			(NMVPNService *service);
-void				nm_vpn_service_set_state			(NMVPNService *service, const NMVPNState state);
+const char *	nm_vpn_service_get_program		(NMVPNService *service);
+void			nm_vpn_service_set_program		(NMVPNService *service, const char *program);
 
-gboolean			nm_vpn_service_exec_daemon		(NMVPNService *service);
+NMVPNState	nm_vpn_service_get_state			(NMVPNService *service);
+
+gboolean		nm_vpn_service_name_owner_changed	(NMVPNService *service, NMVPNActRequest *req, const char *old, const char *new);
+gboolean		nm_vpn_service_process_signal		(NMVPNService *service, NMVPNActRequest *req, DBusMessage *message);
+
+void			nm_vpn_service_start_connection	(NMVPNService *service, NMVPNActRequest *req);
+void			nm_vpn_service_stop_connection	(NMVPNService *service, NMVPNActRequest *req);
 
 #endif

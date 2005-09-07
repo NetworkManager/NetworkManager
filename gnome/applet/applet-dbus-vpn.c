@@ -36,43 +36,19 @@
 
 static void nmwa_free_vpn_connections (NMWirelessApplet *applet);
 
-/*
- * nmwa_dbus_vpn_get_active_vpn_connection
- *
- * Get the active VPN connection from the dbus side of the applet
- *
- */
-VPNConnection *nmwa_dbus_vpn_get_active_vpn_connection (NMWirelessApplet *applet)
-{
-	GSList		*elt;
-
-	g_return_val_if_fail (applet != NULL, NULL);
-
-	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
-	{
-		VPNConnection *vpn = (VPNConnection*) elt->data;
-		NMVPNState	vpn_state = nmwa_vpn_connection_get_state (vpn);
-
-		if (vpn_state == NM_VPN_STATE_STARTED)
-			return vpn;
-	}
-
-	return NULL;
-}
 
 /*
  * nmwa_dbus_vpn_update_vpn_connection_state
  *
  * Sets the state for a dbus vpn connection and schedules a copy to the applet gui.
  */
-void nmwa_dbus_vpn_update_vpn_connection_state (NMWirelessApplet *applet, const char *vpn_name, NMVPNState vpn_state)
+void nmwa_dbus_vpn_update_vpn_connection_state (NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_state)
 {
 	VPNConnection	*vpn;
 
 	g_return_if_fail (applet != NULL);
 
-	vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name);
-	if (vpn != NULL)
+	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
 		nmwa_vpn_connection_set_state (vpn, vpn_state);
 }
 
@@ -106,7 +82,7 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	const char *		name;
 	const char *        user_name;
 	const char *        service;
-	NMVPNState		state;
+	NMVPNActStage		state;
 	dbus_uint32_t		state_int;
 	
 	g_return_if_fail (pcall != NULL);
@@ -130,7 +106,7 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	{
 		VPNConnection *	vpn;
 
-		state = (NMVPNState) state_int;
+		state = (NMVPNActStage) state_int;
 
 		/* If its already there, update the service, otherwise add it to the list */
 		if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, name)))
@@ -167,7 +143,7 @@ void nmwa_dbus_vpn_update_one_vpn_connection (NMWirelessApplet *applet, const ch
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (vpn_name != NULL);
 
-	nmwa_dbus_vpn_get_active_vpn_connection (applet);
+	nmwa_get_first_active_vpn_connection (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnectionProperties")))
 	{
@@ -241,7 +217,7 @@ void nmwa_dbus_vpn_update_vpn_connections (NMWirelessApplet *applet)
 
 	nmwa_free_vpn_connections (applet);
 
-	nmwa_dbus_vpn_get_active_vpn_connection (applet);
+	nmwa_get_first_active_vpn_connection (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnections")))
 	{

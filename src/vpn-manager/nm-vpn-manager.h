@@ -23,23 +23,28 @@
 #include <dbus/dbus.h>
 #include "NetworkManagerMain.h"
 #include "nm-vpn-connection.h"
+#include "nm-vpn-service.h"
 
 
 NMVPNManager *		nm_vpn_manager_new						(NMData *app_data);
-void				nm_vpn_manager_clear_connections			(NMVPNManager *manager);
 NMVPNConnection *	nm_vpn_manager_add_connection				(NMVPNManager *manager, const char *name, const char *service_name, const char *user_name);
 void				nm_vpn_manager_remove_connection			(NMVPNManager *manager, NMVPNConnection *vpn);
 char	**			nm_vpn_manager_get_connection_names		(NMVPNManager *manager);
 void				nm_vpn_manager_dispose					(NMVPNManager *manager);
 
-NMVPNConnection *	nm_vpn_manager_get_active_vpn_connection	(NMVPNManager *manager);
+NMVPNActRequest *	nm_vpn_manager_get_vpn_act_request			(NMVPNManager *manager);
 
-void				nm_vpn_manager_activate_vpn_connection		(NMVPNManager *manager, NMVPNConnection *vpn, char **password_items, int password_count, char **data_items, int count);
+void				nm_vpn_manager_activate_vpn_connection		(NMVPNManager *manager, NMVPNConnection *vpn, char **password_items,
+														int password_count, char **data_items, int data_count);
 void				nm_vpn_manager_deactivate_vpn_connection	(NMVPNManager *manager);
 
 NMVPNConnection *	nm_vpn_manager_find_connection_by_name		(NMVPNManager *manager, const char *con_name);
+NMVPNService *		nm_vpn_manager_find_service_by_name		(NMVPNManager *manager, const char *service_name);
 
 gboolean			nm_vpn_manager_process_signal				(NMVPNManager *manager, DBusMessage *signal);
 gboolean			nm_vpn_manager_process_name_owner_changed	(NMVPNManager *manager, const char *service, const char *old_owner, const char *new_owner);
+
+void				nm_vpn_manager_schedule_vpn_activation_failed(NMVPNManager *manager, NMVPNActRequest *req);
+void				nm_vpn_manager_schedule_vpn_connection_died	(NMVPNManager *manager, NMVPNActRequest *req);
 
 #endif  /* NM_VPN_MANAGER_H */

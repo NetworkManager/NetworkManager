@@ -25,10 +25,10 @@
 
 struct VPNConnection
 {
-	int   refcount;
-	char	*name;
-	char *service;
-	NMVPNState state;
+	int			refcount;
+	char	*		name;
+	char *		service;
+	NMVPNActStage	state;
 };
 
 
@@ -136,14 +136,14 @@ VPNConnection *nmwa_vpn_connection_find_by_name (GSList *list, const char *name)
 	return vpn;	
 }
 
-NMVPNState nmwa_vpn_connection_get_state (VPNConnection *vpn)
+NMVPNActStage nmwa_vpn_connection_get_state (VPNConnection *vpn)
 {
-	g_return_val_if_fail (vpn != NULL, NM_VPN_STATE_UNKNOWN);
+	g_return_val_if_fail (vpn != NULL, NM_VPN_ACT_STAGE_UNKNOWN);
 
 	return vpn->state;
 }
 
-void nmwa_vpn_connection_set_state (VPNConnection *vpn, NMVPNState state)
+void nmwa_vpn_connection_set_state (VPNConnection *vpn, NMVPNActStage state)
 {
 	g_return_if_fail (vpn != NULL);
 

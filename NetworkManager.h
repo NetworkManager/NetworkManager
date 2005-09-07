@@ -193,6 +193,22 @@ typedef enum NMVPNState
 
 
 /*
+ * VPN connection activation stages
+ */
+typedef enum NMVPNActStage
+{
+	NM_VPN_ACT_STAGE_UNKNOWN = 0,
+	NM_VPN_ACT_STAGE_DISCONNECTED,
+	NM_VPN_ACT_STAGE_PREPARE,
+	NM_VPN_ACT_STAGE_CONNECT,
+	NM_VPN_ACT_STAGE_IP_CONFIG_GET,
+	NM_VPN_ACT_STAGE_ACTIVATED,
+	NM_VPN_ACT_STAGE_FAILED,
+	NM_VPN_ACT_STAGE_CANCELED
+} NMVPNActStage;
+
+
+/*
  * Device activation stages
  */
 typedef enum NMActStage
