@@ -293,8 +293,13 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		char *vpn_name;
 		char *banner;
 
-		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &banner, DBUS_TYPE_INVALID)) {
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &banner, DBUS_TYPE_INVALID))
+		{
+			char *stripped = g_strstrip (g_strdup (banner));
+
 			nmwa_schedule_vpn_login_banner_dialog (applet, vpn_name, banner);
+			g_free (stripped);
+
 			/* set the 'last_attempt_success' key in gconf so we DON'T prompt for password next time */
 			set_vpn_last_attempt_status (applet, vpn_name, TRUE);
 		}

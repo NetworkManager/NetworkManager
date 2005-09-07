@@ -1,5 +1,12 @@
 2005-09-07  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bill Moss <bmoss@clemson.edu>
+	* src/applet-dbus.c
+		- (nmwa_dbus_filter): strip whitespace from beginning
+			and end of VPN login banner
+
+2005-09-07  Dan Williams  <dcbw@redhat.com>
+
 	* The great VPN Manager rewrite of 2005
 
 2005-09-07  Christopher Aillon  <caillon@redhat.com>
