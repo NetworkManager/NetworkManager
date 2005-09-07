@@ -86,9 +86,9 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "state")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_nm_state_cb, applet, NULL);
+		dbus_message_unref (message);
 	}
 }
 
@@ -250,7 +250,6 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 
 			dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
 			dbus_connection_send_with_reply (cb_data->applet->connection, message, &product_pcall, -1);
-			dbus_message_unref (message);
 			if (product_pcall)
 			{
 				HalInfoCBData *	product_cb_data = g_malloc0 (sizeof (HalInfoCBData));
@@ -262,6 +261,7 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 				product_cb_data->vendor = g_strdup (info_vendor);
 				dbus_pending_call_set_notify (product_pcall, hal_info_product_cb, product_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
 			}
+			dbus_message_unref (message);
 		}
 	}
 	dbus_message_unref (reply);
@@ -310,7 +310,6 @@ static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
 
 			dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
 			dbus_connection_send_with_reply (cb_data->applet->connection, message, &vendor_pcall, -1);
-			dbus_message_unref (message);
 			if (vendor_pcall)
 			{
 				HalInfoCBData *	vendor_cb_data = g_malloc0 (sizeof (HalInfoCBData));
