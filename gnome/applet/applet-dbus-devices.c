@@ -142,9 +142,9 @@ static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getWirelessEnabled")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		dbus_message_unref (message);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_wireless_enabled_cb, applet, NULL);
+		dbus_message_unref (message);
 	}
 }
 
@@ -321,6 +321,7 @@ static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
 				vendor_cb_data->parent_op = g_strdup (op);
 				dbus_pending_call_set_notify (vendor_pcall, hal_info_vendor_cb, vendor_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
 			}
+			dbus_message_unref (message);
 		}
 	}
 	dbus_message_unref (reply);
