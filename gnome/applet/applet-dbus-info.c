@@ -928,8 +928,8 @@ static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, 
 										   &item_id);
 			if (ret != GNOME_KEYRING_RESULT_OK)
 				g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
-			else
-				gnome_keyring_attribute_list_free (attributes);
+
+			gnome_keyring_attribute_list_free (attributes);
 		}
 
 		gconf_entry_unref (gconf_entry);

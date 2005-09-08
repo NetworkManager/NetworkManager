@@ -1,3 +1,8 @@
+2005-09-07  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-dbus-info.c: need to free attributes in the
+	failure case as well.
+
 2005-09-07  Rodrigo Moya <rodrigo@novell.com>
 
 	* gnome/panel/eggtrayicon.[ch]:
