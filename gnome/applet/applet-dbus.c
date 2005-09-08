@@ -297,7 +297,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		{
 			char *stripped = g_strstrip (g_strdup (banner));
 
-			nmwa_schedule_vpn_login_banner_dialog (applet, vpn_name, banner);
+			nmwa_schedule_vpn_login_banner_dialog (applet, vpn_name, stripped);
 			g_free (stripped);
 
 			/* set the 'last_attempt_success' key in gconf so we DON'T prompt for password next time */
