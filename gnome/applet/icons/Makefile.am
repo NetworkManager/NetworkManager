@@ -38,6 +38,20 @@ smallicon_DATA=		\
 	nm-signal-50.png	\
 	nm-signal-75.png	\
 	nm-signal-100.png	\
+	nm-vpn-connecting01.png	\
+	nm-vpn-connecting02.png	\
+	nm-vpn-connecting03.png	\
+	nm-vpn-connecting04.png	\
+	nm-vpn-connecting05.png	\
+	nm-vpn-connecting06.png	\
+	nm-vpn-connecting07.png	\
+	nm-vpn-connecting08.png	\
+	nm-vpn-connecting09.png	\
+	nm-vpn-connecting10.png	\
+	nm-vpn-connecting11.png	\
+	nm-vpn-connecting12.png	\
+	nm-vpn-connecting13.png	\
+	nm-vpn-connecting14.png	\
 	nm-vpn-lock.png	\
 	$(NULL)
 
