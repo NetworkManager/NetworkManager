@@ -149,3 +149,18 @@ void nmwa_vpn_connection_set_state (VPNConnection *vpn, NMVPNActStage state)
 
 	vpn->state = state;
 }
+
+gboolean nmwa_vpn_connection_is_activating (VPNConnection *vpn)
+{
+	NMVPNActStage stage;
+
+	g_return_val_if_fail (vpn != NULL, FALSE);
+
+	stage = nmwa_vpn_connection_get_state (vpn);
+	if (stage == NM_VPN_ACT_STAGE_PREPARE ||
+		stage == NM_VPN_ACT_STAGE_CONNECT ||
+		stage == NM_VPN_ACT_STAGE_IP_CONFIG_GET)
+		return TRUE;
+
+	return FALSE;
+}

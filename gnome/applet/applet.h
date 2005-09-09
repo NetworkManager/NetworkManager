@@ -105,6 +105,8 @@ typedef struct
 	GdkPixbuf *		wireless_100_icon;
 #define NUM_WIRELESS_CONNECTING_FRAMES 11
 	GdkPixbuf *		wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+#define NUM_VPN_CONNECTING_FRAMES 14
+	GdkPixbuf *		vpn_connecting_icons[NUM_VPN_CONNECTING_FRAMES];
 	GdkPixbuf *		vpn_lock_icon;
 
 	/* Animation stuff */

@@ -892,29 +892,47 @@ VPNConnection *nmwa_get_first_active_vpn_connection (NMWirelessApplet *applet)
 	return NULL;
 }
 
+VPNConnection *nmwa_get_first_activating_vpn_connection (NMWirelessApplet *applet)
+{
+	VPNConnection *	vpn;
+	GSList *			elt;
 
-static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *new_icon)
+	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
+	{
+		vpn = (VPNConnection*) elt->data;
+		if (nmwa_vpn_connection_is_activating (vpn))
+			return vpn;
+	}
+
+	return NULL;
+}
+
+static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPixbuf *vpn_icon)
 {
 	GdkPixbuf	*composite;
 	VPNConnection	*vpn;
 
 	g_return_if_fail (applet != NULL);
-	g_return_if_fail (new_icon != NULL);
+	g_return_if_fail (link_icon != NULL);
 
-	composite = gdk_pixbuf_copy (new_icon);
+	composite = gdk_pixbuf_copy (link_icon);
 
 	vpn = nmwa_get_first_active_vpn_connection (applet);
+	if (!vpn)
+		vpn = nmwa_get_first_activating_vpn_connection (applet);
 
 	if (vpn)
 	{
-		int dest_x = gdk_pixbuf_get_width (new_icon) - gdk_pixbuf_get_width (applet->vpn_lock_icon);
-		int dest_y = gdk_pixbuf_get_height (new_icon) - gdk_pixbuf_get_height (applet->vpn_lock_icon) - 2;
+		if (!vpn_icon)
+			goto out;
 
-		gdk_pixbuf_composite (applet->vpn_lock_icon, composite, dest_x, dest_y, gdk_pixbuf_get_width (applet->vpn_lock_icon),
-							gdk_pixbuf_get_height (applet->vpn_lock_icon), dest_x, dest_y, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
+		gdk_pixbuf_composite (vpn_icon, composite, 0, 0, gdk_pixbuf_get_width (vpn_icon),
+							gdk_pixbuf_get_height (vpn_icon), 0, 0, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
 	}
 
+out:
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
+
 	g_object_unref (composite);
 }
 
@@ -930,6 +948,37 @@ static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_ico
 		gtk_widget_show (applet->progress_bar);
 }
 
+static GdkPixbuf *nmwa_get_wireless_connection_strength_icon (NMWirelessApplet *applet)
+{
+	NetworkDevice *act_dev;
+	WirelessNetwork *active_network;
+	int strength = 0;
+	GdkPixbuf *pixbuf = NULL;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+
+	act_dev = nmwa_get_first_active_device (applet->device_list);
+	if (act_dev && network_device_is_wireless (act_dev))
+	{
+		active_network = network_device_get_active_wireless_network (act_dev);
+		strength = CLAMP ((int)network_device_get_strength (act_dev), 0, 100);
+	}
+
+	if (strength > 75)
+		pixbuf = applet->wireless_100_icon;
+	else if (strength > 50)
+		pixbuf = applet->wireless_75_icon;
+	else if (strength > 25)
+		pixbuf = applet->wireless_50_icon;
+	else if (strength > 0)
+		pixbuf = applet->wireless_25_icon;
+	else
+		pixbuf = applet->wireless_00_icon;
+
+	return pixbuf;
+}
+
+
 /*
  * animation_timeout
  *
@@ -939,7 +988,11 @@ static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_ico
  */
 static gboolean animation_timeout (NMWirelessApplet *applet)
 {
-	NetworkDevice *act_dev = nmwa_get_first_active_device (applet->device_list);
+	NetworkDevice *act_dev;
+
+	g_return_val_if_fail (applet != NULL, FALSE);
+
+	act_dev = nmwa_get_first_active_device (applet->device_list);
 
 	if (!applet->nm_running)
 	{
@@ -947,26 +1000,31 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 		return TRUE;
 	}
 
-	switch (applet->nm_state)
+	if (applet->nm_state == NM_STATE_CONNECTING)
 	{
-		case NM_STATE_CONNECTING:
-			if (act_dev && network_device_is_wireless (act_dev))
-			{
-				if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
-					applet->animation_step = 0;
-				nmwa_set_icon (applet, applet->wireless_connecting_icons[applet->animation_step]);
-			}
-			else if (act_dev)
-			{
-				if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
-					applet->animation_step = 0;
-				nmwa_set_icon (applet, applet->wired_connecting_icons[applet->animation_step]);
-			}
-			applet->animation_step ++;
-			break;
+		if (act_dev && network_device_is_wireless (act_dev))
+		{
+			if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
+				applet->animation_step = 0;
+			nmwa_set_icon (applet, applet->wireless_connecting_icons[applet->animation_step], NULL);
+		}
+		else if (act_dev)
+		{
+			if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
+				applet->animation_step = 0;
+			nmwa_set_icon (applet, applet->wired_connecting_icons[applet->animation_step], NULL);
+		}
+		applet->animation_step ++;
+	}
+	else if (nmwa_get_first_activating_vpn_connection (applet) != NULL)
+	{
+		GdkPixbuf *connected_icon;
+		connected_icon = nmwa_get_wireless_connection_strength_icon (applet);
 
-		default:
-			break;
+		if (applet->animation_step >= NUM_VPN_CONNECTING_FRAMES)
+			applet->animation_step = 0;
+		nmwa_set_icon (applet, connected_icon, applet->vpn_connecting_icons[applet->animation_step]);
+		applet->animation_step ++;
 	}
 
 	return TRUE;
@@ -1064,6 +1122,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	GdkPixbuf *		progress = NULL;
 	gint				strength = -1;
 	char *			tip = NULL;
+	char *			vpntip = NULL;
 	WirelessNetwork *	active_network = NULL;
 	NetworkDevice *	act_dev = NULL;
 	VPNConnection		*vpn;
@@ -1107,16 +1166,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 				}
 				else
 				{
-					if (strength > 75)
-						pixbuf = applet->wireless_100_icon;
-					else if (strength > 50)
-						pixbuf = applet->wireless_75_icon;
-					else if (strength > 25)
-						pixbuf = applet->wireless_50_icon;
-					else if (strength > 0)
-						pixbuf = applet->wireless_25_icon;
-					else
-						pixbuf = applet->wireless_00_icon;
+					pixbuf = nmwa_get_wireless_connection_strength_icon (applet);
 					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
 							active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
 				}
@@ -1132,28 +1182,40 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			break;
 	}
 
-done:
-	if (!applet->tooltips)
-		applet->tooltips = gtk_tooltips_new ();
-
 	vpn = nmwa_get_first_active_vpn_connection (applet);
 	if (vpn != NULL)
 	{
-		char *newtip;
-		char *vpntip;
-
 		vpntip = g_strdup_printf (_("VPN connection to '%s'"), nmwa_vpn_connection_get_name (vpn));
+	}
+	else
+	{
+		vpn = nmwa_get_first_activating_vpn_connection (applet);
+		if (vpn != NULL)
+		{
+			need_animation = TRUE;
+			vpntip = g_strdup_printf (_("VPN connecting to '%s'"), nmwa_vpn_connection_get_name (vpn));
+		}
+	}
+
+	if (vpntip)
+	{
+		char *newtip;
 		newtip = g_strconcat (tip, "\n", vpntip, NULL);
 		g_free (vpntip);
 		g_free (tip);
 		tip = newtip;
 	}
 
+done:
+	if (!applet->tooltips)
+		applet->tooltips = gtk_tooltips_new ();
+
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
 	g_free (tip);
 
-	nmwa_set_progress (applet, progress);	
+	nmwa_set_progress (applet, progress);
 
+	applet->animation_step = 0;
 	if (applet->animation_id)
 		g_source_remove (applet->animation_id);
 	if (need_animation)
@@ -1161,7 +1223,7 @@ done:
 	else
 	{
 		if (pixbuf)
-			nmwa_set_icon (applet, pixbuf);
+			nmwa_set_icon (applet, pixbuf, applet->vpn_lock_icon);
 		else
 			show_applet = FALSE;
 	}
@@ -2573,6 +2635,13 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	{
 		name = g_strdup_printf ("nm-connecting%02d", i+1);
 		ICON_LOAD(applet->wireless_connecting_icons[i], name);
+		g_free (name);
+	}
+
+	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
+	{
+		name = g_strdup_printf ("nm-vpn-connecting%02d", i+1);
+		ICON_LOAD(applet->vpn_connecting_icons[i], name);
 		g_free (name);
 	}
 

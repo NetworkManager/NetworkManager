@@ -37,6 +37,8 @@ void				nmwa_vpn_connection_set_service	(VPNConnection *vpn, const char *service
 NMVPNActStage		nmwa_vpn_connection_get_state		(VPNConnection *vpn);
 void				nmwa_vpn_connection_set_state		(VPNConnection *vpn, NMVPNActStage state);
 
+gboolean		nmwa_vpn_connection_is_activating	(VPNConnection *vpn);
+
 VPNConnection *	nmwa_vpn_connection_find_by_name	(GSList *list, const char *name);
 
 #endif

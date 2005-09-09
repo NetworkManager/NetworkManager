@@ -1,3 +1,16 @@
+2005-09-08  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/vpn-connection.c:
+	* gnome/applet/vpn-connection.h:
+	Add nmwa_vpn_connection_is_activating ()
+
+	* gnome/applet/applet.c:
+	* gnome/applet/applet.h:
+	* gnome/applet/icons/nm-vpn-connecting*.png:
+	Add new VPN connecting icons from Diana Fong <dfong@redhat.com>, letting
+	the user know something's happening between clicking the VPN item and it
+	actually being connected.
+
 2005-09-07  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c: need to free attributes in the
