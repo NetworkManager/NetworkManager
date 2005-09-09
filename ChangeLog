@@ -1,3 +1,8 @@
+2005-09-09  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.glade:
+	Clean up a few strings to use better grammar and proper casing.
+
 2005-09-08  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/vpn-connection.c:
