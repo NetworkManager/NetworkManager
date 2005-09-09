@@ -1,5 +1,9 @@
 2005-09-09  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet.c:
+	Also overlay the vpn connecting icons onto the wired icon,
+	when appropriate.
+
 	* gnome/vpn-properties/nm-vpn-properties.glade:
 	Clean up a few strings to use better grammar and proper casing.
 

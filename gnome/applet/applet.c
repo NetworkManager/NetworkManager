@@ -948,32 +948,35 @@ static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_ico
 		gtk_widget_show (applet->progress_bar);
 }
 
-static GdkPixbuf *nmwa_get_wireless_connection_strength_icon (NMWirelessApplet *applet)
+static GdkPixbuf *nmwa_get_connected_icon (NMWirelessApplet *applet, NetworkDevice *dev)
 {
-	NetworkDevice *act_dev;
-	WirelessNetwork *active_network;
 	int strength = 0;
 	GdkPixbuf *pixbuf = NULL;
 
 	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (dev != NULL, NULL);
 
-	act_dev = nmwa_get_first_active_device (applet->device_list);
-	if (act_dev && network_device_is_wireless (act_dev))
+	if (network_device_is_wireless (dev))
 	{
-		active_network = network_device_get_active_wireless_network (act_dev);
-		strength = CLAMP ((int)network_device_get_strength (act_dev), 0, 100);
+		if (applet->is_adhoc)
+			pixbuf = applet->adhoc_icon;
+		else
+		{
+			strength = CLAMP ((int)network_device_get_strength (dev), 0, 100);
+			if (strength > 75)
+				pixbuf = applet->wireless_100_icon;
+			else if (strength > 50)
+				pixbuf = applet->wireless_75_icon;
+			else if (strength > 25)
+				pixbuf = applet->wireless_50_icon;
+			else if (strength > 0)
+				pixbuf = applet->wireless_25_icon;
+			else
+				pixbuf = applet->wireless_00_icon;
+		}
 	}
-
-	if (strength > 75)
-		pixbuf = applet->wireless_100_icon;
-	else if (strength > 50)
-		pixbuf = applet->wireless_75_icon;
-	else if (strength > 25)
-		pixbuf = applet->wireless_50_icon;
-	else if (strength > 0)
-		pixbuf = applet->wireless_25_icon;
 	else
-		pixbuf = applet->wireless_00_icon;
+		pixbuf = applet->wired_icon;
 
 	return pixbuf;
 }
@@ -992,13 +995,13 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 
 	g_return_val_if_fail (applet != NULL, FALSE);
 
-	act_dev = nmwa_get_first_active_device (applet->device_list);
-
 	if (!applet->nm_running)
 	{
 		applet->animation_step = 0;
 		return TRUE;
 	}
+
+	act_dev = nmwa_get_first_active_device (applet->device_list);
 
 	if (applet->nm_state == NM_STATE_CONNECTING)
 	{
@@ -1019,7 +1022,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	else if (nmwa_get_first_activating_vpn_connection (applet) != NULL)
 	{
 		GdkPixbuf *connected_icon;
-		connected_icon = nmwa_get_wireless_connection_strength_icon (applet);
+		connected_icon = nmwa_get_connected_icon (applet, act_dev);
 
 		if (applet->animation_step >= NUM_VPN_CONNECTING_FRAMES)
 			applet->animation_step = 0;
@@ -1153,24 +1156,18 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 
 		case NM_STATE_CONNECTED:
 			if (network_device_is_wired (act_dev))
-			{
-				pixbuf = applet->wired_icon;
 				tip = g_strdup (_("Wired network connection"));
-			}
 			else if (network_device_is_wireless (act_dev))
 			{
 				if (applet->is_adhoc)
-				{
-					pixbuf = applet->adhoc_icon;
 					tip = g_strdup (_("Connected to an Ad-Hoc wireless network"));
-				}
 				else
-				{
-					pixbuf = nmwa_get_wireless_connection_strength_icon (applet);
 					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
 							active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
-				}
 			}
+
+			pixbuf = nmwa_get_connected_icon (applet, act_dev);
+
 			break;
 
 		case NM_STATE_CONNECTING:
