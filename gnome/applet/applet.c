@@ -2582,6 +2582,9 @@ static void nmwa_icons_free (NMWirelessApplet *applet)
 
 	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->wireless_connecting_icons[i]);
+
+	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
+		g_object_unref (applet->vpn_connecting_icons[i]);
 }
 
 #define ICON_LOAD(x, y)	\
