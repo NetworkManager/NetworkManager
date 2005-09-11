@@ -31,6 +31,8 @@
 #include "nm-vpn-act-request.h"
 #include "nm-utils.h"
 
+/* define this for getting VPN debug messages */
+#undef NM_DEBUG_VPN_CONFIG
 
 struct NMVPNService
 {
@@ -49,6 +51,7 @@ struct NMVPNService
 static void nm_vpn_service_add_watch (NMVPNService *service);
 static void nm_vpn_service_remove_watch (NMVPNService *service);
 static void nm_vpn_service_stop_connection_internal (NMVPNService *service);
+#ifdef NM_DEBUG_VPN_CONFIG
 static void print_vpn_config (guint32 ip4_vpn_gateway,
 						const char *tundev,
 						guint32 ip4_internal_address,
@@ -59,6 +62,7 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 						guint32 ip4_internal_nbns_len,
 						const char *dns_domain,
 						const char *login_banner);
+#endif
 
 static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, NMVPNActRequest *req);
 static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPNActRequest *req);
@@ -252,7 +256,6 @@ void nm_vpn_service_act_request_failed (NMVPNService *service, NMVPNActRequest *
 
 static void nm_vpn_service_activation_success (NMVPNService *service, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
 	NMVPNConnection *	vpn = NULL;
 
 	g_assert (service != NULL);
@@ -479,7 +482,6 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 	dbus_uint32_t		password_count;
 	char **			data_items;
 	dbus_uint32_t		data_count;
-	DBusError			error;
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
 
@@ -662,7 +664,7 @@ static void nm_vpn_service_stage4_ip_config_get (NMVPNService *service, NMVPNAct
 		NMDevice *	parent_dev;
 		guint32		i;
 
-#if 0
+#ifdef NM_DEBUG_VPN_CONFIG
 		print_vpn_config (ip4_vpn_gateway, tundev, ip4_internal_address, ip4_internal_netmask,
 						ip4_internal_dns, ip4_internal_dns_len, ip4_internal_nbns, ip4_internal_nbns_len,
 						dns_domain, login_banner);
@@ -897,7 +899,7 @@ gboolean nm_vpn_service_process_signal (NMVPNService *service, NMVPNActRequest *
 	return TRUE;
 }
 
-
+#ifdef NM_DEBUG_VPN
 /*
  *  Prints config returned from the service daemo
  */
@@ -948,3 +950,4 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 	nm_info ("-----------------------------------------");
 }
 
+#endif

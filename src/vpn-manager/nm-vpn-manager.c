@@ -310,7 +310,6 @@ gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *mess
  */
 gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const char *changed_service_name, const char *old_owner, const char *new_owner)
 {
-	NMVPNConnection *	active;
 	NMVPNService *		service;
 	gboolean			handled = FALSE;
 

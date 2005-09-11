@@ -329,7 +329,6 @@ void nm_system_restart_mdns_responder (void)
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
 	char *buf;
-	char	*addr;
 	struct ether_addr hw_addr;
 	unsigned char eui[8];
 
@@ -809,7 +808,6 @@ GSList * nm_system_get_dialup_config (void)
 	while ((entry = g_dir_read_name(dir)))
 	{
 		NMDialUpConfig *config;
-		shvarFile *cfg_file;
 		char *buf;
 		
 		if (!is_valid_cfg(entry))

@@ -186,7 +186,6 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 {
 	NMData *		app_data;
 	NMIP4Config *	config;
-	gboolean		success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -298,7 +297,6 @@ out:
  */
 gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes)
 {
-	gboolean		success = FALSE;
 	NMIP4Config *	ad_config = NULL;
 
 	g_return_val_if_fail (iface != NULL, FALSE);

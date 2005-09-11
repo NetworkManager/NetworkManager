@@ -210,7 +210,6 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	GtkWidget *label;
 	struct ifreq ifr;
 	int fd, flags;
-	gboolean ret_val = TRUE;
 	const char *iface = NULL;
 	NetworkDevice *dev;
 	gboolean ret = TRUE;
@@ -348,10 +347,6 @@ static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
 
 static void nmwa_about_cb (NMWirelessApplet *applet)
 {
-	GdkPixbuf	*pixbuf;
-	char		*file;
-	GtkWidget	*about_dialog;
-
 	static const gchar *authors[] =
 	{
 		"The Red Hat Desktop Team, including:\n",
@@ -383,6 +378,10 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 	};
 
 #if !GTK_CHECK_VERSION(2,6,0)
+	GdkPixbuf	*pixbuf;
+	char		*file;
+	GtkWidget	*about_dialog;
+
 	/* GTK 2.4 and earlier, have to use libgnome for about dialog */
 	file = gnome_program_locate_file (NULL, GNOME_FILE_DOMAIN_PIXMAP, "gnome-networktool.png", FALSE, NULL);
 	pixbuf = gdk_pixbuf_new_from_file (file, NULL);
@@ -802,7 +801,6 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	char *				label_text = NULL;
 	char *				temp = NULL;
 	GtkButton *			button;
-	NMDriverSupportLevel	support_level;
 	guint32				timestamp;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
@@ -1517,8 +1515,6 @@ static void nmwa_menu_add_text_item (GtkWidget *menu, char *text)
  */
 static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, gint n_devices, NMWirelessApplet *applet)
 {
-	GtkWidget *		menu_item;
-
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (device != NULL);
 	g_return_if_fail (applet != NULL);
@@ -1672,7 +1668,6 @@ static void nmwa_has_encrypted_networks_helper (NetworkDevice *dev, WirelessNetw
  */
 static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, NMWirelessApplet *applet)
 {
-	GSList *			list;
 	gboolean			has_encrypted = FALSE;
 	AddNetworksCB *	add_networks_cb = NULL;
 
@@ -1766,7 +1761,6 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 {
 	GtkMenuItem *item;
 	GtkMenu *dialup_menu;
-	GtkMenuItem *other_item;
 	GSList *elt;
 
 	g_return_if_fail (menu != NULL);
@@ -1807,7 +1801,6 @@ static gboolean is_vpn_available (void)
 
 	result = FALSE;
 	if ((dir = g_dir_open (VPN_NAME_FILES_DIR, 0, NULL)) != NULL) {
-		const char *f;
 		if (g_dir_read_name (dir) != NULL)
 			result = TRUE;
 		g_dir_close (dir);
@@ -2053,7 +2046,6 @@ static GtkWidget *nmwa_dropdown_menu_create (GtkMenuItem *parent, NMWirelessAppl
  */
 static void nmwa_context_menu_update (NMWirelessApplet *applet)
 {
-	GtkWidget *image;
 	GSList *element;
 	gboolean have_wireless = FALSE;
 
@@ -2189,7 +2181,6 @@ static gboolean nmwa_toplevel_menu_button_press_cb (GtkWidget *widget, GdkEventB
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
 	GtkWidget      *menu_bar;
-	GtkWidget		*event_box;
 
 	/* Event box for tooltips */
 	applet->event_box = gtk_event_box_new ();
@@ -2368,8 +2359,6 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
  */
 static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 {
-	GError *	error = NULL;
-
 	gtk_widget_hide (GTK_WIDGET (applet));
 
 	applet->nm_running = FALSE;

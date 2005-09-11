@@ -373,7 +373,6 @@ GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
 {
 	GtkWidget *	dialog;
 	GtkButton *	ok_button;
-	GtkButton *	cancel_button;
 	GtkEntry *	entry;
 	GtkComboBox *	key_type_combo;
 	GtkLabel *	label;

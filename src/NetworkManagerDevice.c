@@ -1267,7 +1267,6 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method)
 {
 	NMSock			*sk;
-	int				err;
 	struct iwreq		wreq;
 	int				keylen;
 	unsigned char		safe_key[IW_ENCODING_TOKEN_MAX + 1];
@@ -1737,7 +1736,6 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq	wrq;
-		int			err;
 
 		memset (&wrq, 0, sizeof (struct iwreq));
 #ifdef IOCTL_DEBUG
@@ -1788,7 +1786,6 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq	wreq;
-		int			err;
 		gboolean		mode_good = FALSE;
 
 		switch (mode)
@@ -2337,7 +2334,6 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 {
 	guint		assoc = 0;
 	double		last_freq = 0;
-	guint		assoc_count = 0;
 	struct timeval	timeout = { .tv_sec = 0, .tv_usec = 0 };
 	nm_completion_args args;
 
@@ -2618,7 +2614,6 @@ static gboolean nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	NMData *			data = NULL;
 	NMDevice *		dev = NULL;
 	NMAccessPoint *	ap = NULL;
-	NMIP4Config *		ip4_config = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -2703,7 +2698,6 @@ static NMIP4Config *nm_device_new_ip4_autoip_config (NMDevice *dev)
 	if (get_autoip (dev, &ip))
 	{
 		#define LINKLOCAL_BCAST		0xa9feffff
-		int	temp = ip.s_addr;
 
 		config = nm_ip4_config_new ();
 
@@ -2937,7 +2931,6 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 {
 	NMData *			data = NULL;
 	NMDevice *		dev = NULL;
-	NMAccessPoint *	ap = NULL;
 	NMIP4Config *		ip4_config = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -3713,7 +3706,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 	NMWirelessScanResults	*results = (NMWirelessScanResults *)user_data;
 	NMDevice				*dev;
 	wireless_scan			*tmp_ap;
-	gboolean				 have_blank_essids = FALSE;
 	NMAPListIter			*iter;
 	GTimeVal				 cur_time;
 	gboolean				 list_changed = FALSE;

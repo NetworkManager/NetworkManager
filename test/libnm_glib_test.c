@@ -61,7 +61,6 @@ int main( int argc, char *argv[] )
 {
 	GMainLoop	*loop;
 	libnm_glib_ctx *ctx;
-	guint	 id;
 
 	ctx = libnm_glib_init ();
 	if (!ctx)

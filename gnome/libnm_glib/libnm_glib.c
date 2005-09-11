@@ -418,7 +418,6 @@ static libnm_glib_ctx *libnm_glib_ctx_new (void)
 	if (!(ctx->callbacks_lock = g_mutex_new ()))
 		goto error;
 
-success:
 	return ctx;
 
 error:
@@ -459,7 +458,6 @@ libnm_glib_ctx *libnm_glib_init (void)
 	while (!ctx->thread_inited)
 		g_usleep (G_USEC_PER_SEC / 2);
 
-success:
 	return ctx;
 
 error:

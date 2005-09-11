@@ -194,8 +194,6 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type)
 {
 	DBusMessage *	reply;
-	const char *	dev_path;
-	const char *	net_path;
 	const int		tmp_key_type = (int)key_type;
 
 	g_return_if_fail (connection != NULL);
@@ -659,7 +657,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 	}
 	else
 	{
-		DBusMessageIter 		iter, array_iter;
+		DBusMessageIter 		iter;
 
 		reply = dbus_message_new_method_return (message);
 		dbus_message_iter_init_append (reply, &iter);
@@ -923,16 +921,12 @@ static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, 
  */
 static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage *message)
 {
-	DBusMessage *		reply_message = NULL;
 	char *			network = NULL;
 	NMDeviceAuthMethod	auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 	char *			enc_key_source = NULL;
 	int				enc_key_type = -1;
-	char *			key;
 	gboolean			user_requested;
-	GConfValue *		value;
 	DBusError			error;
-	char *			escaped_network;
 	dbus_bool_t		args_good;
 
 	g_return_if_fail (applet != NULL);

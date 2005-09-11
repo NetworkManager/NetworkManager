@@ -47,7 +47,6 @@
 static gboolean nm_policy_activation_finish (NMActRequest *req)
 {
 	NMDevice			*dev = NULL;
-	NMAccessPoint		*ap = NULL;
 	NMData			*data = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -85,7 +84,6 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
 
-out:
 	return FALSE;
 }
 
@@ -167,7 +165,6 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_device_change_check (data);
 
-out:
 	return FALSE;
 }
 
@@ -551,7 +548,6 @@ static gboolean allowed_list_update_pending = FALSE;
 static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 {
 	NMData	*data = (NMData *)user_data;
-	GSList	*elt;
 
 	allowed_list_update_pending = FALSE;
 
@@ -622,8 +618,6 @@ static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
 		NMDevice	*dev = (NMDevice *)(elt->data);
 		if (nm_device_is_wireless (dev))
 		{
-			NMAccessPoint	*best_ap;
-
 			if (nm_device_get_supports_wireless_scan (dev))
 			{
 				/* Once we have the list, copy in any relevant information from our Allowed list and fill

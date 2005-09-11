@@ -745,7 +745,6 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	DBusError				error;
 	const char *			essid = NULL;
 	gint					timestamp_secs = -1;
-	const char *			key = NULL;
 	NMEncKeyType			key_type = -1;
 	gboolean				trusted = FALSE;
 	NMDeviceAuthMethod		auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;

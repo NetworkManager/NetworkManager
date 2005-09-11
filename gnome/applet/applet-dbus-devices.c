@@ -868,24 +868,28 @@ out:
 void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char *name)
 {
 	DBusMessage *message;
-	DBusMessageIter iter;
-	DBusMessageIter iter_array;
 
 	g_return_if_fail (name != NULL);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "activateDialup")))
 	{
+
 		nm_info ("Activating dialup connection '%s'.", name);
 #if 0
-		dbus_message_iter_init_append (message, &iter);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
-		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+		{
+			DBusMessageIter iter;
+			DBusMessageIter iter_array;
+			dbus_message_iter_init_append (message, &iter);
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
 
-		for (i = passwords; i != NULL; i = g_slist_next (i)) {
-			dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &(i->data));
+			for (i = passwords; i != NULL; i = g_slist_next (i)) {
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &(i->data));
+			}
+			dbus_message_iter_close_container (&iter, &iter_array);
 		}
-		dbus_message_iter_close_container (&iter, &iter_array);
 #endif
+
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
 			nm_warning ("nmwa_dbus_activate_dialup_connection(): Could not send activateDialup message!");

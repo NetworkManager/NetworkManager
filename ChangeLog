@@ -1,5 +1,29 @@
 2005-09-10  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet.c:
+	* gnome/applet/applet-dbus-devices.c:
+	* gnome/applet/applet-dbus-info.c:
+	* gnome/applet/passphrase-dialog.c:
+	* gnome/libnm_glib/libnm_glib.c:
+	* gnome/vpn-properties/nm-vpn-properties.c:
+	* src/autoip.c:
+	* src/backends/NetworkManagerRedHat.c:
+	* src/named-manager/nm-named-manager.c:
+	* src/NetworkManagerAPList.c:
+	* src/NetworkManager.c:
+	* src/NetworkManagerDbus.c:
+	* src/NetworkManagerDevice.c:
+	* src/NetworkManagerPolicy.c:
+	* src/NetworkManagerSystem.c:
+	* src/nm-dbus-device.c:
+	* src/nm-dbus-nm.c:
+	* src/vpn-manager/nm-vpn-manager.c:
+	* src/vpn-manager/nm-vpn-service.c:
+	* test/libnm_glib_test.c:
+	* test/nminfotest.c:
+	* test/nmtestdevices.c:
+	Fix a bunch of 'unused variable' compiler warnings
+
 	* NetworkManager.h:
 	* gnome/applet/applet-dbus-info.c:
 	* gnome/applet/applet-dbus-info.h:

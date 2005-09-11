@@ -500,7 +500,6 @@ static void sigterm_handler (int signum)
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
 {
 	NMData *		data = user_data;
-	NMDevice *	act_dev = NULL;
 
 	nm_info ("Caught terminiation signal");
 	g_main_loop_quit (data->main_loop);
@@ -606,8 +605,6 @@ static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *in
 	{
 		if (nm_device_is_wired (dev) && !nm_device_has_active_link (dev))
 		{
-			NMDevice *act_dev =  NULL;
-
 			nm_device_set_link_active (dev, TRUE);
 			nm_policy_schedule_device_change_check (data);
 		}
@@ -818,12 +815,9 @@ void nm_hal_deinit (NMData *data)
  */
 int main( int argc, char *argv[] )
 {
-	guint		link_source_id;
-	GSource *		link_source;
 	gboolean		become_daemon = TRUE;
 	gboolean		enable_test_devices = FALSE;
 	GError *		error = NULL;
-	DBusError		dbus_error;
 	char *		owner;
 	
 	if ((int)getuid() != 0)

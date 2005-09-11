@@ -134,7 +134,6 @@ static void get_networks_of_type (DBusConnection *connection, NMNetworkType type
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
 	gint32		type_as_int;
 	char **networks;
@@ -260,7 +259,6 @@ static DBusHandlerResult nm_message_handler (DBusConnection *connection, DBusMes
 {
 	const char		*method;
 	const char		*path;
-	DBusMessage		*reply_message = NULL;
 	gboolean			 handled = TRUE;
 
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -283,7 +281,6 @@ static DBusHandlerResult nm_message_handler (DBusConnection *connection, DBusMes
 int main( int argc, char *argv[] )
 {
 	DBusConnection			*connection;
-	DBusConnection			*connection2;
 	DBusError				 error;
 	DBusObjectPathVTable	 vtable = { NULL, &nm_message_handler, NULL, NULL, NULL, NULL };
 	dbus_bool_t			 success = FALSE;

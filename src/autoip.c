@@ -214,7 +214,6 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
-	char				*temp_addr;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (out_ip != NULL, FALSE);

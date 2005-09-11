@@ -203,7 +203,6 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	char *			essid = NULL;
 	char *			key = NULL;
 	int				key_type = -1;
-	NMActRequest *		req = NULL;
 	NMAccessPoint *	ap = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -463,7 +462,6 @@ static DBusMessage *nm_dbus_nm_get_wireless_enabled (DBusConnection *connection,
 
 static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	GSList	*elt;
 	NMData	*app_data;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
@@ -499,7 +497,6 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 
 static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	GSList	*elt;
 	NMData	*app_data;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);

@@ -119,7 +119,6 @@ out:
 static gboolean
 add_vpn_connection (const char *conn_name, const char *service_name, GSList *conn_data, GSList *routes)
 {
-	int i;
 	char *gconf_key;
 	GtkTreeIter iter;
 	char conn_gconf_path[PATH_MAX];
@@ -232,7 +231,6 @@ static gboolean vpn_druid_vpn_type_page_next (GnomeDruidPage *druidpage,
 					      gpointer user_data)
 {
 	GtkWidget *w;
-	GtkWidget *vbox;
 	NetworkManagerVpnUI *vpn_ui;
 
 	/*printf ("vpn_type_next!\n");*/
@@ -296,7 +294,6 @@ static gboolean vpn_druid_vpn_details_page_next (GnomeDruidPage *druidpage,
 		is_valid = vpn_ui->is_valid (vpn_ui);
 	}
 
-out:
 	return !is_valid;
 }
 
@@ -325,7 +322,6 @@ static gboolean vpn_druid_vpn_confirm_page_finish (GnomeDruidPage *druidpage,
 						   GtkWidget *widget,
 						   gpointer user_data)
 {
-	static int vpncon = 0;
 	GSList *conn_data;
 	GSList *conn_routes;
 	char *conn_name;
@@ -341,7 +337,7 @@ static gboolean vpn_druid_vpn_confirm_page_finish (GnomeDruidPage *druidpage,
 	add_vpn_connection (conn_name, vpn_ui->get_service_name (vpn_ui), conn_data, conn_routes);
 
 	gtk_widget_hide_all (GTK_WIDGET (druid_window));
-out:
+
 	return FALSE;
 }
 
@@ -786,9 +782,7 @@ export_cb (GtkButton *button, gpointer user_data)
 	GSList *conn_vpn_data;
 	GSList *conn_routes;
 	const char *conn_name;
-	char key[PATH_MAX];
 	char *conn_gconf_path;
-	GtkTreeIter iter;
 
 	/*printf ("edit\n");*/
 
@@ -815,7 +809,6 @@ static void get_all_vpn_connections (void)
 		const char *conn_name;
 		const char *conn_service_name;
 		GSList *conn_vpn_data;
-		GSList *i;
 		gboolean conn_user_can_edit = TRUE;
 
 		conn_gconf_path = (const char *) (vpn_conn->data);
@@ -865,9 +858,6 @@ static void get_all_vpn_connections (void)
 error:
 		g_free (vpn_conn->data);
 	}
-
-out:
-	;
 }
 
 static void 
@@ -925,12 +915,9 @@ init_app (void)
 {
 	GtkWidget *w;
 	gchar *glade_file;
-	char *file;
-	GtkTreeIter iter;
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	GSList *i;
-	NetworkManagerVpnUI *vpn_ui_interface;
 	GtkHBox *vpn_type_hbox1;
 	GDir *dir;
 

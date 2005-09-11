@@ -228,8 +228,7 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 		gboolean			 success = FALSE;
 		NMAccessPointList	*ap_list;
 		NMAPListIter		*list_iter;
-		char				*object_path,
-                                                *escaped_object_path;
+		char			*escaped_object_path;
 
 		dbus_message_iter_init_append (reply, &iter);
 		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH_AS_STRING, &iter_array);

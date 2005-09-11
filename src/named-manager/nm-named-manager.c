@@ -258,7 +258,6 @@ nm_named_manager_error_quark (void)
 static void
 join_forwarders (gpointer key, gpointer value, gpointer data)
 {
-	guint id = GPOINTER_TO_UINT (key);
 	const char *server = value;
 	GString *str = data;
 
@@ -604,7 +603,6 @@ compute_domain_searches (NMNamedManager *mgr)
 static void
 write_nameserver (gpointer key, gpointer value, gpointer data)
 {
-	guint id = GPOINTER_TO_UINT (key);
 	const char *server = value;
 	FILE *f = data;
 
@@ -787,7 +785,6 @@ typedef struct {
 static void
 remove_domain_id (gpointer key, gpointer value, gpointer data)
 {
-	const char *domain = key;
 	GHashTable *servers = value;
 	NMNamedManagerRemoveData *removedata = data;
 

@@ -85,7 +85,6 @@ void remove_device (DBusConnection *connection, char *dev)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
 
 	g_return_if_fail (connection != NULL);
@@ -125,7 +124,6 @@ void set_link_active (DBusConnection *connection, char *dev, gboolean active)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
-	DBusMessageIter iter;
 	DBusError		 error;
 
 	g_return_if_fail (connection != NULL);
