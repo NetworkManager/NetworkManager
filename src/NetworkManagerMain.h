@@ -81,7 +81,6 @@ typedef struct NMData
 	GSList *				dev_list;
 	GMutex *				dev_list_mutex;
 
-	NMWirelessScanMethod	scanning_method;
 	gboolean				wireless_enabled;
 	gboolean				asleep;
 

@@ -325,7 +325,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 
 		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 
-		opts->scan_interval = 20;
+		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 
 		opts->scan_mutex = g_mutex_new ();
 		opts->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
@@ -3221,7 +3221,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 		nm_device_set_essid (dev, "");
 		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
 		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-		dev->options.wireless.scan_interval = 20;
+		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 	}
 
 	return TRUE;
@@ -3870,12 +3870,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		g_slist_free (outdated_list);
 	}
 
-	/* If the list changed or we are unassociated, decrease our wireless scanning interval */
-	if (list_changed || !nm_device_is_activated (dev))
-		dev->options.wireless.scan_interval = 20;
-	else
-		dev->options.wireless.scan_interval = MIN (60, dev->options.wireless.scan_interval + 10);
-
 	nm_policy_schedule_device_change_check (dev->app_data);
 
 	return FALSE;
@@ -3953,18 +3947,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		return FALSE;
 	}
 
-	/* Reschedule if scanning is off, or if scanning is AUTO and we are
-	 * associated to an access point.
-	 */
-	if (    ((dev->app_data->scanning_method == NM_SCAN_METHOD_NEVER)
-		|| (    (dev->app_data->scanning_method == NM_SCAN_METHOD_WHEN_UNASSOCIATED)
-			&& nm_device_is_activated (dev)))
-		&& !scan_cb->force)
-	{
-		dev->options.wireless.scan_interval = 10;
-		goto reschedule;
-	}
-
 	/* Reschedule ourselves if all wireless is disabled, we're asleep,
 	 * or we are currently activating.
 	 */
@@ -3972,7 +3954,18 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		|| (dev->app_data->asleep == TRUE)
 		|| (nm_device_is_activating (dev) == TRUE))
 	{
-		dev->options.wireless.scan_interval = 10;
+		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_INIT);
+		goto reschedule;
+	}
+
+	/*
+	 * A/B/G cards should only scan if they are disconnected.  Set the timeout to active
+	 * for the case we lose this connection shortly, it will reach this point and then
+	 * nm_device_is_activated will return FALSE, letting the scan proceed.
+	 */
+	if (dev->options.wireless.num_freqs > 14 && nm_device_is_activated (dev) == TRUE)
+	{
+		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 		goto reschedule;
 	}
 
@@ -3980,7 +3973,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	if (dev->test_device)
 	{
 		nm_device_fake_ap_list (dev);
-		dev->options.wireless.scan_interval = 20;
+		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 		goto reschedule;
 	}
 
@@ -4116,6 +4109,31 @@ void nm_device_set_ip4_config (NMDevice *dev, NMIP4Config *config)
 	dev->ip4_config = config;
 	if (old_config)
 		nm_ip4_config_unref (old_config);
+}
+
+void nm_device_set_wireless_scan_interval (NMDevice *dev, NMWirelessScanInterval interval)
+{
+	guint seconds;
+
+	g_return_if_fail (dev != NULL);
+
+	switch (interval)
+	{
+		case NM_WIRELESS_SCAN_INTERVAL_INIT:
+			seconds = 10;
+			break;
+
+		case NM_WIRELESS_SCAN_INTERVAL_INACTIVE:
+			seconds = 120;
+			break;
+
+		case NM_WIRELESS_SCAN_INTERVAL_ACTIVE:
+		default:
+			seconds = 20;
+			break;
+	}
+
+	dev->options.wireless.scan_interval = seconds;
 }
 
 

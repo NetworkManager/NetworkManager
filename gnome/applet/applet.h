@@ -82,7 +82,6 @@ typedef struct
 
 	/* Data model elements */
 	gboolean			is_adhoc;
-	NMWirelessScanMethod	scan_method;
 	gboolean			wireless_enabled;
 	gboolean			nm_running;
 
@@ -125,8 +124,6 @@ typedef struct
 	GtkTooltips *		tooltips;
 
 	GtkWidget *		context_menu;
-	GtkWidget *		scanning_item;
-	GtkWidget *		scanning_menu;
 	GtkWidget *		stop_wireless_item;
 
 	GtkWidget *		passphrase_dialog;
@@ -149,8 +146,6 @@ void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const c
 
 NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
 VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
-
-NMWirelessScanMethod	nmwa_gconf_get_wireless_scan_method	(NMWirelessApplet *applet);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 

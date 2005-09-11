@@ -36,6 +36,7 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
+#include "NetworkManagerWireless.h"
 #include "nm-dbus-nm.h"
 #include "nm-dbus-device.h"
 #include "nm-dbus-net.h"
@@ -599,74 +600,6 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection, NMActR
 
 
 /*
- * nm_dbus_update_wireless_scan_method_cb
- *
- * Callback from nm_dbus_update_wireless_scan_method
- *
- */
-static void nm_dbus_update_wireless_scan_method_cb (DBusPendingCall *pcall, NMData *data)
-{
-	DBusMessage *			reply;
-	NMWirelessScanMethod	method = NM_SCAN_METHOD_UNKNOWN;
-
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (data != NULL);
-
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-		goto out;
-
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
-	{
-		dbus_message_unref (reply);
-		goto out;
-	}
-
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &method, DBUS_TYPE_INVALID))
-	{
-		if ((method == NM_SCAN_METHOD_ALWAYS) || (method == NM_SCAN_METHOD_NEVER)
-				|| (method == NM_SCAN_METHOD_WHEN_UNASSOCIATED))
-			data->scanning_method = method;
-	}
-	dbus_message_unref (reply);
-
-out:
-	dbus_pending_call_unref (pcall);
-}
-
-
-/*
- * nm_dbus_update_wireless_scan_method
- *
- * Get the wireless scan method from NetworkManagerInfo
- *
- */
-void nm_dbus_update_wireless_scan_method (DBusConnection *connection, NMData *data)
-{
-	DBusMessage *		message = NULL;
-	DBusPendingCall *	pcall = NULL;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (data != NULL);
-
-	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getWirelessScanMethod")))
-	{
-		nm_warning ("nm_dbus_update_wireless_scan_method(): Couldn't allocate the dbus message");
-		return;
-	}
-
-	if (dbus_connection_send_with_reply (connection, message, &pcall, INT_MAX) && pcall)
-		dbus_pending_call_set_notify (pcall, (DBusPendingCallNotifyFunction) nm_dbus_update_wireless_scan_method_cb, data, NULL);
-	else
-		nm_warning ("nm_dbus_update_wireless_scan_method(): could not send dbus message");
-
-	dbus_message_unref (message);
-}
-
-
-/*
  * nm_dbus_update_network_info
  *
  * Tell NetworkManagerInfo the updated info of the AP
@@ -1097,8 +1030,11 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 				handled = TRUE;
 			}
 		}
-		else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "WirelessScanMethodUpdate"))
-			nm_dbus_update_wireless_scan_method (data->dbus_connection, data);
+		else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "UserInterfaceActivated"))
+		{
+			nm_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+			handled = TRUE;
+		}
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "Disconnected"))
 	{
@@ -1126,7 +1062,6 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 					dbus_bus_add_match (connection, match, NULL);
 					nm_policy_schedule_allowed_ap_list_update (data);
 					nm_dbus_vpn_schedule_vpn_connections_update (data);
-					nm_dbus_update_wireless_scan_method (data->dbus_connection, data);
 					g_free (match);
 					handled = TRUE;
 				}

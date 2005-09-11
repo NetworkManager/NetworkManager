@@ -232,3 +232,56 @@ max_qual->updated);
 #endif
 	return (CLAMP (percent, 0, 100));
 }
+
+
+void nm_update_device_wireless_timeouts (NMData *data, NMWirelessScanInterval interval)
+{
+	GSList *elt;
+	NMDevice *dev = NULL;
+
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		dev = (NMDevice *)(elt->data);
+		if (dev && nm_device_is_wireless (dev))
+			nm_device_set_wireless_scan_interval (dev, interval);
+	}
+}
+
+static gboolean nm_wireless_set_scan_interval_cb (gpointer user_data)
+{
+	NMData *data = (NMData*) user_data;
+
+	nm_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_INACTIVE);
+
+	return FALSE;
+}
+
+void nm_wireless_set_scan_interval (NMData *data, NMDevice *dev, NMWirelessScanInterval interval)
+{
+	static guint source_id = 0;
+	GSource *source = NULL;
+	GSList *elt;
+
+	g_return_if_fail (data != NULL);
+
+	if (source_id != 0)
+		g_source_remove (source_id);
+
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		NMDevice *d = (NMDevice *)(elt->data);
+		if (dev && dev != d)
+			continue;
+
+		if (d && nm_device_is_wireless (d))
+			nm_device_set_wireless_scan_interval (d, interval);
+	}
+
+	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE)
+	{
+		source = g_timeout_source_new (120000);
+		g_source_set_callback (source, nm_wireless_set_scan_interval_cb, (gpointer) data, NULL);
+		source_id = g_source_attach (source, data->main_context);
+		g_source_unref (source);
+	}
+}

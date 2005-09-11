@@ -225,17 +225,4 @@ typedef enum NMActStage
 	NM_ACT_STAGE_CANCELLED
 } NMActStage;
 
-
-/*
- * Wireless scanning methods
- *
- */
-typedef enum NMWirelessScanMethod
-{
-	NM_SCAN_METHOD_UNKNOWN = 0,
-	NM_SCAN_METHOD_ALWAYS,
-	NM_SCAN_METHOD_WHEN_UNASSOCIATED,
-	NM_SCAN_METHOD_NEVER
-} NMWirelessScanMethod;
-
 #endif

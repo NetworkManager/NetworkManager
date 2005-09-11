@@ -34,6 +34,12 @@
 
 typedef struct NMDevice	NMDevice;
 
+typedef enum NMWirelessScanInterval
+{
+	NM_WIRELESS_SCAN_INTERVAL_INIT = 0,
+	NM_WIRELESS_SCAN_INTERVAL_ACTIVE,
+	NM_WIRELESS_SCAN_INTERVAL_INACTIVE
+} NMWirelessScanInterval;
 
 NMDevice *	nm_device_new					(const char *iface, const char *udi, gboolean test_device,
 											NMDeviceType test_dev_type, NMData *app_data);
@@ -89,6 +95,8 @@ gint8		nm_device_get_signal_strength			(NMDevice *dev);
 void			nm_device_update_signal_strength		(NMDevice *dev);
 
 NMAccessPoint *nm_device_get_best_ap				(NMDevice *dev);
+
+void			nm_device_set_wireless_scan_interval		(NMDevice *dev, NMWirelessScanInterval interval);
 
 /* There is no function to get the WEP key since that's a slight security risk */
 void			nm_device_set_enc_key				(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);

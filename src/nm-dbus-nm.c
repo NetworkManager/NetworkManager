@@ -411,19 +411,6 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 	return (reply);
 }
 
-
-static DBusMessage *nm_dbus_nm_get_wireless_scan_method (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
-{
-	DBusMessage	*reply = NULL;
-
-	g_return_val_if_fail (data && data->data && connection && message, NULL);
-
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &data->data->scanning_method, DBUS_TYPE_INVALID);
-	
-	return reply;
-}
-
 static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	gboolean	enabled = FALSE;
@@ -562,7 +549,6 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "activateDialup",		nm_dbus_nm_activate_dialup);
 	nm_dbus_method_list_add_method (list, "setActiveDevice",		nm_dbus_nm_set_active_device);
 	nm_dbus_method_list_add_method (list, "createWirelessNetwork",	nm_dbus_nm_create_wireless_network);
-	nm_dbus_method_list_add_method (list, "getWirelessScanMethod",	nm_dbus_nm_get_wireless_scan_method);
 	nm_dbus_method_list_add_method (list, "setWirelessEnabled",		nm_dbus_nm_set_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "getWirelessEnabled",		nm_dbus_nm_get_wireless_enabled);
 	nm_dbus_method_list_add_method (list, "sleep",				nm_dbus_nm_sleep);

@@ -35,5 +35,6 @@ char *	nm_wireless_128bit_key_from_passphrase	(const char *passphrase);
 int		nm_wireless_qual_to_percent			(const struct iw_quality *qual,
 										 const struct iw_quality *max_qual,
 										 const struct iw_quality *avg_qual);
+void nm_wireless_set_scan_interval	(NMData *data, NMDevice *dev, NMWirelessScanInterval interval);
 
 #endif

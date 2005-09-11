@@ -428,8 +428,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	}
 
 	data->enable_test_devices = enable_test_devices;
-
-	data->scanning_method = NM_SCAN_METHOD_ALWAYS;
 	data->wireless_enabled = TRUE;
 
 	nm_policy_schedule_device_change_check (data);
@@ -931,7 +929,6 @@ int main( int argc, char *argv[] )
 	{
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
 		nm_dbus_vpn_schedule_vpn_connections_update (nm_data);
-		nm_dbus_update_wireless_scan_method (nm_data->dbus_connection, nm_data);
 	}
 
 	/* Right before we init hal, we have to make sure our mainloop
