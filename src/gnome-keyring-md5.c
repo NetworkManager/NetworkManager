@@ -29,7 +29,7 @@ gnome_keyring_md5_string (const char *string, unsigned char digest[16])
   struct GnomeKeyringMD5Context md5_context;
   
   gnome_keyring_md5_init (&md5_context);
-  gnome_keyring_md5_update (&md5_context, string, strlen (string));
+  gnome_keyring_md5_update (&md5_context, (const unsigned char *)string, strlen (string));
   gnome_keyring_md5_final (digest, &md5_context);
 }
 
@@ -58,7 +58,7 @@ char *
 gnome_keyring_md5_digest_to_ascii (unsigned char digest[16])
 {
   static char hex_digits[] = "0123456789abcdef";
-  unsigned char *res;
+  char *res;
   int i;
   
   res = g_malloc (33);

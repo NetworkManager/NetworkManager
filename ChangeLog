@@ -1,5 +1,7 @@
 2005-09-12  Christopher Aillon  <caillon@redhat.com>
 
+	* src/gnome-keyring-md5.c: Updated code from gnome-keyring
+
 	* gnome/applet/applet-dbus-devices.c:
 	* gnome/applet/applet.c:
 	* gnome/applet/nm-device.c:
