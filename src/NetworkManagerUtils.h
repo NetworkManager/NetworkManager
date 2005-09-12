@@ -102,4 +102,6 @@ gboolean nm_completion_boolean_function2_test(int tries,
 		nm_completion_args args);
 #define nm_completion_boolean_function_test nm_completion_boolean_function1_test
 
+gchar* nm_utils_inet_ip4_address_as_string (guint32 ip);
+
 #endif

@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <linux/sockios.h>
 #include <syslog.h>
 #include <stdarg.h>
@@ -800,5 +802,17 @@ gboolean nm_completion_boolean_function2_test(int tries,
 	if (!(*condition)(arg0, arg1))
 		return TRUE;
 	return FALSE;
+}
+
+
+gchar *nm_utils_inet_ip4_address_as_string (guint32 ip)
+{
+	struct in_addr tmp_addr;
+	gchar *ip_string;
+
+	tmp_addr.s_addr = ip;
+	ip_string = inet_ntoa (tmp_addr);
+
+	return g_strdup (ip_string);
 }
 

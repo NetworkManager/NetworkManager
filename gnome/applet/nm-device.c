@@ -41,6 +41,9 @@ struct NetworkDevice
 	gboolean				link;
 	NMDriverSupportLevel	driver_support_level;
 	char *				addr;
+	char *				ip4addr;
+	char *				broadcast;
+	char *				netmask;
 	char *				udi;
 	gint					strength;
 	GSList *				networks;
@@ -89,6 +92,9 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 	dev->type = src->type;
 	dev->link = src->link;
 	dev->addr = g_strdup (src->addr);
+	dev->ip4addr = g_strdup (src->ip4addr);
+	dev->broadcast = g_strdup (src->broadcast);
+	dev->netmask = g_strdup (src->netmask);
 	dev->driver_support_level = src->driver_support_level;
 	dev->iface = g_strdup (src->iface);
 	dev->desc = g_strdup (src->desc);
@@ -145,6 +151,9 @@ void network_device_unref (NetworkDevice *dev)
 		g_free (dev->udi);
 		g_free (dev->desc);
 		g_free (dev->addr);
+		g_free (dev->broadcast);
+		g_free (dev->netmask);
+		g_free (dev->ip4addr);
 		memset (dev, 0, sizeof (NetworkDevice));
 		g_free (dev);
 	}
@@ -400,12 +409,65 @@ void network_device_set_address (NetworkDevice *dev, const char *addr)
 	g_return_if_fail (dev != NULL);
 
 	if (dev->addr)
-	{
 		g_free (dev->addr);
-		dev->addr = NULL;
-	}
-	if (addr)
-		dev->addr = g_strdup (addr);
+	dev->addr = addr ? g_strdup (addr) : NULL;
+}
+
+/*
+ * Accessors for broadcast address
+ */
+const char *network_device_get_broadcast (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->broadcast);
+}
+
+void network_device_set_broadcast (NetworkDevice *dev, const char *addr)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->broadcast)
+		g_free (dev->broadcast);
+	dev->broadcast = addr ? g_strdup (addr) : NULL;
+}
+
+/*
+ * Accessors for subnet address
+ */
+const char *network_device_get_netmask (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->netmask);
+}
+
+void network_device_set_netmask (NetworkDevice *dev, const char *addr)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->netmask)
+		g_free (dev->netmask);
+	dev->netmask = addr ? g_strdup (addr) : NULL;
+}
+
+/*
+ * Accessors for ip4 address
+ */
+const char *network_device_get_ip4_address (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->ip4addr);
+}
+
+void network_device_set_ip4_address (NetworkDevice *dev, const char *addr)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->ip4addr)
+		g_free (dev->ip4addr);
+	dev->ip4addr = addr ? g_strdup (addr) : NULL;
 }
 
 /*

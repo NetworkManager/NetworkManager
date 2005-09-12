@@ -1,3 +1,16 @@
+2005-09-12  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.c:
+	* gnome/applet/applet.c:
+	* gnome/applet/nm-device.c:
+	* gnome/applet/nm-device.h:
+	* src/NetworkManagerUtils.c:
+	* src/NetworkManagerUtils.h:
+	* src/nm-dbus-device.c:
+	I've got a fever, and the only cure for it is less ioctl.
+	Make NM push IP data rather than make the applet open a socket
+	to the device.
+
 2005-09-10  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:

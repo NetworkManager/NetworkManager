@@ -32,6 +32,7 @@
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerDbusUtils.h"
 #include "NetworkManagerPolicy.h"
+#include "NetworkManagerUtils.h"
 #include "nm-dbus-device.h"
 
 
@@ -325,7 +326,9 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		const char *		iface = nm_device_get_iface (dev);
 		dbus_uint32_t		type = (dbus_uint32_t) nm_device_get_type (dev);
 		const char *		udi = nm_device_get_udi (dev);
-		dbus_uint32_t		ip4_address = (dbus_uint32_t) nm_device_get_ip4_address (dev);
+		gchar *			ip4_address;
+		gchar *			broadcast;
+		gchar *			subnetmask;
 		struct ether_addr	hw_addr;
 		char				hw_addr_buf[20];
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
@@ -338,10 +341,16 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		int				num_networks = 0;
 		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
 		NMActStage		act_stage = active ? nm_act_request_get_stage (nm_device_get_act_request (dev)) : NM_ACT_STAGE_UNKNOWN;
+		NMIP4Config *		ip4config;
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
 		ether_ntoa_r (&hw_addr, &hw_addr_buf[0]);
+
+		ip4config = nm_device_get_ip4_config (dev);
+		ip4_address = nm_utils_inet_ip4_address_as_string (nm_device_get_ip4_address (dev));
+		broadcast = nm_utils_inet_ip4_address_as_string (nm_ip4_config_get_broadcast (ip4config));
+		subnetmask = nm_utils_inet_ip4_address_as_string (nm_ip4_config_get_netmask (ip4config));
 
 		if (nm_device_is_wireless (dev))
 		{
@@ -391,7 +400,9 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_STRING, &udi,
 									DBUS_TYPE_BOOLEAN,&active,
 									DBUS_TYPE_UINT32, &act_stage,
-									DBUS_TYPE_UINT32, &ip4_address,
+									DBUS_TYPE_STRING, &ip4_address,
+									DBUS_TYPE_STRING, &subnetmask,
+									DBUS_TYPE_STRING, &broadcast,
 									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
@@ -403,6 +414,9 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		g_free (op);
 		g_free (active_network_path);
 		g_strfreev (networks);
+		g_free (ip4_address);
+		g_free (broadcast);
+		g_free (subnetmask);
 	}
 
 	return reply;

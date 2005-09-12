@@ -658,7 +658,9 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	dbus_uint32_t		type = 0;
 	const char *		udi = NULL;
 	dbus_bool_t		active = FALSE;
-	dbus_uint32_t		ip4_address = 0;
+	const char *		ip4_address = NULL;
+	const char *		broadcast = NULL;
+	const char *		subnetmask = NULL;
 	const char *		hw_addr = NULL;
 	dbus_uint32_t		mode = 0;
 	dbus_int32_t		strength = -1;
@@ -687,7 +689,9 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_STRING, &udi,
 									DBUS_TYPE_BOOLEAN,&active,
 									DBUS_TYPE_UINT32, &act_stage,
-									DBUS_TYPE_UINT32, &ip4_address,
+									DBUS_TYPE_STRING, &ip4_address,
+									DBUS_TYPE_STRING, &subnetmask,
+									DBUS_TYPE_STRING, &broadcast,
 									DBUS_TYPE_STRING, &hw_addr,
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
@@ -706,6 +710,9 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 		network_device_set_link (dev, link_active);
 		network_device_set_driver_support_level (dev, driver_support_level);
 		network_device_set_act_stage (dev, act_stage);
+		network_device_set_ip4_address (dev, ip4_address);
+		network_device_set_broadcast (dev, broadcast);
+		network_device_set_netmask (dev, subnetmask);
 
 		/* If the device already exists in our list for some reason, remove it so we
 		 * can add the new one with updated data.

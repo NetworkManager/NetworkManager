@@ -32,23 +32,6 @@
 #endif
 
 #include <string.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <math.h>
-#include <dirent.h>
-#include <time.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/un.h>
-#include <net/if.h>
-
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 #include <libgnomeui/libgnomeui.h>
@@ -206,13 +189,10 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 {
 	GtkWidget *info_dialog;
 	char *addr = NULL, *mask = NULL, *broadcast = NULL;
-	char *dest = NULL, *mac = NULL, *iface_and_type = NULL;
+	char *mac = NULL, *iface_and_type = NULL;
 	GtkWidget *label;
-	struct ifreq ifr;
-	int fd, flags;
 	const char *iface = NULL;
 	NetworkDevice *dev;
-	gboolean ret = TRUE;
 
 	info_dialog = glade_xml_get_widget (applet->info_dialog_xml, "info_dialog");
 	if (!info_dialog)
@@ -222,7 +202,6 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		g_free (err);
 		return FALSE;
 	}
-
 	
 	if ((dev = nmwa_get_first_active_device (applet->device_list)))
 		iface = network_device_get_iface (dev);
@@ -235,81 +214,21 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		return FALSE;
 	}
 
-	fd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-	{
-		char *err = g_strdup (_("Could not open socket!"));
-		nmwa_show_socket_err (info_dialog, err);
-		g_free (err);
-		return FALSE;
-	}
+	mac = (char*) network_device_get_address (dev);
+	broadcast = (char*) network_device_get_broadcast (dev);
+	addr = (char*) network_device_get_ip4_address (dev);
+	mask = (char*) network_device_get_netmask (dev);
 
-	ifr.ifr_addr.sa_family = AF_INET;
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (ioctl (fd, SIOCGIFADDR, &ifr) == 0)
-		addr = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0)
-	{
-		char *err = g_strdup (_("Failed to get information about the interface!"));
-		nmwa_show_socket_err (info_dialog, err);
-		g_free (err);
-		ret = FALSE;
-		goto out;
-	}
-	flags = ifr.ifr_flags;
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (flags & IFF_BROADCAST && ioctl (fd, SIOCGIFBRDADDR, &ifr) == 0)
-		broadcast = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_broadaddr)->sin_addr));
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (ioctl (fd, SIOCGIFNETMASK, &ifr) == 0)
-		mask = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr));
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (flags & IFF_POINTOPOINT && ioctl (fd, SIOCGIFDSTADDR, &ifr) == 0)
-		dest = g_strdup (inet_ntoa (((struct sockaddr_in *) &ifr.ifr_dstaddr)->sin_addr));
-
-	g_strlcpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name));
-	if (ioctl (fd, SIOCGIFHWADDR, &ifr) == 0)
-		mac = g_strdup_printf ("%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X",
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[0],
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[1],
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[2],
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[3],
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[4],
-		       (unsigned char) ifr.ifr_hwaddr.sa_data[5]);
-
-	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
 	else
 		iface_and_type = g_strdup_printf (_("Wireless Ethernet (%s)"), iface);	
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
 	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-ip-address");
 	gtk_label_set_text (GTK_LABEL (label), addr);
-
-	label = get_label (info_dialog, applet->info_dialog_xml, "label-destination-address");
-	if (flags & IFF_POINTOPOINT)
-	{
-		gtk_label_set_text (GTK_LABEL (label), dest);
-		gtk_widget_show (label);
-	}
-	else
-		gtk_widget_hide (label);
-
-	label = get_label (info_dialog, applet->info_dialog_xml, "label-destination-address-label");
-	if (flags & IFF_POINTOPOINT)
-	{
-		gtk_label_set_text (GTK_LABEL (label), dest);
-		gtk_widget_show (label);
-	}
-	else
-		gtk_widget_hide (label);
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-broadcast-address");
 	gtk_label_set_text (GTK_LABEL (label), broadcast);
@@ -320,16 +239,9 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-hardware-address");
 	gtk_label_set_text (GTK_LABEL (label), mac);
 
-out:
-	close (fd);
-	g_free (addr);
-	g_free (broadcast);
-	g_free (mask);
-	g_free (dest);
 	g_free (iface_and_type);
-	g_free (mac);
 
-	return ret;
+	return TRUE;
 }
 
 static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
