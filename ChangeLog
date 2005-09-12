@@ -1,5 +1,8 @@
 2005-09-12  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/wireless-applet.glade:
+	The passphrase entry should also activate the default
+
 	* src/gnome-keyring-md5.c: Updated code from gnome-keyring
 
 	* gnome/applet/applet-dbus-devices.c:
