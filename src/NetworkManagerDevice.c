@@ -26,6 +26,7 @@
 #include <iwlib.h>
 #include <signal.h>
 #include <string.h>
+#include <netinet/ether.h>
 
 #include "autoip.h"
 #include "NetworkManager.h"
@@ -3511,14 +3512,40 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 		{
 			const GTimeVal *curtime = nm_ap_get_timestamp (tmp_ap);
 
-			if (nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > trusted_latest_timestamp.tv_sec))
+			gboolean blacklisted = nm_ap_has_manufacturer_default_essid (scan_ap);
+			if (blacklisted)
+			{
+				GSList *elt, *user_addrs;
+				const struct ether_addr *ap_addr;
+				char char_addr[20];
+
+				ap_addr = nm_ap_get_address (scan_ap);
+				user_addrs = nm_ap_get_user_addresses (tmp_ap);
+
+				memset (&char_addr[0], 0, 20);
+				ether_ntoa_r (ap_addr, &char_addr[0]);
+
+				for (elt = user_addrs; elt; elt = g_slist_next (elt))
+				{
+					if (elt->data && !strcmp (elt->data, &char_addr[0]))
+					{
+						blacklisted = FALSE;
+						break;
+					}
+				}
+
+				g_slist_foreach (user_addrs, (GFunc)g_free, NULL);
+				g_slist_free (user_addrs);
+			}
+
+			if (!blacklisted && nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > trusted_latest_timestamp.tv_sec))
 			{
 				trusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				trusted_best_ap = scan_ap;
 				/* Merge access point data (mainly to get updated WEP key) */
 				nm_ap_set_enc_key_source (trusted_best_ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_type (tmp_ap));
 			}
-			else if (!nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > untrusted_latest_timestamp.tv_sec))
+			else if (!blacklisted && !nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > untrusted_latest_timestamp.tv_sec))
 			{
 				untrusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				untrusted_best_ap = scan_ap;

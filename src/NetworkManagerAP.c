@@ -55,6 +55,16 @@ struct NMAccessPoint
 	GSList			*user_addresses;
 };
 
+/* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
+static char* default_essid_list[] =
+{
+	"linksys",
+	"default",
+	"belkin54g",
+	"NETGEAR",
+	NULL
+};
+
 /*
  * nm_ap_new
  *
@@ -610,6 +620,22 @@ gboolean nm_is_enc_key_valid (const char *key, NMEncKeyType key_type)
 		&& (key_type != NM_ENC_TYPE_UNKNOWN)
 		&& (key_type != NM_ENC_TYPE_NONE))
 		return TRUE;
+
+	return FALSE;
+}
+
+gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
+{
+	int i;
+
+	g_return_val_if_fail (ap != NULL, FALSE);
+
+	for (i = 0; default_essid_list[i] != NULL; i++)
+	{
+		char *essid = default_essid_list[i];
+		if (strcmp (essid, ap->essid) == 0)
+			return TRUE;
+	}
 
 	return FALSE;
 }

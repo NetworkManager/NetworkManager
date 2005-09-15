@@ -91,4 +91,11 @@ void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
 gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
 
+/* 
+ * NOTE:
+ * This is not intended to return true for all APs with manufacturer defaults.  It is intended to return true for
+ * only the MOST COMMON manufacturing defaults.
+ */
+gboolean			nm_ap_has_manufacturer_default_essid	(NMAccessPoint *ap);
+
 #endif

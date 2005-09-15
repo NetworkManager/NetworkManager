@@ -1,3 +1,13 @@
+2005-09-15  Christopher Aillon  <caillon@redhat.com>
+
+	* src/NetworkManagerAP.c:
+	* src/NetworkManagerAP.h:
+	* src/NetworkManagerDevice.c:
+	Set a blacklist for certain common manufacturer default ESSIDs:
+	APs with these ESSIDs are extremely likely to be completely
+	different networks: connecting to one should not make NM
+	auto-connect to every other AP with the same default ESSID.
+
 2005-09-12  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/wireless-applet.glade:
