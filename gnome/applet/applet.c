@@ -2434,6 +2434,7 @@ out:
 	{
 		char *msg = g_strdup(_("The NetworkManager applet could not find some required resources.  It cannot continue.\n"));
 		show_warning_dialog (msg);
+		nmwa_icons_free (applet);
 	}
 
 	return success;

@@ -342,15 +342,22 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
 		NMActStage		act_stage = active ? nm_act_request_get_stage (nm_device_get_act_request (dev)) : NM_ACT_STAGE_UNKNOWN;
 		NMIP4Config *		ip4config;
+		guint32			broadcast_addr = 0;
+		guint32			subnetmask_addr = 0;
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
 		ether_ntoa_r (&hw_addr, &hw_addr_buf[0]);
 
 		ip4config = nm_device_get_ip4_config (dev);
+		if (ip4config)
+		{
+			broadcast_addr = nm_ip4_config_get_broadcast (ip4config);
+			subnetmask_addr = nm_ip4_config_get_netmask (ip4config);
+		}
 		ip4_address = nm_utils_inet_ip4_address_as_string (nm_device_get_ip4_address (dev));
-		broadcast = nm_utils_inet_ip4_address_as_string (nm_ip4_config_get_broadcast (ip4config));
-		subnetmask = nm_utils_inet_ip4_address_as_string (nm_ip4_config_get_netmask (ip4config));
+		broadcast = nm_utils_inet_ip4_address_as_string (broadcast_addr);
+		subnetmask = nm_utils_inet_ip4_address_as_string (subnetmask_addr);
 
 		if (nm_device_is_wireless (dev))
 		{
