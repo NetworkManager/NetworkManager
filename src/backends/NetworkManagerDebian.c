@@ -169,7 +169,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 	g_return_if_fail (iface != NULL);
 
 	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf ("/sbin/ip address flush dev %s", iface);
+	buf = g_strdup_printf ("/sbin/ip addr flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -407,7 +407,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
   eui[0] ^= 2;
 
   /* Add the default link-local IPv6 address to a device */
-  buf = g_strdup_printf ("/sbin/ip -6 address add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
+  buf = g_strdup_printf ("/sbin/ip -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
 			 eui[0], eui[1], eui[2], eui[3],
 			 eui[4], eui[5],
 			 eui[6], eui[7], nm_device_get_iface (dev));
