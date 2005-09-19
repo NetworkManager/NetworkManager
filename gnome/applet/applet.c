@@ -178,7 +178,7 @@ static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 	char *msg;
 	
 	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
-					   _("Error displaying connection information: "), err);
+	                       _("Error displaying connection information: "), err);
 	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
 	g_free (msg);
 	gtk_window_present (GTK_WINDOW (error_dialog));
@@ -300,13 +300,13 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 	g_free (file);
 
 	about_dialog = gnome_about_new (_("NetworkManager Applet"),
-							  VERSION,
-							  _("Copyright (C) 2004-2005 Red Hat, Inc."),
-							  _("Notification area applet for managing your network devices and connections."),
-							  authors,
-							  documenters,
-							  NULL,
-							  pixbuf);
+	                                VERSION,
+	                                _("Copyright (C) 2004-2005 Red Hat, Inc."),
+	                                _("Notification area applet for managing your network devices and connections."),
+	                                authors,
+	                                documenters,
+	                                NULL,
+	                                pixbuf);
 	g_object_unref (pixbuf);
 
 	gtk_window_set_screen (GTK_WINDOW (about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet)));
@@ -317,16 +317,16 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 
 	/* GTK 2.6 and later code */
 	gtk_show_about_dialog (NULL,
-					   "name", _("NetworkManager Applet"),
-					   "version", VERSION,
-					   "copyright", _("Copyright (C) 2004-2005 Red Hat, Inc."),
-					   "comments",	_("Notification area applet for managing your network devices and connections."),
-					   "authors", authors,
-					   "artists", artists,
-					   "documenters", documenters,
-					   "translator-credits", _("translator-credits"),
-					   "logo-icon-name", GTK_STOCK_NETWORK,
-					   NULL);
+	                       "name", _("NetworkManager Applet"),
+	                       "version", VERSION,
+	                       "copyright", _("Copyright (C) 2004-2005 Red Hat, Inc."),
+	                       "comments", _("Notification area applet for managing your network devices and connections."),
+	                       "authors", authors,
+	                       "artists", artists,
+	                       "documenters", documenters,
+	                       "translator-credits", _("translator-credits"),
+	                       "logo-icon-name", GTK_STOCK_NETWORK,
+	                       NULL);
 #endif
 }
 
@@ -445,7 +445,7 @@ void nmwa_schedule_vpn_failure_dialog (NMWirelessApplet *applet, const char *mem
 	error_data = g_strdup_printf (_("The VPN service said: \"%s\""), error_msg);
 
 	cb_data->msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
-					"%s\n\n%s", error_head, error_desc, error_data);
+	                                "%s\n\n%s", error_head, error_desc, error_data);
 
 	g_free (error_head);
 	g_free (error_desc);
@@ -513,7 +513,7 @@ void nmwa_schedule_vpn_login_banner_dialog (NMWirelessApplet *applet, const char
 
 	msg2 = g_strdup_printf (_("VPN connection '%s' said:"), vpn_name);
 	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s\n\n\"%s\"",
-					_("VPN Login Message"), msg2, banner);
+	                       _("VPN Login Message"), msg2, banner);
 	g_free (msg2);
 
 	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_banner_dialog, msg);
@@ -745,14 +745,14 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	{
 		case NM_DRIVER_NO_WIRELESS_SCAN:
 			temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support wireless scanning."),
-							network_device_get_desc (dev), network_device_get_iface (dev));
+			                        network_device_get_desc (dev), network_device_get_iface (dev));
 			label_text = g_strdup_printf (gtk_label_get_label (label), temp);
 			g_free (temp);
 		break;
 
 		case NM_DRIVER_NO_CARRIER_DETECT:
 			temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support link detection."),
-							network_device_get_desc (dev), network_device_get_iface (dev));
+			                        network_device_get_desc (dev), network_device_get_iface (dev));
 			label_text = g_strdup_printf (gtk_label_get_label (label), temp);
 			g_free (temp);
 			break;
@@ -1073,7 +1073,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 					tip = g_strdup (_("Connected to an Ad-Hoc wireless network"));
 				else
 					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
-							active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
+					                       active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
 			}
 
 			pixbuf = nmwa_get_connected_icon (applet, act_dev);
@@ -1457,7 +1457,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 			NMWirelessMenuItem *item = wireless_menu_item_new ();
 			GtkMenuItem *gtk_item = wireless_menu_item_get_item (item);
 
-		     wireless_menu_item_update (item, device, n_devices);
+			wireless_menu_item_update (item, device, n_devices);
 
 			g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (device)));
 			g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
@@ -1482,16 +1482,16 @@ static void custom_essid_item_selected (GtkWidget *menu_item, NMWirelessApplet *
 
 static void nmwa_menu_add_custom_essid_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
-  GtkWidget *menu_item;
-  GtkWidget *label;
+	GtkWidget *menu_item;
+	GtkWidget *label;
 
-  menu_item = gtk_menu_item_new ();
-  label = gtk_label_new_with_mnemonic (_("_Connect to Other Wireless Network..."));
-  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-  gtk_container_add (GTK_CONTAINER (menu_item), label);
-  gtk_widget_show_all (menu_item);
-  gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-  g_signal_connect (menu_item, "activate", G_CALLBACK (custom_essid_item_selected), applet);
+	menu_item = gtk_menu_item_new ();
+	label = gtk_label_new_with_mnemonic (_("_Connect to Other Wireless Network..."));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_container_add (GTK_CONTAINER (menu_item), label);
+	gtk_widget_show_all (menu_item);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	g_signal_connect (menu_item, "activate", G_CALLBACK (custom_essid_item_selected), applet);
 }
 
 
@@ -1503,16 +1503,16 @@ static void new_network_item_selected (GtkWidget *menu_item, NMWirelessApplet *a
 
 static void nmwa_menu_add_create_network_item (GtkWidget *menu, NMWirelessApplet *applet)
 {
-  GtkWidget *menu_item;
-  GtkWidget *label;
+	GtkWidget *menu_item;
+	GtkWidget *label;
 
-  menu_item = gtk_menu_item_new ();
-  label = gtk_label_new_with_mnemonic (_("Create _New Wireless Network..."));
-  gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
-  gtk_container_add (GTK_CONTAINER (menu_item), label);
-  gtk_widget_show_all (menu_item);
-  gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-  g_signal_connect (menu_item, "activate", G_CALLBACK (new_network_item_selected), applet);
+	menu_item = gtk_menu_item_new ();
+	label = gtk_label_new_with_mnemonic (_("Create _New Wireless Network..."));
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
+	gtk_container_add (GTK_CONTAINER (menu_item), label);
+	gtk_widget_show_all (menu_item);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	g_signal_connect (menu_item, "activate", G_CALLBACK (new_network_item_selected), applet);
 }
 
 
