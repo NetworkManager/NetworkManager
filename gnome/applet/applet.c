@@ -324,7 +324,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 					   "authors", authors,
 					   "artists", artists,
 					   "documenters", documenters,
-					   "translator-credits",	NULL,
+					   "translator-credits", _("translator-credits"),
 					   "logo-icon-name", GTK_STOCK_NETWORK,
 					   NULL);
 #endif

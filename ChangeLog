@@ -1,3 +1,8 @@
+2005-09-19  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet.c: Use translator-credits
+	so translators can make themselves known.
+
 2005-09-15  Christopher Aillon  <caillon@redhat.com>
 
 	* src/NetworkManagerAP.c:
