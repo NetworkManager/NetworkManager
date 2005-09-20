@@ -1,11 +1,11 @@
 2005-09-19  Dan Williams  <dcbw@redhat.com>
 
-    * src/backends/NetworkManagerRedHat.c
-      src/backends/NetworkManagerDebian.c
-      src/backends/NetworkManagerSlackware.c
-      src/backends/NetworkManagerGentoo.c
-      src/backends/NetworkManagerSUSE.c
-        - Fix invocations of "/sbin/ip address" to use short form instead
+	* src/backends/NetworkManagerRedHat.c:
+	* src/backends/NetworkManagerDebian.c:
+	* src/backends/NetworkManagerSlackware.c:
+	* src/backends/NetworkManagerGentoo.c:
+	* src/backends/NetworkManagerSUSE.c:
+	Fix invocations of "/sbin/ip address" to use short form instead
 
 2005-09-19  Christopher Aillon  <caillon@redhat.com>
 
