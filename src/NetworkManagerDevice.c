@@ -2437,7 +2437,7 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 	nm_device_bring_up_wait (dev, 1);
 
-	nm_info ("Activation (%s/wireless) Stage 1 (Device Configure) will connect to access point '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+	nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) will connect to access point '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
 	if (ap_need_key (dev, ap))
 	{
