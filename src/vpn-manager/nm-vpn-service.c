@@ -814,7 +814,6 @@ gboolean nm_vpn_service_name_owner_changed (NMVPNService *service, NMVPNActReque
 	gboolean			new_owner_good = (new && strlen (new));
 
 	g_return_val_if_fail (service != NULL, FALSE);
-	g_return_val_if_fail (req != NULL, FALSE);
 
 	if (req && (vpn = nm_vpn_act_request_get_connection (req)))
 		valid_vpn = same_service_name (service, vpn);
@@ -899,7 +898,7 @@ gboolean nm_vpn_service_process_signal (NMVPNService *service, NMVPNActRequest *
 	return TRUE;
 }
 
-#ifdef NM_DEBUG_VPN
+#ifdef NM_DEBUG_VPN_CONFIG
 /*
  *  Prints config returned from the service daemo
  */
