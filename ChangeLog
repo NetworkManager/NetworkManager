@@ -1,3 +1,8 @@
+2005-09-26  Robert Love  <rml@novell.com>
+
+	* src/named-manager/nm-named-manager.c: only '#' is officially a valid
+	  comment in /etc/resolv.conf -- ';' is not.
+
 2005-09-19  Dan Williams  <dcbw@redhat.com>
 
 	* src/backends/NetworkManagerRedHat.c:
