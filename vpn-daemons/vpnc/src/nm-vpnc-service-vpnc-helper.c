@@ -261,16 +261,18 @@ int main( int argc, char *argv[] )
 	cisco_banner = getenv ("CISCO_BANNER");
 
 #if 0
-	file = fopen ("/tmp/vpnstuff", "w");
-	fprintf (file, "VPNGATEWAY: '%s'\n", vpn_gateway);
-	fprintf (file, "TUNDEF: '%s'\n", tundev);
-	fprintf (file, "INTERNAL_IP4_ADDRESS: '%s'\n", internal_ip4_address);
-	fprintf (file, "INTERNAL_IP4_NETMASK: '%s'\n", internal_ip4_netmask);
-	fprintf (file, "INTERNAL_IP4_DNS: '%s'\n", internal_ip4_dns);
-	fprintf (file, "INTERNAL_IP4_NBNS: '%s'\n", internal_ip4_nbns);
-	fprintf (file, "CISCO_DEF_DOMAIN: '%s'\n", cisco_def_domain);
-	fprintf (file, "CISCO_BANNER: '%s'\n", cisco_banner);
-	fclose (file);
+	{
+		FILE *file = fopen ("/tmp/vpnstuff", "w");
+		fprintf (file, "VPNGATEWAY: '%s'\n", vpn_gateway);
+		fprintf (file, "TUNDEF: '%s'\n", tundev);
+		fprintf (file, "INTERNAL_IP4_ADDRESS: '%s'\n", internal_ip4_address);
+		fprintf (file, "INTERNAL_IP4_NETMASK: '%s'\n", internal_ip4_netmask);
+		fprintf (file, "INTERNAL_IP4_DNS: '%s'\n", internal_ip4_dns);
+		fprintf (file, "INTERNAL_IP4_NBNS: '%s'\n", internal_ip4_nbns);
+		fprintf (file, "CISCO_DEF_DOMAIN: '%s'\n", cisco_def_domain);
+		fprintf (file, "CISCO_BANNER: '%s'\n", cisco_banner);
+		fclose (file);
+	}
 #endif
 
 	if (!vpn_gateway)
