@@ -738,8 +738,10 @@ static char * verify_and_return_provider (const char *provider)
 		goto out_close;
 	ret = strcmp (buf, "no");
 	free (buf);
-	if (ret)
+	if (ret) {
+		buf = NULL;
 		goto out_close;
+	}
 
 	buf = svGetValue (file, "PROVIDER");
 
@@ -778,9 +780,14 @@ GSList * nm_system_get_dialup_config (void)
 		NMDialUpConfig *config;
 		shvarFile *modem_file;
 		char *name, *buf, *provider_name;
+		int modem;
 
-		/* we only want modems */
-		if (!g_str_has_prefix (dentry, "ifcfg-modem"))
+		/* we only want modems and isdn */
+		if (g_str_has_prefix (dentry, "ifcfg-modem"))
+			modem = 1;
+		else if (g_str_has_prefix (dentry, "ifcfg-ippp"))
+			modem = 0;
+		else
 			continue;
 
 		/* open the configuration file */
@@ -798,8 +805,11 @@ GSList * nm_system_get_dialup_config (void)
 			 goto out_free;
 
 		config = g_malloc (sizeof (NMDialUpConfig));
-		config->name = g_strdup_printf ("%s via Modem", provider_name);
-		config->data = g_strdup (dentry + 6);	/* skip the "ifcfg-" prefix */
+		if (modem)
+			config->name = g_strdup_printf ("%s via Modem", provider_name);
+		else
+			config->name = g_strdup_printf ("%s via ISDN", provider_name);
+		config->data = g_strdup (dentry + 6); /* skip the "ifcfg-" prefix */
 
 		list = g_slist_append (list, config);
 

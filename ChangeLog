@@ -1,5 +1,12 @@
 2005-09-26  Robert Love  <rml@novell.com>
 
+	* src/backends/NetworkManagerSuSE.c, (nm_system_get_dialup_config): Add
+	  ISDN support!
+	* src/backends/NetworkManagerSuSE.c, (verify_and_return_provider): Fix
+	  bug in error path if "ASKPASSWORD" is "no".
+
+2005-09-26  Robert Love  <rml@novell.com>
+
 	* src/named-manager/nm-named-manager.c: only '#' is officially a valid
 	  comment in /etc/resolv.conf -- ';' is not.
 
