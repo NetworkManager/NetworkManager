@@ -672,6 +672,8 @@ static void nm_vpn_service_stage4_ip_config_get (NMVPNService *service, NMVPNAct
 
 		config = nm_ip4_config_new ();
 
+		nm_ip4_config_set_secondary (config, TRUE);
+
 		nm_ip4_config_set_address (config, ip4_internal_address);
 
 		if (ip4_internal_netmask)
@@ -885,7 +887,8 @@ gboolean nm_vpn_service_process_signal (NMVPNService *service, NMVPNActRequest *
 
 			/* If the VPN daemon state is now stopped and it was starting, clear the active connection */
 			if (((new_state == NM_VPN_STATE_STOPPED) || (new_state == NM_VPN_STATE_SHUTDOWN) || (new_state == NM_VPN_STATE_STOPPING))
-				&& ((old_state == NM_VPN_STATE_STARTED) || (old_state == NM_VPN_STATE_STARTING)))
+				&& ((old_state == NM_VPN_STATE_STARTED) || (old_state == NM_VPN_STATE_STARTING))
+				&& valid_vpn)
 			{
 				nm_vpn_act_request_unref (req);
 				nm_vpn_manager_schedule_vpn_connection_died (service->manager, req);

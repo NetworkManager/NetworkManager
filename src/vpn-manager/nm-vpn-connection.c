@@ -146,12 +146,6 @@ void nm_vpn_connection_deactivate (NMVPNConnection *connection)
 {
 	g_return_if_fail (connection != NULL);
 
-	if (connection->ip4_config)
-	{
-		nm_system_remove_ip4_config_nameservers (connection->named_manager, connection->ip4_config);
-		nm_system_remove_ip4_config_search_domains (connection->named_manager, connection->ip4_config);
-	}
-
 	if (connection->vpn_iface)
 	{
 		nm_system_device_set_up_down_with_iface (NULL, connection->vpn_iface, FALSE);
@@ -161,6 +155,10 @@ void nm_vpn_connection_deactivate (NMVPNConnection *connection)
 
 	if (connection->ip4_config)
 	{
+		/* Remove attributes of the VPN's IP4 Config */
+		nm_system_vpn_device_unset_from_ip4_config (connection->named_manager, connection->parent_dev,
+				connection->vpn_iface, connection->ip4_config);
+
 		/* Reset routes, nameservers, and domains of the currently active device */
 		nm_system_device_set_from_ip4_config (connection->parent_dev);
 	}

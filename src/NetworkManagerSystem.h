@@ -61,12 +61,9 @@ NMIP4Config *	nm_system_device_new_ip4_system_config		(NMDevice *dev);
 
 gboolean		nm_system_device_get_use_dhcp				(NMDevice *dev);
 
-/* Prototypes for system-layer network functions (ie setting IP address, etc) */
-void			nm_system_remove_ip4_config_nameservers		(NMNamedManager *named, NMIP4Config *config);
-void			nm_system_remove_ip4_config_search_domains	(NMNamedManager *named, NMIP4Config *config);
-
 gboolean		nm_system_device_set_from_ip4_config		(NMDevice *dev);
 gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes);
+gboolean		nm_system_vpn_device_unset_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev, gboolean up);
 gboolean		nm_system_device_set_up_down_with_iface		(NMDevice *dev, const char *iface, gboolean up);

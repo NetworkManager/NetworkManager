@@ -1,3 +1,22 @@
+2005-09-28  Dan Williams  <dcbw@redhat.com>
+
+	Support for named + DBus, using Red Hat DBus patches for named.  You
+	can find those patches here, with "dbus" in the patch's filename:
+
+		http://cvs.fedora.redhat.com/viewcvs/devel/bind/
+
+	Don't forget the named dbus service file either.
+
+	Instead of writing a config file and spawing a named process, NM will
+	use an already-running dbus-enabled named if it finds one.  NM will
+	update named's forwarder configuration on the fly using dbus.
+
+	If there is no dbus-enabled named running, NM will automatically fall
+	back to writing the most-recent DNS server information to /etc/resolv.conf
+	and calling nm_system_update_dns() to kick the system's resolver.
+
+	Accordingly, all named-related configure-time options have been removed.
+
 2005-09-26  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c, (nm_system_get_dialup_config): Add

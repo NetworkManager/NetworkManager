@@ -25,6 +25,8 @@
 
 #include "config.h"
 #include <glib-object.h>
+#include <dbus/dbus.h>
+#include "nm-ip4-config.h"
 
 typedef enum
 {
@@ -63,30 +65,15 @@ typedef struct
 
 GType nm_named_manager_get_type (void);
 
-NMNamedManager * nm_named_manager_new (GMainContext *main_context);
+NMNamedManager * nm_named_manager_new (DBusConnection *connection);
 
-gboolean nm_named_manager_start (NMNamedManager *mgr, GError **error);
+gboolean nm_named_manager_process_name_owner_changed (NMNamedManager *mgr,
+						const char *changed_service_name,
+						const char *old_owner, const char *new_owner);
 
-guint nm_named_manager_add_domain_search (NMNamedManager *mgr,
-					  const char *domain,
-					  GError **error);
-guint nm_named_manager_add_nameserver_ipv4 (NMNamedManager *mgr,
-					    const char *server,
-					    GError **error);
-guint nm_named_manager_add_domain_nameserver_ipv4 (NMNamedManager *mgr,
-						   const char *domain,
-						   const char *server,
-						   GError **error);
+gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
 
-gboolean nm_named_manager_remove_domain_search (NMNamedManager *mgr,
-						guint id,
-						GError **error);
-gboolean nm_named_manager_remove_nameserver_ipv4 (NMNamedManager *mgr,
-						  guint id,
-						  GError **error);
-gboolean nm_named_manager_remove_domain_nameserver_ipv4 (NMNamedManager *mgr,
-							 guint id,
-							 GError **error);
+gboolean nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
 
 G_END_DECLS
 

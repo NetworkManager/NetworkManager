@@ -1079,27 +1079,17 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 					nm_hal_deinit (data);
 			}
 			else if (nm_dhcp_manager_process_name_owner_changed (data->dhcp_manager, service, old_owner, new_owner) == TRUE)
-			{
-				/* Processed by the DHCP manager */
 				handled = TRUE;
-			}
 			else if (nm_vpn_manager_process_name_owner_changed (data->vpn_manager, service, old_owner, new_owner) == TRUE)
-			{
-				/* Processed by the VPN manager */
 				handled = TRUE;
-			}
+			else if (nm_named_manager_process_name_owner_changed (data->named_manager, service, old_owner, new_owner) == TRUE)
+				handled = TRUE;
 		}
 	}
 	else if (nm_dhcp_manager_process_signal (data->dhcp_manager, message) == TRUE)
-	{
-		/* Processed by the DHCP manager */
 		handled = TRUE;
-	}
 	else if (nm_vpn_manager_process_signal (data->vpn_manager, message) == TRUE)
-	{
-		/* Processed by the VPN manager */
 		handled = TRUE;
-	}
 
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);

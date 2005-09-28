@@ -23,19 +23,18 @@
 #include "nm-named-manager.h"
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <ftw.h>
 #include <unistd.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <resolv.h>
-#include <fcntl.h>
 #include <sys/socket.h>
-#include <sys/param.h>
+#include <sys/types.h>
+#include <arpa/inet.h>
 #include <syslog.h>
 #include <glib.h>
+#include <dbus/dbus.h>
+#include "nm-ip4-config.h"
 #include "nm-utils.h"
 
 #ifdef HAVE_SELINUX
@@ -46,13 +45,20 @@
 #define RESOLV_CONF "/etc/resolv.conf"
 #endif
 
+#ifndef NAMED_DBUS_SERVICE
+#define NAMED_DBUS_SERVICE "com.redhat.named"
+#define NAMED_DBUS_INTERFACE "com.redhat.named"
+#define NAMED_DBUS_PATH "/com/redhat/named"
+#endif
+
+
 /* From NetworkManagerSystem.h/.c */
 void nm_system_update_dns (void);
 
 enum
 {
 	PROP_0,
-	PROP_CONTEXT,
+	PROP_DBUS_CONNECTION
 };
 
 G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
@@ -69,24 +75,21 @@ static void nm_named_manager_get_property (GObject *object,
 					   guint prop_id,
 					   GValue *value,
 					   GParamSpec *pspec);
-static gboolean rewrite_resolv_conf (NMNamedManager *mgr, GError **error);
+
+static NMIP4Config *get_last_default_domain (NMNamedManager *mgr);
+
+static gboolean add_all_ip4_configs_to_named (NMNamedManager *mgr);
+
+static gboolean rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error);
+
+static gboolean remove_ip4_config_from_named (NMNamedManager *mgr, NMIP4Config *config);
 
 struct NMNamedManagerPrivate
 {
 	gboolean use_named;
-	GPid named_pid;
-	guint spawn_count;
-	GMainContext *main_context;
-	GSource *child_watch;
-	GSource *queued_reload;
+	DBusConnection *connection;
 
-	guint id_serial;
-	GHashTable *domain_searches; /* guint -> char * */
-	GHashTable *global_ipv4_nameservers; /* guint -> char * */
-	GHashTable *domain_ipv4_nameservers; /* char * -> GHashTable(guint -> char *) */
-
-	char *named_conf;
-	char *named_pid_file;
+	GSList *		configs;
 
 	gboolean disposed;
 };
@@ -103,10 +106,10 @@ nm_named_manager_class_init (NMNamedManagerClass *klass)
 	object_class->get_property = nm_named_manager_get_property;
 
 	g_object_class_install_property (object_class,
-					 PROP_CONTEXT,
-					 g_param_spec_pointer ("context",
-							       "GMainContext",
-							       "Main context",
+					 PROP_DBUS_CONNECTION,
+					 g_param_spec_pointer ("dbus-connection",
+							       "DBusConnection",
+							       "dbus connection",
 							       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
@@ -115,19 +118,7 @@ nm_named_manager_init (NMNamedManager *mgr)
 {
 	mgr->priv = g_new0 (NMNamedManagerPrivate, 1);
 
-#ifdef NM_NO_NAMED
 	mgr->priv->use_named = FALSE;
-#else
-	mgr->priv->use_named = TRUE;
-#endif
-
-	mgr->priv->domain_searches = g_hash_table_new_full (NULL, NULL,
-							    NULL,  (GDestroyNotify) g_free);
-	mgr->priv->global_ipv4_nameservers = g_hash_table_new_full (NULL, NULL,
-								    NULL,  (GDestroyNotify) g_free);
-	mgr->priv->domain_ipv4_nameservers = g_hash_table_new_full (g_str_hash, g_str_equal,
-								    g_free,
-								    (GDestroyNotify) g_hash_table_destroy);
 }
 
 static void
@@ -140,13 +131,14 @@ nm_named_manager_set_property (GObject *object,
 
 	switch (prop_id)
 	{
-	case PROP_CONTEXT:
-		mgr->priv->main_context = g_value_get_pointer (value);
-		g_main_context_ref (mgr->priv->main_context);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
+		case PROP_DBUS_CONNECTION:
+			mgr->priv->connection = g_value_get_pointer (value);
+			mgr->priv->use_named = (gboolean) dbus_bus_name_has_owner (mgr->priv->connection,
+										NAMED_DBUS_SERVICE, NULL);
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+			break;
 	}
 }
 
@@ -160,11 +152,12 @@ nm_named_manager_get_property (GObject *object,
 
 	switch (prop_id)
 	{
-	case PROP_CONTEXT:
-		g_value_set_pointer (value, mgr->priv->main_context);
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
+		case PROP_DBUS_CONNECTION:
+			g_value_set_pointer (value, mgr->priv->connection);
+			break;
+		default:
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+			break;
 	}
 }
 
@@ -172,30 +165,14 @@ static void
 nm_named_manager_dispose (GObject *object)
 {
 	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
+	GSList *elt;
 
 	if (mgr->priv->disposed)
 		return;
 	mgr->priv->disposed = TRUE;
 
-#ifndef NM_NO_NAMED
-	/* Write out a correct resolv.conf when we quit so that
-	 * resolv.conf isn't stuck pointing to 127.0.0.1.
-	 */
-	mgr->priv->use_named = FALSE;
-	rewrite_resolv_conf (mgr, NULL);
-#endif
-
-	if (mgr->priv->named_conf)
-		unlink (mgr->priv->named_conf);
-	if (mgr->priv->named_pid_file)
-		unlink (mgr->priv->named_pid_file);
-	if (mgr->priv->named_pid > 0)
-		kill (mgr->priv->named_pid, SIGTERM);
-	if (mgr->priv->child_watch)
-		g_source_destroy (mgr->priv->child_watch);
-	if (mgr->priv->main_context)
-		g_main_context_unref (mgr->priv->main_context);
-
+	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
+		remove_ip4_config_from_named (mgr, (NMIP4Config *)(elt->data));
 }
 
 static void
@@ -205,12 +182,8 @@ nm_named_manager_finalize (GObject *object)
 
 	g_return_if_fail (mgr->priv != NULL);
 
-	g_hash_table_destroy (mgr->priv->domain_searches);
-	g_hash_table_destroy (mgr->priv->global_ipv4_nameservers);
-	g_hash_table_destroy (mgr->priv->domain_ipv4_nameservers);
-
-	g_free (mgr->priv->named_pid_file);
-	g_free (mgr->priv->named_conf);
+	g_slist_foreach (mgr->priv->configs, (GFunc) nm_ip4_config_unref, NULL);
+	g_slist_free (mgr->priv->configs);
 
 	g_free (mgr->priv);
 
@@ -237,11 +210,11 @@ nm_named_manager_constructor (GType type, guint n_construct_properties,
 }
 
 NMNamedManager *
-nm_named_manager_new (GMainContext *main_context)
+nm_named_manager_new (DBusConnection *connection)
 {
 	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER,
-					       "context",
-					       main_context,
+						  "dbus-connection",
+						  connection,
 					       NULL));
 }
 
@@ -255,391 +228,158 @@ nm_named_manager_error_quark (void)
 	return quark;
 }
 
-static void
-join_forwarders (gpointer key, gpointer value, gpointer data)
-{
-	const char *server = value;
-	GString *str = data;
 
-	g_string_append_c (str, ' ');
-	g_string_append (str, server);
-	g_string_append_c (str, ';');
-}
-
-static char *
-compute_global_forwarders (NMNamedManager *mgr)
-{
-	GString *str = g_string_new ("");
-
-	g_hash_table_foreach (mgr->priv->global_ipv4_nameservers,
-			      join_forwarders,
-			      str);
-	return g_string_free (str, FALSE);
-}
-
-static void
-compute_zone (gpointer key, gpointer value, gpointer data)
-{
-	const char *domain = key;
-	GHashTable *servers = value;
-	GString *str = data;
-
-	g_string_append_c (str, '\n');
-	g_string_append (str, " zone \"");
-	g_string_append (str, domain);
-	g_string_append (str, "\"\n");
-	g_string_append (str, " forwarders {");
-
-	g_hash_table_foreach (servers, join_forwarders, str);
-	g_string_append (str, "}\n}\n");
-}
-
-static char *
-compute_domain_zones (NMNamedManager *mgr)
-{
-	GString *str = g_string_new ("");
-
-	g_hash_table_foreach (mgr->priv->domain_ipv4_nameservers,
-			      compute_zone,
-			      str);
-	return g_string_free (str, FALSE);
-}
-
+/*
+ * nm_named_manager_process_name_owner_changed
+ *
+ * Respond to "service created"/"service deleted" signals from dbus for named.
+ *
+ */
 gboolean
-generate_named_conf (NMNamedManager *mgr, GError **error)
+nm_named_manager_process_name_owner_changed (NMNamedManager *mgr,
+				const char *changed_service_name,
+				const char *old_owner, const char *new_owner)
 {
-	gboolean ret = FALSE;
+	gboolean	handled = FALSE;
+	gboolean	old_owner_good = (old_owner && strlen (old_owner));
+	gboolean	new_owner_good = (new_owner && strlen (new_owner));
 
-#ifdef NM_NO_NAMED
-	if (mgr->priv->use_named == FALSE)
-		return rewrite_resolv_conf (mgr, error);
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (changed_service_name != NULL, FALSE);
 
-#else
-	int out_fd;
-	char *config_contents_str;
-	char **config_contents;
-	char **line;
-	const char *config_name;
-
-	config_name = NM_PKGDATADIR "/named.conf";
-
-	if (!mgr->priv->named_pid_file)
-		mgr->priv->named_pid_file = g_build_filename (NM_NAMED_DATA_DIR,
-							      "NetworkManager-pid-named",
-							      NULL);
-	
-	if (!mgr->priv->named_conf)
-		mgr->priv->named_conf = g_build_filename (NM_NAMED_DATA_DIR,
-							  "NetworkManager-named.conf",
-							  NULL);
-	unlink (mgr->priv->named_conf);
-	out_fd = open (mgr->priv->named_conf, O_WRONLY|O_CREAT|O_TRUNC, 0644);
-	if (out_fd < 0)
-	{
-		g_set_error (error,
-			     G_FILE_ERROR,
-			     G_FILE_ERROR_EXIST,
-			     "Couldn't create %s: %s",
-			     mgr->priv->named_conf,
-			     g_strerror (errno));
+	/* Ensure signal is for named's service */
+	if (strcmp (NAMED_DBUS_SERVICE, changed_service_name) != 0)
 		return FALSE;
-	}
-	/* This is needed to work around the Fedora Core 3
-	 * SELinux policy for named.  We need it to be able
-	 * to read the config file created by NetworkManager,
-	 * which runs in unconfined_t
-	 */
-#if 0
-#ifdef HAVE_SELINUX
-	{
-		char *context;
-		if (matchpathcon (mgr->priv->named_conf, 0, &context) < 0)
-			syslog (LOG_WARNING, "matchpathcon(%s) failed: %s",
-				mgr->priv->named_conf, strerror (errno));
-		else if (fsetfilecon(out_fd, context) < 0)
-			syslog (LOG_WARNING, "fsetfilecon failed: %s",
-				strerror (errno));
-	}
-#endif
-#endif
 
-	if (!g_file_get_contents (config_name,
-				  &config_contents_str,
-				  NULL,
-				  error))
+	if (!old_owner_good && new_owner_good)
 	{
-		close (out_fd);
-		return FALSE;
+		mgr->priv->use_named = TRUE;
+
+		if (!add_all_ip4_configs_to_named (mgr))
+			nm_warning ("Could not set fowarders in named.");
+
+		handled = TRUE;
+	}
+	else if (old_owner_good && !new_owner_good)
+	{
+		mgr->priv->use_named = FALSE;
+		/* FIXME: change resolv.conf */
+		handled = TRUE;
 	}
 
-	config_contents = g_strsplit (config_contents_str,
-				      "\n",
-				      0);
-	g_free (config_contents_str);
-
-	for (line = config_contents; *line; line++)
+	if (handled)
 	{
-		const char *variable_pos;
-		const char *variable_end_pos;
-
-		if ((variable_pos = strstr (*line, "@@"))
-		    && (variable_end_pos = strstr (variable_pos + 2, "@@")))
+		GError *error = NULL;
+		if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error))
 		{
-			char *variable;
-			char *replacement = NULL;
-
-			variable = g_strndup (variable_pos + 2,
-					      variable_end_pos - (variable_pos + 2));
-			if (strcmp ("LOCALSTATEDIR", variable) == 0)
-				replacement = g_strdup (NM_LOCALSTATEDIR);
-			else if (strcmp ("PID_FILE", variable) == 0)
-				replacement = g_strdup (mgr->priv->named_pid_file);
-			else if (strcmp ("FORWARDERS", variable) == 0)
-				replacement = compute_global_forwarders (mgr);
-			else if (strcmp ("DOMAIN_ZONES", variable) == 0)
-				replacement = compute_domain_zones (mgr);
-			else
-			{
-				syslog (LOG_WARNING, "Unknown variable %s in %s",
-					variable, config_name);
-				if (write (out_fd, *line, strlen (*line)) < 0)
-					goto replacement_lose;
-			}
-
-			if (write (out_fd, *line, variable_pos - *line) < 0)
-				goto replacement_lose;
-			if (write (out_fd, replacement, strlen (replacement)) < 0)
-				goto replacement_lose;
-			if (write (out_fd, variable_end_pos + 2, strlen (variable_end_pos + 2)) < 0)
-				goto replacement_lose;
-			if (write (out_fd, "\n", 1) < 0)
-				goto replacement_lose;
-
-			g_free (variable);
-			g_free (replacement);
-			continue;
-		replacement_lose:
-			ret = FALSE;
-			g_free (variable);
-			g_free (replacement);
-			goto write_lose;
-		} else {
-			if (write (out_fd, *line, strlen (*line)) < 0) {
-				ret = FALSE;
-				goto write_lose;
-			}
-		}
-		if (write (out_fd, "\n", 1) < 0) {
-			ret = FALSE;
-			goto write_lose;
+			nm_warning ("Could not write resolv.conf.  Error: '%s'", error ? error->message : "(none)");
+			g_error_free (error);
 		}
 	}
-	
-	ret = TRUE;
-write_lose:
-	close (out_fd);
-	g_strfreev (config_contents);
-#endif
-	return ret;
+
+	return handled;
 }
 
-static void
-watch_cb (GPid pid, gint status, gpointer data)
+static char *
+compute_nameservers (NMNamedManager *mgr, NMIP4Config *config)
 {
-	NMNamedManager *mgr = NM_NAMED_MANAGER (data);
+	int i, num_nameservers;
+	GString *str = NULL;
 
-	if (WIFEXITED (status))
-		syslog (LOG_WARNING, "named exited with error code %d", WEXITSTATUS (status));
-	else if (WIFSTOPPED (status)) 
-		syslog (LOG_WARNING, "named stopped unexpectedly with signal %d", WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		syslog (LOG_WARNING, "named died with signal %d", WTERMSIG (status));
+	g_return_val_if_fail (mgr != NULL, g_strdup (""));
+	g_return_val_if_fail (config != NULL, g_strdup (""));
+
+	num_nameservers = nm_ip4_config_get_num_nameservers (config);
+	if (num_nameservers > 3)
+		num_nameservers = 3; /* 'man resolv.conf' says we can't have > 3 */
+	for (i = 0; i < num_nameservers; i++)
+	{
+		#define ADDR_BUF_LEN 50
+		struct in_addr addr;
+		char *buf;
+
+		if (!str)
+			str = g_string_new ("");
+
+		addr.s_addr = nm_ip4_config_get_nameserver (config, 0);
+		buf = g_malloc0 (ADDR_BUF_LEN);
+		inet_ntop (AF_INET, &addr, buf, ADDR_BUF_LEN);
+
+		g_string_append (str, "nameserver ");
+		g_string_append (str, buf);
+		g_string_append_c (str, '\n');
+		g_free (buf);
+	}
+
+	if (!str)
+		return g_strdup ("");
+
+	return g_string_free (str, FALSE);
+}
+
+static char *
+compute_searches (NMNamedManager *mgr, NMIP4Config *config)
+{
+	int i, num_searches;
+	GString *str = NULL;
+
+	g_return_val_if_fail (mgr != NULL, g_strdup (""));
+
+	/* config can be NULL */
+	if (!config)
+		return g_strdup ("");
+
+	num_searches = nm_ip4_config_get_num_domains (config);
+	for (i = 0; i < num_searches; i++)
+	{
+		if (!str)
+			str = g_string_new ("search");
+
+		g_string_append_c (str, ' ');
+		g_string_append (str, nm_ip4_config_get_domain (config, i));		
+	}
+
+	if (!str)
+		return g_strdup ("");
 	else
-		syslog (LOG_WARNING, "named died from an unknown cause");
+		g_string_append_c (str, '\n');
 
-	if (mgr->priv->queued_reload) {
-		g_source_destroy (mgr->priv->queued_reload);
-		mgr->priv->queued_reload = NULL;
-	}
-	
-	/* FIXME - do something with error; need to handle failure to
-	 * respawn */
-	mgr->priv->named_pid = 0;
-	nm_named_manager_start (mgr, NULL);
-}
-
-gboolean
-nm_named_manager_start (NMNamedManager *mgr, GError **error)
-{
-#ifndef NM_NO_NAMED
-	GPid pid;
-	const char *named_binary;
-	GPtrArray *named_argv;
-
-	mgr->priv->named_pid = 0;
-
-	mgr->priv->spawn_count++;
-	if (mgr->priv->spawn_count > 5)
-	{
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_SYSTEM,
-			     "named crashed more than 5 times, refusing to try again");
-		return FALSE;
-	}
-
-	if (!generate_named_conf (mgr, error))
-		return FALSE;
-
-	named_argv = g_ptr_array_new ();
-	named_binary = g_getenv ("NM_NAMED_BINARY_PATH") ?
-	  g_getenv ("NM_NAMED_BINARY_PATH") : NM_NAMED_BINARY_PATH;
-	g_ptr_array_add (named_argv, (char *) named_binary);
-	g_ptr_array_add (named_argv, "-f");
-	g_ptr_array_add (named_argv, "-u");
-	g_ptr_array_add (named_argv, NM_NAMED_USER);
-	g_ptr_array_add (named_argv, "-c");
-	g_ptr_array_add (named_argv, mgr->priv->named_conf);
-	g_ptr_array_add (named_argv, NULL);
-
-	if (!g_spawn_async (NULL, (char **) named_argv->pdata, NULL,
-			    G_SPAWN_LEAVE_DESCRIPTORS_OPEN |
-			    G_SPAWN_DO_NOT_REAP_CHILD,
-			    NULL, NULL, &pid,
-			    error))
-	{
-		g_ptr_array_free (named_argv, TRUE);
-		return FALSE;
-	}
-	g_ptr_array_free (named_argv, TRUE);
-	nm_info ("named started with pid %d", pid);
-	mgr->priv->named_pid = pid;
-	if (mgr->priv->child_watch)
-		g_source_destroy (mgr->priv->child_watch);
-	mgr->priv->child_watch = g_child_watch_source_new (pid);
-	g_source_set_callback (mgr->priv->child_watch, (GSourceFunc) watch_cb, mgr, NULL);
-	g_source_attach (mgr->priv->child_watch, mgr->priv->main_context);
-	g_source_unref (mgr->priv->child_watch);
-	mgr->priv->child_watch = NULL;
-#endif
-
-	if (!rewrite_resolv_conf (mgr, error))
-	{
-		kill (mgr->priv->named_pid, SIGTERM);
-		mgr->priv->named_pid = 0;
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
-reload_named (NMNamedManager *mgr, GError **error)
-{
-	/* FIXME - handle error */
-	if (!generate_named_conf (mgr, error))
-		return FALSE;
-#ifndef NM_NO_NAMED
-	if (kill (mgr->priv->named_pid, SIGHUP) < 0) {
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_SYSTEM,
-			     "Couldn't signal nameserver: %s",
-			     g_strerror (errno));
-		return FALSE;
-	}
-#endif
-	return TRUE;
-}
-
-static gboolean
-validate_host (const char *server, GError **error)
-{
-	for (; *server; server++)
-	{
-		if (!(g_ascii_isalpha (*server)
-		      || g_ascii_isdigit (*server)
-		      || *server == '-'
-		      || *server == '.'))
-		{
-			g_set_error (error,
-				     NM_NAMED_MANAGER_ERROR,
-				     NM_NAMED_MANAGER_ERROR_INVALID_HOST,
-				     "Invalid characters in host");
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
-static void
-compute_search (gpointer key, gpointer value, gpointer data)
-{
-	const char *server = value;
-	GString *str = data;
-
-	g_string_append_c (str, ' ');
-	g_string_append (str, server);
-}
-
-static char *
-compute_domain_searches (NMNamedManager *mgr)
-{
-	GString *str = g_string_new ("");
-
-	if (g_hash_table_size (mgr->priv->domain_searches) > 0)
-	{
-		g_string_append (str, "search");
-		/* FIXME: Technically you can only have 6 search domains, but we
-		 * pretty much ignore that here for the moment.
-		 */
-		g_hash_table_foreach (mgr->priv->domain_searches,
-				      compute_search,
-				      str);
-	}
 	return g_string_free (str, FALSE);
 }
 
-static void
-write_nameserver (gpointer key, gpointer value, gpointer data)
-{
-	const char *server = value;
-	FILE *f = data;
-
-	fprintf (f, "nameserver %s\n", server);
-	
-}
-
 static gboolean
-rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
+rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error)
 {
-	const char *tmp_resolv_conf = RESOLV_CONF ".tmp";
-	char *searches = NULL;
-	FILE *f;
+	const char *	tmp_resolv_conf = RESOLV_CONF ".tmp";
+	char *		searches = NULL;
+	FILE *		f;
 
 	if ((f = fopen (tmp_resolv_conf, "w")) == NULL)
 		goto lose;
 	
-	searches = compute_domain_searches (mgr);
-	if (fprintf (f, "%s","# generated by NetworkManager, do not edit!\n\n") < 0) {
+	if (fprintf (f, "%s","# generated by NetworkManager, do not edit!\n\n") < 0)
 		goto lose;
+
+	searches = compute_searches (mgr, config);
+
+	if (mgr->priv->use_named == TRUE)
+	{
+		/* Using caching-nameserver & local DNS */
+		if (fprintf (f, "%s%s%s", "; Use a local caching nameserver controlled by NetworkManager\n\n", searches, "\nnameserver 127.0.0.1\n") < 0)
+			goto lose;
+	}
+	else
+	{
+		/* Using glibc resolver */
+		char *nameservers = compute_nameservers (mgr, config);
+
+		fprintf (f, "%s\n\n", searches);
+		g_free (searches);
+
+		fprintf (f, "%s\n\n", nameservers);
+		g_free (nameservers);
 	}
 
-	if (mgr->priv->use_named == TRUE) {
-		/* Using caching-nameserver & local DNS */
-		if (fprintf (f, "%s%s%s", "; Use a local caching nameserver controlled by NetworkManager\n\n", searches, "\n\nnameserver 127.0.0.1\n") < 0) {
-			goto lose;
-		}
-	} else {
-		/* Using glibc resolver, we need this in the NM_NO_NAMED == FALSE
-		 * case too, to write out correct resolv.conf when we quit.
-		 */
-		fprintf (f, "%s\n\n", searches);
-		g_hash_table_foreach (mgr->priv->global_ipv4_nameservers,
-			      write_nameserver,
-			      f);
-	}
-	g_free (searches);
 	if (fclose (f) < 0)
 		goto lose;
 
@@ -657,168 +397,332 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 	return FALSE;
 }
 
-guint
-nm_named_manager_add_domain_search (NMNamedManager *mgr,
-				    const char *domain,
-				    GError **error)
+static const char *
+get_domain_for_config (NMIP4Config *config, gboolean *dflt)
 {
-	guint id;
+	gboolean is_dflt = FALSE;
+	const char *domain;
 
-	if (!validate_host (domain, error))
-		return 0;
+	g_return_val_if_fail (config != NULL, NULL);
 
-	id = ++mgr->priv->id_serial;
+	/* Primary configs always use default domain */
+	if (!nm_ip4_config_get_secondary (config))
+		is_dflt = TRUE;
+	/* Any config without a domain becomes default */
+	if (nm_ip4_config_get_num_domains (config) == 0)
+		is_dflt = TRUE;
 
-	g_hash_table_insert (mgr->priv->domain_searches,
-			     GUINT_TO_POINTER (id),
-			     g_strdup (domain));
-	if (!rewrite_resolv_conf (mgr, error)) {
-		g_hash_table_remove (mgr->priv->global_ipv4_nameservers,
-				     GUINT_TO_POINTER (id));
-		return 0;
-	}
-	return id;
+	if (is_dflt)
+		domain = ".";	/* Default domain */
+	else
+		domain = nm_ip4_config_get_domain (config, 0);
+
+	if (dflt)
+		*dflt = is_dflt;
+
+	return domain;
 }
 
-gboolean
-nm_named_manager_remove_domain_search (NMNamedManager *mgr,
-				       guint id,
-				       GError **error)
+static gboolean
+add_ip4_config_to_named (NMNamedManager *mgr, NMIP4Config *config)
 {
-	if (!g_hash_table_remove (mgr->priv->domain_searches,
-				  GUINT_TO_POINTER (id)))
+	const char *domain;
+	int i, num_nameservers;
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+	gboolean		dflt = FALSE;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	if (!(domain = get_domain_for_config (config, &dflt)))
+		return FALSE;
+
+	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "SetForwarders")))
+		return FALSE;
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &domain, DBUS_TYPE_INVALID);
+
+	num_nameservers = nm_ip4_config_get_num_nameservers (config);
+	for (i = 0; i < num_nameservers; i++)
 	{
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_INVALID_ID,
-			     "Invalid domain search id");
+		dbus_uint32_t	server = nm_ip4_config_get_nameserver (config, i);
+		dbus_uint16_t	port = htons (53); /* default DNS port */
+		char			fwd_policy = dflt ? 1 : 2; /* 'first' : 'only' */
+
+		dbus_message_append_args (message, DBUS_TYPE_UINT32, &server,
+									DBUS_TYPE_UINT16, &port,
+									DBUS_TYPE_BYTE, &fwd_policy,
+									DBUS_TYPE_INVALID);
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+	dbus_message_unref (message);
+
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("Could not set forwarders for zone '%s'.  Error: '%s'.", domain, error.message);
+		dbus_error_free (&error);
 		return FALSE;
 	}
-	if (!rewrite_resolv_conf (mgr, error))
+
+	if (!reply)
+	{
+		nm_warning ("Could not set forwarders for zone '%s', did not receive a reply from named.", domain);
+		dbus_error_free (&error);
 		return FALSE;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	{
+		const char *err_msg = NULL;
+		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
+		nm_warning ("Could not set forwarders for zone '%s'.  Named replied: '%s'", domain, err_msg);
+		dbus_message_unref (reply);
+		return FALSE;
+	}
+	dbus_message_unref (reply);
+
 	return TRUE;
 }
 
-guint
-nm_named_manager_add_nameserver_ipv4 (NMNamedManager *mgr,
-				      const char *server,
-				      GError **error)
+static gboolean
+add_all_ip4_configs_to_named (NMNamedManager *mgr)
 {
-	guint id;
+	GSList *elt = NULL;
 
-	if (!validate_host (server, error))
-		return 0;
+	g_return_val_if_fail (mgr != NULL, FALSE);
 
-	id = ++mgr->priv->id_serial;
-
-	g_hash_table_insert (mgr->priv->global_ipv4_nameservers,
-			     GUINT_TO_POINTER (id),
-			     g_strdup (server));
-	if (!reload_named (mgr, error)) {
-		g_hash_table_remove (mgr->priv->global_ipv4_nameservers,
-				     GUINT_TO_POINTER (id));
-		return 0;
-	}
-	return id;
-}
-
-guint
-nm_named_manager_add_domain_nameserver_ipv4 (NMNamedManager *mgr,
-					     const char *domain,
-					     const char *server,
-					     GError **error)
-{
-	GHashTable *servers;
-	guint id;
-
-	if (!validate_host (server, error))
-		return 0;
-
-	id = ++mgr->priv->id_serial;
-
-	servers = g_hash_table_lookup (mgr->priv->domain_ipv4_nameservers,
-				       domain);
-	if (!servers)
-	{
-		servers = g_hash_table_new_full (NULL, NULL,
-						 NULL, (GDestroyNotify) g_free);
-		g_hash_table_insert (mgr->priv->domain_ipv4_nameservers,
-				     g_strdup (domain),
-				     servers);
-	}
-	g_hash_table_insert (servers,
-			     GUINT_TO_POINTER (id),
-			     g_strdup (server));
-	if (!reload_named (mgr, error)) {
-		g_hash_table_remove (servers, domain);
-		return 0;
-	}
-	return id;
-}
-
-gboolean
-nm_named_manager_remove_nameserver_ipv4 (NMNamedManager *mgr,
-					 guint id,
-					 GError **error)
-{
-	if (!g_hash_table_remove (mgr->priv->global_ipv4_nameservers,
-				  GUINT_TO_POINTER (id)))
-	{
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_INVALID_ID,
-			     "Invalid nameserver id");
-		return FALSE;
-	}
-
-	if (!reload_named (mgr, error))
-		return FALSE;
-	
+	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
+		add_ip4_config_to_named (mgr, (NMIP4Config *)(elt->data));
+		
 	return TRUE;
 }
 
-typedef struct {
-	guint id;
-	gboolean removed;
-} NMNamedManagerRemoveData;
+static gboolean
+remove_one_zone_from_named (NMNamedManager *mgr, const char *zone)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (zone != NULL, FALSE);
+
+	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "SetForwarders")))
+		return FALSE;
+
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &zone, DBUS_TYPE_INVALID);
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+	dbus_message_unref (message);
+
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("Could not remove forwarders for zone '%s'.  Error: '%s'.", zone, error.message);
+		dbus_error_free (&error);
+		return FALSE;
+	}
+
+	if (!reply)
+	{
+		nm_warning ("Could not remove forwarders for zone '%s', did not receive a reply from named.", zone);
+		dbus_error_free (&error);
+		return FALSE;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	{
+		const char *err_msg = NULL;
+		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
+		nm_warning ("Could not remove forwarders for zone '%s'.  Named replied: '%s'", zone, err_msg);
+		dbus_message_unref (reply);
+		return FALSE;
+	}
+	dbus_message_unref (reply);
+
+	return TRUE;
+}
+
+static gboolean
+remove_ip4_config_from_named (NMNamedManager *mgr, NMIP4Config *config)
+{
+	const char *domain;
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	DBusError		error;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	if (!(domain = get_domain_for_config (config, NULL)))
+		return FALSE;
+
+	return remove_one_zone_from_named (mgr, domain);
+}
 
 static void
-remove_domain_id (gpointer key, gpointer value, gpointer data)
+remove_all_zones_from_named (NMNamedManager *mgr)
 {
-	GHashTable *servers = value;
-	NMNamedManagerRemoveData *removedata = data;
+	DBusMessage *		message;
+	DBusMessage *		reply;
+	DBusError			error;
+	DBusMessageIter	iter;
+	GSList *			zones = NULL;
+	GSList *			elt = NULL;
 
-	if (removedata->removed)
+	g_return_if_fail (mgr != NULL);
+
+	if (!mgr->priv->use_named)
 		return;
+
+	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "GetForwarders")))
+		return;
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+	dbus_message_unref (message);
+
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("Could not get forwarder list from named.  Error: '%s'.", error.message);
+		dbus_error_free (&error);
+		return;
+	}
+
+	if (!reply)
+	{
+		nm_warning ("Could not get forarder list from named, did not receive a reply from named.");
+		dbus_error_free (&error);
+		return;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	{
+		const char *err_msg = NULL;
+		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
+		nm_warning ("Could not get forwarder list from named.  Named replied: '%s'", err_msg);
+		dbus_message_unref (reply);
+		return;
+	}
+
+	dbus_message_iter_init (reply, &iter);
+	do
+	{
+		/* We depend on zones being the only strings in what named returns obviously */
+		if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
+		{
+			char *zone = NULL;
+			dbus_message_iter_get_basic (&iter, &zone);
+			zones = g_slist_append (zones, g_strdup (zone));
+		}
+	} while (dbus_message_iter_next (&iter));
+	dbus_message_unref (reply);
+
+	/* Remove all the zones from named */
+	for (elt = zones; elt; elt = g_slist_next (elt))
+		remove_one_zone_from_named (mgr, (const char *)(elt->data));
 	
-	if (g_hash_table_remove (servers, GUINT_TO_POINTER (removedata->id)))
-		removedata->removed = TRUE;
+	g_slist_foreach (zones, (GFunc) g_free, NULL);
+	g_slist_free (zones);
 }
 
 gboolean
-nm_named_manager_remove_domain_nameserver_ipv4 (NMNamedManager *mgr,
-						guint id,
-						GError **error)
+nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 {
-	NMNamedManagerRemoveData data;
-	
-	data.id = id;
-	data.removed = FALSE;
+	GError *	error = NULL;
 
-	g_hash_table_foreach (mgr->priv->domain_ipv4_nameservers,
-			      remove_domain_id,
-			      &data);
-	if (!data.removed)
-	{
-		g_set_error (error,
-			     NM_NAMED_MANAGER_ERROR,
-			     NM_NAMED_MANAGER_ERROR_INVALID_ID,
-			     "Invalid nameserver id");
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	/* Don't allow the same zone added twice */
+	if (g_slist_find (mgr->priv->configs, config))
 		return FALSE;
+
+	/* First clear out and reload configs in named */
+	if (mgr->priv->use_named)
+	{
+		remove_all_zones_from_named (mgr);
+		add_all_ip4_configs_to_named (mgr);
 	}
 
-	if (!reload_named (mgr, error))
-		return FALSE;
-	
+	nm_ip4_config_ref (config);
+	mgr->priv->configs = g_slist_append (mgr->priv->configs, config);
+
+	/* Activate the zone config */
+	if (mgr->priv->use_named)
+		add_ip4_config_to_named (mgr, config);
+
+	if (!rewrite_resolv_conf (mgr, config, &error))
+	{
+		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		g_error_free (error);
+	}
+
 	return TRUE;
 }
+
+static NMIP4Config *
+get_last_default_domain (NMNamedManager *mgr)
+{
+	GSList *elt = NULL;
+	NMIP4Config *last_default = NULL;
+	NMIP4Config *last = NULL;
+
+	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
+	{
+		gboolean dflt = FALSE;
+		const char *domain = NULL;
+		NMIP4Config *config = (NMIP4Config *)(elt->data);
+
+		last = config;
+		domain = get_domain_for_config (config, &dflt);
+		if (dflt)
+			last_default = config;
+	}
+
+	/* Fall back the last config added to the list if none are the default */
+	return (last_default ? last_default : last);
+}
+
+gboolean
+nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
+{
+	GError *	error = NULL;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	/* Can't remove it if it wasn't in the list to begin with */
+	if (!g_slist_find (mgr->priv->configs, config))
+		return FALSE;
+
+	/* Deactivate the config */
+	if (mgr->priv->use_named)
+		remove_ip4_config_from_named (mgr, config);
+
+	mgr->priv->configs = g_slist_remove (mgr->priv->configs, config);
+	nm_ip4_config_unref (config);
+
+	/* Clear out and reload configs since we may need a new
+	 * default zone if the one we are removing was the old
+	 * default zone.
+	 */
+	if (mgr->priv->use_named)
+	{
+		remove_all_zones_from_named (mgr);
+		add_all_ip4_configs_to_named (mgr);
+	}
+
+	if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error))
+	{
+		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		g_error_free (error);
+	}
+
+	return TRUE;
+}
+

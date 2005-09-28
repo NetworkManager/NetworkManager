@@ -67,116 +67,6 @@ static gboolean nm_system_device_set_ip4_route_with_iface			(NMDevice *dev, cons
 
 
 /*
- * nm_system_remove_ip4_config_nameservers
- *
- * Remove an IPv4 Config's nameservers from the name service.
- *
- */
-void nm_system_remove_ip4_config_nameservers (NMNamedManager *named, NMIP4Config *config)
-{
-	GError *error = NULL;
-	int	i, len;
-
-	g_return_if_fail (config != NULL);
-
-	len = nm_ip4_config_get_num_nameservers (config);
-	for (i = 0; i < len; i++)
-	{
-		guint id = nm_ip4_config_get_nameserver_id (config, i);
-		if ((id != 0) && !nm_named_manager_remove_nameserver_ipv4 (named, id, &error))
-		{
-			nm_warning ("Couldn't remove nameserver: %s", error->message);
-			g_clear_error (&error);
-		}
-		else
-			nm_ip4_config_set_nameserver_id (config, i, 0);
-	}
-}
-
-
-static void set_nameservers (NMNamedManager *named, NMIP4Config *config)
-{
-	GError *error = NULL;
-	int	i, len;
-
-	g_return_if_fail (config != NULL);
-
-	len = nm_ip4_config_get_num_nameservers (config);
-	for (i = 0; i < len; i++)
-	{
-		guint		id;
-		guint		ns_addr = nm_ip4_config_get_nameserver (config, i);
-		struct in_addr	temp_addr;
-		char *		nameserver;
-
-		temp_addr.s_addr = ns_addr;
-		nameserver = g_strdup (inet_ntoa (temp_addr));
-		nm_info ("Adding nameserver: %s", nameserver);
-		if ((id = nm_named_manager_add_nameserver_ipv4 (named, nameserver, &error)))
-			nm_ip4_config_set_nameserver_id (config, i, id);
-		else
-		{
-			nm_warning ("Couldn't add nameserver: %s", error->message);
-			g_clear_error (&error);
-		}
-		g_free (nameserver);
-	}
-}
-
-
-/*
- * nm_system_remove_ip4_config_search_domains
- *
- * Remove an IPv4 Config's search domains from the name service.
- *
- */
-void nm_system_remove_ip4_config_search_domains (NMNamedManager *named, NMIP4Config *config)
-{
-	GError *error = NULL;
-	int	i, len;
-
-	g_return_if_fail (config != NULL);
-
-	len = nm_ip4_config_get_num_domains (config);
-	for (i = 0; i < len; i++)
-	{
-		guint id = nm_ip4_config_get_domain_id (config, i);
-		if ((id != 0) && !nm_named_manager_remove_domain_search (named, id, &error))
-		{
-			nm_warning ("Couldn't remove domain search: %s", error->message);
-			g_clear_error (&error);
-		}
-		else
-			nm_ip4_config_set_domain_id (config, i, 0);
-	}
-}
-
-static void set_search_domains (NMNamedManager *named, NMIP4Config *config)
-{
-	GError *error = NULL;
-	int	i, len;
-
-	g_return_if_fail (config != NULL);
-
-	len = nm_ip4_config_get_num_domains (config);
-	for (i = 0; i < len; i++)
-	{
-		const char *	domain = nm_ip4_config_get_domain (config, i);
-		guint		id;
-
-		nm_info ("Adding domain search: %s", domain);
-		if ((id = nm_named_manager_add_domain_search (named, domain, &error)))
-			nm_ip4_config_set_domain_id (config, i, id);
-		else
-		{
-			nm_warning ("Couldn't add domain search: %s", error->message);
-			g_clear_error (&error);
-		}
-	}
-}
-
-
-/*
  * nm_system_device_set_from_ip4_config
  *
  * Set IPv4 configuration of the device from an NMIP4Config object.
@@ -206,8 +96,7 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	sleep (1);
 	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0);
 
-	set_nameservers (app_data->named_manager, config);
-	set_search_domains (app_data->named_manager, config);
+	nm_named_manager_add_ip4_config (app_data->named_manager, config);
 
 	return TRUE;
 }
@@ -302,12 +191,9 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
+	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
-	{
-		nm_system_remove_ip4_config_nameservers (named, ad_config);
-		nm_system_remove_ip4_config_search_domains (named, ad_config);
 		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF);
-	}
 
 	nm_system_device_set_up_down_with_iface (NULL, iface, TRUE);
 
@@ -345,8 +231,26 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 		}
 	}
 
-	set_nameservers (named, config);
-	set_search_domains (named, config);
+	nm_named_manager_add_ip4_config (named, config);
+
+	return TRUE;
+}
+
+
+/*
+ * nm_system_vpn_device_unset_from_ip4_config
+ *
+ * Unset an IPv4 configuration of a VPN device from an NMIP4Config object.
+ *
+ */
+gboolean nm_system_vpn_device_unset_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config)
+{
+	g_return_val_if_fail (named != NULL, FALSE);
+	g_return_val_if_fail (active_device != NULL, FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	nm_named_manager_remove_ip4_config (named, config);
 
 	return TRUE;
 }

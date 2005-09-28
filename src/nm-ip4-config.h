@@ -32,6 +32,9 @@ NMIP4Config *	nm_ip4_config_copy				(NMIP4Config *config);
 void			nm_ip4_config_ref				(NMIP4Config *config);
 void			nm_ip4_config_unref				(NMIP4Config *config);
 
+gboolean		nm_ip4_config_get_secondary		(NMIP4Config *config);
+void			nm_ip4_config_set_secondary		(NMIP4Config *config, gboolean secondary);
+
 guint32		nm_ip4_config_get_address		(NMIP4Config *config);
 void			nm_ip4_config_set_address		(NMIP4Config *config, guint32 addr);
 
@@ -46,14 +49,10 @@ void			nm_ip4_config_set_broadcast		(NMIP4Config *config, guint32 broadcast);
 
 void			nm_ip4_config_add_nameserver		(NMIP4Config *config, guint32 nameserver);
 guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint index);
-guint32		nm_ip4_config_get_nameserver_id	(NMIP4Config *config, guint index);
-void			nm_ip4_config_set_nameserver_id	(NMIP4Config *config, guint index, guint32 id);
 guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
 
 void			nm_ip4_config_add_domain			(NMIP4Config *config, const char *domain);
 const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint index);
-guint32		nm_ip4_config_get_domain_id		(NMIP4Config *config, guint index);
-void			nm_ip4_config_set_domain_id		(NMIP4Config *config, guint index, guint32 id);
 guint32		nm_ip4_config_get_num_domains		(NMIP4Config *config);
 
 #endif

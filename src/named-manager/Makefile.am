@@ -3,12 +3,12 @@ namedconfdir = $(pkgdatadir)
 
 EXTRA_DIST = $(namedconf_DATA)
 
-INCLUDES = -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}/utils -I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libnamed-manager.la
 
 libnamed_manager_la_SOURCES = nm-named-manager.h nm-named-manager.c
 
-libnamed_manager_la_CPPFLAGS = $(DBUS_CFLAGS) $(GTHREAD_CFLAGS) -DNM_PKGDATADIR=\"$(pkgdatadir)\" -DNM_LOCALSTATEDIR=\"$(localstatedir)\"
+libnamed_manager_la_CPPFLAGS = $(DBUS_CFLAGS) $(GTHREAD_CFLAGS) -DNM_PKGDATADIR=\"$(pkgdatadir)\" -DNM_LOCALSTATEDIR=\"$(localstatedir)\" -DDBUS_API_SUBJECT_TO_CHANGE
 
 libnamed_manager_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)

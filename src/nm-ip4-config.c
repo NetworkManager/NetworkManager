@@ -27,18 +27,6 @@
 #include "nm-ip4-config.h"
 
 
-typedef struct NamserverID
-{
-	guint32	ns_address;
-	guint32	ns_id;
-} NameserverID;
-
-typedef struct DomainID
-{
-	char *	domain;
-	guint32	domain_id;
-} DomainID;
-
 struct NMIP4Config
 {
 	guint	refcount;
@@ -46,13 +34,15 @@ struct NMIP4Config
 	guint32	ip4_gateway;
 	guint32	ip4_netmask;
 	guint32	ip4_broadcast;
-	GSList	*nameservers;
-	GSList	*domains;
+	GSList *	nameservers;
+	GSList *	domains;
+
+	/* If this is a VPN/etc config that requires
+	 * another device (like Ethernet) to already have
+	 * an IP4Config before it can be used.
+	 */
+	gboolean	secondary;
 };
-
-
-static void domain_id_free (DomainID *did);
-static void nameserver_id_free (NameserverID *ns);
 
 
 NMIP4Config *nm_ip4_config_new (void)
@@ -104,14 +94,27 @@ void nm_ip4_config_unref (NMIP4Config *config)
 	config->refcount--;
 	if (config->refcount <= 0)
 	{
-		g_slist_foreach (config->nameservers, (GFunc) nameserver_id_free, NULL);
 		g_slist_free (config->nameservers);
-		g_slist_foreach (config->domains, (GFunc) domain_id_free, NULL);
+		g_slist_foreach (config->domains, (GFunc) g_free, NULL);
 		g_slist_free (config->domains);
 
 		memset (config, 0, sizeof (NMIP4Config));
 		g_free (config);
 	}
+}
+
+gboolean nm_ip4_config_get_secondary (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	return config->secondary;
+}
+
+void nm_ip4_config_set_secondary (NMIP4Config *config, gboolean secondary)
+{
+	g_return_if_fail (config != NULL);
+
+	config->secondary = secondary;
 }
 
 guint32 nm_ip4_config_get_address (NMIP4Config *config)
@@ -170,61 +173,23 @@ void nm_ip4_config_set_broadcast (NMIP4Config *config, guint32 broadcast)
 	config->ip4_broadcast = broadcast;
 }
 
-
-static NameserverID *nameserver_id_new (guint32 nameserver)
-{
-	NameserverID *ns = g_malloc0 (sizeof (NameserverID));
-
-	ns->ns_address = nameserver;
-
-	return ns;
-}
-
-static void nameserver_id_free (NameserverID *ns)
-{
-	g_free (ns);
-}
-
 void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
 {
 	g_return_if_fail (config != NULL);
 
-	config->nameservers = g_slist_append (config->nameservers, nameserver_id_new (nameserver));
+	config->nameservers = g_slist_append (config->nameservers, GINT_TO_POINTER (nameserver));
 }
 
 guint32 nm_ip4_config_get_nameserver (NMIP4Config *config, guint index)
 {
-	NameserverID *ns;
+	guint32 nameserver;
 
 	g_return_val_if_fail (config != NULL, 0);
 	g_return_val_if_fail (index < g_slist_length (config->nameservers), 0);
 
-	if ((ns = g_slist_nth_data (config->nameservers, index)))
-		return ns->ns_address;
+	if ((nameserver = (guint32) g_slist_nth_data (config->nameservers, index)))
+		return nameserver;
 	return 0;
-}
-
-guint32 nm_ip4_config_get_nameserver_id (NMIP4Config *config, guint index)
-{
-	NameserverID *ns;
-
-	g_return_val_if_fail (config != NULL, 0);
-	g_return_val_if_fail (index < g_slist_length (config->nameservers), 0);
-
-	if ((ns = g_slist_nth_data (config->nameservers, index)))
-		return ns->ns_id;
-	return 0;
-}
-
-void nm_ip4_config_set_nameserver_id (NMIP4Config *config, guint index, guint32 id)
-{
-	NameserverID *ns;
-
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (index < g_slist_length (config->nameservers));
-
-	if ((ns = g_slist_nth_data (config->nameservers, index)))
-		ns->ns_id = id;
 }
 
 guint32 nm_ip4_config_get_num_nameservers (NMIP4Config *config)
@@ -235,24 +200,6 @@ guint32 nm_ip4_config_get_num_nameservers (NMIP4Config *config)
 }
 
 
-static DomainID *domain_id_new (const char *domain)
-{
-	DomainID *did = g_malloc0 (sizeof (DomainID));
-
-	did->domain = g_strdup (domain);
-
-	return did;
-}
-
-static void domain_id_free (DomainID *did)
-{
-	if (!did)
-		return;
-
-	g_free (did->domain);
-	g_free (did);
-}
-
 void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 {
 	g_return_if_fail (config != NULL);
@@ -261,42 +208,19 @@ void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 	if (!strlen (domain))
 		return;
 
-	config->domains = g_slist_append (config->domains, domain_id_new (domain));
+	config->domains = g_slist_append (config->domains, g_strdup (domain));
 }
 
 const char *nm_ip4_config_get_domain (NMIP4Config *config, guint index)
 {
-	DomainID	*did;
+	const char *domain;
 
 	g_return_val_if_fail (config != NULL, NULL);
 	g_return_val_if_fail (index < g_slist_length (config->domains), NULL);
 
-	if ((did = g_slist_nth_data (config->domains, index)))
-		return did->domain;
+	if ((domain = (const char *) g_slist_nth_data (config->domains, index)))
+		return domain;
 	return NULL;
-}
-
-guint32 nm_ip4_config_get_domain_id (NMIP4Config *config, guint index)
-{
-	DomainID	*did;
-
-	g_return_val_if_fail (config != NULL, 0);
-	g_return_val_if_fail (index < g_slist_length (config->domains), 0);
-
-	if ((did = g_slist_nth_data (config->domains, index)))
-		return did->domain_id;
-	return 0;
-}
-
-void nm_ip4_config_set_domain_id (NMIP4Config *config, guint index, guint32 id)
-{
-	DomainID	*did;
-
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (index < g_slist_length (config->domains));
-
-	if ((did = g_slist_nth_data (config->domains, index)))
-		did->domain_id = id;
 }
 
 guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)

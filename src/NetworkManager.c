@@ -403,8 +403,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	sigaction (SIGINT, &action, NULL);
 	sigaction (SIGTERM, &action, NULL);
 
-	data->named_manager = nm_named_manager_new (data->main_context);
-
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
 	data->dialup_list_mutex = g_mutex_new ();
@@ -917,6 +915,7 @@ int main( int argc, char *argv[] )
 	/* Need to happen after DBUS is initialized */
 	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
 	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data);
+	nm_data->named_manager = nm_named_manager_new (nm_data->dbus_connection);
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
 	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
@@ -950,13 +949,6 @@ int main( int argc, char *argv[] )
 
 	/* Get modems, ISDN, and so on's configuration from the system */
 	nm_data->dialup_list = nm_system_get_dialup_config ();
-
-	if (!nm_named_manager_start (nm_data->named_manager, &error))
-	{
-		nm_error ("couldn't initialize nameserver: %s",
-			  error->message);
-		exit (EXIT_FAILURE);
-	}
 
 	nm_schedule_state_change_signal_broadcast (nm_data);
 

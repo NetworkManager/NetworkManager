@@ -3199,8 +3199,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	/* Remove any device nameservers and domains */
 	if ((config = nm_device_get_ip4_config (dev)))
 	{
-		nm_system_remove_ip4_config_nameservers (dev->app_data->named_manager, config);
-		nm_system_remove_ip4_config_search_domains (dev->app_data->named_manager, config);
+		nm_named_manager_remove_ip4_config (dev->app_data->named_manager, config);
 		nm_device_set_ip4_config (dev, NULL);
 	}
 
