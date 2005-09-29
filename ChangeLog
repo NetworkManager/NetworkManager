@@ -1,3 +1,7 @@
+2005-09-29  Robert Love  <rml@novell.com>
+
+	* src/NetworkManager.c: removed unused variable.
+
 2005-09-28  Dan Williams  <dcbw@redhat.com>
 
 	Support for named + DBus, using Red Hat DBus patches for named.  You

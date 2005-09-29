@@ -815,7 +815,6 @@ int main( int argc, char *argv[] )
 {
 	gboolean		become_daemon = TRUE;
 	gboolean		enable_test_devices = FALSE;
-	GError *		error = NULL;
 	char *		owner;
 	
 	if ((int)getuid() != 0)
