@@ -817,7 +817,7 @@ int main( int argc, char *argv[] )
 	gboolean		enable_test_devices = FALSE;
 	char *		owner;
 	
-	if ((int)getuid() != 0)
+	if (getuid () != 0)
 	{
 		g_printerr ("You must be root to run NetworkManager!\n");
 		return (EXIT_FAILURE);
