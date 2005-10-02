@@ -873,13 +873,13 @@ static GdkPixbuf *nmwa_get_connected_icon (NMWirelessApplet *applet, NetworkDevi
 		else
 		{
 			strength = CLAMP ((int)network_device_get_strength (dev), 0, 100);
-			if (strength > 75)
+			if (strength > 80)
 				pixbuf = applet->wireless_100_icon;
-			else if (strength > 50)
+			else if (strength > 55)
 				pixbuf = applet->wireless_75_icon;
-			else if (strength > 25)
+			else if (strength > 30)
 				pixbuf = applet->wireless_50_icon;
-			else if (strength > 0)
+			else if (strength > 5)
 				pixbuf = applet->wireless_25_icon;
 			else
 				pixbuf = applet->wireless_00_icon;

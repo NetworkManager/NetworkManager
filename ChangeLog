@@ -1,3 +1,11 @@
+2005-10-02  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet.c
+		- Adjust signal strength -> icon mapping values slightly
+			(so that 51% signal doesn't show a 75% icon) by adding
+			5% to the values. ex: > 5% now shows 25% icon, > 30%
+			shows 50% icon, etc.
+
 2005-09-29  Robert Love  <rml@novell.com>
 
 	* src/NetworkManager.c: removed unused variable.
