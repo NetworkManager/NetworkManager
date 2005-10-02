@@ -108,6 +108,7 @@ void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMActRequest *req);
 void			nm_device_activation_cancel						(NMDevice *dev);
 gboolean		nm_device_activation_should_cancel					(NMDevice *dev);
 gboolean		nm_device_is_activating							(NMDevice *dev);
+gboolean		nm_device_deactivate_quickly						(NMDevice *dev);
 gboolean		nm_device_deactivate							(NMDevice *dev);
 
 NMAccessPoint *nm_device_wireless_get_activation_ap	(NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type);

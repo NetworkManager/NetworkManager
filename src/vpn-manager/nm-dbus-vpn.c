@@ -749,7 +749,7 @@ static DBusMessage *nm_dbus_vpn_deactivate_connection (DBusConnection *connectio
 
 	nm_info ("Will deactivate the VPN connection '%s', service '%s'.", nm_vpn_connection_get_name (vpn),
 						nm_vpn_connection_get_service_name (vpn));
-	nm_vpn_manager_deactivate_vpn_connection (data->data->vpn_manager);
+	nm_vpn_manager_deactivate_vpn_connection (data->data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
 
 	return NULL;
 }

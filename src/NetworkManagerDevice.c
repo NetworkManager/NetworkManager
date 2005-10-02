@@ -3162,19 +3162,19 @@ void nm_device_activation_cancel (NMDevice *dev)
 
 
 /*
- * nm_device_deactivate
+ * nm_device_deactivate_quickly
  *
- * Remove a device's routing table entries and IP address.
+ * Quickly deactivate a device, for things like sleep, etc.  Doesn't
+ * clean much stuff up, and nm_device_deactivate() should be called
+ * on the device eventually.
  *
  */
-gboolean nm_device_deactivate (NMDevice *dev)
+gboolean nm_device_deactivate_quickly (NMDevice *dev)
 {
-	NMIP4Config *	config;
-
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
-	nm_info ("Deactivating device %s.", nm_device_get_iface (dev));
+	nm_vpn_manager_deactivate_vpn_connection (dev->app_data->vpn_manager, dev);
 
 	if (nm_device_is_activated (dev))
 		nm_dbus_schedule_device_status_change_signal (dev->app_data, dev, NULL, DEVICE_NO_LONGER_ACTIVE);
@@ -3191,10 +3191,29 @@ gboolean nm_device_deactivate (NMDevice *dev)
 		dev->act_request = NULL;
 	}
 
+	return TRUE;
+}
+
+
+/*
+ * nm_device_deactivate
+ *
+ * Remove a device's routing table entries and IP address.
+ *
+ */
+gboolean nm_device_deactivate (NMDevice *dev)
+{
+	NMIP4Config *	config;
+
+	g_return_val_if_fail (dev  != NULL, FALSE);
+	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+
+	nm_info ("Deactivating device %s.", nm_device_get_iface (dev));
+
+	nm_device_deactivate_quickly (dev);
+
 	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
 		return TRUE;
-
-	nm_vpn_manager_deactivate_vpn_connection (dev->app_data->vpn_manager);
 
 	/* Remove any device nameservers and domains */
 	if ((config = nm_device_get_ip4_config (dev)))

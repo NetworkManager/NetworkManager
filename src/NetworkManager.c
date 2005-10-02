@@ -44,6 +44,7 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
+#include "nm-vpn-act-request.h"
 #include "nm-dbus-vpn.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dhcp-manager.h"
@@ -360,6 +361,7 @@ void nm_schedule_state_change_signal_broadcast (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	source = g_idle_source_new ();
+	g_source_set_priority (source, G_PRIORITY_HIGH);
 	g_source_set_callback (source, nm_state_change_signal_broadcast, data, NULL);
 	id = g_source_attach (source, data->main_context);
 	g_source_unref (source);
@@ -452,11 +454,13 @@ static void device_stop_and_free (NMDevice *dev, gpointer user_data)
  */
 static void nm_data_free (NMData *data)
 {
+	NMVPNActRequest *req;
+
 	g_return_if_fail (data != NULL);
 
 	/* Kill any active VPN connection */
-	if (nm_vpn_manager_get_vpn_act_request (data->vpn_manager))
-		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager);
+	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
+		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
 
 	/* Stop and destroy all devices */
 	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);

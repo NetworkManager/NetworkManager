@@ -326,7 +326,8 @@ void nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager, NMActRequest *r
 			/* FIXME: we should really monitor the interface's DHCP state by waiting
 			 * for dhcdbd to tell us the device is "down" rather than sleeping here.
 			 */
-			sleep (1);
+			if (!manager->data->asleep)
+				sleep (1);
 		}
 		g_free (path);
 

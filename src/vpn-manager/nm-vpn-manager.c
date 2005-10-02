@@ -78,7 +78,7 @@ void nm_vpn_manager_dispose (NMVPNManager *manager)
 	g_return_if_fail (manager != NULL);
 
 	if (manager->act_req)
-		nm_vpn_manager_deactivate_vpn_connection (manager);
+		nm_vpn_manager_deactivate_vpn_connection (manager, nm_vpn_act_request_get_parent_dev (manager->act_req));
 
 	g_slist_foreach (manager->connections, (GFunc) nm_vpn_connection_unref, NULL);
 	g_slist_free (manager->connections);
@@ -347,7 +347,7 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	g_return_if_fail (data_items != NULL);
 
 	if (manager->act_req)
-		nm_vpn_manager_deactivate_vpn_connection (manager);
+		nm_vpn_manager_deactivate_vpn_connection (manager, nm_vpn_act_request_get_parent_dev (manager->act_req));
 
 	service_name = nm_vpn_connection_get_service_name (vpn);
 	if (!(service = nm_vpn_manager_find_service_by_name (manager, service_name)))
@@ -372,14 +372,14 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
  * Signal the VPN service daemon to deactivate a particular VPN connection.
  *
  */
-void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager)
+void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager, NMDevice *dev)
 {
 	NMVPNService *		service;
 	NMVPNConnection *	vpn;
 
 	g_return_if_fail (manager != NULL);
 
-	if (!manager->act_req)
+	if (!manager->act_req || (dev != nm_vpn_act_request_get_parent_dev (manager->act_req)))
 		return;
 
 	if (nm_vpn_act_request_is_activating (manager->act_req) || nm_vpn_act_request_is_activated (manager->act_req))
@@ -412,7 +412,7 @@ static gboolean nm_vpn_manager_vpn_activation_failed (gpointer user_data)
 	g_assert (manager);
 
 	if (manager->act_req == req)
-		nm_vpn_manager_deactivate_vpn_connection (manager);
+		nm_vpn_manager_deactivate_vpn_connection (manager, nm_vpn_act_request_get_parent_dev (req));
 
 	return FALSE;
 }
@@ -443,7 +443,7 @@ static gboolean nm_vpn_manager_vpn_connection_died (gpointer user_data)
 	g_assert (manager);
 
 	if (manager->act_req == req)
-		nm_vpn_manager_deactivate_vpn_connection (manager);
+		nm_vpn_manager_deactivate_vpn_connection (manager, nm_vpn_act_request_get_parent_dev (req));
 
 	return FALSE;
 }

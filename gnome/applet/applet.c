@@ -1059,6 +1059,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 
 	switch (applet->nm_state)
 	{
+		case NM_STATE_ASLEEP:
 		case NM_STATE_DISCONNECTED:
 			pixbuf = applet->no_connection_icon;
 			tip = g_strdup (_("No network connection"));

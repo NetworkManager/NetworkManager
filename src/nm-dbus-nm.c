@@ -469,27 +469,29 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 	app_data = data->data;
 	if (app_data->asleep == FALSE)
 	{
+		GSList *elt;
+
 		nm_info ("Going to sleep.");
 
 		app_data->asleep = TRUE;
+		/* Not using nm_schedule_state_change_signal_broadcast() here
+		 * because we want the signal to go out ASAP.
+		 */
+		nm_dbus_signal_state_change (connection, app_data);
 
 		/* Remove all devices from the device list */
 		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
-		while (g_slist_length (app_data->dev_list))
+		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
 		{
-			NMDevice	*dev = (NMDevice *)(app_data->dev_list->data);
-
-			fprintf (stderr, "dev %p\n", dev);
-			nm_remove_device (app_data, dev);
+			NMDevice *dev = (NMDevice *)(elt->data);
+			nm_device_set_removed (dev, TRUE);
+			nm_device_deactivate_quickly (dev);
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 
 		nm_lock_mutex (app_data->dialup_list_mutex, __FUNCTION__);
 		nm_system_deactivate_all_dialup (app_data->dialup_list);
 		nm_unlock_mutex (app_data->dialup_list_mutex, __FUNCTION__);
-
-		nm_schedule_state_change_signal_broadcast (app_data);
-		nm_policy_schedule_device_change_check (data->data);
 	}
 
 	return NULL;
@@ -506,6 +508,12 @@ static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *me
 	{
 		nm_info  ("Waking up from sleep.");
 		app_data->asleep = FALSE;
+
+		/* Remove all devices from the device list */
+		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		while (g_slist_length (app_data->dev_list))
+			nm_remove_device (app_data, (NMDevice *)(app_data->dev_list->data));
+		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 
 		nm_add_initial_devices (app_data);
 
