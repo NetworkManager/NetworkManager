@@ -1,3 +1,8 @@
+2005-10-03  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Fix Glib error, GError must be
+	  NULL.
+
 2005-10-02  Dan Williams  <dcbw@redhat.com>
 
 	* Shorten time taken to sleep by fastpathing bits of device deactivation

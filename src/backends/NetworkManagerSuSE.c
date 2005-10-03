@@ -765,7 +765,7 @@ GSList * nm_system_get_dialup_config (void)
 {
 	GSList *list = NULL;
 	const char *dentry;
-	GError *err;
+	GError *err = NULL;
 	GDir *dir;
 
 	dir = g_dir_open (SYSCONFDIR "/sysconfig/network", 0, &err);
