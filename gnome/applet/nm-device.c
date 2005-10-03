@@ -45,7 +45,6 @@ struct NetworkDevice
 	char *				broadcast;
 	char *				netmask;
 	char *				udi;
-	char *				route;
 	gint					strength;
 	GSList *				networks;
 	NMActStage			act_stage;
@@ -99,7 +98,6 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 	dev->driver_support_level = src->driver_support_level;
 	dev->iface = g_strdup (src->iface);
 	dev->desc = g_strdup (src->desc);
-	dev->route = g_strdup (src->route);
 	dev->udi = g_strdup (src->udi);
 	dev->active = src->active;
 	dev->act_stage = src->act_stage;
@@ -150,7 +148,6 @@ void network_device_unref (NetworkDevice *dev)
 			network_device_clear_wireless_networks (dev);
 		g_free (dev->nm_path);
 		g_free (dev->iface);
-		g_free (dev->route);
 		g_free (dev->udi);
 		g_free (dev->desc);
 		g_free (dev->addr);
@@ -471,25 +468,6 @@ void network_device_set_ip4_address (NetworkDevice *dev, const char *addr)
 	if (dev->ip4addr)
 		g_free (dev->ip4addr);
 	dev->ip4addr = addr ? g_strdup (addr) : NULL;
-}
-
-/*
- * Accessors for default route
- */
-const char *network_device_get_route (NetworkDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	return (dev->route);
-}
-
-void network_device_set_route (NetworkDevice *dev, const char *route)
-{
-	g_return_if_fail (dev != NULL);
-
-	if (dev->route)
-		g_free (dev->route);
-	dev->route = route ? g_strdup (route) : NULL;
 }
 
 /*

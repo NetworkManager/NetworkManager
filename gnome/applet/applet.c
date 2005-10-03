@@ -189,7 +189,7 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 {
 	GtkWidget *info_dialog;
 	char *addr = NULL, *mask = NULL, *broadcast = NULL;
-	char *mac = NULL, *iface_and_type = NULL, *route = NULL;
+	char *mac = NULL, *iface_and_type = NULL;
 	GtkWidget *label;
 	const char *iface = NULL;
 	NetworkDevice *dev;
@@ -218,7 +218,6 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	broadcast = (char*) network_device_get_broadcast (dev);
 	addr = (char*) network_device_get_ip4_address (dev);
 	mask = (char*) network_device_get_netmask (dev);
-	route = (char*) network_device_get_route (dev);
 
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
@@ -239,9 +238,6 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-hardware-address");
 	gtk_label_set_text (GTK_LABEL (label), mac);
-
-	label = get_label (info_dialog, applet->info_dialog_xml, "label-default-route");
-	gtk_label_set_text (GTK_LABEL (label), route);
 
 	g_free (iface_and_type);
 
