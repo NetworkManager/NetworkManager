@@ -1558,7 +1558,7 @@ void nm_device_update_hw_address (NMDevice *dev)
 	if (err != 0)
 		return;
 
-     memcpy (&(dev->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+	memcpy (&(dev->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
 }
 
 
