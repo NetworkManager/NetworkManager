@@ -97,8 +97,6 @@ struct NMDevice
 	GMainLoop *			loop;
 	GThread *				worker;
 	gboolean				worker_started;
-	guint		 		renew_timeout;
-	guint				rebind_timeout;
 
 	NMActRequest *			act_request;
 	gboolean				quit_activation;	/* Flag to signal activation thread to stop activating */
