@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-11-29 11:55+0100\n"
-"PO-Revision-Date: 2004-11-29 20:22+0800\n"
+"POT-Creation-Date: 2005-10-04 03:44+0200\n"
+"PO-Revision-Date: 2005-10-04 15:23+0800\n"
 "Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
 "MIME-Version: 1.0\n"
@@ -16,29 +16,431 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: info-daemon/networks.glade.h:1
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">无线网络：</span>"
+#. Setup a request to the keyring to save the network passphrase
+#: ../gnome/applet/applet-dbus-info.c:864
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "无线网络 %s 的密码句"
 
-#: info-daemon/networks.glade.h:2
-msgid "Modify Wireless Networks"
-msgstr "修改无线网络"
+#: ../gnome/applet/applet-dbus-info.c:1082
+#, c-format
+msgid ""
+"The requested wireless network '%s' does not appear to be in range.  A "
+"different wireless network will be used if any are available."
+msgstr ""
+"所请求的无线网络“%s”似乎不在范围内。如果有其它无线网络的话，将会切"
+"换到可用的无线网络。"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/essid.glade.h:1
-msgid "*"
-msgstr "*"
+#: ../gnome/applet/applet-dbus.c:317
+#, c-format
+msgid "Connection to the wireless network '%s' failed."
+msgstr "到无线网络“%s”的连接失败。"
 
-#: info-daemon/passphrase.glade.h:2 panel-applet/essid.glade.h:2
+#: ../gnome/applet/applet-dbus.c:322
+msgid "Connection to the wired network failed."
+msgstr "连接到有线网络失败。"
+
+#: ../gnome/applet/applet.c:181
+msgid "Error displaying connection information: "
+msgstr "显示连接信息出错："
+
+#: ../gnome/applet/applet.c:200
+msgid "Could not find some required resources (the glade file)!"
+msgstr "序找不到所需的资源(glade 文件未找到)！"
+
+#: ../gnome/applet/applet.c:211
+msgid "No active connections!"
+msgstr "没有活动的连接！"
+
+#: ../gnome/applet/applet.c:223
+#, c-format
+msgid "Wired Ethernet (%s)"
+msgstr "有线以太网(%s)"
+
+#: ../gnome/applet/applet.c:225
+#, c-format
+msgid "Wireless Ethernet (%s)"
+msgstr "无线以太网(%s)"
+
+#: ../gnome/applet/applet.c:302 ../gnome/applet/applet.c:320
+msgid "NetworkManager Applet"
+msgstr "网络管理器小程序"
+
+#: ../gnome/applet/applet.c:304 ../gnome/applet/applet.c:322
+msgid "Copyright (C) 2004-2005 Red Hat, Inc."
+msgstr "版权 (C) 2004-2005 Red Hat, Inc."
+
+#: ../gnome/applet/applet.c:305 ../gnome/applet/applet.c:323
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr "管理您网络设备和连接的通知区域小程序"
+
+#: ../gnome/applet/applet.c:327
+msgid "translator-credits"
+msgstr "Funda Wang <fundawang@linux.net.cn>"
+
+#: ../gnome/applet/applet.c:412
+msgid "VPN Error"
+msgstr "VPN 出错"
+
+#: ../gnome/applet/applet.c:416
+msgid "VPN Login Failure"
+msgstr "VPN 登录失败"
+
+#: ../gnome/applet/applet.c:417
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a login failure."
+msgstr "无法启动 VPN 连接“%s”，原因是登录失败。"
+
+#: ../gnome/applet/applet.c:421
+msgid "VPN Start Failure"
+msgstr "VPN 启动失败"
+
+#: ../gnome/applet/applet.c:422
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' due to a failure launching the VPN "
+"program."
+msgstr "无法启动 VPN 连接“%s”，原因是调用 VPN 程序失败。"
+
+#: ../gnome/applet/applet.c:426 ../gnome/applet/applet.c:436
+msgid "VPN Connect Failure"
+msgstr "VPN 连接失败"
+
+#: ../gnome/applet/applet.c:427
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a connection error."
+msgstr "无法启动 VPN 连接“%s”，原因是连接出错。"
+
+#: ../gnome/applet/applet.c:431
+msgid "VPN Configuration Error"
+msgstr "VPN 配置错误"
+
+#: ../gnome/applet/applet.c:432
+#, c-format
+msgid "The VPN connection '%s' was not correctly configured."
+msgstr "VPN 连接“%s”未正确配置。"
+
+#: ../gnome/applet/applet.c:437
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' because the VPN server did not "
+"return an adequate network configuration."
+msgstr ""
+"无法启动 VPN 连接“%s”，原因是 VPN 服务器未返回足够的网络配置。"
+
+#: ../gnome/applet/applet.c:445
+#, c-format
+msgid "The VPN service said: \"%s\""
+msgstr "VPN 服务说：“%s”"
+
+#: ../gnome/applet/applet.c:514
+#, c-format
+msgid "VPN connection '%s' said:"
+msgstr "VPN 连接“%s”说："
+
+#: ../gnome/applet/applet.c:516
+msgid "VPN Login Message"
+msgstr "VPN 登录消息"
+
+#: ../gnome/applet/applet.c:734 ../gnome/applet/applet.c:2287
+#: ../gnome/applet/other-network-dialog.c:407
+#: ../gnome/applet/passphrase-dialog.c:384
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr "网络管理器小程序找不到所需的资源(glade 文件未找到)。"
+
+#: ../gnome/applet/applet.c:747
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "网络设备“%s(%s)”不支持无线扫描。"
+
+#: ../gnome/applet/applet.c:754
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "网络设备“%s(%s)”不支持链接检测。"
+
+#: ../gnome/applet/applet.c:963
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "正在为有线网络准备设备 %s..."
+
+#: ../gnome/applet/applet.c:965
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "正在为无线网络“%2$s”准备设备 %1$s..."
+
+#: ../gnome/applet/applet.c:972
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "正在为有线网络配置设备 %s..."
+
+#: ../gnome/applet/applet.c:974
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "正在试图加入无线网络“%s”..."
+
+#: ../gnome/applet/applet.c:981
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "正在等待无线网络“%s”的网络密钥..."
+
+#: ../gnome/applet/applet.c:988 ../gnome/applet/applet.c:997
+msgid "Requesting a network address from the wired network..."
+msgstr "正在从有线网络请求网络地址..."
+
+#: ../gnome/applet/applet.c:990 ../gnome/applet/applet.c:999
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "正在从无线网络“%s”请求网络地址..."
+
+#: ../gnome/applet/applet.c:1006
+msgid "Finishing connection to the wired network..."
+msgstr "正在完成到有线网络的连接..."
+
+#: ../gnome/applet/applet.c:1008
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "正在完成到无线网络“%s”的连接..."
+
+#: ../gnome/applet/applet.c:1053
+msgid "NetworkManager is not running"
+msgstr "网络管理器未运行"
+
+#: ../gnome/applet/applet.c:1065
+msgid "No network connection"
+msgstr "没有网络连接"
+
+#: ../gnome/applet/applet.c:1070
+msgid "Wired network connection"
+msgstr "有线网络连接"
+
+#: ../gnome/applet/applet.c:1074
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "已连接到 Ad-Hoc 无线网络"
+
+#: ../gnome/applet/applet.c:1076
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "到“%s”的无线网络连接(%d%%)"
+
+#: ../gnome/applet/applet.c:1096
+#, c-format
+msgid "VPN connection to '%s'"
+msgstr "到“%s”的 VPN 连接"
+
+#: ../gnome/applet/applet.c:1104
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "连接到“%s”的 VPN"
+
+#: ../gnome/applet/applet.c:1490
+msgid "_Connect to Other Wireless Network..."
+msgstr "连接到其它无线网络(_C)..."
+
+#: ../gnome/applet/applet.c:1511
+msgid "Create _New Wireless Network..."
+msgstr "创建新的无线网络(_N)..."
+
+#: ../gnome/applet/applet.c:1624
+msgid "_VPN Connections"
+msgstr "_VPN 连接"
+
+#: ../gnome/applet/applet.c:1656
+msgid "_Configure VPN..."
+msgstr "配置 VPN(_C)..."
+
+#: ../gnome/applet/applet.c:1660
+msgid "_Disconnect VPN..."
+msgstr "断开 VPN(_D)..."
+
+#: ../gnome/applet/applet.c:1682
+msgid "_Dial Up Connections"
+msgstr "拨号连接(_D)"
+
+#: ../gnome/applet/applet.c:1691
+#, c-format
+msgid "Connect to %s..."
+msgstr "正在连接到 %s..."
+
+#: ../gnome/applet/applet.c:1741
+msgid "No network devices have been found"
+msgstr "没有发现网络设备"
+
+#: ../gnome/applet/applet.c:1903
+msgid "NetworkManager is not running..."
+msgstr "网络管理器未运行..."
+
+#. Wireless Enabled item
+#: ../gnome/applet/applet.c:2005
+msgid "_Wireless Enabled"
+msgstr "无线已启用(_W)"
+
+#. Connection Information item
+#: ../gnome/applet/applet.c:2011
+msgid "Connection _Information"
+msgstr "连接信息(_I)"
+
+#. Help item
+#: ../gnome/applet/applet.c:2021
+msgid "_Help"
+msgstr "帮助(_H)"
+
+#. About item
+#: ../gnome/applet/applet.c:2029
+msgid "_About"
+msgstr "关于(_A)"
+
+#: ../gnome/applet/applet.c:2436
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr "网络管理器小程序找不到所需的资源。无法继续。\n"
+
+#: ../gnome/applet/eggtrayicon.c:127
+msgid "Orientation"
+msgstr "方向"
+
+#: ../gnome/applet/eggtrayicon.c:128
+msgid "The orientation of the tray."
+msgstr "托盘方向。"
+
+#: ../gnome/applet/menu-items.c:87
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "有线网络(%s)"
+
+#: ../gnome/applet/menu-items.c:90
+msgid "_Wired Network"
+msgstr "有线网络(_W)"
+
+#: ../gnome/applet/menu-items.c:161
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "无线网络(%s)"
+
+#: ../gnome/applet/menu-items.c:163
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "无线网络"
+
+#: ../gnome/applet/menu-items.c:303
+msgid " (invalid Unicode)"
+msgstr " (无效的 Unicode)"
+
+#: ../gnome/applet/other-network-dialog.c:143
+#: ../gnome/applet/wireless-applet.glade.h:39
+msgid "_Passphrase:"
+msgstr "密码句(_P)："
+
+#: ../gnome/applet/other-network-dialog.c:146
+msgid "_ASCII Key:"
+msgstr "_ASCII 密钥："
+
+#: ../gnome/applet/other-network-dialog.c:149
+msgid "_Hex Key:"
+msgstr "十六进制密钥(_H)："
+
+#: ../gnome/applet/other-network-dialog.c:238
+msgid "Create new wireless network"
+msgstr "创建新的无线网络"
+
+#: ../gnome/applet/other-network-dialog.c:239
+msgid ""
+"Enter the ESSID and security settings of the wireless network you wish to "
+"create."
+msgstr "输入您想要创建的无线网络的 ESSID 和安全设置。"
+
+#: ../gnome/applet/other-network-dialog.c:240
+msgid "By default, the ESSID is set to your computer's name,"
+msgstr "默认情况下，ESSID 会设定为您的计算机名称 "
+
+#: ../gnome/applet/other-network-dialog.c:242
+msgid ", with no encryption enabled."
+msgstr "，并且不启用加密。"
+
+#: ../gnome/applet/other-network-dialog.c:244
+msgid "Create New Wireless Network"
+msgstr "创建新的无线网络"
+
+#: ../gnome/applet/other-network-dialog.c:249
+msgid "Custom wireless network"
+msgstr "自定义无线网络"
+
+#: ../gnome/applet/other-network-dialog.c:250
+msgid "Enter the ESSID of the wireless network to which you wish to connect."
+msgstr "输入您想要连接的无线网络的 ESSID。"
+
+#: ../gnome/applet/other-network-dialog.c:252
+msgid "Connect to Other Wireless Network"
+msgstr "连接到其它无线网络"
+
+#: ../gnome/applet/passphrase-dialog.c:155
+msgid "Passphrase:"
+msgstr "密码句："
+
+#: ../gnome/applet/passphrase-dialog.c:158
+msgid "ASCII Key:"
+msgstr "ASCII 密钥："
+
+#: ../gnome/applet/passphrase-dialog.c:161
+msgid "Hex Key:"
+msgstr "十六进制密钥："
+
+#: ../gnome/applet/vpn-password-dialog.c:152
+#: ../gnome/applet/vpn-password-dialog.c:189
+#, c-format
+msgid "Cannot start VPN connection '%s'"
+msgstr "无法启动 VPN 连接“%s”"
+
+#: ../gnome/applet/vpn-password-dialog.c:155
+#, c-format
+msgid ""
+"Could not find the authentication dialog for VPN connection type '%s'. "
+"Contact your system administrator."
+msgstr ""
+"找不到 VPN 连接类型“%s”的身份验证对话。请联系您的系统管理员。"
+
+#: ../gnome/applet/vpn-password-dialog.c:192
+#, c-format
+msgid ""
+"There was a problem launching the authentication dialog for VPN connection "
+"type '%s'. Contact your system administrator."
+msgstr ""
+"调用 VPN 连接类型“%s”的身份验证对话有问题。请联系您的系统管理员。"
+
+#: ../gnome/applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
-"Ascii Key (WEP)\n"
+"ASCII Key (WEP)\n"
 "Hex Key (WEP)"
 msgstr ""
 "128 位密码句(WEP)\n"
 "ASCII 密钥(WEP)\n"
 "十六进制密钥(WEP)"
 
-#: info-daemon/passphrase.glade.h:6
+#: ../gnome/applet/wireless-applet.glade.h:5
+msgid ""
+"128-bit passphrase (WEP)\n"
+"ASCII key (WEP)\n"
+"Hex key (WEP)"
+msgstr ""
+"128 位密码句(WEP)\n"
+"ASCII 密钥(WEP)\n"
+"十六进制密钥(WEP)"
+
+#: ../gnome/applet/wireless-applet.glade.h:8
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">活动连接信息</span>"
+
+#: ../gnome/applet/wireless-applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -51,141 +453,263 @@ msgstr ""
 "\n"
 "要访问无线网络“%s”，需要提供密码句或加密密钥。"
 
-#: info-daemon/passphrase.glade.h:9 panel-applet/essid.glade.h:7
-msgid "Key Type:"
-msgstr "密钥类型："
-
-#: info-daemon/passphrase.glade.h:10
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:135
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:147
-#: panel-applet/essid.glade.h:8
-msgid "Passphrase:"
-msgstr "密码句："
-
-#: info-daemon/passphrase.glade.h:11
-msgid "Wireless Network Key Required"
-msgstr "需要无线网络密钥"
-
-#: info-daemon/passphrase.glade.h:12
-msgid "_Login to Network"
-msgstr "登录到网络(_L)"
-
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:138
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
-msgid "Ascii Key:"
-msgstr "ASCII 密钥："
-
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:141
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:153
-msgid "Hex Key:"
-msgstr "十六进制密钥："
-
-#: panel-applet/NMWirelessApplet.c:289
-msgid "No network connection"
-msgstr "没有网络连接"
-
-#: panel-applet/NMWirelessApplet.c:293
-msgid "Wired network connection"
-msgstr "有线网络连接"
-
-#: panel-applet/NMWirelessApplet.c:299
-msgid "Connecting to a wired network..."
-msgstr "正在连接到有线网络..."
-
-#: panel-applet/NMWirelessApplet.c:314
-#, c-format
-msgid "Wireless network connection (%d%%)"
-msgstr "无线网络连接(%d%%)"
-
-#: panel-applet/NMWirelessApplet.c:317
-msgid "Wireless network connection"
-msgstr "无线网络连接"
-
-#: panel-applet/NMWirelessApplet.c:323
-msgid "Connecting to a wireless network..."
-msgstr "正在连接到无线网络..."
-
-#: panel-applet/NMWirelessApplet.c:326
-msgid "NetworkManager is not running"
-msgstr "网络管理器未运行"
-
-#: panel-applet/NMWirelessApplet.c:332
-msgid "Scanning for wireless networks..."
-msgstr "正在扫描无线网络..."
-
-#: panel-applet/NMWirelessApplet.c:656
-msgid "Other Wireless Networks..."
-msgstr "其它无线网络..."
-
-#: panel-applet/NMWirelessApplet.c:767
-msgid "No network devices have been found"
-msgstr "没有发现网络设备"
-
-#: panel-applet/NMWirelessApplet.c:884
-msgid "NetworkManager is not running..."
-msgstr "网络管理器未运行..."
-
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:224
-msgid "Custom wireless network"
-msgstr "自定义无线网络"
-
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:225
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr "输入您想要连接的无线网络的 ESSID。"
-
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:305
-#: panel-applet/NMWirelessAppletOtherNetworkDialog.c:314
+#: ../gnome/applet/wireless-applet.glade.h:14
+#, no-c-format
 msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr "网络管理器小程序找不到所需的资源(glade 文件未找到)。"
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">削减的网络功能</span>\n"
+"\n"
+"%s  该网络无法完整工作。"
 
-#: panel-applet/essid.glade.h:5
+#: ../gnome/applet/wireless-applet.glade.h:18
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen to log in to the wireless network '%s'.  If you are sure "
+"that this wireless network is secure, click the checkbox below and "
+"NetworkManager will not require confirmation on subsequent log ins."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">无线网络登录确认</"
+"span>\n"
+"\n"
+"您选择登录到无线网络“%s”。如果您确定此无线网络是安全的，请选中下面的复选框，"
+"网络管理器在以后登录时将不会请求确认。"
+
+#: ../gnome/applet/wireless-applet.glade.h:21
+msgid "Broadcast Address:"
+msgstr "广播地址："
+
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "C_onnect"
 msgstr "连接(_O)"
 
-#: panel-applet/essid.glade.h:6
-msgid "Connect with encryption enabled"
-msgstr "启用加密连接"
+#: ../gnome/applet/wireless-applet.glade.h:23
+msgid "Connect with _encryption enabled"
+msgstr "启用加密连接(_E)"
 
-#: panel-applet/essid.glade.h:9
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid "Connection Information"
+msgstr "连接信息"
+
+#: ../gnome/applet/wireless-applet.glade.h:25
+msgid "Destination Address:"
+msgstr "目的地址："
+
+#: ../gnome/applet/wireless-applet.glade.h:26
+msgid "Hardware Address:"
+msgstr "硬件地址："
+
+#: ../gnome/applet/wireless-applet.glade.h:27
+msgid "IP Address:"
+msgstr "IP 地址："
+
+#: ../gnome/applet/wireless-applet.glade.h:28
+msgid "Interface:"
+msgstr "接口："
+
+#: ../gnome/applet/wireless-applet.glade.h:29
+msgid "Other Wireless Network..."
+msgstr "其它无线网络..."
+
+#: ../gnome/applet/wireless-applet.glade.h:30
+msgid "Subnet Mask:"
+msgstr "子网掩码："
+
+#: ../gnome/applet/wireless-applet.glade.h:31
+msgid "Wireless Network Key Required"
+msgstr "需要无线网络密钥"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
 msgid "Wireless _adapter:"
 msgstr "无线适配器(_A)："
 
-#: panel-applet/essid.glade.h:10
-msgid "Wireless _Network:"
+#: ../gnome/applet/wireless-applet.glade.h:33
+msgid "Wireless _network:"
 msgstr "无线网络(_N)："
 
-#: panel-applet/menu-info.c:101
+#: ../gnome/applet/wireless-applet.glade.h:34
+msgid "_Always Trust this Wireless Network"
+msgstr "总是信任此无线网络(_A)"
+
+#: ../gnome/applet/wireless-applet.glade.h:35
+msgid "_Don't remind me again"
+msgstr "以后不再提醒(_D)"
+
+#: ../gnome/applet/wireless-applet.glade.h:36
+msgid "_Key Type:"
+msgstr "密钥类型(_K)："
+
+#: ../gnome/applet/wireless-applet.glade.h:37
+msgid "_Key type:"
+msgstr "密钥类型(_K)："
+
+#: ../gnome/applet/wireless-applet.glade.h:38
+msgid "_Login to Network"
+msgstr "登录到网络(_L)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:372
+msgid "Cannot add VPN connection"
+msgstr "无法添加 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:374
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr "您的系统上未找到合适的 VPN 软件。请联系您的系统管理员。"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:426
+msgid "Cannot import VPN connection"
+msgstr "没有导入 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:428
 #, c-format
-msgid "Wired Network (%s)"
-msgstr "无线网络(%s)"
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"找不到合适的软件来导入 VPN 连接类型“%s”的文件“%s”。请联系您的系统管理员。"
 
-#: panel-applet/menu-info.c:103
-msgid "Wired Network"
-msgstr "无线网络"
-
-#: panel-applet/menu-info.c:168
+#: ../gnome/vpn-properties/nm-vpn-properties.c:568
 #, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "无线网络(%s)"
+msgid "Error retrieving VPN connection '%s'"
+msgstr "获取 VPN 连接“%s”出错"
 
-#: panel-applet/menu-info.c:170
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "无线网络"
+#: ../gnome/vpn-properties/nm-vpn-properties.c:571
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"找不到 VPN 连接类型“%s”的用户界面文件。请联系您的系统管理员。"
 
-#: panel-applet/menu-info.c:307
-msgid " (invalid Unicode)"
-msgstr " (无效的 Unicode)"
+#: ../gnome/vpn-properties/nm-vpn-properties.c:731
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "删除 VPN 连接“%s”吗？"
 
-#: examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
-msgstr "方向"
+#: ../gnome/vpn-properties/nm-vpn-properties.c:734
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"关于 VPN 连接“%s”的全部信息都将丢失。要创建新连接的话，您就必须请求您的系统管理员提供相应信息。"
 
-#: examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
-msgstr "托盘方向。"
+#: ../gnome/vpn-properties/nm-vpn-properties.c:940
+msgid "Unable to load"
+msgstr "无法装入"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:942
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "找不到所需的资源(glade 文件)！"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1060
+msgid "Edit VPN Connection"
+msgstr "编辑 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "添加新的 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "选择您想要创建的 VPN 连接类型。"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "连接到："
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "创建 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "创建 VPN 连接 - 第一步，共两步"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "创建 VPN 连接 - 第二步，共两步"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "删除选中的 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "导出(_X)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "编辑选中的 VPN 连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "将 VPN 设置导出到文件"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "将选中的 VPN 连接导出到文件"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "创建 VPN 连接完成"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "管理虚拟私网连接"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+"此助手将指引您创建到虚拟私网(VPN)的连接。\n\n"
+"此向导需要您提供的某些信息，比如 IP 地址和机密问题，您可能需要求助系统管理员才能知晓。"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "VPN 连接"
+
+#: ../src/nm-netlink-monitor.c:154
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "无法创建监视有线以太网设备的网络连接套接字 - %s"
+
+#: ../src/nm-netlink-monitor.c:172
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "无法绑定到监视有线以太网设备的网络连接套接字 - %s"
+
+#: ../src/nm-netlink-monitor.c:403
+msgid "operation took too long"
+msgstr "操作时间太长"
+
+#: ../src/nm-netlink-monitor.c:500
+msgid "received data from wrong type of sender"
+msgstr "从错误的发送者类型收到数据"
+
+#: ../src/nm-netlink-monitor.c:513
+msgid "received data from unexpected sender"
+msgstr "从未知的发送者收到数据"
+
+#: ../src/nm-netlink-monitor.c:644
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "向套接字发送的数据太多，其中有些已经丢失"
+
+#: ../src/nm-netlink-monitor.c:733
+msgid "error occurred while waiting for data on socket"
+msgstr "等候套接字上的数据时发生了错误"
 
