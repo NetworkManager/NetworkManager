@@ -329,6 +329,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		gchar *			ip4_address;
 		gchar *			broadcast;
 		gchar *			subnetmask;
+		gchar *			route;
 		struct ether_addr	hw_addr;
 		char				hw_addr_buf[20];
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
@@ -344,6 +345,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		NMIP4Config *		ip4config;
 		guint32			broadcast_addr = 0;
 		guint32			subnetmask_addr = 0;
+		guint32			route_addr = 0;
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
@@ -354,10 +356,12 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		{
 			broadcast_addr = nm_ip4_config_get_broadcast (ip4config);
 			subnetmask_addr = nm_ip4_config_get_netmask (ip4config);
+			route_addr = nm_ip4_config_get_gateway (ip4config);
 		}
 		ip4_address = nm_utils_inet_ip4_address_as_string (nm_device_get_ip4_address (dev));
 		broadcast = nm_utils_inet_ip4_address_as_string (broadcast_addr);
 		subnetmask = nm_utils_inet_ip4_address_as_string (subnetmask_addr);
+		route = nm_utils_inet_ip4_address_as_string (route_addr);
 
 		if (nm_device_is_wireless (dev))
 		{
@@ -369,13 +373,13 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 			strength = (dbus_int32_t) nm_device_get_signal_strength (dev);
 			mode = (dbus_uint32_t) nm_device_get_mode (dev);
 
-			if (req && (ap = nm_act_request_get_ap (req)))
-			{
+			 if (req && (ap = nm_act_request_get_ap (req)))
+			 {
 				NMAccessPoint	*tmp_ap;
 
 				if ((tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (ap))))
 					active_network_path = nm_dbus_get_object_path_for_network (dev, tmp_ap);
-			}
+			 }
 
 			ap_list = nm_device_ap_list_get (dev);
 			if (ap_list && (num_networks = nm_ap_list_size (ap_list)))
@@ -411,6 +415,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_STRING, &subnetmask,
 									DBUS_TYPE_STRING, &broadcast,
 									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
+									DBUS_TYPE_STRING, &route,
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
@@ -421,6 +426,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		g_free (op);
 		g_free (active_network_path);
 		g_strfreev (networks);
+		g_free (route);
 		g_free (ip4_address);
 		g_free (broadcast);
 		g_free (subnetmask);

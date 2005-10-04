@@ -66,8 +66,11 @@ void					network_device_set_broadcast				(NetworkDevice *dev, const char *addr);
 const char *			network_device_get_netmask				(NetworkDevice *dev);
 void					network_device_set_netmask				(NetworkDevice *dev, const char *addr);
 
-const char *			network_device_get_ip4_address				(NetworkDevice *dev);
-void					network_device_set_ip4_address				(NetworkDevice *dev, const char *addr);
+const char *			network_device_get_ip4_address			(NetworkDevice *dev);
+void					network_device_set_ip4_address			(NetworkDevice *dev, const char *addr);
+
+const char *			network_device_get_route					(NetworkDevice *dev);
+void					network_device_set_route					(NetworkDevice *dev, const char *route);
 
 NMDriverSupportLevel	network_device_get_driver_support_level		(NetworkDevice *dev);
 void					network_device_set_driver_support_level		(NetworkDevice *dev, NMDriverSupportLevel level);
