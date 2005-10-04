@@ -330,6 +330,8 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		gchar *			broadcast;
 		gchar *			subnetmask;
 		gchar *			route;
+		gchar *			primary_dns;
+		gchar *			secondary_dns;
 		struct ether_addr	hw_addr;
 		char				hw_addr_buf[20];
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
@@ -346,6 +348,8 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		guint32			broadcast_addr = 0;
 		guint32			subnetmask_addr = 0;
 		guint32			route_addr = 0;
+		guint32			primary_dns_addr = 0;
+		guint32			secondary_dns_addr = 0;
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
@@ -354,14 +358,24 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		ip4config = nm_device_get_ip4_config (dev);
 		if (ip4config)
 		{
+			guint32 nr_nameservers;
+
 			broadcast_addr = nm_ip4_config_get_broadcast (ip4config);
 			subnetmask_addr = nm_ip4_config_get_netmask (ip4config);
 			route_addr = nm_ip4_config_get_gateway (ip4config);
+
+			nr_nameservers = nm_ip4_config_get_num_nameservers (ip4config);
+			if (nr_nameservers > 1)
+				secondary_dns_addr = nm_ip4_config_get_nameserver (ip4config, 1);
+			if (nr_nameservers > 0)
+				primary_dns_addr = nm_ip4_config_get_nameserver (ip4config, 0);
 		}
 		ip4_address = nm_utils_inet_ip4_address_as_string (nm_device_get_ip4_address (dev));
 		broadcast = nm_utils_inet_ip4_address_as_string (broadcast_addr);
 		subnetmask = nm_utils_inet_ip4_address_as_string (subnetmask_addr);
 		route = nm_utils_inet_ip4_address_as_string (route_addr);
+		primary_dns = nm_utils_inet_ip4_address_as_string (primary_dns_addr);
+		secondary_dns = nm_utils_inet_ip4_address_as_string (secondary_dns_addr);
 
 		if (nm_device_is_wireless (dev))
 		{
@@ -416,6 +430,8 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_STRING, &broadcast,
 									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
 									DBUS_TYPE_STRING, &route,
+									DBUS_TYPE_STRING, &primary_dns,
+									DBUS_TYPE_STRING, &secondary_dns,
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,

@@ -199,7 +199,6 @@ guint32 nm_ip4_config_get_num_nameservers (NMIP4Config *config)
 	return (g_slist_length (config->nameservers));
 }
 
-
 void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 {
 	g_return_if_fail (config != NULL);

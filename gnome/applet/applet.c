@@ -188,8 +188,8 @@ static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 static gboolean nmwa_update_info (NMWirelessApplet *applet)
 {
 	GtkWidget *info_dialog;
-	char *addr = NULL, *mask = NULL, *broadcast = NULL;
-	char *mac = NULL, *iface_and_type = NULL, *route = NULL;
+	char *addr = NULL, *broadcast = NULL, *primary_dns = NULL, *secondary_dns = NULL;
+	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL;
 	GtkWidget *label;
 	const char *iface = NULL;
 	NetworkDevice *dev;
@@ -219,6 +219,8 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	addr = (char*) network_device_get_ip4_address (dev);
 	mask = (char*) network_device_get_netmask (dev);
 	route = (char*) network_device_get_route (dev);
+	primary_dns = (char*) network_device_get_primary_dns (dev);
+	secondary_dns = (char*) network_device_get_secondary_dns (dev);
 
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
@@ -237,11 +239,17 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-subnet-mask");
 	gtk_label_set_text (GTK_LABEL (label), mask);
 
-	label = get_label (info_dialog, applet->info_dialog_xml, "label-hardware-address");
-	gtk_label_set_text (GTK_LABEL (label), mac);
-
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-default-route");
 	gtk_label_set_text (GTK_LABEL (label), route);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-primary-dns");
+	gtk_label_set_text (GTK_LABEL (label), primary_dns);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-secondary-dns");
+	gtk_label_set_text (GTK_LABEL (label), secondary_dns);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-hardware-address");
+	gtk_label_set_text (GTK_LABEL (label), mac);
 
 	g_free (iface_and_type);
 

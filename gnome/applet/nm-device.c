@@ -46,6 +46,8 @@ struct NetworkDevice
 	char *				netmask;
 	char *				udi;
 	char *				route;
+	char *				primary_dns;
+	char *				secondary_dns;
 	gint					strength;
 	GSList *				networks;
 	NMActStage			act_stage;
@@ -490,6 +492,44 @@ void network_device_set_route (NetworkDevice *dev, const char *route)
 	if (dev->route)
 		g_free (dev->route);
 	dev->route = route ? g_strdup (route) : NULL;
+}
+
+/*
+ * Accessors for primary DNS
+ */
+const char *network_device_get_primary_dns (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->primary_dns);
+}
+
+void network_device_set_primary_dns (NetworkDevice *dev, const char *dns)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->primary_dns)
+		g_free (dev->primary_dns);
+	dev->primary_dns = dns ? g_strdup (dns) : NULL;
+}
+
+/*
+ * Accessors for secondary DNS
+ */
+const char *network_device_get_secondary_dns (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->secondary_dns);
+}
+
+void network_device_set_secondary_dns (NetworkDevice *dev, const char *dns)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->secondary_dns)
+		g_free (dev->secondary_dns);
+	dev->secondary_dns = dns ? g_strdup (dns) : NULL;
 }
 
 /*

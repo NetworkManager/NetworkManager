@@ -3,6 +3,17 @@
 	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet.c,
 	  gnome/applet/nm-device.c, gnome/applet/nm-device.h,
 	  gnome/applet/wireless-applet.glade, src/nm-dbus-device.c: Display
+	  default route in the 'Connection Information' dialog, send primary
+	  and secondary name servers in in "getProperties" DBUS method, add
+	  network_device_{get,set}_{primary,secondary}_dns(),  The primary and
+	  secondary domain name servers are crucial pieces of information
+	  that a user might need in debugging a network problem.
+
+2005-10-04  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet.c,
+	  gnome/applet/nm-device.c, gnome/applet/nm-device.h,
+	  gnome/applet/wireless-applet.glade, src/nm-dbus-device.c: Display
 	  default route in the 'Connection Information' dialog, send default
 	  route in "getProperties" DBUS method, add network_device_set_route(),
 	  and network_device_get_route().  The Gateway is a crucial piece of
