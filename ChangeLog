@@ -1,5 +1,12 @@
 2005-10-04  Robert Love  <rml@novell.com>
 
+	* src/nm-dbus-device.c: Use iw_ether_ntop(), not ether_ntoa_r(), to
+	  convert an ether_addr structure's MAC into a string, because the
+	  latter will drop leading zero's and uses lower-case, e.g. 7:3b:4
+	  versus 07:3B:04, while the former will not.
+
+2005-10-04  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet.c,
 	  gnome/applet/nm-device.c, gnome/applet/nm-device.h,
 	  gnome/applet/wireless-applet.glade, src/nm-dbus-device.c: Display

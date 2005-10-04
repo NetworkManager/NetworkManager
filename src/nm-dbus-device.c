@@ -121,7 +121,7 @@ static DBusMessage *nm_dbus_device_get_hw_address (DBusConnection *connection, D
 
 		nm_device_get_hw_address (dev, &addr);
 		memset (char_addr, 0, 20);
-		ether_ntoa_r (&addr, &char_addr[0]);
+		iw_ether_ntop (&addr, char_addr);
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &ptr, DBUS_TYPE_INVALID);
 	}
 
@@ -353,7 +353,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 
 		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
-		ether_ntoa_r (&hw_addr, &hw_addr_buf[0]);
+		iw_ether_ntop (&hw_addr, hw_addr_buf);
 
 		ip4config = nm_device_get_ip4_config (dev);
 		if (ip4config)
