@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.1.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-09-06 12:36+0200\n"
-"PO-Revision-Date: 2005-09-06 13:16+0200\n"
+"POT-Creation-Date: 2005-10-05 22:27+0200\n"
+"PO-Revision-Date: 2005-10-05 22:29+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmal <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -18,12 +18,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-dbus-info.c:918
+#: ../gnome/applet/applet-dbus-info.c:867
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Passord for trådløst nettverk %s"
 
-#: ../gnome/applet/applet-dbus-info.c:1140
+#: ../gnome/applet/applet-dbus-info.c:1085
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -32,76 +32,72 @@ msgstr ""
 "Forespurt trådløst nettverk «%s» ser ut til å være utenfor rekkevidde. Et "
 "annet trådløst nettverk vil bli brukt hvis tilgjengelig."
 
-#: ../gnome/applet/applet-dbus.c:307
+#: ../gnome/applet/applet-dbus.c:317
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Tilkobling til trådløst nettverk «%s» feilet."
 
-#: ../gnome/applet/applet-dbus.c:312
+#: ../gnome/applet/applet-dbus.c:322
 msgid "Connection to the wired network failed."
 msgstr "Tilkobling til trådløst nettverk feilet."
 
-#: ../gnome/applet/applet.c:198
+#: ../gnome/applet/applet.c:181
 msgid "Error displaying connection information: "
 msgstr "Feil under visning av tilkoblingsinformasjon:"
 
-#: ../gnome/applet/applet.c:221
+#: ../gnome/applet/applet.c:200
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Fant ikke nødvendige ressurser (glade-filen)."
 
-#: ../gnome/applet/applet.c:233
+#: ../gnome/applet/applet.c:211
 msgid "No active connections!"
 msgstr "Ingen aktive tilkoblinger!"
 
-#: ../gnome/applet/applet.c:242
-msgid "Could not open socket!"
-msgstr "Kunne ikke åpne sokkel!"
-
-#: ../gnome/applet/applet.c:257
-msgid "Failed to get information about the interface!"
-msgstr "Fikk ikke informasjon om grensesnittet!"
-
-#: ../gnome/applet/applet.c:289
+#: ../gnome/applet/applet.c:226
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Kablet nettverk (%s)"
 
-#: ../gnome/applet/applet.c:291
+#: ../gnome/applet/applet.c:228
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Trådløst nettverk (%s)"
 
-#: ../gnome/applet/applet.c:391 ../gnome/applet/applet.c:409
+#: ../gnome/applet/applet.c:314 ../gnome/applet/applet.c:332
 msgid "NetworkManager Applet"
 msgstr "NetworkManager panelprogram"
 
-#: ../gnome/applet/applet.c:393 ../gnome/applet/applet.c:411
+#: ../gnome/applet/applet.c:316 ../gnome/applet/applet.c:334
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "Opphavsrett © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:394 ../gnome/applet/applet.c:412
+#: ../gnome/applet/applet.c:317 ../gnome/applet/applet.c:335
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr "Et panelprogram for å håndtere nettverksenheter og tilkoblinger."
 
-#: ../gnome/applet/applet.c:501
+#: ../gnome/applet/applet.c:339
+msgid "translator-credits"
+msgstr "Kjartan Maraas <kmaraas@gnome.org>"
+
+#: ../gnome/applet/applet.c:424
 msgid "VPN Error"
 msgstr "Feil med VPN"
 
-#: ../gnome/applet/applet.c:505
+#: ../gnome/applet/applet.c:428
 msgid "VPN Login Failure"
 msgstr "Feil ved VPN-pålogging"
 
-#: ../gnome/applet/applet.c:506
+#: ../gnome/applet/applet.c:429
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "Kunne ikke starte VPN-tilkobling «%s» pga en feil ved pålogging."
 
-#: ../gnome/applet/applet.c:510
+#: ../gnome/applet/applet.c:433
 msgid "VPN Start Failure"
 msgstr "Feil ved start av VPN"
 
-#: ../gnome/applet/applet.c:511
+#: ../gnome/applet/applet.c:434
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -110,25 +106,25 @@ msgstr ""
 "Kunne ikke starte VPN-tilkobling «%s» på grunn av feil ved oppstart av VPN-"
 "programmet."
 
-#: ../gnome/applet/applet.c:515 ../gnome/applet/applet.c:525
+#: ../gnome/applet/applet.c:438 ../gnome/applet/applet.c:448
 msgid "VPN Connect Failure"
 msgstr "Feil ved tilkobling av VPN"
 
-#: ../gnome/applet/applet.c:516
+#: ../gnome/applet/applet.c:439
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Kunne ikke starte VPN-tilkobling «%s» pga en feil ved tilkobling."
 
-#: ../gnome/applet/applet.c:520
+#: ../gnome/applet/applet.c:443
 msgid "VPN Configuration Error"
 msgstr "Feil i konfigurasjon av VPN"
 
-#: ../gnome/applet/applet.c:521
+#: ../gnome/applet/applet.c:444
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN-tilkobling «%s» er ikke korrekt konfigurert."
 
-#: ../gnome/applet/applet.c:526
+#: ../gnome/applet/applet.c:449
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -137,183 +133,172 @@ msgstr ""
 "Kunne ikke starte VPN-tilkobling «%s» fordi VPN-tjeneren ikke returnerte "
 "riktig nettverkskonfigurasjon."
 
-#: ../gnome/applet/applet.c:534
+#: ../gnome/applet/applet.c:457
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "VPN-tjenesten sa: «%s»"
 
-#: ../gnome/applet/applet.c:603
+#: ../gnome/applet/applet.c:526
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "VPN-tilkobling «%s» sa:"
 
-#: ../gnome/applet/applet.c:605
+#: ../gnome/applet/applet.c:528
 msgid "VPN Login Message"
 msgstr "Påloggingsmelding for VPN"
 
-#: ../gnome/applet/applet.c:824 ../gnome/applet/applet.c:2440
+#: ../gnome/applet/applet.c:746 ../gnome/applet/applet.c:2299
 #: ../gnome/applet/other-network-dialog.c:407
-#: ../gnome/applet/passphrase-dialog.c:385
+#: ../gnome/applet/passphrase-dialog.c:384
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr ""
 "NetworkManager fant ikke nødvendige ressurser (glade-filen ble ikke funnet)."
 
-#: ../gnome/applet/applet.c:837
+#: ../gnome/applet/applet.c:759
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Nettverksenheten «%s (%s)» støtter ikke søk etter trådløse nettverk."
 
-#: ../gnome/applet/applet.c:844
+#: ../gnome/applet/applet.c:766
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr ""
 "Nettverksenheten «%s (%s)» støtter ikke informasjon om tilkoblet status."
 
-#: ../gnome/applet/applet.c:988
+#: ../gnome/applet/applet.c:975
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Klargjør enhet %s for det trådløse nettverket..."
 
-#: ../gnome/applet/applet.c:990
+#: ../gnome/applet/applet.c:977
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Klargjør enhet %s for trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:997
+#: ../gnome/applet/applet.c:984
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Konfigurerer enhet %s for kablet nettverk..."
 
-#: ../gnome/applet/applet.c:999
+#: ../gnome/applet/applet.c:986
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Forsøker å bruke trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:1006
+#: ../gnome/applet/applet.c:993
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Venter på nettverksnøkkel for trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:1013 ../gnome/applet/applet.c:1022
+#: ../gnome/applet/applet.c:1000 ../gnome/applet/applet.c:1009
 msgid "Requesting a network address from the wired network..."
 msgstr "Ber om en nettverksadresse fra kablet nettverk..."
 
-#: ../gnome/applet/applet.c:1015 ../gnome/applet/applet.c:1024
+#: ../gnome/applet/applet.c:1002 ../gnome/applet/applet.c:1011
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Ber om en nettverksadresse fra trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:1031
+#: ../gnome/applet/applet.c:1018
 msgid "Finishing connection to the wired network..."
 msgstr "Fullfører tilkobling til kablet nettverk..."
 
-#: ../gnome/applet/applet.c:1033
+#: ../gnome/applet/applet.c:1020
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Fullfører tilkobling til trådløst nettverk «%s»..."
 
-#: ../gnome/applet/applet.c:1077
+#: ../gnome/applet/applet.c:1065
 msgid "NetworkManager is not running"
 msgstr "NetworkManager kjører ikke"
 
-#: ../gnome/applet/applet.c:1088
+#: ../gnome/applet/applet.c:1077
 msgid "No network connection"
 msgstr "Ingen nettverksforbindelse"
 
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1082
 msgid "Wired network connection"
 msgstr "Trådløs nettverkforbindelse"
 
-#: ../gnome/applet/applet.c:1102
+#: ../gnome/applet/applet.c:1086
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Kobler til et Ad-Hoc trådløst nettverk"
 
-#: ../gnome/applet/applet.c:1116
+#: ../gnome/applet/applet.c:1088
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Trådløs nettverksforbindelse til «%s» (%d%%)"
 
-#: ../gnome/applet/applet.c:1140
+#: ../gnome/applet/applet.c:1108
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-tilkobling til «%s»"
 
-#: ../gnome/applet/applet.c:1552
+#: ../gnome/applet/applet.c:1116
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "Kobler til «%s» via VPN"
+
+#: ../gnome/applet/applet.c:1502
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Koble til annet trådløst nettverk..."
 
-#: ../gnome/applet/applet.c:1573
+#: ../gnome/applet/applet.c:1523
 msgid "Create _New Wireless Network..."
 msgstr "Opprett _nytt trådløst nettverk..."
 
-#: ../gnome/applet/applet.c:1687
+#: ../gnome/applet/applet.c:1636
 msgid "_VPN Connections"
 msgstr "_VPN-tilkoblinger"
 
-#: ../gnome/applet/applet.c:1719
+#: ../gnome/applet/applet.c:1668
 msgid "_Configure VPN..."
 msgstr "_Konfigurer VPN..."
 
-#: ../gnome/applet/applet.c:1723
+#: ../gnome/applet/applet.c:1672
 msgid "_Disconnect VPN..."
 msgstr "Ko_ble fra VPN..."
 
-#: ../gnome/applet/applet.c:1746
+#: ../gnome/applet/applet.c:1694
 msgid "_Dial Up Connections"
 msgstr "_Oppringte tilkoblinger"
 
-#: ../gnome/applet/applet.c:1755
+#: ../gnome/applet/applet.c:1703
 #, c-format
 msgid "Connect to %s..."
 msgstr "Koble til %s..."
 
-#: ../gnome/applet/applet.c:1806
+#: ../gnome/applet/applet.c:1753
 msgid "No network devices have been found"
 msgstr "Ingen nettverksenheter ble funnet"
 
-#: ../gnome/applet/applet.c:1968
+#: ../gnome/applet/applet.c:1915
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager kjører ikke..."
 
-#: ../gnome/applet/applet.c:2077
-msgid "Wireless Network _Discovery"
-msgstr "Sø_k etter trådløse nettverk"
-
-#: ../gnome/applet/applet.c:2080
-msgid "Always Search"
-msgstr "Alltid søk"
-
-#: ../gnome/applet/applet.c:2088
-msgid "Search Only When Disconnected"
-msgstr "Søk kun når frakoblet"
-
-#: ../gnome/applet/applet.c:2096
-msgid "Never Search"
-msgstr "Aldri søk"
-
 #. Wireless Enabled item
-#: ../gnome/applet/applet.c:2108
+#: ../gnome/applet/applet.c:2017
 msgid "_Wireless Enabled"
 msgstr "_Trådløst nettverk aktivert"
 
 #. Connection Information item
-#: ../gnome/applet/applet.c:2114
+#: ../gnome/applet/applet.c:2023
 msgid "Connection _Information"
 msgstr "Tilkoblings_informasjon"
 
 #. Help item
-#: ../gnome/applet/applet.c:2124
+#: ../gnome/applet/applet.c:2033
 msgid "_Help"
 msgstr "_Hjelp"
 
 #. About item
-#: ../gnome/applet/applet.c:2132
+#: ../gnome/applet/applet.c:2041
 msgid "_About"
 msgstr "_Om"
 
-#: ../gnome/applet/applet.c:2579
+#: ../gnome/applet/applet.c:2448
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -321,42 +306,42 @@ msgstr ""
 "Panelprogrammet for NetworkManager fant ikke noen av de nødvendige "
 "ressursene. Det kan ikke fortsette.\n"
 
-#: ../gnome/applet/eggtrayicon.c:118
+#: ../gnome/applet/eggtrayicon.c:127
 msgid "Orientation"
 msgstr "Orientering"
 
-#: ../gnome/applet/eggtrayicon.c:119
+#: ../gnome/applet/eggtrayicon.c:128
 msgid "The orientation of the tray."
 msgstr "Orientering for trauet."
 
-#: ../gnome/applet/menu-items.c:89
+#: ../gnome/applet/menu-items.c:87
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Kablet nettverk (%s)"
 
-#: ../gnome/applet/menu-items.c:92
+#: ../gnome/applet/menu-items.c:90
 msgid "_Wired Network"
 msgstr "_Kablet nettverk"
 
-#: ../gnome/applet/menu-items.c:165
+#: ../gnome/applet/menu-items.c:161
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Trådløst nettverk (%s)"
 msgstr[1] "Trådløse nettverk (%s)"
 
-#: ../gnome/applet/menu-items.c:167
+#: ../gnome/applet/menu-items.c:163
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Trådløst nettverk"
 msgstr[1] "Trådløse nettverk"
 
-#: ../gnome/applet/menu-items.c:309
+#: ../gnome/applet/menu-items.c:303
 msgid " (invalid Unicode)"
 msgstr " (ugyldig Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:143
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Passphrase:"
 msgstr "_Passord:"
 
@@ -417,7 +402,7 @@ msgid "Hex Key:"
 msgstr "Heksadesimal nøkkel:"
 
 #: ../gnome/applet/vpn-password-dialog.c:152
-#: ../gnome/applet/vpn-password-dialog.c:191
+#: ../gnome/applet/vpn-password-dialog.c:189
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "Kan ikke starte VPN-tilkobling «%s»"
@@ -431,7 +416,7 @@ msgstr ""
 "Fant ikke autentiseringsdialogen for VPN tilkoblingstypen «%s». Kontakt din "
 "systemadministrator."
 
-#: ../gnome/applet/vpn-password-dialog.c:194
+#: ../gnome/applet/vpn-password-dialog.c:192
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
@@ -531,66 +516,78 @@ msgid "Connection Information"
 msgstr "Tilkoblingsinformasjon"
 
 #: ../gnome/applet/wireless-applet.glade.h:25
+msgid "Default Route:"
+msgstr "Forvalgt rute:"
+
+#: ../gnome/applet/wireless-applet.glade.h:26
 msgid "Destination Address:"
 msgstr "Måladresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:27
 msgid "Hardware Address:"
 msgstr "Maskinvareadresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/wireless-applet.glade.h:28
 msgid "IP Address:"
 msgstr "IP adresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/wireless-applet.glade.h:29
 msgid "Interface:"
 msgstr "Grensesnitt:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/wireless-applet.glade.h:30
 msgid "Other Wireless Network..."
 msgstr "Annet trådløst nettverk..."
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/wireless-applet.glade.h:31
+msgid "Primary DNS:"
+msgstr "Primær DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
+msgid "Secondary DNS:"
+msgstr "Sekundær DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:33
 msgid "Subnet Mask:"
 msgstr "Subnettmaske:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Wireless Network Key Required"
 msgstr "Nøkkel for trådløst nettverk kreves"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Wireless _adapter:"
 msgstr "Trådløst _kort:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Wireless _network:"
 msgstr "Trådløst _nettverk:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "_Always Trust this Wireless Network"
 msgstr "Stol _alltid på dette trådløse nettverket"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:38
 msgid "_Don't remind me again"
 msgstr "_Ikke vis påminnelse igjen"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "_Key Type:"
 msgstr "Type nø_kkel:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "_Key type:"
 msgstr "Type nø_kkel:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "_Login to Network"
 msgstr "_Logg på nettverk"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:376
+#: ../gnome/vpn-properties/nm-vpn-properties.c:372
 msgid "Cannot add VPN connection"
 msgstr "Kan ikke legge til VPN-tilkobling"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:378
+#: ../gnome/vpn-properties/nm-vpn-properties.c:374
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -598,11 +595,11 @@ msgstr ""
 "Ingen passende VPN-programvare ble funnet på systemet. Kontakt din "
 "systemadministrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:430
+#: ../gnome/vpn-properties/nm-vpn-properties.c:426
 msgid "Cannot import VPN connection"
 msgstr "Kan ikke importere VPN-tilkobling"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:432
+#: ../gnome/vpn-properties/nm-vpn-properties.c:428
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -611,12 +608,12 @@ msgstr ""
 "Kan ikke finne passende programvare for VPN-tilkobling av type «%s» for "
 "import av fil «%s». Kontakt din sysstemadministrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:572
+#: ../gnome/vpn-properties/nm-vpn-properties.c:568
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Feil under henting av VPN tilkobling «%s»"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:575
+#: ../gnome/vpn-properties/nm-vpn-properties.c:571
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -625,12 +622,12 @@ msgstr ""
 "Kunne ikke finne brukergrensesnittfiler for VPN-tilkobling type «%s». "
 "Kontakt din systemadministrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:735
+#: ../gnome/vpn-properties/nm-vpn-properties.c:731
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Slett VPN-tilkobling «%s»?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:738
+#: ../gnome/vpn-properties/nm-vpn-properties.c:734
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -640,16 +637,16 @@ msgstr ""
 "All informasjon om VPN-tilkobling «%s» vil gå tapt og du vil kanskje trenge "
 "hjelp fra din systemadministrator for å opprette en ny tilkobling."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:953
+#: ../gnome/vpn-properties/nm-vpn-properties.c:940
 msgid "Unable to load"
 msgstr "Kunne ikke laste"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:955
+#: ../gnome/vpn-properties/nm-vpn-properties.c:942
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Fant ikke nødvendige ressurser (glade-filen)."
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1073
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1060
 msgid "Edit VPN Connection"
 msgstr "Rediger VPN-tilkobling"
 
@@ -658,32 +655,28 @@ msgid "Add a new VPN connection"
 msgstr "Legg til en ny VPN-tilkobling"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "Velg hvilken type VPN-tilkobling du ønsker å opprette."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "Connect to:"
 msgstr "Koble til:"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Create VPN Connection"
 msgstr "Opprett VPN-tilkobling"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Create VPN Connection - 1 of 2"
 msgstr "Opprett VPN-tilkobling - 1 av 2"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Create VPN Connection - 2 of 2"
 msgstr "Opprett VPN-tilkobling - 2 av 2"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
 msgstr "Slett valgt VPN-tilkobling"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid ""
-"Dependent on the private network you want to connect to, you need to select "
-"what type of connection you want to create."
-msgstr ""
-"Du må velge hvilken type tilkobling du vil opprette avhengig av det private "
-"nettverket du vil koble til."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "E_xport"
@@ -694,34 +687,32 @@ msgid "Edit the selected VPN connection"
 msgstr "Rediger valgt VPN-tilkobling"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
-msgid "Export VPN connection to a file"
-msgstr "Eksporter VPN-tilkobling til en fil"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
 msgid "Export the VPN settings to a file"
 msgstr "Eksporter innstillinger for VPN til en fil"
 
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "Eksporter valgt VPN-tilkobling til en fil"
+
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
-msgid "Finish create VPN Connection"
+msgid "Finish Creating VPN Connection"
 msgstr "Fullfør oppretting av VPN-tilkobling"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
-msgid "Manage Virtual Private Network connections"
+msgid "Manage Virtual Private Network Connections"
 msgstr "Håndter tilkoblinger til Virtuelle Private Nettverk"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
-"This assistant will guide you through the creation of a new VPN connection "
-"to a private network.\n"
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
 "\n"
-"It will require some information, such as IP addresses and secrets, that "
-"will probably be provided by your system administrator as appropriate."
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
 msgstr ""
-"Denne assistenten vil hjelpe deg gjennom oppretting av en ny VPN-"
-"tilkobling.\n"
+"Denne assistenten vil hjelpe deg gjennom oppretting av en tilkobling til et Virtuelt Privat Nettverk (VPN).\n"
 "\n"
-"Du vil trenge en del informasjon slik som IP-adresse og passord. Du vil "
-"sannsynligvis kunne få denne informasjonen fra din systemadministrator."
+"Du vil trenge en del informasjon slik som IP-adresse og passord. Du vil sannsynligvis kunne få denne informasjonen fra din systemadministrator."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
