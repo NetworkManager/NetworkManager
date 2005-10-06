@@ -1,3 +1,11 @@
+2005-10-06  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet.c:
+	* gnome/applet/applet.h:
+	* gnome/applet/icons/Makefile.am:
+	Convey information about the current connection stage in the
+	icons themselves instead of creating a separate progress bar.
+
 2005-10-04  Robert Love  <rml@novell.com>
 
 	* src/nm-dbus-device.c: Use iw_ether_ntop(), not ether_ntoa_r(), to

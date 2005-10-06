@@ -859,17 +859,6 @@ out:
 }
 
 
-static void nmwa_set_progress (NMWirelessApplet *applet, GdkPixbuf *progress_icon)
-{
-	g_return_if_fail (applet != NULL);
-
-	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->progress_bar), progress_icon);
-	if (!progress_icon)
-		gtk_widget_hide (applet->progress_bar);
-	else
-		gtk_widget_show (applet->progress_bar);
-}
-
 static GdkPixbuf *nmwa_get_connected_icon (NMWirelessApplet *applet, NetworkDevice *dev)
 {
 	int strength = 0;
@@ -904,62 +893,12 @@ static GdkPixbuf *nmwa_get_connected_icon (NMWirelessApplet *applet, NetworkDevi
 }
 
 
-/*
- * animation_timeout
- *
- * Jump to the next frame of the applets icon if the icon
- * is supposed to be animated.
- *
- */
-static gboolean animation_timeout (NMWirelessApplet *applet)
-{
-	NetworkDevice *act_dev;
-
-	g_return_val_if_fail (applet != NULL, FALSE);
-
-	if (!applet->nm_running)
-	{
-		applet->animation_step = 0;
-		return TRUE;
-	}
-
-	act_dev = nmwa_get_first_active_device (applet->device_list);
-
-	if (applet->nm_state == NM_STATE_CONNECTING)
-	{
-		if (act_dev && network_device_is_wireless (act_dev))
-		{
-			if (applet->animation_step >= NUM_WIRELESS_CONNECTING_FRAMES)
-				applet->animation_step = 0;
-			nmwa_set_icon (applet, applet->wireless_connecting_icons[applet->animation_step], NULL);
-		}
-		else if (act_dev)
-		{
-			if (applet->animation_step >= NUM_WIRED_CONNECTING_FRAMES)
-				applet->animation_step = 0;
-			nmwa_set_icon (applet, applet->wired_connecting_icons[applet->animation_step], NULL);
-		}
-		applet->animation_step ++;
-	}
-	else if (nmwa_get_first_activating_vpn_connection (applet) != NULL)
-	{
-		GdkPixbuf *connected_icon;
-		connected_icon = nmwa_get_connected_icon (applet, act_dev);
-
-		if (applet->animation_step >= NUM_VPN_CONNECTING_FRAMES)
-			applet->animation_step = 0;
-		nmwa_set_icon (applet, connected_icon, applet->vpn_connecting_icons[applet->animation_step]);
-		applet->animation_step ++;
-	}
-
-	return TRUE;
-}
-
-
 static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDevice *dev, WirelessNetwork *net, char **tip)
 {
 	const char *essid;
 	const char *iface;
+	gint connecting_stage = -1;
+	GdkPixbuf *pixbuf = NULL;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
@@ -975,7 +914,8 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 				*tip = g_strdup_printf (_("Preparing device %s for the wired network..."), iface);
 			else if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Preparing device %s for the wireless network '%s'..."), iface, essid);
-			return applet->progress_icons[1];
+			connecting_stage = 0;
+			break;
 		}
 
 		case NM_ACT_STAGE_DEVICE_CONFIG:
@@ -984,14 +924,16 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 				*tip = g_strdup_printf (_("Configuring device %s for the wired network..."), iface);
 			else if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Attempting to join the wireless network '%s'..."), essid);
-			return applet->progress_icons[3];
+			connecting_stage = 0;
+			break;
 		}
 
 		case NM_ACT_STAGE_NEED_USER_KEY:
 		{
 			if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Waiting for Network Key for the wireless network '%s'..."), essid);
-			return applet->progress_icons[4];
+			connecting_stage = 0;
+			break;
 		}
 
 		case NM_ACT_STAGE_IP_CONFIG_START:
@@ -1000,7 +942,8 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 				*tip = g_strdup_printf (_("Requesting a network address from the wired network..."));
 			else if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Requesting a network address from the wireless network '%s'..."), essid);
-			return applet->progress_icons[5];
+			connecting_stage = 1;
+			break;
 		}
 
 		case NM_ACT_STAGE_IP_CONFIG_GET:
@@ -1009,7 +952,8 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 				*tip = g_strdup_printf (_("Requesting a network address from the wired network..."));
 			else if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Requesting a network address from the wireless network '%s'..."), essid);
-			return applet->progress_icons[8];
+			connecting_stage = 2;
+			break;
 		}
 
 		case NM_ACT_STAGE_IP_CONFIG_COMMIT:
@@ -1018,7 +962,8 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 				*tip = g_strdup_printf (_("Finishing connection to the wired network..."));
 			else if (network_device_is_wireless (dev))
 				*tip = g_strdup_printf (_("Finishing connection to the wireless network '%s'..."), essid);
-			return applet->progress_icons[10];
+			connecting_stage = 2;
+			break;
 		}
 
 		default:
@@ -1028,7 +973,71 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 		case NM_ACT_STAGE_UNKNOWN:
 			break;
 	}
-	return NULL;
+
+	if (connecting_stage >= 0 && connecting_stage < NUM_CONNECTING_STAGES)
+	{
+		if (applet->animation_step > NUM_CONNECTING_FRAMES)
+			applet->animation_step = 0;
+
+		pixbuf = applet->network_connecting_icons[connecting_stage][applet->animation_step];
+	}
+
+	return pixbuf;
+}
+
+
+
+/*
+ * animation_timeout
+ *
+ * Jump to the next frame of the applets icon if the icon
+ * is supposed to be animated.
+ *
+ */
+static gboolean animation_timeout (NMWirelessApplet *applet)
+{
+	NetworkDevice *act_dev;
+	GdkPixbuf *pixbuf;
+
+	g_return_val_if_fail (applet != NULL, FALSE);
+
+	if (!applet->nm_running)
+	{
+		applet->animation_step = 0;
+		return TRUE;
+	}
+
+	act_dev = nmwa_get_first_active_device (applet->device_list);
+	if (!act_dev)
+	{
+		applet->animation_step = 0;
+		return TRUE;
+	}
+
+	if (applet->nm_state == NM_STATE_CONNECTING)
+	{
+		if (act_dev)
+		{
+			char *tip = NULL;
+			pixbuf = nmwa_act_stage_to_pixbuf (applet, act_dev, NULL, &tip);
+			g_free (tip);
+
+			if (pixbuf)
+				nmwa_set_icon (applet, pixbuf, NULL);
+		}
+		applet->animation_step ++;
+	}
+	else if (nmwa_get_first_activating_vpn_connection (applet) != NULL)
+	{
+		pixbuf = nmwa_get_connected_icon (applet, act_dev);
+
+		if (applet->animation_step >= NUM_VPN_CONNECTING_FRAMES)
+			applet->animation_step = 0;
+		nmwa_set_icon (applet, pixbuf, applet->vpn_connecting_icons[applet->animation_step]);
+		applet->animation_step ++;
+	}
+
+	return TRUE;
 }
 
 
@@ -1044,7 +1053,6 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 	gboolean			show_applet = TRUE;
 	gboolean			need_animation = FALSE;
 	GdkPixbuf *		pixbuf = NULL;
-	GdkPixbuf *		progress = NULL;
 	gint				strength = -1;
 	char *			tip = NULL;
 	char *			vpntip = NULL;
@@ -1094,8 +1102,10 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 			break;
 
 		case NM_STATE_CONNECTING:
-			progress = nmwa_act_stage_to_pixbuf (applet, act_dev, active_network, &tip);
-			need_animation = TRUE;
+			{
+				pixbuf = nmwa_act_stage_to_pixbuf (applet, act_dev, active_network, &tip);
+				need_animation = TRUE;
+			}
 			break;
 
 		default:
@@ -1132,8 +1142,6 @@ done:
 
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
 	g_free (tip);
-
-	nmwa_set_progress (applet, progress);
 
 	applet->animation_step = 0;
 	if (applet->animation_id)
@@ -2121,13 +2129,11 @@ static void nmwa_setup_widgets (NMWirelessApplet *applet)
 	applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
 
 	applet->pixmap = gtk_image_new ();
-	applet->progress_bar = gtk_image_new ();
 
 	applet->icon_box = gtk_hbox_new (FALSE, 3);
 	gtk_container_set_border_width (GTK_CONTAINER (applet->icon_box), 0);
 
 	/* Set up the widget structure and show the applet */
-	gtk_container_add (GTK_CONTAINER (applet->icon_box), applet->progress_bar);
 	gtk_container_add (GTK_CONTAINER (applet->icon_box), applet->pixmap);
 	gtk_container_add (GTK_CONTAINER (applet->top_menu_item), applet->icon_box);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), applet->top_menu_item);
@@ -2356,7 +2362,7 @@ static void setup_stock (void)
 
 static void nmwa_icons_free (NMWirelessApplet *applet)
 {
-	gint i;
+	gint i,j;
 
 	g_object_unref (applet->no_connection_icon);
 	g_object_unref (applet->wired_icon);
@@ -2369,11 +2375,9 @@ static void nmwa_icons_free (NMWirelessApplet *applet)
 	g_object_unref (applet->wireless_75_icon);
 	g_object_unref (applet->wireless_100_icon);
 
-	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
-		g_object_unref (applet->wired_connecting_icons[i]);
-
-	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
-		g_object_unref (applet->wireless_connecting_icons[i]);
+	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
+		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
+			g_object_unref (applet->network_connecting_icons[i][j]);
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->vpn_connecting_icons[i]);
@@ -2395,7 +2399,7 @@ static gboolean
 nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 {
 	char *	name;
-	int		i;
+	int		i, j;
 	gboolean	success = FALSE;
 
 	/* Assume icons are square */
@@ -2412,25 +2416,14 @@ nmwa_icons_load_from_disk (NMWirelessApplet *applet, GtkIconTheme *icon_theme)
 	ICON_LOAD(applet->wireless_75_icon, "nm-signal-75");
 	ICON_LOAD(applet->wireless_100_icon, "nm-signal-100");
 
-	for (i = 0; i < NUM_PROGRESS_FRAMES; i++)
+	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
 	{
-		name = g_strdup_printf ("nm-progress%02d", i+1);
-		ICON_LOAD(applet->progress_icons[i], name);
-		g_free (name);
-	}
-
-	for (i = 0; i < NUM_WIRED_CONNECTING_FRAMES; i++)
-	{
-		name = g_strdup_printf ("nm-connecting%02d", i+1);
-		ICON_LOAD(applet->wired_connecting_icons[i], name);
-		g_free (name);
-	}
-
-	for (i = 0; i < NUM_WIRELESS_CONNECTING_FRAMES; i++)
-	{
-		name = g_strdup_printf ("nm-connecting%02d", i+1);
-		ICON_LOAD(applet->wireless_connecting_icons[i], name);
-		g_free (name);
+		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
+		{
+			name = g_strdup_printf ("nm-stage%02d-connecting%02d", i+1, j+1);
+			ICON_LOAD(applet->network_connecting_icons[i][j], name);
+			g_free (name);
+		}
 	}
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)

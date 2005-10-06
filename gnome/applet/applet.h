@@ -93,17 +93,14 @@ typedef struct
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;
 	GdkPixbuf *		adhoc_icon;
-#define NUM_PROGRESS_FRAMES 11
-	GdkPixbuf *		progress_icons[NUM_PROGRESS_FRAMES];
-#define NUM_WIRED_CONNECTING_FRAMES 11
-	GdkPixbuf *		wired_connecting_icons[NUM_WIRED_CONNECTING_FRAMES];
 	GdkPixbuf *		wireless_00_icon;
 	GdkPixbuf *		wireless_25_icon;
 	GdkPixbuf *		wireless_50_icon;
 	GdkPixbuf *		wireless_75_icon;
 	GdkPixbuf *		wireless_100_icon;
-#define NUM_WIRELESS_CONNECTING_FRAMES 11
-	GdkPixbuf *		wireless_connecting_icons[NUM_WIRELESS_CONNECTING_FRAMES];
+#define NUM_CONNECTING_STAGES 3
+#define NUM_CONNECTING_FRAMES 11
+	GdkPixbuf *		network_connecting_icons[NUM_CONNECTING_STAGES][NUM_CONNECTING_FRAMES];
 #define NUM_VPN_CONNECTING_FRAMES 14
 	GdkPixbuf *		vpn_connecting_icons[NUM_VPN_CONNECTING_FRAMES];
 	GdkPixbuf *		vpn_lock_icon;
@@ -115,7 +112,6 @@ typedef struct
 	/* Direct UI elements */
 	GtkWidget *		icon_box;
 	GtkWidget *		pixmap;
-	GtkWidget *		progress_bar;
 	GtkWidget *		top_menu_item;
 	GtkWidget *		dropdown_menu;
 	GtkWidget *		vpn_menu;
