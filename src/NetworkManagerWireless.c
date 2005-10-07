@@ -233,20 +233,6 @@ max_qual->updated);
 	return (CLAMP (percent, 0, 100));
 }
 
-
-void nm_update_device_wireless_timeouts (NMData *data, NMWirelessScanInterval interval)
-{
-	GSList *elt;
-	NMDevice *dev = NULL;
-
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
-		dev = (NMDevice *)(elt->data);
-		if (dev && nm_device_is_wireless (dev))
-			nm_device_set_wireless_scan_interval (dev, interval);
-	}
-}
-
 static gboolean nm_wireless_set_scan_interval_cb (gpointer user_data)
 {
 	NMData *data = (NMData*) user_data;
