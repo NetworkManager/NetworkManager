@@ -246,7 +246,8 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	for option in -Wno-unused -Wno-sign-compare -Wno-pointer-sign \
 		      -Wdeclaration-after-statement -Wstrict-prototypes \
-		      -Wmissing-prototypes -Wmissing-declarations; do
+		      -Wmissing-prototypes -Wmissing-declarations \
+		      -Wno-strict-aliasing; do
 		SAVE_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $option"
 		AC_MSG_CHECKING([whether gcc understands $option])

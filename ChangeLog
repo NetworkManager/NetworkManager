@@ -1,13 +1,11 @@
 2005-10-07  Robert Love  <rml@novell.com>
 
 	* configure.in: Change our compile flags for the betterment of mankind.
-	  Remove "-Wno-strict-aliasing" because we should not be doing bad
-	  aliasing or type punning that throws off optimizations (this is esp.
-	  important in gcc 4.1).  Add "-Wstrict-prototypes" because we comply
-	  anyhow and missing a prototype is very bad on 64-bit platforms as
-	  types default to int but sizeof(int) != sizeof(long), add
-	  "-Wmissing-prototypes" and "-Wmissing-declarations" to warn if we
-	  define an exported function but fail to put it in a header.
+	  Add "-Wstrict-prototypes" because we comply anyhow and missing a
+	  prototype is very bad on 64-bit platforms as types default to int but
+	  sizeof(int) != sizeof(long), add "-Wmissing-prototypes" and
+	  "-Wmissing-declarations" to warn if we define an exported function
+	  but fail to put it in a header.
 
 2005-10-07  Robert Love  <rml@novell.com>
 
