@@ -11,7 +11,7 @@
 	* configure.in: Change our compile flags for the betterment of mankind.
 	  Add "-Wstrict-prototypes" because we comply anyhow and missing a
 	  prototype is very bad on 64-bit platforms as types default to int but
-	  sizeof(int) != sizeof(long), add "-Wmissing-prototypes" and
+	  sizeof(int) != sizeof(long) and add "-Wmissing-prototypes" &
 	  "-Wmissing-declarations" to warn if we define an exported function
 	  but fail to put it in a header.
 
