@@ -5,5 +5,5 @@ Exec=nm-vpn-properties --import-service org.freedesktop.NetworkManager.vpnc --im
 Terminal=false
 Type=Application
 DocPath=
-Categories=;
+Categories=GNOME;Application;Network;
 MimeType=application/x-cisco-vpn-settings

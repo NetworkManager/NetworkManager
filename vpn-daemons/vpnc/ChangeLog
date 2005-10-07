@@ -1,6 +1,11 @@
+2005-10-07  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-vpnc.desktop.in: use a category for the desktop entry.
+	(Patch from: Rodrigo Moya <rodrigo@novell.com>)
+
 2005-08-18  David Zeuthen  <davidz@redhat.com>
 
-	* configure.in: Require NetworkManaged-devel >= 0.4.1. Bump version
+	* configure.in: Require NetworkManager-devel >= 0.4.1. Bump version
 	to 0.3.
 
 2005-08-14  Christopher Aillon  <caillon@redhat.com>
