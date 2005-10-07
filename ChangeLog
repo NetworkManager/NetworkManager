@@ -1,3 +1,18 @@
+2005-10-07  Robert Love  <rml@novell.com>
+
+	* Cleanup prototypes: put some functions in header files and mark
+	  others as 'static' -- feel free to invert
+	* src/vpn-manager/nm-dbus-vpn.c: remove prototype of
+	  nm_vpn_manager_vpn_connection_list_copy()
+	* src/vpn-manager/nm-vpn-act-request.c: remove prototype of
+	  nm_vpn_service_get_dbus_connection()
+	* src/vpn-manager/nm-vpn-manager.h: add prototypes for
+	  nm_vpn_manager_vpn_connection_list_copy()
+	* src/vpn-manager/nm-vpn-service.c: Make nm_vpn_service_act_request_failed
+	  and nm_vpn_service_stage2_daemon_wait static.
+	* src/vpn-manager/nm-vpn-service.h: add prototype for
+	  nm_vpn_service_get_dbus_connection()
+
 2005-10-06  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:

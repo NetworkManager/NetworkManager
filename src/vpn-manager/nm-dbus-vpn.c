@@ -399,9 +399,6 @@ out:
 }
 
 
-/* Should only be used by nm_dbus_vpn_connections_update_cb() */
-GSList *nm_vpn_manager_vpn_connection_list_copy (NMVPNManager *manager);
-
 /*
  * nm_dbus_vpn_connections_update_cb
  *

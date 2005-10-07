@@ -47,10 +47,6 @@ struct NMVPNActRequest
 };
 
 
-/* Ugly, I know.  But we need it for now */
-DBusConnection *nm_vpn_service_get_dbus_connection (NMVPNService *service);
-
-
 NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *service, NMVPNConnection *vpn,
 								NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count)
 {

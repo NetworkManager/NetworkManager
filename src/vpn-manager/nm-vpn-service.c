@@ -230,7 +230,8 @@ static char *construct_op_from_service_name (const char *service_name)
  * has failed.
  *
  */
-void nm_vpn_service_act_request_failed (NMVPNService *service, NMVPNActRequest *req)
+static void nm_vpn_service_act_request_failed (NMVPNService *service,
+								       NMVPNActRequest *req)
 {
 	NMVPNConnection *vpn;
 
@@ -368,7 +369,7 @@ static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, N
  * Wait until the VPN daemon has become active.
  *
  */
-gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
+static gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
 	NMVPNService *		service;
