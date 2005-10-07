@@ -887,7 +887,7 @@ load_properties_module (GSList **vpn_types, const char *path)
 	}
 
 	if (!g_module_symbol (module, "nm_vpn_properties_factory", 
-			      (gpointer *) &nm_vpn_properties_factory)) {
+			      (gpointer) &nm_vpn_properties_factory)) {
 		
 		g_warning ("Cannot locate function 'nm_vpn_properties_factory' in '%s': %s", 
 			   path, g_module_error ());

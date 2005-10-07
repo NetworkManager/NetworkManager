@@ -26,7 +26,7 @@
 #include "libnm_glib.h"
 
 
-void status_printer (libnm_glib_ctx *ctx, gpointer user_data)
+static void status_printer (libnm_glib_ctx *ctx, gpointer user_data)
 {
 	libnm_glib_state	state;
 

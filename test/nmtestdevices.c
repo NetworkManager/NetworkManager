@@ -30,7 +30,7 @@
 
 #include "NetworkManager.h"
 
-void create_device (DBusConnection *connection, NMDeviceType type)
+static void create_device (DBusConnection *connection, NMDeviceType type)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -81,7 +81,7 @@ void create_device (DBusConnection *connection, NMDeviceType type)
 }
 
 
-void remove_device (DBusConnection *connection, char *dev)
+static void remove_device (DBusConnection *connection, char *dev)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -120,7 +120,7 @@ void remove_device (DBusConnection *connection, char *dev)
 }
 
 
-void set_link_active (DBusConnection *connection, char *dev, gboolean active)
+static void set_link_active (DBusConnection *connection, char *dev, gboolean active)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;

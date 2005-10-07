@@ -57,8 +57,11 @@ static inline gboolean nmi_network_type_valid (NMNetworkType type)
  * Make a DBus error message
  *
  */
-DBusMessage *nmi_dbus_create_error_message (DBusMessage *message, const char *exception_namespace,
-										const char *exception, const char *format, ...)
+static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message,
+								const char *exception_namespace,
+								const char *exception,
+								const char *format,
+								...)
 {
 	char *		exception_text;
 	DBusMessage *	reply_message;

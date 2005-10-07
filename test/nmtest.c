@@ -200,7 +200,7 @@ static int nmwa_dbus_call_nm_method (DBusConnection *con, const char *path, cons
 	return (RETURN_SUCCESS);
 }
 
-char * get_active_device (DBusConnection *connection)
+static char * get_active_device (DBusConnection *connection)
 {
 	int	 ret;
 	char *active_device = NULL;
@@ -213,7 +213,7 @@ char * get_active_device (DBusConnection *connection)
 }
 
 
-char * get_object_name (DBusConnection *connection, char *path)
+static char * get_object_name (DBusConnection *connection, char *path)
 {
 	int	 ret;
 	char *name = NULL;
@@ -228,7 +228,7 @@ char * get_object_name (DBusConnection *connection, char *path)
 }
 
 
-int get_object_signal_strength (DBusConnection *connection, char *path)
+static int get_object_signal_strength (DBusConnection *connection, char *path)
 {
 	int	 ret;
 	int strength = -1;
@@ -243,7 +243,7 @@ int get_object_signal_strength (DBusConnection *connection, char *path)
 }
 
 
-NMState get_nm_state (DBusConnection *connection)
+static NMState get_nm_state (DBusConnection *connection)
 {
 	int	 	ret;
 	NMState	state;
@@ -256,7 +256,7 @@ NMState get_nm_state (DBusConnection *connection)
 }
 
 
-char * get_device_active_network (DBusConnection *connection, char *path)
+static char * get_device_active_network (DBusConnection *connection, char *path)
 {
 	int	 ret;
 	char *net = NULL;
@@ -269,7 +269,7 @@ char * get_device_active_network (DBusConnection *connection, char *path)
 }
 
 
-int get_device_type (DBusConnection *connection, char *path)
+static int get_device_type (DBusConnection *connection, char *path)
 {
 	int	ret;
 	int	type = -1;
@@ -282,7 +282,7 @@ int get_device_type (DBusConnection *connection, char *path)
 }
 
 
-void print_device_networks (DBusConnection *connection, const char *path)
+static void print_device_networks (DBusConnection *connection, const char *path)
 {
 	int	  ret;
 	char **networks = NULL;
@@ -307,7 +307,7 @@ void print_device_networks (DBusConnection *connection, const char *path)
 }
 
 
-void print_devices (DBusConnection *connection)
+static void print_devices (DBusConnection *connection)
 {
 	int	  ret;
 	char **devices = NULL;
@@ -346,7 +346,7 @@ void print_devices (DBusConnection *connection)
 }
 
 
-void set_device_network (DBusConnection *connection, const char *path, const char *network)
+static void set_device_network (DBusConnection *connection, const char *path, const char *network)
 {
 	DBusMessage 	*message;
 	DBusMessage 	*reply;

@@ -814,7 +814,7 @@ VPNConnection *nmwa_get_first_active_vpn_connection (NMWirelessApplet *applet)
 	return NULL;
 }
 
-VPNConnection *nmwa_get_first_activating_vpn_connection (NMWirelessApplet *applet)
+static VPNConnection *nmwa_get_first_activating_vpn_connection (NMWirelessApplet *applet)
 {
 	VPNConnection *	vpn;
 	GSList *			elt;

@@ -1,5 +1,13 @@
 2005-10-07  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-info.c, gnome/applet/applet.c,
+	  gnome/applet/applet.h, gnome/vpn-properties/nm-vpn-properties.c,
+	  src/dhcp-manager/nm-dhcp-manager.c, test/libnm_glib_test.c,
+	  test/nmtest.c test/nmtestdevices.c: mark functions 'static' as
+	  appropriate
+
+2005-10-07  Robert Love  <rml@novell.com>
+
 	* configure.in: Change our compile flags for the betterment of mankind.
 	  Add "-Wstrict-prototypes" because we comply anyhow and missing a
 	  prototype is very bad on 64-bit platforms as types default to int but

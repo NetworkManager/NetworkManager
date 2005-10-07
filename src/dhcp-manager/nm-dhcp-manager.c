@@ -190,7 +190,7 @@ guint8 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *d
  * Called after timeout of a DHCP transaction to notify device of the failure.
  *
  */
-gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
+static gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
 {
 	NMData *		data;
 	NMDevice *	dev;
