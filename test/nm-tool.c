@@ -311,7 +311,6 @@ static void detail_device (DBusConnection *connection, const char *path)
 
 static void print_devices (DBusConnection *connection)
 {
-	gboolean		success = TRUE;
 	DBusMessage *	message = NULL;
 	DBusMessage *	reply = NULL;
 	DBusError		error;
@@ -360,9 +359,6 @@ int main( int argc, char *argv[] )
 {
 	DBusConnection *connection;
 	DBusError		error;
-	char *		path;
-	NMState		state;
-	char *		state_string;
 
 	g_type_init ();
 
