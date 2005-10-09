@@ -1,5 +1,13 @@
 2005-10-09  Dan Williams  <dcbw@redhat.com>
 
+	* Replace the "driver support level" stuff with capabilities.  The
+		capability field is a bitfield that is more flexible than the
+		old driver support level thing.  It's mostly so we can easily
+		figure out what supports WPA and what doesn't, but should be
+		quite useful later.
+
+2005-10-09  Dan Williams  <dcbw@redhat.com>
+
 	* test/nmtest.c
 		- Removed
 

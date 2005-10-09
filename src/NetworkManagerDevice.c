@@ -52,6 +52,9 @@ static gboolean supports_mii_carrier_detect (NMDevice *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice *dev);
 static gboolean nm_device_bring_up_wait (NMDevice *dev, gboolean cancelable);
 static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap, gboolean default_link);
+static guint32 nm_device_discover_capabilities (NMDevice *dev);
+static gboolean nm_is_driver_supported (NMDevice *dev);
+static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev);
 
 static void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req);
 static void nm_device_activate_schedule_stage2_device_config (NMActRequest *req);
@@ -114,34 +117,65 @@ static gboolean nm_device_test_wireless_extensions (NMDevice *dev)
 
 
 /*
- * nm_device_supports_wireless_scan
+ * nm_get_device_driver_name
  *
- * Test whether a given device is a wireless one or not.
+ * Get the device's driver name from HAL.
  *
  */
-static gboolean nm_device_supports_wireless_scan (NMDevice *dev)
+static char *nm_get_device_driver_name (NMDevice *dev)
 {
-	NMSock			*sk;
-	int				 err;
-	gboolean			 can_scan = TRUE;
-	wireless_scan_head	 scan_data;
-	
-	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, FALSE);
+	char	*		udi = NULL;
+	char	*		driver_name = NULL;
+	LibHalContext *ctx = NULL;
 
-	/* A test wireless device can always scan (we generate fake scan data for it) */
-	if (dev->test_device)
-		return (TRUE);
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (dev->app_data != NULL, NULL);
 
-	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+	ctx = dev->app_data->hal_ctx;
+	g_return_val_if_fail (ctx != NULL, NULL);
+
+	if ((udi = nm_device_get_udi (dev)))
 	{
-		err = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
-		nm_dispose_scan_results (scan_data.result);
-		if ((err == -1) && (errno == EOPNOTSUPP))
-			can_scan = FALSE;
-		nm_dev_sock_close (sk);
+		char *parent_udi = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+
+		if (parent_udi && libhal_device_property_exists (ctx, parent_udi, "info.linux.driver", NULL))
+		{
+			char *drv = libhal_device_get_property_string (ctx, parent_udi, "info.linux.driver", NULL);
+			driver_name = g_strdup (drv);
+			g_free (drv);
+		}
+		g_free (parent_udi);
 	}
-	return (can_scan);
+
+	return driver_name;
+}
+
+/* Blacklist of unsupported drivers */
+static char * driver_blacklist[] =
+{
+	NULL
+};
+
+
+/*
+ * nm_is_driver_supported
+ *
+ * Check device's driver against a blacklist of unsupported drivers.
+ *
+ */
+static gboolean nm_is_driver_supported (NMDevice *dev)
+{
+	char ** drv = NULL;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (dev->driver != NULL, FALSE);
+
+	for (drv = &driver_blacklist[0]; *drv; drv++)
+	{
+		if (!strcmp (*drv, dev->driver))
+			return FALSE;
+	}
+	return TRUE;
 }
 
 
@@ -259,6 +293,64 @@ void nm_device_copy_allowed_to_dev_list (NMDevice *dev, NMAccessPointList *allow
 
 
 /*
+ * nm_device_wireless_init
+ *
+ * Initialize a new wireless device with wireless-specific settings.
+ *
+ */
+static gboolean nm_device_wireless_init (NMDevice *dev)
+{
+	NMSock				*sk;
+	NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+
+	opts->scan_mutex = g_mutex_new ();
+	opts->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+	if (!opts->scan_mutex || !opts->ap_list)
+		return FALSE;
+
+	nm_register_mutex_desc (opts->scan_mutex, "Scan Mutex");
+	nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+
+	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+
+	/* Non-scanning devices show the entire allowed AP list as their
+	 * available networks.
+	 */
+	if (!(dev->capabilities & NM_DEVICE_CAP_WIRELESS_SCAN))
+		nm_device_copy_allowed_to_dev_list (dev, dev->app_data->allowed_ap_list);
+
+	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		iwrange	range;
+		if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0)
+		{
+			int i;
+
+			opts->max_qual.qual = range.max_qual.qual;
+			opts->max_qual.level = range.max_qual.level;
+			opts->max_qual.noise = range.max_qual.noise;
+			opts->max_qual.updated = range.max_qual.updated;
+
+			opts->avg_qual.qual = range.avg_qual.qual;
+			opts->avg_qual.level = range.avg_qual.level;
+			opts->avg_qual.noise = range.avg_qual.noise;
+			opts->avg_qual.updated = range.avg_qual.updated;
+
+			opts->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
+			for (i = 0; i < opts->num_freqs; i++)
+				opts->freqs[i] = iw_freq2float (&(range.freq[i]));
+		}
+		nm_dev_sock_close (sk);
+	}
+
+	return TRUE;
+}
+
+
+/*
  * nm_device_new
  *
  * Creates and initializes the structure representation of an NM device.  For test
@@ -296,7 +388,8 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	dev->app_data = app_data;
 	dev->iface = g_strdup (iface);
 	dev->test_device = test_dev;
-	nm_device_set_udi (dev, udi);
+	dev->udi = g_strdup (udi);
+	dev->driver = nm_get_device_driver_name (dev);
 	dev->use_dhcp = TRUE;
 
 	/* Real hardware devices are probed for their type, test devices must have
@@ -318,66 +411,19 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	/* Have to bring the device up before checking link status and other stuff */
 	nm_device_bring_up_wait (dev, 0);
 
-	/* Initialize wireless-specific options */
-	if (nm_device_is_wireless (dev))
+	/* First check for driver support */
+	if (nm_is_driver_supported (dev))
+		dev->capabilities |= NM_DEVICE_CAP_NM_SUPPORTED;
+
+	/* Then discover devices-specific capabilities */
+	if (dev->capabilities & NM_DEVICE_CAP_NM_SUPPORTED)
 	{
-		NMSock				*sk;
-		NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
+		dev->capabilities |= nm_device_discover_capabilities (dev);
 
-		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
-
-		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
-
-		opts->scan_mutex = g_mutex_new ();
-		opts->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
-		if (!opts->scan_mutex || !opts->ap_list)
+		/* Initialize wireless-specific options */
+		if (nm_device_is_wireless (dev) && !nm_device_wireless_init (dev))
 			goto err;
 
-		nm_register_mutex_desc (opts->scan_mutex, "Scan Mutex");
-
-		opts->supports_wireless_scan = nm_device_supports_wireless_scan (dev);
-
-		/* Non-scanning devices show the entire allowed AP list as their
-		 * available networks.
-		 */
-		if (opts->supports_wireless_scan == FALSE)
-			nm_device_copy_allowed_to_dev_list (dev, app_data->allowed_ap_list);
-
-		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
-		{
-			iwrange	range;
-			if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0)
-			{
-				int i;
-
-				opts->max_qual.qual = range.max_qual.qual;
-				opts->max_qual.level = range.max_qual.level;
-				opts->max_qual.noise = range.max_qual.noise;
-				opts->max_qual.updated = range.max_qual.updated;
-
-				opts->avg_qual.qual = range.avg_qual.qual;
-				opts->avg_qual.level = range.avg_qual.level;
-				opts->avg_qual.noise = range.avg_qual.noise;
-				opts->avg_qual.updated = range.avg_qual.updated;
-
-				opts->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
-				for (i = 0; i < opts->num_freqs; i++)
-					opts->freqs[i] = iw_freq2float (&(range.freq[i]));
-			}
-			nm_dev_sock_close (sk);
-		}
-	}
-	else if (nm_device_is_wired (dev))
-	{
-		if (supports_ethtool_carrier_detect (dev) || supports_mii_carrier_detect (dev))
-			dev->options.wired.has_carrier_detect = TRUE;
-	}
-
-	/* Must be called after carrier detect or wireless scan detect. */
-	dev->driver_support_level = nm_get_driver_support_level (dev->app_data->hal_ctx, dev);
-
-	if (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED)
-	{
 		nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 		nm_device_update_ip4_address (dev);
 		nm_device_update_hw_address (dev);
@@ -386,6 +432,8 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev->system_config_data = nm_system_device_get_system_config (dev);
 		dev->use_dhcp = nm_system_device_get_use_dhcp (dev);
 	}
+
+	nm_print_device_capabilities (dev);
 
 	dev->worker = g_thread_create (nm_device_worker, dev, TRUE, &error);
 	if (!dev->worker)
@@ -463,6 +511,7 @@ gboolean nm_device_unref (NMDevice *dev)
 
 		g_free (dev->udi);
 		g_free (dev->iface);
+		g_free (dev->driver);
 		memset (dev, 0, sizeof (NMDevice));
 		g_free (dev);
 		deleted = TRUE;
@@ -532,6 +581,105 @@ void nm_device_worker_thread_stop (NMDevice *dev)
 		g_thread_join (dev->worker);
 		dev->worker = NULL;
 	}
+}
+
+
+/*
+ * nm_device_wireless_discover_capabilities
+ *
+ * Figure out wireless-specific capabilities
+ *
+ */
+static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
+{
+	NMSock *			sk;
+	int				err;
+	wireless_scan_head	scan_data;
+	guint32			caps = NM_DEVICE_CAP_NONE;
+
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NM_DEVICE_CAP_NONE);
+
+	/* A test wireless device can always scan (we generate fake scan data for it) */
+	if (dev->test_device)
+		caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
+	else
+	{
+		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+		{
+			err = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+			nm_dispose_scan_results (scan_data.result);
+			if (!((err == -1) && (errno == EOPNOTSUPP)))
+				caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
+			nm_dev_sock_close (sk);
+		}
+	}
+
+	return caps;
+}
+
+
+/*
+ * nm_device_wireless_discover_capabilities
+ *
+ * Figure out wireless-specific capabilities
+ *
+ */
+static guint32 nm_device_wired_discover_capabilities (NMDevice *dev)
+{
+	guint32		caps = NM_DEVICE_CAP_NONE;
+	const char *	udi = NULL;
+	char *		usb_test = NULL;
+	LibHalContext *ctx = NULL;
+
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
+	g_return_val_if_fail (nm_device_is_wired (dev), NM_DEVICE_CAP_NONE);
+	g_return_val_if_fail (dev->app_data != NULL, NM_DEVICE_CAP_NONE);
+
+	/* cipsec devices are also explicitly unsupported at this time */
+	if (strstr (nm_device_get_iface (dev), "cipsec"))
+		return NM_DEVICE_CAP_NONE;
+
+	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
+	ctx = dev->app_data->hal_ctx;
+	udi = nm_device_get_udi (dev);
+	if (    libhal_device_property_exists (ctx, udi, "usb.interface.class", NULL)
+		&& (usb_test = libhal_device_get_property_string (ctx, udi, "usb.interface.class", NULL)))
+	{
+		libhal_free_string (usb_test);
+		return NM_DEVICE_CAP_NONE;
+	}
+
+	if (supports_ethtool_carrier_detect (dev) || supports_mii_carrier_detect (dev))
+		caps |= NM_DEVICE_CAP_CARRIER_DETECT;
+
+	return caps;
+}
+
+
+/*
+ * nm_device_discover_capabilities
+ *
+ * Called only at device initialization time to discover device-specific
+ * capabilities.
+ *
+ */
+static guint32 nm_device_discover_capabilities (NMDevice *dev)
+{
+	guint32 caps = NM_DEVICE_CAP_NONE;
+
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
+
+	/* Don't touch devices that we already don't support */
+	if (!(dev->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
+		return NM_DEVICE_CAP_NONE;
+
+	if (nm_device_is_wired (dev))
+		caps |= nm_device_wired_discover_capabilities (dev);
+	else if (nm_device_is_wireless (dev))
+		caps |= nm_device_wireless_discover_capabilities (dev);
+
+	return caps;
 }
 
 
@@ -621,6 +769,17 @@ const char * nm_device_get_iface (NMDevice *dev)
 
 
 /*
+ * Get/set functions for driver
+ */
+const char * nm_device_get_driver (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return (dev->driver);
+}
+
+
+/*
  * Get/set functions for type
  */
 guint nm_device_get_type (NMDevice *dev)
@@ -646,13 +805,13 @@ gboolean nm_device_is_wired (NMDevice *dev)
 
 
 /*
- * Accessor for driver support level
+ * Accessor for device capabilities
  */
-NMDriverSupportLevel nm_device_get_driver_support_level (NMDevice *dev)
+guint32 nm_device_get_capabilities (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
 
-	return (dev->driver_support_level);
+	return dev->capabilities;
 }
 
 
@@ -695,7 +854,7 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 			 * must manually choose semi-supported devices.
 			 *
 			 */
-			if (nm_device_is_wired (dev) && (nm_device_get_driver_support_level (dev) == NM_DRIVER_FULLY_SUPPORTED))
+			if (nm_device_is_wired (dev) && (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT))
 			{
 				gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
 				NMActRequest *	act_req;
@@ -726,7 +885,7 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
 	if (!nm_device_is_wireless (dev))
 		return (FALSE);
 
-	return (dev->options.wireless.supports_wireless_scan);
+	return (dev->capabilities & NM_DEVICE_CAP_WIRELESS_SCAN);
 }
 
 
@@ -740,7 +899,7 @@ gboolean nm_device_get_supports_carrier_detect (NMDevice *dev)
 	if (!nm_device_is_wired (dev))
 		return (FALSE);
 
-	return (dev->options.wired.has_carrier_detect);
+	return (dev->capabilities & NM_DEVICE_CAP_CARRIER_DETECT);
 }
 
 /*
@@ -866,7 +1025,7 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 	 * they never get auto-selected by NM.  User has to force them on us,
 	 * so we just hope the user knows whether or not the cable's plugged in.
 	 */
-	if (dev->options.wired.has_carrier_detect != TRUE)
+	if (!(dev->capabilities & NM_DEVICE_CAP_CARRIER_DETECT))
 		link = TRUE;
 
 	return link;
@@ -1849,9 +2008,6 @@ gboolean nm_device_activation_start (NMActRequest *req)
 	g_assert (dev);
 
 	g_return_val_if_fail (!nm_device_is_activating (dev), TRUE);	/* Return if activation has already begun */
-
-	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
-		return FALSE;
 
 	nm_act_request_ref (req);
 	dev->act_request = req;
@@ -3212,7 +3368,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 
 	nm_device_deactivate_quickly (dev);
 
-	if (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED)
+	if (!(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
 		return TRUE;
 
 	/* Remove any device nameservers and domains */
@@ -3971,14 +4127,22 @@ static gboolean nm_completion_scan_has_results (int tries, nm_completion_args ar
  */
 static gboolean nm_device_wireless_scan (gpointer user_data)
 {
-	NMWirelessScanCB		*scan_cb = (NMWirelessScanCB *)(user_data);
-	NMDevice 				*dev = NULL;
-	NMWirelessScanResults	*scan_results = NULL;
+	NMWirelessScanCB *		scan_cb = (NMWirelessScanCB *)(user_data);
+	NMDevice *			dev = NULL;
+	NMWirelessScanResults *	scan_results = NULL;
+	guint32				caps;
 
 	g_return_val_if_fail (scan_cb != NULL, FALSE);
 
 	dev = scan_cb->dev;
 	if (!dev || !dev->app_data)
+	{
+		g_free (scan_cb);
+		return FALSE;
+	}
+
+	caps = nm_device_get_capabilities (dev);
+	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED) || !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 	{
 		g_free (scan_cb);
 		return FALSE;

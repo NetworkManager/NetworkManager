@@ -222,22 +222,24 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 
 	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
 	{
-		guint	 dev_type;
-		gboolean	 link_active;
-		guint	 prio = 0;
-		NMDevice	*dev = (NMDevice *)(elt->data);
-
-		/* Skip devices that can't do carrier detect or can't do wireless scanning */
-		if (nm_device_get_driver_support_level (dev) != NM_DRIVER_FULLY_SUPPORTED)
-			continue;
+		guint		dev_type;
+		gboolean		link_active;
+		guint		prio = 0;
+		NMDevice *	dev = (NMDevice *)(elt->data);
+		guint32		caps;
 
 		dev_type = nm_device_get_type (dev);
 		link_active = nm_device_has_active_link (dev);
+		caps = nm_device_get_capabilities (dev);
+
+		/* Don't use devices that SUCK */
+		if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
+			continue;
 
 		if (nm_device_is_wired (dev))
 		{
 			/* We never automatically choose devices that don't support carrier detect */
-			if (!nm_device_get_supports_carrier_detect (dev))
+			if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 				continue;
 
 			if (link_active)
@@ -254,20 +256,15 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		}
 		else if (nm_device_is_wireless (dev) && data->wireless_enabled)
 		{
-			if (link_active)
-				prio += 1;
+			/* Don't automatically choose a device that doesn't support wireless scanning */
+			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
+				continue;
 
-			if (nm_device_get_supports_wireless_scan (dev))
-				prio += 2;
-			else
+			if (link_active)
 				prio += 1;
 
 			if (nm_device_get_act_request (dev) && link_active)
 				prio += 3;
-
-			/* Stick with an already active non-scanning device if the user chose one */
-			if (!nm_device_get_supports_wireless_scan (dev) && nm_device_get_act_request (dev))
-				prio += 2;
 
 			if (prio > best_wireless_prio)
 			{
@@ -326,6 +323,8 @@ static gboolean nm_policy_device_change_check (NMData *data)
 
 	if (old_dev)
 	{
+		guint32 caps = nm_device_get_capabilities (old_dev);
+
 		/* Don't interrupt a currently activating device. */
 		if (nm_device_is_activating (old_dev))
 		{
@@ -336,7 +335,8 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
-		if (nm_device_get_driver_support_level (old_dev) != NM_DRIVER_FULLY_SUPPORTED)
+		if ((nm_device_is_wireless (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			|| (nm_device_is_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
 		{
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
 				nm_device_get_iface (old_dev));

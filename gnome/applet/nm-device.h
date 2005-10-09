@@ -78,8 +78,8 @@ void					network_device_set_primary_dns			(NetworkDevice *dev, const char *dns);
 const char *			network_device_get_secondary_dns			(NetworkDevice *dev);
 void					network_device_set_secondary_dns			(NetworkDevice *dev, const char *dns);
 
-NMDriverSupportLevel	network_device_get_driver_support_level		(NetworkDevice *dev);
-void					network_device_set_driver_support_level		(NetworkDevice *dev, NMDriverSupportLevel level);
+guint32				network_device_get_capabilities			(NetworkDevice *dev);
+void					network_device_set_capabilities			(NetworkDevice *dev, guint32 caps);
 
 const char *			network_device_get_iface					(NetworkDevice *dev);
 

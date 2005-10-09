@@ -436,10 +436,12 @@ static void nmwa_dbus_check_drivers (NMWirelessApplet *applet)
 			}
 		}
 
-		if (    !found
-			&& (    (network_device_get_driver_support_level (dbus_dev) == NM_DRIVER_NO_CARRIER_DETECT)
-				|| (network_device_get_driver_support_level (dbus_dev) == NM_DRIVER_NO_WIRELESS_SCAN)))
-			nmwa_dbus_schedule_driver_notification (applet, dbus_dev);
+		if (!found)
+		{
+			if ((network_device_is_wired (dbus_dev) && !(network_device_get_capabilities (dbus_dev) & NM_DEVICE_CAP_CARRIER_DETECT))
+				|| (network_device_is_wireless (dbus_dev) && !(network_device_get_capabilities (dbus_dev) & NM_DEVICE_CAP_WIRELESS_SCAN)))
+				nmwa_dbus_schedule_driver_notification (applet, dbus_dev);
+		}
 	}
 }
 
@@ -669,7 +671,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	dbus_int32_t		strength = -1;
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
-	dbus_uint32_t		driver_support_level = 0;
+	dbus_uint32_t		caps = NM_DEVICE_CAP_NONE;
 	char **			networks = NULL;
 	int				num_networks = 0;
 	NMActStage		act_stage = NM_ACT_STAGE_UNKNOWN;
@@ -702,7 +704,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
-									DBUS_TYPE_UINT32, &driver_support_level,
+									DBUS_TYPE_UINT32, &caps,
 									DBUS_TYPE_STRING, &active_network_path,
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, &num_networks,
 									DBUS_TYPE_INVALID))
@@ -714,7 +716,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 		network_device_set_address (dev, hw_addr);
 		network_device_set_active (dev, active);
 		network_device_set_link (dev, link_active);
-		network_device_set_driver_support_level (dev, driver_support_level);
+		network_device_set_capabilities (dev, caps);
 		network_device_set_act_stage (dev, act_stage);
 		network_device_set_ip4_address (dev, ip4_address);
 		network_device_set_broadcast (dev, broadcast);

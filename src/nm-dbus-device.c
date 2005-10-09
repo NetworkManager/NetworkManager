@@ -265,7 +265,7 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 	return reply;
 }
 
-static DBusMessage *nm_dbus_device_get_driver_support_level (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_device_get_capabilities (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
 	NMDevice		*dev;
@@ -275,8 +275,8 @@ static DBusMessage *nm_dbus_device_get_driver_support_level (DBusConnection *con
 	dev = data->dev;
 	if ((reply = dbus_message_new_method_return (message)))
 	{
-		dbus_uint32_t driver_support_level = nm_device_get_driver_support_level (dev);
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &driver_support_level, DBUS_TYPE_INVALID);
+		dbus_uint32_t capabilities = nm_device_get_capabilities (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &capabilities, DBUS_TYPE_INVALID);
 	}
 
 	return reply;
@@ -339,7 +339,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		dbus_int32_t		strength = -1;
 		char *			active_network_path = NULL;
 		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
-		dbus_uint32_t		driver_support_level = (dbus_uint32_t) nm_device_get_driver_support_level (dev);
+		dbus_uint32_t		capabilities = (dbus_uint32_t) nm_device_get_capabilities (dev);
 		char **			networks = NULL;
 		int				num_networks = 0;
 		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
@@ -435,7 +435,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_UINT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
-									DBUS_TYPE_UINT32, &driver_support_level,
+									DBUS_TYPE_UINT32, &capabilities,
 									DBUS_TYPE_STRING, &active_network_path,
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, num_networks,
 									DBUS_TYPE_INVALID);
@@ -462,19 +462,18 @@ NMDbusMethodList *nm_dbus_device_methods_setup (void)
 {
 	NMDbusMethodList	*list = nm_dbus_method_list_new (NULL);
 
-	nm_dbus_method_list_add_method (list, "getProperties",			nm_dbus_device_get_properties);
-
-	nm_dbus_method_list_add_method (list, "getName",				nm_dbus_device_get_name);
-	nm_dbus_method_list_add_method (list, "getType",				nm_dbus_device_get_type);
-	nm_dbus_method_list_add_method (list, "getHalUdi",			nm_dbus_device_get_hal_udi);
-	nm_dbus_method_list_add_method (list, "getIP4Address",			nm_dbus_device_get_ip4_address);
-	nm_dbus_method_list_add_method (list, "getHWAddress",			nm_dbus_device_get_hw_address);
-	nm_dbus_method_list_add_method (list, "getMode",				nm_dbus_device_get_mode);
-	nm_dbus_method_list_add_method (list, "getActiveNetwork",		nm_dbus_device_get_active_network);
-	nm_dbus_method_list_add_method (list, "getNetworks",			nm_dbus_device_get_networks);
-	nm_dbus_method_list_add_method (list, "getLinkActive",			nm_dbus_device_get_link_active);
-	nm_dbus_method_list_add_method (list, "setLinkActive",			nm_dbus_device_set_link_active);
-	nm_dbus_method_list_add_method (list, "getDriverSupportLevel",	nm_dbus_device_get_driver_support_level);
+	nm_dbus_method_list_add_method (list, "getProperties",		nm_dbus_device_get_properties);
+	nm_dbus_method_list_add_method (list, "getName",			nm_dbus_device_get_name);
+	nm_dbus_method_list_add_method (list, "getType",			nm_dbus_device_get_type);
+	nm_dbus_method_list_add_method (list, "getHalUdi",		nm_dbus_device_get_hal_udi);
+	nm_dbus_method_list_add_method (list, "getIP4Address",		nm_dbus_device_get_ip4_address);
+	nm_dbus_method_list_add_method (list, "getHWAddress",		nm_dbus_device_get_hw_address);
+	nm_dbus_method_list_add_method (list, "getMode",			nm_dbus_device_get_mode);
+	nm_dbus_method_list_add_method (list, "getActiveNetwork",	nm_dbus_device_get_active_network);
+	nm_dbus_method_list_add_method (list, "getNetworks",		nm_dbus_device_get_networks);
+	nm_dbus_method_list_add_method (list, "getLinkActive",		nm_dbus_device_get_link_active);
+	nm_dbus_method_list_add_method (list, "setLinkActive",		nm_dbus_device_set_link_active);
+	nm_dbus_method_list_add_method (list, "getCapabilities",	nm_dbus_device_get_capabilities);
 
 	return (list);
 }

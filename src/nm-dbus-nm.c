@@ -63,37 +63,23 @@ static DBusMessage *nm_dbus_nm_get_devices (DBusConnection *connection, DBusMess
 		return NULL;
 
 	dbus_message_iter_init_append (reply, &iter);
-	/* Iterate over device list and grab index of "active device" */
 	if (nm_try_acquire_mutex (data->data->dev_list_mutex, __FUNCTION__))
 	{
 		GSList	*elt;
-		gboolean	 appended = FALSE;
 
 		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH_AS_STRING, &iter_array);
-
 		for (elt = data->data->dev_list; elt; elt = g_slist_next (elt))
 		{
 			NMDevice	*dev = (NMDevice *)(elt->data);
 
-			if (dev && (nm_device_get_driver_support_level (dev) != NM_DRIVER_UNSUPPORTED))
+			if (dev)
 			{
 				char *op = nm_dbus_get_object_path_for_device (dev);
 
 				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &op);
 				g_free (op);
-				appended = TRUE;
 			}
 		}
-
-		/* If by some chance there is a device list, but it has no devices in it
-		 * (something which should never happen), die.
-		 */
-		if (!appended)
-		{
-			nm_warning ("Device list existed, but no devices were in it.");
-			g_assert_not_reached ();
-		}
-
 		dbus_message_iter_close_container (&iter, &iter_array);
 		nm_unlock_mutex (data->data->dev_list_mutex, __FUNCTION__);
 	}
@@ -229,7 +215,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	dev_path = nm_dbus_unescape_object_path (dev_path);
 	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
 	g_free (dev_path);
-	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
+	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
@@ -293,7 +279,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	dev_path = nm_dbus_unescape_object_path (dev_path);
 	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
 	g_free (dev_path);
-	if (!dev || (nm_device_get_driver_support_level (dev) == NM_DRIVER_UNSUPPORTED))
+	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");

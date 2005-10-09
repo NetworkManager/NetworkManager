@@ -94,7 +94,7 @@ void wired_menu_item_update (NMWiredMenuItem *item, NetworkDevice *dev, const gi
 	/* Only dim the item if the device supports carrier detection AND
 	 * we know it doesn't have a link.
 	 */
-	if (network_device_get_driver_support_level (dev) != NM_DRIVER_NO_CARRIER_DETECT)
+	if (network_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT)
 		gtk_widget_set_sensitive (GTK_WIDGET (item->check_item), network_device_get_link (dev));
 }
 

@@ -55,8 +55,10 @@ void			nm_device_set_udi					(NMDevice *dev, const char *udi);
 
 const char *	nm_device_get_iface					(NMDevice *dev);
 
+const char *	nm_device_get_driver				(NMDevice *dev);
+
 NMDeviceType	nm_device_get_type					(NMDevice *dev);
-NMDriverSupportLevel	nm_device_get_driver_support_level	(NMDevice *dev);
+guint32		nm_device_get_capabilities			(NMDevice *dev);
 
 gboolean		nm_device_is_wireless				(NMDevice *dev);
 gboolean		nm_device_is_wired					(NMDevice *dev);

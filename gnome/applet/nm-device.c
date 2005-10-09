@@ -32,25 +32,25 @@
  */
 struct NetworkDevice
 {
-	int					refcount;
-	char *				iface;
-	char *				desc;
-	char *				nm_path;
-	NMDeviceType			type;
-	gboolean				active;
-	gboolean				link;
-	NMDriverSupportLevel	driver_support_level;
-	char *				addr;
-	char *				ip4addr;
-	char *				broadcast;
-	char *				netmask;
-	char *				udi;
-	char *				route;
-	char *				primary_dns;
-	char *				secondary_dns;
-	gint					strength;
-	GSList *				networks;
-	NMActStage			act_stage;
+	int			refcount;
+	char *		iface;
+	char *		desc;
+	char *		nm_path;
+	NMDeviceType	type;
+	gboolean		active;
+	gboolean		link;
+	guint32		caps;
+	char *		addr;
+	char *		ip4addr;
+	char *		broadcast;
+	char *		netmask;
+	char *		udi;
+	char *		route;
+	char *		primary_dns;
+	char *		secondary_dns;
+	gint			strength;
+	GSList *		networks;
+	NMActStage	act_stage;
 };
 
 
@@ -98,7 +98,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 	dev->ip4addr = g_strdup (src->ip4addr);
 	dev->broadcast = g_strdup (src->broadcast);
 	dev->netmask = g_strdup (src->netmask);
-	dev->driver_support_level = src->driver_support_level;
+	dev->caps = src->caps;
 	dev->iface = g_strdup (src->iface);
 	dev->desc = g_strdup (src->desc);
 	dev->route = g_strdup (src->route);
@@ -533,20 +533,20 @@ void network_device_set_secondary_dns (NetworkDevice *dev, const char *dns)
 }
 
 /*
- * Accessors for driver support level
+ * Accessors for device capabilities
  */
-NMDriverSupportLevel network_device_get_driver_support_level (NetworkDevice *dev)
+guint32 network_device_get_capabilities (NetworkDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
 
-	return (dev->driver_support_level);
+	return dev->caps;
 }
 
-void network_device_set_driver_support_level (NetworkDevice *dev, NMDriverSupportLevel level)
+void network_device_set_capabilities (NetworkDevice *dev, guint32 caps)
 {
 	g_return_if_fail (dev != NULL);
 
-	dev->driver_support_level = level;
+	dev->caps = caps;
 }
 
 /*

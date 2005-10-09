@@ -407,191 +407,56 @@ int nm_spawn_process (const char *args)
 }
 
 
-typedef struct driver_support
-{
-	char *name;
-	NMDriverSupportLevel level;
-} driver_support;
-
-
-/* Blacklist of unsupported wireless drivers */
-static driver_support wireless_driver_blacklist[] =
-{
-	{NULL,			NM_DRIVER_UNSUPPORTED}
-};
-
-
-/* Blacklist of unsupported wired drivers.  Drivers/cards that don't support
- * link detection should be blacklisted.
- */
-static driver_support wired_driver_blacklist[] =
-{
-/* Completely unsupported drivers */
-	{NULL,			NM_DRIVER_UNSUPPORTED}
-};
-
-
 /*
- * nm_get_device_driver_name
+ * nm_print_device_capabilities
  *
- * Get the device's driver name from HAL.
+ * Return the capabilities for a particular device.
  *
  */
-static char *nm_get_device_driver_name (LibHalContext *ctx, NMDevice *dev)
+void nm_print_device_capabilities (NMDevice *dev)
 {
-	char	*udi = NULL;
-	char	*driver_name = NULL;
+	gboolean		full_support = TRUE;
+	guint32		caps;
+	const char *	driver = NULL;
 
-	g_return_val_if_fail (ctx != NULL, NULL);
-	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_if_fail (dev != NULL);
 
-	if ((udi = nm_device_get_udi (dev)))
+	caps = nm_device_get_capabilities (dev);
+	driver = nm_device_get_driver (dev);
+
+	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED))
 	{
-		char *parent_udi = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
-
-		if (parent_udi && libhal_device_property_exists (ctx, parent_udi, "info.linux.driver", NULL))
-			driver_name = libhal_device_get_property_string (ctx, parent_udi, "info.linux.driver", NULL);
-		g_free(parent_udi);
+		nm_info ("%s: Driver support level for '%s' is unsupported",
+				nm_device_get_iface (dev), driver);
+		return;
 	}
 
-	return (driver_name);
-}
-
-/*
- * nm_get_wireless_driver_support_level
- *
- * Blacklist certain wireless devices.
- *
- */
-static NMDriverSupportLevel nm_get_wireless_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
-{
-	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
-	char					*driver_name = NULL;
-
-	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (driver != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (*driver == NULL, NM_DRIVER_UNSUPPORTED);
-
-	if ((driver_name = nm_get_device_driver_name (ctx, dev)))
+	if (nm_device_is_wired (dev))
 	{
-		driver_support *drv;
-		for (drv = &wireless_driver_blacklist[0]; drv->name; drv++)
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 		{
-			if (!strcmp (drv->name, driver_name))
-			{
-				level = drv->level;
-				break;
-			}
-		}
-		*driver = g_strdup (driver_name);
-		g_free (driver_name);
-	}
-
-	/* Check for carrier detection support */
-	if ((level != NM_DRIVER_UNSUPPORTED) && !nm_device_get_supports_wireless_scan (dev))
-		level = NM_DRIVER_NO_WIRELESS_SCAN;
-
-	return (level);
-}
-
-
-/*
- * nm_get_wired_driver_support_level
- *
- * Blacklist certain devices.
- *
- */
-static NMDriverSupportLevel nm_get_wired_driver_support_level (LibHalContext *ctx, NMDevice *dev, char **driver)
-{
-	NMDriverSupportLevel	 level = NM_DRIVER_FULLY_SUPPORTED;
-	char					*driver_name = NULL;
-	char					*usb_test;
-	char					*udi;
-
-	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (driver != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (*driver == NULL, NM_DRIVER_UNSUPPORTED);
-
-	if ((driver_name = nm_get_device_driver_name (ctx, dev)))
-	{
-		driver_support *drv;
-		for (drv = &wired_driver_blacklist[0]; drv->name; drv++)
-		{
-			if (!strcmp (drv->name, driver_name))
-			{
-				level = drv->level;
-				break;
-			}
-		}
-		*driver = g_strdup (driver_name);
-		g_free (driver_name);
-	}
-
-	/* cipsec devices are also explicitly unsupported at this time */
-	if (strstr (nm_device_get_iface (dev), "cipsec"))
-		level = NM_DRIVER_UNSUPPORTED;
-
-	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
-	udi = nm_device_get_udi (dev);
-	if (    libhal_device_property_exists (ctx, udi, "usb.interface.class", NULL)
-		&& (usb_test = libhal_device_get_property_string (ctx, udi, "usb.interface.class", NULL)))
-	{
-		libhal_free_string (usb_test);
-		level = NM_DRIVER_UNSUPPORTED;
-	}
-
-	/* Check for carrier detection support */
-	if ((level != NM_DRIVER_UNSUPPORTED) && !nm_device_get_supports_carrier_detect(dev))
-		level = NM_DRIVER_NO_CARRIER_DETECT;
-
-	return (level);
-}
-
-
-/*
- * nm_get_driver_support_level
- *
- * Return the driver support level for a particular device.
- *
- */
-NMDriverSupportLevel nm_get_driver_support_level (LibHalContext *ctx, NMDevice *dev)
-{
-	char					*driver = NULL;
-	NMDriverSupportLevel	 level = NM_DRIVER_UNSUPPORTED;
-
-	g_return_val_if_fail (ctx != NULL, NM_DRIVER_UNSUPPORTED);
-	g_return_val_if_fail (dev != NULL, NM_DRIVER_UNSUPPORTED);
-
-	if (nm_device_is_wireless (dev))
-		level = nm_get_wireless_driver_support_level (ctx, dev, &driver);
-	else if (nm_device_is_wired (dev))
-		level = nm_get_wired_driver_support_level (ctx, dev, &driver);
-
-	switch (level)
-	{
-		case NM_DRIVER_NO_CARRIER_DETECT:
 			nm_info ("%s: Driver '%s' does not support carrier detection.\n"
-						"\tYou must switch to it manually.", nm_device_get_iface (dev), driver);
-			break;
-		case NM_DRIVER_NO_WIRELESS_SCAN:
+					"\tYou must switch to it manually.",
+					nm_device_get_iface (dev), driver);
+			full_support = FALSE;
+		}
+	}
+	else if (nm_device_is_wireless (dev))
+	{
+		if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
+		{
 			nm_info ("%s: Driver '%s' does not support wireless scanning.\n"
-						"\tNetworkManager will not be able to fully use the card.",
- 						nm_device_get_iface (dev), driver);
-			break;
-		case NM_DRIVER_FULLY_SUPPORTED:
-			nm_info ("%s: Driver support level for '%s' is fully-supported",
+					"\tSome features will not be available.",
 						nm_device_get_iface (dev), driver);
-			break;
-		default:
-			nm_info ("%s: Driver support level for '%s' is unsupported",
-						nm_device_get_iface (dev), driver);
-			break;
+			full_support = FALSE;
+		}
 	}
 
-	g_free (driver);
-	return (level);
+	if (full_support)
+	{
+		nm_info ("%s: Device is fully-supported using driver '%s'.",
+				nm_device_get_iface (dev), driver);
+	}
 }
 
 static inline int nm_timeval_cmp(const struct timeval *a,

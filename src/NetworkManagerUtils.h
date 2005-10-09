@@ -44,25 +44,25 @@ typedef enum SockType
 typedef struct NMSock NMSock;
 
 
-gboolean				nm_try_acquire_mutex			(GMutex *mutex, const char *func);
-void					nm_lock_mutex					(GMutex *mutex, const char *func);
-void					nm_unlock_mutex				(GMutex *mutex, const char *func);
-void					nm_register_mutex_desc			(GMutex *mutex, const char *string);
+gboolean		nm_try_acquire_mutex			(GMutex *mutex, const char *func);
+void			nm_lock_mutex					(GMutex *mutex, const char *func);
+void			nm_unlock_mutex				(GMutex *mutex, const char *func);
+void			nm_register_mutex_desc			(GMutex *mutex, const char *string);
 
-NMSock *				nm_dev_sock_open				(NMDevice *dev, SockType type, const char *func_name, const char *desc);
-void					nm_dev_sock_close				(NMSock *sock);
-int					nm_dev_sock_get_fd				(NMSock *sock);
-void					nm_print_open_socks				(void);
+NMSock *		nm_dev_sock_open				(NMDevice *dev, SockType type, const char *func_name, const char *desc);
+void			nm_dev_sock_close				(NMSock *sock);
+int			nm_dev_sock_get_fd				(NMSock *sock);
+void			nm_print_open_socks				(void);
 
-int					nm_null_safe_strcmp				(const char *s1, const char *s2);
+int			nm_null_safe_strcmp				(const char *s1, const char *s2);
 
-gboolean				nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
+gboolean		nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
 
-void					nm_dispose_scan_results			(wireless_scan *result_list);
+void			nm_dispose_scan_results			(wireless_scan *result_list);
 
-int					nm_spawn_process				(const char *args);
+int			nm_spawn_process				(const char *args);
 
-NMDriverSupportLevel	nm_get_driver_support_level		(LibHalContext *ctx, NMDevice *dev);
+void			nm_print_device_capabilities		(NMDevice *dev);
 
 #define NM_COMPLETION_TRIES_INFINITY -1
 

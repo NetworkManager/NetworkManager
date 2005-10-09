@@ -753,24 +753,20 @@ gboolean nmwa_driver_notify (gpointer user_data)
 
 	label = GTK_LABEL (glade_xml_get_widget (cb_data->xml, "driver_sucks_label"));
 
-	switch (network_device_get_driver_support_level (dev))
+	if (network_device_is_wireless (dev) && !(network_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN))
 	{
-		case NM_DRIVER_NO_WIRELESS_SCAN:
-			temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support wireless scanning."),
-			                        network_device_get_desc (dev), network_device_get_iface (dev));
-			label_text = g_strdup_printf (gtk_label_get_label (label), temp);
-			g_free (temp);
-		break;
+		temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support wireless scanning."),
+		                        network_device_get_desc (dev), network_device_get_iface (dev));
+		label_text = g_strdup_printf (gtk_label_get_label (label), temp);
+		g_free (temp);
+	}
 
-		case NM_DRIVER_NO_CARRIER_DETECT:
-			temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support link detection."),
-			                        network_device_get_desc (dev), network_device_get_iface (dev));
-			label_text = g_strdup_printf (gtk_label_get_label (label), temp);
-			g_free (temp);
-			break;
-
-		default:
-			break;
+	if (network_device_is_wired (dev) && !(network_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT))
+	{
+		temp = g_strdup_printf (_("The network device \"%s (%s)\" does not support link detection."),
+		                        network_device_get_desc (dev), network_device_get_iface (dev));
+		label_text = g_strdup_printf (gtk_label_get_label (label), temp);
+		g_free (temp);
 	}
 
 	if (label_text)
@@ -1768,6 +1764,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 		g_assert (dev);
 
+		/* Ignore unsupported devices */
+		if (!(network_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
+			continue;
+
 		switch (network_device_get_type (dev))
 		{
 			case DEVICE_TYPE_WIRELESS_ETHERNET:
@@ -1789,6 +1789,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		if (dev)
 		{
 			gint n_devices = 0;
+
+			/* Ignore unsupported devices */
+			if (!(network_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
+				continue;
 
 			switch (network_device_get_type (dev))
 			{

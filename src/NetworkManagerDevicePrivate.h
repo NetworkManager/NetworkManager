@@ -37,7 +37,6 @@
 typedef struct NMDeviceWirelessOptions
 {
 	char *			cur_essid;	/* Mainly for test devices */
-	gboolean			supports_wireless_scan;
 	gint8			strength;
 	gint8			invalid_strength_counter;
 	iwqual			max_qual;
@@ -57,7 +56,7 @@ typedef struct NMDeviceWirelessOptions
 /* Wired device specific options */
 typedef struct NMDeviceWiredOptions
 {
-	gboolean			 has_carrier_detect;
+	guint32	unused;
 } NMDeviceWiredOptions;
 
 /* General options structure */
@@ -73,35 +72,36 @@ typedef union NMDeviceOptions
  */
 struct NMDevice
 {
-	guint			 	refcount;
+	guint			refcount;
 
-	char *				udi;
-	char *				iface;
-	NMDeviceType			type;
-	NMDriverSupportLevel	driver_support_level;
-	gboolean				removed;
+	char *			udi;
+	char *			iface;
+	NMDeviceType		type;
+	guint32			capabilities;
+	char *			driver;
+	gboolean			removed;
 
-	gboolean				link_active;
-	guint32				ip4_address;
+	gboolean			link_active;
+	guint32			ip4_address;
 	/* FIXME: ipv6 address too */
-	struct ether_addr		hw_addr;
-	NMData *				app_data;
-	NMDeviceOptions		options;
+	struct ether_addr	hw_addr;
+	NMData *			app_data;
+	NMDeviceOptions	options;
 
 	/* IP configuration info */
-	void *				system_config_data;	/* Distro-specific config data (parsed config file, etc) */
-	gboolean				use_dhcp;
-	NMIP4Config *			ip4_config;			/* Config from DHCP, PPP, or system config files */
+	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
+	gboolean			use_dhcp;
+	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
 
-	GMainContext *			context;
-	GMainLoop *			loop;
-	GThread *				worker;
-	gboolean				worker_started;
+	GMainContext *		context;
+	GMainLoop *		loop;
+	GThread *			worker;
+	gboolean			worker_started;
 
-	NMActRequest *			act_request;
-	gboolean				quit_activation;	/* Flag to signal activation thread to stop activating */
+	NMActRequest *		act_request;
+	gboolean			quit_activation;	/* Flag to signal activation thread to stop activating */
 
-	gboolean				test_device;
-	gboolean				test_device_up;
+	gboolean			test_device;
+	gboolean			test_device_up;
 };
 
