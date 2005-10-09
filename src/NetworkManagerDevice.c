@@ -1146,14 +1146,14 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 		safe_essid[0] = '\0';
 	else
 	{
-		strncpy (safe_essid, essid, IW_ESSID_MAX_SIZE);
+		strncpy ((char *) safe_essid, essid, IW_ESSID_MAX_SIZE);
 		safe_essid[IW_ESSID_MAX_SIZE] = '\0';
 	}
 
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
-		wreq.u.essid.length	 = strlen (safe_essid) + 1;
+		wreq.u.essid.length	 = strlen ((char *) safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
 	
 #ifdef IOCTL_DEBUG
@@ -1444,7 +1444,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		safe_key[0] = '\0';
 	else
 	{
-		strncpy (safe_key, key, IW_ENCODING_TOKEN_MAX);
+		strncpy ((char *) safe_key, key, IW_ENCODING_TOKEN_MAX);
 		safe_key[IW_ENCODING_TOKEN_MAX] = '\0';
 	}
 
@@ -1460,7 +1460,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		 * it.  Therefore, we have to set Open System mode when using WEP.
 		 */
 
-		if (strlen (safe_key) == 0)
+		if (strlen ((char *) safe_key) == 0)
 		{
 			wreq.u.data.flags |= IW_ENCODE_DISABLED | IW_ENCODE_NOKEY;
 			set_key = TRUE;
@@ -1469,7 +1469,8 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		{
 			unsigned char		parsed_key[IW_ENCODING_TOKEN_MAX + 1];
 
-			keylen = iw_in_key_full (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), safe_key, &parsed_key[0], &wreq.u.data.flags);
+			keylen = iw_in_key_full (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev),
+						(char *) safe_key, &parsed_key[0], &wreq.u.data.flags);
 			if (keylen > 0)
 			{
 				switch (auth_method)
