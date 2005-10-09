@@ -8,10 +8,10 @@ AM_CPPFLAGS =						\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nmtest nminfotest nmtestdevices libnm_glib_test
+noinst_PROGRAMS = nm-tool nminfotest nmtestdevices libnm_glib_test
 
-nmtest_SOURCES = nmtest.c
-nmtest_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
+nm_tool_SOURCES = nm-tool.c
+nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 		$(top_builddir)/utils/libnmutils.la
 
 

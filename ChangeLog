@@ -1,3 +1,13 @@
+2005-10-09  Dan Williams  <dcbw@redhat.com>
+
+	* test/nmtest.c
+		- Removed
+
+	* test/nm-tool.c
+	  test/Makefile.am
+		- Added new "nm-tool" tool that gives quite a bit more
+			information
+
 2005-10-07  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-dbus-info.c, gnome/applet/applet.c,
