@@ -95,6 +95,13 @@ static char *nmi_dbus_get_network_key (NMWirelessApplet *applet, const char *ess
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (essid != NULL, NULL);
 
+	/* If the menu happens to be showing when we pop up the
+	 * keyring dialog, we get an X server deadlock.  So deactivate
+	 * the menu here.
+	 */
+	if (applet->dropdown_menu && GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->dropdown_menu)))
+		gtk_menu_shell_deactivate (GTK_MENU_SHELL (applet->dropdown_menu));
+
 	/* Get the essid key, if any, from the keyring */
 	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
 								   &found_list,
