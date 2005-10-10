@@ -1,5 +1,10 @@
 2005-10-10  Dan Williams  <dcbw@redhat.com>
 
+	* Remove nm_system_load_device_modules() from backend files
+		and from NetworkManager.c
+
+2005-10-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- Fix some bugs introduced by the capabilities patch
 

@@ -237,20 +237,6 @@ void nm_system_update_dns (void)
 }
 
 /*
- * nm_system_load_device_modules
- *
- * Loads any network adapter kernel modules, these should already be loaded
- * by /etc/modules.autoload.d/kernel-2.x
- *
- * Gentoo should have all modules loaded.
- */
-void nm_system_load_device_modules (void)
-{
-}
-
-
-
-/*
  * nm_system_restart_mdns_responder
  *
  * Restart the multicast DNS responder so that it knows about new

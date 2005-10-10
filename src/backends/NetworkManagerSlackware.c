@@ -165,17 +165,6 @@ void nm_system_update_dns (void)
 
 
 /*
- * nm_system_load_device_modules
- *
- * These should already be loaded 
- *
- */
-void nm_system_load_device_modules (void)
-{
-}
-
-
-/*
  * nm_system_restart_mdns_responder
  *
  * Restart the multicast DNS responder so that it knows about new

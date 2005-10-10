@@ -51,7 +51,6 @@ void			nm_system_delete_default_route			(void);
 void			nm_system_flush_arp_cache				(void);
 void			nm_system_kill_all_dhcp_daemons			(void);
 void			nm_system_update_dns					(void);
-void			nm_system_load_device_modules				(void);
 void			nm_system_restart_mdns_responder			(void);
 void			nm_system_device_add_ip6_link_address 		(NMDevice *dev);
 

@@ -887,14 +887,6 @@ int main( int argc, char *argv[] )
 
 	nm_system_init();
 
-	/* Load all network device kernel modules.
-	 * NOTE: this hack is temporary until device modules get loaded
-	 * on startup by something else.  The problem is that unless
-	 * the module is loaded, HAL doesn't know its a network device,
-	 * and therefore can't tell us about it.
-	 */
-	nm_system_load_device_modules ();
-
 	/* Initialize our instance data */
 	nm_data = nm_data_new (enable_test_devices);
 	if (!nm_data)

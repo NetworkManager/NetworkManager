@@ -276,17 +276,6 @@ void nm_system_update_dns (void)
 
 
 /*
- * nm_system_load_device_modules
- *
- * Load any network adapter kernel modules that we need.
- *
- */
-void nm_system_load_device_modules (void)
-{
-}
-
-
-/*
  * nm_system_restart_mdns_responder
  *
  * Restart the multicast DNS responder so that it knows about new

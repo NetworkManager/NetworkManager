@@ -361,18 +361,6 @@ void nm_system_update_dns (void)
 
 
 /*
- * nm_system_load_device_modules
- *
- * This is a null op - all our drivers should already be loaded.
- *
- */
-void nm_system_load_device_modules (void)
-{
-	return;
-}
-
-
-/*
  * nm_system_restart_mdns_responder
  *
  * Restart the multicast DNS responder so that it knows about new
