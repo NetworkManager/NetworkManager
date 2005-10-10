@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.35 2005/09/26 21:11:24 marcel Exp $
+# $Id: sk.po,v 1.36 2005/10/10 21:22:17 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-09-26 23:05+0200\n"
-"PO-Revision-Date: 2005-09-26 23:10+0200\n"
+"POT-Creation-Date: 2005-10-10 23:13+0200\n"
+"PO-Revision-Date: 2005-10-10 23:14+0200\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -19,12 +19,12 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural= (n==1) ? 1 : (n>=2 && n<=4) ? 2 : 0;\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-dbus-info.c:864
+#: ../gnome/applet/applet-dbus-info.c:874
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Heslo pre bezdrôtovú sieť %s"
 
-#: ../gnome/applet/applet-dbus-info.c:1082
+#: ../gnome/applet/applet-dbus-info.c:1092
 #, c-format
 msgid ""
 "The requested wireless network '%s' does not appear to be in range.  A "
@@ -54,52 +54,52 @@ msgstr "Nepodarilo sa nájsť niektoré vyžadované zdroje (súbor glade)!"
 msgid "No active connections!"
 msgstr "Bez aktívnych sieťových spojení!"
 
-#: ../gnome/applet/applet.c:223
+#: ../gnome/applet/applet.c:226
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Drôtový ethernet (%s)"
 
-#: ../gnome/applet/applet.c:225
+#: ../gnome/applet/applet.c:228
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Bezdrôtový ethernet (%s)"
 
-#: ../gnome/applet/applet.c:302 ../gnome/applet/applet.c:320
+#: ../gnome/applet/applet.c:314 ../gnome/applet/applet.c:332
 msgid "NetworkManager Applet"
 msgstr "Applet NetworkManager"
 
-#: ../gnome/applet/applet.c:304 ../gnome/applet/applet.c:322
+#: ../gnome/applet/applet.c:316 ../gnome/applet/applet.c:334
 msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 msgstr "Autorské práva © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:305 ../gnome/applet/applet.c:323
+#: ../gnome/applet/applet.c:317 ../gnome/applet/applet.c:335
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr ""
 "Aplet oblasti upozornení pre správu vašich sieťových zariadení a pripojení."
 
-#: ../gnome/applet/applet.c:327
+#: ../gnome/applet/applet.c:339
 msgid "translator-credits"
 msgstr "Marcel Telka <marcel@telka.sk>"
 
-#: ../gnome/applet/applet.c:412
+#: ../gnome/applet/applet.c:424
 msgid "VPN Error"
 msgstr "Chyba VPN"
 
-#: ../gnome/applet/applet.c:416
+#: ../gnome/applet/applet.c:428
 msgid "VPN Login Failure"
 msgstr "Zlyhanie VPN prihlásenia"
 
-#: ../gnome/applet/applet.c:417
+#: ../gnome/applet/applet.c:429
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "Nepodarilo sa spustiť VPN spojenie '%s' kvôli zlyhania prihlásenia."
 
-#: ../gnome/applet/applet.c:421
+#: ../gnome/applet/applet.c:433
 msgid "VPN Start Failure"
 msgstr "Zlyhanie spustenia VPN"
 
-#: ../gnome/applet/applet.c:422
+#: ../gnome/applet/applet.c:434
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -108,25 +108,25 @@ msgstr ""
 "Nepodarilo sa spustiť VPN spojenie '%s' kvôli zlyhaniu spustenia VPN "
 "programu."
 
-#: ../gnome/applet/applet.c:426 ../gnome/applet/applet.c:436
+#: ../gnome/applet/applet.c:438 ../gnome/applet/applet.c:448
 msgid "VPN Connect Failure"
 msgstr "Zlyhanie VPN spojenia"
 
-#: ../gnome/applet/applet.c:427
+#: ../gnome/applet/applet.c:439
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Nepodarilo sa spustiť VPN spojenie '%s' kvôli chybe spojenia."
 
-#: ../gnome/applet/applet.c:431
+#: ../gnome/applet/applet.c:443
 msgid "VPN Configuration Error"
 msgstr "Chyba konfigurácie VPN"
 
-#: ../gnome/applet/applet.c:432
+#: ../gnome/applet/applet.c:444
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN spojenie '%s' nebolo správne nakonfigurované."
 
-#: ../gnome/applet/applet.c:437
+#: ../gnome/applet/applet.c:449
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -135,22 +135,22 @@ msgstr ""
 "Nepodarilo sa spustiť VPN spojenie '%s', pretože VPN server nevrátil "
 "príslušnú konfiguráciu siete."
 
-#: ../gnome/applet/applet.c:445
+#: ../gnome/applet/applet.c:457
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "VPN služba oznámila: \"%s\""
 
-#: ../gnome/applet/applet.c:514
+#: ../gnome/applet/applet.c:526
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "VPN spojenie '%s' oznámilo:"
 
-#: ../gnome/applet/applet.c:516
+#: ../gnome/applet/applet.c:528
 msgid "VPN Login Message"
 msgstr "Správa VPN prihlásenia"
 
-#: ../gnome/applet/applet.c:734 ../gnome/applet/applet.c:2286
-#: ../gnome/applet/other-network-dialog.c:407
+#: ../gnome/applet/applet.c:746 ../gnome/applet/applet.c:2309
+#: ../gnome/applet/other-network-dialog.c:417
 #: ../gnome/applet/passphrase-dialog.c:384
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
@@ -159,148 +159,148 @@ msgstr ""
 "Applet NetworkManager nemohol nájsť niektoré vyžadované zdroje (súbor glade "
 "nebol nájdený)."
 
-#: ../gnome/applet/applet.c:747
+#: ../gnome/applet/applet.c:758
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Sieťové zariadenie \"%s (%s)\" nepodporuje bezdrôtové vyhľadávanie."
 
-#: ../gnome/applet/applet.c:754
+#: ../gnome/applet/applet.c:766
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Sieťové zariadenie \"%s (%s)\" nepodporuje detekciu linky."
 
-#: ../gnome/applet/applet.c:963
+#: ../gnome/applet/applet.c:910
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Pripravujem zariadenie %s pre drôtovú sieť..."
 
-#: ../gnome/applet/applet.c:965
+#: ../gnome/applet/applet.c:912
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Pripravujem zariadenie %s pre bezdrôtovú sieť '%s'..."
 
-#: ../gnome/applet/applet.c:972
+#: ../gnome/applet/applet.c:920
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Konfigurácia zariadenia %s pre drôtovú sieť..."
 
-#: ../gnome/applet/applet.c:974
+#: ../gnome/applet/applet.c:922
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Pokus o pripojenie k bezdrôtovej sieti '%s'..."
 
-#: ../gnome/applet/applet.c:981
+#: ../gnome/applet/applet.c:930
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Čakanie na sieťový kľúč pre bezdrôtovú sieť '%s'..."
 
-#: ../gnome/applet/applet.c:988 ../gnome/applet/applet.c:997
+#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
 msgid "Requesting a network address from the wired network..."
 msgstr "Vyžiadanie sieťovej adresy z drôtovej siete..."
 
-#: ../gnome/applet/applet.c:990 ../gnome/applet/applet.c:999
+#: ../gnome/applet/applet.c:940 ../gnome/applet/applet.c:950
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Vyžiadanie sieťovej adresy z bezdrôtovej siete '%s'..."
 
-#: ../gnome/applet/applet.c:1006
+#: ../gnome/applet/applet.c:958
 msgid "Finishing connection to the wired network..."
 msgstr "Ukončovanie spojenia k drôtovej sieti..."
 
-#: ../gnome/applet/applet.c:1008
+#: ../gnome/applet/applet.c:960
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Ukončovanie spojenia k bezdrôtovej sieti '%s'..."
 
-#: ../gnome/applet/applet.c:1053
+#: ../gnome/applet/applet.c:1069
 msgid "NetworkManager is not running"
 msgstr "NetworkManager nebeží"
 
-#: ../gnome/applet/applet.c:1064
+#: ../gnome/applet/applet.c:1081
 msgid "No network connection"
 msgstr "Bez sieťového spojenia"
 
-#: ../gnome/applet/applet.c:1069
+#: ../gnome/applet/applet.c:1086
 msgid "Wired network connection"
 msgstr "Pripojenie k drôtovej sieti"
 
-#: ../gnome/applet/applet.c:1073
+#: ../gnome/applet/applet.c:1090
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Pripájané k bezdrôtovej sieti Ad-Hoc"
 
-#: ../gnome/applet/applet.c:1075
+#: ../gnome/applet/applet.c:1092
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Bezdrôtové sieťové pripojenie k '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1114
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN spojenie s '%s'"
 
-#: ../gnome/applet/applet.c:1103
+#: ../gnome/applet/applet.c:1122
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN pripájanie k '%s'"
 
-#: ../gnome/applet/applet.c:1489
+#: ../gnome/applet/applet.c:1506
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Pripojiť sa k inej bezdrôtovej sieti..."
 
-#: ../gnome/applet/applet.c:1510
+#: ../gnome/applet/applet.c:1527
 msgid "Create _New Wireless Network..."
 msgstr "Vytvoriť _novú bezdrôtovú sieť..."
 
-#: ../gnome/applet/applet.c:1623
+#: ../gnome/applet/applet.c:1640
 msgid "_VPN Connections"
 msgstr "_VPN spojenia"
 
-#: ../gnome/applet/applet.c:1655
+#: ../gnome/applet/applet.c:1672
 msgid "_Configure VPN..."
 msgstr "_Konfigurovať VPN..."
 
-#: ../gnome/applet/applet.c:1659
+#: ../gnome/applet/applet.c:1676
 msgid "_Disconnect VPN..."
 msgstr "_Odpojiť VPN..."
 
-#: ../gnome/applet/applet.c:1681
+#: ../gnome/applet/applet.c:1698
 msgid "_Dial Up Connections"
 msgstr "_Vytáčané spojenia"
 
-#: ../gnome/applet/applet.c:1690
+#: ../gnome/applet/applet.c:1707
 #, c-format
 msgid "Connect to %s..."
 msgstr "Pripojiť k %s..."
 
-#: ../gnome/applet/applet.c:1740
+#: ../gnome/applet/applet.c:1757
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: ../gnome/applet/applet.c:1902
+#: ../gnome/applet/applet.c:1927
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
 #. Wireless Enabled item
-#: ../gnome/applet/applet.c:2004
+#: ../gnome/applet/applet.c:2029
 msgid "_Wireless Enabled"
 msgstr "Povolené _bezdrôtové pripojenie"
 
 #. Connection Information item
-#: ../gnome/applet/applet.c:2010
+#: ../gnome/applet/applet.c:2035
 msgid "Connection _Information"
 msgstr "_Informácie o spojení"
 
 #. Help item
-#: ../gnome/applet/applet.c:2020
+#: ../gnome/applet/applet.c:2045
 msgid "_Help"
 msgstr "_Pomocník"
 
 #. About item
-#: ../gnome/applet/applet.c:2028
+#: ../gnome/applet/applet.c:2053
 msgid "_About"
 msgstr "_O programe"
 
-#: ../gnome/applet/applet.c:2435
+#: ../gnome/applet/applet.c:2445
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -344,24 +344,24 @@ msgstr[2] "Bezdrôtové siete"
 msgid " (invalid Unicode)"
 msgstr " (neplatný Unikód)"
 
-#: ../gnome/applet/other-network-dialog.c:143
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/other-network-dialog.c:148
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Passphrase:"
 msgstr "_Heslo:"
 
-#: ../gnome/applet/other-network-dialog.c:146
+#: ../gnome/applet/other-network-dialog.c:151
 msgid "_ASCII Key:"
 msgstr "_ASCII kľúč:"
 
-#: ../gnome/applet/other-network-dialog.c:149
+#: ../gnome/applet/other-network-dialog.c:154
 msgid "_Hex Key:"
 msgstr "_Kľúč v šestnástkovej sústave:"
 
-#: ../gnome/applet/other-network-dialog.c:238
+#: ../gnome/applet/other-network-dialog.c:243
 msgid "Create new wireless network"
 msgstr "Vytvoriť novú bezdrôtovú sieť"
 
-#: ../gnome/applet/other-network-dialog.c:239
+#: ../gnome/applet/other-network-dialog.c:244
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -369,27 +369,27 @@ msgstr ""
 "Zadajte ESSID a bezpečnostné nastavenia bezdrôtovej siete, ktorú chcete "
 "vytvoriť."
 
-#: ../gnome/applet/other-network-dialog.c:240
+#: ../gnome/applet/other-network-dialog.c:245
 msgid "By default, the ESSID is set to your computer's name,"
 msgstr "Štandardne je ESSID nastavené na názov vášho počítača,"
 
-#: ../gnome/applet/other-network-dialog.c:242
+#: ../gnome/applet/other-network-dialog.c:247
 msgid ", with no encryption enabled."
 msgstr ", bez povoleného šifrovania."
 
-#: ../gnome/applet/other-network-dialog.c:244
+#: ../gnome/applet/other-network-dialog.c:249
 msgid "Create New Wireless Network"
 msgstr "Vytvoriť _novú bezdrôtovú sieť"
 
-#: ../gnome/applet/other-network-dialog.c:249
+#: ../gnome/applet/other-network-dialog.c:254
 msgid "Custom wireless network"
 msgstr "Vlastná bezdrôtová sieť"
 
-#: ../gnome/applet/other-network-dialog.c:250
+#: ../gnome/applet/other-network-dialog.c:255
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Zadajte ESSID bezdrôtovej siete, ku ktorej sa chcete pripojiť."
 
-#: ../gnome/applet/other-network-dialog.c:252
+#: ../gnome/applet/other-network-dialog.c:257
 msgid "Connect to Other Wireless Network"
 msgstr "_Pripojiť sa k inej bezdrôtovej sieti"
 
@@ -518,58 +518,70 @@ msgid "Connection Information"
 msgstr "Informácie o spojení"
 
 #: ../gnome/applet/wireless-applet.glade.h:25
+msgid "Default Route:"
+msgstr "Predvolené smerovanie:"
+
+#: ../gnome/applet/wireless-applet.glade.h:26
 msgid "Destination Address:"
 msgstr "Cieľová adresa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:27
 msgid "Hardware Address:"
 msgstr "Hardvérová adresa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/wireless-applet.glade.h:28
 msgid "IP Address:"
 msgstr "IP adresa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/wireless-applet.glade.h:29
 msgid "Interface:"
 msgstr "Rozhranie:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/wireless-applet.glade.h:30
 msgid "Other Wireless Network..."
 msgstr "Ostatné bezdrôtové siete..."
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/wireless-applet.glade.h:31
+msgid "Primary DNS:"
+msgstr "Primárne DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
+msgid "Secondary DNS:"
+msgstr "Sekundárne DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:33
 msgid "Subnet Mask:"
 msgstr "Maska podsiete:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Wireless Network Key Required"
 msgstr "Je potrebný kľúč bezdrôtovej siete"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Wireless _adapter:"
 msgstr "Bezdrôtový _adaptér:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Wireless _network:"
 msgstr "Bezdrôtová _sieť:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "_Always Trust this Wireless Network"
 msgstr "_Vždy dôverovať tejto bezdrôtovej sieti"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:38
 msgid "_Don't remind me again"
 msgstr "_Nepripomínať mi znovu"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "_Key Type:"
 msgstr "_Typ kľúča:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "_Key type:"
 msgstr "_Typ kľúča:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "_Login to Network"
 msgstr "_Prihlásenie k sieti"
 
@@ -701,11 +713,11 @@ msgid ""
 "It will require some information, such as IP addresses and secrets.  Please "
 "see your system administrator to obtain this information."
 msgstr ""
-"Tento asistent vás bude sprevádzať počas vytvárania spojenia k "
-"Virtuálnej Privátnej Sieti (VPN).\n"
+"Tento asistent vás bude sprevádzať počas vytvárania spojenia k Virtuálnej "
+"Privátnej Sieti (VPN).\n"
 "\n"
-"Bude vyžadovať niektoré informácie, ako sú IP adresy a heslá. Prosím, vyžiadajte si "
-"tieto informácie od vášho správcu systému."
+"Bude vyžadovať niektoré informácie, ako sú IP adresy a heslá. Prosím, "
+"vyžiadajte si tieto informácie od vášho správcu systému."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
