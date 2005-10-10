@@ -260,6 +260,9 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 				continue;
 
+			/* Bump by 1 so that _something_ gets chosen every time */
+			prio += 1;
+
 			if (link_active)
 				prio += 1;
 
@@ -335,7 +338,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
-		if ((nm_device_is_wireless (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+		if ((nm_device_is_wired (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			|| (nm_device_is_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
 		{
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",

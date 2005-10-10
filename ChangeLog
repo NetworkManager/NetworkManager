@@ -1,5 +1,10 @@
 2005-10-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- Fix some bugs introduced by the capabilities patch
+
+2005-10-10  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-info.c
 		- (nmi_dbus_get_network_key): hide the menu when putting up
 			the keyring dialog.  (not sure if the code is right...)
