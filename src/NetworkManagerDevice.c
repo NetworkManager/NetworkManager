@@ -3438,7 +3438,7 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 		nm_ap_set_enc_key_source (ap, key, enc_type);
 
 		/* Be sure to update NMI with the new auth mode */
-		if (allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap)))
+		if ((allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
 			nm_ap_set_auth_method (allowed_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
 
 		nm_device_activate_schedule_stage1_device_prepare (req);
