@@ -166,6 +166,7 @@ static char * driver_blacklist[] =
 static gboolean nm_is_driver_supported (NMDevice *dev)
 {
 	char ** drv = NULL;
+	gboolean supported = TRUE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (dev->driver != NULL, FALSE);
@@ -173,9 +174,35 @@ static gboolean nm_is_driver_supported (NMDevice *dev)
 	for (drv = &driver_blacklist[0]; *drv; drv++)
 	{
 		if (!strcmp (*drv, dev->driver))
-			return FALSE;
+		{
+			supported = FALSE;
+			break;
+		}
 	}
-	return TRUE;
+
+	/* Check for Wireless Extensions support >= 16 for wireless devices */
+	if (supported && nm_device_is_wireless (dev))
+	{
+		NMSock *	sk = NULL;
+		guint8	we_ver = 0;
+
+		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+		{
+			iwrange	range;
+			if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0)
+				we_ver = range.we_version_compiled;
+			nm_dev_sock_close (sk);
+		}
+
+		if (we_ver < 16)
+		{
+			nm_warning ("%s: driver's Wireless Extensions version (%d) is too old.  Can't use device.",
+				nm_device_get_iface (dev), we_ver);
+			supported = FALSE;
+		}
+	}
+
+	return supported;
 }
 
 
@@ -322,6 +349,7 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 	if (!(dev->capabilities & NM_DEVICE_CAP_WIRELESS_SCAN))
 		nm_device_copy_allowed_to_dev_list (dev, dev->app_data->allowed_ap_list);
 
+	opts->we_version = 0;
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		iwrange	range;
@@ -342,6 +370,8 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 			opts->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
 			for (i = 0; i < opts->num_freqs; i++)
 				opts->freqs[i] = iw_freq2float (&(range.freq[i]));
+
+			opts->we_version = range.we_version_compiled;
 		}
 		nm_dev_sock_close (sk);
 	}
@@ -607,7 +637,8 @@ static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
 	{
 		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
-			err = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &scan_data);
+			guint8 we_ver = dev->options.wireless.we_version;
+			err = iw_scan (nm_dev_sock_get_fd (sk), (char *) nm_device_get_iface (dev), we_ver, &scan_data);
 			nm_dispose_scan_results (scan_data.result);
 			if (!((err == -1) && (errno == EOPNOTSUPP)))
 				caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
@@ -4073,17 +4104,19 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 
 static gboolean nm_completion_scan_has_results (int tries, nm_completion_args args)
 {
-	NMDevice				*dev = args[0];
-	gboolean				*err = args[1];
-	NMSock				*sk = args[2];
-	NMWirelessScanResults	*scan_results = args[3];
-	int					 rc;
+	NMDevice *			dev = args[0];
+	gboolean *			err = args[1];
+	NMSock *				sk = args[2];
+	NMWirelessScanResults *	scan_results = args[3];
+	int					rc;
+	guint8				we_ver;
 
 	g_return_val_if_fail (dev != NULL, TRUE);
 	g_return_val_if_fail (err != NULL, TRUE);
 	g_return_val_if_fail (scan_results != NULL, TRUE);
 
-	rc = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), WIRELESS_EXT, &(scan_results->scan_head));
+	we_ver = dev->options.wireless.we_version;
+	rc = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), we_ver, &(scan_results->scan_head));
 	*err = FALSE;
 	if (rc == -1 && errno == ETIME)
 	{

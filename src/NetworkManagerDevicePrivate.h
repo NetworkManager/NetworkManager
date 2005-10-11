@@ -51,6 +51,7 @@ typedef struct NMDeviceWirelessOptions
 	NMAccessPointList *	ap_list;
 	guint8			scan_interval; /* seconds */
 	guint32			last_scan;
+	guint8			we_version;
 } NMDeviceWirelessOptions;
 
 /* Wired device specific options */
