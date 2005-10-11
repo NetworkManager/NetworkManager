@@ -136,15 +136,15 @@ static char *nm_get_device_driver_name (NMDevice *dev)
 
 	if ((udi = nm_device_get_udi (dev)))
 	{
-		char *parent_udi = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+		char *physdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
 
-		if (parent_udi && libhal_device_property_exists (ctx, parent_udi, "info.linux.driver", NULL))
+		if (physdev_udi && libhal_device_property_exists (ctx, physdev_udi, "info.linux.driver", NULL))
 		{
-			char *drv = libhal_device_get_property_string (ctx, parent_udi, "info.linux.driver", NULL);
+			char *drv = libhal_device_get_property_string (ctx, physdev_udi, "info.linux.driver", NULL);
 			driver_name = g_strdup (drv);
 			g_free (drv);
 		}
-		g_free (parent_udi);
+		g_free (physdev_udi);
 	}
 
 	return driver_name;
