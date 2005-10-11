@@ -272,12 +272,12 @@ out:
 
 
 /*
- * hal_info_parent_cb
+ * hal_net_physdev_cb
  *
  * nmwa_dbus_update_device_info_from_hal callback
  *
  */
-static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
+static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	HalInfoCBData *	cb_data = (HalInfoCBData *) user_data;
@@ -297,7 +297,7 @@ static void hal_info_parent_cb (DBusPendingCall *pcall, void *user_data)
 		goto out;
 	}
 
-	/* Grab the object path of the parent item of this "Network Interface" */
+	/* Grab the object path of the physical device of this "Network Interface" */
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &op, DBUS_TYPE_INVALID))
 	{
 		DBusMessage *		message;
@@ -348,7 +348,7 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 	if ((message = dbus_message_new_method_call ("org.freedesktop.Hal", network_device_get_hal_udi (dev),
 										"org.freedesktop.Hal.Device", "GetPropertyString")))
 	{
-		const char *	prop = "info.parent";
+		const char *	prop = "net.physical_device";
 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
@@ -359,7 +359,7 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 			cb_data->applet = applet;
 			network_device_ref (dev);
 			cb_data->dev = dev;
-			dbus_pending_call_set_notify (pcall, hal_info_parent_cb, cb_data, (DBusFreeFunction) free_hal_info_cb_data);
+			dbus_pending_call_set_notify (pcall, hal_net_physdev_cb, cb_data, (DBusFreeFunction) free_hal_info_cb_data);
 		}
 		dbus_message_unref (message);
 	}

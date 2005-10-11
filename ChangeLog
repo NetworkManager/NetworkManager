@@ -1,5 +1,12 @@
 2005-10-11  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-devices.c
+		- (nmwa_dbus_update_device_info_from_hal), (hal_net_physdev_cb):
+			We want to grab the product & vendor from net.physical_dev
+			rather than info.parent.
+
+2005-10-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerDevice.c
 		- Use the driver's WE version for scanning rather than
 			the WE version NM was compiled with.  Fixes random
