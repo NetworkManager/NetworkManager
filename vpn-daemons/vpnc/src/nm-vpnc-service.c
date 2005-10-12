@@ -346,7 +346,6 @@ static gint nm_vpnc_start_vpnc_binary (NmVpncData *data)
 	const char **		vpnc_binary = NULL;
 	GPtrArray *	vpnc_argv;
 	GError *		error = NULL;
-	gboolean		success = FALSE;
 	GSource *		vpnc_watch;
 	gint			stdin_fd = -1;
 
@@ -429,11 +428,7 @@ static inline void write_config_option (int fd, const char *format, ...)
 static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char **password_items,
 							const int num_passwords, char **data_items, const int num_items)
 {
-	char *	string;
-	int     i, x;
-	char *	dirname;
-	char *	cmd;
-	int	ret;
+	int     i;
 	gboolean has_user_name = FALSE;
 
 	g_return_val_if_fail (user_name != NULL, FALSE);
@@ -497,7 +492,6 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 					{ "Application Version",		OPT_TYPE_ASCII },
 					{ NULL,					OPT_TYPE_UNKNOWN } };
 
-	char **		item;
 	unsigned int	i;
 
 	g_return_val_if_fail (data_items != NULL, FALSE);
@@ -515,7 +509,6 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 		Option *opt = NULL;
 		unsigned int t, len;
 		char *opt_value;
-		struct in_addr addr;
 
 		if (!data_items[i] || !data_items[i+1])
 			return FALSE;
@@ -665,7 +658,6 @@ static gboolean nm_vpnc_dbus_handle_stop_vpn (NmVpncData *data)
 static DBusMessage *nm_vpnc_dbus_start_vpn (DBusConnection *con, DBusMessage *message, NmVpncData *data)
 {
 	DBusMessage		*reply = NULL;
-	gboolean			 success = FALSE;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (con != NULL, NULL);
@@ -699,7 +691,6 @@ static DBusMessage *nm_vpnc_dbus_start_vpn (DBusConnection *con, DBusMessage *me
 			break;
 	}
 
-out:
 	return reply;
 }
 
@@ -741,7 +732,6 @@ static DBusMessage *nm_vpnc_dbus_stop_vpn (DBusConnection *con, DBusMessage *mes
 			break;
 	}
 
-out:
 	return reply;
 }
 
@@ -796,7 +786,7 @@ static void nm_vpnc_dbus_process_helper_config_error (DBusConnection *con, DBusM
 	nm_vpnc_dbus_handle_stop_vpn (data);
 }
 
-
+#if 0
 /*
  *  Prints config returned from vpnc-helper
  */
@@ -846,6 +836,7 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 	nm_info ("%s", cisco_banner);
 	nm_info ("-----------------------------------------");
 }
+#endif
 
 /*
  * nm_vpnc_dbus_process_helper_ip4_config

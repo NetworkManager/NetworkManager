@@ -1,3 +1,9 @@
+2005-10-12  Robert Love  <rml@novell.com>
+
+	* src/nm-vpn-service.c: remove a bunch of unused variables
+	  and labels.  Also, ifdef-out a function whose only caller
+	  is ifdef'ed out.
+
 2005-10-07  Christopher Aillon  <caillon@redhat.com>
 
 	* nm-vpnc.desktop.in: use a category for the desktop entry.
