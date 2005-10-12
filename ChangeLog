@@ -1,3 +1,13 @@
+2005-10-12  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet.c:
+	Fix icon animation smoothness issues.  nmwa_redraw_timeout gets called
+	every 1000ms.  It will unconditionally call nmwa_update_state which
+	kills the existing animation timeout and registers a new one with a
+	callback to draw a new frame every 100ms.  There are 11 connecting
+	icon frames, so the last 2 frames kept getting dropped.  Only reset
+	the animation timeout if we aren't animating.
+
 2005-10-11  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.c

@@ -972,7 +972,7 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 
 	if (connecting_stage >= 0 && connecting_stage < NUM_CONNECTING_STAGES)
 	{
-		if (applet->animation_step > NUM_CONNECTING_FRAMES)
+		if (applet->animation_step >= NUM_CONNECTING_FRAMES)
 			applet->animation_step = 0;
 
 		pixbuf = applet->network_connecting_icons[connecting_stage][applet->animation_step];
@@ -981,7 +981,7 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 	return pixbuf;
 }
 
-
+static void nmwa_update_state (NMWirelessApplet *applet);
 
 /*
  * animation_timeout
@@ -1029,8 +1029,16 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 
 		if (applet->animation_step >= NUM_VPN_CONNECTING_FRAMES)
 			applet->animation_step = 0;
+
 		nmwa_set_icon (applet, pixbuf, applet->vpn_connecting_icons[applet->animation_step]);
 		applet->animation_step ++;
+	}
+	else
+	{
+		applet->animation_step = 0;
+		applet->animation_id = 0;
+		nmwa_update_state (applet);
+		return FALSE;
 	}
 
 	return TRUE;
@@ -1141,7 +1149,10 @@ done:
 
 	applet->animation_step = 0;
 	if (applet->animation_id)
+	{
 		g_source_remove (applet->animation_id);
+		applet->animation_id = 0;
+	}
 	if (need_animation)
 		applet->animation_id = g_timeout_add (100, (GSourceFunc) animation_timeout, applet);
 	else
@@ -1168,7 +1179,8 @@ done:
  */
 static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 {
-	nmwa_update_state (applet);
+	if (!applet->animation_id)
+		nmwa_update_state (applet);
 
   	return (TRUE);
 }
