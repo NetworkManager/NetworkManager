@@ -48,8 +48,8 @@ void				 libnm_glib_shutdown			(libnm_glib_ctx *ctx);
 
 libnm_glib_state	 libnm_glib_get_network_state		(const libnm_glib_ctx *ctx);
 
-gint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
-void				 libnm_glib_unregister_callback	(libnm_glib_ctx *ctx, gint id);
+guint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
+void				 libnm_glib_unregister_callback	(libnm_glib_ctx *ctx, guint id);
 
 #ifdef __cplusplus
 }

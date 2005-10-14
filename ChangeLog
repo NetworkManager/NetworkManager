@@ -1,3 +1,9 @@
+2005-10-14  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c:
+	* gnome/libnm_glib/libnm_glib.h:
+	Use guint instead of gint for callback IDs.
+
 2005-10-12  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:
