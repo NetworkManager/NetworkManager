@@ -352,26 +352,6 @@ gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 
 
 /*
- * nm_dispose_scan_results
- *
- * Free memory used by the wireless scan results structure
- *
- */
-void nm_dispose_scan_results (wireless_scan *result_list)
-{
-	wireless_scan *tmp = result_list;
-
-	while (tmp)
-	{
-		wireless_scan *tmp2 = tmp;
-
-		tmp = tmp->next;
-		free (tmp2);
-	}
-}
-
-
-/*
  * nm_spawn_process
  *
  * Wrap g_spawn_sync in a usable manner

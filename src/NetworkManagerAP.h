@@ -28,6 +28,9 @@
 
 typedef struct NMAccessPoint NMAccessPoint;
 
+#define AP_MAX_WPA_IE_LEN 40
+
+
 NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 
@@ -43,7 +46,7 @@ void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 const char *		nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
 char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
 void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
-NMEncKeyType	nm_ap_get_enc_type		(const NMAccessPoint *ap);
+NMEncKeyType		nm_ap_get_enc_type		(const NMAccessPoint *ap);
 
 NMDeviceAuthMethod	nm_ap_get_auth_method	(const NMAccessPoint *ap);
 void				nm_ap_set_auth_method	(NMAccessPoint *ap, const NMDeviceAuthMethod auth_method);
@@ -90,6 +93,12 @@ void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 /* Helper */
 gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
 gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
+
+const guint8 *		nm_ap_get_wpa_ie		(NMAccessPoint *ap, guint32 *length);
+void				nm_ap_set_wpa_ie		(NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
+
+const guint8 *		nm_ap_get_rsn_ie		(NMAccessPoint *ap, guint32 *length);
+void				nm_ap_set_rsn_ie		(NMAccessPoint *ap, const guint8 *rsn_ie, guint32 length);
 
 /* 
  * NOTE:

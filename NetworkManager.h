@@ -133,6 +133,16 @@ typedef enum NMEncKeyType
 
 
 /*
+ * Access Point capability bits
+ *
+ */
+#define NM_AP_CAP_NONE			0x0000
+#define NM_AP_CAP_WEP			0x0001
+#define NM_AP_CAP_WPA1			0x0002
+#define NM_AP_CAP_WPA2			0x0004
+
+
+/*
  * Wireless network modes
  */
 typedef enum NMNetworkMode

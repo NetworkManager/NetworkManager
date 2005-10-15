@@ -1,3 +1,24 @@
+2005-10-15  Dan Williams  <dcbw@redhat.com>
+
+	Move scanning code into NetworkManager rather than use iwlib's
+	iw_scan() function, so that we can figure out AP capabilities.
+
+	* NetworkManager.h
+		- Add AP capability bits
+
+	* src/NetworkManagerAP.[ch]
+		- Add capability field to NMAccessPoint structure
+		- Add WPA & RSN Information Element fields and accessor
+			functions to NMAccessPoint
+
+	* src/NetworkManagerDevice.c
+		- Remove usage of iw_scan
+		- Add scanning code to NetworkManager rather than use
+			iw_scan() from iwlib
+
+	* src/NetworkManagerUtils.[ch]
+		- (nm_dispose_scan_results): remove, unused
+
 2005-10-14  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/libnm_glib/libnm_glib.c:

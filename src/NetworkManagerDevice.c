@@ -56,6 +56,10 @@ static guint32 nm_device_discover_capabilities (NMDevice *dev);
 static gboolean nm_is_driver_supported (NMDevice *dev);
 static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev);
 
+static guint8 * get_scan_results(NMDevice *dev, NMSock *sk, guint32 *data_len);
+static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guint32 res_buf_len);
+
+
 static void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req);
 static void nm_device_activate_schedule_stage2_device_config (NMActRequest *req);
 static void nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req);
@@ -63,8 +67,9 @@ static void nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *r
 
 typedef struct
 {
-	NMDevice					*dev;
-	struct wireless_scan_head	 scan_head;
+	NMDevice *	dev;
+	guint8 *		results;
+	guint32		results_len;
 } NMWirelessScanResults;
 
 typedef struct
@@ -637,9 +642,9 @@ static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
 	{
 		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
-			guint8 we_ver = dev->options.wireless.we_version;
-			err = iw_scan (nm_dev_sock_get_fd (sk), (char *) nm_device_get_iface (dev), we_ver, &scan_data);
-			nm_dispose_scan_results (scan_data.result);
+			struct iwreq wrq;
+			memset (&wrq, 0, sizeof (struct iwreq));
+			err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWSCAN, &wrq);
 			if (!((err == -1) && (errno == EOPNOTSUPP)))
 				caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
 			nm_dev_sock_close (sk);
@@ -3937,120 +3942,24 @@ static void nm_device_wireless_schedule_scan (NMDevice *dev)
  */
 static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 {
-	NMWirelessScanResults	*results = (NMWirelessScanResults *)user_data;
-	NMDevice				*dev;
-	wireless_scan			*tmp_ap;
-	NMAPListIter			*iter;
-	GTimeVal				 cur_time;
-	gboolean				 list_changed = FALSE;
+	NMWirelessScanResults *	cb_data = (NMWirelessScanResults *)user_data;
+	NMDevice *			dev;
+	GTimeVal				cur_time;
+	NMAPListIter *			iter = NULL;
 
-	g_return_val_if_fail (results != NULL, FALSE);	
+	g_return_val_if_fail (cb_data != NULL, FALSE);	
 
-	dev = results->dev;
-	if (!dev || !results->scan_head.result)
+	dev = cb_data->dev;
+	if (!dev || !cb_data->results)
 		return FALSE;
 
-	g_get_current_time (&cur_time);
-
-	/* Translate iwlib scan results to NM access point list */
-	for (tmp_ap = results->scan_head.result; tmp_ap; tmp_ap = tmp_ap->next)
-	{
-		/* We need at least an ESSID or a MAC address for each access point */
-		if (tmp_ap->b.has_essid || tmp_ap->has_ap_addr)
-		{
-			NMAccessPoint		*nm_ap  = nm_ap_new ();
-			int				 percent;
-			gboolean			 new = FALSE;
-			gboolean			 strength_changed = FALSE;
-			gboolean			 success = FALSE;
-
-			/* Copy over info from scan to local structure */
-
-			/* ipw2x00 drivers fill in an essid of "<hidden>" if they think the access point
-			 * is hiding its MAC address.  Sigh.
-			 */
-			if (    !tmp_ap->b.has_essid
-				|| (tmp_ap->b.essid && !strlen (tmp_ap->b.essid))
-				|| (tmp_ap->b.essid && !strcmp (tmp_ap->b.essid, "<hidden>")))	/* Stupid ipw drivers use <hidden> */
-				nm_ap_set_essid (nm_ap, NULL);
-			else
-				nm_ap_set_essid (nm_ap, tmp_ap->b.essid);
-
-			if (tmp_ap->b.has_key && (tmp_ap->b.key_flags & IW_ENCODE_DISABLED))
-			{
-				nm_ap_set_encrypted (nm_ap, FALSE);
-				nm_ap_set_auth_method (nm_ap, NM_DEVICE_AUTH_METHOD_NONE);
-			}
-			else
-			{
-				nm_ap_set_encrypted (nm_ap, TRUE);
-				nm_ap_set_auth_method (nm_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
-			}
-
-			if (tmp_ap->has_ap_addr)
-				nm_ap_set_address (nm_ap, (const struct ether_addr *)(tmp_ap->ap_addr.sa_data));
-
-			if (tmp_ap->b.has_mode)
-			{
-				NMNetworkMode mode = NETWORK_MODE_INFRA;
-				switch (tmp_ap->b.mode)
-				{
-					case IW_MODE_INFRA:
-						mode = NETWORK_MODE_INFRA;
-						break;
-					case IW_MODE_ADHOC:
-						mode = NETWORK_MODE_ADHOC;
-						break;
-					default:
-						mode = NETWORK_MODE_INFRA;
-						break;
-				}
-				nm_ap_set_mode (nm_ap, mode);
-			}
-			else
-				nm_ap_set_mode (nm_ap, NETWORK_MODE_INFRA);
-
-			percent = nm_wireless_qual_to_percent (&(tmp_ap->stats.qual),
-							(const iwqual *)(&dev->options.wireless.max_qual),
-							(const iwqual *)(&dev->options.wireless.avg_qual));
-			nm_ap_set_strength (nm_ap, percent);
-
-			if (tmp_ap->b.has_freq)
-				nm_ap_set_freq (nm_ap, tmp_ap->b.freq);
-
-			nm_ap_set_last_seen (nm_ap, &cur_time);
-
-			/* If the AP is not broadcasting its ESSID, try to fill it in here from our
-			 * allowed list where we cache known MAC->ESSID associations.
-			 */
-			if (!nm_ap_get_essid (nm_ap))
-				nm_ap_list_copy_one_essid_by_address (nm_ap, dev->app_data->allowed_ap_list);
-
-			/* Add the AP to the device's AP list */
-			success = nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), nm_ap, &new, &strength_changed);
-			if (success)
-			{
-				/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes strength */
-				if (new)
-				{
-					nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap,
-								NETWORK_STATUS_APPEARED, -1);
-					list_changed = TRUE;
-				}
-				else if (strength_changed)
-				{
-					nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, nm_ap,
-								NETWORK_STATUS_STRENGTH_CHANGED, nm_ap_get_strength (nm_ap));
-				}
-			}
-			nm_ap_unref (nm_ap);
-		}
-	}	
+	if (!process_scan_results (dev, cb_data->results, cb_data->results_len))
+		nm_warning ("nm_device_wireless_process_scan_results(%s): process_scan_results() returned an error.", nm_device_get_iface (dev));
 
 	/* Once we have the list, copy in any relevant information from our Allowed list. */
 	nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
 
-	/* Walk the access point list and remove any access points older than 120s */
+	/* Walk the access point list and remove any access points older than 180s */
 	g_get_current_time (&cur_time);
 	if (nm_device_ap_list_get (dev) && (iter = nm_ap_list_iter_new (nm_device_ap_list_get (dev))))
 	{
@@ -4071,12 +3980,12 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			const GTimeVal	*ap_time = nm_ap_get_last_seen (outdated_ap);
 			gboolean		 keep_around = FALSE;
 
-			/* Don't ever get prune the AP we're currently associated with */
+			/* Don't ever prune the AP we're currently associated with */
 			if (	    nm_ap_get_essid (outdated_ap)
 				&&  (cur_ap && (nm_null_safe_strcmp (nm_ap_get_essid (cur_ap), nm_ap_get_essid (outdated_ap))) == 0))
 				keep_around = TRUE;
 
-			if (!keep_around && (ap_time->tv_sec + 120 < cur_time.tv_sec))
+			if (!keep_around && (ap_time->tv_sec + 180 < cur_time.tv_sec))
 				outdated_list = g_slist_append (outdated_list, outdated_ap);
 		}
 		nm_ap_list_iter_free (iter);
@@ -4090,7 +3999,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 			{
 				nm_dbus_signal_wireless_network_change	(dev->app_data->dbus_connection, dev, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
 				nm_ap_list_remove_ap (nm_device_ap_list_get (dev), outdated_ap);
-				list_changed = TRUE;
 			}
 		}
 		g_slist_free (outdated_list);
@@ -4099,58 +4007,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 	nm_policy_schedule_device_change_check (dev->app_data);
 
 	return FALSE;
-}
-
-
-static gboolean nm_completion_scan_has_results (int tries, nm_completion_args args)
-{
-	NMDevice *			dev = args[0];
-	gboolean *			err = args[1];
-	NMSock *				sk = args[2];
-	NMWirelessScanResults *	scan_results = args[3];
-	int					rc;
-	guint8				we_ver;
-
-	g_return_val_if_fail (dev != NULL, TRUE);
-	g_return_val_if_fail (err != NULL, TRUE);
-	g_return_val_if_fail (scan_results != NULL, TRUE);
-
-	we_ver = dev->options.wireless.we_version;
-	rc = iw_scan (nm_dev_sock_get_fd (sk), (char *)nm_device_get_iface (dev), we_ver, &(scan_results->scan_head));
-	*err = FALSE;
-	if (rc == -1 && errno == ETIME)
-	{
-		/* Scans take time.  iw_scan's timeout is 15 seconds, so if the card hasn't returned
-		 * scan results after two consecutive runs of iw_scan(), the card sucks.
-		 */
-		if (tries >= 1)
-		{
-			nm_warning ("Warning: the wireless card (%s) requires too much time for scans.  Its driver needs to be fixed.", nm_device_get_iface (dev));
-			scan_results->scan_head.result = NULL;
-			*err = TRUE;
-			return TRUE;
-		}
-		else
-		{
-			/* Give the card one more chance to return scan results */
-			scan_results->scan_head.result = NULL;
-			return FALSE;
-		}
-	}
-	if ((rc == -1 && errno == ENODATA) || (rc == 0 && scan_results->scan_head.result == NULL))
-	{
-		/* Card hasn't had time yet to compile full access point list.
-		 * Give it some more time and scan again.  If that doesn't
-		 * work, we eventually give up.  */
-		scan_results->scan_head.result = NULL;
-		return FALSE;
-	}
-	else if (rc == -1)
-	{
-		scan_results->scan_head.result = NULL;
-		return TRUE;
-	}
-	return TRUE;
 }
 
 
@@ -4166,6 +4022,8 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	NMDevice *			dev = NULL;
 	NMWirelessScanResults *	scan_results = NULL;
 	guint32				caps;
+	guint8 * 				results = NULL;
+	guint32				results_len = 0;
 
 	g_return_val_if_fail (scan_cb != NULL, FALSE);
 
@@ -4234,10 +4092,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			double		orig_freq = 0;
 			int			orig_rate = 0;
 			const int		interval = 20;
-			const int		assoc_pause = nm_device_get_association_pause_value (dev);
-			const int		delay = G_USEC_PER_SEC / interval;
-			const int		max_tries = assoc_pause * interval;
-			nm_completion_args args;
+			struct iwreq	wrq;
 
 			orig_mode = nm_device_get_mode (dev);
 			if (orig_mode == NETWORK_MODE_ADHOC)
@@ -4252,13 +4107,30 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			nm_device_set_mode (dev, NETWORK_MODE_INFRA);
 			nm_device_set_frequency (dev, 0);
 
-			scan_results = g_malloc0 (sizeof (NMWirelessScanResults));
+			wrq.u.data.pointer = NULL;
+			wrq.u.data.flags = 0;
+			wrq.u.data.length = 0;
+			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWSCAN, &wrq) < 0)
+			{
+				nm_warning ("nm_device_wireless_scan(%s): couldn't trigger wireless scan.  errno = %d",
+					nm_device_get_iface (dev), errno);
+			}
+			else
+			{
+				/* Initial pause for card to return data */
+				g_usleep (G_USEC_PER_SEC / 4);
 
-			args[0] = dev;
-			args[1] = &err;
-			args[2] = sk;
-			args[3] = scan_results;
-			nm_wait_for_completion (max_tries, delay, nm_completion_scan_has_results, NULL, args);
+				if ((results = get_scan_results (dev, sk, &results_len)))
+				{
+					scan_results = g_malloc0 (sizeof (NMWirelessScanResults));
+					nm_device_ref (dev);
+					scan_results->dev = dev;
+					scan_results->results = results;
+					scan_results->results_len = results_len;
+				}
+				else
+					nm_warning ("nm_device_wireless_scan(%s): get_scan_results() returned an error.", nm_device_get_iface (dev));
+			}
 
 			nm_device_set_mode (dev, orig_mode);
 			/* Only set frequency if ad-hoc mode */
@@ -4269,28 +4141,20 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			}
 
 			nm_dev_sock_close (sk);
-
-			if (!scan_results->scan_head.result)
-			{
-				g_free (scan_results);
-				scan_results = NULL;
-			}
 		}
 		nm_unlock_mutex (dev->options.wireless.scan_mutex, __FUNCTION__);
 	}
-
 
 	/* We run the scan processing function from the main thread, since it must deliver
 	 * messages over DBUS.  Plus, that way the main thread is the only thread that has
 	 * to modify the device's access point list.
 	 */
-	if ((scan_results != NULL) && (scan_results->scan_head.result != NULL))
+	if (scan_results != NULL)
 	{
-		guint	 scan_process_source_id = 0;
-		GSource	*scan_process_source = g_idle_source_new ();
-		GTimeVal	 cur_time;
+		guint	scan_process_source_id = 0;
+		GSource *	scan_process_source = g_idle_source_new ();
+		GTimeVal	cur_time;
 
-		scan_results->dev = dev;
 		g_source_set_callback (scan_process_source, nm_device_wireless_process_scan_results, scan_results, NULL);
 		scan_process_source_id = g_source_attach (scan_process_source, dev->app_data->main_context);
 		g_source_unref (scan_process_source);
@@ -4500,10 +4364,6 @@ out:
 	return supports_mii;	
 }
 
-/****************************************/
-/* End Code ripped from HAL             */
-/****************************************/
-
 
 /****************************************/
 /* Test device routes                   */
@@ -4520,3 +4380,338 @@ gboolean nm_device_is_test_device (NMDevice *dev)
 	return (dev->test_device);
 }
 
+
+/*****************************************/
+/* Start code ripped from wpa_supplicant */
+/*****************************************/
+/*
+ * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+
+static int hex2num(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return -1;
+}
+
+
+static int hex2byte(const char *hex)
+{
+	int a, b;
+	a = hex2num(*hex++);
+	if (a < 0)
+		return -1;
+	b = hex2num(*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
+
+static int hexstr2bin(const char *hex, u8 *buf, size_t len)
+{
+	int i, a;
+	const char *ipos = hex;
+	u8 *opos = buf;
+
+	for (i = 0; i < len; i++) {
+		a = hex2byte(ipos);
+		if (a < 0)
+			return -1;
+		*opos++ = a;
+		ipos += 2;
+	}
+	return 0;
+}
+
+static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
+{
+	struct iwreq iwr;
+	guint8 *res_buf;
+	size_t len, res_buf_len = 1000;
+	guint8 tries = 0;
+
+	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (sk != NULL, NULL);
+
+	*data_len = 0;
+
+	res_buf_len = IW_SCAN_MAX_DATA;
+	for (;;)
+	{
+		res_buf = g_malloc (res_buf_len);
+		if (res_buf == NULL)
+			return NULL;
+		memset (&iwr, 0, sizeof(iwr));
+		iwr.u.data.pointer = res_buf;
+		iwr.u.data.flags = 0;
+		iwr.u.data.length = res_buf_len;
+
+		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWSCAN, &iwr) == 0)
+			break;
+
+		if ((errno == E2BIG) && (res_buf_len < 100000))
+		{
+			g_free (res_buf);
+			res_buf = NULL;
+			res_buf_len *= 2;
+		}
+		else if (errno == EAGAIN)
+		{
+			/* If the card doesn't return results after 20s, it sucks. */
+			if (tries > 20)
+			{
+				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
+				free (res_buf);
+				return NULL;
+			}
+
+			g_free (res_buf);
+			g_usleep (G_USEC_PER_SEC / 10);
+			tries++;
+		}
+		else
+		{
+			nm_warning ("get_scan_results(): card returned too much scan info.");
+			g_free (res_buf);
+			return NULL;
+		}
+	}
+
+	*data_len = iwr.u.data.length;
+	return res_buf;
+}
+
+
+static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guint32 res_buf_len)
+{
+	char *pos, *end, *custom, *genie, *gpos, *gend;
+	NMAccessPoint *ap = NULL;
+	size_t clen;
+	struct iw_event iwe_buf, *iwe = &iwe_buf;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (res_buf != NULL, FALSE);
+	g_return_val_if_fail (res_buf_len > 0, FALSE);
+
+	pos = (char *) res_buf;
+	end = (char *) res_buf + res_buf_len;
+
+	while (pos + IW_EV_LCP_LEN <= end)
+	{
+		int ssid_len;
+		/* Event data may be unaligned, so make a local, aligned copy
+		 * before processing. */
+		memcpy (&iwe_buf, pos, IW_EV_LCP_LEN);
+		if (iwe->len <= IW_EV_LCP_LEN)
+			break;
+
+		custom = pos + IW_EV_POINT_LEN;
+		if (dev->options.wireless.we_version > 18 &&
+		    (iwe->cmd == SIOCGIWESSID ||
+		     iwe->cmd == SIOCGIWENCODE ||
+		     iwe->cmd == IWEVGENIE ||
+		     iwe->cmd == IWEVCUSTOM))
+		{
+			/* WE-19 removed the pointer from struct iw_point */
+			char *dpos = (char *) &iwe_buf.u.data.length;
+			int dlen = dpos - (char *) &iwe_buf;
+			memcpy (dpos, pos + IW_EV_LCP_LEN, sizeof (struct iw_event) - dlen);
+		}
+		else
+		{
+			memcpy (&iwe_buf, pos, sizeof (struct iw_event));
+			custom += IW_EV_POINT_OFF;
+		}
+
+		switch (iwe->cmd)
+		{
+			case SIOCGIWAP:
+				/* New access point record */
+
+				/* Merge previous AP */
+				if (ap)
+				{
+					gboolean new = FALSE;
+					gboolean strength_changed = FALSE;
+					GTimeVal cur_time;
+
+					g_get_current_time (&cur_time);
+					nm_ap_set_last_seen (ap, &cur_time);
+
+					/* If the AP is not broadcasting its ESSID, try to fill it in here from our
+					 * allowed list where we cache known MAC->ESSID associations.
+					 */
+					if (!nm_ap_get_essid (ap))
+						nm_ap_list_copy_one_essid_by_address (ap, dev->app_data->allowed_ap_list);
+
+					/* Add the AP to the device's AP list */
+					if (nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), ap, &new, &strength_changed))
+					{
+						DBusConnection *con = dev->app_data->dbus_connection;
+						/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes strength */
+						if (new)
+							nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_APPEARED, -1);
+						else if (strength_changed)
+						{
+							nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_STRENGTH_CHANGED,
+								nm_ap_get_strength (ap));
+						}
+					}
+					nm_ap_unref (ap);
+					ap = NULL;
+				}
+
+				/* New AP with some defaults */
+				ap = nm_ap_new ();
+				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
+				nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_NONE);
+				nm_ap_set_mode (ap, NETWORK_MODE_INFRA);
+				break;
+			case SIOCGIWMODE:
+				switch (iwe->u.mode)
+				{
+					case IW_MODE_ADHOC:
+						nm_ap_set_mode (ap, NETWORK_MODE_ADHOC);
+						break;
+					case IW_MODE_MASTER:
+					case IW_MODE_INFRA:
+						nm_ap_set_mode (ap, NETWORK_MODE_INFRA);
+						break;
+					default:
+						break;
+				}
+				break;
+			case SIOCGIWESSID:
+				ssid_len = iwe->u.essid.length;
+				if (custom + ssid_len > end)
+					break;
+				if (iwe->u.essid.flags && (ssid_len > 0) && (ssid_len <= IW_ESSID_MAX_SIZE))
+				{
+						gboolean set = TRUE;
+						char *essid = g_malloc (IW_ESSID_MAX_SIZE + 1);
+						memcpy (essid, custom, ssid_len);
+						essid[ssid_len] = '\0';
+						if ((strlen (essid) >= 8) && (strcmp (essid, "<hidden>") != 0))	/* Stupid ipw drivers use <hidden> */
+							set = FALSE;
+						if (set)
+							nm_ap_set_essid (ap, essid);
+						g_free (essid);
+				}
+				break;
+			case SIOCGIWFREQ:
+			     nm_ap_set_freq (ap, iw_freq2float(&(iwe->u.freq)));
+				break;
+			case IWEVQUAL:
+				nm_ap_set_strength (ap, nm_wireless_qual_to_percent (&(iwe->u.qual),
+									(const iwqual *)(&dev->options.wireless.max_qual),
+									(const iwqual *)(&dev->options.wireless.avg_qual)));
+				break;
+			case SIOCGIWENCODE:
+				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
+				{
+					nm_ap_set_encrypted (ap, TRUE);
+					nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+				}
+				break;
+#if 0
+			case SIOCGIWRATE:
+				custom = pos + IW_EV_LCP_LEN;
+				clen = iwe->len;
+				if (custom + clen > end)
+					break;
+				maxrate = 0;
+				while (((ssize_t) clen) >= sizeof(struct iw_param)) {
+					/* Note: may be misaligned, make a local,
+					 * aligned copy */
+					memcpy(&p, custom, sizeof(struct iw_param));
+					if (p.value > maxrate)
+						maxrate = p.value;
+					clen -= sizeof(struct iw_param);
+					custom += sizeof(struct iw_param);
+				}
+				results[ap_num].maxrate = maxrate;
+				break;
+#endif
+			case IWEVGENIE:
+				#define GENERIC_INFO_ELEM 0xdd
+				#define RSN_INFO_ELEM 0x30
+				gpos = genie = custom;
+				gend = genie + iwe->u.data.length;
+				if (gend > end)
+				{
+					nm_warning ("get_scan_results(): IWEVGENIE overflow.");
+					break;
+				}
+				while ((gpos + 1 < gend) && (gpos + 2 + (u8) gpos[1] <= gend))
+				{
+					u8 ie = gpos[0], ielen = gpos[1] + 2;
+					if (ielen > AP_MAX_WPA_IE_LEN)
+					{
+						gpos += ielen;
+						continue;
+					}
+					switch (ie)
+					{
+						case GENERIC_INFO_ELEM:
+							if ((ielen < 2 + 4) || (memcmp (&gpos[2], "\x00\x50\xf2\x01", 4) != 0))
+								break;
+							nm_ap_set_wpa_ie (ap, gpos, ielen);
+							break;
+						case RSN_INFO_ELEM:
+							nm_ap_set_rsn_ie (ap, gpos, ielen);
+							break;
+					}
+					gpos += ielen;
+				}
+				break;
+			case IWEVCUSTOM:
+				clen = iwe->u.data.length;
+				if (custom + clen > end)
+					break;
+				if (clen > 7 && ((strncmp (custom, "wpa_ie=", 7) == 0) || (strncmp (custom, "rsn_ie=", 7) == 0)))
+				{
+					char *spos;
+					int bytes;
+					char *ie_buf;
+
+					spos = custom + 7;
+					bytes = custom + clen - spos;
+					if (bytes & 1)
+						break;
+					bytes /= 2;
+					if (bytes > AP_MAX_WPA_IE_LEN)
+					{
+						nm_warning ("get_scan_results(): IE was too long (%d bytes).", bytes);
+						break;
+					}
+					ie_buf = g_malloc0 (bytes);
+					hexstr2bin (spos, ie_buf, bytes);
+					if (strncmp (custom, "wpa_ie=", 7) == 0)
+						nm_ap_set_wpa_ie (ap, ie_buf, bytes);
+					else if (strncmp (custom, "rsn_ie=", 7) == 0)
+						nm_ap_set_rsn_ie (ap, ie_buf, bytes);				
+					g_free (ie_buf);
+				}
+				break;
+		}
+
+		pos += iwe->len;
+	}
+
+	return TRUE;
+}
+
+/*****************************************/
+/* End code ripped from wpa_supplicant */
+/*****************************************/

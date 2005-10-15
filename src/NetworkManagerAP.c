@@ -30,29 +30,36 @@
  */
 struct NMAccessPoint
 {
-	guint			 refcount;
-	char				*essid;
-	struct ether_addr	*address;
-	NMNetworkMode		 mode;
-	gint8			 strength;
-	double			 freq;
-	guint16			 rate;
-	gboolean			 encrypted;
+	guint			refcount;
+	char *			essid;
+	struct ether_addr *	address;
+	NMNetworkMode		mode;
+	gint8			strength;
+	double			freq;
+	guint16			rate;
+	gboolean			encrypted;
+	guint32			capabilities;
+
+	/* WPA auxiliary information */
+	guint8 *			wpa_ie;
+	guint32			wpa_ie_len;
+	guint8 *			rsn_ie;
+	guint32			rsn_ie_len;
 
 	/* Non-scanned attributes */
-	gboolean			 invalid;
-	gboolean			 matched;	/* used in ap list diffing */
-	gboolean			 artificial; /* Whether or not the AP is from a scan */
-	gboolean			 user_created; /* Whether or not the AP was created by the user with "Create network..." */
-	GTimeVal			 last_seen; /* Last time the AP was seen in a scan */
+	gboolean			invalid;
+	gboolean			matched;		/* used in ap list diffing */
+	gboolean			artificial;	/* Whether or not the AP is from a scan */
+	gboolean			user_created;	/* Whether or not the AP was created by the user with "Create network..." */
+	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
 
 	/* Things from user prefs/NetworkManagerInfo */
-	gboolean			 trusted;
-	char				*enc_key;
-	NMEncKeyType		 enc_type;
-	NMDeviceAuthMethod	 auth_method;
-	GTimeVal			 timestamp;
-	GSList			*user_addresses;
+	gboolean			trusted;
+	char *			enc_key;
+	NMEncKeyType		enc_type;
+	NMDeviceAuthMethod	auth_method;
+	GTimeVal			timestamp;
+	GSList *			user_addresses;
 };
 
 /* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
@@ -639,3 +646,67 @@ gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 
 	return FALSE;
 }
+
+
+const guint8 * nm_ap_get_wpa_ie (NMAccessPoint *ap, guint32 *length)
+{
+	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (length != NULL, NULL);
+
+	*length = ap->wpa_ie_len;
+	return ap->wpa_ie;
+}
+
+void nm_ap_set_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
+{
+	g_return_if_fail (ap != NULL);
+
+	if (wpa_ie)
+		g_return_if_fail ((length > 0) && (length <= AP_MAX_WPA_IE_LEN));
+
+	if (ap->wpa_ie)
+	{
+		g_free (ap->wpa_ie);
+		ap->wpa_ie = NULL;
+		ap->wpa_ie_len = 0;
+	}
+
+	if (wpa_ie)
+	{
+		ap->wpa_ie = g_malloc0 (length);
+		ap->wpa_ie_len = length;
+		memcpy (ap->wpa_ie, wpa_ie, length);
+	}
+}
+
+const guint8 * nm_ap_get_rsn_ie (NMAccessPoint *ap, guint32 *length)
+{
+	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (length != NULL, NULL);
+
+	*length = ap->rsn_ie_len;
+	return ap->rsn_ie;
+}
+
+void nm_ap_set_rsn_ie (NMAccessPoint *ap, const guint8 *rsn_ie, guint32 length)
+{
+	g_return_if_fail (ap != NULL);
+
+	if (rsn_ie)
+		g_return_if_fail ((length > 0) && (length <= AP_MAX_WPA_IE_LEN));
+
+	if (ap->rsn_ie)
+	{
+		g_free (ap->rsn_ie);
+		ap->rsn_ie = NULL;
+		ap->rsn_ie_len = 0;
+	}
+
+	if (rsn_ie)
+	{
+		ap->rsn_ie = g_malloc0 (length);
+		ap->rsn_ie_len = length;
+		memcpy (ap->rsn_ie, rsn_ie, length);
+	}
+}
+

@@ -58,8 +58,6 @@ int			nm_null_safe_strcmp				(const char *s1, const char *s2);
 
 gboolean		nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
 
-void			nm_dispose_scan_results			(wireless_scan *result_list);
-
 int			nm_spawn_process				(const char *args);
 
 void			nm_print_device_capabilities		(NMDevice *dev);
