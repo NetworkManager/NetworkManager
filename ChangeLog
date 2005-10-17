@@ -1,12 +1,12 @@
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c:
-	Find network encryption keys asyncrhonously
+	Find network encryption keys asynchronously
 
 2005-10-17  Robert Love  <rml@novell.com>
 
 	*  src/backends/NetworkManagerDebian.c,
-	  src/backends/NetworkManagerRedHat,
+	  src/backends/NetworkManagerRedHat.c,
 	  src/backends/NetworkManagerSuSE.c: allow '#' as a valid resolv.conf
 	  comment delimiter.
 
