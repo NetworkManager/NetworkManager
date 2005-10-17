@@ -264,8 +264,8 @@ void nm_system_kill_all_dhcp_daemons (void)
 void nm_system_update_dns (void)
 {
 #ifdef NM_NO_NAMED
-	if (nm_spawn_process ("/etc/init.d/nscd status") != 0)
-		nm_spawn_process ("/etc/init.d/nscd restart");
+	if (nm_spawn_process (SYSCONFDIR"/init.d/nscd status") != 0)
+		nm_spawn_process (SYSCONFDIR"/init.d/nscd restart");
 
 	nm_info ("Clearing nscd hosts cache.");
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
@@ -419,6 +419,8 @@ out:
  *
  * Read in the config file for a device.
  *
+ * SuSE stores this information in /etc/sysconfig/network/ifcfg-*-<MAC address>
+ *
  */
 void *nm_system_device_get_system_config (NMDevice *dev)
 {
@@ -438,8 +440,6 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	char *ip_str;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-
-	/* SuSE stores this information usually in /etc/sysconfig/network/ifcfg-*-<MAC address> */
 
 	sys_data = g_malloc0 (sizeof (SuSESystemConfigData));
 	sys_data->use_dhcp = TRUE;
@@ -538,7 +538,7 @@ found:
 		}
 
 		buf = NULL;
-		if ((f = fopen ("/etc/sysconfig/network/routes", "r")))
+		if ((f = fopen (SYSCONFDIR"/sysconfig/network/routes", "r")))
 		{
 			while (fgets (buffer, 512, f) && !feof (f))
 			{
@@ -716,7 +716,7 @@ static char * verify_and_return_provider (const char *provider)
 	char *name, *buf = NULL;
 	int ret;
 
-	name = g_strdup_printf ("/etc/sysconfig/network/providers/%s", provider);
+	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/providers/%s", provider);
 
 	file = svNewFile (name);
 	if (!file)
@@ -780,7 +780,7 @@ GSList * nm_system_get_dialup_config (void)
 			continue;
 
 		/* open the configuration file */
-		name = g_strdup_printf ("/etc/sysconfig/network/%s", dentry);
+		name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/%s", dentry);
 		modem_file = svNewFile (name);
 		if (!modem_file)
 			 goto out_gfree;

@@ -1,3 +1,8 @@
+2005-10-17  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: use SYSCONFDIR not open-coded
+	  "/etc"
+
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* src/NetworkManagerDevice.c: (process_scan_results)
