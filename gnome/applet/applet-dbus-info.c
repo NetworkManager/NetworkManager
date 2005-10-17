@@ -1110,12 +1110,13 @@ static DBusMessage *nmi_dbus_add_network_address (NMWirelessApplet *applet, DBus
  */
 DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	const char *		method;
-	const char *		path;
-	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
-	DBusMessage *		reply = NULL;
+	const char *method;
+	const char *path;
+	NMWirelessApplet *applet = (NMWirelessApplet *)user_data;
+	DBusMessage *reply = NULL;
+	gboolean handled = TRUE;
 
-	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_HANDLED);
+	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
 	method = dbus_message_get_member (message);
 	path = dbus_message_get_path (message);
@@ -1164,6 +1165,8 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		reply = nmi_dbus_get_vpn_connection_vpn_data (applet, message);
 	else if (strcmp ("getVPNConnectionRoutes", method) == 0)
 		reply = nmi_dbus_get_vpn_connection_routes (applet, message);
+	else
+		handled = FALSE;
 
 	if (reply)
 	{
@@ -1171,7 +1174,7 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 		dbus_message_unref (reply);
 	}
 
-	return (DBUS_HANDLER_RESULT_HANDLED);
+	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
 void nmi_dbus_signal_user_interface_activated (DBusConnection *connection)

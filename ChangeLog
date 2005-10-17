@@ -1,6 +1,11 @@
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c:
+	Let D-BUS know that we haven't handled a message when we haven't.
+
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-dbus-info.c:
 	Find network encryption keys asynchronously
 
 2005-10-17  Robert Love  <rml@novell.com>
