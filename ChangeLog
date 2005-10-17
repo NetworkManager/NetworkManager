@@ -5,8 +5,13 @@
 
 2005-10-17  Robert Love  <rml@novell.com>
 
-	*  src/backends/NetworkManagerDebian.c,
-	  src/backends/NetworkManagerRedHat.c,
+	* src/nm-ip4-config.c: use GPOINTER_TO_UINT and not a straight cast
+	  in order to remain 64-bit clean.
+
+2005-10-17  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerRedHat,
 	  src/backends/NetworkManagerSuSE.c: allow '#' as a valid resolv.conf
 	  comment delimiter.
 

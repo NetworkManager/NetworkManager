@@ -182,12 +182,12 @@ void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
 
 guint32 nm_ip4_config_get_nameserver (NMIP4Config *config, guint index)
 {
-	guint32 nameserver;
+	guint nameserver;
 
 	g_return_val_if_fail (config != NULL, 0);
 	g_return_val_if_fail (index < g_slist_length (config->nameservers), 0);
 
-	if ((nameserver = (guint32) g_slist_nth_data (config->nameservers, index)))
+	if ((nameserver = GPOINTER_TO_UINT (g_slist_nth_data (config->nameservers, index))))
 		return nameserver;
 	return 0;
 }
