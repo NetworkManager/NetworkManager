@@ -4433,6 +4433,7 @@ static int hexstr2bin(const char *hex, u8 *buf, size_t len)
 	return 0;
 }
 
+#define SCAN_SLEEP_CENTISECONDS		10	/* sleep 1/10 of a second, waiting for data */
 static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
 {
 	struct iwreq iwr;
@@ -4469,7 +4470,7 @@ static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
 		else if (errno == EAGAIN)
 		{
 			/* If the card doesn't return results after 20s, it sucks. */
-			if (tries > 20)
+			if (tries > 20 * SCAN_SLEEP_CENTISECONDS)
 			{
 				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
 				free (res_buf);
@@ -4477,7 +4478,7 @@ static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
 			}
 
 			g_free (res_buf);
-			g_usleep (G_USEC_PER_SEC / 10);
+			g_usleep (G_USEC_PER_SEC / SCAN_SLEEP_CENTISECONDS);
 			tries++;
 		}
 		else

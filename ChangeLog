@@ -1,17 +1,23 @@
+2005-10-17  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: Actually wait 20s, as we intend, not
+	  two seconds -- tries is updated every 1/10 of a second, not every
+	  second..
+
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c:
 	Let D-BUS know that we haven't handled a message when we haven't.
 
-2005-10-17  Christopher Aillon  <caillon@redhat.com>
-
-	* gnome/applet/applet-dbus-info.c:
-	Find network encryption keys asynchronously
-
 2005-10-17  Robert Love  <rml@novell.com>
 
 	* src/nm-ip4-config.c: use GPOINTER_TO_UINT and not a straight cast
 	  in order to remain 64-bit clean.
+
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-dbus-info.c:
+	Find network encryption keys asynchronously
 
 2005-10-17  Robert Love  <rml@novell.com>
 
