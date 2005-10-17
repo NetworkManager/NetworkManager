@@ -4602,7 +4602,9 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 						char *essid = g_malloc (IW_ESSID_MAX_SIZE + 1);
 						memcpy (essid, custom, ssid_len);
 						essid[ssid_len] = '\0';
-						if ((strlen (essid) >= 8) && (strcmp (essid, "<hidden>") != 0))	/* Stupid ipw drivers use <hidden> */
+						if (!strlen(essid))
+							set = FALSE;
+						else if ((strlen (essid) == 8) && (strcmp (essid, "<hidden>") == 0))	/* Stupid ipw drivers use <hidden> */
 							set = FALSE;
 						if (set)
 							nm_ap_set_essid (ap, essid);

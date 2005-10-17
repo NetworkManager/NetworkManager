@@ -1,3 +1,8 @@
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* src/NetworkManagerDevice.c: (process_scan_results)
+	Fix logic that checks to see whether we have an ESSID.
+
 2005-10-15  Dan Williams  <dcbw@redhat.com>
 
 	Move scanning code into NetworkManager rather than use iwlib's
