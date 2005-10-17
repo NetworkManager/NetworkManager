@@ -1,5 +1,12 @@
 2005-10-17  Robert Love  <rml@novell.com>
 
+	*  src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerRedHat,
+	  src/backends/NetworkManagerSuSE.c: allow '#' as a valid resolv.conf
+	  comment delimiter.
+
+2005-10-17  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: use SYSCONFDIR not open-coded
 	  "/etc"
 

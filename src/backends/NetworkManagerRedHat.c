@@ -393,7 +393,7 @@ static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *
 		char *line = split_contents[i];
 
 		/* Ignore comments */
-		if (!line || (line[0] == ';'))
+		if (!line || (line[0] == ';') || (line[0] == '#'))
 			continue;
 
 		line = g_strstrip (line);

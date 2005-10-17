@@ -358,14 +358,14 @@ static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *
 
 	if (!(split_contents = g_strsplit (contents, "\n", 0)))
 		goto out;
-	
+
 	len = g_strv_length (split_contents);
 	for (i = 0; i < len; i++)
 	{
 		char *line = split_contents[i];
 
 		/* Ignore comments */
-		if (!line || (line[0] == ';'))
+		if (!line || (line[0] == ';') || (line[0] == '#'))
 			continue;
 
 		line = g_strstrip (line);
@@ -400,7 +400,7 @@ static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *
 		}
 		else if ((strncmp (line, "nameserver", 10) == 0) && (strlen (line) > 10))
 		{
-			guint32	addr = (guint32) (inet_addr (line + 11));
+			guint32 addr = (guint32) (inet_addr (line + 11));
 
 			if (addr != (guint32) -1)
 				nm_ip4_config_add_nameserver (ip4_config, addr);
