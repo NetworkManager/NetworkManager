@@ -134,6 +134,17 @@ static void libnm_glib_schedule_single_callback (libnm_glib_ctx *ctx, libnm_glib
 	g_source_unref (source);
 }
 
+static void libnm_glib_unschedule_single_callback (libnm_glib_ctx *ctx, libnm_glib_callback *callback)
+{
+	GSource *source;
+
+	g_return_if_fail (ctx != NULL);
+	g_return_if_fail (callback != NULL);
+
+	source = g_main_context_find_source_by_user_data (callback->gmain_ctx, callback);
+	if (source)
+		g_source_destroy (source);
+}
 
 static void libnm_glib_call_callbacks (libnm_glib_ctx *ctx)
 {
@@ -525,6 +536,7 @@ void libnm_glib_unregister_callback (libnm_glib_ctx *ctx, guint id)
 		libnm_glib_callback *callback = (libnm_glib_callback *)(elem->data);
 		if (callback && (callback->id == id))
 		{
+			libnm_glib_unschedule_single_callback (ctx, callback);
 			ctx->callbacks = g_slist_remove_link (ctx->callbacks, elem);
 			break;
 		}

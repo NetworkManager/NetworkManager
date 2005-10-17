@@ -1,3 +1,8 @@
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c:
+	Make libnm_glib_unregister_callback () actually unregister the callback
+
 2005-10-17  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDevice.c: Actually wait 20s, as we intend, not
