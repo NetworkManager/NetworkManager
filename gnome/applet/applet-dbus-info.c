@@ -80,43 +80,77 @@ static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message,
 }
 
 
-/*
- * nmi_dbus_get_network_key
- *
- * Grab the network's key from the keyring.
- *
- */
-static char *nmi_dbus_get_network_key (NMWirelessApplet *applet, const char *essid)
+typedef struct NMGetNetworkKeyCBData
 {
-	GnomeKeyringResult	ret;
-	GList *			found_list = NULL;
-	char *			key = NULL;
+	NMWirelessApplet *applet;
+	DBusMessage *message;
+	NetworkDevice *dev;
+	char *net_path;
+	char *essid;
+} NMGetNetworkKeyCBData;
 
-	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (essid != NULL, NULL);
-
-	/* If the menu happens to be showing when we pop up the
-	 * keyring dialog, we get an X server deadlock.  So deactivate
-	 * the menu here.
-	 */
-	if (applet->dropdown_menu && GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->dropdown_menu)))
-		gtk_menu_shell_deactivate (GTK_MENU_SHELL (applet->dropdown_menu));
-
-	/* Get the essid key, if any, from the keyring */
-	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
-								   &found_list,
-								   "essid",
-								   GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-								   essid,
-								   NULL);
-	if (ret == GNOME_KEYRING_RESULT_OK)
+static void free_network_key_cb_data (NMGetNetworkKeyCBData *cb_data)
+{
+	if (cb_data)
 	{
-		GnomeKeyringFound *found = found_list->data;
+		dbus_message_unref (cb_data->message);
+		network_device_unref (cb_data->dev);
+		g_free (cb_data->net_path);
+		g_free (cb_data->essid);
+		memset (cb_data, 0, sizeof (NMGetNetworkKeyCBData));
+		g_free (cb_data);
+	}
+}
+
+
+static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
+                                               GList             *found_list,
+                                               gpointer           data)
+{
+	NMGetNetworkKeyCBData *cb_data = (NMGetNetworkKeyCBData*) data;
+	NMWirelessApplet *applet = cb_data->applet;
+	DBusMessage *message = cb_data->message;
+	NetworkDevice *dev = cb_data->dev;
+	char *net_path = cb_data->net_path;
+	char *essid = cb_data->essid;
+
+	if (result == GNOME_KEYRING_RESULT_OK)
+	{
+		gchar *key;
+		gchar *gconf_key;
+		gchar *escaped_network;
+		GConfValue *value;
+		NMEncKeyType key_type = -1;
+		GnomeKeyringFound *found;
+
+		found = found_list->data;
 		key = g_strdup (found->secret);
-		gnome_keyring_found_list_free (found_list);
+
+		/* Grab key type from GConf since we need it for return message */
+		escaped_network = gconf_escape_key (essid, strlen (essid));
+		gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		g_free (escaped_network);
+
+		value = gconf_client_get (applet->gconf_client, gconf_key, NULL);
+		g_free (gconf_key);
+
+		if (value)
+		{
+			key_type = gconf_value_get_int (value);
+			gconf_value_free (value);
+		}
+
+		nmi_dbus_return_user_key (applet->connection, message, key, key_type);
+		g_free (key);
+	}
+	else
+	{
+		WirelessNetwork *net;
+		if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
+			nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
 	}
 
-	return key;
+	free_network_key_cb_data (cb_data);
 }
 
 
@@ -136,12 +170,12 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 	gboolean	success = FALSE;
 
 	if (dbus_message_get_args (message, NULL,
-							DBUS_TYPE_OBJECT_PATH, &dev_path,
-							DBUS_TYPE_OBJECT_PATH, &net_path,
-							DBUS_TYPE_STRING, &essid,
-							DBUS_TYPE_INT32, &attempt,
-							DBUS_TYPE_BOOLEAN, &new_key,
-							DBUS_TYPE_INVALID))
+	                           DBUS_TYPE_OBJECT_PATH, &dev_path,
+	                           DBUS_TYPE_OBJECT_PATH, &net_path,
+	                           DBUS_TYPE_STRING, &essid,
+	                           DBUS_TYPE_INT32, &attempt,
+	                           DBUS_TYPE_BOOLEAN, &new_key,
+	                           DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *dev = NULL;
 
@@ -149,47 +183,63 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
 		{
 			WirelessNetwork *net = NULL;
 
-			/* Try to get the key from the keyring.  If we fail, ask for a new key. */
+			/* It's not a new key, so try to get the key from the keyring. */
 			if (!new_key)
 			{
-				char *key;
+				GnomeKeyringResult ret;
+				GList *found_list = NULL;
+				char *key = NULL;
+				NMGetNetworkKeyCBData *cb_data;
 
-				if ((key = nmi_dbus_get_network_key (applet, essid)))
-				{
-					char *		gconf_key;
-					char *		escaped_network;
-					GConfValue *	value;
-					NMEncKeyType	key_type = -1;
+				cb_data = g_malloc0 (sizeof (NMGetNetworkKeyCBData));
+				cb_data->applet = applet;
+				cb_data->essid = g_strdup (essid);
+				cb_data->message = message;
+				dbus_message_ref (message);
+				cb_data->dev = dev;
+				network_device_ref (dev);
+				cb_data->net_path = g_strdup (net_path);
 
-					/* Grab key type from GConf since we need it for return message */
-					escaped_network = gconf_escape_key (essid, strlen (essid));
-					gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-					g_free (escaped_network);
-					if ((value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
-					{
-						key_type = gconf_value_get_int (value);
-						gconf_value_free (value);
-					}
-					g_free (gconf_key);
+				/* If the menu happens to be showing when we pop up the
+				 * keyring dialog, we get an X server deadlock.  So deactivate
+				 * the menu here.
+				 */
+				if (applet->dropdown_menu && GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->dropdown_menu)))
+					gtk_menu_shell_deactivate (GTK_MENU_SHELL (applet->dropdown_menu));
 
-					nmi_dbus_return_user_key (applet->connection, message, key, key_type);
-					g_free (key);
-					success = TRUE;
-				}
-				else
-					new_key = TRUE;
+				/* Get the essid key, if any, from the keyring */
+				gnome_keyring_find_itemsv (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+				                           (GnomeKeyringOperationGetListCallback) nmi_dbus_get_network_key_callback,
+				                           cb_data,
+				                           NULL,
+				                           "essid",
+				                           GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+				                           essid,
+				                           NULL);
 			}
+			else
+			{
+				/* We only ask the user for a new key when we know about the network from NM,
+				 * since throwing up a dialog with a random essid from somewhere is a security issue.
+				 */
+				if (new_key && (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
+				{
+					success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
+					if (!success)
+					{
+						DBusMessage *error_message;
+						char *error_message_str;
 
-			/* We only ask the user for a new key when we know about the network from NM,
-			 * since throwing up a dialog with a random essid from somewhere is a security issue.
-			 */
-			if (new_key && (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
-				success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
+						error_message_str = g_strdup_printf ("Could not get user key for network '%s'.", essid);
+						error_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "GetKeyError", error_message_str);
+						g_free (error_message_str);
+
+						return error_message;
+					}
+				}
+			}
 		}
 	}
-
-	if (!success)
-		return nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "GetKeyError", "Could not get user key for network.");
 
 	return NULL;
 }
@@ -203,8 +253,8 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
  */
 void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type)
 {
-	DBusMessage *	reply;
-	const int		tmp_key_type = (int)key_type;
+	DBusMessage *reply;
+	const int tmp_key_type = (int)key_type;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (passphrase != NULL);
