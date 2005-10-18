@@ -1,3 +1,9 @@
+2005-10-17  Dan Williams  <dcbw@redhat.com>
+
+	* NetworkManager.h
+		- Remove WPA-related constants so they aren't part of the
+			upcoming release.
+
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:
