@@ -1,3 +1,8 @@
+2005-10-18  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: nmwa_context_menu_update(): 'iface' could
+	  be used uninitialized.
+
 2005-10-18  Christopher Aillon  <caillon@redhat.com>
 
 	* test/libnm_glib_test.c: Test unregistering, too.
