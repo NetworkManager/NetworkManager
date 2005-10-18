@@ -1998,7 +1998,7 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 	GSList *element;
 	gboolean have_wireless = FALSE;
 	NetworkDevice *dev;
-	const char *iface;
+	const char *iface = NULL;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (applet->stop_wireless_item != NULL);
