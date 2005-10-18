@@ -61,6 +61,7 @@ int main( int argc, char *argv[] )
 {
 	GMainLoop	*loop;
 	libnm_glib_ctx *ctx;
+	guint id;
 
 	ctx = libnm_glib_init ();
 	if (!ctx)
@@ -68,14 +69,17 @@ int main( int argc, char *argv[] )
 		fprintf (stderr, "Could not initialize libnm.\n");
 		exit (1);
 	}
-	libnm_glib_register_callback (ctx, status_printer, ctx, NULL);
+
+	id = libnm_glib_register_callback (ctx, status_printer, ctx, NULL);
+	fprintf (stderr, "Registered Callback with ID %d\n", id);
+	libnm_glib_unregister_callback (ctx, id);
+	fprintf (stderr, "Unregistered Callback with ID %d\n", id);
+
+	id = libnm_glib_register_callback (ctx, status_printer, ctx, NULL);
+	fprintf (stderr, "Registered Callback with ID %d\n", id);
 
 	loop = g_main_loop_new (NULL, FALSE);
-//	id = g_timeout_add (2000, status_printer, (gpointer)ctx);
-
 	g_main_loop_run (loop);
-
-//	g_source_remove (id);
 
 	exit (0);
 }

@@ -1,3 +1,7 @@
+2005-10-18  Christopher Aillon  <caillon@redhat.com>
+
+	* test/libnm_glib_test.c: Test unregistering, too.
+
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* configure.in: Bump to 0.5.0
