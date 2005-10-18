@@ -122,6 +122,7 @@ typedef struct
 
 	GtkWidget *		context_menu;
 	GtkWidget *		stop_wireless_item;
+	GtkWidget *		info_menu_item;
 
 	GtkWidget *		passphrase_dialog;
 	GladeXML *		info_dialog_xml;

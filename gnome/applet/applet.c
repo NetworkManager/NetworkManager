@@ -1997,13 +1997,24 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 {
 	GSList *element;
 	gboolean have_wireless = FALSE;
+	NetworkDevice *dev;
+	const char *iface;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (applet->stop_wireless_item != NULL);
+	g_return_if_fail (applet->info_menu_item != NULL);
+
+	if ((dev = nmwa_get_first_active_device (applet->device_list)))
+		iface = network_device_get_iface (dev);
+
+	if (!dev || !iface)
+		gtk_widget_set_sensitive (applet->info_menu_item, FALSE);
+	else
+		gtk_widget_set_sensitive (applet->info_menu_item, TRUE);
 
 	for (element = applet->device_list; element; element = element->next)
 	{
-		NetworkDevice *dev = (NetworkDevice *)(element->data);
+		dev = (NetworkDevice *)(element->data);
 
 		g_assert (dev);
 
@@ -2044,11 +2055,11 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
 
 	/* Connection Information item */
-	menu_item = gtk_image_menu_item_new_with_mnemonic (_("Connection _Information"));
-	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_show_info_cb), applet);
+	applet->info_menu_item = gtk_image_menu_item_new_with_mnemonic (_("Connection _Information"));
+	g_signal_connect (G_OBJECT (applet->info_menu_item), "activate", G_CALLBACK (nmwa_show_info_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_MENU);
-	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
+	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (applet->info_menu_item), image);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->info_menu_item);
 
 	/* Separator */
 	nmwa_menu_add_separator_item (menu);

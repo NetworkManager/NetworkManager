@@ -1,5 +1,12 @@
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet.c:
+	* gnome/applet/applet.h:
+	Desensitize the 'Connection Information' menu item when there is
+	no active connection.
+
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
 	* gnome/libnm_glib/libnm_glib.c:
 	Make libnm_glib_unregister_callback () actually unregister the callback
 
