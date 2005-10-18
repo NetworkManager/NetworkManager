@@ -1,3 +1,7 @@
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* configure.in: Bump to 0.5.0
+
 2005-10-17  Dan Williams  <dcbw@redhat.com>
 
 	* NetworkManager.h
