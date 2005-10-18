@@ -3429,6 +3429,8 @@ gboolean nm_device_deactivate (NMDevice *dev)
 		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 	}
 
+	nm_schedule_state_change_signal_broadcast (dev->app_data);
+
 	return TRUE;
 }
 

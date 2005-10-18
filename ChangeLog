@@ -1,5 +1,11 @@
 2005-10-18  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerDevice.c: invoke the long-in-the-tooth named
+	  function nmwa_schedule_state_change_signal_broadcast() when we
+	  deactivate a device, too.
+
+2005-10-18  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: nmwa_context_menu_update(): 'iface' could
 	  be used uninitialized.
 
