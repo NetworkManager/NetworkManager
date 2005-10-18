@@ -1,3 +1,8 @@
+2005-10-18  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/other-network-dialog.c: Use g_get_host_name ()
+	if we've got GLib 2.8.0
+
 2005-10-18  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDevice.c: invoke the long-in-the-tooth named

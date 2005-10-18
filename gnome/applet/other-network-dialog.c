@@ -32,11 +32,14 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+
+#if !GLIB_CHECK_VERSION(2,8,0)
+#include <unistd.h>
+#endif
 
 #include "NetworkManager.h"
 #include "applet.h"
@@ -231,31 +234,40 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 
 	if (create_network)
 	{
+		gchar *default_essid_text;
+
+#if GLIB_CHECK_VERSION(2,8,0)
+		const char *hostname = g_get_host_name ();
+#else
 		char hostname[HOST_NAME_MAX] = "hostname";
 
 		gethostname (hostname, HOST_NAME_MAX);
 		hostname[HOST_NAME_MAX-1] = '\n';	/* unspecified whether a truncated hostname is terminated */
+#endif
 
 		gtk_entry_set_text (GTK_ENTRY (essid_entry), hostname);
 		gtk_editable_set_position (GTK_EDITABLE (essid_entry), -1);
 
-		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s\n\n%s %s%s",
-			_("Create new wireless network"),
-			_("Enter the ESSID and security settings of the wireless network you wish to create."),
-			_("By default, the ESSID is set to your computer's name,"),
-			hostname,
-			_(", with no encryption enabled."));
+		default_essid_text = g_strdup_printf (_("By default, the ESSID is set to your computer's name, %s, with no encryption enabled"),
+		                                      hostname);
+
+		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s\n\n%s",
+		                         _("Create new wireless network"),
+		                         _("Enter the ESSID and security settings of the wireless network you wish to create."),
+		                         default_essid_text);
+		g_free (default_essid_text);
 
 		gtk_window_set_title (GTK_WINDOW(dialog), _("Create New Wireless Network"));
 	}
 	else
 	{
 		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
-			_("Custom wireless network"),
-			_("Enter the ESSID of the wireless network to which you wish to connect."));
+		                         _("Custom wireless network"),
+		                         _("Enter the ESSID of the wireless network to which you wish to connect."));
 
 		gtk_window_set_title (GTK_WINDOW(dialog), _("Connect to Other Wireless Network"));
 	}
+
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "essid_label")), label);
 	g_free (label);
 
