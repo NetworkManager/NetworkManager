@@ -170,6 +170,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				else if (old_owner_good && !new_owner_good)
 				{
 					applet->nm_running = FALSE;
+					applet->nm_state = NM_STATE_DISCONNECTED;
 					nmi_passphrase_dialog_schedule_cancel (applet);
 				}
 			}
