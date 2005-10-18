@@ -1,3 +1,7 @@
+2005-10-17  Christopher Aillon  <caillon@redhat.com>
+
+	* configure.in: Bump version to 0.5.0
+
 2005-10-12  Robert Love  <rml@novell.com>
 
 	* src/nm-vpn-service.c: remove a bunch of unused variables
