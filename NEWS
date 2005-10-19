@@ -1,3 +1,58 @@
+==============================================
+NetworkManager-0.5.0
+Overview of changes since NetworkManager-0.4.1
+==============================================
+
+* NetworkManager
+   * Initscripts are now generated
+   * Not waiting as long for scans to complete (Bill Moss).
+   * Fix several D-BUS object leaks (John Palmieri, Dan Williams,
+                                     Christopher Aillon)
+   * VPN now advertises state changes
+   * Make --without-named work (j@bootlab.org)
+   * Make --with-dhcdbd work correctly (j@bootlab.org)
+   * Fix timeout scan values (Bill Moss)
+   * Send notifications of device strength changing so clients do
+     not have to poll.
+   * Don't return a UDI device if it doesn't exist (Tomislav Vujec)
+   * Strip whitespace from the VPN banner (Bill Moss)
+   * VPN Manager rewritten to better support signals (Dan Williams)
+   * Don't allow clients to determine what states we should be
+     scanning in, add logic to scan when we need to.
+   * Blacklist some common ESSIDs such that multiple access points
+     with these ESSIDs aren't treated as the same network.
+   * Support for D-BUS enabled named (Dan Williams)
+   * Only '#' is a valid comment in resolv.conf (Robert Love)
+   * Don't try to set auth mode on the AP from the allowed list if
+     it's NULL (Bill Moss)
+   * Add internal scanning code so we don't have to use iwlib's
+     code any longer (Dan Williams)
+   * libnm now uses guints instead of gints for its callback IDs.
+   * libnm_glib_unregister_callback () now works.
+   * Fix our scanning interval (Robert Love)
+   * Updates to backends for Gentoo, SuSE, RedHat, Debian, and
+     Slackware (Robert Love, Peter Jones, Bill Nottingham,
+                j@bootlab.org)
+       - Dialup support in RedHat backend
+       - ISDN support in SUSE backend
+       - Other fixes
+
+* nm-applet
+   * The applet is no longer threaded (Dan Williams)
+   * Dialogs no longer block the UI when shown
+   * Passphrase dialog now treats Esc keypresses properly
+   * Create Network and Connect to Network dialogs now have
+     different window titles
+   * New icons for connecting to a network and to a VPN
+     (Diana Fong)
+   * Context menu items have been cleaned up
+   * Pressing enter in the passphrase entry should activate the
+     default action.
+   * Fix icon animation smoothness
+   * Display more data in the Connection Information dialog
+     (Robert Love) 
+
+
 ============================================
 NetworkManager-0.3.1
 Overview of changes since NetworkManager-0.3
