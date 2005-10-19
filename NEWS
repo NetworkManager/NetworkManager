@@ -1,4 +1,23 @@
 ==============================================
+NetworkManager-0.5.1
+Overview of changes since NetworkManager-0.5.0
+==============================================
+
+* NetworkManager
+	* Don't drop the last scanned AP (Dan Williams)
+	* Broadcast state change when disconnected (Robert Love)
+	* The Slackware backend now builds (Nico)
+	* Don't install unsued config files (Dan Williams)
+	* Add a test for libnm_glib_unregister_callback (Christopher Aillon)
+	* Requires wireless-tools 28pre9 (Christopher Aillon)
+
+* nm-applet
+	* Use g_get_host_name () if we've got it (Christopher Aillon)
+	* Fix an unitialized variable (Robert Love)
+	* Fix sensitivity of VPN items (Robert Love)
+
+
+==============================================
 NetworkManager-0.5.0
 Overview of changes since NetworkManager-0.4.1
 ==============================================
