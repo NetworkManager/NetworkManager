@@ -1,5 +1,9 @@
 2005-10-19  Robert Love  <rml@novell.com>
 
+	* vpn-daemons/vpnc/nm-vpnc.desktop.in: add fields
+
+2005-10-19  Robert Love  <rml@novell.com>
+
 	* gnome/vpn-properties/nm-vpn-properties.c: Correctly set the
 	  sensitivity of the buttons.  Specificaly, do the right thing if
 	  there are no entries.
