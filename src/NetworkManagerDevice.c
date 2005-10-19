@@ -4496,6 +4496,39 @@ static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
 }
 
 
+static void add_new_ap_to_device_list (NMDevice *dev, NMAccessPoint *ap)
+{
+	gboolean new = FALSE;
+	gboolean strength_changed = FALSE;
+	GTimeVal cur_time;
+
+	g_return_if_fail (dev != NULL);
+	g_return_if_fail (ap != NULL);
+
+	g_get_current_time (&cur_time);
+	nm_ap_set_last_seen (ap, &cur_time);
+
+	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
+	 * allowed list where we cache known MAC->ESSID associations.
+	 */
+	if (!nm_ap_get_essid (ap))
+		nm_ap_list_copy_one_essid_by_address (ap, dev->app_data->allowed_ap_list);
+
+	/* Add the AP to the device's AP list */
+	if (nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), ap, &new, &strength_changed))
+	{
+		DBusConnection *con = dev->app_data->dbus_connection;
+		/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes strength */
+		if (new)
+			nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_APPEARED, -1);
+		else if (strength_changed)
+		{
+			nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_STRENGTH_CHANGED,
+				nm_ap_get_strength (ap));
+		}
+	}
+}
+
 static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guint32 res_buf_len)
 {
 	char *pos, *end, *custom, *genie, *gpos, *gend;
@@ -4513,6 +4546,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 	while (pos + IW_EV_LCP_LEN <= end)
 	{
 		int ssid_len;
+
 		/* Event data may be unaligned, so make a local, aligned copy
 		 * before processing. */
 		memcpy (&iwe_buf, pos, IW_EV_LCP_LEN);
@@ -4545,32 +4579,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				/* Merge previous AP */
 				if (ap)
 				{
-					gboolean new = FALSE;
-					gboolean strength_changed = FALSE;
-					GTimeVal cur_time;
-
-					g_get_current_time (&cur_time);
-					nm_ap_set_last_seen (ap, &cur_time);
-
-					/* If the AP is not broadcasting its ESSID, try to fill it in here from our
-					 * allowed list where we cache known MAC->ESSID associations.
-					 */
-					if (!nm_ap_get_essid (ap))
-						nm_ap_list_copy_one_essid_by_address (ap, dev->app_data->allowed_ap_list);
-
-					/* Add the AP to the device's AP list */
-					if (nm_ap_list_merge_scanned_ap (nm_device_ap_list_get (dev), ap, &new, &strength_changed))
-					{
-						DBusConnection *con = dev->app_data->dbus_connection;
-						/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes strength */
-						if (new)
-							nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_APPEARED, -1);
-						else if (strength_changed)
-						{
-							nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_STRENGTH_CHANGED,
-								nm_ap_get_strength (ap));
-						}
-					}
+					add_new_ap_to_device_list (dev, ap);
 					nm_ap_unref (ap);
 					ap = NULL;
 				}
@@ -4709,9 +4718,18 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					g_free (ie_buf);
 				}
 				break;
+			default:
+				break;
 		}
 
 		pos += iwe->len;
+	}
+
+	if (ap)
+	{
+		add_new_ap_to_device_list (dev, ap);
+		nm_ap_unref (ap);
+		ap = NULL;
 	}
 
 	return TRUE;
