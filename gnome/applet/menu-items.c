@@ -255,7 +255,7 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 	g_object_set (item->security_image, "visible", is_encrypted, NULL);
 
 	if (wireless_network_get_encrypted (network))
-		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), GTK_STOCK_DIALOG_AUTHENTICATION, GTK_ICON_SIZE_MENU);
+		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), "gnome-lockscreen", GTK_ICON_SIZE_MENU);
 	else
 		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), NULL, GTK_ICON_SIZE_MENU);
 }

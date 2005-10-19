@@ -1,11 +1,5 @@
 2005-10-19  Robert Love  <rml@novell.com>
 
-	* gnome/applet/menu-items.c: Patch from Jeroen Zwartepoorte: Use the
-	  correct stock icon value, GTK_STOCK_DIALOG_AUTHENTICATION, and not
-	  the open-coded "gnome-lockscreen" to get our "secure" network icon.
-	
-2005-10-19  Robert Love  <rml@novell.com>
-
 	* gnome/vpn-properties/nm-vpn-properties.c: Correctly set the
 	  sensitivity of the buttons.  Specificaly, do the right thing if
 	  there are no entries.
