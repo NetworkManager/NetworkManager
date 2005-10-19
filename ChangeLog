@@ -1,3 +1,8 @@
+2005-10-19  Christopher Aillon  <caillon@redhat.com>
+
+	* configure.in: Update check for adequate wireless-tools
+	with an AC_TRY_COMPILE for the new symbols we use.
+
 2005-10-19  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c

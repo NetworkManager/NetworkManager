@@ -73,10 +73,18 @@ AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
 AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
 
-AC_CHECK_HEADER(iwlib.h, [],
-			[AC_MSG_ERROR(iwlib.h not found. Install wireless-tools.)], [])
-AC_CHECK_LIB(iw, iw_scan, [ IWLIB=-liw ],
-			[AC_MSG_ERROR(wireless-tools 27.pre23 not installed or not functional)], [])
+AC_MSG_CHECKING([for wireless-tools >= 28pre9])
+AC_TRY_COMPILE([#include <iwlib.h>],
+               [#ifndef IWEVGENIE
+                #error "not found"
+                #endif],
+               [ac_have_iwevgenie=yes],
+               [ac_have_iwevgenie=no])
+AC_MSG_RESULT($ac_have_iwevgenie)
+if test "$ac_have_iwevgenie" = no; then
+	AC_MSG_ERROR(wireless-tools >= 28pre9 not installed or not functional)
+fi
+IWLIB=-liw
 AC_SUBST(IWLIB)
 
 PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.22)
