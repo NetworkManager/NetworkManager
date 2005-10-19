@@ -1,8 +1,3 @@
-namedconf_DATA = named.conf
-namedconfdir = $(pkgdatadir)
-
-EXTRA_DIST = $(namedconf_DATA)
-
 INCLUDES = -I${top_srcdir}/utils -I${top_srcdir}/src
 
 noinst_LTLIBRARIES = libnamed-manager.la
