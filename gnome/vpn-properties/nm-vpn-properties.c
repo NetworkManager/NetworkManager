@@ -91,29 +91,27 @@ enum {
 static void
 update_edit_del_sensitivity (void)
 {
-	GtkTreeIter iter;
 	GtkTreeSelection *selection;
-	gboolean is_editable;	
-	char *service_name;
-	NetworkManagerVpnUI *vpn_ui;
+	gboolean is_editable, is_exportable;
+	GtkTreeIter iter;
 
-	if ((selection = gtk_tree_view_get_selection (vpn_conn_view)) == NULL)
-		goto out;
+	selection = gtk_tree_view_get_selection (vpn_conn_view);
+	if (!selection || !gtk_tree_selection_get_selected (selection, NULL, &iter))
+		is_editable = is_exportable = FALSE;
+	else {
+		NetworkManagerVpnUI *vpn_ui;
+		const char *service_name;
 
-	if (!gtk_tree_selection_get_selected (selection, NULL, &iter))
-		goto out;
+		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_USER_CAN_EDIT_COLUMN, &is_editable, -1);
+		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_SVC_NAME_COLUMN, &service_name, -1);
 
-	gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_USER_CAN_EDIT_COLUMN, &is_editable, -1);
-	gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_SVC_NAME_COLUMN, &service_name, -1);
+		vpn_ui = find_vpn_ui_by_service_name (service_name);
+		is_exportable = vpn_ui->can_export (vpn_ui);
+	}
 
 	gtk_widget_set_sensitive (vpn_edit, is_editable);
 	gtk_widget_set_sensitive (vpn_delete, is_editable);
-
-	vpn_ui = find_vpn_ui_by_service_name (service_name);
-	gtk_widget_set_sensitive (vpn_export, vpn_ui->can_export (vpn_ui));
-
-out:
-	;
+	gtk_widget_set_sensitive (vpn_export, is_editable && is_exportable);
 }
 
 static gboolean
@@ -1068,7 +1066,6 @@ init_app (void)
 	/* reuse the widget */
 	gtk_signal_connect (GTK_OBJECT (edit_dialog), "delete-event", 
 			    GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
-
 
 	/* update "Edit" and "Delete" for current selection */
 	update_edit_del_sensitivity ();
