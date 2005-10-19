@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 
 /*
- *	Mostly a mix of the Gentoo and RedHat Backends
+ * Mostly a mix of the Gentoo and RedHat Backends
  */
 
 /*
@@ -40,6 +40,7 @@
  */
 void nm_system_init (void)
 {
+	nm_system_kill_all_dhcp_daemons();
 }
 
 /*
@@ -50,17 +51,31 @@ void nm_system_init (void)
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	char	buf [100];
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
 	if (nm_device_is_test_device (dev))
 		return;
 
+	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
+}
+
+/*
+ * nm_system_device_flush_routes_with_iface
+ *
+ * Flush all routes associated with a network device
+ *
+ */
+void nm_system_device_flush_routes_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
 	/* Remove routing table entries */
-	snprintf (buf, 100, "/sbin/ip route flush dev %s", nm_device_get_iface (dev));
+	buf = g_strdup_printf ("/sbin/ip route flush dev %s", iface);
 	nm_spawn_process (buf);
+	g_free (buf);
 }
 
 
@@ -72,19 +87,32 @@ void nm_system_device_flush_routes (NMDevice *dev)
  */
 void nm_system_device_flush_addresses (NMDevice *dev)
 {
-	char	buf [100];
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
 	if (nm_device_is_test_device (dev))
 		return;
 
-	/* Remove all IP addresses for a device */
-	snprintf (buf, 100, "/sbin/ip addr flush dev %s", nm_device_get_iface (dev));
-	nm_spawn_process (buf);
+	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
 }
 
+/*
+ * nm_system_device_flush_addresses_with_iface
+ *
+ * Flush all network addresses associated with a network device
+ *
+ */
+void nm_system_device_flush_addresses_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
+	/* Remove all IP addresses for a device */
+	buf = g_strdup_printf ("/sbin/ip addr flush dev %s", iface);
+	nm_spawn_process (buf);
+	g_free (buf);
+}
 
 /*
  * nm_system_device_setup_static_ip4_config
@@ -101,17 +129,29 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
 	return FALSE;
 }
 
-
 /*
- * nm_system_device_update_config_info
+ * nm_system_device_get_system_config
  *
  * Retrieve any relevant configuration info for a particular device
  * from the system network configuration information.  Clear out existing
  * info before setting stuff too.
  *
  */
-void nm_system_device_update_config_info (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
+	return NULL;
+}
+
+/*
+ * nm_system_device_has_active_routes
+ *
+ * Find out whether the specified device has any routes in the routing
+ * table.
+ *
+ */
+gboolean nm_system_device_has_active_routes (NMDevice *dev)
+{
+	return FALSE;
 }
 
 
@@ -148,7 +188,6 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
-	nm_spawn_process ("/usr/bin/killall -q dhcpcd");
 }
 
 
@@ -161,8 +200,8 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
+	/* I'm not running nscd */
 }
-
 
 /*
  * nm_system_restart_mdns_responder
@@ -173,6 +212,8 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
+	/* for GWARE at least */
+	nm_spawn_process("/etc/rc.d/rc.howl restart");
 }
 
 
@@ -198,12 +239,29 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 
 	/* Add the default link-local IPv6 address to a device */
 	buf = g_strdup_printf ("/sbin/ip -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
-						eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
-						eui[6], eui[7], nm_device_get_iface (dev));
+	                       eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
+	                       eui[6], eui[7], nm_device_get_iface (dev));
 	nm_spawn_process (buf);
 	g_free (buf);
 }
 
+/*
+ * nm_system_device_add_route_via_device_with_iface
+ *
+ * Add route to the given device
+ *
+ */
+void nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
+	/* Add default gateway */
+	buf = g_strdup_printf ("/sbin/ip route add %s dev %s", route, iface);
+	nm_spawn_process (buf);
+	g_free (buf);
+}
 
 /*
  * nm_system_device_add_default_route_via_device
@@ -213,6 +271,31 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
  */
 void nm_system_device_add_default_route_via_device (NMDevice *dev)
 {
+	g_return_if_fail (dev != NULL);
+
+	/* Not really applicable for test devices */
+	if (nm_device_is_test_device (dev))
+		return;
+
+	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
+}
+
+/*
+ * nm_system_device_add_default_route_via_device_with_iface
+ *
+ * Add default route to the given device
+ *
+ */
+void nm_system_device_add_default_route_via_device_with_iface (const char *iface)
+{
+	char	*buf;
+
+	g_return_if_fail (iface != NULL);
+
+	/* Add default gateway */
+	buf = g_strdup_printf ("/sbin/ip route add default dev %s", iface);
+	nm_spawn_process (buf);
+	g_free (buf);
 }
  
  
@@ -225,6 +308,8 @@ void nm_system_device_add_default_route_via_device (NMDevice *dev)
  */
 void nm_system_flush_loopback_routes (void)
 {
+	/* Remove routing table entries for lo */
+	nm_spawn_process ("/sbin/ip route flush dev lo");
 }
 
  
@@ -236,5 +321,40 @@ void nm_system_flush_loopback_routes (void)
  */
 void nm_system_flush_arp_cache (void)
 {
+	nm_spawn_process ("/sbin/ip neigh flush all");
 }
 
+void nm_system_deactivate_all_dialup (GSList *list)
+{
+}
+
+gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
+{
+	return FALSE;
+}
+
+/*
+ *  nm_system_get_dialup_config
+ *  
+ *  Enumerate dial up options on this system, allocate NMDialUpConfig's,
+ *  fill them out, and return.
+ *  
+ */
+GSList * nm_system_get_dialup_config (void)
+{
+	return NULL;
+}
+
+void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
+{
+}
+
+NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
+{
+	return NULL;
+}
+
+gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
+{
+	return TRUE;
+}
