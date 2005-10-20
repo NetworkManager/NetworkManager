@@ -4,3 +4,4 @@ Makefile.in
 POTFILES
 da.gmo
 sv.gmo
+*.pot
