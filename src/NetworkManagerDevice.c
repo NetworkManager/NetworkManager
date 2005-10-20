@@ -26,6 +26,8 @@
 #include <iwlib.h>
 #include <signal.h>
 #include <string.h>
+#include <float.h>
+#include <math.h>
 #include <netinet/ether.h>
 
 #include "autoip.h"
@@ -1237,7 +1239,7 @@ static double nm_device_get_frequency (NMDevice *dev)
 		struct iwreq		wrq;
 
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWFREQ.", nm_device_get_iface (dev));
+		nm_info ("%s: About to GET IWFREQ.", nm_device_get_iface (dev));
 #endif
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWFREQ, &wrq);
 		if (err >= 0)
@@ -1308,7 +1310,7 @@ static void nm_device_set_frequency (NMDevice *dev, const double freq)
 			iw_float2freq (freq, &wrq.u.freq);
 		}
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to SET IWFREQ.", nm_device_get_iface (dev));
+		nm_info ("%s: About to SET IWFREQ.", nm_device_get_iface (dev));
 #endif
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWFREQ, &wrq)) == -1)
 		{
@@ -1352,7 +1354,7 @@ static int nm_device_get_bitrate (NMDevice *dev)
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWRATE.", nm_device_get_iface (dev));
+		nm_info ("%s: About to GET IWRATE.", nm_device_get_iface (dev));
 #endif
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWRATE, &wrq);
 		nm_dev_sock_close (sk);
@@ -1372,7 +1374,7 @@ static int nm_device_get_bitrate (NMDevice *dev)
 static void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 {
 	NMSock	*sk;
-	
+
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
@@ -1400,7 +1402,7 @@ static void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 		}
 		/* Silently fail as not all drivers support setting bitrate yet (ipw2x00 for example) */
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to SET IWRATE.", nm_device_get_iface (dev));
+		nm_info ("%s: About to SET IWRATE.", nm_device_get_iface (dev));
 #endif
 		iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWRATE, &wrq);
 
@@ -1467,7 +1469,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 	int				keylen;
 	unsigned char		safe_key[IW_ENCODING_TOKEN_MAX + 1];
 	gboolean			set_key = FALSE;
-	
+
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_wireless (dev));
 
@@ -1530,7 +1532,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 		if (set_key)
 		{
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to SET IWENCODE.", nm_device_get_iface (dev));
+			nm_info ("%s: About to SET IWENCODE.", nm_device_get_iface (dev));
 #endif
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWENCODE, &wreq) == -1)
 			{
@@ -2494,9 +2496,9 @@ static gboolean nm_dwwfl_test (int tries, nm_completion_args args)
 
 	/* If we're on the same frequency and essid, and we're associated,
 	 * increment the count for how many iterations we've been associated;
-	 * otherwise start over. */
-	/* XXX floating point comparison this way is dangerous, IIRC */
-	if ((cur_freq == *last_freq) && assoc && !strcmp (essid, cur_essid))
+	 * otherwise start over.  To avoid a direct comparison of floating points, we
+	 * ensure that the absolute value of their difference is within an epsilon. */
+	if ((fabs(cur_freq - *last_freq) < DBL_EPSILON) && assoc && !strcmp (essid, cur_essid))
 	{
 		(*assoc_count)++;
 	}

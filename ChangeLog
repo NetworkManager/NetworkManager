@@ -1,3 +1,9 @@
+2005-10-20  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: Use fabs() and DBL_EPSILON to avoid a
+	  direct comparison of floating point values, which is never correct.
+	  Also some misc. cleanup.
+
 2005-10-19  Robert Love  <rml@novell.com>
 
 	* vpn-daemons/vpnc/nm-vpnc.desktop.in: add fields
