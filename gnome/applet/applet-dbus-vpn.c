@@ -282,7 +282,7 @@ void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *
 	{
 		GSList *i;
 
-		nm_info ("Activating VPN connection '%s'.\n", name);
+		nm_info ("Activating VPN connection '%s'.", name);
 		dbus_message_iter_init_append (message, &iter);
 		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
 		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
@@ -294,7 +294,7 @@ void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
-		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message\n");
+		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message");
 }
 
 
@@ -312,11 +312,11 @@ void nmwa_dbus_vpn_deactivate_connection (DBusConnection *connection)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "deactivateVPNConnection")))
 	{
-		nm_info ("Deactivating the current VPN connection.\n");
+		nm_info ("Deactivating the current VPN connection.");
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
-		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message\n");
+		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message");
 }
 
 

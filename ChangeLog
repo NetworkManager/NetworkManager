@@ -1,5 +1,10 @@
 2005-10-21  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet-dbus-vpn.c:
+	Get rid of spurious newlines in debug console output
+
+2005-10-21  Christopher Aillon  <caillon@redhat.com>
+
 	* src/backends/NetworkManagerGentoo.c:
 	Fix path to killall.  Patch from Dave Shanker <dshanker@gmail.com>
 
