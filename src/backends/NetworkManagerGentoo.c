@@ -232,7 +232,7 @@ void nm_system_update_dns (void)
 	if (nm_spawn_process ("/etc/init.d/nscd status") == 0)
 		nm_spawn_process ("/etc/init.d/nscd restart");
  #else
-	nm_spawn_process("/usr/sbin/killall -q nscd");
+	nm_spawn_process("/usr/bin/killall -q nscd");
  #endif	
 }
 
