@@ -1,3 +1,10 @@
+2005-10-24  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tor Krill <tor@krill.nu>
+	* src/named-manager/nm-named-manager.c
+		- Write more than just the first nameserver to /etc/resolv.conf
+		- Write out valid /etc/resolv.conf on exit
+
 2005-10-21  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet-dbus-vpn.c:
