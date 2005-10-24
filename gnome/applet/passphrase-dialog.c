@@ -333,31 +333,15 @@ gboolean nmi_passphrase_dialog_schedule_show (NetworkDevice *dev, WirelessNetwor
  * Cancel and hide any user key dialog that might be up
  *
  */
-static gboolean nmi_passphrase_dialog_cancel (NMWirelessApplet *applet)
+void nmi_passphrase_dialog_cancel (NMWirelessApplet *applet)
 {
 	GtkWidget *dialog;
 
-	g_return_val_if_fail (applet != NULL, FALSE);
+	g_return_if_fail (applet != NULL);
 	dialog = applet->passphrase_dialog;
 
 	if (GTK_WIDGET_VISIBLE (dialog))
 		nmi_passphrase_dialog_clear (dialog);
-
-	return FALSE;
-}
-
-
-/*
- * nmi_passphrase_dialog_schedule_cancel
- *
- * Schedule the passphrase dialog cancellation
- *
- */
-void nmi_passphrase_dialog_schedule_cancel (NMWirelessApplet *applet)
-{
-	g_return_if_fail (applet != NULL);
-
-	g_idle_add ((GSourceFunc) nmi_passphrase_dialog_cancel, applet);
 }
 
 

@@ -75,6 +75,8 @@ static void		nmwa_icons_free (NMWirelessApplet *applet);
 static void		nmwa_about_cb (NMWirelessApplet *applet);
 static void		nmwa_context_menu_update (NMWirelessApplet *applet);
 static GtkWidget *	nmwa_get_instance (NMWirelessApplet *applet);
+static void		nmwa_update_state (NMWirelessApplet *applet);
+
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 
@@ -124,7 +126,7 @@ NetworkDevice * nmwa_get_first_active_device (GSList *dev_list)
 
 static void nmwa_init (NMWirelessApplet *applet)
 {
-	applet->animation_id = 0;
+	applet->animation_active = FALSE;
 	applet->animation_step = 0;
 	glade_gnome_init ();
 
@@ -825,6 +827,7 @@ static VPNConnection *nmwa_get_first_activating_vpn_connection (NMWirelessApplet
 	return NULL;
 }
 
+
 static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPixbuf *vpn_icon)
 {
 	GdkPixbuf	*composite;
@@ -981,8 +984,6 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 	return pixbuf;
 }
 
-static void nmwa_update_state (NMWirelessApplet *applet);
-
 /*
  * animation_timeout
  *
@@ -1000,14 +1001,16 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	if (!applet->nm_running)
 	{
 		applet->animation_step = 0;
-		return TRUE;
+		applet->animation_active = FALSE;
+		return FALSE;
 	}
 
 	act_dev = nmwa_get_first_active_device (applet->device_list);
 	if (!act_dev)
 	{
 		applet->animation_step = 0;
-		return TRUE;
+		applet->animation_active = FALSE;
+		return FALSE;
 	}
 
 	if (applet->nm_state == NM_STATE_CONNECTING)
@@ -1036,7 +1039,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	else
 	{
 		applet->animation_step = 0;
-		applet->animation_id = 0;
+		applet->animation_active = FALSE;
 		nmwa_update_state (applet);
 		return FALSE;
 	}
@@ -1148,15 +1151,19 @@ done:
 	g_free (tip);
 
 	applet->animation_step = 0;
-	if (applet->animation_id)
+	if (need_animation && !applet->animation_active)
 	{
-		g_source_remove (applet->animation_id);
-		applet->animation_id = 0;
-	}
-	if (need_animation)
 		applet->animation_id = g_timeout_add (100, (GSourceFunc) animation_timeout, applet);
-	else
+		applet->animation_active = TRUE;
+	}
+	else if (!need_animation)
 	{
+		if (applet->animation_active)
+		{
+			g_source_remove (applet->animation_id);
+			applet->animation_active = FALSE;
+		}
+
 		if (pixbuf)
 			nmwa_set_icon (applet, pixbuf, applet->vpn_lock_icon);
 		else
@@ -1179,15 +1186,10 @@ done:
  */
 static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 {
-	if (!applet->animation_id)
+	if (!applet->animation_active)
 		nmwa_update_state (applet);
 
-  	return (TRUE);
-}
-
-static void nmwa_start_redraw_timeout (NMWirelessApplet *applet)
-{
-	applet->redraw_timeout_id = g_timeout_add (1000, (GtkFunction) nmwa_redraw_timeout, applet);
+  	return TRUE;
 }
 
 
@@ -2359,7 +2361,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	g_signal_connect (applet, "style-set", G_CALLBACK (nmwa_theme_change_cb), NULL);
 
 	/* Start redraw timeout */
-	nmwa_start_redraw_timeout (applet);
+	applet->redraw_timeout_id = g_timeout_add (1000, (GtkFunction) nmwa_redraw_timeout, applet);
 
 	return GTK_WIDGET (applet);
 }

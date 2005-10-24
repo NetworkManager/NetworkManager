@@ -1,5 +1,20 @@
 2005-10-24  Dan Williams  <dcbw@redhat.com>
 
+	Cleanup some applet stuff:
+
+	- Animation timeouts.  If NM died while the applet was animating,
+		the applet would not hide itself.  This is now fixed.
+
+	- Remove some dead code
+
+	- Remove nmi_passphrase_dialog_schedule_cancel() and convert uses
+		to nmi_passphrase_dialog_cancel() since we no longer use threads.
+
+	- Track animation timeout using a gboolean rather than the timeout's
+		ID, since timeout IDs can legally be 0.
+
+2005-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/backends/interface_parser.c
 		- Add void to function declarations that need it
 			to match patch from Engin AYDOGAN

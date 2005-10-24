@@ -108,6 +108,7 @@ typedef struct
 
 	/* Animation stuff */
 	int				animation_step;
+	gboolean			animation_active;
 	guint			animation_id;
 
 	/* Direct UI elements */

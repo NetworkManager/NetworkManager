@@ -1126,29 +1126,7 @@ DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBu
 	if (strcmp ("getKeyForNetwork", method) == 0)
 		reply = nmi_dbus_get_key_for_network (applet, message);
 	else if (strcmp ("cancelGetKeyForNetwork", method) == 0)
-		nmi_passphrase_dialog_schedule_cancel (applet);
-#if 0  /* Not used at this time */
-	else if (strcmp ("networkNotFound", method) == 0)
-	{
-		const char *	network;
-		DBusError	 	error;
-
-		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID))
-		{
-			GtkWidget	*dialog;
-			char		*text;
-
-			dbus_error_free (&error);
-			text = g_strdup_printf (_("The requested wireless network '%s' does not appear to be in range.  "
-								 "A different wireless network will be used if any are available."), network);
-
-			dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, text, NULL);
-			gtk_window_present (GTK_WINDOW (dialog));
-			g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
-		}
-	}
-#endif
+		nmi_passphrase_dialog_cancel (applet);
 	else if (strcmp ("getNetworks", method) == 0)
 		reply = nmi_dbus_get_networks (applet, message);
 	else if (strcmp ("getNetworkProperties", method) == 0)
