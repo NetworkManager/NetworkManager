@@ -69,7 +69,7 @@ void add_data(const char *key,const char *data)
 
 #define SPACE_OR_TAB(string,ret) {ret = strchr(string,' ');ret=(ret == NULL?strchr(string,'\t'):ret);}
 
-void ifparser_init()
+void ifparser_init(void)
 {
 	FILE *inp = fopen(INTERFACES,"r");
 	int ret = 0;
@@ -156,13 +156,13 @@ void _destroy_block(if_block* ifb)
 	return;
 }
 
-void ifparser_destroy() 
+void ifparser_destroy(void) 
 {
 	_destroy_block(first);
 	first = last = NULL;
 }
 
-if_block *ifparser_getfirst()
+if_block *ifparser_getfirst(void)
 {
 	return first;
 }

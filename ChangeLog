@@ -1,5 +1,18 @@
 2005-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/backends/interface_parser.c
+		- Add void to function declarations that need it
+			to match patch from Engin AYDOGAN
+
+	* src/backends/interface_parser.h
+		- Remove unused prototype for ifparser_interfaces()
+
+	Patch from Engin AYDOGAN <engin@bzzzt.biz>
+	* src/backends/interface_parser.h:
+		- Compile fixes for gcc 4.0.2 (add void)
+
+2005-10-24  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tor Krill <tor@krill.nu>
 	* src/named-manager/nm-named-manager.c
 		- Write more than just the first nameserver to /etc/resolv.conf

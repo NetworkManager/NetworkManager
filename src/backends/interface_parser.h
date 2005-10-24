@@ -40,13 +40,16 @@ typedef struct _if_block
 	struct _if_block *next;
 } if_block;
 
-void ifparser_init();
-void ifparser_destroy();
+void ifparser_init(void);
+void ifparser_destroy(void);
 
-const char* ifparser_interfaces();
 if_block *ifparser_getif(const char* iface);
-if_block *ifparser_getfirst();
+if_block *ifparser_getfirst(void);
 const char *ifparser_getkey(if_block* iface, const char *key);
 
+void add_block(const char *type, const char* name);
+void add_data(const char *key,const char *data);
+void _destroy_data(if_data *ifd);
+void _destroy_block(if_block* ifb);
 #endif
 	
