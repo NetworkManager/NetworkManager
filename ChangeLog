@@ -1,5 +1,19 @@
 2005-10-24  Dan Williams  <dcbw@redhat.com>
 
+	Clean up wireless scanning and wireless link probing.
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_probe_wireless_link_state): instead of calling nm_get_best_ap(),
+			just see if there's an activation request on the device, and check the
+			current link against the activation request access point's ESSID.
+		- (link_to_specific_ap): increase the # of failed links we tolerate from 3 to 6
+		- (nm_device_wireless_process_scan_results): actually free our scan data, and
+			don't call process_scan_results() on zero-length data
+		- (nm_device_set_wireless_scan_interval): increase the init scan interval to 
+			15 seconds (from 10)
+
+2005-10-24  Dan Williams  <dcbw@redhat.com>
+
 	Cleanup some applet stuff:
 
 	- Animation timeouts.  If NM died while the applet was animating,

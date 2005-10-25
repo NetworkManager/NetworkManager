@@ -860,7 +860,7 @@ gboolean nm_device_has_active_link (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (dev->link_active);
+	return dev->link_active;
 }
 
 void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
@@ -1008,20 +1008,20 @@ out:
  */
 static gboolean nm_device_probe_wireless_link_state (NMDevice *dev)
 {
-	gboolean 		 link = FALSE;
-	NMAccessPoint	*best_ap;
+	NMAccessPoint *	ap;
+	NMActRequest *		req;
+	gboolean 			link = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	/* Test devices have their link state set through DBUS */
 	if (dev->test_device)
 		return nm_device_has_active_link (dev);
 
-	if ((best_ap = nm_device_get_best_ap (dev)))
+	if ((req = nm_device_get_act_request (dev)))
 	{
-		link = link_to_specific_ap (dev, best_ap, TRUE);
-		nm_ap_unref (best_ap);
+		if ((ap = nm_act_request_get_ap (req)))
+			link = link_to_specific_ap (dev, ap, TRUE);
 	}
 
 	return link;
@@ -3646,7 +3646,7 @@ static gboolean link_to_specific_ap (NMDevice *dev, NMAccessPoint *ap, gboolean 
 	if (!link)
 	{
 		dev->options.wireless.failed_link_count++;
-		if (dev->options.wireless.failed_link_count < 3)
+		if (dev->options.wireless.failed_link_count <= 6)
 			link = default_link;
 	}
 
@@ -3937,6 +3937,17 @@ static void nm_device_wireless_schedule_scan (NMDevice *dev)
 }
 
 
+static void free_process_scan_cb_data (NMWirelessScanResults *cb_data)
+{
+	if (!cb_data)
+		return;
+
+	if (cb_data->results)
+		g_free (cb_data->results);
+	memset (cb_data, 0, sizeof (NMWirelessScanResults));
+	g_free (cb_data);	
+}
+
 /*
  * nm_device_wireless_process_scan_results
  *
@@ -3946,7 +3957,7 @@ static void nm_device_wireless_schedule_scan (NMDevice *dev)
  */
 static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 {
-	NMWirelessScanResults *	cb_data = (NMWirelessScanResults *)user_data;
+	NMWirelessScanResults *	cb_data = (NMWirelessScanResults *) user_data;
 	NMDevice *			dev;
 	GTimeVal				cur_time;
 	NMAPListIter *			iter = NULL;
@@ -3955,13 +3966,21 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 
 	dev = cb_data->dev;
 	if (!dev || !cb_data->results)
+	{
+		free_process_scan_cb_data (cb_data);
 		return FALSE;
+	}
 
-	if (!process_scan_results (dev, cb_data->results, cb_data->results_len))
-		nm_warning ("nm_device_wireless_process_scan_results(%s): process_scan_results() returned an error.", nm_device_get_iface (dev));
+	if (cb_data->results_len > 0)
+	{
+		if (!process_scan_results (dev, cb_data->results, cb_data->results_len))
+			nm_warning ("nm_device_wireless_process_scan_results(%s): process_scan_results() returned an error.", nm_device_get_iface (dev));
 
-	/* Once we have the list, copy in any relevant information from our Allowed list. */
-	nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+		/* Once we have the list, copy in any relevant information from our Allowed list. */
+		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
+	}
+
+	free_process_scan_cb_data (cb_data);
 
 	/* Walk the access point list and remove any access points older than 180s */
 	g_get_current_time (&cur_time);
@@ -4224,7 +4243,7 @@ void nm_device_set_wireless_scan_interval (NMDevice *dev, NMWirelessScanInterval
 	switch (interval)
 	{
 		case NM_WIRELESS_SCAN_INTERVAL_INIT:
-			seconds = 10;
+			seconds = 15;
 			break;
 
 		case NM_WIRELESS_SCAN_INTERVAL_INACTIVE:
