@@ -1,5 +1,14 @@
 2005-10-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerDevice.c
+		- (get_scan_results): cleanups, deal cleanly with ENODATA signifying
+			no scan results
+		- (free_process_scan_cb_data): unref the device when freeing results
+		- (nm_device_wireless_process_scan_results): free scan results a bit later
+			so we don't unref the device underneath ourselves
+
+2005-10-25  Dan Williams  <dcbw@redhat.com>
+
 	* Back out 2005-10-24 commit from Tor Krill.  Patch
 		causes nameservers never to be removed from named.
 

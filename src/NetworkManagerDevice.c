@@ -58,7 +58,7 @@ static guint32 nm_device_discover_capabilities (NMDevice *dev);
 static gboolean nm_is_driver_supported (NMDevice *dev);
 static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev);
 
-static guint8 * get_scan_results(NMDevice *dev, NMSock *sk, guint32 *data_len);
+static gboolean get_scan_results (NMDevice *dev, NMSock *sk, guint8 **out_res_buf, guint32 *data_len);
 static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guint32 res_buf_len);
 
 
@@ -3944,6 +3944,7 @@ static void free_process_scan_cb_data (NMWirelessScanResults *cb_data)
 
 	if (cb_data->results)
 		g_free (cb_data->results);
+	nm_device_unref (cb_data->dev);
 	memset (cb_data, 0, sizeof (NMWirelessScanResults));
 	g_free (cb_data);	
 }
@@ -3979,8 +3980,6 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 		/* Once we have the list, copy in any relevant information from our Allowed list. */
 		nm_ap_list_copy_properties (nm_device_ap_list_get (dev), dev->app_data->allowed_ap_list);
 	}
-
-	free_process_scan_cb_data (cb_data);
 
 	/* Walk the access point list and remove any access points older than 180s */
 	g_get_current_time (&cur_time);
@@ -4029,6 +4028,8 @@ static gboolean nm_device_wireless_process_scan_results (gpointer user_data)
 
 	nm_policy_schedule_device_change_check (dev->app_data);
 
+	free_process_scan_cb_data (cb_data);
+
 	return FALSE;
 }
 
@@ -4045,8 +4046,6 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 	NMDevice *			dev = NULL;
 	NMWirelessScanResults *	scan_results = NULL;
 	guint32				caps;
-	guint8 * 				results = NULL;
-	guint32				results_len = 0;
 
 	g_return_val_if_fail (scan_cb != NULL, FALSE);
 
@@ -4140,10 +4139,13 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			}
 			else
 			{
+				guint8 * 	results = NULL;
+				guint32	results_len = 0;
+
 				/* Initial pause for card to return data */
 				g_usleep (G_USEC_PER_SEC / 4);
 
-				if ((results = get_scan_results (dev, sk, &results_len)))
+				if (get_scan_results (dev, sk, &results, &results_len))
 				{
 					scan_results = g_malloc0 (sizeof (NMWirelessScanResults));
 					nm_device_ref (dev);
@@ -4457,63 +4459,73 @@ static int hexstr2bin(const char *hex, u8 *buf, size_t len)
 }
 
 #define SCAN_SLEEP_CENTISECONDS		10	/* sleep 1/10 of a second, waiting for data */
-static guint8 * get_scan_results (NMDevice *dev, NMSock *sk, guint32 *data_len)
+static gboolean get_scan_results (NMDevice *dev, NMSock *sk, guint8 **out_res_buf, guint32 *data_len)
 {
 	struct iwreq iwr;
 	guint8 *res_buf;
-	size_t len, res_buf_len = 1000;
+	size_t len, res_buf_len = IW_SCAN_MAX_DATA;
 	guint8 tries = 0;
+	gboolean success = FALSE;
 
-	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
-	g_return_val_if_fail (sk != NULL, NULL);
+	g_return_val_if_fail (dev != NULL, FALSE);
+	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (sk != NULL, FALSE);
+	g_return_val_if_fail (out_res_buf != NULL, FALSE);
+	g_return_val_if_fail (*out_res_buf == NULL, FALSE);
+	g_return_val_if_fail (data_len != NULL, FALSE);
 
 	*data_len = 0;
 
-	res_buf_len = IW_SCAN_MAX_DATA;
 	for (;;)
 	{
 		res_buf = g_malloc (res_buf_len);
-		if (res_buf == NULL)
-			return NULL;
-		memset (&iwr, 0, sizeof(iwr));
+		if (!res_buf)
+			break;
+		memset (&iwr, 0, sizeof (struct iwreq));
 		iwr.u.data.pointer = res_buf;
 		iwr.u.data.flags = 0;
 		iwr.u.data.length = res_buf_len;
 
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWSCAN, &iwr) == 0)
-			break;
-
-		if ((errno == E2BIG) && (res_buf_len < 100000))
 		{
-			g_free (res_buf);
-			res_buf = NULL;
+			/* success */
+			*data_len = iwr.u.data.length;
+			*out_res_buf = res_buf;
+			success = TRUE;
+			break;
+		}
+
+		g_free (res_buf);
+		res_buf = NULL;
+
+		if ((errno == E2BIG) && (res_buf_len < 100000))	/* Buffer not big enough */
+		{
 			res_buf_len *= 2;
 		}
-		else if (errno == EAGAIN)
+		else if (errno == EAGAIN)	/* Card doesn't have results yet */
 		{
-			/* If the card doesn't return results after 20s, it sucks. */
 			if (tries > 20 * SCAN_SLEEP_CENTISECONDS)
 			{
 				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
-				free (res_buf);
-				return NULL;
+				break;
 			}
 
-			g_free (res_buf);
 			g_usleep (G_USEC_PER_SEC / SCAN_SLEEP_CENTISECONDS);
 			tries++;
 		}
-		else
+		else if (errno == ENODATA)	/* No scan results */
 		{
-			nm_warning ("get_scan_results(): card returned too much scan info.");
-			g_free (res_buf);
-			return NULL;
+			success = TRUE;
+			break;
+		}
+		else		/* Random errors */
+		{
+			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info.  errno = %d", errno);
+			break;
 		}
 	}
 
-	*data_len = iwr.u.data.length;
-	return res_buf;
+	return success;
 }
 
 
