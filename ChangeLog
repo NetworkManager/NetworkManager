@@ -1,3 +1,8 @@
+2005-10-26  Robert Love  <rml@novell.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c: print actual error string on daemon()
+	  failure; correct usage text for "--no-daemon"
+
 2005-10-25  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerDevice.c

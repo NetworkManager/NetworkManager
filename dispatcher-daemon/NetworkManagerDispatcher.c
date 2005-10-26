@@ -271,7 +271,7 @@ static void nmd_print_usage (void)
 	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--no-daemon] [--help]\n");
 	fprintf (stderr,
 		"\n"
-		"        --no-daemon        Become a daemon\n"
+		"        --no-daemon        Do not daemonize\n"
 		"        --help             Show this information and exit\n"
 		"\n"
 		"NetworkManagerDispatcher listens for device messages from NetworkManager\n"
