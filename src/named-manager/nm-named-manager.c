@@ -706,6 +706,8 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 	if (mgr->priv->use_named)
 		remove_ip4_config_from_named (mgr, config);
 
+	mgr->priv->configs = g_slist_remove (mgr->priv->configs, config);
+	nm_ip4_config_unref (config);
 
 	/* Clear out and reload configs since we may need a new
 	 * default zone if the one we are removing was the old
@@ -722,9 +724,6 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
 		g_error_free (error);
 	}
-
-	mgr->priv->configs = g_slist_remove (mgr->priv->configs, config);
-	nm_ip4_config_unref (config);
 
 	return TRUE;
 }

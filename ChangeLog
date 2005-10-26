@@ -1,3 +1,8 @@
+2005-10-25  Dan Williams  <dcbw@redhat.com>
+
+	* Back out 2005-10-24 commit from Tor Krill.  Patch
+		causes nameservers never to be removed from named.
+
 2005-10-24  Dan Williams  <dcbw@redhat.com>
 
 	Clean up wireless scanning and wireless link probing.
