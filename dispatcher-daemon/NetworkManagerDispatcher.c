@@ -55,7 +55,7 @@ typedef enum NMDAction	NMDAction;
  * nmd_permission_check
  *
  * Verify that the given script has the permissions we want.  Specifically,
- * very that the file is
+ * ensure that the file is
  *	- A regular file.
  *	- Owned by root.
  *	- Not writable by the group or by other.
@@ -336,7 +336,7 @@ int main (int argc, char *argv[])
 
 	if (become_daemon && daemon (FALSE, FALSE) < 0)
 	{
-	     nm_warning ("NetworkManagerDispatcher could not daemonize.  errno = %d", errno );
+	     nm_warning ("NetworkManagerDispatcher could not daemonize: %s", strerror (errno));
 	     exit (1);
 	}
 
