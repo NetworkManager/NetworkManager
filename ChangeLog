@@ -1,6 +1,10 @@
 2005-10-27  Christopher Aillon  <caillon@redhat.com>
 
-	* gnome/applet.c: The applet's about dialog can advertise our 
+	* gnome/applet/applet.c: Use the copyright symbol instead of (C)
+
+2005-10-27  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet.c: The applet's about dialog can advertise our 
 	project page <http://www.gnome.org/projects/NetworkManager/>
 
 2005-10-26  Christopher Aillon  <caillon@redhat.com>

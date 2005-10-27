@@ -322,7 +322,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 
 	about_dialog = gnome_about_new (_("NetworkManager Applet"),
 	                                VERSION,
-	                                _("Copyright (C) 2004-2005 Red Hat, Inc."),
+	                                _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
 	                                _("Notification area applet for managing your network devices and connections."),
 	                                authors,
 	                                documenters,
@@ -347,7 +347,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 	gtk_show_about_dialog (NULL,
 	                       "name", _("NetworkManager Applet"),
 	                       "version", VERSION,
-	                       "copyright", _("Copyright (C) 2004-2005 Red Hat, Inc."),
+	                       "copyright", _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
 	                       "comments", _("Notification area applet for managing your network devices and connections."),
 	                       "website", "http://www.gnome.org/projects/NetworkManager/",
 	                       "authors", authors,
