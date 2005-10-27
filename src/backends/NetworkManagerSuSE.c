@@ -501,7 +501,7 @@ found:
 		}
 		else
 		{
-			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
+			nm_warning ("Network configuration for device '%s' was invalid: Non-DHCP configuration, "
 						"but no IP address specified.  Will use DHCP instead.", nm_device_get_iface (dev));
 			error = TRUE;
 			goto out;

@@ -1,3 +1,7 @@
+2005-10-27  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: fix warning message text
+
 2005-10-27  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c: Use the copyright symbol instead of (C)
