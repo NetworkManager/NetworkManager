@@ -319,7 +319,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 	                                _("Notification area applet for managing your network devices and connections."),
 	                                authors,
 	                                documenters,
-	                                NULL,
+	                                _("translator-credits"),
 	                                pixbuf);
 	g_object_unref (pixbuf);
 

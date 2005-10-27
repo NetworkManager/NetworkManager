@@ -1,3 +1,8 @@
+2005-10-26  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet.c: Also use translator credits if we don't have
+	the new GtkAboutDialog (older versions of GTK+)
+
 2005-10-26  Robert Love  <rml@novell.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c: print actual error string on daemon()
