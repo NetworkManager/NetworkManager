@@ -271,6 +271,13 @@ static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
 	}
 }
 
+static void about_dialog_activate_link_cb (GtkAboutDialog *about,
+                                           const gchar *link,
+                                           gpointer data)
+{
+	gnome_url_show (link, NULL);
+}
+
 static void nmwa_about_cb (NMWirelessApplet *applet)
 {
 	static const gchar *authors[] =
@@ -329,12 +336,20 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 
 #else
 
+	static gboolean been_here = FALSE;
+	if (!been_here)
+	{
+		been_here = TRUE;
+		gtk_about_dialog_set_url_hook (about_dialog_activate_link_cb, NULL, NULL);
+	}
+
 	/* GTK 2.6 and later code */
 	gtk_show_about_dialog (NULL,
 	                       "name", _("NetworkManager Applet"),
 	                       "version", VERSION,
 	                       "copyright", _("Copyright (C) 2004-2005 Red Hat, Inc."),
 	                       "comments", _("Notification area applet for managing your network devices and connections."),
+	                       "website", "http://www.gnome.org/projects/NetworkManager/",
 	                       "authors", authors,
 	                       "artists", artists,
 	                       "documenters", documenters,
