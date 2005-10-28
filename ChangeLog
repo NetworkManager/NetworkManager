@@ -1,3 +1,12 @@
+2005-10-28  Robert Love  <rml@novell.com>
+
+	* vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade: Change label to
+	  "Import Saved Configuration..." to make it clear that importing is
+	  not the next step, but an option.  As an aside, a nice TODO would be
+	  to move Importing out of the vpn-specific dialog and into the main
+	  property editor, as Importing goes with Adding, but that will require
+	  some rearchitecting of the VPN stuff I suspect.
+
 2005-10-27  Dan Williams  <dcbw@redhat.com>
 
 	Start using libnl.  You need 1.0-pre3 or higher.  Eventually

@@ -17,6 +17,7 @@
   <property name="type_hint">GDK_WINDOW_TYPE_HINT_NORMAL</property>
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
+  <property name="urgency_hint">False</property>
 
   <child>
     <widget class="GtkVBox" id="nm-vpnc-widget">
@@ -122,7 +123,6 @@
 		    <widget class="GtkLabel" id="label4">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Name used to identify the connection to the private network, e.g. &quot;Campus VPN&quot; or &quot;Corporate Network&quot;</property>
-		      <property name="mnemonic_widget">vpnc-connection-name</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -132,6 +132,7 @@
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
+		      <property name="mnemonic_widget">vpnc-connection-name</property>
 		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
 		      <property name="width_chars">-1</property>
 		      <property name="single_line_mode">False</property>
@@ -337,7 +338,6 @@
 		    <widget class="GtkLabel" id="label7">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">_Gateway:</property>
-		      <property name="mnemonic_widget">vpnc-gateway</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -347,6 +347,7 @@
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
+		      <property name="mnemonic_widget">vpnc-gateway</property>
 		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
 		      <property name="width_chars">-1</property>
 		      <property name="single_line_mode">False</property>
@@ -365,7 +366,6 @@
 		    <widget class="GtkLabel" id="label8">
 		      <property name="visible">True</property>
 		      <property name="label" translatable="yes">G_roup Name:</property>
-		      <property name="mnemonic_widget">vpnc-group-name</property>
 		      <property name="use_underline">True</property>
 		      <property name="use_markup">False</property>
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -375,6 +375,7 @@
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
+		      <property name="mnemonic_widget">vpnc-group-name</property>
 		      <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
 		      <property name="width_chars">-1</property>
 		      <property name="single_line_mode">False</property>
@@ -412,9 +413,6 @@
 
       <child>
 	<widget class="GtkExpander" id="vpnc-optional-information-expander">
-          <property name="label" translatable="yes">&lt;b&gt;O_ptional Information&lt;/b&gt;</property>
-          <property name="use_underline">True</property>
-          <property name="use_markup">True</property>
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
 	  <property name="expanded">True</property>
@@ -791,7 +789,7 @@
 		      <child>
 			<widget class="GtkLabel" id="label15">
 			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">_Import...</property>
+			  <property name="label" translatable="yes">_Import Saved Configuration...</property>
 			  <property name="use_underline">True</property>
 			  <property name="use_markup">False</property>
 			  <property name="justify">GTK_JUSTIFY_LEFT</property>
