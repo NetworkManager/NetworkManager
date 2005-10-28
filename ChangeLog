@@ -1,3 +1,21 @@
+2005-10-27  Dan Williams  <dcbw@redhat.com>
+
+	Start using libnl.  You need 1.0-pre3 or higher.  Eventually
+	we should replace most of the distro-specific backend code
+	with libnl stuff.
+
+	Get it here:  http://people.suug.ch/~tgr/libnl/
+
+	* configure.in
+	  src/Makefile.am
+		- Add checks for libnl pkgconfig file
+		- Use LIBNL_LIBS & LIBNL_CFLAGS
+
+	* src/NetworkManagerSystem.c
+	  src/nm-ip4-config.[ch]
+		- Use libnl rather than ioctl() for most things
+		- Remove unused functions
+
 2005-10-27  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: fix warning message text

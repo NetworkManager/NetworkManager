@@ -49,6 +49,7 @@ NetworkManager_CPPFLAGS = 			\
 	$(GTHREAD_CFLAGS)				\
 	$(HAL_CFLAGS)					\
 	$(OPENSSL_CFLAGS)				\
+	$(LIBNL_CFLAGS)				\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED			\
 	-DBINDIR=\"$(bindir)\"			\
@@ -69,6 +70,7 @@ NetworkManager_LDADD = 							\
 			$(GTHREAD_LIBS)					\
 			$(HAL_LIBS)						\
 			$(IWLIB)							\
+			$(LIBNL_LIBS)						\
 			$(top_builddir)/utils/libnmutils.la	\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\

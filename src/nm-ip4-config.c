@@ -26,6 +26,10 @@
 #include "NetworkManager.h"
 #include "nm-ip4-config.h"
 
+#include <netlink/route/addr.h>
+#include <netlink/utils.h>
+#include <netinet/in.h>
+
 
 struct NMIP4Config
 {
@@ -227,4 +231,117 @@ guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)
 	g_return_val_if_fail (config != NULL, 0);
 
 	return (g_slist_length (config->domains));
+}
+
+
+/* libnl convenience/conversion functions */
+
+extern void rtnl_addr_set_prefixlen (struct rtnl_addr *, int);
+
+/*
+ * ip4_netmask_to_prefix
+ *
+ * Figure out the network prefix from a netmask.  Netmask
+ * MUST be in network byte order.
+ *
+ */
+static int ip4_netmask_to_prefix (guint32 ip4_netmask)
+{
+	int i = 1;
+
+	/* Just count how many bit shifts we need */
+	ip4_netmask = ntohl (ip4_netmask);
+	while (!(ip4_netmask & 0x1) && ++i)
+		ip4_netmask = ip4_netmask >> 1;
+	return (32 - (i-1));
+}
+
+static int ip4_addr_to_rtnl_local (guint32 ip4_address, struct rtnl_addr *addr)
+{
+	struct nl_addr * local = NULL;
+	int err = 0;
+
+	g_return_val_if_fail (addr != NULL, -1);
+
+	local = nl_addr_alloc (sizeof (in_addr_t));
+	nl_addr_set_family (local, AF_INET);
+	nl_addr_set_binary_addr (local, &ip4_address, sizeof (guint32));
+
+	err = rtnl_addr_set_local (addr, local);
+
+	nl_addr_put (local);
+	return err;
+}
+
+static int ip4_addr_to_rtnl_peer (guint32 ip4_address, struct rtnl_addr *addr)
+{
+	struct nl_addr * peer = NULL;
+	int err = 0;
+
+	g_return_val_if_fail (addr != NULL, -1);
+
+	peer = nl_addr_alloc (sizeof (in_addr_t));
+	nl_addr_set_family (peer, AF_INET);
+	nl_addr_set_binary_addr (peer, &ip4_address, sizeof (guint32));
+
+	err = rtnl_addr_set_peer (addr, peer);
+
+	nl_addr_put (peer);
+	return err;
+}
+
+static void ip4_addr_to_rtnl_prefixlen (guint32 ip4_netmask, struct rtnl_addr *addr)
+{
+	g_return_if_fail (addr != NULL);
+
+	rtnl_addr_set_prefixlen (addr,ip4_netmask_to_prefix (ip4_netmask));
+}
+
+static int ip4_addr_to_rtnl_broadcast (guint32 ip4_broadcast, struct rtnl_addr *addr)
+{
+	struct nl_addr	* local = NULL;
+	int err = 0;
+
+	g_return_val_if_fail (addr != NULL, -1);
+
+	local = nl_addr_alloc (sizeof (in_addr_t));
+	nl_addr_set_family (local, AF_INET);
+	nl_addr_set_binary_addr (local, &ip4_broadcast, sizeof (guint32));
+
+	err = rtnl_addr_set_broadcast (addr, local);
+
+	nl_addr_put (local);
+	return err;
+}
+
+
+struct rtnl_addr * nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 flags)
+{
+	struct rtnl_addr *	addr = NULL;
+	gboolean			success = TRUE;
+
+	g_return_val_if_fail (config != NULL, NULL);
+
+	if (!(addr = rtnl_addr_alloc()))
+		return NULL;
+
+	if (flags & NM_RTNL_ADDR_ADDR)
+		success = (ip4_addr_to_rtnl_local (config->ip4_address, addr) >= 0);
+
+	if (flags & NM_RTNL_ADDR_PTP_ADDR)
+		success = (ip4_addr_to_rtnl_peer (config->ip4_address, addr) >= 0);
+
+	if (flags & NM_RTNL_ADDR_NETMASK)
+		ip4_addr_to_rtnl_prefixlen (config->ip4_netmask, addr);
+
+	if (flags & NM_RTNL_ADDR_BROADCAST)
+		success = (ip4_addr_to_rtnl_broadcast (config->ip4_broadcast, addr) >= 0);
+
+	if (!success)
+	{
+		rtnl_addr_put (addr);
+		addr = NULL;
+	}
+
+	return addr;
 }
