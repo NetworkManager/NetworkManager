@@ -1,3 +1,7 @@
+2005-10-28  Marcel Telka  <marcel@telka.sk>
+
+	* sk.po: Updated Slovak translation.
+
 2005-10-27  Christopher Aillon  <caillon@redhat.com>
 
 	* POTFILES.in: NetworkManager is now encoded in UTF-8
