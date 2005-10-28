@@ -179,8 +179,12 @@ static void nm_vpnc_set_state (NmVpncData *data, NMVPNState new_state)
 	g_return_if_fail (data != NULL);
 
 	old_state = data->state;
-	data->state = new_state;
-	nm_vpnc_dbus_signal_state_change (data, old_state);
+
+	if (old_state != new_state)
+	{
+		data->state = new_state;
+		nm_vpnc_dbus_signal_state_change (data, old_state);
+	}
 }
 
 

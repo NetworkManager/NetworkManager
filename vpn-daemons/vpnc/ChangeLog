@@ -1,3 +1,8 @@
+2005-10-27  Christopher Aillon  <caillon@redhat.com>
+
+	* src/nm-vpn-service.c: Only signal the bus that state
+	changed	if old_state != new_state
+
 2005-10-17  Christopher Aillon  <caillon@redhat.com>
 
 	* configure.in: Bump version to 0.5.0
