@@ -722,7 +722,8 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 	if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error))
 	{
 		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
-		g_error_free (error);
+		if (error)
+			g_error_free (error);
 	}
 
 	return TRUE;
