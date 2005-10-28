@@ -1,3 +1,4 @@
+[encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
 gnome/applet/applet-dbus-info.c
