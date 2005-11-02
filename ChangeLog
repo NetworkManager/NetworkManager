@@ -1,3 +1,9 @@
+2005-11-02  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/main.c: Don't set the restart command.  This fixes
+	the issue where the restart command was getting copies of all its
+	arguments for each time the applet was restarted.
+
 2005-11-02  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Only send the DBUS setWirelessEnabled method
@@ -9,7 +15,8 @@
 
 	* gnome/applet/applet.c: add nmwa_enable_wireless_set_active().
 	* gnome/applet/applet-dbus-devices.c: invoke the new function
-	  nmwa_enable_wireless_set_active() to ensure that the state of the		  'Enable Wireless' checkbox matches the daemon's state.  This is a
+	  nmwa_enable_wireless_set_active() to ensure that the state of the
+	  'Enable Wireless' checkbox matches the daemon's state.  This is a
 	  concern because the daemon remembers the state.
 
 2005-11-02  Robert Love  <rml@novell.com>

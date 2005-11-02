@@ -52,7 +52,6 @@ int main (int argc, char *argv[])
 			    GNOME_PARAM_NONE);
 
     	client = gnome_master_client ();
-    	gnome_client_set_restart_command (client, argc, argv);
     	gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
 
     	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);
