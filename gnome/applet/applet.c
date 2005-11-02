@@ -2059,7 +2059,7 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
  */
 void nmwa_enable_wireless_set_active (NMWirelessApplet *applet)
 {
-	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
+	   //gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
 }
 
 /*
@@ -2081,7 +2081,7 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	/* 'Enable Wireless' item */
 	applet->stop_wireless_item = gtk_check_menu_item_new_with_mnemonic (_("Enable _Wireless"));
 	nmwa_enable_wireless_set_active (applet);
-	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
+	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "toggled", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
 
 	/* 'Connection Information' item */
