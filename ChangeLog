@@ -1,5 +1,12 @@
 2005-11-02  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: Make menu item "Enable Wireless" not "Wireless
+	  Enabled", as checkboxes should be actions/commands not positive
+	  statements, otherwise they are confusing in the unselected case.  See
+	  examples in GNOME HIG, Chapter 6.
+
+2005-11-02  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: When wireless is disabled, act it.  Do not
 	  show a list of wireless networks or the wireless devices or the
 	  "Create Wireless ..." menus.  Aside from this cosmetics, this fixes
