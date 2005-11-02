@@ -417,8 +417,10 @@ static gboolean nm_policy_device_change_check (NMData *data)
 				gboolean link = nm_device_has_active_link (old_dev);
 				if (es || !link)
 				{
-					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.  essid=%d, link=%d", nm_device_get_iface (new_dev),
-								new_essid, nm_device_get_iface (old_dev), old_essid, es, link);
+					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.  different_ssids=%d, have_link=%d",
+					         nm_device_get_iface (new_dev),	new_essid,
+					         nm_device_get_iface (old_dev), old_essid,
+					         es, link);
 					do_switch = TRUE;
 				}
 			}
