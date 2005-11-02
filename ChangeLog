@@ -1,5 +1,13 @@
 2005-11-02  Christopher Aillon  <caillon@redhat.com>
 
+	* gnome/applet/applet.c:
+	* gnome/applet/applet.h:
+	Partial backout of Dan's timeout animation patch.
+	Timeout IDs cannot legally be 0, so revert the code in place to handle
+	a timeout ID of 0 to denote the timeout isn't running.
+
+2005-11-02  Christopher Aillon  <caillon@redhat.com>
+
 	* src/NetworkManagerPolicy.c:
 	(nm_policy_device_change_check) Clarify wireless switch nm_info text
 

@@ -126,7 +126,7 @@ NetworkDevice * nmwa_get_first_active_device (GSList *dev_list)
 
 static void nmwa_init (NMWirelessApplet *applet)
 {
-	applet->animation_active = FALSE;
+	applet->animation_id = 0;
 	applet->animation_step = 0;
 	glade_gnome_init ();
 
@@ -1016,7 +1016,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	if (!applet->nm_running)
 	{
 		applet->animation_step = 0;
-		applet->animation_active = FALSE;
+		applet->animation_id = 0;
 		return FALSE;
 	}
 
@@ -1024,7 +1024,7 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	if (!act_dev)
 	{
 		applet->animation_step = 0;
-		applet->animation_active = FALSE;
+		applet->animation_id = 0;
 		return FALSE;
 	}
 
@@ -1054,7 +1054,6 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 	else
 	{
 		applet->animation_step = 0;
-		applet->animation_active = FALSE;
 		nmwa_update_state (applet);
 		return FALSE;
 	}
@@ -1166,17 +1165,14 @@ done:
 	g_free (tip);
 
 	applet->animation_step = 0;
-	if (need_animation && !applet->animation_active)
-	{
+	if (need_animation && applet->animation_id == 0)
 		applet->animation_id = g_timeout_add (100, (GSourceFunc) animation_timeout, applet);
-		applet->animation_active = TRUE;
-	}
 	else if (!need_animation)
 	{
-		if (applet->animation_active)
+		if (applet->animation_id)
 		{
 			g_source_remove (applet->animation_id);
-			applet->animation_active = FALSE;
+			applet->animation_id = 0;
 		}
 
 		if (pixbuf)
@@ -1201,7 +1197,7 @@ done:
  */
 static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 {
-	if (!applet->animation_active)
+	if (!applet->animation_id)
 		nmwa_update_state (applet);
 
   	return TRUE;
