@@ -1871,9 +1871,13 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
 {
+	gboolean state;
+
 	g_return_if_fail (applet != NULL);
 
-	nmwa_dbus_enable_wireless (applet, !applet->wireless_enabled);
+	state = gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget));
+	if (applet->wireless_enabled != state)
+		nmwa_dbus_enable_wireless (applet, state);
 }
 
 
@@ -2055,11 +2059,12 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
  *
  * Set the 'Enable Wireless' menu item state to match the daemon's last DBUS
  * message.  We cannot just do this at menu creation time because the DBUS
- * message might not have been sent yet.
+ * message might not have been sent yet or in case the daemon state changes
+ * out from under us.
  */
 void nmwa_enable_wireless_set_active (NMWirelessApplet *applet)
 {
-	   //gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
+	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
 }
 
 /*

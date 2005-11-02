@@ -1,5 +1,12 @@
 2005-11-02  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: Only send the DBUS setWirelessEnabled method
+	  if the widget state differs from our saved state.  This ensures we
+	  do not enter an endless loop of death and destruction.  Also, this
+	  guarantees us that we enforce the widget state.
+
+2005-11-02  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: add nmwa_enable_wireless_set_active().
 	* gnome/applet/applet-dbus-devices.c: invoke the new function
 	  nmwa_enable_wireless_set_active() to ensure that the state of the		  'Enable Wireless' checkbox matches the daemon's state.  This is a
