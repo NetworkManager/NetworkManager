@@ -2050,6 +2050,17 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 		gtk_widget_hide (applet->stop_wireless_item);
 }
 
+/*
+ * nmwa_enable_wireless_set_active
+ *
+ * Set the 'Enable Wireless' menu item state to match the daemon's last DBUS
+ * message.  We cannot just do this at menu creation time because the DBUS
+ * message might not have been sent yet.
+ */
+void nmwa_enable_wireless_set_active (NMWirelessApplet *applet)
+{
+	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
+}
 
 /*
  * nmwa_context_menu_create
@@ -2069,11 +2080,11 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 
 	/* 'Enable Wireless' item */
 	applet->stop_wireless_item = gtk_check_menu_item_new_with_mnemonic (_("Enable _Wireless"));
-	gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), TRUE);
+	nmwa_enable_wireless_set_active (applet);
 	g_signal_connect (G_OBJECT (applet->stop_wireless_item), "activate", G_CALLBACK (nmwa_set_wireless_enabled_cb), applet);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->stop_wireless_item);
 
-	/* Connection Information item */
+	/* 'Connection Information' item */
 	applet->info_menu_item = gtk_image_menu_item_new_with_mnemonic (_("Connection _Information"));
 	g_signal_connect (G_OBJECT (applet->info_menu_item), "activate", G_CALLBACK (nmwa_show_info_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_INFO, GTK_ICON_SIZE_MENU);

@@ -118,7 +118,11 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 	}
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_BOOLEAN, &wireless_enabled, DBUS_TYPE_INVALID))
+	{
 		applet->wireless_enabled = wireless_enabled;
+		nmwa_enable_wireless_set_active (applet);
+	}
+
 	dbus_message_unref (reply);
 
 out:

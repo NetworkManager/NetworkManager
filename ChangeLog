@@ -1,5 +1,12 @@
 2005-11-02  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: add nmwa_enable_wireless_set_active().
+	* gnome/applet/applet-dbus-devices.c: invoke the new function
+	  nmwa_enable_wireless_set_active() to ensure that the state of the		  'Enable Wireless' checkbox matches the daemon's state.  This is a
+	  concern because the daemon remembers the state.
+
+2005-11-02  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: Make menu item "Enable Wireless" not "Wireless
 	  Enabled", as checkboxes should be actions/commands not positive
 	  statements, otherwise they are confusing in the unselected case.  See

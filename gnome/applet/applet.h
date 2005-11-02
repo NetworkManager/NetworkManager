@@ -145,6 +145,8 @@ void				nmwa_schedule_vpn_login_banner_dialog	(NMWirelessApplet *applet, const c
 NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
 VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
 
+void				nmwa_enable_wireless_set_active		(NMWirelessApplet *applet);
+
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 
 #endif
