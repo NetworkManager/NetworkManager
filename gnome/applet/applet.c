@@ -1496,8 +1496,14 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 
 		case DEVICE_TYPE_WIRELESS_ETHERNET:
 		{
-			NMWirelessMenuItem *item = wireless_menu_item_new ();
-			GtkMenuItem *gtk_item = wireless_menu_item_get_item (item);
+			NMWirelessMenuItem *item;
+			GtkMenuItem *gtk_item;
+
+			if (!applet->wireless_enabled)
+				break;
+
+			item = wireless_menu_item_new ();
+			gtk_item = wireless_menu_item_get_item (item);
 
 			wireless_menu_item_update (item, device, n_devices);
 
@@ -1629,7 +1635,7 @@ static void nmwa_menu_device_add_networks (GtkWidget *menu, NetworkDevice *dev, 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if (!network_device_is_wireless (dev))
+	if (!network_device_is_wireless (dev) || !applet->wireless_enabled)
 		return;
 
 	/* Check for any security */
@@ -1853,7 +1859,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 			nmwa_menu_add_dialup_menu (menu, applet);
 	}
 
-	if (n_wireless_interfaces > 0)
+	if (n_wireless_interfaces > 0 && applet->wireless_enabled)
 	{
 		/* Add the "Other wireless network..." entry */
 		nmwa_menu_add_separator_item (menu);

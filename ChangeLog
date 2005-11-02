@@ -1,3 +1,13 @@
+2005-11-02  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: When wireless is disabled, act it.  Do not
+	  show a list of wireless networks or the wireless devices or the
+	  "Create Wireless ..." menus.  Aside from this cosmetics, this fixes
+	  a bad bug: If wireless is disabled and the user picks a wireless
+	  network, NM will switch to the network, only to immediately switch
+	  back, as wireless is disabled.  This also reassures people that NM
+	  is not scanning (it is not -- I verified).  Fixes Novell bug #130041.
+
 2005-11-02  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.c:
