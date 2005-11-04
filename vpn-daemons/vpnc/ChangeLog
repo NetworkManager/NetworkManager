@@ -1,3 +1,9 @@
+2005-11-04  Robert Love  <rml@novell.com>
+
+	* auth-dialog/gnome-two-password-dialog.c: Embarrassing bug!  Make sure
+	  we g_free() these things in the right order.  Fix c/o JPR. (Novell
+	  bug #121884).
+
 2005-10-27  Christopher Aillon  <caillon@redhat.com>
 
 	* src/nm-vpn-service.c: Only signal the bus that state
