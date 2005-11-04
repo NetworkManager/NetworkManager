@@ -2535,18 +2535,18 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 
 	/* we want to sleep for a very short amount of time, to minimize
 	 * hysteresis on the boundaries of our required time.  But we
-	 * also want the maximum to be based on what the card */
+	 * also want the maximum to be based on what the card can handle. */
 	const guint	delay = 30;
 	const guint	required_tries = 10;
 	const guint	min_delay = 2 * (delay / required_tries);
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	/* for cards which don't scan many frequencies, this will return 
+	/* for cards that don't scan many frequencies, this will return 
 	 * 5 seconds, which we'll bump up to 6 seconds below.  Oh well. */
 	timeout.tv_sec = (time_t) nm_device_get_association_pause_value (dev);
 
-	/* Refuse to to have a timeout that's _less_ than twice the total time
+	/* Refuse to have a timeout that's _less_ than twice the total time
 	 * required before calling a link valid */
 	if (timeout.tv_sec < min_delay)
 		timeout.tv_sec = min_delay;
