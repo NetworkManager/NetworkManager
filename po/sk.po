@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Marcel Telka <marcel@telka.sk>, 2004, 2005.
 #
-# $Id: sk.po,v 1.39 2005/10/28 19:01:58 marcel Exp $
+# $Id: sk.po,v 1.40 2005/11/06 08:48:58 marcel Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-10-28 21:00+0200\n"
-"PO-Revision-Date: 2005-10-28 21:00+0200\n"
+"POT-Creation-Date: 2005-11-06 09:46+0100\n"
+"PO-Revision-Date: 2005-11-06 09:48+0100\n"
 "Last-Translator: Marcel Telka <marcel@telka.sk>\n"
 "Language-Team: Slovak <sk-i18n@lists.linux.sk>\n"
 "MIME-Version: 1.0\n"
@@ -140,7 +140,7 @@ msgstr "VPN spojenie '%s' oznámilo:"
 msgid "VPN Login Message"
 msgstr "Správa VPN prihlásenia"
 
-#: ../gnome/applet/applet.c:763 ../gnome/applet/applet.c:2349
+#: ../gnome/applet/applet.c:763 ../gnome/applet/applet.c:2367
 #: ../gnome/applet/other-network-dialog.c:429
 #: ../gnome/applet/passphrase-dialog.c:368
 msgid ""
@@ -203,95 +203,95 @@ msgstr "Ukončovanie spojenia k drôtovej sieti..."
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Ukončovanie spojenia k bezdrôtovej sieti '%s'..."
 
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1094
 msgid "NetworkManager is not running"
 msgstr "NetworkManager nebeží"
 
-#: ../gnome/applet/applet.c:1107
+#: ../gnome/applet/applet.c:1106
 msgid "No network connection"
 msgstr "Bez sieťového spojenia"
 
-#: ../gnome/applet/applet.c:1112
+#: ../gnome/applet/applet.c:1111
 msgid "Wired network connection"
 msgstr "Pripojenie k drôtovej sieti"
 
-#: ../gnome/applet/applet.c:1116
+#: ../gnome/applet/applet.c:1115
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Pripájané k bezdrôtovej sieti Ad-Hoc"
 
-#: ../gnome/applet/applet.c:1118
+#: ../gnome/applet/applet.c:1117
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Bezdrôtové sieťové pripojenie k '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1140
+#: ../gnome/applet/applet.c:1139
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN spojenie s '%s'"
 
-#: ../gnome/applet/applet.c:1148
+#: ../gnome/applet/applet.c:1147
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN pripájanie k '%s'"
 
-#: ../gnome/applet/applet.c:1535
+#: ../gnome/applet/applet.c:1537
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Pripojiť sa k inej bezdrôtovej sieti..."
 
-#: ../gnome/applet/applet.c:1556
+#: ../gnome/applet/applet.c:1558
 msgid "Create _New Wireless Network..."
 msgstr "Vytvoriť _novú bezdrôtovú sieť..."
 
-#: ../gnome/applet/applet.c:1669
+#: ../gnome/applet/applet.c:1671
 msgid "_VPN Connections"
 msgstr "_VPN spojenia"
 
-#: ../gnome/applet/applet.c:1701
+#: ../gnome/applet/applet.c:1703
 msgid "_Configure VPN..."
 msgstr "_Konfigurovať VPN..."
 
-#: ../gnome/applet/applet.c:1705
+#: ../gnome/applet/applet.c:1707
 msgid "_Disconnect VPN..."
 msgstr "_Odpojiť VPN..."
 
-#: ../gnome/applet/applet.c:1727
+#: ../gnome/applet/applet.c:1729
 msgid "_Dial Up Connections"
 msgstr "_Vytáčané spojenia"
 
-#: ../gnome/applet/applet.c:1736
+#: ../gnome/applet/applet.c:1738
 #, c-format
 msgid "Connect to %s..."
 msgstr "Pripojiť k %s..."
 
-#: ../gnome/applet/applet.c:1786
+#: ../gnome/applet/applet.c:1788
 msgid "No network devices have been found"
 msgstr "Neboli nájdené iné sieťové zariadenia"
 
-#: ../gnome/applet/applet.c:1956
+#: ../gnome/applet/applet.c:1962
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nebeží..."
 
-#. Wireless Enabled item
-#: ../gnome/applet/applet.c:2069
-msgid "_Wireless Enabled"
-msgstr "Povolené _bezdrôtové pripojenie"
+#. 'Enable Wireless' item
+#: ../gnome/applet/applet.c:2087
+msgid "Enable _Wireless"
+msgstr "Povoliť _bezdrôtové pripojenie"
 
-#. Connection Information item
-#: ../gnome/applet/applet.c:2075
+#. 'Connection Information' item
+#: ../gnome/applet/applet.c:2093
 msgid "Connection _Information"
 msgstr "_Informácie o spojení"
 
 #. Help item
-#: ../gnome/applet/applet.c:2085
+#: ../gnome/applet/applet.c:2103
 msgid "_Help"
 msgstr "_Pomocník"
 
 #. About item
-#: ../gnome/applet/applet.c:2093
+#: ../gnome/applet/applet.c:2111
 msgid "_About"
 msgstr "_O programe"
 
-#: ../gnome/applet/applet.c:2485
+#: ../gnome/applet/applet.c:2503
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
