@@ -3739,7 +3739,7 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 				user_addrs = nm_ap_get_user_addresses (tmp_ap);
 
 				memset (&char_addr[0], 0, 20);
-				ether_ntoa_r (ap_addr, &char_addr[0]);
+				iw_ether_ntop (ap_addr, &char_addr[0]);
 
 				for (elt = user_addrs; elt; elt = g_slist_next (elt))
 				{

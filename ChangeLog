@@ -1,3 +1,12 @@
+2005-11-08  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bill Moss <bmoss@clemson.edu>
+	* src/NetworkManagerAPList.c
+	  src/NetworkManagerDevice.c
+	  src/NetworkManagerDBus.c
+		- Replace occurances of ether_ntoa_r() with iw_ether_ntop() so
+			we get more readable ether/mac addresses
+
 2005-11-02  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/main.c: Don't set the restart command.  This fixes

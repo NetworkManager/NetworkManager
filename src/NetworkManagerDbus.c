@@ -676,7 +676,7 @@ gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType 
 	}
 
 	char_addr = g_new0 (gchar, 20);
-	ether_ntoa_r (addr, char_addr);
+	iw_ether_ntop (addr, char_addr);
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
 				  DBUS_TYPE_INT32, &type_as_int32,
 				  DBUS_TYPE_STRING, &char_addr,

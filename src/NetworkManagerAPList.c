@@ -397,7 +397,7 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
 			GSList	*elt;
 
 			memset (&char_addr[0], 0, 20);
-			ether_ntoa_r (addr, &char_addr[0]);
+			iw_ether_ntop (addr, &char_addr[0]);
 			for (elt = user_addrs; elt; elt = g_slist_next (elt))
 			{
 				if (elt->data && !strcmp (elt->data, &char_addr[0]))
