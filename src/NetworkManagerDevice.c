@@ -3154,8 +3154,8 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_device_update_ip4_address (dev);
 		nm_system_device_add_ip6_link_address (dev);
 		nm_system_restart_mdns_responder ();
-		nm_policy_schedule_activation_finish (req);
 		nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
+		nm_policy_schedule_activation_finish (req);
 	}
 	else
 		nm_policy_schedule_activation_failed (req);
