@@ -23,10 +23,8 @@ libtool
 ltmain.sh
 missing
 mkinstalldirs
-nm-vpnc.desktop
-nm-vpnc-service
-nm-vpnc-service-vpnc-helper
-nm-vpnc-service.name
+nm-openvpn-service.name
+nm-openvpn.desktop
 stamp-h1
-COPYING
+COPYIN
 INSTALL

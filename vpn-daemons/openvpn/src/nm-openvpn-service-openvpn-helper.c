@@ -89,7 +89,6 @@ static gboolean send_config_info (DBusConnection *con,
   guint32		uint_ip4_nbns_len = 0;
   guint32		num_valid = 0, i = 0;
   gboolean        success = FALSE;
-  int             exit_code = 0;
 
   g_return_val_if_fail (con != NULL, FALSE);
 
