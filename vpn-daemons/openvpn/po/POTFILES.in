@@ -1,0 +1,10 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+auth-dialog/gnome-two-password-dialog.c
+auth-dialog/main.c
+nm-openvpn.desktop.in
+properties/nm-openvpn.c
+properties/nm-openvpn-dialog.glade
+src/nm-openvpn-service.c
+src/nm-openvpn-service-openvpn-helper.c
+

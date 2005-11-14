@@ -1,0 +1,15 @@
+OpenVPN support for NetworkManager
+
+Added by Tim Niemueller http://www.niemueller.de
+
+Assumes that you have a running OpenVPN X.509 setup as mentioned
+in the OpenVPN 2.0 HOWOT on the OpenVPN homepage.
+
+TODO: Support for static keys, support for password authentication,
+only present auth-dialog if needed.
+
+Code released under the GPL. See COPYING file in the NetworkManager
+directory.
+
+Aachen, 2005/11/12
+

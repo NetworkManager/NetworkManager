@@ -1,3 +1,8 @@
+2005-11-14  Robert Love  <rml@novell.com>
+
+	* vpn-daemons/openvpn: initial checkin of OpenVPN VPN Module, by Tim
+	  Niemueller <tim@niemueller.de>.
+
 2005-11-08  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bill Moss <bmoss@clemson.edu>
