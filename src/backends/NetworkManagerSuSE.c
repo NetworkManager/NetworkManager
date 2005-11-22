@@ -554,12 +554,8 @@ found:
 			fclose (f);
 		}
 		if (!buf)
-		{
-			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
-						"but no gateway specified.  Will use DHCP instead.", nm_device_get_iface (dev));
-			error = TRUE;
-			goto out;
-		}
+			nm_info ("Network configuration for device '%s' does not specify a gateway but is "
+				 "statically configured (non-DHCP).", nm_device_get_iface (dev));
 
 		set_ip4_config_from_resolv_conf (SYSCONFDIR"/resolv.conf", sys_data->config);
 	}

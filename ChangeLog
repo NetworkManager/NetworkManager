@@ -1,5 +1,11 @@
 2005-11-22  Robert Love  <rml@novell.com>
 
+	* src/backends/NetworkManagerSuSE.c: Don't fall back to DHCP if the
+	  gateway is not set, just print a little note.  Configurations without
+	  gateways are valid.
+
+2005-11-22  Robert Love  <rml@novell.com>
+
 	* README: update
 
 2005-11-20  Ilkka Tuohela  <hile@iki.fi>
