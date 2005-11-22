@@ -2,16 +2,14 @@ THEORY OF OPERATION:
 
 NetworkManager attempts to keep an active network connection available at all
 times.  It is intended only for the desktop use-case, and is not intended for
-usage on servers.  At this time, it does not support static IP addresses on
-network interfaces, and requires DHCP to be used instead.  The point of
-NetworkManager is to make networking configuration and setup as painless and
-automatic as possible.  If using DHCP, NetworkManager is _intended_ to replace
-default routes, obtain IP addresses from a DHCP server, and change nameservers
-whenever it sees fit.  If you have special needs, we'd like to hear about them,
-but understand that NetworkManager is not intended to serve the needs of all
-users.
+usage on servers.  The point of NetworkManager is to make networking
+configuration and setup as painless and automatic as possible.  If using DHCP,
+NetworkManager is _intended_ to replace default routes, obtain IP addresses
+from a DHCP server, and change nameservers whenever it sees fit.  If you have
+special needs, we'd like to hear about them, but understand that NetworkManager
+is not intended to serve the needs of all users.
 
-  
+
 From a list of all adapters currently installed on the system, NetworkManager
 will first try a wired and then a wireless adapter.  Wireless adapters that
 support wireless scanning are preferred over ones that cannot.  NetworkManager
@@ -41,24 +39,24 @@ are not.
 
 STRUCTURE:
 
-NetworkManager runs as a root-user system level daemon, since it must manipulate
-hardware directly.  It communicates over DBUS with a desktop-level per-user
-process, nm-applet.  Since Trusted and Preferred Networks are user-specific,
-there must be some mechanism of getting this information per-user.
-NetworkManager cannot store that information as it is user-specific, and
-therefore communicates over DBUS to the user daemon which provides those lists.
-NetworkManager also provides an API over DBUS for any DBUS-aware application to
-determine the current state of the network, including available wireless
-networks the computer is aware of and specific details about those networks.
-This API also provides the means for forcing NetworkManager to associate with a
-specific wireless network.  Use of DBUS allows separation of NetworkManager,
-which requires no user-interface, and the parts of the user interface which
-might be desktop environment specific.
+NetworkManager runs as a root-user system level daemon, since it
+must manipulate hardware directly.  It communicates over DBUS with a
+desktop-level per-user process, nm-applet.  Since Trusted and Preferred
+Networks are user-specific, there must be some mechanism of getting this
+information per-user.  NetworkManager cannot store that information as it is
+user-specific, and therefore communicates over DBUS to the user daemon which
+provides those lists.  NetworkManager also provides an API over DBUS for any
+DBUS-aware application to determine the current state of the network, including available wireless networks the computer is aware of and specific details about
+those networks.  This API also provides the means for forcing NetworkManager to
+associate with a specific wireless network.  Use of DBUS allows separation of
+NetworkManager, which requires no user-interface, and the parts of the user
+interface which might be desktop environment specific.
 
 The nm-applet provides a DBUS service called NetworkManagerInfo, which should
 provide to NetworkManager the Trusted and Preferred Networks lists upon request.
 It also should be able to display a dialog to retrieve a WEP/WPA key or
 passphrase from the user when NetworkManager requests it.  The GNOME version of
-NetworkManagerInfo, for example, stores Trusted and Preferred Networks in GConf,
-and proxies that information to NetworkManager upon request.
+NetworkManagerInfo, for example, stores Trusted and Preferred Networks in
+GConf and WEP/WPA keys in gnome-keyring, and proxies that information to
+NetworkManager upon request.
 
