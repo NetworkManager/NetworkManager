@@ -1,3 +1,37 @@
+2005-11-30  Tim Niemueller <tim@niemueller.de>
+
+	* vpn-daemons/openvpn/auth-dialog/main.c: Only request one password,
+	  still use GnomeTwoPasswordDialog, gives all the functionality we need.
+	  This should be unified between VPN implementations. Also I had to add
+	  GConf support to see if a password is really needed for the connection
+	  type. The configuraton line should be written to the auth-dialog by NM
+	  and maybe even an impl_needs_passwd_dialog or similar should be added.
+	  Patch will follow when healthy again.
+
+	* vpn-daemons/openvpn/properties/nm-openvpn-dialog.glade: Updated GUI,
+	  contains now everything needed to configure all three connection types
+
+	* vpn-daemons/openvpn/properties/nm-openvpn.c: Added handling of all
+	  three connection types.
+
+	* vpn-daemons/openvpn/src/nm-openvpn-service-openvpn-helper.c: Use
+	  different environment variables which are available for all connection
+	  types, fixed the returned VPN gateway address. This was the remote IP
+	  used in the VPN network, not the remote's real address. This prevented
+	  it from working if VPN gateway was not in the same subnet since routes
+	  were wrong.
+
+	* vpn-daemons/openvpn/src/nm-openvpn-service.h
+	  vpn-daemons/openvpn/src/nm-openvpn-service.c: Added support for
+	  password and shared secret connection types. Reformatted to Gnu style.
+
+	* vpn-daemons/openvpn/configure.in: Raised version to 0.2.0
+
+	* vpn-daemons/openvpn/intltool-extract.in
+	  vpn-daemons/openvpn/intltool-merge.in
+	  vpn-daemons/openvpn/intltool-update.in:
+	  Version from intltool 0.33, 0.34 won't work at the moment.
+
 2005-11-22  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Don't fall back to DHCP if the

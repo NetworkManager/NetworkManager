@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
@@ -56,16 +57,31 @@ static const char *openvpn_binary_paths[] =
 
 #define NM_OPENVPN_HELPER_PATH		BINDIR"/nm-openvpn-service-openvpn-helper"
 
+
+typedef struct _NmOpenVPN_IOData
+{
+  char           *username;
+  char           *password;
+  gint            child_stdin_fd;
+  gint            child_stdout_fd;
+  gint            child_stderr_fd;
+  gint            socket_fd;
+  FILE           *socket_file;
+} NmOpenVPN_IOData;
+
 typedef struct NmOpenVPNData
 {
-  GMainLoop *		loop;
-  DBusConnection	*	con;
+  GMainLoop            *loop;
+  DBusConnection       *con;
   NMVPNState		state;
-  GPid				pid;
+  GPid			pid;
   guint			quit_timer;
   guint			helper_timer;
+  gint                  connection_type;
+  guint                 connect_timer;
+  guint                 connect_count;
+  NmOpenVPN_IOData     *io_data;
 } NmOpenVPNData;
-
 
 static gboolean nm_openvpn_dbus_handle_stop_vpn (NmOpenVPNData *data);
 
@@ -76,8 +92,9 @@ static gboolean nm_openvpn_dbus_handle_stop_vpn (NmOpenVPNData *data);
  * Make a DBus error message
  *
  */
-static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const char *exception_namespace,
-						  const char *exception, const char *format, ...)
+static DBusMessage *
+nm_dbus_create_error_message (DBusMessage *message, const char *exception_namespace,
+			      const char *exception, const char *format, ...)
 {
   char *exception_text;
   DBusMessage	*reply;
@@ -102,7 +119,8 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
  * Signal the bus that some VPN operation failed.
  *
  */
-static void nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *signal)
+static void
+nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *signal)
 {
   DBusMessage	*message;
   const char	*error_msg = NULL;
@@ -110,8 +128,19 @@ static void nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *sig
   g_return_if_fail (data != NULL);
   g_return_if_fail (signal != NULL);
 
-  // No sophisticated error message for now
-  error_msg = _("VPN Connection failed");
+  if ( strcmp (signal, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED) == 0 )
+    error_msg = _("The VPN login failed because the user name and password were not accepted.");
+  else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED) == 0 )
+    error_msg = _("The VPN login failed because the VPN program could not be started.");
+  else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED) == 0 )
+    error_msg = _("The VPN login failed because the VPN program could not connect to the VPN server.");
+  else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD) == 0 )
+    error_msg = _("The VPN login failed because the VPN configuration options were invalid.");
+  else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD) == 0 )
+    error_msg = _("The VPN login failed because the VPN program received an invalid configuration from the VPN server.");
+  else
+    error_msg = _("VPN connection failed");
+
   if (!error_msg)
     return;
 
@@ -135,7 +164,8 @@ static void nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *sig
  * Signal the bus that our state changed.
  *
  */
-static void nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNState old_state)
+static void
+nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNState old_state)
 {
   DBusMessage	*message;
 
@@ -162,7 +192,8 @@ static void nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNState
  * Set our state and make sure to signal the bus.
  *
  */
-static void nm_openvpn_set_state (NmOpenVPNData *data, NMVPNState new_state)
+static void
+nm_openvpn_set_state (NmOpenVPNData *data, NMVPNState new_state)
 {
   NMVPNState	old_state;
 
@@ -184,7 +215,8 @@ static void nm_openvpn_set_state (NmOpenVPNData *data, NMVPNState new_state)
  * Callback to quit nm-openvpn-service after a certain period of time.
  *
  */
-static gboolean nm_openvpn_quit_timer_cb (NmOpenVPNData *data)
+static gboolean
+nm_openvpn_quit_timer_cb (NmOpenVPNData *data)
 {
   data->quit_timer = 0;
 
@@ -203,7 +235,8 @@ static gboolean nm_openvpn_quit_timer_cb (NmOpenVPNData *data)
  * then we just exit since NetworkManager will re-launch us later.
  *
  */
-static void nm_openvpn_schedule_quit_timer (NmOpenVPNData *data, guint interval)
+static void
+nm_openvpn_schedule_quit_timer (NmOpenVPNData *data, guint interval)
 {
   g_return_if_fail (data != NULL);
 
@@ -218,12 +251,33 @@ static void nm_openvpn_schedule_quit_timer (NmOpenVPNData *data, guint interval)
  * Cancel a quit timer that we've scheduled before.
  *
  */
-static void nm_openvpn_cancel_quit_timer (NmOpenVPNData *data)
+static void
+nm_openvpn_cancel_quit_timer (NmOpenVPNData *data)
 {
   g_return_if_fail (data != NULL);
 
   if (data->quit_timer > 0)
     g_source_remove (data->quit_timer);
+}
+
+
+
+
+static void
+nm_openvpn_disconnect_management_socket (NmOpenVPNData *data)
+{
+  g_return_if_fail (data != NULL);
+
+  // This should no throw a warning since this can happen in
+  // non-password modes
+  if ( data->io_data == NULL) return;
+
+  fclose( data->io_data->socket_file );
+  data->io_data->socket_fd   = -1;
+  data->io_data->socket_file = NULL;
+
+  g_free (data->io_data);
+  data->io_data = NULL;
 }
 
 
@@ -234,11 +288,14 @@ static void nm_openvpn_cancel_quit_timer (NmOpenVPNData *data)
  * occurs, we kill openvpn
  *
  */
-static gboolean nm_openvpn_helper_timer_cb (NmOpenVPNData *data)
+static gboolean
+nm_openvpn_helper_timer_cb (NmOpenVPNData *data)
 {
   data->helper_timer = 0;
 
   g_return_val_if_fail (data != NULL, FALSE);
+
+  nm_openvpn_disconnect_management_socket (data);
 
   nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
   nm_openvpn_dbus_handle_stop_vpn (data);
@@ -255,7 +312,8 @@ static gboolean nm_openvpn_helper_timer_cb (NmOpenVPNData *data)
  * we kill openvpn
  *
  */
-static void nm_openvpn_schedule_helper_timer (NmOpenVPNData *data)
+static void
+nm_openvpn_schedule_helper_timer (NmOpenVPNData *data)
 {
   g_return_if_fail (data != NULL);
 
@@ -270,7 +328,8 @@ static void nm_openvpn_schedule_helper_timer (NmOpenVPNData *data)
  * Cancel a helper timer that we've scheduled before.
  *
  */
-static void nm_openvpn_cancel_helper_timer (NmOpenVPNData *data)
+static void
+nm_openvpn_cancel_helper_timer (NmOpenVPNData *data)
 {
   g_return_if_fail (data != NULL);
 
@@ -280,12 +339,176 @@ static void nm_openvpn_cancel_helper_timer (NmOpenVPNData *data)
 
 
 /*
+ * nm_openvpn_csocket_data_cb
+ *
+ * Called if data is available on the management connection, if asked for user or
+ * password it is sent. After password has been sent associated data will be freed
+ * and channel closed by returning FALSE.
+ *
+ */
+static gboolean
+nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer user_data)
+{
+  NmOpenVPNData    *data    = (NmOpenVPNData *)user_data;
+  NmOpenVPN_IOData *io_data = data->io_data;
+  char *str;
+
+  if (! (condition & G_IO_IN))
+    return TRUE;
+
+  if (g_io_channel_read_line (source, &str, NULL, NULL, NULL) == G_IO_STATUS_NORMAL) {
+    int len;
+
+    len = strlen (str);
+    if ( len > 0 ) {
+      char *auth;
+
+      //printf("Read: %s\n", str);
+
+      if ( sscanf(str, ">PASSWORD:Need '%a[^']' username/password", &auth) > 0 ) {
+
+	if ( io_data->username != NULL ) {
+	  // printf("Queried for %s. Write: username=%s, password=%s\n", auth, io_data->username, io_data->password);
+	  fprintf( io_data->socket_file, "username \"%s\" %s\n", auth, io_data->username);
+	  fprintf( io_data->socket_file, "password \"%s\" %s\n", auth, io_data->password);
+	  fflush( io_data->socket_file );
+	}
+
+	g_free( io_data->username );
+	g_free( io_data->password );
+	free( auth );
+	io_data->username    = NULL;
+	io_data->password    = NULL;
+
+	return TRUE;
+
+      } else if ( strstr(str, ">PASSWORD:Verification Failed: ") == str ) {
+
+	nm_warning("Password verification failed");
+
+	nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+	nm_openvpn_disconnect_management_socket (data);
+
+	return FALSE;
+      }
+    }
+  }
+
+  return TRUE;
+}
+
+
+/*
+ * nm_openvpn_connect_timer_cb
+ *
+ * We need to wait until OpenVPN has started the management socket
+ *
+ */
+static gboolean
+nm_openvpn_connect_timer_cb (NmOpenVPNData *data)
+{
+  struct sockaddr_in     serv_addr;
+  int                    tries = 0;
+  gboolean               connected = FALSE;
+  gint                   socket_fd = -1;
+  NmOpenVPN_IOData      *io_data;
+
+  g_return_val_if_fail (data != NULL, FALSE);
+
+  io_data = data->io_data;
+  g_return_val_if_fail (io_data != NULL, FALSE);
+
+  data->connect_timer = 0;
+  data->connect_count++;
+
+  // open socket and start listener
+  socket_fd = socket( PF_INET, SOCK_STREAM, IPPROTO_TCP );
+  if ( socket_fd < 0 ) {
+    // we failed
+    return FALSE;
+  }
+
+  serv_addr.sin_family = AF_INET;
+  inet_aton("127.0.0.1", &(serv_addr.sin_addr));
+  serv_addr.sin_port = htons( 1194 );
+ 
+  connected = ( connect (socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == 0 );
+
+  if ( ! connected ) {
+    close ( socket_fd );
+    if ( data->connect_count <= 30 ) {
+      return TRUE;
+    } else {
+      nm_warning ("Could not open management socket");
+      nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED);
+      return FALSE;
+    }
+  } else {
+    GIOChannel            *openvpn_socket_channel;
+    guint                  openvpn_socket_channel_eventid;
+      
+    io_data->socket_fd   = socket_fd;
+
+    if ( (io_data->socket_file = fdopen( socket_fd, "w+" )) != NULL ) {
+      openvpn_socket_channel = g_io_channel_unix_new (socket_fd);
+      openvpn_socket_channel_eventid = g_io_add_watch (openvpn_socket_channel, G_IO_IN, nm_openvpn_socket_data_cb, data);
+      g_io_channel_set_encoding (openvpn_socket_channel, NULL, NULL);
+      g_io_channel_unref (openvpn_socket_channel);
+    }
+
+    return FALSE;
+  }
+}
+
+
+/*
+ * nm_openvpn_schedule_helper_timer
+ *
+ * Once openvpn is running, we wait for the helper to return the IP4 configuration
+ * information to us.  If we don't receive that information within 7 seconds,
+ * we kill openvpn
+ *
+ */
+static void
+nm_openvpn_schedule_connect_timer (NmOpenVPNData *data)
+{
+  g_return_if_fail (data != NULL);
+  g_return_if_fail (data->io_data != NULL);
+
+  if (data->connect_timer == 0)
+    data->connect_timer = g_timeout_add (200, (GSourceFunc) nm_openvpn_connect_timer_cb, data);
+}
+
+
+/*
+ * nm_openvpn_cancel_helper_timer
+ *
+ * Cancel a helper timer that we've scheduled before.
+ *
+ */
+static void
+nm_openvpn_cancel_connect_timer (NmOpenVPNData *data)
+{
+  g_return_if_fail (data != NULL);
+
+  if (data->connect_timer > 0) {
+    g_source_remove (data->connect_timer);
+    data->connect_timer = 0;
+    data->connect_count = 0;
+  }
+}
+
+
+
+
+/*
  * openvpn_watch_cb
  *
  * Watch our child openvpn process and get notified of events from it.
  *
  */
-static void openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
+static void
+openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 {
   guint	error = -1;
 
@@ -309,6 +532,7 @@ static void openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
   data->pid = 0;
 
   /* Must be after data->state is set since signals use data->state */
+  /* This is still code from vpnc, openvpn does not supply useful exit codes :-/ */
   switch (error)
     {
     case 2:	/* Couldn't log in due to bad user/pass */
@@ -328,21 +552,31 @@ static void openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 
+
 /*
  * nm_openvpn_start_vpn_binary
  *
  * Start the openvpn binary with a set of arguments and a config file.
  *
  */
-static gint nm_openvpn_start_openvpn_binary (NmOpenVPNData *data, char **data_items, const int num_items)
+static gint
+nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
+				 char **data_items, const int num_items,
+				 char **passwords, const int num_passwords
+				 )
 {
-  GPid			pid;
-  const char **		openvpn_binary = NULL;
-  GPtrArray *	openvpn_argv;
-  GError *		error = NULL;
-  GSource *		openvpn_watch;
-  gint			stdin_fd = -1;
-  int                   i = 0;
+  GPid	        pid;
+  const char  **openvpn_binary = NULL;
+  GPtrArray    *openvpn_argv;
+  GError       *error = NULL;
+  GSource      *openvpn_watch;
+  gint	        stdin_fd = -1;
+  gint          stdout_fd = -1;
+  gint          stderr_fd = -1;
+  int           i = 0;
+
+  char         *username = NULL;
+
 
   g_return_val_if_fail (data != NULL, -1);
 
@@ -365,63 +599,173 @@ static gint nm_openvpn_start_openvpn_binary (NmOpenVPNData *data, char **data_it
     return -1;
   }
 
-  openvpn_argv = g_ptr_array_new ();
-  g_ptr_array_add (openvpn_argv, (gpointer) (*openvpn_binary));
-
-  g_ptr_array_add (openvpn_argv, (gpointer) "--client");
-  g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
-  g_ptr_array_add (openvpn_argv, (gpointer) "--dev");
-  g_ptr_array_add (openvpn_argv, (gpointer) "tun");
-  g_ptr_array_add (openvpn_argv, (gpointer) "--up");
-  g_ptr_array_add (openvpn_argv, (gpointer) NM_OPENVPN_HELPER_PATH);
-  g_ptr_array_add (openvpn_argv, (gpointer) "--up-restart");
-  g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
-  g_ptr_array_add (openvpn_argv, (gpointer) "server");
-
-
-  // Note that it should be guaranteed that num_items % 2 == 0
+  // First check in which mode we are operating. Since NM does not
+  // guarantee any particular order we search this parameter
+  // explictly once
+  data->connection_type = NM_OPENVPN_CONTYPE_INVALID;
   for (i = 0; i < num_items; ++i) {
-    if ( strcmp( data_items[i], "remote" ) == 0) {
-      g_ptr_array_add (openvpn_argv, (gpointer) "--remote");
-      g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
-    } else if ( strcmp( data_items[i], "ca" ) == 0) {
-      g_ptr_array_add (openvpn_argv, (gpointer) "--ca");
-      g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
-    } else if ( strcmp( data_items[i], "cert" ) == 0) {
-      g_ptr_array_add (openvpn_argv, (gpointer) "--cert");
-      g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
-    } else if ( strcmp( data_items[i], "key" ) == 0) {
-      g_ptr_array_add (openvpn_argv, (gpointer) "--key");
-      g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
-    } else if ( (strcmp( data_items[i], "comp-lzo" ) == 0) &&
-		(strcmp( data_items[i], "yes" ) == 0) ) {
-      g_ptr_array_add (openvpn_argv, (gpointer) "--comp-lzo");
+    if ( strcmp( data_items[i], "connection-type" ) == 0) {
+      ++i;
+      if ( strcmp (data_items[i], "x509" ) == 0 ) {
+	data->connection_type = NM_OPENVPN_CONTYPE_X509;
+      } else if ( strcmp (data_items[i], "shared-key" ) == 0 ) {
+	data->connection_type = NM_OPENVPN_CONTYPE_SHAREDKEY;
+      } else if ( strcmp (data_items[i], "password" ) == 0 ) {
+	data->connection_type = NM_OPENVPN_CONTYPE_PASSWORD;
+      }
+    } else if ( strcmp (data_items[i], "username" ) == 0) {
+      username = data_items[++i];
     }
   }
-  g_ptr_array_add (openvpn_argv, NULL);
 
-  if (!g_spawn_async_with_pipes (NULL, (char **) openvpn_argv->pdata, NULL,
-				 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &stdin_fd,
-				 NULL, NULL, &error))
-    {
-      g_ptr_array_free (openvpn_argv, TRUE);
-      nm_warning ("openvpn failed to start.  error: '%s'", error->message);
-      g_error_free(error);
-      return -1;
+  if ( data->connection_type != NM_OPENVPN_CONTYPE_INVALID ) {
+
+    openvpn_argv = g_ptr_array_new ();
+    g_ptr_array_add (openvpn_argv, (gpointer) (*openvpn_binary));
+
+    // Note that it should be guaranteed that num_items % 2 == 0
+    // Add global arguments
+    for (i = 0; i < num_items; ++i) {
+      if ( strcmp( data_items[i], "remote" ) == 0) {
+	g_ptr_array_add (openvpn_argv, (gpointer) "--remote");
+	g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+      } else if ( (strcmp( data_items[i], "comp-lzo" ) == 0) &&
+		  (strcmp( data_items[++i], "yes" ) == 0) ) {
+	g_ptr_array_add (openvpn_argv, (gpointer) "--comp-lzo");
+      }
     }
-  g_ptr_array_free (openvpn_argv, TRUE);
+    g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
+    g_ptr_array_add (openvpn_argv, (gpointer) "--dev");
+    g_ptr_array_add (openvpn_argv, (gpointer) "tun");
+    // g_ptr_array_add (openvpn_argv, (gpointer) "--syslog openvpn-nm");
+    g_ptr_array_add (openvpn_argv, (gpointer) "--up");
+    g_ptr_array_add (openvpn_argv, (gpointer) NM_OPENVPN_HELPER_PATH);
+    g_ptr_array_add (openvpn_argv, (gpointer) "--up-restart");
+    g_ptr_array_add (openvpn_argv, (gpointer) "--persist-key");
+    g_ptr_array_add (openvpn_argv, (gpointer) "--persist-tun");
 
-  nm_info ("openvpn started with pid %d", pid);
 
-  data->pid = pid;
-  openvpn_watch = g_child_watch_source_new (pid);
-  g_source_set_callback (openvpn_watch, (GSourceFunc) openvpn_watch_cb, data, NULL);
-  g_source_attach (openvpn_watch, NULL);
-  g_source_unref (openvpn_watch);
+    switch ( data->connection_type ) {
 
-  nm_openvpn_schedule_helper_timer (data);
+    case NM_OPENVPN_CONTYPE_X509:
 
-  return stdin_fd;
+      g_ptr_array_add (openvpn_argv, (gpointer) "--client");
+      g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
+      g_ptr_array_add (openvpn_argv, (gpointer) "server");
+
+      for (i = 0; i < num_items; ++i) {
+	if ( strcmp( data_items[i], "ca" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--ca");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	} else if ( strcmp( data_items[i], "cert" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--cert");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	} else if ( strcmp( data_items[i], "key" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--key");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	}
+      }
+      break;
+
+    case NM_OPENVPN_CONTYPE_SHAREDKEY:
+      {
+	char *local_ip = NULL;
+	char *remote_ip = NULL;
+
+	// Note that it should be guaranteed that num_items % 2 == 0
+	for (i = 0; i < num_items; ++i) {
+	  if ( strcmp( data_items[i], "local-ip" ) == 0) {
+	    local_ip = data_items[++i];
+	  } else if ( strcmp( data_items[i], "remote-ip" ) == 0) {
+	    remote_ip = data_items[++i];
+	  } else if ( strcmp( data_items[i], "shared-key" ) == 0) {
+	    g_ptr_array_add (openvpn_argv, (gpointer) "--secret");
+	    g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	  }
+
+	}
+
+	if ( (local_ip == NULL) || (remote_ip == NULL) ) {
+	  // Insufficient data
+	    g_ptr_array_free (openvpn_argv, TRUE);
+	    return -1;
+	} else {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--ifconfig");
+	  g_ptr_array_add (openvpn_argv, (gpointer) local_ip);
+	  g_ptr_array_add (openvpn_argv, (gpointer) remote_ip);
+	}
+      }
+      break;
+      
+    case NM_OPENVPN_CONTYPE_PASSWORD:
+
+      // Client mode
+      g_ptr_array_add (openvpn_argv, (gpointer) "--client");
+      g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
+      g_ptr_array_add (openvpn_argv, (gpointer) "server");
+      // Use user/path authentication
+      g_ptr_array_add (openvpn_argv, (gpointer) "--auth-user-pass");
+      // Management socket for localhost access to supply username and password
+      g_ptr_array_add (openvpn_argv, (gpointer) "--management");
+      g_ptr_array_add (openvpn_argv, (gpointer) "127.0.0.1");
+      // with have nobind, thus 1194 should be free, it is the IANA assigned port
+      g_ptr_array_add (openvpn_argv, (gpointer) "1194");
+      // Query on the management socket for user/pass
+      g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
+
+
+      for (i = 0; i < num_items; ++i) {
+	if ( strcmp( data_items[i], "ca" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--ca");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	}
+      }
+    }
+
+
+    g_ptr_array_add (openvpn_argv, NULL);
+
+    if (!g_spawn_async_with_pipes (NULL, (char **) openvpn_argv->pdata, NULL,
+				   G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &stdin_fd,
+				   &stdout_fd, &stderr_fd, &error))
+      {
+	g_ptr_array_free (openvpn_argv, TRUE);
+	nm_warning ("openvpn failed to start.  error: '%s'", error->message);
+	g_error_free(error);
+	return -1;
+      }
+    g_ptr_array_free (openvpn_argv, TRUE);
+    
+    nm_info ("openvpn started with pid %d", pid);
+
+    data->pid = pid;
+    openvpn_watch = g_child_watch_source_new (pid);
+    g_source_set_callback (openvpn_watch, (GSourceFunc) openvpn_watch_cb, data, NULL);
+    g_source_attach (openvpn_watch, NULL);
+    g_source_unref (openvpn_watch);
+
+    if ( data->connection_type == NM_OPENVPN_CONTYPE_PASSWORD ) {
+      NmOpenVPN_IOData  *io_data;
+
+      io_data                  = g_new0 (NmOpenVPN_IOData, 1);
+      io_data->child_stdin_fd  = stdin_fd;
+      io_data->child_stdout_fd = stdout_fd;
+      io_data->child_stderr_fd = stderr_fd;
+      io_data->username        = g_strdup(username);
+      io_data->password        = g_strdup(passwords[0]);
+
+      data->io_data = io_data;
+
+      nm_openvpn_schedule_connect_timer (data);
+    }
+
+    nm_openvpn_schedule_helper_timer (data);
+
+    return stdin_fd;
+
+  } else {
+    return -1;
+  }
 }
 
 
@@ -445,15 +789,21 @@ typedef struct Option
  * Make sure the config options are sane
  *
  */
-static gboolean nm_openvpn_config_options_validate (char **data_items, int num_items)
+static gboolean
+nm_openvpn_config_options_validate (char **data_items, int num_items)
 {
   Option	allowed_opts[] = {
-    { "remote",			OPT_TYPE_ADDRESS },
+    { "remote",			        OPT_TYPE_ADDRESS },
     { "ca",				OPT_TYPE_ASCII },
     { "cert",				OPT_TYPE_ASCII },
     { "key",				OPT_TYPE_ASCII },
     { "comp-lzo",			OPT_TYPE_ASCII },
-    { NULL,					OPT_TYPE_UNKNOWN } };
+    { "shared-key",			OPT_TYPE_ASCII },
+    { "local-ip",			OPT_TYPE_ADDRESS },
+    { "remote-ip",			OPT_TYPE_ADDRESS },
+    { "username",			OPT_TYPE_ASCII },
+    { "connection-type",		OPT_TYPE_ASCII },
+    { NULL,				OPT_TYPE_UNKNOWN } };
   
   unsigned int	i;
 
@@ -525,13 +875,15 @@ static gboolean nm_openvpn_config_options_validate (char **data_items, int num_i
   return TRUE;
 }
 
+
 /*
  * nm_openvpn_dbus_handle_start_vpn
  *
  * Parse message arguments and start the VPN connection.
  *
  */
-static gboolean nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
+static gboolean
+nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
 {
   char **		data_items = NULL;
   int		num_items = -1;
@@ -569,11 +921,12 @@ static gboolean nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVP
     }
 
   /* Now we can finally try to activate the VPN */
-  if ((openvpn_fd = nm_openvpn_start_openvpn_binary (data, data_items, num_items)) >= 0)
-    {
-      success = TRUE;
-    }
+  if ((openvpn_fd = nm_openvpn_start_openvpn_binary (data, data_items, num_items, password_items, num_passwords)) >= 0) {
+    // Everything ok
+    success = TRUE;
+  }
 
+  
 out:
   dbus_free_string_array (data_items);
   if (!success)
@@ -596,7 +949,7 @@ static gboolean nm_openvpn_dbus_handle_stop_vpn (NmOpenVPNData *data)
     {
       nm_openvpn_set_state (data, NM_VPN_STATE_STOPPING);
 
-      kill (data->pid, SIGTERM);
+      kill (data->pid, SIGINT);
       nm_info ("Terminated openvpn daemon with PID %d.", data->pid);
       data->pid = 0;
 
@@ -614,7 +967,8 @@ static gboolean nm_openvpn_dbus_handle_stop_vpn (NmOpenVPNData *data)
  * Begin a VPN connection.
  *
  */
-static DBusMessage *nm_openvpn_dbus_start_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
+static DBusMessage *
+nm_openvpn_dbus_start_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
 {
   DBusMessage		*reply = NULL;
 
@@ -660,7 +1014,8 @@ static DBusMessage *nm_openvpn_dbus_start_vpn (DBusConnection *con, DBusMessage 
  * Terminate a VPN connection.
  *
  */
-static DBusMessage *nm_openvpn_dbus_stop_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
+static DBusMessage *
+nm_openvpn_dbus_stop_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
 {
   DBusMessage		*reply = NULL;
 
@@ -701,7 +1056,8 @@ static DBusMessage *nm_openvpn_dbus_stop_vpn (DBusConnection *con, DBusMessage *
  * Return some state information to NetworkManager.
  *
  */
-static DBusMessage *nm_openvpn_dbus_get_state (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
+static DBusMessage *
+nm_openvpn_dbus_get_state (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
 {
   DBusMessage		*reply = NULL;
 
@@ -723,7 +1079,8 @@ static DBusMessage *nm_openvpn_dbus_get_state (DBusConnection *con, DBusMessage 
  * it needed.
  *
  */
-static void nm_openvpn_dbus_process_helper_config_error (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
+static void
+nm_openvpn_dbus_process_helper_config_error (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
 {
   char *error_item;
 
@@ -742,6 +1099,7 @@ static void nm_openvpn_dbus_process_helper_config_error (DBusConnection *con, DB
     }
 
   nm_openvpn_cancel_helper_timer (data);
+  nm_openvpn_disconnect_management_socket (data);
   nm_openvpn_dbus_handle_stop_vpn (data);
 }
 
@@ -752,7 +1110,8 @@ static void nm_openvpn_dbus_process_helper_config_error (DBusConnection *con, DB
  * Signal the bus 
  *
  */
-static void nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
+static void
+nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *message, NmOpenVPNData *data)
 {
   guint32		ip4_vpn_gateway;
   char *		tundev;
@@ -774,6 +1133,7 @@ static void nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBus
     return;
 
   nm_openvpn_cancel_helper_timer (data);
+  nm_openvpn_disconnect_management_socket (data);
 
   if (dbus_message_get_args(message, NULL, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 			    DBUS_TYPE_STRING, &tundev,
@@ -785,12 +1145,17 @@ static void nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBus
     {
       DBusMessage	*signal;
 
+      struct in_addr a;
+
       
       if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_OPENVPN, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
 	{
 	  nm_warning ("Not enough memory for new dbus message!");
 	  goto out;
 	}
+
+      a.s_addr = ip4_vpn_gateway;
+      a.s_addr = ip4_address;
 
       dbus_message_append_args (signal, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 				DBUS_TYPE_STRING, &tundev,
@@ -828,7 +1193,8 @@ out:
  * Handle requests for our services.
  *
  */
-static DBusHandlerResult nm_openvpn_dbus_message_handler (DBusConnection *con, DBusMessage *message, void *user_data)
+static DBusHandlerResult
+nm_openvpn_dbus_message_handler (DBusConnection *con, DBusMessage *message, void *user_data)
 {
   NmOpenVPNData		*data = (NmOpenVPNData *)user_data;
   const char		*method;
@@ -885,7 +1251,8 @@ static DBusHandlerResult nm_openvpn_dbus_message_handler (DBusConnection *con, D
  * signals.
  *
  */
-static DBusHandlerResult nm_openvpn_dbus_filter (DBusConnection *con, DBusMessage *message, void *user_data)
+static DBusHandlerResult
+nm_openvpn_dbus_filter (DBusConnection *con, DBusMessage *message, void *user_data)
 {
   NmOpenVPNData	*data = (NmOpenVPNData *)user_data;
   gboolean		handled = FALSE;
@@ -938,7 +1305,8 @@ static DBusHandlerResult nm_openvpn_dbus_filter (DBusConnection *con, DBusMessag
  * Grab our connection to the system bus, return NULL if anything goes wrong.
  *
  */
-DBusConnection *nm_openvpn_dbus_init (NmOpenVPNData *data)
+DBusConnection *
+nm_openvpn_dbus_init (NmOpenVPNData *data)
 {
   DBusConnection			*connection = NULL;
   DBusError				 error;
@@ -1001,7 +1369,8 @@ out:
 
 NmOpenVPNData *vpn_data = NULL;
 
-static void sigterm_handler (int signum)
+static void
+sigterm_handler (int signum)
 {
   nm_info ("nm-openvpn-service caught SIGINT/SIGTERM");
 
@@ -1013,7 +1382,8 @@ static void sigterm_handler (int signum)
  * main
  *
  */
-int main( int argc, char *argv[] )
+int
+main( int argc, char *argv[] )
 {
   struct sigaction	action;
   sigset_t			block_mask;

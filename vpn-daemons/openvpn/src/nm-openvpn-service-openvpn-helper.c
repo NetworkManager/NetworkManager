@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <regex.h>
@@ -34,7 +35,6 @@
 
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
-
 
 /*
  * send_config_error
@@ -188,15 +188,25 @@ static gboolean send_config_info (DBusConnection *con,
 
 
 /*
- * Environment variables passed back from 'openvpn':
+ * See the OpenVPN man page for available environment variables.
  *
- * VPNGATEWAY             -- vpn gateway address (always present)
- * TUNDEV                 -- tunnel device (always present)
- * IP4_ADDRESS   -- address (always present)
- * IP4_NETMASK   -- netmask (often unset)
- * IP4_DNS       -- list of dns serverss
  *
  */
+
+
+/** Prints all environment variables to /tmp/environ
+ */
+static void
+print_env()
+{
+  FILE *f = fopen("/tmp/environ", "w");
+  int env = 0;
+  while ( __environ[env] != NULL ) {
+    fprintf(f, "%s\n", __environ[env++]);
+  }
+  fclose(f);
+}
+
 
 /*
  * main
@@ -204,22 +214,26 @@ static gboolean send_config_info (DBusConnection *con,
  */
 int main( int argc, char *argv[] )
 {
-  DBusConnection *	con;
-  DBusError		error;
-  char *			vpn_gateway = NULL;
-  char *			tundev = NULL;
-  char *			ip4_address = NULL;
-  char *			ip4_netmask = NULL;
-  GPtrArray *		ip4_dns = NULL;
-  GPtrArray *             ip4_nbns = NULL;
+  DBusConnection  *con;
+  DBusError        error;
+  char            *vpn_gateway = NULL;
+  char            *tundev = NULL;
+  char            *ip4_address = NULL;
+  char            *ip4_ptp = NULL;
+  char            *ip4_netmask = NULL;
+  GPtrArray       *ip4_dns = NULL;
+  GPtrArray       *ip4_nbns = NULL;
   
-  char **split = NULL;
-  char **item;
+  char           **split = NULL;
+  char           **item;
 
-  char *                  tmp;
-  char                    envname[100];
-  int                     i = 1;
-  int                     exit_code = 0;
+  char            *tmp;
+  // max(length(envname)) = length("foreign_option_") + length(to_string(MAX_INT)) + 1;
+  //                               = 15                     = 10 for 4 byte int
+  //                                                    (which should be enough for quite some time)
+  char             envname[26];
+  int              i = 1;
+  int              exit_code = 0;
 
   g_type_init ();
   if (!g_thread_supported ())
@@ -234,9 +248,11 @@ int main( int argc, char *argv[] )
     }
   dbus_connection_set_exit_on_disconnect (con, FALSE);
 
+  // print_env();
 
-  vpn_gateway = getenv( "route_vpn_gateway" );
+  vpn_gateway = getenv( "trusted_ip" );
   tundev      = getenv ("dev");
+  ip4_ptp     = getenv("ifconfig_remote");
   ip4_address = getenv("ifconfig_local");
   ip4_netmask = getenv("route_netmask_1");
   

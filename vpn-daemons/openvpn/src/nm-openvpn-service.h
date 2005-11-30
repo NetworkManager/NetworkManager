@@ -26,4 +26,14 @@
 #define NM_DBUS_INTERFACE_OPENVPN	"org.freedesktop.NetworkManager.openvpn"
 #define NM_DBUS_PATH_OPENVPN	"/org/freedesktop/NetworkManager/openvpn"
 
+#define NM_OPENVPN_CONTYPE_INVALID -1
+#define NM_OPENVPN_CONTYPE_X509 0
+#define NM_OPENVPN_CONTYPE_SHAREDKEY 1
+#define NM_OPENVPN_CONTYPE_PASSWORD 2
+// this magic number (3) is set implictly by the minimum of tab pages
+// and number of connection type combo box elements
+// (which should be the same as it is the number of connection types
+#define NM_OPENVPN_CONTYPE_NUM 3
+
+
 #endif
