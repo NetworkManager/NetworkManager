@@ -391,9 +391,14 @@ gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *ifa
 	if (!(request = rtnl_link_alloc ()))
 		goto out;
 
-	up ? rtnl_link_set_flags (request, IFF_UP) : rtnl_link_unset_flags (request, IFF_UP);
+	if (up)
+		rtnl_link_set_flags (request, IFF_UP);
+	else
+		rtnl_link_unset_flags (request, IFF_UP);
+
 	old = iface_to_rtnl_link (iface, nlh);
-	rtnl_link_change (nlh, old, request, 0);
+	if (old)
+		rtnl_link_change (nlh, old, request, 0);
 
 	rtnl_link_put (old);
 	rtnl_link_put (request);

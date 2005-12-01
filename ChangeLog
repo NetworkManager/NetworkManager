@@ -1,3 +1,9 @@
+2005-12-01  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.c: If iface_to_rtnl_link() returns NULL, the
+	  interface is already gone, so don't call rtnl_link_change() to down
+	  it (which will segfault, anyhow).
+
 2005-11-22  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Don't fall back to DHCP if the
