@@ -49,7 +49,7 @@ int main (int argc, char *argv[])
 
 	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
-			    GNOME_PARAM_NONE);
+			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 
     	client = gnome_master_client ();
     	gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
