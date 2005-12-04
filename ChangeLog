@@ -1,3 +1,10 @@
+2005-12-03  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.[ch]
+	  src/nm-ip4-config.c
+		- move ip4_netmask_to_prefix() to NetworkManagerUtils.c
+		- consolidate code into nm_utils_ip4_addr_to_nl_addr()
+
 2005-12-01  Robert Love  <rml@novell.com>
 
 	* gnome/applet/main.c, gnome/vpn-properties/nm-vpn-properties.c: We

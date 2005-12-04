@@ -37,6 +37,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 
+#include <netlink/addr.h>
+#include <netinet/in.h>
+
 
 struct NMSock
 {
@@ -659,5 +662,36 @@ gchar *nm_utils_inet_ip4_address_as_string (guint32 ip)
 	ip_string = inet_ntoa (tmp_addr);
 
 	return g_strdup (ip_string);
+}
+
+
+struct nl_addr * nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
+{
+	struct nl_addr * nla = NULL;
+
+	if (!(nla = nl_addr_alloc (sizeof (in_addr_t))))
+		return NULL;
+	nl_addr_set_family (nla, AF_INET);
+	nl_addr_set_binary_addr (nla, &ip4_addr, sizeof (guint32));
+
+	return nla;
+}
+
+/*
+ * nm_utils_ip4_netmask_to_prefix
+ *
+ * Figure out the network prefix from a netmask.  Netmask
+ * MUST be in network byte order.
+ *
+ */
+int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
+{
+	int i = 1;
+
+	/* Just count how many bit shifts we need */
+	ip4_netmask = ntohl (ip4_netmask);
+	while (!(ip4_netmask & 0x1) && ++i)
+		ip4_netmask = ip4_netmask >> 1;
+	return (32 - (i-1));
 }
 
