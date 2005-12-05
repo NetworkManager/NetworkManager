@@ -1291,7 +1291,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
 	if ((connection == NULL) || dbus_error_is_set (&error))
 	{
-		nm_warning ("nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running?");
+		nm_warning ("nm_dbus_init() could not get the system bus.  Make sure the message bus daemon is running!");
 		connection = NULL;
 		goto out;
 	}
