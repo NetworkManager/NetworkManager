@@ -1,7 +1,4 @@
-/***************************************************************************
- * CVSID: $Id$
- *
- * nm-openvpn.c : GNOME UI dialogs for configuring OpenVPN connections
+/* nm-openvpn.c : GNOME UI dialogs for configuring OpenVPN connections
  *
  * Copyright (C) 2005 Tim Niemueller <tim@niemueller.de>
  * Based on work by David Zeuthen, <davidz@redhat.com>
@@ -20,7 +17,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
- **************************************************************************/
+ * $Id$
+ *
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -58,6 +57,7 @@ struct _NetworkManagerVpnUIImpl {
   GtkCheckButton *w_use_routes;
   GtkEntry       *w_routes;
   GtkCheckButton *w_use_lzo;
+  GtkCheckButton *w_use_tap;
   GtkExpander    *w_opt_info_expander;
   GtkButton      *w_import_button;
   GtkButton      *w_button_ca;
@@ -94,6 +94,7 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
   gtk_entry_set_text (impl->w_routes, "");
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), FALSE);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tap), FALSE);
   gtk_expander_set_expanded (impl->w_opt_info_expander, FALSE);
   gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_connection_type), 0);
   connection_type_changed (GTK_COMBO_BOX (impl->w_connection_type), impl);
@@ -148,11 +149,13 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
       gint type_cbox_sel = 0;
 
       if ( strcmp (value, "x509") == 0 ) {
-	type_cbox_sel = 0;
+	type_cbox_sel = NM_OPENVPN_CONTYPE_X509;
       } else if ( strcmp (value, "shared-key") == 0 ) {
-	type_cbox_sel = 1;
+	type_cbox_sel = NM_OPENVPN_CONTYPE_SHAREDKEY;
       } else if ( strcmp (value, "password") == 0 ) {
-	type_cbox_sel = 2;
+	type_cbox_sel = NM_OPENVPN_CONTYPE_PASSWORD;
+      } else if ( strcmp (value, "x509userpass") == 0 ) {
+	type_cbox_sel = NM_OPENVPN_CONTYPE_X509USERPASS;
       }
 
       gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_connection_type), type_cbox_sel);
@@ -165,6 +168,10 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
       gtk_entry_set_text (impl->w_shared_key, value);
     } else if ( strcmp (key, "username") == 0 ) {
       gtk_entry_set_text (impl->w_username, value);
+    } else if ( (strcmp (key,   "dev") == 0) &&
+		(strcmp (value, "tap") == 0) ) {
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tap), TRUE);
+      should_expand = TRUE;
     }
   }
 
@@ -212,7 +219,8 @@ impl_get_properties (NetworkManagerVpnUI *self)
   const char *local_ip;
   const char *remote_ip;
   const char *username;
-  gboolean use_lzo;
+  gboolean    use_lzo;
+  gboolean    use_tap;
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
@@ -220,6 +228,7 @@ impl_get_properties (NetworkManagerVpnUI *self)
   cert                   = gtk_entry_get_text (impl->w_cert);
   key                    = gtk_entry_get_text (impl->w_key);
   use_lzo                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo));
+  use_tap                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_tap));
   shared_key             = gtk_entry_get_text (impl->w_shared_key);
   local_ip               = gtk_entry_get_text (impl->w_local_ip);
   remote_ip              = gtk_entry_get_text (impl->w_remote_ip);
@@ -234,10 +243,15 @@ impl_get_properties (NetworkManagerVpnUI *self)
   case NM_OPENVPN_CONTYPE_PASSWORD:
     data = g_slist_append (data, g_strdup ("password"));
     break;
+  case NM_OPENVPN_CONTYPE_X509USERPASS:
+    data = g_slist_append (data, g_strdup ("x509userpass"));
+    break;
   default: // NM_OPENVPN_CONTYPE_X509
     data = g_slist_append (data, g_strdup ("x509"));
     break;
   }
+  data = g_slist_append (data, g_strdup ("dev"));
+  data = g_slist_append (data, use_tap ? g_strdup ("tap") : g_strdup("tun"));
   data = g_slist_append (data, g_strdup ("remote"));
   data = g_slist_append (data, g_strdup (remote));
   data = g_slist_append (data, g_strdup ("ca"));
@@ -425,6 +439,32 @@ impl_is_valid (NetworkManagerVpnUI *self)
       is_valid = TRUE;
     }
  
+  } else if ( connection_type == NM_OPENVPN_CONTYPE_X509USERPASS ) {
+
+    const char *username;
+    const char *ca;
+    const char *cert;
+    const char *key;
+
+    username    = gtk_entry_get_text (impl->w_username);
+    ca          = gtk_entry_get_text (impl->w_password_ca);
+    cert                   = gtk_entry_get_text (impl->w_cert);
+    key                    = gtk_entry_get_text (impl->w_key);
+
+
+    if (strlen (username) > 0 &&
+	strlen (ca) > 0 &&
+	strlen (cert) > 0 &&
+	strlen (key) > 0 &&
+	((!use_routes) || (use_routes && strlen (routes_entry) > 0)) &&
+	/* validate ca/cert/key files */
+	g_file_test( ca, G_FILE_TEST_IS_REGULAR) &&
+	g_file_test( cert, G_FILE_TEST_IS_REGULAR) &&
+	g_file_test( key, G_FILE_TEST_IS_REGULAR) ) {
+
+      is_valid = TRUE;
+    }
+ 
   } else {
     // default to NM_OPENVPN_CONTYPE_X509
     const char *ca;
@@ -538,6 +578,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   gboolean use_routes;
   const char *routes;
   gboolean use_lzo;
+  gboolean use_tap;
   gint connection_type;
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
@@ -552,6 +593,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
   routes                 = gtk_entry_get_text (impl->w_routes);
   use_lzo                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo));
+  use_tap                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_tap));
 
   
   // This is risky, should be variable length depending on actual data!
@@ -603,10 +645,31 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
     g_string_append_printf (buf, _("Username:  %s"), username);
     break;
 
+  case NM_OPENVPN_CONTYPE_X509USERPASS:
+    ca = gtk_entry_get_text (impl->w_ca);
+
+    g_string_append (buf, _("Connection Type: X.509 with Password Authentication"));
+
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("CA:  %s"), ca);
+
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("Cert:  %s"), cert);
+
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("Key:  %s"), key);
+
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("Username:  %s"), username);
+    break;
+
   }
 
   g_string_append (buf, "\n\t");
   g_string_append_printf (buf, _("Remote:  %s"), remote);
+
+  g_string_append (buf, "\n\t");
+  g_string_append_printf( buf, _("Device: %s"), ((use_tap) ? _("TAP") : _("TUN")));
 
   if (use_routes) {
     g_string_append (buf, "\n\t");
@@ -642,6 +705,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     char *key = NULL;
     char *routes = NULL;
     char *lzo = NULL;
+    char *dev = NULL;
     char *connection_type = NULL;
     char *shared_key = NULL;
     char *local_ip = NULL;
@@ -652,6 +716,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     connectionname  = g_key_file_get_string (keyfile, "openvpn", "description", NULL);
     connection_type = g_key_file_get_string (keyfile, "openvpn", "connection-type", NULL);
     remote          = g_key_file_get_string (keyfile, "openvpn", "remote", NULL);
+    dev             = g_key_file_get_string (keyfile, "openvpn", "dev", NULL);
     ca              = g_key_file_get_string (keyfile, "openvpn", "ca", NULL);
     cert            = g_key_file_get_string (keyfile, "openvpn", "cert", NULL);
     key             = g_key_file_get_string (keyfile, "openvpn", "key", NULL);
@@ -668,9 +733,11 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     /* sanity check data */
     if ( (connectionname != NULL) &&
 	 (remote != NULL ) &&
+	 (dev != NULL) &&
 	 (connection_type != NULL) &&
-	 (strlen(remote) > 0) &&
-	 (strlen(connectionname) > 0) ) {
+	 (strlen (remote) > 0) &&
+	 (strlen (dev) > 0) &&
+	 (strlen (connectionname) > 0) ) {
 
       // Basics ok, now check per poosible mode
 
@@ -725,17 +792,28 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     }
 
     if (file_is_good) {
+      should_expand = FALSE;
+
       gtk_entry_set_text (impl->w_connection_name, connectionname);
       gtk_entry_set_text (impl->w_remote, remote);
 
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), ((lzo != NULL) && (strcmp(lzo, "yes") == 0)));
-      
-      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), strlen (routes) > 0);
-      gtk_entry_set_text (impl->w_routes, routes);
-      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), strlen (routes) > 0);
+      if ( (lzo != NULL) && (strcmp(lzo, "yes") == 0) ) {
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), TRUE);
+	should_expand = TRUE;
+      }
 
-      should_expand = (strlen (routes) > 0) ||
-	((lzo != NULL) && (strcmp(lzo, "yes") == 0));
+      if ( strcmp (dev, "tap") == 0 ) {
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tap), TRUE);
+	should_expand = TRUE;
+      }
+
+      if ( strlen (routes) > 0 ) {
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), TRUE);
+	should_expand = TRUE;
+	gtk_entry_set_text (impl->w_routes, routes);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
+      }
+
       gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
     } else {
       GtkWidget *dialog;
@@ -756,6 +834,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     g_free (connectionname);
     g_free (connection_type);
     g_free (remote);
+    g_free (dev);
     g_free (ca);
     g_free (cert);
     g_free (key);
@@ -808,14 +887,42 @@ connection_type_changed (GtkComboBox *box, gpointer user_data)
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
   gint sel = gtk_combo_box_get_active( box );
 
-  gtk_notebook_set_current_page( impl->w_settings_notebook, sel );
+  switch ( sel ) {
+  case NM_OPENVPN_CONTYPE_X509:
+  case NM_OPENVPN_CONTYPE_SHAREDKEY:
+  case NM_OPENVPN_CONTYPE_PASSWORD:
+    {
+      gtk_notebook_set_current_page( impl->w_settings_notebook, sel );
+      for (i = NM_OPENVPN_CONTYPE_X509; i <= NM_OPENVPN_CONTYPE_PASSWORD; ++i) {
+	GtkWidget *tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook), i));
+	gtk_widget_set_sensitive( tab, (i == sel));
+	gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), (i == sel));
+      }
+    }
+    break;
+  case NM_OPENVPN_CONTYPE_X509USERPASS:
+    {
+      GtkWidget *tab;
 
-  for (i = 0; i < NM_OPENVPN_CONTYPE_NUM; ++i) {
-    GtkWidget *tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook), i));
-    gtk_widget_set_sensitive( tab, (i == sel));
-    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), (i == sel));
+      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						    NM_OPENVPN_CONTYPE_X509));
+      gtk_widget_set_sensitive( tab, TRUE);
+      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
+
+      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						    NM_OPENVPN_CONTYPE_SHAREDKEY));
+      gtk_widget_set_sensitive( tab, FALSE);
+      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), FALSE);
+
+      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						    NM_OPENVPN_CONTYPE_PASSWORD));
+      gtk_widget_set_sensitive( tab, TRUE);
+      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
+
+    }
+    gtk_notebook_set_current_page( impl->w_settings_notebook, NM_OPENVPN_CONTYPE_X509 );
+    break;
   }
-
 }
 
 static void
@@ -894,6 +1001,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   GSList *i;
   const char *connection_type = NULL;
   const char *remote = NULL;
+  const char *dev = NULL;
   const char *ca = NULL;
   const char *cert = NULL;
   const char *key = NULL;
@@ -915,6 +1023,8 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
     if (strcmp (key, "remote") == 0) {
       remote = value;
+    } else if (strcmp (key, "dev") == 0) {
+      dev = value;
     } else if (strcmp (key, "ca") == 0) {
       ca = value;
     } else if (strcmp (key, "cert") == 0) {
@@ -964,6 +1074,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     "description=%s\n"
 	     "connection-type=%s\n"
 	     "remote=%s\n"
+	     "dev=%s\n"
 	     "ca=%s\n"
 	     "cert=%s\n"
 	     "key=%s\n"
@@ -976,6 +1087,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     /* Description */ connection_name,
 	     /* conn type */   connection_type,
 	     /* Host */        remote,
+	     /* TUN or TAP */  dev,
 	     /* CA */          ca,
 	     /* Cert */        cert,
 	     /* Key */         key,
@@ -1084,6 +1196,7 @@ impl_get_object (void)
     impl->w_button_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-key" ) );
 
     impl->w_use_lzo                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-lzo"));
+    impl->w_use_tap                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tap"));
 
     impl->w_connection_type        = GTK_COMBO_BOX (glade_xml_get_widget (impl->xml, "openvpn-connection-type"));
     impl->w_settings_notebook      = GTK_NOTEBOOK (glade_xml_get_widget (impl->xml, "openvpn-settings"));
