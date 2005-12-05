@@ -1,6 +1,8 @@
-/* nm-openvpn-service - openvpn integration with NetworkManager
+/* nm-openvpn-service-openvpn-helper - helper called after OpenVPN established
+ * a connection, uses DBUS to send information back to nm-openvpn-service
  *
- * Dan Williams <dcbw@redhat.com>
+ * Tim Niemueller [www.niemueller.de]
+ * Based on work by Dan Williams <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +19,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2005 Tim Niemueller
+ *
+ * $Id$
+ * 
  */
 
 #include <glib.h>

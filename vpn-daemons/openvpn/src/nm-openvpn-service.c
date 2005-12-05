@@ -17,6 +17,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
+ * $Id$
+ *
  */
 
 
@@ -65,8 +67,8 @@ typedef struct _NmOpenVPN_IOData
   gint            child_stdin_fd;
   gint            child_stdout_fd;
   gint            child_stderr_fd;
-  gint            socket_fd;
-  FILE           *socket_file;
+  GIOChannel     *socket_channel;
+  guint           socket_channel_eventid;
 } NmOpenVPN_IOData;
 
 typedef struct NmOpenVPNData
@@ -272,9 +274,12 @@ nm_openvpn_disconnect_management_socket (NmOpenVPNData *data)
   // non-password modes
   if ( data->io_data == NULL) return;
 
-  fclose( data->io_data->socket_file );
-  data->io_data->socket_fd   = -1;
-  data->io_data->socket_file = NULL;
+  g_source_remove (data->io_data->socket_channel_eventid);
+  g_io_channel_shutdown (data->io_data->socket_channel, FALSE, NULL);
+  g_io_channel_unref (data->io_data->socket_channel);
+
+  if (data->io_data->username) g_free (data->io_data->username);
+  if (data->io_data->password) g_free (data->io_data->password);
 
   g_free (data->io_data);
   data->io_data = NULL;
@@ -363,22 +368,21 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
     if ( len > 0 ) {
       char *auth;
 
-      //printf("Read: %s\n", str);
+      /* printf("Read: %s\n", str); */
 
       if ( sscanf(str, ">PASSWORD:Need '%a[^']' username/password", &auth) > 0 ) {
 
-	if ( io_data->username != NULL ) {
-	  // printf("Queried for %s. Write: username=%s, password=%s\n", auth, io_data->username, io_data->password);
-	  fprintf( io_data->socket_file, "username \"%s\" %s\n", auth, io_data->username);
-	  fprintf( io_data->socket_file, "password \"%s\" %s\n", auth, io_data->password);
-	  fflush( io_data->socket_file );
+         if ( io_data->username != NULL ) {
+          gsize written;
+          char *buf = g_strdup_printf ("username \"%s\" %s\n"
+                                       "password \"%s\" %s\n",
+                                       auth, io_data->username,
+                                       auth, io_data->password);
+          /* Will always write everything in blocking channels (on success) */
+          g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
+          g_io_channel_flush (source, NULL);
+          g_free (buf);
 	}
-
-	g_free( io_data->username );
-	g_free( io_data->password );
-	free( auth );
-	io_data->username    = NULL;
-	io_data->password    = NULL;
 
 	return TRUE;
 
@@ -446,15 +450,13 @@ nm_openvpn_connect_timer_cb (NmOpenVPNData *data)
   } else {
     GIOChannel            *openvpn_socket_channel;
     guint                  openvpn_socket_channel_eventid;
-      
-    io_data->socket_fd   = socket_fd;
+    
+    openvpn_socket_channel = g_io_channel_unix_new (socket_fd);
+    openvpn_socket_channel_eventid = g_io_add_watch (openvpn_socket_channel, G_IO_IN, nm_openvpn_socket_data_cb, data);
+    g_io_channel_set_encoding (openvpn_socket_channel, NULL, NULL);
 
-    if ( (io_data->socket_file = fdopen( socket_fd, "w+" )) != NULL ) {
-      openvpn_socket_channel = g_io_channel_unix_new (socket_fd);
-      openvpn_socket_channel_eventid = g_io_add_watch (openvpn_socket_channel, G_IO_IN, nm_openvpn_socket_data_cb, data);
-      g_io_channel_set_encoding (openvpn_socket_channel, NULL, NULL);
-      g_io_channel_unref (openvpn_socket_channel);
-    }
+    io_data->socket_channel = openvpn_socket_channel;
+    io_data->socket_channel_eventid = openvpn_socket_channel_eventid;
 
     return FALSE;
   }
@@ -576,6 +578,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
   int           i = 0;
 
   char         *username = NULL;
+  char         *dev = NULL;
 
 
   g_return_val_if_fail (data != NULL, -1);
@@ -612,6 +615,8 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 	data->connection_type = NM_OPENVPN_CONTYPE_SHAREDKEY;
       } else if ( strcmp (data_items[i], "password" ) == 0 ) {
 	data->connection_type = NM_OPENVPN_CONTYPE_PASSWORD;
+      } else if ( strcmp (data_items[i], "x509userpass" ) == 0 ) {
+	data->connection_type = NM_OPENVPN_CONTYPE_X509USERPASS;
       }
     } else if ( strcmp (data_items[i], "username" ) == 0) {
       username = data_items[++i];
@@ -632,12 +637,21 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       } else if ( (strcmp( data_items[i], "comp-lzo" ) == 0) &&
 		  (strcmp( data_items[++i], "yes" ) == 0) ) {
 	g_ptr_array_add (openvpn_argv, (gpointer) "--comp-lzo");
+      } else if ( (strcmp( data_items[i], "dev" ) == 0) ) {
+	dev = data_items[++i];
       }
     }
     g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
     g_ptr_array_add (openvpn_argv, (gpointer) "--dev");
-    g_ptr_array_add (openvpn_argv, (gpointer) "tun");
-    // g_ptr_array_add (openvpn_argv, (gpointer) "--syslog openvpn-nm");
+    if ( (dev != NULL) ) {
+      g_ptr_array_add (openvpn_argv, (gpointer) dev);
+    } else {
+      // Versions prior to 0.3.0 didn't set this so we default for
+      // tun for these configs
+      g_ptr_array_add (openvpn_argv, (gpointer) "tun");
+    }
+    g_ptr_array_add (openvpn_argv, (gpointer) "--syslog");
+    g_ptr_array_add (openvpn_argv, (gpointer) "nm-openvpn");
     g_ptr_array_add (openvpn_argv, (gpointer) "--up");
     g_ptr_array_add (openvpn_argv, (gpointer) NM_OPENVPN_HELPER_PATH);
     g_ptr_array_add (openvpn_argv, (gpointer) "--up-restart");
@@ -720,6 +734,39 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
 	}
       }
+      break;
+
+
+    case NM_OPENVPN_CONTYPE_X509USERPASS:
+
+      g_ptr_array_add (openvpn_argv, (gpointer) "--client");
+      g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
+      g_ptr_array_add (openvpn_argv, (gpointer) "server");
+
+      for (i = 0; i < num_items; ++i) {
+	if ( strcmp( data_items[i], "ca" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--ca");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	} else if ( strcmp( data_items[i], "cert" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--cert");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	} else if ( strcmp( data_items[i], "key" ) == 0) {
+	  g_ptr_array_add (openvpn_argv, (gpointer) "--key");
+	  g_ptr_array_add (openvpn_argv, (gpointer) data_items[++i]);
+	}
+      }
+      // Use user/path authentication
+      g_ptr_array_add (openvpn_argv, (gpointer) "--auth-user-pass");
+      // Management socket for localhost access to supply username and password
+      g_ptr_array_add (openvpn_argv, (gpointer) "--management");
+      g_ptr_array_add (openvpn_argv, (gpointer) "127.0.0.1");
+      // with have nobind, thus 1194 should be free, it is the IANA assigned port
+      g_ptr_array_add (openvpn_argv, (gpointer) "1194");
+      // Query on the management socket for user/pass
+      g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
+      break;
+
+
     }
 
 
@@ -744,7 +791,10 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
     g_source_attach (openvpn_watch, NULL);
     g_source_unref (openvpn_watch);
 
-    if ( data->connection_type == NM_OPENVPN_CONTYPE_PASSWORD ) {
+    if ( (data->connection_type == NM_OPENVPN_CONTYPE_PASSWORD) ||
+	 (data->connection_type == NM_OPENVPN_CONTYPE_X509USERPASS)
+	 ) {
+
       NmOpenVPN_IOData  *io_data;
 
       io_data                  = g_new0 (NmOpenVPN_IOData, 1);
@@ -795,6 +845,7 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
   Option	allowed_opts[] = {
     { "remote",			        OPT_TYPE_ADDRESS },
     { "ca",				OPT_TYPE_ASCII },
+    { "dev",				OPT_TYPE_ASCII },
     { "cert",				OPT_TYPE_ASCII },
     { "key",				OPT_TYPE_ASCII },
     { "comp-lzo",			OPT_TYPE_ASCII },
