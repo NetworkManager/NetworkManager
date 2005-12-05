@@ -262,7 +262,8 @@ main (int argc, char *argv[])
 	i = g_slist_next (i);
 	if (i != NULL) {
 	  const char *string2 = gconf_value_get_string ((GConfValue *)i->data);
-	  if ( strcmp (string2, "password") == 0 ) {
+	  if ( (strcmp (string2, "password") == 0) ||
+	       (strcmp (string2, "x509userpass") == 0) ) {
 	    needs_password = TRUE;
 	  }
 	}
