@@ -30,7 +30,7 @@
 
 ## Release information
 my $PROGRAM = "intltool-update";
-my $VERSION = "0.33";
+my $VERSION = "0.34.1";
 my $PACKAGE = "intltool";
 
 ## Loaded modules
@@ -94,6 +94,8 @@ my $POTFILES_in;
 
 $SRCDIR = $ENV{"srcdir"} if $ENV{"srcdir"};
 $POTFILES_in = "<$SRCDIR/POTFILES.in";
+
+my $devnull = ($^O eq 'MSWin32' ? 'NUL:' : '/dev/null');
 
 ## Handle options
 GetOptions 
@@ -442,7 +444,7 @@ sub FindLeftoutFiles
 	while (<FILE>) 
 	{
 	    # FIXME: share the pattern matching code with intltool-extract
-	    if (/\s_(.*)=\"/ || /<_[^>]+>/ || /translatable=\"yes\"/)
+	    if (/\s_[-A-Za-z0-9._:]+\s*=\s*\"([^"]+)\"/ || /<_[^>]+>/ || /translatable=\"yes\"/)
 	    {
                 if (defined isNotValidMissing (unpack("x3 A*", $file))) {
                     push @buf_allfiles, unpack("x3 A*", $file) . "\n";
@@ -628,7 +630,7 @@ sub GeneratePOTemplate
     my $gettext_support_nonascii = 0;
 
     # checks for GNU gettext >= 0.12
-    my $dummy = `$XGETTEXT --version --from-code=UTF-8 >/dev/null 2>/dev/null`;
+    my $dummy = `$XGETTEXT --version --from-code=UTF-8 >$devnull 2>$devnull`;
     if ($? == 0)
     {
 	$gettext_support_nonascii = 1;
@@ -826,7 +828,7 @@ sub Console_Write_TranslationStatus
 
     $output_file = "$SRCDIR/$lang.po" if ($output_file eq "");
 
-    system ("$MSGFMT", "-o", "/dev/null", "--statistics", $output_file);
+    system ("$MSGFMT", "-o", "$devnull", "--verbose", $output_file);
 }
 
 sub Console_Write_CoverageReport
@@ -846,7 +848,7 @@ sub Console_Write_CoverageReport
     foreach my $lang (@languages)
     {
 	print "$lang: ";
-	system ("$MSGFMT", "-o", "/dev/null", "--statistics", "$SRCDIR/$lang.po");
+	system ("$MSGFMT", "-o", "$devnull", "--verbose", "$SRCDIR/$lang.po");
     }
 }
 

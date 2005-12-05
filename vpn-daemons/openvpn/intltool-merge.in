@@ -35,7 +35,7 @@
 ## Release information
 my $PROGRAM = "intltool-merge";
 my $PACKAGE = "intltool";
-my $VERSION = "0.33";
+my $VERSION = "0.34.1";
 
 ## Loaded modules
 use strict; 
@@ -92,6 +92,7 @@ my $OUTFILE;
 my %po_files_by_lang = ();
 my %translations = ();
 my $iconv = $ENV{"ICONV"} || $ENV{"INTLTOOL_ICONV"} || "/usr/bin/iconv";
+my $devnull = ($^O eq 'MSWin32' ? 'NUL:' : '/dev/null');
 
 # Use this instead of \w for XML files to handle more possible characters.
 my $w = "[-A-Za-z0-9._:]";
@@ -299,7 +300,7 @@ sub get_po_encoding
         $encoding = "ISO-8859-1";
     }
 
-    system ("$iconv -f $encoding -t UTF-8 </dev/null 2>/dev/null");
+    system ("$iconv -f $encoding -t UTF-8 <$devnull 2>$devnull");
     if ($?) {
 	$encoding = get_local_charset($encoding);
     }
@@ -542,6 +543,8 @@ sub ba_merge_translations
     }
 
     open OUTPUT, ">$OUTFILE" or die "can't open $OUTFILE: $!";
+    # Binmode so that selftest works ok if using a native Win32 Perl...
+    binmode (OUTPUT) if $^O eq 'MSWin32';
 
     while ($source =~ s|^(.*?)([ \t]*<\s*$w+\s+($w+\s*=\s*"$q"\s*)+/?>)([ \t]*\n)?||s) 
     {
@@ -610,23 +613,16 @@ sub getAttributeString
 	if ($do_translate && $key =~ /^_/) {
 	    $key =~ s|^_||g;
 	    if ($language) {
-		
 		# Handle translation
-		#
 		my $decode_string = entity_decode($string);
 		my $translation = $translations{$language, $decode_string};
 		if ($translation) {
 		    $translation = entity_encode($translation);
 		    $string = $translation;
-                    $$translate = 2;
-		} else {
-                    $$translate = 2; # we still want translations for deep nesting (FIXME: this will cause
-                                     # problems since we might get untranslated duplicated entries, but with xml:lang set)
-                    # Fix would be to set it here to eg. 3, and do a check in traverse() to see if any of the containing tags
-                    # really need translation, and only emit "translation" if there is (this means parsing same data twice)
                 }
+                $$translate = 2;
             } else {
-                 $$translate = 2 if ($translate && (!$$translate)); # watch not to "overwrite" if $translate == 2
+                 $$translate = 2 if ($translate && (!$$translate)); # watch not to "overwrite" $translate
             }
 	}
 	
@@ -636,19 +632,19 @@ sub getAttributeString
 }
 
 # Returns a translatable string from XML node, it works on contents of every node in XML::Parser tree
-#   doesn't support nesting of translatable tags (i.e. <_blah>this <_doh>doesn't</_doh> work</_blah> -- besides
-#   can you define the correct semantics for this?)
-#
-
 sub getXMLstring
 {
     my $ref = shift;
+    my $spacepreserve = shift || 0;
     my @list = @{ $ref };
     my $result = "";
 
     my $count = scalar(@list);
     my $attrs = $list[0];
     my $index = 1;
+
+    $spacepreserve = 1 if ((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?preserve["']?$/));
+    $spacepreserve = 0 if ((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?default["']?$/));
 
     while ($index < $count) {
 	my $type = $list[$index];
@@ -657,19 +653,15 @@ sub getXMLstring
 	    # We've got CDATA
 	    if ($content) {
 		# lets strip the whitespace here, and *ONLY* here
-                $content =~ s/\s+/ /gs if (!((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?preserve["']?$/)));
-		$result .= ($content);
-	    } else {
-		#print "no cdata content when expected it\n"; # is this possible, is this ok?
-		# what to do if this happens?
-		# Did I mention that I hate XML::Parser tree style?
+                $content =~ s/\s+/ /gs if (!$spacepreserve);
+		$result .= $content;
 	    }
-	} else {
+	} elsif ( "$type" ne "1" ) {
 	    # We've got another element
 	    $result .= "<$type";
 	    $result .= getAttributeString(@{$content}[0], 0); # no nested translatable elements
 	    if ($content) {
-		my $subresult = getXMLstring($content);
+		my $subresult = getXMLstring($content, $spacepreserve);
 		if ($subresult) {
 		    $result .= ">".$subresult . "</$type>";
 		} else {
@@ -691,6 +683,7 @@ sub translate_subnodes
     my $content = shift;
     my $language = shift || "";
     my $singlelang = shift || 0;
+    my $spacepreserve = shift || 0;
 
     my @nodes = @{ $content };
 
@@ -702,13 +695,30 @@ sub translate_subnodes
         if ($singlelang) {
             my $oldMO = $MULTIPLE_OUTPUT;
             $MULTIPLE_OUTPUT = 1;
-            traverse($fh, $type, $rest, $language);
+            traverse($fh, $type, $rest, $language, $spacepreserve);
             $MULTIPLE_OUTPUT = $oldMO;
         } else {
-            traverse($fh, $type, $rest, $language);
+            traverse($fh, $type, $rest, $language, $spacepreserve);
         }
         $index += 2;
     }
+}
+
+sub isWellFormedXmlFragment
+{
+    my $ret = eval 'require XML::Parser';
+    if(!$ret) {
+        die "You must have XML::Parser installed to run $0\n\n";
+    } 
+
+    my $fragment = shift;
+    return 0 if (!$fragment);
+
+    $fragment = "<root>$fragment</root>";
+    my $xp = new XML::Parser(Style => 'Tree');
+    my $tree = 0;
+    eval { $tree = $xp->parse($fragment); };
+    return $tree;
 }
 
 sub traverse
@@ -717,6 +727,7 @@ sub traverse
     my $nodename = shift;
     my $content = shift;
     my $language = shift || "";
+    my $spacepreserve = shift || 0;
 
     if (!$nodename) {
 	if ($content =~ /^[\s]*$/) {
@@ -735,22 +746,26 @@ sub traverse
 	    $nodename =~ s/^_//;
 	}
 	my $lookup = '';
+
+        $spacepreserve = 0 if ((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?default["']?$/));
+        $spacepreserve = 1 if ((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?preserve["']?$/));
+
 	print $fh "<$nodename", $outattr;
 	if ($translate) {
-	    $lookup = getXMLstring($content);
-            if (!((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?preserve["']?$/))) {
+	    $lookup = getXMLstring($content, $spacepreserve);
+            if (!$spacepreserve) {
                 $lookup =~ s/^\s+//s;
                 $lookup =~ s/\s+$//s;
             }
 
 	    if ($lookup || $translate == 2) {
-                my $translation = $translations{$language, $lookup};
+                my $translation = $translations{$language, $lookup} if isWellFormedXmlFragment($translations{$language, $lookup});
                 if ($MULTIPLE_OUTPUT && ($translation || $translate == 2)) {
                     $translation = $lookup if (!$translation);
                     print $fh " xml:lang=\"", $language, "\"" if $language;
                     print $fh ">";
                     if ($translate == 2) {
-                        translate_subnodes($fh, \@all, $language, 1);
+                        translate_subnodes($fh, \@all, $language, 1, $spacepreserve);
                     } else {
                         print $fh $translation;
                     }
@@ -761,7 +776,7 @@ sub traverse
                 } else {
                     print $fh ">";
                     if ($translate == 2) {
-                        translate_subnodes($fh, \@all, $language, 1);
+                        translate_subnodes($fh, \@all, $language, 1, $spacepreserve);
                     } else {
                         print $fh $lookup;
                     }
@@ -780,7 +795,7 @@ sub traverse
                         #
                         my $translate = 0;
                         my $localattrs = getAttributeString($attrs, 1, $lang, \$translate);
-                        my $translation = $translations{$lang, $lookup};
+                        my $translation = $translations{$lang, $lookup} if isWellFormedXmlFragment($translations{$lang, $lookup});
                         if ($translate && !$translation) {
                             $translation = $lookup;
                         }
@@ -791,7 +806,7 @@ sub traverse
 			    print $fh $leading_space;
  			    print $fh "<", $nodename, " xml:lang=\"", $lang, "\"", $localattrs, ">";
                             if ($translate == 2) {
-                               translate_subnodes($fh, \@all, $lang, 1);
+                               translate_subnodes($fh, \@all, $lang, 1, $spacepreserve);
                             } else {
                                 print $fh $translation;
                             }
@@ -808,7 +823,7 @@ sub traverse
                 while ($index < $count) {
                     my $type = $all[$index];
                     my $rest = $all[$index+1];
-                    traverse($fh, $type, $rest, $language);
+                    traverse($fh, $type, $rest, $language, $spacepreserve);
                     $index += 2;
                 }
 		print $fh "</$nodename>";
@@ -817,6 +832,16 @@ sub traverse
 	    }
 	}
     }
+}
+
+sub intltool_tree_comment
+{
+    my $expat = shift;
+    my $data  = shift;
+    my $clist = $expat->{Curlist};
+    my $pos   = $#$clist;
+
+    push @$clist, 1 => $data;
 }
 
 sub intltool_tree_cdatastart
@@ -962,7 +987,17 @@ sub parseTree
 
     my $name = shift @{ $ref };
     my $cont = shift @{ $ref };
-    traverse($fh, $name, $cont, $language);
+    
+    while (!$name || "$name" eq "1") {
+        $name = shift @{ $ref };
+        $cont = shift @{ $ref };
+    }
+
+    my $spacepreserve = 0;
+    my $attrs = @{$cont}[0];
+    $spacepreserve = 1 if ((exists $attrs->{"xml:space"}) && ($attrs->{"xml:space"} =~ /^["']?preserve["']?$/));
+
+    traverse($fh, $name, $cont, $language, $spacepreserve);
 }
 
 sub xml_merge_output
@@ -975,6 +1010,7 @@ sub xml_merge_output
 	        mkdir $lang or die "Cannot create subdirectory $lang: $!\n";
             }
             open OUTPUT, ">$lang/$OUTFILE" or die "Cannot open $lang/$OUTFILE: $!\n";
+            binmode (OUTPUT) if $^O eq 'MSWin32';
             my $tree = readXml($FILE);
             print_header($FILE, \*OUTPUT);
             parseTree(\*OUTPUT, $tree, $lang);
@@ -983,6 +1019,7 @@ sub xml_merge_output
         }
     } 
     open OUTPUT, ">$OUTFILE" or die "Cannot open $OUTFILE: $!\n";
+    binmode (OUTPUT) if $^O eq 'MSWin32';
     my $tree = readXml($FILE);
     print_header($FILE, \*OUTPUT);
     parseTree(\*OUTPUT, $tree);
@@ -994,6 +1031,7 @@ sub keys_merge_translations
 {
     open INPUT, "<${FILE}" or die;
     open OUTPUT, ">${OUTFILE}" or die;
+    binmode (OUTPUT) if $^O eq 'MSWin32';
 
     while (<INPUT>) 
     {
@@ -1029,6 +1067,7 @@ sub desktop_merge_translations
 {
     open INPUT, "<${FILE}" or die;
     open OUTPUT, ">${OUTFILE}" or die;
+    binmode (OUTPUT) if $^O eq 'MSWin32';
 
     while (<INPUT>) 
     {
@@ -1072,6 +1111,7 @@ sub schemas_merge_translations
     }
 
     open OUTPUT, ">$OUTFILE" or die;
+    binmode (OUTPUT) if $^O eq 'MSWin32';
 
     # FIXME: support attribute translations
 
@@ -1173,6 +1213,7 @@ sub rfc822deb_merge_translations
     }
 
     open OUTPUT, ">${OUTFILE}" or die;
+    binmode (OUTPUT) if $^O eq 'MSWin32';
 
     while ($source =~ /(^|\n+)(_*)([^:\s]+)(:[ \t]*)(.*?)(?=\n[\S\n]|$)/sg)
     {
