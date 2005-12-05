@@ -903,7 +903,6 @@ int main( int argc, char *argv[] )
 			  "Either dbus is not running, or the "
 			  "NetworkManager dbus security policy "
 			  "was not loaded.");
-		nm_data_free (nm_data);
 		exit (EXIT_FAILURE);
 	}
 
