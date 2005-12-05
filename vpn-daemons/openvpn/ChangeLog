@@ -1,6 +1,34 @@
-005-11-30  Tim Niemueller <tim@niemueller.de>
+2005-12-05  Tim Niemueller <tim@niemueller.de>
 
-	* vpn-daemons/openvpn/auth-dialog/main.c: Only request one password,
+	* properties/nm-openvpn-dialog.glade: Added X.509 + User/Pass to list
+	  of available connection types, added checkbox for using TAP device to
+	  optional info expander
+
+	* properties/nm-openvpn.c: Added support for new X.509 + User/Pass
+	  connection type, Added support for using TAP device, device is now
+	  written to config to new field dev
+
+	* auth-dialog/main.c: Password is also needed for new connection type
+
+	* src/nm-openvpn-service-openvpn-helper.c: Updated header
+
+	* src/nm-openvpn-service.[ch]: Added support for new X.509 + User/Pass
+	  connection type, device is now an explicit parameter, if not set it
+	  defaults to "tun" for compatibility with versions < 0.3.0, fixed
+	  closing of management socket, thanks for this patch goes to to
+	  Crispin Flowerday
+
+	* configure.in: Raised version to 0.3.0
+
+	* openvpn/intltool-extract.in
+	  openvpn/intltool-merge.in
+	  openvpn/intltool-update.in:
+	  Versions from intltool 0.34 are back, magically work after new
+	  autogen.sh run!?
+
+2005-11-30  Tim Niemueller <tim@niemueller.de>
+
+	* auth-dialog/main.c: Only request one password,
 	  still use GnomeTwoPasswordDialog, gives all the functionality we need.
 	  This should be unified between VPN implementations. Also I had to add
 	  GConf support to see if a password is really needed for the connection
@@ -8,28 +36,28 @@
 	  and maybe even an impl_needs_passwd_dialog or similar should be added.
 	  Patch will follow when healthy again.
 
-	* vpn-daemons/openvpn/properties/nm-openvpn-dialog.glade: Updated GUI,
+	* properties/nm-openvpn-dialog.glade: Updated GUI,
 	  contains now everything needed to configure all three connection types
 
-	* vpn-daemons/openvpn/properties/nm-openvpn.c: Added handling of all
+	* properties/nm-openvpn.c: Added handling of all
 	  three connection types.
 
-	* vpn-daemons/openvpn/src/nm-openvpn-service-openvpn-helper.c: Use
+	* src/nm-openvpn-service-openvpn-helper.c: Use
 	  different environment variables which are available for all connection
 	  types, fixed the returned VPN gateway address. This was the remote IP
 	  used in the VPN network, not the remote's real address. This prevented
 	  it from working if VPN gateway was not in the same subnet since routes
 	  were wrong.
 
-	* vpn-daemons/openvpn/src/nm-openvpn-service.h
-	  vpn-daemons/openvpn/src/nm-openvpn-service.c: Added support for
+	* src/nm-openvpn-service.h
+	  src/nm-openvpn-service.c: Added support for
 	  password and shared secret connection types. Reformatted to Gnu style.
 
-	* vpn-daemons/openvpn/configure.in: Raised version to 0.2.0
+	* configure.in: Raised version to 0.2.0
 
-	* vpn-daemons/openvpn/intltool-extract.in
-	  vpn-daemons/openvpn/intltool-merge.in
-	  vpn-daemons/openvpn/intltool-update.in:
+	* openvpn/intltool-extract.in
+	  openvpn/intltool-merge.in
+	  openvpn/intltool-update.in:
 	  Version from intltool 0.33, 0.34 won't work at the moment.
 
 2005-10-29  Tim Niemueller <tim@niemueller.de>
