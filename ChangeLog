@@ -1,5 +1,12 @@
 2005-12-06  Dan Williams  <dcbw@redhat.com>
 
+	* Move NetworkManager.h -> include/NetworkManager.h
+	* Split out VPN stuff into include/NetworkManagerVPN.h
+	* Fix up makefiles to include new location
+	* Fix up sources to include NetworkManagerVPN.h
+
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
 	Various changes in the applet to move VPN connection "state" -> "stage",
 	which it actually is.  I'd like to change the signal as well when we
 	break compat in the near future.

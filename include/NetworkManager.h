@@ -33,8 +33,6 @@
 #define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
 #define	NM_DBUS_PATH_DHCP			"/org/freedesktop/NetworkManager/DhcpOptions"
 #define	NM_DBUS_INTERFACE_DHCP		"org.freedesktop.NetworkManager.DhcpOptions"
-#define	NM_DBUS_PATH_VPN			"/org/freedesktop/NetworkManager/VPNConnections"
-#define	NM_DBUS_INTERFACE_VPN		"org.freedesktop.NetworkManager.VPNConnections"
 
 #define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
 #define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
@@ -49,30 +47,6 @@
 #define NM_DBUS_NO_NETWORKS_ERROR		"org.freedesktop.NetworkManager.NoNetworks"
 #define NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
 #define NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
-
-#define NM_DBUS_NO_ACTIVE_VPN_CONNECTION	"org.freedesktop.NetworkManager.VPNConnections.NoActiveVPNConnection"
-#define NM_DBUS_NO_VPN_CONNECTIONS			"org.freedesktop.NetworkManager.VPNConnections.NoVPNConnections"
-#define NM_DBUS_INVALID_VPN_CONNECTION		"org.freedesktop.NetworkManager.VPNConnections.InvalidVPNConnection"
-
-#define NM_DBUS_VPN_STARTING_IN_PROGRESS	"StartingInProgress"
-#define NM_DBUS_VPN_ALREADY_STARTED		"AlreadyStarted"
-#define NM_DBUS_VPN_STOPPING_IN_PROGRESS	"StoppingInProgress"
-#define NM_DBUS_VPN_ALREADY_STOPPED		"AlreadyStopped"
-#define NM_DBUS_VPN_WRONG_STATE			"WrongState"
-#define NM_DBUS_VPN_BAD_ARGUMENTS			"BadArguments"
-
-
-/*
- * VPN daemon signals
- */
-#define NM_DBUS_VPN_SIGNAL_LOGIN_BANNER		"LoginBanner"
-#define NM_DBUS_VPN_SIGNAL_LOGIN_FAILED		"LoginFailed"
-#define NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED	"LaunchFailed"
-#define NM_DBUS_VPN_SIGNAL_CONNECT_FAILED	"ConnectFailed"
-#define NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD	"VPNConfigBad"
-#define NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD	"IPConfigBad"
-#define NM_DBUS_VPN_SIGNAL_STATE_CHANGE		"StateChange"
-#define NM_DBUS_VPN_SIGNAL_IP4_CONFIG		"IP4Config"
 
 
 /*
@@ -174,37 +148,6 @@ typedef enum NMDeviceAuthMethod
 	NM_DEVICE_AUTH_METHOD_SHARED_KEY,
 	NM_DEVICE_AUTH_METHOD_WPA_PSK
 } NMDeviceAuthMethod;
-
-
-/*
- * VPN daemon states
- */
-typedef enum NMVPNState
-{
-	NM_VPN_STATE_UNKNOWN = 0,
-	NM_VPN_STATE_INIT,
-	NM_VPN_STATE_SHUTDOWN,
-	NM_VPN_STATE_STARTING,
-	NM_VPN_STATE_STARTED,
-	NM_VPN_STATE_STOPPING,
-	NM_VPN_STATE_STOPPED
-} NMVPNState;
-
-
-/*
- * VPN connection activation stages
- */
-typedef enum NMVPNActStage
-{
-	NM_VPN_ACT_STAGE_UNKNOWN = 0,
-	NM_VPN_ACT_STAGE_DISCONNECTED,
-	NM_VPN_ACT_STAGE_PREPARE,
-	NM_VPN_ACT_STAGE_CONNECT,
-	NM_VPN_ACT_STAGE_IP_CONFIG_GET,
-	NM_VPN_ACT_STAGE_ACTIVATED,
-	NM_VPN_ACT_STAGE_FAILED,
-	NM_VPN_ACT_STAGE_CANCELED
-} NMVPNActStage;
 
 
 /*

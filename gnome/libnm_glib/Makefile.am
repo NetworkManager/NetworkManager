@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir}  -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}  -I${top_srcdir}/utils -I${top_srcdir}/include
 
 lib_LTLIBRARIES=libnm_glib.la
 

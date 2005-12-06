@@ -1,6 +1,11 @@
 SUBDIRS=named-manager vpn-manager dhcp-manager backends
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/src/dhcp-manager -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}                   \
+           -I${top_srcdir}/include           \
+           -I${top_srcdir}/src/named-manager \
+           -I${top_srcdir}/src/vpn-manager   \
+           -I${top_srcdir}/src/dhcp-manager  \
+           -I${top_srcdir}/utils
 
 bin_PROGRAMS = NetworkManager
 

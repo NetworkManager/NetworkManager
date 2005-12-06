@@ -1,4 +1,9 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/src/named-manager -I${top_srcdir}/src/vpn-manager -I${top_srcdir}/src -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}                       \
+           -I${top_srcdir}/include               \
+           -I${top_srcdir}/utils                 \
+           -I${top_srcdir}/src                   \
+           -I${top_srcdir}/src/vpn-manager       \
+           -I${top_srcdir}/src/named-manager
 
 noinst_LTLIBRARIES = libnmbackend.la
 

@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir}  -I${top_srcdir}/utils -I${top_srcdir}/vpn-daemons/vpnc
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/vpn-daemons/vpnc
 
 AM_CPPFLAGS =							\
 	$(DBUS_CFLAGS)						\

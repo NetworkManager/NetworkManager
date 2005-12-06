@@ -1,4 +1,7 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/gnome/libnm_glib -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}                    \
+           -I${top_srcdir}/gnome/libnm_glib   \
+           -I${top_srcdir}/utils              \
+           -I${top_srcdir}/include
 
 AM_CPPFLAGS =						\
 	$(DBUS_CFLAGS)					\

@@ -25,6 +25,7 @@
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerVPN.h"
 #include "nm-dbus-vpn.h"
 #include "nm-vpn-manager.h"
 #include "nm-vpn-connection.h"

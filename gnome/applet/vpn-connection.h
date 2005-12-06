@@ -23,6 +23,7 @@
 #define VPN_CONNECTION_H
 
 #include "applet.h"
+#include "NetworkManagerVPN.h"
 
 VPNConnection *	nmwa_vpn_connection_new			(const char *name);
 VPNConnection *	nmwa_vpn_connection_copy			(VPNConnection *vpn);

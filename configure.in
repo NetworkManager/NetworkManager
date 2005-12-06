@@ -280,6 +280,7 @@ fi
 
 AC_OUTPUT([
 Makefile
+include/Makefile
 utils/Makefile
 src/Makefile
 src/named-manager/Makefile

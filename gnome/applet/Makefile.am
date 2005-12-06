@@ -2,7 +2,7 @@ SUBDIRS=icons
 
 NULL=
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/include
 
 bin_PROGRAMS = nm-applet
 
