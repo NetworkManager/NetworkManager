@@ -19,7 +19,7 @@ RETVAL=0
 
 start()
 {
-	if [ "`pgrep dbus-daemon-1`" = "" ]; then
+	if [ "`pgrep dbus-daemon`" = "" ]; then
 		echo -n "D-BUS must be running to start NetworkManager"
 		exit 1
 	fi

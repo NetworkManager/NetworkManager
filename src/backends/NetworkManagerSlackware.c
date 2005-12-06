@@ -188,6 +188,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
+	nm_spawn_process ("/bin/killall -q dhcpcd");
 }
 
 

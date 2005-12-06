@@ -1,3 +1,13 @@
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
+	Slackware patches from Paul Blazejowski <paulb@blazebox.homeip.net>
+	* initscript/Slackware/rc.networkmanager
+		- Cosmetic fix
+
+	* src/backends/NetworkManagerSlackware.c
+		- Kill dhcpcd when starting so that dhclient can bind to DHCP on
+			interfaces
+
 2005-12-05  Robert Love  <rml@novell.com>
 
 	* src/NetworkManager.c: don't call nm_data_free() when there is nothing
