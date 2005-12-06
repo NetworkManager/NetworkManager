@@ -1,5 +1,11 @@
 2005-12-06  Dan Williams  <dcbw@redhat.com>
 
+	Various changes in the applet to move VPN connection "state" -> "stage",
+	which it actually is.  I'd like to change the signal as well when we
+	break compat in the near future.
+
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
 	Slackware patches from Paul Blazejowski <paulb@blazebox.homeip.net>
 	* initscript/Slackware/rc.networkmanager
 		- Cosmetic fix
