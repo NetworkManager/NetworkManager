@@ -28,7 +28,7 @@ struct VPNConnection
 	int			refcount;
 	char	*		name;
 	char *		service;
-	NMVPNActStage	state;
+	NMVPNActStage	stage;
 };
 
 
@@ -56,7 +56,7 @@ VPNConnection *nmwa_vpn_connection_copy (VPNConnection *src_vpn)
 	dst_vpn->refcount = 1;
 	dst_vpn->name = g_strdup (src_vpn->name);
 	dst_vpn->service = src_vpn->service ? g_strdup (src_vpn->service) : NULL;
-	dst_vpn->state = src_vpn->state;
+	dst_vpn->stage = src_vpn->stage;
 
 	return dst_vpn;
 }
@@ -136,18 +136,18 @@ VPNConnection *nmwa_vpn_connection_find_by_name (GSList *list, const char *name)
 	return vpn;	
 }
 
-NMVPNActStage nmwa_vpn_connection_get_state (VPNConnection *vpn)
+NMVPNActStage nmwa_vpn_connection_get_stage (VPNConnection *vpn)
 {
 	g_return_val_if_fail (vpn != NULL, NM_VPN_ACT_STAGE_UNKNOWN);
 
-	return vpn->state;
+	return vpn->stage;
 }
 
-void nmwa_vpn_connection_set_state (VPNConnection *vpn, NMVPNActStage state)
+void nmwa_vpn_connection_set_stage (VPNConnection *vpn, NMVPNActStage stage)
 {
 	g_return_if_fail (vpn != NULL);
 
-	vpn->state = state;
+	vpn->stage = stage;
 }
 
 gboolean nmwa_vpn_connection_is_activating (VPNConnection *vpn)
@@ -156,7 +156,7 @@ gboolean nmwa_vpn_connection_is_activating (VPNConnection *vpn)
 
 	g_return_val_if_fail (vpn != NULL, FALSE);
 
-	stage = nmwa_vpn_connection_get_state (vpn);
+	stage = nmwa_vpn_connection_get_stage (vpn);
 	if (stage == NM_VPN_ACT_STAGE_PREPARE ||
 		stage == NM_VPN_ACT_STAGE_CONNECT ||
 		stage == NM_VPN_ACT_STAGE_IP_CONFIG_GET)

@@ -819,7 +819,7 @@ VPNConnection *nmwa_get_first_active_vpn_connection (NMWirelessApplet *applet)
 	for (elt = applet->vpn_connections; elt; elt = g_slist_next (elt))
 	{
 		vpn = (VPNConnection*) elt->data;
-		vpn_state = nmwa_vpn_connection_get_state (vpn);
+		vpn_state = nmwa_vpn_connection_get_stage (vpn);
 		if (vpn_state == NM_VPN_ACT_STAGE_ACTIVATED)
 			return vpn;
 	}

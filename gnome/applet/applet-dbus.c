@@ -226,13 +226,13 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionStateChange"))	/* Active VPN connection changed */
 	{
 		char *		name = NULL;
-		NMVPNActStage	vpn_state;
-		dbus_uint32_t	vpn_state_int;
+		NMVPNActStage	vpn_stage;
+		dbus_uint32_t	vpn_stage_int;
 
-		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_UINT32, &vpn_state_int, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_UINT32, &vpn_stage_int, DBUS_TYPE_INVALID))
 		{
-			vpn_state = (NMVPNActStage) vpn_state_int;
-			nmwa_dbus_vpn_update_vpn_connection_state (applet, name, vpn_state);
+			vpn_stage = (NMVPNActStage) vpn_stage_int;
+			nmwa_dbus_vpn_update_vpn_connection_stage (applet, name, vpn_stage);
 		}
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, "VPNConnectionRemoved"))

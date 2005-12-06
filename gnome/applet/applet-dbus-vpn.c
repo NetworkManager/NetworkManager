@@ -38,18 +38,18 @@ static void nmwa_free_vpn_connections (NMWirelessApplet *applet);
 
 
 /*
- * nmwa_dbus_vpn_update_vpn_connection_state
+ * nmwa_dbus_vpn_update_vpn_connection_stage
  *
- * Sets the state for a dbus vpn connection and schedules a copy to the applet gui.
+ * Sets the activation stage for a dbus vpn connection.
  */
-void nmwa_dbus_vpn_update_vpn_connection_state (NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_state)
+void nmwa_dbus_vpn_update_vpn_connection_stage (NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_stage)
 {
 	VPNConnection	*vpn;
 
 	g_return_if_fail (applet != NULL);
 
 	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
-		nmwa_vpn_connection_set_state (vpn, vpn_state);
+		nmwa_vpn_connection_set_stage (vpn, vpn_stage);
 }
 
 typedef struct VpnPropsCBData
@@ -82,8 +82,8 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	const char *		name;
 	const char *        user_name;
 	const char *        service;
-	NMVPNActStage		state;
-	dbus_uint32_t		state_int;
+	NMVPNActStage		stage;
+	dbus_uint32_t		stage_int;
 	
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -102,23 +102,23 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	}
 
 	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &user_name,
-				DBUS_TYPE_STRING, &service, DBUS_TYPE_UINT32, &state_int, DBUS_TYPE_INVALID))
+				DBUS_TYPE_STRING, &service, DBUS_TYPE_UINT32, &stage_int, DBUS_TYPE_INVALID))
 	{
 		VPNConnection *	vpn;
 
-		state = (NMVPNActStage) state_int;
+		stage = (NMVPNActStage) stage_int;
 
 		/* If its already there, update the service, otherwise add it to the list */
 		if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, name)))
 		{
 			nmwa_vpn_connection_set_service (vpn, service);
-			nmwa_vpn_connection_set_state (vpn, state);
+			nmwa_vpn_connection_set_stage (vpn, stage);
 		}
 		else
 		{
 			vpn = nmwa_vpn_connection_new (name);
 			nmwa_vpn_connection_set_service (vpn, service);
-			nmwa_vpn_connection_set_state (vpn, state);
+			nmwa_vpn_connection_set_stage (vpn, stage);
 			applet->vpn_connections = g_slist_append (applet->vpn_connections, vpn);
 		}
 	}

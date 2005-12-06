@@ -34,8 +34,8 @@ const char *		nmwa_vpn_connection_get_name		(VPNConnection *vpn);
 const char *		nmwa_vpn_connection_get_service	(VPNConnection *vpn);
 void				nmwa_vpn_connection_set_service	(VPNConnection *vpn, const char *service);
 
-NMVPNActStage		nmwa_vpn_connection_get_state		(VPNConnection *vpn);
-void				nmwa_vpn_connection_set_state		(VPNConnection *vpn, NMVPNActStage state);
+NMVPNActStage		nmwa_vpn_connection_get_stage		(VPNConnection *vpn);
+void				nmwa_vpn_connection_set_stage		(VPNConnection *vpn, NMVPNActStage stage);
 
 gboolean		nmwa_vpn_connection_is_activating	(VPNConnection *vpn);
 
