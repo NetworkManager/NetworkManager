@@ -37,6 +37,26 @@
 static void nmwa_free_vpn_connections (NMWirelessApplet *applet);
 
 
+void
+nmwa_dbus_vpn_set_last_attempt_status (NMWirelessApplet *applet, const char *vpn_name, gboolean last_attempt_success)
+{
+	char *gconf_key;
+	char *escaped_name;
+	VPNConnection *vpn;
+	
+	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
+	{
+		escaped_name = gconf_escape_key (vpn_name, strlen (vpn_name));
+
+		gconf_key = g_strdup_printf ("%s/%s/last_attempt_success", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
+		gconf_client_set_bool (applet->gconf_client, gconf_key, last_attempt_success, NULL);
+
+		g_free (gconf_key);
+		g_free (escaped_name);
+	}
+}
+
+
 /*
  * nmwa_dbus_vpn_update_vpn_connection_stage
  *
@@ -49,7 +69,14 @@ void nmwa_dbus_vpn_update_vpn_connection_stage (NMWirelessApplet *applet, const 
 	g_return_if_fail (applet != NULL);
 
 	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
+	{
 		nmwa_vpn_connection_set_stage (vpn, vpn_stage);
+		if (vpn_stage == NM_VPN_ACT_STAGE_ACTIVATED)
+		{
+			/* set the 'last_attempt_success' key in gconf so we DON'T prompt for password next time */
+			nmwa_dbus_vpn_set_last_attempt_status (applet, vpn_name, TRUE);
+		}
+	}
 }
 
 typedef struct VpnPropsCBData

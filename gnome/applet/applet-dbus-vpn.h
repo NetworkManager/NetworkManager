@@ -27,6 +27,8 @@
 #include <dbus/dbus.h>
 #include "vpn-connection.h"
 
+void		nmwa_dbus_vpn_set_last_attempt_status			(NMWirelessApplet *applet, const char *vpn_name, gboolean last_attempt_success);
+
 void		nmwa_dbus_vpn_update_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);
 void		nmwa_dbus_vpn_update_vpn_connections			(NMWirelessApplet *applet);
 void		nmwa_dbus_vpn_remove_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);

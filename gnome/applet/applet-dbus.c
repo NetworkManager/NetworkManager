@@ -98,22 +98,6 @@ static int deal_with_dbus_error (const char *function, const char *method, DBusE
 }
 
 
-
-static void
-set_vpn_last_attempt_status (NMWirelessApplet *applet, const char *vpn_name, gboolean last_attempt_success)
-{
-	char *gconf_key;
-	char *escaped_name;
-
-	escaped_name = gconf_escape_key (vpn_name, strlen (vpn_name));
-
-	gconf_key = g_strdup_printf ("%s/%s/last_attempt_success", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
-	gconf_client_set_bool (applet->gconf_client, gconf_key, last_attempt_success, NULL);
-
-	g_free (gconf_key);
-	g_free (escaped_name);
-}
-
 /*
  * nmwa_dbus_filter
  *
@@ -286,7 +270,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 		if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_name, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID)) {
 			nmwa_schedule_vpn_failure_dialog (applet, member, vpn_name, error_msg);
 			/* clear the 'last_attempt_success' key in gconf so we prompt for password next time */
-			set_vpn_last_attempt_status (applet, vpn_name, FALSE);
+			nmwa_dbus_vpn_set_last_attempt_status (applet, vpn_name, FALSE);
 		}
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_VPN, NM_DBUS_VPN_SIGNAL_LOGIN_BANNER))
@@ -302,7 +286,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			g_free (stripped);
 
 			/* set the 'last_attempt_success' key in gconf so we DON'T prompt for password next time */
-			set_vpn_last_attempt_status (applet, vpn_name, TRUE);
+			nmwa_dbus_vpn_set_last_attempt_status (applet, vpn_name, TRUE);
 		}
 	}
 	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceActivationFailed"))

@@ -1,5 +1,15 @@
 2005-12-06  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus.c
+		- (set_vpn_last_attempt_status): remove, now in applet-dbus-vpn.c
+
+	* gnome/applet/applet-dbus-vpn.c
+		- (nmwa_dbus_vpn_set_last_attempt_status): new, from applet-dbus.c
+		- (nmwa_dbus_vpn_update_vpn_connection_stage): set last_attempt_success
+			to TRUE here if stage was ACTIVATED
+
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
 	* Change nm_device_is_* functions to better names:
 		nm_device_is_wireless() -> nm_device_is_802_11_wireless()
 		nm_device_is_wired() -> nm_device_is_802_3_ethernet()
