@@ -494,16 +494,25 @@ found:
 
 	if (!(sys_data->use_dhcp))
 	{
-		if ((buf = svGetValue (file, "IPADDR")))
+		buf = svGetValue (file, "IPADDR");
+		if (buf)
 		{
-			nm_ip4_config_set_address (sys_data->config, inet_addr (buf));
-			free (buf);
+				in_addr_t ip;
+
+				ip = inet_addr (buf);
+				if (ip != -1)
+					nm_ip4_config_set_address (sys_data->config, ip);
+				else
+					error = TRUE;
+				free (buf);
 		}
 		else
+			error = TRUE;
+
+		if (error)
 		{
 			nm_warning ("Network configuration for device '%s' was invalid: Non-DHCP configuration, "
-						"but no IP address specified.  Will use DHCP instead.", nm_device_get_iface (dev));
-			error = TRUE;
+					  "but no IP address specified.  Will use DHCP instead.", nm_device_get_iface (dev));
 			goto out;
 		}
 
