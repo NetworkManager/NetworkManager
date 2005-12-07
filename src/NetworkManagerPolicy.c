@@ -58,7 +58,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	g_assert (dev);
 
 	/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		struct ether_addr	addr;
 		NMAccessPoint *	ap = nm_act_request_get_ap (req);
@@ -137,7 +137,7 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		if ((ap = nm_act_request_get_ap (req)))
 		{
@@ -236,7 +236,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
 			continue;
 
-		if (nm_device_is_wired (dev))
+		if (nm_device_is_802_3_ethernet (dev))
 		{
 			/* We never automatically choose devices that don't support carrier detect */
 			if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
@@ -254,7 +254,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 				best_wired_prio = prio;
 			}
 		}
-		else if (nm_device_is_wireless (dev) && data->wireless_enabled)
+		else if (nm_device_is_802_11_wireless (dev) && data->wireless_enabled)
 		{
 			/* Don't automatically choose a device that doesn't support wireless scanning */
 			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
@@ -338,8 +338,8 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
-		if ((nm_device_is_wired (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			|| (nm_device_is_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
+		if ((nm_device_is_802_3_ethernet (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			|| (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
 		{
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
 				nm_device_get_iface (old_dev));
@@ -389,7 +389,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
 		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
 
-		if (nm_device_is_wired (old_dev))
+		if (nm_device_is_802_3_ethernet (old_dev))
 		{
 			/* Only switch if the old device was not user requested, and we are either switching to
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
@@ -401,10 +401,10 @@ static gboolean nm_policy_device_change_check (NMData *data)
 				do_switch = TRUE;
 			}
 		}
-		else if (nm_device_is_wireless (old_dev))
+		else if (nm_device_is_802_11_wireless (old_dev))
 		{
 			/* Only switch if the old device's wireless config is invalid */
-			if (nm_device_is_wireless (new_dev))
+			if (nm_device_is_802_11_wireless (new_dev))
 			{
 				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
 				const char *	old_essid = nm_ap_get_essid (old_ap);
@@ -424,7 +424,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 					do_switch = TRUE;
 				}
 			}
-			else if (nm_device_is_wired (new_dev))
+			else if (nm_device_is_802_3_ethernet (new_dev))
 			{
 				if (!nm_device_has_active_link (old_dev))
 					do_switch = TRUE;
@@ -432,7 +432,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		}
 	}
 
-	if (do_switch && (nm_device_is_wired (new_dev) || (nm_device_is_wireless (new_dev) && ap)))
+	if (do_switch && (nm_device_is_802_3_ethernet (new_dev) || (nm_device_is_802_11_wireless (new_dev) && ap)))
 	{
 		NMActRequest *	act_req = NULL;
 
@@ -621,7 +621,7 @@ static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
 	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
 	{
 		NMDevice	*dev = (NMDevice *)(elt->data);
-		if (nm_device_is_wireless (dev))
+		if (nm_device_is_802_11_wireless (dev))
 		{
 			if (nm_device_get_supports_wireless_scan (dev))
 			{

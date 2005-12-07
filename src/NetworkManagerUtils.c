@@ -414,7 +414,7 @@ void nm_print_device_capabilities (NMDevice *dev)
 		return;
 	}
 
-	if (nm_device_is_wired (dev))
+	if (nm_device_is_802_3_ethernet (dev))
 	{
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 		{
@@ -424,7 +424,7 @@ void nm_print_device_capabilities (NMDevice *dev)
 			full_support = FALSE;
 		}
 	}
-	else if (nm_device_is_wireless (dev))
+	else if (nm_device_is_802_11_wireless (dev))
 	{
 		if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 		{

@@ -188,7 +188,7 @@ static gboolean nm_is_driver_supported (NMDevice *dev)
 	}
 
 	/* Check for Wireless Extensions support >= 16 for wireless devices */
-	if (supported && nm_device_is_wireless (dev))
+	if (supported && nm_device_is_802_11_wireless (dev))
 	{
 		NMSock *	sk = NULL;
 		guint8	we_ver = 0;
@@ -338,7 +338,7 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 	NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 
 	opts->scan_mutex = g_mutex_new ();
 	opts->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
@@ -458,7 +458,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev->capabilities |= nm_device_discover_capabilities (dev);
 
 		/* Initialize wireless-specific options */
-		if (nm_device_is_wireless (dev) && !nm_device_wireless_init (dev))
+		if (nm_device_is_802_11_wireless (dev) && !nm_device_wireless_init (dev))
 			goto err;
 
 		nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
@@ -530,7 +530,7 @@ gboolean nm_device_unref (NMDevice *dev)
 		nm_device_worker_thread_stop (dev);
 		nm_device_bring_down (dev);
 
-		if (nm_device_is_wireless (dev))
+		if (nm_device_is_802_11_wireless (dev))
 		{
 			nm_device_ap_list_clear (dev);
 
@@ -577,7 +577,7 @@ static gpointer nm_device_worker (gpointer user_data)
 	}
 
 	/* Start the scanning timeout for devices that can do scanning */
-	if (nm_device_is_wireless (dev) && nm_device_get_supports_wireless_scan (dev))
+	if (nm_device_is_802_11_wireless (dev) && nm_device_get_supports_wireless_scan (dev))
 	{
 		GSource			*source = g_idle_source_new ();
 		guint			 source_id = 0;
@@ -635,7 +635,7 @@ static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
 	guint32			caps = NM_DEVICE_CAP_NONE;
 
 	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NM_DEVICE_CAP_NONE);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NM_DEVICE_CAP_NONE);
 
 	/* A test wireless device can always scan (we generate fake scan data for it) */
 	if (dev->test_device)
@@ -671,7 +671,7 @@ static guint32 nm_device_wired_discover_capabilities (NMDevice *dev)
 	LibHalContext *ctx = NULL;
 
 	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
-	g_return_val_if_fail (nm_device_is_wired (dev), NM_DEVICE_CAP_NONE);
+	g_return_val_if_fail (nm_device_is_802_3_ethernet (dev), NM_DEVICE_CAP_NONE);
 	g_return_val_if_fail (dev->app_data != NULL, NM_DEVICE_CAP_NONE);
 
 	/* cipsec devices are also explicitly unsupported at this time */
@@ -712,9 +712,9 @@ static guint32 nm_device_discover_capabilities (NMDevice *dev)
 	if (!(dev->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
 		return NM_DEVICE_CAP_NONE;
 
-	if (nm_device_is_wired (dev))
+	if (nm_device_is_802_3_ethernet (dev))
 		caps |= nm_device_wired_discover_capabilities (dev);
-	else if (nm_device_is_wireless (dev))
+	else if (nm_device_is_802_11_wireless (dev))
 		caps |= nm_device_wireless_discover_capabilities (dev);
 
 	return caps;
@@ -759,7 +759,7 @@ void nm_device_set_removed (NMDevice *dev, const gboolean removed)
 static gint nm_device_get_association_pause_value (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, -1);
-	g_return_val_if_fail (nm_device_is_wireless (dev), -1);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), -1);
 
 	/* If the card supports more than 14 channels, we should probably wait
 	 * around 10s so it can scan them all. After we set the ESSID on the card, the card
@@ -827,14 +827,14 @@ guint nm_device_get_type (NMDevice *dev)
 	return (dev->type);
 }
 
-gboolean nm_device_is_wireless (NMDevice *dev)
+gboolean nm_device_is_802_11_wireless (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
 	return (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 }
 
-gboolean nm_device_is_wired (NMDevice *dev)
+gboolean nm_device_is_802_3_ethernet (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -892,13 +892,13 @@ void nm_device_set_link_active (NMDevice *dev, const gboolean link_active)
 			 * must manually choose semi-supported devices.
 			 *
 			 */
-			if (nm_device_is_wired (dev) && (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT))
+			if (nm_device_is_802_3_ethernet (dev) && (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT))
 			{
 				gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
 				NMActRequest *	act_req;
 
 				/* If active device is wireless, switch to this one */
-				if (act_dev && nm_device_is_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
+				if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
 					do_switch = TRUE;
 
 				if (do_switch && (act_req = nm_act_request_new (dev->app_data, dev, NULL, TRUE)))
@@ -920,7 +920,7 @@ gboolean nm_device_get_supports_wireless_scan (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	if (!nm_device_is_wireless (dev))
+	if (!nm_device_is_802_11_wireless (dev))
 		return (FALSE);
 
 	return (dev->capabilities & NM_DEVICE_CAP_WIRELESS_SCAN);
@@ -934,7 +934,7 @@ gboolean nm_device_get_supports_carrier_detect (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	if (!nm_device_is_wired (dev))
+	if (!nm_device_is_802_3_ethernet (dev))
 		return (FALSE);
 
 	return (dev->capabilities & NM_DEVICE_CAP_CARRIER_DETECT);
@@ -1041,7 +1041,7 @@ static gboolean nm_device_probe_wired_link_state (NMDevice *dev)
 	gsize length;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (nm_device_is_wired (dev) == TRUE, FALSE);
+	g_return_val_if_fail (nm_device_is_802_3_ethernet (dev) == TRUE, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
 
 	/* Test devices have their link state set through DBUS */
@@ -1085,12 +1085,12 @@ gboolean nm_device_probe_link_state (NMDevice *dev)
 	if (!nm_device_is_up (dev))
 		nm_device_bring_up (dev);
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		link = nm_device_probe_wireless_link_state (dev);
 		nm_device_update_signal_strength (dev);
 	}
-	else if (nm_device_is_wired (dev))
+	else if (nm_device_is_802_3_ethernet (dev))
 		link = nm_device_probe_wired_link_state (dev);
 
 	return link;
@@ -1112,7 +1112,7 @@ char * nm_device_get_essid (NMDevice *dev)
 	int		 err;
 	
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 
 	/* Test devices return the essid of their "best" access point
 	 * or if there is none, the contents of the cur_essid field.
@@ -1168,7 +1168,7 @@ void nm_device_set_essid (NMDevice *dev, const char *essid)
 	unsigned char		 safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
 	
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	/* Test devices directly set cur_essid */
 	if (dev->test_device)
@@ -1228,7 +1228,7 @@ static double nm_device_get_frequency (NMDevice *dev)
 	double	 freq = 0;
 
 	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), 0);
 
 	/* Test devices don't really have a frequency, they always succeed */
 	if (dev->test_device)
@@ -1270,7 +1270,7 @@ static void nm_device_set_frequency (NMDevice *dev, const double freq)
 		return;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	/* Test devices don't really have a frequency, they always succeed */
 	if (dev->test_device)
@@ -1345,7 +1345,7 @@ static int nm_device_get_bitrate (NMDevice *dev)
 	struct iwreq	 wrq;
 	
 	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (nm_device_is_wireless (dev), 0);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), 0);
 
 	/* Test devices don't really have a bitrate, they always succeed */
 	if (dev->test_device)
@@ -1376,7 +1376,7 @@ static void nm_device_set_bitrate (NMDevice *dev, const int Mbps)
 	NMSock	*sk;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	/* Test devices don't really have a bitrate, they always succeed */
 	if (dev->test_device)
@@ -1424,7 +1424,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (addr != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	memset (addr, 0, sizeof (struct ether_addr));
 
@@ -1471,7 +1471,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 	gboolean			set_key = FALSE;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	/* Test devices just ignore encryption keys */
 	if (dev->test_device)
@@ -1560,7 +1560,7 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 gint8 nm_device_get_signal_strength (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, -1);
-	g_return_val_if_fail (nm_device_is_wireless (dev), -1);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), -1);
 
 	return (dev->options.wireless.strength);
 }
@@ -1582,7 +1582,7 @@ void nm_device_update_signal_strength (NMDevice *dev)
 	int			percent = -1;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 	g_return_if_fail (dev->app_data != NULL);
 
 	/* Grab the scan lock since our strength is meaningless during a scan. */
@@ -1929,7 +1929,7 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 	NMNetworkMode	mode = NETWORK_MODE_UNKNOWN;
 
 	g_return_val_if_fail (dev != NULL, NETWORK_MODE_UNKNOWN);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NETWORK_MODE_UNKNOWN);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NETWORK_MODE_UNKNOWN);
 
 	/* Force the card into Managed/Infrastructure mode */
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
@@ -1975,7 +1975,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 	gboolean		 success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 	g_return_val_if_fail ((mode == NETWORK_MODE_INFRA) || (mode == NETWORK_MODE_ADHOC), FALSE);
 
 	if (nm_device_get_mode (dev) == mode)
@@ -2190,7 +2190,7 @@ static gboolean nm_device_activate_stage1_device_prepare (NMActRequest *req)
 
 	nm_info ("Activation (%s) Stage 1 (Device Prepare) started...", nm_device_get_iface (dev));
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		ap = nm_act_request_get_ap (req);
 		g_assert (ap);
@@ -2296,7 +2296,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	const char		*essid = NULL;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
-	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_auth_method (ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
@@ -2739,7 +2739,7 @@ static gboolean nm_device_activate_stage2_device_config (NMActRequest *req)
 	g_assert (dev);
 
 	ap = nm_act_request_get_ap (req);
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 		g_assert (ap);
 
 	nm_info ("Activation (%s) Stage 2 (Device Configure) starting...", nm_device_get_iface (dev));
@@ -2754,14 +2754,14 @@ static gboolean nm_device_activate_stage2_device_config (NMActRequest *req)
 		goto out;
 	}
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		if (nm_ap_get_user_created (ap))
 			nm_device_wireless_configure_adhoc (req);
 		else
 			nm_device_wireless_configure (req);
 	}
-	else if (nm_device_is_wired (dev))
+	else if (nm_device_is_802_3_ethernet (dev))
 		nm_device_wired_configure (req);
 
 	if (nm_device_activation_should_cancel (dev))
@@ -2827,7 +2827,7 @@ static gboolean nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 		goto out;
 	}
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 		ap = nm_act_request_get_ap (req);
 
 	if (!(ap && nm_ap_get_user_created (ap)) && nm_device_get_use_dhcp (dev))
@@ -2928,7 +2928,7 @@ static gboolean nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (data);
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		ap = nm_act_request_get_ap (req);
 		g_assert (ap);
@@ -2965,7 +2965,7 @@ static gboolean nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		/* Interfaces cannot be down if they are the active interface,
 		 * otherwise we cannot use them for scanning or link detection.
 		 */
-		if (nm_device_is_wireless (dev))
+		if (nm_device_is_802_11_wireless (dev))
 		{
 			nm_device_set_essid (dev, "");
 			nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
@@ -3037,13 +3037,13 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 		goto out;
 	}
 
-	if (nm_device_is_wired (dev))
+	if (nm_device_is_802_3_ethernet (dev))
 	{
 		/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
 		nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
 		ip4_config = nm_device_new_ip4_autoip_config (dev);
 	}
-	else if (nm_device_is_wireless (dev))
+	else if (nm_device_is_802_11_wireless (dev))
 	{
 		NMAccessPoint *ap = nm_act_request_get_ap (req);
 
@@ -3423,7 +3423,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	nm_device_update_ip4_address (dev);
 
 	/* Clean up stuff, don't leave the card associated */
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 	{
 		nm_device_set_essid (dev, "");
 		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
@@ -3496,7 +3496,7 @@ static void nm_device_ap_list_add_ap (NMDevice *dev, NMAccessPoint *ap)
 {
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (ap  != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	nm_ap_list_append_ap (dev->options.wireless.ap_list, ap);
 	/* Transfer ownership of ap to the list by unrefing it here */
@@ -3513,7 +3513,7 @@ static void nm_device_ap_list_add_ap (NMDevice *dev, NMAccessPoint *ap)
 void	nm_device_ap_list_clear (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	if (!dev->options.wireless.ap_list)
 		return;
@@ -3534,7 +3534,7 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_essid (NMDevice *dev, const char *ess
 	NMAccessPoint	*ret_ap = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 	g_return_val_if_fail (essid != NULL, NULL);
 
 	if (!dev->options.wireless.ap_list)
@@ -3557,7 +3557,7 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_address (NMDevice *dev, const struct 
 	NMAccessPoint	*ret_ap = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 	g_return_val_if_fail (addr != NULL, NULL);
 
 	if (!dev->options.wireless.ap_list)
@@ -3583,7 +3583,7 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_obj_path (NMDevice *dev, const char *
 	char *			dev_path;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 	g_return_val_if_fail (obj_path != NULL, NULL);
 
 	if (!dev->options.wireless.ap_list)
@@ -3616,7 +3616,7 @@ NMAccessPoint *nm_device_ap_list_get_ap_by_obj_path (NMDevice *dev, const char *
 NMAccessPointList *nm_device_ap_list_get (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 
 	return (dev->options.wireless.ap_list);
 }
@@ -3673,7 +3673,7 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 	GTimeVal		 	untrusted_latest_timestamp = {0, 0};
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (nm_device_is_wireless (dev), NULL);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NULL);
 	g_assert (dev->app_data);
 
 	/* Devices that can't scan don't do anything automatic.
@@ -3924,7 +3924,7 @@ static void nm_device_wireless_schedule_scan (NMDevice *dev)
 	NMWirelessScanCB	*scan_cb;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (nm_device_is_wireless (dev));
+	g_return_if_fail (nm_device_is_802_11_wireless (dev));
 
 	scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
 	scan_cb->dev = dev;
@@ -4468,7 +4468,7 @@ static gboolean get_scan_results (NMDevice *dev, NMSock *sk, guint8 **out_res_bu
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-	g_return_val_if_fail (nm_device_is_wireless (dev), FALSE);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 	g_return_val_if_fail (sk != NULL, FALSE);
 	g_return_val_if_fail (out_res_buf != NULL, FALSE);
 	g_return_val_if_fail (*out_res_buf == NULL, FALSE);

@@ -129,7 +129,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 		{
 			nm_info ("Now managing %s device '%s'.",
-				nm_device_is_wireless (dev) ? "wireless" : "wired", nm_device_get_iface (dev));
+				nm_device_is_802_11_wireless (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)", nm_device_get_iface (dev));
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
 			nm_device_deactivate (dev);
@@ -566,7 +566,7 @@ static gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 	{
 		if ((dev = (NMDevice *)(elt->data)))
 		{
-			if (nm_device_is_wireless (dev) && !nm_device_is_activating (dev))
+			if (nm_device_is_802_11_wireless (dev) && !nm_device_is_activating (dev))
 			{
 				nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 				nm_device_update_signal_strength (dev);
@@ -605,7 +605,7 @@ static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *in
 	/* Don't do anything if we already have a link */
 	if (dev)
 	{
-		if (nm_device_is_wired (dev) && !nm_device_has_active_link (dev))
+		if (nm_device_is_802_3_ethernet (dev) && !nm_device_has_active_link (dev))
 		{
 			nm_device_set_link_active (dev, TRUE);
 			nm_policy_schedule_device_change_check (data);
@@ -627,7 +627,7 @@ static void nm_device_link_deactivated (NmNetlinkMonitor *monitor, const gchar *
 
 	if (dev)
 	{
-		if (nm_device_is_wired (dev))
+		if (nm_device_is_802_3_ethernet (dev))
 			nm_device_set_link_active (dev, FALSE);
 		nm_device_unref (dev);
 	}

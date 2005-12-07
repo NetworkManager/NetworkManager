@@ -1,5 +1,11 @@
 2005-12-06  Dan Williams  <dcbw@redhat.com>
 
+	* Change nm_device_is_* functions to better names:
+		nm_device_is_wireless() -> nm_device_is_802_11_wireless()
+		nm_device_is_wired() -> nm_device_is_802_3_ethernet()
+
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
 	* Change naming of NMDeviceType to something more sensible:
 		NM_DEVICE_TYPE_DONT_KNOW -> NM_DEVICE_TYPE_UNKNOWN
 		NM_DEVICE_TYPE_WIRED_ETHERNET -> NM_DEVICE_TYPE_802_3_ETHERNET

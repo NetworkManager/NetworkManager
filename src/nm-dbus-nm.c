@@ -223,7 +223,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	}
 
 	/* Make sure network is valid and device is wireless */
-	if (nm_device_is_wireless (dev) && !essid)
+	if (nm_device_is_802_11_wireless (dev) && !essid)
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::setActiveDevice called with invalid arguments.");
@@ -234,7 +234,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	nm_schedule_state_change_signal_broadcast (data->data);
 
-	if (nm_device_is_wireless (dev))
+	if (nm_device_is_802_11_wireless (dev))
 		ap = nm_device_wireless_get_activation_ap (dev, essid, key, (NMEncKeyType)key_type);
 	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
 
@@ -288,7 +288,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	nm_device_ref (dev);
 
 	/* Make sure network is valid and device is wireless */
-	if (!nm_device_is_wireless (dev) || !network)
+	if (!nm_device_is_802_11_wireless (dev) || !network)
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
 							"NetworkManager::createWirelessNetwork called with invalid arguments.");
@@ -420,7 +420,7 @@ static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
 		{
 			NMDevice	*dev = (NMDevice *)(elt->data);
-			if (nm_device_is_wireless (dev))
+			if (nm_device_is_802_11_wireless (dev))
 			{
 				nm_device_deactivate (dev);
 				nm_device_bring_down (dev);

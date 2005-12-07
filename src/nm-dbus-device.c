@@ -173,7 +173,7 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 
 	/* Only wireless devices have an active network */
 	dev = data->dev;
-	if (!nm_device_is_wireless (dev))
+	if (!nm_device_is_802_11_wireless (dev))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
 				"Wired devices cannot have active networks.");
@@ -216,7 +216,7 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 
 	/* Only wireless devices have networks */
 	dev = data->dev;
-	if (!nm_device_is_wireless (dev))
+	if (!nm_device_is_802_11_wireless (dev))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
 				"Wired devices cannot see wireless networks.");
@@ -377,7 +377,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		primary_dns = nm_utils_inet_ip4_address_as_string (primary_dns_addr);
 		secondary_dns = nm_utils_inet_ip4_address_as_string (secondary_dns_addr);
 
-		if (nm_device_is_wireless (dev))
+		if (nm_device_is_802_11_wireless (dev))
 		{
 			NMActRequest *		req = nm_device_get_act_request (dev);
 			NMAccessPoint *	ap;

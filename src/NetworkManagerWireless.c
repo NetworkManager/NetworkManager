@@ -259,7 +259,7 @@ void nm_wireless_set_scan_interval (NMData *data, NMDevice *dev, NMWirelessScanI
 		if (dev && dev != d)
 			continue;
 
-		if (d && nm_device_is_wireless (d))
+		if (d && nm_device_is_802_11_wireless (d))
 			nm_device_set_wireless_scan_interval (d, interval);
 	}
 
