@@ -1198,7 +1198,6 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   guint32		ip4_nbns_len;
   gboolean		success = FALSE;
   char *                empty = "";
-  char *                login_banner = "Login succeeded";
 
   g_return_if_fail (data != NULL);
   g_return_if_fail (con != NULL);
