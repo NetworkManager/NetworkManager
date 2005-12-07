@@ -57,7 +57,7 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 						&keyring_result) != GNOME_KEYRING_RESULT_OK)
     return FALSE;
 
-  if (keyring_result != NULL && g_list_length (keyring_result) == 2) {
+  if (keyring_result != NULL && g_list_length (keyring_result) == 1) {
     char *password;
     GnomeKeyringNetworkPasswordData *data1 = keyring_result->data;
 
