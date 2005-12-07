@@ -148,7 +148,7 @@ void network_device_unref (NetworkDevice *dev)
 	dev->refcount--;
 	if (dev->refcount < 1)
 	{
-		if (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (dev->type == DEVICE_TYPE_802_11_WIRELESS)
 			network_device_clear_wireless_networks (dev);
 		g_free (dev->nm_path);
 		g_free (dev->iface);
@@ -169,7 +169,7 @@ gboolean network_device_is_wired (NetworkDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (network_device_get_type (dev) == DEVICE_TYPE_WIRED_ETHERNET);
+	return (network_device_get_type (dev) == DEVICE_TYPE_802_3_ETHERNET);
 }
 
 
@@ -177,7 +177,7 @@ gboolean network_device_is_wireless (NetworkDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET);
+	return (network_device_get_type (dev) == DEVICE_TYPE_802_11_WIRELESS);
 }
 
 
@@ -193,7 +193,7 @@ WirelessNetwork *network_device_get_active_wireless_network (NetworkDevice *dev)
 	WirelessNetwork *	active = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, NULL);
+	g_return_val_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS, NULL);
 
 	for (list = dev->networks; list; list = list->next)
 	{
@@ -222,7 +222,7 @@ WirelessNetwork *network_device_get_wireless_network_by_essid (NetworkDevice *de
 	WirelessNetwork *	return_net = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, NULL);
+	g_return_val_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS, NULL);
 	g_return_val_if_fail (essid != NULL, NULL);
 
 	for (list = dev->networks; list; list = list->next)
@@ -252,7 +252,7 @@ WirelessNetwork *network_device_get_wireless_network_by_nm_path (NetworkDevice *
 	WirelessNetwork *	return_net = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, NULL);
+	g_return_val_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS, NULL);
 	g_return_val_if_fail (nm_path != NULL, NULL);
 
 	for (list = dev->networks; list; list = list->next)
@@ -281,7 +281,7 @@ void network_device_foreach_wireless_network (NetworkDevice *dev, WirelessNetwor
 	GSList *			list;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 	g_return_if_fail (func != NULL);
 
 	for (list = dev->networks; list; list = list->next)
@@ -303,7 +303,7 @@ void network_device_foreach_wireless_network (NetworkDevice *dev, WirelessNetwor
 void network_device_add_wireless_network (NetworkDevice *dev, WirelessNetwork *net)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 	g_return_if_fail (net != NULL);
 
 	wireless_network_ref (net);
@@ -318,7 +318,7 @@ void network_device_add_wireless_network (NetworkDevice *dev, WirelessNetwork *n
 void network_device_clear_wireless_networks (NetworkDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 
 	g_slist_foreach (dev->networks, (GFunc) wireless_network_unref, NULL);
 	g_slist_free (dev->networks);
@@ -337,7 +337,7 @@ void network_device_remove_wireless_network (NetworkDevice *dev, WirelessNetwork
 	GSList	*elt;
 
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 	g_return_if_fail (net != NULL);
 
 	for (elt = dev->networks; elt; elt = g_slist_next (elt))
@@ -378,7 +378,7 @@ static int sort_networks_function (WirelessNetwork *a, WirelessNetwork *b)
 void network_device_sort_wireless_networks (NetworkDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 
 	dev->networks = g_slist_sort (dev->networks, (GCompareFunc) sort_networks_function);
 }
@@ -393,7 +393,7 @@ void network_device_sort_wireless_networks (NetworkDevice *dev)
 guint network_device_get_num_wireless_networks (NetworkDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, 0);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, 0);
+	g_return_val_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS, 0);
 	
 	return g_slist_length (dev->networks);
 }
@@ -564,7 +564,7 @@ const char *network_device_get_nm_path (NetworkDevice *dev)
  */
 NMDeviceType network_device_get_type (NetworkDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, DEVICE_TYPE_DONT_KNOW);
+	g_return_val_if_fail (dev != NULL, DEVICE_TYPE_UNKNOWN);
 
 	return (dev->type);
 }
@@ -575,7 +575,7 @@ NMDeviceType network_device_get_type (NetworkDevice *dev)
 gint network_device_get_strength (NetworkDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, -1);
-	g_return_val_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET, -1);
+	g_return_val_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS, -1);
 
 	return (dev->strength);
 }
@@ -583,7 +583,7 @@ gint network_device_get_strength (NetworkDevice *dev)
 void network_device_set_strength (NetworkDevice *dev, gint strength)
 {
 	g_return_if_fail (dev != NULL);
-	g_return_if_fail (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	g_return_if_fail (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 
 	dev->strength = strength;
 }

@@ -327,7 +327,7 @@ static DBusMessage *nm_dbus_nm_create_test_device (DBusConnection *connection, D
 
 	dbus_error_init (&err);
 	if (    dbus_message_get_args (message, &err, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		&& ((type == DEVICE_TYPE_WIRED_ETHERNET) || (type == DEVICE_TYPE_WIRELESS_ETHERNET)))
+		&& ((type == DEVICE_TYPE_802_3_ETHERNET) || (type == DEVICE_TYPE_802_11_WIRELESS)))
 	{
 		char			*interface = g_strdup_printf ("test%d", test_dev_num);
 		char			*udi = g_strdup_printf ("/test-devices/%s", interface);

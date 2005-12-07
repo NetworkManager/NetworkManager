@@ -235,7 +235,7 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
 	 */
 	if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
 	{
-		nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+		nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
 		g_free (iface);
 	}
 }
@@ -285,7 +285,7 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 
 		if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
 		{
-			nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+			nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
 			g_free (iface);
 		}
 	}
@@ -324,7 +324,7 @@ void nm_add_initial_devices (NMData *data)
 
 			if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, net_devices[i])))
 			{
-				nm_create_device_and_add_to_list (data, net_devices[i], iface, FALSE, DEVICE_TYPE_DONT_KNOW);
+				nm_create_device_and_add_to_list (data, net_devices[i], iface, FALSE, DEVICE_TYPE_UNKNOWN);
 				g_free (iface);
 			}
 		}

@@ -1475,7 +1475,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 
 	switch (network_device_get_type (device))
 	{
-		case DEVICE_TYPE_WIRED_ETHERNET:
+		case DEVICE_TYPE_802_3_ETHERNET:
 		{
 			NMWiredMenuItem *item = wired_menu_item_new ();
 			GtkCheckMenuItem *gtk_item = wired_menu_item_get_check_item (item);
@@ -1494,7 +1494,7 @@ static void nmwa_menu_add_device_item (GtkWidget *menu, NetworkDevice *device, g
 			break;
 		}
 
-		case DEVICE_TYPE_WIRELESS_ETHERNET:
+		case DEVICE_TYPE_802_11_WIRELESS:
 		{
 			NMWirelessMenuItem *item;
 			GtkMenuItem *gtk_item;
@@ -1801,10 +1801,10 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 		switch (network_device_get_type (dev))
 		{
-			case DEVICE_TYPE_WIRELESS_ETHERNET:
+			case DEVICE_TYPE_802_11_WIRELESS:
 				n_wireless_interfaces++;
 				break;
-			case DEVICE_TYPE_WIRED_ETHERNET:
+			case DEVICE_TYPE_802_3_ETHERNET:
 				n_wired_interfaces++;
 				break;
 			default:
@@ -1827,11 +1827,11 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 
 			switch (network_device_get_type (dev))
 			{
-				case DEVICE_TYPE_WIRED_ETHERNET:
+				case DEVICE_TYPE_802_3_ETHERNET:
 					n_devices = n_wired_interfaces;
 					break;
 
-				case DEVICE_TYPE_WIRELESS_ETHERNET:
+				case DEVICE_TYPE_802_11_WIRELESS:
 					n_devices = n_wireless_interfaces;
 					break;
 
@@ -2041,7 +2041,7 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 
 		g_assert (dev);
 
-		if (network_device_get_type (dev) == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (network_device_get_type (dev) == DEVICE_TYPE_802_11_WIRELESS)
 		{
 			have_wireless = TRUE;
 			break;

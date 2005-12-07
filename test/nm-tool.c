@@ -234,9 +234,9 @@ static void detail_device (DBusConnection *connection, const char *path)
 
 		/* General information */
 		print_string ("NM Path", op);
-		if (type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (type == DEVICE_TYPE_802_11_WIRELESS)
 			print_string ("Type", "802.11 Wireless");
-		else if (type == DEVICE_TYPE_WIRED_ETHERNET)
+		else if (type == DEVICE_TYPE_802_3_ETHERNET)
 			print_string ("Type", "Wired");
 		if (active)
 			print_string ("Active", "yes");
@@ -257,7 +257,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 			print_string ("  Scanning", "yes");
 
 		/* Wireless specific information */
-		if (type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{
 			char *str_strength;
 			int	 i;
@@ -277,7 +277,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 			for (i = 0; i < num_networks; i++)
 				detail_network (connection, networks[i], active_network_path);
 		}
-		else if (type == DEVICE_TYPE_WIRED_ETHERNET)
+		else if (type == DEVICE_TYPE_802_3_ETHERNET)
 		{
 			fprintf (stdout, "\n  Wired Settings\n");
 			if (link_active)

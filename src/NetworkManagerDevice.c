@@ -391,7 +391,7 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
  * nm_device_new
  *
  * Creates and initializes the structure representation of an NM device.  For test
- * devices, a device type other than DEVICE_TYPE_DONT_KNOW must be specified, this
+ * devices, a device type other than DEVICE_TYPE_UNKNWON must be specified, this
  * argument is ignored for real hardware devices since they are auto-probed.
  *
  */
@@ -406,7 +406,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 	g_return_val_if_fail (app_data != NULL, NULL);
 
 	/* Test devices must have a valid type specified */
-	if (test_dev && !(test_dev_type != DEVICE_TYPE_DONT_KNOW))
+	if (test_dev && !(test_dev_type != DEVICE_TYPE_UNKNOWN))
 		return (NULL);
 
 	/* Another check to make sure we don't create a test device unless
@@ -436,7 +436,7 @@ NMDevice *nm_device_new (const char *iface, const char *udi, gboolean test_dev, 
 		dev->type = test_dev_type;
 	else
 		dev->type = nm_device_test_wireless_extensions (dev) ?
-						DEVICE_TYPE_WIRELESS_ETHERNET : DEVICE_TYPE_WIRED_ETHERNET;
+						DEVICE_TYPE_802_11_WIRELESS : DEVICE_TYPE_802_3_ETHERNET;
 
 	/* Device thread's main loop */
 	dev->context = g_main_context_new ();
@@ -822,7 +822,7 @@ const char * nm_device_get_driver (NMDevice *dev)
  */
 guint nm_device_get_type (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, DEVICE_TYPE_DONT_KNOW);
+	g_return_val_if_fail (dev != NULL, DEVICE_TYPE_UNKNOWN);
 
 	return (dev->type);
 }
@@ -831,14 +831,14 @@ gboolean nm_device_is_wireless (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (dev->type == DEVICE_TYPE_WIRELESS_ETHERNET);
+	return (dev->type == DEVICE_TYPE_802_11_WIRELESS);
 }
 
 gboolean nm_device_is_wired (NMDevice *dev)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return (dev->type == DEVICE_TYPE_WIRED_ETHERNET);
+	return (dev->type == DEVICE_TYPE_802_3_ETHERNET);
 }
 
 

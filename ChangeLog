@@ -1,5 +1,12 @@
 2005-12-06  Dan Williams  <dcbw@redhat.com>
 
+	* Change naming of NMDeviceType to something more sensible:
+		NM_DEVICE_TYPE_DONT_KNOW -> NM_DEVICE_TYPE_UNKNOWN
+		NM_DEVICE_TYPE_WIRED_ETHERNET -> NM_DEVICE_TYPE_802_3_ETHERNET
+		NM_DEVICE_TYPE_WIRELESS_ETHERNET -> NM_DEVICE_TYPE_802_11_WIRELESS
+
+2005-12-06  Dan Williams  <dcbw@redhat.com>
+
 	* Move NetworkManager.h -> include/NetworkManager.h
 	* Split out VPN stuff into include/NetworkManagerVPN.h
 	* Fix up makefiles to include new location

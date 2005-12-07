@@ -740,7 +740,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 
 		nmwa_dbus_update_device_info_from_hal (dev, applet);
 
-		if (type == DEVICE_TYPE_WIRELESS_ETHERNET)
+		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{
 			network_device_set_strength (dev, strength);
 
