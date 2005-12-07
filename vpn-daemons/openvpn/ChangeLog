@@ -1,3 +1,25 @@
+2005-12-07  Tim Niemueller <tim@niemueller.de>
+
+	* auth-dialog/main.c:
+	  - Only request one password from Gnome keyring, patch by Crispin
+	    Flowerday
+
+	* properties/nm-openvpn-dialog.glade:
+	  - Added check button to use TCP instead of UDP
+
+	* properties/nm-openvpn.c:
+	  - Protocol can now be set, defaults to UDP, TCP maybe selected with
+	    check box
+
+	* src/nm-openvpn-service.c:
+	  - Support proto flag in config, default to UDP if not set for backward
+	    compatibility
+	  - Set a fake login banner for now until we fixed when NM sets
+	    last_attempt_success (provided by Crispin)
+
+	* configure.in:
+	  - Raised versoin to 0.3.1
+
 2005-12-05  Tim Niemueller <tim@niemueller.de>
 
 	* properties/nm-openvpn-dialog.glade:
