@@ -529,15 +529,15 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 			{
 				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
 				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_type (src_ap));
-				if (nm_ap_get_auth_method (src_ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN)
+				if (nm_ap_get_auth_method (src_ap) != -1)
 				{
 					/* Ensure that we don't set the NONE auth method from the src_ap
 					 * if the dest_ap has encryption enabled.
 					 */
-					if (nm_ap_get_encrypted (dest_ap)  && (nm_ap_get_auth_method (src_ap) != NM_DEVICE_AUTH_METHOD_NONE))
+					if (nm_ap_get_encrypted (dest_ap)  && (nm_ap_get_auth_method (src_ap) != 0))
 						nm_ap_set_auth_method (dest_ap, nm_ap_get_auth_method (src_ap));
 					else if (!nm_ap_get_encrypted (dest_ap))
-						nm_ap_set_auth_method (dest_ap, NM_DEVICE_AUTH_METHOD_NONE);
+						nm_ap_set_auth_method (dest_ap, 0);
 				}
 				nm_ap_set_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
 			}

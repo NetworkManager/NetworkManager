@@ -100,7 +100,7 @@ NMAccessPoint *nm_device_get_best_ap				(NMDevice *dev);
 void			nm_device_set_wireless_scan_interval		(NMDevice *dev, NMWirelessScanInterval interval);
 
 /* There is no function to get the WEP key since that's a slight security risk */
-void			nm_device_set_enc_key				(NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method);
+void			nm_device_set_enc_key				(NMDevice *dev, const char *key, int auth_method);
 
 NMActRequest *	nm_device_get_act_request						(NMDevice *dev);
 gboolean		nm_device_activation_start						(NMActRequest *req);

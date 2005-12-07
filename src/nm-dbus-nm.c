@@ -303,7 +303,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	{
 		nm_ap_set_encrypted (new_ap, TRUE);
 		nm_ap_set_enc_key_source (new_ap, key, (NMEncKeyType)key_type);
-		nm_ap_set_auth_method (new_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+		nm_ap_set_auth_method (new_ap, IW_AUTH_ALG_OPEN_SYSTEM);
 	}
 	nm_ap_set_mode (new_ap, IW_MODE_ADHOC);
 	nm_ap_set_user_created (new_ap, TRUE);

@@ -315,8 +315,8 @@ void nm_device_copy_allowed_to_dev_list (NMDevice *dev, NMAccessPointList *allow
 		/* Assume that if the allowed list AP has a saved encryption
 		 * key that the AP is encrypted.
 		 */
-		if (    (nm_ap_get_auth_method (src_ap) == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
-			|| (nm_ap_get_auth_method (src_ap) == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+		if (    (nm_ap_get_auth_method (src_ap) == IW_AUTH_ALG_OPEN_SYSTEM)
+			|| (nm_ap_get_auth_method (src_ap) == IW_AUTH_ALG_SHARED_KEY))
 			nm_ap_set_encrypted (dst_ap, TRUE);
 
 		nm_ap_list_append_ap (dev_list, dst_ap);
@@ -1462,7 +1462,7 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
  *		NOTE that at this time, the key must be the raw HEX key, not
  *		a passphrase.
  */
-void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod auth_method)
+void nm_device_set_enc_key (NMDevice *dev, const char *key, int auth_method)
 {
 	NMSock			*sk;
 	struct iwreq		wreq;
@@ -1513,10 +1513,10 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, NMDeviceAuthMethod a
 			{
 				switch (auth_method)
 				{
-					case NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM:
+					case IW_AUTH_ALG_OPEN_SYSTEM:
 						wreq.u.data.flags |= IW_ENCODE_OPEN;
 						break;
-					case NM_DEVICE_AUTH_METHOD_SHARED_KEY:
+					case IW_AUTH_ALG_SHARED_KEY:
 						wreq.u.data.flags |= IW_ENCODE_RESTRICTED;
 						break;
 					default:
@@ -2118,27 +2118,27 @@ NMActRequest *nm_device_get_act_request (NMDevice *dev)
  * (which is found from NMI) and ensure that its valid with the encryption status of the AP.
  *
  */
-static NMDeviceAuthMethod get_initial_auth_method (NMAccessPoint *ap, NMAccessPointList *allowed_list)
+static int get_initial_auth_method (NMAccessPoint *ap, NMAccessPointList *allowed_list)
 {
-	g_return_val_if_fail (ap != NULL, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+	g_return_val_if_fail (ap != NULL, IW_AUTH_ALG_OPEN_SYSTEM);
 
 	if (nm_ap_get_encrypted (ap))
 	{
-		NMDeviceAuthMethod	 auth = nm_ap_get_auth_method (ap);
+		int	 auth = nm_ap_get_auth_method (ap);
 		NMAccessPoint		*allowed_ap = nm_ap_list_get_ap_by_essid (allowed_list, nm_ap_get_essid (ap));
 		
 		/* Prefer default auth method if we found one for this AP in our allowed list. */
 		if (allowed_ap)
 			auth = nm_ap_get_auth_method (allowed_ap);
 
-		if (    (auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
-			|| (auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+		if (    (auth == IW_AUTH_ALG_OPEN_SYSTEM)
+			|| (auth == IW_AUTH_ALG_SHARED_KEY))
 			return (auth);
 		else
-			return (NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+			return (IW_AUTH_ALG_OPEN_SYSTEM);
 	}
 
-	return (NM_DEVICE_AUTH_METHOD_NONE);
+	return 0;
 }
 
 
@@ -2178,7 +2178,7 @@ static gboolean nm_device_activate_stage1_device_prepare (NMActRequest *req)
 			if (nm_ap_get_encrypted (ap) || nm_ap_is_enc_key_valid (ap))
 			{
 				nm_ap_set_encrypted (ap, TRUE);
-				nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+				nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 			}
 		}
 
@@ -2266,14 +2266,14 @@ static gboolean nm_device_is_up_and_associated_wait (NMDevice *dev, int timeout,
  */
 static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 {
-	NMDeviceAuthMethod	 auth;
+	int	 auth;
 	const char		*essid = NULL;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
-	g_return_val_if_fail (nm_ap_get_auth_method (ap) != NM_DEVICE_AUTH_METHOD_UNKNOWN, FALSE);
+	g_return_val_if_fail (nm_ap_get_auth_method (ap) != -1, FALSE);
 
 	dev->options.wireless.failed_link_count = 0;
 
@@ -2298,9 +2298,9 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	{
 		char *	hashed_key = nm_ap_get_enc_key_hashed (ap);
 
-		if (auth == NM_DEVICE_AUTH_METHOD_NONE)
+		if (auth == 0)
 		{
-			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+			nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 			nm_warning ("Activation (%s/wireless): AP '%s' said it was encrypted, but had "
 					"'none' for authentication method.  Using Open System authentication method.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap));
@@ -2309,14 +2309,14 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 		g_free (hashed_key);
 	}
 	else
-		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+		nm_device_set_enc_key (dev, NULL, 0);
 
 	nm_device_set_essid (dev, essid);
 
 	nm_info ("Activation (%s/wireless): using essid '%s', with %s authentication.",
-			nm_device_get_iface (dev), essid, (auth == NM_DEVICE_AUTH_METHOD_NONE) ? "no" :
-				((auth == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM) ? "Open System" :
-				((auth == NM_DEVICE_AUTH_METHOD_SHARED_KEY) ? "Shared Key" : "unknown")));
+			nm_device_get_iface (dev), essid, (auth == 0) ? "no" :
+				((auth == IW_AUTH_ALG_OPEN_SYSTEM) ? "Open System" :
+				((auth == IW_AUTH_ALG_SHARED_KEY) ? "Shared Key" : "unknown")));
 
 	/* Bring the device up and pause to allow card to associate.  After we set the ESSID
 	 * on the card, the card has to scan all channels to find our requested AP (which can
@@ -2346,7 +2346,7 @@ static void nm_device_wireless_configure_adhoc (NMActRequest *req)
 	NMData *			data;
 	NMDevice *		dev;
 	NMAccessPoint *	ap;
-	NMDeviceAuthMethod	auth = NM_DEVICE_AUTH_METHOD_NONE;
+	int				auth = 0;
 	NMAPListIter *		iter;
 	NMAccessPoint *	tmp_ap;
 	double			card_freqs[IW_MAX_FREQUENCIES];
@@ -2368,7 +2368,7 @@ static void nm_device_wireless_configure_adhoc (NMActRequest *req)
 	g_assert (ap);
 
 	if (nm_ap_get_encrypted (ap))
-		auth = NM_DEVICE_AUTH_METHOD_SHARED_KEY;
+		auth = IW_AUTH_ALG_SHARED_KEY;
 
 	/* Build our local list of frequencies to whittle down until we find a free one */
 	memset (&card_freqs, 0, sizeof (card_freqs));
@@ -2630,16 +2630,16 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 		if (!link)
 		{
-			if (nm_ap_get_auth_method (ap) == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
+			if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_OPEN_SYSTEM)
 			{
 				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Open System mode, trying Shared Key.",
 						nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 				/* Back down to Shared Key mode */
-				nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
+				nm_ap_set_auth_method (ap, IW_AUTH_ALG_SHARED_KEY);
 				success = FALSE;
 				continue;
 			}
-			else if (nm_ap_get_auth_method (ap) == NM_DEVICE_AUTH_METHOD_SHARED_KEY)
+			else if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_SHARED_KEY)
 			{
 				/* Didn't work in Shared Key either. */
 				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Shared Key mode, need correct key?",
@@ -2942,7 +2942,7 @@ static gboolean nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		if (nm_device_is_802_11_wireless (dev))
 		{
 			nm_device_set_essid (dev, "");
-			nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+			nm_device_set_enc_key (dev, NULL, 0);
 		}
 
 		if (!nm_device_is_up (dev))
@@ -3027,15 +3027,15 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 		 * and also for Open System mode (where you cannot know WEP key is wrong ever), we try to
 		 * do DHCP and if that fails, fall back to next auth mode and try again.
 		 */
-		if (nm_ap_get_auth_method (ap) == NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM)
+		if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_OPEN_SYSTEM)
 		{
 			/* Back down to Shared Key mode */
 			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Open System mode, trying Shared Key.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_SHARED_KEY);
+			nm_ap_set_auth_method (ap, IW_AUTH_ALG_SHARED_KEY);
 			nm_device_activate_schedule_stage2_device_config (req);
 		}
-		else if ((nm_ap_get_auth_method (ap) == NM_DEVICE_AUTH_METHOD_SHARED_KEY))
+		else if ((nm_ap_get_auth_method (ap) == IW_AUTH_ALG_SHARED_KEY))
 		{
 			/* Shared Key mode failed, we must have bad WEP key */
 			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Shared Key mode, asking for new key.",
@@ -3400,7 +3400,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	if (nm_device_is_802_11_wireless (dev))
 	{
 		nm_device_set_essid (dev, "");
-		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
+		nm_device_set_enc_key (dev, NULL, 0);
 		nm_device_set_mode (dev, IW_MODE_INFRA);
 		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 	}
@@ -3448,12 +3448,12 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 		NMAccessPoint * allowed_ap;
 
 		/* Start off at Open System auth mode with the new key */
-		nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+		nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 		nm_ap_set_enc_key_source (ap, key, enc_type);
 
 		/* Be sure to update NMI with the new auth mode */
 		if ((allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
-			nm_ap_set_auth_method (allowed_ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+			nm_ap_set_auth_method (allowed_ap, IW_AUTH_ALG_OPEN_SYSTEM);
 
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
@@ -3791,9 +3791,9 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 		nm_ap_set_essid (ap, essid);
 		nm_ap_set_encrypted (ap, encrypted);		
 		if (encrypted)
-			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+			nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 		else
-			nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_NONE);
+			nm_ap_set_auth_method (ap, 0);
 		nm_ap_set_artificial (ap, TRUE);
 		nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 		nm_ap_unref (ap);
@@ -4594,7 +4594,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				/* New AP with some defaults */
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
-				nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_NONE);
+				nm_ap_set_auth_method (ap, 0);
 				nm_ap_set_mode (ap, IW_MODE_INFRA);
 				break;
 			case SIOCGIWMODE:
@@ -4642,7 +4642,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
 				{
 					nm_ap_set_encrypted (ap, TRUE);
-					nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM);
+					nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 				}
 				break;
 #if 0

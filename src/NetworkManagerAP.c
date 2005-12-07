@@ -58,7 +58,7 @@ struct NMAccessPoint
 	gboolean			trusted;
 	char *			enc_key;
 	NMEncKeyType		enc_type;
-	NMDeviceAuthMethod	auth_method;
+	int				auth_method; /* from wireless.h; -1 is unknown, zero is none */
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
 };
@@ -91,7 +91,7 @@ NMAccessPoint * nm_ap_new (void)
 	}
 
 	ap->mode = IW_MODE_INFRA;
-	ap->auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	ap->auth_method = -1;
 	ap->refcount = 1;
 
 	return (ap);
@@ -311,14 +311,14 @@ NMEncKeyType nm_ap_get_enc_type (const NMAccessPoint *ap)
  * Get/set functions for auth_method
  *
  */
-NMDeviceAuthMethod nm_ap_get_auth_method (const NMAccessPoint *ap)
+int nm_ap_get_auth_method (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NM_DEVICE_AUTH_METHOD_UNKNOWN);
+	g_return_val_if_fail (ap != NULL, -1);
 
 	return (ap->auth_method);
 }
 
-void nm_ap_set_auth_method (NMAccessPoint *ap, NMDeviceAuthMethod auth_method)
+void nm_ap_set_auth_method (NMAccessPoint *ap, int auth_method)
 {
 	g_return_if_fail (ap != NULL);
 

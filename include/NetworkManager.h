@@ -127,19 +127,6 @@ typedef enum NMNetworkType
 
 
 /*
- * Authentication modes
- */
-typedef enum NMDeviceAuthMethod
-{
-	NM_DEVICE_AUTH_METHOD_UNKNOWN = 0,
-	NM_DEVICE_AUTH_METHOD_NONE,
-	NM_DEVICE_AUTH_METHOD_OPEN_SYSTEM,
-	NM_DEVICE_AUTH_METHOD_SHARED_KEY,
-	NM_DEVICE_AUTH_METHOD_WPA_PSK
-} NMDeviceAuthMethod;
-
-
-/*
  * Device activation stages
  */
 typedef enum NMActStage

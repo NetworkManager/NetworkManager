@@ -618,7 +618,7 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 	g_return_val_if_fail (ap != NULL, FALSE);
 
 	auth_method = nm_ap_get_auth_method (ap);
-	if (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN)
+	if (auth_method == -1)
 		return FALSE;
 
 	essid = nm_ap_get_essid (ap);
@@ -747,7 +747,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	gint					timestamp_secs = -1;
 	NMEncKeyType			key_type = -1;
 	gboolean				trusted = FALSE;
-	NMDeviceAuthMethod		auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	int					auth_method = -1;
 	char **				addresses;
 	int					num_addresses;
 

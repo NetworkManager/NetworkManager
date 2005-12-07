@@ -1,5 +1,15 @@
 2005-12-07  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-info.c, include/NetworkManager.h,
+	  src/NetworkManagerAP.c, src/NetworkManagerAP.h,
+	  src/NetworkManagerAPList.c, src/NetworkManagerDbus.c,
+	  src/NetworkManagerDevice.c, src/NetworkManagerDevice.h,
+	  src/nm-dbus-nm.c: Convert NM_DEVICE_AUTH_METHOD_* to use the
+	  wireless-tools constants directly.  UNKNOWN is now -1 and NONE is
+	  zero.
+
+2005-12-07  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: In static configurations, if the
 	  supplied IP is invalid, fall back to DHCP.
 

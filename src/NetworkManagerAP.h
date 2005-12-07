@@ -48,8 +48,8 @@ char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
 void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
 NMEncKeyType		nm_ap_get_enc_type		(const NMAccessPoint *ap);
 
-NMDeviceAuthMethod	nm_ap_get_auth_method	(const NMAccessPoint *ap);
-void				nm_ap_set_auth_method	(NMAccessPoint *ap, const NMDeviceAuthMethod auth_method);
+int				nm_ap_get_auth_method	(const NMAccessPoint *ap);
+void				nm_ap_set_auth_method	(NMAccessPoint *ap, int auth_method);
 
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);

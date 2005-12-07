@@ -406,7 +406,7 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 	gint32			 i;
 	NMEncKeyType		 key_type = -1;
 	gboolean			 trusted = FALSE;
-	NMDeviceAuthMethod	 auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	int				 auth_method = -1;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -894,8 +894,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
  *
  */
 static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
-			const NMEncKeyType enc_key_type, const NMDeviceAuthMethod auth_method,
-			gboolean user_requested)
+							const NMEncKeyType enc_key_type, int auth_method, gboolean user_requested)
 {
 	char *		key;
 	GConfEntry *	gconf_entry;
@@ -961,7 +960,7 @@ static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, 
 			g_free (key);
 		}
 
-		if (auth_method != NM_DEVICE_AUTH_METHOD_UNKNOWN)
+		if (auth_method != -1)
 		{
 			key = g_strdup_printf ("%s/%s/auth_method", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 			gconf_client_set_int (applet->gconf_client, key, auth_method, NULL);
@@ -982,7 +981,7 @@ static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, 
 static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage *message)
 {
 	char *			network = NULL;
-	NMDeviceAuthMethod	auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
+	int				auth_method = -1;
 	char *			enc_key_source = NULL;
 	int				enc_key_type = -1;
 	gboolean			user_requested;
@@ -999,7 +998,7 @@ static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage 
 											  DBUS_TYPE_INT32, &auth_method,
 											  DBUS_TYPE_BOOLEAN, &user_requested,
 											  DBUS_TYPE_INVALID);
-	if (!args_good || (strlen (network) <= 0) || (auth_method == NM_DEVICE_AUTH_METHOD_UNKNOWN))
+	if (!args_good || (strlen (network) <= 0) || (auth_method == -1))
 		return;
 	if (enc_key_source && strlen (enc_key_source) && ((enc_key_type == NM_ENC_TYPE_UNKNOWN) || (enc_key_type == NM_ENC_TYPE_NONE)))
 		return;
