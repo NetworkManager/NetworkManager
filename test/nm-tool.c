@@ -26,6 +26,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <iwlib.h>
+
 #include "NetworkManager.h"
 #include "nm-utils.h"
 
@@ -153,7 +155,7 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 		float flt_freq = freq / 1000000000;
 		gboolean active = (active_path && !strcmp (active_path, path)) ? TRUE : FALSE;
 
-		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s", (mode == NETWORK_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
+		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s", (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
 					flt_freq, strength, enc ? ", Encrypted" : "");
 		temp_essid = g_strdup_printf ("  %s%s", active ? "*" : "", essid);
 		print_string (temp_essid, temp);
@@ -264,9 +266,9 @@ static void detail_device (DBusConnection *connection, const char *path)
 
 			/*
 			fprintf (stdout, "\n  Wireless Settings\n");
-			if (mode == NETWORK_MODE_INFRA)
+			if (mode == IW_MODE_INFRA)
 				print_string ("  Mode", "Infrastructure");
-			else if (mode == NETWORK_MODE_ADHOC)
+			else if (mode == IW_MODE_ADHOC)
 				print_string ("  Mode", "Ad-Hoc");
 			str_strength = g_strdup_printf ("%d%%", strength);
 			print_string ("  Strength", str_strength);

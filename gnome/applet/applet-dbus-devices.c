@@ -486,7 +486,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	double 			freq = 0;
 	dbus_int32_t		rate = 0;
 	dbus_bool_t		enc = FALSE;
-	dbus_uint32_t		mode = 0;
+	dbus_int32_t		mode = -1;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -511,7 +511,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 									DBUS_TYPE_DOUBLE, &freq,
 									DBUS_TYPE_INT32,  &rate,
 									DBUS_TYPE_BOOLEAN,&enc,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *	dev;
@@ -671,7 +671,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	const char *		route = NULL;
 	const char *		primary_dns = NULL;
 	const char *		secondary_dns = NULL;
-	dbus_uint32_t		mode = 0;
+	dbus_int32_t		mode = -1;
 	dbus_int32_t		strength = -1;
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
@@ -705,7 +705,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_STRING, &route,
 									DBUS_TYPE_STRING, &primary_dns,
 									DBUS_TYPE_STRING, &secondary_dns,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
 									DBUS_TYPE_UINT32, &caps,

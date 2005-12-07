@@ -77,7 +77,8 @@ void			nm_device_set_essid					(NMDevice *dev, const char *essid);
 
 void			nm_device_get_ap_address				(NMDevice *dev, struct ether_addr *addr);
 
-NMNetworkMode	nm_device_get_mode					(NMDevice *dev);
+int			nm_device_get_mode					(NMDevice *dev);
+gboolean		nm_device_set_mode					(NMDevice *dev, const int mode);
 
 guint32		nm_device_get_ip4_address			(NMDevice *dev);
 void			nm_device_update_ip4_address			(NMDevice *dev);
@@ -90,8 +91,6 @@ void			nm_device_get_ip6_address			(NMDevice *dev);
 gboolean		nm_device_get_supports_wireless_scan	(NMDevice *dev);
 
 gboolean		nm_device_get_supports_carrier_detect	(NMDevice *dev);
-
-gboolean		nm_device_set_mode					(NMDevice *dev, const NMNetworkMode mode);
 
 gint8		nm_device_get_signal_strength			(NMDevice *dev);
 void			nm_device_update_signal_strength		(NMDevice *dev);

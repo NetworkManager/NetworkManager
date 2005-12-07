@@ -348,7 +348,7 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 	nm_register_mutex_desc (opts->scan_mutex, "Scan Mutex");
 	nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 
-	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+	nm_device_set_mode (dev, IW_MODE_INFRA);
 
 	/* Non-scanning devices show the entire allowed AP list as their
 	 * available networks.
@@ -1923,13 +1923,13 @@ static gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
  * Get managed/infrastructure/adhoc mode on a device (currently wireless only)
  *
  */
-NMNetworkMode nm_device_get_mode (NMDevice *dev)
+int nm_device_get_mode (NMDevice *dev)
 {
-	NMSock		*sk;
-	NMNetworkMode	mode = NETWORK_MODE_UNKNOWN;
+	NMSock *	sk;
+	int		mode = -1;
 
-	g_return_val_if_fail (dev != NULL, NETWORK_MODE_UNKNOWN);
-	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), NETWORK_MODE_UNKNOWN);
+	g_return_val_if_fail (dev != NULL, -1);
+	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), -1);
 
 	/* Force the card into Managed/Infrastructure mode */
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
@@ -1942,24 +1942,15 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCGIWMODE, &wrq) == 0)
 		{
-			switch (wrq.u.mode)
-			{
-				case IW_MODE_INFRA:
-					mode = NETWORK_MODE_INFRA;
-					break;
-				case IW_MODE_ADHOC:
-					mode = NETWORK_MODE_ADHOC;
-					break;
-				default:
-					break;
-			}
+			if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
+				mode = wrq.u.mode;
 		}
 		else
 			nm_warning ("nm_device_get_mode (%s): error getting card mode.  errno = %d", nm_device_get_iface (dev), errno);				
 		nm_dev_sock_close (sk);
 	}
 
-	return (mode);
+	return mode;
 }
 
 
@@ -1969,14 +1960,14 @@ NMNetworkMode nm_device_get_mode (NMDevice *dev)
  * Set managed/infrastructure/adhoc mode on a device (currently wireless only)
  *
  */
-gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
+gboolean nm_device_set_mode (NMDevice *dev, const int mode)
 {
 	NMSock		*sk;
 	gboolean		 success = FALSE;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
-	g_return_val_if_fail ((mode == NETWORK_MODE_INFRA) || (mode == NETWORK_MODE_ADHOC), FALSE);
+	g_return_val_if_fail ((mode == IW_MODE_INFRA) || (mode == IW_MODE_ADHOC), FALSE);
 
 	if (nm_device_get_mode (dev) == mode)
 		return TRUE;
@@ -1985,42 +1976,25 @@ gboolean nm_device_set_mode (NMDevice *dev, const NMNetworkMode mode)
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		struct iwreq	wreq;
-		gboolean		mode_good = FALSE;
 
-		switch (mode)
-		{
-			case NETWORK_MODE_INFRA:
-				wreq.u.mode = IW_MODE_INFRA;
-				mode_good = TRUE;
-				break;
-			case NETWORK_MODE_ADHOC:
-				wreq.u.mode = IW_MODE_ADHOC;
-				mode_good = TRUE;
-				break;
-			default:
-				mode_good = FALSE;
-				break;
-		}
-		if (mode_good)
-		{
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWMODE.", nm_device_get_iface (dev));
 #endif
-			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWMODE, &wreq) == 0)
-				success = TRUE;
-			else
-			{
-				if (errno != ENODEV)
-					nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
-						nm_device_get_iface (dev),
-						mode == NETWORK_MODE_INFRA ? "Infrastructure" : (mode == NETWORK_MODE_ADHOC ? "adhoc" : "unknown"),
-						errno);
-			}
+		wreq.u.mode = mode;
+		if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWMODE, &wreq) == 0)
+			success = TRUE;
+		else
+		{
+			if (errno != ENODEV)
+				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
+					nm_device_get_iface (dev),
+					mode == IW_MODE_INFRA ? "Infrastructure" : (mode == IW_MODE_ADHOC ? "Ad-Hoc" : "unknown"),
+					errno);
 		}
 		nm_dev_sock_close (sk);
 	}
 
-	return (success);
+	return success;
 }
 
 
@@ -2307,7 +2281,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	nm_device_bring_down_wait (dev, 0);
 	nm_device_bring_up_wait (dev, 0);
 
-	nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+	nm_device_set_mode (dev, IW_MODE_INFRA);
 
 	essid = nm_ap_get_essid (ap);
 	auth = nm_ap_get_auth_method (ap);
@@ -2315,7 +2289,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	nm_device_set_mode (dev, nm_ap_get_mode (ap));
 	nm_device_set_bitrate (dev, 0);
 
-	if (nm_ap_get_user_created (ap) || (nm_ap_get_freq (ap) && (nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC)))
+	if (nm_ap_get_user_created (ap) || (nm_ap_get_freq (ap) && (nm_ap_get_mode (ap) == IW_MODE_ADHOC)))
 		nm_device_set_frequency (dev, nm_ap_get_freq (ap));
 	else
 		nm_device_set_frequency (dev, 0);	/* auto */
@@ -2354,7 +2328,7 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information
 	 * from scanned access points out of iwlib, clamp bitrate for these cards at 11Mbps.
 	 */
-	if ((nm_ap_get_mode (ap) == NETWORK_MODE_ADHOC) && (nm_device_get_bitrate (dev) <= 0))
+	if ((nm_ap_get_mode (ap) == IW_MODE_ADHOC) && (nm_device_get_bitrate (dev) <= 0))
 		nm_device_set_bitrate (dev, 11000);	/* In Kbps */
 
 	return TRUE;
@@ -3427,7 +3401,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	{
 		nm_device_set_essid (dev, "");
 		nm_device_set_enc_key (dev, NULL, NM_DEVICE_AUTH_METHOD_NONE);
-		nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+		nm_device_set_mode (dev, IW_MODE_INFRA);
 		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 	}
 
@@ -4110,14 +4084,14 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
 			int			err;
-			NMNetworkMode	orig_mode = NETWORK_MODE_INFRA;
+			int			orig_mode = IW_MODE_INFRA;
 			double		orig_freq = 0;
 			int			orig_rate = 0;
 			const int		interval = 20;
 			struct iwreq	wrq;
 
 			orig_mode = nm_device_get_mode (dev);
-			if (orig_mode == NETWORK_MODE_ADHOC)
+			if (orig_mode == IW_MODE_ADHOC)
 			{
 				orig_freq = nm_device_get_frequency (dev);
 				orig_rate = nm_device_get_bitrate (dev);
@@ -4126,7 +4100,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 			/* Must be in infrastructure mode during scan, otherwise we don't get a full
 			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
 			 */
-			nm_device_set_mode (dev, NETWORK_MODE_INFRA);
+			nm_device_set_mode (dev, IW_MODE_INFRA);
 			nm_device_set_frequency (dev, 0);
 
 			wrq.u.data.pointer = NULL;
@@ -4159,7 +4133,7 @@ static gboolean nm_device_wireless_scan (gpointer user_data)
 
 			nm_device_set_mode (dev, orig_mode);
 			/* Only set frequency if ad-hoc mode */
-			if (orig_mode == NETWORK_MODE_ADHOC)
+			if (orig_mode == IW_MODE_ADHOC)
 			{
 				nm_device_set_frequency (dev, orig_freq);
 				nm_device_set_bitrate (dev, orig_rate);
@@ -4621,17 +4595,17 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
 				nm_ap_set_auth_method (ap, NM_DEVICE_AUTH_METHOD_NONE);
-				nm_ap_set_mode (ap, NETWORK_MODE_INFRA);
+				nm_ap_set_mode (ap, IW_MODE_INFRA);
 				break;
 			case SIOCGIWMODE:
 				switch (iwe->u.mode)
 				{
 					case IW_MODE_ADHOC:
-						nm_ap_set_mode (ap, NETWORK_MODE_ADHOC);
+						nm_ap_set_mode (ap, IW_MODE_ADHOC);
 						break;
 					case IW_MODE_MASTER:
 					case IW_MODE_INFRA:
-						nm_ap_set_mode (ap, NETWORK_MODE_INFRA);
+						nm_ap_set_mode (ap, IW_MODE_INFRA);
 						break;
 					default:
 						break;

@@ -76,7 +76,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 			nm_ap_set_address (ap, &addr);
 
 		/* Don't store MAC addresses for non-infrastructure networks */
-		if ((nm_ap_get_mode (ap) == NETWORK_MODE_INFRA) && nm_ethernet_address_is_valid (&addr))
+		if ((nm_ap_get_mode (ap) == IW_MODE_INFRA) && nm_ethernet_address_is_valid (&addr))
 			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_ap_get_essid (ap), &addr);
 	}
 

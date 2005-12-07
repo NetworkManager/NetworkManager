@@ -104,17 +104,6 @@ typedef enum NMEncKeyType
 
 
 /*
- * Wireless network modes
- */
-typedef enum NMNetworkMode
-{
-	NETWORK_MODE_UNKNOWN = 0,
-	NETWORK_MODE_INFRA,
-	NETWORK_MODE_ADHOC
-} NMNetworkMode;
-
-
-/*
  * Wireless network update types
  */
 typedef enum

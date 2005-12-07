@@ -218,11 +218,11 @@ static DBusMessage *nm_dbus_net_get_mode (DBusConnection *connection, DBusMessag
 
 	g_return_val_if_fail (data && data->data && data->dev && data->ap && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message))) {
-                dbus_uint32_t mode;
-                mode = nm_ap_get_mode (data->ap);
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &mode, DBUS_TYPE_INVALID);
-        }
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		dbus_int32_t mode = (dbus_int32_t) nm_ap_get_mode (data->ap);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &mode, DBUS_TYPE_INVALID);
+	}
 
 	return reply;
 }
@@ -244,7 +244,7 @@ static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBus
 		double 		freq = nm_ap_get_freq (data->ap);
 		dbus_int32_t	rate = nm_ap_get_rate (data->ap);
 		dbus_bool_t	enc = nm_ap_get_encrypted (data->ap);
-		dbus_uint32_t	mode = nm_ap_get_mode (data->ap);
+		dbus_int32_t	mode = (dbus_int32_t) nm_ap_get_mode (data->ap);
 
 		memset (&hw_addr_buf[0], 0, 20);
 		if (nm_ap_get_address (data->ap))
@@ -257,7 +257,7 @@ static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBus
 									DBUS_TYPE_DOUBLE, &freq,
 									DBUS_TYPE_INT32,  &rate,
 									DBUS_TYPE_BOOLEAN,&enc,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INVALID);
 		g_free (op);
 	}

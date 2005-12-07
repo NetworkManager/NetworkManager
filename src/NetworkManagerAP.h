@@ -57,8 +57,8 @@ void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
 const struct ether_addr *	nm_ap_get_address		(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
-NMNetworkMode		nm_ap_get_mode			(const NMAccessPoint *ap);
-void				nm_ap_set_mode			(NMAccessPoint *ap, const NMNetworkMode mode);
+int				nm_ap_get_mode			(const NMAccessPoint *ap);
+void				nm_ap_set_mode			(NMAccessPoint *ap, const int mode);
 
 gint8			nm_ap_get_strength		(const NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);

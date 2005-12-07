@@ -23,6 +23,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "NetworkManagerWireless.h"
+#include <wireless.h>
 
 
 /*
@@ -33,7 +34,7 @@ struct NMAccessPoint
 	guint			refcount;
 	char *			essid;
 	struct ether_addr *	address;
-	NMNetworkMode		mode;
+	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
 	double			freq;
 	guint16			rate;
@@ -89,7 +90,7 @@ NMAccessPoint * nm_ap_new (void)
 		return (NULL);
 	}
 
-	ap->mode = NETWORK_MODE_INFRA;
+	ap->mode = IW_MODE_INFRA;
 	ap->auth_method = NM_DEVICE_AUTH_METHOD_UNKNOWN;
 	ap->refcount = 1;
 
@@ -357,16 +358,17 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
  * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
  *
  */
-NMNetworkMode nm_ap_get_mode (const NMAccessPoint *ap)
+int nm_ap_get_mode (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NETWORK_MODE_UNKNOWN);
+	g_return_val_if_fail (ap != NULL, -1);
 
-	return (ap->mode);
+	return ap->mode;
 }
 
-void nm_ap_set_mode (NMAccessPoint *ap, const NMNetworkMode mode)
+void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
 {
 	g_return_if_fail (ap != NULL);
+	g_return_if_fail ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA));
 
 	ap->mode = mode;
 }

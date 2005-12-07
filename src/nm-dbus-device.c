@@ -136,11 +136,11 @@ static DBusMessage *nm_dbus_device_get_mode (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message))) {
-                dbus_uint32_t mode;
-                mode = nm_device_get_mode (dev);
-		dbus_message_append_args (reply, DBUS_TYPE_UINT32, &mode, DBUS_TYPE_INVALID);
-        }
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		dbus_int32_t mode = (dbus_int32_t) nm_device_get_mode (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_INT32, &mode, DBUS_TYPE_INVALID);
+	}
 
 	return reply;
 }
@@ -335,7 +335,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		struct ether_addr	hw_addr;
 		char				hw_addr_buf[20];
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
-		dbus_uint32_t		mode = 0;
+		dbus_int32_t		mode = -1;
 		dbus_int32_t		strength = -1;
 		char *			active_network_path = NULL;
 		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
@@ -385,7 +385,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 			NMAPListIter *		iter;
 
 			strength = (dbus_int32_t) nm_device_get_signal_strength (dev);
-			mode = (dbus_uint32_t) nm_device_get_mode (dev);
+			mode = (dbus_int32_t) nm_device_get_mode (dev);
 
 			 if (req && (ap = nm_act_request_get_ap (req)))
 			 {
@@ -432,7 +432,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_STRING, &route,
 									DBUS_TYPE_STRING, &primary_dns,
 									DBUS_TYPE_STRING, &secondary_dns,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
 									DBUS_TYPE_UINT32, &capabilities,
