@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager-openvpn, 0.3.0, tim@niemueller.de, NetworkManager-openvpn)
+AC_INIT(NetworkManager-openvpn, 0.3.1, tim@niemueller.de, NetworkManager-openvpn)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 
