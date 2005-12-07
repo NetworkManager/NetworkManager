@@ -1675,9 +1675,9 @@ void nm_device_update_ip4_address (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return;
-	
+
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
+	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFADDR.", nm_device_get_iface (dev));
 #endif
@@ -1742,9 +1742,9 @@ void nm_device_update_hw_address (NMDevice *dev)
 
 	if ((sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 		return;
-	
+
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy ((char *)(&req.ifr_name), nm_device_get_iface (dev), strlen (nm_device_get_iface (dev)));
+	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFHWADDR.", nm_device_get_iface (dev));
 #endif
@@ -1806,7 +1806,7 @@ gboolean nm_device_is_up (NMDevice *dev)
 		return (FALSE);
 
 	/* Get device's flags */
-	strcpy (ifr.ifr_name, nm_device_get_iface (dev));
+	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof (ifr.ifr_name) - 1);
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET IFFLAGS.", nm_device_get_iface (dev));
 #endif
@@ -4304,7 +4304,7 @@ static gboolean supports_ethtool_carrier_detect (NMDevice *dev)
 		return (FALSE);
 	}
 
-	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
+	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name) - 1);
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
 #ifdef IOCTL_DEBUG
@@ -4369,7 +4369,7 @@ static gboolean supports_mii_carrier_detect (NMDevice *dev)
 		return (FALSE);
 	}
 
-	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof(ifr.ifr_name)-1);
+	strncpy (ifr.ifr_name, nm_device_get_iface (dev), sizeof (ifr.ifr_name) - 1);
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to GET MIIPHY\n", nm_device_get_iface (dev));
 #endif

@@ -621,7 +621,7 @@ gboolean nm_completion_boolean_function1_test(int tries,
 	if (message)
 		if ((log_interval == 0 && tries == 0)
 			   || (log_interval != 0 && tries % log_interval == 0))
-			syslog(log_level, message);
+			syslog(log_level, "%s", message);
 
 	if (!(*condition)(arg0))
 		return TRUE;
@@ -645,7 +645,7 @@ gboolean nm_completion_boolean_function2_test(int tries,
 	if (message)
 		if ((log_interval == 0 && tries == 0)
 			   || (log_interval != 0 && tries % log_interval == 0))
-			syslog(log_level, message);
+			syslog(log_level, "%s", message);
 
 	if (!(*condition)(arg0, arg1))
 		return TRUE;
