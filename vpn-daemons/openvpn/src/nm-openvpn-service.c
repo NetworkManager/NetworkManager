@@ -580,6 +580,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 
   char         *username = NULL;
   char         *dev = NULL;
+  char         *proto = NULL;
 
 
   g_return_val_if_fail (data != NULL, -1);
@@ -640,9 +641,13 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 	g_ptr_array_add (openvpn_argv, (gpointer) "--comp-lzo");
       } else if ( (strcmp( data_items[i], "dev" ) == 0) ) {
 	dev = data_items[++i];
+      } else if ( (strcmp( data_items[i], "proto" ) == 0) ) {
+	proto = data_items[++i];
       }
     }
     g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
+
+    // Device, either tun or tap
     g_ptr_array_add (openvpn_argv, (gpointer) "--dev");
     if ( (dev != NULL) ) {
       g_ptr_array_add (openvpn_argv, (gpointer) dev);
@@ -651,15 +656,32 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       // tun for these configs
       g_ptr_array_add (openvpn_argv, (gpointer) "tun");
     }
+
+    // Protocol, either tcp or udp
+    g_ptr_array_add (openvpn_argv, (gpointer) "--proto");
+    if ( (proto != NULL) ) {
+      g_ptr_array_add (openvpn_argv, (gpointer) proto);
+    } else {
+      // Versions prior to 0.4.0 didn't set this so we default for
+      // udp for these configs
+      g_ptr_array_add (openvpn_argv, (gpointer) "udp");
+    }
+
+    // Syslog
     g_ptr_array_add (openvpn_argv, (gpointer) "--syslog");
     g_ptr_array_add (openvpn_argv, (gpointer) "nm-openvpn");
+
+    // Up script, called when connection has been established or has been restarted
     g_ptr_array_add (openvpn_argv, (gpointer) "--up");
     g_ptr_array_add (openvpn_argv, (gpointer) NM_OPENVPN_HELPER_PATH);
     g_ptr_array_add (openvpn_argv, (gpointer) "--up-restart");
+
+    // Keep key and tun if restart is needed
     g_ptr_array_add (openvpn_argv, (gpointer) "--persist-key");
     g_ptr_array_add (openvpn_argv, (gpointer) "--persist-tun");
 
 
+    // Now append configuration options which are dependent on the configuration type
     switch ( data->connection_type ) {
 
     case NM_OPENVPN_CONTYPE_X509:
@@ -847,6 +869,7 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
     { "remote",			        OPT_TYPE_ADDRESS },
     { "ca",				OPT_TYPE_ASCII },
     { "dev",				OPT_TYPE_ASCII },
+    { "proto",				OPT_TYPE_ASCII },
     { "cert",				OPT_TYPE_ASCII },
     { "key",				OPT_TYPE_ASCII },
     { "comp-lzo",			OPT_TYPE_ASCII },
@@ -1175,6 +1198,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   guint32		ip4_nbns_len;
   gboolean		success = FALSE;
   char *                empty = "";
+  char *                login_banner = "Login succeeded";
 
   g_return_if_fail (data != NULL);
   g_return_if_fail (con != NULL);
