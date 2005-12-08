@@ -1,3 +1,10 @@
+2005-12-08  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: We want to fall back on and default to
+	  IW_MODE_AUTO, not -1, which is more in line with our previous
+	  behavior.  Otherwise, we try to set the wireless mode to -1 in
+	  nm_device_set_mode().
+
 2005-12-07  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-dbus-info.c, include/NetworkManager.h,

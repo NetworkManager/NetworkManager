@@ -1926,7 +1926,7 @@ static gboolean nm_device_bring_down_wait (NMDevice *dev, gboolean cancelable)
 int nm_device_get_mode (NMDevice *dev)
 {
 	NMSock *	sk;
-	int		mode = -1;
+	int		mode = IW_MODE_AUTO;
 
 	g_return_val_if_fail (dev != NULL, -1);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), -1);
@@ -1967,7 +1967,7 @@ gboolean nm_device_set_mode (NMDevice *dev, const int mode)
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
-	g_return_val_if_fail ((mode == IW_MODE_INFRA) || (mode == IW_MODE_ADHOC), FALSE);
+	g_return_val_if_fail ((mode == IW_MODE_INFRA) || (mode == IW_MODE_ADHOC) || (mode == IW_MODE_AUTO), FALSE);
 
 	if (nm_device_get_mode (dev) == mode)
 		return TRUE;
