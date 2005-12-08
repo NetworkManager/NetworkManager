@@ -1,5 +1,11 @@
 2005-12-08  Robert Love  <rml@novell.com>
 
+	* include/NetworkManager.h: add WPA capabilities constants
+	* src/NetworkManagerDevice.c: detect if wireless devices support WPA
+	  or WPA2 and add the capabilities bits as appropriate.
+
+2005-12-08  Robert Love  <rml@novell.com>
+
 	* initscript/SUSE/networkmanager-dispatcher.in: new initscript for
 	  NetworkManagerDispatcher.
 	* configure.in, initscript/SUSE/.cvsignore,

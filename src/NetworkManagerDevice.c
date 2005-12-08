@@ -653,14 +653,46 @@ static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
 		}
 	}
 
+	/* A test wireless device is a pro at WPA and WPA2 */
+	if (dev->test_device)
+		   caps |= NM_DEVICE_CAP_WIRELESS_WPA | NM_DEVICE_CAP_WIRELESS_WPA2;
+	else
+	{
+		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
+		{
+			struct iw_range range;
+			struct iwreq wrq;
+
+			memset (&wrq, 0, sizeof (wrq));
+			strncpy (wrq.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
+			wrq.u.data.pointer = (caddr_t) &range;
+			wrq.u.data.length = sizeof (struct iw_range);
+
+			if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) >= 0)
+			{
+				if (range.enc_capa & IW_ENC_CAPA_WPA)
+					caps |= NM_DEVICE_CAP_WIRELESS_WPA;
+				if (range.enc_capa & IW_ENC_CAPA_WPA2)
+					caps |= NM_DEVICE_CAP_WIRELESS_WPA2;
+			}
+
+			/*
+			 * FIXME: Most drivers do not yet support enc_capa, so we should
+			 * try another method here if neither WPA cap was set.
+			 */
+
+			nm_dev_sock_close (sk);
+		}
+	}
+
 	return caps;
 }
 
 
 /*
- * nm_device_wireless_discover_capabilities
+ * nm_device_wired_discover_capabilities
  *
- * Figure out wireless-specific capabilities
+ * Figure out wired-specific capabilities
  *
  */
 static guint32 nm_device_wired_discover_capabilities (NMDevice *dev)
