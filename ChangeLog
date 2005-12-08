@@ -1,5 +1,13 @@
 2005-12-08  Robert Love  <rml@novell.com>
 
+	* initscript/SUSE/networkmanager-dispatcher.in: new initscript for
+	  NetworkManagerDispatcher.
+	* configure.in, initscript/SUSE/.cvsignore,
+	  initscript/SUSE/Makefile.am: support new networkmanager-dispatcher
+	  initscript.
+	
+2005-12-08  Robert Love  <rml@novell.com>
+
 	* initscript/SUSE/networkmanager.in: Do not start 'networking' service.
 
 2005-12-08  Robert Love  <rml@novell.com>
