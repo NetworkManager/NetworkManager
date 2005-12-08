@@ -2,14 +2,12 @@
 
 ### BEGIN INIT INFO
 # Provides:       networkmanager
-# Required-Start: $network dbus haldaemon
+# Required-Start: dbus haldaemon
 # Default-Start:  3 5
 # Default-Stop:
 # Description: NetworkManager, a network and wireless connection manager
 ### END INIT INFO
 
-prefix=@prefix@
-exec_prefix=@prefix@
 bindir=@bindir@
 
 NETWORKMANAGER_BIN=${bindir}/NetworkManager

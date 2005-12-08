@@ -1,5 +1,9 @@
 2005-12-08  Robert Love  <rml@novell.com>
 
+	* initscript/SUSE/networkmanager.in: Do not start 'networking' service.
+
+2005-12-08  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerDevice.c: We want to fall back on and default to
 	  IW_MODE_AUTO, not -1, which is more in line with our previous
 	  behavior.  Otherwise, we try to set the wireless mode to -1 in
