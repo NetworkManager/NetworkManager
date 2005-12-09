@@ -1,3 +1,8 @@
+2005-12-09  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDevice.c: handle error better in
+	  nm_device_set_mode().
+
 2005-12-08  Robert Love  <rml@novell.com>
 
 	* include/NetworkManager.h: add WPA capabilities constants

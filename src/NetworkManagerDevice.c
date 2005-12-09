@@ -2018,10 +2018,12 @@ gboolean nm_device_set_mode (NMDevice *dev, const int mode)
 		else
 		{
 			if (errno != ENODEV)
-				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode.  errno = %d",
+				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode: %s",
 					nm_device_get_iface (dev),
-					mode == IW_MODE_INFRA ? "Infrastructure" : (mode == IW_MODE_ADHOC ? "Ad-Hoc" : "unknown"),
-					errno);
+					mode == IW_MODE_INFRA ? "Infrastructure" : \
+						(mode == IW_MODE_ADHOC ? "Ad-Hoc" : \
+							(mode == IW_MODE_AUTO ? "Auto" : "unknown")),
+					strerror (errno));
 		}
 		nm_dev_sock_close (sk);
 	}
