@@ -1,3 +1,13 @@
+2005-12-09  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/*
+	  configure.in
+	  Makefile.am
+		- Add a utility library for clients of NetworkManager.  It's
+			only targetted at applets for the moment, and contains
+			a generalized 802.11 cipher framework for different
+			types of keys (WEP & WPA Hex, ASCII, Passphrase)
+
 2005-12-09  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDevice.c: handle error better in

@@ -127,6 +127,10 @@ PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
 AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
 
+PKG_CHECK_MODULES(GLIB, glib-2.0)
+AC_SUBST(GLIB_CFLAGS)
+AC_SUBST(GLIB_LIBS)
+
 PKG_CHECK_MODULES(GMODULE, gmodule-2.0)
 AC_SUBST(GMODULE_CFLAGS)
 AC_SUBST(GMODULE_LIBS)
@@ -287,6 +291,8 @@ src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
 src/backends/Makefile
+libnm-util/libnm-util.pc
+libnm-util/Makefile
 dispatcher-daemon/Makefile
 gnome/Makefile
 gnome/applet/Makefile

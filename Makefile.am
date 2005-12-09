@@ -1,4 +1,4 @@
-SUBDIRS = utils src dispatcher-daemon gnome initscript test po include
+SUBDIRS = utils src dispatcher-daemon gnome initscript test po include libnm-util
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\

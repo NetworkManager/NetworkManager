@@ -1,0 +1,48 @@
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/include
+
+lib_LTLIBRARIES=libnm-util.la
+
+libnm_util_la_CPPFLAGS =	$(GLIB_CFLAGS)
+
+if WITH_GCRYPT
+libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
+endif
+
+libnm_util_la_SOURCES=			\
+	cipher.c					\
+	cipher.h					\
+	cipher-manager.c			\
+	cipher-manager.h			\
+	cipher-wep-hex.c			\
+	cipher-wep-hex.h			\
+	cipher-wep-passphrase.c		\
+	cipher-wep-passphrase.h		\
+	cipher-wep-ascii.c			\
+	cipher-wep-ascii.h			\
+	cipher-wpa-psk-hex.c		\
+	cipher-wpa-psk-hex.h		\
+	cipher-wpa-psk-passphrase.c	\
+	cipher-wpa-psk-passphrase.h	\
+	sha1.c					\
+	sha1.h
+
+if !WITH_GCRYPT
+libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
+endif
+
+libnm_util_la_LDFLAGS= $(GLIB_LIBS)
+
+if WITH_GCRYPT
+libnm_util_la_LDFLAGS += $(LIBGCRYPT_LIBS)
+endif
+
+libnm_util_includedir=$(includedir)/NetworkManager
+
+libnm_util_include_HEADERS = cipher-manager.h cipher.h
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = libnm-util.pc
+
+DISTCLEANFILES = libnm-util.pc
+
+EXTRA_DIST = libnm-util.pc.in
