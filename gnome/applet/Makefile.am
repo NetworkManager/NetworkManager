@@ -2,7 +2,7 @@ SUBDIRS=icons
 
 NULL=
 
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/include
+INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/include -I${top_srcdir}/libnm-util
 
 bin_PROGRAMS = nm-applet
 
@@ -58,6 +58,8 @@ nm_applet_SOURCES =			\
 	vpn-password-dialog.h	\
 	vpn-connection.c		\
 	vpn-connection.h		\
+	wireless-security-common.c	\
+	wireless-security-common.h	\
 	$(NULL)
 
 nm_applet_LDADD =						\
@@ -72,6 +74,7 @@ nm_applet_LDADD =						\
 	$(LIBGNOMEUI_LIBS)					\
 	$(GNOME_KEYRING_LIBS)				\
 	$(top_builddir)/utils/libnmutils.la	\
+	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(NULL)
 
 

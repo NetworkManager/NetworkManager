@@ -1,5 +1,27 @@
 2005-12-10  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/Makefile.am
+		- Add libnm-util to includes
+		- Add libnm-util to link list
+		- Add wireless-security-common.* to compile list
+
+	* gnome/applet/other-network-dialog.c
+		- Convert to using the WirelessSecurityManager code and
+			widgets
+
+	* gnome/applet/passphrase-dialog.c
+		- Comment out references to stuff in the glade file that
+			cause runtime errors until it can be fixed up
+			to use the WirelessSecurityManager code
+
+	* gnome/applet/wireless-applet.glade
+		- Rename some widgets
+		- Add widgets for the WirelessSecurityManager code
+		- Remove passphrase-related stuff since that's now
+			handled by the WirelessSecurityManager code
+
+2005-12-10  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-devices.c
 		- Print out error message details for dbus pending call callbacks
 		- Move nmwa_dbus_update_devices() up

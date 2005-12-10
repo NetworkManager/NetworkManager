@@ -62,6 +62,7 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 
 	button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
 	combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
+/*
 	passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
 	passphrase_text = gtk_entry_get_text (passphrase_entry);
 
@@ -82,6 +83,7 @@ static void update_button_cb (GtkWidget *widget, GladeXML *xml)
 		default:
 			break;
 	}
+*/
 
 	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);
 }
@@ -121,8 +123,10 @@ static void nmi_passphrase_dialog_clear (GtkWidget *dialog)
 
 	if ((xml = (GladeXML *)g_object_get_data (G_OBJECT (dialog), "glade-xml")))
 	{
+/*
 		entry  = glade_xml_get_widget (xml, "passphrase_entry");
 		gtk_entry_set_text (GTK_ENTRY (entry), "");
+*/
 	}
 
 	gtk_widget_hide (dialog);
@@ -387,15 +391,17 @@ GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
 	ok_button = GTK_BUTTON (glade_xml_get_widget (dialog_xml, "login_button"));
 	gtk_widget_grab_default (GTK_WIDGET (ok_button));
 
-	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
+//	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
 	nmi_passphrase_dialog_clear (dialog);
 	gtk_widget_set_sensitive (GTK_WIDGET (ok_button), FALSE);
-	g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), dialog_xml);
+//	g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), dialog_xml);
 
+/*
 	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
 	gtk_combo_box_set_active (key_type_combo, 0);
 	g_signal_connect (G_OBJECT (key_type_combo), "changed", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_key_type_combo_changed), applet);
 	nmi_passphrase_dialog_key_type_combo_changed (GTK_WIDGET (key_type_combo), applet);
+*/
 
 	return dialog;
 }
