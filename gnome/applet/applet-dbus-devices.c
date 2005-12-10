@@ -56,6 +56,11 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_nm_state_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -113,6 +118,11 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 
 	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -198,6 +208,11 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("hal_info_product_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -238,6 +253,11 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("hal_info_vendor_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -297,6 +317,11 @@ static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("hal_net_physdev_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -504,6 +529,17 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 		goto out;
 	}
 
+	if (message_is_error (reply))
+	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_net_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
+		dbus_message_unref (reply);
+		goto out;
+	}
+
 	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_OBJECT_PATH, &op,
 									DBUS_TYPE_STRING, &essid,
 									DBUS_TYPE_STRING, &hw_addr,
@@ -686,8 +722,13 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_device_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -814,6 +855,17 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 		goto out;
 	}
 
+	if (message_is_error (reply))
+	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_update_devices_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
+		dbus_message_unref (reply);
+		goto out;
+	}
+
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH, &devices, &num_devices, DBUS_TYPE_INVALID))
 	{
 		char ** item;
@@ -828,6 +880,30 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 
 out:
 	dbus_pending_call_unref (pcall);
+}
+
+
+/*
+ * nmwa_dbus_update_devices
+ *
+ * Do a full update of network devices, wireless networks, and dial up devices.
+ *
+ */
+void nmwa_dbus_update_devices (NMWirelessApplet *applet)
+{
+	DBusMessage *		message;
+	DBusPendingCall *	pcall;
+
+	nmwa_free_data_model (applet);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
+	{
+		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+		if (pcall)
+			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
+		dbus_message_unref (message);
+	}
+	nmwa_dbus_update_wireless_enabled (applet);
 }
 
 
@@ -852,6 +928,17 @@ static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (dbus_message_is_error (reply, NM_DBUS_NO_DIALUP_ERROR))
 	{
+		dbus_message_unref (reply);
+		goto out;
+	}
+
+	if (message_is_error (reply))
+	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -919,30 +1006,6 @@ void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char 
 	}
 	else
 		nm_warning ("nmwa_dbus_activate_dialup_connection(): Couldn't allocate the dbus message!");
-}
-
-
-/*
- * nmwa_dbus_update_devices
- *
- * Do a full update of network devices, wireless networks, and dial up devices.
- *
- */
-void nmwa_dbus_update_devices (NMWirelessApplet *applet)
-{
-	DBusMessage *		message;
-	DBusPendingCall *	pcall;
-
-	nmwa_free_data_model (applet);
-
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
-	{
-		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
-		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
-		dbus_message_unref (message);
-	}
-	nmwa_dbus_update_wireless_enabled (applet);
 }
 
 

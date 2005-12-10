@@ -122,8 +122,13 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_vpn_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
@@ -210,6 +215,17 @@ static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, voi
 
 	if (dbus_message_is_error (reply, NM_DBUS_NO_VPN_CONNECTIONS))
 	{
+		dbus_message_unref (reply);
+		goto out;
+	}
+
+	if (message_is_error (reply))
+	{
+		DBusError err;
+
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nmwa_dbus_vpn_update_vpn_connections_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}

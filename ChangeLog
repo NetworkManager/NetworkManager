@@ -1,4 +1,13 @@
-2005-12-09  Dan Williams  <dcbw@redhat.com>
+2005-12-10  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.c
+		- Print out error message details for dbus pending call callbacks
+		- Move nmwa_dbus_update_devices() up
+
+	* gnome/applet/applet-dbus-vpn.c
+		- Print out error message details for dbus pending call callbacks
+
+2005-12-10  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/*
 		- More fixups
