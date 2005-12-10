@@ -22,10 +22,10 @@
 #include <glib.h>
 #include <iwlib.h>
 
-#include "cipher-wep-passphrase.h"
 #include "cipher.h"
 #include "cipher-private.h"
-#include "cipher-manager.h"
+#include "cipher-wep-passphrase.h"
+
 #ifdef HAVE_GCRYPT
 #include <gcrypt.h>
 #else
@@ -98,18 +98,18 @@ static char * cipher_wep_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const
 }
 
 
-int cipher_wep128_passphrase_register (void)
+IEEE_802_11_Cipher * cipher_wep128_passphrase_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP104;
-	cipher->input_min = 0;  /* What _is_ the min, really? */
+	cipher->input_min = 1;  /* What _is_ the min, really? */
 	cipher->input_max = 64;
 	cipher->cipher_hash_func = cipher_wep128_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
@@ -120,9 +120,8 @@ static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, co
 	return cipher_wep_passphrase_hash_func (cipher, input, 26);
 }
 
-int cipher_wep64_passphrase_register (void)
+IEEE_802_11_Cipher * cipher_wep64_passphrase_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP40;
@@ -130,8 +129,9 @@ int cipher_wep64_passphrase_register (void)
 	cipher->input_max = 64;
 	cipher->cipher_hash_func = cipher_wep64_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)

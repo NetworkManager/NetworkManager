@@ -22,15 +22,9 @@
 #include <glib.h>
 #include <iwlib.h>
 
-#include "cipher-wep-ascii.h"
 #include "cipher.h"
 #include "cipher-private.h"
-#include "cipher-manager.h"
-#ifdef HAVE_GCRYPT
-#include <gcrypt.h>
-#else
-#include "gnome-keyring-md5.h"
-#endif
+#include "cipher-wep-ascii.h"
 
 
 static char * cipher_wep128_ascii_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
@@ -60,9 +54,8 @@ static char * cipher_wep_ascii_hash_func (IEEE_802_11_Cipher *cipher, const char
 
 
 #define WEP128_ASCII_INPUT_SIZE	13
-int cipher_wep128_ascii_register (void)
+IEEE_802_11_Cipher * cipher_wep128_ascii_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP104;
@@ -70,8 +63,9 @@ int cipher_wep128_ascii_register (void)
 	cipher->input_max = WEP128_ASCII_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep128_ascii_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep128_ascii_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
@@ -84,9 +78,8 @@ static char * cipher_wep128_ascii_hash_func (IEEE_802_11_Cipher *cipher, const c
 
 
 #define WEP64_ASCII_INPUT_SIZE	5
-int cipher_wep64_ascii_register (void)
+IEEE_802_11_Cipher * cipher_wep64_ascii_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP40;
@@ -94,8 +87,9 @@ int cipher_wep64_ascii_register (void)
 	cipher->input_max = WEP64_ASCII_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep64_ascii_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep64_ascii_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)

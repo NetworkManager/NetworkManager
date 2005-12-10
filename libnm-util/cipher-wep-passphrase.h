@@ -22,7 +22,7 @@
 #ifndef CIPHER_WEP_PASSPHRASE_H
 #define CIPHER_WEP_PASSPHRASE_H
 
-int cipher_wep128_passphrase_register (void);
-int cipher_wep64_passphrase_register (void);
+IEEE_802_11_Cipher * cipher_wep128_passphrase_new (void);
+IEEE_802_11_Cipher * cipher_wep64_passphrase_new (void);
 
 #endif	/* CIPHER_WEP_PASSPHRASE_H */

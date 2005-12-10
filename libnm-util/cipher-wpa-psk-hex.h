@@ -24,6 +24,6 @@
 
 #define WPA_PMK_LEN 32
 
-int cipher_wpa_psk_hex_register (void);
+IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void);
 
 #endif	/* CIPHER_WPA_PSK_HEX_H */

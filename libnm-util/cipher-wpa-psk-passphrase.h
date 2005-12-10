@@ -22,6 +22,6 @@
 #ifndef CIPHER_WPA_PSK_PASSPHRASE_H
 #define CIPHER_WPA_PSK_PASSPHRASE_H
 
-int cipher_wpa_psk_passphrase_register (void);
+IEEE_802_11_Cipher * cipher_wpa_psk_passphrase_new (void);
 
 #endif	/* CIPHER_WPA_PSK_PASSPHRASE_H */

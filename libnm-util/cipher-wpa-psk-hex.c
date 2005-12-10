@@ -22,10 +22,9 @@
 #include <glib.h>
 #include <iwlib.h>
 
-#include "cipher-wpa-psk-hex.h"
 #include "cipher.h"
 #include "cipher-private.h"
-#include "cipher-manager.h"
+#include "cipher-wpa-psk-hex.h"
 
 
 static char * cipher_wpa_psk_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
@@ -75,9 +74,8 @@ static int hexstr2bin(const char *hex, char *buf, size_t len)
 
 /* End from hostap */
 
-int cipher_wpa_psk_hex_register (void)
+IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_TKIP;
@@ -85,8 +83,9 @@ int cipher_wpa_psk_hex_register (void)
 	cipher->input_max = WPA_PMK_LEN * 2;
 	cipher->cipher_hash_func = cipher_wpa_psk_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wpa_psk_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)

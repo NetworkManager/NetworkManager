@@ -1,6 +1,13 @@
 2005-12-09  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/*
+		- More fixups
+		- Remove cipher-manager.* because we don't need it
+		- Forgot to add gnome-keyring-md5 files to compile list
+
+2005-12-09  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/*
 	  configure.in
 	  Makefile.am
 		- Add a utility library for clients of NetworkManager.  It's

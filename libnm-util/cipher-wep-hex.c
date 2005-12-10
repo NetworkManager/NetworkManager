@@ -22,10 +22,9 @@
 #include <glib.h>
 #include <iwlib.h>
 
-#include "cipher-wep-hex.h"
 #include "cipher.h"
 #include "cipher-private.h"
-#include "cipher-manager.h"
+#include "cipher-wep-hex.h"
 
 
 static char * cipher_wep128_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
@@ -117,9 +116,8 @@ static char * cipher_wep_hex_convert_func (IEEE_802_11_Cipher *cipher, const cha
 
 
 #define WEP128_HEX_INPUT_SIZE	26
-int cipher_wep128_hex_register (void)
+IEEE_802_11_Cipher * cipher_wep128_hex_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP104;
@@ -127,8 +125,9 @@ int cipher_wep128_hex_register (void)
 	cipher->input_max = WEP128_HEX_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep128_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep128_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
@@ -141,9 +140,8 @@ static char * cipher_wep128_hex_hash_func (IEEE_802_11_Cipher *cipher, const cha
 
 
 #define WEP64_HEX_INPUT_SIZE	10
-int cipher_wep64_hex_register (void)
+IEEE_802_11_Cipher * cipher_wep64_hex_new (void)
 {
-	CipherManager * cm = cipher_manager_get_instance ();
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP40;
@@ -151,8 +149,9 @@ int cipher_wep64_hex_register (void)
 	cipher->input_max = WEP64_HEX_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep64_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
+	ieee_802_11_cipher_ref (cipher);
 
-	return cipher_manager_register_cipher (cm, cipher);
+	return cipher;
 }
 
 static char * cipher_wep64_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)

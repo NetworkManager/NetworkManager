@@ -22,7 +22,7 @@
 #ifndef CIPHER_WEP_ASCII_H
 #define CIPHER_WEP_ASCII_H
 
-int cipher_wep128_ascii_register (void);
-int cipher_wep64_ascii_register (void);
+IEEE_802_11_Cipher * cipher_wep128_ascii_new (void);
+IEEE_802_11_Cipher * cipher_wep64_ascii_new (void);
 
 #endif	/* CIPHER_WEP_ASCII_H */
