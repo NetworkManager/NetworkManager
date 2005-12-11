@@ -92,6 +92,8 @@ void gnome_two_password_dialog_set_readonly_username       (GnomeTwoPasswordDial
 void gnome_two_password_dialog_set_readonly_domain         (GnomeTwoPasswordDialog  *password_dialog,
 							    gboolean                 readonly);
 
+void gnome_two_password_dialog_set_password_primary_label (GnomeTwoPasswordDialog  *password_dialog,
+							   const char              *password_primary_description);
 void gnome_two_password_dialog_set_password_secondary_label (GnomeTwoPasswordDialog  *password_dialog,
 							     const char              *password_secondary_description);
 

@@ -75,6 +75,7 @@ struct GnomeTwoPasswordDialogDetails
 
 	gboolean anon_support_on;
 
+	char *primary_password_label;
 	char *secondary_password_label;
 };
 
@@ -144,6 +145,7 @@ gnome_two_password_dialog_init (GnomeTwoPasswordDialog *password_dialog)
 	password_dialog->details->show_password_secondary = TRUE;
 	password_dialog->details->anon_support_on = FALSE;
 
+	password_dialog->details->primary_password_label = g_strdup ( _("_Password:") );
 	password_dialog->details->secondary_password_label = g_strdup ( _("_Secondary Password:") );
 }
 
@@ -161,9 +163,11 @@ gnome_two_password_dialog_finalize (GObject *object)
 	g_object_unref (password_dialog->details->password_entry_secondary);
 
 	g_free (password_dialog->details->remember_label_text);
-	g_free (password_dialog->details);
 
+	g_free (password_dialog->details->primary_password_label);
 	g_free (password_dialog->details->secondary_password_label);
+
+	g_free (password_dialog->details);
 
 	if (G_OBJECT_CLASS (parent_class)->finalize != NULL)
 		(* G_OBJECT_CLASS (parent_class)->finalize) (object);
@@ -269,7 +273,8 @@ add_table_rows (GnomeTwoPasswordDialog *password_dialog)
 	if (password_dialog->details->show_domain)
 		add_row (table, row++, _("_Domain:"), password_dialog->details->domain_entry, offset);
 	if (password_dialog->details->show_password)
-		add_row (table, row++, _("_Password:"), password_dialog->details->password_entry, offset);
+		add_row (table, row++, password_dialog->details->primary_password_label,
+			 password_dialog->details->password_entry, offset);
 	if (password_dialog->details->show_password_secondary)
 		add_row (table, row++, password_dialog->details->secondary_password_label, 
 			 password_dialog->details->password_entry_secondary, offset);
@@ -728,6 +733,18 @@ gnome_two_password_dialog_get_remember (GnomeTwoPasswordDialog         *password
 		return GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION;
 	}
 	return GNOME_TWO_PASSWORD_DIALOG_REMEMBER_NOTHING;
+}
+
+void gnome_two_password_dialog_set_password_primary_label (GnomeTwoPasswordDialog  *password_dialog,
+							   const char              *password_primary_label)
+{
+	g_return_if_fail (password_dialog != NULL);
+	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+
+	g_free (password_dialog->details->primary_password_label);
+	password_dialog->details->primary_password_label = g_strdup (password_primary_label);
+
+	add_table_rows (password_dialog);
 }
 
 void gnome_two_password_dialog_set_password_secondary_label (GnomeTwoPasswordDialog  *password_dialog,

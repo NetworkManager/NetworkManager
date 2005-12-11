@@ -44,6 +44,10 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 {
   GSList *passwords;
   GList *keyring_result;
+  GList *keyring_i;
+
+  char *password = NULL;
+  char *certpass = NULL;
 
   passwords = NULL;
 
@@ -57,66 +61,138 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 						&keyring_result) != GNOME_KEYRING_RESULT_OK)
     return FALSE;
 
-  if (keyring_result != NULL && g_list_length (keyring_result) == 1) {
-    char *password;
-    GnomeKeyringNetworkPasswordData *data1 = keyring_result->data;
+  *is_session = FALSE;
 
-    password = NULL;
-
-    if (strcmp (data1->object, "password") == 0) {
-      password = data1->password;
+  // Go through all passwords and assign to appropriate variable
+  for (keyring_i = keyring_result; keyring_i != NULL; keyring_i = g_list_next (keyring_i)) {
+    
+    GnomeKeyringNetworkPasswordData *data = keyring_i->data;
+      
+    if (strcmp (data->object, "password") == 0) {
+      password = data->password;
+    } else if (strcmp (data->object, "certpass") == 0) {
+      certpass = data->password;
     }
 
-    if (password != NULL) {
-      passwords = g_slist_append (passwords, g_strdup (password));
-      if (strcmp (data1->keyring, "session") == 0)
-	*is_session = TRUE;
-      else
-	*is_session = FALSE;
-    }
-
-    gnome_keyring_network_password_list_free (keyring_result);
+    if (strcmp (data->keyring, "session") == 0)
+      *is_session = TRUE;
+    
   }
+
+
+  if (password != NULL) {
+    passwords = g_slist_append (passwords, g_strdup (password));
+  } else {
+    passwords = g_slist_append (passwords, g_strdup (""));
+  }
+
+  if (certpass != NULL) {
+    passwords = g_slist_append (passwords, g_strdup (certpass));
+  } else {
+    passwords = g_slist_append (passwords, g_strdup (""));
+  }
+
+  gnome_keyring_network_password_list_free (keyring_result);
 
   return passwords;
 }
 
 static void save_vpn_password (const char *vpn_name, const char *vpn_service, const char *keyring, 
-			       const char *password)
+			       const char *password, const char *certpass)
 {
   guint32 item_id;
   GnomeKeyringResult keyring_result;
 
-  keyring_result = gnome_keyring_set_network_password_sync (keyring,
-							    g_get_user_name (),
-							    NULL,
-							    vpn_name,
-							    "password",
-							    vpn_service,
-							    NULL,
-							    0,
-							    password,
-							    &item_id);
-  if (keyring_result != GNOME_KEYRING_RESULT_OK)
-    {
+  if ( password != NULL) {
+    keyring_result = gnome_keyring_set_network_password_sync (keyring,
+							      g_get_user_name (),
+							      NULL,
+							      vpn_name,
+							      "password",
+							      vpn_service,
+							      NULL,
+							      0,
+							      password,
+							      &item_id);
+    if (keyring_result != GNOME_KEYRING_RESULT_OK) {
       g_warning ("Couldn't store password in keyring, code %d", (int) keyring_result);
     }
+  }
+
+  if ( certpass != NULL) {
+    keyring_result = gnome_keyring_set_network_password_sync (keyring,
+							      g_get_user_name (),
+							      NULL,
+							      vpn_name,
+							      "certpass",
+							      vpn_service,
+							      NULL,
+							      0,
+							      certpass,
+							      &item_id);
+    if (keyring_result != GNOME_KEYRING_RESULT_OK) {
+      g_warning ("Couldn't store certpass in keyring, code %d", (int) keyring_result);
+    }
+  }
 
 }
 
+
+/** Checks if a key is encrypted
+ * The key file is read and it is checked if it contains a line reading
+ * Proc-Type: 4,ENCRYPTED
+ * This is defined in RFC 1421 (PEM)
+ * @param filename the path to the file
+ * @return returns true if the key is encrypted, false otherwise
+ */
+static gboolean
+pem_is_encrypted(const char *filename)
+{
+
+  GIOChannel *pem_chan;
+  char       *str = NULL;
+  gboolean encrypted = FALSE;
+
+  pem_chan = g_io_channel_new_file (filename, "r", NULL);
+
+  if ( pem_chan == NULL ) {
+    // We don't know
+    return FALSE;
+  }
+
+  while ( ! encrypted && (g_io_channel_read_line (pem_chan, &str, NULL, NULL, NULL) != G_IO_STATUS_EOF) ) {
+    if ( strstr (str, "Proc-Type: 4,ENCRYPTED") == str ) {
+      // encrypted!
+      encrypted = TRUE;
+    }
+
+    g_free (str);
+  }
+
+  return encrypted;
+}
+
+
 static GSList *
-get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
+get_passwords (const char *vpn_name,
+	       const char *vpn_service,
+	       gboolean retry,
+	       gboolean need_password,
+	       gboolean need_certpass)
 {
   GSList          *result;
   char            *prompt;
-  GtkWidget	*dialog;
+  GtkWidget	  *dialog;
   char            *keyring_password;
+  char            *keyring_certpass;
   gboolean         keyring_is_session;
   GSList          *keyring_result;
   GnomeTwoPasswordDialogRemember remember;
+  int              num_passwords = 0;
 
   result = NULL;
   keyring_password = NULL;
+  keyring_certpass = NULL;
   keyring_result = NULL;
 
   g_return_val_if_fail (vpn_name != NULL, NULL);
@@ -129,6 +205,7 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
   } else {
     if ((keyring_result = lookup_pass (vpn_name, vpn_service, &keyring_is_session)) != NULL) {
       keyring_password = g_strdup ((char *) keyring_result->data);
+      keyring_certpass = g_strdup ((char *) (g_slist_next (keyring_result))->data);
     }
     g_slist_foreach (keyring_result, (GFunc)g_free, NULL);
     g_slist_free (keyring_result);
@@ -142,7 +219,45 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
   gnome_two_password_dialog_set_show_userpass_buttons (GNOME_TWO_PASSWORD_DIALOG (dialog), FALSE);
   gnome_two_password_dialog_set_show_domain (GNOME_TWO_PASSWORD_DIALOG (dialog), FALSE);
   gnome_two_password_dialog_set_show_remember (GNOME_TWO_PASSWORD_DIALOG (dialog), TRUE);
-  gnome_two_password_dialog_set_show_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog), FALSE);
+
+  if (need_password && need_certpass) {
+    gnome_two_password_dialog_set_show_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog),
+							   TRUE);
+    gnome_two_password_dialog_set_password_secondary_label (GNOME_TWO_PASSWORD_DIALOG (dialog),
+							    _("Certificate password:") );
+
+    /* if retrying, put in the passwords from the keyring */
+    if (keyring_password != NULL) {
+      gnome_two_password_dialog_set_password (GNOME_TWO_PASSWORD_DIALOG (dialog),
+					      keyring_password);
+    }
+    if (keyring_certpass != NULL) {
+      gnome_two_password_dialog_set_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog),
+							keyring_certpass);
+    }
+  } else {
+    gnome_two_password_dialog_set_show_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog),
+							   FALSE);
+    if (need_password) {
+      // defaults for label are ok
+
+      /* if retrying, put in the passwords from the keyring */
+      if (keyring_password != NULL) {
+	gnome_two_password_dialog_set_password (GNOME_TWO_PASSWORD_DIALOG (dialog),
+						keyring_password);
+      }
+
+    } else if (need_certpass) {
+      gnome_two_password_dialog_set_password_primary_label (GNOME_TWO_PASSWORD_DIALOG (dialog),
+							    _("Certificate password:") );
+      /* if retrying, put in the passwords from the keyring */
+      if (keyring_certpass != NULL) {
+	gnome_two_password_dialog_set_password (GNOME_TWO_PASSWORD_DIALOG (dialog),
+						keyring_certpass);
+      }
+    }
+  }
+
   /* use the same keyring storage options as from the items we put in the entry boxes */
   remember = GNOME_TWO_PASSWORD_DIALOG_REMEMBER_NOTHING;
   if (keyring_result != NULL) {
@@ -153,35 +268,40 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
   }
   gnome_two_password_dialog_set_remember (GNOME_TWO_PASSWORD_DIALOG (dialog), remember);
 
-  /* if retrying, put in the passwords from the keyring */
-  if (keyring_password != NULL) {
-    gnome_two_password_dialog_set_password (GNOME_TWO_PASSWORD_DIALOG (dialog), keyring_password);
-  }
-
   gtk_widget_show (dialog);
 
-  if (gnome_two_password_dialog_run_and_block (GNOME_TWO_PASSWORD_DIALOG (dialog)))
-    {
-      char *password;
+  if (gnome_two_password_dialog_run_and_block (GNOME_TWO_PASSWORD_DIALOG (dialog))) {
+    char *password = "unused";
+    char *certpass = "unused";
 
+    if (need_password && need_certpass) {
       password = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
-      result = g_slist_append (result, password);
-
-      switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog)))
-	{
-	case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-	  save_vpn_password (vpn_name, vpn_service, "session", password);
-	  break;
-	case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-	  save_vpn_password (vpn_name, vpn_service, NULL, password);
-	  break;
-	default:
-	  break;
-	}
-
+      certpass = gnome_two_password_dialog_get_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog));
+    } else {
+      if (need_password) {
+	password = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
+      } else if (need_certpass) {
+	certpass = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
+      }
     }
 
+    result = g_slist_append (result, g_strdup (password));
+    result = g_slist_append (result, g_strdup (certpass));
+
+    switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog))) {
+    case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
+      save_vpn_password (vpn_name, vpn_service, "session", password, certpass);
+      break;
+    case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
+      save_vpn_password (vpn_name, vpn_service, NULL, password, certpass);
+      break;
+    default:
+      break;
+    }
+  }
+
   g_free (keyring_password);
+  g_free (keyring_certpass);
 
   gtk_widget_destroy (dialog);
 
@@ -196,14 +316,17 @@ main (int argc, char *argv[])
   gchar       *gconf_key = NULL;
   char        *escaped_name;
   gboolean     needs_password = FALSE;
+  gboolean     needs_certpass = FALSE;
   gboolean     valid_conn = FALSE;
-  GSList *i;
-  GSList *passwords;
-  static gboolean retry = FALSE;
-  static gchar *vpn_name = NULL;
-  static gchar *vpn_service = NULL;
-  GError *error = NULL;
-  GOptionContext *context;
+  GSList      *i;
+  GSList      *passwords;
+  gchar       *key = NULL;
+  gchar       *connection_type = NULL;
+  static gboolean  retry = FALSE;
+  static gchar    *vpn_name = NULL;
+  static gchar    *vpn_service = NULL;
+  GError          *error = NULL;
+  GOptionContext  *context;
   static GOptionEntry entries[] = 
     {
       { "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
@@ -256,25 +379,37 @@ main (int argc, char *argv[])
   valid_conn = TRUE;
     
   for (i = gconf_value_get_list (gconf_val); i != NULL; i = g_slist_next (i)) {
-    const char *string = gconf_value_get_string ((GConfValue *)i->data);
-    if (string) {
-      if ( strcmp (string, "connection-type") == 0 ) {
-	i = g_slist_next (i);
-	if (i != NULL) {
-	  const char *string2 = gconf_value_get_string ((GConfValue *)i->data);
-	  if ( (strcmp (string2, "password") == 0) ||
-	       (strcmp (string2, "x509userpass") == 0) ) {
-	    needs_password = TRUE;
-	  }
+    const char *gkey = gconf_value_get_string ((GConfValue *)i->data);
+    const char *gval = NULL;
+
+    i = g_slist_next (i);
+    if (i != NULL) {
+      gval = gconf_value_get_string ((GConfValue *)i->data);
+    }
+
+    if ( gkey != NULL ) {
+      if ( strcmp (gkey, "connection-type") == 0 ) {
+	connection_type = g_strdup (gval);
+	if ( (strcmp (gval, "password") == 0) ||
+	     (strcmp (gval, "x509userpass") == 0) ) {
+	  needs_password = TRUE;
 	}
-	break;
+      } else if ( strcmp (gkey, "key") == 0 ) {
+	key = g_strdup (gval);
       }
     }
   }
   gconf_value_free (gconf_val);
 
-  if ( needs_password ) {
-    passwords = get_passwords (vpn_name, vpn_service, retry);
+  if ( (connection_type != NULL) && (key != NULL) ) {
+    if ( (strcmp (connection_type, "x509") == 0) ||
+	 (strcmp (connection_type, "x509userpass") == 0) ) {
+      needs_certpass = pem_is_encrypted (key);
+    }
+  }
+
+  if ( needs_password || needs_certpass ) {
+    passwords = get_passwords (vpn_name, vpn_service, retry, needs_password, needs_certpass);
     if (passwords == NULL)
       goto out;
 
@@ -288,7 +423,7 @@ main (int argc, char *argv[])
     g_slist_free (passwords);
 
   } else {
-    printf ("No password needed\n");
+    printf ("No password needed\nNo certpass needed\n");
   }
 
   printf ("\n\n");
@@ -301,6 +436,9 @@ main (int argc, char *argv[])
  out:
   g_object_unref (gconf_client);
   g_option_context_free (context);
+
+  g_free (connection_type);
+  g_free (key);
 
   if ( ! valid_conn ) {
     return 1;
