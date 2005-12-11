@@ -19,20 +19,18 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef WIRELESS_SECURITY_COMMON_H
-#define WIRELESS_SECURITY_COMMON_H
+#ifndef WIRELESS_SECURITY_MANAGER_H
+#define WIRELESS_SECURITY_MANAGER_H
 
 #include <gtk/gtk.h>
-#include "applet.h"
 
 typedef struct WirelessSecurityManager WirelessSecurityManager;
-typedef struct WirelessSecurityOption WirelessSecurityOption;
 
 
-WirelessSecurityManager * wsm_new (NMWirelessApplet *applet);
+WirelessSecurityManager * wsm_new (const char * glade_file);
 void wsm_free (WirelessSecurityManager *wsm);
 void wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
-GtkWidget * wsm_get_widget_for_index (WirelessSecurityManager *wsm, guint index);
-gboolean wsm_is_ws_widget (WirelessSecurityManager *wsm, GtkWidget * widget);
+GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo);
+gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo);
 
-#endif	/* WIRELESS_SECURITY_COMMON_H */
+#endif	/* WIRELESS_SECURITY_MANAGER_H */

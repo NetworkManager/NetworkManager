@@ -1,3 +1,9 @@
+2005-12-11  Dan Williams  <dcbw@redhat.com>
+
+	* Hook more bits of the Other Network Dialog up to the
+		wireless security manager stuff, and restructure
+		bits of the dialog so there's less code.
+
 2005-12-10  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/Makefile.am

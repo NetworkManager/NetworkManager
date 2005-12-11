@@ -58,8 +58,10 @@ nm_applet_SOURCES =			\
 	vpn-password-dialog.h	\
 	vpn-connection.c		\
 	vpn-connection.h		\
-	wireless-security-common.c	\
-	wireless-security-common.h	\
+	wireless-security-manager.c	\
+	wireless-security-manager.h	\
+	wireless-security-option.c	\
+	wireless-security-option.h	\
 	$(NULL)
 
 nm_applet_LDADD =						\
