@@ -65,6 +65,7 @@ typedef struct _NmOpenVPN_IOData
 {
   char           *username;
   char           *password;
+  char           *certpass;
   gint            child_stdin_fd;
   gint            child_stdout_fd;
   gint            child_stderr_fd;
@@ -132,7 +133,7 @@ nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *signal)
   g_return_if_fail (signal != NULL);
 
   if ( strcmp (signal, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED) == 0 )
-    error_msg = _("The VPN login failed because the user name and password were not accepted.");
+    error_msg = _("The VPN login failed because the user name and password were not accepted or the certificate password was wrong.");
   else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED) == 0 )
     error_msg = _("The VPN login failed because the VPN program could not be started.");
   else if (strcmp (signal, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED) == 0 )
@@ -357,7 +358,7 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 {
   NmOpenVPNData    *data    = (NmOpenVPNData *)user_data;
   NmOpenVPN_IOData *io_data = data->io_data;
-  char *str;
+  char *str = NULL;
 
   if (! (condition & G_IO_IN))
     return TRUE;
@@ -369,22 +370,44 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
     if ( len > 0 ) {
       char *auth;
 
-      /* printf("Read: %s\n", str); */
+      // printf("Read: %s\n", str);
 
-      if ( sscanf(str, ">PASSWORD:Need '%a[^']' username/password", &auth) > 0 ) {
+      if ( sscanf(str, ">PASSWORD:Need '%a[^']'", &auth) > 0 ) {
 
-         if ( io_data->username != NULL ) {
-          gsize written;
-          char *buf = g_strdup_printf ("username \"%s\" %s\n"
-                                       "password \"%s\" %s\n",
-                                       auth, io_data->username,
-                                       auth, io_data->password);
-          /* Will always write everything in blocking channels (on success) */
-          g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
-          g_io_channel_flush (source, NULL);
-          g_free (buf);
+	if ( strcmp (auth, "Auth") == 0) {
+
+	  if ( (io_data->username != NULL) &&
+	       (io_data->password != NULL) ) {
+	    gsize written;
+	    char *buf = g_strdup_printf ("username \"%s\" %s\n"
+					 "password \"%s\" %s\n",
+					 auth, io_data->username,
+					 auth, io_data->password);
+	    /* Will always write everything in blocking channels (on success) */
+	    g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
+	    g_io_channel_flush (source, NULL);
+	    g_free (buf);
+	  }
+	} else if ( strcmp (auth, "Private Key") == 0 ) {
+	  if ( io_data->certpass != NULL ) {
+	    gsize written;
+	    char *buf = g_strdup_printf ("password \"%s\" %s\n",
+					 auth, io_data->certpass);
+	    // printf("1: sending: %s\n", buf);
+	    /* Will always write everything in blocking channels (on success) */
+	    g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
+	    g_io_channel_flush (source, NULL);
+	    g_free (buf);
+	  } else {
+	    nm_warning("Certificate password requested but certpass == NULL");
+	  }
+	} else {
+	  nm_warning("No clue what to send for username/password request for '%s'", auth);
+	  nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+	  nm_openvpn_disconnect_management_socket (data);
 	}
 
+	g_free (auth);
 	return TRUE;
 
       } else if ( strstr(str, ">PASSWORD:Verification Failed: ") == str ) {
@@ -398,6 +421,8 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
       }
     }
   }
+
+  g_free (str);
 
   return TRUE;
 }
@@ -581,6 +606,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
   char         *username = NULL;
   char         *dev = NULL;
   char         *proto = NULL;
+  char         *port = NULL;
 
 
   g_return_val_if_fail (data != NULL, -1);
@@ -643,6 +669,8 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 	dev = data_items[++i];
       } else if ( (strcmp( data_items[i], "proto" ) == 0) ) {
 	proto = data_items[++i];
+      } else if ( (strcmp( data_items[i], "port") == 0) ) {
+	port = data_items[++i];
       }
     }
     g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
@@ -662,9 +690,19 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
     if ( (proto != NULL) ) {
       g_ptr_array_add (openvpn_argv, (gpointer) proto);
     } else {
-      // Versions prior to 0.4.0 didn't set this so we default for
+      // Versions prior to 0.3.1 didn't set this so we default for
       // udp for these configs
       g_ptr_array_add (openvpn_argv, (gpointer) "udp");
+    }
+
+    // Port
+    g_ptr_array_add (openvpn_argv, (gpointer) "--port");
+    if ( (port != NULL) ) {
+      g_ptr_array_add (openvpn_argv, (gpointer) port);
+    } else {
+      // Versions prior to 0.3.2 didn't set this so we default to
+      // IANA assigned port 1194
+      g_ptr_array_add (openvpn_argv, (gpointer) "1194");
     }
 
     // Syslog
@@ -679,6 +717,14 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
     // Keep key and tun if restart is needed
     g_ptr_array_add (openvpn_argv, (gpointer) "--persist-key");
     g_ptr_array_add (openvpn_argv, (gpointer) "--persist-tun");
+
+    // Management socket for localhost access to supply username and password
+    g_ptr_array_add (openvpn_argv, (gpointer) "--management");
+    g_ptr_array_add (openvpn_argv, (gpointer) "127.0.0.1");
+    // with have nobind, thus 1194 should be free, it is the IANA assigned port
+    g_ptr_array_add (openvpn_argv, (gpointer) "1194");
+    // Query on the management socket for user/pass
+    g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
 
 
     // Now append configuration options which are dependent on the configuration type
@@ -742,14 +788,6 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       g_ptr_array_add (openvpn_argv, (gpointer) "server");
       // Use user/path authentication
       g_ptr_array_add (openvpn_argv, (gpointer) "--auth-user-pass");
-      // Management socket for localhost access to supply username and password
-      g_ptr_array_add (openvpn_argv, (gpointer) "--management");
-      g_ptr_array_add (openvpn_argv, (gpointer) "127.0.0.1");
-      // with have nobind, thus 1194 should be free, it is the IANA assigned port
-      g_ptr_array_add (openvpn_argv, (gpointer) "1194");
-      // Query on the management socket for user/pass
-      g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
-
 
       for (i = 0; i < num_items; ++i) {
 	if ( strcmp( data_items[i], "ca" ) == 0) {
@@ -780,13 +818,6 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       }
       // Use user/path authentication
       g_ptr_array_add (openvpn_argv, (gpointer) "--auth-user-pass");
-      // Management socket for localhost access to supply username and password
-      g_ptr_array_add (openvpn_argv, (gpointer) "--management");
-      g_ptr_array_add (openvpn_argv, (gpointer) "127.0.0.1");
-      // with have nobind, thus 1194 should be free, it is the IANA assigned port
-      g_ptr_array_add (openvpn_argv, (gpointer) "1194");
-      // Query on the management socket for user/pass
-      g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
       break;
 
 
@@ -814,8 +845,15 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
     g_source_attach (openvpn_watch, NULL);
     g_source_unref (openvpn_watch);
 
+    /* Listen to the management socket for a few connection types:
+       PASSWORD: Will require username and password
+       X509USERPASS: Will require username and password and maybe certificate password
+       X509: May require certificate password
+    */
     if ( (data->connection_type == NM_OPENVPN_CONTYPE_PASSWORD) ||
-	 (data->connection_type == NM_OPENVPN_CONTYPE_X509USERPASS)
+	 (data->connection_type == NM_OPENVPN_CONTYPE_X509USERPASS) ||
+	 (data->connection_type == NM_OPENVPN_CONTYPE_X509)
+	 
 	 ) {
 
       NmOpenVPN_IOData  *io_data;
@@ -826,6 +864,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       io_data->child_stderr_fd = stderr_fd;
       io_data->username        = g_strdup(username);
       io_data->password        = g_strdup(passwords[0]);
+      io_data->certpass        = g_strdup(passwords[1]);
 
       data->io_data = io_data;
 
@@ -847,6 +886,7 @@ typedef enum OptType
 	OPT_TYPE_UNKNOWN = 0,
 	OPT_TYPE_ADDRESS,
 	OPT_TYPE_ASCII,
+	OPT_TYPE_INTEGER,
 	OPT_TYPE_NONE
 } OptType;
 
@@ -870,6 +910,7 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
     { "ca",				OPT_TYPE_ASCII },
     { "dev",				OPT_TYPE_ASCII },
     { "proto",				OPT_TYPE_ASCII },
+    { "port",				OPT_TYPE_INTEGER },
     { "cert",				OPT_TYPE_ASCII },
     { "key",				OPT_TYPE_ASCII },
     { "comp-lzo",			OPT_TYPE_ASCII },
@@ -939,6 +980,9 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
 
 	case OPT_TYPE_ADDRESS:
 	  /* Can be any legal hostname or IP address */
+	  break;
+
+	case OPT_TYPE_INTEGER:
 	  break;
 
 	default:
