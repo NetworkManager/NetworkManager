@@ -1,5 +1,9 @@
 2005-12-11  Dan Williams  <dcbw@redhat.com>
 
+	* Make validation of the key work correctly
+
+2005-12-11  Dan Williams  <dcbw@redhat.com>
+
 	* Hook more bits of the Other Network Dialog up to the
 		wireless security manager stuff, and restructure
 		bits of the dialog so there's less code.

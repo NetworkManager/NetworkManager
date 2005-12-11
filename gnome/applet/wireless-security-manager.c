@@ -93,7 +93,8 @@ void wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo)
 }
 
 
-GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo)
+GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
+				GtkSignalFunc validate_cb, gpointer user_data)
 {
 	WirelessSecurityOption * opt = NULL;
 	GtkTreeIter			iter;
@@ -109,10 +110,10 @@ GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
 	g_return_val_if_fail (opt != NULL, NULL);
 
-	return wso_get_widget (opt);
+	return wso_get_widget (opt, validate_cb, user_data);
 }
 
-gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo)
+gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo, const char *ssid)
 {
 	WirelessSecurityOption * opt = NULL;
 	GtkTreeIter			iter;
@@ -128,7 +129,7 @@ gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo)
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
 	g_return_val_if_fail (opt != NULL, FALSE);
 
-	return wso_validate_input (opt);
+	return wso_validate_input (opt, ssid);
 }
 
 

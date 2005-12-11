@@ -16,14 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * This applet used the GNOME Wireless Applet as a skeleton to build from.
- *
- * GNOME Wireless Applet Authors:
- *		Eskil Heyn Olsen <eskil@eskil.dk>
- *		Bastien Nocera <hadess@hadess.net> (Gnome2 port)
- *
- * (C) Copyright 2004 Red Hat, Inc.
- * (C) Copyright 2001, 2002 Free Software Foundation
+ * (C) Copyright 2005 Red Hat, Inc.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -53,7 +46,7 @@
 static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 {
 	gboolean		enable = FALSE;
-	const char *	text;
+	const char *	ssid;
 	GtkButton *	ok_button;
 	GtkEntry *	network_name_entry;
 	GladeXML *	xml;
@@ -66,12 +59,10 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 	wsm = (WirelessSecurityManager *) g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
 	g_return_if_fail (wsm != NULL);
 
-	network_name_entry = GTK_ENTRY (glade_xml_get_widget (xml, "network_name_entry"));
-	ok_button = GTK_BUTTON (glade_xml_get_widget (xml, "ok_button"));
-	
-	/* An ESSID is required */
-	text = gtk_entry_get_text (network_name_entry);
-	if (text && strlen (text) > 0)
+	/* An SSID is required */
+	network_name_entry = GTK_ENTRY (glade_xml_get_widget (xml, "network_name_entry"));	
+	ssid = gtk_entry_get_text (network_name_entry);
+	if (ssid && strlen (ssid) > 0)
 		enable = TRUE;
 
 	/* Validate the wireless security choices */
@@ -80,9 +71,10 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 		GtkComboBox * security_combo;
 
 		security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
-		enable = wsm_validate_active (wsm, security_combo);
+		enable = wsm_validate_active (wsm, security_combo, ssid);
 	}
 
+	ok_button = GTK_BUTTON (glade_xml_get_widget (xml, "ok_button"));
 	gtk_widget_set_sensitive (GTK_WIDGET (ok_button), enable);
 }
 
@@ -122,7 +114,8 @@ static void nmwa_other_network_dialog_security_combo_changed (GtkWidget *securit
 	}
 
 	/* Determine and add the correct wireless security widget to the dialog */
-	if ((wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo))))
+	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);
+	if (wso_widget)
 		gtk_container_add (GTK_CONTAINER (vbox), wso_widget);
 
 	update_button_cb (NULL, dialog);

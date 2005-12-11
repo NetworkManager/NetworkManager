@@ -31,9 +31,9 @@ WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file);
 WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file);
 
 const char * wso_get_name (WirelessSecurityOption * opt);
-GtkWidget * wso_get_widget (WirelessSecurityOption * opt);
+GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data);
 gboolean wso_is_wso_widget (GtkWidget * widget);
-gboolean wso_validate_input (WirelessSecurityOption * opt);
+gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid);
 void wso_free (WirelessSecurityOption * opt);
 
 

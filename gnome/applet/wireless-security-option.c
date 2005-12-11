@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
+#include <gtk/gtk.h>
 #include <string.h>
 #include <glade/glade.h>
 
@@ -179,27 +180,66 @@ const char * wso_get_name (WirelessSecurityOption * opt)
 }
 
 
-GtkWidget * wso_get_widget (WirelessSecurityOption * opt)
+GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data)
 {
 	g_return_val_if_fail (opt != NULL, NULL);
 
 	/* Some options may not have any UI */
 	if (!opt->widget && opt->uixml)
 	{
+		GSList *	elt;
+
+		/* Grab our UI widget and tag it as a WSO widget */
 		opt->widget = glade_xml_get_widget (opt->uixml, opt->widget_name);
 		g_object_ref (G_OBJECT (opt->widget));
 		g_object_set_data (G_OBJECT (opt->widget), WS_TAG_NAME, GINT_TO_POINTER (WS_TAG_MAGIC));
+
+		/* Set the caller's validate callback on any sub-widgets we care about */
+		for (elt = opt->subwidget_names; elt; elt = g_slist_next (elt))
+		{
+			const char *	widget_name = (const char *) (elt->data);
+			GtkWidget *	widget;
+
+			if ((widget = glade_xml_get_widget (opt->uixml, widget_name)))
+				g_signal_connect (G_OBJECT (widget), "changed", validate_cb, user_data);
+		}
 	}
 
 	return opt->widget;
 }
 
 
-gboolean wso_validate_input (WirelessSecurityOption * opt)
+gboolean wso_validate_input (WirelessSecurityOption * opt, const char *ssid)
 {
-	g_return_val_if_fail (opt != NULL, FALSE);
+	GSList * elt;
 
-	return TRUE;
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (ssid != NULL, FALSE);
+
+	if (!opt->subwidget_names)
+		return TRUE;
+
+	for (elt = opt->subwidget_names; elt; elt = g_slist_next (elt))
+	{
+		const char *	widget_name = (const char *) (elt->data);
+		GtkWidget *	widget;
+
+		if ((widget = glade_xml_get_widget (opt->uixml, widget_name)))
+		{
+			const char *	input = gtk_entry_get_text (GTK_ENTRY (widget));
+			GSList *		cipher_elt;
+
+			/* Try each of our ciphers in turn, if one validates that's enough */
+			for (cipher_elt = opt->ciphers; cipher_elt; cipher_elt = g_slist_next (cipher_elt))
+			{
+				IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *) (cipher_elt->data);
+				if (ieee_802_11_cipher_validate (cipher, ssid, input) == 0)
+					return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
 }
 
 
