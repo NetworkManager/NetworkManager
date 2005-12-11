@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnome-screensaver\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-11-13 15:57+0100\n"
-"PO-Revision-Date: 2005-11-13 15:58+0100\n"
+"POT-Creation-Date: 2005-12-11 12:51+0100\n"
+"PO-Revision-Date: 2005-12-11 12:53+0100\n"
 "Last-Translator: Francisco Javier F. Serrador <serrador@cvs.gnome.org>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,17 +20,17 @@ msgstr ""
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-dbus-info.c:924
+#: ../gnome/applet/applet-dbus-info.c:923
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Frase de paso para la red inalámbrica %s"
 
-#: ../gnome/applet/applet-dbus.c:318
+#: ../gnome/applet/applet-dbus.c:302
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "La conexión a la red inalámbrica «%s» ha fallado."
 
-#: ../gnome/applet/applet-dbus.c:323
+#: ../gnome/applet/applet-dbus.c:307
 msgid "Connection to the wired network failed."
 msgstr "La conexión a la red cableada ha fallado."
 
@@ -145,8 +145,8 @@ msgid "VPN Login Message"
 msgstr "Mensaje de acceso VPN"
 
 #: ../gnome/applet/applet.c:763 ../gnome/applet/applet.c:2367
-#: ../gnome/applet/other-network-dialog.c:429
-#: ../gnome/applet/passphrase-dialog.c:368
+#: ../gnome/applet/other-network-dialog.c:410
+#: ../gnome/applet/passphrase-dialog.c:372
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -339,31 +339,20 @@ msgstr[1] "Redes inalámbricas"
 msgid " (invalid Unicode)"
 msgstr " (Unicode inválido)"
 
-#: ../gnome/applet/other-network-dialog.c:151
-#: ../gnome/applet/wireless-applet.glade.h:42
-msgid "_Passphrase:"
-msgstr "_Frase de paso:"
-
-#: ../gnome/applet/other-network-dialog.c:154
-msgid "_ASCII Key:"
-msgstr "Clave _Ascii:"
-
-#: ../gnome/applet/other-network-dialog.c:157
-msgid "_Hex Key:"
-msgstr "Clave _Hex:"
-
-#: ../gnome/applet/other-network-dialog.c:251
+#: ../gnome/applet/other-network-dialog.c:233
 #, c-format
 msgid ""
 "By default, the ESSID is set to your computer's name, %s, with no encryption "
 "enabled"
-msgstr "Por omisión, el ESSID se establece al nombre de su equipo, %s sin ninguna encriptación activada"
+msgstr ""
+"Por omisión, el ESSID se establece al nombre de su equipo, %s sin ninguna "
+"encriptación activada"
 
-#: ../gnome/applet/other-network-dialog.c:255
+#: ../gnome/applet/other-network-dialog.c:237
 msgid "Create new wireless network"
 msgstr "Crea una red inalámbricas nueva"
 
-#: ../gnome/applet/other-network-dialog.c:256
+#: ../gnome/applet/other-network-dialog.c:238
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -371,32 +360,32 @@ msgstr ""
 "Introduzca el ESSID y las opciones de seguridad de la red inalámbrica que "
 "quiere crear."
 
-#: ../gnome/applet/other-network-dialog.c:260
+#: ../gnome/applet/other-network-dialog.c:242
 msgid "Create New Wireless Network"
 msgstr "Crear una red inalámbrica nueva"
 
-#: ../gnome/applet/other-network-dialog.c:265
+#: ../gnome/applet/other-network-dialog.c:247
 msgid "Custom wireless network"
 msgstr "Red inalámbrica personalizada"
 
-#: ../gnome/applet/other-network-dialog.c:266
+#: ../gnome/applet/other-network-dialog.c:248
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
 "Introduzca el ESSID de la red inalámbrica con la que quiere conectarse."
 
-#: ../gnome/applet/other-network-dialog.c:268
+#: ../gnome/applet/other-network-dialog.c:250
 msgid "Connect to Other Wireless Network"
 msgstr "Conectar a otra red inalámbrica"
 
-#: ../gnome/applet/passphrase-dialog.c:155
+#: ../gnome/applet/passphrase-dialog.c:159
 msgid "Passphrase:"
 msgstr "Contraseña:"
 
-#: ../gnome/applet/passphrase-dialog.c:158
+#: ../gnome/applet/passphrase-dialog.c:162
 msgid "ASCII Key:"
 msgstr "Clave Ascii:"
 
-#: ../gnome/applet/passphrase-dialog.c:161
+#: ../gnome/applet/passphrase-dialog.c:165
 msgid "Hex Key:"
 msgstr "Clave Hex:"
 
@@ -430,32 +419,12 @@ msgstr " "
 
 #: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
-"128-bit Passphrase (WEP)\n"
-"ASCII Key (WEP)\n"
-"Hex Key (WEP)"
-msgstr ""
-"Frase de paso de 128 bits (WEP)\n"
-"Clave Ascii (WEP)\n"
-"Clave Hex (WEP)"
-
-#: ../gnome/applet/wireless-applet.glade.h:5
-msgid ""
-"128-bit passphrase (WEP)\n"
-"ASCII key (WEP)\n"
-"Hex key (WEP)"
-msgstr ""
-"Frase de paso de 128 bits (WEP)\n"
-"Clave Ascii (WEP)\n"
-"Clave Hex (WEP)"
-
-#: ../gnome/applet/wireless-applet.glade.h:8
-msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Información de la conexión activa</"
 "span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/wireless-applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -470,7 +439,7 @@ msgstr ""
 "Se requiere una frase de paso o clave de encriptación para acceder a la red "
 "inalámbrica «%s»."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/wireless-applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -481,7 +450,7 @@ msgstr ""
 "\n"
 "%s No será completamente funcional."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/wireless-applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -498,45 +467,61 @@ msgstr ""
 "red es segura, marque la casilla de abajo y NetworkManager no le volverá a "
 "solicitar confirmación en los siguientes accesos."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/wireless-applet.glade.h:15
 msgid "Broadcast Address:"
 msgstr "Dirección de difusión:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/wireless-applet.glade.h:16
 msgid "C_onnect"
 msgstr "_Conectar"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
-msgid "Connect with _encryption enabled"
-msgstr "Conexión con _encriptado activado"
-
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/wireless-applet.glade.h:17
 msgid "Connection Information"
 msgstr "Información de la conexión"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/wireless-applet.glade.h:18
 msgid "Default Route:"
 msgstr "Ruta predeterminada:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Destination Address:"
 msgstr "Dirección de destino:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/wireless-applet.glade.h:20
 msgid "Hardware Address:"
 msgstr "Dirección hardware:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "IP Address:"
 msgstr "Dirección IP:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "Interface:"
 msgstr "Interfaz:"
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/wireless-applet.glade.h:23
+msgid "Key:"
+msgstr "Clave:"
+
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid ""
+"None\n"
+"WEP Passphrase\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+msgstr ""
+"Ninguna\n"
+"Frase de paso WEP\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+
+#: ../gnome/applet/wireless-applet.glade.h:29
 msgid "Other Wireless Network..."
 msgstr "Otras redes inalámbricas..."
+
+#: ../gnome/applet/wireless-applet.glade.h:30
+msgid "Password:"
+msgstr "Contraseña:"
 
 #: ../gnome/applet/wireless-applet.glade.h:31
 msgid "Primary DNS:"
@@ -551,16 +536,16 @@ msgid "Subnet Mask:"
 msgstr "Máscara de subred:"
 
 #: ../gnome/applet/wireless-applet.glade.h:34
+msgid "User Name:"
+msgstr "Nombre de usuario:"
+
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Wireless Network Key Required"
 msgstr "Clave requerida para la red inalámbrica"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Wireless _adapter:"
 msgstr "_Adaptador inalámbrico:"
-
-#: ../gnome/applet/wireless-applet.glade.h:36
-msgid "Wireless _network:"
-msgstr "_Red inalámbrica:"
 
 #: ../gnome/applet/wireless-applet.glade.h:37
 msgid "_Always Trust this Wireless Network"
@@ -571,16 +556,28 @@ msgid "_Don't remind me again"
 msgstr "_No volver a recordar"
 
 #: ../gnome/applet/wireless-applet.glade.h:39
-msgid "_Key Type:"
-msgstr "Tipo de _clave:"
-
-#: ../gnome/applet/wireless-applet.glade.h:40
-msgid "_Key type:"
-msgstr "Tipo de _clave"
-
-#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "_Login to Network"
 msgstr "_Entrar en la red"
+
+#: ../gnome/applet/wireless-applet.glade.h:40
+msgid "_Network Name:"
+msgstr "Nombre de _red:"
+
+#: ../gnome/applet/wireless-applet.glade.h:41
+msgid "_Wireless Security:"
+msgstr "_Seguridad inalámbrica:"
+
+#: ../gnome/applet/wireless-applet.glade.h:42
+msgid "leap_subwindow"
+msgstr ""
+
+#: ../gnome/applet/wireless-applet.glade.h:43
+msgid "wep_key_subwindow"
+msgstr ""
+
+#: ../gnome/applet/wireless-applet.glade.h:44
+msgid "wpa_psk_subwindow"
+msgstr ""
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:370
 msgid "Cannot add VPN connection"
@@ -756,6 +753,45 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:733
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
+
+#~ msgid "_Passphrase:"
+#~ msgstr "_Frase de paso:"
+
+#~ msgid "_ASCII Key:"
+#~ msgstr "Clave _Ascii:"
+
+#~ msgid "_Hex Key:"
+#~ msgstr "Clave _Hex:"
+
+#~ msgid ""
+#~ "128-bit Passphrase (WEP)\n"
+#~ "ASCII Key (WEP)\n"
+#~ "Hex Key (WEP)"
+#~ msgstr ""
+#~ "Frase de paso de 128 bits (WEP)\n"
+#~ "Clave Ascii (WEP)\n"
+#~ "Clave Hex (WEP)"
+
+#~ msgid ""
+#~ "128-bit passphrase (WEP)\n"
+#~ "ASCII key (WEP)\n"
+#~ "Hex key (WEP)"
+#~ msgstr ""
+#~ "Frase de paso de 128 bits (WEP)\n"
+#~ "Clave Ascii (WEP)\n"
+#~ "Clave Hex (WEP)"
+
+#~ msgid "Connect with _encryption enabled"
+#~ msgstr "Conexión con _encriptado activado"
+
+#~ msgid "Wireless _network:"
+#~ msgstr "_Red inalámbrica:"
+
+#~ msgid "_Key Type:"
+#~ msgstr "Tipo de _clave:"
+
+#~ msgid "_Key type:"
+#~ msgstr "Tipo de _clave"
 
 #~ msgid ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
