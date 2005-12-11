@@ -1,3 +1,19 @@
+2005-12-11  Tim Niemueller <tim@niemueller.de>
+
+	* auth-dialog/main.c:
+	  - Added support for encrypted key files in X.509 connections
+	  - restructured code, fixed a memleak
+
+	* src/nm-openvpn-service.c:
+	  - Added support for encrypted key files for X.509 connections
+	  - Added support for port parameter in gconf keys.
+
+	* src/gnome-two-password-dialog.[ch]:
+	  - Added support for setting the primary password label
+
+	* configure.in:
+	  - Bumped version to 0.3.2
+
 2005-12-07  Tim Niemueller <tim@niemueller.de>
 
 	* src/nm-openvpn-service.c:
