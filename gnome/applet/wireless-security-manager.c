@@ -99,43 +99,58 @@ void wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo)
 }
 
 
-GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
-				GtkSignalFunc validate_cb, gpointer user_data)
+static WirelessSecurityOption * get_active_option_from_combo (GtkComboBox *combo)
 {
 	WirelessSecurityOption * opt = NULL;
 	GtkTreeIter			iter;
 	GtkTreeModel *			model;
 	char *				str;
 
-	g_return_val_if_fail (wsm != NULL, NULL);
 	g_return_val_if_fail (combo != NULL, NULL);
 
 	model = gtk_combo_box_get_model (combo);
 	g_assert (model);
 	gtk_combo_box_get_active_iter (combo, &iter);
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
-	g_return_val_if_fail (opt != NULL, NULL);
 
+	return opt;
+}
+
+
+GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
+				GtkSignalFunc validate_cb, gpointer user_data)
+{
+	WirelessSecurityOption * opt = NULL;
+
+	g_return_val_if_fail (wsm != NULL, NULL);
+	g_return_val_if_fail (combo != NULL, NULL);
+
+	opt = get_active_option_from_combo (combo);
+	g_return_val_if_fail (opt != NULL, NULL);
 	return wso_get_widget (opt, validate_cb, user_data);
 }
 
 gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo, const char *ssid)
 {
 	WirelessSecurityOption * opt = NULL;
-	GtkTreeIter			iter;
-	GtkTreeModel *			model;
-	char *				str;
 
 	g_return_val_if_fail (wsm != NULL, FALSE);
 	g_return_val_if_fail (combo != NULL, FALSE);
 
-	model = gtk_combo_box_get_model (combo);
-	g_assert (model);
-	gtk_combo_box_get_active_iter (combo, &iter);
-	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
+	opt = get_active_option_from_combo (combo);
 	g_return_val_if_fail (opt != NULL, FALSE);
+	return wso_validate_input (opt, ssid, NULL);
+}
 
-	return wso_validate_input (opt, ssid);
+
+WirelessSecurityOption * wsm_get_option_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo)
+{
+	WirelessSecurityOption * opt = NULL;
+
+	g_return_val_if_fail (wsm != NULL, NULL);
+	g_return_val_if_fail (combo != NULL, NULL);
+
+	return get_active_option_from_combo (combo);
 }
 
 

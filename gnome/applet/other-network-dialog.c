@@ -325,7 +325,6 @@ static void nmwa_other_network_dialog_response_cb (GtkDialog *dialog, gint respo
 	if (response == GTK_RESPONSE_OK)
 	{
 		GtkEntry *	network_name_entry;
-		GtkComboBox *	security_combo;
 		const char *	essid = NULL;
 		const char *	key = NULL;
 		int			key_type = -1;
@@ -333,23 +332,24 @@ static void nmwa_other_network_dialog_response_cb (GtkDialog *dialog, gint respo
 		network_name_entry = GTK_ENTRY (glade_xml_get_widget (xml, "network_name_entry"));
 		essid = gtk_entry_get_text (network_name_entry);
 
-		security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
-
 		if (essid[0] != '\000')
 		{
-			NMEncKeyType	nm_key_type =  -1;
-			GtkTreeIter	iter;
-			char *		str;
-			NetworkDevice *dev;
-			char *		passphrase = NULL;
+			WirelessSecurityOption *	opt;
+			GtkComboBox *			security_combo;
+			GtkTreeIter			iter;
+			char *				str;
+			NetworkDevice *		dev;
 
 			gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
 			gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
 
+			security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+			opt = wsm_get_option_for_active (wsm, security_combo);
+
 			if (create_network)
-				nmwa_dbus_create_network (applet->connection, dev, essid, nm_key_type, passphrase);
+				nmwa_dbus_create_network (applet->connection, dev, essid, opt);
 			else
-				nmwa_dbus_set_device (applet->connection, dev, essid, nm_key_type, passphrase);
+				nmwa_dbus_set_device (applet->connection, dev, essid, opt);
 		}
 	}
 

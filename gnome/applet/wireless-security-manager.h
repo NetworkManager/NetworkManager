@@ -23,15 +23,23 @@
 #define WIRELESS_SECURITY_MANAGER_H
 
 #include <gtk/gtk.h>
+#include "wireless-security-option.h"
 
 typedef struct WirelessSecurityManager WirelessSecurityManager;
 
 
-WirelessSecurityManager * wsm_new (const char * glade_file);
-void wsm_free (WirelessSecurityManager *wsm);
-void wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
-GtkWidget * wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
-					GtkSignalFunc validate_cb, gpointer user_data);
-gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo, const char *ssid);
+WirelessSecurityManager *	wsm_new (const char * glade_file);
+
+void						wsm_free (WirelessSecurityManager *wsm);
+
+void						wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
+
+GtkWidget *				wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
+								GtkSignalFunc validate_cb, gpointer user_data);
+
+gboolean					wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
+								const char *ssid);
+
+WirelessSecurityOption *		wsm_get_option_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo);
 
 #endif	/* WIRELESS_SECURITY_MANAGER_H */

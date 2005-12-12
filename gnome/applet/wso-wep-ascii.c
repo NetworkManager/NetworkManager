@@ -23,6 +23,7 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <dbus/dbus.h>
 
 #include "wireless-security-option.h"
 #include "wso-wep-ascii.h"
@@ -60,6 +61,8 @@ static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFun
 	g_return_val_if_fail (opt != NULL, NULL);
 	g_return_val_if_fail (opt->data != NULL, NULL);
 	g_return_val_if_fail (validate_cb != NULL, NULL);
+	g_return_val_if_fail (opt->data->auth_combo_name != NULL, FALSE);
+	g_return_val_if_fail (opt->data->entry_name != NULL, FALSE);
 
 	widget = wso_widget_helper (opt);
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
@@ -72,16 +75,49 @@ static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFun
 }
 
 
-static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid)
+static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher)
 {
 	GtkWidget *	entry;
 	const char *	input;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (opt->data->entry_name != NULL, FALSE);
 
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
 	input = gtk_entry_get_text (GTK_ENTRY (entry));
-	return wso_validate_helper (opt, ssid, input);
+	return wso_validate_helper (opt, ssid, input, out_cipher);
+}
+
+
+static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char *ssid, DBusMessage *message)
+{
+	IEEE_802_11_Cipher *	cipher = NULL;
+	GtkWidget *			auth_combo;
+	int					auth_alg = -1;
+	int					we_cipher = -1;
+	GtkWidget *			entry;
+	const char *			input;
+	char *				hashed = NULL;
+
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (opt->data != NULL, FALSE);
+	g_return_val_if_fail (opt->data->auth_combo_name != NULL, FALSE);
+	g_return_val_if_fail (opt->data->entry_name != NULL, FALSE);
+
+	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
+	input = gtk_entry_get_text (GTK_ENTRY (entry));
+	if (!wso_validate_helper (opt, ssid, input, &cipher) || !cipher)
+		return FALSE;
+
+	auth_combo = glade_xml_get_widget (opt->uixml, opt->data->auth_combo_name);
+	auth_alg = wso_wep_auth_combo_get_auth_alg (opt, GTK_COMBO_BOX (auth_combo));
+
+	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
+	hashed = ieee_802_11_cipher_hash (cipher, ssid, input);
+
+	g_free (hashed);
+
+	return TRUE;
 }
 
 
@@ -99,6 +135,7 @@ WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
 	opt->widget_create_func = widget_create_func;
+	opt->append_dbus_params_func = append_dbus_params_func;
 
 	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
 	{

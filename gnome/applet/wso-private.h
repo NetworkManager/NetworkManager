@@ -26,6 +26,9 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <dbus/dbus.h>
+
+#include "cipher.h"
 
 #define WS_TAG_MAGIC	0xa7f4
 #define WS_TAG_NAME		"ws-tag"
@@ -54,10 +57,15 @@ struct WirelessSecurityOption
 	void			(*data_free_func)(WirelessSecurityOption *opt);
 
 	/* Validate the option's input */
-	gboolean		(*validate_input_func)(WirelessSecurityOption *opt, const char *ssid);
+	gboolean		(*validate_input_func)(WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher);
 
 	/* Widget creation function */
 	GtkWidget *	(*widget_create_func)(WirelessSecurityOption *opt, GtkSignalFunc validate_cb, gpointer user_data);
+
+	/* DBUS params append function for building up a suitable
+	 * dbus message describing this particular security option
+	 */
+	gboolean		(*append_dbus_params_func)(WirelessSecurityOption *opt, const char *ssid, DBusMessage *message);
 };
 
 

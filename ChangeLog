@@ -1,3 +1,13 @@
+2005-12-11  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.[ch]
+	  gnome/applet/applet.c
+	  gnome/applet/other-network-dialog.c
+	  gnome/applet/wireless-security-manager.[ch]
+	  gnome/applet/wireless-security-option.[ch]
+	  gnome/applet/wso-*
+		- Push the wireless security options further into the applet
+
 2005-12-12  Robert Love  <rml@novell.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c: Do not fail if DHCP does not

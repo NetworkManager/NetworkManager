@@ -1305,7 +1305,7 @@ static void nmwa_menu_item_activate (GtkMenuItem *item, gpointer user_data)
 	if ((tag = g_object_get_data (G_OBJECT (item), "network")))
 		net = network_device_get_wireless_network_by_essid (dev, tag);
 
-	nmwa_dbus_set_device (applet->connection, dev, net ? wireless_network_get_essid (net) : NULL, -1, NULL);
+	nmwa_dbus_set_device (applet->connection, dev, net ? wireless_network_get_essid (net) : NULL, NULL);
 	network_device_unref (dev);
 
 	nmi_dbus_signal_user_interface_activated (applet->connection);

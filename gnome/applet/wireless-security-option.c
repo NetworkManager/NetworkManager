@@ -25,6 +25,7 @@
 #include <string.h>
 #include <glade/glade.h>
 #include <iwlib.h>
+#include <dbus/dbus.h>
 
 #include "wireless-security-option.h"
 #include "cipher.h"
@@ -59,14 +60,24 @@ GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate
 	return opt->widget;
 }
 
-gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid)
+gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid, IEEE_802_11_Cipher ** out_cipher)
 {
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (ssid != NULL, FALSE);
 
 	if (opt->validate_input_func)
-		return (*(opt->validate_input_func))(opt, ssid);
+		return (*(opt->validate_input_func))(opt, ssid, out_cipher);
 	return FALSE;
+}
+
+gboolean wso_append_dbus_params (WirelessSecurityOption *opt, const char *ssid, DBusMessage *message)
+{
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (ssid != NULL, FALSE);
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	g_assert (opt->append_dbus_params_func);
+	return (*(opt->append_dbus_params_func))(opt, ssid, message);
 }
 
 void wso_free (WirelessSecurityOption * opt)
@@ -90,7 +101,7 @@ void wso_free (WirelessSecurityOption * opt)
 
 /**********************************************/
 
-gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input)
+gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input, IEEE_802_11_Cipher ** out_cipher)
 {
 	GSList * elt;
 
@@ -98,12 +109,18 @@ gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, con
 	g_return_val_if_fail (input != NULL, FALSE);
 	g_return_val_if_fail (ssid != NULL, FALSE);
 
+	if (out_cipher)
+		g_return_val_if_fail (*out_cipher != NULL, FALSE);
+
 	/* Try each of our ciphers in turn, if one validates that's enough */
 	for (elt = opt->ciphers; elt; elt = g_slist_next (elt))
 	{
 		IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *) (elt->data);
 		if (ieee_802_11_cipher_validate (cipher, ssid, input) == 0)
+		{
+			*out_cipher = cipher;
 			return TRUE;
+		}
 	}
 	return FALSE;
 }
@@ -145,6 +162,22 @@ void wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo)
 
 	gtk_combo_box_set_model (combo, GTK_TREE_MODEL (model));
 	gtk_combo_box_set_active (combo, 0);
+}
+
+int wso_wep_auth_combo_get_auth_alg (WirelessSecurityOption *opt, GtkComboBox * combo)
+{
+	GtkTreeIter	iter;
+	GtkTreeModel *	model;
+	int			auth_alg;
+	char *		str;
+
+	g_return_val_if_fail (opt != NULL, -1);
+	g_return_val_if_fail (combo != NULL, -1);
+
+	model = gtk_combo_box_get_model (combo);
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
+	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, AUTH_ALG_COLUMN, &auth_alg, -1);
+	return auth_alg;
 }
 
 void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo)

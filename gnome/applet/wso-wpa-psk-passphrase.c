@@ -61,7 +61,7 @@ static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFun
 }
 
 
-static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid)
+static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher)
 {
 	GtkWidget *	entry;
 	const char *	input;
@@ -70,7 +70,7 @@ static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ss
 
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
 	input = gtk_entry_get_text (GTK_ENTRY (entry));
-	return wso_validate_helper (opt, ssid, input);
+	return wso_validate_helper (opt, ssid, input, out_cipher);
 }
 
 

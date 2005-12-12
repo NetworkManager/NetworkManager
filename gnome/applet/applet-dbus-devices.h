@@ -29,6 +29,7 @@
 #include "applet.h"
 #include "nm-device.h"
 #include "wireless-network.h"
+#include "wireless-security-option.h"
 
 void			nmwa_dbus_update_one_vpn_connection		(DBusConnection *connection, const char *name, NMWirelessApplet *applet, gboolean is_active);
 void			nmwa_dbus_update_vpn_connections			(NMWirelessApplet *applet);
@@ -45,8 +46,8 @@ void			nmwa_dbus_device_remove_one_device			(NMWirelessApplet *applet, const cha
 void			nmwa_dbus_device_update_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path);
 void			nmwa_dbus_device_remove_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path);
 void			nmwa_dbus_update_strength			(NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength);
-void			nmwa_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, NMEncKeyType key_type, const char *passphrase);
-void			nmwa_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, NMEncKeyType key_type, const char *passphrase);
+void			nmwa_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
+void			nmwa_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
 
 void			nmwa_free_data_model					(NMWirelessApplet *applet);
 

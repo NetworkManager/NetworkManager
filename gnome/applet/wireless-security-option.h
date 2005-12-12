@@ -22,22 +22,32 @@
 #ifndef WIRELESS_SECURITY_OPTION_H
 #define WIRELESS_SECURITY_OPTION_H
 
+#include <dbus/dbus.h>
 #include <gtk/gtk.h>
+
+#include "cipher.h"
 
 typedef struct WirelessSecurityOption WirelessSecurityOption;
 
-const char * wso_get_name (WirelessSecurityOption * opt);
-GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data);
-gboolean wso_is_wso_widget (GtkWidget * widget);
-gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid);
-void wso_free (WirelessSecurityOption * opt);
+const char *	wso_get_name (WirelessSecurityOption * opt);
+
+GtkWidget *	wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data);
+
+gboolean		wso_is_wso_widget (GtkWidget * widget);
+
+gboolean		wso_validate_input (WirelessSecurityOption * opt, const char * ssid, IEEE_802_11_Cipher ** out_cipher);
+
+gboolean		wso_append_dbus_params (WirelessSecurityOption *opt, const char *ssid, DBusMessage *message);
+
+void			wso_free (WirelessSecurityOption * opt);
 
 /* For use by the options themselves */
-gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input);
-GtkWidget * wso_widget_helper (WirelessSecurityOption *opt);
+gboolean		wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input, IEEE_802_11_Cipher ** out_cipher);
+GtkWidget *	wso_widget_helper (WirelessSecurityOption *opt);
 
-void wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo);
-void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo);
+void			wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo);
+int			wso_wep_auth_combo_get_auth_alg (WirelessSecurityOption *opt, GtkComboBox * combo);
+void			wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo);
 
 
 #endif	/* WIRELESS_SECURITY_OPTION_H */

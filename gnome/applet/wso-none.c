@@ -19,13 +19,22 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
+#include <dbus/dbus.h>
 
 #include "wireless-security-option.h"
 #include "wso-none.h"
 #include "wso-private.h"
+#include "cipher.h"
 
 
-static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid)
+static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher)
+{
+	g_return_val_if_fail (opt != NULL, FALSE);
+
+	return TRUE;
+}
+
+static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char *ssid, DBusMessage *message)
 {
 	g_return_val_if_fail (opt != NULL, FALSE);
 
@@ -41,6 +50,7 @@ WirelessSecurityOption * wso_none_new (const char *glade_file)
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
 	opt->name = g_strdup (_("None"));
 	opt->validate_input_func = validate_input_func;
+	opt->append_dbus_params_func = append_dbus_params_func;
 	return opt;
 }
 

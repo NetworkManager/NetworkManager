@@ -1069,29 +1069,29 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
  *
  */
 void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
-						const NMEncKeyType key_type, const char *passphrase)
+						WirelessSecurityOption * opt)
 {
 	DBusMessage	*message;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
+	if (network_device_is_wireless (dev))
+		g_return_if_fail (essid != NULL);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "setActiveDevice")))
 	{
 		const char *dev_path = network_device_get_nm_path (dev);
 
-		if (network_device_is_wireless (dev) && essid)
+		if (network_device_is_wireless (dev))
 		{
-			int tmp_key_type = (int)key_type;
-
-			if (passphrase == NULL)
-				passphrase = "";
-
+			/* Build up the required args */
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 										DBUS_TYPE_STRING, &essid,
-										DBUS_TYPE_STRING, &passphrase,
-										DBUS_TYPE_INT32, &tmp_key_type,
 										DBUS_TYPE_INVALID);
+
+			/* If we've got specific wireless security options, add them */
+			if (opt)
+				wso_append_dbus_params (opt, essid, message);
 		}
 		else
 		{
@@ -1113,7 +1113,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
  *
  */
 void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, const char *essid,
-						NMEncKeyType key_type, const char *passphrase)
+						WirelessSecurityOption * opt)
 {
 	DBusMessage	*message;
 
@@ -1121,21 +1121,19 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (essid != NULL);
 	g_return_if_fail (network_device_is_wireless (dev));
+	g_return_if_fail (opt != NULL);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "createWirelessNetwork")))
 	{
-		const char *dev_path = network_device_get_nm_path (dev);
+		const char *dev_path;
 
-		if (dev_path)
+		if ((dev_path = network_device_get_nm_path (dev)))
 		{
-			nm_info ("Creating network '%s' %s passphrase on device '%s'.\n", essid, passphrase ? "with" : "without", dev_path);
-			if (passphrase == NULL)
-				passphrase = "";
+			nm_info ("Creating network '%s' on device '%s'.\n", essid, dev_path);
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
-									DBUS_TYPE_STRING, &essid,
-									DBUS_TYPE_STRING, &passphrase,
-									DBUS_TYPE_INT32, &key_type,
-									DBUS_TYPE_INVALID);
+										DBUS_TYPE_STRING, &essid,
+										DBUS_TYPE_INVALID);
+			wso_append_dbus_params (opt, essid, message);
 			dbus_connection_send (connection, message, NULL);
 		}
 		dbus_message_unref (message);
