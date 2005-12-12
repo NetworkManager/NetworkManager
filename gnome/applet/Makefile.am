@@ -62,6 +62,17 @@ nm_applet_SOURCES =			\
 	wireless-security-manager.h	\
 	wireless-security-option.c	\
 	wireless-security-option.h	\
+	wso-none.c			\
+	wso-none.h			\
+	wso-private.h			\
+	wso-wep-ascii.c		\
+	wso-wep-ascii.h		\
+	wso-wep-hex.c			\
+	wso-wep-hex.h			\
+	wso-wep-passphrase.c	\
+	wso-wep-passphrase.h	\
+	wso-wpa-psk-passphrase.c	\
+	wso-wpa-psk-passphrase.h	\
 	$(NULL)
 
 nm_applet_LDADD =						\

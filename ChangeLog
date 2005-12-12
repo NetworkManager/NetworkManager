@@ -1,5 +1,14 @@
 2005-12-11  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/wso-*
+	  gnome/applet/wireless-security-option.*
+	  gnome/applet/Makefile.am
+		- split each security option out so we can eventually
+			have each one build up their own dbus message
+			arguments to send to NM
+
+2005-12-11  Dan Williams  <dcbw@redhat.com>
+
 	* Make validation of the key work correctly
 
 2005-12-11  Dan Williams  <dcbw@redhat.com>

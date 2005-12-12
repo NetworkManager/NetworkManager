@@ -19,25 +19,29 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef WIRELESS_SECURITY_OPTION_H
-#define WIRELESS_SECURITY_OPTION_H
 
-#include <gtk/gtk.h>
-
-typedef struct WirelessSecurityOption WirelessSecurityOption;
-
-const char * wso_get_name (WirelessSecurityOption * opt);
-GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data);
-gboolean wso_is_wso_widget (GtkWidget * widget);
-gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid);
-void wso_free (WirelessSecurityOption * opt);
-
-/* For use by the options themselves */
-gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input);
-GtkWidget * wso_widget_helper (WirelessSecurityOption *opt);
-
-void wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo);
-void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo);
+#include "wireless-security-option.h"
+#include "wso-none.h"
+#include "wso-private.h"
 
 
-#endif	/* WIRELESS_SECURITY_OPTION_H */
+static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid)
+{
+	g_return_val_if_fail (opt != NULL, FALSE);
+
+	return TRUE;
+}
+
+WirelessSecurityOption * wso_none_new (const char *glade_file)
+{
+	WirelessSecurityOption * opt = NULL;
+
+	g_return_val_if_fail (glade_file != NULL, NULL);
+
+	opt = g_malloc0 (sizeof (WirelessSecurityOption));
+	opt->name = g_strdup (_("None"));
+	opt->validate_input_func = validate_input_func;
+	return opt;
+}
+
+

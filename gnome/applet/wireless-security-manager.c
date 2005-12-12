@@ -27,6 +27,12 @@
 #include "wireless-security-manager.h"
 #include "wireless-security-option.h"
 
+#include "wso-none.h"
+#include "wso-private.h"
+#include "wso-wep-ascii.h"
+#include "wso-wep-hex.h"
+#include "wso-wep-passphrase.h"
+#include "wso-wpa-psk-passphrase.h"
 
 struct WirelessSecurityManager
 {

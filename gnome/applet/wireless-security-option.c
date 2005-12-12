@@ -24,38 +24,11 @@
 #include <gtk/gtk.h>
 #include <string.h>
 #include <glade/glade.h>
+#include <iwlib.h>
 
 #include "wireless-security-option.h"
-
 #include "cipher.h"
-#include "cipher-wep-passphrase.h"
-#include "cipher-wep-hex.h"
-#include "cipher-wep-ascii.h"
-#include "cipher-wpa-psk-passphrase.h"
-
-#define WS_TAG_MAGIC	0xa7f4
-#define WS_TAG_NAME		"ws-tag"
-
-struct WirelessSecurityOption
-{
-	/* Human readable name for the option */
-	char *		name;
-
-	/* Corresponding IEEE_802_11_Cipher objects */
-	GSList *		ciphers;
-
-	/* Name of the widget for this item */
-	const char *	widget_name;
-
-	/* Notebook widget (once created) for this option */
-	GtkWidget *	widget;
-
-	/* The Glade UI for this option */
-	GladeXML *	uixml;
-
-	/* Glade object names for sub-widgets */
-	GSList *		subwidget_names;
-};
+#include "wso-private.h"
 
 gboolean wso_is_wso_widget (GtkWidget * widget)
 {
@@ -69,109 +42,6 @@ gboolean wso_is_wso_widget (GtkWidget * widget)
 	return FALSE;
 }
 
-
-WirelessSecurityOption * wso_none_new (const char *glade_file)
-{
-	WirelessSecurityOption * opt = NULL;
-
-	g_return_val_if_fail (glade_file != NULL, NULL);
-
-	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("None"));
-	return opt;
-}
-
-
-WirelessSecurityOption * wso_wep_passphrase_new (const char *glade_file)
-{
-	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
-
-	g_return_val_if_fail (glade_file != NULL, NULL);
-
-	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP Passphrase"));
-	opt->widget_name = "wep_passphrase_notebook";
-	opt->subwidget_names = g_slist_append (opt->subwidget_names, "wep_passphrase_entry");
-
-	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
-	{
-		wso_free (opt);
-		return NULL;
-	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wep128_passphrase_new ());
-	return opt;
-}
-
-
-WirelessSecurityOption * wso_wep_hex_new (const char *glade_file)
-{
-	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
-
-	g_return_val_if_fail (glade_file != NULL, NULL);
-
-	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP 40/128-bit hex"));
-	opt->widget_name = "wep_key_notebook";
-	opt->subwidget_names = g_slist_append (opt->subwidget_names, "wep_key_entry");
-
-	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
-	{
-		wso_free (opt);
-		return NULL;
-	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wep128_hex_new ());
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wep64_hex_new ());
-	return opt;
-}
-
-
-WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
-{
-	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
-
-	g_return_val_if_fail (glade_file != NULL, NULL);
-
-	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP 40/128-bit ASCII"));
-	opt->widget_name = "wep_key_notebook";
-	opt->subwidget_names = g_slist_append (opt->subwidget_names, "wep_key_entry");
-
-	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
-	{
-		wso_free (opt);
-		return NULL;
-	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wep128_ascii_new ());
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wep64_ascii_new ());
-	return opt;
-}
-
-
-WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
-{
-	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
-
-	g_return_val_if_fail (glade_file != NULL, NULL);
-
-	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WPA Personal Passphrase"));
-	opt->widget_name = "wpa_psk_notebook";
-	opt->subwidget_names = g_slist_append (opt->subwidget_names, "wpa_psk_entry");
-
-	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
-	{
-		wso_free (opt);
-		return NULL;
-	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wpa_psk_passphrase_new ());
-	return opt;
-}
-
-
 const char * wso_get_name (WirelessSecurityOption * opt)
 {
 	g_return_val_if_fail (opt != NULL, NULL);
@@ -179,72 +49,32 @@ const char * wso_get_name (WirelessSecurityOption * opt)
 	return opt->name;
 }
 
-
 GtkWidget * wso_get_widget (WirelessSecurityOption * opt, GtkSignalFunc validate_cb, gpointer user_data)
 {
 	g_return_val_if_fail (opt != NULL, NULL);
+	g_return_val_if_fail (validate_cb != NULL, NULL);
 
-	/* Some options may not have any UI */
-	if (!opt->widget && opt->uixml)
-	{
-		GSList *	elt;
-
-		/* Grab our UI widget and tag it as a WSO widget */
-		opt->widget = glade_xml_get_widget (opt->uixml, opt->widget_name);
-		g_object_ref (G_OBJECT (opt->widget));
-		g_object_set_data (G_OBJECT (opt->widget), WS_TAG_NAME, GINT_TO_POINTER (WS_TAG_MAGIC));
-
-		/* Set the caller's validate callback on any sub-widgets we care about */
-		for (elt = opt->subwidget_names; elt; elt = g_slist_next (elt))
-		{
-			const char *	widget_name = (const char *) (elt->data);
-			GtkWidget *	widget;
-
-			if ((widget = glade_xml_get_widget (opt->uixml, widget_name)))
-				g_signal_connect (G_OBJECT (widget), "changed", validate_cb, user_data);
-		}
-	}
-
+	if (!opt->widget && opt->widget_create_func)
+		opt->widget = (*(opt->widget_create_func))(opt, validate_cb, user_data);
 	return opt->widget;
 }
 
-
-gboolean wso_validate_input (WirelessSecurityOption * opt, const char *ssid)
+gboolean wso_validate_input (WirelessSecurityOption * opt, const char * ssid)
 {
-	GSList * elt;
-
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (ssid != NULL, FALSE);
 
-	if (!opt->subwidget_names)
-		return TRUE;
-
-	for (elt = opt->subwidget_names; elt; elt = g_slist_next (elt))
-	{
-		const char *	widget_name = (const char *) (elt->data);
-		GtkWidget *	widget;
-
-		if ((widget = glade_xml_get_widget (opt->uixml, widget_name)))
-		{
-			const char *	input = gtk_entry_get_text (GTK_ENTRY (widget));
-			GSList *		cipher_elt;
-
-			/* Try each of our ciphers in turn, if one validates that's enough */
-			for (cipher_elt = opt->ciphers; cipher_elt; cipher_elt = g_slist_next (cipher_elt))
-			{
-				IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *) (cipher_elt->data);
-				if (ieee_802_11_cipher_validate (cipher, ssid, input) == 0)
-					return TRUE;
-			}
-		}
-	}
-
+	if (opt->validate_input_func)
+		return (*(opt->validate_input_func))(opt, ssid);
 	return FALSE;
 }
 
-
 void wso_free (WirelessSecurityOption * opt)
 {
+	/* Free the option-specific data first */
+	if (opt->data_free_func)
+		(*(opt->data_free_func))(opt);
+
 	g_free (opt->name);
 	if (opt->uixml)
 		g_object_unref (opt->uixml);
@@ -252,7 +82,80 @@ void wso_free (WirelessSecurityOption * opt)
 		g_object_unref (opt->widget);
 	g_slist_foreach (opt->ciphers, (GFunc) ieee_802_11_cipher_unref, NULL);
 	g_slist_free (opt->ciphers);
+
 	memset (opt, 0, sizeof (WirelessSecurityOption));
 	g_free (opt);
+}
+
+
+/**********************************************/
+
+gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input)
+{
+	GSList * elt;
+
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (input != NULL, FALSE);
+	g_return_val_if_fail (ssid != NULL, FALSE);
+
+	/* Try each of our ciphers in turn, if one validates that's enough */
+	for (elt = opt->ciphers; elt; elt = g_slist_next (elt))
+	{
+		IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *) (elt->data);
+		if (ieee_802_11_cipher_validate (cipher, ssid, input) == 0)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+
+GtkWidget * wso_widget_helper (WirelessSecurityOption *opt)
+{
+	GtkWidget * widget;
+
+	g_return_val_if_fail (opt != NULL, NULL);
+
+	widget = glade_xml_get_widget (opt->uixml, opt->widget_name);
+	g_object_ref (G_OBJECT (widget));
+	g_object_set_data (G_OBJECT (widget), WS_TAG_NAME, GINT_TO_POINTER (WS_TAG_MAGIC));
+	return widget;
+}
+
+
+#define NAME_COLUMN			0
+#define AUTH_ALG_COLUMN		1
+void wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo)
+{
+	GtkListStore *	model;
+	GtkTreeIter	iter;
+	char *		label;
+
+	g_return_if_fail (opt != NULL);
+	g_return_if_fail (combo != NULL);
+
+	model = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
+
+	gtk_list_store_append (model, &iter);
+	gtk_list_store_set (model, &iter, NAME_COLUMN, _("Open System"), AUTH_ALG_COLUMN, IW_AUTH_ALG_OPEN_SYSTEM, -1);
+
+	gtk_list_store_append (model, &iter);
+	gtk_list_store_set (model, &iter, NAME_COLUMN, _("Shared Key"), AUTH_ALG_COLUMN, IW_AUTH_ALG_SHARED_KEY, -1);
+
+	g_object_ref (G_OBJECT (model));
+
+	gtk_combo_box_set_model (combo, GTK_TREE_MODEL (model));
+	gtk_combo_box_set_active (combo, 0);
+}
+
+void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo)
+{
+	GtkListStore * model;
+	char *		label;
+
+	g_return_if_fail (opt != NULL);
+	g_return_if_fail (combo != NULL);
+
+	model = GTK_LIST_STORE (gtk_combo_box_get_model (combo));
+	g_object_unref (G_OBJECT (model));
 }
 
