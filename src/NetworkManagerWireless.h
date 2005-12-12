@@ -28,8 +28,8 @@
 #include "NetworkManagerAPList.h"
 
 
-char *	nm_wireless_64bit_ascii_to_hex		(const unsigned char *ascii);
-char *	nm_wireless_128bit_ascii_to_hex		(const unsigned char *ascii);
+char *	nm_wireless_64bit_ascii_to_hex		(const char *ascii);
+char *	nm_wireless_128bit_ascii_to_hex		(const char *ascii);
 char *	nm_wireless_128bit_key_from_passphrase	(const char *passphrase);
 
 int		nm_wireless_qual_to_percent			(const struct iw_quality *qual,

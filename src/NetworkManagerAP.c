@@ -659,7 +659,7 @@ const guint8 * nm_ap_get_wpa_ie (NMAccessPoint *ap, guint32 *length)
 	return ap->wpa_ie;
 }
 
-void nm_ap_set_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
+void nm_ap_set_wpa_ie (NMAccessPoint *ap, const char *wpa_ie, guint32 length)
 {
 	g_return_if_fail (ap != NULL);
 
@@ -690,7 +690,7 @@ const guint8 * nm_ap_get_rsn_ie (NMAccessPoint *ap, guint32 *length)
 	return ap->rsn_ie;
 }
 
-void nm_ap_set_rsn_ie (NMAccessPoint *ap, const guint8 *rsn_ie, guint32 length)
+void nm_ap_set_rsn_ie (NMAccessPoint *ap, const char *rsn_ie, guint32 length)
 {
 	g_return_if_fail (ap != NULL);
 

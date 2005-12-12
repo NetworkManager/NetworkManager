@@ -4450,11 +4450,11 @@ static int hex2byte(const char *hex)
 	return (a << 4) | b;
 }
 
-static int hexstr2bin(const char *hex, u8 *buf, size_t len)
+static int hexstr2bin(const char *hex, char *buf, size_t len)
 {
 	int i, a;
 	const char *ipos = hex;
-	u8 *opos = buf;
+	char *opos = buf;
 
 	for (i = 0; i < len; i++) {
 		a = hex2byte(ipos);

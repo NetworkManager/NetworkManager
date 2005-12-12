@@ -40,10 +40,10 @@
  * Convert an ASCII string into a suitable WEP key.
  *
  */
-char *nm_wireless_64bit_ascii_to_hex (const unsigned char *ascii)
+char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
-	unsigned char	*res;
+	char			*res;
 	int			 i;
 
 	res = g_malloc (33);
@@ -69,10 +69,10 @@ char *nm_wireless_64bit_ascii_to_hex (const unsigned char *ascii)
  *  copyright Red Hat, Inc. under terms of the LGPL.
  *
  */
-char *nm_wireless_128bit_ascii_to_hex (const unsigned char *ascii)
+char *nm_wireless_128bit_ascii_to_hex (const char *ascii)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
-	unsigned char	*res;
+	char			*res;
 	int			 i;
 
 	res = g_malloc (33);
@@ -98,7 +98,7 @@ char *nm_wireless_128bit_ascii_to_hex (const unsigned char *ascii)
 char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
 {
 	char		 	md5_data[65];
-	unsigned char	digest[16];
+	char			digest[16];
 	int			passphrase_len;
 	int			i;
 

@@ -95,10 +95,10 @@ gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
 gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
 
 const guint8 *		nm_ap_get_wpa_ie		(NMAccessPoint *ap, guint32 *length);
-void				nm_ap_set_wpa_ie		(NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
+void				nm_ap_set_wpa_ie		(NMAccessPoint *ap, const char *wpa_ie, guint32 length);
 
 const guint8 *		nm_ap_get_rsn_ie		(NMAccessPoint *ap, guint32 *length);
-void				nm_ap_set_rsn_ie		(NMAccessPoint *ap, const guint8 *rsn_ie, guint32 length);
+void				nm_ap_set_rsn_ie		(NMAccessPoint *ap, const char *rsn_ie, guint32 length);
 
 /* 
  * NOTE:

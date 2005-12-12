@@ -1,4 +1,16 @@
-2005-12-11  Dan Williams  <dcbw@redhat.com>
+2005-12-12  Robert Love  <rml@novell.com>
+
+	* libnm-util/cipher-wep-passphrase.c,
+	  libnm-util/cipher-wpa-psk-passphrase.c, src/NetworkManagerAP.c,
+	  src/NetworkManagerAP.h, src/NetworkManagerDevice.c,
+	  src/NetworkManagerWireless.c, src/NetworkManagerWireless.h: Treat
+	  all WEP/WPA keys as "char *" and not explicitly signed or unsigned.
+	  When handling keys, we don't care what the sign is.  The compiler
+	  guarantees us that we get our 8-bits, which is all we care about.
+	* configure.in: Remove "-Wno-pointer-sign" flag.  We are sign-aware!
+
+
+2005-12-12  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.[ch]
 	  gnome/applet/applet.c

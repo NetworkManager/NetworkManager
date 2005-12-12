@@ -59,7 +59,7 @@ static char * cipher_wpa_psk_passphrase_hash_func (IEEE_802_11_Cipher *cipher, c
 	g_return_val_if_fail (ssid_len > 0, NULL);
 
 	buf = g_malloc0 (WPA_PMK_LEN * 2);
-	pbkdf2_sha1 (input, (char *) ssid, ssid_len, 4096, buf, WPA_PMK_LEN);
+	pbkdf2_sha1 (input, (char *) ssid, ssid_len, 4096, (unsigned char *) buf, WPA_PMK_LEN);
 
 	return buf;
 }

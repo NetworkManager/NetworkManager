@@ -50,7 +50,7 @@ static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, con
 static char * cipher_wep_passphrase_ascii_to_hex (const unsigned char *ascii, int req_keylen)
 {
 	static char	 hex_digits[] = "0123456789abcdef";
-	unsigned char	*res;
+	char			*res;
 	int			 i;
 
 	g_return_val_if_fail (ascii != NULL, NULL);
