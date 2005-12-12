@@ -11,6 +11,7 @@ endif
 libnm_util_la_SOURCES=			\
 	cipher.c					\
 	cipher.h					\
+	cipher-private.h			\
 	cipher-wep-hex.c			\
 	cipher-wep-hex.h			\
 	cipher-wep-passphrase.c		\
