@@ -190,7 +190,7 @@ static const char * get_host_name (void)
 	char hostname[HOST_NAME_MAX] = "hostname";
 
 	gethostname (hostname, HOST_NAME_MAX);
-	hostname[HOST_NAME_MAX-1] = '\n';	/* unspecified whether a truncated hostname is terminated */
+	hostname[HOST_NAME_MAX-1] = '\0';	/* unspecified whether a truncated hostname is terminated */
 #endif
 
 	return hostname;
