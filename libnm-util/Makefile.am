@@ -2,7 +2,14 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/include
 
 lib_LTLIBRARIES=libnm-util.la
 
-libnm_util_la_CPPFLAGS =	$(GLIB_CFLAGS)
+libnm_util_la_CPPFLAGS =				\
+	$(GLIB_CFLAGS)					\
+	$(DBUS_CFLAGS)					\
+	-DDBUS_API_SUBJECT_TO_CHANGE		\
+	-DG_DISABLE_DEPRECATED			\
+	-DGDK_DISABLE_DEPRECATED			\
+	-DGNOME_DISABLE_DEPRECATED		\
+	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"
 
 if WITH_GCRYPT
 libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
@@ -24,6 +31,8 @@ libnm_util_la_SOURCES=			\
 	cipher-wpa-psk-passphrase.h	\
 	gnome-keyring-md5.c			\
 	gnome-keyring-md5.h			\
+	dbus-helpers.c				\
+	dbus-helpers.h				\
 	sha1.c					\
 	sha1.h
 
@@ -31,7 +40,7 @@ if !WITH_GCRYPT
 libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
 endif
 
-libnm_util_la_LDFLAGS= $(GLIB_LIBS)
+libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
 if WITH_GCRYPT
 libnm_util_la_LDFLAGS += $(LIBGCRYPT_LIBS)
@@ -45,7 +54,8 @@ libnm_util_include_HEADERS = 		\
 	cipher-wep-passphrase.h		\
 	cipher-wep-ascii.h			\
 	cipher-wpa-psk-hex.h		\
-	cipher-wpa-psk-passphrase.h
+	cipher-wpa-psk-passphrase.h	\
+	dbus-helpers.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

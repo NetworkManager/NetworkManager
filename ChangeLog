@@ -1,3 +1,16 @@
+2005-12-12  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/dbus-helpers.[ch]
+	  libnm-util/Makefile.am
+		- new helper calls to consolidate locations where
+			NM's setDevice method is called
+
+	* gnome/applet/applet-dbus-devices.c
+	  gnome/applet/wireless-security-option.c
+	  gnome/applet/wso-*
+		- Implement dbus message param append function for
+			all wireless security options
+
 2005-12-12  Robert Love  <rml@novell.com>
 
 	* libnm-util/cipher-wep-passphrase.c,

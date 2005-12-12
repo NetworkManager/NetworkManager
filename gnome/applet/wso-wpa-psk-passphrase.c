@@ -23,12 +23,15 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <dbus/dbus.h>
+#include <iwlib.h>
 
 #include "wireless-security-option.h"
 #include "wso-wpa-psk-passphrase.h"
 #include "wso-private.h"
 #include "cipher.h"
 #include "cipher-wpa-psk-passphrase.h"
+#include "dbus-helpers.h"
 
 
 struct OptData
@@ -71,6 +74,30 @@ static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ss
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
 	input = gtk_entry_get_text (GTK_ENTRY (entry));
 	return wso_validate_helper (opt, ssid, input, out_cipher);
+}
+
+
+static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char *ssid, DBusMessage *message)
+{
+	IEEE_802_11_Cipher *	cipher = NULL;
+	GtkWidget *			auth_combo;
+	int					auth_alg = -1;
+	GtkWidget *			entry;
+	const char *			input;
+
+	g_return_val_if_fail (opt != NULL, FALSE);
+	g_return_val_if_fail (opt->data != NULL, FALSE);
+	g_return_val_if_fail (opt->data->entry_name != NULL, FALSE);
+
+	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
+	input = gtk_entry_get_text (GTK_ENTRY (entry));
+	if (!wso_validate_helper (opt, ssid, input, &cipher) || !cipher)
+		return FALSE;
+
+	nmu_dbus_message_append_wpa_psk_args (message, cipher, ssid, input,
+			IW_AUTH_WPA_VERSION_WPA, IW_AUTH_KEY_MGMT_PSK);
+
+	return TRUE;
 }
 
 

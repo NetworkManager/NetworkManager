@@ -1071,7 +1071,8 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
 void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
 						WirelessSecurityOption * opt)
 {
-	DBusMessage	*message;
+	DBusMessage *	message;
+	gboolean		success = TRUE;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -1091,14 +1092,15 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 
 			/* If we've got specific wireless security options, add them */
 			if (opt)
-				wso_append_dbus_params (opt, essid, message);
+				success = wso_append_dbus_params (opt, essid, message);
 		}
 		else
 		{
 			nm_info ("Forcing device '%s'\n", network_device_get_nm_path (dev));
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 		}
-		dbus_connection_send (connection, message, NULL);
+//		if (success)
+//			dbus_connection_send (connection, message, NULL);
 		dbus_message_unref (message);
 	}
 	else

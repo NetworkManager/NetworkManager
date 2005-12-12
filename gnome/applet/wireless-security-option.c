@@ -110,7 +110,7 @@ gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, con
 	g_return_val_if_fail (ssid != NULL, FALSE);
 
 	if (out_cipher)
-		g_return_val_if_fail (*out_cipher != NULL, FALSE);
+		g_return_val_if_fail (*out_cipher == NULL, FALSE);
 
 	/* Try each of our ciphers in turn, if one validates that's enough */
 	for (elt = opt->ciphers; elt; elt = g_slist_next (elt))
@@ -118,7 +118,8 @@ gboolean wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, con
 		IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *) (elt->data);
 		if (ieee_802_11_cipher_validate (cipher, ssid, input) == 0)
 		{
-			*out_cipher = cipher;
+			if (out_cipher)
+				*out_cipher = cipher;
 			return TRUE;
 		}
 	}

@@ -30,6 +30,7 @@
 #include "wso-private.h"
 #include "cipher.h"
 #include "cipher-wep-ascii.h"
+#include "dbus-helpers.h"
 
 
 struct OptData
@@ -94,10 +95,8 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	IEEE_802_11_Cipher *	cipher = NULL;
 	GtkWidget *			auth_combo;
 	int					auth_alg = -1;
-	int					we_cipher = -1;
 	GtkWidget *			entry;
 	const char *			input;
-	char *				hashed = NULL;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (opt->data != NULL, FALSE);
@@ -112,11 +111,7 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	auth_combo = glade_xml_get_widget (opt->uixml, opt->data->auth_combo_name);
 	auth_alg = wso_wep_auth_combo_get_auth_alg (opt, GTK_COMBO_BOX (auth_combo));
 
-	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
-	hashed = ieee_802_11_cipher_hash (cipher, ssid, input);
-
-	g_free (hashed);
-
+	nmu_dbus_message_append_wep_args (message, cipher, ssid, input, auth_alg);
 	return TRUE;
 }
 
