@@ -58,6 +58,7 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_nm_state_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -120,6 +121,7 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -210,6 +212,7 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("hal_info_product_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -255,6 +258,7 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("hal_info_vendor_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -319,6 +323,7 @@ static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("hal_net_physdev_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -533,6 +538,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_net_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -726,6 +732,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_device_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -859,6 +866,7 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_update_devices_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -936,6 +944,7 @@ static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);

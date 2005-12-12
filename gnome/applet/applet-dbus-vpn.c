@@ -126,6 +126,7 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_vpn_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
@@ -223,6 +224,7 @@ static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, voi
 	{
 		DBusError err;
 
+		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
 		nm_warning ("nmwa_dbus_vpn_update_vpn_connections_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
