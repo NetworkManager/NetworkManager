@@ -9,7 +9,6 @@
 	  guarantees us that we get our 8-bits, which is all we care about.
 	* configure.in: Remove "-Wno-pointer-sign" flag.  We are sign-aware!
 
-
 2005-12-12  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.[ch]
