@@ -1,3 +1,7 @@
+2005-12-12  Robert Love  <rml@novell.com>
+
+	* auth-dialog/main.c: one more NULL, this time for the ellipses
+
 2005-12-11  Tim Niemueller <tim@niemueller.de>
 
 	* auth-dialog/main.c:

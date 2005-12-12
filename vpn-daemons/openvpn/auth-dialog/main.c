@@ -359,7 +359,7 @@ main (int argc, char *argv[])
 
   gnome_program_init ("nm-openvpn-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
 		      argc, argv, 
-		      GNOME_PARAM_NONE);
+		      GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 
 
   gconf_client = gconf_client_get_default();
