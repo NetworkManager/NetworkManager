@@ -507,9 +507,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 			goto out;
 	}
 
-	if (!get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers) || !num_ip4_nameservers)
-		goto out;
-
+	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers);
 	get_ip4_string (manager, dev, "domain_name", &domain_names);
 
 	nm_info ("Retrieved the following IP4 configuration from the DHCP daemon:");

@@ -1,3 +1,8 @@
+2005-12-12  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Do not fail if DHCP does not
+	  return any name servers.  That is perfectly valid.  (Novell #134369).
+
 2005-12-11  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/wso-*
