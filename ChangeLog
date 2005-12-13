@@ -1,5 +1,10 @@
 2005-12-13  Robert Love  <rml@novell.com>
 
+	* src/named-manager/nm-named-manager.c: Revert earlier commit.  Instead, fail silently if config is NULL
+	  by not asserting and not returning FALSE.  Also, make sure we always fclose() the file.
+
+2005-12-13  Robert Love  <rml@novell.com>
+
 	Patch by Stefan Scheler <sscheler@suse.de>:
 	*  src/nm-ip4-config.h, src/nm-ip4-config.c,
 	   src/dhcp-manager/nm-dhcp-manager.c: Add support for setting up NIS
