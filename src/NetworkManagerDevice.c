@@ -2492,7 +2492,7 @@ static gboolean nm_dwwfl_test (int tries, nm_completion_args args)
 	guint *		assoc_count = args[1];
 	double *		last_freq = args[2];
 	char *		essid = args[3];
-	int			required = GPOINTER_TO_INT (args[4]);
+	guint		required = GPOINTER_TO_UINT (args[4]);
 
 	double		cur_freq = nm_device_get_frequency (dev);
 	gboolean		assoc = nm_device_wireless_is_associated (dev);
