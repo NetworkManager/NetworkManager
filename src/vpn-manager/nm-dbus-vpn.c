@@ -391,7 +391,8 @@ static void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *
 
 		if (new)
 			vpn = nm_vpn_manager_add_connection (cb_data->data->vpn_manager, con_name, service_name, user_name);
-		nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, new ? "VPNConnectionAdded" : "VPNConnectionUpdate");
+		if (vpn)
+			nm_dbus_vpn_signal_vpn_connection_update (cb_data->data->dbus_connection, vpn, new ? "VPNConnectionAdded" : "VPNConnectionUpdate");
 	}
 	dbus_message_unref (reply);
 

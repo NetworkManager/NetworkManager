@@ -1,5 +1,10 @@
 2005-12-12  Robert Love  <rml@novell.com>
 
+	* src/vpn-manager/nm-dbus-vpn.c: Do not call the lengthy-named function
+	  nm_vpn_manager_remove_connection() unless vpn is non-NULL.
+
+2005-12-12  Robert Love  <rml@novell.com>
+
 	* src/named-manager/nm-named-manager.c: Don't unref the config until
 	  after we call rewrite_resolv_conf(), because get_last_default_domain()
 	  needs to access the config.  Fixes "rewrite_resolv_conf: assertion
