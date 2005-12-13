@@ -41,10 +41,8 @@ dbus_bool_t nmu_dbus_message_append_wep_args (DBusMessage *message, IEEE_802_11_
 	g_return_val_if_fail ((auth_alg == IW_AUTH_ALG_OPEN_SYSTEM) || (auth_alg == IW_AUTH_ALG_SHARED_KEY), FALSE);
 
 	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
-fprintf (stderr, "Cipher=%d, ssid='%s', input='%s'\n", we_cipher, ssid, input);
 	hashed = ieee_802_11_cipher_hash (cipher, ssid, input);
 	hashed_len = strlen (hashed);
-fprintf (stderr, "hashed = '%s', len = %d\n", hashed, hashed_len);
 
 	result = dbus_message_append_args (message, DBUS_TYPE_INT32, &we_cipher,
 								DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &hashed, hashed_len,
