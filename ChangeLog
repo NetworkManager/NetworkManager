@@ -1,9 +1,17 @@
-2005-12-12  Robert Love  <rml@novell.com>
+2005-12-13  Robert Love  <rml@novell.com>
+
+	Patch by Stefan Scheler <sscheler@suse.de>:
+	*  src/nm-ip4-config.h, src/nm-ip4-config.c,
+	   src/dhcp-manager/nm-dhcp-manager.c: Add support for setting up NIS
+	   via DHCP.  Still need the backends to commit the NIS domain name and
+	   and servers to yp.conf as needed.
+
+2005-12-13  Robert Love  <rml@novell.com>
 
 	* src/vpn-manager/nm-dbus-vpn.c: Do not call the lengthy-named function
 	  nm_vpn_manager_remove_connection() unless vpn is non-NULL.
 
-2005-12-12  Robert Love  <rml@novell.com>
+2005-12-13  Robert Love  <rml@novell.com>
 
 	* src/named-manager/nm-named-manager.c: Don't unref the config until
 	  after we call rewrite_resolv_conf(), because get_last_default_domain()

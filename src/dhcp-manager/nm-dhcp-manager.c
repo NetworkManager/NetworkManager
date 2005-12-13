@@ -469,7 +469,10 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	guint32 *		ip4_nameservers = NULL;
 	guint32 *		ip4_gateway = NULL;
 	guint32		num_ip4_nameservers = 0;
+	guint32		num_ip4_nis_servers = 0;
 	char *		domain_names = NULL;
+	char *		nis_domain = NULL;
+	guint32 *		ip4_nis_servers = NULL;
 	struct in_addr	temp_addr;
         nm_completion_args args;
 
@@ -509,6 +512,8 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 
 	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers);
 	get_ip4_string (manager, dev, "domain_name", &domain_names);
+	get_ip4_string (manager, dev, "nis_domain", &nis_domain);
+	get_ip4_uint32s (manager, dev, "nis_servers", &ip4_nis_servers, &num_ip4_nis_servers);
 
 	nm_info ("Retrieved the following IP4 configuration from the DHCP daemon:");
 
@@ -548,6 +553,21 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		}
 		g_strfreev (searches);
 	}
+
+	if (nis_domain) {
+		nm_ip4_config_set_nis_domain( ip4_config, nis_domain);
+		nm_info ("  nis domain '%s'", nis_domain);
+	}
+
+	for (i = 0; i < num_ip4_nis_servers; i++)
+	{
+		nm_ip4_config_add_nis_server (ip4_config, ip4_nis_servers[i]);
+		temp_addr.s_addr = ip4_nis_servers[i];
+		nm_info ("  nis server %s", inet_ntoa (temp_addr));
+	}
+
+	nm_info("nis_servers = %d", nm_ip4_config_get_num_nis_servers(ip4_config));
+	nm_info("nis domain = %s", nm_ip4_config_get_nis_domain(ip4_config));
 
 out:
 	return ip4_config;

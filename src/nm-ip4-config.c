@@ -42,6 +42,9 @@ struct NMIP4Config
 	GSList *	nameservers;
 	GSList *	domains;
 
+	gchar *	 nis_domain;
+	GSList * nis_servers;
+
 	/* If this is a VPN/etc config that requires
 	 * another device (like Ethernet) to already have
 	 * an IP4Config before it can be used.
@@ -74,6 +77,8 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	dst_config->ip4_netmask = nm_ip4_config_get_netmask (src_config);
 	dst_config->ip4_broadcast = nm_ip4_config_get_broadcast (src_config);
 
+	dst_config->nis_domain = g_strdup(nm_ip4_config_get_nis_domain(src_config));
+
 	len = nm_ip4_config_get_num_nameservers (src_config);
 	for (i = 0; i < len; i++)
 		nm_ip4_config_add_nameserver (dst_config, nm_ip4_config_get_nameserver (src_config, i));
@@ -81,6 +86,10 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	len = nm_ip4_config_get_num_domains (src_config);
 	for (i = 0; i < len; i++)
 		nm_ip4_config_add_domain (dst_config, nm_ip4_config_get_domain (src_config, i));
+
+	len = nm_ip4_config_get_num_nis_servers (src_config);
+	for (i = 0; i < len; i++)
+		nm_ip4_config_add_nis_server (dst_config, nm_ip4_config_get_nis_server (src_config, i));
 
 	return dst_config;
 }
@@ -99,9 +108,11 @@ void nm_ip4_config_unref (NMIP4Config *config)
 	config->refcount--;
 	if (config->refcount <= 0)
 	{
+		g_free (config->nis_domain);
 		g_slist_free (config->nameservers);
 		g_slist_foreach (config->domains, (GFunc) g_free, NULL);
 		g_slist_free (config->domains);
+		g_slist_free (config->nis_servers);
 
 		memset (config, 0, sizeof (NMIP4Config));
 		g_free (config);
@@ -204,6 +215,32 @@ guint32 nm_ip4_config_get_num_nameservers (NMIP4Config *config)
 	return (g_slist_length (config->nameservers));
 }
 
+void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis_server)
+{
+	g_return_if_fail (config != NULL);
+
+	config->nis_servers = g_slist_append (config->nis_servers, GINT_TO_POINTER (nis_server));
+}
+
+guint32 nm_ip4_config_get_nis_server (NMIP4Config *config, guint index)
+{
+	guint nis_server;
+
+	g_return_val_if_fail (config != NULL, 0);
+	g_return_val_if_fail (index < g_slist_length (config->nis_servers), 0);
+
+	if ((nis_server = GPOINTER_TO_UINT (g_slist_nth_data (config->nis_servers, index))))
+		return nis_server;
+	return 0;
+}
+
+guint32 nm_ip4_config_get_num_nis_servers (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, 0);
+
+	return (g_slist_length (config->nis_servers));
+}
+
 void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 {
 	g_return_if_fail (config != NULL);
@@ -213,6 +250,23 @@ void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 		return;
 
 	config->domains = g_slist_append (config->domains, g_strdup (domain));
+}
+
+void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain) 
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (domain != NULL);
+	
+	if (!strlen (domain))
+		return;
+	
+	config->nis_domain = g_strdup(domain);
+}
+
+gchar *nm_ip4_config_get_nis_domain (NMIP4Config *config)
+{
+	g_return_val_if_fail( config != NULL, NULL);
+	return config->nis_domain;
 }
 
 const char *nm_ip4_config_get_domain (NMIP4Config *config, guint index)
