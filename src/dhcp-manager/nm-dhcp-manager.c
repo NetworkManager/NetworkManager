@@ -480,7 +480,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	char *		nis_domain = NULL;
 	guint32 *		ip4_nis_servers = NULL;
 	struct in_addr	temp_addr;
-        nm_completion_args args;
+	nm_completion_args	args;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (req != NULL, NULL);
@@ -560,8 +560,9 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		g_strfreev (searches);
 	}
 
-	if (nis_domain) {
-		nm_ip4_config_set_nis_domain( ip4_config, nis_domain);
+	if (nis_domain)
+	{
+		nm_ip4_config_set_nis_domain (ip4_config, nis_domain);
 		nm_info ("  nis domain '%s'", nis_domain);
 	}
 

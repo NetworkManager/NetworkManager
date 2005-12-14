@@ -42,8 +42,8 @@ struct NMIP4Config
 	GSList *	nameservers;
 	GSList *	domains;
 
-	gchar *	 nis_domain;
-	GSList * nis_servers;
+	gchar *	nis_domain;
+	GSList *	nis_servers;
 
 	/* If this is a VPN/etc config that requires
 	 * another device (like Ethernet) to already have
@@ -77,7 +77,7 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	dst_config->ip4_netmask = nm_ip4_config_get_netmask (src_config);
 	dst_config->ip4_broadcast = nm_ip4_config_get_broadcast (src_config);
 
-	dst_config->nis_domain = g_strdup(nm_ip4_config_get_nis_domain(src_config));
+	dst_config->nis_domain = g_strdup (nm_ip4_config_get_nis_domain (src_config));
 
 	len = nm_ip4_config_get_num_nameservers (src_config);
 	for (i = 0; i < len; i++)
@@ -260,7 +260,7 @@ void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain)
 	if (!strlen (domain))
 		return;
 	
-	config->nis_domain = g_strdup(domain);
+	config->nis_domain = g_strdup (domain);
 }
 
 gchar *nm_ip4_config_get_nis_domain (NMIP4Config *config)
