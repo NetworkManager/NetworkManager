@@ -37,4 +37,7 @@ int		nm_wireless_qual_to_percent			(const struct iw_quality *qual,
 										 const struct iw_quality *avg_qual);
 void nm_wireless_set_scan_interval	(NMData *data, NMDevice *dev, NMWirelessScanInterval interval);
 
+guint32	nm_802_11_wireless_discover_capabilities (NMDevice *dev, iwrange * range, guint32 data_len);
+
+
 #endif

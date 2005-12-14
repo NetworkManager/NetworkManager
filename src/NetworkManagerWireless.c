@@ -271,3 +271,50 @@ void nm_wireless_set_scan_interval (NMData *data, NMDevice *dev, NMWirelessScanI
 		g_source_unref (source);
 	}
 }
+
+
+guint32 nm_802_11_wireless_discover_capabilities (NMDevice *dev, iwrange * range, guint32 data_len)
+{
+	int		minlen;
+	guint32	caps = NM_802_11_CAP_NONE;
+
+	g_return_val_if_fail (dev != NULL, NM_802_11_CAP_NONE);
+	g_return_val_if_fail (range != NULL, NM_802_11_CAP_NONE);
+
+	minlen = ((char *) range->enc_capa) - (char *) range + sizeof (range->enc_capa);
+
+	/* A test wireless device is a pro at everything */
+	if (nm_device_is_test_device (dev))
+	{
+		caps |= NM_802_11_CAP_KEY_MGMT_WPA
+			 | NM_802_11_CAP_KEY_MGMT_WPA2
+			 | NM_802_11_CAP_KEY_MGMT_WPA_PSK
+			 | NM_802_11_CAP_KEY_MGMT_WPA2_PSK
+			 | NM_802_11_CAP_CIPHER_WEP40
+			 | NM_802_11_CAP_CIPHER_WEP104
+			 | NM_802_11_CAP_CIPHER_TKIP
+			 | NM_802_11_CAP_CIPHER_CCMP;
+	}
+	else
+	{
+		/* All drivers should support WEP by default */
+		caps |= NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104;
+
+		if ((data_len >= minlen) && range->we_version_compiled >= 18)
+		{
+			if (range->enc_capa & IW_ENC_CAPA_WPA)
+				caps |= NM_802_11_CAP_KEY_MGMT_WPA | NM_802_11_CAP_KEY_MGMT_WPA_PSK;
+			if (range->enc_capa & IW_ENC_CAPA_WPA2)
+				caps |= NM_802_11_CAP_KEY_MGMT_WPA2 | NM_802_11_CAP_KEY_MGMT_WPA2_PSK;
+
+			if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
+				caps |= NM_802_11_CAP_CIPHER_TKIP;
+			if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
+				caps |= NM_802_11_CAP_CIPHER_CCMP;
+		}
+	}
+
+	return caps;
+}
+
+

@@ -334,8 +334,8 @@ void nm_device_copy_allowed_to_dev_list (NMDevice *dev, NMAccessPointList *allow
  */
 static gboolean nm_device_wireless_init (NMDevice *dev)
 {
-	NMSock				*sk;
-	NMDeviceWirelessOptions	*opts = &(dev->options.wireless);
+	NMDevice80211WirelessOptions *	opts = &(dev->options.wireless);
+	NMSock *						sk;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
@@ -359,8 +359,16 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 	opts->we_version = 0;
 	if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-		iwrange	range;
-		if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) >= 0)
+		struct iw_range range;
+		struct iwreq wrq;
+		int minlen = ((char *) &range.enc_capa) - (char *) &range + sizeof (range.enc_capa);
+
+		memset (&wrq, 0, sizeof (wrq));
+		strncpy (wrq.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
+		wrq.u.data.pointer = (caddr_t) &range;
+		wrq.u.data.length = sizeof (struct iw_range);
+
+		if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) >= 0)
 		{
 			int i;
 
@@ -379,6 +387,9 @@ static gboolean nm_device_wireless_init (NMDevice *dev)
 				opts->freqs[i] = iw_freq2float (&(range.freq[i]));
 
 			opts->we_version = range.we_version_compiled;
+
+			/* 802.11 wireless-specific capabilities */
+			opts->capabilities = nm_802_11_wireless_discover_capabilities (dev, &range, wrq.u.data.length);
 		}
 		nm_dev_sock_close (sk);
 	}
@@ -649,38 +660,6 @@ static guint32 nm_device_wireless_discover_capabilities (NMDevice *dev)
 			err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWSCAN, &wrq);
 			if (!((err == -1) && (errno == EOPNOTSUPP)))
 				caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
-			nm_dev_sock_close (sk);
-		}
-	}
-
-	/* A test wireless device is a pro at WPA and WPA2 */
-	if (dev->test_device)
-		   caps |= NM_DEVICE_CAP_WIRELESS_WPA | NM_DEVICE_CAP_WIRELESS_WPA2;
-	else
-	{
-		if ((sk = nm_dev_sock_open (dev, DEV_WIRELESS, __FUNCTION__, NULL)))
-		{
-			struct iw_range range;
-			struct iwreq wrq;
-
-			memset (&wrq, 0, sizeof (wrq));
-			strncpy (wrq.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-			wrq.u.data.pointer = (caddr_t) &range;
-			wrq.u.data.length = sizeof (struct iw_range);
-
-			if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) >= 0)
-			{
-				if (range.enc_capa & IW_ENC_CAPA_WPA)
-					caps |= NM_DEVICE_CAP_WIRELESS_WPA;
-				if (range.enc_capa & IW_ENC_CAPA_WPA2)
-					caps |= NM_DEVICE_CAP_WIRELESS_WPA2;
-			}
-
-			/*
-			 * FIXME: Most drivers do not yet support enc_capa, so we should
-			 * try another method here if neither WPA cap was set.
-			 */
-
 			nm_dev_sock_close (sk);
 		}
 	}

@@ -13,6 +13,24 @@
 
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Update and split 802.11 wireless-specific capabilities from
+			generic device capabilities
+
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerDevicePrivate.h
+		- (nm_device_wireless_discover_capabilities): Move 802.11
+			wireless-specific capability checks to
+			NetworkManagerWireless.c
+		- Rename NMDeviceWirelessOptions -> NMDevice80211WirelessOptions
+		- Rename NMDeviceWiredOptions -> NMDevice80211EthernetOptions
+
+	* src/NetworkManagerWireless.[ch]
+		- (nm_802_11_wireless_discover_capabilities): Check extended
+			802.11 wireless-specific capabilities of the driver
+
+2005-12-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ap-security*.[ch]
 		- Add AP security abstractions to NetworkManager
 

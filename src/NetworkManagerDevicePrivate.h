@@ -34,9 +34,9 @@
 
 
 /* Wireless device specific options */
-typedef struct NMDeviceWirelessOptions
+typedef struct NMDevice80211WirelessOptions
 {
-	char *			cur_essid;	/* Mainly for test devices */
+	char *			cur_essid;	/* Only for test devices */
 	gint8			strength;
 	gint8			invalid_strength_counter;
 	iwqual			max_qual;
@@ -51,20 +51,23 @@ typedef struct NMDeviceWirelessOptions
 	NMAccessPointList *	ap_list;
 	guint8			scan_interval; /* seconds */
 	guint32			last_scan;
+
+	/* Static options from driver */
 	guint8			we_version;
-} NMDeviceWirelessOptions;
+	guint32			capabilities;
+} NMDevice80211WirelessOptions;
 
 /* Wired device specific options */
-typedef struct NMDeviceWiredOptions
+typedef struct NMDevice80211EthernetOptions
 {
 	guint32	unused;
-} NMDeviceWiredOptions;
+} NMDevice8023EthernetOptions;
 
 /* General options structure */
 typedef union NMDeviceOptions
 {
-	NMDeviceWirelessOptions	wireless;
-	NMDeviceWiredOptions	wired;
+	NMDevice80211WirelessOptions	wireless;
+	NMDevice8023EthernetOptions	wired;
 } NMDeviceOptions;
 
 
