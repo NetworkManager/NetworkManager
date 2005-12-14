@@ -336,7 +336,8 @@ void nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager, NMActRequest *r
 }
 
 
-static gboolean get_ip4_uint32s (NMDHCPManager *manager, NMDevice *dev, const char *item, guint32 **ip4_uint32, guint32 *num_items)
+static gboolean get_ip4_uint32s (NMDHCPManager *manager, NMDevice *dev, const char *item,
+			guint32 **ip4_uint32, guint32 *num_items, gboolean ignore_error)
 {
 	DBusMessage *	message = NULL;
 	DBusMessage *	reply = NULL;
@@ -386,7 +387,9 @@ static gboolean get_ip4_uint32s (NMDHCPManager *manager, NMDevice *dev, const ch
 
 		if (dbus_error_is_set (&error))
 		{
-			nm_warning ("get_ip4_uint32(): error calling '%s', DHCP daemon returned error '%s', message '%s'.", item, error.name, error.message);
+			if (!ignore_error)
+				nm_warning ("get_ip4_uint32s(): error calling '%s', DHCP daemon returned error '%s', message '%s'.",
+					item, error.name, error.message);
 			dbus_error_free (&error);
 		}
 		dbus_message_unref (message);
@@ -397,7 +400,8 @@ static gboolean get_ip4_uint32s (NMDHCPManager *manager, NMDevice *dev, const ch
 }
 
 
-static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const char *item, char **string)
+static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const char *item,
+			char **string, gboolean ignore_error)
 {
 	DBusMessage *	message = NULL;
 	DBusMessage *	reply = NULL;
@@ -429,7 +433,9 @@ static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const cha
 
 		if (dbus_error_is_set (&error))
 		{
-			nm_warning ("get_ip4_string(): error calling '%s', DHCP daemon returned error '%s', message '%s'.", item, error.name, error.message);
+			if (!ignore_error)
+				nm_warning ("get_ip4_string(): error calling '%s', DHCP daemon returned error '%s', message '%s'.",
+						item, error.name, error.message);
 			dbus_error_free (&error);
 			*string = NULL;
 		}
@@ -494,26 +500,26 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		return NULL;
 	}
 
-	if (!get_ip4_uint32s (manager, dev, "ip_address", &ip4_address, &count) || !count)
+	if (!get_ip4_uint32s (manager, dev, "ip_address", &ip4_address, &count, FALSE) || !count)
 		goto out;
 
-	if (!get_ip4_uint32s (manager, dev, "subnet_mask", &ip4_netmask, &count) || !count)
+	if (!get_ip4_uint32s (manager, dev, "subnet_mask", &ip4_netmask, &count, FALSE) || !count)
 		goto out;
 
-	if (!get_ip4_uint32s (manager, dev, "broadcast_address", &ip4_broadcast, &count) || !count)
+	if (!get_ip4_uint32s (manager, dev, "broadcast_address", &ip4_broadcast, &count, FALSE) || !count)
 		goto out;
 
-	if (!get_ip4_uint32s (manager, dev, "routers", &ip4_gateway, &count) || !count)
+	if (!get_ip4_uint32s (manager, dev, "routers", &ip4_gateway, &count, TRUE) || !count)
 	{
 		/* If DHCP doesn't have a 'routers', just use the DHCP server's address as our gateway for now */
-		if (!get_ip4_uint32s (manager, dev, "dhcp_server_identifier", &ip4_gateway, &count) || !count)
+		if (!get_ip4_uint32s (manager, dev, "dhcp_server_identifier", &ip4_gateway, &count, FALSE) || !count)
 			goto out;
 	}
 
-	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers);
-	get_ip4_string (manager, dev, "domain_name", &domain_names);
-	get_ip4_string (manager, dev, "nis_domain", &nis_domain);
-	get_ip4_uint32s (manager, dev, "nis_servers", &ip4_nis_servers, &num_ip4_nis_servers);
+	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers, FALSE);
+	get_ip4_string (manager, dev, "domain_name", &domain_names, FALSE);
+	get_ip4_string (manager, dev, "nis_domain", &nis_domain, TRUE);
+	get_ip4_uint32s (manager, dev, "nis_servers", &ip4_nis_servers, &num_ip4_nis_servers, TRUE);
 
 	nm_info ("Retrieved the following IP4 configuration from the DHCP daemon:");
 
