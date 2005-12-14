@@ -25,10 +25,9 @@
 #include <glib.h>
 #include <time.h>
 #include "NetworkManager.h"
+#include "wpa.h"
 
 typedef struct NMAccessPoint NMAccessPoint;
-
-#define AP_MAX_WPA_IE_LEN 40
 
 
 NMAccessPoint *	nm_ap_new				(void);

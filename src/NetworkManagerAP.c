@@ -32,6 +32,8 @@
 struct NMAccessPoint
 {
 	guint			refcount;
+
+	/* Scanned or cached values */
 	char *			essid;
 	struct ether_addr *	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
@@ -664,7 +666,7 @@ void nm_ap_set_wpa_ie (NMAccessPoint *ap, const char *wpa_ie, guint32 length)
 	g_return_if_fail (ap != NULL);
 
 	if (wpa_ie)
-		g_return_if_fail ((length > 0) && (length <= AP_MAX_WPA_IE_LEN));
+		g_return_if_fail ((length > 0) && (length <= WPA_MAX_IE_LEN));
 
 	if (ap->wpa_ie)
 	{
@@ -695,7 +697,7 @@ void nm_ap_set_rsn_ie (NMAccessPoint *ap, const char *rsn_ie, guint32 length)
 	g_return_if_fail (ap != NULL);
 
 	if (rsn_ie)
-		g_return_if_fail ((length > 0) && (length <= AP_MAX_WPA_IE_LEN));
+		g_return_if_fail ((length > 0) && (length <= WPA_MAX_IE_LEN));
 
 	if (ap->rsn_ie)
 	{

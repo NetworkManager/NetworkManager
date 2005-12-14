@@ -4681,8 +4681,6 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				break;
 #endif
 			case IWEVGENIE:
-				#define GENERIC_INFO_ELEM 0xdd
-				#define RSN_INFO_ELEM 0x30
 				gpos = genie = custom;
 				gend = genie + iwe->u.data.length;
 				if (gend > end)
@@ -4693,19 +4691,19 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				while ((gpos + 1 < gend) && (gpos + 2 + (u8) gpos[1] <= gend))
 				{
 					u8 ie = gpos[0], ielen = gpos[1] + 2;
-					if (ielen > AP_MAX_WPA_IE_LEN)
+					if (ielen > WPA_MAX_IE_LEN)
 					{
 						gpos += ielen;
 						continue;
 					}
 					switch (ie)
 					{
-						case GENERIC_INFO_ELEM:
+						case WPA_GENERIC_INFO_ELEM:
 							if ((ielen < 2 + 4) || (memcmp (&gpos[2], "\x00\x50\xf2\x01", 4) != 0))
 								break;
 							nm_ap_set_wpa_ie (ap, gpos, ielen);
 							break;
-						case RSN_INFO_ELEM:
+						case WPA_RSN_INFO_ELEM:
 							nm_ap_set_rsn_ie (ap, gpos, ielen);
 							break;
 					}
@@ -4727,7 +4725,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					if (bytes & 1)
 						break;
 					bytes /= 2;
-					if (bytes > AP_MAX_WPA_IE_LEN)
+					if (bytes > WPA_MAX_IE_LEN)
 					{
 						nm_warning ("get_scan_results(): IE was too long (%d bytes).", bytes);
 						break;

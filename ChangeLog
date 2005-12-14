@@ -1,6 +1,23 @@
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h
+		- Add 802.11-specific capability for 802.1x key
+			management
+
+	* src/wpa.[ch]
+		- Pull in WPA IE and RSN IE parsing code from
+			wpa_supplicant so we can determine access point
+			capabilities
+		- Move WPA-related constants here from NetworkManagerAP.h
+			and NetworkManagerDevice.c
+
+	* src/NetworkManagerDevice.c
+	  src/NetworkManagerAP.[ch]
+		- Use WPA-related constants from wpa.h
+
+2005-12-14  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManager.h
 		- Update and split 802.11 wireless-specific capabilities from
 			generic device capabilities
 
