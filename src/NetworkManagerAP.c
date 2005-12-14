@@ -23,6 +23,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "NetworkManagerWireless.h"
+#include "nm-ap-security.h"
 #include <wireless.h>
 
 
@@ -40,14 +41,7 @@ struct NMAccessPoint
 	gint8			strength;
 	double			freq;
 	guint16			rate;
-	gboolean			encrypted;
 	guint32			capabilities;
-
-	/* WPA auxiliary information */
-	guint8 *			wpa_ie;
-	guint32			wpa_ie_len;
-	guint8 *			rsn_ie;
-	guint32			rsn_ie_len;
 
 	/* Non-scanned attributes */
 	gboolean			invalid;
@@ -58,11 +52,14 @@ struct NMAccessPoint
 
 	/* Things from user prefs/NetworkManagerInfo */
 	gboolean			trusted;
+	NMAPSecurity *		security;
+	GTimeVal			timestamp;
+	GSList *			user_addresses;
+
+	/* Soon to be banished */
 	char *			enc_key;
 	NMEncKeyType		enc_type;
 	int				auth_method; /* from wireless.h; -1 is unknown, zero is none */
-	GTimeVal			timestamp;
-	GSList *			user_addresses;
 };
 
 /* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
@@ -134,7 +131,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap->strength = src_ap->strength;
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
-	new_ap->encrypted = src_ap->encrypted;
+	new_ap->capabilities = src_ap->capabilities;
 
 	if (src_ap->enc_key && (strlen (src_ap->enc_key) > 0))
 		new_ap->enc_key = g_strdup (src_ap->enc_key);
@@ -286,14 +283,17 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
-	return (ap->encrypted);
+	return (ap->capabilities & NM_802_11_CAP_PROTO_WEP);
 }
 
-void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean encrypted)
+void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean privacy)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->encrypted = encrypted;
+	if (privacy)
+		ap->capabilities |= NM_802_11_CAP_PROTO_WEP;
+	else
+		ap->capabilities &= ~NM_802_11_CAP_PROTO_WEP;
 }
 
 
@@ -652,65 +652,41 @@ gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 }
 
 
-const guint8 * nm_ap_get_wpa_ie (NMAccessPoint *ap, guint32 *length)
+static void set_capabilities_from_cipher (NMAccessPoint *ap, int cipher)
 {
-	g_return_val_if_fail (ap != NULL, NULL);
-	g_return_val_if_fail (length != NULL, NULL);
-
-	*length = ap->wpa_ie_len;
-	return ap->wpa_ie;
+	if (cipher & IW_AUTH_CIPHER_WEP40)
+		ap->capabilities |= NM_802_11_CAP_CIPHER_WEP40;
+	if (cipher & IW_AUTH_CIPHER_WEP104)
+		ap->capabilities |= NM_802_11_CAP_CIPHER_WEP104;
+	if (cipher & IW_AUTH_CIPHER_TKIP)
+		ap->capabilities |= NM_802_11_CAP_CIPHER_TKIP;
+	if (cipher & IW_AUTH_CIPHER_CCMP)
+		ap->capabilities |= NM_802_11_CAP_CIPHER_CCMP;
 }
 
-void nm_ap_set_wpa_ie (NMAccessPoint *ap, const char *wpa_ie, guint32 length)
+void nm_ap_set_capabilities_from_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
 {
+	wpa_ie_data *	cap_data;
+
 	g_return_if_fail (ap != NULL);
 
-	if (wpa_ie)
-		g_return_if_fail ((length > 0) && (length <= WPA_MAX_IE_LEN));
+	if (!(cap_data = wpa_parse_wpa_ie (wpa_ie, length)))
+		return;
 
-	if (ap->wpa_ie)
-	{
-		g_free (ap->wpa_ie);
-		ap->wpa_ie = NULL;
-		ap->wpa_ie_len = 0;
-	}
+	ap->capabilities = NM_802_11_CAP_NONE;
 
-	if (wpa_ie)
-	{
-		ap->wpa_ie = g_malloc0 (length);
-		ap->wpa_ie_len = length;
-		memcpy (ap->wpa_ie, wpa_ie, length);
-	}
+	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA)
+		ap->capabilities |= NM_802_11_CAP_PROTO_WPA;
+	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA2)
+		ap->capabilities |= NM_802_11_CAP_PROTO_WPA2;
+
+	set_capabilities_from_cipher (ap, cap_data->pairwise_cipher);
+	set_capabilities_from_cipher (ap, cap_data->group_cipher);
+
+	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_802_1X)
+		ap->capabilities |= NM_802_11_CAP_KEY_MGMT_802_1X;
+	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_PSK)
+		ap->capabilities |= NM_802_11_CAP_KEY_MGMT_PSK;
 }
 
-const guint8 * nm_ap_get_rsn_ie (NMAccessPoint *ap, guint32 *length)
-{
-	g_return_val_if_fail (ap != NULL, NULL);
-	g_return_val_if_fail (length != NULL, NULL);
-
-	*length = ap->rsn_ie_len;
-	return ap->rsn_ie;
-}
-
-void nm_ap_set_rsn_ie (NMAccessPoint *ap, const char *rsn_ie, guint32 length)
-{
-	g_return_if_fail (ap != NULL);
-
-	if (rsn_ie)
-		g_return_if_fail ((length > 0) && (length <= WPA_MAX_IE_LEN));
-
-	if (ap->rsn_ie)
-	{
-		g_free (ap->rsn_ie);
-		ap->rsn_ie = NULL;
-		ap->rsn_ie_len = 0;
-	}
-
-	if (rsn_ie)
-	{
-		ap->rsn_ie = g_malloc0 (length);
-		ap->rsn_ie_len = length;
-		memcpy (ap->rsn_ie, rsn_ie, length);
-	}
-}
 

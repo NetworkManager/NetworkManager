@@ -3777,7 +3777,7 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
  * request.
  *
  */
-NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type)
+NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char *essid, NMAPSecurity *security)
 {
 	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
@@ -3789,6 +3789,7 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 
 	nm_debug ("Forcing AP '%s'", essid);
 
+#if 0
 	if (    key
 		&& strlen (key)
 		&& (key_type != NM_ENC_TYPE_UNKNOWN)
@@ -3834,6 +3835,7 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 	/* Use the encryption key and type the user sent us if its valid */
 	if (encrypted)
 		nm_ap_set_enc_key_source (ap, key, key_type);
+#endif
 
 	return ap;
 }
@@ -4610,7 +4612,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				/* New AP with some defaults */
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
-				nm_ap_set_auth_method (ap, 0);
+				nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 				nm_ap_set_mode (ap, IW_MODE_INFRA);
 				break;
 			case SIOCGIWMODE:
@@ -4656,10 +4658,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				break;
 			case SIOCGIWENCODE:
 				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
-				{
 					nm_ap_set_encrypted (ap, TRUE);
-					nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
-				}
 				break;
 #if 0
 			case SIOCGIWRATE:
@@ -4688,9 +4687,9 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					nm_warning ("get_scan_results(): IWEVGENIE overflow.");
 					break;
 				}
-				while ((gpos + 1 < gend) && (gpos + 2 + (u8) gpos[1] <= gend))
+				while ((gpos + 1 < gend) && (gpos + 2 + (guint8) gpos[1] <= gend))
 				{
-					u8 ie = gpos[0], ielen = gpos[1] + 2;
+					guint8 ie = gpos[0], ielen = gpos[1] + 2;
 					if (ielen > WPA_MAX_IE_LEN)
 					{
 						gpos += ielen;
@@ -4701,10 +4700,10 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 						case WPA_GENERIC_INFO_ELEM:
 							if ((ielen < 2 + 4) || (memcmp (&gpos[2], "\x00\x50\xf2\x01", 4) != 0))
 								break;
-							nm_ap_set_wpa_ie (ap, gpos, ielen);
+							nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)gpos, ielen);
 							break;
 						case WPA_RSN_INFO_ELEM:
-							nm_ap_set_rsn_ie (ap, gpos, ielen);
+							nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)gpos, ielen);
 							break;
 					}
 					gpos += ielen;
@@ -4733,9 +4732,9 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					ie_buf = g_malloc0 (bytes);
 					hexstr2bin (spos, ie_buf, bytes);
 					if (strncmp (custom, "wpa_ie=", 7) == 0)
-						nm_ap_set_wpa_ie (ap, ie_buf, bytes);
+						nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)ie_buf, bytes);
 					else if (strncmp (custom, "rsn_ie=", 7) == 0)
-						nm_ap_set_rsn_ie (ap, ie_buf, bytes);				
+						nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)ie_buf, bytes);				
 					g_free (ie_buf);
 				}
 				break;

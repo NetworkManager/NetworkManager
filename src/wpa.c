@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <iwlib.h>
+#include <glib.h>
 
 #include "wpa.h"
 #include "nm-utils.h"
@@ -92,14 +93,6 @@ static const u8 RSN_KEY_DATA_GROUPKEY[] = { 0x00, 0x0f, 0xac, 1 };
 static const u8 RSN_KEY_DATA_STAKEY[] = { 0x00, 0x0f, 0xac, 2 };
 static const u8 RSN_KEY_DATA_MAC_ADDR[] = { 0x00, 0x0f, 0xac, 3 };
 static const u8 RSN_KEY_DATA_PMKID[] = { 0x00, 0x0f, 0xac, 4 };
-
-/* 1/4: PMKID
- * 2/4: RSN IE
- * 3/4: one or two RSN IEs + GTK IE (encrypted)
- * 4/4: empty
- * 1/2: GTK IE (encrypted)
- * 2/2: empty
- */
 
 /* RSN IE version 1
  * 0x01 0x00 (version; little endian)
@@ -436,16 +429,31 @@ static int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
  * @wpa_ie: Pointer to WPA or RSN IE
  * @wpa_ie_len: Length of the WPA/RSN IE
  * @data: Pointer to data area for parsing results
- * Returns: 0 on success, -1 on failure
+ * Returns: parsed results on success, NULL on failure
  *
  * Parse the contents of WPA or RSN IE and write the parsed data into data.
  */
-int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
-		     struct wpa_ie_data *data)
+wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 {
+	wpa_ie_data *	data = NULL;
+	int			err = -1;
+
+	if (!wpa_ie || wpa_ie_len <= 0)
+		return NULL;
+
+	data = g_malloc0 (sizeof (wpa_ie_data));
+
 	if (wpa_ie_len >= 1 && wpa_ie[0] == WPA_RSN_INFO_ELEM)
-		return wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
+		err = wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
 	else
-		return wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
+		err = wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
+
+	if (err != 0)
+	{
+		g_free (data);
+		data = NULL;
+	}
+
+	return data;
 }
 

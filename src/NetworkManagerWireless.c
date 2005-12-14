@@ -286,10 +286,10 @@ guint32 nm_802_11_wireless_discover_capabilities (NMDevice *dev, iwrange * range
 	/* A test wireless device is a pro at everything */
 	if (nm_device_is_test_device (dev))
 	{
-		caps |= NM_802_11_CAP_KEY_MGMT_WPA
-			 | NM_802_11_CAP_KEY_MGMT_WPA2
-			 | NM_802_11_CAP_KEY_MGMT_WPA_PSK
-			 | NM_802_11_CAP_KEY_MGMT_WPA2_PSK
+		caps |= NM_802_11_CAP_PROTO_WPA
+			 | NM_802_11_CAP_PROTO_WPA2
+			 | NM_802_11_CAP_KEY_MGMT_PSK
+			 | NM_802_11_CAP_KEY_MGMT_802_1X
 			 | NM_802_11_CAP_CIPHER_WEP40
 			 | NM_802_11_CAP_CIPHER_WEP104
 			 | NM_802_11_CAP_CIPHER_TKIP
@@ -303,9 +303,17 @@ guint32 nm_802_11_wireless_discover_capabilities (NMDevice *dev, iwrange * range
 		if ((data_len >= minlen) && range->we_version_compiled >= 18)
 		{
 			if (range->enc_capa & IW_ENC_CAPA_WPA)
-				caps |= NM_802_11_CAP_KEY_MGMT_WPA | NM_802_11_CAP_KEY_MGMT_WPA_PSK;
+			{
+				caps |= NM_802_11_CAP_PROTO_WPA
+					 | NM_802_11_CAP_KEY_MGMT_PSK
+					 | NM_802_11_CAP_KEY_MGMT_802_1X;
+			}
 			if (range->enc_capa & IW_ENC_CAPA_WPA2)
-				caps |= NM_802_11_CAP_KEY_MGMT_WPA2 | NM_802_11_CAP_KEY_MGMT_WPA2_PSK;
+			{
+				caps |= NM_802_11_CAP_PROTO_WPA2
+					 | NM_802_11_CAP_KEY_MGMT_PSK
+					 | NM_802_11_CAP_KEY_MGMT_802_1X;
+			}
 
 			if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
 				caps |= NM_802_11_CAP_CIPHER_TKIP;

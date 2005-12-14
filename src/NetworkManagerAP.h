@@ -51,9 +51,9 @@ int				nm_ap_get_auth_method	(const NMAccessPoint *ap);
 void				nm_ap_set_auth_method	(NMAccessPoint *ap, int auth_method);
 
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
-void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean encrypted);
+void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean privacy);
 
-const struct ether_addr *	nm_ap_get_address		(const NMAccessPoint *ap);
+const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
 int				nm_ap_get_mode			(const NMAccessPoint *ap);
@@ -93,11 +93,7 @@ void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
 gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
 
-const guint8 *		nm_ap_get_wpa_ie		(NMAccessPoint *ap, guint32 *length);
-void				nm_ap_set_wpa_ie		(NMAccessPoint *ap, const char *wpa_ie, guint32 length);
-
-const guint8 *		nm_ap_get_rsn_ie		(NMAccessPoint *ap, guint32 *length);
-void				nm_ap_set_rsn_ie		(NMAccessPoint *ap, const char *rsn_ie, guint32 length);
+void				nm_ap_set_capabilities_from_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
 
 /* 
  * NOTE:

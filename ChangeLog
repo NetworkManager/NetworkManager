@@ -1,6 +1,33 @@
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h
+	  src/NetworkManagerWireless.c
+		- Rearrange 802.11 wireless-specific capabilities again
+
+	* src/Makefile.am
+		- Forgot to add wpa.c/wpa.h to the makefiles
+
+	* src/NetworkManagerAP.[ch]
+		- Implement access point capabilities and parse the
+			WPA/RSN IEs into the capability bitfield
+		- Switch the "encrypted" attribute to utilize the bitfield
+			and capabilities rather than being independent
+
+	* src/NetworkManagerDevice.c
+		- (nm_device_wireless_get_activation_ap): break it horribly
+			until we can push NMAPSecurity objects into access point
+			objects and through the activation chain
+		- Stuff WPA & RSN IEs into AP capabilities
+
+	* src/nm-dbus-nm.c
+		- Take a shot at actually making setActiveDevice work
+
+	* src/wpa.[ch]
+		- Make the API a bit saner
+
+2005-12-14  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManager.h
 		- Add 802.11-specific capability for 802.1x key
 			management
 

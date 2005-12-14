@@ -22,7 +22,7 @@
 
 #define WPA_MAX_IE_LEN 40
 
-struct wpa_ie_data {
+typedef struct wpa_ie_data {
 	int proto;
 	int pairwise_cipher;
 	int group_cipher;
@@ -30,9 +30,9 @@ struct wpa_ie_data {
 	int capabilities;
 	int num_pmkid;
 	const uint8_t *pmkid;
-};
+} wpa_ie_data;
 
 
-int wpa_parse_wpa_ie(const uint8_t *wpa_ie, size_t wpa_ie_len, struct wpa_ie_data *data);
+wpa_ie_data * wpa_parse_wpa_ie (const uint8_t *wpa_ie, size_t wpa_ie_len);
 
 #endif /* WPA_H */

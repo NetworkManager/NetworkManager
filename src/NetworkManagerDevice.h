@@ -27,6 +27,7 @@
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "nm-ip4-config.h"
+#include "nm-ap-security.h"
 
 #if 0
 #define IOCTL_DEBUG
@@ -112,7 +113,7 @@ gboolean		nm_device_is_activating							(NMDevice *dev);
 gboolean		nm_device_deactivate_quickly						(NMDevice *dev);
 gboolean		nm_device_deactivate							(NMDevice *dev);
 
-NMAccessPoint *nm_device_wireless_get_activation_ap	(NMDevice *dev, const char *essid, const char *key, NMEncKeyType key_type);
+NMAccessPoint *nm_device_wireless_get_activation_ap	(NMDevice *dev, const char *essid, NMAPSecurity *security);
 
 void			nm_device_set_user_key_for_network		(NMActRequest *req, const char *key, const NMEncKeyType enc_type);
 

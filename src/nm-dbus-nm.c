@@ -190,9 +190,6 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	DBusMessage *		reply = NULL;
 	char *			dev_path;
 	char *			unescaped_dev_path = NULL;
-	char *			essid = NULL;
-	char *			key = NULL;
-	int				key_type = -1;
 	NMAccessPoint *	ap = NULL;
 	DBusMessageIter	iter;
 
@@ -205,8 +202,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_OBJECT_PATH)
 	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManager::setActiveDevice called with invalid arguments.");
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 		goto out;
 	}
 
@@ -225,51 +221,47 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	if (nm_device_is_802_11_wireless (dev))
 	{
-		NMAPSecurity * security = NULL;
+		NMAPSecurity * 	security = NULL;
+		char *			essid = NULL;
 
-		if (dbus_message_iter_next (&iter))
-		{
-			dbus_message_iter_get_basic (&iter, &essid);
-
-			if (dbus_message_iter_next (&iter))
-			{
-				security = nm_ap_security_new_from_dbus_message (&iter);
-			}
-		}
-	}
-	else if (nm_device_is_802_3_ethernet (dev))
-	{
-	}
-// DEBUG
-return reply;
-
-	/* Try to grab both device _and_ network first, and if that fails then just the device. */
-	if (!dbus_message_get_args (message, NULL,	DBUS_TYPE_OBJECT_PATH, &dev_path,
-										DBUS_TYPE_STRING, &essid,
-										DBUS_TYPE_STRING, &key,
-										DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
-	{
-		/* So if that failed, try getting just the device */
-		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID))
+		if (!dbus_message_iter_next (&iter))
 		{
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 			goto out;
-		} else nm_info ("FORCE: device '%s'", dev_path);
-	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, essid);
+		}
 
-	/* Make sure network is valid and device is wireless */
-	if (nm_device_is_802_11_wireless (dev) && !essid)
+		/* grab ssid and ensure validity */
+		dbus_message_iter_get_basic (&iter, &essid);
+		if (!essid || (strlen (essid) <= 0))
+		{
+			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			goto out;
+		}
+
+		if (!dbus_message_iter_next (&iter))
+		{
+			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			goto out;
+		}
+
+		if (!(security = nm_ap_security_new_from_dbus_message (&iter)))
+		{
+			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			goto out;
+		}
+
+		/* Set up the wireless-specific activation request properties */
+		ap = nm_device_wireless_get_activation_ap (dev, essid, security);
+
+		nm_info ("User Switch: %s / %s", dev_path, essid);
+	}
+	else if (nm_device_is_802_3_ethernet (dev))
 	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
-		goto out;
+		nm_info ("User Switch: %s", dev_path);
 	}
 
 	nm_device_deactivate (dev);
-
 	nm_schedule_state_change_signal_broadcast (data->data);
-
-	if (nm_device_is_802_11_wireless (dev))
-		ap = nm_device_wireless_get_activation_ap (dev, essid, key, (NMEncKeyType)key_type);
 	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
 
 out:
