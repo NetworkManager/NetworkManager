@@ -1,3 +1,16 @@
+2005-12-14  Robert Love  <rml@novell.com>
+
+	Patch from Stefan Scheler <sscheler@suse.de>:
+	* src/NetworkManagerDevice.c: call backend code to activate and
+	  deactivate NIS.
+	* src/NetworkManagerSystem.h: add new NIS interfaces.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: add stub functions for NIS
+	  support.
+	* src/backends/NetworkManagerSuSE.c: add NIS support, baby.
+
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-ap-security*.[ch]

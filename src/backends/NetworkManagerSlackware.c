@@ -359,3 +359,24 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 {
 	return TRUE;
 }
+
+/*
+ * nm_system_activate_nis
+ *
+ * set up the nis domain and write a yp.conf
+ *
+ */
+void nm_system_activate_nis (NMIP4Config *config)
+{
+}
+
+/*
+ * nm_system_shutdown_nis
+ *
+ * shutdown ypbind
+ *
+ */
+void nm_system_shutdown_nis (void)
+{
+}
+

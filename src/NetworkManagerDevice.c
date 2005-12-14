@@ -3162,6 +3162,7 @@ static gboolean nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_device_update_ip4_address (dev);
 		nm_system_device_add_ip6_link_address (dev);
 		nm_system_restart_mdns_responder ();
+		nm_system_activate_nis (dev->ip4_config);
 		nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
 		nm_policy_schedule_activation_finish (req);
 	}
@@ -3376,6 +3377,8 @@ gboolean nm_device_deactivate_quickly (NMDevice *dev)
 {
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (dev->app_data != NULL, FALSE);
+
+	nm_system_shutdown_nis ();
 
 	nm_vpn_manager_deactivate_vpn_connection (dev->app_data->vpn_manager, dev);
 
