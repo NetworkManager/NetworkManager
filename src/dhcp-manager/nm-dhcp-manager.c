@@ -566,9 +566,6 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		nm_info ("  nis server %s", inet_ntoa (temp_addr));
 	}
 
-	nm_info("nis_servers = %d", nm_ip4_config_get_num_nis_servers(ip4_config));
-	nm_info("nis domain = %s", nm_ip4_config_get_nis_domain(ip4_config));
-
 out:
 	return ip4_config;
 }
