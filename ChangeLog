@@ -1,16 +1,3 @@
-2005-12-14  Robert Love  <rml@novell.com>
-
-	Patch from Stefan Scheler <sscheler@suse.de>:
-	* src/NetworkManagerDevice.c: call backend code to activate and
-	  deactivate NIS.
-	* src/NetworkManagerSystem.h: add new NIS interfaces.
-	* src/backends/NetworkManagerDebian.c,
-	  src/backends/NetworkManagerGentoo.c,
-	  src/backends/NetworkManagerRedHat.c,
-	  src/backends/NetworkManagerSlackware.c: add stub functions for NIS
-	  support.
-	* src/backends/NetworkManagerSuSE.c: add NIS support, baby.
-
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h
@@ -28,6 +15,19 @@
 	* src/NetworkManagerWireless.[ch]
 		- (nm_802_11_wireless_discover_capabilities): Check extended
 			802.11 wireless-specific capabilities of the driver
+
+2005-12-14  Robert Love  <rml@novell.com>
+
+	Patch from Stefan Scheler <sscheler@suse.de>:
+	* src/NetworkManagerDevice.c: call backend code to activate and
+	  deactivate NIS.
+	* src/NetworkManagerSystem.h: add new NIS interfaces.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: add stub functions for NIS
+	  support.
+	* src/backends/NetworkManagerSuSE.c: add NIS support, baby.
 
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
