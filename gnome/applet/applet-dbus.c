@@ -359,7 +359,6 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet)
 	DBusError		 		error;
 	DBusObjectPathVTable	vtable = { NULL, &nmi_dbus_info_message_handler, NULL, NULL, NULL, NULL };
 	int					acquisition;
-	int					flags = 0;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 
@@ -373,12 +372,7 @@ static DBusConnection * nmwa_dbus_init (NMWirelessApplet *applet)
 	}
 
 	dbus_error_init (&error);
-#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
-	flags &= DBUS_NAME_FLAG_REPLACE_EXISTING;
-#else
-	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
-#endif
-	acquisition = dbus_bus_request_name (connection, NMI_DBUS_SERVICE, flags, &error);
+	acquisition = dbus_bus_request_name (connection, NMI_DBUS_SERVICE, DBUS_NAME_FLAG_REPLACE_EXISTING, &error);
 	if (dbus_error_is_set (&error))
 	{
 		nm_warning ("nmwa_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);

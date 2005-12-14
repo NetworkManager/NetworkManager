@@ -1,3 +1,10 @@
+2005-12-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerDbus.c
+	  gnome/applet/applet-dbus.c
+		- Fix up dbus service replacement options.  The applet
+			should allow replacement, NM itself should not.
+
 2005-12-13  Robert Love  <rml@novell.com>
 
 	* src/named-manager/nm-named-manager.c: Revert earlier commit.

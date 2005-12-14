@@ -1284,6 +1284,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	DBusObjectPathVTable	devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	vpn_vtable = {NULL, &nm_dbus_vpn_message_handler, NULL, NULL, NULL, NULL};
 	char *				owner;
+	int					flags = 0;
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
@@ -1336,10 +1337,15 @@ DBusConnection *nm_dbus_init (NMData *data)
 	}
 
 	dbus_error_init (&error);
-	dbus_bus_request_name (connection, NM_DBUS_SERVICE, 0, &error);
+#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
+	flags = 0;	/* Prohibit replacement */
+#else
+	flags &= DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
+#endif
+	dbus_bus_request_name (connection, NM_DBUS_SERVICE, flags, &error);
 	if (dbus_error_is_set (&error))
 	{
-		nm_warning ("nm_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
+		nm_warning ("nm_dbus_init() could not acquire the NetworkManager service.\n  Message: '%s'", error.message);
 		connection = NULL;
 		goto out;
 	}
