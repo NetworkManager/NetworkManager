@@ -28,27 +28,48 @@
 #include "cipher.h"
 
 
+static void key_append_helper (DBusMessageIter *iter, const char *key)
+{
+	DBusMessageIter	subiter;
+	int				key_len;
+
+	g_return_if_fail (iter != NULL);
+	g_return_if_fail (key != NULL);
+
+	key_len = strlen (key);
+	g_return_if_fail (key_len > 0);
+
+	if (!dbus_message_iter_open_container (iter, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE_AS_STRING, &subiter))
+		return;	
+	dbus_message_iter_append_fixed_array (&subiter, DBUS_TYPE_BYTE, &key, key_len);
+	dbus_message_iter_close_container (iter, &subiter);
+}
+
 dbus_bool_t nmu_dbus_message_append_wep_args (DBusMessage *message, IEEE_802_11_Cipher *cipher,
 					const char *ssid, const char *input, int auth_alg)
 {
-	int			we_cipher = -1;
-	char *		hashed = NULL;
-	int			hashed_len;
-	dbus_bool_t	result;
+	int				we_cipher = -1;
+	char *			key = NULL;
+	dbus_bool_t		result = TRUE;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (message != NULL, FALSE);
 	g_return_val_if_fail (cipher != NULL, FALSE);
 	g_return_val_if_fail ((auth_alg == IW_AUTH_ALG_OPEN_SYSTEM) || (auth_alg == IW_AUTH_ALG_SHARED_KEY), FALSE);
 
-	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
-	hashed = ieee_802_11_cipher_hash (cipher, ssid, input);
-	hashed_len = strlen (hashed);
+	dbus_message_iter_init_append (message, &iter);
 
-	result = dbus_message_append_args (message, DBUS_TYPE_INT32, &we_cipher,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &hashed, hashed_len,
-								DBUS_TYPE_INT32, &auth_alg,
-								DBUS_TYPE_INVALID);
-	g_free (hashed);
+	/* First arg: WE Cipher (INT32) */
+	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &we_cipher);
+
+	/* Second arg: hashed key (ARRAY, BYTE) */
+	key = ieee_802_11_cipher_hash (cipher, ssid, input);
+	key_append_helper (&iter, key);
+	g_free (key);
+
+	/* Third arg: WEP authentication algorithm (INT32) */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &auth_alg);
 
 	return result;
 }
@@ -57,26 +78,32 @@ dbus_bool_t nmu_dbus_message_append_wep_args (DBusMessage *message, IEEE_802_11_
 dbus_bool_t nmu_dbus_message_append_wpa_psk_args (DBusMessage *message, IEEE_802_11_Cipher *cipher,
 					const char *ssid, const char *input, int wpa_version, int key_mgt)
 {
-	int			we_cipher = -1;
-	char *		hashed = NULL;
-	int			hashed_len;
-	dbus_bool_t	result;
+	int				we_cipher = -1;
+	char *			key = NULL;
+	dbus_bool_t		result = TRUE;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (message != NULL, FALSE);
 	g_return_val_if_fail (cipher != NULL, FALSE);
 	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
 	g_return_val_if_fail ((key_mgt == IW_AUTH_KEY_MGMT_802_1X) || (key_mgt == IW_AUTH_KEY_MGMT_PSK), FALSE);
 
-	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
-	hashed = ieee_802_11_cipher_hash (cipher, ssid, input);
-	hashed_len = strlen (hashed);
+	dbus_message_iter_init_append (message, &iter);
 
-	result = dbus_message_append_args (message, DBUS_TYPE_INT32, &we_cipher,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &hashed, hashed_len,
-								DBUS_TYPE_INT32, &wpa_version,
-								DBUS_TYPE_INT32, &key_mgt,
-								DBUS_TYPE_INVALID);
-	g_free (hashed);
+	/* First arg: WE Cipher (INT32) */
+	we_cipher = ieee_802_11_cipher_get_we_cipher (cipher);
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &we_cipher);
+
+	/* Second arg: hashed key (ARRAY, BYTE) */
+	key = ieee_802_11_cipher_hash (cipher, ssid, input);
+	key_append_helper (&iter, key);
+	g_free (key);
+
+	/* Third arg: WPA version (INT32) */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &wpa_version);
+
+	/* Fourth arg: WPA key management (INT32) */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &key_mgt);
 
 	return result;
 }

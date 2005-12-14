@@ -47,7 +47,14 @@ NetworkManager_SOURCES =				\
 		nm-activation-request.c		\
 		nm-activation-request.h		\
 		autoip.c					\
-		autoip.h
+		autoip.h					\
+		nm-ap-security.c			\
+		nm-ap-security.h			\
+		nm-ap-security-private.h		\
+		nm-ap-security-wep.c		\
+		nm-ap-security-wep.h		\
+		nm-ap-security-wpa-psk.c		\
+		nm-ap-security-wpa-psk.h
 
 NetworkManager_CPPFLAGS = 			\
 	$(DBUS_CFLAGS)					\

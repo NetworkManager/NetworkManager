@@ -1099,8 +1099,8 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 			nm_info ("Forcing device '%s'\n", network_device_get_nm_path (dev));
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 		}
-//		if (success)
-//			dbus_connection_send (connection, message, NULL);
+		if (success)
+			dbus_connection_send (connection, message, NULL);
 		dbus_message_unref (message);
 	}
 	else

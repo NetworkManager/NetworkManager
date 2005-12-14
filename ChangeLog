@@ -1,5 +1,19 @@
 2005-12-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-ap-security*.[ch]
+		- Add AP security abstractions to NetworkManager
+
+	* src/nm-dbus-device.c
+		- Begin to parse new format dbus messages from the applet
+			and construct an AP security object from the message
+
+	* libnm-util/dbus-helpers.c
+		- Use message iters so we can append the key as a fixed
+			array of bytes, which actually works rather than
+			using dbus_message_append_args() as we were before
+
+2005-12-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerDbus.c
 	  gnome/applet/applet-dbus.c
 		- Fix up dbus service replacement options.  The applet

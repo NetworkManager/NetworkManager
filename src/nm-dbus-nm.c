@@ -34,6 +34,7 @@
 #include "NetworkManagerDialup.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManager.h"
+#include "nm-ap-security.h"
 
 
 /*
@@ -183,18 +184,64 @@ out:
  */
 static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
+#define INVALID_ARGS_ERROR	"InvalidArguments"
+#define INVALID_ARGS_MESSAGE	"NetworkManager::setActiveDevice called with invalid arguments."
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
-	char *			dev_path = NULL;
+	char *			dev_path;
+	char *			unescaped_dev_path = NULL;
 	char *			essid = NULL;
 	char *			key = NULL;
 	int				key_type = -1;
 	NMAccessPoint *	ap = NULL;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
+
+	dbus_message_iter_init (message, &iter);
+
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_OBJECT_PATH)
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+							"NetworkManager::setActiveDevice called with invalid arguments.");
+		goto out;
+	}
+
+	dbus_message_iter_get_basic (&iter, &dev_path);
+	unescaped_dev_path = nm_dbus_unescape_object_path (dev_path);
+	dev = nm_dbus_get_device_from_object_path (data->data, unescaped_dev_path);
+	g_free (unescaped_dev_path);
+
+	/* Ensure the device exists in our list and is supported */
+	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
+						"The requested network device does not exist.");
+		goto out;
+	}
+
+	if (nm_device_is_802_11_wireless (dev))
+	{
+		NMAPSecurity * security = NULL;
+
+		if (dbus_message_iter_next (&iter))
+		{
+			dbus_message_iter_get_basic (&iter, &essid);
+
+			if (dbus_message_iter_next (&iter))
+			{
+				security = nm_ap_security_new_from_dbus_message (&iter);
+			}
+		}
+	}
+	else if (nm_device_is_802_3_ethernet (dev))
+	{
+	}
+// DEBUG
+return reply;
 
 	/* Try to grab both device _and_ network first, and if that fails then just the device. */
 	if (!dbus_message_get_args (message, NULL,	DBUS_TYPE_OBJECT_PATH, &dev_path,
@@ -205,28 +252,15 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		/* So if that failed, try getting just the device */
 		if (!dbus_message_get_args (message, NULL, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID))
 		{
-			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManager::setActiveDevice called with invalid arguments.");
+			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 			goto out;
 		} else nm_info ("FORCE: device '%s'", dev_path);
 	} else nm_info ("FORCE: device '%s', network '%s'", dev_path, essid);
 
-	/* So by now we have a valid device and possibly a network as well */
-	dev_path = nm_dbus_unescape_object_path (dev_path);
-	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
-	g_free (dev_path);
-	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
-						"The requested network device does not exist.");
-		goto out;
-	}
-
 	/* Make sure network is valid and device is wireless */
 	if (nm_device_is_802_11_wireless (dev) && !essid)
 	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManager::setActiveDevice called with invalid arguments.");
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 		goto out;
 	}
 
