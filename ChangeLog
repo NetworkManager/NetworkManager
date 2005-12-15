@@ -1,3 +1,12 @@
+2005-12-15  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig  <thoenig@suse.de>:
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_signal_filter) return DBUS_HANDLER_RESULT_HANDLED
+			if HAL jumps off the system bus.  Otherwise libdbus
+			(dbus_connection_dispatch) will try to run the filter
+			function of our libhal context which is already freed.
+
 2005-12-15  Alexander Shopov  <ash@contact.bg>
 
 	* configure.in: Added "bg" (Bulgarian) to ALL_LINGUAS

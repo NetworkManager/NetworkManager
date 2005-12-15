@@ -1074,9 +1074,15 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 			else if (strcmp (service, "org.freedesktop.Hal") == 0)
 			{
 				if (!old_owner_good && new_owner_good) /* Hal just appeared */
+				{
 					nm_hal_init (data);
+					handled = TRUE;
+				}
 				else if (old_owner_good && !new_owner_good)	/* Hal went away */
+				{
 					nm_hal_deinit (data);
+					handled = TRUE;
+				}
 			}
 			else if (nm_dhcp_manager_process_name_owner_changed (data->dhcp_manager, service, old_owner, new_owner) == TRUE)
 				handled = TRUE;
