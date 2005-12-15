@@ -1,3 +1,8 @@
+2005-12-15  Robert Love  <rml@novell.com>
+
+	* src/gnome/applet.c: Don't show the 'Help' menu item until we have,
+	  well, help to give.  Couple other misc. bits.
+
 2005-12-15  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/dbus-helpers.[ch]

@@ -109,13 +109,9 @@ NetworkDevice * nmwa_get_first_active_device (GSList *dev_list)
 {
 	GSList *	elt;
 
-	if (!dev_list)
-		return NULL;
-
 	for (elt = dev_list; elt; elt = g_slist_next (elt))
 	{
 		NetworkDevice *dev = (NetworkDevice *)(elt->data);
-
 		if (network_device_get_active (dev))
 			return dev;
 	}
@@ -178,7 +174,7 @@ static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 {
 	GtkWidget *error_dialog;
 	char *msg;
-	
+
 	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
 	                       _("Error displaying connection information: "), err);
 	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
@@ -857,14 +853,9 @@ static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPi
 	if (!vpn)
 		vpn = nmwa_get_first_activating_vpn_connection (applet);
 
-	if (vpn)
-	{
-		if (!vpn_icon)
-			goto out;
-
+	if (vpn && vpn_icon)
 		gdk_pixbuf_composite (vpn_icon, composite, 0, 0, gdk_pixbuf_get_width (vpn_icon),
 							gdk_pixbuf_get_height (vpn_icon), 0, 0, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
-	}
 
 out:
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
@@ -998,6 +989,7 @@ static GdkPixbuf * nmwa_act_stage_to_pixbuf (NMWirelessApplet *applet, NetworkDe
 
 	return pixbuf;
 }
+
 
 /*
  * animation_timeout
@@ -1751,7 +1743,7 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 
 /** Returns TRUE if, and only if, we have VPN support installed
  *
- *  Algorithm: just check whether any .name files exist in
+ *  Algorithm: just check whether any files exist in the directory
  *  /etc/NetworkManager/VPN
  */
 static gboolean is_vpn_available (void)
@@ -2099,13 +2091,15 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	/* Separator */
 	nmwa_menu_add_separator_item (menu);
 
+#if 0	/* FIXME: Implement the help callback, nmwa_help_cb()! */
 	/* Help item */
 	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_Help"));
-/*	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_help_cb), applet); */
+	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nmwa_help_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_HELP, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 	gtk_widget_set_sensitive (GTK_WIDGET (menu_item), FALSE);
+#endif
 
 	/* About item */
 	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_About"));
