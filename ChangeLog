@@ -1,5 +1,15 @@
 2005-12-15  Robert Love  <rml@novell.com>
 
+	* gnome/applet/menu-items.c: A new icon, "network-wireless-encrypted"
+	  is being added to the icon naming spec, so let's use that (Tango CVS
+	  has the icon).  Because it is new, however, we fall back to the
+	  current "gnome-lockscreen" if the new icon is not around, thus
+	  behavior is the same.
+	* gnome/applet/applet.c: Remove setup_stock().  We do not need the
+	  factory junk.
+
+2005-12-15  Robert Love  <rml@novell.com>
+
 	* src/gnome/applet.c: Don't show the 'Help' menu item until we have,
 	  well, help to give.  Couple other misc. bits.
 

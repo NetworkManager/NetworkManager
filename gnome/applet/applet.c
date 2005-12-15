@@ -69,7 +69,6 @@
 #endif
 
 static GObject *	nmwa_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
-static void		setup_stock (void);
 static gboolean	nmwa_icons_init (NMWirelessApplet *applet);
 static void		nmwa_icons_free (NMWirelessApplet *applet);
 static void		nmwa_about_cb (NMWirelessApplet *applet);
@@ -126,7 +125,6 @@ static void nmwa_init (NMWirelessApplet *applet)
 	applet->animation_step = 0;
 	glade_gnome_init ();
 
-	setup_stock ();
 	if (!nmwa_icons_init (applet))
 		return;
 
@@ -2393,28 +2391,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	return GTK_WIDGET (applet);
 }
 
-static void setup_stock (void)
-{
-	GtkIconFactory *ifactory;
-	GtkIconSet *iset;
-	GtkIconSource *isource;
-	static gboolean initted = FALSE;
-
-	if (initted)
-		return;
-
-	ifactory = gtk_icon_factory_new ();
-	iset = gtk_icon_set_new ();
-	isource = gtk_icon_source_new ();
-
-	/* we use the lockscreen icon to get a key */
-	gtk_icon_source_set_icon_name (isource, "gnome-lockscreen");
-	gtk_icon_set_add_source (iset, isource);
-	gtk_icon_factory_add (ifactory, "gnome-lockscreen", iset);
-	gtk_icon_factory_add_default (ifactory);
-
-	initted = TRUE;
-}
 
 static void nmwa_icons_free (NMWirelessApplet *applet)
 {
