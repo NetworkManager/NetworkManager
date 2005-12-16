@@ -53,6 +53,6 @@ struct _NMAPSecurityWEPClass
 
 GType nm_ap_security_wep_get_type (void);
 
-NMAPSecurityWEP * nm_ap_security_wep_new_from_dbus_message (DBusMessageIter *iter, int we_cipher);
+NMAPSecurityWEP * nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher);
 
 #endif	/* NM_AP_SECURITY_WEP_H */

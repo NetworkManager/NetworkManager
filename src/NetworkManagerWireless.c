@@ -22,107 +22,12 @@
 #include <stdio.h>
 #include <iwlib.h>
 #include "config.h"
-#ifdef HAVE_GCRYPT
-#include <gcrypt.h>
-#else
-#include "gnome-keyring-md5.h"
-#endif
 #include "NetworkManager.h"
 #include "NetworkManagerDevice.h"
 #include "NetworkManagerWireless.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "utils/nm-utils.h"
-
-/*
- * nm_wireless_64bit_ascii_to_hex
- *
- * Convert an ASCII string into a suitable WEP key.
- *
- */
-char *nm_wireless_64bit_ascii_to_hex (const char *ascii)
-{
-	static char	 hex_digits[] = "0123456789abcdef";
-	char			*res;
-	int			 i;
-
-	res = g_malloc (33);
-	for (i = 0; i < 16; i++)
-	{
-		res[2*i] = hex_digits[(ascii[i] >> 4) & 0xf];
-		res[2*i+1] = hex_digits[ascii[i] & 0xf];
-	}
-
-	/* We chomp it at byte 10, since WEP keys only use 40 bits */
-	res[10] = 0;
-	return (res);
-}
-
-
-/*
- * nm_wireless_128bit_ascii_to_hex
- *
- * Convert an ascii string into a suitable string for use
- * as a WEP key.
- *
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- *
- */
-char *nm_wireless_128bit_ascii_to_hex (const char *ascii)
-{
-	static char	 hex_digits[] = "0123456789abcdef";
-	char			*res;
-	int			 i;
-
-	res = g_malloc (33);
-	for (i = 0; i < 16; i++)
-	{
-		res[2*i] = hex_digits[(ascii[i] >> 4) & 0xf];
-		res[2*i+1] = hex_digits[ascii[i] & 0xf];
-	}
-	/* We chomp it at byte 26, since WEP keys only use 104 bits */
-	res[26] = 0;
-
-	return (res);
-}
-
-
-/*
- * nm_wireless_128bit_key_from_passphrase
- *
- * From a passphrase, generate a standard 128-bit WEP key using
- * MD5 algorithm.
- *
- */
-char *nm_wireless_128bit_key_from_passphrase	(const char *passphrase)
-{
-	char		 	md5_data[65];
-	char			digest[16];
-	int			passphrase_len;
-	int			i;
-
-	g_return_val_if_fail (passphrase != NULL, NULL);
-
-	passphrase_len = strlen (passphrase);
-	if (passphrase_len < 1)
-		return (NULL);
-
-	/* Get at least 64 bits */
-	for (i = 0; i < 64; i++)
-		md5_data [i] = passphrase [i % passphrase_len];
-
-	/* Null terminate md5 data-to-hash and hash it */
-	md5_data[64] = 0;
-#ifdef HAVE_GCRYPT
-	gcry_md_hash_buffer (GCRY_MD_MD5, digest, md5_data, 64);
-#else
-	gnome_keyring_md5_string (md5_data, digest);
-#endif
-
-	return (nm_wireless_128bit_ascii_to_hex (digest));
-}
-
 
 /*
  * nm_wireless_stats_to_percent

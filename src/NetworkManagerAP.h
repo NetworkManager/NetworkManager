@@ -26,6 +26,7 @@
 #include <time.h>
 #include "NetworkManager.h"
 #include "wpa.h"
+#include "nm-ap-security.h"
 
 typedef struct NMAccessPoint NMAccessPoint;
 
@@ -42,9 +43,6 @@ void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 char *			nm_ap_get_essid		(const NMAccessPoint *ap);
 void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
-const char *		nm_ap_get_enc_key_source	(const NMAccessPoint *ap);
-char *			nm_ap_get_enc_key_hashed	(const NMAccessPoint *ap);
-void				nm_ap_set_enc_key_source	(NMAccessPoint *ap, const char *key, NMEncKeyType type);
 NMEncKeyType		nm_ap_get_enc_type		(const NMAccessPoint *ap);
 
 int				nm_ap_get_auth_method	(const NMAccessPoint *ap);
@@ -52,6 +50,9 @@ void				nm_ap_set_auth_method	(NMAccessPoint *ap, int auth_method);
 
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean privacy);
+
+NMAPSecurity *		nm_ap_get_security		(const NMAccessPoint *ap);
+void				nm_ap_set_security		(NMAccessPoint *ap, NMAPSecurity *security);
 
 const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
@@ -88,10 +89,6 @@ void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
-
-/* Helper */
-gboolean			nm_ap_is_enc_key_valid	(NMAccessPoint *ap);
-gboolean			nm_is_enc_key_valid		(const char *key, NMEncKeyType key_type);
 
 void				nm_ap_set_capabilities_from_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
 

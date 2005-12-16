@@ -1,3 +1,10 @@
+2005-12-15  Dan Williams  <dcbw@redhat.com>
+
+	* Exorcise encryption key hashing on APs
+	* Use libnm-util's serialization/deserialization in both the
+		applet and NM
+	* Random other stuff
+
 2005-12-15  Robert Love  <rml@novell.com>
 
 	* gnome/applet/menu-items.c: A new icon, "network-wireless-encrypted"

@@ -94,7 +94,7 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	if (!wso_validate_helper (opt, ssid, input, &cipher) || !cipher)
 		return FALSE;
 
-	nmu_dbus_message_append_wpa_psk_args (message, cipher, ssid, input,
+	nmu_security_serialize_wpa_psk_with_cipher (message, cipher, ssid, input,
 			IW_AUTH_WPA_VERSION_WPA, IW_AUTH_KEY_MGMT_PSK);
 
 	return TRUE;

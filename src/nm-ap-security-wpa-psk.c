@@ -20,12 +20,15 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <iwlib.h>
 
 #include "nm-ap-security.h"
 #include "nm-ap-security-wpa-psk.h"
 #include "nm-ap-security-private.h"
+#include "dbus-helpers.h"
+#include "NetworkManagerDevice.h"
 
 #define NM_AP_SECURITY_WPA_PSK_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WPA_PSK, NMAPSecurityWPA_PSKPrivate))
 
@@ -38,7 +41,7 @@ struct _NMAPSecurityWPA_PSKPrivate
 };
 
 NMAPSecurityWPA_PSK *
-nm_ap_security_wpa_psk_new_from_dbus_message (DBusMessageIter *iter, int we_cipher)
+nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
 {
 	NMAPSecurityWPA_PSK *	security = NULL;
 	char *				key;
@@ -49,33 +52,7 @@ nm_ap_security_wpa_psk_new_from_dbus_message (DBusMessageIter *iter, int we_ciph
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
-	/* Next arg: key (DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE) */
-	if ((dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_ARRAY)
-			|| (dbus_message_iter_get_element_type (iter) != DBUS_TYPE_BYTE))
-		goto out;
-
-	dbus_message_iter_get_fixed_array (iter, &key, &key_len);
-	if (key_len <= 0)
-		goto out;
-
-	/* Next arg: WPA version (DBUS_TYPE_INT32) */
-	if (!dbus_message_iter_next (iter))
-		goto out;
-	if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INT32)
-		goto out;
-
-	dbus_message_iter_get_basic (iter, &wpa_version);
-	if ((wpa_version != IW_AUTH_WPA_VERSION_WPA) && (wpa_version != IW_AUTH_WPA_VERSION_WPA2))
-		goto out;
-
-	/* Next arg: WPA key management (DBUS_TYPE_INT32) */
-	if (!dbus_message_iter_next (iter))
-		goto out;
-	if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INT32)
-		goto out;
-
-	dbus_message_iter_get_basic (iter, &key_mgt);
-	if ((key_mgt != IW_AUTH_KEY_MGMT_PSK) && (key_mgt != IW_AUTH_KEY_MGMT_802_1X))
+	if (!nmu_security_deserialize_wpa_psk (iter, &key, &key_len, &wpa_version, &key_mgt))
 		goto out;
 
 	/* Success, build up our security object */
@@ -85,14 +62,39 @@ nm_ap_security_wpa_psk_new_from_dbus_message (DBusMessageIter *iter, int we_ciph
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgt = key_mgt;
 
+	if (we_cipher == IW_AUTH_CIPHER_TKIP)
+		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA TKIP"));
+	else
+		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA CCMP"));
+
 out:
 	return security;
+}
+
+static int 
+real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
+{
+	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
+
+	if (!nmu_security_serialize_wpa_psk (iter,
+			nm_ap_security_get_key (instance),
+			self->priv->wpa_version,
+			self->priv->key_mgt))
+		return -1;
+	return 0;
 }
 
 static void 
 real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
 {
 	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
+}
+
+static int 
+real_device_setup (NMAPSecurity *self, NMDevice * dev)
+{
+	/* Stub; should be farmed out to wpa_supplicant eventually */
+	return 0;
 }
 
 static void
@@ -111,6 +113,7 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 	NMAPSecurityClass *par_class = NM_AP_SECURITY_CLASS (klass);
 
 	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWPA_PSKPrivate));
 }

@@ -28,5 +28,6 @@ void nm_ap_security_set_we_cipher (NMAPSecurity *self, int we_cipher);
 
 void nm_ap_security_set_key (NMAPSecurity *self, const char *key, int key_len);
 
+void nm_ap_security_set_description (NMAPSecurity *self, const char *desc);
 
 #endif	/* NM_AP_SECURITY_PRIVATE_H */

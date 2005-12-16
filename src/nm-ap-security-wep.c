@@ -20,12 +20,15 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <iwlib.h>
 
 #include "nm-ap-security.h"
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-private.h"
+#include "dbus-helpers.h"
+#include "NetworkManagerDevice.h"
 
 #define NM_AP_SECURITY_WEP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WEP, NMAPSecurityWEPPrivate))
 
@@ -37,10 +40,10 @@ struct _NMAPSecurityWEPPrivate
 };
 
 NMAPSecurityWEP *
-nm_ap_security_wep_new_from_dbus_message (DBusMessageIter *iter, int we_cipher)
+nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher)
 {
 	NMAPSecurityWEP *	security = NULL;
-	char *			key;
+	char *			key = NULL;
 	int				key_len;
 	int				auth_algorithm;
 	DBusMessageIter	subiter;
@@ -48,24 +51,7 @@ nm_ap_security_wep_new_from_dbus_message (DBusMessageIter *iter, int we_cipher)
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_WEP40) || (we_cipher == IW_AUTH_CIPHER_WEP104), NULL);
 
-	/* Next arg: key (DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE) */
-	if ((dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_ARRAY)
-			|| (dbus_message_iter_get_element_type (iter) != DBUS_TYPE_BYTE))
-		goto out;
-
-	dbus_message_iter_recurse (iter, &subiter);
-	dbus_message_iter_get_fixed_array (&subiter, &key, &key_len);
-	if (key_len <= 0)
-		goto out;
-
-	/* Next arg: authentication algorithm (DBUS_TYPE_INT32) */
-	if (!dbus_message_iter_next (iter))
-		goto out;
-	if (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_INT32)
-		goto out;
-
-	dbus_message_iter_get_basic (iter, &auth_algorithm);
-	if ((auth_algorithm != IW_AUTH_ALG_OPEN_SYSTEM) && (auth_algorithm != IW_AUTH_ALG_SHARED_KEY))
+	if (!nmu_security_deserialize_wep (iter, &key, &key_len, &auth_algorithm))
 		goto out;
 
 	/* Success, build up our security object */
@@ -74,14 +60,41 @@ nm_ap_security_wep_new_from_dbus_message (DBusMessageIter *iter, int we_cipher)
 	nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len);
 	security->priv->auth_algorithm = auth_algorithm;
 
+	if (we_cipher == IW_AUTH_CIPHER_WEP40)
+		nm_ap_security_set_description (NM_AP_SECURITY (security), _("40-bit WEP"));
+	else
+		nm_ap_security_set_description (NM_AP_SECURITY (security), _("104-bit WEP"));
+
 out:
 	return security;
+}
+
+static int 
+real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
+{
+	NMAPSecurityWEP *	self = NM_AP_SECURITY_WEP (instance);
+
+	if (!nmu_security_serialize_wep (iter,
+			nm_ap_security_get_key (instance),
+			self->priv->auth_algorithm))
+		return -1;
+	return 0;
 }
 
 static void 
 real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
 {
 	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
+}
+
+static int 
+real_device_setup (NMAPSecurity *instance, NMDevice * dev)
+{
+	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
+
+	nm_device_set_enc_key (dev, nm_ap_security_get_key (instance),
+			self->priv->auth_algorithm);
+	return 0;
 }
 
 static void
@@ -98,7 +111,9 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMAPSecurityClass *par_class = NM_AP_SECURITY_CLASS (klass);
 
+	par_class->serialize_func = real_serialize;
 	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));
 }

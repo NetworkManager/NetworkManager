@@ -5,7 +5,8 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
-           -I${top_srcdir}/utils
+           -I${top_srcdir}/utils			\
+           -I${top_srcdir}/libnm-util
 
 bin_PROGRAMS = NetworkManager
 
@@ -70,14 +71,7 @@ NetworkManager_CPPFLAGS = 			\
 	-DDATADIR=\"$(datadir)\"			\
 	-DSYSCONFDIR=\"$(sysconfdir)\"	\
 	-DARP_DEBUG
-if WITH_GCRYPT
-NetworkManager_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
-endif
 
-
-if !WITH_GCRYPT
-NetworkManager_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
-endif
 
 NetworkManager_LDADD = 							\
 			$(DBUS_LIBS)						\
@@ -89,11 +83,8 @@ NetworkManager_LDADD = 							\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\
-			./backends/libnmbackend.la
-
-if WITH_GCRYPT
-NetworkManager_LDADD += $(LIBGCRYPT_LIBS)
-endif
+			./backends/libnmbackend.la			\
+			$(top_builddir)/libnm-util/libnm-util.la
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

@@ -528,17 +528,7 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 			if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
 			{
 				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
-				nm_ap_set_enc_key_source (dest_ap, nm_ap_get_enc_key_source (src_ap), nm_ap_get_enc_type (src_ap));
-				if (nm_ap_get_auth_method (src_ap) != -1)
-				{
-					/* Ensure that we don't set the NONE auth method from the src_ap
-					 * if the dest_ap has encryption enabled.
-					 */
-					if (nm_ap_get_encrypted (dest_ap)  && (nm_ap_get_auth_method (src_ap) != 0))
-						nm_ap_set_auth_method (dest_ap, nm_ap_get_auth_method (src_ap));
-					else if (!nm_ap_get_encrypted (dest_ap))
-						nm_ap_set_auth_method (dest_ap, 0);
-				}
+				nm_ap_set_security (dest_ap, nm_ap_get_security (src_ap));
 				nm_ap_set_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
 			}
 		}
@@ -789,10 +779,11 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	nm_warning ("AP_LIST_PRINT: printing members of '%s'", name);
 	while ((ap = nm_ap_list_iter_next (iter)))
 	{
-		const GTimeVal *timestamp = nm_ap_get_timestamp (ap);
-		const GTimeVal *seen = nm_ap_get_last_seen (ap);
+		const GTimeVal *	timestamp = nm_ap_get_timestamp (ap);
+		const GTimeVal *	seen = nm_ap_get_last_seen (ap);
+		NMAPSecurity * 	security = nm_ap_get_security (ap);
 		nm_warning ("\t%d)\tobj=%p, essid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, %s=%f, rate=%d, inval=%d, mode=%d, seen=%ld",
-				i, ap, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_get_enc_key_source (ap), nm_ap_get_encrypted (ap),
+				i, ap, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_security_get_key (security), nm_ap_get_encrypted (ap),
 				nm_ap_get_address (ap), nm_ap_get_strength (ap), (nm_ap_get_freq (ap) < 20) ? "channel" : "freq", nm_ap_get_freq (ap), nm_ap_get_rate (ap),
 				nm_ap_get_invalid (ap), nm_ap_get_mode (ap), seen->tv_sec);
 		i++;

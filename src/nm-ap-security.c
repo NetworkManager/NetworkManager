@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <iwlib.h>
 
@@ -27,6 +28,7 @@
 #include "nm-ap-security-private.h"
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-wpa-psk.h"
+#include "NetworkManagerDevice.h"
 
 #define NM_AP_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY, NMAPSecurityPrivate))
 
@@ -34,6 +36,7 @@ struct _NMAPSecurityPrivate
 {
 	int		we_cipher;
 	char *	key;
+	char *	description;
 
 	gboolean	dispose_has_run;
 };
@@ -47,12 +50,13 @@ nm_ap_security_new (int we_cipher)
 
 	security = g_object_new (NM_TYPE_AP_SECURITY, NULL);
 	security->priv->we_cipher = we_cipher;
+	security->priv->key = NULL;
 	return security;
 }
 
 
 NMAPSecurity *
-nm_ap_security_new_from_dbus_message (DBusMessageIter *iter)
+nm_ap_security_new_deserialize (DBusMessageIter *iter)
 {
 	NMAPSecurity * security = NULL;
 	int we_cipher;
@@ -76,12 +80,12 @@ nm_ap_security_new_from_dbus_message (DBusMessageIter *iter)
 		{
 			case IW_AUTH_CIPHER_WEP40:
 			case IW_AUTH_CIPHER_WEP104:
-				security = NM_AP_SECURITY (nm_ap_security_wep_new_from_dbus_message (iter, we_cipher));
+				security = NM_AP_SECURITY (nm_ap_security_wep_new_deserialize (iter, we_cipher));
 				break;
 
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
-				security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_dbus_message (iter, we_cipher));
+				security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_deserialize (iter, we_cipher));
 				break;
 
 			default:
@@ -93,7 +97,8 @@ out:
 	return security;
 }
 
-void nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
+void
+nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (fd >= 0);
@@ -133,32 +138,89 @@ nm_ap_security_set_key (NMAPSecurity *self, const char *key, int key_len)
 	memcpy (self->priv->key, key, key_len);
 }
 
+static int 
+real_serialize (NMAPSecurity *self, DBusMessageIter *iter)
+{
+	/* Nothing to do */
+	return 0;
+}
+
 static void 
 real_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
 {
 }
 
-int nm_ap_security_get_we_cipher (NMAPSecurity *self)
+static int 
+real_device_setup (NMAPSecurity *self, NMDevice * dev)
 {
-	NMAPSecurityPrivate *priv;
+	/* unencrypted */
+	nm_device_set_enc_key (dev, NULL, 0);
+	return 0;
+}
 
+int
+nm_ap_security_get_we_cipher (NMAPSecurity *self)
+{
 	g_return_val_if_fail (self != NULL, -1);
 
-	priv = NM_AP_SECURITY_GET_PRIVATE (self);
-
-	return priv->we_cipher;
+	return self->priv->we_cipher;
 }
 
-const char * nm_ap_security_get_key (NMAPSecurity *self)
+const char *
+nm_ap_security_get_key (NMAPSecurity *self)
 {
-	NMAPSecurityPrivate *priv;
-
 	g_return_val_if_fail (self != NULL, NULL);
 
-	priv = NM_AP_SECURITY_GET_PRIVATE (self);
-
-	return priv->key;
+	return self->priv->key;
 }
+
+const char *
+nm_ap_security_get_description (NMAPSecurity *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return self->priv->description;
+}
+
+void
+nm_ap_security_set_description (NMAPSecurity *self, const char *desc)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (desc != NULL);
+
+	self->priv->description = (char *) desc;
+}
+
+int
+nm_ap_security_device_setup (NMAPSecurity *self, NMDevice *dev)
+{
+	g_return_val_if_fail (self != NULL, -1);
+	g_return_val_if_fail (dev != NULL, -1);
+
+	if (self->priv->dispose_has_run)
+		return -1;
+
+	return NM_AP_SECURITY_GET_CLASS (self)->device_setup_func (self, dev);
+}
+
+int
+nm_ap_security_serialize (NMAPSecurity *self, DBusMessageIter *iter)
+{
+	dbus_int32_t	dbus_we_cipher;
+
+	g_return_val_if_fail (self != NULL, -1);
+	g_return_val_if_fail (iter != NULL, -1);
+
+	if (self->priv->dispose_has_run)
+		return -1;
+
+	/* First arg: WE cipher (INT32) */
+	dbus_we_cipher = (dbus_int32_t) self->priv->we_cipher;
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &dbus_we_cipher);
+
+	return NM_AP_SECURITY_GET_CLASS (self)->serialize_func (self, iter);
+}
+
 
 static void
 nm_ap_security_init (NMAPSecurity * self)
@@ -167,6 +229,7 @@ nm_ap_security_init (NMAPSecurity * self)
 	self->priv->dispose_has_run = FALSE;
 	self->priv->we_cipher = IW_AUTH_CIPHER_NONE;
 	self->priv->key = NULL;
+	self->priv->description = _("none");
 }
 
 static void
@@ -213,7 +276,9 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 	object_class->dispose = nm_ap_security_dispose;
 	object_class->finalize = nm_ap_security_finalize;
 
+	klass->serialize_func = real_serialize;
 	klass->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	klass->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityPrivate));
 }

@@ -605,45 +605,48 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection, NMActR
  * Tell NetworkManagerInfo the updated info of the AP
  *
  */
-gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested)
+gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, const gboolean automatic)
 {
-	DBusMessage *	message;
-	gboolean		success = FALSE;
-	dbus_int32_t	auth_method;
-	const char *	essid;
-	const char *	enc_key_source;
-	dbus_int32_t	enc_key_type;
+	DBusMessage *		message;
+	gboolean			success = FALSE;
+	const char *		essid;
+	NMAPSecurity *		security;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
 
-	auth_method = nm_ap_get_auth_method (ap);
-	if (auth_method == -1)
-		return FALSE;
-
 	essid = nm_ap_get_essid (ap);
-	if (!(enc_key_source = nm_ap_get_enc_key_source (ap)))
-		enc_key_source = "";
-	enc_key_type = nm_ap_get_enc_type (ap);
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkInfo")))
 	{
 		nm_warning ("nm_dbus_update_network_info(): Couldn't allocate the dbus message");
-		return FALSE;
+		goto out;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &essid,
-								DBUS_TYPE_STRING, &enc_key_source,
-								DBUS_TYPE_INT32, &enc_key_type,
-								DBUS_TYPE_INT32, &auth_method,
-								DBUS_TYPE_BOOLEAN, &user_requested,
-								DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nm_dbus_update_network_info(): failed to send dbus message.");
-	else
-		success = TRUE;
+	dbus_message_iter_init_append (message, &iter);
 
+	/* First argument: ESSID (STRING) */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
+
+	/* Second argument: Automatic (BOOLEAN) */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &automatic);
+
+	/* Serialize the AP's security info into the message */
+	security = nm_ap_get_security (ap);
+	g_assert (security);
+	if (nm_ap_security_serialize (security, &iter) != 0)
+		goto unref;
+
+	if (dbus_connection_send (connection, message, NULL))
+		success = TRUE;
+	else
+		nm_warning ("nm_dbus_update_network_info(): failed to send dbus message.");
+
+unref:
 	dbus_message_unref (message);
+
+out:
 	return success;
 }
 
@@ -741,15 +744,17 @@ static void free_get_networks_cb_data (GetNetworksCBData *data)
 static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data)
 {
 	GetOneNetworkCBData *	cb_data = (GetOneNetworkCBData *)user_data;
-	DBusMessage *			reply;
-	DBusError				error;
+	DBusMessage *			reply = NULL;
+	DBusMessageIter		iter;
+	DBusMessageIter		subiter;
 	const char *			essid = NULL;
 	gint					timestamp_secs = -1;
-	NMEncKeyType			key_type = -1;
 	gboolean				trusted = FALSE;
-	int					auth_method = -1;
-	char **				addresses;
-	int					num_addresses;
+	GSList *				addr_list = NULL;
+	NMAPSecurity *			security;
+	NMAccessPoint *		ap;
+	NMAccessPoint *		list_ap;
+	GTimeVal *			timestamp;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -759,79 +764,101 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 
 	dbus_pending_call_ref (pcall);
 
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
 	if (dbus_message_is_error (reply, "BadNetworkData"))
 	{
-		dbus_message_unref (reply);
 		nm_ap_list_remove_ap_by_essid (cb_data->list, cb_data->network);
 		goto out;
 	}
 
-	dbus_error_init (&error);
-	if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &essid,
-									  DBUS_TYPE_INT32, &timestamp_secs,
-									  DBUS_TYPE_INT32, &key_type,
-									  DBUS_TYPE_INT32, &auth_method,
-									  DBUS_TYPE_BOOLEAN, &trusted,
-									  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &addresses, &num_addresses,
-									  DBUS_TYPE_INVALID))
+	if (message_is_error (reply))
 	{
-		if (timestamp_secs > 0)
-		{
-			NMAccessPoint *	ap;
-			NMAccessPoint *	list_ap;
-			GTimeVal *		timestamp = g_new0 (GTimeVal, 1);
-			GSList *			addr_list = NULL;
-			int				i;
+		DBusError err;
 
-			ap = nm_ap_new ();
-			nm_ap_set_essid (ap, essid);
-
-			timestamp->tv_sec = timestamp_secs;
-			timestamp->tv_usec = 0;
-			nm_ap_set_timestamp (ap, timestamp);
-			g_free (timestamp);
-
-			nm_ap_set_trusted (ap, trusted);
-			nm_ap_set_auth_method (ap, auth_method);
-
-			/* We get the actual key when we try to connect, use NULL for now. */
-			nm_ap_set_enc_key_source (ap, NULL, key_type);
-
-			for (i = 0; i < num_addresses; i++)
-				if (strlen (addresses[i]) >= 11)
-					addr_list = g_slist_append (addr_list, g_strdup (addresses[i]));
-			nm_ap_set_user_addresses (ap, addr_list);
-
-			if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
-			{
-				nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
-				nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
-				nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
-				nm_ap_set_enc_key_source (list_ap, nm_ap_get_enc_key_source (ap), nm_ap_get_enc_type (ap));
-				nm_ap_set_auth_method (list_ap, nm_ap_get_auth_method (ap));
-				nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
-			}
-			else
-			{
-				/* New AP, just add it to the list */
-				nm_ap_list_append_ap (cb_data->list, ap);
-			}
-			nm_ap_unref (ap);
-
-			/* Ensure all devices get new information copied into their device lists */
-			nm_policy_schedule_device_ap_lists_update_from_allowed (cb_data->data);
-		}
-		dbus_free_string_array (addresses);
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("nm_dbus_get_network_data_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		dbus_error_free (&err);
+		goto out;
 	}
-	dbus_message_unref (reply);
+
+	dbus_message_iter_init (reply, &iter);
+
+	/* First arg: ESSID (STRING) */
+	if (!dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		goto out;
+	dbus_message_iter_get_basic (&iter, &essid);
+
+	/* Second arg: Timestamp (INT32) */
+	if (!dbus_message_iter_next (&iter)
+			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32))
+		goto out;
+	dbus_message_iter_get_basic (&iter, &timestamp_secs);
+	
+	/* Third arg: trusted (BOOLEAN) */
+	if (!dbus_message_iter_next (&iter)
+			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
+		goto out;
+	dbus_message_iter_get_basic (&iter, &trusted);
+
+	/* Fourth arg: BSSID addresses (ARRAY, STRING) */
+	if (!dbus_message_iter_next (&iter)
+			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)
+			|| (dbus_message_iter_get_element_type (&iter) != DBUS_TYPE_STRING))
+		goto out;
+	dbus_message_iter_recurse (&iter, &subiter);
+	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_STRING)
+	{
+		char *address;
+		dbus_message_iter_get_basic (&subiter, &address);
+		if (address && strlen (address) >= 11)
+			addr_list = g_slist_append (addr_list, address);
+		dbus_message_iter_next (&subiter);
+	}
+
+	/* Unserialize access point security info */
+	if (!(security = nm_ap_security_new_deserialize (&iter)))
+		goto out;
+
+	/* Construct the new access point */
+	ap = nm_ap_new ();
+	nm_ap_set_essid (ap, essid);
+	nm_ap_set_security (ap, security);
+
+	timestamp = g_malloc0 (sizeof (GTimeVal));
+	timestamp->tv_sec = timestamp_secs;
+	timestamp->tv_usec = 0;
+	nm_ap_set_timestamp (ap, timestamp);
+	g_free (timestamp);
+
+	nm_ap_set_trusted (ap, trusted);
+	nm_ap_set_user_addresses (ap, addr_list);
+
+	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
+	{
+		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
+		nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+		nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
+		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
+		nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
+	}
+	else
+	{
+		/* New AP, just add it to the list */
+		nm_ap_list_append_ap (cb_data->list, ap);
+	}
+	nm_ap_unref (ap);
+
+	/* Ensure all devices get new information copied into their device lists */
+	nm_policy_schedule_device_ap_lists_update_from_allowed (cb_data->data);
 
 out:
+	if (addr_list)
+		g_slist_free (addr_list);
+	if (reply)
+		dbus_message_unref (reply);
 	dbus_pending_call_unref (pcall);
 }
 

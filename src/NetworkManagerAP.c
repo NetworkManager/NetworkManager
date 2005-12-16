@@ -163,10 +163,14 @@ void nm_ap_unref (NMAccessPoint *ap)
 		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
 		g_slist_free (ap->user_addresses);
 
+		if (ap->security)
+			g_object_unref (G_OBJECT (ap->security));
+
 		ap->essid = NULL;
 		ap->enc_key = NULL;
 
 		g_free (ap);
+		memset (ap, 0, sizeof (NMAccessPoint));
 	}
 }
 
@@ -214,64 +218,6 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 
 	if (essid)
 		ap->essid = g_strdup (essid);
-}
-
-
-/*
- * Get/set functions for encryption key
- *
- */
-const char * nm_ap_get_enc_key_source (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, NULL);
-
-	return (ap->enc_key);
-}
-
-void nm_ap_set_enc_key_source (NMAccessPoint *ap, const char * key, NMEncKeyType type)
-{
-	g_return_if_fail (ap != NULL);
-
-	if (ap->enc_key)
-		g_free (ap->enc_key);
-
-	ap->enc_key = g_strdup (key);
-	ap->enc_type = type;
-}
-
-char *nm_ap_get_enc_key_hashed (const NMAccessPoint *ap)
-{
-	char	*		hashed = NULL;
-	const char *	source_key;
-
-	g_return_val_if_fail (ap != NULL, NULL);
-
-	source_key = nm_ap_get_enc_key_source (ap);
-	switch (ap->enc_type)
-	{
-		case (NM_ENC_TYPE_128_BIT_PASSPHRASE):
-			if (source_key)
-				hashed = nm_wireless_128bit_key_from_passphrase (source_key);
-			break;
-		case (NM_ENC_TYPE_ASCII_KEY):
-			if (source_key){
-				if(strlen(source_key)<=5)
-					hashed = nm_wireless_64bit_ascii_to_hex (source_key);
-				else
-					hashed = nm_wireless_128bit_ascii_to_hex (source_key);
-			}
-			break;
-		case (NM_ENC_TYPE_HEX_KEY):
-		case (NM_ENC_TYPE_UNKNOWN):
-			if (source_key)
-				hashed = g_strdup (source_key);
-			break;
-
-		default:
-			break;
-	}
-
-	return (hashed);
 }
 
 
@@ -325,6 +271,35 @@ void nm_ap_set_auth_method (NMAccessPoint *ap, int auth_method)
 	g_return_if_fail (ap != NULL);
 
 	ap->auth_method = auth_method;
+}
+
+
+/*
+ * Accessorts for AP security info
+ *
+ */
+NMAPSecurity * nm_ap_get_security (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, NULL);
+
+	return ap->security;
+}
+
+void nm_ap_set_security (NMAccessPoint *ap, NMAPSecurity *security)
+{
+	g_return_if_fail (ap != NULL);
+
+	if (ap->security)
+	{
+		g_object_unref (G_OBJECT (ap->security));
+		ap->security = NULL;
+	}
+
+	if (security)
+	{
+		g_object_ref (G_OBJECT (security));
+		ap->security = security;
+	}
 }
 
 
@@ -591,11 +566,7 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 	g_return_if_fail (ap != NULL);
 
 	/* Free existing list */
-	for (elt = ap->user_addresses; elt; elt = g_slist_next (elt))
-	{
-		if (elt->data)
-			g_free (elt->data);
-	}
+	g_slist_foreach (ap->user_addresses, (GFunc) g_free, NULL);
 
 	/* Copy new list and set as our own */
 	for (elt = list; elt; elt = g_slist_next (elt))
@@ -607,33 +578,6 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 	ap->user_addresses = new;
 }
 
-
-gboolean nm_ap_is_enc_key_valid (NMAccessPoint *ap)
-{
-	const char		*key;
-	NMEncKeyType		 key_type;
-
-	g_return_val_if_fail (ap != NULL, FALSE);
-
-	key = nm_ap_get_enc_key_source (ap);
-	key_type = nm_ap_get_enc_type (ap);
-
-	if (nm_is_enc_key_valid (key, key_type))
-		return TRUE;
-
-	return FALSE;
-}
-
-gboolean nm_is_enc_key_valid (const char *key, NMEncKeyType key_type)
-{
-	if (    key
-		&& strlen (key)
-		&& (key_type != NM_ENC_TYPE_UNKNOWN)
-		&& (key_type != NM_ENC_TYPE_NONE))
-		return TRUE;
-
-	return FALSE;
-}
 
 gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 {

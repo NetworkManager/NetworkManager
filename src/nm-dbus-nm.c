@@ -184,8 +184,8 @@ out:
  */
 static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-#define INVALID_ARGS_ERROR	"InvalidArguments"
-#define INVALID_ARGS_MESSAGE	"NetworkManager::setActiveDevice called with invalid arguments."
+	const char * INVALID_ARGS_ERROR = "InvalidArguments";
+	const char * INVALID_ARGS_MESSAGE = "NetworkManager::setActiveDevice called with invalid arguments.";
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path;
@@ -224,7 +224,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		NMAPSecurity * 	security = NULL;
 		char *			essid = NULL;
 
-		if (!dbus_message_iter_next (&iter))
+		if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
 		{
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 			goto out;
@@ -232,19 +232,13 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		/* grab ssid and ensure validity */
 		dbus_message_iter_get_basic (&iter, &essid);
-		if (!essid || (strlen (essid) <= 0))
+		if (!essid || (strlen (essid) <= 0) || !dbus_message_iter_next (&iter))
 		{
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 			goto out;
 		}
 
-		if (!dbus_message_iter_next (&iter))
-		{
-			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
-			goto out;
-		}
-
-		if (!(security = nm_ap_security_new_from_dbus_message (&iter)))
+		if (!(security = nm_ap_security_new_deserialize (&iter)))
 		{
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
 			goto out;
@@ -252,6 +246,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		/* Set up the wireless-specific activation request properties */
 		ap = nm_device_wireless_get_activation_ap (dev, essid, security);
+ 		g_object_unref (G_OBJECT (security));
 
 		nm_info ("User Switch: %s / %s", dev_path, essid);
 	}
@@ -276,68 +271,76 @@ out:
  */
 static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
+	const char * INVALID_ARGS_ERROR = "InvalidArguments";
+	const char * INVALID_ARGS_MESSAGE = "NetworkManager::createWirelessNetwork called with invalid arguments.";
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path = NULL;
+	char *			unescaped_dev_path = NULL;
 	NMAccessPoint *	new_ap = NULL;
-	char *			network = NULL;
-	char *			key = NULL;
-	int				key_type = -1;
-	DBusError			error;
+	NMAPSecurity * 	security = NULL;
+	char *			essid = NULL;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->data != NULL, NULL);
 
-	/* Try to grab both device _and_ network first, and if that fails then just the device. */
-	dbus_error_init (&error);
-	if (!dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_path,
-										DBUS_TYPE_STRING, &network,
-										DBUS_TYPE_STRING, &key,
-										DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
-						"NetworkManager::createWirelessNetwork called with invalid arguments.");
-		return reply;
-	} else nm_info ("Creating network '%s' on device '%s'.", network, dev_path);
+	dbus_message_iter_init (message, &iter);
 
-	dev_path = nm_dbus_unescape_object_path (dev_path);
-	dev = nm_dbus_get_device_from_object_path (data->data, dev_path);
-	g_free (dev_path);
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_OBJECT_PATH)
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+		goto out;
+	}
+
+	dbus_message_iter_get_basic (&iter, &dev_path);
+	unescaped_dev_path = nm_dbus_unescape_object_path (dev_path);
+	dev = nm_dbus_get_device_from_object_path (data->data, unescaped_dev_path);
+	g_free (unescaped_dev_path);
+
+	/* Ensure the device exists in our list and is supported */
 	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
-		return reply;
-	}
-	nm_device_ref (dev);
-
-	/* Make sure network is valid and device is wireless */
-	if (!nm_device_is_802_11_wireless (dev) || !network)
-	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManager::createWirelessNetwork called with invalid arguments.");
 		goto out;
 	}
 
-	new_ap = nm_ap_new ();
-
-	/* Fill in the description of the network to create */
-	nm_ap_set_essid (new_ap, network);
-	if (nm_is_enc_key_valid (key, (NMEncKeyType)key_type))
+	if (    !nm_device_is_802_11_wireless (dev)
+		|| !dbus_message_iter_next (&iter)
+		|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
 	{
-		nm_ap_set_encrypted (new_ap, TRUE);
-		nm_ap_set_enc_key_source (new_ap, key, (NMEncKeyType)key_type);
-		nm_ap_set_auth_method (new_ap, IW_AUTH_ALG_OPEN_SYSTEM);
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+		goto out;
 	}
-	nm_ap_set_mode (new_ap, IW_MODE_ADHOC);
+
+	/* grab ssid and ensure validity */
+	dbus_message_iter_get_basic (&iter, &essid);
+	if (!essid || (strlen (essid) <= 0) || !dbus_message_iter_next (&iter))
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+		goto out;
+	}
+
+	if (!(security = nm_ap_security_new_deserialize (&iter)))
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+		goto out;
+	}
+
+	nm_info ("Creating network '%s' on device '%s'.", essid, dev_path);
+
+	new_ap = nm_ap_new ();
+	nm_ap_set_essid (new_ap, essid);
+	nm_ap_set_security (new_ap, security);
+	g_object_unref (G_OBJECT (security));
 	nm_ap_set_user_created (new_ap, TRUE);
 
 	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, new_ap, TRUE));
 
 out:
-	nm_device_unref (dev);
 	return reply;
 }
 

@@ -111,7 +111,7 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	auth_combo = glade_xml_get_widget (opt->uixml, opt->data->auth_combo_name);
 	auth_alg = wso_wep_auth_combo_get_auth_alg (opt, GTK_COMBO_BOX (auth_combo));
 
-	nmu_dbus_message_append_wep_args (message, cipher, ssid, input, auth_alg);
+	nmu_security_serialize_wep_with_cipher (message, cipher, ssid, input, auth_alg);
 	return TRUE;
 }
 

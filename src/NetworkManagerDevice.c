@@ -2125,37 +2125,6 @@ NMActRequest *nm_device_get_act_request (NMDevice *dev)
 
 
 /*
- * get_initial_auth_method
- *
- * Update the auth method of the AP from the last-known-good one saved in the allowed list
- * (which is found from NMI) and ensure that its valid with the encryption status of the AP.
- *
- */
-static int get_initial_auth_method (NMAccessPoint *ap, NMAccessPointList *allowed_list)
-{
-	g_return_val_if_fail (ap != NULL, IW_AUTH_ALG_OPEN_SYSTEM);
-
-	if (nm_ap_get_encrypted (ap))
-	{
-		int	 auth = nm_ap_get_auth_method (ap);
-		NMAccessPoint		*allowed_ap = nm_ap_list_get_ap_by_essid (allowed_list, nm_ap_get_essid (ap));
-		
-		/* Prefer default auth method if we found one for this AP in our allowed list. */
-		if (allowed_ap)
-			auth = nm_ap_get_auth_method (allowed_ap);
-
-		if (    (auth == IW_AUTH_ALG_OPEN_SYSTEM)
-			|| (auth == IW_AUTH_ALG_SHARED_KEY))
-			return (auth);
-		else
-			return (IW_AUTH_ALG_OPEN_SYSTEM);
-	}
-
-	return 0;
-}
-
-
-/*
  * nm_device_activate_stage1_device_prepare
  *
  * Prepare for device activation
@@ -2163,9 +2132,10 @@ static int get_initial_auth_method (NMAccessPoint *ap, NMAccessPointList *allowe
  */
 static gboolean nm_device_activate_stage1_device_prepare (NMActRequest *req)
 {
-	NMDevice *		dev;
-	NMData *			data;
-	NMAccessPoint *	ap;
+	NMDevice *	dev;
+	NMData *		data;
+	NMAccessPoint *ap;
+	NMAPSecurity *	security;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -2176,28 +2146,6 @@ static gboolean nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	g_assert (dev);
 
 	nm_info ("Activation (%s) Stage 1 (Device Prepare) started...", nm_device_get_iface (dev));
-
-	if (nm_device_is_802_11_wireless (dev))
-	{
-		ap = nm_act_request_get_ap (req);
-		g_assert (ap);
-
-		if (nm_ap_get_artificial (ap))
-		{
-			/* Some Cisco cards (340/350 PCMCIA) don't return non-broadcasting APs
-			 * in their scan results, so we can't know beforehand whether or not the
-			 * AP was encrypted.  We have to update their encryption status on the fly.
-			 */
-			if (nm_ap_get_encrypted (ap) || nm_ap_is_enc_key_valid (ap))
-			{
-				nm_ap_set_encrypted (ap, TRUE);
-				nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
-			}
-		}
-
-		/* Initial authentication method */
-		nm_ap_set_auth_method (ap, get_initial_auth_method (ap, data->allowed_ap_list));
-	}
 
 	if (nm_device_activation_should_cancel (dev))
 		nm_device_schedule_activation_handle_cancel (req);
@@ -2279,14 +2227,17 @@ static gboolean nm_device_is_up_and_associated_wait (NMDevice *dev, int timeout,
  */
 static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 {
-	int	 auth;
-	const char		*essid = NULL;
+	const char *	essid = NULL;
+	NMAPSecurity *	security;
+	int			we_cipher;
 
 	g_return_val_if_fail (dev  != NULL, FALSE);
 	g_return_val_if_fail (nm_device_is_802_11_wireless (dev), FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
-	g_return_val_if_fail (nm_ap_get_auth_method (ap) != -1, FALSE);
+
+	security = nm_ap_get_security (ap);
+	g_return_val_if_fail (security != NULL, FALSE);
 
 	dev->options.wireless.failed_link_count = 0;
 
@@ -2297,7 +2248,6 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	nm_device_set_mode (dev, IW_MODE_INFRA);
 
 	essid = nm_ap_get_essid (ap);
-	auth = nm_ap_get_auth_method (ap);
 
 	nm_device_set_mode (dev, nm_ap_get_mode (ap));
 	nm_device_set_bitrate (dev, 0);
@@ -2307,29 +2257,13 @@ static gboolean nm_device_set_wireless_config (NMDevice *dev, NMAccessPoint *ap)
 	else
 		nm_device_set_frequency (dev, 0);	/* auto */
 
-	if (nm_ap_get_encrypted (ap) && nm_ap_is_enc_key_valid (ap))
-	{
-		char *	hashed_key = nm_ap_get_enc_key_hashed (ap);
-
-		if (auth == 0)
-		{
-			nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
-			nm_warning ("Activation (%s/wireless): AP '%s' said it was encrypted, but had "
-					"'none' for authentication method.  Using Open System authentication method.",
-					nm_device_get_iface (dev), nm_ap_get_essid (ap));
-		}
-		nm_device_set_enc_key (dev, hashed_key, auth);
-		g_free (hashed_key);
-	}
-	else
-		nm_device_set_enc_key (dev, NULL, 0);
+	/* FIXME: set card's config using wpa_supplicant, not ourselves */
+	nm_ap_security_device_setup (security, dev);
 
 	nm_device_set_essid (dev, essid);
 
-	nm_info ("Activation (%s/wireless): using essid '%s', with %s authentication.",
-			nm_device_get_iface (dev), essid, (auth == 0) ? "no" :
-				((auth == IW_AUTH_ALG_OPEN_SYSTEM) ? "Open System" :
-				((auth == IW_AUTH_ALG_SHARED_KEY) ? "Shared Key" : "unknown")));
+	nm_info ("Activation (%s/wireless): using essid '%s', with '%s' security.",
+			nm_device_get_iface (dev), essid, nm_ap_security_get_description (security));
 
 	/* Bring the device up and pause to allow card to associate.  After we set the ESSID
 	 * on the card, the card has to scan all channels to find our requested AP (which can
@@ -2557,6 +2491,7 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 }
 
 
+#if 0
 static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 {
 	char		*essid;
@@ -2591,6 +2526,7 @@ static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 
 	return need_key;
 }
+#endif
 
 
 /*
@@ -2621,11 +2557,14 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 	nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) will connect to access point '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
+#if 0
+// FIXME
 	if (ap_need_key (dev, ap))
 	{
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
 		return;
 	}
+#endif
 
 	while (success == FALSE)
 	{
@@ -3461,16 +3400,7 @@ void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, con
 	}
 	else
 	{
-		NMAccessPoint * allowed_ap;
-
-		/* Start off at Open System auth mode with the new key */
-		nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
-		nm_ap_set_enc_key_source (ap, key, enc_type);
-
-		/* Be sure to update NMI with the new auth mode */
-		if ((allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
-			nm_ap_set_auth_method (allowed_ap, IW_AUTH_ALG_OPEN_SYSTEM);
-
+		/* nm_ap_set_security (ap, security) */
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
 }
@@ -3718,6 +3648,9 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 		{
 			const GTimeVal *curtime = nm_ap_get_timestamp (tmp_ap);
 
+			/* Only connect to a blacklisted AP if the user has connected
+			 * to this specific AP before.
+			 */
 			gboolean blacklisted = nm_ap_has_manufacturer_default_essid (scan_ap);
 			if (blacklisted)
 			{
@@ -3748,15 +3681,13 @@ NMAccessPoint * nm_device_get_best_ap (NMDevice *dev)
 			{
 				trusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				trusted_best_ap = scan_ap;
-				/* Merge access point data (mainly to get updated WEP key) */
-				nm_ap_set_enc_key_source (trusted_best_ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_type (tmp_ap));
+				nm_ap_set_security (trusted_best_ap, nm_ap_get_security (tmp_ap));
 			}
 			else if (!blacklisted && !nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > untrusted_latest_timestamp.tv_sec))
 			{
 				untrusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				untrusted_best_ap = scan_ap;
-				/* Merge access point data (mainly to get updated WEP key) */
-				nm_ap_set_enc_key_source (untrusted_best_ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_type (tmp_ap));
+				nm_ap_set_security (untrusted_best_ap, nm_ap_get_security (tmp_ap));
 			}
 		}
 	}
@@ -3786,15 +3717,9 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
 	g_return_val_if_fail (essid != NULL, NULL);
+	g_return_val_if_fail (security != NULL, NULL);
 
 	nm_debug ("Forcing AP '%s'", essid);
-
-#if 0
-	if (    key
-		&& strlen (key)
-		&& (key_type != NM_ENC_TYPE_UNKNOWN)
-		&& (key_type != NM_ENC_TYPE_NONE))
-		encrypted = TRUE;
 
 	/* Find the AP in our card's scan list first.
 	 * If its not there, create an entirely new AP.
@@ -3806,11 +3731,6 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 		 */
 		ap = nm_ap_new ();
 		nm_ap_set_essid (ap, essid);
-		nm_ap_set_encrypted (ap, encrypted);		
-		if (encrypted)
-			nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
-		else
-			nm_ap_set_auth_method (ap, 0);
 		nm_ap_set_artificial (ap, TRUE);
 		nm_ap_list_append_ap (nm_device_ap_list_get (dev), ap);
 		nm_ap_unref (ap);
@@ -3822,20 +3742,7 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 		 */
 		nm_ap_list_remove_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (ap));
 	}
-
-	/* Now that this AP has an essid, copy over encryption keys and whatnot */
-	if ((tmp_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (ap))))
-	{
-		nm_ap_set_enc_key_source (ap, nm_ap_get_enc_key_source (tmp_ap), nm_ap_get_enc_type (tmp_ap));
-		nm_ap_set_auth_method (ap, nm_ap_get_auth_method (tmp_ap));
-		nm_ap_set_invalid (ap, nm_ap_get_invalid (tmp_ap));
-		nm_ap_set_timestamp (ap, nm_ap_get_timestamp (tmp_ap));
-	}
-
-	/* Use the encryption key and type the user sent us if its valid */
-	if (encrypted)
-		nm_ap_set_enc_key_source (ap, key, key_type);
-#endif
+	nm_ap_set_security (ap, security);
 
 	return ap;
 }
@@ -3889,7 +3796,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 		if ((list_ap = nm_ap_list_get_ap_by_essid (dev->app_data->allowed_ap_list, nm_ap_get_essid (nm_ap))))
 		{
 			nm_ap_set_timestamp (nm_ap, nm_ap_get_timestamp (list_ap));
-			nm_ap_set_enc_key_source (nm_ap, nm_ap_get_enc_key_source (list_ap), nm_ap_get_enc_type (list_ap));
+			nm_ap_set_security (nm_ap, nm_ap_get_security (list_ap));
 		}
 
 		/* Add the AP to the device's AP list */
