@@ -1459,15 +1459,13 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
 
 
 /*
- * nm_device_set_enc_key
+ * nm_device_set_wep_enc_key
  *
  * If a device is wireless, set the encryption key that it should use.
  *
  * key:	encryption key to use, or NULL or "" to disable encryption.
- *		NOTE that at this time, the key must be the raw HEX key, not
- *		a passphrase.
  */
-void nm_device_set_enc_key (NMDevice *dev, const char *key, int auth_method)
+void nm_device_set_wep_enc_key (NMDevice *dev, const char *key, int auth_method)
 {
 	NMSock *		sk;
 	struct iwreq	wreq;
@@ -1542,12 +1540,12 @@ void nm_device_set_enc_key (NMDevice *dev, const char *key, int auth_method)
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWENCODE, &wreq) == -1)
 			{
 				if (errno != ENODEV)
-					nm_warning ("nm_device_set_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
+					nm_warning ("nm_device_set_wep_enc_key(): error setting key for device %s.  errno = %d", nm_device_get_iface (dev), errno);
 			}
 		}
 
 		nm_dev_sock_close (sk);
-	} else nm_warning ("nm_device_set_enc_key(): could not get wireless control socket.");
+	} else nm_warning ("nm_device_set_wep_enc_key(): could not get wireless control socket.");
 }
 
 
@@ -2868,7 +2866,7 @@ static gboolean nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		if (nm_device_is_802_11_wireless (dev))
 		{
 			nm_device_set_essid (dev, "");
-			nm_device_set_enc_key (dev, NULL, 0);
+			nm_device_set_wep_enc_key (dev, NULL, 0);
 		}
 
 		if (!nm_device_is_up (dev))
@@ -3321,7 +3319,7 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	if (nm_device_is_802_11_wireless (dev))
 	{
 		nm_device_set_essid (dev, "");
-		nm_device_set_enc_key (dev, NULL, 0);
+		nm_device_set_wep_enc_key (dev, NULL, 0);
 		nm_device_set_mode (dev, IW_MODE_INFRA);
 		nm_wireless_set_scan_interval (dev->app_data, dev, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 	}
@@ -3329,46 +3327,6 @@ gboolean nm_device_deactivate (NMDevice *dev)
 	nm_schedule_state_change_signal_broadcast (dev->app_data);
 
 	return TRUE;
-}
-
-
-/*
- * nm_device_set_user_key_for_network
- *
- * Called upon receipt of a NetworkManagerInfo reply with a
- * user-supplied key.
- *
- */
-void nm_device_set_user_key_for_network (NMActRequest *req, const char *key, const NMEncKeyType enc_type)
-{
-	NMData *			data;
-	NMDevice *		dev;
-	NMAccessPoint *	ap;
-	const char *		cancel_message = "***canceled***";
-
-	g_return_if_fail (key != NULL);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	dev = nm_act_request_get_dev (req);
-	g_assert (dev);
-
-	ap = nm_act_request_get_ap (req);
-	g_assert (ap);
-
-	/* If the user canceled, mark the ap as invalid */
-	if (strncmp (key, cancel_message, strlen (cancel_message)) == 0)
-	{
-		nm_ap_list_append_ap (data->invalid_ap_list, ap);
-		nm_device_deactivate (dev);
-		nm_policy_schedule_device_change_check (data);
-	}
-	else
-	{
-		/* nm_ap_set_security (ap, security) */
-		nm_device_activate_schedule_stage1_device_prepare (req);
-	}
 }
 
 

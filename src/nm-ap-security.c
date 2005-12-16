@@ -163,7 +163,7 @@ static int
 real_device_setup (NMAPSecurity *self, NMDevice * dev)
 {
 	/* unencrypted */
-	nm_device_set_enc_key (dev, NULL, 0);
+	nm_device_set_wep_enc_key (dev, NULL, 0);
 	return 0;
 }
 

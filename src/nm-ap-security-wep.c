@@ -92,7 +92,7 @@ real_device_setup (NMAPSecurity *instance, NMDevice * dev)
 {
 	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
 
-	nm_device_set_enc_key (dev, nm_ap_security_get_key (instance),
+	nm_device_set_wep_enc_key (dev, nm_ap_security_get_key (instance),
 			self->priv->auth_algorithm);
 	return 0;
 }

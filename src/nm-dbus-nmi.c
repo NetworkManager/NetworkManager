@@ -37,12 +37,12 @@
  */
 static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRequest *req)
 {
-	DBusMessage *		reply;
+	DBusMessage *		reply = NULL;
 	NMData *			data;
 	NMDevice *		dev;
 	NMAccessPoint *	ap;
-	char *			passphrase = NULL;
-	NMEncKeyType		key_type = -1;
+	NMAPSecurity *		security;
+	DBusMessageIter	iter;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (req != NULL);
@@ -66,25 +66,43 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
+	if (message_is_error (reply))
 	{
+		DBusError err;
+
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+
+		/* Check for cancelled error */
+		if (strcmp (err.name, "CanceledError") != 0)
+			nm_warning ("nm_dbus_get_user_key_for_network_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+
+		dbus_error_free (&err);
+		dbus_message_unref (reply);
+
 		/* FIXME: since we're not marking the device as invalid, its a fair bet
 		 * that NM will just try to reactivate the device again, and may fail
 		 * to get the user key in exactly the same way, which ends up right back
 		 * here...  ad nauseum.  Figure out how to deal with a failure here.
 		 */
+		nm_ap_list_append_ap (data->invalid_ap_list, ap);
 		nm_device_deactivate (dev);
 		nm_policy_schedule_device_change_check (data);
+
+		goto out;
 	}
-	else
+
+	dbus_message_iter_init (reply, &iter);
+	if ((security = nm_ap_security_new_deserialize (&iter)))
 	{
-		if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &key_type, DBUS_TYPE_INVALID))
-			nm_device_set_user_key_for_network (req, passphrase, key_type);
-		nm_act_request_set_user_key_pending_call (req, NULL);
+		nm_ap_set_security (ap, security);	
+		nm_device_activation_start (req);
 	}
-	dbus_message_unref (reply);
+	nm_act_request_set_user_key_pending_call (req, NULL);
 
 out:
+	if (reply)
+		dbus_message_unref (reply);
 	nm_act_request_unref (req);
 	dbus_pending_call_unref (pcall);
 }

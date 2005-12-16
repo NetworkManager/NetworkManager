@@ -1,5 +1,12 @@
 2005-12-16  Dan Williams  <dcbw@redhat.com>
 
+	* nm_device_set_enc_key -> nm_device_set_wep_enc_key
+
+	* Fix up NM -> NMI get-user-key dbus calls in NM (applet
+		bits still to be done)
+
+2005-12-16  Dan Williams  <dcbw@redhat.com>
+
 	* Finally move info-daemon related stuff out of
 		NetworkManagerDbus.c to nm-dbus-nmi.c
 
