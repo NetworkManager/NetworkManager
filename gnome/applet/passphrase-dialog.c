@@ -36,56 +36,39 @@
 #include "passphrase-dialog.h"
 #include "nm-utils.h"
 #include "NetworkManager.h"
+#include "wireless-security-manager.h"
 
 static GladeXML *get_dialog_xml (GtkWidget *dialog)
 {
-	char *data;
-
 	g_return_val_if_fail (dialog != NULL, NULL);
 
-	if ((data = g_object_get_data (G_OBJECT (dialog), "glade-xml")))
-		return (GladeXML *)data;
-
-	return NULL;
+	return (GladeXML *) g_object_get_data (G_OBJECT (dialog), "glade-xml");
 }
 
-
-static void update_button_cb (GtkWidget *widget, GladeXML *xml)
+static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 {
-	GtkButton	*	button;
-	GtkComboBox *	combo;
-	GtkEntry	*	passphrase_entry;
-	const char *	passphrase_text;
 	gboolean		enable = FALSE;
+	const char *	ssid = NULL;
+	GtkWidget *	button;
+	GladeXML *	xml;
+	WirelessSecurityManager * wsm;
+	GtkComboBox *	security_combo;
 
+	g_return_if_fail (dialog != NULL);
+	xml = get_dialog_xml (GTK_WIDGET (dialog));
 	g_return_if_fail (xml != NULL);
+	wsm = (WirelessSecurityManager *) g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
+	g_return_if_fail (wsm != NULL);
 
-	button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
-	combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "key_type_combo"));
-/*
-	passphrase_entry = GTK_ENTRY (glade_xml_get_widget (xml, "passphrase_entry"));
-	passphrase_text = gtk_entry_get_text (passphrase_entry);
+	ssid = (const char *) g_object_get_data (G_OBJECT (dialog), "network");
+	g_assert (ssid);
 
-	switch (gtk_combo_box_get_active (combo))
-	{
-		case KEY_TYPE_128_BIT_PASSPHRASE:
-			if (strlen (passphrase_text) > 0)
-				enable = TRUE;
-			break;
-		case KEY_TYPE_ASCII_KEY:
-			if ((strlen (passphrase_text) == 5) || (strlen (passphrase_text) == 13))
-				enable = TRUE;
-			break;
-		case KEY_TYPE_HEX_KEY:
-			if ((strlen (passphrase_text) == 10) || (strlen (passphrase_text) == 26))
-				enable = TRUE;
-			break;
-		default:
-			break;
-	}
-*/
+	/* Validate the wireless security choices */
+	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+	enable = wsm_validate_active (wsm, security_combo, ssid);
 
-	gtk_widget_set_sensitive (GTK_WIDGET (button), enable);
+	button = glade_xml_get_widget (xml, "login_button");
+	gtk_widget_set_sensitive (button, enable);
 }
 
 /*
@@ -123,10 +106,7 @@ static void nmi_passphrase_dialog_clear (GtkWidget *dialog)
 
 	if ((xml = (GladeXML *)g_object_get_data (G_OBJECT (dialog), "glade-xml")))
 	{
-/*
-		entry  = glade_xml_get_widget (xml, "passphrase_entry");
-		gtk_entry_set_text (GTK_ENTRY (entry), "");
-*/
+		/* FIXME: clear WSO widgets here */
 	}
 
 	gtk_widget_hide (dialog);
@@ -134,40 +114,46 @@ static void nmi_passphrase_dialog_clear (GtkWidget *dialog)
 
 
 /*
- * nmi_passphrase_dialog_key_type_combo_changed
+ * nmi_passphrase_dialog_security_combo_changed
  *
- * Change the text of the passphrase entry label to match the selected
- * key type.
+ * Replace the current wireless security widgets with new ones
+ * according to what the user chose.
  *
  */
-static void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_combo, gpointer user_data)
+static void nmi_passphrase_dialog_security_combo_changed (GtkWidget *security_combo, gpointer user_data)
 {
-	GtkWidget *	dialog = gtk_widget_get_toplevel (key_type_combo);
+	int			choice;
+	GtkDialog *	dialog = (GtkDialog *) user_data;
+	WirelessSecurityManager * wsm;
+	GtkWidget *	wso_widget;
+	GladeXML *	xml;
+	GtkWidget *	vbox;
+	GList *		elt;
 
-	if (GTK_WIDGET_TOPLEVEL (dialog))
+	g_return_if_fail (dialog != NULL);
+	xml = get_dialog_xml (GTK_WIDGET (dialog));
+	g_return_if_fail (xml != NULL);
+
+	wsm = g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
+	g_return_if_fail (wsm != NULL);
+
+	vbox = GTK_WIDGET (glade_xml_get_widget (xml, "wireless_security_vbox"));
+
+	/* Remove any previous wireless security widgets */
+	for (elt = gtk_container_get_children (GTK_CONTAINER (vbox)); elt; elt = g_list_next (elt))
 	{
-		GtkLabel *		entry_label;
-		int				combo_choice;
-		GladeXML *		dialog_xml;
+		GtkWidget * child = GTK_WIDGET (elt->data);
 
-		g_return_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL);
-
-		entry_label = GTK_LABEL (glade_xml_get_widget (dialog_xml, "passphrase_entry_label"));
-		switch ((combo_choice = gtk_combo_box_get_active (GTK_COMBO_BOX (key_type_combo))))
-		{
-			case KEY_TYPE_128_BIT_PASSPHRASE:
-				gtk_label_set_label (entry_label, _("Passphrase:"));
-				break;
-			case KEY_TYPE_ASCII_KEY:
-				gtk_label_set_label (entry_label, _("ASCII Key:"));
-				break;
-			case KEY_TYPE_HEX_KEY:
-				gtk_label_set_label (entry_label, _("Hex Key:"));
-				break;
-			default:
-				break;
-		}
+		if (wso_is_wso_widget (child))
+			gtk_container_remove (GTK_CONTAINER (vbox), child);
 	}
+
+	/* Determine and add the correct wireless security widget to the dialog */
+	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);
+	if (wso_widget)
+		gtk_container_add (GTK_CONTAINER (vbox), wso_widget);
+
+	update_button_cb (NULL, dialog);
 }
 
 
@@ -179,64 +165,51 @@ static void nmi_passphrase_dialog_key_type_combo_changed (GtkWidget *key_type_co
  * a cancellation message to NetworkManager.
  * Either way, get rid of the dialog.
  */
-static void nmi_passphrase_dialog_response_received (GtkWidget *cancel_button, gint response, gpointer user_data)
+static void nmi_passphrase_dialog_response_received (GtkWidget *dialog, gint response, gpointer user_data)
 {
-	GtkWidget *		dialog = gtk_widget_get_toplevel (cancel_button);
-	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 
-	GladeXML *		dialog_xml;
+	GladeXML *		xml;
 	GtkEntry *		entry;
-	GtkComboBox *		key_type_combo;
-	const char *		passphrase;
-	NetworkDevice *		dev;
-	WirelessNetwork *	net;
+	GtkComboBox *		security_combo;
 	DBusMessage *		message;
-	NMEncKeyType		key_type_return;
+	WirelessSecurityManager *wsm;
+	WirelessSecurityOption *	opt;
+	WirelessNetwork *	net;
+	NMGConfWSO *		gconf_wso;
 
 	g_return_if_fail (applet != NULL);
 
-	if (! GTK_WIDGET_TOPLEVEL (dialog))
-		return;
+	message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
+	g_assert (message);
 
 	if (response != GTK_RESPONSE_OK)
 	{
-		DBusMessage *		message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
+		DBusMessage *	reply;
 
-		nmi_dbus_return_user_key (applet->connection, message, "***canceled***", NM_ENC_TYPE_UNKNOWN);
-		nmi_passphrase_dialog_clear (dialog);
-
-		return;
+		reply = dbus_message_new_error (message, "CanceledError", "Request was cancelled.");
+		dbus_connection_send (applet->connection, reply, NULL);
+		goto out;
 	}
 
-	dev = g_object_get_data (G_OBJECT (dialog), "device");
-	net = g_object_get_data (G_OBJECT (dialog), "network");
-	message = g_object_get_data (G_OBJECT (dialog), "dbus-message");
-	key_type_return = NM_ENC_TYPE_UNKNOWN;
+	xml = get_dialog_xml (dialog);
+	g_assert (xml);
 
-	g_return_if_fail ((dialog_xml = get_dialog_xml (dialog)) != NULL);
+	wsm = g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
+	g_assert (wsm);
 
-	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
-	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
-	passphrase = gtk_entry_get_text (entry);
+	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+	opt = wsm_get_option_for_active (wsm, security_combo);
 
-	switch (gtk_combo_box_get_active (key_type_combo))
-	{
-		case KEY_TYPE_128_BIT_PASSPHRASE:
-			key_type_return = NM_ENC_TYPE_128_BIT_PASSPHRASE;
-			break;
-		case KEY_TYPE_ASCII_KEY:
-			key_type_return = NM_ENC_TYPE_ASCII_KEY;
-			break;
-		case KEY_TYPE_HEX_KEY:
-			key_type_return = NM_ENC_TYPE_HEX_KEY;
-			break;
-		default:
-			key_type_return = NM_ENC_TYPE_UNKNOWN;
-			break;
-	}
+	net = (WirelessNetwork *) g_object_get_data (G_OBJECT (dialog), "network");
+	g_assert (net);
+	gconf_wso = nm_gconf_wso_new_from_wso (opt, wireless_network_get_essid (net));
 
-	/* Tell NetworkManager about the key the user typed in */
-	nmi_dbus_return_user_key (applet->connection, message, passphrase, key_type_return);
+	/* Return new security information to NM */
+	nmi_dbus_return_user_key (applet->connection, message, gconf_wso);
+	g_object_unref (G_OBJECT (gconf_wso));
+
+out:
 	nmi_passphrase_dialog_clear (dialog);
 }
 
@@ -359,49 +332,49 @@ void nmi_passphrase_dialog_cancel (NMWirelessApplet *applet)
  */
 GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
 {
-	GtkWidget *	dialog;
-	GtkButton *	ok_button;
-	GtkEntry *	entry;
-	GtkComboBox *	key_type_combo;
-	GtkLabel *	label;
-	GladeXML *	dialog_xml;
-	char *		orig_label_text;
+	GtkWidget *				dialog;
+	GtkButton *				ok_button;
+	GtkEntry *				entry;
+	GtkLabel *				label;
+	GladeXML *				xml;
+	char *					orig_label_text;
+	WirelessSecurityManager *	wsm;
+	GtkComboBox *				security_combo;
 
-	if (!(dialog_xml = glade_xml_new (applet->glade_file, "passphrase_dialog", NULL)))
+	if (!(xml = glade_xml_new (applet->glade_file, "passphrase_dialog", NULL)))
 	{
 		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		return NULL;
 	}
 
-	dialog = glade_xml_get_widget (dialog_xml, "passphrase_dialog");
+	dialog = glade_xml_get_widget (xml, "passphrase_dialog");
 	gtk_widget_hide (dialog);
 
-	g_object_set_data (G_OBJECT (dialog), "glade-xml", dialog_xml);
+	g_object_set_data (G_OBJECT (dialog), "glade-xml", xml);
 
 	/* Save original label text to preserve the '%s' and other formatting that gets overwritten
 	 * when the dialog is first shown.
 	 */
-	label = GTK_LABEL (glade_xml_get_widget (dialog_xml, "label1"));
+	label = GTK_LABEL (glade_xml_get_widget (xml, "label1"));
 	orig_label_text = g_strdup (gtk_label_get_label (label));
 
 	g_object_set_data (G_OBJECT (dialog), "orig-label-text", orig_label_text);
 
 	g_signal_connect (G_OBJECT (dialog), "response", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_response_received), applet);
 
-	ok_button = GTK_BUTTON (glade_xml_get_widget (dialog_xml, "login_button"));
+	ok_button = GTK_BUTTON (glade_xml_get_widget (xml, "login_button"));
 	gtk_widget_grab_default (GTK_WIDGET (ok_button));
 
-//	entry = GTK_ENTRY (glade_xml_get_widget (dialog_xml, "passphrase_entry"));
 	nmi_passphrase_dialog_clear (dialog);
 	gtk_widget_set_sensitive (GTK_WIDGET (ok_button), FALSE);
-//	g_signal_connect (entry, "changed", G_CALLBACK (update_button_cb), dialog_xml);
 
-/*
-	key_type_combo = GTK_COMBO_BOX (glade_xml_get_widget (dialog_xml, "key_type_combo"));
-	gtk_combo_box_set_active (key_type_combo, 0);
-	g_signal_connect (G_OBJECT (key_type_combo), "changed", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_key_type_combo_changed), applet);
-	nmi_passphrase_dialog_key_type_combo_changed (GTK_WIDGET (key_type_combo), applet);
-*/
+	wsm = wsm_new (applet->glade_file);
+	g_object_set_data (G_OBJECT (dialog), "wireless-security-manager", (gpointer) wsm);
+
+	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+	wsm_populate_combo (wsm, security_combo);
+	g_signal_connect (G_OBJECT (security_combo), "changed", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_security_combo_changed), dialog);
+	nmi_passphrase_dialog_security_combo_changed (GTK_WIDGET (security_combo), dialog);
 
 	return dialog;
 }
@@ -415,7 +388,7 @@ GtkWidget *nmi_passphrase_dialog_init (NMWirelessApplet *applet)
  */
 void nmi_passphrase_dialog_destroy (GtkWidget *dialog)
 {
-	char 	*data;
+	char *	data;
 
 	g_return_if_fail (dialog != NULL);
 

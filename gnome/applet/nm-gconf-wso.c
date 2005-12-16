@@ -31,6 +31,7 @@
 #include "nm-gconf-wso-wep.h"
 #include "nm-gconf-wso-wpa-psk.h"
 #include "gconf-helpers.h"
+#include "wireless-security-option.h"
 
 
 #define NM_GCONF_WSO_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GCONF_WSO, NMGConfWSOPrivate))
@@ -107,7 +108,6 @@ nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network)
 
 	g_return_val_if_fail (client != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
-
 	if (!nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
 							"we_cipher",
@@ -138,6 +138,32 @@ nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network)
 
 out:
 	return security;
+}
+
+/* HACK: to convert the WirelessSecurityOption -> NMGConfWSO,
+ * we serialize the WSO to a dbus message then deserialize
+ * it into an NMGConfWSO.
+ */
+NMGConfWSO *
+nm_gconf_wso_new_from_wso (WirelessSecurityOption *opt, const char *ssid)
+{
+	DBusMessage *		message;
+	DBusMessageIter	iter;
+	NMGConfWSO *		gconf_wso = NULL;
+
+	g_return_val_if_fail (opt != NULL, NULL);
+	g_return_val_if_fail (ssid != NULL, NULL);
+
+	message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "foobar");
+	if (!wso_append_dbus_params (opt, ssid, message))
+		goto out;
+
+	dbus_message_iter_init (message, &iter);
+	gconf_wso = nm_gconf_wso_new_deserialize_dbus (&iter);
+
+out:
+	dbus_message_unref (message);
+	return gconf_wso;
 }
 
 void

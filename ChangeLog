@@ -1,3 +1,20 @@
+2005-12-16  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/*
+		- Fix up the passphrase dialog to use all the
+			WirelessSecurityOption stuff (untested)
+
+2005-12-16  Dan Williams  <dcbw@redhat.com>
+
+	* Move nm_gconf_get_*_helper() functions to separate files,
+		gconf-helpers.c & gconf-helpers.h
+
+	* New NMGConfWSO objects for managing the gconf side of things.
+		Eventually these should be merged with the
+		WirelessSecurityOption objects and a common base (that can
+		serialize/deserialize from dbus & gconf) should be
+		refactored out, but for now they are separate.
+
 2005-12-16  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Do not invoke ypbind or autofs

@@ -37,6 +37,7 @@
 #include "applet-dbus-info.h"
 #include "passphrase-dialog.h"
 #include "nm-utils.h"
+#include "nm-gconf-wso.h"
 #include "gconf-helpers.h"
 
 
@@ -257,8 +258,8 @@ nmi_dbus_return_user_key (DBusConnection *connection,
 		return;
 	}
 
-	dbus_message_iter_append_init (reply, &iter);
-	if (nm_gconf_wso_serialize_dbus (gconf_wso, &iter)
+	dbus_message_iter_init_append (reply, &iter);
+	if (nm_gconf_wso_serialize_dbus (gconf_wso, &iter))
 		dbus_connection_send (connection, reply, NULL);
 	else
 		nm_warning ("nmi_dbus_return_user_key(): couldn't serialize gconf_wso");

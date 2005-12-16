@@ -26,6 +26,8 @@
 #include <gconf/gconf-client.h>
 #include <dbus/dbus.h>
 
+#include "wireless-security-option.h"
+
 #define NM_TYPE_GCONF_WSO			(nm_gconf_wso_get_type ())
 #define NM_GCONF_WSO(obj)			(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_GCONF_WSO, NMGConfWSO))
 #define NM_GCONF_WSO_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_GCONF_WSO, NMGConfWSOClass))
@@ -63,6 +65,8 @@ GType nm_gconf_wso_get_type (void);
 NMGConfWSO * nm_gconf_wso_new_deserialize_dbus (DBusMessageIter *iter);
 
 NMGConfWSO * nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network);
+
+NMGConfWSO * nm_gconf_wso_new_from_wso (WirelessSecurityOption *opt, const char *ssid);
 
 int nm_gconf_wso_get_we_cipher (NMGConfWSO *self);
 
