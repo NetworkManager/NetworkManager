@@ -849,6 +849,8 @@ void nm_system_activate_nis (NMIP4Config *config)
 	/* write out yp.conf and restart the daemon */
 	if (num_nis_servers > 0)
 	{
+		struct stat sb;
+
 		ypconf = fopen ("/etc/yp.conf", "w");
 
 		if (ypconf)
@@ -862,10 +864,17 @@ void nm_system_activate_nis (NMIP4Config *config)
 			fclose (ypconf);
 		} else
 			nm_warning ("Could not commit NIS changes to /etc/yp.conf.");
-		nm_info ("Restarting ypbind.");
-		nm_spawn_process ("/usr/sbin/rcypbind restart");
-		nm_info ("Restarting autofs.");
-		nm_spawn_process ("/usr/sbin/rcautofs restart");
+
+		if (stat ("/usr/sbin/rcypbind", &sb) != -1)
+		{
+			nm_info ("Restarting ypbind.");
+			nm_spawn_process ("/usr/sbin/rcypbind restart");
+		}
+		if (stat ("/usr/sbin/rcautofs", &sb) != -1)
+		{
+			nm_info ("Restarting autofs.");
+			nm_spawn_process ("/usr/sbin/rcautofs restart");
+		}
 	}
 }
 
@@ -878,8 +887,16 @@ void nm_system_activate_nis (NMIP4Config *config)
  */
 void nm_system_shutdown_nis (void)
 {
-	nm_info ("Stopping ypbind.");
-	nm_spawn_process ("/usr/sbin/rcypbind stop");
-	nm_info ("Restarting autofs.");
-	nm_spawn_process ("/usr/sbin/rcautofs restart");
+	struct stat sb;
+
+	if (stat ("/usr/sbin/rcypbind", &sb) != -1)
+	{
+		nm_info ("Stopping ypbind.");
+		nm_spawn_process ("/usr/sbin/rcypbind stop");
+	}
+	if (stat ("/usr/sbin/rcautofs", &sb) != -1)
+	{
+		nm_info ("Restarting autofs.");
+		nm_spawn_process ("/usr/sbin/rcautofs restart");
+	}
 }

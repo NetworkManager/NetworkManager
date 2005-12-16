@@ -1,3 +1,9 @@
+2005-12-16  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Do not invoke ypbind or autofs
+	  binaries unless they exist (nm_spawn_process() emits a warning if
+	  asked to spawn a non-existant process).
+
 2005-12-16  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c
