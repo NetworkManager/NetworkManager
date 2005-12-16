@@ -46,6 +46,7 @@
 #include "nm-dhcp-manager.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
+#include "nm-dbus-nmi.h"
 
 /* Local static prototypes */
 static gpointer nm_device_worker (gpointer user_data);

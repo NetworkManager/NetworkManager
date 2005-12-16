@@ -67,18 +67,6 @@ void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
 void			nm_dbus_signal_device_strength_change	(DBusConnection *connection, NMDevice *dev, gint strength);
 
-void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMActRequest *req, const gboolean new_key);
-
-void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection, NMActRequest *req);
-
-NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
-
-gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
-
-gboolean		nm_dbus_update_network_info			(DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested);
-
-void			nm_dbus_update_allowed_networks		(DBusConnection *connection, NMAccessPointList *list, NMData *data);
-
 NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
 
 NMState		nm_get_app_state_from_data			(NMData *data);

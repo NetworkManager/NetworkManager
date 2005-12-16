@@ -1,5 +1,10 @@
 2005-12-16  Dan Williams  <dcbw@redhat.com>
 
+	* Finally move info-daemon related stuff out of
+		NetworkManagerDbus.c to nm-dbus-nmi.c
+
+2005-12-16  Dan Williams  <dcbw@redhat.com>
+
 	* Kill auth_method for access points, since that's now done
 		by NMAPSecurity objects
 

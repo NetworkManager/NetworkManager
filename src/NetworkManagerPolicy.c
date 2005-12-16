@@ -35,6 +35,7 @@
 #include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
+#include "nm-dbus-nmi.h"
 
 
 /*
