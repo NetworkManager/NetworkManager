@@ -125,6 +125,7 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 	NMAPSecurityClass *par_class = NM_AP_SECURITY_CLASS (klass);
 
 	par_class->copy_constructor_func = real_copy_constructor;
+	par_class->serialize_func = real_serialize;
 	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
 	par_class->device_setup_func = real_device_setup;
 
