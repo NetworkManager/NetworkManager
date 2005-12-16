@@ -73,6 +73,14 @@ nm_applet_SOURCES =			\
 	wso-wep-passphrase.h	\
 	wso-wpa-psk-passphrase.c	\
 	wso-wpa-psk-passphrase.h	\
+	nm-gconf-wso.c			\
+	nm-gconf-wso.h			\
+	nm-gconf-wso-wep.c		\
+	nm-gconf-wso-wep.h		\
+	nm-gconf-wso-wpa-psk.c	\
+	nm-gconf-wso-wpa-psk.h	\
+	gconf-helpers.c		\
+	gconf-helpers.h		\
 	$(NULL)
 
 nm_applet_LDADD =						\

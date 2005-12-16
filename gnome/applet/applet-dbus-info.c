@@ -37,6 +37,7 @@
 #include "applet-dbus-info.h"
 #include "passphrase-dialog.h"
 #include "nm-utils.h"
+#include "gconf-helpers.h"
 
 
 /*
@@ -107,40 +108,28 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
                                                GList             *found_list,
                                                gpointer           data)
 {
-	NMGetNetworkKeyCBData *cb_data = (NMGetNetworkKeyCBData*) data;
-	NMWirelessApplet *applet = cb_data->applet;
-	DBusMessage *message = cb_data->message;
-	NetworkDevice *dev = cb_data->dev;
-	char *net_path = cb_data->net_path;
-	char *essid = cb_data->essid;
+	NMGetNetworkKeyCBData *	cb_data = (NMGetNetworkKeyCBData*) data;
+	NMWirelessApplet *		applet = cb_data->applet;
+	DBusMessage *			message = cb_data->message;
+	NetworkDevice *		dev = cb_data->dev;
+	char *				net_path = cb_data->net_path;
+	char *				essid = cb_data->essid;
 
 	if (result == GNOME_KEYRING_RESULT_OK)
 	{
-		gchar *key;
-		gchar *gconf_key;
-		gchar *escaped_network;
-		GConfValue *value;
-		NMEncKeyType key_type = -1;
-		GnomeKeyringFound *found;
+		gchar *			key;
+		gchar *			escaped_network;
+		GnomeKeyringFound *	found;
+		NMGConfWSO *		gconf_wso;
 
 		found = found_list->data;
 		key = g_strdup (found->secret);
 
-		/* Grab key type from GConf since we need it for return message */
 		escaped_network = gconf_escape_key (essid, strlen (essid));
-		gconf_key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		gconf_wso = nm_gconf_wso_new_deserialize_gconf (applet->gconf_client, escaped_network);
 		g_free (escaped_network);
 
-		value = gconf_client_get (applet->gconf_client, gconf_key, NULL);
-		g_free (gconf_key);
-
-		if (value)
-		{
-			key_type = gconf_value_get_int (value);
-			gconf_value_free (value);
-		}
-
-		nmi_dbus_return_user_key (applet->connection, message, key, key_type);
+		nmi_dbus_return_user_key (applet->connection, message, gconf_wso);
 		g_free (key);
 	}
 	else
@@ -251,13 +240,16 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
  * Alert NetworkManager of the new user key
  *
  */
-void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message, const char *passphrase, const NMEncKeyType key_type)
+void
+nmi_dbus_return_user_key (DBusConnection *connection,
+					DBusMessage *message,
+					NMGConfWSO *gconf_wso)
 {
-	DBusMessage *reply;
-	const int tmp_key_type = (int)key_type;
+	DBusMessage *		reply;
+	DBusMessageIter	iter;
 
 	g_return_if_fail (connection != NULL);
-	g_return_if_fail (passphrase != NULL);
+	g_return_if_fail (gconf_wso != NULL);
 
 	if (!(reply = dbus_message_new_method_return (message)))
 	{
@@ -265,8 +257,11 @@ void nmi_dbus_return_user_key (DBusConnection *connection, DBusMessage *message,
 		return;
 	}
 
-	dbus_message_append_args (reply, DBUS_TYPE_STRING, &passphrase, DBUS_TYPE_INT32, &tmp_key_type, DBUS_TYPE_INVALID);
-	dbus_connection_send (connection, reply, NULL);
+	dbus_message_iter_append_init (reply, &iter);
+	if (nm_gconf_wso_serialize_dbus (gconf_wso, &iter)
+		dbus_connection_send (connection, reply, NULL);
+	else
+		nm_warning ("nmi_dbus_return_user_key(): couldn't serialize gconf_wso");
 	dbus_message_unref (reply);
 }
 
@@ -377,100 +372,6 @@ static DBusMessage *nmi_dbus_get_networks (NMWirelessApplet *applet, DBusMessage
 
 out:
 	return reply;
-}
-
-
-static gboolean
-nm_gconf_get_int_helper (GConfClient *client,
-					const char *path,
-					const char *key,
-					const char *network,
-					int *value)
-{
-	char *		gc_key;
-	GConfValue *	gc_value;
-	gboolean		success = FALSE;
-
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-
-	gc_key = g_strdup_printf ("%s/%s/%s", path, network, key);
-	if ((gc_value = gconf_client_get (client, gc_key, NULL)))
-	{
-		if (gc_value->type == GCONF_VALUE_INT)
-		{
-			*value = gconf_value_get_int (gc_value);
-			success = TRUE;
-		}
-		gconf_value_free (gc_value);
-	}
-	g_free (gc_key);
-
-	return success;
-}
-
-
-static gboolean
-nm_gconf_get_string_helper (GConfClient *client,
-					const char *path,
-					const char *key,
-					const char *network,
-					char **value)
-{
-	char *		gc_key;
-	GConfValue *	gc_value;
-	gboolean		success = FALSE;
-
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-	g_return_val_if_fail (*value == NULL, FALSE);
-
-	gc_key = g_strdup_printf ("%s/%s/%s", path, network, key);
-	if ((gc_value = gconf_client_get (client, gc_key, NULL)))
-	{
-		if (gc_value->type == GCONF_VALUE_STRING)
-		{
-			*value = g_strdup (gconf_value_get_string (gc_value));
-			success = TRUE;
-		}
-		gconf_value_free (gc_value);
-	}
-	g_free (gc_key);
-
-	return success;
-}
-
-
-static gboolean
-nm_gconf_get_bool_helper (GConfClient *client,
-					const char *path,
-					const char *key,
-					const char *network,
-					gboolean *value)
-{
-	char *		gc_key;
-	GConfValue *	gc_value;
-	gboolean		success = FALSE;
-
-	g_return_val_if_fail (key != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (value != NULL, FALSE);
-
-	gc_key = g_strdup_printf ("%s/%s/%s", path, network, key);
-	if ((gc_value = gconf_client_get (client, gc_key, NULL)))
-	{
-		if (gc_value->type == GCONF_VALUE_STRING)
-		{
-			*value = gconf_value_get_bool (gc_value);
-			success = TRUE;
-		}
-		gconf_value_free (gc_value);
-	}
-	g_free (gc_key);
-
-	return success;
 }
 
 
