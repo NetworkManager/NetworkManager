@@ -67,10 +67,6 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 		/* Cache details in the info-daemon since the connect was successful */
 		nm_dbus_update_network_info (data->dbus_connection, ap, nm_act_request_get_user_requested (req));
 
-		/* Cache the correct auth method in our AP list too */
-		if ((tmp_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap))))
-			nm_ap_set_auth_method (tmp_ap, nm_ap_get_auth_method (ap));
-
 		nm_device_get_ap_address (dev, &addr);
 		if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 			nm_ap_set_address (ap, &addr);

@@ -138,6 +138,15 @@ nm_ap_security_set_key (NMAPSecurity *self, const char *key, int key_len)
 	memcpy (self->priv->key, key, key_len);
 }
 
+static NMAPSecurity *
+real_copy_constructor (NMAPSecurity *self)
+{
+	NMAPSecurity * dst = nm_ap_security_new (self->priv->we_cipher);
+
+	nm_ap_security_copy_properties (self, dst);
+	return dst;
+}
+
 static int 
 real_serialize (NMAPSecurity *self, DBusMessageIter *iter)
 {
@@ -221,6 +230,27 @@ nm_ap_security_serialize (NMAPSecurity *self, DBusMessageIter *iter)
 	return NM_AP_SECURITY_GET_CLASS (self)->serialize_func (self, iter);
 }
 
+NMAPSecurity *
+nm_ap_security_new_copy (NMAPSecurity *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return NM_AP_SECURITY_GET_CLASS (self)->copy_constructor_func (self);
+}
+
+void
+nm_ap_security_copy_properties (NMAPSecurity *self, NMAPSecurity *dst)
+{
+	int	key_len;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (dst != NULL);
+	g_return_if_fail (self != dst);
+
+	nm_ap_security_set_we_cipher (dst, self->priv->we_cipher);
+	nm_ap_security_set_key (dst, self->priv->key, strlen (self->priv->key));
+	nm_ap_security_set_description (dst, self->priv->description);
+}
 
 static void
 nm_ap_security_init (NMAPSecurity * self)
@@ -276,6 +306,7 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 	object_class->dispose = nm_ap_security_dispose;
 	object_class->finalize = nm_ap_security_finalize;
 
+	klass->copy_constructor_func = real_copy_constructor;
 	klass->serialize_func = real_serialize;
 	klass->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
 	klass->device_setup_func = real_device_setup;

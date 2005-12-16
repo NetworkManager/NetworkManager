@@ -43,11 +43,6 @@ void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 char *			nm_ap_get_essid		(const NMAccessPoint *ap);
 void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
 
-NMEncKeyType		nm_ap_get_enc_type		(const NMAccessPoint *ap);
-
-int				nm_ap_get_auth_method	(const NMAccessPoint *ap);
-void				nm_ap_set_auth_method	(NMAccessPoint *ap, int auth_method);
-
 gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
 void				nm_ap_set_encrypted		(NMAccessPoint *ap, gboolean privacy);
 

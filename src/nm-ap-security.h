@@ -51,6 +51,8 @@ struct _NMAPSecurityClass
 	GObjectClass parent;
 
 	/* class members */
+	NMAPSecurity *	(*copy_constructor_func)	(NMAPSecurity *self);
+
 	int	(*serialize_func)				(NMAPSecurity *self, DBusMessageIter *iter);
 
 	void	(*write_wpa_supplicant_config_func)(NMAPSecurity *self, int fd);
@@ -60,6 +62,8 @@ struct _NMAPSecurityClass
 
 
 GType nm_ap_security_get_type (void);
+
+NMAPSecurity *	nm_ap_security_new_copy (NMAPSecurity *self);
 
 NMAPSecurity * nm_ap_security_new_deserialize (DBusMessageIter *iter);
 

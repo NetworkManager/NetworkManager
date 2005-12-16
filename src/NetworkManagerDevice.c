@@ -310,14 +310,7 @@ void nm_device_copy_allowed_to_dev_list (NMDevice *dev, NMAccessPointList *allow
 	dev_list = nm_device_ap_list_get (dev);
 	while ((src_ap = nm_ap_list_iter_next (iter)))
 	{
-		NMAccessPoint	*dst_ap = nm_ap_new_from_ap (src_ap);
-
-		/* Assume that if the allowed list AP has a saved encryption
-		 * key that the AP is encrypted.
-		 */
-		if (    (nm_ap_get_auth_method (src_ap) == IW_AUTH_ALG_OPEN_SYSTEM)
-			|| (nm_ap_get_auth_method (src_ap) == IW_AUTH_ALG_SHARED_KEY))
-			nm_ap_set_encrypted (dst_ap, TRUE);
+		NMAccessPoint *	dst_ap = nm_ap_new_from_ap (src_ap);
 
 		nm_ap_list_append_ap (dev_list, dst_ap);
 		nm_ap_unref (dst_ap);
@@ -1475,11 +1468,11 @@ void nm_device_get_ap_address (NMDevice *dev, struct ether_addr *addr)
  */
 void nm_device_set_enc_key (NMDevice *dev, const char *key, int auth_method)
 {
-	NMSock			*sk;
-	struct iwreq		wreq;
-	int				keylen;
-	unsigned char		safe_key[IW_ENCODING_TOKEN_MAX + 1];
-	gboolean			set_key = FALSE;
+	NMSock *		sk;
+	struct iwreq	wreq;
+	int			keylen;
+	unsigned char	safe_key[IW_ENCODING_TOKEN_MAX + 1];
+	gboolean		set_key = FALSE;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (nm_device_is_802_11_wireless (dev));
@@ -2582,30 +2575,10 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 		if (!link)
 		{
-			if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_OPEN_SYSTEM)
-			{
-				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Open System mode, trying Shared Key.",
-						nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-				/* Back down to Shared Key mode */
-				nm_ap_set_auth_method (ap, IW_AUTH_ALG_SHARED_KEY);
-				success = FALSE;
-				continue;
-			}
-			else if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_SHARED_KEY)
-			{
-				/* Didn't work in Shared Key either. */
-				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in Shared Key mode, need correct key?",
-						nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-				nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
-				break;
-			}
-			else
-			{
-				nm_debug ("Activation (%s/wireless): no hardware link to '%s' in non-encrypted mode.",
-						nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-				nm_policy_schedule_activation_failed (req);
-				break;
-			}
+			nm_debug ("Activation (%s/wireless): no hardware link to '%s'.",
+					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+			nm_policy_schedule_activation_failed (req);
+			break;
 		}
 	}
 
@@ -2972,25 +2945,17 @@ static gboolean nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	else if (nm_device_is_802_11_wireless (dev))
 	{
 		NMAccessPoint *ap = nm_act_request_get_ap (req);
+		NMAPSecurity *	security;
 
 		g_assert (ap);
 
-		/* For those broken cards that report successful hardware link even when WEP key is wrong,
-		 * and also for Open System mode (where you cannot know WEP key is wrong ever), we try to
-		 * do DHCP and if that fails, fall back to next auth mode and try again.
-		 */
-		if (nm_ap_get_auth_method (ap) == IW_AUTH_ALG_OPEN_SYSTEM)
+		security = nm_ap_get_security (ap);
+
+		/* FIXME: should we only ask for a new key if the activation request is user-requested? */
+		if (ap && (nm_ap_security_get_we_cipher (security) != IW_AUTH_CIPHER_NONE))
 		{
-			/* Back down to Shared Key mode */
-			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Open System mode, trying Shared Key.",
-					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			nm_ap_set_auth_method (ap, IW_AUTH_ALG_SHARED_KEY);
-			nm_device_activate_schedule_stage2_device_config (req);
-		}
-		else if ((nm_ap_get_auth_method (ap) == IW_AUTH_ALG_SHARED_KEY))
-		{
-			/* Shared Key mode failed, we must have bad WEP key */
-			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s' in Shared Key mode, asking for new key.",
+			/* Activation failed, we must have bad WEP key */
+			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 			nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 		}
@@ -4519,7 +4484,6 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				/* New AP with some defaults */
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
-				nm_ap_set_auth_method (ap, IW_AUTH_ALG_OPEN_SYSTEM);
 				nm_ap_set_mode (ap, IW_MODE_INFRA);
 				break;
 			case SIOCGIWMODE:

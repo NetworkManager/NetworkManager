@@ -55,11 +55,6 @@ struct NMAccessPoint
 	NMAPSecurity *		security;
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
-
-	/* Soon to be banished */
-	char *			enc_key;
-	NMEncKeyType		enc_type;
-	int				auth_method; /* from wireless.h; -1 is unknown, zero is none */
 };
 
 /* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
@@ -90,7 +85,6 @@ NMAccessPoint * nm_ap_new (void)
 	}
 
 	ap->mode = IW_MODE_INFRA;
-	ap->auth_method = -1;
 	ap->refcount = 1;
 
 	return (ap);
@@ -133,10 +127,10 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap->rate = src_ap->rate;
 	new_ap->capabilities = src_ap->capabilities;
 
-	if (src_ap->enc_key && (strlen (src_ap->enc_key) > 0))
-		new_ap->enc_key = g_strdup (src_ap->enc_key);
+	if (src_ap->security)
+		new_ap->security = nm_ap_security_new_copy (src_ap->security);
 
-	return (new_ap);
+	return new_ap;
 }
 
 
@@ -159,7 +153,6 @@ void nm_ap_unref (NMAccessPoint *ap)
 	{
 		g_free (ap->essid);
 		g_free (ap->address);
-		g_free (ap->enc_key);
 		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
 		g_slist_free (ap->user_addresses);
 
@@ -167,7 +160,6 @@ void nm_ap_unref (NMAccessPoint *ap)
 			g_object_unref (G_OBJECT (ap->security));
 
 		ap->essid = NULL;
-		ap->enc_key = NULL;
 
 		g_free (ap);
 		memset (ap, 0, sizeof (NMAccessPoint));
@@ -229,7 +221,9 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
-	return (ap->capabilities & NM_802_11_CAP_PROTO_WEP);
+	return ((ap->capabilities & NM_802_11_CAP_PROTO_WEP)
+			|| (ap->capabilities & NM_802_11_CAP_PROTO_WPA)
+			|| (ap->capabilities & NM_802_11_CAP_PROTO_WPA2));
 }
 
 void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean privacy)
@@ -241,38 +235,6 @@ void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean privacy)
 	else
 		ap->capabilities &= ~NM_802_11_CAP_PROTO_WEP;
 }
-
-
-/*
- * Return the encryption method the user specified for this access point.
- *
- */
-NMEncKeyType nm_ap_get_enc_type (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, TRUE);
-
-	return (ap->enc_type);
-}
-
-
-/*
- * Get/set functions for auth_method
- *
- */
-int nm_ap_get_auth_method (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, -1);
-
-	return (ap->auth_method);
-}
-
-void nm_ap_set_auth_method (NMAccessPoint *ap, int auth_method)
-{
-	g_return_if_fail (ap != NULL);
-
-	ap->auth_method = auth_method;
-}
-
 
 /*
  * Accessorts for AP security info
@@ -296,10 +258,7 @@ void nm_ap_set_security (NMAccessPoint *ap, NMAPSecurity *security)
 	}
 
 	if (security)
-	{
-		g_object_ref (G_OBJECT (security));
-		ap->security = security;
-	}
+		ap->security = nm_ap_security_new_copy (security);
 }
 
 

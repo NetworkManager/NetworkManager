@@ -97,6 +97,17 @@ real_device_setup (NMAPSecurity *instance, NMDevice * dev)
 	return 0;
 }
 
+static NMAPSecurity *
+real_copy_constructor (NMAPSecurity *instance)
+{
+	NMAPSecurityWEP * dst = g_object_new (NM_TYPE_AP_SECURITY_WEP, NULL);
+	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
+
+	dst->priv->auth_algorithm = self->priv->auth_algorithm;
+	nm_ap_security_copy_properties (NM_AP_SECURITY (self), NM_AP_SECURITY (dst));
+	return NM_AP_SECURITY (dst);
+}
+
 static void
 nm_ap_security_wep_init (NMAPSecurityWEP * self)
 {
@@ -111,6 +122,7 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMAPSecurityClass *par_class = NM_AP_SECURITY_CLASS (klass);
 
+	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
 	par_class->device_setup_func = real_device_setup;

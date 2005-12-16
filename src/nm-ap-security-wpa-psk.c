@@ -97,6 +97,18 @@ real_device_setup (NMAPSecurity *self, NMDevice * dev)
 	return 0;
 }
 
+static NMAPSecurity *
+real_copy_constructor (NMAPSecurity *instance)
+{
+	NMAPSecurityWPA_PSK * dst = g_object_new (NM_TYPE_AP_SECURITY_WPA_PSK, NULL);
+	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
+
+	dst->priv->wpa_version = self->priv->wpa_version;
+	dst->priv->key_mgt = self->priv->key_mgt;
+	nm_ap_security_copy_properties (NM_AP_SECURITY (self), NM_AP_SECURITY (dst));
+	return NM_AP_SECURITY (dst);
+}
+
 static void
 nm_ap_security_wpa_psk_init (NMAPSecurityWPA_PSK * self)
 {
@@ -112,6 +124,7 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMAPSecurityClass *par_class = NM_AP_SECURITY_CLASS (klass);
 
+	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
 	par_class->device_setup_func = real_device_setup;
 

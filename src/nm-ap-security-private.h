@@ -30,4 +30,6 @@ void nm_ap_security_set_key (NMAPSecurity *self, const char *key, int key_len);
 
 void nm_ap_security_set_description (NMAPSecurity *self, const char *desc);
 
+void nm_ap_security_copy_properties (NMAPSecurity *self, NMAPSecurity *dst);
+
 #endif	/* NM_AP_SECURITY_PRIVATE_H */

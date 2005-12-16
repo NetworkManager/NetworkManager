@@ -826,6 +826,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	ap = nm_ap_new ();
 	nm_ap_set_essid (ap, essid);
 	nm_ap_set_security (ap, security);
+	g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 
 	timestamp = g_malloc0 (sizeof (GTimeVal));
 	timestamp->tv_sec = timestamp_secs;

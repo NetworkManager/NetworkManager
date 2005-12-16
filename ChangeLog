@@ -1,3 +1,11 @@
+2005-12-16  Dan Williams  <dcbw@redhat.com>
+
+	* Kill auth_method for access points, since that's now done
+		by NMAPSecurity objects
+
+	* Add a copy-constructor of sorts to NMAPSecurity
+		(how do you do this properly in glib???)
+
 2005-12-15  Dan Williams  <dcbw@redhat.com>
 
 	* Exorcise encryption key hashing on APs
