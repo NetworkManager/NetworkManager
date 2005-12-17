@@ -64,9 +64,11 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 		struct ether_addr	addr;
 		NMAccessPoint *	ap = nm_act_request_get_ap (req);
 		NMAccessPoint *	tmp_ap;
+		gboolean			automatic;
 
 		/* Cache details in the info-daemon since the connect was successful */
-		nm_dbus_update_network_info (data->dbus_connection, ap, nm_act_request_get_user_requested (req));
+		automatic = !nm_act_request_get_user_requested (req);
+		nm_dbus_update_network_info (data->dbus_connection, ap, automatic);
 
 		nm_device_get_ap_address (dev, &addr);
 		if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))

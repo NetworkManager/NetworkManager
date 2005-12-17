@@ -80,20 +80,6 @@ typedef enum NMDeviceType
 
 
 /*
- * Encryption key types
- */
-typedef enum NMEncKeyType
-{
-	NM_ENC_TYPE_UNKNOWN = 0,
-	NM_ENC_TYPE_NONE,
-	NM_ENC_TYPE_HEX_KEY,
-	NM_ENC_TYPE_ASCII_KEY,
-	NM_ENC_TYPE_128_BIT_PASSPHRASE
-	/* FIXME: 802.1x support */
-} NMEncKeyType;
-
-
-/*
  * General device capability bits
  *
  */

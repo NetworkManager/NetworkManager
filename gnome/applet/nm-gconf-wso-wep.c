@@ -98,7 +98,7 @@ out:
 static int 
 real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 {
-	NMGConfWSOWEP *	self = NM_GCONF_WSO_WEP (instance);
+	NMGConfWSOWEP * self = NM_GCONF_WSO_WEP (instance);
 
 	if (!nmu_security_serialize_wep (iter,
 			nm_gconf_wso_get_key (instance),
@@ -108,8 +108,15 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 }
 
 static int 
-real_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
+real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *network)
 {
+	NMGConfWSOWEP *self = NM_GCONF_WSO_WEP (instance);
+	char *		key;
+
+	key = g_strdup_printf ("%s/%s/%sauth_algorithm", GCONF_PATH_WIRELESS_NETWORKS, network, WEP_PREFIX);
+	gconf_client_set_int (client, key, self->priv->auth_algorithm, NULL);
+	g_free (key);
+
 	return 0;
 }
 

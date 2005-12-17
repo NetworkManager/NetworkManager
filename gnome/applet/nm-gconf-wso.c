@@ -247,6 +247,7 @@ int
 nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
 {
 	dbus_int32_t	dbus_we_cipher;
+	char *		key;
 
 	g_return_val_if_fail (self != NULL, -1);
 	g_return_val_if_fail (client != NULL, -1);
@@ -255,11 +256,11 @@ nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char 
 	if (self->priv->dispose_has_run)
 		return -1;
 
-#if 0
-	/* First arg: WE cipher (INT32) */
-	dbus_we_cipher = (dbus_int32_t) self->priv->we_cipher;
-	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &dbus_we_cipher);
-#endif
+	key = g_strdup_printf ("%s/%s/we_cipher", GCONF_PATH_WIRELESS_NETWORKS, network);
+	gconf_client_set_int (client, key, self->priv->we_cipher, NULL);
+	g_free (key);
+
+	/* Encryption key doesn't get serialized since its stored in the keyring */
 
 	return NM_GCONF_WSO_GET_CLASS (self)->serialize_gconf_func (self, client, network);
 }

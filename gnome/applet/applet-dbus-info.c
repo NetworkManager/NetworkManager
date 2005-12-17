@@ -30,6 +30,7 @@
 #include <gtk/gtk.h>
 #include <glade/glade.h>
 #include <gnome-keyring.h>
+#include <iwlib.h>
 
 #include "NetworkManager.h"
 #include "applet.h"
@@ -794,80 +795,71 @@ nmi_dbus_get_vpn_connection_routes (DBusConnection *connection,
  * Save information about a wireless network in gconf and the gnome keyring.
  *
  */
-static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, const char *enc_key_source,
-							const NMEncKeyType enc_key_type, int auth_method, gboolean user_requested)
+static void
+nmi_save_network_info (NMWirelessApplet *applet,
+                       const char *essid,
+                       gboolean automatic,
+                       NMGConfWSO * gconf_wso)
 {
-	char *		key;
-	GConfEntry *	gconf_entry;
-	char *		escaped_network;
+	GnomeKeyringAttributeList *	attributes;
+	GnomeKeyringAttribute		attr;
+	char *					key;
+	GConfEntry *				gconf_entry;
+	char *					escaped_network;
+	GnomeKeyringResult			ret;
+	const char *				name;
+	guint32					item_id;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (essid != NULL);
+	g_return_if_fail (gconf_wso != NULL);
 
 	escaped_network = gconf_escape_key (essid, strlen (essid));
 	key = g_strdup_printf ("%s/%s", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	gconf_entry = gconf_client_get_entry (applet->gconf_client, key, NULL, TRUE, NULL);
 	g_free (key);
-
 	if (gconf_entry)
+		goto out;
+	gconf_entry_unref (gconf_entry);
+
+	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
 	{
-		GnomeKeyringAttributeList *attributes;
-		GnomeKeyringAttribute attr;
-		GnomeKeyringResult ret;
-		const char *name;
-		guint32 item_id;
+		/* Setup a request to the keyring to save the network passphrase */
+		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+		attributes = gnome_keyring_attribute_list_new ();
+		attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
+		attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
+		attr.value.string = g_strdup (essid);
+		g_array_append_val (attributes, attr);
 
-		if (enc_key_source && strlen (enc_key_source)
-			&& (enc_key_type != NM_ENC_TYPE_UNKNOWN) && (enc_key_type != NM_ENC_TYPE_NONE))
-		{
-			/* Setup a request to the keyring to save the network passphrase */
-			name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
-			attributes = gnome_keyring_attribute_list_new ();
-			attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
-			attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
-			attr.value.string = g_strdup (essid);
-			g_array_append_val (attributes, attr);
+		ret = gnome_keyring_item_create_sync (NULL,
+									   GNOME_KEYRING_ITEM_GENERIC_SECRET,
+									   name,
+									   attributes,
+									   nm_gconf_wso_get_key (gconf_wso),
+									   TRUE,
+									   &item_id);
+		if (ret != GNOME_KEYRING_RESULT_OK)
+			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
 
-			ret = gnome_keyring_item_create_sync (NULL,
-										   GNOME_KEYRING_ITEM_GENERIC_SECRET,
-										   name,
-										   attributes,
-										   enc_key_source,
-										   TRUE,
-										   &item_id);
-			if (ret != GNOME_KEYRING_RESULT_OK)
-				g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
-
-			gnome_keyring_attribute_list_free (attributes);
-		}
-
-		gconf_entry_unref (gconf_entry);
-
-		key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-		gconf_client_set_string (applet->gconf_client, key, essid, NULL);
-		g_free (key);
-
-		key = g_strdup_printf ("%s/%s/key_type", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-		gconf_client_set_int (applet->gconf_client, key, (int)enc_key_type, NULL);
-		g_free (key);
-
-		/* We only update the timestamp if the user requested a particular network, not if
-		 * NetworkManager decided to switch access points by itself.
-		 */
-		if (user_requested)
-		{
-			key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-			gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-			g_free (key);
-		}
-
-		if (auth_method != -1)
-		{
-			key = g_strdup_printf ("%s/%s/auth_method", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-			gconf_client_set_int (applet->gconf_client, key, auth_method, NULL);
-			g_free (key);
-		}
+		gnome_keyring_attribute_list_free (attributes);
 	}
+
+	key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+	gconf_client_set_string (applet->gconf_client, key, essid, NULL);
+	g_free (key);
+
+	/* We only update the timestamp if the user requested a particular network, not if
+	 * NetworkManager decided to switch access points by itself.
+	 */
+	if (!automatic)
+	{
+		key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
+		g_free (key);
+	}
+
+out:
 	g_free (escaped_network);
 }
 
@@ -885,28 +877,36 @@ nmi_dbus_update_network_info (DBusConnection *connection,
                               void *user_data)
 {
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
-	char *			network = NULL;
-	int				auth_method = -1;
-	char *			enc_key_source = NULL;
-	int				enc_key_type = -1;
-	gboolean			user_requested;
+	char *			essid = NULL;
+	gboolean			automatic;
 	dbus_bool_t		args_good;
+	NMGConfWSO *		gconf_wso = NULL;
+	DBusMessageIter	iter;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	args_good = dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network,
-											DBUS_TYPE_STRING, &enc_key_source,
-											DBUS_TYPE_INT32, &enc_key_type,
-											DBUS_TYPE_INT32, &auth_method,
-											DBUS_TYPE_BOOLEAN, &user_requested,
-											DBUS_TYPE_INVALID);
-	if (!args_good || (strlen (network) <= 0) || (auth_method == -1))
-		return NULL;
-	if (enc_key_source && strlen (enc_key_source) && ((enc_key_type == NM_ENC_TYPE_UNKNOWN) || (enc_key_type == NM_ENC_TYPE_NONE)))
-		return NULL;
+	dbus_message_iter_init (message, &iter);
 
-	nmi_save_network_info (applet, network, enc_key_source, (NMEncKeyType) enc_key_type, auth_method, user_requested);
+	/* First argument: ESSID (STRING) */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+		goto out;
+	dbus_message_iter_get_basic (&iter, &essid);
+	if (strlen (essid) <= 0)
+		goto out;
+
+	/* Second argument: Automatic (BOOLEAN) */
+	if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
+		goto out;
+	dbus_message_iter_get_basic (&iter, &automatic);
+
+	/* Deserialize the sercurity option out of the message */
+	if (!(gconf_wso = nm_gconf_wso_new_deserialize_dbus (&iter)))
+		goto out;
+
+	nmi_save_network_info (applet, essid, automatic, gconf_wso);
+
+out:
 	return NULL;
 }
 

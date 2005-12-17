@@ -1,5 +1,20 @@
 2005-12-17  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Finally kill NMEncKeyType
+
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_save_network_info): convert to NMGConfWSO
+
+	* gnome/applet/nm-gconf-wso-*.c
+		- Implement gconf serialization functions
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): fix up meaning of
+			automatic/user_requested
+
+2005-12-17  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/*
 		- More applet cleanups
 		- Use the dbus-method-dispatcher

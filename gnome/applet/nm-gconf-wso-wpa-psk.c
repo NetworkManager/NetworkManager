@@ -120,8 +120,19 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 }
 
 static int 
-real_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
+real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *network)
 {
+	NMGConfWSOWPA_PSK *	self = NM_GCONF_WSO_WPA_PSK (instance);
+	char *			key;
+
+	key = g_strdup_printf ("%s/%s/%swpa_version", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_PSK_PREFIX);
+	gconf_client_set_int (client, key, self->priv->wpa_version, NULL);
+	g_free (key);
+
+	key = g_strdup_printf ("%s/%s/%skey_mgt", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_PSK_PREFIX);
+	gconf_client_set_int (client, key, self->priv->key_mgt, NULL);
+	g_free (key);
+
 	return 0;
 }
 
