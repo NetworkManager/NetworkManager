@@ -32,6 +32,8 @@ void			nmi_passphrase_dialog_destroy			(GtkWidget *dialog);
 
 gboolean		nmi_passphrase_dialog_schedule_show	(NetworkDevice *dev, WirelessNetwork *net, DBusMessage *message, NMWirelessApplet *applet);
 
-void			nmi_passphrase_dialog_cancel			(NMWirelessApplet *applet);
+DBusMessage *	nmi_passphrase_dialog_cancel			(DBusConnection *connection, DBusMessage *message, void *user_data);
 
-#endif
+
+#endif	/* PASSPHRASE_DIALOG_H */
+

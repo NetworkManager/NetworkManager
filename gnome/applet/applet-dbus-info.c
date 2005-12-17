@@ -39,6 +39,23 @@
 #include "nm-utils.h"
 #include "nm-gconf-wso.h"
 #include "gconf-helpers.h"
+#include "dbus-method-dispatcher.h"
+#include "dbus-helpers.h"
+
+
+static DBusMessage * new_invalid_args_error (DBusMessage *message, const char *func)
+{
+	char *		msg;
+	DBusMessage *	reply;
+
+	g_return_val_if_fail (message != NULL, NULL);
+	g_return_val_if_fail (func != NULL, NULL);
+
+	return nmu_create_dbus_error_message (message,
+								"InvalidArguments",
+								"NetworkManager::%s called with invalid arguments.",
+								func);
+}
 
 
 /*
@@ -123,15 +140,13 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
 		GnomeKeyringFound *	found;
 		NMGConfWSO *		gconf_wso;
 
-		found = found_list->data;
-		key = g_strdup (found->secret);
-
 		escaped_network = gconf_escape_key (essid, strlen (essid));
 		gconf_wso = nm_gconf_wso_new_deserialize_gconf (applet->gconf_client, escaped_network);
 		g_free (escaped_network);
 
+		found = found_list->data;
+		nm_gconf_wso_set_key (gconf_wso, found->secret, strlen (found->secret));
 		nmi_dbus_return_user_key (applet->connection, message, gconf_wso);
-		g_free (key);
 	}
 	else
 	{
@@ -150,83 +165,84 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
  * Throw up the user key dialog
  *
  */
-static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_key_for_network (DBusConnection *connection,
+                              DBusMessage *message,
+                              void *user_data)
 {
-	char *	dev_path = NULL;
-	char *	net_path = NULL;
-	char *	essid = NULL;
-	int		attempt = 0;
-	gboolean	new_key = FALSE;
-	gboolean	success = FALSE;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	char *			dev_path = NULL;
+	char *			net_path = NULL;
+	char *			essid = NULL;
+	int				attempt = 0;
+	gboolean			new_key = FALSE;
+	NetworkDevice *	dev = NULL;
+	WirelessNetwork *	net = NULL;
 
-	if (dbus_message_get_args (message, NULL,
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	if (!dbus_message_get_args (message, NULL,
 	                           DBUS_TYPE_OBJECT_PATH, &dev_path,
 	                           DBUS_TYPE_OBJECT_PATH, &net_path,
 	                           DBUS_TYPE_STRING, &essid,
 	                           DBUS_TYPE_INT32, &attempt,
 	                           DBUS_TYPE_BOOLEAN, &new_key,
 	                           DBUS_TYPE_INVALID))
+		return NULL;
+
+	if (!(dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+		return NULL;
+
+	/* It's not a new key, so try to get the key from the keyring. */
+	if (!new_key)
 	{
-		NetworkDevice *dev = NULL;
+		GnomeKeyringResult ret;
+		GList *found_list = NULL;
+		char *key = NULL;
+		NMGetNetworkKeyCBData *cb_data;
 
-		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+		cb_data = g_malloc0 (sizeof (NMGetNetworkKeyCBData));
+		cb_data->applet = applet;
+		cb_data->essid = g_strdup (essid);
+		cb_data->message = message;
+		dbus_message_ref (message);
+		cb_data->dev = dev;
+		network_device_ref (dev);
+		cb_data->net_path = g_strdup (net_path);
+
+		/* If the menu happens to be showing when we pop up the
+		 * keyring dialog, we get an X server deadlock.  So deactivate
+		 * the menu here.
+		 */
+		if (applet->dropdown_menu && GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->dropdown_menu)))
+			gtk_menu_shell_deactivate (GTK_MENU_SHELL (applet->dropdown_menu));
+
+		/* Get the essid key, if any, from the keyring */
+		gnome_keyring_find_itemsv (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+		                           (GnomeKeyringOperationGetListCallback) nmi_dbus_get_network_key_callback,
+		                           cb_data,
+		                           NULL,
+		                           "essid",
+		                           GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+		                           essid,
+		                           NULL);
+	}
+	else
+	{
+		/* We only ask the user for a new key when we know about the network from NM,
+		 * since throwing up a dialog with a random essid from somewhere is a security issue.
+		 */
+		if (new_key && (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
 		{
-			WirelessNetwork *net = NULL;
-
-			/* It's not a new key, so try to get the key from the keyring. */
-			if (!new_key)
+			gboolean success;
+			if (!(success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet)))
 			{
-				GnomeKeyringResult ret;
-				GList *found_list = NULL;
-				char *key = NULL;
-				NMGetNetworkKeyCBData *cb_data;
-
-				cb_data = g_malloc0 (sizeof (NMGetNetworkKeyCBData));
-				cb_data->applet = applet;
-				cb_data->essid = g_strdup (essid);
-				cb_data->message = message;
-				dbus_message_ref (message);
-				cb_data->dev = dev;
-				network_device_ref (dev);
-				cb_data->net_path = g_strdup (net_path);
-
-				/* If the menu happens to be showing when we pop up the
-				 * keyring dialog, we get an X server deadlock.  So deactivate
-				 * the menu here.
-				 */
-				if (applet->dropdown_menu && GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->dropdown_menu)))
-					gtk_menu_shell_deactivate (GTK_MENU_SHELL (applet->dropdown_menu));
-
-				/* Get the essid key, if any, from the keyring */
-				gnome_keyring_find_itemsv (GNOME_KEYRING_ITEM_GENERIC_SECRET,
-				                           (GnomeKeyringOperationGetListCallback) nmi_dbus_get_network_key_callback,
-				                           cb_data,
-				                           NULL,
-				                           "essid",
-				                           GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-				                           essid,
-				                           NULL);
-			}
-			else
-			{
-				/* We only ask the user for a new key when we know about the network from NM,
-				 * since throwing up a dialog with a random essid from somewhere is a security issue.
-				 */
-				if (new_key && (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
-				{
-					success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
-					if (!success)
-					{
-						DBusMessage *error_message;
-						char *error_message_str;
-
-						error_message_str = g_strdup_printf ("Could not get user key for network '%s'.", essid);
-						error_message = nmi_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "GetKeyError", error_message_str);
-						g_free (error_message_str);
-
-						return error_message;
-					}
-				}
+				return nmi_dbus_create_error_message (message,
+				                                      NMI_DBUS_INTERFACE,
+				                                      "GetKeyError",
+				                                      "Could not get user key for network '%s'.",
+				                                      essid);
 			}
 		}
 	}
@@ -243,21 +259,17 @@ static DBusMessage * nmi_dbus_get_key_for_network (NMWirelessApplet *applet, DBu
  */
 void
 nmi_dbus_return_user_key (DBusConnection *connection,
-					DBusMessage *message,
-					NMGConfWSO *gconf_wso)
+                          DBusMessage *message,
+                          NMGConfWSO *gconf_wso)
 {
 	DBusMessage *		reply;
 	DBusMessageIter	iter;
 
 	g_return_if_fail (connection != NULL);
+	g_return_if_fail (message != NULL);
 	g_return_if_fail (gconf_wso != NULL);
 
-	if (!(reply = dbus_message_new_method_return (message)))
-	{
-		nm_warning ("nmi_dbus_return_user_key(): Couldn't allocate the dbus message");
-		return;
-	}
-
+	reply = dbus_message_new_method_return (message);
 	dbus_message_iter_init_append (reply, &iter);
 	if (nm_gconf_wso_serialize_dbus (gconf_wso, &iter))
 		dbus_connection_send (connection, reply, NULL);
@@ -284,12 +296,7 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 	if (type != NETWORK_TYPE_ALLOWED)
 		return;
 
-	if (!(message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate")))
-	{
-		nm_warning ("nmi_dbus_signal_update_network(): Not enough memory for new dbus message!");
-		return;
-	}
-
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
 		nm_warning ("nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
@@ -305,8 +312,14 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
  * of a string array in a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_networks (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_networks (DBusConnection *connection,
+                       DBusMessage *message,
+                       void *user_data)
 {
+	const char * NO_NET_ERROR = "NoNetworks";
+	const char * NO_NET_ERROR_MSG = "There are no wireless networks stored.";
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt;
 	DBusMessage *		reply = NULL;
@@ -320,19 +333,11 @@ static DBusMessage *nmi_dbus_get_networks (NMWirelessApplet *applet, DBusMessage
 
 	if (	   !dbus_message_get_args (message, NULL, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
 		|| !nmi_network_type_valid (type))
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-						"NetworkManagerInfo::getNetworks called with invalid arguments.");
-		goto out;
-	}
+		return new_invalid_args_error (message, __func__);
 
 	/* List all allowed access points that gconf knows about */
 	if (!(dir_list = gconf_client_all_dirs (applet->gconf_client, GCONF_PATH_WIRELESS_NETWORKS, NULL)))
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
-					"There are no wireless networks stored.");
-		goto out;
-	}
+		return nmu_create_dbus_error_message (message, NO_NET_ERROR, NO_NET_ERROR_MSG);
 
 	reply = dbus_message_new_method_return (message);
 	dbus_message_iter_init_append (reply, &iter);
@@ -367,8 +372,7 @@ static DBusMessage *nmi_dbus_get_networks (NMWirelessApplet *applet, DBusMessage
 	if (!value_added)
 	{
 		dbus_message_unref (reply);
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoNetworks",
-					"There are no wireless networks stored.");
+		reply = nmu_create_dbus_error_message (message, NO_NET_ERROR, NO_NET_ERROR_MSG);
 	}
 
 out:
@@ -388,8 +392,12 @@ static void addr_list_append_helper (GConfValue *value, DBusMessageIter *iter)
  * Returns the properties of a specific wireless network from gconf
  *
  */
-static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_network_properties (DBusConnection *connection,
+                                 DBusMessage *message,
+                                 void *user_data)
 {
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	DBusMessage *		reply = NULL;
 	gchar *			gconf_key = NULL;
 	char *			network = NULL;
@@ -408,12 +416,11 @@ static DBusMessage *nmi_dbus_get_network_properties (NMWirelessApplet *applet, D
 
 	client = applet->gconf_client;
 
-	if (    !dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0))
-	{
+	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
 		goto out;
-	}
+
+	if (!nmi_network_type_valid (type) || (strlen (network) <= 0))
+		goto out;
 
 	if (!(escaped_network = gconf_escape_key (network, strlen (network))))
 		goto out;
@@ -471,10 +478,7 @@ out:
 	g_free (escaped_network);
 
 	if (!reply)
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-						"NetworkManagerInfo::getNetworkProperties called with invalid arguments.");
-	}
+		reply = new_invalid_args_error (message, __func__);
 
 	return reply;
 }
@@ -494,12 +498,7 @@ void nmi_dbus_signal_update_vpn_connection (DBusConnection *connection, const ch
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (name != NULL);
 
-	if (!(message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "VPNConnectionUpdate")))
-	{
-		nm_warning ("nmi_dbus_signal_update_vpn_connection(): Not enough memory for new dbus message!");
-		return;
-	}
-
+	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "VPNConnectionUpdate");
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
 		nm_warning ("nmi_dbus_signal_update_vpn_connection(): Could not raise the 'VPNConnectionUpdate' signal!");
@@ -515,8 +514,12 @@ void nmi_dbus_signal_update_vpn_connection (DBusConnection *connection, const ch
  * of a string array in a dbus message.
  *
  */
-static DBusMessage *nmi_dbus_get_vpn_connections (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_vpn_connections (DBusConnection *connection,
+                              DBusMessage *message,
+                              void *user_data)
 {
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt = NULL;
 	DBusMessage *		reply = NULL;
@@ -530,7 +533,7 @@ static DBusMessage *nmi_dbus_get_vpn_connections (NMWirelessApplet *applet, DBus
 	/* List all VPN connections that gconf knows about */
 	if (!(dir_list = gconf_client_all_dirs (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS, NULL)))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoVPNConnections",
+		reply = nmu_create_dbus_error_message (message, "NoVPNConnections",
 							"There are no VPN connections stored.");
 		goto out;
 	}
@@ -567,7 +570,7 @@ static DBusMessage *nmi_dbus_get_vpn_connections (NMWirelessApplet *applet, DBus
 	if (!value_added)
 	{
 		dbus_message_unref (reply);
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "NoVPNConnections",
+		reply = nmu_create_dbus_error_message (message, "NoVPNConnections",
 						"There are no VPN connections stored.");
 	}
 
@@ -582,8 +585,12 @@ out:
  * Returns the properties of a specific VPN connection from gconf
  *
  */
-static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_vpn_connection_properties (DBusConnection *connection,
+                                        DBusMessage *message,
+                                        void *user_data)
 {
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	DBusMessage *	reply = NULL;
 	gchar *		gconf_key = NULL;
 	char *		vpn_connection = NULL;
@@ -603,9 +610,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_properties (NMWirelessApplet *ap
 	if (    !dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &vpn_connection, DBUS_TYPE_INVALID)
 		|| (strlen (vpn_connection) <= 0))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getVPNConnectionProperties called with invalid arguments.");
-		goto out;
+		return new_invalid_args_error (message, __func__);
 	}
 
 	escaped_name = gconf_escape_key (vpn_connection, strlen (vpn_connection));
@@ -642,29 +647,26 @@ out:
  * Returns vpn-daemon specific properties for a particular VPN connection.
  *
  */
-static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_vpn_connection_vpn_data (DBusConnection *connection,
+                                      DBusMessage *message,
+                                      void *user_data)
 {
-	DBusMessage		*reply = NULL;
-	gchar			*gconf_key = NULL;
-	char				*name = NULL;
-	GConfValue		*vpn_data_value = NULL;
-	GConfValue		*value = NULL;
-	DBusError			 error;
-	char				*escaped_name;
-	DBusMessageIter 	 iter, array_iter;
-	GSList			*elt;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	DBusMessage *	reply = NULL;
+	gchar *		gconf_key = NULL;
+	char *		name = NULL;
+	GConfValue *	vpn_data_value = NULL;
+	GConfValue *	value = NULL;
+	char *		escaped_name;
+	DBusMessageIter iter, array_iter;
+	GSList *		elt;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID)
-		|| (strlen (name) <= 0))
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getVPNConnectionVPNData called with invalid arguments.");
-		return reply;
-	}
+	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID) || (strlen (name) <= 0))
+		return new_invalid_args_error (message, __func__);
 
 	escaped_name = gconf_escape_key (name, strlen (name));
 
@@ -672,7 +674,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *appl
 	gconf_key = g_strdup_printf ("%s/%s/name", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
 	if (!(value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+		reply = nmu_create_dbus_error_message (message, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionVPNData could not access the name for connection '%s'", name);
 		return reply;
 	}
@@ -685,7 +687,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *appl
 		|| !(vpn_data_value->type == GCONF_VALUE_LIST)
 		|| !(gconf_value_get_list_type (vpn_data_value) == GCONF_VALUE_STRING))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+		reply = nmu_create_dbus_error_message (message, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionVPNData could not access the VPN data for connection '%s'", name);
 		if (vpn_data_value)
 			gconf_value_free (vpn_data_value);
@@ -709,7 +711,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *appl
 	gconf_value_free (vpn_data_value);
 	g_free (escaped_name);
 
-	return (reply);
+	return reply;
 }
 
 /*
@@ -718,29 +720,26 @@ static DBusMessage *nmi_dbus_get_vpn_connection_vpn_data (NMWirelessApplet *appl
  * Returns routes for a particular VPN connection.
  *
  */
-static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_get_vpn_connection_routes (DBusConnection *connection,
+                                    DBusMessage *message,
+                                    void *user_data)
 {
-	DBusMessage		*reply = NULL;
-	gchar			*gconf_key = NULL;
-	char				*name = NULL;
-	GConfValue		*routes_value = NULL;
-	GConfValue		*value = NULL;
-	DBusError			 error;
-	char				*escaped_name;
-	DBusMessageIter 	 iter, array_iter;
-	GSList			*elt;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	DBusMessage *	reply = NULL;
+	gchar *		gconf_key = NULL;
+	char *		name = NULL;
+	GConfValue *	routes_value = NULL;
+	GConfValue *	value = NULL;
+	char *		escaped_name;
+	DBusMessageIter iter, array_iter;
+	GSList *		elt;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID)
-		|| (strlen (name) <= 0))
-	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::getVPNConnectionRoutes called with invalid arguments.");
-		return reply;
-	}
+	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID) || (strlen (name) <= 0))
+		return new_invalid_args_error (message, __func__);
 
 	escaped_name = gconf_escape_key (name, strlen (name));
 
@@ -748,7 +747,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
 	gconf_key = g_strdup_printf ("%s/%s/name", GCONF_PATH_VPN_CONNECTIONS, escaped_name);
 	if (!(value = gconf_client_get (applet->gconf_client, gconf_key, NULL)))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+		reply = nmu_create_dbus_error_message (message, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionRoutes could not access the name for connection '%s'", name);
 		return reply;
 	}
@@ -761,7 +760,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
 		|| !(routes_value->type == GCONF_VALUE_LIST)
 		|| !(gconf_value_get_list_type (routes_value) == GCONF_VALUE_STRING))
 	{
-		reply = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "BadVPNConnectionData",
+		reply = nmu_create_dbus_error_message (message, "BadVPNConnectionData",
 						"NetworkManagerInfo::getVPNConnectionRoutes could not access the routes for connection '%s'", name);
 		if (routes_value)
 			gconf_value_free (routes_value);
@@ -785,7 +784,7 @@ static DBusMessage *nmi_dbus_get_vpn_connection_routes (NMWirelessApplet *applet
 	gconf_value_free (routes_value);
 	g_free (escaped_name);
 
-	return (reply);
+	return reply;
 }
 
 
@@ -880,32 +879,35 @@ static void nmi_save_network_info (NMWirelessApplet *applet, const char *essid, 
  * Update a network's authentication method and encryption key in gconf & the keyring
  *
  */
-static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_update_network_info (DBusConnection *connection,
+                              DBusMessage *message,
+                              void *user_data)
 {
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	char *			network = NULL;
 	int				auth_method = -1;
 	char *			enc_key_source = NULL;
 	int				enc_key_type = -1;
 	gboolean			user_requested;
-	DBusError			error;
 	dbus_bool_t		args_good;
 
-	g_return_if_fail (applet != NULL);
-	g_return_if_fail (message != NULL);
+	g_return_val_if_fail (applet != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
 
-	dbus_error_init (&error);
-	args_good = dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network,
-											  DBUS_TYPE_STRING, &enc_key_source,
-											  DBUS_TYPE_INT32, &enc_key_type,
-											  DBUS_TYPE_INT32, &auth_method,
-											  DBUS_TYPE_BOOLEAN, &user_requested,
-											  DBUS_TYPE_INVALID);
+	args_good = dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network,
+											DBUS_TYPE_STRING, &enc_key_source,
+											DBUS_TYPE_INT32, &enc_key_type,
+											DBUS_TYPE_INT32, &auth_method,
+											DBUS_TYPE_BOOLEAN, &user_requested,
+											DBUS_TYPE_INVALID);
 	if (!args_good || (strlen (network) <= 0) || (auth_method == -1))
-		return;
+		return NULL;
 	if (enc_key_source && strlen (enc_key_source) && ((enc_key_type == NM_ENC_TYPE_UNKNOWN) || (enc_key_type == NM_ENC_TYPE_NONE)))
-		return;
+		return NULL;
 
 	nmi_save_network_info (applet, network, enc_key_source, (NMEncKeyType) enc_key_type, auth_method, user_requested);
+	return NULL;
 }
 
 
@@ -915,33 +917,34 @@ static void nmi_dbus_update_network_info (NMWirelessApplet *applet, DBusMessage 
  * Add an AP's MAC address to a wireless network entry in gconf
  *
  */
-static DBusMessage *nmi_dbus_add_network_address (NMWirelessApplet *applet, DBusMessage *message)
+static DBusMessage *
+nmi_dbus_add_network_address (DBusConnection *connection,
+                              DBusMessage *message,
+                              void *user_data)
 {
-	DBusMessage		*reply_message = NULL;
-	char				*network = NULL;
-	NMNetworkType		 type;
-	char				*addr;
-	char				*key;
-	GConfValue		*value;
-	DBusError			 error;
-	char				*escaped_network;
-	GSList			*new_mac_list = NULL;
-	gboolean			 found = FALSE;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	DBusMessage *	reply_message = NULL;
+	char *		network = NULL;
+	NMNetworkType	type;
+	char *		addr;
+	char *		key;
+	GConfValue *	value;
+	char *		escaped_network;
+	GSList *		new_mac_list = NULL;
+	gboolean		found = FALSE;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
-	dbus_error_init (&error);
-	if (    !dbus_message_get_args (message, &error, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_STRING, &addr, DBUS_TYPE_INVALID)
-		|| !nmi_network_type_valid (type)
-		|| (strlen (network) <= 0)
-		|| !addr
-		|| (strlen (addr) < 11))
-	{
-		reply_message = nmwa_dbus_create_error_message (message, NMI_DBUS_INTERFACE, "InvalidArguments",
-							"NetworkManagerInfo::addNetworkAddress called with invalid arguments.");
-		return (reply_message);
-	}
+	if (!dbus_message_get_args (message, NULL,
+						   DBUS_TYPE_STRING, &network,
+						   DBUS_TYPE_INT32, &type,
+						   DBUS_TYPE_STRING, &addr,
+						   DBUS_TYPE_INVALID))
+		return new_invalid_args_error (message, __func__);
+
+	if (!nmi_network_type_valid (type) || (strlen (network) <= 0) || !addr || (strlen (addr) < 11))
+		return new_invalid_args_error (message, __func__);
 
 	/* Force-set the essid too so that we have a semi-complete network entry */
 	escaped_network = gconf_escape_key (network, strlen (network));
@@ -963,28 +966,28 @@ static DBusMessage *nmi_dbus_add_network_address (NMWirelessApplet *applet, DBus
 
 	/* Get current list of access point MAC addresses for this AP from GConf */
 	key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	value = gconf_client_get (applet->gconf_client, key, NULL);
-	g_free (escaped_network);
-
-	if (value && (value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+	if ((value = gconf_client_get (applet->gconf_client, key, NULL)))
 	{
-		GSList	*elem;
-
-		new_mac_list = gconf_client_get_list (applet->gconf_client, key, GCONF_VALUE_STRING, NULL);
-		gconf_value_free (value);
-
-		/* Ensure that the MAC isn't already in the list */
-		elem = new_mac_list;
-		while (elem)
+		if ((value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
 		{
-			if (elem->data && !strcmp (addr, elem->data))
+			GSList *	elt;
+
+			new_mac_list = gconf_client_get_list (applet->gconf_client, key, GCONF_VALUE_STRING, NULL);
+
+			/* Ensure that the MAC isn't already in the list */
+			for (elt = new_mac_list; elt; elt = g_slist_next (elt))
 			{
-				found = TRUE;
-				break;
+				if (elt->data && !strcmp (addr, elt->data))
+				{
+					found = TRUE;
+					break;
+				}
 			}
-			elem = g_slist_next (elem);
 		}
+		gconf_value_free (value);
 	}
+	g_free (escaped_network);
+	g_free (key);
 
 	/* Add the new MAC address to the end of the list */
 	if (!found)
@@ -997,9 +1000,7 @@ static DBusMessage *nmi_dbus_add_network_address (NMWirelessApplet *applet, DBus
 	g_slist_foreach (new_mac_list, (GFunc)g_free, NULL);
 	g_slist_free (new_mac_list);
 
-	g_free (key);
-
-	return (NULL);
+	return NULL;
 }
 
 
@@ -1011,41 +1012,17 @@ static DBusMessage *nmi_dbus_add_network_address (NMWirelessApplet *applet, DBus
  */
 DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	const char *method;
-	const char *path;
-	NMWirelessApplet *applet = (NMWirelessApplet *)user_data;
-	DBusMessage *reply = NULL;
-	gboolean handled = TRUE;
+	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
+	DBusMessage *		reply = NULL;
+	gboolean			handled;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	method = dbus_message_get_member (message);
-	path = dbus_message_get_path (message);
-
-/*	nm_warning ("nmi_dbus_nmi_message_handler() got method %s for path %s", method, path); */
-
-	if (strcmp ("getKeyForNetwork", method) == 0)
-		reply = nmi_dbus_get_key_for_network (applet, message);
-	else if (strcmp ("cancelGetKeyForNetwork", method) == 0)
-		nmi_passphrase_dialog_cancel (applet);
-	else if (strcmp ("getNetworks", method) == 0)
-		reply = nmi_dbus_get_networks (applet, message);
-	else if (strcmp ("getNetworkProperties", method) == 0)
-		reply = nmi_dbus_get_network_properties (applet, message);
-	else if (strcmp ("updateNetworkInfo", method) == 0)
-		nmi_dbus_update_network_info (applet, message);
-	else if (strcmp ("addNetworkAddress", method) == 0)
-		nmi_dbus_add_network_address (applet, message);
-	else if (strcmp ("getVPNConnections", method) == 0)
-		reply = nmi_dbus_get_vpn_connections (applet, message);
-	else if (strcmp ("getVPNConnectionProperties", method) == 0)
-		reply = nmi_dbus_get_vpn_connection_properties (applet, message);
-	else if (strcmp ("getVPNConnectionVPNData", method) == 0)
-		reply = nmi_dbus_get_vpn_connection_vpn_data (applet, message);
-	else if (strcmp ("getVPNConnectionRoutes", method) == 0)
-		reply = nmi_dbus_get_vpn_connection_routes (applet, message);
-	else
-		handled = FALSE;
+	handled = dbus_method_dispatcher_dispatch (applet->nmi_methods,
+                                                connection,
+                                                message,
+                                                &reply,
+                                                applet);
 
 	if (reply)
 	{
@@ -1073,4 +1050,28 @@ void nmi_dbus_signal_user_interface_activated (DBusConnection *connection)
 		nm_warning ("nmi_dbus_signal_user_interface_activated(): Could not raise the 'UserInterfaceActivated' signal!");
 
 	dbus_message_unref (message);
+}
+
+/*
+ * nmi_dbus_nmi_methods_setup
+ *
+ * Register handlers for dbus methods on the org.freedesktop.NetworkManagerInfo object.
+ *
+ */
+DBusMethodDispatcher *nmi_dbus_nmi_methods_setup (void)
+{
+	DBusMethodDispatcher *	dispatcher = dbus_method_dispatcher_new (NULL);
+
+	dbus_method_dispatcher_register_method (dispatcher, "getKeyForNetwork",          nmi_dbus_get_key_for_network);
+	dbus_method_dispatcher_register_method (dispatcher, "cancelGetKeyForNetwork",    nmi_passphrase_dialog_cancel);
+	dbus_method_dispatcher_register_method (dispatcher, "getNetworks",               nmi_dbus_get_networks);
+	dbus_method_dispatcher_register_method (dispatcher, "getNetworkProperties",      nmi_dbus_get_network_properties);
+	dbus_method_dispatcher_register_method (dispatcher, "updateNetworkInfo",         nmi_dbus_update_network_info);
+	dbus_method_dispatcher_register_method (dispatcher, "addNetworkAddress",         nmi_dbus_add_network_address);
+	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnections",         nmi_dbus_get_vpn_connections);
+	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnectionProperties",nmi_dbus_get_vpn_connection_properties);
+	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnectionVPNData",   nmi_dbus_get_vpn_connection_vpn_data);
+	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnectionRoutes",    nmi_dbus_get_vpn_connection_routes);
+
+	return dispatcher;
 }

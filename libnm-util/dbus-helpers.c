@@ -247,3 +247,32 @@ nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
 	return result;
 }
 
+
+/*
+ * nmu_create_dbus_error_message
+ *
+ * Make a pretty DBus error message
+ *
+ */
+DBusMessage *
+nmu_create_dbus_error_message (DBusMessage *message,
+                               const char *exception,
+                               const char *format,
+                               ...)
+{
+	DBusMessage *	reply;
+	va_list		args;
+	char *		errmsg;
+
+	errmsg = g_malloc0 (513);
+	va_start (args, format);
+	vsnprintf (errmsg, 512, format, args);
+	va_end (args);
+
+	reply = dbus_message_new_error (message, exception, errmsg);
+	g_free (errmsg);
+
+	return reply;
+}
+
+

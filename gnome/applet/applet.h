@@ -31,6 +31,7 @@
 
 #include "nm-device.h"
 #include "wireless-network.h"
+#include "dbus-method-dispatcher.h"
 
 
 /*
@@ -75,6 +76,7 @@ typedef struct
 	EggTrayIcon		parent;
 
 	DBusConnection *	connection;
+	DBusMethodDispatcher *	nmi_methods;
 	GConfClient *		gconf_client;
 	guint		 	gconf_prefs_notify_id;
 	guint		 	gconf_vpn_notify_id;

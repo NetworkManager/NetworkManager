@@ -54,6 +54,7 @@
 #include "vpn-password-dialog.h"
 #include "vpn-connection.h"
 #include "nm-utils.h"
+#include "dbus-method-dispatcher.h"
 
 /* Compat for GTK 2.4 and lower... */
 #if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
@@ -2331,6 +2332,8 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_prefs_notify_id);
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_vpn_notify_id);
 	g_object_unref (G_OBJECT (applet->gconf_client));
+
+	dbus_method_dispatcher_unref (applet->nmi_methods);
 
 	exit (EXIT_SUCCESS);
 }

@@ -43,32 +43,6 @@
 
 
 /*
- * nmi_dbus_create_error_message
- *
- * Convenience function to make a DBus error message
- *
- */
-DBusMessage *nmwa_dbus_create_error_message (DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...)
-{
-	char *		exception_text;
-	DBusMessage *	reply_message;
-	va_list		args;
-	char			error_text[512];
-
-
-	va_start (args, format);
-	vsnprintf (error_text, 512, format, args);
-	va_end (args);
-
-	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
-	reply_message = dbus_message_new_error (message, exception_text, error_text);
-	g_free (exception_text);
-
-	return (reply_message);
-}
-
-
-/*
  * deal_with_dbus_error
  *
  * Ignore some common dbus errors
@@ -155,7 +129,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				{
 					applet->nm_running = FALSE;
 					applet->nm_state = NM_STATE_DISCONNECTED;
-					nmi_passphrase_dialog_cancel (applet);
+					nmi_passphrase_dialog_cancel (NULL, NULL, applet);
 				}
 			}
 		}
@@ -469,6 +443,7 @@ void nmwa_dbus_init_helper (NMWirelessApplet *applet)
 	dbus_g_thread_init ();
 
 	applet->connection = nmwa_dbus_init (applet);
+	applet->nmi_methods = nmi_dbus_nmi_methods_setup ();
 
 	timeout_source = g_timeout_source_new (2000);
 	g_source_set_callback (timeout_source, nmwa_dbus_connection_watcher, applet, NULL);

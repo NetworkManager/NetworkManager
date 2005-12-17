@@ -1,3 +1,13 @@
+2005-12-17  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/*
+		- More applet cleanups
+		- Use the dbus-method-dispatcher
+
+	* libnm-util/dbus-method-dispatcher.[ch]
+		- Generalize the implementation from NM in
+			NetworkManagerUtils.c
+
 2005-12-16  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/*

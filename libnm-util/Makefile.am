@@ -34,7 +34,9 @@ libnm_util_la_SOURCES=			\
 	dbus-helpers.c				\
 	dbus-helpers.h				\
 	sha1.c					\
-	sha1.h
+	sha1.h					\
+	dbus-method-dispatcher.c		\
+	dbus-method-dispatcher.h
 
 if !WITH_GCRYPT
 libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
@@ -55,7 +57,8 @@ libnm_util_include_HEADERS = 		\
 	cipher-wep-ascii.h			\
 	cipher-wpa-psk-hex.h		\
 	cipher-wpa-psk-passphrase.h	\
-	dbus-helpers.h
+	dbus-helpers.h				\
+	dbus-method-dispatcher.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

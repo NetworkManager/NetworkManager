@@ -42,8 +42,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
 }
 
-DBusMessage *	nmwa_dbus_create_error_message		(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
-
 void			nmwa_dbus_init_helper				(NMWirelessApplet *applet);
 
 void			nmwa_dbus_enable_scanning			(NMWirelessApplet *applet, gboolean enabled);

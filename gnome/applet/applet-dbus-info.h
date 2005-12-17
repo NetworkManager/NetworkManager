@@ -39,4 +39,6 @@ void				nmi_dbus_signal_update_vpn_connection	(DBusConnection *connection, const
 
 void				nmi_dbus_signal_user_interface_activated	(DBusConnection *connection);
 
+DBusMethodDispatcher *	nmi_dbus_nmi_methods_setup		(void);
+
 #endif

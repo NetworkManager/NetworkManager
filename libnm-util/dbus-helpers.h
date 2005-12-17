@@ -27,37 +27,41 @@
 #include "cipher.h"
 
 dbus_bool_t	nmu_security_serialize_wep (DBusMessageIter *iter,
-								const char *key,
-								int auth_alg);
+                                        const char *key,
+                                        int auth_alg);
 
 dbus_bool_t	nmu_security_deserialize_wep (DBusMessageIter *iter,
-								char **key,
-								int *key_len,
-								int *auth_alg);
+                                        char **key,
+                                        int *key_len,
+                                        int *auth_alg);
 
 dbus_bool_t	nmu_security_serialize_wep_with_cipher (DBusMessage *message,
-								IEEE_802_11_Cipher *cipher,
-								const char *ssid,
-								const char *input,
-								int auth_alg);
+                                        IEEE_802_11_Cipher *cipher,
+                                        const char *ssid,
+                                        const char *input,
+                                        int auth_alg);
 
 dbus_bool_t	nmu_security_serialize_wpa_psk (DBusMessageIter *iter,
-								const char *key,
-								int wpa_version,
-								int key_mgt);
+                                        const char *key,
+                                        int wpa_version,
+                                        int key_mgt);
 
 dbus_bool_t	nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
-								char **key,
-								int *key_len,
-								int *wpa_version,
-								int *key_mgt);
+                                        char **key,
+                                        int *key_len,
+                                        int *wpa_version,
+                                        int *key_mgt);
 
 dbus_bool_t	nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
-								IEEE_802_11_Cipher *cipher,
-								const char *ssid,
-								const char *input,
-								int wpa_version,
-								int key_mgt);
+                                        IEEE_802_11_Cipher *cipher,
+                                        const char *ssid,
+                                        const char *input,
+                                        int wpa_version,
+                                        int key_mgt);
 
+DBusMessage *	nmu_create_dbus_error_message (DBusMessage *message,
+                                        const char *exception,
+                                        const char *format,
+                                        ...);
 
 #endif	/* DBUS_HELPERS_H */
