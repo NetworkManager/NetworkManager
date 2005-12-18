@@ -1,5 +1,9 @@
 2005-12-17  Dan Williams  <dcbw@redhat.com>
 
+	* Fix bugs
+
+2005-12-17  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Finally kill NMEncKeyType
 

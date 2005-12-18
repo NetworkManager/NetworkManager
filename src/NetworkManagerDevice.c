@@ -4443,7 +4443,6 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				/* New AP with some defaults */
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
-				nm_ap_set_mode (ap, IW_MODE_INFRA);
 				break;
 			case SIOCGIWMODE:
 				switch (iwe->u.mode)
@@ -4465,17 +4464,17 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					break;
 				if (iwe->u.essid.flags && (ssid_len > 0) && (ssid_len <= IW_ESSID_MAX_SIZE))
 				{
-						gboolean set = TRUE;
-						char *essid = g_malloc (IW_ESSID_MAX_SIZE + 1);
-						memcpy (essid, custom, ssid_len);
-						essid[ssid_len] = '\0';
-						if (!strlen(essid))
-							set = FALSE;
-						else if ((strlen (essid) == 8) && (strcmp (essid, "<hidden>") == 0))	/* Stupid ipw drivers use <hidden> */
-							set = FALSE;
-						if (set)
-							nm_ap_set_essid (ap, essid);
-						g_free (essid);
+					gboolean set = TRUE;
+					char *essid = g_malloc (IW_ESSID_MAX_SIZE + 1);
+					memcpy (essid, custom, ssid_len);
+					essid[ssid_len] = '\0';
+					if (!strlen(essid))
+						set = FALSE;
+					else if ((strlen (essid) == 8) && (strcmp (essid, "<hidden>") == 0))	/* Stupid ipw drivers use <hidden> */
+						set = FALSE;
+					if (set)
+						nm_ap_set_essid (ap, essid);
+					g_free (essid);
 				}
 				break;
 			case SIOCGIWFREQ:

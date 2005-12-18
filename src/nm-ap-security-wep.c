@@ -35,8 +35,6 @@
 struct _NMAPSecurityWEPPrivate
 {
 	int		auth_algorithm;
-
-	gboolean	dispose_has_run;
 };
 
 NMAPSecurityWEP *
@@ -113,7 +111,6 @@ nm_ap_security_wep_init (NMAPSecurityWEP * self)
 {
 	self->priv = NM_AP_SECURITY_WEP_GET_PRIVATE (self);
 	self->priv->auth_algorithm = IW_AUTH_ALG_OPEN_SYSTEM;
-	self->priv->dispose_has_run = FALSE;
 }
 
 static void

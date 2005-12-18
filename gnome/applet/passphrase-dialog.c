@@ -60,12 +60,12 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 	wsm = (WirelessSecurityManager *) g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
 	g_return_if_fail (wsm != NULL);
 
-	ssid = (const char *) g_object_get_data (G_OBJECT (dialog), "network");
-	g_assert (ssid);
-
-	/* Validate the wireless security choices */
-	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
-	enable = wsm_validate_active (wsm, security_combo, ssid);
+	if ((ssid = (const char *) g_object_get_data (G_OBJECT (dialog), "network")))
+	{
+		/* Validate the wireless security choices */
+		security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+		enable = wsm_validate_active (wsm, security_combo, ssid);
+	}
 
 	button = glade_xml_get_widget (xml, "login_button");
 	gtk_widget_set_sensitive (button, enable);

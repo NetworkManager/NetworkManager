@@ -25,6 +25,8 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_AP_SECURITY			(nm_ap_security_get_type ())
 #define NM_AP_SECURITY(obj)			(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AP_SECURITY, NMAPSecurity))
 #define NM_AP_SECURITY_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_AP_SECURITY, NMAPSecurityClass))
@@ -78,5 +80,7 @@ void nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd);
 int nm_ap_security_device_setup (NMAPSecurity *self, struct NMDevice *dev);
 
 const char *nm_ap_security_get_description (NMAPSecurity *self);
+
+G_END_DECLS
 
 #endif	/* NM_AP_SECURITY_H */

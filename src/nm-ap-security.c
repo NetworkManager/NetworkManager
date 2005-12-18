@@ -41,8 +41,6 @@ struct _NMAPSecurityPrivate
 	gboolean	dispose_has_run;
 };
 
-static GObjectClass *parent_class = NULL;
-
 static NMAPSecurity *
 nm_ap_security_new (int we_cipher)
 {
@@ -265,7 +263,9 @@ nm_ap_security_init (NMAPSecurity * self)
 static void
 nm_ap_security_dispose (GObject *object)
 {
-	NMAPSecurity *self = (NMAPSecurity *) object;
+	NMAPSecurity *		self = NM_AP_SECURITY (object);
+	NMAPSecurityClass *	klass;
+	GObjectClass *		parent_class;  
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -282,19 +282,25 @@ nm_ap_security_dispose (GObject *object)
 	 */
 
 	/* Chain up to the parent class */
-	G_OBJECT_CLASS (parent_class)->dispose (object);
+	klass = NM_AP_SECURITY_CLASS (g_type_class_peek (NM_TYPE_AP_SECURITY));
+	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
+	parent_class->dispose (object);
 }
 
 static void
 nm_ap_security_finalize (GObject *object)
 {
-	NMAPSecurity *self = (NMAPSecurity *) object;
+	NMAPSecurity *		self = NM_AP_SECURITY (object);
+	NMAPSecurityClass *	klass;
+	GObjectClass *		parent_class;  
 
 	/* Complete object destruction */
 	g_free (self->priv->key);
 
 	/* Chain up to the parent class */
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	klass = NM_AP_SECURITY_CLASS (g_type_class_peek (NM_TYPE_AP_SECURITY));
+	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
+	parent_class->finalize (object);
 }
 
 

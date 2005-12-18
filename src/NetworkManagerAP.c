@@ -36,7 +36,7 @@ struct NMAccessPoint
 
 	/* Scanned or cached values */
 	char *			essid;
-	struct ether_addr *	address;
+	struct ether_addr	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
 	double			freq;
@@ -77,17 +77,16 @@ NMAccessPoint * nm_ap_new (void)
 {
 	NMAccessPoint	*ap;
 	
-	ap = g_new0 (NMAccessPoint, 1);
-	if (!ap)
+	if (!(ap = g_malloc0 (sizeof (NMAccessPoint))))
 	{
 		nm_warning ("nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?");
-		return (NULL);
+		return NULL;
 	}
 
 	ap->mode = IW_MODE_INFRA;
 	ap->refcount = 1;
 
-	return (ap);
+	return ap;
 }
 
 
@@ -99,16 +98,11 @@ NMAccessPoint * nm_ap_new (void)
  */
 NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 {
-	NMAccessPoint		*new_ap;
-	struct ether_addr	*new_addr;
+	NMAccessPoint *	new_ap;
 
 	g_return_val_if_fail (src_ap != NULL, NULL);
 
-	new_addr = g_new0 (struct ether_addr, 1);
-	g_return_val_if_fail (new_addr != NULL, NULL);
-
-	new_ap = nm_ap_new();
-	if (!new_ap)
+	if (!(new_ap = nm_ap_new()))
 	{
 		nm_warning ("nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
 		return (NULL);
@@ -116,11 +110,7 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 
 	if (src_ap->essid && (strlen (src_ap->essid) > 0))
 		new_ap->essid = g_strdup (src_ap->essid);
-	if (src_ap->address)
-	{
-		memcpy (new_addr, src_ap->address, sizeof (struct ether_addr));
-		new_ap->address = new_addr;
-	}
+	memcpy (&new_ap->address, &src_ap->address, sizeof (struct ether_addr));
 	new_ap->mode = src_ap->mode;
 	new_ap->strength = src_ap->strength;
 	new_ap->freq = src_ap->freq;
@@ -147,22 +137,20 @@ void nm_ap_ref (NMAccessPoint *ap)
 void nm_ap_unref (NMAccessPoint *ap)
 {
 	g_return_if_fail (ap != NULL);
+	g_return_if_fail (ap->refcount > 0);
 
 	ap->refcount--;
 	if (ap->refcount == 0)
 	{
 		g_free (ap->essid);
-		g_free (ap->address);
 		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
 		g_slist_free (ap->user_addresses);
 
 		if (ap->security)
 			g_object_unref (G_OBJECT (ap->security));
 
-		ap->essid = NULL;
-
-		g_free (ap);
 		memset (ap, 0, sizeof (NMAccessPoint));
+		g_free (ap);
 	}
 }
 
@@ -270,23 +258,15 @@ const struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, NULL);
 
-	return (ap->address);
+	return &ap->address;
 }
 
 void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 {
-	struct ether_addr *new_addr;
-
 	g_return_if_fail (ap != NULL);
+	g_return_if_fail (addr != NULL);
 
-	new_addr = g_new0 (struct ether_addr, 1);
-	g_return_if_fail (new_addr != NULL);
-
-	if (ap->address)
-		g_free (ap->address);
-
-	memcpy (new_addr, addr, sizeof (struct ether_addr));
-	ap->address = new_addr;
+	memcpy (&ap->address, addr, sizeof (struct ether_addr));
 }
 
 

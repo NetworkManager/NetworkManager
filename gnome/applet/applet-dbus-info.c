@@ -53,8 +53,9 @@ static DBusMessage * new_invalid_args_error (DBusMessage *message, const char *f
 	g_return_val_if_fail (func != NULL, NULL);
 
 	return nmu_create_dbus_error_message (message,
+								NMI_DBUS_SERVICE,
 								"InvalidArguments",
-								"NetworkManager::%s called with invalid arguments.",
+								"%s called with invalid arguments.",
 								func);
 }
 
@@ -338,7 +339,7 @@ nmi_dbus_get_networks (DBusConnection *connection,
 
 	/* List all allowed access points that gconf knows about */
 	if (!(dir_list = gconf_client_all_dirs (applet->gconf_client, GCONF_PATH_WIRELESS_NETWORKS, NULL)))
-		return nmu_create_dbus_error_message (message, NO_NET_ERROR, NO_NET_ERROR_MSG);
+		return nmu_create_dbus_error_message (message, NMI_DBUS_SERVICE, NO_NET_ERROR, NO_NET_ERROR_MSG);
 
 	reply = dbus_message_new_method_return (message);
 	dbus_message_iter_init_append (reply, &iter);
@@ -373,7 +374,7 @@ nmi_dbus_get_networks (DBusConnection *connection,
 	if (!value_added)
 	{
 		dbus_message_unref (reply);
-		reply = nmu_create_dbus_error_message (message, NO_NET_ERROR, NO_NET_ERROR_MSG);
+		reply = nmu_create_dbus_error_message (message, NMI_DBUS_SERVICE, NO_NET_ERROR, NO_NET_ERROR_MSG);
 	}
 
 out:
@@ -418,32 +419,50 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	client = applet->gconf_client;
 
 	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
+	{
+		nm_warning ("%s:%d (%s): message arguments were invalid.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	if (!nmi_network_type_valid (type) || (strlen (network) <= 0))
+	{
+		nm_warning ("%s:%d (%s): network or network type was invalid.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	if (!(escaped_network = gconf_escape_key (network, strlen (network))))
+	{
+		nm_warning ("%s:%d (%s): couldn't unescape network name.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* ESSID */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "essid", escaped_network, &essid) || !essid)
+	{
+		nm_warning ("%s:%d (%s): couldn't get 'essid' item from GConf.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Timestamp */
 	if (!nm_gconf_get_int_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "timestamp", escaped_network, &timestamp) || (timestamp < 0))
+	{
+		nm_warning ("%s:%d (%s): couldn't get 'timestamp' item from GConf.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Trusted status */
 	if (!nm_gconf_get_bool_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "trusted", escaped_network, &trusted))
-		goto out;
+		trusted = FALSE;
 
 	/* Grab the list of stored AP MAC addresses */
 	gconf_key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	ap_addrs_value = gconf_client_get (client, gconf_key, NULL);
 	g_free (gconf_key);
 	if (ap_addrs_value && ((ap_addrs_value->type != GCONF_VALUE_LIST) || (gconf_value_get_list_type (ap_addrs_value) != GCONF_VALUE_STRING)))
+	{
+		nm_warning ("%s:%d (%s): addresses value existed in GConf, but was not a string list.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Build reply */
 	reply = dbus_message_new_method_return (message);
@@ -534,7 +553,7 @@ nmi_dbus_get_vpn_connections (DBusConnection *connection,
 	/* List all VPN connections that gconf knows about */
 	if (!(dir_list = gconf_client_all_dirs (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS, NULL)))
 	{
-		reply = nmu_create_dbus_error_message (message, "NoVPNConnections",
+		reply = nmu_create_dbus_error_message (message, NMI_DBUS_SERVICE, "NoVPNConnections",
 							"There are no VPN connections stored.");
 		goto out;
 	}
@@ -571,7 +590,7 @@ nmi_dbus_get_vpn_connections (DBusConnection *connection,
 	if (!value_added)
 	{
 		dbus_message_unref (reply);
-		reply = nmu_create_dbus_error_message (message, "NoVPNConnections",
+		reply = nmu_create_dbus_error_message (message, NMI_DBUS_SERVICE, "NoVPNConnections",
 						"There are no VPN connections stored.");
 	}
 
@@ -618,11 +637,17 @@ nmi_dbus_get_vpn_connection_properties (DBusConnection *connection,
 
 	/* User-visible name of connection */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_VPN_CONNECTIONS, "name", escaped_name, &name) || !name)
+	{
+		nm_warning ("%s:%d (%s): couldn't get 'name' item from GConf.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Service name of connection */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_VPN_CONNECTIONS, "service_name", escaped_name, &service_name) || !service_name)
+	{
+		nm_warning ("%s:%d (%s): couldn't get 'service_name' item from GConf.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* User name of connection - use the logged in user */
 	user_name = g_get_user_name ();
@@ -819,7 +844,10 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	gconf_entry = gconf_client_get_entry (applet->gconf_client, key, NULL, TRUE, NULL);
 	g_free (key);
 	if (gconf_entry)
+	{
+		nm_warning ("%s:%d (%s): GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, __func__, essid);
 		goto out;
+	}
 	gconf_entry_unref (gconf_entry);
 
 	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
@@ -890,19 +918,31 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 
 	/* First argument: ESSID (STRING) */
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+	{
+		nm_warning ("%s:%d (%s): message format was invalid.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &essid);
 	if (strlen (essid) <= 0)
+	{
+		nm_warning ("%s:%d (%s): message argument 'essid' was invalid.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Second argument: Automatic (BOOLEAN) */
 	if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
+	{
+		nm_warning ("%s:%d (%s): message argument 'automatic' was invalid.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &automatic);
 
 	/* Deserialize the sercurity option out of the message */
 	if (!(gconf_wso = nm_gconf_wso_new_deserialize_dbus (&iter)))
+	{
+		nm_warning ("%s:%d (%s): couldn't get security information from the message.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	nmi_save_network_info (applet, essid, automatic, gconf_wso);
 

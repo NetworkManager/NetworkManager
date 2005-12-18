@@ -796,7 +796,20 @@ WEP 40/128-bit ASCII
 	      </child>
 
 	      <child>
-		<placeholder/>
+		<widget class="GtkVBox" id="wireless_security_vbox">
+		  <property name="visible">True</property>
+		  <property name="homogeneous">False</property>
+		  <property name="spacing">0</property>
+
+		  <child>
+		    <placeholder/>
+		  </child>
+		</widget>
+		<packing>
+		  <property name="padding">0</property>
+		  <property name="expand">True</property>
+		  <property name="fill">True</property>
+		</packing>
 	      </child>
 	    </widget>
 	    <packing>

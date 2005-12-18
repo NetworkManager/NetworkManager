@@ -36,8 +36,6 @@ struct _NMAPSecurityWPA_PSKPrivate
 {
 	int		wpa_version;
 	int		key_mgt;
-
-	gboolean	dispose_has_run;
 };
 
 NMAPSecurityWPA_PSK *
@@ -115,7 +113,6 @@ nm_ap_security_wpa_psk_init (NMAPSecurityWPA_PSK * self)
 	self->priv = NM_AP_SECURITY_WPA_PSK_GET_PRIVATE (self);
 	self->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA;
 	self->priv->key_mgt = IW_AUTH_KEY_MGMT_PSK;
-	self->priv->dispose_has_run = FALSE;
 }
 
 static void
