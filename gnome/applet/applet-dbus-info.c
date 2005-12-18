@@ -938,6 +938,9 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	dbus_message_iter_get_basic (&iter, &automatic);
 
 	/* Deserialize the sercurity option out of the message */
+	if (!dbus_message_iter_next (&iter))
+		goto out;
+
 	if (!(gconf_wso = nm_gconf_wso_new_deserialize_dbus (&iter)))
 	{
 		nm_warning ("%s:%d (%s): couldn't get security information from the message.", __FILE__, __LINE__, __func__);
