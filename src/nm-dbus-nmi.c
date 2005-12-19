@@ -398,27 +398,43 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	dbus_message_iter_init (reply, &iter);
 
 	/* First arg: ESSID (STRING) */
-	if (!dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
+	{
+		nm_warning ("%s:%d (%s): a message argument (essid) was invalid.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &essid);
 
 	/* Second arg: Timestamp (INT32) */
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32))
+	{
+		nm_warning ("%s:%d (%s): a message argument (timestamp) was invalid.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &timestamp_secs);
 	
 	/* Third arg: trusted (BOOLEAN) */
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
+	{
+		nm_warning ("%s:%d (%s): a message argument (trusted) was invalid.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_get_basic (&iter, &trusted);
 
 	/* Fourth arg: BSSID addresses (ARRAY, STRING) */
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)
 			|| (dbus_message_iter_get_element_type (&iter) != DBUS_TYPE_STRING))
+	{
+		nm_warning ("%s:%d (%s): a message argument (addresses) was invalid.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 	dbus_message_iter_recurse (&iter, &subiter);
 	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_STRING)
 	{
@@ -431,7 +447,11 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 
 	/* Unserialize access point security info */
 	if (!(security = nm_ap_security_new_deserialize (&iter)))
+	{
+		nm_warning ("%s:%d (%s): message arguments were invalid (could not deserialize "
+				"wireless network security information.", __FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	/* Construct the new access point */
 	ap = nm_ap_new ();
@@ -495,13 +515,29 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 	dbus_pending_call_ref (pcall);
 
 	if (!dbus_pending_call_get_completed (pcall))
+	{
+		nm_warning ("%s:%d (%s): pending call was not completed.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+	{
+		nm_warning ("%s:%d (%s): could not retrieve the reply.",
+				__FILE__, __LINE__, __func__);
 		goto out;
+	}
 
 	if (message_is_error (reply))
+	{
+		DBusError	err;
+
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("%s:%d (%s): error received: %s - %s.",
+				__FILE__, __LINE__, __func__, err.name, err.message);
 		goto out;
+	}
 
 	dbus_message_iter_init (reply, &iter);
 	dbus_message_iter_recurse (&iter, &array_iter);

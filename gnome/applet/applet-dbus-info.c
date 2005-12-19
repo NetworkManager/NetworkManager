@@ -412,6 +412,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	gboolean			trusted = FALSE;
 	DBusMessageIter 	iter, array_iter;
 	GConfClient *		client;
+	NMGConfWSO *		gconf_wso;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -464,6 +465,14 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 		goto out;
 	}
 
+	/* Get the network's security information from GConf */
+	if (!(gconf_wso = nm_gconf_wso_new_deserialize_gconf (client, escaped_network)))
+	{
+		nm_warning ("%s:%d (%s): couldn't retrieve security information from "
+				"GConf.", __FILE__, __LINE__, __func__);
+		goto out;
+	}
+
 	/* Build reply */
 	reply = dbus_message_new_method_return (message);
 	dbus_message_iter_init_append (reply, &iter);
@@ -488,7 +497,8 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	}
 	dbus_message_iter_close_container (&iter, &array_iter);
 
-	/* FIXME: serialize the security info into the message */
+	/* Serialize the security info into the message */
+	nm_gconf_wso_serialize_dbus (gconf_wso, &iter);	
 
 out:
 	if (ap_addrs_value)
