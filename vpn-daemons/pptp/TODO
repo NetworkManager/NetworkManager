@@ -1,0 +1,105 @@
+
+
+
+Hi Nikolaus,
+
+Yes, I've did quite a bit of work on it.  Infact I totally revamped it to use a pppd plugin as it's helper. (Thus is can do the DNS + routing without modifications to your local /etc/ppp files)
+
+Actually there is one exception... Many distros have an ip-up script which implements usepeerdns functionality thus replacing resolve.conf... This conflicts with NetworkManager's actions so may need to be removed. Sadly there appears to be no way to tell pppd NOT to execute /etc/ppp/ip-up if it exists!
+
+Uses a pppd plugin to handle CHAP authentication (not sure of the V2 implications...) and ip-up functionality... It explicitly resolves the IP of the vpn server before starting pppd. And starts pppd with the pty option rather than letting pptp start pppd (as recomented by the pptp maintainer).
+
+Sadly, I haven't quite figured out how I'm gonna get the username and password from the vpn-daemon to the pppd helper plugin infact I've just got my credentials hard coded in the plugin for testing!
+The reason I haven't fixed that is that there is another strange behaviour where by the pptp vpn daemon (sometimes!) takes NM down when it exits!!  It seems to seg fault but I can't find the cause. I've been really busy but  would love somone to take a look at this.  I can upload it in it's present state with instructions for where to insert your credentials if you/anyone else would be willing to try it and perhaps assist me.
+
+tOnY
+
+
+Nikolaus Filus wrote:
+
+> Hi,
+>
+> I just managed to get your pptp plugin "working" for my university setup. It was a hard piece of work, since I'm not familiar with NM or pptp details. There are several issues to be fixed and I hope this report will be usefull for you. I don't attach patches as my modifications are just hacks :)
+>
+> 1. nm-pptp-service-pptp-helper
+> The while-loop doesn't work, as I wasn't able to find a place, where
+> foreign_option_%i shall be defined. It seems to me as if this code is incomplete and you wanted to scan through the whole environment and
+> analyse the options. I had to manually add parsing of DNS, DNS1 and DNS2 which are set in my environment, or my resolv.conf is empty after connecting to the vpn.
+>
+> 2. nm-pptp-service
+> encrypt-mppe was never attached to my pppd options and I had to add
+>
+>  g_ptr_array_add (pptp_argv, (gpointer) "require-mschap-v2");
+>  g_ptr_array_add (pptp_argv, (gpointer) "mppe");
+>  g_ptr_array_add (pptp_argv, (gpointer) "required,stateless");
+>
+> outside the for-loop. As you can see, I also need the "require-mschap-v2" option. For this to work I need to specify a special remotename, which is NOT the hostname, as used in your code. This also requires a second line
+> in chap-secrets.
+>
+> 3. configuration
+> By default a new default route to ppp0 is specified, deleting the old one. I need to preserve it (by setting vpn-routes to 0.0.0.0/0) and add
+>
+>  route add -host vpn-gw dev eth1
+>  route add default dev ppp0
+>
+> manually.
+>
+>
+> With this modifications, I was able to connect the vpn at my university "using" networkmanager.
+>
+>
+> Are you working on the pppd plugin as announced on the mailinglist? I would be glad to test it :)
+>
+>
+> Thanks for your work
+>
+> Nikolaus Filus
+>
+>  
+>
+
+
+
+
+
+Dan Williams wrote:
+
+> But in your case, the pppd-vpn-service daemon could just do whatever it
+> does to start the connection, but provide a dbus service that when
+> called, returns the password and username.  The pppd plugin would then
+> call this dbus service and request the pass & user.
+>
+>  
+>
+That is precisely what I intend and started implementing it. I just wanted to fix the strange and 'intermittent' segfault before
+adding anymore complexity.
+
+I only hesitated when naming the dbus service.
+
+> There are some things to think hard about here though, namely the
+> security of it.  If you have a daemon providing a dbus service, unless
+> you lock it down anyone can call its methods.  So you'd have to make
+> sure that you lock down the dbus policy for the service-daemon pretty
+> tight.  If you restrict it to just 'root'/uid 0, any root app could ask
+> for the user and password.  But then again, any 'root' app can do
+> horrible things to your system anyway.  So this might be an acceptable
+> course of action.
+>  
+>
+I imagined that root access would be sufficient in this case too.  I suppose
+the only other way is for the vpn-daemon to pass some secret cookie to the
+pppd on start up that the plugin then uses when asking for the user/pass later
+but that too would open all kinds of security holes I suppose.
+
+Anyway... A root process could overwrite the pppd plugin in /usr/lib with
+something malicious so I can't see any possible gain.  Just as a root process could
+overwrite the vpnc binary with a script which 'tee' s the standard input to a file :-)
+
+> Ideally this could be solved upstream in pppd.  But at some point you
+> simply do best-effort to hide the username & password from view, keep
+> investigating how to do it better, and fix it a bit later.
+>  
+>
+Exactly.  "Just works" not "Will at some future time just work" right :-)
+
+tOnY 
