@@ -36,12 +36,12 @@ IEEE_802_11_Cipher * cipher_wpa_psk_passphrase_new (void)
 {
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
+	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_TKIP;
 	cipher->input_min = 8;
 	cipher->input_max = WPA_PMK_LEN * 2;
 	cipher->cipher_hash_func = cipher_wpa_psk_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
-	ieee_802_11_cipher_ref (cipher);
 
 	return cipher;
 }

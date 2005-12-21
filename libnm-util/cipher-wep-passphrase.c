@@ -102,12 +102,12 @@ IEEE_802_11_Cipher * cipher_wep128_passphrase_new (void)
 {
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
+	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP104;
 	cipher->input_min = 1;  /* What _is_ the min, really? */
 	cipher->input_max = 64;
 	cipher->cipher_hash_func = cipher_wep128_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
-	ieee_802_11_cipher_ref (cipher);
 
 	return cipher;
 }
@@ -124,12 +124,12 @@ IEEE_802_11_Cipher * cipher_wep64_passphrase_new (void)
 {
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
+	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP40;
 	cipher->input_min = 1;  /* What _is_ the min, really? */
 	cipher->input_max = 64;
 	cipher->cipher_hash_func = cipher_wep64_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
-	ieee_802_11_cipher_ref (cipher);
 
 	return cipher;
 }

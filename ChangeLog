@@ -1,3 +1,8 @@
+2005-12-21  Dan Williams  <dcbw@redhat.com>
+
+	* test/libnm-util
+		- Add some testcases for WEP ciphers
+
 2005-12-17  Dan Williams  <dcbw@redhat.com>
 
 	* Fix bugs

@@ -32,6 +32,9 @@ int           ieee_802_11_cipher_get_input_max (IEEE_802_11_Cipher *cipher);
 char *        ieee_802_11_cipher_hash (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 int           ieee_802_11_cipher_validate (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 
+/* Private API members (not part of the public API) */
+int           ieee_802_11_cipher_refcount (IEEE_802_11_Cipher *cipher);
+
 /* For use by ciphers themselves */
 int           cipher_default_validate_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 

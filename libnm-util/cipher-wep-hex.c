@@ -120,12 +120,12 @@ IEEE_802_11_Cipher * cipher_wep128_hex_new (void)
 {
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
+	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP104;
 	cipher->input_min = WEP128_HEX_INPUT_SIZE;
 	cipher->input_max = WEP128_HEX_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep128_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
-	ieee_802_11_cipher_ref (cipher);
 
 	return cipher;
 }
@@ -144,12 +144,12 @@ IEEE_802_11_Cipher * cipher_wep64_hex_new (void)
 {
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
+	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_WEP40;
 	cipher->input_min = WEP64_HEX_INPUT_SIZE;
 	cipher->input_max = WEP64_HEX_INPUT_SIZE;
 	cipher->cipher_hash_func = cipher_wep64_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
-	ieee_802_11_cipher_ref (cipher);
 
 	return cipher;
 }

@@ -300,6 +300,7 @@ gnome/libnm_glib/libnm_glib.pc
 gnome/libnm_glib/Makefile
 gnome/vpn-properties/Makefile
 test/Makefile
+test/libnm-util/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
 initscript/RedHat/NetworkManager

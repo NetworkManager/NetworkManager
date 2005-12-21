@@ -30,6 +30,7 @@
 void ieee_802_11_cipher_ref (IEEE_802_11_Cipher *cipher)
 {
 	g_return_if_fail (cipher != NULL);
+	g_return_if_fail (cipher->refcount > 0);
 
 	cipher->refcount++;
 }
@@ -37,6 +38,7 @@ void ieee_802_11_cipher_ref (IEEE_802_11_Cipher *cipher)
 void ieee_802_11_cipher_unref (IEEE_802_11_Cipher *cipher)
 {
 	g_return_if_fail (cipher != NULL);
+	g_return_if_fail (cipher->refcount > 0);
 
 	cipher->refcount--;
 	if (cipher->refcount <= 0)
@@ -46,9 +48,18 @@ void ieee_802_11_cipher_unref (IEEE_802_11_Cipher *cipher)
 	}
 }
 
+int ieee_802_11_cipher_refcount (IEEE_802_11_Cipher *cipher)
+{
+	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
+
+	return cipher->refcount;
+}
+
 int ieee_802_11_cipher_get_we_cipher (IEEE_802_11_Cipher *cipher)
 {
 	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
 
 	return cipher->we_cipher;
 }
@@ -56,6 +67,7 @@ int ieee_802_11_cipher_get_we_cipher (IEEE_802_11_Cipher *cipher)
 int ieee_802_11_cipher_get_input_min (IEEE_802_11_Cipher *cipher)
 {
 	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
 
 	return cipher->input_min;
 }
@@ -63,6 +75,7 @@ int ieee_802_11_cipher_get_input_min (IEEE_802_11_Cipher *cipher)
 int ieee_802_11_cipher_get_input_max (IEEE_802_11_Cipher *cipher)
 {
 	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
 
 	return cipher->input_max;
 }
@@ -70,6 +83,7 @@ int ieee_802_11_cipher_get_input_max (IEEE_802_11_Cipher *cipher)
 char *ieee_802_11_cipher_hash (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
 {
 	g_return_val_if_fail (cipher != NULL, NULL);
+	g_return_val_if_fail (cipher->refcount > 0, NULL);
 
 	return (*cipher->cipher_hash_func)(cipher, ssid, input);
 }
@@ -77,6 +91,7 @@ char *ieee_802_11_cipher_hash (IEEE_802_11_Cipher *cipher, const char *ssid, con
 int ieee_802_11_cipher_validate (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
 {
 	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
 
 	if (!cipher->cipher_input_validate_func)
 		return cipher_default_validate_func (cipher, ssid, input);
@@ -92,6 +107,7 @@ int cipher_default_validate_func (IEEE_802_11_Cipher *cipher, const char *ssid, 
 	int		len;
 
 	g_return_val_if_fail (cipher != NULL, -1);
+	g_return_val_if_fail (cipher->refcount > 0, -1);
 	g_return_val_if_fail (input != NULL, -1);
 
 	len = strlen (input);
