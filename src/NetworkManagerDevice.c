@@ -2483,15 +2483,17 @@ static gboolean nm_device_wireless_wait_for_link (NMDevice *dev, const char *ess
 }
 
 
-#if 0
 static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 {
-	char		*essid;
-	gboolean	 need_key = FALSE;
+	char *		essid;
+	gboolean		need_key = FALSE;
+	NMAPSecurity *	security;
 
 	g_return_val_if_fail (ap != NULL, FALSE);
 
 	essid = nm_ap_get_essid (ap);
+	security = nm_ap_get_security (ap);
+	g_assert (security);
 
 	if (!nm_ap_get_encrypted (ap))
 	{
@@ -2500,7 +2502,7 @@ static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 	}
 	else
 	{
-		if (nm_ap_is_enc_key_valid (ap))
+		if (nm_ap_security_get_key (security))
 		{
 			nm_info ("Activation (%s/wireless): access point '%s' "
 				 "is encrypted, and a key exists.  No new key needed.",
@@ -2510,15 +2512,13 @@ static gboolean ap_need_key (NMDevice *dev, NMAccessPoint *ap)
 		{
 			nm_info ("Activation (%s/wireless): access point '%s' "
 				 "is encrypted, but NO valid key exists.  New key needed.",
-				 nm_device_get_iface (dev), 
-				 essid ? essid : "(null)");
+				 nm_device_get_iface (dev), essid ? essid : "(null)");
 			need_key = TRUE;
 		}
 	}
 
 	return need_key;
 }
-#endif
 
 
 /*
@@ -2549,14 +2549,11 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 	nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) will connect to access point '%s'.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
-#if 0
-// FIXME
 	if (ap_need_key (dev, ap))
 	{
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
 		return;
 	}
-#endif
 
 	while (success == FALSE)
 	{
@@ -2574,7 +2571,7 @@ static void nm_device_wireless_configure (NMActRequest *req)
 
 		if (!link)
 		{
-			nm_debug ("Activation (%s/wireless): no hardware link to '%s'.",
+			nm_info ("Activation (%s/wireless): no hardware link to '%s'.",
 					nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 			nm_policy_schedule_activation_failed (req);
 			break;
@@ -3641,7 +3638,6 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (dev->app_data != NULL, NULL);
 	g_return_val_if_fail (essid != NULL, NULL);
-	g_return_val_if_fail (security != NULL, NULL);
 
 	nm_debug ("Forcing AP '%s'", essid);
 
@@ -3650,8 +3646,18 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 	 */
 	if (!(ap = nm_ap_list_get_ap_by_essid (nm_device_ap_list_get (dev), essid)))
 	{
-		/* Okay, the card didn't see it in the scan, Cisco cards sometimes do this.
-		 * So we make a "fake" access point and add it to the scan list.
+		/* We need security information from the user if the network they
+		 * request isn't in our scan list.
+		 */
+		if (!security)
+		{
+			nm_warning ("%s: tried to manually connect to network '%s' without "
+						"providing security information!", __func__, essid);
+			return NULL;
+		}
+
+		/* User chose a network we haven't seen in a scan, so create a
+		 * "fake" access point and add it to yhe scan list.
 		 */
 		ap = nm_ap_new ();
 		nm_ap_set_essid (ap, essid);
@@ -3665,7 +3671,12 @@ NMAccessPoint * nm_device_wireless_get_activation_ap (NMDevice *dev, const char 
 		 * the User Knows What's Best.
 		 */
 		nm_ap_list_remove_ap_by_essid (dev->app_data->invalid_ap_list, nm_ap_get_essid (ap));
+
+		/* If we didn't get any security info, make some up. */
+		if (!security)
+			security = nm_ap_security_new_from_ap (ap);
 	}
+	g_assert (security);
 	nm_ap_set_security (ap, security);
 
 	return ap;

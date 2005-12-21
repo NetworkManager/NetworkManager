@@ -106,7 +106,7 @@ out:
 	return security;
 }
 
-static int 
+static gboolean 
 real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 {
 	NMGConfWSOWPA_PSK * self = NM_GCONF_WSO_WPA_PSK (instance);
@@ -115,11 +115,11 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 			nm_gconf_wso_get_key (instance),
 			self->priv->wpa_version,
 			self->priv->key_mgt))
-		return -1;
-	return 0;
+		return FALSE;
+	return TRUE;
 }
 
-static int 
+static gboolean 
 real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *network)
 {
 	NMGConfWSOWPA_PSK *	self = NM_GCONF_WSO_WPA_PSK (instance);
@@ -133,7 +133,7 @@ real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *net
 	gconf_client_set_int (client, key, self->priv->key_mgt, NULL);
 	g_free (key);
 
-	return 0;
+	return TRUE;
 }
 
 static void

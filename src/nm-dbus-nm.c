@@ -202,7 +202,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_OBJECT_PATH)
 	{
-		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+		nm_warning ("%s:%d (%s): Invalid arguments (first arg type was not OBJECT_PATH).",
+					__FILE__, __LINE__, __func__);
 		goto out;
 	}
 
@@ -216,6 +217,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 						"The requested network device does not exist.");
+		nm_warning ("%s:%d (%s): Invalid device (device not found).", __FILE__, __LINE__, __func__);
 		goto out;
 	}
 
@@ -226,22 +228,30 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
 		{
-			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			nm_warning ("%s:%d (%s): Invalid argument type (essid).", __FILE__, __LINE__, __func__);
 			goto out;
 		}
 
 		/* grab ssid and ensure validity */
 		dbus_message_iter_get_basic (&iter, &essid);
-		if (!essid || (strlen (essid) <= 0) || !dbus_message_iter_next (&iter))
+		if (!essid || (strlen (essid) <= 0))
 		{
-			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			nm_warning ("%s:%d (%s): Invalid argument (essid).", __FILE__, __LINE__, __func__);
 			goto out;
 		}
 
-		if (!(security = nm_ap_security_new_deserialize (&iter)))
+		/* If there's security information, we use that.  If not, we
+		 * make some up from the scan list.
+		 */
+		if (dbus_message_iter_has_next (&iter))
 		{
-			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
-			goto out;
+			if (!(security = nm_ap_security_new_deserialize (&iter)))
+			{
+				/* There was security info, but it was invalid */
+				reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+				nm_warning ("%s:%d (%s): Invalid argument (wireless security info).", __FILE__, __LINE__, __func__);
+				goto out;
+			}
 		}
 
 		/* Set up the wireless-specific activation request properties */
@@ -260,6 +270,12 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
 
 out:
+	if (!reply)
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE,
+						INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+	}
+
 	return reply;
 }
 

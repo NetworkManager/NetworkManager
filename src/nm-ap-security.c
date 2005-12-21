@@ -95,6 +95,42 @@ out:
 	return security;
 }
 
+
+#define WPA2_CCMP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_CCMP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WPA2_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WPA_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WEP_WEP104		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104)
+#define WEP_WEP40		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40)
+NMAPSecurity *
+nm_ap_security_new_from_ap (NMAccessPoint *ap)
+{
+	NMAPSecurity *	security = NULL;
+	guint32		caps;
+
+	g_return_val_if_fail (ap != NULL, NULL);
+
+	/* Deteremine best encryption algorithm to use */
+	caps = nm_ap_get_capabilities (ap);
+
+/*
+	if (caps & WPA2_CCMP_PSK)
+		stuff
+	else if (caps & WPA2_TKIP_PSK)
+		stuff
+	else if (caps & WPA_TKIP_PSK)
+		stuff
+	else
+*/
+	if (caps & WEP_WEP104)
+		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104));
+	else if (caps & WEP_WEP40)
+		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40));
+	else if (!nm_ap_get_encrypted (ap))
+		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
+
+	return security;
+}
+
 void
 nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
 {
@@ -246,7 +282,8 @@ nm_ap_security_copy_properties (NMAPSecurity *self, NMAPSecurity *dst)
 	g_return_if_fail (self != dst);
 
 	nm_ap_security_set_we_cipher (dst, self->priv->we_cipher);
-	nm_ap_security_set_key (dst, self->priv->key, strlen (self->priv->key));
+	if (self->priv->key)
+		nm_ap_security_set_key (dst, self->priv->key, strlen (self->priv->key));
 	nm_ap_security_set_description (dst, self->priv->description);
 }
 

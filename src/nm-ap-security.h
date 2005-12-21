@@ -47,6 +47,7 @@ struct _NMAPSecurity
 };
 
 struct NMDevice;
+struct NMAccessPoint;
 
 struct _NMAPSecurityClass
 {
@@ -68,6 +69,8 @@ GType nm_ap_security_get_type (void);
 NMAPSecurity *	nm_ap_security_new_copy (NMAPSecurity *self);
 
 NMAPSecurity * nm_ap_security_new_deserialize (DBusMessageIter *iter);
+
+NMAPSecurity *	nm_ap_security_new_from_ap (struct NMAccessPoint *ap);
 
 int nm_ap_security_get_we_cipher (NMAPSecurity *self);
 

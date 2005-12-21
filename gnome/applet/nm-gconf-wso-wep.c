@@ -95,7 +95,7 @@ out:
 	return security;
 }
 
-static int 
+static gboolean 
 real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 {
 	NMGConfWSOWEP * self = NM_GCONF_WSO_WEP (instance);
@@ -103,11 +103,11 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 	if (!nmu_security_serialize_wep (iter,
 			nm_gconf_wso_get_key (instance),
 			self->priv->auth_algorithm))
-		return -1;
-	return 0;
+		return FALSE;
+	return TRUE;
 }
 
-static int 
+static gboolean 
 real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *network)
 {
 	NMGConfWSOWEP *self = NM_GCONF_WSO_WEP (instance);
@@ -117,7 +117,7 @@ real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *net
 	gconf_client_set_int (client, key, self->priv->auth_algorithm, NULL);
 	g_free (key);
 
-	return 0;
+	return TRUE;
 }
 
 static void

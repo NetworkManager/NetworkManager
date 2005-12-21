@@ -54,9 +54,9 @@ struct _NMGConfWSOClass
 	GObjectClass parent;
 
 	/* class members */
-	int	(*serialize_dbus_func)	(NMGConfWSO *self, DBusMessageIter *iter);
+	gboolean	(*serialize_dbus_func)	(NMGConfWSO *self, DBusMessageIter *iter);
 
-	int	(*serialize_gconf_func)	(NMGConfWSO *self, GConfClient *client, const char *network);
+	gboolean	(*serialize_gconf_func)	(NMGConfWSO *self, GConfClient *client, const char *network);
 };
 
 
@@ -74,8 +74,8 @@ const char * nm_gconf_wso_get_key (NMGConfWSO *self);
 
 void nm_gconf_wso_set_key (NMGConfWSO *self, const char *key, int key_len);
 
-int nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter);
+gboolean nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter);
 
-int nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network);
+gboolean nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network);
 
 #endif	/* NM_GCONF_WSO_H */

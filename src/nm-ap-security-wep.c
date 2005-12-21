@@ -37,6 +37,17 @@ struct _NMAPSecurityWEPPrivate
 	int		auth_algorithm;
 };
 
+static void set_description (NMAPSecurityWEP *security)
+{
+	NMAPSecurity * parent = NM_AP_SECURITY (security);
+
+	if (nm_ap_security_get_we_cipher (parent) == IW_AUTH_CIPHER_WEP40)
+		nm_ap_security_set_description (parent, _("40-bit WEP"));
+	else
+		nm_ap_security_set_description (parent, _("104-bit WEP"));
+
+}
+
 NMAPSecurityWEP *
 nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher)
 {
@@ -58,12 +69,26 @@ nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len);
 	security->priv->auth_algorithm = auth_algorithm;
 
-	if (we_cipher == IW_AUTH_CIPHER_WEP40)
-		nm_ap_security_set_description (NM_AP_SECURITY (security), _("40-bit WEP"));
-	else
-		nm_ap_security_set_description (NM_AP_SECURITY (security), _("104-bit WEP"));
+	set_description (security);
 
 out:
+	return security;
+}
+
+NMAPSecurityWEP *
+nm_ap_security_wep_new_from_ap (NMAccessPoint *ap, int we_cipher)
+{
+	NMAPSecurityWEP *	security = NULL;
+
+	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_WEP40) || (we_cipher == IW_AUTH_CIPHER_WEP104), NULL);
+
+	security = g_object_new (NM_TYPE_AP_SECURITY_WEP, NULL);
+	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
+	security->priv->auth_algorithm = IW_AUTH_ALG_OPEN_SYSTEM;
+
+	set_description (security);
+
 	return security;
 }
 

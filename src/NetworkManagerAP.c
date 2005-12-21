@@ -201,6 +201,14 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 }
 
 
+guint32 nm_ap_get_capabilities (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, -1);
+
+	return ap->capabilities;
+}
+
+
 /*
  * Get/set functions for encrypted flag
  *
@@ -216,12 +224,13 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 
 void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean privacy)
 {
+#define ALL_WEP (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104 | NM_802_11_CAP_CIPHER_WEP40)
 	g_return_if_fail (ap != NULL);
 
 	if (privacy)
-		ap->capabilities |= NM_802_11_CAP_PROTO_WEP;
+		ap->capabilities |= ALL_WEP;
 	else
-		ap->capabilities &= ~NM_802_11_CAP_PROTO_WEP;
+		ap->capabilities &= ~ALL_WEP;
 }
 
 /*

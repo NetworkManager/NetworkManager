@@ -1,3 +1,41 @@
+2005-12-21  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/nm-gconf-wso*
+		- Make the serialize functions return gboolean
+			rather than int
+
+	* gnome/applet/nm-gconf-wso.c
+		- (nm_gconf_wso_dispose, nm_gconf_wso_finalize): fix up
+			parent class handling so we don't segfault
+
+	* src/NetworkManagerAP.[ch]
+		- (nm_ap_get_capabilities): new function, return capabilities
+			now that something can use them
+		- (nm_ap_set_encrypted): assume that an access point supports
+			both WEP104 and WEP40 if its set encrypted.  FIXME: can
+			we even tell whether it just supports WEP40?
+
+	* src/NetworkManagerDevice.c
+		- (ap_need_key): resurrect and update for the New World Order
+		- (nm_device_wireless_get_activation_ap): if we're not given
+			security info to use, create some based on access point
+			capabilities
+
+	* src/nm-ap-security-wep.c
+		- (nm_ap_security_wep_new_from_ap): create a new object
+			based on a certain access point's capabilities
+
+	* src/nm-ap-security.c
+		- (nm_ap_security_new_from_ap): delegate creation of a new
+			object based on access point capabilities to a subclass
+		- (nm_ap_security_copy_properties): don't segfault if we
+			don't have a key yet
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_set_active_device): provide more informative
+			output when errors occur.  Also construct security info
+			for a given access point if we weren't given any
+
 2005-12-21  Žygimantas Beručka  <zygis@gnome.org>
 
 	* configure.in: Added Lithuanian to ALL_LINGUAS.

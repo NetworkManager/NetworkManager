@@ -44,8 +44,6 @@ struct _NMGConfWSOPrivate
 	gboolean	dispose_has_run;
 };
 
-static GObjectClass *parent_class = NULL;
-
 static NMGConfWSO *
 nm_gconf_wso_new (int we_cipher)
 {
@@ -225,16 +223,16 @@ nm_gconf_wso_get_key (NMGConfWSO *self)
 	return self->priv->key;
 }
 
-int
+gboolean
 nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter)
 {
 	dbus_int32_t	dbus_we_cipher;
 
-	g_return_val_if_fail (self != NULL, -1);
-	g_return_val_if_fail (iter != NULL, -1);
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (iter != NULL, FALSE);
 
 	if (self->priv->dispose_has_run)
-		return -1;
+		return FALSE;
 
 	/* First arg: WE cipher (INT32) */
 	dbus_we_cipher = (dbus_int32_t) self->priv->we_cipher;
@@ -243,18 +241,18 @@ nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter)
 	return NM_GCONF_WSO_GET_CLASS (self)->serialize_dbus_func (self, iter);
 }
 
-int
+gboolean
 nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
 {
 	dbus_int32_t	dbus_we_cipher;
 	char *		key;
 
-	g_return_val_if_fail (self != NULL, -1);
-	g_return_val_if_fail (client != NULL, -1);
-	g_return_val_if_fail (network != NULL, -1);
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (client != NULL, FALSE);
+	g_return_val_if_fail (network != NULL, FALSE);
 
 	if (self->priv->dispose_has_run)
-		return -1;
+		return FALSE;
 
 	key = g_strdup_printf ("%s/%s/we_cipher", GCONF_PATH_WIRELESS_NETWORKS, network);
 	gconf_client_set_int (client, key, self->priv->we_cipher, NULL);
@@ -277,7 +275,9 @@ nm_gconf_wso_init (NMGConfWSO * self)
 static void
 nm_gconf_wso_dispose (GObject *object)
 {
-	NMGConfWSO *self = (NMGConfWSO *) object;
+	NMGConfWSO *		self = (NMGConfWSO *) object;
+	NMGConfWSOClass *	klass;
+	GObjectClass *		parent_class;  
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -294,19 +294,25 @@ nm_gconf_wso_dispose (GObject *object)
 	 */
 
 	/* Chain up to the parent class */
-	G_OBJECT_CLASS (parent_class)->dispose (object);
+	klass = NM_GCONF_WSO_CLASS (g_type_class_peek (NM_TYPE_GCONF_WSO));
+	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
+	parent_class->dispose (object);
 }
 
 static void
 nm_gconf_wso_finalize (GObject *object)
 {
-	NMGConfWSO *self = (NMGConfWSO *) object;
+	NMGConfWSO *		self = (NMGConfWSO *) object;
+	NMGConfWSOClass *	klass;
+	GObjectClass *		parent_class;  
 
 	/* Complete object destruction */
 	g_free (self->priv->key);
 
 	/* Chain up to the parent class */
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	klass = NM_GCONF_WSO_CLASS (g_type_class_peek (NM_TYPE_GCONF_WSO));
+	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
+	parent_class->finalize (object);
 }
 
 
