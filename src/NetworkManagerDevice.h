@@ -104,6 +104,7 @@ void			nm_device_set_wep_enc_key			(NMDevice *dev, const char *key, int auth_met
 
 NMActRequest *	nm_device_get_act_request						(NMDevice *dev);
 gboolean		nm_device_activation_start						(NMActRequest *req);
+void			nm_device_activate_schedule_stage1_device_prepare		(NMActRequest *req);
 void			nm_device_activate_schedule_stage4_ip_config_get		(NMActRequest *req);
 void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMActRequest *req);
 void			nm_device_activation_cancel						(NMDevice *dev);

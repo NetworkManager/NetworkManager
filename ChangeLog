@@ -1,5 +1,9 @@
 2005-12-21  Dan Williams  <dcbw@redhat.com>
 
+	* Make connection after key retrieval work again
+
+2005-12-21  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/nm-gconf-wso*
 		- Make the serialize functions return gboolean
 			rather than int

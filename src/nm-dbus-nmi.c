@@ -96,7 +96,7 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	if ((security = nm_ap_security_new_deserialize (&iter)))
 	{
 		nm_ap_set_security (ap, security);	
-		nm_device_activation_start (req);
+		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
 	nm_act_request_set_user_key_pending_call (req, NULL);
 

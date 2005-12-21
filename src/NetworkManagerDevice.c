@@ -63,7 +63,6 @@ static gboolean get_scan_results (NMDevice *dev, NMSock *sk, guint8 **out_res_bu
 static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guint32 res_buf_len);
 
 
-static void nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req);
 static void nm_device_activate_schedule_stage2_device_config (NMActRequest *req);
 static void nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req);
 static void nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
