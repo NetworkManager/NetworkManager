@@ -1,3 +1,14 @@
+2005-12-22  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-info.c
+		- Remove nmi_dbus_create_error_message() in favor of
+			nmu_create_dbus_error_message()
+		- (nmi_dbus_get_network_properties): Error message cleanups
+		- (nmi_dbus_get_network_properties): BSSIDs are now in the 'bssids'
+			gconf key rather than 'addresses', since they really are BSSIDs
+		- (nmi_dbus_get_network_properties): Dispose of the security
+			object when we're done with it
+
 2005-12-21  Dan Williams  <dcbw@redhat.com>
 
 	* Consolidate the info-daemon's "updateNetworkInfo" and

@@ -72,35 +72,6 @@ static inline gboolean nmi_network_type_valid (NMNetworkType type)
 }
 
 
-/*
- * nmi_dbus_create_error_message
- *
- * Make a DBus error message
- *
- */
-static DBusMessage *nmi_dbus_create_error_message (DBusMessage *message,
-								const char *exception_namespace,
-								const char *exception,
-								const char *format,
-								...)
-{
-	char *		exception_text;
-	DBusMessage *	reply_message;
-	va_list		args;
-	char			error_text[512];
-
-	va_start (args, format);
-	vsnprintf (error_text, 512, format, args);
-	va_end (args);
-
-	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
-	reply_message = dbus_message_new_error (message, exception_text, error_text);
-	g_free (exception_text);
-
-	return (reply_message);
-}
-
-
 typedef struct NMGetNetworkKeyCBData
 {
 	NMWirelessApplet *applet;
@@ -240,7 +211,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 			gboolean success;
 			if (!(success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet)))
 			{
-				return nmi_dbus_create_error_message (message,
+				return nmu_create_dbus_error_message (message,
 				                                      NMI_DBUS_INTERFACE,
 				                                      "GetKeyError",
 				                                      "Could not get user key for network '%s'.",
@@ -403,7 +374,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	DBusMessage *		reply = NULL;
 	gchar *			gconf_key = NULL;
 	char *			network = NULL;
-	GConfValue *		ap_addrs_value = NULL;
+	GConfValue *		bssids_value = NULL;
 	NMNetworkType		type;
 	char *			escaped_network = NULL;
 	char *			essid = NULL;
@@ -440,14 +411,16 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	/* ESSID */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "essid", escaped_network, &essid) || !essid)
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'essid' item from GConf.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d (%s): couldn't get 'essid' item from GConf for '%s'.",
+				__FILE__, __LINE__, __func__, network);
 		goto out;
 	}
 
 	/* Timestamp */
 	if (!nm_gconf_get_int_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "timestamp", escaped_network, &timestamp) || (timestamp < 0))
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'timestamp' item from GConf.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d (%s): couldn't get 'timestamp' item from GConf for '%s'.",
+				__FILE__, __LINE__, __func__, essid);
 		goto out;
 	}
 
@@ -455,13 +428,14 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	if (!nm_gconf_get_bool_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "trusted", escaped_network, &trusted))
 		trusted = FALSE;
 
-	/* Grab the list of stored AP MAC addresses */
-	gconf_key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	ap_addrs_value = gconf_client_get (client, gconf_key, NULL);
+	/* Grab the list of stored access point BSSIDs */
+	gconf_key = g_strdup_printf ("%s/%s/bssids", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+	bssids_value = gconf_client_get (client, gconf_key, NULL);
 	g_free (gconf_key);
-	if (ap_addrs_value && ((ap_addrs_value->type != GCONF_VALUE_LIST) || (gconf_value_get_list_type (ap_addrs_value) != GCONF_VALUE_STRING)))
+	if (bssids_value && ((bssids_value->type != GCONF_VALUE_LIST) || (gconf_value_get_list_type (bssids_value) != GCONF_VALUE_STRING)))
 	{
-		nm_warning ("%s:%d (%s): addresses value existed in GConf, but was not a string list.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d (%s): addresses value existed in GConf, but was not a string list for '%s'.",
+				__FILE__, __LINE__, __func__, essid);
 		goto out;
 	}
 
@@ -469,7 +443,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	if (!(gconf_wso = nm_gconf_wso_new_deserialize_gconf (client, escaped_network)))
 	{
 		nm_warning ("%s:%d (%s): couldn't retrieve security information from "
-				"GConf.", __FILE__, __LINE__, __func__);
+				"GConf for '%s'.", __FILE__, __LINE__, __func__, essid);
 		goto out;
 	}
 
@@ -481,28 +455,33 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
 
 	/* Second arg: Timestamp (INT32) */
-	dbus_int = (gint32) timestamp;
-	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &dbus_int);
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_INT32, &timestamp);
 
 	/* Third arg: Trusted (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &trusted);
 	
 	/* Fourth arg: List of AP BSSIDs (ARRAY, STRING) */
 	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
-	if (ap_addrs_value)
+	if (bssids_value)
 	{
-		g_slist_foreach (gconf_value_get_list (ap_addrs_value),
+		g_slist_foreach (gconf_value_get_list (bssids_value),
 				(GFunc) addr_list_append_helper,
 				&array_iter);
+	}
+	else
+	{
+		const char *fake = " ";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &fake);
 	}
 	dbus_message_iter_close_container (&iter, &array_iter);
 
 	/* Serialize the security info into the message */
-	nm_gconf_wso_serialize_dbus (gconf_wso, &iter);	
+	nm_gconf_wso_serialize_dbus (gconf_wso, &iter);
+	g_object_unref (G_OBJECT (gconf_wso));
 
 out:
-	if (ap_addrs_value)
-		gconf_value_free (ap_addrs_value);
+	if (bssids_value)
+		gconf_value_free (bssids_value);
 
 	g_free (essid);
 	g_free (escaped_network);
