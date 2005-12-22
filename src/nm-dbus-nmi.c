@@ -24,6 +24,7 @@
 #include "nm-activation-request.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
+#include "NetworkManagerUtils.h"
 #include "nm-dbus-nmi.h"
 #include "nm-utils.h"
 
@@ -221,7 +222,9 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 	DBusMessage *		message;
 	gboolean			success = FALSE;
 	const char *		essid;
+	gchar *			char_bssid;
 	NMAPSecurity *		security;
+	const struct ether_addr *addr;
 	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
@@ -243,6 +246,25 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 	/* Second argument: Automatic (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &automatic);
 
+	/* Third argument: Access point's BSSID */
+	addr = nm_ap_get_address (ap);
+	if ((nm_ap_get_mode (ap) == IW_MODE_INFRA) && nm_ethernet_address_is_valid (addr))
+	{
+		char_bssid = g_new0 (gchar, 20);
+		iw_ether_ntop (addr, char_bssid);
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &char_bssid);
+		g_free (char_bssid);
+	}
+	else
+	{
+		/* Use an invalid BSSID for non-infrastructure networks, since
+		 * the BSSID is usually randomly constructed by the driver and
+		 * changed every time you activate the network.
+		 */
+		char_bssid = " ";
+		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &char_bssid);
+	}
+
 	/* Serialize the AP's security info into the message */
 	security = nm_ap_get_security (ap);
 	g_assert (security);
@@ -259,51 +281,6 @@ unref:
 
 out:
 	return success;
-}
-
-
-/*
- * nm_dbus_add_network_address
- *
- * Tell NetworkManagerInfo the MAC address of an AP
- *
- * Returns:	FALSE on error
- *			TRUE on success
- *
- */
-gboolean nm_dbus_add_network_address (DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr)
-{
-	DBusMessage *	message;
-	gboolean		success = FALSE;
-	gchar *		char_addr;
-	dbus_int32_t	type_as_int32 = (dbus_int32_t) type;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (network != NULL, FALSE);
-	g_return_val_if_fail (type != NETWORK_TYPE_UNKNOWN, FALSE);
-	g_return_val_if_fail (addr != NULL, FALSE);
-
-	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "addNetworkAddress")))
-	{
-		nm_warning ("nm_dbus_add_network_ap_mac_address(): Couldn't allocate the dbus message");
-		return (FALSE);
-	}
-
-	char_addr = g_new0 (gchar, 20);
-	iw_ether_ntop (addr, char_addr);
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &network,
-				  DBUS_TYPE_INT32, &type_as_int32,
-				  DBUS_TYPE_STRING, &char_addr,
-				  DBUS_TYPE_INVALID);
-	g_free (char_addr);					
-
-	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nm_dbus_add_network_ap_mac_address(): failed to send dbus message.");
-	else
-		success = TRUE;
-
-	dbus_message_unref (message);
-	return (success);
 }
 
 

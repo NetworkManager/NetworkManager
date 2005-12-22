@@ -1,5 +1,10 @@
 2005-12-21  Dan Williams  <dcbw@redhat.com>
 
+	* Consolidate the info-daemon's "updateNetworkInfo" and
+		"addNetworkAddress" calls into just "updateNetworkInfo"
+
+2005-12-21  Dan Williams  <dcbw@redhat.com>
+
 	* Make connection after key retrieval work again
 
 2005-12-21  Dan Williams  <dcbw@redhat.com>

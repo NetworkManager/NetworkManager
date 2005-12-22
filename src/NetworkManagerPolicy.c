@@ -68,15 +68,12 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 
 		/* Cache details in the info-daemon since the connect was successful */
 		automatic = !nm_act_request_get_user_requested (req);
-		nm_dbus_update_network_info (data->dbus_connection, ap, automatic);
 
 		nm_device_get_ap_address (dev, &addr);
 		if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 			nm_ap_set_address (ap, &addr);
 
-		/* Don't store MAC addresses for non-infrastructure networks */
-		if ((nm_ap_get_mode (ap) == IW_MODE_INFRA) && nm_ethernet_address_is_valid (&addr))
-			nm_dbus_add_network_address (data->dbus_connection, NETWORK_TYPE_ALLOWED, nm_ap_get_essid (ap), &addr);
+		nm_dbus_update_network_info (data->dbus_connection, ap, automatic);
 	}
 
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));

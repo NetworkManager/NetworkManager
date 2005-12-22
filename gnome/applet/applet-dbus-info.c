@@ -834,6 +834,7 @@ static void
 nmi_save_network_info (NMWirelessApplet *applet,
                        const char *essid,
                        gboolean automatic,
+                       const char *bssid,
                        NMGConfWSO * gconf_wso)
 {
 	GnomeKeyringAttributeList *	attributes;
@@ -897,6 +898,48 @@ nmi_save_network_info (NMWirelessApplet *applet,
 		g_free (key);
 	}
 
+	if (bssid && (strlen (bssid) >= 11))
+	{
+		GConfValue *	value;
+		GSList *		new_bssid_list = NULL;
+		gboolean		found = FALSE;
+
+		/* Get current list of access point BSSIDs for this AP from GConf */
+		key = g_strdup_printf ("%s/%s/bssids", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
+		if ((value = gconf_client_get (applet->gconf_client, key, NULL)))
+		{
+			if ((value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
+			{
+				GSList *	elt;
+
+				new_bssid_list = gconf_client_get_list (applet->gconf_client, key, GCONF_VALUE_STRING, NULL);
+
+				/* Ensure that the MAC isn't already in the list */
+				for (elt = new_bssid_list; elt; elt = g_slist_next (elt))
+				{
+					if (elt->data && !strcmp (bssid, elt->data))
+					{
+						found = TRUE;
+						break;
+					}
+				}
+			}
+			gconf_value_free (value);
+		}
+		g_free (key);
+
+		/* Add the new MAC address to the end of the list */
+		if (!found)
+		{
+			new_bssid_list = g_slist_append (new_bssid_list, g_strdup (bssid));
+			gconf_client_set_list (applet->gconf_client, key, GCONF_VALUE_STRING, new_bssid_list, NULL);
+		}
+
+		/* Free the list, since gconf_client_set_list deep-copies it */
+		g_slist_foreach (new_bssid_list, (GFunc) g_free, NULL);
+		g_slist_free (new_bssid_list);
+	}
+
 out:
 	g_free (escaped_network);
 }
@@ -920,6 +963,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	dbus_bool_t		args_good;
 	NMGConfWSO *		gconf_wso = NULL;
 	DBusMessageIter	iter;
+	char *			bssid;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -947,6 +991,14 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	}
 	dbus_message_iter_get_basic (&iter, &automatic);
 
+	/* Third argument: Access point's BSSID */
+	if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
+	{
+		nm_warning ("%s:%d (%s): message argument 'bssid' was invalid.", __FILE__, __LINE__, __func__);
+		goto out;
+	}
+	dbus_message_iter_get_basic (&iter, &bssid);
+
 	/* Deserialize the sercurity option out of the message */
 	if (!dbus_message_iter_next (&iter))
 		goto out;
@@ -957,102 +1009,9 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 		goto out;
 	}
 
-	nmi_save_network_info (applet, essid, automatic, gconf_wso);
+	nmi_save_network_info (applet, essid, automatic, bssid, gconf_wso);
 
 out:
-	return NULL;
-}
-
-
-/*
- * nmi_dbus_add_network_address
- *
- * Add an AP's MAC address to a wireless network entry in gconf
- *
- */
-static DBusMessage *
-nmi_dbus_add_network_address (DBusConnection *connection,
-                              DBusMessage *message,
-                              void *user_data)
-{
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
-	DBusMessage *	reply_message = NULL;
-	char *		network = NULL;
-	NMNetworkType	type;
-	char *		addr;
-	char *		key;
-	GConfValue *	value;
-	char *		escaped_network;
-	GSList *		new_mac_list = NULL;
-	gboolean		found = FALSE;
-
-	g_return_val_if_fail (applet != NULL, NULL);
-	g_return_val_if_fail (message != NULL, NULL);
-
-	if (!dbus_message_get_args (message, NULL,
-						   DBUS_TYPE_STRING, &network,
-						   DBUS_TYPE_INT32, &type,
-						   DBUS_TYPE_STRING, &addr,
-						   DBUS_TYPE_INVALID))
-		return new_invalid_args_error (message, __func__);
-
-	if (!nmi_network_type_valid (type) || (strlen (network) <= 0) || !addr || (strlen (addr) < 11))
-		return new_invalid_args_error (message, __func__);
-
-	/* Force-set the essid too so that we have a semi-complete network entry */
-	escaped_network = gconf_escape_key (network, strlen (network));
-	key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	value = gconf_client_get (applet->gconf_client, key, NULL);
-
-	/* If the network doesn't already exist in GConf, add it and set its timestamp to now. */
-	if (!value || (!value && (value->type == GCONF_VALUE_STRING)))
-	{
-		/* Set the essid of the network. */
-		gconf_client_set_string (applet->gconf_client, key, network, NULL);
-		g_free (key);
-
-		/* Update timestamp on network */
-		key = g_strdup_printf ("%s/%s/timestamp", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-		gconf_client_set_int (applet->gconf_client, key, time (NULL), NULL);
-	}
-	g_free (key);
-
-	/* Get current list of access point MAC addresses for this AP from GConf */
-	key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	if ((value = gconf_client_get (applet->gconf_client, key, NULL)))
-	{
-		if ((value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (value) == GCONF_VALUE_STRING))
-		{
-			GSList *	elt;
-
-			new_mac_list = gconf_client_get_list (applet->gconf_client, key, GCONF_VALUE_STRING, NULL);
-
-			/* Ensure that the MAC isn't already in the list */
-			for (elt = new_mac_list; elt; elt = g_slist_next (elt))
-			{
-				if (elt->data && !strcmp (addr, elt->data))
-				{
-					found = TRUE;
-					break;
-				}
-			}
-		}
-		gconf_value_free (value);
-	}
-	g_free (escaped_network);
-	g_free (key);
-
-	/* Add the new MAC address to the end of the list */
-	if (!found)
-	{
-		new_mac_list = g_slist_append (new_mac_list, g_strdup (addr));
-		gconf_client_set_list (applet->gconf_client, key, GCONF_VALUE_STRING, new_mac_list, NULL);
-	}
-
-	/* Free the list, since gconf_client_set_list deep-copies it */
-	g_slist_foreach (new_mac_list, (GFunc)g_free, NULL);
-	g_slist_free (new_mac_list);
-
 	return NULL;
 }
 
@@ -1120,7 +1079,6 @@ DBusMethodDispatcher *nmi_dbus_nmi_methods_setup (void)
 	dbus_method_dispatcher_register_method (dispatcher, "getNetworks",               nmi_dbus_get_networks);
 	dbus_method_dispatcher_register_method (dispatcher, "getNetworkProperties",      nmi_dbus_get_network_properties);
 	dbus_method_dispatcher_register_method (dispatcher, "updateNetworkInfo",         nmi_dbus_update_network_info);
-	dbus_method_dispatcher_register_method (dispatcher, "addNetworkAddress",         nmi_dbus_add_network_address);
 	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnections",         nmi_dbus_get_vpn_connections);
 	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnectionProperties",nmi_dbus_get_vpn_connection_properties);
 	dbus_method_dispatcher_register_method (dispatcher, "getVPNConnectionVPNData",   nmi_dbus_get_vpn_connection_vpn_data);

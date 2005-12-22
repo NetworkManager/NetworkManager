@@ -31,8 +31,6 @@ void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection, NMAc
 
 NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
 
-gboolean		nm_dbus_add_network_address			(DBusConnection *connection, NMNetworkType type, const char *network, struct ether_addr *addr);
-
 gboolean		nm_dbus_update_network_info			(DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested);
 
 void			nm_dbus_update_one_allowed_network		(DBusConnection *connection, const char *network, NMData *data);
