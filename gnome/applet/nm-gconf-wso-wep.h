@@ -54,8 +54,11 @@ struct _NMGConfWSOWEPClass
 
 GType nm_gconf_wso_wep_get_type (void);
 
-NMGConfWSOWEP * nm_gconf_wso_wep_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher);
+NMGConfWSOWEP * nm_gconf_wso_wep_new_deserialize_dbus (DBusMessageIter *iter,
+                                                        int we_cipher);
 
-NMGConfWSOWEP * nm_gconf_wso_wep_new_deserialize_gconf (GConfClient *client, const char *network, int we_cipher);
+NMGConfWSOWEP * nm_gconf_wso_wep_new_deserialize_gconf (GConfClient *client,
+                                                        const char *network,
+                                                        int we_cipher);
 
 #endif	/* NM_GCONF_WSO_WEP_H */

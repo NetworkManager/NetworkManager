@@ -99,7 +99,8 @@ out:
 }
 
 NMGConfWSO *
-nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network)
+nm_gconf_wso_new_deserialize_gconf (GConfClient *client,
+                                    const char *network)
 {
 	NMGConfWSO * security = NULL;
 	int we_cipher;
@@ -143,7 +144,8 @@ out:
  * it into an NMGConfWSO.
  */
 NMGConfWSO *
-nm_gconf_wso_new_from_wso (WirelessSecurityOption *opt, const char *ssid)
+nm_gconf_wso_new_from_wso (WirelessSecurityOption *opt,
+                           const char *ssid)
 {
 	DBusMessage *		message;
 	DBusMessageIter	iter;
@@ -165,7 +167,8 @@ out:
 }
 
 void
-nm_gconf_wso_set_we_cipher (NMGConfWSO *self, int we_cipher)
+nm_gconf_wso_set_we_cipher (NMGConfWSO *self,
+                            int we_cipher)
 {
 	g_return_if_fail (self != NULL);
 
@@ -181,7 +184,9 @@ nm_gconf_wso_set_we_cipher (NMGConfWSO *self, int we_cipher)
 }
 
 void
-nm_gconf_wso_set_key (NMGConfWSO *self, const char *key, int key_len)
+nm_gconf_wso_set_key (NMGConfWSO *self,
+                      const char *key,
+                      int key_len)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (key != NULL);
@@ -194,14 +199,17 @@ nm_gconf_wso_set_key (NMGConfWSO *self, const char *key, int key_len)
 }
 
 static int 
-real_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter)
+real_serialize_dbus (NMGConfWSO *self,
+                     DBusMessageIter *iter)
 {
 	/* Nothing to do */
 	return 0;
 }
 
 static int 
-real_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
+real_serialize_gconf (NMGConfWSO *self,
+                      GConfClient *client,
+                      const char *network)
 {
 	/* Nothing to do */
 	return 0;
@@ -224,7 +232,8 @@ nm_gconf_wso_get_key (NMGConfWSO *self)
 }
 
 gboolean
-nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter)
+nm_gconf_wso_serialize_dbus (NMGConfWSO *self,
+                             DBusMessageIter *iter)
 {
 	dbus_int32_t	dbus_we_cipher;
 
@@ -242,7 +251,9 @@ nm_gconf_wso_serialize_dbus (NMGConfWSO *self, DBusMessageIter *iter)
 }
 
 gboolean
-nm_gconf_wso_serialize_gconf (NMGConfWSO *self, GConfClient *client, const char *network)
+nm_gconf_wso_serialize_gconf (NMGConfWSO *self,
+                              GConfClient *client,
+                              const char *network)
 {
 	dbus_int32_t	dbus_we_cipher;
 	char *		key;
