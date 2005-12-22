@@ -905,7 +905,6 @@ nmi_save_network_info (NMWirelessApplet *applet,
 			}
 			gconf_value_free (value);
 		}
-		g_free (key);
 
 		/* Add the new MAC address to the end of the list */
 		if (!found)
@@ -913,6 +912,7 @@ nmi_save_network_info (NMWirelessApplet *applet,
 			new_bssid_list = g_slist_append (new_bssid_list, g_strdup (bssid));
 			gconf_client_set_list (applet->gconf_client, key, GCONF_VALUE_STRING, new_bssid_list, NULL);
 		}
+		g_free (key);
 
 		/* Free the list, since gconf_client_set_list deep-copies it */
 		g_slist_foreach (new_bssid_list, (GFunc) g_free, NULL);
