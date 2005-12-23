@@ -1,5 +1,17 @@
 2005-12-23  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_get_key_for_network): if there's no entry in
+			GConf for a network, assume we want a new key
+		- (nmi_save_network_info): serialize wireless security info
+			into GConf so its saved
+
+	* src/nm-dbus-nm.c
+		- Fix warning as we may not be passed security info when
+			connecting to a wireless network
+
+2005-12-23  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-compat.c
 		- Fix bugs in GConf entry conversion
 

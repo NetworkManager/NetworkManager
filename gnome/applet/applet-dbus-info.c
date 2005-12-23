@@ -151,6 +151,8 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 	gboolean			new_key = FALSE;
 	NetworkDevice *	dev = NULL;
 	WirelessNetwork *	net = NULL;
+	char *			temp = NULL;
+	char *			escaped_network;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -167,6 +169,18 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 	if (!(dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
 		return NULL;
 
+	/* If we don't have a record of the network yet in GConf, ask for
+	 * a new key no matter what NM says.
+	 */
+	escaped_network = gconf_escape_key (essid, strlen (essid));
+	if (!nm_gconf_get_string_helper (applet->gconf_client,
+                                      GCONF_PATH_WIRELESS_NETWORKS,
+                                      "essid",
+                                      escaped_network, &temp)
+         || !temp)
+		new_key = TRUE;
+	g_free (escaped_network);
+	
 	/* It's not a new key, so try to get the key from the keyring. */
 	if (!new_key)
 	{
@@ -840,29 +854,6 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	}
 	gconf_entry_unref (gconf_entry);
 
-	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
-	{
-		/* Setup a request to the keyring to save the network passphrase */
-		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
-		attributes = gnome_keyring_attribute_list_new ();
-		attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
-		attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
-		attr.value.string = g_strdup (essid);
-		g_array_append_val (attributes, attr);
-
-		ret = gnome_keyring_item_create_sync (NULL,
-									   GNOME_KEYRING_ITEM_GENERIC_SECRET,
-									   name,
-									   attributes,
-									   nm_gconf_wso_get_key (gconf_wso),
-									   TRUE,
-									   &item_id);
-		if (ret != GNOME_KEYRING_RESULT_OK)
-			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
-
-		gnome_keyring_attribute_list_free (attributes);
-	}
-
 	key = g_strdup_printf ("%s/%s/essid", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	gconf_client_set_string (applet->gconf_client, key, essid, NULL);
 	g_free (key);
@@ -917,6 +908,37 @@ nmi_save_network_info (NMWirelessApplet *applet,
 		/* Free the list, since gconf_client_set_list deep-copies it */
 		g_slist_foreach (new_bssid_list, (GFunc) g_free, NULL);
 		g_slist_free (new_bssid_list);
+	}
+
+	/* Stuff the security information into GConf */
+	if (!nm_gconf_wso_serialize_gconf (gconf_wso, applet->gconf_client, escaped_network))
+	{
+		nm_warning ("%s:%d (%s): Couldn't serialize security info for '%s'.",
+				__FILE__, __LINE__, __func__, essid);
+	}
+
+	/* Stuff the encryption key into the keyring */
+	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
+	{
+		/* Setup a request to the keyring to save the network passphrase */
+		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+		attributes = gnome_keyring_attribute_list_new ();
+		attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
+		attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
+		attr.value.string = g_strdup (essid);
+		g_array_append_val (attributes, attr);
+
+		ret = gnome_keyring_item_create_sync (NULL,
+									   GNOME_KEYRING_ITEM_GENERIC_SECRET,
+									   name,
+									   attributes,
+									   nm_gconf_wso_get_key (gconf_wso),
+									   TRUE,
+									   &item_id);
+		if (ret != GNOME_KEYRING_RESULT_OK)
+			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
+
+		gnome_keyring_attribute_list_free (attributes);
 	}
 
 out:
@@ -989,6 +1011,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	}
 
 	nmi_save_network_info (applet, essid, automatic, bssid, gconf_wso);
+	g_object_unref (G_OBJECT (gconf_wso));
 
 out:
 	return NULL;

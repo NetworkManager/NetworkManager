@@ -256,7 +256,8 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		/* Set up the wireless-specific activation request properties */
 		ap = nm_device_wireless_get_activation_ap (dev, essid, security);
- 		g_object_unref (G_OBJECT (security));
+		if (security)
+	 		g_object_unref (G_OBJECT (security));
 
 		nm_info ("User Switch: %s / %s", dev_path, essid);
 	}
