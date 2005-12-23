@@ -1,5 +1,15 @@
 2005-12-22  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-compat.[ch]
+		- Convert old-format GConf and keyring entries
+			when the applet starts up.
+
+	* gnome/applet/applet.c
+		- (nmwa_get_instance): Call the conversion function
+			on startup before dbus is initialized
+
+2005-12-22  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-info.c
 		- Remove nmi_dbus_create_error_message() in favor of
 			nmu_create_dbus_error_message()

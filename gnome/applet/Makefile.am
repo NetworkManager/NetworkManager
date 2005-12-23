@@ -34,6 +34,8 @@ nm_applet_SOURCES =			\
 	main.c				\
 	applet.c				\
 	applet.h				\
+	applet-compat.c		\
+	applet-compat.h		\
 	applet-dbus.c			\
 	applet-dbus.h			\
 	applet-dbus-devices.c	\

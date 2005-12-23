@@ -44,6 +44,7 @@
 #include <gconf/gconf-client.h>
 
 #include "applet.h"
+#include "applet-compat.h"
 #include "applet-dbus.h"
 #include "applet-dbus-devices.h"
 #include "applet-dbus-vpn.h"
@@ -2379,6 +2380,12 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	gconf_client_add_dir (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS, GCONF_CLIENT_PRELOAD_NONE, NULL);
 	applet->gconf_vpn_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_VPN_CONNECTIONS,
 						nmwa_gconf_vpn_connections_notify_callback, applet, NULL, NULL);
+
+	/* Convert old-format stored network entries to the new format.
+	 * Must be RUN BEFORE DBUS INITIALIZATION since we have to do
+	 * synchronous calls against gnome-keyring.
+	 */
+	nma_compat_convert_oldformat_entries (applet->gconf_client);
 
 	nmwa_dbus_init_helper (applet);
 
