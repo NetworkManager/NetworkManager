@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-11-04 15:23-0500\n"
+"POT-Creation-Date: 2005-12-23 02:34-0500\n"
 "PO-Revision-Date: 2005-09-06 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
@@ -18,78 +18,78 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: gnome/applet/applet-dbus-info.c:924
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:846
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Passphrase for wireless network %s"
 
-#: gnome/applet/applet-dbus.c:318
+#: ../gnome/applet/applet-dbus.c:276
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Connection to the wireless network '%s' failed."
 
-#: gnome/applet/applet-dbus.c:323
+#: ../gnome/applet/applet-dbus.c:281
 msgid "Connection to the wired network failed."
 msgstr "Connection to the wired network failed."
 
-#: gnome/applet/applet.c:183
+#: ../gnome/applet/applet.c:179
 msgid "Error displaying connection information: "
 msgstr "Error displaying connection information: "
 
-#: gnome/applet/applet.c:202
+#: ../gnome/applet/applet.c:198
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Could not find some required resources (the glade file)!"
 
-#: gnome/applet/applet.c:213
+#: ../gnome/applet/applet.c:209
 msgid "No active connections!"
 msgstr "No active connections!"
 
-#: gnome/applet/applet.c:228
+#: ../gnome/applet/applet.c:224
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Wired Ethernet (%s)"
 
-#: gnome/applet/applet.c:230
+#: ../gnome/applet/applet.c:226
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Wireless Ethernet (%s)"
 
-#: gnome/applet/applet.c:323 gnome/applet/applet.c:348
+#: ../gnome/applet/applet.c:319 ../gnome/applet/applet.c:344
 msgid "NetworkManager Applet"
 msgstr "NetworkManager Applet"
 
-#: gnome/applet/applet.c:325 gnome/applet/applet.c:350
+#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
-#: gnome/applet/applet.c:326 gnome/applet/applet.c:351
+#: ../gnome/applet/applet.c:322 ../gnome/applet/applet.c:347
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr ""
 "Notification area applet for managing your network devices and connections."
 
-#: gnome/applet/applet.c:329 gnome/applet/applet.c:356
+#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:352
 msgid "translator-credits"
 msgstr "Adam Weinberger <adamw@gnome.org>"
 
-#: gnome/applet/applet.c:441
+#: ../gnome/applet/applet.c:437
 msgid "VPN Error"
 msgstr "VPN Error"
 
-#: gnome/applet/applet.c:445
+#: ../gnome/applet/applet.c:441
 msgid "VPN Login Failure"
 msgstr "VPN Login Failure"
 
-#: gnome/applet/applet.c:446
+#: ../gnome/applet/applet.c:442
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "Could not start the VPN connection '%s' due to a login failure."
 
-#: gnome/applet/applet.c:450
+#: ../gnome/applet/applet.c:446
 msgid "VPN Start Failure"
 msgstr "VPN Start Failure"
 
-#: gnome/applet/applet.c:451
+#: ../gnome/applet/applet.c:447
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -98,25 +98,25 @@ msgstr ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
 "program."
 
-#: gnome/applet/applet.c:455 gnome/applet/applet.c:465
+#: ../gnome/applet/applet.c:451 ../gnome/applet/applet.c:461
 msgid "VPN Connect Failure"
 msgstr "VPN Connect Failure"
 
-#: gnome/applet/applet.c:456
+#: ../gnome/applet/applet.c:452
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Could not start the VPN connection '%s' due to a connection error."
 
-#: gnome/applet/applet.c:460
+#: ../gnome/applet/applet.c:456
 msgid "VPN Configuration Error"
 msgstr "VPN Configuration Error"
 
-#: gnome/applet/applet.c:461
+#: ../gnome/applet/applet.c:457
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "The VPN connection '%s' was not correctly configured."
 
-#: gnome/applet/applet.c:466
+#: ../gnome/applet/applet.c:462
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -125,23 +125,23 @@ msgstr ""
 "Could not start the VPN connection '%s' because the VPN server did not "
 "return an adequate network configuration."
 
-#: gnome/applet/applet.c:474
+#: ../gnome/applet/applet.c:470
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "The VPN service said: \"%s\""
 
-#: gnome/applet/applet.c:543
+#: ../gnome/applet/applet.c:539
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "VPN connection '%s' said:"
 
-#: gnome/applet/applet.c:545
+#: ../gnome/applet/applet.c:541
 msgid "VPN Login Message"
 msgstr "VPN Login Message"
 
-#: gnome/applet/applet.c:763 gnome/applet/applet.c:2367
-#: gnome/applet/other-network-dialog.c:429
-#: gnome/applet/passphrase-dialog.c:368
+#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2363
+#: ../gnome/applet/other-network-dialog.c:379
+#: ../gnome/applet/passphrase-dialog.c:351
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -149,148 +149,148 @@ msgstr ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 
-#: gnome/applet/applet.c:775
+#: ../gnome/applet/applet.c:771
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "The network device \"%s (%s)\" does not support wireless scanning."
 
-#: gnome/applet/applet.c:783
+#: ../gnome/applet/applet.c:779
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "The network device \"%s (%s)\" does not support link detection."
 
-#: gnome/applet/applet.c:928
+#: ../gnome/applet/applet.c:919
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Preparing device %s for the wired network..."
 
-#: gnome/applet/applet.c:930
+#: ../gnome/applet/applet.c:921
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Preparing device %s for the wireless network '%s'..."
 
-#: gnome/applet/applet.c:938
+#: ../gnome/applet/applet.c:929
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Configuring device %s for the wired network..."
 
-#: gnome/applet/applet.c:940
+#: ../gnome/applet/applet.c:931
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Attempting to join the wireless network '%s'..."
 
-#: gnome/applet/applet.c:948
+#: ../gnome/applet/applet.c:939
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Waiting for Network Key for the wireless network '%s'..."
 
-#: gnome/applet/applet.c:956 gnome/applet/applet.c:966
+#: ../gnome/applet/applet.c:947 ../gnome/applet/applet.c:957
 msgid "Requesting a network address from the wired network..."
 msgstr "Requesting a network address from the wired network..."
 
-#: gnome/applet/applet.c:958 gnome/applet/applet.c:968
+#: ../gnome/applet/applet.c:949 ../gnome/applet/applet.c:959
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Requesting a network address from the wireless network '%s'..."
 
-#: gnome/applet/applet.c:976
+#: ../gnome/applet/applet.c:967
 msgid "Finishing connection to the wired network..."
 msgstr "Finishing connection to the wired network..."
 
-#: gnome/applet/applet.c:978
+#: ../gnome/applet/applet.c:969
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Finishing connection to the wireless network '%s'..."
 
-#: gnome/applet/applet.c:1094
+#: ../gnome/applet/applet.c:1086
 msgid "NetworkManager is not running"
 msgstr "NetworkManager is not running"
 
-#: gnome/applet/applet.c:1106
+#: ../gnome/applet/applet.c:1098
 msgid "No network connection"
 msgstr "No network connection"
 
-#: gnome/applet/applet.c:1111
+#: ../gnome/applet/applet.c:1103
 msgid "Wired network connection"
 msgstr "Wired network connection"
 
-#: gnome/applet/applet.c:1115
+#: ../gnome/applet/applet.c:1107
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Connected to an Ad-Hoc wireless network"
 
-#: gnome/applet/applet.c:1117
+#: ../gnome/applet/applet.c:1109
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Wireless network connection to '%s' (%d%%)"
 
-#: gnome/applet/applet.c:1139
+#: ../gnome/applet/applet.c:1131
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN connection to '%s'"
 
-#: gnome/applet/applet.c:1147
+#: ../gnome/applet/applet.c:1139
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN connecting to '%s'"
 
-#: gnome/applet/applet.c:1537
+#: ../gnome/applet/applet.c:1529
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Connect to Other Wireless Network..."
 
-#: gnome/applet/applet.c:1558
+#: ../gnome/applet/applet.c:1550
 msgid "Create _New Wireless Network..."
 msgstr "Create _New Wireless Network..."
 
-#: gnome/applet/applet.c:1671
+#: ../gnome/applet/applet.c:1663
 msgid "_VPN Connections"
 msgstr "_VPN Connections"
 
-#: gnome/applet/applet.c:1703
+#: ../gnome/applet/applet.c:1695
 msgid "_Configure VPN..."
 msgstr "_Configure VPN..."
 
-#: gnome/applet/applet.c:1707
+#: ../gnome/applet/applet.c:1699
 msgid "_Disconnect VPN..."
 msgstr "_Disconnect VPN..."
 
-#: gnome/applet/applet.c:1729
+#: ../gnome/applet/applet.c:1721
 msgid "_Dial Up Connections"
 msgstr "_Dial-Up Connections"
 
-#: gnome/applet/applet.c:1738
+#: ../gnome/applet/applet.c:1730
 #, c-format
 msgid "Connect to %s..."
 msgstr "Connect to %s..."
 
-#: gnome/applet/applet.c:1788
+#: ../gnome/applet/applet.c:1780
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: gnome/applet/applet.c:1962
+#: ../gnome/applet/applet.c:1954
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
 #. 'Enable Wireless' item
-#: gnome/applet/applet.c:2087
+#: ../gnome/applet/applet.c:2079
 msgid "Enable _Wireless"
 msgstr "Enable _Wireless"
 
 #. 'Connection Information' item
-#: gnome/applet/applet.c:2093
+#: ../gnome/applet/applet.c:2085
 msgid "Connection _Information"
 msgstr "Connection _Information"
 
 #. Help item
-#: gnome/applet/applet.c:2103
+#: ../gnome/applet/applet.c:2096
 msgid "_Help"
 msgstr "_Help"
 
 #. About item
-#: gnome/applet/applet.c:2111
+#: ../gnome/applet/applet.c:2105
 msgid "_About"
 msgstr "_About"
 
-#: gnome/applet/applet.c:2503
+#: ../gnome/applet/applet.c:2483
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -298,54 +298,69 @@ msgstr ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
 
-#: gnome/applet/eggtrayicon.c:127
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "Open System"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "Shared Key"
+
+#: ../gnome/applet/wso-none.c:51
+msgid "None"
+msgstr "None"
+
+#: ../gnome/applet/wso-wep-ascii.c:128
+msgid "WEP 40/128-bit ASCII"
+msgstr "WEP 40/128-bit ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:125
+msgid "WEP 40/128-bit hex"
+msgstr "WEP 40/128-bit hex"
+
+#: ../gnome/applet/wso-wep-passphrase.c:125
+msgid "WEP Passphrase"
+msgstr "WEP Passphrase"
+
+#: ../gnome/applet/wso-wpa-psk-passphrase.c:113
+msgid "WPA Personal Passphrase"
+msgstr "WPA Personal Passphrase"
+
+#: ../gnome/applet/eggtrayicon.c:127
 msgid "Orientation"
 msgstr "Orientation"
 
-#: gnome/applet/eggtrayicon.c:128
+#: ../gnome/applet/eggtrayicon.c:128
 msgid "The orientation of the tray."
 msgstr "The orientation of the tray."
 
-#: gnome/applet/menu-items.c:87
+#: ../gnome/applet/menu-items.c:87
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Wired Network (%s)"
 
-#: gnome/applet/menu-items.c:90
+#: ../gnome/applet/menu-items.c:90
 msgid "_Wired Network"
 msgstr "_Wired Network"
 
-#: gnome/applet/menu-items.c:161
+#: ../gnome/applet/menu-items.c:161
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Wireless Network (%s)"
 msgstr[1] "Wireless Networks (%s)"
 
-#: gnome/applet/menu-items.c:163
+#: ../gnome/applet/menu-items.c:163
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Wireless Network"
 msgstr[1] "Wireless Networks"
 
-#: gnome/applet/menu-items.c:303
+#: ../gnome/applet/menu-items.c:326
 msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
 
-#: gnome/applet/other-network-dialog.c:151
-#: gnome/applet/wireless-applet.glade.h:42
-msgid "_Passphrase:"
-msgstr "_Passphrase:"
-
-#: gnome/applet/other-network-dialog.c:154
-msgid "_ASCII Key:"
-msgstr "_ASCII Key:"
-
-#: gnome/applet/other-network-dialog.c:157
-msgid "_Hex Key:"
-msgstr "_Hex Key:"
-
-#: gnome/applet/other-network-dialog.c:251
+#: ../gnome/applet/other-network-dialog.c:248
 #, c-format
 msgid ""
 "By default, the ESSID is set to your computer's name, %s, with no encryption "
@@ -354,11 +369,11 @@ msgstr ""
 "By default, the ESSID is set to your computer's name, %s, with no encryption "
 "enabled"
 
-#: gnome/applet/other-network-dialog.c:255
+#: ../gnome/applet/other-network-dialog.c:252
 msgid "Create new wireless network"
 msgstr "Create new wireless network"
 
-#: gnome/applet/other-network-dialog.c:256
+#: ../gnome/applet/other-network-dialog.c:253
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -366,41 +381,29 @@ msgstr ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
 
-#: gnome/applet/other-network-dialog.c:260
+#: ../gnome/applet/other-network-dialog.c:257
 msgid "Create New Wireless Network"
 msgstr "Create New Wireless Network"
 
-#: gnome/applet/other-network-dialog.c:265
+#: ../gnome/applet/other-network-dialog.c:262
 msgid "Custom wireless network"
 msgstr "Custom wireless network"
 
-#: gnome/applet/other-network-dialog.c:266
+#: ../gnome/applet/other-network-dialog.c:263
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Enter the ESSID of the wireless network to which you wish to connect."
 
-#: gnome/applet/other-network-dialog.c:268
+#: ../gnome/applet/other-network-dialog.c:265
 msgid "Connect to Other Wireless Network"
 msgstr "Connect to Other Wireless Network"
 
-#: gnome/applet/passphrase-dialog.c:155
-msgid "Passphrase:"
-msgstr "Passphrase:"
-
-#: gnome/applet/passphrase-dialog.c:158
-msgid "ASCII Key:"
-msgstr "ASCII Key:"
-
-#: gnome/applet/passphrase-dialog.c:161
-msgid "Hex Key:"
-msgstr "Hex Key:"
-
-#: gnome/applet/vpn-password-dialog.c:152
-#: gnome/applet/vpn-password-dialog.c:189
+#: ../gnome/applet/vpn-password-dialog.c:152
+#: ../gnome/applet/vpn-password-dialog.c:189
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "Cannot start VPN connection '%s'"
 
-#: gnome/applet/vpn-password-dialog.c:155
+#: ../gnome/applet/vpn-password-dialog.c:155
 #, c-format
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
@@ -409,7 +412,7 @@ msgstr ""
 "Could not find the authentication dialogue for VPN connection type '%s'. "
 "Contact your system administrator."
 
-#: gnome/applet/vpn-password-dialog.c:192
+#: ../gnome/applet/vpn-password-dialog.c:192
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
@@ -418,37 +421,17 @@ msgstr ""
 "There was a problem launching the authentication dialogue for VPN connection "
 "type '%s'. Contact your system administrator."
 
-#: gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/wireless-applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: gnome/applet/wireless-applet.glade.h:2
-msgid ""
-"128-bit Passphrase (WEP)\n"
-"ASCII Key (WEP)\n"
-"Hex Key (WEP)"
-msgstr ""
-"128-bit Passphrase (WEP)\n"
-"ASCII Key (WEP)\n"
-"Hex Key (WEP)"
-
-#: gnome/applet/wireless-applet.glade.h:5
-msgid ""
-"128-bit passphrase (WEP)\n"
-"ASCII key (WEP)\n"
-"Hex key (WEP)"
-msgstr ""
-"128-bit passphrase (WEP)\n"
-"ASCII key (WEP)\n"
-"Hex key (WEP)"
-
-#: gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 
-#: gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/wireless-applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -463,7 +446,7 @@ msgstr ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 
-#: gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/wireless-applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -474,7 +457,7 @@ msgstr ""
 "\n"
 "%s  It will not be completely functional."
 
-#: gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/wireless-applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -491,95 +474,143 @@ msgstr ""
 "that this wireless network is secure, click the checkbox below and "
 "NetworkManager will not require confirmation on subsequent logins."
 
-#: gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/wireless-applet.glade.h:15
+msgid "Authentication:"
+msgstr "Authentication:"
+
+#: ../gnome/applet/wireless-applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Broadcast Address:"
 
-#: gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/wireless-applet.glade.h:17
 msgid "C_onnect"
 msgstr "C_onnect"
 
-#: gnome/applet/wireless-applet.glade.h:23
-msgid "Connect with _encryption enabled"
-msgstr "Connect with _encryption enabled"
-
-#: gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/wireless-applet.glade.h:18
 msgid "Connection Information"
 msgstr "Connection Information"
 
-#: gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Default Route:"
 msgstr "Default Route:"
 
-#: gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Destination Address:"
 
-#: gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "Hardware Address:"
 msgstr "Hardware Address:"
 
-#: gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "IP Address:"
 msgstr "IP Address:"
 
-#: gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/wireless-applet.glade.h:23
 msgid "Interface:"
 msgstr "Interface:"
 
-#: gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid "Key:"
+msgstr "Key:"
+
+#: ../gnome/applet/wireless-applet.glade.h:25
+msgid ""
+"None\n"
+"WEP Passphrase\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+msgstr ""
+"None\n"
+"WEP Passphrase\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+
+#: ../gnome/applet/wireless-applet.glade.h:30
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"Open System\n"
+"Shared Key"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
 msgid "Other Wireless Network..."
 msgstr "Other Wireless Network..."
 
-#: gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:33
+msgid "Passphrase:"
+msgstr "Passphrase:"
+
+#: ../gnome/applet/wireless-applet.glade.h:34
+msgid "Password:"
+msgstr "Password:"
+
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Primary DNS:"
 msgstr "Primary DNS:"
 
-#: gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Secondary DNS:"
 msgstr "Secondary DNS:"
 
-#: gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "Subnet Mask:"
 msgstr "Subnet Mask:"
 
-#: gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:38
+msgid "User Name:"
+msgstr "User Name:"
+
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "Wireless Network Key Required"
 msgstr "Wireless Network Key Required"
 
-#: gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "Wireless _adapter:"
 msgstr "Wireless _adapter:"
 
-#: gnome/applet/wireless-applet.glade.h:36
-msgid "Wireless _network:"
-msgstr "Wireless _network:"
-
-#: gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "_Always Trust this Wireless Network"
 msgstr "_Always Trust this Wireless Network"
 
-#: gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Don't remind me again"
 msgstr "_Do not remind me again"
 
-#: gnome/applet/wireless-applet.glade.h:39
-msgid "_Key Type:"
-msgstr "_Key Type:"
-
-#: gnome/applet/wireless-applet.glade.h:40
-msgid "_Key type:"
-msgstr "_Key type:"
-
-#: gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/wireless-applet.glade.h:43
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:370
+#: ../gnome/applet/wireless-applet.glade.h:44
+msgid "_Network Name:"
+msgstr "_Network Name:"
+
+#: ../gnome/applet/wireless-applet.glade.h:45
+msgid "_Wireless Security:"
+msgstr "_Wireless Security:"
+
+#: ../gnome/applet/wireless-applet.glade.h:46
+msgid "leap_subwindow"
+msgstr "leap_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:47
+msgid "wep_key_subwindow"
+msgstr "wep_key_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:48
+msgid "wep_passphrase_subwindow"
+msgstr "wep_passphrase_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:49
+msgid "wpa_psk_subwindow"
+msgstr "wpa_psk_subwindow"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:370
 msgid "Cannot add VPN connection"
 msgstr "Cannot add VPN connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:372
+#: ../gnome/vpn-properties/nm-vpn-properties.c:372
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -587,11 +618,11 @@ msgstr ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
 
-#: gnome/vpn-properties/nm-vpn-properties.c:424
+#: ../gnome/vpn-properties/nm-vpn-properties.c:424
 msgid "Cannot import VPN connection"
 msgstr "Cannot import VPN connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:426
+#: ../gnome/vpn-properties/nm-vpn-properties.c:426
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -600,12 +631,12 @@ msgstr ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
 
-#: gnome/vpn-properties/nm-vpn-properties.c:566
+#: ../gnome/vpn-properties/nm-vpn-properties.c:566
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Error retrieving VPN connection '%s'"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:569
+#: ../gnome/vpn-properties/nm-vpn-properties.c:569
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -614,12 +645,12 @@ msgstr ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
 
-#: gnome/vpn-properties/nm-vpn-properties.c:729
+#: ../gnome/vpn-properties/nm-vpn-properties.c:729
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Delete VPN connection \"%s\"?"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:732
+#: ../gnome/vpn-properties/nm-vpn-properties.c:732
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -630,72 +661,72 @@ msgstr ""
 "need your system administrator to provide information to create a new "
 "connection."
 
-#: gnome/vpn-properties/nm-vpn-properties.c:938
+#: ../gnome/vpn-properties/nm-vpn-properties.c:938
 msgid "Unable to load"
 msgstr "Unable to load"
 
-#: gnome/vpn-properties/nm-vpn-properties.c:940
+#: ../gnome/vpn-properties/nm-vpn-properties.c:940
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Cannot find some needed resources (the glade file)!"
 
 #. Edit dialog
-#: gnome/vpn-properties/nm-vpn-properties.c:1058
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1058
 msgid "Edit VPN Connection"
 msgstr "Edit VPN Connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:1
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
 msgid "Add a new VPN connection"
 msgstr "Add a new VPN connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:2
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
 msgid "Choose which type of VPN connection you wish to create."
 msgstr "Choose the type of VPN connection you wish to create."
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:3
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "Connect to:"
 msgstr "Connect to:"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:4
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Create VPN Connection"
 msgstr "Create VPN Connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:5
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Create VPN Connection - 1 of 2"
 msgstr "Create VPN Connection - 1 of 2"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:6
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Create VPN Connection - 2 of 2"
 msgstr "Create VPN Connection - 2 of 2"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:7
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
 msgstr "Delete the selected VPN connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:8
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "E_xport"
 msgstr "E_xport"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:9
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
 msgid "Edit the selected VPN connection"
 msgstr "Edit the selected VPN connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:10
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
 msgid "Export the VPN settings to a file"
 msgstr "Export the VPN settings to a file"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:11
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
 msgid "Export the selected VPN connection to a file"
 msgstr "Export the selected VPN connection to a file"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:12
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
 msgid "Finish Creating VPN Connection"
 msgstr "Finish Creating VPN Connection"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:13
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
 msgid "Manage Virtual Private Network Connections"
 msgstr "Manage Virtual Private Network Connections"
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:14
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
 "This assistant will guide you through the creation of a connection to a "
 "Virtual Private Network (VPN).\n"
@@ -709,40 +740,60 @@ msgstr ""
 "It will require some information, such as IP addresses and secrets.  Please "
 "see your system administrator to obtain this information."
 
-#: gnome/vpn-properties/nm-vpn-properties.glade.h:17
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN Connections"
 
-#: src/nm-netlink-monitor.c:154
+#: ../src/nm-ap-security-wep.c:45
+msgid "40-bit WEP"
+msgstr "40-bit WEP"
+
+#: ../src/nm-ap-security-wep.c:47
+msgid "104-bit WEP"
+msgstr "104-bit WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:64
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:66
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security.c:297
+msgid "none"
+msgstr "none"
+
+#: ../src/nm-netlink-monitor.c:154
 #, c-format
 msgid ""
 "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "Unable to create netlink socket for monitoring wired ethernet devices - %s"
 
-#: src/nm-netlink-monitor.c:172
+#: ../src/nm-netlink-monitor.c:172
 #, c-format
 msgid ""
 "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "Unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 
-#: src/nm-netlink-monitor.c:403
+#: ../src/nm-netlink-monitor.c:403
 msgid "operation took too long"
 msgstr "Operation took too long"
 
-#: src/nm-netlink-monitor.c:500
+#: ../src/nm-netlink-monitor.c:500
 msgid "received data from wrong type of sender"
 msgstr "Received data from wrong type of sender"
 
-#: src/nm-netlink-monitor.c:513
+#: ../src/nm-netlink-monitor.c:513
 msgid "received data from unexpected sender"
 msgstr "Received data from unexpected sender"
 
-#: src/nm-netlink-monitor.c:644
+#: ../src/nm-netlink-monitor.c:644
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "Too much data was sent over socket and some of it was lost"
 
-#: src/nm-netlink-monitor.c:733
+#: ../src/nm-netlink-monitor.c:733
 msgid "error occurred while waiting for data on socket"
 msgstr "error occurred while waiting for data on socket"

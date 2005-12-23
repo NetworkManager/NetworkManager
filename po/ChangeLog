@@ -1,3 +1,8 @@
+2005-12-23  Adam Weinberger  <adamw@gnome.org>
+
+	* POTFILES.in: Added missing files.
+	* en_CA.po: Updated Canadian English translation.
+
 2005-12-21  Žygimantas Beručka  <zygis@gnome.org>
 
 	* lt.po: Added Lithuanian translation.
