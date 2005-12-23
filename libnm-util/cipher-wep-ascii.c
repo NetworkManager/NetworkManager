@@ -33,23 +33,14 @@ static char * cipher_wep64_ascii_hash_func (IEEE_802_11_Cipher *cipher, const ch
 
 static char * cipher_wep_ascii_hash_func (IEEE_802_11_Cipher *cipher, const char *input, int req_keylen)
 {
-	int		keylen;
-	char *	ret = NULL;
-
 	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (input != NULL, NULL);
 	g_return_val_if_fail (req_keylen > 0, NULL);
 
-	keylen = strlen (input);
-	if (keylen != req_keylen)
+	if (strlen (input) != req_keylen)
 		return NULL;
 
-	if (keylen > IW_ENCODING_TOKEN_MAX)
-		keylen = IW_ENCODING_TOKEN_MAX;
-	ret = g_malloc0 (keylen+1);
-	memcpy (ret, input, keylen);
-
-	return ret;
+	return cipher_bin2hexstr (input, req_keylen, req_keylen * 2);
 }
 
 

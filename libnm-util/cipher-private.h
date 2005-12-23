@@ -51,4 +51,15 @@ struct IEEE_802_11_Cipher
 };
 
 
+int		cipher_default_validate_func (IEEE_802_11_Cipher *cipher,
+                                        const char *ssid,
+                                        const char *input);
+
+char *	cipher_bin2hexstr (const char *bytes,
+                             int len,
+                             int final_len);
+
+char *	cipher_hexstr2bin (const char *hex,
+                             size_t len);
+
 #endif	/* CIPHER_PRIVATE_H */

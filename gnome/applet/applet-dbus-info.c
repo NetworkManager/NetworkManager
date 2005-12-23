@@ -462,7 +462,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	
 	/* Fourth arg: List of AP BSSIDs (ARRAY, STRING) */
 	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
-	if (bssids_value)
+	if (bssids_value && (g_slist_length (gconf_value_get_list (bssids_value)) > 0))
 	{
 		g_slist_foreach (gconf_value_get_list (bssids_value),
 				(GFunc) addr_list_append_helper,
@@ -470,8 +470,8 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	}
 	else
 	{
-		const char *fake = " ";
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &fake);
+		const char *fake = "";
+		dbus_message_iter_append_basic (&array_iter, DBUS_TYPE_STRING, &fake);
 	}
 	dbus_message_iter_close_container (&iter, &array_iter);
 
@@ -833,7 +833,7 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	key = g_strdup_printf ("%s/%s", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	gconf_entry = gconf_client_get_entry (applet->gconf_client, key, NULL, TRUE, NULL);
 	g_free (key);
-	if (gconf_entry)
+	if (!gconf_entry)
 	{
 		nm_warning ("%s:%d (%s): GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, __func__, essid);
 		goto out;

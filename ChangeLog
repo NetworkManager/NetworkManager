@@ -1,3 +1,31 @@
+2005-12-23  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-compat.c
+		- Fix bugs in GConf entry conversion
+
+	* gnome/applet/applet-dbus-info.c
+		- (nmi_dbus_get_network_properties): handle case of the BSSID
+			list being zero-length
+
+	* libnm-util/cipher-*
+	  libnm-util/dbus-helpers.c
+		- All ciphers must now return hashed keys as UTF-8 valid
+			hexadecimal strings, ie "8f3dae4023".  They are pushed
+			through dbus as strings too.
+		- Consolidate various functions that do bin->hex and hex->bin
+			conversion into cipher.c
+
+	* src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-psk.c
+		- Handle NULL keys since we may not know keys right away
+
+	* src/nm-dbus-nmi.c
+		- (nm_dbus_get_network_data_cb): actually advance to the start
+			of the wireless security info before we try to deserialize it
+
+	* libnm-util/test-ciphers.c
+		- Update cipher tests for the change to UTF-8 hexadecimal strings
+
 2005-12-22  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-compat.[ch]

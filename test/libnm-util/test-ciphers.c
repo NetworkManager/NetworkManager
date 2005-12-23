@@ -59,7 +59,7 @@ struct Inputs
 	char * overrun;
 	char * incorrect_input;
 	char * correct_input;
-	char correct_output[100];
+	char * correct_output;
 };
 
 #define WEP128_ASCII_SELECTOR		0
@@ -77,7 +77,7 @@ struct Inputs test_input[6] =
 		"herecomessantaclaus",
 		NULL,
 		"1234567891234",
-		{ 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x31, 0x32, 0x33, 0x34, 0x00 }
+		"31323334353637383931323334"
 	},
 	{
 		/* WEP64 ASCII */
@@ -85,7 +85,7 @@ struct Inputs test_input[6] =
 		"herecomessantaclaus",
 		NULL,
 		"12345",
-		{ 0x31, 0x32, 0x33, 0x34, 0x35, 0x00 }
+		"3132333435"
 	},
 	{
 		/* WEP128 Hex */
@@ -93,7 +93,7 @@ struct Inputs test_input[6] =
 		"3235ab39b9b2e32fda8a919b9a021458",
 		"qwertyuiopjxccjvjpapadfjcd",
 		"4ec5de9938b606e9d40dff721e",
-		{ 0x4e, 0xc5, 0xde, 0x99, 0x38, 0xb6, 0x06, 0xe9, 0xd4, 0x0d, 0xff, 0x72, 0x1e, 0x00 }
+		"4ec5de9938b606e9d40dff721e"
 	},
 	{
 		/* WEP64 Hex */
@@ -101,7 +101,7 @@ struct Inputs test_input[6] =
 		"3235ab39b9b2e",
 		"qwertyuiop",
 		"4ec5de9938",
-		{ 0x4e, 0xc5, 0xde, 0x99, 0x38 }
+		"4ec5de9938"
 	},
 	{
 		/* WEP128 Passphrse */
@@ -109,8 +109,7 @@ struct Inputs test_input[6] =
 		"3235ab39b9b2e32fda8a919b9a0214583235ab39b9b2e32fda8a919b9a0214583acb",
 		NULL,
 		"You don't remember me but I remember you.",
-		{ 0x30, 0x36, 0x61, 0x39, 0x63, 0x37, 0x30, 0x37, 0x31, 0x35, 0x66, 0x65, 0x30,
-		  0x36, 0x31, 0x32, 0x39, 0x63, 0x36, 0x32, 0x35, 0x61, 0x32, 0x34, 0x38, 0x64 }
+		"06a9c70715fe06129c625a248d"
 	},
 	{
 		/* WEP64 Passphrse */
@@ -118,7 +117,7 @@ struct Inputs test_input[6] =
 		"3235ab39b9b2e32fda8a919b9a0214583235ab39b9b2e32fda8a919b9a0214583acb",
 		NULL,
 		"Have you forgotten all I know?",
-		{ 0x31, 0x38, 0x30, 0x37, 0x34, 0x66, 0x33, 0x31, 0x37, 0x38 }
+		"18074f3178"
 	}
 };
 
@@ -152,6 +151,9 @@ static void test_inputs (IEEE_802_11_Cipher *cipher, const char *test, int selec
 	/* Compare to known output */
 	if (memcmp (output, input->correct_output, strlen (input->correct_output)) != 0)
 		test_result (progname, test, TEST_FAIL, "Hashed output did not match expected!\n");
+
+	if (!g_utf8_validate (output, strlen (output), NULL))
+		test_result (progname, test, TEST_FAIL, "Hashed output was not valid UTF8!\n");
 
 	test_result (progname, test, TEST_SUCCEED, NULL);
 }

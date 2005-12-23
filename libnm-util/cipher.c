@@ -121,3 +121,93 @@ int cipher_default_validate_func (IEEE_802_11_Cipher *cipher, const char *ssid, 
 
 	return ret;
 }
+
+/*
+ * cipher_bin2hexstr
+ *
+ * Convert a byte-array into a hexadecimal string.
+ *
+ * Code originally by Alex Larsson <alexl@redhat.com> and
+ *  copyright Red Hat, Inc. under terms of the LGPL.
+ *
+ */
+char *
+cipher_bin2hexstr (const char *bytes,
+                   int len,
+                   int final_len)
+{
+	static char	hex_digits[] = "0123456789abcdef";
+	char *		result;
+	int			i;
+
+	g_return_val_if_fail (bytes != NULL, NULL);
+	g_return_val_if_fail (len > 0, NULL);
+	g_return_val_if_fail (len < 256, NULL);	/* Arbitrary limit */
+
+	result = g_malloc0 (len * 2);
+	for (i = 0; i < len; i++)
+	{
+		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
+		result[2*i+1] = hex_digits[bytes[i] & 0xf];
+	}
+	/* Cut converted key off at the correct length for this cipher type */
+	result[final_len] = '\0';
+
+	return result;
+}
+
+/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
+
+static int hex2num(char c)
+{
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return -1;
+}
+
+static int hex2byte(const char *hex)
+{
+	int a, b;
+	a = hex2num(*hex++);
+	if (a < 0)
+		return -1;
+	b = hex2num(*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
+
+char *
+cipher_hexstr2bin(const char *hex,
+                  size_t len)
+{
+	size_t		i;
+	int			a;
+	const char *	ipos = hex;
+	char *		buf = NULL;
+	char *		opos;
+
+	/* Length must be a multiple of 2 */
+	if ((len % 2) != 0)
+		return NULL;
+
+	opos = buf = g_malloc0 ((len / 2) + 1);
+	for (i = 0; i < len; i += 2)
+	{
+		a = hex2byte(ipos);
+		if (a < 0)
+		{
+			g_free (buf);
+			return NULL;
+		}
+		*opos++ = a;
+		ipos += 2;
+	}
+	return buf;
+}
+
+/* End from hostap */

@@ -35,7 +35,4 @@ int           ieee_802_11_cipher_validate (IEEE_802_11_Cipher *cipher, const cha
 /* Private API members (not part of the public API) */
 int           ieee_802_11_cipher_refcount (IEEE_802_11_Cipher *cipher);
 
-/* For use by ciphers themselves */
-int           cipher_default_validate_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
-
 #endif	/* CIPHER_H */

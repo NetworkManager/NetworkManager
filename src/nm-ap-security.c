@@ -60,6 +60,7 @@ nm_ap_security_new_deserialize (DBusMessageIter *iter)
 	int we_cipher;
 
 	g_return_val_if_fail (iter != NULL, NULL);
+
 	/* We require the WE cipher (an INT32) first */
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_INT32, NULL);
 

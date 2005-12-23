@@ -28,25 +28,6 @@
 #include "cipher.h"
 
 
-static dbus_bool_t key_append_helper (DBusMessageIter *iter, const char *key)
-{
-	DBusMessageIter	subiter;
-	int				key_len;
-
-	g_return_val_if_fail (iter != NULL, FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
-
-	key_len = strlen (key);
-	g_return_val_if_fail (key_len > 0, FALSE);
-
-	if (!dbus_message_iter_open_container (iter, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE_AS_STRING, &subiter))
-		return FALSE;
-	dbus_message_iter_append_fixed_array (&subiter, DBUS_TYPE_BYTE, &key, key_len);
-	dbus_message_iter_close_container (iter, &subiter);
-
-	return TRUE;
-}
-
 static void we_cipher_append_helper (DBusMessageIter *iter, int we_cipher)
 {
 	dbus_int32_t	dbus_we_cipher = (dbus_int32_t) we_cipher;
@@ -61,13 +42,13 @@ nmu_security_serialize_wep (DBusMessageIter *iter,
 					   const char *key,
 					   int auth_alg)
 {
+	const char *	fake_key = "";
+
 	g_return_val_if_fail (iter != NULL, FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail ((auth_alg == IW_AUTH_ALG_OPEN_SYSTEM) || (auth_alg == IW_AUTH_ALG_SHARED_KEY), FALSE);
 
-	/* Second arg: hashed key (ARRAY, BYTE) */
-	if (!key_append_helper (iter, key))
-		return FALSE;
+	/* Second arg: hashed key (STRING) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, key ? &key : &fake_key);
 
 	/* Third arg: WEP authentication algorithm (INT32) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &auth_alg);
@@ -92,13 +73,11 @@ nmu_security_deserialize_wep (DBusMessageIter *iter,
 	g_return_val_if_fail (key_len != NULL, FALSE);
 	g_return_val_if_fail (auth_alg != NULL, FALSE);
 
-	/* Next arg: key (ARRAY, BYTE) */
-	g_return_val_if_fail ((dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_ARRAY)
-			&& (dbus_message_iter_get_element_type (iter) == DBUS_TYPE_BYTE), FALSE);
+	/* Next arg: key (STRING) */
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 
-	dbus_message_iter_recurse (iter, &subiter);
-	dbus_message_iter_get_fixed_array (&subiter, &dbus_key, &dbus_key_len);
-	g_return_val_if_fail (dbus_key_len > 0, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_key);
+	g_return_val_if_fail (dbus_key != NULL, FALSE);
 
 	/* Next arg: authentication algorithm (INT32) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
@@ -108,8 +87,8 @@ nmu_security_deserialize_wep (DBusMessageIter *iter,
 	g_return_val_if_fail ((dbus_auth_alg == IW_AUTH_ALG_OPEN_SYSTEM)
 			|| (dbus_auth_alg == IW_AUTH_ALG_SHARED_KEY), FALSE);
 
-	*key = dbus_key;
-	*key_len = dbus_key_len;
+	*key = strlen (dbus_key) > 0 ? dbus_key : NULL;
+	*key_len = strlen (dbus_key);
 	*auth_alg = dbus_auth_alg;
 	return TRUE;
 }
@@ -154,9 +133,8 @@ nmu_security_serialize_wpa_psk (DBusMessageIter *iter,
 	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
 	g_return_val_if_fail ((key_mgt == IW_AUTH_KEY_MGMT_802_1X) || (key_mgt == IW_AUTH_KEY_MGMT_PSK), FALSE);
 
-	/* Second arg: hashed key (ARRAY, BYTE) */
-	if (!key_append_helper (iter, key))
-		return FALSE;
+	/* Second arg: hashed key (STRING) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &key);
 
 	/* Third arg: WPA version (INT32) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &wpa_version);
@@ -187,13 +165,11 @@ nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
 	g_return_val_if_fail (wpa_version != NULL, FALSE);
 	g_return_val_if_fail (key_mgt != NULL, FALSE);
 
-	/* Next arg: key (ARRAY, BYTE) */
-	g_return_val_if_fail ((dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_ARRAY)
-			&& (dbus_message_iter_get_element_type (iter) == DBUS_TYPE_BYTE), FALSE);
+	/* Next arg: key (STRING) */
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 
-	dbus_message_iter_recurse (iter, &subiter);
-	dbus_message_iter_get_fixed_array (&subiter, &dbus_key, &dbus_key_len);
-	g_return_val_if_fail (dbus_key_len > 0, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_key);
+	g_return_val_if_fail (dbus_key != NULL, FALSE);
 
 	/* Next arg: WPA version (INT32) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
@@ -211,8 +187,8 @@ nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
 	g_return_val_if_fail ((dbus_key_mgt == IW_AUTH_KEY_MGMT_802_1X)
 			|| (dbus_key_mgt == IW_AUTH_KEY_MGMT_PSK), FALSE);
 
-	*key = dbus_key;
-	*key_len = dbus_key_len;
+	*key = strlen (dbus_key) > 0 ? dbus_key : NULL;
+	*key_len = strlen (dbus_key);
 	*wpa_version = dbus_wpa_version;
 	*key_mgt = dbus_key_mgt;
 	return TRUE;

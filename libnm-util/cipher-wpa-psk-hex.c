@@ -29,50 +29,7 @@
 
 static char * cipher_wpa_psk_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 
-
-/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
-
-static int hex2num(char c)
-{
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	return -1;
-}
-
-static int hex2byte(const char *hex)
-{
-	int a, b;
-	a = hex2num(*hex++);
-	if (a < 0)
-		return -1;
-	b = hex2num(*hex++);
-	if (b < 0)
-		return -1;
-	return (a << 4) | b;
-}
-
-static int hexstr2bin(const char *hex, char *buf, size_t len)
-{
-	size_t i;
-	int a;
-	const char *ipos = hex;
-	char *opos = buf;
-
-	for (i = 0; i < len; i++) {
-		a = hex2byte(ipos);
-		if (a < 0)
-			return -1;
-		*opos++ = a;
-		ipos += 2;
-	}
-	return 0;
-}
-
-/* End from hostap */
+#define HEXSTR_WPA_PMK_LEN	WPA_PMK_LEN * 2
 
 IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void)
 {
@@ -80,8 +37,8 @@ IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void)
 
 	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_TKIP;
-	cipher->input_min = 2;
-	cipher->input_max = WPA_PMK_LEN * 2;
+	cipher->input_min = HEXSTR_WPA_PMK_LEN;
+	cipher->input_max = HEXSTR_WPA_PMK_LEN;
 	cipher->cipher_hash_func = cipher_wpa_psk_hex_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
 
@@ -90,19 +47,17 @@ IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void)
 
 static char * cipher_wpa_psk_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
 {
-	char * buf = NULL;
-	char * ret = NULL;
-	int    err = -1;
+	char * bin = NULL;
+	char * hex = NULL;
 
 	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (input != NULL, NULL);
 
-	buf = g_malloc0 (WPA_PMK_LEN+1);
-	err = hexstr2bin (input, buf, WPA_PMK_LEN);
-	if (err != 0)
-		g_free (buf);
-	else
-		ret = buf;
-
-	return ret;
+	/* Convert -> bin and back to -> hexstr for validation */
+	if (!(bin = cipher_hexstr2bin (input, HEXSTR_WPA_PMK_LEN)))
+		return NULL;
+	if (!(hex = cipher_bin2hexstr (bin, WPA_PMK_LEN, HEXSTR_WPA_PMK_LEN)))
+		return NULL;
+	g_free (bin);
+	return hex;
 }

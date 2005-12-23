@@ -37,37 +37,6 @@ static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, co
 static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 
 
-/*
- * cipher_wep_passphrase_ascii_to_hex
- *
- * Convert an ascii string into a suitable string for use
- * as a WEP key.
- *
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- *
- */
-static char * cipher_wep_passphrase_ascii_to_hex (const unsigned char *ascii, int req_keylen)
-{
-	static char	 hex_digits[] = "0123456789abcdef";
-	char			*res;
-	int			 i;
-
-	g_return_val_if_fail (ascii != NULL, NULL);
-	g_return_val_if_fail ((req_keylen == 26) || (req_keylen == 10), NULL);
-
-	res = g_malloc (33);
-	for (i = 0; i < 16; i++)
-	{
-		res[2*i] = hex_digits[(ascii[i] >> 4) & 0xf];
-		res[2*i+1] = hex_digits[ascii[i] & 0xf];
-	}
-	/* Cut converted key off at the correct length for this cipher type */
-	res[req_keylen] = 0;
-
-	return res;
-}
-
 static char * cipher_wep_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *input, int req_keylen)
 {
 	char		 	md5_data[65];
@@ -94,7 +63,7 @@ static char * cipher_wep_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const
 	gnome_keyring_md5_string (md5_data, digest);
 #endif
 
-	return (cipher_wep_passphrase_ascii_to_hex (digest, req_keylen));
+	return (cipher_bin2hexstr ((const char *) &digest, 16, req_keylen));
 }
 
 

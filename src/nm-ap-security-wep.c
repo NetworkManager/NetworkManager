@@ -66,7 +66,8 @@ nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_AP_SECURITY_WEP, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
-	nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len);
+	if (key)
+		nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len);
 	security->priv->auth_algorithm = auth_algorithm;
 
 	set_description (security);

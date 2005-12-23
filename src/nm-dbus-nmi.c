@@ -423,6 +423,14 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	}
 
 	/* Unserialize access point security info */
+	if (!dbus_message_iter_has_next (&iter))
+	{
+		nm_warning ("%s:%d (%s): a message argument (security info) was invalid.",
+				__FILE__, __LINE__, __func__);
+		goto out;
+	}
+	dbus_message_iter_next (&iter);
+
 	if (!(security = nm_ap_security_new_deserialize (&iter)))
 	{
 		nm_warning ("%s:%d (%s): message arguments were invalid (could not deserialize "

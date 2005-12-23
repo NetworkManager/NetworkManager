@@ -185,7 +185,7 @@ set_key_in_keyring (const char *essid,
 								   &item_id);
 	if (ret != GNOME_KEYRING_RESULT_OK)
 	{
-		nm_warning ("%s:%d (%s): Error saving encryption key in keyring for '%s'.  Ret=%d",
+		nm_warning ("%s:%d (%s): Error converting encryption key for '%s'.  Ret=%d",
 			__FILE__, __LINE__, __func__, essid, ret);
 	}
 
@@ -289,7 +289,7 @@ convert_one_entry (GConfClient *client,
 	}
 
 	/* Ignore any entry that looks like it doesn't need conversion */
-	if (!nm_gconf_get_int_helper (client,
+	if (nm_gconf_get_int_helper (client,
                                    GCONF_PATH_WIRELESS_NETWORKS,
                                    "we_cipher",
                                    escaped_network,
@@ -313,7 +313,7 @@ convert_one_entry (GConfClient *client,
 	key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
 	if ((addrs_value = gconf_client_get (client, key, NULL)))
 	{
-		if ((addrs_value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (addrs_value) != GCONF_VALUE_STRING))
+		if ((addrs_value->type == GCONF_VALUE_LIST) && (gconf_value_get_list_type (addrs_value) == GCONF_VALUE_STRING))
 		{
 			GSList *	list;
 			char *	conv_key;
@@ -333,6 +333,7 @@ convert_one_entry (GConfClient *client,
 	/* Convert security information, if any */
 	switch (key_type)
 	{
+		case NM_ENC_TYPE_UNKNOWN:
 		case NM_ENC_TYPE_NONE:
 			convert_no_encryption (client, escaped_network);
 			break;
