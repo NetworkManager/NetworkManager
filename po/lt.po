@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-12-21 12:43+0200\n"
-"PO-Revision-Date: 2005-12-21 13:13+0200\n"
+"POT-Creation-Date: 2005-12-26 01:15+0200\n"
+"PO-Revision-Date: 2005-12-26 01:16+0200\n"
 "Last-Translator: Žygimantas Beručka <zygis@gnome.org>\n"
 "Language-Team: Lithuanian <komp_lt@konferencijos.lt>\n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-dbus-info.c:866
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:924
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Bevielio tinklo „%s“ slaptažodis"
@@ -32,64 +32,64 @@ msgstr "Nepavyko prisijungti prie bevielio tinklo „%s“."
 msgid "Connection to the wired network failed."
 msgstr "Nepavyko prisijungti prie laidinio tinklo."
 
-#: ../gnome/applet/applet.c:178
+#: ../gnome/applet/applet.c:179
 msgid "Error displaying connection information: "
 msgstr "Klaida bandant parodyti prisijungimo informaciją: "
 
-#: ../gnome/applet/applet.c:197
+#: ../gnome/applet/applet.c:198
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Nepavyko rasti kai kurių reikalingų resursų (glade bylos)!"
 
-#: ../gnome/applet/applet.c:208
+#: ../gnome/applet/applet.c:209
 msgid "No active connections!"
 msgstr "Nėra aktyvių prisijungimų!"
 
-#: ../gnome/applet/applet.c:223
+#: ../gnome/applet/applet.c:224
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Laidinis tinklas (%s)"
 
-#: ../gnome/applet/applet.c:225
+#: ../gnome/applet/applet.c:226
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Bevielis tinklas (%s)"
 
-#: ../gnome/applet/applet.c:318 ../gnome/applet/applet.c:343
+#: ../gnome/applet/applet.c:319 ../gnome/applet/applet.c:344
 msgid "NetworkManager Applet"
 msgstr "NetworkManager įtaisas"
 
-#: ../gnome/applet/applet.c:320 ../gnome/applet/applet.c:345
+#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Autorinės teisės © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
+#: ../gnome/applet/applet.c:322 ../gnome/applet/applet.c:347
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr ""
 "Pranešimų vietos įtaisas Jūsų tinklo įrenginių ir prisijungimų valdymui."
 
-#: ../gnome/applet/applet.c:324 ../gnome/applet/applet.c:351
+#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:352
 msgid "translator-credits"
 msgstr "Žygimantas Beručka <zygis@gnome.org>"
 
-#: ../gnome/applet/applet.c:436
+#: ../gnome/applet/applet.c:437
 msgid "VPN Error"
 msgstr "VPN klaida"
 
-#: ../gnome/applet/applet.c:440
+#: ../gnome/applet/applet.c:441
 msgid "VPN Login Failure"
 msgstr "VPN prisijungimas nepavyko"
 
-#: ../gnome/applet/applet.c:441
+#: ../gnome/applet/applet.c:442
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "VPN prisijungimo „%s“ atverti nepavyko, nes nepavyko autentikuotis."
 
-#: ../gnome/applet/applet.c:445
+#: ../gnome/applet/applet.c:446
 msgid "VPN Start Failure"
 msgstr "VPN atverti nepavyko"
 
-#: ../gnome/applet/applet.c:446
+#: ../gnome/applet/applet.c:447
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -97,48 +97,48 @@ msgid ""
 msgstr ""
 "Nepavyko atverti VPN prisijungimo „%s“, nes nepavyko paleisti VPN programos."
 
-#: ../gnome/applet/applet.c:450 ../gnome/applet/applet.c:460
+#: ../gnome/applet/applet.c:451 ../gnome/applet/applet.c:461
 msgid "VPN Connect Failure"
 msgstr "VPN prisijungimo klaida"
 
-#: ../gnome/applet/applet.c:451
+#: ../gnome/applet/applet.c:452
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Nepavyko atverti VPN prisijungimo „%s“ dėl prisijungimo klaidos."
 
-#: ../gnome/applet/applet.c:455
+#: ../gnome/applet/applet.c:456
 msgid "VPN Configuration Error"
 msgstr "VPN konfigūracijos klaida"
 
-#: ../gnome/applet/applet.c:456
+#: ../gnome/applet/applet.c:457
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN prisijungimas „%s“ buvo neteisingai sukonfigūruotas."
 
-#: ../gnome/applet/applet.c:461
+#: ../gnome/applet/applet.c:462
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
 "return an adequate network configuration."
 msgstr ""
-"Nepavyko atverti VPN prisijungimo „%s“, nes VPN serveris negrąžino adekvačios "
-"tinklo konfigūracijos."
+"Nepavyko atverti VPN prisijungimo „%s“, nes VPN serveris negrąžino "
+"adekvačios tinklo konfigūracijos."
 
-#: ../gnome/applet/applet.c:469
+#: ../gnome/applet/applet.c:470
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "Iš VPN tarnybos gauta: „%s“"
 
-#: ../gnome/applet/applet.c:538
+#: ../gnome/applet/applet.c:539
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "Iš VPN prisijungimo „%s“ gauta:"
 
-#: ../gnome/applet/applet.c:540
+#: ../gnome/applet/applet.c:541
 msgid "VPN Login Message"
 msgstr "VPN prisijungimo pranešimas"
 
-#: ../gnome/applet/applet.c:758 ../gnome/applet/applet.c:2362
+#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2363
 #: ../gnome/applet/other-network-dialog.c:379
 #: ../gnome/applet/passphrase-dialog.c:351
 msgid ""
@@ -148,154 +148,182 @@ msgstr ""
 "NetworkManager įtaisas nerado kai kurių reikalingų resursų (nerasta glade "
 "byla)."
 
-#: ../gnome/applet/applet.c:770
+#: ../gnome/applet/applet.c:771
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Tinklinis įrenginys „%s (%s)“ nepalaiko bevielio skanavimo."
 
-#: ../gnome/applet/applet.c:778
+#: ../gnome/applet/applet.c:779
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Tinklinis įrenginys „%s (%s)“ nepalaiko saitų aptikimo."
 
-#: ../gnome/applet/applet.c:918
+#: ../gnome/applet/applet.c:919
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Įrenginys %s ruošiamas laidiniam tinklui..."
 
-#: ../gnome/applet/applet.c:920
+#: ../gnome/applet/applet.c:921
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Įrenginys %s ruošiamas bevieliam tinklui „%s“..."
 
-#: ../gnome/applet/applet.c:928
+#: ../gnome/applet/applet.c:929
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Įrenginys %s konfigūruojamas laidiniam tinklui..."
 
-#: ../gnome/applet/applet.c:930
+#: ../gnome/applet/applet.c:931
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Bandoma prisijungti prie bevielio tinklo „%s“..."
 
-#: ../gnome/applet/applet.c:938
+#: ../gnome/applet/applet.c:939
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Bevielio tinklo „%s“ laukiama Tinklo rakto..."
 
-#: ../gnome/applet/applet.c:946 ../gnome/applet/applet.c:956
+#: ../gnome/applet/applet.c:947 ../gnome/applet/applet.c:957
 msgid "Requesting a network address from the wired network..."
 msgstr "Laidinio tinklo prašoma adreso tinkle..."
 
-#: ../gnome/applet/applet.c:948 ../gnome/applet/applet.c:958
+#: ../gnome/applet/applet.c:949 ../gnome/applet/applet.c:959
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Bevielio tinklo „%s“ prašoma adreso tinkle..."
 
-#: ../gnome/applet/applet.c:966
+#: ../gnome/applet/applet.c:967
 msgid "Finishing connection to the wired network..."
 msgstr "Užbaigiamas prisijungimas prie laidinio tinklo..."
 
-#: ../gnome/applet/applet.c:968
+#: ../gnome/applet/applet.c:969
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Užbaigiamas prisijungimas prie bevielio tinklo „%s“..."
 
-#: ../gnome/applet/applet.c:1085
+#: ../gnome/applet/applet.c:1086
 msgid "NetworkManager is not running"
 msgstr "NetworkManager nepaleistas"
 
-#: ../gnome/applet/applet.c:1097
+#: ../gnome/applet/applet.c:1098
 msgid "No network connection"
 msgstr "Nėra tinklo prisijungimo"
 
-#: ../gnome/applet/applet.c:1102
+#: ../gnome/applet/applet.c:1103
 msgid "Wired network connection"
 msgstr "Bevielis tinklo prisijungimas"
 
-#: ../gnome/applet/applet.c:1106
+#: ../gnome/applet/applet.c:1107
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Prisijungti prie Ad-Hoc bevielio tinklo"
 
-#: ../gnome/applet/applet.c:1108
+#: ../gnome/applet/applet.c:1109
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Bevielio tinklo prisijungimas prie „%s“ (%d%%)"
 
-#: ../gnome/applet/applet.c:1130
+#: ../gnome/applet/applet.c:1131
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN prisijungimas prie „%s“"
 
-#: ../gnome/applet/applet.c:1138
+#: ../gnome/applet/applet.c:1139
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN prisijungimas prie „%s“"
 
-#: ../gnome/applet/applet.c:1528
+#: ../gnome/applet/applet.c:1529
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Prisijungti prie kito bevielio tinklo..."
 
-#: ../gnome/applet/applet.c:1549
+#: ../gnome/applet/applet.c:1550
 msgid "Create _New Wireless Network..."
 msgstr "Sukurti _naują bevielį tinklą..."
 
-#: ../gnome/applet/applet.c:1662
+#: ../gnome/applet/applet.c:1663
 msgid "_VPN Connections"
 msgstr "_VPN prisijungimai"
 
-#: ../gnome/applet/applet.c:1694
+#: ../gnome/applet/applet.c:1695
 msgid "_Configure VPN..."
 msgstr "_Konfigūruoti VPN..."
 
-#: ../gnome/applet/applet.c:1698
+#: ../gnome/applet/applet.c:1699
 msgid "_Disconnect VPN..."
 msgstr "_Atjungti VPN..."
 
-#: ../gnome/applet/applet.c:1720
+#: ../gnome/applet/applet.c:1721
 msgid "_Dial Up Connections"
 msgstr "_Dial Up prisijungimai"
 
-#: ../gnome/applet/applet.c:1729
+#: ../gnome/applet/applet.c:1730
 #, c-format
 msgid "Connect to %s..."
 msgstr "Prisijungti prie %s..."
 
-#: ../gnome/applet/applet.c:1779
+#: ../gnome/applet/applet.c:1780
 msgid "No network devices have been found"
 msgstr "Nerasta tinklinių įrenginių"
 
-#: ../gnome/applet/applet.c:1953
+#: ../gnome/applet/applet.c:1954
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager nepaleistas..."
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2078
+#: ../gnome/applet/applet.c:2079
 msgid "Enable _Wireless"
 msgstr "Įjungti _bevielį"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2084
+#: ../gnome/applet/applet.c:2085
 msgid "Connection _Information"
 msgstr "Prisijungimo _informacija"
 
 #. Help item
-#: ../gnome/applet/applet.c:2095
+#: ../gnome/applet/applet.c:2096
 msgid "_Help"
 msgstr "_Pagalba"
 
 #. About item
-#: ../gnome/applet/applet.c:2104
+#: ../gnome/applet/applet.c:2105
 msgid "_About"
 msgstr "_Apie"
 
-#: ../gnome/applet/applet.c:2476
+#: ../gnome/applet/applet.c:2483
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
 msgstr ""
 "NetworkManager įtaisas nerado kai kurių reikiamų resursų. Toliau tęsti "
 "nebegalima.\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "Atvira sistema"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "Viešas raktas"
+
+#: ../gnome/applet/wso-none.c:51
+msgid "None"
+msgstr "Nėra"
+
+#: ../gnome/applet/wso-wep-ascii.c:128
+msgid "WEP 40/128-bit ASCII"
+msgstr "WEP 40/128-bit ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:125
+msgid "WEP 40/128-bit hex"
+msgstr "WEP 40/128-bit hex"
+
+#: ../gnome/applet/wso-wep-passphrase.c:125
+msgid "WEP Passphrase"
+msgstr "WEP slaptažodis"
+
+#: ../gnome/applet/wso-wpa-psk-passphrase.c:113
+msgid "WPA Personal Passphrase"
+msgstr "WPA asmeninis slaptažodis"
 
 #: ../gnome/applet/eggtrayicon.c:127
 msgid "Orientation"
@@ -350,8 +378,7 @@ msgstr "Sukurti naują bevielį tinklą"
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
-msgstr ""
-"Įveskite norimo sukurti bevielio tinklo ESSID ir saugumo nustatymus."
+msgstr "Įveskite norimo sukurti bevielio tinklo ESSID ir saugumo nustatymus."
 
 #: ../gnome/applet/other-network-dialog.c:257
 msgid "Create New Wireless Network"
@@ -426,10 +453,10 @@ msgid ""
 "\n"
 "%s  It will not be completely functional."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Sumažintas tinklo funkcionalumas</span>\n"
+"<span weight=\"bold\" size=\"larger\">Sumažintas tinklo funkcionalumas</"
+"span>\n"
 "\n"
 "%s  Jo funkcionalumas bus ribotas."
-""
 
 #: ../gnome/applet/wireless-applet.glade.h:12
 #, no-c-format
@@ -444,9 +471,9 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Bevielio tinklo prisijungimo "
 "patvirtinimas</span>\n"
 "\n"
-"Jūs pasirinkote prisijungti prie bevielio tinklo „%s“. Jeigu esate tikri, kad "
-"šis bevielis tinklas saugus, spragtelėkite žemiau esantį žymimąjį langelį ir "
-"NetworkManager ateityje prisijungiant nereikalaus patvirtinimo."
+"Jūs pasirinkote prisijungti prie bevielio tinklo „%s“. Jeigu esate tikri, "
+"kad šis bevielis tinklas saugus, spragtelėkite žemiau esantį žymimąjį "
+"langelį ir NetworkManager ateityje prisijungiant nereikalaus patvirtinimo."
 
 #: ../gnome/applet/wireless-applet.glade.h:15
 msgid "Authentication:"
@@ -602,8 +629,8 @@ msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
 msgstr ""
-"Nepavyko rasti tinkamos programos VPN ryšio tipui „%s“ bylos „%s“ importavimui. "
-"Susisiekite su savo sistemos administratoriumi."
+"Nepavyko rasti tinkamos programos VPN ryšio tipui „%s“ bylos „%s“ "
+"importavimui. Susisiekite su savo sistemos administratoriumi."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:566
 #, c-format
@@ -708,8 +735,8 @@ msgid ""
 "It will require some information, such as IP addresses and secrets.  Please "
 "see your system administrator to obtain this information."
 msgstr ""
-"Šis vediklis padės Jums sukurti prisijungimą prie Virtualaus privataus tinklo "
-"(VPN).\n"
+"Šis vediklis padės Jums sukurti prisijungimą prie Virtualaus privataus "
+"tinklo (VPN).\n"
 "\n"
 "Jūs turėsite pateikti šiek tiek informacijos, tokios kaip IP adresai ir "
 "slaptažodžiai. Jei neturite šios informacijos, paprašykite jos savo sistemos "
@@ -718,6 +745,26 @@ msgstr ""
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN prisijungimai"
+
+#: ../src/nm-ap-security-wep.c:45
+msgid "40-bit WEP"
+msgstr "40 bitų WEP"
+
+#: ../src/nm-ap-security-wep.c:47
+msgid "104-bit WEP"
+msgstr "104 bitų WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:65
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:67
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security.c:298
+msgid "none"
+msgstr "nėra"
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
@@ -731,7 +778,8 @@ msgstr ""
 msgid ""
 "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
-"nepavyko susijungti su netlink lizdu laidinių tinklo įrenginių stebėjimui - %s"
+"nepavyko susijungti su netlink lizdu laidinių tinklo įrenginių stebėjimui - %"
+"s"
 
 #: ../src/nm-netlink-monitor.c:403
 msgid "operation took too long"
@@ -747,7 +795,8 @@ msgstr "gauti duomenys iš nesitikėto siuntėjo"
 
 #: ../src/nm-netlink-monitor.c:644
 msgid "too much data was sent over socket and some of it was lost"
-msgstr "lizdu buvo perduota per daug duomenų ir kai kurie duomenys buvo prarasti"
+msgstr ""
+"lizdu buvo perduota per daug duomenų ir kai kurie duomenys buvo prarasti"
 
 #: ../src/nm-netlink-monitor.c:733
 msgid "error occurred while waiting for data on socket"
