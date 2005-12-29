@@ -120,7 +120,7 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 	dbus_int32_t		strength = -1;
 	double 			freq = 0;
 	dbus_int32_t		rate = 0;
-	dbus_bool_t		enc = FALSE;
+	dbus_int32_t		capabilities = NM_802_11_CAP_NONE;
 	dbus_uint32_t		mode = 0;
 
 	g_return_if_fail (connection != NULL);
@@ -146,19 +146,37 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_DOUBLE, &freq,
 									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_BOOLEAN,&enc,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
+									DBUS_TYPE_INT32,  &capabilities,
 									DBUS_TYPE_INVALID))
 	{
 		char *temp = NULL;
 		char *temp_essid = NULL;
 		float flt_freq = freq / 1000000000;
 		gboolean active = (active_path && !strcmp (active_path, path)) ? TRUE : FALSE;
+		GString *enc_string = g_string_new (NULL);
+
+		if (capabilities & NM_802_11_CAP_PROTO_WEP)
+			enc_string = g_string_append (enc_string, "WEP");
+		if (enc_string->str && (strlen (enc_string->str) > 0))
+			enc_string = g_string_append_c (enc_string, ' ');
+		if (capabilities & NM_802_11_CAP_PROTO_WPA)
+			enc_string = g_string_append (enc_string, "WPA");
+		if (enc_string->str && (strlen (enc_string->str) > 0))
+			enc_string = g_string_append_c (enc_string, ' ');
+		if (capabilities & NM_802_11_CAP_PROTO_WPA2)
+			enc_string = g_string_append (enc_string, "WPA2");
+		if (enc_string->str && (strlen (enc_string->str) > 0))
+		{
+			enc_string = g_string_prepend (enc_string, ", Encrypted (");
+			enc_string = g_string_append (enc_string, ")");
+		}
 
 		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s", (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
-					flt_freq, strength, enc ? ", Encrypted" : "");
+					flt_freq, strength, (enc_string && strlen (enc_string->str)) ? enc_string->str : "");
 		temp_essid = g_strdup_printf ("  %s%s", active ? "*" : "", essid);
 		print_string (temp_essid, temp);
+		g_string_free (enc_string, TRUE);
 		g_free (temp_essid);
 		g_free (temp);
 	}
@@ -190,6 +208,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
 	dbus_uint32_t		caps = NM_DEVICE_CAP_NONE;
+	dbus_uint32_t		type_caps = NM_DEVICE_CAP_NONE;
 	char **			networks = NULL;
 	int				num_networks = 0;
 	NMActStage		act_stage = NM_ACT_STAGE_UNKNOWN;
@@ -224,10 +243,11 @@ static void detail_device (DBusConnection *connection, const char *path)
 									DBUS_TYPE_STRING, &route,
 									DBUS_TYPE_STRING, &primary_dns,
 									DBUS_TYPE_STRING, &secondary_dns,
-									DBUS_TYPE_UINT32, &mode,
+									DBUS_TYPE_INT32, &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
 									DBUS_TYPE_UINT32, &caps,
+									DBUS_TYPE_UINT32, &type_caps,
 									DBUS_TYPE_STRING, &active_network_path,
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, &num_networks,
 									DBUS_TYPE_INVALID))
@@ -255,14 +275,24 @@ static void detail_device (DBusConnection *connection, const char *path)
 			print_string ("  Supported", "no");
 		if (caps & NM_DEVICE_CAP_CARRIER_DETECT)
 			print_string ("  Carrier Detect", "yes");
-		if (caps & NM_DEVICE_CAP_WIRELESS_SCAN)
-			print_string ("  Scanning", "yes");
 
 		/* Wireless specific information */
 		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{
 			char *str_strength;
 			int	 i;
+
+			fprintf (stdout, "\n  Wireless Settings\n");
+
+			if (caps & NM_DEVICE_CAP_WIRELESS_SCAN)
+				print_string ("  Scanning", "yes");
+
+			if (type_caps & NM_802_11_CAP_PROTO_WEP)
+				print_string ("  WEP Encryption", "yes");
+			if (type_caps & NM_802_11_CAP_PROTO_WPA)
+				print_string ("  WPA Encryption", "yes");
+			if (type_caps & NM_802_11_CAP_PROTO_WPA2)
+				print_string ("  WPA2 Encryption", "yes");
 
 			/*
 			fprintf (stdout, "\n  Wireless Settings\n");
