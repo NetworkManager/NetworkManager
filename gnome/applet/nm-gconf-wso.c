@@ -212,7 +212,7 @@ real_serialize_gconf (NMGConfWSO *self,
                       const char *network)
 {
 	/* Nothing to do */
-	return 0;
+	return TRUE;
 }
 
 int
