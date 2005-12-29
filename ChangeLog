@@ -1,3 +1,9 @@
+2005-12-29  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/cipher-wpa-psk-passphrase.c
+		- (cipher_wpa_psk_passphrase_hash_func): return key as hex string
+			like other ciphers
+
 2005-12-23  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-info.c

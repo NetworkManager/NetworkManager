@@ -50,6 +50,7 @@ static char * cipher_wpa_psk_passphrase_hash_func (IEEE_802_11_Cipher *cipher, c
 {
 	int ssid_len;
 	char *buf = NULL;
+	char *output = NULL;
 
 	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (input != NULL, NULL);
@@ -60,6 +61,8 @@ static char * cipher_wpa_psk_passphrase_hash_func (IEEE_802_11_Cipher *cipher, c
 
 	buf = g_malloc0 (WPA_PMK_LEN * 2);
 	pbkdf2_sha1 (input, (char *) ssid, ssid_len, 4096, (unsigned char *) buf, WPA_PMK_LEN);
+	output = cipher_bin2hexstr (buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
+	g_free (buf);
 
-	return buf;
+	return output;
 }
