@@ -28,6 +28,9 @@
 #include "cipher-wep-ascii.h"
 #include "cipher-wep-hex.h"
 #include "cipher-wep-passphrase.h"
+#include "cipher-wpa-psk-hex.h"
+#include "cipher-wpa-psk-passphrase.h"
+#include "test-inputs.h"
 #include "test-common.h"
 
 static char *progname = NULL;
@@ -53,77 +56,9 @@ static void test_refcounts (IEEE_802_11_Cipher *cipher, const char *test)
 }
 
 
-struct Inputs
-{
-	char * underrun;
-	char * overrun;
-	char * incorrect_input;
-	char * correct_input;
-	char * correct_output;
-};
-
-#define WEP128_ASCII_SELECTOR		0
-#define WEP64_ASCII_SELECTOR		1
-#define WEP128_HEX_SELECTOR		2
-#define WEP64_HEX_SELECTOR		3
-#define WEP128_PASSPHRASE_SELECTOR	4
-#define WEP64_PASSPHRASE_SELECTOR	5
-
-struct Inputs test_input[6] =
-{
-	{
-		/* WEP128 ASCII */
-		"ph34rm3",
-		"herecomessantaclaus",
-		NULL,
-		"1234567891234",
-		"31323334353637383931323334"
-	},
-	{
-		/* WEP64 ASCII */
-		"1234",
-		"herecomessantaclaus",
-		NULL,
-		"12345",
-		"3132333435"
-	},
-	{
-		/* WEP128 Hex */
-		"3dff2f1f93a87ad",
-		"3235ab39b9b2e32fda8a919b9a021458",
-		"qwertyuiopjxccjvjpapadfjcd",
-		"4ec5de9938b606e9d40dff721e",
-		"4ec5de9938b606e9d40dff721e"
-	},
-	{
-		/* WEP64 Hex */
-		"3dff2f1f",
-		"3235ab39b9b2e",
-		"qwertyuiop",
-		"4ec5de9938",
-		"4ec5de9938"
-	},
-	{
-		/* WEP128 Passphrse */
-		"",
-		"3235ab39b9b2e32fda8a919b9a0214583235ab39b9b2e32fda8a919b9a0214583acb",
-		NULL,
-		"You don't remember me but I remember you.",
-		"06a9c70715fe06129c625a248d"
-	},
-	{
-		/* WEP64 Passphrse */
-		"",
-		"3235ab39b9b2e32fda8a919b9a0214583235ab39b9b2e32fda8a919b9a0214583acb",
-		NULL,
-		"Have you forgotten all I know?",
-		"18074f3178"
-	}
-};
-
 static void test_inputs (IEEE_802_11_Cipher *cipher, const char *test, int selector)
 {
-#define ESSID	"foobar"
+#define ESSID	"ThisIsASSID"
 	struct Inputs * input = &test_input[selector];
 	char *output;
 	char *correct_output;
@@ -162,6 +97,8 @@ static void test_wep_ascii (void)
 {
 	IEEE_802_11_Cipher *cipher;
 
+	fprintf (stderr, "\n\n---- START: WEP ASCII ---------------------------------------------\n");
+
 	/* Test basic object creation */
 	if (!(cipher = cipher_wep128_ascii_new ()))
 		test_result (progname, "new_wep128_ascii", TEST_FAIL, "Could not create WEP104 ASCII cipher.\n");
@@ -191,6 +128,8 @@ static void test_wep_ascii (void)
 static void test_wep_hex (void)
 {
 	IEEE_802_11_Cipher *cipher;
+
+	fprintf (stderr, "\n\n---- START: WEP Hex ---------------------------------------------\n");
 
 	/* Test basic object creation */
 	if (!(cipher = cipher_wep128_hex_new ()))
@@ -222,6 +161,8 @@ static void test_wep_passphrase (void)
 {
 	IEEE_802_11_Cipher *cipher;
 
+	fprintf (stderr, "\n\n---- START: WEP Passphrase ---------------------------------------------\n");
+
 	/* Test basic object creation */
 	if (!(cipher = cipher_wep128_passphrase_new ()))
 		test_result (progname, "new_wep128_passphrase", TEST_FAIL, "Could not create WEP104 Passphrase cipher.\n");
@@ -248,6 +189,47 @@ static void test_wep_passphrase (void)
 	ieee_802_11_cipher_unref (cipher);
 }
 
+static void test_wpa_psk_hex (void)
+{
+	IEEE_802_11_Cipher *cipher;
+
+	fprintf (stderr, "\n\n---- START: WPA-PSK Hex ---------------------------------------------\n");
+
+	/* Test basic object creation */
+	if (!(cipher = cipher_wpa_psk_hex_new ()))
+		test_result (progname, "new_wpa_psk_hex", TEST_FAIL, "Could not create WPA-PSK Hex cipher.\n");
+	test_result (progname, "new_wpa_psk_hex", TEST_SUCCEED, NULL);
+	/* Test object refcounting */
+	test_refcounts (cipher, "wpa_psk_hex_refcounts");
+
+	/* Test inputs */
+	if (!(cipher = cipher_wpa_psk_hex_new ()))
+		test_result (progname, "new_wpa_psk_hex", TEST_FAIL, "Could not create WPA-PSK Hex cipher.\n");
+	test_inputs (cipher, "inputs_wpa_psk_hex", WPA_PSK_HEX_SELECTOR);
+	ieee_802_11_cipher_unref (cipher);
+}
+
+static void test_wpa_psk_passphrase (void)
+{
+	IEEE_802_11_Cipher *cipher;
+
+	fprintf (stderr, "\n\n---- START: WPA-PSK Passphrase ---------------------------------------------\n");
+
+	/* Test basic object creation */
+	if (!(cipher = cipher_wpa_psk_passphrase_new ()))
+		test_result (progname, "new_wpa_psk_passphrase", TEST_FAIL, "Could not create WPA-PSK Passphrase cipher.\n");
+	test_result (progname, "new_wpa_psk_passphrase", TEST_SUCCEED, NULL);
+	/* Test object refcounting */
+	test_refcounts (cipher, "wpa_psk_passphrase_refcounts");
+
+	/* Test inputs */
+	if (!(cipher = cipher_wpa_psk_passphrase_new ()))
+		test_result (progname, "new_wpa_psk_passphrase", TEST_FAIL, "Could not create WPA-PSK Passphrase cipher.\n");
+	test_inputs (cipher, "inputs_wpa_psk_passphrase", WPA_PSK_PASSPHRASE_SELECTOR);
+	ieee_802_11_cipher_unref (cipher);
+}
+
+
 int main (int argc, char **argv)
 {
 	progname = argv[0];
@@ -255,6 +237,10 @@ int main (int argc, char **argv)
 	test_wep_ascii ();
 	test_wep_hex ();
 	test_wep_passphrase ();
+	test_wpa_psk_hex ();
+	test_wpa_psk_passphrase ();
+
+	fprintf (stderr, "\n\n------ DONE\n");
 
 	return 0;
 }

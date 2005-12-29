@@ -1,5 +1,19 @@
 2005-12-29  Dan Williams  <dcbw@redhat.com>
 
+	* test/test-common.c
+	  test/test-common.h
+	  test/Makefile.am
+		- Move to a test-common subdirectory
+
+	* test/libnm-util/test-ciphers.c
+		- Move test data to test-inputs.h
+		- Test WPA ciphers too
+
+	* test/libnm-util/test-dbus-helpers.c
+		- Test serialization/deserialization of ciphers
+
+2005-12-29  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-devices.c
 		- Replace 'enc' parameter with 'capabilities' for wireless networks
 			in dbus calls to NM
