@@ -1,5 +1,11 @@
 2005-12-29  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Add NM_802_11_CAP_PROTO_NONE since we need to recognize
+			between networks that don't have any encryption at all
+
+2005-12-29  Dan Williams  <dcbw@redhat.com>
+
 	* test/test-common.c
 	  test/test-common.h
 	  test/Makefile.am
