@@ -81,6 +81,9 @@ void					network_device_set_secondary_dns			(NetworkDevice *dev, const char *dns
 guint32				network_device_get_capabilities			(NetworkDevice *dev);
 void					network_device_set_capabilities			(NetworkDevice *dev, guint32 caps);
 
+guint32				network_device_get_type_capabilities		(NetworkDevice *dev);
+void					network_device_set_type_capabilities		(NetworkDevice *dev, guint32 type_caps);
+
 const char *			network_device_get_iface					(NetworkDevice *dev);
 
 const char *			network_device_get_nm_path				(NetworkDevice *dev);

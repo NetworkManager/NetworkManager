@@ -42,6 +42,9 @@
 #include "wireless-security-manager.h"
 #include "wireless-security-option.h"
 
+#define NAME_COLUMN		0
+#define DEV_COLUMN		1
+
 
 static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 {
@@ -57,6 +60,7 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 	xml = (GladeXML *) g_object_get_data (G_OBJECT (dialog), "glade-xml");
 	g_return_if_fail (xml != NULL);
 	wsm = (WirelessSecurityManager *) g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
+	g_assert (wsm);
 	g_return_if_fail (wsm != NULL);
 
 	/* An SSID is required */
@@ -79,13 +83,72 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 }
 
 /*
- * nmwa_other_network_dialog_security_combo_changed
+ * nmwa_ond_device_combo_changed
+ *
+ * Replace current wireless security information with options
+ * suitable for the current network device.
+ *
+ */
+static void nmwa_ond_device_combo_changed (GtkWidget *dev_combo, gpointer user_data)
+{
+	int			choice;
+	GtkDialog *	dialog = (GtkDialog *) user_data;
+	WirelessSecurityManager * wsm;
+	GtkWidget *	wso_widget;
+	GladeXML *	xml;
+	GtkWidget *	vbox;
+	GtkWidget *	security_combo;
+	GList *		elt;
+	NetworkDevice *dev;
+	char *		str;
+	GtkTreeModel *	model;
+	GtkTreeIter	iter;
+
+	g_return_if_fail (dialog != NULL);
+	xml = (GladeXML *) g_object_get_data (G_OBJECT (dialog), "glade-xml");
+	g_return_if_fail (xml != NULL);
+
+	wsm = g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
+	g_return_if_fail (wsm != NULL);
+
+	vbox = glade_xml_get_widget (xml, "wireless_security_vbox");
+
+	/* Remove any previous wireless security widgets */
+	for (elt = gtk_container_get_children (GTK_CONTAINER (vbox)); elt; elt = g_list_next (elt))
+	{
+		GtkWidget * child = GTK_WIDGET (elt->data);
+
+		if (wso_is_wso_widget (child))
+			gtk_container_remove (GTK_CONTAINER (vbox), child);
+	}
+
+	/* Update WirelessSecurityManager with the new device's capabilities */
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (dev_combo), &iter);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (dev_combo));
+	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
+	g_assert (dev);
+
+	wsm_set_capabilities (wsm, network_device_get_type_capabilities (dev));
+	security_combo = glade_xml_get_widget (xml, "security_combo");
+	wsm_update_combo (wsm, GTK_COMBO_BOX (security_combo));
+
+	/* Determine and add the correct wireless security widget to the dialog */
+	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);
+	if (wso_widget)
+		gtk_container_add (GTK_CONTAINER (vbox), wso_widget);
+
+	update_button_cb (NULL, dialog);
+}
+
+
+/*
+ * nmwa_ond_security_combo_changed
  *
  * Replace the current wireless security widgets with new ones
  * according to what the user chose.
  *
  */
-static void nmwa_other_network_dialog_security_combo_changed (GtkWidget *security_combo, gpointer user_data)
+static void nmwa_ond_security_combo_changed (GtkWidget *combo, gpointer user_data)
 {
 	int			choice;
 	GtkDialog *	dialog = (GtkDialog *) user_data;
@@ -114,16 +177,13 @@ static void nmwa_other_network_dialog_security_combo_changed (GtkWidget *securit
 	}
 
 	/* Determine and add the correct wireless security widget to the dialog */
-	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);
+	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);
 	if (wso_widget)
 		gtk_container_add (GTK_CONTAINER (vbox), wso_widget);
 
 	update_button_cb (NULL, dialog);
 }
 
-
-#define NAME_COLUMN		0
-#define DEV_COLUMN		1
 static GtkTreeModel * create_wireless_adapter_model (NMWirelessApplet *applet)
 {
 	GtkListStore *	model;
@@ -198,7 +258,7 @@ static const char * get_host_name (void)
 
 
 
-static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApplet *applet, gboolean create_network)
+static GtkDialog *nmwa_ond_init (GladeXML *xml, NMWirelessApplet *applet, gboolean create_network)
 {
 	GtkDialog *				dialog = NULL;
 	GtkWidget *				network_name_entry;
@@ -211,6 +271,8 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	gboolean					valid;
 	GtkWidget *				combo;
 	GtkTreeIter				iter;
+	NetworkDevice *			dev;
+	char *					str;
 
 	g_return_val_if_fail (xml != NULL, NULL);
 	g_return_val_if_fail (applet != NULL, NULL);
@@ -236,6 +298,43 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	gtk_widget_grab_focus (network_name_entry);
 	gtk_widget_set_sensitive (button, FALSE);
 	g_signal_connect (network_name_entry, "changed", G_CALLBACK (update_button_cb), dialog);
+
+	model = create_wireless_adapter_model (applet);
+
+	valid = gtk_tree_model_get_iter_first (model, &iter);
+	while (valid)
+	{
+		n_wireless_interfaces++;
+		valid = gtk_tree_model_iter_next (model, &iter);
+	}
+
+	/* Can connect to a wireless network if there aren't any wireless devices */
+	if (n_wireless_interfaces < 1)
+		return NULL;
+
+	combo = glade_xml_get_widget (xml, "wireless_adapter_combo");
+	gtk_combo_box_set_model (GTK_COMBO_BOX (combo), model);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
+	g_signal_connect (G_OBJECT (combo), "changed", GTK_SIGNAL_FUNC (nmwa_ond_device_combo_changed), dialog);
+
+	if (n_wireless_interfaces == 1)
+	{
+		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adapter_label"));
+		gtk_widget_hide (combo);
+	}
+
+	wsm = wsm_new (applet->glade_file);
+	g_object_set_data (G_OBJECT (dialog), "wireless-security-manager", (gpointer) wsm);
+
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
+	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
+	g_assert (dev);
+	wsm_set_capabilities (wsm, network_device_get_type_capabilities (dev));
+
+	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
+	wsm_update_combo (wsm, security_combo);
+	g_signal_connect (G_OBJECT (security_combo), "changed", GTK_SIGNAL_FUNC (nmwa_ond_security_combo_changed), dialog);
+	nmwa_ond_security_combo_changed (GTK_WIDGET (security_combo), dialog);
 
 	if (create_network)
 	{
@@ -268,42 +367,11 @@ static GtkDialog *nmwa_other_network_dialog_init (GladeXML *xml, NMWirelessApple
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "caption_label")), label);
 	g_free (label);
 
-	model = create_wireless_adapter_model (applet);
-
-	valid = gtk_tree_model_get_iter_first (model, &iter);
-	while (valid)
-	{
-		n_wireless_interfaces++;
-		valid = gtk_tree_model_iter_next (model, &iter);
-	}
-
-	/* Can connect to a wireless network if there aren't any wireless devices */
-	if (n_wireless_interfaces < 1)
-		return NULL;
-
-	combo = glade_xml_get_widget (xml, "wireless_adapter_combo");
-	gtk_combo_box_set_model (GTK_COMBO_BOX (combo), model);
-	gtk_combo_box_set_active (GTK_COMBO_BOX (combo), 0);
-
-	if (n_wireless_interfaces == 1)
-	{
-		gtk_widget_hide (glade_xml_get_widget (xml, "wireless_adapter_label"));
-		gtk_widget_hide (combo);
-	}
-
-	wsm = wsm_new (applet->glade_file);
-	g_object_set_data (G_OBJECT (dialog), "wireless-security-manager", (gpointer) wsm);
-
-	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
-	wsm_populate_combo (wsm, security_combo);
-	g_signal_connect (G_OBJECT (security_combo), "changed", GTK_SIGNAL_FUNC (nmwa_other_network_dialog_security_combo_changed), dialog);
-	nmwa_other_network_dialog_security_combo_changed (GTK_WIDGET (security_combo), dialog);
-
 	return dialog;
 }
 
 
-static void nmwa_other_network_dialog_response_cb (GtkDialog *dialog, gint response, gpointer data)
+static void nmwa_ond_response_cb (GtkDialog *dialog, gint response, gpointer data)
 {
 	GladeXML *		xml;
 	NMWirelessApplet *	applet;
@@ -380,9 +448,9 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 		return;
 	}
 
-	if (!(dialog = nmwa_other_network_dialog_init (xml, applet, create_network)))
+	if (!(dialog = nmwa_ond_init (xml, applet, create_network)))
 		return;
 
 	gtk_window_present (GTK_WINDOW (dialog));
-	g_signal_connect (dialog, "response", G_CALLBACK (nmwa_other_network_dialog_response_cb), NULL);
+	g_signal_connect (dialog, "response", G_CALLBACK (nmwa_ond_response_cb), NULL);
 }

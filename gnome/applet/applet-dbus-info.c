@@ -124,8 +124,10 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
 	else
 	{
 		WirelessNetwork *net;
+
+		nmi_passphrase_dialog_destroy (applet);
 		if ((net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
-			nmi_passphrase_dialog_schedule_show (dev, net, message, applet);
+			applet->passphrase_dialog = nmi_passphrase_dialog_new (applet, 0, dev, net, message);
 	}
 
 	free_network_key_cb_data (cb_data);
@@ -222,15 +224,8 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 		 */
 		if (new_key && (net = network_device_get_wireless_network_by_nm_path (dev, net_path)))
 		{
-			gboolean success;
-			if (!(success = nmi_passphrase_dialog_schedule_show (dev, net, message, applet)))
-			{
-				return nmu_create_dbus_error_message (message,
-				                                      NMI_DBUS_INTERFACE,
-				                                      "GetKeyError",
-				                                      "Could not get user key for network '%s'.",
-				                                      essid);
-			}
+			nmi_passphrase_dialog_destroy (applet);
+			applet->passphrase_dialog = nmi_passphrase_dialog_new (applet, 0, dev, net, message);
 		}
 	}
 
@@ -263,6 +258,21 @@ nmi_dbus_return_user_key (DBusConnection *connection,
 	else
 		nm_warning ("nmi_dbus_return_user_key(): couldn't serialize gconf_wso");
 	dbus_message_unref (reply);
+}
+
+
+static DBusMessage *
+nmi_dbus_cancel_get_key_for_network (DBusConnection *connection,
+                                     DBusMessage *message,
+                                     void *user_data)
+{
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+
+	g_return_val_if_fail (applet != NULL, NULL);
+
+	nmi_passphrase_dialog_destroy (applet);
+
+	return NULL;
 }
 
 
@@ -1077,7 +1087,7 @@ DBusMethodDispatcher *nmi_dbus_nmi_methods_setup (void)
 	DBusMethodDispatcher *	dispatcher = dbus_method_dispatcher_new (NULL);
 
 	dbus_method_dispatcher_register_method (dispatcher, "getKeyForNetwork",          nmi_dbus_get_key_for_network);
-	dbus_method_dispatcher_register_method (dispatcher, "cancelGetKeyForNetwork",    nmi_passphrase_dialog_cancel);
+	dbus_method_dispatcher_register_method (dispatcher, "cancelGetKeyForNetwork",    nmi_dbus_cancel_get_key_for_network);
 	dbus_method_dispatcher_register_method (dispatcher, "getNetworks",               nmi_dbus_get_networks);
 	dbus_method_dispatcher_register_method (dispatcher, "getNetworkProperties",      nmi_dbus_get_network_properties);
 	dbus_method_dispatcher_register_method (dispatcher, "updateNetworkInfo",         nmi_dbus_update_network_info);

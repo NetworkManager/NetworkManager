@@ -24,6 +24,7 @@
 #include <string.h>
 #include <glade/glade.h>
 
+#include "NetworkManager.h"
 #include "wireless-security-manager.h"
 #include "wireless-security-option.h"
 
@@ -40,40 +41,66 @@ struct WirelessSecurityManager
 	GSList *	options;
 };
 
+
 WirelessSecurityManager * wsm_new (const char * glade_file)
 {
 	WirelessSecurityManager *	wsm = NULL;
-	WirelessSecurityOption *		opt;
 
 	g_return_val_if_fail (glade_file, NULL);
 
 	wsm = g_malloc0 (sizeof (WirelessSecurityManager));
 	wsm->glade_file = g_strdup (glade_file);
 
-	/* Add the items */
-	if ((opt = wso_none_new (glade_file)))
-		wsm->options = g_slist_append (wsm->options, opt);
-
-	if ((opt = wso_wep_passphrase_new (glade_file)))
-		wsm->options = g_slist_append (wsm->options, opt);
-
-	if ((opt = wso_wep_hex_new (glade_file)))
-		wsm->options = g_slist_append (wsm->options, opt);
-
-	if ((opt = wso_wep_ascii_new (glade_file)))
-		wsm->options = g_slist_append (wsm->options, opt);
-
-/*
-	if ((opt = wso_wpa_psk_passphrase_new (glade_file)))
-		wsm->options = g_slist_append (wsm->options, opt);
-*/
-
 	return wsm;
 }
 
+
+void wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
+{
+	WirelessSecurityOption *		opt;
+
+	g_return_if_fail (wsm != NULL);
+
+	/* Free previous options */
+	g_slist_foreach (wsm->options, (GFunc) wso_free, NULL);
+	g_slist_free (wsm->options);
+	wsm->options = NULL;
+
+	if (capabilities & NM_802_11_CAP_PROTO_NONE)
+	{
+		opt = wso_none_new (wsm->glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+	}
+
+	if (capabilities & NM_802_11_CAP_PROTO_WEP)
+	{
+		opt = wso_wep_passphrase_new (wsm->glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+
+		opt = wso_wep_hex_new (wsm->glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+
+		opt = wso_wep_ascii_new (wsm->glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+	}
+
+#if 0	/* NOT YET */
+	if (capabilities & NM_802_11_CAP_PROTO_WPA)
+	{
+		opt = wso_wpa_psk_passphrase_new (glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+	}
+#endif
+}
+
 #define NAME_COLUMN	0
-#define OPT_COLUMN		1
-void wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo)
+#define OPT_COLUMN	1
+void wsm_update_combo (WirelessSecurityManager *wsm, GtkComboBox *combo)
 {
 	GtkListStore *	model;
 	GSList *		elt;

@@ -129,7 +129,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				{
 					applet->nm_running = FALSE;
 					applet->nm_state = NM_STATE_DISCONNECTED;
-					nmi_passphrase_dialog_cancel (NULL, NULL, applet);
+					nmi_passphrase_dialog_destroy (applet);
 				}
 			}
 		}

@@ -33,9 +33,9 @@ struct WirelessNetwork
 	int		refcount;
 	char *	nm_path;
 	char *	essid;
-	gboolean	encrypted;
 	gboolean	active;
 	gint8	strength;
+	int		capabilities;
 };
 
 
@@ -77,7 +77,7 @@ WirelessNetwork *wireless_network_copy (WirelessNetwork *src)
 	net->nm_path = g_strdup (src->nm_path);
 	net->essid = g_strdup (src->essid);
 	net->active = src->active;
-	net->encrypted = src->encrypted;
+	net->capabilities = src->capabilities;
 	net->strength = src->strength;
 
 	return net;
@@ -156,20 +156,20 @@ const char *wireless_network_get_nm_path (WirelessNetwork *net)
 }
 
 /*
- * Accessors for encrypted
+ * Accessors for capabilities
  */
-gboolean wireless_network_get_encrypted (WirelessNetwork *net)
+int wireless_network_get_capabilities (WirelessNetwork *net)
 {
 	g_return_val_if_fail (net != NULL, FALSE);
 
-	return net->encrypted;
+	return net->capabilities;
 }
 
-void wireless_network_set_encrypted (WirelessNetwork *net, gboolean encrypted)
+void wireless_network_set_capabilities (WirelessNetwork *net, int capabilities)
 {
 	g_return_if_fail (net != NULL);
 
-	net->encrypted = encrypted;
+	net->capabilities = capabilities;
 }
 
 /*

@@ -38,8 +38,8 @@ const char *		wireless_network_get_essid		(WirelessNetwork *net);
 
 const char *		wireless_network_get_nm_path		(WirelessNetwork *net);
 
-gboolean			wireless_network_get_encrypted	(WirelessNetwork *net);
-void				wireless_network_set_encrypted	(WirelessNetwork *net, gboolean encrypted);
+int				wireless_network_get_capabilities	(WirelessNetwork *net);
+void				wireless_network_set_capabilities	(WirelessNetwork *net, int capabilities);
 
 gint8			wireless_network_get_strength		(WirelessNetwork *net);
 void				wireless_network_set_strength		(WirelessNetwork *net, gint8 strength);

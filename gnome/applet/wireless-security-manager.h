@@ -24,6 +24,7 @@
 
 #include <gtk/gtk.h>
 #include "wireless-security-option.h"
+#include "wireless-network.h"
 
 typedef struct WirelessSecurityManager WirelessSecurityManager;
 
@@ -32,7 +33,9 @@ WirelessSecurityManager *	wsm_new (const char * glade_file);
 
 void						wsm_free (WirelessSecurityManager *wsm);
 
-void						wsm_populate_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
+void						wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities);
+
+void						wsm_update_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
 
 GtkWidget *				wsm_get_widget_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo,
 								GtkSignalFunc validate_cb, gpointer user_data);

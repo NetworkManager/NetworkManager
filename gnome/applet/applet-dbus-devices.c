@@ -515,8 +515,8 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	dbus_int32_t		strength = -1;
 	double 			freq = 0;
 	dbus_int32_t		rate = 0;
-	dbus_bool_t		enc = FALSE;
 	dbus_int32_t		mode = -1;
+	dbus_int32_t		capabilities = NM_802_11_CAP_NONE;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -552,8 +552,8 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_DOUBLE, &freq,
 									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_BOOLEAN,&enc,
 									DBUS_TYPE_INT32,  &mode,
+									DBUS_TYPE_INT32,  &capabilities,
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *	dev;
@@ -572,7 +572,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 				network_device_remove_wireless_network (dev, tmp_net);
 			}
 
-			wireless_network_set_encrypted (net, enc);
+			wireless_network_set_capabilities (net, capabilities);
 			wireless_network_set_strength (net, strength);
 			if (act_net && strlen (act_net) && (strcmp (act_net, op) == 0))
 				wireless_network_set_active (net, TRUE);
@@ -718,6 +718,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
 	dbus_uint32_t		caps = NM_DEVICE_CAP_NONE;
+	dbus_uint32_t		type_caps = NM_DEVICE_CAP_NONE;
 	char **			networks = NULL;
 	int				num_networks = 0;
 	NMActStage		act_stage = NM_ACT_STAGE_UNKNOWN;
@@ -757,6 +758,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
 									DBUS_TYPE_UINT32, &caps,
+									DBUS_TYPE_UINT32, &type_caps,
 									DBUS_TYPE_STRING, &active_network_path,
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, &num_networks,
 									DBUS_TYPE_INVALID))
@@ -769,6 +771,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 		network_device_set_active (dev, active);
 		network_device_set_link (dev, link_active);
 		network_device_set_capabilities (dev, caps);
+		network_device_set_type_capabilities (dev, type_caps);
 		network_device_set_act_stage (dev, act_stage);
 		network_device_set_ip4_address (dev, ip4_address);
 		network_device_set_broadcast (dev, broadcast);

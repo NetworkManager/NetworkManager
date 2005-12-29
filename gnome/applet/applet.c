@@ -1603,13 +1603,17 @@ static void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, 
  */
 static void nmwa_has_encrypted_networks_helper (NetworkDevice *dev, WirelessNetwork *net, gpointer user_data)
 {
-	gboolean * has_encrypted = user_data;
+	gboolean *has_encrypted = user_data;
+	int		capabilities;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (net != NULL);
 	g_return_if_fail (has_encrypted != NULL);
 
-	if (wireless_network_get_encrypted (net))
+	capabilities = wireless_network_get_capabilities (net);
+	if (    (capabilities & NM_802_11_CAP_PROTO_WEP)
+		|| (capabilities & NM_802_11_CAP_PROTO_WPA)
+		|| (capabilities & NM_802_11_CAP_PROTO_WPA2))
 		*has_encrypted = TRUE;
 }
 
@@ -1680,6 +1684,9 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 
 		if (active_vpn && active_vpn == vpn)
 			gtk_check_menu_item_set_active (vpn_item, TRUE);
+
+		if (applet->nm_state != NM_STATE_CONNECTED)
+			gtk_widget_set_sensitive (GTK_WIDGET (vpn_item), FALSE);
 
 		g_signal_connect (G_OBJECT (vpn_item), "activate", G_CALLBACK (nmwa_menu_vpn_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (vpn_menu), GTK_WIDGET (vpn_item));
@@ -2315,7 +2322,7 @@ static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 
 	nmwa_icons_free (applet);
 
-	nmi_passphrase_dialog_destroy (applet->passphrase_dialog);
+	nmi_passphrase_dialog_destroy (applet);
 
 	if (applet->redraw_timeout_id > 0)
 	{
@@ -2356,6 +2363,7 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->dialup_list = NULL;
 	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
+	applet->passphrase_dialog = NULL;
 
 	applet->glade_file = g_build_filename (GLADEDIR, "wireless-applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
@@ -2367,7 +2375,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	}
 
 	applet->info_dialog_xml = glade_xml_new (applet->glade_file, "info_dialog", NULL);
-	applet->passphrase_dialog = nmi_passphrase_dialog_init (applet);
 
 	applet->gconf_client = gconf_client_get_default ();
 	if (!applet->gconf_client)

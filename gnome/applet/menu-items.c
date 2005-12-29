@@ -239,8 +239,9 @@ GtkCheckMenuItem *network_menu_item_get_check_item (NMNetworkMenuItem *item)
  */
 void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted)
 {
-	char *display_essid;
-	gdouble percent;
+	char *	display_essid;
+	gdouble	percent;
+	int		capabilities;
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (network != NULL);
@@ -255,7 +256,10 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 	/* Deal with the encrypted icon */
 	g_object_set (item->security_image, "visible", is_encrypted, NULL);
 
-	if (wireless_network_get_encrypted (network))
+	capabilities = wireless_network_get_capabilities (network);
+	if (    (capabilities & NM_802_11_CAP_PROTO_WEP)
+		|| (capabilities & NM_802_11_CAP_PROTO_WPA)
+		|| (capabilities & NM_802_11_CAP_PROTO_WPA2))
 	{
 		/*
 		 * We want to use "network-wireless-encrypted," which was recently added to the icon spec,

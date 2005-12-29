@@ -40,6 +40,7 @@ struct NetworkDevice
 	gboolean		active;
 	gboolean		link;
 	guint32		caps;
+	guint32		type_caps;
 	char *		addr;
 	char *		ip4addr;
 	char *		broadcast;
@@ -547,6 +548,23 @@ void network_device_set_capabilities (NetworkDevice *dev, guint32 caps)
 	g_return_if_fail (dev != NULL);
 
 	dev->caps = caps;
+}
+
+/*
+ * Accessors for type-specific device capabilities
+ */
+guint32 network_device_get_type_capabilities (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
+
+	return dev->type_caps;
+}
+
+void network_device_set_type_capabilities (NetworkDevice *dev, guint32 type_caps)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->type_caps = type_caps;
 }
 
 /*

@@ -1,5 +1,47 @@
 2005-12-29  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-devices.c
+		- Replace 'enc' parameter with 'capabilities' for wireless networks
+			in dbus calls to NM
+		- Set capabilities on WirelessNetwork objects
+		- Receive and save type-specific device capabilities too
+
+	* gnome/applet/applet-dbus-info.c
+	  gnome/applet/applet-dbus.c
+		- Passphrase dialog no longer a singleton; new instance gets created
+			on each request.  Updates to deal with that.
+
+	* gnome/applet/applet.c
+		- (nmwa_has_encrypted_networks_helper): use AP capabilities rather
+			than single 'encrypted' flag
+		- (nmwa_menu_add_vpn_menu): if NM isn't connected, disable any VPN
+			menu items
+		- Passphrase dialog updates per above
+
+	* gnome/applet/menu-items.c
+		- (network_menu_item_update): use AP capabilities to determine
+			encryption
+
+	* gnome/applet/nm-device.[ch]
+		- Add accessors for type-specific device capabilities
+
+	* gnome/applet/other-network-dialog.c
+		- Rework to respect device capabilities.  i.e., if the device doesn't
+			support WPA, remove that option from the security dropdown
+
+	* gnome/applet/passphrase-dialog.c
+		- Massive rework so that a new instance is created each time
+			it's used, to support wireless network capabilities
+
+	* gnome/applet/wireless-network.[ch]
+		- Add accessors and members for wireless network capabilities
+
+	* gnome/applet/wireless-security-manager.[ch]
+		- (wsm_set_capabilities): called after creation to set which
+			security options get shown to the user
+
+2005-12-29  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/cipher-wpa-psk-passphrase.c
 		- (cipher_wpa_psk_passphrase_hash_func): return key as hex string
 			like other ciphers
