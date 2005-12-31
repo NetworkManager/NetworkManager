@@ -36,6 +36,9 @@
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-device.h"
+#include "nm-device-802-11-wireless.h"
+#include "nm-device-802-3-ethernet.h"
 
 #include <netlink/addr.h>
 #include <netinet/in.h>
@@ -217,7 +220,7 @@ NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, c
 	sock->desc = desc ? g_strdup (desc) : NULL;
 	sock->dev = dev;
 	if (sock->dev)
-		nm_device_ref (sock->dev);
+		g_object_ref (G_OBJECT (sock->dev));
 
 	/* Add the sock to our global sock list for tracking */
 	g_static_mutex_lock (&sock_list_mutex);
@@ -244,7 +247,7 @@ void nm_dev_sock_close (NMSock *sock)
 	g_free (sock->func);
 	g_free (sock->desc);
 	if (sock->dev)
-		nm_device_unref (sock->dev);
+		g_object_unref (G_OBJECT (sock->dev));
 
 	memset (sock, 0, sizeof (NMSock));
 

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <dbus/dbus.h>
 #include "nm-activation-request.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
@@ -62,7 +62,7 @@ NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *a
 	req->refcount = 1;
 	req->data = data;
 
-	nm_device_ref (dev);
+	g_object_ref (G_OBJECT (dev));
 	req->dev = dev;
 
 	if (ap)
@@ -90,7 +90,7 @@ void nm_act_request_unref (NMActRequest *req)
 	req->refcount--;
 	if (req->refcount <= 0)
 	{
-		nm_device_unref (req->dev);
+		g_object_unref (G_OBJECT (req->dev));
 		if (req->ap)
 			nm_ap_unref (req->ap);
 

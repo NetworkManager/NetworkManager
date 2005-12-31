@@ -32,7 +32,7 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 
 typedef enum SockType
 {

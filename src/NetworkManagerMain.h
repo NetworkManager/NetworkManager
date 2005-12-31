@@ -30,6 +30,7 @@
 #include "NetworkManagerAP.h"
 #include "nm-netlink-monitor.h"
 #include "nm-named-manager.h"
+#include "nm-device.h"
 
 
 typedef enum NMIntState
@@ -92,14 +93,14 @@ typedef struct NMData
 } NMData;
 
 
-struct NMDevice *	nm_get_active_device					(NMData *data);
+NMDevice *	nm_get_active_device					(NMData *data);
 
-struct NMDevice *	nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
+NMDevice *	nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
 														gboolean test_device, NMDeviceType test_device_type);
 
 void				nm_add_initial_devices					(NMData *data);
 
-void				nm_remove_device						(NMData *data, struct NMDevice *dev);
+void				nm_remove_device						(NMData *data, NMDevice *dev);
 
 void				nm_schedule_state_change_signal_broadcast	(NMData *data);
 

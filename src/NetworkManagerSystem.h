@@ -23,7 +23,9 @@
 #define NETWORK_MANAGER_SYSTEM_H
 
 #include <glib.h>
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
+#include "nm-ip4-config.h"
+#include "nm-named-manager.h"
 
 
 /* Prototypes for system/distribution dependent functions,

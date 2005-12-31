@@ -35,6 +35,8 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManager.h"
 #include "nm-ap-security.h"
+#include "nm-device-802-3-ethernet.h"
+#include "nm-device-802-11-wireless.h"
 
 
 /*
@@ -255,7 +257,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		}
 
 		/* Set up the wireless-specific activation request properties */
-		ap = nm_device_wireless_get_activation_ap (dev, essid, security);
+		ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev), essid, security);
 		if (security)
 	 		g_object_unref (G_OBJECT (security));
 

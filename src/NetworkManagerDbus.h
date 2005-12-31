@@ -26,6 +26,9 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include "NetworkManager.h"
+#include "NetworkManagerMain.h"
+#include "nm-device.h"
+#include "nm-device-802-11-wireless.h"
 #include "NetworkManagerAPList.h"
 
 
@@ -51,7 +54,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
 }
 
-
 DBusConnection *nm_dbus_init						(NMData *data);
 
 gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
@@ -64,8 +66,8 @@ void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev
 
 void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 
-void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
-void			nm_dbus_signal_device_strength_change	(DBusConnection *connection, NMDevice *dev, gint strength);
+void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
+void			nm_dbus_signal_device_strength_change	(DBusConnection *connection, NMDevice80211Wireless *dev, gint strength);
 
 NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
 

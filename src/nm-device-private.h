@@ -19,35 +19,20 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_DBUS_UTILS_H
-#define NETWORK_MANAGER_DBUS_UTILS_H
-
-#include <glib.h>
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
+#ifndef NM_DEVICE_PRIVATE_H
+#define NM_DEVICE_PRIVATE_H
 
 #include "nm-device.h"
-#include "NetworkManagerMain.h"
-
-typedef struct NMDbusCBData
-{
-	NMData		*data;
-	NMDevice		*dev;
-	NMAccessPoint	*ap;
-} NMDbusCBData;
-
-typedef DBusMessage* (*NMDbusMethod) (DBusConnection *, DBusMessage *, NMDbusCBData *);
 
 
-NMDbusMethodList *	nm_dbus_method_list_new			(NMDbusMethod validate_method);
+void			nm_device_set_udi		(NMDevice *dev,
+								 const char *udi);
 
-void				nm_dbus_method_list_add_method	(NMDbusMethodList *list, const char *method, NMDbusMethod callback);
+void			nm_device_set_device_type (NMDevice *self,
+								  const NMDeviceType type);
 
-gboolean			nm_dbus_method_dispatch			(NMDbusMethodList *list, DBusConnection *connection, DBusMessage *message,
-													gpointer user_data, DBusMessage **reply);
+gboolean		nm_device_is_activated (NMDevice *dev);
 
-void				nm_dbus_method_list_free			(NMDbusMethodList *list);
+GMainContext *	nm_device_get_main_context (NMDevice *dev);
 
-
-#endif
+#endif	/* NM_DEVICE_PRIVATE_H */

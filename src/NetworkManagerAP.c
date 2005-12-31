@@ -22,7 +22,6 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "NetworkManagerWireless.h"
 #include "nm-ap-security.h"
 #include <wireless.h>
 
@@ -85,6 +84,7 @@ NMAccessPoint * nm_ap_new (void)
 
 	ap->mode = IW_MODE_INFRA;
 	ap->refcount = 1;
+	ap->capabilities = NM_802_11_CAP_PROTO_NONE;
 
 	return ap;
 }
@@ -203,9 +203,17 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 
 guint32 nm_ap_get_capabilities (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, -1);
+	g_return_val_if_fail (ap != NULL, NM_802_11_CAP_NONE);
 
 	return ap->capabilities;
+}
+
+
+void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->capabilities = capabilities;
 }
 
 
@@ -222,16 +230,6 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 			|| (ap->capabilities & NM_802_11_CAP_PROTO_WPA2));
 }
 
-void nm_ap_set_encrypted (NMAccessPoint *ap, gboolean privacy)
-{
-#define ALL_WEP (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104 | NM_802_11_CAP_CIPHER_WEP40)
-	g_return_if_fail (ap != NULL);
-
-	if (privacy)
-		ap->capabilities |= ALL_WEP;
-	else
-		ap->capabilities &= ~ALL_WEP;
-}
 
 /*
  * Accessorts for AP security info
@@ -544,41 +542,72 @@ gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 }
 
 
-static void set_capabilities_from_cipher (NMAccessPoint *ap, int cipher)
+static guint32 add_capabilities_from_cipher (guint32 caps, int cipher)
 {
 	if (cipher & IW_AUTH_CIPHER_WEP40)
-		ap->capabilities |= NM_802_11_CAP_CIPHER_WEP40;
+	{
+		caps |= (NM_802_11_CAP_PROTO_WEP & NM_802_11_CAP_CIPHER_WEP40);
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
 	if (cipher & IW_AUTH_CIPHER_WEP104)
-		ap->capabilities |= NM_802_11_CAP_CIPHER_WEP104;
+	{
+		caps |= (NM_802_11_CAP_PROTO_WEP & NM_802_11_CAP_CIPHER_WEP104);
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
 	if (cipher & IW_AUTH_CIPHER_TKIP)
-		ap->capabilities |= NM_802_11_CAP_CIPHER_TKIP;
+	{
+		caps |= NM_802_11_CAP_CIPHER_TKIP;
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
 	if (cipher & IW_AUTH_CIPHER_CCMP)
-		ap->capabilities |= NM_802_11_CAP_CIPHER_CCMP;
+	{
+		caps |= NM_802_11_CAP_CIPHER_CCMP;
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
+
+	return caps;
 }
 
-void nm_ap_set_capabilities_from_wpa_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
+void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
 {
 	wpa_ie_data *	cap_data;
+	guint32		caps;
 
 	g_return_if_fail (ap != NULL);
 
 	if (!(cap_data = wpa_parse_wpa_ie (wpa_ie, length)))
 		return;
 
-	ap->capabilities = NM_802_11_CAP_NONE;
-
+	caps = nm_ap_get_capabilities (ap);
 	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA)
-		ap->capabilities |= NM_802_11_CAP_PROTO_WPA;
+	{
+		caps |= NM_802_11_CAP_PROTO_WPA;
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
 	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA2)
-		ap->capabilities |= NM_802_11_CAP_PROTO_WPA2;
+	{
+		caps |= NM_802_11_CAP_PROTO_WPA2;
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
 
-	set_capabilities_from_cipher (ap, cap_data->pairwise_cipher);
-	set_capabilities_from_cipher (ap, cap_data->group_cipher);
+	caps = add_capabilities_from_cipher (caps, cap_data->pairwise_cipher);
+	caps = add_capabilities_from_cipher (caps, cap_data->group_cipher);
 
 	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_802_1X)
-		ap->capabilities |= NM_802_11_CAP_KEY_MGMT_802_1X;
+		caps |= NM_802_11_CAP_KEY_MGMT_802_1X;
 	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_PSK)
-		ap->capabilities |= NM_802_11_CAP_KEY_MGMT_PSK;
+		caps |= NM_802_11_CAP_KEY_MGMT_PSK;
+
+	nm_ap_set_capabilities (ap, caps);
 }
 
 
+void nm_ap_add_capabilities_for_wep (NMAccessPoint *ap)
+{
+	guint32		caps;
+
+	g_return_if_fail (ap != NULL);
+
+	ap->capabilities |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
+	ap->capabilities &= ~NM_802_11_CAP_PROTO_NONE;
+}

@@ -25,6 +25,12 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 
+/* Grr */
+#ifndef NM_DEVICE_802_11_WIRELESS_DEFINED
+#define NM_DEVICE_802_11_WIRELESS_DEFINED
+typedef struct _NMDevice80211Wireless NMDevice80211Wireless;
+#endif
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_AP_SECURITY			(nm_ap_security_get_type ())
@@ -46,7 +52,6 @@ struct _NMAPSecurity
 	NMAPSecurityPrivate *priv;
 };
 
-struct NMDevice;
 struct NMAccessPoint;
 
 struct _NMAPSecurityClass
@@ -60,7 +65,7 @@ struct _NMAPSecurityClass
 
 	void	(*write_wpa_supplicant_config_func)(NMAPSecurity *self, int fd);
 
-	int	(*device_setup_func)			(NMAPSecurity *self, struct NMDevice * dev);
+	int	(*device_setup_func)			(NMAPSecurity *self, NMDevice80211Wireless * dev);
 };
 
 
@@ -80,7 +85,7 @@ int nm_ap_security_serialize (NMAPSecurity *self, DBusMessageIter *iter);
 
 void nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd);
 
-int nm_ap_security_device_setup (NMAPSecurity *self, struct NMDevice *dev);
+int nm_ap_security_device_setup (NMAPSecurity *self, NMDevice80211Wireless *dev);
 
 const char *nm_ap_security_get_description (NMAPSecurity *self);
 

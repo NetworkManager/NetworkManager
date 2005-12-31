@@ -1,3 +1,21 @@
+2005-12-31  Dan Williams  <dcbw@redhat.com>
+
+	* refactor NMDevice into a GObject-based framework with separate
+		objects for wired and wireless.  The following files are no
+		longer used but should stick around for a bit so we don't
+		loose code through the cracks:
+			NetworkManagerDevice.c
+			NetworkManagerDevice.h
+			NetworkManagerWireless.c
+			NetworkManagerWireless.h
+
+	The intent here is to allow each device type to manage its own
+	connection & activation life-cycle, ie to allow wireless devices
+	to interface with wpa_supplicant, etc.  There's a fair bit of
+	encapsulation breakage right now that should gradually get pulled
+	back into each device, along with things like periodic property
+	updates and link probing.
+
 2005-12-29  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h

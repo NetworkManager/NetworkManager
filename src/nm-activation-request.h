@@ -26,7 +26,7 @@
 #include <dbus/dbus.h>
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerAP.h"
 #include "nm-ip4-config.h"
 

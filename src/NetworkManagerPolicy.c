@@ -36,6 +36,8 @@
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-dbus-nmi.h"
+#include "nm-device-802-11-wireless.h"
+#include "nm-device-802-3-ethernet.h"
 
 
 /*
@@ -61,6 +63,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
 	if (nm_device_is_802_11_wireless (dev))
 	{
+		NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
 		struct ether_addr	addr;
 		NMAccessPoint *	ap = nm_act_request_get_ap (req);
 		NMAccessPoint *	tmp_ap;
@@ -69,7 +72,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 		/* Cache details in the info-daemon since the connect was successful */
 		automatic = !nm_act_request_get_user_requested (req);
 
-		nm_device_get_ap_address (dev, &addr);
+		nm_device_802_11_wireless_get_bssid (wdev, &addr);
 		if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 			nm_ap_set_address (ap, &addr);
 
@@ -203,12 +206,12 @@ void nm_policy_schedule_activation_failed (NMActRequest *req)
  */
 static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **ap)
 {
-	GSList		*elt;
-	NMDevice		*best_wired_dev = NULL;
-	guint		 best_wired_prio = 0;
-	NMDevice		*best_wireless_dev = NULL;
-	guint		 best_wireless_prio = 0;
-	NMDevice		*highest_priority_dev = NULL;
+	GSList *				elt;
+	NMDevice8023Ethernet *	best_wired_dev = NULL;
+	guint				best_wired_prio = 0;
+	NMDevice80211Wireless *	best_wireless_dev = NULL;
+	guint				best_wireless_prio = 0;
+	NMDevice *			highest_priority_dev = NULL;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (ap != NULL, NULL);
@@ -224,7 +227,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		NMDevice *	dev = (NMDevice *)(elt->data);
 		guint32		caps;
 
-		dev_type = nm_device_get_type (dev);
+		dev_type = nm_device_get_device_type (dev);
 		link_active = nm_device_has_active_link (dev);
 		caps = nm_device_get_capabilities (dev);
 
@@ -246,7 +249,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 
 			if (prio > best_wired_prio)
 			{
-				best_wired_dev = dev;
+				best_wired_dev = NM_DEVICE_802_3_ETHERNET (dev);
 				best_wired_prio = prio;
 			}
 		}
@@ -267,21 +270,22 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 
 			if (prio > best_wireless_prio)
 			{
-				best_wireless_dev = dev;
+				best_wireless_dev = NM_DEVICE_802_11_WIRELESS (dev);
 				best_wireless_prio = prio;
 			}
 		}
 	}
 
 	if (best_wired_dev)
-		highest_priority_dev = best_wired_dev;
+		highest_priority_dev = NM_DEVICE (best_wired_dev);
 	else if (best_wireless_dev)
 	{
-		highest_priority_dev = best_wireless_dev;
-		*ap = nm_device_get_best_ap (highest_priority_dev);
+		*ap = nm_device_802_11_wireless_get_best_ap (best_wireless_dev);
 		/* If the device doesn't have a "best" ap, then we can't use it */
 		if (!*ap)
 			highest_priority_dev = NULL;
+		else
+			highest_priority_dev = NM_DEVICE (best_wireless_dev);
 	}
 
 #if 0
@@ -619,19 +623,21 @@ static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
 		NMDevice	*dev = (NMDevice *)(elt->data);
 		if (nm_device_is_802_11_wireless (dev))
 		{
-			if (nm_device_get_supports_wireless_scan (dev))
+			NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
+
+			if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN)
 			{
 				/* Once we have the list, copy in any relevant information from our Allowed list and fill
 				 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
 				 * MAC address in our allowed list.
 				 */
-				nm_ap_list_copy_essids_by_address (nm_device_ap_list_get (dev), data->allowed_ap_list);
-				nm_ap_list_copy_properties (nm_device_ap_list_get (dev), data->allowed_ap_list);
+				nm_ap_list_copy_essids_by_address (nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
+				nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
 			}
 			else
-				nm_device_copy_allowed_to_dev_list (dev, data->allowed_ap_list);
+				nm_device_802_11_wireless_copy_allowed_to_dev_list (wdev, data->allowed_ap_list);
 
-			nm_ap_list_remove_duplicate_essids (nm_device_ap_list_get (dev));
+			nm_ap_list_remove_duplicate_essids (nm_device_802_11_wireless_ap_list_get (wdev));
 		}
 	}
 

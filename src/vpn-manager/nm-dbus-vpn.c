@@ -22,7 +22,7 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include "NetworkManagerMain.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerVPN.h"

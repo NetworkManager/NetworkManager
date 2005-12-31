@@ -64,7 +64,7 @@ NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *se
 	req->stage = NM_VPN_ACT_STAGE_PREPARE;
 
 	req->manager = manager;
-	nm_device_ref (parent_dev);
+	g_object_ref (G_OBJECT (parent_dev));
 	req->parent_dev = parent_dev;
 	nm_vpn_service_ref (service);
 	req->service = service;
@@ -95,7 +95,7 @@ void nm_vpn_act_request_unref (NMVPNActRequest *req)
 	req->refcount--;
 	if (req->refcount == 0)
 	{
-		nm_device_unref (req->parent_dev);
+		g_object_unref (G_OBJECT (req->parent_dev));
 		nm_vpn_service_unref (req->service);
 		nm_vpn_connection_unref (req->vpn);
 

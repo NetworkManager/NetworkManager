@@ -28,7 +28,7 @@
 #include "nm-ap-security-wpa-psk.h"
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device-802-11-wireless.h"
 
 #define NM_AP_SECURITY_WPA_PSK_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WPA_PSK, NMAPSecurityWPA_PSKPrivate))
 
@@ -90,7 +90,7 @@ real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
 }
 
 static int 
-real_device_setup (NMAPSecurity *self, NMDevice * dev)
+real_device_setup (NMAPSecurity *self, NMDevice80211Wireless * dev)
 {
 	/* Stub; should be farmed out to wpa_supplicant eventually */
 	return 0;

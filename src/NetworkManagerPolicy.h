@@ -23,7 +23,7 @@
 #define NETWORK_MANAGER_POLICY_H
 
 #include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
 

@@ -60,6 +60,7 @@ const char *	nm_device_get_driver				(NMDevice *dev);
 
 NMDeviceType	nm_device_get_type					(NMDevice *dev);
 guint32		nm_device_get_capabilities			(NMDevice *dev);
+guint32		nm_device_get_type_capabilities		(NMDevice *dev);
 
 gboolean		nm_device_is_802_11_wireless			(NMDevice *dev);
 gboolean		nm_device_is_802_3_ethernet			(NMDevice *dev);

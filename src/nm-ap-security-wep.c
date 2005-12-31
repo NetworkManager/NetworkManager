@@ -28,7 +28,7 @@
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device-802-11-wireless.h"
 
 #define NM_AP_SECURITY_WEP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WEP, NMAPSecurityWEPPrivate))
 
@@ -112,11 +112,11 @@ real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
 }
 
 static int 
-real_device_setup (NMAPSecurity *instance, NMDevice * dev)
+real_device_setup (NMAPSecurity *instance, NMDevice80211Wireless * dev)
 {
 	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
 
-	nm_device_set_wep_enc_key (dev, nm_ap_security_get_key (instance),
+	nm_device_802_11_wireless_set_wep_enc_key (dev, nm_ap_security_get_key (instance),
 			self->priv->auth_algorithm);
 	return 0;
 }

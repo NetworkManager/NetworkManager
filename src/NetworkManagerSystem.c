@@ -42,7 +42,7 @@
 #include <glib.h>
 #include <pthread.h>
 #include "NetworkManagerSystem.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 

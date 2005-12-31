@@ -30,13 +30,12 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerDbusUtils.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
-#include "NetworkManagerWireless.h"
 #include "nm-dbus-nm.h"
 #include "nm-dbus-device.h"
 #include "nm-dbus-net.h"
@@ -251,7 +250,7 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 
 	dbus_message_unref (message);
 
-	nm_device_unref (cb_data->dev);
+	g_object_unref (G_OBJECT (cb_data->dev));
 	g_free (cb_data);
 
 	return FALSE;
@@ -267,7 +266,7 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 	g_return_if_fail (dev != NULL);
 
 	cb_data = g_malloc0 (sizeof (NMStatusChangeData));
-	nm_device_ref (dev);
+	g_object_ref (G_OBJECT (dev));
 	cb_data->data = data;
 	cb_data->dev = dev;
 	if (ap)
@@ -351,7 +350,7 @@ void nm_dbus_signal_state_change (DBusConnection *connection, NMData *data)
  * Notifies the bus that a new wireless network has come into range
  *
  */
-void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevice *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength)
+void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength)
 {
 	DBusMessage *	message;
 	char *		dev_path = NULL;
@@ -362,10 +361,10 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (ap != NULL);
 
-	if (!(dev_path = nm_dbus_get_object_path_for_device (dev)))
+	if (!(dev_path = nm_dbus_get_object_path_for_device (NM_DEVICE (dev))))
 		goto out;
 
-	if (!(net_path = nm_dbus_get_object_path_for_network (dev, ap)))
+	if (!(net_path = nm_dbus_get_object_path_for_network (NM_DEVICE (dev), ap)))
 		goto out;
 
 	switch (status)
@@ -410,7 +409,7 @@ out:
 }
 
 
-void nm_dbus_signal_device_strength_change (DBusConnection *connection, NMDevice *dev, gint strength)
+void nm_dbus_signal_device_strength_change (DBusConnection *connection, NMDevice80211Wireless *dev, gint strength)
 {
 	DBusMessage *	message;
 	char *		dev_path = NULL;
@@ -418,7 +417,7 @@ void nm_dbus_signal_device_strength_change (DBusConnection *connection, NMDevice
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
-	if (!(dev_path = nm_dbus_get_object_path_for_device (dev)))
+	if (!(dev_path = nm_dbus_get_object_path_for_device (NM_DEVICE (dev))))
 		goto out;
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceStrengthChanged")))
@@ -494,7 +493,7 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 		}
 		else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "UserInterfaceActivated"))
 		{
-			nm_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+			nm_device_802_11_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 			handled = TRUE;
 		}
 	}

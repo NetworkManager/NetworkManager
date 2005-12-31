@@ -11,6 +11,13 @@ INCLUDES = -I${top_srcdir}                   \
 bin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES =				\
+		nm-device.c				\
+		nm-device.h				\
+		nm-device-private.h			\
+		nm-device-802-3-ethernet.c	\
+		nm-device-802-3-ethernet.h	\
+		nm-device-802-11-wireless.c	\
+		nm-device-802-11-wireless.h	\
 		NetworkManagerAP.c			\
 		NetworkManagerAP.h			\
 		NetworkManagerAPList.c		\
@@ -28,9 +35,6 @@ NetworkManager_SOURCES =				\
 		nm-dbus-net.h				\
 		nm-dbus-nmi.c				\
 		nm-dbus-nmi.h				\
-		NetworkManagerDevice.c		\
-		NetworkManagerDevice.h		\
-		NetworkManagerDevicePrivate.h	\
 		nm-ip4-config.c			\
 		nm-ip4-config.h			\
 		NetworkManager.c			\
@@ -39,8 +43,6 @@ NetworkManager_SOURCES =				\
 		NetworkManagerPolicy.h		\
 		NetworkManagerUtils.c		\
 		NetworkManagerUtils.h		\
-		NetworkManagerWireless.c		\
-		NetworkManagerWireless.h		\
 		NetworkManagerSystem.c		\
 		NetworkManagerSystem.h		\
 		nm-netlink-monitor.c		\

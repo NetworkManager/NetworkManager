@@ -19,7 +19,8 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
+#include "nm-device-802-11-wireless.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
@@ -43,7 +44,7 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	ap_list = nm_device_ap_list_get (dev);
+	ap_list = nm_device_802_11_wireless_ap_list_get (NM_DEVICE_802_11_WIRELESS (dev));
 	if (!ap_list)
 		return (NULL);
 
@@ -145,7 +146,7 @@ static DBusMessage *nm_dbus_net_get_strength (DBusConnection *connection, DBusMe
 		NMAPListIter		*iter;
 		int				 best_strength = nm_ap_get_strength (data->ap);
 
-		if (!(ap_list = nm_device_ap_list_get (data->dev)))
+		if (!(ap_list = nm_device_802_11_wireless_ap_list_get (NM_DEVICE_802_11_WIRELESS (data->dev))))
 			goto append;
 
 		if (!(iter = nm_ap_list_iter_new (ap_list)))
@@ -243,8 +244,8 @@ static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBus
 		dbus_int32_t	strength = nm_ap_get_strength (data->ap);
 		double 		freq = nm_ap_get_freq (data->ap);
 		dbus_int32_t	rate = nm_ap_get_rate (data->ap);
-		dbus_bool_t	enc = nm_ap_get_encrypted (data->ap);
 		dbus_int32_t	mode = (dbus_int32_t) nm_ap_get_mode (data->ap);
+		dbus_int32_t	capabilities = (dbus_int32_t) nm_ap_get_capabilities (data->ap);
 
 		memset (&hw_addr_buf[0], 0, 20);
 		if (nm_ap_get_address (data->ap))
@@ -256,8 +257,8 @@ static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBus
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_DOUBLE, &freq,
 									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_BOOLEAN,&enc,
 									DBUS_TYPE_INT32,  &mode,
+									DBUS_TYPE_INT32,  &capabilities,
 									DBUS_TYPE_INVALID);
 		g_free (op);
 	}

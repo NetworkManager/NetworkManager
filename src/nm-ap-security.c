@@ -28,7 +28,7 @@
 #include "nm-ap-security-private.h"
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-wpa-psk.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device-802-11-wireless.h"
 
 #define NM_AP_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY, NMAPSecurityPrivate))
 
@@ -195,10 +195,10 @@ real_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
 }
 
 static int 
-real_device_setup (NMAPSecurity *self, NMDevice * dev)
+real_device_setup (NMAPSecurity *self, NMDevice80211Wireless * dev)
 {
 	/* unencrypted */
-	nm_device_set_wep_enc_key (dev, NULL, 0);
+	nm_device_802_11_wireless_set_wep_enc_key (dev, NULL, 0);
 	return 0;
 }
 
@@ -236,7 +236,7 @@ nm_ap_security_set_description (NMAPSecurity *self, const char *desc)
 }
 
 int
-nm_ap_security_device_setup (NMAPSecurity *self, NMDevice *dev)
+nm_ap_security_device_setup (NMAPSecurity *self, NMDevice80211Wireless *dev)
 {
 	g_return_val_if_fail (self != NULL, -1);
 	g_return_val_if_fail (dev != NULL, -1);

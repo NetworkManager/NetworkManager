@@ -858,6 +858,20 @@ guint32 nm_device_get_capabilities (NMDevice *dev)
 
 
 /*
+ * Accessor for type-specific device capabilities
+ */
+guint32 nm_device_get_type_capabilities (NMDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NM_DEVICE_CAP_NONE);
+
+	if (dev->type == DEVICE_TYPE_802_11_WIRELESS)
+		return dev->options.wireless.capabilities;
+
+	return NM_DEVICE_CAP_NONE;
+}
+
+
+/*
  * Get/set functions for link_active
  */
 gboolean nm_device_has_active_link (NMDevice *dev)
@@ -3700,7 +3714,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 											{{0x12, 0x34, 0x56, 0x78, 0x90, 0xab}},
 											{{0xcd, 0xef, 0x12, 0x34, 0x56, 0x78}},
 											{{0x90, 0xab, 0xcd, 0xef, 0x12, 0x34}} };
-	guint8			 fake_qualities[NUM_FAKE_APS] = { 150, 26, 200, 100 };
+	guint8			 fake_qualities[NUM_FAKE_APS] = { 45, 26, 12, 93 };
 	double			 fake_freqs[NUM_FAKE_APS] = { 3.1416, 4.1416, 5.1415, 6.1415 };
 	gboolean			 fake_enc[NUM_FAKE_APS] = { FALSE, TRUE, FALSE, TRUE };
 
@@ -3718,9 +3732,7 @@ static void nm_device_fake_ap_list (NMDevice *dev)
 		nm_ap_set_essid (nm_ap, fake_essids[i]);
 
 		if (fake_enc[i])
-			nm_ap_set_encrypted (nm_ap, FALSE);
-		else
-			nm_ap_set_encrypted (nm_ap, TRUE);
+			nm_ap_add_capabilities_for_wep (nm_ap);
 
 		nm_ap_set_address (nm_ap, (const struct ether_addr *)(&fake_addrs[i]));
 		nm_ap_set_strength (nm_ap, fake_qualities[i]);
@@ -4497,7 +4509,7 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 				break;
 			case SIOCGIWENCODE:
 				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
-					nm_ap_set_encrypted (ap, TRUE);
+					nm_ap_add_capabilities_for_wep (ap);
 				break;
 #if 0
 			case SIOCGIWRATE:
@@ -4539,10 +4551,10 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 						case WPA_GENERIC_INFO_ELEM:
 							if ((ielen < 2 + 4) || (memcmp (&gpos[2], "\x00\x50\xf2\x01", 4) != 0))
 								break;
-							nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)gpos, ielen);
+							nm_ap_add_capabilities_from_ie (ap, (const guint8 *)gpos, ielen);
 							break;
 						case WPA_RSN_INFO_ELEM:
-							nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)gpos, ielen);
+							nm_ap_add_capabilities_from_ie (ap, (const guint8 *)gpos, ielen);
 							break;
 					}
 					gpos += ielen;
@@ -4571,9 +4583,9 @@ static gboolean process_scan_results (NMDevice *dev, const guint8 *res_buf, guin
 					ie_buf = g_malloc0 (bytes);
 					hexstr2bin (spos, ie_buf, bytes);
 					if (strncmp (custom, "wpa_ie=", 7) == 0)
-						nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)ie_buf, bytes);
+						nm_ap_add_capabilities_from_ie (ap, (const guint8 *)ie_buf, bytes);
 					else if (strncmp (custom, "rsn_ie=", 7) == 0)
-						nm_ap_set_capabilities_from_wpa_ie (ap, (const guint8 *)ie_buf, bytes);				
+						nm_ap_add_capabilities_from_ie (ap, (const guint8 *)ie_buf, bytes);				
 					g_free (ie_buf);
 				}
 				break;

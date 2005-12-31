@@ -30,7 +30,9 @@
 #include <glib.h>
 #include <unistd.h>
 #include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
+#include "nm-device-802-3-ethernet.h"
+#include "nm-device-802-11-wireless.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -210,7 +212,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	ARPMessage		p;
 	struct ether_addr	addr;
 	struct in_addr		ip = {0};
-	NMSock			*sk;
+	NMSock *			sk = NULL;
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
@@ -223,6 +225,13 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	/* initialize saddr */
 	memset (&saddr, 0, sizeof (saddr));
 	strncpy (saddr.sa_data, nm_device_get_iface (dev), sizeof (saddr.sa_data));
+
+	if (nm_device_is_802_3_ethernet (dev))
+		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
+	else if (nm_device_is_802_11_wireless (dev))
+		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
+	else
+		goto out;
 
 	/* open an ARP socket */
 	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
@@ -237,8 +246,6 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		nm_warning ("%s: Couldn't bind to the device.", nm_device_get_iface (dev));
 		goto out;
 	}
-
-	nm_device_get_hw_address (dev, &addr);
 
 	/* initialize pseudo random selection of IP addresses */
 	srandom ( (addr.ether_addr_octet[ETHER_ADDR_LEN-4] << 24) |
@@ -344,6 +351,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	}
 
 out:
-	nm_dev_sock_close (sk);
+	if (sk)
+		nm_dev_sock_close (sk);
 	return success;
 }

@@ -457,8 +457,8 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 
 		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
-		nm_ap_set_encrypted (list_ap_addr, nm_ap_get_encrypted (merge_ap));
-		if  (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap_addr))
+		nm_ap_set_capabilities (list_ap_addr, nm_ap_get_capabilities (merge_ap));
+		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap_addr))
 		{
 			nm_ap_set_strength (list_ap_addr, nm_ap_get_strength (merge_ap));
 			*strength_changed = TRUE;
@@ -480,7 +480,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 		const GTimeVal *list_ap_essid_seen = nm_ap_get_last_seen (list_ap_essid);
 
-		nm_ap_set_encrypted (list_ap_essid, nm_ap_get_encrypted (merge_ap));
+		nm_ap_set_capabilities (list_ap_essid, nm_ap_get_capabilities (merge_ap));
 
 		if (!((list_ap_essid_seen->tv_sec == merge_ap_seen->tv_sec)
 			&& (nm_ap_get_strength (list_ap_essid) >= nm_ap_get_strength (merge_ap))))
@@ -600,7 +600,7 @@ void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointLi
  *       may result in undesired behavior.
  *
  */
-void nm_ap_list_diff (NMData *data, NMDevice *dev, NMAccessPointList *old, NMAccessPointList *new)
+void nm_ap_list_diff (NMData *data, NMDevice80211Wireless *dev, NMAccessPointList *old, NMAccessPointList *new)
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*old_ap;

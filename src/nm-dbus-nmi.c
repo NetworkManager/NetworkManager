@@ -20,7 +20,7 @@
  */
 
 #include "NetworkManager.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"

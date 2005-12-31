@@ -28,12 +28,14 @@
 #include <netinet/ether.h>
 
 #include "nm-utils.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerDbusUtils.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-device.h"
+#include "nm-device-802-3-ethernet.h"
+#include "nm-device-802-11-wireless.h"
 
 
 static DBusMessage *nm_dbus_device_get_name (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
@@ -61,11 +63,12 @@ static DBusMessage *nm_dbus_device_get_type (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message))) {
-                dbus_int32_t type;
-                type = nm_device_get_type (dev);
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		dbus_int32_t type;
+		type = nm_device_get_device_type (dev);
 		dbus_message_append_args (reply, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID);
-        }
+	}
 
 	return reply;
 }
@@ -117,9 +120,13 @@ static DBusMessage *nm_dbus_device_get_hw_address (DBusConnection *connection, D
 	{
 		struct ether_addr	addr;
 		char				char_addr[20];
-		char				*ptr = &char_addr[0];
+		char *			ptr = &char_addr[0];
 
-		nm_device_get_hw_address (dev, &addr);
+		memset (&addr, 0, sizeof (struct ether_addr));
+		if (nm_device_is_802_3_ethernet (dev))
+			nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
+		else if (nm_device_is_802_11_wireless (dev))
+			nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
 		memset (char_addr, 0, 20);
 		iw_ether_ntop (&addr, char_addr);
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &ptr, DBUS_TYPE_INVALID);
@@ -136,9 +143,14 @@ static DBusMessage *nm_dbus_device_get_mode (DBusConnection *connection, DBusMes
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message)))
+	if (!nm_device_is_802_11_wireless (dev))
 	{
-		dbus_int32_t mode = (dbus_int32_t) nm_device_get_mode (dev);
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotWireless",
+				"Wired devices cannot see wireless networks.");
+	}
+	else if ((reply = dbus_message_new_method_return (message)))
+	{
+		dbus_int32_t mode = (dbus_int32_t) nm_device_802_11_wireless_get_mode (NM_DEVICE_802_11_WIRELESS (dev));
 		dbus_message_append_args (reply, DBUS_TYPE_INT32, &mode, DBUS_TYPE_INVALID);
 	}
 
@@ -153,12 +165,13 @@ static DBusMessage *nm_dbus_device_get_link_active (DBusConnection *connection, 
 	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
 
 	dev = data->dev;
-	if ((reply = dbus_message_new_method_return (message))) {
-                dbus_bool_t is_active;
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		dbus_bool_t is_active;
 
-                is_active = nm_device_has_active_link (dev);
+		is_active = nm_device_has_active_link (dev);
 		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &is_active, DBUS_TYPE_INVALID);
-        }
+	}
 
 	return reply;
 }
@@ -188,8 +201,8 @@ static DBusMessage *nm_dbus_device_get_active_network (DBusConnection *connectio
 			NMAccessPoint *tmp_ap;
 			char *		object_path = NULL;
 
-			if (    (tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (ap)))
-				&& (object_path = nm_dbus_get_object_path_for_network (dev, tmp_ap)))
+			tmp_ap = nm_device_802_11_wireless_ap_list_get_ap_by_essid (NM_DEVICE_802_11_WIRELESS (dev), nm_ap_get_essid (ap));
+			if (tmp_ap && (object_path = nm_dbus_get_object_path_for_network (dev, tmp_ap)))
 			{
 				dbus_message_append_args (reply, DBUS_TYPE_OBJECT_PATH, &object_path, DBUS_TYPE_INVALID);
 				g_free (object_path);
@@ -234,7 +247,7 @@ static DBusMessage *nm_dbus_device_get_networks (DBusConnection *connection, DBu
 		dbus_message_iter_init_append (reply, &iter);
 		dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_OBJECT_PATH_AS_STRING, &iter_array);
 
-		if ((ap_list = nm_device_ap_list_get (dev)))
+		if ((ap_list = nm_device_802_11_wireless_ap_list_get (NM_DEVICE_802_11_WIRELESS (dev))))
 		{
 			if ((list_iter = nm_ap_list_iter_new (ap_list)))
 			{
@@ -304,7 +317,7 @@ static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, 
 		dbus_error_init (&error);
 		if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &link, DBUS_TYPE_INVALID))
 		{
-			nm_device_set_link_active (dev, link);
+			nm_device_set_active_link (dev, link);
 			nm_policy_schedule_device_change_check (data->data);
 		}
 	}
@@ -324,7 +337,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 	{
 		char *			op = nm_dbus_get_object_path_for_device (dev);
 		const char *		iface = nm_device_get_iface (dev);
-		dbus_uint32_t		type = (dbus_uint32_t) nm_device_get_type (dev);
+		dbus_uint32_t		type = (dbus_uint32_t) nm_device_get_device_type (dev);
 		const char *		udi = nm_device_get_udi (dev);
 		gchar *			ip4_address;
 		gchar *			broadcast;
@@ -340,6 +353,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		char *			active_network_path = NULL;
 		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
 		dbus_uint32_t		capabilities = (dbus_uint32_t) nm_device_get_capabilities (dev);
+		dbus_uint32_t		type_capabilities = (dbus_uint32_t) nm_device_get_type_capabilities (dev);
 		char **			networks = NULL;
 		int				num_networks = 0;
 		dbus_bool_t		active = nm_device_get_act_request (dev) ? TRUE : FALSE;
@@ -351,8 +365,11 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		guint32			primary_dns_addr = 0;
 		guint32			secondary_dns_addr = 0;
 
-		nm_device_get_hw_address (dev, &hw_addr);
 		memset (hw_addr_buf, 0, 20);
+		if (nm_device_is_802_3_ethernet (dev))
+			nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
+		else if (nm_device_is_802_11_wireless (dev))
+			nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
 		iw_ether_ntop (&hw_addr, hw_addr_buf);
 
 		ip4config = nm_device_get_ip4_config (dev);
@@ -379,23 +396,24 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 
 		if (nm_device_is_802_11_wireless (dev))
 		{
+			NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
 			NMActRequest *		req = nm_device_get_act_request (dev);
 			NMAccessPoint *	ap;
 			NMAccessPointList *	ap_list;
 			NMAPListIter *		iter;
 
-			strength = (dbus_int32_t) nm_device_get_signal_strength (dev);
-			mode = (dbus_int32_t) nm_device_get_mode (dev);
+			strength = (dbus_int32_t) nm_device_802_11_wireless_get_signal_strength (wdev);
+			mode = (dbus_int32_t) nm_device_802_11_wireless_get_mode (wdev);
 
 			 if (req && (ap = nm_act_request_get_ap (req)))
 			 {
 				NMAccessPoint	*tmp_ap;
 
-				if ((tmp_ap = nm_device_ap_list_get_ap_by_essid (dev, nm_ap_get_essid (ap))))
+				if ((tmp_ap = nm_device_802_11_wireless_ap_list_get_ap_by_essid (wdev, nm_ap_get_essid (ap))))
 					active_network_path = nm_dbus_get_object_path_for_network (dev, tmp_ap);
 			 }
 
-			ap_list = nm_device_ap_list_get (dev);
+			ap_list = nm_device_802_11_wireless_ap_list_get (wdev);
 			if (ap_list && (num_networks = nm_ap_list_size (ap_list)))
 			{
 				if ((iter = nm_ap_list_iter_new (ap_list)))
@@ -436,6 +454,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
 									DBUS_TYPE_UINT32, &capabilities,
+									DBUS_TYPE_UINT32, &type_capabilities,
 									DBUS_TYPE_STRING, &active_network_path,
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, num_networks,
 									DBUS_TYPE_INVALID);

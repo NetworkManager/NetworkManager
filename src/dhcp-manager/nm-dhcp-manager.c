@@ -21,15 +21,16 @@
 
 #include <glib.h>
 #include <dbus/dbus.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include "nm-dhcp-manager.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 
 
 struct NMDHCPManager
@@ -173,9 +174,9 @@ guint8 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *d
 			nm_info ("Error from dhcdbd on 'reason' request because: name '%s', message '%s'.", error.name, error.message);
 		dbus_error_free (&error);
 	}
-	if (reply)
+	else if (reply)
 	{
-		if (!dbus_message_get_args (reply, &error, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
+		if (!dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
 			state = 0;
 		dbus_message_unref (reply);
 	}

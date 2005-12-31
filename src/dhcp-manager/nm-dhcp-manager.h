@@ -22,7 +22,7 @@
 #define NM_DHCP_MANAGER_H
 
 #include "NetworkManagerMain.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
 
 char *			get_dhcp_match_string					(const char *owner);
 

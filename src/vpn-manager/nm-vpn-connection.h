@@ -20,7 +20,8 @@
 #ifndef NM_VPN_CONNECTION_H
 #define NM_VPN_CONNECTION_H
 
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
+#include "nm-named-manager.h"
 
 typedef struct NMVPNConnection NMVPNConnection;
 

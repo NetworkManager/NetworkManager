@@ -36,9 +36,10 @@
 #include "NetworkManager.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerDevice.h"
+#include "nm-device.h"
+#include "nm-device-802-3-ethernet.h"
+#include "nm-device-802-11-wireless.h"
 #include "NetworkManagerPolicy.h"
-#include "NetworkManagerWireless.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
@@ -143,7 +144,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 		{
 			/* If we couldn't add the device to our list, free its data. */
 			nm_warning ("could not acquire device list mutex." );
-			nm_device_unref (dev);
+			g_object_unref (G_OBJECT (dev));
 			dev = NULL;
 		}
 	} else nm_warning ("could not allocate device data." );
@@ -168,7 +169,7 @@ void nm_remove_device (NMData *data, NMDevice *dev)
 	nm_device_worker_thread_stop (dev);
 	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
 
-	nm_device_unref (dev);
+	g_object_unref (G_OBJECT (dev));
 
 	/* Remove the device entry from the device list and free its data */
 	data->dev_list = g_slist_remove (data->dev_list, dev);
@@ -442,7 +443,7 @@ static void device_stop_and_free (NMDevice *dev, gpointer user_data)
 
 	nm_device_set_removed (dev, TRUE);
 	nm_device_deactivate (dev);
-	nm_device_unref (dev);
+	g_object_unref (G_OBJECT (dev));
 }
 
 
@@ -555,7 +556,7 @@ static gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 		{
 			if ((dev = (NMDevice *)(elt->data)))
 			{
-				nm_device_ref (dev);
+				g_object_ref (G_OBJECT (dev));
 				copy = g_slist_append (copy, dev);
 			}
 		}
@@ -568,10 +569,11 @@ static gboolean nm_poll_and_update_wireless_link_state (NMData *data)
 		{
 			if (nm_device_is_802_11_wireless (dev) && !nm_device_is_activating (dev))
 			{
-				nm_device_set_link_active (dev, nm_device_probe_link_state (dev));
-				nm_device_update_signal_strength (dev);
+				NMDevice80211Wireless *wdev = NM_DEVICE_802_11_WIRELESS (dev);
+				nm_device_set_active_link (dev, nm_device_probe_link_state (dev));
+				nm_device_802_11_wireless_update_signal_strength (wdev);
 			}
-			nm_device_unref (dev);
+			g_object_unref (G_OBJECT (dev));
 		}
 	}
 
@@ -598,7 +600,7 @@ static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *in
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		if ((dev = nm_get_device_by_iface (data, interface_name)))
-			nm_device_ref (dev);
+			g_object_ref (G_OBJECT (dev));
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
@@ -607,10 +609,10 @@ static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *in
 	{
 		if (nm_device_is_802_3_ethernet (dev) && !nm_device_has_active_link (dev))
 		{
-			nm_device_set_link_active (dev, TRUE);
+			nm_device_set_active_link (dev, TRUE);
 			nm_policy_schedule_device_change_check (data);
 		}
-		nm_device_unref (dev);
+		g_object_unref (G_OBJECT (dev));
 	}
 }
 
@@ -621,15 +623,15 @@ static void nm_device_link_deactivated (NmNetlinkMonitor *monitor, const gchar *
 	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
 	{
 		if ((dev = nm_get_device_by_iface (data, interface_name)))
-			nm_device_ref (dev);
+			g_object_ref (G_OBJECT (dev));
 		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
 	if (dev)
 	{
 		if (nm_device_is_802_3_ethernet (dev))
-			nm_device_set_link_active (dev, FALSE);
-		nm_device_unref (dev);
+			nm_device_set_active_link (dev, FALSE);
+		g_object_unref (G_OBJECT (dev));
 	}
 }
 
