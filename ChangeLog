@@ -1,3 +1,14 @@
+2006-1-1  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-activation-request.c
+		- Change dhcp_state member of the NMActRequest structure
+			from guint8 to guint32
+
+	* src/dhcp-manager/nm-dhcp-manager.[ch]
+		- (nm_dhcp_manager_get_state_for_device): return guint32 rather
+			than guint8 to match the dbus argument.  Turns out we were
+			overwriting memory since we were passing in only a guint8
+
 2005-12-31  Dan Williams  <dcbw@redhat.com>
 
 	* refactor NMDevice into a GObject-based framework with separate

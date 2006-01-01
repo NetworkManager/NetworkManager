@@ -43,7 +43,7 @@ struct NMActRequest
 	NMActStage		stage;
 	DBusPendingCall *	user_key_pcall;
 
-	guint8			dhcp_state;
+	guint32			dhcp_state;
 	guint			dhcp_timeout;
 };
 

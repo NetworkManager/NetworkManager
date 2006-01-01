@@ -138,12 +138,12 @@ void nm_dhcp_manager_dispose (NMDHCPManager *manager)
 }
 
 
-guint8 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *dev)
+guint32 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *dev)
 {
 	DBusMessage *	message;
 	DBusMessage *	reply;
 	char *		path;
-	guint8		state = 0;
+	guint32		state = 0;
 	DBusError		error;
 
 	g_return_val_if_fail (manager != NULL, 0);

@@ -37,6 +37,6 @@ NMIP4Config *		nm_dhcp_manager_get_ip4_config			(NMDHCPManager *manager, NMActRe
 gboolean			nm_dhcp_manager_process_signal			(NMDHCPManager *manager, DBusMessage *message);
 gboolean			nm_dhcp_manager_process_name_owner_changed	(NMDHCPManager *manager, const char *changed_service_name, const char *old_owner, const char *new_owner);
 
-guint8			nm_dhcp_manager_get_state_for_device		(NMDHCPManager *manager, NMDevice *dev);
+guint32			nm_dhcp_manager_get_state_for_device		(NMDHCPManager *manager, NMDevice *dev);
 
 #endif
