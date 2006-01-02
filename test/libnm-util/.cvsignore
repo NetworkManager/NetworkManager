@@ -1,3 +1,4 @@
 test-ciphers
 Makefile.in
 Makefile
+test-dbus-helpers
