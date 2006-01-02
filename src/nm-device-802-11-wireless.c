@@ -215,11 +215,6 @@ real_init (NMDevice *dev)
 	NMSock *				sk;
 	NMDeviceClass *		parent_class;
 
-	/* Chain up to parent first */
-	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
-	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	parent_class->init (NM_DEVICE (self));
-
 	self->priv->scan_mutex = g_mutex_new ();
 	nm_register_mutex_desc (self->priv->scan_mutex, "Scan Mutex");
 

@@ -88,26 +88,24 @@ static void		nm_device_schedule_activation_handle_cancel (NMActRequest *req);
 static NMDeviceType
 discover_device_type (const char *iface)
 {
-	int		err = -1;
-	char		ioctl_buf[64];
-	int		fd;
-	int		len;
+	int	err = -1;
+	int	fd;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
-	ioctl_buf[63] = 0;
-	len = strlen (iface);
-	len = len > 63 ? 63 : len;
-	strncpy (ioctl_buf, iface, len);
-
 	if ((fd = iw_sockets_open ()) >= 0)
 	{
+		char	buf[64];
+
+		strncpy (buf, iface, 62);
+		buf[63] = '\0';
+
 #ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET IWNAME\n", iface);
+		nm_info ("%s: About to GET IWNAME", iface);
 #endif
-		err = ioctl (fd, SIOCGIWNAME, ioctl_buf);
+		err = ioctl (fd, SIOCGIWNAME, buf);
 #ifdef IOCTL_DEBUG
-		nm_info ("%s: Done with GET IWNAME\n", iface);
+		nm_info ("%s: Done with GET IWNAME", iface);
 #endif
 		close (fd);
 	}
@@ -151,6 +149,7 @@ nm_device_new (const char *iface,
 {
 	NMDevice * 	dev;
 	NMDeviceType	type;
+	nm_completion_args args;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
@@ -171,14 +170,52 @@ nm_device_new (const char *iface,
 			g_assert_not_reached ();
 	}
 	
+	g_assert (dev);
 	dev->priv->iface = g_strdup (iface);
 	dev->priv->udi = g_strdup (udi);
 	dev->priv->driver = nm_get_device_driver_name (app_data->hal_ctx, udi);
 	dev->priv->app_data = app_data;
 	dev->priv->type = type;
 
+	dev->priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->discover_generic_capabilities (dev);
+
+	/* Device thread's main loop */
+	dev->priv->context = g_main_context_new ();
+	dev->priv->loop = g_main_loop_new (dev->priv->context, FALSE);
+
+	/* Have to bring the device up before checking link status and other stuff */
+	nm_device_bring_up_wait (dev, 0);
+
+//	nm_device_set_active_link (dev, nm_device_probe_link_state (dev));
+//	nm_device_update_ip4_address (dev);
+/* FIXME */
+#if 0
+	nm_device_update_hw_address (dev);
+#endif
+
+	/* Grab IP config data for this device from the system configuration files */
+	dev->priv->system_config_data = nm_system_device_get_system_config (dev);
+	dev->priv->use_dhcp = nm_system_device_get_use_dhcp (dev);
+
+	nm_print_device_capabilities (dev);
+
 	/* Call type-specific initialization */
-	NM_DEVICE_GET_CLASS (dev)->init (dev);
+	if (NM_DEVICE_GET_CLASS (dev)->init)
+		NM_DEVICE_GET_CLASS (dev)->init (dev);
+
+	dev->priv->worker = g_thread_create (nm_device_worker, dev, TRUE, NULL);
+	g_assert (dev->priv->worker);
+	g_object_ref (G_OBJECT (dev));	/* For the worker thread */
+
+	/* Block until our device thread has actually had a chance to start. */
+	args[0] = &dev->priv->worker_started;
+	args[1] = (gpointer) "nm_device_init(): waiting for device's worker thread to start";
+	args[2] = GINT_TO_POINTER (LOG_INFO);
+	args[3] = GINT_TO_POINTER (0);
+	nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY,
+			G_USEC_PER_SEC / 20, nm_completion_boolean_test, NULL, args);
+
+	nm_info ("nm_device_init(): device's worker thread started, continuing.");
 
 	return dev;
 }
@@ -218,48 +255,6 @@ static guint32
 real_discover_generic_capabilities (NMDevice *dev)
 {
 	return 0;
-}
-
-static void
-real_init (NMDevice *self)
-{
-	nm_completion_args args;
-
-	self->priv->capabilities |= NM_DEVICE_GET_CLASS (self)->discover_generic_capabilities (self);
-
-	/* Device thread's main loop */
-	self->priv->context = g_main_context_new ();
-	self->priv->loop = g_main_loop_new (self->priv->context, FALSE);
-
-	/* Have to bring the device up before checking link status and other stuff */
-	nm_device_bring_up_wait (self, 0);
-
-//	nm_device_set_active_link (self, nm_device_probe_link_state (self));
-//	nm_device_update_ip4_address (self);
-/* FIXME */
-#if 0
-	nm_device_update_hw_address (self);
-#endif
-
-	/* Grab IP config data for this device from the system configuration files */
-	self->priv->system_config_data = nm_system_device_get_system_config (self);
-	self->priv->use_dhcp = nm_system_device_get_use_dhcp (self);
-
-	nm_print_device_capabilities (self);
-
-	self->priv->worker = g_thread_create (nm_device_worker, self, TRUE, NULL);
-	g_assert (self->priv->worker);
-	g_object_ref (G_OBJECT (self));	/* For the worker thread */
-
-	/* Block until our device thread has actually had a chance to start. */
-	args[0] = &self->priv->worker_started;
-	args[1] = (gpointer) "nm_device_init(): waiting for device's worker thread to start";
-	args[2] = GINT_TO_POINTER (LOG_INFO);
-	args[3] = GINT_TO_POINTER (0);
-	nm_wait_for_completion (NM_COMPLETION_TRIES_INFINITY,
-			G_USEC_PER_SEC / 20, nm_completion_boolean_test, NULL, args);
-
-	nm_info ("nm_device_init(): device's worker thread started, continuing.");
 }
 
 
@@ -1445,28 +1440,15 @@ nm_device_deactivate_quickly (NMDevice *self)
 void
 nm_device_deactivate (NMDevice *self)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (self->priv->app_data != NULL);
-
-	
-	NM_DEVICE_GET_CLASS (self)->deactivate (self);
-	nm_schedule_state_change_signal_broadcast (self->priv->app_data);
-}
-
-static void
-real_deactivate (NMDevice *self)
-{
 	NMData *		app_data;
 	NMIP4Config *	config;
 
+	g_return_if_fail (self != NULL);
 	g_return_if_fail (self->priv->app_data != NULL);
 
 	nm_info ("Deactivating device %s.", nm_device_get_iface (self));
 
 	nm_device_deactivate_quickly (self);
-
-	if (!(nm_device_get_capabilities (self) & NM_DEVICE_CAP_NM_SUPPORTED))
-		return;
 
 	app_data = self->priv->app_data;
 
@@ -1480,8 +1462,13 @@ real_deactivate (NMDevice *self)
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (self);
 	nm_system_device_flush_addresses (self);
-	nm_device_update_ip4_address (self);
+	nm_device_update_ip4_address (self);	
 
+	/* Call device type-specific deactivation */
+	if (NM_DEVICE_GET_CLASS (self)->deactivate)
+		NM_DEVICE_GET_CLASS (self)->deactivate (self);
+
+	nm_schedule_state_change_signal_broadcast (self->priv->app_data);
 }
 
 
@@ -1938,11 +1925,9 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->finalize = nm_device_finalize;
 
 	klass->is_test_device = real_is_test_device;
-	klass->deactivate = real_deactivate;
 	klass->cancel_activation = real_cancel_activation;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->discover_generic_capabilities = real_discover_generic_capabilities;
-	klass->init = real_init;
 	klass->start = real_start;
 	klass->activation_prepare = real_activation_prepare;
 	klass->activation_config = real_activation_config;

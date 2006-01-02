@@ -1,5 +1,19 @@
 2006-1-1  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_init): don't chain up to parent init because we don't
+			need to do that anymore
+
+	* src/nm-device.c
+		- (discover_device_type): fix arguments to ioctl() to correctly
+			pass interface name
+		- (nm_device_new): consolidate generic device initialization into
+			nm_device_new()
+		- (real_init): remove, consolidated to nm_device_new()
+		- (nm_device_deactivate, real_deactivate): consolidate
+
+2006-1-1  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 		- Change dhcp_state member of the NMActRequest structure
 			from guint8 to guint32
