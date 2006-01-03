@@ -1,3 +1,10 @@
+2006-01-03  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: update to newer API (no more
+	  nm_device_get_hw_address); use inet_aton in lieu of inet_addr as the
+	  latter cannot differentiate between error and the address -1; misc.
+	  clean up.
+
 2006-1-3  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c

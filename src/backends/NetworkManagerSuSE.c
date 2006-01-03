@@ -435,12 +435,11 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	shvarFile *file;
 	char *buf = NULL;
 	SuSESystemConfigData *sys_data = NULL;
-	struct ether_addr addr;
+	struct ether_addr hw_addr;
 	FILE *f = NULL;
 	char buffer[512];
 	gboolean error = FALSE;
-	unsigned int i;
-	int len;
+	int i, len;
 	struct in_addr temp_addr;
 	char *ip_str;
 
@@ -449,12 +448,15 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	sys_data = g_malloc0 (sizeof (SuSESystemConfigData));
 	sys_data->use_dhcp = TRUE;
 
-	memset (&addr, 0, sizeof(addr));
-	nm_device_get_hw_address (dev, &addr);
+	if (nm_device_is_802_3_ethernet (dev))
+		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
+	else if (nm_device_is_802_11_wireless (dev))
+		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
+
 	sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x",
-			addr.ether_addr_octet[0], addr.ether_addr_octet[1],
-			addr.ether_addr_octet[2], addr.ether_addr_octet[3],
-			addr.ether_addr_octet[4], addr.ether_addr_octet[5]);
+			hw_addr.ether_addr_octet[0], hw_addr.ether_addr_octet[1],
+			hw_addr.ether_addr_octet[2], hw_addr.ether_addr_octet[3],
+			hw_addr.ether_addr_octet[4], hw_addr.ether_addr_octet[5]);
 	cfg_file_path = g_strdup_printf (SYSCONFDIR"/sysconfig/network/ifcfg-eth-id-%s", mac);
 	if (!cfg_file_path)
 		return sys_data;
@@ -502,11 +504,12 @@ found:
 		buf = svGetValue (file, "IPADDR");
 		if (buf)
 		{
-				in_addr_t ip;
+				struct in_addr ip;
+				int ret;
 
-				ip = inet_addr (buf);
-				if (ip != -1)
-					nm_ip4_config_set_address (sys_data->config, ip);
+				ret = inet_aton (buf, &ip);
+				if (ret)
+					nm_ip4_config_set_address (sys_data->config, ip.s_addr);
 				else
 					error = TRUE;
 				free (buf);
@@ -839,7 +842,7 @@ void nm_system_activate_nis (NMIP4Config *config)
 	gchar *nis_domain = NULL; 
 	int num_nis_servers = 0; 
 	struct in_addr	temp_addr;
-	int i, ret;
+	int i;
 	FILE *ypconf = NULL;
 
 	g_return_if_fail (config != NULL);
