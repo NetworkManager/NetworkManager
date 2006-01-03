@@ -451,9 +451,12 @@ static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const cha
 static gboolean nm_completion_dhcp_bound_test(int tries,
 		nm_completion_args args)
 {
-	NMActRequest *req = args[0];
+	NMActRequest *	req = args[0];
+	NMDevice *	dev = args[1];
 
 	if (state_is_bound (nm_act_request_get_dhcp_state (req)))
+		return TRUE;
+	if (nm_device_activation_should_cancel (dev))
 		return TRUE;
 	return FALSE;
 }
@@ -493,8 +496,12 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	g_assert (dev);
 
 	args[0] = req;
+	args[1] = dev;
 	nm_wait_for_completion (30, G_USEC_PER_SEC / 10,
 			nm_completion_dhcp_bound_test, NULL, args);
+	if (nm_device_activation_should_cancel (dev))
+		return NULL;
+
 	if (!state_is_bound (nm_act_request_get_dhcp_state (req)))
 	{
 		nm_warning ("Tried to get IP4 Config for a device when dhcdbd wasn't in a BOUND state!");
@@ -604,6 +611,9 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	if (!(member = dbus_message_get_member (message)))
 		return FALSE;
 	if (!(interface = dbus_message_get_interface (message)))
+		return FALSE;
+	/* Ignore non-DHCP related messages */
+	if (strncmp (interface, "com.redhat.dhcp", 15))
 		return FALSE;
 
 #if 0

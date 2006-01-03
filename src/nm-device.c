@@ -827,6 +827,11 @@ real_act_stage3_ip_config_start (NMDevice *self,
 		/* Begin a DHCP transaction on the interface */
 		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+		/* DHCP devices will be notified by the DHCP manager when
+		 * stuff happens.
+		 */
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
 	return ret;
@@ -1012,6 +1017,13 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, req, &ip4_config);
+
+	if (nm_device_activation_should_cancel (self))
+	{
+		nm_device_schedule_activation_handle_cancel (req);
+		goto out;
+	}
+
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
