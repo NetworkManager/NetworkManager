@@ -722,43 +722,6 @@ real_act_stage2_config (NMDevice *dev, NMActRequest *req)
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *self,
-                                NMActRequest *req,
-                                NMIP4Config **config)
-{
-	NMData *		data;
-	NMIP4Config *	real_config = NULL;
-	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
-
-	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	if (nm_device_get_use_dhcp (self))
-		real_config = nm_dhcp_manager_get_ip4_config (data->dhcp_manager, req);
-	else
-		real_config = nm_system_device_new_ip4_system_config (self);
-
-	if (real_config)
-	{
-		*config = real_config;
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	}
-	else
-	{
-		/* Make sure device is up even if config fails */
-		if (!nm_device_is_up (self))
-			nm_device_bring_up (self);
-	}
-
-	return ret;
-}
-
-
 /*
  * nm_device_activate_stage2_device_config
  *
@@ -848,6 +811,28 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 }
 
 
+static NMActStageReturn
+real_act_stage3_ip_config_start (NMDevice *self,
+                                 NMActRequest *req)
+{	
+	NMData *			data = NULL;
+	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_SUCCESS;
+
+	data = nm_act_request_get_data (req);
+	g_assert (data);
+
+	/* DHCP devices try DHCP, non-DHCP default to SUCCESS */
+	if (nm_device_get_use_dhcp (self))
+	{
+		/* Begin a DHCP transaction on the interface */
+		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return ret;
+}
+
+
 /*
  * nm_device_activate_stage3_ip_config_start
  *
@@ -859,8 +844,8 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 {
 	NMData *			data = NULL;
 	NMDevice *		self = NULL;
-	NMAccessPoint *	ap = NULL;
 	const char *		iface;
+	NMActStageReturn	ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -879,16 +864,15 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 		goto out;
 	}
 
-	if (nm_device_is_802_11_wireless (self))
-		ap = nm_act_request_get_ap (req);
-
-	if (!(ap && nm_ap_get_user_created (ap)) && nm_device_get_use_dhcp (self))
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self, req);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+		goto out;
+	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
-		/* Begin a DHCP transaction on the interface */
-		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
-			nm_policy_schedule_activation_failed (req);
+		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -896,7 +880,6 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 		goto out;
 	}
 
-	/* Static IP and user-created wireless networks skip directly to IP configure stage */
 	nm_device_activate_schedule_stage4_ip_config_get (req);
 
 out:
@@ -950,7 +933,6 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 		#define LINKLOCAL_BCAST		0xa9feffff
 
 		config = nm_ip4_config_new ();
-
 		nm_ip4_config_set_address (config, (guint32)(ip.s_addr));
 		nm_ip4_config_set_netmask (config, (guint32)(ntohl (0xFFFF0000)));
 		nm_ip4_config_set_broadcast (config, (guint32)(ntohl (LINKLOCAL_BCAST)));
@@ -958,6 +940,43 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 	}
 
 	return config;
+}
+
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *self,
+                                NMActRequest *req,
+                                NMIP4Config **config)
+{
+	NMData *			data;
+	NMIP4Config *		real_config = NULL;
+	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	g_assert (req);
+	data = nm_act_request_get_data (req);
+	g_assert (data);
+
+	if (nm_device_get_use_dhcp (self))
+		real_config = nm_dhcp_manager_get_ip4_config (data->dhcp_manager, req);
+	else
+		real_config = nm_system_device_new_ip4_system_config (self);
+
+	if (real_config)
+	{
+		*config = real_config;
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+	else
+	{
+		/* Make sure device is up even if config fails */
+		if (!nm_device_is_up (self))
+			nm_device_bring_up (self);
+	}
+
+	return ret;
 }
 
 
@@ -1045,6 +1064,24 @@ nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 }
 
 
+static NMActStageReturn
+real_act_stage4_ip_config_timeout (NMDevice *self,
+                                   NMActRequest *req,
+                                   NMIP4Config **config)
+{
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	g_assert (req);
+
+	/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
+	nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
+	*config = nm_device_new_ip4_autoip_config (self);
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+
 /*
  * nm_device_activate_stage4_ip_config_timeout
  *
@@ -1057,6 +1094,8 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	NMData *		data = NULL;
 	NMDevice *	self = NULL;
 	NMIP4Config *	ip4_config = NULL;
+	const char *	iface;
+	NMActStageReturn	ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -1066,8 +1105,8 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) started...",
-			nm_device_get_iface (self));
+	iface = nm_device_get_iface (self);
+	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) started...", iface);
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -1075,49 +1114,22 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 		goto out;
 	}
 
-	if (nm_device_is_802_3_ethernet (self))
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, req, &ip4_config);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+		goto out;
+	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
 	{
-		/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
-		nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
-		ip4_config = nm_device_new_ip4_autoip_config (self);
+		nm_policy_schedule_activation_failed (req);
+		goto out;
 	}
-	else if (nm_device_is_802_11_wireless (self))
-	{
-		NMAccessPoint *ap = nm_act_request_get_ap (req);
-		NMAPSecurity *	security;
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
+	g_assert (ip4_config);
 
-		g_assert (ap);
-
-		security = nm_ap_get_security (ap);
-
-		/* FIXME: should we only ask for a new key if the activation request is user-requested? */
-		if (ap && (nm_ap_security_get_we_cipher (security) != IW_AUTH_CIPHER_NONE))
-		{
-			/* Activation failed, we must have bad WEP key */
-			nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
-					nm_device_get_iface (self), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
-		}
-		else
-		{
-			/*
-			 * Wireless, not encrypted, no DHCP Reply.  Try Zeroconf.  We do not do this in
-			 * the encrypted case, because the problem could be (and more likely is) a bad key.
-			 */
-			nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
-			ip4_config = nm_device_new_ip4_autoip_config (self);
-		}
-	}
-
-	if (ip4_config)
-	{
-		nm_act_request_set_ip4_config (req, ip4_config);
-		nm_device_activate_schedule_stage5_ip_config_commit (req);
-	}
+	nm_act_request_set_ip4_config (req, ip4_config);
+	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
-	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) complete.",
-			nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) complete.", iface);
 	return FALSE;
 }
 
@@ -1907,6 +1919,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->start = real_start;
 	klass->act_stage1_prepare = real_act_stage1_prepare;
 	klass->act_stage2_config = real_act_stage2_config;
+	klass->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	klass->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));

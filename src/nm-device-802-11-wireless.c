@@ -2355,6 +2355,34 @@ real_act_stage2_config (NMDevice *dev,
 
 
 static NMActStageReturn
+real_act_stage3_ip_config_start (NMDevice *dev,
+                                 NMActRequest *req)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+	g_assert (ap);
+
+	/* User-created access points (ie, Ad-Hoc networks) don't do DHCP,
+	 * everything else does.
+	 */
+	if (!nm_ap_get_user_created (ap))
+	{
+		NMDevice80211WirelessClass *	klass;
+		NMDeviceClass * parent_class;
+
+		/* Chain up to parent */
+		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+		ret = parent_class->act_stage3_ip_config_start (dev, req);
+	}
+
+	return ret;
+}
+
+
+static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *dev,
                                 NMActRequest *req,
                                 NMIP4Config **config)
@@ -2363,6 +2391,9 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	g_assert (ap);
 	if (nm_ap_get_user_created (ap))
@@ -2380,6 +2411,55 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage4_get_ip4_config (dev, req, &real_config);
 	}
+	*config = real_config;
+
+	return ret;
+}
+
+
+static NMActStageReturn
+real_act_stage4_ip_config_timeout (NMDevice *dev,
+                                   NMActRequest *req,
+                                   NMIP4Config **config)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMIP4Config *			real_config = NULL;
+	NMAPSecurity *			security;
+	NMData *				data;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	g_assert (ap);
+
+	data = nm_device_get_app_data (dev);
+	g_assert (data);
+
+	security = nm_ap_get_security (ap);
+	g_assert (security);
+
+	/* FIXME: should we only ask for a new key if the activation request is user-requested? */
+	if (nm_ap_security_get_we_cipher (security) != IW_AUTH_CIPHER_NONE)
+	{
+		/* Activation failed, we must have bad WEP key */
+		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
+				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+	else
+	{
+		NMDevice80211WirelessClass *	klass;
+		NMDeviceClass * parent_class;
+
+		/* Chain up to parent */
+		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+		ret = parent_class->act_stage4_ip_config_timeout (dev, req, &real_config);
+	}
+	*config = real_config;
 
 	return ret;
 }
@@ -2451,9 +2531,13 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->init = real_init;
 	parent_class->start = real_start;
-	parent_class->deactivate = real_deactivate;
-	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->update_link = real_update_link;
+
+	parent_class->act_stage2_config = real_act_stage2_config;
+	parent_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
+	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
+	parent_class->deactivate = real_deactivate;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }

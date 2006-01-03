@@ -90,11 +90,16 @@ struct _NMDeviceClass
 
 	void			(* init)				(NMDevice *self);
 	void			(* start)				(NMDevice *self);
-	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest * req);
-	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest * req);
+	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest *req);
+	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest *req);
+	NMActStageReturn	(* act_stage3_ip_config_start)(NMDevice *self,
+											 struct NMActRequest *req);
 	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
-											 struct NMActRequest * req,
+											 struct NMActRequest *req,
 											 NMIP4Config **config);
+	NMActStageReturn	(* act_stage4_ip_config_timeout)	(NMDevice *self,
+												 struct NMActRequest *req,
+												 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* cancel_activation)	(NMDevice *self);
 };

@@ -175,6 +175,9 @@ real_get_generic_capabilities (NMDevice *dev)
 	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
 		caps |= NM_DEVICE_CAP_CARRIER_DETECT;
 
+	if (caps)
+		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
+
 	return caps;
 }
 
@@ -241,10 +244,11 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
-	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
+
+	parent_class->act_stage2_config = real_act_stage2_config;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }
