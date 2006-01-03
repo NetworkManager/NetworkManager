@@ -454,6 +454,20 @@ wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 		data = NULL;
 	}
 
+#if 0
+	if (data)
+	{
+		nm_debug ("WPA IE: -------------------");
+		nm_debug ("   proto        0x%X", data->proto);
+		nm_debug ("   pw cipher    0x%X", data->pairwise_cipher);
+		nm_debug ("   gr cipher    0x%X", data->group_cipher);
+		nm_debug ("   key mgmt     0x%X", data->key_mgmt);
+		nm_debug ("   capabilities 0x%X", data->capabilities);
+		nm_debug ("   # pmkid      0x%X", data->num_pmkid);
+		nm_debug ("");
+	}
+#endif
+
 	return data;
 }
 
