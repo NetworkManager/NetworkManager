@@ -1,3 +1,20 @@
+2006-1-3  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- Move link-checking/probing into the device subclasses
+			themselves
+
+	* src/nm-device.[ch]
+	  src/nm-device-802-11-wireless.c
+	  src/nm-device-802-3-ethernet.c
+		- Do periodic link checking in device subclasses rather
+			than being triggered from NetworkManager.c
+		- discover_wireless_capabilities -> get_wireless_capabilities
+		- discover_generic_capabilities -> get_generic_capabilities
+		- Device subclass activation routines now return a value of type
+			NMActStageReturn to indicate what step to perform next
+		- Devices now override stage4_get_ip4_config if they choose
+
 2006-1-1  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

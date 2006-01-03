@@ -24,15 +24,10 @@
 
 #include "nm-device.h"
 
-
-void			nm_device_set_udi		(NMDevice *dev,
-								 const char *udi);
-
-void			nm_device_set_device_type (NMDevice *self,
-								  const NMDeviceType type);
-
 gboolean		nm_device_is_activated (NMDevice *dev);
 
 GMainContext *	nm_device_get_main_context (NMDevice *dev);
+
+NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
 
 #endif	/* NM_DEVICE_PRIVATE_H */

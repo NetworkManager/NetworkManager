@@ -40,6 +40,13 @@ typedef enum NMWirelessScanInterval
 	NM_WIRELESS_SCAN_INTERVAL_INACTIVE
 } NMWirelessScanInterval;
 
+typedef enum NMActStageReturn
+{
+	NM_ACT_STAGE_RETURN_FAILURE = 0,
+	NM_ACT_STAGE_RETURN_SUCCESS,
+	NM_ACT_STAGE_RETURN_POSTPONE
+} NMActStageReturn;
+
 
 G_BEGIN_DECLS
 
@@ -73,22 +80,21 @@ struct _NMDeviceClass
 
 	const char *	(* has_active_link)	(NMDevice *self);
 	void			(* set_active_link)	(NMDevice *self, gboolean active);
-	gboolean		(* probe_link)		(NMDevice *self);
-
-	guint32			(* get_ip4_address)	(NMDevice *self);
-	struct in6_addr *	(* get_ip6_address)	(NMDevice *self);
+	void			(* update_link)	(NMDevice *self);
 
 	void			(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
-	gboolean		(* is_up)			(NMDevice *self);
 
-	guint32		(* get_type_capabilities)		(NMDevice *self);
-	guint32		(* discover_generic_capabilities)	(NMDevice *self);
+	guint32		(* get_type_capabilities)	(NMDevice *self);
+	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
 	void			(* init)				(NMDevice *self);
 	void			(* start)				(NMDevice *self);
-	gboolean		(* activation_prepare)	(NMDevice *self, struct NMActRequest * req);
-	gboolean		(* activation_config)	(NMDevice *self, struct NMActRequest * req);
+	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest * req);
+	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest * req);
+	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
+											 struct NMActRequest * req,
+											 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* cancel_activation)	(NMDevice *self);
 };
@@ -102,7 +108,7 @@ NMDevice *	nm_device_new (const char *iface,
 						NMDeviceType test_dev_type,
 						struct NMData *app_data);
 
-void		nm_device_worker_thread_stop (NMDevice *self);
+void		nm_device_stop (NMDevice *self);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 

@@ -177,17 +177,21 @@ nm_device_new (const char *iface,
 	dev->priv->app_data = app_data;
 	dev->priv->type = type;
 
-	dev->priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->discover_generic_capabilities (dev);
+	dev->priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
+	if (!(dev->priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
+	{
+		g_object_unref (G_OBJECT (dev));
+		return  NULL;
+	}
 
 	/* Device thread's main loop */
 	dev->priv->context = g_main_context_new ();
 	dev->priv->loop = g_main_loop_new (dev->priv->context, FALSE);
 
 	/* Have to bring the device up before checking link status and other stuff */
-	nm_device_bring_up_wait (dev, 0);
+	nm_device_bring_up_wait (dev, FALSE);
 
-//	nm_device_set_active_link (dev, nm_device_probe_link_state (dev));
-//	nm_device_update_ip4_address (dev);
+	nm_device_update_ip4_address (dev);
 /* FIXME */
 #if 0
 	nm_device_update_hw_address (dev);
@@ -252,7 +256,7 @@ nm_device_init (NMDevice * self)
 }
 
 static guint32
-real_discover_generic_capabilities (NMDevice *dev)
+real_get_generic_capabilities (NMDevice *dev)
 {
 	return 0;
 }
@@ -295,9 +299,12 @@ nm_device_worker (gpointer user_data)
 
 
 void
-nm_device_worker_thread_stop (NMDevice *self)
+nm_device_stop (NMDevice *self)
 {
 	g_return_if_fail (self != NULL);
+
+	nm_device_deactivate (self);
+	nm_device_bring_down (self);
 
 	if (self->priv->loop)
 		g_main_loop_quit (self->priv->loop);
@@ -392,19 +399,6 @@ nm_device_get_udi (NMDevice *self)
 	return self->priv->udi;
 }
 
-void
-nm_device_set_udi (NMDevice *self,
-                   const char *udi)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (udi != NULL);
-
-	if (self->priv->udi)
-		g_free (self->priv->udi);
-	self->priv->udi = g_strdup (udi);
-}
-
-
 /*
  * Get/set functions for iface
  */
@@ -438,14 +432,6 @@ nm_device_get_device_type (NMDevice *self)
 	g_return_val_if_fail (self != NULL, DEVICE_TYPE_UNKNOWN);
 
 	return self->priv->type;
-}
-
-void
-nm_device_set_device_type (NMDevice *self, const NMDeviceType type)
-{
-	g_return_if_fail (self != NULL);
-
-	self->priv->type = type;
 }
 
 
@@ -604,44 +590,6 @@ nm_device_set_active_link (NMDevice *self,
 }
 
 
-static gboolean
-real_probe_link (NMDevice *dev)
-{
-	return FALSE;
-}
-
-/*
- * nm_device_probe_link_state
- *
- * Return the current link state of the device.
- *
- */
-gboolean
-nm_device_probe_link_state (NMDevice *self)
-{
-	gboolean	link = FALSE;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	if (!nm_device_is_up (self))
-		nm_device_bring_up (self);
-
-	link = NM_DEVICE_GET_CLASS (self)->probe_link (self);
-
-#if 0
-	if (nm_device_is_802_11_wireless (dev))
-	{
-		link = nm_device_probe_wireless_link_state (dev);
-		nm_device_update_signal_strength (dev);
-	}
-	else if (nm_device_is_802_3_ethernet (dev))
-		link = nm_device_probe_wired_link_state (dev);
-#endif
-
-	return link;
-}
-
-
 /*
  * nm_device_activation_start
  *
@@ -697,6 +645,7 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	NMAccessPoint *ap;
 	NMAPSecurity *	security;
 	const char *	iface;
+	NMActStageReturn	ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -709,13 +658,25 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 1 (Device Prepare) started...", iface);
 
-	NM_DEVICE_GET_CLASS (self)->activation_prepare (self, req);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, req);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+		goto out;
+	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
+	{
+		nm_policy_schedule_activation_failed (req);
+		goto out;
+	}
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
 	if (nm_device_activation_should_cancel (self))
+	{
 		nm_device_schedule_activation_handle_cancel (req);
-	else
-		nm_device_activate_schedule_stage2_device_config (req);
+		goto out;
+	}
 
+	nm_device_activate_schedule_stage2_device_config (req);
+
+out:
 	nm_info ("Activation (%s) Stage 1 (Device Prepare) complete.", iface);
 	return FALSE;
 }
@@ -747,18 +708,54 @@ nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
 	g_source_unref (source);
 }
 
-static gboolean
-real_activation_prepare (NMDevice *dev, NMActRequest *req)
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *dev, NMActRequest *req)
 {
 	/* Nothing to do */
-	return TRUE;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
-static gboolean
-real_activation_config (NMDevice *dev, NMActRequest *req)
+static NMActStageReturn
+real_act_stage2_config (NMDevice *dev, NMActRequest *req)
 {
 	/* Nothing to do */
-	return TRUE;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *self,
+                                NMActRequest *req,
+                                NMIP4Config **config)
+{
+	NMData *		data;
+	NMIP4Config *	real_config = NULL;
+	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	g_assert (req);
+	data = nm_act_request_get_data (req);
+	g_assert (data);
+
+	if (nm_device_get_use_dhcp (self))
+		real_config = nm_dhcp_manager_get_ip4_config (data->dhcp_manager, req);
+	else
+		real_config = nm_system_device_new_ip4_system_config (self);
+
+	if (real_config)
+	{
+		*config = real_config;
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+	else
+	{
+		/* Make sure device is up even if config fails */
+		if (!nm_device_is_up (self))
+			nm_device_bring_up (self);
+	}
+
+	return ret;
 }
 
 
@@ -775,6 +772,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	NMDevice *	self;
 	NMData *		data;
 	const char *	iface;
+	NMActStageReturn	ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -797,17 +795,25 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 		goto out;
 	}
 
-	if (!NM_DEVICE_GET_CLASS (self)->activation_config (self, req))
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, req);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+		goto out;
+	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
 		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	nm_info ("Activation (%s) Stage 2 (Device Configure) successful.", iface);
-	nm_device_activate_schedule_stage3_ip_config_start (req);
 
 	if (nm_device_activation_should_cancel (self))
+	{
 		nm_device_schedule_activation_handle_cancel (req);
+		goto out;
+	}
+
+	nm_device_activate_schedule_stage3_ip_config_start (req);
 
 out:
 	nm_info ("Activation (%s) Stage 2 (Device Configure) complete.", iface);
@@ -931,7 +937,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
  * Build up an IP config with a Link Local address
  *
  */
-static NMIP4Config *
+NMIP4Config *
 nm_device_new_ip4_autoip_config (NMDevice *self)
 {
 	struct in_addr		ip;
@@ -968,6 +974,7 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	NMDevice *		self = NULL;
 	NMAccessPoint *	ap = NULL;
 	NMIP4Config *		ip4_config = NULL;
+	NMActStageReturn	ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -977,12 +984,6 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	if (nm_device_is_802_11_wireless (self))
-	{
-		ap = nm_act_request_get_ap (req);
-		g_assert (ap);
-	}
-
 	nm_info ("Activation (%s) Stage 4 (IP Configure Get) started...", nm_device_get_iface (self));
 
 	if (nm_device_activation_should_cancel (self))
@@ -991,12 +992,15 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		goto out;
 	}
 
-	if (ap && nm_ap_get_user_created (ap))
-		ip4_config = nm_device_new_ip4_autoip_config (self);
-	else if (nm_device_get_use_dhcp (self))
-		ip4_config = nm_dhcp_manager_get_ip4_config (data->dhcp_manager, req);
-	else
-		ip4_config = nm_system_device_new_ip4_system_config (self);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, req, &ip4_config);
+	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
+		goto out;
+	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
+	{
+		nm_policy_schedule_activation_failed (req);
+		goto out;
+	}
+	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -1004,29 +1008,8 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		goto out;
 	}
 
-	if (ip4_config)
-	{
-		nm_act_request_set_ip4_config (req, ip4_config);
-		nm_device_activate_schedule_stage5_ip_config_commit (req);
-	}
-	else
-	{
-		/* Interfaces cannot be down if they are the active interface,
-		 * otherwise we cannot use them for scanning or link detection.
-		 */
-		if (nm_device_is_802_11_wireless (self))
-		{
-			NMDevice80211Wireless *wdev = NM_DEVICE_802_11_WIRELESS (self);
-
-			nm_device_802_11_wireless_set_essid (wdev, "");
-			nm_device_802_11_wireless_set_wep_enc_key (wdev, NULL, 0);
-		}
-
-		if (!nm_device_is_up (self))
-			nm_device_bring_up (self);
-
-		nm_policy_schedule_activation_failed (req);
-	}
+	nm_act_request_set_ip4_config (req, ip4_config);
+	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
 	nm_info ("Activation (%s) Stage 4 (IP Configure Get) complete.", nm_device_get_iface (self));
@@ -1206,7 +1189,8 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_system_device_add_ip6_link_address (self);
 		nm_system_restart_mdns_responder ();
 		nm_system_activate_nis (self->priv->ip4_config);
-		nm_device_set_active_link (self, nm_device_probe_link_state (self));
+		if (NM_DEVICE_GET_CLASS (self)->update_link)
+			NM_DEVICE_GET_CLASS (self)->update_link (self);
 		nm_policy_schedule_activation_finish (req);
 	}
 	else
@@ -1644,14 +1628,7 @@ nm_device_update_ip4_address (NMDevice *self)
 	g_return_if_fail (self->priv->app_data != NULL);
 	g_return_if_fail (nm_device_get_iface (self) != NULL);
 
-	/* Test devices get a nice, bogus IP address */
-	if (nm_device_is_test_device (self))
-	{
-		self->priv->ip4_address = 0x07030703;
-		return;
-	}
-
-	if ((sk = nm_dev_sock_open (self, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
+	if ((sk = nm_dev_sock_open (self, DEV_GENERAL, __func__, NULL)) == NULL)
 		return;
 
 	iface = nm_device_get_iface (self);
@@ -1693,7 +1670,7 @@ nm_device_set_up_down (NMDevice *self,
 	 */
 /* FIXME */
 #if 0
-	if (!nm_ethernet_address_is_valid (&(self->priv->hw_addr)))
+	if (up && !nm_ethernet_address_is_valid (&(self->priv->hw_addr)))
 		nm_device_update_hw_address (self);
 #endif
 }
@@ -1876,8 +1853,7 @@ nm_device_dispose (GObject *object)
 	 * reference.
 	 */
 
-	nm_device_worker_thread_stop (self);
-	nm_device_bring_down (self);
+	nm_device_stop (self);
 
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
 	if (self->priv->ip4_config)
@@ -1927,11 +1903,11 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->is_test_device = real_is_test_device;
 	klass->cancel_activation = real_cancel_activation;
 	klass->get_type_capabilities = real_get_type_capabilities;
-	klass->discover_generic_capabilities = real_discover_generic_capabilities;
+	klass->get_generic_capabilities = real_get_generic_capabilities;
 	klass->start = real_start;
-	klass->activation_prepare = real_activation_prepare;
-	klass->activation_config = real_activation_config;
-	klass->probe_link = real_probe_link;
+	klass->act_stage1_prepare = real_act_stage1_prepare;
+	klass->act_stage2_config = real_act_stage2_config;
+	klass->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 }

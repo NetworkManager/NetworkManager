@@ -114,9 +114,13 @@ static int	wireless_qual_to_percent (const struct iw_quality *qual,
 
 static gboolean	is_associated (NMDevice80211Wireless *self);
 
+static gboolean	link_to_specific_ap (NMDevice80211Wireless *self,
+								 NMAccessPoint *ap,
+								 gboolean default_link);
+
 
 static guint32
-real_discover_generic_capabilities (NMDevice *dev)
+real_get_generic_capabilities (NMDevice *dev)
 {
 	NMDevice80211Wireless *	wdev;
 	NMSock *			sk;
@@ -154,9 +158,9 @@ out:
 }
 
 static guint32
-discover_wireless_capabilities (NMDevice80211Wireless *self,
-                                iwrange * range,
-                                guint32 data_len)
+get_wireless_capabilities (NMDevice80211Wireless *self,
+                           iwrange * range,
+                           guint32 data_len)
 {
 	int		minlen;
 	guint32	caps = NM_802_11_CAP_NONE;
@@ -265,35 +269,86 @@ real_init (NMDevice *dev)
 			self->priv->we_version = range.we_version_compiled;
 
 			/* 802.11 wireless-specific capabilities */
-			self->priv->capabilities = discover_wireless_capabilities (self, &range, wrq.u.data.length);
+			self->priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
 		}
 		nm_dev_sock_close (sk);
 	}
 }
 
+
+static gboolean
+probe_link (NMDevice80211Wireless *self)
+{
+	gboolean		link = FALSE;
+	NMActRequest *	req;
+
+	if ((req = nm_device_get_act_request (NM_DEVICE (self))))
+	{
+		NMAccessPoint * ap;
+		if ((ap = nm_act_request_get_ap (req)))
+			link = link_to_specific_ap (self, ap, TRUE);
+	}
+
+	return link;
+}
+
+
+static void
+real_update_link (NMDevice *dev)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+
+	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+}
+
+
+/*
+ * nm_device_802_11_periodic_update
+ *
+ * Periodically update device statistics and link state.
+ *
+ */
+static gboolean
+nm_device_802_11_periodic_update (gpointer data)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (data);
+
+	g_return_val_if_fail (self != NULL, TRUE);
+
+	nm_device_802_11_wireless_update_signal_strength (self);
+	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+
+	return TRUE;
+}
+
+
 static void
 real_start (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	guint32				caps;
+	GSource *				source;
+	guint				source_id;
 
 	/* Start the scanning timeout for devices that can do scanning */
-	caps = nm_device_get_capabilities (dev);
-	if (caps & NM_DEVICE_CAP_WIRELESS_SCAN)
+	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN)
 	{
-		GSource			*source = g_idle_source_new ();
-		guint			 source_id = 0;
-		NMWirelessScanCB	*scan_cb;
+		NMWirelessScanCB *	scan_cb;
 
 		scan_cb = g_malloc0 (sizeof (NMWirelessScanCB));
 		scan_cb->dev = self;
 		scan_cb->force = TRUE;
 
+		source = g_idle_source_new ();
 		g_source_set_callback (source, nm_device_802_11_wireless_scan, scan_cb, NULL);
 		source_id = g_source_attach (source, nm_device_get_main_context (dev));
 		g_source_unref (source);
 	}
 
+	/* Peridoically update link status and signal strength */
+	source = g_timeout_source_new (2000);
+	g_source_set_callback (source, nm_device_802_11_periodic_update, self, NULL);
+	source_id = g_source_attach (source, nm_device_get_main_context (dev));
+	g_source_unref (source);
 }
 
 static void
@@ -875,12 +930,14 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 		else
 		{
 			if (errno != ENODEV)
+			{
 				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode: %s",
 					iface,
 					mode == IW_MODE_INFRA ? "Infrastructure" : \
 						(mode == IW_MODE_ADHOC ? "Ad-Hoc" : \
 							(mode == IW_MODE_AUTO ? "Auto" : "unknown")),
 					strerror (errno));
+			}
 		}
 		nm_dev_sock_close (sk);
 	}
@@ -1938,7 +1995,7 @@ set_wireless_config (NMDevice80211Wireless *self,
  * Create an ad-hoc network (rather than associating with one).
  *
  */
-static gboolean
+static NMActStageReturn
 wireless_configure_adhoc (NMDevice80211Wireless *self,
                           NMAccessPoint *ap,
                           NMActRequest *req)
@@ -1955,8 +2012,7 @@ wireless_configure_adhoc (NMDevice80211Wireless *self,
 	int				err;
 	const char *		iface;
 
-	g_return_val_if_fail (req != NULL, FALSE);
-
+	g_assert (req);
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
@@ -1969,9 +2025,7 @@ wireless_configure_adhoc (NMDevice80211Wireless *self,
 	for (i = 0; i < num_freqs; i++)
 		card_freqs[i] = self->priv->freqs[i];
 
-	/* We need to find a clear wireless channel to use.  We will
-	 * only use 802.11b channels for now.
-	 */
+	/* Compile a list of wireless channels that are currently in use */
 	iter = nm_ap_list_iter_new (nm_device_802_11_wireless_ap_list_get (self));
 	while ((tmp_ap = nm_ap_list_iter_next (iter)))
 	{
@@ -1985,13 +2039,13 @@ wireless_configure_adhoc (NMDevice80211Wireless *self,
 	nm_ap_list_iter_free (iter);
 
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __func__, NULL)) == NULL)
-		return FALSE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	err = iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range);
 	nm_dev_sock_close (sk);
 	if (err < 0)
-		return FALSE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	/* Ok, find the first non-zero freq in our table and use it.
 	 * For now we only try to use a channel in the 802.11b channel
@@ -2020,14 +2074,14 @@ wireless_configure_adhoc (NMDevice80211Wireless *self,
 	}
 
 	if (!freq_to_use)
-		return FALSE;
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	nm_ap_set_freq (ap, freq_to_use);
 
 	nm_info ("Will create network '%s' with frequency %f.", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
 	set_wireless_config (self, ap);
 
-	return TRUE;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 
@@ -2233,21 +2287,21 @@ ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
  * Configure a wireless device for association with a particular access point.
  *
  */
-static gboolean
+static NMActStageReturn
 wireless_configure_infra (NMDevice80211Wireless *self,
                           NMAccessPoint *ap,
                           NMActRequest *req)
 {
-	NMData *		data;
-	gboolean		success = FALSE;
-	const char *	iface;
+	NMData *			data;
+	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
+	const char *		iface;
+	gboolean			link = FALSE;
 
-	g_return_val_if_fail (req != NULL, FALSE);
-
+	g_assert (req);
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
-	nm_device_bring_up_wait (NM_DEVICE (self), 1);
+	nm_device_bring_up_wait (NM_DEVICE (self), TRUE);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) will connect to access point '%s'.",
@@ -2256,63 +2310,80 @@ wireless_configure_infra (NMDevice80211Wireless *self,
 	if (ap_need_key (self, ap))
 	{
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
-/* FIXME */
-/* Deal with stuff like this */
-		return FALSE;
+		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	while (success == FALSE)
-	{
-		gboolean	link = FALSE;
+	set_wireless_config (self, ap);
+	if (nm_device_wireless_wait_for_link (self, nm_ap_get_essid (ap)))
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
-		if (nm_device_activation_should_cancel (NM_DEVICE (self)))
-			break;
+	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
+		return NM_ACT_STAGE_RETURN_SUCCESS;
 
-		set_wireless_config (self, ap);
-
-		success = link = nm_device_wireless_wait_for_link (self, nm_ap_get_essid (ap));
-
-		if (nm_device_activation_should_cancel (NM_DEVICE (self)))
-			break;
-
-		if (!link)
-		{
-			nm_info ("Activation (%s/wireless): no hardware link to '%s'.",
-					iface, nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			break;
-		}
-	}
-
-	if (success)
+	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
 	{
 		nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) successful.  Connected to access point '%s'.",
 				iface, nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 	}
-/*
-What's this for again?
-	else if (!nm_device_activation_should_cancel (NM_DEVICE (self)) && (nm_act_request_get_stage (req) != NM_ACT_STAGE_NEED_USER_KEY))
-*/
+	else
+	{
+		nm_info ("Activation (%s/wireless): no hardware link to '%s'.",
+				iface, nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+	}
 
-	return success;
+	return ret;
 }
 
 
-static gboolean
-real_activation_config (NMDevice *dev, NMActRequest *req)
+static NMActStageReturn
+real_act_stage2_config (NMDevice *dev,
+                        NMActRequest *req)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
-	gboolean				success = FALSE;
+	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_assert (ap);
 
 	if (nm_ap_get_user_created (ap))
-		success = wireless_configure_adhoc (self, ap, req);
+		ret = wireless_configure_adhoc (self, ap, req);
 	else
-		success = wireless_configure_infra (self, ap, req);
+		ret = wireless_configure_infra (self, ap, req);
 
-	return success;
+	return ret;
 }
+
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *dev,
+                                NMActRequest *req,
+                                NMIP4Config **config)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMIP4Config *			real_config = NULL;
+
+	g_assert (ap);
+	if (nm_ap_get_user_created (ap))
+	{
+		real_config = nm_device_new_ip4_autoip_config (NM_DEVICE (self));
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	}
+	else
+	{
+		NMDevice80211WirelessClass *	klass;
+		NMDeviceClass * parent_class;
+
+		/* Chain up to parent */
+		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+		ret = parent_class->act_stage4_get_ip4_config (dev, req, &real_config);
+	}
+
+	return ret;
+}
+
 
 static guint32
 real_get_type_capabilities (NMDevice *dev)
@@ -2320,26 +2391,6 @@ real_get_type_capabilities (NMDevice *dev)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
 	return self->priv->capabilities;
-}
-
-
-static gboolean
-real_probe_link (NMDevice *dev)
-{
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	gboolean				link = FALSE;
-	NMAccessPoint *		ap;
-	NMActRequest *			req;
-
-	if ((req = nm_device_get_act_request (dev)))
-	{
-		if ((ap = nm_act_request_get_ap (req)))
-			link = link_to_specific_ap (self, ap, TRUE);
-	}
-
-	nm_device_802_11_wireless_update_signal_strength (self);
-
-	return link;
 }
 
 
@@ -2397,12 +2448,12 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	object_class->finalize = nm_device_802_11_wireless_finalize;
 
 	parent_class->get_type_capabilities = real_get_type_capabilities;
-	parent_class->discover_generic_capabilities = real_discover_generic_capabilities;
+	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->init = real_init;
 	parent_class->start = real_start;
 	parent_class->deactivate = real_deactivate;
-	parent_class->activation_config = real_activation_config;
-	parent_class->probe_link = real_probe_link;
+	parent_class->act_stage2_config = real_act_stage2_config;
+	parent_class->update_link = real_update_link;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }

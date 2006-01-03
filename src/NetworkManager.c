@@ -165,8 +165,7 @@ void nm_remove_device (NMData *data, NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 
 	nm_device_set_removed (dev, TRUE);
-	nm_device_deactivate (dev);
-	nm_device_worker_thread_stop (dev);
+	nm_device_stop (dev);
 	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
 
 	g_object_unref (G_OBJECT (dev));
@@ -531,77 +530,15 @@ static void nm_print_usage (void)
 		"\n");
 }
 
-/*
- * nm_poll_and_update_wireless_link_state
- *
- * Called every 2s to poll wireless cards and determine if they have a link
- * or not.
- *
- */
-static gboolean nm_poll_and_update_wireless_link_state (NMData *data)
-{
-	GSList *		elt;
-	GSList *		copy = NULL;
-	NMDevice *	dev;
-
-	g_return_val_if_fail (data != NULL, TRUE);
-
-	if ((data->wireless_enabled == FALSE) || (data->asleep == TRUE))
-		return (TRUE);
-
-	/* Copy device list and ref devices to keep them around */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-	{
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-		{
-			if ((dev = (NMDevice *)(elt->data)))
-			{
-				g_object_ref (G_OBJECT (dev));
-				copy = g_slist_append (copy, dev);
-			}
-		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	}
-
-	for (elt = copy; elt; elt = g_slist_next (elt))
-	{
-		if ((dev = (NMDevice *)(elt->data)))
-		{
-			if (nm_device_is_802_11_wireless (dev) && !nm_device_is_activating (dev))
-			{
-				NMDevice80211Wireless *wdev = NM_DEVICE_802_11_WIRELESS (dev);
-				nm_device_set_active_link (dev, nm_device_probe_link_state (dev));
-				nm_device_802_11_wireless_update_signal_strength (wdev);
-			}
-			g_object_unref (G_OBJECT (dev));
-		}
-	}
-
-	g_slist_free (copy);
-	
-	return TRUE;
-}
-
-static void nm_monitor_wireless_link_state (NMData *data)
-{
-	GSource *link_source;
-	link_source = g_timeout_source_new (NM_WIRELESS_LINK_STATE_POLL_INTERVAL);
-	g_source_set_callback (link_source, 
-			       (GSourceFunc) nm_poll_and_update_wireless_link_state, 
-			       data, NULL);
-	g_source_attach (link_source, nm_data->main_context);
-	g_source_unref (link_source);
-}
-
 static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
 {
 	NMDevice *dev = NULL;
 
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __func__))
 	{
 		if ((dev = nm_get_device_by_iface (data, interface_name)))
 			g_object_ref (G_OBJECT (dev));
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		nm_unlock_mutex (data->dev_list_mutex, __func__);
 	}
 
 	/* Don't do anything if we already have a link */
@@ -620,11 +557,11 @@ static void nm_device_link_deactivated (NmNetlinkMonitor *monitor, const gchar *
 {
 	NMDevice *dev = NULL;
 
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	if (nm_try_acquire_mutex (data->dev_list_mutex, __func__))
 	{
 		if ((dev = nm_get_device_by_iface (data, interface_name)))
 			g_object_ref (G_OBJECT (dev));
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		nm_unlock_mutex (data->dev_list_mutex, __func__);
 	}
 
 	if (dev)
@@ -940,7 +877,6 @@ int main( int argc, char *argv[] )
 	nm_system_enable_loopback ();
 
 	/* Create watch functions that monitor cards for link status. */
-	nm_monitor_wireless_link_state (nm_data);
 	nm_monitor_wired_link_state (nm_data);
 
 	/* Get modems, ISDN, and so on's configuration from the system */

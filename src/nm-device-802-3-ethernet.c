@@ -41,6 +41,7 @@ struct _NMDevice8023EthernetPrivate
 	gboolean	dispose_has_run;
 
 	struct ether_addr	hw_addr;
+	char *			carrier_file_path;
 };
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
@@ -54,6 +55,81 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	self->priv->dispose_has_run = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
+}
+
+
+static gboolean
+probe_link (NMDevice8023Ethernet *self)
+{
+	gboolean				link = FALSE;
+	gchar *				contents;
+	gsize				length;
+	guint32				caps;
+
+	if (nm_device_get_removed (NM_DEVICE (self)))
+		return FALSE;
+
+	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL))
+	{
+		link = (gboolean) atoi (contents);
+		g_free (contents);
+	}
+
+	/* We say that non-carrier-detect devices always have a link, because
+	 * they never get auto-selected by NM.  User has to force them on us,
+	 * so we just hope the user knows whether or not the cable's plugged in.
+	 */
+	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+		link = TRUE;
+
+	return link;
+}
+
+
+static void
+real_update_link (NMDevice *dev)
+{
+	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
+
+	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+}
+
+
+/*
+ * nm_device_802_3_periodic_update
+ *
+ * Periodically update device statistics and link state.
+ *
+ */
+static gboolean
+nm_device_802_3_periodic_update (gpointer data)
+{
+	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (data);
+
+	g_return_val_if_fail (self != NULL, TRUE);
+
+	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+
+	return TRUE;
+}
+
+
+static void
+real_start (NMDevice *dev)
+{
+	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
+	GSource *				source;
+	guint				source_id;
+
+	self->priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
+			nm_device_get_iface (NM_DEVICE (dev)));
+
+	/* Peridoically update link status and signal strength */
+	source = g_timeout_source_new (2000);
+	g_source_set_callback (source, nm_device_802_3_periodic_update, self, NULL);
+	source_id = g_source_attach (source, nm_device_get_main_context (dev));
+	g_source_unref (source);
 }
 
 
@@ -74,7 +150,7 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_a
 
 
 static guint32
-real_discover_generic_capabilities (NMDevice *dev)
+real_get_generic_capabilities (NMDevice *dev)
 {
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
 	guint32		caps = NM_DEVICE_CAP_NONE;
@@ -102,52 +178,18 @@ real_discover_generic_capabilities (NMDevice *dev)
 	return caps;
 }
 
-static gboolean
-real_activation_config (NMDevice *dev, NMActRequest *req)
+static NMActStageReturn
+real_act_stage2_config (NMDevice *dev, NMActRequest *req)
 {
 	NMData *	data;
 
-	g_return_val_if_fail (req != NULL, FALSE);
-
+	g_assert (req);
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
 	return TRUE;
 }
 
-
-static gboolean
-real_probe_link (NMDevice *dev)
-{
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-	gboolean				link = FALSE;
-	gchar *				contents;
-	gchar *				carrier_path;
-	gsize				length;
-	guint32				caps;
-
-	if (nm_device_get_removed (dev))
-		return FALSE;
-
-	carrier_path = g_strdup_printf ("/sys/class/net/%s/carrier", nm_device_get_iface (dev));
-	if (g_file_get_contents (carrier_path, &contents, &length, NULL))
-	{
-		link = (gboolean) atoi (contents);
-		g_free (contents);
-	}
-	g_free (carrier_path);
-
-	/* We say that non-carrier-detect devices always have a link, because
-	 * they never get auto-selected by NM.  User has to force them on us,
-	 * so we just hope the user knows whether or not the cable's plugged in.
-	 */
-	caps = nm_device_get_capabilities (dev);
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-		link = TRUE;
-
-	return link;
-
-}
 
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
@@ -182,6 +224,8 @@ nm_device_802_3_ethernet_finalize (GObject *object)
 	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
 	NMDeviceClass *			parent_class;  
 
+	g_free (self->priv->carrier_file_path);
+
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 	G_OBJECT_CLASS (parent_class)->finalize (object);
@@ -197,9 +241,10 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
-	parent_class->activation_config = real_activation_config;
-	parent_class->discover_generic_capabilities = real_discover_generic_capabilities;
-	parent_class->probe_link = real_probe_link;
+	parent_class->act_stage2_config = real_act_stage2_config;
+	parent_class->get_generic_capabilities = real_get_generic_capabilities;
+	parent_class->start = real_start;
+	parent_class->update_link = real_update_link;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }
