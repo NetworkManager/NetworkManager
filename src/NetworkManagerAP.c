@@ -579,6 +579,10 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 		return;
 
 	caps = nm_ap_get_capabilities (ap);
+
+	/* Mark WEP as unsupported, if it's supported it will be added below */
+	caps &= ~NM_802_11_CAP_PROTO_WEP;
+
 	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA)
 	{
 		caps |= NM_802_11_CAP_PROTO_WPA;

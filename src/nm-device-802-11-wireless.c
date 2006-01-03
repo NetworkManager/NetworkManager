@@ -2836,7 +2836,13 @@ process_scan_results (NMDevice80211Wireless *dev,
 				break;
 			case SIOCGIWENCODE:
 				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
-					nm_ap_add_capabilities_for_wep (ap);
+				{
+					/* Only add WEP capabilities if this AP doesn't have
+					 * any encryption capabilities yet.
+					 */
+					if (nm_ap_get_capabilities (ap) & NM_802_11_CAP_PROTO_NONE)
+						nm_ap_add_capabilities_for_wep (ap);
+				}
 				break;
 #if 0
 			case SIOCGIWRATE:

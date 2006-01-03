@@ -1,5 +1,15 @@
 2006-01-03  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (nm_ap_add_capabilities_from_ie): presume no WEP unless
+			the WPA IE specifies that WEP is supported
+
+	* src/nm-device-802-11-wireless.c
+		- (process_scan_results): don't mark an AP as supporting WEP
+			if there's already other encryption capability info
+
+2006-01-03  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- Recognize activation cancellation when waiting for DHCP
 			configuration from dhcdbd
