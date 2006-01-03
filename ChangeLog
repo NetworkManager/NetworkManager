@@ -1,4 +1,4 @@
-2006-1-3  Dan Williams  <dcbw@redhat.com>
+2006-01-03  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
 	  src/nm-device.[ch]
@@ -16,7 +16,7 @@
 	  latter cannot differentiate between error and the address -1; misc.
 	  clean up.
 
-2006-1-3  Dan Williams  <dcbw@redhat.com>
+2006-01-03  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
 		- Move link-checking/probing into the device subclasses
@@ -33,7 +33,7 @@
 			NMActStageReturn to indicate what step to perform next
 		- Devices now override stage4_get_ip4_config if they choose
 
-2006-1-1  Dan Williams  <dcbw@redhat.com>
+2006-01-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
 		- (real_init): don't chain up to parent init because we don't
@@ -47,7 +47,7 @@
 		- (real_init): remove, consolidated to nm_device_new()
 		- (nm_device_deactivate, real_deactivate): consolidate
 
-2006-1-1  Dan Williams  <dcbw@redhat.com>
+2006-01-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-activation-request.c
 		- Change dhcp_state member of the NMActRequest structure
