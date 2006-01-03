@@ -542,8 +542,12 @@ void
 nm_device_set_active_link (NMDevice *self,
                            const gboolean link_active)
 {
+	NMData *	app_data;
+
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (self->priv->app_data != NULL);
+
+	app_data = self->priv->app_data;
 
 	if (self->priv->link_active != link_active)
 	{
@@ -553,11 +557,11 @@ nm_device_set_active_link (NMDevice *self,
 		if (!link_active && self->priv->act_request)
 		{
 			nm_device_deactivate (self);
-			nm_policy_schedule_device_change_check (self->priv->app_data);
+			nm_policy_schedule_device_change_check (app_data);
 		}
 		else if (link_active && !self->priv->act_request)
 		{
-			NMDevice *	act_dev = nm_get_active_device (self->priv->app_data);
+			NMDevice *	act_dev = nm_get_active_device (app_data);
 			NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
 
 			/* Should we switch to this device now that it has a link?
@@ -578,14 +582,14 @@ nm_device_set_active_link (NMDevice *self,
 				if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
 					do_switch = TRUE;
 
-				if (do_switch && (act_req = nm_act_request_new (self->priv->app_data, self, NULL, TRUE)))
+				if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE)))
 				{
 					nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));
-					nm_policy_schedule_device_activation (act_req);
+					nm_policy_schedule_device_change_check (app_data);
 				}
 			}
 		}
-		nm_dbus_schedule_device_status_change_signal	(self->priv->app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
+		nm_dbus_schedule_device_status_change_signal	(app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 	}
 }
 
@@ -1576,6 +1580,29 @@ nm_device_activation_should_cancel (NMDevice *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	return (self->priv->quit_activation);
+}
+
+
+void
+nm_device_activation_failure_handler (NMDevice *self,
+                                      struct NMActRequest *req)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (req != NULL);
+
+	if (NM_DEVICE_GET_CLASS (self)->activation_failure_handler)
+		NM_DEVICE_GET_CLASS (self)->activation_failure_handler (self, req);
+}
+
+
+void nm_device_activation_success_handler (NMDevice *self,
+                                           struct NMActRequest *req)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (req != NULL);
+
+	if (NM_DEVICE_GET_CLASS (self)->activation_success_handler)
+		NM_DEVICE_GET_CLASS (self)->activation_success_handler (self, req);
 }
 
 

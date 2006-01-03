@@ -102,6 +102,11 @@ struct _NMDeviceClass
 												 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* cancel_activation)	(NMDevice *self);
+
+	void			(* activation_failure_handler)	(NMDevice *self,
+											 struct NMActRequest *req);
+	void			(* activation_success_handler)	(NMDevice *self,
+											 struct NMActRequest *req);
 };
 
 
@@ -178,6 +183,11 @@ gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 void			nm_device_activation_cancel	(NMDevice *dev);
 gboolean		nm_device_activation_should_cancel (NMDevice *self);
+
+void			nm_device_activation_failure_handler	(NMDevice *dev,
+											 struct NMActRequest *req);
+void			nm_device_activation_success_handler	(NMDevice *dev,
+											 struct NMActRequest *req);
 
 G_END_DECLS
 

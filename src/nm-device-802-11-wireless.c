@@ -2377,6 +2377,8 @@ real_act_stage3_ip_config_start (NMDevice *dev,
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage3_ip_config_start (dev, req);
 	}
+	else
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	return ret;
 }
@@ -2465,6 +2467,54 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 }
 
 
+static void
+real_activation_success_handler (NMDevice *dev,
+                                 NMActRequest *req)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	struct ether_addr	addr;
+	NMAccessPoint *	ap = nm_act_request_get_ap (req);
+	NMAccessPoint *	tmp_ap;
+	gboolean			automatic;
+	NMData *			app_data;
+
+	app_data = nm_act_request_get_data (req);
+	g_assert (app_data);
+
+	/* Cache details in the info-daemon since the connect was successful */
+	automatic = !nm_act_request_get_user_requested (req);
+
+	nm_device_802_11_wireless_get_bssid (self, &addr);
+	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
+		nm_ap_set_address (ap, &addr);
+
+	nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
+}
+
+
+static void
+real_activation_failure_handler (NMDevice *dev,
+                                 NMActRequest *req)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMData *			app_data;
+	NMAccessPoint *	ap;
+
+	app_data = nm_act_request_get_data (req);
+	g_assert (app_data);
+
+	if ((ap = nm_act_request_get_ap (req)))
+	{
+		/* Add the AP to the invalid list and force a best ap update */
+		nm_ap_set_invalid (ap, TRUE);
+		nm_ap_list_append_ap (app_data->invalid_ap_list, ap);
+	}
+
+	nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),
+			ap ? nm_ap_get_essid (ap) : "(none)");
+}
+
+
 static guint32
 real_get_type_capabilities (NMDevice *dev)
 {
@@ -2538,6 +2588,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
 	parent_class->deactivate = real_deactivate;
+
+	parent_class->activation_failure_handler = real_activation_failure_handler;
+	parent_class->activation_success_handler = real_activation_success_handler;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }

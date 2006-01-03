@@ -60,24 +60,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	/* Tell NetworkManagerInfo to store the MAC address of the active device's AP */
-	if (nm_device_is_802_11_wireless (dev))
-	{
-		NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
-		struct ether_addr	addr;
-		NMAccessPoint *	ap = nm_act_request_get_ap (req);
-		NMAccessPoint *	tmp_ap;
-		gboolean			automatic;
-
-		/* Cache details in the info-daemon since the connect was successful */
-		automatic = !nm_act_request_get_user_requested (req);
-
-		nm_device_802_11_wireless_get_bssid (wdev, &addr);
-		if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
-			nm_ap_set_address (ap, &addr);
-
-		nm_dbus_update_network_info (data->dbus_connection, ap, automatic);
-	}
+	nm_device_activation_success_handler (dev, req);
 
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
 	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_NOW_ACTIVE);
@@ -124,9 +107,8 @@ void nm_policy_schedule_activation_finish (NMActRequest *req)
  */
 static gboolean nm_policy_activation_failed (NMActRequest *req)
 {
-	NMDevice			*dev = NULL;
-	NMAccessPoint		*ap = NULL;
-	NMData			*data = NULL;
+	NMDevice *	dev = NULL;
+	NMData *		data = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -136,29 +118,10 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	if (nm_device_is_802_11_wireless (dev))
-	{
-		if ((ap = nm_act_request_get_ap (req)))
-		{
-			/* Only pop up the Network Not Found dialog when its a user-requested access point
-			 * that failed, not one that we've automatically found and connected to.
-			 */
-			if (nm_act_request_get_user_requested (req))
-				nm_dbus_schedule_device_status_change_signal	(data, dev, ap, DEVICE_ACTIVATION_FAILED);
+	nm_device_activation_failure_handler (dev, req);
 
-			/* Add the AP to the invalid list and force a best ap update */
-			nm_ap_set_invalid (ap, TRUE);
-			nm_ap_list_append_ap (data->invalid_ap_list, ap);
-		}
-
-		nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),
-				ap ? nm_ap_get_essid (ap) : "(none)");
-	}
-	else
-	{
-		nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
-		nm_dbus_schedule_device_status_change_signal	(data, dev, NULL, DEVICE_ACTIVATION_FAILED);
-	}
+	nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
+	nm_dbus_schedule_device_status_change_signal	(data, dev, NULL, DEVICE_ACTIVATION_FAILED);
 
 	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data);
@@ -437,7 +400,6 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		NMActRequest *	act_req = NULL;
 
 		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE)))
-
 		{
 			nm_info ("Will activate connection '%s%s%s'.", nm_device_get_iface (new_dev), ap ? "/" : "", ap ? nm_ap_get_essid (ap) : "");
 			nm_policy_schedule_device_activation (act_req);
