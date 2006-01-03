@@ -137,8 +137,8 @@ static WirelessSecurityOption * get_active_option_from_combo (GtkComboBox *combo
 
 	model = gtk_combo_box_get_model (combo);
 	g_assert (model);
-	gtk_combo_box_get_active_iter (combo, &iter);
-	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
+	if (gtk_combo_box_get_active_iter (combo, &iter))
+		gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
 
 	return opt;
 }
