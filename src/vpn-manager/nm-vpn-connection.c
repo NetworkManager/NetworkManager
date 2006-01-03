@@ -124,11 +124,12 @@ gboolean nm_vpn_connection_set_config (NMVPNConnection *connection, const char *
 	char **	routes;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (vpn_iface != NULL, FALSE);
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (ip4_config != NULL, FALSE);
 
-	nm_vpn_connection_set_vpn_iface (connection, vpn_iface);
+	/* IPsec VPNs will not have tunnel device */
+	if (vpn_iface != NULL)
+		nm_vpn_connection_set_vpn_iface (connection, vpn_iface);
 	nm_vpn_connection_set_parent_device (connection, dev);
 	nm_vpn_connection_set_ip4_config (connection, ip4_config);
 

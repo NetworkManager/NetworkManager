@@ -269,71 +269,73 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 	struct rtnl_addr *	addr = NULL;
 	struct rtnl_link *	request = NULL;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
 		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF);
 
-	nm_system_device_set_up_down_with_iface (NULL, iface, TRUE);
-
-	nlh = new_nl_handle ();
-
-	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT)))
+	if (iface != NULL)
 	{
-		int err = 0;
-		iface_to_rtnl_index (iface, nlh, addr);
-		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-			nm_warning ("nm_system_device_set_from_ip4_config(): error %d returned from rtnl_addr_add().\n", err);
-		rtnl_addr_put (addr);
-	}
-	else
-		nm_warning ("nm_system_vpn_device_set_from_ip4_config(): couldn't create rtnl address!\n");
+		nm_system_device_set_up_down_with_iface (NULL, iface, TRUE);
 
-	/* Set the MTU */
-	if ((request = rtnl_link_alloc ()))
-	{
-		struct rtnl_link * old;
+		nlh = new_nl_handle ();
 
-		old = iface_to_rtnl_link (iface, nlh);
-		rtnl_link_set_mtu (request, 1412);
-		rtnl_link_change (nlh, old, request, 0);
-
-		rtnl_link_put (old);
-		rtnl_link_put (request);
-	}
-
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
-
-	sleep (1);
-
-	nm_system_device_flush_routes_with_iface (iface);
-	if (num_routes <= 0)
-	{
-		nm_system_delete_default_route ();
-		nm_system_device_add_default_route_via_device_with_iface (iface);
-	}
-	else
-	{
-		int i;
-		for (i = 0; i < num_routes; i++)
+		if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT)))
 		{
-			char *valid_ip4_route;
+			int err = 0;
+			iface_to_rtnl_index (iface, nlh, addr);
+			if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
+				nm_warning ("nm_system_device_set_from_ip4_config(): error %d returned from rtnl_addr_add().\n", err);
+			rtnl_addr_put (addr);
+		}
+		else
+			nm_warning ("nm_system_vpn_device_set_from_ip4_config(): couldn't create rtnl address!\n");
 
-			/* Make sure the route is valid, otherwise it's a security risk as the route
-			 * text is simply taken from the user, and passed directly to system().  If
-			 * we did not check the route, think of:
-			 *
-			 *     system("/sbin/ip route add `rm -rf /` dev eth0")
-			 *
-			 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
-			 */
-			if ((valid_ip4_route = validate_ip4_route (routes[i])))
+		/* Set the MTU */
+		if ((request = rtnl_link_alloc ()))
+		{
+			struct rtnl_link * old;
+
+			old = iface_to_rtnl_link (iface, nlh);
+			rtnl_link_set_mtu (request, 1412);
+			rtnl_link_change (nlh, old, request, 0);
+
+			rtnl_link_put (old);
+			rtnl_link_put (request);
+		}
+
+		nl_close (nlh);
+		nl_handle_destroy (nlh);
+
+		sleep (1);
+
+		nm_system_device_flush_routes_with_iface (iface);
+		if (num_routes <= 0)
+		{
+			nm_system_delete_default_route ();
+			nm_system_device_add_default_route_via_device_with_iface (iface);
+		}
+		else
+		{
+			int i;
+			for (i = 0; i < num_routes; i++)
 			{
-				nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
-				g_free (valid_ip4_route);
+				char *valid_ip4_route;
+
+				/* Make sure the route is valid, otherwise it's a security risk as the route
+				 * text is simply taken from the user, and passed directly to system().  If
+				 * we did not check the route, think of:
+				 *
+				 *     system("/sbin/ip route add `rm -rf /` dev eth0")
+				 *
+				 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
+				 */
+				if ((valid_ip4_route = validate_ip4_route (routes[i])))
+				{
+					nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
+					g_free (valid_ip4_route);
+				}
 			}
 		}
 	}

@@ -1,3 +1,11 @@
+2006-01-03  Robert Love  <rml@novell.com>
+
+	Patch by Preggna S:
+	* src/NetworkManagerSystem.c, src/vpn-manager/nm-vpn-connection.c:
+	  IPsec does not require that a VPN client be bound to an interface,
+	  due to the use of the in-kernel IPSec bits.  So make the tunnel
+	  device optional.
+
 2006-01-03  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c
