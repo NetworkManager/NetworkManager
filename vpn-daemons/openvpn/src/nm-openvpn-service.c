@@ -438,7 +438,6 @@ static gboolean
 nm_openvpn_connect_timer_cb (NmOpenVPNData *data)
 {
   struct sockaddr_in     serv_addr;
-  int                    tries = 0;
   gboolean               connected = FALSE;
   gint                   socket_fd = -1;
   NmOpenVPN_IOData      *io_data;
@@ -1517,10 +1516,11 @@ main( int argc, char *argv[] )
 
   vpn_data->loop = g_main_loop_new (NULL, FALSE);
 
-  system ("/sbin/modprobe tun");
+  if (system ("/sbin/modprobe tun") == -1)
+    exit (EXIT_FAILURE);
 
   if (!(vpn_data->con = nm_openvpn_dbus_init (vpn_data)))
-    exit (1);
+    exit (EXIT_FAILURE);
 
   action.sa_handler = sigterm_handler;
   sigemptyset (&block_mask);
@@ -1537,5 +1537,5 @@ main( int argc, char *argv[] )
   g_main_loop_unref (vpn_data->loop);
   g_free (vpn_data);
 
-  exit (0);
+  exit (EXIT_SUCCESS);
 }

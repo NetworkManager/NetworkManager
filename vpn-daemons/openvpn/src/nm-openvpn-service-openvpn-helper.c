@@ -199,7 +199,7 @@ static gboolean send_config_info (DBusConnection *con,
  *
  */
 
-
+#if 0	/* FIXME: Nothing uses this and it is static */
 /** Prints all environment variables to /tmp/environ
  */
 static void
@@ -212,6 +212,7 @@ print_env()
   }
   fclose(f);
 }
+#endif
 
 
 /*
