@@ -77,6 +77,7 @@ nm_applet_SOURCES =			\
 	wso-wpa-psk-passphrase.h	\
 	nm-gconf-wso.c			\
 	nm-gconf-wso.h			\
+	nm-gconf-wso-private.h	\
 	nm-gconf-wso-wep.c		\
 	nm-gconf-wso-wep.h		\
 	nm-gconf-wso-wpa-psk.c	\
