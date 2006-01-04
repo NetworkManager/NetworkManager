@@ -71,12 +71,12 @@ child_stdout_data_cb (GIOChannel *source, GIOCondition condition, gpointer userd
 			if (++io_user_data->num_newlines == 2) {
 				char buf[1];
 				/* terminate the child */
-				write (io_user_data->child_stdin, buf, sizeof (buf));
-			}			
+				if (write (io_user_data->child_stdin, buf, sizeof (buf)) == -1)
+					goto out;
+			}
 		} else if (len > 0) {
 			/* remove terminating newline */
 			str[len - 1] = '\0';
-
 			*passwords = g_slist_append (*passwords, str);
 		}
 	}
