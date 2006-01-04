@@ -601,7 +601,6 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	gboolean			handled = FALSE;
 	NMDevice *		dev;
 	NMActRequest *		req = NULL;
-	const char *		signature;
 
 	g_return_val_if_fail (manager != NULL, FALSE);
 	g_return_val_if_fail (message != NULL, FALSE);
@@ -617,8 +616,10 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 		return FALSE;
 
 #if 0
-	signature = dbus_message_get_signature (message);
-	nm_info ("nm_dhcp_manager_process_signal(): got signal op='%s' member='%s' interface='%s' sig='%s'", object_path, member, interface, signature);
+	{
+		const char *signature = dbus_message_get_signature (message);
+		nm_info ("nm_dhcp_manager_process_signal(): got signal op='%s' member='%s' interface='%s' sig='%s'", object_path, member, interface, signature);
+	}
 #endif
 
 	dev = nm_get_device_by_iface (manager->data, member);
