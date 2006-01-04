@@ -1,3 +1,12 @@
+2006-01-04  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerDialup.h: add 'type' field and NM_DIALUP_TYPE
+	  values so that distribution-backends can differentiate between the
+	  various types (modem, ISDN, et cetera) of dialup device that they
+	  support.
+	* src/backends/NetworkManagerSuSE.c: perform isdnctrl on interface, as
+	  needed.
+
 2006-01-03  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
