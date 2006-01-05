@@ -29,6 +29,7 @@
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
 #include "nm-device-802-11-wireless.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_AP_SECURITY_WPA_PSK_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WPA_PSK, NMAPSecurityWPA_PSKPrivate))
 
@@ -37,6 +38,16 @@ struct _NMAPSecurityWPA_PSKPrivate
 	int		wpa_version;
 	int		key_mgt;
 };
+
+static void set_description (NMAPSecurityWPA_PSK *security)
+{
+	NMAPSecurity * parent = NM_AP_SECURITY (security);
+
+	if (nm_ap_security_get_we_cipher (parent) == IW_AUTH_CIPHER_TKIP)
+		nm_ap_security_set_description (parent, _("WPA TKIP"));
+	else
+		nm_ap_security_set_description (parent, _("WPA CCMP"));
+}
 
 NMAPSecurityWPA_PSK *
 nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
@@ -61,12 +72,33 @@ nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgt = key_mgt;
 
-	if (we_cipher == IW_AUTH_CIPHER_TKIP)
-		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA TKIP"));
-	else
-		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA CCMP"));
+	set_description (security);
 
 out:
+	return security;
+}
+
+NMAPSecurityWPA_PSK *
+nm_ap_security_wpa_psk_new_from_ap (NMAccessPoint *ap, int we_cipher)
+{
+	NMAPSecurityWPA_PSK *	security = NULL;
+	guint32				caps;
+
+	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (we_cipher == IW_AUTH_CIPHER_TKIP || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+
+	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_PSK, NULL);
+	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
+
+	caps = nm_ap_get_capabilities (ap);
+	if (caps & NM_802_11_CAP_PROTO_WPA2)
+		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA2;
+	else if (caps & NM_802_11_CAP_PROTO_WPA)
+		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA;
+	security->priv->key_mgt = IW_AUTH_KEY_MGMT_PSK;
+
+	set_description (security);
+
 	return security;
 }
 
@@ -83,10 +115,71 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 	return 0;
 }
 
-static void 
-real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
+static gboolean 
+real_write_supplicant_config (NMAPSecurity *instance,
+                              struct wpa_ctrl *ctrl,
+                              int nwid)
 {
 	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
+	gboolean			success = FALSE;
+	char *			msg = NULL;
+	const char *		key = nm_ap_security_get_key (instance);
+	int				cipher = nm_ap_security_get_we_cipher (instance);
+
+	/* WPA-PSK network setup */
+
+	/* wpa_cli -ieth1 set_network 0 key_mgmt WPA-PSK */
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i key_mgmt WPA-PSK", nwid))
+		goto out;
+
+	msg = g_strdup_printf ("SET_NETWORK %i psk <key>", nwid);
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
+			"SET_NETWORK %i psk %s", nwid, key))
+	{
+		g_free (msg);
+		goto out;
+	}
+	g_free (msg);
+
+	if (cipher == IW_AUTH_CIPHER_TKIP)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i pairwise TKIP", nwid))
+			goto out;
+
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i group TKIP", nwid))
+			goto out;
+	}
+	else
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i pairwise CCMP", nwid))
+			goto out;
+
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i group CCMP", nwid))
+			goto out;
+	}
+
+	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i proto WPA", nwid))
+			goto out;
+	}
+	else if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA2)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i proto WPA2", nwid))
+			goto out;
+	}
+
+	success = TRUE;
+
+out:
+	return success;
 }
 
 static int 
@@ -124,7 +217,7 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
-	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	par_class->write_supplicant_config_func = real_write_supplicant_config;
 	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWPA_PSKPrivate));

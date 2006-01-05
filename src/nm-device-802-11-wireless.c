@@ -26,6 +26,8 @@
 #include <string.h>
 #include <net/ethernet.h>
 #include <iwlib.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
@@ -37,6 +39,7 @@
 #include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
 #include "nm-dbus-nmi.h"
+#include "wpa_ctrl.h"
 
 /* #define IW_QUAL_DEBUG */
 
@@ -63,6 +66,12 @@ struct _NMDevice80211WirelessPrivate
 	NMAccessPointList *	ap_list;
 	guint8			scan_interval; /* seconds */
 	guint32			last_scan;
+
+	/* Supplicant control */
+	GPid				sup_pid;
+	GSource *			sup_watch;
+	GSource *			sup_status;
+	struct wpa_ctrl *	sup_ctrl;
 
 	/* Static options from driver */
 	guint8			we_version;
@@ -207,6 +216,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv->dispose_has_run = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
+	self->priv->sup_pid = -1;
 }
 
 static void
@@ -2334,6 +2344,224 @@ wireless_configure_infra (NMDevice80211Wireless *self,
 	return ret;
 }
 
+
+/****************************************************************************/
+/* WPA Supplicant control stuff
+ *
+ * Originally from:
+ *
+ *	wpa_supplicant wrapper
+ *
+ *	Copyright (C) 2005 Kay Sievers <kay.sievers@vrfy.org>
+ *
+ *	This program is free software; you can redistribute it and/or modify it
+ *	under the terms of the GNU General Public License as published by the
+ *	Free Software Foundation version 2 of the License.
+ */
+
+#define WPA_SUPPLICANT_GLOBAL_SOCKET		"/var/run/wpa_supplicant-global"
+#define WPA_SUPPLICANT_CONTROL_SOCKET		"/var/run/wpa_supplicant"
+#define WPA_SUPPLICANT_BINARY				"/usr/sbin/wpa_supplicant"
+
+static void
+supplicant_cleanup (NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	self->priv->sup_pid = -1;
+	if (self->priv->sup_watch)
+	{
+		g_source_destroy (self->priv->sup_watch);
+		self->priv->sup_watch = NULL;
+	}
+	if (self->priv->sup_status)
+	{
+		g_source_destroy (self->priv->sup_status);
+		self->priv->sup_status = NULL;
+	}
+	if (self->priv->sup_ctrl)
+	{
+		wpa_ctrl_close (self->priv->sup_ctrl);
+		self->priv->sup_ctrl = NULL;
+	}
+}
+
+static void
+supplicant_watch_cb (GPid pid,
+                     gint status,
+                     gpointer user_data)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
+	
+	g_assert (self);
+	
+	if (WIFEXITED (status))
+		nm_warning ("wpa_supplicant exited with error code %d", WEXITSTATUS (status));
+	else if (WIFSTOPPED (status)) 
+		nm_warning ("wpa_supplicant stopped unexpectedly with signal %d", WSTOPSIG (status));
+	else if (WIFSIGNALED (status))
+		nm_warning ("wpa_supplicant died with signal %d", WTERMSIG (status));
+	else
+		nm_warning ("wpa_supplicant died from an unknown cause");
+
+	supplicant_cleanup (self);
+
+	/* FIXME: deal with disconnection; device no longer has a link */
+}
+
+static gboolean
+supplicant_monitor_status_cb (GIOChannel *source,
+                              GIOCondition condition,
+                              gpointer user_data)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
+	char					message[2048];
+	size_t				message_len;
+	struct wpa_ctrl *		ctrl;
+
+	g_assert (self);
+
+	ctrl = self->priv->sup_ctrl;
+	g_return_val_if_fail (ctrl != NULL, FALSE);
+
+	message_len = sizeof (message);
+	wpa_ctrl_recv (ctrl, message, &message_len);
+	message[message_len] = '\0';
+	if (strstr (message, WPA_EVENT_CONNECTED) != NULL)
+		printf("UP\n");
+	else if (strstr (message, WPA_EVENT_DISCONNECTED) != NULL)
+		printf("DOWN\n");
+
+	return TRUE;
+}
+
+static gboolean
+wpa_supplicant_start (NMDevice80211Wireless *self)
+{
+	gboolean	success = FALSE;
+	char *	argv[4];
+	GError *	error;
+	GPid		pid = -1;
+
+	argv[0] = WPA_SUPPLICANT_BINARY;
+	argv[1] = "-g";
+	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
+	argv[4] = NULL;
+
+	if (!(success = g_spawn_async ("/", argv, NULL, 0, NULL, NULL, &pid, &error)))
+	{
+		if (error)
+		{
+			nm_warning ("Couldn't start wpa_supplicant.  Error: (%d) %s",
+					error->code, error->message);
+			g_error_free (error);
+		}
+		else
+			nm_warning ("Couldn't start wpa_supplicant due to an unknown error.");
+	}
+	else
+	{
+		if (self->priv->sup_watch)
+			g_source_destroy (self->priv->sup_watch);
+		self->priv->sup_watch = g_child_watch_source_new (pid);
+		g_source_set_callback (self->priv->sup_watch, (GSourceFunc) supplicant_watch_cb, self, NULL);
+		g_source_attach (self->priv->sup_watch, nm_device_get_main_context (NM_DEVICE (self)));
+	}
+
+	return success;
+}
+
+
+static gboolean
+wpa_supplicant_interface_init (NMDevice80211Wireless *self)
+{
+	struct wpa_ctrl *	ctrl;
+	struct wpa_ctrl *	ctrl_if = NULL;
+	char *			socket_path;
+	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
+	gboolean			success = FALSE;
+
+	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET)))
+		goto exit;
+
+	/* wpa_cli -g/var/run/wpa_supplicant-global interface_add eth1 "" wext /var/run/wpa_supplicant */
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"INTERFACE_ADD %s\t\twext\t" WPA_SUPPLICANT_CONTROL_SOCKET "\t", iface))
+		goto exit;
+
+	wpa_ctrl_close (ctrl);
+
+	/* attach to interface socket */
+	if (!(socket_path = g_strdup_printf (WPA_SUPPLICANT_CONTROL_SOCKET "/%s", iface)))
+		goto exit;
+	self->priv->sup_ctrl = wpa_ctrl_open (socket_path);
+	g_free (socket_path);
+	success = TRUE;
+
+exit:
+	return success;
+}
+
+
+static gboolean
+wpa_supplicant_send_network_config (NMDevice80211Wireless *self,
+                                    NMActRequest *req)
+{
+	NMAccessPoint *	ap = NULL;
+	gboolean			success = FALSE;
+	char *			response = NULL;
+	int				nwid;
+	const char *		essid;
+	struct wpa_ctrl *	ctrl;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (req != NULL, FALSE);
+
+	ap = nm_act_request_get_ap (req);
+	g_assert (ap);
+
+	ctrl = self->priv->sup_ctrl;
+	g_assert (ctrl);
+
+	/* Standard network setup info */
+	if (!(response = nm_utils_supplicant_request (ctrl, "ADD_NETWORK")))
+	{
+		nm_warning ("Supplicant error for ADD_NETWORK.\n");
+		goto out;
+	}
+	if (sscanf (response, "%i\n", &nwid) != 1)
+	{
+		nm_warning ("Supplicant error for ADD_NETWORK.  Response: '%s'\n", response);
+		g_free (response);
+		goto out;
+	}
+	g_free (response);
+
+	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
+		goto out;
+
+	essid = nm_ap_get_essid (ap);
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i ssid \"%s\"", nwid, essid))
+		goto out;
+
+	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
+		goto out;
+
+	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid))
+		goto out;
+
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"ENABLE_NETWORK %i", nwid, essid))
+		goto out;
+
+	success = TRUE;
+out:
+	return success;
+}
+
+
+/****************************************************************************/
 
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev,

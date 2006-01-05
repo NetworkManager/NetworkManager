@@ -1,3 +1,32 @@
+2006-01-04  Dan Williams  <dcbw@redhat.com>
+
+	First dump of wpa_supplicant-related code.  It's not hooked up to
+	anything yet though.  Thanks to Kay Sievers for
+	wpa_supplicant_wrapper.c, which formed the basis for this work,
+	and to Jouni Malinen for writing wpa_ctrl.c and wpa_ctrl.h.
+
+	* src/Makefile.am
+	  src/wpa_ctrl.[ch]
+		- Add wpa_ctrl stuff from wpa_supplicant so we can talk to it
+
+	* src/NetworkManagerUtils.[ch]
+		- (nm_utils_supplicant_request, nm_utils_supplicant_request_with_check):
+			Add convenience functions for talking to wpa_supplicant
+
+	* src/nm-ap-security.[ch]
+	  src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-psk.[ch]
+		- Update and implement real_write_supplicant_config functions
+			in all security types
+		- (nm_ap_security_wpa_psk_new_from_ap): implement in
+			nm-ap-security-wpa-psk.c
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_cleanup, supplicant_watch_cb, supplicant_monitor_status_cb,
+		   wpa_supplicant_start, wpa_supplicant_interface_init,
+		   wpa_supplicant_send_network_config): add functions to talk to
+			wpa_supplicant and write network config to it
+
 2006-01-04  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDialup.h: add 'type' field and NM_DIALUP_TYPE

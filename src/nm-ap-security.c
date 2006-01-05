@@ -29,6 +29,9 @@
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-wpa-psk.h"
 #include "nm-device-802-11-wireless.h"
+#include "wpa_ctrl.h"
+#include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_AP_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY, NMAPSecurityPrivate))
 
@@ -112,17 +115,11 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 
 	/* Deteremine best encryption algorithm to use */
 	caps = nm_ap_get_capabilities (ap);
-
-/*
 	if (caps & WPA2_CCMP_PSK)
-		stuff
-	else if (caps & WPA2_TKIP_PSK)
-		stuff
-	else if (caps & WPA_TKIP_PSK)
-		stuff
-	else
-*/
-	if (caps & WEP_WEP104)
+		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_CCMP));
+	else if ((caps & WPA_TKIP_PSK) || (caps & WPA2_TKIP_PSK))
+		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_TKIP));
+	else if (caps & WEP_WEP104)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104));
 	else if (caps & WEP_WEP40)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40));
@@ -132,16 +129,20 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 	return security;
 }
 
-void
-nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
+
+gboolean
+nm_ap_security_write_supplicant_config (NMAPSecurity *self,
+                                        struct wpa_ctrl *ctrl,
+                                        int nwid)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (fd >= 0);
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (ctrl != NULL, FALSE);
+	g_return_val_if_fail (nwid >= 0, FALSE);
 
 	if (self->priv->dispose_has_run)
-		return;
+		return FALSE;
 
-	NM_AP_SECURITY_GET_CLASS (self)->write_wpa_supplicant_config_func (self, fd);
+	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self, ctrl, nwid);
 }
 
 void
@@ -189,9 +190,17 @@ real_serialize (NMAPSecurity *self, DBusMessageIter *iter)
 	return 0;
 }
 
-static void 
-real_write_wpa_supplicant_config (NMAPSecurity *self, int fd)
+static gboolean 
+real_write_supplicant_config (NMAPSecurity *self,
+                              struct wpa_ctrl *ctrl,
+                              int nwid)
 {
+	/* Unencrypted network setup */
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i key_mgmt NONE", nwid))
+		return FALSE;
+
+	return TRUE;
 }
 
 static int 
@@ -352,7 +361,7 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 
 	klass->copy_constructor_func = real_copy_constructor;
 	klass->serialize_func = real_serialize;
-	klass->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	klass->write_supplicant_config_func = real_write_supplicant_config;
 	klass->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityPrivate));

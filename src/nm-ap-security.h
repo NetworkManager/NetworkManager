@@ -53,6 +53,7 @@ struct _NMAPSecurity
 };
 
 struct NMAccessPoint;
+struct wpa_ctrl;
 
 struct _NMAPSecurityClass
 {
@@ -63,7 +64,7 @@ struct _NMAPSecurityClass
 
 	int	(*serialize_func)				(NMAPSecurity *self, DBusMessageIter *iter);
 
-	void	(*write_wpa_supplicant_config_func)(NMAPSecurity *self, int fd);
+	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self, struct wpa_ctrl *ctrl, int nwid);
 
 	int	(*device_setup_func)			(NMAPSecurity *self, NMDevice80211Wireless * dev);
 };
@@ -83,7 +84,7 @@ const char * nm_ap_security_get_key (NMAPSecurity *self);
 
 int nm_ap_security_serialize (NMAPSecurity *self, DBusMessageIter *iter);
 
-void nm_ap_security_write_wpa_supplicant_config (NMAPSecurity *self, int fd);
+gboolean nm_ap_security_write_supplicant_config (NMAPSecurity *self, struct wpa_ctrl *ctrl, int nwid);
 
 int nm_ap_security_device_setup (NMAPSecurity *self, NMDevice80211Wireless *dev);
 

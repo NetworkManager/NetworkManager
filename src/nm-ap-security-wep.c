@@ -29,6 +29,8 @@
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
 #include "nm-device-802-11-wireless.h"
+#include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #define NM_AP_SECURITY_WEP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WEP, NMAPSecurityWEPPrivate))
 
@@ -105,10 +107,38 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 	return 0;
 }
 
-static void 
-real_write_wpa_supplicant_config (NMAPSecurity *instance, int fd)
+static gboolean 
+real_write_supplicant_config (NMAPSecurity *instance,
+                              struct wpa_ctrl *ctrl,
+                              int nwid)
 {
-	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
+	NMAPSecurityWEP *	self = NM_AP_SECURITY_WEP (instance);
+	gboolean			success = FALSE;
+	char *			msg = NULL;
+	const char *		key = nm_ap_security_get_key (instance);
+
+	/* WEP network setup */
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i key_mgmt NONE", nwid))
+		goto out;
+
+	msg = g_strdup_printf ("SET_NETWORK %i wep_key0 <key>", nwid);
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
+			"SET_NETWORK %i wep_key0 %s", nwid, key))
+	{
+		g_free (msg);
+		goto out;
+	}
+	g_free (msg);
+
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i wep_tx_keyidx 0", nwid))
+		goto out;
+
+	success = TRUE;
+
+out:
+	return success;
 }
 
 static int 
@@ -147,7 +177,7 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
-	par_class->write_wpa_supplicant_config_func = real_write_wpa_supplicant_config;
+	par_class->write_supplicant_config_func = real_write_supplicant_config;
 	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));

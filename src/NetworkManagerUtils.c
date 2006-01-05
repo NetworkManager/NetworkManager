@@ -39,6 +39,7 @@
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
+#include "wpa_ctrl.h"
 
 #include <netlink/addr.h>
 #include <netinet/in.h>
@@ -696,5 +697,86 @@ int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 	while (!(ip4_netmask & 0x1) && ++i)
 		ip4_netmask = ip4_netmask >> 1;
 	return (32 - (i-1));
+}
+
+
+char *
+nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
+                             const char *format,
+                             ...)
+{
+	va_list	args;
+	size_t	len;
+	char *	response = NULL;
+	char *	command;
+
+	g_return_val_if_fail (ctrl != NULL, NULL);
+	g_return_val_if_fail (format != NULL, NULL);
+
+	va_start (args, format);
+	if (!(command = g_strdup_vprintf (format, args)))
+		return NULL;
+	va_end (args);
+
+	response = g_malloc (2048);
+	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
+	g_free (command);
+	response[len] = '\0';
+	return response;
+}
+
+
+gboolean
+nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
+                                        const char *expected,
+                                        const char *func,
+								const char *err_msg_cmd,
+                                        const char *format,
+                                        ...)
+{
+	va_list	args;
+	gboolean	success = FALSE;
+	size_t	len;
+	char *	response = NULL;
+	char *	command;
+	char *	temp;
+
+	g_return_val_if_fail (ctrl != NULL, FALSE);
+	g_return_val_if_fail (expected != NULL, FALSE);
+	g_return_val_if_fail (format != NULL, FALSE);
+
+	va_start (args, format);
+	if (!(command = g_strdup_vprintf (format, args)))
+		goto out;
+
+	response = g_malloc (2048);
+	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
+	response[len] = '\0';
+
+	if (response)
+	{
+		if (strncmp (response, expected, strlen (expected)) == 0)
+			success = TRUE;
+		else
+		{
+			temp = g_strdup_printf ("%s: supplicant error for '%s'.  Response: '%s'",
+						func, err_msg_cmd ? err_msg_cmd : command, response);
+			nm_warning_str (temp);
+			g_free (temp);
+		}
+		g_free (response);
+	}
+	else
+	{
+		temp = g_strdup_printf ("%s: supplicant error for '%s'.  No response.",
+					func, err_msg_cmd ? err_msg_cmd : command);
+		nm_warning_str (temp);
+		g_free (temp);
+	}
+	g_free (command);
+
+out:
+	va_end (args);
+	return success;
 }
 

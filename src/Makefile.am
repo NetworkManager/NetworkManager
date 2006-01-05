@@ -59,7 +59,9 @@ NetworkManager_SOURCES =				\
 		nm-ap-security-wpa-psk.c		\
 		nm-ap-security-wpa-psk.h		\
 		wpa.c					\
-		wpa.h
+		wpa.h					\
+		wpa_ctrl.c				\
+		wpa_ctrl.h
 
 NetworkManager_CPPFLAGS = 			\
 	$(DBUS_CFLAGS)					\
