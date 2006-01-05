@@ -7,6 +7,11 @@ AM_MAINTAINER_MODE
 AM_CONFIG_HEADER(config.h)
 
 dnl
+dnl Explicitly set AUX dir
+dnl
+AC_CONFIG_AUX_DIR(.)
+
+dnl
 dnl Require programs
 dnl
 AC_PROG_CC

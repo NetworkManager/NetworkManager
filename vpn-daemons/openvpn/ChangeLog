@@ -1,3 +1,9 @@
+2006-01-05  Tim Niemueller <tim@niemueller.de>
+
+	* configure.in: Explicitly set AUX_DIR to . to prevent autoconf from
+	  searching (and finding) install-sh in ../.., which lead to
+	  problems.
+
 2005-12-12  Robert Love  <rml@novell.com>
 
 	* auth-dialog/main.c: one more NULL, this time for the ellipses
