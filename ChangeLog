@@ -1,8 +1,9 @@
 2006-01-04  Robert Love  <rml@novell.com>
 
-	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet-dbus-devices.h,
-	  gnome/applet/applet.c, src/nm-dbus-nm.c: Expose a menu item for hanging up
-	  active dialup connections.
+	* gnome/applet/applet-dbus-devices.c,
+	  gnome/applet/applet-dbus-devices.h, gnome/applet/applet.c,
+	  src/nm-dbus-nm.c: Expose a menu item for hanging up active dialup
+	  connections.
 
 2006-01-04  Dan Williams  <dcbw@redhat.com>
 
