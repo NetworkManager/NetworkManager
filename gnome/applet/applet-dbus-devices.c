@@ -1013,11 +1013,34 @@ void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char 
 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
-			nm_warning ("nmwa_dbus_activate_dialup_connection(): Could not send activateDialup message!");
+			nm_warning ("nmwa_dbus_dialup_activate_connection(): Could not send activateDialup message!");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_activate_dialup_connection(): Couldn't allocate the dbus message!");
+		nm_warning ("nmwa_dbus_dialup_activate_connection(): Couldn't allocate the dbus message!");
+}
+
+
+/*
+ * nmwa_dbus_dialup_hangup_connections
+ *
+ * Tell NetworkManager to activate a particular dialup connection.
+ *
+ */
+void nmwa_dbus_dialup_hangup_connections (NMWirelessApplet *applet)
+{
+	DBusMessage *message;
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "hangupDialup")))
+	{
+		nm_info ("Hanging up dialup connections ...");
+
+		if (!dbus_connection_send (applet->connection, message, NULL))
+			nm_warning ("nmwa_dbus_dialup_hangup_connections(): Could not send hangupDialup message!");
+		dbus_message_unref (message);
+	}
+	else
+		nm_warning ("nmwa_dbus_dialup_hangup_connections(): Couldn't allocate the dbus message!");
 }
 
 

@@ -177,6 +177,31 @@ out:
 }
 
 
+static DBusMessage *nm_dbus_nm_hangup_dialup (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	DBusMessage *reply = NULL;
+	NMData *nm_data = (NMData *) data->data;
+	const char *dialup;
+
+	g_return_val_if_fail (data != NULL, NULL);
+	g_return_val_if_fail (data->data != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (message != NULL, NULL);
+
+	reply = dbus_message_new_method_return (message);
+	if (!reply)
+		return NULL;
+
+	nm_lock_mutex (nm_data->dialup_list_mutex, __FUNCTION__);
+	nm_system_deactivate_all_dialup (nm_data->dialup_list);
+	nm_unlock_mutex (nm_data->dialup_list_mutex, __FUNCTION__);
+
+out:
+	return reply;
+}
+
+
+
 /*
  * nm_dbus_nm_set_active_device
  *
@@ -586,6 +611,7 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getDevices",			nm_dbus_nm_get_devices);
 	nm_dbus_method_list_add_method (list, "getDialup",			nm_dbus_nm_get_dialup);
 	nm_dbus_method_list_add_method (list, "activateDialup",		nm_dbus_nm_activate_dialup);
+	nm_dbus_method_list_add_method (list, "hangupDialup",		nm_dbus_nm_hangup_dialup);
 	nm_dbus_method_list_add_method (list, "setActiveDevice",		nm_dbus_nm_set_active_device);
 	nm_dbus_method_list_add_method (list, "createWirelessNetwork",	nm_dbus_nm_create_wireless_network);
 	nm_dbus_method_list_add_method (list, "setWirelessEnabled",		nm_dbus_nm_set_wireless_enabled);

@@ -1382,6 +1382,26 @@ static void nmwa_menu_dialup_item_activate (GtkMenuItem *item, gpointer user_dat
 
 
 /*
+ * nmwa_menu_dialup_hangup_activate
+ *
+ * Signal function called when user clicks on a dialup menu item
+ *
+ */
+static void nmwa_menu_dialup_hangup_activate (GtkMenuItem *item, gpointer user_data)
+{
+	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
+	const char *dialup;
+
+	g_return_if_fail (item != NULL);
+	g_return_if_fail (applet != NULL);
+
+	nmwa_dbus_dialup_hangup_connections (applet);
+
+	nmi_dbus_signal_user_interface_activated (applet->connection);
+}
+
+
+/*
  * nmwa_menu_configure_vpn_item_activate
  *
  * Signal function called when user clicks "Configure VPN..."
@@ -1720,6 +1740,7 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 {
 	GtkMenuItem *item;
 	GtkMenu *dialup_menu;
+	GtkWidget *hangup_item;
 	GSList *elt;
 
 	g_return_if_fail (menu != NULL);
@@ -1741,6 +1762,10 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 		g_signal_connect (G_OBJECT (dialup_item), "activate", G_CALLBACK (nmwa_menu_dialup_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (dialup_item));
 	}
+
+	hangup_item = gtk_menu_item_new_with_mnemonic (_("_Hangup Connections..."));
+	g_signal_connect (G_OBJECT (hangup_item), "activate", G_CALLBACK (nmwa_menu_dialup_hangup_activate), NULL);
+	gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), hangup_item);
 
 	gtk_menu_item_set_submenu (item, GTK_WIDGET (dialup_menu));
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (item));
