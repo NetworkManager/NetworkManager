@@ -1744,7 +1744,6 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 {
 	GtkMenuItem *item;
 	GtkMenu *dialup_menu;
-	GtkWidget *hangup_item;
 	GSList *elt;
 
 	g_return_if_fail (menu != NULL);
