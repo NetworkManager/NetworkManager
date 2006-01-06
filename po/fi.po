@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-11-20 10:53+0200\n"
-"PO-Revision-Date: 2005-11-20 10:53+0200\n"
+"POT-Creation-Date: 2006-01-06 22:45+0200\n"
+"PO-Revision-Date: 2006-01-06 22:50+0200\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -18,81 +18,80 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-dbus-info.c:924
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Langattoman verkon %s tunnuslause"
 
-#: ../gnome/applet/applet-dbus.c:318
+#: ../gnome/applet/applet-dbus.c:276
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Yhteys langattomaan verkkoon \"%s\" epäonnistui."
 
-#: ../gnome/applet/applet-dbus.c:323
+#: ../gnome/applet/applet-dbus.c:281
 msgid "Connection to the wired network failed."
 msgstr "Yhteys kiinteään verkkoon epäonnistui."
 
-#: ../gnome/applet/applet.c:183
+#: ../gnome/applet/applet.c:179
 msgid "Error displaying connection information: "
 msgstr "Virhe näytettäessä yhteyden tietoja: "
 
-#: ../gnome/applet/applet.c:202
+#: ../gnome/applet/applet.c:198
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Joitain vaadittuja osia ei löytynyt (glade-tiedostoa)!"
 
-#: ../gnome/applet/applet.c:213
+#: ../gnome/applet/applet.c:209
 msgid "No active connections!"
 msgstr "Ei aktiivisia yhteyksiä!"
 
-#: ../gnome/applet/applet.c:228
+#: ../gnome/applet/applet.c:224
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Kiinteä Ethernet-yhteys (%s)"
 
-#: ../gnome/applet/applet.c:230
+#: ../gnome/applet/applet.c:226
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Langaton Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:323 ../gnome/applet/applet.c:348
+#: ../gnome/applet/applet.c:319 ../gnome/applet/applet.c:344
 msgid "NetworkManager Applet"
 msgstr "NetworkManager-sovelma"
 
-#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:350
+#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:326 ../gnome/applet/applet.c:351
+#: ../gnome/applet/applet.c:322 ../gnome/applet/applet.c:347
 msgid ""
 "Notification area applet for managing your network devices and connections."
-msgstr ""
-"Ilmoitusalueen sovelma verkkolaitteiden ja yhteyksien hallintaan."
+msgstr "Ilmoitusalueen sovelma verkkolaitteiden ja yhteyksien hallintaan."
 
-#: ../gnome/applet/applet.c:329 ../gnome/applet/applet.c:356
+#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:352
 msgid "translator-credits"
 msgstr ""
 "Ilkka Tuohela, 2005.\n"
 "\n"
 "http://www.gnome.fi/"
 
-#: ../gnome/applet/applet.c:441
+#: ../gnome/applet/applet.c:437
 msgid "VPN Error"
 msgstr "VPN-virhe"
 
-#: ../gnome/applet/applet.c:445
+#: ../gnome/applet/applet.c:441
 msgid "VPN Login Failure"
 msgstr "Virhe kirjauduttaessa VPN:ään"
 
-#: ../gnome/applet/applet.c:446
+#: ../gnome/applet/applet.c:442
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "VPN-yhteyttä \"%s\" ei voitu käynnistää kirjautumisvirheen takia."
 
-#: ../gnome/applet/applet.c:450
+#: ../gnome/applet/applet.c:446
 msgid "VPN Start Failure"
 msgstr "VPN-yhteyden käynnistysvirhe"
 
-#: ../gnome/applet/applet.c:451
+#: ../gnome/applet/applet.c:447
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -101,25 +100,25 @@ msgstr ""
 "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska VPN-ohjelman suorittaminen "
 "epäonnistui."
 
-#: ../gnome/applet/applet.c:455 ../gnome/applet/applet.c:465
+#: ../gnome/applet/applet.c:451 ../gnome/applet/applet.c:461
 msgid "VPN Connect Failure"
 msgstr "VPN-yhteyden yhteydenottovirhe"
 
-#: ../gnome/applet/applet.c:456
+#: ../gnome/applet/applet.c:452
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska tapahtui yhteysvirhe."
 
-#: ../gnome/applet/applet.c:460
+#: ../gnome/applet/applet.c:456
 msgid "VPN Configuration Error"
 msgstr "VPN-yhteyden asetusvirhe"
 
-#: ../gnome/applet/applet.c:461
+#: ../gnome/applet/applet.c:457
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN-yhteyden \"%s\" asetukset ovat virheelliset."
 
-#: ../gnome/applet/applet.c:466
+#: ../gnome/applet/applet.c:462
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -128,23 +127,23 @@ msgstr ""
 "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska VPN-palvelin ei palauttanut "
 "kelvollista verkkomäärittelyä."
 
-#: ../gnome/applet/applet.c:474
+#: ../gnome/applet/applet.c:470
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "VPN-palvelin vastasi: \"%s\""
 
-#: ../gnome/applet/applet.c:543
+#: ../gnome/applet/applet.c:539
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "VPN-yhteys \"%s\" ilmoitti:"
 
-#: ../gnome/applet/applet.c:545
+#: ../gnome/applet/applet.c:541
 msgid "VPN Login Message"
 msgstr "VPN-yhteyden kirjautumisviesti"
 
-#: ../gnome/applet/applet.c:763 ../gnome/applet/applet.c:2367
-#: ../gnome/applet/other-network-dialog.c:429
-#: ../gnome/applet/passphrase-dialog.c:368
+#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2402
+#: ../gnome/applet/other-network-dialog.c:448
+#: ../gnome/applet/passphrase-dialog.c:210
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -152,154 +151,188 @@ msgstr ""
 "NetworkManager-sovelma ei voinut ladata jotain vaadituista resursseista "
 "(glade-tiedostoa ei löytynyt)."
 
-#: ../gnome/applet/applet.c:775
+#: ../gnome/applet/applet.c:771
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Verkkolaite \"%s (%s)\" ei tue langattomien verkkojen etsimistä."
 
-#: ../gnome/applet/applet.c:783
+#: ../gnome/applet/applet.c:779
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Verkkolaite \"%s (%s)\" ei tue verkkoyhteyden havaitsemista."
 
-#: ../gnome/applet/applet.c:928
+#: ../gnome/applet/applet.c:919
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Valmistellaan laitetta %s kiinteälle verkkoyhteydelle..."
 
-#: ../gnome/applet/applet.c:930
+#: ../gnome/applet/applet.c:921
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Valmistellaan laitetta %s langattomalle verkolle \"%s\"..."
 
-#: ../gnome/applet/applet.c:938
+#: ../gnome/applet/applet.c:929
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Määritellään laitetta %s kiinteälle verkkoyhteydelle..."
 
-#: ../gnome/applet/applet.c:940
+#: ../gnome/applet/applet.c:931
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Yritetään liittyä langattomaan verkkoon \"%s\"..."
 
-#: ../gnome/applet/applet.c:948
+#: ../gnome/applet/applet.c:939
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Odotetaan verkon avainta langattomalle verkolle \"%s\""
 
-#: ../gnome/applet/applet.c:956 ../gnome/applet/applet.c:966
+#: ../gnome/applet/applet.c:947 ../gnome/applet/applet.c:957
 msgid "Requesting a network address from the wired network..."
 msgstr "Pyydetään verkko-osoitetta kiinteästä verkosta..."
 
-#: ../gnome/applet/applet.c:958 ../gnome/applet/applet.c:968
+#: ../gnome/applet/applet.c:949 ../gnome/applet/applet.c:959
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Pyydetään verkko-osoitettta langattomasta verkosta \"%s\"..."
 
-#: ../gnome/applet/applet.c:976
+#: ../gnome/applet/applet.c:967
 msgid "Finishing connection to the wired network..."
 msgstr "Viimeistellään yhteyttä kiinteään verkkoon..."
 
-#: ../gnome/applet/applet.c:978
+#: ../gnome/applet/applet.c:969
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Viimeistellään yhteyttä langattomaan verkkoon \"%s\"..."
 
-#: ../gnome/applet/applet.c:1094
+#: ../gnome/applet/applet.c:1086
 msgid "NetworkManager is not running"
 msgstr "NetworkManager ei ole käytössä"
 
-#: ../gnome/applet/applet.c:1106
+#: ../gnome/applet/applet.c:1098
 msgid "No network connection"
 msgstr "Ei verkkoyhteyttä"
 
-#: ../gnome/applet/applet.c:1111
+#: ../gnome/applet/applet.c:1103
 msgid "Wired network connection"
 msgstr "Kiinteä verkkoyhteys"
 
-#: ../gnome/applet/applet.c:1115
+#: ../gnome/applet/applet.c:1107
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Yhteys langattomaan Ad-Hoc-verkkoon"
 
-#: ../gnome/applet/applet.c:1117
+#: ../gnome/applet/applet.c:1109
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Langaton verkkoyhteyts \"%s\" (%d%%)"
 
-#: ../gnome/applet/applet.c:1139
+#: ../gnome/applet/applet.c:1131
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-yhteys \"%s\""
 
-#: ../gnome/applet/applet.c:1147
+#: ../gnome/applet/applet.c:1139
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN-yhteyttä \"%s\" avataan"
 
-#: ../gnome/applet/applet.c:1537
+#: ../gnome/applet/applet.c:1553
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Yhdistä muihin langattomiin verkkoihin..."
 
-#: ../gnome/applet/applet.c:1558
+#: ../gnome/applet/applet.c:1574
 msgid "Create _New Wireless Network..."
 msgstr "Luo _uusi langaton verkko..."
 
-#: ../gnome/applet/applet.c:1671
+#: ../gnome/applet/applet.c:1691
 msgid "_VPN Connections"
 msgstr "_VPN-yhteydet"
 
-#: ../gnome/applet/applet.c:1703
+#: ../gnome/applet/applet.c:1726
 msgid "_Configure VPN..."
 msgstr "_Määrittele VPN-yhteys..."
 
-#: ../gnome/applet/applet.c:1707
+#: ../gnome/applet/applet.c:1730
 msgid "_Disconnect VPN..."
 msgstr "_Katkaise VPN-yhteys..."
 
-#: ../gnome/applet/applet.c:1729
+#: ../gnome/applet/applet.c:1752
 msgid "_Dial Up Connections"
 msgstr "_Modeemiyhteydet"
 
-#: ../gnome/applet/applet.c:1738
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1763
 #, c-format
 msgid "Connect to %s..."
 msgstr "Ota yhteyttä kohteeseen %s..."
 
-#: ../gnome/applet/applet.c:1788
+#: ../gnome/applet/applet.c:1769
+#, c-format
+msgid "Disconnect from %s..."
+msgstr "Katkaise yhteys kohteeseen %s..."
+
+#: ../gnome/applet/applet.c:1818
 msgid "No network devices have been found"
 msgstr "Verkkolaitteita ei löytynyt"
 
-#: ../gnome/applet/applet.c:1962
+#: ../gnome/applet/applet.c:1992
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager ei ole käytössä..."
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2087
+#: ../gnome/applet/applet.c:2117
 msgid "Enable _Wireless"
 msgstr "Ota _langaton käyttöön"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2093
+#: ../gnome/applet/applet.c:2123
 msgid "Connection _Information"
 msgstr "Tietoja _yhteydestä"
 
 #. Help item
-#: ../gnome/applet/applet.c:2103
+#: ../gnome/applet/applet.c:2134
 msgid "_Help"
 msgstr "O_hje"
 
 #. About item
-#: ../gnome/applet/applet.c:2111
+#: ../gnome/applet/applet.c:2143
 msgid "_About"
 msgstr "_Tietoja"
 
-#: ../gnome/applet/applet.c:2503
+#: ../gnome/applet/applet.c:2521
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
 msgstr ""
 "NetworkManager-sovelma ei löytänyt joitain vaadituista resursseista eikä "
 "pysty jatkamaan.\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "Avoin järjestelmä"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "Jaettu avain"
+
+#: ../gnome/applet/wso-none.c:53
+msgid "None"
+msgstr "Ei mitään"
+
+#: ../gnome/applet/wso-wep-ascii.c:128
+msgid "WEP 40/128-bit ASCII"
+msgstr "WEP 40/128-bittinen ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:125
+msgid "WEP 40/128-bit hex"
+msgstr "WEP 40/128-bittinen heksadesimaali"
+
+#: ../gnome/applet/wso-wep-passphrase.c:125
+msgid "WEP Passphrase"
+msgstr "WEP-tunnuslause:"
+
+#: ../gnome/applet/wso-wpa-psk-passphrase.c:113
+msgid "WPA Personal Passphrase"
+msgstr "WPA henkilökohtaisella tunnuslauseella"
 
 #: ../gnome/applet/eggtrayicon.c:127
 msgid "Orientation"
@@ -331,24 +364,11 @@ msgid_plural "Wireless Networks"
 msgstr[0] "Langaton verko"
 msgstr[1] "Langattomat verkot"
 
-#: ../gnome/applet/menu-items.c:303
+#: ../gnome/applet/menu-items.c:330
 msgid " (invalid Unicode)"
 msgstr " (virheellistä Unicodea)"
 
-#: ../gnome/applet/other-network-dialog.c:151
-#: ../gnome/applet/wireless-applet.glade.h:42
-msgid "_Passphrase:"
-msgstr "_Tunnuslause:"
-
-#: ../gnome/applet/other-network-dialog.c:154
-msgid "_ASCII Key:"
-msgstr "_ASCII-avain:"
-
-#: ../gnome/applet/other-network-dialog.c:157
-msgid "_Hex Key:"
-msgstr "HEX-avain:"
-
-#: ../gnome/applet/other-network-dialog.c:251
+#: ../gnome/applet/other-network-dialog.c:347
 #, c-format
 msgid ""
 "By default, the ESSID is set to your computer's name, %s, with no encryption "
@@ -356,44 +376,31 @@ msgid ""
 msgstr ""
 "Oletuksena ESSID asetetaan tietokoneesi nimeksi %s käyttämättä salausta"
 
-#: ../gnome/applet/other-network-dialog.c:255
+#: ../gnome/applet/other-network-dialog.c:351
 msgid "Create new wireless network"
 msgstr "Luo uusi langaton verkko"
 
-#: ../gnome/applet/other-network-dialog.c:256
+#: ../gnome/applet/other-network-dialog.c:352
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
-msgstr ""
-"Syötä luotavan langattoman verkkoyhteyden ESSID ja turva-asetukset."
+msgstr "Syötä luotavan langattoman verkkoyhteyden ESSID ja turva-asetukset."
 
-#: ../gnome/applet/other-network-dialog.c:260
+#: ../gnome/applet/other-network-dialog.c:356
 msgid "Create New Wireless Network"
 msgstr "Luo uusi langaton verkko"
 
-#: ../gnome/applet/other-network-dialog.c:265
+#: ../gnome/applet/other-network-dialog.c:361
 msgid "Custom wireless network"
 msgstr "Oma langaton verkko"
 
-#: ../gnome/applet/other-network-dialog.c:266
+#: ../gnome/applet/other-network-dialog.c:362
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "Syötä sen langattoman verkon ESSID, johon haluat ottaa yhteyttä."
 
-#: ../gnome/applet/other-network-dialog.c:268
+#: ../gnome/applet/other-network-dialog.c:364
 msgid "Connect to Other Wireless Network"
 msgstr "Ota yhteyttä muuhun langattomaan verkkoon"
-
-#: ../gnome/applet/passphrase-dialog.c:155
-msgid "Passphrase:"
-msgstr "Tunnuslause:"
-
-#: ../gnome/applet/passphrase-dialog.c:158
-msgid "ASCII Key:"
-msgstr "ASCII-avain:"
-
-#: ../gnome/applet/passphrase-dialog.c:161
-msgid "Hex Key:"
-msgstr "HEX-avain:"
 
 #: ../gnome/applet/vpn-password-dialog.c:152
 #: ../gnome/applet/vpn-password-dialog.c:189
@@ -425,32 +432,11 @@ msgstr " "
 
 #: ../gnome/applet/wireless-applet.glade.h:2
 msgid ""
-"128-bit Passphrase (WEP)\n"
-"ASCII Key (WEP)\n"
-"Hex Key (WEP)"
-msgstr ""
-"128-bittinen tunnuslause (WEP)\n"
-"ASCII-avain (WEP)\n"
-"HEX-avain (WEP)"
-
-#: ../gnome/applet/wireless-applet.glade.h:5
-msgid ""
-"128-bit passphrase (WEP)\n"
-"ASCII key (WEP)\n"
-"Hex key (WEP)"
-msgstr ""
-"128-bittinen tunnuslause (WEP)\n"
-"ASCII-avain (WEP)\n"
-"HEX-avain (WEP)"
-
-#: ../gnome/applet/wireless-applet.glade.h:8
-msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Tietoja aktiivisesta yhteydestä</span>"
 
-
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/wireless-applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -459,13 +445,13 @@ msgid ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Langaton verkko vaatii tunnuslausetta"
-"</span>\n"
+"<span weight=\"bold\" size=\"larger\">Langaton verkko vaatii tunnuslausetta</"
+"span>\n"
 "\n"
-"Tunnuslause tai salausavain vaaditaan, jotta voit ottaa yhteyttä langattomaan "
-"verkkoon %s."
+"Tunnuslause tai salausavain vaaditaan, jotta voit ottaa yhteyttä "
+"langattomaan verkkoon %s."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/wireless-applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -476,7 +462,7 @@ msgstr ""
 "\n"
 "%s  Verkkoyhteys ei ole täysin toimiva."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/wireless-applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -489,93 +475,141 @@ msgstr ""
 "<span weight=\"bold\" size=\"larger\">Langattoman yhteyden kirjatumisen "
 "vahvistus</span>\n"
 "\n"
-"Olet ottamassa yhteyttä langattomaan verkkoon \"%s\". Jos olet varma, "
-"että tämä langaton verkko on turvallinen, napsauta alla olevaa ruutua "
-"ja NetworkManager ei kysy tätä vahvistusikkunaa enää uudestaan."
+"Olet ottamassa yhteyttä langattomaan verkkoon \"%s\". Jos olet varma, että "
+"tämä langaton verkko on turvallinen, napsauta alla olevaa ruutua ja "
+"NetworkManager ei kysy tätä vahvistusikkunaa enää uudestaan."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/wireless-applet.glade.h:15
+msgid "Authentication:"
+msgstr "Tunnistautuminen:"
+
+#: ../gnome/applet/wireless-applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Broadcast-osoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/wireless-applet.glade.h:17
 msgid "C_onnect"
 msgstr "_Yhdistä"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
-msgid "Connect with _encryption enabled"
-msgstr "Yhdistä käyttäen _salausta"
-
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/wireless-applet.glade.h:18
 msgid "Connection Information"
 msgstr "Tietoja yhteydestä"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Default Route:"
 msgstr "Oletusyhdyskäytävä:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Kohdeosoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "Hardware Address:"
 msgstr "Laiteosoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "IP Address:"
 msgstr "IP-osoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/wireless-applet.glade.h:23
 msgid "Interface:"
 msgstr "Verkkolaite:"
 
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid "Key:"
+msgstr "Avain:"
+
+#: ../gnome/applet/wireless-applet.glade.h:25
+msgid ""
+"None\n"
+"WEP Passphrase\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+msgstr ""
+"Ei mitään\n"
+"WEP-tunnuslause\n"
+"WEP 40/128-bittinen heksadesimaali\n"
+"WEP 40/128-bittinen ASCII\n"
+
 #: ../gnome/applet/wireless-applet.glade.h:30
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"Avoin järjestelmä\n"
+"Jaettu avain"
+
+#: ../gnome/applet/wireless-applet.glade.h:32
 msgid "Other Wireless Network..."
 msgstr "Muu langaton verkko..."
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:33
+msgid "Passphrase:"
+msgstr "Tunnuslause:"
+
+#: ../gnome/applet/wireless-applet.glade.h:34
+msgid "Password:"
+msgstr "Salasana:"
+
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Primary DNS:"
 msgstr "Ensisijainen DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Secondary DNS:"
 msgstr "Toissijainen DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "Subnet Mask:"
 msgstr "Aliverkkopeite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:38
+msgid "User Name:"
+msgstr "Käyttäjätunnus:"
+
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "Wireless Network Key Required"
 msgstr "Langattoman verkon salausavain vaaditaan"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "Wireless _adapter:"
 msgstr "Langaton _verkkolaite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
-msgid "Wireless _network:"
-msgstr "Langaton _verkko:"
-
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "_Always Trust this Wireless Network"
 msgstr "_Luota aina tähän langattomaan verkkoon"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Don't remind me again"
 msgstr "_Älä huomauta uudestaan"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
-msgid "_Key Type:"
-msgstr "_Avaimen tyyppi:"
-
-#: ../gnome/applet/wireless-applet.glade.h:40
-msgid "_Key type:"
-msgstr "_Avaimen tyyppi:"
-
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/wireless-applet.glade.h:43
 msgid "_Login to Network"
 msgstr "_Kirjaudu verkkoon"
+
+#: ../gnome/applet/wireless-applet.glade.h:44
+msgid "_Network Name:"
+msgstr "_Verkon nimi:"
+
+#: ../gnome/applet/wireless-applet.glade.h:45
+msgid "_Wireless Security:"
+msgstr "_Langaton tietoturva:"
+
+#: ../gnome/applet/wireless-applet.glade.h:46
+msgid "leap_subwindow"
+msgstr "leap_ali-ikkuna"
+
+#: ../gnome/applet/wireless-applet.glade.h:47
+msgid "wep_key_subwindow"
+msgstr "wep_avaimen_ali-ikkuna"
+
+#: ../gnome/applet/wireless-applet.glade.h:48
+msgid "wep_passphrase_subwindow"
+msgstr "wep_salalauseen_ali-ikkuna"
+
+#: ../gnome/applet/wireless-applet.glade.h:49
+msgid "wpa_psk_subwindow"
+msgstr "wp_psk_ali-ikkuna"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:370
 msgid "Cannot add VPN connection"
@@ -707,20 +741,40 @@ msgid ""
 msgstr ""
 "Tämä velho ohjaa sinua määrittelmään VPN-yhteyden\n"
 "\n"
-"Yhteyden luominen vaatii joitakin tietoja, kuten IP-osoitteita ja salasanoja. " 
-"Pyydä vaadittavat tiedot järjestelmäsi ylläpitäjältä."
+"Yhteyden luominen vaatii joitakin tietoja, kuten IP-osoitteita ja "
+"salasanoja. Pyydä vaadittavat tiedot järjestelmäsi ylläpitäjältä."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN-yhteydet"
+
+#: ../src/nm-ap-security-wep.c:47
+msgid "40-bit WEP"
+msgstr "40-bittinen WEP"
+
+#: ../src/nm-ap-security-wep.c:49
+msgid "104-bit WEP"
+msgstr "104-bittinen WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:47
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:49
+msgid "WPA CCMP"
+msgstr "WPA COMP"
+
+#: ../src/nm-ap-security.c:307
+msgid "none"
+msgstr "ei mitään"
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
 msgid ""
 "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
-"Netlink-pistoketta kiinteiden verkkoyhteyksien tarkkailuun ei voida "
-"luoda - %s"
+"Netlink-pistoketta kiinteiden verkkoyhteyksien tarkkailuun ei voida luoda - %"
+"s"
 
 #: ../src/nm-netlink-monitor.c:172
 #, c-format
@@ -750,3 +804,44 @@ msgstr "lähetettiin liian paljon tietoja pistekkeeseen ja osaa siitä hukkui"
 msgid "error occurred while waiting for data on socket"
 msgstr "virhe odotettaessa tietoja pistokkeesta"
 
+#~ msgid "_Passphrase:"
+#~ msgstr "_Tunnuslause:"
+
+#~ msgid "_ASCII Key:"
+#~ msgstr "_ASCII-avain:"
+
+#~ msgid "_Hex Key:"
+#~ msgstr "HEX-avain:"
+
+#~ msgid "ASCII Key:"
+#~ msgstr "ASCII-avain:"
+
+#~ msgid ""
+#~ "128-bit Passphrase (WEP)\n"
+#~ "ASCII Key (WEP)\n"
+#~ "Hex Key (WEP)"
+#~ msgstr ""
+#~ "128-bittinen tunnuslause (WEP)\n"
+#~ "ASCII-avain (WEP)\n"
+#~ "HEX-avain (WEP)"
+
+#~ msgid ""
+#~ "128-bit passphrase (WEP)\n"
+#~ "ASCII key (WEP)\n"
+#~ "Hex key (WEP)"
+#~ msgstr ""
+#~ "128-bittinen tunnuslause (WEP)\n"
+#~ "ASCII-avain (WEP)\n"
+#~ "HEX-avain (WEP)"
+
+#~ msgid "Connect with _encryption enabled"
+#~ msgstr "Yhdistä käyttäen _salausta"
+
+#~ msgid "Wireless _network:"
+#~ msgstr "Langaton _verkko:"
+
+#~ msgid "_Key Type:"
+#~ msgstr "_Avaimen tyyppi:"
+
+#~ msgid "_Key type:"
+#~ msgstr "_Avaimen tyyppi:"
