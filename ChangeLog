@@ -1,5 +1,12 @@
 2006-01-06  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerDevice.c, src/NetworkManagerDevice.h,
+	  src/NetworkManagerDevicePrivate.h, src/NetworkManagerWireless.c,
+	  src/NetworkManagerWireless.h: Remove, no longer used and they keep
+	  showing up in my greps.
+
+2006-01-06  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-devices.c,
 	  gnome/applet/other-network-dialog.c, gnome/applet/wso-none.c,
 	  libnm-util/dbus-helpers.c, libnm-util/dbus-helpers.h,
