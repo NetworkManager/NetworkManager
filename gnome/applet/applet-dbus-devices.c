@@ -1022,25 +1022,43 @@ void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char 
 
 
 /*
- * nmwa_dbus_dialup_hangup_connections
+ * nmwa_dbus_dialup_activate_connection
  *
  * Tell NetworkManager to activate a particular dialup connection.
  *
  */
-void nmwa_dbus_dialup_hangup_connections (NMWirelessApplet *applet)
+void nmwa_dbus_dialup_deactivate_connection (NMWirelessApplet *applet, const char *name)
 {
 	DBusMessage *message;
 
-	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "hangupDialup")))
-	{
-		nm_info ("Hanging up dialup connections ...");
+	g_return_if_fail (name != NULL);
 
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "deactivateDialup")))
+	{
+
+		nm_info ("Deactivating dialup connection '%s'.", name);
+#if 0
+		{
+			DBusMessageIter iter;
+			DBusMessageIter iter_array;
+			dbus_message_iter_init_append (message, &iter);
+			dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &name);
+			dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &iter_array);
+
+			for (i = passwords; i != NULL; i = g_slist_next (i)) {
+				dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING, &(i->data));
+			}
+			dbus_message_iter_close_container (&iter, &iter_array);
+		}
+#endif
+
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
-			nm_warning ("nmwa_dbus_dialup_hangup_connections(): Could not send hangupDialup message!");
+			nm_warning ("nmwa_dbus_dialup_deactivate_connection(): Could not send deactivateDialup message!");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_dialup_hangup_connections(): Couldn't allocate the dbus message!");
+		nm_warning ("nmwa_dbus_dialup_deactivate_connection(): Couldn't allocate the dbus message!");
 }
 
 

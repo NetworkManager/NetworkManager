@@ -1358,12 +1358,12 @@ static void nmwa_menu_vpn_item_activate (GtkMenuItem *item, gpointer user_data)
 
 
 /*
- * nmwa_menu_dialup_item_activate
+ * nmwa_menu_connect_item_activate
  *
  * Signal function called when user clicks on a dialup menu item
  *
  */
-static void nmwa_menu_dialup_item_activate (GtkMenuItem *item, gpointer user_data)
+static void nmwa_menu_dialup_connect_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
 	const char *dialup;
@@ -1387,7 +1387,7 @@ static void nmwa_menu_dialup_item_activate (GtkMenuItem *item, gpointer user_dat
  * Signal function called when user clicks on a dialup menu item
  *
  */
-static void nmwa_menu_dialup_hangup_activate (GtkMenuItem *item, gpointer user_data)
+static void nmwa_menu_dialup_disconnect_item_activate (GtkMenuItem *item, gpointer user_data)
 {
 	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
 	const char *dialup;
@@ -1395,7 +1395,11 @@ static void nmwa_menu_dialup_hangup_activate (GtkMenuItem *item, gpointer user_d
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nmwa_dbus_dialup_hangup_connections (applet);
+	dialup = g_object_get_data (G_OBJECT (item), "dialup");
+	if (!dialup)
+		return;
+
+	nmwa_dbus_dialup_deactivate_connection (applet, dialup);
 
 	nmi_dbus_signal_user_interface_activated (applet->connection);
 }
@@ -1751,21 +1755,24 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 	dialup_menu = GTK_MENU (gtk_menu_new ());
 	for (elt = applet->dialup_list; elt; elt = g_slist_next (elt))
 	{
-		GtkMenuItem *dialup_item;
+		GtkMenuItem *connect_item, *disconnect_item;
 		char *name = elt->data;
 		const char *label;
 
+		/* FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item */
+
 		label = g_strdup_printf (_("Connect to %s..."), name);
-		dialup_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
-		g_object_set_data (G_OBJECT (dialup_item), "dialup", name);
+		connect_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
+		g_object_set_data (G_OBJECT (connect_item), "dialup", name);
+		g_signal_connect (G_OBJECT (connect_item), "activate", G_CALLBACK (nmwa_menu_dialup_connect_item_activate), applet);
+		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (connect_item));
 
-		g_signal_connect (G_OBJECT (dialup_item), "activate", G_CALLBACK (nmwa_menu_dialup_item_activate), applet);
-		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (dialup_item));
+		label = g_strdup_printf (_("Disconnect from %s..."), name);
+		disconnect_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
+		g_object_set_data (G_OBJECT (disconnect_item), "dialup", name);
+		g_signal_connect (G_OBJECT (disconnect_item), "activate", G_CALLBACK (nmwa_menu_dialup_disconnect_item_activate), applet);
+		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (disconnect_item));
 	}
-
-	hangup_item = gtk_menu_item_new_with_mnemonic (_("_Hangup Connections..."));
-	g_signal_connect (G_OBJECT (hangup_item), "activate", G_CALLBACK (nmwa_menu_dialup_hangup_activate), NULL);
-	gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), hangup_item);
 
 	gtk_menu_item_set_submenu (item, GTK_WIDGET (dialup_menu));
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (item));

@@ -1,5 +1,13 @@
 2006-01-06  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet.c,
+	  gnome/applet/applet-dbus-devices.h, src/nm-dbus-nm.c: Remove global
+	  hangup code and add per-device hangup.  Tie last commit into the
+	  GNOME applet.  TODO:  Save, understand, and respond to the state of
+	  each dialup device.
+
+2006-01-06  Robert Love  <rml@novell.com>
+
 	Patch by Timo Hoenig <thoenig@suse.de>:
 	* src/NetworkManagerSystem.h, src/nm-dbus-nm.c: Add interfaces to
 	  hangup specific dialup devices.

@@ -40,7 +40,7 @@ void			nmwa_dbus_update_nm_state				(NMWirelessApplet *applet);
 void			nmwa_dbus_update_devices					(NMWirelessApplet *applet);
 void			nmwa_dbus_update_dialup					(NMWirelessApplet *applet);
 void			nmwa_dbus_dialup_activate_connection		(NMWirelessApplet *applet, const char *name);
-void			nmwa_dbus_dialup_hangup_connections		(NMWirelessApplet *applet);
+void			nmwa_dbus_dialup_deactivate_connection		(NMWirelessApplet *applet, const char *name);
 void			nmwa_dbus_device_update_one_device			(NMWirelessApplet *applet, const char *dev_path);
 void			nmwa_dbus_device_remove_one_device			(NMWirelessApplet *applet, const char *dev_path);
 
