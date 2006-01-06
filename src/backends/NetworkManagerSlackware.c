@@ -334,6 +334,11 @@ void nm_system_deactivate_all_dialup (GSList *list)
 {
 }
 
+gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
+{
+	return FALSE;
+}
+
 gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 {
 	return FALSE;

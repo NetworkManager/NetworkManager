@@ -1,3 +1,16 @@
+2006-01-06  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig <thoenig@suse.de>:
+	* src/NetworkManagerSystem.h, src/nm-dbus-nm.c: Add interfaces to
+	  hangup specific dialup devices.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: Add stub backend.
+	* src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSuSE.c: Add specific backend interface to
+	  hangup specific dialup devices.
+
 2006-01-04  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-dbus-devices.c,

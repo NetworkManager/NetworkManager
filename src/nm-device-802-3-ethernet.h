@@ -29,6 +29,12 @@
 
 #include "nm-device.h"
 
+/* define the kernel types until mii.h and ethtool.h are fixed */
+#define u64	__u64
+#define u32	__u32
+#define u16	__u16
+#define u8	__u8
+
 G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE_802_3_ETHERNET			(nm_device_802_3_ethernet_get_type ())

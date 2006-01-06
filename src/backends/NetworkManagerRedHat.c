@@ -666,6 +666,38 @@ void nm_system_deactivate_all_dialup (GSList *list)
 	}
 }
 
+
+gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
+{
+	GSList *l;
+	gboolean ret = FALSE;
+	
+	for (l = list; l; l = g_slist_next (l))
+	{
+		NMDialUpConfig *config = (NMDialUpConfig *) l->data;
+		if (strcmp (dialup, config->name) == 0)
+		{
+			char *cmd;
+			int status;
+			
+			nm_info ("Dectivating dialup device %s (%s) ...", dialup, (char *) config->data);
+			cmd = g_strdup_printf ("/sbin/ifdown %s", (char *) config->data);
+			status = nm_spawn_process (cmd);
+			g_free (cmd);
+			if (status == 0) {
+				ret = TRUE;
+			} else {
+				/* FIXME: Decode errors into something sensible */
+				nm_warning ("Couldn't deactivate dialup device %s (%s) - %d", dialup, (char *) config->data, status);
+				ret = FALSE;
+			}
+			break;
+		}
+	}
+	return ret;
+}
+
+
 gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 {
 	GSList *l;
