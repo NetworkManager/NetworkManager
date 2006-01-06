@@ -1,5 +1,17 @@
 2006-01-06  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-devices.c,
+	  gnome/applet/other-network-dialog.c, gnome/applet/wso-none.c,
+	  libnm-util/dbus-helpers.c, libnm-util/dbus-helpers.h,
+	  src/nm-dbus-nm.c: Fix several issues.  'Connect to Other' and 'Create
+	  New Network' both failed in the non-encrypted case because we were
+	  not appending the security options to the DBUS message.  And
+	  'Connect to Other' was also failing in the encrypted case because
+	  we were not incrementing to the next DBUS parameter.  All fixed.
+	  Thanks to dcdw for some debugging help.
+
+2006-01-06  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet.c,
 	  gnome/applet/applet-dbus-devices.h, src/nm-dbus-nm.c: Remove global
 	  hangup code and add per-device hangup.  Tie last commit into the

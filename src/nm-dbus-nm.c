@@ -278,7 +278,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 		/* If there's security information, we use that.  If not, we
 		 * make some up from the scan list.
 		 */
-		if (dbus_message_iter_has_next (&iter))
+		if (dbus_message_iter_next (&iter))
 		{
 			if (!(security = nm_ap_security_new_deserialize (&iter)))
 			{

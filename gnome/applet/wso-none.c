@@ -25,6 +25,7 @@
 #include "wso-none.h"
 #include "wso-private.h"
 #include "cipher.h"
+#include "dbus-helpers.h"
 
 
 static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher)
@@ -38,6 +39,7 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 {
 	g_return_val_if_fail (opt != NULL, FALSE);
 
+	nmu_security_serialize_none_with_cipher (message);
 	return TRUE;
 }
 

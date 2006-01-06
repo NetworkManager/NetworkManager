@@ -1134,7 +1134,7 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 										DBUS_TYPE_STRING, &essid,
 										DBUS_TYPE_INVALID);
 
-			/* If we've got specific wireless security options, add them */
+			/* If we have specific wireless security options, add them */
 			if (opt)
 				success = wso_append_dbus_params (opt, essid, message);
 		}
@@ -1181,11 +1181,12 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 										DBUS_TYPE_INVALID);
 			wso_append_dbus_params (opt, essid, message);
 			dbus_connection_send (connection, message, NULL);
-		}
+		} else
+			nm_warning ("nmwa_dbus_create_network(): Could not get the device path!\n");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_set_device(): Couldn't allocate the dbus message\n");
+		nm_warning ("nmwa_dbus_create_network(): Couldn't allocate the dbus message\n");
 }
 
 

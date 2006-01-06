@@ -35,6 +35,8 @@ dbus_bool_t	nmu_security_deserialize_wep (DBusMessageIter *iter,
                                         int *key_len,
                                         int *auth_alg);
 
+dbus_bool_t	nmu_security_serialize_none_with_cipher (DBusMessage *message);
+
 dbus_bool_t	nmu_security_serialize_wep_with_cipher (DBusMessage *message,
                                         IEEE_802_11_Cipher *cipher,
                                         const char *ssid,

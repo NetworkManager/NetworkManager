@@ -434,6 +434,7 @@ static void nmwa_ond_response_cb (GtkDialog *dialog, gint response, gpointer dat
 	destroy_wireless_adapter_model (model);
 }
 
+
 void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
 {
 	GtkDialog *			dialog;

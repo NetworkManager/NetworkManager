@@ -95,6 +95,23 @@ nmu_security_deserialize_wep (DBusMessageIter *iter,
 
 
 dbus_bool_t
+nmu_security_serialize_none_with_cipher (DBusMessage *message)
+{
+	dbus_bool_t		result = TRUE;
+	DBusMessageIter	iter;
+
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	dbus_message_iter_init_append (message, &iter);
+
+	/* First arg: WE Cipher (INT32) */
+	we_cipher_append_helper (&iter, IW_AUTH_CIPHER_NONE);
+
+	return result;
+}
+
+
+dbus_bool_t
 nmu_security_serialize_wep_with_cipher (DBusMessage *message,
 					IEEE_802_11_Cipher *cipher,
 					const char *ssid,
