@@ -30,7 +30,7 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
 

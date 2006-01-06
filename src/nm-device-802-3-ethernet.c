@@ -328,9 +328,7 @@ out:
 /**************************************/
 /*    MII capability detection        */
 /**************************************/
-#define _LINUX_IF_H
 #include <linux/mii.h>
-#undef _LINUX_IF_H
 
 static int
 mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int location)
