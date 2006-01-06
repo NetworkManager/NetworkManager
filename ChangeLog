@@ -1,5 +1,13 @@
 2006-01-06  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerPolicy.c: Always prefer wired to wireless, as the
+	  user plugging in a network cable signals their preference for to
+	  switch, unless the user explicitly selected a wireless network and
+	  therefore signaled their preference for said wireless network over
+	  wired.  In other words, do exactly what makes sense.
+
+2006-01-06  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerDevice.c, src/NetworkManagerDevice.h,
 	  src/NetworkManagerDevicePrivate.h, src/NetworkManagerWireless.c,
 	  src/NetworkManagerWireless.h: Remove, no longer used and they keep

@@ -332,7 +332,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 
 	if (!old_dev && !new_dev)
 	{
-		/* Do nothing, wait for something like link-state to change, or an access point to be found */
+		; /* Do nothing, wait for something like link-state to change, or an access point to be found */
 	}
 	else if (!old_dev && new_dev)
 	{
@@ -386,10 +386,10 @@ static gboolean nm_policy_device_change_check (NMData *data)
 					         es, link);
 					do_switch = TRUE;
 				}
-			}
+			} /* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
 			else if (nm_device_is_802_3_ethernet (new_dev))
 			{
-				if (!nm_device_has_active_link (old_dev))
+				if (!old_user_requested)
 					do_switch = TRUE;
 			}
 		}
