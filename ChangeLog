@@ -1,3 +1,10 @@
+2006-01-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-private.h
+	  src/nm-device.c
+		- (nm_device_activate_schedule_stage3_ip_config_start): make this
+			function available to subclasses
+
 2006-01-06  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerPolicy.c: Always prefer wired to wireless, as the

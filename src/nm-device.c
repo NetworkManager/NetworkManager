@@ -73,7 +73,6 @@ struct _NMDevicePrivate
 
 static gpointer	nm_device_worker (gpointer user_data);
 
-static void		nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req);
 static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
 
 static void		nm_device_schedule_activation_handle_cancel (NMActRequest *req);
@@ -902,7 +901,7 @@ out:
  *
  * Schedule IP configuration start
  */
-static void
+void
 nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
 {
 	GSource *		source = NULL;
