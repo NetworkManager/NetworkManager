@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnome-screensaver\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-12-25 12:39+0100\n"
-"PO-Revision-Date: 2005-12-25 12:43+0100\n"
+"POT-Creation-Date: 2006-01-07 02:24+0100\n"
+"PO-Revision-Date: 2006-01-07 02:24+0100\n"
 "Last-Translator: Francisco Javier F. Serrador <serrador@cvs.gnome.org>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
 #. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:924
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Frase de paso para la red inalámbrica %s"
@@ -144,9 +144,9 @@ msgstr "La conexión VPN «%s» ha devuelto el siguiente mensaje:"
 msgid "VPN Login Message"
 msgstr "Mensaje de acceso VPN"
 
-#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2363
-#: ../gnome/applet/other-network-dialog.c:379
-#: ../gnome/applet/passphrase-dialog.c:351
+#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2402
+#: ../gnome/applet/other-network-dialog.c:448
+#: ../gnome/applet/passphrase-dialog.c:210
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -240,64 +240,70 @@ msgstr "Conexión VPN a «%s»"
 msgid "VPN connecting to '%s'"
 msgstr "VPN conectando a «%s»"
 
-#: ../gnome/applet/applet.c:1529
+#: ../gnome/applet/applet.c:1553
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Conectar a otra red inalámbrica..."
 
-#: ../gnome/applet/applet.c:1550
+#: ../gnome/applet/applet.c:1574
 msgid "Create _New Wireless Network..."
 msgstr "Crear una red inalámbrica _nueva..."
 
-#: ../gnome/applet/applet.c:1663
+#: ../gnome/applet/applet.c:1691
 msgid "_VPN Connections"
 msgstr "Conexiones _VPN"
 
-#: ../gnome/applet/applet.c:1695
+#: ../gnome/applet/applet.c:1726
 msgid "_Configure VPN..."
 msgstr "_Configurar VPN..."
 
-#: ../gnome/applet/applet.c:1699
+#: ../gnome/applet/applet.c:1730
 msgid "_Disconnect VPN..."
 msgstr "_Desconectar VPN..."
 
-#: ../gnome/applet/applet.c:1721
+#: ../gnome/applet/applet.c:1752
 msgid "_Dial Up Connections"
 msgstr "Conexiones de _marcado"
 
-#: ../gnome/applet/applet.c:1730
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1763
 #, c-format
 msgid "Connect to %s..."
 msgstr "Conectar a %s..."
 
-#: ../gnome/applet/applet.c:1780
+#: ../gnome/applet/applet.c:1769
+#, c-format
+msgid "Disconnect from %s..."
+msgstr "Desconectar de %s..."
+
+#: ../gnome/applet/applet.c:1818
 msgid "No network devices have been found"
 msgstr "No se ha encontrado ningún dispositivo de red"
 
-#: ../gnome/applet/applet.c:1954
+#: ../gnome/applet/applet.c:1992
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager no se está ejecutando..."
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2079
+#: ../gnome/applet/applet.c:2117
 msgid "Enable _Wireless"
 msgstr "Activar _inalámbrico"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2085
+#: ../gnome/applet/applet.c:2123
 msgid "Connection _Information"
 msgstr "_Información de la conexión"
 
 #. Help item
-#: ../gnome/applet/applet.c:2096
+#: ../gnome/applet/applet.c:2134
 msgid "_Help"
 msgstr "A_yuda"
 
 #. About item
-#: ../gnome/applet/applet.c:2105
+#: ../gnome/applet/applet.c:2143
 msgid "_About"
 msgstr "A_cerca de"
 
-#: ../gnome/applet/applet.c:2483
+#: ../gnome/applet/applet.c:2521
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -313,7 +319,7 @@ msgstr "Sistema abierto"
 msgid "Shared Key"
 msgstr "Clave compartida"
 
-#: ../gnome/applet/wso-none.c:51
+#: ../gnome/applet/wso-none.c:53
 msgid "None"
 msgstr "Ninguno"
 
@@ -363,11 +369,11 @@ msgid_plural "Wireless Networks"
 msgstr[0] "Red inalámbrica"
 msgstr[1] "Redes inalámbricas"
 
-#: ../gnome/applet/menu-items.c:326
+#: ../gnome/applet/menu-items.c:330
 msgid " (invalid Unicode)"
 msgstr " (Unicode inválido)"
 
-#: ../gnome/applet/other-network-dialog.c:248
+#: ../gnome/applet/other-network-dialog.c:347
 #, c-format
 msgid ""
 "By default, the ESSID is set to your computer's name, %s, with no encryption "
@@ -376,11 +382,11 @@ msgstr ""
 "Por omisión, el ESSID se establece al nombre de su equipo, %s sin ninguna "
 "encriptación activada"
 
-#: ../gnome/applet/other-network-dialog.c:252
+#: ../gnome/applet/other-network-dialog.c:351
 msgid "Create new wireless network"
 msgstr "Crea una red inalámbricas nueva"
 
-#: ../gnome/applet/other-network-dialog.c:253
+#: ../gnome/applet/other-network-dialog.c:352
 msgid ""
 "Enter the ESSID and security settings of the wireless network you wish to "
 "create."
@@ -388,20 +394,20 @@ msgstr ""
 "Introduzca el ESSID y las opciones de seguridad de la red inalámbrica que "
 "quiere crear."
 
-#: ../gnome/applet/other-network-dialog.c:257
+#: ../gnome/applet/other-network-dialog.c:356
 msgid "Create New Wireless Network"
 msgstr "Crear una red inalámbrica nueva"
 
-#: ../gnome/applet/other-network-dialog.c:262
+#: ../gnome/applet/other-network-dialog.c:361
 msgid "Custom wireless network"
 msgstr "Red inalámbrica personalizada"
 
-#: ../gnome/applet/other-network-dialog.c:263
+#: ../gnome/applet/other-network-dialog.c:362
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr ""
 "Introduzca el ESSID de la red inalámbrica con la que quiere conectarse."
 
-#: ../gnome/applet/other-network-dialog.c:265
+#: ../gnome/applet/other-network-dialog.c:364
 msgid "Connect to Other Wireless Network"
 msgstr "Conectar a otra red inalámbrica"
 
@@ -753,23 +759,23 @@ msgstr ""
 msgid "VPN Connections"
 msgstr "Conexiones VPN"
 
-#: ../src/nm-ap-security-wep.c:45
+#: ../src/nm-ap-security-wep.c:47
 msgid "40-bit WEP"
 msgstr "WEP de 40 bits"
 
-#: ../src/nm-ap-security-wep.c:47
+#: ../src/nm-ap-security-wep.c:49
 msgid "104-bit WEP"
 msgstr "WEP de 104 bits"
 
-#: ../src/nm-ap-security-wpa-psk.c:65
+#: ../src/nm-ap-security-wpa-psk.c:47
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:67
+#: ../src/nm-ap-security-wpa-psk.c:49
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security.c:298
+#: ../src/nm-ap-security.c:307
 msgid "none"
 msgstr "ninguna"
 
