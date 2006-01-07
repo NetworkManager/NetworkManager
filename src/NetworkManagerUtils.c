@@ -767,7 +767,19 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
 	response[len] = '\0';
 #ifdef SUPPLICANT_DEBUG
-	nm_info ("SUP: response was '%s'", response);
+	{
+		gboolean newline = FALSE;
+
+		/* Kill the newline for the debug message */
+		if (response[len - 1] == '\n')
+		{
+			newline = TRUE;
+			response[len - 1] = '\0';
+		}
+		nm_info ("SUP: response was '%s'", response);
+		if (newline)
+			response[len - 1] = '\n';
+	}
 #endif
 
 	if (response)
@@ -776,10 +788,22 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 			success = TRUE;
 		else
 		{
+			gboolean newline = FALSE;
+
+			/* Kill the newline for the debug message */
+			if (response[len - 1] == '\n')
+			{
+				newline = TRUE;
+				response[len - 1] = '\0';
+			}
+
 			temp = g_strdup_printf ("%s: supplicant error for '%s'.  Response: '%s'",
 						func, err_msg_cmd ? err_msg_cmd : command, response);
 			nm_warning_str (temp);
 			g_free (temp);
+
+			if (newline)
+				response[len - 1] = '\n';
 		}
 		g_free (response);
 	}
