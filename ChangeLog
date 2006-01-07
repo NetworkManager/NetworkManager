@@ -1,5 +1,11 @@
 2006-01-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+		- (nm_utils_supplicant_request, nm_utils_supplicant_request_with_check):
+			pass correct buffer length to wpa_ctrl_request()
+
+2006-01-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-private.h
 	  src/nm-device.c
 		- (nm_device_activate_schedule_stage3_ip_config_start): make this

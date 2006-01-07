@@ -700,6 +700,9 @@ int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 }
 
 
+#define SUPPLICANT_DEBUG
+#define RESPONSE_SIZE	2048
+
 char *
 nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
                              const char *format,
@@ -718,10 +721,17 @@ nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
 		return NULL;
 	va_end (args);
 
-	response = g_malloc (2048);
+	response = g_malloc (RESPONSE_SIZE);
+	len = RESPONSE_SIZE;
+#ifdef SUPPLICANT_DEBUG
+	nm_info ("SUP: sending command '%s'", command);
+#endif
 	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
 	g_free (command);
 	response[len] = '\0';
+#ifdef SUPPLICANT_DEBUG
+	nm_info ("SUP: response was '%s'", response);
+#endif
 	return response;
 }
 
@@ -749,9 +759,16 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 	if (!(command = g_strdup_vprintf (format, args)))
 		goto out;
 
-	response = g_malloc (2048);
+	response = g_malloc (RESPONSE_SIZE);
+	len = RESPONSE_SIZE;
+#ifdef SUPPLICANT_DEBUG
+	nm_info ("SUP: sending command '%s'", command);
+#endif
 	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
 	response[len] = '\0';
+#ifdef SUPPLICANT_DEBUG
+	nm_info ("SUP: response was '%s'", response);
+#endif
 
 	if (response)
 	{
