@@ -1870,62 +1870,8 @@ reschedule:
 	return FALSE;
 }
 
-/*
- * Return the amount of time we should wait for the device
- * to get a link, based on the # of frequencies it has to
- * scan.
- */
-static inline gint
-get_association_pause_value (NMDevice80211Wireless *self)
-{
-	/* If the card supports more than 14 channels, we should probably wait
-	 * around 10s so it can scan them all. After we set the ESSID on the card, the card
-	 * has to scan all channels to find our requested AP (which can take a long time
-	 * if it is an A/B/G chipset like the Atheros 5212, for example).
-	 */
-	if (self->priv->num_freqs > 14)
-		return 8;
-	else
-		return 5;
-}
 
-
-static gboolean
-link_test (int tries,
-           nm_completion_args args)
-{
-	NMDevice80211Wireless * self = args[0];
-	gboolean *err = args[1];
-
-	g_return_val_if_fail (self != NULL, TRUE);
-	g_return_val_if_fail (err != NULL, TRUE);
-
-	if (is_associated (self) && nm_device_802_11_wireless_get_essid (self))
-	{
-		*err = FALSE;
-		return TRUE;
-	}
-	*err = TRUE;
-	return FALSE;
-}
-
-static gboolean
-is_up_and_associated_wait (NMDevice80211Wireless *self,
-                           int timeout,
-                           int interval)
-{
-	gboolean err;
-	const gint delay = (G_USEC_PER_SEC * get_association_pause_value (self)) / interval;
-	const gint max_cycles = timeout * interval;
-	nm_completion_args args;
-
-	args[0] = self;
-	args[1] = &err;
-	nm_wait_for_completion (max_cycles, delay, NULL, link_test, args);
-	return !err;
-}
-
-
+#ifdef UNUSED
 /*
  * nm_device_set_wireless_config
  *
@@ -2086,10 +2032,11 @@ wireless_configure_adhoc (NMDevice80211Wireless *self,
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
+#endif /* UNUSED */
 
 
 /*
- * nm_device_wireless_is_associated
+ * is_associated
  *
  * Figure out whether or not we're associated to an access point
  */
@@ -2149,100 +2096,6 @@ out:
 
 
 static gboolean
-nm_dwwfl_test (int tries,
-               nm_completion_args args)
-{
-	NMDevice80211Wireless *	self = args[0];
-	guint *		assoc_count = args[1];
-	double *		last_freq = args[2];
-	char *		essid = args[3];
-	guint		required = GPOINTER_TO_UINT (args[4]);
-
-	double		cur_freq = nm_device_802_11_wireless_get_frequency (self);
-	gboolean		assoc = is_associated (self);
-	const char *	cur_essid = nm_device_802_11_wireless_get_essid (self);
-
-	/* If we've been cancelled, return that we should stop */
-	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
-		return TRUE;
-
-	/* If we're on the same frequency and essid, and we're associated,
-	 * increment the count for how many iterations we've been associated;
-	 * otherwise start over.  To avoid a direct comparison of floating points, we
-	 * ensure that the absolute value of their difference is within an epsilon. */
-	if ((fabs(cur_freq - *last_freq) < DBL_EPSILON) && assoc && !strcmp (essid, cur_essid))
-	{
-		(*assoc_count)++;
-	}
-	else
-	{
-		*assoc_count = 0;
-		*last_freq = cur_freq;
-	}
-
-	/* If we're told to cancel, return that we're finished.
-	 * If the card's frequency has been stable for more than the required
-	 * interval, return that we're finished.
-	 * Otherwise, we're not finished. */
-	if (nm_device_activation_should_cancel (NM_DEVICE (self)) || (*assoc_count >= required))
-		return TRUE;
-
-	return FALSE;
-}
-
-
-/*
- * nm_device_wireless_wait_for_link
- *
- * Try to be clever about when the wireless card really has associated with the access point.
- * Return TRUE when we think that it has, and FALSE when we thing it has not associated.
- *
- */
-static gboolean
-nm_device_wireless_wait_for_link (NMDevice80211Wireless *self,
-                                  const char *essid)
-{
-	guint		assoc = 0;
-	double		last_freq = 0;
-	struct timeval	timeout = { .tv_sec = 0, .tv_usec = 0 };
-	nm_completion_args args;
-
-	/* we want to sleep for a very short amount of time, to minimize
-	 * hysteresis on the boundaries of our required time.  But we
-	 * also want the maximum to be based on what the card can handle. */
-	const guint	delay = 30;
-	const guint	required_tries = 10;
-	const guint	min_delay = 2 * (delay / required_tries);
-
-	/* for cards that don't scan many frequencies, this will return 
-	 * 5 seconds, which we'll bump up to 6 seconds below.  Oh well. */
-	timeout.tv_sec = (time_t) get_association_pause_value (self);
-
-	/* Refuse to have a timeout that's _less_ than twice the total time
-	 * required before calling a link valid */
-	if (timeout.tv_sec < min_delay)
-		timeout.tv_sec = min_delay;
-
-	/* We more or less keep asking the driver for the frequency the
-	 * card is listening on until it connects to an AP.  Once it's 
-	 * associated, the driver stops scanning.  To detect that, we look
-	 * for the essid and frequency to remain constant for 3 seconds.
-	 * When it remains constant, we assume it's a real link. */
-	args[0] = self;
-	args[1] = &assoc;
-	args[2] = &last_freq;
-	args[3] = (void *)essid;
-	args[4] = (void *)(required_tries * 2);
-	nm_wait_for_timeout (&timeout, G_USEC_PER_SEC / delay, nm_dwwfl_test, nm_dwwfl_test, args);
-
-	/* If we've had a reasonable association count, we say we have a link */
-	if (assoc > required_tries)
-		return TRUE;
-	return FALSE;
-}
-
-
-static gboolean
 ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
 {
 	char *		essid;
@@ -2281,60 +2134,6 @@ ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
 	}
 
 	return need_key;
-}
-
-
-/*
- * nm_device_activate_wireless_configure
- *
- * Configure a wireless device for association with a particular access point.
- *
- */
-static NMActStageReturn
-wireless_configure_infra (NMDevice80211Wireless *self,
-                          NMAccessPoint *ap,
-                          NMActRequest *req)
-{
-	NMData *			data;
-	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
-	const char *		iface;
-	gboolean			link = FALSE;
-
-	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	nm_device_bring_up_wait (NM_DEVICE (self), TRUE);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) will connect to access point '%s'.",
-			iface, nm_ap_get_essid (ap));
-
-	if (ap_need_key (self, ap))
-	{
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
-
-	set_wireless_config (self, ap);
-	if (nm_device_wireless_wait_for_link (self, nm_ap_get_essid (ap)))
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-
-	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
-		return NM_ACT_STAGE_RETURN_SUCCESS;
-
-	if (ret == NM_ACT_STAGE_RETURN_SUCCESS)
-	{
-		nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) successful.  Connected to access point '%s'.",
-				iface, nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-	}
-	else
-	{
-		nm_info ("Activation (%s/wireless): no hardware link to '%s'.",
-				iface, nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-	}
-
-	return ret;
 }
 
 
@@ -2722,12 +2521,6 @@ real_act_stage2_config (NMDevice *dev,
 
 	g_assert (ap);
 
-#ifdef OLD_ACTIVATION
-	if (nm_ap_get_user_created (ap))
-		ret = wireless_configure_adhoc (self, ap, req);
-	else
-		ret = wireless_configure_infra (self, ap, req);
-#else
 	supplicant_cleanup (self);
 
 	/* If we need an encryption key, get one */
@@ -2765,7 +2558,6 @@ real_act_stage2_config (NMDevice *dev,
 
 	/* We'll get stage3 started when the supplicant connects */
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
-#endif
 
 out:
 	return ret;

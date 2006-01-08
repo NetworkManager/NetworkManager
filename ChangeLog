@@ -1,5 +1,10 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- Remove unused code from the old device activation path
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/dbus-helpers.c
 		- (nmu_security_serialize_wpa_psk): pass a blank key through
 			dbus when key == NULL
