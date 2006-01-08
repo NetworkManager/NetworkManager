@@ -1,5 +1,11 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/dbus-helpers.c
+		- (nmu_security_serialize_wpa_psk): pass a blank key through
+			dbus when key == NULL
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/nm-gconf-wso-wpa-psk.c
 		- (nm_gconf_wso_wpa_psk_new_deserialize_dbus): feed
 			correct arguments to nmu_security_deserialize_wpa_psk()

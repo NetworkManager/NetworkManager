@@ -145,13 +145,14 @@ nmu_security_serialize_wpa_psk (DBusMessageIter *iter,
 					int wpa_version,
 					int key_mgt)
 {
+	const char *	fake_key = "";
+
 	g_return_val_if_fail (iter != NULL, FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
 	g_return_val_if_fail ((key_mgt == IW_AUTH_KEY_MGMT_802_1X) || (key_mgt == IW_AUTH_KEY_MGMT_PSK), FALSE);
 
 	/* Second arg: hashed key (STRING) */
-	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &key);
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, key ? &key : &fake_key);
 
 	/* Third arg: WPA version (INT32) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &wpa_version);
