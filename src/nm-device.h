@@ -139,7 +139,6 @@ void			nm_device_set_removed	(NMDevice *dev,
 gboolean		nm_device_has_active_link	(NMDevice *dev);
 void			nm_device_set_active_link	(NMDevice *dev,
 									 const gboolean active);
-gboolean		nm_device_probe_link_state	(NMDevice *dev);
 
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
