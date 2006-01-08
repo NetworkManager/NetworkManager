@@ -1,3 +1,16 @@
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManager.h
+		- Add NMI_DBUS_USER_KEY_CANCELED_ERROR as a constant for
+			applet/info-daemons
+
+	* gnome/applet/passphrase-dialog.c
+		- Use the constant.  Fixes a bug where the arguments to
+			dbus_message_new_error() were incorrect
+
+	* src/nm-dbus-nmi.c
+		- Use the constant
+
 2006-01-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
