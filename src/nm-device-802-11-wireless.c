@@ -58,8 +58,6 @@ struct _NMDevice80211WirelessPrivate
 	iwqual			max_qual;
 	iwqual			avg_qual;
 
-	guint			failed_link_count;
-
 	gint8			num_freqs;
 	double			freqs[IW_MAX_FREQUENCIES];
 
@@ -74,6 +72,9 @@ struct _NMDevice80211WirelessPrivate
 	GSource *			sup_status;
 	struct wpa_ctrl *	sup_ctrl;
 	GSource *			sup_timeout;
+
+	guint32			failed_link_count;
+	GSource *			link_timeout;
 
 	/* Static options from driver */
 	guint8			we_version;
@@ -130,6 +131,8 @@ static gboolean	link_to_specific_ap (NMDevice80211Wireless *self,
 								 gboolean default_link);
 
 static void		supplicant_cleanup (NMDevice80211Wireless *self);
+
+static void		remove_link_timeout (NMDevice80211Wireless *self);
 
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
@@ -289,29 +292,14 @@ real_init (NMDevice *dev)
 }
 
 
-static gboolean
-probe_link (NMDevice80211Wireless *self)
-{
-	gboolean		link = FALSE;
-	NMActRequest *	req;
-
-	if ((req = nm_device_get_act_request (NM_DEVICE (self))))
-	{
-		NMAccessPoint * ap;
-		if ((ap = nm_act_request_get_ap (req)))
-			link = link_to_specific_ap (self, ap, TRUE);
-	}
-
-	return link;
-}
-
-
 static void
 real_update_link (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+	/* If the supplicant isn't running, we can't possibly have a link */
+	if (!self->priv->sup_pid)
+		nm_device_set_active_link (NM_DEVICE (self), FALSE);
 }
 
 
@@ -329,7 +317,6 @@ nm_device_802_11_periodic_update (gpointer data)
 	g_return_val_if_fail (self != NULL, TRUE);
 
 	nm_device_802_11_wireless_update_signal_strength (self);
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
 
 	return TRUE;
 }
@@ -374,6 +361,7 @@ real_deactivate (NMDevice *dev)
 	g_assert (app_data);
 
 	supplicant_cleanup (self);
+	remove_link_timeout (self);
 
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_802_11_wireless_set_essid (self, "");
@@ -2370,6 +2358,18 @@ wireless_configure_infra (NMDevice80211Wireless *self,
 
 
 static void
+remove_link_timeout (NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	if (self->priv->link_timeout != NULL)
+	{
+		g_source_destroy (self->priv->link_timeout);
+		self->priv->link_timeout = NULL;
+	}
+}
+
+static void
 supplicant_remove_timeout (NMDevice80211Wireless *self)
 {
 	g_return_if_fail (self != NULL);
@@ -2410,6 +2410,7 @@ supplicant_cleanup (NMDevice80211Wireless *self)
 	}
 
 	supplicant_remove_timeout (self);
+	remove_link_timeout (self);
 
 	/* HACK: should be fixed in wpa_supplicant */
 	unlink (WPA_SUPPLICANT_GLOBAL_SOCKET);
@@ -2420,6 +2421,7 @@ supplicant_watch_cb (GPid pid,
                      gint status,
                      gpointer user_data)
 {
+	NMDevice *			dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 	
 	g_assert (self);
@@ -2435,8 +2437,24 @@ supplicant_watch_cb (GPid pid,
 
 	supplicant_cleanup (self);
 
-	/* FIXME: deal with disconnection; device no longer has a link */
+	nm_device_set_active_link (dev, FALSE);
 }
+
+
+static gboolean
+link_timeout_cb (gpointer user_data)
+{
+	NMDevice *			dev = NM_DEVICE (user_data);
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
+
+	g_assert (dev);
+
+	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+	nm_device_set_active_link (dev, FALSE);
+
+	return FALSE;
+}
+
 
 #define MESSAGE_LEN	2048
 
@@ -2445,15 +2463,19 @@ supplicant_status_cb (GIOChannel *source,
                       GIOCondition condition,
                       gpointer user_data)
 {
+	NMDevice *			dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 	char *				message;
 	size_t				len;
 	struct wpa_ctrl *		ctrl;
+	NMActRequest * 		req;
 
 	g_assert (self);
 
 	ctrl = self->priv->sup_ctrl;
 	g_return_val_if_fail (ctrl != NULL, FALSE);
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
 
 	message = g_malloc (MESSAGE_LEN);
 	len = MESSAGE_LEN;
@@ -2462,7 +2484,8 @@ supplicant_status_cb (GIOChannel *source,
 
 	if (strstr (message, WPA_EVENT_CONNECTED) != NULL)
 	{
-		NMActRequest * req = nm_device_get_act_request (NM_DEVICE (self));
+		remove_link_timeout (self);
+		nm_device_set_active_link (dev, TRUE);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -2481,8 +2504,21 @@ supplicant_status_cb (GIOChannel *source,
 	}
 	else if (strstr (message, WPA_EVENT_DISCONNECTED) != NULL)
 	{
-		printf("DOWN\n");
-		/* FIXME: deal with disconnection; device no longer has a link */
+		if (nm_device_is_activated (dev) || nm_device_is_activating (dev))
+		{
+			/* Start the link timeout so we allow some time for reauthentication */
+			if (self->priv->link_timeout == NULL)
+			{
+				GMainContext *	context = nm_device_get_main_context (dev);
+				self->priv->link_timeout = g_timeout_source_new (8000);
+				g_source_set_callback (self->priv->link_timeout, link_timeout_cb, self, NULL);
+				g_source_attach (self->priv->link_timeout, context);
+			}
+		}
+		else
+		{
+			nm_device_set_active_link (dev, FALSE);
+		}
 	}
 
 	return TRUE;

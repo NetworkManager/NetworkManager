@@ -1,6 +1,13 @@
 2006-01-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
+		- Add a link timeout so we allow the supplicant time to
+			reassociate if it can, before we deactivate the card
+		- Fix up link status and link updating so things work better
+
+2006-01-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
 		- Switch over to using wpa_supplicant
 		- Add a timeout of 10s for association of the supplicant
 		- Start the monitor callback of the supplicant
