@@ -148,7 +148,7 @@ nmi_passphrase_dialog_response_received (GtkWidget *dialog,
 	{
 		DBusMessage *	reply;
 
-		reply = dbus_message_new_error (message, "CanceledError", "Request was cancelled.");
+		reply = dbus_message_new_error (message, NMI_DBUS_USER_KEY_CANCELED_ERROR, "Request was cancelled.");
 		dbus_connection_send (applet->connection, reply, NULL);
 		goto out;
 	}

@@ -59,8 +59,6 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 
 	dbus_pending_call_ref (pcall);
 
-	nm_info ("Activation (%s) New wireless user key for network '%s' received.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
-
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
@@ -75,7 +73,12 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 		dbus_set_error_from_message (&err, reply);
 
 		/* Check for cancelled error */
-		if (strcmp (err.name, "CanceledError") != 0)
+		if (strcmp (err.name, NMI_DBUS_USER_KEY_CANCELED_ERROR) == 0)
+		{
+			nm_info ("Activation (%s) New wireless user key request for network '%s' was canceled.",
+					nm_device_get_iface (dev), nm_ap_get_essid (ap));
+		}
+		else
 			nm_warning ("nm_dbus_get_user_key_for_network_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 
 		dbus_error_free (&err);
@@ -92,6 +95,8 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 
 		goto out;
 	}
+
+	nm_info ("Activation (%s) New wireless user key for network '%s' received.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
 
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter)))

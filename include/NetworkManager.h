@@ -48,6 +48,8 @@
 #define NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
 #define NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
 
+#define NMI_DBUS_USER_KEY_CANCELED_ERROR	"org.freedesktop.NetworkManagerInfo.CanceledError"
+
 
 /*
  * NetworkManager signals
