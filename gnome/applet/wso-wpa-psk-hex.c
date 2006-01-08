@@ -115,6 +115,7 @@ WirelessSecurityOption * wso_wpa_psk_hex_new (const char *glade_file)
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
 	opt->widget_create_func = widget_create_func;
+	opt->append_dbus_params_func = append_dbus_params_func;
 
 	if (!(opt->uixml = glade_xml_new (glade_file, opt->widget_name, NULL)))
 	{
