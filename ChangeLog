@@ -1,5 +1,11 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (get_wireless_capabilities): correctly detect driver WPA
+			capabilities
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/Makefile.am
 	  gnome/applet/wso-wpa-psk-hex.c
 	  gnome/applet/wso-wpa-psk-hex.h

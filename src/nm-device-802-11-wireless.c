@@ -177,13 +177,13 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
                            iwrange * range,
                            guint32 data_len)
 {
-	int		minlen;
+	guint32	minlen;
 	guint32	caps = NM_802_11_CAP_NONE;
 
 	g_return_val_if_fail (self != NULL, NM_802_11_CAP_NONE);
 	g_return_val_if_fail (range != NULL, NM_802_11_CAP_NONE);
 
-	minlen = ((char *) range->enc_capa) - (char *) range + sizeof (range->enc_capa);
+	minlen = ((char *) &range->enc_capa) - (char *) range + sizeof (range->enc_capa);
 
 	/* All drivers should support WEP by default */
 	caps |= (NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
