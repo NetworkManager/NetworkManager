@@ -27,10 +27,10 @@
 #include <iwlib.h>
 
 #include "wireless-security-option.h"
-#include "wso-wpa-psk-passphrase.h"
+#include "wso-wpa-psk-hex.h"
 #include "wso-private.h"
 #include "cipher.h"
-#include "cipher-wpa-psk-passphrase.h"
+#include "cipher-wpa-psk-hex.h"
 #include "dbus-helpers.h"
 
 
@@ -101,7 +101,7 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 }
 
 
-WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
+WirelessSecurityOption * wso_wpa_psk_hex_new (const char *glade_file)
 {
 	WirelessSecurityOption * opt = NULL;
 	GladeXML *			xml = NULL;
@@ -110,8 +110,8 @@ WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WPA Personal Passphrase"));
-	opt->widget_name = "wpa_psk_passphrase_notebook";
+	opt->name = g_strdup (_("WPA Personal Hex"));
+	opt->widget_name = "wpa_psk_hex_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
 	opt->widget_create_func = widget_create_func;
@@ -121,11 +121,11 @@ WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
 		wso_free (opt);
 		return NULL;
 	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wpa_psk_passphrase_new ());
+	opt->ciphers = g_slist_append (opt->ciphers, cipher_wpa_psk_hex_new ());
 
 	/* Option-specific data */
 	opt->data = data = g_malloc0 (sizeof (OptData));
-	data->entry_name = "wpa_psk_passphrase_entry";
+	data->entry_name = "wpa_psk_hex_entry";
 
 	return opt;
 }

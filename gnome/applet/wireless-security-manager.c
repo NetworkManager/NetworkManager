@@ -34,6 +34,7 @@
 #include "wso-wep-hex.h"
 #include "wso-wep-passphrase.h"
 #include "wso-wpa-psk-passphrase.h"
+#include "wso-wpa-psk-hex.h"
 
 struct WirelessSecurityManager
 {
@@ -88,14 +89,16 @@ void wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
 		wsm->options = g_slist_append (wsm->options, opt);
 	}
 
-#if 0	/* NOT YET */
 	if (capabilities & NM_802_11_CAP_PROTO_WPA)
 	{
-		opt = wso_wpa_psk_passphrase_new (glade_file);
+		opt = wso_wpa_psk_passphrase_new (wsm->glade_file);
+		g_assert (opt);
+		wsm->options = g_slist_append (wsm->options, opt);
+
+		opt = wso_wpa_psk_hex_new (wsm->glade_file);
 		g_assert (opt);
 		wsm->options = g_slist_append (wsm->options, opt);
 	}
-#endif
 }
 
 #define NAME_COLUMN	0

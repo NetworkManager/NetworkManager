@@ -1,5 +1,23 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/Makefile.am
+	  gnome/applet/wso-wpa-psk-hex.c
+	  gnome/applet/wso-wpa-psk-hex.h
+		- New files, implement WPA-PSK Hex key input
+
+	* gnome/applet/wireless-applet.glade
+		- Change existing wpa-psk stuff to wpa-psk-hex
+		- Add new widgets for wpa-psk-passphrase
+
+	* gnome/applet/wireless-security-manager.c
+		- (wsm_set_capabilities): enable WPA options
+
+	* gnome/applet/wso-wpa-psk-passphrase.c
+		- (wso_wpa_psk_passphrase_new): use correct glade widgets
+			for WPA-PSK passphrase
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Add NMI_DBUS_USER_KEY_CANCELED_ERROR as a constant for
 			applet/info-daemons
