@@ -82,7 +82,6 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 			nm_warning ("nm_dbus_get_user_key_for_network_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 
 		dbus_error_free (&err);
-		dbus_message_unref (reply);
 
 		/* FIXME: since we're not marking the device as invalid, its a fair bet
 		 * that NM will just try to reactivate the device again, and may fail
