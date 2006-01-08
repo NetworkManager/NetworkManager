@@ -1,5 +1,15 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/nm-gconf-wso-wpa-psk.c
+		- (nm_gconf_wso_wpa_psk_new_deserialize_dbus): feed
+			correct arguments to nmu_security_deserialize_wpa_psk()
+
+	* src/nm-ap-security-wpa-psk.c
+		- (nm_ap_security_wpa_psk_new_deserialize): feed correct
+			arguments to nmu_security_deserialize_wpa_psk()
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/wso-wpa-psk-hex.c
 	  gnome/applet/wso-wpa-psk-passphrase.c
 		- Hook up the append_dbus_params_func() function

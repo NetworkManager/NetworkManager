@@ -47,10 +47,10 @@ NMGConfWSOWPA_PSK *
 nm_gconf_wso_wpa_psk_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 {
 	NMGConfWSOWPA_PSK *	security = NULL;
-	char *				key;
-	int					key_len;
-	int					wpa_version;
-	int					key_mgt;
+	char *			key = NULL;
+	int				key_len;
+	int				wpa_version;
+	int				key_mgt;
 
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);

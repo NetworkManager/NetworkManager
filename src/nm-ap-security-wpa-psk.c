@@ -53,7 +53,7 @@ NMAPSecurityWPA_PSK *
 nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
 {
 	NMAPSecurityWPA_PSK *	security = NULL;
-	char *				key;
+	char *				key = NULL;
 	int					key_len;
 	int					wpa_version;
 	int					key_mgt;
