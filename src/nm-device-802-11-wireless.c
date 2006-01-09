@@ -2712,6 +2712,14 @@ real_activation_success_handler (NMDevice *dev,
 	/* Cache details in the info-daemon since the connect was successful */
 	automatic = !nm_act_request_get_user_requested (req);
 
+	/* If it's a user-created ad-hoc network, add it to the device's scan list */
+	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap))
+	{
+		NMAccessPointList *ap_list = nm_device_802_11_wireless_ap_list_get (self);
+		if (!nm_ap_list_get_ap_by_essid (ap_list, nm_ap_get_essid (ap)))
+			nm_ap_list_append_ap (ap_list, ap);
+	}
+
 	nm_device_802_11_wireless_get_bssid (self, &addr);
 	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 		nm_ap_set_address (ap, &addr);

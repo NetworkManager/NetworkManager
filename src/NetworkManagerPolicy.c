@@ -371,19 +371,24 @@ static gboolean nm_policy_device_change_check (NMData *data)
 			{
 				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
 				const char *	old_essid = nm_ap_get_essid (old_ap);
+				int			old_mode = nm_ap_get_mode (old_ap);
 				const char *	new_essid = nm_ap_get_essid (ap);
 
-				/* Schedule new activation if the currently associated access point is not the "best" one
-				 * or we've lost the link to the old access point.
+				/* Schedule new activation if the currently associated
+				 * access point is not the "best" one or we've lost the
+				 * link to the old access point.  We don't switch away
+				 * from Ad-Hoc APs either.
 				 */
-				gboolean es = (strcmp (old_essid, new_essid) != 0);
+				gboolean same_essid = (strcmp (old_essid, new_essid) == 0);
 				gboolean link = nm_device_has_active_link (old_dev);
-				if (es || !link)
+				if ((!same_essid || !link) && (old_mode != IW_MODE_ADHOC))
 				{
-					nm_info ("SWITCH: found better connection '%s/%s' than current connection '%s/%s'.  different_ssids=%d, have_link=%d",
+					nm_info ("SWITCH: found better connection '%s/%s'"
+					         " than current connection '%s/%s'.  "
+					         "same_ssid=%d, have_link=%d",
 					         nm_device_get_iface (new_dev),	new_essid,
 					         nm_device_get_iface (old_dev), old_essid,
-					         es, link);
+					         same_essid, link);
 					do_switch = TRUE;
 				}
 			} /* Always prefer Ethernet over wireless, unless the user explicitly switched away. */

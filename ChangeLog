@@ -1,3 +1,17 @@
+2006-01-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): don't autoswitch away from
+			Ad-Hoc networks, since there's really no concept of "link"
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_create_wireless_network): mark created networks
+			as Ad-Hoc networks
+
+	* src/nm-device-802-11-wireless.c
+		- (real_activation_success_handler): add user-created Ad-Hoc
+			networks to the device's scan list
+
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
 	We now require a patch for wpa_supplicant to support Ad-Hoc

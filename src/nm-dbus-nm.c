@@ -386,6 +386,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 
 	new_ap = nm_ap_new ();
 	nm_ap_set_essid (new_ap, essid);
+	nm_ap_set_mode (new_ap, IW_MODE_ADHOC);
 	nm_ap_set_security (new_ap, security);
 	g_object_unref (G_OBJECT (security));
 	nm_ap_set_user_created (new_ap, TRUE);
