@@ -77,6 +77,7 @@ static void		nmwa_about_cb (NMWirelessApplet *applet);
 static void		nmwa_context_menu_update (NMWirelessApplet *applet);
 static GtkWidget *	nmwa_get_instance (NMWirelessApplet *applet);
 static void		nmwa_update_state (NMWirelessApplet *applet);
+static void		nmwa_dropdown_menu_deactivate_cb (GtkWidget *menu, NMWirelessApplet *applet);
 
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
@@ -841,6 +842,7 @@ static VPNConnection *nmwa_get_first_activating_vpn_connection (NMWirelessApplet
 
 static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPixbuf *vpn_icon)
 {
+	GtkRequisition requisition;
 	GdkPixbuf	*composite;
 	VPNConnection	*vpn;
 
@@ -859,6 +861,13 @@ static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPi
 
 out:
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
+
+	/* Add some padding to the applet to ensure the
+	 * highlight has some space.
+	 */
+	gtk_widget_set_size_request (GTK_WIDGET (applet), -1, -1);
+	gtk_widget_size_request (GTK_WIDGET (applet), &requisition);
+	gtk_widget_set_size_request (GTK_WIDGET (applet), requisition.width + 6, requisition.height + 2);
 
 	g_object_unref (composite);
 }
@@ -2169,32 +2178,83 @@ static void nmwa_theme_change_cb (NMWirelessApplet *applet)
 	{
 		gtk_menu_item_remove_submenu (GTK_MENU_ITEM (applet->top_menu_item));
 		applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
+		g_signal_connect (applet->dropdown_menu, "deactivate", G_CALLBACK (nmwa_dropdown_menu_deactivate_cb), applet);
 	}
+}
+
+/*
+ * nmwa_menu_position_func
+ *
+ * Position main dropdown menu, adapted from netapplet
+ *
+ */
+static void nmwa_menu_position_func (GtkMenu *menu G_GNUC_UNUSED, int *x, int *y, gboolean *push_in, gpointer user_data)
+{
+	int screen_w, screen_h, button_x, button_y, panel_w, panel_h;
+	GtkRequisition requisition;
+	GdkScreen *screen;
+	NMWirelessApplet *applet = (NMWirelessApplet *)user_data;
+
+	screen = gtk_widget_get_screen (applet->event_box);
+	screen_w = gdk_screen_get_width (screen);
+	screen_h = gdk_screen_get_height (screen);
+
+	gdk_window_get_origin (applet->event_box->window, &button_x, &button_y);
+	gtk_window_get_size (GTK_WINDOW (gtk_widget_get_toplevel (applet->event_box)), &panel_w, &panel_h);
+
+	*x = button_x;
+
+	/* Check to see if we would be placing the menu off of the end of the screen. */
+	gtk_widget_size_request (GTK_WIDGET (menu), &requisition);
+	if (button_y + panel_h + requisition.height >= screen_h)
+		*y = button_y - requisition.height;
+	else
+		*y = button_y + panel_h;
+
+	*push_in = TRUE;
 }
 
 /*
  * nmwa_toplevel_menu_button_press_cb
  *
- * Handle right-clicks for the context popup menu
+ * Handle left/right-clicks for the dropdown and context popup menus
  *
  */
-static gboolean nmwa_toplevel_menu_button_press_cb (GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+static gboolean nmwa_toplevel_menu_button_press_cb (GtkWidget *widget, GdkEventButton *event, NMWirelessApplet *applet)
 {
-	NMWirelessApplet	*applet = (NMWirelessApplet *)user_data;
-
 	g_return_val_if_fail (applet != NULL, FALSE);
 
-	if (event->button != 1)
-		g_signal_stop_emission_by_name (widget, "button_press_event");
-
-	if (event->button == 3)
+	switch (event->button)
 	{
-		nmwa_context_menu_update (applet);
-		gtk_menu_popup (GTK_MENU (applet->context_menu), NULL, NULL, NULL, applet, event->button, event->time);
-		return (TRUE);
+		case 1:
+			gtk_widget_set_state (applet->event_box, GTK_STATE_SELECTED);
+			gtk_menu_popup (GTK_MENU (applet->dropdown_menu), NULL, NULL, nmwa_menu_position_func, applet, event->button, event->time);
+			return TRUE;
+		case 3:
+			nmwa_context_menu_update (applet);
+			gtk_menu_popup (GTK_MENU (applet->context_menu), NULL, NULL, nmwa_menu_position_func, applet, event->button, event->time);
+			return TRUE;
+		default:
+			g_signal_stop_emission_by_name (widget, "button_press_event");
+			return FALSE;
 	}
 
-	return (FALSE);
+	return FALSE;
+}
+
+
+/*
+ * nmwa_toplevel_menu_button_press_cb
+ *
+ * Handle left-unclick on the dropdown menu.
+ *
+ */
+static void nmwa_dropdown_menu_deactivate_cb (GtkWidget *menu, NMWirelessApplet *applet)
+{
+
+	g_return_if_fail (applet != NULL);
+
+	gtk_widget_set_state (applet->event_box, GTK_STATE_NORMAL);
 }
 
 
@@ -2207,33 +2267,22 @@ static gboolean nmwa_toplevel_menu_button_press_cb (GtkWidget *widget, GdkEventB
  */
 static void nmwa_setup_widgets (NMWirelessApplet *applet)
 {
-	GtkWidget      *menu_bar;
-
-	/* Event box for tooltips */
+	/* Event box is the main applet widget */
 	applet->event_box = gtk_event_box_new ();
 	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
-
-	menu_bar = gtk_menu_bar_new ();
 
 	applet->top_menu_item = gtk_menu_item_new();
 	gtk_widget_set_name (applet->top_menu_item, "ToplevelMenu");
 	gtk_container_set_border_width (GTK_CONTAINER (applet->top_menu_item), 0);
-	g_signal_connect (applet->top_menu_item, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press_cb), applet);
-
-	applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
 
 	applet->pixmap = gtk_image_new ();
-
-	applet->icon_box = gtk_hbox_new (FALSE, 3);
-	gtk_container_set_border_width (GTK_CONTAINER (applet->icon_box), 0);
-
-	/* Set up the widget structure and show the applet */
-	gtk_container_add (GTK_CONTAINER (applet->icon_box), applet->pixmap);
-	gtk_container_add (GTK_CONTAINER (applet->top_menu_item), applet->icon_box);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu_bar), applet->top_menu_item);
-	gtk_container_add (GTK_CONTAINER (applet->event_box), menu_bar);
+	gtk_container_add (GTK_CONTAINER (applet->event_box), applet->pixmap);
 	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
-	gtk_widget_show_all (GTK_WIDGET (applet));
+ 	gtk_widget_show_all (GTK_WIDGET (applet));
+ 
+	applet->dropdown_menu = nmwa_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
+	g_signal_connect (applet->event_box, "button_press_event", G_CALLBACK (nmwa_toplevel_menu_button_press_cb), applet);
+	g_signal_connect (applet->dropdown_menu, "deactivate", G_CALLBACK (nmwa_dropdown_menu_deactivate_cb), applet);
 
 	applet->context_menu = nmwa_context_menu_create (applet);
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);

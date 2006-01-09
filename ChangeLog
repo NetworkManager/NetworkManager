@@ -1,3 +1,14 @@
+2006-01-09  Dan Williams  <dcbw@redhat.com>
+
+	Apply Robert's 'tray icon redo' patch with fixes
+
+	* gnome/applet/applet.c
+	  gnome/applet/applet.h
+		- Instead of using a menu bar + menu item, simulate menu
+			behavior using a popup menu.  Highlight the area around
+			the icon more like a menu too, by playing with the applet's
+			size requisition
+
 2006-01-09  Timo Hoenig   <thoenig@suse.de>
 	* libnm-util/dbus-helpers.c
 	  libnm-util/dbus-helpers.h

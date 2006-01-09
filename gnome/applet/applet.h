@@ -113,7 +113,6 @@ typedef struct
 	guint			animation_id;
 
 	/* Direct UI elements */
-	GtkWidget *		icon_box;
 	GtkWidget *		pixmap;
 	GtkWidget *		top_menu_item;
 	GtkWidget *		dropdown_menu;
