@@ -64,7 +64,10 @@ struct _NMAPSecurityClass
 
 	int	(*serialize_func)				(NMAPSecurity *self, DBusMessageIter *iter);
 
-	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self, struct wpa_ctrl *ctrl, int nwid);
+	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self,
+									  struct wpa_ctrl *ctrl,
+									  int nwid,
+									  gboolean user_created);
 
 	int	(*device_setup_func)			(NMAPSecurity *self, NMDevice80211Wireless * dev);
 };
@@ -74,21 +77,26 @@ GType nm_ap_security_get_type (void);
 
 NMAPSecurity *	nm_ap_security_new_copy (NMAPSecurity *self);
 
-NMAPSecurity * nm_ap_security_new_deserialize (DBusMessageIter *iter);
+NMAPSecurity *	nm_ap_security_new_deserialize (DBusMessageIter *iter);
 
 NMAPSecurity *	nm_ap_security_new_from_ap (struct NMAccessPoint *ap);
 
-int nm_ap_security_get_we_cipher (NMAPSecurity *self);
+int			nm_ap_security_get_we_cipher (NMAPSecurity *self);
 
-const char * nm_ap_security_get_key (NMAPSecurity *self);
+const char *	nm_ap_security_get_key (NMAPSecurity *self);
 
-int nm_ap_security_serialize (NMAPSecurity *self, DBusMessageIter *iter);
+int			nm_ap_security_serialize (NMAPSecurity *self,
+									DBusMessageIter *iter);
 
-gboolean nm_ap_security_write_supplicant_config (NMAPSecurity *self, struct wpa_ctrl *ctrl, int nwid);
+gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
+									struct wpa_ctrl *ctrl,
+									int nwid,
+									gboolean user_created);
 
-int nm_ap_security_device_setup (NMAPSecurity *self, NMDevice80211Wireless *dev);
+int			nm_ap_security_device_setup (NMAPSecurity *self,
+									NMDevice80211Wireless *dev);
 
-const char *nm_ap_security_get_description (NMAPSecurity *self);
+const char *	nm_ap_security_get_description (NMAPSecurity *self);
 
 G_END_DECLS
 

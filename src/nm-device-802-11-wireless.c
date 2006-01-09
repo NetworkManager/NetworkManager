@@ -2421,6 +2421,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	int				nwid;
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
+	gboolean			user_created;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2453,10 +2454,22 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 			"SET_NETWORK %i ssid \"%s\"", nwid, essid))
 		goto out;
 
+	/* Ad-Hoc ? */
+	user_created = nm_ap_get_user_created (ap);
+	if (user_created)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i mode 1", nwid))
+			goto out;
+	}
+
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
 		goto out;
 
-	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid))
+	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid, user_created))
+		goto out;
+
+	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
 		goto out;
 
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,

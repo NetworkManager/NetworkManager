@@ -110,7 +110,8 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
-                              int nwid)
+                              int nwid,
+                              gboolean user_created)
 {
 	NMAPSecurityWEP *	self = NM_AP_SECURITY_WEP (instance);
 	gboolean			success = FALSE;

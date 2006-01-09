@@ -1,5 +1,18 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-ap-security.c
+	  src/nm-ap-security.h
+		- Add a user_created argument to the write_supplicant_config
+			functions
+
+	* src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-psk.c
+	  src/nm-device-802-11-wireless.c
+		- Make Ad-Hoc mode somewhat work, at least write the
+			correct options to wpa_supplicant
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- Remove unused code from the old device activation path
 

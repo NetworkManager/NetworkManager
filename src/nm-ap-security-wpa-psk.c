@@ -118,50 +118,19 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
-                              int nwid)
+                              int nwid,
+                              gboolean user_created)
 {
 	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
 	gboolean			success = FALSE;
 	char *			msg = NULL;
 	const char *		key = nm_ap_security_get_key (instance);
 	int				cipher = nm_ap_security_get_we_cipher (instance);
+	char *			key_mgmt = "WPA-PSK";
+	char *			pairwise_cipher = NULL;
+	char *			group_cipher = NULL;
 
 	/* WPA-PSK network setup */
-
-	/* wpa_cli -ieth1 set_network 0 key_mgmt WPA-PSK */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i key_mgmt WPA-PSK", nwid))
-		goto out;
-
-	msg = g_strdup_printf ("SET_NETWORK %i psk <key>", nwid);
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
-			"SET_NETWORK %i psk %s", nwid, key))
-	{
-		g_free (msg);
-		goto out;
-	}
-	g_free (msg);
-
-	if (cipher == IW_AUTH_CIPHER_TKIP)
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i pairwise TKIP", nwid))
-			goto out;
-
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i group TKIP", nwid))
-			goto out;
-	}
-	else
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i pairwise CCMP", nwid))
-			goto out;
-
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i group CCMP", nwid))
-			goto out;
-	}
 
 	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
 	{
@@ -175,6 +144,40 @@ real_write_supplicant_config (NMAPSecurity *instance,
 				"SET_NETWORK %i proto WPA2", nwid))
 			goto out;
 	}
+
+	/* Ad-Hoc has to be WPA-NONE */
+	if (user_created)
+		key_mgmt = "WPA-NONE";
+
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i key_mgmt %s", nwid, key_mgmt))
+		goto out;
+
+	msg = g_strdup_printf ("SET_NETWORK %i psk <key>", nwid);
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
+			"SET_NETWORK %i psk %s", nwid, key))
+	{
+		g_free (msg);
+		goto out;
+	}
+	g_free (msg);
+
+	if (cipher == IW_AUTH_CIPHER_TKIP)
+		pairwise_cipher = group_cipher = "TKIP";
+	else
+		pairwise_cipher = group_cipher = "CCMP";
+
+	/* Ad-Hoc requires pairwise cipher of NONE */
+	if (user_created)
+		pairwise_cipher = "NONE";
+		
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i pairwise %s", nwid, pairwise_cipher))
+		goto out;
+
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i group %s", nwid, group_cipher))
+		goto out;
 
 	success = TRUE;
 

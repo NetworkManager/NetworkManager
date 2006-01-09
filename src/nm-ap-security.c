@@ -133,7 +133,8 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
                                         struct wpa_ctrl *ctrl,
-                                        int nwid)
+                                        int nwid,
+                                        gboolean user_created)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (ctrl != NULL, FALSE);
@@ -142,7 +143,7 @@ nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 	if (self->priv->dispose_has_run)
 		return FALSE;
 
-	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self, ctrl, nwid);
+	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self, ctrl, nwid, user_created);
 }
 
 void
@@ -193,7 +194,8 @@ real_serialize (NMAPSecurity *self, DBusMessageIter *iter)
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *self,
                               struct wpa_ctrl *ctrl,
-                              int nwid)
+                              int nwid,
+                              gboolean user_created)
 {
 	/* Unencrypted network setup */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
