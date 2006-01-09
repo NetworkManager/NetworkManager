@@ -2432,6 +2432,11 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ctrl = self->priv->sup_ctrl;
 	g_assert (ctrl);
 
+	/* Tell wpa_supplicant that we'll do the scanning */
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"AP_SCAN 2"))
+		goto out;
+
 	/* Standard network setup info */
 	if (!(response = nm_utils_supplicant_request (ctrl, "ADD_NETWORK")))
 	{

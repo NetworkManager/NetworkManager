@@ -1,5 +1,15 @@
 2006-01-08  Dan Williams  <dcbw@redhat.com>
 
+	We now require a patch for wpa_supplicant to support Ad-Hoc
+	networks:
+	  http://people.redhat.com/dcbw/wpa_supplicant-ctrl-iface-ap-scan.patch
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): turn off wpa_supplicant's
+			scanning.  Fixes Ad-Hoc networks.
+
+2006-01-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ap-security.c
 	  src/nm-ap-security.h
 		- Add a user_created argument to the write_supplicant_config
