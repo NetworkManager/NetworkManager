@@ -8,6 +8,6 @@ Description: Convenience library for clients of NetworkManager
 Version: @VERSION@
 Requires: glib-2.0
 Cflags: -I${includedir}/NetworkManager
-Libs: -L${libdir} -lnm_util
+Libs: -L${libdir} -lnm-util
 
 
