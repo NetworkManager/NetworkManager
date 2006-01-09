@@ -1,13 +1,20 @@
+2006-01-09  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-3-ethernet.h:  The kernel headers <linux/mii.h> and
+	  <linux/ethtool.h> leak the kernel-only types u16, u32, et al.
+	  User-space does not supply these types, so we have to define them
+	  ourselves.  The relevant kernel maintainer refused to accept a patch
+	  switching these headers to the propre C99 types.
+
 2006-01-09  Dan Williams  <dcbw@redhat.com>
 
 	Apply Robert's 'tray icon redo' patch with fixes
-
 	* gnome/applet/applet.c
 	  gnome/applet/applet.h
 		- Instead of using a menu bar + menu item, simulate menu
 			behavior using a popup menu.  Highlight the area around
-			the icon more like a menu too, by playing with the applet's
-			size requisition
+			the icon more like a menu too, by playing with the
+			applet's size requisition
 
 2006-01-09  Timo Hoenig   <thoenig@suse.de>
 	* libnm-util/dbus-helpers.c
