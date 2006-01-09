@@ -1,3 +1,9 @@
+2006-01-09  Timo Hoenig   <thoenig@suse.de>
+	* libnm-util/dbus-helpers.c
+	  libnm-util/dbus-helpers.h
+	  	- (nmu_create_dbus_error_message): rename parameter 'namespace'
+			to 'exception_namespace' (:namespace is a keyword in C++)
+			
 2006-01-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

@@ -250,7 +250,7 @@ nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
  */
 DBusMessage *
 nmu_create_dbus_error_message (DBusMessage *message,
-                               const char *namespace,
+                               const char *exception_namespace,
                                const char *exception,
                                const char *format,
                                ...)
@@ -265,7 +265,7 @@ nmu_create_dbus_error_message (DBusMessage *message,
 	vsnprintf (errmsg, 512, format, args);
 	va_end (args);
 
-	full_exception = g_strdup_printf ("%s.%s", namespace, exception);
+	full_exception = g_strdup_printf ("%s.%s", exception_namespace, exception);
 	reply = dbus_message_new_error (message, full_exception, errmsg);
 	g_free (full_exception);
 	g_free (errmsg);

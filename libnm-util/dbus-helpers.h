@@ -62,7 +62,7 @@ dbus_bool_t	nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
                                         int key_mgt);
 
 DBusMessage *	nmu_create_dbus_error_message (DBusMessage *message,
-                                        const char *namespace,
+                                        const char *exception_namespace,
                                         const char *exception,
                                         const char *format,
                                         ...);
