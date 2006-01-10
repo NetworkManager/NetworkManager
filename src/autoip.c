@@ -281,9 +281,11 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 			}
 			else
 			{
-				/* FIXME: we need to randomize the timeout _between_ MIN and MAX */
+				unsigned int usecs_to_sleep = ((PROBE_MAX - PROBE_MIN) * 1000000) - 1;
+
+				/* We want to sleep between PROBE_MIN and PROBE_MAX seconds, exclusive */
 				timeout.tv_sec += PROBE_MIN;
-				timeout.tv_usec += (random () % 200000);
+				timeout.tv_usec += 1 + (random () % usecs_to_sleep);
 			}
 		}
 		else if (nannounce < ANNOUNCE_NUM)
