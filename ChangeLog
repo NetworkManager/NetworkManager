@@ -4,7 +4,7 @@
 	  <linux/ethtool.h> leak the kernel-only types u16, u32, et al.
 	  User-space does not supply these types, so we have to define them
 	  ourselves.  The relevant kernel maintainer refused to accept a patch
-	  switching these headers to the propre C99 types.
+	  switching these headers to the proper C99 types.
 
 2006-01-09  Dan Williams  <dcbw@redhat.com>
 
