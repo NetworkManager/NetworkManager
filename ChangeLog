@@ -1,5 +1,12 @@
 2006-01-10  Robert Love  <rml@novell.com>
 
+	* src/autoip.c: Fix FIXME.  In performing the link-local zeroconf IP
+	  assignment dance, we want to sleep between PROBE_MIN and PROBE_MAX
+	  seconds, exclusive.  That is, we want to sleep x seconds such that
+	  1 < x < 2.
+
+2006-01-10  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-info.c: Remove FIXME, we do not have to free
 	  the attr fields according to the example in the email available at
 	  mail.gnome.org/archives/desktop-devel-list/2004-May/msg00230.html.
