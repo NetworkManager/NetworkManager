@@ -66,8 +66,10 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 		goto out;
 	}
 
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID))
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID)) {
 		applet->nm_state = nm_state;
+		nmwa_enable_networking_set_active (applet);
+	}
 
 	dbus_message_unref (reply);
 
@@ -1211,6 +1213,33 @@ void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
 		dbus_message_unref (message);
 	}
 }
+
+/*
+ * nmwa_dbus_enable_networking
+ *
+ * Tell NetworkManager to enabled or disable all wireless devices.
+ *
+ */
+void nmwa_dbus_enable_networking (NMWirelessApplet *applet, gboolean enabled)
+{
+	DBusMessage	*message;
+	const char	*method;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (applet->connection != NULL);
+
+	if (enabled)
+		method = "wake";
+	else
+		method = "sleep";
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, method)))
+	{
+		dbus_connection_send (applet->connection, message, NULL);
+		dbus_message_unref (message);
+	}
+}
+
 
 void nmwa_dbus_update_strength (NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength)
 {

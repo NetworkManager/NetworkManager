@@ -1,3 +1,11 @@
+2006-01-10  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet-dbus.h,
+	  gnome/applet/applet.c, gnome/applet/applet.h: Add 'Enable Networking'
+	  option to give users ability to globally disconnect and put NM to
+	  sleep.  This is useful as a 'lockdown mode' for flying, security, and
+	  clean disconnect.
+
 2006-01-09  Robert Love  <rml@novell.com>
 
 	* src/nm-device-802-3-ethernet.h:  The kernel headers <linux/mii.h> and

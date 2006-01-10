@@ -43,11 +43,8 @@ static inline gboolean message_is_error (DBusMessage *msg)
 }
 
 void			nmwa_dbus_init_helper				(NMWirelessApplet *applet);
-
-void			nmwa_dbus_enable_scanning			(NMWirelessApplet *applet, gboolean enabled);
-
 void			nmwa_dbus_enable_wireless			(NMWirelessApplet *applet, gboolean enabled);
-
+void			nmwa_dbus_enable_networking			(NMWirelessApplet *applet, gboolean enabled);
 void			nmwa_free_gui_data_model				(NMWirelessApplet *applet);
 void			nmwa_free_dbus_data_model			(NMWirelessApplet *applet);
 

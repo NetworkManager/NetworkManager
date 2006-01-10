@@ -1096,12 +1096,18 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 		goto done;
 	}
 
+#if 0
 	if (!act_dev)
 		applet->nm_state = NM_STATE_DISCONNECTED;
+#endif
 
 	switch (applet->nm_state)
 	{
 		case NM_STATE_ASLEEP:
+			pixbuf = applet->no_connection_icon;
+			tip = g_strdup (_("Networking disabled"));
+			break;
+
 		case NM_STATE_DISCONNECTED:
 			pixbuf = applet->no_connection_icon;
 			tip = g_strdup (_("No network connection"));
@@ -1828,6 +1834,12 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 		return;
 	}
 
+	if (applet->nm_state == NM_STATE_ASLEEP)
+	{
+		nmwa_menu_add_text_item (menu, _("Networking disabled"));
+		return;
+	}
+
 	for (element = applet->device_list; element; element = element->next)
 	{
 		NetworkDevice *dev = (NetworkDevice *)(element->data);
@@ -1917,6 +1929,18 @@ static void nmwa_set_wireless_enabled_cb (GtkWidget *widget, NMWirelessApplet *a
 	state = gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget));
 	if (applet->wireless_enabled != state)
 		nmwa_dbus_enable_wireless (applet, state);
+}
+
+
+static void nmwa_set_networking_enabled_cb (GtkWidget *widget, NMWirelessApplet *applet)
+{
+	gboolean state;
+
+	g_return_if_fail (applet != NULL);
+
+	state = gtk_check_menu_item_get_active (GTK_CHECK_MENU_ITEM (widget));
+	if ((applet->nm_state == NM_STATE_ASLEEP && state) || (applet->nm_state != NM_STATE_ASLEEP && !state))
+		nmwa_dbus_enable_networking (applet, state);
 }
 
 
@@ -2087,11 +2111,12 @@ static void nmwa_context_menu_update (NMWirelessApplet *applet)
 		}
 	}
 
-	if (have_wireless)
+	if (have_wireless && applet->nm_state != NM_STATE_ASLEEP)
 		gtk_widget_show_all (applet->stop_wireless_item);
 	else
 		gtk_widget_hide (applet->stop_wireless_item);
 }
+
 
 /*
  * nmwa_enable_wireless_set_active
@@ -2105,6 +2130,21 @@ void nmwa_enable_wireless_set_active (NMWirelessApplet *applet)
 {
 	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->stop_wireless_item), applet->wireless_enabled);
 }
+
+
+/*
+ * nmwa_enable_networking_set_active
+ *
+ * Set the 'Enable Networking' menu item state to match the daemon's last DBUS
+ * message.  We cannot just do this at menu creation time because the DBUS
+ * message might not have been sent yet or in case the daemon state changes
+ * out from under us.
+ */
+void nmwa_enable_networking_set_active (NMWirelessApplet *applet)
+{
+	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->enable_networking_item), applet->nm_state != NM_STATE_ASLEEP);
+}
+
 
 /*
  * nmwa_context_menu_create
@@ -2121,6 +2161,12 @@ static GtkWidget *nmwa_context_menu_create (NMWirelessApplet *applet)
 	g_return_val_if_fail (applet != NULL, NULL);
 
 	menu = gtk_menu_new ();
+
+	/* 'Enable Networking' item */
+	applet->enable_networking_item = gtk_check_menu_item_new_with_mnemonic (_("Enable _Networking"));
+	nmwa_enable_networking_set_active (applet);
+	g_signal_connect (G_OBJECT (applet->enable_networking_item), "toggled", G_CALLBACK (nmwa_set_networking_enabled_cb), applet);
+	gtk_menu_shell_append (GTK_MENU_SHELL (menu), applet->enable_networking_item);
 
 	/* 'Enable Wireless' item */
 	applet->stop_wireless_item = gtk_check_menu_item_new_with_mnemonic (_("Enable _Wireless"));
@@ -2444,7 +2490,6 @@ static GtkWidget * nmwa_get_instance (NMWirelessApplet *applet)
 	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
 	applet->passphrase_dialog = NULL;
-
 	applet->glade_file = g_build_filename (GLADEDIR, "wireless-applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
 	{

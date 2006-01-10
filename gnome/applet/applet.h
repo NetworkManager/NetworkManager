@@ -122,6 +122,7 @@ typedef struct
 	GtkTooltips *		tooltips;
 
 	GtkWidget *		context_menu;
+	GtkWidget *		enable_networking_item;
 	GtkWidget *		stop_wireless_item;
 	GtkWidget *		info_menu_item;
 
@@ -147,6 +148,8 @@ NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
 VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
 
 void				nmwa_enable_wireless_set_active		(NMWirelessApplet *applet);
+
+void				nmwa_enable_networking_set_active		(NMWirelessApplet *applet);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 
