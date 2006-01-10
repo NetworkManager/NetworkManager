@@ -386,7 +386,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->main_context = g_main_context_new ();
 	data->main_loop = g_main_loop_new (data->main_context, FALSE);
 
-	if (pipe(data->sigterm_pipe) < 0)
+	if (pipe (data->sigterm_pipe) < 0)
 	{
 		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
 		exit (EXIT_FAILURE);
@@ -623,10 +623,10 @@ nm_monitor_wired_link_state (NMData *data)
 }
 
 static void
-nm_info_handler (const gchar	*log_domain,
-		GLogLevelFlags	 log_level,
-		const gchar	*message,
-		gboolean 	 is_daemon)
+nm_info_handler (const gchar		*log_domain,
+			  GLogLevelFlags	 log_level,
+			  const gchar		*message,
+			  gboolean		 is_daemon)
 {
 	int syslog_priority;	
 

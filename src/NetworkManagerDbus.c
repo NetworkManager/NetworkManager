@@ -309,10 +309,6 @@ NMState nm_get_app_state_from_data (NMData *data)
 		return NM_STATE_CONNECTING;
 	else
 		return NM_STATE_CONNECTED;
-
-	g_assert_not_reached ();
-
-	return NM_STATE_UNKNOWN;
 }
 
 
@@ -343,6 +339,7 @@ void nm_dbus_signal_state_change (DBusConnection *connection, NMData *data)
 
 	dbus_message_unref (message);
 }
+
 
 /*
  * nm_dbus_signal_wireless_network_change
