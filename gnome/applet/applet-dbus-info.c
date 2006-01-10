@@ -840,13 +840,10 @@ nmi_save_network_info (NMWirelessApplet *applet,
                        const char *bssid,
                        NMGConfWSO * gconf_wso)
 {
-	GnomeKeyringAttributeList *	attributes;
-	GnomeKeyringAttribute		attr;
 	char *					key;
 	GConfEntry *				gconf_entry;
 	char *					escaped_network;
 	GnomeKeyringResult			ret;
-	const char *				name;
 	guint32					item_id;
 
 	g_return_if_fail (applet != NULL);
@@ -930,10 +927,14 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	/* Stuff the encryption key into the keyring */
 	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
 	{
-		/* Setup a request to the keyring to save the network passphrase */
+		GnomeKeyringAttributeList *attributes;
+		GnomeKeyringAttribute attr;		
+		char *name;
+
 		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+
 		attributes = gnome_keyring_attribute_list_new ();
-		attr.name = g_strdup ("essid");	/* FIXME: Do we need to free this ? */
+		attr.name = g_strdup ("essid");
 		attr.type = GNOME_KEYRING_ATTRIBUTE_TYPE_STRING;
 		attr.value.string = g_strdup (essid);
 		g_array_append_val (attributes, attr);
@@ -948,6 +949,7 @@ nmi_save_network_info (NMWirelessApplet *applet,
 		if (ret != GNOME_KEYRING_RESULT_OK)
 			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
 
+		g_free (name);
 		gnome_keyring_attribute_list_free (attributes);
 	}
 
