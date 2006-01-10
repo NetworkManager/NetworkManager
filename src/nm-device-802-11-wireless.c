@@ -450,9 +450,12 @@ nm_device_802_11_wireless_set_address (NMDevice80211Wireless *self)
 
 	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
 	if (ret)
-		return;
+		goto out;
 
 	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+
+out:
+	nm_dev_sock_close (sk);
 }
 
 

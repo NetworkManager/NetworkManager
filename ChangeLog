@@ -1,5 +1,10 @@
 2006-01-10  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-11-wireless.c, src/nm-device-802-3-ethernet.c: Make
+	  sure that we close the socket!
+
+2006-01-10  Robert Love  <rml@novell.com>
+
 	* src/nm-device-802-11-wireless.c, src/nm-device-802-11-wireless.h,
 	  src/nm-device-802-3-ethernet.c, src/nm-device-802-3-ethernet.h,
 	  src/nm-device.c: Fix a FIXME!  Reimplement the function
