@@ -83,6 +83,8 @@ static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev)
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
 
+void nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *dev);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_802_3_ETHERNET_H */

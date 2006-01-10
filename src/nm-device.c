@@ -191,10 +191,12 @@ nm_device_new (const char *iface,
 	nm_device_bring_up_wait (dev, FALSE);
 
 	nm_device_update_ip4_address (dev);
-/* FIXME */
-#if 0
-	nm_device_update_hw_address (dev);
-#endif
+
+	/* Update the device's hardware address */
+	if (nm_device_is_802_3_ethernet (dev))
+		nm_device_802_3_ethernet_set_address (NM_DEVICE_802_3_ETHERNET (dev));
+	else if (nm_device_is_802_11_wireless (dev))
+		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (dev));
 
 	/* Grab IP config data for this device from the system configuration files */
 	dev->priv->system_config_data = nm_system_device_get_system_config (dev);
@@ -1715,14 +1717,14 @@ nm_device_set_up_down (NMDevice *self,
 
 	nm_system_device_set_up_down (self, up);
 
-	/* Make sure we have a valid MAC address, some cards reload firmware when they
+	/*
+	 * Make sure that we have a valid MAC address, some cards reload firmware when they
 	 * are brought up.
 	 */
-/* FIXME */
-#if 0
-	if (up && !nm_ethernet_address_is_valid (&(self->priv->hw_addr)))
-		nm_device_update_hw_address (self);
-#endif
+	if (nm_device_is_802_3_ethernet (self))
+		nm_device_802_3_ethernet_set_address (NM_DEVICE_802_3_ETHERNET (self));
+	else if (nm_device_is_802_11_wireless (self))
+		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (self));
 }
 
 

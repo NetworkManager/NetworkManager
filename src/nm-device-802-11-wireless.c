@@ -409,7 +409,6 @@ nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
 }
 
 
-
 /*
  * nm_device_802_11_wireless_get_address
  *
@@ -424,6 +423,36 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
+}
+
+
+/*
+ * nm_device_802_11_wireless_set_address
+ *
+ * Set a device's hardware address
+ *
+ */
+void
+nm_device_802_11_wireless_set_address (NMDevice80211Wireless *self)
+{
+	NMDevice *dev = NM_DEVICE (self);
+	struct ifreq req;
+	NMSock *sk;
+	int ret;
+
+	g_return_if_fail (self != NULL);
+
+	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
+	if (!sk)
+		return;
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
+
+	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+	if (ret)
+		return;
+
+	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
 }
 
 

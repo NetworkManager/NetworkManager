@@ -1,5 +1,15 @@
 2006-01-10  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-11-wireless.c, src/nm-device-802-11-wireless.h,
+	  src/nm-device-802-3-ethernet.c, src/nm-device-802-3-ethernet.h,
+	  src/nm-device.c: Fix a FIXME!  Reimplement the function
+	  nm_device_update_hw_address() in device subclass variants,
+	  nm_device_802_3_ethernet_set_address() and
+	  nm_device_802_11_wireless_set_address(), hook them up, and use them.
+	  This fixes the existing bug where MAC addresses are all zeros.
+
+2006-01-10  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet-dbus.h,
 	  gnome/applet/applet.c, gnome/applet/applet.h: Add 'Enable Networking'
 	  option to give users ability to globally disconnect and put NM to

@@ -82,6 +82,8 @@ void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
 								   struct ether_addr *addr);
 
+void nm_device_802_11_wireless_set_address (NMDevice80211Wireless *dev);
+
 void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
                                                     struct ether_addr *bssid);
 

@@ -134,7 +134,7 @@ real_start (NMDevice *dev)
 
 
 /*
- * nm_device_get_hw_address
+ * nm_device_802_3_ethernet_get_address
  *
  * Get a device's hardware address
  *
@@ -146,6 +146,36 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_a
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
+}
+
+
+/*
+ * nm_device_802_3_ethernet_set_address
+ *
+ * Set a device's hardware address
+ *
+ */
+void
+nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *self)
+{
+	NMDevice *dev = NM_DEVICE (self);
+	struct ifreq req;
+	NMSock *sk;
+	int ret;
+
+	g_return_if_fail (self != NULL);
+
+	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
+	if (!sk)
+		return;
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
+
+	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+	if (ret)
+		return;
+
+	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
 }
 
 
