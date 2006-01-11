@@ -66,10 +66,8 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 		goto out;
 	}
 
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID)) {
-		applet->nm_state = nm_state;
-		nmwa_enable_networking_set_active (applet);
-	}
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID))
+		nmwa_set_state (applet, nm_state);
 
 	dbus_message_unref (reply);
 

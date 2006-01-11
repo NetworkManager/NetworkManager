@@ -149,7 +149,7 @@ VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
 
 void				nmwa_enable_wireless_set_active		(NMWirelessApplet *applet);
 
-void				nmwa_enable_networking_set_active		(NMWirelessApplet *applet);
+void				nmwa_set_state						(NMWirelessApplet *applet, NMState state);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 

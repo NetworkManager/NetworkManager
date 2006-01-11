@@ -119,7 +119,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				{
 					/* NetworkManager started up */
 					applet->nm_running = TRUE;
-					applet->nm_state = NM_STATE_DISCONNECTED;
+					nmwa_set_state (applet, NM_STATE_DISCONNECTED);
 					nmwa_dbus_update_nm_state (applet);
 					nmwa_dbus_update_devices (applet);
 					nmwa_dbus_update_dialup (applet);
@@ -128,7 +128,7 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 				else if (old_owner_good && !new_owner_good)
 				{
 					applet->nm_running = FALSE;
-					applet->nm_state = NM_STATE_DISCONNECTED;
+					nmwa_set_state (applet, NM_STATE_DISCONNECTED);
 					nmi_passphrase_dialog_destroy (applet);
 				}
 			}
@@ -145,13 +145,11 @@ static DBusHandlerResult nmwa_dbus_filter (DBusConnection *connection, DBusMessa
 			/* If we've switched to connecting, update the active device to ensure that we have
 			 * valid wireless network information for it.
 			 */
-			if (   (state == NM_STATE_CONNECTING)
-				&& act_dev
-				&& network_device_is_wireless (act_dev))
+			if (state == NM_STATE_CONNECTING && act_dev && network_device_is_wireless (act_dev))
 			{
 				nmwa_dbus_device_update_one_device (applet, network_device_get_nm_path (act_dev));
 			}
-			applet->nm_state = state;
+			nmwa_set_state (applet, state);
 		}
 	}
 	else if (    dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceAdded")
@@ -415,7 +413,7 @@ static gboolean nmwa_dbus_connection_watcher (gpointer user_data)
 		if ((applet->connection = nmwa_dbus_init (applet)))
 		{
 			applet->nm_running = nmwa_dbus_nm_is_running (applet->connection);
-			applet->nm_state = NM_STATE_DISCONNECTED;
+			nmwa_set_state (applet, NM_STATE_DISCONNECTED);
 			nmwa_dbus_update_nm_state (applet);
 			nmwa_dbus_update_devices (applet);
 			nmwa_dbus_update_dialup (applet);

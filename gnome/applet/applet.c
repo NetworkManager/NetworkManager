@@ -1098,7 +1098,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 
 #if 0
 	if (!act_dev)
-		applet->nm_state = NM_STATE_DISCONNECTED;
+		nmwa_set_state (applet, NM_STATE_DISCONNECTED);
 #endif
 
 	switch (applet->nm_state)
@@ -1828,7 +1828,7 @@ static void nmwa_menu_add_devices (GtkWidget *menu, NMWirelessApplet *applet)
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
-	if (! applet->device_list)
+	if (!applet->device_list)
 	{
 		nmwa_menu_add_text_item (menu, _("No network devices have been found"));
 		return;
@@ -2140,9 +2140,24 @@ void nmwa_enable_wireless_set_active (NMWirelessApplet *applet)
  * message might not have been sent yet or in case the daemon state changes
  * out from under us.
  */
-void nmwa_enable_networking_set_active (NMWirelessApplet *applet)
+static inline void nmwa_enable_networking_set_active (NMWirelessApplet *applet)
 {
 	   gtk_check_menu_item_set_active (GTK_CHECK_MENU_ITEM (applet->enable_networking_item), applet->nm_state != NM_STATE_ASLEEP);
+}
+
+
+/*
+ * nmwa_set_state
+ *
+ * Set the applet's state to one of the NMState enumerations.
+ *
+ */
+void nmwa_set_state (NMWirelessApplet *applet, enum NMState state)
+{
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (state >= NM_STATE_UNKNOWN && state <= NM_STATE_DISCONNECTED);
+	applet->nm_state = state;
+	nmwa_enable_networking_set_active (applet);
 }
 
 

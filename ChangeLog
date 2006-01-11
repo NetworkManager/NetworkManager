@@ -1,3 +1,10 @@
+2006-01-11  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet-dbus.c,
+	  gnome/applet/applet.c, gnome/applet/applet.h: Consolidating
+	  assignments to applet->nm_state into a new nmwa_set_state() function
+	  for both cleanliness and to help debugging.
+
 2006-01-10  Robert Love  <rml@novell.com>
 
 	* src/autoip.c: Fix FIXME.  In performing the link-local zeroconf IP
