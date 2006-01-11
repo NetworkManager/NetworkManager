@@ -262,17 +262,10 @@ static gboolean vpn_druid_vpn_type_page_next (GnomeDruidPage *druidpage,
 }
 
 static void vpn_druid_vpn_details_page_prepare (GnomeDruidPage *druidpage,
-						GtkWidget *widget,
-						gpointer user_data)
+									   GtkWidget *widget,
+									   gpointer user_data)
 {
-	/*printf ("vpn_details_prepare!\n");*/
-
-	gnome_druid_set_buttons_sensitive (druid, 
-					   TRUE,
-					   FALSE,
-					   TRUE,
-					   FALSE);	
-
+	gnome_druid_set_buttons_sensitive (druid, TRUE, FALSE, TRUE, FALSE);	
 }
 
 static gboolean vpn_druid_vpn_details_page_next (GnomeDruidPage *druidpage,
@@ -339,11 +332,8 @@ static gboolean vpn_druid_vpn_confirm_page_finish (GnomeDruidPage *druidpage,
 	return FALSE;
 }
 
-static gboolean vpn_druid_cancel (GnomeDruid *druid,
-				  gpointer user_data)
+static gboolean vpn_druid_cancel (GnomeDruid *ignored_druid, gpointer user_data)
 {
-	/*printf ("vpn_druid_cancel!\n");*/
-
 	gtk_widget_hide_all (GTK_WIDGET (druid_window));
 	return FALSE;
 }
@@ -357,21 +347,19 @@ add_cb (GtkButton *button, gpointer user_data)
 	GList *i;
 	GList *children;
 
-	/*printf ("add_cb\n");*/
-
 	/* Bail out if we don't have any VPN implementations on our system */
 	if (vpn_types == NULL || g_slist_length (vpn_types) == 0) {
-		GtkWidget *dialog;
+		GtkWidget *err_dialog;
 
-		dialog = gtk_message_dialog_new (NULL,
+		err_dialog = gtk_message_dialog_new (NULL,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_ERROR,
 						 GTK_BUTTONS_CLOSE,
 						 _("Cannot add VPN connection"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (err_dialog),
 		   _("No suitable VPN software was found on your system. Contact your system administrator."));
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_dialog_run (GTK_DIALOG (err_dialog));
+		gtk_widget_destroy (err_dialog);
 		goto out;
 	}
 
@@ -413,20 +401,20 @@ import_settings (const char *svc_name, const char *name)
 	/* Bail out if we don't have the requested VPN implementation on our system */
 	if (vpn_ui == NULL) {
 		char *basename;
-		GtkWidget *dialog;
+		GtkWidget *err_dialog;
 
 		basename = g_path_get_basename (name);
 
-		dialog = gtk_message_dialog_new (NULL,
+		err_dialog = gtk_message_dialog_new (NULL,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_ERROR,
 						 GTK_BUTTONS_CLOSE,
 						 _("Cannot import VPN connection"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (err_dialog),
 							  _("Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."),
 							  svc_name, basename);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_dialog_run (GTK_DIALOG (err_dialog));
+		gtk_widget_destroy (err_dialog);
 		g_free (basename);
 		goto out;
 	}
@@ -442,7 +430,6 @@ import_settings (const char *svc_name, const char *name)
 
 	w = glade_xml_get_widget (xml, "vpn-druid-vpn-details-page");
 	gnome_druid_set_page (druid, GNOME_DRUID_PAGE (w));
-
 
 	/* show appropriate child */
 	w = vpn_ui->get_widget (vpn_ui, NULL, NULL, NULL);
@@ -465,6 +452,7 @@ import_settings (const char *svc_name, const char *name)
 
 	gtk_window_set_policy (druid_window, FALSE, FALSE, TRUE);
 	gtk_widget_show_all (GTK_WIDGET (druid_window));
+
 out:
 	;
 }
@@ -557,19 +545,19 @@ retrieve_data_from_selected_connection (NetworkManagerVpnUI **vpn_ui,
 
 	*vpn_ui = find_vpn_ui_by_service_name (conn_service_name);
 	if (*vpn_ui == NULL) {
-		GtkWidget *dialog;
+		GtkWidget *err_dialog;
 
-		dialog = gtk_message_dialog_new (NULL,
+		err_dialog = gtk_message_dialog_new (NULL,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_ERROR,
 						 GTK_BUTTONS_CLOSE,
 						 _("Error retrieving VPN connection '%s'"),
 						 *conn_name);
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-  _("Could not find the UI files for VPN connection type '%s'. Contact your system administrator."),
-							  conn_service_name);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (err_dialog),
+		    _("Could not find the UI files for VPN connection type '%s'. Contact your system administrator."),
+		    conn_service_name);
+		gtk_dialog_run (GTK_DIALOG (err_dialog));
+		gtk_widget_destroy (err_dialog);
 		goto out;
 	}
 
@@ -581,9 +569,9 @@ retrieve_data_from_selected_connection (NetworkManagerVpnUI **vpn_ui,
 
 	*conn_vpn_data = NULL;
 	for (i = conn_vpn_data_gconfvalue; i != NULL; i = g_slist_next (i)) {
-		const char *value;
-		value = gconf_value_get_string ((GConfValue *) i->data);
-		*conn_vpn_data = g_slist_append (*conn_vpn_data, (gpointer) value);
+		const char *val;
+		val = gconf_value_get_string ((GConfValue *) i->data);
+		*conn_vpn_data = g_slist_append (*conn_vpn_data, (gpointer) val);
 	}
 
 
@@ -596,9 +584,9 @@ retrieve_data_from_selected_connection (NetworkManagerVpnUI **vpn_ui,
 	conn_routes_gconfvalue = gconf_value_get_list (value);
 	*conn_routes = NULL;
 	for (i = conn_routes_gconfvalue; i != NULL; i = g_slist_next (i)) {
-		const char *value;
-		value = gconf_value_get_string ((GConfValue *) i->data);
-		*conn_routes = g_slist_append (*conn_routes, (gpointer) value);
+		const char *val;
+		val = gconf_value_get_string ((GConfValue *) i->data);
+		*conn_routes = g_slist_append (*conn_routes, (gpointer) val);
 	}
 
 	result = TRUE;
@@ -710,7 +698,7 @@ delete_cb (GtkButton *button, gpointer user_data)
 	GtkTreeSelection *selection;
 	gchar *conn_gconf_path;
 	gchar *conn_name;
-	GtkWidget *dialog;
+	GtkWidget *confirm_dialog;
 	int response;
 
 	/*printf ("delete\n");*/
@@ -722,16 +710,16 @@ delete_cb (GtkButton *button, gpointer user_data)
 		goto out;
 
 	gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_NAME_COLUMN, &conn_name, -1);
-	dialog = gtk_message_dialog_new (NULL,
+	confirm_dialog = gtk_message_dialog_new (NULL,
 					 GTK_DIALOG_DESTROY_WITH_PARENT,
 					 GTK_MESSAGE_WARNING,
 					 GTK_BUTTONS_CANCEL,
 					 _("Delete VPN connection \"%s\"?"), conn_name);
-	gtk_dialog_add_buttons (GTK_DIALOG (dialog), GTK_STOCK_DELETE, GTK_RESPONSE_OK, NULL);
-	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+	gtk_dialog_add_buttons (GTK_DIALOG (confirm_dialog), GTK_STOCK_DELETE, GTK_RESPONSE_OK, NULL);
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (confirm_dialog),
 						  _("All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."), conn_name);
-	response = gtk_dialog_run (GTK_DIALOG (dialog));
-	gtk_widget_destroy (dialog);
+	response = gtk_dialog_run (GTK_DIALOG (confirm_dialog));
+	gtk_widget_destroy (confirm_dialog);
 
 	if (response != GTK_RESPONSE_OK)
 		goto out;
@@ -872,7 +860,7 @@ vpn_list_cursor_changed_cb (GtkTreeView *treeview,
 extern NetworkManagerVpnUI* vpn_ui_factory_dummy (void);
 
 static void
-load_properties_module (GSList **vpn_types, const char *path)
+load_properties_module (GSList **vpn_types_list, const char *path)
 {
 	GModule *module;
 	NetworkManagerVpnUI* (*nm_vpn_properties_factory) (void) = NULL;
@@ -900,7 +888,7 @@ load_properties_module (GSList **vpn_types, const char *path)
 		goto out;
 	}
 
-	*vpn_types = g_slist_append (*vpn_types, impl);
+	*vpn_types_list = g_slist_append (*vpn_types_list, impl);
 
 out:
 	;
@@ -929,17 +917,17 @@ init_app (void)
 	xml = glade_xml_new (glade_file, NULL, NULL);
 	g_free (glade_file);
 	if (!xml) {
-		GtkWidget *dialog;
+		GtkWidget *err_dialog;
 
-		dialog = gtk_message_dialog_new (NULL,
+		err_dialog = gtk_message_dialog_new (NULL,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_ERROR,
 						 GTK_BUTTONS_CLOSE,
 						 _("Unable to load"));
-		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (err_dialog),
 		   _("Cannot find some needed resources (the glade file)!"));
-		gtk_dialog_run (GTK_DIALOG (dialog));
-		gtk_widget_destroy (dialog);
+		gtk_dialog_run (GTK_DIALOG (err_dialog));
+		gtk_widget_destroy (err_dialog);
 
 		return FALSE;
 	}
@@ -1000,10 +988,7 @@ init_app (void)
 	gtk_signal_connect_after (GTK_OBJECT (vpn_conn_view), "cursor-changed",
 				  GTK_SIGNAL_FUNC (vpn_list_cursor_changed_cb), NULL);
 
-
 	get_all_vpn_connections ();
-
-	
 
 	column = gtk_tree_view_column_new ();
 	renderer = gtk_cell_renderer_text_new ();
@@ -1130,7 +1115,7 @@ main (int argc, char *argv[])
 	}
 
 	if (do_import) {
-		import_settings (import_svc, import_file);		
+		import_settings (import_svc, import_file);
 	}
 
 	gtk_main ();

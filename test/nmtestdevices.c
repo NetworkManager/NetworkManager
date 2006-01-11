@@ -81,7 +81,7 @@ static void create_device (DBusConnection *connection, NMDeviceType type)
 }
 
 
-static void remove_device (DBusConnection *connection, char *dev)
+static void destroy_device (DBusConnection *connection, char *dev)
 {
 	DBusMessage	*message;
 	DBusMessage	*reply;
@@ -186,7 +186,7 @@ int main( int argc, char *argv[] )
 	DBusError		 error;
 	char			*dev = NULL;
 	gboolean		 create = FALSE;
-	gboolean		 remove = FALSE;
+	gboolean		 destroy = FALSE;
 	gboolean		 make_link_active = FALSE;
 	gboolean		 make_link_inactive = FALSE;
 	NMDeviceType	 dev_type = DEVICE_TYPE_UNKNOWN;
@@ -238,7 +238,7 @@ int main( int argc, char *argv[] )
 				}
 				else if (strcmp (opt, "remove-device") == 0)
 				{
-					remove = TRUE;
+					destroy = TRUE;
 					if (optarg)
 						dev = g_strdup (optarg);
 				}
@@ -276,8 +276,8 @@ int main( int argc, char *argv[] )
 
 	if (create)
 		create_device (connection, dev_type);
-	else if (remove)
-		remove_device (connection, dev);
+	else if (destroy)
+		destroy_device (connection, dev);
 	else if (make_link_active)
 		set_link_active (connection, dev, TRUE);
 	else if (make_link_inactive)

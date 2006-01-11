@@ -209,7 +209,7 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 	NMStatusChangeData *cb_data = (NMStatusChangeData *)user_data;
 	DBusMessage *		message;
 	char *			dev_path;
-	const char *		signal = NULL;
+	const char *		sig = NULL;
 	int				i = 0;
 
 	g_return_val_if_fail (cb_data->data, FALSE);
@@ -219,13 +219,13 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 	while ((dev_status_signals[i].status != DEVICE_STATUS_INVALID) && (dev_status_signals[i].status != cb_data->status))
 		i++;
 
-	if (!(signal = dev_status_signals[i].signal))
+	if (!(sig = dev_status_signals[i].signal))
 		return FALSE;
 
 	if (!(dev_path = nm_dbus_get_object_path_for_device (cb_data->dev)))
 		return FALSE;
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, signal)))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, sig)))
 	{
 		nm_warning ("nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
 		g_free (dev_path);
@@ -352,7 +352,7 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	DBusMessage *	message;
 	char *		dev_path = NULL;
 	char *		net_path = NULL;
-	const char *	signal = NULL;
+	const char *	sig = NULL;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
@@ -367,25 +367,25 @@ void nm_dbus_signal_wireless_network_change (DBusConnection *connection, NMDevic
 	switch (status)
 	{
 		case NETWORK_STATUS_DISAPPEARED:
-			signal = "WirelessNetworkDisappeared";
+			sig = "WirelessNetworkDisappeared";
 			break;
 		case NETWORK_STATUS_APPEARED:
-			signal = "WirelessNetworkAppeared";
+			sig = "WirelessNetworkAppeared";
 			break;
 		case NETWORK_STATUS_STRENGTH_CHANGED:
-			signal = "WirelessNetworkStrengthChanged";
+			sig = "WirelessNetworkStrengthChanged";
 			break;
 		default:
 			break;
 	}
 
-	if (!signal)
+	if (!sig)
 	{
 		nm_warning ("nm_dbus_signal_wireless_network_change(): tried to broadcast unknown signal.");
 		goto out;
 	}
 
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, signal)))
+	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, sig)))
 	{
 		nm_warning ("nm_dbus_signal_wireless_network_change(): Not enough memory for new dbus message!");
 		goto out;

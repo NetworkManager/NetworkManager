@@ -196,14 +196,14 @@ void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
 	config->nameservers = g_slist_append (config->nameservers, GINT_TO_POINTER (nameserver));
 }
 
-guint32 nm_ip4_config_get_nameserver (NMIP4Config *config, guint index)
+guint32 nm_ip4_config_get_nameserver (NMIP4Config *config, guint i)
 {
 	guint nameserver;
 
 	g_return_val_if_fail (config != NULL, 0);
-	g_return_val_if_fail (index < g_slist_length (config->nameservers), 0);
+	g_return_val_if_fail (i < g_slist_length (config->nameservers), 0);
 
-	if ((nameserver = GPOINTER_TO_UINT (g_slist_nth_data (config->nameservers, index))))
+	if ((nameserver = GPOINTER_TO_UINT (g_slist_nth_data (config->nameservers, i))))
 		return nameserver;
 	return 0;
 }
@@ -222,14 +222,14 @@ void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis_server)
 	config->nis_servers = g_slist_append (config->nis_servers, GINT_TO_POINTER (nis_server));
 }
 
-guint32 nm_ip4_config_get_nis_server (NMIP4Config *config, guint index)
+guint32 nm_ip4_config_get_nis_server (NMIP4Config *config, guint i)
 {
 	guint nis_server;
 
 	g_return_val_if_fail (config != NULL, 0);
-	g_return_val_if_fail (index < g_slist_length (config->nis_servers), 0);
+	g_return_val_if_fail (i < g_slist_length (config->nis_servers), 0);
 
-	if ((nis_server = GPOINTER_TO_UINT (g_slist_nth_data (config->nis_servers, index))))
+	if ((nis_server = GPOINTER_TO_UINT (g_slist_nth_data (config->nis_servers, i))))
 		return nis_server;
 	return 0;
 }
@@ -269,14 +269,14 @@ gchar *nm_ip4_config_get_nis_domain (NMIP4Config *config)
 	return config->nis_domain;
 }
 
-const char *nm_ip4_config_get_domain (NMIP4Config *config, guint index)
+const char *nm_ip4_config_get_domain (NMIP4Config *config, guint i)
 {
 	const char *domain;
 
 	g_return_val_if_fail (config != NULL, NULL);
-	g_return_val_if_fail (index < g_slist_length (config->domains), NULL);
+	g_return_val_if_fail (i < g_slist_length (config->domains), NULL);
 
-	if ((domain = (const char *) g_slist_nth_data (config->domains, index)))
+	if ((domain = (const char *) g_slist_nth_data (config->domains, i)))
 		return domain;
 	return NULL;
 }

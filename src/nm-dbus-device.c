@@ -312,12 +312,12 @@ static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, 
 	else if ((reply = dbus_message_new_method_return (message)))
 	{
 		DBusError	error;
-		gboolean	link;
+		gboolean	have_link;
 
 		dbus_error_init (&error);
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &link, DBUS_TYPE_INVALID))
+		if (dbus_message_get_args (message, &error, DBUS_TYPE_BOOLEAN, &have_link, DBUS_TYPE_INVALID))
 		{
-			nm_device_set_active_link (dev, link);
+			nm_device_set_active_link (dev, have_link);
 			nm_policy_schedule_device_change_check (data->data);
 		}
 	}
@@ -419,7 +419,6 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 				if ((iter = nm_ap_list_iter_new (ap_list)))
 				{
 					int				i = 0;
-					NMAccessPoint *	ap;
 
 					networks = g_malloc0 (sizeof (char *) * (num_networks + 1));
 					while ((ap = nm_ap_list_iter_next (iter)))

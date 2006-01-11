@@ -380,15 +380,15 @@ static gboolean nm_policy_device_change_check (NMData *data)
 				 * from Ad-Hoc APs either.
 				 */
 				gboolean same_essid = (strcmp (old_essid, new_essid) == 0);
-				gboolean link = nm_device_has_active_link (old_dev);
-				if ((!same_essid || !link) && (old_mode != IW_MODE_ADHOC))
+				gboolean have_link = nm_device_has_active_link (old_dev);
+				if ((!same_essid || !have_link) && (old_mode != IW_MODE_ADHOC))
 				{
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
 					         "same_ssid=%d, have_link=%d",
 					         nm_device_get_iface (new_dev),	new_essid,
 					         nm_device_get_iface (old_dev), old_essid,
-					         same_essid, link);
+					         same_essid, have_link);
 					do_switch = TRUE;
 				}
 			} /* Always prefer Ethernet over wireless, unless the user explicitly switched away. */

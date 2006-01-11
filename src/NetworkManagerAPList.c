@@ -604,7 +604,6 @@ void nm_ap_list_diff (NMData *data, NMDevice80211Wireless *dev, NMAccessPointLis
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*old_ap;
-	NMAccessPoint	*new_ap;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev  != NULL);
@@ -614,7 +613,7 @@ void nm_ap_list_diff (NMData *data, NMDevice80211Wireless *dev, NMAccessPointLis
 	{
 		while ((old_ap = nm_ap_list_iter_next (iter)))
 		{
-			NMAccessPoint	*new_ap = NULL;
+			NMAccessPoint	*new_ap;
 
 			if (nm_ap_get_essid (old_ap))
 			{
@@ -635,6 +634,8 @@ void nm_ap_list_diff (NMData *data, NMDevice80211Wireless *dev, NMAccessPointLis
 	 */
 	if (new && (iter = nm_ap_list_iter_new (new)))
 	{
+		NMAccessPoint	*new_ap;
+
 		while ((new_ap = nm_ap_list_iter_next (iter)))
 		{
 			if (!nm_ap_get_matched (new_ap) && nm_ap_get_essid (new_ap))

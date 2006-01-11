@@ -260,9 +260,9 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	AC_MSG_RESULT(yes)
 	CFLAGS="-Wall -Werror -std=gnu89 $CFLAGS"
 
-	for option in -Wno-unused -Wno-sign-compare -Wmissing-declarations \
+	for option in -Wshadow -Wmissing-declarations -Wmissing-prototypes \
 		      -Wdeclaration-after-statement -Wstrict-prototypes \
-		      -Wmissing-prototypes; do
+		      -Wfloat-equal -Wno-unused -Wno-sign-compare; do
 		SAVE_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $option"
 		AC_MSG_CHECKING([whether gcc understands $option])

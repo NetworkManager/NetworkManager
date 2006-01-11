@@ -269,10 +269,10 @@ static void nmwa_show_info_cb (GtkMenuItem *mi, NMWirelessApplet *applet)
 }
 
 static void about_dialog_activate_link_cb (GtkAboutDialog *about,
-                                           const gchar *link,
+                                           const gchar *url,
                                            gpointer data)
 {
-	gnome_url_show (link, NULL);
+	gnome_url_show (url, NULL);
 }
 
 static void nmwa_about_cb (NMWirelessApplet *applet)

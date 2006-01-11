@@ -464,7 +464,7 @@ link_to_specific_ap (NMDevice80211Wireless *self,
                      NMAccessPoint *ap,
                      gboolean default_link)
 {
-	gboolean link = FALSE;
+	gboolean have_link = FALSE;
 
 	/* Checking hardware's ESSID during a scan is doesn't work. */
 	nm_lock_mutex (self->priv->scan_mutex, __func__);
@@ -477,20 +477,20 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 		if (dev_essid && ap_essid && !strcmp (dev_essid, ap_essid))
 		{
 			self->priv->failed_link_count = 0;
-			link = TRUE;
+			have_link = TRUE;
 		}
 	}
 
 	nm_unlock_mutex (self->priv->scan_mutex, __func__);
 
-	if (!link)
+	if (!have_link)
 	{
 		self->priv->failed_link_count++;
 		if (self->priv->failed_link_count <= 6)
-			link = default_link;
+			have_link = default_link;
 	}
 
-	return link;
+	return have_link;
 }
 
 
@@ -1352,7 +1352,7 @@ nm_device_802_11_wireless_set_frequency (NMDevice80211Wireless *self,
 
 	g_return_if_fail (self != NULL);
 
-	if (nm_device_802_11_wireless_get_frequency (self) == freq)
+	if (fabs (nm_device_802_11_wireless_get_frequency (self) - freq) <= DBL_EPSILON)
 		return;
 
 	iface = nm_device_get_iface (NM_DEVICE (self));

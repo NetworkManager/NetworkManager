@@ -96,17 +96,17 @@ static void iface_to_rtnl_index (const char *iface, struct nl_handle *nlh, struc
 static struct rtnl_link * iface_to_rtnl_link (const char *iface, struct nl_handle *nlh)
 {
 	struct nl_cache *	cache = NULL;
-	struct rtnl_link *	link = NULL;
+	struct rtnl_link *	have_link = NULL;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (nlh != NULL, NULL);
 
 	if ((cache = get_link_cache (nlh)))
-		link = rtnl_link_get_by_name (cache, iface);
+		have_link = rtnl_link_get_by_name (cache, iface);
 	else
 		nm_warning ("iface_to_rtnl_link() couldn't allocate link cache.");
 
-	return link;
+	return have_link;
 }
 
 

@@ -212,9 +212,9 @@ void nm_vpn_manager_remove_connection (NMVPNManager *manager, NMVPNConnection *v
 	if (manager->act_req && (nm_vpn_act_request_get_connection (manager->act_req) == vpn))
 	{
 		NMVPNService *		service = nm_vpn_act_request_get_service (manager->act_req);
-		NMVPNConnection *	vpn = nm_vpn_act_request_get_connection (manager->act_req);
+		NMVPNConnection *	v = nm_vpn_act_request_get_connection (manager->act_req);
 
-		nm_vpn_connection_deactivate (vpn);
+		nm_vpn_connection_deactivate (v);
 		nm_vpn_service_stop_connection (service, manager->act_req);
 
 		nm_vpn_act_request_unref (manager->act_req);

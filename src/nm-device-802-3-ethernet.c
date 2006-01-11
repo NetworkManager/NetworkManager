@@ -61,29 +61,27 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 static gboolean
 probe_link (NMDevice8023Ethernet *self)
 {
-	gboolean				link = FALSE;
+	gboolean				have_link = FALSE;
 	gchar *				contents;
 	gsize				length;
-	guint32				caps;
 
 	if (nm_device_get_removed (NM_DEVICE (self)))
 		return FALSE;
 
 	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL))
 	{
-		link = (gboolean) atoi (contents);
+		have_link = (gboolean) atoi (contents);
 		g_free (contents);
 	}
 
 	/* We say that non-carrier-detect devices always have a link, because
-	 * they never get auto-selected by NM.  User has to force them on us,
+	 * they never get auto-selected by NM.  The user has to force them on us,
 	 * so we just hope the user knows whether or not the cable's plugged in.
 	 */
-	caps = nm_device_get_capabilities (NM_DEVICE (self));
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-		link = TRUE;
+	if (!have_link && !(nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_CARRIER_DETECT))
+		have_link = TRUE;
 
-	return link;
+	return have_link;
 }
 
 

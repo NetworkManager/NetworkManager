@@ -1,3 +1,16 @@
+2006-01-11  Robert Love  <rml@novell.com>
+
+	* configure.in: Add the gcc flags '-Wshadow' and '-Wfloat-equal'.
+	* gnome/applet/applet.c, gnome/vpn-properties/nm-vpn-properties.c,
+	  src/NetworkManagerAPList.c, src/NetworkManagerDbus.c,
+	  src/NetworkManagerPolicy.c, src/NetworkManagerSystem.c,
+	  src/nm-dbus-device.c, src/nm-device-802-3-ethernet.c,
+	  src/nm-ip4-config.c, src/vpn-manager/nm-vpn-manager.c,
+	  test/nmtestdevices.c: Fix shadowed variable usage as appropriate.
+	* src/nm-device-802-11-wireless.c: Fix floating point comparison by
+	  comparing values within DBL_EPSILON.  Also fix shadowed variable
+	  usage.
+
 2006-01-11  Dan Williams  <dcbw@redhat.com>
 
 	Add options for WPA2 and WPA1+CCMP (AES).
@@ -10,7 +23,7 @@
 			and don't allow creation of WPA2 Ad-Hoc networks since
 			wpa_supplicant doesn't support them
 
-	* gnome/applet/wireless-security-manager.c
+	* gnome/applet/wireless-security-manager.c
 		- (wsm_set_capabilities): Add WPA2 options, and pass capability
 			on to the specific wireless security option being created
 
