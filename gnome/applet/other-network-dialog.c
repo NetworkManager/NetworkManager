@@ -273,6 +273,7 @@ static GtkDialog *nmwa_ond_init (GladeXML *xml, NMWirelessApplet *applet, gboole
 	GtkTreeIter				iter;
 	NetworkDevice *			dev;
 	char *					str;
+	int						dev_caps;
 
 	g_return_val_if_fail (xml != NULL, NULL);
 	g_return_val_if_fail (applet != NULL, NULL);
@@ -329,7 +330,13 @@ static GtkDialog *nmwa_ond_init (GladeXML *xml, NMWirelessApplet *applet, gboole
 	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
 	g_assert (dev);
-	wsm_set_capabilities (wsm, network_device_get_type_capabilities (dev));
+	dev_caps = network_device_get_type_capabilities (dev);
+	/* Can't do WPA2/CCMP Ad-Hoc networks because wpa_supplicant
+	 * doesn't support them.
+	 */
+	if (create_network)
+		dev_caps &= ~NM_802_11_CAP_PROTO_WPA2;
+	wsm_set_capabilities (wsm, dev_caps);
 
 	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
 	wsm_update_combo (wsm, security_combo);

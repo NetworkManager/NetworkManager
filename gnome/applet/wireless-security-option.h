@@ -41,13 +41,4 @@ gboolean		wso_append_dbus_params (WirelessSecurityOption *opt, const char *ssid,
 
 void			wso_free (WirelessSecurityOption * opt);
 
-/* For use by the options themselves */
-gboolean		wso_validate_helper (WirelessSecurityOption *opt, const char *ssid, const char *input, IEEE_802_11_Cipher ** out_cipher);
-GtkWidget *	wso_widget_helper (WirelessSecurityOption *opt);
-
-void			wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo);
-int			wso_wep_auth_combo_get_auth_alg (WirelessSecurityOption *opt, GtkComboBox * combo);
-void			wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo);
-
-
 #endif	/* WIRELESS_SECURITY_OPTION_H */

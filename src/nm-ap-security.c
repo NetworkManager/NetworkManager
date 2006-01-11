@@ -102,6 +102,7 @@ out:
 
 #define WPA2_CCMP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_CCMP | NM_802_11_CAP_KEY_MGMT_PSK)
 #define WPA2_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WPA_CCMP_PSK	(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_CCMP | NM_802_11_CAP_KEY_MGMT_PSK)
 #define WPA_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
 #define WEP_WEP104		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104)
 #define WEP_WEP40		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40)
@@ -115,7 +116,7 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 
 	/* Deteremine best encryption algorithm to use */
 	caps = nm_ap_get_capabilities (ap);
-	if (caps & WPA2_CCMP_PSK)
+	if ((caps & WPA_CCMP_PSK) || (caps & WPA2_CCMP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_CCMP));
 	else if ((caps & WPA_TKIP_PSK) || (caps & WPA2_TKIP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_TKIP));

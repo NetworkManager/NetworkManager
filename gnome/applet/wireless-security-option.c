@@ -30,6 +30,7 @@
 #include "wireless-security-option.h"
 #include "cipher.h"
 #include "wso-private.h"
+#include "NetworkManager.h"
 
 gboolean wso_is_wso_widget (GtkWidget * widget)
 {
@@ -193,3 +194,38 @@ void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * comb
 	g_object_unref (G_OBJECT (model));
 }
 
+
+GtkTreeModel *
+wso_wpa_create_key_type_model (int capabilities,
+                               int *num_added)
+{
+	GtkListStore *	model;
+	GSList *		elt;
+	GtkTreeIter	iter;
+	int			num = 0;
+
+	g_return_val_if_fail (num_added != NULL, NULL);
+
+	model = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
+	if (capabilities & NM_802_11_CAP_CIPHER_TKIP)
+	{
+		const char *name = _("TKIP (Default)");
+
+		gtk_list_store_append (model, &iter);
+		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
+			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_TKIP, -1);
+		num++;
+	}
+	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
+	{
+		const char *name = _("CCMP/AES");
+
+		gtk_list_store_append (model, &iter);
+		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
+			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_CCMP, -1);
+		num++;
+	}
+
+	*num_added = num;
+	return GTK_TREE_MODEL (model);
+}

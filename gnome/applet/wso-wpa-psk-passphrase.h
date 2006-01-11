@@ -22,7 +22,7 @@
 #ifndef WSO_WPA_PSK_PASSPHRASE_H
 #define WSO_WPA_PSK_PASSPHRASE_H
 
-WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file);
+WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file, int capabilities);
 
 
 #endif	/* WSO_WPA_PSK_PASSPHRASE_H */

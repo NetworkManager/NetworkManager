@@ -45,6 +45,17 @@ IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void)
 	return cipher;
 }
 
+
+void cipher_wpa_psk_hex_set_we_cipher (IEEE_802_11_Cipher *cipher, int we_cipher)
+{
+	g_return_if_fail (cipher != NULL);
+	g_return_if_fail ((we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP));
+	g_return_if_fail ((cipher->we_cipher == IW_AUTH_CIPHER_TKIP) || (cipher->we_cipher == IW_AUTH_CIPHER_CCMP));
+
+	cipher->we_cipher = we_cipher;
+}
+
+
 static char * cipher_wpa_psk_hex_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
 {
 	char * bin = NULL;

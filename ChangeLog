@@ -1,3 +1,47 @@
+2006-01-11  Dan Williams  <dcbw@redhat.com>
+
+	Add options for WPA2 and WPA1+CCMP (AES).
+
+	* gnome/applet/wireless-applet.glade
+		- Add UI bits for WPA+CCMP
+
+	* gnome/applet/other-network-dialog.c
+		- (nmwa_ond_init): pass capabilities into the WirelessSecurityManager,
+			and don't allow creation of WPA2 Ad-Hoc networks since
+			wpa_supplicant doesn't support them
+
+	* gnome/applet/wireless-security-manager.c
+		- (wsm_set_capabilities): Add WPA2 options, and pass capability
+			on to the specific wireless security option being created
+
+	* gnome/applet/wireless-security-option.[ch]
+		- (wso_wpa_create_key_type_model): new utility function to create
+			the model required for WPA Key Type combo box
+
+	* gnome/applet/wso-private.h
+	  gnome/applet/wireless-security-option.h
+		- Move private function prototypes into wso-private.h
+
+	* gnome/applet/wso-wpa-psk-hex.[ch]
+	  gnome/applet/wso-wpa-psk-passphrase.[ch]
+		- (append_dbus_params_func): get WPA version from checkbox and pass
+			it to the dbus serialization helper
+		- (key_type_combo_changed_cb): Set the cipher's WE Cipher when the
+			key type combo changes
+		- (wso_wpa_psk_hex_new): set up the key type combo with the correct
+			model and options
+
+	* libnm-util/cipher-wpa-psk-hex.c
+	  libnm-util/cipher-wpa-psk-passphrase.c
+		- (cipher_wpa_psk_hex_set_we_cipher, cipher_wpa_psk_passphrase_set_we_cipher):
+			new function; allow the cipher to be changed after object creation
+
+	* src/nm-ap-security-wpa-psk.c
+		- (set_description): Do WPA2 descriptions too
+
+	* src/nm-ap-security.c
+		- (nm_ap_security_new_from_ap): allow CCMP with WPA1 too
+
 2006-01-11  Robert Love  <rml@novell.com>
 
 	* src/nm-device-802-3-ethernet.c: Use the if_mii() inline function that

@@ -32,11 +32,14 @@
 #include "cipher.h"
 #include "cipher-wpa-psk-passphrase.h"
 #include "dbus-helpers.h"
+#include "NetworkManager.h"
 
 
 struct OptData
 {
 	const char *	entry_name;
+	const char *	wpa2_checkbox_name;
+	const char *	key_type_combo_name;
 };
 
 static void data_free_func (WirelessSecurityOption *opt)
@@ -84,6 +87,8 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	int					auth_alg = -1;
 	GtkWidget *			entry;
 	const char *			input;
+	GtkWidget *			wpa2_checkbox;
+	int					wpa_version = IW_AUTH_WPA_VERSION_WPA;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (opt->data != NULL, FALSE);
@@ -94,23 +99,58 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 	if (!wso_validate_helper (opt, ssid, input, &cipher) || !cipher)
 		return FALSE;
 
+	wpa2_checkbox = glade_xml_get_widget (opt->uixml, opt->data->wpa2_checkbox_name);
+	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (wpa2_checkbox)))
+		wpa_version = IW_AUTH_WPA_VERSION_WPA2;
+
 	nmu_security_serialize_wpa_psk_with_cipher (message, cipher, ssid, input,
-			IW_AUTH_WPA_VERSION_WPA, IW_AUTH_KEY_MGMT_PSK);
+			wpa_version, IW_AUTH_KEY_MGMT_PSK);
 
 	return TRUE;
 }
 
 
-WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
+static void
+key_type_combo_changed_cb (GtkComboBox *combo,
+                                   gpointer user_data)
+{
+	WirelessSecurityOption * opt = (WirelessSecurityOption *) user_data;
+	IEEE_802_11_Cipher *	cipher;
+	int					we_cipher;
+	GtkTreeModel *			model;
+	GtkTreeIter			iter;
+	char *				str;
+
+	g_return_if_fail (opt != NULL);
+
+	cipher = (IEEE_802_11_Cipher *) g_slist_nth_data (opt->ciphers, 0);
+	g_return_if_fail (cipher != NULL);
+
+	model = gtk_combo_box_get_model (combo);
+	gtk_combo_box_get_active_iter (combo, &iter);
+	gtk_tree_model_get (model, &iter, WPA_KEY_TYPE_NAME_COL, &str,
+			WPA_KEY_TYPE_CIPHER_COL, &we_cipher, -1);
+	cipher_wpa_psk_passphrase_set_we_cipher (cipher, we_cipher);
+}
+
+
+WirelessSecurityOption *
+wso_wpa_psk_passphrase_new (const char *glade_file,
+                            int capabilities)
 {
 	WirelessSecurityOption * opt = NULL;
 	GladeXML *			xml = NULL;
 	OptData *				data = NULL;
+	GtkWidget *			wpa2_checkbox;
+	GtkWidget *			key_type_combo;
+	int					num_added;
+	GtkTreeModel *			model;
+	GtkTreeIter			iter;
 
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WPA Personal Passphrase"));
+	opt->name = g_strdup (_("WPA Preshared-Key Passphrase"));
 	opt->widget_name = "wpa_psk_passphrase_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
@@ -127,6 +167,26 @@ WirelessSecurityOption * wso_wpa_psk_passphrase_new (const char *glade_file)
 	/* Option-specific data */
 	opt->data = data = g_malloc0 (sizeof (OptData));
 	data->entry_name = "wpa_psk_passphrase_entry";
+	data->wpa2_checkbox_name = "wpa2_checkbutton";
+	data->key_type_combo_name = "wpa_psk_passphrase_type_combo";
+
+	wpa2_checkbox = glade_xml_get_widget (opt->uixml, data->wpa2_checkbox_name);
+	if (!(capabilities & NM_802_11_CAP_PROTO_WPA2))
+		gtk_widget_set_sensitive (GTK_WIDGET (wpa2_checkbox), FALSE);
+
+	key_type_combo = glade_xml_get_widget (opt->uixml, data->key_type_combo_name);
+	g_signal_connect (G_OBJECT (key_type_combo), "changed", (GCallback) key_type_combo_changed_cb, opt);
+	model = wso_wpa_create_key_type_model (capabilities, &num_added);
+	if (!model || !num_added)
+	{
+		wso_free (opt);
+		return NULL;
+	}
+	gtk_combo_box_set_model (GTK_COMBO_BOX (key_type_combo), model);
+	gtk_tree_model_get_iter_first (model, &iter);
+	gtk_combo_box_set_active_iter (GTK_COMBO_BOX (key_type_combo), &iter);
+	if (num_added == 1)
+		gtk_widget_set_sensitive (key_type_combo, FALSE);
 
 	return opt;
 }

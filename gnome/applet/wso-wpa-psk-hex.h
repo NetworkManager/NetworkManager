@@ -22,7 +22,7 @@
 #ifndef WSO_WPA_PSK_HEX_H
 #define WSO_WPA_PSK_HEX_H
 
-WirelessSecurityOption * wso_wpa_psk_hex_new (const char *glade_file);
+WirelessSecurityOption * wso_wpa_psk_hex_new (const char *glade_file, int capabilities);
 
 
 #endif	/* WSO_WPA_PSK_HEX_H */

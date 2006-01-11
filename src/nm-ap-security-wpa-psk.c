@@ -42,11 +42,22 @@ struct _NMAPSecurityWPA_PSKPrivate
 static void set_description (NMAPSecurityWPA_PSK *security)
 {
 	NMAPSecurity * parent = NM_AP_SECURITY (security);
+	int			we_cipher = nm_ap_security_get_we_cipher (parent);
 
-	if (nm_ap_security_get_we_cipher (parent) == IW_AUTH_CIPHER_TKIP)
-		nm_ap_security_set_description (parent, _("WPA TKIP"));
-	else
-		nm_ap_security_set_description (parent, _("WPA CCMP"));
+	if (security->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
+	{
+		if (we_cipher == IW_AUTH_CIPHER_TKIP)
+			nm_ap_security_set_description (parent, _("WPA TKIP"));
+		else
+			nm_ap_security_set_description (parent, _("WPA CCMP"));
+	}
+	else if (security->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA2)
+	{
+		if (we_cipher == IW_AUTH_CIPHER_TKIP)
+			nm_ap_security_set_description (parent, _("WPA2 TKIP"));
+		else
+			nm_ap_security_set_description (parent, _("WPA2 CCMP"));
+	}
 }
 
 NMAPSecurityWPA_PSK *
