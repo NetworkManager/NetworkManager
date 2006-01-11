@@ -1,5 +1,14 @@
 2006-01-11  Robert Love  <rml@novell.com>
 
+	* gnome/applet/wireless-security-manager.c: Fix crash by not asserting
+	  that wso_foo_new() returned non-NULL.  Instead, only append the new
+	  wso to wsm->options if the wso is non-NULL.  The crux is that we
+	  assume that the relevant key types are implied by WEP and WPA as
+	  appropriate.  To be sure, they should be, but we should not expect
+	  drivers to not be oozing piles of wolf fecal matter.
+
+2006-01-11  Robert Love  <rml@novell.com>
+
 	* configure.in: Add the gcc flags '-Wshadow' and '-Wfloat-equal'.
 	* gnome/applet/applet.c, gnome/vpn-properties/nm-vpn-properties.c,
 	  src/NetworkManagerAPList.c, src/NetworkManagerDbus.c,

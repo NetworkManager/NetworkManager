@@ -70,35 +70,35 @@ void wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
 	if (capabilities & NM_802_11_CAP_PROTO_NONE)
 	{
 		opt = wso_none_new (wsm->glade_file);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 	}
 
 	if (capabilities & NM_802_11_CAP_PROTO_WEP)
 	{
 		opt = wso_wep_passphrase_new (wsm->glade_file);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 
 		opt = wso_wep_hex_new (wsm->glade_file);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 
 		opt = wso_wep_ascii_new (wsm->glade_file);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 	}
 
 	if (   (capabilities & NM_802_11_CAP_PROTO_WPA)
 	    || (capabilities & NM_802_11_CAP_PROTO_WPA2))
 	{
 		opt = wso_wpa_psk_passphrase_new (wsm->glade_file, capabilities);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 
 		opt = wso_wpa_psk_hex_new (wsm->glade_file, capabilities);
-		g_assert (opt);
-		wsm->options = g_slist_append (wsm->options, opt);
+		if (opt)
+			wsm->options = g_slist_append (wsm->options, opt);
 	}
 }
 
