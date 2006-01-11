@@ -373,7 +373,7 @@ mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int locati
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
-	mii = if_mii (ifr);
+	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
 #ifdef IOCTL_DEBUG

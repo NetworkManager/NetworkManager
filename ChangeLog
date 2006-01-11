@@ -1,5 +1,11 @@
 2006-01-11  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-3-ethernet.c: In case local copies of glibc do not
+	  define if_mii(), open code the same results, and do so without any
+	  type punning.
+
+2006-01-11  Robert Love  <rml@novell.com>
+
 	* gnome/applet/wireless-security-manager.c: Fix crash by not asserting
 	  that wso_foo_new() returned non-NULL.  Instead, only append the new
 	  wso to wsm->options if the wso is non-NULL.  The crux is that we
