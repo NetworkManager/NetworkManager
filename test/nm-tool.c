@@ -106,7 +106,7 @@ static void print_string (const char *label, const char *data)
 		spaces[i] = 0x20;
 	spaces[i] = 0x00;
 
-	fprintf (stdout, "  %s:%s%s\n", label, &spaces[0], data);
+	printf ("  %s:%s%s\n", label, &spaces[0], data);
 }
 
 
@@ -256,7 +256,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, &num_networks,
 									DBUS_TYPE_INVALID))
 	{
-		fprintf (stdout, "- Device: %s ----------------------------------------------------------------\n", iface);
+		printf ("- Device: %s ----------------------------------------------------------------\n", iface);
 
 		/* General information */
 		print_string ("NM Path", op);
@@ -286,7 +286,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 			char *str_strength;
 			int	 i;
 
-			fprintf (stdout, "\n  Wireless Settings\n");
+			printf ("\n  Wireless Settings\n");
 
 			if (caps & NM_DEVICE_CAP_WIRELESS_SCAN)
 				print_string ("  Scanning", "yes");
@@ -299,7 +299,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 				print_string ("  WPA2 Encryption", "yes");
 
 			/*
-			fprintf (stdout, "\n  Wireless Settings\n");
+			printf ("\n  Wireless Settings\n");
 			if (mode == IW_MODE_INFRA)
 				print_string ("  Mode", "Infrastructure");
 			else if (mode == IW_MODE_ADHOC)
@@ -309,13 +309,13 @@ static void detail_device (DBusConnection *connection, const char *path)
 			g_free (str_strength);
 			*/
 
-			fprintf (stdout, "\n  Wireless Networks (* = Current Network)\n");
+			printf ("\n  Wireless Networks (* = Current Network)\n");
 			for (i = 0; i < num_networks; i++)
 				detail_network (connection, networks[i], active_network_path);
 		}
 		else if (type == DEVICE_TYPE_802_3_ETHERNET)
 		{
-			fprintf (stdout, "\n  Wired Settings\n");
+			printf ("\n  Wired Settings\n");
 			if (link_active)
 				print_string ("  Hardware Link", "yes");
 			else
@@ -325,7 +325,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 		/* IP Setup info */
 		if (active)
 		{
-			fprintf (stdout, "\n  IP Settings:\n");
+			printf ("\n  IP Settings:\n");
 			print_string ("  IP Address", ip4_address);
 			print_string ("  Subnet Mask", subnetmask);
 			print_string ("  Broadcast", broadcast);
@@ -335,7 +335,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 		}
 		
 
-		fprintf (stdout, "\n\n");
+		printf ("\n\n");
 		dbus_free_string_array (networks);
 	}
 	else
@@ -407,11 +407,11 @@ int main( int argc, char *argv[] )
 		return 1;
 	}
 
-	fprintf (stdout, "\nNetworkManager Tool\n\n");
+	printf ("\nNetworkManager Tool\n\n");
 
 	if (!get_nm_state (connection))
 	{
-		fprintf (stdout, "\n\nNetworkManager appears not to be running (could not get its state).\n");
+		fprintf (stderr, "\n\nNetworkManager appears not to be running (could not get its state).\n");
 		exit (1);
 	}
 

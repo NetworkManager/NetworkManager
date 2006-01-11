@@ -1,5 +1,14 @@
 2006-01-11  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-3-ethernet.c: Use the if_mii() inline function that
+	  is defined in <linux/mii.h> to return the mii_ioctl_data structure
+	  from the ifreq structure in lieu of an open coded solution.  Removes
+	  a life-threatening type-punning.
+	* configure.in: Remove '-Wno-strict-aliasing' as we no longer pun any
+	  types, ever, whatsoever, baby.
+
+2006-01-11  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-devices.c, gnome/applet/applet-dbus.c,
 	  gnome/applet/applet.c, gnome/applet/applet.h: Consolidating
 	  assignments to applet->nm_state into a new nmwa_set_state() function
@@ -64,13 +73,15 @@
 	* libnm-util/dbus-helpers.c
 	  libnm-util/dbus-helpers.h
 	  	- (nmu_create_dbus_error_message): rename parameter 'namespace'
-			to 'exception_namespace' (:namespace is a keyword in C++)
+			to 'exception_namespace' (:namespace is a keyword in
+			C++)
 			
 2006-01-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): don't autoswitch away from
-			Ad-Hoc networks, since there's really no concept of "link"
+			Ad-Hoc networks, since there's really no concept of
+			"link"
 
 	* src/nm-dbus-nm.c
 		- (nm_dbus_nm_create_wireless_network): mark created networks
@@ -147,7 +158,7 @@
 		- Change existing wpa-psk stuff to wpa-psk-hex
 		- Add new widgets for wpa-psk-passphrase
 
-	* gnome/applet/wireless-security-manager.c
+	* gnome/applet/wireless-security-manager.c
 		- (wsm_set_capabilities): enable WPA options
 
 	* gnome/applet/wso-wpa-psk-passphrase.c
@@ -184,15 +195,16 @@
 2006-01-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerUtils.c
-		- (nm_utils_supplicant_request, nm_utils_supplicant_request_with_check):
+		- (nm_utils_supplicant_request,
+		  nm_utils_supplicant_request_with_check):
 			pass correct buffer length to wpa_ctrl_request()
 
 2006-01-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-private.h
 	  src/nm-device.c
-		- (nm_device_activate_schedule_stage3_ip_config_start): make this
-			function available to subclasses
+		- (nm_device_activate_schedule_stage3_ip_config_start): make
+			this function available to subclasses
 
 2006-01-06  Robert Love  <rml@novell.com>
 
