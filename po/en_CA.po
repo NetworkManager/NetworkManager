@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-09 22:19-0500\n"
+"POT-Creation-Date: 2006-01-11 12:54-0500\n"
 "PO-Revision-Date: 2005-09-06 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
@@ -17,18 +17,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. Setup a request to the keyring to save the network passphrase
 #: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Passphrase for wireless network %s"
 
-#: ../gnome/applet/applet-dbus.c:276
+#: ../gnome/applet/applet-dbus.c:274
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Connection to the wireless network '%s' failed."
 
-#: ../gnome/applet/applet-dbus.c:281
+#: ../gnome/applet/applet-dbus.c:279
 msgid "Connection to the wired network failed."
 msgstr "Connection to the wired network failed."
 
@@ -139,7 +138,7 @@ msgstr "VPN connection '%s' said:"
 msgid "VPN Login Message"
 msgstr "VPN Login Message"
 
-#: ../gnome/applet/applet.c:760 ../gnome/applet/applet.c:2451
+#: ../gnome/applet/applet.c:760 ../gnome/applet/applet.c:2511
 #: ../gnome/applet/other-network-dialog.c:448
 #: ../gnome/applet/passphrase-dialog.c:210
 msgid ""
@@ -206,97 +205,106 @@ msgstr "Finishing connection to the wireless network '%s'..."
 msgid "NetworkManager is not running"
 msgstr "NetworkManager is not running"
 
-#: ../gnome/applet/applet.c:1107
+#: ../gnome/applet/applet.c:1108 ../gnome/applet/applet.c:1839
+msgid "Networking disabled"
+msgstr "Networking disabled"
+
+#: ../gnome/applet/applet.c:1113
 msgid "No network connection"
 msgstr "No network connection"
 
-#: ../gnome/applet/applet.c:1112
+#: ../gnome/applet/applet.c:1118
 msgid "Wired network connection"
 msgstr "Wired network connection"
 
-#: ../gnome/applet/applet.c:1116
+#: ../gnome/applet/applet.c:1122
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Connected to an Ad-Hoc wireless network"
 
-#: ../gnome/applet/applet.c:1118
+#: ../gnome/applet/applet.c:1124
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Wireless network connection to '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1140
+#: ../gnome/applet/applet.c:1146
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN connection to '%s'"
 
-#: ../gnome/applet/applet.c:1148
+#: ../gnome/applet/applet.c:1154
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN connecting to '%s'"
 
-#: ../gnome/applet/applet.c:1562
+#: ../gnome/applet/applet.c:1568
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Connect to Other Wireless Network..."
 
-#: ../gnome/applet/applet.c:1583
+#: ../gnome/applet/applet.c:1589
 msgid "Create _New Wireless Network..."
 msgstr "Create _New Wireless Network..."
 
-#: ../gnome/applet/applet.c:1700
+#: ../gnome/applet/applet.c:1706
 msgid "_VPN Connections"
 msgstr "_VPN Connections"
 
-#: ../gnome/applet/applet.c:1735
+#: ../gnome/applet/applet.c:1741
 msgid "_Configure VPN..."
 msgstr "_Configure VPN..."
 
-#: ../gnome/applet/applet.c:1739
+#: ../gnome/applet/applet.c:1745
 msgid "_Disconnect VPN..."
 msgstr "_Disconnect VPN..."
 
-#: ../gnome/applet/applet.c:1761
+#: ../gnome/applet/applet.c:1767
 msgid "_Dial Up Connections"
 msgstr "_Dial-Up Connections"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1772
+#: ../gnome/applet/applet.c:1778
 #, c-format
 msgid "Connect to %s..."
 msgstr "Connect to %s..."
 
-#: ../gnome/applet/applet.c:1778
+#: ../gnome/applet/applet.c:1784
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Disconnect from %s..."
 
-#: ../gnome/applet/applet.c:1827
+#: ../gnome/applet/applet.c:1833
 msgid "No network devices have been found"
 msgstr "No network devices have been found"
 
-#: ../gnome/applet/applet.c:2001
+#: ../gnome/applet/applet.c:2025
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager is not running..."
 
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2181
+msgid "Enable _Networking"
+msgstr "Enable _Networking"
+
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2126
+#: ../gnome/applet/applet.c:2187
 msgid "Enable _Wireless"
 msgstr "Enable _Wireless"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2132
+#: ../gnome/applet/applet.c:2193
 msgid "Connection _Information"
 msgstr "Connection _Information"
 
 #. Help item
-#: ../gnome/applet/applet.c:2143
+#: ../gnome/applet/applet.c:2204
 msgid "_Help"
 msgstr "_Help"
 
 #. About item
-#: ../gnome/applet/applet.c:2152
+#: ../gnome/applet/applet.c:2213
 msgid "_About"
 msgstr "_About"
 
-#: ../gnome/applet/applet.c:2570
+#: ../gnome/applet/applet.c:2630
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
