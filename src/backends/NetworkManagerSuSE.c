@@ -854,14 +854,14 @@ GSList * nm_system_get_dialup_config (void)
 			 goto out_free;
 
 		config = g_malloc (sizeof (NMDialUpConfig));
+		config->data = g_strdup (dentry + 6); /* skip the "ifcfg-" prefix */
 		if (modem) {
-			config->name = g_strdup_printf ("%s via Modem", provider_name);
+			config->name = g_strdup_printf ("%s via modem (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_MODEM;
 		} else {
-			config->name = g_strdup_printf ("%s via ISDN", provider_name);
+			config->name = g_strdup_printf ("%s via ISDN (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_ISDN;
 		}
-		config->data = g_strdup (dentry + 6); /* skip the "ifcfg-" prefix */
 
 		list = g_slist_append (list, config);
 
