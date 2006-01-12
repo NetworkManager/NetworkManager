@@ -2378,7 +2378,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 {
 	gboolean	success = FALSE;
 	char *	argv[4];
-	GError *	error;
+	GError *	error = NULL;
 	GPid		pid = -1;
 
 	argv[0] = WPA_SUPPLICANT_BINARY;

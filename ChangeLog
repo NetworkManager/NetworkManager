@@ -1,3 +1,9 @@
+2006-01-12  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_exec): ensure GError is correctly initialized
+			Reported by Diego González (gnome.org #326708)
+
 2006-01-11  Robert Love  <rml@novell.com>
 
 	* src/nm-device-802-3-ethernet.c: In case local copies of glibc do not
