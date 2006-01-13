@@ -1,3 +1,10 @@
+2006-01-13  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_cleanup): delete old device control sockets too
+		- (supplicant_get_device_socket_path): new function to consolidate
+			locations that need a path to a device's control socket
+
 2006-01-12  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Put the ppp device in the

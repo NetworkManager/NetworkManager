@@ -2213,10 +2213,22 @@ supplicant_remove_timeout (NMDevice80211Wireless *self)
 	}
 }
 
+static char *
+supplicant_get_device_socket_path (NMDevice80211Wireless *self)
+{
+	const char *iface;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	return g_strdup_printf (WPA_SUPPLICANT_CONTROL_SOCKET "/%s", iface);
+}
 
 static void
 supplicant_cleanup (NMDevice80211Wireless *self)
 {
+	char * sock_path;
+
 	g_return_if_fail (self != NULL);
 
 	if (self->priv->sup_pid > 0)
@@ -2243,8 +2255,13 @@ supplicant_cleanup (NMDevice80211Wireless *self)
 	supplicant_remove_timeout (self);
 	remove_link_timeout (self);
 
-	/* HACK: should be fixed in wpa_supplicant */
+	/* HACK: should be fixed in wpa_supplicant.  Will likely
+	 * require accomodations for selinux.
+	 */
 	unlink (WPA_SUPPLICANT_GLOBAL_SOCKET);
+	sock_path = supplicant_get_device_socket_path (self);
+	unlink (sock_path);
+	g_free (sock_path);
 }
 
 static void
@@ -2432,8 +2449,7 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	wpa_ctrl_close (ctrl);
 
 	/* attach to interface socket */
-	if (!(socket_path = g_strdup_printf (WPA_SUPPLICANT_CONTROL_SOCKET "/%s", iface)))
-		goto exit;
+	socket_path = supplicant_get_device_socket_path (self);
 	self->priv->sup_ctrl = wpa_ctrl_open (socket_path);
 	g_free (socket_path);
 	success = TRUE;
