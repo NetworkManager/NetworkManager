@@ -352,6 +352,16 @@ real_start (NMDevice *dev)
 }
 
 static void
+real_deactivate_quickly (NMDevice *dev)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+
+	supplicant_cleanup (self);
+	remove_link_timeout (self);
+}
+
+
+static void
 real_deactivate (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
@@ -359,9 +369,6 @@ real_deactivate (NMDevice *dev)
 
 	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
-
-	supplicant_cleanup (self);
-	remove_link_timeout (self);
 
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_802_11_wireless_set_essid (self, "");
@@ -2437,6 +2444,7 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	char *			socket_path;
 	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
 	gboolean			success = FALSE;
+	int				tries = 0;
 
 	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET)))
 		goto exit;
@@ -2445,13 +2453,21 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 			"INTERFACE_ADD %s\t\twext\t" WPA_SUPPLICANT_CONTROL_SOCKET "\t", iface))
 		goto exit;
-
 	wpa_ctrl_close (ctrl);
 
-	/* attach to interface socket */
+	/* Get a control socket to wpa_supplicant for this interface.
+	 * Try a couple times to work around naive socket naming
+	 * in wpa_ctrl that sometimes collides with stale ones.
+	 */
 	socket_path = supplicant_get_device_socket_path (self);
-	self->priv->sup_ctrl = wpa_ctrl_open (socket_path);
+	while (!self->priv->sup_ctrl && (tries++ < 10))
+		self->priv->sup_ctrl = wpa_ctrl_open (socket_path);
 	g_free (socket_path);
+	if (!self->priv->sup_ctrl)
+	{
+		nm_info ("Error opening control interface to supplicant.");
+		goto exit;
+	}
 	success = TRUE;
 
 exit:
@@ -2872,6 +2888,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
 	parent_class->deactivate = real_deactivate;
+	parent_class->deactivate_quickly = real_deactivate_quickly;
 
 	parent_class->activation_failure_handler = real_activation_failure_handler;
 	parent_class->activation_success_handler = real_activation_success_handler;

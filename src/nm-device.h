@@ -101,6 +101,7 @@ struct _NMDeviceClass
 												 struct NMActRequest *req,
 												 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
+	void			(* deactivate_quickly)	(NMDevice *self);
 	void			(* cancel_activation)	(NMDevice *self);
 
 	void			(* activation_failure_handler)	(NMDevice *self,

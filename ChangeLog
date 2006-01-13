@@ -1,5 +1,25 @@
 2006-01-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+	  src/nm-device.h
+		- Allow subclasses to implement deactivate_quickly()
+		- (nm_device_deactivate_quickly): call subclass
+			deactivate_quickly() methods
+		- (nm_device_set_active_link): small cleanups, and don't
+			deactivate the device right away because we risk a deadlock
+			when called from device thread, waiting for the device
+			thread to cancel activation
+
+	* src/nm-device-802-11-wireless.c
+		- (real_deactivate_quickly): new function
+		- (nm_device_802_11_wireless_class_init): hook in real_deactivate_quickly
+		- (real_deactivate): move supplicant cleanup to real_deactivate_quickly
+			so that we kill the supplicant when we sleep too
+		- (supplicant_interface_init): work around naive naming attempts of
+			wpa_ctrl when naming sockets
+
+2006-01-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (supplicant_cleanup): delete old device control sockets too
 		- (supplicant_get_device_socket_path): new function to consolidate

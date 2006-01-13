@@ -543,24 +543,23 @@ void
 nm_device_set_active_link (NMDevice *self,
                            const gboolean link_active)
 {
-	NMData *	app_data;
+	NMData *		app_data;
+	NMActRequest *	req;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (self->priv->app_data != NULL);
 
 	app_data = self->priv->app_data;
+	req = nm_device_get_act_request (self);
 
 	if (self->priv->link_active != link_active)
 	{
 		self->priv->link_active = link_active;
 
 		/* Deactivate a currently active device */
-		if (!link_active && self->priv->act_request)
-		{
-			nm_device_deactivate (self);
+		if (!link_active && req)
 			nm_policy_schedule_device_change_check (app_data);
-		}
-		else if (link_active && !self->priv->act_request)
+		else if (link_active && !req)
 		{
 			NMDevice *	act_dev = nm_get_active_device (app_data);
 			NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
@@ -1440,6 +1439,10 @@ nm_device_deactivate_quickly (NMDevice *self)
 		nm_act_request_unref (act_request);
 		self->priv->act_request = NULL;
 	}
+
+	/* Call device type-specific deactivation */
+	if (NM_DEVICE_GET_CLASS (self)->deactivate_quickly)
+		NM_DEVICE_GET_CLASS (self)->deactivate_quickly (self);
 
 	return TRUE;
 }
