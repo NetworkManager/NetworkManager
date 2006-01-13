@@ -356,7 +356,6 @@ gboolean nm_system_vpn_device_unset_from_ip4_config (NMNamedManager *named, NMDe
 {
 	g_return_val_if_fail (named != NULL, FALSE);
 	g_return_val_if_fail (active_device != NULL, FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	nm_named_manager_remove_ip4_config (named, config);

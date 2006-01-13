@@ -1,3 +1,9 @@
+2006-01-13  Robert Love  <rml@novell.com>
+
+	Patch by T Sureshkumar <tsureshkuman@novell.com>:
+	* src/NetworkManagerSystem.c: Don't assert iface != NULL, allowing VPN
+	  modules that do not use an interface.
+
 2006-01-13  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c
