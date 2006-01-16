@@ -1,5 +1,10 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/wireless-security-option.c
+		- (wso_wpa_create_key_type_model): clarify AES-CCMP algorithm name
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/cipher-wpa-psk-passphrase.c
 		- (cipher_wpa_psk_passphrase_new): correct passphrase length, should
 			be 8 - 63 characters inclusive

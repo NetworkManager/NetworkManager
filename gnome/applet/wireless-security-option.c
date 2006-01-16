@@ -218,7 +218,7 @@ wso_wpa_create_key_type_model (int capabilities,
 	}
 	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
 	{
-		const char *name = _("CCMP/AES");
+		const char *name = _("AES-CCMP");
 
 		gtk_list_store_append (model, &iter);
 		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
