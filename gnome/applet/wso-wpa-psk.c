@@ -27,10 +27,11 @@
 #include <iwlib.h>
 
 #include "wireless-security-option.h"
-#include "wso-wpa-psk-hex.h"
+#include "wso-wpa-psk.h"
 #include "wso-private.h"
 #include "cipher.h"
 #include "cipher-wpa-psk-hex.h"
+#include "cipher-wpa-psk-passphrase.h"
 #include "dbus-helpers.h"
 #include "NetworkManager.h"
 
@@ -40,6 +41,8 @@ struct OptData
 	const char *	entry_name;
 	const char *	wpa2_checkbox_name;
 	const char *	key_type_combo_name;
+	IEEE_802_11_Cipher *	hex_cipher;
+	IEEE_802_11_Cipher *	passphrase_cipher;
 };
 
 static void data_free_func (WirelessSecurityOption *opt)
@@ -47,6 +50,9 @@ static void data_free_func (WirelessSecurityOption *opt)
 	g_return_if_fail (opt != NULL);
 	g_return_if_fail (opt->data != NULL);
 
+	ieee_802_11_cipher_ref (opt->data->passphrase_cipher);
+	ieee_802_11_cipher_ref (opt->data->hex_cipher);
+	memset (opt->data, 0, sizeof (opt->data));
 	g_free (opt->data);
 }
 
@@ -67,7 +73,7 @@ static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFun
 }
 
 
-static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher ** out_cipher)
+static gboolean validate_input_func (WirelessSecurityOption *opt, const char *ssid, IEEE_802_11_Cipher **out_cipher)
 {
 	GtkWidget *	entry;
 	const char *	input;
@@ -115,28 +121,34 @@ key_type_combo_changed_cb (GtkComboBox *combo,
                                    gpointer user_data)
 {
 	WirelessSecurityOption * opt = (WirelessSecurityOption *) user_data;
-	IEEE_802_11_Cipher *	cipher;
 	int					we_cipher;
 	GtkTreeModel *			model;
 	GtkTreeIter			iter;
 	char *				str;
+	GSList *				elt;
 
 	g_return_if_fail (opt != NULL);
-
-	cipher = (IEEE_802_11_Cipher *) g_slist_nth_data (opt->ciphers, 0);
-	g_return_if_fail (cipher != NULL);
 
 	model = gtk_combo_box_get_model (combo);
 	gtk_combo_box_get_active_iter (combo, &iter);
 	gtk_tree_model_get (model, &iter, WPA_KEY_TYPE_NAME_COL, &str,
 			WPA_KEY_TYPE_CIPHER_COL, &we_cipher, -1);
-	cipher_wpa_psk_hex_set_we_cipher (cipher, we_cipher);
+
+	for (elt = opt->ciphers; elt; elt = g_slist_next (elt))
+	{
+		IEEE_802_11_Cipher * cipher = (IEEE_802_11_Cipher *)(elt->data);
+
+		if (cipher == opt->data->passphrase_cipher)
+			cipher_wpa_psk_passphrase_set_we_cipher (cipher, we_cipher);
+		else if (cipher == opt->data->hex_cipher)
+			cipher_wpa_psk_hex_set_we_cipher (cipher, we_cipher);
+	}
 }
 
 
 WirelessSecurityOption *
-wso_wpa_psk_hex_new (const char *glade_file,
-                     int capabilities)
+wso_wpa_psk_new (const char *glade_file,
+                 int capabilities)
 {
 	WirelessSecurityOption * opt = NULL;
 	GladeXML *			xml = NULL;
@@ -150,8 +162,8 @@ wso_wpa_psk_hex_new (const char *glade_file,
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WPA Preshared-Key Hex"));
-	opt->widget_name = "wpa_psk_hex_notebook";
+	opt->name = g_strdup (_("WPA/WPA2 Personal"));
+	opt->widget_name = "wpa_psk_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
 	opt->widget_create_func = widget_create_func;
@@ -162,13 +174,20 @@ wso_wpa_psk_hex_new (const char *glade_file,
 		wso_free (opt);
 		return NULL;
 	}
-	opt->ciphers = g_slist_append (opt->ciphers, cipher_wpa_psk_hex_new ());
 
 	/* Option-specific data */
 	opt->data = data = g_malloc0 (sizeof (OptData));
-	data->entry_name = "wpa_psk_hex_entry";
+	data->entry_name = "wpa_psk_entry";
 	data->wpa2_checkbox_name = "wpa2_checkbutton";
-	data->key_type_combo_name = "wpa_psk_hex_type_combo";
+	data->key_type_combo_name = "wpa_psk_type_combo";
+
+	/* Set up our ciphers */
+	data->passphrase_cipher = cipher_wpa_psk_passphrase_new ();
+	ieee_802_11_cipher_ref (data->passphrase_cipher);
+	opt->ciphers = g_slist_append (opt->ciphers, data->passphrase_cipher);
+	data->hex_cipher = cipher_wpa_psk_hex_new ();
+	ieee_802_11_cipher_ref (data->hex_cipher);
+	opt->ciphers = g_slist_append (opt->ciphers, data->hex_cipher);
 
 	wpa2_checkbox = glade_xml_get_widget (opt->uixml, data->wpa2_checkbox_name);
 	if (!(capabilities & NM_802_11_CAP_PROTO_WPA2))

@@ -1,5 +1,28 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/wso-wpa-psk-hex.[ch]
+		- Renamed -> wso-wpa-psk.[ch]
+
+	* gnome/applet/wso-wpa-psk.[ch]
+		- New files
+
+	* gnome/applet/wso-wpa-psk-passphrase.[ch]
+		- Removed, rolled into wso-wpa-psk.[ch]
+
+	* gnome/applet/Makefile.am
+		- Updated for above changes
+
+	* gnome/applet/wireless-applet.glade
+		- Consolidate WPA-PSK options into one notebook
+			widget, and make dialogs invisible by default
+			to fix screen oddities
+
+	* gnome/applet/wireless-security-manager.c
+		- (wsm_set_capabilities): create the new wpa-psk widget rather
+			than both the old hex & passphrase ones
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/other-network-dialog.c
 		- (nmwa_ond_init): Change text to refer to "name" rather than "ESSID"
 

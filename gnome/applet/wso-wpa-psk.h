@@ -19,10 +19,10 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-#ifndef WSO_WPA_PSK_HEX_H
-#define WSO_WPA_PSK_HEX_H
+#ifndef WSO_WPA_PSK_H
+#define WSO_WPA_PSK_H
 
-WirelessSecurityOption * wso_wpa_psk_hex_new (const char *glade_file, int capabilities);
+WirelessSecurityOption * wso_wpa_psk_new (const char *glade_file, int capabilities);
 
 
 #endif	/* WSO_WPA_PSK_HEX_H */
