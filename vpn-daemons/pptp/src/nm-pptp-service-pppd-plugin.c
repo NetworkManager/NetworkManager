@@ -106,6 +106,7 @@ static void pptp_ip_up(void *opaque, int arg)
   guint32 		uint_ip4_wins2    = 0;
   guint32		uint_ip4_wins_len = 0;
   guint32		uint_ip4_address  = 0;
+  guint32		uint_ip4_ptp_address  = 0;
   guint32		uint_ip4_netmask  = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
   guint32 i=0;
  
@@ -178,6 +179,7 @@ static void pptp_ip_up(void *opaque, int arg)
   dbus_message_append_args (message, 
 			    DBUS_TYPE_STRING, &str_ifname,
 			    DBUS_TYPE_UINT32, &uint_ip4_address,
+			    DBUS_TYPE_UINT32, &uint_ip4_ptp_address,
 			    DBUS_TYPE_UINT32, &uint_ip4_netmask,
 // Array workaround
                 DBUS_TYPE_UINT32, &uint_ip4_dns1,

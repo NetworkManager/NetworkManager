@@ -38,6 +38,9 @@ void			nm_ip4_config_set_secondary		(NMIP4Config *config, gboolean secondary);
 guint32		nm_ip4_config_get_address		(NMIP4Config *config);
 void			nm_ip4_config_set_address		(NMIP4Config *config, guint32 addr);
 
+guint32		nm_ip4_config_get_ptp_address		(NMIP4Config *config);
+void			nm_ip4_config_set_ptp_address		(NMIP4Config *config, guint32 ptp_addr);
+
 guint32		nm_ip4_config_get_gateway		(NMIP4Config *config);
 void			nm_ip4_config_set_gateway		(NMIP4Config *config, guint32 gateway);
 

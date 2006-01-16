@@ -31,14 +31,16 @@
 #include <netlink/utils.h>
 #include <netinet/in.h>
 
-
 struct NMIP4Config
 {
 	guint	refcount;
+
 	guint32	ip4_address;
+	guint32	ip4_ptp_address;
 	guint32	ip4_gateway;
 	guint32	ip4_netmask;
 	guint32	ip4_broadcast;
+
 	GSList *	nameservers;
 	GSList *	domains;
 
@@ -73,6 +75,7 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	dst_config->refcount = 1;
 
 	dst_config->ip4_address = nm_ip4_config_get_address (src_config);
+	dst_config->ip4_ptp_address = nm_ip4_config_get_ptp_address (src_config);
 	dst_config->ip4_gateway = nm_ip4_config_get_gateway (src_config);
 	dst_config->ip4_netmask = nm_ip4_config_get_netmask (src_config);
 	dst_config->ip4_broadcast = nm_ip4_config_get_broadcast (src_config);
@@ -145,6 +148,20 @@ void nm_ip4_config_set_address (NMIP4Config *config, guint32 addr)
 	g_return_if_fail (config != NULL);
 
 	config->ip4_address = addr;
+}
+
+guint32 nm_ip4_config_get_ptp_address (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, 0);
+
+	return config->ip4_ptp_address;
+}
+
+void nm_ip4_config_set_ptp_address (NMIP4Config *config, guint32 ptp_addr)
+{
+	g_return_if_fail (config != NULL);
+
+	config->ip4_ptp_address = ptp_addr;
 }
 
 guint32 nm_ip4_config_get_gateway (NMIP4Config *config)
@@ -357,7 +374,7 @@ struct rtnl_addr * nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 flag
 		success = (ip4_addr_to_rtnl_local (config->ip4_address, addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_PTP_ADDR)
-		success = (ip4_addr_to_rtnl_peer (config->ip4_address, addr) >= 0);
+		success = (ip4_addr_to_rtnl_peer (config->ip4_ptp_address, addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_NETMASK)
 		ip4_addr_to_rtnl_prefixlen (config->ip4_netmask, addr);

@@ -1,5 +1,40 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	Apply the PtP Address bits of a patch from Tim Niemueller
+
+	* src/nm-ip4-config.[ch]
+		- Add ip4_ptp_address member to object
+		- (nm_ip4_config_copy): copy ptp address too
+		- (nm_ip4_config_get_ptp_address, nm_ip4_config_set_ptp_address):
+			new functions
+		- (nm_ip4_config_to_rtnl_addr): use ptp address when asked to,
+			rather than local tunnel ip address
+
+	* src/vpn-manager/nm-vpn-service.c
+		- (print_vpn_config): update for PtP address
+		- (nm_vpn_service_stage4_ip_config_get): switch parsing to
+			DBusMessageIters in preparation for getting routes from the VPN
+			service daemons too
+
+	* vpn-daemons/openvpn/src/nm-openvpn-service-openvpn-helper.c
+		- (send_config_info): update for PtP address, clean up code
+		- (main): update for PtP address, clean up code, fix typo
+
+	* vpn-daemons/openvpn/src/nm-openvpn-service.c
+		- (nm_openvpn_dbus_process_helper_ip4_config): update for PtP address
+
+	* vpn-daemons/pptp/src/nm-pptp-service-pppd-plugin.c
+		- (pptp_ip_up): update for PtP address
+
+	* vpn-daemons/pptp/src/nm-pptp-service.c
+		- (nm_pptp_dbus_process_helper_ip4_config): update for PtP address
+
+	* vpn-daemons/vpnc/src/nm-vpnc-service.c
+		- (print_vpn_config): update for PtP address
+		- (nm_vpnc_dbus_process_helper_ip4_config): update for PtP address
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet.c
 		- (nmwa_add_networks_helper): don't indicate an active network
 			if NM is disconnected or asleep

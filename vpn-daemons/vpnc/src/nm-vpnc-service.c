@@ -795,16 +795,18 @@ static void nm_vpnc_dbus_process_helper_config_error (DBusConnection *con, DBusM
 /*
  *  Prints config returned from vpnc-helper
  */
-static void print_vpn_config (guint32 ip4_vpn_gateway,
-						const char *tundev,
-						guint32 ip4_internal_address,
-						gint32 ip4_internal_netmask,
-						guint32 *ip4_internal_dns,
-						guint32 ip4_internal_dns_len,
-						guint32 *ip4_internal_nbns,
-						guint32 ip4_internal_nbns_len,
-						const char *cisco_def_domain,
-						const char *cisco_banner)
+static void
+print_vpn_config (guint32 ip4_vpn_gateway,
+                  const char *tundev,
+                  guint32 ip4_address,
+                  guint32 ip4_ptp_address,
+                  gint32 ip4_netmask,
+                  guint32 *ip4_dns,
+                  guint32 ip4_dns_len,
+                  guint32 *ip4_nbns,
+                  guint32 ip4_nbns_len,
+                  const char *cisco_def_domain,
+                  const char *cisco_banner)
 {
 	struct in_addr	temp_addr;
 	guint32 		i;
@@ -812,25 +814,27 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 	temp_addr.s_addr = ip4_vpn_gateway;
 	nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
 	nm_info ("Tunnel Device: %s", tundev);
-	temp_addr.s_addr = ip4_internal_address;
+	temp_addr.s_addr = ip4_address;
 	nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
-	temp_addr.s_addr = ip4_internal_netmask;
+	temp_addr.s_addr = ip4_netmask;
 	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
+	temp_addr.s_addr = ip4_ptp_address;
+	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
 
-	for (i = 0; i < ip4_internal_dns_len; i++)
+	for (i = 0; i < ip4_dns_len; i++)
 	{
-		if (ip4_internal_dns[i] != 0)
+		if (ip4_dns[i] != 0)
 		{
-			temp_addr.s_addr = ip4_internal_dns[i];
+			temp_addr.s_addr = ip4_dns[i];
 			nm_info ("Internal IP4 DNS: %s", inet_ntoa (temp_addr));
 		}
 	}
 
-	for (i = 0; i < ip4_internal_nbns_len; i++)
+	for (i = 0; i < ip4_nbns_len; i++)
 	{
-		if (ip4_internal_nbns[i] != 0)
+		if (ip4_nbns[i] != 0)
 		{
-			temp_addr.s_addr = ip4_internal_nbns[i];
+			temp_addr.s_addr = ip4_nbns[i];
 			nm_info ("Internal IP4 NBNS: %s", inet_ntoa (temp_addr));
 		}
 	}
@@ -853,15 +857,17 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 {
 	guint32		ip4_vpn_gateway;
 	char *		tundev;
-	guint32		ip4_internal_address;
-	guint32		ip4_internal_netmask;
-	guint32 *		ip4_internal_dns;
-	guint32		ip4_internal_dns_len;
-	guint32 *		ip4_internal_nbns;
-	guint32		ip4_internal_nbns_len;
+	guint32		ip4_address;
+	guint32		ip4_ptp_address;
+	guint32		ip4_netmask;
+	guint32 *		ip4_dns;
+	guint32		ip4_dns_len;
+	guint32 *		ip4_nbns;
+	guint32		ip4_nbns_len;
 	char *		cisco_def_domain;
 	char *		cisco_banner;
 	gboolean		success = FALSE;
+	DBusMessage *	signal;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (con != NULL);
@@ -873,47 +879,47 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 
 	nm_vpnc_cancel_helper_timer (data);
 
-	if (dbus_message_get_args(message, NULL, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-									 DBUS_TYPE_STRING, &tundev,
-									 DBUS_TYPE_UINT32, &ip4_internal_address,
-									 DBUS_TYPE_UINT32, &ip4_internal_netmask,
-									 DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_dns, &ip4_internal_dns_len,
-									 DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_nbns, &ip4_internal_nbns_len,
-									 DBUS_TYPE_STRING, &cisco_def_domain,
-									 DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID))
-	{
-		DBusMessage	*signal;
+	if (!dbus_message_get_args(message, NULL,
+	                          DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+	                          DBUS_TYPE_STRING, &tundev,
+	                          DBUS_TYPE_UINT32, &ip4_address,
+	                          DBUS_TYPE_UINT32, &ip4_netmask,
+	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, &ip4_dns_len,
+	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, &ip4_nbns_len,
+	                          DBUS_TYPE_STRING, &cisco_def_domain,
+	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID))
+		goto out;
 
+	/* For Cisco/vpnc, PtP address == local VPN address */
+	ip4_ptp_address = ip4_address;
 #if 0
-		print_vpn_config (ip4_vpn_gateway, tundev, ip4_internal_address, ip4_internal_netmask,
-						ip4_internal_dns, ip4_internal_dns_len, ip4_internal_nbns, ip4_internal_nbns_len,
-						cisco_def_domain, cisco_banner);
+	print_vpn_config (ip4_vpn_gateway, tundev, ip4_address, ip4_netmask,
+					ip4_dns, ip4_dns_len, ip4_nbns, ip4_nbns_len,
+					cisco_def_domain, cisco_banner);
 #endif
 
-		if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
-		{
-			nm_warning ("Not enough memory for new dbus message!");
-			goto out;
-		}
+	if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
+		goto out;
 
-		dbus_message_append_args (signal, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-									DBUS_TYPE_STRING, &tundev,
-									DBUS_TYPE_UINT32, &ip4_internal_address,
-									DBUS_TYPE_UINT32, &ip4_internal_netmask,
-									DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_dns, ip4_internal_dns_len,
-									DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_nbns, ip4_internal_nbns_len,
-									DBUS_TYPE_STRING, &cisco_def_domain,
-									DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
-		if (!dbus_connection_send (data->con, signal, NULL))
-		{
-			nm_warning ("Could not raise the "NM_DBUS_VPN_SIGNAL_IP4_CONFIG" signal!");
-			goto out;
-		}
-
-		dbus_message_unref (signal);
-		nm_vpnc_set_state (data, NM_VPN_STATE_STARTED);
-		success = TRUE;
+	dbus_message_append_args (signal,
+	                          DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+	                          DBUS_TYPE_STRING, &tundev,
+	                          DBUS_TYPE_UINT32, &ip4_address,
+	                          DBUS_TYPE_UINT32, &ip4_ptp_address,
+	                          DBUS_TYPE_UINT32, &ip4_netmask,
+	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
+	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+	                          DBUS_TYPE_STRING, &cisco_def_domain,
+	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
+	if (!dbus_connection_send (data->con, signal, NULL))
+	{
+		nm_warning ("Could not raise the "NM_DBUS_VPN_SIGNAL_IP4_CONFIG" signal!");
+		goto out;
 	}
+
+	dbus_message_unref (signal);
+	nm_vpnc_set_state (data, NM_VPN_STATE_STARTED);
+	success = TRUE;
 
 out:
 	if (!success)

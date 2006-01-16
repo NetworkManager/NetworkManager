@@ -815,6 +815,7 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
   guint32		    ip4_vpn_gateway;
   char *		    tundev;
   guint32		    ip4_address;
+  guint32		    ip4_ptp_address;
   guint32		    ip4_netmask;
   guint32 *		    ip4_dns;
   guint32		    ip4_dns_len;
@@ -840,6 +841,7 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
   if (dbus_message_get_args(message, NULL, 
 			    DBUS_TYPE_STRING, &tundev,
 			    DBUS_TYPE_UINT32, &ip4_address,
+			    DBUS_TYPE_UINT32, &ip4_ptp_address,
 			    DBUS_TYPE_UINT32, &ip4_netmask,
 			    DBUS_TYPE_UINT32, &ip4_dns1,
 			    DBUS_TYPE_UINT32, &ip4_dns2,
@@ -876,6 +878,7 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
                 DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 				DBUS_TYPE_STRING, &tundev,
 				DBUS_TYPE_UINT32, &ip4_address,
+				DBUS_TYPE_UINT32, &ip4_ptp_address,
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,

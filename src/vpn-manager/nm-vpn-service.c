@@ -54,12 +54,13 @@ static void nm_vpn_service_stop_connection_internal (NMVPNService *service);
 #ifdef NM_DEBUG_VPN_CONFIG
 static void print_vpn_config (guint32 ip4_vpn_gateway,
 						const char *tundev,
-						guint32 ip4_internal_address,
-						gint32 ip4_internal_netmask,
-						guint32 *ip4_internal_dns,
-						guint32 ip4_internal_dns_len,
-						guint32 *ip4_internal_nbns,
-						guint32 ip4_internal_nbns_len,
+						guint32 ip4_address,
+						guint32 ip4_ptp_address,
+						gint32 ip4_netmask,
+						guint32 *ip4_dns,
+						guint32 ip4_dns_len,
+						guint32 *ip4_nbns,
+						guint32 ip4_nbns_len,
 						const char *dns_domain,
 						const char *login_banner);
 #endif
@@ -622,26 +623,58 @@ static void nm_vpn_service_cancel_callback (NMVPNService *service, NMVPNActReque
 }
 
 
+static gboolean
+get_dbus_guint32_helper (DBusMessageIter *iter,
+                         guint32 *num,
+					char *desc)
+{
+	if (!dbus_message_iter_next (iter)
+	    || (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_UINT32))
+	{
+		nm_warning ("Error: couldn't get %s from VPN IP Config message.", desc);
+		return FALSE;
+	}
+	dbus_message_iter_get_basic (iter, num);
+	return TRUE;
+}
+
+static gboolean
+get_dbus_string_helper (DBusMessageIter *iter,
+                        char **str,
+                        char *desc)
+{
+	if (!dbus_message_iter_next (iter)
+	    || (dbus_message_iter_get_arg_type (iter) != DBUS_TYPE_STRING))
+	{
+		nm_warning ("Error: couldn't get %s from VPN IP Config message.", desc);
+		return FALSE;
+	}
+	dbus_message_iter_get_basic (iter, str);
+	return TRUE;
+}
+
+
 /*
  * nm_vpn_service_stage4_ip_config_get
  *
  * Configure a device with IPv4 config info in response the the VPN daemon.
  *
  */
-static void nm_vpn_service_stage4_ip_config_get (NMVPNService *service, NMVPNActRequest *req, DBusMessage *message)
+static void
+nm_vpn_service_stage4_ip_config_get (NMVPNService *service,
+                                     NMVPNActRequest *req,
+                                     DBusMessage *message)
 {
 	NMVPNConnection *	vpn;
-	guint32			ip4_vpn_gateway;
+	guint32			num;
+	char *			str;
 	char *			tundev;
-	guint32			ip4_internal_address;
-	guint32			ip4_internal_netmask;
-	guint32 *			ip4_internal_dns;
-	guint32			ip4_internal_dns_len;
-	guint32 *			ip4_internal_nbns;
-	guint32			ip4_internal_nbns_len;
-	char *			dns_domain;
 	char *			login_banner;
 	gboolean			success = FALSE;
+	DBusMessageIter	iter;
+	DBusMessageIter	subiter;
+	NMIP4Config *		config;
+	NMDevice *		parent_dev;
 
 	g_return_if_fail (service != NULL);
 	g_return_if_fail (message != NULL);
@@ -652,65 +685,116 @@ static void nm_vpn_service_stage4_ip_config_get (NMVPNService *service, NMVPNAct
 
 	nm_info ("VPN Activation (%s) Stage 4 (IP Config Get) reply received.", nm_vpn_connection_get_name (vpn));
 
-	if (dbus_message_get_args(message, NULL, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-									 DBUS_TYPE_STRING, &tundev,
-									 DBUS_TYPE_UINT32, &ip4_internal_address,
-									 DBUS_TYPE_UINT32, &ip4_internal_netmask,
-									 DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_dns, &ip4_internal_dns_len,
-									 DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_internal_nbns, &ip4_internal_nbns_len,
-									 DBUS_TYPE_STRING, &dns_domain,
-									 DBUS_TYPE_STRING, &login_banner, DBUS_TYPE_INVALID))
+	config = nm_ip4_config_new ();
+	nm_ip4_config_set_secondary (config, TRUE);
+
+	dbus_message_iter_init (message, &iter);
+
+	/* First arg: IP4 VPN Gateway address (UINT32) */
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32)
 	{
-		NMIP4Config *	config;
-		NMDevice *	parent_dev;
-		guint32		i;
+		nm_warning ("Error: couldn't get IP4 VPN Gateway Address"
+		          " from VPN IP Config message.");
+		goto out;
+	}
+	dbus_message_iter_get_basic (&iter, &num);
+	nm_ip4_config_set_gateway (config, num);
 
-#ifdef NM_DEBUG_VPN_CONFIG
-		print_vpn_config (ip4_vpn_gateway, tundev, ip4_internal_address, ip4_internal_netmask,
-						ip4_internal_dns, ip4_internal_dns_len, ip4_internal_nbns, ip4_internal_nbns_len,
-						dns_domain, login_banner);
-#endif
+	/* Second arg: Tunnel device, if any (STRING) */
+	if (!get_dbus_string_helper (&iter, &tundev, "Tunnel Device"))
+		goto out;
 
-		config = nm_ip4_config_new ();
+	/* Third arg: IP4 VPN Local Address (UINT32) */
+	if (!get_dbus_guint32_helper (&iter, &num, "IP4 VPN Local Address"))
+		goto out;
+	nm_ip4_config_set_address (config, num);
 
-		nm_ip4_config_set_secondary (config, TRUE);
+	/* Fourth arg: IP4 VPN Point-to-Point Address (UINT32) */
+	if (!get_dbus_guint32_helper (&iter, &num, "IP4 VPN PtP Address"))
+		goto out;
+	nm_ip4_config_set_ptp_address (config, num);
 
-		nm_ip4_config_set_address (config, ip4_internal_address);
+	/* Fifth arg: IP4 VPN Local Netmask (UINT32) */
+	if (!get_dbus_guint32_helper (&iter, &num, "IP4 VPN Local Netmask"))
+		goto out;
+	/* If no netmask, default to Class C address */
+	nm_ip4_config_set_netmask (config, num ? num : 0x00FF);
 
-		if (ip4_internal_netmask)
-			nm_ip4_config_set_netmask (config, ip4_internal_netmask);
-		else
-			nm_ip4_config_set_netmask (config, 0x00FF); /* Class C */
-
-		nm_ip4_config_set_gateway (config, ip4_vpn_gateway);
-
-		if (strlen (dns_domain))
-			nm_ip4_config_add_domain (config, dns_domain);
-
-		for (i = 0; i < ip4_internal_dns_len; i++)
-		{
-			if (ip4_internal_dns[i] != 0)
-				nm_ip4_config_add_nameserver (config, ip4_internal_dns[i]);
-		}
-
-		parent_dev = nm_vpn_act_request_get_parent_dev (req);
-		g_assert (parent_dev);
-
-		if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config))
-		{
-			if (login_banner && strlen (login_banner))
-				nm_dbus_vpn_signal_vpn_login_banner (service->app_data->dbus_connection, vpn, login_banner);
-			success = TRUE;
-		}
+	/* Sixth arg: IP4 DNS Server Addresses (ARRAY, UINT32) */
+	if (   !dbus_message_iter_next (&iter)
+	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY))
+	{
+		nm_warning ("Error: couldn't get IP4 DNS Server Addresses"
+		          " from VPN IP Config message.");
+		goto out;
+	}
+	dbus_message_iter_recurse (&iter, &subiter);
+	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32)
+	{
+		dbus_message_iter_get_basic (&subiter, &num);
+		if (num)
+			nm_ip4_config_add_nameserver (config, num);
+		dbus_message_iter_next (&subiter);
 	}
 
+	/* Seventh arg: IP4 NBNS Server Addresses (ARRAY, UINT32) */
+	if (   !dbus_message_iter_next (&iter)
+	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY))
+	{
+		nm_warning ("Error: couldn't get IP4 NBNS Server Addresses"
+		          " from VPN IP Config message.");
+		goto out;
+	}
+	dbus_message_iter_recurse (&iter, &subiter);
+	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32)
+	{
+		dbus_message_iter_get_basic (&subiter, &num);
+		/* We don't do anything with these yet */
+		dbus_message_iter_next (&subiter);
+	}
+
+	/* Eigth arg: DNS Domain (STRING) */
+	if (!get_dbus_string_helper (&iter, &str, "DNS Domain"))
+		goto out;
+	if (strlen (str))
+		nm_ip4_config_add_domain (config, str);
+
+	/* Ninth arg: VPN Login Banner (STRING) */
+	if (!get_dbus_string_helper (&iter, &login_banner, "Login Banner"))
+		goto out;
+
+#ifdef NM_DEBUG_VPN_CONFIG
+	print_vpn_config (ip4_vpn_gateway,
+	                  tundev,
+	                  ip4_address,
+	                  ip4_ptp_address,
+	                  ip4_netmask,
+	                  ip4_dns,
+	                  ip4_dns_len,
+	                  ip4_nbns,
+	                  ip4_nbns_len,
+	                  dns_domain,
+	                  login_banner);
+#endif
+
+	if (!(parent_dev = nm_vpn_act_request_get_parent_dev (req)))
+		goto out;
+
+	if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config))
+	{
+		if (login_banner && strlen (login_banner))
+			nm_dbus_vpn_signal_vpn_login_banner (service->app_data->dbus_connection, vpn, login_banner);
+		success = TRUE;
+		nm_vpn_service_activation_success (service, req);
+	}
+
+out:
 	if (!success)
 	{
+		nm_ip4_config_unref (config);
 		nm_warning ("nm_vpn_service_stage4_ip_config_get(%s): did not receive valid IP config information.", service->service);
 		nm_vpn_service_act_request_failed (service, req);
 	}
-	else
-		nm_vpn_service_activation_success (service, req);
 }
 
 
@@ -908,12 +992,13 @@ gboolean nm_vpn_service_process_signal (NMVPNService *service, NMVPNActRequest *
  */
 static void print_vpn_config (guint32 ip4_vpn_gateway,
 						const char *tundev,
-						guint32 ip4_internal_address,
-						gint32 ip4_internal_netmask,
-						guint32 *ip4_internal_dns,
-						guint32 ip4_internal_dns_len,
-						guint32 *ip4_internal_nbns,
-						guint32 ip4_internal_nbns_len,
+						guint32 ip4_address,
+						guint32 ip4_ptp_address,
+						guint32 ip4_netmask,
+						guint32 *ip4_dns,
+						guint32 ip4_dns_len,
+						guint32 *ip4_nbns,
+						guint32 ip4_nbns_len,
 						const char *dns_domain,
 						const char *login_banner)
 {
@@ -923,25 +1008,27 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 	temp_addr.s_addr = ip4_vpn_gateway;
 	nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
 	nm_info ("Tunnel Device: %s", tundev);
-	temp_addr.s_addr = ip4_internal_address;
+	temp_addr.s_addr = ip4_address;
 	nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
-	temp_addr.s_addr = ip4_internal_netmask;
+	temp_addr.s_addr = ip4_netmask;
 	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
+	temp_addr.s_addr = ip4_ptp_address;
+	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
 
-	for (i = 0; i < ip4_internal_dns_len; i++)
+	for (i = 0; i < ip4_dns_len; i++)
 	{
-		if (ip4_internal_dns[i] != 0)
+		if (ip4_dns[i] != 0)
 		{
-			temp_addr.s_addr = ip4_internal_dns[i];
+			temp_addr.s_addr = ip4_dns[i];
 			nm_info ("Internal IP4 DNS: %s", inet_ntoa (temp_addr));
 		}
 	}
 
-	for (i = 0; i < ip4_internal_nbns_len; i++)
+	for (i = 0; i < ip4_nbns_len; i++)
 	{
-		if (ip4_internal_nbns[i] != 0)
+		if (ip4_nbns[i] != 0)
 		{
-			temp_addr.s_addr = ip4_internal_nbns[i];
+			temp_addr.s_addr = ip4_nbns[i];
 			nm_info ("Internal IP4 NBNS: %s", inet_ntoa (temp_addr));
 		}
 	}

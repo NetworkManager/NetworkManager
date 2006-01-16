@@ -1234,6 +1234,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   guint32		ip4_vpn_gateway;
   char *		tundev;
   guint32		ip4_address;
+  guint32		ip4_ptpaddr;
   guint32		ip4_netmask;
   guint32 *		ip4_dns;
   guint32		ip4_dns_len;
@@ -1253,9 +1254,11 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   nm_openvpn_cancel_helper_timer (data);
   nm_openvpn_disconnect_management_socket (data);
 
-  if (dbus_message_get_args(message, NULL, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+  if (dbus_message_get_args(message, NULL,
+			    DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 			    DBUS_TYPE_STRING, &tundev,
 			    DBUS_TYPE_UINT32, &ip4_address,
+			    DBUS_TYPE_UINT32, &ip4_ptpaddr,
 			    DBUS_TYPE_UINT32, &ip4_netmask,
 			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, &ip4_dns_len,
 			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, &ip4_nbns_len,
@@ -1263,21 +1266,17 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
     {
       DBusMessage	*signal;
 
-      struct in_addr a;
-
-      
       if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_OPENVPN, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
 	{
 	  nm_warning ("Not enough memory for new dbus message!");
 	  goto out;
 	}
 
-      a.s_addr = ip4_vpn_gateway;
-      a.s_addr = ip4_address;
-
-      dbus_message_append_args (signal, DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+      dbus_message_append_args (signal,
+				DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 				DBUS_TYPE_STRING, &tundev,
 				DBUS_TYPE_UINT32, &ip4_address,
+				DBUS_TYPE_UINT32, &ip4_ptpaddr,
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,

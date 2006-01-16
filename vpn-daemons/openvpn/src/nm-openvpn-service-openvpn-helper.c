@@ -69,31 +69,90 @@ static void send_config_error (DBusConnection *con, const char *item)
 }
 
 
+ /*
+ * gpa_to_uint32arr
+ *
+ * Convert GPtrArray of uint32 to a uint32* array
+ *
+ */
+static void
+gpa_to_uint32arr (const GPtrArray *gpa,
+		  guint32 **uia,
+		  guint32  *uia_len)
+{
+  
+  guint32		num_valid = 0, i = 0;
+  struct in_addr	temp_addr;
+
+  *uia = NULL;
+
+  if ( gpa->len > 0 ) {
+    /* Pass over the array first to determine how many valid entries there are */
+    num_valid = 0;
+    for (i = 0; i < gpa->len; ++i) {
+      if (inet_aton ((char *)gpa->pdata[i], &temp_addr)) {
+	num_valid++;
+      }
+    }
+    
+    /* Do the actual string->int conversion and assign to the array. */
+    if (num_valid > 0) {
+      *uia = g_new0 (guint32, num_valid);
+      for (i = 0; i < gpa->len; ++i) {
+	if (inet_aton ((char *)gpa->pdata[i], &temp_addr)) {
+	  (*uia)[i] = temp_addr.s_addr;
+	}
+      }
+    }
+      
+    *uia_len = num_valid;
+  }
+  if (*uia == NULL) {
+    *uia     = g_malloc0 (sizeof (guint32));
+    *uia_len = 1;
+  }
+}
+
+static gboolean
+ipstr_to_uint32 (const char *ip_str, guint32 *ip)
+{
+  struct in_addr	temp_addr;
+
+  /* Convert IPv4 address arguments from strings into numbers */
+  if (!inet_aton (ip_str, &temp_addr))
+    return FALSE;
+  *ip = temp_addr.s_addr;
+  return TRUE;
+}
+
+
 /*
  * send_config_info
  *
  * Send IP config info to nm-openvpn-service
  *
  */
-static gboolean send_config_info (DBusConnection *con,
-				  const char *str_vpn_gateway,
-				  const char *str_tundev,
-				  const char *str_ip4_address,
-				  const char *str_ip4_netmask,
-				  const GPtrArray *gpa_ip4_dns,
-				  const GPtrArray *gpa_ip4_nbns
-				  )
+static gboolean
+send_config_info (DBusConnection *con,
+		  const char *str_vpn_gateway,
+		  const char *str_tundev,
+		  const char *str_ip4_address,
+		  const char *str_ip4_ptpaddr,
+		  const char *str_ip4_netmask,
+		  const GPtrArray *gpa_ip4_dns,
+		  const GPtrArray *gpa_ip4_nbns
+		  )
 {
   DBusMessage *	message;
   struct in_addr	temp_addr;
   guint32		uint_vpn_gateway = 0;
   guint32		uint_ip4_address = 0;
+  guint32		uint_ip4_ptpaddr = 0;
   guint32		uint_ip4_netmask = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
   guint32 *	        uint_ip4_dns = NULL;
   guint32		uint_ip4_dns_len = 0;
   guint32 *	        uint_ip4_nbns = NULL;
   guint32		uint_ip4_nbns_len = 0;
-  guint32		num_valid = 0, i = 0;
   gboolean        success = FALSE;
 
   g_return_val_if_fail (con != NULL, FALSE);
@@ -104,79 +163,35 @@ static gboolean send_config_info (DBusConnection *con,
       return FALSE;
     }
 
-  /* Convert IPv4 address arguments from strings into numbers */
-  if (!inet_aton (str_vpn_gateway, &temp_addr))
-    {
-      nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid VPN Gateway from openvpn.");
-      send_config_error (con, "VPN Gateway");
-		goto out;
-    }
-  uint_vpn_gateway = temp_addr.s_addr;
+  if (! ipstr_to_uint32 (str_vpn_gateway, &uint_vpn_gateway) ) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid VPN Gateway from openvpn.");
+    send_config_error (con, "VPN Gateway");
+    goto out;
+  }
 
-  if (!inet_aton (str_ip4_address, &temp_addr))
-    {
-      nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid Internal IP4 Address from openvpn.");
-      send_config_error (con, "IP4 Address");
-      goto out;
-    }
-  uint_ip4_address = temp_addr.s_addr;
+  if (! ipstr_to_uint32 (str_ip4_address, &uint_ip4_address) ) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid Internal IP4 Address from openvpn.");
+    send_config_error (con, "IP4 Address");
+    goto out;
+  }
 
-  if (strlen (str_ip4_netmask) && inet_aton (str_ip4_netmask, &temp_addr))
-    uint_ip4_netmask = temp_addr.s_addr;
+  if (! ipstr_to_uint32 (str_ip4_ptpaddr, &uint_ip4_ptpaddr) ) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid PtP IP4 Address from openvpn.");
+    send_config_error (con, "IP4 PtP Address");
+    goto out;
+  }
 
-  if ( gpa_ip4_dns->len > 0 )
-    {
-      /* Pass over the array first to determine how many valid entries there are */
-      num_valid = 0;
-      for (i = 0; i < gpa_ip4_dns->len; ++i)
-	if (inet_aton ((char *)gpa_ip4_dns->pdata[i], &temp_addr))
-	  num_valid++;
-      
-      /* Do the actual string->int conversion and assign to the array. */
-      if (num_valid > 0)
-	{
-	  uint_ip4_dns = g_new0 (guint32, num_valid);
-	  for (i = 0; i < gpa_ip4_dns->len; ++i)
-	    if (inet_aton ((char *)gpa_ip4_dns->pdata[i], &temp_addr))
-	      uint_ip4_dns[i] = temp_addr.s_addr;
-	}
-      
-      uint_ip4_dns_len = num_valid;
-    }
-  if (!uint_ip4_dns)
-    {
-      uint_ip4_dns = g_malloc0 (sizeof (guint32));
-      uint_ip4_dns_len = 1;
-    }
+  if (strlen (str_ip4_netmask) > 0) {
+    ipstr_to_uint32 (str_ip4_netmask, &uint_ip4_netmask);
+  }
 
-  if ( gpa_ip4_nbns->len > 0 )
-    {
-      /* Pass over the array first to determine how many valid entries there are */
-      num_valid = 0;
-      for (i = 0; i < gpa_ip4_nbns->len; ++i)
-	if (inet_aton ((char *)gpa_ip4_nbns->pdata[i], &temp_addr))
-	  num_valid++;
-      
-      /* Do the actual string->int conversion and assign to the array. */
-      if (num_valid > 0)
-	{
-	  uint_ip4_nbns = g_new0 (guint32, num_valid);
-	  for (i = 0; i < gpa_ip4_nbns->len; ++i)
-	    if (inet_aton ((char *)gpa_ip4_nbns->pdata[i], &temp_addr))
-	      uint_ip4_nbns[i] = temp_addr.s_addr;
-	}
-      
-      uint_ip4_nbns_len = num_valid;
-    }
-  if (!uint_ip4_nbns)
-    {
-      uint_ip4_nbns = g_malloc0 (sizeof (guint32));
-      uint_ip4_nbns_len = 1;
-    }
+  gpa_to_uint32arr (gpa_ip4_dns, &uint_ip4_dns, &uint_ip4_dns_len);
+  gpa_to_uint32arr (gpa_ip4_nbns, &uint_ip4_nbns, &uint_ip4_nbns_len);
 
   dbus_message_append_args (message, DBUS_TYPE_UINT32, &uint_vpn_gateway,
 			    DBUS_TYPE_STRING, &str_tundev,
 			    DBUS_TYPE_UINT32, &uint_ip4_address,
+			    DBUS_TYPE_UINT32, &uint_ip4_ptpaddr,
 			    DBUS_TYPE_UINT32, &uint_ip4_netmask,
 			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_ip4_dns, uint_ip4_dns_len,
 			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_ip4_nbns, uint_ip4_nbns_len,
@@ -188,6 +203,9 @@ static gboolean send_config_info (DBusConnection *con,
   
   dbus_message_unref (message);
   
+  g_free (uint_ip4_dns);
+  g_free (uint_ip4_nbns);
+
  out:
   return success;
 }
@@ -299,41 +317,38 @@ int main( int argc, char *argv[] )
 	{
 		FILE *file = fopen ("/tmp/vpnstuff", "w");
 		fprintf (file, "VPNGATEWAY: '%s'\n", vpn_gateway);
-		fprintf (file, "TUNDEF: '%s'\n", tundev);
+		fprintf (file, "TUNDEV: '%s'\n", tundev);
 		fprintf (file, "IP4_ADDRESS: '%s'\n", ip4_address);
 		fprintf (file, "IP4_NETMASK: '%s'\n", ip4_netmask);
 		fclose (file);
 	}
 #endif
   
-  if (!vpn_gateway)
-    {
-      nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a VPN Gateway from openvpn.");
-      send_config_error (con, "VPN Gateway");
-      exit (1);
-    }
-  if (!tundev || !g_utf8_validate (tundev, -1, NULL))
-    {
-      nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a Tunnel Device from openvpn, or the tunnel device was not valid UTF-8.");
-      send_config_error (con, "Tunnel Device");
-      exit (1);
-    }
-  if (!ip4_address)
-    {
-      nm_warning ("nm-openvpn-service-openvpn-helper didn't receive an Internal IP4 Address from openvpn.");
-      send_config_error (con, "IP4 Address");
-      exit (1);
-    }
+  if (!vpn_gateway) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a VPN Gateway from openvpn.");
+    send_config_error (con, "VPN Gateway");
+    exit (1);
+  }
+  if (!tundev || !g_utf8_validate (tundev, -1, NULL)) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a Tunnel Device from openvpn, or the tunnel device was not valid UTF-8.");
+    send_config_error (con, "Tunnel Device");
+    exit (1);
+  }
+  if (!ip4_address) {
+    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive an Internal IP4 Address from openvpn.");
+    send_config_error (con, "IP4 Address");
+    exit (1);
+  }
 
-  if (!ip4_netmask)
+  if (!ip4_netmask) {
     ip4_netmask = g_strdup ("");
-  
-  
-  /* Send the config info to nm-openvpn-service */
-  if (!send_config_info (con, vpn_gateway, tundev, ip4_address, ip4_netmask, ip4_dns, ip4_nbns))
-    {
-      exit_code = 1;
-    }
+  }
+
+  if (!send_config_info (con, vpn_gateway, tundev,
+			 ip4_address, ip4_ptp, ip4_netmask,
+			 ip4_dns, ip4_nbns)) {
+    exit_code = 1;
+  }
   
   g_strfreev( split );
   g_ptr_array_free( ip4_dns, TRUE );
