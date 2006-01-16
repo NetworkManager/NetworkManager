@@ -1,5 +1,11 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): switch devices if we lose the link
+			on an ethernet device. 
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/wso-wpa-psk-hex.[ch]
 		- Renamed -> wso-wpa-psk.[ch]
 

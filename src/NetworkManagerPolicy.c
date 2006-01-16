@@ -351,14 +351,15 @@ static gboolean nm_policy_device_change_check (NMData *data)
 	{
 		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
 		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
+		gboolean		old_has_link = nm_device_has_active_link (old_dev);
 
 		if (nm_device_is_802_3_ethernet (old_dev))
 		{
-			/* Only switch if the old device was not user requested, and we are either switching to
+			/* Only switch if the old device was not user requested, and we are switching to
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
 			 * above will prefer a wired device to a wireless device.
 			 */
-			if (!old_user_requested && (new_dev != old_dev))
+			if ((!old_user_requested || !old_has_link)  && (new_dev != old_dev))
 			{
 				nm_info ("SWITCH: found better connection '%s' than current connection '%s'.", nm_device_get_iface (new_dev), nm_device_get_iface (old_dev));
 				do_switch = TRUE;
@@ -380,15 +381,14 @@ static gboolean nm_policy_device_change_check (NMData *data)
 				 * from Ad-Hoc APs either.
 				 */
 				gboolean same_essid = (strcmp (old_essid, new_essid) == 0);
-				gboolean have_link = nm_device_has_active_link (old_dev);
-				if ((!same_essid || !have_link) && (old_mode != IW_MODE_ADHOC))
+				if ((!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC))
 				{
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
 					         "same_ssid=%d, have_link=%d",
 					         nm_device_get_iface (new_dev),	new_essid,
 					         nm_device_get_iface (old_dev), old_essid,
-					         same_essid, have_link);
+					         same_essid, old_has_link);
 					do_switch = TRUE;
 				}
 			} /* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
