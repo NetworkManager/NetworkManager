@@ -1621,8 +1621,12 @@ static void nmwa_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, 
 	gtk_item = network_menu_item_get_check_item (item);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (cb_data->menu), GTK_WIDGET (gtk_item));
-	if (network_device_get_active (dev) && wireless_network_get_active (net))
-		gtk_check_menu_item_set_active (gtk_item, TRUE);
+	if (   (cb_data->applet->nm_state == NM_STATE_CONNECTED)
+	    || (cb_data->applet->nm_state == NM_STATE_CONNECTING))
+	{
+		if (network_device_get_active (dev) && wireless_network_get_active (net))
+			gtk_check_menu_item_set_active (gtk_item, TRUE);
+	}
 	network_menu_item_update (item, net, cb_data->has_encrypted);
 
 	g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (wireless_network_get_essid (net)));

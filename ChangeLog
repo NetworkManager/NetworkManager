@@ -1,5 +1,11 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet.c
+		- (nmwa_add_networks_helper): don't indicate an active network
+			if NM is disconnected or asleep
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): switch devices if we lose the link
 			on an ethernet device. 
