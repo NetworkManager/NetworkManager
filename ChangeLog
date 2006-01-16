@@ -1,3 +1,8 @@
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_sleep): bring device down after quick deactivation
+
 2006-01-13  Robert Love  <rml@novell.com>
 
 	Patch by T Sureshkumar <tsureshkuman@novell.com>:
