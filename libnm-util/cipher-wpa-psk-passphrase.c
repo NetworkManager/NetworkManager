@@ -38,8 +38,9 @@ IEEE_802_11_Cipher * cipher_wpa_psk_passphrase_new (void)
 
 	cipher->refcount = 1;
 	cipher->we_cipher = IW_AUTH_CIPHER_TKIP;
+	/* Passphrase between 8 and 63 characters inclusive */
 	cipher->input_min = 8;
-	cipher->input_max = WPA_PMK_LEN * 2;
+	cipher->input_max = (WPA_PMK_LEN * 2) - 1;
 	cipher->cipher_hash_func = cipher_wpa_psk_passphrase_hash_func;
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
 

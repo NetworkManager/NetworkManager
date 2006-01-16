@@ -1,5 +1,11 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/cipher-wpa-psk-passphrase.c
+		- (cipher_wpa_psk_passphrase_new): correct passphrase length, should
+			be 8 - 63 characters inclusive
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-dbus-nm.c
 		- (nm_dbus_nm_sleep): bring device down after quick deactivation
 
