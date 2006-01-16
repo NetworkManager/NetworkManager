@@ -554,7 +554,7 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 			NMDevice *dev = (NMDevice *)(elt->data);
 			nm_device_set_removed (dev, TRUE);
 			nm_device_deactivate_quickly (dev);
-			nm_system_device_set_up_down (self, FALSE);
+			nm_system_device_set_up_down (dev, FALSE);
 		}
 		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
 
