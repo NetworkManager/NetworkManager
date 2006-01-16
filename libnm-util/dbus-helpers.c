@@ -62,7 +62,6 @@ nmu_security_deserialize_wep (DBusMessageIter *iter,
 						int *key_len,
 						int *auth_alg)
 {
-	DBusMessageIter	subiter;
 	char *			dbus_key;
 	int				dbus_key_len;
 	dbus_int32_t		dbus_auth_alg;
@@ -170,7 +169,6 @@ nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
 						int *wpa_version,
 						int *key_mgt)
 {
-	DBusMessageIter	subiter;
 	char *			dbus_key;
 	int				dbus_key_len;
 	dbus_int32_t		dbus_wpa_version;
