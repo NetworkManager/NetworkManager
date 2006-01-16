@@ -77,7 +77,7 @@ G_STMT_START								\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
 	g_debug ("<debug info>\t[%f] %s (): " fmt "\n", _timestamp,	\
-		 G_GNUC_PRETTY_FUNCTION, ##args);				\
+		 G_STRFUNC, ##args);				\
 } G_STMT_END
 
 #define nm_debug_str(fmt_str, args...)						\
@@ -86,21 +86,21 @@ G_STMT_START								\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
 	g_debug ("<debug info>\t[%f] %s (): %s\n", _timestamp,	\
-		 G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);				\
+		 G_STRFUNC, fmt_str, ##args);				\
 } G_STMT_END
 
 #define nm_warning(fmt, args...)					\
 G_STMT_START								\
 {									\
 	g_warning ("<WARNING>\t %s (): " fmt "\n", 			\
-		   G_GNUC_PRETTY_FUNCTION, ##args);			\
+		   G_STRFUNC, ##args);			\
 } G_STMT_END
 
 #define nm_warning_str(fmt_str, args...)					\
 G_STMT_START								\
 {									\
 	g_warning ("<WARNING>\t %s (): %s\n", 			\
-		   G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);			\
+		   G_STRFUNC, fmt_str, ##args);			\
 } G_STMT_END
 
 #define nm_error(fmt, args...)						\
@@ -109,7 +109,7 @@ G_STMT_START								\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
 	g_critical ("<ERROR>\t[%f] %s (): " fmt "\n", _timestamp,	\
-		    G_GNUC_PRETTY_FUNCTION, ##args);			\
+		    G_STRFUNC, ##args);			\
 	nm_print_backtrace ();						\
 	G_BREAKPOINT ();						\
 } G_STMT_END
@@ -120,7 +120,7 @@ G_STMT_START								\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
 	g_critical ("<ERROR>\t[%f] %s (): %s\n", _timestamp,	\
-		    G_GNUC_PRETTY_FUNCTION, fmt_str, ##args);			\
+		    G_STRFUNC, fmt_str, ##args);			\
 	nm_print_backtrace ();						\
 	G_BREAKPOINT ();						\
 } G_STMT_END
