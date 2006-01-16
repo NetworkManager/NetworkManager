@@ -26,6 +26,10 @@
 
 #include "cipher.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 dbus_bool_t	nmu_security_serialize_wep (DBusMessageIter *iter,
                                         const char *key,
                                         int auth_alg);
@@ -66,5 +70,9 @@ DBusMessage *	nmu_create_dbus_error_message (DBusMessage *message,
                                         const char *exception,
                                         const char *format,
                                         ...);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* DBUS_HELPERS_H */

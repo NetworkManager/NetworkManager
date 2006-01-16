@@ -1,3 +1,12 @@
+2006-01-16  Robert Love  <rml@novell.com>
+
+	Patch from Timo Hoenig  <thoenig@suse.de:
+	* libnm-util/cipher-wep-ascii.h, libnm-util/cipher-wep-hex.h,
+	  libnm-util/cipher-wep-passphrase.h, libnm-util/cipher-wpa-psk-hex.h,
+	  libnm-util/cipher-wpa-psk-passphrase.h, libnm-util/cipher.h,
+	  libnm-util/dbus-helpers.h: add checks whether headers are used
+	  within a C++ build.
+
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/wireless-security-option.c

@@ -22,7 +22,15 @@
 #ifndef CIPHER_WEP_HEX_H
 #define CIPHER_WEP_HEX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 IEEE_802_11_Cipher * cipher_wep128_hex_new (void);
 IEEE_802_11_Cipher * cipher_wep64_hex_new (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* CIPHER_WEP_HEX_H */

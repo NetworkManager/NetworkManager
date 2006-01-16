@@ -22,7 +22,15 @@
 #ifndef CIPHER_WEP_ASCII_H
 #define CIPHER_WEP_ASCII_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 IEEE_802_11_Cipher * cipher_wep128_ascii_new (void);
 IEEE_802_11_Cipher * cipher_wep64_ascii_new (void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* CIPHER_WEP_ASCII_H */

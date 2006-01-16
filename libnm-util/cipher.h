@@ -22,6 +22,10 @@
 #ifndef CIPHER_H
 #define CIPHER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct IEEE_802_11_Cipher IEEE_802_11_Cipher;
 
 void          ieee_802_11_cipher_ref (IEEE_802_11_Cipher *cipher);
@@ -34,5 +38,9 @@ int           ieee_802_11_cipher_validate (IEEE_802_11_Cipher *cipher, const cha
 
 /* Private API members (not part of the public API) */
 int           ieee_802_11_cipher_refcount (IEEE_802_11_Cipher *cipher);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* CIPHER_H */

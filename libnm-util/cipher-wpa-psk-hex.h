@@ -22,10 +22,18 @@
 #ifndef CIPHER_WPA_PSK_HEX_H
 #define CIPHER_WPA_PSK_HEX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define WPA_PMK_LEN 32
 
 IEEE_802_11_Cipher * cipher_wpa_psk_hex_new (void);
 
 void cipher_wpa_psk_hex_set_we_cipher (IEEE_802_11_Cipher *cipher, int we_cipher);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* CIPHER_WPA_PSK_HEX_H */
