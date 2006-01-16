@@ -1,5 +1,10 @@
 2006-01-16  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/other-network-dialog.c
+		- (nmwa_ond_init): Change text to refer to "name" rather than "ESSID"
+
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet.c
 		- (nmwa_show_vpn_login_banner_dialog, nmwa_show_vpn_failure_dialog,
 		   nmwa_driver_notify, show_warning_dialog): fix up focus-stealing

@@ -351,12 +351,14 @@ static GtkDialog *nmwa_ond_init (GladeXML *xml, NMWirelessApplet *applet, gboole
 		gtk_entry_set_text (GTK_ENTRY (network_name_entry), hostname);
 		gtk_editable_set_position (GTK_EDITABLE (network_name_entry), -1);
 
-		default_essid_text = g_strdup_printf (_("By default, the ESSID is set to your computer's name, %s, with no encryption enabled"),
+		default_essid_text = g_strdup_printf (_("By default, the wireless"
+				" network's name is set to your computer's name, %s, with"
+				" no encryption enabled"),
 		                                      hostname);
 
 		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s\n\n%s",
 		                         _("Create new wireless network"),
-		                         _("Enter the ESSID and security settings of the wireless network you wish to create."),
+		                         _("Enter the name and security settings of the wireless network you wish to create."),
 		                         default_essid_text);
 		g_free (default_essid_text);
 
@@ -365,10 +367,10 @@ static GtkDialog *nmwa_ond_init (GladeXML *xml, NMWirelessApplet *applet, gboole
 	else
 	{
 		label = g_strdup_printf ("<span size=\"larger\" weight=\"bold\">%s</span>\n\n%s",
-		                         _("Custom wireless network"),
-		                         _("Enter the ESSID of the wireless network to which you wish to connect."));
+		                         _("Existing wireless network"),
+		                         _("Enter the name of the wireless network to which you wish to connect."));
 
-		gtk_window_set_title (GTK_WINDOW(dialog), _("Connect to Other Wireless Network"));
+		gtk_window_set_title (GTK_WINDOW (dialog), _("Connect to Other Wireless Network"));
 	}
 
 	gtk_label_set_markup (GTK_LABEL (glade_xml_get_widget (xml, "caption_label")), label);
