@@ -286,7 +286,7 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 			int err = 0;
 			iface_to_rtnl_index (iface, nlh, addr);
 			if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-				nm_warning ("nm_system_device_set_from_ip4_config(): error %d returned from rtnl_addr_add().\n", err);
+				nm_warning ("nm_system_device_set_from_ip4_config(): error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
 			rtnl_addr_put (addr);
 		}
 		else
