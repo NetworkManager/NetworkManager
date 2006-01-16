@@ -395,7 +395,6 @@ static void vpn_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
 static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
 {
 	GtkWidget	*dialog;
-	guint32	 timestamp;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
@@ -406,11 +405,12 @@ static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
 	g_signal_connect (dialog, "response", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
 	g_signal_connect (dialog, "close", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
 	g_object_set_data (G_OBJECT (dialog), "data", cb_data);
-	gtk_widget_show_all (dialog);
 
 	/* Bash focus-stealing prevention in the face */
-	timestamp = gdk_x11_get_server_time (dialog->window);
-	gdk_x11_window_set_user_time (dialog->window, timestamp);
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
+	gtk_widget_show_all (dialog);
 
 	return FALSE;
 }
@@ -504,7 +504,6 @@ static void vpn_login_banner_dialog_close_cb (GtkWidget *dialog, gpointer user_d
 static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
 {
 	GtkWidget	*dialog;
-	guint32	 timestamp;
 
 	g_return_val_if_fail (message != NULL, FALSE);
 
@@ -512,11 +511,12 @@ static gboolean nmwa_show_vpn_login_banner_dialog (char *message)
 	g_signal_connect (dialog, "response", G_CALLBACK (vpn_login_banner_dialog_close_cb), NULL);
 	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_banner_dialog_close_cb), NULL);
 	g_object_set_data (G_OBJECT (dialog), "message", message);
-	gtk_widget_show_all (dialog);
 
 	/* Bash focus-stealing prevention in the face */
-	timestamp = gdk_x11_get_server_time (dialog->window);
-	gdk_x11_window_set_user_time (dialog->window, timestamp);
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
+	gtk_widget_show_all (dialog);
 
 	return FALSE;
 }
@@ -739,7 +739,6 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	char *				label_text = NULL;
 	char *				temp = NULL;
 	GtkButton *			button;
-	guint32				timestamp;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 
@@ -789,11 +788,11 @@ gboolean nmwa_driver_notify (gpointer user_data)
 	button = GTK_BUTTON (glade_xml_get_widget (cb_data->xml, "ok_button"));
 	g_signal_connect (G_OBJECT (button), "clicked", GTK_SIGNAL_FUNC (nmwa_driver_notify_ok_cb), cb_data);
 
-	gtk_widget_show_all (GTK_WIDGET (dialog));
-
 	/* Bash focus-stealing prevention in the face */
-	timestamp = gdk_x11_get_server_time (dialog->window);
-	gdk_x11_window_set_user_time (dialog->window, timestamp);
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
+	gtk_widget_show_all (dialog);
 
 out:
 	network_device_unref (cb_data->dev);
@@ -1220,16 +1219,15 @@ static int nmwa_redraw_timeout (NMWirelessApplet *applet)
 static gboolean show_warning_dialog (char *mesg)
 {
 	GtkWidget	*	dialog;
-	guint32		timestamp;
 
 	dialog = gtk_message_dialog_new (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, mesg, NULL);
-	gtk_widget_realize (dialog);
 
 	/* Bash focus-stealing prevention in the face */
-	timestamp = gdk_x11_get_server_time (dialog->window);
-	gdk_x11_window_set_user_time (dialog->window, timestamp);
-
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
 	gtk_window_present (GTK_WINDOW (dialog));
+
 	g_signal_connect_swapped (dialog, "response", G_CALLBACK (gtk_widget_destroy), dialog);
 	g_free (mesg);
 

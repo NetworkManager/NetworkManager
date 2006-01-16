@@ -1,3 +1,21 @@
+2006-01-16  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet.c
+		- (nmwa_show_vpn_login_banner_dialog, nmwa_show_vpn_failure_dialog,
+		   nmwa_driver_notify, show_warning_dialog): fix up focus-stealing
+			prevention to realize window before trying to get server
+			time
+
+	* gnome/applet/other-network-dialog.c
+		- (nmwa_other_network_dialog_run): fix up focus-stealing
+			prevention to realize window before trying to get server
+			time
+
+	* gnome/applet/passphrase-dialog.c
+		- (nmi_passphrase_dialog_new): fix up focus-stealing
+			prevention to realize window before trying to get server
+			time
+
 2006-01-16  Robert Love  <rml@novell.com>
 
 	Patch from Timo Hoenig  <thoenig@suse.de:

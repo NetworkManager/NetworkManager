@@ -197,7 +197,6 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 	GtkComboBox *				security_combo;
 	const char *				orig_label_text;
 	char *					new_label_text;
-	guint32					timestamp;
 	guint32					caps;
 
 	g_return_val_if_fail (applet != NULL, NULL);
@@ -252,15 +251,10 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 
 	g_signal_connect (G_OBJECT (dialog), "response", GTK_SIGNAL_FUNC (nmi_passphrase_dialog_response_received), dialog);
 
-	/*
-	 * Bash focus-stealing prevention in the face
-	 *
-	 * FIXME:
-	 * 	Gdk-CRITICAL **: gdk_x11_get_server_time: assertion `GDK_IS_WINDOW (window)' failed
-	 * 	Gdk-CRITICAL **: gdk_x11_window_set_user_time: assertion `GDK_IS_WINDOW (window)' failed
-	 */
-	timestamp = gdk_x11_get_server_time (dialog->window);
-	gdk_x11_window_set_user_time (dialog->window, timestamp);
+	/* Bash focus-stealing prevention in the face */
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
 	gtk_window_present (GTK_WINDOW (dialog));
 
 	return dialog;

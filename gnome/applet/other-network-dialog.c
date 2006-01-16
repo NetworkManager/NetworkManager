@@ -444,8 +444,8 @@ static void nmwa_ond_response_cb (GtkDialog *dialog, gint response, gpointer dat
 
 void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_network)
 {
-	GtkDialog *			dialog;
-	GladeXML *			xml;
+	GtkWidget *	dialog;
+	GladeXML *	xml;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (applet->glade_file != NULL);
@@ -456,9 +456,12 @@ void nmwa_other_network_dialog_run (NMWirelessApplet *applet, gboolean create_ne
 		return;
 	}
 
-	if (!(dialog = nmwa_ond_init (xml, applet, create_network)))
+	if (!(dialog = GTK_WIDGET (nmwa_ond_init (xml, applet, create_network))))
 		return;
-
-	gtk_window_present (GTK_WINDOW (dialog));
 	g_signal_connect (dialog, "response", G_CALLBACK (nmwa_ond_response_cb), NULL);
+
+	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
+	gtk_widget_realize (dialog);
+	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
+	gtk_window_present (GTK_WINDOW (dialog));
 }
