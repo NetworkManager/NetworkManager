@@ -293,6 +293,7 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 		"j@bootlab.org",
 		"Peter Jones <pjones@redhat.com>",
 		"Robert Love <rml@novell.com>",
+		"Tim Niemueller <tim@niemueller.de>",
 		NULL
 	};
 
