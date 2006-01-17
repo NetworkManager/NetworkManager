@@ -191,18 +191,19 @@ nm_ap_security_wep_get_type (void)
 	if (type == 0) {
 		static const GTypeInfo info = {
 			sizeof (NMAPSecurityWEPClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_ap_security_wep_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMAPSecurityWEP),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_ap_security_wep_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_ap_security_wep_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (NM_TYPE_AP_SECURITY,
-					       "NMAPSecurityWEP",
-					       &info, 0);
+								 "NMAPSecurityWEP",
+								 &info, 0);
 	}
 	return type;
 }

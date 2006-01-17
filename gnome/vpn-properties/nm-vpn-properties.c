@@ -1071,9 +1071,9 @@ main (int argc, char *argv[])
 	static gchar *import_file = NULL;
 	static GOptionEntry entries[] = 
 		{
-			{ "import-service", 's', 0,G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
+			{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
 			{ "import-file", 'f', 0, G_OPTION_ARG_STRING, &import_file, "File to import", NULL},
-			{ NULL }
+			{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
 		};
 
 	bindtextdomain (GETTEXT_PACKAGE, NULL);

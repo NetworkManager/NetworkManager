@@ -147,18 +147,19 @@ nm_gconf_wso_wep_get_type (void)
 	if (type == 0) {
 		static const GTypeInfo info = {
 			sizeof (NMGConfWSOWEPClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_gconf_wso_wep_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMGConfWSOWEP),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_gconf_wso_wep_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_gconf_wso_wep_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (NM_TYPE_GCONF_WSO,
-					       "NMGConfWSOWEP",
-					       &info, 0);
+								"NMGConfWSOWEP",
+								&info, 0);
 	}
 	return type;
 }

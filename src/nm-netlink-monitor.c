@@ -136,7 +136,7 @@ gboolean
 nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 				    GError	     **error)
 {
-	struct sockaddr_nl monitor_address = { 0 };
+	struct sockaddr_nl monitor_address = { .nl_family = 0 };
 	int fd, saved_errno;
 	GError *channel_error;
 	GIOFlags channel_flags;
@@ -323,8 +323,9 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 		struct nlmsghdr  header;
 		struct rtgenmsg  request;
 	} NmNetlinkMonitorStatusPacket;
-	NmNetlinkMonitorStatusPacket packet = { { 0 } };
-	struct sockaddr_nl recipient = { 0 };
+
+	NmNetlinkMonitorStatusPacket packet;
+	struct sockaddr_nl recipient = { .nl_pad = 0 };
 	static guint32 sequence_number;
 	int fd, saved_errno;
 	ssize_t num_bytes_sent;
@@ -339,6 +340,7 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 	recipient.nl_pid = 0; /* going to kernel */
 	recipient.nl_groups = RTMGRP_LINK;
 
+	memset (&packet, 0, sizeof (NmNetlinkMonitorStatusPacket));
 	packet.header.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtgenmsg));
 	packet.header.nlmsg_flags = NLM_F_ROOT | NLM_F_MATCH | NLM_F_REQUEST;
 	packet.header.nlmsg_type = RTM_GETLINK;
@@ -432,7 +434,7 @@ receive_pending_bytes (GIOChannel  *channel,
 	GString *pending_bytes;
 	ssize_t num_bytes_read;
 	gboolean succeeded;
-	struct sockaddr_nl sender = { 0 };
+	struct sockaddr_nl sender = { .nl_pad = 0 };
 	gchar buffer[4096];
 	static const size_t buffer_capacity = (size_t) sizeof (buffer);
 	socklen_t sender_size;

@@ -377,18 +377,20 @@ nm_ap_security_get_type (void)
 	if (type == 0) {
 		static const GTypeInfo info = {
 			sizeof (NMAPSecurityClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_ap_security_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMAPSecurity),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_ap_security_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_ap_security_init,
+			NULL		/* value_table */
 		};
+
 		type = g_type_register_static (G_TYPE_OBJECT,
-					       "NMAPSecurity",
-					       &info, 0);
+								 "NMAPSecurity",
+								 &info, 0);
 	}
 	return type;
 }

@@ -1977,14 +1977,15 @@ nm_device_get_type (void)
 		static const GTypeInfo info =
 		{
 			sizeof (NMDeviceClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_device_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMDevice),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_device_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_device_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (G_TYPE_OBJECT,
 					       "NMDevice",

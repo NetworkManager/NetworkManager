@@ -293,14 +293,15 @@ nm_device_802_3_ethernet_get_type (void)
 		static const GTypeInfo info =
 		{
 			sizeof (NMDevice8023EthernetClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_device_802_3_ethernet_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMDevice8023Ethernet),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_device_802_3_ethernet_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_device_802_3_ethernet_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (NM_TYPE_DEVICE,
 					       "NMDevice8023Ethernet",

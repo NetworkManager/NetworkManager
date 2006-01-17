@@ -2905,14 +2905,15 @@ nm_device_802_11_wireless_get_type (void)
 		static const GTypeInfo info =
 		{
 			sizeof (NMDevice80211WirelessClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_device_802_11_wireless_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMDevice80211Wireless),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_device_802_11_wireless_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_device_802_11_wireless_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (NM_TYPE_DEVICE,
 					       "NMDevice80211Wireless",

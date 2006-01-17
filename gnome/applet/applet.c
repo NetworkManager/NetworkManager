@@ -2158,7 +2158,7 @@ static inline void nmwa_enable_networking_set_active (NMWirelessApplet *applet)
 void nmwa_set_state (NMWirelessApplet *applet, enum NMState state)
 {
 	g_return_if_fail (applet != NULL);
-	g_return_if_fail (state >= NM_STATE_UNKNOWN && state <= NM_STATE_DISCONNECTED);
+	g_return_if_fail (state <= NM_STATE_DISCONNECTED);
 	applet->nm_state = state;
 	nmwa_enable_networking_set_active (applet);
 }

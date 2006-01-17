@@ -244,18 +244,19 @@ nm_ap_security_wpa_psk_get_type (void)
 	if (type == 0) {
 		static const GTypeInfo info = {
 			sizeof (NMAPSecurityWPA_PSKClass),
-			NULL,   /* base_init */
-			NULL,   /* base_finalize */
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
 			(GClassInitFunc) nm_ap_security_wpa_psk_class_init,
-			NULL,   /* class_finalize */
-			NULL,   /* class_data */
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
 			sizeof (NMAPSecurityWPA_PSK),
-			0,      /* n_preallocs */
-			(GInstanceInitFunc) nm_ap_security_wpa_psk_init
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_ap_security_wpa_psk_init,
+			NULL		/* value_table */
 		};
 		type = g_type_register_static (NM_TYPE_AP_SECURITY,
-					       "NMAPSecurityWPA_PSK",
-					       &info, 0);
+					       		 "NMAPSecurityWPA_PSK",
+					       		 &info, 0);
 	}
 	return type;
 }

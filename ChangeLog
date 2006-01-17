@@ -1,5 +1,17 @@
 2006-01-16  Robert Love  <rml@novell.com>
 
+	* gnome/applet/eggtrayicon.c, src/nm-device.c, src/nm-ap-security.c,
+	  gnome/applet/nm-gconf-wso-wep.c, gnome/applet/nm-gconf-wso-wpa-psk.c,
+	  gnome/applet/nm-gconf-wso.c, src/nm-device-802-3-ethernet.c,
+	  gnome/vpn-properties/nm-vpn-properties.c, src/nm-ap-security-wep.c,
+	  src/nm-ap-security-wpa-psk.c, src/nm-device-802-11-wireless.c,
+	  src/nm-netlink-monitor.c: Don't miss any initializers on structure
+	  declarations, ever.
+	* gnome/applet/applet.c: Remove useless check (NMState is unsigned and
+	  NM_STATE_DISCONNECTED is zero).
+
+2006-01-16  Robert Love  <rml@novell.com>
+
 	* src/nm-device-802-11-wireless.c: argv[3], not argv[4].  Fix
 	  uninitialized parameter and buffer overflow.  Novell #143496.
 
