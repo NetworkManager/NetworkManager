@@ -6,5 +6,3 @@ nm-pptp.desktop.in
 properties/nm-pptp.c
 properties/nm-pptp-dialog.glade
 src/nm-pptp-service.c
-src/nm-pptp-service-pptp-helper.c
-
