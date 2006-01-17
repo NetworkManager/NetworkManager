@@ -93,7 +93,4 @@ NetworkManager_LDADD = 							\
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
-helperdir = $(bindir)
-helper_SCRIPTS = NMLoadModules
-
 EXTRA_DIST = $(dbusservice_DATA) $(helper_SCRIPTS)

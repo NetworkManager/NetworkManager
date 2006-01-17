@@ -1,5 +1,12 @@
 2006-01-16  Robert Love  <rml@novell.com>
 
+	* src/Makefile.am: Don't install NMLoadModules
+	* src/NMLoadModules, test/NMLoadModules: Move the NMLoadModules script
+	  from src/ to test/ as no one uses it anymore.  Note that I would be
+	  fine with removing it altogether.
+
+2006-01-16  Robert Love  <rml@novell.com>
+
 	* gnome/applet/eggtrayicon.c, src/nm-device.c, src/nm-ap-security.c,
 	  gnome/applet/nm-gconf-wso-wep.c, gnome/applet/nm-gconf-wso-wpa-psk.c,
 	  gnome/applet/nm-gconf-wso.c, src/nm-device-802-3-ethernet.c,
