@@ -1,3 +1,9 @@
+2006-01-17  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device.c
+		- (nm_device_class_init): connect a default act_stage4_ip_config_timeout
+			function.  Fixes crash when wired DHCP fails.
+
 2006-01-16  Robert Love  <rml@novell.com>
 
 	* src/Makefile.am: Don't install NMLoadModules

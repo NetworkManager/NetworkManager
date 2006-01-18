@@ -1111,7 +1111,7 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	NMDevice *	self = NULL;
 	NMIP4Config *	ip4_config = NULL;
 	const char *	iface;
-	NMActStageReturn	ret;
+	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -1964,6 +1964,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	klass->act_stage2_config = real_act_stage2_config;
 	klass->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	klass->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	klass->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
 
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 }
