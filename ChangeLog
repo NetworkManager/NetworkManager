@@ -3,7 +3,6 @@
 	* configure.in: Remove 'no' language.  Replaced by 'nb', which is
 	  identical for NM.  For a full discussion, see the thread at
 	  http://mail.gnome.org/archives/gnome-i18n/2004-August/msg00006.html.
-	* po/no.po: Remove.
 
 2006-01-17  Dan Williams  <dcbw@redhat.com>
 
