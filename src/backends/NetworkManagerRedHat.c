@@ -637,6 +637,19 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 }
 
 
+/*
+ * nm_system_device_get_disabled
+ *
+ * Return whether the distro-specific system config tells us to use
+ * dhcp for this device.
+ *
+ */
+gboolean nm_system_device_get_disabled (NMDevice *dev)
+{
+	return FALSE;
+}
+
+
 NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 {
 	RHSystemConfigData	*sys_data;

@@ -62,6 +62,8 @@ NMIP4Config *	nm_system_device_new_ip4_system_config		(NMDevice *dev);
 
 gboolean		nm_system_device_get_use_dhcp				(NMDevice *dev);
 
+gboolean		nm_system_device_get_disabled				(NMDevice *dev);
+
 gboolean		nm_system_device_set_from_ip4_config		(NMDevice *dev);
 gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes);
 gboolean		nm_system_vpn_device_unset_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config);

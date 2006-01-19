@@ -370,6 +370,20 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 	return TRUE;
 }
 
+
+/*
+ * nm_system_device_get_disabled
+ *
+ * Return whether the distro-specific system config tells us to use
+ * dhcp for this device.
+ *
+ */
+gboolean nm_system_device_get_disabled (NMDevice *dev)
+{
+	return FALSE;
+}
+
+
 /*
  * nm_system_activate_nis
  *

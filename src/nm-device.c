@@ -168,7 +168,7 @@ nm_device_new (const char *iface,
 		default:
 			g_assert_not_reached ();
 	}
-	
+
 	g_assert (dev);
 	dev->priv->iface = g_strdup (iface);
 	dev->priv->udi = g_strdup (udi);
@@ -180,7 +180,7 @@ nm_device_new (const char *iface,
 	if (!(dev->priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		g_object_unref (G_OBJECT (dev));
-		return  NULL;
+		return NULL;
 	}
 
 	/* Device thread's main loop */
@@ -201,6 +201,13 @@ nm_device_new (const char *iface,
 	/* Grab IP config data for this device from the system configuration files */
 	dev->priv->system_config_data = nm_system_device_get_system_config (dev);
 	dev->priv->use_dhcp = nm_system_device_get_use_dhcp (dev);
+
+	/* Allow distributions to flag devices as disabled */
+	if (nm_system_device_get_disabled (dev))
+	{
+		g_object_unref (G_OBJECT (dev));
+		return NULL;
+	}
 
 	nm_print_device_capabilities (dev);
 
@@ -1994,5 +2001,3 @@ nm_device_get_type (void)
 	}
 	return type;
 }
-
-

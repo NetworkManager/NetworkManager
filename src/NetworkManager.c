@@ -147,7 +147,7 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 			g_object_unref (G_OBJECT (dev));
 			dev = NULL;
 		}
-	} else nm_warning ("could not allocate device data." );
+	}
 
 	return (dev);
 }

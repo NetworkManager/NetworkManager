@@ -341,6 +341,7 @@ typedef struct SuSESystemConfigData
 {
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
+	gboolean		system_disabled;
 } SuSESystemConfigData;
 
 /*
@@ -497,22 +498,33 @@ found:
 		free (buf);
 	}
 
+	if ((buf = svGetValue (file, "NM_CONTROLLED")))
+	{
+		nm_debug ("NM_CONTROLLED=%s", buf);
+		if (!strcasecmp (buf, "no"))
+		{
+			nm_info ("System configuration disables device %s", nm_device_get_iface (dev));
+			sys_data->system_disabled = TRUE;
+		}
+		free (buf);
+	}		
+
 	sys_data->config = nm_ip4_config_new ();
 
-	if (!(sys_data->use_dhcp))
+	if (!sys_data->use_dhcp || sys_data->system_disabled)
 	{
 		buf = svGetValue (file, "IPADDR");
 		if (buf)
 		{
-				struct in_addr ip;
-				int ret;
+			struct in_addr ip;
+			int ret;
 
-				ret = inet_aton (buf, &ip);
-				if (ret)
-					nm_ip4_config_set_address (sys_data->config, ip.s_addr);
-				else
-					error = TRUE;
-				free (buf);
+			ret = inet_aton (buf, &ip);
+			if (ret)
+				nm_ip4_config_set_address (sys_data->config, ip.s_addr);
+			else
+				error = TRUE;
+			free (buf);
 		}
 		else
 			error = TRUE;
@@ -654,12 +666,32 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 {
 	SuSESystemConfigData *sys_data;
 
-	g_return_val_if_fail (dev != NULL, TRUE);
+	g_return_val_if_fail (dev != NULL, FALSE);
 
 	if ((sys_data = nm_device_get_system_config_data (dev)))
 		return sys_data->use_dhcp;
 
-	return TRUE;
+	return FALSE;
+}
+
+
+/*
+ * nm_system_device_get_disabled
+ *
+ * Return whether the distribution has flagged this device as disabled.
+ *
+ */
+gboolean nm_system_device_get_disabled (NMDevice *dev)
+{
+	SuSESystemConfigData *sys_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->system_disabled;
+
+	return FALSE;
 }
 
 
