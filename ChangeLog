@@ -4,6 +4,7 @@
 	* man, man/NetworkManager.1.in, man/NetworkManagerDispatcher.1.in,
 	  man/Makefile.am: Add man pages for NetworkManager and its
 	  crime-solving bumbling buddy, NetworkManagerDispatcher.
+	* man/.cvsignore: Add.
 
 2006-01-20  Robert Love  <rml@novell.com>
 
