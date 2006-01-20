@@ -1,0 +1,25 @@
+.\" NetworkManager(1) manual page
+.\"
+.\" Copyright (C) 2005 Robert Love
+.\"
+.TH NETWORKMANAGER "1"
+NetworkManager \- network management daemon
+.SH SYNOPSIS
+.B NetworkManager [\-\-no-daemon] [\-\-enable-test-devices]
+.SH DESCRIPTION
+The \fINetworkManager\fP daemon attempts to keep an active network connection
+available at all times.  The point of NetworkManager is to make networking
+configuration and setup as painless and automatic as possible.  If using DHCP,
+NetworkManager is intended to replace default routes, obtain IP addresses from
+a DHCP server, and change nameservers whenever it sees fit, with the aim of
+making networking Just Work.
+.SH OPTIONS
+The following options are supported:
+.TP
+.I "--no-daemon"
+Do not daemonize.  This is useful for debugging.
+.TP
+.I "--enable-test-devices"
+Enable support for virtual test devices.  These are useful for debugging.
+.SH SEE ALSO
+.BR NetworkManagerDispatcher (1)

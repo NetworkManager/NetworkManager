@@ -1,8 +1,18 @@
-SUBDIRS = utils libnm-util src dispatcher-daemon gnome initscript test po include
+SUBDIRS = 				\
+	   utils				\
+	   libnm-util			\
+	   src				\
+	   dispatcher-daemon	\
+	   gnome				\
+	   initscript			\
+	   test				\
+	   po				\
+	   man				\
+	   include
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\
-	NetworkManager.pc.in		\
+	NetworkManager.pc.in	\
 	intltool-extract.in		\
 	intltool-merge.in		\
 	intltool-update.in

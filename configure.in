@@ -313,6 +313,9 @@ initscript/Slackware/Makefile
 initscript/SUSE/Makefile
 initscript/SUSE/networkmanager
 initscript/SUSE/networkmanager-dispatcher
+man/Makefile
+man/NetworkManager.1
+man/NetworkManagerDispatcher.1
 po/Makefile.in
 NetworkManager.pc
 ])
