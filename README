@@ -1,13 +1,13 @@
 THEORY OF OPERATION:
 
 NetworkManager attempts to keep an active network connection available at all
-times.  It is intended only for the desktop use-case, and is not intended for
-usage on servers.  The point of NetworkManager is to make networking
-configuration and setup as painless and automatic as possible.  If using DHCP,
-NetworkManager is _intended_ to replace default routes, obtain IP addresses
-from a DHCP server, and change nameservers whenever it sees fit.  If you have
-special needs, we'd like to hear about them, but understand that NetworkManager
-is not intended to serve the needs of all users.
+times.  The point of NetworkManager is to make networking configuration and
+setup as painless and automatic as possible.  If using DHCP, NetworkManager is
+_intended_ to replace default routes, obtain IP addresses from a DHCP server,
+and change nameservers whenever it sees fit.  In effect, the goal of
+NetworkManager is to make networking Just Work.  If you have special needs,
+we'd like to hear about them, but understand that NetworkManager is not
+intended to serve the needs of all users.
 
 
 From a list of all adapters currently installed on the system, NetworkManager
