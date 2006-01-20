@@ -749,7 +749,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 	DBusObjectPathVTable	devices_vtable = {NULL, &nm_dbus_devices_message_handler, NULL, NULL, NULL, NULL};
 	DBusObjectPathVTable	vpn_vtable = {NULL, &nm_dbus_vpn_message_handler, NULL, NULL, NULL, NULL};
 	char *				owner;
-	int					flags = 0;
+	int					flags, ret;
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
@@ -762,7 +762,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 		goto out;
 	}
 
-//	dbus_connection_set_exit_on_disconnect (connection, FALSE);
+	//dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, data->main_context);
 
 	data->nm_methods = nm_dbus_nm_methods_setup ();
@@ -803,14 +803,21 @@ DBusConnection *nm_dbus_init (NMData *data)
 
 	dbus_error_init (&error);
 #if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
-	flags = 0;	/* Prohibit replacement */
+	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;	/* Prohibit replacement is now the default */
 #else
-	flags &= DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
+	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
 #endif
-	dbus_bus_request_name (connection, NM_DBUS_SERVICE, flags, &error);
+	ret = dbus_bus_request_name (connection, NM_DBUS_SERVICE, flags, &error);
 	if (dbus_error_is_set (&error))
 	{
 		nm_warning ("nm_dbus_init() could not acquire the NetworkManager service.\n  Message: '%s'", error.message);
+		connection = NULL;
+		goto out;
+	}
+	else if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
+	{
+		nm_warning ("nm_dbus_init() could not acquire the NetworkManager service as it is already taken (ret=%d). Is the daemon already running?",
+				  ret);
 		connection = NULL;
 		goto out;
 	}

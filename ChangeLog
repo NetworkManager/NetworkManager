@@ -1,5 +1,13 @@
 2006-01-20  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerDbus.c: Fail if NM's DBUS service is already taken,
+	  instead of queuing.  This prevents the running of multiple NM
+	  daemons concurrently, which does not work whatsoever and results in
+	  neither daemon working correctly.  Also, we don't handle queuing and
+	  name-owner-changes, anyhow.
+
+2006-01-20  Robert Love  <rml@novell.com>
+
 	* src/Makefile.am: Install the NetworkManager daemon to sbin, not bin.
 	* dispatcher/Makefile.am: Install the NetworkManagerDispatcher daemon
 	  to sbin, not bin.
