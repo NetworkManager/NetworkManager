@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-18 10:57+0100\n"
-"PO-Revision-Date: 2006-01-18 10:57+0100\n"
+"POT-Creation-Date: 2006-01-20 20:37+0100\n"
+"PO-Revision-Date: 2006-01-20 20:29+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
 "MIME-Version: 1.0\n"
@@ -21,7 +21,7 @@ msgstr ""
 #: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
 #, c-format
 msgid "Passphrase for wireless network %s"
-msgstr "Kodeord til trådløst netværk %s"
+msgstr "Adgangskode til trådløst netværk %s"
 
 #: ../gnome/applet/applet-dbus.c:274
 #, c-format
@@ -216,7 +216,7 @@ msgstr "NetworkManager kører ikke"
 
 #: ../gnome/applet/applet.c:1108 ../gnome/applet/applet.c:1842
 msgid "Networking disabled"
-msgstr "Netværk deaktiveret"
+msgstr "Netværks-understøttelse deaktiveret"
 
 #: ../gnome/applet/applet.c:1113
 msgid "No network connection"
@@ -291,7 +291,7 @@ msgstr "NetworkManager kører ikke..."
 #. 'Enable Networking' item
 #: ../gnome/applet/applet.c:2184
 msgid "Enable _Networking"
-msgstr "Aktivér _netværk"
+msgstr "Aktivér _netværks-understøttelse"
 
 #. 'Enable Wireless' item
 #: ../gnome/applet/applet.c:2190
@@ -331,7 +331,7 @@ msgstr "Delt nøgle"
 
 #: ../gnome/applet/wireless-security-option.c:212
 msgid "TKIP (Default)"
-msgstr "TKIP (forvalg)"
+msgstr "TKIP (forvalgt)"
 
 #: ../gnome/applet/wireless-security-option.c:221
 msgid "AES-CCMP"
@@ -351,7 +351,7 @@ msgstr "WEP 40/128-bit hex"
 
 #: ../gnome/applet/wso-wep-passphrase.c:125
 msgid "WEP Passphrase"
-msgstr "WEP-kodeord:"
+msgstr "WEP-adgangskode:"
 
 #: ../gnome/applet/eggtrayicon.c:128
 msgid "Orientation"
@@ -467,11 +467,11 @@ msgid ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Kodeord påkrævet af trådløst netværk</"
-"span>\n"
+"<span weight=\"bold\" size=\"larger\">Adgangskode påkrævet af trådløst "
+"netværk</span>\n"
 "\n"
-"Et kodeord eller krypteringsnøgle er påkrævet, for at opnå adgang til det "
-"trådløse netværk '%s'."
+"En adgangskode eller krypteringsnøgle er påkrævet, for at opnå adgang til "
+"det trådløse netværk '%s'."
 
 #: ../gnome/applet/wireless-applet.glade.h:8
 #, no-c-format
@@ -554,7 +554,7 @@ msgid ""
 "WEP 40/128-bit ASCII\n"
 msgstr ""
 "Ingen\n"
-"WEP-kodeord\n"
+"WEP-adgangskode\n"
 "WEP 40/128-bit hex\n"
 "WEP 40/128-bit ASCII\n"
 
@@ -572,7 +572,7 @@ msgstr "Andet trådløst netværk..."
 
 #: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Passphrase:"
-msgstr "Kodeord:"
+msgstr "Adgangskode:"
 
 #: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Password:"
@@ -777,9 +777,9 @@ msgstr ""
 "Denne vil guide dig gennem oprettelsen af en forbindelse til et virtuelt "
 "privat netværk (VPN).\n"
 "\n"
-"Denne guide vil kræve nogle informationer, såsom IP-adresser og kodeord.  "
-"Henvend dig venligst til din system-administrator for at få disse "
-"informationer."
+"Denne guide vil kræve nogle informationer, såsom IP-adresser og "
+"adgangskode.  Henvend dig venligst til din system-administrator for at få "
+"disse informationer."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
