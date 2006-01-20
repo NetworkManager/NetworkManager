@@ -8,7 +8,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/utils			\
            -I${top_srcdir}/libnm-util
 
-bin_PROGRAMS = NetworkManager
+sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES =				\
 		nm-device.c				\

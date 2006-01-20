@@ -2,7 +2,7 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/include
 
 NULL=
 
-bin_PROGRAMS = NetworkManagerDispatcher
+sbin_PROGRAMS = NetworkManagerDispatcher
 
 NetworkManagerDispatcher_CPPFLAGS = 	\
 	$(DBUS_CFLAGS)					\
@@ -19,5 +19,4 @@ NetworkManagerDispatcher_LDADD =		\
 				$(DBUS_LIBS)	\
 				$(GTHREAD_LIBS)	\
 				$(top_builddir)/utils/libnmutils.la
-
 

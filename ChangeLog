@@ -1,3 +1,9 @@
+2006-01-20  Robert Love  <rml@novell.com>
+
+	* src/Makefile.am: Install the NetworkManager daemon to sbin, not bin.
+	* dispatcher/Makefile.am: Install the NetworkManagerDispatcher daemon
+	  to sbin, not bin.
+
 2006-01-19  Robert Love  <rml@novell.com>
 
 	* configure.in: Require hal 0.5.0 or later.
