@@ -93,4 +93,4 @@ NetworkManager_LDADD = 							\
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
-EXTRA_DIST = $(dbusservice_DATA) $(helper_SCRIPTS)
+EXTRA_DIST = $(dbusservice_DATA)
