@@ -51,18 +51,18 @@ guint32		nm_ip4_config_get_broadcast		(NMIP4Config *config);
 void			nm_ip4_config_set_broadcast		(NMIP4Config *config, guint32 broadcast);
 
 void			nm_ip4_config_add_nameserver		(NMIP4Config *config, guint32 nameserver);
-guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint index);
+guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
 
 void			nm_ip4_config_add_nis_server		(NMIP4Config *config, guint32 nis_server);
-guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint index);
+guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nis_servers	(NMIP4Config *config);
 
 void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain);
 gchar *nm_ip4_config_get_nis_domain (NMIP4Config *config);
 
 void			nm_ip4_config_add_domain			(NMIP4Config *config, const char *domain);
-const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint index);
+const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_domains		(NMIP4Config *config);
 
 
