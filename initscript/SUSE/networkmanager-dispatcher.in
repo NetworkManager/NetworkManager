@@ -8,9 +8,9 @@
 # Description: NetworkManagerDispatcher responds to network events
 ### END INIT INFO
 
-bindir=@bindir@
+sbindir=@sbindir@
 
-NETWORKMANAGER_BIN=${bindir}/NetworkManagerDispatcher
+NETWORKMANAGER_BIN=${sbindir}/NetworkManagerDispatcher
 test -x $NETWORKMANAGER_BIN || exit 5
 
 . /etc/rc.status

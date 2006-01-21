@@ -5,6 +5,12 @@
 	  man/Makefile.am: Add man pages for NetworkManager and its
 	  crime-solving bumbling buddy, NetworkManagerDispatcher.
 	* man/.cvsignore: Add.
+	* initscript/Debian/NetworkManager,
+	  initscript/Gentoo/NetworkManager.in,
+	  initscript/RedHat/NetworkManager.in,
+	  initscript/RedHat/NetworkManagerDispatcher.in,
+	  initscript/SUSE/networkmanager-dispatcher.in,
+	  initscript/SUSE/networkmanager.in: Update for /usr/sbin not /usr/bin.
 
 2006-01-20  Robert Love  <rml@novell.com>
 
