@@ -3,6 +3,6 @@ man_MANS =				\
 	NetworkManagerDispatcher.1
 
 EXTRA_DIST =				\
-	$(mans_MANS)			\
+	$(man_MANS)			\
 	NetworkManager.1.in		\
 	NetworkManagerDispatcher.1.in
