@@ -44,7 +44,6 @@ struct NMAccessPoint
 
 	/* Non-scanned attributes */
 	gboolean			invalid;
-	gboolean			matched;		/* used in ap list diffing */
 	gboolean			artificial;	/* Whether or not the AP is from a scan */
 	gboolean			user_created;	/* Whether or not the AP was created by the user with "Create network..." */
 	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
@@ -372,26 +371,6 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 	g_return_if_fail (ap != NULL);
 
 	ap->invalid = invalid;
-}
-
-
-/*
- * Get/set functions for "matched", which is used by
- * the ap list diffing functions to speed up the diff
- *
- */
-gboolean nm_ap_get_matched (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (ap != NULL, TRUE);
-
-	return (ap->matched);
-}
-
-void nm_ap_set_matched (NMAccessPoint *ap, gboolean matched)
-{
-	g_return_if_fail (ap != NULL);
-
-	ap->matched = matched;
 }
 
 

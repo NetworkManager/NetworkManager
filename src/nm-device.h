@@ -108,6 +108,8 @@ struct _NMDeviceClass
 											 struct NMActRequest *req);
 	void			(* activation_success_handler)	(NMDevice *self,
 											 struct NMActRequest *req);
+
+	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 };
 
 
@@ -188,6 +190,8 @@ void			nm_device_activation_failure_handler	(NMDevice *dev,
 											 struct NMActRequest *req);
 void			nm_device_activation_success_handler	(NMDevice *dev,
 											 struct NMActRequest *req);
+
+gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 
 G_END_DECLS
 

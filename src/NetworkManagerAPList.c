@@ -435,18 +435,24 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
  *			TRUE if the ap was completely new
  *
  */
-gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *merge_ap,
-				gboolean *new, gboolean *strength_changed)
+gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointList *list, NMAccessPoint *merge_ap)
 {
-	NMAccessPoint   *list_ap_addr, *list_ap_essid;
+	NMAccessPoint *	list_ap = NULL;
+	gboolean			strength_changed = FALSE;
+	gboolean			new = FALSE;
+	NMData *			app_data;
 
+	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (list != NULL, FALSE);
 	g_return_val_if_fail (merge_ap != NULL, FALSE);
-	g_return_val_if_fail (new != NULL, FALSE);
-	g_return_val_if_fail (strength_changed != NULL, FALSE);
 
-	if ((list_ap_addr = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
+	app_data = nm_device_get_app_data (NM_DEVICE (dev));
+	g_return_val_if_fail (app_data != NULL, FALSE);
+
+	if ((list_ap = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
 	{
+		const char *	devlist_essid = nm_ap_get_essid (list_ap);
+		const char *	merge_essid = nm_ap_get_essid (merge_ap);
 
 		/* First, we check for an address match. If the merge AP has the
 		 * same address as a list AP, the merge AP and the list AP
@@ -457,15 +463,28 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 
 		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
-		nm_ap_set_capabilities (list_ap_addr, nm_ap_get_capabilities (merge_ap));
-		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap_addr))
+		/* Did the AP's name change? */
+		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid))
 		{
-			nm_ap_set_strength (list_ap_addr, nm_ap_get_strength (merge_ap));
-			*strength_changed = TRUE;
+			nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
+			        dev, list_ap, NETWORK_STATUS_DISAPPEARED, -1);
+			new = TRUE;
 		}
-		nm_ap_set_last_seen (list_ap_addr, merge_ap_seen);
+
+		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
+		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap))
+		{
+			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
+			strength_changed = TRUE;
+		}
+		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+
+		/* Have to change AP's name _after_ dbus signal for old network name
+		 * has gone out.
+		 */
+		nm_ap_set_essid (list_ap, merge_essid);
 	}
-	else if ((list_ap_essid = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
+	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
 	{
 
 		/* Second, we check for an ESSID match. In this case,
@@ -477,26 +496,41 @@ gboolean nm_ap_list_merge_scanned_ap (NMAccessPointList *list, NMAccessPoint *me
 		 * equal, the merge AP and the list AP come from the same scan.
 		 * Update the time_last_seen. */
 
-		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
-		const GTimeVal *list_ap_essid_seen = nm_ap_get_last_seen (list_ap_essid);
+		const GTimeVal *	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const GTimeVal *	list_ap_seen = nm_ap_get_last_seen (list_ap);
+		const int			merge_ap_strength = nm_ap_get_strength (merge_ap);
 
-		nm_ap_set_capabilities (list_ap_essid, nm_ap_get_capabilities (merge_ap));
+		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
 
-		if (!((list_ap_essid_seen->tv_sec == merge_ap_seen->tv_sec)
-			&& (nm_ap_get_strength (list_ap_essid) >= nm_ap_get_strength (merge_ap))))
+		if (!((list_ap_seen->tv_sec == merge_ap_seen->tv_sec)
+			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength)))
 		{
-			nm_ap_set_strength (list_ap_essid, nm_ap_get_strength (merge_ap));
-			nm_ap_set_address (list_ap_essid, nm_ap_get_address (merge_ap)); 
-			*strength_changed = TRUE;
+			nm_ap_set_strength (list_ap, merge_ap_strength);
+			nm_ap_set_address (list_ap, nm_ap_get_address (merge_ap));
 		}
-		nm_ap_set_last_seen (list_ap_essid, merge_ap_seen);
+		nm_ap_set_last_seen (list_ap, merge_ap_seen);
 	}
 	else
 	{
 		/* Add the merge AP to the list. */
 		nm_ap_list_append_ap (list, merge_ap);
-		*new = TRUE;
+		list_ap = merge_ap;
+		new = TRUE;
 	}
+
+	if (list_ap && strength_changed && !new)
+	{
+		const int new_strength = nm_ap_get_strength (list_ap);
+		nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
+		        dev, list_ap, NETWORK_STATUS_STRENGTH_CHANGED, new_strength);
+	}
+
+	if (list_ap && new)
+	{
+		nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
+		        dev, list_ap, NETWORK_STATUS_APPEARED, -1);
+	}
+
 	return TRUE;
 }
 
@@ -579,68 +613,6 @@ void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointLi
 		while ((dest_ap = nm_ap_list_iter_next (iter)))
 			nm_ap_list_copy_one_essid_by_address (dest_ap, source);
 
-		nm_ap_list_iter_free (iter);
-	}
-}
-
-
-/*
- * nm_ap_list_diff
- *
- * Takes two ap lists and determines the differences.  For each ap that is present
- * in the original list, but not in the new list, a WirelessNetworkDisappeared signal is emitted
- * over DBus.  For each ap in the new list but not in the original, a WirelessNetworkAppeared
- * signal is emitted.  For each ap that is the same between the lists, the "invalid" flag is copied
- * over from the old ap to the new ap to preserve "invalid" ap status (ie, user cancelled entering
- * a WEP key so we cannot connect to it anyway, so why try).
- *
- * NOTE: it is assumed that this function is called only ONCE for each list passed into it,
- *       since the "matched" value on access points in the list are never cleared after the
- *       ap is initially created.  Therefore, calling this function twice for any given ap list
- *       may result in undesired behavior.
- *
- */
-void nm_ap_list_diff (NMData *data, NMDevice80211Wireless *dev, NMAccessPointList *old, NMAccessPointList *new)
-{
-	NMAPListIter	*iter;
-	NMAccessPoint	*old_ap;
-
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (dev  != NULL);
-
-	/* Iterate over each item in the old list and find it in the new list */
-	if (old && (iter = nm_ap_list_iter_new (old)))
-	{
-		while ((old_ap = nm_ap_list_iter_next (iter)))
-		{
-			NMAccessPoint	*new_ap;
-
-			if (nm_ap_get_essid (old_ap))
-			{
-				if ((new_ap = nm_ap_list_get_ap_by_essid (new, nm_ap_get_essid (old_ap))))
-				{
-					nm_ap_set_matched (old_ap, TRUE);
-					nm_ap_set_matched (new_ap, TRUE);
-				}
-				else
-					nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, old_ap, NETWORK_STATUS_DISAPPEARED, -1);
-			}
-		}
-		nm_ap_list_iter_free (iter);
-	}
-
-	/* Iterate over the new list and compare to the old list.  Items that aren't already
-	 * matched are by definition new networks.
-	 */
-	if (new && (iter = nm_ap_list_iter_new (new)))
-	{
-		NMAccessPoint	*new_ap;
-
-		while ((new_ap = nm_ap_list_iter_next (iter)))
-		{
-			if (!nm_ap_get_matched (new_ap) && nm_ap_get_essid (new_ap))
-				nm_dbus_signal_wireless_network_change (data->dbus_connection, dev, new_ap, NETWORK_STATUS_APPEARED, -1);
-		}
 		nm_ap_list_iter_free (iter);
 	}
 }

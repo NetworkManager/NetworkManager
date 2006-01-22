@@ -2814,6 +2814,21 @@ real_activation_failure_handler (NMDevice *dev,
 			ap ? nm_ap_get_essid (ap) : "(none)");
 }
 
+static gboolean
+real_can_interrupt_activation (NMDevice *dev)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMActRequest *			req;
+	gboolean interrupt = FALSE;
+
+	if (   (req = nm_device_get_act_request (dev))
+	    && (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY))
+	{
+		interrupt = TRUE;
+	}
+	return interrupt;
+}
+
 
 static guint32
 real_get_type_capabilities (NMDevice *dev)
@@ -2889,6 +2904,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
 	parent_class->deactivate = real_deactivate;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
+	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 
 	parent_class->activation_failure_handler = real_activation_failure_handler;
 	parent_class->activation_success_handler = real_activation_success_handler;
@@ -3053,10 +3069,9 @@ static void
 add_new_ap_to_device_list (NMDevice80211Wireless *dev,
                            NMAccessPoint *ap)
 {
-	gboolean new = FALSE;
-	gboolean strength_changed = FALSE;
 	GTimeVal cur_time;
 	NMData *	app_data;
+	NMAccessPointList *	ap_list;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (ap != NULL);
@@ -3072,18 +3087,8 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
 
 	/* Add the AP to the device's AP list */
-	if (nm_ap_list_merge_scanned_ap (nm_device_802_11_wireless_ap_list_get (dev), ap, &new, &strength_changed))
-	{
-		DBusConnection *con = app_data->dbus_connection;
-		/* Handle dbus signals that we need to broadcast when the AP is added to the list or changes strength */
-		if (new)
-			nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_APPEARED, -1);
-		else if (strength_changed)
-		{
-			nm_dbus_signal_wireless_network_change (con, dev, ap, NETWORK_STATUS_STRENGTH_CHANGED,
-				nm_ap_get_strength (ap));
-		}
-	}
+	ap_list = nm_device_802_11_wireless_ap_list_get (dev);
+	nm_ap_list_merge_scanned_ap (dev, ap_list, ap);
 }
 
 static gboolean

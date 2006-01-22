@@ -1,3 +1,29 @@
+2006-01-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.[ch]
+		- (nm_ap_get_matched, nm_ap_set_matched): remove
+
+	* src/NetworkManagerAPList.[ch]
+		- (nm_ap_list_diff): removed
+		- (nm_ap_list_merge_scanned_ap): move AP dbus signal logic here,
+			deal with access points changing essids on us
+
+	* src/nm-device-802-11-wireless.c
+		- (add_new_ap_to_device_list): move AP dbus signal logic to
+			src/NetworkManagerAPList.c
+		- (real_can_interrupt_activation): new function; allow interruption
+			of device activation if we are waiting for a network key
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): allow interruption of currently
+			activating devices if the device allows it.  Previous behavior
+			would refuse to activate a just-plugged wired device if a
+			wireless device was waiting for a key.
+
+	* src/nm-device.[ch]
+		- (nm_device_can_interrupt_activation): new function; ask devices
+			whether their activation can be interrupted
+
 2006-01-20  Robert Love  <rml@novell.com>
 
 	* Makefile.am, configure.in: Add new man subdirectory.

@@ -271,7 +271,8 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
  *    3) wireless network topology changes
  *
  */
-static gboolean nm_policy_device_change_check (NMData *data)
+static gboolean
+nm_policy_device_change_check (NMData *data)
 {
 	NMAccessPoint *	ap = NULL;
 	NMDevice *		new_dev = NULL;
@@ -292,7 +293,8 @@ static gboolean nm_policy_device_change_check (NMData *data)
 		guint32 caps = nm_device_get_capabilities (old_dev);
 
 		/* Don't interrupt a currently activating device. */
-		if (nm_device_is_activating (old_dev))
+		if (   nm_device_is_activating (old_dev)
+		    && !nm_device_can_interrupt_activation (old_dev))
 		{
 			nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
 			goto out;
@@ -359,7 +361,7 @@ static gboolean nm_policy_device_change_check (NMData *data)
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
 			 * above will prefer a wired device to a wireless device.
 			 */
-			if ((!old_user_requested || !old_has_link)  && (new_dev != old_dev))
+			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev))
 			{
 				nm_info ("SWITCH: found better connection '%s' than current connection '%s'.", nm_device_get_iface (new_dev), nm_device_get_iface (old_dev));
 				do_switch = TRUE;
