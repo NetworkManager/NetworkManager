@@ -404,3 +404,13 @@ void nm_system_shutdown_nis (void)
 {
 }
 
+/*
+ * nm_system_set_hostname
+ *
+ * set the hostname
+ *
+ */
+void nm_system_set_hostname (NMIP4Config *config)
+{
+}
+

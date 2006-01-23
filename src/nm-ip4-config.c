@@ -44,6 +44,7 @@ struct NMIP4Config
 	GSList *	nameservers;
 	GSList *	domains;
 
+	gchar * hostname;
 	gchar *	nis_domain;
 	GSList *	nis_servers;
 
@@ -80,6 +81,7 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	dst_config->ip4_netmask = nm_ip4_config_get_netmask (src_config);
 	dst_config->ip4_broadcast = nm_ip4_config_get_broadcast (src_config);
 
+	dst_config->hostname = g_strdup (nm_ip4_config_get_hostname (src_config));
 	dst_config->nis_domain = g_strdup (nm_ip4_config_get_nis_domain (src_config));
 
 	len = nm_ip4_config_get_num_nameservers (src_config);
@@ -111,6 +113,7 @@ void nm_ip4_config_unref (NMIP4Config *config)
 	config->refcount--;
 	if (config->refcount <= 0)
 	{
+		g_free (config->hostname);
 		g_free (config->nis_domain);
 		g_slist_free (config->nameservers);
 		g_slist_foreach (config->domains, (GFunc) g_free, NULL);
@@ -267,6 +270,24 @@ void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 		return;
 
 	config->domains = g_slist_append (config->domains, g_strdup (domain));
+}
+
+void nm_ip4_config_set_hostname (NMIP4Config *config, const char *hostname)
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (hostname != NULL);
+
+	if (!strlen (hostname))
+		return;
+
+	config->hostname = g_strdup (hostname);
+}
+
+gchar *nm_ip4_config_get_hostname (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return config->hostname;
 }
 
 void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain) 

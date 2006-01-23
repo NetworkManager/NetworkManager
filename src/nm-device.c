@@ -1223,6 +1223,7 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_device_update_ip4_address (self);
 		nm_system_device_add_ip6_link_address (self);
 		nm_system_restart_mdns_responder ();
+		nm_system_set_hostname (self->priv->ip4_config);
 		nm_system_activate_nis (self->priv->ip4_config);
 		if (NM_DEVICE_GET_CLASS (self)->update_link)
 			NM_DEVICE_GET_CLASS (self)->update_link (self);

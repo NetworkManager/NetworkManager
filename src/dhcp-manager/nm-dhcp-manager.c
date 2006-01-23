@@ -422,13 +422,32 @@ static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const cha
 		dbus_error_init (&error);
 		if ((reply = dbus_connection_send_with_reply_and_block (manager->data->dbus_connection, message, -1, &error)))
 		{
-			char *dbus_string;
+			DBusMessageIter iter;
 
-			dbus_error_init (&error);
-			if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID))
+			dbus_message_iter_init (reply, &iter);
+			if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
 			{
-				*string = g_strdup (dbus_string);
-				success = TRUE;
+				char *dbus_string;
+
+				dbus_error_init (&error);
+				if (dbus_message_get_args (reply, &error, DBUS_TYPE_STRING, &dbus_string, DBUS_TYPE_INVALID))
+				{
+					*string = g_strdup (dbus_string);
+					success = TRUE;
+				}
+			}
+			else if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_ARRAY)
+			{
+				char *byte_array = NULL;
+				int   len = 0;
+
+				dbus_error_init (&error);
+				if (dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &byte_array, &len, DBUS_TYPE_INVALID))
+				{
+					*string = g_strdup (byte_array);
+					*string[len] = '\0';
+					success = TRUE;
+				}
 			}
 		}
 
@@ -480,6 +499,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	guint32 *		ip4_gateway = NULL;
 	guint32		num_ip4_nameservers = 0;
 	guint32		num_ip4_nis_servers = 0;
+	char *		hostname = NULL;
 	char *		domain_names = NULL;
 	char *		nis_domain = NULL;
 	guint32 *		ip4_nis_servers = NULL;
@@ -524,6 +544,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 			goto out;
 	}
 
+	get_ip4_string (manager, dev, "host_name", &hostname, TRUE);
 	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers, FALSE);
 	get_ip4_string (manager, dev, "domain_name", &domain_names, FALSE);
 	get_ip4_string (manager, dev, "nis_domain", &nis_domain, TRUE);
@@ -553,6 +574,12 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		nm_ip4_config_add_nameserver (ip4_config, ip4_nameservers[i]);
 		temp_addr.s_addr = ip4_nameservers[i];
 		nm_info ("  nameserver %s", inet_ntoa (temp_addr));
+	}
+
+	if (hostname)
+	{
+		nm_ip4_config_set_hostname (ip4_config, hostname);
+		nm_info ("  hostname '%s'", hostname);
 	}
 
 	if (domain_names)

@@ -1,5 +1,19 @@
 2006-01-23  Robert Love  <rml@novell.com>
 
+	* dhcp-manager/nm-dhcp-manager.c, nm-device.c, nm-ip4-config.c,
+	  nm-ip4-config.h, NetworkManagerSystem.h: Save the hostname reported
+	  by DHCP and pass it to the backends, allowing distribution-specific
+	  behavior with respect to the DHCP-supplied hostname (if nothing else,
+	  some distributions might not want to set the hostname).
+	* backends/NetworkManagerSuSE.c: Set the hostname if the variable
+	  DHCLIENT_SET_HOSTNAME is set to "yes" in /etc/sysconfig/network/dhcp.
+	  Also update our NIS behavior.
+	* backends/NetworkManagerDebian.c, backends/NetworkManagerGentoo.c,
+	  backends/NetworkManagerRedHat.c, backends/NetworkManagerSlackware.c:
+	  Add stub functions.
+
+2006-01-23  Robert Love  <rml@novell.com>
+
 	* Makefile.am, nm-applet.desktop: Add autostart .desktop file, now that
 	  gnome-session does autostart.  TODO: We need to install this to
 	  $prefix/share/autostart/.
