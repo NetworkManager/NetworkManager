@@ -1,0 +1,14 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Network Manager
+Comment=Network Manager applet
+Icon=nm-device-wireless
+Exec=nm-applet
+Terminal=false
+Type=Application
+Categories=
+OnlyShowIn=GNOME;
+X-GNOME-Bugzilla-Bugzilla=GNOME
+X-GNOME-Bugzilla-Product=NetworkManager
+X-GNOME-Bugzilla-Component=general
+X-GNOME-Autostart-enabled=true
