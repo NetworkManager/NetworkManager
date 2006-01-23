@@ -1,5 +1,6 @@
 2006-01-23  Robert Love  <rml@novell.com>
 
+	Patch by Timo Hoenig <thoenig@suse.de>:
 	* dhcp-manager/nm-dhcp-manager.c, nm-device.c, nm-ip4-config.c,
 	  nm-ip4-config.h, NetworkManagerSystem.h: Save the hostname reported
 	  by DHCP and pass it to the backends, allowing distribution-specific

@@ -1037,8 +1037,11 @@ void nm_system_set_hostname (NMIP4Config *config)
 
 	if (!strcmp (buf, "yes")) {
 		hostname = nm_ip4_config_get_hostname (config);
-		if (hostname && sethostname (hostname, strlen (hostname)) < 0)
+		if (hostname) {
+			nm_info ("Setting hostname to %s\n", hostname);
+			if (sethostname (hostname, strlen (hostname)) < 0)
 				nm_warning ("Could not set hostname.");
+		}
 	}
 	free (buf);
 
