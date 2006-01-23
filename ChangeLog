@@ -1,3 +1,9 @@
+2006-01-23  Robert Love  <rml@novell.com>
+
+	* Makefile.am, nm-applet.desktop: Add autostart .desktop file, now that
+	  gnome-session does autostart.  TODO: We need to install this to
+	  $prefix/share/autostart/.
+
 2006-01-22  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.[ch]

@@ -15,7 +15,8 @@ EXTRA_DIST =				\
 	NetworkManager.pc.in	\
 	intltool-extract.in		\
 	intltool-merge.in		\
-	intltool-update.in
+	intltool-update.in		\
+	nm-applet.desktop
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
