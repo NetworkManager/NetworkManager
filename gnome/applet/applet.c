@@ -1758,42 +1758,10 @@ static void nmwa_menu_add_vpn_menu (GtkWidget *menu, NMWirelessApplet *applet)
 }
 
 
-static void nmwa_config_dialup_cb (GtkMenu *item, gpointer data)
-{
-	char *modem_argv[] = { "/opt/gnome/bin/gnomesu", "/sbin/yast2", "modem", NULL };
-	char *isdn_argv[] = { "/opt/gnome/bin/gnomesu", "/sbin/yast2", "isdn", NULL };
-	char **argv;
-	gboolean modem = (gboolean) data;
-	GError *err = NULL;
-
-	if (modem)
-		argv = modem_argv;
-	else
-		argv = isdn_argv;
-
-	if (!g_spawn_async ("/", argv, NULL, 0, NULL, NULL, NULL, &err))
-	{
-		GtkWidget *dialog;
-		char *msg;
-
-		msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
-						   _("Dialup configuration could not be run"), err->message);
-
-		dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
-		gtk_dialog_run (GTK_DIALOG (dialog));
-
-		gtk_widget_destroy (dialog);
-		g_free (msg);
-		g_error_free (err);
-	}
-}
-
-
 static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet)
 {
 	GtkMenuItem *item;
 	GtkMenu *dialup_menu;
-	GtkWidget *configure_item;
 	GSList *elt;
 
 	g_return_if_fail (menu != NULL);
@@ -1822,14 +1790,6 @@ static void nmwa_menu_add_dialup_menu (GtkWidget *menu, NMWirelessApplet *applet
 		g_signal_connect (G_OBJECT (disconnect_item), "activate", G_CALLBACK (nmwa_menu_dialup_disconnect_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (disconnect_item));
 	}
-
-	configure_item = gtk_menu_item_new_with_mnemonic (_("Configure _Modem..."));
-	g_signal_connect (G_OBJECT (configure_item), "activate", G_CALLBACK (nmwa_config_dialup_cb), (gpointer) 1);
-	gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), configure_item);
-
-	configure_item = gtk_menu_item_new_with_mnemonic (_("Configure _ISDN..."));
-	g_signal_connect (G_OBJECT (configure_item), "activate", G_CALLBACK (nmwa_config_dialup_cb), (gpointer) 0);
-	gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), configure_item);
 
 	gtk_menu_item_set_submenu (item, GTK_WIDGET (dialup_menu));
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), GTK_WIDGET (item));
