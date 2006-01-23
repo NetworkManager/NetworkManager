@@ -177,12 +177,12 @@ void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
  * Get/set functions for essid
  *
  */
-char * nm_ap_get_essid (const NMAccessPoint *ap)
+const char * nm_ap_get_essid (const NMAccessPoint *ap)
 {
 	g_assert (ap);
 	g_return_val_if_fail (ap != NULL, NULL);
 
-	return (ap->essid);
+	return ap->essid;
 }
 
 void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)

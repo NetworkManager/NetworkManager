@@ -129,7 +129,7 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	gint32			attempt = 1;
 	char *			dev_path;
 	char *			net_path;
-	char *			essid;
+	const char *		essid;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (req != NULL);

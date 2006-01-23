@@ -1,6 +1,13 @@
 2006-01-22  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.[ch]
+	  src/nm-dbus-nmi.c
+	  src/nm-device-802-11-wireless.c	  
+		- Make nm_ap_get_essid return "const char *"
+
+2006-01-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.[ch]
 		- (nm_ap_get_matched, nm_ap_set_matched): remove
 
 	* src/NetworkManagerAPList.[ch]

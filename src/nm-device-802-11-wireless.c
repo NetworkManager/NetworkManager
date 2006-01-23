@@ -478,8 +478,8 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 
 	if (is_associated (self))
 	{
-		char *	dev_essid = nm_device_802_11_wireless_get_essid (self);
-		char *	ap_essid = nm_ap_get_essid (ap);
+		char *		dev_essid = nm_device_802_11_wireless_get_essid (self);
+		const char *	ap_essid = nm_ap_get_essid (ap);
 
 		if (dev_essid && ap_essid && !strcmp (dev_essid, ap_essid))
 		{
@@ -544,8 +544,8 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	{
 		if ((cur_ap = nm_act_request_get_ap (req)))
 		{
-			char *	essid = nm_ap_get_essid (cur_ap);
-			gboolean	keep = FALSE;
+			const char *	essid = nm_ap_get_essid (cur_ap);
+			gboolean		keep = FALSE;
 
 			if (nm_ap_get_user_created (cur_ap))
 				keep = TRUE;
@@ -569,8 +569,8 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 		return NULL;
 	while ((scan_ap = nm_ap_list_iter_next (iter)))
 	{
-		NMAccessPoint	*tmp_ap;
-		char			*ap_essid = nm_ap_get_essid (scan_ap);
+		NMAccessPoint *tmp_ap;
+		const char *	ap_essid = nm_ap_get_essid (scan_ap);
 
 		/* Access points in the "invalid" list cannot be used */
 		if (nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, ap_essid))
@@ -2137,7 +2137,7 @@ out:
 static gboolean
 ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
 {
-	char *		essid;
+	const char *	essid;
 	gboolean		need_key = FALSE;
 	NMAPSecurity *	security;
 	const char *	iface;
