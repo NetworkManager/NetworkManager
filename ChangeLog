@@ -1,4 +1,4 @@
-2006-01-23  Robert Love  <rml@novell.com>
+2006-01-24  Robert Love  <rml@novell.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c: Null-out the original byte array
 	  before we g_strdup(), not the ultimate string.
