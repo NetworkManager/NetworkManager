@@ -444,8 +444,8 @@ static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const cha
 				dbus_error_init (&error);
 				if (dbus_message_get_args (reply, &error, DBUS_TYPE_ARRAY, DBUS_TYPE_BYTE, &byte_array, &len, DBUS_TYPE_INVALID))
 				{
+					byte_array[len] = '\0';
 					*string = g_strdup (byte_array);
-					*string[len] = '\0';
 					success = TRUE;
 				}
 			}
