@@ -1,3 +1,10 @@
+2006-01-23  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/cipher-private.h
+	  libnm-util/cipher.c
+	  libnm-util/cipher.h
+		- (cipher_bin2hexstr, cipher_hexstr2bin): make public
+
 2006-01-23  Robert Love  <rml@novell.com>
 
 	Patch by Timo Hoenig <thoenig@suse.de>:

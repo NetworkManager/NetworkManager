@@ -36,6 +36,10 @@ int           ieee_802_11_cipher_get_input_max (IEEE_802_11_Cipher *cipher);
 char *        ieee_802_11_cipher_hash (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 int           ieee_802_11_cipher_validate (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
 
+char *        cipher_bin2hexstr (const char *bytes, int len, int final_len);
+char *        cipher_hexstr2bin(const char *hex, size_t len);
+
+
 /* Private API members (not part of the public API) */
 int           ieee_802_11_cipher_refcount (IEEE_802_11_Cipher *cipher);
 

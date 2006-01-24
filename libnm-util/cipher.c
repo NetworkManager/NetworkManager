@@ -151,7 +151,8 @@ cipher_bin2hexstr (const char *bytes,
 		result[2*i+1] = hex_digits[bytes[i] & 0xf];
 	}
 	/* Cut converted key off at the correct length for this cipher type */
-	result[final_len] = '\0';
+	if (final_len > -1)
+		result[final_len] = '\0';
 
 	return result;
 }
