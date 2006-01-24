@@ -1,5 +1,29 @@
 2006-01-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.[ch]
+		- (nm_ap_new_from_ap): copy original essid too
+		- (nm_ap_unref): free original essid
+		- (nm_ap_get_orig_essid): new function
+		- (nm_ap_set_essid): Convert essid to UTF-8 for display and dbus,
+			but keep original essid around too
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): send wpa_supplicant the
+			_original_ essid, and not as a string, but in hex.  Should
+			allow us to connect to more APs that use wierd character
+			encodings for their essids
+
+	* utils/nm-utils.[ch]
+		- (nm_utils_essid_to_utf8): make a best-effort to convert the essid
+			to UTF-8.  If it's not already valid UTF-8, we check LANG and
+			use the current locale as a hint for what encoding the essid
+			might be in.  Obviously not 100% accurate, but the idea here is
+			that if a user's locale is ex. ja_JP, they are more likely than
+			not to be in Japan, where access points will likely be in some
+			Japanese encoding.
+
+2006-01-23  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/cipher-private.h
 	  libnm-util/cipher.c
 	  libnm-util/cipher.h

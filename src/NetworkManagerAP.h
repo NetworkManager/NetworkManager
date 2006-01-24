@@ -42,6 +42,7 @@ void				nm_ap_set_timestamp		(NMAccessPoint *ap, const GTimeVal *timestamp);
 
 const char *		nm_ap_get_essid		(const NMAccessPoint *ap);
 void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
+/* Get essid in original over-the-air form */
 const char *		nm_ap_get_orig_essid	(const NMAccessPoint *ap);
 
 guint32			nm_ap_get_capabilities	(NMAccessPoint *ap);

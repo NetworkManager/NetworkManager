@@ -35,6 +35,7 @@ struct NMAccessPoint
 
 	/* Scanned or cached values */
 	char *			essid;
+	char *			orig_essid;
 	struct ether_addr	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
@@ -108,7 +109,10 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	}
 
 	if (src_ap->essid && (strlen (src_ap->essid) > 0))
+	{
 		new_ap->essid = g_strdup (src_ap->essid);
+		new_ap->orig_essid = g_strdup (src_ap->orig_essid);
+	}
 	memcpy (&new_ap->address, &src_ap->address, sizeof (struct ether_addr));
 	new_ap->mode = src_ap->mode;
 	new_ap->strength = src_ap->strength;
@@ -142,6 +146,7 @@ void nm_ap_unref (NMAccessPoint *ap)
 	if (ap->refcount == 0)
 	{
 		g_free (ap->essid);
+		g_free (ap->orig_essid);
 		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
 		g_slist_free (ap->user_addresses);
 
@@ -179,10 +184,16 @@ void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
  */
 const char * nm_ap_get_essid (const NMAccessPoint *ap)
 {
-	g_assert (ap);
 	g_return_val_if_fail (ap != NULL, NULL);
 
 	return ap->essid;
+}
+
+const char * nm_ap_get_orig_essid (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, NULL);
+
+	return ap->orig_essid;
 }
 
 void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
@@ -192,11 +203,16 @@ void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 	if (ap->essid)
 	{
 		g_free (ap->essid);
+		g_free (ap->orig_essid);
 		ap->essid = NULL;
+		ap->orig_essid = NULL;
 	}
 
 	if (essid)
-		ap->essid = g_strdup (essid);
+	{
+		ap->orig_essid = g_strdup (essid);
+		ap->essid = nm_utils_essid_to_utf8 (essid);
+	}
 }
 
 

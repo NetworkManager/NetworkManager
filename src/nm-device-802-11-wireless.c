@@ -41,6 +41,7 @@
 #include "nm-activation-request.h"
 #include "nm-dbus-nmi.h"
 #include "wpa_ctrl.h"
+#include "cipher.h"
 
 /* #define IW_QUAL_DEBUG */
 
@@ -2486,6 +2487,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
+	char *			hex_essid;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2518,9 +2520,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
 		goto out;
 
-	essid = nm_ap_get_essid (ap);
+	essid = nm_ap_get_orig_essid (ap);
+	hex_essid = cipher_bin2hexstr (essid, strlen (essid), -1);
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i ssid \"%s\"", nwid, essid))
+			"SET_NETWORK %i ssid %s", nwid, hex_essid))
 		goto out;
 
 	/* Ad-Hoc ? */
