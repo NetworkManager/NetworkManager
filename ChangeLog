@@ -1,3 +1,19 @@
+2006-01-25  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/wireless-applet.glade
+		- Remove WPA2 Checkbox
+
+	* gnome/applet/wireless-security-manager.c
+		- (wsm_set_capabilities): split up sections for wpa and wpa2.
+			This means the Wireless Security menu now has two WPA options,
+			one for "WPA Personal" and one for "WPA2 Personal"
+
+	* gnome/applet/wso-wpa-psk.[ch]
+		- (wso_wpa_psk_new): remove stuff for WPA2 checkbox, and use
+			'wpa2' argument to determine WPA version to use
+		- (append_dbus_params_func): pass stored WPA version to cipher
+			rather than using the (removed) checkbox
+
 2006-01-24  Robert Love  <rml@novell.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c: Null-out the original byte array
