@@ -1,12 +1,13 @@
 TODO items for NetworkManager
 -----------------------------
 
-Any of these items are of course fair game for anyone, patches are greatly welcome.  It also serves as a "what still needs to be done" list.
+Any of these items are of course fair game for anyone, patches are greatly
+welcome.  It also serves as a "what still needs to be done" list.
 
 
-- WPA support
+- WPA Enterprise support
 
-WPA support is greatly, significantly, mightily needed.
+Support WPA Enterprise. 
 
 
 - Access Point link checking thresholds
@@ -14,9 +15,11 @@ WPA support is greatly, significantly, mightily needed.
 Wireless link checking could be enhanced to check the signal strength of an access point and switch if the current access point a wireless card is associated with has dropped below say, 20%.
 
 
-- Gracefully recover from dbus and hal dropouts
+- Gracefully recover from dbus dropouts
 
-There is currently no logic to gracefully recover from a crashed/killed dbus or hal.  There are dbus functions for notification when services come up and go away which could be used here.  Remeber that when dbus dies, hal also dies at the moment.
+There is currently no logic to gracefully recover from a crashed/killed dbus.
+There are dbus functions for notification when services come up and go away
+that we could use here.  Note that when dbus dies, hal also dies at the moment.
 
 
 - Support 40/64 bit passphrases

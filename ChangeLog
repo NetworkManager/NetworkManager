@@ -1,5 +1,10 @@
 2006-01-26  Robert Love  <rml@novell.com>
 
+	* TODO: Update.  WPA support is in the bag and HAL restarts (should)
+	  work.
+
+2006-01-26  Robert Love  <rml@novell.com>
+
 	* configure.in: Change '-Wno-unused' to '-Wno-unused-parameter'
 	* gnome/applet/applet-compat.c, gnome/applet/applet-dbus-devices.c,
 	  gnome/applet/applet-dbus-info.c, gnome/applet/applet-dbus.c,
