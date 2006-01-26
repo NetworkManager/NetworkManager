@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-17 19:56-0500\n"
+"POT-Creation-Date: 2006-01-26 12:18-0500\n"
 "PO-Revision-Date: 2005-09-06 14:52-0400\n"
 "Last-Translator: Adam Weinberger <adamw@gnome.org>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
@@ -505,38 +505,34 @@ msgid "C_onnect"
 msgstr "C_onnect"
 
 #: ../gnome/applet/wireless-applet.glade.h:18
-msgid "Connect using WPA2"
-msgstr "Connect using WPA2"
-
-#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Connection Information"
 msgstr "Connection Information"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Default Route:"
 msgstr "Default Route:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/wireless-applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Destination Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "Hardware Address:"
 msgstr "Hardware Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "IP Address:"
 msgstr "IP Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/wireless-applet.glade.h:23
 msgid "Interface:"
 msgstr "Interface:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/wireless-applet.glade.h:24
 msgid "Key:"
 msgstr "Key:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:25
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -548,7 +544,7 @@ msgstr ""
 "WEP 40/128-bit hex\n"
 "WEP 40/128-bit ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:30
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -556,85 +552,89 @@ msgstr ""
 "Open System\n"
 "Shared Key"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:32
 msgid "Other Wireless Network..."
 msgstr "Other Wireless Network..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:33
 msgid "Passphrase:"
 msgstr "Passphrase:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Password:"
 msgstr "Password:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Primary DNS:"
 msgstr "Primary DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Secondary DNS:"
 msgstr "Secondary DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "Subnet Mask:"
 msgstr "Subnet Mask:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/wireless-applet.glade.h:38
 msgid "Type:"
 msgstr "Type:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "User Name:"
 msgstr "User Name:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "Wireless Network Key Required"
 msgstr "Wireless Network Key Required"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "Wireless _adapter:"
 msgstr "Wireless _adapter:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Always Trust this Wireless Network"
 msgstr "_Always Trust this Wireless Network"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/wireless-applet.glade.h:43
 msgid "_Don't remind me again"
 msgstr "_Do not remind me again"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/wireless-applet.glade.h:44
 msgid "_Login to Network"
 msgstr "_Login to Network"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/wireless-applet.glade.h:45
 msgid "_Network Name:"
 msgstr "_Network Name:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/wireless-applet.glade.h:46
 msgid "_Wireless Security:"
 msgstr "_Wireless Security:"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/wireless-applet.glade.h:47
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/wireless-applet.glade.h:48
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/wireless-applet.glade.h:49
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/wireless-applet.glade.h:50
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 
-#: ../gnome/applet/wso-wpa-psk.c:165
-msgid "WPA/WPA2 Personal"
-msgstr "WPA/WPA2 Personal"
+#: ../gnome/applet/wso-wpa-psk.c:171
+msgid "WPA2 Personal"
+msgstr "WPA2 Personal"
+
+#: ../gnome/applet/wso-wpa-psk.c:173
+msgid "WPA Personal"
+msgstr "WPA Personal"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:358
 msgid "Cannot add VPN connection"
