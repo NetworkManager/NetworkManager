@@ -58,6 +58,7 @@ NetworkManager_SOURCES =				\
 		nm-ap-security-wep.h		\
 		nm-ap-security-wpa-psk.c		\
 		nm-ap-security-wpa-psk.h		\
+		kernel-types.h				\
 		wpa.c					\
 		wpa.h					\
 		wpa_ctrl.c				\

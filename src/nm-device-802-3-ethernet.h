@@ -28,18 +28,6 @@
 
 #include "nm-device.h"
 
-/*
- * The kernel headers <linux/mii.h> and <linux/ethtool.h> leak the kernel-only
- * types u16, u32, et al.  User-space does not supply these types, so we define
- * them here.
- */
-#ifndef u64
-# define u64	__u64
-# define u32	__u32
-# define u16	__u16
-# define u8	__u8
-#endif
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_DEVICE_802_3_ETHERNET			(nm_device_802_3_ethernet_get_type ())

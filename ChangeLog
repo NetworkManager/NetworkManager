@@ -1,5 +1,15 @@
 2006-01-26  Robert Love  <rml@novell.com>
 
+	* src/Makefile.am, src/kernel-types.h: Now that two different source
+	  files are feeling the crack-addled leakage of kernel types such as
+	  u32 and s8 -- superior to __u64 and __u8, to be sure, but not valid
+	  types in user-space -- define a header and include it as needed.
+	* src/nm-device-802-3-ethernet.c: Include kernel-types.h
+	* src/nm-device-802-3-ethernet.h: Remove defines.
+	* src/wpa.c: Remove defines and include kernel-types.h.
+
+2006-01-26  Robert Love  <rml@novell.com>
+
 	* TODO: Update.  WPA support is in the bag and HAL restarts (should)
 	  work.
 
@@ -524,7 +534,7 @@
 	  	- (nmu_create_dbus_error_message): rename parameter 'namespace'
 			to 'exception_namespace' (:namespace is a keyword in
 			C++)
-			
+
 2006-01-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
@@ -1422,7 +1432,7 @@
 	* configure.in, initscript/SUSE/.cvsignore,
 	  initscript/SUSE/Makefile.am: support new networkmanager-dispatcher
 	  initscript.
-	
+
 2005-12-08  Robert Love  <rml@novell.com>
 
 	* initscript/SUSE/networkmanager.in: Do not start 'networking' service.

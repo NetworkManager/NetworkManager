@@ -33,6 +33,7 @@
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "kernel-types.h"
 
 #define NM_DEVICE_802_3_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetPrivate))
 

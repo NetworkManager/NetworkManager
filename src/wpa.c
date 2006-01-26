@@ -16,18 +16,9 @@
 #include <iwlib.h>
 #include <glib.h>
 
+#include "kernel-types.h"
 #include "wpa.h"
 #include "nm-utils.h"
-
-/* crack */
-typedef uint64_t u64;
-typedef uint32_t u32;
-typedef uint16_t u16;
-typedef uint8_t u8;
-typedef int64_t s64;
-typedef int32_t s32;
-typedef int16_t s16;
-typedef int8_t s8;
 
 #define WPA_GET_LE16(a) ((u16) (((a)[1] << 8) | (a)[0]))
 
