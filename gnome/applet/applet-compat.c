@@ -216,7 +216,6 @@ generic_convert_wep_entry (GConfClient *client,
 	int					key_item_id = -1;
 	int					real_we_cipher = IW_AUTH_CIPHER_WEP104;
 	IEEE_802_11_Cipher *	real_cipher = NULL;
-	int					ret;
 	char *				hashed_key = NULL;
 
 	g_return_if_fail (client != NULL);

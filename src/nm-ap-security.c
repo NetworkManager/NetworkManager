@@ -288,8 +288,6 @@ nm_ap_security_new_copy (NMAPSecurity *self)
 void
 nm_ap_security_copy_properties (NMAPSecurity *self, NMAPSecurity *dst)
 {
-	int	key_len;
-
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (dst != NULL);
 	g_return_if_fail (self != dst);

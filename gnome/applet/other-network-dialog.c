@@ -91,7 +91,6 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
  */
 static void nmwa_ond_device_combo_changed (GtkWidget *dev_combo, gpointer user_data)
 {
-	int			choice;
 	GtkDialog *	dialog = (GtkDialog *) user_data;
 	WirelessSecurityManager * wsm;
 	GtkWidget *	wso_widget;
@@ -150,7 +149,6 @@ static void nmwa_ond_device_combo_changed (GtkWidget *dev_combo, gpointer user_d
  */
 static void nmwa_ond_security_combo_changed (GtkWidget *combo, gpointer user_data)
 {
-	int			choice;
 	GtkDialog *	dialog = (GtkDialog *) user_data;
 	WirelessSecurityManager * wsm;
 	GtkWidget *	wso_widget;
@@ -403,8 +401,6 @@ static void nmwa_ond_response_cb (GtkDialog *dialog, gint response, gpointer dat
 	{
 		GtkEntry *	network_name_entry;
 		const char *	essid = NULL;
-		const char *	key = NULL;
-		int			key_type = -1;
 
 		network_name_entry = GTK_ENTRY (glade_xml_get_widget (xml, "network_name_entry"));
 		essid = gtk_entry_get_text (network_name_entry);

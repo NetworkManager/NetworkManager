@@ -139,8 +139,6 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	NMIP4Config *		config;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
-	int				i = -1;
-	gboolean			success = FALSE;
 	int				err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);

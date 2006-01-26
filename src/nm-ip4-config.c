@@ -329,8 +329,6 @@ guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)
 
 /* libnl convenience/conversion functions */
 
-extern void rtnl_addr_set_prefixlen (struct rtnl_addr *, int);
-
 static int ip4_addr_to_rtnl_local (guint32 ip4_address, struct rtnl_addr *addr)
 {
 	struct nl_addr * local = NULL;

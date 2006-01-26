@@ -46,9 +46,6 @@
 
 static DBusMessage * new_invalid_args_error (DBusMessage *message, const char *func)
 {
-	char *		msg;
-	DBusMessage *	reply;
-
 	g_return_val_if_fail (message != NULL, NULL);
 	g_return_val_if_fail (func != NULL, NULL);
 
@@ -108,7 +105,6 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
 
 	if (result == GNOME_KEYRING_RESULT_OK)
 	{
-		gchar *			key;
 		gchar *			escaped_network;
 		GnomeKeyringFound *	found;
 		NMGConfWSO *		gconf_wso;
@@ -186,9 +182,6 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 	/* It's not a new key, so try to get the key from the keyring. */
 	if (!new_key)
 	{
-		GnomeKeyringResult ret;
-		GList *found_list = NULL;
-		char *key = NULL;
 		NMGetNetworkKeyCBData *cb_data;
 
 		cb_data = g_malloc0 (sizeof (NMGetNetworkKeyCBData));
@@ -372,7 +365,6 @@ nmi_dbus_get_networks (DBusConnection *connection,
 		reply = nmu_create_dbus_error_message (message, NMI_DBUS_SERVICE, NO_NET_ERROR, NO_NET_ERROR_MSG);
 	}
 
-out:
 	return reply;
 }
 
@@ -403,7 +395,6 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	char *			escaped_network = NULL;
 	char *			essid = NULL;
 	gint				timestamp = -1;
-	dbus_int32_t		dbus_int;
 	gboolean			trusted = FALSE;
 	DBusMessageIter 	iter, array_iter;
 	GConfClient *		client;
@@ -625,9 +616,7 @@ nmi_dbus_get_vpn_connection_properties (DBusConnection *connection,
 {
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	DBusMessage *	reply = NULL;
-	gchar *		gconf_key = NULL;
 	char *		vpn_connection = NULL;
-	GConfValue *	value;
 	char *		escaped_name = NULL;
 	char *		name = NULL;
 	char *		service_name = NULL;
@@ -973,7 +962,6 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
 	char *			essid = NULL;
 	gboolean			automatic;
-	dbus_bool_t		args_good;
 	NMGConfWSO *		gconf_wso = NULL;
 	DBusMessageIter	iter;
 	char *			bssid;

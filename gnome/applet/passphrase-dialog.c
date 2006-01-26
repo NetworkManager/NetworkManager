@@ -80,7 +80,6 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
  */
 static void nmi_passphrase_dialog_security_combo_changed (GtkWidget *security_combo, gpointer user_data)
 {
-	int			choice;
 	GtkDialog *	dialog = (GtkDialog *) user_data;
 	WirelessSecurityManager * wsm;
 	GtkWidget *	wso_widget;
@@ -130,7 +129,6 @@ nmi_passphrase_dialog_response_received (GtkWidget *dialog,
 {
 	NMWirelessApplet *	applet;
 	GladeXML *		xml;
-	GtkEntry *		entry;
 	GtkComboBox *		security_combo;
 	DBusMessage *		message;
 	WirelessSecurityManager *wsm;
@@ -190,7 +188,6 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 {
 	GtkWidget *				dialog;
 	GtkButton *				ok_button;
-	GtkEntry *				entry;
 	GtkWidget *				label;
 	GladeXML *				xml;
 	WirelessSecurityManager *	wsm;

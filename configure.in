@@ -262,7 +262,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	for option in -Wshadow -Wmissing-declarations -Wmissing-prototypes \
 		      -Wdeclaration-after-statement -Wstrict-prototypes \
-		      -Wfloat-equal -Wno-unused -Wno-sign-compare; do
+		      -Wfloat-equal -Wno-unused-parameter -Wno-sign-compare; do
 		SAVE_CFLAGS="$CFLAGS"
 		CFLAGS="$CFLAGS $option"
 		AC_MSG_CHECKING([whether gcc understands $option])

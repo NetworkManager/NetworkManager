@@ -603,8 +603,6 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 
 void nm_ap_add_capabilities_for_wep (NMAccessPoint *ap)
 {
-	guint32		caps;
-
 	g_return_if_fail (ap != NULL);
 
 	ap->capabilities |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);

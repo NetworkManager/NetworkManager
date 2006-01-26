@@ -653,8 +653,6 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 {
 	NMDevice *	self;
 	NMData *		data;
-	NMAccessPoint *ap;
-	NMAPSecurity *	security;
 	const char *	iface;
 	NMActStageReturn	ret;
 
@@ -1007,7 +1005,6 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 {
 	NMData *			data = NULL;
 	NMDevice *		self = NULL;
-	NMAccessPoint *	ap = NULL;
 	NMIP4Config *		ip4_config = NULL;
 	NMActStageReturn	ret;
 

@@ -104,7 +104,6 @@ void wsm_update_combo (WirelessSecurityManager *wsm, GtkComboBox *combo)
 {
 	GtkListStore *	model;
 	GSList *		elt;
-	gboolean		ret = FALSE;
 
 	g_return_if_fail (wsm != NULL);
 	g_return_if_fail (combo != NULL);
@@ -174,8 +173,6 @@ gboolean wsm_validate_active (WirelessSecurityManager *wsm, GtkComboBox *combo, 
 
 WirelessSecurityOption * wsm_get_option_for_active (WirelessSecurityManager *wsm, GtkComboBox *combo)
 {
-	WirelessSecurityOption * opt = NULL;
-
 	g_return_val_if_fail (wsm != NULL, NULL);
 	g_return_val_if_fail (combo != NULL, NULL);
 

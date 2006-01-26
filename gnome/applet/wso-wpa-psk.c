@@ -99,8 +99,6 @@ append_dbus_params_func (WirelessSecurityOption *opt,
                          DBusMessage *message)
 {
 	IEEE_802_11_Cipher *	cipher = NULL;
-	GtkWidget *			auth_combo;
-	int					auth_alg = -1;
 	GtkWidget *			entry;
 	const char *			input;
 
@@ -157,7 +155,6 @@ wso_wpa_psk_new (const char *glade_file,
                  gboolean wpa2)
 {
 	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
 	OptData *				data = NULL;
 	GtkWidget *			key_type_combo;
 	int					num_added;

@@ -119,7 +119,6 @@ static gboolean append_dbus_params_func (WirelessSecurityOption *opt, const char
 WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
 {
 	WirelessSecurityOption * opt = NULL;
-	GladeXML *			xml = NULL;
 	OptData *				data = NULL;
 
 	g_return_val_if_fail (glade_file != NULL, NULL);

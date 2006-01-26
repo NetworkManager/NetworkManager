@@ -61,7 +61,6 @@ static void test_inputs (IEEE_802_11_Cipher *cipher, const char *test, int selec
 #define ESSID	"ThisIsASSID"
 	struct Inputs * input = &test_input[selector];
 	char *output;
-	char *correct_output;
 
 	/* Underrun */
 	if ((ieee_802_11_cipher_validate (cipher, ESSID, input->underrun)) != -1)

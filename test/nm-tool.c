@@ -283,7 +283,6 @@ static void detail_device (DBusConnection *connection, const char *path)
 		/* Wireless specific information */
 		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{
-			char *str_strength;
 			int	 i;
 
 			printf ("\n  Wireless Settings\n");

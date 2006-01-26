@@ -337,7 +337,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 	{
 		char *			op = nm_dbus_get_object_path_for_device (dev);
 		const char *		iface = nm_device_get_iface (dev);
-		dbus_uint32_t		type = (dbus_uint32_t) nm_device_get_device_type (dev);
+		dbus_uint32_t		type = nm_device_get_device_type (dev);
 		const char *		udi = nm_device_get_udi (dev);
 		gchar *			ip4_address;
 		gchar *			broadcast;

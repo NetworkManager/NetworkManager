@@ -98,17 +98,6 @@ typedef struct
 
 
 static void	nm_device_802_11_wireless_ap_list_clear (NMDevice80211Wireless *self);
-void	nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
-                                                    const char *essid);
-char *		nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self);
-void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
-                                                    struct ether_addr *bssid);
-void			nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
-                                                         const char *key,
-                                                         int auth_method);
-
-gboolean	nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
-									 const int mode);
 
 static gboolean nm_device_802_11_wireless_scan (gpointer user_data);
 
@@ -138,10 +127,8 @@ static void		remove_link_timeout (NMDevice80211Wireless *self);
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
-	NMDevice80211Wireless *	wdev;
 	NMSock *			sk;
 	int				err;
-	wireless_scan_head	scan_data;
 	guint32			caps = NM_DEVICE_CAP_NONE;
 	iwrange			range;
 	struct iwreq		wrq;
@@ -230,11 +217,9 @@ static void
 real_init (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMDevice80211WirelessClass *	klass;
 	NMData *				app_data;
 	guint32				caps;
 	NMSock *				sk;
-	NMDeviceClass *		parent_class;
 
 	self->priv->scan_mutex = g_mutex_new ();
 	nm_register_mutex_desc (self->priv->scan_mutex, "Scan Mutex");
@@ -258,7 +243,6 @@ real_init (NMDevice *dev)
 	{
 		struct iw_range range;
 		struct iwreq wrq;
-		int minlen = ((char *) &range.enc_capa) - (char *) &range + sizeof (range.enc_capa);
 
 		memset (&wrq, 0, sizeof (wrq));
 		strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
@@ -646,9 +630,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
                                              const char *essid,
                                              NMAPSecurity *security)
 {
-	gboolean			 encrypted = FALSE;
 	NMAccessPoint		*ap = NULL;
-	NMAccessPoint		*tmp_ap = NULL;
 	NMData *			app_data;
 	NMAccessPointList *	dev_ap_list;
 
@@ -700,25 +682,6 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 	nm_ap_set_security (ap, security);
 
 	return ap;
-}
-
-
-/*
- * nm_device_802_11_wireless_ap_list_add_ap
- *
- * Add an access point to the devices internal AP list.
- *
- */
-static void
-nm_device_802_11_wireless_ap_list_add_ap (NMDevice80211Wireless *self,
-                                          NMAccessPoint *ap)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (ap != NULL);
-
-	nm_ap_list_append_ap (self->priv->ap_list, ap);
-	/* Transfer ownership of ap to the list by unrefing it here */
-	nm_ap_unref (ap);
 }
 
 
@@ -1823,11 +1786,9 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 		iface = nm_device_get_iface (NM_DEVICE (self));
 		if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
-			int			err;
 			int			orig_mode = IW_MODE_INFRA;
 			double		orig_freq = 0;
 			int			orig_rate = 0;
-			const int		interval = 20;
 			struct iwreq	wrq;
 
 			orig_mode = nm_device_802_11_wireless_get_mode (self);
@@ -2301,7 +2262,6 @@ static gboolean
 link_timeout_cb (gpointer user_data)
 {
 	NMDevice *			dev = NM_DEVICE (user_data);
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 
 	g_assert (dev);
 
@@ -2441,7 +2401,6 @@ static gboolean
 supplicant_interface_init (NMDevice80211Wireless *self)
 {
 	struct wpa_ctrl *	ctrl;
-	struct wpa_ctrl *	ctrl_if = NULL;
 	char *			socket_path;
 	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
 	gboolean			success = FALSE;
@@ -2561,7 +2520,6 @@ supplicant_monitor_start (NMDevice80211Wireless *self)
 	int			fd = -1;
 	GIOChannel *	channel;
 	GMainContext *	context;
-	NMData *		data = nm_device_get_app_data (NM_DEVICE (self));
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -2769,7 +2727,6 @@ real_activation_success_handler (NMDevice *dev,
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	struct ether_addr	addr;
 	NMAccessPoint *	ap = nm_act_request_get_ap (req);
-	NMAccessPoint *	tmp_ap;
 	gboolean			automatic;
 	NMData *			app_data;
 
@@ -2799,7 +2756,6 @@ static void
 real_activation_failure_handler (NMDevice *dev,
                                  NMActRequest *req)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMData *			app_data;
 	NMAccessPoint *	ap;
 
@@ -2820,7 +2776,6 @@ real_activation_failure_handler (NMDevice *dev,
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMActRequest *			req;
 	gboolean interrupt = FALSE;
 
@@ -2876,7 +2831,6 @@ nm_device_802_11_wireless_dispose (GObject *object)
 static void
 nm_device_802_11_wireless_finalize (GObject *object)
 {
-	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessClass *	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (object);
 	NMDeviceClass *			parent_class;  
 
@@ -3003,7 +2957,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 {
 	struct iwreq iwr;
 	guint8 *res_buf;
-	size_t len, res_buf_len = IW_SCAN_MAX_DATA;
+	size_t res_buf_len = IW_SCAN_MAX_DATA;
 	guint8 tries = 0;
 	gboolean success = FALSE;
 

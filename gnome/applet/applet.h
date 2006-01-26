@@ -53,8 +53,6 @@ enum NMWAEncryptionKeyTypes
 	KEY_TYPE_HEX_KEY = 2
 };
 
-static GType nmwa_get_type (void); /* prototype for G_DEFINE_TYPE */
-
 #define NM_TYPE_WIRELESS_APPLET			(nmwa_get_type())
 #define NM_WIRELESS_APPLET(object)			(G_TYPE_CHECK_INSTANCE_CAST((object), NM_TYPE_WIRELESS_APPLET, NMWirelessApplet))
 #define NM_WIRELESS_APPLET_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIRELESS_APPLET, NMWirelessAppletClass))

@@ -66,8 +66,6 @@ NMGConfWSO * nm_gconf_wso_new_deserialize_dbus (DBusMessageIter *iter);
 
 NMGConfWSO * nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network);
 
-NMGConfWSO * nm_gconf_wso_new_deserialize_gconf (GConfClient *client, const char *network);
-
 NMGConfWSO * nm_gconf_wso_new_from_wso (WirelessSecurityOption *opt, const char *ssid);
 
 int nm_gconf_wso_get_we_cipher (NMGConfWSO *self);

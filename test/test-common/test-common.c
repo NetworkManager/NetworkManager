@@ -53,7 +53,7 @@ test_result (const char *progname,
 		result_string = "SUCCEED";
 
 	full_msg = g_strdup_printf ("%s: (%s) %s %s\n", progname, test, result_string, errmsg ? errmsg : "");
-	fprintf (stderr, full_msg);
+	fprintf (stderr, "%s", full_msg);
 	g_free (full_msg);
 	g_free (errmsg);
 

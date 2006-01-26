@@ -43,36 +43,6 @@
 
 
 /*
- * deal_with_dbus_error
- *
- * Ignore some common dbus errors
- *
- */
-static int deal_with_dbus_error (const char *function, const char *method, DBusError *error)
-{
-	int	ret = RETURN_FAILURE;
-
-	if (!strcmp (error->name, DBUS_NO_SERVICE_ERROR))
-		ret = RETURN_NO_NM;
-	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_NET_ERROR))
-		ret = RETURN_SUCCESS;
-	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_DEVICE_ERROR))
-		ret = RETURN_SUCCESS;
-	else if (!strcmp (error->name, NM_DBUS_NO_NETWORKS_ERROR))
-		ret = RETURN_SUCCESS;
-	else if (!strcmp (error->name, NM_DBUS_NO_ACTIVE_VPN_CONNECTION))
-		ret = RETURN_SUCCESS;
-	else if (!strcmp (error->name, NM_DBUS_NO_VPN_CONNECTIONS))
-		ret = RETURN_SUCCESS;
-
-	if ((ret != RETURN_SUCCESS) && (ret != RETURN_NO_NM))
-		nm_warning ("%s(): %s raised on method '%s':\n %s\n\n", function, error->name, method, error->message);
-
-	return ret;
-}
-
-
-/*
  * nmwa_dbus_filter
  *
  */

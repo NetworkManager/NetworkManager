@@ -78,7 +78,7 @@ static void		nmwa_context_menu_update (NMWirelessApplet *applet);
 static GtkWidget *	nmwa_get_instance (NMWirelessApplet *applet);
 static void		nmwa_update_state (NMWirelessApplet *applet);
 static void		nmwa_dropdown_menu_deactivate_cb (GtkWidget *menu, NMWirelessApplet *applet);
-
+static GType		nmwa_get_type (void);	/* for G_DEFINE_TYPE */
 
 G_DEFINE_TYPE(NMWirelessApplet, nmwa, EGG_TYPE_TRAY_ICON)
 
@@ -178,7 +178,7 @@ static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 
 	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
 	                       _("Error displaying connection information: "), err);
-	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, msg);
+	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", msg);
 	g_free (msg);
 	gtk_window_present (GTK_WINDOW (error_dialog));
 	g_signal_connect_swapped (error_dialog, "response", G_CALLBACK (gtk_widget_destroy), error_dialog);
@@ -859,7 +859,6 @@ static void nmwa_set_icon (NMWirelessApplet *applet, GdkPixbuf *link_icon, GdkPi
 		gdk_pixbuf_composite (vpn_icon, composite, 0, 0, gdk_pixbuf_get_width (vpn_icon),
 							gdk_pixbuf_get_height (vpn_icon), 0, 0, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
 
-out:
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
 
 	/* Add some padding to the applet to ensure the
@@ -2457,7 +2456,8 @@ static void nmwa_gconf_vpn_connections_notify_callback (GConfClient *client, gui
  * Destroy the applet and clean up its data
  *
  */
-static void nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
+static void G_GNUC_NORETURN
+nmwa_destroy (NMWirelessApplet *applet, gpointer user_data)
 {
 	if (applet->dropdown_menu)
 		nmwa_dropdown_menu_clear (applet->dropdown_menu);

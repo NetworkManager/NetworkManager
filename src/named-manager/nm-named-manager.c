@@ -556,9 +556,6 @@ static gboolean
 remove_ip4_config_from_named (NMNamedManager *mgr, NMIP4Config *config)
 {
 	const char *domain;
-	DBusMessage *	message;
-	DBusMessage *	reply;
-	DBusError		error;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);

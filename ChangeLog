@@ -1,3 +1,24 @@
+2006-01-26  Robert Love  <rml@novell.com>
+
+	* configure.in: Change '-Wno-unused' to '-Wno-unused-parameter'
+	* gnome/applet/applet-compat.c, gnome/applet/applet-dbus-devices.c,
+	  gnome/applet/applet-dbus-info.c, gnome/applet/applet-dbus.c,
+	  gnome/applet/applet.c, gnome/applet/applet.h, src/nm-dbus-device.c,
+	  gnome/applet/nm-gconf-wso-wep.c, gnome/applet/nm-gconf-wso-wpa-psk.c,
+	  gnome/applet/nm-gconf-wso.c, gnome/applet/nm-gconf-wso.h,
+	  gnome/applet/other-network-dialog.c, src/nm-device.c, test/nm-tool.c,
+	  gnome/applet/passphrase-dialog.c, src/nm-device-802-11-wireless.c,
+	  gnome/applet/wireless-security-manager.c, src/nm-ip4-config.c,
+	  gnome/applet/wireless-security-option.c, src/nm-ap-security.c,
+	  gnome/applet/wso-wep-ascii.c, gnome/applet/wso-wep-hex.c,
+	  gnome/applet/wso-wep-passphrase.c, gnome/applet/wso-wpa-psk.c,
+	  libnm-util/dbus-helpers.c, src/NetworkManagerAP.c, src/nm-dbus-nmi.c,
+	  src/NetworkManagerSystem.c, src/nm-ap-security-wep.c,
+	  src/nm-device-802-11-wireless.h, test/libnm-util/test-ciphers.c,
+	  src/named-manager/nm-named-manager.c, test/test-common/test-common.c:
+	  Kill unused variables, labels, and static functions.  Don't pass
+	  string literals as the format string for printf-like functions.
+
 2006-01-25  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/wireless-applet.glade

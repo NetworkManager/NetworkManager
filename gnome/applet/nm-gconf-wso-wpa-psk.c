@@ -73,8 +73,6 @@ NMGConfWSOWPA_PSK *
 nm_gconf_wso_wpa_psk_new_deserialize_gconf (GConfClient *client, const char *network, int we_cipher)
 {
 	NMGConfWSOWPA_PSK *	security = NULL;
-	char *				key;
-	int					key_len;
 	int					wpa_version;
 	int					key_mgt;
 

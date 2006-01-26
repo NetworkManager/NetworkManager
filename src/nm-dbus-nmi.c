@@ -540,7 +540,7 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 		/* Get properties on each network */
 		if ((message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworkProperties")))
 		{
-			dbus_int32_t			type_as_int32 = (dbus_int32_t) nm_ap_list_get_type (cb_data->list);
+			dbus_int32_t			type_as_int32 = nm_ap_list_get_type (cb_data->list);
 			DBusPendingCall *		net_pcall = NULL;
 
 			dbus_message_append_args (message, DBUS_TYPE_STRING, &value, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
@@ -577,7 +577,7 @@ out:
 void nm_dbus_update_allowed_networks (DBusConnection *connection, NMAccessPointList *list, NMData *data)
 {
 	DBusMessage *		message;
-	dbus_int32_t		type_as_int32 = (dbus_int32_t) nm_ap_list_get_type (list);
+	dbus_int32_t		type_as_int32 = nm_ap_list_get_type (list);
 	DBusPendingCall *	pcall = NULL;
 
 	g_return_if_fail (connection != NULL);

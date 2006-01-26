@@ -255,7 +255,6 @@ nm_gconf_wso_serialize_gconf (NMGConfWSO *self,
                               GConfClient *client,
                               const char *network)
 {
-	dbus_int32_t	dbus_we_cipher;
 	char *		key;
 
 	g_return_val_if_fail (self != NULL, FALSE);

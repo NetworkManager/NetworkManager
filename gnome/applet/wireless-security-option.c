@@ -147,7 +147,6 @@ void wso_wep_auth_combo_setup (WirelessSecurityOption *opt, GtkComboBox * combo)
 {
 	GtkListStore *	model;
 	GtkTreeIter	iter;
-	char *		label;
 
 	g_return_if_fail (opt != NULL);
 	g_return_if_fail (combo != NULL);
@@ -185,7 +184,6 @@ int wso_wep_auth_combo_get_auth_alg (WirelessSecurityOption *opt, GtkComboBox * 
 void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * combo)
 {
 	GtkListStore * model;
-	char *		label;
 
 	g_return_if_fail (opt != NULL);
 	g_return_if_fail (combo != NULL);
@@ -200,7 +198,6 @@ wso_wpa_create_key_type_model (int capabilities,
                                int *num_added)
 {
 	GtkListStore *	model;
-	GSList *		elt;
 	GtkTreeIter	iter;
 	int			num = 0;
 

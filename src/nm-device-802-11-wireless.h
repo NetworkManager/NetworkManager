@@ -87,6 +87,11 @@ void nm_device_802_11_wireless_set_address (NMDevice80211Wireless *dev);
 void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
                                                     struct ether_addr *bssid);
 
+char *		nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self);
+
+gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
+										 const int mode);
+
 NMAccessPoint *	nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *dev);
 
 NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *dev,

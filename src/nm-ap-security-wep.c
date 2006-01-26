@@ -57,7 +57,6 @@ nm_ap_security_wep_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	char *			key = NULL;
 	int				key_len;
 	int				auth_algorithm;
-	DBusMessageIter	subiter;
 
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_WEP40) || (we_cipher == IW_AUTH_CIPHER_WEP104), NULL);
@@ -113,7 +112,6 @@ real_write_supplicant_config (NMAPSecurity *instance,
                               int nwid,
                               gboolean user_created)
 {
-	NMAPSecurityWEP *	self = NM_AP_SECURITY_WEP (instance);
 	gboolean			success = FALSE;
 	char *			msg = NULL;
 	const char *		key = nm_ap_security_get_key (instance);

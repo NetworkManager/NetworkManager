@@ -63,7 +63,6 @@ nmu_security_deserialize_wep (DBusMessageIter *iter,
 						int *auth_alg)
 {
 	char *			dbus_key;
-	int				dbus_key_len;
 	dbus_int32_t		dbus_auth_alg;
 
 	g_return_val_if_fail (iter != NULL, FALSE);
@@ -170,7 +169,6 @@ nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
 						int *key_mgt)
 {
 	char *			dbus_key;
-	int				dbus_key_len;
 	dbus_int32_t		dbus_wpa_version;
 	dbus_int32_t		dbus_key_mgt;
 

@@ -49,7 +49,6 @@ nm_gconf_wso_wep_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	char *			key = NULL;
 	int				key_len;
 	int				auth_algorithm;
-	DBusMessageIter	subiter;
 
 	g_return_val_if_fail (iter != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_WEP40) || (we_cipher == IW_AUTH_CIPHER_WEP104), NULL);
@@ -71,8 +70,6 @@ NMGConfWSOWEP *
 nm_gconf_wso_wep_new_deserialize_gconf (GConfClient *client, const char *network, int we_cipher)
 {
 	NMGConfWSOWEP *	security = NULL;
-	char *			key = NULL;
-	int				key_len;
 	int				auth_algorithm;
 
 	g_return_val_if_fail (client != NULL, NULL);
