@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-18 10:41+0100\n"
-"PO-Revision-Date: 2006-01-17 13:54+0100\n"
+"POT-Creation-Date: 2006-01-26 15:19+0100\n"
+"PO-Revision-Date: 2006-01-26 15:19+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
 "MIME-Version: 1.0\n"
@@ -178,10 +178,14 @@ msgid "G_roup Name:"
 msgstr "G_ruppenavn:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "Yderligere oplysninger"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Override _user name"
 msgstr "Overskriv br_ugernavn"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:7
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -189,19 +193,19 @@ msgstr ""
 "Indtast oplysninger fra din systemadministrator nedenfor. Du skal ikke "
 "indtaste din adgangskode her, da du bliver spurgt om den ved tilslutning."
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Use _domain for authentication"
 msgstr "Brug _domæne til brugerverifikation"
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "_Gateway:"
 msgstr "Ad_gangspunkt:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid "_Import Saved Configuration..."
 msgstr "_Importér gemt konfiguration..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:11
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
@@ -209,7 +213,7 @@ msgstr ""
 "_Navn brugt til at identificere forbindelsen til det private netværk, f.eks. "
 "\"Universitets VPN\" eller \"Virksomhedens netværk\""
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Brug kun VPN-forbindelse til flg. adresser"
 
