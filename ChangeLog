@@ -1,3 +1,9 @@
+2006-01-27  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: If DHCLIENT_SET_HOSTNAME is set
+	  but the DHCP server did not return a hostname, try to look up our
+	  name via DNS and set the system hostname to that.
+
 2006-01-27  Dan Williams  <dcbw@redhat.com>
 
 	* src/backends/NetworkManagerRedHat.c

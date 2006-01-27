@@ -1023,6 +1023,8 @@ void nm_system_set_hostname (NMIP4Config *config)
 {
 	shvarFile *file;
 	gchar *name, *buf, *hostname = NULL;
+	struct in_addr temp_addr;
+	struct hostent *host = NULL;
 
 	g_return_if_fail (config != NULL);
 
@@ -1035,10 +1037,26 @@ void nm_system_set_hostname (NMIP4Config *config)
 	if (!buf)
 		goto out_close;
 
-	if (!strcmp (buf, "yes")) {
+	if (!strcmp (buf, "yes")) 
+	{
 		hostname = nm_ip4_config_get_hostname (config);
-		if (hostname) {
-			nm_info ("Setting hostname to %s\n", hostname);
+		if (!hostname)
+		{
+			/* try to get hostname via dns */
+			temp_addr.s_addr = nm_ip4_config_get_address (config);
+			host = gethostbyaddr ((char *) &temp_addr, sizeof (temp_addr), AF_INET);
+			if (host)
+			{
+				hostname = g_strdup (host->h_name);
+				hostname = strtok (hostname, ".");	
+			}
+			else
+				nm_warning ("nm_system_set_hostname(): gethostbyaddr failed, h_errno = %d", h_errno);
+		}
+
+		if (hostname)
+		{
+			nm_info ("Setting hostname to '%s'", hostname);
 			if (sethostname (hostname, strlen (hostname)) < 0)
 				nm_warning ("Could not set hostname.");
 		}
@@ -1050,4 +1068,3 @@ out_close:
 out_gfree:
 	g_free (name);
 }
-
