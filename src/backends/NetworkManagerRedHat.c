@@ -345,6 +345,7 @@ typedef struct RHSystemConfigData
 {
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
+	gboolean		system_disabled;
 } RHSystemConfigData;
 
 
@@ -497,6 +498,17 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 		free (buf);
 	}
 
+	if ((buf = svGetValue (file, "NM_CONTROLLED")))
+	{
+		nm_debug ("NM_CONTROLLED=%s", buf);
+		if (!strcasecmp (buf, "no"))
+		{
+			nm_info ("System configuration disables device %s", nm_device_get_iface (dev));
+			sys_data->system_disabled = TRUE;
+		}
+		free (buf);
+	}		
+
 	sys_data->config = nm_ip4_config_new ();
 
 	if (!(sys_data->use_dhcp))
@@ -646,6 +658,13 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
  */
 gboolean nm_system_device_get_disabled (NMDevice *dev)
 {
+	RHSystemConfigData *sys_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->system_disabled;
+
 	return FALSE;
 }
 

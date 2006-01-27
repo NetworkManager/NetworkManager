@@ -1,5 +1,10 @@
 2006-01-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerRedHat.c
+		- Add NM_CONTROLLED system network script support for RH/Fedora
+
+2006-01-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/backends/NetworkManagerGentoo.c
 		- (nm_system_device_get_disabled): add missing function.
 			Gnome BZ #328780
