@@ -1,4 +1,8 @@
-2006-01-26  Robert Love  <rml@novell.com>
+2006-01-27  Clytie Siddall <clytie@riverland.net.au>
+
+	* configure.in	Added vi in ALL_LINGUAS line.
+	
+	2006-01-26  Robert Love  <rml@novell.com>
 
 	* src/Makefile.am, src/kernel-types.h: Now that two different source
 	  files are feeling the crack-addled leakage of kernel types such as
