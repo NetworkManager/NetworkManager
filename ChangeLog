@@ -1,5 +1,13 @@
 2006-01-27  Robert Love  <rml@novell.com>
 
+	* configure.in: Require wpa_supplicant.  Detect location of binary and
+	  use it.  Override with "--with-wpa_supplicant=foo".
+	* src/Makefile.am, src/nm-device-802-11-wireless.c: Do not hardcode the
+	  path to wpa_supplicant but use the auto-detected or user-provided
+	  value from configure.
+
+2006-01-27  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: If DHCLIENT_SET_HOSTNAME is set
 	  but the DHCP server did not return a hostname, try to look up our
 	  name via DNS and set the system hostname to that.
@@ -17,7 +25,7 @@
 
 2006-01-27  Clytie Siddall <clytie@riverland.net.au>
 
-	* configure.in	Added vi in ALL_LINGUAS line.
+	* configure.in:	Added vi in ALL_LINGUAS line.
 	
 2006-01-26  Robert Love  <rml@novell.com>
 

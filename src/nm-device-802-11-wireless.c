@@ -2154,7 +2154,6 @@ ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
 
 #define WPA_SUPPLICANT_GLOBAL_SOCKET		"/var/run/wpa_supplicant-global"
 #define WPA_SUPPLICANT_CONTROL_SOCKET		"/var/run/wpa_supplicant"
-#define WPA_SUPPLICANT_BINARY				"/usr/sbin/wpa_supplicant"
 
 
 static void
@@ -2366,7 +2365,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 	GError *	error = NULL;
 	GPid		pid = -1;
 
-	argv[0] = WPA_SUPPLICANT_BINARY;
+	argv[0] = WPA_SUPPLICANT_BIN;
 	argv[1] = "-g";
 	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
 	argv[3] = NULL;

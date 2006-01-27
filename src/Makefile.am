@@ -64,17 +64,18 @@ NetworkManager_SOURCES =				\
 		wpa_ctrl.c				\
 		wpa_ctrl.h
 
-NetworkManager_CPPFLAGS = 			\
-	$(DBUS_CFLAGS)					\
-	$(GTHREAD_CFLAGS)				\
-	$(HAL_CFLAGS)					\
-	$(OPENSSL_CFLAGS)				\
-	$(LIBNL_CFLAGS)				\
-	-DDBUS_API_SUBJECT_TO_CHANGE		\
-	-DG_DISABLE_DEPRECATED			\
-	-DBINDIR=\"$(bindir)\"			\
-	-DDATADIR=\"$(datadir)\"			\
-	-DSYSCONFDIR=\"$(sysconfdir)\"	\
+NetworkManager_CPPFLAGS = 							\
+	$(DBUS_CFLAGS)									\
+	$(GTHREAD_CFLAGS)								\
+	$(HAL_CFLAGS)									\
+	$(OPENSSL_CFLAGS)								\
+	$(LIBNL_CFLAGS)								\
+	-DWPA_SUPPLICANT_BIN=\"$(WPA_SUPPLICANT_BINARY_PATH)\"	\
+	-DDBUS_API_SUBJECT_TO_CHANGE						\
+	-DG_DISABLE_DEPRECATED							\
+	-DBINDIR=\"$(bindir)\"							\
+	-DDATADIR=\"$(datadir)\"							\
+	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DARP_DEBUG
 
 
