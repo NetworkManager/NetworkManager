@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-20 20:19+0100\n"
-"PO-Revision-Date: 2006-01-21 02:27+0100\n"
+"POT-Creation-Date: 2006-01-28 04:25+0100\n"
+"PO-Revision-Date: 2006-01-28 17:38+0100\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -21,17 +21,17 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:923
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Wachtwoordfrase voor draadloos netwerk %s"
 
-#: ../gnome/applet/applet-dbus.c:274
+#: ../gnome/applet/applet-dbus.c:244
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Verbinding maken met het draadloos netwerk '%s' is mislukt."
 
-#: ../gnome/applet/applet-dbus.c:279
+#: ../gnome/applet/applet-dbus.c:249
 msgid "Connection to the wired network failed."
 msgstr "Verbinding maken met het bedraad netwerk is mislukt."
 
@@ -153,8 +153,8 @@ msgid "VPN Login Message"
 msgstr "VPN-aanmeldbericht"
 
 #: ../gnome/applet/applet.c:760 ../gnome/applet/applet.c:2514
-#: ../gnome/applet/other-network-dialog.c:457
-#: ../gnome/applet/passphrase-dialog.c:209
+#: ../gnome/applet/other-network-dialog.c:453
+#: ../gnome/applet/passphrase-dialog.c:206
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -173,17 +173,17 @@ msgstr "Het netwerkapparaat \"%s (%s)\" ondersteunt draadloos scannen niet."
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Het netwerkapparaat \"%s (%s)\" ondersteunt link-detecteren niet."
 
-#: ../gnome/applet/applet.c:928
+#: ../gnome/applet/applet.c:927
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Apparaat %s wordt ingesteld voor het bedraad netwerk..."
 
-#: ../gnome/applet/applet.c:930
+#: ../gnome/applet/applet.c:929
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Apparaat %s wordt ingesteld op het draadloos netwerk '%s'..."
 
-#: ../gnome/applet/applet.c:938
+#: ../gnome/applet/applet.c:937
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Appraat %s wordt geconfigureerd voor het bedraad netwerk..."
@@ -192,32 +192,32 @@ msgstr "Appraat %s wordt geconfigureerd voor het bedraad netwerk..."
 # dit is een poging om binnen te komen
 # ik poog om binnen te komen
 # bezig met pogen om binen te komen
-#: ../gnome/applet/applet.c:940
+#: ../gnome/applet/applet.c:939
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Poging om binnen te komen bij draadloos netwerk '%s'..."
 
-#: ../gnome/applet/applet.c:948
+#: ../gnome/applet/applet.c:947
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Wachten op netwerksleutel voor draadloos netwerk '%s'..."
 
 # Verzoek een netwerkadres van het bedraad netwerk...
 # er wordt een netwerkadres voor het bedraad netwerk verzocht
-#: ../gnome/applet/applet.c:956 ../gnome/applet/applet.c:966
+#: ../gnome/applet/applet.c:955 ../gnome/applet/applet.c:965
 msgid "Requesting a network address from the wired network..."
 msgstr "Er wordt een netwerkadres verzocht voor het bedraad netwerk..."
 
-#: ../gnome/applet/applet.c:958 ../gnome/applet/applet.c:968
+#: ../gnome/applet/applet.c:957 ../gnome/applet/applet.c:967
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Er wordt een netwerkadres verzocht voor het draadloos netwerk '%s'..."
 
-#: ../gnome/applet/applet.c:976
+#: ../gnome/applet/applet.c:975
 msgid "Finishing connection to the wired network..."
 msgstr "Verbinding met het bedraad netwerk wordt voltooid..."
 
-#: ../gnome/applet/applet.c:978
+#: ../gnome/applet/applet.c:977
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Verbinding met het draadloos netwerk '%s' wordt voltooid..."
@@ -228,85 +228,85 @@ msgstr "Verbinding met het draadloos netwerk '%s' wordt voltooid..."
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1094
 msgid "NetworkManager is not running"
 msgstr "Geen NetworkManager..."
 
 # netwerk is uitgezet/netwerken is uitgezet/netwerken is niet mogelijk
-#: ../gnome/applet/applet.c:1108 ../gnome/applet/applet.c:1842
+#: ../gnome/applet/applet.c:1107 ../gnome/applet/applet.c:1841
 msgid "Networking disabled"
 msgstr "Netwerk is uitgeschakeld"
 
 # Netwerken
-#: ../gnome/applet/applet.c:1113
+#: ../gnome/applet/applet.c:1112
 msgid "No network connection"
 msgstr "Geen netwerkverbinding"
 
 # bedraad/bekabeld netwerk
-#: ../gnome/applet/applet.c:1118
+#: ../gnome/applet/applet.c:1117
 msgid "Wired network connection"
 msgstr "Bedraad netwerk"
 
-#: ../gnome/applet/applet.c:1122
+#: ../gnome/applet/applet.c:1121
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Verbonden met een Ad-hoc draadloos netwerk"
 
-#: ../gnome/applet/applet.c:1124
+#: ../gnome/applet/applet.c:1123
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Draadloze netwerkverbinding met '%s' (%d%%)"
 
 # verbinding naar/met
-#: ../gnome/applet/applet.c:1146
+#: ../gnome/applet/applet.c:1145
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-verbinding met '%s'"
 
 # Connecting? ipv connection?
-#: ../gnome/applet/applet.c:1154
+#: ../gnome/applet/applet.c:1153
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN verbinden met '%s'"
 
-#: ../gnome/applet/applet.c:1567
+#: ../gnome/applet/applet.c:1566
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Verbinden met ander draadloos netwerk..."
 
-#: ../gnome/applet/applet.c:1588
+#: ../gnome/applet/applet.c:1587
 msgid "Create _New Wireless Network..."
 msgstr "_Nieuw draadloos netwerk aanmaken..."
 
 # Netwerken
-#: ../gnome/applet/applet.c:1709
+#: ../gnome/applet/applet.c:1708
 msgid "_VPN Connections"
 msgstr "_VPN-verbindingen"
 
-#: ../gnome/applet/applet.c:1744
+#: ../gnome/applet/applet.c:1743
 msgid "_Configure VPN..."
 msgstr "VPN _configureren..."
 
-#: ../gnome/applet/applet.c:1748
+#: ../gnome/applet/applet.c:1747
 msgid "_Disconnect VPN..."
 msgstr "V_PN-verbinding verbreken..."
 
 # Netwerken
-#: ../gnome/applet/applet.c:1770
+#: ../gnome/applet/applet.c:1769
 msgid "_Dial Up Connections"
 msgstr "In_bel-verbindingen"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1781
+#: ../gnome/applet/applet.c:1780
 #, c-format
 msgid "Connect to %s..."
 msgstr "Verbinden met %s..."
 
-#: ../gnome/applet/applet.c:1787
+#: ../gnome/applet/applet.c:1786
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Verbinden met %s verbreken..."
 
 # Er zijn geen netwerkapparaten geconfigureerd/gevonden
-#: ../gnome/applet/applet.c:1836
+#: ../gnome/applet/applet.c:1835
 msgid "No network devices have been found"
 msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 
@@ -316,33 +316,33 @@ msgstr "Er zijn geen netwerkapparaten geconfigureerd"
 # NetworkManager loopt niet
 # Geen NetworkManager aanwezig
 # NetworkManager niet aanwezig
-#: ../gnome/applet/applet.c:2028
+#: ../gnome/applet/applet.c:2027
 msgid "NetworkManager is not running..."
 msgstr "Geen NetworkManager..."
 
 #. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2184
+#: ../gnome/applet/applet.c:2183
 msgid "Enable _Networking"
 msgstr "_Netwerk aanzetten"
 
 # Wireless gebruiken
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2190
+#: ../gnome/applet/applet.c:2189
 msgid "Enable _Wireless"
 msgstr "_Draadloos netwerk aanzetten"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2196
+#: ../gnome/applet/applet.c:2195
 msgid "Connection _Information"
 msgstr "_Verbindingsinformatie"
 
 #. Help item
-#: ../gnome/applet/applet.c:2207
+#: ../gnome/applet/applet.c:2206
 msgid "_Help"
 msgstr "_Hulp"
 
 #. About item
-#: ../gnome/applet/applet.c:2216
+#: ../gnome/applet/applet.c:2215
 msgid "_About"
 msgstr "I_nfo"
 
@@ -355,19 +355,19 @@ msgstr ""
 "Het NetworkManager-applet kon bepaalde vereiste bronnen niet vinden.  Het "
 "zal nu worden afgesloten.\n"
 
-#: ../gnome/applet/wireless-security-option.c:158
+#: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
 msgstr "Open systeem"
 
-#: ../gnome/applet/wireless-security-option.c:161
+#: ../gnome/applet/wireless-security-option.c:160
 msgid "Shared Key"
 msgstr "Gedeelde sleutel"
 
-#: ../gnome/applet/wireless-security-option.c:212
+#: ../gnome/applet/wireless-security-option.c:209
 msgid "TKIP (Default)"
 msgstr "TKIP (standaard)"
 
-#: ../gnome/applet/wireless-security-option.c:221
+#: ../gnome/applet/wireless-security-option.c:218
 msgid "AES-CCMP"
 msgstr "AES-CCMP"
 
@@ -375,15 +375,15 @@ msgstr "AES-CCMP"
 msgid "None"
 msgstr "Geen"
 
-#: ../gnome/applet/wso-wep-ascii.c:128
+#: ../gnome/applet/wso-wep-ascii.c:127
 msgid "WEP 40/128-bit ASCII"
 msgstr "WEP 40/128-bit ASCII"
 
-#: ../gnome/applet/wso-wep-hex.c:125
+#: ../gnome/applet/wso-wep-hex.c:124
 msgid "WEP 40/128-bit hex"
 msgstr "WEP 40/128-bit hex"
 
-#: ../gnome/applet/wso-wep-passphrase.c:125
+#: ../gnome/applet/wso-wep-passphrase.c:124
 msgid "WEP Passphrase"
 msgstr "WEP wachtwoordfrase"
 
@@ -422,36 +422,41 @@ msgid " (invalid Unicode)"
 msgstr " (ongeldige Unicode)"
 
 # encryptie/versleuteling/cryptografie
-#: ../gnome/applet/other-network-dialog.c:354
+#: ../gnome/applet/other-network-dialog.c:352
 #, c-format
 msgid ""
 "By default, the wireless network's name is set to your computer's name, %s, "
 "with no encryption enabled"
-msgstr "Standaard wordt de naam van het draadloos netwerk ingesteld op de naam van uw computer, %s, en wordt er geen gebruik gemaakt van cryptografie"
+msgstr ""
+"Standaard wordt de naam van het draadloos netwerk ingesteld op de naam van "
+"uw computer, %s, en wordt er geen gebruik gemaakt van cryptografie"
 
-#: ../gnome/applet/other-network-dialog.c:360
+#: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
 msgstr "Nieuw draadloos netwerk aanmaken"
 
-#: ../gnome/applet/other-network-dialog.c:361
+#: ../gnome/applet/other-network-dialog.c:359
 msgid ""
 "Enter the name and security settings of the wireless network you wish to "
 "create."
-msgstr "Geef de naam en de beveiligingsinstellingen van het draadloos netwerk dat u wilt aanmaken."
+msgstr ""
+"Geef de naam en de beveiligingsinstellingen van het draadloos netwerk dat u "
+"wilt aanmaken."
 
-#: ../gnome/applet/other-network-dialog.c:365
+#: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
 msgstr "Nieuw draadloos netwerk aanmaken"
 
-#: ../gnome/applet/other-network-dialog.c:370
+#: ../gnome/applet/other-network-dialog.c:368
 msgid "Existing wireless network"
 msgstr "Bestaand draadloos netwerk"
 
-#: ../gnome/applet/other-network-dialog.c:371
+#: ../gnome/applet/other-network-dialog.c:369
 msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Geef de naam van het draadloos netwerk waarmee u een verbinding wilt maken."
+msgstr ""
+"Geef de naam van het draadloos netwerk waarmee u een verbinding wilt maken."
 
-#: ../gnome/applet/other-network-dialog.c:373
+#: ../gnome/applet/other-network-dialog.c:371
 msgid "Connect to Other Wireless Network"
 msgstr "Verbinden met ander draadloos netwerk"
 
@@ -550,39 +555,35 @@ msgid "C_onnect"
 msgstr "_Verbinden"
 
 #: ../gnome/applet/wireless-applet.glade.h:18
-msgid "Connect using WPA2"
-msgstr "Verbinden met gebruik van WPA2"
-
-#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Connection Information"
 msgstr "Verbindingsinformatie"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/wireless-applet.glade.h:19
 msgid "Default Route:"
 msgstr "Standaard route:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/wireless-applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Doeladres:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/wireless-applet.glade.h:21
 msgid "Hardware Address:"
 msgstr "Hardware-adres:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/wireless-applet.glade.h:22
 msgid "IP Address:"
 msgstr "IP-adres:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/wireless-applet.glade.h:23
 msgid "Interface:"
 msgstr "Apparaat:"
 
 # station/apparaat/interface
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/wireless-applet.glade.h:24
 msgid "Key:"
 msgstr "Sleutel:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/wireless-applet.glade.h:25
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -594,7 +595,7 @@ msgstr ""
 "WEP 40/128-bit hex\n"
 "WEP 40/128-bit ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/wireless-applet.glade.h:30
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -602,90 +603,94 @@ msgstr ""
 "Open systeem\n"
 "gedeelde sleutel"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/wireless-applet.glade.h:32
 msgid "Other Wireless Network..."
 msgstr "Ander draadloos netwerk..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/wireless-applet.glade.h:33
 msgid "Passphrase:"
 msgstr "Wachtwoordfrase:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/wireless-applet.glade.h:34
 msgid "Password:"
 msgstr "Wachtwoord:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/wireless-applet.glade.h:35
 msgid "Primary DNS:"
 msgstr "Primaire DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/wireless-applet.glade.h:36
 msgid "Secondary DNS:"
 msgstr "Secondaire DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/wireless-applet.glade.h:37
 msgid "Subnet Mask:"
 msgstr "Subnetmasker:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/wireless-applet.glade.h:38
 msgid "Type:"
 msgstr "Type:"
 
 # inlognaam/gebruikersnaam
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "User Name:"
 msgstr "Gebruikersnaam:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "Wireless Network Key Required"
 msgstr "Sleutel draadloos netwerk vereist"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "Wireless _adapter:"
 msgstr "Draadloze _adapter:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Always Trust this Wireless Network"
 msgstr "_Dit draadloze netwerk altijd vertrouwen"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/wireless-applet.glade.h:43
 msgid "_Don't remind me again"
 msgstr "_Niet meer tonen"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/wireless-applet.glade.h:44
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/wireless-applet.glade.h:45
 msgid "_Network Name:"
 msgstr "_Netwerknaam:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/wireless-applet.glade.h:46
 msgid "_Wireless Security:"
 msgstr "_Draadloze beveiliging:"
 
 # BUG: deze horen niet thuis in het po-bestand
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/wireless-applet.glade.h:47
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
 # BUG: deze horen niet thuis in het po-bestand
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/wireless-applet.glade.h:48
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
 # BUG: deze horen niet thuis in het po-bestand
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/wireless-applet.glade.h:49
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
 # BUG: deze horen niet thuis in het po-bestand
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/wireless-applet.glade.h:50
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 
-#: ../gnome/applet/wso-wpa-psk.c:165
-msgid "WPA/WPA2 Personal"
-msgstr "WPA/WPA2 persoonlijk"
+#: ../gnome/applet/wso-wpa-psk.c:168
+msgid "WPA2 Personal"
+msgstr "WPA2 persoonlijk"
+
+#: ../gnome/applet/wso-wpa-psk.c:170
+msgid "WPA Personal"
+msgstr "WPA persoonlijk"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:358
 msgid "Cannot add VPN connection"
@@ -860,7 +865,7 @@ msgstr "WPA2 TKIP"
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security.c:310
+#: ../src/nm-ap-security.c:308
 msgid "none"
 msgstr "geen"
 
@@ -899,6 +904,9 @@ msgstr "te veel data verzonden over de socket, een gedeelte is verloren"
 #: ../src/nm-netlink-monitor.c:735
 msgid "error occurred while waiting for data on socket"
 msgstr "er is een fout opgetreden bij het wachten op data van de 'socket'"
+
+#~ msgid "Connect using WPA2"
+#~ msgstr "Verbinden met gebruik van WPA2"
 
 #~ msgid "CCMP/AES"
 #~ msgstr "CCMP/AES"
