@@ -1,15 +1,15 @@
 # Catalan translation for NetworkManager
-# Copyright © 2005, The Free Software Foundation, Inc.
+# Copyright © 2005, 2006, The Free Software Foundation, Inc.
 # This file is distributed under the same license as the
 #   NetworkManager package.
-# Josep Puigdemont i Casamajó <josep.puigdemont@gmail.com>, 2005.
+# Josep Puigdemont i Casamajó <josep.puigdemont@gmail.com>, 2005, 2006.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-07 13:35+0100\n"
-"PO-Revision-Date: 2006-01-07 13:47+0100\n"
+"POT-Creation-Date: 2006-01-29 01:08+0100\n"
+"PO-Revision-Date: 2006-01-29 01:15+0100\n"
 "Last-Translator: Josep Puigdemont i Casamajó <josep.puigdemont@gmail.com>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,83 +17,82 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#. Setup a request to the keyring to save the network passphrase
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:923
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Contrasenya per a la xarxa sense fil %s"
 
-#: ../gnome/applet/applet-dbus.c:276
+#: ../gnome/applet/applet-dbus.c:244
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Ha fallat la connexió a la xarxa sense fil «%s»."
 
-#: ../gnome/applet/applet-dbus.c:281
+#: ../gnome/applet/applet-dbus.c:249
 msgid "Connection to the wired network failed."
 msgstr "Ha fallat la connexió a la xarxa amb fil."
 
-#: ../gnome/applet/applet.c:179
+#: ../gnome/applet/applet.c:180
 msgid "Error displaying connection information: "
 msgstr "S'ha produït un error en mostrar la informació de la connexió: "
 
-#: ../gnome/applet/applet.c:198
+#: ../gnome/applet/applet.c:199
 msgid "Could not find some required resources (the glade file)!"
 msgstr ""
 "Alguns dels recursos requerits no s'han pogut trobar (el fitxer glade)!"
 
-#: ../gnome/applet/applet.c:209
+#: ../gnome/applet/applet.c:210
 msgid "No active connections!"
 msgstr "No hi ha cap connexió activa."
 
-#: ../gnome/applet/applet.c:224
+#: ../gnome/applet/applet.c:225
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Xarxa amb fil (%s)"
 
-#: ../gnome/applet/applet.c:226
+#: ../gnome/applet/applet.c:227
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Xarxa sense fil (%s)"
 
-#: ../gnome/applet/applet.c:319 ../gnome/applet/applet.c:344
+#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
 msgid "NetworkManager Applet"
 msgstr "Miniaplicació NetworkManager"
 
-#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
+#: ../gnome/applet/applet.c:323 ../gnome/applet/applet.c:348
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:322 ../gnome/applet/applet.c:347
+#: ../gnome/applet/applet.c:324 ../gnome/applet/applet.c:349
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr ""
 "Miniaplicació per a l'àrea de notificació per a gestionar els vostres "
 "dispositius de xarxa i connexions."
 
-#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:352
+#: ../gnome/applet/applet.c:327 ../gnome/applet/applet.c:354
 msgid "translator-credits"
 msgstr "Josep Puigdemont i Casamajó <josep.puigdemont@gmail.com>"
 
-#: ../gnome/applet/applet.c:437
+#: ../gnome/applet/applet.c:439
 msgid "VPN Error"
 msgstr "Error VPN"
 
-#: ../gnome/applet/applet.c:441
+#: ../gnome/applet/applet.c:443
 msgid "VPN Login Failure"
 msgstr "S'ha produït un error en l'entrada VPN"
 
-#: ../gnome/applet/applet.c:442
+#: ../gnome/applet/applet.c:444
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr ""
 "Atès que s'ha produït un error en l'entrada, no s'ha pogut iniciar la "
 "connexió VPN «%s»."
 
-#: ../gnome/applet/applet.c:446
+#: ../gnome/applet/applet.c:448
 msgid "VPN Start Failure"
 msgstr "No s'ha pogut iniciar la VPN"
 
-#: ../gnome/applet/applet.c:447
+#: ../gnome/applet/applet.c:449
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -102,27 +101,27 @@ msgstr ""
 "No s'ha pogut iniciar la connexió VPN «%s» perquè s'ha produït un error en "
 "llançar la VPN."
 
-#: ../gnome/applet/applet.c:451 ../gnome/applet/applet.c:461
+#: ../gnome/applet/applet.c:453 ../gnome/applet/applet.c:463
 msgid "VPN Connect Failure"
 msgstr "S'ha produït un error en la connexió VPN"
 
-#: ../gnome/applet/applet.c:452
+#: ../gnome/applet/applet.c:454
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr ""
 "No s'ha pogut iniciar la connexió VPN «%s» ja que s'ha produït un error de "
 "connexió."
 
-#: ../gnome/applet/applet.c:456
+#: ../gnome/applet/applet.c:458
 msgid "VPN Configuration Error"
 msgstr "S'ha produït un error de configuració de la VPN"
 
-#: ../gnome/applet/applet.c:457
+#: ../gnome/applet/applet.c:459
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "La connexió VPN «%s» no està correctament configurada."
 
-#: ../gnome/applet/applet.c:462
+#: ../gnome/applet/applet.c:464
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -131,23 +130,23 @@ msgstr ""
 "No s'ha pogut iniciar la connexió VPN «%s» perquè el servidor VPN no ha "
 "retornat cap configuració de xarxa adequada."
 
-#: ../gnome/applet/applet.c:470
+#: ../gnome/applet/applet.c:472
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "El servei VPN digué: «%s»"
 
-#: ../gnome/applet/applet.c:539
+#: ../gnome/applet/applet.c:541
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "La connexió VPN «%s» digué:"
 
-#: ../gnome/applet/applet.c:541
+#: ../gnome/applet/applet.c:543
 msgid "VPN Login Message"
 msgstr "Missatge d'entrada de la VPN"
 
-#: ../gnome/applet/applet.c:759 ../gnome/applet/applet.c:2402
-#: ../gnome/applet/other-network-dialog.c:448
-#: ../gnome/applet/passphrase-dialog.c:210
+#: ../gnome/applet/applet.c:760 ../gnome/applet/applet.c:2514
+#: ../gnome/applet/other-network-dialog.c:453
+#: ../gnome/applet/passphrase-dialog.c:206
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
@@ -155,155 +154,164 @@ msgstr ""
 "La miniaplicació NetworkManager no ha pogut trobar alguns dels recursos "
 "requerits (no s'ha trobat el fitxer glade)."
 
-#: ../gnome/applet/applet.c:771
+#: ../gnome/applet/applet.c:772
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "El dispositiu de xarxa «%s (%s)» no permet l'escaneig sense fil."
 
-#: ../gnome/applet/applet.c:779
+#: ../gnome/applet/applet.c:780
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "El dispositiu de xarxa «%s (%s)» no permet la detecció de l'enllaç."
 
-#: ../gnome/applet/applet.c:919
+#: ../gnome/applet/applet.c:927
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "S'està perparant el dispositiu %s per a la xarxa amb fil..."
 
-#: ../gnome/applet/applet.c:921
+#: ../gnome/applet/applet.c:929
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "S'està preparant el dispositiu %s per a la xarxa sense fil «%s»..."
 
-#: ../gnome/applet/applet.c:929
+#: ../gnome/applet/applet.c:937
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "S'està configurant el dispositu %s per a la xarxa amb fil..."
 
-#: ../gnome/applet/applet.c:931
+#: ../gnome/applet/applet.c:939
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "S'està intentant entrar a la xarxa sense fil «%s»..."
 
-#: ../gnome/applet/applet.c:939
+#: ../gnome/applet/applet.c:947
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "S'està esperant per a la clau de xarxa de la xarxa sense fil «%s»..."
 
-#: ../gnome/applet/applet.c:947 ../gnome/applet/applet.c:957
+#: ../gnome/applet/applet.c:955 ../gnome/applet/applet.c:965
 msgid "Requesting a network address from the wired network..."
 msgstr "S'està sol·licitant una adreça de xarxa per a la xarxa amb fil..."
 
-#: ../gnome/applet/applet.c:949 ../gnome/applet/applet.c:959
+#: ../gnome/applet/applet.c:957 ../gnome/applet/applet.c:967
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr ""
 "S'està sol·licitant una adreça de xarxa per a la xarxa sense fil «%s»..."
 
-#: ../gnome/applet/applet.c:967
+#: ../gnome/applet/applet.c:975
 msgid "Finishing connection to the wired network..."
 msgstr "S'està finalitzant la connexió a la xarxa amb fil..."
 
-#: ../gnome/applet/applet.c:969
+#: ../gnome/applet/applet.c:977
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "S'està finalizant la connexió a la xarxa sense fil «%s»..."
 
-#: ../gnome/applet/applet.c:1086
+#: ../gnome/applet/applet.c:1094
 msgid "NetworkManager is not running"
 msgstr "No s'està executant el NetworkManager"
 
-#: ../gnome/applet/applet.c:1098
+#: ../gnome/applet/applet.c:1107 ../gnome/applet/applet.c:1841
+msgid "Networking disabled"
+msgstr "S'ha inhabilitat la xarxa"
+
+#: ../gnome/applet/applet.c:1112
 msgid "No network connection"
 msgstr "No hi ha cap connexió de xarxa"
 
-#: ../gnome/applet/applet.c:1103
+#: ../gnome/applet/applet.c:1117
 msgid "Wired network connection"
 msgstr "Connexió de xarxa amb fil"
 
-#: ../gnome/applet/applet.c:1107
+#: ../gnome/applet/applet.c:1121
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Connectat a una xarxa Ad-Hoc sense fil"
 
-#: ../gnome/applet/applet.c:1109
+#: ../gnome/applet/applet.c:1123
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Connexió de xarxa sense fil a «%s» (%d%%)"
 
-#: ../gnome/applet/applet.c:1131
+#: ../gnome/applet/applet.c:1145
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "Connexió VPN a «%s»"
 
-#: ../gnome/applet/applet.c:1139
+#: ../gnome/applet/applet.c:1153
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "S'està connectant amb VPN a «%s»"
 
-#: ../gnome/applet/applet.c:1553
+#: ../gnome/applet/applet.c:1566
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Connecta a d'altres xarxes sense fil..."
 
-#: ../gnome/applet/applet.c:1574
+#: ../gnome/applet/applet.c:1587
 msgid "Create _New Wireless Network..."
 msgstr "Crea una xarxa sense fil _nova..."
 
-#: ../gnome/applet/applet.c:1691
+#: ../gnome/applet/applet.c:1708
 msgid "_VPN Connections"
 msgstr "Connexions _VPN"
 
-#: ../gnome/applet/applet.c:1726
+#: ../gnome/applet/applet.c:1743
 msgid "_Configure VPN..."
 msgstr "_Configura la VPN..."
 
-#: ../gnome/applet/applet.c:1730
+#: ../gnome/applet/applet.c:1747
 msgid "_Disconnect VPN..."
 msgstr "_Desconnecta la VPN..."
 
-#: ../gnome/applet/applet.c:1752
+#: ../gnome/applet/applet.c:1769
 msgid "_Dial Up Connections"
 msgstr "Connexions de _marcatge"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1763
+#: ../gnome/applet/applet.c:1780
 #, c-format
 msgid "Connect to %s..."
 msgstr "Connecta a %s..."
 
-#: ../gnome/applet/applet.c:1769
+#: ../gnome/applet/applet.c:1786
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Desconnecta de %s..."
 
-#: ../gnome/applet/applet.c:1818
+#: ../gnome/applet/applet.c:1835
 msgid "No network devices have been found"
 msgstr "No s'ha trobat cap dispositiu de xarxa"
 
-#: ../gnome/applet/applet.c:1992
+#: ../gnome/applet/applet.c:2027
 msgid "NetworkManager is not running..."
 msgstr "No s'està executant el NetworkManager..."
 
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2183
+msgid "Enable _Networking"
+msgstr "Habilita la _xarxa"
+
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2117
+#: ../gnome/applet/applet.c:2189
 msgid "Enable _Wireless"
 msgstr "Habilita la xarxa _sense fil"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2123
+#: ../gnome/applet/applet.c:2195
 msgid "Connection _Information"
 msgstr "_Informació de la connexió"
 
 #. Help item
-#: ../gnome/applet/applet.c:2134
+#: ../gnome/applet/applet.c:2206
 msgid "_Help"
 msgstr "A_juda"
 
 #. About item
-#: ../gnome/applet/applet.c:2143
+#: ../gnome/applet/applet.c:2215
 msgid "_About"
 msgstr "_Quant a"
 
-#: ../gnome/applet/applet.c:2521
+#: ../gnome/applet/applet.c:2633
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -319,31 +327,35 @@ msgstr "Sistema obert"
 msgid "Shared Key"
 msgstr "Clau compartida"
 
+#: ../gnome/applet/wireless-security-option.c:209
+msgid "TKIP (Default)"
+msgstr "TKIP (Predeterminat)"
+
+#: ../gnome/applet/wireless-security-option.c:218
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
 msgstr "Cap"
 
-#: ../gnome/applet/wso-wep-ascii.c:128
+#: ../gnome/applet/wso-wep-ascii.c:127
 msgid "WEP 40/128-bit ASCII"
 msgstr "WEP 40/128-bit ASCII"
 
-#: ../gnome/applet/wso-wep-hex.c:125
+#: ../gnome/applet/wso-wep-hex.c:124
 msgid "WEP 40/128-bit hex"
 msgstr "WEP 40/128-bit hex"
 
-#: ../gnome/applet/wso-wep-passphrase.c:125
+#: ../gnome/applet/wso-wep-passphrase.c:124
 msgid "WEP Passphrase"
 msgstr "Contrasenya WEP:"
 
-#: ../gnome/applet/wso-wpa-psk-passphrase.c:113
-msgid "WPA Personal Passphrase"
-msgstr "Contrasenya personal WPA"
-
-#: ../gnome/applet/eggtrayicon.c:127
+#: ../gnome/applet/eggtrayicon.c:128
 msgid "Orientation"
 msgstr "Orientació"
 
-#: ../gnome/applet/eggtrayicon.c:128
+#: ../gnome/applet/eggtrayicon.c:129
 msgid "The orientation of the tray."
 msgstr "Orientació de l'àrea de notificació."
 
@@ -373,40 +385,40 @@ msgstr[1] "Xarxes sense fil"
 msgid " (invalid Unicode)"
 msgstr " (Unicode invàlid)"
 
-#: ../gnome/applet/other-network-dialog.c:347
+#: ../gnome/applet/other-network-dialog.c:352
 #, c-format
 msgid ""
-"By default, the ESSID is set to your computer's name, %s, with no encryption "
-"enabled"
+"By default, the wireless network's name is set to your computer's name, %s, "
+"with no encryption enabled"
 msgstr ""
-"Per defecte, l'ESSID s'estableix al nom de l'ordinador, %s, sense habilitar "
-"el xifratge."
+"Per defecte, el nom de la xarxa sense fil s'estableix al nom de l'ordinador, "
+"%s, sense habilitar el xifratge"
 
-#: ../gnome/applet/other-network-dialog.c:351
+#: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
 msgstr "Crea una nova xarxa sense fil"
 
-#: ../gnome/applet/other-network-dialog.c:352
+#: ../gnome/applet/other-network-dialog.c:359
 msgid ""
-"Enter the ESSID and security settings of the wireless network you wish to "
+"Enter the name and security settings of the wireless network you wish to "
 "create."
 msgstr ""
-"Entreu l'ESSID i els paràmetres de seguretat per a la xarxa sense fil que "
+"Entreu el nom els paràmetres de seguretat per a la xarxa sense fil que "
 "vulgueu crear."
 
-#: ../gnome/applet/other-network-dialog.c:356
+#: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
 msgstr "Crea una xarxa sense fil nova"
 
-#: ../gnome/applet/other-network-dialog.c:361
-msgid "Custom wireless network"
-msgstr "Xarxa sense fil personalitzada"
+#: ../gnome/applet/other-network-dialog.c:368
+msgid "Existing wireless network"
+msgstr "Xarxa sense fil existent"
 
-#: ../gnome/applet/other-network-dialog.c:362
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr "Entreu l'ESSID de la xarxa sense fil a la que vulgueu connectar-vos."
+#: ../gnome/applet/other-network-dialog.c:369
+msgid "Enter the name of the wireless network to which you wish to connect."
+msgstr "Entreu el nom de la xarxa sense fil a la que vulgueu connectar-vos."
 
-#: ../gnome/applet/other-network-dialog.c:364
+#: ../gnome/applet/other-network-dialog.c:371
 msgid "Connect to Other Wireless Network"
 msgstr "Connecta a d'altres xarxes sense fil"
 
@@ -573,58 +585,70 @@ msgid "Subnet Mask:"
 msgstr "Màscara de subxarxa:"
 
 #: ../gnome/applet/wireless-applet.glade.h:38
+msgid "Type:"
+msgstr "Tipus:"
+
+#: ../gnome/applet/wireless-applet.glade.h:39
 msgid "User Name:"
 msgstr "Nom d'usuari:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/wireless-applet.glade.h:40
 msgid "Wireless Network Key Required"
 msgstr "Es requereix una clau per a la xarxa sense fil"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/wireless-applet.glade.h:41
 msgid "Wireless _adapter:"
 msgstr "_Adaptador sense fil:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/wireless-applet.glade.h:42
 msgid "_Always Trust this Wireless Network"
 msgstr "Confia sempre en _aquesta xarxa sense fil"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/wireless-applet.glade.h:43
 msgid "_Don't remind me again"
 msgstr "_No m'ho tornis a recordar"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/wireless-applet.glade.h:44
 msgid "_Login to Network"
 msgstr "_Entra a la xarxa"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/wireless-applet.glade.h:45
 msgid "_Network Name:"
 msgstr "Nom de _xarxa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/wireless-applet.glade.h:46
 msgid "_Wireless Security:"
 msgstr "Seguretat de la _xarxa sense fil:"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/wireless-applet.glade.h:47
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/wireless-applet.glade.h:48
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/wireless-applet.glade.h:49
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/wireless-applet.glade.h:50
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:370
+#: ../gnome/applet/wso-wpa-psk.c:168
+msgid "WPA2 Personal"
+msgstr "Contrasenya personal WPA2"
+
+#: ../gnome/applet/wso-wpa-psk.c:170
+msgid "WPA Personal"
+msgstr "Contrasenya personal WPA"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:358
 msgid "Cannot add VPN connection"
 msgstr "No s'ha pogut afegir la connexions VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:372
+#: ../gnome/vpn-properties/nm-vpn-properties.c:360
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -632,11 +656,11 @@ msgstr ""
 "No s'ha pogut trobar el programari VPN adequat en aquest ordinador. "
 "Contacteu el vostre administrador."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:424
+#: ../gnome/vpn-properties/nm-vpn-properties.c:412
 msgid "Cannot import VPN connection"
 msgstr "No s'ha pogut importar la connexió VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:426
+#: ../gnome/vpn-properties/nm-vpn-properties.c:414
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -645,12 +669,12 @@ msgstr ""
 "No s'ha pogut trobar el programari adequat per al tipus de connexió VPN «%s» "
 "per a importar el fitxer «%s». Contacteu el vostre administrador de sistemes."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:566
+#: ../gnome/vpn-properties/nm-vpn-properties.c:554
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "S'ha produït un error en recuperar la connexió VPN «%s»"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:569
+#: ../gnome/vpn-properties/nm-vpn-properties.c:557
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -659,12 +683,12 @@ msgstr ""
 "No s'han pogut trobar els fitxers d'UI per al tipus de connexió VPN «%s». "
 "Contacteu el vostre administrador de sistemes."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:729
+#: ../gnome/vpn-properties/nm-vpn-properties.c:717
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Voleu suprimir la connexió VPN «%s»?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:732
+#: ../gnome/vpn-properties/nm-vpn-properties.c:720
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -675,16 +699,16 @@ msgstr ""
 "necessitareu que el vostre administrador us proporcioni informació per a "
 "crear una connexió nova."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:938
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
 msgid "Unable to load"
 msgstr "No es pot carregar"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:940
+#: ../gnome/vpn-properties/nm-vpn-properties.c:928
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "No s'han pogut trobar alguns dels recursos requerits el fitxer glade)."
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1058
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1043
 msgid "Edit VPN Connection"
 msgstr "Edita la connexió VPN"
 
@@ -766,15 +790,23 @@ msgstr "40-bit WEP"
 msgid "104-bit WEP"
 msgstr "104-bit WEP"
 
-#: ../src/nm-ap-security-wpa-psk.c:47
+#: ../src/nm-ap-security-wpa-psk.c:50
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:49
+#: ../src/nm-ap-security-wpa-psk.c:52
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security.c:307
+#: ../src/nm-ap-security-wpa-psk.c:57
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security.c:308
 msgid "none"
 msgstr "cap"
 
@@ -794,23 +826,23 @@ msgstr ""
 "noes pot vincular al sòcol netlink per a la monitorització de dispositius de "
 "xarxa amb fil ethernet - %s"
 
-#: ../src/nm-netlink-monitor.c:403
+#: ../src/nm-netlink-monitor.c:405
 msgid "operation took too long"
 msgstr "l'operació ha trigat massa"
 
-#: ../src/nm-netlink-monitor.c:500
+#: ../src/nm-netlink-monitor.c:502
 msgid "received data from wrong type of sender"
 msgstr "s'han rebut dades d'un tipus de remitent equivocat"
 
-#: ../src/nm-netlink-monitor.c:513
+#: ../src/nm-netlink-monitor.c:515
 msgid "received data from unexpected sender"
 msgstr "s'han rebut dades d'un remitent que no s'esperava"
 
-#: ../src/nm-netlink-monitor.c:644
+#: ../src/nm-netlink-monitor.c:646
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "s'ha enviat massa dades a través del sòcol, i se n'han perdut algunes"
 
-#: ../src/nm-netlink-monitor.c:733
+#: ../src/nm-netlink-monitor.c:735
 msgid "error occurred while waiting for data on socket"
 msgstr "s'ha produït un error en esperar dades del sòcol"
 
@@ -887,9 +919,6 @@ msgstr "s'ha produït un error en esperar dades del sòcol"
 #~ msgid "Wireless _network:"
 #~ msgstr "_Xarxa sense fil:"
 
-#~ msgid "_Key Type:"
-#~ msgstr "Tipus de _clau:"
-
 #~ msgid "_Key type:"
 #~ msgstr "Tipus de _clau:"
 
@@ -899,51 +928,6 @@ msgstr "s'ha produït un error en esperar dades del sòcol"
 #~ msgstr ""
 #~ "Depenent del tipus de xarxa privada a la que us vulgueu connectar, heu "
 #~ "d'escollir el tipus de connexió que vulgueu crear."
-
-# FIXME
-#, fuzzy
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
-#~ "\n"
-#~ "Could not start the VPN connection '%s' due to a login failure.\n"
-#~ "\n"
-#~ "The VPN service said: \"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Error d'entrada a la VPN</span>\n"
-#~ "\n"
-#~ "No s'ha pogut iniciar la connexió VPN «%s» perquè l'entrada a fallat.\n"
-#~ "\n"
-#~ "El servei VPN indica: «%s»"
-
-# FIXME
-#, fuzzy
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
-#~ "\n"
-#~ "Could not start the VPN connection '%s' due to a connection error.\n"
-#~ "\n"
-#~ "The VPN service said: \"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Error d'entrada a la VPN</span>\n"
-#~ "\n"
-#~ "No s'ha pogut iniciar la connexió VPN «%s» perquè l'entrada a fallat.\n"
-#~ "\n"
-#~ "El servei VPN indica: «%s»"
-
-# FIXME
-#, fuzzy
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n"
-#~ "\n"
-#~ "The VPN connection '%s' was not correctly configured.\n"
-#~ "\n"
-#~ "The VPN service said: \"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">Error d'entrada a la VPN</span>\n"
-#~ "\n"
-#~ "No s'ha pogut iniciar la connexió VPN «%s» perquè l'entrada a fallat.\n"
-#~ "\n"
-#~ "El servei VPN indica: «%s»"
 
 #~ msgid "Other Wireless Networks..."
 #~ msgstr "Altres xarxes sense fil..."
