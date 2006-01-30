@@ -34,6 +34,7 @@ struct NetworkDevice
 {
 	int			refcount;
 	char *		iface;
+	char *		driver;
 	char *		desc;
 	char *		nm_path;
 	NMDeviceType	type;
@@ -93,6 +94,7 @@ NetworkDevice *network_device_copy (NetworkDevice *src)
 
 	network_device_ref (dev);
 	dev->nm_path = g_strdup (src->nm_path);
+	dev->driver = g_strdup (src->driver);
 	dev->type = src->type;
 	dev->link = src->link;
 	dev->addr = g_strdup (src->addr);
@@ -153,6 +155,7 @@ void network_device_unref (NetworkDevice *dev)
 			network_device_clear_wireless_networks (dev);
 		g_free (dev->nm_path);
 		g_free (dev->iface);
+		g_free (dev->driver);
 		g_free (dev->route);
 		g_free (dev->udi);
 		g_free (dev->desc);
@@ -399,6 +402,25 @@ guint network_device_get_num_wireless_networks (NetworkDevice *dev)
 	return g_slist_length (dev->networks);
 }
 
+
+/*
+ * Accessors for driver name
+ */
+const char *network_device_get_driver (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, NULL);
+
+	return dev->driver;
+}
+
+void network_device_set_driver (NetworkDevice *dev, const char *driver)
+{
+	g_return_if_fail (dev != NULL);
+
+	if (dev->driver)
+		g_free (dev->driver);
+	dev->driver = driver ? g_strdup (driver) : NULL;
+}
 
 /*
  * Accessors for hardware address

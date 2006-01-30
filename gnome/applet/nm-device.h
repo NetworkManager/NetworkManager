@@ -106,4 +106,7 @@ void					network_device_set_desc					(NetworkDevice *dev, const char *desc);
 NMActStage			network_device_get_act_stage				(NetworkDevice *dev);
 void					network_device_set_act_stage				(NetworkDevice *dev, NMActStage act_stage);
 
+const char *			network_device_get_driver				(NetworkDevice *dev);
+void					network_device_set_driver				(NetworkDevice *dev, const char *driver);
+
 #endif

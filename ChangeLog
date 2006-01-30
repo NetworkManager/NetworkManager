@@ -1,3 +1,29 @@
+2006-01-30  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus-devices.c
+		- (nmwa_dbus_device_get_driver_cb, nmwa_dbus_device_get_driver): new
+			functions, grab device driver name from NetworkManager
+		- (nmwa_dbus_device_properties_cb): call functions to get driver
+
+	* gnome/applet/applet.c
+		- (nmwa_update_info): show driver name in Connection Information
+			dialog
+
+	* gnome/applet/nm-device.[ch]
+		- (network_device_get_driver, network_device_set_driver): add
+			accessors for driver name
+
+	* gnome/applet/wireless-applet.glade
+		- Add line for driver name to Connection Information dialog
+
+	* src/nm-dbus-device.c
+		- (nm_dbus_device_get_driver): new function to return driver name
+		- (nm_dbus_device_methods): hook up driver name function to dbus
+
+	* test/nm-tool.c
+		- (get_driver_name): new function
+		- (detail_device): grab and show driver name
+
 2006-01-30  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Apparently gtk_message_dialog_new_with_markup

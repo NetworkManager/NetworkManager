@@ -187,7 +187,7 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 	char *addr = NULL, *broadcast = NULL, *primary_dns = NULL, *secondary_dns = NULL;
 	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL;
 	GtkWidget *label;
-	const char *iface = NULL;
+	const char *iface = NULL, *driver = NULL;
 	NetworkDevice *dev;
 
 	info_dialog = glade_xml_get_widget (applet->info_dialog_xml, "info_dialog");
@@ -210,6 +210,8 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 		return FALSE;
 	}
 
+	if (!(driver = network_device_get_driver (dev)))
+		driver = "(unknown)";
 	mac = (char*) network_device_get_address (dev);
 	broadcast = (char*) network_device_get_broadcast (dev);
 	addr = (char*) network_device_get_ip4_address (dev);
@@ -225,6 +227,9 @@ static gboolean nmwa_update_info (NMWirelessApplet *applet)
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
 	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-driver");
+	gtk_label_set_text (GTK_LABEL (label), driver);
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-ip-address");
 	gtk_label_set_text (GTK_LABEL (label), addr);

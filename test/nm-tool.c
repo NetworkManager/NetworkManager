@@ -191,6 +191,38 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 }
 
 
+static char *
+get_driver_name (DBusConnection *connection, const char *path)
+{
+	DBusMessage *	message;
+	DBusMessage *	reply;
+	char *		driver = NULL;
+	DBusError		error;
+
+	g_return_val_if_fail (path != NULL, NULL);
+
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICES, "getDriver")))
+	{
+		nm_warning ("%s(): Couldn't allocate the dbus message", __func__);
+		return NULL;
+	}
+
+	dbus_error_init (&error);
+	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
+	dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	else if (reply)
+	{
+		if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &driver, DBUS_TYPE_INVALID))
+			driver = g_strdup (driver);
+		dbus_message_unref (reply);
+	}
+
+	return driver;
+}
+
+
 static void detail_device (DBusConnection *connection, const char *path)
 {
 	DBusMessage *		message = NULL;
@@ -256,6 +288,8 @@ static void detail_device (DBusConnection *connection, const char *path)
 									DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &networks, &num_networks,
 									DBUS_TYPE_INVALID))
 	{
+		char *	driver;
+
 		printf ("- Device: %s ----------------------------------------------------------------\n", iface);
 
 		/* General information */
@@ -264,6 +298,12 @@ static void detail_device (DBusConnection *connection, const char *path)
 			print_string ("Type", "802.11 Wireless");
 		else if (type == DEVICE_TYPE_802_3_ETHERNET)
 			print_string ("Type", "Wired");
+
+		if ((driver = get_driver_name (connection, path)))
+			print_string ("Driver", driver);
+		else
+			print_string ("Driver", "(unknown)");
+		
 		if (active)
 			print_string ("Active", "yes");
 		else

@@ -99,6 +99,96 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 }
 
 
+typedef struct DriverCBData
+{
+	NMWirelessApplet *	applet;
+	NetworkDevice *	dev;
+} DriverCBData;
+
+
+/*
+ * nmwa_dbus_device_get_driver_cb
+ *
+ * Callback from nmwa_dbus_update_wireless_enabled
+ *
+ */
+static void nmwa_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_data)
+{
+	DBusMessage *		reply;
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	DriverCBData *		data = (DriverCBData *) user_data;
+	const char *		driver;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (applet != NULL);
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (message_is_error (reply))
+	{
+		DBusError err;
+
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+		nm_warning ("%s(): dbus returned an error.\n  (%s) %s\n", __func__, err.name, err.message);
+		dbus_error_free (&err);
+		dbus_message_unref (reply);
+		goto out;
+	}
+
+	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &driver, DBUS_TYPE_INVALID))
+	{
+		if (data && data->dev)
+			network_device_set_driver (data->dev, driver);
+	}
+
+	dbus_message_unref (reply);
+
+out:
+	if (data)
+	{
+		if (data->dev)
+			network_device_unref (data->dev);
+		g_free (data);
+	}
+	dbus_pending_call_unref (pcall);
+}
+
+
+/*
+ * nmwa_dbus_device_get_driver
+ *
+ * Get the a device's driver name
+ *
+ */
+static void nmwa_dbus_device_get_driver (NetworkDevice *dev, NMWirelessApplet *applet)
+{
+	DBusMessage *		message;
+	DBusPendingCall *	pcall = NULL;
+	const char *		op;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (dev != NULL);
+
+	op = network_device_get_nm_path (dev);
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, op, NM_DBUS_INTERFACE_DEVICES, "getDriver")))
+	{
+		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+		if (pcall)
+		{
+			DriverCBData *	data = g_malloc0 (sizeof (DriverCBData));
+
+			network_device_ref (dev);
+			data->dev = dev;
+			data->applet = applet;
+			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_get_driver_cb, data, NULL);
+		}
+		dbus_message_unref (message);
+	}
+}
+
+
 /*
  * nmwa_dbus_update_wireless_enabled_cb
  *
@@ -723,6 +813,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 		}
 
 		nmwa_dbus_update_device_info_from_hal (dev, applet);
+		nmwa_dbus_device_get_driver (dev, applet);
 
 		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{

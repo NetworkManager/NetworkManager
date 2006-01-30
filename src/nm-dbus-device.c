@@ -295,6 +295,23 @@ static DBusMessage *nm_dbus_device_get_capabilities (DBusConnection *connection,
 	return reply;
 }
 
+static DBusMessage *nm_dbus_device_get_driver (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+{
+	DBusMessage	*reply = NULL;
+	NMDevice		*dev;
+
+	g_return_val_if_fail (data && data->data && data->dev && connection && message, NULL);
+
+	dev = data->dev;
+	if ((reply = dbus_message_new_method_return (message)))
+	{
+		const char * driver = nm_device_get_driver (dev);
+		dbus_message_append_args (reply, DBUS_TYPE_STRING, &driver, DBUS_TYPE_INVALID);
+	}
+
+	return reply;
+}
+
 static DBusMessage *nm_dbus_device_set_link_active (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	DBusMessage	*reply = NULL;
@@ -492,6 +509,7 @@ NMDbusMethodList *nm_dbus_device_methods_setup (void)
 	nm_dbus_method_list_add_method (list, "getLinkActive",		nm_dbus_device_get_link_active);
 	nm_dbus_method_list_add_method (list, "setLinkActive",		nm_dbus_device_set_link_active);
 	nm_dbus_method_list_add_method (list, "getCapabilities",	nm_dbus_device_get_capabilities);
+	nm_dbus_method_list_add_method (list, "getDriver",		nm_dbus_device_get_driver);
 
 	return (list);
 }
