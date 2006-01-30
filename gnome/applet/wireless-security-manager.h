@@ -33,7 +33,7 @@ WirelessSecurityManager *	wsm_new (const char * glade_file);
 
 void						wsm_free (WirelessSecurityManager *wsm);
 
-void						wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities);
+gboolean						wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities);
 
 void						wsm_update_combo (WirelessSecurityManager *wsm, GtkComboBox *combo);
 

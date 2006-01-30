@@ -27,6 +27,7 @@
 #include "NetworkManager.h"
 #include "wireless-security-manager.h"
 #include "wireless-security-option.h"
+#include "nm-utils.h"
 
 #include "wso-none.h"
 #include "wso-private.h"
@@ -55,11 +56,12 @@ WirelessSecurityManager * wsm_new (const char * glade_file)
 }
 
 
-void wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
+gboolean wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
 {
 	WirelessSecurityOption *		opt;
+	gboolean ret = TRUE;
 
-	g_return_if_fail (wsm != NULL);
+	g_return_val_if_fail (wsm != NULL, FALSE);
 
 	/* Free previous options */
 	g_slist_foreach (wsm->options, (GFunc) wso_free, NULL);
@@ -96,6 +98,14 @@ void wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilities)
 		if ((opt = wso_wpa_psk_new (wsm->glade_file, capabilities, TRUE)))
 			wsm->options = g_slist_append (wsm->options, opt);
 	}
+
+	if (!wsm->options)
+	{
+		nm_warning ("capabilities='%x' and did not match any protocals, not even none!", capabilities);
+		ret = FALSE;
+	}
+
+	return ret;
 }
 
 #define NAME_COLUMN	0

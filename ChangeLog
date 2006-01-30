@@ -1,5 +1,18 @@
 2006-01-27  Robert Love  <rml@novell.com>
 
+	* gnome/applet/passphrase-dialog.c: If wsm_set_capabilities() returns
+	  FALSE, we have no security options for this dialog, so we throw up
+	  an error dialog instead of a broken passphrase dialog.  Fixes
+	  Novell #138404.
+	* gnome/applet/wireless-security-manager.c,
+	  gnome/applet/wireless-security-manager.h: If wsm_set_capabilities()
+	  does not add any security options, not even none, print a warning
+	  and return FALSE.  This let's functions constructed a dialog bail
+	  out if the device's capabilities and the network's requirements have
+	  zero overlap.
+
+2006-01-27  Robert Love  <rml@novell.com>
+
 	* configure.in: Require wpa_supplicant.  Detect location of binary and
 	  use it.  Override with "--with-wpa_supplicant=foo".
 	* src/Makefile.am, src/nm-device-802-11-wireless.c: Do not hardcode the

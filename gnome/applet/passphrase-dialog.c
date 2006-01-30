@@ -201,15 +201,38 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 	g_return_val_if_fail (net != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
 
+	wsm = wsm_new (applet->glade_file);
+
+	caps = network_device_get_type_capabilities (dev);
+	caps &= wireless_network_get_capabilities (net);
+	if (!wsm_set_capabilities (wsm, caps))
+	{
+		GtkWidget *error_dialog;
+
+		error_dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+							"<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
+							_("Error connecting to wireless network"),
+							_("The requested wireless network requires security capabilities unsupported by your hardware."));
+		gtk_window_present (GTK_WINDOW (error_dialog));
+		g_signal_connect_swapped (error_dialog, "response", G_CALLBACK (gtk_widget_destroy), error_dialog);
+
+		wsm_free (wsm);
+
+		return NULL;
+	}
+
+
 	if (!(xml = glade_xml_new (applet->glade_file, "passphrase_dialog", NULL)))
 	{
 		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		wsm_free (wsm);
 		return NULL;
 	}
 
 	dialog = glade_xml_get_widget (xml, "passphrase_dialog");
 	gtk_widget_hide (dialog);
 
+	g_object_set_data (G_OBJECT (dialog), "wireless-security-manager", (gpointer) wsm);
 	g_object_set_data (G_OBJECT (dialog), "glade-xml", xml);
 	g_object_set_data (G_OBJECT (dialog), "applet", applet);
 	g_object_set_data (G_OBJECT (dialog), "uid", GINT_TO_POINTER (uid));
@@ -232,13 +255,6 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 	g_object_set_data (G_OBJECT (dialog), "dbus-message", message);
 
 	gtk_widget_set_sensitive (GTK_WIDGET (ok_button), FALSE);
-
-	wsm = wsm_new (applet->glade_file);
-	g_object_set_data (G_OBJECT (dialog), "wireless-security-manager", (gpointer) wsm);
-
-	caps = network_device_get_type_capabilities (dev);
-	caps &= wireless_network_get_capabilities (net);
-	wsm_set_capabilities (wsm, caps);
 
 	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
 	wsm_update_combo (wsm, security_combo);
