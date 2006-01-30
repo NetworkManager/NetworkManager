@@ -402,7 +402,7 @@ static gboolean get_ip4_uint32s (NMDHCPManager *manager, NMDevice *dev, const ch
 
 
 static gboolean get_ip4_string (NMDHCPManager *manager, NMDevice *dev, const char *item,
-			char **string, gboolean ignore_error)
+						  char **string, gboolean ignore_error)
 {
 	DBusMessage *	message = NULL;
 	DBusMessage *	reply = NULL;
@@ -546,7 +546,7 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 
 	get_ip4_string (manager, dev, "host_name", &hostname, TRUE);
 	get_ip4_uint32s (manager, dev, "domain_name_servers", &ip4_nameservers, &num_ip4_nameservers, FALSE);
-	get_ip4_string (manager, dev, "domain_name", &domain_names, FALSE);
+	get_ip4_string (manager, dev, "domain_name", &domain_names, TRUE);
 	get_ip4_string (manager, dev, "nis_domain", &nis_domain, TRUE);
 	get_ip4_uint32s (manager, dev, "nis_servers", &ip4_nis_servers, &num_ip4_nis_servers, TRUE);
 

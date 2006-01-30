@@ -1,5 +1,10 @@
 2006-01-30  Robert Love  <rml@novell.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c: Pass TRUE for ignore_error in
+	  get_ip4_string() for "domain_name".
+
+2006-01-30  Robert Love  <rml@novell.com>
+
 	* gnome/applet/nm-gconf-wso-wpa-psk.c, gnome/applet/nm-gconf-wso.c,
 	  gnome/applet/wireless-security-option.c, include/NetworkManager.h,
 	  libnm-util/cipher-wpa-psk-hex.c, src/nm-ap-security-wpa-psk.c,
