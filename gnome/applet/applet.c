@@ -174,12 +174,9 @@ static GtkWidget * get_label (GtkWidget *info_dialog, GladeXML *xml, const char 
 static void nmwa_show_socket_err (GtkWidget *info_dialog, const char *err)
 {
 	GtkWidget *error_dialog;
-	char *msg;
 
-	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
-	                       _("Error displaying connection information: "), err);
-	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, "%s", msg);
-	g_free (msg);
+	error_dialog = gtk_message_dialog_new_with_markup (GTK_WINDOW (info_dialog), 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+			"<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s", _("Error displaying connection information:"), err);
 	gtk_window_present (GTK_WINDOW (error_dialog));
 	g_signal_connect_swapped (error_dialog, "response", G_CALLBACK (gtk_widget_destroy), error_dialog);
 }

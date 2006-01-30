@@ -1,4 +1,9 @@
-2006-01-27  Robert Love  <rml@novell.com>
+2006-01-30  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Apparently gtk_message_dialog_new_with_markup
+	  does not parse the markup if it is not part of the format.
+
+2006-01-30  Robert Love  <rml@novell.com>
 
 	* gnome/applet/passphrase-dialog.c: If wsm_set_capabilities() returns
 	  FALSE, we have no security options for this dialog, so we throw up
