@@ -84,6 +84,7 @@ nm_gconf_wso_new_deserialize_dbus (DBusMessageIter *iter)
 				security = NM_GCONF_WSO (nm_gconf_wso_wep_new_deserialize_dbus (iter, we_cipher));
 				break;
 
+			case NM_AUTH_CIPHER_AUTO:
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
 				security = NM_GCONF_WSO (nm_gconf_wso_wpa_psk_new_deserialize_dbus (iter, we_cipher));
@@ -125,6 +126,7 @@ nm_gconf_wso_new_deserialize_gconf (GConfClient *client,
 				security = NM_GCONF_WSO (nm_gconf_wso_wep_new_deserialize_gconf (client, network, we_cipher));
 				break;
 
+			case NM_AUTH_CIPHER_AUTO:
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
 				security = NM_GCONF_WSO (nm_gconf_wso_wpa_psk_new_deserialize_gconf (client, network, we_cipher));
@@ -174,7 +176,8 @@ nm_gconf_wso_set_we_cipher (NMGConfWSO *self,
 
 	/* Ensure the cipher is valid */
 	g_return_if_fail (
-		   (we_cipher == IW_AUTH_CIPHER_NONE)
+		   (we_cipher == NM_AUTH_CIPHER_AUTO)
+		|| (we_cipher == IW_AUTH_CIPHER_NONE)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP40)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP104)
 		|| (we_cipher == IW_AUTH_CIPHER_TKIP)

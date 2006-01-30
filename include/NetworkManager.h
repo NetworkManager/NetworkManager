@@ -110,6 +110,8 @@ typedef enum NMDeviceType
 #define NM_802_11_CAP_CIPHER_TKIP			0x00004000
 #define NM_802_11_CAP_CIPHER_CCMP			0x00008000
 
+/* Let wpa_supplicant figure out the cipher */
+#define NM_AUTH_CIPHER_AUTO				0x0
 
 /*
  * Wireless network update types

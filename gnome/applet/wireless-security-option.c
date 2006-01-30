@@ -200,14 +200,21 @@ wso_wpa_create_key_type_model (int capabilities,
 	GtkListStore *	model;
 	GtkTreeIter	iter;
 	int			num = 0;
+	const char *	name;
 
 	g_return_val_if_fail (num_added != NULL, NULL);
 
 	model = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
+
+	name = _("Automatic (Default)");
+	gtk_list_store_append (model, &iter);
+	gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
+					WPA_KEY_TYPE_CIPHER_COL, 0, -1);
+	num++;
+
 	if (capabilities & NM_802_11_CAP_CIPHER_TKIP)
 	{
-		const char *name = _("TKIP (Default)");
-
+		name = _("TKIP");
 		gtk_list_store_append (model, &iter);
 		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
 			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_TKIP, -1);
@@ -215,8 +222,7 @@ wso_wpa_create_key_type_model (int capabilities,
 	}
 	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
 	{
-		const char *name = _("AES-CCMP");
-
+		name = _("AES-CCMP");
 		gtk_list_store_append (model, &iter);
 		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
 			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_CCMP, -1);

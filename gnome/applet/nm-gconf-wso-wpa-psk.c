@@ -53,7 +53,7 @@ nm_gconf_wso_wpa_psk_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	int				key_mgt;
 
 	g_return_val_if_fail (iter != NULL, NULL);
-	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+	g_return_val_if_fail ((we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	if (!nmu_security_deserialize_wpa_psk (iter, &key, &key_len, &wpa_version, &key_mgt))
 		goto out;
@@ -78,7 +78,7 @@ nm_gconf_wso_wpa_psk_new_deserialize_gconf (GConfClient *client, const char *net
 
 	g_return_val_if_fail (client != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
-	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+	g_return_val_if_fail ((we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	if (!nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,

@@ -1,3 +1,16 @@
+2006-01-30  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-psk.c, gnome/applet/nm-gconf-wso.c,
+	  gnome/applet/wireless-security-option.c, include/NetworkManager.h,
+	  libnm-util/cipher-wpa-psk-hex.c, src/nm-ap-security-wpa-psk.c,
+	  libnm-util/cipher-wpa-psk-passphrase.c, src/nm-ap-security.c: Add
+	  support for "Automatic" pairwise and group cipher configuration by
+	  letting wpa_supplicant handle the details.  Add UI elements, new
+	  cipher type NM_AUTH_CIPHER_AUTO, and backend support.  Works like a
+	  charm.  Note this does more than add a nice feature, it fixes a bug.
+	  Apparently, some people have AP's where the pairwise cipher does not
+	  match the group cipher.  Insane, but true.
+
 2006-01-30  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.c
