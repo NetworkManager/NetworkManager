@@ -12,7 +12,9 @@ Support WPA Enterprise.
 
 - Access Point link checking thresholds
 
-Wireless link checking could be enhanced to check the signal strength of an access point and switch if the current access point a wireless card is associated with has dropped below say, 20%.
+Wireless link checking could be enhanced to check the signal strength of an
+access point and switch if the current access point a wireless card is
+associated with has dropped below say, 20%.
 
 
 - Gracefully recover from dbus dropouts
@@ -24,5 +26,6 @@ that we could use here.  Note that when dbus dies, hal also dies at the moment.
 
 - Support 40/64 bit passphrases
 
-Allow user to enter passphrases and convert them to 40/64 bit WEP keys on the fly.  Unfortunately, the algorithm for 40/64 bit passphrases is kind of messy.
+Allow user to enter passphrases and convert them to 40/64 bit WEP keys on the
+fly.  Unfortunately, the algorithm for 40/64 bit passphrases is kind of messy.
 
