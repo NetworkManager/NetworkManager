@@ -43,7 +43,7 @@
 #include "wpa_ctrl.h"
 #include "cipher.h"
 
-#define NM_SUPPLICANT_TIMEOUT	20	/* 20s: how long we wait for wpa_supplicant to associate */
+#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
 
 /* #define IW_QUAL_DEBUG */
 
