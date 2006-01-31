@@ -2490,6 +2490,14 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 			"SET_NETWORK %i ssid %s", nwid, hex_essid))
 		goto out;
 
+	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames. */
+	if (nm_ap_get_artificial (ap))
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+				"SET_NETWORK %i scan_ssid 1", nwid))
+			goto out;
+	}
+
 	/* Ad-Hoc ? */
 	user_created = nm_ap_get_user_created (ap);
 	if (user_created)

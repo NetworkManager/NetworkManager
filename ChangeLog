@@ -1,4 +1,10 @@
-2006-01-30  Robert Love  <rml@novell.com>
+2006-01-31  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-11-wireless.c: Set "scan_ssid 1" if the requested
+	  AP is not broadcasting, to scan with probe request frames.  Required
+	  for non-broadcast networks.
+
+2006-01-31  Robert Love  <rml@novell.com>
 
 	* src/nm-device-802-11-wireless.c: Make the wpa_supplicant a
 	  preprocessor define (still 20s).  Fix message text in nm_info()
