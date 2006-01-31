@@ -1,5 +1,12 @@
 2006-01-31  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerAP.c: Add two new manufacturer default network
+	  names: linksys-a and linksys-g.  These are found (at least) on the
+	  Linksys WAP55AG, which does both 802.11a and 802.11b, each with their
+	  own ESSID.
+
+2006-01-31  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerAP.c: Optimize the function
 	  nm_ap_has_manufacturer_default_essid().  I did not like its resulting
 	  machine code.  This is the first in a series of code tweaks aiming to

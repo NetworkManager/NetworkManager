@@ -60,6 +60,8 @@ struct NMAccessPoint
 static const char * default_essid_list[] =
 {
 	"linksys",
+	"linksys-a",
+	"linksys-g",
 	"default",
 	"belkin54g",
 	"NETGEAR",
