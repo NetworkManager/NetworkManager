@@ -2539,8 +2539,8 @@ supplicant_monitor_start (NMDevice80211Wireless *self)
 	g_source_set_callback (self->priv->sup_status, (GSourceFunc) supplicant_status_cb, self, NULL);
 	g_source_attach (self->priv->sup_status, context);
 
-	/* Set up a timeout on the association to kill it after 10s */
-	self->priv->sup_timeout = g_timeout_source_new (10000);
+	/* Set up a timeout on the association to kill it after 20s */
+	self->priv->sup_timeout = g_timeout_source_new (20000);
 	g_source_set_callback (self->priv->sup_timeout, supplicant_timeout_cb, self, NULL);
 	g_source_attach (self->priv->sup_timeout, context);
 

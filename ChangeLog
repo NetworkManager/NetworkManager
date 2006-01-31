@@ -1,5 +1,11 @@
 2006-01-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_monitor_start): increase connect/auth timeout to
+			20 seconds from 10 seconds
+
+2006-01-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/Makefile.am
 		- Define LOCALSTATEDIR
 
