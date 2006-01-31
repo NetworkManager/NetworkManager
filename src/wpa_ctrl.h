@@ -60,7 +60,7 @@ extern "C" {
  * is configured in wpa_supplicant/hostapd and other programs using the control
  * interface need to use matching path configuration.
  */
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path);
+struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path, const char *local_path_dir);
 
 
 /**

@@ -1,3 +1,15 @@
+2006-01-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/Makefile.am
+		- Define LOCALSTATEDIR
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_exec): tell wpa_ctrl_open() to stick the local control
+			socket where we want it to
+
+	* src/wpa_ctrl.[ch]
+		- (wpa_ctrl_open): accept location to put local control socket
+
 2006-01-30  Robert Love  <rml@novell.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c: Pass TRUE for ignore_error in

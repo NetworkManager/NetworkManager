@@ -2399,13 +2399,17 @@ supplicant_exec (NMDevice80211Wireless *self)
 static gboolean
 supplicant_interface_init (NMDevice80211Wireless *self)
 {
+#define NM_WPA_CTRL_IFACE_DIR		LOCALSTATEDIR"/run/NetworkManager"
 	struct wpa_ctrl *	ctrl;
 	char *			socket_path;
 	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
 	gboolean			success = FALSE;
 	int				tries = 0;
 
-	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET)))
+	/* Ensure our control socket directory is around */
+	mkdir (NM_WPA_CTRL_IFACE_DIR, 0700);
+
+	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_WPA_CTRL_IFACE_DIR)))
 		goto exit;
 
 	/* wpa_cli -g/var/run/wpa_supplicant-global interface_add eth1 "" wext /var/run/wpa_supplicant */
@@ -2420,7 +2424,7 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	 */
 	socket_path = supplicant_get_device_socket_path (self);
 	while (!self->priv->sup_ctrl && (tries++ < 10))
-		self->priv->sup_ctrl = wpa_ctrl_open (socket_path);
+		self->priv->sup_ctrl = wpa_ctrl_open (socket_path, NM_WPA_CTRL_IFACE_DIR);
 	g_free (socket_path);
 	if (!self->priv->sup_ctrl)
 	{

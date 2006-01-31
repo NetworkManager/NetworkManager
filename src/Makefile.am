@@ -76,6 +76,7 @@ NetworkManager_CPPFLAGS = 							\
 	-DBINDIR=\"$(bindir)\"							\
 	-DDATADIR=\"$(datadir)\"							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
+	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
 	-DARP_DEBUG
 
 

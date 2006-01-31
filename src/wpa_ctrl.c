@@ -28,7 +28,6 @@
 #include "wpa_ctrl.h"
 /* WHACK #include "common.h" */
 
-
 /**
  * struct wpa_ctrl - Internal structure for control interface library
  *
@@ -50,7 +49,8 @@ struct wpa_ctrl {
 };
 
 
-struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
+struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path,
+                                const char *local_path_dir)
 {
 	struct wpa_ctrl *ctrl;
 #ifndef CONFIG_CTRL_IFACE_UDP
@@ -98,7 +98,7 @@ struct wpa_ctrl * wpa_ctrl_open(const char *ctrl_path)
 
 	ctrl->local.sun_family = AF_UNIX;
 	snprintf(ctrl->local.sun_path, sizeof(ctrl->local.sun_path),
-		 "/tmp/wpa_ctrl_%d-%d", getpid(), counter++);
+		 "%s/wpa_ctrl_%d-%d", local_path_dir, getpid(), counter++);
 	if (bind(ctrl->s, (struct sockaddr *) &ctrl->local,
 		    sizeof(ctrl->local)) < 0) {
 		close(ctrl->s);
