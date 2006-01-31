@@ -1,3 +1,9 @@
+2006-01-31  Dan Williams  <dcbw@redhat.com>
+
+	* nm-applet.desktop
+		- Add --sm-disable to Exec arguments, presuming that when
+			using autostart, we don't want session management
+
 2006-01-31  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerAP.c: Add two new manufacturer default network
