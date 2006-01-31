@@ -1,5 +1,16 @@
 2006-01-31  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerAP.c: Optimize the function
+	  nm_ap_has_manufacturer_default_essid().  I did not like its resulting
+	  machine code.  This is the first in a series of code tweaks aiming to
+	  generate better machine code and make NetworkManager all the better.
+	  Just kidding.  Who has time to go through the assembly generated for
+	  every function?  I certainly don't.  I have a wife, a kid, a job,
+	  a mortgage, a mistress.  But this function was so bad, I was called
+	  to arms.  Like the book.
+
+2006-01-31  Robert Love  <rml@novell.com>
+
 	* src/nm-device-802-11-wireless.c: Set "scan_ssid 1" if the requested
 	  AP is not broadcasting, to scan with probe request frames.  Required
 	  for non-broadcast networks.

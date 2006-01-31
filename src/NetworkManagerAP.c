@@ -57,7 +57,7 @@ struct NMAccessPoint
 };
 
 /* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
-static char* default_essid_list[] =
+static const char * default_essid_list[] =
 {
 	"linksys",
 	"default",
@@ -522,14 +522,15 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 
 gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 {
-	int i;
+	const char **default_essid = default_essid_list;
+	const char *this_essid;
 
 	g_return_val_if_fail (ap != NULL, FALSE);
+	this_essid = ap->essid;
 
-	for (i = 0; default_essid_list[i] != NULL; i++)
+	while (*default_essid)
 	{
-		char *essid = default_essid_list[i];
-		if (strcmp (essid, ap->essid) == 0)
+		if (!strcmp (*(default_essid++), this_essid))
 			return TRUE;
 	}
 
