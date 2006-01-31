@@ -43,6 +43,8 @@
 #include "wpa_ctrl.h"
 #include "cipher.h"
 
+#define NM_SUPPLICANT_TIMEOUT	20	/* 20s: how long we wait for wpa_supplicant to associate */
+
 /* #define IW_QUAL_DEBUG */
 
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
@@ -2347,8 +2349,8 @@ supplicant_timeout_cb (gpointer user_data)
 
 	g_assert (self);
 
-	nm_info ("Activation (%s/wireless): association too too long (>10s), failing activation.",
-			nm_device_get_iface (dev));
+	nm_info ("Activation (%s/wireless): association took too long (>%ss), failing activation.",
+			nm_device_get_iface (dev), NM_SUPPLICANT_TIMEOUT);
 
 	if (nm_device_is_activating (dev))
 		nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
@@ -2539,8 +2541,8 @@ supplicant_monitor_start (NMDevice80211Wireless *self)
 	g_source_set_callback (self->priv->sup_status, (GSourceFunc) supplicant_status_cb, self, NULL);
 	g_source_attach (self->priv->sup_status, context);
 
-	/* Set up a timeout on the association to kill it after 20s */
-	self->priv->sup_timeout = g_timeout_source_new (20000);
+	/* Set up a timeout on the association to kill it after NM_SUPPLICANT_TIMEOUT seconds */
+	self->priv->sup_timeout = g_timeout_source_new (NM_SUPPLICANT_TIMEOUT * 1000);
 	g_source_set_callback (self->priv->sup_timeout, supplicant_timeout_cb, self, NULL);
 	g_source_attach (self->priv->sup_timeout, context);
 

@@ -1,3 +1,9 @@
+2006-01-30  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-11-wireless.c: Make the wpa_supplicant a
+	  preprocessor define (still 20s).  Fix message text in nm_info()
+	  s/too too/took too/.
+
 2006-01-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
