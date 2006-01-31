@@ -2349,7 +2349,7 @@ supplicant_timeout_cb (gpointer user_data)
 
 	g_assert (self);
 
-	nm_info ("Activation (%s/wireless): association took too long (>%ss), failing activation.",
+	nm_info ("Activation (%s/wireless): association took too long (>%ds), failing activation.",
 			nm_device_get_iface (dev), NM_SUPPLICANT_TIMEOUT);
 
 	if (nm_device_is_activating (dev))
@@ -2409,7 +2409,7 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	int				tries = 0;
 
 	/* Ensure our control socket directory is around */
-	mkdir (NM_WPA_CTRL_IFACE_DIR, 0700);
+	mkdir (NM_WPA_CTRL_IFACE_DIR, S_IRWXU);
 
 	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_WPA_CTRL_IFACE_DIR)))
 		goto exit;
