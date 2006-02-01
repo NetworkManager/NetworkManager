@@ -2,3 +2,4 @@ Makefile
 Makefile.in
 NetworkManager.1
 NetworkManagerDispatcher.1
+nm-tool.1
