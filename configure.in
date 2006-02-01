@@ -330,6 +330,7 @@ initscript/SUSE/networkmanager-dispatcher
 man/Makefile
 man/NetworkManager.1
 man/NetworkManagerDispatcher.1
+man/nm-tool.1
 po/Makefile.in
 NetworkManager.pc
 ])

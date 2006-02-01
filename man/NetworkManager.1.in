@@ -22,4 +22,5 @@ Do not daemonize.  This is useful for debugging.
 .I "--enable-test-devices"
 Enable support for virtual test devices.  These are useful for debugging.
 .SH SEE ALSO
-.BR NetworkManagerDispatcher (1)
+.BR NetworkManagerDispatcher (1),
+.BR nm-tool (1)
