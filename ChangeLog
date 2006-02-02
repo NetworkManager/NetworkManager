@@ -1,5 +1,15 @@
 2006-02-02  Robert Love  <rml@novell.com>
 
+	* src/Makefile.am: If we aren't going to create the run directory at,
+	  uh, run-time, create it during install.  Then users just doing
+	  'make install' are cool, too.  While we are here, create the
+	  dispatcher.d directory, too.
+	* src/nm-device-802-11-wireless.c: Let the Makefile define and pass in
+	  the exact run directory.
+	* Makefile.am: Install nm-applet.desktop.
+
+2006-02-02  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerAP.c: Add 'broadcast' property to the NMAccessPoint
 	  structure, which denotes whether or not the AP is hidden.  This is a
 	  superset of 'artificial' -- we need 'broadcast' because a hidden AP

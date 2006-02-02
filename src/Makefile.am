@@ -64,6 +64,12 @@ NetworkManager_SOURCES =				\
 		wpa_ctrl.c				\
 		wpa_ctrl.h
 
+rundir=$(localstatedir)/run/NetworkManager
+dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
+install-data-hook:
+	   $(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
+	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+
 NetworkManager_CPPFLAGS = 							\
 	$(DBUS_CFLAGS)									\
 	$(GTHREAD_CFLAGS)								\
@@ -77,6 +83,7 @@ NetworkManager_CPPFLAGS = 							\
 	-DDATADIR=\"$(datadir)\"							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
+	-DNM_RUN_DIR=\"$(rundir)\"						\
 	-DARP_DEBUG
 
 
@@ -92,6 +99,8 @@ NetworkManager_LDADD = 							\
 			./dhcp-manager/libdhcp-manager.la		\
 			./backends/libnmbackend.la			\
 			$(top_builddir)/libnm-util/libnm-util.la
+
+
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf

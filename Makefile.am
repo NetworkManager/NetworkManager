@@ -21,5 +21,7 @@ EXTRA_DIST =				\
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
 pkgconfigdir = $(libdir)/pkgconfig
-
 pkgconfig_DATA = NetworkManager.pc
+
+autostartdir = $(datadir)/autostart
+autostart_DATA = nm-applet.desktop
