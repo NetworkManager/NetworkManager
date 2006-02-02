@@ -1,3 +1,9 @@
+2006-02-02  Robert Love  <rml@novell.com>
+
+	Patch by Sureshkumar T <tsureshkumar@novell.com>:
+	* src/vpn-manager/nm-vpn-connection.c, src/NetworkManagerSystem.c:
+	  Check for and handle empty string for iface.
+
 2006-02-01  Robert Love  <rml@novell.com>
 
 	* configure.in, man/nm-tool.1.in, man/Makefile.am: Add nm-tool(1)
@@ -114,8 +120,8 @@
 	  Novell #138404.
 	* gnome/applet/wireless-security-manager.c,
 	  gnome/applet/wireless-security-manager.h: If wsm_set_capabilities()
-	  does not add any security options, not even none, print a warning
-	  and return FALSE.  This let's functions constructed a dialog bail
+	  does not add any security options, not even NONE, print a warning
+	  and return FALSE.  This let's functions constructing a dialog bail
 	  out if the device's capabilities and the network's requirements have
 	  zero overlap.
 

@@ -273,7 +273,7 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
 		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF);
 
-	if (iface != NULL)
+	if (iface != NULL && strlen (iface))
 	{
 		nm_system_device_set_up_down_with_iface (NULL, iface, TRUE);
 
