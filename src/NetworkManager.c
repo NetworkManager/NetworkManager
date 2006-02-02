@@ -389,7 +389,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	if (pipe (data->sigterm_pipe) < 0)
 	{
 		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
-		exit (EXIT_FAILURE);
+		return NULL;
 	}
 
 	data->sigterm_iochannel = g_io_channel_unix_new (data->sigterm_pipe[0]);
@@ -398,12 +398,16 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	g_source_attach (iosource, data->main_context);
 	g_source_unref (iosource);
 
+	action.sa_sigaction = NULL;
 	action.sa_handler = sigterm_handler;
 	sigemptyset (&block_mask);
 	action.sa_mask = block_mask;
 	action.sa_flags = 0;
-	sigaction (SIGINT, &action, NULL);
-	sigaction (SIGTERM, &action, NULL);
+	if (sigaction (SIGINT, &action, NULL) || sigaction (SIGTERM, &action, NULL))
+	{
+		nm_error ("Failed to install signal handlers: %s", g_strerror (errno));
+		return NULL;
+	}
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
@@ -489,12 +493,12 @@ static void nm_data_free (NMData *data)
 
 static void sigterm_handler (int signum)
 {
-        int ignore;
+	int ignore;
 
-	/* FIXME: This line is probably not a great 
-	 * thing to have in a signal handler
+	/* FIXME: This is probably not a great thing to have in a signal handler,
+	 * but you only live once.
 	 */
-	nm_info ("Caught SIGINT/SIGTERM");
+	nm_info ("Caught %s", signum == SIGINT ? "SIGINT" : "SIGTERM");
 
 	ignore = write (nm_data->sigterm_pipe[1], "X", 1);
 }
