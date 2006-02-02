@@ -1,3 +1,10 @@
+2006-02-02  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_interface_init): don't try to create
+			/var/run/NetworkManager, since that should be done by
+			the distro package.  Causes problems for stuff like SELinux
+
 2006-02-02  Robert Love  <rml@novell.com>
 
 	Patch by Sureshkumar T <tsureshkumar@novell.com>:

@@ -2408,9 +2408,6 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	gboolean			success = FALSE;
 	int				tries = 0;
 
-	/* Ensure our control socket directory is around */
-	mkdir (NM_WPA_CTRL_IFACE_DIR, S_IRWXU);
-
 	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_WPA_CTRL_IFACE_DIR)))
 		goto exit;
 
