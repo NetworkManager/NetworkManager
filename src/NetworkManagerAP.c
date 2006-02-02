@@ -46,6 +46,7 @@ struct NMAccessPoint
 	/* Non-scanned attributes */
 	gboolean			invalid;
 	gboolean			artificial;	/* Whether or not the AP is from a scan */
+	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	gboolean			user_created;	/* Whether or not the AP was created by the user with "Create network..." */
 	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
 
@@ -430,6 +431,24 @@ void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
 	g_return_if_fail (ap != NULL);
 
 	ap->artificial = artificial;
+}
+
+
+/*
+ * Get/Set functions to indicate whether an access point is broadcasting
+ * (hidden).  This is a superset of artificial.
+ */
+gboolean nm_ap_get_broadcast (const NMAccessPoint *ap)
+{
+	g_return_val_if_fail (ap != NULL, TRUE);
+	return ap->broadcast;
+}
+
+
+void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
+{
+	g_return_if_fail (ap != NULL);
+	ap->broadcast = broadcast;
 }
 
 

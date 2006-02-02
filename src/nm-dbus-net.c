@@ -246,19 +246,21 @@ static DBusMessage *nm_dbus_net_get_properties (DBusConnection *connection, DBus
 		dbus_int32_t	rate = nm_ap_get_rate (data->ap);
 		dbus_int32_t	mode = (dbus_int32_t) nm_ap_get_mode (data->ap);
 		dbus_int32_t	capabilities = (dbus_int32_t) nm_ap_get_capabilities (data->ap);
+		dbus_bool_t	broadcast = (dbus_bool_t) nm_ap_get_broadcast (data->ap);
 
 		memset (&hw_addr_buf[0], 0, 20);
 		if (nm_ap_get_address (data->ap))
 			iw_ether_ntop((const struct ether_addr *) (nm_ap_get_address (data->ap)), &hw_addr_buf[0]);
 
 		dbus_message_append_args (reply,	DBUS_TYPE_OBJECT_PATH, &op,
-									DBUS_TYPE_STRING, &essid,
-									DBUS_TYPE_STRING, &hw_addr_buf_ptr,
-									DBUS_TYPE_INT32,  &strength,
-									DBUS_TYPE_DOUBLE, &freq,
-									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_INT32,  &mode,
-									DBUS_TYPE_INT32,  &capabilities,
+									DBUS_TYPE_STRING,  &essid,
+									DBUS_TYPE_STRING,  &hw_addr_buf_ptr,
+									DBUS_TYPE_INT32,   &strength,
+									DBUS_TYPE_DOUBLE,  &freq,
+									DBUS_TYPE_INT32,   &rate,
+									DBUS_TYPE_INT32,   &mode,
+									DBUS_TYPE_INT32,   &capabilities,
+									DBUS_TYPE_BOOLEAN, &broadcast,
 									DBUS_TYPE_INVALID);
 		g_free (op);
 	}

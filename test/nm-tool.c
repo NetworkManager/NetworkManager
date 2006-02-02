@@ -122,6 +122,7 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 	dbus_int32_t		rate = 0;
 	dbus_int32_t		capabilities = NM_802_11_CAP_NONE;
 	dbus_uint32_t		mode = 0;
+	gboolean			broadcast = TRUE;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (path != NULL);
@@ -141,13 +142,14 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 	}
 
 	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_OBJECT_PATH, &op,
-									DBUS_TYPE_STRING, &essid,
-									DBUS_TYPE_STRING, &hw_addr,
-									DBUS_TYPE_INT32,  &strength,
-									DBUS_TYPE_DOUBLE, &freq,
-									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_INT32,  &mode,
-									DBUS_TYPE_INT32,  &capabilities,
+									DBUS_TYPE_STRING,  &essid,
+									DBUS_TYPE_STRING,  &hw_addr,
+									DBUS_TYPE_INT32,   &strength,
+									DBUS_TYPE_DOUBLE,  &freq,
+									DBUS_TYPE_INT32,   &rate,
+									DBUS_TYPE_INT32,   &mode,
+									DBUS_TYPE_INT32,   &capabilities,
+									DBUS_TYPE_BOOLEAN, &broadcast,
 									DBUS_TYPE_INVALID))
 	{
 		char *temp = NULL;
@@ -176,8 +178,8 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 			enc_string = g_string_append (enc_string, ")");
 		}
 
-		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s", (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
-					flt_freq, strength, (enc_string && strlen (enc_string->str)) ? enc_string->str : "");
+		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s%s", (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
+					flt_freq, strength, (enc_string && strlen (enc_string->str)) ? enc_string->str : "", !broadcast ? ", Hidden" : "");
 		temp_essid = g_strdup_printf ("  %s%s", active ? "*" : "", essid);
 		print_string (temp_essid, temp);
 		g_string_free (enc_string, TRUE);

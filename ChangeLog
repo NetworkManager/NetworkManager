@@ -1,3 +1,23 @@
+2006-02-02  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerAP.c: Add 'broadcast' property to the NMAccessPoint
+	  structure, which denotes whether or not the AP is hidden.  This is a
+	  superset of 'artificial' -- we need 'broadcast' because a hidden AP
+	  can show up in the scan list.  Add nm_ap_get_broadcast() and
+	  nm_ap_set_broadcast() accessor interfaces.
+	* src/NetworkManagerAP.h: Add prototypes for nm_ap_get_broadcast() and
+	  nm_ap_set_broadcast().
+	* src/nm-dbus-net.c: Add new argument, boolean broadcast, to the
+	  "getProperties" method, which denotes whether or not the given
+	  network is hidden.
+	* src/nm-device-802-11-wireless.c: Set broadcast to FALSE when creating
+	  an artificial network.  Set broadcast to TRUE when scanning returns
+	  an ESSID and FALSE when not.
+	* gnome/applet/applet-dbus-devices.c: Retrieve 'broadcast' argument
+	  from "getProperties" method on a network.  Possible TODO is to
+	  somehow display this.
+	* test/nm-tool.c: Display "Hidden" if the AP does not broadcast.
+
 2006-02-02  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

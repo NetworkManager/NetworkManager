@@ -666,6 +666,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 		ap = nm_ap_new ();
 		nm_ap_set_essid (ap, essid);
 		nm_ap_set_artificial (ap, TRUE);
+		nm_ap_set_broadcast (ap, FALSE);
 		nm_ap_list_append_ap (dev_ap_list, ap);
 		nm_ap_unref (ap);
 	}
@@ -2488,7 +2489,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 		goto out;
 
 	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames. */
-	if (nm_ap_get_artificial (ap))
+	if (!nm_ap_get_broadcast (ap))
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i scan_ssid 1", nwid))
@@ -3149,7 +3150,12 @@ process_scan_results (NMDevice80211Wireless *dev,
 					else if ((strlen (essid) == 8) && (strcmp (essid, "<hidden>") == 0))	/* Stupid ipw drivers use <hidden> */
 						set = FALSE;
 					if (set)
+					{
+						nm_ap_set_broadcast (ap, TRUE);
 						nm_ap_set_essid (ap, essid);
+					}
+					else
+						nm_ap_set_broadcast (ap, FALSE);
 					g_free (essid);
 				}
 				break;

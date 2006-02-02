@@ -540,6 +540,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	dbus_int32_t		rate = 0;
 	dbus_int32_t		mode = -1;
 	dbus_int32_t		capabilities = NM_802_11_CAP_NONE;
+	dbus_bool_t		broadcast = TRUE;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -570,13 +571,14 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	}
 
 	if (dbus_message_get_args (reply, NULL,	DBUS_TYPE_OBJECT_PATH, &op,
-									DBUS_TYPE_STRING, &essid,
-									DBUS_TYPE_STRING, &hw_addr,
-									DBUS_TYPE_INT32,  &strength,
-									DBUS_TYPE_DOUBLE, &freq,
-									DBUS_TYPE_INT32,  &rate,
-									DBUS_TYPE_INT32,  &mode,
-									DBUS_TYPE_INT32,  &capabilities,
+									DBUS_TYPE_STRING,  &essid,
+									DBUS_TYPE_STRING,  &hw_addr,
+									DBUS_TYPE_INT32,   &strength,
+									DBUS_TYPE_DOUBLE,  &freq,
+									DBUS_TYPE_INT32,   &rate,
+									DBUS_TYPE_INT32,   &mode,
+									DBUS_TYPE_INT32,   &capabilities,
+									DBUS_TYPE_BOOLEAN, &broadcast,
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *	dev;

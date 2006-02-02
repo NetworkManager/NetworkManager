@@ -77,6 +77,9 @@ void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
 gboolean			nm_ap_get_artificial	(const NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
+gboolean			nm_ap_get_broadcast		(const NMAccessPoint *ap);
+void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
+
 const GTimeVal *	nm_ap_get_last_seen		(const NMAccessPoint *ap);
 void				nm_ap_set_last_seen		(NMAccessPoint *ap, const GTimeVal *last_seen);
 
