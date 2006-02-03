@@ -1,3 +1,8 @@
+2006-02-03  Christopher Aillon  <caillon@redhat.com>
+
+	* initscript/RedHat/NetworkManager.in: modify the pidfile location
+	Patch from Dan Walsh <dwalsh@redhat.com>
+
 2006-02-03  Robert Love  <rml@novell.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c,

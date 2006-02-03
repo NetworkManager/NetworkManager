@@ -7,7 +7,7 @@
 #               connections to the best available connection. \
 #
 # processname: NetworkManager
-# pidfile: /var/run/NetworkManager.pid
+# pidfile: /var/run/NetworkManager/NetworkManager.pid
 #
 
 prefix=@prefix@
@@ -28,7 +28,7 @@ NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 # so we can rearrange this easily
 processname=NetworkManager
 servicename=NetworkManager
-pidfile=/var/run/NetworkManager.pid
+pidfile=/var/run/NetworkManager/NetworkManager.pid
 
 RETVAL=0
 
