@@ -1,3 +1,10 @@
+2006-02-02  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/main.c
+		- (main): in a variation on Robert's patch, change
+			RESTART_IMMEDIATELY -> RESTART_NEVER.  Should do what
+			he wants.
+
 2006-02-02  Robert Love  <rml@novell.com>
 
 	* src/Makefile.am: If we aren't going to create the run directory at,

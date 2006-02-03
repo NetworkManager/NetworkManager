@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
 			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 
     	client = gnome_master_client ();
-    	gnome_client_set_restart_style (client, GNOME_RESTART_IMMEDIATELY);
+    	gnome_client_set_restart_style (client, GNOME_RESTART_NEVER);
 
     	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);
     	g_signal_connect (client, "die", G_CALLBACK (session_die), NULL);
@@ -66,8 +66,6 @@ int main (int argc, char *argv[])
 		gtk_widget_show_all (GTK_WIDGET (nmwa));
 		gtk_main ();
 	}
-
-    	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
 	return 0;
 }
