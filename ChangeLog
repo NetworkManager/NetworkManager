@@ -1,3 +1,10 @@
+2006-02-03  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerUtils.c: Even for debugging, we should not log the
+	  user's encryption key, so we print the err_msg_cmd not the command,
+	  if available.  So long as SUPPLICANT_DEBUG is default, this makes
+	  sense.
+
 2006-02-03  Christopher Aillon  <caillon@redhat.com>
 
 	* initscript/RedHat/NetworkManagerDispatcher.in:

@@ -762,7 +762,7 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 	response = g_malloc (RESPONSE_SIZE);
 	len = RESPONSE_SIZE;
 #ifdef SUPPLICANT_DEBUG
-	nm_info ("SUP: sending command '%s'", command);
+	nm_info ("SUP: sending command '%s'", err_msg_cmd ? err_msg_cmd : command);
 #endif
 	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
 	response[len] = '\0';
