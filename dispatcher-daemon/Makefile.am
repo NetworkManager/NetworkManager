@@ -10,7 +10,8 @@ NetworkManagerDispatcher_CPPFLAGS = 	\
 	-Wall						\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\
-	-DDATADIR=\"$(datadir)\"		\
+	-DDATADIR=\"$(datadir)\"			\
+	-DSYSCONFDIR=\"$(sysconfdir)\"	\
 	$(NULL)
 
 NetworkManagerDispatcher_SOURCES =	NetworkManagerDispatcher.c

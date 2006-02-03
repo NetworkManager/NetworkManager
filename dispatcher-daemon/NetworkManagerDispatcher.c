@@ -48,7 +48,7 @@ enum NMDAction
 typedef enum NMDAction	NMDAction;
 
 
-#define NM_SCRIPT_DIR	"/etc/NetworkManager/dispatcher.d"
+#define NM_SCRIPT_DIR	SYSCONFDIR"/NetworkManager/dispatcher.d"
 
 
 /*
