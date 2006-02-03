@@ -7,7 +7,7 @@
 #              changes the network state.
 #
 # processname: NetworkManagerDispatcher
-# pidfile: /var/run/NetworkManagerDispatcher.pid
+# pidfile: /var/run/NetworkManager/NetworkManagerDispatcher.pid
 #
 
 prefix=@prefix@
@@ -25,7 +25,7 @@ NETWORKMANAGERDISPATCHER_BIN=${sbindir}/NetworkManagerDispatcher
 # so we can rearrange this easily
 processname=NetworkManagerDispatcher
 servicename=NetworkManagerDispatcher
-pidfile=/var/run/NetworkManagerDispatcher.pid
+pidfile=/var/run/NetworkManager/NetworkManagerDispatcher.pid
 
 RETVAL=0
 
