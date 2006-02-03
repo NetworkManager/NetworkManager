@@ -1,4 +1,10 @@
-2006-02-02  Dan Williams  <dcbw@redhat.com>
+2006-02-03  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/main.c
+		- (main): change the NEVER->ALWAYS so we start at the
+			beginning of the session, if being session-managed
+
+2006-02-03  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/main.c
 		- (main): in a variation on Robert's patch, change
