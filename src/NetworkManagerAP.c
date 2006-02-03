@@ -79,15 +79,11 @@ NMAccessPoint * nm_ap_new (void)
 {
 	NMAccessPoint	*ap;
 	
-	if (!(ap = g_malloc0 (sizeof (NMAccessPoint))))
-	{
-		nm_warning ("nm_ap_new() could not allocate a new user access point info structure.  Not enough memory?");
-		return NULL;
-	}
-
+	ap = g_malloc0 (sizeof (NMAccessPoint));
 	ap->mode = IW_MODE_INFRA;
 	ap->refcount = 1;
 	ap->capabilities = NM_802_11_CAP_PROTO_NONE;
+	ap->broadcast = TRUE;
 
 	return ap;
 }
@@ -122,6 +118,8 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_ap->freq = src_ap->freq;
 	new_ap->rate = src_ap->rate;
 	new_ap->capabilities = src_ap->capabilities;
+	new_ap->artificial = src_ap->artificial;
+	new_ap->broadcast = src_ap->broadcast;
 
 	if (src_ap->security)
 		new_ap->security = nm_ap_security_new_copy (src_ap->security);

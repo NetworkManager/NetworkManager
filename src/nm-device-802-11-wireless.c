@@ -3149,10 +3149,7 @@ process_scan_results (NMDevice80211Wireless *dev,
 					else if ((strlen (essid) == 8) && (strcmp (essid, "<hidden>") == 0))	/* Stupid ipw drivers use <hidden> */
 						set = FALSE;
 					if (set)
-					{
-						nm_ap_set_broadcast (ap, TRUE);
 						nm_ap_set_essid (ap, essid);
-					}
 					else
 						nm_ap_set_broadcast (ap, FALSE);
 					g_free (essid);
