@@ -922,7 +922,8 @@ out_gfree:
 void nm_system_activate_nis (NMIP4Config *config)
 {
 	shvarFile *file;
-	gchar *nis_domain, *name, *buf = NULL; 
+	const char *nis_domain;
+	char *name, *buf = NULL; 
 	int num_nis_servers = 0; 
 	struct in_addr	temp_addr;
 	int i;
@@ -1021,15 +1022,13 @@ void nm_system_shutdown_nis (void)
  */
 void nm_system_set_hostname (NMIP4Config *config)
 {
+	char *filename, *h_name = NULL, *buf;
 	shvarFile *file;
-	gchar *name, *buf, *hostname = NULL;
-	struct in_addr temp_addr;
-	struct hostent *host = NULL;
 
 	g_return_if_fail (config != NULL);
 
-	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
-	file = svNewFile (name);
+	filename = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
+	file = svNewFile (filename);
 	if (!file)
 		goto out_gfree;
 
@@ -1039,16 +1038,21 @@ void nm_system_set_hostname (NMIP4Config *config)
 
 	if (!strcmp (buf, "yes")) 
 	{
+		const char *hostname;
+
 		hostname = nm_ip4_config_get_hostname (config);
 		if (!hostname)
 		{
+			struct in_addr temp_addr;
+			struct hostent *host;
+
 			/* try to get hostname via dns */
 			temp_addr.s_addr = nm_ip4_config_get_address (config);
 			host = gethostbyaddr ((char *) &temp_addr, sizeof (temp_addr), AF_INET);
 			if (host)
 			{
-				hostname = g_strdup (host->h_name);
-				hostname = strtok (hostname, ".");	
+				h_name = g_strdup (host->h_name);
+				hostname = strtok (h_name, ".");
 			}
 			else
 				nm_warning ("nm_system_set_hostname(): gethostbyaddr failed, h_errno = %d", h_errno);
@@ -1061,10 +1065,11 @@ void nm_system_set_hostname (NMIP4Config *config)
 				nm_warning ("Could not set hostname.");
 		}
 	}
-	free (buf);
 
+	g_free (h_name);
+	free (buf);
 out_close:
 	svCloseFile (file);
 out_gfree:
-	g_free (name);
+	g_free (filename);
 }

@@ -1,5 +1,16 @@
 2006-02-03  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-11-wireless.c, src/nm-device-802-11-wireless.h:
+	  Make nm_device_802_11_wireless_get_essid() return 'const char *' not
+	  'char *'.
+	* src/nm-ip4-config.c, src/nm-ip4-config.h: Make the functions
+	  nm_ip4_config_get_hostname() and
+	  nm_ip4_config_get_nis_domain() return 'const char *' not 'char *'.
+	* src/backends/NetworkManagerSuSE.c: Fix up for above.  Also, do not
+	  leak g_strdup() result.
+
+2006-02-03  Robert Love  <rml@novell.com>
+
 	* src/NetworkManagerAP.c: In nm_ap_new(), default new networks to
 	  broadcast == TRUE.  Also, copy broadcast and artificial properties
 	  from source network to destination in nm_ap_copy().

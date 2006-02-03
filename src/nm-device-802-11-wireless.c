@@ -465,7 +465,7 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 
 	if (is_associated (self))
 	{
-		char *		dev_essid = nm_device_802_11_wireless_get_essid (self);
+		const char *	dev_essid = nm_device_802_11_wireless_get_essid (self);
 		const char *	ap_essid = nm_ap_get_essid (ap);
 
 		if (dev_essid && ap_essid && !strcmp (dev_essid, ap_essid))
@@ -1171,7 +1171,7 @@ out:
  * Returns:	allocated string containing essid.  Must be freed by caller.
  *
  */
-char *
+const char *
 nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self)
 {
 	NMSock *		sk;

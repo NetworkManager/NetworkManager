@@ -283,7 +283,7 @@ void nm_ip4_config_set_hostname (NMIP4Config *config, const char *hostname)
 	config->hostname = g_strdup (hostname);
 }
 
-gchar *nm_ip4_config_get_hostname (NMIP4Config *config)
+const char *nm_ip4_config_get_hostname (NMIP4Config *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
@@ -301,7 +301,7 @@ void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain)
 	config->nis_domain = g_strdup (domain);
 }
 
-gchar *nm_ip4_config_get_nis_domain (NMIP4Config *config)
+const char *nm_ip4_config_get_nis_domain (NMIP4Config *config)
 {
 	g_return_val_if_fail( config != NULL, NULL);
 	return config->nis_domain;
