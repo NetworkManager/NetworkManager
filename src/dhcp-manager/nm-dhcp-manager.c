@@ -639,7 +639,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	if (!(interface = dbus_message_get_interface (message)))
 		return FALSE;
 	/* Ignore non-DHCP related messages */
-	if (strncmp (interface, "com.redhat.dhcp", 15))
+	if (strncmp (interface, DHCP_SERVICE_NAME, 15))
 		return FALSE;
 
 #if 0
@@ -652,7 +652,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	dev = nm_get_device_by_iface (manager->data, member);
 	if (dev && (req = nm_device_get_act_request (dev)))
 	{
-		if (dbus_message_is_signal (message, "com.redhat.dhcp.state", nm_device_get_iface (dev)))
+		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", nm_device_get_iface (dev)))
 		{
 			guint8	state;
 
