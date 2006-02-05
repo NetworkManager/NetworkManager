@@ -1,5 +1,14 @@
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (ap_need_key, real_act_stage2_config): deal with APs changing
+			settings on us.  Previously NM would loop asking for the
+			key but getting the same one back.  Now, if the NMI-supplied
+			cipher doesn't overlap with the scanned AP capabilities,
+			we request a completely new key from the user.
+
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 		- (nm_utils_supplicant_request_with_check, nm_utils_supplicant_request):
 			Handle newline killing better

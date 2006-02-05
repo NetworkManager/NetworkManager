@@ -2100,18 +2100,23 @@ out:
 
 
 static gboolean
-ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
+ap_need_key (NMDevice80211Wireless *self,
+             NMAccessPoint *ap,
+             gboolean *ask_user)
 {
 	const char *	essid;
 	gboolean		need_key = FALSE;
 	NMAPSecurity *	security;
 	const char *	iface;
+	int			we_cipher;
 
 	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (ask_user != NULL, FALSE);
 
 	essid = nm_ap_get_essid (ap);
 	security = nm_ap_get_security (ap);
 	g_assert (security);
+	we_cipher = nm_ap_security_get_we_cipher (security);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
@@ -2119,21 +2124,37 @@ ap_need_key (NMDevice80211Wireless *self, NMAccessPoint *ap)
 	{
 		nm_info ("Activation (%s/wireless): access point '%s' is unencrypted, no key needed.", 
 			 iface, essid ? essid : "(null)");
+
+		/* If the user-specified security info doesn't overlap the
+		 * scanned access point's info, create new info from the scanned
+		 * characteristics of the access point.  Can happen if the AP's
+		 * settings were changed.
+		 */
+		if (we_cipher != IW_AUTH_CIPHER_NONE)
+			nm_ap_set_security (ap, nm_ap_security_new_from_ap (ap));
 	}
 	else
 	{
-		if (nm_ap_security_get_key (security))
-		{
-			nm_info ("Activation (%s/wireless): access point '%s' "
-				 "is encrypted, and a key exists.  No new key needed.",
-			  	 iface, essid ? essid : "(null)");
-		}
-		else
+		if (   !nm_ap_security_get_key (security)
+		    || (we_cipher == IW_AUTH_CIPHER_NONE))
 		{
 			nm_info ("Activation (%s/wireless): access point '%s' "
 				 "is encrypted, but NO valid key exists.  New key needed.",
 				 iface, essid ? essid : "(null)");
 			need_key = TRUE;
+
+			/* If the user-specified security info doesn't overlap the
+			 * scanned access point's info, ask the user for a completely
+			 * new key.
+			 */
+			if (we_cipher == IW_AUTH_CIPHER_NONE)
+				*ask_user = TRUE;
+		}
+		else
+		{
+			nm_info ("Activation (%s/wireless): access point '%s' "
+				 "is encrypted, and a key exists.  No new key needed.",
+			  	 iface, essid ? essid : "(null)");
 		}
 	}
 
@@ -2571,15 +2592,16 @@ real_act_stage2_config (NMDevice *dev,
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMData *				data = nm_act_request_get_data (req);
 	const char *			iface;
+	gboolean				ask_user = FALSE;
 
 	g_assert (ap);
 
 	supplicant_cleanup (self);
 
 	/* If we need an encryption key, get one */
-	if (ap_need_key (self, ap))
+	if (ap_need_key (self, ap, &ask_user))
 	{
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, FALSE);
+		nm_dbus_get_user_key_for_network (data->dbus_connection, req, ask_user);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
