@@ -249,7 +249,7 @@ nmi_dbus_return_user_key (DBusConnection *connection,
 	if (nm_gconf_wso_serialize_dbus (gconf_wso, &iter))
 		dbus_connection_send (connection, reply, NULL);
 	else
-		nm_warning ("nmi_dbus_return_user_key(): couldn't serialize gconf_wso");
+		nm_warning ("couldn't serialize gconf_wso");
 	dbus_message_unref (reply);
 }
 
