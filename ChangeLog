@@ -1,3 +1,9 @@
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/nm-gconf-wso.c
+		- (real_serialize_dbus): return TRUE, not 0.  Fixes serialization
+			of unencrypted access point security info.
+
 2006-02-03  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerUtils.c: Even for debugging, we should not log the

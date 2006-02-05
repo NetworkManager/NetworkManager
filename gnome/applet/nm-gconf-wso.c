@@ -201,12 +201,12 @@ nm_gconf_wso_set_key (NMGConfWSO *self,
 	memcpy (self->priv->key, key, key_len);
 }
 
-static int 
+static gboolean 
 real_serialize_dbus (NMGConfWSO *self,
                      DBusMessageIter *iter)
 {
 	/* Nothing to do */
-	return 0;
+	return TRUE;
 }
 
 static int 
