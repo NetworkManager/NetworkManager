@@ -2207,7 +2207,7 @@ supplicant_status_cb (GIOChannel *source,
 static int
 get_supplicant_timeout (NMDevice80211Wireless *self)
 {
-	if(self->priv->num_freqs > 14)
+	if (self->priv->num_freqs > 14)
 		return NM_SUPPLICANT_TIMEOUT * 2;
 	return NM_SUPPLICANT_TIMEOUT;
 }
