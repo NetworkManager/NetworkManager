@@ -37,6 +37,7 @@ struct NMDHCPManager
 {
 	NMData *		data;
 	gboolean		running;
+	size_t		dhcp_sn_len;
 };
 
 
@@ -116,6 +117,7 @@ NMDHCPManager * nm_dhcp_manager_new (NMData *data)
 	manager = g_malloc0 (sizeof (NMDHCPManager));
 	manager->data = data;
 	manager->running = dbus_bus_name_has_owner (manager->data->dbus_connection, DHCP_SERVICE_NAME, NULL);
+	manager->dhcp_sn_len = strlen (DHCP_SERVICE_NAME);
 
 	if (manager->running && (owner = get_name_owner (data->dbus_connection, DHCP_SERVICE_NAME)))
 	{
@@ -639,7 +641,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	if (!(interface = dbus_message_get_interface (message)))
 		return FALSE;
 	/* Ignore non-DHCP related messages */
-	if (strncmp (interface, DHCP_SERVICE_NAME, 15))
+	if (strncmp (interface, DHCP_SERVICE_NAME, manager->dhcp_sn_len))
 		return FALSE;
 
 #if 0

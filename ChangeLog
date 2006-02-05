@@ -1,3 +1,9 @@
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- Loose a commit race with Robert; make sure size check
+			uses size of DHCP_SERVICE_LEN, not hardcoded 15
+
 2006-02-05  Robert Love  <rml@novell.com>
 
 	Patch by Christoph Brill <chrisbrill@gmx.net>
