@@ -2204,7 +2204,7 @@ supplicant_status_cb (GIOChannel *source,
 	return TRUE;
 }
 
-static int
+static unsigned int
 get_supplicant_timeout (NMDevice80211Wireless *self)
 {
 	if (self->priv->num_freqs > 14)
@@ -2220,7 +2220,7 @@ supplicant_timeout_cb (gpointer user_data)
 
 	g_assert (self);
 
-	nm_info ("Activation (%s/wireless): association took too long (>%ds), failing activation.",
+	nm_info ("Activation (%s/wireless): association took too long (>%us), failing activation.",
 			nm_device_get_iface (dev), get_supplicant_timeout (self));
 
 	if (nm_device_is_activating (dev))
@@ -2423,7 +2423,7 @@ supplicant_monitor_start (NMDevice80211Wireless *self)
 	g_source_set_callback (self->priv->sup_status, (GSourceFunc) supplicant_status_cb, self, NULL);
 	g_source_attach (self->priv->sup_status, context);
 
-	/* Set up a timeout on the association to kill it after NM_SUPPLICANT_TIMEOUT seconds */
+	/* Set up a timeout on the association to kill it after get_supplicant_time() seconds */
 	self->priv->sup_timeout = g_timeout_source_new (get_supplicant_timeout (self) * 1000);
 	g_source_set_callback (self->priv->sup_timeout, supplicant_timeout_cb, self, NULL);
 	g_source_attach (self->priv->sup_timeout, context);
