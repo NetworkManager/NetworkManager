@@ -703,6 +703,19 @@ int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 #define SUPPLICANT_DEBUG
 #define RESPONSE_SIZE	2048
 
+
+static char *
+kill_newline (char *s, size_t *l)
+{
+	g_return_val_if_fail (l != NULL, s);
+
+	while ((--(*l) >= 0) && (s[*l] != '\n'));
+	if (s[*l] == '\n')
+		s[*l] = '\0';
+	return s;
+}
+
+
 char *
 nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
                              const char *format,
@@ -730,7 +743,10 @@ nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
 	g_free (command);
 	response[len] = '\0';
 #ifdef SUPPLICANT_DEBUG
-	nm_info ("SUP: response was '%s'", response);
+	{
+		response = kill_newline (response, &len);
+		nm_info ("SUP: response was '%s'", response);
+	}
 #endif
 	return response;
 }
@@ -768,17 +784,8 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 	response[len] = '\0';
 #ifdef SUPPLICANT_DEBUG
 	{
-		gboolean newline = FALSE;
-
-		/* Kill the newline for the debug message */
-		if (response[len - 1] == '\n')
-		{
-			newline = TRUE;
-			response[len - 1] = '\0';
-		}
+		response = kill_newline (response, &len);
 		nm_info ("SUP: response was '%s'", response);
-		if (newline)
-			response[len - 1] = '\n';
 	}
 #endif
 
@@ -788,22 +795,11 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 			success = TRUE;
 		else
 		{
-			gboolean newline = FALSE;
-
-			/* Kill the newline for the debug message */
-			if (response[len - 1] == '\n')
-			{
-				newline = TRUE;
-				response[len - 1] = '\0';
-			}
-
+			response = kill_newline (response, &len);
 			temp = g_strdup_printf ("%s: supplicant error for '%s'.  Response: '%s'",
 						func, err_msg_cmd ? err_msg_cmd : command, response);
 			nm_warning_str (temp);
 			g_free (temp);
-
-			if (newline)
-				response[len - 1] = '\n';
 		}
 		g_free (response);
 	}

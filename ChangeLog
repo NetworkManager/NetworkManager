@@ -1,5 +1,11 @@
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+		- (nm_utils_supplicant_request_with_check, nm_utils_supplicant_request):
+			Handle newline killing better
+
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/nm-gconf-wso.c
 		- (real_serialize_dbus): return TRUE, not 0.  Fixes serialization
 			of unencrypted access point security info.
