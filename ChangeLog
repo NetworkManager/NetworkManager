@@ -1,5 +1,15 @@
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (get_supplicant_timeout): new function; return
+			NM_SUPPLICANT_TIMEOUT * 2 for cards that support more than
+			14 channels.  These are likely a/b/g cards, like Atheros, and
+			slow as hell to scan.
+		- (supplicant_timeout_cb, supplicant_monitor_start): use
+			get_supplicant_timeout()
+
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- Loose a commit race with Robert; make sure size check
 			uses size of DHCP_SERVICE_LEN, not hardcoded 15
