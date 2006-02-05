@@ -1,5 +1,22 @@
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
+	Refine handling of non-broadcast networks.
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_merge_scanned_ap): unconditionally copy the 'broadcast'
+			property from scanned AP to the AP from the device list
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): use ap_scan=1 for all networks
+			except non-SSID-broadcasting and Ad-Hoc networks.  Use
+			ap_scan=2 for those.  Also, don't set scan_ssid for Ad-Hoc
+			networks since those don't have APs.
+		- (add_new_ap_to_device_list): if there's no valid SSID, mark the
+			AP as non-SSID-broadcasting
+		- (process_scan_results): don't handle non-SSID-broadcasting here
+
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (get_supplicant_timeout): new function; return
 			NM_SUPPLICANT_TIMEOUT * 2 for cards that support more than

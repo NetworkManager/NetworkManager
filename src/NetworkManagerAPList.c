@@ -478,6 +478,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 			strength_changed = TRUE;
 		}
 		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
 
 		/* Have to change AP's name _after_ dbus signal for old network name
 		 * has gone out.
@@ -509,6 +510,7 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 			nm_ap_set_address (list_ap, nm_ap_get_address (merge_ap));
 		}
 		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
 	}
 	else
 	{

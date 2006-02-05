@@ -2319,6 +2319,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
 	char *			hex_essid;
+	char *			ap_scan = "AP_SCAN 1";
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2329,9 +2330,14 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ctrl = self->priv->sup_ctrl;
 	g_assert (ctrl);
 
+	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
+	user_created = nm_ap_get_user_created (ap);
+	if (!nm_ap_get_broadcast (ap) || user_created)
+		ap_scan = "AP_SCAN 2";
+
 	/* Tell wpa_supplicant that we'll do the scanning */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"AP_SCAN 2"))
+			ap_scan))
 		goto out;
 
 	/* Standard network setup info */
@@ -2357,8 +2363,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 			"SET_NETWORK %i ssid %s", nwid, hex_essid))
 		goto out;
 
-	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames. */
-	if (!nm_ap_get_broadcast (ap))
+	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames.
+	 * However, don't try to probe Ad-Hoc networks.
+	 */
+	if (!nm_ap_get_broadcast (ap) && !user_created)
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i scan_ssid 1", nwid))
@@ -2366,7 +2374,6 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	}
 
 	/* Ad-Hoc ? */
-	user_created = nm_ap_get_user_created (ap);
 	if (user_created)
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
@@ -2922,7 +2929,10 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 	 */
 	app_data = nm_device_get_app_data (NM_DEVICE (dev));
 	if (!nm_ap_get_essid (ap))
+	{
+		nm_ap_set_broadcast (ap, FALSE);
 		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
+	}
 
 	/* Add the AP to the device's AP list */
 	ap_list = nm_device_802_11_wireless_ap_list_get (dev);
@@ -3021,8 +3031,6 @@ process_scan_results (NMDevice80211Wireless *dev,
 						set = FALSE;
 					if (set)
 						nm_ap_set_essid (ap, essid);
-					else
-						nm_ap_set_broadcast (ap, FALSE);
 					g_free (essid);
 				}
 				break;
