@@ -98,10 +98,6 @@ NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wirele
 													const char *essid,
 													NMAPSecurity *security);
 
-void			nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *dev,
-                                                         const char *key,
-                                                         int auth_method);
-
 void			nm_device_802_11_wireless_set_scan_interval (struct NMData *data,
                                                             NMDevice80211Wireless *dev,
                                                             NMWirelessScanInterval interval);

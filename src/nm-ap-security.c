@@ -208,14 +208,6 @@ real_write_supplicant_config (NMAPSecurity *self,
 	return TRUE;
 }
 
-static int 
-real_device_setup (NMAPSecurity *self, NMDevice80211Wireless * dev)
-{
-	/* unencrypted */
-	nm_device_802_11_wireless_set_wep_enc_key (dev, NULL, 0);
-	return 0;
-}
-
 int
 nm_ap_security_get_we_cipher (NMAPSecurity *self)
 {
@@ -247,18 +239,6 @@ nm_ap_security_set_description (NMAPSecurity *self, const char *desc)
 	g_return_if_fail (desc != NULL);
 
 	self->priv->description = (char *) desc;
-}
-
-int
-nm_ap_security_device_setup (NMAPSecurity *self, NMDevice80211Wireless *dev)
-{
-	g_return_val_if_fail (self != NULL, -1);
-	g_return_val_if_fail (dev != NULL, -1);
-
-	if (self->priv->dispose_has_run)
-		return -1;
-
-	return NM_AP_SECURITY_GET_CLASS (self)->device_setup_func (self, dev);
 }
 
 int
@@ -365,7 +345,6 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 	klass->copy_constructor_func = real_copy_constructor;
 	klass->serialize_func = real_serialize;
 	klass->write_supplicant_config_func = real_write_supplicant_config;
-	klass->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityPrivate));
 }

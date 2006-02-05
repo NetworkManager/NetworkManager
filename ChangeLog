@@ -1,5 +1,26 @@
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
+	Remove anything having to do with device_setup_func from the
+	AP security objects, since it's no longer used.
+
+	* src/nm-ap-security.h
+		- Kill device_setup_func and nm_ap_security_device_setup()
+
+	* src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-psk.c
+		- (real_device_setup): remove
+
+	* src/nm-ap-security.c
+		- (real_device_setup): remove
+		- (nm_ap_security_device_setup): remove
+
+	* src/nm-device-802-11-wireless.[ch]
+		- (nm_device_802_11_wireless_set_wep_enc_key): make static
+		- (set_wireless_config, wireless_configure_adhoc): remove; unused
+			and done by wpa_supplicant now anyway
+
+2006-02-05  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (ap_need_key, real_act_stage2_config): deal with APs changing
 			settings on us.  Previously NM would loop asking for the

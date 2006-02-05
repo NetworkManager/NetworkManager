@@ -68,8 +68,6 @@ struct _NMAPSecurityClass
 									  struct wpa_ctrl *ctrl,
 									  int nwid,
 									  gboolean user_created);
-
-	int	(*device_setup_func)			(NMAPSecurity *self, NMDevice80211Wireless * dev);
 };
 
 
@@ -92,9 +90,6 @@ gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 									struct wpa_ctrl *ctrl,
 									int nwid,
 									gboolean user_created);
-
-int			nm_ap_security_device_setup (NMAPSecurity *self,
-									NMDevice80211Wireless *dev);
 
 const char *	nm_ap_security_get_description (NMAPSecurity *self);
 

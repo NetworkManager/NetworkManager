@@ -210,13 +210,6 @@ out:
 	return success;
 }
 
-static int 
-real_device_setup (NMAPSecurity *self, NMDevice80211Wireless * dev)
-{
-	/* Stub; should be farmed out to wpa_supplicant eventually */
-	return 0;
-}
-
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -246,7 +239,6 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
-	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWPA_PSKPrivate));
 }

@@ -126,6 +126,11 @@ static void		supplicant_cleanup (NMDevice80211Wireless *self);
 
 static void		remove_link_timeout (NMDevice80211Wireless *self);
 
+static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
+                                           const char *key,
+                                           int auth_method);
+
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -1498,7 +1503,7 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
  *
  * key:	encryption key to use, or NULL or "" to disable encryption.
  */
-void
+static void
 nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
                                            const char *key,
                                            int auth_method)
@@ -1873,170 +1878,6 @@ reschedule:
 	g_free (scan_cb);
 	return FALSE;
 }
-
-
-#ifdef UNUSED
-/*
- * nm_device_set_wireless_config
- *
- * Bring up a wireless card with the essid and wep key of its "best" ap
- *
- * Returns:	TRUE on successful activation
- *			FALSE on unsuccessful activation (ie no best AP)
- *
- */
-static gboolean
-set_wireless_config (NMDevice80211Wireless *self,
-                     NMAccessPoint *ap)
-{
-	const char *	essid = NULL;
-	NMAPSecurity *	security;
-	int			we_cipher;
-
-	g_return_val_if_fail (ap != NULL, FALSE);
-	g_return_val_if_fail (nm_ap_get_essid (ap) != NULL, FALSE);
-
-	security = nm_ap_get_security (ap);
-	g_return_val_if_fail (security != NULL, FALSE);
-
-	self->priv->failed_link_count = 0;
-
-	/* Force the card into Managed/Infrastructure mode */
-	nm_device_bring_down_wait (NM_DEVICE (self), 0);
-	nm_device_bring_up_wait (NM_DEVICE (self), 0);
-
-	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
-
-	essid = nm_ap_get_essid (ap);
-
-	nm_device_802_11_wireless_set_mode (self, nm_ap_get_mode (ap));
-	nm_device_802_11_wireless_set_bitrate (self, 0);
-
-	if (nm_ap_get_user_created (ap) || (nm_ap_get_freq (ap) && (nm_ap_get_mode (ap) == IW_MODE_ADHOC)))
-		nm_device_802_11_wireless_set_frequency (self, nm_ap_get_freq (ap));
-	else
-		nm_device_802_11_wireless_set_frequency (self, 0);	/* auto */
-
-	/* FIXME: set card's config using wpa_supplicant, not ourselves */
-	nm_ap_security_device_setup (security, self);
-
-	nm_device_802_11_wireless_set_essid (self, essid);
-
-	nm_info ("Activation (%s/wireless): using essid '%s', with '%s' security.",
-			nm_device_get_iface (NM_DEVICE (self)), essid, nm_ap_security_get_description (security));
-
-	/* Bring the device up and pause to allow card to associate.  After we set the ESSID
-	 * on the card, the card has to scan all channels to find our requested AP (which can
-	 * take a long time if it is an A/B/G chipset like the Atheros 5212, for example).
-	 */
-	is_up_and_associated_wait (self, 2, 100);
-
-	/* Some cards don't really work well in ad-hoc mode unless you explicitly set the bitrate
-	 * on them. (Netgear WG511T/Atheros 5212 with madwifi drivers).  Until we can get rate information
-	 * from scanned access points out of iwlib, clamp bitrate for these cards at 11Mbps.
-	 */
-	if ((nm_ap_get_mode (ap) == IW_MODE_ADHOC) && (nm_device_802_11_wireless_get_bitrate (self) <= 0))
-		nm_device_802_11_wireless_set_bitrate (self, 11000);	/* In Kbps */
-
-	return TRUE;
-}
-
-
-/*
- * nm_device_wireless_configure_adhoc
- *
- * Create an ad-hoc network (rather than associating with one).
- *
- */
-static NMActStageReturn
-wireless_configure_adhoc (NMDevice80211Wireless *self,
-                          NMAccessPoint *ap,
-                          NMActRequest *req)
-{
-	NMData *			data;
-	int				auth = 0;
-	NMAPListIter *		iter;
-	NMAccessPoint *	tmp_ap;
-	double			card_freqs[IW_MAX_FREQUENCIES];
-	int				num_freqs = 0, i;
-	double			freq_to_use = 0;
-	iwrange			range;
-	NMSock *			sk;
-	int				err;
-	const char *		iface;
-
-	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	if (nm_ap_get_encrypted (ap))
-		auth = IW_AUTH_ALG_SHARED_KEY;
-
-	/* Build our local list of frequencies to whittle down until we find a free one */
-	memset (&card_freqs, 0, sizeof (card_freqs));
-	num_freqs = MIN (self->priv->num_freqs, IW_MAX_FREQUENCIES);
-	for (i = 0; i < num_freqs; i++)
-		card_freqs[i] = self->priv->freqs[i];
-
-	/* Compile a list of wireless channels that are currently in use */
-	iter = nm_ap_list_iter_new (nm_device_802_11_wireless_ap_list_get (self));
-	while ((tmp_ap = nm_ap_list_iter_next (iter)))
-	{
-		double ap_freq = nm_ap_get_freq (tmp_ap);
-		for (i = 0; i < num_freqs && ap_freq; i++)
-		{
-			if (card_freqs[i] == ap_freq)
-				card_freqs[i] = 0;
-		}
-	}
-	nm_ap_list_iter_free (iter);
-
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __func__, NULL)) == NULL)
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	err = iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range);
-	nm_dev_sock_close (sk);
-	if (err < 0)
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
-	/* Ok, find the first non-zero freq in our table and use it.
-	 * For now we only try to use a channel in the 802.11b channel
-	 * space so that most everyone can see it.
-	 */
-	for (i = 0; i < num_freqs; i++)
-	{
-		int channel = iw_freq_to_channel (card_freqs[i], &range);
-		if (card_freqs[i] && (channel > 0) && (channel < 15))
-		{
-			freq_to_use = card_freqs[i];
-			break;
-		}
-	}
-
-	/* Hmm, no free channels in 802.11b space.  Pick one more or less randomly */
-	if (!freq_to_use)
-	{
-		double pfreq;
-		int	channel = (int)(random () % 14);
-		int	err;
-
-		err = iw_channel_to_freq (channel, &pfreq, &range);
-		if (err == channel)
-			freq_to_use = pfreq;
-	}
-
-	if (!freq_to_use)
-		return NM_ACT_STAGE_RETURN_FAILURE;
-
-	nm_ap_set_freq (ap, freq_to_use);
-
-	nm_info ("Will create network '%s' with frequency %f.", nm_ap_get_essid (ap), nm_ap_get_freq (ap));
-	set_wireless_config (self, ap);
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
-}
-#endif /* UNUSED */
 
 
 /*

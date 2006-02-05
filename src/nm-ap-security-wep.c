@@ -140,16 +140,6 @@ out:
 	return success;
 }
 
-static int 
-real_device_setup (NMAPSecurity *instance, NMDevice80211Wireless * dev)
-{
-	NMAPSecurityWEP * self = NM_AP_SECURITY_WEP (instance);
-
-	nm_device_802_11_wireless_set_wep_enc_key (dev, nm_ap_security_get_key (instance),
-			self->priv->auth_algorithm);
-	return 0;
-}
-
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -177,7 +167,6 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
-	par_class->device_setup_func = real_device_setup;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));
 }
