@@ -709,7 +709,8 @@ kill_newline (char *s, size_t *l)
 {
 	g_return_val_if_fail (l != NULL, s);
 
-	while ((--(*l) >= 0) && (s[*l] != '\n'));
+	while ((--(*l) > 0) && (s[*l] != '\n'))
+		;
 	if (s[*l] == '\n')
 		s[*l] = '\0';
 	return s;

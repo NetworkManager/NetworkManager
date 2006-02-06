@@ -1,3 +1,10 @@
+2006-02-06  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerUtils.c: kill_newline(): 'l' is unsigned so the
+	  test ">=" is never false.  If no newline is found, we loop forever.
+	  We can just check for ">" because the following if will see zero-th
+	  argument if the while gets that far.
+
 2006-02-05  Dan Williams  <dcbw@redhat.com>
 
 	Refine handling of non-broadcast networks.
@@ -33,7 +40,7 @@
 
 2006-02-05  Robert Love  <rml@novell.com>
 
-	Patch by Christoph Brill <chrisbrill@gmx.net>
+	Patch by Christoph Brill <chrisbrill@gmx.net>:
 	* src/dhcp-manager/nm-dhcp-manager.c: Replace two open coded defines
 	  with DHCP_SERVICE_NAME.
 
