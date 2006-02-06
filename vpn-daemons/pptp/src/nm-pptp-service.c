@@ -44,6 +44,7 @@
 #include <netdb.h>
 
 #include <NetworkManager/NetworkManager.h>
+#include <NetworkManager/NetworkManagerVPN.h>
 
 #include "nm-pptp-service.h"
 #include "nm-utils.h"
@@ -67,7 +68,7 @@ static const char *pppd_binary_paths[] =
 
 typedef struct NmPPTPData
 {
-  GMainLoop *		loop;
+  GMainLoop         *loop;
   DBusConnection	*con;
   NMVPNState		state;
   GPid				pid;
