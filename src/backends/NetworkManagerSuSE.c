@@ -20,7 +20,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * (C) Copyright 2004 Red Hat, Inc.
- * (C) Copyright 2005 SuSE GmbH
+ * (C) Copyright 2005-2006 SuSE GmbH
  */
 
 #include <stdio.h>
@@ -718,10 +718,11 @@ void nm_system_deactivate_all_dialup (GSList *list)
 		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
 		char *cmd;
 
-		if (config->type == NM_DIALUP_TYPE_ISDN) {
-				cmd = g_strdup_printf ("/sbin/isdnctrl hangup %s", (char *) config->data);
-				nm_spawn_process (cmd);
-				g_free (cmd);
+		if (config->type == NM_DIALUP_TYPE_ISDN)
+		{
+			cmd = g_strdup_printf ("/sbin/isdnctrl hangup %s", (char *) config->data);
+			nm_spawn_process (cmd);
+			g_free (cmd);
 		}
 
 		cmd = g_strdup_printf ("/sbin/ifdown %s", (char *) config->data);
@@ -735,7 +736,7 @@ gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
 {
 	GSList *elt;
 	gboolean ret = FALSE;
-	
+
 	for (elt = list; elt; elt = g_slist_next (elt))
 	{
 		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
@@ -749,7 +750,8 @@ gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
 			nm_spawn_process (cmd);
 			g_free (cmd);
 
-			if (config->type == NM_DIALUP_TYPE_ISDN) {
+			if (config->type == NM_DIALUP_TYPE_ISDN)
+			{
 				cmd = g_strdup_printf ("/sbin/isdnctrl hangup %s", (char *) config->data);
 				nm_spawn_process (cmd);
 				g_free (cmd);
@@ -782,7 +784,8 @@ gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 			nm_spawn_process (cmd);
 			g_free (cmd);
 
-			if (config->type == NM_DIALUP_TYPE_ISDN) {
+			if (config->type == NM_DIALUP_TYPE_ISDN)
+			{
 				cmd = g_strdup_printf ("/sbin/isdnctrl dial %s", (char *) config->data);
 				nm_spawn_process (cmd);
 				g_free (cmd);
@@ -819,7 +822,8 @@ static char * verify_and_return_provider (const char *provider)
 		goto out_close;
 	ret = strcmp (buf, "no");
 	free (buf);
-	if (ret) {
+	if (ret)
+	{
 		buf = NULL;
 		goto out_close;
 	}
@@ -887,10 +891,12 @@ GSList * nm_system_get_dialup_config (void)
 
 		config = g_malloc (sizeof (NMDialUpConfig));
 		config->data = g_strdup (dentry + 6); /* skip the "ifcfg-" prefix */
-		if (modem) {
+		if (modem)
+		{
 			config->name = g_strdup_printf ("%s via modem (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_MODEM;
-		} else {
+		} else
+		{
 			config->name = g_strdup_printf ("%s via ISDN (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_ISDN;
 		}
@@ -912,6 +918,7 @@ out_gfree:
 
 	return list;
 }
+
 
 /*
  * nm_system_activate_nis
