@@ -43,8 +43,6 @@
 #include "wpa_ctrl.h"
 #include "cipher.h"
 
-#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
-
 /* #define IW_QUAL_DEBUG */
 
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
@@ -2201,8 +2199,13 @@ supplicant_status_cb (GIOChannel *source,
 		}
 	}
 
+	g_free (message);
+
 	return TRUE;
 }
+
+
+#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
 
 static unsigned int
 get_supplicant_timeout (NMDevice80211Wireless *self)
@@ -2211,6 +2214,7 @@ get_supplicant_timeout (NMDevice80211Wireless *self)
 		return NM_SUPPLICANT_TIMEOUT * 2;
 	return NM_SUPPLICANT_TIMEOUT;
 }
+
 
 static gboolean
 supplicant_timeout_cb (gpointer user_data)
