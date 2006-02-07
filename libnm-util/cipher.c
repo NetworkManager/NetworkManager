@@ -144,7 +144,7 @@ cipher_bin2hexstr (const char *bytes,
 	g_return_val_if_fail (len > 0, NULL);
 	g_return_val_if_fail (len < 256, NULL);	/* Arbitrary limit */
 
-	result = g_malloc0 (len * 2);
+	result = g_malloc0 (len * 2 + 1);
 	for (i = 0; i < len; i++)
 	{
 		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];

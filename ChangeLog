@@ -1,3 +1,8 @@
+2006-02-07  Robert Love  <rml@novell.com>
+
+	Patch by Stefan Seyfried <seife@suse.de>:
+	* libnm-util/cipher.c: Fix off-by-one error in cipher_bin2hexstr.
+
 2006-02-06  Robert Love  <rml@novell.com>
 
 	* src/nm-device-802-11-wireless.c: Fix leak in supplicant_status_cb().
