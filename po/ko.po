@@ -1,0 +1,852 @@
+# networkmanager korean translation.
+# Copyright (C) YEAR THE NetworkManager'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the NetworkManager package.
+# Young-Ho Cha <ganadist@gmail.com>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-02-04 15:49+0900\n"
+"PO-Revision-Date: 2006-02-04 20:59+0900\n"
+"Last-Translator: Young-Ho Cha <ganadist@gmail.com>\n"
+"Language-Team: GNOME Korea <gnome-kr-hackers@lists.kldp.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:923
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "무선 네트워크 %s의 열쇠글"
+
+#: ../gnome/applet/applet-dbus.c:244
+#, c-format
+msgid "Connection to the wireless network '%s' failed."
+msgstr "무선 네트워크 '%s'(으)로 연결 실패."
+
+#: ../gnome/applet/applet-dbus.c:249
+msgid "Connection to the wired network failed."
+msgstr "유선 네트워크 연결 실패."
+
+#: ../gnome/applet/applet.c:179
+msgid "Error displaying connection information:"
+msgstr "연결 정보 보이기 오류:"
+
+#: ../gnome/applet/applet.c:196
+msgid "Could not find some required resources (the glade file)!"
+msgstr "필요한 몇몇 파일(glade 파일)을 찾을 수 없습니다!"
+
+#: ../gnome/applet/applet.c:207
+msgid "No active connections!"
+msgstr "활성된 연결 없음!"
+
+#: ../gnome/applet/applet.c:224
+#, c-format
+msgid "Wired Ethernet (%s)"
+msgstr "유선 이더넷 (%s)"
+
+#: ../gnome/applet/applet.c:226
+#, c-format
+msgid "Wireless Ethernet (%s)"
+msgstr "무선 이더넷 (%s)"
+
+#: ../gnome/applet/applet.c:323 ../gnome/applet/applet.c:348
+msgid "NetworkManager Applet"
+msgstr "네트워크 관리자 애플릿"
+
+#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:350
+msgid "Copyright © 2004-2005 Red Hat, Inc."
+msgstr "Copyright © 2004-2005 Red Hat, Inc."
+
+#: ../gnome/applet/applet.c:326 ../gnome/applet/applet.c:351
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"네트워크 장치와 연결을 관리하는 애플릿."
+
+#: ../gnome/applet/applet.c:329 ../gnome/applet/applet.c:356
+msgid "translator-credits"
+msgstr "차영호 <ganadist@gmail.com>, 2006"
+
+#: ../gnome/applet/applet.c:441
+msgid "VPN Error"
+msgstr "VPN 오류"
+
+#: ../gnome/applet/applet.c:445
+msgid "VPN Login Failure"
+msgstr "VPN 로그인 실패"
+
+#: ../gnome/applet/applet.c:446
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a login failure."
+msgstr "로그인을 실패해서 VPN 연결 '%s'(을)를 시작할 수 없습니다."
+
+#: ../gnome/applet/applet.c:450
+msgid "VPN Start Failure"
+msgstr "VPN 시작 실패"
+
+#: ../gnome/applet/applet.c:451
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' due to a failure launching the VPN "
+"program."
+msgstr ""
+"VPN프로그램 실행을 실패해서 VPN 연결 '%s'(을)를 시작할 수 없습니다."
+
+#: ../gnome/applet/applet.c:455 ../gnome/applet/applet.c:465
+msgid "VPN Connect Failure"
+msgstr "VPN 연결 실패"
+
+#: ../gnome/applet/applet.c:456
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a connection error."
+msgstr "연결에 오류가 있어서 VPN 연결 '%s'(을)를 시작할 수 없습니다."
+
+#: ../gnome/applet/applet.c:460
+msgid "VPN Configuration Error"
+msgstr "VPN 설정 오류"
+
+#: ../gnome/applet/applet.c:461
+#, c-format
+msgid "The VPN connection '%s' was not correctly configured."
+msgstr "VPN 연결 '%s'의 설정이 올바르지 않습니다."
+
+#: ../gnome/applet/applet.c:466
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' because the VPN server did not "
+"return an adequate network configuration."
+msgstr ""
+"VPN서버가 알맞는 네트워크 설정을 돌려주지 않아서 VPN 연결 '%s'(을)를 "
+"시작할 수 없습니다."
+
+#: ../gnome/applet/applet.c:474
+#, c-format
+msgid "The VPN service said: \"%s\""
+msgstr "VPN 서비스: \"%s\""
+
+#: ../gnome/applet/applet.c:543
+#, c-format
+msgid "VPN connection '%s' said:"
+msgstr "VPN 연결 '%s':"
+
+#: ../gnome/applet/applet.c:545
+msgid "VPN Login Message"
+msgstr "VPN 로그인 메세지"
+
+#: ../gnome/applet/applet.c:762 ../gnome/applet/applet.c:2516
+#: ../gnome/applet/other-network-dialog.c:453
+#: ../gnome/applet/passphrase-dialog.c:227
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"네트워크 관리자 애플릿이 필요한 몇몇 파일을 찾을 수 없습니다. (glade 파일을 "
+"찾을 수 없습니다)."
+
+#: ../gnome/applet/applet.c:774
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "네트워크 장치 \"%s (%s)\"(이)가 무선랜 검색을 지원하지 않습니다."
+
+#: ../gnome/applet/applet.c:782
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "네트워크 장치 \"%s (%s)\"(이)가 연결 감지를 지원하지 않습니다."
+
+#: ../gnome/applet/applet.c:929
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "유선 네트워크의 장치 %s 준비중..."
+
+#: ../gnome/applet/applet.c:931
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "무선 네트워크 '%2$s'의 장치 %1$s 준비중..."
+
+#: ../gnome/applet/applet.c:939
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "유선 네트워크의 장치 %s 설정중..."
+
+#: ../gnome/applet/applet.c:941
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "무선 네트워크 '%s'에 참여 준비중..."
+
+#: ../gnome/applet/applet.c:949
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "무선 네트워크 '%s'의 네트워크 키 기다리는 중..."
+
+#: ../gnome/applet/applet.c:957 ../gnome/applet/applet.c:967
+msgid "Requesting a network address from the wired network..."
+msgstr "유선 네트워크에서 네트워크 주소 요청중..."
+
+#: ../gnome/applet/applet.c:959 ../gnome/applet/applet.c:969
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "무선 네트워크 '%s'에서 네트워크 주소 요청중..."
+
+#: ../gnome/applet/applet.c:977
+msgid "Finishing connection to the wired network..."
+msgstr "유선 네트워크 연결 끝내는 중..."
+
+#: ../gnome/applet/applet.c:979
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "무선 네트워크 '%s' 연결 끝내는 중..."
+
+#: ../gnome/applet/applet.c:1096
+msgid "NetworkManager is not running"
+msgstr "네트워크 관리자가 실행 중이지 않습니다"
+
+#: ../gnome/applet/applet.c:1109 ../gnome/applet/applet.c:1843
+msgid "Networking disabled"
+msgstr "네트워크를 사용할 수 없습니다"
+
+#: ../gnome/applet/applet.c:1114
+msgid "No network connection"
+msgstr "네트워크 연결 없음"
+
+#: ../gnome/applet/applet.c:1119
+msgid "Wired network connection"
+msgstr "유선 네트워크 연결"
+
+#: ../gnome/applet/applet.c:1123
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Ad-Hoc 무선 네트워크 연결됨"
+
+#: ../gnome/applet/applet.c:1125
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "'%s'(으)로 무선 네트워크 연결 (%d%%)"
+
+#: ../gnome/applet/applet.c:1147
+#, c-format
+msgid "VPN connection to '%s'"
+msgstr "'%s'(으)로 VPN 연결"
+
+#: ../gnome/applet/applet.c:1155
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "'%s'(으)로 VPN 연결중"
+
+#: ../gnome/applet/applet.c:1568
+msgid "_Connect to Other Wireless Network..."
+msgstr "다른 무선 네트워크에 연결(_C)..."
+
+#: ../gnome/applet/applet.c:1589
+msgid "Create _New Wireless Network..."
+msgstr "새 무선 네트워크 만들기(_N)..."
+
+#: ../gnome/applet/applet.c:1710
+msgid "_VPN Connections"
+msgstr "VPN 연결(_V)"
+
+#: ../gnome/applet/applet.c:1745
+msgid "_Configure VPN..."
+msgstr "VPN 설정하기(_C)..."
+
+#: ../gnome/applet/applet.c:1749
+msgid "_Disconnect VPN..."
+msgstr "VPN 연결 끊기(_D)..."
+
+#: ../gnome/applet/applet.c:1771
+msgid "_Dial Up Connections"
+msgstr "전화 연결(_D)"
+
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1782
+#, c-format
+msgid "Connect to %s..."
+msgstr "%s(으)로 연결..."
+
+#: ../gnome/applet/applet.c:1788
+#, c-format
+msgid "Disconnect from %s..."
+msgstr "%s에서 연결 끊기..."
+
+#: ../gnome/applet/applet.c:1837
+msgid "No network devices have been found"
+msgstr "네트워크 장치를 찾을 수 없습니다"
+
+#: ../gnome/applet/applet.c:2029
+msgid "NetworkManager is not running..."
+msgstr "네트워크 관리자가 실행중이지 않습니다..."
+
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2185
+msgid "Enable _Networking"
+msgstr "네트워크 사용(_N)"
+
+#. 'Enable Wireless' item
+#: ../gnome/applet/applet.c:2191
+msgid "Enable _Wireless"
+msgstr "무선 네트워크 사용(_W)"
+
+#. 'Connection Information' item
+#: ../gnome/applet/applet.c:2197
+msgid "Connection _Information"
+msgstr "연결 정보(_I)"
+
+#. Help item
+#: ../gnome/applet/applet.c:2208
+msgid "_Help"
+msgstr "도움말(_H)"
+
+#. About item
+#: ../gnome/applet/applet.c:2217
+msgid "_About"
+msgstr "정보(_A)"
+
+#: ../gnome/applet/applet.c:2635
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr ""
+"네트워크 관리자 애플릿이 필요한 몇몇 파일을 찾을 수 없습니다. 계속할 수 없습니다.\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "열린 시스템"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "공유 키"
+
+#: ../gnome/applet/wireless-security-option.c:209
+msgid "Automatic (Default)"
+msgstr "자동 (기본값)"
+
+#: ../gnome/applet/wireless-security-option.c:217
+msgid "TKIP"
+msgstr "TKIP"
+
+#: ../gnome/applet/wireless-security-option.c:225
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
+#: ../gnome/applet/wso-none.c:53
+msgid "None"
+msgstr "없음"
+
+#: ../gnome/applet/wso-wep-ascii.c:127
+msgid "WEP 40/128-bit ASCII"
+msgstr "WEP 40/128비트 ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:124
+msgid "WEP 40/128-bit hex"
+msgstr "WEP 40/128비트 16진수"
+
+#: ../gnome/applet/wso-wep-passphrase.c:124
+msgid "WEP Passphrase"
+msgstr "WEP 열쇠글"
+
+#: ../gnome/applet/eggtrayicon.c:128
+msgid "Orientation"
+msgstr "방향"
+
+#: ../gnome/applet/eggtrayicon.c:129
+msgid "The orientation of the tray."
+msgstr "트레이의 방향."
+
+#: ../gnome/applet/menu-items.c:87
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "유선 네트워크 (%s)"
+
+#: ../gnome/applet/menu-items.c:90
+msgid "_Wired Network"
+msgstr "유선 네트워크(_W)"
+
+#: ../gnome/applet/menu-items.c:161
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "무선 네트워크 (%s)"
+
+#: ../gnome/applet/menu-items.c:163
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "무선 네트워크"
+
+#: ../gnome/applet/menu-items.c:330
+msgid " (invalid Unicode)"
+msgstr " (잘못된 유니코드)"
+
+#: ../gnome/applet/other-network-dialog.c:352
+#, c-format
+msgid ""
+"By default, the wireless network's name is set to your computer's name, %s, "
+"with no encryption enabled"
+msgstr ""
+"기본값으로 무선 네트워크의 이름은 컴퓨터의 이름 %s(으)로 설정되고 암호화가 "
+"설정되지 않습니다"
+
+#: ../gnome/applet/other-network-dialog.c:358
+msgid "Create new wireless network"
+msgstr "새 무선 네트워크 만들기"
+
+#: ../gnome/applet/other-network-dialog.c:359
+msgid ""
+"Enter the name and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"만드려는 무선 네트워크의 이름과 보안 설정을 입력하십시오."
+
+#: ../gnome/applet/other-network-dialog.c:363
+msgid "Create New Wireless Network"
+msgstr "새 무선 네트워크 만들기"
+
+#: ../gnome/applet/other-network-dialog.c:368
+msgid "Existing wireless network"
+msgstr "있는 무선 네트워크"
+
+#: ../gnome/applet/other-network-dialog.c:369
+msgid "Enter the name of the wireless network to which you wish to connect."
+msgstr "연결하려는 무선 네트워크의 이름을 입력하십시오."
+
+#: ../gnome/applet/other-network-dialog.c:371
+msgid "Connect to Other Wireless Network"
+msgstr "다른 무선 네트워크에 연결"
+
+#: ../gnome/applet/passphrase-dialog.c:214
+msgid "Error connecting to wireless network"
+msgstr "무선 네트워크 연결 오류"
+
+#: ../gnome/applet/passphrase-dialog.c:215
+msgid ""
+"The requested wireless network requires security capabilities unsupported by "
+"your hardware."
+msgstr ""
+"무선 네트워크에서 하드웨어가 지원하지 않는 보안 기능을 필요로 합니다."
+
+#: ../gnome/applet/vpn-password-dialog.c:152
+#: ../gnome/applet/vpn-password-dialog.c:189
+#, c-format
+msgid "Cannot start VPN connection '%s'"
+msgstr "VPN 연결 '%s'(을)를 시작할 수 없습니다"
+
+#: ../gnome/applet/vpn-password-dialog.c:155
+#, c-format
+msgid ""
+"Could not find the authentication dialog for VPN connection type '%s'. "
+"Contact your system administrator."
+msgstr ""
+"VPN 연결 형식 '%s'의 인증 대화상자를 찾을 수 없습니다."
+"시스템 관리자에게 알려주십시오."
+
+#: ../gnome/applet/vpn-password-dialog.c:192
+#, c-format
+msgid ""
+"There was a problem launching the authentication dialog for VPN connection "
+"type '%s'. Contact your system administrator."
+msgstr ""
+"VPN 연결 형식 '%s'의 인증 대화상자를 시작하는데 문제가 생겼습니다."
+"시스템 관리자에게 알려주십시오."
+
+#: ../gnome/applet/wireless-applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/wireless-applet.glade.h:2
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">활성화 된 연결 정보</span>"
+
+#: ../gnome/applet/wireless-applet.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">열쇠글을 필요로 하는 무선 네트워크</span>\n"
+"\n"
+"무선 네트워크 '%s'에 연결하려면 열쇠글이나 암호키가 있어야 합니다."
+
+#: ../gnome/applet/wireless-applet.glade.h:8
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\"> 줄어든 네트워크 기능</span>\n"
+"\n"
+"%s 모든 기능을 쓸 수 없습니다."
+
+#: ../gnome/applet/wireless-applet.glade.h:12
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen to log in to the wireless network '%s'.  If you are sure "
+"that this wireless network is secure, click the checkbox below and "
+"NetworkManager will not require confirmation on subsequent log ins."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">무선 네트워크 로그인 확인</span>\n"
+"\n"
+"무선 네트워크 '%s'에 로그인을 선택했습니다. 무선 네트워크가 안전하다고"
+"생각되면, 아래의 확인 상자를 눌러서 네트워크 매니져가 로그인 이후에"
+"확인을 하지 않도록 하십시오."
+
+#: ../gnome/applet/wireless-applet.glade.h:15
+msgid "Authentication:"
+msgstr "인증:"
+
+#: ../gnome/applet/wireless-applet.glade.h:16
+msgid "Broadcast Address:"
+msgstr "Broadcast 주소:"
+
+#: ../gnome/applet/wireless-applet.glade.h:17
+msgid "C_onnect"
+msgstr "연결(_O)"
+
+#: ../gnome/applet/wireless-applet.glade.h:18
+msgid "Connection Information"
+msgstr "연결 정보"
+
+#: ../gnome/applet/wireless-applet.glade.h:19
+msgid "Default Route:"
+msgstr "기본 Route:"
+
+#: ../gnome/applet/wireless-applet.glade.h:20
+msgid "Destination Address:"
+msgstr "목표 주소:"
+
+#: ../gnome/applet/wireless-applet.glade.h:21
+msgid "Driver:"
+msgstr "드라이버:"
+
+#: ../gnome/applet/wireless-applet.glade.h:22
+msgid "Hardware Address:"
+msgstr "하드웨어 주소:"
+
+#: ../gnome/applet/wireless-applet.glade.h:23
+msgid "IP Address:"
+msgstr "IP 주소:"
+
+#: ../gnome/applet/wireless-applet.glade.h:24
+msgid "Interface:"
+msgstr "인터페이스:"
+
+#: ../gnome/applet/wireless-applet.glade.h:25
+msgid "Key:"
+msgstr "키:"
+
+#: ../gnome/applet/wireless-applet.glade.h:26
+msgid ""
+"None\n"
+"WEP Passphrase\n"
+"WEP 40/128-bit hex\n"
+"WEP 40/128-bit ASCII\n"
+msgstr ""
+"없음\n"
+"WEP 열쇠글\n"
+"WEP 40/128비트 16진수\n"
+"WEP 40/128비트 ASCII\n"
+
+#: ../gnome/applet/wireless-applet.glade.h:31
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"열린 시스템\n"
+"공유 키"
+
+#: ../gnome/applet/wireless-applet.glade.h:33
+msgid "Other Wireless Network..."
+msgstr "다른 무선 네트워크..."
+
+#: ../gnome/applet/wireless-applet.glade.h:34
+msgid "Passphrase:"
+msgstr "열쇠글:"
+
+#: ../gnome/applet/wireless-applet.glade.h:35
+msgid "Password:"
+msgstr "열쇠글:"
+
+#: ../gnome/applet/wireless-applet.glade.h:36
+msgid "Primary DNS:"
+msgstr "기본 DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:37
+msgid "Secondary DNS:"
+msgstr "보조 DNS:"
+
+#: ../gnome/applet/wireless-applet.glade.h:38
+msgid "Subnet Mask:"
+msgstr "서브넷 마스크:"
+
+#: ../gnome/applet/wireless-applet.glade.h:39
+msgid "Type:"
+msgstr "형식:"
+
+#: ../gnome/applet/wireless-applet.glade.h:40
+msgid "User Name:"
+msgstr "사용자 이름:"
+
+#: ../gnome/applet/wireless-applet.glade.h:41
+msgid "Wireless Network Key Required"
+msgstr "무선 네트워크 키가 필요합니다"
+
+#: ../gnome/applet/wireless-applet.glade.h:42
+msgid "Wireless _adapter:"
+msgstr "무선 아답터(_A):"
+
+#: ../gnome/applet/wireless-applet.glade.h:43
+msgid "_Always Trust this Wireless Network"
+msgstr "이 무선 네트워크 항상 신뢰(_A)"
+
+#: ../gnome/applet/wireless-applet.glade.h:44
+msgid "_Don't remind me again"
+msgstr "다시 묻지 않음(_D)"
+
+#: ../gnome/applet/wireless-applet.glade.h:45
+msgid "_Login to Network"
+msgstr "네트워크에 로그인(_L)"
+
+#: ../gnome/applet/wireless-applet.glade.h:46
+msgid "_Network Name:"
+msgstr "네트워크 이름(_N):"
+
+#: ../gnome/applet/wireless-applet.glade.h:47
+msgid "_Wireless Security:"
+msgstr "무선 보안(_W):"
+
+#: ../gnome/applet/wireless-applet.glade.h:48
+msgid "leap_subwindow"
+msgstr "leap_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:49
+msgid "wep_key_subwindow"
+msgstr "wep_key_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:50
+msgid "wep_passphrase_subwindow"
+msgstr "wep_passphrase_subwindow"
+
+#: ../gnome/applet/wireless-applet.glade.h:51
+msgid "wpa_psk_subwindow"
+msgstr "wpa_psk_subwindow"
+
+#: ../gnome/applet/wso-wpa-psk.c:168
+msgid "WPA2 Personal"
+msgstr "개인용 WPA2"
+
+#: ../gnome/applet/wso-wpa-psk.c:170
+msgid "WPA Personal"
+msgstr "개인용 WPA"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:358
+msgid "Cannot add VPN connection"
+msgstr "VPN 연결에 더할 수 없음"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:360
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+"시스템에 알맞는 VPN 소프트웨어가 없습니다. 시스템 관리자에게 알리기 바립니다."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:412
+msgid "Cannot import VPN connection"
+msgstr "VPN 연결 가져올 수 없음"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:414
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"파일 '%2$s'에서 VPN 연결 형식 '%1$s'(을)를 가져올 수 있는 적당한 "
+"소프트웨어가 없습니다. 시스템 관리자에게 알리기 바랍니다."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:554
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "VPN 연결 '%s' 얻는데 오류"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:557
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"VPN 연결 형식 '%s'에 대한 UI 파일을 찾을 수 없습니다. 시스템 관리자에게 "
+"알리기 바랍니다."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "VPN 연결 \"%s\"(을)를 지우겠습니까?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:720
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"VPN 연결 \"%s\"에 대한 모든 정보를 버립니다. 그리고 시스템 관리자에게 "
+"새 연결에 대한 정보를 다시 얻어야 합니다."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+msgid "Unable to load"
+msgstr "읽을 수 없음"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:928
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "필요한 몇몇 파일(glade 파일)을 찾을 수 없습니다!"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1043
+msgid "Edit VPN Connection"
+msgstr "VPN 연결 편집"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "VPN 연결 더하기"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "만드려는 VPN연결 형식을 고르십시오."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "연결:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "VPN 연결 만들기"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "VPN 연결 만들기 2단계 중 1단계"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "VPN 연결 만들기 2단계 중 2단계"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "선택한 VPN 연결 지우기"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "내보내기(_X)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "선택한 VPN 연결을 고칩니다"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "VPN 설정을 파일로 저장합니다"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "선택한 VPN 연경을 파일로 저장합니다"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "VPN 연결 만들기 마침"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "가상 개인 네트워크 연결 관리"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+"가상 개인 네트워크(VPN)으로 연결하는 것을 도와줍니다.\n"
+"\n"
+"IP주소와 열쇠글 같은 정보가 필요합니다. 이러한 정보는 "
+"시스템 관리자에게 확인하시기 바랍니다."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "VPN 연결"
+
+#: ../src/nm-ap-security-wep.c:47
+msgid "40-bit WEP"
+msgstr "40비트 WEP"
+
+#: ../src/nm-ap-security-wep.c:49
+msgid "104-bit WEP"
+msgstr "104비트 WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "WAP CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "WPA 자동"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "WAP2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "WPA2 자동"
+
+#: ../src/nm-ap-security.c:310
+msgid "none"
+msgstr "없음"
+
+#: ../src/nm-netlink-monitor.c:154
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"유선 이더넷 장치를 감시하는 넷링크 소켓을 만들 수 없습니다 - %s"
+
+#: ../src/nm-netlink-monitor.c:172
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"유선 이더넷 장치를 감시하는 넷링크 소켓을 바인드 할 수 없습니다 - %s"
+
+#: ../src/nm-netlink-monitor.c:405
+msgid "operation took too long"
+msgstr "동작이 너무 오래 걸립니다"
+
+#: ../src/nm-netlink-monitor.c:502
+msgid "received data from wrong type of sender"
+msgstr "잘못된 형식의 전송자에게 받은 데이터"
+
+#: ../src/nm-netlink-monitor.c:515
+msgid "received data from unexpected sender"
+msgstr "예상하지 않은 전송자에게 받은 데이터"
+
+#: ../src/nm-netlink-monitor.c:646
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "너무 많은 데이터가 보내졌고 일부는 잃어버렸습니다"
+
+#: ../src/nm-netlink-monitor.c:735
+msgid "error occurred while waiting for data on socket"
+msgstr "소켓에서 데이터를 기다리는 동안 오류가 발생했습니다"
