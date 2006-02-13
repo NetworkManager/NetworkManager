@@ -1,5 +1,16 @@
 2006-02-12  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tom Parker <palfrey@tevp.net>
+	* src/NetworkManagerSystem.h
+		- Remove prototype for nm_system_device_setup_static_ip4_config(),
+			no longer used
+
+	* src/backends/NetworkManagerDebian.c
+		- Remove some dead code (nm_system_device_setup_static_ip4_config) and
+			unused variables
+
+2006-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* vpn-daemons/openvpn/intltool-extract.in
 	  vpn-daemons/openvpn/intltool-merge.in
 	  vpn-daemons/openvpn/intltool-update.in

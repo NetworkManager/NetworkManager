@@ -111,8 +111,6 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	char	*buf;
-
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
@@ -175,117 +173,6 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 	nm_spawn_process (buf);
 	g_free (buf);
 }
-
-/*
- * nm_system_device_setup_static_ip4_config
- *
- * Set up the device with a particular IPv4 address/netmask/gateway.
- *
- * Returns:	TRUE	on success
- *			FALSE on error
- *
- */
-#if 0
-gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
-{
-#define IPBITS (sizeof (guint32) * 8)
-        struct in_addr  temp_addr;
-        struct in_addr  temp_addr2;
-        char            *s_tmp;
-        char            *s_tmp2;
-        int             i;
-        guint32         addr;
-        guint32         netmask;
-        guint32         prefix = IPBITS;    /* initialize with # bits in ipv4 address */
-        guint32         broadcast;
-        char            *buf;
-        int             err;
-        const char            *iface;
-
-        g_return_val_if_fail (dev != NULL, FALSE);
-        g_return_val_if_fail (!nm_device_config_get_use_dhcp (dev), FALSE);
-
-        addr = nm_device_config_get_ip4_address (dev);
-        netmask = nm_device_config_get_ip4_netmask (dev);
-        iface = nm_device_get_iface (dev);
-        broadcast = nm_device_config_get_ip4_broadcast (dev);
-
-        /* get the prefix from the netmask */
-        for (i = 0; i < IPBITS; i++)
-        {
-                if (!(ntohl (netmask) & ((2 << i) - 1)))
-                       prefix--;
-        }
-
-        /* Calculate the broadcast address if the user didn't specify one */
-        if (!broadcast)
-                broadcast = ((addr & (int)netmask) | ~(int)netmask);
-
-        /* 
-         * Try and work out if someone else has our IP
-         * using RFC 2131 Duplicate Address Detection
-         */
-        temp_addr.s_addr = addr;
-        buf = g_strdup_printf ("%s -q -D -c 1 -I %s %s",ARPING, 
-                               iface, inet_ntoa (temp_addr));
-        if ((err = nm_spawn_process (buf)))
-        {
-            nm_warning ("Error: Duplicate address '%s' detected for " 
-                             "device '%s' \n", iface, inet_ntoa (temp_addr));
-            goto error;
-        }
-        g_free (buf);
-
-        /* set our IP address */
-        temp_addr.s_addr = addr;
-        temp_addr2.s_addr = broadcast;
-        s_tmp = g_strdup (inet_ntoa (temp_addr));
-        s_tmp2 = g_strdup (inet_ntoa (temp_addr2));
-        buf = g_strdup_printf ("/sbin/ip addr add %s/%d brd %s dev %s label %s",
-                               s_tmp, prefix, s_tmp2, iface, iface);
-        g_free (s_tmp);
-        g_free (s_tmp2);
-        if ((err = nm_spawn_process (buf)))
-        {
-            nm_warning ("Error: could not set network configuration for "
-                             "device '%s' using command:\n      '%s'",
-                             iface, buf);
-            goto error;
-        }
-        g_free (buf);
-
-        /* Alert other computers of our new address */
-        temp_addr.s_addr = addr;
-        buf = g_strdup_printf ("%s -q -A -c 1 -I %s %s", ARPING,iface,
-                               inet_ntoa (temp_addr));
-        nm_spawn_process (buf);
-        g_free (buf);
-        g_usleep (G_USEC_PER_SEC * 2);
-        buf = g_strdup_printf ("%s -q -U -c 1 -I %s %s", ARPING, iface,
-                                inet_ntoa (temp_addr));
-        nm_spawn_process (buf);
-        g_free (buf);
-
-        /* set the default route to be this device's gateway */
-        temp_addr.s_addr = nm_device_config_get_ip4_gateway (dev);
-        buf = g_strdup_printf ("/sbin/ip route replace default via %s dev %s",
-                               inet_ntoa (temp_addr), iface);
-        if ((err = nm_spawn_process (buf)))
-        {
-                nm_warning ("Error: could not set default route using "
-                                 "command:\n    '%s'", buf);
-                goto error;
-        }
-        g_free (buf);
-        return (TRUE);
-        
-error:
-        g_free (buf);
-        nm_system_device_flush_addresses (dev);
-        nm_system_device_flush_routes (dev);
-        return (FALSE);
-}
-#endif
 
 /*
  * nm_system_enable_loopback
@@ -384,7 +271,6 @@ void nm_system_restart_mdns_responder (void)
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
   char *buf;
-  char *addr;
   struct ether_addr hw_addr;
   unsigned char eui[8];
 
@@ -717,11 +603,7 @@ gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
 GSList * nm_system_get_dialup_config (void)
 {
 	const char *buf;
-	if_block *curr_device;
-	gboolean       error = FALSE;
-	GError *err;
 	unsigned int i = 0;
-	size_t len;
 	GSList *list = NULL;
 	if_block *curr;
 	ifparser_init();

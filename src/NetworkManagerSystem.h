@@ -46,7 +46,6 @@ void			nm_system_device_add_route_via_device_with_iface (const char *iface, cons
 void			nm_system_device_flush_addresses			(NMDevice *dev);
 void			nm_system_device_flush_addresses_with_iface	(const char *iface);
 
-gboolean		nm_system_device_setup_static_ip4_config	(NMDevice *dev);
 void			nm_system_enable_loopback				(void);
 void			nm_system_flush_loopback_routes			(void);
 void			nm_system_delete_default_route			(void);
