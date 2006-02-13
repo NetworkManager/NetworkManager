@@ -1,3 +1,10 @@
+2006-02-12  Dan Williams  <dcbw@redhat.com>
+
+	* vpn-daemons/pptp/src/pppd/patchlevel.h
+	* vpn-daemons/pptp/src/nm-pptp-service-pppd-plugin.c
+		- Rename VERSION -> PPPD_VERSION to avoid conflict with the
+			Makefile-defined VERSION
+
 2006-02-09  Dan Williams  <dcbw@redhat.com>
 
 	Patch from: Vinay A R <rvinay@novell.com>

@@ -39,7 +39,7 @@
 #include "nm-pptp-service.h"
 #include "nm-utils.h"
 
-char pppd_version[] = VERSION;
+char pppd_version[] = PPPD_VERSION;
 
 static void pptp_ip_up(void *opaque, int arg);
 static void pptp_ip_down(void *opaque, int arg);
