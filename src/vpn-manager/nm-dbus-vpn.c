@@ -701,16 +701,20 @@ static DBusMessage *nm_dbus_vpn_activate_connection (DBusConnection *connection,
 		{
 			int	item_count = -1;
 			char **items;
-
+			int routes_count = -1;
+			char **routes;
+			routes = nm_dbus_vpn_get_routes (connection, vpn, &routes_count);
 			if ((items = nm_dbus_vpn_get_vpn_data (connection, vpn, &item_count)))
 			{
 				char *	joined_string = g_strjoinv (" / ", items);
-
-				nm_info ("Will activate VPN connection '%s', service '%s', user_name '%s', vpn_data '%s'.",
-					name, nm_vpn_connection_get_service_name (vpn), nm_vpn_connection_get_user_name (vpn), joined_string);
-				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, passwords, num_passwords, items, item_count);
+				char *  routes_string = g_strjoinv (" / ", routes);
+				nm_info ("Will activate VPN connection '%s', service '%s', user_name '%s', vpn_data '%s', route '%s'.",
+				name, nm_vpn_connection_get_service_name (vpn), nm_vpn_connection_get_user_name (vpn), joined_string, routes_string);
+				nm_vpn_manager_activate_vpn_connection (data->data->vpn_manager, vpn, passwords, num_passwords, items, item_count, 
+									routes, routes_count);
 
 				g_free (joined_string);
+				g_free (routes_string);
 				g_strfreev (items);
 			}
 		} else {

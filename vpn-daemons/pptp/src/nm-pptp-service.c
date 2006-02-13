@@ -596,6 +596,8 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
   int		num_items = -1;
   char **		password_items = NULL;
   int		num_passwords = -1;
+  char **		user_routes = NULL;
+  int		user_routes_count = -1;
   const char *	name = NULL;
   const char *	user_name = NULL;
   DBusError		error;
@@ -613,6 +615,7 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
 			      DBUS_TYPE_STRING, &user_name,
 			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &password_items, &num_passwords,
 			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, &num_items,
+			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &user_routes, &user_routes_count,
 			      DBUS_TYPE_INVALID))
     {
       nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
@@ -635,6 +638,8 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
 
 out:
   dbus_free_string_array (data_items);
+  dbus_free_string_array (password_items);
+  dbus_free_string_array (user_routes);
   if (!success)
     nm_pptp_set_state (data, NM_VPN_STATE_STOPPED);
   return success;

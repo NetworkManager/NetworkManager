@@ -1,3 +1,38 @@
+2006-02-09  Dan Williams  <dcbw@redhat.com>
+
+	Patch from: Vinay A R <rvinay@novell.com>
+	* src/vpn-manager/nm-vpn-act-request.[ch]
+		- Added 'routes' and 'routes_count' to struct NMVPNActRequest since
+			IPSec VPNs require them for std gateway.
+		- (nm_vpn_act_request_new): takes arguments for 'user_routes'
+			and 'user_routes_count'
+		- (nm_vpn_act_request_get_user_routes): new function; gets user
+			defined routes	from NMVPNActRequest object, returns the string
+			array of routes.
+
+	* src/vpn-manager/nm-vpn-manager.[ch]
+		- (nm_vpn_manager_activate_vpn_connection): take additional arguments
+			for 'user_routes' and 'user_routes_count'
+	
+	* src/vpn-manager/nm-dbus-vpn.c
+		- (nm_dbus_vpn_activate_connection): gets 'user_routes' from
+			nm_dbus_vpn_get_routes() to pass to nm_vpn_manager_activate_vpn_connection()
+	
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_stage3_connect): pass user routes over dbus to
+			the vpn daemon
+
+	Modifications by Dan:
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_stage3_connect): ensure that we don't pass NULL string
+			arrays into dbus
+
+	* vpn-daemons/vpnc/src/nm-vpnc-service.c
+	* vpn-daemons/pptp/src/nm-pptp-service.c
+	* vpn-daemons/openvpn/src/nm-openvpn-service.c
+		- Grab user routes from dbus message
+		- Free all string arrays we got from dbus
+	
 2006-02-07  Robert Love  <rml@novell.com>
 
 	Patch by Stefan Seyfried <seife@suse.de>:

@@ -472,6 +472,22 @@ out:
 }
 
 
+static char **
+sanitize_dbus_string_array (char **in_array, dbus_uint32_t *in_num)
+{
+	char ** out_array;
+
+	g_return_val_if_fail (in_num != NULL, NULL);
+
+	if (in_array)
+		return in_array;
+
+	out_array = g_malloc0 (sizeof (char *));
+	out_array[0] = g_strdup ("");
+	*in_num = 1;
+	return out_array;
+}
+
 static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
@@ -484,6 +500,8 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 	dbus_uint32_t		password_count;
 	char **			data_items;
 	dbus_uint32_t		data_count;
+	char **			user_routes;
+	dbus_uint32_t		user_routes_count = 0;
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
 
@@ -512,10 +530,17 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 	user_name = nm_vpn_connection_get_user_name (vpn);
 	password_items = (char **) nm_vpn_act_request_get_password_items (req, &password_count);
 	data_items = (char **) nm_vpn_act_request_get_data_items (req, &data_count);
+	user_routes = (char **) nm_vpn_act_request_get_user_routes(req, &user_routes_count);
+
+	/* Ensure that data_items and user_routes are safe to put through dbus */
+	data_items = sanitize_dbus_string_array (data_items, &data_count);
+	user_routes = sanitize_dbus_string_array (user_routes, &user_routes_count);
+
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &name,
 				  DBUS_TYPE_STRING, &user_name,
 				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &password_items, password_count,
 				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, data_count,
+				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &user_routes, user_routes_count,
 				  DBUS_TYPE_INVALID);
 
 	dbus_connection_send_with_reply (service->app_data->dbus_connection, message, &pcall, -1);

@@ -29,7 +29,8 @@
 
 
 NMVPNActRequest *	nm_vpn_act_request_new			(NMVPNManager *manager, NMVPNService *service, NMVPNConnection *vpn,
-											NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count);
+						NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count,
+						char **user_routes, int user_routes_count);
 void				nm_vpn_act_request_ref			(NMVPNActRequest *req);
 void				nm_vpn_act_request_unref			(NMVPNActRequest *req);
 
@@ -43,6 +44,7 @@ NMDevice *		nm_vpn_act_request_get_parent_dev	(NMVPNActRequest *req);
 
 const char **		nm_vpn_act_request_get_password_items	(NMVPNActRequest *req, guint *count);
 const char **		nm_vpn_act_request_get_data_items	(NMVPNActRequest *req, guint *count);
+const char **		nm_vpn_act_request_get_user_routes	(NMVPNActRequest *req, guint *count);
 
 void				nm_vpn_act_request_cancel		(NMVPNActRequest *req);
 gboolean			nm_vpn_act_request_should_cancel	(NMVPNActRequest *req);

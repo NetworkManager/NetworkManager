@@ -40,6 +40,8 @@ struct NMVPNActRequest
 	int				password_count;
 	char **			data_items;
 	int				data_count;
+	char **			user_routes;
+	int 			user_routes_count;
 
 	guint			daemon_wait_count;
 	guint			callback_id;
@@ -48,7 +50,8 @@ struct NMVPNActRequest
 
 
 NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *service, NMVPNConnection *vpn,
-								NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count)
+					NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count,
+					char **user_routes, int user_routes_count)
 {
 	NMVPNActRequest	*req;
 
@@ -75,6 +78,8 @@ NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *se
 	req->password_count = password_count;
 	req->data_items = g_strdupv (data_items);
 	req->data_count = data_count;
+	req->user_routes = g_strdupv (user_routes);
+	req->user_routes_count = user_routes_count;
 
 	return req;
 }
@@ -192,6 +197,15 @@ const char ** nm_vpn_act_request_get_data_items (NMVPNActRequest *req, guint *co
 
 	*count = req->data_count;
 	return (const char **) (req->data_items);
+}
+
+const char ** nm_vpn_act_request_get_user_routes (NMVPNActRequest *req, guint *count)
+{
+	g_return_val_if_fail (req != NULL, NULL);
+	g_return_val_if_fail (count != NULL, NULL);
+
+	*count = req->user_routes_count;
+	return (const char **) (req->user_routes);
 }
 
 void nm_vpn_act_request_cancel (NMVPNActRequest *req)

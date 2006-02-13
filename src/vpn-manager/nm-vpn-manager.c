@@ -335,7 +335,7 @@ gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const
  *
  */
 void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnection *vpn,
-				char **password_items, int password_count, char **data_items, int data_count)
+				char **password_items, int password_count, char **data_items, int data_count, char **user_routes, int user_routes_count)
 {
 	NMDevice *		parent_dev;
 	NMVPNActRequest *	req;
@@ -360,7 +360,8 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 		return;
 	}
 
-	req = nm_vpn_act_request_new (manager, service, vpn, parent_dev, password_items, password_count, data_items, data_count);
+	req = nm_vpn_act_request_new (manager, service, vpn, parent_dev, password_items, password_count, data_items, data_count,
+					 user_routes, user_routes_count);
 	manager->act_req = req;
 
 	nm_vpn_service_start_connection (service, req);
