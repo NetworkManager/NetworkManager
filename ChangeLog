@@ -1,5 +1,16 @@
 2006-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* vpn-daemons/openvpn/intltool-extract.in
+	  vpn-daemons/openvpn/intltool-merge.in
+	  vpn-daemons/openvpn/intltool-update.in
+	  vpn-daemons/pptp/intltool-extract.in
+	  vpn-daemons/pptp/intltool-merge.in
+	  vpn-daemons/pptp/intltool-update.in
+		- Remove from CVS, they should get created by intltoolize,
+			shouldn't they?
+
+2006-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* vpn-daemons/pptp/src/pppd/patchlevel.h
 	* vpn-daemons/pptp/src/nm-pptp-service-pppd-plugin.c
 		- Rename VERSION -> PPPD_VERSION to avoid conflict with the
