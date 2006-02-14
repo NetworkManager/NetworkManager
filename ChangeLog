@@ -5,7 +5,7 @@
 	non-broadcast encrypted networks always fails because nm_ap_get_encrypted()
 	always returns FALSE, even when the user provided a key, because the
 	newly-created fake AP does not have any capabilities set, which is a sypmtom
-	of security settings not matching capabilities (Novell bug #150787):
+	of security settings not matching capabilities (Novell bug #150784):
 	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Add new interface,
 	  nm_ap_add_capabilities_from_security(), which sets the given AP's
 	  capabilities off the given security settings.  Also improve our handling of
