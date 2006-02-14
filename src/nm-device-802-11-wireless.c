@@ -686,6 +686,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 	}
 	g_assert (security);
 	nm_ap_set_security (ap, security);
+	nm_ap_add_capabilities_from_security (ap, security);
 
 	return ap;
 }

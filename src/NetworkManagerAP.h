@@ -89,6 +89,7 @@ void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 
+void				nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *security);
 void				nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
 void				nm_ap_add_capabilities_for_wep (NMAccessPoint *ap);
 

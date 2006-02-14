@@ -234,16 +234,14 @@ void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
 
 
 /*
- * Get functions for encrypted flag
+ * Accessor function for encrypted flag
  *
  */
 gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
-	return ((ap->capabilities & NM_802_11_CAP_PROTO_WEP)
-			|| (ap->capabilities & NM_802_11_CAP_PROTO_WPA)
-			|| (ap->capabilities & NM_802_11_CAP_PROTO_WPA2));
+	return (!(ap->capabilities & NM_802_11_CAP_PROTO_NONE));
 }
 
 
@@ -580,7 +578,32 @@ static guint32 add_capabilities_from_cipher (guint32 caps, int cipher)
 		caps &= ~NM_802_11_CAP_PROTO_NONE;
 	}
 
+	if (cipher == NM_AUTH_CIPHER_AUTO)
+	{
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
+
 	return caps;
+}
+
+/*
+ * nm_ap_add_capabilities_from_cipher
+ *
+ * Update a given AP's capabilities via a wireless extension cipher integer
+ *
+ */
+void nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *security)
+{
+	guint32 caps;
+	int cipher;
+
+	g_return_if_fail (ap != NULL);
+	g_return_if_fail (security != NULL);
+
+	cipher = nm_ap_security_get_we_cipher (security);
+	caps = nm_ap_get_capabilities (ap);
+	caps = add_capabilities_from_cipher (caps, cipher);
+	nm_ap_set_capabilities (ap, caps);
 }
 
 void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
