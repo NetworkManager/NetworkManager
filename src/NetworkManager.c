@@ -488,6 +488,8 @@ static void nm_data_free (NMData *data)
 
 	nm_hal_deinit (data);
 
+	closelog ();
+
 	memset (data, 0, sizeof (NMData));
 }
 
@@ -630,7 +632,7 @@ static void
 nm_info_handler (const gchar		*log_domain,
 			  GLogLevelFlags	 log_level,
 			  const gchar		*message,
-			  gboolean		 is_daemon)
+			  gpointer		 ignored)
 {
 	int syslog_priority;	
 
@@ -673,9 +675,9 @@ nm_set_up_log_handlers (gboolean become_daemon)
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
 
 	g_log_set_handler (G_LOG_DOMAIN, 
-	                   G_LOG_LEVEL_MASK,
-			   (GLogFunc) nm_info_handler,
-			   GINT_TO_POINTER (become_daemon));
+				    G_LOG_LEVEL_MASK,
+				    nm_info_handler,
+				    NULL);
 }
 
 

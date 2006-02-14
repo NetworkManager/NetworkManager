@@ -1,23 +1,32 @@
 2006-02-14  Robert Love  <rml@novell.com>
 
-	Fix problem since change to "deal with APs changing settings on us," checked
-	in on the fifth of February in the year of the dog, wherein connecting to
-	non-broadcast encrypted networks always fails because nm_ap_get_encrypted()
-	always returns FALSE, even when the user provided a key, because the
-	newly-created fake AP does not have any capabilities set, which is a sypmtom
-	of security settings not matching capabilities (Novell bug #150784):
-	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Add new interface,
-	  nm_ap_add_capabilities_from_security(), which sets the given AP's
-	  capabilities off the given security settings.  Also improve our handling of
-	  capabilities w.r.t. NM_802_11_CAP_PROTO_NONE and NM_AUTH_CIPHER_AUTO.
-	* src/nm-device-802-11-wireless.c: Call nm_ap_add_capabilities_from_security
-	  to ensure that capabilities match newly updated security settings.
+	* src/NetworkManager.c: Call closelog() on daemon shutdown to close
+	  syslog's file descriptor.
 
 2006-02-14  Robert Love  <rml@novell.com>
 
-	* src/nm-device-802-11-wireless.c: Clean up nm_warning calls: Print the error
-	  as a string, not an integer, if possible; do not print the function name
-	  twice; always give the interface, if possible; misc. cleanup.
+	Fix bug around since the change to "deal with APs changing settings on
+	us," checked in on the fifth of February in the year of the dog, 
+	wherein connecting to non-broadcast encrypted networks always fails
+	because nm_ap_get_encrypted() always returns FALSE, even when the user
+	provided a key, because the newly-created fake AP does not have any
+	capabilities set, which is a sypmtom of security settings not matching
+	capabilities (Novell bug #150784):
+	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Add new interface,
+	  nm_ap_add_capabilities_from_security(), which sets the given AP's
+	  capabilities off the given security settings.  Also improve our
+	  handling of capabilities w.r.t. NM_802_11_CAP_PROTO_NONE and
+	  NM_AUTH_CIPHER_AUTO.
+	* src/nm-device-802-11-wireless.c: Call the function
+	  nm_ap_add_capabilities_from_security() to ensure that capabilities
+	  match newly updated security settings.
+
+2006-02-14  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-11-wireless.c: Clean up nm_warning calls: Print the
+	  error as a string, not an integer, if possible; do not print the
+	  function name twice; always give the interface, if possible; misc.
+	  cleanup.
 
 2006-02-12  Dan Williams  <dcbw@redhat.com>
 
