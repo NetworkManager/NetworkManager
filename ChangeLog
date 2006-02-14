@@ -1,3 +1,9 @@
+2006-02-14  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-11-wireless.c: Clean up nm_warning calls: Print the error
+	  as a string, not an integer, if possible; do not print the function name
+	  twice; always give the interface, if possible; misc. cleanup.
+
 2006-02-12  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tom Parker <palfrey@tevp.net>
@@ -61,7 +67,7 @@
 	* vpn-daemons/openvpn/src/nm-openvpn-service.c
 		- Grab user routes from dbus message
 		- Free all string arrays we got from dbus
-	
+
 2006-02-07  Robert Love  <rml@novell.com>
 
 	Patch by Stefan Seyfried <seife@suse.de>:

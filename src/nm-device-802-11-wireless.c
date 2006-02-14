@@ -664,7 +664,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 		}
 
 		/* User chose a network we haven't seen in a scan, so create a
-		 * "fake" access point and add it to yhe scan list.
+		 * "fake" access point and add it to the scan list.
 		 */
 		ap = nm_ap_new ();
 		nm_ap_set_essid (ap, essid);
@@ -898,8 +898,8 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 		}
 		else
 		{
-			nm_warning ("nm_device_get_mode (%s): error getting card mode.  errno = %d",
-					nm_device_get_iface (NM_DEVICE (self)), errno);
+			nm_warning ("error getting card mode on %s: %s",
+					nm_device_get_iface (NM_DEVICE (self)), strerror (errno));
 		}
 		nm_dev_sock_close (sk);
 	}
@@ -943,7 +943,7 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 		{
 			if (errno != ENODEV)
 			{
-				nm_warning ("nm_device_set_mode (%s): error setting card to %s mode: %s",
+				nm_warning ("error setting card %s to %s mode: %s",
 					iface,
 					mode == IW_MODE_INFRA ? "Infrastructure" : \
 						(mode == IW_MODE_ADHOC ? "Ad-Hoc" : \
@@ -1200,8 +1200,8 @@ nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self)
 		}
 		else
 		{
-			nm_warning ("nm_device_get_essid(): error getting ESSID for device %s.  errno = %d",
-					iface, errno);
+			nm_warning ("error getting ESSID for device %s: %s",
+					iface, strerror (errno));
 		}
 
 		nm_dev_sock_close (sk);
@@ -1251,8 +1251,8 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		{
 			if (errno != ENODEV)
 			{
-				nm_warning ("nm_device_set_essid(): error setting ESSID '%s' for device %s.  errno = %d",
-						safe_essid, iface, errno);
+				nm_warning ("error setting ESSID to '%s' for device %s: %s",
+						safe_essid, iface, strerror (errno));
 			}
 		}
 
@@ -1297,8 +1297,8 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 			freq = iw_freq2float (&wrq.u.freq);
 		if (err == -1)
 		{
-			nm_warning ("nm_device_get_frequency(): error getting frequency for device %s.  errno = %d",
-					iface, errno);
+			nm_warning ("error getting frequency for device %s: %s",
+					iface, strerror (errno));
 		}
 
 		nm_dev_sock_close (sk);
@@ -1577,14 +1577,14 @@ nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
 			{
 				if (errno != ENODEV)
 				{
-					nm_warning ("nm_device_set_wep_enc_key(): error setting key for device %s.  errno = %d",
-							iface, errno);
+					nm_warning ("error setting key for device %s: %s",
+							iface, strerror (errno));
 				}
 			}
 		}
 
 		nm_dev_sock_close (sk);
-	} else nm_warning ("nm_device_set_wep_enc_key(): could not get wireless control socket.");
+	} else nm_warning ("could not get wireless control socket for device %s", iface);
 }
 
 /*
@@ -1660,7 +1660,7 @@ handle_scan_results (gpointer user_data)
 	if (cb_data->results_len > 0)
 	{
 		if (!process_scan_results (self, cb_data->results, cb_data->results_len))
-			nm_warning ("nm_device_wireless_process_scan_results(%s): process_scan_results() returned an error.", iface);
+			nm_warning ("process_scan_results() on device %s returned an error.", iface);
 
 		/* Once we have the list, copy in any relevant information from our Allowed list. */
 		nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self), app_data->allowed_ap_list);
@@ -1721,7 +1721,7 @@ handle_scan_results (gpointer user_data)
 
 
 /*
- * nm_device_wireless_scan
+ * nm_device_802_11_wireless_scan
  *
  * Get a list of access points this device can see.
  *
@@ -1815,8 +1815,8 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 			wrq.u.data.length = 0;
 			if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWSCAN, &wrq) < 0)
 			{
-				nm_warning ("nm_device_wireless_scan(%s): couldn't trigger wireless scan.  errno = %d",
-						iface, errno);
+				nm_warning ("could not trigger wireless scan on device %s: %s",
+						iface, strerror (errno));
 			}
 			else
 			{
@@ -1835,7 +1835,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 					scan_results->results_len = results_len;
 				}
 				else
-					nm_warning ("nm_device_wireless_scan(%s): get_scan_results() returned an error.", iface);
+					nm_warning ("get_scan_results() on device %s returned an error.", iface);
 			}
 
 			nm_device_802_11_wireless_set_mode (self, orig_mode);
@@ -2104,7 +2104,7 @@ supplicant_watch_cb (GPid pid,
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 	
 	g_assert (self);
-	
+
 	if (WIFEXITED (status))
 		nm_warning ("wpa_supplicant exited with error code %d", WEXITSTATUS (status));
 	else if (WIFSTOPPED (status)) 
@@ -2905,7 +2905,8 @@ get_scan_results (NMDevice80211Wireless *dev,
 		}
 		else		/* Random errors */
 		{
-			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info.  errno = %d", errno);
+			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info: %s",
+					  strerror (errno));
 			break;
 		}
 	}

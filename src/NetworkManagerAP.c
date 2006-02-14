@@ -234,7 +234,7 @@ void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
 
 
 /*
- * Get/set functions for encrypted flag
+ * Get functions for encrypted flag
  *
  */
 gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
@@ -248,7 +248,7 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
 
 
 /*
- * Accessorts for AP security info
+ * Accessors for AP security info
  *
  */
 NMAPSecurity * nm_ap_get_security (const NMAccessPoint *ap)
