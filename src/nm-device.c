@@ -665,7 +665,7 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	g_assert (self);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 1 (Device Prepare) of 5 started...", iface);
+	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, req);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -686,7 +686,7 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	nm_device_activate_schedule_stage2_device_config (req);
 
 out:
-	nm_info ("Activation (%s) Stage 1 (Device Prepare) of 5 complete.", iface);
+	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
 	return FALSE;
 }
 
@@ -709,7 +709,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
-	nm_info ("Activation (%s) Stage 1 (Device Prepare) of 5 scheduled...", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...", nm_device_get_iface (self));
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage1_device_prepare, req, NULL);
@@ -755,7 +755,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	g_assert (self);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 2 (Device Configure) of 5 starting...", iface);
+	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 
 	/* Bring the device up */
 	if (!nm_device_is_up (self))
@@ -777,7 +777,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
-	nm_info ("Activation (%s) Stage 2 (Device Configure) of 5 successful.", iface);
+	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -788,7 +788,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	nm_device_activate_schedule_stage3_ip_config_start (req);
 
 out:
-	nm_info ("Activation (%s) Stage 2 (Device Configure) of 5 complete.", iface);
+	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) complete.", iface);
 	return FALSE;
 }
 
@@ -816,7 +816,7 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage2_device_config, req, NULL);
 	g_source_attach (source, self->priv->context);
 	g_source_unref (source);
-	nm_info ("Activation (%s) Stage 2 (Device Configure) of 5 scheduled...", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) scheduled...", nm_device_get_iface (self));
 }
 
 
@@ -870,7 +870,7 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	g_assert (self);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 3 (IP Configure Start) of 5 started...", iface);
+	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -897,7 +897,7 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	nm_device_activate_schedule_stage4_ip_config_get (req);
 
 out:
-	nm_info ("Activation (%s) Stage 3 (IP Configure Start) of 5 complete.", iface);
+	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
 	return FALSE;
 }
 
@@ -924,7 +924,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage3_ip_config_start, req, NULL);
 	g_source_attach (source, self->priv->context);
 	g_source_unref (source);
-	nm_info ("Activation (%s) Stage 3 (IP Configure Start) of 5 scheduled.", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.", nm_device_get_iface (self));
 }
 
 
@@ -1016,7 +1016,7 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_info ("Activation (%s) Stage 4 (IP Configure Get) of 5 started...", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) started...", nm_device_get_iface (self));
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -1051,7 +1051,7 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
-	nm_info ("Activation (%s) Stage 4 (IP Configure Get) of 5 complete.", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) complete.", nm_device_get_iface (self));
 	return FALSE;
 }
 
@@ -1074,7 +1074,7 @@ nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
-	nm_info ("Activation (%s) Stage 4 (IP Configure Get) of 5 scheduled...",
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) scheduled...",
 			nm_device_get_iface (self));
 
 	source = g_idle_source_new ();
@@ -1126,7 +1126,7 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	g_assert (self);
 
 	iface = nm_device_get_iface (self);
-	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) of 5 started...", iface);
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) started...", iface);
 
 	if (nm_device_activation_should_cancel (self))
 	{
@@ -1149,7 +1149,7 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
-	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) of 5 complete.", iface);
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) complete.", iface);
 	return FALSE;
 }
 
@@ -1177,7 +1177,7 @@ nm_device_activate_schedule_stage4_ip_config_timeout (NMActRequest *req)
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage4_ip_config_timeout, req, NULL);
 	g_source_attach (source, self->priv->context);
 	g_source_unref (source);
-	nm_info ("Activation (%s) Stage 4 (IP Configure Timeout) of 5 scheduled...", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) scheduled...", nm_device_get_iface (self));
 }
 
 
@@ -1205,7 +1205,7 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 	ip4_config = nm_act_request_get_ip4_config (req);
 	g_assert (ip4_config);
 
-	nm_info ("Activation (%s) Stage 5 (IP Configure Commit) of 5 started...",
+	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 			nm_device_get_iface (self));
 
 	if (nm_device_activation_should_cancel (self))
@@ -1230,7 +1230,7 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_policy_schedule_activation_failed (req);
 
 out:
-	nm_info ("Activation (%s) Stage 5 (IP Configure Commit) of 5 complete.",
+	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
 			nm_device_get_iface (self));
 	return FALSE;
 }
@@ -1258,7 +1258,7 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage5_ip_config_commit, req, NULL);
 	g_source_attach (source, self->priv->context);
 	g_source_unref (source);
-	nm_info ("Activation (%s) Stage 5 (IP Configure Commit) of 5 scheduled...", nm_device_get_iface (self));
+	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) scheduled...", nm_device_get_iface (self));
 }
 
 
