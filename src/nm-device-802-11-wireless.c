@@ -2016,8 +2016,8 @@ ap_need_key (NMDevice80211Wireless *self,
  *	Free Software Foundation version 2 of the License.
  */
 
-#define WPA_SUPPLICANT_GLOBAL_SOCKET		"/var/run/wpa_supplicant-global"
-#define WPA_SUPPLICANT_CONTROL_SOCKET		"/var/run/wpa_supplicant"
+#define WPA_SUPPLICANT_GLOBAL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant-global"
+#define WPA_SUPPLICANT_CONTROL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant"
 
 
 static void

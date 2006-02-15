@@ -1,5 +1,11 @@
 2006-02-15  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-11-wireless.c: Use LOCALSTATEDIR preprocessor
+	  define, not an open-coded "/var", for WPA_SUPPLICANT_GLOBAL_SOCKET
+	  and WPA_SUPPLICANT_CONTROL_SOCKET.
+	
+2006-02-15  Robert Love  <rml@novell.com>
+
 	* src/nm-device-802-11-wireless.c, src/nm-device.c: When printing debug
 	  information about what connection stage we are at, provide the total
 	  number of stages, e.g. "Stage 2 of 5", so users know how far along
