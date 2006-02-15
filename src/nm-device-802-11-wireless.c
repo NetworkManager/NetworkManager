@@ -2173,7 +2173,7 @@ supplicant_status_cb (GIOChannel *source,
 		{
 			NMAccessPoint	*ap = nm_act_request_get_ap (req);
 
-			nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) "
+			nm_info ("Activation (%s/wireless) Stage 2 (Device Configure) of 5 "
 					"successful.  Connected to access point '%s'.",
 					nm_device_get_iface (NM_DEVICE (self)),
 					nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
