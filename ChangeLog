@@ -1,3 +1,13 @@
+2006-02-15  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/Makefile.am: Define SYSCONFDIR preprocessor
+	  define to $sysconfdir.
+	* gnome/vpn-properties/nm-vpn-properties.c: Make sure we hide the VPN
+	  editing dialog, vpn_edit_widget, which fixes a bug where editing one
+	  type of VPN and then editing another results in a mangled dialog
+	  box containing the widgets from both VPNs (fixes Novell #150854).
+	  Also, some misc. cleanup and use SYSCONFDIR not open coded directory.
+
 2006-02-14  Robert Love  <rml@novell.com>
 
 	* src/NetworkManager.c: Call closelog() on daemon shutdown to close
