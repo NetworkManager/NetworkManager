@@ -1,8 +1,12 @@
+2006-02-16  Francisco Javier F. Serrador  <serrador@cvs.gnome.org>
+
+	* configure.in: Added es to ALL_LINGUAS.
+
 2006-02-08  Clytie Siddall <clytie@riverland.net.au>
 
-	* configure.in	Added vi in ALL_LINGUAS line.
+	* configure.in:	Added vi in ALL_LINGUAS line.
 	
-	2006-02-04  Funda Wang  <fundawang@linux.net.cn>
+2006-02-04  Funda Wang  <fundawang@linux.net.cn>
 
 	* configure.in: Added zh_CN to ALL_LINGUAS.
 
