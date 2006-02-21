@@ -1,5 +1,11 @@
 2006-02-21  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet.[ch]
+	  gnome/applet/applet-dbus.c
+		- Implement notification support for VPN messages too
+
+2006-02-21  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus-info.c
 		- Clean up warning messages to not double-print the function
 
