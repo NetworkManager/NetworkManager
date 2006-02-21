@@ -1,3 +1,12 @@
+2006-02-21  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Rodney Dawes <dobey@novell.com>
+	* configure.in
+	  gnome/applet/Makefile.am
+	  gnome/applet/applet.c
+		- Add libnotify support if '--enable-notify=yes' is passed
+		  at configure time
+
 2006-02-16  Kang Jeong-Hee  <keizie@gmail.com>
 
 	* configure.in (ALL_LINGUAS): ko added. (Korean)

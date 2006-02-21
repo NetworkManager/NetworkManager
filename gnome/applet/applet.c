@@ -43,6 +43,10 @@
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
 
+#ifdef ENABLE_NOTIFY
+#include <libnotify/notify.h>
+#endif
+
 #include "applet.h"
 #include "applet-compat.h"
 #include "applet-dbus.h"
@@ -1065,6 +1069,81 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 
 
 /*
+ * nmwa_notify_state
+ *
+ * Notify the user of change in connectivity
+ *
+ */
+static void nmwa_notify_state (NMWirelessApplet *applet, NetworkDevice *act_dev, WirelessNetwork *active_network)
+{
+#ifdef ENABLE_NOTIFY
+	NotifyNotification *  n;
+	NotifyUrgency         urgency = NOTIFY_URGENCY_NORMAL;
+	char *                title = NULL;
+	char *                msg = NULL;
+	char *                icon = NULL;
+	static int            state = NM_STATE_ASLEEP;
+
+	if (!notify_is_initted ())
+		notify_init ("NetworkManager");
+
+	switch (applet->nm_state)
+	{
+	     case NM_STATE_ASLEEP:
+	     case NM_STATE_DISCONNECTED:
+			title = g_strdup (_("Disconnected"));
+			msg = g_strdup (_("The network connection has been disconnected."));
+			icon = g_strdup ("nm-no-connection");
+			urgency = NOTIFY_URGENCY_CRITICAL;
+			break;
+
+	     case NM_STATE_CONNECTED:
+			title = g_strdup (_("Connected"));
+			if (network_device_is_wired (act_dev))
+			{
+				msg = g_strdup (_("Connected to a wired network interface."));
+				icon = g_strdup ("nm-device-wired");
+				urgency = NOTIFY_URGENCY_LOW;
+			}
+			else if (network_device_is_wireless (act_dev))
+			{
+				if (applet->is_adhoc)
+				{
+					msg = g_strdup (_("An ad-hoc wireless network connection has been established."));
+					icon = g_strdup ("nm-adhoc");
+				}
+				else
+				{
+					msg = g_strdup_printf (_("A wireless network connection to '%s' has been established."),
+									   active_network ? wireless_network_get_essid (active_network) : "(unknown)");
+					icon = g_strdup ("nm-device-wireless");
+				}
+			}
+
+			break;
+
+	     default:
+			break;
+	}
+
+	if (state != applet->nm_state && title && msg && icon) {
+		n = notify_notification_new (title, msg, icon, (GtkWidget *) applet);
+		notify_notification_set_urgency (n, urgency);
+
+		notify_notification_show (n, NULL);
+
+		g_object_unref (n);
+	}
+	g_free (icon);
+	g_free (msg);
+	g_free (title);
+
+	state = applet->nm_state;
+#endif
+}
+
+
+/*
  * nmwa_update_state
  *
  * Figure out what the currently active device is from NetworkManager, its type,
@@ -1188,6 +1267,8 @@ done:
 		else
 			show_applet = FALSE;
 	}
+
+	nmwa_notify_state (applet, act_dev, active_network);
 
 	/* determine if we should hide the notification icon */
 	if (show_applet)

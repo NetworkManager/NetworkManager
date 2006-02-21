@@ -159,6 +159,13 @@ PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
 AC_SUBST(GNOME_KEYRING_CFLAGS)
 AC_SUBST(GNOME_KEYRING_LIBS)
 
+PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
+			    [enable_notify=no])
+if test "x$enable_notify" != "xno"; then
+   AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
+   [Enable notifications with libnotify])
+fi
+
 PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
