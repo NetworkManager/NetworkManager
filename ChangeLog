@@ -1,5 +1,17 @@
 2006-02-21  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/libnm_glib/libnm_glib.c
+		- Use __func__ everywhere we can
+		- Code cleanups
+		- Use dbus pending calls rather than blocking
+		- Reduce busywaits for our thread to start and stop
+			(gnome.org #330562)
+		- (libnm_glib_dbus_init): Use dbus_bus_get_private() so we don't
+			stomp on others using the default shared dbus connection.
+			Fixes #rh177546# and gnome.org #326572
+
+2006-02-21  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Rodney Dawes <dobey@novell.com>
 	* configure.in
 	  gnome/applet/Makefile.am
