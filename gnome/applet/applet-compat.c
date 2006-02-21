@@ -273,7 +273,7 @@ convert_one_entry (GConfClient *client,
 	char *		escaped_network;
 	char *		key;
 	int			int_key_type;
-	NMEncKeyType	key_type;
+	NMEncKeyType	key_type = NM_ENC_TYPE_NONE;
 	IEEE_802_11_Cipher * first_cipher = NULL;
 	IEEE_802_11_Cipher * second_cipher = NULL;
 
@@ -296,17 +296,14 @@ convert_one_entry (GConfClient *client,
 		goto out;
 
 	/* Grab the key type off this old entry so we know how to convert it */
-	if (!nm_gconf_get_int_helper (client,
+	if (nm_gconf_get_int_helper (client,
                                    GCONF_PATH_WIRELESS_NETWORKS,
                                    "key_type",
                                    escaped_network,
                                    &int_key_type))
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'key_type' item from GConf for '%s'.",
-				__FILE__, __LINE__, __func__, essid);
-		goto out;
+		key_type = (NMEncKeyType) int_key_type;
 	}
-	key_type = (NMEncKeyType) int_key_type;
 
 	/* Convert the list of stored access point BSSIDs */
 	key = g_strdup_printf ("%s/%s/addresses", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);

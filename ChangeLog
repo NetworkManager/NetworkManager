@@ -1,5 +1,11 @@
 2006-02-21  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-compat.c
+		- (convert_one_entry): accept entries without a key_type and
+			convert them to unencrypted networks
+
+2006-02-21  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/libnm_glib/libnm_glib.c
 		- Use __func__ everywhere we can
 		- Code cleanups
