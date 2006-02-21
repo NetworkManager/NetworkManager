@@ -289,7 +289,7 @@ void nmi_dbus_signal_update_network (DBusConnection *connection, const char *net
 	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "WirelessNetworkUpdate");
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nmi_dbus_signal_update_network(): Could not raise the 'WirelessNetworkUpdate' signal!");
+		nm_warning ("Could not raise the 'WirelessNetworkUpdate' signal!");
 
 	dbus_message_unref (message);
 }
@@ -407,35 +407,35 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 
 	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type, DBUS_TYPE_INVALID))
 	{
-		nm_warning ("%s:%d (%s): message arguments were invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - message arguments were invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 
 	if (!nmi_network_type_valid (type) || (strlen (network) <= 0))
 	{
-		nm_warning ("%s:%d (%s): network or network type was invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - network or network type was invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 
 	if (!(escaped_network = gconf_escape_key (network, strlen (network))))
 	{
-		nm_warning ("%s:%d (%s): couldn't unescape network name.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - couldn't unescape network name.", __FILE__, __LINE__);
 		goto out;
 	}
 
 	/* ESSID */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "essid", escaped_network, &essid) || !essid)
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'essid' item from GConf for '%s'.",
-				__FILE__, __LINE__, __func__, network);
+		nm_warning ("%s:%d - couldn't get 'essid' item from GConf for '%s'.",
+				__FILE__, __LINE__, network);
 		goto out;
 	}
 
 	/* Timestamp */
 	if (!nm_gconf_get_int_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "timestamp", escaped_network, &timestamp) || (timestamp < 0))
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'timestamp' item from GConf for '%s'.",
-				__FILE__, __LINE__, __func__, essid);
+		nm_warning ("%s:%d - couldn't get 'timestamp' item from GConf for '%s'.",
+				__FILE__, __LINE__, essid);
 		goto out;
 	}
 
@@ -449,16 +449,16 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	g_free (gconf_key);
 	if (bssids_value && ((bssids_value->type != GCONF_VALUE_LIST) || (gconf_value_get_list_type (bssids_value) != GCONF_VALUE_STRING)))
 	{
-		nm_warning ("%s:%d (%s): addresses value existed in GConf, but was not a string list for '%s'.",
-				__FILE__, __LINE__, __func__, essid);
+		nm_warning ("%s:%d - addresses value existed in GConf, but was not a string list for '%s'.",
+				__FILE__, __LINE__, essid);
 		goto out;
 	}
 
 	/* Get the network's security information from GConf */
 	if (!(gconf_wso = nm_gconf_wso_new_deserialize_gconf (client, escaped_network)))
 	{
-		nm_warning ("%s:%d (%s): couldn't retrieve security information from "
-				"GConf for '%s'.", __FILE__, __LINE__, __func__, essid);
+		nm_warning ("%s:%d - couldn't retrieve security information from "
+				"GConf for '%s'.", __FILE__, __LINE__, essid);
 		goto out;
 	}
 
@@ -525,7 +525,7 @@ void nmi_dbus_signal_update_vpn_connection (DBusConnection *connection, const ch
 	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "VPNConnectionUpdate");
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nmi_dbus_signal_update_vpn_connection(): Could not raise the 'VPNConnectionUpdate' signal!");
+		nm_warning ("Could not raise the 'VPNConnectionUpdate' signal!");
 
 	dbus_message_unref (message);
 }
@@ -640,14 +640,14 @@ nmi_dbus_get_vpn_connection_properties (DBusConnection *connection,
 	/* User-visible name of connection */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_VPN_CONNECTIONS, "name", escaped_name, &name) || !name)
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'name' item from GConf.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - couldn't get 'name' item from GConf.", __FILE__, __LINE__);
 		goto out;
 	}
 
 	/* Service name of connection */
 	if (!nm_gconf_get_string_helper (client, GCONF_PATH_VPN_CONNECTIONS, "service_name", escaped_name, &service_name) || !service_name)
 	{
-		nm_warning ("%s:%d (%s): couldn't get 'service_name' item from GConf.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - couldn't get 'service_name' item from GConf.", __FILE__, __LINE__);
 		goto out;
 	}
 
@@ -845,7 +845,7 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	g_free (key);
 	if (!gconf_entry)
 	{
-		nm_warning ("%s:%d (%s): GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, __func__, essid);
+		nm_warning ("%s:%d - GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, essid);
 		goto out;
 	}
 	gconf_entry_unref (gconf_entry);
@@ -909,8 +909,8 @@ nmi_save_network_info (NMWirelessApplet *applet,
 	/* Stuff the security information into GConf */
 	if (!nm_gconf_wso_serialize_gconf (gconf_wso, applet->gconf_client, escaped_network))
 	{
-		nm_warning ("%s:%d (%s): Couldn't serialize security info for '%s'.",
-				__FILE__, __LINE__, __func__, essid);
+		nm_warning ("%s:%d - Couldn't serialize security info for '%s'.",
+				__FILE__, __LINE__, essid);
 	}
 
 	/* Stuff the encryption key into the keyring */
@@ -974,20 +974,20 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	/* First argument: ESSID (STRING) */
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
 	{
-		nm_warning ("%s:%d (%s): message format was invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - message format was invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &essid);
 	if (strlen (essid) <= 0)
 	{
-		nm_warning ("%s:%d (%s): message argument 'essid' was invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - message argument 'essid' was invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 
 	/* Second argument: Automatic (BOOLEAN) */
 	if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
 	{
-		nm_warning ("%s:%d (%s): message argument 'automatic' was invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - message argument 'automatic' was invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &automatic);
@@ -995,7 +995,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 	/* Third argument: Access point's BSSID */
 	if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
 	{
-		nm_warning ("%s:%d (%s): message argument 'bssid' was invalid.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - message argument 'bssid' was invalid.", __FILE__, __LINE__);
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &bssid);
@@ -1006,7 +1006,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
 
 	if (!(gconf_wso = nm_gconf_wso_new_deserialize_dbus (&iter)))
 	{
-		nm_warning ("%s:%d (%s): couldn't get security information from the message.", __FILE__, __LINE__, __func__);
+		nm_warning ("%s:%d - couldn't get security information from the message.", __FILE__, __LINE__);
 		goto out;
 	}
 
@@ -1056,12 +1056,12 @@ void nmi_dbus_signal_user_interface_activated (DBusConnection *connection)
 	message = dbus_message_new_signal (NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "UserInterfaceActivated");
 	if (!message)
 	{
-		nm_warning ("nmi_dbus_signal_user_interface_activated(): Not enough memory for new dbus message!");
+		nm_warning ("Not enough memory for new dbus message!");
 		return;
 	}
 
 	if (!dbus_connection_send (connection, message, NULL))
-		nm_warning ("nmi_dbus_signal_user_interface_activated(): Could not raise the 'UserInterfaceActivated' signal!");
+		nm_warning ("Could not raise the 'UserInterfaceActivated' signal!");
 
 	dbus_message_unref (message);
 }

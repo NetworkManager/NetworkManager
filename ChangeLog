@@ -1,5 +1,10 @@
 2006-02-21  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-info.c
+		- Clean up warning messages to not double-print the function
+
+2006-02-21  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-compat.c
 		- (convert_one_entry): accept entries without a key_type and
 			convert them to unencrypted networks
