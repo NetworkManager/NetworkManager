@@ -402,7 +402,7 @@ msgstr[1] "Langattomat verkot (%s)"
 #: ../gnome/applet/menu-items.c:163
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
-msgstr[0] "Langaton verko"
+msgstr[0] "Langaton verkko"
 msgstr[1] "Langattomat verkot"
 
 #: ../gnome/applet/menu-items.c:330
