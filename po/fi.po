@@ -251,7 +251,7 @@ msgstr "Yhteys langattomaan Ad-Hoc-verkkoon"
 #: ../gnome/applet/applet.c:1297
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Langaton verkkoyhteyts \"%s\" (%d%%)"
+msgstr "Langaton verkkoyhteys \"%s\" (%d%%)"
 
 #: ../gnome/applet/applet.c:1319
 #, c-format
