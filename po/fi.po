@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-02-01 19:47+0200\n"
-"PO-Revision-Date: 2006-02-01 19:50+0200\n"
+"POT-Creation-Date: 2006-02-23 20:38+0200\n"
+"PO-Revision-Date: 2006-02-23 20:42+0200\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -31,66 +31,62 @@ msgstr "Yhteys langattomaan verkkoon \"%s\" epäonnistui."
 msgid "Connection to the wired network failed."
 msgstr "Yhteys kiinteään verkkoon epäonnistui."
 
-#: ../gnome/applet/applet.c:179
+#: ../gnome/applet/applet.c:183
 msgid "Error displaying connection information:"
 msgstr "Virhe näytettäessä yhteyden tietoja:"
 
-#: ../gnome/applet/applet.c:196
+#: ../gnome/applet/applet.c:200
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Joitain vaadittuja osia ei löytynyt (glade-tiedostoa)!"
 
-#: ../gnome/applet/applet.c:207
+#: ../gnome/applet/applet.c:211
 msgid "No active connections!"
 msgstr "Ei aktiivisia yhteyksiä!"
 
-#: ../gnome/applet/applet.c:224
+#: ../gnome/applet/applet.c:228
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Kiinteä Ethernet-yhteys (%s)"
 
-#: ../gnome/applet/applet.c:226
+#: ../gnome/applet/applet.c:230
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Langaton Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:323 ../gnome/applet/applet.c:348
+#: ../gnome/applet/applet.c:327 ../gnome/applet/applet.c:352
 msgid "NetworkManager Applet"
 msgstr "NetworkManager-sovelma"
 
-#: ../gnome/applet/applet.c:325 ../gnome/applet/applet.c:350
+#: ../gnome/applet/applet.c:329 ../gnome/applet/applet.c:354
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:326 ../gnome/applet/applet.c:351
+#: ../gnome/applet/applet.c:330 ../gnome/applet/applet.c:355
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr "Ilmoitusalueen sovelma verkkolaitteiden ja yhteyksien hallintaan."
 
-#: ../gnome/applet/applet.c:329 ../gnome/applet/applet.c:356
+#: ../gnome/applet/applet.c:333 ../gnome/applet/applet.c:360
 msgid "translator-credits"
 msgstr ""
 "Ilkka Tuohela, 2005.\n"
 "\n"
 "http://www.gnome.fi/"
 
-#: ../gnome/applet/applet.c:441
-msgid "VPN Error"
-msgstr "VPN-virhe"
-
-#: ../gnome/applet/applet.c:445
+#: ../gnome/applet/applet.c:488
 msgid "VPN Login Failure"
 msgstr "Virhe kirjauduttaessa VPN:ään"
 
-#: ../gnome/applet/applet.c:446
+#: ../gnome/applet/applet.c:489
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "VPN-yhteyttä \"%s\" ei voitu käynnistää kirjautumisvirheen takia."
 
-#: ../gnome/applet/applet.c:450
+#: ../gnome/applet/applet.c:493
 msgid "VPN Start Failure"
 msgstr "VPN-yhteyden käynnistysvirhe"
 
-#: ../gnome/applet/applet.c:451
+#: ../gnome/applet/applet.c:494
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
@@ -99,25 +95,25 @@ msgstr ""
 "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska VPN-ohjelman suorittaminen "
 "epäonnistui."
 
-#: ../gnome/applet/applet.c:455 ../gnome/applet/applet.c:465
+#: ../gnome/applet/applet.c:498 ../gnome/applet/applet.c:508
 msgid "VPN Connect Failure"
 msgstr "VPN-yhteyden yhteydenottovirhe"
 
-#: ../gnome/applet/applet.c:456
+#: ../gnome/applet/applet.c:499
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska tapahtui yhteysvirhe."
 
-#: ../gnome/applet/applet.c:460
+#: ../gnome/applet/applet.c:503
 msgid "VPN Configuration Error"
 msgstr "VPN-yhteyden asetusvirhe"
 
-#: ../gnome/applet/applet.c:461
+#: ../gnome/applet/applet.c:504
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN-yhteyden \"%s\" asetukset ovat virheelliset."
 
-#: ../gnome/applet/applet.c:466
+#: ../gnome/applet/applet.c:509
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -126,21 +122,25 @@ msgstr ""
 "VPN-yhteyttä \"%s\" ei voitu käynnistää, koska VPN-palvelin ei palauttanut "
 "kelvollista verkkomäärittelyä."
 
-#: ../gnome/applet/applet.c:474
+#: ../gnome/applet/applet.c:517
 #, c-format
 msgid "The VPN service said: \"%s\""
 msgstr "VPN-palvelin vastasi: \"%s\""
 
-#: ../gnome/applet/applet.c:543
+#: ../gnome/applet/applet.c:524
+msgid "VPN Error"
+msgstr "VPN-virhe"
+
+#: ../gnome/applet/applet.c:634
 #, c-format
 msgid "VPN connection '%s' said:"
 msgstr "VPN-yhteys \"%s\" ilmoitti:"
 
-#: ../gnome/applet/applet.c:545
+#: ../gnome/applet/applet.c:637 ../gnome/applet/applet.c:642
 msgid "VPN Login Message"
 msgstr "VPN-yhteyden kirjautumisviesti"
 
-#: ../gnome/applet/applet.c:762 ../gnome/applet/applet.c:2516
+#: ../gnome/applet/applet.c:859 ../gnome/applet/applet.c:2690
 #: ../gnome/applet/other-network-dialog.c:453
 #: ../gnome/applet/passphrase-dialog.c:227
 msgid ""
@@ -150,163 +150,188 @@ msgstr ""
 "NetworkManager-sovelma ei voinut ladata jotain vaadituista resursseista "
 "(glade-tiedostoa ei löytynyt)."
 
-#: ../gnome/applet/applet.c:774
+#: ../gnome/applet/applet.c:871
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Verkkolaite \"%s (%s)\" ei tue langattomien verkkojen etsimistä."
 
-#: ../gnome/applet/applet.c:782
+#: ../gnome/applet/applet.c:879
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Verkkolaite \"%s (%s)\" ei tue verkkoyhteyden havaitsemista."
 
-#: ../gnome/applet/applet.c:929
+#: ../gnome/applet/applet.c:1026
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Valmistellaan laitetta %s kiinteälle verkkoyhteydelle..."
 
-#: ../gnome/applet/applet.c:931
+#: ../gnome/applet/applet.c:1028
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Valmistellaan laitetta %s langattomalle verkolle \"%s\"..."
 
-#: ../gnome/applet/applet.c:939
+#: ../gnome/applet/applet.c:1036
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Määritellään laitetta %s kiinteälle verkkoyhteydelle..."
 
-#: ../gnome/applet/applet.c:941
+#: ../gnome/applet/applet.c:1038
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Yritetään liittyä langattomaan verkkoon \"%s\"..."
 
-#: ../gnome/applet/applet.c:949
+#: ../gnome/applet/applet.c:1046
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Odotetaan verkon avainta langattomalle verkolle \"%s\""
 
-#: ../gnome/applet/applet.c:957 ../gnome/applet/applet.c:967
+#: ../gnome/applet/applet.c:1054 ../gnome/applet/applet.c:1064
 msgid "Requesting a network address from the wired network..."
 msgstr "Pyydetään verkko-osoitetta kiinteästä verkosta..."
 
-#: ../gnome/applet/applet.c:959 ../gnome/applet/applet.c:969
+#: ../gnome/applet/applet.c:1056 ../gnome/applet/applet.c:1066
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Pyydetään verkko-osoitettta langattomasta verkosta \"%s\"..."
 
-#: ../gnome/applet/applet.c:977
+#: ../gnome/applet/applet.c:1074
 msgid "Finishing connection to the wired network..."
 msgstr "Viimeistellään yhteyttä kiinteään verkkoon..."
 
-#: ../gnome/applet/applet.c:979
+#: ../gnome/applet/applet.c:1076
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Viimeistellään yhteyttä langattomaan verkkoon \"%s\"..."
 
-#: ../gnome/applet/applet.c:1096
+#: ../gnome/applet/applet.c:1187
+msgid "Disconnected"
+msgstr "Yhteys katkaistu"
+
+#: ../gnome/applet/applet.c:1188
+msgid "The network connection has been disconnected."
+msgstr "Yhteys verkkoon on katkaistu."
+
+#: ../gnome/applet/applet.c:1194
+msgid "Connected"
+msgstr "Yhdistetty"
+
+#: ../gnome/applet/applet.c:1197
+msgid "Connected to a wired network interface."
+msgstr "Yhdistetty kiinteään verkkoon."
+
+#: ../gnome/applet/applet.c:1205
+msgid "An ad-hoc wireless network connection has been established."
+msgstr "Yhdistetty langattomaan ad-hoc-verkkoon."
+
+#: ../gnome/applet/applet.c:1210
+#, c-format
+msgid "A wireless network connection to '%s' has been established."
+msgstr "Yhdistetty langattomaan verkkoon \"%s\"."
+
+#: ../gnome/applet/applet.c:1268
 msgid "NetworkManager is not running"
 msgstr "NetworkManager ei ole käytössä"
 
-#: ../gnome/applet/applet.c:1109 ../gnome/applet/applet.c:1843
+#: ../gnome/applet/applet.c:1281 ../gnome/applet/applet.c:2017
 msgid "Networking disabled"
 msgstr "Verkko ei ole käytössä"
 
-#: ../gnome/applet/applet.c:1114
+#: ../gnome/applet/applet.c:1286
 msgid "No network connection"
 msgstr "Ei verkkoyhteyttä"
 
-#: ../gnome/applet/applet.c:1119
+#: ../gnome/applet/applet.c:1291
 msgid "Wired network connection"
 msgstr "Kiinteä verkkoyhteys"
 
-#: ../gnome/applet/applet.c:1123
+#: ../gnome/applet/applet.c:1295
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Yhteys langattomaan Ad-Hoc-verkkoon"
 
-#: ../gnome/applet/applet.c:1125
+#: ../gnome/applet/applet.c:1297
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Langaton verkkoyhteyts \"%s\" (%d%%)"
 
-#: ../gnome/applet/applet.c:1147
+#: ../gnome/applet/applet.c:1319
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-yhteys \"%s\""
 
-#: ../gnome/applet/applet.c:1155
+#: ../gnome/applet/applet.c:1327
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN-yhteyttä \"%s\" avataan"
 
-#: ../gnome/applet/applet.c:1568
+#: ../gnome/applet/applet.c:1742
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Yhdistä muihin langattomiin verkkoihin..."
 
-#: ../gnome/applet/applet.c:1589
+#: ../gnome/applet/applet.c:1763
 msgid "Create _New Wireless Network..."
 msgstr "Luo _uusi langaton verkko..."
 
-#: ../gnome/applet/applet.c:1710
+#: ../gnome/applet/applet.c:1884
 msgid "_VPN Connections"
 msgstr "_VPN-yhteydet"
 
-#: ../gnome/applet/applet.c:1745
+#: ../gnome/applet/applet.c:1919
 msgid "_Configure VPN..."
 msgstr "_Määrittele VPN-yhteys..."
 
-#: ../gnome/applet/applet.c:1749
+#: ../gnome/applet/applet.c:1923
 msgid "_Disconnect VPN..."
 msgstr "_Katkaise VPN-yhteys..."
 
-#: ../gnome/applet/applet.c:1771
+#: ../gnome/applet/applet.c:1945
 msgid "_Dial Up Connections"
 msgstr "_Modeemiyhteydet"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1782
+#: ../gnome/applet/applet.c:1956
 #, c-format
 msgid "Connect to %s..."
 msgstr "Ota yhteyttä kohteeseen %s..."
 
-#: ../gnome/applet/applet.c:1788
+#: ../gnome/applet/applet.c:1962
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Katkaise yhteys kohteeseen %s..."
 
-#: ../gnome/applet/applet.c:1837
+#: ../gnome/applet/applet.c:2011
 msgid "No network devices have been found"
 msgstr "Verkkolaitteita ei löytynyt"
 
-#: ../gnome/applet/applet.c:2029
+#: ../gnome/applet/applet.c:2203
 msgid "NetworkManager is not running..."
 msgstr "NetworkManager ei ole käytössä..."
 
 #. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2185
+#: ../gnome/applet/applet.c:2359
 msgid "Enable _Networking"
 msgstr "Ota _verkko käyttöön"
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2191
+#: ../gnome/applet/applet.c:2365
 msgid "Enable _Wireless"
 msgstr "Ota _langaton käyttöön"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2197
+#: ../gnome/applet/applet.c:2371
 msgid "Connection _Information"
 msgstr "Tietoja _yhteydestä"
 
 #. Help item
-#: ../gnome/applet/applet.c:2208
+#: ../gnome/applet/applet.c:2382
 msgid "_Help"
 msgstr "O_hje"
 
 #. About item
-#: ../gnome/applet/applet.c:2217
+#: ../gnome/applet/applet.c:2391
 msgid "_About"
 msgstr "_Tietoja"
 
-#: ../gnome/applet/applet.c:2635
+#: ../gnome/applet/applet.c:2809
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -428,8 +453,7 @@ msgid ""
 "The requested wireless network requires security capabilities unsupported by "
 "your hardware."
 msgstr ""
-"Pyydetty langaton verkko vaatii tietoturvakykyjä, joita laitteistosi ei "
-"tue."
+"Pyydetty langaton verkko vaatii tietoturvakykyjä, joita laitteistosi ei tue."
 
 #: ../gnome/applet/vpn-password-dialog.c:152
 #: ../gnome/applet/vpn-password-dialog.c:189
@@ -668,11 +692,11 @@ msgstr ""
 "Sopivaa VPN-ohjelmistoa ei löytynyt järjestelmästäsi. Ota yhteyttä "
 "järjestelmäsi ylläpitäjään."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:412
+#: ../gnome/vpn-properties/nm-vpn-properties.c:411
 msgid "Cannot import VPN connection"
 msgstr "VPN-yhteyttä ei voida tuoda"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:414
+#: ../gnome/vpn-properties/nm-vpn-properties.c:413
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -681,12 +705,12 @@ msgstr ""
 "Sopivaa VPN-ohjelmistoa VPN-yhteyden tyypille \"%s\" ei löydy tuotaessa "
 "asetustiedostoa \"%s\". Ota yhteyttä järjestelmäsi ylläpitäjään."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:554
+#: ../gnome/vpn-properties/nm-vpn-properties.c:553
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Virhe haettaessa VPN-yhteyttä \"%s\""
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:557
+#: ../gnome/vpn-properties/nm-vpn-properties.c:556
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -695,12 +719,12 @@ msgstr ""
 "VPN-yhteyden tyypille \"%s\" ei löydy käyttöliittymää. Ota yhteyttä "
 "järjestelmäsi ylläpitäjään."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#: ../gnome/vpn-properties/nm-vpn-properties.c:713
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Poistetaanko VPN-yhteys \"%s\"?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:720
+#: ../gnome/vpn-properties/nm-vpn-properties.c:716
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -711,16 +735,16 @@ msgstr ""
 "yhteyttä järjestelmäsiylläpitäjään, jotta saat uuden yhteyden luomiseen "
 "tarvittavat tiedot."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+#: ../gnome/vpn-properties/nm-vpn-properties.c:921
 msgid "Unable to load"
 msgstr "Ei voitu ladata"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:928
+#: ../gnome/vpn-properties/nm-vpn-properties.c:923
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Jotain tarvittavista resursseista ei löydy (glade-tiedosto)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1043
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1031
 msgid "Edit VPN Connection"
 msgstr "Muokkaa VPN-yhteyttä"
 
@@ -825,7 +849,7 @@ msgstr "WPA2 COMP"
 msgid "WPA2 Automatic"
 msgstr "WPA2 (automaattinen)"
 
-#: ../src/nm-ap-security.c:310
+#: ../src/nm-ap-security.c:290
 msgid "none"
 msgstr "ei mitään"
 
