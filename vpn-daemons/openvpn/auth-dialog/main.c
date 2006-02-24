@@ -327,6 +327,7 @@ main (int argc, char *argv[])
   static gchar    *vpn_service = NULL;
   GError          *error = NULL;
   GOptionContext  *context;
+  int          bytes_read;
   static GOptionEntry entries[] = 
     {
       { "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
@@ -431,7 +432,7 @@ main (int argc, char *argv[])
   fflush (stdout);
 
   /* wait for data on stdin  */
-  fread (buf, sizeof (char), sizeof (buf), stdin);
+  bytes_read = fread (buf, sizeof (char), sizeof (buf), stdin);
 
  out:
   g_object_unref (gconf_client);
