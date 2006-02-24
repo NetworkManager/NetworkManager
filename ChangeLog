@@ -1,5 +1,10 @@
 2006-02-24  Robert Love  <rml@novell.com>
 
+	Patch from Timo Hoenig <thoenig@suse.de>:
+	* src/NetworkManagerDbus.c: Survive DBUS restarts like a champ.
+
+2006-02-24  Robert Love  <rml@novell.com>
+
 	Patch from Dan Winship <danw@novell.com>:
 	* gnome/applet/eggtrayicon.c: Update EggTrayIcon code.  Set the gdk
 	  area to transparent.

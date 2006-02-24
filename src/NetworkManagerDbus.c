@@ -46,6 +46,8 @@
 
 static char *get_nmi_match_string (const char *owner);
 
+static gpointer nm_dbus_reinit (gpointer user_data);
+
 /*
  * nm_dbus_create_error_message
  *
@@ -494,10 +496,13 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 			handled = TRUE;
 		}
 	}
-	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "Disconnected"))
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected"))
 	{
-		/* FIXME: try to recover from disconnection */
+		nm_hal_deinit (data);
+		dbus_connection_unref (data->dbus_connection);
 		data->dbus_connection = NULL;
+		nm_dhcp_manager_dispose (data->dhcp_manager);
+		g_thread_create ((GThreadFunc) nm_dbus_reinit, (gpointer) data, FALSE, NULL);
 		handled = TRUE;
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
@@ -734,6 +739,34 @@ static char *get_nmi_match_string (const char *owner)
 	return g_strdup_printf ("type='signal',interface='" NMI_DBUS_INTERFACE "',sender='%s',path='" NMI_DBUS_PATH "'", owner);
 }
 
+/*
+ * nm_dbus_reinit
+ *
+ * Reconnect to the system message bus if the connection was dropped.
+ *
+ */
+
+static gpointer nm_dbus_reinit (gpointer user_data)
+{
+	NMData *data = (NMData *) user_data;
+	char *owner;
+
+	g_return_val_if_fail (data != NULL, NULL);
+
+	while ((data->dbus_connection = nm_dbus_init (data)) == NULL)
+		g_usleep (G_USEC_PER_SEC * 3);
+
+	/* if HAL was quick it is already back on the bus. Thus, we do not receive NameOwnerChanged */
+	if ((owner = get_name_owner (data->dbus_connection, "org.freedesktop.Hal")))
+		nm_hal_init (data);
+
+	data->dhcp_manager = nm_dhcp_manager_new (data);
+
+	nm_info ("Successfully reconnected to the system bus.");
+	
+	return NULL;
+}
+
 
 /*
  * nm_dbus_init
@@ -762,7 +795,7 @@ DBusConnection *nm_dbus_init (NMData *data)
 		goto out;
 	}
 
-	//dbus_connection_set_exit_on_disconnect (connection, FALSE);
+	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, data->main_context);
 
 	data->nm_methods = nm_dbus_nm_methods_setup ();
