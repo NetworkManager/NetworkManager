@@ -42,11 +42,13 @@ void			nmwa_dbus_update_dialup					(NMWirelessApplet *applet);
 void			nmwa_dbus_dialup_activate_connection		(NMWirelessApplet *applet, const char *name);
 void			nmwa_dbus_dialup_deactivate_connection		(NMWirelessApplet *applet, const char *name);
 void			nmwa_dbus_device_update_one_device			(NMWirelessApplet *applet, const char *dev_path);
+void			nmwa_dbus_device_activated				(NMWirelessApplet *applet, const char *dev_path, const char *essid);
+void			nmwa_dbus_device_deactivated				(NMWirelessApplet *applet, const char *dev_path);
 void			nmwa_dbus_device_remove_one_device			(NMWirelessApplet *applet, const char *dev_path);
 
 void			nmwa_dbus_device_update_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path);
 void			nmwa_dbus_device_remove_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path);
-void			nmwa_dbus_update_strength			(NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength);
+void			nmwa_dbus_update_strength				(NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength);
 void			nmwa_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
 void			nmwa_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
 

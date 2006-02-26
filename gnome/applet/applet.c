@@ -53,6 +53,7 @@
 #include "applet-dbus-devices.h"
 #include "applet-dbus-vpn.h"
 #include "applet-dbus-info.h"
+#include "applet-notifications.h"
 #include "other-network-dialog.h"
 #include "passphrase-dialog.h"
 #include "menu-items.h"
@@ -363,56 +364,27 @@ static void nmwa_about_cb (NMWirelessApplet *applet)
 #endif
 }
 
-typedef struct DialogCBData
-{
-	NMWirelessApplet *applet;
-	char *msg;
-	char *title;
-} DialogCBData;
-
-static void free_dialog_cb_data (DialogCBData *data)
-{
-	g_return_if_fail (data != NULL);
-
-	g_free (data->msg);
-	g_free (data->title);
-	memset (data, 0, sizeof (DialogCBData));
-	g_free (data);
-}
-
 #ifndef ENABLE_NOTIFY
-static void vpn_failure_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
-{
-	DialogCBData *data;
-
-	if ((data = g_object_get_data (G_OBJECT (dialog), "data")))
-	{
-		g_object_set_data (G_OBJECT (dialog), "data", NULL);
-		free_dialog_cb_data (data);
-	}
-
-	gtk_widget_destroy (dialog);
-}
-
-
 /*
  * nmwa_show_vpn_failure_dialog
  *
  * Present the VPN failure dialog.
  *
  */
-static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
+static void
+nmwa_show_vpn_failure_dialog (const char *title,
+                              const char *msg)
 {
 	GtkWidget	*dialog;
 
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
-	g_return_val_if_fail (cb_data->title != NULL, FALSE);
+	g_return_val_if_fail (title != NULL, FALSE);
+	g_return_val_if_fail (msg != NULL, FALSE);
 
-	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_OK, cb_data->msg, NULL);
+	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR,
+				GTK_BUTTONS_OK, msg, NULL);
 	gtk_window_set_title (GTK_WINDOW (dialog), cb_data->title);
-	g_signal_connect (dialog, "response", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
-	g_signal_connect (dialog, "close", G_CALLBACK (vpn_failure_dialog_close_cb), NULL);
+	g_signal_connect (dialog, "response", G_CALLBACK (gtk_widget_destroy), NULL);
+	g_signal_connect (dialog, "close", G_CALLBACK (gtk_widget_destroy), NULL);
 	g_object_set_data (G_OBJECT (dialog), "data", cb_data);
 
 	/* Bash focus-stealing prevention in the face */
@@ -420,44 +392,6 @@ static gboolean nmwa_show_vpn_failure_dialog (DialogCBData *cb_data)
 	gtk_widget_realize (dialog);
 	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
 	gtk_widget_show_all (dialog);
-
-	return FALSE;
-}
-#endif
-
-
-#ifdef ENABLE_NOTIFY
-/*
- * nmwa_notify_vpn_failure
- *
- * Notify the user of that the VPN connection failed
- *
- */
-static gboolean nmwa_notify_vpn_failure (DialogCBData *cb_data)
-{
-	NotifyNotification *  n;
-	NotifyUrgency         urgency = NOTIFY_URGENCY_NORMAL;
-	char *                icon = NULL;
-
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
-	g_return_val_if_fail (cb_data->title != NULL, FALSE);
-
-	if (!notify_is_initted ())
-		notify_init ("NetworkManager");
-
-	icon = g_strdup ("gnome-lockscreen");
-	urgency = NOTIFY_URGENCY_CRITICAL;
-
-	n = notify_notification_new (cb_data->title, cb_data->msg, icon,
-							(GtkWidget *) cb_data->applet);
-	notify_notification_set_urgency (n, urgency);
-	notify_notification_show (n, NULL);
-	g_object_unref (n);
-	g_free (icon);
-	free_dialog_cb_data (cb_data);
-
-	return FALSE;
 }
 #endif
 
@@ -468,147 +402,87 @@ static gboolean nmwa_notify_vpn_failure (DialogCBData *cb_data)
  * Schedule display of a VPN failure message.
  *
  */
-void nmwa_schedule_vpn_failure_alert (NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg)
+void nmwa_show_vpn_failure_alert (NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg)
 {
-	DialogCBData *cb_data = NULL;
-	gchar *error_head = NULL;
-	gchar *error_desc = NULL;
-	gchar *error_data = NULL;
+	char *title = NULL;
+	char *desc = NULL;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (member != NULL);
 	g_return_if_fail (vpn_name != NULL);
 	g_return_if_fail (error_msg != NULL);
 
-	cb_data = g_malloc0 (sizeof (DialogCBData));
-	cb_data->applet = applet;
-
 	if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED))
 	{
-		error_head = g_strdup (_("VPN Login Failure"));
-		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a login failure."), vpn_name);
+		title = g_strdup (_("VPN Login Failure"));
+		desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a login failure."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED))
 	{
-		error_head = g_strdup (_("VPN Start Failure"));
-		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a failure launching the VPN program."), vpn_name);
+		title = g_strdup (_("VPN Start Failure"));
+		desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a failure launching the VPN program."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED))
 	{
-		error_head = g_strdup (_("VPN Connect Failure"));
-		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a connection error."), vpn_name);
+		title = g_strdup (_("VPN Connect Failure"));
+		desc = g_strdup_printf (_("Could not start the VPN connection '%s' due to a connection error."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD))
 	{
-		error_head = g_strdup (_("VPN Configuration Error"));
-		error_desc = g_strdup_printf (_("The VPN connection '%s' was not correctly configured."), vpn_name);
+		title = g_strdup (_("VPN Configuration Error"));
+		desc = g_strdup_printf (_("The VPN connection '%s' was not correctly configured."), vpn_name);
 	}
 	else if (!strcmp (member, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
 	{
-		error_head = g_strdup (_("VPN Connect Failure"));
-		error_desc = g_strdup_printf (_("Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."), vpn_name);
-	}
-	else
-	{
-		free_dialog_cb_data (cb_data);
-		return;
+		title = g_strdup (_("VPN Connect Failure"));
+		desc = g_strdup_printf (_("Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."), vpn_name);
 	}
 
-	error_data = g_strdup_printf (_("The VPN service said: \"%s\""), error_msg);
+	if (title && desc)
+	{
+		char * msg;
 
 #ifdef ENABLE_NOTIFY
-	cb_data->title = g_strdup (error_head);
-	cb_data->msg = g_strdup_printf ("\n%s\n\n%s", error_desc, error_data);
-	g_idle_add ((GSourceFunc) nmwa_notify_vpn_failure, cb_data);
+		msg = g_strdup_printf ("\n%s\n%s", desc, error_msg);
+		nmwa_send_event_notification (applet, NOTIFY_URGENCY_CRITICAL,
+			title, msg, "gnome-lockscreen");
 #else
-	cb_data->title = g_strdup (_("VPN Error"));
-	cb_data->msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
-	                                "%s\n\n%s", error_head, error_desc, error_data);
-	g_idle_add ((GSourceFunc) nmwa_show_vpn_failure_dialog, cb_data);
+		msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n"
+			"%s\n\n%s", title, desc, error_msg);
+		nmwa_show_vpn_failure_dialog (title, msg);
 #endif
-	g_free (error_head);
-	g_free (error_desc);
-	g_free (error_data);
+		g_free (msg);
+	}
+
+	g_free (title);
+	g_free (desc);
 }
 
 
 #ifndef ENABLE_NOTIFY
-static void vpn_login_banner_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
-{
-	DialogCBData *data;
-
-	if ((data = g_object_get_data (G_OBJECT (dialog), "data")))
-	{
-		g_object_set_data (G_OBJECT (dialog), "data", NULL);
-		free_dialog_cb_data (data);
-	}
-
-	gtk_widget_destroy (dialog);
-}
-
-
 /*
  * nmwa_show_vpn_login_banner_dialog
  *
  * Present the VPN login banner dialog.
  *
  */
-static gboolean nmwa_show_vpn_login_banner_dialog (gpointer user_data)
+static void
+nmwa_show_vpn_login_banner_dialog (const char *title,
+                                   const char *msg)
 {
-	DialogCBData *cb_data = (DialogCBData *) user_data;
 	GtkWidget	*dialog;
 
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
-
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_INFO,
-					GTK_BUTTONS_OK, cb_data->msg, NULL);
-	g_signal_connect (dialog, "response", G_CALLBACK (vpn_login_banner_dialog_close_cb), NULL);
-	g_signal_connect (dialog, "close", G_CALLBACK (vpn_login_banner_dialog_close_cb), NULL);
-	g_object_set_data (G_OBJECT (dialog), "data", cb_data);
+					GTK_BUTTONS_OK, msg, NULL);
+	gtk_window_set_title (GTK_WINDOW (dialog), title);
+	g_signal_connect (dialog, "response", G_CALLBACK (gtk_widget_destroy), NULL);
+	g_signal_connect (dialog, "close", G_CALLBACK (gtk_widget_destroy), NULL);
 
 	/* Bash focus-stealing prevention in the face */
 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);
 	gtk_widget_realize (dialog);
 	gdk_x11_window_set_user_time (dialog->window, gtk_get_current_event_time ());
 	gtk_widget_show_all (dialog);
-
-	return FALSE;
-}
-#endif
-
-#ifdef ENABLE_NOTIFY
-/*
- * nmwa_notify_vpn_login_banner
- *
- * Notify the user of that the VPN's login banner
- *
- */
-static gboolean nmwa_notify_vpn_login_banner (DialogCBData *cb_data)
-{
-	NotifyNotification *  n;
-	NotifyUrgency         urgency = NOTIFY_URGENCY_NORMAL;
-	char *                icon = NULL;
-
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-	g_return_val_if_fail (cb_data->msg != NULL, FALSE);
-	g_return_val_if_fail (cb_data->title != NULL, FALSE);
-
-	if (!notify_is_initted ())
-		notify_init ("NetworkManager");
-
-	icon = g_strdup ("gnome-lockscreen");
-	urgency = NOTIFY_URGENCY_LOW;
-
-	n = notify_notification_new (cb_data->title, cb_data->msg, icon,
-							(GtkWidget *) cb_data->applet);
-	notify_notification_set_urgency (n, urgency);
-	notify_notification_show (n, NULL);
-	g_object_unref (n);
-	g_free (icon);
-	free_dialog_cb_data (cb_data);
-
-	return FALSE;
 }
 #endif
 
@@ -619,30 +493,26 @@ static gboolean nmwa_notify_vpn_login_banner (DialogCBData *cb_data)
  * Schedule a display of the VPN banner
  *
  */
-void nmwa_schedule_vpn_login_banner (NMWirelessApplet *applet, const char *vpn_name, const char *banner)
+void nmwa_show_vpn_login_banner (NMWirelessApplet *applet, const char *vpn_name, const char *banner)
 {
-	DialogCBData *	cb_data = NULL;
-	char *msg2;
+	const char *	title;
+	char *		msg;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (vpn_name != NULL);
 	g_return_if_fail (banner != NULL);
 
-	cb_data = g_malloc0 (sizeof (DialogCBData));
-	cb_data->applet = applet;
-
-	msg2 = g_strdup_printf (_("VPN connection '%s' said:"), vpn_name);
-
+	title = _("VPN Login Message");
 #ifdef ENABLE_NOTIFY
-	cb_data->title = g_strdup (_("VPN Login Message"));
-	cb_data->msg = g_strdup_printf ("\n%s\n\n%s", msg2, banner);
-	g_idle_add ((GSourceFunc) nmwa_notify_vpn_login_banner, cb_data);
+	msg = g_strdup_printf ("\n%s", banner);
+	nmwa_send_event_notification (applet, NOTIFY_URGENCY_LOW,
+		title, msg, "gnome-lockscreen");
 #else
-	cb_data->msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s\n\n\"%s\"",
-	                       _("VPN Login Message"), msg2, banner);
-	g_idle_add ((GSourceFunc) nmwa_show_vpn_login_banner_dialog, cb_data);
+	msg = g_strdup_printf ("<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
+	                       title, banner);
+	nmwa_show_vpn_login_banner_dialog (title, msg);
 #endif
-	g_free (msg2);
+	g_free (msg);
 }
 
 
@@ -1162,81 +1032,6 @@ static gboolean animation_timeout (NMWirelessApplet *applet)
 
 
 /*
- * nmwa_notify_state
- *
- * Notify the user of change in connectivity
- *
- */
-static void nmwa_notify_state (NMWirelessApplet *applet, NetworkDevice *act_dev, WirelessNetwork *active_network)
-{
-#ifdef ENABLE_NOTIFY
-	NotifyNotification *  n;
-	NotifyUrgency         urgency = NOTIFY_URGENCY_NORMAL;
-	char *                title = NULL;
-	char *                msg = NULL;
-	char *                icon = NULL;
-	static int            state = NM_STATE_ASLEEP;
-
-	if (!notify_is_initted ())
-		notify_init ("NetworkManager");
-
-	switch (applet->nm_state)
-	{
-	     case NM_STATE_ASLEEP:
-	     case NM_STATE_DISCONNECTED:
-			title = g_strdup (_("Disconnected"));
-			msg = g_strdup (_("The network connection has been disconnected."));
-			icon = g_strdup ("nm-no-connection");
-			urgency = NOTIFY_URGENCY_CRITICAL;
-			break;
-
-	     case NM_STATE_CONNECTED:
-			title = g_strdup (_("Connected"));
-			if (network_device_is_wired (act_dev))
-			{
-				msg = g_strdup (_("Connected to a wired network interface."));
-				icon = g_strdup ("nm-device-wired");
-				urgency = NOTIFY_URGENCY_LOW;
-			}
-			else if (network_device_is_wireless (act_dev))
-			{
-				if (applet->is_adhoc)
-				{
-					msg = g_strdup (_("An ad-hoc wireless network connection has been established."));
-					icon = g_strdup ("nm-adhoc");
-				}
-				else
-				{
-					msg = g_strdup_printf (_("A wireless network connection to '%s' has been established."),
-									   active_network ? wireless_network_get_essid (active_network) : "(unknown)");
-					icon = g_strdup ("nm-device-wireless");
-				}
-			}
-
-			break;
-
-	     default:
-			break;
-	}
-
-	if (state != applet->nm_state && title && msg && icon) {
-		n = notify_notification_new (title, msg, icon, (GtkWidget *) applet);
-		notify_notification_set_urgency (n, urgency);
-
-		notify_notification_show (n, NULL);
-
-		g_object_unref (n);
-	}
-	g_free (icon);
-	g_free (msg);
-	g_free (title);
-
-	state = applet->nm_state;
-#endif
-}
-
-
-/*
  * nmwa_update_state
  *
  * Figure out what the currently active device is from NetworkManager, its type,
@@ -1297,9 +1092,7 @@ static void nmwa_update_state (NMWirelessApplet *applet)
 					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
 					                       active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
 			}
-
 			pixbuf = nmwa_get_connected_icon (applet, act_dev);
-
 			break;
 
 		case NM_STATE_CONNECTING:
@@ -1360,8 +1153,6 @@ done:
 		else
 			show_applet = FALSE;
 	}
-
-	nmwa_notify_state (applet, act_dev, active_network);
 
 	/* determine if we should hide the notification icon */
 	if (show_applet)

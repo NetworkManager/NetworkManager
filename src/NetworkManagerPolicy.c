@@ -51,6 +51,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 {
 	NMDevice			*dev = NULL;
 	NMData			*data = NULL;
+	NMAccessPoint *	ap = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -60,10 +61,13 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
+    if (nm_device_is_802_11_wireless (dev))
+        ap = nm_act_request_get_ap (req);
+
 	nm_device_activation_success_handler (dev, req);
 
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
-	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_NOW_ACTIVE);
+	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
 
 	return FALSE;

@@ -17,7 +17,6 @@ nm_applet_CPPFLAGS =						\
 	$(LIBGNOMEUI_CFLAGS)					\
 	$(PANEL_APPLET_CFLAGS)					\
 	$(GNOME_KEYRING_CFLAGS)					\
-	$(NOTIFY_CFLAGS)					\
 	-DICONDIR=\""$(datadir)/pixmaps"\"			\
 	-DGLADEDIR=\""$(gladedir)"\"				\
 	-DBINDIR=\""$(bindir)"\"					\
@@ -30,6 +29,10 @@ nm_applet_CPPFLAGS =						\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"		\
 	-DVERSION=\"$(VERSION)\"					\
 	$(NULL)
+
+if WITH_NOTIFY
+nm_applet_CPPFLAGS += $(NOTIFY_CFLAGS)
+endif
 
 nm_applet_SOURCES =			\
 	main.c				\
@@ -91,6 +94,10 @@ nm_applet_SOURCES =			\
 	gconf-helpers.h		\
 	$(NULL)
 
+if WITH_NOTIFY
+nm_applet_SOURCES += applet-notifications.c applet-notifications.h
+endif
+
 nm_applet_LDADD =						\
 	$(DBUS_LIBS)						\
 	$(HAL_LIBS)						\
@@ -102,10 +109,13 @@ nm_applet_LDADD =						\
 	$(GCONF_LIBS)						\
 	$(LIBGNOMEUI_LIBS)					\
 	$(GNOME_KEYRING_LIBS)				\
-	$(NOTIFY_LIBS)					\
 	$(top_builddir)/utils/libnmutils.la	\
 	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(NULL)
+
+if WITH_NOTIFY
+nm_applet_LDADD += $(NOTIFY_LIBS)
+endif
 
 
 gladedir = $(datadir)/nm-applet

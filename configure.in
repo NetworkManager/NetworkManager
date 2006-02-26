@@ -165,6 +165,7 @@ if test "x$enable_notify" != "xno"; then
    AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
    [Enable notifications with libnotify])
 fi
+AM_CONDITIONAL(WITH_NOTIFY, test x"$enable_notify" != xno)
 
 PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)

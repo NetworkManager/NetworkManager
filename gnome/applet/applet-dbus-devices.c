@@ -24,11 +24,16 @@
 #include <config.h>
 #endif
 
+#ifdef ENABLE_NOTIFY
+#include <libnotify/notify.h>
+#endif
+
 #include <glib/gi18n.h>
 #include <stdio.h>
 #include <string.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include "applet-notifications.h"
 #include "applet-dbus-devices.h"
 #include "applet-dbus.h"
 #include "applet.h"
@@ -861,6 +866,130 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
 			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_properties_cb, applet, NULL);
+		dbus_message_unref (message);
+	}
+}
+
+typedef struct _DeviceActivatedCBData
+{
+	NMWirelessApplet *applet;
+	char	*essid;
+} DeviceActivatedCBData;
+
+static void free_device_activated_cb_data (DeviceActivatedCBData *obj)
+{
+	if (!obj)
+		return;
+
+	obj->applet = NULL;
+	if (obj->essid)
+		g_free (obj->essid);
+
+	memset (obj, 0, sizeof (DeviceActivatedCBData));
+	g_free (obj);
+}
+
+static void nmwa_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_data)
+{
+	DeviceActivatedCBData *	cb_data = (DeviceActivatedCBData*) user_data;
+	NMWirelessApplet *		applet = cb_data->applet;
+	char *				essid = cb_data->essid;
+	NetworkDevice *		active_device;
+	char *				message = NULL;
+	char *				icon = NULL;
+
+	nmwa_dbus_device_properties_cb (pcall, applet);
+
+	/* Don't show anything if the applet isn't shown */
+	if (!GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
+		goto out;
+
+#ifdef ENABLE_NOTIFY
+	active_device = nmwa_get_first_active_device (applet->device_list);
+	if (active_device && network_device_is_wireless (active_device))
+	{
+		if (applet->is_adhoc)
+		{
+			message = g_strdup_printf (_("You are now connected to the Ad-Hoc wireless network '%s'."), essid);
+			icon = "nm-adhoc";
+		}
+		else
+		{
+			message = g_strdup_printf (_("You are now connected to the wireless network '%s'."), essid);
+			icon = "nm-device-wireless";
+		}
+		
+	}
+	else
+	{
+		message = g_strdup (_("You are now connected to the wired network."));
+		icon = "nm-device-wired";
+	}
+
+	nm_info ("%s", message);
+
+	nmwa_send_event_notification (applet, NOTIFY_URGENCY_LOW, _("Connection Established"), message, icon);
+	g_free (message);
+#endif
+
+out:
+	free_device_activated_cb_data (cb_data);
+}
+
+
+void nmwa_dbus_device_activated (NMWirelessApplet *applet, const char *dev_path, const char *essid)
+{
+	DBusMessage *		message;
+	DBusPendingCall *	pcall = NULL;
+	DeviceActivatedCBData	*cb_data = NULL;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (dev_path != NULL);
+
+	cb_data = g_malloc0 (sizeof (DeviceActivatedCBData));
+	cb_data->applet = applet;
+	if (essid)
+		cb_data->essid = g_strdup (essid);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
+	{
+		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+		if (pcall)
+			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_activated_cb, cb_data, NULL);
+		dbus_message_unref (message);
+	}
+}
+
+
+static void nmwa_dbus_device_deactivated_cb (DBusPendingCall *pcall, void *user_data)
+{
+	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+
+	nmwa_dbus_device_properties_cb (pcall, applet);
+
+#ifdef ENABLE_NOTIFY
+	/* Don't show anything if the applet isn't shown */
+	if (GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
+	{
+		nmwa_send_event_notification (applet, NOTIFY_URGENCY_NORMAL, _("Disconnected"),
+			_("The network connection has been disconnected."), "nm-no-connection");
+	}
+#endif
+}
+
+void nmwa_dbus_device_deactivated (NMWirelessApplet *applet, const char *dev_path)
+{
+	DBusMessage *		message;
+	DBusPendingCall *	pcall = NULL;
+
+	g_return_if_fail (applet != NULL);
+	g_return_if_fail (dev_path != NULL);
+
+	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
+	{
+		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
+		if (pcall)
+			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_deactivated_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }

@@ -139,8 +139,8 @@ NetworkDevice *	nmwa_get_device_for_nm_path			(GSList *dev_list, const char *nm_
 NMWirelessApplet *	nmwa_new							(void);
 void				nmwa_schedule_warning_dialog			(NMWirelessApplet *applet, const char *msg);
 gboolean			nmwa_driver_notify					(gpointer user_data);
-void				nmwa_schedule_vpn_failure_alert		(NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg);
-void				nmwa_schedule_vpn_login_banner		(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
+void				nmwa_show_vpn_failure_alert			(NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg);
+void				nmwa_show_vpn_login_banner			(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
 
 NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
 VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);

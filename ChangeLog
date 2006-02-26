@@ -1,3 +1,42 @@
+2006-02-26  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+	  gnome/applet/Makefile.am
+		- Conditionalize all the notify stuff
+
+	Merge most of Chris Aillon's notification patch:
+	
+	* gnome/applet/applet-notifications.[ch]
+		- New files; show a notification
+	
+	* gnome/applet/applet-dbus-devices.[ch]
+		- (nmwa_dbus_device_activated, nmwa_dbus_device_activated_cb,
+		   nmwa_dbus_device_deactivated, nmwa_dbus_device_deactivated_cb):
+			new functions, do the right thing when a device change occurs
+
+	* gnome/applet/applet-dbus.c
+		- (nmwa_dbus_filter): Split out DeviceNowActive and DeviceNoLongerActive
+			signals, so we can handle them specially
+
+	* gnome/applet/applet.[ch]
+		- nmwa_schedule_vpn_login_banner -> nmwa_show_vpn_login_banner
+		- nmwa_schedule_vpn_failure_alert -> nmwa_show_vpn_failure_alert
+		- (nmwa_notify_state): remove
+		- (nmwa_update_state); remove call to nmwa_notify_state, since the
+			notification work is now done when the appropriate dbus signals
+			are received.
+		- (nmwa_show_vpn_login_banner, nmwa_show_vpn_failure_alert): don't
+			defer execution of the notification/dialog stuff.  That was an
+			artifact of the previous multi-threaded nature of the applet
+			and is now pointless.
+		- (nmwa_notify_vpn_failure, nmwa_notify_vpn_login_banner): remove,
+			no longer needed.  Function folded into applet-notifications.c
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): send the AP along with the device
+			status change signal, if the connection is wireless.  Should
+			fix the race where applet would show a connection to "unknown"
+
 2006-02-25  Robert Love  <rml@novell.com>
 
 	Add WPA Enterprise support:
