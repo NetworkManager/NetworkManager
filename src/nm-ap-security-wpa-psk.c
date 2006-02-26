@@ -74,7 +74,7 @@ nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	int					key_mgt;
 
 	g_return_val_if_fail (iter != NULL, NULL);
-	g_return_val_if_fail (we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP || we_cipher == IW_AUTH_CIPHER_CCMP, NULL);
+	g_return_val_if_fail (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP || we_cipher == IW_AUTH_CIPHER_CCMP, NULL);
 
 	if (!nmu_security_deserialize_wpa_psk (iter, &key, &key_len, &wpa_version, &key_mgt))
 		goto out;
@@ -83,7 +83,7 @@ nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher)
 	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_PSK, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
 	if (key)
-		nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len);
+		nm_ap_security_set_key (NM_AP_SECURITY (security), key, key_len); /* FIXME: Free 'key' ? */
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgt = key_mgt;
 
@@ -100,7 +100,7 @@ nm_ap_security_wpa_psk_new_from_ap (NMAccessPoint *ap, int we_cipher)
 	guint32				caps;
 
 	g_return_val_if_fail (ap != NULL, NULL);
-	g_return_val_if_fail (we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+	g_return_val_if_fail (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_PSK, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
@@ -193,7 +193,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		pairwise_cipher = "NONE";
 
 	/* If user selected "Automatic", we let wpa_supplicant sort it out */
-	if (cipher != NM_AUTH_CIPHER_AUTO)
+	if (cipher != NM_AUTH_TYPE_WPA_PSK_AUTO)
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i pairwise %s", nwid, pairwise_cipher))

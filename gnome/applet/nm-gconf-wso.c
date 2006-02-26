@@ -29,6 +29,7 @@
 #include "nm-gconf-wso.h"
 #include "nm-gconf-wso-private.h"
 #include "nm-gconf-wso-wep.h"
+#include "nm-gconf-wso-wpa-eap.h"
 #include "nm-gconf-wso-wpa-psk.h"
 #include "gconf-helpers.h"
 #include "wireless-security-option.h"
@@ -84,10 +85,14 @@ nm_gconf_wso_new_deserialize_dbus (DBusMessageIter *iter)
 				security = NM_GCONF_WSO (nm_gconf_wso_wep_new_deserialize_dbus (iter, we_cipher));
 				break;
 
-			case NM_AUTH_CIPHER_AUTO:
+			case NM_AUTH_TYPE_WPA_PSK_AUTO:
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
 				security = NM_GCONF_WSO (nm_gconf_wso_wpa_psk_new_deserialize_dbus (iter, we_cipher));
+				break;
+
+			case NM_AUTH_TYPE_WPA_EAP:
+				security = NM_GCONF_WSO (nm_gconf_wso_wpa_eap_new_deserialize_dbus (iter, we_cipher));
 				break;
 
 			default:
@@ -126,7 +131,7 @@ nm_gconf_wso_new_deserialize_gconf (GConfClient *client,
 				security = NM_GCONF_WSO (nm_gconf_wso_wep_new_deserialize_gconf (client, network, we_cipher));
 				break;
 
-			case NM_AUTH_CIPHER_AUTO:
+			case NM_AUTH_TYPE_WPA_PSK_AUTO:
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
 				security = NM_GCONF_WSO (nm_gconf_wso_wpa_psk_new_deserialize_gconf (client, network, we_cipher));
@@ -176,7 +181,8 @@ nm_gconf_wso_set_we_cipher (NMGConfWSO *self,
 
 	/* Ensure the cipher is valid */
 	g_return_if_fail (
-		   (we_cipher == NM_AUTH_CIPHER_AUTO)
+		   (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO)
+		|| (we_cipher == NM_AUTH_TYPE_WPA_EAP)
 		|| (we_cipher == IW_AUTH_CIPHER_NONE)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP40)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP104)

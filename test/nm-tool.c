@@ -172,6 +172,12 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 				enc_string = g_string_append_c (enc_string, ' ');
 			enc_string = g_string_append (enc_string, "WPA2");
 		}
+		if (capabilities & NM_802_11_CAP_KEY_MGMT_802_1X)
+		{
+			if (enc_string->str && (strlen (enc_string->str) > 0))
+				enc_string = g_string_append_c (enc_string, ' ');
+			enc_string = g_string_append (enc_string, "Enterprise");
+		}
 		if (enc_string->str && (strlen (enc_string->str) > 0))
 		{
 			enc_string = g_string_prepend (enc_string, ", Encrypted (");

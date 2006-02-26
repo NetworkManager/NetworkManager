@@ -25,4 +25,4 @@
 WirelessSecurityOption * wso_wpa_psk_new (const char *glade_file, int capabilities, gboolean wpa2);
 
 
-#endif	/* WSO_WPA_PSK_HEX_H */
+#endif	/* WSO_WPA_PSK_H */

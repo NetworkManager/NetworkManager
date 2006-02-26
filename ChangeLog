@@ -1,3 +1,44 @@
+2006-02-25  Robert Love  <rml@novell.com>
+
+	Add WPA Enterprise support:
+	* gnome/applet/Makefile.am: Build the files nm-gconf-wso-wpa-eap.c and
+	  nm-gconf-wso-wpa-eap.h.
+	* gnome/applet/nm-gconf-wso-wpa-eap.c,
+	  gnome/applet/nm-gconf-wso-wpa-eap.h:  Add WPA Enterprise Gconf
+	  serialization and deserialization.
+	* gnome/applet/nm-gconf-wso-wpa-psk.c, gnome/applet/nm-gconf-wso.c,
+	  gnome/applet/wireless-security-option.c, gnome/applet/wso-wpa-psk.c,
+	  gnome/applet/wso-wpa-psk.h: Clean up, support new defines.
+	* gnome/applet/wireless-applet.glade: Add UI for configurating security
+	  settings related to WPA Enterprise.
+	* gnome/applet/wireless-security-manager.c: Invoke wso_wpa_eap_new() to
+	  instantiate WPA Enterprise wireless-security-option.
+	* gnome/applet/wso-wpa-eap.c, gnome/applet/wso-wpa-eap.h: New files.
+	  Implement WPA Enterprise wireless-security-option object.
+	* include/NetworkManager.h: Add new NM_AUTH_TYPE_* and NM_EAP_METHOD_*
+	  defines.  Cleanup.
+	* libnm-util/cipher-wpa-psk-hex.c,
+	  libnm-util/cipher-wpa-psk-passphrase.c: Cleanup.
+	* libnm-util/dbus-helpers.c, libnm-util/dbus-helpers.h: Add
+	  nmu_security_serialize_wpa_eap() to serialize input to DBUS method,
+	  nmu_security_serialize_wpa_eap_with_cipher() to serialize input
+	  including the cipher to DBUS method, and
+	  nmu_security_deserialize_wpa_eap() to deserialize from DBUS return
+	  to output.
+	* src/Makefile.am: Build the files nm-ap-security-wpa-eap.c and
+	  nm-ap-security-wpa-eap.h
+	* src/NetworkManagerAP.c: Add NM_AUTH_TYPE_WPA_EAP to
+	  NM_802_11_CAP_KEY_MGMT_802_1X cipher to capability mapping.
+	* src/nm-ap-security-wpa-eap.c, src/nm-ap-security-wpa-eap.h: New
+	  files.  Implement NMAPSecurityWPA_EAP object.
+	* src/nm-ap-security-wpa-psk.c: Cleanup.
+	* src/nm-ap-security.c: Support NM_AUTH_TYPE_EAP cipher and instantiate
+	  an NMAPSecurityWPA_EAP object via the method
+	  nm_ap_security_wpa_eap_new_deserialize().
+	* src/nm-dbus-nm.c: Cleanup.
+	* test/nm-tool.c: Display "Enterprise" for wireless networks providing
+	  WPA Enterprise support.
+
 2006-02-24  Robert Love  <rml@novell.com>
 
 	Patch from Timo Hoenig <thoenig@suse.de>:

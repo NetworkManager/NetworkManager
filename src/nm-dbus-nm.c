@@ -323,8 +323,8 @@ out:
  */
 static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
-	const char * INVALID_ARGS_ERROR = "InvalidArguments";
-	const char * INVALID_ARGS_MESSAGE = "NetworkManager::createWirelessNetwork called with invalid arguments.";
+	const char *		INVALID_ARGS_ERROR = "InvalidArguments";
+	const char *		INVALID_ARGS_MESSAGE = "NetworkManager::createWirelessNetwork called with invalid arguments.";
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path = NULL;

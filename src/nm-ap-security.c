@@ -28,6 +28,7 @@
 #include "nm-ap-security-private.h"
 #include "nm-ap-security-wep.h"
 #include "nm-ap-security-wpa-psk.h"
+#include "nm-ap-security-wpa-eap.h"
 #include "nm-device-802-11-wireless.h"
 #include "wpa_ctrl.h"
 #include "nm-utils.h"
@@ -85,13 +86,18 @@ nm_ap_security_new_deserialize (DBusMessageIter *iter)
 				security = NM_AP_SECURITY (nm_ap_security_wep_new_deserialize (iter, we_cipher));
 				break;
 
-			case NM_AUTH_CIPHER_AUTO:
+			case NM_AUTH_TYPE_WPA_PSK_AUTO:
 			case IW_AUTH_CIPHER_TKIP:
 			case IW_AUTH_CIPHER_CCMP:
 				security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_deserialize (iter, we_cipher));
 				break;
 
+			case NM_AUTH_TYPE_WPA_EAP:
+				security = NM_AP_SECURITY (nm_ap_security_wpa_eap_new_deserialize (iter));
+				break;
+
 			default:
+				nm_warning ("Unmatched cipher %d", we_cipher);
 				break;
 		}
 	}
@@ -103,8 +109,10 @@ out:
 
 #define WPA2_CCMP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_CCMP | NM_802_11_CAP_KEY_MGMT_PSK)
 #define WPA2_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WPA2_EAP		(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_KEY_MGMT_802_1X)
 #define WPA_CCMP_PSK	(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_CCMP | NM_802_11_CAP_KEY_MGMT_PSK)
 #define WPA_TKIP_PSK	(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_KEY_MGMT_PSK)
+#define WPA_EAP		(NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_KEY_MGMT_802_1X)
 #define WEP_WEP104		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104)
 #define WEP_WEP40		(NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40)
 NMAPSecurity *
@@ -121,6 +129,8 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_CCMP));
 	else if ((caps & WPA_TKIP_PSK) || (caps & WPA2_TKIP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_TKIP));
+	else if ((caps & WPA_EAP) || (caps & WPA2_EAP))
+		security = NM_AP_SECURITY (nm_ap_security_wpa_eap_new_from_ap (ap));
 	else if (caps & WEP_WEP104)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104));
 	else if (caps & WEP_WEP40)
@@ -153,18 +163,23 @@ nm_ap_security_set_we_cipher (NMAPSecurity *self, int we_cipher)
 {
 	g_return_if_fail (self != NULL);
 
-	/* Ensure the cipher is valid */
+	/* Ensure that the cipher is valid */
 	g_return_if_fail (
-		   (we_cipher == NM_AUTH_CIPHER_AUTO)
+		   (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO)
 		|| (we_cipher == IW_AUTH_CIPHER_NONE)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP40)
 		|| (we_cipher == IW_AUTH_CIPHER_WEP104)
 		|| (we_cipher == IW_AUTH_CIPHER_TKIP)
-		|| (we_cipher == IW_AUTH_CIPHER_CCMP));
+		|| (we_cipher == IW_AUTH_CIPHER_CCMP)
+		|| (we_cipher == NM_AUTH_TYPE_WPA_EAP));
 
 	self->priv->we_cipher = we_cipher;
 }
 
+/*
+ * nm_ap_security_set_key - set the encryption key for a given AP
+ *
+ */
 void
 nm_ap_security_set_key (NMAPSecurity *self, const char *key, int key_len)
 {
@@ -211,7 +226,7 @@ real_write_supplicant_config (NMAPSecurity *self,
 int
 nm_ap_security_get_we_cipher (NMAPSecurity *self)
 {
-	g_return_val_if_fail (self != NULL, NM_AUTH_CIPHER_AUTO);
+	g_return_val_if_fail (self != NULL, NM_AUTH_TYPE_WPA_PSK_AUTO);
 
 	return self->priv->we_cipher;
 }

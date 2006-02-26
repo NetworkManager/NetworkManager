@@ -39,8 +39,6 @@ struct _NMGConfWSOWPA_PSKPrivate
 {
 	int		wpa_version;
 	int		key_mgt;
-
-	gboolean	dispose_has_run;
 };
 
 NMGConfWSOWPA_PSK *
@@ -53,7 +51,7 @@ nm_gconf_wso_wpa_psk_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	int				key_mgt;
 
 	g_return_val_if_fail (iter != NULL, NULL);
-	g_return_val_if_fail ((we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+	g_return_val_if_fail ((we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	if (!nmu_security_deserialize_wpa_psk (iter, &key, &key_len, &wpa_version, &key_mgt))
 		goto out;
@@ -65,6 +63,8 @@ nm_gconf_wso_wpa_psk_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgt = key_mgt;
 
+	/* FIXME: Need to free 'key' ? */
+
 out:
 	return security;
 }
@@ -73,12 +73,12 @@ NMGConfWSOWPA_PSK *
 nm_gconf_wso_wpa_psk_new_deserialize_gconf (GConfClient *client, const char *network, int we_cipher)
 {
 	NMGConfWSOWPA_PSK *	security = NULL;
-	int					wpa_version;
-	int					key_mgt;
+	int				wpa_version;
+	int				key_mgt;
 
 	g_return_val_if_fail (client != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
-	g_return_val_if_fail ((we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
+	g_return_val_if_fail ((we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	if (!nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
@@ -140,7 +140,6 @@ nm_gconf_wso_wpa_psk_init (NMGConfWSOWPA_PSK * self)
 	self->priv = NM_GCONF_WSO_WPA_PSK_GET_PRIVATE (self);
 	self->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA;
 	self->priv->key_mgt = IW_AUTH_KEY_MGMT_PSK;
-	self->priv->dispose_has_run = FALSE;
 }
 
 static void

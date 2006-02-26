@@ -34,6 +34,7 @@
 #include "wso-wep-ascii.h"
 #include "wso-wep-hex.h"
 #include "wso-wep-passphrase.h"
+#include "wso-wpa-eap.h"
 #include "wso-wpa-psk.h"
 
 struct WirelessSecurityManager
@@ -89,14 +90,30 @@ gboolean wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilitie
 
 	if (capabilities & NM_802_11_CAP_PROTO_WPA)
 	{
-		if ((opt = wso_wpa_psk_new (wsm->glade_file, capabilities, FALSE)))
-			wsm->options = g_slist_append (wsm->options, opt);
+		if (capabilities & NM_802_11_CAP_KEY_MGMT_802_1X)
+		{
+			if ((opt = wso_wpa_eap_new (wsm->glade_file, capabilities, FALSE)))
+				wsm->options = g_slist_append (wsm->options, opt);
+		}
+		if (capabilities & NM_802_11_CAP_KEY_MGMT_PSK)
+		{
+			if ((opt = wso_wpa_psk_new (wsm->glade_file, capabilities, FALSE)))
+				wsm->options = g_slist_append (wsm->options, opt);
+		}
 	}
 
 	if (capabilities & NM_802_11_CAP_PROTO_WPA2)
 	{
-		if ((opt = wso_wpa_psk_new (wsm->glade_file, capabilities, TRUE)))
-			wsm->options = g_slist_append (wsm->options, opt);
+		if (capabilities & NM_802_11_CAP_KEY_MGMT_802_1X)
+		{
+			if ((opt = wso_wpa_eap_new (wsm->glade_file, capabilities, TRUE)))
+				wsm->options = g_slist_append (wsm->options, opt);
+		}
+		if (capabilities & NM_802_11_CAP_KEY_MGMT_PSK)
+		{
+			if ((opt = wso_wpa_psk_new (wsm->glade_file, capabilities, TRUE)))
+				wsm->options = g_slist_append (wsm->options, opt);
+		}
 	}
 
 	if (!wsm->options)

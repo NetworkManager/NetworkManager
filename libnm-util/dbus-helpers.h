@@ -65,6 +65,39 @@ dbus_bool_t	nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
                                         int wpa_version,
                                         int key_mgt);
 
+dbus_bool_t	nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
+								int eap_method,
+								const char *identity,
+								const char *passwd,
+								const char *anon_identity,
+								const char *private_key_passwd,
+								const char *private_key_file,
+								const char *client_cert_file,
+								const char *ca_cert_file,
+								int wpa_version);
+
+dbus_bool_t	nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
+								int eap_method,
+								const char *identity,
+								const char *passwd,
+								const char *anon_identity,
+								const char *private_key_passwd,
+								const char *private_key_file,
+								const char *client_cert_file,
+								const char *ca_cert_file,
+								int wpa_version);
+
+dbus_bool_t	nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
+								int *eap_method,
+								char **identity,
+								char **passwd,
+								char **anon_identity,
+								char **private_key_passwd,
+								char **private_key_file,
+								char **client_cert_file,
+								char **ca_cert_file,
+								int *wpa_version);
+
 DBusMessage *	nmu_create_dbus_error_message (DBusMessage *message,
                                         const char *exception_namespace,
                                         const char *exception,

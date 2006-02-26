@@ -578,8 +578,14 @@ static guint32 add_capabilities_from_cipher (guint32 caps, int cipher)
 		caps &= ~NM_802_11_CAP_PROTO_NONE;
 	}
 
-	if (cipher == NM_AUTH_CIPHER_AUTO)
+	if (cipher == NM_AUTH_TYPE_WPA_PSK_AUTO)
 	{
+		caps &= ~NM_802_11_CAP_PROTO_NONE;
+	}
+
+	if (cipher == NM_AUTH_TYPE_WPA_EAP)
+	{
+		caps |= NM_802_11_CAP_KEY_MGMT_802_1X;
 		caps &= ~NM_802_11_CAP_PROTO_NONE;
 	}
 

@@ -38,7 +38,7 @@ IEEE_802_11_Cipher * cipher_wpa_psk_passphrase_new (void)
 	IEEE_802_11_Cipher * cipher = g_malloc0 (sizeof (IEEE_802_11_Cipher));
 
 	cipher->refcount = 1;
-	cipher->we_cipher = NM_AUTH_CIPHER_AUTO;
+	cipher->we_cipher = NM_AUTH_TYPE_WPA_PSK_AUTO;
 	/* Passphrase between 8 and 63 characters inclusive */
 	cipher->input_min = 8;
 	cipher->input_max = (WPA_PMK_LEN * 2) - 1;
@@ -52,8 +52,8 @@ IEEE_802_11_Cipher * cipher_wpa_psk_passphrase_new (void)
 void cipher_wpa_psk_passphrase_set_we_cipher (IEEE_802_11_Cipher *cipher, int we_cipher)
 {
 	g_return_if_fail (cipher != NULL);
-	g_return_if_fail ((we_cipher == NM_AUTH_CIPHER_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP));
-	g_return_if_fail ((cipher->we_cipher == NM_AUTH_CIPHER_AUTO || cipher->we_cipher == IW_AUTH_CIPHER_TKIP) || (cipher->we_cipher == IW_AUTH_CIPHER_CCMP));
+	g_return_if_fail ((we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP) || (we_cipher == IW_AUTH_CIPHER_CCMP));
+	g_return_if_fail ((cipher->we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || cipher->we_cipher == IW_AUTH_CIPHER_TKIP) || (cipher->we_cipher == IW_AUTH_CIPHER_CCMP));
 
 	cipher->we_cipher = we_cipher;
 }

@@ -74,6 +74,8 @@ nm_applet_SOURCES =			\
 	wso-wep-hex.h			\
 	wso-wep-passphrase.c	\
 	wso-wep-passphrase.h	\
+	wso-wpa-eap.c			\
+	wso-wpa-eap.h			\
 	wso-wpa-psk.c			\
 	wso-wpa-psk.h			\
 	nm-gconf-wso.c			\
@@ -81,6 +83,8 @@ nm_applet_SOURCES =			\
 	nm-gconf-wso-private.h	\
 	nm-gconf-wso-wep.c		\
 	nm-gconf-wso-wep.h		\
+	nm-gconf-wso-wpa-eap.c	\
+	nm-gconf-wso-wpa-eap.h	\
 	nm-gconf-wso-wpa-psk.c	\
 	nm-gconf-wso-wpa-psk.h	\
 	gconf-helpers.c		\

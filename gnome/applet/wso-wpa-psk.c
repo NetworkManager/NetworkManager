@@ -38,9 +38,9 @@
 
 struct OptData
 {
-	gboolean		wpa2;
-	const char *	entry_name;
-	const char *	key_type_combo_name;
+	gboolean				wpa2;
+	const char *			entry_name;
+	const char *			key_type_combo_name;
 	IEEE_802_11_Cipher *	hex_cipher;
 	IEEE_802_11_Cipher *	passphrase_cipher;
 };
@@ -127,15 +127,13 @@ key_type_combo_changed_cb (GtkComboBox *combo,
 	int					we_cipher;
 	GtkTreeModel *			model;
 	GtkTreeIter			iter;
-	char *				str;
 	GSList *				elt;
 
 	g_return_if_fail (opt != NULL);
 
 	model = gtk_combo_box_get_model (combo);
 	gtk_combo_box_get_active_iter (combo, &iter);
-	gtk_tree_model_get (model, &iter, WPA_KEY_TYPE_NAME_COL, &str,
-			WPA_KEY_TYPE_CIPHER_COL, &we_cipher, -1);
+	gtk_tree_model_get (model, &iter, WPA_KEY_TYPE_CIPHER_COL, &we_cipher, -1);
 
 	for (elt = opt->ciphers; elt; elt = g_slist_next (elt))
 	{

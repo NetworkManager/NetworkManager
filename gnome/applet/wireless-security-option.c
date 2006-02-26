@@ -199,7 +199,7 @@ wso_wpa_create_key_type_model (int capabilities,
 {
 	GtkListStore *	model;
 	GtkTreeIter	iter;
-	int			num = 0;
+	int			num = 1;
 	const char *	name;
 
 	g_return_val_if_fail (num_added != NULL, NULL);
@@ -210,7 +210,6 @@ wso_wpa_create_key_type_model (int capabilities,
 	gtk_list_store_append (model, &iter);
 	gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
 					WPA_KEY_TYPE_CIPHER_COL, 0, -1);
-	num++;
 
 	if (capabilities & NM_802_11_CAP_CIPHER_TKIP)
 	{
