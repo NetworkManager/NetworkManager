@@ -736,6 +736,9 @@ delete_cb (GtkButton *button, gpointer user_data)
 		/* TODO: remove user_name */
 		g_snprintf (key, sizeof (key), "%s/user_name", conn_gconf_path);
 		gconf_client_unset (gconf_client, key, NULL);
+		g_snprintf (key, sizeof (key), "%s/last_attempt_success", conn_gconf_path);
+		gconf_client_unset (gconf_client, key, NULL);
+
 		gconf_client_unset (gconf_client, conn_gconf_path, NULL);
 
 		gconf_client_suggest_sync (gconf_client, NULL);

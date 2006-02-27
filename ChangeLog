@@ -1,5 +1,12 @@
 2006-02-27  Robert Love  <rml@novell.com>
 
+	Patch by R. Vinay <rvinay@novell.com>:
+	* gnome/vpn-properties/nm-vpn-properties.c: Remove the gconf key
+	  'last_attempt_success' when removing a VPN connection, too.  (Fixes
+	  Novell bug #153628).
+	  
+2006-02-27  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.glade: Set "activates_default" on passphrase
 	  entry so user can hit <ENTER> after entering passphrase (Novell bug
 	  #153738).
