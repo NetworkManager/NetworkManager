@@ -64,7 +64,7 @@ case "$1" in
 		stop
 		;;
 	status)
-		status $processname
+		status -p $pidfile $processname
 		RETVAL=$?
 		;;
 	restart)
