@@ -86,7 +86,7 @@ out:
 }
 
 GSList *
-nmwa_vpn_request_password (NMWirelessApplet *applet, const char *name, const char *service, gboolean retry)
+nma_vpn_request_password (NMApplet *applet, const char *name, const char *service, gboolean retry)
 {
 	const char       *argv[] = {NULL /*"/usr/libexec/nm-vpnc-auth-dialog"*/, 
 			      "-n", NULL /*"davidznet42"*/, 

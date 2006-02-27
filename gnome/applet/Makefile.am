@@ -119,7 +119,7 @@ endif
 
 
 gladedir = $(datadir)/nm-applet
-glade_DATA = wireless-applet.glade keyring.png
+glade_DATA = applet.glade keyring.png
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-applet.conf

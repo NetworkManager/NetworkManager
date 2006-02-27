@@ -44,8 +44,8 @@ static gboolean session_save (GnomeClient *client, gpointer client_data)
 
 int main (int argc, char *argv[])
 {
-	NMWirelessApplet *	nmwa;
-	GnomeClient *		client = NULL;
+	NMApplet *	nma;
+	GnomeClient *	client = NULL;
 
 	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
@@ -61,9 +61,9 @@ int main (int argc, char *argv[])
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	if ((nmwa = nmwa_new ()))
+	if ((nma = nma_new ()))
 	{
-		gtk_widget_show_all (GTK_WIDGET (nmwa));
+		gtk_widget_show_all (GTK_WIDGET (nma));
 		gtk_main ();
 	}
 

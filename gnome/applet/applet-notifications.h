@@ -25,7 +25,7 @@
 #include "applet.h"
 
 void
-nmwa_send_event_notification (NMWirelessApplet *applet, 
+nma_send_event_notification (NMApplet *applet, 
                               NotifyUrgency urgency,
                               const char *summary,
                               const char *message,

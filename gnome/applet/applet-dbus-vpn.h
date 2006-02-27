@@ -27,14 +27,14 @@
 #include <dbus/dbus.h>
 #include "vpn-connection.h"
 
-void		nmwa_dbus_vpn_set_last_attempt_status			(NMWirelessApplet *applet, const char *vpn_name, gboolean last_attempt_success);
+void		nma_dbus_vpn_set_last_attempt_status			(NMApplet *applet, const char *vpn_name, gboolean last_attempt_success);
 
-void		nmwa_dbus_vpn_update_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);
-void		nmwa_dbus_vpn_update_vpn_connections			(NMWirelessApplet *applet);
-void		nmwa_dbus_vpn_remove_one_vpn_connection			(NMWirelessApplet *applet, const char *vpn_name);
+void		nma_dbus_vpn_update_one_vpn_connection			(NMApplet *applet, const char *vpn_name);
+void		nma_dbus_vpn_update_vpn_connections			(NMApplet *applet);
+void		nma_dbus_vpn_remove_one_vpn_connection			(NMApplet *applet, const char *vpn_name);
 
-void		nmwa_dbus_vpn_activate_connection				(DBusConnection *connection, const char *name, GSList *passwords);
-void		nmwa_dbus_vpn_deactivate_connection			(DBusConnection *connection);
-void		nmwa_dbus_vpn_update_vpn_connection_stage		(NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_state);
+void		nma_dbus_vpn_activate_connection				(DBusConnection *connection, const char *name, GSList *passwords);
+void		nma_dbus_vpn_deactivate_connection			(DBusConnection *connection);
+void		nma_dbus_vpn_update_vpn_connection_stage		(NMApplet *applet, const char *vpn_name, NMVPNActStage vpn_state);
 
 #endif

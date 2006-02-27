@@ -34,17 +34,17 @@
 #include "vpn-connection.h"
 #include "nm-utils.h"
 
-static void nmwa_free_vpn_connections (NMWirelessApplet *applet);
+static void nma_free_vpn_connections (NMApplet *applet);
 
 
 void
-nmwa_dbus_vpn_set_last_attempt_status (NMWirelessApplet *applet, const char *vpn_name, gboolean last_attempt_success)
+nma_dbus_vpn_set_last_attempt_status (NMApplet *applet, const char *vpn_name, gboolean last_attempt_success)
 {
 	char *gconf_key;
 	char *escaped_name;
 	VPNConnection *vpn;
 	
-	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
+	if ((vpn = nma_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
 	{
 		escaped_name = gconf_escape_key (vpn_name, strlen (vpn_name));
 
@@ -58,30 +58,30 @@ nmwa_dbus_vpn_set_last_attempt_status (NMWirelessApplet *applet, const char *vpn
 
 
 /*
- * nmwa_dbus_vpn_update_vpn_connection_stage
+ * nma_dbus_vpn_update_vpn_connection_stage
  *
  * Sets the activation stage for a dbus vpn connection.
  */
-void nmwa_dbus_vpn_update_vpn_connection_stage (NMWirelessApplet *applet, const char *vpn_name, NMVPNActStage vpn_stage)
+void nma_dbus_vpn_update_vpn_connection_stage (NMApplet *applet, const char *vpn_name, NMVPNActStage vpn_stage)
 {
 	VPNConnection	*vpn;
 
 	g_return_if_fail (applet != NULL);
 
-	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
+	if ((vpn = nma_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
 	{
-		nmwa_vpn_connection_set_stage (vpn, vpn_stage);
+		nma_vpn_connection_set_stage (vpn, vpn_stage);
 		if (vpn_stage == NM_VPN_ACT_STAGE_ACTIVATED)
 		{
 			/* set the 'last_attempt_success' key in gconf so we DON'T prompt for password next time */
-			nmwa_dbus_vpn_set_last_attempt_status (applet, vpn_name, TRUE);
+			nma_dbus_vpn_set_last_attempt_status (applet, vpn_name, TRUE);
 		}
 	}
 }
 
 typedef struct VpnPropsCBData
 {
-	NMWirelessApplet *	applet;	
+	NMApplet *	applet;	
 	char *			name;
 } VpnPropsCBData;
 
@@ -96,16 +96,16 @@ static void free_vpn_props_cb_data (VpnPropsCBData *data)
 }
 
 /*
- * nmwa_dbus_vpn_properties_cb
+ * nma_dbus_vpn_properties_cb
  *
  * Callback for each VPN connection we called "getVPNConnectionProperties" on.
  *
  */
-static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	VpnPropsCBData *	cb_data = user_data;
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	const char *		name;
 	const char *        user_name;
 	const char *        service;
@@ -128,7 +128,7 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_vpn_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -142,16 +142,16 @@ static void nmwa_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data
 		stage = (NMVPNActStage) stage_int;
 
 		/* If its already there, update the service, otherwise add it to the list */
-		if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, name)))
+		if ((vpn = nma_vpn_connection_find_by_name (applet->vpn_connections, name)))
 		{
-			nmwa_vpn_connection_set_service (vpn, service);
-			nmwa_vpn_connection_set_stage (vpn, stage);
+			nma_vpn_connection_set_service (vpn, service);
+			nma_vpn_connection_set_stage (vpn, stage);
 		}
 		else
 		{
-			vpn = nmwa_vpn_connection_new (name);
-			nmwa_vpn_connection_set_service (vpn, service);
-			nmwa_vpn_connection_set_stage (vpn, stage);
+			vpn = nma_vpn_connection_new (name);
+			nma_vpn_connection_set_service (vpn, service);
+			nma_vpn_connection_set_stage (vpn, stage);
 			applet->vpn_connections = g_slist_append (applet->vpn_connections, vpn);
 		}
 	}
@@ -163,12 +163,12 @@ out:
 
 
 /*
- * nmwa_dbus_vpn_update_one_vpn_connection
+ * nma_dbus_vpn_update_one_vpn_connection
  *
  * Get properties on one VPN connection
  *
  */
-void nmwa_dbus_vpn_update_one_vpn_connection (NMWirelessApplet *applet, const char *vpn_name)
+void nma_dbus_vpn_update_one_vpn_connection (NMApplet *applet, const char *vpn_name)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -176,7 +176,7 @@ void nmwa_dbus_vpn_update_one_vpn_connection (NMWirelessApplet *applet, const ch
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (vpn_name != NULL);
 
-	nmwa_get_first_active_vpn_connection (applet);
+	nma_get_first_active_vpn_connection (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnectionProperties")))
 	{
@@ -189,22 +189,22 @@ void nmwa_dbus_vpn_update_one_vpn_connection (NMWirelessApplet *applet, const ch
 
 			cb_data->applet = applet;
 			cb_data->name = g_strdup (vpn_name);
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_vpn_properties_cb, cb_data, (DBusFreeFunction) free_vpn_props_cb_data);
+			dbus_pending_call_set_notify (pcall, nma_dbus_vpn_properties_cb, cb_data, (DBusFreeFunction) free_vpn_props_cb_data);
 		}
 	}
 }
 
 
 /*
- * nmwa_dbus_vpn_update_vpn_connections_cb
+ * nma_dbus_vpn_update_vpn_connections_cb
  *
- * nmwa_dbus_vpn_update_vpn_connections callback.
+ * nma_dbus_vpn_update_vpn_connections callback.
  *
  */
-static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	char **			vpn_names;
 	int				num_vpn_names;
 
@@ -226,7 +226,7 @@ static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, voi
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_vpn_update_vpn_connections_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -238,7 +238,7 @@ static void nmwa_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, voi
 
 		/* For each connection, fire off a "getVPNConnectionProperties" call */
 		for (item = vpn_names; *item; item++)
-			nmwa_dbus_vpn_update_one_vpn_connection (applet, *item);
+			nma_dbus_vpn_update_one_vpn_connection (applet, *item);
 
 		dbus_free_string_array (vpn_names);
 	}
@@ -250,57 +250,57 @@ out:
 
 
 /*
- * nmwa_dbus_vpn_update_vpn_connections
+ * nma_dbus_vpn_update_vpn_connections
  *
  * Do a full update of vpn connections from NetworkManager
  *
  */
-void nmwa_dbus_vpn_update_vpn_connections (NMWirelessApplet *applet)
+void nma_dbus_vpn_update_vpn_connections (NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall;
 
-	nmwa_free_vpn_connections (applet);
+	nma_free_vpn_connections (applet);
 
-	nmwa_get_first_active_vpn_connection (applet);
+	nma_get_first_active_vpn_connection (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnections")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		dbus_message_unref (message);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_vpn_update_vpn_connections_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_vpn_update_vpn_connections_cb, applet, NULL);
 	}
 }
 
 
 /*
- * nmwa_dbus_vpn_remove_one_vpn_connection
+ * nma_dbus_vpn_remove_one_vpn_connection
  *
  * Remove one vpn connection from the list
  *
  */
-void nmwa_dbus_vpn_remove_one_vpn_connection (NMWirelessApplet *applet, const char *vpn_name)
+void nma_dbus_vpn_remove_one_vpn_connection (NMApplet *applet, const char *vpn_name)
 {
 	VPNConnection *	vpn;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (vpn_name != NULL);
 
-	if ((vpn = nmwa_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
+	if ((vpn = nma_vpn_connection_find_by_name (applet->vpn_connections, vpn_name)))
 	{
 		applet->vpn_connections = g_slist_remove (applet->vpn_connections, vpn);
-		nmwa_vpn_connection_unref (vpn);
+		nma_vpn_connection_unref (vpn);
 	}
 }
 
-static void nmwa_free_vpn_connections (NMWirelessApplet *applet)
+static void nma_free_vpn_connections (NMApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
 	if (applet->vpn_connections)
 	{
-		g_slist_foreach (applet->vpn_connections, (GFunc) nmwa_vpn_connection_unref, NULL);
+		g_slist_foreach (applet->vpn_connections, (GFunc) nma_vpn_connection_unref, NULL);
 		g_slist_free (applet->vpn_connections);
 		applet->vpn_connections = NULL;
 	}
@@ -308,12 +308,12 @@ static void nmwa_free_vpn_connections (NMWirelessApplet *applet)
 
 
 /*
- * nmwa_dbus_vpn_activate_connection
+ * nma_dbus_vpn_activate_connection
  *
  * Tell NetworkManager to activate a particular VPN connection.
  *
  */
-void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *name, GSList *passwords)
+void nma_dbus_vpn_activate_connection (DBusConnection *connection, const char *name, GSList *passwords)
 {
 	DBusMessage	*message;
 	DBusMessageIter	 iter;
@@ -339,17 +339,17 @@ void nmwa_dbus_vpn_activate_connection (DBusConnection *connection, const char *
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
-		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message");
+		nm_warning ("Couldn't allocate the dbus message");
 }
 
 
 /*
- * nmwa_dbus_deactivate_vpn_connection
+ * nma_dbus_deactivate_vpn_connection
  *
  * Tell NetworkManager to deactivate the currently active VPN connection.
  *
  */
-void nmwa_dbus_vpn_deactivate_connection (DBusConnection *connection)
+void nma_dbus_vpn_deactivate_connection (DBusConnection *connection)
 {
 	DBusMessage	*message;
 
@@ -361,7 +361,7 @@ void nmwa_dbus_vpn_deactivate_connection (DBusConnection *connection)
 		dbus_connection_send (connection, message, NULL);
 	}
 	else
-		nm_warning ("nmwa_dbus_activate_vpn_connection(): Couldn't allocate the dbus message");
+		nm_warning ("Couldn't allocate the dbus message");
 }
 
 

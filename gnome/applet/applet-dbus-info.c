@@ -71,7 +71,7 @@ static inline gboolean nmi_network_type_valid (NMNetworkType type)
 
 typedef struct NMGetNetworkKeyCBData
 {
-	NMWirelessApplet *applet;
+	NMApplet *applet;
 	DBusMessage *message;
 	NetworkDevice *dev;
 	char *net_path;
@@ -97,7 +97,7 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
                                                gpointer           data)
 {
 	NMGetNetworkKeyCBData *	cb_data = (NMGetNetworkKeyCBData*) data;
-	NMWirelessApplet *		applet = cb_data->applet;
+	NMApplet *		applet = cb_data->applet;
 	DBusMessage *			message = cb_data->message;
 	NetworkDevice *		dev = cb_data->dev;
 	char *				net_path = cb_data->net_path;
@@ -141,7 +141,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	char *			dev_path = NULL;
 	char *			net_path = NULL;
 	char *			essid = NULL;
@@ -164,7 +164,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
 	                           DBUS_TYPE_INVALID))
 		return NULL;
 
-	if (!(dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+	if (!(dev = nma_get_device_for_nm_path (applet->device_list, dev_path)))
 		return NULL;
 
 	/* If we don't have a record of the network yet in GConf, ask for
@@ -259,7 +259,7 @@ nmi_dbus_cancel_get_key_for_network (DBusConnection *connection,
                                      DBusMessage *message,
                                      void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 
@@ -309,7 +309,7 @@ nmi_dbus_get_networks (DBusConnection *connection,
 {
 	const char * NO_NET_ERROR = "NoNetworks";
 	const char * NO_NET_ERROR_MSG = "There are no wireless networks stored.";
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt;
 	DBusMessage *		reply = NULL;
@@ -386,7 +386,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
                                  DBusMessage *message,
                                  void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	DBusMessage *		reply = NULL;
 	gchar *			gconf_key = NULL;
 	char *			network = NULL;
@@ -543,7 +543,7 @@ nmi_dbus_get_vpn_connections (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt = NULL;
 	DBusMessage *		reply = NULL;
@@ -614,7 +614,7 @@ nmi_dbus_get_vpn_connection_properties (DBusConnection *connection,
                                         DBusMessage *message,
                                         void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	DBusMessage *	reply = NULL;
 	char *		vpn_connection = NULL;
 	char *		escaped_name = NULL;
@@ -680,7 +680,7 @@ nmi_dbus_get_vpn_connection_vpn_data (DBusConnection *connection,
                                       DBusMessage *message,
                                       void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	DBusMessage *	reply = NULL;
 	gchar *		gconf_key = NULL;
 	char *		name = NULL;
@@ -753,7 +753,7 @@ nmi_dbus_get_vpn_connection_routes (DBusConnection *connection,
                                     DBusMessage *message,
                                     void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	DBusMessage *	reply = NULL;
 	gchar *		gconf_key = NULL;
 	char *		name = NULL;
@@ -823,7 +823,7 @@ nmi_dbus_get_vpn_connection_routes (DBusConnection *connection,
  *
  */
 static void
-nmi_save_network_info (NMWirelessApplet *applet,
+nmi_save_network_info (NMApplet *applet,
                        const char *essid,
                        gboolean automatic,
                        const char *bssid,
@@ -959,7 +959,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	char *			essid = NULL;
 	gboolean			automatic;
 	NMGConfWSO *		gconf_wso = NULL;
@@ -1026,7 +1026,7 @@ out:
  */
 DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *)user_data;
+	NMApplet *	applet = (NMApplet *)user_data;
 	DBusMessage *		reply = NULL;
 	gboolean			handled;
 

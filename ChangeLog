@@ -1,5 +1,16 @@
 2006-02-27  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/*
+		- Mass search/replace of:
+			nmwa -> nma
+			NMWirelessApplet -> NMApplet
+			NM_*_WIRELESS_APPLET -> NM_*_APPLET
+		   (it ain't just for wireless anymore, ma!)
+		- Fix duplicate function name printing when using nm_warning
+		- wireless-applet.glade -> applet.glade
+
+2006-02-27  Dan Williams  <dcbw@redhat.com>
+
 	* dispatcher-daemon/NetworkManagerDispatcher.c
 		- Accept --pid-file with a path to a pidfile, write it out on
 			startup, and delete it on shutdown

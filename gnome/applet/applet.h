@@ -46,24 +46,17 @@
 typedef struct VPNConnection VPNConnection;
 
 
-enum NMWAEncryptionKeyTypes
-{
-	KEY_TYPE_128_BIT_PASSPHRASE = 0,
-	KEY_TYPE_ASCII_KEY = 1,
-	KEY_TYPE_HEX_KEY = 2
-};
-
-#define NM_TYPE_WIRELESS_APPLET			(nmwa_get_type())
-#define NM_WIRELESS_APPLET(object)			(G_TYPE_CHECK_INSTANCE_CAST((object), NM_TYPE_WIRELESS_APPLET, NMWirelessApplet))
-#define NM_WIRELESS_APPLET_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIRELESS_APPLET, NMWirelessAppletClass))
-#define NM_IS_WIRELESS_APPLET(object)		(G_TYPE_CHECK_INSTANCE_TYPE((object), NM_TYPE_WIRELESS_APPLET))
-#define NM_IS_WIRELESS_APPLET_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_WIRELESS_APPLET))
-#define NM_WIRELESS_APPLET_GET_CLASS(object)	(G_TYPE_INSTANCE_GET_CLASS((object), NM_TYPE_WIRELESS_APPLET, NMWirelessAppletClass))
+#define NM_TYPE_APPLET			(nma_get_type())
+#define NM_APPLET(object)		(G_TYPE_CHECK_INSTANCE_CAST((object), NM_TYPE_APPLET, NMApplet))
+#define NM_APPLET_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_APPLET, NMAppletClass))
+#define NM_IS_APPLET(object)		(G_TYPE_CHECK_INSTANCE_TYPE((object), NM_TYPE_APPLET))
+#define NM_IS_APPLET_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_APPLET))
+#define NM_APPLET_GET_CLASS(object)(G_TYPE_INSTANCE_GET_CLASS((object), NM_TYPE_APPLET, NMAppletClass))
 
 typedef struct
 {
 	EggTrayIconClass	parent_class;
-} NMWirelessAppletClass; 
+} NMAppletClass; 
 
 /*
  * Applet instance data
@@ -126,28 +119,28 @@ typedef struct
 
 	GtkWidget *		passphrase_dialog;
 	GladeXML *		info_dialog_xml;
-} NMWirelessApplet;
+} NMApplet;
 
 typedef struct
 {
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	NetworkDevice *	dev;
 	GladeXML *		xml;
 } DriverNotifyCBData;
 
-NetworkDevice *	nmwa_get_device_for_nm_path			(GSList *dev_list, const char *nm_dev);
-NMWirelessApplet *	nmwa_new							(void);
-void				nmwa_schedule_warning_dialog			(NMWirelessApplet *applet, const char *msg);
-gboolean			nmwa_driver_notify					(gpointer user_data);
-void				nmwa_show_vpn_failure_alert			(NMWirelessApplet *applet, const char *member, const char *vpn_name, const char *error_msg);
-void				nmwa_show_vpn_login_banner			(NMWirelessApplet *applet, const char *vpn_name, const char *banner);
+NetworkDevice *	nma_get_device_for_nm_path			(GSList *dev_list, const char *nm_dev);
+NMApplet *	nma_new							(void);
+void				nma_schedule_warning_dialog			(NMApplet *applet, const char *msg);
+gboolean			nma_driver_notify					(gpointer user_data);
+void				nma_show_vpn_failure_alert			(NMApplet *applet, const char *member, const char *vpn_name, const char *error_msg);
+void				nma_show_vpn_login_banner			(NMApplet *applet, const char *vpn_name, const char *banner);
 
-NetworkDevice *	nmwa_get_first_active_device			(GSList *dev_list);
-VPNConnection *	nmwa_get_first_active_vpn_connection	(NMWirelessApplet *applet);
+NetworkDevice *	nma_get_first_active_device			(GSList *dev_list);
+VPNConnection *	nma_get_first_active_vpn_connection	(NMApplet *applet);
 
-void				nmwa_enable_wireless_set_active		(NMWirelessApplet *applet);
+void				nma_enable_wireless_set_active		(NMApplet *applet);
 
-void				nmwa_set_state						(NMWirelessApplet *applet, NMState state);
+void				nma_set_state						(NMApplet *applet, NMState state);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 

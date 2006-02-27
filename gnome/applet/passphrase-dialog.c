@@ -127,7 +127,7 @@ nmi_passphrase_dialog_response_received (GtkWidget *dialog,
                                          gint response,
                                          gpointer user_data)
 {
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	GladeXML *		xml;
 	GtkComboBox *		security_combo;
 	DBusMessage *		message;
@@ -139,7 +139,7 @@ nmi_passphrase_dialog_response_received (GtkWidget *dialog,
 	message = (DBusMessage *) g_object_get_data (G_OBJECT (dialog), "dbus-message");
 	g_assert (message);
 
-	applet = (NMWirelessApplet *) g_object_get_data (G_OBJECT (dialog), "applet");
+	applet = (NMApplet *) g_object_get_data (G_OBJECT (dialog), "applet");
 	g_assert (applet);
 
 	if (response != GTK_RESPONSE_OK)
@@ -180,7 +180,7 @@ out:
  * to the given UID.
  */
 GtkWidget *
-nmi_passphrase_dialog_new (NMWirelessApplet *applet,
+nmi_passphrase_dialog_new (NMApplet *applet,
                            guint32 uid,
                            NetworkDevice *dev,
                            WirelessNetwork *net,
@@ -224,7 +224,7 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
 
 	if (!(xml = glade_xml_new (applet->glade_file, "passphrase_dialog", NULL)))
 	{
-		nmwa_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
+		nma_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		wsm_free (wsm);
 		return NULL;
 	}
@@ -280,7 +280,7 @@ nmi_passphrase_dialog_new (NMWirelessApplet *applet,
  * Dispose of the passphrase dialog and its data
  *
  */
-void nmi_passphrase_dialog_destroy (NMWirelessApplet *applet)
+void nmi_passphrase_dialog_destroy (NMApplet *applet)
 {
 	char *		data;
 	GtkWidget *	dialog;

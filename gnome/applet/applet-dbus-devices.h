@@ -31,27 +31,27 @@
 #include "wireless-network.h"
 #include "wireless-security-option.h"
 
-void			nmwa_dbus_update_one_vpn_connection		(DBusConnection *connection, const char *name, NMWirelessApplet *applet, gboolean is_active);
-void			nmwa_dbus_update_vpn_connections			(NMWirelessApplet *applet);
-gboolean		nmwa_dbus_update_device_strength			(NMWirelessApplet *applet);
+void			nma_dbus_update_one_vpn_connection		(DBusConnection *connection, const char *name, NMApplet *applet, gboolean is_active);
+void			nma_dbus_update_vpn_connections			(NMApplet *applet);
+gboolean		nma_dbus_update_device_strength			(NMApplet *applet);
 
-void			nmwa_dbus_update_nm_state				(NMWirelessApplet *applet);
+void			nma_dbus_update_nm_state				(NMApplet *applet);
 
-void			nmwa_dbus_update_devices					(NMWirelessApplet *applet);
-void			nmwa_dbus_update_dialup					(NMWirelessApplet *applet);
-void			nmwa_dbus_dialup_activate_connection		(NMWirelessApplet *applet, const char *name);
-void			nmwa_dbus_dialup_deactivate_connection		(NMWirelessApplet *applet, const char *name);
-void			nmwa_dbus_device_update_one_device			(NMWirelessApplet *applet, const char *dev_path);
-void			nmwa_dbus_device_activated				(NMWirelessApplet *applet, const char *dev_path, const char *essid);
-void			nmwa_dbus_device_deactivated				(NMWirelessApplet *applet, const char *dev_path);
-void			nmwa_dbus_device_remove_one_device			(NMWirelessApplet *applet, const char *dev_path);
+void			nma_dbus_update_devices					(NMApplet *applet);
+void			nma_dbus_update_dialup					(NMApplet *applet);
+void			nma_dbus_dialup_activate_connection		(NMApplet *applet, const char *name);
+void			nma_dbus_dialup_deactivate_connection		(NMApplet *applet, const char *name);
+void			nma_dbus_device_update_one_device			(NMApplet *applet, const char *dev_path);
+void			nma_dbus_device_activated				(NMApplet *applet, const char *dev_path, const char *essid);
+void			nma_dbus_device_deactivated				(NMApplet *applet, const char *dev_path);
+void			nma_dbus_device_remove_one_device			(NMApplet *applet, const char *dev_path);
 
-void			nmwa_dbus_device_update_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path);
-void			nmwa_dbus_device_remove_one_network		(NMWirelessApplet *applet, const char *dev_path, const char *net_path);
-void			nmwa_dbus_update_strength				(NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength);
-void			nmwa_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
-void			nmwa_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
+void			nma_dbus_device_update_one_network		(NMApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path);
+void			nma_dbus_device_remove_one_network		(NMApplet *applet, const char *dev_path, const char *net_path);
+void			nma_dbus_update_strength				(NMApplet *applet, const char *dev_path, const char *net_path, int strength);
+void			nma_dbus_set_device					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
+void			nma_dbus_create_network					(DBusConnection *connection, NetworkDevice *dev, const char *essid, WirelessSecurityOption *opt);
 
-void			nmwa_free_data_model					(NMWirelessApplet *applet);
+void			nma_free_data_model					(NMApplet *applet);
 
 #endif

@@ -24,7 +24,7 @@
 
 #include "applet.h"
 
-GSList *nmwa_vpn_request_password (NMWirelessApplet *applet, 
+GSList *nma_vpn_request_password (NMApplet *applet, 
 				   const char *name, 
 				   const char *service, 
 				   gboolean retry);

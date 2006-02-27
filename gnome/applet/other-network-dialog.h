@@ -25,6 +25,6 @@
 #ifndef OTHER_NETWORK_DIALOG_H
 #define OTHER_NETWORK_DIALOG_H
 
-void		nmwa_other_network_dialog_run		(NMWirelessApplet *applet, gboolean create_network);
+void		nma_other_network_dialog_run		(NMApplet *applet, gboolean create_network);
 
 #endif

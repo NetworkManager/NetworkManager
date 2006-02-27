@@ -25,21 +25,21 @@
 #include "applet.h"
 #include "NetworkManagerVPN.h"
 
-VPNConnection *	nmwa_vpn_connection_new			(const char *name);
-VPNConnection *	nmwa_vpn_connection_copy			(VPNConnection *vpn);
-void				nmwa_vpn_connection_ref			(VPNConnection *vpn);
-void				nmwa_vpn_connection_unref		(VPNConnection *vpn);
+VPNConnection *	nma_vpn_connection_new			(const char *name);
+VPNConnection *	nma_vpn_connection_copy			(VPNConnection *vpn);
+void				nma_vpn_connection_ref			(VPNConnection *vpn);
+void				nma_vpn_connection_unref		(VPNConnection *vpn);
 
-const char *		nmwa_vpn_connection_get_name		(VPNConnection *vpn);
+const char *		nma_vpn_connection_get_name		(VPNConnection *vpn);
 
-const char *		nmwa_vpn_connection_get_service	(VPNConnection *vpn);
-void				nmwa_vpn_connection_set_service	(VPNConnection *vpn, const char *service);
+const char *		nma_vpn_connection_get_service	(VPNConnection *vpn);
+void				nma_vpn_connection_set_service	(VPNConnection *vpn, const char *service);
 
-NMVPNActStage		nmwa_vpn_connection_get_stage		(VPNConnection *vpn);
-void				nmwa_vpn_connection_set_stage		(VPNConnection *vpn, NMVPNActStage stage);
+NMVPNActStage		nma_vpn_connection_get_stage		(VPNConnection *vpn);
+void				nma_vpn_connection_set_stage		(VPNConnection *vpn, NMVPNActStage stage);
 
-gboolean		nmwa_vpn_connection_is_activating	(VPNConnection *vpn);
+gboolean		nma_vpn_connection_is_activating	(VPNConnection *vpn);
 
-VPNConnection *	nmwa_vpn_connection_find_by_name	(GSList *list, const char *name);
+VPNConnection *	nma_vpn_connection_find_by_name	(GSList *list, const char *name);
 
 #endif

@@ -42,15 +42,15 @@
 
 
 /*
- * nmwa_dbus_nm_state_cb
+ * nma_dbus_nm_state_cb
  *
- * Callback from nmwa_dbus_update_nm_state
+ * Callback from nma_dbus_update_nm_state
  *
  */
-static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	NMState			nm_state;
 
 	g_return_if_fail (pcall != NULL);
@@ -65,14 +65,14 @@ static void nmwa_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_nm_state_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
 	}
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &nm_state, DBUS_TYPE_INVALID))
-		nmwa_set_state (applet, nm_state);
+		nma_set_state (applet, nm_state);
 
 	dbus_message_unref (reply);
 
@@ -82,12 +82,12 @@ out:
 
 
 /*
- * nmwa_dbus_update_nm_state
+ * nma_dbus_update_nm_state
  *
  * Update internal applet state from NetworkManager state
  *
  */
-void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
+void nma_dbus_update_nm_state (NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -98,7 +98,7 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_nm_state_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_nm_state_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }
@@ -106,21 +106,21 @@ void nmwa_dbus_update_nm_state (NMWirelessApplet *applet)
 
 typedef struct DriverCBData
 {
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	NetworkDevice *	dev;
 } DriverCBData;
 
 
 /*
- * nmwa_dbus_device_get_driver_cb
+ * nma_dbus_device_get_driver_cb
  *
- * Callback from nmwa_dbus_update_wireless_enabled
+ * Callback from nma_dbus_update_wireless_enabled
  *
  */
-static void nmwa_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	DriverCBData *		data = (DriverCBData *) user_data;
 	const char *		driver;
 
@@ -136,7 +136,7 @@ static void nmwa_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_d
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("%s(): dbus returned an error.\n  (%s) %s\n", __func__, err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -162,12 +162,12 @@ out:
 
 
 /*
- * nmwa_dbus_device_get_driver
+ * nma_dbus_device_get_driver
  *
  * Get the a device's driver name
  *
  */
-static void nmwa_dbus_device_get_driver (NetworkDevice *dev, NMWirelessApplet *applet)
+static void nma_dbus_device_get_driver (NetworkDevice *dev, NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -187,7 +187,7 @@ static void nmwa_dbus_device_get_driver (NetworkDevice *dev, NMWirelessApplet *a
 			network_device_ref (dev);
 			data->dev = dev;
 			data->applet = applet;
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_get_driver_cb, data, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_device_get_driver_cb, data, NULL);
 		}
 		dbus_message_unref (message);
 	}
@@ -195,15 +195,15 @@ static void nmwa_dbus_device_get_driver (NetworkDevice *dev, NMWirelessApplet *a
 
 
 /*
- * nmwa_dbus_update_wireless_enabled_cb
+ * nma_dbus_update_wireless_enabled_cb
  *
- * Callback from nmwa_dbus_update_wireless_enabled
+ * Callback from nma_dbus_update_wireless_enabled
  *
  */
-static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	gboolean			wireless_enabled;
 
 	g_return_if_fail (pcall != NULL);
@@ -218,7 +218,7 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -227,7 +227,7 @@ static void nmwa_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_BOOLEAN, &wireless_enabled, DBUS_TYPE_INVALID))
 	{
 		applet->wireless_enabled = wireless_enabled;
-		nmwa_enable_wireless_set_active (applet);
+		nma_enable_wireless_set_active (applet);
 	}
 
 	dbus_message_unref (reply);
@@ -238,12 +238,12 @@ out:
 
 
 /*
- * nmwa_dbus_update_wireless_enabled
+ * nma_dbus_update_wireless_enabled
  *
  * Get the wireless_enabled value from NetworkManager
  *
  */
-static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
+static void nma_dbus_update_wireless_enabled (NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -254,7 +254,7 @@ static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_wireless_enabled_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_update_wireless_enabled_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }
@@ -262,7 +262,7 @@ static void nmwa_dbus_update_wireless_enabled (NMWirelessApplet *applet)
 
 typedef struct HalInfoCBData
 {
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	NetworkDevice *	dev;
 	char *			parent_op;
 	char *			vendor;
@@ -309,7 +309,7 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("hal_info_product_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -355,7 +355,7 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("hal_info_vendor_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -397,7 +397,7 @@ out:
 /*
  * hal_net_physdev_cb
  *
- * nmwa_dbus_update_device_info_from_hal callback
+ * nma_dbus_update_device_info_from_hal callback
  *
  */
 static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
@@ -420,7 +420,7 @@ static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("hal_net_physdev_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -460,12 +460,12 @@ out:
 
 
 /*
- * nmwa_dbus_update_device_info_from_hal
+ * nma_dbus_update_device_info_from_hal
  *
  * Grab the info.product tag from hal for a specific UDI
  *
  */
-static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWirelessApplet *applet)
+static void nma_dbus_update_device_info_from_hal (NetworkDevice *dev, NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -495,7 +495,7 @@ static void nmwa_dbus_update_device_info_from_hal (NetworkDevice *dev, NMWireles
 }
 
 
-void nmwa_free_data_model (NMWirelessApplet *applet)
+void nma_free_data_model (NMApplet *applet)
 {
 	g_return_if_fail (applet != NULL);
 
@@ -512,7 +512,7 @@ typedef struct NetPropCBData
 {
 	char *			dev_op;
 	char *			act_net;
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 } NetPropCBData;
 
 static void free_net_prop_cb_data (NetPropCBData *data)
@@ -527,16 +527,16 @@ static void free_net_prop_cb_data (NetPropCBData *data)
 
 
 /*
- * nmwa_dbus_net_properties_cb
+ * nma_dbus_net_properties_cb
  *
- * Callback for each network we called "getProperties" on in nmwa_dbus_device_properties_cb().
+ * Callback for each network we called "getProperties" on in nma_dbus_device_properties_cb().
  *
  */
-static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NetPropCBData *	cb_data = (NetPropCBData *) user_data;
-	NMWirelessApplet *	applet;
+	NMApplet *	applet;
 	const char *		op = NULL;
 	const char *		essid = NULL;
 	const char *		hw_addr = NULL;
@@ -569,7 +569,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_net_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -588,7 +588,7 @@ static void nmwa_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data
 	{
 		NetworkDevice *	dev;
 
-		if ((dev = nmwa_get_device_for_nm_path (applet->device_list, cb_data->dev_op)))
+		if ((dev = nma_get_device_for_nm_path (applet->device_list, cb_data->dev_op)))
 		{
 			WirelessNetwork *	net = wireless_network_new (essid, op);
 			WirelessNetwork *	tmp_net;
@@ -620,12 +620,12 @@ out:
 
 
 /*
- * nmwa_dbus_device_update_one_network
+ * nma_dbus_device_update_one_network
  *
  * Get properties on just one wireless network.
  *
  */
-void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path)
+void nma_dbus_device_update_one_network (NMApplet *applet, const char *dev_path, const char *net_path, const char *active_net_path)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -644,7 +644,7 @@ void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *
 			cb_data->dev_op = g_strdup (dev_path);
 			cb_data->act_net = (active_net_path && strlen (active_net_path)) ? g_strdup (active_net_path) : NULL;
 			cb_data->applet = applet;
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_net_properties_cb, cb_data, (DBusFreeFunction) free_net_prop_cb_data);
+			dbus_pending_call_set_notify (pcall, nma_dbus_net_properties_cb, cb_data, (DBusFreeFunction) free_net_prop_cb_data);
 		}
 		dbus_message_unref (message);
 	}
@@ -652,12 +652,12 @@ void nmwa_dbus_device_update_one_network (NMWirelessApplet *applet, const char *
 
 
 /*
- * nmwa_dbus_device_remove_one_network
+ * nma_dbus_device_remove_one_network
  *
  * Remove a wireless network from a device.
  *
  */
-void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *dev_path, const char *net_path)
+void nma_dbus_device_remove_one_network (NMApplet *applet, const char *dev_path, const char *net_path)
 {
 	NetworkDevice *	dev;
 
@@ -665,7 +665,7 @@ void nmwa_dbus_device_remove_one_network (NMWirelessApplet *applet, const char *
 	g_return_if_fail (dev_path != NULL);
 	g_return_if_fail (net_path != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+	if ((dev = nma_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
 		WirelessNetwork *	net;
 
@@ -722,15 +722,15 @@ sort_devices_function (gconstpointer a, gconstpointer b)
 
 
 /*
- * nmwa_dbus_device_properties_cb
+ * nma_dbus_device_properties_cb
  *
- * Callback for each device we called "getProperties" on in nmwa_dbus_update_devices_cb().
+ * Callback for each device we called "getProperties" on in nma_dbus_update_devices_cb().
  *
  */
-static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	char *			op = NULL;
 	const char *		iface = NULL;
 	dbus_uint32_t		type = 0;
@@ -765,7 +765,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_device_properties_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -794,7 +794,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 									DBUS_TYPE_INVALID))
 	{
 		NetworkDevice *dev = network_device_new (iface, type, op);
-		NetworkDevice *tmp_dev = nmwa_get_device_for_nm_path (applet->device_list, op);
+		NetworkDevice *tmp_dev = nma_get_device_for_nm_path (applet->device_list, op);
 
 		network_device_set_hal_udi (dev, udi);
 		network_device_set_address (dev, hw_addr);
@@ -819,8 +819,8 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 			network_device_unref (tmp_dev);
 		}
 
-		nmwa_dbus_update_device_info_from_hal (dev, applet);
-		nmwa_dbus_device_get_driver (dev, applet);
+		nma_dbus_update_device_info_from_hal (dev, applet);
+		nma_dbus_device_get_driver (dev, applet);
 
 		if (type == DEVICE_TYPE_802_11_WIRELESS)
 		{
@@ -832,7 +832,7 @@ static void nmwa_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_d
 				char ** item;
 
 				for (item = networks; *item; item++)
-					nmwa_dbus_device_update_one_network (applet, op, *item, active_network_path);
+					nma_dbus_device_update_one_network (applet, op, *item, active_network_path);
 			}
 		}
 		dbus_free_string_array (networks);
@@ -848,12 +848,12 @@ out:
 
 
 /*
- * nmwa_dbus_device_update_one_device
+ * nma_dbus_device_update_one_device
  *
  * Get properties on just one device.
  *
  */
-void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *dev_path)
+void nma_dbus_device_update_one_device (NMApplet *applet, const char *dev_path)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -865,14 +865,14 @@ void nmwa_dbus_device_update_one_device (NMWirelessApplet *applet, const char *d
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_properties_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_device_properties_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }
 
 typedef struct _DeviceActivatedCBData
 {
-	NMWirelessApplet *applet;
+	NMApplet *applet;
 	char	*essid;
 } DeviceActivatedCBData;
 
@@ -889,23 +889,23 @@ static void free_device_activated_cb_data (DeviceActivatedCBData *obj)
 	g_free (obj);
 }
 
-static void nmwa_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DeviceActivatedCBData *	cb_data = (DeviceActivatedCBData*) user_data;
-	NMWirelessApplet *		applet = cb_data->applet;
+	NMApplet *		applet = cb_data->applet;
 	char *				essid = cb_data->essid;
 	NetworkDevice *		active_device;
 	char *				message = NULL;
 	char *				icon = NULL;
 
-	nmwa_dbus_device_properties_cb (pcall, applet);
+	nma_dbus_device_properties_cb (pcall, applet);
 
 	/* Don't show anything if the applet isn't shown */
 	if (!GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
 		goto out;
 
 #ifdef ENABLE_NOTIFY
-	active_device = nmwa_get_first_active_device (applet->device_list);
+	active_device = nma_get_first_active_device (applet->device_list);
 	if (active_device && network_device_is_wireless (active_device))
 	{
 		if (applet->is_adhoc)
@@ -928,7 +928,7 @@ static void nmwa_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_da
 
 	nm_info ("%s", message);
 
-	nmwa_send_event_notification (applet, NOTIFY_URGENCY_LOW, _("Connection Established"), message, icon);
+	nma_send_event_notification (applet, NOTIFY_URGENCY_LOW, _("Connection Established"), message, icon);
 	g_free (message);
 #endif
 
@@ -937,7 +937,7 @@ out:
 }
 
 
-void nmwa_dbus_device_activated (NMWirelessApplet *applet, const char *dev_path, const char *essid)
+void nma_dbus_device_activated (NMApplet *applet, const char *dev_path, const char *essid)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -955,29 +955,29 @@ void nmwa_dbus_device_activated (NMWirelessApplet *applet, const char *dev_path,
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_activated_cb, cb_data, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_device_activated_cb, cb_data, NULL);
 		dbus_message_unref (message);
 	}
 }
 
 
-static void nmwa_dbus_device_deactivated_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_device_deactivated_cb (DBusPendingCall *pcall, void *user_data)
 {
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 
-	nmwa_dbus_device_properties_cb (pcall, applet);
+	nma_dbus_device_properties_cb (pcall, applet);
 
 #ifdef ENABLE_NOTIFY
 	/* Don't show anything if the applet isn't shown */
 	if (GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
 	{
-		nmwa_send_event_notification (applet, NOTIFY_URGENCY_NORMAL, _("Disconnected"),
+		nma_send_event_notification (applet, NOTIFY_URGENCY_NORMAL, _("Disconnected"),
 			_("The network connection has been disconnected."), "nm-no-connection");
 	}
 #endif
 }
 
-void nmwa_dbus_device_deactivated (NMWirelessApplet *applet, const char *dev_path)
+void nma_dbus_device_deactivated (NMApplet *applet, const char *dev_path)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
@@ -989,22 +989,22 @@ void nmwa_dbus_device_deactivated (NMWirelessApplet *applet, const char *dev_pat
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_device_deactivated_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_device_deactivated_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }
 
 
 /*
- * nmwa_dbus_update_devices_cb
+ * nma_dbus_update_devices_cb
  *
- * nmwa_dbus_update_devices callback.
+ * nma_dbus_update_devices callback.
  *
  */
-static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMWirelessApplet *	applet = (NMWirelessApplet *) user_data;
+	NMApplet *	applet = (NMApplet *) user_data;
 	char **			devices;
 	int				num_devices;
 
@@ -1026,7 +1026,7 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_update_devices_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -1038,7 +1038,7 @@ static void nmwa_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data
 
 		/* For each device, fire off a "getProperties" call */
 		for (item = devices; *item; item++)
-			nmwa_dbus_device_update_one_device (applet, *item);
+			nma_dbus_device_update_one_device (applet, *item);
 
 		dbus_free_string_array (devices);
 	}
@@ -1050,39 +1050,39 @@ out:
 
 
 /*
- * nmwa_dbus_update_devices
+ * nma_dbus_update_devices
  *
  * Do a full update of network devices, wireless networks, and dial up devices.
  *
  */
-void nmwa_dbus_update_devices (NMWirelessApplet *applet)
+void nma_dbus_update_devices (NMApplet *applet)
 {
 	DBusMessage *		message;
 	DBusPendingCall *	pcall;
 
-	nmwa_free_data_model (applet);
+	nma_free_data_model (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_devices_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_update_devices_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
-	nmwa_dbus_update_wireless_enabled (applet);
+	nma_dbus_update_wireless_enabled (applet);
 }
 
 
 /*
- * nmwa_dbus_update_dialup_cb
+ * nma_dbus_update_dialup_cb
  *
- * nmwa_dbus_update_dialup DBUS callback.
+ * nma_dbus_update_dialup DBUS callback.
  *
  */
-static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
+static void nma_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *reply;
-	NMWirelessApplet *applet = (NMWirelessApplet *) user_data;
+	NMApplet *applet = (NMApplet *) user_data;
 	char **dialup_devices;
 	int num_devices;
 
@@ -1104,7 +1104,7 @@ static void nmwa_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nmwa_dbus_update_wireless_enabled_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		dbus_message_unref (reply);
 		goto out;
@@ -1136,12 +1136,12 @@ out:
 
 
 /*
- * nmwa_dbus_dialup_activate_connection
+ * nma_dbus_dialup_activate_connection
  *
  * Tell NetworkManager to activate a particular dialup connection.
  *
  */
-void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char *name)
+void nma_dbus_dialup_activate_connection (NMApplet *applet, const char *name)
 {
 	DBusMessage *message;
 
@@ -1168,21 +1168,21 @@ void nmwa_dbus_dialup_activate_connection (NMWirelessApplet *applet, const char 
 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
-			nm_warning ("nmwa_dbus_dialup_activate_connection(): Could not send activateDialup message!");
+			nm_warning ("Could not send activateDialup message!");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_dialup_activate_connection(): Couldn't allocate the dbus message!");
+		nm_warning ("Couldn't allocate the dbus message!");
 }
 
 
 /*
- * nmwa_dbus_dialup_activate_connection
+ * nma_dbus_dialup_activate_connection
  *
  * Tell NetworkManager to activate a particular dialup connection.
  *
  */
-void nmwa_dbus_dialup_deactivate_connection (NMWirelessApplet *applet, const char *name)
+void nma_dbus_dialup_deactivate_connection (NMApplet *applet, const char *name)
 {
 	DBusMessage *message;
 
@@ -1209,50 +1209,50 @@ void nmwa_dbus_dialup_deactivate_connection (NMWirelessApplet *applet, const cha
 
 		dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
 		if (!dbus_connection_send (applet->connection, message, NULL))
-			nm_warning ("nmwa_dbus_dialup_deactivate_connection(): Could not send deactivateDialup message!");
+			nm_warning ("Could not send deactivateDialup message!");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_dialup_deactivate_connection(): Couldn't allocate the dbus message!");
+		nm_warning ("Couldn't allocate the dbus message!");
 }
 
 
 /*
- * nmwa_dbus_update_dialup
+ * nma_dbus_update_dialup
  *
  * Do an update of dial up devices.
  *
  */
-void nmwa_dbus_update_dialup (NMWirelessApplet *applet)
+void nma_dbus_update_dialup (NMApplet *applet)
 {
 	DBusMessage *message;
 	DBusPendingCall *pcall;
 
-	nmwa_free_data_model (applet);
+	nma_free_data_model (applet);
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDialup")))
 	{
 		dbus_connection_send_with_reply (applet->connection, message, &pcall, -1);
 		if (pcall)
-			dbus_pending_call_set_notify (pcall, nmwa_dbus_update_dialup_cb, applet, NULL);
+			dbus_pending_call_set_notify (pcall, nma_dbus_update_dialup_cb, applet, NULL);
 		dbus_message_unref (message);
 	}
 }
 
 
 /*
- * nmwa_dbus_device_remove_one_device
+ * nma_dbus_device_remove_one_device
  *
  * Remove a device from our list.
  *
  */
-void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *dev_path)
+void nma_dbus_device_remove_one_device (NMApplet *applet, const char *dev_path)
 {
 	NetworkDevice *	dev;
 
 	g_return_if_fail (applet != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+	if ((dev = nma_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
 		applet->device_list = g_slist_remove (applet->device_list, dev);
 		network_device_unref (dev);
@@ -1261,13 +1261,13 @@ void nmwa_dbus_device_remove_one_device (NMWirelessApplet *applet, const char *d
 
 
 /*
- * nmwa_dbus_set_device
+ * nma_dbus_set_device
  *
  * Tell NetworkManager to use a specific network device that the user picked, and
  * possibly a specific wireless network too.
  *
  */
-void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
+void nma_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
 						WirelessSecurityOption * opt)
 {
 	DBusMessage *	message;
@@ -1303,17 +1303,17 @@ void nmwa_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_set_device(): Couldn't allocate the dbus message\n");
+		nm_warning ("Couldn't allocate the dbus message\n");
 }
 
 
 /*
- * nmwa_dbus_create_network
+ * nma_dbus_create_network
  *
  * Tell NetworkManager to create an Ad-Hoc wireless network
  *
  */
-void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, const char *essid,
+void nma_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, const char *essid,
 						WirelessSecurityOption * opt)
 {
 	DBusMessage	*message;
@@ -1337,21 +1337,21 @@ void nmwa_dbus_create_network (DBusConnection *connection, NetworkDevice *dev, c
 			wso_append_dbus_params (opt, essid, message);
 			dbus_connection_send (connection, message, NULL);
 		} else
-			nm_warning ("nmwa_dbus_create_network(): Could not get the device path!\n");
+			nm_warning ("Could not get the device path!\n");
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nmwa_dbus_create_network(): Couldn't allocate the dbus message\n");
+		nm_warning ("Couldn't allocate the dbus message\n");
 }
 
 
 /*
- * nmwa_dbus_enable_wireless
+ * nma_dbus_enable_wireless
  *
  * Tell NetworkManager to enabled or disable all wireless devices.
  *
  */
-void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
+void nma_dbus_enable_wireless (NMApplet *applet, gboolean enabled)
 {
 	DBusMessage	*message;
 
@@ -1362,18 +1362,18 @@ void nmwa_dbus_enable_wireless (NMWirelessApplet *applet, gboolean enabled)
 	{
 		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID);
 		dbus_connection_send (applet->connection, message, NULL);
-		nmwa_dbus_update_wireless_enabled (applet);
+		nma_dbus_update_wireless_enabled (applet);
 		dbus_message_unref (message);
 	}
 }
 
 /*
- * nmwa_dbus_enable_networking
+ * nma_dbus_enable_networking
  *
  * Tell NetworkManager to enabled or disable all wireless devices.
  *
  */
-void nmwa_dbus_enable_networking (NMWirelessApplet *applet, gboolean enabled)
+void nma_dbus_enable_networking (NMApplet *applet, gboolean enabled)
 {
 	DBusMessage	*message;
 	const char	*method;
@@ -1394,13 +1394,13 @@ void nmwa_dbus_enable_networking (NMWirelessApplet *applet, gboolean enabled)
 }
 
 
-void nmwa_dbus_update_strength (NMWirelessApplet *applet, const char *dev_path, const char *net_path, int strength)
+void nma_dbus_update_strength (NMApplet *applet, const char *dev_path, const char *net_path, int strength)
 {
 	NetworkDevice *dev;
 
 	g_return_if_fail (applet != NULL);
 
-	if ((dev = nmwa_get_device_for_nm_path (applet->device_list, dev_path)))
+	if ((dev = nma_get_device_for_nm_path (applet->device_list, dev_path)))
 	{
 		if (net_path != NULL)
 		{

@@ -42,10 +42,10 @@ static inline gboolean message_is_error (DBusMessage *msg)
 	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
 }
 
-void			nmwa_dbus_init_helper				(NMWirelessApplet *applet);
-void			nmwa_dbus_enable_wireless			(NMWirelessApplet *applet, gboolean enabled);
-void			nmwa_dbus_enable_networking			(NMWirelessApplet *applet, gboolean enabled);
-void			nmwa_free_gui_data_model				(NMWirelessApplet *applet);
-void			nmwa_free_dbus_data_model			(NMWirelessApplet *applet);
+void			nma_dbus_init_helper				(NMApplet *applet);
+void			nma_dbus_enable_wireless			(NMApplet *applet, gboolean enabled);
+void			nma_dbus_enable_networking			(NMApplet *applet, gboolean enabled);
+void			nma_free_gui_data_model				(NMApplet *applet);
+void			nma_free_dbus_data_model			(NMApplet *applet);
 
 #endif

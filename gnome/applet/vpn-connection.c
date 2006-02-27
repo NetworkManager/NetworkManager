@@ -32,7 +32,7 @@ struct VPNConnection
 };
 
 
-VPNConnection *nmwa_vpn_connection_new (const char *name)
+VPNConnection *nma_vpn_connection_new (const char *name)
 {
 	VPNConnection *vpn;
 
@@ -46,7 +46,7 @@ VPNConnection *nmwa_vpn_connection_new (const char *name)
 }
 
 
-VPNConnection *nmwa_vpn_connection_copy (VPNConnection *src_vpn)
+VPNConnection *nma_vpn_connection_copy (VPNConnection *src_vpn)
 {
 	VPNConnection *dst_vpn;
 
@@ -62,7 +62,7 @@ VPNConnection *nmwa_vpn_connection_copy (VPNConnection *src_vpn)
 }
 
 
-void nmwa_vpn_connection_ref (VPNConnection *vpn)
+void nma_vpn_connection_ref (VPNConnection *vpn)
 {
 	g_return_if_fail (vpn != NULL);
 
@@ -70,7 +70,7 @@ void nmwa_vpn_connection_ref (VPNConnection *vpn)
 }
 
 
-void nmwa_vpn_connection_unref (VPNConnection *vpn)
+void nma_vpn_connection_unref (VPNConnection *vpn)
 {
 	g_return_if_fail (vpn != NULL);
 
@@ -85,14 +85,14 @@ void nmwa_vpn_connection_unref (VPNConnection *vpn)
 }
 
 
-const char *nmwa_vpn_connection_get_name (VPNConnection *vpn)
+const char *nma_vpn_connection_get_name (VPNConnection *vpn)
 {
 	g_return_val_if_fail (vpn != NULL, NULL);
 
 	return vpn->name;
 }
 
-const char *nmwa_vpn_connection_get_service (VPNConnection *vpn)
+const char *nma_vpn_connection_get_service (VPNConnection *vpn)
 {
 	g_return_val_if_fail (vpn != NULL, NULL);
 
@@ -100,7 +100,7 @@ const char *nmwa_vpn_connection_get_service (VPNConnection *vpn)
 }
 
 
-void nmwa_vpn_connection_set_service (VPNConnection *vpn, const char *service)
+void nma_vpn_connection_set_service (VPNConnection *vpn, const char *service)
 {
 	g_return_if_fail (vpn != NULL);
 	g_return_if_fail (service != NULL);
@@ -113,14 +113,14 @@ void nmwa_vpn_connection_set_service (VPNConnection *vpn, const char *service)
 
 static int is_same_name (VPNConnection *vpn, const char *name)
 {
-	if (!vpn || !name || !nmwa_vpn_connection_get_name (vpn))
+	if (!vpn || !name || !nma_vpn_connection_get_name (vpn))
 		return -1;
 
-	return strcmp (nmwa_vpn_connection_get_name (vpn), name);
+	return strcmp (nma_vpn_connection_get_name (vpn), name);
 }
 
 
-VPNConnection *nmwa_vpn_connection_find_by_name (GSList *list, const char *name)
+VPNConnection *nma_vpn_connection_find_by_name (GSList *list, const char *name)
 {
 	GSList		*elt;
 	VPNConnection	*vpn = NULL;
@@ -136,27 +136,27 @@ VPNConnection *nmwa_vpn_connection_find_by_name (GSList *list, const char *name)
 	return vpn;	
 }
 
-NMVPNActStage nmwa_vpn_connection_get_stage (VPNConnection *vpn)
+NMVPNActStage nma_vpn_connection_get_stage (VPNConnection *vpn)
 {
 	g_return_val_if_fail (vpn != NULL, NM_VPN_ACT_STAGE_UNKNOWN);
 
 	return vpn->stage;
 }
 
-void nmwa_vpn_connection_set_stage (VPNConnection *vpn, NMVPNActStage stage)
+void nma_vpn_connection_set_stage (VPNConnection *vpn, NMVPNActStage stage)
 {
 	g_return_if_fail (vpn != NULL);
 
 	vpn->stage = stage;
 }
 
-gboolean nmwa_vpn_connection_is_activating (VPNConnection *vpn)
+gboolean nma_vpn_connection_is_activating (VPNConnection *vpn)
 {
 	NMVPNActStage stage;
 
 	g_return_val_if_fail (vpn != NULL, FALSE);
 
-	stage = nmwa_vpn_connection_get_stage (vpn);
+	stage = nma_vpn_connection_get_stage (vpn);
 	if (stage == NM_VPN_ACT_STAGE_PREPARE ||
 		stage == NM_VPN_ACT_STAGE_CONNECT ||
 		stage == NM_VPN_ACT_STAGE_IP_CONFIG_GET)
