@@ -98,14 +98,16 @@ NMDevice *	nm_get_active_device					(NMData *data);
 NMDevice *	nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
 														gboolean test_device, NMDeviceType test_device_type);
 
-void				nm_add_initial_devices					(NMData *data);
+void			nm_add_initial_devices					(NMData *data);
 
-void				nm_remove_device						(NMData *data, NMDevice *dev);
+void			nm_remove_device						(NMData *data, NMDevice *dev);
 
-void				nm_schedule_state_change_signal_broadcast	(NMData *data);
+void			nm_schedule_state_change_signal_broadcast	(NMData *data);
 
-void				nm_hal_init							(NMData *data);
+void			nm_hal_init							(NMData *data);
 
-void				nm_hal_deinit							(NMData *data);
+void			nm_hal_deinit							(NMData *data);
+
+int			nm_get_sigterm_pipe						(void);
 
 #endif

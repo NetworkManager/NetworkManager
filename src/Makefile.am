@@ -45,6 +45,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerUtils.h		\
 		NetworkManagerSystem.c		\
 		NetworkManagerSystem.h		\
+		nm-logging.c				\
+		nm-logging.h				\
 		nm-netlink-monitor.c		\
 		nm-netlink-monitor.h		\
 		nm-activation-request.c		\
@@ -82,6 +84,8 @@ NetworkManager_CPPFLAGS = 							\
 	-DDBUS_API_SUBJECT_TO_CHANGE						\
 	-DG_DISABLE_DEPRECATED							\
 	-DBINDIR=\"$(bindir)\"							\
+	-DSBINDIR=\"$(sbindir)\"							\
+	-DLIBEXECDIR=\"$(libexecdir)\"					\
 	-DDATADIR=\"$(datadir)\"							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
@@ -102,9 +106,25 @@ NetworkManager_LDADD = 							\
 			./backends/libnmbackend.la			\
 			$(top_builddir)/libnm-util/libnm-util.la
 
+NetworkManager_LDFLAGS = -rdynamic
 
+libexec_PROGRAMS = nm-crash-logger
+nm_crash_logger_SOURCES = nm-crash-logger.c
+nm_crash_logger_CPPFLAGS = \
+	$(GTHREAD_CFLAGS)								\
+	-DG_DISABLE_DEPRECATED							\
+	-DBINDIR=\"$(bindir)\"							\
+	-DSBINDIR=\"$(sbindir)\"							\
+	-DDATADIR=\"$(datadir)\"							\
+	-DSYSCONFDIR=\"$(sysconfdir)\"					\
+	-DLOCALSTATEDIR=\"$(localstatedir)\"
+nm_crash_logger_LDADD = $(GTHREAD_LIBS)
+
+
+NetworkManagerdir = $(datadir)/NetworkManager
+NetworkManager_DATA = gdb-cmd
 
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
-EXTRA_DIST = $(dbusservice_DATA)
+EXTRA_DIST = $(dbusservice_DATA) $(NetworkManager_DATA)

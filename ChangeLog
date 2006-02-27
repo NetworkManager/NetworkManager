@@ -1,5 +1,21 @@
 2006-02-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/Makefile.am
+		- make and install nm-crash-logger
+
+	* src/nm-logging.[ch]
+	  	- New files; consolidate logging and crash handling
+
+	* src/nm-crash-logger.c
+	  src/gdb-cmd
+		- Standalong crashlogger for NM, grab a backtrace
+			using GDB
+
+	* src/NetworkManager.[ch]
+		- Remove signal handling and put it into nm-logging.c
+
+2006-02-26  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 	  gnome/applet/Makefile.am
 		- Conditionalize all the notify stuff

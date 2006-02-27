@@ -49,6 +49,7 @@
 #include "nm-dbus-vpn.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dhcp-manager.h"
+#include "nm-logging.h"
 
 #define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
 
@@ -58,7 +59,6 @@
 static NMData		*nm_data = NULL;
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
-static void sigterm_handler (int signum);
 static void nm_data_free (NMData *data);
 
 /*
@@ -376,8 +376,6 @@ void nm_schedule_state_change_signal_broadcast (NMData *data)
  */
 static NMData *nm_data_new (gboolean enable_test_devices)
 {
-	struct sigaction	action;
-	sigset_t			block_mask;
 	NMData *			data;
 	GSource *			iosource;
 	
@@ -386,28 +384,20 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	data->main_context = g_main_context_new ();
 	data->main_loop = g_main_loop_new (data->main_context, FALSE);
 
+	/* Allow clean shutdowns by having the thread which receives the signal
+	 * notify the main thread to quit, rather than having the receiving
+	 * thread try to quit the glib main loop.
+	 */
 	if (pipe (data->sigterm_pipe) < 0)
 	{
 		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
 		return NULL;
 	}
-
 	data->sigterm_iochannel = g_io_channel_unix_new (data->sigterm_pipe[0]);
 	iosource = g_io_create_watch (data->sigterm_iochannel, G_IO_IN | G_IO_ERR);
 	g_source_set_callback (iosource, (GSourceFunc) sigterm_pipe_handler, data, NULL);
 	g_source_attach (iosource, data->main_context);
 	g_source_unref (iosource);
-
-	action.sa_sigaction = NULL;
-	action.sa_handler = sigterm_handler;
-	sigemptyset (&block_mask);
-	action.sa_mask = block_mask;
-	action.sa_flags = 0;
-	if (sigaction (SIGINT, &action, NULL) || sigaction (SIGTERM, &action, NULL))
-	{
-		nm_error ("Failed to install signal handlers: %s", g_strerror (errno));
-		return NULL;
-	}
 
 	/* Initialize the device list mutex to protect additions/deletions to it. */
 	data->dev_list_mutex = g_mutex_new ();
@@ -488,21 +478,12 @@ static void nm_data_free (NMData *data)
 
 	nm_hal_deinit (data);
 
-	closelog ();
-
 	memset (data, 0, sizeof (NMData));
 }
 
-static void sigterm_handler (int signum)
+int nm_get_sigterm_pipe (void)
 {
-	int ignore;
-
-	/* FIXME: This is probably not a great thing to have in a signal handler,
-	 * but you only live once.
-	 */
-	nm_info ("Caught %s", signum == SIGINT ? "SIGINT" : "SIGTERM");
-
-	ignore = write (nm_data->sigterm_pipe[1], "X", 1);
+	return nm_data->sigterm_pipe[1];
 }
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
@@ -626,58 +607,6 @@ nm_monitor_wired_link_state (NMData *data)
 	nm_netlink_monitor_request_status (monitor, NULL);
 
 	data->netlink_monitor = monitor;
-}
-
-static void
-nm_info_handler (const gchar		*log_domain,
-			  GLogLevelFlags	 log_level,
-			  const gchar		*message,
-			  gpointer		 ignored)
-{
-	int syslog_priority;	
-
-	switch (log_level)
-	{
-		case G_LOG_LEVEL_ERROR:
-			syslog_priority = LOG_CRIT;
-		break;
-
-		case G_LOG_LEVEL_CRITICAL:
-			syslog_priority = LOG_ERR;
-		break;
-
-		case G_LOG_LEVEL_WARNING:
-			syslog_priority = LOG_WARNING;
-		break;
-
-		case G_LOG_LEVEL_MESSAGE:
-			syslog_priority = LOG_NOTICE;
-
-		case G_LOG_LEVEL_DEBUG:
-			syslog_priority = LOG_DEBUG;
-		break;
-
-		case G_LOG_LEVEL_INFO:
-		default:
-			syslog_priority = LOG_INFO;
-		break;
-	}
-
-	syslog (syslog_priority, "%s", message);
-}
-
-static void
-nm_set_up_log_handlers (gboolean become_daemon)
-{
-	if (become_daemon)
-		openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
-	else
-		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
-
-	g_log_set_handler (G_LOG_DOMAIN, 
-				    G_LOG_LEVEL_MASK,
-				    nm_info_handler,
-				    NULL);
 }
 
 
@@ -827,7 +756,7 @@ int main( int argc, char *argv[] )
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
 
-	nm_set_up_log_handlers (become_daemon);
+	nm_logging_setup (become_daemon);
 	nm_info ("starting...");
 
 	nm_system_init();
@@ -895,6 +824,7 @@ int main( int argc, char *argv[] )
 
 	nm_print_open_socks ();
 	nm_data_free (nm_data);
+	nm_logging_shutdown ();
 
 	exit (0);
 }
