@@ -1,5 +1,12 @@
 2006-02-27  Robert Love  <rml@novell.com>
 
+	* dispatcher-daemon/NetworkManagerDispatcher.c, src/NetworkManager.c:
+	  Open the pid file O_TRUNC, so if it already exists we truncate it to
+	  zero length.  Also, be more verbose about warnings generated during
+	  writing out the pid file.
+
+2006-02-27  Robert Love  <rml@novell.com>
+
 	Patch by R. Vinay <rvinay@novell.com>:
 	* gnome/vpn-properties/nm-vpn-properties.c: Remove the gconf key
 	  'last_attempt_success' when removing a VPN connection, too.  (Fixes

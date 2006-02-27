@@ -280,19 +280,22 @@ static void nmd_print_usage (void)
 }
 
 
-static gboolean
+static void
 write_pidfile (const char *pidfile)
 {
+ 	char pid[16];
 	int fd;
-	int ignored;
-	char pid[16];
-
-	if ((fd = open (pidfile, O_CREAT | O_WRONLY, 00644)) < 0)
-		return FALSE;
-	snprintf (pid, sizeof (pid), "%d", getpid ());
-	ignored = write (fd, pid, strlen (pid));
-	close (fd);
-	return TRUE;
+ 
+	if ((fd = open (pidfile, O_CREAT|O_WRONLY|O_TRUNC, 00644)) < 0)
+	{
+		nm_warning ("Opening %s failed: %s", pidfile, strerror (errno));
+		return;
+	}
+ 	snprintf (pid, sizeof (pid), "%d", getpid ());
+	if (write (fd, pid, strlen (pid)) < 0)
+		nm_warning ("Writing to %s failed: %s", pidfile, strerror (errno));
+	if (close (fd))
+		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
 
@@ -365,11 +368,7 @@ int main (int argc, char *argv[])
 		g_thread_init (NULL);
 
 	if (pidfile)
-	{
-		if (!write_pidfile (pidfile))
-			nm_warning ("Couldn't write pid file %s! errno: %s", pidfile,
-				strerror (errno));
-	}
+		write_pidfile (pidfile);
 
 	/* Connect to the NetworkManager dbus service and run the main loop */
 	if ((connection = nmd_dbus_init ()))
