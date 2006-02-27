@@ -120,7 +120,7 @@ gboolean nm_vpn_act_request_is_activating (NMVPNActRequest *req)
 
 	switch (req->stage)
 	{
-		case	NM_VPN_ACT_STAGE_PREPARE:
+		case NM_VPN_ACT_STAGE_PREPARE:
 		case NM_VPN_ACT_STAGE_CONNECT:
 		case NM_VPN_ACT_STAGE_IP_CONFIG_GET:
 			activating = TRUE;

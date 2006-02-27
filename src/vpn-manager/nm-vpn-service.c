@@ -488,6 +488,7 @@ sanitize_dbus_string_array (char **in_array, dbus_uint32_t *in_num)
 	return out_array;
 }
 
+
 static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
@@ -838,7 +839,7 @@ static void nm_vpn_service_stop_connection_internal (NMVPNService *service)
 		dbus_message_unref (message);
 	}
 	else
-		nm_warning ("nm_vpn_service_stop_connection(): error, couldn't allocate dbus message.");
+		nm_warning ("nm_vpn_service_stop_connection_internal(): error, couldn't allocate dbus message.");
 
 	g_free (op);
 }
@@ -860,8 +861,8 @@ void nm_vpn_service_stop_connection (NMVPNService *service, NMVPNActRequest *req
 	/* Ensure we can stop the connection in this state */
 	if ((service->state != NM_VPN_STATE_STARTED) && (service->state != NM_VPN_STATE_STARTING))
 	{
-		nm_info ("nm_vpn_service_start_connection(%s): could not stop connection '%s' because service was not STARTED.", 
-					service->service, nm_vpn_connection_get_name (vpn));
+		nm_info ("nm_vpn_service_stop_connection(%s): could not stop connection '%s' because service was %d.", 
+					service->service, nm_vpn_connection_get_name (vpn), service->state);
 		return;
 	}
 

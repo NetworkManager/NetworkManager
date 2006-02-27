@@ -347,7 +347,7 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	g_return_if_fail (password_items != NULL);
 	g_return_if_fail (data_items != NULL);
 
-	if (manager->act_req)
+	if (nm_vpn_manager_get_vpn_act_request (manager))
 		nm_vpn_manager_deactivate_vpn_connection (manager, nm_vpn_act_request_get_parent_dev (manager->act_req));
 
 	service_name = nm_vpn_connection_get_service_name (vpn);
