@@ -1,3 +1,21 @@
+2006-02-27  Dan Williams  <dcbw@redhat.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- Accept --pid-file with a path to a pidfile, write it out on
+			startup, and delete it on shutdown
+
+	* src/NetworkManager.c
+		- Accept --pid-file with a path to a pidfile, write it out on
+			startup, and delete it on shutdown
+		- Move nm_print_usage() lower
+
+	* initscripts/RedHat/NetworkManager.in
+		- Use new --pid-file option
+		- Fix service stopping to wait a bit for NM to quit
+
+	* initscripts/RedHat/NetworkManagerDispatcher.in
+		- Use new --pid-file option
+
 2006-02-26  Dan Williams  <dcbw@redhat.com>
 
 	* src/Makefile.am

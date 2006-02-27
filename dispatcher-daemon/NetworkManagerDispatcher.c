@@ -280,15 +280,32 @@ static void nmd_print_usage (void)
 }
 
 
+static gboolean
+write_pidfile (const char *pidfile)
+{
+	int fd;
+	int ignored;
+	char pid[16];
+
+	if ((fd = open (pidfile, O_CREAT | O_WRONLY, 00644)) < 0)
+		return FALSE;
+	snprintf (pid, sizeof (pid), "%d", getpid ());
+	ignored = write (fd, pid, strlen (pid));
+	close (fd);
+	return TRUE;
+}
+
+
 /*
  * main
  *
  */
 int main (int argc, char *argv[])
 {
-	gboolean		 become_daemon = TRUE;
-	GMainLoop		*loop  = NULL;
+	gboolean		become_daemon = TRUE;
+	GMainLoop *	loop  = NULL;
 	DBusConnection	*connection = NULL;
+	char *		pidfile = NULL;
 
 	/* Parse options */
 	while (1)
@@ -299,6 +316,7 @@ int main (int argc, char *argv[])
 
 		static struct option options[] = {
 			{"no-daemon",	0, NULL, 0},
+			{"pid-file",	1, NULL, 0},
 			{"help",		0, NULL, 0},
 			{NULL,		0, NULL, 0}
 		};
@@ -318,6 +336,8 @@ int main (int argc, char *argv[])
 				}
 				else if (strcmp (opt, "no-daemon") == 0)
 					become_daemon = FALSE;
+				else if (strcmp (opt, "pid-file") == 0)
+					pidfile = g_strdup (optarg);
 				else
 				{
 					nmd_print_usage ();
@@ -344,12 +364,24 @@ int main (int argc, char *argv[])
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 
+	if (pidfile)
+	{
+		if (!write_pidfile (pidfile))
+			nm_warning ("Couldn't write pid file %s! errno: %s", pidfile,
+				strerror (errno));
+	}
+
 	/* Connect to the NetworkManager dbus service and run the main loop */
 	if ((connection = nmd_dbus_init ()))
 	{
 		loop = g_main_loop_new (NULL, FALSE);
 		g_main_loop_run (loop);
 	}
+
+	/* Clean up pidfile */
+	if (pidfile)
+		unlink (pidfile);
+	g_free (pidfile);
 
 	return 0;
 }

@@ -37,17 +37,16 @@ start()
 	echo $"Setting network parameters... "
 	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
 	echo -n $"Starting NetworkManager daemon: "
-	daemon --check $servicename $processname
+	daemon --check $servicename $processname --pid-file=$pidfile
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > $pidfile
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename
 }
 
 stop()
 {
 	echo -n $"Stopping NetworkManager daemon: "
-
-	killproc $servicename -TERM
+	killproc -p $pidfile $servicename
 	RETVAL=$?
 	echo
 	if [ $RETVAL -eq 0 ]; then

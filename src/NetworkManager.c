@@ -495,28 +495,6 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 	return FALSE;
 }
 
-/*
- * nm_print_usage
- *
- * Prints program usage.
- *
- */
-static void nm_print_usage (void)
-{
-	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--help]\n");
-	fprintf (stderr,
-		"\n"
-		"        --no-daemon             Don't become a daemon\n"
-		"        --enable-test-devices   Allow dummy devices to be created via DBUS methods [DEBUG]\n"
-		"        --help                  Show this information and exit\n"
-		"\n"
-		"NetworkManager monitors all network connections and automatically\n"
-		"chooses the best connection to use.  It also allows the user to\n"
-		"specify wireless access points which wireless cards in the computer\n"
-		"should associate with.\n"
-		"\n");
-}
-
 static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
 {
 	NMDevice *dev = NULL;
@@ -685,6 +663,47 @@ void nm_hal_deinit (NMData *data)
 	}
 }
 
+
+static gboolean
+write_pidfile (const char *pidfile)
+{
+	int fd;
+	int ignored;
+	char pid[16];
+
+	if ((fd = open (pidfile, O_CREAT | O_WRONLY, 00644)) < 0)
+		return FALSE;
+	snprintf (pid, sizeof (pid), "%d", getpid ());
+	ignored = write (fd, pid, strlen (pid));
+	close (fd);
+	return TRUE;
+}
+
+
+/*
+ * nm_print_usage
+ *
+ * Prints program usage.
+ *
+ */
+static void nm_print_usage (void)
+{
+	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--pid-file=<file>] [--help]\n");
+	fprintf (stderr,
+		"\n"
+		"        --no-daemon             Don't become a daemon\n"
+		"        --pid-file=<path>       Specify the location of a PID file\n"
+		"        --enable-test-devices   Allow dummy devices to be created via DBUS methods [DEBUG]\n"
+		"        --help                  Show this information and exit\n"
+		"\n"
+		"NetworkManager monitors all network connections and automatically\n"
+		"chooses the best connection to use.  It also allows the user to\n"
+		"specify wireless access points which wireless cards in the computer\n"
+		"should associate with.\n"
+		"\n");
+}
+
+
 /*
  * main
  *
@@ -694,6 +713,7 @@ int main( int argc, char *argv[] )
 	gboolean		become_daemon = TRUE;
 	gboolean		enable_test_devices = FALSE;
 	char *		owner;
+	char *		pidfile = NULL;
 	
 	if (getuid () != 0)
 	{
@@ -711,6 +731,7 @@ int main( int argc, char *argv[] )
 		static struct option options[] = {
 			{"no-daemon",			0, NULL, 0},
 			{"enable-test-devices",	0, NULL, 0},
+			{"pid-file",			1, NULL, 0},
 			{"help",				0, NULL, 0},
 			{NULL,				0, NULL, 0}
 		};
@@ -732,6 +753,8 @@ int main( int argc, char *argv[] )
 					become_daemon = FALSE;
 				else if (strcmp (opt, "enable-test-devices") == 0)
 					enable_test_devices = TRUE;
+				else if (strcmp (opt, "pid-file") == 0)
+					pidfile = g_strdup (optarg);
 				break;
 
 			default:
@@ -755,6 +778,13 @@ int main( int argc, char *argv[] )
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
+	
+	if (pidfile)
+	{
+		if (!write_pidfile (pidfile))
+			nm_warning ("Couldn't write pid file %s! errno: %s", pidfile,
+				strerror (errno));
+	}
 
 	nm_logging_setup (become_daemon);
 	nm_info ("starting...");
@@ -825,6 +855,11 @@ int main( int argc, char *argv[] )
 	nm_print_open_socks ();
 	nm_data_free (nm_data);
 	nm_logging_shutdown ();
+
+	/* Clean up pidfile */
+	if (pidfile)
+		unlink (pidfile);
+	g_free (pidfile);
 
 	exit (0);
 }

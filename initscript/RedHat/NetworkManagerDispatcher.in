@@ -32,16 +32,15 @@ RETVAL=0
 start()
 {
 	echo -n $"Starting NetworkManagerDispatcher daemon: "
-	daemon --check $servicename $processname
+	daemon --check $servicename $processname --pid-file=$pidfile
 	RETVAL=$?
 	echo
-	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename && echo `/sbin/pidof $processname` > $pidfile
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename
 }
 
 stop()
 {
 	echo -n $"Stopping NetworkManagerDispatcher daemon: "
-
 	killproc $servicename -TERM
 	RETVAL=$?
 	echo
