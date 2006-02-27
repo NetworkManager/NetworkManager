@@ -53,6 +53,8 @@
 
 #define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
 
+#define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
+
 /*
  * Globals
  */
@@ -717,6 +719,7 @@ int main( int argc, char *argv[] )
 	gboolean		enable_test_devices = FALSE;
 	char *		owner;
 	char *		pidfile = NULL;
+	char *		user_pidfile = NULL;
 	
 	if (getuid () != 0)
 	{
@@ -757,7 +760,7 @@ int main( int argc, char *argv[] )
 				else if (strcmp (opt, "enable-test-devices") == 0)
 					enable_test_devices = TRUE;
 				else if (strcmp (opt, "pid-file") == 0)
-					pidfile = g_strdup (optarg);
+					user_pidfile = g_strdup (optarg);
 				break;
 
 			default:
@@ -767,14 +770,20 @@ int main( int argc, char *argv[] )
 		}
 	}
 
-	if (become_daemon && daemon (0, 0) < 0)
+	if (become_daemon)
 	{
-		int saved_errno;
+		if (daemon (0, 0) < 0)
+		{
+			int saved_errno;
 
-		saved_errno = errno;
-		nm_error ("NetworkManager could not daemonize: %s [error %u]",
-			  g_strerror (saved_errno), saved_errno);
-		exit (EXIT_FAILURE);
+			saved_errno = errno;
+			nm_error ("NetworkManager could not daemonize: %s [error %u]",
+				  g_strerror (saved_errno), saved_errno);
+			exit (EXIT_FAILURE);
+		}
+
+		pidfile = user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE;
+		write_pidfile (pidfile);
 	}
 
 	g_type_init ();
@@ -782,9 +791,6 @@ int main( int argc, char *argv[] )
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
 	
-	if (pidfile)
-		write_pidfile (pidfile);
-
 	nm_logging_setup (become_daemon);
 	nm_info ("starting...");
 
@@ -858,7 +864,7 @@ int main( int argc, char *argv[] )
 	/* Clean up pidfile */
 	if (pidfile)
 		unlink (pidfile);
-	g_free (pidfile);
+	g_free (user_pidfile);
 
 	exit (0);
 }

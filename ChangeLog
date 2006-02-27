@@ -3,7 +3,8 @@
 	* dispatcher-daemon/NetworkManagerDispatcher.c, src/NetworkManager.c:
 	  Open the pid file O_TRUNC, so if it already exists we truncate it to
 	  zero length.  Also, be more verbose about warnings generated during
-	  writing out the pid file.
+	  writing out the pid file.  Finally, always write out the pid file if
+	  in daemon mode.  Use "--pid-file" to override the default.
 
 2006-02-27  Robert Love  <rml@novell.com>
 

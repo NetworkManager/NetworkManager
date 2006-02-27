@@ -48,7 +48,9 @@ enum NMDAction
 typedef enum NMDAction	NMDAction;
 
 
-#define NM_SCRIPT_DIR	SYSCONFDIR"/NetworkManager/dispatcher.d"
+#define NM_SCRIPT_DIR		SYSCONFDIR"/NetworkManager/dispatcher.d"
+
+#define NMD_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManagerDispatcher.pid"
 
 
 /*
@@ -309,6 +311,7 @@ int main (int argc, char *argv[])
 	GMainLoop *	loop  = NULL;
 	DBusConnection	*connection = NULL;
 	char *		pidfile = NULL;
+	char *		user_pidfile = NULL;
 
 	/* Parse options */
 	while (1)
@@ -340,7 +343,7 @@ int main (int argc, char *argv[])
 				else if (strcmp (opt, "no-daemon") == 0)
 					become_daemon = FALSE;
 				else if (strcmp (opt, "pid-file") == 0)
-					pidfile = g_strdup (optarg);
+					user_pidfile = g_strdup (optarg);
 				else
 				{
 					nmd_print_usage ();
@@ -357,18 +360,21 @@ int main (int argc, char *argv[])
 
 	openlog("NetworkManagerDispatcher", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
 
-	if (become_daemon && daemon (FALSE, FALSE) < 0)
+	if (become_daemon)
 	{
-	     nm_warning ("NetworkManagerDispatcher could not daemonize: %s", strerror (errno));
-	     exit (1);
+		if (daemon (FALSE, FALSE) < 0)
+		{
+	     	nm_warning ("NetworkManagerDispatcher could not daemonize: %s", strerror (errno));
+		     exit (1);
+		}
+
+		pidfile = user_pidfile ? user_pidfile : NMD_DEFAULT_PID_FILE;
+		write_pidfile (pidfile);
 	}
 
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
-
-	if (pidfile)
-		write_pidfile (pidfile);
 
 	/* Connect to the NetworkManager dbus service and run the main loop */
 	if ((connection = nmd_dbus_init ()))
@@ -380,7 +386,7 @@ int main (int argc, char *argv[])
 	/* Clean up pidfile */
 	if (pidfile)
 		unlink (pidfile);
-	g_free (pidfile);
+	g_free (user_pidfile);
 
 	return 0;
 }
