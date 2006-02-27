@@ -344,7 +344,7 @@ msgstr "（無效的統一碼）"
 
 #: ../gnome/applet/other-network-dialog.c:148
 #: ../gnome/applet/passphrase-dialog.c:163
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "通行碼："
 
@@ -402,11 +402,11 @@ msgid ""
 "type '%s'. Contact your system administrator."
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "Ascii Key (WEP)\n"
@@ -416,7 +416,7 @@ msgstr ""
 "Acii 格式金鑰 (WEP)\n"
 "Hex 格式金鑰 (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:5
+#: ../gnome/applet/applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "Ascii key (WEP)\n"
@@ -426,12 +426,12 @@ msgstr ""
 "Acii 格式金鑰 (WEP)\n"
 "Hex 格式金鑰 (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\">使用中的連線資訊：</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -444,7 +444,7 @@ msgstr ""
 "\n"
 "需要一個通行碼或是密鑰來存取無線網路‘%s’"
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/applet.glade.h:14
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -452,7 +452,7 @@ msgid ""
 "%s  It will not be completely functional."
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -463,79 +463,79 @@ msgid ""
 "NetworkManager will not require confirmation on subsequent log ins."
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Always Trust this Wireless Network"
 msgstr "總是信任這無線網路"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Broadcast Address:"
 msgstr "廣播位址："
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "C_onnect"
 msgstr "連線(_O)"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Connect with encryption enabled"
 msgstr "啟用加密連接"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Connection Information"
 msgstr "連線資訊"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Destination Address:"
 msgstr "目的地位址："
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "Don't remind me again"
 msgstr "不要再提醒我"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "Hardware Address:"
 msgstr "硬體位址："
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "IP Address:"
 msgstr "IP 位址："
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid "Interface:"
 msgstr "介面："
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid "Key Type:"
 msgstr "金鑰類型："
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Key type:"
 msgstr "金鑰類型："
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "其它無線網路..."
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Subnet Mask:"
 msgstr "子網路遮罩："
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Wireless Network Key Required"
 msgstr "需要無線網路金鑰"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Wireless _adapter:"
 msgstr "無線網絡卡(_A)："
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Wireless _network:"
 msgstr "無線網路(_N)："
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "_Login to Network"
 msgstr "登入網路(_L)"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "_OK"
 msgstr "確定(_O)"
 

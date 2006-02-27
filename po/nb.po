@@ -427,15 +427,15 @@ msgstr "Fant ikke autentiseringsdialogen for VPN tilkoblingstypen «%s». Kontak
 msgid "There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."
 msgstr "Det oppstod en feil under oppstart av autentiseringsdialogen for VPN tilkoblingstypen «%s». Kontakt din systemadministrator."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\" size=\"larger\">Informasjon om aktiv tilkobling</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
@@ -446,7 +446,7 @@ msgstr ""
 "\n"
 "Ett passord eller en krypteringsnøkkel kreves for å aksessere trådløst nettverk «%s»."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -457,7 +457,7 @@ msgstr ""
 "\n"
 "%s  Ikke fullstendig funksjonell."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</span>\n"
@@ -468,51 +468,51 @@ msgstr ""
 "\n"
 "Du har valgt å logge inn på trådløst nettverk «%s». Hvis du er sikker på at dette trådløse nettverket er sikkert kan du be NetworkManager om å slutte å spørre spørsmål når du kobler deg til det ved å krysse av i boksen nedenfor."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Autentisering:"
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Kringkastingsadresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "K_oble til"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Tilkoblingsinformasjon"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Forvalgt rute:"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Måladresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Driver:"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Hardware Address:"
 msgstr "Maskinvareadresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "IP Address:"
 msgstr "IP adresse:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Interface:"
 msgstr "Grensesnitt:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Key:"
 msgstr "Nøkkel:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -520,86 +520,86 @@ msgid ""
 "WEP 40/128-bit ASCII\n"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid ""
 "Open System\n"
 "Shared Key"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "Annet trådløst nettverk..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Passord:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Password:"
 msgstr "Passord:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Primary DNS:"
 msgstr "Primær DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Secondary DNS:"
 msgstr "Sekundær DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Subnet Mask:"
 msgstr "Subnettmaske:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 #, fuzzy
 msgid "Type:"
 msgstr "Type nø_kkel:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "User Name:"
 msgstr "Brukernavn:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Wireless Network Key Required"
 msgstr "Nøkkel for trådløst nettverk kreves"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "Wireless _adapter:"
 msgstr "Trådløst _kort:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "_Always Trust this Wireless Network"
 msgstr "Stol _alltid på dette trådløse nettverket"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "_Don't remind me again"
 msgstr "_Ikke vis påminnelse igjen"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "_Login to Network"
 msgstr "_Logg på nettverk"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "_Network Name:"
 msgstr "_Nettverksnavn:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "_Wireless Security:"
 msgstr "Tr_ådløs sikkerhet:"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "leap_subwindow"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "wep_key_subwindow"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "wep_passphrase_subwindow"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:51
 msgid "wpa_psk_subwindow"
 msgstr ""
 

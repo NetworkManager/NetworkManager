@@ -393,7 +393,7 @@ msgstr " (неправильний Юнікод)"
 
 #: ../gnome/applet/other-network-dialog.c:143
 #: ../gnome/applet/passphrase-dialog.c:156
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Парольна фраза:"
 
@@ -459,11 +459,11 @@ msgstr ""
 "Проблема запуску діалогового вікна аутентифікації для з'єднання VPN типу '%"
 "s'. Зв'яжіться з системним адміністратором."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "ASCII Key (WEP)\n"
@@ -473,7 +473,7 @@ msgstr ""
 "ASCII-ключ (WEP)\n"
 "Шістнадцятковий ключ (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:5
+#: ../gnome/applet/applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "ASCII key (WEP)\n"
@@ -483,13 +483,13 @@ msgstr ""
 "ASCII-ключ (WEP)\n"
 "Шістнадцятковий ключ (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Інформація про активні з'єднання</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -504,7 +504,7 @@ msgstr ""
 "Для доступу до бездротової мережі '%s' необхідна парольна фраза чи ключ "
 "шифрування."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/applet.glade.h:14
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -516,7 +516,7 @@ msgstr ""
 "\n"
 "%s  Програма не повністю функціональна."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -533,79 +533,79 @@ msgstr ""
 "відмітьте поле нижче, та NetworkManager надалі не буде набридати запитаннями "
 "при з'єднанні."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Always Trust this Wireless Network"
 msgstr "Завжди довіряти бездротовій мережі"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Broadcast Address:"
 msgstr "Широкомовна адреса:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "C_onnect"
 msgstr "_З'єднатись"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Connect with encryption enabled"
 msgstr "З'єднання з шифруванням"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Connection Information"
 msgstr "Інформація про з'єднання"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Destination Address:"
 msgstr "Цільова адреса:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "Don't remind me again"
 msgstr "Не нагадувати надалі"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "Hardware Address:"
 msgstr "Апаратна адреса:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "IP Address:"
 msgstr "Адреса IP:"
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid "Interface:"
 msgstr "Інтерфейс:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid "Key Type:"
 msgstr "Тип ключа:"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Key type:"
 msgstr "Тип ключа:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "Інша бездротова мережа..."
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Subnet Mask:"
 msgstr "Маска мережі:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Wireless Network Key Required"
 msgstr "Вимагається ключ бездротової мережі"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Wireless _adapter:"
 msgstr "Бездротовий _адаптер:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Wireless _network:"
 msgstr "Бездротова _мережа"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "_Login to Network"
 msgstr "_Увійти в мережу"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "_OK"
 msgstr "_Гаразд"
 

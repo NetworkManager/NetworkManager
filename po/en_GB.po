@@ -358,7 +358,7 @@ msgid " (invalid Unicode)"
 msgstr " (invalid Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:143
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "_Passphrase:"
 msgstr "_Passphrase:"
 
@@ -444,11 +444,11 @@ msgstr ""
 "There was a problem launching the authentication dialog for VPN connection "
 "type '%s'. Contact your system administrator."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "ASCII Key (WEP)\n"
@@ -458,7 +458,7 @@ msgstr ""
 "ASCII Key (WEP)\n"
 "Hex Key (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:5
+#: ../gnome/applet/applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "ASCII key (WEP)\n"
@@ -468,13 +468,13 @@ msgstr ""
 "ASCII key (WEP)\n"
 "Hex key (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, fuzzy
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -489,7 +489,7 @@ msgstr ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/applet.glade.h:14
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -500,7 +500,7 @@ msgstr ""
 "\n"
 "%s  It will not be completely functional."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 #, fuzzy, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -517,90 +517,90 @@ msgstr ""
 "wireless network is secure, click the checkbox below and NetworkManager will "
 "not require confirmation on subsequent connections."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Broadcast Address:"
 msgstr "Broadcast Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "C_onnect"
 msgstr "C_onnect"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "Connect with _encryption enabled"
 msgstr "Connect with _encryption enabled"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Connection Information"
 msgstr "Connection Information"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Default Route:"
 msgstr "Default Route:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Destination Address:"
 msgstr "Destination Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "Hardware Address:"
 msgstr "Hardware Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "IP Address:"
 msgstr "IP Address:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "Interface:"
 msgstr "Interface:"
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid "Other Wireless Network..."
 msgstr "Other Wireless Networks..."
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid "Primary DNS:"
 msgstr "Primary DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Secondary DNS:"
 msgstr "Secondary DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Subnet Mask:"
 msgstr "Subnet Mask:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Wireless Network Key Required"
 msgstr "Wireless Network Key Required"
 
 #
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Wireless _adapter:"
 msgstr "Wireless _adapter:"
 
 #
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Wireless _network:"
 msgstr "Wireless _network:"
 
 #
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "_Always Trust this Wireless Network"
 msgstr "_Always Trust this Wireless Network"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "_Don't remind me again"
 msgstr "_Don't remind me again"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "_Key Type:"
 msgstr "_Key Type:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "_Key type:"
 msgstr "_Key type:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "_Login to Network"
 msgstr "_Login to Network"
 

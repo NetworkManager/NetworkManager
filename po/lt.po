@@ -480,18 +480,18 @@ msgstr ""
 "Įvyko klaida paleidžiant autentikacijos dialogą VPN prisijungimo tipui „%s“. "
 "Susisiekite su savo sistemos administratoriumi."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Aktyvaus prisijungimo informacija</"
 "span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -506,7 +506,7 @@ msgstr ""
 "Norint prisijungti prie bevielio tinklo „%s“ reikalingas slaptažodis ar "
 "šifruotas raktas."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -518,7 +518,7 @@ msgstr ""
 "\n"
 "%s  Jo funkcionalumas bus ribotas."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -535,51 +535,51 @@ msgstr ""
 "kad šis bevielis tinklas saugus, spragtelėkite žemiau esantį žymimąjį "
 "langelį ir NetworkManager ateityje prisijungiant nereikalaus patvirtinimo."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Autentikacija:"
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Transliacijos adresas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "Prisi_jungti"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Prisijungimo informacija"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Numatytasis maršrutas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Paskirties adresas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Driver:"
 msgstr "Tvarkyklė:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Hardware Address:"
 msgstr "Aparatinis adresas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "IP Address:"
 msgstr "IP adresas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Interface:"
 msgstr "Sąsaja:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Key:"
 msgstr "Raktas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -591,7 +591,7 @@ msgstr ""
 "WEP 40/128 bitų hex\n"
 "WEP 40/128 bitų ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -599,79 +599,79 @@ msgstr ""
 "Atvira sistema\n"
 "Viešas raktas"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "Kitas bevielis tinklas..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Slaptažodis:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Password:"
 msgstr "Slaptažodis:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Primary DNS:"
 msgstr "Pirminis DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Secondary DNS:"
 msgstr "Antrinis DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Subnet Mask:"
 msgstr "Potinklio kaukė:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "Type:"
 msgstr "Tipas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "User Name:"
 msgstr "Naudotojo vardas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Wireless Network Key Required"
 msgstr "Reikalingas bevielio tinklo raktas"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "Wireless _adapter:"
 msgstr "Bevielis _adapteris:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "_Always Trust this Wireless Network"
 msgstr "_Visada pasitikėti šiuo bevieliu tinklu"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "_Don't remind me again"
 msgstr "_Daugiau man nepriminti"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "_Login to Network"
 msgstr "_Prisijungi prie tinklo"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "_Network Name:"
 msgstr "_Tinklo pavadinimas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "_Wireless Security:"
 msgstr "_Bevielis saugumas:"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:51
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 

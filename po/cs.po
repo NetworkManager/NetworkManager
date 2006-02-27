@@ -482,17 +482,17 @@ msgstr ""
 "Při spouštění autentizačního dialogu pro typ připojení k VPN '%s' se vyskytl "
 "problém. Kontaktujte vašeho správce systému."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Informace o aktivním spojení</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -505,7 +505,7 @@ msgstr ""
 "\n"
 "Pro přístup k bezdrátové síti '%s' je vyžadováno heslo nebo šifrovací klíč."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -516,7 +516,7 @@ msgstr ""
 "\n"
 "%s  Nebude úplně fungovat."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -533,51 +533,51 @@ msgstr ""
 "je tato bezdrátová síť bezpečná, klikněte na zaškrtávací pole níže a "
 "NetworkManager nebude při dalších přihlašováních žádat o potvrzení."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Autentizace:"
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Adresa broadcastu:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "_Připojit"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Informace o spojení"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Implicitní cesta:"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Adresa cíle:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Driver:"
 msgstr "Ovladač:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Hardware Address:"
 msgstr "Hardwarová adresa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "IP Address:"
 msgstr "IP adresa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Interface:"
 msgstr "Rozhraní:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Key:"
 msgstr "Klíč:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -589,7 +589,7 @@ msgstr ""
 "WEP 40/128 bitů šestnáctkově\n"
 "WEP 40/128 bitů v ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -597,79 +597,79 @@ msgstr ""
 "Otevřený systém\n"
 "Sdílený klíč"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "Jiná bezdrátová síť..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Heslo:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Password:"
 msgstr "Heslo:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Primary DNS:"
 msgstr "Primární DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Secondary DNS:"
 msgstr "Sekundární DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Subnet Mask:"
 msgstr "Maska podsítě:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "Type:"
 msgstr "Typ:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "User Name:"
 msgstr "Jméno uživatele:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Wireless Network Key Required"
 msgstr "Je vyžadován klíč bezdrátové sítě"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "Wireless _adapter:"
 msgstr "Bezdrátový _adaptér:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "_Always Trust this Wireless Network"
 msgstr "_Vždy důvěřovat této bezdrátové síti"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "_Don't remind me again"
 msgstr "_Už mě to nepřipomínat"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "_Network Name:"
 msgstr "_Název sítě:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "_Wireless Security:"
 msgstr "_Bezdrátové zabezpečení:"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:51
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 

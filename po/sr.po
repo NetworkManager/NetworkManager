@@ -256,7 +256,7 @@ msgstr " (неисправан Уникод)"
 
 #: gnome/applet/other-network-dialog.c:148
 #: gnome/applet/passphrase-dialog.c:164
-#: gnome/applet/wireless-applet.glade.h:27
+#: gnome/applet/applet.glade.h:27
 msgid "Passphrase:"
 msgstr "Лозинка:"
 
@@ -293,15 +293,15 @@ msgstr "Унесите ESSID бежичне мреже са којом жели�
 msgid "You must log in to access the Virtual Private Network '%s'."
 msgstr "Морате бити пријављени како бисте користили виртуелну приватну мрежу „%s“."
 
-#: gnome/applet/wireless-applet.glade.h:1
+#: gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: gnome/applet/wireless-applet.glade.h:2
+#: gnome/applet/applet.glade.h:2
 msgid "*"
 msgstr "*"
 
-#: gnome/applet/wireless-applet.glade.h:3
+#: gnome/applet/applet.glade.h:3
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "Ascii Key (WEP)\n"
@@ -311,7 +311,7 @@ msgstr ""
 "АСКРИ кључ (WEP)\n"
 "Хекс кључ (WEP)"
 
-#: gnome/applet/wireless-applet.glade.h:6
+#: gnome/applet/applet.glade.h:6
 msgid ""
 "128-bit passphrase (WEP)\n"
 "Ascii key (WEP)\n"
@@ -321,7 +321,7 @@ msgstr ""
 "АСКРИ кључ (WEP)\n"
 "Хекс кључ (WEP)"
 
-#: gnome/applet/wireless-applet.glade.h:10
+#: gnome/applet/applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -334,7 +334,7 @@ msgstr ""
 "\n"
 " Лозинка или кључ за шифровање су неопходни за приступ бежичној мрежи „%s“."
 
-#: gnome/applet/wireless-applet.glade.h:14
+#: gnome/applet/applet.glade.h:14
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -345,7 +345,7 @@ msgstr ""
 "\n"
 "%s неће бити сасвим употребљива."
 
-#: gnome/applet/wireless-applet.glade.h:18
+#: gnome/applet/applet.glade.h:18
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -359,47 +359,47 @@ msgstr ""
 "\n"
 "Желите да се пријавите на мрежу „%s“. Ако сте сигурни да је ова бежична мрежа безбедна, обележите кућицу испод и Управник мреже вам више неће постављати сувишна питања при пријави на ову мрежу."
 
-#: gnome/applet/wireless-applet.glade.h:21
+#: gnome/applet/applet.glade.h:21
 msgid "Always Trust this Wireless Network"
 msgstr "Увек поклони поверење бежичној мрежи"
 
-#: gnome/applet/wireless-applet.glade.h:22
+#: gnome/applet/applet.glade.h:22
 msgid "C_onnect"
 msgstr "П_овежи се"
 
-#: gnome/applet/wireless-applet.glade.h:23
+#: gnome/applet/applet.glade.h:23
 msgid "Connect with encryption enabled"
 msgstr "Повежи се и укључи шифровање"
 
-#: gnome/applet/wireless-applet.glade.h:24
+#: gnome/applet/applet.glade.h:24
 msgid "Don't remind me again"
 msgstr "Не подсећај ме више"
 
-#: gnome/applet/wireless-applet.glade.h:25
+#: gnome/applet/applet.glade.h:25
 msgid "Key Type:"
 msgstr "Врста кључа:"
 
-#: gnome/applet/wireless-applet.glade.h:26
+#: gnome/applet/applet.glade.h:26
 msgid "Key type:"
 msgstr "Врста кључа:"
 
-#: gnome/applet/wireless-applet.glade.h:28
+#: gnome/applet/applet.glade.h:28
 msgid "Wireless Network Key Required"
 msgstr "Потребан је кључ за бежичну мрежу"
 
-#: gnome/applet/wireless-applet.glade.h:29
+#: gnome/applet/applet.glade.h:29
 msgid "Wireless _adapter:"
 msgstr "Бежични _уређај:"
 
-#: gnome/applet/wireless-applet.glade.h:30
+#: gnome/applet/applet.glade.h:30
 msgid "Wireless _network:"
 msgstr "Бежична _мрежа:"
 
-#: gnome/applet/wireless-applet.glade.h:31
+#: gnome/applet/applet.glade.h:31
 msgid "_Login to Network"
 msgstr "_Умрежи се"
 
-#: gnome/applet/wireless-applet.glade.h:32
+#: gnome/applet/applet.glade.h:32
 msgid "_OK"
 msgstr "_У реду"
 

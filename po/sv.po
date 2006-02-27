@@ -2,7 +2,7 @@
 # Copyright (C) 2004, 2005 Free Software Foundation, Inc.
 # Christian Rose <menthos@menthos.com>, 2004, 2005.
 #
-# $Id: sv.po,v 1.8 2005/09/17 23:16:38 menthos Exp $
+# $Id: sv.po,v 1.9 2006/02/27 06:53:33 dcbw Exp $
 #
 msgid ""
 msgstr ""
@@ -341,7 +341,7 @@ msgid " (invalid Unicode)"
 msgstr " (ogiltig Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:143
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "_Passphrase:"
 msgstr "_Lösenfras:"
 
@@ -425,11 +425,11 @@ msgstr ""
 "Ett problem inträffade vid start av autentiseringsdialogen för VPN-"
 "anslutningstypen \"%s\". Kontakta din systemadministratör."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "ASCII Key (WEP)\n"
@@ -439,7 +439,7 @@ msgstr ""
 "ASCII-nyckel (WEP)\n"
 "Hexadecimal nyckel (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:5
+#: ../gnome/applet/applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "ASCII key (WEP)\n"
@@ -449,13 +449,13 @@ msgstr ""
 "ASCII-nyckel (WEP)\n"
 "Hexadecimal nyckel (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Information om aktiv anslutning</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/applet.glade.h:10
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -470,7 +470,7 @@ msgstr ""
 "En lösenfras eller en krypteringsnyckel krävs för att komma åt det trådlösa "
 "nätverket \"%s\"."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/applet.glade.h:14
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -482,7 +482,7 @@ msgstr ""
 "\n"
 "%s  Det kommer inte att vara helt fungerande."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -500,75 +500,75 @@ msgstr ""
 "kommer nätverkshanteraren inte längre att kräva bekräftelse vid framtida "
 "inloggningar."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Broadcast Address:"
 msgstr "Broadcast-adress:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "C_onnect"
 msgstr "_Anslut"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "Connect with _encryption enabled"
 msgstr "Anslut med _kryptering aktiverad"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Connection Information"
 msgstr "Anslutningsinformation"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Destination Address:"
 msgstr "Måladress:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
 msgstr "Hårdvaruadress:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "IP Address:"
 msgstr "IP-adress:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "Interface:"
 msgstr "Gränssnitt:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "Other Wireless Network..."
 msgstr "Annat trådlöst nätverk..."
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid "Subnet Mask:"
 msgstr "Subnätsmask:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid "Wireless Network Key Required"
 msgstr "Nyckel krävs för det trådlösa nätverket"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Wireless _adapter:"
 msgstr "Trådlös _nätverksadapter:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Wireless _network:"
 msgstr "Trådlöst _nätverk:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "_Always Trust this Wireless Network"
 msgstr "_Lita alltid på detta trådlösa nätverk"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "_Don't remind me again"
 msgstr "_Påminn mig inte igen"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "_Key Type:"
 msgstr "_Nyckeltyp:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "_Key type:"
 msgstr "_Nyckeltyp:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "_Login to Network"
 msgstr "_Logga in på nätverket"
 

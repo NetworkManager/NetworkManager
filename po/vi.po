@@ -469,16 +469,16 @@ msgid ""
 msgstr "Gặp lỗi khi khởi chạy hộp thoại xác thực cho cách kết nối VPN « %s ». Hãy "
 "liên lạc với quản trị hệ thống."
 
-#:../gnome/applet/wireless-applet.glade.h:1
+#:../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#:../gnome/applet/wireless-applet.glade.h:2
+#:../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\" size=\"larger\">Thông tin kết nối hoạt động</span>"
 
-#:../gnome/applet/wireless-applet.glade.h:4
+#:../gnome/applet/applet.glade.h:4
 #,no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -491,7 +491,7 @@ msgstr "<span weight=\"bold\" size=\"larger\">Cụm từ Mật khẩu Cần thi�
 "\n"
 "Cần thiết cụm từ mật khẩu hay khóa mật mã để truy cập mạng vô tuyến « %s »."
 
-#:../gnome/applet/wireless-applet.glade.h:8
+#:../gnome/applet/applet.glade.h:8
 #,no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -501,7 +501,7 @@ msgstr "<span weight=\"bold\" size=\"larger\">Chức năng mạng bị giảm</s
 "\n"
 "%s  Nó sẽ không hoạt động hoàn toàn."
 
-#:../gnome/applet/wireless-applet.glade.h:12
+#:../gnome/applet/applet.glade.h:12
 #,no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -517,51 +517,51 @@ msgstr "<span weight=\"bold\" size=\"larger\">Xác thực Đăng nhập với m�
 "bảo mật, hãy đánh dấu trong hộp chọn bên dưới, vậy trình Quản lý mạng sẽ "
 "không cần thiết xác thực khi đăng nhập sau."
 
-#:../gnome/applet/wireless-applet.glade.h:15
+#:../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Xác thực:"
 
-#:../gnome/applet/wireless-applet.glade.h:16
+#:../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Địa chỉ phát thanh:"
 
-#:../gnome/applet/wireless-applet.glade.h:17
+#:../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "_Kết nối"
 
-#:../gnome/applet/wireless-applet.glade.h:18
+#:../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Thông tin kết nối"
 
-#:../gnome/applet/wireless-applet.glade.h:19
+#:../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Tuyến mặc định:"
 
-#:../gnome/applet/wireless-applet.glade.h:20
+#:../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Địa chỉ đích:"
 
-#:../gnome/applet/wireless-applet.glade.h:21
+#:../gnome/applet/applet.glade.h:21
 msgid "Driver:"
 msgstr "Trình điều khiển:"
 
-#:../gnome/applet/wireless-applet.glade.h:22
+#:../gnome/applet/applet.glade.h:22
 msgid "Hardware Address:"
 msgstr "Địa chỉ phần cứng:"
 
-#:../gnome/applet/wireless-applet.glade.h:23
+#:../gnome/applet/applet.glade.h:23
 msgid "IP Address:"
 msgstr "Địa chỉ IP:"
 
-#:../gnome/applet/wireless-applet.glade.h:24
+#:../gnome/applet/applet.glade.h:24
 msgid "Interface:"
 msgstr "Giao diện:"
 
-#:../gnome/applet/wireless-applet.glade.h:25
+#:../gnome/applet/applet.glade.h:25
 msgid "Key:"
 msgstr "Khóa:"
 
-#:../gnome/applet/wireless-applet.glade.h:26
+#:../gnome/applet/applet.glade.h:26
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -572,86 +572,86 @@ msgstr "Không có\n"
 "WEP 40/128-bit thập lục\n"
 "WEP 40/128-bit ASCII\n"
 
-#:../gnome/applet/wireless-applet.glade.h:31
+#:../gnome/applet/applet.glade.h:31
 msgid ""
 "Open System\n"
 "Shared Key"
 msgstr "Hệ thống mở\n"
 "Khóa dùng chung"
 
-#:../gnome/applet/wireless-applet.glade.h:33
+#:../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "mạng Vô tuyến khác..."
 
-#:../gnome/applet/wireless-applet.glade.h:34
+#:../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Cụm từ mật khẩu :"
 
-#:../gnome/applet/wireless-applet.glade.h:35
+#:../gnome/applet/applet.glade.h:35
 msgid "Password:"
 msgstr "Mật khẩu :"
 
-#:../gnome/applet/wireless-applet.glade.h:36
+#:../gnome/applet/applet.glade.h:36
 msgid "Primary DNS:"
 msgstr "DNS chính:"
 
-#:../gnome/applet/wireless-applet.glade.h:37
+#:../gnome/applet/applet.glade.h:37
 msgid "Secondary DNS:"
 msgstr "DNS phụ :"
 
-#:../gnome/applet/wireless-applet.glade.h:38
+#:../gnome/applet/applet.glade.h:38
 msgid "Subnet Mask:"
 msgstr "Mặt nạ mạng cấp dưới:"
 
-#:../gnome/applet/wireless-applet.glade.h:39
+#:../gnome/applet/applet.glade.h:39
 msgid "Type:"
 msgstr "Kiểu :"
 
-#:../gnome/applet/wireless-applet.glade.h:40
+#:../gnome/applet/applet.glade.h:40
 msgid "User Name:"
 msgstr "Tên người dùng:"
 
-#:../gnome/applet/wireless-applet.glade.h:41
+#:../gnome/applet/applet.glade.h:41
 msgid "Wireless Network Key Required"
 msgstr "Cần thiết Khóa mạng Vô tuyến:"
 
-#:../gnome/applet/wireless-applet.glade.h:42
+#:../gnome/applet/applet.glade.h:42
 msgid "Wireless _adapter:"
 msgstr "_Bộ điều hợp vô tuyến"
 
-#:../gnome/applet/wireless-applet.glade.h:43
+#:../gnome/applet/applet.glade.h:43
 msgid "_Always Trust this Wireless Network"
 msgstr "_Luôn luôn tin cây mạng vô tuyến này"
 
-#:../gnome/applet/wireless-applet.glade.h:44
+#:../gnome/applet/applet.glade.h:44
 msgid "_Don't remind me again"
 msgstr "_Đừng nhắc nhở tôi lần nữa"
 
-#:../gnome/applet/wireless-applet.glade.h:45
+#:../gnome/applet/applet.glade.h:45
 msgid "_Login to Network"
 msgstr "_Đăng nhập với mạng"
 
-#:../gnome/applet/wireless-applet.glade.h:46
+#:../gnome/applet/applet.glade.h:46
 msgid "_Network Name:"
 msgstr "T_ên mạng:"
 
-#:../gnome/applet/wireless-applet.glade.h:47
+#:../gnome/applet/applet.glade.h:47
 msgid "_Wireless Security:"
 msgstr "_Bảo mật vô tuyến:"
 
-#:../gnome/applet/wireless-applet.glade.h:48
+#:../gnome/applet/applet.glade.h:48
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#:../gnome/applet/wireless-applet.glade.h:49
+#:../gnome/applet/applet.glade.h:49
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#:../gnome/applet/wireless-applet.glade.h:50
+#:../gnome/applet/applet.glade.h:50
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#:../gnome/applet/wireless-applet.glade.h:51
+#:../gnome/applet/applet.glade.h:51
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 

@@ -34,7 +34,7 @@ msgstr "<Uburemere UTSINDAGIYE"
 msgid "Modify Wireless Networks"
 msgstr ""
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:2
+#: info-daemon/passphrase.glade.h:1 panel-applet/applet.glade.h:2
 msgid "*"
 msgstr "*"
 
@@ -69,7 +69,7 @@ msgstr "Ubwoko bw'agakandisho"
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:140
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
-#: panel-applet/essid.glade.h:7 panel-applet/wireless-applet.glade.h:19
+#: panel-applet/essid.glade.h:7 panel-applet/applet.glade.h:19
 msgid "Passphrase:"
 msgstr ""
 
@@ -77,7 +77,7 @@ msgstr ""
 msgid "Wireless Network Key Required"
 msgstr ""
 
-#: info-daemon/passphrase.glade.h:12 panel-applet/wireless-applet.glade.h:22
+#: info-daemon/passphrase.glade.h:12 panel-applet/applet.glade.h:22
 #, fuzzy
 msgid "_Login to Network"
 msgstr "Kuri"
@@ -242,7 +242,7 @@ msgstr "Kugena urusobe"
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "i Bya i urusobe Kuri Kuri Kwihuza"
 
-#: panel-applet/essid.glade.h:1 panel-applet/wireless-applet.glade.h:3
+#: panel-applet/essid.glade.h:1 panel-applet/applet.glade.h:3
 #, fuzzy
 msgid ""
 "128-bit passphrase (WEP)\n"
@@ -250,12 +250,12 @@ msgid ""
 "Hex key (WEP)"
 msgstr "Urufunguzo Urufunguzo"
 
-#: panel-applet/essid.glade.h:4 panel-applet/wireless-applet.glade.h:15
+#: panel-applet/essid.glade.h:4 panel-applet/applet.glade.h:15
 #, fuzzy
 msgid "C_onnect"
 msgstr "Kwihuza"
 
-#: panel-applet/essid.glade.h:5 panel-applet/wireless-applet.glade.h:16
+#: panel-applet/essid.glade.h:5 panel-applet/applet.glade.h:16
 #, fuzzy
 msgid "Connect with encryption enabled"
 msgstr "Na: Bishunzwe: Bikora"
@@ -264,16 +264,16 @@ msgstr "Na: Bishunzwe: Bikora"
 # sw/source\ui\index\cnttab.src:TP_TOX_SELECT.FT_SORTALG.text
 # #-#-#-#-#  sw.pot (PACKAGE VERSION)  #-#-#-#-#
 # sw/source\ui\misc\srtdlg.src:DLG_SORTING.FT_KEYTYP.text
-#: panel-applet/essid.glade.h:6 panel-applet/wireless-applet.glade.h:18
+#: panel-applet/essid.glade.h:6 panel-applet/applet.glade.h:18
 #, fuzzy
 msgid "Key type:"
 msgstr "Ubwoko bw'agakandisho"
 
-#: panel-applet/essid.glade.h:8 panel-applet/wireless-applet.glade.h:20
+#: panel-applet/essid.glade.h:8 panel-applet/applet.glade.h:20
 msgid "Wireless _adapter:"
 msgstr ""
 
-#: panel-applet/essid.glade.h:9 panel-applet/wireless-applet.glade.h:21
+#: panel-applet/essid.glade.h:9 panel-applet/applet.glade.h:21
 #, fuzzy
 msgid "Wireless _network:"
 msgstr "urusobe"
@@ -320,11 +320,11 @@ msgstr "Icyerekezo Bya i"
 msgid "_About..."
 msgstr "Ibyerekeye"
 
-#: panel-applet/wireless-applet.glade.h:1
+#: panel-applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: panel-applet/wireless-applet.glade.h:7
+#: panel-applet/applet.glade.h:7
 #, fuzzy, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -332,7 +332,7 @@ msgid ""
 "%s  It will not be completely functional."
 msgstr "<Uburemere UTSINDAGIYE Ingano Kinini OYA"
 
-#: panel-applet/wireless-applet.glade.h:11
+#: panel-applet/applet.glade.h:11
 #, fuzzy, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -345,17 +345,17 @@ msgstr ""
 "<Uburemere UTSINDAGIYE Ingano Kinini LOG in Kuri i urusobe iyi urusobe ni "
 "Kanda i munsi Na Oya Na: Ryari: Kwihuza Kuri"
 
-#: panel-applet/wireless-applet.glade.h:14
+#: panel-applet/applet.glade.h:14
 #, fuzzy
 msgid "Always Trust this Wireless Network"
 msgstr "iyi"
 
-#: panel-applet/wireless-applet.glade.h:17
+#: panel-applet/applet.glade.h:17
 msgid "Don't remind me again"
 msgstr ""
 
 # crashrep/source\all\crashrep.lng:%OK_BUTTON%.text
-#: panel-applet/wireless-applet.glade.h:23
+#: panel-applet/applet.glade.h:23
 #, fuzzy
 msgid "_OK"
 msgstr "YEGO"

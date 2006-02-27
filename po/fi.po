@@ -479,17 +479,17 @@ msgstr ""
 "Virhe käynnistettäessä kirjatumisikkunaa VPN-yhteyden tyypille \"%s\". Ota "
 "yhteyttä järjestelmäsi ylläpitäjään."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Tietoja aktiivisesta yhteydestä</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -504,7 +504,7 @@ msgstr ""
 "Tunnuslause tai salausavain vaaditaan, jotta voit ottaa yhteyttä "
 "langattomaan verkkoon %s."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -515,7 +515,7 @@ msgstr ""
 "\n"
 "%s  Verkkoyhteys ei ole täysin toimiva."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -532,51 +532,51 @@ msgstr ""
 "tämä langaton verkko on turvallinen, napsauta alla olevaa ruutua ja "
 "NetworkManager ei kysy tätä vahvistusikkunaa enää uudestaan."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Tunnistautuminen:"
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Broadcast-osoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "_Yhdistä"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Tietoja yhteydestä"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Oletusyhdyskäytävä:"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Kohdeosoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Driver:"
 msgstr "Ajuri:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Hardware Address:"
 msgstr "Laiteosoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "IP Address:"
 msgstr "IP-osoite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Interface:"
 msgstr "Verkkolaite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Key:"
 msgstr "Avain:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -588,7 +588,7 @@ msgstr ""
 "WEP 40/128-bittinen heksadesimaali\n"
 "WEP 40/128-bittinen ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -596,79 +596,79 @@ msgstr ""
 "Avoin järjestelmä\n"
 "Jaettu avain"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Other Wireless Network..."
 msgstr "Muu langaton verkko..."
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Passphrase:"
 msgstr "Tunnuslause:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Password:"
 msgstr "Salasana:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Primary DNS:"
 msgstr "Ensisijainen DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Secondary DNS:"
 msgstr "Toissijainen DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Subnet Mask:"
 msgstr "Aliverkkopeite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "Type:"
 msgstr "Tyyppi:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "User Name:"
 msgstr "Käyttäjätunnus:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Wireless Network Key Required"
 msgstr "Langattoman verkon salausavain vaaditaan"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "Wireless _adapter:"
 msgstr "Langaton _verkkolaite:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "_Always Trust this Wireless Network"
 msgstr "_Luota aina tähän langattomaan verkkoon"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "_Don't remind me again"
 msgstr "_Älä huomauta uudestaan"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "_Login to Network"
 msgstr "_Kirjaudu verkkoon"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "_Network Name:"
 msgstr "_Verkon nimi:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "_Wireless Security:"
 msgstr "_Langaton tietoturva:"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "leap_subwindow"
 msgstr "leap_ali-ikkuna"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "wep_key_subwindow"
 msgstr "wep_avaimen_ali-ikkuna"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "wep_passphrase_subwindow"
 msgstr "wep_salalauseen_ali-ikkuna"
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:51
 msgid "wpa_psk_subwindow"
 msgstr "wp_psk_ali-ikkuna"
 

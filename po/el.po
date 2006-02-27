@@ -379,7 +379,7 @@ msgid " (invalid Unicode)"
 msgstr " (μή έγκυρο Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:143
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 #, fuzzy
 msgid "_Passphrase:"
 msgstr "Συνθηματικό:"
@@ -465,11 +465,11 @@ msgid ""
 "type '%s'. Contact your system administrator."
 msgstr "a πιστοποίηση διάλογος για είδος Επαφή."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "128-bit Passphrase (WEP)\n"
 "ASCII Key (WEP)\n"
@@ -479,7 +479,7 @@ msgstr ""
 "Κλειδί ASCII (WEP)\n"
 "Κλειδί Hex(WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:5
+#: ../gnome/applet/applet.glade.h:5
 msgid ""
 "128-bit passphrase (WEP)\n"
 "ASCII key (WEP)\n"
@@ -489,13 +489,13 @@ msgstr ""
 "Κλειδί ASCII (WEP)\n"
 "Κλειδί Hex (WEP)"
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, fuzzy
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\">Ασύρματα Δίκτυα:</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:10
+#: ../gnome/applet/applet.glade.h:10
 #, fuzzy, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -506,7 +506,7 @@ msgid ""
 msgstr ""
 "<span weight=\"bold\" size=\"larger\"> Ασύρματη Δίκτυο</span> ο or είναι."
 
-#: ../gnome/applet/wireless-applet.glade.h:14
+#: ../gnome/applet/applet.glade.h:14
 #, fuzzy, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -514,7 +514,7 @@ msgid ""
 "%s  It will not be completely functional."
 msgstr "<span weight=\"bold\" size=\"larger\"> Δίκτυο</span> ο ο not."
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -531,83 +531,83 @@ msgstr ""
 "αυτό το ασύρματο δίκτυο είναι ασφαλές, πατήστε το παρακάτωκουτί ελέγχου και "
 "ο NetworkManager δεν θα απαιτεί επιβεβαίωση στις επόμενες συνδέσεις σας."
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 #, fuzzy
 msgid "Broadcast Address:"
 msgstr "Μετάδοση Διεύθυνση:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "C_onnect"
 msgstr "Σύν_δεση"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 #, fuzzy
 msgid "Connect with _encryption enabled"
 msgstr "Σύνδεση με κρυπτογράφηση"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Connection Information"
 msgstr "Πληροφορίες σύνδεσης"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "Destination Address:"
 msgstr " Διεύθυνση προορισμού:"
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
 msgstr "Διεύθυνση υλικού:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "IP Address:"
 msgstr "Διεύθυνση IP:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "Interface:"
 msgstr "Διεπαφή:"
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "Other Wireless Network..."
 msgstr "Άλλο ασύρματο δίκτυο..."
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 #, fuzzy
 msgid "Subnet Mask:"
 msgstr "Subnet Mask:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 #, fuzzy
 msgid "Wireless Network Key Required"
 msgstr "Ασύρματη Δίκτυο Πλήκτρο"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Wireless _adapter:"
 msgstr "Ασύρματος _προσαρμογέας:"
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Wireless _network:"
 msgstr "Ασύρματο _δίκτυο:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 #, fuzzy
 msgid "_Always Trust this Wireless Network"
 msgstr "Να είναι πάντα έμπιστο αυτό το ασύρματο Δίκτυο"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 #, fuzzy
 msgid "_Don't remind me again"
 msgstr "Να μη γίνει υπενθύμιση ξανά"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 #, fuzzy
 msgid "_Key Type:"
 msgstr "Κατά Είδος"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 #, fuzzy
 msgid "_Key type:"
 msgstr "Κατά Είδος"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "_Login to Network"
 msgstr "_Είσοδος στο Δίκτυο"
 

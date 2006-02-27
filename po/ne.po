@@ -25,7 +25,7 @@ msgstr "<span weight=\"bold\">ताररहित संजाल:</span>"
 msgid "Modify Wireless Networks"
 msgstr "ताररहित संजाल सुधारनुहोला"
 
-#: info-daemon/passphrase.glade.h:1 panel-applet/wireless-applet.glade.h:2
+#: info-daemon/passphrase.glade.h:1 panel-applet/applet.glade.h:2
 msgid "*"
 msgstr "*"
 
@@ -60,7 +60,7 @@ msgstr "कुन्ज प्रकार:"
 #: info-daemon/passphrase.glade.h:10
 #: info-daemon/NetworkManagerInfoPassphraseDialog.c:140
 #: panel-applet/NMWirelessAppletOtherNetworkDialog.c:150
-#: panel-applet/essid.glade.h:7 panel-applet/wireless-applet.glade.h:19
+#: panel-applet/essid.glade.h:7 panel-applet/applet.glade.h:19
 msgid "Passphrase:"
 msgstr "गुज्रिएकोवाक्य:"
 
@@ -68,7 +68,7 @@ msgstr "गुज्रिएकोवाक्य:"
 msgid "Wireless Network Key Required"
 msgstr "ताररहित सञ्जाल कुन्ज चाहियो"
 
-#: info-daemon/passphrase.glade.h:12 panel-applet/wireless-applet.glade.h:22
+#: info-daemon/passphrase.glade.h:12 panel-applet/applet.glade.h:22
 msgid "_Login to Network"
 msgstr "सञ्जालमा लगइन गर्नुहोला"
 
@@ -244,7 +244,7 @@ msgstr "ताररहित संजाल आफै मिलाउनुह
 msgid "Enter the ESSID of the wireless network to which you wish to connect."
 msgstr "तपाईले सम्पर्क गर्न चहानुभएको ताररहित संजालको ई एस एस आई डि प्रवेश गराउनुहोला।"
 
-#: panel-applet/essid.glade.h:1 panel-applet/wireless-applet.glade.h:3
+#: panel-applet/essid.glade.h:1 panel-applet/applet.glade.h:3
 msgid ""
 "128-bit passphrase (WEP)\n"
 "Ascii key (WEP)\n"
@@ -254,23 +254,23 @@ msgstr ""
 "एएससिआइआइ कुन्ज (डब्लु ई पि)\n"
 "हेक्स कुन्ज (डब्लु ई पि)"
 
-#: panel-applet/essid.glade.h:4 panel-applet/wireless-applet.glade.h:15
+#: panel-applet/essid.glade.h:4 panel-applet/applet.glade.h:15
 msgid "C_onnect"
 msgstr "सम्पर्क गर्नुहोला"
 
-#: panel-applet/essid.glade.h:5 panel-applet/wireless-applet.glade.h:16
+#: panel-applet/essid.glade.h:5 panel-applet/applet.glade.h:16
 msgid "Connect with encryption enabled"
 msgstr "सक्षम गुप्तिकरण सहित जडान गर्नुहोला"
 
-#: panel-applet/essid.glade.h:6 panel-applet/wireless-applet.glade.h:18
+#: panel-applet/essid.glade.h:6 panel-applet/applet.glade.h:18
 msgid "Key type:"
 msgstr "कुन्ज प्रकार:"
 
-#: panel-applet/essid.glade.h:8 panel-applet/wireless-applet.glade.h:20
+#: panel-applet/essid.glade.h:8 panel-applet/applet.glade.h:20
 msgid "Wireless _adapter:"
 msgstr "ताररहित एडप्टर:"
 
-#: panel-applet/essid.glade.h:9 panel-applet/wireless-applet.glade.h:21
+#: panel-applet/essid.glade.h:9 panel-applet/applet.glade.h:21
 msgid "Wireless _network:"
 msgstr "ताररहित संजाल:"
 
@@ -312,11 +312,11 @@ msgstr "अभिमुखीकरण॒"
 msgid "The orientation of the tray."
 msgstr "ट्रेको अभिमुखीकरण॒"
 
-#: panel-applet/wireless-applet.glade.h:1
+#: panel-applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: panel-applet/wireless-applet.glade.h:7
+#: panel-applet/applet.glade.h:7
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -327,7 +327,7 @@ msgstr ""
 "\n"
 "%s  यो पूर्ण कार्य हुने छैन।"
 
-#: panel-applet/wireless-applet.glade.h:11
+#: panel-applet/applet.glade.h:11
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -343,15 +343,15 @@ msgstr ""
 "ताररहित संजाल सुरक्षित छ, तलको जाँच बाकसमा क्लिक गर्नुहोला र संजाल प्रबन्धकले मन्द "
 "प्रश्नहरूले तपाईलाई दु:ख दिंदैन जब तपाई यससंग जोडिनुहुन्छ।."
 
-#: panel-applet/wireless-applet.glade.h:14
+#: panel-applet/applet.glade.h:14
 msgid "Always Trust this Wireless Network"
 msgstr "जहिलेपनि यहि ताररहित सञ्जालमा विश्वास गर्नुहोला।"
 
-#: panel-applet/wireless-applet.glade.h:17
+#: panel-applet/applet.glade.h:17
 msgid "Don't remind me again"
 msgstr "मलाई फेरि नसम्झाउनुहोला।"
 
-#: panel-applet/wireless-applet.glade.h:23
+#: panel-applet/applet.glade.h:23
 msgid "_OK"
 msgstr "ठीक छ॒"
 

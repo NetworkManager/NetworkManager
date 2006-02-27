@@ -446,17 +446,17 @@ msgstr ""
 "S'ha produït un error en llançar el diàleg d'autenticació per al tipus de "
 "connexió VPN «%s». Contacteu el vostre administrador de sistemes."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Informació de la connexió activa</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -471,7 +471,7 @@ msgstr ""
 "Es requereix una contrasenya o clau de xifratge per a la xarxa sense fil «%"
 "s»."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -482,7 +482,7 @@ msgstr ""
 "\n"
 "%s  No serà del tot funcional."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -500,47 +500,47 @@ msgstr ""
 "NetworkManager no us tornarà a demanarà cap més confirmació per entrar a "
 "aquesta xarxa en el futur."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Authentication:"
 msgstr "Autenticació:"
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Broadcast Address:"
 msgstr "Adreça de multidifusió:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "C_onnect"
 msgstr "C_onnecta"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "Connection Information"
 msgstr "Informació de la connexió"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "Default Route:"
 msgstr "Ruta predeterminada:"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Destination Address:"
 msgstr "Adreça de destí:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Hardware Address:"
 msgstr "Adreça del maquinari:"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "IP Address:"
 msgstr "Adreça IP:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "Interface:"
 msgstr "Interfície:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Key:"
 msgstr "Clau:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -552,7 +552,7 @@ msgstr ""
 "WEP 40/128-bit hex\n"
 "WEP 40/128-bit ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -560,79 +560,79 @@ msgstr ""
 "Sistema obert\n"
 "Clau compartida"
 
-#: ../gnome/applet/wireless-applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:32
 msgid "Other Wireless Network..."
 msgstr "Altres xarxes sense fil..."
 
-#: ../gnome/applet/wireless-applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:33
 msgid "Passphrase:"
 msgstr "Contrasenya:"
 
-#: ../gnome/applet/wireless-applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:34
 msgid "Password:"
 msgstr "Contrasenya:"
 
-#: ../gnome/applet/wireless-applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:35
 msgid "Primary DNS:"
 msgstr "DNS primari:"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid "Secondary DNS:"
 msgstr "DNS secondari:"
 
-#: ../gnome/applet/wireless-applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:37
 msgid "Subnet Mask:"
 msgstr "Màscara de subxarxa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Type:"
 msgstr "Tipus:"
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "User Name:"
 msgstr "Nom d'usuari:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "Wireless Network Key Required"
 msgstr "Es requereix una clau per a la xarxa sense fil"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Wireless _adapter:"
 msgstr "_Adaptador sense fil:"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "_Always Trust this Wireless Network"
 msgstr "Confia sempre en _aquesta xarxa sense fil"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "_Don't remind me again"
 msgstr "_No m'ho tornis a recordar"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "_Login to Network"
 msgstr "_Entra a la xarxa"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "_Network Name:"
 msgstr "Nom de _xarxa:"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "_Wireless Security:"
 msgstr "Seguretat de la _xarxa sense fil:"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 

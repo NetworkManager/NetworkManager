@@ -470,16 +470,16 @@ msgstr ""
 "VPN 연결 형식 '%s'의 인증 대화상자를 시작하는데 문제가 생겼습니다.시스템 관리"
 "자에게 알려주십시오."
 
-#: ../gnome/applet/wireless-applet.glade.h:1
+#: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
-#: ../gnome/applet/wireless-applet.glade.h:2
+#: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
 msgstr "<span weight=\"bold\" size=\"larger\">활성화 된 연결 정보</span>"
 
-#: ../gnome/applet/wireless-applet.glade.h:4
+#: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
@@ -493,7 +493,7 @@ msgstr ""
 "\n"
 "무선 네트워크 '%s'에 연결하려면 열쇠글이나 암호키가 있어야 합니다."
 
-#: ../gnome/applet/wireless-applet.glade.h:8
+#: ../gnome/applet/applet.glade.h:8
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
@@ -504,7 +504,7 @@ msgstr ""
 "\n"
 "%s 모든 기능을 쓸 수 없습니다."
 
-#: ../gnome/applet/wireless-applet.glade.h:12
+#: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
@@ -520,71 +520,71 @@ msgstr ""
 "면, 아래의 확인 상자를 눌러서 네트워크 매니져가 로그인 이후에확인을 하지 않도"
 "록 하십시오."
 
-#: ../gnome/applet/wireless-applet.glade.h:15
+#: ../gnome/applet/applet.glade.h:15
 msgid "Anonymous Identity:"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:16
 msgid "Authentication:"
 msgstr "인증:"
 
-#: ../gnome/applet/wireless-applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:17
 msgid "Broadcast Address:"
 msgstr "Broadcast 주소:"
 
-#: ../gnome/applet/wireless-applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:18
 msgid "CA Certificate File:"
 msgstr "CA 인증서 파일:"
 
-#: ../gnome/applet/wireless-applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:19
 msgid "C_onnect"
 msgstr "연결(_O)"
 
-#: ../gnome/applet/wireless-applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:20
 msgid "Client Certificate File:"
 msgstr "클라이언트 인증서 파일:"
 
-#: ../gnome/applet/wireless-applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:21
 msgid "Connection Information"
 msgstr "연결 정보"
 
-#: ../gnome/applet/wireless-applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:22
 msgid "Default Route:"
 msgstr "기본 Route:"
 
-#: ../gnome/applet/wireless-applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:23
 msgid "Destination Address:"
 msgstr "목표 주소:"
 
-#: ../gnome/applet/wireless-applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:24
 msgid "Driver:"
 msgstr "드라이버:"
 
-#: ../gnome/applet/wireless-applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:25
 msgid "EAP Method:"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:26
+#: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
 msgstr "하드웨어 주소:"
 
-#: ../gnome/applet/wireless-applet.glade.h:27
+#: ../gnome/applet/applet.glade.h:27
 msgid "IP Address:"
 msgstr "IP 주소:"
 
-#: ../gnome/applet/wireless-applet.glade.h:28
+#: ../gnome/applet/applet.glade.h:28
 msgid "Identity:"
 msgstr ""
 
-#: ../gnome/applet/wireless-applet.glade.h:29
+#: ../gnome/applet/applet.glade.h:29
 msgid "Interface:"
 msgstr "인터페이스:"
 
-#: ../gnome/applet/wireless-applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:30
 msgid "Key:"
 msgstr "키:"
 
-#: ../gnome/applet/wireless-applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:31
 msgid ""
 "None\n"
 "WEP Passphrase\n"
@@ -596,7 +596,7 @@ msgstr ""
 "WEP 40/128비트 16진수\n"
 "WEP 40/128비트 ASCII\n"
 
-#: ../gnome/applet/wireless-applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:36
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -604,103 +604,103 @@ msgstr ""
 "열린 시스템\n"
 "공유 키"
 
-#: ../gnome/applet/wireless-applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:38
 msgid "Other Wireless Network..."
 msgstr "다른 무선 네트워크..."
 
-#: ../gnome/applet/wireless-applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:39
 msgid "Passphrase:"
 msgstr "열쇠글:"
 
-#: ../gnome/applet/wireless-applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:40
 msgid "Password:"
 msgstr "열쇠글:"
 
-#: ../gnome/applet/wireless-applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:41
 msgid "Primary DNS:"
 msgstr "기본 DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:42
 msgid "Private Key File:"
 msgstr "개인키 파일:"
 
-#: ../gnome/applet/wireless-applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:43
 msgid "Private Key Password:"
 msgstr "개인키 열쇠글:"
 
-#: ../gnome/applet/wireless-applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:44
 msgid "Secondary DNS:"
 msgstr "보조 DNS:"
 
-#: ../gnome/applet/wireless-applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:45
 msgid "Select the CA Certificate File"
 msgstr "CA 인증서 파일을 선택하십시오"
 
-#: ../gnome/applet/wireless-applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:46
 msgid "Select the Client Certificate File"
 msgstr "클라이언트 인증서 파일을 선택하십시오"
 
-#: ../gnome/applet/wireless-applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:47
 msgid "Select the Private Key File"
 msgstr "개인키 파일을 선택하십시오"
 
-#: ../gnome/applet/wireless-applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:48
 msgid "Subnet Mask:"
 msgstr "서브넷 마스크:"
 
-#: ../gnome/applet/wireless-applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:49
 msgid "Type:"
 msgstr "형식:"
 
-#: ../gnome/applet/wireless-applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:50
 msgid "User Name:"
 msgstr "사용자 이름:"
 
-#: ../gnome/applet/wireless-applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:51
 msgid "Wireless Network Key Required"
 msgstr "무선 네트워크 키가 필요합니다"
 
-#: ../gnome/applet/wireless-applet.glade.h:52
+#: ../gnome/applet/applet.glade.h:52
 msgid "Wireless _adapter:"
 msgstr "무선 아답터(_A):"
 
-#: ../gnome/applet/wireless-applet.glade.h:53
+#: ../gnome/applet/applet.glade.h:53
 msgid "_Always Trust this Wireless Network"
 msgstr "이 무선 네트워크 항상 신뢰(_A)"
 
-#: ../gnome/applet/wireless-applet.glade.h:54
+#: ../gnome/applet/applet.glade.h:54
 msgid "_Don't remind me again"
 msgstr "다시 묻지 않음(_D)"
 
-#: ../gnome/applet/wireless-applet.glade.h:55
+#: ../gnome/applet/applet.glade.h:55
 msgid "_Login to Network"
 msgstr "네트워크에 로그인(_L)"
 
-#: ../gnome/applet/wireless-applet.glade.h:56
+#: ../gnome/applet/applet.glade.h:56
 msgid "_Network Name:"
 msgstr "네트워크 이름(_N):"
 
-#: ../gnome/applet/wireless-applet.glade.h:57
+#: ../gnome/applet/applet.glade.h:57
 msgid "_Wireless Security:"
 msgstr "무선 보안(_W):"
 
-#: ../gnome/applet/wireless-applet.glade.h:58
+#: ../gnome/applet/applet.glade.h:58
 msgid "leap_subwindow"
 msgstr "leap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:59
+#: ../gnome/applet/applet.glade.h:59
 msgid "wep_key_subwindow"
 msgstr "wep_key_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:60
+#: ../gnome/applet/applet.glade.h:60
 msgid "wep_passphrase_subwindow"
 msgstr "wep_passphrase_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:61
+#: ../gnome/applet/applet.glade.h:61
 msgid "wpa_eap_subwindow"
 msgstr "wpa_eap_subwindow"
 
-#: ../gnome/applet/wireless-applet.glade.h:62
+#: ../gnome/applet/applet.glade.h:62
 msgid "wpa_psk_subwindow"
 msgstr "wpa_psk_subwindow"
 
