@@ -270,10 +270,11 @@ static DBusConnection *nmd_dbus_init (void)
  */
 static void nmd_print_usage (void)
 {
-	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--no-daemon] [--help]\n");
+	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--no-daemon] [--pid-file=<file>] [--help]\n");
 	fprintf (stderr,
 		"\n"
 		"        --no-daemon        Do not daemonize\n"
+		"        --pid-file=<path>  Specify the location of a PID file\n"
 		"        --help             Show this information and exit\n"
 		"\n"
 		"NetworkManagerDispatcher listens for device messages from NetworkManager\n"
