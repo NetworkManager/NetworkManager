@@ -87,7 +87,13 @@ nm_gconf_wso_wpa_eap_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
 
-	/* FIXME: Need to free passwd, key_file, and cert_file ? */
+	dbus_free (identity);
+	dbus_free (passwd);
+	dbus_free (anon_identity);
+	dbus_free (private_key_passwd);
+	dbus_free (private_key_file);
+	dbus_free (client_cert_file);
+	dbus_free (ca_cert_file);
 
 out:
 	return security;
@@ -196,7 +202,13 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
 
-	/* FIXME: Need to free key_file and cert_file ? */
+	g_free (identity);
+	g_free (passwd);
+	g_free (anon_identity);
+	g_free (private_key_passwd);
+	g_free (private_key_file);
+	g_free (client_cert_file);
+	g_free (ca_cert_file);
 
 out:
 	return security;

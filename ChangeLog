@@ -1,7 +1,8 @@
 2006-02-28  Robert Love  <rml@novell.com>
 
 	* libnm-util/dbus-helpers.c, src/nm-ap-security-wpa-eap.c,
-	  src/nm-ap-security-wpa-psk.c: Fix FIXMEs: Callers of the DBUS
+	  src/nm-ap-security-wpa-psk.c, gnome/applet/nm-gconf-wso-wpa-eap.c,
+	  gnome/applet/nm-gconf-wso-wpa-eap.c: Fix FIXMEs: Callers of the DBUS
 	  deserializers are responsible for freeing the returned DBUS strings.
 
 2006-02-27  Christopher Aillon  <caillon@redhat.com>
