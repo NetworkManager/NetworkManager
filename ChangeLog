@@ -1,3 +1,19 @@
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_start_connection): if the vpn service daemon is
+			already running, don't blindly ask it to connect, but wait until
+			it's in the STOPPED state first.  Fixes an assertion when user
+			starts a second vpn connection without stopping the first.
+		- (nm_vpn_service_stage2_daemon_wait): ensure the vpn service's
+			dbus service exists before continuing with the connection
+			process, and reduce latency while waiting for it to become
+			available
+		- (nm_vpn_service_schedule_stage2_daemon_wait): reduce latency
+			waiting for the vpn service daemon to become available
+		- General log message cleanups; show progress via "Stage x of 4"
+			rather than not telling anyone how many stages there are
+
 2006-02-28  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerSystem.h: Add nm_system_should_modify_resolv_conf.
