@@ -81,4 +81,6 @@ void			nm_system_set_hostname (NMIP4Config *config);
 void			nm_system_activate_nis (NMIP4Config *config);
 void			nm_system_shutdown_nis (void);
 
+gboolean		nm_system_should_modify_resolv_conf (void);
+
 #endif

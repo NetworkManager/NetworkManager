@@ -337,12 +337,12 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 }
 
 
-typedef struct SuSESystemConfigData
+typedef struct SuSEDeviceConfigData
 {
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
 	gboolean		system_disabled;
-} SuSESystemConfigData;
+} SuSEDeviceConfigData;
 
 /*
  * set_ip4_config_from_resolv_conf
@@ -435,7 +435,7 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 	struct stat statbuf;
 	shvarFile *file;
 	char *buf = NULL;
-	SuSESystemConfigData *sys_data = NULL;
+	SuSEDeviceConfigData *sys_data = NULL;
 	struct ether_addr hw_addr;
 	FILE *f = NULL;
 	char buffer[512];
@@ -446,7 +446,7 @@ void *nm_system_device_get_system_config (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	sys_data = g_malloc0 (sizeof (SuSESystemConfigData));
+	sys_data = g_malloc0 (sizeof (SuSEDeviceConfigData));
 	sys_data->use_dhcp = TRUE;
 
 	if (nm_device_is_802_3_ethernet (dev))
@@ -643,7 +643,7 @@ out:
  */
 void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
 {
-	SuSESystemConfigData *sys_data = (SuSESystemConfigData *)system_config_data;
+	SuSEDeviceConfigData *sys_data = (SuSEDeviceConfigData *)system_config_data;
 
 	g_return_if_fail (dev != NULL);
 
@@ -664,7 +664,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
  */
 gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 {
-	SuSESystemConfigData *sys_data;
+	SuSEDeviceConfigData *sys_data;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -683,7 +683,7 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
  */
 gboolean nm_system_device_get_disabled (NMDevice *dev)
 {
-	SuSESystemConfigData *sys_data;
+	SuSEDeviceConfigData *sys_data;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -697,7 +697,7 @@ gboolean nm_system_device_get_disabled (NMDevice *dev)
 
 NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
 {
-	SuSESystemConfigData *sys_data;
+	SuSEDeviceConfigData *sys_data;
 	NMIP4Config *new_config = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
@@ -1080,3 +1080,36 @@ out_close:
 out_gfree:
 	g_free (filename);
 }
+
+/*
+ * nm_system_should_modify_resolv_conf
+ *
+ * Can NM update resolv.conf, or is it locked down?
+ */
+gboolean nm_system_should_modify_resolv_conf (void)
+{
+	char *name, *buf;
+	shvarFile *file;
+	gboolean ret = TRUE;
+
+	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/config");
+	file = svNewFile (name);
+	if (!file)
+		goto out_gfree;
+
+	buf = svGetValue (file, "MODIFY_RESOLV_CONF_DYNAMICALLY");
+	if (!buf)
+		goto out_close;
+
+	if (strcmp (buf, "no") == 0)
+		ret = FALSE;
+
+	free (buf);
+out_close:
+	svCloseFile (file);
+out_gfree:
+	g_free (name);
+
+	return ret;
+}
+

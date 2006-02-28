@@ -21,6 +21,7 @@
 
 #include "config.h"
 #include "nm-named-manager.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -34,8 +35,10 @@
 #include <syslog.h>
 #include <glib.h>
 #include <dbus/dbus.h>
+
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
+#include "NetworkManagerSystem.h"
 
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
@@ -50,10 +53,6 @@
 #define NAMED_DBUS_INTERFACE "com.redhat.named"
 #define NAMED_DBUS_PATH "/com/redhat/named"
 #endif
-
-
-/* From NetworkManagerSystem.h/.c */
-void nm_system_update_dns (void);
 
 enum
 {
@@ -357,6 +356,13 @@ rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error)
 	/* If no config, we don't have anything to update, so exit silently */
 	if (!config)
 		return TRUE;
+
+	/* If the sysadmin disabled modifying resolv.conf, exit silently */
+	if (!nm_system_should_modify_resolv_conf ())
+	{
+		nm_info ("DHCP returned name servers but system has disabled dynamic modification!");
+		return TRUE;
+	}
 
 	if ((f = fopen (tmp_resolv_conf, "w")) == NULL)
 		goto lose;

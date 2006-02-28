@@ -1,3 +1,17 @@
+2006-02-28  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.h: Add nm_system_should_modify_resolv_conf.
+	* src/backends/NetworkManagerSuSE.c: Implement the interface
+	  nm_system_should_modify_resolv_conf() for SUSE.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: Add stub.
+	* src/named-manager/Makefile.am: Grab includes from src.
+	* src/named-manager/nm-named-manager.c: Allow backends to disable the
+	  automatic updating of resolv.conf.  This is useful for testing,
+	  broken static configurations, and administrator lock-down.
+
 2006-02-28  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
