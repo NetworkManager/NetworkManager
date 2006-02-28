@@ -44,9 +44,9 @@ struct OptData
 	const char *	passwd;
 	const char *	anon_identity;
 	const char *	private_key_passwd;
-	const char *	private_key_file;
-	const char *	client_cert_file;
-	const char *	ca_cert_file;
+	char *		private_key_file;
+	char *		client_cert_file;
+	char *		ca_cert_file;
 	gboolean		wpa2;
 };
 
@@ -57,7 +57,9 @@ data_free_func (WirelessSecurityOption *opt)
 	g_return_if_fail (opt != NULL);
 	g_return_if_fail (opt->data != NULL);
 
-	/* FIXME: Need to free the internal char*'s */
+	g_free (opt->data->private_key_file);
+	g_free (opt->data->client_cert_file);
+	g_free (opt->data->ca_cert_file);
 
 	memset (opt->data, 0, sizeof (opt->data));
 	g_free (opt->data);
@@ -78,16 +80,26 @@ widget_create_func (WirelessSecurityOption *opt,
 
 	widget = wso_widget_helper (opt);
 
-	/* FIXME: Add other UI elements */
-
-	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_identity_entry");
 	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_passwd_entry");
+	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_anon_identity_entry");
+	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_client_cert_file_chooser_button");
+	g_signal_connect (G_OBJECT (entry), "selection-changed", validate_cb, user_data);
 
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_file_chooser_button");
 	g_signal_connect (G_OBJECT (entry), "selection-changed", validate_cb, user_data);
 
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_ca_cert_file_chooser_button");
 	g_signal_connect (G_OBJECT (entry), "selection-changed", validate_cb, user_data);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
+	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
 
 	return widget;
 }
@@ -98,15 +110,13 @@ validate_input_func (WirelessSecurityOption *opt,
                      const char *ssid,
                      IEEE_802_11_Cipher **out_cipher)
 {
-	//GtkWidget *	entry;
-	//GtkWidget *	filechooser;
-	//const char *	input;
+#if 0	/* FIXME: Figure out valid combinations of options and enforce */
+	GtkWidget *	entry;
+	GtkWidget *	filechooser;
+	const char *	input;
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 
-	/* FIXME: Add other UI elements */
-
-#if 0
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
 	input = gtk_entry_get_text (GTK_ENTRY (entry));
 	if (!input || strlen (input) < 1)

@@ -1,5 +1,9 @@
 2006-02-28  Robert Love  <rml@novell.com>
 
+	* gnome/applet/wso-wpa-eap.c: Fix misc. FIXME statements.
+
+2006-02-28  Robert Love  <rml@novell.com>
+
 	* libnm-util/dbus-helpers.c, src/nm-ap-security-wpa-eap.c,
 	  src/nm-ap-security-wpa-psk.c, gnome/applet/nm-gconf-wso-wpa-eap.c,
 	  gnome/applet/nm-gconf-wso-wpa-eap.c: Fix FIXMEs: Callers of the DBUS
