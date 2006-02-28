@@ -2371,6 +2371,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 		g_get_charset (&charset);
 		g_io_channel_set_encoding (channel, charset, NULL);
 		self->priv->supplicant.stdout = g_io_create_watch (channel, G_IO_IN | G_IO_ERR);
+		g_source_set_priority (self->priv->supplicant.stdout, G_PRIORITY_LOW);
 		g_source_set_callback (self->priv->supplicant.stdout, (GSourceFunc) supplicant_log_stdout, self, NULL);
 		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
 		g_io_channel_unref (channel);
