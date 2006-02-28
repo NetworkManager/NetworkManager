@@ -41,7 +41,7 @@ struct NMVPNActRequest
 	char **			data_items;
 	int				data_count;
 	char **			user_routes;
-	int 			user_routes_count;
+	int				user_routes_count;
 
 	guint			daemon_wait_count;
 	guint			callback_id;
@@ -50,8 +50,8 @@ struct NMVPNActRequest
 
 
 NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *service, NMVPNConnection *vpn,
-					NMDevice *parent_dev, char **password_items, int password_count, char **data_items, int data_count,
-					char **user_routes, int user_routes_count)
+								 NMDevice *parent_dev, char **password_items, int password_count,
+								  char **data_items, int data_count, char **user_routes, int user_routes_count)
 {
 	NMVPNActRequest	*req;
 

@@ -86,12 +86,18 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
 	security->priv->wpa_version = wpa_version;
 
-	/* FIXME: free passwd, cert_file, and key_file ? */
-
 	if (wpa_version == IW_AUTH_WPA_VERSION_WPA2)
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA2 Enterprise"));
 	else
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA Enterprise"));
+
+	dbus_free (identity);
+	dbus_free (passwd);
+	dbus_free (anon_identity);
+	dbus_free (private_key_passwd);
+	dbus_free (private_key_file);
+	dbus_free (client_cert_file);
+	dbus_free (ca_cert_file);
 
 out:
 	return security;

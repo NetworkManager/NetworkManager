@@ -57,6 +57,11 @@ nmu_security_serialize_wep (DBusMessageIter *iter,
 	return TRUE;
 }
 
+/*
+ * nmu_security_deserialize_wep
+ *
+ * Callers are responsible for freeing 'key' via dbus_free().
+ */
 dbus_bool_t
 nmu_security_deserialize_wep (DBusMessageIter *iter,
 						char **key,
@@ -162,6 +167,11 @@ nmu_security_serialize_wpa_psk (DBusMessageIter *iter,
 	return TRUE;
 }
 
+/*
+ * nmu_security_deserialize_wpa_psk
+ *
+ * Callers are responsible for freeing 'key' via dbus_free().
+ */
 dbus_bool_t
 nmu_security_deserialize_wpa_psk (DBusMessageIter *iter,
 						    char **key,
@@ -326,7 +336,13 @@ nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 	return result;
 }
 
-
+/*
+ * nmu_security_deserialize_wpa_eap
+ *
+ * Callers are responsible for freeing identity, passwd, anon_identity,
+ * private_key_passwd, private_key_file, client_cert_file, and ca_cert_file
+ * via dbus_free().
+ */
 dbus_bool_t
 nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 						    int *eap_method,
