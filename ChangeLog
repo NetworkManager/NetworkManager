@@ -1,6 +1,6 @@
 2006-02-27  Christopher Aillon  <caillon@redhat.com>
 
-	* src/nm-device-wireless-802-11.c:
+	* src/nm-device-802-11-wireless.c:
 	The scan list is being pruned prematurely.  We should prune after
 	the device has gone MIA for three scans, not one.  Split out the
 	interval to realtime seconds function to better serve this.
