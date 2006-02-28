@@ -1674,7 +1674,7 @@ handle_scan_results (gpointer user_data)
 		nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self), app_data->allowed_ap_list);
 	}
 
-	/* Walk the access point list and remove any access points older than thrice the active scan interval */
+	/* Walk the access point list and remove any access points older than thrice the inactive scan interval */
 	g_get_current_time (&cur_time);
 	ap_list = nm_device_802_11_wireless_ap_list_get (self);
 	if (ap_list && (iter = nm_ap_list_iter_new (ap_list)))
@@ -1695,7 +1695,7 @@ handle_scan_results (gpointer user_data)
 		{
 			const GTimeVal	*ap_time = nm_ap_get_last_seen (outdated_ap);
 			gboolean		 keep_around = FALSE;
-			guint active_interval_s;
+			guint inactive_interval_s;
 			guint prune_interval_s;
 
 			/* Don't ever prune the AP we're currently associated with */
@@ -1703,8 +1703,8 @@ handle_scan_results (gpointer user_data)
 				&&  (cur_ap && (nm_null_safe_strcmp (nm_ap_get_essid (cur_ap), nm_ap_get_essid (outdated_ap))) == 0))
 				keep_around = TRUE;
 
-			active_interval_s = nm_wireless_scan_interval_to_seconds (NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
-			prune_interval_s = active_interval_s * 3;
+			inactive_interval_s = nm_wireless_scan_interval_to_seconds (NM_WIRELESS_SCAN_INTERVAL_INACTIVE);
+			prune_interval_s = inactive_interval_s * 3;
 
 			if (!keep_around && (ap_time->tv_sec + prune_interval_s < cur_time.tv_sec))
 				outdated_list = g_slist_append (outdated_list, outdated_ap);

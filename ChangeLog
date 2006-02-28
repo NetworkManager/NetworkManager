@@ -1,3 +1,8 @@
+2006-02-27  Christopher Aillon  <caillon@redhat.com>
+
+	* src/nm-device-802-11-wireless.c:
+	Err, fix thinko in my previous commit.
+
 2006-02-28  Robert Love  <rml@novell.com>
 
 	* gnome/applet/wso-wpa-eap.c: Fix misc. FIXME statements.
