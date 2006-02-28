@@ -128,6 +128,29 @@ static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *s
                                            const char *key,
                                            int auth_method);
 
+static guint nm_wireless_scan_interval_to_seconds (NMWirelessScanInterval interval)
+{
+	guint seconds;
+
+	switch (interval)
+	{
+		case NM_WIRELESS_SCAN_INTERVAL_INIT:
+			seconds = 15;
+			break;
+
+		case NM_WIRELESS_SCAN_INTERVAL_INACTIVE:
+			seconds = 120;
+			break;
+
+		case NM_WIRELESS_SCAN_INTERVAL_ACTIVE:
+		default:
+			seconds = 20;
+			break;
+	}
+
+	return seconds;
+}
+
 
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
@@ -837,23 +860,7 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
 
 		if (d && nm_device_is_802_11_wireless (d))
 		{
-			guint seconds;
-
-			switch (interval)
-			{
-				case NM_WIRELESS_SCAN_INTERVAL_INIT:
-					seconds = 15;
-					break;
-
-				case NM_WIRELESS_SCAN_INTERVAL_INACTIVE:
-					seconds = 120;
-					break;
-
-				case NM_WIRELESS_SCAN_INTERVAL_ACTIVE:
-				default:
-					seconds = 20;
-					break;
-			}
+			guint seconds = nm_wireless_scan_interval_to_seconds (interval);
 
 			NM_DEVICE_802_11_WIRELESS (d)->priv->scan_interval = seconds;
 		}
@@ -1667,7 +1674,7 @@ handle_scan_results (gpointer user_data)
 		nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self), app_data->allowed_ap_list);
 	}
 
-	/* Walk the access point list and remove any access points older than 180s */
+	/* Walk the access point list and remove any access points older than thrice the active scan interval */
 	g_get_current_time (&cur_time);
 	ap_list = nm_device_802_11_wireless_ap_list_get (self);
 	if (ap_list && (iter = nm_ap_list_iter_new (ap_list)))
@@ -1688,13 +1695,18 @@ handle_scan_results (gpointer user_data)
 		{
 			const GTimeVal	*ap_time = nm_ap_get_last_seen (outdated_ap);
 			gboolean		 keep_around = FALSE;
+			guint active_interval_s;
+			guint prune_interval_s;
 
 			/* Don't ever prune the AP we're currently associated with */
 			if (	    nm_ap_get_essid (outdated_ap)
 				&&  (cur_ap && (nm_null_safe_strcmp (nm_ap_get_essid (cur_ap), nm_ap_get_essid (outdated_ap))) == 0))
 				keep_around = TRUE;
 
-			if (!keep_around && (ap_time->tv_sec + 180 < cur_time.tv_sec))
+			active_interval_s = nm_wireless_scan_interval_to_seconds (NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+			prune_interval_s = active_interval_s * 3;
+
+			if (!keep_around && (ap_time->tv_sec + prune_interval_s < cur_time.tv_sec))
 				outdated_list = g_slist_append (outdated_list, outdated_ap);
 		}
 		nm_ap_list_iter_free (iter);
