@@ -63,8 +63,6 @@ nm_gconf_wso_wpa_psk_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgt = key_mgt;
 
-	dbus_free (key);
-
 out:
 	return security;
 }

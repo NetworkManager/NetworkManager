@@ -44,9 +44,9 @@ struct OptData
 	const char *	passwd;
 	const char *	anon_identity;
 	const char *	private_key_passwd;
-	char *		private_key_file;
-	char *		client_cert_file;
-	char *		ca_cert_file;
+	const char *	private_key_file;
+	const char *	client_cert_file;
+	const char *	ca_cert_file;
 	gboolean		wpa2;
 };
 
@@ -56,10 +56,6 @@ data_free_func (WirelessSecurityOption *opt)
 {
 	g_return_if_fail (opt != NULL);
 	g_return_if_fail (opt->data != NULL);
-
-	g_free (opt->data->private_key_file);
-	g_free (opt->data->client_cert_file);
-	g_free (opt->data->ca_cert_file);
 
 	memset (opt->data, 0, sizeof (opt->data));
 	g_free (opt->data);

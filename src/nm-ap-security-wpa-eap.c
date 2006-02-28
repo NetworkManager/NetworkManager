@@ -91,14 +91,6 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	else
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA Enterprise"));
 
-	dbus_free (identity);
-	dbus_free (passwd);
-	dbus_free (anon_identity);
-	dbus_free (private_key_passwd);
-	dbus_free (private_key_file);
-	dbus_free (client_cert_file);
-	dbus_free (ca_cert_file);
-
 out:
 	return security;
 }

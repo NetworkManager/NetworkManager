@@ -87,14 +87,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
 
-	dbus_free (identity);
-	dbus_free (passwd);
-	dbus_free (anon_identity);
-	dbus_free (private_key_passwd);
-	dbus_free (private_key_file);
-	dbus_free (client_cert_file);
-	dbus_free (ca_cert_file);
-
 out:
 	return security;
 }
@@ -222,13 +214,13 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 
 	if (!nmu_security_serialize_wpa_eap (iter,
 			self->priv->eap_method,
-			self->priv->identity,
-			self->priv->passwd,
-			self->priv->anon_identity,
-			self->priv->private_key_passwd,
-			self->priv->private_key_file,
-			self->priv->client_cert_file,
-			self->priv->ca_cert_file,
+			self->priv->identity ? : "",
+			self->priv->passwd ? : "",
+			self->priv->anon_identity ? : "",
+			self->priv->private_key_passwd ? : "",
+			self->priv->private_key_file ? : "",
+			self->priv->client_cert_file ? : "",
+			self->priv->ca_cert_file ? : "",
 			self->priv->wpa_version))
 		return FALSE;
 	return TRUE;
