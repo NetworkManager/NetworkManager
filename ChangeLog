@@ -1,3 +1,13 @@
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- Move all the wpa_supplicant-related management stuff into its
+			own struct, just for oranization's sake
+		- (supplicant_exec): when exec-ing wpa_supplicant, connect its stdout
+			to a GIOChannel/GSource
+		- (supplicant_log_stdout): new function; grab output from the
+			wpa_supplicant stdout pipe and write it to our logs.
+
 2006-02-27  Christopher Aillon  <caillon@redhat.com>
 
 	* src/nm-device-802-11-wireless.c:

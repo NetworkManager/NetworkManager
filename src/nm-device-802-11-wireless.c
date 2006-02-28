@@ -47,6 +47,17 @@
 
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
 
+struct _Supplicant
+{
+	GPid				pid;
+	GSource *			watch;
+	GSource *			status;
+	struct wpa_ctrl *	ctrl;
+	GSource *			timeout;
+
+	GSource *			stdout;
+};
+
 struct _NMDevice80211WirelessPrivate
 {
 	gboolean	dispose_has_run;
@@ -67,12 +78,7 @@ struct _NMDevice80211WirelessPrivate
 	guint8			scan_interval; /* seconds */
 	guint32			last_scan;
 
-	/* Supplicant control */
-	GPid				sup_pid;
-	GSource *			sup_watch;
-	GSource *			sup_status;
-	struct wpa_ctrl *	sup_ctrl;
-	GSource *			sup_timeout;
+	struct _Supplicant	supplicant;
 
 	guint32			failed_link_count;
 	GSource *			link_timeout;
@@ -238,7 +244,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv->dispose_has_run = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
-	self->priv->sup_pid = -1;
+	self->priv->supplicant.pid = -1;
 }
 
 static void
@@ -311,7 +317,7 @@ real_update_link (NMDevice *dev)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
 	/* If the supplicant isn't running, we can't possibly have a link */
-	if (!self->priv->sup_pid)
+	if (!self->priv->supplicant.pid)
 		nm_device_set_active_link (NM_DEVICE (self), FALSE);
 }
 
@@ -2050,10 +2056,10 @@ supplicant_remove_timeout (NMDevice80211Wireless *self)
 	g_return_if_fail (self != NULL);
 
 	/* Remove any pending timeouts on the request */
-	if (self->priv->sup_timeout != NULL)
+	if (self->priv->supplicant.timeout != NULL)
 	{
-		g_source_destroy (self->priv->sup_timeout);
-		self->priv->sup_timeout = NULL;
+		g_source_destroy (self->priv->supplicant.timeout);
+		self->priv->supplicant.timeout = NULL;
 	}
 }
 
@@ -2075,25 +2081,30 @@ supplicant_cleanup (NMDevice80211Wireless *self)
 
 	g_return_if_fail (self != NULL);
 
-	if (self->priv->sup_pid > 0)
+	if (self->priv->supplicant.pid > 0)
 	{
-		kill (self->priv->sup_pid, SIGTERM);
-		self->priv->sup_pid = -1;
+		kill (self->priv->supplicant.pid, SIGTERM);
+		self->priv->supplicant.pid = -1;
 	}
-	if (self->priv->sup_watch)
+	if (self->priv->supplicant.watch)
 	{
-		g_source_destroy (self->priv->sup_watch);
-		self->priv->sup_watch = NULL;
+		g_source_destroy (self->priv->supplicant.watch);
+		self->priv->supplicant.watch = NULL;
 	}
-	if (self->priv->sup_status)
+	if (self->priv->supplicant.status)
 	{
-		g_source_destroy (self->priv->sup_status);
-		self->priv->sup_status = NULL;
+		g_source_destroy (self->priv->supplicant.status);
+		self->priv->supplicant.status = NULL;
 	}
-	if (self->priv->sup_ctrl)
+	if (self->priv->supplicant.ctrl)
 	{
-		wpa_ctrl_close (self->priv->sup_ctrl);
-		self->priv->sup_ctrl = NULL;
+		wpa_ctrl_close (self->priv->supplicant.ctrl);
+		self->priv->supplicant.ctrl = NULL;
+	}
+	if (self->priv->supplicant.stdout)
+	{
+		g_source_destroy (self->priv->supplicant.stdout);
+		self->priv->supplicant.stdout = NULL;
 	}
 
 	supplicant_remove_timeout (self);
@@ -2163,7 +2174,7 @@ supplicant_status_cb (GIOChannel *source,
 
 	g_assert (self);
 
-	ctrl = self->priv->sup_ctrl;
+	ctrl = self->priv->supplicant.ctrl;
 	g_return_val_if_fail (ctrl != NULL, FALSE);
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
@@ -2247,20 +2258,98 @@ supplicant_timeout_cb (gpointer user_data)
 }
 
 
+/*
+ * supplicant_log_stdout
+ *
+ * Read text from a GIOChannel that's hooked up to the stdout of
+ * wpa_supplicant, then write that text to NM's syslog service.
+ * Adapted from Gnome's bug-buddy.
+ *
+ */
+static gboolean
+supplicant_log_stdout (GIOChannel *ioc, GIOCondition condition, gpointer data)
+{
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (data);
+	gboolean retval = FALSE;
+	char *buf;
+	gsize len;
+	GIOStatus io_status;
+	GTimeVal start_time, cur_time;
+
+	#define LINE_SIZE 1024
+	buf = g_malloc0 (LINE_SIZE);
+	g_get_current_time (&start_time);
+ try_read:
+	io_status = g_io_channel_read_chars (ioc, buf, LINE_SIZE-1, &len, NULL);
+	switch (io_status)
+	{
+		case G_IO_STATUS_AGAIN:
+			g_usleep (G_USEC_PER_SEC / 60);
+			/* Only wait for data for 1/2 a second */
+			g_get_current_time (&cur_time);
+			/* Subtract 1/2 second from current time so we don't have
+			 * to modify start_time.
+			 */
+			g_time_val_add (&cur_time, -1 * (G_USEC_PER_SEC / 2));
+			/* Compare times.  If cur_time is less, keep trying to read */
+			if ((cur_time.tv_sec < start_time.tv_sec)
+				|| ((cur_time.tv_sec == start_time.tv_sec)
+					&& (cur_time.tv_usec < start_time.tv_usec)))
+				goto try_read;
+			nm_warning ("Waited too long for wpa_supplicant output, some may be lost.");
+			break;
+		case G_IO_STATUS_ERROR:
+			nm_warning ("Error reading wpa_supplicant output.");
+			break;
+		case G_IO_STATUS_NORMAL:
+			retval = TRUE;
+			break;
+		default:
+			break;
+	}
+
+	if (len > 0)
+	{
+		char *end;
+		char *start;
+
+		/* Log each line separately; sometimes we get a couple lines at a time */
+		buf[LINE_SIZE-1] = '\0';
+		start = end = &buf[0];
+		while (*end != '\0')
+		{
+			if (*end == '\n')
+			{
+				*end = '\0';
+				nm_info ("wpa_supplicant(%d): %s", self->priv->supplicant.pid, start);
+				start = end + 1;
+			}
+			end++;
+		}
+	}
+	g_free (buf);
+
+	return retval;
+}
+
 static gboolean
 supplicant_exec (NMDevice80211Wireless *self)
 {
 	gboolean	success = FALSE;
-	char *	argv[4];
+	char *	argv[5];
 	GError *	error = NULL;
 	GPid		pid = -1;
+	int		sup_stdout;
 
 	argv[0] = WPA_SUPPLICANT_BIN;
-	argv[1] = "-g";
-	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
-	argv[3] = NULL;
+	argv[1] = "-dd";
+	argv[2] = "-g";
+	argv[3] = WPA_SUPPLICANT_GLOBAL_SOCKET;
+	argv[4] = NULL;
 
-	if (!(success = g_spawn_async ("/", argv, NULL, 0, NULL, NULL, &pid, &error)))
+	success = g_spawn_async_with_pipes ("/", argv, NULL, 0, NULL, NULL,
+	                    &pid, NULL, &sup_stdout, NULL, &error);
+	if (!success)
 	{
 		if (error)
 		{
@@ -2273,13 +2362,30 @@ supplicant_exec (NMDevice80211Wireless *self)
 	}
 	else
 	{
+		GIOChannel *	channel;
+		const char *	charset = NULL;
+
+		/* Monitor output from supplicant and redirect to syslog */
+		channel = g_io_channel_unix_new (sup_stdout);
+		g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
+		g_get_charset (&charset);
+		g_io_channel_set_encoding (channel, charset, NULL);
+		self->priv->supplicant.stdout = g_io_create_watch (channel, G_IO_IN | G_IO_ERR);
+		g_source_set_callback (self->priv->supplicant.stdout, (GSourceFunc) supplicant_log_stdout, self, NULL);
+		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
+		g_io_channel_unref (channel);
+
+		/* Crackrock delay so we don't try to talk to wpa_supplicant to early */
+		/* FIXME: poll the global control socket instead of just sleeping */
 		g_usleep (G_USEC_PER_SEC);
-		self->priv->sup_pid = pid;
-		if (self->priv->sup_watch)
-			g_source_destroy (self->priv->sup_watch);
-		self->priv->sup_watch = g_child_watch_source_new (pid);
-		g_source_set_callback (self->priv->sup_watch, (GSourceFunc) supplicant_watch_cb, self, NULL);
-		g_source_attach (self->priv->sup_watch, nm_device_get_main_context (NM_DEVICE (self)));
+
+		/* Monitor the child process so we know when it stops */
+		self->priv->supplicant.pid = pid;
+		if (self->priv->supplicant.watch)
+			g_source_destroy (self->priv->supplicant.watch);
+		self->priv->supplicant.watch = g_child_watch_source_new (pid);
+		g_source_set_callback (self->priv->supplicant.watch, (GSourceFunc) supplicant_watch_cb, self, NULL);
+		g_source_attach (self->priv->supplicant.watch, nm_device_get_main_context (NM_DEVICE (self)));
 	}
 
 	return success;
@@ -2309,10 +2415,10 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	 * in wpa_ctrl that sometimes collides with stale ones.
 	 */
 	socket_path = supplicant_get_device_socket_path (self);
-	while (!self->priv->sup_ctrl && (tries++ < 10))
-		self->priv->sup_ctrl = wpa_ctrl_open (socket_path, NM_RUN_DIR);
+	while (!self->priv->supplicant.ctrl && (tries++ < 10))
+		self->priv->supplicant.ctrl = wpa_ctrl_open (socket_path, NM_RUN_DIR);
 	g_free (socket_path);
-	if (!self->priv->sup_ctrl)
+	if (!self->priv->supplicant.ctrl)
 	{
 		nm_info ("Error opening control interface to supplicant.");
 		goto exit;
@@ -2344,7 +2450,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	ctrl = self->priv->sup_ctrl;
+	ctrl = self->priv->supplicant.ctrl;
 	g_assert (ctrl);
 
 	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
@@ -2428,22 +2534,22 @@ supplicant_monitor_start (NMDevice80211Wireless *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	/* register network event monitor */
-	if (wpa_ctrl_attach (self->priv->sup_ctrl) != 0)
+	if (wpa_ctrl_attach (self->priv->supplicant.ctrl) != 0)
 		goto out;
 
-	if ((fd = wpa_ctrl_get_fd (self->priv->sup_ctrl)) < 0)
+	if ((fd = wpa_ctrl_get_fd (self->priv->supplicant.ctrl)) < 0)
 		goto out;
 
 	context = nm_device_get_main_context (NM_DEVICE (self));
 	channel = g_io_channel_unix_new (fd);
-	self->priv->sup_status = g_io_create_watch (channel, G_IO_IN);
-	g_source_set_callback (self->priv->sup_status, (GSourceFunc) supplicant_status_cb, self, NULL);
-	g_source_attach (self->priv->sup_status, context);
+	self->priv->supplicant.status = g_io_create_watch (channel, G_IO_IN);
+	g_source_set_callback (self->priv->supplicant.status, (GSourceFunc) supplicant_status_cb, self, NULL);
+	g_source_attach (self->priv->supplicant.status, context);
 
 	/* Set up a timeout on the association to kill it after get_supplicant_time() seconds */
-	self->priv->sup_timeout = g_timeout_source_new (get_supplicant_timeout (self) * 1000);
-	g_source_set_callback (self->priv->sup_timeout, supplicant_timeout_cb, self, NULL);
-	g_source_attach (self->priv->sup_timeout, context);
+	self->priv->supplicant.timeout = g_timeout_source_new (get_supplicant_timeout (self) * 1000);
+	g_source_set_callback (self->priv->supplicant.timeout, supplicant_timeout_cb, self, NULL);
+	g_source_attach (self->priv->supplicant.timeout, context);
 
 	success = TRUE;
 
