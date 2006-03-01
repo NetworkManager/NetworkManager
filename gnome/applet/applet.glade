@@ -1665,7 +1665,7 @@ WEP 40/128-bit ASCII
 
 <widget class="GtkWindow" id="wep_key_subwindow">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">wep_key_subwindow</property>
+  <property name="title" translatable="no">wep_key_subwindow</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -1854,7 +1854,7 @@ Shared Key</property>
 
 <widget class="GtkWindow" id="leap_subwindow">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">leap_subwindow</property>
+  <property name="title" translatable="no">leap_subwindow</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -2046,7 +2046,7 @@ Shared Key</property>
 
 <widget class="GtkWindow" id="wpa_psk_subwindow">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">wpa_psk_subwindow</property>
+  <property name="title" translatable="no">wpa_psk_subwindow</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -2234,7 +2234,7 @@ Shared Key</property>
 
 <widget class="GtkWindow" id="wpa_eap_subwindow">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">wpa_eap_subwindow</property>
+  <property name="title" translatable="no">wpa_eap_subwindow</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -2712,7 +2712,7 @@ Shared Key</property>
 
 <widget class="GtkWindow" id="wep_passphrase_subwindow">
   <property name="visible">True</property>
-  <property name="title" translatable="yes">wep_passphrase_subwindow</property>
+  <property name="title" translatable="no">wep_passphrase_subwindow</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
