@@ -377,15 +377,14 @@ nma_show_vpn_failure_dialog (const char *title,
 {
 	GtkWidget	*dialog;
 
-	g_return_val_if_fail (title != NULL, FALSE);
-	g_return_val_if_fail (msg != NULL, FALSE);
+	g_return_if_fail (title != NULL, FALSE);
+	g_return_if_fail (msg != NULL, FALSE);
 
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK, msg, NULL);
-	gtk_window_set_title (GTK_WINDOW (dialog), cb_data->title);
+	gtk_window_set_title (GTK_WINDOW (dialog), title);
 	g_signal_connect (dialog, "response", G_CALLBACK (gtk_widget_destroy), NULL);
 	g_signal_connect (dialog, "close", G_CALLBACK (gtk_widget_destroy), NULL);
-	g_object_set_data (G_OBJECT (dialog), "data", cb_data);
 
 	/* Bash focus-stealing prevention in the face */
 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER_ALWAYS);

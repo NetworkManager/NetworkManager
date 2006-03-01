@@ -1,5 +1,12 @@
 2006-02-28  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Brian Magnuson <magnuson@rcn.com>
+	* gnome/applet/applet.c
+		- (nma_show_vpn_failure_dialog): fix errors left over from
+			libnotify support changes
+
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-act-request.[ch]
 		- (nm_vpn_act_request_is_activated): don't use a switch/case for
 			just one value
