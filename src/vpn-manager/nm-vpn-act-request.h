@@ -36,6 +36,7 @@ void				nm_vpn_act_request_unref			(NMVPNActRequest *req);
 
 gboolean			nm_vpn_act_request_is_activating	(NMVPNActRequest *req);
 gboolean			nm_vpn_act_request_is_activated	(NMVPNActRequest *req);
+gboolean			nm_vpn_act_request_is_failed		(NMVPNActRequest *req);
 
 NMVPNManager *		nm_vpn_act_request_get_manager	(NMVPNActRequest *req);
 NMVPNService *		nm_vpn_act_request_get_service	(NMVPNActRequest *req);

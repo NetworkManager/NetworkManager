@@ -384,7 +384,9 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager, NMDevice *
 	if (!manager->act_req || (dev != nm_vpn_act_request_get_parent_dev (manager->act_req)))
 		return;
 
-	if (nm_vpn_act_request_is_activating (manager->act_req) || nm_vpn_act_request_is_activated (manager->act_req))
+	if (nm_vpn_act_request_is_activating (manager->act_req)
+		|| nm_vpn_act_request_is_activated (manager->act_req)
+		|| nm_vpn_act_request_is_failed (manager->act_req))
 	{
 		if (nm_vpn_act_request_is_activated (manager->act_req))
 		{

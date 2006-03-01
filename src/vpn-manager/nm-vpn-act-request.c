@@ -135,21 +135,16 @@ gboolean nm_vpn_act_request_is_activating (NMVPNActRequest *req)
 
 gboolean nm_vpn_act_request_is_activated (NMVPNActRequest *req)
 {
-	gboolean	activated = FALSE;
-
 	g_return_val_if_fail (req != NULL, FALSE);
+	
+	return (req->stage == NM_VPN_ACT_STAGE_ACTIVATED) ? TRUE : FALSE;
+}
 
-	switch (req->stage)
-	{
-		case NM_VPN_ACT_STAGE_ACTIVATED:
-			activated = TRUE;
-			break;
-
-		default:
-			break;			
-	}
-
-	return activated;
+gboolean nm_vpn_act_request_is_failed (NMVPNActRequest *req)
+{
+	g_return_val_if_fail (req != NULL, FALSE);
+	
+	return (req->stage == NM_VPN_ACT_STAGE_FAILED) ? TRUE : FALSE;
 }
 
 NMVPNManager *nm_vpn_act_request_get_manager (NMVPNActRequest *req)

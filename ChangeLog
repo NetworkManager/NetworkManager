@@ -1,5 +1,20 @@
 2006-02-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-act-request.[ch]
+		- (nm_vpn_act_request_is_activated): don't use a switch/case for
+			just one value
+		- (nm_vpn_act_request_is_failed): new function; return whether or
+			not the vpn activation request has failed
+
+	* src/vpn-manager/nm-vpn-manager.c 
+		- (nm_vpn_manager_deactivate_vpn_connection): tell the vpn service
+			daemon to kill the connection when the activation request fails.
+			Fixes issue where NM would get confused if the VPN activation
+			request timed out, and would not allow further VPN connections
+			on that service.
+
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet.c
 		- (nma_menu_add_vpn_menu): until the NM VPN manager can deal with
 			overlapping connection requests, disable all VPN menu items
