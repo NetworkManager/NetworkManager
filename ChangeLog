@@ -1,3 +1,11 @@
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_set_parent_device): fix C&P error which
+			called g_object_unref() on the connection's parent device
+			when it should have been ref-ed instead.  Fixes crash with
+			repeated vpn connect requests
+
 2006-02-28  Christopher Aillon  <caillon@redhat.com>
 
 	* gnome/applet/applet.glade:

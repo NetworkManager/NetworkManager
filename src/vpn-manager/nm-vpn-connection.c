@@ -235,7 +235,7 @@ static void nm_vpn_connection_set_parent_device (NMVPNConnection *con, NMDevice 
 
 	if (parent_dev)
 	{
-		g_object_unref (G_OBJECT (parent_dev));
+		g_object_ref (G_OBJECT (parent_dev));
 		con->parent_dev = parent_dev;
 	}
 }
