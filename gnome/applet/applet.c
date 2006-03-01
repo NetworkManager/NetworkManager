@@ -1690,8 +1690,18 @@ static void nma_menu_add_vpn_menu (GtkWidget *menu, NMApplet *applet)
 		nma_vpn_connection_ref (vpn);
 		g_object_set_data (G_OBJECT (vpn_item), "vpn", vpn);
 
-		if (active_vpn && active_vpn == vpn)
-			gtk_check_menu_item_set_active (vpn_item, TRUE);
+		/* FIXME: all VPN items except the active one are disabled,
+		 * due to a bug in the VPN handling code in NM.  See commit to
+		 * src/vpn-manager/nm-vpn-service.c on 2006-02-28 by dcbw for
+		 * more details.
+		 */
+		if (active_vpn)
+		{
+			if (active_vpn == vpn)
+				gtk_check_menu_item_set_active (vpn_item, TRUE);
+			else
+				gtk_widget_set_sensitive (GTK_WIDGET (vpn_item), FALSE);
+		}
 
 		if (applet->nm_state != NM_STATE_CONNECTED)
 			gtk_widget_set_sensitive (GTK_WIDGET (vpn_item), FALSE);

@@ -1,5 +1,12 @@
 2006-02-28  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet.c
+		- (nma_menu_add_vpn_menu): until the NM VPN manager can deal with
+			overlapping connection requests, disable all VPN menu items
+			but the active VPN connection
+
+2006-02-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-connection.c
 		- (nm_vpn_connection_set_parent_device): fix C&P error which
 			called g_object_unref() on the connection's parent device
