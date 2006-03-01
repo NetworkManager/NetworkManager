@@ -1,3 +1,7 @@
+2006-03-01  Rodrigo Moya <rodrigo@novell.com>
+
+	* Makefile.am: use the correct dir for autostart mechanism.
+
 2006-02-28  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Brian Magnuson <magnuson@rcn.com>
