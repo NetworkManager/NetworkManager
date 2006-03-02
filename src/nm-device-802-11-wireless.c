@@ -1811,7 +1811,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 		iface = nm_device_get_iface (NM_DEVICE (self));
 		if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 		{
-			int			orig_mode = IW_MODE_INFRA;
+			int			orig_mode;
 			double		orig_freq = 0;
 			int			orig_rate = 0;
 			struct iwreq	wrq;
@@ -1825,8 +1825,12 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 
 			/* Must be in infrastructure mode during scan, otherwise we don't get a full
 			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
+			 *
+			 * We only set the mode if it needs setting, in case it is a costly operation
+			 * for the driver.
 			 */
-			nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
+			if (orig_mode != IW_MODE_INFRA)
+				nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
 			nm_device_802_11_wireless_set_frequency (self, 0);
 
 			wrq.u.data.pointer = NULL;
