@@ -852,6 +852,8 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
 	static guint	source_id = 0;
 	GSource *		source = NULL;
 	GSList *		elt;
+	gboolean		found = FALSE;
+	guint8		seconds = nm_wireless_scan_interval_to_seconds (interval);
 
 	g_return_if_fail (data != NULL);
 
@@ -866,11 +868,18 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
 
 		if (d && nm_device_is_802_11_wireless (d))
 		{
-			guint seconds = nm_wireless_scan_interval_to_seconds (interval);
-
 			NM_DEVICE_802_11_WIRELESS (d)->priv->scan_interval = seconds;
+			if (self && (NM_DEVICE (self) == d))
+				found = TRUE;
 		}
 	}
+
+	/* In case the scan interval didn't get set (which can happen during card
+	 * initialization where the device gets set up before being added to the
+	 * device list), set interval here
+	 */
+	if (self && !found)
+		self->priv->scan_interval = seconds;
 
 	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE)
 	{
