@@ -1,9 +1,17 @@
 2006-03-02  Robert Love  <rml@novell.com>
 
+	Commit Dan's update of my previous commit:
+	* src/nm-device-802-11-wireless.c: Always set the mode, because the
+	  set_mode() function itself does the check.  But do only set the
+	  frequency if in Ad-Hoc mode.
+
+2006-03-02  Robert Love  <rml@novell.com>
+
 	Patch by Brian Magnuson <magnuson@rcn.com>:
-	* src/nm-device-802-11-wireless.c: During scanning, only set the wireless
-	  mode to infrastructure if it is not currently in infrastructure mode.
-	  For some driver, setting the mode is a costly operation, apparently.
+	* src/nm-device-802-11-wireless.c: During scanning, only set the
+	  wireless mode to infrastructure if it is not currently in
+	  infrastructure mode.  For some driver, setting the mode is a costly
+	  operation, apparently.
 
 2006-03-01  Rodrigo Moya <rodrigo@novell.com>
 

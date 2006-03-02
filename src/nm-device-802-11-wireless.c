@@ -1825,13 +1825,14 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 
 			/* Must be in infrastructure mode during scan, otherwise we don't get a full
 			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
-			 *
-			 * We only set the mode if it needs setting, in case it is a costly operation
-			 * for the driver.
 			 */
-			if (orig_mode != IW_MODE_INFRA)
-				nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
-			nm_device_802_11_wireless_set_frequency (self, 0);
+			nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
+
+			/* We only unlock the frequency if the card is in adhoc mode, in case it is
+			 * a costly operation for the driver.
+			 */
+			if (orig_mode == IW_MODE_ADHOC)
+				nm_device_802_11_wireless_set_frequency (self, 0);
 
 			wrq.u.data.pointer = NULL;
 			wrq.u.data.flags = 0;
