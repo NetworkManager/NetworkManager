@@ -1,5 +1,11 @@
 2006-03-02  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.c: Do not set the pixbuf if we don't have an
+	  active device.  But do not do what we used to do and override the
+	  state, which caused the dreaded icon race of '05.
+
+2006-03-02  Robert Love  <rml@novell.com>
+
 	Commit Dan's update of my previous commit:
 	* src/nm-device-802-11-wireless.c: Always set the mode, because the
 	  set_mode() function itself does the check.  But do only set the

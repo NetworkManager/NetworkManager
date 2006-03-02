@@ -1063,11 +1063,6 @@ static void nma_update_state (NMApplet *applet)
 		goto done;
 	}
 
-#if 0
-	if (!act_dev)
-		nma_set_state (applet, NM_STATE_DISCONNECTED);
-#endif
-
 	switch (applet->nm_state)
 	{
 		case NM_STATE_ASLEEP:
@@ -1095,6 +1090,7 @@ static void nma_update_state (NMApplet *applet)
 			break;
 
 		case NM_STATE_CONNECTING:
+			if (act_dev)
 			{
 				pixbuf = nma_act_stage_to_pixbuf (applet, act_dev, active_network, &tip);
 				need_animation = TRUE;
