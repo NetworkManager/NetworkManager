@@ -25,3 +25,5 @@ src/nm-ap-security-wep.c
 src/nm-ap-security-wpa-psk.c
 src/nm-ap-security.c
 src/nm-netlink-monitor.c
+gnome/applet/applet-dbus-devices.c
+src/nm-ap-security-wpa-eap.c
