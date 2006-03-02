@@ -1,3 +1,32 @@
+2006-03-02  Robert Love  <rml@novell.com>
+
+	Add support for retrieving both the per-device speed and the
+	per-network maximum supported rate.  Then change the getProperties
+	DBUS API for both networks and devices to report this informaiton.
+	Finally, display the information via both nm-applet and nm-tool:
+	* gnome/applet/applet-dbus-devices.c: Grab the speed from getProperties
+	  and set it.
+	* gnome/applet/applet.c: Display the device's speed in the 'Connection
+	  Information' dialog.
+	* gnome/applet/applet.glade: Update the UI to show per-device speed.
+	* gnome/applet/nm-device.c, gnome/applet/nm-device.h: Add interfaces
+	  network_device_get_speed() and network_device_set_speed() for
+	  retrieving and setting, respectively, a network device's current
+	  speed.
+	* src/nm-dbus-device.c: Send the device's speed on getProperties.
+	* src/nm-device-802-11-wireless.c: Return the rate in Mb/s, not Kb/s,
+	  in the function nm_device_802_11_wireless_get_bitrate() -- it does
+	  not matter (yet) what the units are, because we only feed it its own
+	  output.  Implement SIOCGIRATE and set the per-network maximum
+	  supported rate during scanning.
+	* src/nm-device-802-11-wireless.h: Export the function
+	  nm_device_802_11_wireless_get_bitrate().
+	* src/nm-device-802-3-ethernet.c, src/nm-device-802-3-ethernet.h: Add
+	  function nm_device_802_3_ethernet_get_speed() for returning an
+	  802.3's current speed, in Mb/s.
+	* test/nm-tool.c: Display the per-device current speed, if available,
+	  and the per-network maximum rate.
+
 2006-03-02  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

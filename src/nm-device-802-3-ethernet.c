@@ -332,8 +332,8 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
 	{
-		nm_warning ("cannot open socket on interface %s for ethtool detect; errno=%d",
-				iface, errno);
+		nm_warning ("cannot open socket on interface %s for ethtool detect: %s",
+				iface, strerror (errno));
 		return FALSE;
 	}
 
@@ -356,6 +356,37 @@ out:
 	return supports_ethtool;
 }
 
+
+int
+nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
+{
+	NMSock *			sk;
+	struct ifreq		ifr;
+	struct ethtool_cmd	edata;
+	const char *		iface;
+	int				speed = 0;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
+	{
+		nm_warning ("cannot open socket on interface %s for ethtool: %s",
+				iface, strerror (errno));
+		return FALSE;
+	}
+
+	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+	edata.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (char *) &edata;
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
+		goto out;
+	speed = edata.speed;
+
+out:
+	nm_dev_sock_close (sk);
+	return speed;
+}
 
 
 /**************************************/

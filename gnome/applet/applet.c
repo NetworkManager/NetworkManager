@@ -190,8 +190,9 @@ static gboolean nma_update_info (NMApplet *applet)
 {
 	GtkWidget *info_dialog;
 	char *addr = NULL, *broadcast = NULL, *primary_dns = NULL, *secondary_dns = NULL;
-	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL;
+	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL, *speed = NULL;
 	GtkWidget *label;
+	int mbs;
 	const char *iface = NULL, *driver = NULL;
 	NetworkDevice *dev;
 
@@ -225,6 +226,11 @@ static gboolean nma_update_info (NMApplet *applet)
 	primary_dns = (char*) network_device_get_primary_dns (dev);
 	secondary_dns = (char*) network_device_get_secondary_dns (dev);
 
+	printf ("WOLF %d\n", network_device_get_speed (dev));
+	mbs = network_device_get_speed (dev);
+	if (mbs)
+		speed = g_strdup_printf ("%d Mb/s", mbs);
+
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
 	else
@@ -232,6 +238,9 @@ static gboolean nma_update_info (NMApplet *applet)
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
 	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-speed");
+	gtk_label_set_text (GTK_LABEL (label), mbs ? speed : "Unknown");
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-driver");
 	gtk_label_set_text (GTK_LABEL (label), driver);
@@ -258,6 +267,7 @@ static gboolean nma_update_info (NMApplet *applet)
 	gtk_label_set_text (GTK_LABEL (label), mac);
 
 	g_free (iface_and_type);
+	g_free (speed);
 
 	return TRUE;
 }

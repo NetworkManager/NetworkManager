@@ -51,6 +51,7 @@ struct NetworkDevice
 	char *		primary_dns;
 	char *		secondary_dns;
 	gint			strength;
+	gint			speed;
 	GSList *		networks;
 	NMActStage	act_stage;
 };
@@ -676,6 +677,23 @@ void network_device_set_link (NetworkDevice *dev, gboolean link)
 	g_return_if_fail (dev != NULL);
 
 	dev->link = link;
+}
+
+/*
+ * Accessors for speed (in Mb/s)
+ */
+int network_device_get_speed (NetworkDevice *dev)
+{
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	return (dev->speed);
+}
+
+void network_device_set_speed (NetworkDevice *dev, int speed)
+{
+	g_return_if_fail (dev != NULL);
+
+	dev->speed = speed;
 }
 
 /*

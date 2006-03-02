@@ -92,6 +92,8 @@ const char *	nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self);
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 										 const int mode);
 
+int			nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
+
 NMAccessPoint *	nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *dev);
 
 NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *dev,

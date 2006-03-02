@@ -184,8 +184,13 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 			enc_string = g_string_append (enc_string, ")");
 		}
 
-		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Strength %d%%%s%s", (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
-					flt_freq, strength, (enc_string && strlen (enc_string->str)) ? enc_string->str : "", !broadcast ? ", Hidden" : "");
+		temp = g_strdup_printf ("%s Mode, Freq %.3f MHz, Rate %d Mb/s, Strength %d%%%s%s",
+						    (mode == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc", 
+						    flt_freq,
+						    rate / 1024,
+						    strength,
+						    (enc_string && strlen (enc_string->str)) ? enc_string->str : "",
+						    !broadcast ? ", Hidden" : "");
 		temp_essid = g_strdup_printf ("  %s%s", active ? "*" : "", essid);
 		print_string (temp_essid, temp);
 		g_string_free (enc_string, TRUE);
@@ -251,6 +256,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 	dbus_int32_t		strength = -1;
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
+	dbus_int32_t		speed = 0;
 	dbus_uint32_t		caps = NM_DEVICE_CAP_NONE;
 	dbus_uint32_t		type_caps = NM_DEVICE_CAP_NONE;
 	char **			networks = NULL;
@@ -287,9 +293,10 @@ static void detail_device (DBusConnection *connection, const char *path)
 									DBUS_TYPE_STRING, &route,
 									DBUS_TYPE_STRING, &primary_dns,
 									DBUS_TYPE_STRING, &secondary_dns,
-									DBUS_TYPE_INT32, &mode,
+									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
+									DBUS_TYPE_INT32,  &speed,
 									DBUS_TYPE_UINT32, &caps,
 									DBUS_TYPE_UINT32, &type_caps,
 									DBUS_TYPE_STRING, &active_network_path,
@@ -327,6 +334,15 @@ static void detail_device (DBusConnection *connection, const char *path)
 			print_string ("  Supported", "no");
 		if (caps & NM_DEVICE_CAP_CARRIER_DETECT)
 			print_string ("  Carrier Detect", "yes");
+
+		if (speed)
+		{
+			char *speed_string;
+
+			speed_string = g_strdup_printf ("%d Mb/s", speed);
+			print_string ("  Speed", speed_string);
+			g_free (speed_string);
+		}
 
 		/* Wireless specific information */
 		if (type == DEVICE_TYPE_802_11_WIRELESS)

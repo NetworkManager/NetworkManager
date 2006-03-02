@@ -1412,10 +1412,10 @@ nm_device_802_11_wireless_set_frequency (NMDevice80211Wireless *self,
  * nm_device_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
- * Returned value is rate in KHz.
+ * Returned value is rate in Mb/s.
  *
  */
-static int
+int
 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 {
 	NMSock *		sk;
@@ -1435,7 +1435,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 		nm_dev_sock_close (sk);
 	}
 
-	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
+	return ((err >= 0) ? wrq.u.bitrate.value / 1000000 : 0);
 }
 
 
@@ -3086,6 +3086,8 @@ process_scan_results (NMDevice80211Wireless *dev,
 	char *pos, *end, *custom, *genie, *gpos, *gend;
 	NMAccessPoint *ap = NULL;
 	size_t clen;
+	struct iw_param iwp;
+	int maxrate;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
@@ -3174,7 +3176,7 @@ process_scan_results (NMDevice80211Wireless *dev,
 				}
 				break;
 			case SIOCGIWFREQ:
-			     nm_ap_set_freq (ap, iw_freq2float(&(iwe->u.freq)));
+				nm_ap_set_freq (ap, iw_freq2float(&(iwe->u.freq)));
 				break;
 			case IWEVQUAL:
 				nm_ap_set_strength (ap, wireless_qual_to_percent (&(iwe->u.qual),
@@ -3191,25 +3193,22 @@ process_scan_results (NMDevice80211Wireless *dev,
 						nm_ap_add_capabilities_for_wep (ap);
 				}
 				break;
-#if 0
 			case SIOCGIWRATE:
-				custom = pos + IW_EV_LCP_LEN;
 				clen = iwe->len;
 				if (custom + clen > end)
 					break;
 				maxrate = 0;
-				while (((ssize_t) clen) >= sizeof(struct iw_param)) {
-					/* Note: may be misaligned, make a local,
-					 * aligned copy */
-					memcpy(&p, custom, sizeof(struct iw_param));
-					if (p.value > maxrate)
-						maxrate = p.value;
-					clen -= sizeof(struct iw_param);
-					custom += sizeof(struct iw_param);
+				while (((ssize_t) clen) >= sizeof(struct iw_param))
+				{
+					/* the payload may be unaligned, so we align it */
+					memcpy(&iwp, custom, sizeof (struct iw_param));
+					if (iwp.value > maxrate)
+						maxrate = iwp.value;
+					clen -= sizeof (struct iw_param);
+					custom += sizeof (struct iw_param);
 				}
-				results[ap_num].maxrate = maxrate;
+				nm_ap_set_rate (ap, maxrate);
 				break;
-#endif
 			case IWEVGENIE:
 				gpos = genie = custom;
 				gend = genie + iwe->u.data.length;

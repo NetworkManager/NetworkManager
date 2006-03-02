@@ -745,6 +745,7 @@ static void nma_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_da
 	const char *		secondary_dns = NULL;
 	dbus_int32_t		mode = -1;
 	dbus_int32_t		strength = -1;
+	dbus_int32_t		speed = 0;
 	char *			active_network_path = NULL;
 	dbus_bool_t		link_active = FALSE;
 	dbus_uint32_t		caps = NM_DEVICE_CAP_NONE;
@@ -787,6 +788,7 @@ static void nma_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_da
 									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
+									DBUS_TYPE_INT32,  &speed,
 									DBUS_TYPE_UINT32, &caps,
 									DBUS_TYPE_UINT32, &type_caps,
 									DBUS_TYPE_STRING, &active_network_path,
@@ -798,6 +800,7 @@ static void nma_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_da
 
 		network_device_set_hal_udi (dev, udi);
 		network_device_set_address (dev, hw_addr);
+		network_device_set_speed (dev, speed);
 		network_device_set_active (dev, active);
 		network_device_set_link (dev, link_active);
 		network_device_set_capabilities (dev, caps);
