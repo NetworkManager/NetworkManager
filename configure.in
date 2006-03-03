@@ -87,7 +87,7 @@ fi
 IWLIB=-liw
 AC_SUBST(IWLIB)
 
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.22)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.60)
 
 ##### Find out the version of DBUS we're using
 dbus_version=`pkg-config --modversion dbus-1`
