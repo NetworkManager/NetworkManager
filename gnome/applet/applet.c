@@ -226,7 +226,6 @@ static gboolean nma_update_info (NMApplet *applet)
 	primary_dns = (char*) network_device_get_primary_dns (dev);
 	secondary_dns = (char*) network_device_get_secondary_dns (dev);
 
-	printf ("WOLF %d\n", network_device_get_speed (dev));
 	mbs = network_device_get_speed (dev);
 	if (mbs)
 		speed = g_strdup_printf ("%d Mb/s", mbs);
