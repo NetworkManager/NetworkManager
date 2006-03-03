@@ -1,5 +1,10 @@
 2006-03-03  Robert Love  <rml@novell.com>
 
+	* configure.in: Bump version to 0.6.0.
+	* NEWS: Update.
+
+2006-03-03  Robert Love  <rml@novell.com>
+
 	* configure.in: Require DBUS 0.60 or later.
 
 2006-03-03  Dan Williams  <dcbw@redhat.com>
