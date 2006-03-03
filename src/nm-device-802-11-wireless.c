@@ -699,6 +699,10 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 		nm_ap_set_essid (ap, essid);
 		nm_ap_set_artificial (ap, TRUE);
 		nm_ap_set_broadcast (ap, FALSE);
+		/* Ensure the AP has some capabilities.  They will get overwritten
+		 * with the correct ones next time the AP is seen in a scan.
+		 */
+		nm_ap_set_capabilities (ap, nm_ap_security_get_default_capabilities (security));
 		nm_ap_list_append_ap (dev_ap_list, ap);
 		nm_ap_unref (ap);
 	}
@@ -2783,6 +2787,7 @@ real_activation_failure_handler (NMDevice *dev,
                                  NMActRequest *req)
 {
 	NMData *			app_data;
+	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *	ap;
 
 	app_data = nm_act_request_get_data (req);
@@ -2790,9 +2795,25 @@ real_activation_failure_handler (NMDevice *dev,
 
 	if ((ap = nm_act_request_get_ap (req)))
 	{
-		/* Add the AP to the invalid list and force a best ap update */
-		nm_ap_set_invalid (ap, TRUE);
-		nm_ap_list_append_ap (app_data->invalid_ap_list, ap);
+		if (nm_ap_get_artificial (ap))
+		{
+			NMAccessPointList *	dev_list;
+		
+			/* Artificial APs are ones that don't show up in scans,
+			 * but which the user explicitly attempted to connect to.
+			 * However, if we fail on one of these, remove it from the
+			 * list because we don't have any scan or capability info
+			 * for it, and they are pretty much useless.
+			 */
+			dev_list = nm_device_802_11_wireless_ap_list_get (self);
+			nm_ap_list_remove_ap (dev_list, ap);
+		}
+		else
+		{
+			/* Add the AP to the invalid list */
+			nm_ap_set_invalid (ap, TRUE);
+			nm_ap_list_append_ap (app_data->invalid_ap_list, ap);
+		}
 	}
 
 	nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),

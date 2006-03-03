@@ -210,6 +210,30 @@ out:
 	return success;
 }
 
+static guint32
+real_get_default_capabilities (NMAPSecurity *instance)
+{
+	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
+	guint32			caps = NM_802_11_CAP_NONE;
+	int				we_cipher = nm_ap_security_get_we_cipher (instance);
+
+	if (we_cipher == IW_AUTH_CIPHER_TKIP)
+		caps |= NM_802_11_CAP_CIPHER_TKIP;
+	else if (we_cipher == IW_AUTH_CIPHER_CCMP)
+		caps |= NM_802_11_CAP_CIPHER_CCMP;
+	else if (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO)
+		caps |= (NM_802_11_CAP_CIPHER_TKIP | NM_802_11_CAP_CIPHER_CCMP);
+
+	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
+		caps |= NM_802_11_CAP_PROTO_WPA;
+	else if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA2)
+		caps |= NM_802_11_CAP_PROTO_WPA2;
+
+	if (self->priv->key_mgt == IW_AUTH_KEY_MGMT_PSK)
+		caps |= NM_802_11_CAP_KEY_MGMT_PSK;
+	return caps;
+}
+
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -239,6 +263,7 @@ nm_ap_security_wpa_psk_class_init (NMAPSecurityWPA_PSKClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
+	par_class->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWPA_PSKPrivate));
 }

@@ -1,3 +1,46 @@
+2006-03-03  Dan Williams  <dcbw@redhat.com>
+
+	Fix a crash if an "Other wireless network" was chosen, failed, then
+	chosen again from the applet's menu.  If the other network wasn't
+	noticed in a scan, it wouldn't have any capabilities, but would still
+	be listed because the user forced the network.  To fix this, we set
+	sensible capabilities on the forced network, which will get overwritten
+	with the correct ones if the network shows up later in a scan.
+	
+	* src/nm-ap-security.h
+		- Add a new "get_default_capabilities_func" member to the
+			NMAPSecurity class
+
+	* src/nm-ap-security.c
+		- (nm_ap_security_get_default_capabilities): new function
+
+	* src/nm-ap-security.c
+	  src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-psk.c
+	  src/nm-ap-security-wpa-eap.c
+		- Implement get_default_capabilities_func() for all, which
+			uses the information contained in a specific NMAPSecurity
+			object to determine default AP capabilites necessary
+			to support that object
+
+	As a secondary measure, we now prune artificial access points that fail
+	to be activated right away.  The thing failed, and we have no scan data for
+	it, so it's pretty much useless since security information is only saved
+	in the applets when a connection is successful.
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_merge_scanned_ap): mark any ap noticed in a scan
+			not artificial.  If we see it, it's no longer a figment of the
+			user's imagination :)
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_failed): send along the failed AP if we
+			have it
+
+	* src/nm-device-802-11-wireless.c
+		- (real_activation_failure_handler): remove artificial APs from
+			the device list, because activation failed
+
 2006-03-02  Robert Love  <rml@novell.com>
 
 	Add support for retrieving both the per-device speed and the

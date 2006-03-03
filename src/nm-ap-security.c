@@ -142,6 +142,15 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 }
 
 
+guint32
+nm_ap_security_get_default_capabilities (NMAPSecurity *self)
+{
+	g_return_val_if_fail (self != NULL, NM_802_11_CAP_PROTO_NONE);
+
+	return NM_AP_SECURITY_GET_CLASS (self)->get_default_capabilities_func (self);
+}
+
+
 gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
                                         struct wpa_ctrl *ctrl,
@@ -221,6 +230,12 @@ real_write_supplicant_config (NMAPSecurity *self,
 		return FALSE;
 
 	return TRUE;
+}
+
+static guint32
+real_get_default_capabilities (NMAPSecurity *self)
+{
+	return NM_802_11_CAP_PROTO_NONE;
 }
 
 int
@@ -360,6 +375,7 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 	klass->copy_constructor_func = real_copy_constructor;
 	klass->serialize_func = real_serialize;
 	klass->write_supplicant_config_func = real_write_supplicant_config;
+	klass->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityPrivate));
 }

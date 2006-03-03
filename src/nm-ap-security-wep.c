@@ -140,6 +140,25 @@ out:
 	return success;
 }
 
+static guint32
+real_get_default_capabilities (NMAPSecurity *instance)
+{
+	guint32	caps = NM_802_11_CAP_NONE;
+
+	switch (nm_ap_security_get_we_cipher (instance))
+	{
+		case IW_AUTH_CIPHER_WEP40:
+			caps |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40);
+			break;
+		case IW_AUTH_CIPHER_WEP104:
+			caps |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104);
+			break;
+		default:
+			break;
+	}
+	return caps;
+}
+
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -167,6 +186,7 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
+	par_class->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));
 }

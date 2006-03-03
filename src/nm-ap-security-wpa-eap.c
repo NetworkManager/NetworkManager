@@ -84,7 +84,6 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	security->priv->private_key_file = g_strdup (private_key_file);
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
-	security->priv->wpa_version = wpa_version;
 
 	if (wpa_version == IW_AUTH_WPA_VERSION_WPA2)
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA2 Enterprise"));
@@ -282,6 +281,22 @@ out:
 	return success;
 }
 
+static guint32
+real_get_default_capabilities (NMAPSecurity *instance)
+{
+	NMAPSecurityWPA_EAP *self = NM_AP_SECURITY_WPA_EAP (instance);
+	guint32			caps = NM_802_11_CAP_NONE;
+
+	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
+		caps |= NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_CIPHER_TKIP;
+	else if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA2)
+		caps |= NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_CIPHER_CCMP;
+
+	if (self->priv->key_mgmt == IW_AUTH_KEY_MGMT_802_1X)
+		caps |= NM_802_11_CAP_KEY_MGMT_802_1X;
+
+	return caps;
+}
 
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
@@ -332,6 +347,7 @@ nm_ap_security_wpa_eap_class_init (NMAPSecurityWPA_EAPClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
+	par_class->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWPA_EAPPrivate));
 }

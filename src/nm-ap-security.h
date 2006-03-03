@@ -68,6 +68,8 @@ struct _NMAPSecurityClass
 									  struct wpa_ctrl *ctrl,
 									  int nwid,
 									  gboolean user_created);
+
+	guint32 (*get_default_capabilities_func)(NMAPSecurity *self);
 };
 
 
@@ -92,6 +94,8 @@ gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 									gboolean user_created);
 
 const char *	nm_ap_security_get_description (NMAPSecurity *self);
+
+guint32		nm_ap_security_get_default_capabilities (NMAPSecurity *self);
 
 G_END_DECLS
 
