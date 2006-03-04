@@ -1,3 +1,10 @@
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): assume that drivers that don't
+			support WPA pretty much suck, and can't handle NM scanning
+			along with wpa_supplicant.
+
 2006-03-03  Robert Love  <rml@novell.com>
 
 	* configure.in: Bump version to 0.6.0.

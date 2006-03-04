@@ -2462,6 +2462,8 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	gboolean			user_created;
 	char *			hex_essid;
 	char *			ap_scan = "AP_SCAN 1";
+	guint32			caps;
+	gboolean			supports_wpa;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2472,9 +2474,17 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ctrl = self->priv->supplicant.ctrl;
 	g_assert (ctrl);
 
+	/* Assume that drivers that don't support WPA pretty much suck,
+	 * and can't handle NM scanning along with wpa_supplicant.  Which
+	 * is the case for most of them, airo in particular.
+	 */
+	caps = nm_device_get_type_capabilities (NM_DEVICE (self));
+	supports_wpa = (caps & NM_802_11_CAP_PROTO_WPA)
+				|| (caps & NM_802_11_CAP_PROTO_WPA2);
+
 	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
 	user_created = nm_ap_get_user_created (ap);
-	if (!nm_ap_get_broadcast (ap) || user_created)
+	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
