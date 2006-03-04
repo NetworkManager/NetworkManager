@@ -1872,7 +1872,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 					scan_results->results_len = results_len;
 				}
 				else
-					nm_warning ("get_scan_results() on device %s returned an error.", iface);
+					nm_warning ("device %s returned an error.", iface);
 			}
 
 			nm_device_802_11_wireless_set_mode (self, orig_mode);
@@ -3046,7 +3046,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		{
 			if (tries > 20 * SCAN_SLEEP_CENTISECONDS)
 			{
-				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
+				nm_warning ("card took too much time scanning.  Get a better one.");
 				break;
 			}
 
@@ -3060,7 +3060,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		}
 		else		/* Random errors */
 		{
-			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info: %s",
+			nm_warning ("unknown error, or the card returned too much scan info: %s",
 					  strerror (errno));
 			break;
 		}
