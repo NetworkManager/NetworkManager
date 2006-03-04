@@ -1,5 +1,48 @@
 2006-03-04  Dan Williams  <dcbw@redhat.com>
 
+	Clean up activation cancellation.  Should be a lot faster now.  Observed
+	an issue with wireless devices between stage 2 and 3 of activation, where
+	activation would be cancelled, but the device thread wouldn't notice until
+	the supplicant association timed out.  Reorganize activation such that
+	a cancellation handler gets immediately scheduled in the device's thread,
+	and devices have a chance to perform any custom cleanup too.
+
+	* src/nm-device.[ch]
+		- (activation_cancel_handler): new device-type-specific function
+			for cleaning up device-type-specific stuff on cancellation
+		- (cancel_activation): removed
+		- (nm_device_activation_cancel): subsume functionality of
+			real_cancel_activation, but instead of doing anything, punt
+			operation to a handler that's run in device-thread context
+		- (nm_device_schedule_activation_handle_cancel): fix spelling of
+			a warning message
+		- (activation_handle_cancel_helper): cancellation handler run in
+			device-thread context, calls device-type-specific cancelation,
+			then tears down the activation request
+		- (real_activation_cancel_handler): generic cancellation handler,
+			deals with cancelling any in-process DHCP request
+		- (nm_device_activate_stage1_device_prepare,
+		   nm_device_activate_stage2_device_config,
+		   nm_device_activate_stage3_ip_config_start,
+		   nm_device_activate_stage4_ip_config_get,
+		   nm_device_activate_stage4_ip_config_timeout,
+		   nm_device_activate_stage5_ip_commit): don't call
+			nm_device_schedule_activation_handle_cancel() any more, since
+			cancellation will have been already scheduled for us by
+			nm_device_activation_cancel().  Just exit the function and
+			assume that the cancel handler will be called next.
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_act_stage2_config): remove; didn't do anything anyway
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_status_cb): ensure we don't do anything if the activation
+			got cancelled
+		- (real_activation_cancel_handler): implement; cancel user key request
+			on activation cancellation
+
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (supplicant_send_network_config): assume that drivers that don't
 			support WPA pretty much suck, and can't handle NM scanning

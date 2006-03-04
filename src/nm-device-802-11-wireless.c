@@ -2192,6 +2192,12 @@ supplicant_status_cb (GIOChannel *source,
 
 	g_assert (self);
 
+	/* Do nothing if we're supposed to be canceling activation.
+	 * We'll get cleaned up by the cancellation handlers later.
+	 */
+	if (nm_device_activation_should_cancel (dev))
+		return TRUE;
+
 	ctrl = self->priv->supplicant.ctrl;
 	g_return_val_if_fail (ctrl != NULL, FALSE);
 
@@ -2830,6 +2836,27 @@ real_activation_failure_handler (NMDevice *dev,
 			ap ? nm_ap_get_essid (ap) : "(none)");
 }
 
+static void
+real_activation_cancel_handler (NMDevice *dev,
+                                NMActRequest *req)
+{
+	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessClass *	klass;
+	NMDeviceClass * 			parent_class;
+
+	/* Chain up to parent first */
+	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+	parent_class->activation_cancel_handler (dev, req);
+
+	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
+	{
+		NMData *data = nm_device_get_app_data (dev);
+		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection, req);
+	}
+}
+
+
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
@@ -2922,6 +2949,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->activation_failure_handler = real_activation_failure_handler;
 	parent_class->activation_success_handler = real_activation_success_handler;
+	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }
