@@ -386,8 +386,8 @@ nma_show_vpn_failure_dialog (const char *title,
 {
 	GtkWidget	*dialog;
 
-	g_return_if_fail (title != NULL, FALSE);
-	g_return_if_fail (msg != NULL, FALSE);
+	g_return_if_fail (title != NULL);
+	g_return_if_fail (msg != NULL);
 
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK, msg, NULL);
@@ -479,6 +479,9 @@ nma_show_vpn_login_banner_dialog (const char *title,
                                    const char *msg)
 {
 	GtkWidget	*dialog;
+
+	g_return_if_fail (title != NULL);
+	g_return_if_fail (msg != NULL);
 
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_INFO,
 					GTK_BUTTONS_OK, msg, NULL);
