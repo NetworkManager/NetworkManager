@@ -895,11 +895,13 @@ static void free_device_activated_cb_data (DeviceActivatedCBData *obj)
 static void nma_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DeviceActivatedCBData *	cb_data = (DeviceActivatedCBData*) user_data;
-	NMApplet *		applet = cb_data->applet;
+	NMApplet *			applet = cb_data->applet;
+#ifdef ENABLE_NOTIFY
 	char *				essid = cb_data->essid;
 	NetworkDevice *		active_device;
 	char *				message = NULL;
 	char *				icon = NULL;
+#endif
 
 	nma_dbus_device_properties_cb (pcall, applet);
 
