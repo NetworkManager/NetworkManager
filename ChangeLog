@@ -1,3 +1,14 @@
+2006-03-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-notifications.h
+		- Protect prototype of nma_send_event_notification() because it
+			includes libnotify-specific types
+		- Include libnotify/libnotify.h too, since we technically need it
+
+	* gnome/applet/applet.c
+		- (nma_show_vpn_failure_dialog): fix usage of g_return_if_fail
+		- (nma_show_vpn_login_banner_dialog): add some error checking
+
 2006-03-04  Dan Williams  <dcbw@redhat.com>
 
 	Clean up activation cancellation.  Should be a lot faster now.  Observed

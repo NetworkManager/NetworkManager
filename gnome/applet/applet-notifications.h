@@ -22,6 +22,9 @@
 #ifndef NM_NOTIFICATION_H__
 #define NM_NOTIFICATION_H__
 
+#ifdef ENABLE_NOTIFY
+
+#include <libnotify/notify.h>
 #include "applet.h"
 
 void
@@ -30,5 +33,7 @@ nma_send_event_notification (NMApplet *applet,
                               const char *summary,
                               const char *message,
                               const char *icon);
+
+#endif /* ENABLE_NOTIFY */
 
 #endif /* NM_NOTIFICATION_H__ */
