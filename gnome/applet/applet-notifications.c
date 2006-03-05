@@ -20,6 +20,7 @@
  */
 
 #include <libnotify/notify.h>
+#include "applet.h"
 #include "applet-notifications.h"
 
 void

@@ -22,6 +22,8 @@
 #ifndef NM_NOTIFICATION_H__
 #define NM_NOTIFICATION_H__
 
+#include "config.h"
+
 #ifdef ENABLE_NOTIFY
 
 #include <libnotify/notify.h>
