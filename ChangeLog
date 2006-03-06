@@ -1,5 +1,10 @@
 2006-03-06  Robert Love  <rml@novell.com>
 
+	* NetworkManager.pc.in:  Provide an -I to the NetworkManager include
+	  directory in CFLAGS so developers can actually use NetworkManager.h.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c: Use preprocessor defines and not
 	  open-coded integer constants.  Add state_to_string() to map a given
 	  state to a textual description, and provide that when notifying of
