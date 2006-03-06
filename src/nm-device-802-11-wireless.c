@@ -2590,8 +2590,8 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
-	char *			hex_essid;
-	char *			ap_scan = "AP_SCAN 1";
+	const char *		hex_essid;
+	const char *		ap_scan = "AP_SCAN 1";
 	guint32			caps;
 	gboolean			supports_wpa;
 
@@ -2612,14 +2612,16 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	supports_wpa = (caps & NM_802_11_CAP_PROTO_WPA)
 				|| (caps & NM_802_11_CAP_PROTO_WPA2);
 
-	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
+	/* Use "AP_SCAN 2" if:
+	 * - The wireless network is non-broadcast or user created
+	 * - The wireless driver does not support WPA
+	 */
 	user_created = nm_ap_get_user_created (ap);
 	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			ap_scan))
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, ap_scan))
 		goto out;
 
 	/* Standard network setup info */
