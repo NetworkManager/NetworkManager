@@ -394,6 +394,43 @@ nm_get_device_by_iface (NMData *data,
 
 
 /*
+ * nm_get_device_by_iface_locked
+ *
+ * Search through the device list for a device with a given iface.
+ * NOTE: refs the device, caller must unref when done.
+ *
+ */
+NMDevice *
+nm_get_device_by_iface_locked (NMData *data,
+                               const char *iface)
+{
+	GSList *	elt;
+	NMDevice *dev = NULL;
+	
+	g_return_val_if_fail (data  != NULL, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	nm_lock_mutex (data->dev_list_mutex, __func__);
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+	{
+		NMDevice	*tmp_dev = NULL;
+		if ((tmp_dev = NM_DEVICE (elt->data)))
+		{
+			if (nm_null_safe_strcmp (nm_device_get_iface (tmp_dev), iface) == 0)
+			{
+				g_object_ref (G_OBJECT (tmp_dev));
+				dev = tmp_dev;
+				break;
+			}
+		}
+	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+	return dev;
+}
+
+
+/*
  * Get/set functions for UDI
  */
 const char *
@@ -556,45 +593,45 @@ nm_device_set_active_link (NMDevice *self,
 	app_data = self->priv->app_data;
 	req = nm_device_get_act_request (self);
 
-	if (self->priv->link_active != link_active)
+	if (self->priv->link_active == link_active)
+		return;
+
+	self->priv->link_active = link_active;
+
+	/* Deactivate a currently active device */
+	if (!link_active && req)
+		nm_policy_schedule_device_change_check (app_data);
+	else if (link_active && !req)
 	{
-		self->priv->link_active = link_active;
+		NMDevice *	act_dev = nm_get_active_device (app_data);
+		NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
 
-		/* Deactivate a currently active device */
-		if (!link_active && req)
-			nm_policy_schedule_device_change_check (app_data);
-		else if (link_active && !req)
+		/* Should we switch to this device now that it has a link?
+		 *
+		 * Only auto-switch for wired devices, AND...
+		 *
+		 * only switch to fully-supported devices, since ones that don't have carrier detection
+		 * capability usually report the carrier as "always on" even if its not really on.  User
+		 * must manually choose semi-supported devices.
+		 *
+		 */
+		if (nm_device_is_802_3_ethernet (self) && (nm_device_get_capabilities (self) & NM_DEVICE_CAP_CARRIER_DETECT))
 		{
-			NMDevice *	act_dev = nm_get_active_device (app_data);
-			NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
+			gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
+			NMActRequest *	act_req;
 
-			/* Should we switch to this device now that it has a link?
-			 *
-			 * Only auto-switch for wired devices, AND...
-			 *
-			 * only switch to fully-supported devices, since ones that don't have carrier detection
-			 * capability usually report the carrier as "always on" even if its not really on.  User
-			 * must manually choose semi-supported devices.
-			 *
-			 */
-			if (nm_device_is_802_3_ethernet (self) && (nm_device_get_capabilities (self) & NM_DEVICE_CAP_CARRIER_DETECT))
+			/* If active device is wireless, switch to this one */
+			if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
+				do_switch = TRUE;
+
+			if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE)))
 			{
-				gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
-				NMActRequest *	act_req;
-
-				/* If active device is wireless, switch to this one */
-				if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
-					do_switch = TRUE;
-
-				if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE)))
-				{
-					nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));
-					nm_policy_schedule_device_change_check (app_data);
-				}
+				nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));
+				nm_policy_schedule_device_change_check (app_data);
 			}
 		}
-		nm_dbus_schedule_device_status_change_signal	(app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 	}
+	nm_dbus_schedule_device_status_change_signal	(app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 }
 
 

@@ -127,6 +127,48 @@ static struct nl_handle * new_nl_handle (void)
 }
 
 
+int
+nm_system_get_rtnl_index_from_iface (const char *iface)
+{
+	struct nl_handle *	nlh = NULL;
+	struct nl_cache *	cache = NULL;
+	int				i = RTNL_LINK_NOT_FOUND;
+
+	nlh = new_nl_handle ();
+	if (nlh && (cache = get_link_cache (nlh)))
+		i = rtnl_link_name2i (cache, iface);
+	nl_close (nlh);
+	nl_handle_destroy (nlh);
+
+	return i;
+}
+
+
+#define MAX_IFACE_LEN	32
+char *
+nm_system_get_iface_from_rtnl_index (int rtnl_index)
+{
+	struct nl_handle *	nlh = NULL;
+	struct nl_cache *	cache = NULL;
+	char *			buf = NULL;
+
+	nlh = new_nl_handle ();
+	if (nlh && (cache = get_link_cache (nlh)))
+	{
+		buf = g_malloc0 (MAX_IFACE_LEN);
+		if (!rtnl_link_i2name (cache, rtnl_index, buf, MAX_IFACE_LEN - 1))
+		{
+			g_free (buf);
+			buf = NULL;
+		}
+	}
+	nl_close (nlh);
+	nl_handle_destroy (nlh);
+
+	return buf;
+}
+
+
 /*
  * nm_system_device_set_from_ip4_config
  *

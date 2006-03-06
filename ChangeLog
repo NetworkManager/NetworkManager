@@ -1,5 +1,82 @@
 2006-03-05  Dan Williams  <dcbw@redhat.com>
 
+	Process netlink messages in device subclasses rather than in
+	NetworkManager.c.  Also add support for recognizing Wireless Events.
+	
+	* configure.in
+		- Find GLIB_GENMARSHAL
+
+	* src/Makefile.am
+		- Since we're marshalling custom types for wireless event signals,
+			we get to create our own marshallers using GLIB_GENMARSHAL
+
+	* src/NetworkManager.c
+		- (nm_monitor_wired_link_state): renamed to nm_monitor_setup
+		- (nm_monitor_setup): renamed from nm_monitor_wired_link_state, and
+			cut down somewhat.  We no longer process signals here.
+		- (nm_data_new): create the netlink monitor here, and remove a
+			useless call to nm_policy_schedule_device_change_check()
+		- (nm_data_free): get rid of the netlink monitor here
+		- (nm_device_link_activated, nm_device_link_deactivated): removed
+		- (main): don't create the netlink monitor here, let nm_data_new
+			do that.  Call nm_policy_schedule_device_change_check() right
+			before we jump to the mainloop to figure out which device
+			to use first
+
+	* src/NetworkManagerSystem.[ch]
+		- (nm_system_get_rtnl_index_from_iface, nm_system_get_iface_from_rtnl_index):
+			convert back and forth from interface names to interface
+			indexes
+
+	* src/nm-device-802-11-wireless.c
+		- (real_init): connect to wireless-event signals from the netlink
+			monitor object
+		- (nm_device_802_11_wireless_event): new function, schedule handler
+			for wireless event signals from the netlink monitor object.  We
+			want the handler to run in the device's context
+		- (wireless_event_helper): handle wireless-event signals from netlink
+		- (nm_device_802_11_wireless_dispose): disconnect wireless-event
+			signal handler
+
+	* src/nm-device-802-11-wireless.h
+		- remove unused prototype for nm_device_802_11_wireless_new
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_init): new function; set up signal handlers for link events
+		- (nm_device_802_3_ethernet_link_activated): new function, schedule
+			handler for netlink link activated events on device's main loop
+		- (link_activated_helper): when we get a link activated event, set
+			the device's link to be active
+		- (nm_device_802_3_ethernet_link_deactivated): new function; schedule
+			handler for netlink link deactivated events on device's main loop
+		- (link_deactivated_helper): when we get a link deactivated event, set
+			the device's link to be inactive
+		- (nm_device_802_3_ethernet_dispose): disconnect signal handler on
+			dispose
+
+	* src/nm-device-802-3-ethernet.h
+		- remove unused prototype for nm_device_802_3_ethernet_new
+
+	* src/nm-device.[ch]
+		- (nm_get_device_by_iface_locked): variant of nm_get_device_by_iface
+			but locks the device list
+		- (nm_device_set_active_link): a little bit of cleanup and de-indenting
+
+	* src/nm-netlink-monitor.[ch]
+		- (nm_netlink_monitor_class_install_signals): New signal
+			"wireless-event"
+		- (nm_netlink_monitor_new): keep reference to NMData so we can get
+			at the device list
+		- (nm_netlink_monitor_event_handler): expand for wireless events too
+
+	* src/nm-marshal-main.c
+		- Include generated nm-marshal.c and nm-marshal.h
+
+	* src/nm-marshal.list
+		- List of custom marshal functions
+
+2006-03-05  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-notifications.h
 		- Protect prototype of nma_send_event_notification() because it
 			includes libnotify-specific types

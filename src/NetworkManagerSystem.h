@@ -35,6 +35,9 @@
 void			nm_system_init (void);
 gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 
+int			nm_system_get_rtnl_index_from_iface		(const char *iface);
+char *		nm_system_get_iface_from_rtnl_index		(int rtnl_index);
+
 void			nm_system_device_flush_routes				(NMDevice *dev);
 void			nm_system_device_flush_routes_with_iface	(const char *iface);
 

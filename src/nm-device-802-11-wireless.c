@@ -82,6 +82,7 @@ struct _NMDevice80211WirelessPrivate
 
 	guint32			failed_link_count;
 	GSource *			link_timeout;
+	gulong			wireless_event_id;
 
 	/* Static options from driver */
 	guint8			we_version;
@@ -133,6 +134,12 @@ static void		remove_link_timeout (NMDevice80211Wireless *self);
 static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
                                            const char *key,
                                            int auth_method);
+
+static void		nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
+                                                     GObject *obj,
+                                                     char *data,
+                                                     int data_len,
+                                                     NMDevice80211Wireless *self);
 
 static guint nm_wireless_scan_interval_to_seconds (NMWirelessScanInterval interval)
 {
@@ -254,6 +261,7 @@ real_init (NMDevice *dev)
 	NMData *				app_data;
 	guint32				caps;
 	NMSock *				sk;
+	NmNetlinkMonitor *		monitor;
 
 	self->priv->scan_mutex = g_mutex_new ();
 	nm_register_mutex_desc (self->priv->scan_mutex, "Scan Mutex");
@@ -308,6 +316,122 @@ real_init (NMDevice *dev)
 		}
 		nm_dev_sock_close (sk);
 	}
+
+	monitor = app_data->netlink_monitor;
+	self->priv->wireless_event_id = 
+			g_signal_connect (G_OBJECT (monitor), "wireless-event",
+				G_CALLBACK (nm_device_802_11_wireless_event), self);
+}
+
+
+typedef struct WirelessEventCBData
+{
+	NMDevice80211Wireless *	dev;
+	char *				data;
+	int					len;
+} WirelessEventCBData;
+
+static gboolean
+wireless_event_helper (gpointer user_data)
+{
+	NMDevice80211Wireless *	self;
+	WirelessEventCBData *	cb_data;
+	struct iw_event iwe_buf, *iwe = &iwe_buf;
+	char *pos, *end, *custom;
+
+	cb_data = (WirelessEventCBData *) user_data;
+	g_return_val_if_fail (cb_data != NULL, FALSE);
+
+	self = NM_DEVICE_802_11_WIRELESS (cb_data->dev);
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	g_return_val_if_fail (cb_data->data != NULL, FALSE);
+	g_return_val_if_fail (cb_data->len >= 0, FALSE);
+
+	pos = cb_data->data;
+	end = cb_data->data + cb_data->len;
+
+	while (pos + IW_EV_LCP_LEN <= end)
+	{
+		/* Event data may be unaligned, so make a local, aligned copy
+		 * before processing. */
+		memcpy (&iwe_buf, pos, IW_EV_LCP_LEN);
+		if (iwe->len <= IW_EV_LCP_LEN)
+			break;
+
+		custom = pos + IW_EV_POINT_LEN;
+		if (self->priv->we_version > 18 &&
+		    (iwe->cmd == IWEVMICHAELMICFAILURE ||
+		     iwe->cmd == IWEVCUSTOM ||
+		     iwe->cmd == IWEVASSOCREQIE ||
+		     iwe->cmd == IWEVASSOCRESPIE ||
+		     iwe->cmd == IWEVPMKIDCAND))
+		{
+			/* WE-19 removed the pointer from struct iw_point */
+			char *dpos = (char *) &iwe_buf.u.data.length;
+			int dlen = dpos - (char *) &iwe_buf;
+			memcpy (dpos, pos + IW_EV_LCP_LEN,
+			       sizeof (struct iw_event) - dlen);
+		}
+		else
+		{
+			memcpy (&iwe_buf, pos, sizeof (struct iw_event));
+			custom += IW_EV_POINT_OFF;
+		}
+
+		switch (iwe->cmd)
+		{
+			case SIOCGIWAP:
+				if (   memcmp(iwe->u.ap_addr.sa_data,
+					   "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0
+				    || memcmp(iwe->u.ap_addr.sa_data,
+					   "\x44\x44\x44\x44\x44\x44", ETH_ALEN) == 0
+				    || memcmp(iwe->u.ap_addr.sa_data,
+					   "\xFF\xFF\xFF\xFF\xFF\xFF", ETH_ALEN) == 0)
+				{
+					/* disassociated */
+				} else {
+					/* associated */
+				}
+				break;
+			case SIOCGIWSCAN:
+				/* Got some scan results */
+				break;
+		}
+		pos += iwe->len;
+	}
+	g_object_unref (G_OBJECT (self));
+	g_free (cb_data->data);
+	g_free (cb_data);
+	return FALSE;
+}
+
+static void
+nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
+                                 GObject *obj,
+                                 char *data,
+                                 int data_len,
+                                 NMDevice80211Wireless *self)
+{
+	GSource *				source;
+	WirelessEventCBData *	cb_data;
+
+	/* Make sure signal is for us */
+	if (NM_DEVICE (self) != NM_DEVICE (obj))
+		return;
+
+	cb_data = g_malloc0 (sizeof (WirelessEventCBData));
+	cb_data->dev = self;
+	g_object_ref (G_OBJECT (self));
+	cb_data->data = g_malloc (data_len);
+	memcpy (cb_data->data, data, data_len);
+	cb_data->len = data_len;
+
+	source = g_idle_source_new ();
+	g_source_set_callback (source, (GSourceFunc) wireless_event_helper,
+			cb_data, NULL);
+	g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+	g_source_unref (source);
 }
 
 
@@ -2887,6 +3011,7 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessClass *	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (object);
 	NMDeviceClass *			parent_class;
+	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -2906,6 +3031,9 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	if (self->priv->ap_list)
 		nm_ap_list_unref (self->priv->ap_list);
 	g_mutex_free (self->priv->scan_mutex);
+
+	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+		self->priv->wireless_event_id);
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));

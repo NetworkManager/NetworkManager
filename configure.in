@@ -201,6 +201,9 @@ PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
 AC_SUBST(LIBGNOMEUI_CFLAGS) # is this even needed? it was typed incorrectly before
 AC_SUBST(LIBGNOMEUI_LIBS)
 
+GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
+AC_SUBST(GLIB_GENMARSHAL)
+
 AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
 
 if ! test -z "$with_dbus_sys" ; then

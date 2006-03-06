@@ -173,6 +173,8 @@ NMDevice *	nm_get_device_by_udi	(struct NMData *data,
 								 const char *udi);
 NMDevice *	nm_get_device_by_iface	(struct NMData *data,
 								 const char *iface);
+NMDevice *	nm_get_device_by_iface_locked	(struct NMData *data,
+								 const char *iface);
 
 gboolean		nm_device_is_test_device	(NMDevice *dev);
 

@@ -62,17 +62,31 @@ NetworkManager_SOURCES =				\
 		nm-ap-security-wpa-eap.h		\
 		nm-ap-security-wpa-psk.c		\
 		nm-ap-security-wpa-psk.h		\
+		nm-marshal-main.c			\
 		kernel-types.h				\
 		wpa.c					\
 		wpa.h					\
 		wpa_ctrl.c				\
 		wpa_ctrl.h
 
-rundir=$(localstatedir)/run/NetworkManager
-dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
-install-data-hook:
-	   $(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
-	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+nm-marshal.h: Makefile.am nm-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal nm-marshal.list --header > xgen-gmh \
+	&& (cmp -s xgen-gmh nm-marshal.h || cp xgen-gmh nm-marshal.h) \
+	&& rm -f xgen-gmh xgen-gmh~
+
+nm-marshal.c: Makefile.am nm-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal nm-marshal.list --body > xgen-gmc \
+	&& cp xgen-gmc nm-marshal.c \
+	&& rm -f xgen-gmc xgen-gmc~
+
+nm-marshal-main.c: nm-marshal.c nm-marshal.h
+
+built_sources = 					\
+	nm-marshal.h					\
+	nm-marshal.c					\
+	$(NULL)
+
+$(NetworkManager_OBJECTS): $(built_sources)
 
 NetworkManager_CPPFLAGS = 							\
 	$(DBUS_CFLAGS)									\
@@ -127,4 +141,16 @@ NetworkManager_DATA = gdb-cmd
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = NetworkManager.conf
 
-EXTRA_DIST = $(dbusservice_DATA) $(NetworkManager_DATA)
+EXTRA_DIST = \
+	$(dbusservice_DATA) \
+	$(NetworkManager_DATA) \
+	nm-marshal.list
+
+rundir=$(localstatedir)/run/NetworkManager
+dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
+install-data-hook:
+	   $(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
+	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+
+CLEANFILES = $(built_sources)
+
