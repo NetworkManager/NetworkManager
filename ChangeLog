@@ -1,5 +1,14 @@
 2006-03-06  Robert Love  <rml@novell.com>
 
+	* gnome/applet/Makefile.am: Define AUTOSTARTDIR.
+	* gnome/applet/applet.c: Add 'Remove' option to the right click menu,
+	  to exit the applet.  As a sweet side-effect, idea courtesy of Chris
+	  Rivera, detect if the applet was auto-started.  If so, ask the user
+	  if he or she would like to stop automatically running the applet on
+	  login.  If so, disable autostart.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
 	* NetworkManager.pc.in:  Provide an -I to the NetworkManager include
 	  directory in CFLAGS so developers can actually use NetworkManager.h.
 
