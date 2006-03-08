@@ -1,4 +1,9 @@
-2006-03-06  Robert Love  <rml@novell.com>
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade: Hide the password entry text with
+	  asterisks.
+
+2006-03-08  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerSystem.h, src/nm-device.c, NetworkManagerDebian.c,
 	  NetworkManagerRedHat.c, NetworkManagerGentoo.c,
