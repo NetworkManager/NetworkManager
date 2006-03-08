@@ -196,7 +196,7 @@ nm_device_new (const char *iface,
 		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (dev));
 
 	/* Grab IP config data for this device from the system configuration files */
-	dev->priv->system_config_data = nm_system_device_get_system_config (dev);
+	dev->priv->system_config_data = nm_system_device_get_system_config (dev, app_data);
 	dev->priv->use_dhcp = nm_system_device_get_use_dhcp (dev);
 
 	/* Allow distributions to flag devices as disabled */

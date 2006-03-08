@@ -31,7 +31,11 @@
 
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerMain.h"
 #include "nm-device.h"
+#include "nm-ap-security.h"
+#include "NetworkManagerAPList.h"
+#include "NetworkManagerPolicy.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerDialup.h"
@@ -428,7 +432,7 @@ out:
  * SuSE stores this information in /etc/sysconfig/network/ifcfg-*-<MAC address>
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	char *cfg_file_path = NULL;
 	char mac[18];
@@ -507,7 +511,52 @@ found:
 			sys_data->system_disabled = TRUE;
 		}
 		free (buf);
-	}		
+	}
+
+	if ((buf = svGetValue (file, "WIRELESS_ESSID")))
+	{
+		NMAccessPoint *	ap;
+		NMAccessPoint *	list_ap;
+		NMAPSecurity *		security;
+		GTimeVal *		timestamp;
+
+		ap = nm_ap_new ();
+		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
+
+		nm_ap_set_essid (ap, buf);
+		nm_ap_set_security (ap, security);
+		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
+
+		timestamp = g_malloc0 (sizeof (GTimeVal));
+		timestamp->tv_sec = time (NULL);
+		timestamp->tv_usec = 0;
+		nm_ap_set_timestamp (ap, timestamp);
+		g_free (timestamp);
+
+		nm_ap_set_trusted (ap, TRUE);
+
+		if ((list_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, buf)))
+		{
+			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
+			nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
+			nm_ap_set_security (list_ap, nm_ap_get_security (ap));
+			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
+		}
+		else
+		{
+			/* New AP, just add it to the list */
+			nm_ap_list_append_ap (app_data->allowed_ap_list, ap);
+		}
+		nm_ap_unref (ap);
+
+		nm_debug ("Adding '%s' to the list of trusted networks", buf);
+
+		/* Ensure all devices get new information copied into their device lists */
+		nm_policy_schedule_device_ap_lists_update_from_allowed (app_data);
+
+		free (buf);
+	}
 
 	sys_data->config = nm_ip4_config_new ();
 
