@@ -2524,7 +2524,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
 		g_io_channel_unref (channel);
 
-		/* Crackrock delay so we don't try to talk to wpa_supplicant to early */
+		/* Crackrock delay so we don't try to talk to wpa_supplicant too early */
 		/* FIXME: poll the global control socket instead of just sleeping */
 		g_usleep (G_USEC_PER_SEC);
 
