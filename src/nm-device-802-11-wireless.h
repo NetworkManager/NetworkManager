@@ -65,6 +65,7 @@ struct _NMDevice80211WirelessClass
 
 GType nm_device_802_11_wireless_get_type (void);
 
+
 static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev);
 static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev)
 {

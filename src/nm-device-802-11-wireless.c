@@ -2466,8 +2466,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
-	char *			hex_essid;
-	char *			ap_scan = "AP_SCAN 1";
+	const char *		hex_essid;
+	const char *		ap_scan = "AP_SCAN 1";
+	guint32			caps;
+	gboolean			supports_wpa;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
