@@ -27,6 +27,17 @@
 	  if he or she would like to stop automatically running the applet on
 	  login.  If so, disable autostart.
 
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Use preprocessor defines and not
+	  open-coded integer constants.  Add state_to_string() to map a given
+	  state to a textual description, and provide that when notifying of
+	  state change.
+	* src/dhcp-manager/nm-dhcp-manager.h: Provide defines for the dhcdbd
+	  states, copied and cleaned up from dhcdbd.d.  Ideally, we would use
+	  this header directly, but it is currently not installed on most
+	  systems.
+
 2006-03-05  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-notifications.h
