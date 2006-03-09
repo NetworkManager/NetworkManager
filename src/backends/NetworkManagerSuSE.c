@@ -34,8 +34,16 @@
 #include "NetworkManagerMain.h"
 #include "nm-device.h"
 #include "nm-ap-security.h"
+#include "nm-ap-security-private.h"
+#include "nm-ap-security-wep.h"
+#include "nm-ap-security-wpa-psk.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
+#include "cipher.h"
+#include "cipher-wep-ascii.h"
+#include "cipher-wep-hex.h"
+#include "cipher-wep-passphrase.h"
+#include "cipher-wpa-psk-passphrase.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerDialup.h"
@@ -486,7 +494,7 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	return sys_data;
 
 found:
-	nm_debug ("found config %s for if %s", cfg_file_path, nm_device_get_iface (dev));
+	nm_debug ("found config '%s' for interface '%s'", cfg_file_path, nm_device_get_iface (dev));
 	if (!(file = svNewFile (cfg_file_path)))
 	{
 		g_free (cfg_file_path);
@@ -517,17 +525,97 @@ found:
 	{
 		NMAccessPoint *	ap;
 		NMAccessPoint *	list_ap;
-		NMAPSecurity *		security;
+		char *			key;
+		char *			mode;
 
 		ap = nm_ap_new ();
-		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
-
 		nm_ap_set_essid (ap, buf);
-		nm_ap_set_security (ap, security);
-		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
-
 		nm_ap_set_timestamp (ap, time (NULL), 0);
 		nm_ap_set_trusted (ap, TRUE);
+
+		if ((mode = svGetValue (file, "WIRELESS_AUTH_MODE")) && !strcmp (mode, "psk"))
+		{
+			if ((key = svGetValue (file, "WIRELESS_WPA_PSK")))
+			{
+				IEEE_802_11_Cipher *	cipher;
+				NMAPSecurityWPA_PSK *	security;
+				char *				hash;
+
+				cipher = cipher_wpa_psk_passphrase_new ();
+				nm_ap_set_capabilities (ap, NM_802_11_CAP_PROTO_WPA);
+				security = nm_ap_security_wpa_psk_new_from_ap (ap, NM_AUTH_TYPE_WPA_PSK_AUTO);
+				hash = ieee_802_11_cipher_hash (cipher, buf, key);
+				nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
+				nm_ap_set_security (ap, NM_AP_SECURITY (security));
+
+				ieee_802_11_cipher_unref (cipher);
+				g_object_unref (G_OBJECT (security));
+			}
+		}
+		else if ((key = svGetValue (file, "WIRELESS_KEY_0")) && strlen (key) > 3)
+		{
+			IEEE_802_11_Cipher *	cipher;
+			NMAPSecurityWEP *		security;
+			char *				key_type;
+			char *				hash;
+			char *				real_key;
+
+			key_type = svGetValue (file, "WIRELESS_KEY_LENGTH");
+			if (key_type && strcmp (key_type, "128") != 0)
+			{
+				if (key[0] == 'h' && key[1] == ':')
+				{
+					cipher = cipher_wep64_passphrase_new ();
+					real_key = key + 2;
+				}
+				else if (key[0] == 's' && key[1] == ':')
+				{
+					cipher = cipher_wep64_ascii_new ();
+					real_key = key + 2;
+				}
+				else
+				{
+					cipher = cipher_wep64_hex_new ();
+					real_key = key;
+				}
+				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40);
+			}
+			else
+			{
+				if (key[0] == 'h' && key[1] == ':')
+				{
+					cipher = cipher_wep128_passphrase_new ();
+					real_key = key + 2;
+				}
+				else if (key[0] == 's' && key[1] == ':')
+				{
+					cipher = cipher_wep128_ascii_new ();
+					real_key = key + 2;
+				}
+				else
+				{
+					cipher = cipher_wep128_hex_new ();
+					real_key = key;
+				}
+				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104);
+			}
+			hash = ieee_802_11_cipher_hash (cipher, buf, real_key);
+			nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
+			nm_ap_set_security (ap, NM_AP_SECURITY (security));
+
+			ieee_802_11_cipher_unref (cipher);
+			g_object_unref (G_OBJECT (security));
+
+			free (key_type);
+		}
+		else
+		{
+			NMAPSecurity *	security;
+
+			security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
+			nm_ap_set_security (ap, security);
+			g_object_unref (G_OBJECT (security));
+		}
 
 		if ((list_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, buf)))
 		{
@@ -535,7 +623,6 @@ found:
 			nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
 			nm_ap_set_security (list_ap, nm_ap_get_security (ap));
-			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
 		}
 		else
 		{
@@ -549,6 +636,8 @@ found:
 		/* Ensure all devices get new information copied into their device lists */
 		nm_policy_schedule_device_ap_lists_update_from_allowed (app_data);
 
+		free (key);
+		free (mode);
 		free (buf);
 	}
 
