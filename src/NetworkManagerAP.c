@@ -171,13 +171,20 @@ const GTimeVal *nm_ap_get_timestamp (const NMAccessPoint *ap)
 	return (&ap->timestamp);
 }
 
-void nm_ap_set_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
+void nm_ap_set_timestamp (NMAccessPoint *ap, glong sec, glong usec)
+{
+	g_return_if_fail (ap != NULL);
+
+	ap->timestamp.tv_sec = sec;
+	ap->timestamp.tv_usec = usec;
+}
+
+void nm_ap_set_timestamp_via_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
 {
 	g_return_if_fail (ap != NULL);
 
 	ap->timestamp = *timestamp;
 }
-
 
 /*
  * Get/set functions for essid

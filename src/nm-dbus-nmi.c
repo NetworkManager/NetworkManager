@@ -346,7 +346,6 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	NMAPSecurity *			security;
 	NMAccessPoint *		ap;
 	NMAccessPoint *		list_ap;
-	GTimeVal *			timestamp;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -448,11 +447,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	nm_ap_set_security (ap, security);
 	g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 
-	timestamp = g_malloc0 (sizeof (GTimeVal));
-	timestamp->tv_sec = timestamp_secs;
-	timestamp->tv_usec = 0;
-	nm_ap_set_timestamp (ap, timestamp);
-	g_free (timestamp);
+	nm_ap_set_timestamp (ap, timestamp_secs, 0);
 
 	nm_ap_set_trusted (ap, trusted);
 	nm_ap_set_user_addresses (ap, addr_list);
@@ -460,7 +455,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
 	{
 		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
-		nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+		nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 		nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
 		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
 		nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
