@@ -1,3 +1,17 @@
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Have the function
+	  nm_ap_set_timestamp() take the second and micro-second parameters as
+	  direct arguments, which avoids both a dynamic memory allocation and a
+	  structure-to-structure copy!  Add a new interface, the aptly named
+	  nm_ap_set_timestamp_via_timestamp(), to set the timestamp from an
+	  existing GTimeVal, as nm_ap_set_timestamp() once did, for use with
+	  the return from nm_ap_get_timestamp().  New users should use the new
+	  nm_ap_set_timestamp(), not nm_ap_set_timestamp_via_timestamp(), for
+	  the extreme benefit to performance.
+	* src/NetworkManagerAPList.c, src/nm-dbus-nmi.c,
+	  src/backends/NetworkManagerSuSE.c: Use the new functions as needed.
+
 2006-03-08  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.glade: Hide the password entry text with

@@ -518,7 +518,6 @@ found:
 		NMAccessPoint *	ap;
 		NMAccessPoint *	list_ap;
 		NMAPSecurity *		security;
-		GTimeVal *		timestamp;
 
 		ap = nm_ap_new ();
 		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
@@ -527,18 +526,13 @@ found:
 		nm_ap_set_security (ap, security);
 		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 
-		timestamp = g_malloc0 (sizeof (GTimeVal));
-		timestamp->tv_sec = time (NULL);
-		timestamp->tv_usec = 0;
-		nm_ap_set_timestamp (ap, timestamp);
-		g_free (timestamp);
-
+		nm_ap_set_timestamp (ap, time (NULL), 0);
 		nm_ap_set_trusted (ap, TRUE);
 
 		if ((list_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, buf)))
 		{
 			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
-			nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+			nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
 			nm_ap_set_security (list_ap, nm_ap_get_security (ap));
 			nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
