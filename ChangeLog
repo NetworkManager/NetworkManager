@@ -3,6 +3,15 @@
 	* gnome/applet/applet.glade: Hide the password entry text with
 	  asterisks.
 
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* gnome/applet/Makefile.am: Define AUTOSTARTDIR.
+	* gnome/applet/applet.c: Add 'Remove' option to the right click menu,
+	  to exit the applet.  As a sweet side-effect, idea courtesy of Chris
+	  Rivera, detect if the applet was auto-started.  If so, ask the user
+	  if he or she would like to stop automatically running the applet on
+	  login.  If so, disable autostart.
+
 2006-03-05  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-notifications.h
