@@ -75,15 +75,15 @@
 	#define GTK_STOCK_INFO			GTK_STOCK_DIALOG_INFO
 #endif
 
-static GObject *	nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
-static gboolean	nma_icons_init (NMApplet *applet);
-static void		nma_icons_free (NMApplet *applet);
-static void		nma_context_menu_update (NMApplet *applet);
-static GtkWidget *	nma_get_instance (NMApplet *applet);
-static void		nma_update_state (NMApplet *applet);
-static void		nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
-static void		nma_destroy (NMApplet *applet);
-static GType		nma_get_type (void);	/* for G_DEFINE_TYPE */
+static GObject *			nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
+static gboolean			nma_icons_init (NMApplet *applet);
+static void				nma_icons_free (NMApplet *applet);
+static void				nma_context_menu_update (NMApplet *applet);
+static GtkWidget *			nma_get_instance (NMApplet *applet);
+static void				nma_update_state (NMApplet *applet);
+static void				nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
+static G_GNUC_NORETURN void	nma_destroy (NMApplet *applet);
+static GType				nma_get_type (void);	/* for G_DEFINE_TYPE */
 
 G_DEFINE_TYPE(NMApplet, nma, EGG_TYPE_TRAY_ICON)
 

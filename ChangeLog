@@ -1,7 +1,7 @@
 2006-03-09  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Read in WEP and WPA static
-	configurations.
+	  configurations.
 
 2006-03-09  Dan Williams  <dcbw@redhat.com>
 
