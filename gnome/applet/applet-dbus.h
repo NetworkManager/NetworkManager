@@ -27,14 +27,6 @@
 #include "NetworkManager.h"
 #include "applet.h"
 
-/* Return codes for functions that use dbus */
-enum
-{
-	RETURN_SUCCESS = 1,
-	RETURN_FAILURE = 0,
-	RETURN_NO_NM = -1
-};
-
 static inline gboolean message_is_error (DBusMessage *msg)
 {
 	g_return_val_if_fail (msg != NULL, FALSE);
@@ -47,5 +39,14 @@ void			nma_dbus_enable_wireless			(NMApplet *applet, gboolean enabled);
 void			nma_dbus_enable_networking			(NMApplet *applet, gboolean enabled);
 void			nma_free_gui_data_model				(NMApplet *applet);
 void			nma_free_dbus_data_model			(NMApplet *applet);
+
+gboolean		nma_dbus_send_with_callback		(DBusConnection *connection,
+                                                   DBusMessage *msg, 
+                                                   DBusPendingCallNotifyFunction func,
+                                                   gpointer data,
+                                                   DBusFreeFunction free_func,
+                                                   const char *caller);
+void			nma_dbus_send_with_callback_replied(DBusPendingCall *pcall,
+                                                   const char *caller);
 
 #endif

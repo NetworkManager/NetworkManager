@@ -1,3 +1,18 @@
+2006-03-09  Dan Williams  <dcbw@redhat.com>
+
+	Track pending call requests in the applet, and report how many are
+	outstanding, and how long each completed one takes.
+	
+	* gnome/applet/applet-dbus-devices.c
+	  gnome/applet/applet-dbus-vpn.c
+		- Track pending calls
+
+	* gnome/applet/applet-dbus.[ch]
+		- Remove some unused enums
+		- (nma_dbus_send_with_callback, nma_dbus_send_with_callback_replied):
+			new functions to track dbus pending calls and spit out some
+			statistics about them
+
 2006-03-09  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Have the function
