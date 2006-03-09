@@ -213,19 +213,6 @@ real_get_generic_capabilities (NMDevice *dev)
 	return caps;
 }
 
-static NMActStageReturn
-real_act_stage2_config (NMDevice *dev, NMActRequest *req)
-{
-	NMData *	data;
-
-	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	return TRUE;
-}
-
-
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
@@ -279,8 +266,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
-
-	parent_class->act_stage2_config = real_act_stage2_config;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }

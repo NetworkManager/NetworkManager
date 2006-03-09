@@ -1,3 +1,7 @@
+2006-03-08  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-vpnc.desktop.in: Use NoDisplay=true (fixes 333854)
+
 2006-01-23  Robert Love  <rml@novell.com>
 
 	* properties/nm-vpnc-dialog.glade: Add (back) 'Optional Information'
