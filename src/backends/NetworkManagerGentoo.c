@@ -300,7 +300,7 @@ typedef struct GentooSystemConfigData
  * info before setting stuff too.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	char		*cfg_file_path = NULL;
 	FILE		*file = NULL;

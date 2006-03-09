@@ -384,7 +384,7 @@ out:
  * info before setting stuff too.
  *
  */
-void* nm_system_device_get_system_config (NMDevice *dev)
+void* nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	DebSystemConfigData *	sys_data = NULL;
 	if_block *curr_device;

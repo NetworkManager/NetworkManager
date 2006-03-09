@@ -1,7 +1,22 @@
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Read in WEP and WPA static
+	  configurations.
+
 2006-03-08  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.glade: Hide the password entry text with
 	  asterisks.
+
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.h, src/nm-device.c, NetworkManagerDebian.c,
+	  NetworkManagerRedHat.c, NetworkManagerGentoo.c,
+	  NetworkManagerSlackware.c: Pass nm_system_device_get_system_config()
+	  a second argument, NMData.
+	* src/nm-ap-security.h, src/nm-ap-security.c: Export nm_ap_security_new.
+	* src/backends/NetworkManagerSuSE.c: Add wireless networks from ifcfg-*
+	  config files as trusted.
 
 2006-03-06  Robert Love  <rml@novell.com>
 
