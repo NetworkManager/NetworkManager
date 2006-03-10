@@ -128,15 +128,15 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 
 	if (!nmu_security_serialize_wpa_eap (iter,
-								  self->priv->eap_method,
-								  self->priv->identity,
-								  self->priv->passwd,
-								  self->priv->anon_identity,
-								  self->priv->private_key_passwd,
-								  self->priv->private_key_file,
-								  self->priv->client_cert_file,
-								  self->priv->ca_cert_file,
-								  self->priv->wpa_version))
+			self->priv->eap_method,
+			self->priv->identity ? : "",
+			self->priv->passwd ? : "",
+			self->priv->anon_identity ? : "",
+			self->priv->private_key_passwd ? : "",
+			self->priv->private_key_file ? : "",
+			self->priv->client_cert_file ? : "",
+			self->priv->ca_cert_file ? : "",
+			self->priv->wpa_version))
 		return -1;
 	return 0;
 }
