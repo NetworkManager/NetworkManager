@@ -1,5 +1,13 @@
 2006-03-10  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet-dbus-devices.c: When building the device
+	  description, do not bail out if one property is nonexistant.  Keep
+	  building the rest of the string, in case the others exist.  The user
+	  cannot do anything about the errors, anyhow.  Some devices do not
+	  have all of the properties.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.glade: Add toggles to show/obfuscate the
 	  passphrase or key.
 	* gnome/applet/wso-wep-ascii.c, gnome/applet/wso-wep-hex.c,
