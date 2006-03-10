@@ -12,7 +12,6 @@
 	* src/nm-ap-security-wpa-eap.c: Pass fake empty strings for
 	  serialization if strings are NULL, lest DBUS get angry.
 
-
 2006-03-10  Robert Love  <rml@novell.com>
 
 	* src/nm-ap-security-wpa-eap.c: Don't log the password.
