@@ -62,6 +62,21 @@ data_free_func (WirelessSecurityOption *opt)
 }
 
 
+static void show_passwords_cb (GtkToggleButton *button, WirelessSecurityOption *opt)
+{
+	GtkWidget *	entry;
+	gboolean		visible;
+
+	visible = gtk_toggle_button_get_active (button);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_passwd_entry");
+	gtk_entry_set_visibility (GTK_ENTRY (entry), visible);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
+	gtk_entry_set_visibility (GTK_ENTRY (entry), visible);
+}
+
+
 static GtkWidget *
 widget_create_func (WirelessSecurityOption *opt,
                     GtkSignalFunc validate_cb,
@@ -69,6 +84,7 @@ widget_create_func (WirelessSecurityOption *opt,
 {
 	GtkWidget *	entry;
 	GtkWidget *	widget;
+	GtkWidget *	checkbutton;
 
 	g_return_val_if_fail (opt != NULL, NULL);
 	g_return_val_if_fail (opt->data != NULL, NULL);
@@ -96,6 +112,9 @@ widget_create_func (WirelessSecurityOption *opt,
 
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
 	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	checkbutton = glade_xml_get_widget (opt->uixml, "show_checkbutton");
+	g_signal_connect (G_OBJECT (checkbutton), "toggled", GTK_SIGNAL_FUNC (show_passwords_cb), opt);
 
 	return widget;
 }

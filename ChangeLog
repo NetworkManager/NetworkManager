@@ -1,5 +1,14 @@
 2006-03-10  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.glade: Add toggles to show/obfuscate the
+	  passphrase or key.
+	* gnome/applet/wso-wep-ascii.c, gnome/applet/wso-wep-hex.c,
+	  gnome/applet/wso-wep-passphrase.c, gnome/applet/wso-wpa-eap.c,
+	  gnome/applet/wso-wpa-psk.c: Show and obfuscate passphrases and keys
+	  in response to "toggled" signal on new toggle.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
 	* src/nm-ap-security-wpa-eap.c: Pass fake empty strings for
 	  serialization if strings are NULL, lest DBUS get angry.
 
