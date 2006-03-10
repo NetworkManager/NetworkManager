@@ -217,8 +217,17 @@ real_write_supplicant_config (NMAPSecurity *instance,
 			goto out;
 
 	if (passwd && strlen (passwd) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i password \"%s\"", nwid, passwd))
+	{
+		char *msg;
+
+		msg = g_strdup_printf ("SET_NETWORK %i password <password>", nwid);
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i password \"%s\"", nwid, passwd))
+		{
+			g_free (msg);
 			goto out;
+		}
+		g_free (msg);
+	}
 
 	if (anon_identity && strlen (anon_identity) > 0)
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i anonymous_identity \"%s\"", nwid, anon_identity))
