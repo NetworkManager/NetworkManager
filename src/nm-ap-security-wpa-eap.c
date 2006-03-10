@@ -218,8 +218,6 @@ real_write_supplicant_config (NMAPSecurity *instance,
 
 	if (passwd && strlen (passwd) > 0)
 	{
-		char *msg;
-
 		msg = g_strdup_printf ("SET_NETWORK %i password <password>", nwid);
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i password \"%s\"", nwid, passwd))
 		{
