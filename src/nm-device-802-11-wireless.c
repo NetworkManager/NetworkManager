@@ -1872,7 +1872,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 					scan_results->results_len = results_len;
 				}
 				else
-					nm_warning ("get_scan_results() on device %s returned an error.", iface);
+					nm_warning ("device %s returned an error.", iface);
 			}
 
 			nm_device_802_11_wireless_set_mode (self, orig_mode);
@@ -2192,6 +2192,12 @@ supplicant_status_cb (GIOChannel *source,
 
 	g_assert (self);
 
+	/* Do nothing if we're supposed to be canceling activation.
+	 * We'll get cleaned up by the cancellation handlers later.
+	 */
+	if (nm_device_activation_should_cancel (dev))
+		return TRUE;
+
 	ctrl = self->priv->supplicant.ctrl;
 	g_return_val_if_fail (ctrl != NULL, FALSE);
 
@@ -2394,7 +2400,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
 		g_io_channel_unref (channel);
 
-		/* Crackrock delay so we don't try to talk to wpa_supplicant to early */
+		/* Crackrock delay so we don't try to talk to wpa_supplicant too early */
 		/* FIXME: poll the global control socket instead of just sleeping */
 		g_usleep (G_USEC_PER_SEC);
 
@@ -2460,8 +2466,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
-	char *			hex_essid;
-	char *			ap_scan = "AP_SCAN 1";
+	const char *		hex_essid;
+	const char *		ap_scan = "AP_SCAN 1";
+	guint32			caps;
+	gboolean			supports_wpa;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2472,14 +2480,24 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ctrl = self->priv->supplicant.ctrl;
 	g_assert (ctrl);
 
-	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
+	/* Assume that drivers that don't support WPA pretty much suck,
+	 * and can't handle NM scanning along with wpa_supplicant.  Which
+	 * is the case for most of them, airo in particular.
+	 */
+	caps = nm_device_get_type_capabilities (NM_DEVICE (self));
+	supports_wpa = (caps & NM_802_11_CAP_PROTO_WPA)
+				|| (caps & NM_802_11_CAP_PROTO_WPA2);
+
+	/* Use "AP_SCAN 2" if:
+	 * - The wireless network is non-broadcast or user created
+	 * - The wireless driver does not support WPA
+	 */
 	user_created = nm_ap_get_user_created (ap);
-	if (!nm_ap_get_broadcast (ap) || user_created)
+	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			ap_scan))
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, ap_scan))
 		goto out;
 
 	/* Standard network setup info */
@@ -2820,6 +2838,27 @@ real_activation_failure_handler (NMDevice *dev,
 			ap ? nm_ap_get_essid (ap) : "(none)");
 }
 
+static void
+real_activation_cancel_handler (NMDevice *dev,
+                                NMActRequest *req)
+{
+	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessClass *	klass;
+	NMDeviceClass * 			parent_class;
+
+	/* Chain up to parent first */
+	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+	parent_class->activation_cancel_handler (dev, req);
+
+	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
+	{
+		NMData *data = nm_device_get_app_data (dev);
+		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection, req);
+	}
+}
+
+
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
@@ -2912,6 +2951,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->activation_failure_handler = real_activation_failure_handler;
 	parent_class->activation_success_handler = real_activation_success_handler;
+	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }
@@ -3046,7 +3086,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		{
 			if (tries > 20 * SCAN_SLEEP_CENTISECONDS)
 			{
-				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
+				nm_warning ("card took too much time scanning.  Get a better one.");
 				break;
 			}
 
@@ -3060,7 +3100,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		}
 		else		/* Random errors */
 		{
-			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info: %s",
+			nm_warning ("unknown error, or the card returned too much scan info: %s",
 					  strerror (errno));
 			break;
 		}

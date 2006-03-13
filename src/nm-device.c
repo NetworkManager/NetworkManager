@@ -75,9 +75,6 @@ static gpointer	nm_device_worker (gpointer user_data);
 
 static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
 
-static void		nm_device_schedule_activation_handle_cancel (NMActRequest *req);
-
-
 /*
  * nm_device_test_wireless_extensions
  *
@@ -199,7 +196,7 @@ nm_device_new (const char *iface,
 		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (dev));
 
 	/* Grab IP config data for this device from the system configuration files */
-	dev->priv->system_config_data = nm_system_device_get_system_config (dev);
+	dev->priv->system_config_data = nm_system_device_get_system_config (dev, app_data);
 	dev->priv->use_dhcp = nm_system_device_get_use_dhcp (dev);
 
 	/* Allow distributions to flag devices as disabled */
@@ -678,10 +675,7 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	nm_device_activate_schedule_stage2_device_config (req);
 
@@ -762,10 +756,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 		nm_device_bring_up (self);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, req);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -780,10 +771,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	nm_device_activate_schedule_stage3_ip_config_start (req);
 
@@ -873,10 +861,7 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self, req);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -889,10 +874,7 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	nm_device_activate_schedule_stage4_ip_config_get (req);
 
@@ -1019,18 +1001,12 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) started...", nm_device_get_iface (self));
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, req, &ip4_config);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
@@ -1042,10 +1018,7 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	nm_act_request_set_ip4_config (req, ip4_config);
 	nm_device_activate_schedule_stage5_ip_config_commit (req);
@@ -1129,10 +1102,7 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) started...", iface);
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, req, &ip4_config);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -1209,10 +1179,7 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 			nm_device_get_iface (self));
 
 	if (nm_device_activation_should_cancel (self))
-	{
-		nm_device_schedule_activation_handle_cancel (req);
 		goto out;
-	}
 
 	nm_device_set_ip4_config (self, ip4_config);
 	if (nm_system_device_set_from_ip4_config (self))
@@ -1262,27 +1229,39 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
 }
 
 
+static void
+real_activation_cancel_handler (NMDevice *self,
+                                NMActRequest *req)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (req != NULL);
+
+	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
+		nm_dhcp_manager_cancel_transaction (self->priv->app_data->dhcp_manager, req);
+}
+
 /*
- * nm_device_activation_handle_cancel
+ * activation_handle_cancel_helper
  *
- * Cancel activation on a device and clean up.
+ * Allow specific device types to clean up their own cancellation
  *
  */
 static gboolean
-nm_device_activation_handle_cancel (NMActRequest *req)
+activation_handle_cancel_helper (NMActRequest *req)
 {
-	NMDevice *	self;
-	NMData *		data;
+	NMDevice * self;
+	NMDeviceClass *klass;
 
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
+	g_assert (req);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	if ((req = nm_device_get_act_request (self)) && nm_device_is_activating (self))
+	klass = NM_DEVICE_CLASS (g_type_class_peek (NM_TYPE_DEVICE));
+	if (klass->activation_cancel_handler)
+		klass->activation_cancel_handler (self, req);
+
+	if ((req = nm_device_get_act_request (self)))
 	{
 		self->priv->act_request = NULL;
 		nm_act_request_unref (req);
@@ -1317,28 +1296,12 @@ nm_device_schedule_activation_handle_cancel (NMActRequest *req)
 
 	nm_info ("Activation (%s) cancellation handler scheduled...", nm_device_get_iface (self));
 	source = g_idle_source_new ();
-	g_source_set_callback (source, (GSourceFunc) nm_device_activation_handle_cancel, req, NULL);
+	g_source_set_callback (source, (GSourceFunc) activation_handle_cancel_helper, req, NULL);
+	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
 	g_source_attach (source, self->priv->context);
 	g_source_unref (source);
 }
 
-
-/*
- * nm_device_activation_cancel
- *
- * Signal activation worker that it should stop and die.
- *
- */
-void
-nm_device_activation_cancel (NMDevice *self)
-{
-	NMDeviceClass *	klass;
-
-	g_return_if_fail (self != NULL);
-
-	klass = NM_DEVICE_CLASS (g_type_class_peek (NM_TYPE_DEVICE));
-	klass->cancel_activation (self);
-}
 
 static
 gboolean nm_ac_test (int tries,
@@ -1358,8 +1321,14 @@ gboolean nm_ac_test (int tries,
 	return TRUE;
 }
 
-static void
-real_cancel_activation (NMDevice *self)
+/*
+ * nm_device_activation_cancel
+ *
+ * Signal activation worker that it should stop and die.
+ *
+ */
+void
+nm_device_activation_cancel (NMDevice *self)
 {
 	nm_completion_args	args;
 	NMData *			app_data;
@@ -1372,28 +1341,11 @@ real_cancel_activation (NMDevice *self)
 	if (nm_device_is_activating (self))
 	{
 		NMActRequest *	req = nm_device_get_act_request (self);
-		gboolean		clear_act_request = FALSE;
 
 		nm_info ("Activation (%s): cancelling...", nm_device_get_iface (self));
 		self->priv->quit_activation = TRUE;
 
-		/* If the device is waiting for DHCP or a user key, force its current request to stop. */
-		if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
-		{
-			nm_dbus_cancel_get_user_key_for_network (app_data->dbus_connection, req);
-			clear_act_request = TRUE;
-		}
-		else if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
-		{
-			nm_dhcp_manager_cancel_transaction (app_data->dhcp_manager, req);
-			clear_act_request = TRUE;
-		}
-
-		if (clear_act_request)
-		{
-			self->priv->act_request = NULL;
-			nm_act_request_unref (req);
-		}
+		nm_device_schedule_activation_handle_cancel (req);
 
 		/* Spin until cancelled.  Possible race conditions or deadlocks here.
 		 * The other problem with waiting here is that we hold up dbus traffic
@@ -1972,7 +1924,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->finalize = nm_device_finalize;
 
 	klass->is_test_device = real_is_test_device;
-	klass->cancel_activation = real_cancel_activation;
+	klass->activation_cancel_handler = real_activation_cancel_handler;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;
 	klass->start = real_start;

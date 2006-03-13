@@ -139,7 +139,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
  * info before setting stuff too.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	return NULL;
 }

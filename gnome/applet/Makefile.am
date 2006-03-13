@@ -6,28 +6,29 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/include -I${top
 
 bin_PROGRAMS = nm-applet
 
-nm_applet_CPPFLAGS =						\
-	$(DBUS_CFLAGS)							\
-	$(GTHREAD_CFLAGS)						\
-	$(HAL_CFLAGS)							\
-	$(DBUS_GLIB_CFLAGS)						\
-	$(GLADE_CFLAGS)						\
-	$(GTK_CFLAGS)							\
-	$(GCONF_CFLAGS)						\
-	$(LIBGNOMEUI_CFLAGS)					\
-	$(PANEL_APPLET_CFLAGS)					\
-	$(GNOME_KEYRING_CFLAGS)					\
-	-DICONDIR=\""$(datadir)/pixmaps"\"			\
-	-DGLADEDIR=\""$(gladedir)"\"				\
-	-DBINDIR=\""$(bindir)"\"					\
-	-DSYSCONFDIR=\""$(sysconfdir)"\"			\
+nm_applet_CPPFLAGS =									\
+	$(DBUS_CFLAGS)										\
+	$(GTHREAD_CFLAGS)									\
+	$(HAL_CFLAGS)										\
+	$(DBUS_GLIB_CFLAGS)									\
+	$(GLADE_CFLAGS)									\
+	$(GTK_CFLAGS)										\
+	$(GCONF_CFLAGS)									\
+	$(LIBGNOMEUI_CFLAGS)								\
+	$(PANEL_APPLET_CFLAGS)								\
+	$(GNOME_KEYRING_CFLAGS)								\
+	-DICONDIR=\""$(datadir)/pixmaps"\"						\
+	-DGLADEDIR=\""$(gladedir)"\"							\
+	-DBINDIR=\""$(bindir)"\"								\
+	-DSYSCONFDIR=\""$(sysconfdir)"\"						\
+	-DAUTOSTARTDIR=\""$(datadir)/gnome/autostart"\"			\
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"	\
-	-DDBUS_API_SUBJECT_TO_CHANGE				\
-	-DG_DISABLE_DEPRECATED					\
-	-DGDK_DISABLE_DEPRECATED					\
-	-DGNOME_DISABLE_DEPRECATED				\
+	-DDBUS_API_SUBJECT_TO_CHANGE							\
+	-DG_DISABLE_DEPRECATED								\
+	-DGDK_DISABLE_DEPRECATED								\
+	-DGNOME_DISABLE_DEPRECATED							\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"		\
-	-DVERSION=\"$(VERSION)\"					\
+	-DVERSION=\"$(VERSION)\"								\
 	$(NULL)
 
 if WITH_NOTIFY

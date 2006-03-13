@@ -1,3 +1,169 @@
+2006-03-13  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.1.
+	* NEWS: Update.
+
+2006-03-13  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig <thoenig@suse.de>:
+	* dispatcher-daemon/NetworkManagerDispatcher.c: Let the dispatcher
+	  daemon survive DBUS restarts, too.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-devices.c: When building the device
+	  description, do not bail out if one property is nonexistant.  Keep
+	  building the rest of the string, in case the others exist.  The user
+	  cannot do anything about the errors, anyhow.  Some devices do not
+	  have all of the properties.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade: Add toggles to show/obfuscate the
+	  passphrase or key.
+	* gnome/applet/wso-wep-ascii.c, gnome/applet/wso-wep-hex.c,
+	  gnome/applet/wso-wep-passphrase.c, gnome/applet/wso-wpa-eap.c,
+	  gnome/applet/wso-wpa-psk.c: Show and obfuscate passphrases and keys
+	  in response to "toggled" signal on new toggle.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wpa-eap.c: Pass fake empty strings for
+	  serialization if strings are NULL, lest DBUS get angry.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wpa-eap.c: Don't log the password.
+
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Read in WEP and WPA static
+	  configurations.
+
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Have the function
+	  nm_ap_set_timestamp() take the second and micro-second parameters as
+	  direct arguments, which avoids both a dynamic memory allocation and a
+	  structure-to-structure copy!  Add a new interface, the aptly named
+	  nm_ap_set_timestamp_via_timestamp(), to set the timestamp from an
+	  existing GTimeVal, as nm_ap_set_timestamp() once did, for use with
+	  the return from nm_ap_get_timestamp().  New users should use the new
+	  nm_ap_set_timestamp(), not nm_ap_set_timestamp_via_timestamp(), for
+	  the extreme benefit to performance.
+	* src/NetworkManagerAPList.c, src/nm-dbus-nmi.c,
+	  src/backends/NetworkManagerSuSE.c: Use the new functions as needed.
+
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade: Hide the password entry text with
+	  asterisks.
+
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.h, src/nm-device.c, NetworkManagerDebian.c,
+	  NetworkManagerRedHat.c, NetworkManagerGentoo.c,
+	  NetworkManagerSlackware.c: Pass nm_system_device_get_system_config()
+	  a second argument, NMData.
+	* src/nm-ap-security.h, src/nm-ap-security.c: Export nm_ap_security_new.
+	* src/backends/NetworkManagerSuSE.c: Add wireless networks from ifcfg-*
+	  config files as trusted.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* gnome/applet/Makefile.am: Define AUTOSTARTDIR.
+	* gnome/applet/applet.c: Add 'Remove' option to the right click menu,
+	  to exit the applet.  As a sweet side-effect, idea courtesy of Chris
+	  Rivera, detect if the applet was auto-started.  If so, ask the user
+	  if he or she would like to stop automatically running the applet on
+	  login.  If so, disable autostart.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* NetworkManager.pc.in:  Provide an -I to the NetworkManager include
+	  directory in CFLAGS so developers can actually use NetworkManager.h.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Use preprocessor defines and not
+	  open-coded integer constants.  Add state_to_string() to map a given
+	  state to a textual description, and provide that when notifying of
+	  state change.
+	* src/dhcp-manager/nm-dhcp-manager.h: Provide defines for the dhcdbd
+	  states, copied and cleaned up from dhcdbd.d.  Ideally, we would use
+	  this header directly, but it is currently not installed on most
+	  systems.
+
+2006-03-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-notifications.h
+		- Protect prototype of nma_send_event_notification() because it
+			includes libnotify-specific types
+		- Include libnotify/libnotify.h too, since we technically need it
+
+	* gnome/applet/applet.c
+		- (nma_show_vpn_failure_dialog): fix usage of g_return_if_fail
+		- (nma_show_vpn_login_banner_dialog): add some error checking
+
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
+	Clean up activation cancellation.  Should be a lot faster now.  Observed
+	an issue with wireless devices between stage 2 and 3 of activation, where
+	activation would be cancelled, but the device thread wouldn't notice until
+	the supplicant association timed out.  Reorganize activation such that
+	a cancellation handler gets immediately scheduled in the device's thread,
+	and devices have a chance to perform any custom cleanup too.
+
+	* src/nm-device.[ch]
+		- (activation_cancel_handler): new device-type-specific function
+			for cleaning up device-type-specific stuff on cancellation
+		- (cancel_activation): removed
+		- (nm_device_activation_cancel): subsume functionality of
+			real_cancel_activation, but instead of doing anything, punt
+			operation to a handler that's run in device-thread context
+		- (nm_device_schedule_activation_handle_cancel): fix spelling of
+			a warning message
+		- (activation_handle_cancel_helper): cancellation handler run in
+			device-thread context, calls device-type-specific cancelation,
+			then tears down the activation request
+		- (real_activation_cancel_handler): generic cancellation handler,
+			deals with cancelling any in-process DHCP request
+		- (nm_device_activate_stage1_device_prepare,
+		   nm_device_activate_stage2_device_config,
+		   nm_device_activate_stage3_ip_config_start,
+		   nm_device_activate_stage4_ip_config_get,
+		   nm_device_activate_stage4_ip_config_timeout,
+		   nm_device_activate_stage5_ip_commit): don't call
+			nm_device_schedule_activation_handle_cancel() any more, since
+			cancellation will have been already scheduled for us by
+			nm_device_activation_cancel().  Just exit the function and
+			assume that the cancel handler will be called next.
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_act_stage2_config): remove; didn't do anything anyway
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_status_cb): ensure we don't do anything if the activation
+			got cancelled
+		- (real_activation_cancel_handler): implement; cancel user key request
+			on activation cancellation
+
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): assume that drivers that don't
+			support WPA pretty much suck, and can't handle NM scanning
+			along with wpa_supplicant.
+
+2006-03-03  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.0.
+	* NEWS: Update.
+
+2006-03-03  Robert Love  <rml@novell.com>
+
+	* configure.in: Require DBUS 0.60 or later.
+
 2006-03-03  Dan Williams  <dcbw@redhat.com>
 
 	Fix a crash if an "Other wireless network" was chosen, failed, then

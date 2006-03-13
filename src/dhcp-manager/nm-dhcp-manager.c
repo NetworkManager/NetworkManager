@@ -614,6 +614,34 @@ out:
 	return ip4_config;
 }
 
+static inline const char * state_to_string (guint state)
+{
+	switch (state)
+	{
+		case DHCDBD_PREINIT:
+			return "starting";
+		case DHCDBD_BOUND:
+			return "bound";
+		case DHCDBD_RENEW:
+			return "renew";
+		case DHCDBD_REBOOT:
+			return "reboot";
+		case DHCDBD_REBIND:
+			return "rebind";
+		case DHCDBD_TIMEOUT:
+			return "timeout";
+		case DHCDBD_FAIL:
+			return "fail";
+		case DHCDBD_START:
+			return "successfully started";
+		case DHCDBD_ABEND:
+			return "abnormal exit";
+		case DHCDBD_END:
+			return "normal exit";
+		default:
+			return "unknown";
+	}
+}
 
 /*
  * nm_dhcp_manager_process_signal
@@ -654,19 +682,23 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	dev = nm_get_device_by_iface (manager->data, member);
 	if (dev && (req = nm_device_get_act_request (dev)))
 	{
-		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", nm_device_get_iface (dev)))
+		const char *iface = nm_device_get_iface (dev);
+
+		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", iface))
 		{
 			guint8	state;
 
 			if (dbus_message_get_args (message, NULL, DBUS_TYPE_BYTE, &state, DBUS_TYPE_INVALID))
 			{
-				nm_info ("DHCP daemon state now %d for interface %s", state, nm_device_get_iface (dev));
+				const char *desc = state_to_string (state);
+
+				nm_info ("DHCP daemon state is now %d (%s) for interface %s", state, desc, iface);
 				switch (state)
 				{
-					case 2:		/* BOUND */
-					case 3:		/* RENEW */
-					case 4:		/* REBOOT */
-					case 5:		/* REBIND */
+					case DHCDBD_BOUND:		/* lease obtained */
+					case DHCDBD_RENEW:		/* lease renewed */
+					case DHCDBD_REBOOT:		/* have valid lease, but now obtained a different one */
+					case DHCDBD_REBIND:		/* new, different lease */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_get (req);
@@ -674,7 +706,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 						}
 						break;
 
-					case 8:		/* TIMEOUT - timed out trying to contact server */
+					case DHCDBD_TIMEOUT:		/* timed out contacting DHCP server */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_timeout (req);
@@ -682,9 +714,9 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 						}
 						break;					
 
-					case 9:		/* FAIL */
-					case 13:		/* ABEND */
-//					case 14:		/* END */
+					case DHCDBD_FAIL:		/* all attempts to contact server timed out, sleeping */
+					case DHCDBD_ABEND:		/* dhclient exited abnormally */
+//					case DHCDBD_END:		/* dhclient exited normally */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_policy_schedule_activation_failed (req);

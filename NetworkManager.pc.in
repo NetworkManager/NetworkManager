@@ -8,3 +8,4 @@ Name: NetworkManager
 Description: System for maintaining active network connection
 Requires: dbus-1
 Version: @VERSION@
+Cflags: -I${includedir}/NetworkManager

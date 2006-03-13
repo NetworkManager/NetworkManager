@@ -45,7 +45,7 @@ struct _NMAPSecurityPrivate
 	gboolean	dispose_has_run;
 };
 
-static NMAPSecurity *
+NMAPSecurity *
 nm_ap_security_new (int we_cipher)
 {
 	NMAPSecurity * security;

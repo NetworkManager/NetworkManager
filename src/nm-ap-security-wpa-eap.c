@@ -128,15 +128,15 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 
 	if (!nmu_security_serialize_wpa_eap (iter,
-								  self->priv->eap_method,
-								  self->priv->identity,
-								  self->priv->passwd,
-								  self->priv->anon_identity,
-								  self->priv->private_key_passwd,
-								  self->priv->private_key_file,
-								  self->priv->client_cert_file,
-								  self->priv->ca_cert_file,
-								  self->priv->wpa_version))
+			self->priv->eap_method,
+			self->priv->identity ? : "",
+			self->priv->passwd ? : "",
+			self->priv->anon_identity ? : "",
+			self->priv->private_key_passwd ? : "",
+			self->priv->private_key_file ? : "",
+			self->priv->client_cert_file ? : "",
+			self->priv->ca_cert_file ? : "",
+			self->priv->wpa_version))
 		return -1;
 	return 0;
 }
@@ -217,8 +217,15 @@ real_write_supplicant_config (NMAPSecurity *instance,
 			goto out;
 
 	if (passwd && strlen (passwd) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i password \"%s\"", nwid, passwd))
+	{
+		msg = g_strdup_printf ("SET_NETWORK %i password <password>", nwid);
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i password \"%s\"", nwid, passwd))
+		{
+			g_free (msg);
 			goto out;
+		}
+		g_free (msg);
+	}
 
 	if (anon_identity && strlen (anon_identity) > 0)
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i anonymous_identity \"%s\"", nwid, anon_identity))
