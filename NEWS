@@ -1,4 +1,21 @@
 ==============================================
+NetworkManager-0.6.1
+Overview of changes since NetworkManager-0.6.0
+==============================================
+
+0.6.1 is a minor bug fix release.
+
+* NetworkManager
+	* Improved activation cancelation (Dan Williams)
+	* Workarounds for non-WPA drivers (Dan Williams)
+	* Fix WPA Enterprise crasher (Robert Love)
+
+* nm-applet
+	* Hide password entry fields by default (Robert Love)
+	* Add toggle to show/hide password field (Robert Love)
+	* Add 'Remove' option to right-click menu (Robert Love)
+
+==============================================
 NetworkManager-0.6.0
 Overview of changes since NetworkManager-0.5.1
 ==============================================
@@ -6,7 +23,8 @@ Overview of changes since NetworkManager-0.5.1
 This releases ushers in WPA support, as well as many other features, bug fixes,
 and clean ups.
 
-We now require libnl, a netlink library (http://people.suug.ch/~tgr/libnl/) and wpa_supplicant, a WPA supplicant (http://hostap.epitest.fi/wpa_supplicant/).
+We now require libnl, a netlink library (http://people.suug.ch/~tgr/libnl/) and
+wpa_supplicant, a WPA supplicant (http://hostap.epitest.fi/wpa_supplicant/).
 
 Two new VPN modules are part of the distribution: openvpn and pptp.
 
