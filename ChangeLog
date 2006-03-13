@@ -5,6 +5,7 @@
 
 2006-03-13  Robert Love  <rml@novell.com>
 
+	Patch by Timo Hoenig <thoenig@suse.de>:
 	* dispatcher-daemon/NetworkManagerDispatcher.c: Let the dispatcher
 	  daemon survive DBUS restarts, too.
 
