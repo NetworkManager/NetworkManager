@@ -1,5 +1,12 @@
 2006-03-13  Robert Love  <rml@novell.com>
 
+	* gnome/vpn-properties/nm-vpn-properties.c: Hide the next page's
+	  widgets, too, if they exist, in case the user hit the back button.
+	  Fixes a bug where the details page contains the widgets of multiple
+	  VPN modules (Novell bug #157048).
+
+2006-03-13  Robert Love  <rml@novell.com>
+
 	Patch by Timo Hoenig <thoenig@suse.de>:
 	* dispatcher-daemon/NetworkManagerDispatcher.c: Let the dispatcher
 	  daemon survive DBUS restarts, too.
