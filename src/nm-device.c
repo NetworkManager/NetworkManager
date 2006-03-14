@@ -212,6 +212,9 @@ nm_device_new (const char *iface,
 	if (NM_DEVICE_GET_CLASS (dev)->init)
 		NM_DEVICE_GET_CLASS (dev)->init (dev);
 
+	/* This ref should logically go in nm_device_worker, but we need the
+	   ref to be taken before the worker thread is scheduled on a cpu. */
+	g_object_ref (G_OBJECT (dev));
 	dev->priv->worker = g_thread_create (nm_device_worker, dev, TRUE, NULL);
 	g_assert (dev->priv->worker);
 	g_object_ref (G_OBJECT (dev));	/* For the worker thread */
@@ -1875,8 +1878,6 @@ nm_device_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
-
-	nm_device_stop (self);
 
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
 	if (self->priv->ip4_config)
