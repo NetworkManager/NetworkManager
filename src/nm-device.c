@@ -1913,8 +1913,6 @@ nm_device_dispose (GObject *object)
 	 * reference.
 	 */
 
-	nm_device_stop (self);
-
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
 	if (self->priv->ip4_config)
 	{
