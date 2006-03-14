@@ -212,9 +212,11 @@ nm_device_new (const char *iface,
 	if (NM_DEVICE_GET_CLASS (dev)->init)
 		NM_DEVICE_GET_CLASS (dev)->init (dev);
 
+	/* This ref should logically go in nm_device_worker, but we need the
+	   ref to be taken before the worker thread is scheduled on a cpu. */
+	g_object_ref (G_OBJECT (dev));
 	dev->priv->worker = g_thread_create (nm_device_worker, dev, TRUE, NULL);
 	g_assert (dev->priv->worker);
-	g_object_ref (G_OBJECT (dev));	/* For the worker thread */
 
 	/* Block until our device thread has actually had a chance to start. */
 	args[0] = &dev->priv->worker_started;
