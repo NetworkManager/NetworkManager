@@ -1,3 +1,8 @@
+2006-03-14  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Check that we have a valid AP
+	  before adding anything.
+
 2006-03-13  Robert Love  <rml@novell.com>
 
 	* gnome/vpn-properties/nm-vpn-properties.c: Hide the next page's
