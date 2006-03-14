@@ -521,7 +521,7 @@ found:
 		free (buf);
 	}
 
-	if ((buf = svGetValue (file, "WIRELESS_ESSID")) && strlen (buf) > 0)
+	if ((buf = svGetValue (file, "WIRELESS_ESSID")) && strlen (buf) > 1)
 	{
 		NMAccessPoint *	ap;
 		NMAccessPoint *	list_ap;
