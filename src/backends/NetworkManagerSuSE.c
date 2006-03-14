@@ -633,6 +633,9 @@ found:
 
 		nm_debug ("Adding '%s' to the list of trusted networks", buf);
 
+		/* Ensure all devices get new information copied into their device lists */
+		nm_policy_schedule_device_ap_lists_update_from_allowed (app_data);
+
 		free (key);
 		free (mode);
 		free (buf);
