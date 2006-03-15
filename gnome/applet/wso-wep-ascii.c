@@ -135,7 +135,7 @@ WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP 40/128-bit ASCII"));
+	opt->name = g_strdup (_("WEP 64/128-bit ASCII"));
 	opt->widget_name = "wep_key_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;

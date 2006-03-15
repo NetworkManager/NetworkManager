@@ -1,5 +1,20 @@
 2006-03-15  Robert Love  <rml@novell.com>
 
+	* gnome/applet/applet.glade, gnome/applet/wso-wep-ascii.c,
+	  gnome/applet/wso-wep-hex.c, gnome/applet/wso-wep-passphrase.c: The
+	  label "WEP 40/128-bit" is inconsistent because the physical key size
+	  is 40 or 104-bits, to which a 24-bit initialisation vector is
+	  appended, forming a 64 or 128-bit traffic key.  Thus, the label ought
+	  to read "40/104" or "64/128".  I do not care much which, but most
+	  users think of "silver" and "gold" encryption as 64 and 128-bits, so
+	  let's stick with that.  Thus, s/"40/128"/"64/128"/g.  Also, since our
+	  WEP passphrase support only handles 128-bit keys, and any future
+	  64-bit passphrase support will require a new option (no way to auto-
+	  detect the target key size), explicitly label our passphrase support
+	  "WEP 128-bit Passphrase".
+
+2006-03-15  Robert Love  <rml@novell.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c: Do not start dhcdbd, but rely on
 	  the system init scripts (or some other mechanism) starting it (or a
 	  compatible DBUS service) before NetworkManager runs.  This means that
