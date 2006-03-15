@@ -559,7 +559,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		      <property name="visible">True</property>
 		      <property name="items" translatable="yes">None
 WEP 128-bit Passphrase
-WEP 64/128-bit hex
+WEP 64/128-bit Hex
 WEP 64/128-bit ASCII
 </property>
 		      <property name="add_tearoffs">False</property>
@@ -774,7 +774,7 @@ A passphrase or encryption key is required to access the wireless network '%s'.<
 		      <property name="visible">True</property>
 		      <property name="items" translatable="yes">None
 WEP 128-bit Passphrase
-WEP 64/128-bit hex
+WEP 64/128-bit Hex
 WEP 64/128-bit ASCII
 </property>
 		      <property name="add_tearoffs">False</property>
