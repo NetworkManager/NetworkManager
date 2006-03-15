@@ -73,39 +73,6 @@ static gboolean state_is_down (guint8 state)
 }
 
 
-/*
- * nm_dhcp_manager_exec_daemon
- *
- * Launch the DHCP daemon.
- *
- */
-static gboolean nm_dhcp_manager_exec_daemon (NMDHCPManager *manager)
-{
-	GPtrArray		*dhcp_argv;
-	GError		*error = NULL;
-	GPid			 pid;
-
-	g_return_val_if_fail (manager != NULL, FALSE);
-
-	dhcp_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhcp_argv, (gpointer) DHCDBD_BINARY_PATH);
-	g_ptr_array_add (dhcp_argv, (gpointer) "--system");
-	g_ptr_array_add (dhcp_argv, NULL);
-
-	if (!g_spawn_async ("/", (char **) dhcp_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))
-	{
-		g_ptr_array_free (dhcp_argv, TRUE);
-		nm_warning ("Could not activate the DHCP daemon " DHCDBD_BINARY_PATH ".  error: '%s'.", error->message);
-		g_error_free (error);
-		return FALSE;
-	}
-	g_ptr_array_free (dhcp_argv, TRUE);
-	nm_info ("Activated the DHCP daemon " DHCDBD_BINARY_PATH " with PID %d.", pid);
-
-	return TRUE;
-}
-
-
 NMDHCPManager * nm_dhcp_manager_new (NMData *data)
 {
 	NMDHCPManager *	manager;
@@ -153,9 +120,8 @@ guint32 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *
 
 	if (!manager->running)
 	{
-		if (nm_dhcp_manager_exec_daemon (manager) == FALSE)
-			return 0;
-		sleep (1);
+		nm_warning ("dhcdbd not running!");
+		return 0;
 	}
 
 	path = g_strdup_printf (DHCP_OBJECT_PATH"/%s", nm_device_get_iface (dev));
@@ -235,9 +201,8 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 
 	if (!manager->running)
 	{
-		if (nm_dhcp_manager_exec_daemon (manager) == FALSE)
-			return FALSE;
-		sleep (1);
+		nm_warning ("dhcdbd not running!");
+		return FALSE;
 	}
 	else
 	{

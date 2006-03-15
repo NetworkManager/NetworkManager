@@ -1,3 +1,13 @@
+2006-03-15  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Do not start dhcdbd, but rely on
+	  the system init scripts (or some other mechanism) starting it (or a
+	  compatible DBUS service) before NetworkManager runs.  This means that
+	  distributions might need to update their init scripts.  This fixes
+	  possible races and is quite a bit cleaner.
+	* initscript/SUSE/networkmanager.in: Update to start dhcdbd before
+	  starting the NetworkManager daemon.
+
 2006-03-14  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Check that we have a valid AP
