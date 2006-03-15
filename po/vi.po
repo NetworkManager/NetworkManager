@@ -6,8 +6,8 @@ msgid ""
 ""
 msgstr "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-10 04:15+0100\n"
-"PO-Revision-Date: 2006-03-10 21:36+1030\n"
+"POT-Creation-Date: 2006-03-14 12:20+0100\n"
+"PO-Revision-Date: 2006-03-15 16:52+1030\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <gnomevi-list@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -78,7 +78,9 @@ msgid ""
 "The networking applet will now terminate, but will automatically launch the "
 "next time you login.  Would you like to stop automatically running the "
 "networking applet on login?"
-msgstr "Tiểu dụng chạy mạng sẽ kết thúc ngay, nhưng sẽ tự động khởi chạy khi bạn đăng nhập lần kế tiếp. Bạn có muốn dừng tự động chạy tiểu dụng chạy mặng vào lúc đăng nhập phải không?"
+msgstr "Tiểu dụng chạy mạng sẽ kết thúc ngay, nhưng sẽ tự động khởi chạy khi bạn "
+"đăng nhập lần kế tiếp. Bạn có muốn dừng tự động chạy tiểu dụng chạy mặng vào "
+"lúc đăng nhập phải không?"
 
 #:../gnome/applet/applet.c:506
 msgid "VPN Login Failure"
@@ -335,47 +337,47 @@ msgid "None"
 msgstr "Không có"
 
 # Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wso-wep-ascii.c:127
+#:../gnome/applet/wso-wep-ascii.c:138
 msgid "WEP 40/128-bit ASCII"
 msgstr "WEP 40/128-bit ASCII"
 
-#:../gnome/applet/wso-wep-hex.c:124
+#:../gnome/applet/wso-wep-hex.c:135
 msgid "WEP 40/128-bit hex"
 msgstr "WEP 40/128-bit thập lục"
 
-#:../gnome/applet/wso-wep-passphrase.c:124
+#:../gnome/applet/wso-wep-passphrase.c:135
 msgid "WEP Passphrase"
 msgstr "WEP Cụm từ mật khẩu"
 
-#:../gnome/applet/wso-wpa-eap.c:208
+#:../gnome/applet/wso-wpa-eap.c:227
 msgid "PEAP"
 msgstr "PEAP"
 
-#:../gnome/applet/wso-wpa-eap.c:209
+#:../gnome/applet/wso-wpa-eap.c:228
 msgid "TLS"
 msgstr "TLS"
 
-#:../gnome/applet/wso-wpa-eap.c:210
+#:../gnome/applet/wso-wpa-eap.c:229
 msgid "TTLS"
 msgstr "TTLS"
 
 # Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wso-wpa-eap.c:218 ../src/nm-ap-security-wpa-eap.c:89
+#:../gnome/applet/wso-wpa-eap.c:237 ../src/nm-ap-security-wpa-eap.c:89
 #:../src/nm-ap-security-wpa-eap.c:113
 msgid "WPA2 Enterprise"
 msgstr "WPA2 Enterprise"
 
 # Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wso-wpa-eap.c:220 ../src/nm-ap-security-wpa-eap.c:91
+#:../gnome/applet/wso-wpa-eap.c:239 ../src/nm-ap-security-wpa-eap.c:91
 #:../src/nm-ap-security-wpa-eap.c:118
 msgid "WPA Enterprise"
 msgstr "WPA Enterprise"
 
-#:../gnome/applet/wso-wpa-psk.c:166
+#:../gnome/applet/wso-wpa-psk.c:178
 msgid "WPA2 Personal"
 msgstr "WPA2 Cá nhân"
 
-#:../gnome/applet/wso-wpa-psk.c:168
+#:../gnome/applet/wso-wpa-psk.c:180
 msgid "WPA Personal"
 msgstr "WPA Cá nhân"
 
@@ -649,65 +651,81 @@ msgid "Select the Private Key File"
 msgstr "Chọn tập tin là khóa riêng."
 
 #:../gnome/applet/applet.glade.h:48
+msgid "Show key"
+msgstr "Hiện khoá"
+
+#:../gnome/applet/applet.glade.h:49
+msgid "Show passphrase"
+msgstr "HIện cụm từ mật khẩu"
+
+#:../gnome/applet/applet.glade.h:50
+msgid "Show password"
+msgstr "Hiện mật khẩu"
+
+#:../gnome/applet/applet.glade.h:51
+msgid "Show passwords"
+msgstr "Hiện các mật khẩu"
+
+#:../gnome/applet/applet.glade.h:52
 msgid "Speed:"
 msgstr "Tốc độ :"
 
-#:../gnome/applet/applet.glade.h:49
+#:../gnome/applet/applet.glade.h:53
 msgid "Subnet Mask:"
 msgstr "Mặt nạ mạng cấp dưới:"
 
-#:../gnome/applet/applet.glade.h:50
+#:../gnome/applet/applet.glade.h:54
 msgid "Type:"
 msgstr "Kiểu :"
 
-#:../gnome/applet/applet.glade.h:51
+#:../gnome/applet/applet.glade.h:55
 msgid "User Name:"
 msgstr "Tên người dùng:"
 
-#:../gnome/applet/applet.glade.h:52
+#:../gnome/applet/applet.glade.h:56
 msgid "Wireless Network Key Required"
 msgstr "Cần thiết Khóa mạng Vô tuyến:"
 
-#:../gnome/applet/applet.glade.h:53
+#:../gnome/applet/applet.glade.h:57
 msgid "Wireless _adapter:"
 msgstr "_Bộ điều hợp vô tuyến"
 
-#:../gnome/applet/applet.glade.h:54
+#:../gnome/applet/applet.glade.h:58
 msgid "_Always Trust this Wireless Network"
 msgstr "_Luôn luôn tin cây mạng vô tuyến này"
 
-#:../gnome/applet/applet.glade.h:55
+#:../gnome/applet/applet.glade.h:59
 msgid "_Don't remind me again"
 msgstr "_Đừng nhắc nhở tôi lần nữa"
 
-#:../gnome/applet/applet.glade.h:56
+#:../gnome/applet/applet.glade.h:60
 msgid "_Login to Network"
 msgstr "_Đăng nhập với mạng"
 
-#:../gnome/applet/applet.glade.h:57
+#:../gnome/applet/applet.glade.h:61
 msgid "_Network Name:"
 msgstr "T_ên mạng:"
 
-#:../gnome/applet/applet.glade.h:58
+#:../gnome/applet/applet.glade.h:62
 msgid "_Wireless Security:"
 msgstr "_Bảo mật vô tuyến:"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:358
+#:../gnome/vpn-properties/nm-vpn-properties.c:361
 msgid "Cannot add VPN connection"
 msgstr "Không thể thêm sự kết nối VPN"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:360
+#:../gnome/vpn-properties/nm-vpn-properties.c:363
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
 msgstr "Không tìm thấy phần mềm VPN thích hợp nào trong hệ thống của bạn. Hãy liên "
 "lạc với quản trị hệ thống."
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:411
+#:../gnome/vpn-properties/nm-vpn-properties.c:415
 msgid "Cannot import VPN connection"
 msgstr "Không thể nhập sự kết nối VPN"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:413
+#:../gnome/vpn-properties/nm-vpn-properties.c:417
 #,c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -715,12 +733,12 @@ msgid ""
 msgstr "Không tìm thấy phần mềm thích hợp cho kiểu kết nối VPN « %s » để nhập tập "
 "tin « %s ». Hãy liên lạc với quản trị hệ thống."
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:553
+#:../gnome/vpn-properties/nm-vpn-properties.c:557
 #,c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Gặp lỗi khi lấy kết nối PN « %s »"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:556
+#:../gnome/vpn-properties/nm-vpn-properties.c:560
 #,c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -728,12 +746,12 @@ msgid ""
 msgstr "Không tìm thấy những tập tin giao diện người dùng cho kiểu kết nối VPN « %s "
 "». Hãy liên lạc với quản trị hệ thống."
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:713
+#:../gnome/vpn-properties/nm-vpn-properties.c:717
 #,c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Xóa bỏ sự kết nối VPN « %s » không?"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:716
+#:../gnome/vpn-properties/nm-vpn-properties.c:720
 #,c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -742,16 +760,16 @@ msgid ""
 msgstr "Mọi thông tin về sự kết nối VPN « %s » sẽ bị mất và có lẽ bạn sẽ cần quản "
 "trị hệ thống cung cấp thông tin để tạo sự kết nối mới."
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:924
+#:../gnome/vpn-properties/nm-vpn-properties.c:928
 msgid "Unable to load"
 msgstr "Không thể tải"
 
-#:../gnome/vpn-properties/nm-vpn-properties.c:926
+#:../gnome/vpn-properties/nm-vpn-properties.c:930
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "• Không tìm thấy một số tài nguyên cần thiết (tải tập tin glade). •"
 
 #.Edit dialog
-#:../gnome/vpn-properties/nm-vpn-properties.c:1034
+#:../gnome/vpn-properties/nm-vpn-properties.c:1038
 msgid "Edit VPN Connection"
 msgstr "Sửa đổi sự kết nối VPN"
 
