@@ -33,10 +33,6 @@
 #endif
 
 
-static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
-static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input);
-
-
 static char * cipher_wep_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *input, int req_keylen)
 {
 	char		 	md5_data[65];
@@ -66,6 +62,13 @@ static char * cipher_wep_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const
 	return (cipher_bin2hexstr ((const char *) &digest, 16, req_keylen));
 }
 
+static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
+{
+	g_return_val_if_fail (cipher != NULL, NULL);
+	g_return_val_if_fail (input != NULL, NULL);
+
+	return cipher_wep_passphrase_hash_func (cipher, input, 26);
+}
 
 IEEE_802_11_Cipher * cipher_wep128_passphrase_new (void)
 {
@@ -81,12 +84,12 @@ IEEE_802_11_Cipher * cipher_wep128_passphrase_new (void)
 	return cipher;
 }
 
-static char * cipher_wep128_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
+static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
 {
 	g_return_val_if_fail (cipher != NULL, NULL);
 	g_return_val_if_fail (input != NULL, NULL);
 
-	return cipher_wep_passphrase_hash_func (cipher, input, 26);
+	return cipher_wep_passphrase_hash_func (cipher, input, 10);
 }
 
 IEEE_802_11_Cipher * cipher_wep64_passphrase_new (void)
@@ -101,13 +104,5 @@ IEEE_802_11_Cipher * cipher_wep64_passphrase_new (void)
 	cipher->cipher_input_validate_func = cipher_default_validate_func;
 
 	return cipher;
-}
-
-static char * cipher_wep64_passphrase_hash_func (IEEE_802_11_Cipher *cipher, const char *ssid, const char *input)
-{
-	g_return_val_if_fail (cipher != NULL, NULL);
-	g_return_val_if_fail (input != NULL, NULL);
-
-	return cipher_wep_passphrase_hash_func (cipher, input, 10);
 }
 
