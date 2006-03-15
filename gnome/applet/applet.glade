@@ -558,9 +558,9 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		    <widget class="GtkComboBox" id="security_combo">
 		      <property name="visible">True</property>
 		      <property name="items" translatable="yes">None
-WEP Passphrase
-WEP 40/128-bit hex
-WEP 40/128-bit ASCII
+WEP 128-bit Passphrase
+WEP 64/128-bit hex
+WEP 64/128-bit ASCII
 </property>
 		      <property name="add_tearoffs">False</property>
 		      <property name="focus_on_click">True</property>
@@ -773,9 +773,9 @@ A passphrase or encryption key is required to access the wireless network '%s'.<
 		    <widget class="GtkComboBox" id="security_combo">
 		      <property name="visible">True</property>
 		      <property name="items" translatable="yes">None
-WEP Passphrase
-WEP 40/128-bit hex
-WEP 40/128-bit ASCII
+WEP 128-bit Passphrase
+WEP 64/128-bit hex
+WEP 64/128-bit ASCII
 </property>
 		      <property name="add_tearoffs">False</property>
 		      <property name="focus_on_click">True</property>

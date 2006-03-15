@@ -132,7 +132,7 @@ WirelessSecurityOption * wso_wep_passphrase_new (const char *glade_file)
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP Passphrase"));
+	opt->name = g_strdup (_("WEP 128-bit Passphrase"));
 	opt->widget_name = "wep_passphrase_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
