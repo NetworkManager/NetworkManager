@@ -3,7 +3,7 @@
 	* src/backends/NetworkManagerSuSE.c: Do "rcypbind reload" to send the
 	  signal SIGHUP to ypbind, not "rcypbind restart" to physically restart
 	  it, in case it is not running in the first place.  We just want its
-	  configuration reloaded.
+	  configuration reloaded.  Also, do not "rcypbind stop" on device down.
 
 2006-03-15  Robert Love  <rml@novell.com>
 
