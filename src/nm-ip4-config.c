@@ -35,16 +35,10 @@ struct NMIP4Config
 {
 	guint	refcount;
 
-	guint32	ip4_address;src/backends/NetworkManagrerSuSE.c
-	guint32	ip4_ptp_address;
-	guint32	ip4_gateway;
-	guint32	ip4_netmask;guint	refcount;
-
-	guint32	ip4_address;src/backends/NetworkManagrerSuSE.c
+	guint32	ip4_address;
 	guint32	ip4_ptp_address;
 	guint32	ip4_gateway;
 	guint32	ip4_netmask;
-
 	guint32	ip4_broadcast;
 
 	GSList *	nameservers;
