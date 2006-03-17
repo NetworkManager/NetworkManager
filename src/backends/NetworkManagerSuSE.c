@@ -1112,8 +1112,8 @@ void nm_system_activate_nis (NMIP4Config *config)
 
 			if (stat ("/usr/sbin/rcypbind", &sb) != -1)
 			{
-				nm_info ("Restarting ypbind.");
-				nm_spawn_process ("/usr/sbin/rcypbind restart");
+				nm_info ("Asking ypbind to reload its configuration.");
+				nm_spawn_process ("/usr/sbin/rcypbind reload");
 			}
 			if (stat ("/usr/sbin/rcautofs", &sb) != -1)
 			{
