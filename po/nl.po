@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-12 20:36+0100\n"
-"PO-Revision-Date: 2006-03-13 01:17+0100\n"
+"POT-Creation-Date: 2006-03-18 20:20+0100\n"
+"PO-Revision-Date: 2006-03-19 05:04+0100\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -95,7 +95,10 @@ msgid ""
 "The networking applet will now terminate, but will automatically launch the "
 "next time you login.  Would you like to stop automatically running the "
 "networking applet on login?"
-msgstr "Het netwerk-applet zal nu worden afgesloten maar zal automatisch worden opgestart wanneer u zich de volgende keer weer aanmeldt. Wilt u dat het netwerk-applet niet langer automatisch wordt opgestart bij het aanmelden?"
+msgstr ""
+"Het netwerk-applet zal nu worden afgesloten maar zal automatisch worden "
+"opgestart wanneer u zich de volgende keer weer aanmeldt. Wilt u dat het "
+"netwerk-applet niet langer automatisch wordt opgestart bij het aanmelden?"
 
 #: ../gnome/applet/applet.c:506
 msgid "VPN Login Failure"
@@ -392,16 +395,16 @@ msgid "None"
 msgstr "Geen"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 40/128-bit ASCII"
-msgstr "WEP 40/128-bit ASCII"
+msgid "WEP 64/128-bit ASCII"
+msgstr "WEP 64/128-bit ASCII"
 
 #: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 40/128-bit hex"
-msgstr "WEP 40/128-bit hex"
+msgid "WEP 64/128-bit Hex"
+msgstr "WEP 64/128-bit Hex"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP Passphrase"
-msgstr "WEP wachtwoordzin"
+msgid "WEP 128-bit Passphrase"
+msgstr "WEP 128-bit wachtwoordzin"
 
 #: ../gnome/applet/wso-wpa-eap.c:227
 msgid "PEAP"
@@ -671,14 +674,14 @@ msgstr "Sleutel:"
 #: ../gnome/applet/applet.glade.h:31
 msgid ""
 "None\n"
-"WEP Passphrase\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
 msgstr ""
 "Geen\n"
-"WEP wachtwoordzin\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128-bit wachtwoordzin\n"
+"WEP 64/128-bit hex\n"
+"WEP 64/128-bit ASCII\n"
 
 #: ../gnome/applet/applet.glade.h:36
 msgid ""
@@ -793,11 +796,11 @@ msgstr "_Netwerknaam:"
 msgid "_Wireless Security:"
 msgstr "_Draadloos beveiliging:"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:358
+#: ../gnome/vpn-properties/nm-vpn-properties.c:361
 msgid "Cannot add VPN connection"
 msgstr "Kan VPN-verbinding niet toevoegen"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:360
+#: ../gnome/vpn-properties/nm-vpn-properties.c:363
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -806,13 +809,13 @@ msgstr ""
 "met uw systeembeheerder."
 
 # Netwerken
-#: ../gnome/vpn-properties/nm-vpn-properties.c:411
+#: ../gnome/vpn-properties/nm-vpn-properties.c:415
 msgid "Cannot import VPN connection"
 msgstr "Kan VPN-verbinding niet importeren"
 
 # VPN-verbinding type s
 # VPN-verbindingstype s
-#: ../gnome/vpn-properties/nm-vpn-properties.c:413
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -822,13 +825,13 @@ msgstr ""
 "bestand '%s' te importeren. Neem contact op met uw systeembeheerder."
 
 # herleiden/ophalen
-#: ../gnome/vpn-properties/nm-vpn-properties.c:553
+#: ../gnome/vpn-properties/nm-vpn-properties.c:557
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Fout bij herleiden VPN-verbinding '%s'"
 
 # bleh: UI files
-#: ../gnome/vpn-properties/nm-vpn-properties.c:556
+#: ../gnome/vpn-properties/nm-vpn-properties.c:560
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -837,12 +840,12 @@ msgstr ""
 "Kon de UI-bestanden voor VPN-verbindingtype '%s' niet vinden. Neem contact "
 "op met uw systeembeheerder."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:713
+#: ../gnome/vpn-properties/nm-vpn-properties.c:717
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "VPN-verbinding \"%s\" verwijderen?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:716
+#: ../gnome/vpn-properties/nm-vpn-properties.c:720
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -853,16 +856,16 @@ msgstr ""
 "mogelijk uw systeembeheerder om informatie moeten vragen voor het opzetten "
 "van een nieuwe verbinding."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+#: ../gnome/vpn-properties/nm-vpn-properties.c:928
 msgid "Unable to load"
 msgstr "Kon niet laden"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+#: ../gnome/vpn-properties/nm-vpn-properties.c:930
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Kon bepaalde vereiste bronnen niet vinden (het glade bestand)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1034
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1038
 msgid "Edit VPN Connection"
 msgstr "VPN-verbinding bewerken"
 
