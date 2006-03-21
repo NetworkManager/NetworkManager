@@ -545,8 +545,11 @@ found:
 				nm_ap_set_capabilities (ap, NM_802_11_CAP_PROTO_WPA);
 				security = nm_ap_security_wpa_psk_new_from_ap (ap, NM_AUTH_TYPE_WPA_PSK_AUTO);
 				hash = ieee_802_11_cipher_hash (cipher, buf, key);
-				nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
-				nm_ap_set_security (ap, NM_AP_SECURITY (security));
+				if (hash)
+				{
+					nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
+					nm_ap_set_security (ap, NM_AP_SECURITY (security));
+				}
 
 				ieee_802_11_cipher_unref (cipher);
 				g_object_unref (G_OBJECT (security));
@@ -594,14 +597,23 @@ found:
 				}
 				else
 				{
+					char **keyv;
+
 					cipher = cipher_wep128_hex_new ();
-					real_key = key;
+
+					keyv = g_strsplit (key, "-", 0);
+					real_key = g_strjoinv (NULL, keyv);
+					g_strfreev (keyv);
+					free (key);
 				}
 				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104);
 			}
 			hash = ieee_802_11_cipher_hash (cipher, buf, real_key);
-			nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
-			nm_ap_set_security (ap, NM_AP_SECURITY (security));
+			if (hash)
+			{
+				nm_ap_security_set_key (NM_AP_SECURITY (security), hash, strlen (hash));
+				nm_ap_set_security (ap, NM_AP_SECURITY (security));
+			}
 
 			ieee_802_11_cipher_unref (cipher);
 			g_object_unref (G_OBJECT (security));
