@@ -1,5 +1,19 @@
 2006-03-21  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerSystem.c, src/NetworkManagerSystem.h: Add
+	  nm_system_get_mtu(), which returns a user-provided or system-mandated
+	  MTU value for a given device, if any, or zero if no such value
+	  exists.  Add nm_system_set_mtu() to set the MTU for a given device
+	  if we have a provided value.
+	* src/nm-device.c: Set the MTU of devices.
+	* src/backends/NetworkManagerSuSE.c: Read MTU, if any, from sysconfig.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: Implement stub functions.
+
+2006-03-21  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: Strip hypens from hex key in
 	  configuration file.
 
