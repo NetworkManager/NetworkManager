@@ -354,6 +354,7 @@ typedef struct SuSEDeviceConfigData
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
 	gboolean		system_disabled;
+	unsigned int	mtu;
 } SuSEDeviceConfigData;
 
 /*
@@ -518,6 +519,17 @@ found:
 			nm_info ("System configuration disables device %s", nm_device_get_iface (dev));
 			sys_data->system_disabled = TRUE;
 		}
+		free (buf);
+	}
+
+	if ((buf = svGetValue (file, "MTU")))
+	{
+		unsigned long mtu;
+
+		errno = 0;
+		mtu = strtoul (buf, NULL, 10);
+		if (!errno && mtu > 500 && mtu < INT_MAX)
+			sys_data->mtu = (unsigned int) mtu;
 		free (buf);
 	}
 
@@ -762,6 +774,9 @@ out:
 	ip_str = g_strdup (inet_ntoa (temp_addr));
 	nm_debug ("mask=%s", ip_str);
 	g_free (ip_str);
+
+	if (sys_data->mtu)
+		nm_debug ("mtu=%u", sys_data->mtu);
 
 	len = nm_ip4_config_get_num_nameservers (sys_data->config);
 	for (i = 0; i < len; i++)
@@ -1252,3 +1267,20 @@ out_gfree:
 	return ret;
 }
 
+
+/*
+ * nm_system_get_mtu
+ *
+ * Return a user-provided or system-mandated MTU for this device or zero if
+ * no such MTU is provided.
+ */
+unsigned int nm_system_get_mtu (NMDevice *dev)
+{
+	SuSEDeviceConfigData *	sys_data;
+
+	sys_data = nm_device_get_system_config_data (dev);
+	if (!sys_data)
+		return 0;
+
+	return sys_data->mtu;
+}
