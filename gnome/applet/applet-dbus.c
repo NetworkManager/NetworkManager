@@ -186,7 +186,13 @@ static DBusHandlerResult nma_dbus_filter (DBusConnection *connection, DBusMessag
 
 	/* nm_info ("signal(): got signal op='%s' member='%s' interface='%s'", object_path, member, interface); */
 
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected"))
+	{
+		dbus_connection_unref (applet->connection);
+		applet->connection = NULL;
+		applet->nm_running = FALSE;
+	}
+	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
 		char 	*service;
 		char		*old_owner;
@@ -516,11 +522,14 @@ static gboolean nma_dbus_connection_watcher (gpointer user_data)
 		if ((applet->connection = nma_dbus_init (applet)))
 		{
 			applet->nm_running = nma_dbus_nm_is_running (applet->connection);
-			nma_set_state (applet, NM_STATE_DISCONNECTED);
-			nma_dbus_update_nm_state (applet);
-			nma_dbus_update_devices (applet);
-			nma_dbus_update_dialup (applet);
-			nma_dbus_vpn_update_vpn_connections (applet);
+			if (applet->nm_running)
+			{
+				nma_set_state (applet, NM_STATE_DISCONNECTED);
+				nma_dbus_update_nm_state (applet);
+				nma_dbus_update_devices (applet);
+				nma_dbus_update_dialup (applet);
+				nma_dbus_vpn_update_vpn_connections (applet);
+			}
 		}
 	}
 

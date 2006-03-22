@@ -1,5 +1,12 @@
 2006-03-22  Robert Love  <rml@novell.com>
 
+	Bug fix by Timo Hoenig <thoenig@suse.de>:
+	* gnome/applet/applet-dbus.c: Let the applet reconnect to DBUS on
+	  disconnect.  Otherwise, we have the daemon surviving DBUS restarts
+	  and the applet going AWOL.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c: Create NM_DHCP_TIMEOUT
 	  preprocessor define and use it instead of open-coded the DHCP
 	  timeout, which is currently 25 seconds, everywhere.
