@@ -1,5 +1,9 @@
 2006-03-22  Robert Love  <rml@novell.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c: Bump timeout to 45 seconds.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
 	Bug fix by Timo Hoenig <thoenig@suse.de>:
 	* gnome/applet/applet-dbus.c: Let the applet reconnect to DBUS on
 	  disconnect.  Otherwise, we have the daemon surviving DBUS restarts
