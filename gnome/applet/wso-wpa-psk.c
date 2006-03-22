@@ -207,12 +207,7 @@ wso_wpa_psk_new (const char *glade_file,
 
 	key_type_combo = glade_xml_get_widget (opt->uixml, data->key_type_combo_name);
 	g_signal_connect (G_OBJECT (key_type_combo), "changed", (GCallback) key_type_combo_changed_cb, opt);
-	model = wso_wpa_create_key_type_model (capabilities, &num_added);
-	if (!model || !num_added)
-	{
-		wso_free (opt);
-		return NULL;
-	}
+	model = wso_wpa_create_key_type_model (capabilities, FALSE, &num_added);
 	gtk_combo_box_set_model (GTK_COMBO_BOX (key_type_combo), model);
 	gtk_tree_model_get_iter_first (model, &iter);
 	gtk_combo_box_set_active_iter (GTK_COMBO_BOX (key_type_combo), &iter);

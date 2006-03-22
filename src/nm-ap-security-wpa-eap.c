@@ -37,6 +37,7 @@
 struct _NMAPSecurityWPA_EAPPrivate
 {
 	int		eap_method;
+	int		key_type;
 	int		wpa_version;
 	int		key_mgmt;
 	char *	identity;
@@ -54,6 +55,7 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 {
 	NMAPSecurityWPA_EAP *	security = NULL;
 	int					eap_method;
+	int					key_type;
 	int					wpa_version;
 	char *				identity = NULL;
 	char *				passwd = NULL;
@@ -65,9 +67,9 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 
 	g_return_val_if_fail (iter != NULL, NULL);
 
-	if (!nmu_security_deserialize_wpa_eap (iter, &eap_method, &identity, &passwd, &anon_identity,
-								    &private_key_passwd, &private_key_file, &client_cert_file, 
-								    &ca_cert_file, &wpa_version))
+	if (!nmu_security_deserialize_wpa_eap (iter, &eap_method, &key_type, &identity, &passwd,
+								    &anon_identity, &private_key_passwd, &private_key_file,
+								    &client_cert_file, &ca_cert_file, &wpa_version))
 		goto out;
 
 	/* Success, build up our security object */
@@ -75,6 +77,7 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), NM_AUTH_TYPE_WPA_EAP);
 	nm_ap_security_set_key (NM_AP_SECURITY (security), "FIXME", 5); /* FIXME: what do we do for Enterprise? */
 	security->priv->eap_method = eap_method;
+	security->priv->key_type = key_type;
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgmt = IW_AUTH_KEY_MGMT_802_1X;
 	security->priv->identity = g_strdup (identity);
@@ -129,6 +132,7 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 
 	if (!nmu_security_serialize_wpa_eap (iter,
 			self->priv->eap_method,
+			self->priv->key_type,
 			self->priv->identity ? : "",
 			self->priv->passwd ? : "",
 			self->priv->anon_identity ? : "",
@@ -177,11 +181,11 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	const char *		ca_cert_file = self->priv->ca_cert_file;
 	const char *		client_cert_file = self->priv->client_cert_file;
 	int				wpa_version = self->priv->wpa_version;
-	int				cipher = nm_ap_security_get_we_cipher (instance);
 	int 				key_mgmt = self->priv->key_mgmt;
 	int				eap_method = self->priv->eap_method;
+	int				key_type = self->priv->key_type;
 
-	g_return_val_if_fail (cipher == NM_AUTH_TYPE_WPA_EAP, FALSE);
+	g_return_val_if_fail (nm_ap_security_get_we_cipher (instance) == NM_AUTH_TYPE_WPA_EAP, FALSE);
 	g_return_val_if_fail (key_mgmt == IW_AUTH_KEY_MGMT_802_1X, FALSE);
 	g_return_val_if_fail (wpa_version == IW_AUTH_WPA_VERSION_WPA
 				    || wpa_version == IW_AUTH_WPA_VERSION_WPA2, FALSE);
@@ -192,6 +196,10 @@ real_write_supplicant_config (NMAPSecurity *instance,
 				    || eap_method == NM_EAP_METHOD_PEAP
 				    || eap_method == NM_EAP_METHOD_TLS
 				    || eap_method == NM_EAP_METHOD_TTLS, FALSE);
+	g_return_val_if_fail ((key_type == 0)
+				    || (key_type == IW_AUTH_CIPHER_CCMP)
+				    || (key_type == IW_AUTH_CIPHER_TKIP)
+				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
 
 	/* WPA-EAP network setup */
 
@@ -206,8 +214,17 @@ real_write_supplicant_config (NMAPSecurity *instance,
 			goto out;
 	}
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt WPA-EAP", nwid))
-		goto out;
+	if (key_type != IW_AUTH_CIPHER_WEP104)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt WPA-EAP", nwid))
+			goto out;
+	}
+	else
+	{
+		/* So-called Dynamic WEP */
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt IEEE8021X", nwid))
+			goto out;
+	}
 
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i eap %s", nwid, get_eap_method (eap_method)))
 		goto out;
@@ -253,34 +270,31 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i ca_cert \"%s\"", nwid, ca_cert_file))
 			goto out;
 
-#if 0	/* Right now we always let wpa_supplicant sort out the pairwise and group cipher */
 	/*
-	 * FIXME: Technically, the pairwise cipher does not need to be the same as
-	 * the group cipher.  Fixing this requires changes in the UI.
+	 * Set the pairwise and group cipher, if the user provided one.  If user selected "Automatic", we
+	 * let wpa_supplicant sort it out.  Likewise, if the user selected "Dynamic WEP", we do nothing.
 	 */
-	if (cipher == IW_AUTH_CIPHER_TKIP)
-		pairwise_cipher = group_cipher = "TKIP";
-	else if (cipher == IW_AUTH_CIPHER_CCMP)
-		pairwise_cipher = group_cipher = "CCMP";
-	else if (cipher == IW_AUTH_CIPHER_NONE)
-		pairwise_cipher = group_cipher = "NONE";
-
-	/* Ad-Hoc requires pairwise cipher of NONE */
-	if (user_created)
-		pairwise_cipher = "NONE";
-
-	/* If user selected "Automatic", we let wpa_supplicant sort it out */
-	if (cipher != NM_AUTH_TYPE_WPA_PSK_AUTO)
+	if (key_type != NM_AUTH_TYPE_WPA_PSK_AUTO && key_type != IW_AUTH_CIPHER_WEP104)
 	{
+		const char *cipher;
+
+		/*
+	 	 * FIXME: Technically, the pairwise cipher does not need to be the same as
+	 	 * the group cipher.  Fixing this requires changes in the UI.
+	 	 */
+		if (key_type == IW_AUTH_CIPHER_TKIP)
+			cipher = "TKIP";
+		else /* IW_AUTH_CIPHER_CCMP */
+			cipher = "CCMP";
+
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i pairwise %s", nwid, pairwise_cipher))
+				"SET_NETWORK %i pairwise %s", nwid, cipher))
 			goto out;
 
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i group %s", nwid, group_cipher))
+				"SET_NETWORK %i group %s", nwid, cipher))
 			goto out;
 	}
-#endif
 
 	success = TRUE;
 
@@ -312,6 +326,7 @@ real_copy_constructor (NMAPSecurity *instance)
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 
 	dst->priv->eap_method = self->priv->eap_method;
+	dst->priv->key_type = self->priv->key_type;
 	dst->priv->wpa_version = self->priv->wpa_version;
 	dst->priv->key_mgmt = self->priv->key_mgmt;
 	dst->priv->identity = self->priv->identity;

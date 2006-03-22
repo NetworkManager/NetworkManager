@@ -1,3 +1,34 @@
+2006-03-22  Robert Love  <rml@novell.com>
+
+	Implement "Dynamic WEP", which is basically WPA authentication and WEP
+	key exchange via WPA, ostensibly providing good security without
+	requiring hardware that supports full WPA.  Also, add UI elements to
+	allow the user to select the pairwise & group cipher for WPA Enterprise
+	networks, too:
+	* gnome/applet/applet.glade: Update glade file.
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Serialize and deserialize the
+	  key type, too, to and from gconf.
+	* gnome/applet/wireless-security-option.c: Add "wpa_eap" parameter to
+	  wso_wpa_create_key_type_model(), noting whether we are handling PSK
+	  or EAP configuration, and in the latter case add in "Dynamic WEP" if
+	  the capabilities match.
+	* gnome/applet/wso-private.h: Update wso_wpa_create_key_type_model()'s
+	  prototype.
+	* gnome/applet/wso-wpa-eap.c: Manage UI elements for the key type and
+	  serialize from UI to DBUS.
+	* gnome/applet/wso-wpa-psk.c: Cannot fail and always returns at least
+	  one element.
+	* libnm-util/dbus-helpers.c: Update nmu_security_serialize_wpa_eap(),
+	  nmu_security_serialize_wpa_eap_with_cipher(), and
+	  nmu_security_deserialize_wpa_eap() to take a "key_type" parameter and
+	  serialize/deserialize the key type via DBUS as the new third DBUS
+	  parameter.
+	* libnm-util/dbus-helpers.h: Update prototypes.
+	* src/nm-ap-security-wpa-eap.c: Deserialize the key type from DBUS,
+	  too.  If the key type is WEP104, do Dynamic WEP, which means
+	  "IEEE8021X" for "key_mgmt".  Also add support for user-specified
+	  pairwise and group ciphers (fixes a FIXME).
+
 2006-03-21  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerSystem.c, src/NetworkManagerSystem.h: Add
