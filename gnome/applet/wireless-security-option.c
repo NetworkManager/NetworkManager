@@ -208,7 +208,7 @@ wso_wpa_create_key_type_model (int capabilities, gboolean wpa_eap, int *num_adde
 	name = _("Automatic (Default)");
 	gtk_list_store_append (model, &iter);
 	gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
-					WPA_KEY_TYPE_CIPHER_COL, 0, -1);
+					WPA_KEY_TYPE_CIPHER_COL, NM_AUTH_TYPE_WPA_PSK_AUTO, -1);
 
 	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
 	{

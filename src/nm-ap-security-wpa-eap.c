@@ -196,7 +196,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 				    || eap_method == NM_EAP_METHOD_PEAP
 				    || eap_method == NM_EAP_METHOD_TLS
 				    || eap_method == NM_EAP_METHOD_TTLS, FALSE);
-	g_return_val_if_fail ((key_type == 0)
+	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
 				    || (key_type == IW_AUTH_CIPHER_CCMP)
 				    || (key_type == IW_AUTH_CIPHER_TKIP)
 				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
