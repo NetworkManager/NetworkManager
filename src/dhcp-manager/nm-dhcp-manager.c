@@ -33,7 +33,7 @@
 #include "nm-utils.h"
 
 
-#define NM_DHCP_TIMEOUT		25	/* DHCP timeout, in seconds */
+#define NM_DHCP_TIMEOUT		45	/* DHCP timeout, in seconds */
 
 struct NMDHCPManager
 {
