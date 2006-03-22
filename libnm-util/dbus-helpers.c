@@ -268,7 +268,7 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 				    || (eap_method == NM_EAP_METHOD_PEAP)
 				    || (eap_method == NM_EAP_METHOD_TLS)
 				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
-	g_return_val_if_fail ((key_type == 0)
+	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
 				    || (key_type == IW_AUTH_CIPHER_CCMP)
 				    || (key_type == IW_AUTH_CIPHER_TKIP)
 				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
@@ -331,7 +331,7 @@ nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 				    || (eap_method == NM_EAP_METHOD_PEAP)
 				    || (eap_method == NM_EAP_METHOD_TLS)
 				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
-	g_return_val_if_fail ((key_type == 0)
+	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
 				    || (key_type == IW_AUTH_CIPHER_CCMP)
 				    || (key_type == IW_AUTH_CIPHER_TKIP)
 				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
@@ -406,7 +406,7 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_INT32, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_key_type);
-	g_return_val_if_fail ((dbus_key_type == 0)
+	g_return_val_if_fail ((dbus_key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
 				    || (dbus_key_type == IW_AUTH_CIPHER_CCMP)
 				    || (dbus_key_type == IW_AUTH_CIPHER_TKIP)
 				    || (dbus_key_type == IW_AUTH_CIPHER_WEP104), FALSE);
