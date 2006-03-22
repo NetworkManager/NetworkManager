@@ -33,6 +33,8 @@
 #include "nm-utils.h"
 
 
+#define NM_DHCP_TIMEOUT		25	/* DHCP timeout, in seconds */
+
 struct NMDHCPManager
 {
 	NMData *		data;
@@ -172,7 +174,8 @@ static gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_info ("Device '%s' DHCP transaction took too long (>25s), stopping it.", nm_device_get_iface (dev));
+	nm_info ("Device '%s' DHCP transaction took too long (>%ds), stopping it.",
+		    nm_device_get_iface (dev), NM_DHCP_TIMEOUT);
 
 	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 	{
@@ -238,8 +241,8 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 		return FALSE;
 	}
 
-	/* Set up a timeout on the transaction to kill it after 25s */
-	source = g_timeout_source_new (25000);
+	/* Set up a timeout on the transaction to kill it after NM_DHCP_TIMEOUT seconds */
+	source = g_timeout_source_new (NM_DHCP_TIMEOUT * 1000);
 	g_source_set_callback (source, (GSourceFunc) nm_dhcp_manager_handle_timeout, req, NULL);
 	nm_act_request_set_dhcp_timeout (req, g_source_attach (source, manager->data->main_context));
 	g_source_unref (source);
