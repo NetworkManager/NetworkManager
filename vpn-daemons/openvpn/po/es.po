@@ -7,10 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-02-06 12:41+0100\n"
-"PO-Revision-Date: 2006-02-07 11:55+0100\n"
+"POT-Creation-Date: 2006-03-23 12:03+0100\n"
+"PO-Revision-Date: 2006-03-23 12:35+0100\n"
 "Last-Translator: \n"
-"Language-Team:  <es@li.org>\n"
+"Language-Team:  Traductores GNOME-ES <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -274,15 +274,18 @@ msgstr "Contraseña"
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
-msgstr "Introduzca la información proporcionada por su administrador de sistemas aquí abajo. No introduzca su contraseña, puesto que se le pedirá cuando conecte."
+msgstr ""
+"Introduzca la información proporcionada por su administrador de sistemas "
+"aquí abajo. No introduzca su contraseña, puesto que se le pedirá cuando "
+"conecte."
 
 #: ../properties/nm-openvpn-dialog.glade.h:12
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your adminstrator for the file."
 msgstr ""
-"Fíjese en que el archivo que está importando no es un archivo de configuración OpenVPN. "
-"Pida este archivo a su administrador."
+"Fíjese en que el archivo que está importando no es un archivo de "
+"configuración OpenVPN. Pida este archivo a su administrador."
 
 #: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Remote IP:"
@@ -340,17 +343,19 @@ msgstr "_Importar configuración guardada..."
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
-msgstr ""
+msgstr "El _nombre utilizado para identificar la conexión a la red privada, por ejemplo: «VPN del campus» o «Red corporativa»"
 
 #: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "_Sólamente utilizar la conexión VPN para estas direcciones"
 
 #: ../src/nm-openvpn-service.c:136
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr "El acceso VPN ha fallado porque el nombre de usuario y la contraseña no fueron aceptadas o la contraseña del certificado es errónea."
+msgstr ""
+"El acceso VPN ha fallado porque el nombre de usuario y la contraseña no "
+"fueron aceptadas o la contraseña del certificado es errónea."
 
 #: ../src/nm-openvpn-service.c:138
 msgid "The VPN login failed because the VPN program could not be started."
@@ -360,17 +365,23 @@ msgstr "El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN.
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr "El acceso VPN ha fallado porque el programa VPN no ha podido conectar con el servidor VPN."
+msgstr ""
+"El acceso VPN ha fallado porque el programa VPN no ha podido conectar con el "
+"servidor VPN."
 
 #: ../src/nm-openvpn-service.c:142
 msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "El acceso VPN ha fallado porque las opciones de configuración de VPN eran incorrectas."
+msgstr ""
+"El acceso VPN ha fallado porque las opciones de configuración de VPN eran "
+"incorrectas."
 
 #: ../src/nm-openvpn-service.c:144
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr "El acceso VPN ha fallado porque el programa VPN recibió una configuración incorrecta del servidor VPN."
+msgstr ""
+"El acceso VPN ha fallado porque el programa VPN recibió una configuración "
+"incorrecta del servidor VPN."
 
 #: ../src/nm-openvpn-service.c:146
 msgid "VPN connection failed"
