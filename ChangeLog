@@ -1,3 +1,10 @@
+2006-03-23  Robert Love  <rml@novell.com>
+
+	Patch by j <j@bootlab.org>:
+	* gnome/applet/applet.glade: Don't set the invisible_char property,
+	  which simply overrides the GTK default.  By and by, this behavior
+	  ought to be fixed in Glade.
+
 2006-03-22  Robert Love  <rml@novell.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c: Bump timeout to 45 seconds.
