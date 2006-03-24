@@ -2538,6 +2538,10 @@ static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
 	nma_icons_free (applet);
 
 	nmi_passphrase_dialog_destroy (applet);
+#ifdef ENABLE_NOTIFY
+	notify_notification_close (applet->notification, NULL);
+	g_object_unref (applet->notification);
+#endif
 
 	if (applet->redraw_timeout_id > 0)
 	{
@@ -2579,6 +2583,10 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
 	applet->passphrase_dialog = NULL;
+#ifdef ENABLE_NOTIFY
+	applet->notification = NULL;
+#endif
+
 	applet->glade_file = g_build_filename (GLADEDIR, "applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
 	{
