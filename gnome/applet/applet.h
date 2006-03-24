@@ -21,6 +21,11 @@
 
 #ifndef APPLET_H
 #define APPLET_H
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
 #include <glade/glade.h>
@@ -33,6 +38,9 @@
 #include "wireless-network.h"
 #include "dbus-method-dispatcher.h"
 
+#ifdef ENABLE_NOTIFY
+#include <libnotify/notify.h>
+#endif
 
 /*
  * Preference locations
@@ -119,6 +127,9 @@ typedef struct
 
 	GtkWidget *		passphrase_dialog;
 	GladeXML *		info_dialog_xml;
+#ifdef ENABLE_NOTIFY
+	NotifyNotification*	notification;
+#endif
 } NMApplet;
 
 typedef struct

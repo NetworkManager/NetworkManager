@@ -1,3 +1,15 @@
+2006-03-24  Christopher Aillon  <caillon@redhat.com>
+
+	* gnome/applet/applet-notifications.c:
+	When displaying a notification, make sure to get rid of the
+	previous notification so as to not have competing bubbles,
+	and stop leaking the old one.
+
+	* gnome/applet/applet.c:
+	* gnome/applet/applet.h:
+	Add a new 'notification' member to the applet, and zero it out
+	and free it appropriately.
+
 2006-03-23  Robert Love  <rml@novell.com>
 
 	Patch by j <j@bootlab.org>:
