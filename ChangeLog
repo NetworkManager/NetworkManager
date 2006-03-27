@@ -1,3 +1,9 @@
+2006-03-27  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Revert 2006-03-17 commit and again
+	  restart, not reload, ypbind.  Unfortunately there is no superior
+	  solution.
+
 2006-03-24  Robert Love  <rml@novell.com>
 
 	Patch by Christopher Aillon <caillon@redhat.com> on HEAD:
