@@ -215,8 +215,6 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-	/* for GWARE at least */
-	nm_spawn_process("/etc/rc.d/rc.howl restart");
 }
 
 

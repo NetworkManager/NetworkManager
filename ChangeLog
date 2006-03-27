@@ -1,5 +1,12 @@
 2006-03-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Diffe <diffie@blazebox.homeip.net>
+	* src/backends/NetworkManagerSlackware.c
+		- Don't restart howl, since it's been replaced by Avahi
+			in most distributions
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tor Krill <bugzilla@krill.nu>
 	* configure.in
 	  initscript/Makefile.am
