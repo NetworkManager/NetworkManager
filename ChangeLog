@@ -1,5 +1,17 @@
 2006-03-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tor Krill <bugzilla@krill.nu>
+	* configure.in
+	  initscript/Makefile.am
+	  src/backends/Makefile.am
+	  src/backends/NetworkManagerArch.c
+	  initscript/Arch/Makefile.am
+	  initscript/Arch/networkmanager-dispatcher.in
+	  initscript/Arch/networkmanager.in
+		- Add Arch Linux support, fixes gnome.org #335147
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Diffe <diffie@blazebox.homeip.net>
      * initscript/Slackware/rc.networkmanager
      	- update, fixed gnome.org #333368
