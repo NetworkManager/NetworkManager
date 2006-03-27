@@ -1,3 +1,14 @@
+2006-03-27  Jürg Billeter  <j@bitron.ch>
+
+	* configure.in:
+	* initscript/Makefile.am:
+	* initscript/paldo/Makefile.am:
+	* initscript/paldo/NetworkManager.in:
+	* initscript/paldo/NetworkManagerDispatcher.in:
+	* src/backends/Makefile.am:
+	* src/backends/NetworkManagerPaldo.c:
+		- Add paldo support
+
 2006-03-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

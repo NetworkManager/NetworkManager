@@ -42,6 +42,10 @@ if TARGET_ARCH
 libnmbackend_la_SOURCES +=	NetworkManagerArch.c
 endif
 
+if TARGET_PALDO
+libnmbackend_la_SOURCES +=	NetworkManagerPaldo.c
+endif
+
 libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					$(GTHREAD_CFLAGS)				\
