@@ -1,5 +1,13 @@
 2006-03-27  Robert Love  <rml@novell.com>
 
+	Patch by Jürg Billeter <j@bitron.ch>:
+	* src/nm-logging.c: Add printf modifier to fix warning on 64-bit
+	  systems.
+	* src/nm-netlink-monitor.c: Include <net/if.h> instead of <linux/if.h>
+	  as we prefer glibc over kernel headers, if possible.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
 	Patch by Jon Escombe <list@dresco.co.uk>:
 	* gnome/applet/nm-gconf-wso.c: Add missing NM_AUTH_TYPE_WPA_EAP case.
 	* gnome/applet/nm-gconf-wso-wpa-eap.c: If retrieving the gconf values
