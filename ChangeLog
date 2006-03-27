@@ -1,5 +1,15 @@
 2006-03-27  Robert Love  <rml@novell.com>
 
+	Patch by Jon Escombe <list@dresco.co.uk>:
+	* gnome/applet/nm-gconf-wso.c: Add missing NM_AUTH_TYPE_WPA_EAP case.
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: If retrieving the gconf values
+	  fail, don't bail out.  We don't expect all of the various WPA-EAP
+	  values to be present.
+	* src/nm-ap-security.c: We need to match all capabilities for each
+	  encryption type, not any one of them.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: Revert 2006-03-17 commit and again
 	  restart, not reload, ypbind.  Unfortunately there is no superior
 	  solution.

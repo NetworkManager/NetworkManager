@@ -137,6 +137,10 @@ nm_gconf_wso_new_deserialize_gconf (GConfClient *client,
 				security = NM_GCONF_WSO (nm_gconf_wso_wpa_psk_new_deserialize_gconf (client, network, we_cipher));
 				break;
 
+			case NM_AUTH_TYPE_WPA_EAP:
+				security = NM_GCONF_WSO (nm_gconf_wso_wpa_eap_new_deserialize_gconf (client, network, we_cipher));
+				break;
+
 			default:
 				break;
 		}

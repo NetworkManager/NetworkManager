@@ -106,90 +106,80 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	char *			private_key_file = NULL;
 	char *			client_cert_file = NULL;
 	char *			ca_cert_file = NULL;
-	int				wpa_version;
-	int				eap_method;
-	int				key_type;
-	int				key_mgmt;
+	int				wpa_version = 0;
+	int				eap_method = 0;
+	int				key_type = 0;
+	int				key_mgmt = 0;
 
 	g_return_val_if_fail (client != NULL, NULL);
 	g_return_val_if_fail (network != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == NM_AUTH_TYPE_WPA_EAP), NULL);
 
-	if (!nm_gconf_get_int_helper (client,
+	nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
 							WPA_EAP_PREFIX"eap_method",
 							network,
-							&eap_method))
-		goto out;
+							&eap_method);
 
-	if (!nm_gconf_get_int_helper (client,
+	nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
 							WPA_EAP_PREFIX"key_type",
 							network,
-							&key_type))
-		goto out;
+							&key_type);
 
-	if (!nm_gconf_get_int_helper (client,
+	nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
 							WPA_EAP_PREFIX"wpa_version",
 							network,
-							&wpa_version))
-		goto out;
+							&wpa_version);
 
-	if (!nm_gconf_get_int_helper (client,
+	nm_gconf_get_int_helper (client,
 							GCONF_PATH_WIRELESS_NETWORKS,
 							WPA_EAP_PREFIX"key_mgt",
 							network,
-							&key_mgmt))
+							&key_mgmt);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"identity",
 							   network,
-							   &identity))
-		goto out;
+							   &identity);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"passwd",
 							   network,
-							   &passwd))
-		goto out;
+							   &passwd);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"anon_identity",
 							   network,
-							   &anon_identity))
-		goto out;
+							   &anon_identity);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"private_key_passwd",
 							   network,
-							   &private_key_passwd))
-		goto out;
+							   &private_key_passwd);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"private_key_file",
 							   network,
-							   &private_key_file))
-		goto out;
+							   &private_key_file);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"client_cert_file",
 							   network,
-							   &client_cert_file))
-		goto out;
+							   &client_cert_file);
 
-	if (!nm_gconf_get_string_helper (client,
+	nm_gconf_get_string_helper (client,
 							   GCONF_PATH_WIRELESS_NETWORKS,
 							   WPA_EAP_PREFIX"ca_cert_file",
 							   network,
-							   &ca_cert_file))
-		goto out;
+							   &ca_cert_file);
 
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_GCONF_WSO_WPA_EAP, NULL);
@@ -214,7 +204,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	g_free (client_cert_file);
 	g_free (ca_cert_file);
 
-out:
 	return security;
 }
 
