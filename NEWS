@@ -1,4 +1,19 @@
 ==============================================
+NetworkManager-0.6.2
+Overview of changes since NetworkManager-0.6.2
+==============================================
+
+0.6.2 is a bug fix release.
+
+* NetworkManager
+	* Many, many bug fixes (Everyone)
+	* Dynamic WEP Support (Robert Love)
+
+* nm-applet
+	* Many bug fixes (Everyone)
+
+
+==============================================
 NetworkManager-0.6.1
 Overview of changes since NetworkManager-0.6.0
 ==============================================

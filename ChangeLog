@@ -1,5 +1,10 @@
 2006-03-27  Robert Love  <rml@novell.com>
 
+	* configure.in: Bump version to 0.6.2.
+	* NEWS: Update.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
 	* gnome/applet/other-network-dialog.c: Do not allow the user to try to
 	  create WPA-EAP Ad-Hoc networks because such an action makes no sense.
 
