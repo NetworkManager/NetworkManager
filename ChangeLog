@@ -1,5 +1,11 @@
 2006-03-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Christian Persch <chpe@gnome.org>
+	* gnome/applet/applet.glade
+		- HIG fixes; mostly for spacing and borders (gnome.org #336220)
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Diffe <diffie@blazebox.homeip.net>
 	* src/backends/NetworkManagerSlackware.c
 		- Don't restart howl, since it's been replaced by Avahi
