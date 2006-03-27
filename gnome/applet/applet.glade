@@ -4,12 +4,12 @@
 <glade-interface>
 
 <widget class="GtkDialog" id="trust_dialog">
-  <property name="border_width">6</property>
+  <property name="border_width">5</property>
   <property name="title" translatable="yes"> </property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_CENTER_ALWAYS</property>
   <property name="modal">True</property>
-  <property name="resizable">True</property>
+  <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
@@ -24,7 +24,7 @@
     <widget class="GtkVBox" id="dialog-vbox1">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
-      <property name="spacing">12</property>
+      <property name="spacing">14</property>
 
       <child internal-child="action_area">
 	<widget class="GtkHButtonBox" id="dialog-action_area1">
@@ -68,7 +68,7 @@
 
       <child>
 	<widget class="GtkHBox" id="hbox1">
-	  <property name="border_width">6</property>
+	  <property name="border_width">5</property>
 	  <property name="visible">True</property>
 	  <property name="homogeneous">False</property>
 	  <property name="spacing">12</property>
@@ -160,12 +160,12 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 </widget>
 
 <widget class="GtkDialog" id="driver_sucks_dialog">
-  <property name="border_width">6</property>
+  <property name="border_width">5</property>
   <property name="title" translatable="yes"> </property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_CENTER_ALWAYS</property>
   <property name="modal">True</property>
-  <property name="resizable">True</property>
+  <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
@@ -180,7 +180,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
     <widget class="GtkVBox" id="vbox2">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
-      <property name="spacing">12</property>
+      <property name="spacing">14</property>
 
       <child internal-child="action_area">
 	<widget class="GtkHButtonBox" id="hbuttonbox1">
@@ -211,7 +211,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 
       <child>
 	<widget class="GtkHBox" id="hbox2">
-	  <property name="border_width">6</property>
+	  <property name="border_width">5</property>
 	  <property name="visible">True</property>
 	  <property name="homogeneous">False</property>
 	  <property name="spacing">12</property>
@@ -303,7 +303,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 </widget>
 
 <widget class="GtkDialog" id="other_network_dialog">
-  <property name="border_width">6</property>
+  <property name="border_width">5</property>
   <property name="title" translatable="yes">Other Wireless Network...</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_CENTER_ALWAYS</property>
@@ -324,7 +324,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
     <widget class="GtkVBox" id="dialog-vbox1">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
-      <property name="spacing">4</property>
+      <property name="spacing">2</property>
 
       <child internal-child="action_area">
 	<widget class="GtkHButtonBox" id="dialog-action_area1">
@@ -368,7 +368,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 
       <child>
 	<widget class="GtkHBox" id="hbox1">
-	  <property name="border_width">6</property>
+	  <property name="border_width">5</property>
 	  <property name="visible">True</property>
 	  <property name="homogeneous">False</property>
 	  <property name="spacing">12</property>
@@ -427,8 +427,8 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		  <property name="n_rows">4</property>
 		  <property name="n_columns">2</property>
 		  <property name="homogeneous">False</property>
-		  <property name="row_spacing">12</property>
-		  <property name="column_spacing">6</property>
+		  <property name="row_spacing">6</property>
+		  <property name="column_spacing">12</property>
 
 		  <child>
 		    <widget class="GtkLabel" id="wireless_adapter_label">
@@ -485,7 +485,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
 		      <property name="wrap">False</property>
 		      <property name="selectable">False</property>
-		      <property name="xalign">1</property>
+		      <property name="xalign">0</property>
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
@@ -534,7 +534,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
 		      <property name="justify">GTK_JUSTIFY_LEFT</property>
 		      <property name="wrap">False</property>
 		      <property name="selectable">False</property>
-		      <property name="xalign">1</property>
+		      <property name="xalign">0</property>
 		      <property name="yalign">0.5</property>
 		      <property name="xpad">0</property>
 		      <property name="ypad">0</property>
@@ -618,7 +618,7 @@ WEP 64/128-bit ASCII
 </widget>
 
 <widget class="GtkDialog" id="passphrase_dialog">
-  <property name="border_width">6</property>
+  <property name="border_width">5</property>
   <property name="has_focus">True</property>
   <property name="title" translatable="yes">Wireless Network Key Required</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
@@ -639,7 +639,7 @@ WEP 64/128-bit ASCII
     <widget class="GtkVBox" id="dialog-vbox1">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
-      <property name="spacing">12</property>
+      <property name="spacing">2</property>
 
       <child internal-child="action_area">
 	<widget class="GtkHButtonBox" id="dialog-action_area1">
@@ -683,7 +683,7 @@ WEP 64/128-bit ASCII
 
       <child>
 	<widget class="GtkHBox" id="hbox1">
-	  <property name="border_width">6</property>
+	  <property name="border_width">5</property>
 	  <property name="visible">True</property>
 	  <property name="homogeneous">False</property>
 	  <property name="spacing">12</property>
@@ -741,7 +741,7 @@ A passphrase or encryption key is required to access the wireless network '%s'.<
 		<widget class="GtkHBox" id="hbox7">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
-		  <property name="spacing">6</property>
+		  <property name="spacing">12</property>
 
 		  <child>
 		    <widget class="GtkLabel" id="security_combo_label">
@@ -828,7 +828,7 @@ WEP 64/128-bit ASCII
 </widget>
 
 <widget class="GtkDialog" id="info_dialog">
-  <property name="border_width">6</property>
+  <property name="border_width">5</property>
   <property name="title" translatable="yes">Connection Information</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -900,7 +900,7 @@ WEP 64/128-bit ASCII
 		<widget class="GtkHBox" id="hbox2">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
-		  <property name="spacing">6</property>
+		  <property name="spacing">12</property>
 
 		  <child>
 		    <widget class="GtkImage" id="image1">
@@ -926,8 +926,8 @@ WEP 64/128-bit ASCII
 		      <property name="n_rows">14</property>
 		      <property name="n_columns">2</property>
 		      <property name="homogeneous">False</property>
-		      <property name="row_spacing">3</property>
-		      <property name="column_spacing">6</property>
+		      <property name="row_spacing">6</property>
+		      <property name="column_spacing">12</property>
 
 		      <child>
 			<widget class="GtkLabel" id="label-interface">
@@ -1752,7 +1752,7 @@ WEP 64/128-bit ASCII
 	  <property name="n_columns">2</property>
 	  <property name="homogeneous">False</property>
 	  <property name="row_spacing">6</property>
-	  <property name="column_spacing">6</property>
+	  <property name="column_spacing">12</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="wep_key_label">
@@ -1990,7 +1990,7 @@ Shared Key</property>
 	  <property name="n_columns">2</property>
 	  <property name="homogeneous">False</property>
 	  <property name="row_spacing">6</property>
-	  <property name="column_spacing">6</property>
+	  <property name="column_spacing">12</property>
 
 	  <child>
 	    <widget class="GtkEntry" id="leap_username_entry">
@@ -2179,8 +2179,8 @@ Shared Key</property>
 	  <property name="n_rows">3</property>
 	  <property name="n_columns">2</property>
 	  <property name="homogeneous">False</property>
-	  <property name="row_spacing">4</property>
-	  <property name="column_spacing">4</property>
+	  <property name="row_spacing">6</property>
+	  <property name="column_spacing">12</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="wpa_psk_label">
@@ -2416,8 +2416,8 @@ Shared Key</property>
 	  <property name="n_rows">10</property>
 	  <property name="n_columns">2</property>
 	  <property name="homogeneous">False</property>
-	  <property name="row_spacing">4</property>
-	  <property name="column_spacing">4</property>
+	  <property name="row_spacing">6</property>
+	  <property name="column_spacing">12</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="wpa-eap-ca-cert-file-label">
@@ -2985,7 +2985,7 @@ Shared Key</property>
 	  <property name="n_columns">2</property>
 	  <property name="homogeneous">False</property>
 	  <property name="row_spacing">6</property>
-	  <property name="column_spacing">6</property>
+	  <property name="column_spacing">12</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="wep_passphrase_label">
