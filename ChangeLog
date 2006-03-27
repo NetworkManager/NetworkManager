@@ -1,3 +1,9 @@
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Diffe <diffie@blazebox.homeip.net>
+     * initscript/Slackware/rc.networkmanager
+     	- update, fixed gnome.org #333368
+
 2006-03-27  Robert Love  <rml@novell.com>
 
 	* gnome/applet/other-network-dialog.c: Do not allow the user to try to
