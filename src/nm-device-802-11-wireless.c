@@ -214,13 +214,22 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
 
 	if ((data_len >= minlen) && range->we_version_compiled >= 18)
 	{
+		if (range->enc_capa & IW_ENC_CAPA_WPA)
+		{
 			caps |= (NM_802_11_CAP_PROTO_WPA
 				  | NM_802_11_CAP_KEY_MGMT_PSK
 				  | NM_802_11_CAP_KEY_MGMT_802_1X);
+		}
+		if (range->enc_capa & IW_ENC_CAPA_WPA2)
+		{
 			caps |= (NM_802_11_CAP_PROTO_WPA2
 				  | NM_802_11_CAP_KEY_MGMT_PSK
 				  | NM_802_11_CAP_KEY_MGMT_802_1X);
+		}
+
+		if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
 			caps |= NM_802_11_CAP_CIPHER_TKIP;
+		if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
 			caps |= NM_802_11_CAP_CIPHER_CCMP;
 	}
 
@@ -1820,21 +1829,23 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 			int			orig_rate = 0;
 			struct iwreq	wrq;
 
-			/* Must be in infrastructure mode during scan, otherwise we don't get a full
-			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
-			 *
-			 * We only set the mode and unlock the frequency if the card is in adhoc mode,
-			 * in case doing so is a costly operation for the driver or the driver prefers
-			 * IW_MODE_AUTO.
-			 */
 			orig_mode = nm_device_802_11_wireless_get_mode (self);
 			if (orig_mode == IW_MODE_ADHOC)
 			{
 				orig_freq = nm_device_802_11_wireless_get_frequency (self);
 				orig_rate = nm_device_802_11_wireless_get_bitrate (self);
-				nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
-				nm_device_802_11_wireless_set_frequency (self, 0);
 			}
+
+			/* Must be in infrastructure mode during scan, otherwise we don't get a full
+			 * list of scan results.  Scanning doesn't work well in Ad-Hoc mode :( 
+			 */
+			nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
+
+			/* We only unlock the frequency if the card is in adhoc mode, in case it is
+			 * a costly operation for the driver.
+			 */
+			if (orig_mode == IW_MODE_ADHOC)
+				nm_device_802_11_wireless_set_frequency (self, 0);
 
 			wrq.u.data.pointer = NULL;
 			wrq.u.data.flags = 0;
@@ -2242,11 +2253,13 @@ supplicant_status_cb (GIOChannel *source,
 }
 
 
-#define NM_SUPPLICANT_TIMEOUT	60	/* how long we wait for wpa_supplicant to associate (in seconds) */
+#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
 
 static unsigned int
 get_supplicant_timeout (NMDevice80211Wireless *self)
 {
+	if (self->priv->num_freqs > 14)
+		return NM_SUPPLICANT_TIMEOUT * 2;
 	return NM_SUPPLICANT_TIMEOUT;
 }
 
@@ -2412,30 +2425,13 @@ supplicant_interface_init (NMDevice80211Wireless *self)
 	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
 	gboolean			success = FALSE;
 	int				tries = 0;
-	const char *		wpa_driver;
-	const char *		kernel_driver;
 
 	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_RUN_DIR)))
 		goto exit;
 
-	kernel_driver = nm_device_get_driver (NM_DEVICE (self));
-
-	/*
-	 * We want to work with the generic "wext" wpa_supplicant driver, but some kernel drivers
-	 * are just utter junk.  For those losers, we use a specific wpa_supplicant driver.
-	 */
-	if (!strcmp (kernel_driver, "ath_pci"))
-		wpa_driver = "madwifi";
-	else if (!strcmp (kernel_driver, "ndiswrapper"))
-		wpa_driver = "ndiswrapper";
-	else if (!strcmp (kernel_driver, "prism54"))
-		wpa_driver = "prism54";
-	else
-		wpa_driver = "wext";
-
 	/* wpa_cli -g/var/run/wpa_supplicant-global interface_add eth1 "" wext /var/run/wpa_supplicant */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"INTERFACE_ADD %s\t\t%s\t" WPA_SUPPLICANT_CONTROL_SOCKET "\t", iface, wpa_driver))
+			"INTERFACE_ADD %s\t\twext\t" WPA_SUPPLICANT_CONTROL_SOCKET "\t", iface))
 		goto exit;
 	wpa_ctrl_close (ctrl);
 
@@ -2472,7 +2468,6 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	gboolean			user_created;
 	const char *		hex_essid;
 	const char *		ap_scan = "AP_SCAN 1";
-	const char *		kernel_driver;
 	guint32			caps;
 	gboolean			supports_wpa;
 
@@ -2494,23 +2489,12 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 				|| (caps & NM_802_11_CAP_PROTO_WPA2);
 
 	/* Use "AP_SCAN 2" if:
-	 *  - The wireless driver is orinoco or prism54
-	 *  - The wireless network is user created, but not madwifi
-	 *  - The wireless driver does not support WPA
-	 * Otherwise, we prefer "AP_SCAN 1".
+	 * - The wireless network is non-broadcast or user created
+	 * - The wireless driver does not support WPA
 	 */
 	user_created = nm_ap_get_user_created (ap);
-	kernel_driver = nm_device_get_driver (NM_DEVICE (self));
-	if (!strcmp (kernel_driver, "orinoco_cs"))
+	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
-	else if (!strcmp (kernel_driver, "prism54"))
-		ap_scan = "AP_SCAN 2";
-	else if (user_created && strcmp (kernel_driver, "ath_pci"))
-		ap_scan = "AP_SCAN 2";
-	else if (!supports_wpa)
-		ap_scan = "AP_SCAN 2";
-	else
-		ap_scan = "AP_SCAN 1";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, ap_scan))
