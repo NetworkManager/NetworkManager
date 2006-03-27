@@ -14,3 +14,6 @@ endif
 if TARGET_SUSE
 SUBDIRS += SUSE
 endif
+if TARGET_ARCH
+SUBDIRS += Arch
+endif

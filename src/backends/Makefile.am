@@ -38,6 +38,10 @@ if TARGET_SLACKWARE
 libnmbackend_la_SOURCES +=	NetworkManagerSlackware.c
 endif
 
+if TARGET_ARCH
+libnmbackend_la_SOURCES +=	NetworkManagerArch.c
+endif
+
 libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					$(GTHREAD_CFLAGS)				\
