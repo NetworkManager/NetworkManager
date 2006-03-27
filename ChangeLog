@@ -1,5 +1,10 @@
 2006-03-27  Robert Love  <rml@novell.com>
 
+	* gnome/applet/other-network-dialog.c: Do not allow the user to try to
+	  create WPA-EAP Ad-Hoc networks because such an action makes no sense.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
 	Patch by Jürg Billeter <j@bitron.ch>:
 	* src/nm-logging.c: Add printf modifier to fix warning on 64-bit
 	  systems.
