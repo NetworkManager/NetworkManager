@@ -20,6 +20,7 @@
  */
 
 #include <libnotify/notify.h>
+#include "applet.h"
 #include "applet-notifications.h"
 
 void
@@ -29,7 +30,7 @@ nma_send_event_notification (NMApplet *applet,
                               const char *message,
                               const char *icon)
 {
-	NotifyNotification *notification;
+	const char *notify_icon;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (summary != NULL);
@@ -38,9 +39,16 @@ nma_send_event_notification (NMApplet *applet,
 	if (!notify_is_initted ())
 		notify_init ("NetworkManager");
 
-	notification = notify_notification_new (summary, message,
-			icon ? icon : GTK_STOCK_NETWORK, GTK_WIDGET (applet));
-	notify_notification_set_urgency (notification, urgency);
-	notify_notification_show (notification, NULL);
+	if (applet->notification != NULL) {
+		notify_notification_close (applet->notification, NULL);
+		g_object_unref (applet->notification);
+	}
+
+	notify_icon = icon ? icon : GTK_STOCK_NETWORK;
+
+	applet->notification = notify_notification_new (summary, message, notify_icon, GTK_WIDGET (applet));
+
+	notify_notification_set_urgency (applet->notification, urgency);
+	notify_notification_show (applet->notification, NULL);
 }
 

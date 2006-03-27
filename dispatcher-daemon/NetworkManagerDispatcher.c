@@ -52,6 +52,7 @@ typedef enum NMDAction	NMDAction;
 
 #define NMD_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManagerDispatcher.pid"
 
+static DBusConnection *nmd_dbus_init (void);
 
 /*
  * nmd_permission_check
@@ -174,6 +175,22 @@ static char * nmd_get_device_name (DBusConnection *connection, char *path)
 	return dev_name;
 }
 
+/*
+ * nmd reinit_dbus
+ *
+ * Reconnect to the system message bus if the connection was dropped.
+ *
+ */
+static gboolean nmd_reinit_dbus (gpointer user_data)
+{
+	if (nmd_dbus_init ())
+	{
+		nm_info ("Successfully reconnected to the system bus.");
+		return FALSE;
+	}
+	else
+		return TRUE;
+}
 
 /*
  * nmd_dbus_filter
@@ -190,6 +207,14 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 
 	dbus_error_init (&error);
 	object_path = dbus_message_get_path (message);
+
+	if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected"))
+	{
+		dbus_connection_unref (connection);
+		connection = NULL;
+		g_timeout_add (3000, nmd_reinit_dbus, NULL);
+		handled = TRUE;
+	}
 
 	if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive"))
 		action = NMD_DEVICE_NOW_INACTIVE;
@@ -225,7 +250,6 @@ static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessag
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
-
 /*
  * nmd_dbus_init
  *
@@ -246,6 +270,7 @@ static DBusConnection *nmd_dbus_init (void)
 		return (NULL);
 	}
 
+	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, NULL);
 
 	if (!dbus_connection_add_filter (connection, nmd_dbus_filter, NULL, NULL))

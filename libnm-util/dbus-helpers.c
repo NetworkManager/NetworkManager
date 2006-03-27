@@ -249,6 +249,7 @@ nmu_security_serialize_wpa_psk_with_cipher (DBusMessage *message,
 dbus_bool_t
 nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 						  int eap_method,
+						  int key_type,
 						  const char *identity,
 						  const char *passwd,
 						  const char *anon_identity,
@@ -267,32 +268,39 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 				    || (eap_method == NM_EAP_METHOD_PEAP)
 				    || (eap_method == NM_EAP_METHOD_TLS)
 				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
+	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
+				    || (key_type == IW_AUTH_CIPHER_CCMP)
+				    || (key_type == IW_AUTH_CIPHER_TKIP)
+				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
 
 	/* Second arg: EAP method (INT32) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &eap_method);
 
-	/* Third arg: Identity (STRING) */
+	/* Third arg: Key type (INT32) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &key_type);
+
+	/* Fourth arg: Identity (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &identity);
 
-	/* Fourth arg: Password (STRING) */
+	/* Fifth arg: Password (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &passwd);
 
-	/* Fifth arg: Anonymous Identity (STRING) */
+	/* Sixth arg: Anonymous Identity (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &anon_identity);
 
-	/* Sixth arg: Private key password (STRING) */
+	/* Seventh arg: Private key password (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &private_key_passwd);
 
-	/* Seventh arg: Private key file (STRING) */
+	/* Eighth arg: Private key file (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &private_key_file);
 
-	/* Eighth arg: Client certificate file (STRING) */
+	/* Ninth arg: Client certificate file (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &client_cert_file);
 
-	/* Ninth arg: CA certificate file (STRING) */
+	/* Tenth arg: CA certificate file (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &ca_cert_file);
 
-	/* Tenth and final arg: WPA version (INT32) */
+	/* Eleventh and final arg: WPA version (INT32) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_INT32, &wpa_version);
 
 	return TRUE;
@@ -302,6 +310,7 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 dbus_bool_t
 nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 								    int eap_method,
+								    int key_type,
 								    const char *identity,
 								    const char *passwd,
 								    const char *anon_identity,
@@ -322,11 +331,15 @@ nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 				    || (eap_method == NM_EAP_METHOD_PEAP)
 				    || (eap_method == NM_EAP_METHOD_TLS)
 				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
+	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
+				    || (key_type == IW_AUTH_CIPHER_CCMP)
+				    || (key_type == IW_AUTH_CIPHER_TKIP)
+				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
 
 	/* First arg: WE Cipher (INT32) */
 	we_cipher_append_helper (iter, NM_AUTH_TYPE_WPA_EAP);
 
-	result = nmu_security_serialize_wpa_eap (iter, eap_method, identity, passwd, anon_identity, private_key_passwd,
+	result = nmu_security_serialize_wpa_eap (iter, eap_method, key_type, identity, passwd, anon_identity, private_key_passwd,
 									 private_key_file, client_cert_file, ca_cert_file, wpa_version);
 
 	return result;
@@ -338,6 +351,7 @@ nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 dbus_bool_t
 nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 						    int *eap_method,
+						    int *key_type,
 						    char **identity,
 						    char **passwd,
 						    char **anon_identity,
@@ -356,8 +370,11 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 	char *		dbus_ca_cert_file;
 	dbus_int32_t	dbus_wpa_version;
 	dbus_int32_t	dbus_eap_method;
+	dbus_int32_t	dbus_key_type;
 
 	g_return_val_if_fail (iter != NULL, FALSE);
+	g_return_val_if_fail (eap_method != NULL, FALSE);
+	g_return_val_if_fail (key_type != NULL, FALSE);
 	g_return_val_if_fail (identity != NULL, FALSE);
 	g_return_val_if_fail (*identity == NULL, FALSE);
 	g_return_val_if_fail (passwd != NULL, FALSE);
@@ -385,49 +402,58 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 				    || (dbus_eap_method == NM_EAP_METHOD_TLS)
 				    || (dbus_eap_method == NM_EAP_METHOD_TTLS), FALSE);
 
-	/* Third arg: Identity (STRING) */
+	/* Third arg: Key type (INT32) */
+	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_INT32, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_key_type);
+	g_return_val_if_fail ((dbus_key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
+				    || (dbus_key_type == IW_AUTH_CIPHER_CCMP)
+				    || (dbus_key_type == IW_AUTH_CIPHER_TKIP)
+				    || (dbus_key_type == IW_AUTH_CIPHER_WEP104), FALSE);
+
+	/* Fourth arg: Identity (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_identity);
 	g_return_val_if_fail (dbus_identity != NULL, FALSE);
 
-	/* Fourth arg: Password (STRING) */
+	/* Fifth arg: Password (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_password);
 	g_return_val_if_fail (dbus_password != NULL, FALSE);
 
-	/* Fifth arg: Anonymous Identity (STRING) */
+	/* Sixth arg: Anonymous Identity (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_anon_identity);
 	g_return_val_if_fail (dbus_anon_identity != NULL, FALSE);
 
-	/* Sixth arg: Private key password (STRING) */
+	/* Seventh arg: Private key password (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_private_key_passwd);
 	g_return_val_if_fail (dbus_private_key_passwd != NULL, FALSE);
 
-	/* Seventh arg: Private key file (STRING) */
+	/* Eighth arg: Private key file (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_private_key_file);
 	g_return_val_if_fail (dbus_private_key_file != NULL, FALSE);
 
-	/* Eighth arg: Client certificate file (STRING) */
+	/* Ninth arg: Client certificate file (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_client_cert_file);
 	g_return_val_if_fail (dbus_client_cert_file != NULL, FALSE);
 
-	/* Ninth arg: CA certificate file (STRING) */
+	/* Tenth arg: CA certificate file (STRING) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_ca_cert_file);
 	g_return_val_if_fail (dbus_ca_cert_file != NULL, FALSE);
 
-	/* Tenth and final arg: WPA version (INT32) */
+	/* Eleventh and final arg: WPA version (INT32) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_INT32, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_wpa_version);
@@ -435,6 +461,7 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 			|| (dbus_wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
 
 	*eap_method = dbus_eap_method;
+	*key_type = dbus_key_type;
 	*identity = strlen (dbus_identity) > 0 ? dbus_identity : NULL;
 	*passwd = strlen (dbus_password) > 0 ? dbus_password : NULL;
 	*anon_identity = strlen (dbus_anon_identity) > 0 ? dbus_anon_identity : NULL;

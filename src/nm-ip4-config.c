@@ -44,7 +44,7 @@ struct NMIP4Config
 	GSList *	nameservers;
 	GSList *	domains;
 
-	gchar * hostname;
+	gchar *	hostname;
 	gchar *	nis_domain;
 	GSList *	nis_servers;
 

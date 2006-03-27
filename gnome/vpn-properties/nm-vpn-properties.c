@@ -236,9 +236,12 @@ static gboolean vpn_druid_vpn_type_page_next (GnomeDruidPage *druidpage,
 
 	/* first hide existing child */
 	w = g_list_nth_data (gtk_container_children (GTK_CONTAINER (vpn_type_details)), 0);
-	if (w != NULL) {
+	if (w)
 		gtk_widget_hide (w);
-	}
+	/* hide the previous widget from the next page, in case the user hit 'back' */
+	w = g_list_nth_data (gtk_container_children (GTK_CONTAINER (vpn_type_details)), 1);
+	if (w)
+		gtk_widget_hide (w);
 
 	/* show appropriate child */
 	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
@@ -380,6 +383,7 @@ add_cb (GtkButton *button, gpointer user_data)
 	gtk_window_set_policy (druid_window, FALSE, FALSE, TRUE);
 
 	gtk_widget_show_all (GTK_WIDGET (druid_window));
+
 out:
 	;
 }

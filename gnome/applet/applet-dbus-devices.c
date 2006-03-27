@@ -291,7 +291,8 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	HalInfoCBData *	cb_data = (HalInfoCBData *) user_data;
-	char *			info_product;
+	char *			info_product = "Unknown";
+	char *			desc;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -303,24 +304,13 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (message_is_error (reply))
-	{
-		DBusError err;
+	if (!message_is_error (reply))
+		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &info_product, DBUS_TYPE_INVALID);
 
-		dbus_error_init (&err);
-		dbus_set_error_from_message (&err, reply);
-		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
-		dbus_error_free (&err);
-		dbus_message_unref (reply);
-		goto out;
-	}
+	desc = g_strdup_printf ("%s %s", cb_data->vendor, info_product);
+	network_device_set_desc (cb_data->dev, desc);
+	g_free (desc);
 
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &info_product, DBUS_TYPE_INVALID))
-	{
-		char *desc = g_strdup_printf ("%s %s", cb_data->vendor, info_product);
-
-		network_device_set_desc (cb_data->dev, desc);
-	}
 	dbus_message_unref (reply);
 
 out:
@@ -338,7 +328,10 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	HalInfoCBData *	cb_data = (HalInfoCBData *) user_data;
-	char *			info_vendor;
+	char *			info_vendor = "Unknown";
+	DBusMessage *		message;
+	DBusPendingCall *	product_pcall = NULL;
+
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -349,44 +342,30 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (message_is_error (reply))
+	if (!message_is_error (reply))
+		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &info_vendor, DBUS_TYPE_INVALID);
+
+	if ((message = dbus_message_new_method_call ("org.freedesktop.Hal", cb_data->parent_op,
+										"org.freedesktop.Hal.Device", "GetPropertyString")))
 	{
-		DBusError err;
+		const char *	prop = "info.product";
 
-		dbus_error_init (&err);
-		dbus_set_error_from_message (&err, reply);
-		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
-		dbus_error_free (&err);
-		dbus_message_unref (reply);
-		goto out;
-	}
-
-	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &info_vendor, DBUS_TYPE_INVALID))
-	{
-		DBusMessage *		message;
-		DBusPendingCall *	product_pcall = NULL;
-
-		if ((message = dbus_message_new_method_call ("org.freedesktop.Hal", cb_data->parent_op,
-											"org.freedesktop.Hal.Device", "GetPropertyString")))
+		dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
+		dbus_connection_send_with_reply (cb_data->applet->connection, message, &product_pcall, -1);
+		if (product_pcall)
 		{
-			const char *	prop = "info.product";
+			HalInfoCBData *	product_cb_data = g_malloc0 (sizeof (HalInfoCBData));
 
-			dbus_message_append_args (message, DBUS_TYPE_STRING, &prop, DBUS_TYPE_INVALID);
-			dbus_connection_send_with_reply (cb_data->applet->connection, message, &product_pcall, -1);
-			if (product_pcall)
-			{
-				HalInfoCBData *	product_cb_data = g_malloc0 (sizeof (HalInfoCBData));
-
-				product_cb_data->applet = cb_data->applet;
-				network_device_ref (cb_data->dev);
-				product_cb_data->dev = cb_data->dev;
-				product_cb_data->parent_op = g_strdup (cb_data->parent_op);
-				product_cb_data->vendor = g_strdup (info_vendor);
-				dbus_pending_call_set_notify (product_pcall, hal_info_product_cb, product_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
-			}
-			dbus_message_unref (message);
+			product_cb_data->applet = cb_data->applet;
+			network_device_ref (cb_data->dev);
+			product_cb_data->dev = cb_data->dev;
+			product_cb_data->parent_op = g_strdup (cb_data->parent_op);
+			product_cb_data->vendor = g_strdup (info_vendor);
+			dbus_pending_call_set_notify (product_pcall, hal_info_product_cb, product_cb_data, (DBusFreeFunction) free_hal_info_cb_data);
 		}
+		dbus_message_unref (message);
 	}
+
 	dbus_message_unref (reply);
 
 out:
@@ -895,11 +874,13 @@ static void free_device_activated_cb_data (DeviceActivatedCBData *obj)
 static void nma_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DeviceActivatedCBData *	cb_data = (DeviceActivatedCBData*) user_data;
-	NMApplet *		applet = cb_data->applet;
+	NMApplet *			applet = cb_data->applet;
+#ifdef ENABLE_NOTIFY
 	char *				essid = cb_data->essid;
 	NetworkDevice *		active_device;
 	char *				message = NULL;
 	char *				icon = NULL;
+#endif
 
 	nma_dbus_device_properties_cb (pcall, applet);
 

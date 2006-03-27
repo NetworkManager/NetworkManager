@@ -255,6 +255,49 @@ out:
 
 
 /*
+ * nm_system_set_mtu
+ *
+ * Set the MTU for a given device.
+ */
+void nm_system_set_mtu (NMDevice *dev)
+{
+	struct rtnl_link *		request;
+	struct rtnl_link *		old;
+	unsigned long			mtu;
+	struct nl_handle *		nlh;
+	const char *			iface;
+
+	mtu = nm_system_get_mtu (dev);
+	if (!mtu)
+		return;
+
+	nlh = new_nl_handle ();
+	if (!nlh)
+		return;
+
+	request = rtnl_link_alloc ();
+	if (!request)
+		goto out_nl_close;
+
+	iface = nm_device_get_iface (dev);
+	old = iface_to_rtnl_link (iface, nlh);
+	if (!old)
+		goto out_request;
+
+	nm_info ("Setting MTU of interface '%s' to %ld", iface, mtu);
+	rtnl_link_set_mtu (request, mtu);
+	rtnl_link_change (nlh, old, request, 0);
+
+	rtnl_link_put (old);
+out_request:
+	rtnl_link_put (request);
+out_nl_close:
+	nl_close (nlh);
+	nl_handle_destroy (nlh);
+}
+
+
+/*
  * nm_system_vpn_device_set_from_ip4_config
  *
  * Set IPv4 configuration of a VPN device from an NMIP4Config object.

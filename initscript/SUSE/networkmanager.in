@@ -10,6 +10,9 @@
 
 sbindir=@sbindir@
 
+DHCDBD_BIN=${sinbidr}/dhcdbd
+test -x $DHCDBD_BIN || exit 5
+
 NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 test -x $NETWORKMANAGER_BIN || exit 5
 
@@ -18,6 +21,12 @@ rc_reset
 
 case "$1" in
 	start)
+		checkproc $DHCDBD_BIN
+		if [ $? != 0 ]; then
+			echo -n "Starting the DHCP DBUS Daemon"
+			startproc $DHCDBD_BIN --system
+			rc_status -v
+		fi
 		checkproc $NETWORKMANAGER_BIN
 		if [ $? = 0 ]; then
 			echo -n "NetworkManager already running"
@@ -32,6 +41,8 @@ case "$1" in
 		echo -n "Shutting down the NetworkManager"
 		killproc -TERM $NETWORKMANAGER_BIN
 		rc_status -v
+		echo -n "Shutting down the DHCP DBUS Daemon"
+		killproc -TERM $DHCDBD_BIN
 		;;
 	restart)
 		$0 stop
@@ -39,6 +50,9 @@ case "$1" in
 		rc_status
 		;;
 	status)
+		echo -n "Checking for the DHCP DBUS Daemon: "
+		checkproc $DHCDBD_BIN
+		rc_status -v
 		echo -n "Checking for the NetworkManager: "
 		checkproc $NETWORKMANAGER_BIN
 		rc_status -v

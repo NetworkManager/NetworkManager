@@ -139,7 +139,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
  * info before setting stuff too.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	return NULL;
 }
@@ -422,4 +422,16 @@ void nm_system_set_hostname (NMIP4Config *config)
 gboolean nm_system_should_modify_resolv_conf (void)
 {
 	return TRUE;
+}
+
+
+/*
+ * nm_system_get_mtu
+ *
+ * Return a user-provided or system-mandated MTU for this device or zero if
+ * no such MTU is provided.
+ */
+unsigned int nm_system_get_mtu (NMDevice *dev)
+{
+	return 0;
 }
