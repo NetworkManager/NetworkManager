@@ -44,13 +44,14 @@ ALL_LINGUAS="bg bs ca cs da de el en_CA es fi fr gu hr hu it ja ko lt nb ne nl p
 AC_PROG_INTLTOOL([0.27.2])
 AM_GLIB_GNU_GETTEXT
 
-AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, or slackware]))
+AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch or slackware]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
 	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
 	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
+	AC_CHECK_FILE(/etc/arch-release,with_distro="arch")
 	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
 fi
 with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
@@ -60,7 +61,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware) ;;
+		redhat|suse|gentoo|debian|slackware|arch) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -72,6 +73,7 @@ AM_CONDITIONAL(TARGET_SUSE, test x"$with_distro" = xsuse)
 AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
 AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
+AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
 
 AC_MSG_CHECKING([for wireless-tools >= 28pre9])
 AC_TRY_COMPILE([#include <iwlib.h>],
@@ -338,6 +340,9 @@ initscript/Slackware/Makefile
 initscript/SUSE/Makefile
 initscript/SUSE/networkmanager
 initscript/SUSE/networkmanager-dispatcher
+initscript/Arch/Makefile
+initscript/Arch/networkmanager
+initscript/Arch/networkmanager-dispatcher
 man/Makefile
 man/NetworkManager.1
 man/NetworkManagerDispatcher.1
