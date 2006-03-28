@@ -3,7 +3,10 @@ NetworkManager-0.6.2
 Overview of changes since NetworkManager-0.6.2
 ==============================================
 
-0.6.2 is a bug fix release.
+0.6.2 is a bug fix release.  Note that NetworkManager no longer automatically
+runs dhcdbd if it is not running.  This means that it is now the system's
+responsibility to start dhcdbd prior to NetworkManager, e.g. in the
+distribution's NetworkManager initscript.
 
 * NetworkManager
 	* Many, many bug fixes (Everyone)
