@@ -61,6 +61,7 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 						guint32 ip4_dns_len,
 						guint32 *ip4_nbns,
 						guint32 ip4_nbns_len,
+						guint32 mss,
 						const char *dns_domain,
 						const char *login_banner);
 #endif
@@ -809,13 +810,18 @@ nm_vpn_service_stage4_ip_config_get (NMVPNService *service,
 		dbus_message_iter_next (&subiter);
 	}
 
-	/* Eigth arg: DNS Domain (STRING) */
+	/* Eighth arg: MSS (UINT32) */
+	if (!get_dbus_guint32_helper (&iter, &num, "MSS"))
+		goto out;
+	nm_ip4_config_set_mss (config, num);
+	
+	/* Ninth arg: DNS Domain (STRING) */
 	if (!get_dbus_string_helper (&iter, &str, "DNS Domain"))
 		goto out;
 	if (strlen (str))
 		nm_ip4_config_add_domain (config, str);
 
-	/* Ninth arg: VPN Login Banner (STRING) */
+	/* Tenth arg: VPN Login Banner (STRING) */
 	if (!get_dbus_string_helper (&iter, &login_banner, "Login Banner"))
 		goto out;
 
@@ -829,6 +835,7 @@ nm_vpn_service_stage4_ip_config_get (NMVPNService *service,
 	                  ip4_dns_len,
 	                  ip4_nbns,
 	                  ip4_nbns_len,
+	                  mss,
 	                  dns_domain,
 	                  login_banner);
 #endif
@@ -1057,6 +1064,7 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 						guint32 ip4_dns_len,
 						guint32 *ip4_nbns,
 						guint32 ip4_nbns_len,
+						guint32 mss,
 						const char *dns_domain,
 						const char *login_banner)
 {
@@ -1072,6 +1080,7 @@ static void print_vpn_config (guint32 ip4_vpn_gateway,
 	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
 	temp_addr.s_addr = ip4_ptp_address;
 	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
+	nm_info ("Maximum Segment Size (MSS): %d", mss);
 
 	for (i = 0; i < ip4_dns_len; i++)
 	{

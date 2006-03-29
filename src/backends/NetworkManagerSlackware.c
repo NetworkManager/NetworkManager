@@ -429,7 +429,7 @@ gboolean nm_system_should_modify_resolv_conf (void)
  * Return a user-provided or system-mandated MTU for this device or zero if
  * no such MTU is provided.
  */
-unsigned int nm_system_get_mtu (NMDevice *dev)
+guint32 nm_system_get_mtu (NMDevice *dev)
 {
 	return 0;
 }

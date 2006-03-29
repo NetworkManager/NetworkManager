@@ -29,6 +29,7 @@
 #include "nm-device.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerSystem.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 
@@ -577,6 +578,12 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		temp_addr.s_addr = ip4_nis_servers[i];
 		nm_info ("  nis server %s", inet_ntoa (temp_addr));
 	}
+
+	/*
+	 * Grab the MTU from the backend.  If DHCP servers can send recommended MTU's,
+	 * should set that here if the backend returns zero.
+	 */
+	nm_ip4_config_set_mtu (ip4_config, nm_system_get_mtu (dev));
 
 out:
 	return ip4_config;

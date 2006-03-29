@@ -1,3 +1,29 @@
+2006-03-29  Robert Love  <rml@novell.com>
+
+	Patch by Vinay R <rvinay@novell.com> and Robert Love <rml@novell.com>,
+	to add support for per-route MSS and improve support for per-interface
+	MTU:
+	* src/NetworkManagerSystem.c: Modify nm_system_device_set_ip4_route to
+	  optionally take an MSS parameter and set it for the given route.
+	  Remove nm_system_device_set_ip4_route_with_iface.  Pass in the
+	  NMIP4Config's stored MSS, if any.
+	* src/nm-ip4-config.c: Add 'mtu' and 'mss' to NMIP4Config, representing
+	  the interface's MTU and the route's MSS, respectively.  Add functions
+	  nm_ip4_config_get_mtu, nm_ip4_config_set_mtu, nm_ip4_config_get_mss,
+	  and nm_ip4_config_set_mss for retrieving and setting the MTU and the
+	  MSS.
+	* src/nm-ip4-config.h: Add prototypes for nm_ip4_config_get_mtu,
+	  nm_ip4_config_set_mtu, nm_ip4_config_get_mss, and
+	  nm_ip4_config_set_mss.
+	* src/vpn-manager/nm-vpn-service.c: Modify to receive the MSS from the
+	  VPN daemon.
+	* src/backends/NetworkManager{Arch,Debian,Gentoo,RedHat,Slackware,SUSE}.c:
+	  Change the retval of nm_system_get_mtu to guint32.
+	* src/dhcp-manager/nm-dhcp-manager.c: Set the MTU on the new DHCP-given
+	  NMIP4Config to the MTU provided by the system, if any.  TODO: If DHCP
+	  servers can specify MTU's, we should set it here if the MTU was not
+	  provided.
+
 2006-03-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

@@ -52,8 +52,119 @@
 #include <netlink/route/link.h>
 
 
-static gboolean nm_system_device_set_ip4_route					(NMDevice *dev, int ip4_gateway, int ip4_dest, int ip4_netmask);
-static gboolean nm_system_device_set_ip4_route_with_iface			(NMDevice *dev, const char *iface, int ip4_gateway, int ip4_dest, int ip4_netmask);
+/*
+ * nm_system_device_set_ip4_route
+ *
+ */
+static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, int ip4_dest, int ip4_netmask, int mss)
+{
+	NMSock *			sk;
+	gboolean			success = FALSE;
+	struct rtentry		rtent;
+	struct sockaddr_in *p;
+	const char *		iface;
+	int				err;
+
+	iface = nm_device_get_iface (dev);
+
+	/*
+	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
+	 * way of saying "no route" so we just return here.  Hopefully the
+	 * caller flushed the routes, first.
+	 */
+	if (ip4_gateway == 0)
+		return TRUE;
+
+	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
+		return FALSE;
+
+	memset (&rtent, 0, sizeof (struct rtentry));
+	p				= (struct sockaddr_in *) &rtent.rt_dst;
+	p->sin_family		= AF_INET;
+	p->sin_addr.s_addr	= ip4_dest;
+	p				= (struct sockaddr_in *) &rtent.rt_gateway;
+	p->sin_family		= AF_INET;
+	p->sin_addr.s_addr	= ip4_gateway;
+	p				= (struct sockaddr_in *) &rtent.rt_genmask;
+	p->sin_family		= AF_INET;
+	p->sin_addr.s_addr	= ip4_netmask;
+	rtent.rt_dev		= (char *)iface;
+	rtent.rt_metric	= 1;
+	rtent.rt_window	= 0;
+	rtent.rt_flags		= RTF_UP | RTF_GATEWAY | (rtent.rt_window ? RTF_WINDOW : 0);
+
+	if (mss)
+	{
+		rtent.rt_flags |= RTF_MTU;
+		rtent.rt_mtu = mss;
+	}
+
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
+#endif
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
+#ifdef IOCTL_DEBUG
+	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
+#endif
+
+	if (err == -1)
+	{
+		if (errno == ENETUNREACH)	/* possibly gateway is over the bridge */
+		{						/* try adding a route to gateway first */
+			struct rtentry	rtent2;
+			
+			memset (&rtent2, 0, sizeof(struct rtentry));
+			p				= (struct sockaddr_in *)&rtent2.rt_dst;
+			p->sin_family		= AF_INET;
+			p				= (struct sockaddr_in *)&rtent2.rt_gateway;
+			p->sin_family		= AF_INET;
+			p->sin_addr.s_addr	= ip4_gateway;
+			p				= (struct sockaddr_in *)&rtent2.rt_genmask;
+			p->sin_family		= AF_INET;
+			p->sin_addr.s_addr	= 0xffffffff;
+			rtent2.rt_dev		= (char *)iface;
+			rtent2.rt_metric	= 0;
+			rtent2.rt_flags	= RTF_UP | RTF_HOST;
+
+			if (mss)
+			{
+				rtent2.rt_flags |= RTF_MTU;
+				rtent2.rt_mtu = mss;
+			}
+
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
+#endif
+			err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
+#ifdef IOCTL_DEBUG
+			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
+#endif
+
+			if (!err)
+			{
+#ifdef IOCTL_DEBUG
+				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
+#endif
+				err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
+#ifdef IOCTL_DEBUG
+				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
+#endif
+
+				if (!err)
+					success = TRUE;
+				else
+					nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, strerror (errno));
+			}
+		}
+		else
+			nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, strerror (errno));
+	}
+	else
+		success = TRUE;
+
+	nm_dev_sock_close (sk);
+	return success;
+}
 
 
 static struct nl_cache * get_link_cache (struct nl_handle *nlh)
@@ -72,6 +183,7 @@ static struct nl_cache * get_link_cache (struct nl_handle *nlh)
 
 	return link_cache;
 }
+
 
 static void iface_to_rtnl_index (const char *iface, struct nl_handle *nlh, struct rtnl_addr *addr)
 {
@@ -170,7 +282,7 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	nl_handle_destroy (nlh);
 
 	sleep (1);
-	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0);
+	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, nm_ip4_config_get_mss (config));
 
 	nm_named_manager_add_ip4_config (app_data->named_manager, config);
 
@@ -255,49 +367,6 @@ out:
 
 
 /*
- * nm_system_set_mtu
- *
- * Set the MTU for a given device.
- */
-void nm_system_set_mtu (NMDevice *dev)
-{
-	struct rtnl_link *		request;
-	struct rtnl_link *		old;
-	unsigned long			mtu;
-	struct nl_handle *		nlh;
-	const char *			iface;
-
-	mtu = nm_system_get_mtu (dev);
-	if (!mtu)
-		return;
-
-	nlh = new_nl_handle ();
-	if (!nlh)
-		return;
-
-	request = rtnl_link_alloc ();
-	if (!request)
-		goto out_nl_close;
-
-	iface = nm_device_get_iface (dev);
-	old = iface_to_rtnl_link (iface, nlh);
-	if (!old)
-		goto out_request;
-
-	nm_info ("Setting MTU of interface '%s' to %ld", iface, mtu);
-	rtnl_link_set_mtu (request, mtu);
-	rtnl_link_change (nlh, old, request, 0);
-
-	rtnl_link_put (old);
-out_request:
-	rtnl_link_put (request);
-out_nl_close:
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
-}
-
-
-/*
  * nm_system_vpn_device_set_from_ip4_config
  *
  * Set IPv4 configuration of a VPN device from an NMIP4Config object.
@@ -314,7 +383,7 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
-		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF);
+		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF, nm_ip4_config_get_mss (config));
 
 	if (iface != NULL && strlen (iface))
 	{
@@ -456,111 +525,43 @@ out:
 
 
 /*
- * nm_system_device_set_ip4_route
+ * nm_system_set_mtu
  *
- * Set the IPv4 broadcast address on a device.
- *
+ * Set the MTU for a given device.
  */
-static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, int ip4_dest, int ip4_netmask)
+void nm_system_set_mtu (NMDevice *dev)
 {
-	g_return_val_if_fail (dev != NULL, FALSE);
+	struct rtnl_link *	request;
+	struct rtnl_link *	old;
+	unsigned long		mtu;
+	struct nl_handle *	nlh;
+	const char *		iface;
 
-	return nm_system_device_set_ip4_route_with_iface (dev, nm_device_get_iface (dev), ip4_gateway, ip4_dest, ip4_netmask);
-}
+	mtu = nm_system_get_mtu (dev);
+	if (!mtu)
+		return;
 
-static gboolean nm_system_device_set_ip4_route_with_iface (NMDevice *dev, const char *iface, int ip4_gateway, int ip4_dest, int ip4_netmask)
-{
-	NMSock *			sk;
-	gboolean			success = FALSE;
-	struct rtentry		rtent;
-	struct sockaddr_in *p;
-	int				err;
+	nlh = new_nl_handle ();
+	if (!nlh)
+		return;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
+	request = rtnl_link_alloc ();
+	if (!request)
+		goto out_nl_close;
 
-	/*
-	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
-	 * way of saying "no route" so we just return here.  Hopefully the
-	 * caller flushed the routes, first.
-	 */
-	if (ip4_gateway == 0)
-		return TRUE;
+	iface = nm_device_get_iface (dev);
+	old = iface_to_rtnl_link (iface, nlh);
+	if (!old)
+		goto out_request;
 
-	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
-		return FALSE;
+	nm_info ("Setting MTU of interface '%s' to %ld", iface, mtu);
+	rtnl_link_set_mtu (request, mtu);
+	rtnl_link_change (nlh, old, request, 0);
 
-	memset (&rtent, 0, sizeof (struct rtentry));
-	p				= (struct sockaddr_in *)&rtent.rt_dst;
-	p->sin_family		= AF_INET;
-	p->sin_addr.s_addr	= ip4_dest;
-	p				= (struct sockaddr_in *)&rtent.rt_gateway;
-	p->sin_family		= AF_INET;
-	p->sin_addr.s_addr	= ip4_gateway;
-	p				= (struct sockaddr_in *)&rtent.rt_genmask;
-	p->sin_family		= AF_INET;
-	p->sin_addr.s_addr	= ip4_netmask;
-	rtent.rt_dev		= (char *)iface;
-	rtent.rt_metric	= 1;
-	rtent.rt_window	= 0;
-	rtent.rt_flags		= RTF_UP | RTF_GATEWAY | (rtent.rt_window ? RTF_WINDOW : 0);
-
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
-#endif
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
-#endif
-
-	if (err == -1)
-	{
-		if (errno == ENETUNREACH)	/* possibly gateway is over the bridge */
-		{						/* try adding a route to gateway first */
-			struct rtentry	rtent2;
-			
-			memset (&rtent2, 0, sizeof(struct rtentry));
-			p				= (struct sockaddr_in *)&rtent2.rt_dst;
-			p->sin_family		= AF_INET;
-			p				= (struct sockaddr_in *)&rtent2.rt_gateway;
-			p->sin_family		= AF_INET;
-			p->sin_addr.s_addr	= ip4_gateway;
-			p				= (struct sockaddr_in *)&rtent2.rt_genmask;
-			p->sin_family		= AF_INET;
-			p->sin_addr.s_addr	= 0xffffffff;
-			rtent2.rt_dev		= (char *)iface;
-			rtent2.rt_metric	= 0;
-			rtent2.rt_flags	= RTF_UP | RTF_HOST;
-
-#ifdef IOCTL_DEBUG
-			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-#endif
-			err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
-#ifdef IOCTL_DEBUG
-			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-#endif
-
-			if (err == 0)
-			{
-#ifdef IOCTL_DEBUG
-				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-#endif
-				err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-#ifdef IOCTL_DEBUG
-				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-#endif
-
-				if (err == 0)
-					success = TRUE;
-				else
-					nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! error = %s", iface, strerror (errno));
-			}
-		}
-		else
-			nm_warning ("nm_system_device_set_ip4_route_with_iface (%s): failed to set IPv4 default route! error = %s", iface, strerror (errno));
-	}
-	else
-		success = TRUE;
-
-	nm_dev_sock_close (sk);
-	return (success);
+	rtnl_link_put (old);
+out_request:
+	rtnl_link_put (request);
+out_nl_close:
+	nl_close (nlh);
+	nl_handle_destroy (nlh);
 }

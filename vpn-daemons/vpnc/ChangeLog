@@ -1,3 +1,8 @@
+2006-03-29  Robert Love  <rml@novell.com>
+
+	* src/nm-vpnc-service.c: New eigth argument to DBUS VPN method, the
+	  per-route MSS.  Cisco does not care about the MSS, so we send zero.
+
 2006-03-20  Dan Williams  <dcbw@redhat.com>
 
 	* configure.in: Bump release to 0.6
