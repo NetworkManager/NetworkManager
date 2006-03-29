@@ -354,7 +354,7 @@ typedef struct SuSEDeviceConfigData
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
 	gboolean		system_disabled;
-	unsigned int	mtu;
+	guint32		mtu;
 } SuSEDeviceConfigData;
 
 /*
@@ -524,12 +524,12 @@ found:
 
 	if ((buf = svGetValue (file, "MTU")))
 	{
-		unsigned long mtu;
+		guint32 mtu;
 
 		errno = 0;
 		mtu = strtoul (buf, NULL, 10);
 		if (!errno && mtu > 500 && mtu < INT_MAX)
-			sys_data->mtu = (unsigned int) mtu;
+			sys_data->mtu = mtu;
 		free (buf);
 	}
 
@@ -722,6 +722,8 @@ found:
 			nm_ip4_config_set_broadcast (sys_data->config, broadcast);
 		}
 
+		nm_ip4_config_set_mtu (sys_data->config, sys_data->mtu);
+
 		buf = NULL;
 		if ((f = fopen (SYSCONFDIR"/sysconfig/network/routes", "r")))
 		{
@@ -845,7 +847,6 @@ gboolean nm_system_device_get_disabled (NMDevice *dev)
 	SuSEDeviceConfigData *sys_data;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-
 
 	if ((sys_data = nm_device_get_system_config_data (dev)))
 		return sys_data->system_disabled;
@@ -1279,7 +1280,7 @@ out_gfree:
  * Return a user-provided or system-mandated MTU for this device or zero if
  * no such MTU is provided.
  */
-unsigned int nm_system_get_mtu (NMDevice *dev)
+guint32 nm_system_get_mtu (NMDevice *dev)
 {
 	SuSEDeviceConfigData *	sys_data;
 

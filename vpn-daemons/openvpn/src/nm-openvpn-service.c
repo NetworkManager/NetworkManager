@@ -1245,6 +1245,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   guint32		ip4_dns_len;
   guint32 *		ip4_nbns;
   guint32		ip4_nbns_len;
+  guint32		mss;
   gboolean		success = FALSE;
   char *                empty = "";
 
@@ -1277,6 +1278,9 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 	  goto out;
 	}
 
+	/* OpenVPN does not care about the MSS */
+	mss = 0;
+
       dbus_message_append_args (signal,
 				DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 				DBUS_TYPE_STRING, &tundev,
@@ -1285,6 +1289,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+				DBUS_TYPE_UINT32, &mss,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_INVALID);

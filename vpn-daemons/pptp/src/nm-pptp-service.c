@@ -831,6 +831,7 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
   guint32		    ip4_nbns_len;
   guint32 		    ip4_nbns1;
   guint32 		    ip4_nbns2;
+  guint32			mss;
   gboolean		    success = FALSE;
   char *            empty = "";
 
@@ -879,6 +880,9 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	  goto out;
 	}
 
+	/* PPTP does not care about the MSS */
+	mss = 0;
+
       ip4_vpn_gateway=data->ip4_vpn_gateway.s_addr;
       dbus_message_append_args (signal, 
                 DBUS_TYPE_UINT32, &ip4_vpn_gateway,
@@ -888,6 +892,7 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+				DBUS_TYPE_UINT32, &mss,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_INVALID);

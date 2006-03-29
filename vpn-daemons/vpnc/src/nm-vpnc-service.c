@@ -869,6 +869,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	guint32		ip4_dns_len;
 	guint32 *		ip4_nbns;
 	guint32		ip4_nbns_len;
+	guint32		mss;
 	char *		cisco_def_domain;
 	char *		cisco_banner;
 	gboolean		success = FALSE;
@@ -897,6 +898,10 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 
 	/* For Cisco/vpnc, PtP address == local VPN address */
 	ip4_ptp_address = ip4_address;
+
+	/* and we don't specify an MSS */
+	mss = 0;
+
 #if 0
 	print_vpn_config (ip4_vpn_gateway, tundev, ip4_address, ip4_netmask,
 					ip4_dns, ip4_dns_len, ip4_nbns, ip4_nbns_len,
@@ -914,6 +919,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	                          DBUS_TYPE_UINT32, &ip4_netmask,
 	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+						 DBUS_TYPE_UINT32, &mss,
 	                          DBUS_TYPE_STRING, &cisco_def_domain,
 	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (data->con, signal, NULL))
