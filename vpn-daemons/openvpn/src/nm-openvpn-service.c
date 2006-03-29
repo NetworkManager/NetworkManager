@@ -1289,7 +1289,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
-				DBUS_TYPE_UINT32, &mss;
+				DBUS_TYPE_UINT32, &mss,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_INVALID);
