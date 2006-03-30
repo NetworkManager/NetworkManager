@@ -1,3 +1,9 @@
+2006-03-30  Robert Love  <rml@novell.com>
+
+	Patch by Crispin Flowerday <gnome@flowerday.cx>:
+	* src/nm-openvpn-service-helper.c: Fix crash when no PtP IP address is
+	  supplied.
+
 2006-03-29  Robert Love  <rml@novell.com>
 
 	* src/nm-openvpn-service.c: New eigth argument to DBUS VPN method, the
