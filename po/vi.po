@@ -6,8 +6,8 @@ msgid ""
 ""
 msgstr "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-14 12:20+0100\n"
-"PO-Revision-Date: 2006-03-15 16:52+1030\n"
+"POT-Creation-Date: 2006-03-30 04:01+0200\n"
+"PO-Revision-Date: 2006-03-30 21:23+1030\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <gnomevi-list@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -21,12 +21,12 @@ msgstr "Project-Id-Version: NetworkManager HEAD\n"
 msgid "Passphrase for wireless network %s"
 msgstr "Cụm từ mật khẩu cho mạng vô tuyến %s"
 
-#:../gnome/applet/applet-dbus.c:377
+#:../gnome/applet/applet-dbus.c:383
 #,c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Việc kết nối đến mạng vô tuyến « %s » bị lỗi."
 
-#:../gnome/applet/applet-dbus.c:382
+#:../gnome/applet/applet-dbus.c:388
 msgid "Connection to the wired network failed."
 msgstr "Việc kết nối đến mạng tuyến bị lỗi."
 
@@ -133,7 +133,7 @@ msgstr "Không thể khởi chạy kết nối VPN « %s » vì trình phục v�
 msgid "VPN Login Message"
 msgstr "Thông điệp đăng nhập VPN"
 
-#:../gnome/applet/applet.c:821 ../gnome/applet/applet.c:2585
+#:../gnome/applet/applet.c:821 ../gnome/applet/applet.c:2593
 #:../gnome/applet/other-network-dialog.c:453
 #:../gnome/applet/passphrase-dialog.c:227
 msgid ""
@@ -303,7 +303,7 @@ msgstr "_Giới thiệu"
 msgid "_Remove"
 msgstr "_Gỡ bỏ"
 
-#:../gnome/applet/applet.c:2704
+#:../gnome/applet/applet.c:2712
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -318,19 +318,23 @@ msgstr "Hệ thống mở"
 msgid "Shared Key"
 msgstr "Khóa dùng chung"
 
-#:../gnome/applet/wireless-security-option.c:209
+#:../gnome/applet/wireless-security-option.c:208
 msgid "Automatic (Default)"
 msgstr "Tự động (Mặc định)"
 
+# Name: don't translate / Tên: đừng dịch
+#:../gnome/applet/wireless-security-option.c:215
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
 # Literal: don't translate / Nghĩa chữ: đừng dịch
-#:../gnome/applet/wireless-security-option.c:216
+#:../gnome/applet/wireless-security-option.c:223
 msgid "TKIP"
 msgstr "TKIP"
 
-# Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wireless-security-option.c:224
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
+#:../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr "WEP động"
 
 #:../gnome/applet/wso-none.c:53
 msgid "None"
@@ -338,38 +342,38 @@ msgstr "Không có"
 
 # Name: don't translate / Tên: đừng dịch
 #:../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 40/128-bit ASCII"
-msgstr "WEP 40/128-bit ASCII"
+msgid "WEP 64/128-bit ASCII"
+msgstr "WEP 64/128-bit ASCII"
 
 #:../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 40/128-bit hex"
-msgstr "WEP 40/128-bit thập lục"
+msgid "WEP 64/128-bit Hex"
+msgstr "WEP 64/128-bit thập lục"
 
 #:../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP Passphrase"
-msgstr "WEP Cụm từ mật khẩu"
+msgid "WEP 128-bit Passphrase"
+msgstr "WEP 128-bit cụm từ mật khẩu"
 
-#:../gnome/applet/wso-wpa-eap.c:227
+#:../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
 msgstr "PEAP"
 
-#:../gnome/applet/wso-wpa-eap.c:228
+#:../gnome/applet/wso-wpa-eap.c:238
 msgid "TLS"
 msgstr "TLS"
 
-#:../gnome/applet/wso-wpa-eap.c:229
+#:../gnome/applet/wso-wpa-eap.c:239
 msgid "TTLS"
 msgstr "TTLS"
 
 # Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wso-wpa-eap.c:237 ../src/nm-ap-security-wpa-eap.c:89
-#:../src/nm-ap-security-wpa-eap.c:113
+#:../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
+#:../src/nm-ap-security-wpa-eap.c:116
 msgid "WPA2 Enterprise"
 msgstr "WPA2 Enterprise"
 
 # Name: don't translate / Tên: đừng dịch
-#:../gnome/applet/wso-wpa-eap.c:239 ../src/nm-ap-security-wpa-eap.c:91
-#:../src/nm-ap-security-wpa-eap.c:118
+#:../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
+#:../src/nm-ap-security-wpa-eap.c:121
 msgid "WPA Enterprise"
 msgstr "WPA Enterprise"
 
@@ -589,124 +593,128 @@ msgid "Interface:"
 msgstr "Giao diện:"
 
 #:../gnome/applet/applet.glade.h:30
+msgid "Key Type:"
+msgstr "Kiểu khoá :"
+
+#:../gnome/applet/applet.glade.h:31
 msgid "Key:"
 msgstr "Khóa:"
 
-#:../gnome/applet/applet.glade.h:31
+#:../gnome/applet/applet.glade.h:32
 msgid ""
 "None\n"
-"WEP Passphrase\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
 msgstr "Không có\n"
-"Cụm từ mật khẩu WEP\n"
-"WEP 40/128-bit thập lục\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128-bit cụm từ mật khẩu\n"
+"WEP 64/128-bit thập lục\n"
+"WEP 64/128-bit ASCII\n"
 
-#:../gnome/applet/applet.glade.h:36
+#:../gnome/applet/applet.glade.h:37
 msgid ""
 "Open System\n"
 "Shared Key"
 msgstr "Hệ thống mở\n"
 "Khóa dùng chung"
 
-#:../gnome/applet/applet.glade.h:38
+#:../gnome/applet/applet.glade.h:39
 msgid "Other Wireless Network..."
 msgstr "mạng Vô tuyến khác..."
 
-#:../gnome/applet/applet.glade.h:39
+#:../gnome/applet/applet.glade.h:40
 msgid "Passphrase:"
 msgstr "Cụm từ mật khẩu :"
 
-#:../gnome/applet/applet.glade.h:40
+#:../gnome/applet/applet.glade.h:41
 msgid "Password:"
 msgstr "Mật khẩu :"
 
-#:../gnome/applet/applet.glade.h:41
+#:../gnome/applet/applet.glade.h:42
 msgid "Primary DNS:"
 msgstr "DNS chính:"
 
-#:../gnome/applet/applet.glade.h:42
+#:../gnome/applet/applet.glade.h:43
 msgid "Private Key File:"
 msgstr "Tập tin khoá riêng:"
 
-#:../gnome/applet/applet.glade.h:43
+#:../gnome/applet/applet.glade.h:44
 msgid "Private Key Password:"
 msgstr "Mật khẩu khoá riêng:"
 
-#:../gnome/applet/applet.glade.h:44
+#:../gnome/applet/applet.glade.h:45
 msgid "Secondary DNS:"
 msgstr "DNS phụ :"
 
-#:../gnome/applet/applet.glade.h:45
+#:../gnome/applet/applet.glade.h:46
 msgid "Select the CA Certificate File"
 msgstr "Chọn tập tin chứng nhận của nhà cầm quyền chứng nhận (CA)."
 
-#:../gnome/applet/applet.glade.h:46
+#:../gnome/applet/applet.glade.h:47
 msgid "Select the Client Certificate File"
 msgstr "Chọn tập tin chứng nhận của ứng dụng khách."
 
-#:../gnome/applet/applet.glade.h:47
+#:../gnome/applet/applet.glade.h:48
 msgid "Select the Private Key File"
 msgstr "Chọn tập tin là khóa riêng."
 
-#:../gnome/applet/applet.glade.h:48
+#:../gnome/applet/applet.glade.h:49
 msgid "Show key"
 msgstr "Hiện khoá"
 
-#:../gnome/applet/applet.glade.h:49
+#:../gnome/applet/applet.glade.h:50
 msgid "Show passphrase"
 msgstr "HIện cụm từ mật khẩu"
 
-#:../gnome/applet/applet.glade.h:50
+#:../gnome/applet/applet.glade.h:51
 msgid "Show password"
 msgstr "Hiện mật khẩu"
 
-#:../gnome/applet/applet.glade.h:51
+#:../gnome/applet/applet.glade.h:52
 msgid "Show passwords"
 msgstr "Hiện các mật khẩu"
 
-#:../gnome/applet/applet.glade.h:52
+#:../gnome/applet/applet.glade.h:53
 msgid "Speed:"
 msgstr "Tốc độ :"
 
-#:../gnome/applet/applet.glade.h:53
+#:../gnome/applet/applet.glade.h:54
 msgid "Subnet Mask:"
 msgstr "Mặt nạ mạng cấp dưới:"
 
-#:../gnome/applet/applet.glade.h:54
+#:../gnome/applet/applet.glade.h:55
 msgid "Type:"
 msgstr "Kiểu :"
 
-#:../gnome/applet/applet.glade.h:55
+#:../gnome/applet/applet.glade.h:56
 msgid "User Name:"
 msgstr "Tên người dùng:"
 
-#:../gnome/applet/applet.glade.h:56
+#:../gnome/applet/applet.glade.h:57
 msgid "Wireless Network Key Required"
 msgstr "Cần thiết Khóa mạng Vô tuyến:"
 
-#:../gnome/applet/applet.glade.h:57
+#:../gnome/applet/applet.glade.h:58
 msgid "Wireless _adapter:"
 msgstr "_Bộ điều hợp vô tuyến"
 
-#:../gnome/applet/applet.glade.h:58
+#:../gnome/applet/applet.glade.h:59
 msgid "_Always Trust this Wireless Network"
 msgstr "_Luôn luôn tin cây mạng vô tuyến này"
 
-#:../gnome/applet/applet.glade.h:59
+#:../gnome/applet/applet.glade.h:60
 msgid "_Don't remind me again"
 msgstr "_Đừng nhắc nhở tôi lần nữa"
 
-#:../gnome/applet/applet.glade.h:60
+#:../gnome/applet/applet.glade.h:61
 msgid "_Login to Network"
 msgstr "_Đăng nhập với mạng"
 
-#:../gnome/applet/applet.glade.h:61
+#:../gnome/applet/applet.glade.h:62
 msgid "_Network Name:"
 msgstr "T_ên mạng:"
 
-#:../gnome/applet/applet.glade.h:62
+#:../gnome/applet/applet.glade.h:63
 msgid "_Wireless Security:"
 msgstr "_Bảo mật vô tuyến:"
 
