@@ -287,11 +287,9 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 
 
 /*
- * nm_dbus_network_status_from_data
+ * nm_get_app_state_from_data
  *
- * Return a network status string based on our network data
- *
- * Caller MUST free returned value
+ * Return the state of the network connection
  *
  */
 NMState nm_get_app_state_from_data (NMData *data)

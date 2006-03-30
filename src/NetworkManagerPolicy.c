@@ -390,7 +390,7 @@ nm_policy_device_change_check (NMData *data)
 				 * link to the old access point.  We don't switch away
 				 * from Ad-Hoc APs either.
 				 */
-				gboolean same_essid = (strcmp (old_essid, new_essid) == 0);
+				gboolean same_essid = (nm_null_safe_strcmp (old_essid, new_essid) == 0);
 				if ((!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC))
 				{
 					nm_info ("SWITCH: found better connection '%s/%s'"
