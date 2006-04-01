@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: GNOME 2.8\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-18 20:20+0100\n"
-"PO-Revision-Date: 2006-03-19 05:04+0100\n"
+"POT-Creation-Date: 2006-04-01 04:45+0200\n"
+"PO-Revision-Date: 2006-04-01 09:39+0200\n"
 "Last-Translator: Tino Meinen <a.t.meinen@chello.nl>\n"
 "Language-Team: Dutch <vertaling@vrijschrift.org>\n"
 "MIME-Version: 1.0\n"
@@ -27,13 +27,13 @@ msgstr ""
 msgid "Passphrase for wireless network %s"
 msgstr "Wachtwoordzin voor draadloos netwerk %s"
 
-#: ../gnome/applet/applet-dbus.c:377
+#: ../gnome/applet/applet-dbus.c:383
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Verbinding maken met het draadloos netwerk '%s' is mislukt."
 
 # vaste netwerk
-#: ../gnome/applet/applet-dbus.c:382
+#: ../gnome/applet/applet-dbus.c:388
 msgid "Connection to the wired network failed."
 msgstr "Verbinding maken met het bekabelde netwerk is mislukt."
 
@@ -160,7 +160,7 @@ msgstr ""
 msgid "VPN Login Message"
 msgstr "VPN-aanmeldbericht"
 
-#: ../gnome/applet/applet.c:821 ../gnome/applet/applet.c:2585
+#: ../gnome/applet/applet.c:821 ../gnome/applet/applet.c:2593
 #: ../gnome/applet/other-network-dialog.c:453
 #: ../gnome/applet/passphrase-dialog.c:227
 msgid ""
@@ -362,7 +362,7 @@ msgid "_Remove"
 msgstr "_Verwijderen"
 
 # het kan het glade-bestand niet vinden.
-#: ../gnome/applet/applet.c:2704
+#: ../gnome/applet/applet.c:2712
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
@@ -378,17 +378,21 @@ msgstr "Open systeem"
 msgid "Shared Key"
 msgstr "Gedeelde sleutel"
 
-#: ../gnome/applet/wireless-security-option.c:209
+#: ../gnome/applet/wireless-security-option.c:208
 msgid "Automatic (Default)"
 msgstr "Automatisch (standaard)"
 
-#: ../gnome/applet/wireless-security-option.c:216
+#: ../gnome/applet/wireless-security-option.c:215
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
+#: ../gnome/applet/wireless-security-option.c:223
 msgid "TKIP"
 msgstr "TKIP"
 
-#: ../gnome/applet/wireless-security-option.c:224
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
+#: ../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr "Dynamisch WEP"
 
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
@@ -406,25 +410,25 @@ msgstr "WEP 64/128-bit Hex"
 msgid "WEP 128-bit Passphrase"
 msgstr "WEP 128-bit wachtwoordzin"
 
-#: ../gnome/applet/wso-wpa-eap.c:227
+#: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
 msgstr "PEAP"
 
-#: ../gnome/applet/wso-wpa-eap.c:228
+#: ../gnome/applet/wso-wpa-eap.c:238
 msgid "TLS"
 msgstr "TLS"
 
-#: ../gnome/applet/wso-wpa-eap.c:229
+#: ../gnome/applet/wso-wpa-eap.c:239
 msgid "TTLS"
 msgstr "TTLS"
 
-#: ../gnome/applet/wso-wpa-eap.c:237 ../src/nm-ap-security-wpa-eap.c:89
-#: ../src/nm-ap-security-wpa-eap.c:113
+#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
+#: ../src/nm-ap-security-wpa-eap.c:116
 msgid "WPA2 Enterprise"
 msgstr "WPA2 enterprise"
 
-#: ../gnome/applet/wso-wpa-eap.c:239 ../src/nm-ap-security-wpa-eap.c:91
-#: ../src/nm-ap-security-wpa-eap.c:118
+#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
+#: ../src/nm-ap-security-wpa-eap.c:121
 msgid "WPA Enterprise"
 msgstr "WPA enterprise"
 
@@ -666,12 +670,16 @@ msgstr "Identiteit:"
 msgid "Interface:"
 msgstr "Apparaat:"
 
-# station/apparaat/interface
 #: ../gnome/applet/applet.glade.h:30
+msgid "Key Type:"
+msgstr "Sleuteltype:"
+
+# station/apparaat/interface
+#: ../gnome/applet/applet.glade.h:31
 msgid "Key:"
 msgstr "Sleutel:"
 
-#: ../gnome/applet/applet.glade.h:31
+#: ../gnome/applet/applet.glade.h:32
 msgid ""
 "None\n"
 "WEP 128-bit Passphrase\n"
@@ -683,7 +691,7 @@ msgstr ""
 "WEP 64/128-bit hex\n"
 "WEP 64/128-bit ASCII\n"
 
-#: ../gnome/applet/applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:37
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -691,108 +699,108 @@ msgstr ""
 "Open systeem\n"
 "gedeelde sleutel"
 
-#: ../gnome/applet/applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:39
 msgid "Other Wireless Network..."
 msgstr "Ander draadloos netwerk..."
 
-#: ../gnome/applet/applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:40
 msgid "Passphrase:"
 msgstr "Wachtwoordzin:"
 
-#: ../gnome/applet/applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:41
 msgid "Password:"
 msgstr "Wachtwoord:"
 
-#: ../gnome/applet/applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:42
 msgid "Primary DNS:"
 msgstr "Primaire DNS:"
 
-#: ../gnome/applet/applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:43
 msgid "Private Key File:"
 msgstr "Privé sleutelbestand:"
 
-#: ../gnome/applet/applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:44
 msgid "Private Key Password:"
 msgstr "Privé sleutelwachtwoord:"
 
-#: ../gnome/applet/applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:45
 msgid "Secondary DNS:"
 msgstr "Secondaire DNS:"
 
-#: ../gnome/applet/applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:46
 msgid "Select the CA Certificate File"
 msgstr "Selecteer het CA-certificaatbestand"
 
-#: ../gnome/applet/applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:47
 msgid "Select the Client Certificate File"
 msgstr "Selecteer het cliënt-certificaatbestand"
 
-#: ../gnome/applet/applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:48
 msgid "Select the Private Key File"
 msgstr "Selecteer het privé sleutelbestand"
 
-#: ../gnome/applet/applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:49
 msgid "Show key"
 msgstr "Sleutel tonen"
 
-#: ../gnome/applet/applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:50
 msgid "Show passphrase"
 msgstr "Wachtwoordzin tonen"
 
-#: ../gnome/applet/applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:51
 msgid "Show password"
 msgstr "Wachtwoord tonen"
 
-#: ../gnome/applet/applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:52
 msgid "Show passwords"
 msgstr "Wachtwoorden tonen"
 
-#: ../gnome/applet/applet.glade.h:52
+#: ../gnome/applet/applet.glade.h:53
 msgid "Speed:"
 msgstr "Snelheid:"
 
-#: ../gnome/applet/applet.glade.h:53
+#: ../gnome/applet/applet.glade.h:54
 msgid "Subnet Mask:"
 msgstr "Subnetmasker:"
 
-#: ../gnome/applet/applet.glade.h:54
+#: ../gnome/applet/applet.glade.h:55
 msgid "Type:"
 msgstr "Type:"
 
 # inlognaam/gebruikersnaam
-#: ../gnome/applet/applet.glade.h:55
+#: ../gnome/applet/applet.glade.h:56
 msgid "User Name:"
 msgstr "Gebruikersnaam:"
 
-#: ../gnome/applet/applet.glade.h:56
+#: ../gnome/applet/applet.glade.h:57
 msgid "Wireless Network Key Required"
 msgstr "Sleutel voor draadloos netwerk vereist"
 
 # draadloze adapter is een adapter zonder draadjes
 # bedoeld wordt een adapter voor draadloos netwerken
-#: ../gnome/applet/applet.glade.h:57
+#: ../gnome/applet/applet.glade.h:58
 msgid "Wireless _adapter:"
 msgstr "Draadloos _adapter:"
 
-#: ../gnome/applet/applet.glade.h:58
+#: ../gnome/applet/applet.glade.h:59
 msgid "_Always Trust this Wireless Network"
 msgstr "_Dit draadloos netwerk altijd vertrouwen"
 
-#: ../gnome/applet/applet.glade.h:59
+#: ../gnome/applet/applet.glade.h:60
 msgid "_Don't remind me again"
 msgstr "_Niet meer tonen"
 
-#: ../gnome/applet/applet.glade.h:60
+#: ../gnome/applet/applet.glade.h:61
 msgid "_Login to Network"
 msgstr "_Aanmelden bij het netwerk"
 
-#: ../gnome/applet/applet.glade.h:61
+#: ../gnome/applet/applet.glade.h:62
 msgid "_Network Name:"
 msgstr "_Netwerknaam:"
 
 # Bedoeld wordt beveiliging van het draadloos netwerk.
 # niet dat de beveiling draadloos is.
-#: ../gnome/applet/applet.glade.h:62
+#: ../gnome/applet/applet.glade.h:63
 msgid "_Wireless Security:"
 msgstr "_Draadloos beveiliging:"
 
@@ -1075,9 +1083,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 #~ msgid "Connect using WPA2"
 #~ msgstr "Verbinden met gebruik van WPA2"
 
-#~ msgid "CCMP/AES"
-#~ msgstr "CCMP/AES"
-
 # BUG: deze horen niet thuis in het po-bestand
 #~ msgid "wpa_psk_passphrase_subwindow"
 #~ msgstr "wpa_psk_passphrase_subwindow"
@@ -1110,9 +1115,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 #~ msgid "Wireless _network:"
 #~ msgstr "Draadloos _netwerk:"
 
-#~ msgid "_Key type:"
-#~ msgstr "_Sleuteltype:"
-
 # draadloze netwerk/draadloos netwerk
 #~ msgid ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
@@ -1121,10 +1123,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 #~ "Het opgevraagde draadloos netwerk '%s' is kennelijk niet binnen bereik.  "
 #~ "Indien er een ander draadloos netwerk beschikbaar is zal dat worden "
 #~ "gebruikt."
-
-# deze zin is verbonden met de vorige zin?
-#~ msgid ", with no encryption enabled."
-#~ msgstr ", en zonder versleuteling."
 
 #~ msgid "Could not open socket!"
 #~ msgstr "Kon 'socket' niet openen!"
@@ -1160,23 +1158,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 #~ msgstr ""
 #~ "Afhankelijk van het privé-netwerk weermee u een verbinding wilt maken, "
 #~ "moet u het type verbinding selecteren wat u wilt maken."
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">%s</span>\n"
-#~ "\n"
-#~ "%s\n"
-#~ "\n"
-#~ "\"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">%s</span>\n"
-#~ "\n"
-#~ "%s\n"
-#~ "\n"
-#~ "\"%s\""
-
-# Okay
-#~ msgid "_OK"
-#~ msgstr "_OK"
 
 # aanmeld-fout kan verwarrend zijn omdat je je ook bij een draadloos 
 # netwerk moet aanmelden.
@@ -1221,9 +1202,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 #~ "\n"
 #~ "De VPN-service meldde: \"%s\""
 
-#~ msgid "%s"
-#~ msgstr "%s"
-
 #~ msgid "Other Wireless Networks..."
 #~ msgstr "Andere draadloze netwerken..."
 
@@ -1240,9 +1218,6 @@ msgstr "De verbinding met het netwerk is verbroken."
 # privénetwerk
 #~ msgid "You must log in to access the Virtual Private Network '%s'."
 #~ msgstr "U moet inloggen voor toegang tot het Virtual Private Network '%s'."
-
-#~ msgid "*"
-#~ msgstr "*"
 
 #~ msgid "<span weight=\"bold\">Wireless Networks:</span>"
 #~ msgstr "<span weight=\"bold\">Draadloze netwerken:</span>"
