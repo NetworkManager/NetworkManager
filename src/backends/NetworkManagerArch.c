@@ -952,3 +952,15 @@ void nm_system_set_hostname (NMIP4Config *config)
 {
 }
 
+/*
+ * nm_system_get_mtu
+ *
+ * Return a user-provided or system-mandated MTU for this device or zero if
+ * no such MTU is provided.
+ */
+guint32 nm_system_get_mtu (NMDevice *dev)
+{
+	return 0;
+
+}
+
