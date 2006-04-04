@@ -1,3 +1,9 @@
+2006-04-04  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Remove the 'Remove' option that I added to the
+	  applet.  It just confuses the crap out of people and does not make a
+	  lot of sense, as the daemon still runs.
+
 2006-04-02  Tor Krill  <tor@krill.nu>
 
 	* initscript/Arch/networkmanager.in: Added checks for HAL and dhcdbd

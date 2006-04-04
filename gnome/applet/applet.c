@@ -374,86 +374,6 @@ static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 }
 
 
-#define AUTOSTART_ENABLE_STR		"X-GNOME-Autostart-enabled=true"
-#define AUTOSTART_ENABLE_STR_LEN	30
-#define AUTOSTART_DISABLE_STR		"X-GNOME-Autostart-enabled=false"
-#define AUTOSTART_DISABLE_STR_LEN	31
-static void G_GNUC_NORETURN nma_remove_cb (GtkMenuItem *mi, NMApplet *applet)
-{
-	char			*src;
-	char			*dir;
-	char			*file;
-	const char	*sub;
-	gsize		src_len;
-	GtkWidget 	*dialog;
-
-	/*
-	 * Give the user the option of disabling autostart, if it is enabled.  Autostart is in
-	 * use if there is an nm-applet.desktop in either the system wide or the per-user
-	 * autostart directory and it has "X-GNOME-Autostart-enabled" set to "true".  To disable
-	 * autostart, we (re)write the autostart file to the per-user location, with the
-	 * autostart option set to "false".
-	 */
-
-	dir = g_strdup_printf ("%s/.config/autostart", g_get_home_dir ());
-	file = g_strdup_printf ("%s/nm-applet.desktop", dir);
-
-	/*
-	 * Figure out what our source file is.  Try to use the user's nm-applet.desktop, first.
-	 * If it does not exist, we use the system-wide autostart file.
-	 */
-	if (!g_file_get_contents (file, &src, &src_len, NULL))
-		if (!g_file_get_contents (AUTOSTARTDIR"/nm-applet.desktop", &src, &src_len, NULL))
-			goto out_free_file;
-
-	/* If autostart is explicitly disabled or not explicitly enabled, we are done. */
-	if (strstr (src, AUTOSTART_DISABLE_STR))
-		goto out_free_src;
-	sub = strstr (src, AUTOSTART_ENABLE_STR);
-	if (!sub)
-		goto out_free_src;
-
-	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_QUESTION, GTK_BUTTONS_YES_NO,
-										"<span weight=\"bold\" size=\"larger\">%s</span>\n\n%s",
-										_("Stop automatically running the networking applet?"),
-										_("The networking applet will now terminate, but will automatically launch the next time you login.  Would you like to stop automatically running the networking applet on login?"));
-	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_YES)
-	{
-		char			*dst;
-		gsize		dst_len;
-		gsize		sub_len;
-
-		src_len += 1;
-		dst_len = src_len + 1;
-		dst = g_malloc (dst_len);
-		sub_len = sub - src;
-
-		/* memcpy the first chunk, write in our updated string, and memcpy the remaining bytes */
-		memcpy (dst, src, sub_len);
-		g_strlcpy (dst + sub_len, AUTOSTART_DISABLE_STR, dst_len - sub_len);
-		memcpy (dst + sub_len + AUTOSTART_DISABLE_STR_LEN,
-			   sub + AUTOSTART_ENABLE_STR_LEN,
-			   src_len - sub_len - AUTOSTART_ENABLE_STR_LEN);
-		dst[dst_len-1] = '\0';
-
-		g_mkdir_with_parents (dir, 0750);
-		g_file_set_contents (file, dst, dst_len, NULL);
-
-		g_free (dst);
-	}
-
-	gtk_widget_destroy (dialog);
-
-out_free_src:
-	g_free (src);
-out_free_file:
-	g_free (file);
-	g_free (dir);
-
-	nma_destroy (applet);
-}
-
-
 #ifndef ENABLE_NOTIFY
 /*
  * nma_show_vpn_failure_dialog
@@ -2280,13 +2200,6 @@ static GtkWidget *nma_context_menu_create (NMApplet *applet)
 	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_About"));
 	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nma_about_cb), applet);
 	image = gtk_image_new_from_stock (GTK_STOCK_ABOUT, GTK_ICON_SIZE_MENU);
-	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
-	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
-
-	/* Quit */
-	menu_item = gtk_image_menu_item_new_with_mnemonic (_("_Remove"));
-	g_signal_connect (G_OBJECT (menu_item), "activate", G_CALLBACK (nma_remove_cb), applet);
-	image = gtk_image_new_from_stock (GTK_STOCK_QUIT, GTK_ICON_SIZE_MENU);
 	gtk_image_menu_item_set_image (GTK_IMAGE_MENU_ITEM (menu_item), image);
 	gtk_menu_shell_append (GTK_MENU_SHELL (menu), menu_item);
 
