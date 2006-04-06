@@ -17,3 +17,9 @@ associated with has dropped below say, 20%.
 Allow user to enter passphrases and convert them to 40/64 bit WEP keys on the
 fly.  Unfortunately, the algorithm for 40/64 bit passphrases is kind of messy.
 
+
+- Proper PPP support
+
+Provide integrated and proper PPP support, replacing the current per-distro
+code.  Seamlessly communicate with pppd, manage the dial up profiles ourselves,
+and so on.
