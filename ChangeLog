@@ -1,3 +1,14 @@
+2006-04-06  Robert Love  <rml@novell.com>
+
+	Fix bad but simple bug where an active modem connection did not update
+	NM's connection state, breaking any app that did online/offline:
+	* src/NetworkManagerMain.h: Add 'modem_active' member to NMData,
+	  represented whether a dial up connection is active, or not.
+	* src/nm-dbus-nm.c: Set and unset 'modem_active' in response
+	  to modem activation and deactivation.
+	* src/NetworkManagerDbus.c: When asked our state, do not return
+	  disconnected if the modem is active.
+
 2006-04-04  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Remove the 'Remove' option that I added to the
