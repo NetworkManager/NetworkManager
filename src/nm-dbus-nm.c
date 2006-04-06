@@ -170,6 +170,8 @@ static DBusMessage *nm_dbus_nm_activate_dialup (DBusConnection *connection, DBus
 	if (!nm_system_activate_dialup (nm_data->dialup_list, dialup))
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "ActivationFailed",
 									   "Failed to activate the dialup device.");
+	else
+		nm_data->modem_active = TRUE;
 	nm_unlock_mutex (nm_data->dialup_list_mutex, __FUNCTION__);
 
 out:
@@ -203,6 +205,8 @@ static DBusMessage *nm_dbus_nm_deactivate_dialup (DBusConnection *connection, DB
 	if (!nm_system_deactivate_dialup (nm_data->dialup_list, dialup))
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeactivationFailed",
 									   "Failed to deactivate the dialup device.");
+	else
+		nm_data->modem_active = FALSE;
 	nm_unlock_mutex (nm_data->dialup_list_mutex, __FUNCTION__);
 
 out:
@@ -560,6 +564,7 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 
 		nm_lock_mutex (app_data->dialup_list_mutex, __FUNCTION__);
 		nm_system_deactivate_all_dialup (app_data->dialup_list);
+		app_data->modem_active = FALSE;
 		nm_unlock_mutex (app_data->dialup_list_mutex, __FUNCTION__);
 	}
 

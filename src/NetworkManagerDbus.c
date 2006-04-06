@@ -302,7 +302,7 @@ NMState nm_get_app_state_from_data (NMData *data)
 		return NM_STATE_ASLEEP;
 
 	act_dev = nm_get_active_device (data);
-	if (!act_dev)
+	if (!act_dev && !data->modem_active)
 		return NM_STATE_DISCONNECTED;
 
 	if (nm_device_is_activating (act_dev))
