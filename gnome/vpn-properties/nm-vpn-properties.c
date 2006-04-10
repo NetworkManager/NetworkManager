@@ -353,7 +353,11 @@ static gboolean vpn_druid_cancel (GnomeDruid *ignored_druid, gpointer user_data)
 	return FALSE;
 }
 
-
+static gboolean vpn_window_close (GtkWidget *ignored, gpointer user_data)
+{
+	gtk_widget_hide_all (GTK_WIDGET (druid_window));
+	return TRUE;
+}
 
 static void
 add_cb (GtkButton *button, gpointer user_data)
@@ -623,7 +627,7 @@ edit_cb (GtkButton *button, gpointer user_data)
 	char *conn_gconf_path;
 	GtkTreeIter iter;
 
-	/*printf ("edit\n");*/
+	printf ("edit_cb\n");
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
@@ -785,7 +789,7 @@ export_cb (GtkButton *button, gpointer user_data)
 	const char *conn_name;
 	char *conn_gconf_path;
 
-	/*printf ("edit\n");*/
+	/*printf ("export_cb\n");*/
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
@@ -919,6 +923,7 @@ init_app (void)
 	GtkCellRenderer *renderer;
 	GSList *i;
 	GtkHBox *vpn_type_hbox1;
+	GtkWidget *toplevel;
 	GDir *dir;
 
 	/* TODO: ensure only one copy of this program is running at any time */
@@ -990,10 +995,8 @@ init_app (void)
 	vpn_delete = glade_xml_get_widget (xml, "delete");
 	gtk_signal_connect (GTK_OBJECT (vpn_delete), "clicked", GTK_SIGNAL_FUNC (delete_cb), NULL);
 	w = glade_xml_get_widget (xml, "close");
-	gtk_signal_connect (GTK_OBJECT (w), "clicked",
-			    GTK_SIGNAL_FUNC (close_cb), NULL);
-	gtk_signal_connect (GTK_OBJECT (dialog), "delete_event",
-			    GTK_SIGNAL_FUNC (close_cb), NULL);
+	gtk_signal_connect (GTK_OBJECT (w), "clicked", GTK_SIGNAL_FUNC (close_cb), NULL);
+	gtk_signal_connect (GTK_OBJECT (dialog), "delete_event", GTK_SIGNAL_FUNC (close_cb), NULL);
 
 	vpn_conn_view = GTK_TREE_VIEW (glade_xml_get_widget (xml, "vpnlist"));
 	vpn_conn_list = gtk_list_store_new (VPNCONN_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
@@ -1039,6 +1042,9 @@ init_app (void)
 	w = glade_xml_get_widget (xml, "vpn-druid-vpn-confirm-page");
 	gtk_signal_connect_after (GTK_OBJECT (w), "prepare", GTK_SIGNAL_FUNC (vpn_druid_vpn_confirm_page_prepare), NULL);
 	gtk_signal_connect_after (GTK_OBJECT (w), "finish", GTK_SIGNAL_FUNC (vpn_druid_vpn_confirm_page_finish), NULL);
+
+	toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+	gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
 
 	druid_window = GTK_WINDOW (glade_xml_get_widget (xml, "vpn-create-connection"));
 
