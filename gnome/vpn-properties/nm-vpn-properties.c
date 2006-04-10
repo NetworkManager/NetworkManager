@@ -269,7 +269,19 @@ static void vpn_druid_vpn_details_page_prepare (GnomeDruidPage *druidpage,
 						GtkWidget *widget,
 						gpointer user_data)
 {
-	gnome_druid_set_buttons_sensitive (druid, TRUE, FALSE, TRUE, FALSE);	
+	gboolean is_valid;
+	NetworkManagerVpnUI *vpn_ui;
+
+	is_valid = FALSE;
+
+	/*printf ("vpn_druid_von_details_page_prepare!\n");*/
+
+	/* validate input, in case we are coming in via 'Back' */
+	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
+	if (vpn_ui != NULL)
+		is_valid = vpn_ui->is_valid (vpn_ui);
+
+	gnome_druid_set_buttons_sensitive (druid, TRUE, is_valid, TRUE, FALSE);	
 }
 
 static gboolean vpn_druid_vpn_details_page_next (GnomeDruidPage *druidpage,
@@ -818,7 +830,7 @@ static void get_all_vpn_connections (void)
 		    gconf_value_get_list_type (value) != GCONF_VALUE_STRING ||
 		    (conn_vpn_data = gconf_value_get_list (value)) == NULL)
 			goto error;
-		
+
 		//conn_user_can_edit = (strcmp (conn_name, "RH VPN Boston") != 0);
 
 		gtk_list_store_append (vpn_conn_list, &iter);

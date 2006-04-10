@@ -1,3 +1,9 @@
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Validate VPN settings on
+	  'Back' too or else the 'Forward' option is initially disabled despite
+	  valid input.
+
 2006-04-06  Robert Love  <rml@novell.com>
 
 	Fix bad but simple bug where an active modem connection did not update
