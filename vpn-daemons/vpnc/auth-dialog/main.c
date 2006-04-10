@@ -261,7 +261,7 @@ main (int argc, char *argv[])
 
 	gnome_program_init ("nm-vpnc-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
-			    GNOME_PARAM_NONE);
+			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 	  
 	passwords = get_passwords (vpn_name, vpn_service, retry);
 	if (passwords == NULL)
