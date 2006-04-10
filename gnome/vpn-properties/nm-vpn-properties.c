@@ -627,7 +627,7 @@ edit_cb (GtkButton *button, gpointer user_data)
 	char *conn_gconf_path;
 	GtkTreeIter iter;
 
-	printf ("edit_cb\n");
+	/*printf ("edit_cb\n");*/
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
