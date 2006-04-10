@@ -1,3 +1,9 @@
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* properties/nm-openvpn.c: Report error if writing out of exported
+	  configuration fails.  The silent treatment might work for me and my
+	  wife, but not for failed I/O.
+
 2006-03-30  Robert Love  <rml@novell.com>
 
 	Patch by Crispin Flowerday <gnome@flowerday.cx>:
@@ -14,7 +20,6 @@
 	* configure.in: Added pt_BR to ALL_LINGUAS.
 
 2006-02-28  Ilkka Tuohela  <hile@iki.fi>
-
 	* configure.in: Added fi to ALL_LINGUAS.
 	
 2006-02-16  Francisco Javier F. Serrador  <serrador@cvs.gnome.org>
