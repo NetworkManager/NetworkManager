@@ -1,5 +1,12 @@
 2006-04-10  Robert Love  <rml@novell.com>
 
+	* gnome/vpn-properties/nm-vpn-properties.c: Intercept and short-circuit
+	  the "delete_event" signal on the druid's parent window and handle it
+	  our way, lest using the WM to close the druid results in a series of
+	  bloody and ultimately lethal errors.
+
+2006-04-10  Robert Love  <rml@novell.com>
+
 	* gnome/vpn-properties/nm-vpn-properties.c: Validate VPN settings on
 	  'Back' too or else the 'Forward' option is initially disabled despite
 	  valid input.
