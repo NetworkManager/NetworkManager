@@ -1167,7 +1167,7 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
       /*printf ("User selected '%s'\n", path);*/
       
     }
-	
+
   gtk_widget_destroy (dialog);
 
   if (path != NULL) {
@@ -1185,23 +1185,26 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
 						_("Do you want to replace it with the one you are saving?"));
       response = gtk_dialog_run (GTK_DIALOG (dialog));
       gtk_widget_destroy (dialog);
-      if (response == GTK_RESPONSE_OK)
-          if (!export_to_file (impl, path, properties, routes, connection_name)) {
-			GtkWidget *dialog;
+      if (response != GTK_RESPONSE_OK)
+	      goto out;
+   }
 
-			dialog = gtk_message_dialog_new (NULL,
-									   GTK_DIALOG_DESTROY_WITH_PARENT,
-									   GTK_MESSAGE_WARNING,
-									   GTK_BUTTONS_CLOSE,
-									   _("Failed to export configuration"));
-			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-											  _("Failed to save file %s"), path);
-			gtk_dialog_run (GTK_DIALOG (dialog));
-			gtk_widget_destroy (dialog);
-		}
+   if (!export_to_file (impl, path, properties, routes, connection_name)) {
+	GtkWidget *dialog;
+
+	dialog = gtk_message_dialog_new (NULL,
+				   GTK_DIALOG_DESTROY_WITH_PARENT,
+				   GTK_MESSAGE_WARNING,
+				   GTK_BUTTONS_CLOSE,
+				   _("Failed to export configuration"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+					  _("Failed to save file %s"), path);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
     }
-  }      
+  }
 
+out:
   g_free (path);
 
   return TRUE;
