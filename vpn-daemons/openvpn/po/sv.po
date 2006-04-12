@@ -1,17 +1,18 @@
 # Swedish messages for NetworkManager openvpn.
 # Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
+# Daniel Nylander <po@danielnylander.se>, 2006.
 #
-# $Id: sv.po,v 1.2 2006/03/29 20:01:04 menthos Exp $
+# $Id: sv.po,v 1.3 2006/04/12 19:06:24 dnylande Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-29 21:59+0200\n"
-"PO-Revision-Date: 2006-03-29 21:58+0200\n"
-"Last-Translator: Christian Rose <menthos@menthos.com>\n"
-"Language-Team: Swedish <sv@li.org>\n"
+"POT-Creation-Date: 2006-04-12 20:17+0200\n"
+"PO-Revision-Date: 2006-04-12 21:03+0100\n"
+"Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,7 +24,7 @@ msgstr "_Lösenord:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:149
 msgid "_Secondary Password:"
-msgstr "_Andrahandslösenord:"
+msgstr "_Sekundärt lösenord:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:272
 msgid "_Username:"
@@ -58,7 +59,8 @@ msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Certifikatlösenord:"
 
@@ -87,18 +89,21 @@ msgstr "Namn:  %s"
 msgid "Connection Type: X.509 Certificates"
 msgstr "Anslutningstyp: X.509-certifikat"
 
-#: ../properties/nm-openvpn.c:627 ../properties/nm-openvpn.c:654
+#: ../properties/nm-openvpn.c:627
+#: ../properties/nm-openvpn.c:654
 #: ../properties/nm-openvpn.c:666
 #, c-format
 msgid "CA:  %s"
 msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:630 ../properties/nm-openvpn.c:669
+#: ../properties/nm-openvpn.c:630
+#: ../properties/nm-openvpn.c:669
 #, c-format
 msgid "Cert:  %s"
 msgstr "Cert:   %s"
 
-#: ../properties/nm-openvpn.c:633 ../properties/nm-openvpn.c:672
+#: ../properties/nm-openvpn.c:633
+#: ../properties/nm-openvpn.c:672
 #, c-format
 msgid "Key:  %s"
 msgstr "Nyckel: %s"
@@ -126,7 +131,8 @@ msgstr "Fjärr-IP:  %s"
 msgid "Connection Type: Password"
 msgstr "Anslutningstyp: Lösenord"
 
-#: ../properties/nm-openvpn.c:657 ../properties/nm-openvpn.c:675
+#: ../properties/nm-openvpn.c:657
+#: ../properties/nm-openvpn.c:675
 #, c-format
 msgid "Username:  %s"
 msgstr "Användarnamn:  %s"
@@ -186,8 +192,7 @@ msgstr "Nej"
 
 #: ../properties/nm-openvpn.c:698
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr ""
-"Anslutningsdetaljerna kan ändras genom att knappen \"Redigera\" används."
+msgstr "Anslutningsdetaljerna kan ändras genom att knappen \"Redigera\" används."
 
 #: ../properties/nm-openvpn.c:849
 msgid "Cannot import settings"
@@ -202,7 +207,8 @@ msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
 msgid "Select file to import"
 msgstr "Välj fil att importera"
 
-#: ../properties/nm-openvpn.c:966 ../properties/nm-openvpn.c:978
+#: ../properties/nm-openvpn.c:966
+#: ../properties/nm-openvpn.c:978
 msgid "Select CA to use"
 msgstr "Välj CA att använda"
 
@@ -219,18 +225,27 @@ msgid "Select shared key to use"
 msgstr "Välj delad nyckel att använda"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1147
+#: ../properties/nm-openvpn.c:1152
 msgid "Save as..."
 msgstr "Spara som..."
 
-#: ../properties/nm-openvpn.c:1177
+#: ../properties/nm-openvpn.c:1182
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "En fil med namnet \"%s\" finns redan."
 
-#: ../properties/nm-openvpn.c:1180
+#: ../properties/nm-openvpn.c:1185
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Vill du ersätta den med den du håller på att spara?"
+
+#: ../properties/nm-openvpn.c:1199
+msgid "Failed to export configuration"
+msgstr "Misslyckades med att exportera konfiguration"
+
+#: ../properties/nm-openvpn.c:1201
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Misslyckades med att spara filen %s"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
 msgid "<b>Connection Name</b>"
@@ -273,21 +288,12 @@ msgid "Password"
 msgstr "Lösenord"
 
 #: ../properties/nm-openvpn-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Ange den information som har tillhandahållits av din systemadministratör "
-"nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när "
-"du ansluter."
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Ange den information som har tillhandahållits av din systemadministratör nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när du ansluter."
 
 #: ../properties/nm-openvpn-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
-msgstr ""
-"Observera att den fil som du importerar inte är en OpenVPN-"
-"konfigurationsfil. Be din administratör om filen."
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your adminstrator for the file."
+msgstr "Observera att den fil som du importerar inte är en OpenVPN-konfigurationsfil. Be din administratör om filen."
 
 #: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Remote IP:"
@@ -342,52 +348,32 @@ msgid "_Import Saved Configuration..."
 msgstr "_Importera sparad konfiguration..."
 
 #: ../properties/nm-openvpn-dialog.glade.h:27
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Namn som används för att identifiera anslutningen till det privata "
-"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
+msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "_Namn som används för att identifiera anslutningen till det privata nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 
 #: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "_Only use VPN connection for these addresses"
 msgstr "Använd _endast VPN-anslutning för dessa adresser"
 
 #: ../src/nm-openvpn-service.c:136
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
-"accepterades eller att certifikatlösenordet var felaktigt."
+msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
+msgstr "VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte accepterades eller att certifikatlösenordet var felaktigt."
 
 #: ../src/nm-openvpn-service.c:138
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
+msgstr "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
 
 #: ../src/nm-openvpn-service.c:140
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
-"till VPN-servern."
+msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgstr "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta till VPN-servern."
 
 #: ../src/nm-openvpn-service.c:142
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
-"ogiltiga."
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var ogiltiga."
 
 #: ../src/nm-openvpn-service.c:144
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
-"konfiguration från VPN-servern."
+msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgstr "VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig konfiguration från VPN-servern."
 
 #: ../src/nm-openvpn-service.c:146
 msgid "VPN connection failed"
@@ -395,128 +381,89 @@ msgstr "VPN-anslutningen misslyckades"
 
 #~ msgid "Remember password for this session"
 #~ msgstr "Kom ihåg lösenordet för denna session"
-
 #~ msgid "Save password in keyring"
 #~ msgstr "Spara lösenordet i nyckelring"
-
 #~ msgid "Certificate"
 #~ msgstr "Certifikat"
-
 #~ msgid "VPN Connection Manager"
 #~ msgstr "VPN-anslutningshanterare"
-
 #~ msgid "VPN Connection Manager (vpnc)"
 #~ msgstr "VPN-anslutningshanterare (vpnc)"
-
 #~ msgid "Name:"
 #~ msgstr "Namn:"
-
 #~ msgid "Username: %s"
 #~ msgstr "Användarnamn: %s"
-
 #~ msgid "User name:"
 #~ msgstr "Användarnamn:"
-
 #~ msgid "User Name:"
 #~ msgstr "Användarnamn:"
-
 #~ msgid "CA:"
 #~ msgstr "CA:"
-
 #~ msgid "Cert:"
 #~ msgstr "Cert:"
-
 #~ msgid "Key"
 #~ msgstr "Nyckel"
-
 #~ msgid "Connection Type"
 #~ msgstr "Anslutningstyp"
-
 #~ msgid "Shared Key"
 #~ msgstr "Delad nyckel"
-
 #~ msgid "Local IP"
 #~ msgstr "Lokalt IP"
-
 #~ msgid "Remote IP"
 #~ msgstr "Fjärr-IP"
-
 #~ msgid "Remote: %s"
 #~ msgstr "Fjärr: %s"
-
 #~ msgid "Remote:"
 #~ msgstr "Fjärr:"
-
 #~ msgid "Device:"
 #~ msgstr "Enhet:"
-
 #~ msgid "Device"
 #~ msgstr "Enhet"
-
 #~ msgid "Protocol:"
 #~ msgstr "Protokoll:"
-
 #~ msgid "Protocol"
 #~ msgstr "Protokoll"
-
 #~ msgid "Routes:"
 #~ msgstr "Vägar:"
-
 #~ msgid "Routes"
 #~ msgstr "Vägar"
-
 #~ msgid "Use LZO Compression:"
 #~ msgstr "Använd LZO-komprimering:"
-
 #~ msgid "Use LZO Compression"
 #~ msgstr "Använd LZO-komprimering"
-
 #~ msgid "CA file:"
 #~ msgstr "CA-fil:"
-
 #~ msgid "Gateway:"
 #~ msgstr "Gateway:"
-
 #~ msgid "Import Saved Configuration..."
 #~ msgstr "Importera sparad konfiguration..."
-
 #~ msgid ""
 #~ "Name used to identify the connection to the private network, e.g. "
 #~ "\"Campus VPN\" or \"Corporate Network\""
 #~ msgstr ""
 #~ "Namn som används för att identifiera anslutningen till det privata "
 #~ "nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
-
 #~ msgid "Only use VPN connection for these addresses"
 #~ msgstr "Använd endast VPN-anslutning för dessa adresser"
-
 #~ msgid ""
 #~ "The VPN login failed because the user name and password were not accepted."
 #~ msgstr ""
 #~ "VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
 #~ "accepterades."
-
 #~ msgid "_Group Password:"
 #~ msgstr "_Grupplösenord:"
-
 #~ msgid "Group Name:"
 #~ msgstr "Gruppnamn:"
-
 #~ msgid "Override user name"
 #~ msgstr "Åsidosätt användarnamn"
-
 #~ msgid "Use domain for authentication"
 #~ msgstr "Använd domän för autentisering"
-
 #~ msgid "_Import..."
 #~ msgstr "_Importera..."
-
 #~ msgid "Compatible Cisco VPN client (vpnc)"
 #~ msgstr "Kompatibel Cisco VPN-klient (vpnc)"
-
 #~ msgid "\tDomain:  %s\n"
 #~ msgstr "\tDomän:  %s\n"
-
 #~ msgid ""
 #~ "The following vpnc VPN connection will be created:\n"
 #~ "\n"
@@ -535,10 +482,8 @@ msgstr "VPN-anslutningen misslyckades"
 #~ "\tGruppnamn:  %s\n"
 #~ "%s%s%s\n"
 #~ "Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
-
 #~ msgid "TCP tunneling not supported"
 #~ msgstr "TCP-tunnling stöds inte"
-
 #~ msgid ""
 #~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
 #~ "through TCP which is currently not supported in the vpnc software.\n"
@@ -551,3 +496,4 @@ msgstr "VPN-anslutningen misslyckades"
 #~ "\n"
 #~ "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men "
 #~ "det kanske inte fungerar som väntat."
+
