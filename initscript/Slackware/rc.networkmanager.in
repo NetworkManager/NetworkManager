@@ -8,8 +8,18 @@
 # processname: NetworkManager
 # pidfile: /var/run/NetworkManager.pid
 #
+
+prefix=@prefix@
+exec_prefix=@prefix@
+sbindir=@sbindir@
+
+NETWORKMANAGER_BIN=${sbindir}/NetworkManager
+
+# Sanity checks.
+[ -x $NETWORKMANAGER_BIN ] || exit 0
+
 # We need /sbin/ip
-[ -x /sbin/ip ] || exit 1
+[ -x /sbin/ip ] || exit 0
 
 PIDFILE=/var/run/NetworkManager.pid
 
@@ -30,8 +40,8 @@ nm_start()
     rm -f $PIDFILE
   fi
 
-  echo "Starting NetworkManager daemon:  /usr/sbin/NetworkManager"
-  /usr/sbin/NetworkManager
+  echo "Starting NetworkManager daemon:  $NETWORKMANAGER_BIN"
+  $NETWORKMANAGER_BIN
 }
 
 nm_status()
