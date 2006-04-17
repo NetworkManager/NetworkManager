@@ -1,3 +1,12 @@
+2006-04-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Paul Blazejowski <paulb@blazebox.homeip.net>
+	* configure.in
+	  initscript/Slackware/Makefile.am
+	  initscript/Slackware/rc.networkmanager-dispatcher.in
+	  initscript/Slackware/rc.networkmanager.in
+		- Update slackware initscripts
+
 2006-04-10  Robert Love  <rml@novell.com>
 
 	* gnome/vpn-properties/nm-vpn-properties.c: Intercept and short-circuit
