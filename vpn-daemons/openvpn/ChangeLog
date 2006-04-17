@@ -1,3 +1,8 @@
+2006-04-17  Robert Love  <rml@novell.com>
+
+	* properties/nm-openvpn-dialog.glade: If the dialog won't let the user
+	  type in the file entry GtkEntries, then don't mark them editable.
+
 2006-04-10  Robert Love  <rml@novell.com>
 
 	* properties/nm-openvpn.c: Report error if writing out of exported

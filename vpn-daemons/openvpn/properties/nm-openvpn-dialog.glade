@@ -405,7 +405,7 @@ X.509 with Password Authentication</property>
 			    <widget class="GtkEntry" id="openvpn-ca">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
+			      <property name="editable">False</property>
 			      <property name="visibility">True</property>
 			      <property name="max_length">0</property>
 			      <property name="text" translatable="yes"></property>
@@ -481,7 +481,7 @@ X.509 with Password Authentication</property>
 			    <widget class="GtkEntry" id="openvpn-cert">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
+			      <property name="editable">False</property>
 			      <property name="visibility">True</property>
 			      <property name="max_length">0</property>
 			      <property name="text" translatable="yes"></property>
@@ -692,7 +692,7 @@ X.509 with Password Authentication</property>
 			    <widget class="GtkEntry" id="openvpn-key">
 			      <property name="visible">True</property>
 			      <property name="can_focus">True</property>
-			      <property name="editable">True</property>
+			      <property name="editable">False</property>
 			      <property name="visibility">True</property>
 			      <property name="max_length">0</property>
 			      <property name="text" translatable="yes"></property>
