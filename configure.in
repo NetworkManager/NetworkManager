@@ -339,6 +339,7 @@ initscript/RedHat/NetworkManager
 initscript/RedHat/NetworkManagerDispatcher
 initscript/Gentoo/Makefile
 initscript/Gentoo/NetworkManager
+initscript/Gentoo/NetworkManagerDispatcher
 initscript/Debian/Makefile
 initscript/Slackware/Makefile
 initscript/Slackware/rc.networkmanager

@@ -59,8 +59,7 @@ void nm_system_device_flush_routes (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
+	g_return_if_fail (nm_device_is_test_device (dev) != TRUE);
 
 	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
 }
@@ -92,6 +91,7 @@ void nm_system_device_flush_routes_with_iface (const char *iface)
  */
 gboolean nm_system_device_has_active_routes (NMDevice *dev)
 {
+        /* TODO */
 	return (FALSE);
 }
 
@@ -107,8 +107,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
+	g_return_if_fail (nm_device_is_test_device (dev) != TRUE);
 
 	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
 }
@@ -170,7 +169,9 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
  */
 void nm_system_enable_loopback (void)
 {
-	nm_spawn_process("/etc/init.d/net.lo start");
+  /* No need to run net.lo if it is already running */
+	if (nm_spawn_process ("/etc/init.d/net.lo status") != 0)
+		nm_spawn_process("/etc/init.d/net.lo start");
 }
 
 
@@ -219,6 +220,8 @@ void nm_system_flush_arp_cache (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
+        /* TODO */
+        /* Tell dhcdbd to kill its dhclient instance */
 }
 
 /*
@@ -235,7 +238,7 @@ void nm_system_update_dns (void)
 		nm_spawn_process ("/etc/init.d/nscd restart");
  #else
 	nm_spawn_process("/usr/bin/killall -q nscd");
- #endif	
+ #endif
 }
 
 /*
@@ -247,9 +250,13 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-	nm_spawn_process("/etc/init.d/mDNSResponder stop");
-	nm_spawn_process("/etc/init.d/mDNSResponder zap");
-	nm_spawn_process("/etc/init.d/mDNSResponder start");
+        /* TODO Not only mDNSResponder is a possible mdns responder!
+         * As Avahi can become Gentoo's default, we could spawn a dbus signal here and let avahi listen for it? */
+        if (nm_spawn_process ("/etc/init.d/mDNSResponder status") == 0) {
+        	nm_spawn_process("/etc/init.d/mDNSResponder stop");
+	        nm_spawn_process("/etc/init.d/mDNSResponder zap");
+        	nm_spawn_process("/etc/init.d/mDNSResponder start");
+        }
 }
 
 
@@ -262,7 +269,6 @@ void nm_system_restart_mdns_responder (void)
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
 	char *buf;
-	char *addr;
 	struct ether_addr hw_addr;
 	unsigned char eui[8];
 	
@@ -271,6 +277,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	else if (nm_device_is_802_11_wireless (dev))
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
 	
+        /* Shouldnt we use sizeof(eui) ? In theory, obviously */
 	memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
 	memmove (eui+5, eui+3, 3);
 	eui[3] = 0xff;
@@ -320,7 +327,7 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	g_return_val_if_fail (dev != NULL, NULL);
 
 	sys_data = g_malloc0 (sizeof (GentooSystemConfigData));
-    sys_data->config = nm_device_get_ip4_config(dev);
+        sys_data->config = nm_device_get_ip4_config(dev);
 	/* We use DHCP on an interface unless told not to */
 	sys_data->use_dhcp = TRUE;
 	nm_device_set_use_dhcp (dev, TRUE);
@@ -332,18 +339,22 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	 * /etc/conf.d/net, this is for all interfaces.
 	 */
 
-	cfg_file_path = g_strdup_printf ("/etc/conf.d/net");
-	if (!cfg_file_path)
+	cfg_file_path = g_strdup ("/etc/conf.d/net");
+	if (!cfg_file_path) {
+                g_free (sys_data);
 		return NULL;
+        }
 
 	if (!(file = fopen (cfg_file_path, "r")))
 	{
 		g_free (cfg_file_path);
+                g_free (sys_data);
 		return NULL;
 	}
- 	sprintf(confline, "iface_%s", nm_device_get_iface (dev));
- 	sprintf(dhcpline, "iface_%s=\"dhcp\"", nm_device_get_iface (dev));
-	while (fgets (buffer, 499, file) && !feof (file))
+ 	snprintf(confline, 100, "iface_%s", nm_device_get_iface (dev));
+ 	snprintf(dhcpline, 100, "iface_%s=\"dhcp\"", nm_device_get_iface (dev));
+        /* buffer is char[100], guess this fgets call was fairly wrong then? */
+	while (fgets (buffer, 100, file) && !feof (file))
 	{
 		/* Kock off newline if any */
 		g_strstrip (buffer);
@@ -402,12 +413,12 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 		/* If we aren't using dhcp, then try to get the gateway */
 		if (!use_dhcp)
 			{
-			sprintf(ipline, "gateway=\"%s/", nm_device_get_iface (dev));
+			snprintf(ipline, 100, "gateway=\"%s/", nm_device_get_iface (dev));
 			if (strncmp(buffer, ipline, strlen(ipline) - 1) == 0)
 			{
-				sprintf(ipline, "gateway=\"%s/%%d.%%d.%%d.%%d\"", nm_device_get_iface (dev) );
+				snprintf(ipline, 100, "gateway=\"%s/%%d.%%d.%%d.%%d\"", nm_device_get_iface (dev) );
 				sscanf(buffer, ipline, &ipa, &ipb, &ipc, &ipd);
-				sprintf(ipline, "%d.%d.%d.%d", ipa, ipb, ipc, ipd);
+				snprintf(ipline, 100, "%d.%d.%d.%d", ipa, ipb, ipc, ipd);
 				ip4_gateway = inet_addr (ipline);
 			}
 		}		
@@ -418,12 +429,12 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	/* If successful, set values on the device */
 	if (data_good)
 	{
-        nm_warning("data good :-)");
+                nm_warning("data good :-)");
 		nm_device_set_use_dhcp (dev, use_dhcp);
 		if (ip4_address)
-            nm_ip4_config_set_address (sys_data->config, ip4_address);
+                        nm_ip4_config_set_address (sys_data->config, ip4_address);
 		if (ip4_gateway)
-            nm_ip4_config_set_gateway (sys_data->config, ip4_gateway);
+                        nm_ip4_config_set_gateway (sys_data->config, ip4_gateway);
 		if (ip4_netmask)
 			nm_ip4_config_set_netmask (sys_data->config, ip4_netmask);
 		if (ip4_broadcast)
@@ -443,8 +454,7 @@ void nm_system_device_add_default_route_via_device (NMDevice *dev)
 	g_return_if_fail (dev != NULL);
 
 	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
+	g_return_if_fail (nm_device_is_test_device (dev) != TRUE);
 
 	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
 }
@@ -473,12 +483,12 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 
 	g_return_if_fail (dev != NULL);
 
-	if (!sys_data)
-		return;
+	g_return_if_fail(sys_data != NULL);
 
 	if (sys_data->config)
 		nm_ip4_config_unref (sys_data->config);
 
+        g_free (sys_data);
 }
 
 NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)

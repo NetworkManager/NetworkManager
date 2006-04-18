@@ -1,3 +1,13 @@
+2006-04-18  Nicolas Trangez  <eikke@eikke.com>
+
+	* backends/NetworkManagerGentoo.c: Small cleanups and enhancements
+	* configure.in
+	  initscript/Gentoo/Makefile.am
+	  initscript/Gentoo/NetworkManagerDispatcher.in
+	  	- New script
+	* initscript/Gentoo/NetworkManager.in: small dependency fixup from
+	  Gentopia
+
 2006-04-16  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Paul Blazejowski <paulb@blazebox.homeip.net>
