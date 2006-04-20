@@ -608,7 +608,7 @@ static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
 				 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
 				 * MAC address in our allowed list.
 				 */
-				nm_ap_list_copy_essids_by_address (nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
+				nm_ap_list_copy_essids_by_address (data, wdev, nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
 				nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
 			}
 			else

@@ -589,7 +589,10 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
  * If one is found, copy the essid over to the original access point.
  *
  */
-void nm_ap_list_copy_one_essid_by_address (NMAccessPoint *ap, NMAccessPointList *search_list)
+void nm_ap_list_copy_one_essid_by_address (NMData *app_data,
+								   NMDevice80211Wireless *dev,
+								   NMAccessPoint *ap,
+								   NMAccessPointList *search_list)
 {
 	NMAccessPoint	*found_ap;
 
@@ -599,7 +602,10 @@ void nm_ap_list_copy_one_essid_by_address (NMAccessPoint *ap, NMAccessPointList 
 	if (!nm_ap_get_essid (ap) && (found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap))))
 	{
 		if (nm_ap_get_essid (found_ap))
+		{
 			nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
+			nm_dbus_signal_wireless_network_change (app_data->dbus_connection, dev, ap, NETWORK_STATUS_APPEARED, 0);
+		}
 	}
 }
 
@@ -612,7 +618,10 @@ void nm_ap_list_copy_one_essid_by_address (NMAccessPoint *ap, NMAccessPointList 
  * its found, copy the source access point's essid to the dest access point.
  *
  */
-void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointList *source)
+void nm_ap_list_copy_essids_by_address (NMData *app_data,
+								NMDevice80211Wireless *dev,
+								NMAccessPointList *dest,
+								NMAccessPointList *source)
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
@@ -623,7 +632,7 @@ void nm_ap_list_copy_essids_by_address (NMAccessPointList *dest, NMAccessPointLi
 	if ((iter = nm_ap_list_iter_new (dest)))
 	{
 		while ((dest_ap = nm_ap_list_iter_next (iter)))
-			nm_ap_list_copy_one_essid_by_address (dest_ap, source);
+			nm_ap_list_copy_one_essid_by_address (app_data, dev, dest_ap, source);
 
 		nm_ap_list_iter_free (iter);
 	}

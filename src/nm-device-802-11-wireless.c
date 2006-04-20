@@ -1270,7 +1270,7 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
 		wreq.u.essid.length	 = strlen ((char *) safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
-	
+
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWESSID.", iface);
 #endif
@@ -3131,7 +3131,7 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 	if (!nm_ap_get_essid (ap))
 	{
 		nm_ap_set_broadcast (ap, FALSE);
-		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
+		nm_ap_list_copy_one_essid_by_address (app_data, dev, ap, app_data->allowed_ap_list);
 	}
 
 	/* Add the AP to the device's AP list */

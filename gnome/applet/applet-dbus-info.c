@@ -470,7 +470,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 
 	/* Third arg: Trusted (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &trusted);
-	
+
 	/* Fourth arg: List of AP BSSIDs (ARRAY, STRING) */
 	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
 	if (bssids_value && (g_slist_length (gconf_value_get_list (bssids_value)) > 0))

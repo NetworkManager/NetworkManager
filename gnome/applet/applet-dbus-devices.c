@@ -515,7 +515,7 @@ static void nma_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
 	NetPropCBData *	cb_data = (NetPropCBData *) user_data;
-	NMApplet *	applet;
+	NMApplet *		applet;
 	const char *		op = NULL;
 	const char *		essid = NULL;
 	const char *		hw_addr = NULL;
