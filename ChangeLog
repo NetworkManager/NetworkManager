@@ -1,5 +1,20 @@
 2006-04-20  Robert Love  <rml@novell.com>
 
+	Fix bug where hidden ESSID's would not show up in the applet, even
+	if NMI provided a BSSID -> ESSID mapping from Gconf.  This occurred
+	because nm_policy_device_list_update_from_allowed_list() would merge
+	the data, putting a name to the hidden networks, but never notify NMI
+	of the changes.  Simple fix is to invoke the function
+	nm_dbus_signal_wireless_network_change() if we make a mapping.
+	* src/NetworkManagerAPList.c: Call the function
+	  nm_dbus_signal_wireless_network_change() if we made a successful
+	  BSSID to ESSID mapping, notifying the applet of the "new" network.
+	* src/NetworkManagerAPList.h: Update the prototypes for both
+	  nm_ap_list_copy_essids_by_address() and
+	  nm_ap_list_copy_one_essid_by_address().
+
+2006-04-20  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet-dbus-info.c: Don't bail out if the timestamp is
 	  not set.  Just return zero.
 
