@@ -386,7 +386,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
                                  DBusMessage *message,
                                  void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	DBusMessage *		reply = NULL;
 	gchar *			gconf_key = NULL;
 	char *			network = NULL;
@@ -431,13 +431,9 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 		goto out;
 	}
 
-	/* Timestamp */
+	/* Timestamp.  If the timestamp is not set, return zero. */
 	if (!nm_gconf_get_int_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "timestamp", escaped_network, &timestamp) || (timestamp < 0))
-	{
-		nm_warning ("%s:%d - couldn't get 'timestamp' item from GConf for '%s'.",
-				__FILE__, __LINE__, essid);
-		goto out;
-	}
+		timestamp = 0;
 
 	/* Trusted status */
 	if (!nm_gconf_get_bool_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "trusted", escaped_network, &trusted))
