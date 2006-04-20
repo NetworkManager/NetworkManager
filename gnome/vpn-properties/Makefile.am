@@ -7,8 +7,10 @@ nm_vpn_properties_HEADERS = 					\
 	nm-vpn-ui-interface.h
 
 nm_vpn_properties_SOURCES = 					\
-					nm-vpn-properties.c	\
-	nm-vpn-ui-interface.h
+					nm-vpn-properties.c		\
+					clipboard.c			\
+					clipboard.h			\
+					nm-vpn-ui-interface.h
 
 gladedir = $(datadir)/gnome-vpn-properties
 glade_DATA = nm-vpn-properties.glade

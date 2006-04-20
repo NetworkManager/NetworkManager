@@ -1,3 +1,14 @@
+2006-04-20  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Satisfy TODO: Ensure that
+	  only one copy of nm-vpn-properties is running at a time via the 'ol
+	  X selection trick.  This prevents the user from opening two "VPN
+	  Connections" windows from within the applet, which leads to mass
+	  hysteria.
+	* clipboard.c: New file, implementing simple X selection logic.
+	* clipboard.h: New file.
+	* gnome/vpn-properties/Makefile.am: Add clipboard.{c,h}
+
 2006-04-16  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Paul Blazejowski <paulb@blazebox.homeip.net>

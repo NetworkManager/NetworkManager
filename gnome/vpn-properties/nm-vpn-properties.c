@@ -43,6 +43,7 @@
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 #include "nm-vpn-ui-interface.h"
+#include "clipboard.h"
 
 #define NM_GCONF_VPN_CONNECTIONS_PATH "/system/networking/vpn_connections"
 
@@ -926,7 +927,8 @@ init_app (void)
 	GtkWidget *toplevel;
 	GDir *dir;
 
-	/* TODO: ensure only one copy of this program is running at any time */
+	if (!vpn_get_clipboard ())
+		return FALSE;
 
 	gconf_client = gconf_client_get_default ();
 	gconf_client_add_dir (gconf_client, NM_GCONF_VPN_CONNECTIONS_PATH,
