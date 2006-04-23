@@ -21,7 +21,11 @@ nm_pptp_service_SOURCES =				\
 				nm-pptp-service.c	\
 				nm-pptp-service.h	\
 				nm-utils.c		\
-				nm-utils.h
+				nm-utils.h		\
+				pppd/fsm.h		\
+				pppd/ipcp.h		\
+				pppd/patchlevel.h 	\
+				pppd/pppd.h
 
 
 nm_pptp_service_LDADD = 						\
