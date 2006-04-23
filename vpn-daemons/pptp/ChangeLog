@@ -1,3 +1,8 @@
+2006-04-23  Dan Williams  <dcbw@redhat.com>
+
+	Patch from j@bootlab.org
+	* src/Makefile.am: add missing files so make distcheck works
+
 2006-03-29  Robert Love  <rml@novell.com>
 
 	* src/nm-pptp-service.c: New eigth argument to DBUS VPN method, the
