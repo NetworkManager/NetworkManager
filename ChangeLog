@@ -1,5 +1,40 @@
 2006-04-24  Dan Williams  <dcbw@redhat.com>
 
+	Commit the async scanning patch
+
+	* src/nm-device-802-11-wireless.c
+		- get rid of scan_mutex
+		- (wireless_event_helper): act on wireless scan events
+		- (real_start): schedule a pending scan
+		- (link_to_specific_ap): fake the link to the AP during a scan
+		- (nm_device_802_11_wireless_update_signal_strength): ignore signal
+			strength during scans
+		- (nm_device_get_frequency, nm_device_set_frequency, nm_device_get_bitrate,
+			nm_device_set_bitrate): unused with new scanning code, disable
+		- (nm_device_wireless_schedule_scan): removed
+		- (nm_device_wireless_process_scan_results): renamed to convert_scan_results()
+		- (request_and_convert_scan_results): new function; retrieve scan
+			results from the driver and schedule the processing function
+		- (scan_results_timeout): timeout triggered when card doesn't send
+			a scan results wireless event during a certain interval
+		- (schedule_scan_results_timeout): new function; schedule the scan
+			results timeout
+		- (cancel_scan_results_timeout): new function; cancel the scan
+			results timeout
+		- (nm_device_802_11_wireless_scan): if wpa_supplicant is running, ask it
+			to do the scanning.  Otherwise, just request a scan but don't
+			grab results here; instead schedule a timeout for scan results and
+			let netlink notify us of scan completion events
+		- (nm_device_wireless_schedule_scan): new function; schedule a wireless scan
+		- (cancel_pending_scan): new function; cancel a pending wireless scan
+		- (supplicant_status_cb): ignore disconnect events while scanning
+		- (supplicant_exec): wait a bit longer for the supplicant to start up
+		- (nm_device_802_11_wireless_dispose): cancel pending scans and results
+			timeouts
+		- (get_scan_results): removed; folded into request_and_convert_scan_results()
+
+2006-04-24  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet-dbus.c
 		- Disable the pending call debug stuff, seems under control now
 
