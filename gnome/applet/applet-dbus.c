@@ -43,7 +43,7 @@
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
-#define DBUS_PENDING_CALL_DEBUG
+/* #define DBUS_PENDING_CALL_DEBUG */
 
 typedef struct PCallInfo
 {
@@ -115,8 +115,8 @@ nma_dbus_send_with_callback_replied (DBusPendingCall *pcall,
                                      const char *caller)
 {
 	PCallInfo *	info;
-	GTimeVal		now;
 #ifdef DBUS_PENDING_CALL_DEBUG
+	GTimeVal		now;
 	long			elapsed_ms = 0;
 #endif
 

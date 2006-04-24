@@ -1,3 +1,8 @@
+2006-04-24  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-dbus.c
+		- Disable the pending call debug stuff, seems under control now
+
 2006-04-20  Robert Love  <rml@novell.com>
 
 	Fix bug where hidden ESSID's would not show up in the applet, even
