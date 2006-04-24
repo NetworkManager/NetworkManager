@@ -1365,26 +1365,28 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 	NMSock*		sk;
 	int			err;
 	struct iwreq	wreq;
-	unsigned char	safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
+	char *		safe_essid;
 	const char *	iface;
+	gint			len = 0;
 
 	g_return_if_fail (self != NULL);
 
-	/* Make sure the essid we get passed is a valid size */
-	if (!essid)
-		safe_essid[0] = '\0';
-	else
+	safe_essid = g_malloc0 (IW_ESSID_MAX_SIZE + 1);
+
+	if (essid)
 	{
-		strncpy ((char *) safe_essid, essid, IW_ESSID_MAX_SIZE);
-		safe_essid[IW_ESSID_MAX_SIZE] = '\0';
+		len = MIN(IW_ESSID_MAX_SIZE, strlen (essid));
+		if (len <= 0)
+			len = 0;
+		strncpy (safe_essid, essid, len);
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
-		wreq.u.essid.length	 = strlen ((char *) safe_essid) + 1;
-		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
+		wreq.u.essid.length	 = len + 1;
+		wreq.u.essid.flags	 = (len > 0) ? 1 : 0; /* 1=enable ESSID, 0=disable/any */
 
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWESSID.", iface);
@@ -1407,6 +1409,7 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		 */
 		sleep (2);
 	}
+	g_free (safe_essid);
 }
 
 
