@@ -1,3 +1,11 @@
+2006-04-25  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wep.c: Bug fix: We stopped setting the
+	  key mode (the authentication algorithm), e.g. open or shared, when we
+	  moved to using wpa_supplicant.  wpa_supplicant defaults to open, so
+	  only shared was broken.  If the user specified a shared key, set it
+	  explicitly, otherwise let wpa_supplicant go with the default.
+
 2006-04-20  Robert Love  <rml@novell.com>
 
 	Fix bug where hidden ESSID's would not show up in the applet, even
