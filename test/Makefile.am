@@ -13,12 +13,15 @@ AM_CPPFLAGS =						\
 	-DBINDIR=\"$(bindir)\"			\
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nm-tool nminfotest nmtestdevices libnm_glib_test
+noinst_PROGRAMS = nm-tool nm-online nminfotest nmtestdevices libnm_glib_test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 		$(top_builddir)/utils/libnmutils.la
 
+nm_online_SOURCES = nm-online.c
+nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
+		$(top_builddir)/utils/libnmutils.la
 
 nminfotest_SOURCES = nminfotest.c
 nminfotest_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
