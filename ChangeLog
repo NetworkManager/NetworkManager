@@ -2,7 +2,7 @@
 
 	* tests/nm-online.c: New file.  Simple utility that returns exit status
 	  noting whether the connection is offline or online.  If offline on
-	  start, it waits 60 seconds (or a command-line given value) for an
+	  start, it waits 30 seconds (or a command-line given value) for an
 	  online signal.  If it times out, it again returns offline.  This is
 	  useful for scripts that want to wait for network connections.
 

@@ -69,7 +69,7 @@ int main (int argc, char *argv[])
 	DBusConnection *connection;
 	DBusError error;
 	GMainLoop *loop;
-	int timeout = 60;
+	int timeout = 30;
 
 	if (argc == 2) {
 		timeout = (int) strtol (argv[1], NULL, 10);
