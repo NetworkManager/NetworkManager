@@ -82,30 +82,17 @@ static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *
  *
  */
 static NMDeviceType
-discover_device_type (const char *iface)
+discover_device_type (LibHalContext *ctx, const char *udi)
 {
-	int	err = -1;
-	int	fd;
+	char * category = NULL;
 
-	g_return_val_if_fail (iface != NULL, FALSE);
-
-	if ((fd = iw_sockets_open ()) >= 0)
-	{
-		char	buf[64];
-
-		strncpy (buf, iface, 62);
-		buf[63] = '\0';
-
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET IWNAME", iface);
-#endif
-		err = ioctl (fd, SIOCGIWNAME, buf);
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: Done with GET IWNAME", iface);
-#endif
-		close (fd);
-	}
-	return err == 0 ? DEVICE_TYPE_802_11_WIRELESS : DEVICE_TYPE_802_3_ETHERNET;
+	if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
+		category = libhal_device_get_property_string(ctx, udi, "info.category", NULL);
+	if (category && (!strcmp (category, "net.80211")))
+		return DEVICE_TYPE_802_11_WIRELESS;
+	else if (category && (!strcmp (category, "net.80203")))
+		return DEVICE_TYPE_802_3_ETHERNET;
+	return DEVICE_TYPE_UNKNOWN;
 }
 
 /*
@@ -152,7 +139,7 @@ nm_device_new (const char *iface,
 	g_return_val_if_fail (strlen (iface) > 0, NULL);
 	g_return_val_if_fail (app_data != NULL, NULL);
 
-	type = discover_device_type (iface);
+	type = discover_device_type (app_data->hal_ctx, udi);
 	switch (type)
 	{
 		case DEVICE_TYPE_802_11_WIRELESS:
