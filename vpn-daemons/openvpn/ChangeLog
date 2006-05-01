@@ -1,3 +1,7 @@
+2006-05-01  Josep Puigdemont Casamajó  <josep.puigdemont@gmail.com>
+
+	* configure.in: Added "ca" to ALL_LINGUAS.
+
 2006-04-17  Robert Love  <rml@novell.com>
 
 	* properties/nm-openvpn-dialog.glade: If the dialog won't let the user
