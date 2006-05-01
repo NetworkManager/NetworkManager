@@ -1,3 +1,8 @@
+2006-05-01  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-compat.c: Warn if the returned escaped ESSID is
+	  empty, too.
+
 2006-04-27  Jeremy Katz  <katzj@redhat.com>
 
 	* src/nm-device.c (discover_device_type): Actually use the hal
