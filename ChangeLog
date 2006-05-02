@@ -1,3 +1,10 @@
+2006-05-02  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig;
+	* tests/nm-online.c: Print pretty status indicator as timeout winds
+	  down.  Also fix possible race between DBUS startup and failure
+	  return.
+
 2006-05-01  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-compat.c: Warn if the returned escaped ESSID is

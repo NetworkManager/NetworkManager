@@ -3,14 +3,15 @@
  *
  * Return values:
  *
- * 	0	: online
+ * 	0	: already online or connection established within given timeout
  *	1	: offline or not online within given timeout
- *	2	: error
+ *	2	: unspecified error
  *
  * Robert Love <rml@novell.com>
  */
 
 #define DBUS_API_SUBJECT_TO_CHANGE 1
+#define PROGRESS_STEPS 15
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,6 +21,12 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManager/NetworkManager.h>
+
+typedef struct 
+{
+	int value;
+	double norm;
+} Timeout;
 
 static DBusHandlerResult dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
 				      DBusMessage *message,
@@ -46,8 +53,8 @@ static gboolean check_online (DBusConnection *connection)
 	reply = dbus_connection_send_with_reply_and_block (connection, message,
 							   -1, &error);
 	dbus_message_unref (message);
-	if (!reply)
-		exit (2);
+	if (!reply) 
+		return FALSE;
 
 	if (!dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &state,
 				    DBUS_TYPE_INVALID))
@@ -59,9 +66,23 @@ static gboolean check_online (DBusConnection *connection)
 	return TRUE;
 }
 
-static gboolean handle_timeout (gpointer data G_GNUC_UNUSED)
+static gboolean handle_timeout (gpointer data)
 {
-	exit (1);
+	int i = PROGRESS_STEPS;
+	Timeout *timeout = (Timeout *) data;
+
+	g_print ("\rConnecting");
+	for (; i > 0; i--)
+		putchar ((timeout->value >= (i * timeout->norm)) ? ' ' : '.');
+	if (timeout->value)
+		g_print (" %4is", timeout->value);
+	fflush (stdout);
+
+	timeout->value--;
+	if (timeout->value < 0)
+		exit (1);
+
+	return TRUE;
 }
 
 int main (int argc, char *argv[])
@@ -69,11 +90,13 @@ int main (int argc, char *argv[])
 	DBusConnection *connection;
 	DBusError error;
 	GMainLoop *loop;
-	int timeout = 30;
+	Timeout timeout;
+	
+	timeout.value = 30;
 
 	if (argc == 2) {
-		timeout = (int) strtol (argv[1], NULL, 10);
-		if (timeout < 0 || timeout > 3600)
+		timeout.value = (int) strtol (argv[1], NULL, 10);
+		if (timeout.value <= 0 || timeout.value > 3600) 
 			return 2;
 	}
 
@@ -105,8 +128,10 @@ int main (int argc, char *argv[])
 	if (check_online (connection))
 		return 0;
 
-	if (timeout)
-		g_timeout_add (timeout * 1000, handle_timeout, NULL);
+	if (timeout.value) {
+		timeout.norm = (double) timeout.value / (double) PROGRESS_STEPS;
+		g_timeout_add (1000, handle_timeout, &timeout);
+	}
 
 	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);
