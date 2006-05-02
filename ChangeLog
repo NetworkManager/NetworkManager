@@ -1,3 +1,7 @@
+2006-05-02  Peter Jones  <pjones@redhat.com>
+
+	* vpn-daemons/vpnc/src/nm-vpnc-service.c: Allow rekeying.
+
 2006-05-02  Robert Love  <rml@novell.com>
 
 	Patch by Timo Hoenig;

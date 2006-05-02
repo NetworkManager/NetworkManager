@@ -495,6 +495,7 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 					{ "IKE DH Group",			OPT_TYPE_ASCII },
 					{ "Perfect Forward Secrecy",	OPT_TYPE_ASCII },
 					{ "Application Version",		OPT_TYPE_ASCII },
+					{ "Rekeying interval",		OPT_TYPE_ASCII },
 					{ NULL,					OPT_TYPE_UNKNOWN } };
 
 	unsigned int	i;
