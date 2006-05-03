@@ -1257,7 +1257,7 @@ gboolean nm_system_should_modify_resolv_conf (void)
 	if (!file)
 		goto out_gfree;
 
-	buf = svGetValue (file, "MODIFY_RESOLV_CONF_DYNAMICALLY");
+	buf = svGetValue (file, "DHCLIENT_MODIFY_RESOLV_CONF");
 	if (!buf)
 		goto out_close;
 

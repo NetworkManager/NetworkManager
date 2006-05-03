@@ -1,3 +1,10 @@
+2006-05-03  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Respect the variable
+	  dhcp:DHCLIENT_MODIFY_RESOLV_CONF, not
+	  config:MODIFY_RESOLV_CONF_DYNAMICALLY, when deciding whether or not
+	  to dynamically update /etc/resolv.conf.
+
 2006-05-02  Peter Jones  <pjones@redhat.com>
 
 	* vpn-daemons/vpnc/src/nm-vpnc-service.c: Allow rekeying.
