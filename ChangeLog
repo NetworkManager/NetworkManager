@@ -1,3 +1,9 @@
+2006-05-04  Ryan Lortie  <desrt@desrt.ca>
+
+	* gnome/applet/passphrase-dialog.c (update_button_cb): Get the SSID of
+	  the WirelessNetwork structure using the proper function instead of
+	  just casting it directly to (const char *) (gnome.org #336991)
+
 2006-05-03  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Respect the variable
