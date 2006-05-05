@@ -2,11 +2,11 @@
 
 	* src/NetworkManager.c: Set the umask to 0022 when daemonizing, in case
 	  root has a wacky default of its own (or, more common, a user has a
-	  bad umask and uses su/sudo to restart NetworkManager).  Anything other
-	  than 0022 does not do what we want with, for example, resolv.conf.  This
-	  problem is amplified by our judicious use of fopen(), which uses mode
-	  0666 -- implying that the only way to get the permissions we want is
-	  with a umask of 0022.
+	  bad umask and uses su/sudo to restart NetworkManager).  Anything
+	  other than 0022 does not do what we want with, for example,
+	  resolv.conf.  This problem is amplified by our judicious use of
+	  fopen(), which uses mode 0666 -- implying that the only way to get
+	  the permissions we want is with a umask of 0022.
 
 2006-05-05  Dan Williams  <dcbw@redhat.com>
 
