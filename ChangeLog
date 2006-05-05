@@ -1,3 +1,13 @@
+2006-05-05  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_set_wep_enc_key): convert to
+			nm_device_802_11_wireless_disable_encryption() since that's all
+			we use it for anymore; we don't ever set WEP keys ourselves.
+		- (real_deactivate_quickly): reset SSID and encryption keys
+		- (real_deactivate): move SSID and encryption key reset to
+			real_deactivate_quickly(), which gets run before us anyway
+
 2006-05-05  Robert Love  <rml@novell.com>
 
 	* src/NetworkManager.c: Set the umask to 0022 when daemonizing, in case

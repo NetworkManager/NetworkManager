@@ -129,9 +129,7 @@ static void		supplicant_cleanup (NMDevice80211Wireless *self);
 
 static void		remove_link_timeout (NMDevice80211Wireless *self);
 
-static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
-                                           const char *key,
-                                           int auth_method);
+static void		nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self);
 
 static void		nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
                                                      GObject *obj,
@@ -494,6 +492,10 @@ real_deactivate_quickly (NMDevice *dev)
 
 	supplicant_cleanup (self);
 	remove_link_timeout (self);
+
+	/* Clean up stuff, don't leave the card associated */
+	nm_device_802_11_wireless_set_essid (self, "");
+	nm_device_802_11_wireless_disable_encryption (self);
 }
 
 
@@ -506,9 +508,6 @@ real_deactivate (NMDevice *dev)
 	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
 
-	/* Clean up stuff, don't leave the card associated */
-	nm_device_802_11_wireless_set_essid (self, "");
-	nm_device_802_11_wireless_set_wep_enc_key (self, NULL, 0);
 	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
 	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 }
@@ -1641,91 +1640,36 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 
 
 /*
- * nm_device_set_wep_enc_key
+ * nm_device_802_11_wireless_disable_encryption
  *
- * If a device is wireless, set the encryption key that it should use.
+ * Clear any encryption keys the device may have set.
  *
- * key:	encryption key to use, or NULL or "" to disable encryption.
  */
 static void
-nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
-                                           const char *key,
-                                           int auth_method)
+nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self)
 {
+	const char * iface = nm_device_get_iface (NM_DEVICE (self));
 	NMSock *		sk;
-	struct iwreq	wreq;
-	int			keylen;
-	unsigned char	safe_key[IW_ENCODING_TOKEN_MAX + 1];
-	gboolean		set_key = FALSE;
-	const char *	iface;
 
 	g_return_if_fail (self != NULL);
 
-	/* Make sure the essid we get passed is a valid size */
-	if (!key)
-		safe_key[0] = '\0';
-	else
-	{
-		strncpy ((char *) safe_key, key, IW_ENCODING_TOKEN_MAX);
-		safe_key[IW_ENCODING_TOKEN_MAX] = '\0';
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-		wreq.u.data.pointer = (caddr_t) NULL;
-		wreq.u.data.length = 0;
-		wreq.u.data.flags = IW_ENCODE_ENABLED;
+     	struct iwreq	wreq = {
+			.u.data.pointer = (caddr_t) NULL,
+			.u.data.length = 0,
+			.u.data.flags = IW_ENCODE_DISABLED
+		};
 
-		/* Unfortunately, some drivers (Cisco) don't make a distinction between
-		 * Open System authentication mode and whether or not to use WEP.  You
-		 * DON'T have to use WEP when using Open System, but these cards force
-		 * it.  Therefore, we have to set Open System mode when using WEP.
-		 */
-
-		if (strlen ((char *) safe_key) == 0)
-		{
-			wreq.u.data.flags |= IW_ENCODE_DISABLED | IW_ENCODE_NOKEY;
-			set_key = TRUE;
-		}
-		else
-		{
-			unsigned char		parsed_key[IW_ENCODING_TOKEN_MAX + 1];
-
-			keylen = iw_in_key_full (nm_dev_sock_get_fd (sk), iface,
-						(char *) safe_key, &parsed_key[0], &wreq.u.data.flags);
-			if (keylen > 0)
-			{
-				switch (auth_method)
-				{
-					case IW_AUTH_ALG_OPEN_SYSTEM:
-						wreq.u.data.flags |= IW_ENCODE_OPEN;
-						break;
-					case IW_AUTH_ALG_SHARED_KEY:
-						wreq.u.data.flags |= IW_ENCODE_RESTRICTED;
-						break;
-					default:
-						wreq.u.data.flags |= IW_ENCODE_RESTRICTED;
-						break;
-				}
-				wreq.u.data.pointer	=  (caddr_t) &parsed_key;
-				wreq.u.data.length	=  keylen;
-				set_key = TRUE;
-			}
-		}
-
-		if (set_key)
-		{
 #ifdef IOCTL_DEBUG
-			nm_info ("%s: About to SET IWENCODE.", iface);
+		nm_info ("%s: About to SET IWENCODE.", iface);
 #endif
-			if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWENCODE, &wreq) == -1)
+		if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWENCODE, &wreq) == -1)
+		{
+			if (errno != ENODEV)
 			{
-				if (errno != ENODEV)
-				{
-					nm_warning ("error setting key for device %s: %s",
-							iface, strerror (errno));
-				}
+				nm_warning ("error setting key for device %s: %s",
+						iface, strerror (errno));
 			}
 		}
 
