@@ -1,3 +1,10 @@
+2006-05-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c
+		- Don't suck CPU when dbus isn't around by scheduling idle handlers
+			to reconnect; instead wait a bit more with each reconnect attempt
+			up to a max of one minute.
+
 2006-05-04  Ryan Lortie  <desrt@desrt.ca>
 
 	* gnome/applet/passphrase-dialog.c (update_button_cb): Get the SSID of

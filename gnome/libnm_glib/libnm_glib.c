@@ -39,6 +39,7 @@ struct libnm_glib_ctx
 	GMainLoop *		g_main_loop;
 	DBusConnection	*	dbus_con;
 	guint			dbus_watcher;
+	guint			dbus_watch_interval;
 	gboolean			thread_done;
 	gboolean			thread_inited;
 
@@ -347,14 +348,29 @@ libnm_glib_dbus_watcher (gpointer user_data)
 
 	g_return_val_if_fail (ctx != NULL, FALSE);
 
+	ctx->dbus_watcher = 0;
+
 	if (!ctx->dbus_con)
 		ctx->dbus_con = libnm_glib_dbus_init ((gpointer)ctx, ctx->g_main_ctx);
 
 	if (ctx->dbus_con)
-		return (FALSE);	/* Don't reschedule ourselves if we have a connection to dbus */
+	{
+		/* Get NM's state right away after we reconnect */
+		libnm_glib_get_nm_state (ctx);
+		ctx->dbus_watch_interval = 1000;
+	}
+	else
+	{
+		/* Wait 3 seconds longer each time we fail to reconnect to dbus,
+		 * with a maximum wait of one minute.
+		 */
+		ctx->dbus_watch_interval = MIN(ctx->dbus_watch_interval + 3000, 60000); 
 
-	/* Reschule ourselves if we _still_ don't have a connection to dbus */
-	return (TRUE);
+		/* Reschule ourselves if we _still_ don't have a connection to dbus */
+		libnm_glib_schedule_dbus_watcher (ctx);
+	}
+
+	return FALSE;
 }
 
 
@@ -372,7 +388,7 @@ libnm_glib_schedule_dbus_watcher (libnm_glib_ctx *ctx)
 
 	if (ctx->dbus_watcher == 0)
 	{
-		GSource	*source = g_idle_source_new ();
+		GSource *	source = g_timeout_source_new (ctx->dbus_watch_interval);
 		g_source_set_callback (source, libnm_glib_dbus_watcher, (gpointer) ctx, NULL);
 		ctx->dbus_watcher = g_source_attach (source, ctx->g_main_ctx);
 		g_source_unref (source);
@@ -453,6 +469,7 @@ libnm_glib_ctx_new (void)
 		goto error;
 	if (!(ctx->callbacks_lock = g_mutex_new ()))
 		goto error;
+	ctx->dbus_watch_interval = 1000;
 
 	return ctx;
 
