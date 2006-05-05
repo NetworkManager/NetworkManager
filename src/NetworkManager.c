@@ -743,6 +743,13 @@ int main( int argc, char *argv[] )
 		write_pidfile (pidfile);
 	}
 
+	/*
+	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
+	 * Otherwise, if root (or an su'ing user) has a wacky umask, we could
+	 * write out an unreadable resolv.conf.
+	 */
+	umask (022);
+
 	g_type_init ();
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
