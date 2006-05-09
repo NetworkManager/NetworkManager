@@ -45,7 +45,6 @@ struct _NMGConfWSOWPA_EAPPrivate
 	const char *	identity;
 	const char *	passwd;
 	const char *	anon_identity;
-	const char *	private_key_passwd;
 	const char *	private_key_file;
 	const char *	client_cert_file;
 	const char *	ca_cert_file;
@@ -70,14 +69,16 @@ nm_gconf_wso_wpa_eap_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	g_return_val_if_fail (we_cipher == NM_AUTH_TYPE_WPA_EAP, NULL);
 	g_return_val_if_fail (iter != NULL, NULL);
 
-	if (!nmu_security_deserialize_wpa_eap (iter, &eap_method, &key_type, &identity, &passwd, &anon_identity, &private_key_passwd,
-								    &private_key_file, &client_cert_file, &ca_cert_file, &wpa_version))
+	if (!nmu_security_deserialize_wpa_eap (iter, &eap_method, &key_type, &identity, &passwd,
+								    &anon_identity, &private_key_passwd, &private_key_file,
+								    &client_cert_file, &ca_cert_file, &wpa_version))
 		goto out;
 
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_GCONF_WSO_WPA_EAP, NULL);
 	nm_gconf_wso_set_we_cipher (NM_GCONF_WSO (security), we_cipher);
-	nm_gconf_wso_set_key (NM_GCONF_WSO (security), "FIXME", 5);	/* FIXME: What to do about Enterprise keys? */
+	if (private_key_passwd)
+		nm_gconf_wso_set_key (NM_GCONF_WSO (security), private_key_passwd, strlen (private_key_passwd));
 	security->priv->wpa_version = wpa_version;
 	security->priv->eap_method = eap_method;
 	security->priv->key_type = key_type;
@@ -85,7 +86,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	security->priv->identity = g_strdup (identity);
 	security->priv->passwd = g_strdup (passwd);
 	security->priv->anon_identity = g_strdup (anon_identity);
-	security->priv->private_key_passwd = g_strdup (private_key_passwd);
 	security->priv->private_key_file = g_strdup (private_key_file);
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
@@ -102,7 +102,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	char *			identity = NULL;
 	char *			passwd = NULL;
 	char *			anon_identity = NULL;
-	char *			private_key_passwd = NULL;
 	char *			private_key_file = NULL;
 	char *			client_cert_file = NULL;
 	char *			ca_cert_file = NULL;
@@ -116,70 +115,64 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	g_return_val_if_fail ((we_cipher == NM_AUTH_TYPE_WPA_EAP), NULL);
 
 	nm_gconf_get_int_helper (client,
-							GCONF_PATH_WIRELESS_NETWORKS,
-							WPA_EAP_PREFIX"eap_method",
-							network,
-							&eap_method);
+						GCONF_PATH_WIRELESS_NETWORKS,
+						WPA_EAP_PREFIX"eap_method",
+						network,
+						&eap_method);
 
 	nm_gconf_get_int_helper (client,
-							GCONF_PATH_WIRELESS_NETWORKS,
-							WPA_EAP_PREFIX"key_type",
-							network,
-							&key_type);
+						GCONF_PATH_WIRELESS_NETWORKS,
+						WPA_EAP_PREFIX"key_type",
+						network,
+						&key_type);
 
 	nm_gconf_get_int_helper (client,
-							GCONF_PATH_WIRELESS_NETWORKS,
-							WPA_EAP_PREFIX"wpa_version",
-							network,
-							&wpa_version);
+						GCONF_PATH_WIRELESS_NETWORKS,
+						WPA_EAP_PREFIX"wpa_version",
+						network,
+						&wpa_version);
 
 	nm_gconf_get_int_helper (client,
-							GCONF_PATH_WIRELESS_NETWORKS,
-							WPA_EAP_PREFIX"key_mgt",
-							network,
-							&key_mgmt);
+						GCONF_PATH_WIRELESS_NETWORKS,
+						WPA_EAP_PREFIX"key_mgt",
+						network,
+						&key_mgmt);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"identity",
-							   network,
-							   &identity);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"identity",
+						   network,
+						   &identity);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"passwd",
-							   network,
-							   &passwd);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"passwd",
+						   network,
+						   &passwd);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"anon_identity",
-							   network,
-							   &anon_identity);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"anon_identity",
+						   network,
+						   &anon_identity);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"private_key_passwd",
-							   network,
-							   &private_key_passwd);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"private_key_file",
+						   network,
+						   &private_key_file);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"private_key_file",
-							   network,
-							   &private_key_file);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"client_cert_file",
+						   network,
+						   &client_cert_file);
 
 	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"client_cert_file",
-							   network,
-							   &client_cert_file);
-
-	nm_gconf_get_string_helper (client,
-							   GCONF_PATH_WIRELESS_NETWORKS,
-							   WPA_EAP_PREFIX"ca_cert_file",
-							   network,
-							   &ca_cert_file);
+						   GCONF_PATH_WIRELESS_NETWORKS,
+						   WPA_EAP_PREFIX"ca_cert_file",
+						   network,
+						   &ca_cert_file);
 
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_GCONF_WSO_WPA_EAP, NULL);
@@ -191,7 +184,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	security->priv->identity = g_strdup (identity);
 	security->priv->passwd = g_strdup (passwd);
 	security->priv->anon_identity = g_strdup (anon_identity);
-	security->priv->private_key_passwd = g_strdup (private_key_passwd);
 	security->priv->private_key_file = g_strdup (private_key_file);
 	security->priv->client_cert_file = g_strdup (client_cert_file);
 	security->priv->ca_cert_file = g_strdup (ca_cert_file);
@@ -199,7 +191,6 @@ nm_gconf_wso_wpa_eap_new_deserialize_gconf (GConfClient *client, const char *net
 	g_free (identity);
 	g_free (passwd);
 	g_free (anon_identity);
-	g_free (private_key_passwd);
 	g_free (private_key_file);
 	g_free (client_cert_file);
 	g_free (ca_cert_file);
@@ -219,7 +210,7 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 			self->priv->identity ? : "",
 			self->priv->passwd ? : "",
 			self->priv->anon_identity ? : "",
-			self->priv->private_key_passwd ? : "",
+			nm_gconf_wso_get_key (instance),
 			self->priv->private_key_file ? : "",
 			self->priv->client_cert_file ? : "",
 			self->priv->ca_cert_file ? : "",
@@ -260,10 +251,6 @@ real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *net
 
 	key = g_strdup_printf ("%s/%s/%sanon_identity", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
 	gconf_client_set_string (client, key, self->priv->anon_identity, NULL);
-	g_free (key);
-
-	key = g_strdup_printf ("%s/%s/%sprivate_key_passwd", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->private_key_passwd, NULL);
 	g_free (key);
 
 	key = g_strdup_printf ("%s/%s/%sprivate_key_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);

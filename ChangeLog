@@ -1,3 +1,9 @@
+2006-05-09  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Fix FIXME: Save the WPA EAP
+	  private certificate passphrase, if any, in the GNOME Keyring.
+	* libnm-utils/dbus-helpers.c: Update.
+
 2006-05-05  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
