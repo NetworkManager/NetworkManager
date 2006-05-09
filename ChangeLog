@@ -1,3 +1,9 @@
+2006-05-09  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Fix FIXME: Save the WPA EAP
+	  private certificate passphrase, if any, in the GNOME Keyring.
+	* libnm-utils/dbus-helpers.c: Update.
+
 2006-05-05  Robert Love  <rml@novell.com>
 
 	* src/NetworkManager.c: Set the umask to 0022 when daemonizing, in case
