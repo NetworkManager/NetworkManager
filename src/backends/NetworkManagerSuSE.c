@@ -616,7 +616,6 @@ found:
 					keyv = g_strsplit (key, "-", 0);
 					real_key = g_strjoinv (NULL, keyv);
 					g_strfreev (keyv);
-					free (key);
 				}
 				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104);
 			}
