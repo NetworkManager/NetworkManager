@@ -690,7 +690,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 			else if (link_to_specific_ap (self, cur_ap, TRUE))
 				keep = TRUE;
 
-			/* Only keep if its not in the invalid list and its _is_ in our scaned list */
+			/* Only keep if its not in the invalid list and its _is_ in our scanned list */
 			if ( keep
 				&& !nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid)
 				&& nm_device_802_11_wireless_ap_list_get_ap_by_essid (self, essid))
