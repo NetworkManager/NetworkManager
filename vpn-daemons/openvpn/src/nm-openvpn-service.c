@@ -50,16 +50,7 @@
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
 
-
-static const char *openvpn_binary_paths[] =
-{
-  "/usr/sbin/openvpn",
-  "/sbin/openvpn",
-  NULL
-};
-
 #define NM_OPENVPN_HELPER_PATH		BINDIR"/nm-openvpn-service-openvpn-helper"
-
 
 typedef struct _NmOpenVPN_IOData
 {
@@ -593,7 +584,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 				 )
 {
   GPid	        pid;
-  const char  **openvpn_binary = NULL;
+  const char   *openvpn_binary = NULL;
   GPtrArray    *openvpn_argv;
   GError       *error = NULL;
   GSource      *openvpn_watch;
@@ -606,7 +597,9 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
   char         *dev = NULL;
   char         *proto = NULL;
   char         *port = NULL;
-
+  char         *cipher = NULL;
+  char         *ta = NULL;
+  char         *ta_dir = NULL;
 
   g_return_val_if_fail (data != NULL, -1);
 
@@ -617,14 +610,8 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
   }
 
   /* Find openvpn */
-  openvpn_binary = openvpn_binary_paths;
-  while (*openvpn_binary != NULL) {
-    if (g_file_test (*openvpn_binary, G_FILE_TEST_EXISTS))
-      break;
-    openvpn_binary++;
-  }
-
-  if (!*openvpn_binary) {
+  openvpn_binary = nm_find_openvpn();
+  if (!openvpn_binary) {
     nm_info ("Could not find openvpn binary.");
     return -1;
   }
@@ -653,7 +640,7 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
   if ( data->connection_type != NM_OPENVPN_CONTYPE_INVALID ) {
 
     openvpn_argv = g_ptr_array_new ();
-    g_ptr_array_add (openvpn_argv, (gpointer) (*openvpn_binary));
+    g_ptr_array_add (openvpn_argv, (gpointer) (openvpn_binary));
 
     // Note that it should be guaranteed that num_items % 2 == 0
     // Add global arguments
@@ -670,6 +657,12 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 	proto = data_items[++i];
       } else if ( (strcmp( data_items[i], "port") == 0) ) {
 	port = data_items[++i];
+      } else if ( (strcmp( data_items[i], "cipher") == 0) ) {
+	cipher = data_items[++i];
+      } else if ( (strcmp( data_items[i], "ta") == 0) ) {
+	ta = data_items[++i];
+      } else if ( (strcmp( data_items[i], "ta-dir") == 0) ) {
+	ta_dir = data_items[++i];
       }
     }
     g_ptr_array_add (openvpn_argv, (gpointer) "--nobind");
@@ -702,6 +695,20 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
       // Versions prior to 0.3.2 didn't set this so we default to
       // IANA assigned port 1194
       g_ptr_array_add (openvpn_argv, (gpointer) "1194");
+    }
+
+    // Cipher
+    if (cipher != NULL) {
+      g_ptr_array_add (openvpn_argv, (gpointer) "--cipher");
+      g_ptr_array_add (openvpn_argv, (gpointer) cipher);
+    }
+
+    // TA
+    if (ta != NULL) {
+      g_ptr_array_add (openvpn_argv, (gpointer) "--tls-auth");
+      g_ptr_array_add (openvpn_argv, (gpointer) ta);
+      if (ta_dir != NULL)
+	g_ptr_array_add (openvpn_argv, (gpointer) ta_dir);
     }
 
     // Syslog
@@ -822,7 +829,6 @@ nm_openvpn_start_openvpn_binary (NmOpenVPNData *data,
 
     }
 
-
     g_ptr_array_add (openvpn_argv, NULL);
 
     if (!g_spawn_async_with_pipes (NULL, (char **) openvpn_argv->pdata, NULL,
@@ -918,6 +924,9 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
     { "remote-ip",			OPT_TYPE_ADDRESS },
     { "username",			OPT_TYPE_ASCII },
     { "connection-type",		OPT_TYPE_ASCII },
+    { "cipher",				OPT_TYPE_ASCII },
+    { "ta",				OPT_TYPE_ASCII },
+    { "ta-dir",				OPT_TYPE_ASCII },
     { NULL,				OPT_TYPE_UNKNOWN } };
   
   unsigned int	i;

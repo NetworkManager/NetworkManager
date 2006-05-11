@@ -1,3 +1,14 @@
+2006-05-11  Robert Love  <rml@novell.com>
+
+	Patch to add OpenVPN TLS and Cipher support, by Groug <groug@free.fr>:
+	* properties/nm-openvpn-dialog.glade: Add UI checkboxes.
+	* properties/nm-openvpn.c: New UI.
+	* src/nm-openvpn-service.c: Support "--tls-auth" and "--cipher"
+	  OpenVPN options.
+	* src/nm-utils.c: Add nm_find_openvpn(), exported function for finding
+	  the location of the OpenVPN binary.
+	* src/nm-utils.h: Add prototype.
+
 2006-05-01  Josep Puigdemont Casamajó  <josep.puigdemont@gmail.com>
 
 	* configure.in: Added "ca" to ALL_LINGUAS.

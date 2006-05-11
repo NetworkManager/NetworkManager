@@ -128,4 +128,25 @@ G_STMT_START								\
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
+static inline const char *nm_find_openvpn (void)
+{
+	static const char *openvpn_binary_paths[] =
+	{
+		"/usr/sbin/openvpn",
+		"/sbin/openvpn",
+		NULL
+	};
+
+	const char  **openvpn_binary = openvpn_binary_paths;
+
+	while (*openvpn_binary != NULL) {
+		if (g_file_test (*openvpn_binary, G_FILE_TEST_EXISTS))
+			break;
+		openvpn_binary++;
+	}
+
+	return *openvpn_binary;
+}
+
+
 #endif /* NM_UTILS_H */
