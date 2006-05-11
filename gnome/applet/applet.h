@@ -134,13 +134,13 @@ typedef struct
 
 typedef struct
 {
-	NMApplet *	applet;
+	NMApplet *		applet;
 	NetworkDevice *	dev;
 	GladeXML *		xml;
 } DriverNotifyCBData;
 
 NetworkDevice *	nma_get_device_for_nm_path			(GSList *dev_list, const char *nm_dev);
-NMApplet *	nma_new							(void);
+NMApplet *		nma_new							(void);
 void				nma_schedule_warning_dialog			(NMApplet *applet, const char *msg);
 gboolean			nma_driver_notify					(gpointer user_data);
 void				nma_show_vpn_failure_alert			(NMApplet *applet, const char *member, const char *vpn_name, const char *error_msg);

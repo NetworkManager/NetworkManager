@@ -281,7 +281,6 @@ NMDbusMethodList *nm_dbus_net_methods_setup (void)
 	NMDbusMethodList	*list = nm_dbus_method_list_new (nm_dbus_net_validate);
 
 	nm_dbus_method_list_add_method (list, "getProperties",		nm_dbus_net_get_properties);
-
 	nm_dbus_method_list_add_method (list, "getName",			nm_dbus_net_get_name);
 	nm_dbus_method_list_add_method (list, "getAddress",		nm_dbus_net_get_address);
 	nm_dbus_method_list_add_method (list, "getStrength",		nm_dbus_net_get_strength);
