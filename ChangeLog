@@ -1,3 +1,9 @@
+2006-05-11  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@teco.edu>
+	* src/backends/NetworkManagerDebian.c
+		- Debian backend fixups
+
 2006-05-10  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Fix double free (Novell #173442).
