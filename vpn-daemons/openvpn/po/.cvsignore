@@ -4,5 +4,9 @@ Makefile.in
 POTFILES
 da.gmo
 sv.gmo
+es.gmo
+fi.gmo
+pt_BR.gmo
+zh_CN.gmo
 *.pot
 stamp-it
