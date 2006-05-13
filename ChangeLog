@@ -1,3 +1,9 @@
+2006-05-13  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_get_generic_capabilities): Don't ignore devices that can't do
+			carrier detect (Debian bug #366373)
+
 2006-05-11  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@teco.edu>
