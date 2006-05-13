@@ -288,8 +288,7 @@ real_get_generic_capabilities (NMDevice *dev)
 	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
 		caps |= NM_DEVICE_CAP_CARRIER_DETECT;
 
-	if (caps)
-		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
+	caps |= NM_DEVICE_CAP_NM_SUPPORTED;
 
 	return caps;
 }
