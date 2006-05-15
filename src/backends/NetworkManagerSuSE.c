@@ -1251,7 +1251,7 @@ gboolean nm_system_should_modify_resolv_conf (void)
 	shvarFile *file;
 	gboolean ret = TRUE;
 
-	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/config");
+	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
 	file = svNewFile (name);
 	if (!file)
 		goto out_gfree;
