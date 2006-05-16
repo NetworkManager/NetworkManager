@@ -1089,8 +1089,7 @@ void nm_system_activate_nis (NMIP4Config *config)
 {
 	shvarFile *file;
 	const char *nis_domain;
-	char *name, *buf = NULL; 
-	int num_nis_servers = 0; 
+	char *name, *buf;
 	struct in_addr	temp_addr;
 	int i;
 	FILE *ypconf = NULL;
@@ -1117,11 +1116,14 @@ void nm_system_activate_nis (NMIP4Config *config)
 		goto out_close;
 
 	if (!strcmp (buf, "yes")) {
+		int num_nis_servers;
+
 		num_nis_servers = nm_ip4_config_get_num_nis_servers(config);
-		/* write out yp.conf and restart the daemon */
 		if (num_nis_servers > 0)
 		{
 			struct stat sb;
+
+			/* write out yp.conf and restart the daemon */
 
 			ypconf = fopen ("/etc/yp.conf", "w");
 
@@ -1166,19 +1168,41 @@ out_gfree:
  */
 void nm_system_shutdown_nis (void)
 {
-	struct stat sb;
+	char *name, *buf = NULL;
+	shvarFile *file;
 
-	if (stat ("/usr/sbin/rcypbind", &sb) != -1)
-	{
-		nm_info ("Stopping ypbind.");
-		nm_spawn_process ("/usr/sbin/rcypbind stop");
+	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
+	file = svNewFile (name);
+	if (!file)
+		goto out_gfree;
+
+	buf = svGetValue (file, "DHCLIENT_MODIFY_NIS_CONF");
+	if (!buf)
+		goto out_close;
+
+	if (!strcmp (buf, "yes")) {
+		struct stat sb;
+
+		if (stat ("/usr/sbin/rcypbind", &sb) != -1)
+		{
+			nm_info ("Stopping ypbind.");
+			nm_spawn_process ("/usr/sbin/rcypbind stop");
+		}
+
+		if (stat ("/usr/sbin/rcautofs", &sb) != -1)
+		{
+			nm_info ("Restarting autofs.");
+			nm_spawn_process ("/usr/sbin/rcautofs restart");
+		}
 	}
-	if (stat ("/usr/sbin/rcautofs", &sb) != -1)
-	{
-		nm_info ("Restarting autofs.");
-		nm_spawn_process ("/usr/sbin/rcautofs restart");
-	}
+
+	free (buf);
+out_close:
+	svCloseFile (file);
+out_gfree:
+	g_free (name);
 }
+
 
 /*
  * nm_system_set_hostname
