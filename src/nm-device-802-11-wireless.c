@@ -201,7 +201,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
  * current access point.
  *
  */
-void
+static void
 nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 {
 	NMData *		app_data;
