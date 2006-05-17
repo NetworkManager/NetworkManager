@@ -2,7 +2,6 @@
 
 	Functionality to automatically add BSSIDs to the allowed-MAC list as
 	one roams from access point to access point on a given network:
-	* gnome/applet/applet-dbus-info.c:
 	* src/NetworkManagerUtils.c: Add nm_ethernet_addresses_are_equal(),
 	  helper function to compare two ether_addr structures and return TRUE
 	  if they contain the same MAC address.
