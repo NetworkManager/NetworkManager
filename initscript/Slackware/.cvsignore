@@ -1,2 +1,4 @@
+rc.networkmanager
+rc.networkmanager-dispatcher
 Makefile
 Makefile.in
