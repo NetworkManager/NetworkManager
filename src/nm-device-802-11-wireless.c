@@ -155,18 +155,18 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 
 	g_return_if_fail (self != NULL);
 
-	/* Grab the scan lock since the current AP is meaningless during a scan. */
-	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
+	/* The current BSSID is pretty meaningless during a scan */
+	if (self->priv->scanning)
 		return;
 
 	/* If we aren't the active device with an active AP, there is no meaningful BSSID value */
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	if (!req)
-		goto out;
+		return;
 
 	ap = nm_act_request_get_ap (req);
 	if (!ap)
-		goto out;
+		return;
 
 	/* Get the current BSSID.  If it is valid but does not match the stored value, update it. */
 	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
@@ -191,9 +191,6 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 		g_assert (app_data);
 		nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
 	}
-
-out:
-	nm_unlock_mutex (self->priv->scan_mutex, __func__);
 }
 
 
