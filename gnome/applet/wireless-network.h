@@ -41,6 +41,9 @@ const char *		wireless_network_get_nm_path		(WirelessNetwork *net);
 int				wireless_network_get_capabilities	(WirelessNetwork *net);
 void				wireless_network_set_capabilities	(WirelessNetwork *net, int capabilities);
 
+int				wireless_network_get_mode		(WirelessNetwork *net);
+void				wireless_network_set_mode		(WirelessNetwork *net, int mode);
+
 gint8			wireless_network_get_strength		(WirelessNetwork *net);
 void				wireless_network_set_strength		(WirelessNetwork *net, gint8 strength);
 

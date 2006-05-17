@@ -1,5 +1,19 @@
 2006-05-17  Robert Love  <rml@novell.com>
 
+	Functionality to differentiate Ad-Hoc networks from infrastructure
+	networks in the applet, by displaying a special icon:
+	* gnome/applet/applet-dbus-devices.c: Set the mode for new networks.
+	* gnome/applet/applet.c: Pass 'applet' to network_menu_item_update().
+	* gnome/applet/menu-items.c: Set a special icon in the scan list for
+	  ad-hoc networks.  TODO: Add a third icon representing "encrypted and
+	  Ad-Hoc".  Right now, we display the same icon for all Ad-Hoc wireless
+	  networks, encrypted or not.
+	* gnome/applet/wireless-network.c, gnome/applet/wireless-network.h: New
+	  accessor functions to get and set the mode of a given network,
+	  wireless_network_get_mode() and wireless_network_set_mode().
+
+2006-05-17  Robert Love  <rml@novell.com>
+
 	Functionality to automatically add BSSIDs to the allowed-MAC list as
 	one roams from access point to access point on a given network:
 	* src/NetworkManagerUtils.c: Add nm_ethernet_addresses_are_equal(),

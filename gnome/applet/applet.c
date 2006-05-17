@@ -1585,6 +1585,7 @@ static void nma_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, g
 	AddNetworksCB *	cb_data = (AddNetworksCB *)user_data;
 	NMNetworkMenuItem *	item;
 	GtkCheckMenuItem *	gtk_item;
+	NMApplet *		applet;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (net != NULL);
@@ -1592,22 +1593,23 @@ static void nma_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, g
 	g_return_if_fail (cb_data->menu != NULL);
 	g_return_if_fail (cb_data->applet != NULL);
 
-	item = network_menu_item_new (cb_data->applet->encryption_size_group);
+	applet = cb_data->applet;
+	item = network_menu_item_new (applet->encryption_size_group);
 	gtk_item = network_menu_item_get_check_item (item);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (cb_data->menu), GTK_WIDGET (gtk_item));
-	if (   (cb_data->applet->nm_state == NM_STATE_CONNECTED)
-	    || (cb_data->applet->nm_state == NM_STATE_CONNECTING))
+	if (   (applet->nm_state == NM_STATE_CONNECTED)
+	    || (applet->nm_state == NM_STATE_CONNECTING))
 	{
 		if (network_device_get_active (dev) && wireless_network_get_active (net))
 			gtk_check_menu_item_set_active (gtk_item, TRUE);
 	}
-	network_menu_item_update (item, net, cb_data->has_encrypted);
+	network_menu_item_update (applet, item, net, cb_data->has_encrypted);
 
 	g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (wireless_network_get_essid (net)));
 	g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (dev)));
 	g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
-	g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nma_menu_item_activate), cb_data->applet);
+	g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nma_menu_item_activate), applet);
 
 	gtk_widget_show (GTK_WIDGET (gtk_item));
 }

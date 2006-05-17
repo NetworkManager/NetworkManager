@@ -41,7 +41,7 @@ void				 wireless_menu_item_update (NMWirelessMenuItem *item, NetworkDevice *dev
 
 NMNetworkMenuItem	*network_menu_item_new (GtkSizeGroup *encryption_size_group);
 GtkCheckMenuItem	*network_menu_item_get_check_item (NMNetworkMenuItem *item);
-void				 network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted);
+void				 network_menu_item_update (NMApplet *applet, NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted);
 
 /* Helper function; escapes an essid for human readable display. */
 char      		*nm_menu_network_escape_essid_for_display (const char *essid);
