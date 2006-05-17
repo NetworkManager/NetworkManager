@@ -120,8 +120,6 @@ int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
 gint8	nm_device_802_11_wireless_get_signal_strength (NMDevice80211Wireless *self);
 
-void		nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self);
-
 
 G_END_DECLS
 

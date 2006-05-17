@@ -955,7 +955,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	char *			essid = NULL;
 	gboolean			automatic;
 	NMGConfWSO *		gconf_wso = NULL;

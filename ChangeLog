@@ -1,7 +1,21 @@
+2006-05-17  Robert Love  <rml@novell.com>
+
+	Functionality to automatically add BSSIDs to the allowed-MAC list as
+	one roams from access point to access point on a given network:
+	* src/NetworkManagerUtils.c: Add nm_ethernet_addresses_are_equal(),
+	  helper function to compare two ether_addr structures and return TRUE
+	  if they contain the same MAC address.
+	* src/NetworkManagerUtils.h: Add nm_ethernet_addresses_are_equal()
+	  prototype.
+	* src/nm-device-802-11-wireless.c: New function to update the BSSID
+	  stored with the current AP.  If the BSSID has indeed changed, we
+	  send it out to the applet, allowing the allowed-MAC list to grow
+	  automatically in response to roaming.
+
 2006-05-16  Robert Love  <rml@novell.com>
 
-	* src/backends/NetworkManagerSuSE.c: Don't touch ypbind or autofs unless
-	  dhcp:DHCLIENT_MODIFY_NIS_CONF is set to "yes".
+	* src/backends/NetworkManagerSuSE.c: Don't touch ypbind or autofs
+	  unless dhcp:DHCLIENT_MODIFY_NIS_CONF is set to "yes".
 
 2006-05-13  Dan Williams  <dcbw@redhat.com>
 

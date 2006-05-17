@@ -214,7 +214,6 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection, NMActR
 }
 
 
-
 /*
  * nm_dbus_update_network_info
  *
