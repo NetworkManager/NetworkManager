@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <glib/gi18n.h>
 #include <string.h>
+#include <iwlib.h>
 
 #include "menu-items.h"
 #include "applet-dbus.h"
@@ -234,14 +235,16 @@ GtkCheckMenuItem *network_menu_item_get_check_item (NMNetworkMenuItem *item)
 }
 
 
-/* has_encrypted means that the wireless network has an encrypted
+/* is_encrypted means that the wireless network has an encrypted
  * area, and thus we need to allow for spacing.
  */
-void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network, const gboolean is_encrypted)
+void network_menu_item_update (NMApplet *applet, NMNetworkMenuItem *item,
+						 WirelessNetwork *network, const gboolean is_encrypted)
 {
 	char *	display_essid;
 	gdouble	percent;
-	int		capabilities;
+	gboolean	encrypted = FALSE;
+	gboolean	adhoc = FALSE;
 
 	g_return_if_fail (item != NULL);
 	g_return_if_fail (network != NULL);
@@ -256,10 +259,22 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 	/* Deal with the encrypted icon */
 	g_object_set (item->security_image, "visible", is_encrypted, NULL);
 
-	capabilities = wireless_network_get_capabilities (network);
-	if (    (capabilities & NM_802_11_CAP_PROTO_WEP)
-		|| (capabilities & NM_802_11_CAP_PROTO_WPA)
-		|| (capabilities & NM_802_11_CAP_PROTO_WPA2))
+	if (wireless_network_get_capabilities (network) & (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_PROTO_WPA | NM_802_11_CAP_PROTO_WPA2))
+		encrypted = TRUE;
+
+	if (wireless_network_get_mode (network) == IW_MODE_ADHOC)
+		adhoc = TRUE;
+
+	/*
+	 * Set a special icon for special circumstances: encrypted or ad-hoc.
+	 *
+	 * FIXME: We do not currently differentiate between encrypted and non-encrypted Ad-Hoc
+	 *        networks; they all receive the same icon.  Ideally, we should have a third icon
+	 *        type for encrypted Ad-Hoc networks.
+	 */
+	if (adhoc)
+		gtk_image_set_from_pixbuf (GTK_IMAGE (item->security_image), applet->adhoc_icon);
+	else if (encrypted)
 	{
 		/*
 		 * We want to use "network-wireless-encrypted," which was recently added to the icon spec,
@@ -267,7 +282,12 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 		 *
 		 * XXX: Would be nice to require gtk-2.6.  For now, we have an ugly and a simple version.
 		 */
-#if (GTK_MAJOR_VERSION <= 2 && GTK_MINOR_VERSION < 6)
+#if GTK_CHECK_VERSION(2,6,0)
+		if (gtk_icon_theme_has_icon (gtk_icon_theme_get_default (), "network-wireless-encrypted"))
+			gtk_image_set_from_icon_name (GTK_IMAGE (item->security_image), "network-wireless-encrypted", GTK_ICON_SIZE_MENU);
+		else
+			gtk_image_set_from_icon_name (GTK_IMAGE (item->security_image), "gnome-lockscreen", GTK_ICON_SIZE_MENU);
+# else
 		GdkPixbuf *pixbuf;
 		GtkIconTheme *icon_theme;
 
@@ -276,18 +296,11 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 		if (!pixbuf)
 			pixbuf = gtk_icon_theme_load_icon (icon_theme, "gnome-lockscreen", GTK_ICON_SIZE_MENU, 0, NULL);
 		gtk_image_set_from_pixbuf (GTK_IMAGE (item->security_image), pixbuf);
-# else
-		if (gtk_icon_theme_has_icon (gtk_icon_theme_get_default (), "network-wireless-encrypted"))
-			gtk_image_set_from_icon_name (GTK_IMAGE (item->security_image), "network-wireless-encrypted", GTK_ICON_SIZE_MENU);
-		else
-			gtk_image_set_from_icon_name (GTK_IMAGE (item->security_image), "gnome-lockscreen", GTK_ICON_SIZE_MENU);
 #endif
 	}
-	else
+	else	/* neither encrypted nor Ad-Hoc */
 		gtk_image_set_from_stock (GTK_IMAGE (item->security_image), NULL, GTK_ICON_SIZE_MENU);
 }
-
-
 
 
 /****************************************************************
@@ -299,34 +312,34 @@ void network_menu_item_update (NMNetworkMenuItem *item, WirelessNetwork *network
 static char *eel_make_valid_utf8 (const char *name)
 {
 	GString *string;
-	const char *remainder, *invalid;
+	const char *rem, *invalid;
 	int remaining_bytes, valid_bytes;
 
 	string = NULL;
-	remainder = name;
+	rem = name;
 	remaining_bytes = strlen (name);
 
 	while (remaining_bytes != 0) {
-		if (g_utf8_validate (remainder, remaining_bytes, &invalid)) {
+		if (g_utf8_validate (rem, remaining_bytes, &invalid)) {
 			break;
 		}
-		valid_bytes = invalid - remainder;
+		valid_bytes = invalid - rem;
 
 		if (string == NULL) {
 			string = g_string_sized_new (remaining_bytes);
 		}
-		g_string_append_len (string, remainder, valid_bytes);
+		g_string_append_len (string, rem, valid_bytes);
 		g_string_append_c (string, '?');
 
 		remaining_bytes -= valid_bytes + 1;
-		remainder = invalid + 1;
+		rem = invalid + 1;
 	}
 
 	if (string == NULL) {
 		return g_strdup (name);
 	}
 
-	g_string_append (string, remainder);
+	g_string_append (string, rem);
 	g_string_append (string, _(" (invalid Unicode)"));
 	g_assert (g_utf8_validate (string->str, -1, NULL));
 

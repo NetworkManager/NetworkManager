@@ -106,7 +106,7 @@ void nma_dbus_update_nm_state (NMApplet *applet)
 
 typedef struct DriverCBData
 {
-	NMApplet *	applet;
+	NMApplet *		applet;
 	NetworkDevice *	dev;
 } DriverCBData;
 
@@ -120,7 +120,7 @@ typedef struct DriverCBData
 static void nma_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_data)
 {
 	DBusMessage *		reply;
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	DriverCBData *		data = (DriverCBData *) user_data;
 	const char *		driver;
 
@@ -166,7 +166,7 @@ out:
 /*
  * nma_dbus_device_get_driver
  *
- * Get the a device's driver name
+ * Get the device's driver name
  *
  */
 static void nma_dbus_device_get_driver (NetworkDevice *dev, NMApplet *applet)
@@ -607,6 +607,7 @@ static void nma_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 				network_device_remove_wireless_network (dev, tmp_net);
 			}
 
+			wireless_network_set_mode (net, mode);
 			wireless_network_set_capabilities (net, capabilities);
 			wireless_network_set_strength (net, strength);
 			if (act_net && strlen (act_net) && (strcmp (act_net, op) == 0))
