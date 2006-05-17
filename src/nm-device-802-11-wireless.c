@@ -134,6 +134,140 @@ static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *s
                                            const char *key,
                                            int auth_method);
 
+
+/*
+ * nm_device_802_11_wireless_update_bssid
+ *
+ * Update the current wireless network's BSSID, presumably in response to
+ * roaming.
+ *
+ */
+static void
+nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
+{
+	NMAccessPoint *		ap;
+	NMActRequest *			req;
+	struct ether_addr		new_bssid;
+	const struct ether_addr	*old_bssid;
+
+	g_return_if_fail (self != NULL);
+
+	/* Grab the scan lock since the current AP is meaningless during a scan. */
+	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
+		return;
+
+	/* If we aren't the active device with an active AP, there is no meaningful BSSID value */
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (!req)
+		goto out;
+
+	ap = nm_act_request_get_ap (req);
+	if (!ap)
+		goto out;
+
+	/* Get the current BSSID.  If it is valid but does not match the stored value, update it. */
+	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
+	old_bssid = nm_ap_get_address (ap);
+	if (nm_ethernet_address_is_valid (&new_bssid) && !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid))
+	{
+		NMData *	app_data;
+		gboolean	automatic;
+		gchar	new_addr[20];
+		gchar	old_addr[20];
+
+		memset (new_addr, '\0', sizeof (new_addr));
+		memset (old_addr, '\0', sizeof (old_addr));
+		iw_ether_ntop (&new_bssid, new_addr);
+		iw_ether_ntop (old_bssid, old_addr);
+		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'", old_addr, new_addr, nm_ap_get_essid (ap));
+
+		nm_ap_set_address (ap, &new_bssid);
+
+		automatic = !nm_act_request_get_user_requested (req);
+		app_data = nm_device_get_app_data (NM_DEVICE (self));
+		g_assert (app_data);
+		nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
+	}
+
+out:
+	nm_unlock_mutex (self->priv->scan_mutex, __func__);
+}
+
+
+/*
+ * nm_device_802_11_wireless_update_signal_strength
+ *
+ * Update the device's idea of the strength of its connection to the
+ * current access point.
+ *
+ */
+static void
+nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
+{
+	NMData *		app_data;
+	gboolean		has_range = FALSE;
+	NMSock *		sk;
+	iwrange		range;
+	iwstats		stats;
+	int			percent = -1;
+
+	g_return_if_fail (self != NULL);
+
+	app_data = nm_device_get_app_data (NM_DEVICE (self));
+	g_assert (app_data);
+
+	/* Grab the scan lock since our strength is meaningless during a scan. */
+	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
+		return;
+
+	/* If we aren't the active device, we don't really have a signal strength
+	 * that would mean anything.
+	 */
+	if (!nm_device_get_act_request (NM_DEVICE (self)))
+	{
+		self->priv->strength = -1;
+		goto out;
+	}
+
+	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		const char *iface = nm_device_get_iface (NM_DEVICE (self));
+
+		memset (&range, 0, sizeof (iwrange));
+		memset (&stats, 0, sizeof (iwstats));
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET 'iwrange'.", iface);
+#endif
+		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range) >= 0);
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET 'iwstats'.", iface);
+#endif
+		if (iw_get_stats (nm_dev_sock_get_fd (sk), iface, &stats, &range, has_range) == 0)
+		{
+			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
+					(const iwqual *)(&self->priv->avg_qual));
+		}
+		nm_dev_sock_close (sk);
+	}
+
+	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
+	 * one second and normal strength the next.
+	 */
+	if ((percent == -1) && (++self->priv->invalid_strength_counter <= 3))
+		percent = self->priv->strength;
+	else
+		self->priv->invalid_strength_counter = 0;
+
+	if (percent != self->priv->strength)
+		nm_dbus_signal_device_strength_change (app_data->dbus_connection, self, percent);
+
+	self->priv->strength = percent;
+
+out:
+	nm_unlock_mutex (self->priv->scan_mutex, __func__);
+}
+
+
 static guint nm_wireless_scan_interval_to_seconds (NMWirelessScanInterval interval)
 {
 	guint seconds;
@@ -336,6 +470,7 @@ nm_device_802_11_periodic_update (gpointer data)
 	g_return_val_if_fail (self != NULL, TRUE);
 
 	nm_device_802_11_wireless_update_signal_strength (self);
+	nm_device_802_11_wireless_update_bssid (self);
 
 	return TRUE;
 }
@@ -1119,80 +1254,6 @@ max_qual->updated);
 
 
 /*
- * nm_device_802_11_wireless_update_signal_strength
- *
- * Update the device's idea of the strength of its connection to the
- * current access point.
- *
- */
-void
-nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
-{
-	NMData *		app_data;
-	gboolean		has_range = FALSE;
-	NMSock *		sk;
-	iwrange		range;
-	iwstats		stats;
-	int			percent = -1;
-
-	g_return_if_fail (self != NULL);
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
-
-	/* Grab the scan lock since our strength is meaningless during a scan. */
-	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
-		return;
-
-	/* If we aren't the active device, we don't really have a signal strength
-	 * that would mean anything.
-	 */
-	if (!nm_device_get_act_request (NM_DEVICE (self)))
-	{
-		self->priv->strength = -1;
-		goto out;
-	}
-
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		const char *iface = nm_device_get_iface (NM_DEVICE (self));
-
-		memset (&range, 0, sizeof (iwrange));
-		memset (&stats, 0, sizeof (iwstats));
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET 'iwrange'.", iface);
-#endif
-		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range) >= 0);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET 'iwstats'.", iface);
-#endif
-		if (iw_get_stats (nm_dev_sock_get_fd (sk), iface, &stats, &range, has_range) == 0)
-		{
-			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
-					(const iwqual *)(&self->priv->avg_qual));
-		}
-		nm_dev_sock_close (sk);
-	}
-
-	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
-	 * one second and normal strength the next.
-	 */
-	if ((percent == -1) && (++self->priv->invalid_strength_counter <= 3))
-		percent = self->priv->strength;
-	else
-		self->priv->invalid_strength_counter = 0;
-
-	if (percent != self->priv->strength)
-		nm_dbus_signal_device_strength_change (app_data->dbus_connection, self, percent);
-
-	self->priv->strength = percent;
-
-out:
-	nm_unlock_mutex (self->priv->scan_mutex, __func__);
-}
-
-
-/*
  * nm_device_get_essid
  *
  * If a device is wireless, return the essid that it is attempting
@@ -1512,7 +1573,7 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWAP.", iface);
+		nm_info ("%s: About to GET IWAP.", iface);
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
 			memcpy (bssid, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));

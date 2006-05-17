@@ -333,7 +333,7 @@ int nm_null_safe_strcmp (const char *s1, const char *s2)
 /*
  * nm_ethernet_address_is_valid
  *
- * Compares an ethernet address against known invalid addresses.
+ * Compares an Ethernet address against known invalid addresses.
  *
  */
 gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
@@ -355,6 +355,19 @@ gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 		valid = TRUE;
 
 	return (valid);
+}
+
+
+/*
+ * nm_ethernet_addresses_are_equal
+ *
+ * Compare two Ethernet addresses and return TRUE if equal and FALSE if not.
+ */
+gboolean nm_ethernet_addresses_are_equal (const struct ether_addr *a, const struct ether_addr *b)
+{
+	if (memcmp (a, b, sizeof (struct ether_addr)))
+		return FALSE;
+	return TRUE;
 }
 
 
