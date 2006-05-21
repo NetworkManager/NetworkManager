@@ -1,5 +1,11 @@
 2006-05-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-vpnc-service.c
+		- Better rekey patch; honor user-specified interval but default
+			to 2 hours if unspecified
+
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
     * configure.in: bump version to 0.7.0 to match NM HEAD
 
 2006-04-10  Robert Love  <rml@novell.com>
