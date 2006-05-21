@@ -1,5 +1,10 @@
 2006-05-21  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+		- Bump version to 0.7 to signify we are in 0.7 development
+
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Adam Schreiber <sadam@clemson.edu>
 	* gnome/vpn-properties/nm-vpn-properties.c
 		- (main): correct Gnome program name  (gnome.org #342498)
