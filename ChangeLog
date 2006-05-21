@@ -1,5 +1,11 @@
 2006-05-21  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Adam Schreiber <sadam@clemson.edu>
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- (main): correct Gnome program name  (gnome.org #342498)
+
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
 	Fix gnome.org #330832 based on patch from Crispin Flowerday <crispin@gnome.org>
 
 	* src/NetworkManagerDbus.[ch]

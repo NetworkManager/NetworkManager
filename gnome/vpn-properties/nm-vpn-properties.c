@@ -1111,7 +1111,7 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	gnome_program_init (GETTEXT_PACKAGE, VERSION, LIBGNOMEUI_MODULE, argc, argv,
+	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
 			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 
 	glade_gnome_init ();
