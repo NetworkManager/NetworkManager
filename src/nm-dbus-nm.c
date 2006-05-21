@@ -228,7 +228,6 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path;
-	char *			unescaped_dev_path = NULL;
 	NMAccessPoint *	ap = NULL;
 	DBusMessageIter	iter;
 
@@ -247,9 +246,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	}
 
 	dbus_message_iter_get_basic (&iter, &dev_path);
-	unescaped_dev_path = nm_dbus_unescape_object_path (dev_path);
-	dev = nm_dbus_get_device_from_object_path (data->data, unescaped_dev_path);
-	g_free (unescaped_dev_path);
+	dev = nm_dbus_get_device_from_escaped_object_path (data->data, dev_path);
 
 	/* Ensure the device exists in our list and is supported */
 	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
@@ -332,7 +329,6 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
 	char *			dev_path = NULL;
-	char *			unescaped_dev_path = NULL;
 	NMAccessPoint *	new_ap = NULL;
 	NMAPSecurity * 	security = NULL;
 	char *			essid = NULL;
@@ -352,9 +348,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	}
 
 	dbus_message_iter_get_basic (&iter, &dev_path);
-	unescaped_dev_path = nm_dbus_unescape_object_path (dev_path);
-	dev = nm_dbus_get_device_from_object_path (data->data, unescaped_dev_path);
-	g_free (unescaped_dev_path);
+	dev = nm_dbus_get_device_from_escaped_object_path (data->data, dev_path);
 
 	/* Ensure the device exists in our list and is supported */
 	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
@@ -452,9 +446,7 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 	{
 		NMDevice	*dev;
 
-		dev_path = nm_dbus_unescape_object_path (dev_path);
-
-		if ((dev = nm_dbus_get_device_from_object_path (data->data, dev_path)))
+		if ((dev = nm_dbus_get_device_from_escaped_object_path (data->data, dev_path)))
 		{
 			if (nm_device_is_test_device (dev))
 				nm_remove_device (data->data, dev);
@@ -467,8 +459,6 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
 							"The requested network device does not exist.");
 		}
-
-		g_free (dev_path);
 	}
 	else
 	{

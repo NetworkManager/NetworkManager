@@ -1,3 +1,14 @@
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
+	Fix gnome.org #330832 based on patch from Crispin Flowerday <crispin@gnome.org>
+
+	* src/NetworkManagerDbus.[ch]
+		- nm_dbus_get_device_from_object_path -> nm_dbus_get_device_from_escaped_object_path:
+			clarify that function's argument should be an escaped dbus object
+			path, and look for path segment end before returning a match
+	* src/nm-dbus-nm.c:
+		- Fix up users of nm_dbus_get_device_from_escaped_object_path()
+
 2006-05-17  Robert Love  <rml@novell.com>
 
 	Functionality to differentiate Ad-Hoc networks from infrastructure

@@ -119,52 +119,50 @@ char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
 
 
 /*
- * nm_dbus_get_device_from_object_path
+ * nm_dbus_get_device_from_escaped_object_path
  *
- * Returns the device associated with a dbus object path
+ * Returns the device associated with an _escaped_ dbus object path
  *
  */
-NMDevice *nm_dbus_get_device_from_object_path (NMData *data, const char *path)
+NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char *path)
 {
-	NMDevice	*dev = NULL;
+	NMDevice *dev = NULL;
+	GSList *	elt;
 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 
-	/* FIXME
-	 * This function could be much more efficient, for example we could
-	 * actually _parse_ the object path, but that's a lot more code and
-	 * stupid stuff.  The approach below is slower, less efficient, but
-	 * less code and less error-prone.
-	 */
+	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+		return NULL;
 
-	/* Iterate over device list */
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
+	/* Iterate over the device list looking for the device with the matching object path. */
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 	{
-		GSList	*elt;
-		char		 compare_path[100];
-		char    *escaped_compare_path;
+		char *compare_path;
+		char *escaped_compare_path;
+		int len;
 
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt))
+		if (!(dev = (NMDevice *)(elt->data)))
+			continue;
+
+		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
+		g_free (compare_path);
+		len = strlen (escaped_compare_path);
+
+		/* Compare against our constructed path, but ignore any trailing elements */
+		if (    (strncmp (path, escaped_compare_path, len) == 0)
+			&& ((path[len] == '\0' || path[len] == '/')))
 		{
-			if ((dev = (NMDevice *)(elt->data)))
-			{
-				snprintf (compare_path, 100, "%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-				escaped_compare_path = nm_dbus_escape_object_path (compare_path);
-				/* Compare against our constructed path, but ignore any trailing elements */
-				if (strncmp (path, compare_path, strlen (escaped_compare_path)) == 0)
-				{
-					g_free (escaped_compare_path);
-					break;
-				}
-				g_free (escaped_compare_path);
-				dev = NULL;
-			}
+			g_free (escaped_compare_path);
+			break;
 		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+		g_free (escaped_compare_path);
+		dev = NULL;
 	}
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
-	return (dev);
+	return dev;
 }
 
 
@@ -617,7 +615,7 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 
 	path = dbus_message_get_path (message);
 
-	if (!(dev = nm_dbus_get_device_from_object_path (data, path)))
+	if (!(dev = nm_dbus_get_device_from_escaped_object_path (data, path)))
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound", "The requested network device does not exist.");
 	else
 	{
