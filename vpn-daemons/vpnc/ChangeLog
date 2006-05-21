@@ -1,6 +1,6 @@
-2006-05-15  Dan Williams  <dcbw@redhat.com>
+2006-05-21  Dan Williams  <dcbw@redhat.com>
 
-    * configure.in: bump version to 0.6.2 for release
+    * configure.in: bump version to 0.7.0 to match NM HEAD
 
 2006-04-10  Robert Love  <rml@novell.com>
 
