@@ -36,6 +36,15 @@ start()
 {
 	echo $"Setting network parameters... "
 	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
+
+	if [ ! -e /var/lock/subsys/dhcdbd ]; then
+		service dhcdbd start
+	fi
+
+	if [ ! -e /var/lock/subsys/named ]; then
+		service named start
+	fi
+
 	echo -n $"Starting NetworkManager daemon: "
 	daemon --check $servicename $processname --pid-file=$pidfile
 	RETVAL=$?
