@@ -1,5 +1,13 @@
 2006-05-22  Robert Love  <rml@novell.com>
 
+	* src/nm-device-802-11-wireless.c: Don't chain up to the parent's
+	  stage4_timeout on failure unless the wireless network is Ad-Hoc.
+	  99% of the time there is a real problem with wireless, and a
+	  seemingly successful connection via Zeroconf just confuses the user.
+	  And that 1% of the time the network is probably Ad-Hoc, anyhow.
+
+2006-05-22  Robert Love  <rml@novell.com>
+
 	* src/backends/NetworkManagerSuSE.c: Reload, do not restart, ypbind and
 	  autofs on interface up if NIS is configured.  On interface down, do
 	  nothing.
