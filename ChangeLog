@@ -1,3 +1,13 @@
+2006-05-22  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Zero out the icon pointers before we set them,
+	  to avoid calling g_object_unref() on stale pointers on error in
+	  nma_icons_free().  This happens because we short-circuit loaded the
+	  icons on the first failure but then free all icons.  Normally we have
+	  no issue because the icons were zero'ed out malloc, but we have stale
+	  pointer data after nma_icon_theme_changed().
+	* gnome/applet/main.c: Return error code if nma_new() failed.
+
 2006-05-21  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Adam Schreiber <sadam@clemson.edu>

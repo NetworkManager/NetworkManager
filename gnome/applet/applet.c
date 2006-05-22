@@ -2548,7 +2548,7 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 
 static void nma_icons_free (NMApplet *applet)
 {
-	gint i,j;
+	int i;
 
 	g_object_unref (applet->no_connection_icon);
 	g_object_unref (applet->wired_icon);
@@ -2562,17 +2562,49 @@ static void nma_icons_free (NMApplet *applet)
 	g_object_unref (applet->wireless_100_icon);
 
 	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
+	{
+		int j;
+
 		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
 			g_object_unref (applet->network_connecting_icons[i][j]);
+	}
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->vpn_connecting_icons[i]);
 }
 
+static void nma_icons_zero (NMApplet *applet)
+{
+	int i;
+
+	applet->no_connection_icon = NULL;
+	applet->wired_icon = NULL;
+	applet->adhoc_icon = NULL;
+	applet->vpn_lock_icon = NULL;
+
+	applet->wireless_00_icon = NULL;
+	applet->wireless_25_icon = NULL;
+	applet->wireless_50_icon = NULL;
+	applet->wireless_75_icon = NULL;
+	applet->wireless_100_icon = NULL;
+
+	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
+	{
+		int j;
+
+		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
+			applet->network_connecting_icons[i][j] = NULL;
+	}
+
+	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
+		applet->vpn_connecting_icons[i] = NULL;
+
+}
+
 #define ICON_LOAD(x, y)	\
 	{		\
 		GError *err = NULL; \
-		x = gtk_icon_theme_load_icon (icon_theme, y, icon_size, 0, &err); \
+		x = gtk_icon_theme_load_icon (icon_theme, y, 22, 0, &err); \
 		if (x == NULL) { \
 			success = FALSE; \
 			g_warning ("Icon %s missing: %s", y, err->message); \
@@ -2584,12 +2616,14 @@ static void nma_icons_free (NMApplet *applet)
 static gboolean
 nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 {
-	char *	name;
-	int		i, j;
-	gboolean	success = FALSE;
+	int		i;
+	gboolean	success;
 
-	/* Assume icons are square */
-	gint icon_size = 22;
+	/*
+	 * NULL out the icons, so if we error and call nma_icons_free(), we don't hit stale
+	 * data on the not-yet-reached icons.  This can happen off nma_icon_theme_changed().
+	 */
+	nma_icons_zero (applet);
 
 	ICON_LOAD(applet->no_connection_icon, "nm-no-connection");
 	ICON_LOAD(applet->wired_icon, "nm-device-wired");
@@ -2604,8 +2638,12 @@ nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 
 	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
 	{
+		int j;
+
 		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
 		{
+			char *name;
+
 			name = g_strdup_printf ("nm-stage%02d-connecting%02d", i+1, j+1);
 			ICON_LOAD(applet->network_connecting_icons[i][j], name);
 			g_free (name);
@@ -2614,6 +2652,8 @@ nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 	{
+		char *name;
+
 		name = g_strdup_printf ("nm-vpn-connecting%02d", i+1);
 		ICON_LOAD(applet->vpn_connecting_icons[i], name);
 		g_free (name);
