@@ -2979,16 +2979,22 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
-	else
+	else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
 	{
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
 
-		/* Chain up to parent */
+		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage4_ip_config_timeout (dev, req, &real_config);
 	}
+	else
+	{
+		/* Non-encrypted network and IP configure failed.  Alert the user. */
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	*config = real_config;
 
 	return ret;
