@@ -1142,12 +1142,12 @@ void nm_system_activate_nis (NMIP4Config *config)
 			if (stat ("/usr/sbin/rcypbind", &sb) != -1)
 			{
 				nm_info ("Restarting ypbind.");
-				nm_spawn_process ("/usr/sbin/rcypbind restart");
+				nm_spawn_process ("/usr/sbin/rcypbind reload");
 			}
 			if (stat ("/usr/sbin/rcautofs", &sb) != -1)
 			{
 				nm_info ("Restarting autofs.");
-				nm_spawn_process ("/usr/sbin/rcautofs restart");
+				nm_spawn_process ("/usr/sbin/rcautofs reload");
 			}
 		}
 	}
@@ -1168,6 +1168,7 @@ out_gfree:
  */
 void nm_system_shutdown_nis (void)
 {
+#if 0	/* XXX: let's not touch NIS, for now; probably need to make this a configurable option */
 	char *name, *buf = NULL;
 	shvarFile *file;
 
@@ -1201,6 +1202,7 @@ out_close:
 	svCloseFile (file);
 out_gfree:
 	g_free (name);
+#endif
 }
 
 

@@ -1,5 +1,11 @@
 2006-05-22  Robert Love  <rml@novell.com>
 
+	* src/backends/NetworkManagerSuSE.c: Reload, do not restart, ypbind and
+	  autofs on interface up if NIS is configured.  On interface down, do
+	  nothing.
+
+2006-05-22  Robert Love  <rml@novell.com>
+
 	* gnome/applet/applet.c: Zero out the icon pointers before we set them,
 	  to avoid calling g_object_unref() on stale pointers on error in
 	  nma_icons_free().  This happens because we short-circuit loaded the
