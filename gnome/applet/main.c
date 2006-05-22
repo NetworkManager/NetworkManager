@@ -22,7 +22,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+# include <config.h>
 #endif
 
 #include <string.h>
@@ -37,15 +37,10 @@ static void session_die (GnomeClient *client, gpointer client_data)
         gtk_main_quit ();
 }
 
-static gboolean session_save (GnomeClient *client, gpointer client_data)
-{
-        return TRUE;
-}
-
 int main (int argc, char *argv[])
 {
 	NMApplet *	nma;
-	GnomeClient *	client = NULL;
+	GnomeClient *	client;
 
 	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
@@ -54,18 +49,19 @@ int main (int argc, char *argv[])
     	client = gnome_master_client ();
     	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
-    	g_signal_connect (client, "save_yourself", G_CALLBACK (session_save), NULL);
+    	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
     	g_signal_connect (client, "die", G_CALLBACK (session_die), NULL);
 
 	bindtextdomain (GETTEXT_PACKAGE, NULL);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	if ((nma = nma_new ()))
-	{
-		gtk_widget_show_all (GTK_WIDGET (nma));
-		gtk_main ();
-	}
+	nma = nma_new ();
+	if (!nma)
+		exit (EXIT_FAILURE);
+
+	gtk_widget_show_all (GTK_WIDGET (nma));
+	gtk_main ();
 
 	return 0;
 }
