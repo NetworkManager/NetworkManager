@@ -1086,7 +1086,7 @@ main (int argc, char *argv[])
 			{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
 	};
 
-	bindtextdomain (GETTEXT_PACKAGE, NULL);
+	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
