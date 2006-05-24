@@ -20,7 +20,6 @@
  */
 
 #include <config.h>
-#include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,7 +28,7 @@
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
-#include <glib/gi18n-lib.h>
+#include <glib/gi18n.h>
 #include <unistd.h>
 
 #include "applet.h"
