@@ -1,5 +1,11 @@
 2006-05-24  Robert Love  <rml@novell.com>
 
+	* examples/python/systray/eggtrayicon.c, gnome/applet/eggtrayicon.c,
+	  gnome/applet/passphrase-dialog.c, gnome/applet/vpn-password-dialog.c,
+	  src/NetworkManager.c: Include <glib/gi18n.h> and not <libintl.h>.
+
+2006-05-24  Robert Love  <rml@novell.com>
+
 	* gnome/applet/Makefile.am, gnome/vpn-properties/Makefile.am,
 	  libnm-util/Makefile.am, src/Makefile.am,
 	  vpn-daemons/openvpn/auth-dialog/Makefile.am,
