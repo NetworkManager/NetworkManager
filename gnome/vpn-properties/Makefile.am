@@ -27,7 +27,7 @@ nm_vpn_properties_CFLAGS =                              \
         -DG_DISABLE_DEPRECATED                          \
         -DGDK_DISABLE_DEPRECATED                        \
         -DGNOME_DISABLE_DEPRECATED                      \
-        -DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
+	-DGNOMELOCALEDIR=\"$(datadir)/locale\"		\
         -DVERSION=\"$(VERSION)\" \
         $(NULL)
 
