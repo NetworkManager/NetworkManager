@@ -9,7 +9,7 @@ libnm_util_la_CPPFLAGS =				\
 	-DG_DISABLE_DEPRECATED			\
 	-DGDK_DISABLE_DEPRECATED			\
 	-DGNOME_DISABLE_DEPRECATED		\
-	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"
+	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
 
 if WITH_GCRYPT
 libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS)

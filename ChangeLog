@@ -1,5 +1,19 @@
 2006-05-24  Robert Love  <rml@novell.com>
 
+	* gnome/applet/Makefile.am, gnome/vpn-properties/Makefile.am,
+	  libnm-util/Makefile.am, src/Makefile.am,
+	  vpn-daemons/openvpn/auth-dialog/Makefile.am,
+	  vpn-daemons/openvpn/properties/Makefile.am,
+	  vpn-daemons/pptp/auth-dialog/Makefile.am,
+	  vpn-daemons/pptp/properties/Makefile.am,
+	  vpn-daemons/vpnc/auth-dialog/Makefile.am,
+	  vpn-daemons/vpnc/properties/Makefile.am: Do not override what the
+	  user passed for --datadir, if anything, when setting the GNOME locale
+	  directory.  It should be a function of the specified datadir and not
+	  the prefix.
+
+2006-05-24  Robert Love  <rml@novell.com>
+
 	* gnome/applet/main.c, gnome/vpn-properties/nm-vpn-properties.c,
 	  src/NetworkManager.c: Take care to call bindtextdomain with the
 	  location of msgid files.
