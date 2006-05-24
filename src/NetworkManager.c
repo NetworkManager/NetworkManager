@@ -19,6 +19,10 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -32,6 +36,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <libintl.h>
 
 #include "NetworkManager.h"
 #include "nm-utils.h"
@@ -726,6 +731,10 @@ int main( int argc, char *argv[] )
 		g_printerr ("You must be root to run NetworkManager!\n");
 		return (EXIT_FAILURE);
 	}
+
+	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
 
 	/* Parse options */
 	while (1)

@@ -90,6 +90,7 @@ NetworkManager_CPPFLAGS = 							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
 	-DNM_RUN_DIR=\"$(rundir)\"						\
+	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"		\
 	-DARP_DEBUG
 
 
