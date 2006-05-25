@@ -1,5 +1,14 @@
 2006-05-25  Robert Love  <rml@novell.com>
 
+	* src/nm-device.h: Introduce nm_ioctl_info(), which defines to
+	  nm_info() if IOCTL_DEBUG is set and a no-op if not.  We can use this
+	  instead of dumping ifdef's throughout the code.
+	* src/NetworkManagerSystem.c, src/nm-device-802-11-wireless.c,
+	  src/nm-device-802-3-ethernet.c, src/nm-device.c: Remove ifdef's and
+	  use nm_ioctl_info() in lieu.
+
+2006-05-25  Robert Love  <rml@novell.com>
+
 	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342400:
 	* libnm-util/Makefile.am: Only build gnome-keyring-md5.{c,h} if we are
 	  not using gcrypt.  Otherwise, we get a linker error.

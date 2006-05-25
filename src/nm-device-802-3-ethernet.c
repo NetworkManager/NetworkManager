@@ -412,18 +412,15 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 	strncpy (ifr.ifr_name, iface, sizeof(ifr.ifr_name) - 1);
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to ETHTOOL\n", iface);
-#endif
+
+	nm_ioctl_info ("%s: About to ETHTOOL\n", iface);
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
 	supports_ethtool = TRUE;
 
 out:
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: Done with ETHTOOL\n", iface);
-#endif
+	nm_ioctl_info ("%s: Done with ETHTOOL\n", iface);
 	nm_dev_sock_close (sk);
 	return supports_ethtool;
 }
@@ -481,14 +478,10 @@ mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int locati
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET MIIREG\n", iface);
-#endif
+	nm_ioctl_info ("%s: About to GET MIIREG\n", iface);
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIREG, ifr) >= 0)
 		val = mii->val_out;
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: Done with GET MIIREG\n", iface);
-#endif
+	nm_ioctl_info ("%s: Done with GET MIIREG\n", iface);
 
 	return val;
 }
@@ -514,13 +507,10 @@ supports_mii_carrier_detect (NMDevice8023Ethernet *self)
 	}
 
 	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET MIIPHY\n", iface);
-#endif
+	nm_ioctl_info ("%s: About to GET MIIPHY\n", iface);
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIPHY, &ifr);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: Done with GET MIIPHY\n", iface);
-#endif
+	nm_ioctl_info ("%s: Done with GET MIIPHY\n", iface);
+
 	if (err < 0)
 		goto out;
 

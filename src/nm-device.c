@@ -1684,13 +1684,11 @@ nm_device_update_ip4_address (NMDevice *self)
 	iface = nm_device_get_iface (self);
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, iface, sizeof (req.ifr_name) - 1);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IFADDR.", iface);
-#endif
+
+	nm_ioctl_info ("%s: About to GET IFADDR.", iface);
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFADDR, &req);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: Done with GET IFADDR.", iface);
-#endif
+	nm_ioctl_info ("%s: Done with GET IFADDR.", iface);
+
 	nm_dev_sock_close (sk);
 	if (err != 0)
 		return;
@@ -1744,13 +1742,11 @@ nm_device_is_up (NMDevice *self)
 
 	/* Get device's flags */
 	strncpy (ifr.ifr_name, nm_device_get_iface (self), sizeof (ifr.ifr_name) - 1);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IFFLAGS.", nm_device_get_iface (self));
-#endif
+
+	nm_ioctl_info ("%s: About to GET IFFLAGS.", nm_device_get_iface (self));
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: Done with GET IFFLAGS.", nm_device_get_iface (self));
-#endif
+	nm_ioctl_info ("%s: Done with GET IFFLAGS.", nm_device_get_iface (self));
+
 	nm_dev_sock_close (sk);
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));

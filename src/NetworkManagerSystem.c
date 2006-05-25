@@ -99,13 +99,9 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 		rtent.rt_mtu = mss;
 	}
 
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
-#endif
+	nm_ioctl_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
-#endif
+	nm_ioctl_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
 
 	if (err == -1)
 	{
@@ -132,23 +128,15 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 				rtent2.rt_mtu = mss;
 			}
 
-#ifdef IOCTL_DEBUG
-			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-#endif
+			nm_ioctl_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
 			err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
-#ifdef IOCTL_DEBUG
-			nm_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-#endif
+			nm_ioctl_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
 
 			if (!err)
 			{
-#ifdef IOCTL_DEBUG
-				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-#endif
+				nm_ioctl_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
 				err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-#ifdef IOCTL_DEBUG
-				nm_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-#endif
+				nm_ioctl_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
 
 				if (!err)
 					success = TRUE;

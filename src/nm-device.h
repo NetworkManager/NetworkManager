@@ -30,7 +30,16 @@
 #include "nm-ip4-config.h"
 
 #if 0
-#define IOCTL_DEBUG
+# define IOCTL_DEBUG 1
+#endif
+
+#ifdef IOCTL_DEBUG
+# define nm_ioctl_info(fmt, args...)				\
+  G_STMT_START {								\
+      g_message ("<information>\t" fmt "\n", ##args);	\
+  } G_STMT_END
+#else
+# define nm_ioctl_info(fmt, args...) do { } while(0)
 #endif
 
 typedef enum NMWirelessScanInterval

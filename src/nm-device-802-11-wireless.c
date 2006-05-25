@@ -235,13 +235,11 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 
 		memset (&range, 0, sizeof (iwrange));
 		memset (&stats, 0, sizeof (iwstats));
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET 'iwrange'.", iface);
-#endif
+
+		nm_ioctl_info ("%s: About to GET 'iwrange'.", iface);
 		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range) >= 0);
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET 'iwstats'.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET 'iwstats'.", iface);
+
 		if (iw_get_stats (nm_dev_sock_get_fd (sk), iface, &stats, &range, has_range) == 0)
 		{
 			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
@@ -1161,9 +1159,9 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 		struct iwreq	wrq;
 
 		memset (&wrq, 0, sizeof (struct iwreq));
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWMODE.", nm_device_get_iface (NM_DEVICE (self)));
-#endif
+
+		nm_ioctl_info ("%s: About to GET IWMODE.", nm_device_get_iface (NM_DEVICE (self)));
+
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (NM_DEVICE (self)), SIOCGIWMODE, &wrq) == 0)
 		{
 			if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
@@ -1206,9 +1204,9 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 		const char *	iface = nm_device_get_iface (NM_DEVICE (self));
 		struct iwreq	wreq;
 
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to SET IWMODE.", iface);
-#endif
+
+		nm_ioctl_info ("%s: About to SET IWMODE.", iface);
+
 		wreq.u.mode = mode;
 		if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWMODE, &wreq) == 0)
 			success = TRUE;
@@ -1387,9 +1385,8 @@ nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self)
 	{
 		wireless_config	info;
 
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET 'basic config' for ESSID.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET 'basic config' for ESSID.", iface);
+
 		err = iw_get_basic_config (nm_dev_sock_get_fd (sk), iface, &info);
 		if (err >= 0)
 		{
@@ -1445,9 +1442,8 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		wreq.u.essid.length	 = len + 1;
 		wreq.u.essid.flags	 = (len > 0) ? 1 : 0; /* 1=enable ESSID, 0=disable/any */
 
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to SET IWESSID.", iface);
-#endif
+		nm_ioctl_info ("%s: About to SET IWESSID.", iface);
+
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWESSID, &wreq)) == -1)
 		{
 			if (errno != ENODEV)
@@ -1492,9 +1488,8 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 	{
 		struct iwreq		wrq;
 
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET IWFREQ.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET IWFREQ.", iface);
+
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWFREQ, &wrq);
 		if (err >= 0)
 			freq = iw_freq2float (&wrq.u.freq);
@@ -1565,9 +1560,9 @@ nm_device_802_11_wireless_set_frequency (NMDevice80211Wireless *self,
 			wrq.u.freq.flags = IW_FREQ_FIXED;
 			iw_float2freq (freq, &wrq.u.freq);
 		}
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to SET IWFREQ.", iface);
-#endif
+
+		nm_ioctl_info ("%s: About to SET IWFREQ.", iface);
+
 		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWFREQ, &wrq)) == -1)
 		{
 			gboolean	success = FALSE;
@@ -1607,9 +1602,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET IWRATE.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET IWRATE.", iface);
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWRATE, &wrq);
 		nm_dev_sock_close (sk);
 	}
@@ -1654,9 +1647,7 @@ nm_device_802_11_wireless_set_bitrate (NMDevice80211Wireless *self,
 			wrq.u.bitrate.fixed = 0;
 		}
 		/* Silently fail as not all drivers support setting bitrate yet (ipw2x00 for example) */
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to SET IWRATE.", iface);
-#endif
+		nm_ioctl_info ("%s: About to SET IWRATE.", iface);
 		iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWRATE, &wrq);
 
 		nm_dev_sock_close (sk);
@@ -1687,9 +1678,7 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to GET IWAP.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET IWAP.", iface);
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
 			memcpy (bssid, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
 		nm_dev_sock_close (sk);
@@ -1719,9 +1708,7 @@ nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self)
 			.u.data.flags = IW_ENCODE_DISABLED
 		};
 
-#ifdef IOCTL_DEBUG
-		nm_info ("%s: About to SET IWENCODE.", iface);
-#endif
+		nm_ioctl_info ("%s: About to SET IWENCODE.", iface);
 		if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWENCODE, &wreq) == -1)
 		{
 			if (errno != ENODEV)
@@ -2167,9 +2154,7 @@ is_associated (NMDevice80211Wireless *self)
 	 */
 	memset (&wrq, 0, sizeof (struct iwreq));
 	iface = nm_device_get_iface (NM_DEVICE (self));
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWNAME.", iface);
-#endif
+	nm_ioctl_info ("%s: About to GET IWNAME.", iface);
 	if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWNAME, &wrq) >= 0)
 	{
 		if (!strcmp (wrq.u.name, "unassociated"))
@@ -2187,9 +2172,7 @@ is_associated (NMDevice80211Wireless *self)
 		 * Is there a better way?  Some cards don't work too well with this check, ie
 		 * Lucent WaveLAN.
 		 */
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWAP.", iface);
-#endif
+		nm_ioctl_info ("%s: About to GET IWAP.", iface);
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
 			if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
 				associated = TRUE;
