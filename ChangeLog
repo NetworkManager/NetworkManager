@@ -1,5 +1,11 @@
 2006-05-25  Robert Love  <rml@novell.com>
 
+	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342398:
+	* configure.in, gnome/Makefile.am, Makefile.am: Add "--without-gnome"
+	  configure flag to disable building of the GNOME-based applet.
+
+2006-05-25  Robert Love  <rml@novell.com>
+
 	* gnome/applet/nm-device.c, gnome/applet/nm-device.h: Rename function
 	  parameter from link, because it shadows a global variable with some
 	  older versions of glibc.  Yes, glibc is now fixed and, yes, glibc
