@@ -672,11 +672,11 @@ gboolean network_device_get_link (NetworkDevice *dev)
 	return (dev->link);
 }
 
-void network_device_set_link (NetworkDevice *dev, gboolean link)
+void network_device_set_link (NetworkDevice *dev, gboolean new_link)
 {
 	g_return_if_fail (dev != NULL);
 
-	dev->link = link;
+	dev->link = new_link;
 }
 
 /*
