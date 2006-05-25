@@ -1,7 +1,15 @@
+2006-05-25  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-device.c, gnome/applet/nm-device.h: Rename function
+	  parameter from link, because it shadows a global variable with some
+	  older versions of glibc.  Yes, glibc is now fixed and, yes, glibc
+	  should never have exported to the entire system a common four letter
+	  word.  But we here at NetworkManager are team players.  Fixes
+	  GNOME bug #336532.
+
 2006-05-25  Arangel Angov <ufo@linux.net.mk>
 
 	* configure.in: Added mk.po, Macedonian translation.
-
 
 2006-05-24  Robert Love  <rml@novell.com>
 
