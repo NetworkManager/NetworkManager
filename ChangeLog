@@ -1,5 +1,11 @@
 2006-05-25  Robert Love  <rml@novell.com>
 
+	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342400:
+	* libnm-util/Makefile.am: Only build gnome-keyring-md5.{c,h} if we are
+	  not using gcrypt.  Otherwise, we get a linker error.
+
+2006-05-25  Robert Love  <rml@novell.com>
+
 	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342398:
 	* configure.in, gnome/Makefile.am, Makefile.am: Add "--without-gnome"
 	  configure flag to disable building of the GNOME-based applet.

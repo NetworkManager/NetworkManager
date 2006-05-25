@@ -29,8 +29,6 @@ libnm_util_la_SOURCES=			\
 	cipher-wpa-psk-hex.h		\
 	cipher-wpa-psk-passphrase.c	\
 	cipher-wpa-psk-passphrase.h	\
-	gnome-keyring-md5.c			\
-	gnome-keyring-md5.h			\
 	dbus-helpers.c				\
 	dbus-helpers.h				\
 	sha1.c					\
