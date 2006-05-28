@@ -1,3 +1,9 @@
+2006-05-26  Nicolas Trangez  <eikke@eikke.com>
+
+	* src/NetworkManager.c: use GOptions instead of getopt
+	* configure.in: bump glib required version to >= 2.6 for GOption
+	  support
+
 2006-05-25  Robert Love  <rml@novell.com>
 
 	* src/nm-device.h: Introduce nm_ioctl_info(), which defines to
