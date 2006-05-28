@@ -699,7 +699,7 @@ msgstr "您的系统上未找到合适的 VPN 软件。请联系您的系统管�
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:432
 msgid "Cannot import VPN connection"
-msgstr "没有导入 VPN 连接"
+msgstr "无法导入 VPN 连接"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:434
 #, c-format
