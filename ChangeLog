@@ -10,6 +10,7 @@
 	* gnome/vpn-properties/nm-vpn-properties.c
 		- (find_vpn_ui_by_service_name): protect against NULL service names
 		- (update_edit_del_sensitivity): protect against NULL service names
+			Gnome.org #341306
 
 2006-05-28  Dan Williams  <dcbw@redhat.com>
 
@@ -26,6 +27,7 @@
 			AP is essentially the same as the current activation request, but
 			the current activation request isn't done activating yet.  Fixes
 			multiple requests for keyring password on startup for Gnome applet.
+			Gnome.org #341297
 
 2006-05-26  Nicolas Trangez  <eikke@eikke.com>
 
