@@ -61,6 +61,7 @@ struct _Supplicant
 struct _NMDevice80211WirelessPrivate
 {
 	gboolean	dispose_has_run;
+	gboolean	is_initialized;
 
 	struct ether_addr	hw_addr;
 
@@ -376,6 +377,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 {
 	self->priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
+	self->priv->is_initialized = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 	self->priv->supplicant.pid = -1;
@@ -389,6 +391,7 @@ real_init (NMDevice *dev)
 	guint32				caps;
 	NMSock *				sk;
 
+	self->priv->is_initialized = TRUE;
 	self->priv->scan_mutex = g_mutex_new ();
 	nm_register_mutex_desc (self->priv->scan_mutex, "Scan Mutex");
 
@@ -2957,24 +2960,20 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	NMDevice80211WirelessClass *	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (object);
 	NMDeviceClass *			parent_class;
 
+	/* Make sure dispose does not run twice. */
 	if (self->priv->dispose_has_run)
-		/* If dispose did already run, return. */
 		return;
 
-	/* Make sure dispose does not run twice. */
 	self->priv->dispose_has_run = TRUE;
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
-
-	nm_device_802_11_wireless_ap_list_clear (self);
-	if (self->priv->ap_list)
-		nm_ap_list_unref (self->priv->ap_list);
-	g_mutex_free (self->priv->scan_mutex);
+	/* Only do this part of the cleanup if the object is initialized */
+	if (self->priv->is_initialized)
+	{
+		nm_device_802_11_wireless_ap_list_clear (self);
+		if (self->priv->ap_list)
+			nm_ap_list_unref (self->priv->ap_list);
+		g_mutex_free (self->priv->scan_mutex);
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
