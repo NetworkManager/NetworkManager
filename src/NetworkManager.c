@@ -673,7 +673,7 @@ int main( int argc, char *argv[] )
 {
 	gboolean		become_daemon = FALSE;
 	gboolean		enable_test_devices = FALSE;
-        gboolean                show_usage = FALSE;
+	gboolean		show_usage = FALSE;
 	char *		owner;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
@@ -690,28 +690,28 @@ int main( int argc, char *argv[] )
 
 	/* Parse options */
 	{
-                GOptionContext  *opt_ctx = NULL;
-                GOptionEntry options[] = {
-                        {"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
-                        {"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
-                        {"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
-                        {"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
-                        {NULL}
+		GOptionContext  *opt_ctx = NULL;
+		GOptionEntry options[] = {
+			{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
+			{"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
+			{"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
+			{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
+			{NULL}
 		};
-                opt_ctx = g_option_context_new("");
-                g_option_context_add_main_entries(opt_ctx, options, NULL);
-                g_option_context_parse(opt_ctx, &argc, &argv, NULL);
-                g_option_context_free(opt_ctx);
-        }
+		opt_ctx = g_option_context_new("");
+		g_option_context_add_main_entries(opt_ctx, options, NULL);
+		g_option_context_parse(opt_ctx, &argc, &argv, NULL);
+		g_option_context_free(opt_ctx);
+	}
 
-        /* Tricky: become_daemon is FALSE by default, so unless it's TRUE because of a CLI
-         * option, it'll become TRUE after this */
-        become_daemon = !become_daemon;
-        if (show_usage == TRUE)
-		{
-                nm_print_usage();
-					exit (EXIT_SUCCESS);
-				}
+	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because of a CLI
+	 * option, it'll become TRUE after this */
+	become_daemon = !become_daemon;
+	if (show_usage == TRUE)
+	{
+		nm_print_usage();
+		exit (EXIT_SUCCESS);
+	}
 
 	if (become_daemon)
 	{
