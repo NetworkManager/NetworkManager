@@ -1,5 +1,12 @@
 2006-05-28  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Christian Persch <chpe@gnome.org>
+	* configure.in
+	  gnome/vpn-properties/nm-vpn-properties.c
+	  	- (main): Fix option parsing.  Gnome.org #336847
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/vpn-properties/nm-vpn-properties.c
 		- (find_vpn_ui_by_service_name): protect against NULL service names
 		- (update_edit_del_sensitivity): protect against NULL service names
