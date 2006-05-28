@@ -68,11 +68,15 @@ find_vpn_ui_by_service_name (const char *service_name)
 {
 	GSList *i;
 
+	g_return_val_if_fail (service_name != NULL, NULL);
+
 	for (i = vpn_types; i != NULL; i = g_slist_next (i)) {
 		NetworkManagerVpnUI *vpn_ui;
+		const char * vpn_ui_service_name;
 
 		vpn_ui = i->data;
-		if (strcmp (vpn_ui->get_service_name (vpn_ui), service_name) == 0)
+		vpn_ui_service_name = vpn_ui->get_service_name (vpn_ui);
+		if (vpn_ui_service_name && strcmp (vpn_ui_service_name, service_name) == 0)
 			return vpn_ui;
 	}
 
@@ -91,7 +95,7 @@ static void
 update_edit_del_sensitivity (void)
 {
 	GtkTreeSelection *selection;
-	gboolean is_editable, is_exportable;
+	gboolean is_editable = FALSE, is_exportable = FALSE;
 	GtkTreeIter iter;
 
 	selection = gtk_tree_view_get_selection (vpn_conn_view);
@@ -99,13 +103,14 @@ update_edit_del_sensitivity (void)
 		is_editable = is_exportable = FALSE;
 	else {
 		NetworkManagerVpnUI *vpn_ui;
-		const char *service_name;
+		const char *service_name = NULL;
 
 		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_USER_CAN_EDIT_COLUMN, &is_editable, -1);
 		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_SVC_NAME_COLUMN, &service_name, -1);
 
 		vpn_ui = find_vpn_ui_by_service_name (service_name);
-		is_exportable = vpn_ui->can_export (vpn_ui);
+		if (vpn_ui)
+			is_exportable = vpn_ui->can_export (vpn_ui);
 	}
 
 	gtk_widget_set_sensitive (vpn_edit, is_editable);

@@ -1,5 +1,11 @@
 2006-05-28  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- (find_vpn_ui_by_service_name): protect against NULL service names
+		- (update_edit_del_sensitivity): protect against NULL service names
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Chris Fuller <crf@grandecom.net>:
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_dispose): add a is_initialized member and
