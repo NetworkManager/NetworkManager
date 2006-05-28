@@ -61,6 +61,7 @@ struct _Supplicant
 struct _NMDevice80211WirelessPrivate
 {
 	gboolean	dispose_has_run;
+	gboolean	is_initialized;
 
 	struct ether_addr	hw_addr;
 
@@ -371,6 +372,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 {
 	self->priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
+	self->priv->is_initialized = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 	self->priv->supplicant.pid = -1;
@@ -385,6 +387,7 @@ real_init (NMDevice *dev)
 	NMSock *				sk;
 	NmNetlinkMonitor *		monitor;
 
+	self->priv->is_initialized = TRUE;
 	self->priv->scanning = FALSE;
 	self->priv->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
 
@@ -3105,31 +3108,31 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessClass *	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (object);
 	NMDeviceClass *			parent_class;
-	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
-
-	if (self->priv->dispose_has_run)
-		/* If dispose did already run, return. */
-		return;
 
 	/* Make sure dispose does not run twice. */
+	if (self->priv->dispose_has_run)
+		return;
+
 	self->priv->dispose_has_run = TRUE;
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
+	/* Only do this part of the cleanup if the object is initialized */
+	if (self->priv->is_initialized)
+	{
+		NMData *	data = nm_device_get_app_data (NM_DEVICE (self));
 
-	nm_device_802_11_wireless_ap_list_clear (self);
-	if (self->priv->ap_list)
-		nm_ap_list_unref (self->priv->ap_list);
+		self->priv->is_initialized = FALSE;
 
-	cancel_scan_results_timeout (self);
-	cancel_pending_scan (self);
+		/* General cleanup, free references to other objects */
+		nm_device_802_11_wireless_ap_list_clear (self);
+		if (self->priv->ap_list)
+			nm_ap_list_unref (self->priv->ap_list);
 
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->wireless_event_id);
+		cancel_scan_results_timeout (self);
+		cancel_pending_scan (self);
+
+		g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+			self->priv->wireless_event_id);
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
