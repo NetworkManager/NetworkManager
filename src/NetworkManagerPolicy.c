@@ -327,7 +327,7 @@ nm_policy_device_change_check (NMData *data)
 	 * 1) old device is NULL, new device is NULL - we aren't currently connected to anything, and we
 	 *		can't find anything to connect to.  Do nothing.
 	 *
-	 * 2) old device is NULL, new device is good - we aren't currenlty connected to anything, but
+	 * 2) old device is NULL, new device is good - we aren't currently connected to anything, but
 	 *		we have something we can connect to.  Connect to it.
 	 *
 	 * 3) old device is good, new device is NULL - have a current connection, but it's no good since
@@ -384,6 +384,7 @@ nm_policy_device_change_check (NMData *data)
 				const char *	old_essid = nm_ap_get_essid (old_ap);
 				int			old_mode = nm_ap_get_mode (old_ap);
 				const char *	new_essid = nm_ap_get_essid (ap);
+				gboolean		same_request = FALSE;
 
 				/* Schedule new activation if the currently associated
 				 * access point is not the "best" one or we've lost the
@@ -391,7 +392,16 @@ nm_policy_device_change_check (NMData *data)
 				 * from Ad-Hoc APs either.
 				 */
 				gboolean same_essid = (nm_null_safe_strcmp (old_essid, new_essid) == 0);
-				if ((!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC))
+
+				/* If the "best" AP's essid is the same as the current activation
+				 * request's essid, but the current activation request isn't
+				 * done yet, don't switch.  This prevents multiple requests for the
+				 * AP's password on startup.
+				 */
+				if ((old_dev == new_dev) && nm_device_is_activating (new_dev) && same_essid)
+					same_request = TRUE;
+
+				if (!same_request && (!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC))
 				{
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
