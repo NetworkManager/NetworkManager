@@ -1,3 +1,11 @@
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): don't switch devices if the "best"
+			AP is essentially the same as the current activation request, but
+			the current activation request isn't done activating yet.  Fixes
+			multiple requests for keyring password on startup for Gnome applet.
+
 2006-05-26  Nicolas Trangez  <eikke@eikke.com>
 
 	* src/NetworkManager.c: use GOptions instead of getopt
