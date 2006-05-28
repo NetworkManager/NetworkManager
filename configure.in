@@ -211,6 +211,11 @@ if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
 	AC_SUBST(LIBGNOMEUI_CFLAGS) # is this even needed? it was typed incorrectly before
 	AC_SUBST(LIBGNOMEUI_LIBS)
+
+	PKG_CHECK_EXISTS([libgnome-2.0 >= 2.14.0],[have_libgnome_2_14=yes],[have_libgnome_2_14=no])
+	if test "$have_libgnome_2_14" = "yes"; then
+		AC_DEFINE([HAVE_LIBGNOME_2_14],[1],[Define if we have libgnome 2.14])
+	fi
 fi
 
 AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))

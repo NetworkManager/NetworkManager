@@ -39,7 +39,7 @@
 #include <gtk/gtkwindow.h>
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
-#include <glib/gi18n-lib.h>
+#include <glib/gi18n.h>
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 #include "nm-vpn-ui-interface.h"
@@ -1082,13 +1082,12 @@ main (int argc, char *argv[])
 	int ret;
 	gboolean bad_opts;
 	gboolean do_import;
-	GError *error = NULL;
 	gchar *import_svc = NULL;
 	gchar *import_file = NULL;
 	GOptionEntry entries[] =  {
-			{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
-			{ "import-file", 'f', 0, G_OPTION_ARG_STRING, &import_file, "File to import", NULL},
-			{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
+		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, "File to import", NULL},
+		{ NULL }
 	};
 
 	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
@@ -1097,8 +1096,19 @@ main (int argc, char *argv[])
 
 	context = g_option_context_new ("- NetworkManager VPN properties");
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
+
+#ifdef HAVE_LIBGNOME_2_14
+	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
+			    GNOME_PARAM_GOPTION_CONTEXT, context,
+			    GNOME_PARAM_NONE);
+#else
 	g_option_context_add_group (context, gtk_get_option_group (TRUE));
 	g_option_context_parse (context, &argc, &argv, &error);
+	g_option_context_free (context);
+
+	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
+			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
+#endif
 
 	bad_opts = FALSE;
 	do_import = FALSE;
@@ -1115,11 +1125,6 @@ main (int argc, char *argv[])
 		ret = EXIT_FAILURE;
 		goto out;
 	}
-
-	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
-			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
-
-	glade_gnome_init ();
 
 	if (init_app () == FALSE) {
 		ret = EXIT_FAILURE;
