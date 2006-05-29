@@ -167,6 +167,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
   <property name="modal">True</property>
   <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
+  <property name="icon_name">gtk-info</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
   <property name="skip_pager_hint">False</property>
@@ -311,6 +312,7 @@ You have chosen to log in to the wireless network '%s'.  If you are sure that th
   <property name="default_width">488</property>
   <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
+  <property name="icon_name">gtk-dialog-authentication</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
   <property name="skip_pager_hint">False</property>
@@ -626,6 +628,7 @@ WEP 64/128-bit ASCII
   <property name="modal">True</property>
   <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
+  <property name="icon_name">gtk-dialog-authentication</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
   <property name="skip_pager_hint">False</property>
@@ -835,6 +838,7 @@ WEP 64/128-bit ASCII
   <property name="modal">False</property>
   <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
+  <property name="icon_name">gtk-info</property>
   <property name="decorated">True</property>
   <property name="skip_taskbar_hint">False</property>
   <property name="skip_pager_hint">False</property>
