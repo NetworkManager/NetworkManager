@@ -780,10 +780,17 @@ out:
 }
 
 static void
-close_cb (void)
+response_cb (void)
 {
 	gtk_widget_destroy (dialog);
 	gtk_main_quit ();
+}
+
+static gboolean
+delete_event_cb (GtkDialog *the_dialog)
+{
+	gtk_dialog_response (the_dialog, GTK_RESPONSE_DELETE_EVENT);
+	return TRUE;
 }
 
 static void
@@ -1001,9 +1008,10 @@ init_app (void)
 	gtk_signal_connect (GTK_OBJECT (vpn_export), "clicked", GTK_SIGNAL_FUNC (export_cb), NULL);
 	vpn_delete = glade_xml_get_widget (xml, "delete");
 	gtk_signal_connect (GTK_OBJECT (vpn_delete), "clicked", GTK_SIGNAL_FUNC (delete_cb), NULL);
-	w = glade_xml_get_widget (xml, "close");
-	gtk_signal_connect (GTK_OBJECT (w), "clicked", GTK_SIGNAL_FUNC (close_cb), NULL);
-	gtk_signal_connect (GTK_OBJECT (dialog), "delete_event", GTK_SIGNAL_FUNC (close_cb), NULL);
+	g_signal_connect (dialog, "response",
+			  G_CALLBACK (response_cb), NULL);
+	g_signal_connect (dialog, "delete_event",
+			  G_CALLBACK (delete_event_cb), NULL);
 
 	vpn_conn_view = GTK_TREE_VIEW (glade_xml_get_widget (xml, "vpnlist"));
 	vpn_conn_list = gtk_list_store_new (VPNCONN_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
