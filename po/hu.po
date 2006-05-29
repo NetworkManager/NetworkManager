@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD.hu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-28 20:28+0100\n"
+"POT-Creation-Date: 2006-05-29 18:33+0200\n"
 "PO-Revision-Date: 2006-05-08 23:42+0100\n"
 "Last-Translator: Szabolcs Varga <shirokuma@shirokuma.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
@@ -16,292 +16,288 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: KBabel 1.11.1\n"
 
-#: ../gnome/applet/applet-compat.c:171
-#: ../gnome/applet/applet-dbus-info.c:923
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Jelmondat a(z) %s vezeték nélküli hálózathoz"
 
-#: ../gnome/applet/applet-dbus.c:244
+#: ../gnome/applet/applet-dbus.c:265
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Kapcsolódás \"%s\" vezeték nélküli hálózathoz sikertelen."
 
-#: ../gnome/applet/applet-dbus.c:249
+#: ../gnome/applet/applet-dbus.c:270
 msgid "Connection to the wired network failed."
 msgstr "Kapcsolódás a vezetékes hálózathoz sikertelen."
 
-#: ../gnome/applet/applet.c:180
-msgid "Error displaying connection information: "
-msgstr "Hiba a kapcsolat információinak megjelenítése közben: "
+#: ../gnome/applet/applet.c:184
+msgid "Error displaying connection information:"
+msgstr "Hiba a kapcsolatinformációk megjelenítése közben:"
 
-#: ../gnome/applet/applet.c:199
+#: ../gnome/applet/applet.c:202
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Nem található néhány szükséges erőforrás (a glade fájl)!"
 
-#: ../gnome/applet/applet.c:210
+#: ../gnome/applet/applet.c:213
 msgid "No active connections!"
 msgstr "Nincs aktív kapcsolat!"
 
-#: ../gnome/applet/applet.c:225
+#: ../gnome/applet/applet.c:234
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Vezetékes Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:227
+#: ../gnome/applet/applet.c:236
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Vezeték nélküli Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:321
-#: ../gnome/applet/applet.c:346
+#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
 msgid "NetworkManager Applet"
 msgstr "NetworkManager kisalkalmazás"
 
-#: ../gnome/applet/applet.c:323
-#: ../gnome/applet/applet.c:348
+#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright (C) 2004-2005 Red Hat, Inc."
 
-#: ../gnome/applet/applet.c:324
-#: ../gnome/applet/applet.c:349
-msgid "Notification area applet for managing your network devices and connections."
-msgstr "Értesítésiterület-kisalkalmazás a hálózati eszközök és kapcsolatok kezelésére."
+#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"Értesítésiterület-kisalkalmazás a hálózati eszközök és kapcsolatok "
+"kezelésére."
 
-#: ../gnome/applet/applet.c:327
-#: ../gnome/applet/applet.c:354
+#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
 msgid "translator-credits"
 msgstr "Kelemen Gábor <kelemeng@gnome.hu>"
 
-#: ../gnome/applet/applet.c:439
-msgid "VPN Error"
-msgstr "VPN hiba"
-
-#: ../gnome/applet/applet.c:443
+#: ../gnome/applet/applet.c:426
 msgid "VPN Login Failure"
 msgstr "VPN bejelentkezési hiba"
 
-#: ../gnome/applet/applet.c:444
+#: ../gnome/applet/applet.c:427
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "Egy bejelentkezési hiba miatt nem lehet elindítani \"%s\" VPN kapcsolatot."
+msgstr ""
+"Egy bejelentkezési hiba miatt nem lehet elindítani \"%s\" VPN kapcsolatot."
 
-#: ../gnome/applet/applet.c:448
+#: ../gnome/applet/applet.c:431
 msgid "VPN Start Failure"
 msgstr "VPN indítási hiba"
 
-#: ../gnome/applet/applet.c:449
+#: ../gnome/applet/applet.c:432
 #, c-format
-msgid "Could not start the VPN connection '%s' due to a failure launching the VPN program."
-msgstr "Nem sikerült elindítani \"%s\" VPN kapcsolatot a VPN program indításakor fellépett hiba miatt."
+msgid ""
+"Could not start the VPN connection '%s' due to a failure launching the VPN "
+"program."
+msgstr ""
+"Nem sikerült elindítani \"%s\" VPN kapcsolatot a VPN program indításakor "
+"fellépett hiba miatt."
 
-#: ../gnome/applet/applet.c:453
-#: ../gnome/applet/applet.c:463
+#: ../gnome/applet/applet.c:436 ../gnome/applet/applet.c:446
 msgid "VPN Connect Failure"
 msgstr "VPN kapcsolódási hiba"
 
-#: ../gnome/applet/applet.c:454
+#: ../gnome/applet/applet.c:437
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr "Egy kapcsolódási hiba miatt nem lehet elindítani \"%s\" VPN kapcsolatot."
+msgstr ""
+"Egy kapcsolódási hiba miatt nem lehet elindítani \"%s\" VPN kapcsolatot."
 
-#: ../gnome/applet/applet.c:458
+#: ../gnome/applet/applet.c:441
 msgid "VPN Configuration Error"
 msgstr "VPN beállítási hiba"
 
-#: ../gnome/applet/applet.c:459
+#: ../gnome/applet/applet.c:442
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "A(z) \"%s\" VPN kapcsolat nincs megfelelően beállítva."
 
-#: ../gnome/applet/applet.c:464
+#: ../gnome/applet/applet.c:447
 #, c-format
-msgid "Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."
-msgstr "Nem sikerült elindítani \"%s\" VPN kapcsolatot, mivel a VPN-kiszolgáló nem adott vissza megfelelő hálózati beállításokat."
+msgid ""
+"Could not start the VPN connection '%s' because the VPN server did not "
+"return an adequate network configuration."
+msgstr ""
+"Nem sikerült elindítani \"%s\" VPN kapcsolatot, mivel a VPN-kiszolgáló nem "
+"adott vissza megfelelő hálózati beállításokat."
 
-#: ../gnome/applet/applet.c:472
-#, c-format
-msgid "The VPN service said: \"%s\""
-msgstr "A VPN szolgáltatás válasza: \"%s\""
-
-#: ../gnome/applet/applet.c:541
-#, c-format
-msgid "VPN connection '%s' said:"
-msgstr "A(z) \"%s\" VPN kapcsolat válasza:"
-
-#: ../gnome/applet/applet.c:543
+#: ../gnome/applet/applet.c:517
 msgid "VPN Login Message"
 msgstr "VPN bejelentkezési üzenet"
 
-#: ../gnome/applet/applet.c:760
-#: ../gnome/applet/applet.c:2514
+#: ../gnome/applet/applet.c:741 ../gnome/applet/applet.c:2508
 #: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:206
-msgid "The NetworkManager Applet could not find some required resources (the glade file was not found)."
+#: ../gnome/applet/passphrase-dialog.c:228
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
 msgstr "A NetworkManager kisalkalmazás nem talál néhány szükséges glade fájlt."
 
-#: ../gnome/applet/applet.c:772
+#: ../gnome/applet/applet.c:753
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "A(z) \"%s (%s)\" hálózati eszköz nem támogatja a vezeték nélküli keresést."
+msgstr ""
+"A(z) \"%s (%s)\" hálózati eszköz nem támogatja a vezeték nélküli keresést."
 
-#: ../gnome/applet/applet.c:780
+#: ../gnome/applet/applet.c:761
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "A(z) \"%s (%s)\" hálózati eszköz nem támogatja a kapcsolatfelismerést."
 
-#: ../gnome/applet/applet.c:927
+#: ../gnome/applet/applet.c:908
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "%s eszköz előkészítése a vezetékes hálózathoz..."
 
-#: ../gnome/applet/applet.c:929
+#: ../gnome/applet/applet.c:910
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "%s eszköz előkészítése \"%s\" vezeték nélküli hálózathoz..."
 
-#: ../gnome/applet/applet.c:937
+#: ../gnome/applet/applet.c:918
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "%s eszköz beállítása a vezetékes hálózathoz..."
 
-#: ../gnome/applet/applet.c:939
+#: ../gnome/applet/applet.c:920
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Kísérlet \"%s\" vezeték nélküli hálózathoz való kapcsolódásra..."
 
-#: ../gnome/applet/applet.c:947
+#: ../gnome/applet/applet.c:928
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Várakozás \"%s\" vezeték nélküli hálózat hálózati kulcsára..."
 
-#: ../gnome/applet/applet.c:955
-#: ../gnome/applet/applet.c:965
+#: ../gnome/applet/applet.c:936 ../gnome/applet/applet.c:946
 msgid "Requesting a network address from the wired network..."
 msgstr "Hálózati cím kérése a vezetékes hálózattól..."
 
-#: ../gnome/applet/applet.c:957
-#: ../gnome/applet/applet.c:967
+#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Hálózati cím kérése \"%s\" vezeték nélküli hálózattól..."
 
-#: ../gnome/applet/applet.c:975
+#: ../gnome/applet/applet.c:956
 msgid "Finishing connection to the wired network..."
 msgstr "A vezetékes hálózathoz való kapcsolódás befejezése..."
 
-#: ../gnome/applet/applet.c:977
+#: ../gnome/applet/applet.c:958
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "\"%s\" vezeték nélküli hálózathoz való kapcsolódás befejezése..."
 
-#: ../gnome/applet/applet.c:1094
+#: ../gnome/applet/applet.c:1075
 msgid "NetworkManager is not running"
 msgstr "A NetworkManager nem fut"
 
-#: ../gnome/applet/applet.c:1107
-#: ../gnome/applet/applet.c:1841
+#: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1828
 msgid "Networking disabled"
 msgstr "Hálózat letiltva"
 
-#: ../gnome/applet/applet.c:1112
+#: ../gnome/applet/applet.c:1088
 msgid "No network connection"
 msgstr "Nincs hálózati kapcsolat"
 
-#: ../gnome/applet/applet.c:1117
+#: ../gnome/applet/applet.c:1093
 msgid "Wired network connection"
 msgstr "Vezetékes hálózati kapcsolat"
 
-#: ../gnome/applet/applet.c:1121
+#: ../gnome/applet/applet.c:1097
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Ad-hoc vezeték nélküli hálózathoz kapcsolódva"
 
-#: ../gnome/applet/applet.c:1123
+#: ../gnome/applet/applet.c:1099
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Vezeték nélküli hálózati kapcsolat a következővel: \"%s\" (%d%%)"
 
-#: ../gnome/applet/applet.c:1145
+#: ../gnome/applet/applet.c:1120
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN kapcsolat a következőhöz: \"%s\""
 
-#: ../gnome/applet/applet.c:1153
+#: ../gnome/applet/applet.c:1128
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN kapcsolódás a következőhöz: \"%s\""
 
-#: ../gnome/applet/applet.c:1566
+#: ../gnome/applet/applet.c:1541
 msgid "_Connect to Other Wireless Network..."
 msgstr "Kapcsolódás _más vezeték nélküli hálózathoz..."
 
-#: ../gnome/applet/applet.c:1587
+#: ../gnome/applet/applet.c:1562
 msgid "Create _New Wireless Network..."
 msgstr "Ú_j vezeték nélküli hálózat létrehozása..."
 
-#: ../gnome/applet/applet.c:1708
+#: ../gnome/applet/applet.c:1685
 msgid "_VPN Connections"
 msgstr "_VPN kapcsolatok"
 
-#: ../gnome/applet/applet.c:1743
+#: ../gnome/applet/applet.c:1730
 msgid "_Configure VPN..."
 msgstr "V_PN beállítása..."
 
-#: ../gnome/applet/applet.c:1747
+#: ../gnome/applet/applet.c:1734
 msgid "_Disconnect VPN..."
 msgstr "VP_N bontása..."
 
-#: ../gnome/applet/applet.c:1769
+#: ../gnome/applet/applet.c:1756
 msgid "_Dial Up Connections"
 msgstr "_Betárcsázós kapcsolatok"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1780
+#: ../gnome/applet/applet.c:1767
 #, c-format
 msgid "Connect to %s..."
 msgstr "Kapcsolódás ehhez: %s..."
 
-#: ../gnome/applet/applet.c:1786
+#: ../gnome/applet/applet.c:1773
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Kapcsolat bontása: %s..."
 
-#: ../gnome/applet/applet.c:1835
+#: ../gnome/applet/applet.c:1822
 msgid "No network devices have been found"
 msgstr "Nem találtam hálózati eszközöket"
 
-#: ../gnome/applet/applet.c:2027
+#: ../gnome/applet/applet.c:2014
 msgid "NetworkManager is not running..."
 msgstr "A NetworkManager nem fut..."
 
 #. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2183
+#: ../gnome/applet/applet.c:2170
 msgid "Enable _Networking"
 msgstr "_Hálózat engedélyezése"
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2189
+#: ../gnome/applet/applet.c:2176
 msgid "Enable _Wireless"
 msgstr "_Vezeték nélküli kapcsolat engedélyezése"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2195
+#: ../gnome/applet/applet.c:2182
 msgid "Connection _Information"
 msgstr "_Kapcsolat-információk"
 
 #. Help item
-#: ../gnome/applet/applet.c:2206
+#: ../gnome/applet/applet.c:2193
 msgid "_Help"
 msgstr "_Súgó"
 
 #. About item
-#: ../gnome/applet/applet.c:2215
+#: ../gnome/applet/applet.c:2202
 msgid "_About"
 msgstr "_Névjegy"
 
-#: ../gnome/applet/applet.c:2633
-msgid "The NetworkManager applet could not find some required resources.  It cannot continue.\n"
-msgstr "A NetworkManager kisalkalmazás nem talál néhány szükséges erőforrást, ezért a futása nem folytatódhat.\n"
+#: ../gnome/applet/applet.c:2667
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr ""
+"A NetworkManager kisalkalmazás nem talál néhány szükséges erőforrást, ezért "
+"a futása nem folytatódhat.\n"
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
@@ -311,76 +307,122 @@ msgstr "Nyílt rendszer"
 msgid "Shared Key"
 msgstr "Megosztott kulcs"
 
-#: ../gnome/applet/wireless-security-option.c:209
-msgid "TKIP (Default)"
-msgstr "TKIP (alapértelmezett)"
+#: ../gnome/applet/wireless-security-option.c:208
+msgid "Automatic (Default)"
+msgstr "Automatikus (alapértelmezett)"
 
-#: ../gnome/applet/wireless-security-option.c:218
+#: ../gnome/applet/wireless-security-option.c:215
 msgid "AES-CCMP"
 msgstr "AES-CCMP"
+
+#: ../gnome/applet/wireless-security-option.c:223
+msgid "TKIP"
+msgstr "TKIP"
+
+#: ../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr ""
 
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
 msgstr "Nincs"
 
-#: ../gnome/applet/wso-wep-ascii.c:127
-msgid "WEP 40/128-bit ASCII"
-msgstr "WEP 40/128 bites ASCII"
+#: ../gnome/applet/wso-wep-ascii.c:138
+msgid "WEP 64/128-bit ASCII"
+msgstr "WEP 64/128 bites ASCII"
 
-#: ../gnome/applet/wso-wep-hex.c:124
-msgid "WEP 40/128-bit hex"
-msgstr "WEP 40/128 bites hexadecimális"
+#: ../gnome/applet/wso-wep-hex.c:135
+msgid "WEP 64/128-bit Hex"
+msgstr "WEP 64/128 bites hexadecimális"
 
-#: ../gnome/applet/wso-wep-passphrase.c:124
-msgid "WEP Passphrase"
-msgstr "WEP jelmondat"
+#: ../gnome/applet/wso-wep-passphrase.c:135
+msgid "WEP 128-bit Passphrase"
+msgstr "WEP 128 bites jelmondat"
 
-#: ../gnome/applet/eggtrayicon.c:128
+#: ../gnome/applet/wso-wpa-eap.c:237
+msgid "PEAP"
+msgstr "PEAP"
+
+#: ../gnome/applet/wso-wpa-eap.c:238
+msgid "TLS"
+msgstr "TLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:239
+msgid "TTLS"
+msgstr "TTLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
+#: ../src/nm-ap-security-wpa-eap.c:116
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
+#: ../src/nm-ap-security-wpa-eap.c:121
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../gnome/applet/wso-wpa-psk.c:178
+msgid "WPA2 Personal"
+msgstr "WPA2 személyes"
+
+#: ../gnome/applet/wso-wpa-psk.c:180
+msgid "WPA Personal"
+msgstr "WPA személyes"
+
+#: ../gnome/applet/eggtrayicon.c:134
 msgid "Orientation"
 msgstr "Tájolás"
 
-#: ../gnome/applet/eggtrayicon.c:129
+#: ../gnome/applet/eggtrayicon.c:135
 msgid "The orientation of the tray."
 msgstr "A tálca tájolása."
 
-#: ../gnome/applet/menu-items.c:87
+#: ../gnome/applet/menu-items.c:88
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Vezetékes hálózat (%s)"
 
-#: ../gnome/applet/menu-items.c:90
+#: ../gnome/applet/menu-items.c:91
 msgid "_Wired Network"
 msgstr "_Vezetékes hálózat"
 
-#: ../gnome/applet/menu-items.c:161
+#: ../gnome/applet/menu-items.c:162
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Vezeték nélküli hálózat (%s)"
 msgstr[1] "Vezeték nélküli hálózatok (%s)"
 
-#: ../gnome/applet/menu-items.c:163
+#: ../gnome/applet/menu-items.c:164
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Vezeték nélküli hálózat"
 msgstr[1] "Vezeték nélküli hálózatok"
 
-#: ../gnome/applet/menu-items.c:330
+#: ../gnome/applet/menu-items.c:343
 msgid " (invalid Unicode)"
 msgstr " (érvénytelen Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:352
 #, c-format
-msgid "By default, the wireless network's name is set to your computer's name, %s, with no encryption enabled"
-msgstr "Alapértelmezésben a vezeték nélküli hálózat neve a számítógépe neve, (%s) kikapcsolt titkosítással"
+msgid ""
+"By default, the wireless network's name is set to your computer's name, %s, "
+"with no encryption enabled"
+msgstr ""
+"Alapértelmezésben a vezeték nélküli hálózat neve a számítógépe neve, (%s) "
+"kikapcsolt titkosítással"
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
 msgstr "Új vezeték nélküli hálózat létrehozása"
 
 #: ../gnome/applet/other-network-dialog.c:359
-msgid "Enter the name and security settings of the wireless network you wish to create."
-msgstr "Adja meg a létrehozandó vezeték nélküli hálózat nevét és biztonsági beállításait."
+msgid ""
+"Enter the name and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Adja meg a létrehozandó vezeték nélküli hálózat nevét és biztonsági "
+"beállításait."
 
 #: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
@@ -392,46 +434,73 @@ msgstr "Létező vezeték nélküli hálózat"
 
 #: ../gnome/applet/other-network-dialog.c:369
 msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Adja meg azon vezeték nélküli hálózat nevét, amelyhez kapcsolódni kíván."
+msgstr ""
+"Adja meg azon vezeték nélküli hálózat nevét, amelyhez kapcsolódni kíván."
 
 #: ../gnome/applet/other-network-dialog.c:371
 msgid "Connect to Other Wireless Network"
 msgstr "Kapcsolódás más vezeték nélküli hálózathoz"
 
-#: ../gnome/applet/vpn-password-dialog.c:152
-#: ../gnome/applet/vpn-password-dialog.c:189
+#: ../gnome/applet/passphrase-dialog.c:215
+msgid "Error connecting to wireless network"
+msgstr "Hiba a vezeték nélküli hálózathoz csatlakozás közben"
+
+#: ../gnome/applet/passphrase-dialog.c:216
+msgid ""
+"The requested wireless network requires security capabilities unsupported by "
+"your hardware."
+msgstr ""
+"A kért vezeték nélküli hálózat a hardver által nem támogatott biztonsági "
+"képességeket igényel."
+
+#: ../gnome/applet/vpn-password-dialog.c:151
+#: ../gnome/applet/vpn-password-dialog.c:188
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "Nem lehet elindítani \"%s\" VPN kapcsolatot"
 
-#: ../gnome/applet/vpn-password-dialog.c:155
+#: ../gnome/applet/vpn-password-dialog.c:154
 #, c-format
-msgid "Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."
-msgstr "Nem található a hitelesítési párbeszédablak a(z) \"%s\" típusú VPN kapcsolathoz. Lépjen kapcsolatba a rendszergazdával."
+msgid ""
+"Could not find the authentication dialog for VPN connection type '%s'. "
+"Contact your system administrator."
+msgstr ""
+"Nem található a hitelesítési párbeszédablak a(z) \"%s\" típusú VPN "
+"kapcsolathoz. Lépjen kapcsolatba a rendszergazdával."
 
-#: ../gnome/applet/vpn-password-dialog.c:192
+#: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
-msgid "There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."
-msgstr "Hiba lépett fel a(z) \"%s\" típusú VPN kapcsolathoz tartozó párbeszédablak elindítása közben. Lépjen kapcsolatba a rendszergazdával."
+msgid ""
+"There was a problem launching the authentication dialog for VPN connection "
+"type '%s'. Contact your system administrator."
+msgstr ""
+"Hiba lépett fel a(z) \"%s\" típusú VPN kapcsolathoz tartozó párbeszédablak "
+"elindítása közben. Lépjen kapcsolatba a rendszergazdával."
 
 #: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
 #: ../gnome/applet/applet.glade.h:2
-msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr "<span weight=\"bold\" size=\"larger\">Aktív kapcsolatok információi</span>"
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Aktív kapcsolatok információi</span>"
 
 #: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
 "\n"
-"A passphrase or encryption key is required to access the wireless network '%s'."
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">A vezeték nélküli hálózat jelszót igényel</span>\n"
+"<span weight=\"bold\" size=\"larger\">A vezeték nélküli hálózat jelszót "
+"igényel</span>\n"
 "\n"
-"A(z) %s vezeték nélküli hálózathoz való hozzáféréshez jelszó vagy titkosítási kulcs szükséges."
+"A(z) %s vezeték nélküli hálózathoz való hozzáféréshez jelszó vagy "
+"titkosítási kulcs szükséges."
 
 #: ../gnome/applet/applet.glade.h:8
 #, no-c-format
@@ -440,74 +509,111 @@ msgid ""
 "\n"
 "%s  It will not be completely functional."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Csökkentett működőképességű hálózat</span>\n"
+"<span weight=\"bold\" size=\"larger\">Csökkentett működőképességű hálózat</"
+"span>\n"
 "\n"
 "%s  nem lesz teljesen működőképes."
 
 #: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</span>\n"
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
 "\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure that this wireless network is secure, click the checkbox below and NetworkManager will not require confirmation on subsequent log ins."
+"You have chosen to log in to the wireless network '%s'.  If you are sure "
+"that this wireless network is secure, click the checkbox below and "
+"NetworkManager will not require confirmation on subsequent log ins."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Vezeték nélküli hálózatba bejelentkezés megerősítése</span>\n"
+"<span weight=\"bold\" size=\"larger\">Vezeték nélküli hálózatba "
+"bejelentkezés megerősítése</span>\n"
 "\n"
-"A(z) \"%s\" vezeték nélküli hálózatba való bejelentkezést választotta. Ha biztos abban, hogy ez a vezeték nélküli hálózat biztonságos, kattintson az alábbi jelölőnégyzetre és a NetworkManager nem fog megerősítést kérni, ha a későbbiekben kapcsolódik hozzá."
+"A(z) \"%s\" vezeték nélküli hálózatba való bejelentkezést választotta. Ha "
+"biztos abban, hogy ez a vezeték nélküli hálózat biztonságos, kattintson az "
+"alábbi jelölőnégyzetre és a NetworkManager nem fog megerősítést kérni, ha a "
+"későbbiekben kapcsolódik hozzá."
 
 #: ../gnome/applet/applet.glade.h:15
+msgid "Anonymous Identity:"
+msgstr "Névtelen személyazonosság:"
+
+#: ../gnome/applet/applet.glade.h:16
 msgid "Authentication:"
 msgstr "Hitelesítés:"
 
-#: ../gnome/applet/applet.glade.h:16
+#: ../gnome/applet/applet.glade.h:17
 msgid "Broadcast Address:"
 msgstr "Broadcast cím:"
 
-#: ../gnome/applet/applet.glade.h:17
+#: ../gnome/applet/applet.glade.h:18
+msgid "CA Certificate File:"
+msgstr "CA tanúsítványfájl:"
+
+#: ../gnome/applet/applet.glade.h:19
 msgid "C_onnect"
 msgstr "Kapcs_olódás"
 
-#: ../gnome/applet/applet.glade.h:18
+#: ../gnome/applet/applet.glade.h:20
+msgid "Client Certificate File:"
+msgstr "Ügyfél tanúsítványfájl:"
+
+#: ../gnome/applet/applet.glade.h:21
 msgid "Connection Information"
 msgstr "Kapcsolat-információk"
 
-#: ../gnome/applet/applet.glade.h:19
+#: ../gnome/applet/applet.glade.h:22
 msgid "Default Route:"
 msgstr "Alapértelmezett útvonal:"
 
-#: ../gnome/applet/applet.glade.h:20
+#: ../gnome/applet/applet.glade.h:23
 msgid "Destination Address:"
 msgstr "Célcím:"
 
-#: ../gnome/applet/applet.glade.h:21
+#: ../gnome/applet/applet.glade.h:24
+msgid "Driver:"
+msgstr "Illesztőprogram:"
+
+#: ../gnome/applet/applet.glade.h:25
+msgid "EAP Method:"
+msgstr "EAP módszer:"
+
+#: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
 msgstr "Hardvercím:"
 
-#: ../gnome/applet/applet.glade.h:22
+#: ../gnome/applet/applet.glade.h:27
 msgid "IP Address:"
 msgstr "IP-cím:"
 
-#: ../gnome/applet/applet.glade.h:23
+#: ../gnome/applet/applet.glade.h:28
+msgid "Identity:"
+msgstr "Személyazonosság:"
+
+#: ../gnome/applet/applet.glade.h:29
 msgid "Interface:"
 msgstr "Csatoló:"
 
-#: ../gnome/applet/applet.glade.h:24
+#: ../gnome/applet/applet.glade.h:30
+#, fuzzy
+msgid "Key Type:"
+msgstr "Típus:"
+
+#: ../gnome/applet/applet.glade.h:31
 msgid "Key:"
 msgstr "Kulcs:"
 
-#: ../gnome/applet/applet.glade.h:25
+#: ../gnome/applet/applet.glade.h:32
 msgid ""
 "None\n"
-"WEP Passphrase\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
 msgstr ""
 "Nincs\n"
-"WEP jelmondat\n"
-"WEP 40/128-bit hexadecimális\n"
-"WEP 40/128-bit ASCII\n"
+"WEP 128 bites jelmondat\n"
+"WEP 64/128-bit hexadecimális\n"
+"WEP 64/128-bit ASCII\n"
 
-#: ../gnome/applet/applet.glade.h:30
+#: ../gnome/applet/applet.glade.h:37
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -515,137 +621,171 @@ msgstr ""
 "Nyílt rendszer\n"
 "Megosztott kulcs"
 
-#: ../gnome/applet/applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:39
 msgid "Other Wireless Network..."
 msgstr "Egyéb vezeték nélküli hálózat..."
 
-#: ../gnome/applet/applet.glade.h:33
+#: ../gnome/applet/applet.glade.h:40
 msgid "Passphrase:"
 msgstr "Jelmondat:"
 
-#: ../gnome/applet/applet.glade.h:34
+#: ../gnome/applet/applet.glade.h:41
 msgid "Password:"
 msgstr "Jelszó:"
 
-#: ../gnome/applet/applet.glade.h:35
+#: ../gnome/applet/applet.glade.h:42
 msgid "Primary DNS:"
 msgstr "Elsődleges DNS:"
 
-#: ../gnome/applet/applet.glade.h:36
+#: ../gnome/applet/applet.glade.h:43
+msgid "Private Key File:"
+msgstr "Személyes kulcsfájl:"
+
+#: ../gnome/applet/applet.glade.h:44
+msgid "Private Key Password:"
+msgstr "Személyes kulcs jelszava:"
+
+#: ../gnome/applet/applet.glade.h:45
 msgid "Secondary DNS:"
 msgstr "Másodlagos DNS:"
 
-#: ../gnome/applet/applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:46
+msgid "Select the CA Certificate File"
+msgstr "A CA tanúsítványfájl kiválasztása"
+
+#: ../gnome/applet/applet.glade.h:47
+msgid "Select the Client Certificate File"
+msgstr "Az ügyfél tanúsítványfájl kiválasztása"
+
+#: ../gnome/applet/applet.glade.h:48
+msgid "Select the Private Key File"
+msgstr "A személyes kulcsfájl kiválasztása"
+
+#: ../gnome/applet/applet.glade.h:49
+msgid "Show key"
+msgstr "Kulcs megjelenítése"
+
+#: ../gnome/applet/applet.glade.h:50
+msgid "Show passphrase"
+msgstr "Jelmondat megjelenítése:"
+
+#: ../gnome/applet/applet.glade.h:51
+msgid "Show password"
+msgstr "Jelszó megjelenítése:"
+
+#: ../gnome/applet/applet.glade.h:52
+msgid "Show passwords"
+msgstr "Jelszavak megjelenítése:"
+
+#: ../gnome/applet/applet.glade.h:53
+msgid "Speed:"
+msgstr "Sebesség:"
+
+#: ../gnome/applet/applet.glade.h:54
 msgid "Subnet Mask:"
 msgstr "Alhálózati maszk:"
 
-#: ../gnome/applet/applet.glade.h:38
+#: ../gnome/applet/applet.glade.h:55
 msgid "Type:"
 msgstr "Típus:"
 
-#: ../gnome/applet/applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:56
 msgid "User Name:"
 msgstr "Felhasználói név:"
 
-#: ../gnome/applet/applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:57
 msgid "Wireless Network Key Required"
 msgstr "Vezeték nélküli hálózat kulcs szükséges"
 
-#: ../gnome/applet/applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:58
 msgid "Wireless _adapter:"
 msgstr "Vezeték _nélküli csatoló:"
 
-#: ../gnome/applet/applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:59
 msgid "_Always Trust this Wireless Network"
 msgstr "_Mindig megbízom ebben a vezeték nélküli hálózatban"
 
-#: ../gnome/applet/applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:60
 msgid "_Don't remind me again"
 msgstr "_Ne emlékezzen rám"
 
-#: ../gnome/applet/applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:61
 msgid "_Login to Network"
 msgstr "_Bejelentkezés a hálózatba"
 
-#: ../gnome/applet/applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:62
 msgid "_Network Name:"
 msgstr "_Hálózatnév:"
 
-#: ../gnome/applet/applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:63
 msgid "_Wireless Security:"
 msgstr "Vezeték _nélküli biztonság:"
 
-#: ../gnome/applet/applet.glade.h:47
-msgid "leap_subwindow"
-msgstr "leap_subwindow"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "wep_key_subwindow"
-msgstr "wep_key_subwindow"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "wep_passphrase_subwindow"
-msgstr "wep_passphrase_subwindow"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "wpa_psk_subwindow"
-msgstr "wpa_psk_subwindow"
-
-#: ../gnome/applet/wso-wpa-psk.c:168
-msgid "WPA2 Personal"
-msgstr "WPA2 személyes"
-
-#: ../gnome/applet/wso-wpa-psk.c:170
-msgid "WPA Personal"
-msgstr "WPA személyes"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:358
+#: ../gnome/vpn-properties/nm-vpn-properties.c:383
 msgid "Cannot add VPN connection"
 msgstr "Nem lehet VPN kapcsolatot hozzáadni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:360
-msgid "No suitable VPN software was found on your system. Contact your system administrator."
-msgstr "Nem található megfelelő VPN szoftver a rendszerén. Lépjen kapcsolatba a rendszergazdával."
+#: ../gnome/vpn-properties/nm-vpn-properties.c:385
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+"Nem található megfelelő VPN szoftver a rendszerén. Lépjen kapcsolatba a "
+"rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:412
+#: ../gnome/vpn-properties/nm-vpn-properties.c:437
 msgid "Cannot import VPN connection"
 msgstr "Nem lehet VPN kapcsolatot importálni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:414
+#: ../gnome/vpn-properties/nm-vpn-properties.c:439
 #, c-format
-msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
-msgstr "Nem található a(z) \"%s\" kapcsolattípusnak megfelelő VPN szoftver a(z) \"%s\" fájl importálásához. Lépjen kapcsolatba a rendszergazdával."
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"Nem található a(z) \"%s\" kapcsolattípusnak megfelelő VPN szoftver a(z) \"%s"
+"\" fájl importálásához. Lépjen kapcsolatba a rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:554
+#: ../gnome/vpn-properties/nm-vpn-properties.c:579
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Hiba a(z) \"%s\" VPN kapcsolat lekérése közben"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:557
+#: ../gnome/vpn-properties/nm-vpn-properties.c:582
 #, c-format
-msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
-msgstr "Nem találhatóak a(z) \"%s\" VPN kapcsolathoz tartozó felhasználóifelület-fájlok. Lépjen kapcsolatba a rendszergazdával."
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"Nem találhatóak a(z) \"%s\" VPN kapcsolathoz tartozó felhasználóifelület-"
+"fájlok. Lépjen kapcsolatba a rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#: ../gnome/vpn-properties/nm-vpn-properties.c:739
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Törli a(z) \"%s\" VPN kapcsolatot?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:720
+#: ../gnome/vpn-properties/nm-vpn-properties.c:742
 #, c-format
-msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
-msgstr "Minden információ a(z) \"%s\" VPN kapcsolatról el fog veszni és egy új kapcsolat létrehozásához szükséges információkért lehetséges, hogy a rendszergazdára is szüksége lesz."
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"Minden információ a(z) \"%s\" VPN kapcsolatról el fog veszni és egy új "
+"kapcsolat létrehozásához szükséges információkért lehetséges, hogy a "
+"rendszergazdára is szüksége lesz."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+#: ../gnome/vpn-properties/nm-vpn-properties.c:959
 msgid "Unable to load"
 msgstr "Nem lehet betölteni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:928
+#: ../gnome/vpn-properties/nm-vpn-properties.c:961
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Nem található néhány szükséges erőforrás (a glade fájl)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1043
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
 msgid "Edit VPN Connection"
 msgstr "VPN kapcsolat szerkesztése"
 
@@ -703,23 +843,27 @@ msgstr "Virtuális magánhálózati (VPN) kapcsolatok kezelése"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
-"This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN).\n"
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
 "\n"
-"It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information."
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
 msgstr ""
-"Ez az asszisztens végigvezeti Önt egy magánhálózathoz tartozó új Virtuális magánhálózati (VPN) kapcsolat létrehozásán.\n"
+"Ez az asszisztens végigvezeti Önt egy magánhálózathoz tartozó új Virtuális "
+"magánhálózati (VPN) kapcsolat létrehozásán.\n"
 "\n"
-"Ehhez szükség lesz néhány információra, például IP-címekre és titkokra, ezen információkért keresse fel a rendszergazdát."
+"Ehhez szükség lesz néhány információra, például IP-címekre és titkokra, ezen "
+"információkért keresse fel a rendszergazdát."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN kapcsolatok"
 
-#: ../src/nm-ap-security-wep.c:47
+#: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
 msgstr "40 bites WEP"
 
-#: ../src/nm-ap-security-wep.c:49
+#: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
 msgstr "104 bites WEP"
 
@@ -731,27 +875,41 @@ msgstr "WPA TKIP"
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:57
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "WPA automatikus"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
 msgid "WPA2 TKIP"
 msgstr "WPA2 TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:59
+#: ../src/nm-ap-security-wpa-psk.c:61
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security.c:308
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "WPA2 automatikus"
+
+#: ../src/nm-ap-security.c:320
 msgid "none"
 msgstr "nincs"
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "nem lehet netlink foglalatot létrehozni a vezetékes ethernet kártyák megfigyelésére - %s"
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"nem lehet netlink foglalatot létrehozni a vezetékes ethernet kártyák "
+"megfigyelésére - %s"
 
 #: ../src/nm-netlink-monitor.c:172
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "nem lehet kapcsolódni a netlink foglalathoz a vezetékes ethernet kártyák megfigyelésére - %s"
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"nem lehet kapcsolódni a netlink foglalathoz a vezetékes ethernet kártyák "
+"megfigyelésére - %s"
 
 #: ../src/nm-netlink-monitor.c:405
 msgid "operation took too long"
@@ -773,3 +931,91 @@ msgstr "túl sok adat lett átküldve a foglalaton és ezek egy része elveszett
 msgid "error occurred while waiting for data on socket"
 msgstr "hiba lépett fel adatokra várakozás közben a foglalaton"
 
+#: ../gnome/applet/applet-dbus-devices.c:898
+#, c-format
+msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+msgstr ""
+"Kapcsolódott a(z) \"%s\" ad-hoc vezeték nélküli hálózathoz kapcsolódva."
+
+#: ../gnome/applet/applet-dbus-devices.c:903
+#, c-format
+msgid "You are now connected to the wireless network '%s'."
+msgstr "Kapcsolódott a(z) \"%s\" vezeték nélküli hálózathoz."
+
+#: ../gnome/applet/applet-dbus-devices.c:910
+msgid "You are now connected to the wired network."
+msgstr "Kapcsolódott a vezetékes hálózathoz."
+
+#: ../gnome/applet/applet-dbus-devices.c:916
+msgid "Connection Established"
+msgstr "Kapcsolat létrehozva"
+
+#: ../gnome/applet/applet-dbus-devices.c:959
+msgid "Disconnected"
+msgstr "Kapcsolat bontva"
+
+#: ../gnome/applet/applet-dbus-devices.c:960
+msgid "The network connection has been disconnected."
+msgstr "A hálózati kapcsolat bontva."
+
+#~ msgid "Stop automatically running the networking applet?"
+#~ msgstr "A hálózatkezelő kisalkalmazás automatikus futtatásának leállítása?"
+
+#~ msgid ""
+#~ "The networking applet will now terminate, but will automatically launch "
+#~ "the next time you login.  Would you like to stop automatically running "
+#~ "the networking applet on login?"
+#~ msgstr ""
+#~ "A hálózatkezelő kisalkalmazás most befejeződik, de a következő "
+#~ "bejelentkezéskor el fog indulni. Le szeretné tiltani a hálózatkezelő "
+#~ "kisalkalmazás automatikus futtatását bejelentkezéskor?"
+
+#~ msgid "_Remove"
+#~ msgstr "_Eltávolítás"
+
+#~ msgid "Error displaying connection information: "
+#~ msgstr "Hiba a kapcsolat információinak megjelenítése közben: "
+
+#~ msgid "VPN Error"
+#~ msgstr "VPN hiba"
+
+#~ msgid "The VPN service said: \"%s\""
+#~ msgstr "A VPN szolgáltatás válasza: \"%s\""
+
+#~ msgid "VPN connection '%s' said:"
+#~ msgstr "A(z) \"%s\" VPN kapcsolat válasza:"
+
+#~ msgid "TKIP (Default)"
+#~ msgstr "TKIP (alapértelmezett)"
+
+#~ msgid "WEP 40/128-bit ASCII"
+#~ msgstr "WEP 40/128 bites ASCII"
+
+#~ msgid "WEP 40/128-bit hex"
+#~ msgstr "WEP 40/128 bites hexadecimális"
+
+#~ msgid "WEP Passphrase"
+#~ msgstr "WEP jelmondat"
+
+#~ msgid ""
+#~ "None\n"
+#~ "WEP Passphrase\n"
+#~ "WEP 40/128-bit hex\n"
+#~ "WEP 40/128-bit ASCII\n"
+#~ msgstr ""
+#~ "Nincs\n"
+#~ "WEP jelmondat\n"
+#~ "WEP 40/128-bit hexadecimális\n"
+#~ "WEP 40/128-bit ASCII\n"
+
+#~ msgid "leap_subwindow"
+#~ msgstr "leap_subwindow"
+
+#~ msgid "wep_key_subwindow"
+#~ msgstr "wep_key_subwindow"
+
+#~ msgid "wep_passphrase_subwindow"
+#~ msgstr "wep_passphrase_subwindow"
+
+#~ msgid "wpa_psk_subwindow"
+#~ msgstr "wpa_psk_subwindow"
