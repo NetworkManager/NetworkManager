@@ -1,6 +1,13 @@
 2006-05-28  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
+	* gnome/vpn-properties/nm-vpn-properties.c
+	* gnome/vpn-properties/nm-vpn-properties.glade
+		- HIG-ification love  (Gnome.org #336846)
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
 	* configure.in
 	  gnome/vpn-properties/nm-vpn-properties.c
 	  	- (main): Fix option parsing.  Gnome.org #336847
