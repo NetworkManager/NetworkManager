@@ -1092,7 +1092,6 @@ main (int argc, char *argv[])
 	gboolean do_import;
 	gchar *import_svc = NULL;
 	gchar *import_file = NULL;
-	GError *error;
 	GOptionEntry entries[] =  {
 		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
 		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, "File to import", NULL},
@@ -1111,9 +1110,12 @@ main (int argc, char *argv[])
 			    GNOME_PARAM_GOPTION_CONTEXT, context,
 			    GNOME_PARAM_NONE);
 #else
-	g_option_context_add_group (context, gtk_get_option_group (TRUE));
-	g_option_context_parse (context, &argc, &argv, &error);
-	g_option_context_free (context);
+	{
+		GError *error = NULL;
+		g_option_context_add_group (context, gtk_get_option_group (TRUE));
+		g_option_context_parse (context, &argc, &argv, &error);
+		g_option_context_free (context);
+	}
 
 	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
 			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
