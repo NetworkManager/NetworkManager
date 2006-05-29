@@ -1,3 +1,12 @@
+2006-05-28  Christian Persch  <chpe@cvs.gnome.org>
+
+	* gnome/vpn-properties/nm-vpn-properties.glade:
+	* vpn-daemons/openvpn/properties/nm-openvpn-dialog.glade:
+	* vpn-daemons/pptp/properties/nm-pptp-dialog.glade:
+	* vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade:
+		- Make the VPN properties pages prettier and more HIG
+		  compliant. Gnome Bug #336913.
+
 2006-05-28  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
