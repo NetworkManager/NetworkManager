@@ -1092,6 +1092,7 @@ main (int argc, char *argv[])
 	gboolean do_import;
 	gchar *import_svc = NULL;
 	gchar *import_file = NULL;
+	GError *error;
 	GOptionEntry entries[] =  {
 		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
 		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, "File to import", NULL},
