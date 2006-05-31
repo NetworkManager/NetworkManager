@@ -309,7 +309,7 @@ static void pptp_watch_cb (GPid pid, gint status, gpointer user_data)
     {
       error = WEXITSTATUS (status);
       if (error != 0)
-	nm_warning ("pptp exited with error code %d", error);
+	  nm_warning ("pptp exited with error code %d", error);
     }
   else if (WIFSTOPPED (status))
     nm_warning ("pptp stopped unexpectedly with signal %d", WSTOPSIG (status));
@@ -443,11 +443,11 @@ static gint nm_pptp_start_pptp_binary (NmPPTPData *data, char **data_items, cons
       g_ptr_array_add (pptp_argv, (gpointer) "remotename");
       g_ptr_array_add (pptp_argv, (gpointer) data_items[++i]);
     } else if ( (strcmp( data_items[i], "encrypt-mppe" ) == 0) &&
-		(strcmp( data_items[i], "yes" ) == 0) ) {
-//      g_ptr_array_add (pptp_argv, (gpointer) "mppe required");
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (pptp_argv, (gpointer) "require-mppe");
     } else if ( (strcmp( data_items[i], "comp-mppc" ) == 0) &&
-		(strcmp( data_items[i], "yes" ) == 0) ) {
-//      g_ptr_array_add (pptp_argv, (gpointer) "mppc required");
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (pptp_argv, (gpointer) "require-mppc");
     }
   }
 
@@ -823,11 +823,11 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
   guint32		    ip4_address;
   guint32		    ip4_ptp_address;
   guint32		    ip4_netmask;
-  guint32 *		    ip4_dns;
+  guint32 *		    ip4_dns = NULL;
   guint32		    ip4_dns_len;
   guint32 		    ip4_dns1;
   guint32 		    ip4_dns2;
-  guint32 *		    ip4_nbns;
+  guint32 *		    ip4_nbns = NULL;
   guint32		    ip4_nbns_len;
   guint32 		    ip4_nbns1;
   guint32 		    ip4_nbns2;
@@ -909,8 +909,8 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
     }
 
 out:
-    if (ip4_nbns) g_free(ip4_nbns);  
-    if (ip4_dns)  g_free(ip4_dns);  
+    if (ip4_nbns!=NULL) g_free(ip4_nbns);  
+    if (ip4_dns!=NULL)  g_free(ip4_dns);  
   
     if (!success)
     {
@@ -1103,7 +1103,7 @@ static void sigterm_handler (int signum)
 {
   nm_info ("nm-pptp-service caught SIGINT/SIGTERM");
 
-  g_main_loop_quit (vpn_data->loop);
+//  g_main_loop_quit (vpn_data->loop);
 }
 
 
