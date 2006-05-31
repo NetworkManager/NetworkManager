@@ -54,7 +54,7 @@ static void send_config_error (DBusConnection *con, const char *item);
 
 int plugin_init()
 {
-    DBusConnection *	con;
+    DBusConnection *	con = NULL;
     DBusError		error;
 
     g_type_init ();
@@ -65,7 +65,8 @@ int plugin_init()
     con = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
     if ((con == NULL) || dbus_error_is_set (&error))
       {
-        nm_warning ("Could not get the system bus.  Make sure the message bus daemon is running?");
+        dbus_error_free (&error);
+        info("Could not get the system bus.  Make sure the message bus daemon is running?");
         return -1;
       }
     dbus_connection_set_exit_on_disconnect (con, FALSE);
@@ -73,11 +74,12 @@ int plugin_init()
 //    add_options(ldap_options);
     chap_passwd_hook = pptp_chap_passwd;
 
-//    add_notifier(&ip_down_notifier, pptp_ip_down, (void *) con);
+    add_notifier(&ip_down_notifier, pptp_ip_down, (void *) con);
     add_notifier(&ip_up_notifier, pptp_ip_up, (void *) con);
 
     info("nm-pptp: plugin initialized.");
 
+     dbus_error_free (&error);
     return 0;
 }
 
@@ -90,6 +92,9 @@ int pptp_chap_passwd(char *user, char *passwd)
 
 static void pptp_ip_down(void *opaque, int arg)
 {   
+    DBusConnection *con = (DBusConnection *)opaque;
+    
+    return;
 }
 
 static void pptp_ip_up(void *opaque, int arg)
@@ -112,7 +117,7 @@ static void pptp_ip_up(void *opaque, int arg)
  
   g_return_if_fail (con != NULL);
   if (ipcp_gotoptions[ifunit].ouraddr==0) {
-    nm_warning ("nm-pptp-service-pptp-helper didn't receive an Internal IP4 Address from pptp.");
+    info ("nm-pptp-service-pptp-helper didn't receive an Internal IP4 Address from pptp.");
     send_config_error (con, "IP4 Address");
     return;
   }
@@ -120,7 +125,7 @@ static void pptp_ip_up(void *opaque, int arg)
   
   if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE_PPTP, NM_DBUS_PATH_PPTP, NM_DBUS_INTERFACE_PPTP, "signalIP4Config")))
     {
-      nm_warning ("send_config_error(): Couldn't allocate the dbus message");
+      info ("send_config_error(): Couldn't allocate the dbus message");
       return;
     }
 
@@ -160,13 +165,13 @@ static void pptp_ip_up(void *opaque, int arg)
   }
  
   if (ifname==NULL) {
-    nm_warning ("nm-pptp-service-pptp-helper didn't receive a tunnel device name.");
+    info ("nm-pptp-service-pptp-helper didn't receive a tunnel device name.");
     send_config_error (con, "IP4 Address");
   }
   str_ifname = g_strdup(ifname);
 
 /*  Print out some debug info.
-  nm_warning("Sending config IFNAME: %s",str_ifname);
+  info("Sending config IFNAME: %s",str_ifname);
   nm_warning("Sending config IPLOCAL: %s", ip_ntoa(uint_ip4_address));
   nm_warning("Sending config NETMASK: %s", ip_ntoa(uint_ip4_netmask));
   nm_warning("Sending config DNS1: %s", ip_ntoa(uint_ip4_dns1));
@@ -205,13 +210,12 @@ static void pptp_ip_up(void *opaque, int arg)
 //			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_ip4_wins, uint_ip4_wins_len,
 			    DBUS_TYPE_INVALID);
   if (!dbus_connection_send (con, message, NULL)) {
-    nm_warning ("pptp_ip_up(): could not send dbus message");
+    info ("pptp_ip_up(): could not send dbus message");
     dbus_message_unref (message);
     return;
   }
   
   dbus_message_unref (message);
-  
   return;
 }
 
