@@ -3,7 +3,7 @@
  *
  * nm-pptp.c : GNOME UI dialogs for configuring PPTP connections
  *
- * Copyright (C) 2005 Antony Mee <A.J.Mee@ncl.ac.uk>
+ * Copyright (C) 2005 Antony Mee <eemynotna@gmail.com>
  * Based on work by Tim Niemueller <tim@niemueller.de> 
  *              and David Zeuthen, <davidz@redhat.com>
  *

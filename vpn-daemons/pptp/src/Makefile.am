@@ -13,9 +13,13 @@ AM_CPPFLAGS =							\
 	-DLIBDIR=\""$(libdir)"\"				\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
-	-DDATADIR=\"$(datadir)\"
+	-DDATADIR=\"$(datadir)\" \
+    -fPIC
 
-bin_PROGRAMS = nm-pptp-service nm-pptp-service-pppd-plugin.so
+bin_PROGRAMS = nm-pptp-service 
+
+pppdplugindir = $(libdir)/pppd/2.4.3
+pppdplugin_PROGRAMS = nm-pppd-plugin.so
 
 nm_pptp_service_SOURCES =				\
 				nm-pptp-service.c	\
@@ -33,13 +37,13 @@ nm_pptp_service_LDADD = 						\
 				$(GTHREAD_LIBS)
 
 
-nm_pptp_service_pppd_plugin_so_SOURCES = 		\
-				nm-pptp-service-pppd-plugin.c
+nm_pppd_plugin_so_SOURCES = 		\
+				nm-pppd-plugin.c
 
-nm_pptp_service_pppd_plugin_so_LDFLAGS = 		\
-                -shared
+nm_pppd_plugin_so_LDFLAGS = 		\
+				-shared 
 
-nm_pptp_service_pppd_plugin_so_LDADD = 		\
+nm_pppd_plugin_so_LDADD = 		\
 				$(DBUS_LIBS)				\
 				$(GTHREAD_LIBS)
 

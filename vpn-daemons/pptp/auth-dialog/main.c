@@ -73,6 +73,8 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 		}
 
 		if (password != NULL && username != NULL) {
+// Statically set the authentication type for now.
+		    passwords = g_slist_append (passwords, g_strdup("CHAP"));
 			passwords = g_slist_append (passwords, g_strdup (username));
 			passwords = g_slist_append (passwords, g_strdup (password));
 			if (strcmp (data1->keyring, "session") == 0)
@@ -195,6 +197,8 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 
 		username = gnome_two_password_dialog_get_username (GNOME_TWO_PASSWORD_DIALOG (dialog));
 		password = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
+// Statically set the authentication type for now.
+		result = g_slist_append (result, g_strdup("CHAP"));
 		result = g_slist_append (result, username);
 		result = g_slist_append (result, password);
 

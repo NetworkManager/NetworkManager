@@ -1,8 +1,8 @@
 /* nm-pptp-service - pptp integration with NetworkManager
  *
- * Antony Mee <a.j.mee@ncl.ac.uk>
- * Based on work by Tim Niemueller <tim@niemueller.de>
- *              and Dan Williams <dcbw@redhat.com>
+ * Antony J Mee <eemynotna at gmail dot com>
+ * Based on openvpn work by Tim Niemueller <tim@niemueller.de>
+ *                      and Dan Williams <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

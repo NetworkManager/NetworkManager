@@ -1,3 +1,15 @@
+2006-06-01  Antony Mee  <eemynotna@gmail.com>
+
+	* DBUS revamp is complete possible to have various
+	  authentication methods, ptys etc.  
+	* version bumped to 0.6.9 to bring closer in line with NM
+	* nm-pptp-service-pppd-plugin.c -> nm-pppd-plugin.c:
+	  The pppd plugin has now been generalised to work with 
+	  any ppp protocol. (Options do not exist in the config
+	  dialog yet however)
+	* src/Makefile.am: fixed to install pppd plugin correctly
+	  (unsure about -fPIC usage!)
+
 2006-04-23  Dan Williams  <dcbw@redhat.com>
 
 	Patch from j@bootlab.org
@@ -14,7 +26,7 @@
 	  searching (and finding) install-sh in ../.., which lead to
 	  problems.
 
-2005-11-17  Antony Mee <A.J.Mee@ncl.ac.uk>
+2005-11-17  Antony Mee <eemynotna@gmail.com>
 
 	* started work based on openvpn work
 

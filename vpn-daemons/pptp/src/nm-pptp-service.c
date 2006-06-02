@@ -1,8 +1,8 @@
 /* nm-pptp-service - pptp integration with NetworkManager
  *
- * Antony Mee <a.j.mee@ncl.ac.uk>
- * Based on work by Tim Niemueller <tim@niemueller.de>
- *              and Dan Williams <dcbw@redhat.com>
+ * Antony J Mee <eemynotna at gmail dot com>
+ * Based on openvpn work by Tim Niemueller <tim@niemueller.de>
+ *                      and Dan Williams <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,7 +64,7 @@ static const char *pppd_binary_paths[] =
   NULL
 };
 
-#define NM_PPTP_HELPER_PATH		"nm-pptp-service-pppd-plugin.so"
+#define NM_PPTP_HELPER_PATH		"nm-pppd-plugin.so"
 
 typedef struct NmPPTPData
 {
@@ -76,10 +76,14 @@ typedef struct NmPPTPData
   guint			    helper_timer;
   char              *str_ip4_vpn_gateway;
   struct in_addr    ip4_vpn_gateway;
+  char              **auth_items;
+  int               num_auth_items;
 } NmPPTPData;
 
 
 static gboolean nm_pptp_dbus_handle_stop_vpn (NmPPTPData *data);
+static gboolean nm_pptp_store_auth_info (NmPPTPData *data,
+                                   char **auth_items, int num_auth_items);
 
 
 /*
@@ -436,10 +440,10 @@ static gint nm_pptp_start_pptp_binary (NmPPTPData *data, char **data_items, cons
   g_ptr_array_add (pptp_argv, (gpointer) "10");
   // Set the username...
   for (i = 0; i < num_items; ++i) {
-    if ( strcmp( data_items[i], "username" ) == 0) {
+/*    if ( strcmp( data_items[i], "username" ) == 0) {
       g_ptr_array_add (pptp_argv, (gpointer) "user");
       g_ptr_array_add (pptp_argv, (gpointer) data_items[++i]);
-    } else if ( strcmp( data_items[i], "remote" ) == 0) {
+    } else */ if ( strcmp( data_items[i], "remote" ) == 0) {
       g_ptr_array_add (pptp_argv, (gpointer) "remotename");
       g_ptr_array_add (pptp_argv, (gpointer) data_items[++i]);
     } else if ( (strcmp( data_items[i], "encrypt-mppe" ) == 0) &&
@@ -585,6 +589,31 @@ static gboolean nm_pptp_config_options_validate (char **data_items, int num_item
 }
 
 /*
+ * nm_pptp_store_auth_info
+ *
+ * Decode and temporarily store the authentication info provided.
+ *
+ */
+static gboolean nm_pptp_store_auth_info (NmPPTPData *data,
+                                   char **auth_items, int num_auth_items)
+{
+//  nm_warning("nm_pptp_store_auth_info: enter");       
+  g_return_val_if_fail (auth_items != NULL, FALSE);
+  g_return_val_if_fail (num_auth_items >= 1, FALSE);
+ 
+  if ((data->auth_items=g_strdupv(auth_items))==NULL) 
+    {
+      data->num_auth_items=-1;
+//      nm_warning("nm_pptp_store_auth_info: failed");       
+      return FALSE;
+    } 
+  data->num_auth_items=num_auth_items;
+//  nm_warning("nm_pptp_store_auth_info: done");       
+
+  return TRUE;
+}
+
+/*
  * nm_pptp_dbus_handle_start_vpn
  *
  * Parse message arguments and start the VPN connection.
@@ -594,8 +623,8 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
 {
   char **		data_items = NULL;
   int		num_items = -1;
-  char **		password_items = NULL;
-  int		num_passwords = -1;
+  char **		auth_items = NULL;
+  int		num_auth_items = -1;
   char **		user_routes = NULL;
   int		user_routes_count = -1;
   const char *	name = NULL;
@@ -613,7 +642,7 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
   if (!dbus_message_get_args (message, &error,
 			      DBUS_TYPE_STRING, &name,
 			      DBUS_TYPE_STRING, &user_name,
-			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &password_items, &num_passwords,
+			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &auth_items, &num_auth_items,
 			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &data_items, &num_items,
 			      DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &user_routes, &user_routes_count,
 			      DBUS_TYPE_INVALID))
@@ -630,6 +659,12 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
       goto out;
     }
 
+  if (!nm_pptp_store_auth_info (data, auth_items, num_auth_items))
+    {
+      nm_pptp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+      goto out;
+    }
+
   /* Now we can finally try to activate the VPN */
   if ((pptp_fd = nm_pptp_start_pptp_binary (data, data_items, num_items)) >= 0)
     {
@@ -638,7 +673,7 @@ static gboolean nm_pptp_dbus_handle_start_vpn (DBusMessage *message, NmPPTPData 
 
 out:
   dbus_free_string_array (data_items);
-  dbus_free_string_array (password_items);
+  dbus_free_string_array (auth_items);
   dbus_free_string_array (user_routes);
   if (!success)
     nm_pptp_set_state (data, NM_VPN_STATE_STOPPED);
@@ -653,6 +688,31 @@ out:
  *
  */
 static gboolean nm_pptp_dbus_handle_stop_vpn (NmPPTPData *data)
+{
+  g_return_val_if_fail (data != NULL, FALSE);
+
+  if (data->pid > 0)
+    {
+      nm_pptp_set_state (data, NM_VPN_STATE_STOPPING);
+
+      kill (data->pid, SIGTERM);
+      nm_info ("Terminated pppd with PID %d.", data->pid);
+      data->pid = 0;
+
+      nm_pptp_set_state (data, NM_VPN_STATE_STOPPED);
+      nm_pptp_schedule_quit_timer (data, 10000);
+    }
+
+  return TRUE;
+}
+
+/*
+ * nm_pptp_dbus_handle_chap_check
+ *
+ * Stop the running pppd dameon.
+ *
+ */
+static gboolean nm_pptp_dbus_handle_chap_check (NmPPTPData *data)
 {
   g_return_val_if_fail (data != NULL, FALSE);
 
@@ -779,6 +839,44 @@ static DBusMessage *nm_pptp_dbus_get_state (DBusConnection *con, DBusMessage *me
   return reply;
 }
 
+/*
+ * nm_pptp_dbus_get_auth_info
+ *
+ * Pass authentication information to the PPPD plugin.
+ *
+ */
+static DBusMessage *nm_pptp_dbus_get_auth_info (DBusConnection *con, DBusMessage *message, NmPPTPData *data)
+{
+  DBusMessage		*reply = NULL;
+
+  g_return_val_if_fail (data != NULL, NULL);
+  g_return_val_if_fail (con != NULL, NULL);
+  g_return_val_if_fail (message != NULL, NULL);
+  nm_info("Attempting getAuthInfo reply");
+
+  if (data->auth_items==NULL) {
+    nm_warning("Authentication not recieved yet. Sending 'NONE'.");
+    data->auth_items = g_strsplit("NONE empty empty"," ",3);
+    data->num_auth_items = 3;
+  }
+//  g_return_val_if_fail (data->auth_items != NULL, NULL);
+//  g_return_val_if_fail (data->num_auth_items >= 1, NULL);
+
+  nm_info("Building getAuthInfo reply");
+  if ((reply = dbus_message_new_method_return (message)))
+    dbus_message_append_args (reply, 
+          DBUS_TYPE_STRING, &(data->auth_items[0]),
+          DBUS_TYPE_STRING, &(data->auth_items[1]),
+          DBUS_TYPE_STRING, &(data->auth_items[2]),
+//          DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &(data->auth_items), &(data->num_auth_items), 
+          DBUS_TYPE_INVALID);
+  if (!reply)
+    nm_info("Build of getAuthInfo reply failed ");
+
+  nm_info("Should reply ");
+
+  return reply;
+}
 
 /*
  * nm_pptp_dbus_process_helper_config_error
@@ -842,6 +940,10 @@ static void nm_pptp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
   /* Only accept the config info if we're in STARTING state */
   if (data->state != NM_VPN_STATE_STARTING)
     return;
+
+  /* If IP is up then we don't need to leave the auth info lying around */
+  g_strfreev (data->auth_items);
+  data->num_auth_items=-1;
 
   nm_pptp_cancel_helper_timer (data);
 
@@ -962,6 +1064,8 @@ static DBusHandlerResult nm_pptp_dbus_message_handler (DBusConnection *con, DBus
     nm_pptp_dbus_process_helper_config_error (con, message, data);
   else if (strcmp ("signalIP4Config", method) == 0)
     nm_pptp_dbus_process_helper_ip4_config (con, message, data);
+  else if (strcmp ("getAuthInfo", method) == 0)
+    reply = nm_pptp_dbus_get_auth_info (con, message, data);
   else
     handled = FALSE;
   
@@ -1051,6 +1155,7 @@ DBusConnection *nm_pptp_dbus_init (NmPPTPData *data)
       goto out;
     }
   
+  dbus_connection_set_exit_on_disconnect (connection, FALSE);
   dbus_connection_setup_with_g_main (connection, NULL);
 
   dbus_error_init (&error);
@@ -1103,7 +1208,7 @@ static void sigterm_handler (int signum)
 {
   nm_info ("nm-pptp-service caught SIGINT/SIGTERM");
 
-//  g_main_loop_quit (vpn_data->loop);
+  g_main_loop_quit (vpn_data->loop);
 }
 
 
@@ -1143,7 +1248,8 @@ int main( int argc, char *argv[] )
 
   g_main_loop_unref (vpn_data->loop);
 
-  if (vpn_data->str_ip4_vpn_gateway != NULL) g_free( vpn_data->str_ip4_vpn_gateway );
+  g_strfreev (vpn_data->auth_items);
+  g_free (vpn_data->str_ip4_vpn_gateway);
   g_free (vpn_data);
 
   exit (0);
