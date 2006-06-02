@@ -50,7 +50,6 @@ struct _NetworkManagerVpnUIImpl {
 
   GtkEntry       *w_connection_name;
   GtkEntry       *w_remote;
-  GtkEntry       *w_username;
   GtkCheckButton *w_use_routes;
   GtkEntry       *w_routes;
   GtkCheckButton *w_use_mppe;
@@ -64,7 +63,6 @@ pptp_clear_widget (NetworkManagerVpnUIImpl *impl)
 {
   gtk_entry_set_text (impl->w_connection_name, "");
   gtk_entry_set_text (impl->w_remote,   "");
-  gtk_entry_set_text (impl->w_username,   "");
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), FALSE);
   gtk_entry_set_text (impl->w_routes, "");
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
@@ -108,8 +106,6 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 
     if (strcmp (key, "remote") == 0) {
       gtk_entry_set_text (impl->w_remote, value);		
-    } else if (strcmp (key, "username") == 0) {
-      gtk_entry_set_text (impl->w_username, value);
     } else if ( (strcmp (key, "comp-mppc") == 0) &&
 		(strcmp (value, "yes")) ) {
       //gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_mppc), TRUE);
@@ -160,21 +156,17 @@ impl_get_properties (NetworkManagerVpnUI *self)
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
   const char *connectionname;
   const char *remote;
-  const char *username;
   gboolean use_mppc;
   gboolean use_mppe;
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
-  username               = gtk_entry_get_text (impl->w_username);
   use_mppc               = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_mppc));
   use_mppe               = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_mppe));
  
   data = NULL;
   data = g_slist_append (data, g_strdup ("remote"));
   data = g_slist_append (data, g_strdup (remote));
-  data = g_slist_append (data, g_strdup ("username"));
-  data = g_slist_append (data, g_strdup (username));
   data = g_slist_append (data, g_strdup ("comp-mppc"));
   data = g_slist_append (data, use_mppc ? g_strdup ("yes") : g_strdup("no"));
   data = g_slist_append (data, g_strdup ("encrypt-mppe"));
@@ -244,7 +236,6 @@ impl_is_valid (NetworkManagerVpnUI *self)
   gboolean is_valid;
   const char *connectionname;
   const char *remote;
-  const char *username;
   gboolean use_routes;
   const char *routes_entry;
 
@@ -253,14 +244,12 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
-  username               = gtk_entry_get_text (impl->w_username);
   use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
   routes_entry           = gtk_entry_get_text (impl->w_routes);
 
   /* initial sanity checking */
   if (strlen (connectionname) > 0 &&
       strlen (remote) > 0 &&
-      strlen (username) > 0 &&
       ((!use_routes) || (use_routes && strlen (routes_entry) > 0)) ) {
     is_valid = TRUE;
   }
@@ -268,9 +257,7 @@ impl_is_valid (NetworkManagerVpnUI *self)
   /* validate gateway: can be a hostname or an IP; do not allow spaces or tabs */
   if (is_valid &&
       ( (strstr (remote, " ") != NULL)  ||
-	    (strstr (remote, "\t") != NULL) || 
-    	(strstr (username, " ") != NULL)  ||
-	    (strstr (username, "\t") != NULL) ) 
+	    (strstr (remote, "\t") != NULL) )
      ) {
     is_valid = FALSE;
   }
@@ -366,7 +353,6 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
   const char *connectionname;
   const char *remote;
-  const char *username;
   gboolean use_routes;
   const char *routes;
   gboolean use_mppe;
@@ -374,7 +360,6 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
-  username               = gtk_entry_get_text (impl->w_username);
   use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
   routes                 = gtk_entry_get_text (impl->w_routes);
   use_mppe               = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_mppe));
@@ -391,8 +376,6 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 
   g_string_append_printf (buf, _("Remote:  %s"), remote);
   g_string_append (buf, "\n\t");
-
-  g_string_append_printf (buf, _("Username:  %s"), username);
 
   if (use_routes) {
     g_string_append (buf, "\n\t");
@@ -425,7 +408,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
   if (g_key_file_load_from_file (keyfile, path, 0, NULL)) {
     char *connectionname = NULL;
     char *remote = NULL;
-    char *username = NULL;
     char *routes = NULL;
     char *mppc = NULL;
     char *mppe = NULL;
@@ -433,7 +415,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
     connectionname = g_key_file_get_string (keyfile, "main", "Description", NULL);
     remote = g_key_file_get_string (keyfile, "main", "Remote", NULL);
-    username = g_key_file_get_string (keyfile, "main", "Username", NULL);
     mppc = g_key_file_get_string (keyfile, "main", "Comp-MPPC", NULL);
     mppe = g_key_file_get_string (keyfile, "main", "Encrypt-MPPE", NULL);
 
@@ -444,14 +425,11 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     /* sanity check data */
     if ( ( connectionname != NULL) &&
 	 ( remote != NULL ) &&
-	 ( username != NULL ) &&
 	 (strlen(connectionname) > 0) &&
-	 (strlen(username) > 0) &&
 	 (strlen(remote) > 0) ) {
 
       gtk_entry_set_text (impl->w_connection_name, connectionname);
       gtk_entry_set_text (impl->w_remote, remote);
-      gtk_entry_set_text (impl->w_username, username);
 
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_mppc), ((mppc != NULL) && (strcmp(mppc, "yes") == 0)));
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_mppe), ((mppe != NULL) && (strcmp(mppe, "yes") == 0)));
@@ -468,7 +446,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     } else {
       g_free (connectionname);
       g_free (remote);
-      g_free (username);
       g_free (mppe);
       g_free (mppc);
     }
@@ -544,7 +521,6 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   FILE *f;
   GSList *i;
   const char *remote = NULL;
-  const char *username = NULL;
   const char *mppc = NULL;
   const char *mppe = NULL;
   char *routes_str = NULL;
@@ -560,8 +536,6 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
     if (strcmp (key, "remote") == 0) {
       remote = value;
-    } else if (strcmp (key, "username") == 0) {
-      username = value;
     } else if (strcmp (key, "comp-mppc") == 0) {
       mppc = value;
     } else if (strcmp (key, "encrypt-mppe") == 0) {
@@ -596,13 +570,11 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     "[main]\n"
 	     "Description=%s\n"
 	     "Remote=%s\n"
-	     "Username=%s\n"
 	     "Comp-MPPC=%s\n"
 	     "Encrypt-MPPE=%s\n"
 	     "%s",
 	     /* Description */ connection_name,
 	     /* Host */        remote,
-	     /* Username */    username,
 	     /* Comp-MPPC */   mppc,
 	     /* Comp-MPPE */   mppe,
 	     /* X-NM-Routes */ routes_str != NULL ? routes_str : "");
@@ -693,7 +665,6 @@ impl_get_object (void)
     impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
 								       "pptp-import-button"));
 
-    impl->w_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "pptp-username" ) );
 
     impl->w_use_mppc               = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "pptp-use-mppc"));
     impl->w_use_mppe               = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "pptp-use-mppe"));
@@ -708,8 +679,6 @@ impl_get_object (void)
     gtk_signal_connect (GTK_OBJECT (impl->w_remote), 
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_routes), 
-			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_username), 
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
     gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
