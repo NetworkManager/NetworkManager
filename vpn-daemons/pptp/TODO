@@ -1,5 +1,24 @@
+ROADMAP Version 0.7.0
+--------------------------------
+
+   * Rename / relable to general PPPd service
+   * Add configuration options to select alternative ptys
+
+    ^^^^^ ROAD MAP ^^^^^
+\/\/\/  CURRENT VERSION \/\/\/
+
+Version 0.6.9
+--------------------------------
+
+Bugs:
+  * Possible NetworkManager crash on disconnect from VPN!
+  * Add dialog option to select different authentication methods
+  * Add dialog options for the rest of the 'hard coded' pppd options.
 
 
+
+--------------------------------
+Version 0.1.0 -> 0.5.0
 
 Hi Nikolaus,
 
