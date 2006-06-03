@@ -1,3 +1,10 @@
+2006-06-02  Danilo Šegan  <danilo.segan@pctel.com>
+
+	Fixed bug #343274.
+	
+	* sr.po, sr@Latn.po: Fixed a translation on 
+	Filip Miletic's suggestion.
+
 2006-05-27  Funda Wang  <fundawang@linux.net.cn>
 
 	* zh_CN.po: Updated Simplified Chinese translation.
