@@ -5,8 +5,8 @@ It appears
 
 \/\/\/  CURRENT VERSION \/\/\/
 
-ROADMAP Version 0.7.0-beta
---------------------------------
+Version 0.7.0-beta
+------------------
 
    * Renamed/relabled things to be consistent with a general PPPd service
    * Total revamp of the configuration interface
