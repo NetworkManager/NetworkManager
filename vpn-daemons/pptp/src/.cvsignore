@@ -1,4 +1,4 @@
 Makefile.in
 Makefile
-nm-pptp-service
-nm-pptp-service-pptp-helper
+nm-ppp-starter
+nm-pppd-plugin

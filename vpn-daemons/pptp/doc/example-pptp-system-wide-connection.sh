@@ -6,11 +6,11 @@
 # gconfd daemons after the script has run (logging in and out will
 # suffice)
 
-NAME="pptp-system-wide"
-ESCAPED_NAME="pptp-system-wide"
+NAME="ppp-system-wide"
+ESCAPED_NAME="ppp-system-wide"
 REMOTE="1.2.3.4"
 # must be either yes or no
-USEMPPE="no"
+USEMPPE="yes"
 
 IPSEC_ROUTES="[172.16.0.0/16,192.168.4.0/24]"
 
@@ -19,7 +19,7 @@ GCONF_PATH="/system/networking/vpn_connections/$ESCAPED_NAME"
 GCONFTOOL2_OPTS="--direct --config-source xml:readwrite:/etc/gconf/gconf.xml.mandatory"
 
 gconftool-2 $GCONFTOOL2_OPTS --type string --set $GCONF_PATH/name "$NAME"
-gconftool-2 $GCONFTOOL2_OPTS --type string --set $GCONF_PATH/service_name "org.freedesktop.NetworkManager.pptp"
-gconftool-2 $GCONFTOOL2_OPTS --type list --list-type=string --set $GCONF_PATH/vpn_data ["remote","$REMOTE","require-mppe",$USEMPPE]
+gconftool-2 $GCONFTOOL2_OPTS --type string --set $GCONF_PATH/service_name "org.freedesktop.NetworkManager.ppp_starter"
+gconftool-2 $GCONFTOOL2_OPTS --type list --list-type=string --set $GCONF_PATH/vpn_data ["pptp-remote","$REMOTE","encrypt-mppe",$USEMPPE]
 gconftool-2 $GCONFTOOL2_OPTS --type list --list-type=string --set $GCONF_PATH/routes $IPSEC_ROUTES
 

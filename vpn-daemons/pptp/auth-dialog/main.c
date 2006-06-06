@@ -31,7 +31,7 @@
 
 #include "gnome-two-password-dialog.h"
 
-#define VPN_SERVICE "org.freedesktop.NetworkManager.pptp"
+#define VPN_SERVICE "org.freedesktop.NetworkManager.ppp_starter"
 
 static GSList *
 lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session)
@@ -161,7 +161,7 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 	}
 
 	prompt = g_strdup_printf (_("You need to authenticate to access the Virtual Private Network '%s'."), vpn_name);
-	dialog = gnome_two_password_dialog_new (_("Authenticate PPTP VPN"), prompt, NULL, NULL, FALSE);
+	dialog = gnome_two_password_dialog_new (_("Authenticate VPN"), prompt, NULL, NULL, FALSE);
 	g_free (prompt);
 
 	gnome_two_password_dialog_set_show_userpass_buttons (GNOME_TWO_PASSWORD_DIALOG (dialog), FALSE);
@@ -249,7 +249,7 @@ main (int argc, char *argv[])
 
 	passwords = NULL;
 	
-	context = g_option_context_new ("- pptp auth dialog");
+	context = g_option_context_new ("- ppp auth dialog");
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
 	g_option_context_add_group (context, gtk_get_option_group (TRUE));
 	g_option_context_parse (context, &argc, &argv, &error);
@@ -264,7 +264,7 @@ main (int argc, char *argv[])
 		goto out;		
 	}
 
-	gnome_program_init ("nm-pptp-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
+	gnome_program_init ("nm-ppp-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
 			    argc, argv, 
 			    GNOME_PARAM_NONE);
 	  

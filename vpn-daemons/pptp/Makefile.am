@@ -3,13 +3,13 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src auth-dialog properties po
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
-dbusservice_DATA = nm-pptp-service.conf
+dbusservice_DATA = nm-ppp-starter.conf
 
 nmvpnservicedir = $(sysconfdir)/NetworkManager/VPN
-nmvpnservice_DATA = nm-pptp-service.name
+nmvpnservice_DATA = nm-ppp-starter.name
 
 desktopdir = $(datadir)/applications
-desktop_in_files = nm-pptp.desktop.in
+desktop_in_files = nm-ppp.desktop.in
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
 

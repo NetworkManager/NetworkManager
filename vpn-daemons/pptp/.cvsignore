@@ -1,6 +1,6 @@
 Makefile
 Makefile.in
-NetworkManager-pptp*.tar.gz
+NetworkManager-ppp*.tar.gz
 aclocal.m4
 autom4te.cache
 compile
@@ -23,8 +23,8 @@ libtool
 ltmain.sh
 missing
 mkinstalldirs
-nm-pptp-service.name
-nm-pptp.desktop
+nm-ppp-starter.name
+nm-ppp.desktop
 stamp-h1
 COPYING
 INSTALL

@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager-pptp, 0.6.9, eemynotna@gmail.com, NetworkManager-pptp)
+AC_INIT(NetworkManager-ppp_vpn, 0.7.0, eemynotna@gmail.com, NetworkManager-ppp_vpn)
 AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
@@ -38,7 +38,7 @@ AC_CHECK_FUNCS(select socket uname)
 ALL_LINGUAS="da sv"
 AC_SUBST(ALL_LINGUAS)
 
-GETTEXT_PACKAGE=NetworkManager-pptp
+GETTEXT_PACKAGE=NetworkManager-ppp_vpn
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
 
@@ -128,5 +128,5 @@ src/Makefile
 auth-dialog/Makefile
 properties/Makefile
 po/Makefile.in
-nm-pptp-service.name
+nm-ppp-starter.name
 ])

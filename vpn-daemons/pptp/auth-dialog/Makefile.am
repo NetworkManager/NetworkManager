@@ -1,8 +1,8 @@
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
 
-libexec_PROGRAMS = nm-pptp-auth-dialog
+libexec_PROGRAMS = nm-ppp-auth-dialog
 
-nm_pptp_auth_dialog_CPPFLAGS =			\
+nm_ppp_auth_dialog_CPPFLAGS =			\
 	$(GTHREAD_CFLAGS)			\
 	$(GTK_CFLAGS)				\
 	$(LIBGNOMEUI_CFLAGS)			\
@@ -18,13 +18,13 @@ nm_pptp_auth_dialog_CPPFLAGS =			\
 	-DVERSION=\"$(VERSION)\"			\
 	$(NULL)
 
-nm_pptp_auth_dialog_SOURCES =			\
+nm_ppp_auth_dialog_SOURCES =			\
 	main.c					\
 	gnome-two-password-dialog.c		\
 	gnome-two-password-dialog.h		\
 	$(NULL)
 
-nm_pptp_auth_dialog_LDADD =			\
+nm_ppp_auth_dialog_LDADD =			\
 	$(GTK_LIBS)				\
 	$(LIBGNOMEUI_LIBS)			\
 	$(GNOMEKEYRING_LIBS)			\

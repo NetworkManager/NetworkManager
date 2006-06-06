@@ -1,4 +1,4 @@
-/* nm-pptp-service - pptp integration with NetworkManager
+/* nm-ppp-starter - pptp (and other ppp) integration with NetworkManager
  *
  * Antony J Mee <eemynotna at gmail dot com>
  * Based on openvpn work by Tim Niemueller <tim@niemueller.de>
@@ -20,11 +20,11 @@
  *
  */
 
-#ifndef NM_PPTP_SERVICE_H
-#define NM_PPTP_SERVICE_H
+#ifndef NM_PPP_SERVICE_H
+#define NM_PPP_SERVICE_H
 
-#define NM_DBUS_SERVICE_PPTP	"org.freedesktop.NetworkManager.pptp"
-#define NM_DBUS_INTERFACE_PPTP	"org.freedesktop.NetworkManager.pptp"
-#define NM_DBUS_PATH_PPTP	"/org/freedesktop/NetworkManager/pptp"
+#define NM_DBUS_SERVICE_PPP_STARTER	"org.freedesktop.NetworkManager.ppp_starter"
+#define NM_DBUS_INTERFACE_PPP_STARTER	"org.freedesktop.NetworkManager.ppp_starter"
+#define NM_DBUS_PATH_PPP_STARTER	"/org/freedesktop/NetworkManager/ppp_starter"
 
 #endif
