@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager-ppp_vpn, 0.7.0, eemynotna@gmail.com, NetworkManager-ppp_vpn)
+AC_INIT(NetworkManager-ppp_vpn, 0.7.0-beta, eemynotna@gmail.com, NetworkManager-ppp_vpn)
 AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE

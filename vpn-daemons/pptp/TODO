@@ -1,23 +1,46 @@
-ROADMAP Version 0.7.0
---------------------------------
-
-   * Rename / relable to general PPPd service
-   * Add configuration options to select alternative ptys
+Future plans are currently hanging on what people want out of this.
+It appears 
 
     ^^^^^ ROAD MAP ^^^^^
+
 \/\/\/  CURRENT VERSION \/\/\/
+
+ROADMAP Version 0.7.0-beta
+--------------------------------
+
+   * Renamed/relabled things to be consistent with a general PPPd service
+   * Total revamp of the configuration interface
+        - More abstract.  Seperated the dialog (glade) details
+          from behaviour considerable.  Implementation now simply
+          requires a glade file and a few lines of rather declarative
+          code.
+   * Add configuration options to select alternative ptys
+        - though only PPTP is actually defined at the moment
+        - Dial-up has been put in to the configuration as a 
+            "feature preview" but it doesn't actually do anything
+            at present.
+   * Runs pppd asynchronously (allows pppd to fork)
+   * Crash on disconnect fixed.
+   * Added "debug mode" to show more detailed output.
+
+Bugs:
+   * Does not seem to remember you login information even if
+     told to do so.
+   * Still only support for CHAP authentication.
+
 
 Version 0.6.9
 --------------------------------
 
 Bugs:
-  * Possible NetworkManager crash on disconnect from VPN!
-  * Add dialog option to select different authentication methods
-  * Add dialog options for the rest of the 'hard coded' pppd options.
+  * Possible NetworkManager crash on disconnect from VPN! (FIXED)
+  * Add dialog option to select different authentication methods 
+  * Add dialog options for the rest of the 'hard coded' pppd options. (FIXED)
 
 
 
 --------------------------------
+PREHISTORY
 Version 0.1.0 -> 0.5.0
 
 Hi Nikolaus,
