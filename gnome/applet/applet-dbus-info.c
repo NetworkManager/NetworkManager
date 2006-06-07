@@ -97,7 +97,7 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
                                                gpointer           data)
 {
 	NMGetNetworkKeyCBData *	cb_data = (NMGetNetworkKeyCBData*) data;
-	NMApplet *		applet = cb_data->applet;
+	NMApplet *			applet = cb_data->applet;
 	DBusMessage *			message = cb_data->message;
 	NetworkDevice *		dev = cb_data->dev;
 	char *				net_path = cb_data->net_path;
@@ -141,7 +141,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	char *			dev_path = NULL;
 	char *			net_path = NULL;
 	char *			essid = NULL;
@@ -307,9 +307,9 @@ nmi_dbus_get_networks (DBusConnection *connection,
                        DBusMessage *message,
                        void *user_data)
 {
-	const char * NO_NET_ERROR = "NoNetworks";
-	const char * NO_NET_ERROR_MSG = "There are no wireless networks stored.";
-	NMApplet *	applet = (NMApplet *) user_data;
+	const char * 		NO_NET_ERROR = "NoNetworks";
+	const char * 		NO_NET_ERROR_MSG = "There are no wireless networks stored.";
+	NMApplet *		applet = (NMApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt;
 	DBusMessage *		reply = NULL;
@@ -474,11 +474,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 	/* Fourth arg: List of AP BSSIDs (ARRAY, STRING) */
 	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
 	if (bssids_value && (g_slist_length (gconf_value_get_list (bssids_value)) > 0))
-	{
-		g_slist_foreach (gconf_value_get_list (bssids_value),
-				(GFunc) addr_list_append_helper,
-				&array_iter);
-	}
+		g_slist_foreach (gconf_value_get_list (bssids_value), (GFunc) addr_list_append_helper, &array_iter);
 	else
 	{
 		const char *fake = "";
@@ -841,7 +837,7 @@ nmi_save_network_info (NMApplet *applet,
 	g_free (key);
 	if (!gconf_entry)
 	{
-		nm_warning ("%s:%d - GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, essid);
+		nm_warning ("Failed to create or obtain GConf entry for '%s'.", essid);
 		goto out;
 	}
 	gconf_entry_unref (gconf_entry);
@@ -1023,8 +1019,8 @@ out:
 DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	NMApplet *	applet = (NMApplet *)user_data;
-	DBusMessage *		reply = NULL;
-	gboolean			handled;
+	DBusMessage *	reply = NULL;
+	gboolean		handled;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 

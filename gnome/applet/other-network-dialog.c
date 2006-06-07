@@ -381,7 +381,7 @@ static GtkDialog *nma_ond_init (GladeXML *xml, NMApplet *applet, gboolean create
 static void nma_ond_response_cb (GtkDialog *dialog, gint response, gpointer data)
 {
 	GladeXML *		xml;
-	NMApplet *	applet;
+	NMApplet *		applet;
 	gboolean			create_network;
 	GtkTreeModel *		model;
 	GtkComboBox *		combo;
