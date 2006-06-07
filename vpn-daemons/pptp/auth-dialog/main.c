@@ -41,7 +41,7 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 
 	passwords = NULL;
 
-	if (gnome_keyring_find_network_password_sync (g_get_user_name (),     /* user */
+	if (gnome_keyring_find_network_password_sync (NULL,  /* user */
 						      NULL,                   /* domain */
 						      vpn_name,               /* server */
 						      NULL,                   /* object */
@@ -51,33 +51,23 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 						      &keyring_result) != GNOME_KEYRING_RESULT_OK)
 		return FALSE;
 
-	if (keyring_result != NULL && g_list_length (keyring_result) == 2) {
-		char *username;
-		char *password;
-		GnomeKeyringNetworkPasswordData *data1 = keyring_result->data;
-		GnomeKeyringNetworkPasswordData *data2 = (g_list_next (keyring_result))->data;
+	if (keyring_result != NULL && g_list_length (keyring_result) == 1) {
+		GnomeKeyringNetworkPasswordData *data = 
+             (GnomeKeyringNetworkPasswordData *)keyring_result->data;
+		char *username = NULL;
+		char *password = NULL;
+		char *auth_type = NULL;
 
-		username = NULL;
-		password = NULL;
+        username = data->user;
+        password = data->password;
+        auth_type = data->authtype;
 
-		if (strcmp (data1->object, "username") == 0) {
-			username = data1->password;
-		} else if (strcmp (data1->object, "password") == 0) {
-			password = data1->password;
-		}
-
-		if (strcmp (data2->object, "username") == 0) {
-			username = data2->password;
-		} else if (strcmp (data2->object, "password") == 0) {
-			password = data2->password;
-		}
-
-		if (password != NULL && username != NULL) {
+		if (password != NULL && username != NULL && auth_type != NULL) {
 // Statically set the authentication type for now.
-		    passwords = g_slist_append (passwords, g_strdup("CHAP"));
+		    passwords = g_slist_append (passwords, g_strdup(auth_type));
 			passwords = g_slist_append (passwords, g_strdup (username));
 			passwords = g_slist_append (passwords, g_strdup (password));
-			if (strcmp (data1->keyring, "session") == 0)
+			if (strcmp (data->keyring, "session") == 0)
 				*is_session = TRUE;
 			else
 				*is_session = FALSE;
@@ -90,41 +80,26 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 }
 
 static void save_vpn_password (const char *vpn_name, const char *vpn_service, const char *keyring, 
-			       const char *username, const char *password)
+			       const char *auth_type, const char *username, const char *password)
 {
 	guint32 item_id;
 	GnomeKeyringResult keyring_result;
 
 	keyring_result = gnome_keyring_set_network_password_sync (keyring,
-								  g_get_user_name (),
+								  username,
 								  NULL,
 								  vpn_name,
 								  "password",
 								  vpn_service,
-								  NULL,
+								  auth_type,
 								  0,
 								  password,
 								  &item_id);
 	if (keyring_result != GNOME_KEYRING_RESULT_OK)
 	{
-		g_warning ("Couldn't store password in keyring, code %d", (int) keyring_result);
+		g_warning ("Couldn't store authentication information in keyring, code %d", (int) keyring_result);
 	}
 
-	keyring_result = gnome_keyring_set_network_password_sync (keyring,
-								  g_get_user_name (),
-								  NULL,
-								  vpn_name,
-								  "password",
-								  vpn_service,
-								  NULL,
-								  0,
-								  password,
-								  &item_id);
-
-	if (keyring_result != GNOME_KEYRING_RESULT_OK)
-	{
-		g_warning ("Couldn't store password in keyring, code %d", (int) keyring_result);
-	}
 }
 
 static GSList *
@@ -160,8 +135,8 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 		g_slist_free (keyring_result);
 	}
 
-	prompt = g_strdup_printf (_("You need to authenticate to access the Virtual Private Network '%s'."), vpn_name);
-	dialog = gnome_two_password_dialog_new (_("Authenticate VPN"), prompt, NULL, NULL, FALSE);
+	prompt = g_strdup_printf (_("You need to authenticate to access '%s'."), vpn_name);
+	dialog = gnome_two_password_dialog_new (_("Authenticate Connection"), prompt, NULL, NULL, FALSE);
 	g_free (prompt);
 
 	gnome_two_password_dialog_set_show_userpass_buttons (GNOME_TWO_PASSWORD_DIALOG (dialog), FALSE);
@@ -194,21 +169,23 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 	{
 		char *username;
 		char *password;
+		char *auth_type;
 
 		username = gnome_two_password_dialog_get_username (GNOME_TWO_PASSWORD_DIALOG (dialog));
 		password = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
 // Statically set the authentication type for now.
-		result = g_slist_append (result, g_strdup("CHAP"));
+        auth_type = "CHAP";
+		result = g_slist_append (result, auth_type);
 		result = g_slist_append (result, username);
 		result = g_slist_append (result, password);
 
 		switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog)))
 		{
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-				save_vpn_password (vpn_name, vpn_service, "session", username, password);
+				save_vpn_password (vpn_name, vpn_service, "session", auth_type, username, password);
 				break;
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-				save_vpn_password (vpn_name, vpn_service, NULL, username, password);
+				save_vpn_password (vpn_name, vpn_service, NULL, auth_type, username, password);
 				break;
 			default:
 				break;
