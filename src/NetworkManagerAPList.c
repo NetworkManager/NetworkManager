@@ -437,10 +437,11 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
  */
 gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointList *list, NMAccessPoint *merge_ap)
 {
-	NMAccessPoint *	list_ap = NULL;
-	gboolean			strength_changed = FALSE;
-	gboolean			new = FALSE;
-	NMData *			app_data;
+	NMAccessPoint *			list_ap = NULL;
+	gboolean					strength_changed = FALSE;
+	gboolean					new = FALSE;
+	NMData *					app_data;
+	const struct ether_addr *	merge_bssid;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (list != NULL, FALSE);
@@ -449,18 +450,17 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 	app_data = nm_device_get_app_data (NM_DEVICE (dev));
 	g_return_val_if_fail (app_data != NULL, FALSE);
 
-	if ((list_ap = nm_ap_list_get_ap_by_address (list, nm_ap_get_address (merge_ap))))
+	merge_bssid = nm_ap_get_address (merge_ap);
+	if (nm_ethernet_address_is_valid (merge_bssid) && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid)))
 	{
+		/* First, we check for an address match.  If the merge AP has a valid
+		 * BSSID and the same address as a list AP, then the merge AP and
+		 * the list AP must be the same physical AP. The list AP properties must
+		 * be from a previous scan so the time_last_seen's are not equal.  Update
+		 * encryption, authentication method, strength, and the time_last_seen. */
+
 		const char *	devlist_essid = nm_ap_get_essid (list_ap);
 		const char *	merge_essid = nm_ap_get_essid (merge_ap);
-
-		/* First, we check for an address match. If the merge AP has the
-		 * same address as a list AP, the merge AP and the list AP
-		 * must be the same physical AP. The list AP properties must be from
-		 * a previous scan so the time_last_seen's are not equal.
-		 * Update encryption, authentication method,
-		 * strength, and the time_last_seen. */
-
 		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
 		/* Did the AP's name change? */
@@ -492,7 +492,6 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 	}
 	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
 	{
-
 		/* Second, we check for an ESSID match. In this case,
 		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
 		 * encryption and authentication method. Update the strength and address

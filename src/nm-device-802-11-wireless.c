@@ -3181,7 +3181,6 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
                            NMAccessPoint *ap)
 {
 	GTimeVal cur_time;
-	NMData *	app_data;
 	NMAccessPointList *	ap_list;
 
 	g_return_if_fail (dev != NULL);
@@ -3193,10 +3192,12 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
 	 * allowed list where we cache known MAC->ESSID associations.
 	 */
-	app_data = nm_device_get_app_data (NM_DEVICE (dev));
 	if (!nm_ap_get_essid (ap))
 	{
+		NMData *	app_data;
+
 		nm_ap_set_broadcast (ap, FALSE);
+		app_data = nm_device_get_app_data (NM_DEVICE (dev));
 		nm_ap_list_copy_one_essid_by_address (app_data, dev, ap, app_data->allowed_ap_list);
 	}
 

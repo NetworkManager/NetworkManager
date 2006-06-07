@@ -1,3 +1,16 @@
+2006-06-07  Robert Love  <rml@novell.com>
+
+	* gnome/applet/gconf-helpers.c: Bug fix: nm_gconf_helper_get_bool()
+	  checked that the return type was GCONF_VALUE_STRING, not the correct
+	  GCONF_VALUE_BOOL, and thus it never worked.
+	* src/NetworkManagerAPList.c: Before concluding that two networks are
+	  identical based on their BSSID, make sure that the BSSID in question
+	  is actually valid.  Specifically, an empty or all zero BSSID does not
+	  cut it.
+	* gnome/applet/applet-dbus-info.c, gnome/applet/other-network-dialog.c,
+	  src/nm-dbus-nmi.c, src/nm-device-802-11-wireless.c: White space and
+	  similar invariant clean up.
+
 2006-06-02  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet.c: Update copyright years.  Add Novell.
