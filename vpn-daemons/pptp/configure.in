@@ -89,6 +89,10 @@ AS_AC_EXPAND(SBINDIR, $sbindir)
 AS_AC_EXPAND(LIBDIR, $libdir)
 AS_AC_EXPAND(LIBEXECDIR, $libexecdir)
 
+AC_ARG_ENABLE(bluetooth, [  --enable-bluetooth  Build Bluetooth bits [default=no]], enable_bluetooth="$enableval", enable_bluetooth=no)
+if test "x$enable_bluetooth" = "xyes" ; then
+    BUILD_BLUETOOTH="yes"
+fi
 AC_ARG_ENABLE(more-warnings,
 AC_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]),
 set_more_warnings="$enableval",[

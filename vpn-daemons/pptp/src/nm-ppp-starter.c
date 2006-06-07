@@ -75,6 +75,7 @@ typedef struct NmPPPData
   guint		     	quit_timer;
   guint			    helper_timer;
   char              *str_ip4_vpn_gateway;
+  char              *connection_type;
   struct in_addr    ip4_vpn_gateway;
   char              **auth_items;
   int               num_auth_items;
@@ -399,34 +400,19 @@ static void pppd_forked_watch_cb (GPid pid, gint status, gpointer user_data)
   nm_ppp_schedule_quit_timer (data, 10000);
 }
 
-
 /*
- * nm_ppp_start_vpn_binary
+ * nm_ppp_get_cmdline_pptp
  *
- * Start the ppp binary with a set of arguments and a config file.
+ * Process and add to the pppd command line appropriately.
  *
  */
-static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const int num_items)
+static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *ppp_argv)
 {
-  GPid			pid;
   const char **		pptp_binary = NULL;
-  const char **		pppd_binary = NULL;
-  struct hostent    *hostinfo = NULL;
-  GPtrArray *	ppp_argv;
-  GError *		error = NULL;
-  gint			stdin_fd = -1;
-  GSource *		pppd_watch;
   int                   i = 0;
+  struct hostent    *hostinfo = NULL;
   char *        pppd_pty = NULL;
-  char *        cmdline = NULL;
-
-  g_return_val_if_fail (data != NULL, -1);
-
-  data->pid = 0;
-
-  if ( (num_items == 0) || (data_items == NULL) ) {
-    return -1;
-  }
+  
 
   /* Find pptp */
   pptp_binary = pptp_binary_paths;
@@ -440,53 +426,147 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
     nm_info ("Could not find pptp binary.");
     return -1;
   }
-
-  /* Find pppd */
-  pppd_binary = pppd_binary_paths;
-  while (*pppd_binary != NULL) {
-    if (g_file_test (*pppd_binary, G_FILE_TEST_EXISTS))
-      break;
-    pppd_binary++;
-  }
-
-  if (!*pppd_binary) {
-    nm_info ("Could not find pppd binary.");
-    return -1;
-  }
-
-  ppp_argv = g_ptr_array_new ();
-  g_ptr_array_add (ppp_argv, (gpointer) (*pppd_binary));
-
+  
   // First ppp parameter is the PPTP server 
   for (i = 0; i < num_items; ++i) {
     if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
       hostinfo = gethostbyname(data_items[++i]);
       if (!hostinfo) {
-        nm_info ("Could not resolve VPN servers IP.");
+        nm_info ("Could not resolve IP address of VPN server.");
         return -1;
       }
       data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
       data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
-//      nm_info ("Lookup VPN server IP = '%s'",data->str_ip4_vpn_gateway);
 
       pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
-//      nm_info ("Starting pppd with pty %s",pppd_pty);
-      
+
       g_ptr_array_add (ppp_argv, (gpointer) "pty");
       g_ptr_array_add (ppp_argv, (gpointer) pppd_pty);
-      
     }
   }
+/* TODO: this pppd_pty should get freed somewhere */
+//  g_free(pppd_pty);
 
-//  g_ptr_array_add (ppp_argv, (gpointer) "nodetach");
-  g_ptr_array_add (ppp_argv, (gpointer) "ipparam");
-  g_ptr_array_add (ppp_argv, (gpointer) "NetworkManager");
-  // Set the username...
+  /* Process other pptp options */
   for (i = 0; i < num_items; ++i) {
     if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
       g_ptr_array_add (ppp_argv, (gpointer) "remotename");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[++i]);
-    } else if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
+    } /* else if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
+    } */ 
+  }
+}
+
+/*
+ * nm_ppp_get_cmdline_dialup
+ *
+ * Process and add to the pppd command line appropriately.
+ *
+ */
+static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+{
+//  int                   i = 0;
+//  // First ppp parameter is the PPTP server 
+//  for (i = 0; i < num_items; ++i) {
+//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
+//      hostinfo = gethostbyname(data_items[++i]);
+//      if (!hostinfo) {
+//        nm_info ("Could not resolve IP address of VPN server.");
+//        return -1;
+//      }
+//      data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
+//      data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
+//
+//      pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
+//
+//      g_ptr_array_add (ppp_argv, (gpointer) "pty");
+//      g_ptr_array_add (ppp_argv, (gpointer) pppd_pty);
+//    }
+//  }
+//
+//  /* Process other pptp options */
+//  for (i = 0; i < num_items; ++i) {
+//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
+//      g_ptr_array_add (ppp_argv, (gpointer) "remotename");
+//      g_ptr_array_add (ppp_argv, (gpointer) data_items[++i]);
+//    } /* else if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
+//		(strcmp( data_items[++i], "yes" ) == 0) ) {
+//      g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
+//    } */ 
+//  }
+}
+
+/*
+ * nm_ppp_get_cmdline_btgprs
+ *
+ * Process and add to the pppd command line appropriately.
+ *
+ */
+static gint nm_ppp_get_cmdline_btgprs (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+{
+//  int                   i = 0;
+//  const char **		pptp_binary = NULL;
+//
+//  /* Find pptp */
+//  pptp_binary = pptp_binary_paths;
+//  while (*pptp_binary != NULL) {
+//    if (g_file_test (*pptp_binary, G_FILE_TEST_EXISTS))
+//      break;
+//    pptp_binary++;
+//  }
+//
+//  if (!*pptp_binary) {
+//    nm_info ("Could not find pptp binary.");
+//    return -1;
+//  }
+//  
+//  // First ppp parameter is the PPTP server 
+//  for (i = 0; i < num_items; ++i) {
+//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
+//      hostinfo = gethostbyname(data_items[++i]);
+//      if (!hostinfo) {
+//        nm_info ("Could not resolve IP address of VPN server.");
+//        return -1;
+//      }
+//      data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
+//      data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
+//
+//      pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
+//
+//      g_ptr_array_add (ppp_argv, (gpointer) "pty");
+//      g_ptr_array_add (ppp_argv, (gpointer) pppd_pty);
+//    }
+//  }
+//
+//  /* Process other pptp options */
+//  for (i = 0; i < num_items; ++i) {
+//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
+//      g_ptr_array_add (ppp_argv, (gpointer) "remotename");
+//      g_ptr_array_add (ppp_argv, (gpointer) data_items[++i]);
+//    } /* else if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
+//		(strcmp( data_items[++i], "yes" ) == 0) ) {
+//      g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
+//    } */ 
+//  }
+}
+
+/*
+ * nm_ppp_get_cmdline_ppp
+ *
+ * Process and add to the pppd command line appropriately.
+ *
+ */
+static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+{
+  int                   i = 0;
+  // Announce ourselves as NetworkManager to the ip-up/down scripts
+  g_ptr_array_add (ppp_argv, (gpointer) "ipparam");
+  g_ptr_array_add (ppp_argv, (gpointer) "NetworkManager");
+
+  for (i = 0; i < num_items; ++i) {
+    if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "lock");
     } else if ( (strcmp( data_items[i], "ppp-auth-peer" ) == 0) &&
@@ -538,10 +618,64 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
     }
   }
 
+  /* Add this here in case debug has been flagged by other means */
   if (data->debug) g_ptr_array_add (ppp_argv, (gpointer) "debug");
 
   g_ptr_array_add (ppp_argv, (gpointer) "plugin");
   g_ptr_array_add (ppp_argv, (gpointer) NM_PPP_HELPER_PATH);
+}
+
+/*
+ * nm_ppp_start_vpn_binary
+ *
+ * Start the ppp binary with a set of arguments and a config file.
+ *
+ */
+static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const int num_items)
+{
+  GPid			pid;
+  const char **		pppd_binary = NULL;
+  GPtrArray *	ppp_argv;
+  GError *		error = NULL;
+  gint			stdin_fd = -1;
+  GSource *		pppd_watch;
+  char *        cmdline = NULL;
+
+  g_return_val_if_fail (data != NULL, -1);
+
+  data->pid = 0;
+
+  if ( (num_items == 0) || (data_items == NULL) ) {
+    return -1;
+  }
+
+  /* Find pppd */
+  pppd_binary = pppd_binary_paths;
+  while (*pppd_binary != NULL) {
+    if (g_file_test (*pppd_binary, G_FILE_TEST_EXISTS))
+      break;
+    pppd_binary++;
+  }
+
+  if (!*pppd_binary) {
+    nm_info ("Could not find pppd binary.");
+    return -1;
+  }
+
+  ppp_argv = g_ptr_array_new ();
+  g_ptr_array_add (ppp_argv, (gpointer) (*pppd_binary));
+
+  if (strcmp("pptp",data->connection_type)==0) {
+    nm_ppp_get_cmdline_pptp(data,data_items,num_items,ppp_argv);
+  } else if (strcmp("dialup",data->connection_type)==0) {
+    nm_ppp_get_cmdline_dialup(data,data_items,num_items,ppp_argv);
+  } else if (strcmp("btgprs",data->connection_type)==0) {
+    nm_ppp_get_cmdline_btgprs(data,data_items,num_items,ppp_argv);
+  } else {
+    nm_warning("nm-ppp-starter: ppp-connection-type '%s' unknown",data->connection_type);
+  }
+
+  nm_ppp_get_cmdline_ppp(data,data_items,num_items,ppp_argv);
   
   g_ptr_array_add (ppp_argv, NULL);
 
@@ -557,13 +691,11 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
 				 NULL, NULL, &error))
     {
       g_ptr_array_free (ppp_argv, TRUE);
-      g_free(pppd_pty);
       nm_warning ("pppd failed to start.  error: '%s'", error->message);
       g_error_free(error);
       return -1;
     }
   g_ptr_array_free (ppp_argv, TRUE);
-  g_free(pppd_pty);
 
   pppd_watch = g_child_watch_source_new (pid);
   g_source_set_callback (pppd_watch, (GSourceFunc) pppd_start_watch_cb, data, NULL);
@@ -594,7 +726,7 @@ typedef struct Option
  * Make sure the config options are sane
  *
  */
-static gboolean nm_ppp_config_options_validate (char **data_items, int num_items)
+static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_items, int num_items)
 {
   Option	allowed_opts[] = {
     { "ppp-connection-type", OPT_TYPE_ASCII },
@@ -606,7 +738,7 @@ static gboolean nm_ppp_config_options_validate (char **data_items, int num_items
     { "compress-bsd",		OPT_TYPE_ASCII },
     { "compress-deflate",	OPT_TYPE_ASCII },
     { "encrypt-mppe",		OPT_TYPE_ASCII },
-    { "ppp-auth-peer",			OPT_TYPE_ASCII },
+    { "ppp-auth-peer",		OPT_TYPE_ASCII },
     { "ppp-lock",			OPT_TYPE_ASCII },
     { "mtu",			    OPT_TYPE_ASCII },
     { "mru",		    	OPT_TYPE_ASCII },
@@ -615,6 +747,15 @@ static gboolean nm_ppp_config_options_validate (char **data_items, int num_items
     { "ppp-debug",			OPT_TYPE_ASCII },
     { "use-routes",			OPT_TYPE_ASCII },
     { "routes", 			OPT_TYPE_ASCII },
+    { "ppp-crtscts", 		OPT_TYPE_ASCII },
+    { "ppp-noipdefault",	OPT_TYPE_ASCII },
+    { "ppp-modem", 			OPT_TYPE_ASCII },
+    { "bt-bdaddr", 			OPT_TYPE_ASCII },
+    { "bt-channel", 		OPT_TYPE_ASCII },
+    { "gprs-packet-type", 	OPT_TYPE_ASCII },
+    { "gprs-apn", 			OPT_TYPE_ASCII },
+    { "gprs-ip", 			OPT_TYPE_ASCII },
+    { "gprs-context-num", 	OPT_TYPE_ASCII },
     { NULL,					OPT_TYPE_UNKNOWN } };
   
   unsigned int	i;
@@ -628,7 +769,18 @@ static gboolean nm_ppp_config_options_validate (char **data_items, int num_items
       nm_warning ("The number of VPN config options was not even.");
       return FALSE;
     }
-  
+
+  if (data->connection_type!=NULL) g_free(data->connection_type);
+  for (i = 0; i < num_items; ++i) {
+    if ( strcmp( data_items[i], "ppp-connection-type" ) == 0) {
+      data->connection_type=g_strdup(data_items[++i]);
+      break;
+    } 
+  }
+  if (data->connection_type==NULL) return FALSE;
+
+  /* TODO: Need to add some different sections based on the connection_type */
+
   for (i = 0; i < num_items; i += 2)
     {
       Option *opt = NULL;
@@ -762,7 +914,7 @@ static gboolean nm_ppp_dbus_handle_start_vpn (DBusMessage *message, NmPPPData *d
       goto out;
     }
 
-  if (!nm_ppp_config_options_validate (data_items, num_items))
+  if (!nm_ppp_config_options_validate (data, data_items, num_items))
     {
       nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
       goto out;
