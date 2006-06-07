@@ -229,6 +229,11 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   NULL, NULL, impl );
 
   opt = vpnui_opt_new(
+  "ppp-connect-delay"  , VPN_UI_OPTTYPE_SPINNER ,
+  "ppp-connect-delay", "PPP-Connect-Delay", _("Interval (in milliseconds) to wait before connecting."),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
   "ppp-debug"  , VPN_UI_OPTTYPE_YESNO ,
   "ppp-debug", NULL, NULL,
   NULL, NULL, impl );

@@ -57,6 +57,13 @@ static const char *pptp_binary_paths[] =
   NULL
 };
 
+static const char *chat_binary_paths[] =
+{
+  "/usr/sbin/chat",
+  "/sbin/chat",
+  NULL
+};
+
 static const char *pppd_binary_paths[] =
 {
   "/usr/sbin/pppd",
@@ -406,7 +413,7 @@ static void pppd_forked_watch_cb (GPid pid, gint status, gpointer user_data)
  * Process and add to the pppd command line appropriately.
  *
  */
-static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *ppp_argv)
+static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *ppp_argv, GPtrArray *free_later)
 {
   const char **		pptp_binary = NULL;
   int                   i = 0;
@@ -442,6 +449,7 @@ static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const i
 
       g_ptr_array_add (ppp_argv, (gpointer) "pty");
       g_ptr_array_add (ppp_argv, (gpointer) pppd_pty);
+      g_ptr_array_add (free_later, (gpointer) pppd_pty);
     }
   }
 /* TODO: this pppd_pty should get freed somewhere */
@@ -465,7 +473,7 @@ static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const i
  * Process and add to the pppd command line appropriately.
  *
  */
-static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv, GPtrArray *free_later)
 {
 //  int                   i = 0;
 //  // First ppp parameter is the PPTP server 
@@ -499,57 +507,110 @@ static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const
 }
 
 /*
- * nm_ppp_get_cmdline_btgprs
+ * nm_ppp_get_cmdline_btserial
+ *
+ * Process and add to the pppd command line appropriately.
+ * for a bluetooth serial connection
+ *
+ */
+static gint nm_ppp_get_cmdline_btserial (NmPPPData *data, char **data_items, const int num_items, GPtrArray *ppp_argv, GPtrArray *free_later)
+{
+  int        i = 0;
+  char **chat_binary;
+  char *bdaddr = NULL;
+  char *bdchannel=NULL;
+
+  /* Based on BT GPRS instreuctions 
+   *   from http://www.linuxjournal.com/article/7525 */
+
+  /* Gather options */
+  for (i = 0; i < num_items; ++i) {
+    if ( strcmp( data_items[i], "bt-bdaddr" ) == 0) {
+      bdaddr = data_items[++i];
+    } else if ( strcmp( data_items[i], "bt-channel" ) == 0) {
+      bdchannel = data_items[++i];
+    }  
+  }
+
+  /* TODO:Use BLueZ stack to open an RFCOMM channel 
+   *  see http://people.csail.mit.edu/albert/bluez-intro/x499.html 
+   *  and http://www.andybotting.com/mediawiki/index.php/Connecting_the_T610_to_Linux,_and_other_bluetooth_adventures */
+  g_ptr_array_add (ppp_argv, (gpointer) "/dev/ttyGPRS");
+//  g_ptr_array_add (ppp_argv, (gpointer) "115200");
+  g_ptr_array_add (ppp_argv, (gpointer) "57600");
+}
+
+/*
+ * nm_ppp_get_cmdline_gprs
  *
  * Process and add to the pppd command line appropriately.
  *
  */
-static gint nm_ppp_get_cmdline_btgprs (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+static gint nm_ppp_get_cmdline_gprs (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv, GPtrArray *free_later)
 {
-//  int                   i = 0;
-//  const char **		pptp_binary = NULL;
-//
-//  /* Find pptp */
-//  pptp_binary = pptp_binary_paths;
-//  while (*pptp_binary != NULL) {
-//    if (g_file_test (*pptp_binary, G_FILE_TEST_EXISTS))
-//      break;
-//    pptp_binary++;
-//  }
-//
-//  if (!*pptp_binary) {
-//    nm_info ("Could not find pptp binary.");
-//    return -1;
-//  }
-//  
-//  // First ppp parameter is the PPTP server 
-//  for (i = 0; i < num_items; ++i) {
-//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
-//      hostinfo = gethostbyname(data_items[++i]);
-//      if (!hostinfo) {
-//        nm_info ("Could not resolve IP address of VPN server.");
-//        return -1;
-//      }
-//      data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
-//      data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
-//
-//      pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
-//
-//      g_ptr_array_add (ppp_argv, (gpointer) "pty");
-//      g_ptr_array_add (ppp_argv, (gpointer) pppd_pty);
-//    }
-//  }
-//
-//  /* Process other pptp options */
-//  for (i = 0; i < num_items; ++i) {
-//    if ( strcmp( data_items[i], "pptp-remote" ) == 0) {
-//      g_ptr_array_add (ppp_argv, (gpointer) "remotename");
-//      g_ptr_array_add (ppp_argv, (gpointer) data_items[++i]);
-//    } /* else if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
-//		(strcmp( data_items[++i], "yes" ) == 0) ) {
-//      g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
-//    } */ 
-//  }
+  int        i = 0;
+  const char *gprs_ip=NULL;
+  const char *gprs_apn=NULL;
+  const char *gprs_packet_type=NULL;
+  const char *gprs_context_num=NULL;
+  const char *connect_script=NULL; 
+  const char **		chat_binary = NULL;
+
+  /* Find chat */
+  chat_binary = chat_binary_paths;
+  while (*chat_binary != NULL) {
+    if (g_file_test (*chat_binary, G_FILE_TEST_EXISTS))
+      break;
+    chat_binary++;
+  }
+
+  if (!*chat_binary) {
+    nm_info ("Could not find chat binary.");
+    return -1;
+  }
+
+  /* Gather options */
+  for (i = 0; i < num_items; ++i) {
+    if ( strcmp( data_items[i], "gprs-apn" ) == 0) {
+      gprs_apn = data_items[++i];
+    } else if ( strcmp( data_items[i], "gprs-ip-address" ) == 0) {
+      gprs_ip = data_items[++i];
+    } else if ( strcmp( data_items[i], "gprs-packet-type" ) == 0) {
+      gprs_packet_type = data_items[++i];
+    } else if ( strcmp( data_items[i], "gprs-context-num" ) == 0) {
+      gprs_context_num = data_items[++i];
+    }  
+  }
+ 
+  /* Build connect script */
+//  connect_script = g_strdup_printf (
+//  "%s -s -v \"\" AT+CGDCONT=%s,\"%s\",\"%s\",\"%s\",0,0 OK AT+CGDATA=\"PPP\",1", 
+//     (*chat_binary), gprs_context_num, gprs_packet_type, gprs_apn, gprs_ip);
+  connect_script = g_strdup_printf (
+  "%s -s -v "
+  "TIMEOUT 5 "
+  "ECHO ON "
+  "ABORT '\\nBUSY\\r' "
+  "ABORT '\\nERROR\\r' "
+  "ABORT '\\nNO ANSWER\\r' "
+  "ABORT '\\nNO CARRIER\\r' "
+  "ABORT '\\nNO DIALTONE\\r' "
+  "ABORT '\\nRINGING\\r\\n\\r\\nRINGING\\r' "
+  "'' \\rAT "
+  "TIMEOUT 12 "
+  "OK ATE1 "
+  "TIMEOUT 12 "
+  "TIMEOUT 12 "
+  "OK AT+cdgcont=%s,\"%s\",\"%s\" "
+  "OK ATD*99***1#"
+  "CONNECT", 
+     (*chat_binary), gprs_context_num, gprs_packet_type, gprs_apn);
+
+  /* TODO: Need to free connect_string somehow */
+  g_ptr_array_add (ppp_argv, (gpointer) "connect");
+  g_ptr_array_add (ppp_argv, (gpointer) connect_script);
+  g_ptr_array_add (free_later, (gpointer) connect_script);
+
 }
 
 /*
@@ -558,7 +619,7 @@ static gint nm_ppp_get_cmdline_btgprs (NmPPPData *data, char **data_items, const
  * Process and add to the pppd command line appropriately.
  *
  */
-static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv)
+static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv, GPtrArray *free_later)
 {
   int                   i = 0;
   // Announce ourselves as NetworkManager to the ip-up/down scripts
@@ -606,6 +667,15 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
     } else if ( (strcmp( data_items[i], "compress-mppc" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "require-mppc");
+    } else if ( (strcmp( data_items[i], "ppp-modem" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "modem");
+    } else if ( (strcmp( data_items[i], "ppp-crtscts" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "crtscts");
+    } else if ( (strcmp( data_items[i], "ppp-connect" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "crtscts");
     } else if ( (strcmp( data_items[i], "usepeerdns" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "usepeerdns");
@@ -636,6 +706,7 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
   GPid			pid;
   const char **		pppd_binary = NULL;
   GPtrArray *	ppp_argv;
+  GPtrArray *	free_later;
   GError *		error = NULL;
   gint			stdin_fd = -1;
   GSource *		pppd_watch;
@@ -662,20 +733,22 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
     return -1;
   }
 
+  free_later = g_ptr_array_new ();
   ppp_argv = g_ptr_array_new ();
   g_ptr_array_add (ppp_argv, (gpointer) (*pppd_binary));
 
   if (strcmp("pptp",data->connection_type)==0) {
-    nm_ppp_get_cmdline_pptp(data,data_items,num_items,ppp_argv);
+    nm_ppp_get_cmdline_pptp(data,data_items,num_items,ppp_argv,free_later);
   } else if (strcmp("dialup",data->connection_type)==0) {
-    nm_ppp_get_cmdline_dialup(data,data_items,num_items,ppp_argv);
+    nm_ppp_get_cmdline_dialup(data,data_items,num_items,ppp_argv,free_later);
   } else if (strcmp("btgprs",data->connection_type)==0) {
-    nm_ppp_get_cmdline_btgprs(data,data_items,num_items,ppp_argv);
+    nm_ppp_get_cmdline_btserial(data,data_items,num_items,ppp_argv,free_later);
+    nm_ppp_get_cmdline_gprs(data,data_items,num_items,ppp_argv,free_later);
   } else {
     nm_warning("nm-ppp-starter: ppp-connection-type '%s' unknown",data->connection_type);
   }
 
-  nm_ppp_get_cmdline_ppp(data,data_items,num_items,ppp_argv);
+  nm_ppp_get_cmdline_ppp(data,data_items,num_items,ppp_argv,free_later);
   
   g_ptr_array_add (ppp_argv, NULL);
 
@@ -690,11 +763,15 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
 				 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &stdin_fd,
 				 NULL, NULL, &error))
     {
+      g_ptr_array_foreach(free_later,(GFunc)g_free,NULL);
+      g_ptr_array_free (free_later, TRUE);
       g_ptr_array_free (ppp_argv, TRUE);
       nm_warning ("pppd failed to start.  error: '%s'", error->message);
       g_error_free(error);
       return -1;
     }
+  g_ptr_array_foreach(free_later,(GFunc)g_free,NULL);
+  g_ptr_array_free (free_later, TRUE);
   g_ptr_array_free (ppp_argv, TRUE);
 
   pppd_watch = g_child_watch_source_new (pid);
@@ -749,12 +826,13 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { "routes", 			OPT_TYPE_ASCII },
     { "ppp-crtscts", 		OPT_TYPE_ASCII },
     { "ppp-noipdefault",	OPT_TYPE_ASCII },
+    { "ppp-connect-delay",	OPT_TYPE_ASCII },
     { "ppp-modem", 			OPT_TYPE_ASCII },
     { "bt-bdaddr", 			OPT_TYPE_ASCII },
     { "bt-channel", 		OPT_TYPE_ASCII },
     { "gprs-packet-type", 	OPT_TYPE_ASCII },
     { "gprs-apn", 			OPT_TYPE_ASCII },
-    { "gprs-ip", 			OPT_TYPE_ASCII },
+    { "gprs-ip-address", 	OPT_TYPE_ASCII },
     { "gprs-context-num", 	OPT_TYPE_ASCII },
     { NULL,					OPT_TYPE_UNKNOWN } };
   

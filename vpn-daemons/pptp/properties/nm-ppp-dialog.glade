@@ -1091,7 +1091,7 @@
 	    <widget class="GtkExpander" id="pppd-expander">
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
-	      <property name="expanded">False</property>
+	      <property name="expanded">True</property>
 	      <property name="spacing">4</property>
 
 	      <child>
@@ -1643,7 +1643,7 @@
 				      </child>
 
 				      <child>
-					<widget class="GtkSpinButton" id="spinbutton1">
+					<widget class="GtkSpinButton" id="ppp-connect-delay">
 					  <property name="visible">True</property>
 					  <property name="tooltip" translatable="yes">Disconnect after this many LCP echo requests fail</property>
 					  <property name="can_focus">True</property>
