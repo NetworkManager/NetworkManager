@@ -1,5 +1,10 @@
 2006-06-07  Robert Love  <rml@novell.com>
 
+	* NEWS: Update.
+	* configure.in: Bump version to 0.6.3.
+
+2006-06-07  Robert Love  <rml@novell.com>
+
 	* gnome/applet/gconf-helpers.c: Bug fix: nm_gconf_helper_get_bool()
 	  checked that the return type was GCONF_VALUE_STRING, not the correct
 	  GCONF_VALUE_BOOL, and thus it never worked.
