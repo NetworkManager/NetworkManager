@@ -627,7 +627,7 @@ impl_import_file (NetworkManagerVpnUI *self, const char *path)
 	return import_from_file (impl, path);
 }
 
-static void
+static gboolean
 export_to_file (NetworkManagerVpnUIImpl *impl, const char *path, 
 		GSList *properties, GSList *routes, const char *connection_name)
 {
@@ -638,6 +638,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	const char *username = NULL;
 	const char *domain = NULL;
 	char *routes_str = NULL;
+	gboolean ret = TRUE;
 
 	/*printf ("in export_to_file; path='%s'\n", path);*/
 
@@ -681,7 +682,10 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
 	f = fopen (path, "w");
 	if (f == NULL)
+	{
+		ret = FALSE;
 		goto out;
+	}
 
 	fprintf (f, 
 		 "[main]\n"
@@ -730,8 +734,9 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
 	fclose (f);
 out:
-
 	g_free (routes_str);
+
+	return ret;
 }
 
 
@@ -763,7 +768,7 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
 		/*printf ("User selected '%s'\n", path);*/
 
 	}
-	
+
 	gtk_widget_destroy (dialog);
 
 	if (path != NULL) {
@@ -785,8 +790,20 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
 				goto out;
 		}
 
-		export_to_file (impl, path, properties, routes, connection_name);
-	}      
+		if (!export_to_file (impl, path, properties, routes, connection_name)) {
+			GtkWidget *dialog;
+
+			dialog = gtk_message_dialog_new (NULL,
+									   GTK_DIALOG_DESTROY_WITH_PARENT,
+									   GTK_MESSAGE_WARNING,
+									   GTK_BUTTONS_CLOSE,
+									   _("Failed to export configuration"));
+			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+											  _("Failed to save file %s"), path);
+			gtk_dialog_run (GTK_DIALOG (dialog));
+			gtk_widget_destroy (dialog);
+		}
+	}
 
 out:
 	g_free (path);

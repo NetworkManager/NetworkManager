@@ -24,6 +24,7 @@
 #include <errno.h>
 
 #include <glib.h>
+
 #include "nm-utils.h"
 
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string)

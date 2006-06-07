@@ -1,3 +1,13 @@
+2006-04-23  Dan Williams  <dcbw@redhat.com>
+
+	Patch from j@bootlab.org
+	* src/Makefile.am: add missing files so make distcheck works
+
+2006-03-29  Robert Love  <rml@novell.com>
+
+	* src/nm-pptp-service.c: New eigth argument to DBUS VPN method, the
+	  per-route MSS.  PPTP does not care about the MSS, so we send zero.
+
 2006-01-05  Tim Niemueller <tim@niemueller.de>
 
 	* configure.in: Explicitly set AUX_DIR to . to prevent autoconf from

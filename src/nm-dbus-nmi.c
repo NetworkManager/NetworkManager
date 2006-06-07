@@ -214,7 +214,6 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection, NMActR
 }
 
 
-
 /*
  * nm_dbus_update_network_info
  *
@@ -346,7 +345,6 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	NMAPSecurity *			security;
 	NMAccessPoint *		ap;
 	NMAccessPoint *		list_ap;
-	GTimeVal *			timestamp;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -381,8 +379,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	/* First arg: ESSID (STRING) */
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
 	{
-		nm_warning ("%s:%d (%s): a message argument (essid) was invalid.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("a message argument (essid) was invalid.");
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &essid);
@@ -391,18 +388,16 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_INT32))
 	{
-		nm_warning ("%s:%d (%s): a message argument (timestamp) was invalid.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("a message argument (timestamp) was invalid.");
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &timestamp_secs);
-	
-	/* Third arg: trusted (BOOLEAN) */
+
+	/* Third arg: Trusted (BOOLEAN) */
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
 	{
-		nm_warning ("%s:%d (%s): a message argument (trusted) was invalid.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("a message argument (trusted) was invalid.");
 		goto out;
 	}
 	dbus_message_iter_get_basic (&iter, &trusted);
@@ -412,8 +407,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)
 			|| (dbus_message_iter_get_element_type (&iter) != DBUS_TYPE_STRING))
 	{
-		nm_warning ("%s:%d (%s): a message argument (addresses) was invalid.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("a message argument (addresses) was invalid.");
 		goto out;
 	}
 	dbus_message_iter_recurse (&iter, &subiter);
@@ -429,16 +423,15 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	/* Unserialize access point security info */
 	if (!dbus_message_iter_has_next (&iter))
 	{
-		nm_warning ("%s:%d (%s): a message argument (security info) was invalid.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("a message argument (security info) was invalid.");
 		goto out;
 	}
 	dbus_message_iter_next (&iter);
 
 	if (!(security = nm_ap_security_new_deserialize (&iter)))
 	{
-		nm_warning ("%s:%d (%s): message arguments were invalid (could not deserialize "
-				"wireless network security information.", __FILE__, __LINE__, __func__);
+		nm_warning ("message arguments were invalid (could not deserialize "
+				"wireless network security information.");
 		goto out;
 	}
 
@@ -448,11 +441,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	nm_ap_set_security (ap, security);
 	g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 
-	timestamp = g_malloc0 (sizeof (GTimeVal));
-	timestamp->tv_sec = timestamp_secs;
-	timestamp->tv_usec = 0;
-	nm_ap_set_timestamp (ap, timestamp);
-	g_free (timestamp);
+	nm_ap_set_timestamp (ap, timestamp_secs, 0);
 
 	nm_ap_set_trusted (ap, trusted);
 	nm_ap_set_user_addresses (ap, addr_list);
@@ -460,7 +449,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
 	{
 		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
-		nm_ap_set_timestamp (list_ap, nm_ap_get_timestamp (ap));
+		nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 		nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
 		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
 		nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
@@ -505,15 +494,13 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (!dbus_pending_call_get_completed (pcall))
 	{
-		nm_warning ("%s:%d (%s): pending call was not completed.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("pending call was not completed.");
 		goto out;
 	}
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 	{
-		nm_warning ("%s:%d (%s): could not retrieve the reply.",
-				__FILE__, __LINE__, __func__);
+		nm_warning ("could not retrieve the reply.");
 		goto out;
 	}
 
@@ -523,8 +510,7 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("%s:%d (%s): error received: %s - %s.",
-				__FILE__, __LINE__, __func__, err.name, err.message);
+		nm_warning ("error received: %s - %s.", err.name, err.message);
 		goto out;
 	}
 

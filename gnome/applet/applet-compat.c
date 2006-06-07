@@ -280,7 +280,7 @@ convert_one_entry (GConfClient *client,
 	g_return_if_fail (client != NULL);
 	g_return_if_fail (essid != NULL);
 
-	if (!(escaped_network = gconf_escape_key (essid, strlen (essid))))
+	if (!(escaped_network = gconf_escape_key (essid, strlen (essid))) || strlen (escaped_network) < 0)
 	{
 		nm_warning ("%s:%d (%s): couldn't unescape network name '%s'.",
 				__FILE__, __LINE__, __func__, essid);

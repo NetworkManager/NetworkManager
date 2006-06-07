@@ -34,6 +34,7 @@
 #include <NetworkManager/nm-vpn-ui-interface.h>
 
 #include "../src/nm-openvpn-service.h"
+#include "../src/nm-utils.h"
 
 typedef struct _NetworkManagerVpnUIImpl NetworkManagerVpnUIImpl;
 
@@ -73,12 +74,20 @@ struct _NetworkManagerVpnUIImpl {
   GtkEntry       *w_username;
   GtkEntry       *w_password_ca;
   GtkButton      *w_button_password_ca;
+  GtkCheckButton *w_use_cipher;
+  GtkComboBox    *w_cipher;
+  GtkCheckButton *w_use_ta;
+  GtkEntry       *w_ta;
+  GtkButton      *w_button_ta;
+  GtkRadioButton *w_ta_dir_none;
+  GtkRadioButton *w_ta_dir_zero;
+  GtkRadioButton *w_ta_dir_one;
 };
 
 static void connection_type_changed(GtkComboBox *box, gpointer user_data);
 
 
-static void 
+static void
 openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
 {
   gtk_entry_set_text (impl->w_connection_name, "");
@@ -100,6 +109,19 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
   gtk_expander_set_expanded (impl->w_opt_info_expander, FALSE);
   gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_connection_type), 0);
   connection_type_changed (GTK_COMBO_BOX (impl->w_connection_type), impl);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_cipher), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_cipher), FALSE);
+  gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_cipher), 0);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one), FALSE);
+  gtk_entry_set_text (impl->w_ta, "");
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_none), TRUE);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_zero), FALSE);
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_one), FALSE);
 }
 
 static const char *
@@ -112,6 +134,34 @@ static const char *
 impl_get_service_name (NetworkManagerVpnUI *self)
 {
   return "org.freedesktop.NetworkManager.openvpn";
+}
+
+static void
+set_cipher(GtkComboBox *box, GtkCheckButton *button, const char *value)
+{
+  GtkTreeModel *tree = gtk_combo_box_get_model(box);
+  GtkTreeIter   iter;
+  gboolean      valid;
+
+  valid = gtk_tree_model_get_iter_first(tree, &iter);
+
+  while (valid) {
+    gchar *alg;
+
+    gtk_tree_model_get (tree, &iter, 0, &alg, -1);
+
+/*     printf("set_cipher: %s %s\n", alg, value); */
+
+    if (strcmp(value, alg) == 0) {
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(button), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (box), TRUE);
+      gtk_combo_box_set_active_iter (box, &iter);
+      valid = FALSE;
+    } else
+      valid = gtk_tree_model_iter_next (tree, &iter);
+
+    g_free (alg);
+  }
 }
 
 static GtkWidget *
@@ -136,7 +186,7 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
     value = (g_slist_next (i))->data;
 
     if (strcmp (key, "remote") == 0) {
-      gtk_entry_set_text (impl->w_remote, value);		
+      gtk_entry_set_text (impl->w_remote, value);
     } else if (strcmp (key, "ca") == 0) {
       gtk_entry_set_text (impl->w_ca, value);
     } else if (strcmp (key, "cert") == 0) {
@@ -178,6 +228,17 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 		(strcmp (value, "tcp") == 0) ) {
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tcp), TRUE);
       should_expand = TRUE;
+    } else if (strcmp (key, "cipher") == 0) {
+      set_cipher(impl->w_cipher, impl->w_use_cipher, value);
+    } else if (strcmp (key, "ta") == 0) {
+      gtk_entry_set_text (impl->w_ta, value);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), TRUE);
+    } else if (strcmp (key, "ta-dir") == 0) {
+/*       printf("ta_dir='%s'\n", value); */
+      if (strcmp (value, "0") == 0)
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_zero), TRUE);
+      else if (strcmp (value, "1") == 0)
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_one), TRUE);
     }
   }
 
@@ -188,10 +249,10 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
     route_str = g_string_new ("");
     for (i = routes; i != NULL; i = g_slist_next (i)) {
       const char *route;
-			
+
       if (i != routes)
 	g_string_append_c(route_str, ' ');
-			
+
       route = (const char *) i->data;
       g_string_append(route_str, route);
     }
@@ -201,7 +262,7 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
     g_free (str);
     gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), TRUE);
     gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
-    
+
     should_expand = TRUE;
   }
 
@@ -228,6 +289,8 @@ impl_get_properties (NetworkManagerVpnUI *self)
   gboolean    use_lzo;
   gboolean    use_tap;
   gboolean    use_tcp;
+  gboolean    use_cipher;
+  gboolean    use_ta;
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
@@ -241,6 +304,8 @@ impl_get_properties (NetworkManagerVpnUI *self)
   local_ip               = gtk_entry_get_text (impl->w_local_ip);
   remote_ip              = gtk_entry_get_text (impl->w_remote_ip);
   username               = gtk_entry_get_text (impl->w_username);
+  use_cipher             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_cipher));
+  use_ta                 = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_ta));
 
   data = NULL;
   data = g_slist_append (data, g_strdup ("connection-type"));
@@ -280,7 +345,28 @@ impl_get_properties (NetworkManagerVpnUI *self)
   data = g_slist_append (data, g_strdup (remote_ip));
   data = g_slist_append (data, g_strdup ("username"));
   data = g_slist_append (data, g_strdup (username));
+  if (use_cipher) {
+    const gchar *cipher = gtk_combo_box_get_active_text(impl->w_cipher);
+    if (cipher != NULL) {
+      data = g_slist_append (data, g_strdup ("cipher"));
+      data = g_slist_append (data, g_strdup (cipher));
+    }
+  }
+  if (use_ta) {
+    const gchar* dir;
 
+    data = g_slist_append (data, g_strdup ("ta"));
+    data = g_slist_append (data, g_strdup (gtk_entry_get_text (impl->w_ta)));
+    data = g_slist_append (data, g_strdup ("ta-dir"));
+    if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_zero)))
+      dir = "0";
+    else if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_one)))
+      dir = "1";
+    else
+      dir = "";
+/*     printf("ta_dir='%s'\n", dir); */
+    data = g_slist_append (data, g_strdup(dir));
+  }
   return data;
 }
 
@@ -332,7 +418,7 @@ static gboolean
 check_ip (const char *ip)
 {
   int d1, d2, d3, d4;
-	
+
   if (sscanf (ip, "%d.%d.%d.%d", &d1, &d2, &d3, &d4) != 4) {
     return FALSE;
   }
@@ -357,7 +443,7 @@ static gboolean
 check_net_cidr (const char *net)
 {
   int d1, d2, d3, d4, mask;
-	
+
   if (sscanf (net, "%d.%d.%d.%d/%d", &d1, &d2, &d3, &d4, &mask) != 5) {
     return FALSE;
   }
@@ -448,7 +534,7 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
       is_valid = TRUE;
     }
- 
+
   } else if ( connection_type == NM_OPENVPN_CONTYPE_X509USERPASS ) {
 
     const char *username;
@@ -474,7 +560,7 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
       is_valid = TRUE;
     }
- 
+
   } else {
     // default to NM_OPENVPN_CONTYPE_X509
     const char *ca;
@@ -497,20 +583,20 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
       is_valid = TRUE;
     }
-    
+
   }
 
   /* validate routes: each entry must be of the form 'a.b.c.d/mask' */
   if (is_valid) {
     GSList *i;
     GSList *routes;
-    
+
     routes = get_routes (impl);
-      
+
     for (i = routes; is_valid && (i != NULL); i = g_slist_next (i)) {
       is_valid = (is_valid && check_net_cidr ( i->data ));
     }
-      
+
     if (routes != NULL) {
       g_slist_foreach (routes, (GFunc)g_free, NULL);
       g_slist_free (routes);
@@ -521,13 +607,29 @@ impl_is_valid (NetworkManagerVpnUI *self)
 }
 
 
-static void 
-use_routes_toggled (GtkToggleButton *togglebutton, gpointer user_data)
+static void
+use_editable_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 {
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
 
-  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), 
-			    gtk_toggle_button_get_active (togglebutton));
+  if (GTK_CHECK_BUTTON(togglebutton) == impl->w_use_routes)
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes),
+			      gtk_toggle_button_get_active (togglebutton));
+  else if (GTK_CHECK_BUTTON(togglebutton) == impl->w_use_cipher)
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_cipher),
+			      gtk_toggle_button_get_active (togglebutton));
+  else if (GTK_CHECK_BUTTON(togglebutton) == impl->w_use_ta) {
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta),
+			      gtk_toggle_button_get_active (togglebutton));
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta),
+			      gtk_toggle_button_get_active (togglebutton));
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none),
+			      gtk_toggle_button_get_active (togglebutton));
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero),
+			      gtk_toggle_button_get_active (togglebutton));
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one),
+			      gtk_toggle_button_get_active (togglebutton));
+  }
 
   if (impl->callback != NULL) {
     gboolean is_valid;
@@ -537,8 +639,7 @@ use_routes_toggled (GtkToggleButton *togglebutton, gpointer user_data)
   }
 }
 
-
-static void 
+static void
 editable_changed (GtkEditable *editable, gpointer user_data)
 {
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
@@ -555,13 +656,13 @@ editable_changed (GtkEditable *editable, gpointer user_data)
   if ( GTK_ENTRY (editable) == impl->w_ca ) {
     gtk_entry_set_text ( impl->w_password_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_ca)));
   } else if ( GTK_ENTRY (editable) == impl->w_password_ca ) {
-    gtk_entry_set_text ( impl->w_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_password_ca)));    
+    gtk_entry_set_text ( impl->w_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_password_ca)));
   }
 }
 
 
-static void 
-impl_set_validity_changed_callback (NetworkManagerVpnUI *self, 
+static void
+impl_set_validity_changed_callback (NetworkManagerVpnUI *self,
 				    NetworkManagerVpnUIDialogValidityCallback callback,
 				    gpointer user_data)
 {
@@ -591,6 +692,11 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   gboolean use_tap;
   gboolean use_tcp;
   gint connection_type;
+  gboolean use_cipher;
+  const gchar *cipher;
+  gboolean use_ta;
+  const char *ta;
+  const char *ta_dir;
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   connection_type        = gtk_combo_box_get_active (impl->w_connection_type);
@@ -606,8 +712,17 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   use_lzo                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo));
   use_tap                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_tap));
   use_tcp                = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_tcp));
+  use_cipher             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_cipher));
+  cipher                 = gtk_combo_box_get_active_text(impl->w_cipher);
+  use_ta                 = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_ta));
+  ta                     = gtk_entry_get_text (impl->w_ta);
+  if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(impl->w_ta_dir_zero)))
+    ta_dir               = "0";
+  else if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON(impl->w_ta_dir_one)))
+    ta_dir               = "1";
+  else
+    ta_dir               = "";
 
-  
   // This is risky, should be variable length depending on actual data!
   buf = g_string_sized_new (512);
 
@@ -694,6 +809,16 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   g_string_append (buf, "\n\t");
   g_string_append_printf( buf, _("Use LZO Compression: %s"), ((use_lzo) ? _("Yes") : _("No")));
 
+  if (use_cipher && (cipher != NULL)) {
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("Cipher:  %s"), cipher);
+  }
+
+  if (use_ta) {
+    g_string_append (buf, "\n\t");
+    g_string_append_printf (buf, _("TLS auth:  %s %s"), ta, ta_dir);
+  }
+
   g_string_append (buf, "\n\n");
   g_string_append (buf, _("The connection details can be changed using the \"Edit\" button."));
   g_string_append (buf, "\n");
@@ -727,6 +852,9 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     char *local_ip = NULL;
     char *remote_ip = NULL;
     char *username = NULL;
+    char *cipher = NULL;
+    char *ta = NULL;
+    char *ta_dir = NULL;
     gboolean should_expand;
 
     connectionname  = g_key_file_get_string (keyfile, "openvpn", "description", NULL);
@@ -742,6 +870,9 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     local_ip        = g_key_file_get_string (keyfile, "openvpn", "local-ip", NULL);
     remote_ip       = g_key_file_get_string (keyfile, "openvpn", "remote-ip", NULL);
     username        = g_key_file_get_string (keyfile, "openvpn", "username", NULL);
+    cipher          = g_key_file_get_string (keyfile, "openvpn", "cipher", NULL);
+    ta              = g_key_file_get_string (keyfile, "openvpn", "ta", NULL);
+    ta_dir          = g_key_file_get_string (keyfile, "openvpn", "ta_dir", NULL);
 
     /* may not exist */
     if ((routes = g_key_file_get_string (keyfile, "openvpn", "routes", NULL)) == NULL)
@@ -800,7 +931,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_ca, ca);
 	} else {
 	  file_is_good = FALSE;
-	}	
+	}
       } else {
 	// no connection type given in config
 	file_is_good = FALSE;
@@ -808,6 +939,29 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     } else {
       // invlid basic data
       file_is_good = FALSE;
+    }
+
+    if (cipher != NULL) {
+      set_cipher(impl->w_cipher, impl->w_use_cipher, cipher);
+    }
+
+    if (ta != NULL) {
+      gtk_entry_set_text (impl->w_ta, ta);
+      gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one), TRUE);
+    }
+
+    if (ta_dir != NULL) {
+      if (strcmp(ta_dir, "0") == 0)
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_zero), TRUE);
+      else if (strcmp(ta_dir, "1") == 0)
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_one), TRUE);
+      else
+	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_none), TRUE);
     }
 
     if (file_is_good) {
@@ -841,7 +995,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
       gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
     } else {
       GtkWidget *dialog;
-		
+
       dialog = gtk_message_dialog_new (NULL,
 				       GTK_DIALOG_DESTROY_WITH_PARENT,
 				       GTK_MESSAGE_WARNING,
@@ -868,6 +1022,9 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     g_free (local_ip);
     g_free (remote_ip);
     g_free (username);
+    g_free (cipher);
+    g_free (ta);
+    g_free (ta_dir);
   }
 
   g_free (basename);
@@ -888,22 +1045,21 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 					NULL);
-  
+
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
-		
+
     filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
     /*printf ("User selected '%s'\n", filename);*/
 
   }
-	
+
   gtk_widget_destroy (dialog);
 
   if (filename != NULL) {
     import_from_file (impl, filename);
     g_free (filename);
-  }      
+  }
 }
-
 
 static void
 connection_type_changed (GtkComboBox *box, gpointer user_data)
@@ -916,37 +1072,37 @@ connection_type_changed (GtkComboBox *box, gpointer user_data)
   case NM_OPENVPN_CONTYPE_X509:
   case NM_OPENVPN_CONTYPE_SHAREDKEY:
   case NM_OPENVPN_CONTYPE_PASSWORD:
-    {
-      gtk_notebook_set_current_page( impl->w_settings_notebook, sel );
-      for (i = NM_OPENVPN_CONTYPE_X509; i <= NM_OPENVPN_CONTYPE_PASSWORD; ++i) {
-	GtkWidget *tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook), i));
-	gtk_widget_set_sensitive( tab, (i == sel));
-	gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), (i == sel));
-      }
+  {
+    gtk_notebook_set_current_page( impl->w_settings_notebook, sel );
+    for (i = NM_OPENVPN_CONTYPE_X509; i <= NM_OPENVPN_CONTYPE_PASSWORD; ++i) {
+      GtkWidget *tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook), i));
+      gtk_widget_set_sensitive( tab, (i == sel));
+      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), (i == sel));
     }
-    break;
+  }
+  break;
   case NM_OPENVPN_CONTYPE_X509USERPASS:
-    {
-      GtkWidget *tab;
+  {
+    GtkWidget *tab;
 
-      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						    NM_OPENVPN_CONTYPE_X509));
-      gtk_widget_set_sensitive( tab, TRUE);
-      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
+    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						  NM_OPENVPN_CONTYPE_X509));
+    gtk_widget_set_sensitive( tab, TRUE);
+    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
 
-      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						    NM_OPENVPN_CONTYPE_SHAREDKEY));
-      gtk_widget_set_sensitive( tab, FALSE);
-      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), FALSE);
+    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						  NM_OPENVPN_CONTYPE_SHAREDKEY));
+    gtk_widget_set_sensitive( tab, FALSE);
+    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), FALSE);
 
-      tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						    NM_OPENVPN_CONTYPE_PASSWORD));
-      gtk_widget_set_sensitive( tab, TRUE);
-      gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
+    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
+						  NM_OPENVPN_CONTYPE_PASSWORD));
+    gtk_widget_set_sensitive( tab, TRUE);
+    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
 
-    }
-    gtk_notebook_set_current_page( impl->w_settings_notebook, NM_OPENVPN_CONTYPE_X509 );
-    break;
+  }
+  gtk_notebook_set_current_page( impl->w_settings_notebook, NM_OPENVPN_CONTYPE_X509 );
+  break;
   }
 }
 
@@ -977,6 +1133,9 @@ open_button_clicked (GtkButton *button, gpointer user_data)
   } else if ( button == impl->w_button_password_ca ) {
     msg = _("Select CA to use");
     entry = impl->w_password_ca;
+  } else if ( button == impl->w_button_ta ) {
+    msg = _("Select TA to use");
+    entry = impl->w_ta;
   } else {
     return;
   }
@@ -987,11 +1146,11 @@ open_button_clicked (GtkButton *button, gpointer user_data)
 					GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 					NULL);
-  
+
   if ( impl->last_fc_dir != NULL ) {
     gtk_file_chooser_set_current_folder (GTK_FILE_CHOOSER (dialog), impl->last_fc_dir);
   }
-				  
+
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT) {
     gtk_entry_set_text (entry, gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog)));
     dir = gtk_file_chooser_get_current_folder (GTK_FILE_CHOOSER (dialog));
@@ -1004,13 +1163,13 @@ open_button_clicked (GtkButton *button, gpointer user_data)
 
 }
 
-static gboolean 
+static gboolean
 impl_can_export (NetworkManagerVpnUI *self)
 {
   return TRUE;
 }
 
-static gboolean 
+static gboolean
 impl_import_file (NetworkManagerVpnUI *self, const char *path)
 {
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
@@ -1018,8 +1177,8 @@ impl_import_file (NetworkManagerVpnUI *self, const char *path)
   return import_from_file (impl, path);
 }
 
-static void
-export_to_file (NetworkManagerVpnUIImpl *impl, const char *path, 
+static gboolean
+export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 		GSList *properties, GSList *routes, const char *connection_name)
 {
   FILE *f;
@@ -1036,41 +1195,51 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   const char *local_ip = NULL;
   const char *remote_ip = NULL;
   const char *username = NULL;
+  const char *cipher = NULL;
+  const char *ta = NULL;
+  const char *ta_dir = NULL;
   char *routes_str = NULL;
+  gboolean ret;
 
   /*printf ("in export_to_file; path='%s'\n", path);*/
 
   for (i = properties; i != NULL && g_slist_next (i) != NULL; i = g_slist_next (g_slist_next (i))) {
-    const char *key;
+    const char *k;
     const char *value;
 
-    key = i->data;
+    k = i->data;
     value = (g_slist_next (i))->data;
 
-    if (strcmp (key, "remote") == 0) {
+    if (strcmp (k, "remote") == 0) {
       remote = value;
-    } else if (strcmp (key, "dev") == 0) {
+    } else if (strcmp (k, "dev") == 0) {
       dev = value;
-    } else if (strcmp (key, "proto") == 0) {
+    } else if (strcmp (k, "proto") == 0) {
       proto = value;
-    } else if (strcmp (key, "ca") == 0) {
+    } else if (strcmp (k, "ca") == 0) {
       ca = value;
-    } else if (strcmp (key, "cert") == 0) {
+    } else if (strcmp (k, "cert") == 0) {
       cert = value;
-    } else if (strcmp (key, "key") == 0) {
+    } else if (strcmp (k, "key") == 0) {
       key = value;
-    } else if (strcmp (key, "comp-lzo") == 0) {
+    } else if (strcmp (k, "comp-lzo") == 0) {
       lzo = value;
-    } else if (strcmp (key, "shared-key") == 0) {
+    } else if (strcmp (k, "shared-key") == 0) {
       shared_key = value;
-    } else if (strcmp (key, "local-ip") == 0) {
+    } else if (strcmp (k, "local-ip") == 0) {
       local_ip = value;
-    } else if (strcmp (key, "remote-ip") == 0) {
+    } else if (strcmp (k, "remote-ip") == 0) {
       remote_ip = value;
-    } else if (strcmp (key, "username") == 0) {
+    } else if (strcmp (k, "username") == 0) {
       username = value;
-    } else if (strcmp (key, "connection-type") == 0) {
+    } else if (strcmp (k, "connection-type") == 0) {
       connection_type = value;
+    } else if (strcmp (k, "cipher") == 0) {
+      cipher = value;
+    } else if (strcmp (k, "ta") == 0) {
+      ta = value;
+    } else if (strcmp (k, "ta-dir") == 0) {
+      ta_dir = value;
     }
   }
 
@@ -1081,10 +1250,10 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
     str = g_string_new ("routes=");
     for (i = routes; i != NULL; i = g_slist_next (i)) {
       const char *route;
-      
+
       if (i != routes)
 	g_string_append_c (str, ' ');
-			
+
       route = (const char *) i->data;
       g_string_append (str, route);
     }
@@ -1097,7 +1266,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   f = fopen (path, "w");
   if (f != NULL) {
 
-    fprintf (f, 
+    fprintf (f,
 	     "[openvpn]\n"
 	     "description=%s\n"
 	     "connection-type=%s\n"
@@ -1112,6 +1281,9 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     "local-ip=%s\n"
 	     "remote-ip=%s\n"
 	     "username=%s\n"
+	     "cipher=%s\n"
+	     "ta=%s\n"
+	     "ta_dir=%s\n"
 	     "routes=%s\n",
 	     /* Description */ connection_name,
 	     /* conn type */   connection_type,
@@ -1126,15 +1298,22 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     /* local ip */    local_ip,
 	     /* remote ip */   remote_ip,
 	     /* username */    username,
+	     /* cipher */      cipher,
+	     /* TA */          ta,
+	     /* TA direction*/ ta_dir,
 	     /* X-NM-Routes */ routes_str != NULL ? routes_str : "");
 
     fclose (f);
+    ret = TRUE;
   }
+  else
+    ret = FALSE;
   g_free (routes_str);
+  return ret;
 }
 
 
-static gboolean 
+static gboolean
 impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, const char *connection_name)
 {
   char *suggested_name;
@@ -1156,13 +1335,13 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
   g_free (suggested_name);
 
   if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-    {
-      
-      path = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-      /*printf ("User selected '%s'\n", path);*/
-      
-    }
-	
+  {
+
+    path = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
+/*     printf ("User selected '%s'\n", path); */
+
+  }
+
   gtk_widget_destroy (dialog);
 
   if (path != NULL) {
@@ -1180,18 +1359,58 @@ impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, cons
 						_("Do you want to replace it with the one you are saving?"));
       response = gtk_dialog_run (GTK_DIALOG (dialog));
       gtk_widget_destroy (dialog);
-      if (response == GTK_RESPONSE_OK)
-	export_to_file (impl, path, properties, routes, connection_name);
+      if (response != GTK_RESPONSE_OK)
+	goto out;
     }
-  }      
 
+    if (!export_to_file (impl, path, properties, routes, connection_name)) {
+      GtkWidget *dialog;
+
+      dialog = gtk_message_dialog_new (NULL,
+				       GTK_DIALOG_DESTROY_WITH_PARENT,
+				       GTK_MESSAGE_WARNING,
+				       GTK_BUTTONS_CLOSE,
+				       _("Failed to export configuration"));
+      gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+						_("Failed to save file %s"), path);
+      gtk_dialog_run (GTK_DIALOG (dialog));
+      gtk_widget_destroy (dialog);
+    }
+  }
+
+out:
   g_free (path);
 
   return TRUE;
 }
 
+static void
+populate_cipher(GtkComboBox *box)
+{
+  const char *openvpn_binary = NULL;
+  gchar      *cmdline, *tmp, *token;
 
-static NetworkManagerVpnUI* 
+  openvpn_binary = nm_find_openvpn();
+  if (!openvpn_binary)
+    return;
+
+  cmdline = g_strdup_printf("/bin/sh -c \"%s --show-ciphers | /bin/awk '/^[A-Z][A-Z0-9]+-/ { print $1 }'\"", openvpn_binary);
+  if (!g_spawn_command_line_sync(cmdline, &tmp, NULL, NULL, NULL))
+    goto end;
+
+  token = strtok(tmp, "\n");
+
+  while (token) {
+    if (strlen(token))
+      gtk_combo_box_append_text(box, token);
+    token = strtok(NULL, "\n");
+  }
+
+end:
+  g_free(tmp);
+}
+
+static NetworkManagerVpnUI*
 impl_get_object (void)
 {
   char *glade_file;
@@ -1212,9 +1431,9 @@ impl_get_object (void)
     impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
     impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
     impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
-    impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml, 
+    impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
 									 "openvpn-optional-information-expander"));
-    impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
+    impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
 								       "openvpn-import-button"));
 
     impl->w_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ca" ) );
@@ -1241,57 +1460,75 @@ impl_get_object (void)
     impl->w_password_ca            = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-password-ca" ) );
     impl->w_button_password_ca     = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-password-but-ca" ) );
 
+    impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
+    impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
+    populate_cipher(impl->w_cipher);
+
+    impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
+    impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
+    impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
+    impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
+    impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
+    impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
+
     impl->callback                 = NULL;
 
 
-    gtk_signal_connect (GTK_OBJECT (impl->w_use_routes), 
-			"toggled", GTK_SIGNAL_FUNC (use_routes_toggled), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_use_routes),
+			"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_use_cipher),
+			"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_use_ta),
+			"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
 
-    gtk_signal_connect (GTK_OBJECT (impl->w_connection_name), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_connection_name),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_remote), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_remote),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_routes), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_routes),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_ca), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_ca),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_cert), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_cert),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_key), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_key),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_shared_key), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_shared_key),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_local_ip), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_local_ip),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_remote_ip), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_remote_ip),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_username), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_username),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_password_ca), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_password_ca),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-    
-    
-    gtk_signal_connect (GTK_OBJECT (impl->w_button_ca), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_ta),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_ca),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_button_cert), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_cert),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_button_key), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_key),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_button_shared_key), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_shared_key),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-    gtk_signal_connect (GTK_OBJECT (impl->w_button_password_ca), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_password_ca),
+			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_ta),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
 
-    gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
+    gtk_signal_connect (GTK_OBJECT (impl->w_import_button),
 			"clicked", GTK_SIGNAL_FUNC (import_button_clicked), impl);
 
     gtk_signal_connect (GTK_OBJECT (impl->w_connection_type),
 			"changed", GTK_SIGNAL_FUNC (connection_type_changed), impl);
 
     /* make the widget reusable */
-    gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event", 
+    gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event",
 			GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
-    
+
     openvpn_clear_widget (impl);
 
     impl->parent.get_display_name              = impl_get_display_name;
@@ -1307,7 +1544,7 @@ impl_get_object (void)
     impl->parent.import_file                   = impl_import_file;
     impl->parent.export                        = impl_export;
     impl->parent.data                          = impl;
-    
+
     return &(impl->parent);
   } else {
     g_free (impl);
@@ -1315,7 +1552,7 @@ impl_get_object (void)
   }
 }
 
-NetworkManagerVpnUI* 
+NetworkManagerVpnUI*
 nm_vpn_properties_factory (void)
 {
   return impl_get_object();

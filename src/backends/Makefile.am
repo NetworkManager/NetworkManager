@@ -1,9 +1,10 @@
-INCLUDES = -I${top_srcdir}                       \
-           -I${top_srcdir}/include               \
-           -I${top_srcdir}/utils                 \
-           -I${top_srcdir}/src                   \
-           -I${top_srcdir}/src/vpn-manager       \
-           -I${top_srcdir}/src/named-manager
+INCLUDES = -I${top_srcdir}				\
+		 -I${top_srcdir}/include			\
+		 -I${top_srcdir}/utils			\
+		 -I${top_srcdir}/src			\
+		 -I${top_srcdir}/src/vpn-manager	\
+		 -I${top_srcdir}/src/named-manager	\
+		 -I${top_srcdir}/libnm-util
 
 noinst_LTLIBRARIES = libnmbackend.la
 
@@ -35,6 +36,10 @@ endif
 
 if TARGET_SLACKWARE
 libnmbackend_la_SOURCES +=	NetworkManagerSlackware.c
+endif
+
+if TARGET_ARCH
+libnmbackend_la_SOURCES +=	NetworkManagerArch.c
 endif
 
 libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)

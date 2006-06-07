@@ -45,7 +45,7 @@ struct _NMAPSecurityPrivate
 	gboolean	dispose_has_run;
 };
 
-static NMAPSecurity *
+NMAPSecurity *
 nm_ap_security_new (int we_cipher)
 {
 	NMAPSecurity * security;
@@ -125,15 +125,15 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 
 	/* Deteremine best encryption algorithm to use */
 	caps = nm_ap_get_capabilities (ap);
-	if ((caps & WPA_CCMP_PSK) || (caps & WPA2_CCMP_PSK))
+	if (((caps & WPA_CCMP_PSK) == WPA_CCMP_PSK) || ((caps & WPA2_CCMP_PSK) == WPA2_CCMP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_CCMP));
-	else if ((caps & WPA_TKIP_PSK) || (caps & WPA2_TKIP_PSK))
+	else if (((caps & WPA_TKIP_PSK) == WPA_TKIP_PSK) || ((caps & WPA2_TKIP_PSK) == WPA2_TKIP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_TKIP));
-	else if ((caps & WPA_EAP) || (caps & WPA2_EAP))
+	else if (((caps & WPA_EAP) == WPA_EAP) || ((caps & WPA2_EAP) == WPA2_EAP))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_eap_new_from_ap (ap));
-	else if (caps & WEP_WEP104)
+	else if ((caps & WEP_WEP104) == WEP_WEP104)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104));
-	else if (caps & WEP_WEP40)
+	else if ((caps & WEP_WEP40) == WEP_WEP40)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40));
 	else if (!nm_ap_get_encrypted (ap))
 		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);

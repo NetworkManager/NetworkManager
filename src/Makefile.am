@@ -90,8 +90,8 @@ NetworkManager_CPPFLAGS = 							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
 	-DNM_RUN_DIR=\"$(rundir)\"						\
+	-DGNOMELOCALEDIR=\"$(datadir)/locale\"				\
 	-DARP_DEBUG
-
 
 NetworkManager_LDADD = 							\
 			$(DBUS_LIBS)						\

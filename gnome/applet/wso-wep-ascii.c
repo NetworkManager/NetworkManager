@@ -37,6 +37,7 @@ struct OptData
 {
 	const char *	entry_name;
 	const char *	auth_combo_name;
+	const char *	show_checkbutton_name;
 };
 
 static void data_free_func (WirelessSecurityOption *opt)
@@ -53,9 +54,16 @@ static void data_free_func (WirelessSecurityOption *opt)
 }
 
 
+static void show_key_cb (GtkToggleButton *button, GtkEntry *entry)
+{
+	gtk_entry_set_visibility (entry, gtk_toggle_button_get_active (button));
+}
+
+
 static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFunc validate_cb, gpointer user_data)
 {
 	GtkWidget *	entry;
+	GtkWidget *	checkbutton;
 	GtkWidget *	combo;
 	GtkWidget *	widget;
 
@@ -68,6 +76,9 @@ static GtkWidget * widget_create_func (WirelessSecurityOption *opt, GtkSignalFun
 	widget = wso_widget_helper (opt);
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
 	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	checkbutton = glade_xml_get_widget (opt->uixml, opt->data->show_checkbutton_name);
+	g_signal_connect (G_OBJECT (checkbutton), "toggled", GTK_SIGNAL_FUNC (show_key_cb), GTK_ENTRY (entry));
 
 	combo = glade_xml_get_widget (opt->uixml, opt->data->auth_combo_name);
 	wso_wep_auth_combo_setup (opt, GTK_COMBO_BOX (combo));
@@ -124,7 +135,7 @@ WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
 	g_return_val_if_fail (glade_file != NULL, NULL);
 
 	opt = g_malloc0 (sizeof (WirelessSecurityOption));
-	opt->name = g_strdup (_("WEP 40/128-bit ASCII"));
+	opt->name = g_strdup (_("WEP 64/128-bit ASCII"));
 	opt->widget_name = "wep_key_notebook";
 	opt->data_free_func = data_free_func;
 	opt->validate_input_func = validate_input_func;
@@ -143,6 +154,7 @@ WirelessSecurityOption * wso_wep_ascii_new (const char *glade_file)
 	opt->data = data = g_malloc0 (sizeof (OptData));
 	data->entry_name = "wep_key_entry";
 	data->auth_combo_name = "auth_method_combo";
+	data->show_checkbutton_name = "show_checkbutton";
 
 	return opt;
 }

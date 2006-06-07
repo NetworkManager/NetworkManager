@@ -175,7 +175,7 @@ send_config_info (DBusConnection *con,
     goto out;
   }
 
-  if (! ipstr_to_uint32 (str_ip4_ptpaddr, &uint_ip4_ptpaddr) ) {
+  if (str_ip4_ptpaddr && ! ipstr_to_uint32 (str_ip4_ptpaddr, &uint_ip4_ptpaddr) ) {
     nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid PtP IP4 Address from openvpn.");
     send_config_error (con, "IP4 PtP Address");
     goto out;

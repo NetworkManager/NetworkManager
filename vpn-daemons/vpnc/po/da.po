@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-26 15:19+0100\n"
+"POT-Creation-Date: 2006-05-16 17:10+0200\n"
 "PO-Revision-Date: 2006-01-26 15:19+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
@@ -42,11 +42,13 @@ msgid "Connect as _user:"
 msgstr "Tilslut som _bruger:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:465
-msgid "_Remember password for this session"
+#, fuzzy
+msgid "_Remember passwords for this session"
 msgstr "_Husk adgangskode for denne session"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:467
-msgid "_Save password in keyring"
+#, fuzzy
+msgid "_Save passwords in keyring"
 msgstr "_Gem adgangskode i nøglering"
 
 #: ../auth-dialog/main.c:161

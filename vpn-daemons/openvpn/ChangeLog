@@ -1,9 +1,41 @@
+2006-05-11  Robert Love  <rml@novell.com>
+
+	Patch to add OpenVPN TLS and Cipher support, by Groug <groug@free.fr>:
+	* properties/nm-openvpn-dialog.glade: Add UI checkboxes.
+	* properties/nm-openvpn.c: New UI.
+	* src/nm-openvpn-service.c: Support "--tls-auth" and "--cipher"
+	  OpenVPN options.
+	* src/nm-utils.c: Add nm_find_openvpn(), exported function for finding
+	  the location of the OpenVPN binary.
+	* src/nm-utils.h: Add prototype.
+
+2006-04-17  Robert Love  <rml@novell.com>
+
+	* properties/nm-openvpn-dialog.glade: If the dialog won't let the user
+	  type in the file entry GtkEntries, then don't mark them editable.
+
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* properties/nm-openvpn.c: Report error if writing out of exported
+	  configuration fails.  The silent treatment might work for me and my
+	  wife, but not for failed I/O.
+
+2006-03-30  Robert Love  <rml@novell.com>
+
+	Patch by Crispin Flowerday <gnome@flowerday.cx>:
+	* src/nm-openvpn-service-helper.c: Fix crash when no PtP IP address is
+	  supplied.
+
+2006-03-29  Robert Love  <rml@novell.com>
+
+	* src/nm-openvpn-service.c: New eigth argument to DBUS VPN method, the
+	  per-route MSS.  OpenVPN does not care about the MSS, so we send zero.
+
 2006-03-02  Raphael Higino  <raphaelh@cvs.gnome.org>
 
 	* configure.in: Added pt_BR to ALL_LINGUAS.
 
 2006-02-28  Ilkka Tuohela  <hile@iki.fi>
-
 	* configure.in: Added fi to ALL_LINGUAS.
 	
 2006-02-16  Francisco Javier F. Serrador  <serrador@cvs.gnome.org>

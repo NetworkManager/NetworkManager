@@ -83,6 +83,7 @@ typedef struct NMData
 	GMutex *				dev_list_mutex;
 
 	gboolean				wireless_enabled;
+	gboolean				modem_active;
 	gboolean				asleep;
 
 	GSList *				dialup_list;

@@ -20,7 +20,6 @@
  */
 
 #include <config.h>
-#include <libintl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +52,7 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 	GladeXML *	xml;
 	WirelessSecurityManager * wsm;
 	GtkComboBox *	security_combo;
+	WirelessNetwork *net;
 
 	g_return_if_fail (dialog != NULL);
 	xml = get_dialog_xml (GTK_WIDGET (dialog));
@@ -60,7 +60,8 @@ static void update_button_cb (GtkWidget *unused, GtkDialog *dialog)
 	wsm = (WirelessSecurityManager *) g_object_get_data (G_OBJECT (dialog), "wireless-security-manager");
 	g_return_if_fail (wsm != NULL);
 
-	if ((ssid = (const char *) g_object_get_data (G_OBJECT (dialog), "network")))
+	if ((net = g_object_get_data (G_OBJECT (dialog), "network")) &&
+	    (ssid = wireless_network_get_essid (net)))
 	{
 		/* Validate the wireless security choices */
 		security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));

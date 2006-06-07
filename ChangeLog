@@ -1,3 +1,751 @@
+2006-06-07  Robert Love  <rml@novell.com>
+
+	* NEWS: Update.
+	* configure.in: Bump version to 0.6.3.
+
+2006-06-07  Robert Love  <rml@novell.com>
+
+	* gnome/applet/gconf-helpers.c: Bug fix: nm_gconf_helper_get_bool()
+	  checked that the return type was GCONF_VALUE_STRING, not the correct
+	  GCONF_VALUE_BOOL, and thus it never worked.
+	* src/NetworkManagerAPList.c: Before concluding that two networks are
+	  identical based on their BSSID, make sure that the BSSID in question
+	  is actually valid.  Specifically, an empty or all zero BSSID does not
+	  cut it.
+	* gnome/applet/applet-dbus-info.c, gnome/applet/other-network-dialog.c,
+	  src/nm-dbus-nmi.c, src/nm-device-802-11-wireless.c: White space and
+	  similar invariant clean up.
+
+2006-06-02  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Update copyright years.  Add Novell.
+
+2006-05-29  Stanislav Brabec  <sbrabec@suse.cz>
+
+	* configure.in: Updated translations from HEAD branch.
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet.glade
+	  gnome/vpn-properties/nm-vpn-properties.glade
+		- Set window icons on dialogs  (Gnome.org #333420)
+
+2006-05-28  Christian Persch  <chpe@cvs.gnome.org>
+
+	* gnome/vpn-properties/nm-vpn-properties.glade:
+	* vpn-daemons/openvpn/properties/nm-openvpn-dialog.glade:
+	* vpn-daemons/pptp/properties/nm-pptp-dialog.glade:
+	* vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade:
+		- Make the VPN properties pages prettier and more HIG
+		  compliant. Gnome Bug #336913.
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+	* gnome/vpn-properties/nm-vpn-properties.c
+	* gnome/vpn-properties/nm-vpn-properties.glade
+		- HIG-ification love  (Gnome.org #336846)
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+	* configure.in
+	  gnome/vpn-properties/nm-vpn-properties.c
+	  	- (main): Fix option parsing.  Gnome.org #336847
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- (find_vpn_ui_by_service_name): protect against NULL service names
+		- (update_edit_del_sensitivity): protect against NULL service names
+			Gnome.org #341306
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Chris Fuller <crf@grandecom.net>:
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_dispose): add a is_initialized member and
+			don't dispose of wireless-specific stuff unless it is actually
+			initialized.  Gnome.org #341263
+
+2006-05-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): don't switch devices if the "best"
+			AP is essentially the same as the current activation request, but
+			the current activation request isn't done activating yet.  Fixes
+			multiple requests for keyring password on startup for Gnome applet.
+			Gnome.org #341297
+
+2006-05-26  Nicolas Trangez  <eikke@eikke.com>
+
+	* src/NetworkManager.c: use GOptions instead of getopt
+	* configure.in: bump glib required version to >= 2.6 for GOption
+	  support
+
+2006-05-25  Robert Love  <rml@novell.com>
+
+	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342400:
+	* libnm-util/Makefile.am: Only build gnome-keyring-md5.{c,h} if we are
+	  not using gcrypt.  Otherwise, we get a linker error.
+
+2006-05-25  Robert Love  <rml@novell.com>
+
+	Patch Valentine Sinitsyn <e_val@inbox.ru> to fix GNOME bug #342398:
+	* configure.in, gnome/Makefile.am, Makefile.am: Add "--without-gnome"
+	  configure flag to disable building of the GNOME-based applet.
+
+2006-05-25  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-device.c, gnome/applet/nm-device.h: Rename function
+	  parameter from link, because it shadows a global variable with some
+	  older versions of glibc.  Yes, glibc is now fixed and, yes, glibc
+	  should never have exported to the entire system a common four letter
+	  word.  But we here at NetworkManager are team players.  Fixes
+	  GNOME bug #336532.
+
+2006-05-24  Robert Love  <rml@novell.com>
+
+	* examples/python/systray/eggtrayicon.c, gnome/applet/eggtrayicon.c,
+	  gnome/applet/passphrase-dialog.c, gnome/applet/vpn-password-dialog.c,
+	  src/NetworkManager.c: Include <glib/gi18n.h> and not <libintl.h>.
+
+2006-05-24  Robert Love  <rml@novell.com>
+
+	* gnome/applet/Makefile.am, gnome/vpn-properties/Makefile.am,
+	  libnm-util/Makefile.am, src/Makefile.am,
+	  vpn-daemons/openvpn/auth-dialog/Makefile.am,
+	  vpn-daemons/openvpn/properties/Makefile.am,
+	  vpn-daemons/pptp/auth-dialog/Makefile.am,
+	  vpn-daemons/pptp/properties/Makefile.am,
+	  vpn-daemons/vpnc/auth-dialog/Makefile.am,
+	  vpn-daemons/vpnc/properties/Makefile.am: Do not override what the
+	  user passed for --datadir, if anything, when setting the GNOME locale
+	  directory.  It should be a function of the specified datadir and not
+	  the prefix.
+
+2006-05-24  Robert Love  <rml@novell.com>
+
+	* gnome/applet/main.c, gnome/vpn-properties/nm-vpn-properties.c,
+	  src/NetworkManager.c: Take care to call bindtextdomain with the
+	  location of msgid files.
+	* src/Makefile.am: Set GNOMELOCALEDIR to the location of GNOME mo
+	  files.
+
+2006-05-22  Robert Love  <rml@novell.com>
+
+	* src/nm-device-802-11-wireless.c: Don't chain up to the parent's
+	  stage4_timeout on failure unless the wireless network is Ad-Hoc.
+	  99% of the time there is a real problem with wireless, and a
+	  seemingly successful connection via Zeroconf just confuses the user.
+	  And that 1% of the time the network is probably Ad-Hoc, anyhow.
+
+2006-05-22  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Reload, do not restart, ypbind and
+	  autofs on interface up if NIS is configured.  On interface down, do
+	  nothing.
+
+2006-05-22  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Zero out the icon pointers before we set them,
+	  to avoid calling g_object_unref() on stale pointers on error in
+	  nma_icons_free().  This happens because we short-circuit loaded the
+	  icons on the first failure but then free all icons.  Normally we have
+	  no issue because the icons were zero'ed out malloc, but we have stale
+	  pointer data after nma_icon_theme_changed().
+	* gnome/applet/main.c: Return error code if nma_new() failed.
+
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Adam Schreiber <sadam@clemson.edu>
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- (main): correct Gnome program name  (gnome.org #342498)
+
+2006-05-21  Dan Williams  <dcbw@redhat.com>
+
+	Fix gnome.org #330832 based on patch from Crispin Flowerday <crispin@gnome.org>
+
+	* src/NetworkManagerDbus.[ch]
+		- nm_dbus_get_device_from_object_path -> nm_dbus_get_device_from_escaped_object_path:
+			clarify that function's argument should be an escaped dbus object
+			path, and look for path segment end before returning a match
+	* src/nm-dbus-nm.c:
+		- Fix up users of nm_dbus_get_device_from_escaped_object_path()
+
+2006-05-17  Robert Love  <rml@novell.com>
+
+	Functionality to differentiate Ad-Hoc networks from infrastructure
+	networks in the applet, by displaying a special icon:
+	* gnome/applet/applet-dbus-devices.c: Set the mode for new networks.
+	* gnome/applet/applet.c: Pass 'applet' to network_menu_item_update().
+	* gnome/applet/menu-items.c: Set a special icon in the scan list for
+	  ad-hoc networks.  TODO: Add a third icon representing "encrypted and
+	  Ad-Hoc".  Right now, we display the same icon for all Ad-Hoc wireless
+	  networks, encrypted or not.
+	* gnome/applet/wireless-network.c, gnome/applet/wireless-network.h: New
+	  accessor functions to get and set the mode of a given network,
+	  wireless_network_get_mode() and wireless_network_set_mode().
+
+2006-05-17  Robert Love  <rml@novell.com>
+
+	Functionality to automatically add BSSIDs to the allowed-MAC list as
+	one roams from access point to access point on a given network:
+	* src/NetworkManagerUtils.c: Add nm_ethernet_addresses_are_equal(),
+	  helper function to compare two ether_addr structures and return TRUE
+	  if they contain the same MAC address.
+	* src/NetworkManagerUtils.h: Add nm_ethernet_addresses_are_equal()
+	  prototype.
+	* src/nm-device-802-11-wireless.c: New function to update the BSSID
+	  stored with the current AP.  If the BSSID has indeed changed, we
+	  send it out to the applet, allowing the allowed-MAC list to grow
+	  automatically in response to roaming.
+
+2006-05-16  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Don't touch ypbind or autofs
+	  unless dhcp:DHCLIENT_MODIFY_NIS_CONF is set to "yes".
+
+2006-05-13  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_get_generic_capabilities): Don't ignore devices that can't do
+			carrier detect (Debian bug #366373)
+
+2006-05-11  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@teco.edu>
+	* src/backends/NetworkManagerDebian.c
+		- Debian backend fixups
+
+2006-05-10  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Fix double free (Novell #173442).
+
+2006-05-09  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Fix FIXME: Save the WPA EAP
+	  private certificate passphrase, if any, in the GNOME Keyring.
+	* libnm-utils/dbus-helpers.c: Update.
+
+2006-05-05  Robert Love  <rml@novell.com>
+
+	* src/NetworkManager.c: Set the umask to 0022 when daemonizing, in case
+	  root has a wacky default of its own (or, more common, a user has a
+	  bad umask and uses su/sudo to restart NetworkManager).  Anything
+	  other than 0022 does not do what we want with, for example,
+	  resolv.conf.  This problem is amplified by our judicious use of
+	  fopen(), which uses mode 0666 -- implying that the only way to get
+	  the permissions we want is with a umask of 0022.
+
+2006-05-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c
+		- Don't suck CPU when dbus isn't around by scheduling idle handlers
+			to reconnect; instead wait a bit more with each reconnect attempt
+			up to a max of one minute.
+
+2006-05-04  Ryan Lortie  <desrt@desrt.ca>
+
+	* gnome/applet/passphrase-dialog.c (update_button_cb): Get the SSID of
+	  the WirelessNetwork structure using the proper function instead of
+	  just casting it directly to (const char *) (gnome.org #336991)
+
+2006-05-03  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Respect the variable
+	  dhcp:DHCLIENT_MODIFY_RESOLV_CONF, not
+	  config:MODIFY_RESOLV_CONF_DYNAMICALLY, when deciding whether or not
+	  to dynamically update /etc/resolv.conf.
+
+2006-05-02  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig;
+	* tests/nm-online.c: Print pretty status indicator as timeout winds
+	  down.  Also fix possible race between DBUS startup and failure
+	  return.
+
+2006-05-01  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-compat.c: Warn if the returned escaped ESSID is
+	  empty, too.
+
+2006-04-27  Jeremy Katz  <katzj@redhat.com>
+
+	* src/nm-device.c (discover_device_type): Actually use the hal
+	device type instead of ioctl poking
+
+2006-04-26  Robert Love  <rml@novell.com>
+
+	* tests/nm-online.c: New file.  Simple utility that returns exit status
+	  noting whether the connection is offline or online.  If offline on
+	  start, it waits 30 seconds (or a command-line given value) for an
+	  online signal.  If it times out, it again returns offline.  This is
+	  useful for scripts that want to wait for network connections.
+
+2006-04-25  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wep.c: Bug fix: We stopped setting the
+	  key mode (the authentication algorithm), e.g. open or shared, when we
+	  moved to using wpa_supplicant.  wpa_supplicant defaults to open, so
+	  only shared was broken.  If the user specified a shared key, set it
+	  explicitly, otherwise let wpa_supplicant go with the default.
+
+2006-04-20  Robert Love  <rml@novell.com>
+
+	Fix bug where hidden ESSID's would not show up in the applet, even
+	if NMI provided a BSSID -> ESSID mapping from Gconf.  This occurred
+	because nm_policy_device_list_update_from_allowed_list() would merge
+	the data, putting a name to the hidden networks, but never notify NMI
+	of the changes.  Simple fix is to invoke the function
+	nm_dbus_signal_wireless_network_change() if we make a mapping.
+	* src/NetworkManagerAPList.c: Call the function
+	  nm_dbus_signal_wireless_network_change() if we made a successful
+	  BSSID to ESSID mapping, notifying the applet of the "new" network.
+	* src/NetworkManagerAPList.h: Update the prototypes for both
+	  nm_ap_list_copy_essids_by_address() and
+	  nm_ap_list_copy_one_essid_by_address().
+
+2006-04-20  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-info.c: Don't bail out if the timestamp is
+	  not set.  Just return zero.
+
+2006-04-20  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Satisfy TODO: Ensure that
+	  only one copy of nm-vpn-properties is running at a time via the 'ol
+	  X selection trick.  This prevents the user from opening two "VPN
+	  Connections" windows from within the applet, which leads to mass
+	  hysteria.
+	* clipboard.c: New file, implementing simple X selection logic.
+	* clipboard.h: New file.
+	* gnome/vpn-properties/Makefile.am: Add clipboard.{c,h}
+
+2006-04-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Paul Blazejowski <paulb@blazebox.homeip.net>
+	* configure.in
+	  initscript/Slackware/Makefile.am
+	  initscript/Slackware/rc.networkmanager-dispatcher.in
+	  initscript/Slackware/rc.networkmanager.in
+		- Update slackware initscripts
+
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Intercept and short-circuit
+	  the "delete_event" signal on the druid's parent window and handle it
+	  our way, lest using the WM to close the druid results in a series of
+	  bloody and ultimately lethal errors.
+
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Validate VPN settings on
+	  'Back' too or else the 'Forward' option is initially disabled despite
+	  valid input.
+
+2006-04-06  Robert Love  <rml@novell.com>
+
+	Fix bad but simple bug where an active modem connection did not update
+	NM's connection state, breaking any app that did online/offline:
+	* src/NetworkManagerMain.h: Add 'modem_active' member to NMData,
+	  represented whether a dial up connection is active, or not.
+	* src/nm-dbus-nm.c: Set and unset 'modem_active' in response
+	  to modem activation and deactivation.
+	* src/NetworkManagerDbus.c: When asked our state, do not return
+	  disconnected if the modem is active.
+
+2006-04-04  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.c: Remove the 'Remove' option that I added to the
+	  applet.  It just confuses the crap out of people and does not make a
+	  lot of sense, as the daemon still runs.
+
+2006-03-29  Robert Love  <rml@novell.com>
+
+	Patch by Vinay R <rvinay@novell.com> and Robert Love <rml@novell.com>,
+	to add support for per-route MSS and improve support for per-interface
+	MTU:
+	* src/NetworkManagerSystem.c: Modify nm_system_device_set_ip4_route to
+	  optionally take an MSS parameter and set it for the given route.
+	  Remove nm_system_device_set_ip4_route_with_iface.  Pass in the
+	  NMIP4Config's stored MSS, if any.
+	* src/nm-ip4-config.c: Add 'mtu' and 'mss' to NMIP4Config, representing
+	  the interface's MTU and the route's MSS, respectively.  Add functions
+	  nm_ip4_config_get_mtu, nm_ip4_config_set_mtu, nm_ip4_config_get_mss,
+	  and nm_ip4_config_set_mss for retrieving and setting the MTU and the
+	  MSS.
+	* src/nm-ip4-config.h: Add prototypes for nm_ip4_config_get_mtu,
+	  nm_ip4_config_set_mtu, nm_ip4_config_get_mss, and
+	  nm_ip4_config_set_mss.
+	* src/vpn-manager/nm-vpn-service.c: Modify to receive the MSS from the
+	  VPN daemon.
+	* src/backends/NetworkManager{Arch,Debian,Gentoo,RedHat,Slackware,SUSE}.c:
+	  Change the retval of nm_system_get_mtu to guint32.
+	* src/dhcp-manager/nm-dhcp-manager.c: Set the MTU on the new DHCP-given
+	  NMIP4Config to the MTU provided by the system, if any.  TODO: If DHCP
+	  servers can specify MTU's, we should set it here if the MTU was not
+	  provided.
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+	* gnome/applet/applet.glade
+		- HIG fixes; mostly for spacing and borders (gnome.org #336220)
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Diffe <diffie@blazebox.homeip.net>
+	* src/backends/NetworkManagerSlackware.c
+		- Don't restart howl, since it's been replaced by Avahi
+			in most distributions
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tor Krill <bugzilla@krill.nu>
+	* configure.in
+	  initscript/Makefile.am
+	  src/backends/Makefile.am
+	  src/backends/NetworkManagerArch.c
+	  initscript/Arch/Makefile.am
+	  initscript/Arch/networkmanager-dispatcher.in
+	  initscript/Arch/networkmanager.in
+		- Add Arch Linux support, fixes gnome.org #335147
+
+2006-03-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Diffe <diffie@blazebox.homeip.net>
+	* initscript/Slackware/rc.networkmanager
+		- update, fixed gnome.org #333368
+
+2006-03-27  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.2.
+	* NEWS: Update.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
+	* gnome/applet/other-network-dialog.c: Do not allow the user to try to
+	  create WPA-EAP Ad-Hoc networks because such an action makes no sense.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
+	Patch by Jürg Billeter <j@bitron.ch>:
+	* src/nm-logging.c: Add printf modifier to fix warning on 64-bit
+	  systems.
+	* src/nm-netlink-monitor.c: Include <net/if.h> instead of <linux/if.h>
+	  as we prefer glibc over kernel headers, if possible.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
+	Patch by Jon Escombe <list@dresco.co.uk>:
+	* gnome/applet/nm-gconf-wso.c: Add missing NM_AUTH_TYPE_WPA_EAP case.
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: If retrieving the gconf values
+	  fail, don't bail out.  We don't expect all of the various WPA-EAP
+	  values to be present.
+	* src/nm-ap-security.c: We need to match all capabilities for each
+	  encryption type, not any one of them.
+
+2006-03-27  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Revert 2006-03-17 commit and again
+	  restart, not reload, ypbind.  Unfortunately there is no superior
+	  solution.
+
+2006-03-24  Robert Love  <rml@novell.com>
+
+	Patch by Christopher Aillon <caillon@redhat.com> on HEAD:
+	* gnome/applet/applet-notifications.c: When displaying a notification,
+	  make sure to get rid of the previous notification so as to not have
+	  competing bubbles, and stop leaking the old one.
+	* gnome/applet/applet.c, gnome/applet/applet.h:	Add a new
+	  'notification' member to the applet, and zero it out and free it
+	  appropriately.
+
+2006-03-23  Robert Love  <rml@novell.com>
+
+	Patch by j <j@bootlab.org>:
+	* gnome/applet/applet.glade: Don't set the invisible_char property,
+	  which simply overrides the GTK default.  By and by, this behavior
+	  ought to be fixed in Glade.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Bump timeout to 45 seconds.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
+	Bug fix by Timo Hoenig <thoenig@suse.de>:
+	* gnome/applet/applet-dbus.c: Let the applet reconnect to DBUS on
+	  disconnect.  Otherwise, we have the daemon surviving DBUS restarts
+	  and the applet going AWOL.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Create NM_DHCP_TIMEOUT
+	  preprocessor define and use it instead of open-coded the DHCP
+	  timeout, which is currently 25 seconds, everywhere.
+
+2006-03-22  Robert Love  <rml@novell.com>
+
+	Implement "Dynamic WEP", which is basically WPA authentication and WEP
+	key exchange via WPA, ostensibly providing good security without
+	requiring hardware that supports full WPA.  Also, add UI elements to
+	allow the user to select the pairwise & group cipher for WPA Enterprise
+	networks, too:
+	* gnome/applet/applet.glade: Update glade file.
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Serialize and deserialize the
+	  key type, too, to and from gconf.
+	* gnome/applet/wireless-security-option.c: Add "wpa_eap" parameter to
+	  wso_wpa_create_key_type_model(), noting whether we are handling PSK
+	  or EAP configuration, and in the latter case add in "Dynamic WEP" if
+	  the capabilities match.
+	* gnome/applet/wso-private.h: Update wso_wpa_create_key_type_model()'s
+	  prototype.
+	* gnome/applet/wso-wpa-eap.c: Manage UI elements for the key type and
+	  serialize from UI to DBUS.
+	* gnome/applet/wso-wpa-psk.c: Cannot fail and always returns at least
+	  one element.
+	* libnm-util/dbus-helpers.c: Update nmu_security_serialize_wpa_eap(),
+	  nmu_security_serialize_wpa_eap_with_cipher(), and
+	  nmu_security_deserialize_wpa_eap() to take a "key_type" parameter and
+	  serialize/deserialize the key type via DBUS as the new third DBUS
+	  parameter.
+	* libnm-util/dbus-helpers.h: Update prototypes.
+	* src/nm-ap-security-wpa-eap.c: Deserialize the key type from DBUS,
+	  too.  If the key type is WEP104, do Dynamic WEP, which means
+	  "IEEE8021X" for "key_mgmt".  Also add support for user-specified
+	  pairwise and group ciphers (fixes a FIXME).
+
+2006-03-21  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.c, src/NetworkManagerSystem.h: Add
+	  nm_system_get_mtu(), which returns a user-provided or system-mandated
+	  MTU value for a given device, if any, or zero if no such value
+	  exists.  Add nm_system_set_mtu() to set the MTU for a given device
+	  if we have a provided value.
+	* src/nm-device.c: Set the MTU of devices.
+	* src/backends/NetworkManagerSuSE.c: Read MTU, if any, from sysconfig.
+	* src/backends/NetworkManagerDebian.c,
+	  src/backends/NetworkManagerGentoo.c,
+	  src/backends/NetworkManagerRedHat.c,
+	  src/backends/NetworkManagerSlackware.c: Implement stub functions.
+
+2006-03-21  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Strip hypens from hex key in
+	  configuration file.
+
+2006-03-17  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Do "rcypbind reload" to send the
+	  signal SIGHUP to ypbind, not "rcypbind restart" to physically restart
+	  it, in case it is not running in the first place.  We just want its
+	  configuration reloaded.  Also, do not "rcypbind stop" on device down.
+
+2006-03-15  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade, gnome/applet/wso-wep-ascii.c,
+	  gnome/applet/wso-wep-hex.c, gnome/applet/wso-wep-passphrase.c: The
+	  label "WEP 40/128-bit" is inconsistent because the physical key size
+	  is 40 or 104-bits, to which a 24-bit initialisation vector is
+	  appended, forming a 64 or 128-bit traffic key.  Thus, the label ought
+	  to read "40/104" or "64/128".  I do not care much which, but most
+	  users think of "silver" and "gold" encryption as 64 and 128-bits, so
+	  let's stick with that.  Thus, s/"40/128"/"64/128"/g.  Also, since our
+	  WEP passphrase support only handles 128-bit keys, and any future
+	  64-bit passphrase support will require a new option (no way to auto-
+	  detect the target key size), explicitly label our passphrase support
+	  "WEP 128-bit Passphrase".
+
+2006-03-15  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Do not start dhcdbd, but rely on
+	  the system init scripts (or some other mechanism) starting it (or a
+	  compatible DBUS service) before NetworkManager runs.  This means that
+	  distributions might need to update their init scripts.  This fixes
+	  possible races and is quite a bit cleaner.
+	* initscript/SUSE/networkmanager.in: Update to start dhcdbd before
+	  starting the NetworkManager daemon.
+
+2006-03-14  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Check that we have a valid AP
+	  before adding anything.
+
+2006-03-13  Robert Love  <rml@novell.com>
+
+	* gnome/vpn-properties/nm-vpn-properties.c: Hide the next page's
+	  widgets, too, if they exist, in case the user hit the back button.
+	  Fixes a bug where the details page contains the widgets of multiple
+	  VPN modules (Novell bug #157048).
+
+2006-03-13  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.1.
+	* NEWS: Update.
+
+2006-03-13  Robert Love  <rml@novell.com>
+
+	Patch by Timo Hoenig <thoenig@suse.de>:
+	* dispatcher-daemon/NetworkManagerDispatcher.c: Let the dispatcher
+	  daemon survive DBUS restarts, too.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-devices.c: When building the device
+	  description, do not bail out if one property is nonexistant.  Keep
+	  building the rest of the string, in case the others exist.  The user
+	  cannot do anything about the errors, anyhow.  Some devices do not
+	  have all of the properties.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade: Add toggles to show/obfuscate the
+	  passphrase or key.
+	* gnome/applet/wso-wep-ascii.c, gnome/applet/wso-wep-hex.c,
+	  gnome/applet/wso-wep-passphrase.c, gnome/applet/wso-wpa-eap.c,
+	  gnome/applet/wso-wpa-psk.c: Show and obfuscate passphrases and keys
+	  in response to "toggled" signal on new toggle.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wpa-eap.c: Pass fake empty strings for
+	  serialization if strings are NULL, lest DBUS get angry.
+
+2006-03-10  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wpa-eap.c: Don't log the password.
+
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Read in WEP and WPA static
+	  configurations.
+
+2006-03-09  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Have the function
+	  nm_ap_set_timestamp() take the second and micro-second parameters as
+	  direct arguments, which avoids both a dynamic memory allocation and a
+	  structure-to-structure copy!  Add a new interface, the aptly named
+	  nm_ap_set_timestamp_via_timestamp(), to set the timestamp from an
+	  existing GTimeVal, as nm_ap_set_timestamp() once did, for use with
+	  the return from nm_ap_get_timestamp().  New users should use the new
+	  nm_ap_set_timestamp(), not nm_ap_set_timestamp_via_timestamp(), for
+	  the extreme benefit to performance.
+	* src/NetworkManagerAPList.c, src/nm-dbus-nmi.c,
+	  src/backends/NetworkManagerSuSE.c: Use the new functions as needed.
+
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet.glade: Hide the password entry text with
+	  asterisks.
+
+2006-03-08  Robert Love  <rml@novell.com>
+
+	* src/NetworkManagerSystem.h, src/nm-device.c, NetworkManagerDebian.c,
+	  NetworkManagerRedHat.c, NetworkManagerGentoo.c,
+	  NetworkManagerSlackware.c: Pass nm_system_device_get_system_config()
+	  a second argument, NMData.
+	* src/nm-ap-security.h, src/nm-ap-security.c: Export nm_ap_security_new.
+	* src/backends/NetworkManagerSuSE.c: Add wireless networks from ifcfg-*
+	  config files as trusted.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* gnome/applet/Makefile.am: Define AUTOSTARTDIR.
+	* gnome/applet/applet.c: Add 'Remove' option to the right click menu,
+	  to exit the applet.  As a sweet side-effect, idea courtesy of Chris
+	  Rivera, detect if the applet was auto-started.  If so, ask the user
+	  if he or she would like to stop automatically running the applet on
+	  login.  If so, disable autostart.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* NetworkManager.pc.in:  Provide an -I to the NetworkManager include
+	  directory in CFLAGS so developers can actually use NetworkManager.h.
+
+2006-03-06  Robert Love  <rml@novell.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c: Use preprocessor defines and not
+	  open-coded integer constants.  Add state_to_string() to map a given
+	  state to a textual description, and provide that when notifying of
+	  state change.
+	* src/dhcp-manager/nm-dhcp-manager.h: Provide defines for the dhcdbd
+	  states, copied and cleaned up from dhcdbd.d.  Ideally, we would use
+	  this header directly, but it is currently not installed on most
+	  systems.
+
+2006-03-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet-notifications.h
+		- Protect prototype of nma_send_event_notification() because it
+			includes libnotify-specific types
+		- Include libnotify/libnotify.h too, since we technically need it
+
+	* gnome/applet/applet.c
+		- (nma_show_vpn_failure_dialog): fix usage of g_return_if_fail
+		- (nma_show_vpn_login_banner_dialog): add some error checking
+
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
+	Clean up activation cancellation.  Should be a lot faster now.  Observed
+	an issue with wireless devices between stage 2 and 3 of activation, where
+	activation would be cancelled, but the device thread wouldn't notice until
+	the supplicant association timed out.  Reorganize activation such that
+	a cancellation handler gets immediately scheduled in the device's thread,
+	and devices have a chance to perform any custom cleanup too.
+
+	* src/nm-device.[ch]
+		- (activation_cancel_handler): new device-type-specific function
+			for cleaning up device-type-specific stuff on cancellation
+		- (cancel_activation): removed
+		- (nm_device_activation_cancel): subsume functionality of
+			real_cancel_activation, but instead of doing anything, punt
+			operation to a handler that's run in device-thread context
+		- (nm_device_schedule_activation_handle_cancel): fix spelling of
+			a warning message
+		- (activation_handle_cancel_helper): cancellation handler run in
+			device-thread context, calls device-type-specific cancelation,
+			then tears down the activation request
+		- (real_activation_cancel_handler): generic cancellation handler,
+			deals with cancelling any in-process DHCP request
+		- (nm_device_activate_stage1_device_prepare,
+		   nm_device_activate_stage2_device_config,
+		   nm_device_activate_stage3_ip_config_start,
+		   nm_device_activate_stage4_ip_config_get,
+		   nm_device_activate_stage4_ip_config_timeout,
+		   nm_device_activate_stage5_ip_commit): don't call
+			nm_device_schedule_activation_handle_cancel() any more, since
+			cancellation will have been already scheduled for us by
+			nm_device_activation_cancel().  Just exit the function and
+			assume that the cancel handler will be called next.
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_act_stage2_config): remove; didn't do anything anyway
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_status_cb): ensure we don't do anything if the activation
+			got cancelled
+		- (real_activation_cancel_handler): implement; cancel user key request
+			on activation cancellation
+
+2006-03-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_send_network_config): assume that drivers that don't
+			support WPA pretty much suck, and can't handle NM scanning
+			along with wpa_supplicant.
+
+2006-03-03  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.0.
+	* NEWS: Update.
+
+2006-03-03  Robert Love  <rml@novell.com>
+
+	* configure.in: Require DBUS 0.60 or later.
+
 2006-03-03  Dan Williams  <dcbw@redhat.com>
 
 	Fix a crash if an "Other wireless network" was chosen, failed, then

@@ -57,6 +57,7 @@ void			nm_print_open_socks				(void);
 int			nm_null_safe_strcmp				(const char *s1, const char *s2);
 
 gboolean		nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
+gboolean		nm_ethernet_addresses_are_equal	(const struct ether_addr *a, const struct ether_addr *b);
 
 int			nm_spawn_process				(const char *args);
 

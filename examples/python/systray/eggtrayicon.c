@@ -20,7 +20,7 @@
 
 #include <config.h>
 #include <string.h>
-#include <libintl.h>
+#include <glib/gi18n.h>
 
 #include "eggtrayicon.h"
 

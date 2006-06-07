@@ -30,7 +30,7 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <linux/if.h>
+#include <net/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
 
@@ -133,8 +133,8 @@ nm_netlink_monitor_class_install_signals (NmNetlinkMonitorClass	*monitor_class)
 }
 
 gboolean
-nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
-				    GError	     **error)
+nm_netlink_monitor_open_connection (NmNetlinkMonitor *monitor,
+							 GError **error)
 {
 	struct sockaddr_nl monitor_address = { .nl_family = 0 };
 	int fd, saved_errno;

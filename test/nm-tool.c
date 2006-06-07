@@ -84,7 +84,7 @@ static gboolean get_nm_state (DBusConnection *connection)
 			success = FALSE;
 			break;
 	}
-	fprintf (stderr, "State: %s\n\n", state_string);
+	printf ("State: %s\n\n", state_string);
 
 	return success;
 }
@@ -327,7 +327,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 		print_string ("HW Address", hw_addr);
 
 		/* Capabilities */
-		fprintf (stderr, "\n  Capabilities:\n");
+		printf ("\n  Capabilities:\n");
 		if (caps & NM_DEVICE_CAP_NM_SUPPORTED)
 			print_string ("  Supported", "yes");
 		else

@@ -61,6 +61,7 @@ struct _Supplicant
 struct _NMDevice80211WirelessPrivate
 {
 	gboolean	dispose_has_run;
+	gboolean	is_initialized;
 
 	struct ether_addr	hw_addr;
 
@@ -133,6 +134,140 @@ static void		remove_link_timeout (NMDevice80211Wireless *self);
 static void		nm_device_802_11_wireless_set_wep_enc_key (NMDevice80211Wireless *self,
                                            const char *key,
                                            int auth_method);
+
+
+/*
+ * nm_device_802_11_wireless_update_bssid
+ *
+ * Update the current wireless network's BSSID, presumably in response to
+ * roaming.
+ *
+ */
+static void
+nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
+{
+	NMAccessPoint *		ap;
+	NMActRequest *			req;
+	struct ether_addr		new_bssid;
+	const struct ether_addr	*old_bssid;
+
+	g_return_if_fail (self != NULL);
+
+	/* Grab the scan lock since the current AP is meaningless during a scan. */
+	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
+		return;
+
+	/* If we aren't the active device with an active AP, there is no meaningful BSSID value */
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (!req)
+		goto out;
+
+	ap = nm_act_request_get_ap (req);
+	if (!ap)
+		goto out;
+
+	/* Get the current BSSID.  If it is valid but does not match the stored value, update it. */
+	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
+	old_bssid = nm_ap_get_address (ap);
+	if (nm_ethernet_address_is_valid (&new_bssid) && !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid))
+	{
+		NMData *	app_data;
+		gboolean	automatic;
+		gchar	new_addr[20];
+		gchar	old_addr[20];
+
+		memset (new_addr, '\0', sizeof (new_addr));
+		memset (old_addr, '\0', sizeof (old_addr));
+		iw_ether_ntop (&new_bssid, new_addr);
+		iw_ether_ntop (old_bssid, old_addr);
+		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'", old_addr, new_addr, nm_ap_get_essid (ap));
+
+		nm_ap_set_address (ap, &new_bssid);
+
+		automatic = !nm_act_request_get_user_requested (req);
+		app_data = nm_device_get_app_data (NM_DEVICE (self));
+		g_assert (app_data);
+		nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
+	}
+
+out:
+	nm_unlock_mutex (self->priv->scan_mutex, __func__);
+}
+
+
+/*
+ * nm_device_802_11_wireless_update_signal_strength
+ *
+ * Update the device's idea of the strength of its connection to the
+ * current access point.
+ *
+ */
+static void
+nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
+{
+	NMData *		app_data;
+	gboolean		has_range = FALSE;
+	NMSock *		sk;
+	iwrange		range;
+	iwstats		stats;
+	int			percent = -1;
+
+	g_return_if_fail (self != NULL);
+
+	app_data = nm_device_get_app_data (NM_DEVICE (self));
+	g_assert (app_data);
+
+	/* Grab the scan lock since our strength is meaningless during a scan. */
+	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
+		return;
+
+	/* If we aren't the active device, we don't really have a signal strength
+	 * that would mean anything.
+	 */
+	if (!nm_device_get_act_request (NM_DEVICE (self)))
+	{
+		self->priv->strength = -1;
+		goto out;
+	}
+
+	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
+	{
+		const char *iface = nm_device_get_iface (NM_DEVICE (self));
+
+		memset (&range, 0, sizeof (iwrange));
+		memset (&stats, 0, sizeof (iwstats));
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET 'iwrange'.", iface);
+#endif
+		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range) >= 0);
+#ifdef IOCTL_DEBUG
+		nm_info ("%s: About to GET 'iwstats'.", iface);
+#endif
+		if (iw_get_stats (nm_dev_sock_get_fd (sk), iface, &stats, &range, has_range) == 0)
+		{
+			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
+					(const iwqual *)(&self->priv->avg_qual));
+		}
+		nm_dev_sock_close (sk);
+	}
+
+	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
+	 * one second and normal strength the next.
+	 */
+	if ((percent == -1) && (++self->priv->invalid_strength_counter <= 3))
+		percent = self->priv->strength;
+	else
+		self->priv->invalid_strength_counter = 0;
+
+	if (percent != self->priv->strength)
+		nm_dbus_signal_device_strength_change (app_data->dbus_connection, self, percent);
+
+	self->priv->strength = percent;
+
+out:
+	nm_unlock_mutex (self->priv->scan_mutex, __func__);
+}
+
 
 static guint nm_wireless_scan_interval_to_seconds (NMWirelessScanInterval interval)
 {
@@ -242,6 +377,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 {
 	self->priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
+	self->priv->is_initialized = FALSE;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 	self->priv->supplicant.pid = -1;
@@ -255,6 +391,7 @@ real_init (NMDevice *dev)
 	guint32				caps;
 	NMSock *				sk;
 
+	self->priv->is_initialized = TRUE;
 	self->priv->scan_mutex = g_mutex_new ();
 	nm_register_mutex_desc (self->priv->scan_mutex, "Scan Mutex");
 
@@ -336,6 +473,7 @@ nm_device_802_11_periodic_update (gpointer data)
 	g_return_val_if_fail (self != NULL, TRUE);
 
 	nm_device_802_11_wireless_update_signal_strength (self);
+	nm_device_802_11_wireless_update_bssid (self);
 
 	return TRUE;
 }
@@ -573,7 +711,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 			else if (link_to_specific_ap (self, cur_ap, TRUE))
 				keep = TRUE;
 
-			/* Only keep if its not in the invalid list and its _is_ in our scaned list */
+			/* Only keep if its not in the invalid list and it _is_ in our scanned list */
 			if ( keep
 				&& !nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid)
 				&& nm_device_802_11_wireless_ap_list_get_ap_by_essid (self, essid))
@@ -1119,80 +1257,6 @@ max_qual->updated);
 
 
 /*
- * nm_device_802_11_wireless_update_signal_strength
- *
- * Update the device's idea of the strength of its connection to the
- * current access point.
- *
- */
-void
-nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
-{
-	NMData *		app_data;
-	gboolean		has_range = FALSE;
-	NMSock *		sk;
-	iwrange		range;
-	iwstats		stats;
-	int			percent = -1;
-
-	g_return_if_fail (self != NULL);
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
-
-	/* Grab the scan lock since our strength is meaningless during a scan. */
-	if (!nm_try_acquire_mutex (self->priv->scan_mutex, __FUNCTION__))
-		return;
-
-	/* If we aren't the active device, we don't really have a signal strength
-	 * that would mean anything.
-	 */
-	if (!nm_device_get_act_request (NM_DEVICE (self)))
-	{
-		self->priv->strength = -1;
-		goto out;
-	}
-
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		const char *iface = nm_device_get_iface (NM_DEVICE (self));
-
-		memset (&range, 0, sizeof (iwrange));
-		memset (&stats, 0, sizeof (iwstats));
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET 'iwrange'.", iface);
-#endif
-		has_range = (iw_get_range_info (nm_dev_sock_get_fd (sk), iface, &range) >= 0);
-#ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET 'iwstats'.", iface);
-#endif
-		if (iw_get_stats (nm_dev_sock_get_fd (sk), iface, &stats, &range, has_range) == 0)
-		{
-			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
-					(const iwqual *)(&self->priv->avg_qual));
-		}
-		nm_dev_sock_close (sk);
-	}
-
-	/* Try to smooth out the strength.  Atmel cards, for example, will give no strength
-	 * one second and normal strength the next.
-	 */
-	if ((percent == -1) && (++self->priv->invalid_strength_counter <= 3))
-		percent = self->priv->strength;
-	else
-		self->priv->invalid_strength_counter = 0;
-
-	if (percent != self->priv->strength)
-		nm_dbus_signal_device_strength_change (app_data->dbus_connection, self, percent);
-
-	self->priv->strength = percent;
-
-out:
-	nm_unlock_mutex (self->priv->scan_mutex, __func__);
-}
-
-
-/*
  * nm_device_get_essid
  *
  * If a device is wireless, return the essid that it is attempting
@@ -1270,7 +1334,7 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
 		wreq.u.essid.length	 = strlen ((char *) safe_essid) + 1;
 		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
-	
+
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWESSID.", iface);
 #endif
@@ -1512,7 +1576,7 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
 	{
 #ifdef IOCTL_DEBUG
-	nm_info ("%s: About to GET IWAP.", iface);
+		nm_info ("%s: About to GET IWAP.", iface);
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
 			memcpy (bssid, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
@@ -1872,7 +1936,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 					scan_results->results_len = results_len;
 				}
 				else
-					nm_warning ("get_scan_results() on device %s returned an error.", iface);
+					nm_warning ("device %s returned an error.", iface);
 			}
 
 			nm_device_802_11_wireless_set_mode (self, orig_mode);
@@ -2192,6 +2256,12 @@ supplicant_status_cb (GIOChannel *source,
 
 	g_assert (self);
 
+	/* Do nothing if we're supposed to be canceling activation.
+	 * We'll get cleaned up by the cancellation handlers later.
+	 */
+	if (nm_device_activation_should_cancel (dev))
+		return TRUE;
+
 	ctrl = self->priv->supplicant.ctrl;
 	g_return_val_if_fail (ctrl != NULL, FALSE);
 
@@ -2394,7 +2464,7 @@ supplicant_exec (NMDevice80211Wireless *self)
 		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
 		g_io_channel_unref (channel);
 
-		/* Crackrock delay so we don't try to talk to wpa_supplicant to early */
+		/* Crackrock delay so we don't try to talk to wpa_supplicant too early */
 		/* FIXME: poll the global control socket instead of just sleeping */
 		g_usleep (G_USEC_PER_SEC);
 
@@ -2460,8 +2530,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			user_created;
-	char *			hex_essid;
-	char *			ap_scan = "AP_SCAN 1";
+	const char *		hex_essid;
+	const char *		ap_scan = "AP_SCAN 1";
+	guint32			caps;
+	gboolean			supports_wpa;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -2472,14 +2544,24 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	ctrl = self->priv->supplicant.ctrl;
 	g_assert (ctrl);
 
-	/* Ad-Hoc and non-broadcasting networks need AP_SCAN 2 */
+	/* Assume that drivers that don't support WPA pretty much suck,
+	 * and can't handle NM scanning along with wpa_supplicant.  Which
+	 * is the case for most of them, airo in particular.
+	 */
+	caps = nm_device_get_type_capabilities (NM_DEVICE (self));
+	supports_wpa = (caps & NM_802_11_CAP_PROTO_WPA)
+				|| (caps & NM_802_11_CAP_PROTO_WPA2);
+
+	/* Use "AP_SCAN 2" if:
+	 * - The wireless network is non-broadcast or user created
+	 * - The wireless driver does not support WPA
+	 */
 	user_created = nm_ap_get_user_created (ap);
-	if (!nm_ap_get_broadcast (ap) || user_created)
+	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			ap_scan))
+	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, ap_scan))
 		goto out;
 
 	/* Standard network setup info */
@@ -2734,16 +2816,22 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
-	else
+	else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
 	{
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
 
-		/* Chain up to parent */
+		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage4_ip_config_timeout (dev, req, &real_config);
 	}
+	else
+	{
+		/* Non-encrypted network and IP configure failed.  Alert the user. */
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	*config = real_config;
 
 	return ret;
@@ -2820,6 +2908,27 @@ real_activation_failure_handler (NMDevice *dev,
 			ap ? nm_ap_get_essid (ap) : "(none)");
 }
 
+static void
+real_activation_cancel_handler (NMDevice *dev,
+                                NMActRequest *req)
+{
+	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessClass *	klass;
+	NMDeviceClass * 			parent_class;
+
+	/* Chain up to parent first */
+	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
+	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+	parent_class->activation_cancel_handler (dev, req);
+
+	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
+	{
+		NMData *data = nm_device_get_app_data (dev);
+		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection, req);
+	}
+}
+
+
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
@@ -2851,24 +2960,20 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	NMDevice80211WirelessClass *	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (object);
 	NMDeviceClass *			parent_class;
 
+	/* Make sure dispose does not run twice. */
 	if (self->priv->dispose_has_run)
-		/* If dispose did already run, return. */
 		return;
 
-	/* Make sure dispose does not run twice. */
 	self->priv->dispose_has_run = TRUE;
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
-
-	nm_device_802_11_wireless_ap_list_clear (self);
-	if (self->priv->ap_list)
-		nm_ap_list_unref (self->priv->ap_list);
-	g_mutex_free (self->priv->scan_mutex);
+	/* Only do this part of the cleanup if the object is initialized */
+	if (self->priv->is_initialized)
+	{
+		nm_device_802_11_wireless_ap_list_clear (self);
+		if (self->priv->ap_list)
+			nm_ap_list_unref (self->priv->ap_list);
+		g_mutex_free (self->priv->scan_mutex);
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
@@ -2912,6 +3017,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->activation_failure_handler = real_activation_failure_handler;
 	parent_class->activation_success_handler = real_activation_success_handler;
+	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 }
@@ -3046,7 +3152,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		{
 			if (tries > 20 * SCAN_SLEEP_CENTISECONDS)
 			{
-				nm_warning ("get_scan_results(): card took too much time scanning.  Get a better one.");
+				nm_warning ("card took too much time scanning.  Get a better one.");
 				break;
 			}
 
@@ -3060,7 +3166,7 @@ get_scan_results (NMDevice80211Wireless *dev,
 		}
 		else		/* Random errors */
 		{
-			nm_warning ("get_scan_results(): unknown error, or the card returned too much scan info: %s",
+			nm_warning ("unknown error, or the card returned too much scan info: %s",
 					  strerror (errno));
 			break;
 		}
@@ -3075,7 +3181,6 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
                            NMAccessPoint *ap)
 {
 	GTimeVal cur_time;
-	NMData *	app_data;
 	NMAccessPointList *	ap_list;
 
 	g_return_if_fail (dev != NULL);
@@ -3087,11 +3192,13 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
 	 * allowed list where we cache known MAC->ESSID associations.
 	 */
-	app_data = nm_device_get_app_data (NM_DEVICE (dev));
 	if (!nm_ap_get_essid (ap))
 	{
+		NMData *	app_data;
+
 		nm_ap_set_broadcast (ap, FALSE);
-		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
+		app_data = nm_device_get_app_data (NM_DEVICE (dev));
+		nm_ap_list_copy_one_essid_by_address (app_data, dev, ap, app_data->allowed_ap_list);
 	}
 
 	/* Add the AP to the device's AP list */

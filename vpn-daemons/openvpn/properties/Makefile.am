@@ -18,7 +18,7 @@ libnm_openvpn_properties_la_CFLAGS =                          \
         -DG_DISABLE_DEPRECATED                          \
         -DGDK_DISABLE_DEPRECATED                        \
         -DGNOME_DISABLE_DEPRECATED                      \
-        -DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\"  \
+	-DGNOMELOCALEDIR=\"$(datadir)/locale\"		\
         -DVERSION=\"$(VERSION)\"
 
 libnm_openvpn_properties_la_LIBADD =       \

@@ -1,3 +1,26 @@
+2006-05-15  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in: bump version to 0.6.2 for release
+
+2006-04-10  Robert Love  <rml@novell.com>
+
+	* properties/nm-vpnc.c: Report error if writing out of exported
+	  configuration fails.  The silent treatment might work for me and my
+	  wife, but not for failed I/O.
+
+2006-03-29  Robert Love  <rml@novell.com>
+
+	* src/nm-vpnc-service.c: New eigth argument to DBUS VPN method, the
+	  per-route MSS.  Cisco does not care about the MSS, so we send zero.
+
+2006-03-20  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in: Bump release to 0.6
+
+2006-03-08  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-vpnc.desktop.in: Use NoDisplay=true (fixes 333854)
+
 2006-01-23  Robert Love  <rml@novell.com>
 
 	* properties/nm-vpnc-dialog.glade: Add (back) 'Optional Information'

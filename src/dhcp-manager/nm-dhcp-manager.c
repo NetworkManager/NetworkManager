@@ -29,9 +29,12 @@
 #include "nm-device.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerSystem.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 
+
+#define NM_DHCP_TIMEOUT		45	/* DHCP timeout, in seconds */
 
 struct NMDHCPManager
 {
@@ -70,39 +73,6 @@ static gboolean state_is_down (guint8 state)
 		return TRUE;
 
 	return FALSE;
-}
-
-
-/*
- * nm_dhcp_manager_exec_daemon
- *
- * Launch the DHCP daemon.
- *
- */
-static gboolean nm_dhcp_manager_exec_daemon (NMDHCPManager *manager)
-{
-	GPtrArray		*dhcp_argv;
-	GError		*error = NULL;
-	GPid			 pid;
-
-	g_return_val_if_fail (manager != NULL, FALSE);
-
-	dhcp_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhcp_argv, (gpointer) DHCDBD_BINARY_PATH);
-	g_ptr_array_add (dhcp_argv, (gpointer) "--system");
-	g_ptr_array_add (dhcp_argv, NULL);
-
-	if (!g_spawn_async ("/", (char **) dhcp_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))
-	{
-		g_ptr_array_free (dhcp_argv, TRUE);
-		nm_warning ("Could not activate the DHCP daemon " DHCDBD_BINARY_PATH ".  error: '%s'.", error->message);
-		g_error_free (error);
-		return FALSE;
-	}
-	g_ptr_array_free (dhcp_argv, TRUE);
-	nm_info ("Activated the DHCP daemon " DHCDBD_BINARY_PATH " with PID %d.", pid);
-
-	return TRUE;
 }
 
 
@@ -153,9 +123,8 @@ guint32 nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, NMDevice *
 
 	if (!manager->running)
 	{
-		if (nm_dhcp_manager_exec_daemon (manager) == FALSE)
-			return 0;
-		sleep (1);
+		nm_warning ("dhcdbd not running!");
+		return 0;
 	}
 
 	path = g_strdup_printf (DHCP_OBJECT_PATH"/%s", nm_device_get_iface (dev));
@@ -206,7 +175,8 @@ static gboolean nm_dhcp_manager_handle_timeout (NMActRequest *req)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_info ("Device '%s' DHCP transaction took too long (>25s), stopping it.", nm_device_get_iface (dev));
+	nm_info ("Device '%s' DHCP transaction took too long (>%ds), stopping it.",
+		    nm_device_get_iface (dev), NM_DHCP_TIMEOUT);
 
 	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 	{
@@ -235,9 +205,8 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 
 	if (!manager->running)
 	{
-		if (nm_dhcp_manager_exec_daemon (manager) == FALSE)
-			return FALSE;
-		sleep (1);
+		nm_warning ("dhcdbd not running!");
+		return FALSE;
 	}
 	else
 	{
@@ -273,8 +242,8 @@ gboolean nm_dhcp_manager_begin_transaction (NMDHCPManager *manager, NMActRequest
 		return FALSE;
 	}
 
-	/* Set up a timeout on the transaction to kill it after 25s */
-	source = g_timeout_source_new (25000);
+	/* Set up a timeout on the transaction to kill it after NM_DHCP_TIMEOUT seconds */
+	source = g_timeout_source_new (NM_DHCP_TIMEOUT * 1000);
 	g_source_set_callback (source, (GSourceFunc) nm_dhcp_manager_handle_timeout, req, NULL);
 	nm_act_request_set_dhcp_timeout (req, g_source_attach (source, manager->data->main_context));
 	g_source_unref (source);
@@ -610,10 +579,44 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 		nm_info ("  nis server %s", inet_ntoa (temp_addr));
 	}
 
+	/*
+	 * Grab the MTU from the backend.  If DHCP servers can send recommended MTU's,
+	 * should set that here if the backend returns zero.
+	 */
+	nm_ip4_config_set_mtu (ip4_config, nm_system_get_mtu (dev));
+
 out:
 	return ip4_config;
 }
 
+static inline const char * state_to_string (guint state)
+{
+	switch (state)
+	{
+		case DHCDBD_PREINIT:
+			return "starting";
+		case DHCDBD_BOUND:
+			return "bound";
+		case DHCDBD_RENEW:
+			return "renew";
+		case DHCDBD_REBOOT:
+			return "reboot";
+		case DHCDBD_REBIND:
+			return "rebind";
+		case DHCDBD_TIMEOUT:
+			return "timeout";
+		case DHCDBD_FAIL:
+			return "fail";
+		case DHCDBD_START:
+			return "successfully started";
+		case DHCDBD_ABEND:
+			return "abnormal exit";
+		case DHCDBD_END:
+			return "normal exit";
+		default:
+			return "unknown";
+	}
+}
 
 /*
  * nm_dhcp_manager_process_signal
@@ -654,19 +657,23 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	dev = nm_get_device_by_iface (manager->data, member);
 	if (dev && (req = nm_device_get_act_request (dev)))
 	{
-		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", nm_device_get_iface (dev)))
+		const char *iface = nm_device_get_iface (dev);
+
+		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", iface))
 		{
 			guint8	state;
 
 			if (dbus_message_get_args (message, NULL, DBUS_TYPE_BYTE, &state, DBUS_TYPE_INVALID))
 			{
-				nm_info ("DHCP daemon state now %d for interface %s", state, nm_device_get_iface (dev));
+				const char *desc = state_to_string (state);
+
+				nm_info ("DHCP daemon state is now %d (%s) for interface %s", state, desc, iface);
 				switch (state)
 				{
-					case 2:		/* BOUND */
-					case 3:		/* RENEW */
-					case 4:		/* REBOOT */
-					case 5:		/* REBIND */
+					case DHCDBD_BOUND:		/* lease obtained */
+					case DHCDBD_RENEW:		/* lease renewed */
+					case DHCDBD_REBOOT:		/* have valid lease, but now obtained a different one */
+					case DHCDBD_REBIND:		/* new, different lease */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_get (req);
@@ -674,7 +681,7 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 						}
 						break;
 
-					case 8:		/* TIMEOUT - timed out trying to contact server */
+					case DHCDBD_TIMEOUT:		/* timed out contacting DHCP server */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_device_activate_schedule_stage4_ip_config_timeout (req);
@@ -682,9 +689,9 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 						}
 						break;					
 
-					case 9:		/* FAIL */
-					case 13:		/* ABEND */
-//					case 14:		/* END */
+					case DHCDBD_FAIL:		/* all attempts to contact server timed out, sleeping */
+					case DHCDBD_ABEND:		/* dhclient exited abnormally */
+//					case DHCDBD_END:		/* dhclient exited normally */
 						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 						{
 							nm_policy_schedule_activation_failed (req);

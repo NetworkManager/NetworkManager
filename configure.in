@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager, 0.5.1, dcbw@redhat.com, NetworkManager)
+AC_INIT(NetworkManager, 0.6.3, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 
@@ -35,22 +35,29 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(select socket uname)
 
 dnl
+dnl GNOME support
+dnl
+AC_ARG_WITH(gnome, AC_HELP_STRING([--without-gnome], [Build NetworkManager without GNOME support, e.g. daemon only]))
+AM_CONDITIONAL(WITH_GNOME, test x"$with_gnome" != xno)
+
+dnl
 dnl translation support
 dnl
 GETTEXT_PACKAGE=NetworkManager
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
-ALL_LINGUAS="bg bs ca cs da de el en_CA es fi fr gu hr hu it ja ko lt nb ne nl pa pt_BR rw sk sq sr sr@Latn sv uk vi wa zh_CN zh_TW"
+ALL_LINGUAS="bg bs ca cs da de el en_CA en_GB es fi fr gu hr hu it ja ko lt mk nb ne nl pa pt_BR rw sk sq sr@Latn sr sv uk vi wa zh_CN zh_TW"
 AC_PROG_INTLTOOL([0.27.2])
 AM_GLIB_GNU_GETTEXT
 
-AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, or slackware]))
+AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch or slackware]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
 	AC_CHECK_FILE(/etc/fedora-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/gentoo-release,with_distro="gentoo")
 	AC_CHECK_FILE(/etc/debian_version,with_distro="debian")
+	AC_CHECK_FILE(/etc/arch-release,with_distro="arch")
 	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
 fi
 with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
@@ -60,7 +67,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware) ;;
+		redhat|suse|gentoo|debian|slackware|arch) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -72,6 +79,7 @@ AM_CONDITIONAL(TARGET_SUSE, test x"$with_distro" = xsuse)
 AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
 AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
+AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
 
 AC_MSG_CHECKING([for wireless-tools >= 28pre9])
 AC_TRY_COMPILE([#include <iwlib.h>],
@@ -87,7 +95,7 @@ fi
 IWLIB=-liw
 AC_SUBST(IWLIB)
 
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.22)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.60)
 
 ##### Find out the version of DBUS we're using
 dbus_version=`pkg-config --modversion dbus-1`
@@ -127,7 +135,7 @@ PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
 AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
 
-PKG_CHECK_MODULES(GLIB, glib-2.0)
+PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.6)
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
@@ -139,33 +147,35 @@ PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
 
-PKG_CHECK_MODULES(GTK, gtk+-2.0)
-AC_SUBST(GTK_CFLAGS)
-AC_SUBST(GTK_LIBS)
+if test x"$with_gnome" != xno; then
+	PKG_CHECK_MODULES(GTK, gtk+-2.0)
+	AC_SUBST(GTK_CFLAGS)
+	AC_SUBST(GTK_LIBS)
 
-PKG_CHECK_MODULES(GDK_PIXBUF, gdk-pixbuf-2.0)
-AC_SUBST(GDK_PIXBUF_CFLAGS)
-AC_SUBST(GDK_PIXBUF_LIBS)
+	PKG_CHECK_MODULES(GDK_PIXBUF, gdk-pixbuf-2.0)
+	AC_SUBST(GDK_PIXBUF_CFLAGS)
+	AC_SUBST(GDK_PIXBUF_LIBS)
 
-PKG_CHECK_MODULES(GLADE, libglade-2.0)
-AC_SUBST(GLADE_CFLAGS)
-AC_SUBST(GLADE_LIBS)
+	PKG_CHECK_MODULES(GLADE, libglade-2.0)
+	AC_SUBST(GLADE_CFLAGS)
+	AC_SUBST(GLADE_LIBS)
 
-PKG_CHECK_MODULES(GCONF, gconf-2.0)
-AC_SUBST(GCONF_CFLAGS)
-AC_SUBST(GCONF_LIBS)
+	PKG_CHECK_MODULES(GCONF, gconf-2.0)
+	AC_SUBST(GCONF_CFLAGS)
+	AC_SUBST(GCONF_LIBS)
 
-PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
-AC_SUBST(GNOME_KEYRING_CFLAGS)
-AC_SUBST(GNOME_KEYRING_LIBS)
+	PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
+	AC_SUBST(GNOME_KEYRING_CFLAGS)
+	AC_SUBST(GNOME_KEYRING_LIBS)
 
-PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
-			    [enable_notify=no])
-if test "x$enable_notify" != "xno"; then
-   AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
-   [Enable notifications with libnotify])
+	PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
+				[enable_notify=no])
+	if test "x$enable_notify" != "xno"; then
+		AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
+		[Enable notifications with libnotify])
+	fi
 fi
-AM_CONDITIONAL(WITH_NOTIFY, test x"$enable_notify" != xno)
+AM_CONDITIONAL(WITH_NOTIFY, test x"$enable_notify" != xno) # can't do it from inside 'if'
 
 PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)
@@ -193,13 +203,20 @@ else
 fi
 AM_CONDITIONAL(WITH_GCRYPT, test x"$ac_gcrypt" != xno)
 
-PKG_CHECK_MODULES(PANEL_APPLET, libpanelapplet-2.0)
-AC_SUBST(PANEL_APPLET_CFLAGS)
-AC_SUBST(PANEL_APPLET_LIBS)
+if test x"$with_gnome" != xno; then
+	PKG_CHECK_MODULES(PANEL_APPLET, libpanelapplet-2.0)
+	AC_SUBST(PANEL_APPLET_CFLAGS)
+	AC_SUBST(PANEL_APPLET_LIBS)
 
-PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
-AC_SUBST(LIBGNOMEUI_CFLAGS) # is this even needed? it was typed incorrectly before
-AC_SUBST(LIBGNOMEUI_LIBS)
+	PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
+	AC_SUBST(LIBGNOMEUI_CFLAGS) # is this even needed? it was typed incorrectly before
+	AC_SUBST(LIBGNOMEUI_LIBS)
+
+	PKG_CHECK_EXISTS([libgnome-2.0 >= 2.14.0],[have_libgnome_2_14=yes],[have_libgnome_2_14=no])
+	if test "$have_libgnome_2_14" = "yes"; then
+		AC_DEFINE([HAVE_LIBGNOME_2_14],[1],[Define if we have libgnome 2.14])
+	fi
+fi
 
 AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
 
@@ -332,9 +349,14 @@ initscript/Gentoo/Makefile
 initscript/Gentoo/NetworkManager
 initscript/Debian/Makefile
 initscript/Slackware/Makefile
+initscript/Slackware/rc.networkmanager
+initscript/Slackware/rc.networkmanager-dispatcher
 initscript/SUSE/Makefile
 initscript/SUSE/networkmanager
 initscript/SUSE/networkmanager-dispatcher
+initscript/Arch/Makefile
+initscript/Arch/networkmanager
+initscript/Arch/networkmanager-dispatcher
 man/Makefile
 man/NetworkManager.1
 man/NetworkManagerDispatcher.1
