@@ -224,6 +224,7 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 {
 	DBusMessage *		message;
 	gboolean			success = FALSE;
+	gboolean			fallback;
 	const char *		essid;
 	gchar *			char_bssid;
 	NMAPSecurity *		security;
@@ -246,10 +247,14 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 	/* First argument: ESSID (STRING) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
 
-	/* Second argument: Automatic (BOOLEAN) */
+	/* Second argument: Automatic or user-driven connection? (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &automatic);
 
-	/* Third argument: Access point's BSSID */
+	/* Third argument: Fallback? (BOOLEAN) */
+	fallback = nm_ap_get_fallback (ap);
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &fallback);
+
+	/* Fourth argument: Access point's BSSID */
 	addr = nm_ap_get_address (ap);
 	if ((nm_ap_get_mode (ap) == IW_MODE_INFRA) && nm_ethernet_address_is_valid (addr))
 	{
@@ -340,7 +345,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	DBusMessageIter		subiter;
 	const char *			essid = NULL;
 	gint					timestamp_secs = -1;
-	gboolean				trusted = FALSE;
+	gboolean				fallback = FALSE;
 	GSList *				addr_list = NULL;
 	NMAPSecurity *			security;
 	NMAccessPoint *		ap;
@@ -393,14 +398,14 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	}
 	dbus_message_iter_get_basic (&iter, &timestamp_secs);
 
-	/* Third arg: Trusted (BOOLEAN) */
+	/* Third arg: Fallback? (BOOLEAN) */
 	if (!dbus_message_iter_next (&iter)
 			|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
 	{
-		nm_warning ("a message argument (trusted) was invalid.");
+		nm_warning ("a message argument (fallback) was invalid.");
 		goto out;
 	}
-	dbus_message_iter_get_basic (&iter, &trusted);
+	dbus_message_iter_get_basic (&iter, &fallback);
 
 	/* Fourth arg: BSSID addresses (ARRAY, STRING) */
 	if (!dbus_message_iter_next (&iter)
@@ -439,18 +444,19 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	ap = nm_ap_new ();
 	nm_ap_set_essid (ap, essid);
 	nm_ap_set_security (ap, security);
+	nm_ap_add_capabilities_from_security (ap, security);
 	g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 
 	nm_ap_set_timestamp (ap, timestamp_secs, 0);
 
-	nm_ap_set_trusted (ap, trusted);
+	nm_ap_set_fallback (ap, fallback);
 	nm_ap_set_user_addresses (ap, addr_list);
 
 	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
 	{
 		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
 		nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
-		nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
+		nm_ap_set_fallback (list_ap, nm_ap_get_fallback (ap));
 		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
 		nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
 	}

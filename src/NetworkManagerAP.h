@@ -72,8 +72,8 @@ void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
 void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
 
-gboolean			nm_ap_get_trusted		(const NMAccessPoint *ap);
-void				nm_ap_set_trusted		(NMAccessPoint *ap, gboolean trusted);
+gboolean			nm_ap_get_fallback		(const NMAccessPoint *ap);
+void				nm_ap_set_fallback		(NMAccessPoint *ap, gboolean fallback);
 
 gboolean			nm_ap_get_artificial	(const NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);

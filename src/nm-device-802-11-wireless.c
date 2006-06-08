@@ -767,6 +767,103 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 }
 
 
+static gboolean
+get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
+{
+	gboolean blacklisted;
+
+	blacklisted = nm_ap_has_manufacturer_default_essid (ap);
+	if (blacklisted)
+	{
+		GSList *elt;
+		const struct ether_addr *ap_addr;
+		char char_addr[20];
+
+		ap_addr = nm_ap_get_address (ap);
+
+		memset (&char_addr[0], 0, 20);
+		iw_ether_ntop (ap_addr, &char_addr[0]);
+
+		for (elt = addrs; elt; elt = g_slist_next (elt))
+		{
+			if (elt->data && !strcmp (elt->data, &char_addr[0]))
+			{
+				blacklisted = FALSE;
+				break;
+			}
+		}
+	}
+
+	return blacklisted;
+}
+
+
+/*
+ * get_best_fallback_ap
+ *
+ * Find and return the most suitable "fallback" network, if any.  We "fall back"
+ * on these networks and attempt a brute-force connection, given no better options.
+ */
+static NMAccessPoint *
+get_best_fallback_ap (NMDevice80211Wireless *self)
+{
+	NMAccessPointList *	allowed_list;
+	NMAccessPoint *	best_ap = NULL;
+	NMAccessPoint *	allowed_ap;
+	GTimeVal		 	best_timestamp = {0, 0};
+	NMAPListIter *		iter;
+	NMData *			app_data;
+
+	app_data = nm_device_get_app_data (NM_DEVICE (self));
+	allowed_list = app_data->allowed_ap_list;
+
+	iter = nm_ap_list_iter_new (allowed_list);
+	if (!iter)
+		return NULL;
+
+	while ((allowed_ap = nm_ap_list_iter_next (iter)))
+	{
+		const char *		essid;
+		GSList *			user_addrs;
+		const GTimeVal *	curtime;
+		gboolean			blacklisted;
+
+		/* Only designated fallback networks, natch */
+		if (!nm_ap_get_fallback (allowed_ap))
+			continue;
+
+		/* Only connect to a blacklisted AP if the user has connected to this specific AP before */
+		user_addrs = nm_ap_get_user_addresses (allowed_ap);
+		blacklisted = get_ap_blacklisted (allowed_ap, user_addrs);
+		g_slist_foreach (user_addrs, (GFunc) g_free, NULL);
+		g_slist_free (user_addrs);
+		if (blacklisted)
+			continue;
+
+		/* No fallback to networks on the invalid list -- we probably already tried them and failed */
+		essid = nm_ap_get_essid (allowed_ap);
+		if (nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid))
+			continue;
+
+		curtime = nm_ap_get_timestamp (allowed_ap);
+		if (curtime->tv_sec > best_timestamp.tv_sec)
+		{
+			best_timestamp = *nm_ap_get_timestamp (allowed_ap);
+			best_ap = allowed_ap;
+		}
+	}
+	nm_ap_list_iter_free (iter);
+
+	if (best_ap)
+	{
+		nm_ap_set_broadcast (best_ap, FALSE);
+		nm_info ("No allowed networks in sight: Brute forcing fall-back '%s'", nm_ap_get_essid (best_ap));
+	}
+
+	return best_ap;
+}
+
+
 /*
  * nm_device_update_best_ap
  *
@@ -782,10 +879,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	NMAccessPoint *	best_ap = NULL;
 	NMAccessPoint *	cur_ap = NULL;
 	NMActRequest *		req = NULL;
-	NMAccessPoint *	trusted_best_ap = NULL;
-	NMAccessPoint *	untrusted_best_ap = NULL;
-	GTimeVal			trusted_latest_timestamp = {0, 0};
-	GTimeVal		 	untrusted_latest_timestamp = {0, 0};
+	GTimeVal		 	best_timestamp = {0, 0};
 	NMData *			app_data;
 
 	g_return_val_if_fail (self != NULL, NULL);
@@ -844,53 +938,28 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 		if ((tmp_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, ap_essid)))
 		{
-			const GTimeVal *curtime = nm_ap_get_timestamp (tmp_ap);
+			const GTimeVal *	curtime = nm_ap_get_timestamp (tmp_ap);
+			gboolean			blacklisted;
+			GSList *			user_addrs;
 
-			/* Only connect to a blacklisted AP if the user has connected
-			 * to this specific AP before.
-			 */
-			gboolean blacklisted = nm_ap_has_manufacturer_default_essid (scan_ap);
-			if (blacklisted)
+			/* Only connect to a blacklisted AP if the user has connected to this specific AP before */
+			user_addrs = nm_ap_get_user_addresses (tmp_ap);
+			blacklisted = get_ap_blacklisted (scan_ap, user_addrs);
+			g_slist_foreach (user_addrs, (GFunc) g_free, NULL);
+			g_slist_free (user_addrs);
+
+			if (!blacklisted && (curtime->tv_sec > best_timestamp.tv_sec))
 			{
-				GSList *elt, *user_addrs;
-				const struct ether_addr *ap_addr;
-				char char_addr[20];
-
-				ap_addr = nm_ap_get_address (scan_ap);
-				user_addrs = nm_ap_get_user_addresses (tmp_ap);
-
-				memset (&char_addr[0], 0, 20);
-				iw_ether_ntop (ap_addr, &char_addr[0]);
-
-				for (elt = user_addrs; elt; elt = g_slist_next (elt))
-				{
-					if (elt->data && !strcmp (elt->data, &char_addr[0]))
-					{
-						blacklisted = FALSE;
-						break;
-					}
-				}
-
-				g_slist_foreach (user_addrs, (GFunc)g_free, NULL);
-				g_slist_free (user_addrs);
-			}
-
-			if (!blacklisted && nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > trusted_latest_timestamp.tv_sec))
-			{
-				trusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
-				trusted_best_ap = scan_ap;
-				nm_ap_set_security (trusted_best_ap, nm_ap_get_security (tmp_ap));
-			}
-			else if (!blacklisted && !nm_ap_get_trusted (tmp_ap) && (curtime->tv_sec > untrusted_latest_timestamp.tv_sec))
-			{
-				untrusted_latest_timestamp = *nm_ap_get_timestamp (tmp_ap);
-				untrusted_best_ap = scan_ap;
-				nm_ap_set_security (untrusted_best_ap, nm_ap_get_security (tmp_ap));
+				best_timestamp = *nm_ap_get_timestamp (tmp_ap);
+				best_ap = scan_ap;
+				nm_ap_set_security (best_ap, nm_ap_get_security (tmp_ap));
 			}
 		}
 	}
-	best_ap = trusted_best_ap ? trusted_best_ap : untrusted_best_ap;
 	nm_ap_list_iter_free (iter);
+
+	if (!best_ap)
+		best_ap = get_best_fallback_ap (self);
 
 	if (best_ap)
 		nm_ap_ref (best_ap);
@@ -1752,7 +1821,6 @@ convert_scan_results (gpointer user_data)
 	NMDevice80211Wireless *	self;
 	GTimeVal				cur_time;
 	NMAPListIter *			iter = NULL;
-	const char *			iface;
 	NMData *				app_data;
 	NMAccessPointList *		ap_list;
 
@@ -1765,12 +1833,15 @@ convert_scan_results (gpointer user_data)
 		return FALSE;
 	}
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	if (cb_data->results_len > 0)
 	{
 		if (!process_scan_results (self, cb_data->results, cb_data->results_len))
+		{
+			const char *	iface;
+			iface = nm_device_get_iface (NM_DEVICE (self));
 			nm_warning ("process_scan_results() on device %s returned an error.", iface);
+		}
 
 		/* Once we have the list, copy in any relevant information from our Allowed list. */
 		nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self), app_data->allowed_ap_list);
@@ -3035,7 +3106,7 @@ real_activation_failure_handler (NMDevice *dev,
 		if (nm_ap_get_artificial (ap))
 		{
 			NMAccessPointList *	dev_list;
-		
+
 			/* Artificial APs are ones that don't show up in scans,
 			 * but which the user explicitly attempted to connect to.
 			 * However, if we fail on one of these, remove it from the

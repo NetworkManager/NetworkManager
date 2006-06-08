@@ -1,3 +1,26 @@
+2006-06-08  Robert Love  <rml@novell.com>
+
+	Add 'fallback' support.  NetworkManager will attempt to brute-force
+	connect to networks marked as fallback if there are no better wireless
+	connections available.  This is useful as a method of last resort, to
+	work around driver problems, and for use with hidden networks.
+	* gnome/applet/applet-dbus-devices.c,
+	  gnome/applet/applet-dbus-devices.h: Add fallback parameter.
+	* gnome/applet/applet-dbus-info.c: Retrieve fallback bit from Gconf and
+	  pass it on via DBUS.
+	* gnome/applet/applet.c: No fallback by default.
+	* gnome/applet/applet.glade, gnome/applet/other-network-dialog.c:
+	  Update other-network-dialog to add UI checkbox toggling fallback.
+	* src/NetworkManagerAP.c, src/NetworkManagerAP.h: Remove "trusted"
+	  propery from AP object.  Add "fallback" property to AP object.
+	* src/nm-dbus-nm.c: Grab the fallback parameter via DBUS.
+	* src/nm-dbus-nmi.c: Grab the fallback parameter via DBUS.
+	* src/nm-device-802-11-wireless.c: Break out blacklist logic into
+	  separate function.  Add get_best_fallback_ap() for returning an AP
+	  on which to attempt fallback.
+	* src/backends/NetworkManagerSuSE.c: Set stored network as fallback.
+	* test/nm-set-fallback: New file.  Sets a given network as fallback.
+
 2006-06-07  Robert Love  <rml@novell.com>
 
 	* gnome/applet/gconf-helpers.c: Bug fix: nm_gconf_helper_get_bool()

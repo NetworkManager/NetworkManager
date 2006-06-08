@@ -410,11 +410,16 @@ static void nma_ond_response_cb (GtkDialog *dialog, gint response, gpointer data
 			WirelessSecurityOption *	opt;
 			GtkComboBox *			security_combo;
 			GtkTreeIter			iter;
+			GtkWidget *			fallback_button;
 			char *				str;
 			NetworkDevice *		dev;
+			gboolean				fallback;
 
 			gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
 			gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
+
+			fallback_button = glade_xml_get_widget (xml, "fallback_button");
+			fallback = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (fallback_button));
 
 			security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
 			opt = wsm_get_option_for_active (wsm, security_combo);
@@ -422,7 +427,7 @@ static void nma_ond_response_cb (GtkDialog *dialog, gint response, gpointer data
 			if (create_network)
 				nma_dbus_create_network (applet->connection, dev, essid, opt);
 			else
-				nma_dbus_set_device (applet->connection, dev, essid, opt);
+				nma_dbus_set_device (applet->connection, dev, essid, fallback, opt);
 		}
 	}
 

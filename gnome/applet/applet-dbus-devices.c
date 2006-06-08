@@ -1275,7 +1275,7 @@ void nma_dbus_device_remove_one_device (NMApplet *applet, const char *dev_path)
  *
  */
 void nma_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const char *essid,
-						WirelessSecurityOption * opt)
+					 gboolean fallback, WirelessSecurityOption * opt)
 {
 	DBusMessage *	message;
 	gboolean		success = TRUE;
@@ -1294,6 +1294,7 @@ void nma_dbus_set_device (DBusConnection *connection, NetworkDevice *dev, const 
 			/* Build up the required args */
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 										DBUS_TYPE_STRING, &essid,
+										DBUS_TYPE_BOOLEAN, &fallback,
 										DBUS_TYPE_INVALID);
 
 			/* If we have specific wireless security options, add them */

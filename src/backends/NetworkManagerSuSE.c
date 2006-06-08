@@ -543,7 +543,7 @@ found:
 		ap = nm_ap_new ();
 		nm_ap_set_essid (ap, buf);
 		nm_ap_set_timestamp (ap, time (NULL), 0);
-		nm_ap_set_trusted (ap, TRUE);
+		nm_ap_set_fallback (ap, TRUE);
 
 		if ((mode = svGetValue (file, "WIRELESS_AUTH_MODE")) && !strcmp (mode, "psk"))
 		{
@@ -644,7 +644,7 @@ found:
 		{
 			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
 			nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
-			nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
+			nm_ap_set_fallback (list_ap, TRUE);
 			nm_ap_set_security (list_ap, nm_ap_get_security (ap));
 		}
 		else

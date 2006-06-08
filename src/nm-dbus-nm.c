@@ -261,6 +261,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	{
 		NMAPSecurity * 	security = NULL;
 		char *			essid = NULL;
+		gboolean			fallback = FALSE;
 
 		if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
 		{
@@ -275,6 +276,15 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 			nm_warning ("%s:%d (%s): Invalid argument (essid).", __FILE__, __LINE__, __func__);
 			goto out;
 		}
+
+		if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_BOOLEAN))
+		{
+			nm_warning ("Invalid argument type (fallback");
+			goto out;
+		}
+
+		/* grab the fallback bit */
+		dbus_message_iter_get_basic (&iter, &fallback);
 
 		/* If there's security information, we use that.  If not, we
 		 * make some up from the scan list.
@@ -292,6 +302,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 		/* Set up the wireless-specific activation request properties */
 		ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev), essid, security);
+		nm_ap_set_fallback (ap, fallback);
 		if (security)
 	 		g_object_unref (G_OBJECT (security));
 

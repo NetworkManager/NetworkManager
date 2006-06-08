@@ -51,7 +51,7 @@ struct NMAccessPoint
 	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
 
 	/* Things from user prefs/NetworkManagerInfo */
-	gboolean			trusted;
+	gboolean			fallback;
 	NMAPSecurity *		security;
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
@@ -398,21 +398,21 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 
 /*
  * Get/Set functions to indicate that an access point is
- * 'trusted'
+ * 'fallback'
  *
  */
-gboolean nm_ap_get_trusted (const NMAccessPoint *ap)
+gboolean nm_ap_get_fallback (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (ap != NULL, FALSE);
 
-	return (ap->trusted);
+	return (ap->fallback);
 }
 
-void nm_ap_set_trusted (NMAccessPoint *ap, gboolean trusted)
+void nm_ap_set_fallback (NMAccessPoint *ap, gboolean fallback)
 {
 	g_return_if_fail (ap != NULL);
 
-	ap->trusted = trusted;
+	ap->fallback = fallback;
 }
 
 
