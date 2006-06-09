@@ -72,7 +72,7 @@ gboolean		nm_system_vpn_device_set_from_ip4_config	(NMNamedManager *named, NMDev
 gboolean		nm_system_vpn_device_unset_from_ip4_config	(NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev, gboolean up);
-gboolean		nm_system_device_set_up_down_with_iface		(NMDevice *dev, const char *iface, gboolean up);
+gboolean		nm_system_device_set_up_down_with_iface		(const char *iface, gboolean up);
 
 gboolean		nm_system_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 

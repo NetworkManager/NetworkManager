@@ -1,5 +1,27 @@
 2006-06-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.[ch]
+		- (nm_system_device_set_up_down_with_iface): remove 'dev' argument,
+			it was unused and pointless
+		- (nm_system_vpn_device_set_from_iface, nm_system_device_set_up_down):
+			fix for set_up_down_with_iface change
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_deactivate): fix for set_up_down_with_iface change
+
+	* src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+		- (nm_system_enable_loopback): use set_up_down_with_iface where
+			appropriate
+		- (nm_system_flush_loopback_routes): use flush_routes_with_iface
+			where appropriate
+
+2006-06-09  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Peter Jones:
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_update_bssid): make sure that the
