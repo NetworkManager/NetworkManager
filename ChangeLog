@@ -1,3 +1,11 @@
+2006-06-09  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Peter Jones:
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_update_bssid): make sure that the
+			SSID hasn't changed from what we expect before automatically
+			updating the saved BSSID from a new AP
+
 2006-06-08  Robert Love  <rml@novell.com>
 
 	Add 'fallback' support.  NetworkManager will attempt to brute-force

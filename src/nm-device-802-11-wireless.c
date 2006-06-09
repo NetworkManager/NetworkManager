@@ -153,6 +153,8 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 	NMActRequest *			req;
 	struct ether_addr		new_bssid;
 	const struct ether_addr	*old_bssid;
+	const char *		new_essid;
+	const char *		old_essid;
 
 	g_return_if_fail (self != NULL);
 
@@ -169,10 +171,15 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 	if (!ap)
 		return;
 
-	/* Get the current BSSID.  If it is valid but does not match the stored value, update it. */
+	/* Get the current BSSID.  If it is valid but does not match the stored value,
+	 * and the ESSID is the same as what we think its suposed to be, update it. */
 	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
 	old_bssid = nm_ap_get_address (ap);
-	if (nm_ethernet_address_is_valid (&new_bssid) && !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid))
+	new_essid = nm_device_802_11_wireless_get_essid(self);
+	old_essid = nm_ap_get_essid(ap);
+	if (     nm_ethernet_address_is_valid (&new_bssid)
+		&& !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid)
+		&& !nm_null_safe_strcmp (old_essid, new_essid))
 	{
 		NMData *	app_data;
 		gboolean	automatic;
