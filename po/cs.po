@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cs\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-06-06 13:23+0200\n"
-"PO-Revision-Date: 2006-06-06 13:24+0200\n"
+"POT-Creation-Date: 2006-06-09 10:25+0200\n"
+"PO-Revision-Date: 2006-06-09 10:44+0200\n"
 "Last-Translator: Jakub Friedl <jfriedl@suse.cz>\n"
 "Language-Team:  <cs@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Plural-Forms:  nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: KBabel 1.10.2\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:920
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Heslo pro bezdrátovou síť %s"
@@ -136,7 +136,7 @@ msgid "VPN Login Message"
 msgstr "Zpráva po přihlášení VPN"
 
 #: ../gnome/applet/applet.c:743 ../gnome/applet/applet.c:2510
-#: ../gnome/applet/other-network-dialog.c:453
+#: ../gnome/applet/other-network-dialog.c:458
 #: ../gnome/applet/passphrase-dialog.c:228
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
@@ -714,14 +714,18 @@ msgid "_Don't remind me again"
 msgstr "_Už mě to nepřipomínat"
 
 #: ../gnome/applet/applet.glade.h:61
+msgid "_Fallback on this Network"
+msgstr "Používat jako _záložní síť"
+
+#: ../gnome/applet/applet.glade.h:62
 msgid "_Login to Network"
 msgstr "_Přihlásit se k síti"
 
-#: ../gnome/applet/applet.glade.h:62
+#: ../gnome/applet/applet.glade.h:63
 msgid "_Network Name:"
 msgstr "_Název sítě:"
 
-#: ../gnome/applet/applet.glade.h:63
+#: ../gnome/applet/applet.glade.h:64
 msgid "_Wireless Security:"
 msgstr "_Bezdrátové zabezpečení:"
 
