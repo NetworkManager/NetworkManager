@@ -302,7 +302,7 @@ gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
  */
 void nm_system_enable_loopback (void)
 {
-	nm_spawn_process ("/sbin/ifconfig lo up");
+	nm_system_device_set_up_down_with_iface ("lo", TRUE);
 }
 
 
@@ -315,7 +315,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	nm_spawn_process ("/usr/sbin/ip route flush dev lo");
+	nm_system_device_flush_routes_with_iface ("lo");
 }
 
 

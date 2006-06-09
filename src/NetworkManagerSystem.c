@@ -387,7 +387,7 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 
 	if (iface != NULL && strlen (iface))
 	{
-		nm_system_device_set_up_down_with_iface (NULL, iface, TRUE);
+		nm_system_device_set_up_down_with_iface (iface, TRUE);
 
 		nlh = new_nl_handle ();
 
@@ -484,10 +484,10 @@ gboolean nm_system_device_set_up_down (NMDevice *dev, gboolean up)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return nm_system_device_set_up_down_with_iface (dev, nm_device_get_iface (dev), up);
+	return nm_system_device_set_up_down_with_iface (nm_device_get_iface (dev), up);
 }
 
-gboolean nm_system_device_set_up_down_with_iface (NMDevice *dev, const char *iface, gboolean up)
+gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up)
 {
 	gboolean success = FALSE;
 	struct nl_handle *	nlh = NULL;

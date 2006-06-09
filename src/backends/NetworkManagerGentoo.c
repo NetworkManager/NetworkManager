@@ -183,8 +183,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	/* Remove routing table entries for lo */
-	nm_spawn_process ("/sbin/ip route flush dev lo");
+	nm_system_device_flush_routes_with_iface ("lo");
 }
 
 /*

@@ -312,8 +312,7 @@ void nm_system_device_add_default_route_via_device_with_iface (const char *iface
  */
 void nm_system_flush_loopback_routes (void)
 {
-	/* Remove routing table entries for lo */
-	nm_spawn_process ("/sbin/ip route flush dev lo");
+	nm_system_device_flush_routes_with_iface ("lo");
 }
 
  
