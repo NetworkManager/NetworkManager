@@ -127,18 +127,20 @@ static DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const ch
  * Signal the bus that some VPN operation failed.
  *
  */
-static void nm_ppp_dbus_signal_failure (NmPPPData *data, const char *signal)
+static void nm_ppp_dbus_signal_failure (NmPPPData *data, const char *signal, const char *error_msg)
 {
   DBusMessage	*message;
-  const char	*error_msg = NULL;
+  const char	*send_error_msg = NULL;
 
   g_return_if_fail (data != NULL);
   g_return_if_fail (signal != NULL);
 
   // No sophisticated error message for now
-  error_msg = _("VPN Connection failed");
-  if (!error_msg)
-    return;
+  if((send_error_msg=error_msg)==NULL) {
+    send_error_msg = _("VPN Connection failed");
+    if (!send_error_msg)
+      return;
+  }
 
   if (!(message = dbus_message_new_signal (NM_DBUS_PATH_PPP_STARTER, NM_DBUS_INTERFACE_PPP_STARTER, signal)))
     {
@@ -146,7 +148,7 @@ static void nm_ppp_dbus_signal_failure (NmPPPData *data, const char *signal)
       return;
     }
 
-  dbus_message_append_args (message, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID);
+  dbus_message_append_args (message, DBUS_TYPE_STRING, &send_error_msg, DBUS_TYPE_INVALID);
   if (!dbus_connection_send (data->con, message, NULL))
     nm_warning ("Could not raise the signal!");
 
@@ -267,7 +269,7 @@ static gboolean nm_ppp_helper_timer_cb (NmPPPData *data)
 
   g_return_val_if_fail (data != NULL, FALSE);
 
-  nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
+  nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED, NULL);
   nm_ppp_dbus_handle_stop_vpn (data);
 
   return FALSE;
@@ -339,16 +341,19 @@ static void pppd_start_watch_cb (GPid pid, gint status, gpointer user_data)
   /* Must be after data->state is set since signals use data->state */
   switch (error)
     {
+    case 0:	/* No error... Let it keep going! */
+      return;
     case 2:	/* Couldn't log in due to bad user/pass */
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,"Bad Username or Password");
       break;
 
     case 1:	/* Other error (couldn't bind to address, etc) */
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED,NULL);
       break;
 
-    default:
-      return;
+    default:	/* Other error */
+	  nm_warning ("pppd exited with error code %d", error);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED,"pppd dies with an unknown error code");
       break;
     }
 
@@ -392,16 +397,35 @@ static void pppd_forked_watch_cb (GPid pid, gint status, gpointer user_data)
   switch (error)
     {
     case 2:	/* Couldn't log in due to bad user/pass */
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,NULL);
       break;
 
     case 1:	/* Other error (couldn't bind to address, etc) */
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED,NULL);
       break;
 
     default:
       break;
     }
+
+  switch (error)
+    {
+    case 0:	/* No error... Let it keep going! */
+      break;
+    case 2:	/* Couldn't log in due to bad user/pass */
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,"Bad Username or Password");
+      break;
+
+    case 1:	/* Other error (couldn't bind to address, etc) */
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED,NULL);
+      break;
+
+    default:	/* Other error */
+	  nm_warning ("pppd exited with error code %d", error);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED,"pppd dies with an unknown error code");
+      break;
+    }
+
 
   nm_ppp_set_state (data, NM_VPN_STATE_STOPPED);
   nm_ppp_schedule_quit_timer (data, 10000);
@@ -987,20 +1011,20 @@ static gboolean nm_ppp_dbus_handle_start_vpn (DBusMessage *message, NmPPPData *d
 			      DBUS_TYPE_INVALID))
     {
       nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,NULL);
       dbus_error_free (&error);
       goto out;
     }
 
   if (!nm_ppp_config_options_validate (data, data_items, num_items))
     {
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,NULL);
       goto out;
     }
 
   if (!nm_ppp_store_auth_info (data, auth_items, num_auth_items))
     {
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,NULL);
       goto out;
     }
 
@@ -1269,7 +1293,7 @@ static void nm_ppp_dbus_process_helper_config_error (DBusConnection *con, DBusMe
   if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_item, DBUS_TYPE_INVALID))
     {
       nm_warning ("ppp helper did not receive adequate configuration information from pppd.  It is missing '%s'.", error_item);
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD, NULL);
     }
 
   nm_ppp_cancel_helper_timer (data);
