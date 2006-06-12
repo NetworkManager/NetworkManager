@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2006-03-01 22:31-0300\n"
-"Last-Translator: Raphael Higino <raphaelh@uai.com.br>\n"
-"Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
+"PO-Revision-Date: 2006-06-09 09:56\n"
+"Last-Translator: Novell Language <language@novell.com>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -325,26 +325,23 @@ msgstr "TKIP"
 
 #: ../gnome/applet/wireless-security-option.c:231
 msgid "Dynamic WEP"
-msgstr ""
+msgstr "WEP Dinâmico"
 
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
 msgstr "Nenhuma"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
-#, fuzzy
 msgid "WEP 64/128-bit ASCII"
-msgstr "WEP de 40/128 bits ASCII"
+msgstr "WEP de 64/128 bits (ASCII)"
 
 #: ../gnome/applet/wso-wep-hex.c:135
-#, fuzzy
 msgid "WEP 64/128-bit Hex"
-msgstr "WEP de 40/128 bits hexa"
+msgstr "WEP de 64/128 bits (Hexadecimal)"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
-#, fuzzy
 msgid "WEP 128-bit Passphrase"
-msgstr "Frase Secreta WEP"
+msgstr "WEP de 128 bits (Frase Secreta)"
 
 #: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
@@ -598,26 +595,24 @@ msgid "Interface:"
 msgstr "Interface:"
 
 #: ../gnome/applet/applet.glade.h:30
-#, fuzzy
 msgid "Key Type:"
-msgstr "Tipo:"
+msgstr "Tipo de Chave:"
 
 #: ../gnome/applet/applet.glade.h:31
 msgid "Key:"
 msgstr "Chave:"
 
 #: ../gnome/applet/applet.glade.h:32
-#, fuzzy
 msgid ""
 "None\n"
 "WEP 128-bit Passphrase\n"
 "WEP 64/128-bit Hex\n"
 "WEP 64/128-bit ASCII\n"
 msgstr ""
-"Nenhuma\n"
-"Frase secreta WEP\n"
-"WEP 40/128 bits hexa\n"
-"WEP 40/128 bits ASCII\n"
+"Nenhum\n"
+"WEP de 128 bits (Frase Secreta)\n"
+"WEP de 64/128 bits (Hexadecimal)\n"
+"WEP de 64/128 bits (ASCII)\n"
 
 #: ../gnome/applet/applet.glade.h:37
 msgid ""
@@ -669,26 +664,23 @@ msgstr "Selecione o arquivo da chave privada"
 
 #: ../gnome/applet/applet.glade.h:49
 msgid "Show key"
-msgstr ""
+msgstr "Mostrar chave"
 
 #: ../gnome/applet/applet.glade.h:50
-#, fuzzy
 msgid "Show passphrase"
-msgstr "Frase Secreta:"
+msgstr "Mostrar frase secreta"
 
 #: ../gnome/applet/applet.glade.h:51
-#, fuzzy
 msgid "Show password"
-msgstr "Senha:"
+msgstr "Mostrar senha"
 
 #: ../gnome/applet/applet.glade.h:52
-#, fuzzy
 msgid "Show passwords"
-msgstr "Senha:"
+msgstr "Mostrar senhas"
 
 #: ../gnome/applet/applet.glade.h:53
 msgid "Speed:"
-msgstr ""
+msgstr "Velocidade:"
 
 #: ../gnome/applet/applet.glade.h:54
 msgid "Subnet Mask:"
@@ -943,33 +935,30 @@ msgid "error occurred while waiting for data on socket"
 msgstr "ocorreu um erro ao esperar por dados no socket"
 
 #: ../gnome/applet/applet-dbus-devices.c:898
-#, fuzzy, c-format
+#, c-format
 msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Conectado a uma rede sem fio Ad-Hoc"
+msgstr "Agora, você está conectado à rede sem fio '%s' Ad-Hoc."
 
 #: ../gnome/applet/applet-dbus-devices.c:903
-#, fuzzy, c-format
+#, c-format
 msgid "You are now connected to the wireless network '%s'."
-msgstr "Terminando a conexão à rede sem fio '%s'..."
+msgstr "Agora, você está conectado à rede sem fio '%s'."
 
 #: ../gnome/applet/applet-dbus-devices.c:910
-#, fuzzy
 msgid "You are now connected to the wired network."
-msgstr "Terminando a conexão à rede com fios..."
+msgstr "Agora, você está conectado à rede com fio."
 
 #: ../gnome/applet/applet-dbus-devices.c:916
 msgid "Connection Established"
-msgstr ""
+msgstr "Conexão Estabelecida"
 
 #: ../gnome/applet/applet-dbus-devices.c:959
-#, fuzzy
 msgid "Disconnected"
-msgstr "_Desconectar VPN..."
+msgstr "Desconectado"
 
 #: ../gnome/applet/applet-dbus-devices.c:960
-#, fuzzy
 msgid "The network connection has been disconnected."
-msgstr "Atualmente nenhuma conexão de rede está ativa..."
+msgstr "A conexão de rede foi desfeita."
 
 #~ msgid "leap_subwindow"
 #~ msgstr "leap_subwindow"

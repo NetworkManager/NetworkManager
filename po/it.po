@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: NetworkManager 0.1\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2005-02-25 13:19+0100\n"
-"Last-Translator: Francesco Marletta <francesco.marletta@tiscali.it>\n"
-"Language-Team: Italian <tp@list.slinux.it>\n"
+"PO-Revision-Date: 2006-06-09 09:52\n"
+"Last-Translator: Novell Language <language@novell.com>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -330,7 +330,7 @@ msgstr "TKIP"
 
 #: ../gnome/applet/wireless-security-option.c:231
 msgid "Dynamic WEP"
-msgstr ""
+msgstr "WEP dinamico"
 
 # Dovrebbe riferirsi a "sicurezza"
 #: ../gnome/applet/wso-none.c:53
@@ -338,19 +338,16 @@ msgid "None"
 msgstr "Nessuna"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
-#, fuzzy
 msgid "WEP 64/128-bit ASCII"
-msgstr "WEP 40/128-bit ASCII"
+msgstr "ASCII 128 bit/WEP 40"
 
 #: ../gnome/applet/wso-wep-hex.c:135
-#, fuzzy
 msgid "WEP 64/128-bit Hex"
-msgstr "WEP 40/128-bit esadecimale"
+msgstr "Esadecimale 128 bit/WEP 40"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
-#, fuzzy
 msgid "WEP 128-bit Passphrase"
-msgstr "Frase di accesso WEP"
+msgstr "Frase di accesso WEP 128 bit"
 
 #: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
@@ -615,7 +612,6 @@ msgid "Key:"
 msgstr "Chiave:"
 
 #: ../gnome/applet/applet.glade.h:32
-#, fuzzy
 msgid ""
 "None\n"
 "WEP 128-bit Passphrase\n"
@@ -623,9 +619,9 @@ msgid ""
 "WEP 64/128-bit ASCII\n"
 msgstr ""
 "Nessuna\n"
-"Frase di accesso WEP\n"
-"WEP 40/128-bit esadecimale\n"
-"WEP 40/128-bit ASCII\n"
+"Frase di accesso WEP 128 bit\n"
+"WEP 64/128 bit esadecimale\n"
+"WEP 64/128 bit ASCII\n"
 
 #: ../gnome/applet/applet.glade.h:37
 msgid ""
@@ -677,22 +673,19 @@ msgstr "Selezionare il file con la chiave privata"
 
 #: ../gnome/applet/applet.glade.h:49
 msgid "Show key"
-msgstr ""
+msgstr "Mostra chiave"
 
 #: ../gnome/applet/applet.glade.h:50
-#, fuzzy
 msgid "Show passphrase"
-msgstr "Frase chiave:"
+msgstr "Mostra frase chiave"
 
 #: ../gnome/applet/applet.glade.h:51
-#, fuzzy
 msgid "Show password"
-msgstr "Password:"
+msgstr "Mostra password"
 
 #: ../gnome/applet/applet.glade.h:52
-#, fuzzy
 msgid "Show passwords"
-msgstr "Password:"
+msgstr "Mostra le password"
 
 #: ../gnome/applet/applet.glade.h:53
 msgid "Speed:"

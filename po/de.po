@@ -11,9 +11,9 @@ msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2005-09-27 20:55+0200\n"
-"Last-Translator: Hendrik Brandt <heb@gnome-de.org>\n"
-"Language-Team: German <gnome-de@gnome.org>\n"
+"PO-Revision-Date: 2006-06-09 09:51\n"
+"Last-Translator: Novell Language <language@novell.com>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -34,9 +34,8 @@ msgid "Connection to the wired network failed."
 msgstr "Die Verbindung mit dem Kabelnetzwerk ist fehlgeschlagen."
 
 #: ../gnome/applet/applet.c:184
-#, fuzzy
 msgid "Error displaying connection information:"
-msgstr "Die Verbindungsinformationen konnte nicht angezeigt werden: "
+msgstr "Fehler beim Anzeigen der Verbindungsinformationen:"
 
 #: ../gnome/applet/applet.c:202
 msgid "Could not find some required resources (the glade file)!"
@@ -62,7 +61,6 @@ msgid "NetworkManager Applet"
 msgstr "Netzwerk-Manager-Applet"
 
 #: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-#, fuzzy
 msgid "Copyright © 2004-2005 Red Hat, Inc."
 msgstr "Copyright © 2004-2005 Red Hat, Inc."
 
@@ -203,7 +201,7 @@ msgstr "Der Netzwerk-Manager ist nicht aktiv"
 
 #: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1828
 msgid "Networking disabled"
-msgstr ""
+msgstr "Netzwerk deaktiviert"
 
 #: ../gnome/applet/applet.c:1088
 msgid "No network connection"
@@ -263,9 +261,9 @@ msgid "Connect to %s..."
 msgstr "Verbinden mit %s..."
 
 #: ../gnome/applet/applet.c:1773
-#, fuzzy, c-format
+#, c-format
 msgid "Disconnect from %s..."
-msgstr "Verbinden mit %s..."
+msgstr "Trennen von %s..."
 
 #: ../gnome/applet/applet.c:1822
 msgid "No network devices have been found"
@@ -278,12 +276,12 @@ msgstr "Der Netzwerk-Manager ist nicht aktiv..."
 #. 'Enable Networking' item
 #: ../gnome/applet/applet.c:2170
 msgid "Enable _Networking"
-msgstr ""
+msgstr "Netzwerk_aktivieren"
 
 #. 'Enable Wireless' item
 #: ../gnome/applet/applet.c:2176
 msgid "Enable _Wireless"
-msgstr ""
+msgstr "Drahtloses Netzwerk _aktivieren"
 
 #. 'Connection Information' item
 #: ../gnome/applet/applet.c:2182
@@ -310,74 +308,73 @@ msgstr ""
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
-msgstr ""
+msgstr "Offenes System"
 
 #: ../gnome/applet/wireless-security-option.c:160
 msgid "Shared Key"
-msgstr ""
+msgstr "Gemeinsam genutzter Schlüssel"
 
 #: ../gnome/applet/wireless-security-option.c:208
 msgid "Automatic (Default)"
-msgstr ""
+msgstr "Automatisch (Standard)"
 
 #: ../gnome/applet/wireless-security-option.c:215
 msgid "AES-CCMP"
-msgstr ""
+msgstr "AES-CCMP"
 
 #: ../gnome/applet/wireless-security-option.c:223
 msgid "TKIP"
-msgstr ""
+msgstr "TKIP"
 
 #: ../gnome/applet/wireless-security-option.c:231
 msgid "Dynamic WEP"
-msgstr ""
+msgstr "WEP dynamisch"
 
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
-msgstr ""
+msgstr "Keine"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
 msgid "WEP 64/128-bit ASCII"
-msgstr ""
+msgstr "WEP 64/128-Bit-ASCII"
 
 #: ../gnome/applet/wso-wep-hex.c:135
 msgid "WEP 64/128-bit Hex"
-msgstr ""
+msgstr "WEP 64/128-Bit-Hex"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
-#, fuzzy
 msgid "WEP 128-bit Passphrase"
-msgstr "Passwort:"
+msgstr "WEP 128-Bit-Passwortsatz"
 
 #: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
-msgstr ""
+msgstr "PEAP"
 
 #: ../gnome/applet/wso-wpa-eap.c:238
 msgid "TLS"
-msgstr ""
+msgstr "TLS"
 
 #: ../gnome/applet/wso-wpa-eap.c:239
 msgid "TTLS"
-msgstr ""
+msgstr "TTLS"
 
 #: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
 #: ../src/nm-ap-security-wpa-eap.c:116
 msgid "WPA2 Enterprise"
-msgstr ""
+msgstr "WPA2 Enterprise"
 
 #: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
 #: ../src/nm-ap-security-wpa-eap.c:121
 msgid "WPA Enterprise"
-msgstr ""
+msgstr "WPA Enterprise"
 
 #: ../gnome/applet/wso-wpa-psk.c:178
 msgid "WPA2 Personal"
-msgstr ""
+msgstr "WPA2 Personal"
 
 #: ../gnome/applet/wso-wpa-psk.c:180
 msgid "WPA Personal"
-msgstr ""
+msgstr "WPA Personal"
 
 #: ../gnome/applet/eggtrayicon.c:134
 msgid "Orientation"
@@ -414,55 +411,55 @@ msgid " (invalid Unicode)"
 msgstr " (ungültiger Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:352
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "By default, the wireless network's name is set to your computer's name, %s, "
 "with no encryption enabled"
-msgstr "Als Vorgabe ist die ESSID auf Ihren Rechnernamen gesetzt."
+msgstr ""
+"Das drahtlose Netzwerk übernimmt standardmäßig den Namen Ihres Computers, %"
+"s, ohne Verschlüsselung "
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
 msgstr "Ein neues Funknetzwerk erstellen"
 
 #: ../gnome/applet/other-network-dialog.c:359
-#, fuzzy
 msgid ""
 "Enter the name and security settings of the wireless network you wish to "
 "create."
 msgstr ""
-"Bitte geben Sie die ESSID und die Sicherheitseinstellungen für das drahtlose "
-"Netzwerk mit dem Sie sich verbinden möchten ein."
+"Geben Sie Name und Sicherheitseinstellungen für das neue drahtlose Netzwerk "
+"ein."
 
 #: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
 msgstr "Neues Funknetzwerk erstellen"
 
 #: ../gnome/applet/other-network-dialog.c:368
-#, fuzzy
 msgid "Existing wireless network"
-msgstr "Benutzerdefiniertes Funknetzwerk"
+msgstr "Vorhandenes drahtloses Netzwerk"
 
 #: ../gnome/applet/other-network-dialog.c:369
-#, fuzzy
 msgid "Enter the name of the wireless network to which you wish to connect."
 msgstr ""
-"Bitte geben Sie die ESSID für das drahtlose Netzwerk mit dem Sie sich "
-"verbinden möchten ein."
+"Geben Sie den Namen des drahtlosen Netzwerks ein, mit dem Sie eine "
+"Verbindung herstellen möchten."
 
 #: ../gnome/applet/other-network-dialog.c:371
 msgid "Connect to Other Wireless Network"
 msgstr "Mit einem anderen Funknetzwerk verbinden"
 
 #: ../gnome/applet/passphrase-dialog.c:215
-#, fuzzy
 msgid "Error connecting to wireless network"
-msgstr "Mit einem anderen Funknetzwerk verbinden"
+msgstr "Fehler beim Verbinden mit drahtlosem Netzwerk"
 
 #: ../gnome/applet/passphrase-dialog.c:216
 msgid ""
 "The requested wireless network requires security capabilities unsupported by "
 "your hardware."
 msgstr ""
+"Das angeforderte drahtlose Netzwerk setzt Sicherheitseinstellungen voraus, "
+"die von Ihrer Hardware nicht unterstützt werden."
 
 #: ../gnome/applet/vpn-password-dialog.c:151
 #: ../gnome/applet/vpn-password-dialog.c:188
@@ -548,12 +545,11 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:15
 msgid "Anonymous Identity:"
-msgstr ""
+msgstr "Anonyme Identität:"
 
 #: ../gnome/applet/applet.glade.h:16
-#, fuzzy
 msgid "Authentication:"
-msgstr "Ausrichtung"
+msgstr "Authentifizierung:"
 
 #: ../gnome/applet/applet.glade.h:17
 msgid "Broadcast Address:"
@@ -561,7 +557,7 @@ msgstr "Broadcast-Adresse:"
 
 #: ../gnome/applet/applet.glade.h:18
 msgid "CA Certificate File:"
-msgstr ""
+msgstr "CA-Zertifikatdatei:"
 
 #: ../gnome/applet/applet.glade.h:19
 msgid "C_onnect"
@@ -569,7 +565,7 @@ msgstr "_Verbinden"
 
 #: ../gnome/applet/applet.glade.h:20
 msgid "Client Certificate File:"
-msgstr ""
+msgstr "Client-Zertifikatdatei:"
 
 #: ../gnome/applet/applet.glade.h:21
 msgid "Connection Information"
@@ -577,7 +573,7 @@ msgstr "Verbindungsinformationen"
 
 #: ../gnome/applet/applet.glade.h:22
 msgid "Default Route:"
-msgstr ""
+msgstr "Standardroute:"
 
 #: ../gnome/applet/applet.glade.h:23
 msgid "Destination Address:"
@@ -585,11 +581,11 @@ msgstr "Zieladresse:"
 
 #: ../gnome/applet/applet.glade.h:24
 msgid "Driver:"
-msgstr ""
+msgstr "Treiber:"
 
 #: ../gnome/applet/applet.glade.h:25
 msgid "EAP Method:"
-msgstr ""
+msgstr "EAP-Methode:"
 
 #: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
@@ -601,21 +597,19 @@ msgstr "IP-Adresse:"
 
 #: ../gnome/applet/applet.glade.h:28
 msgid "Identity:"
-msgstr ""
+msgstr "Identität:"
 
 #: ../gnome/applet/applet.glade.h:29
 msgid "Interface:"
 msgstr "Schnittstelle:"
 
 #: ../gnome/applet/applet.glade.h:30
-#, fuzzy
 msgid "Key Type:"
-msgstr "_Schlüsseltyp:"
+msgstr "Schlüsseltyp:"
 
 #: ../gnome/applet/applet.glade.h:31
-#, fuzzy
 msgid "Key:"
-msgstr "Hexadezimalschlüssel:"
+msgstr "Schlüssel:"
 
 #: ../gnome/applet/applet.glade.h:32
 msgid ""
@@ -624,12 +618,18 @@ msgid ""
 "WEP 64/128-bit Hex\n"
 "WEP 64/128-bit ASCII\n"
 msgstr ""
+"Keine\n"
+"WEP 128-Bit-Passwortsatz\n"
+"WEP 64/128-Bit-Hex\n"
+"WEP 64/128-Bit-ASCII\n"
 
 #: ../gnome/applet/applet.glade.h:37
 msgid ""
 "Open System\n"
 "Shared Key"
 msgstr ""
+"Offenes System\n"
+"Gemeinsam genutzter Schlüssel"
 
 #: ../gnome/applet/applet.glade.h:39
 msgid "Other Wireless Network..."
@@ -641,69 +641,67 @@ msgstr "Passwort:"
 
 #: ../gnome/applet/applet.glade.h:41
 msgid "Password:"
-msgstr ""
+msgstr "Passwort:"
 
 #: ../gnome/applet/applet.glade.h:42
 msgid "Primary DNS:"
-msgstr ""
+msgstr "Primär-DNS:"
 
 #: ../gnome/applet/applet.glade.h:43
 msgid "Private Key File:"
-msgstr ""
+msgstr "Private Schlüsseldatei:"
 
 #: ../gnome/applet/applet.glade.h:44
 msgid "Private Key Password:"
-msgstr ""
+msgstr "Privates Schlüsselpasswort:"
 
 #: ../gnome/applet/applet.glade.h:45
 msgid "Secondary DNS:"
-msgstr ""
+msgstr "Sekundär-DNS:"
 
 #: ../gnome/applet/applet.glade.h:46
 msgid "Select the CA Certificate File"
-msgstr ""
+msgstr "CA-Zertifikatdatei auswählen"
 
 #: ../gnome/applet/applet.glade.h:47
 msgid "Select the Client Certificate File"
-msgstr ""
+msgstr "Client-Zertifikatdatei auswählen"
 
 #: ../gnome/applet/applet.glade.h:48
 msgid "Select the Private Key File"
-msgstr ""
+msgstr "Private Schlüsseldatei auswählen"
 
 #: ../gnome/applet/applet.glade.h:49
 msgid "Show key"
-msgstr ""
+msgstr "Schlüssel anzeigen"
 
 #: ../gnome/applet/applet.glade.h:50
-#, fuzzy
 msgid "Show passphrase"
-msgstr "Passwort:"
+msgstr "Passwortsatz anzeigen"
 
 #: ../gnome/applet/applet.glade.h:51
 msgid "Show password"
-msgstr ""
+msgstr "Passwort anzeigen"
 
 #: ../gnome/applet/applet.glade.h:52
 msgid "Show passwords"
-msgstr ""
+msgstr "Passwörter anzeigen"
 
 #: ../gnome/applet/applet.glade.h:53
 msgid "Speed:"
-msgstr ""
+msgstr "Geschwindigkeit:"
 
 #: ../gnome/applet/applet.glade.h:54
 msgid "Subnet Mask:"
 msgstr "Subnetz-Maske:"
 
 #: ../gnome/applet/applet.glade.h:55
-#, fuzzy
 msgid "Type:"
-msgstr "_Schlüsseltyp:"
+msgstr "Typ:"
 
 #: ../gnome/applet/applet.glade.h:56
 msgid "User Name:"
-msgstr ""
+msgstr "Benutzername:"
 
 #: ../gnome/applet/applet.glade.h:57
 msgid "Wireless Network Key Required"
@@ -727,12 +725,11 @@ msgstr "_Am Netzwerk anmelden"
 
 #: ../gnome/applet/applet.glade.h:62
 msgid "_Network Name:"
-msgstr ""
+msgstr "_Netzwerkname:"
 
 #: ../gnome/applet/applet.glade.h:63
-#, fuzzy
 msgid "_Wireless Security:"
-msgstr "Funknetzwerkk_arte:"
+msgstr "_Sicherheit des drahtlosen Netzwerks:"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:383
 msgid "Cannot add VPN connection"
@@ -877,39 +874,39 @@ msgstr "VPN-Verbindungen"
 
 #: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
-msgstr ""
+msgstr "40-Bit-WEP"
 
 #: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
-msgstr ""
+msgstr "104-Bit-WEP"
 
 #: ../src/nm-ap-security-wpa-psk.c:50
 msgid "WPA TKIP"
-msgstr ""
+msgstr "WPA TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:52
 msgid "WPA CCMP"
-msgstr ""
+msgstr "WPA CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:54
 msgid "WPA Automatic"
-msgstr ""
+msgstr "WPA Automatisch"
 
 #: ../src/nm-ap-security-wpa-psk.c:59
 msgid "WPA2 TKIP"
-msgstr ""
+msgstr "WPA2 TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:61
 msgid "WPA2 CCMP"
-msgstr ""
+msgstr "WPA2 CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:63
 msgid "WPA2 Automatic"
-msgstr ""
+msgstr "WPA2 Automatisch"
 
 #: ../src/nm-ap-security.c:320
 msgid "none"
-msgstr ""
+msgstr "Keine"
 
 #: ../src/nm-netlink-monitor.c:154
 #, c-format
@@ -950,32 +947,30 @@ msgid "error occurred while waiting for data on socket"
 msgstr "Während des Wartens auf Daten am Socket, ist ein Fehler aufgetreten"
 
 #: ../gnome/applet/applet-dbus-devices.c:898
-#, fuzzy, c-format
+#, c-format
 msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Verbunden mit einem Ad-Hoc-Funknetzwerk"
+msgstr "Sie sind nun mit dem drahtlosen Ad-hoc-Netzwerk '%s' verbunden."
 
 #: ../gnome/applet/applet-dbus-devices.c:903
-#, fuzzy, c-format
+#, c-format
 msgid "You are now connected to the wireless network '%s'."
-msgstr "Fertigstellen der Verbindung mit dem Funknetzwerk »%s«..."
+msgstr "Sie sind nun mit dem drahtlosen Netzwerk '%s' verbunden."
 
 #: ../gnome/applet/applet-dbus-devices.c:910
-#, fuzzy
 msgid "You are now connected to the wired network."
-msgstr "Fertigstellen der Verbindung mit dem Kabelnetzwerk..."
+msgstr "Sie sind nun mit dem Kabelnetzwerk verbunden."
 
 #: ../gnome/applet/applet-dbus-devices.c:916
 msgid "Connection Established"
-msgstr ""
+msgstr "Verbindung hergestellt"
 
 #: ../gnome/applet/applet-dbus-devices.c:959
-#, fuzzy
 msgid "Disconnected"
-msgstr "VPN _trennen..."
+msgstr "Verbindung getrennt"
 
 #: ../gnome/applet/applet-dbus-devices.c:960
 msgid "The network connection has been disconnected."
-msgstr ""
+msgstr "Die Netzwerkverbindung wurde getrennt."
 
 #~ msgid ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
