@@ -822,11 +822,12 @@ nmi_save_network_info (NMApplet *applet,
                        const char *bssid,
                        NMGConfWSO * gconf_wso)
 {
-	char *					key;
-	GConfEntry *				gconf_entry;
-	char *					escaped_network;
-	GnomeKeyringResult			ret;
-	guint32					item_id;
+	char *			key;
+	GConfEntry *		gconf_entry;
+	char *			escaped_network;
+	GnomeKeyringResult	ret;
+	guint32			item_id;
+	GConfValue *		value;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (essid != NULL);
@@ -857,13 +858,18 @@ nmi_save_network_info (NMApplet *applet,
 		g_free (key);
 	}
 
+	/*
+	 * XXX: We don't want to move a network from fallback to non-fallback because the user
+	 * connected via other means.  We need a better way to do this.
+	 */
 	key = g_strdup_printf ("%s/%s/fallback", GCONF_PATH_WIRELESS_NETWORKS, escaped_network);
-	gconf_client_set_bool (applet->gconf_client, key, fallback, NULL);
+	value = gconf_client_get (applet->gconf_client, key, NULL);
+	if (!value || value->type != GCONF_VALUE_BOOL || (!gconf_value_get_bool (value) && fallback))
+		gconf_client_set_bool (applet->gconf_client, key, fallback, NULL);
 	g_free (key);
 
 	if (bssid && (strlen (bssid) >= 11))
 	{
-		GConfValue *	value;
 		GSList *		new_bssid_list = NULL;
 		gboolean		found = FALSE;
 

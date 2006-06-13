@@ -1,3 +1,14 @@
+2006-06-13  Robert Love  <rml@novell.com>
+
+	* gnome/applet/applet-dbus-info.c: Don't set the fallback bit to FALSE
+	  if it is currently set to TRUE.  Otherwise, we will reset the value
+	  when we connect normally.
+	* src/nm-device-802-11-wireless.c: For the roaming code, make sure that
+	  the old BSSID is valid, too.  The recently added ESSID check may not be
+	  sufficient (we can remove it?).  What we really want to catch is the
+	  case of going from all-zeros to the BSSID of some other network, which
+	  happens on failure.
+
 2006-06-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerSystem.[ch]
