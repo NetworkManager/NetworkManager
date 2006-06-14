@@ -248,11 +248,12 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i anonymous_identity \"%s\"", nwid, anon_identity))
 			goto out;
 
-	if (private_key_file && private_key_passwd && strlen (private_key_file) > 0 && strlen (private_key_passwd) > 0)
-	{
+	if (private_key_file && strlen (private_key_file) > 0)
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i private_key \"%s\"", nwid, private_key_file))
 			goto out;
 
+	if (private_key_passwd && strlen (private_key_passwd) > 0)
+	{
 		msg = g_strdup_printf ("SET_NETWORK %i private_key_passwd <key>", nwid);
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i private_key_passwd \"%s\"", nwid, private_key_passwd))
 		{
@@ -329,13 +330,13 @@ real_copy_constructor (NMAPSecurity *instance)
 	dst->priv->key_type = self->priv->key_type;
 	dst->priv->wpa_version = self->priv->wpa_version;
 	dst->priv->key_mgmt = self->priv->key_mgmt;
-	dst->priv->identity = self->priv->identity;
-	dst->priv->passwd = self->priv->passwd;
-	dst->priv->anon_identity = self->priv->anon_identity;
-	dst->priv->private_key_passwd = self->priv->private_key_passwd;
-	dst->priv->private_key_file = self->priv->private_key_file;
-	dst->priv->client_cert_file = self->priv->client_cert_file;
-	dst->priv->ca_cert_file = self->priv->ca_cert_file;
+	dst->priv->identity = g_strdup (self->priv->identity);
+	dst->priv->passwd = g_strdup (self->priv->passwd);
+	dst->priv->anon_identity = g_strdup (self->priv->anon_identity);
+	dst->priv->private_key_passwd = g_strdup (self->priv->private_key_passwd);
+	dst->priv->private_key_file = g_strdup (self->priv->private_key_file);
+	dst->priv->client_cert_file = g_strdup (self->priv->client_cert_file);
+	dst->priv->ca_cert_file = g_strdup (self->priv->ca_cert_file);
 
 	nm_ap_security_copy_properties (NM_AP_SECURITY (self), NM_AP_SECURITY (dst));
 

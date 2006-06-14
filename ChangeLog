@@ -1,3 +1,8 @@
+2006-06-14  Robert Love  <rml@novell.com>
+
+	* src/nm-ap-security-wpa-eap.c: In real_copy_constructor(), actually
+	  copy the strings.
+
 2006-06-14  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Lorenzo Colitti <lorenzo@colitti.com>  gnome.org #344825
