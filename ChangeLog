@@ -1,3 +1,13 @@
+2006-06-14  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Lorenzo Colitti <lorenzo@colitti.com>  gnome.org #344825
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_set_essid): only wait for orinoco cards
+			or ones where the driver is unknown
+		- (supplicant_exec): don't wait for supplicant startup here
+		- (supplicant_interface_init): finer grained polling for supplicant
+			startup
+
 2006-06-13  Robert Love  <rml@novell.com>
 
 	* gnome/applet/applet-dbus-info.c: Don't set the fallback bit to FALSE

@@ -1501,6 +1501,7 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 	struct iwreq	wreq;
 	char *		safe_essid;
 	const char *	iface;
+	const char *	driver;
 	gint			len = 0;
 
 	g_return_if_fail (self != NULL);
@@ -1540,7 +1541,9 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 		 * Unfortunately, there's no way to know when the card is back up
 		 * again.  Sigh...
 		 */
-		sleep (2);
+		driver = nm_device_get_driver (NM_DEVICE (self));
+		if (!driver || !strcmp (driver, "orinoco"))
+			sleep (2);
 	}
 	g_free (safe_essid);
 }
@@ -2346,6 +2349,8 @@ ap_need_key (NMDevice80211Wireless *self,
 
 #define WPA_SUPPLICANT_GLOBAL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant-global"
 #define WPA_SUPPLICANT_CONTROL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant"
+#define WPA_SUPPLICANT_NUM_RETRIES		20
+#define WPA_SUPPLICANT_RETRY_TIME_US		100*1000
 
 
 static void
@@ -2692,10 +2697,6 @@ supplicant_exec (NMDevice80211Wireless *self)
 		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
 		g_io_channel_unref (channel);
 
-		/* Crackrock delay so we don't try to talk to wpa_supplicant too early */
-		/* FIXME: poll the global control socket instead of just sleeping */
-		g_usleep (G_USEC_PER_SEC * 2);
-
 		/* Monitor the child process so we know when it stops */
 		self->priv->supplicant.pid = pid;
 		if (self->priv->supplicant.watch)
@@ -2712,14 +2713,24 @@ supplicant_exec (NMDevice80211Wireless *self)
 static gboolean
 supplicant_interface_init (NMDevice80211Wireless *self)
 {
-	struct wpa_ctrl *	ctrl;
+	struct wpa_ctrl *	ctrl = NULL;
 	char *			socket_path;
 	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
 	gboolean			success = FALSE;
 	int				tries = 0;
 
-	if (!(ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_RUN_DIR)))
+	/* Try to open wpa_supplicant's global control socket */
+	for (tries = 0; tries < WPA_SUPPLICANT_NUM_RETRIES && !ctrl; tries++)
+	{
+		ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_RUN_DIR);
+		g_usleep (WPA_SUPPLICANT_RETRY_TIME_US);
+	}
+
+	if (!ctrl)
+	{
+		nm_info ("Error opening supplicant global control interface.");
 		goto exit;
+	}
 
 	/* wpa_cli -g/var/run/wpa_supplicant-global interface_add eth1 "" wext /var/run/wpa_supplicant */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
