@@ -957,7 +957,7 @@ static gboolean nm_ppp_store_auth_info (NmPPPData *data,
   g_return_val_if_fail (auth_items != NULL, FALSE);
   g_return_val_if_fail (num_auth_items >= 1, FALSE);
  
-  data->auth_items = (char **)g_new0(char *, num_auth_items);
+  data->auth_items = (char **)g_new0(char *, num_auth_items+1);
   g_return_val_if_fail (data->auth_items != NULL, FALSE);
   
   for (i=0;i<num_auth_items;i++) {
@@ -1335,7 +1335,10 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
     return;
 
   /* If IP is up then we don't need to leave the auth info lying around */
-  g_strfreev (data->auth_items);
+
+  if (data->auth_items) 
+    g_strfreev (data->auth_items);
+  data->auth_items = NULL;
   data->num_auth_items=-1;
 
   nm_ppp_cancel_helper_timer (data);
@@ -1645,12 +1648,10 @@ int main( int argc, char *argv[] )
 
   g_main_loop_unref (vpn_data->loop);
 
-  for (i=0;i<vpn_data->num_auth_items;i++) {
-     g_free(vpn_data->auth_items[i]);
-  }
-  g_free((char *)vpn_data->auth_items);
-  g_free (vpn_data->str_ip4_vpn_gateway);
-  g_free (vpn_data);
+  if (vpn_data->auth_items)
+    g_strfreev (vpn_data->auth_items);
+  if (vpn_data->str_ip4_vpn_gateway) g_free (vpn_data->str_ip4_vpn_gateway);
+  if (vpn_data) g_free (vpn_data);
 
   exit (0);
 }
