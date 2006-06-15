@@ -1,3 +1,11 @@
+2006-06-15  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the set unless there
+	  is a non-empty key to set.  Elsewhere, pass an empty string via DBUS
+	  if there is no key to pass.
+	* libnm-util/dbus-helpers.c: Given the above, we can trust always
+	  receiving a non-NULL key.
+
 2006-06-14  Robert Love  <rml@novell.com>
 
 	* src/nm-ap-security-wpa-eap.c: In real_copy_constructor(), actually

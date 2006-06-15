@@ -178,7 +178,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
          || !temp)
 		new_key = TRUE;
 	g_free (escaped_network);
-	
+
 	/* It's not a new key, so try to get the key from the keyring. */
 	if (!new_key)
 	{
@@ -825,8 +825,6 @@ nmi_save_network_info (NMApplet *applet,
 	char *			key;
 	GConfEntry *		gconf_entry;
 	char *			escaped_network;
-	GnomeKeyringResult	ret;
-	guint32			item_id;
 	GConfValue *		value;
 
 	g_return_if_fail (applet != NULL);
@@ -919,11 +917,13 @@ nmi_save_network_info (NMApplet *applet,
 	/* Stuff the encryption key into the keyring */
 	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
 	{
-		GnomeKeyringAttributeList *attributes;
-		GnomeKeyringAttribute attr;		
-		char *name;
+		GnomeKeyringAttributeList *	attributes;
+		GnomeKeyringAttribute 		attr;		
+		char *					display_name;
+		GnomeKeyringResult			ret;
+		guint32					item_id;
 
-		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+		display_name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
 
 		attributes = gnome_keyring_attribute_list_new ();
 		attr.name = g_strdup ("essid");
@@ -933,15 +933,15 @@ nmi_save_network_info (NMApplet *applet,
 
 		ret = gnome_keyring_item_create_sync (NULL,
 									   GNOME_KEYRING_ITEM_GENERIC_SECRET,
-									   name,
+									   display_name,
 									   attributes,
 									   nm_gconf_wso_get_key (gconf_wso),
 									   TRUE,
 									   &item_id);
 		if (ret != GNOME_KEYRING_RESULT_OK)
-			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
+			nm_warning ("Error saving secret for wireless network '%s' in keyring: %d", essid, ret);
 
-		g_free (name);
+		g_free (display_name);
 		gnome_keyring_attribute_list_free (attributes);
 	}
 
