@@ -77,7 +77,7 @@ nm_gconf_wso_wpa_eap_new_deserialize_dbus (DBusMessageIter *iter, int we_cipher)
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_GCONF_WSO_WPA_EAP, NULL);
 	nm_gconf_wso_set_we_cipher (NM_GCONF_WSO (security), we_cipher);
-	if (private_key_passwd)
+	if (private_key_passwd && strlen (private_key_passwd) > 0)
 		nm_gconf_wso_set_key (NM_GCONF_WSO (security), private_key_passwd, strlen (private_key_passwd));
 	security->priv->wpa_version = wpa_version;
 	security->priv->eap_method = eap_method;
@@ -210,7 +210,7 @@ real_serialize_dbus (NMGConfWSO *instance, DBusMessageIter *iter)
 			self->priv->identity ? : "",
 			self->priv->passwd ? : "",
 			self->priv->anon_identity ? : "",
-			nm_gconf_wso_get_key (instance),
+			nm_gconf_wso_get_key (instance) ? : "",
 			self->priv->private_key_file ? : "",
 			self->priv->client_cert_file ? : "",
 			self->priv->ca_cert_file ? : "",

@@ -259,8 +259,6 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 						  const char *ca_cert_file,
 						  int wpa_version)
 {
-	const char *fake_private_key_passwd = "";
-
 	g_return_val_if_fail (iter != NULL, FALSE);
 	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
 	g_return_val_if_fail ((eap_method == NM_EAP_METHOD_MD5)
@@ -291,7 +289,7 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &anon_identity);
 
 	/* Seventh arg: Private key password (STRING) */
-	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, private_key_passwd ? &private_key_passwd : &fake_private_key_passwd);
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &private_key_passwd);
 
 	/* Eighth arg: Private key file (STRING) */
 	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &private_key_file);
