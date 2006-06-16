@@ -1,3 +1,8 @@
+2006-06-16  Robert Love  <rml@novell.com>
+
+	* ../configure.in: Update ALL_LINGUAS.
+	* cs.po, pl.po: Update.
+
 2006-05-18  Robert Love  <rml@novell.com>
 
 	* sv.po: Update.
