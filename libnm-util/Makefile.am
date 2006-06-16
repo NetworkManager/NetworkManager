@@ -34,7 +34,9 @@ libnm_util_la_SOURCES=			\
 	sha1.c					\
 	sha1.h					\
 	dbus-method-dispatcher.c		\
-	dbus-method-dispatcher.h
+	dbus-method-dispatcher.h		\
+	dbus-dict-helpers.c			\
+	dbus-dict-helpers.h
 
 if !WITH_GCRYPT
 libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h

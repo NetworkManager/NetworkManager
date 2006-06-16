@@ -1,3 +1,14 @@
+2006-06-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/Makefile.am
+	* libnm-util/dbus-dict-helpers.[ch]
+		- Add some helpers to take the pain out of using dict types in
+			dbus.
+
+	* test/libnm-util/Makefile.am
+	* test/libnm-util/test-dbus-dict-helpers.c
+		- Test cases for the dict helper functions
+
 2006-06-15  Robert Love  <rml@novell.com>
 
 	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the set unless there
