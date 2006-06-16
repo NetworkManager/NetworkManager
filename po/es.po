@@ -11,9 +11,9 @@ msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2006-02-07 11:23+0100\n"
-"Last-Translator: \n"
-"Language-Team:  <es@li.org>\n"
+"PO-Revision-Date: 2006-05-16 13:58\n"
+"Last-Translator: Novell Language <language@novell.com>\n"
+"Language-Team: Novell Language <language@novell.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -336,15 +336,15 @@ msgstr "Ninguno"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
 msgid "WEP 64/128-bit ASCII"
-msgstr "WEP de 64/128 bits ASCII"
+msgstr "ASCII WEP de 64/128 bits"
 
 #: ../gnome/applet/wso-wep-hex.c:135
 msgid "WEP 64/128-bit Hex"
-msgstr "WEP de 64/128bits hex"
+msgstr "Hexadecimal WEP de 64/128 bits"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
 msgid "WEP 128-bit Passphrase"
-msgstr "Frase de paso WEP de 128 bits:"
+msgstr "Frase de contraseña WEP de 128 bits"
 
 #: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
@@ -361,12 +361,12 @@ msgstr "TTLS"
 #: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
 #: ../src/nm-ap-security-wpa-eap.c:116
 msgid "WPA2 Enterprise"
-msgstr "WPA2 Empresa"
+msgstr "WPA2 empresarial"
 
 #: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
 #: ../src/nm-ap-security-wpa-eap.c:121
 msgid "WPA Enterprise"
-msgstr "WPA Empresa"
+msgstr "WPA empresarial"
 
 #: ../gnome/applet/wso-wpa-psk.c:178
 msgid "WPA2 Personal"
@@ -552,7 +552,7 @@ msgstr "Dirección de difusión:"
 
 #: ../gnome/applet/applet.glade.h:18
 msgid "CA Certificate File:"
-msgstr "Archivo de certificado CA:"
+msgstr "Archivo de certificado de CA:"
 
 #: ../gnome/applet/applet.glade.h:19
 msgid "C_onnect"
@@ -560,7 +560,7 @@ msgstr "_Conectar"
 
 #: ../gnome/applet/applet.glade.h:20
 msgid "Client Certificate File:"
-msgstr "Archivo de certificado del cliente:"
+msgstr "Archivo de certificado de cliente:"
 
 #: ../gnome/applet/applet.glade.h:21
 msgid "Connection Information"
@@ -614,9 +614,9 @@ msgid ""
 "WEP 64/128-bit ASCII\n"
 msgstr ""
 "Ninguna\n"
-"Frase de paso WEP de 128 bits\n"
-"WEP 64/128-bit hex\n"
-"WEP 64/128-bit ASCII\n"
+"Frase de contraseña WEP de 128 bits\n"
+"Hexadecimal WEP de 64/128 bits\n"
+"ASCII WEP de 64/128 bits\n"
 
 #: ../gnome/applet/applet.glade.h:37
 msgid ""
@@ -656,11 +656,11 @@ msgstr "DNS secundario:"
 
 #: ../gnome/applet/applet.glade.h:46
 msgid "Select the CA Certificate File"
-msgstr "Seleccione el archivo de certificado CA"
+msgstr "Seleccione el archivo de certificado de CA"
 
 #: ../gnome/applet/applet.glade.h:47
 msgid "Select the Client Certificate File"
-msgstr "Seleccione el archivo de certificado del cliente"
+msgstr "Seleccione el archivo de certificado de cliente"
 
 #: ../gnome/applet/applet.glade.h:48
 msgid "Select the Private Key File"
@@ -668,19 +668,19 @@ msgstr "Seleccione el archivo de clave privada"
 
 #: ../gnome/applet/applet.glade.h:49
 msgid "Show key"
-msgstr "Mostrar la clave"
+msgstr "Mostrar clave"
 
 #: ../gnome/applet/applet.glade.h:50
 msgid "Show passphrase"
-msgstr "Mostrar la frase de paso"
+msgstr "Mostrar frase de contraseña"
 
 #: ../gnome/applet/applet.glade.h:51
 msgid "Show password"
-msgstr "Mostrar la contraseña"
+msgstr "Mostrar contraseña"
 
 #: ../gnome/applet/applet.glade.h:52
 msgid "Show passwords"
-msgstr "Mostrar las contraseñas"
+msgstr "Mostrar contraseñas"
 
 #: ../gnome/applet/applet.glade.h:53
 msgid "Speed:"
@@ -940,20 +940,20 @@ msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 #: ../gnome/applet/applet-dbus-devices.c:898
 #, c-format
 msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Ahora está conectado a la red inalámbrica Ad-Hoc «%s»."
+msgstr "Ahora está conectado a la red inalámbrica Ad Hoc %s."
 
 #: ../gnome/applet/applet-dbus-devices.c:903
 #, c-format
 msgid "You are now connected to the wireless network '%s'."
-msgstr "Ahora está conectado a la red inalámbrica «%s»."
+msgstr "Ahora está conectado a la red inalámbrica %s."
 
 #: ../gnome/applet/applet-dbus-devices.c:910
 msgid "You are now connected to the wired network."
-msgstr "Ahora está conectado a la red cableada."
+msgstr "Ahora está conectado a la red fija."
 
 #: ../gnome/applet/applet-dbus-devices.c:916
 msgid "Connection Established"
-msgstr "Se ha establecido la conexión"
+msgstr "Conexión establecida"
 
 #: ../gnome/applet/applet-dbus-devices.c:959
 msgid "Disconnected"
@@ -961,7 +961,22 @@ msgstr "Desconectado"
 
 #: ../gnome/applet/applet-dbus-devices.c:960
 msgid "The network connection has been disconnected."
-msgstr "La conexión de red ha sido desconectada."
+msgstr "La conexión de red se ha desconectado."
+
+#~ msgid "Stop automatically running the networking applet?"
+#~ msgstr "¿Desea detener la ejecución automática del applet de red?"
+
+#~ msgid ""
+#~ "The networking applet will now terminate, but will automatically launch "
+#~ "the next time you login.  Would you like to stop automatically running "
+#~ "the networking applet on login?"
+#~ msgstr ""
+#~ "El applet de red se cerrará ahora, pero se iniciará automáticamente la "
+#~ "próxima vez que inicie sesión. ¿Desea detener la ejecución automática del "
+#~ "applet de red al inicio de sesión?"
+
+#~ msgid "_Remove"
+#~ msgstr "_Eliminar"
 
 #~ msgid "VPN Error"
 #~ msgstr "Error de VPN"
@@ -983,38 +998,3 @@ msgstr "La conexión de red ha sido desconectada."
 
 #~ msgid "wpa_psk_subwindow"
 #~ msgstr "wpa_psk_subwindow"
-
-#~ msgid "Stop automatically running the networking applet?"
-#~ msgstr "¿Desea detener la ejecución automática de la miniaplicación de red?"
-
-#~ msgid ""
-#~ "The networking applet will now terminate, but will automatically launch "
-#~ "the next time you login.  Would you like to stop automatically running "
-#~ "the networking applet on login?"
-#~ msgstr ""
-#~ "La miniaplicación de red se detendrá ahora pero se ejecutará "
-#~ "automáticamente la próxima vez que inicie sesión. ¿Desea que no se "
-#~ "ejecute la miniaplicación cuando inicie sesión?"
-
-#~ msgid "_Remove"
-#~ msgstr "_Eliminar"
-
-#~ msgid "WEP 40/128-bit ASCII"
-#~ msgstr "WEP de 40/128 bits ASCII"
-
-#~ msgid "WEP 40/128-bit hex"
-#~ msgstr "WEP de 40/128bits hex"
-
-#~ msgid "WEP Passphrase"
-#~ msgstr "Contraseña WEP:"
-
-#~ msgid ""
-#~ "None\n"
-#~ "WEP Passphrase\n"
-#~ "WEP 40/128-bit hex\n"
-#~ "WEP 40/128-bit ASCII\n"
-#~ msgstr ""
-#~ "Ninguna\n"
-#~ "Frase de paso WEP\n"
-#~ "WEP 40/128-bit hex\n"
-#~ "WEP 40/128-bit ASCII\n"
