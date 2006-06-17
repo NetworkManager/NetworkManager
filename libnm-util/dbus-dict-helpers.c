@@ -22,6 +22,7 @@
 #include <dbus/dbus.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "dbus-dict-helpers.h"
 
@@ -98,6 +99,8 @@ _nmu_get_type_as_string_from_type (const int type)
 			return DBUS_TYPE_STRING_AS_STRING;
 		case DBUS_TYPE_OBJECT_PATH:
 			return DBUS_TYPE_OBJECT_PATH_AS_STRING;
+		case DBUS_TYPE_ARRAY:
+			return DBUS_TYPE_ARRAY_AS_STRING;
 		default:
 			return NULL;
 	}
@@ -106,44 +109,112 @@ _nmu_get_type_as_string_from_type (const int type)
 
 
 static dbus_bool_t
-_nmu_dbus_add_dict_entry (DBusMessageIter *iter_dict,
-                   const char *key,
-                   const int value_type,
-                   const void *value)
+_nmu_dbus_add_dict_entry_start (DBusMessageIter *iter_dict,
+                                DBusMessageIter *iter_dict_entry,
+                                const char *key,
+                                const int value_type)
+{
+	if (!dbus_message_iter_open_container (iter_dict,
+					  DBUS_TYPE_DICT_ENTRY,
+					  NULL,
+					  iter_dict_entry))
+		return FALSE;
+
+	if (!dbus_message_iter_append_basic (iter_dict_entry, DBUS_TYPE_STRING, &key))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+static dbus_bool_t
+_nmu_dbus_add_dict_entry_end (DBusMessageIter *iter_dict,
+                              DBusMessageIter *iter_dict_entry,
+                              DBusMessageIter *iter_dict_val)
+{
+	if (!dbus_message_iter_close_container (iter_dict_entry, iter_dict_val))
+		return FALSE;
+	if (!dbus_message_iter_close_container (iter_dict, iter_dict_entry))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+static dbus_bool_t
+_nmu_dbus_add_dict_entry_basic (DBusMessageIter *iter_dict,
+                                const char *key,
+                                const int value_type,
+                                const void *value)
 {
 	DBusMessageIter iter_dict_entry, iter_dict_val;
 	const char * type_as_string = NULL;
 
 	type_as_string = _nmu_get_type_as_string_from_type (value_type);
 	if (!type_as_string)
-		return 0;
+		return FALSE;
 
-	if (!dbus_message_iter_open_container (iter_dict,
-					  DBUS_TYPE_DICT_ENTRY,
-					  NULL,
-					  &iter_dict_entry))
-		return 0;
-
-	if (!dbus_message_iter_append_basic (&iter_dict_entry, DBUS_TYPE_STRING, &key))
-		return 0;
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
+			key, value_type))
+		return FALSE;
 
 	if (!dbus_message_iter_open_container (&iter_dict_entry,
 					  DBUS_TYPE_VARIANT,
 					  type_as_string,
 					  &iter_dict_val))
-		return 0;
+		return FALSE;
 
 	if (!dbus_message_iter_append_basic (&iter_dict_val, value_type, value))
-		return 0;
+		return FALSE;
 
-	if (!dbus_message_iter_close_container (&iter_dict_entry, &iter_dict_val))
-		return 0;
-	if (!dbus_message_iter_close_container (iter_dict, &iter_dict_entry))
-		return 0;
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
+			&iter_dict_val))
+		return FALSE;
 
-	return 1;
+	return TRUE;
 }
 
+
+static dbus_bool_t
+_nmu_dbus_add_dict_entry_byte_array (DBusMessageIter *iter_dict,
+                                     const char *key,
+                                     const char *value,
+                                     const dbus_uint32_t value_len)
+{
+	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
+	dbus_uint32_t i;
+
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
+			key, DBUS_TYPE_ARRAY))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_entry,
+					  DBUS_TYPE_VARIANT,
+					  DBUS_TYPE_ARRAY_AS_STRING
+					  DBUS_TYPE_BYTE_AS_STRING,
+					  &iter_dict_val))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_val, DBUS_TYPE_ARRAY,
+			DBUS_TYPE_BYTE_AS_STRING, &iter_array))
+		return FALSE;
+
+	for (i = 0; i < value_len; i++)
+	{
+		if (!dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_BYTE,
+				&(value[i])))
+			return FALSE;
+	}
+	
+	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
+		return FALSE;
+
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
+			&iter_dict_val))
+		return FALSE;
+
+	return TRUE;
+}
 
 /**
  * Add a string entry to the dict.
@@ -160,7 +231,7 @@ nmu_dbus_dict_append_string (DBusMessageIter *iter_dict,
                              const char * value)
 {
 	if (!key || !value) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_STRING, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_STRING, &value);
 }
 
 /**
@@ -178,7 +249,7 @@ nmu_dbus_dict_append_byte (DBusMessageIter *iter_dict,
                            const char value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_BYTE, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BYTE, &value);
 }
 
 /**
@@ -196,7 +267,7 @@ nmu_dbus_dict_append_bool (DBusMessageIter *iter_dict,
                            const dbus_bool_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_BOOLEAN, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BOOLEAN, &value);
 }
 
 /**
@@ -214,7 +285,7 @@ nmu_dbus_dict_append_int16 (DBusMessageIter *iter_dict,
                             const dbus_int16_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_INT16, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT16, &value);
 }
 
 /**
@@ -232,7 +303,7 @@ nmu_dbus_dict_append_uint16 (DBusMessageIter *iter_dict,
                              const dbus_uint16_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_UINT16, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT16, &value);
 }
 
 /**
@@ -250,7 +321,7 @@ nmu_dbus_dict_append_int32 (DBusMessageIter *iter_dict,
                             const dbus_int32_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_INT32, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT32, &value);
 }
 
 /**
@@ -268,7 +339,7 @@ nmu_dbus_dict_append_uint32 (DBusMessageIter *iter_dict,
                              const dbus_uint32_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_UINT32, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT32, &value);
 }
 
 /**
@@ -286,7 +357,7 @@ nmu_dbus_dict_append_int64 (DBusMessageIter *iter_dict,
                             const dbus_int64_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_INT64, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT64, &value);
 }
 
 /**
@@ -304,7 +375,7 @@ nmu_dbus_dict_append_uint64 (DBusMessageIter *iter_dict,
                              const dbus_uint64_t value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_UINT64, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT64, &value);
 }
 
 /**
@@ -322,7 +393,7 @@ nmu_dbus_dict_append_double (DBusMessageIter *iter_dict,
                              const double value)
 {
 	if (!key) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_DOUBLE, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_DOUBLE, &value);
 }
 
 /**
@@ -340,7 +411,27 @@ nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
                                   const char * value)
 {
 	if (!key || !value) return 0;
-	return _nmu_dbus_add_dict_entry (iter_dict, key, DBUS_TYPE_OBJECT_PATH, &value);
+	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_OBJECT_PATH, &value);
+}
+
+/**
+ * Add a byte array entry to the dict.
+ *
+ * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param value The byte array
+ * @param value_len The length of the byte array, in bytes
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
+                                 const char * key,
+                                 const char * value,
+                                 const dbus_uint32_t value_len)
+{
+	if (!key || !value) return 0;
+	return _nmu_dbus_add_dict_entry_byte_array (iter_dict, key, value, value_len);
 }
 
 
@@ -370,6 +461,82 @@ nmu_dbus_dict_open_read (DBusMessageIter *iter,
 	return TRUE;
 }
 
+
+static dbus_bool_t
+_nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
+                                     int array_len,
+                                     int array_type,
+                                     NMUDictEntry *entry)
+{
+	dbus_uint32_t i = 0;
+	dbus_bool_t success = FALSE;
+	char byte;
+
+	/* Zero-length arrays are valid. */
+	if (array_len == 0)
+	{
+		entry->bytearray_value = NULL;
+		success = TRUE;
+		goto done;
+	}
+
+	entry->bytearray_value = malloc (array_len * sizeof (char));
+	if (!entry->bytearray_value)
+	{
+		fprintf (stderr, "_nmu_dbus_dict_entry_get_byte_array() out of "
+				"memory trying to retrieve a byte array.\n");
+		goto done;
+	}
+
+	entry->array_type = DBUS_TYPE_BYTE;
+	entry->array_len = array_len;
+	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_BYTE)
+	{
+		dbus_message_iter_get_basic (iter, &byte);
+		entry->bytearray_value[i++] = byte;
+		dbus_message_iter_next (iter);
+	}
+	success = TRUE;
+
+done:
+	return success;
+}
+
+
+static dbus_bool_t
+_nmu_dbus_dict_entry_get_array (DBusMessageIter *iter_dict_val,
+                                NMUDictEntry *entry)
+{
+	int array_type = dbus_message_iter_get_element_type (iter_dict_val);
+	int array_len;
+	dbus_bool_t success = FALSE;
+	DBusMessageIter iter_array;
+
+	if (!entry)
+		return FALSE;
+
+	dbus_message_iter_recurse (iter_dict_val, &iter_array);
+
+ 	array_len = dbus_message_iter_get_array_len (&iter_array);
+	if (array_len < 0)
+		return FALSE;
+
+ 	switch (array_type)
+	{
+		case DBUS_TYPE_BYTE:
+		{
+			success = _nmu_dbus_dict_entry_get_byte_array (&iter_array,
+						array_len, array_type, entry);
+			break;
+		}
+		default:
+			break;
+	}
+
+	return success;
+}
+
+
 static dbus_bool_t
 _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
                                         DBusMessageIter *iter_dict_val)
@@ -382,7 +549,7 @@ _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
 		{
 			const char *v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
-			entry->str_value = v;
+			entry->str_value = strdup (v);
 			break;
 		}
 		case DBUS_TYPE_BOOLEAN:
@@ -450,9 +617,14 @@ _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
 		}
 		case DBUS_TYPE_OBJECT_PATH:
 		{
-			const char *v;
+			char *v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
-			entry->str_value = v;
+			entry->str_value = strdup (v);
+			break;
+		}
+		case DBUS_TYPE_ARRAY:
+		{
+			success = _nmu_dbus_dict_entry_get_array (iter_dict_val, entry);
 			break;
 		}
 		default:
@@ -465,10 +637,9 @@ _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
 
 
 /**
- * Read the current key/value entry from the dict.  Entries and their data
- * are owned by the dbus message and should not be freed or modified.  You must
- * copy the data if you wish to keep it around after the DBusMessage has been
- * freed.
+ * Read the current key/value entry from the dict.  Entries are dynamically
+ * allocated when needed and must be freed after use with the
+ * {@link nmu_dbus_dict_entry_clear} function.
  *
  * The returned entry object will be filled with the type and value of the next
  * entry in the dict, or the type will be DBUS_TYPE_INVALID if an error occurred.
@@ -507,8 +678,9 @@ nmu_dbus_dict_get_entry (DBusMessageIter *iter_dict,
 	return TRUE;
 
 error:
-	memset (entry, 0, sizeof (NMUDictEntry));
+	nmu_dbus_dict_entry_clear (entry);
 	entry->type = DBUS_TYPE_INVALID;
+	entry->array_type = DBUS_TYPE_INVALID;
 	return FALSE;
 }
 
@@ -530,4 +702,34 @@ nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict)
 		return FALSE;
 	}
 	return dbus_message_iter_get_arg_type (iter_dict) == DBUS_TYPE_DICT_ENTRY;
+}
+
+
+/**
+ * Free any memory used by the entry object.
+ *
+ * @param entry The entry object
+ */
+void
+nmu_dbus_dict_entry_clear (NMUDictEntry *entry)
+{
+	if (!entry)
+		return;
+	switch (entry->type)
+	{
+		case DBUS_TYPE_OBJECT_PATH:
+		case DBUS_TYPE_STRING:
+			free (entry->str_value);
+			break;
+		case DBUS_TYPE_ARRAY:
+			switch (entry->array_type)
+			{
+				case DBUS_TYPE_BYTE:
+					free (entry->bytearray_value);
+					break;
+			}
+			break;
+	}
+
+	memset (entry, 0, sizeof (NMUDictEntry));
 }

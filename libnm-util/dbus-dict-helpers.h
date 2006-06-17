@@ -93,6 +93,11 @@ nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
                                   const char * key,
                                   const char * value);
 
+dbus_bool_t
+nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
+                                 const char * key,
+                                 const char * value,
+                                 const dbus_uint32_t value_len);
 
 /*
  * Reading a dict from a DBusMessage
@@ -100,11 +105,12 @@ nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
 
 typedef struct NMUDictEntry {
 	int type;
+	int array_type;
 	const char *key;
 
 	/** Possible values of the property */
 	union {
-		const char *str_value;
+		char *str_value;
 		char byte_value;
 		dbus_bool_t bool_value;
 		dbus_int16_t int16_value;
@@ -114,7 +120,9 @@ typedef struct NMUDictEntry {
 		dbus_int64_t int64_value;
 		dbus_uint64_t uint64_value;
 		double double_value;
+		char * bytearray_value;
 	};
+	dbus_uint32_t array_len;
 } NMUDictEntry;
 
 dbus_bool_t
@@ -127,6 +135,9 @@ nmu_dbus_dict_get_entry (DBusMessageIter *iter_dict,
 
 dbus_bool_t
 nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict);
+
+void
+nmu_dbus_dict_entry_clear (NMUDictEntry *entry);
 
 #ifdef __cplusplus
 }

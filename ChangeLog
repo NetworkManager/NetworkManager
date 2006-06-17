@@ -1,3 +1,10 @@
+2006-06-17  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/dbus-dict-helpers.[ch]
+	  test/libnm-util/test-dbus-dict-helpers.c
+	  	- Add helpers for byte arrays
+	  	- Rework bits of the testcase
+
 2006-06-16  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/Makefile.am

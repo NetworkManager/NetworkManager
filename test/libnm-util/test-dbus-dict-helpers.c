@@ -30,45 +30,68 @@
 static char *progname = NULL;
 
 
-struct DictEntries
-{
-	const char * key_string;  const char *        val_string;  dbus_bool_t string_found;
-	const char * key_byte;    const char          val_byte;    dbus_bool_t byte_found;
-	const char * key_bool;    const dbus_bool_t   val_bool;    dbus_bool_t bool_found;
-	const char * key_int16;   const dbus_int16_t  val_int16;   dbus_bool_t int16_found;
-	const char * key_uint16;  const dbus_uint16_t val_uint16;  dbus_bool_t uint16_found;
-	const char * key_int32;   const dbus_int32_t  val_int32;   dbus_bool_t int32_found;
-	const char * key_uint32;  const dbus_uint32_t val_uint32;  dbus_bool_t uint32_found;
-	const char * key_int64;   const dbus_int64_t  val_int64;   dbus_bool_t int64_found;
-	const char * key_uint64;  const dbus_uint64_t val_uint64;  dbus_bool_t uint64_found;
-	const char * key_double;  const double        val_double;  dbus_bool_t double_found;
-	const char * key_op;      const char *        val_op;      dbus_bool_t op_found;
+#define DECLARE_ENTRY(name, val_type) \
+struct name { \
+	const char *key; \
+	val_type val; \
+	dbus_bool_t found; \
+	int type; \
 };
 
-#define TEST_KEY_STRING "String"
-#define TEST_KEY_BYTE   "Byte"
-#define TEST_KEY_BOOL   "Bool"
-#define TEST_KEY_INT16  "Int16"
-#define TEST_KEY_UINT16 "UInt16"
-#define TEST_KEY_INT32  "Int32"
-#define TEST_KEY_UINT32 "UInt32"
-#define TEST_KEY_INT64  "Int64"
-#define TEST_KEY_UINT64 "UInt64"
-#define TEST_KEY_DOUBLE "Double"
-#define TEST_KEY_OP     "ObjectPath"
+DECLARE_ENTRY(StringEntry, const char *)
+DECLARE_ENTRY(ByteEntry, const char)
+DECLARE_ENTRY(BoolEntry, dbus_bool_t)
+DECLARE_ENTRY(Int16Entry, dbus_int16_t)
+DECLARE_ENTRY(UInt16Entry, dbus_uint16_t)
+DECLARE_ENTRY(Int32Entry, dbus_int32_t)
+DECLARE_ENTRY(UInt32Entry, dbus_uint32_t)
+DECLARE_ENTRY(Int64Entry, dbus_int64_t)
+DECLARE_ENTRY(UInt64Entry, dbus_uint64_t)
+DECLARE_ENTRY(DoubleEntry, double)
+DECLARE_ENTRY(OPEntry, const char *)
+DECLARE_ENTRY(ByteArrayEntry, const char *)
+
+struct DictEntries {
+	struct StringEntry string;
+	struct ByteEntry byte;
+	struct BoolEntry bool;
+	struct Int16Entry int16;
+	struct UInt16Entry uint16;
+	struct Int32Entry int32;
+	struct UInt32Entry uint32;
+	struct Int64Entry int64;
+	struct UInt64Entry uint64;
+	struct DoubleEntry dbl;
+	struct OPEntry op;
+	struct ByteArrayEntry bytearr;
+};
+
+#define TEST_KEY_STRING  "String"
+#define TEST_KEY_BYTE    "Byte"
+#define TEST_KEY_BOOL    "Bool"
+#define TEST_KEY_INT16   "Int16"
+#define TEST_KEY_UINT16  "UInt16"
+#define TEST_KEY_INT32   "Int32"
+#define TEST_KEY_UINT32  "UInt32"
+#define TEST_KEY_INT64   "Int64"
+#define TEST_KEY_UINT64  "UInt64"
+#define TEST_KEY_DOUBLE  "Double"
+#define TEST_KEY_OP      "ObjectPath"
+#define TEST_KEY_BYTEARR "ByteArray"
 
 struct DictEntries entries = {
-	TEST_KEY_STRING,  "foobar22",       FALSE,
-	TEST_KEY_BYTE,    0x78,             FALSE,
-	TEST_KEY_BOOL,    TRUE,             FALSE,
-	TEST_KEY_INT16,   -28567,           FALSE,
-	TEST_KEY_UINT16,  12345,            FALSE,
-	TEST_KEY_INT32,   -5987654,         FALSE,
-	TEST_KEY_UINT32,  45678912,         FALSE,
-	TEST_KEY_INT64,   -12491340761ll,   FALSE,
-	TEST_KEY_UINT64,  8899223582883ll,  FALSE,
-	TEST_KEY_DOUBLE,  54.3355632f,      FALSE,
-	TEST_KEY_OP,      "/com/it/foobar", FALSE
+	{ TEST_KEY_STRING,  "foobar22",       FALSE, DBUS_TYPE_STRING },
+	{ TEST_KEY_BYTE,    0x78,             FALSE, DBUS_TYPE_BYTE },
+	{ TEST_KEY_BOOL,    TRUE,             FALSE, DBUS_TYPE_BOOLEAN },
+	{ TEST_KEY_INT16,   -28567,           FALSE, DBUS_TYPE_INT16 },
+	{ TEST_KEY_UINT16,  12345,            FALSE, DBUS_TYPE_UINT16 },
+	{ TEST_KEY_INT32,   -5987654,         FALSE, DBUS_TYPE_INT32 },
+	{ TEST_KEY_UINT32,  45678912,         FALSE, DBUS_TYPE_UINT32 },
+	{ TEST_KEY_INT64,   -12491340761ll,   FALSE, DBUS_TYPE_INT64 },
+	{ TEST_KEY_UINT64,  8899223582883ll,  FALSE, DBUS_TYPE_UINT64 },
+	{ TEST_KEY_DOUBLE,  54.3355632f,      FALSE, DBUS_TYPE_DOUBLE },
+	{ TEST_KEY_OP,      "/com/it/foobar", FALSE, DBUS_TYPE_OBJECT_PATH },
+	{ TEST_KEY_BYTEARR, "qazwsxedcrfvtgb",FALSE, DBUS_TYPE_BYTE }
 };
 
 
@@ -86,48 +109,53 @@ test_write_dict (DBusMessage *message)
 		err_string = "failed on open_write";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_string (&iter_dict, entries.key_string, entries.val_string)) {
+	if (!nmu_dbus_dict_append_string (&iter_dict, entries.string.key, entries.string.val)) {
 		err_string = "failed to append string entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_byte (&iter_dict, entries.key_byte, entries.val_byte)) {
+	if (!nmu_dbus_dict_append_byte (&iter_dict, entries.byte.key, entries.byte.val)) {
 		err_string = "failed to append byte entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_bool (&iter_dict, entries.key_bool, entries.val_bool)) {
+	if (!nmu_dbus_dict_append_bool (&iter_dict, entries.bool.key, entries.bool.val)) {
 		err_string = "failed to append boolean entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_int16 (&iter_dict, entries.key_int16, entries.val_int16)) {
+	if (!nmu_dbus_dict_append_int16 (&iter_dict, entries.int16.key, entries.int16.val)) {
 		err_string = "failed to append int16 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_uint16 (&iter_dict, entries.key_uint16, entries.val_uint16)) {
+	if (!nmu_dbus_dict_append_uint16 (&iter_dict, entries.uint16.key, entries.uint16.val)) {
 		err_string = "failed to append uint16 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_int32 (&iter_dict, entries.key_int32, entries.val_int32)) {
+	if (!nmu_dbus_dict_append_int32 (&iter_dict, entries.int32.key, entries.int32.val)) {
 		err_string = "failed to append int32 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_uint32 (&iter_dict, entries.key_uint32, entries.val_uint32)) {
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, entries.uint32.key, entries.uint32.val)) {
 		err_string = "failed to append uint32 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_int64 (&iter_dict, entries.key_int64, entries.val_int64)) {
+	if (!nmu_dbus_dict_append_int64 (&iter_dict, entries.int64.key, entries.int64.val)) {
 		err_string = "failed to append int64 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_uint64 (&iter_dict, entries.key_uint64, entries.val_uint64)) {
+	if (!nmu_dbus_dict_append_uint64 (&iter_dict, entries.uint64.key, entries.uint64.val)) {
 		err_string = "failed to append uint64 entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_double (&iter_dict, entries.key_double, entries.val_double)) {
+	if (!nmu_dbus_dict_append_double (&iter_dict, entries.dbl.key, entries.dbl.val)) {
 		err_string = "failed to append double entry";
 		goto done;
 	}
-	if (!nmu_dbus_dict_append_object_path (&iter_dict, entries.key_op, entries.val_op)) {
+	if (!nmu_dbus_dict_append_object_path (&iter_dict, entries.op.key, entries.op.val)) {
 		err_string = "failed to append object path entry";
+		goto done;
+	}
+	if (!nmu_dbus_dict_append_byte_array (&iter_dict, entries.bytearr.key, entries.bytearr.val,
+			strlen (entries.bytearr.val))) {
+		err_string = "failed to append byte array entry";
 		goto done;
 	}
 	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
@@ -142,14 +170,41 @@ done:
 	test_result (progname, "Dict Write", result, err_string);
 }
 
-#define TEST_CASE(test_key, found_var, comparison) \
-		if (!strcmp (entry.key, test_key)) { \
-			fprintf (stderr, "Testing type " test_key ".\n"); \
-			if (!(comparison)) { \
-				err_string = "Test item " test_key " was unexpected value."; \
+#define TEST_CASE(key_string, test_entry, comparison) \
+		if (!strcmp (entry.key, test_entry.key)) { \
+			fprintf (stderr, "Testing type " key_string ".\n"); \
+			if (entry.type != test_entry.type) { \
+				err_string = "Test item " key_string " was an unexpected type."; \
 				goto done; \
 			} \
-			found_var = TRUE; \
+			if (!(comparison)) { \
+				err_string = "Test item " key_string " was unexpected value."; \
+				goto done; \
+			} \
+			test_entry.found = TRUE; \
+			goto next; \
+		}
+
+#define TEST_CASE_ARRAY(key_string, test_entry, exp_len, comparison) \
+		if (!strcmp (entry.key, test_entry.key)) { \
+			fprintf (stderr, "Testing type " key_string ".\n"); \
+			if (entry.type != DBUS_TYPE_ARRAY) { \
+				err_string = "Test item " key_string " was an unexpected type."; \
+				goto done; \
+			} \
+			if (entry.array_type != test_entry.type) { \
+				err_string = "Test item " key_string " was an unexpected element type."; \
+				goto done; \
+			} \
+			if (exp_len != entry.array_len) { \
+				err_string = "Test item " key_string " had unexpected length!"; \
+				goto done; \
+			} \
+			if (!(comparison)) { \
+				err_string = "Test item " key_string " was unexpected value."; \
+				goto done; \
+			} \
+			test_entry.found = TRUE; \
 			goto next; \
 		}
 
@@ -170,34 +225,38 @@ test_read_dict (DBusMessage *message)
 
 	while (nmu_dbus_dict_has_dict_entry (&iter_dict))
 	{
+		dbus_uint32_t bytearr_len = strlen (entries.bytearr.val);
+
 		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
 			err_string = "failure reading dict entry";
 			goto done;
 		}
 
-		TEST_CASE (TEST_KEY_STRING, entries.string_found, !strcmp (entry.str_value, entries.val_string))
-		TEST_CASE (TEST_KEY_BYTE, entries.byte_found, entry.byte_value == entries.val_byte)
-		TEST_CASE (TEST_KEY_BOOL, entries.bool_found, entry.bool_value == entries.val_bool)
-		TEST_CASE (TEST_KEY_INT16, entries.int16_found, entry.int16_value == entries.val_int16)
-		TEST_CASE (TEST_KEY_UINT16, entries.uint16_found, entry.uint16_value == entries.val_uint16)
-		TEST_CASE (TEST_KEY_INT32, entries.int32_found, entry.int32_value == entries.val_int32)
-		TEST_CASE (TEST_KEY_UINT32, entries.uint32_found, entry.uint32_value == entries.val_uint32)
-		TEST_CASE (TEST_KEY_INT64, entries.int64_found, entry.int64_value == entries.val_int64)
-		TEST_CASE (TEST_KEY_UINT64, entries.uint64_found, entry.uint64_value == entries.val_uint64)
-		TEST_CASE (TEST_KEY_DOUBLE, entries.double_found, !memcmp (&entry.double_value, &entries.val_double, sizeof (double)))
-		TEST_CASE (TEST_KEY_OP, entries.op_found, !strcmp (entry.str_value, entries.val_op))
+		TEST_CASE (TEST_KEY_STRING, entries.string, !strcmp (entry.str_value, entries.string.val))
+		TEST_CASE (TEST_KEY_BYTE, entries.byte, entry.byte_value == entries.byte.val)
+		TEST_CASE (TEST_KEY_BOOL, entries.bool, entry.bool_value == entries.bool.val)
+		TEST_CASE (TEST_KEY_INT16, entries.int16, entry.int16_value == entries.int16.val)
+		TEST_CASE (TEST_KEY_UINT16, entries.uint16, entry.uint16_value == entries.uint16.val)
+		TEST_CASE (TEST_KEY_INT32, entries.int32, entry.int32_value == entries.int32.val)
+		TEST_CASE (TEST_KEY_UINT32, entries.uint32, entry.uint32_value == entries.uint32.val)
+		TEST_CASE (TEST_KEY_INT64, entries.int64, entry.int64_value == entries.int64.val)
+		TEST_CASE (TEST_KEY_UINT64, entries.uint64, entry.uint64_value == entries.uint64.val)
+		TEST_CASE (TEST_KEY_DOUBLE, entries.dbl, !memcmp (&entry.double_value, &entries.dbl.val, sizeof (double)))
+		TEST_CASE (TEST_KEY_OP, entries.op, !strcmp (entry.str_value, entries.op.val))
+		TEST_CASE_ARRAY (TEST_KEY_BYTEARR, entries.bytearr, bytearr_len,
+				!memcmp (entry.bytearray_value, entries.bytearr.val, bytearr_len))
 
 		err_string = "Unknown dict entry encountered.";
 		goto done;
 
 	next:
-		continue;
+		nmu_dbus_dict_entry_clear (&entry);
 	}
 
-	if (!entries.string_found || !entries.byte_found || !entries.bool_found || !entries.int16_found
-		|| !entries.uint16_found || !entries.int32_found || !entries.uint32_found
-		|| !entries.int64_found || !entries.uint64_found || !entries.double_found
-		|| !entries.op_found) {
+	if (!entries.string.found || !entries.byte.found || !entries.bool.found || !entries.int16.found
+		|| !entries.uint16.found || !entries.int32.found || !entries.uint32.found
+		|| !entries.int64.found || !entries.uint64.found || !entries.dbl.found
+		|| !entries.op.found || !entries.bytearr.found) {
 		err_string = "A required entry was not found in the dict.";
 		goto done;
 	}
