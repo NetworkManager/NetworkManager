@@ -656,6 +656,7 @@ nmu_dbus_dict_get_entry (DBusMessageIter *iter_dict,
                          NMUDictEntry * entry)
 {
 	DBusMessageIter iter_dict_entry, iter_dict_val;
+	int type;
 	const char *key;
 
 	if (!iter_dict || !entry)
@@ -669,6 +670,9 @@ nmu_dbus_dict_get_entry (DBusMessageIter *iter_dict,
 	entry->key = key;
 
 	if (!dbus_message_iter_next (&iter_dict_entry))
+		goto error;
+	type = dbus_message_iter_get_arg_type (&iter_dict_entry);
+	if (type != DBUS_TYPE_VARIANT)
 		goto error;
 		
 	dbus_message_iter_recurse (&iter_dict_entry, &iter_dict_val);
