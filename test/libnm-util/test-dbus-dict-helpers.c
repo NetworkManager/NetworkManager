@@ -64,34 +64,37 @@ struct DictEntries {
 	struct DoubleEntry dbl;
 	struct OPEntry op;
 	struct ByteArrayEntry bytearr;
+	struct ByteArrayEntry zlbytearr;
 };
 
-#define TEST_KEY_STRING  "String"
-#define TEST_KEY_BYTE    "Byte"
-#define TEST_KEY_BOOL    "Bool"
-#define TEST_KEY_INT16   "Int16"
-#define TEST_KEY_UINT16  "UInt16"
-#define TEST_KEY_INT32   "Int32"
-#define TEST_KEY_UINT32  "UInt32"
-#define TEST_KEY_INT64   "Int64"
-#define TEST_KEY_UINT64  "UInt64"
-#define TEST_KEY_DOUBLE  "Double"
-#define TEST_KEY_OP      "ObjectPath"
-#define TEST_KEY_BYTEARR "ByteArray"
+#define TEST_KEY_STRING    "String"
+#define TEST_KEY_BYTE      "Byte"
+#define TEST_KEY_BOOL      "Bool"
+#define TEST_KEY_INT16     "Int16"
+#define TEST_KEY_UINT16    "UInt16"
+#define TEST_KEY_INT32     "Int32"
+#define TEST_KEY_UINT32    "UInt32"
+#define TEST_KEY_INT64     "Int64"
+#define TEST_KEY_UINT64    "UInt64"
+#define TEST_KEY_DOUBLE    "Double"
+#define TEST_KEY_OP        "ObjectPath"
+#define TEST_KEY_BYTEARR   "ByteArray"
+#define TEST_KEY_ZLBYTEARR "ZLByteArray"
 
 struct DictEntries entries = {
-	{ TEST_KEY_STRING,  "foobar22",       FALSE, DBUS_TYPE_STRING },
-	{ TEST_KEY_BYTE,    0x78,             FALSE, DBUS_TYPE_BYTE },
-	{ TEST_KEY_BOOL,    TRUE,             FALSE, DBUS_TYPE_BOOLEAN },
-	{ TEST_KEY_INT16,   -28567,           FALSE, DBUS_TYPE_INT16 },
-	{ TEST_KEY_UINT16,  12345,            FALSE, DBUS_TYPE_UINT16 },
-	{ TEST_KEY_INT32,   -5987654,         FALSE, DBUS_TYPE_INT32 },
-	{ TEST_KEY_UINT32,  45678912,         FALSE, DBUS_TYPE_UINT32 },
-	{ TEST_KEY_INT64,   -12491340761ll,   FALSE, DBUS_TYPE_INT64 },
-	{ TEST_KEY_UINT64,  8899223582883ll,  FALSE, DBUS_TYPE_UINT64 },
-	{ TEST_KEY_DOUBLE,  54.3355632f,      FALSE, DBUS_TYPE_DOUBLE },
-	{ TEST_KEY_OP,      "/com/it/foobar", FALSE, DBUS_TYPE_OBJECT_PATH },
-	{ TEST_KEY_BYTEARR, "qazwsxedcrfvtgb",FALSE, DBUS_TYPE_BYTE }
+	{ TEST_KEY_STRING,   "foobar22",       FALSE, DBUS_TYPE_STRING },
+	{ TEST_KEY_BYTE,     0x78,             FALSE, DBUS_TYPE_BYTE },
+	{ TEST_KEY_BOOL,     TRUE,             FALSE, DBUS_TYPE_BOOLEAN },
+	{ TEST_KEY_INT16,    -28567,           FALSE, DBUS_TYPE_INT16 },
+	{ TEST_KEY_UINT16,   12345,            FALSE, DBUS_TYPE_UINT16 },
+	{ TEST_KEY_INT32,    -5987654,         FALSE, DBUS_TYPE_INT32 },
+	{ TEST_KEY_UINT32,   45678912,         FALSE, DBUS_TYPE_UINT32 },
+	{ TEST_KEY_INT64,    -12491340761ll,   FALSE, DBUS_TYPE_INT64 },
+	{ TEST_KEY_UINT64,   8899223582883ll,  FALSE, DBUS_TYPE_UINT64 },
+	{ TEST_KEY_DOUBLE,   54.3355632f,      FALSE, DBUS_TYPE_DOUBLE },
+	{ TEST_KEY_OP,       "/com/it/foobar", FALSE, DBUS_TYPE_OBJECT_PATH },
+	{ TEST_KEY_BYTEARR,  "qazwsxedcrfvtgb",FALSE, DBUS_TYPE_BYTE },
+	{ TEST_KEY_ZLBYTEARR,NULL,             FALSE, DBUS_TYPE_BYTE }
 };
 
 
@@ -156,6 +159,10 @@ test_write_dict (DBusMessage *message)
 	if (!nmu_dbus_dict_append_byte_array (&iter_dict, entries.bytearr.key, entries.bytearr.val,
 			strlen (entries.bytearr.val))) {
 		err_string = "failed to append byte array entry";
+		goto done;
+	}
+	if (!nmu_dbus_dict_append_byte_array (&iter_dict, entries.zlbytearr.key, entries.zlbytearr.val, 0)) {
+		err_string = "failed to append zero-length byte array entry";
 		goto done;
 	}
 	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
@@ -245,6 +252,8 @@ test_read_dict (DBusMessage *message)
 		TEST_CASE (TEST_KEY_OP, entries.op, !strcmp (entry.str_value, entries.op.val))
 		TEST_CASE_ARRAY (TEST_KEY_BYTEARR, entries.bytearr, bytearr_len,
 				!memcmp (entry.bytearray_value, entries.bytearr.val, bytearr_len))
+		TEST_CASE_ARRAY (TEST_KEY_ZLBYTEARR, entries.zlbytearr, 0,
+				entry.bytearray_value == entries.zlbytearr.val)
 
 		err_string = "Unknown dict entry encountered.";
 		goto done;
@@ -256,7 +265,7 @@ test_read_dict (DBusMessage *message)
 	if (!entries.string.found || !entries.byte.found || !entries.bool.found || !entries.int16.found
 		|| !entries.uint16.found || !entries.int32.found || !entries.uint32.found
 		|| !entries.int64.found || !entries.uint64.found || !entries.dbl.found
-		|| !entries.op.found || !entries.bytearr.found) {
+		|| !entries.op.found || !entries.bytearr.found || !entries.zlbytearr.found) {
 		err_string = "A required entry was not found in the dict.";
 		goto done;
 	}

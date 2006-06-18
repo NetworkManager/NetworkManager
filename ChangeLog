@@ -2,6 +2,14 @@
 
 	* libnm-util/dbus-dict-helpers.[ch]
 	  test/libnm-util/test-dbus-dict-helpers.c
+		- Fixes for zero-length byte arrays
+		- Replace return values of 0 with FALSE for clarity
+		- Test zero-length byte arrays
+
+2006-06-17  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/dbus-dict-helpers.[ch]
+	  test/libnm-util/test-dbus-dict-helpers.c
 	  	- Add helpers for byte arrays
 	  	- Rework bits of the testcase
 

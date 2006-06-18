@@ -40,7 +40,7 @@ dbus_bool_t
 nmu_dbus_dict_open_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
 {	
 	if (!iter || !iter_dict)
-		return 0;
+		return FALSE;
 
 	return dbus_message_iter_open_container (iter,
 					  DBUS_TYPE_ARRAY,
@@ -66,7 +66,7 @@ dbus_bool_t
 nmu_dbus_dict_close_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
 {	
 	if (!iter || !iter_dict)
-		return 0;
+		return FALSE;
 
 	return dbus_message_iter_close_container (iter, iter_dict);
 }
@@ -230,7 +230,7 @@ nmu_dbus_dict_append_string (DBusMessageIter *iter_dict,
                              const char * key,
                              const char * value)
 {
-	if (!key || !value) return 0;
+	if (!key || !value) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_STRING, &value);
 }
 
@@ -248,7 +248,7 @@ nmu_dbus_dict_append_byte (DBusMessageIter *iter_dict,
                            const char * key,
                            const char value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BYTE, &value);
 }
 
@@ -266,7 +266,7 @@ nmu_dbus_dict_append_bool (DBusMessageIter *iter_dict,
                            const char * key,
                            const dbus_bool_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BOOLEAN, &value);
 }
 
@@ -284,7 +284,7 @@ nmu_dbus_dict_append_int16 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int16_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT16, &value);
 }
 
@@ -302,7 +302,7 @@ nmu_dbus_dict_append_uint16 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint16_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT16, &value);
 }
 
@@ -320,7 +320,7 @@ nmu_dbus_dict_append_int32 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int32_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT32, &value);
 }
 
@@ -338,7 +338,7 @@ nmu_dbus_dict_append_uint32 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint32_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT32, &value);
 }
 
@@ -356,7 +356,7 @@ nmu_dbus_dict_append_int64 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int64_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT64, &value);
 }
 
@@ -374,7 +374,7 @@ nmu_dbus_dict_append_uint64 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint64_t value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT64, &value);
 }
 
@@ -392,7 +392,7 @@ nmu_dbus_dict_append_double (DBusMessageIter *iter_dict,
                              const char * key,
                              const double value)
 {
-	if (!key) return 0;
+	if (!key) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_DOUBLE, &value);
 }
 
@@ -410,7 +410,7 @@ nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
                                   const char * key,
                                   const char * value)
 {
-	if (!key || !value) return 0;
+	if (!key || !value) return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_OBJECT_PATH, &value);
 }
 
@@ -430,7 +430,8 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
                                  const char * value,
                                  const dbus_uint32_t value_len)
 {
-	if (!key || !value) return 0;
+	if (!key) return FALSE;
+	if (!value && (value_len != 0)) return FALSE;
 	return _nmu_dbus_add_dict_entry_byte_array (iter_dict, key, value, value_len);
 }
 
@@ -476,6 +477,7 @@ _nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
 	if (array_len == 0)
 	{
 		entry->bytearray_value = NULL;
+		entry->array_type = DBUS_TYPE_BYTE;
 		success = TRUE;
 		goto done;
 	}
