@@ -75,7 +75,8 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	/* Success, build up our security object */
 	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_EAP, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), NM_AUTH_TYPE_WPA_EAP);
-	nm_ap_security_set_key (NM_AP_SECURITY (security), "FIXME", 5); /* FIXME: what do we do for Enterprise? */
+	if ((private_key_passwd && strlen (private_key_passwd) > 0) || (passwd && strlen (passwd) > 0))
+		nm_ap_security_set_key (NM_AP_SECURITY (security), "FIXME", 5);
 	security->priv->eap_method = eap_method;
 	security->priv->key_type = key_type;
 	security->priv->wpa_version = wpa_version;
