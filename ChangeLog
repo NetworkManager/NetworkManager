@@ -1,3 +1,12 @@
+2006-06-15  Robert Love  <rml@novell.com>
+
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the Gconf keys unless
+	  we have a value to set.  Gconf generates a warning if `val' is NULL.
+	* src/nm-ap-security-wpa-eap.c: Don't set the key for an Enterprise AP
+	  unless we actually received a valid private key file passphrase or
+	  password.  Otherwise, we don't know to later ask the applet to pull
+	  the key from the keyring.
+
 2006-06-17  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/dbus-dict-helpers.[ch]
@@ -26,7 +35,7 @@
 
 2006-06-15  Robert Love  <rml@novell.com>
 
-	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the set unless there
+	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the key unless there
 	  is a non-empty key to set.  Elsewhere, pass an empty string via DBUS
 	  if there is no key to pass.
 	* libnm-util/dbus-helpers.c: Given the above, we can trust always

@@ -239,31 +239,49 @@ real_serialize_gconf (NMGConfWSO *instance, GConfClient *client, const char *net
 
 	key = g_strdup_printf ("%s/%s/%skey_mgt", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
 	gconf_client_set_int (client, key, self->priv->key_mgmt, NULL);
-	g_free (key);	
-
-	key = g_strdup_printf ("%s/%s/%sidentity", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->identity, NULL);
 	g_free (key);
 
-	key = g_strdup_printf ("%s/%s/%spasswd", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->passwd, NULL);
-	g_free (key);
+	if (self->priv->identity && strlen (self->priv->identity) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%sidentity", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->identity, NULL);
+		g_free (key);
+	}
 
-	key = g_strdup_printf ("%s/%s/%sanon_identity", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->anon_identity, NULL);
-	g_free (key);
+	if (self->priv->passwd && strlen (self->priv->passwd) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%spasswd", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->passwd, NULL);
+		g_free (key);
+	}
 
-	key = g_strdup_printf ("%s/%s/%sprivate_key_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->private_key_file, NULL);
-	g_free (key);
+	if (self->priv->anon_identity && strlen (self->priv->anon_identity) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%sanon_identity", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->anon_identity, NULL);
+		g_free (key);
+	}
 
-	key = g_strdup_printf ("%s/%s/%sclient_cert_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->client_cert_file, NULL);
-	g_free (key);
+	if (self->priv->private_key_file && strlen (self->priv->private_key_file) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%sprivate_key_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->private_key_file, NULL);
+		g_free (key);
+	}
 
-	key = g_strdup_printf ("%s/%s/%sca_cert_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
-	gconf_client_set_string (client, key, self->priv->ca_cert_file, NULL);
-	g_free (key);
+	if (self->priv->client_cert_file && strlen (self->priv->client_cert_file) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%sclient_cert_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->client_cert_file, NULL);
+		g_free (key);
+	}
+
+	if (self->priv->ca_cert_file && strlen (self->priv->ca_cert_file) > 0)
+	{
+		key = g_strdup_printf ("%s/%s/%sca_cert_file", GCONF_PATH_WIRELESS_NETWORKS, network, WPA_EAP_PREFIX);
+		gconf_client_set_string (client, key, self->priv->ca_cert_file, NULL);
+		g_free (key);
+	}
 
 	return TRUE;
 }
