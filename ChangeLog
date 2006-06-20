@@ -15,7 +15,7 @@
 		- (supplicant_send_network_config): instead of user_created,
 			use adhoc, and do AP_SCAN 2 for adhoc networks
 
-2006-06-15  Robert Love  <rml@novell.com>
+2006-06-18  Robert Love  <rml@novell.com>
 
 	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the Gconf keys unless
 	  we have a value to set.  Gconf generates a warning if `val' is NULL.
