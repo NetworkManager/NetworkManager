@@ -1,3 +1,4 @@
+# translation of cs.po to
 # translation of cs.po to Czech
 # This file is distributed under the same license as the PACKAGE package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
@@ -8,25 +9,26 @@ msgstr ""
 "Project-Id-Version: cs\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-06-14 13:22+0200\n"
-"PO-Revision-Date: 2006-06-14 13:23+0200\n"
+"PO-Revision-Date: 2006-06-20 12:33+0200\n"
 "Last-Translator: Jakub Friedl <jfriedl@suse.cz>\n"
-"Language-Team: Czech <cs@li.org>\n"
+"Language-Team:  <cs@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.10.2\n"
+"Plural-Forms:  nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:147
 msgid "_Secondary Password:"
-msgstr ""
+msgstr "Ověření _hesla:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:267
 msgid "_Username:"
-msgstr ""
+msgstr "_Uživ. jméno:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:269
 msgid "_Domain:"
-msgstr ""
+msgstr "_Doména:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:271
 msgid "_Password:"
@@ -34,86 +36,86 @@ msgstr "_Heslo:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:354
 msgid "Connect _anonymously"
-msgstr ""
+msgstr "Připojit _anonymně"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:359
 msgid "Connect as _user:"
-msgstr ""
+msgstr "Připojit jako _uživatel:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:465
 msgid "_Remember passwords for this session"
-msgstr ""
+msgstr "_Zapamatovat si hesla pro toto sezení"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:467
 msgid "_Save passwords in keyring"
-msgstr ""
+msgstr "_Uložit hesla do svazku klíčů"
 
 #: ../auth-dialog/main.c:161
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
+msgstr "Pro přístup do VPN '%s' se musíte autentizovat."
 
 #: ../auth-dialog/main.c:162
 msgid "Authenticate VPN"
-msgstr ""
+msgstr "Ověřování VPN"
 
 #: ../auth-dialog/main.c:169
 msgid "_Group Password:"
-msgstr ""
+msgstr "Heslo _skupiny:"
 
 #: ../nm-vpnc.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
-msgstr ""
+msgstr "Přidat, odstranit a upravit VPN připojení"
 
 #: ../nm-vpnc.desktop.in.h:2
 msgid "VPN Connection Manager (vpnc)"
-msgstr ""
+msgstr "Správce VPN spojení (vpnc)"
 
 #: ../properties/nm-vpnc.c:83
 msgid "Compatible Cisco VPN client (vpnc)"
-msgstr ""
+msgstr "Klient kompatibilní s Cisco VPN (vpnc)"
 
 #: ../properties/nm-vpnc.c:447
 msgid "The following vpnc VPN connection will be created:"
-msgstr ""
+msgstr "Budou vytvořeny následující VPN spojení:"
 
 #: ../properties/nm-vpnc.c:449
 #, c-format
 msgid "Name:  %s"
-msgstr ""
+msgstr "Jméno:  %s"
 
 #: ../properties/nm-vpnc.c:452
 #, c-format
 msgid "Gateway:  %s"
-msgstr ""
+msgstr "Brána:  %s"
 
 #: ../properties/nm-vpnc.c:454
 #, c-format
 msgid "Group Name:  %s"
-msgstr ""
+msgstr "Jméno skupiny:  %s"
 
 #: ../properties/nm-vpnc.c:458
 #, c-format
 msgid "Username:  %s"
-msgstr ""
+msgstr "Uživatelské jméno:  %s"
 
 #: ../properties/nm-vpnc.c:463
 #, c-format
 msgid "Domain:  %s"
-msgstr ""
+msgstr "Doména:  %s"
 
 #: ../properties/nm-vpnc.c:468
 #, c-format
 msgid "Routes:  %s"
-msgstr ""
+msgstr "Směrování:  %s"
 
 #: ../properties/nm-vpnc.c:472
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr ""
+msgstr "Podrobnosti o připojení lze změnit kliknutím na tlačítko \"Upravit\"."
 
 #: ../properties/nm-vpnc.c:548
 msgid "TCP tunneling not supported"
-msgstr ""
+msgstr "TCP tunelování není podporováno"
 
 #: ../properties/nm-vpnc.c:550
 #, c-format
@@ -124,116 +126,125 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
+"Soubor VPN nastavení '%s' udává, že má být VPN připojení tunelováno "
+"přes TCP. To není v současné době ve vpnc podporováno.\n"
+"\n"
+"Připojení půjde navázat bez TCP tunelování, ale je možné, že nebude "
+"fungovat korektně."
 
 #: ../properties/nm-vpnc.c:574
 msgid "Cannot import settings"
-msgstr ""
+msgstr "Nelze importovat nastavení"
 
 #: ../properties/nm-vpnc.c:576
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr ""
+msgstr "Soubor VPN nastavení '%s' neobsahuje platná data."
 
 #: ../properties/nm-vpnc.c:593
 msgid "Select file to import"
-msgstr ""
+msgstr "Vyberte soubor k importu"
 
 #. printf ("in impl_export\n");
 #: ../properties/nm-vpnc.c:753
 msgid "Save as..."
-msgstr ""
+msgstr "Uložit jako..."
 
 #: ../properties/nm-vpnc.c:783
 #, c-format
 msgid "A file named \"%s\" already exists."
-msgstr ""
+msgstr "Soubor se jménem \"%s\" již existuje."
 
 #: ../properties/nm-vpnc.c:786
 msgid "Do you want to replace it with the one you are saving?"
-msgstr ""
+msgstr "Chcete ho nahradit ukládaným souborem?"
 
 #: ../properties/nm-vpnc.c:800
 msgid "Failed to export configuration"
-msgstr ""
+msgstr "Export konfigurace selhal"
 
 #: ../properties/nm-vpnc.c:802
 #, c-format
 msgid "Failed to save file %s"
-msgstr ""
+msgstr "Selhalo ukládání souboru %s"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
 msgid "<b>Connection Name</b>"
-msgstr ""
+msgstr "<b>Název připojení</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Required Information</b>"
-msgstr ""
+msgstr "<b>Požadované informace</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr ""
+msgstr "<i>příklad: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "G_roup Name:"
-msgstr ""
+msgstr "J_méno skupiny:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
 msgid "O_ptional Information"
-msgstr ""
+msgstr "_Volitelné informace"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Override _user name"
-msgstr ""
+msgstr "Přepsat _uživatelské jméno"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
+"Níže zadejte informace od svého správce systému. Nezadávejte své heslo, "
+"budete na něj dotázání později během připojování."
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Use _domain for authentication"
-msgstr ""
+msgstr "Použít pro ověření _doménu"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "_Gateway:"
-msgstr ""
+msgstr "_Brána:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
 msgid "_Import Saved Configuration..."
-msgstr ""
+msgstr "_Importovat uložené nastavení..."
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
+"_Jméno používané k identifikaci připojení k soukromé síti, např. \"Kolej\" "
+"nebo \"Firemní síť\""
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "_Použít VPN pouze pro tyto adresy"
 
 #: ../src/nm-vpnc-service.c:117
 msgid "The VPN login failed because the user name and password were not accepted."
-msgstr ""
+msgstr "Připojení do VPN selhalo. Uživatelské jméno a heslo odmítnuto."
 
 #: ../src/nm-vpnc-service.c:119
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
+msgstr "Připojení do VPN selhalo. VPN program nelze spustit."
 
 #: ../src/nm-vpnc-service.c:121
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr ""
+msgstr "Připojení do VPN selhalo. Nelze se spojit s VPN serverem."
 
 #: ../src/nm-vpnc-service.c:123
 msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
+msgstr "Připojení do VPN selhalo. Chybné volby VPN."
 
 #: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr ""
+msgstr "Připojení do VPN selhalo. Byly obdrženy chybné volby od VPN serveru."
 
