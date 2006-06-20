@@ -1,3 +1,20 @@
+2006-06-19  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+		- Clarify usage of user_created
+
+	* src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-eap.c
+	  src/nm-ap-security-wpa-psk.c
+	  src/nm-ap-security.c
+	  src/nm-ap-security.h
+		- s/user_created/adhoc, because we really do mean adhoc
+
+	Patch from Bernard Blackham <bernard@blackham.com.au>
+	* src/nm-device-802-11-wireless.c	  
+		- (supplicant_send_network_config): instead of user_created,
+			use adhoc, and do AP_SCAN 2 for adhoc networks
+
 2006-06-15  Robert Love  <rml@novell.com>
 
 	* gnome/applet/nm-gconf-wso-wpa-eap.c: Don't set the Gconf keys unless

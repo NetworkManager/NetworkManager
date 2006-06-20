@@ -67,7 +67,7 @@ struct _NMAPSecurityClass
 	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self,
 									  struct wpa_ctrl *ctrl,
 									  int nwid,
-									  gboolean user_created);
+									  gboolean adhoc);
 
 	guint32 (*get_default_capabilities_func)(NMAPSecurity *self);
 };
@@ -93,7 +93,7 @@ int			nm_ap_security_serialize (NMAPSecurity *self,
 gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 									struct wpa_ctrl *ctrl,
 									int nwid,
-									gboolean user_created);
+									gboolean adhoc);
 
 const char *	nm_ap_security_get_description (NMAPSecurity *self);
 

@@ -155,7 +155,7 @@ gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
                                         struct wpa_ctrl *ctrl,
                                         int nwid,
-                                        gboolean user_created)
+                                        gboolean adhoc)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (ctrl != NULL, FALSE);
@@ -164,7 +164,8 @@ nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 	if (self->priv->dispose_has_run)
 		return FALSE;
 
-	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self, ctrl, nwid, user_created);
+	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self,
+			ctrl, nwid, adhoc);
 }
 
 void
@@ -222,7 +223,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *self,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	/* Unencrypted network setup */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
