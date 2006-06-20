@@ -47,7 +47,12 @@ struct NMAccessPoint
 	gboolean			invalid;
 	gboolean			artificial;	/* Whether or not the AP is from a scan */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
-	gboolean			user_created;	/* Whether or not the AP was created by the user with "Create network..." */
+	gboolean			user_created;	/* Whether or not the AP was created
+										 * by the user with "Create network..."
+										 * A subset of Ad-Hoc mode.  user_created
+										 * implies Ad-Hoc, but not necessarily
+										 * the other way around.
+										 */
 	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
 
 	/* Things from user prefs/NetworkManagerInfo */

@@ -169,7 +169,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 	gboolean			success = FALSE;

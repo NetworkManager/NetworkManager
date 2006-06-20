@@ -2768,7 +2768,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	int				nwid;
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
-	gboolean			user_created;
+	gboolean			is_adhoc;
 	const char *		hex_essid;
 	const char *		ap_scan = "AP_SCAN 1";
 	guint32			caps;
@@ -2792,11 +2792,11 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 				|| (caps & NM_802_11_CAP_PROTO_WPA2);
 
 	/* Use "AP_SCAN 2" if:
-	 * - The wireless network is non-broadcast or user created
-	 * - The wireless driver does not support WPA
+	 * - The wireless network is non-broadcast or Ad-Hoc
+	 * - The wireless driver does not support WPA (stupid drivers...)
 	 */
-	user_created = nm_ap_get_user_created (ap);
-	if (!nm_ap_get_broadcast (ap) || user_created || !supports_wpa)
+	is_adhoc = (nm_ap_get_mode(ap) == IW_MODE_ADHOC);
+	if (!nm_ap_get_broadcast (ap) || is_adhoc || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
@@ -2829,7 +2829,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames.
 	 * However, don't try to probe Ad-Hoc networks.
 	 */
-	if (!nm_ap_get_broadcast (ap) && !user_created)
+	if (!nm_ap_get_broadcast (ap) && !is_adhoc)
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i scan_ssid 1", nwid))
@@ -2837,7 +2837,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	}
 
 	/* Ad-Hoc ? */
-	if (user_created)
+	if (is_adhoc)
 	{
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i mode 1", nwid))
@@ -2847,7 +2847,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
 		goto out;
 
-	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid, user_created))
+	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid, is_adhoc))
 		goto out;
 
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))

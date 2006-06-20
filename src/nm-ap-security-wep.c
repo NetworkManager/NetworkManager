@@ -115,7 +115,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	gboolean			success = FALSE;
 	char *			msg = NULL;

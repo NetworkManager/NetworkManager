@@ -134,7 +134,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
 	gboolean			success = FALSE;
@@ -161,7 +161,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	}
 
 	/* Ad-Hoc has to be WPA-NONE */
-	if (user_created)
+	if (adhoc)
 		key_mgmt = "WPA-NONE";
 
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
@@ -189,7 +189,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		pairwise_cipher = group_cipher = "NONE";
 
 	/* Ad-Hoc requires pairwise cipher of NONE */
-	if (user_created)
+	if (adhoc)
 		pairwise_cipher = "NONE";
 
 	/* If user selected "Automatic", we let wpa_supplicant sort it out */
