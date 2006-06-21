@@ -306,6 +306,8 @@ static DBusMessage *nm_dbus_device_get_driver (DBusConnection *connection, DBusM
 	if ((reply = dbus_message_new_method_return (message)))
 	{
 		const char * driver = nm_device_get_driver (dev);
+		if (!driver)
+			driver = "";
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &driver, DBUS_TYPE_INVALID);
 	}
 
