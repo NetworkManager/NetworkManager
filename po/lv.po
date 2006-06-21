@@ -1,0 +1,969 @@
+# translation of NetworkManager.HEAD2.po to Latvian
+# translation of NetworkManager.HEAD.po to Latvian
+# This file is distributed under the same license as the PACKAGE package.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# Raivis Dejus <orvils@gmail.com>, 2006.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager.HEAD2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-06-21 13:50+0300\n"
+"PO-Revision-Date: 2006-06-12 22:05+0300\n"
+"Last-Translator: Raivis Dejus <orvils@gmail.com>\n"
+"Language-Team: Latvian <locale@laka.lv>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms:  nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : "
+"2);\n"
+"X-Generator: KBabel 1.10.2\n"
+
+#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:926
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "Parole priekš bezvadu tīkla %s"
+
+#: ../gnome/applet/applet-dbus.c:383
+#, c-format
+msgid "Connection to the wireless network '%s' failed."
+msgstr "Pieslēgums bezvadu tīklam '%s' neizdevies."
+
+#: ../gnome/applet/applet-dbus.c:388
+msgid "Connection to the wired network failed."
+msgstr "Pieslēgums vadu tīklam neizdevies."
+
+#: ../gnome/applet/applet.c:184
+msgid "Error displaying connection information:"
+msgstr "Kļuda paziņojot pieslēguma informāciju:"
+
+#: ../gnome/applet/applet.c:202
+msgid "Could not find some required resources (the glade file)!"
+msgstr "Nevar atrast dažus pieprasījuma resursus (noras fails)!"
+
+#: ../gnome/applet/applet.c:213
+msgid "No active connections!"
+msgstr "Nav aktīvu sakaru!"
+
+#: ../gnome/applet/applet.c:234
+#, c-format
+msgid "Wired Ethernet (%s)"
+msgstr "Vadu tīkls ethernet (%s)"
+
+#: ../gnome/applet/applet.c:236
+#, c-format
+msgid "Wireless Ethernet (%s)"
+msgstr "Bezvadu tīks ethernet (%s)"
+
+#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:363
+msgid "NetworkManager Applet"
+msgstr "NetworkManager aplets"
+
+#: ../gnome/applet/applet.c:339
+msgid ""
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:341 ../gnome/applet/applet.c:367
+msgid ""
+"Notification area applet for managing your network devices and connections."
+msgstr ""
+"Notifikācijas laukuma aplets priekš jūsus tīkla ierīču un savienojumu "
+"vadības."
+
+#: ../gnome/applet/applet.c:344 ../gnome/applet/applet.c:372
+msgid "translator-credits"
+msgstr "translator-atzīšana"
+
+#: ../gnome/applet/applet.c:365
+msgid ""
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:428
+msgid "VPN Login Failure"
+msgstr "VPN litotājvārda kļūme"
+
+#: ../gnome/applet/applet.c:429
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a login failure."
+msgstr "Nevar sākt VPN savienojumu '%s' litotājvārda kļūmes dēļ."
+
+#: ../gnome/applet/applet.c:433
+msgid "VPN Start Failure"
+msgstr "VPN sākšanas kļūme"
+
+#: ../gnome/applet/applet.c:434
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' due to a failure launching the VPN "
+"program."
+msgstr "Nevar sākt VPN savienojumu '%s' VPN startēšanās kļūdas dēļ."
+
+#: ../gnome/applet/applet.c:438 ../gnome/applet/applet.c:448
+msgid "VPN Connect Failure"
+msgstr "VPN savienojuma kļūme"
+
+#: ../gnome/applet/applet.c:439
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a connection error."
+msgstr "Nevar sākt VPN savienojumu '%s' savienojuma kļūmes dēļ."
+
+#: ../gnome/applet/applet.c:443
+msgid "VPN Configuration Error"
+msgstr "VPN konfigrācijas kļūme"
+
+#: ../gnome/applet/applet.c:444
+#, c-format
+msgid "The VPN connection '%s' was not correctly configured."
+msgstr "VPN savienojums '%s' nebija korekti konfigurēts."
+
+#: ../gnome/applet/applet.c:449
+#, c-format
+msgid ""
+"Could not start the VPN connection '%s' because the VPN server did not "
+"return an adequate network configuration."
+msgstr ""
+"Nevar sākt VPN savienojumu '%s' tādēļ, ka VPN serveris neatgriezaadekvātu "
+"tīkla konfigurāciju."
+
+#: ../gnome/applet/applet.c:519
+msgid "VPN Login Message"
+msgstr "VPN litotājvārda ziņojums"
+
+#: ../gnome/applet/applet.c:743 ../gnome/applet/applet.c:2510
+#: ../gnome/applet/other-network-dialog.c:458
+#: ../gnome/applet/passphrase-dialog.c:228
+msgid ""
+"The NetworkManager Applet could not find some required resources (the glade "
+"file was not found)."
+msgstr ""
+"Tīkla administartora aplets nevarēja atrast dažus pieprasītos resursus "
+"(noras failsnetika atrasts)."
+
+#: ../gnome/applet/applet.c:755
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "Tīkla ierīce \"%s (%s)\" natbalsta bezvadu skanēšanu."
+
+#: ../gnome/applet/applet.c:763
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "Tīkla ierīce \"%s (%s)\" natbalsta saites atklāšanu."
+
+#: ../gnome/applet/applet.c:910
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "Ierīce %s tiek sagatavota priekš vadu tīkla..."
+
+#: ../gnome/applet/applet.c:912
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "Ierīce %s tiek sagatavota priekš bezvadu tīkla '%s'..."
+
+#: ../gnome/applet/applet.c:920
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "Ierīce %s tiek konfigurēta vadu tīklam..."
+
+#: ../gnome/applet/applet.c:922
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "Mēģina pievienoties bezvadu tīklam '%s'..."
+
+#: ../gnome/applet/applet.c:930
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "Gaida tīla atslēgu priekš bezvadu tīla '%s'..."
+
+#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
+msgid "Requesting a network address from the wired network..."
+msgstr "Tiek pieprasīta tīkla adrese priekš vadu tīkla..."
+
+#: ../gnome/applet/applet.c:940 ../gnome/applet/applet.c:950
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "Tiek pieprasīta tīkla adrese priekš bezvadu tīkla '%s'..."
+
+#: ../gnome/applet/applet.c:958
+msgid "Finishing connection to the wired network..."
+msgstr "Tiek pabeigta pieslēgšanās vadu tīklam..."
+
+#: ../gnome/applet/applet.c:960
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "Tiek pabeigta pieslēgšanās bezvadu tīklam '%s'..."
+
+#: ../gnome/applet/applet.c:1077
+msgid "NetworkManager is not running"
+msgstr "Tīkla administrators nav palaists"
+
+#: ../gnome/applet/applet.c:1085 ../gnome/applet/applet.c:1830
+msgid "Networking disabled"
+msgstr "Tīklošana atslēgta"
+
+#: ../gnome/applet/applet.c:1090
+msgid "No network connection"
+msgstr "Nav tīla pieslēguma"
+
+#: ../gnome/applet/applet.c:1095
+msgid "Wired network connection"
+msgstr "Vadu tīkla pieslēgums"
+
+#: ../gnome/applet/applet.c:1099
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Pieslēgs pie Ad-Hoc bezvadu tīkla"
+
+#: ../gnome/applet/applet.c:1101
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Bezvadu tīkla pieslēgums pie '%s' (%d%%)"
+
+#: ../gnome/applet/applet.c:1122
+#, c-format
+msgid "VPN connection to '%s'"
+msgstr "VPN pieslēgums pie '%s'"
+
+#: ../gnome/applet/applet.c:1130
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "VPN pieslēdzas pie '%s'"
+
+#: ../gnome/applet/applet.c:1543
+msgid "_Connect to Other Wireless Network..."
+msgstr "Pieslēgties _citam bezvadu tīlam..."
+
+#: ../gnome/applet/applet.c:1564
+msgid "Create _New Wireless Network..."
+msgstr "Izveidot jau_nu bezvadu tīklu..."
+
+#: ../gnome/applet/applet.c:1687
+msgid "_VPN Connections"
+msgstr "_VPN savienojumi"
+
+#: ../gnome/applet/applet.c:1732
+msgid "_Configure VPN..."
+msgstr "_Konfigurēt VPN..."
+
+#: ../gnome/applet/applet.c:1736
+msgid "_Disconnect VPN..."
+msgstr "_Atvienot VPN..."
+
+#: ../gnome/applet/applet.c:1758
+msgid "_Dial Up Connections"
+msgstr "Ie_zvanpieslēgums"
+
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1769
+#, c-format
+msgid "Connect to %s..."
+msgstr "Pieslēgties pie %s..."
+
+#: ../gnome/applet/applet.c:1775
+#, c-format
+msgid "Disconnect from %s..."
+msgstr "Atvienoties no %s..."
+
+#: ../gnome/applet/applet.c:1824
+msgid "No network devices have been found"
+msgstr "Neviena tīkla ierīce netika atrasta"
+
+#: ../gnome/applet/applet.c:2016
+msgid "NetworkManager is not running..."
+msgstr "Tīkla administrators nav palaists..."
+
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2172
+msgid "Enable _Networking"
+msgstr "Aktivizēt _tīklu"
+
+#. 'Enable Wireless' item
+#: ../gnome/applet/applet.c:2178
+msgid "Enable _Wireless"
+msgstr "Aktivizēt _WiFi"
+
+#. 'Connection Information' item
+#: ../gnome/applet/applet.c:2184
+msgid "Connection _Information"
+msgstr "Pieslēguma _informācija"
+
+#. Help item
+#: ../gnome/applet/applet.c:2195
+msgid "_Help"
+msgstr "_Palīdzība"
+
+#. About item
+#: ../gnome/applet/applet.c:2204
+msgid "_About"
+msgstr "P_ar"
+
+#: ../gnome/applet/applet.c:2669
+msgid ""
+"The NetworkManager applet could not find some required resources.  It cannot "
+"continue.\n"
+msgstr ""
+"Tīkla administratora aplets nevarēja atrast dažus pieprasītos resursus. Tas "
+"nevar turpinat.\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "Atvērt sistēmu"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "Koplietošanas atslēga"
+
+#: ../gnome/applet/wireless-security-option.c:208
+msgid "Automatic (Default)"
+msgstr "Automātiski (noklusēti)"
+
+#: ../gnome/applet/wireless-security-option.c:215
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
+#: ../gnome/applet/wireless-security-option.c:223
+msgid "TKIP"
+msgstr "TKIP"
+
+#: ../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr "Dinamiskais WEP"
+
+#: ../gnome/applet/wso-none.c:53
+msgid "None"
+msgstr "Nekas"
+
+#: ../gnome/applet/wso-wep-ascii.c:138
+msgid "WEP 64/128-bit ASCII"
+msgstr "WEP 64/128-bit ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:135
+msgid "WEP 64/128-bit Hex"
+msgstr "WEP 64/128-bit Hex"
+
+#: ../gnome/applet/wso-wep-passphrase.c:135
+msgid "WEP 128-bit Passphrase"
+msgstr "WEP 128-bit Parole"
+
+#: ../gnome/applet/wso-wpa-eap.c:237
+msgid "PEAP"
+msgstr "PEAP"
+
+#: ../gnome/applet/wso-wpa-eap.c:238
+msgid "TLS"
+msgstr "TLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:239
+msgid "TTLS"
+msgstr "TTLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:93
+#: ../src/nm-ap-security-wpa-eap.c:117
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Uzņēmums"
+
+#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:95
+#: ../src/nm-ap-security-wpa-eap.c:122
+msgid "WPA Enterprise"
+msgstr "WPA Uzņēmums"
+
+#: ../gnome/applet/wso-wpa-psk.c:178
+msgid "WPA2 Personal"
+msgstr "WPA2 Privāts"
+
+#: ../gnome/applet/wso-wpa-psk.c:180
+msgid "WPA Personal"
+msgstr "WPA Privāts"
+
+#: ../gnome/applet/eggtrayicon.c:134
+msgid "Orientation"
+msgstr "Orientācija"
+
+#: ../gnome/applet/eggtrayicon.c:135
+msgid "The orientation of the tray."
+msgstr "Paplātes orientācija."
+
+#: ../gnome/applet/menu-items.c:88
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Vadu tīkls (%s)"
+
+#: ../gnome/applet/menu-items.c:91
+msgid "_Wired Network"
+msgstr "_Vadu tīkls"
+
+#: ../gnome/applet/menu-items.c:162
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Bezvadu tīkls (%s)"
+msgstr[1] "Bezvadu tīkli (%s)"
+msgstr[2] "Bezvadu tīklu (%s)"
+
+#: ../gnome/applet/menu-items.c:164
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Bezvadu tīkls"
+msgstr[1] "Bezvadu tīkli"
+msgstr[2] "Bezvadu tīklu"
+
+#: ../gnome/applet/menu-items.c:343
+msgid " (invalid Unicode)"
+msgstr " (nederīgs unikods)"
+
+#: ../gnome/applet/other-network-dialog.c:352
+#, c-format
+msgid ""
+"By default, the wireless network's name is set to your computer's name, %s, "
+"with no encryption enabled"
+msgstr ""
+"Noklusēti bezvadu tīkla nosaukums ir uzstādīts tāds, kā jūsu datora "
+"nosaukums %s bez sifrēšanas"
+
+#: ../gnome/applet/other-network-dialog.c:358
+msgid "Create new wireless network"
+msgstr "Izveidot jaunu bezvadu tīklu"
+
+#: ../gnome/applet/other-network-dialog.c:359
+msgid ""
+"Enter the name and security settings of the wireless network you wish to "
+"create."
+msgstr ""
+"Ievadiet nosaukumu un drošības uzstādījumus bezvadu tīklam, ko jūs vēlaties "
+"izveidot."
+
+#: ../gnome/applet/other-network-dialog.c:363
+msgid "Create New Wireless Network"
+msgstr "Radīt jaunu bezvadu tīklu"
+
+#: ../gnome/applet/other-network-dialog.c:368
+msgid "Existing wireless network"
+msgstr "Pastāvošs bezvadu tīkls"
+
+#: ../gnome/applet/other-network-dialog.c:369
+msgid "Enter the name of the wireless network to which you wish to connect."
+msgstr "Ievadiet nosaukumu tam bezvadu tīklam, kuram jūs vēlaties pieslēgties."
+
+#: ../gnome/applet/other-network-dialog.c:371
+msgid "Connect to Other Wireless Network"
+msgstr "Pieslēgties citam bezvadu tīklam"
+
+#: ../gnome/applet/passphrase-dialog.c:215
+msgid "Error connecting to wireless network"
+msgstr "Bezvadu tīkla savienojuma kļūda"
+
+#: ../gnome/applet/passphrase-dialog.c:216
+msgid ""
+"The requested wireless network requires security capabilities unsupported by "
+"your hardware."
+msgstr ""
+"Pieprasītais bezvadu tīkls pieprasa drošību, ko neatbalsta jūsu aparatūra."
+
+#: ../gnome/applet/vpn-password-dialog.c:151
+#: ../gnome/applet/vpn-password-dialog.c:188
+#, c-format
+msgid "Cannot start VPN connection '%s'"
+msgstr "Nevar sākt VPN savienojumu '%s'"
+
+#: ../gnome/applet/vpn-password-dialog.c:154
+#, c-format
+msgid ""
+"Could not find the authentication dialog for VPN connection type '%s'. "
+"Contact your system administrator."
+msgstr ""
+"Nevar atrast autentifikācijas dialogu priekš VPN savienojuma tipa '%s'. "
+"Sazinieties ar savu sistēmas administratoru."
+
+#: ../gnome/applet/vpn-password-dialog.c:191
+#, c-format
+msgid ""
+"There was a problem launching the authentication dialog for VPN connection "
+"type '%s'. Contact your system administrator."
+msgstr ""
+"Bija problēma startējot autentifikācijas dialogu priekš VPN savienojuma tipa "
+"'%s'. Sazinieties ar jūsu sistēmas administratoru."
+
+#: ../gnome/applet/applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/applet.glade.h:2
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Aktīvā savienojuma informācija</span>"
+
+#: ../gnome/applet/applet.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+"Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%"
+"s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Bezvadu tīkls pieprasa paroli</span>\n"
+"\n"
+"Parole vai šifrēšanas atslēga tiek piepraīta, lai piekļūtu bevadu tīlam '%s'."
+
+#: ../gnome/applet/applet.glade.h:8
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Atvieglota tīkla funkcionēšana</span>\n"
+"\n"
+"%s  Tas nebūs pilnīgi funkcionāli."
+
+#: ../gnome/applet/applet.glade.h:12
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
+"span>\n"
+"\n"
+"You have chosen to log in to the wireless network '%s'.  If you are sure "
+"that this wireless network is secure, click the checkbox below and "
+"NetworkManager will not require confirmation on subsequent log ins."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Bezvadu tīkla lietotājvārda "
+"apstiprināšana</span>\n"
+"\n"
+"Jūs esat izvēlējies pieslēgties šim bezvadu tīklam: '%s'. Ja jūs esat "
+"pārliecināts, ka šis bezvadu tīkls ir drošs, uzklikšķiniet blakus esošajā "
+"atzīmes rūtiņā un tīkla administrators neprasīs apstiprināšanu turpmāk "
+"piereģistrējoties."
+
+#: ../gnome/applet/applet.glade.h:15
+msgid "Anonymous Identity:"
+msgstr "Anonīma identitāte:"
+
+#: ../gnome/applet/applet.glade.h:16
+msgid "Authentication:"
+msgstr "Autentificēšana:"
+
+#: ../gnome/applet/applet.glade.h:17
+msgid "Broadcast Address:"
+msgstr "Apraides adrese:"
+
+#: ../gnome/applet/applet.glade.h:18
+msgid "CA Certificate File:"
+msgstr "CA setrifikāta fails:"
+
+#: ../gnome/applet/applet.glade.h:19
+msgid "C_onnect"
+msgstr "_Savienot"
+
+#: ../gnome/applet/applet.glade.h:20
+msgid "Client Certificate File:"
+msgstr "Klienta sertifikāta fails:"
+
+#: ../gnome/applet/applet.glade.h:21
+msgid "Connection Information"
+msgstr "Savienojuma informācija"
+
+#: ../gnome/applet/applet.glade.h:22
+msgid "Default Route:"
+msgstr "Noklusētais maršruts:"
+
+#: ../gnome/applet/applet.glade.h:23
+msgid "Destination Address:"
+msgstr "Saņēmēja adrese:"
+
+#: ../gnome/applet/applet.glade.h:24
+msgid "Driver:"
+msgstr "Draiveris:"
+
+#: ../gnome/applet/applet.glade.h:25
+msgid "EAP Method:"
+msgstr "EAP metode:"
+
+#: ../gnome/applet/applet.glade.h:26
+msgid "Hardware Address:"
+msgstr "Aparatūras adrese:"
+
+#: ../gnome/applet/applet.glade.h:27
+msgid "IP Address:"
+msgstr "IP adrese:"
+
+#: ../gnome/applet/applet.glade.h:28
+msgid "Identity:"
+msgstr "Identitāte:"
+
+#: ../gnome/applet/applet.glade.h:29
+msgid "Interface:"
+msgstr "Saskarne:"
+
+#: ../gnome/applet/applet.glade.h:30
+msgid "Key Type:"
+msgstr "Atslēgas tips:"
+
+#: ../gnome/applet/applet.glade.h:31
+msgid "Key:"
+msgstr "Atslēga:"
+
+#: ../gnome/applet/applet.glade.h:32
+msgid ""
+"None\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
+msgstr ""
+"Neviens\n"
+"WEP 128-bit Parole\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
+
+#: ../gnome/applet/applet.glade.h:37
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"Atvērt sistēmu\n"
+"Koplietojamā atslēga"
+
+#: ../gnome/applet/applet.glade.h:39
+msgid "Other Wireless Network..."
+msgstr "Cits bezvadu tīkls..."
+
+#: ../gnome/applet/applet.glade.h:40
+msgid "Passphrase:"
+msgstr "Parole:"
+
+#: ../gnome/applet/applet.glade.h:41
+msgid "Password:"
+msgstr "Parole:"
+
+#: ../gnome/applet/applet.glade.h:42
+msgid "Primary DNS:"
+msgstr "Primārais DNS:"
+
+#: ../gnome/applet/applet.glade.h:43
+msgid "Private Key File:"
+msgstr "Privātās atslēgas fails:"
+
+#: ../gnome/applet/applet.glade.h:44
+msgid "Private Key Password:"
+msgstr "Privātās atslēgas parole:"
+
+#: ../gnome/applet/applet.glade.h:45
+msgid "Secondary DNS:"
+msgstr "Sekundārais DNS:"
+
+#: ../gnome/applet/applet.glade.h:46
+msgid "Select the CA Certificate File"
+msgstr "Izvēlieties CA sertifikāta failu"
+
+#: ../gnome/applet/applet.glade.h:47
+msgid "Select the Client Certificate File"
+msgstr "Izvēlieties klienta sertifikāta failu"
+
+#: ../gnome/applet/applet.glade.h:48
+msgid "Select the Private Key File"
+msgstr "Izvēlieties privātās atslēgas failu"
+
+#: ../gnome/applet/applet.glade.h:49
+msgid "Show key"
+msgstr "Rādīt atslēgu"
+
+#: ../gnome/applet/applet.glade.h:50
+msgid "Show passphrase"
+msgstr "Rādīt paroli"
+
+#: ../gnome/applet/applet.glade.h:51
+msgid "Show password"
+msgstr "Rādīt paroli"
+
+#: ../gnome/applet/applet.glade.h:52
+msgid "Show passwords"
+msgstr "Rādīt paroles"
+
+#: ../gnome/applet/applet.glade.h:53
+msgid "Speed:"
+msgstr "Ātrums:"
+
+#: ../gnome/applet/applet.glade.h:54
+msgid "Subnet Mask:"
+msgstr "Apakštīkla mask:"
+
+#: ../gnome/applet/applet.glade.h:55
+msgid "Type:"
+msgstr "Tips:"
+
+#: ../gnome/applet/applet.glade.h:56
+msgid "User Name:"
+msgstr "Lietotāja vārds:"
+
+#: ../gnome/applet/applet.glade.h:57
+msgid "Wireless Network Key Required"
+msgstr "Tiek pieprasīta bezvadu tīkla atslēga"
+
+#: ../gnome/applet/applet.glade.h:58
+msgid "Wireless _adapter:"
+msgstr "Bezvadu _adapteris:"
+
+#: ../gnome/applet/applet.glade.h:59
+msgid "_Always Trust this Wireless Network"
+msgstr "_Vienmēr uzticēties šim bezvadu tīlaam"
+
+#: ../gnome/applet/applet.glade.h:60
+msgid "_Don't remind me again"
+msgstr "Neatgā_dināt vairs"
+
+#: ../gnome/applet/applet.glade.h:61
+msgid "_Fallback on this Network"
+msgstr "Šī tīkla atkāpe (_Fallback)"
+
+#: ../gnome/applet/applet.glade.h:62
+msgid "_Login to Network"
+msgstr "Pies_lēgties tīklam"
+
+#: ../gnome/applet/applet.glade.h:63
+msgid "_Network Name:"
+msgstr "_Tīkla nosaukums:"
+
+#: ../gnome/applet/applet.glade.h:64
+msgid "_Wireless Security:"
+msgstr "Bez_vadu drošība:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:383
+msgid "Cannot add VPN connection"
+msgstr "Nevar pievienot VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:385
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+"Jūsu sistēmā netika atrasta piemērota VPN programmatūra. Sazinieties ar savu "
+"sistēmadministaratoru."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:437
+msgid "Cannot import VPN connection"
+msgstr "Nevar importēt VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:439
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"Nevar atrast piemērotu programmatūru priekš VPN savienojuma tipa'%s'lai "
+"importētu failu '%s'. sazinieties ar savu sistēmadministratoru."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:579
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "Kļūda atgūstot VPN savienojumu '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:582
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"Nevar atrast UI failus priekš VPN savienojuma tipa'%s'. Sazinieties ar savu "
+"sistēmadministratoru."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:739
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "Izdzēst VPN savienojumu \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:742
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"Visa informācija par VPN savienojumu \"%s\" tiks pazaudēta un jums būs "
+"nepieciešams jūsusistēmas administrators, lai sagādātu informāciju, lai "
+"radītu jaunu savienojumu."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:959
+msgid "Unable to load"
+msgstr "Nevar ielādēt"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:961
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "Nevar atrast dažus vajadzīgos resursus (noras fails)!"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
+msgid "Edit VPN Connection"
+msgstr "Rediģēt VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "Pievienot jaunu VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "Izvēlieties kuru VPN savienojuma tipu jūs vēlaties radīt."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "Svienot ar:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "Izveidot VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "Izveidot VPN savienojumu -1 no 2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "Izveidot VPN savienojumu -2 no 2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "Izdzēst izvēlēto VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "E_ksportēt"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "Rediģēt izvēlēto VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "Eksportēt VPN uzstādījumus uz failu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "Eksportēt izvēlēto VPN savienojumu uz failu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "Pabeigt veidot VPN savienojumu"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "Pārvaldīt virtuālo privāto tīklu savienojumus"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+"Šis asistents iepazīstinās jūs ar Virtuālā Privātā Tīkla (VPN) savienojuma "
+"radīšanu.\n"
+"\n"
+"Tas pieprasīs mazliet informācijas, tādu kā IP adresi un noslēpumus.  Lūdzu "
+"vaicājiet savam sistēmadministratoram, lai iegūtu šo informāciju."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "VPN savienojumi"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40-bitu WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104-bitu WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "WPA automātiskais"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "WPA2 automātiskais"
+
+#: ../src/nm-ap-security.c:321
+msgid "none"
+msgstr "neviens"
+
+#: ../src/nm-netlink-monitor.c:170
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"Nespēj radīt tīla saites ligzdu priekš cietsavienojuma tīkla ethernet "
+"ierīces - %s monitoringa"
+
+#: ../src/nm-netlink-monitor.c:188
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"Nespēj piesaistīties pie tīkla saites ligzdas priekš cietsavienojuma tīkla "
+"ethernet ierīces - %s monitoringa"
+
+#: ../src/nm-netlink-monitor.c:425
+msgid "operation took too long"
+msgstr "Operācija rit pārāk ilgi"
+
+#: ../src/nm-netlink-monitor.c:522
+msgid "received data from wrong type of sender"
+msgstr "saņemti dati no nepareiza tipa sūtītāja"
+
+#: ../src/nm-netlink-monitor.c:535
+msgid "received data from unexpected sender"
+msgstr "saņemti dati no negaidīta sūtītāja"
+
+#: ../src/nm-netlink-monitor.c:664
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "Pārāk daudzi dati tika sūtīti caur ligzdu un daži tika pazaudēti"
+
+#: ../src/nm-netlink-monitor.c:774
+msgid "error occurred while waiting for data on socket"
+msgstr "Gaidot datus caur ligzdu, ieviesusies kļūda"
+
+#: ../gnome/applet/applet-dbus-devices.c:922
+#, c-format
+msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+msgstr "Jūs esat savienots ar Ad-Hoc bezvadu tīlu '%s'."
+
+#: ../gnome/applet/applet-dbus-devices.c:927
+#, c-format
+msgid "You are now connected to the wireless network '%s'."
+msgstr "Jūs esat savienots ar bezvadu tīlu '%s'."
+
+#: ../gnome/applet/applet-dbus-devices.c:934
+msgid "You are now connected to the wired network."
+msgstr "Jūs esat savienots ar cietsavienojuma tīlu."
+
+#: ../gnome/applet/applet-dbus-devices.c:940
+msgid "Connection Established"
+msgstr "Savienojums ir ieviesies"
+
+#: ../gnome/applet/applet-dbus-devices.c:983
+msgid "Disconnected"
+msgstr "Atslēgts"
+
+#: ../gnome/applet/applet-dbus-devices.c:984
+msgid "The network connection has been disconnected."
+msgstr "Tīkla savienojums ir ticis atslēgts."

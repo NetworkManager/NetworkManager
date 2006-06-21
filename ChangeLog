@@ -1,3 +1,7 @@
+2006-06-21  Raivis Dejus  <orvils@gmail.com>
+
+	* cinfigure.in: Added 'lv' to ALL_LINGUAS
+
 2006-06-19  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c
