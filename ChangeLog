@@ -1,3 +1,9 @@
+2006-06-21  Dan Williams  <dcbw@redhat.com>
+
+	* nm-dbus-device.c
+		- (nm_dbus_device_get_driver): don't try to stuff a NULL
+			through dbus
+
 2006-06-19  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c
