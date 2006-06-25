@@ -99,6 +99,12 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
                                  const char * value,
                                  const dbus_uint32_t value_len);
 
+dbus_bool_t
+nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
+                                   const char * key,
+                                   const char ** items,
+                                   const dbus_uint32_t num_items);
+
 /*
  * Reading a dict from a DBusMessage
  */
@@ -121,6 +127,7 @@ typedef struct NMUDictEntry {
 		dbus_uint64_t uint64_value;
 		double double_value;
 		char * bytearray_value;
+		char ** strarray_value;
 	};
 	dbus_uint32_t array_len;
 } NMUDictEntry;

@@ -50,6 +50,7 @@ DECLARE_ENTRY(UInt64Entry, dbus_uint64_t)
 DECLARE_ENTRY(DoubleEntry, double)
 DECLARE_ENTRY(OPEntry, const char *)
 DECLARE_ENTRY(ByteArrayEntry, const char *)
+DECLARE_ENTRY(StringArrayEntry, char **)
 
 struct DictEntries {
 	struct StringEntry string;
@@ -65,21 +66,26 @@ struct DictEntries {
 	struct OPEntry op;
 	struct ByteArrayEntry bytearr;
 	struct ByteArrayEntry zlbytearr;
+	struct StringArrayEntry strarr;
+	struct StringArrayEntry zlstrarr;
 };
 
-#define TEST_KEY_STRING    "String"
-#define TEST_KEY_BYTE      "Byte"
-#define TEST_KEY_BOOL      "Bool"
-#define TEST_KEY_INT16     "Int16"
-#define TEST_KEY_UINT16    "UInt16"
-#define TEST_KEY_INT32     "Int32"
-#define TEST_KEY_UINT32    "UInt32"
-#define TEST_KEY_INT64     "Int64"
-#define TEST_KEY_UINT64    "UInt64"
-#define TEST_KEY_DOUBLE    "Double"
-#define TEST_KEY_OP        "ObjectPath"
-#define TEST_KEY_BYTEARR   "ByteArray"
-#define TEST_KEY_ZLBYTEARR "ZLByteArray"
+#define TEST_KEY_STRING      "String"
+#define TEST_KEY_BYTE        "Byte"
+#define TEST_KEY_BOOL        "Bool"
+#define TEST_KEY_INT16       "Int16"
+#define TEST_KEY_UINT16      "UInt16"
+#define TEST_KEY_INT32       "Int32"
+#define TEST_KEY_UINT32      "UInt32"
+#define TEST_KEY_INT64       "Int64"
+#define TEST_KEY_UINT64      "UInt64"
+#define TEST_KEY_DOUBLE      "Double"
+#define TEST_KEY_OP          "ObjectPath"
+#define TEST_KEY_BYTEARR     "ByteArray"
+#define TEST_KEY_ZLBYTEARR   "ZLByteArray"
+#define STRARR_LEN	2
+#define TEST_KEY_STRINGARR   "StringArray"
+#define TEST_KEY_ZLSTRINGARR "ZLStringArray"
 
 struct DictEntries entries = {
 	{ TEST_KEY_STRING,   "foobar22",       FALSE, DBUS_TYPE_STRING },
@@ -94,7 +100,9 @@ struct DictEntries entries = {
 	{ TEST_KEY_DOUBLE,   54.3355632f,      FALSE, DBUS_TYPE_DOUBLE },
 	{ TEST_KEY_OP,       "/com/it/foobar", FALSE, DBUS_TYPE_OBJECT_PATH },
 	{ TEST_KEY_BYTEARR,  "qazwsxedcrfvtgb",FALSE, DBUS_TYPE_BYTE },
-	{ TEST_KEY_ZLBYTEARR,NULL,             FALSE, DBUS_TYPE_BYTE }
+	{ TEST_KEY_ZLBYTEARR,NULL,             FALSE, DBUS_TYPE_BYTE },
+	{ TEST_KEY_STRINGARR,NULL,             FALSE, DBUS_TYPE_STRING },
+	{ TEST_KEY_ZLSTRINGARR,NULL,           FALSE, DBUS_TYPE_STRING }
 };
 
 
@@ -163,6 +171,19 @@ test_write_dict (DBusMessage *message)
 	}
 	if (!nmu_dbus_dict_append_byte_array (&iter_dict, entries.zlbytearr.key, entries.zlbytearr.val, 0)) {
 		err_string = "failed to append zero-length byte array entry";
+		goto done;
+	}
+	entries.strarr.val = malloc (sizeof (char *) * STRARR_LEN);
+	entries.strarr.val[0] = "foo";
+	entries.strarr.val[1] = "bar";
+	if (!nmu_dbus_dict_append_string_array (&iter_dict, entries.strarr.key,
+			(const char **)entries.strarr.val, STRARR_LEN)) {
+		err_string = "failed to append string array entry";
+		goto done;
+	}
+	if (!nmu_dbus_dict_append_string_array (&iter_dict, entries.zlstrarr.key,
+			(const char **)entries.zlstrarr.val, 0)) {
+		err_string = "failed to append zero-length string array entry";
 		goto done;
 	}
 	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
@@ -254,6 +275,10 @@ test_read_dict (DBusMessage *message)
 				!memcmp (entry.bytearray_value, entries.bytearr.val, bytearr_len))
 		TEST_CASE_ARRAY (TEST_KEY_ZLBYTEARR, entries.zlbytearr, 0,
 				entry.bytearray_value == entries.zlbytearr.val)
+		TEST_CASE_ARRAY (TEST_KEY_STRINGARR, entries.strarr, STRARR_LEN,
+				(!strcmp (entry.strarray_value[0], "foo") && !strcmp (entry.strarray_value[1], "bar")))
+		TEST_CASE_ARRAY (TEST_KEY_ZLSTRINGARR, entries.zlstrarr, 0,
+				entry.strarray_value == entries.zlstrarr.val)
 
 		err_string = "Unknown dict entry encountered.";
 		goto done;
@@ -265,7 +290,8 @@ test_read_dict (DBusMessage *message)
 	if (!entries.string.found || !entries.byte.found || !entries.bool.found || !entries.int16.found
 		|| !entries.uint16.found || !entries.int32.found || !entries.uint32.found
 		|| !entries.int64.found || !entries.uint64.found || !entries.dbl.found
-		|| !entries.op.found || !entries.bytearr.found || !entries.zlbytearr.found) {
+		|| !entries.op.found || !entries.bytearr.found || !entries.zlbytearr.found
+		|| !entries.strarr.found || !entries.zlstrarr.found) {
 		err_string = "A required entry was not found in the dict.";
 		goto done;
 	}

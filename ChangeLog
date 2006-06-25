@@ -1,3 +1,9 @@
+2006-06-25  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/dbus-dict-helpers.[ch]
+	  test/libnm-util/test-dbus-dict-helpers.c
+	  	- Add string array support
+
 2006-06-24  Dan Williams  <dcbw@redhat.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c

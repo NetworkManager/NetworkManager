@@ -216,6 +216,48 @@ _nmu_dbus_add_dict_entry_byte_array (DBusMessageIter *iter_dict,
 	return TRUE;
 }
 
+
+static dbus_bool_t
+_nmu_dbus_add_dict_entry_string_array (DBusMessageIter *iter_dict,
+                                       const char *key,
+                                       const char **items,
+                                       const dbus_uint32_t num_items)
+{
+	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
+	dbus_uint32_t i;
+
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
+			key, DBUS_TYPE_ARRAY))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_entry,
+					  DBUS_TYPE_VARIANT,
+					  DBUS_TYPE_ARRAY_AS_STRING
+					  DBUS_TYPE_STRING_AS_STRING,
+					  &iter_dict_val))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_val, DBUS_TYPE_ARRAY,
+			DBUS_TYPE_BYTE_AS_STRING, &iter_array))
+		return FALSE;
+
+	for (i = 0; i < num_items; i++)
+	{
+		if (!dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING,
+				&(items[i])))
+			return FALSE;
+	}
+	
+	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
+		return FALSE;
+
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
+			&iter_dict_val))
+		return FALSE;
+
+	return TRUE;
+}
+
 /**
  * Add a string entry to the dict.
  *
@@ -436,6 +478,28 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
 }
 
 
+/**
+ * Add a string array entry to the dict.
+ *
+ * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param items The array of strings
+ * @param num_items The number of strings in the array
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
+                                   const char * key,
+                                   const char ** items,
+                                   const dbus_uint32_t num_items)
+{
+	if (!key) return FALSE;
+	if (!items && (num_items != 0)) return FALSE;
+	return _nmu_dbus_add_dict_entry_string_array (iter_dict, key, items, num_items);
+}
+
+
 /*****************************************************/
 /* Stuff for reading dicts                           */
 /*****************************************************/
@@ -485,8 +549,8 @@ _nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
 	entry->bytearray_value = malloc (array_len * sizeof (char));
 	if (!entry->bytearray_value)
 	{
-		fprintf (stderr, "_nmu_dbus_dict_entry_get_byte_array() out of "
-				"memory trying to retrieve a byte array.\n");
+		fprintf (stderr, "%s out of memory trying to retrieve a byte "
+				"array.\n", __func__);
 		goto done;
 	}
 
@@ -496,6 +560,72 @@ _nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
 	{
 		dbus_message_iter_get_basic (iter, &byte);
 		entry->bytearray_value[i++] = byte;
+		dbus_message_iter_next (iter);
+	}
+	success = TRUE;
+
+done:
+	return success;
+}
+
+
+static dbus_bool_t
+_nmu_dbus_dict_entry_get_string_array (DBusMessageIter *iter,
+                                       int array_len,
+                                       int array_type,
+                                       NMUDictEntry *entry)
+{
+	dbus_uint32_t count = 0;
+	dbus_bool_t success = FALSE;
+	char ** buffer;
+
+	entry->strarray_value = NULL;
+	entry->array_type = DBUS_TYPE_STRING;
+
+	/* Zero-length arrays are valid. */
+	if (array_len == 0)
+	{
+		success = TRUE;
+		goto done;
+	}
+
+	buffer = (char **)malloc (sizeof (char *) * 8);
+	if (buffer == NULL)
+	{
+		fprintf (stderr, "%s() out of memory trying to retrieve a string"
+				" array.\n", __func__);
+		goto done;
+	}
+
+	entry->strarray_value = buffer;
+	entry->array_len = 0;
+	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING)
+	{
+		const char *value;
+		char *str;
+
+		if ((count % 8) == 0 && count != 0)
+		{
+			buffer = realloc (buffer, sizeof (char *) * (count + 8));
+			if (buffer == NULL)
+			{
+				fprintf (stderr, "%s() out of memory trying to retrieve"
+						"the string array.\n", __func__);
+				goto done;
+			}
+		}
+		entry->strarray_value = buffer;
+
+		dbus_message_iter_get_basic (iter, &value);
+		str = strdup (value);
+		if (str == NULL)
+		{
+			fprintf (stderr, "%s() out of memory trying to duplicate"
+					"the string array.\n", __func__);
+			goto done;
+		}
+		entry->strarray_value[count] = str;
+		entry->array_len = ++count;
 		dbus_message_iter_next (iter);
 	}
 	success = TRUE;
@@ -531,6 +661,9 @@ _nmu_dbus_dict_entry_get_array (DBusMessageIter *iter_dict_val,
 						array_len, array_type, entry);
 			break;
 		}
+		case DBUS_TYPE_STRING:
+			success = _nmu_dbus_dict_entry_get_string_array (&iter_array,
+						array_len, array_type, entry);
 		default:
 			break;
 	}
@@ -703,8 +836,8 @@ nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict)
 {
 	if (!iter_dict)
 	{
-		fprintf (stderr, "nmu_dbus_dict_has_dict_entry() called with invalid "
-				"arguments; this is an error in the program.\n");
+		fprintf (stderr, "%s called with invalid arguments; this is an "
+				"error in the program.\n", __func__);
 		return FALSE;
 	}
 	return dbus_message_iter_get_arg_type (iter_dict) == DBUS_TYPE_DICT_ENTRY;
@@ -719,6 +852,7 @@ nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict)
 void
 nmu_dbus_dict_entry_clear (NMUDictEntry *entry)
 {
+	dbus_uint32_t i;
 	if (!entry)
 		return;
 	switch (entry->type)
@@ -732,6 +866,11 @@ nmu_dbus_dict_entry_clear (NMUDictEntry *entry)
 			{
 				case DBUS_TYPE_BYTE:
 					free (entry->bytearray_value);
+					break;
+				case DBUS_TYPE_STRING:
+					for (i = 0; i < entry->array_len; i++)
+						free (entry->strarray_value[i]);
+					free (entry->strarray_value);
 					break;
 			}
 			break;
