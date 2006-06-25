@@ -589,7 +589,7 @@ out:
 	return ip4_config;
 }
 
-static inline const char * state_to_string (guint state)
+static inline const char * state_to_string (guint8 state)
 {
 	switch (state)
 	{
@@ -614,9 +614,11 @@ static inline const char * state_to_string (guint state)
 		case DHCDBD_END:
 			return "normal exit";
 		default:
-			return "unknown";
+			break;
 	}
+	return NULL;
 }
+
 
 /*
  * nm_dhcp_manager_process_signal
@@ -633,6 +635,9 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	gboolean			handled = FALSE;
 	NMDevice *		dev;
 	NMActRequest *		req = NULL;
+	const char *		iface = NULL;
+	guint8			state;
+	const char *		desc;
 
 	g_return_val_if_fail (manager != NULL, FALSE);
 	g_return_val_if_fail (message != NULL, FALSE);
@@ -654,61 +659,63 @@ gboolean nm_dhcp_manager_process_signal (NMDHCPManager *manager, DBusMessage *me
 	}
 #endif
 
-	dev = nm_get_device_by_iface (manager->data, member);
-	if (dev && (req = nm_device_get_act_request (dev)))
+	if (!(dev = nm_get_device_by_iface (manager->data, member)))
+		return FALSE;
+
+	if (!(req = nm_device_get_act_request (dev)))
+		return FALSE;
+
+	iface = nm_device_get_iface (dev);
+	g_assert (iface != NULL);
+
+	if (!dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", iface))
+		return FALSE;
+
+	handled = TRUE;
+	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_BYTE, &state, DBUS_TYPE_INVALID))
+		goto out;
+
+	desc = state_to_string (state);
+	nm_info ("DHCP daemon state is now %d (%s) for interface %s",
+			state, desc ? desc : "unknown", iface);
+
+	switch (state)
 	{
-		const char *iface = nm_device_get_iface (dev);
-
-		if (dbus_message_is_signal (message, DHCP_SERVICE_NAME".state", iface))
-		{
-			guint8	state;
-
-			if (dbus_message_get_args (message, NULL, DBUS_TYPE_BYTE, &state, DBUS_TYPE_INVALID))
+		case DHCDBD_BOUND:		/* lease obtained */
+		case DHCDBD_RENEW:		/* lease renewed */
+		case DHCDBD_REBOOT:		/* have valid lease, but now obtained a different one */
+		case DHCDBD_REBIND:		/* new, different lease */
+			if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
 			{
-				const char *desc = state_to_string (state);
-
-				nm_info ("DHCP daemon state is now %d (%s) for interface %s", state, desc, iface);
-				switch (state)
-				{
-					case DHCDBD_BOUND:		/* lease obtained */
-					case DHCDBD_RENEW:		/* lease renewed */
-					case DHCDBD_REBOOT:		/* have valid lease, but now obtained a different one */
-					case DHCDBD_REBIND:		/* new, different lease */
-						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
-						{
-							nm_device_activate_schedule_stage4_ip_config_get (req);
-							remove_timeout (manager, req);
-						}
-						break;
-
-					case DHCDBD_TIMEOUT:		/* timed out contacting DHCP server */
-						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
-						{
-							nm_device_activate_schedule_stage4_ip_config_timeout (req);
-							remove_timeout (manager, req);
-						}
-						break;					
-
-					case DHCDBD_FAIL:		/* all attempts to contact server timed out, sleeping */
-					case DHCDBD_ABEND:		/* dhclient exited abnormally */
-//					case DHCDBD_END:		/* dhclient exited normally */
-						if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
-						{
-							nm_policy_schedule_activation_failed (req);
-							remove_timeout (manager, req);
-						}
-						break;
-
-					default:
-						break;
-				}
-				nm_act_request_set_dhcp_state (req, state);
+				nm_device_activate_schedule_stage4_ip_config_get (req);
+				remove_timeout (manager, req);
 			}
+			break;
 
-			handled = TRUE;
-		}
+		case DHCDBD_TIMEOUT:		/* timed out contacting DHCP server */
+			if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
+			{
+				nm_device_activate_schedule_stage4_ip_config_timeout (req);
+				remove_timeout (manager, req);
+			}
+			break;					
+
+		case DHCDBD_FAIL:		/* all attempts to contact server timed out, sleeping */
+		case DHCDBD_ABEND:		/* dhclient exited abnormally */
+//		case DHCDBD_END:		/* dhclient exited normally */
+			if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
+			{
+				nm_policy_schedule_activation_failed (req);
+				remove_timeout (manager, req);
+			}
+			break;
+
+		default:
+			break;
 	}
+	nm_act_request_set_dhcp_state (req, state);
 
+out:
 	return handled;
 }
 
