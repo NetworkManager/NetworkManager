@@ -1,23 +1,25 @@
 # Swedish messages for NetworkManager.
 # Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
+# Daniel Nylander <po@danielnylander.se>, 2006.
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
-# $Id: sv.po,v 1.10 2006/03/25 22:56:50 menthos Exp $
+# $Id: sv.po,v 1.11 2006/06/26 07:11:42 dnylande Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-25 23:54+0100\n"
-"PO-Revision-Date: 2006-03-25 23:54+0200\n"
-"Last-Translator: Christian Rose <menthos@menthos.com>\n"
-"Language-Team: Swedish <sv@li.org>\n"
+"POT-Creation-Date: 2006-06-26 04:32+0200\n"
+"PO-Revision-Date: 2006-06-26 08:52+0100\n"
+"Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:923
+#: ../gnome/applet/applet-compat.c:171
+#: ../gnome/applet/applet-dbus-info.c:926
 #, c-format
 msgid "Passphrase for wireless network %s"
 msgstr "Lösenfras för det trådlösa nätverket %s"
@@ -53,275 +55,256 @@ msgstr "Trådbundet Ethernet (%s)"
 msgid "Wireless Ethernet (%s)"
 msgstr "Trådlöst Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
+#: ../gnome/applet/applet.c:337
+#: ../gnome/applet/applet.c:363
 msgid "NetworkManager Applet"
 msgstr "Panelprogram för nätverkshantering"
 
-#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "Copyright © 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
+#: ../gnome/applet/applet.c:339
 msgid ""
-"Notification area applet for managing your network devices and connections."
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
 msgstr ""
-"Panelprogram i notifieringsytan för hantering av dina nätverksenheter och "
-"nätverksanslutningar."
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
 
-#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
+#: ../gnome/applet/applet.c:341
+#: ../gnome/applet/applet.c:367
+msgid "Notification area applet for managing your network devices and connections."
+msgstr "Panelprogram i notifieringsytan för hantering av dina nätverksenheter och nätverksanslutningar."
+
+#: ../gnome/applet/applet.c:344
+#: ../gnome/applet/applet.c:372
 msgid "translator-credits"
 msgstr ""
+"Daniel Nylander\n"
 "Christian Rose\n"
 "Skicka synpunkter på översättningen till\n"
 "tp-sv@listor.tp-sv.se"
 
-#: ../gnome/applet/applet.c:418
-msgid "Stop automatically running the networking applet?"
-msgstr "Stoppa automatisk körning av panelprogrammet för nätverk?"
-
-#: ../gnome/applet/applet.c:419
+#: ../gnome/applet/applet.c:365
 msgid ""
-"The networking applet will now terminate, but will automatically launch the "
-"next time you login.  Would you like to stop automatically running the "
-"networking applet on login?"
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
 msgstr ""
-"Panelprogrammet för nätverk kommer nu att avslutas, men det kommer "
-"automatiskt att startas nästa gång du loggar in. Vill du stoppa automatisk "
-"körning av panelprogrammet för nätverk vid inloggning?"
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
 
-#: ../gnome/applet/applet.c:506
+#: ../gnome/applet/applet.c:428
 msgid "VPN Login Failure"
 msgstr "VPN-inloggningsfel"
 
-#: ../gnome/applet/applet.c:507
+#: ../gnome/applet/applet.c:429
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr ""
-"Kunde inte starta VPN-anslutningen \"%s\" på grund av ett inloggningfel."
+msgstr "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett inloggningfel."
 
-#: ../gnome/applet/applet.c:511
+#: ../gnome/applet/applet.c:433
 msgid "VPN Start Failure"
 msgstr "VPN-startfel"
 
-#: ../gnome/applet/applet.c:512
+#: ../gnome/applet/applet.c:434
 #, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr ""
-"Kunde inte starta VPN-anslutningen \"%s\" på grund av ett fel vid start av "
-"VPN-programmet."
+msgid "Could not start the VPN connection '%s' due to a failure launching the VPN program."
+msgstr "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett fel vid start av VPN-programmet."
 
-#: ../gnome/applet/applet.c:516 ../gnome/applet/applet.c:526
+#: ../gnome/applet/applet.c:438
+#: ../gnome/applet/applet.c:448
 msgid "VPN Connect Failure"
 msgstr "VPN-anslutningsfel"
 
-#: ../gnome/applet/applet.c:517
+#: ../gnome/applet/applet.c:439
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr ""
-"Kunde inte starta VPN-anslutningen \"%s\" på grund av ett anslutningsfel."
+msgstr "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett anslutningsfel."
 
-#: ../gnome/applet/applet.c:521
+#: ../gnome/applet/applet.c:443
 msgid "VPN Configuration Error"
 msgstr "VPN-konfigurationsfel"
 
-#: ../gnome/applet/applet.c:522
+#: ../gnome/applet/applet.c:444
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "VPN-anslutningen \"%s\" konfigurerades inte korrekt."
 
-#: ../gnome/applet/applet.c:527
+#: ../gnome/applet/applet.c:449
 #, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr ""
-"Kunde inte starta VPN-anslutningen \"%s\" eftersom VPN-servern inte "
-"returnerade en lämplig nätverkskonfiguration."
+msgid "Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."
+msgstr "Kunde inte starta VPN-anslutningen \"%s\" eftersom VPN-servern inte returnerade en lämplig nätverkskonfiguration."
 
-#: ../gnome/applet/applet.c:597
+#: ../gnome/applet/applet.c:519
 msgid "VPN Login Message"
 msgstr "VPN-inloggningsmeddelande"
 
-#: ../gnome/applet/applet.c:821 ../gnome/applet/applet.c:2593
-#: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:227
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
-"resurser (glade-filen hittades inte)."
+#: ../gnome/applet/applet.c:743
+#: ../gnome/applet/applet.c:2510
+#: ../gnome/applet/other-network-dialog.c:458
+#: ../gnome/applet/passphrase-dialog.c:228
+msgid "The NetworkManager Applet could not find some required resources (the glade file was not found)."
+msgstr "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga resurser (glade-filen hittades inte)."
 
-#: ../gnome/applet/applet.c:833
+#: ../gnome/applet/applet.c:755
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Nätverksenheten \"%s (%s)\" stöder inte trådlös genomsökning."
 
-#: ../gnome/applet/applet.c:841
+#: ../gnome/applet/applet.c:763
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Nätverksenheten \"%s (%s)\" stöder inte länkdetektering."
 
-#: ../gnome/applet/applet.c:988
+#: ../gnome/applet/applet.c:910
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Förbereder enheten %s för det trådbundna nätverket..."
 
-#: ../gnome/applet/applet.c:990
+#: ../gnome/applet/applet.c:912
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Förbereder enheten %s för det trådlösa nätverket \"%s\"..."
 
-#: ../gnome/applet/applet.c:998
+#: ../gnome/applet/applet.c:920
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Konfigurerar enheten %s för det trådbundna nätverket..."
 
-#: ../gnome/applet/applet.c:1000
+#: ../gnome/applet/applet.c:922
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Försöker ansluta till det trådlösa nätverket \"%s\"..."
 
-#: ../gnome/applet/applet.c:1008
+#: ../gnome/applet/applet.c:930
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Väntar på nätverksnyckel för det trådlösa nätverket \"%s\"..."
 
-#: ../gnome/applet/applet.c:1016 ../gnome/applet/applet.c:1026
+#: ../gnome/applet/applet.c:938
+#: ../gnome/applet/applet.c:948
 msgid "Requesting a network address from the wired network..."
 msgstr "Begär en nätverksadress från det trådbundna nätverket..."
 
-#: ../gnome/applet/applet.c:1018 ../gnome/applet/applet.c:1028
+#: ../gnome/applet/applet.c:940
+#: ../gnome/applet/applet.c:950
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Begär en nätverksadress från det trådlösa nätverket \"%s\"..."
 
-#: ../gnome/applet/applet.c:1036
+#: ../gnome/applet/applet.c:958
 msgid "Finishing connection to the wired network..."
 msgstr "Slutför anslutning till det trådbundna nätverket..."
 
-#: ../gnome/applet/applet.c:1038
+#: ../gnome/applet/applet.c:960
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Slutför anslutning till det trådlösa nätverket \"%s\"..."
 
-#: ../gnome/applet/applet.c:1155
+#: ../gnome/applet/applet.c:1077
 msgid "NetworkManager is not running"
 msgstr "Nätverkshanteraren är inte igång"
 
-#: ../gnome/applet/applet.c:1163 ../gnome/applet/applet.c:1906
+#: ../gnome/applet/applet.c:1085
+#: ../gnome/applet/applet.c:1830
 msgid "Networking disabled"
 msgstr "Nätverk inaktiverat"
 
-#: ../gnome/applet/applet.c:1168
+#: ../gnome/applet/applet.c:1090
 msgid "No network connection"
 msgstr "Ingen nätverksanslutning"
 
-#: ../gnome/applet/applet.c:1173
+#: ../gnome/applet/applet.c:1095
 msgid "Wired network connection"
 msgstr "Trådbunden nätverksanslutning"
 
-#: ../gnome/applet/applet.c:1177
+#: ../gnome/applet/applet.c:1099
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Ansluten till ett trådlöst ad hoc-nätverk"
 
-#: ../gnome/applet/applet.c:1179
+#: ../gnome/applet/applet.c:1101
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Trådlös nätverksanslutning till \"%s\" (%d%%)"
 
-#: ../gnome/applet/applet.c:1200
+#: ../gnome/applet/applet.c:1122
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "VPN-anslutning till \"%s\""
 
-#: ../gnome/applet/applet.c:1208
+#: ../gnome/applet/applet.c:1130
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "VPN-ansluter till \"%s\""
 
-#: ../gnome/applet/applet.c:1621
+#: ../gnome/applet/applet.c:1543
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Anslut till annat trådlöst nätverk..."
 
-#: ../gnome/applet/applet.c:1642
+#: ../gnome/applet/applet.c:1564
 msgid "Create _New Wireless Network..."
 msgstr "Skapa _nytt trådlöst nätverk..."
 
-#: ../gnome/applet/applet.c:1763
+#: ../gnome/applet/applet.c:1687
 msgid "_VPN Connections"
 msgstr "_VPN-anslutningar"
 
-#: ../gnome/applet/applet.c:1808
+#: ../gnome/applet/applet.c:1732
 msgid "_Configure VPN..."
 msgstr "_Konfigurera VPN..."
 
-#: ../gnome/applet/applet.c:1812
+#: ../gnome/applet/applet.c:1736
 msgid "_Disconnect VPN..."
 msgstr "Koppla _från VPN..."
 
-#: ../gnome/applet/applet.c:1834
+#: ../gnome/applet/applet.c:1758
 msgid "_Dial Up Connections"
 msgstr "_Uppringda anslutningar"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1845
+#: ../gnome/applet/applet.c:1769
 #, c-format
 msgid "Connect to %s..."
 msgstr "Anslut till %s..."
 
-#: ../gnome/applet/applet.c:1851
+#: ../gnome/applet/applet.c:1775
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Koppla från %s..."
 
-#: ../gnome/applet/applet.c:1900
+#: ../gnome/applet/applet.c:1824
 msgid "No network devices have been found"
 msgstr "Inga nätverksenheter har hittats"
 
-#: ../gnome/applet/applet.c:2092
+#: ../gnome/applet/applet.c:2016
 msgid "NetworkManager is not running..."
 msgstr "Nätverkshanteraren är inte igång..."
 
 #. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2248
+#: ../gnome/applet/applet.c:2172
 msgid "Enable _Networking"
 msgstr "Aktivera _nätverk"
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2254
+#: ../gnome/applet/applet.c:2178
 msgid "Enable _Wireless"
 msgstr "Aktivera _trådlöst"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2260
+#: ../gnome/applet/applet.c:2184
 msgid "Connection _Information"
 msgstr "Anslutnings_information"
 
 #. Help item
-#: ../gnome/applet/applet.c:2271
+#: ../gnome/applet/applet.c:2195
 msgid "_Help"
 msgstr "_Hjälp"
 
 #. About item
-#: ../gnome/applet/applet.c:2280
+#: ../gnome/applet/applet.c:2204
 msgid "_About"
 msgstr "_Om"
 
-#. Quit
-#: ../gnome/applet/applet.c:2287
-msgid "_Remove"
-msgstr "_Ta bort"
-
-#: ../gnome/applet/applet.c:2712
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr ""
-"Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
-"resurser. Det kan inte fortsätta.\n"
+#: ../gnome/applet/applet.c:2669
+msgid "The NetworkManager applet could not find some required resources.  It cannot continue.\n"
+msgstr "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga resurser. Det kan inte fortsätta.\n"
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
@@ -380,8 +363,9 @@ msgstr "TTLS"
 # översatt.
 # /Christian
 #
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
-#: ../src/nm-ap-security-wpa-eap.c:116
+#: ../gnome/applet/wso-wpa-eap.c:247
+#: ../src/nm-ap-security-wpa-eap.c:93
+#: ../src/nm-ap-security-wpa-eap.c:117
 msgid "WPA2 Enterprise"
 msgstr "WPA2 Enterprise"
 
@@ -390,8 +374,9 @@ msgstr "WPA2 Enterprise"
 # översatt.
 # /Christian
 #
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
-#: ../src/nm-ap-security-wpa-eap.c:121
+#: ../gnome/applet/wso-wpa-eap.c:249
+#: ../src/nm-ap-security-wpa-eap.c:95
+#: ../src/nm-ap-security-wpa-eap.c:122
 msgid "WPA Enterprise"
 msgstr "WPA Enterprise"
 
@@ -421,52 +406,44 @@ msgstr "Orientering"
 msgid "The orientation of the tray."
 msgstr "Orienteringen på lådan."
 
-#: ../gnome/applet/menu-items.c:87
+#: ../gnome/applet/menu-items.c:88
 #, c-format
 msgid "Wired Network (%s)"
 msgstr "Trådbundet nätverk (%s)"
 
-#: ../gnome/applet/menu-items.c:90
+#: ../gnome/applet/menu-items.c:91
 msgid "_Wired Network"
 msgstr "_Trådbundet nätverk"
 
-#: ../gnome/applet/menu-items.c:161
+#: ../gnome/applet/menu-items.c:162
 #, c-format
 msgid "Wireless Network (%s)"
 msgid_plural "Wireless Networks (%s)"
 msgstr[0] "Trådlöst nätverk (%s)"
 msgstr[1] "Trådlösa nätverk (%s)"
 
-#: ../gnome/applet/menu-items.c:163
+#: ../gnome/applet/menu-items.c:164
 msgid "Wireless Network"
 msgid_plural "Wireless Networks"
 msgstr[0] "Trådlöst nätverk"
 msgstr[1] "Trådlösa nätverk"
 
-#: ../gnome/applet/menu-items.c:330
+#: ../gnome/applet/menu-items.c:343
 msgid " (invalid Unicode)"
 msgstr " (ogiltig Unicode)"
 
 #: ../gnome/applet/other-network-dialog.c:352
 #, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr ""
-"Som standard är namnet på det trådlösa nätverket angivet till din dators "
-"namn, %s, och utan någon kryptering aktiverad"
+msgid "By default, the wireless network's name is set to your computer's name, %s, with no encryption enabled"
+msgstr "Som standard är namnet på det trådlösa nätverket angivet till din dators namn, %s, och utan någon kryptering aktiverad"
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
 msgstr "Skapa nytt trådlöst nätverk"
 
 #: ../gnome/applet/other-network-dialog.c:359
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Ange namnet och säkerhetsinställningarna för det trådlösa nätverk som du "
-"vill skapa."
+msgid "Enter the name and security settings of the wireless network you wish to create."
+msgstr "Ange namnet och säkerhetsinställningarna för det trådlösa nätverk som du vill skapa."
 
 #: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
@@ -484,66 +461,48 @@ msgstr "Ange namnet på det trådlösa nätverk som du vill ansluta till."
 msgid "Connect to Other Wireless Network"
 msgstr "Anslut till annat trådlöst nätverk"
 
-#: ../gnome/applet/passphrase-dialog.c:214
+#: ../gnome/applet/passphrase-dialog.c:215
 msgid "Error connecting to wireless network"
 msgstr "Fel vid anslutning till trådlöst nätverk"
 
-#: ../gnome/applet/passphrase-dialog.c:215
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr ""
-"Det begärda trådlösa nätverket kräver säkerhetsfunktioner som inte stöds av "
-"din hårdvara."
+#: ../gnome/applet/passphrase-dialog.c:216
+msgid "The requested wireless network requires security capabilities unsupported by your hardware."
+msgstr "Det begärda trådlösa nätverket kräver säkerhetsfunktioner som inte stöds av din hårdvara."
 
-#: ../gnome/applet/vpn-password-dialog.c:152
-#: ../gnome/applet/vpn-password-dialog.c:189
+#: ../gnome/applet/vpn-password-dialog.c:151
+#: ../gnome/applet/vpn-password-dialog.c:188
 #, c-format
 msgid "Cannot start VPN connection '%s'"
 msgstr "Kan inte starta VPN-anslutningen \"%s\""
 
-#: ../gnome/applet/vpn-password-dialog.c:155
+#: ../gnome/applet/vpn-password-dialog.c:154
 #, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr ""
-"Kunde inte hitta autentiseringsdialogen för VPN-anslutningstypen \"%s\". "
-"Kontakta din systemadministratör."
+msgid "Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "Kunde inte hitta autentiseringsdialogen för VPN-anslutningstypen \"%s\". Kontakta din systemadministratör."
 
-#: ../gnome/applet/vpn-password-dialog.c:192
+#: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr ""
-"Ett problem inträffade vid start av autentiseringsdialogen för VPN-"
-"anslutningstypen \"%s\". Kontakta din systemadministratör."
+msgid "There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "Ett problem inträffade vid start av autentiseringsdialogen för VPN-anslutningstypen \"%s\". Kontakta din systemadministratör."
 
 #: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
 #: ../gnome/applet/applet.glade.h:2
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Information om aktiv anslutning</span>"
+msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">Information om aktiv anslutning</span>"
 
 #: ../gnome/applet/applet.glade.h:4
 #, no-c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
 "\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
+"A passphrase or encryption key is required to access the wireless network '%s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Lösenfras krävs av det trådlösa "
-"nätverket</span>\n"
+"<span weight=\"bold\" size=\"larger\">Lösenfras krävs av det trådlösa nätverket</span>\n"
 "\n"
-"En lösenfras eller en krypteringsnyckel krävs för att komma åt det trådlösa "
-"nätverket \"%s\"."
+"En lösenfras eller en krypteringsnyckel krävs för att komma åt det trådlösa nätverket \"%s\"."
 
 #: ../gnome/applet/applet.glade.h:8
 #, no-c-format
@@ -552,28 +511,20 @@ msgid ""
 "\n"
 "%s  It will not be completely functional."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Reducerad nätverksfunktionalitet</"
-"span>\n"
+"<span weight=\"bold\" size=\"larger\">Reducerad nätverksfunktionalitet</span>\n"
 "\n"
 "%s  Det kommer inte att vara helt fungerande."
 
 #: ../gnome/applet/applet.glade.h:12
 #, no-c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</span>\n"
 "\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
+"You have chosen to log in to the wireless network '%s'.  If you are sure that this wireless network is secure, click the checkbox below and NetworkManager will not require confirmation on subsequent log ins."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst "
-"nätverk</span>\n"
+"<span weight=\"bold\" size=\"larger\">Inloggningsbekräftelse för trådlöst nätverk</span>\n"
 "\n"
-"Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker på "
-"att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
-"kommer nätverkshanteraren inte längre att kräva bekräftelse vid framtida "
-"inloggningar."
+"Du har valt att logga in på det trådlösa nätverket \"%s\". Om du är säker på att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så kommer nätverkshanteraren inte längre att kräva bekräftelse vid framtida inloggningar."
 
 #: ../gnome/applet/applet.glade.h:15
 msgid "Anonymous Identity:"
@@ -752,82 +703,68 @@ msgid "_Don't remind me again"
 msgstr "_Påminn mig inte igen"
 
 #: ../gnome/applet/applet.glade.h:61
+msgid "_Fallback on this Network"
+msgstr "_Fall tillbaka på detta nätverk"
+
+#: ../gnome/applet/applet.glade.h:62
 msgid "_Login to Network"
 msgstr "_Logga in på nätverket"
 
-#: ../gnome/applet/applet.glade.h:62
+#: ../gnome/applet/applet.glade.h:63
 msgid "_Network Name:"
 msgstr "_Nätverksnamn:"
 
-#: ../gnome/applet/applet.glade.h:63
+#: ../gnome/applet/applet.glade.h:64
 msgid "_Wireless Security:"
 msgstr "_Trådlös säkerhet:"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:361
+#: ../gnome/vpn-properties/nm-vpn-properties.c:383
 msgid "Cannot add VPN connection"
 msgstr "Kan inte lägga till VPN-anslutning"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:363
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Ingen lämplig VPN-programvara hittades på ditt system. Kontakta din "
-"systemadministratör."
+#: ../gnome/vpn-properties/nm-vpn-properties.c:385
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "Ingen lämplig VPN-programvara hittades på ditt system. Kontakta din systemadministratör."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:415
+#: ../gnome/vpn-properties/nm-vpn-properties.c:437
 msgid "Cannot import VPN connection"
 msgstr "Kan inte importera VPN-anslutning"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+#: ../gnome/vpn-properties/nm-vpn-properties.c:439
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Kan inte hitta lämplig programvara för VPN-anslutningstypen \"%s\" för att "
-"importera filen \"%s\". Kontakta din systemadministratör."
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "Kan inte hitta lämplig programvara för VPN-anslutningstypen \"%s\" för att importera filen \"%s\". Kontakta din systemadministratör."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:557
+#: ../gnome/vpn-properties/nm-vpn-properties.c:579
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Fel vid hämtning av VPN-anslutningen \"%s\""
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:560
+#: ../gnome/vpn-properties/nm-vpn-properties.c:582
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"Kunde inte hitta användargränssnittsfilerna för VPN-anslutningstypen \"%s\". "
-"Kontakta din systemadministratör."
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "Kunde inte hitta användargränssnittsfilerna för VPN-anslutningstypen \"%s\". Kontakta din systemadministratör."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#: ../gnome/vpn-properties/nm-vpn-properties.c:739
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Ta bort VPN-anslutningen \"%s\"?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:720
+#: ../gnome/vpn-properties/nm-vpn-properties.c:742
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"All information om VPN-anslutningen \"%s\" kommer att gå förlorad och du kan "
-"komma att behöva kontakta din systemadministratör för att få information för "
-"att kunna skapa en ny anslutning."
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "All information om VPN-anslutningen \"%s\" kommer att gå förlorad och du kan komma att behöva kontakta din systemadministratör för att få information för att kunna skapa en ny anslutning."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:928
+#: ../gnome/vpn-properties/nm-vpn-properties.c:959
 msgid "Unable to load"
 msgstr "Kan inte läsa in"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:930
+#: ../gnome/vpn-properties/nm-vpn-properties.c:961
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Kunde inte hitta en del nödvändiga resurser (glade-filen)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1038
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
 msgid "Edit VPN Connection"
 msgstr "Redigera VPN-anslutning"
 
@@ -885,28 +822,23 @@ msgstr "Hantera VPN-anslutningar"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
+"This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN).\n"
 "\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
+"It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information."
 msgstr ""
-"Denna guide kommer att hjälpa dig igenom processen att skapa en ny "
-"anslutning till ett virtuellt privat nätverk (VPN).\n"
+"Denna guide kommer att hjälpa dig igenom processen att skapa en ny anslutning till ett virtuellt privat nätverk (VPN).\n"
 "\n"
-"Den kommer att kräva en del information, som till exempel ip-adresser och "
-"hemligheter. Kontakta din systemadministratör för att få tag i denna "
-"information."
+"Den kommer att kräva en del information, som till exempel ip-adresser och hemligheter. Kontakta din systemadministratör för att få tag i denna information."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN-anslutningar"
 
-#: ../src/nm-ap-security-wep.c:47
+#: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
 msgstr "40-bitars WEP"
 
-#: ../src/nm-ap-security-wep.c:49
+#: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
 msgstr "104-bitars WEP"
 
@@ -934,25 +866,19 @@ msgstr "WPA2 CCMP"
 msgid "WPA2 Automatic"
 msgstr "WPA2 automatisk"
 
-#: ../src/nm-ap-security.c:320
+#: ../src/nm-ap-security.c:321
 msgid "none"
 msgstr "ingen"
 
 #: ../src/nm-netlink-monitor.c:170
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"kan inte skapa netlink-uttag för övervakning av trådbundna ethernet-enheter "
-"- %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "kan inte skapa netlink-uttag för övervakning av trådbundna ethernet-enheter - %s"
 
 #: ../src/nm-netlink-monitor.c:188
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"kan inte binda till netlink-uttag för övervakning av trådbundna ethernet-"
-"enheter - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "kan inte binda till netlink-uttag för övervakning av trådbundna ethernet-enheter - %s"
 
 #: ../src/nm-netlink-monitor.c:425
 msgid "operation took too long"
@@ -974,109 +900,98 @@ msgstr "för mycket data skickades över uttaget och en del gick förlorat"
 msgid "error occurred while waiting for data on socket"
 msgstr "fel inträffade vid väntan på data i uttaget"
 
-#: ../gnome/applet/applet-dbus-devices.c:921
+#: ../gnome/applet/applet-dbus-devices.c:922
 #, c-format
 msgid "You are now connected to the Ad-Hoc wireless network '%s'."
 msgstr "Du är nu ansluten till det trådlösa ad hoc-nätverket \"%s\"."
 
-#: ../gnome/applet/applet-dbus-devices.c:926
+#: ../gnome/applet/applet-dbus-devices.c:927
 #, c-format
 msgid "You are now connected to the wireless network '%s'."
 msgstr "Du är nu ansluten till det trådlösa nätverket \"%s\"."
 
-#: ../gnome/applet/applet-dbus-devices.c:933
+#: ../gnome/applet/applet-dbus-devices.c:934
 msgid "You are now connected to the wired network."
 msgstr "Du är nu ansluten till det trådbundna nätverket."
 
-#: ../gnome/applet/applet-dbus-devices.c:939
+#: ../gnome/applet/applet-dbus-devices.c:940
 msgid "Connection Established"
 msgstr "Anslutning etablerad"
 
-#: ../gnome/applet/applet-dbus-devices.c:982
+#: ../gnome/applet/applet-dbus-devices.c:983
 msgid "Disconnected"
 msgstr "Frånkopplad"
 
-#: ../gnome/applet/applet-dbus-devices.c:983
+#: ../gnome/applet/applet-dbus-devices.c:984
 msgid "The network connection has been disconnected."
 msgstr "Nätverksanslutningen har kopplats från."
 
+#~ msgid "Stop automatically running the networking applet?"
+#~ msgstr "Stoppa automatisk körning av panelprogrammet för nätverk?"
+#~ msgid ""
+#~ "The networking applet will now terminate, but will automatically launch "
+#~ "the next time you login.  Would you like to stop automatically running "
+#~ "the networking applet on login?"
+#~ msgstr ""
+#~ "Panelprogrammet för nätverk kommer nu att avslutas, men det kommer "
+#~ "automatiskt att startas nästa gång du loggar in. Vill du stoppa "
+#~ "automatisk körning av panelprogrammet för nätverk vid inloggning?"
+#~ msgid "_Remove"
+#~ msgstr "_Ta bort"
 #~ msgid "Disconnect..."
 #~ msgstr "Koppla från..."
-
 #~ msgid "Disconnect"
 #~ msgstr "Koppla från"
-
 #~ msgid "Automatic"
 #~ msgstr "Automatiskt"
-
 #~ msgid "WEP Passphrase"
 #~ msgstr "WEP-lösenfras"
-
 #~ msgid "Passphrase"
 #~ msgstr "Lösenfras"
-
 #~ msgid ""
 #~ "By default, the wireless network's name is set to your computer's name, %"
 #~ "s, with no encryption enabled."
 #~ msgstr ""
 #~ "Som standard är namnet på det trådlösa nätverket angivet till din dators "
 #~ "namn, %s, och utan någon kryptering aktiverad."
-
 #~ msgid "Authentication"
 #~ msgstr "Autentisering"
-
 #~ msgid "Key"
 #~ msgstr "Nyckel"
-
 #~ msgid "Username:"
 #~ msgstr "Användarnamn:"
-
 #~ msgid "Network Name:"
 #~ msgstr "Nätverksnamn:"
-
 #~ msgid ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
 #~ "different wireless network will be used if any are available."
 #~ msgstr ""
 #~ "Det begärda trådlösa nätverket \"%s\" verkar inte vara inom räckhåll. Ett "
 #~ "annat trådlöst nätverk kommer att användas om något är tillgängligt."
-
 #~ msgid "Error displaying connection information: "
 #~ msgstr "Fel vid visning av anslutningsinformation: "
-
 #~ msgid "Copyright (C) 2004-2005 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2005 Red Hat, Inc."
-
 #~ msgid "VPN Error"
 #~ msgstr "VPN-fel"
-
 #~ msgid "The VPN service said: \"%s\""
 #~ msgstr "VPN-tjänsten sa: \"%s\""
-
 #~ msgid "VPN connection '%s' said:"
 #~ msgstr "VPN-anslutningen \"%s\" sa:"
-
 #~ msgid "_Wireless Enabled"
 #~ msgstr "_Trådlöst aktiverat"
-
 #~ msgid "_Passphrase:"
 #~ msgstr "_Lösenfras:"
-
 #~ msgid "_ASCII Key:"
 #~ msgstr "_ASCII-nyckel:"
-
 #~ msgid "_Hex Key:"
 #~ msgstr "_Hexadecimal nyckel:"
-
 #~ msgid "By default, the ESSID is set to your computer's name,"
 #~ msgstr "Som standard är ESSID angivet till din dators namn,"
-
 #~ msgid ", with no encryption enabled."
 #~ msgstr ", och utan någon kryptering aktiverad."
-
 #~ msgid "ASCII Key:"
 #~ msgstr "ASCII-nyckel:"
-
 #~ msgid ""
 #~ "128-bit Passphrase (WEP)\n"
 #~ "ASCII Key (WEP)\n"
@@ -1085,7 +1000,6 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "128-bitars lösenfras (WEP)\n"
 #~ "ASCII-nyckel (WEP)\n"
 #~ "Hexadecimal nyckel (WEP)"
-
 #~ msgid ""
 #~ "128-bit passphrase (WEP)\n"
 #~ "ASCII key (WEP)\n"
@@ -1094,70 +1008,48 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "128-bitars lösenfras (WEP)\n"
 #~ "ASCII-nyckel (WEP)\n"
 #~ "Hexadecimal nyckel (WEP)"
-
 #~ msgid "Connect with _encryption enabled"
 #~ msgstr "Anslut med _kryptering aktiverad"
-
 #~ msgid "Wireless _network:"
 #~ msgstr "Trådlöst _nätverk:"
-
 #~ msgid "_Key Type:"
 #~ msgstr "_Nyckeltyp:"
-
 #~ msgid "_Key type:"
 #~ msgstr "_Nyckeltyp:"
-
 #~ msgid "Wired network (%s)"
 #~ msgstr "Trådbundet nätverk (%s)"
-
 #~ msgid "Wireless network (%s)"
 #~ msgstr "Trådlöst nätverk (%s)"
-
 #~ msgid "VPN connections"
 #~ msgstr "VPN-anslutningar"
-
 #~ msgid "Configure VPN..."
 #~ msgstr "Konfigurera VPN..."
-
 #~ msgid "Dial Up Connections"
 #~ msgstr "Uppringda anslutningar"
-
 #~ msgid "Wireless Enabled"
 #~ msgstr "Trådlöst aktiverat"
-
 #~ msgid "Connection information"
 #~ msgstr "Anslutningsinformation"
-
 #~ msgid "Hexadecimal Key:"
 #~ msgstr "Hexadecimal nyckel:"
-
 #~ msgid "Create a new wireless network..."
 #~ msgstr "Skapa ett nytt trådlöst nätverk..."
-
 #~ msgid "Create a new wireless network"
 #~ msgstr "Skapa ett nytt trådlöst nätverk"
-
 #~ msgid "Active Connection Information"
 #~ msgstr "Information om aktiv anslutning"
-
 #~ msgid "Connect with encryption enabled"
 #~ msgstr "Anslut med kryptering aktiverad"
-
 #~ msgid "Always Trust this Wireless Network"
 #~ msgstr "Lita alltid på detta trådlösa nätverk"
-
 #~ msgid "Don't remind me again"
 #~ msgstr "Påminn mig inte igen"
-
 #~ msgid "Key type:"
 #~ msgstr "Nyckeltyp:"
-
 #~ msgid "Connection to the wireless network '%s' failed.\n"
 #~ msgstr "Anslutning till det trådlösa nätverket \"%s\" misslyckades.\n"
-
 #~ msgid "Connection to the wired network failed.\n"
 #~ msgstr "Anslutning till det trådburna nätverket misslyckades.\n"
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
 #~ "\n"
@@ -1170,7 +1062,6 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett inloggningfel.\n"
 #~ "\n"
 #~ "VPN-tjänsten sa: \"%s\""
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">VPN Start Failure</span>\n"
 #~ "\n"
@@ -1185,7 +1076,6 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "av VPN-programmet.\n"
 #~ "\n"
 #~ "VPN-tjänsten sa: \"%s\""
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
 #~ "\n"
@@ -1199,7 +1089,6 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "anslutningsfel.\n"
 #~ "\n"
 #~ "VPN-tjänsten sa: \"%s\""
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">VPN Configuration Error</span>\n"
 #~ "\n"
@@ -1212,7 +1101,6 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "VPN-anslutningen \"%s\" konfigurerades inte korrekt.\n"
 #~ "\n"
 #~ "VPN-tjänsten sa: \"%s\""
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">VPN Connect Failure</span>\n"
 #~ "\n"
@@ -1227,186 +1115,127 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "returnerade en lämplig nätverkskonfiguration.\n"
 #~ "\n"
 #~ "VPN-tjänsten sa: \"%s\""
-
 #~ msgid "_Stop All Wireless Devices"
 #~ msgstr "_Stoppa alla trådlösa enheter"
-
 #~ msgid "_Start All Wireless Devices"
 #~ msgstr "_Starta alla trådlösa enheter"
-
 #~ msgid "_Wireless Network Discovery"
 #~ msgstr "_Upptäckt av trådlösa nätverk"
-
 #~ msgid "Always Search"
 #~ msgstr "Sök alltid"
-
 #~ msgid "Search Only When Disconnected"
 #~ msgstr "Sök endast då frånkopplad"
-
 #~ msgid "Never Search"
 #~ msgstr "Sök aldrig"
-
 #~ msgid "Stop All Wireless Devices"
 #~ msgstr "Stoppa alla trådlösa enheter"
-
 #~ msgid "_OK"
 #~ msgstr "_OK"
-
 #~ msgid ""
 #~ "Dependent on the private network you want to connect to, you need to "
 #~ "select what type of connection you want to create."
 #~ msgstr ""
 #~ "Beroende på det privata nätverk som du vill ansluta till måste du välja "
 #~ "vilken typ av anslutning som du vill skapa."
-
 #~ msgid "%s"
 #~ msgstr "%s"
-
 #~ msgid "Error"
 #~ msgstr "Fel"
-
 #~ msgid "VPN connection"
 #~ msgstr "VPN-anslutning"
-
 #~ msgid "VPN Connection"
 #~ msgstr "VPN-anslutning"
-
 #~ msgid "Create New Wireless Network..."
 #~ msgstr "Skapa nytt trådlöst nätverk..."
-
 #~ msgid "Start All Wireless Devices"
 #~ msgstr "Starta alla trådlösa enheter"
-
 #~ msgid "Wireless Network Discovery"
 #~ msgstr "Upptäckt av trådlösa nätverk"
-
 #~ msgid "Help"
 #~ msgstr "Hjälp"
-
 #~ msgid "Wired Network"
 #~ msgstr "Trådbundet nätverk"
-
 #~ msgid "Reduced Network Functionality"
 #~ msgstr "Reducerad nätverksfunktionalitet"
-
 #~ msgid "%s  It will not be completely functional."
 #~ msgstr "%s  Det kommer inte att vara helt fungerande."
-
 #~ msgid "It will not be completely functional."
 #~ msgstr "Det kommer inte att vara helt fungerande."
-
 #~ msgid "Other Wireless Networks..."
 #~ msgstr "Andra trådlösa nätverk..."
-
 #~ msgid "Export"
 #~ msgstr "Exportera"
-
 #~ msgid "Domain:"
 #~ msgstr "Domän:"
-
 #~ msgid "VPN Connection Manager"
 #~ msgstr "VPN-anslutningshanterare"
-
 #~ msgid "Required Information"
 #~ msgstr "Nödvändig information"
-
 #~ msgid "Username:  %s"
 #~ msgstr "Användarnamn:  %s"
-
 #~ msgid "Username: %s"
 #~ msgstr "Användarnamn: %s"
-
 #~ msgid "Routes:  %s"
 #~ msgstr "Vägar:  %s"
-
 #~ msgid "Routes: %s"
 #~ msgstr "Vägar: %s"
-
 #~ msgid "Domain:  %s"
 #~ msgstr "Domän:  %s"
-
 #~ msgid "Domain: %s"
 #~ msgstr "Domän: %s"
-
 #~ msgid "Scanning for wireless networks..."
 #~ msgstr "Söker efter trådlösa nätverk..."
-
 #~ msgid "Pause Wireless Scanning"
 #~ msgstr "Gör paus i sökning efter trådlösa nätverk"
-
 #~ msgid "Resume Wireless Scanning"
 #~ msgstr "Återuppta sökning efter trådlösa nätverk"
-
 #~ msgid "About"
 #~ msgstr "Om"
-
 #~ msgid "progress bar label|%d %%"
 #~ msgstr "%d %%"
-
 #~ msgid "*"
 #~ msgstr "*"
-
 #~ msgid "Copyright (C) 2004-2006 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2006 Red Hat, Inc."
-
-#~ msgid "Copyright © 2004-2006 Red Hat, Inc."
-#~ msgstr "Copyright © 2004-2006 Red Hat, Inc."
-
 #~ msgid "Copyright (C) 2004-2007 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2007 Red Hat, Inc."
-
 #~ msgid "Copyright © 2004-2007 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2007 Red Hat, Inc."
-
 #~ msgid "Copyright (C) 2004-2008 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2008 Red Hat, Inc."
-
 #~ msgid "Copyright © 2004-2008 Red Hat, Inc."
 #~ msgstr "Copyright © 2004-2008 Red Hat, Inc."
-
 #~ msgid "Other Wireless Networks"
 #~ msgstr "Andra trådlösa nätverk"
-
 #~ msgid "VPN"
 #~ msgstr "VPN"
-
 #~ msgid ""
 #~ "The NetworkManager applet could not find some required resources.  It "
 #~ "cannot continue."
 #~ msgstr ""
 #~ "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
 #~ "resurser. Det kan inte fortsätta."
-
 #~ msgid "Create new wireless network..."
 #~ msgstr "Skapa nytt trådlöst nätverk..."
-
 #~ msgid "Modify Wireless Networks"
 #~ msgstr "Ändra trådlösa nätverk"
-
 #~ msgid "<span weight=\"bold\">Wireless Networks:</span>"
 #~ msgstr "<span weight=\"bold\">Trådlösa nätverk:</span>"
-
 #~ msgid "There are no network devices..."
 #~ msgstr "Det finns inga nätverksenheter..."
-
 #~ msgid "Modify Wireless Network"
 #~ msgstr "Ändra trådlöst nätverk"
-
 #~ msgid "Wireless networks"
 #~ msgstr "Trådlösa nätverk"
-
 #~ msgid ""
 #~ "A passphrase or WEP key is required to access the wireless network '%s'."
 #~ msgstr ""
 #~ "En lösenfras eller en WEP-nyckel krävs för att komma åt det trådlösa "
 #~ "nätverket \"%s\"."
-
 #~ msgid "About..."
 #~ msgstr "Om..."
-
 #~ msgid "Wireless Network Login Confirmation"
 #~ msgstr "Inloggningsbekräftelse för trådlöst nätverk"
-
 #~ msgid ""
 #~ "You have chosen log in to the wireless network '%s'.  If you are sure "
 #~ "this wireless network is secure, click the checkbox below and "
@@ -1417,3 +1246,4 @@ msgstr "Nätverksanslutningen har kopplats från."
 #~ "på att detta trådlösa nätverk är säkert klickar du i kryssrutan nedan, så "
 #~ "kommer nätverkshanteraren inte längre att besvära dig med dumma frågor "
 #~ "när du ansluter till det."
+
