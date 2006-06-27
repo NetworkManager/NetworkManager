@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-18 10:41+0100\n"
+"POT-Creation-Date: 2006-06-28 00:18+0100\n"
 "PO-Revision-Date: 2006-01-17 13:57+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
 "Language-Team: Danish <dansk@klid.dk>\n"
@@ -49,120 +49,315 @@ msgstr "_Husk adgangskode for denne session"
 msgid "_Save password in keyring"
 msgstr "_Gem adgangskode i nøglering"
 
-#: ../auth-dialog/main.c:161
-#, c-format
-msgid "You need to authenticate to access the Virtual Private Network '%s'."
+#: ../auth-dialog/main.c:138
+#, fuzzy, c-format
+msgid "You need to authenticate to access '%s'."
 msgstr ""
 "Brugerverifikation er påkrævet for at tilslutte til det virtuelle private "
 "netværk '%s'."
 
-#: ../auth-dialog/main.c:162
-msgid "Authenticate PPTP VPN"
-msgstr "PPTP VPN-brugerverifikation"
+#: ../auth-dialog/main.c:139
+msgid "Authenticate Connection"
+msgstr ""
 
-#: ../nm-pptp.desktop.in.h:1
+#: ../nm-ppp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "Tilføj, fjern og redigér VPN-forbindelser"
 
 #
-#: ../nm-pptp.desktop.in.h:2
-msgid "VPN Connection Manager (PPTP)"
+#: ../nm-ppp.desktop.in.h:2
+#, fuzzy
+msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN-forbindelser (PPTP)"
 
-#: ../properties/nm-pptp.c:79
-msgid "PPTP Client"
-msgstr "PPTP-klient"
+#: ../properties/nm-ppp-properties.c:45
+msgid "Tunnel via pppd"
+msgstr ""
 
-#: ../properties/nm-pptp.c:387
-msgid "The following PPTP connection will be created:"
-msgstr "Følgende PPTP-forbindelse vil blive oprettet:"
-
-#: ../properties/nm-pptp.c:389
-#, c-format
-msgid "Name:  %s"
+#: ../properties/nm-ppp-properties.c:111
+#, fuzzy
+msgid "Name"
 msgstr "Navn:  %s"
 
-#: ../properties/nm-pptp.c:392
-#, c-format
-msgid "Remote:  %s"
-msgstr "Fjern:  %s"
+#: ../properties/nm-ppp-properties.c:123
+msgid "PPTP Server"
+msgstr ""
 
-#: ../properties/nm-pptp.c:395
-#, c-format
-msgid "Username:  %s"
-msgstr "Brugernavn:  %s"
+#: ../properties/nm-ppp-properties.c:128
+msgid "Telephone Number"
+msgstr ""
 
-#: ../properties/nm-pptp.c:399
-#, c-format
-msgid "Routes:  %s"
-msgstr "Ruter:  %s"
+#: ../properties/nm-ppp-properties.c:133
+msgid "Bluetooth Address"
+msgstr ""
 
-#: ../properties/nm-pptp.c:403
-#, c-format
-msgid "Use MPPC Compression: %s"
-msgstr "Brug MPPC-komprimering: %s"
+#: ../properties/nm-ppp-properties.c:138
+msgid "Bluetooth Channel"
+msgstr ""
 
-#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
-msgid "Yes"
-msgstr "Ja"
+#: ../properties/nm-ppp-properties.c:143
+msgid "GPRS APN"
+msgstr ""
 
-#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
-msgid "No"
-msgstr "Nej"
+#: ../properties/nm-ppp-properties.c:148
+msgid "GPRS IP"
+msgstr ""
 
-#: ../properties/nm-pptp.c:405
-#, c-format
-msgid "Use MPPE Encryption: %s"
+#: ../properties/nm-ppp-properties.c:153
+msgid "GPRS Context No."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:158
+msgid "GPRS Packet Type"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:163
+msgid "Use CTS/RTS flow control"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:168
+#, fuzzy
+msgid "Connect via a modem"
+msgstr "Tilslut som _bruger:"
+
+#: ../properties/nm-ppp-properties.c:173
+msgid "Require IP to be provided"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:178
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Use Peer DNS"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:183
+#, fuzzy
+msgid "Use MPPE encryption"
 msgstr "Brug MPPE-kryptering: %s"
 
-#: ../properties/nm-pptp.c:408
-msgid "The connection details can be changed using the \"Edit\" button."
+#: ../properties/nm-ppp-properties.c:188
+msgid "Use MPPC compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-properties.c:193
+#, fuzzy
+msgid "Do not use deflate compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-properties.c:198
+#, fuzzy
+msgid "Do not use BSD compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-properties.c:203
+msgid "Exclusive device access by pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:208
+#, fuzzy
+msgid "Authenticate remote peer"
+msgstr "PPTP VPN-brugerverifikation"
+
+#: ../properties/nm-ppp-properties.c:213
+msgid "Maximum transmit unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:218
+msgid "Maximum receive unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:223
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:228
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:233
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:243
+msgid "Use Peer DNS over the Tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:249
+msgid "Specific networks available"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:254
+msgid "Limit to specific networks"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:225
+#, fuzzy, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "Følgende PPTP-forbindelse vil blive oprettet:"
+
+#: ../properties/vpnui_impl.c:238
+#, c-format
+msgid ""
+"\t%s:  %s\n"
+"\n"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:241
+#, fuzzy
+msgid "The connection details can be changed using the \"Back\" button."
 msgstr "Forbindelsens detaljer kan ændres ved at bruge knappen \"Redigér\"."
 
-#: ../properties/nm-pptp.c:484
-msgid "Cannot import settings"
-msgstr "Kan ikke importere opsætning"
-
-#: ../properties/nm-pptp.c:486
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN-opsætningsfilen '%s' indeholder ikke gyldige data."
-
-#: ../properties/nm-pptp.c:504
+#: ../properties/vpnui_impl.c:302
 msgid "Select file to import"
 msgstr "Vælg fil der skal importeres"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-pptp.c:626
+#: ../properties/vpnui_impl.c:447
 msgid "Save as..."
 msgstr "Gem som..."
 
-#: ../properties/nm-pptp.c:656
+#: ../properties/vpnui_impl.c:476
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "En fil med navnet \"%s\" eksisterer allerede."
 
-#: ../properties/nm-pptp.c:659
+#: ../properties/vpnui_impl.c:479
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Vil du erstatte den med den du gemmer?"
 
-#: ../properties/nm-pptp-dialog.glade.h:1
+#: ../properties/nm-ppp-dialog.glade.h:1
+msgid "00:00:00:00"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+msgid "<b>Bluetooth options</b>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:3
 msgid "<b>Connection Name</b>"
 msgstr "<b>Navn på forbindelse</b>"
 
-#: ../properties/nm-pptp-dialog.glade.h:2
+#: ../properties/nm-ppp-dialog.glade.h:4
+msgid "<b>Dial-up options</b>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:5
+#, fuzzy
+msgid "<b>GPRS options</b>"
+msgstr "<b>Påkrævede oplysninger</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+#, fuzzy
+msgid "<b>PPP options</b>"
+msgstr "<b>Navn på forbindelse</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<b>PPTP options</b>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:8
 msgid "<b>Required Information</b>"
 msgstr "<b>Påkrævede oplysninger</b>"
 
-#: ../properties/nm-pptp-dialog.glade.h:3
+#: ../properties/nm-ppp-dialog.glade.h:9
+#, fuzzy
+msgid "<b>Routing options</b>"
+msgstr "<b>Påkrævede oplysninger</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+#, fuzzy
+msgid "<b>Serial options</b>"
+msgstr "<b>Påkrævede oplysninger</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>eksempel: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-pptp-dialog.glade.h:4
-msgid "MS CHAP-v1/v2"
-msgstr "MS CHAP-v1/v2"
+#: ../properties/nm-ppp-dialog.glade.h:12
+#, fuzzy
+msgid "Authenticate Peer"
+msgstr "PPTP VPN-brugerverifikation"
 
-#: ../properties/nm-pptp-dialog.glade.h:5
+#: ../properties/nm-ppp-dialog.glade.h:13
+#, fuzzy
+msgid "BSD Compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-dialog.glade.h:14
+msgid "Compression and encryption"
+msgstr ""
+
+#
+#: ../properties/nm-ppp-dialog.glade.h:15
+#, fuzzy
+msgid "Connection Type:"
+msgstr "VPN-forbindelsen fejlede"
+
+#
+#: ../properties/nm-ppp-dialog.glade.h:16
+#, fuzzy
+msgid "Connection type"
+msgstr "VPN-forbindelsen fejlede"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Debug Output"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+#, fuzzy
+msgid "Deflate compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "Find Device"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "Hardware RTS/CTS"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+msgid "Host name or IP address of the PPTP server"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+#, fuzzy
+msgid "MPPC Compression"
+msgstr "Brug MPPC-komprimering"
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+#, fuzzy
+msgid "MPPE encryption"
+msgstr "Påkræv MPPE-kryptering"
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+msgid "Maximum Receive Unit"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+msgid "Maximum Transmit Unit"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+msgid "Modem Connection"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+msgid "Numeric Tweaks"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+msgid "Peer DNS through tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -170,35 +365,47 @@ msgstr ""
 "Indtast oplysninger fra din systemadministrator nedenfor. Du skal ikke "
 "indtaste din adgangskode her, da du bliver spurgt om den ved tilslutning."
 
-#: ../properties/nm-pptp-dialog.glade.h:6
-msgid "Require MPPE encryption"
-msgstr "Påkræv MPPE-kryptering"
-
-#: ../properties/nm-pptp-dialog.glade.h:7
-msgid "Use MPPC compression"
-msgstr "Brug MPPC-komprimering"
-
-#: ../properties/nm-pptp-dialog.glade.h:8
-msgid "Username:"
-msgstr "Brugernavn:"
-
-#: ../properties/nm-pptp-dialog.glade.h:9
-msgid ""
-"Your password must be defined \n"
-"in /etc/ppp/chap-secrets"
+#: ../properties/nm-ppp-dialog.glade.h:32
+msgid "Require Explicit IP Addr"
 msgstr ""
-"Din adgangskode skal være defineret \n"
-"i /etc/ppp/chap-secrets"
 
-#: ../properties/nm-pptp-dialog.glade.h:11
+#: ../properties/nm-ppp-dialog.glade.h:33
+msgid "Show on connection on menu"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Time in seconds between echo requests"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "_Access Point Name:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "_Channel:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "_Context Num"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "_Device Address:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:40
 msgid "_Gateway:"
 msgstr "Ad_gangspunkt:"
 
-#: ../properties/nm-pptp-dialog.glade.h:12
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "_IP Address:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:42
 msgid "_Import Saved Configuration..."
 msgstr "_Importér gemt konfiguration..."
 
-#: ../properties/nm-pptp-dialog.glade.h:13
+#: ../properties/nm-ppp-dialog.glade.h:43
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
@@ -206,12 +413,63 @@ msgstr ""
 "_Navn brugt til at identificere forbindelsen til det private netværk, f.eks. "
 "\"Universitets VPN\" eller \"Virksomhedens netværk\""
 
-#: ../properties/nm-pptp-dialog.glade.h:14
+#: ../properties/nm-ppp-dialog.glade.h:44
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Brug kun VPN-forbindelse til flg. adresser"
 
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid "_Packet Type"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:46
+msgid "_Telephone Number:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:47
+msgid "connect-delay"
+msgstr ""
+
 #
-#. No sophisticated error message for now
-#: ../src/nm-pptp-service.c:125
+#: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
 msgstr "VPN-forbindelsen fejlede"
+
+#~ msgid "PPTP Client"
+#~ msgstr "PPTP-klient"
+
+#~ msgid "Remote:  %s"
+#~ msgstr "Fjern:  %s"
+
+#~ msgid "Username:  %s"
+#~ msgstr "Brugernavn:  %s"
+
+#~ msgid "Routes:  %s"
+#~ msgstr "Ruter:  %s"
+
+#~ msgid "Use MPPC Compression: %s"
+#~ msgstr "Brug MPPC-komprimering: %s"
+
+#~ msgid "Yes"
+#~ msgstr "Ja"
+
+#~ msgid "No"
+#~ msgstr "Nej"
+
+#~ msgid "Cannot import settings"
+#~ msgstr "Kan ikke importere opsætning"
+
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "VPN-opsætningsfilen '%s' indeholder ikke gyldige data."
+
+#~ msgid "MS CHAP-v1/v2"
+#~ msgstr "MS CHAP-v1/v2"
+
+#~ msgid "Username:"
+#~ msgstr "Brugernavn:"
+
+#~ msgid ""
+#~ "Your password must be defined \n"
+#~ "in /etc/ppp/chap-secrets"
+#~ msgstr ""
+#~ "Din adgangskode skal være defineret \n"
+#~ "i /etc/ppp/chap-secrets"

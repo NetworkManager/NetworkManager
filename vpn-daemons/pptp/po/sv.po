@@ -2,13 +2,13 @@
 # Copyright (C) 2004, 2005 Free Software Foundation, Inc.
 # Christian Rose <menthos@menthos.com>, 2004, 2005.
 #
-# $Id: sv.po,v 1.1 2005/12/21 21:50:06 ajmee Exp $
+# $Id: sv.po,v 1.2 2006/06/27 23:24:53 ajmee Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-26 01:20+0200\n"
+"POT-Creation-Date: 2006-06-28 00:16+0100\n"
 "PO-Revision-Date: 2005-06-26 01:20+0200\n"
 "Last-Translator: Christian Rose <menthos@menthos.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
@@ -17,96 +17,337 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:147
 msgid "_Secondary Password:"
 msgstr "_Andrahandslösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:268
 msgid "_Username:"
 msgstr "_Användarnamn:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:270
 msgid "_Domain:"
 msgstr "_Domän:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:272
 msgid "_Password:"
 msgstr "_Lösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:355
 msgid "Connect _anonymously"
 msgstr "Anslut anon_ymt"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:360
 msgid "Connect as _user:"
 msgstr "Anslut som _användare:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:466
-msgid "Remember password for this session"
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+#, fuzzy
+msgid "_Remember password for this session"
 msgstr "Kom ihåg lösenordet för denna session"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:468
-msgid "Save password in keyring"
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+#, fuzzy
+msgid "_Save password in keyring"
 msgstr "Spara lösenordet i nyckelring"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:161
-#, c-format
-msgid "You need to authenticate to access the Virtual Private Network '%s'."
+#: ../auth-dialog/main.c:138
+#, fuzzy, c-format
+msgid "You need to authenticate to access '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:162
-msgid "Authenticate VPN"
+#: ../auth-dialog/main.c:139
+#, fuzzy
+msgid "Authenticate Connection"
 msgstr "Autentisera VPN"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:169
-msgid "_Group Password:"
-msgstr "_Grupplösenord:"
+#: ../nm-ppp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr ""
 
-#: vpn-daemons/vpnc/nm-vpnc.desktop.in.h:1
-msgid "VPN Connection Manager (vpnc)"
+#: ../nm-ppp.desktop.in.h:2
+#, fuzzy
+msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:1
+#: ../properties/nm-ppp-properties.c:45
+msgid "Tunnel via pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:111
+msgid "Name"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:123
+msgid "PPTP Server"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:128
+msgid "Telephone Number"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:133
+msgid "Bluetooth Address"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:138
+msgid "Bluetooth Channel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:143
+msgid "GPRS APN"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:148
+msgid "GPRS IP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:153
+msgid "GPRS Context No."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:158
+msgid "GPRS Packet Type"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:163
+msgid "Use CTS/RTS flow control"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:168
+#, fuzzy
+msgid "Connect via a modem"
+msgstr "Anslut som _användare:"
+
+#: ../properties/nm-ppp-properties.c:173
+msgid "Require IP to be provided"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:178
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Use Peer DNS"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:183
+msgid "Use MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:188
+msgid "Use MPPC compression"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:193
+msgid "Do not use deflate compression"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:198
+msgid "Do not use BSD compression"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:203
+msgid "Exclusive device access by pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:208
+#, fuzzy
+msgid "Authenticate remote peer"
+msgstr "Autentisera VPN"
+
+#: ../properties/nm-ppp-properties.c:213
+msgid "Maximum transmit unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:218
+msgid "Maximum receive unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:223
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:228
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:233
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:243
+msgid "Use Peer DNS over the Tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:249
+msgid "Specific networks available"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:254
+msgid "Limit to specific networks"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:225
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:238
+#, fuzzy, c-format
+msgid ""
+"\t%s:  %s\n"
+"\n"
+msgstr "\tVägar:  %s\n"
+
+#: ../properties/vpnui_impl.c:241
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr ""
+
+#: ../properties/vpnui_impl.c:302
+msgid "Select file to import"
+msgstr "Välj fil att importera"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:447
+msgid "Save as..."
+msgstr "Spara som..."
+
+#: ../properties/vpnui_impl.c:476
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "En fil med namnet \"%s\" finns redan."
+
+#: ../properties/vpnui_impl.c:479
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Vill du ersätta den med den du håller på att spara?"
+
+#: ../properties/nm-ppp-dialog.glade.h:1
+msgid "00:00:00:00"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+msgid "<b>Bluetooth options</b>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:3
 msgid "<b>Connection Name</b>"
 msgstr "<b>Anslutningsnamn</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Optional Information</b>"
+#: ../properties/nm-ppp-dialog.glade.h:4
+#, fuzzy
+msgid "<b>Dial-up options</b>"
 msgstr "<b>Valfri information</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:3
+#: ../properties/nm-ppp-dialog.glade.h:5
+#, fuzzy
+msgid "<b>GPRS options</b>"
+msgstr "<b>Nödvändig information</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+#, fuzzy
+msgid "<b>PPP options</b>"
+msgstr "<b>Anslutningsnamn</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<b>PPTP options</b>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:8
 msgid "<b>Required Information</b>"
 msgstr "<b>Nödvändig information</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-ppp-dialog.glade.h:9
+#, fuzzy
+msgid "<b>Routing options</b>"
+msgstr "<b>Nödvändig information</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+#, fuzzy
+msgid "<b>Serial options</b>"
+msgstr "<b>Valfri information</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:5
-msgid "Gateway:"
-msgstr "Gateway:"
+#: ../properties/nm-ppp-dialog.glade.h:12
+#, fuzzy
+msgid "Authenticate Peer"
+msgstr "Autentisera VPN"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:6
-msgid "Group Name:"
-msgstr "Gruppnamn:"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:7
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
+#: ../properties/nm-ppp-dialog.glade.h:13
+msgid "BSD Compression"
 msgstr ""
-"Namn som används för att identifiera anslutningen till det privata "
-"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:8
-msgid "Only use VPN connection for these addresses"
-msgstr "Använd endast VPN-anslutning för dessa adresser"
+#: ../properties/nm-ppp-dialog.glade.h:14
+msgid "Compression and encryption"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:9
-msgid "Override user name"
-msgstr "Åsidosätt användarnamn"
+#: ../properties/nm-ppp-dialog.glade.h:15
+#, fuzzy
+msgid "Connection Type:"
+msgstr "<b>Anslutningsnamn</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-ppp-dialog.glade.h:16
+#, fuzzy
+msgid "Connection type"
+msgstr "<b>Anslutningsnamn</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Debug Output"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+msgid "Deflate compression"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "Find Device"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "Hardware RTS/CTS"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+msgid "Host name or IP address of the PPTP server"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid "MPPC Compression"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+msgid "MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+msgid "Maximum Receive Unit"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+msgid "Maximum Transmit Unit"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+msgid "Modem Connection"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+msgid "Numeric Tweaks"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+msgid "Peer DNS through tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -115,132 +356,169 @@ msgstr ""
 "nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när "
 "du ansluter."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:11
-msgid "Use domain for authentication"
-msgstr "Använd domän för autentisering"
+#: ../properties/nm-ppp-dialog.glade.h:32
+msgid "Require Explicit IP Addr"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:12
-msgid "_Import..."
-msgstr "_Importera..."
+#: ../properties/nm-ppp-dialog.glade.h:33
+msgid "Show on connection on menu"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:83
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Kompatibel Cisco VPN-klient (vpnc)"
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Time in seconds between echo requests"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:448
-#, c-format
-msgid "\tUsername:  %s\n"
-msgstr "\tAnvändarnamn:  %s\n"
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "_Access Point Name:"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:449
-#, c-format
-msgid "\tRoutes:  %s\n"
-msgstr "\tVägar:  %s\n"
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "_Channel:"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:450
-#, c-format
-msgid "\tDomain:  %s\n"
-msgstr "\tDomän:  %s\n"
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "_Context Num"
+msgstr ""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:453
-#, c-format
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "_Device Address:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+#, fuzzy
+msgid "_Gateway:"
+msgstr "Gateway:"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "_IP Address:"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "_Import Saved Configuration..."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+#, fuzzy
 msgid ""
-"The following vpnc VPN connection will be created:\n"
-"\n"
-"\tName:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGroup Name:  %s\n"
-"%s%s%s\n"
-"The connection details can be changed using the \"Edit\" button.\n"
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
 msgstr ""
-"Följande vpnc-VPN-anslutning kommer att skapas:\n"
-"\n"
-"\tNamn:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGruppnamn:  %s\n"
-"%s%s%s\n"
-"Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
+"Namn som används för att identifiera anslutningen till det privata "
+"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:544
-msgid "TCP tunneling not supported"
-msgstr "TCP-tunnling stöds inte"
+#: ../properties/nm-ppp-dialog.glade.h:44
+#, fuzzy
+msgid "_Only use VPN connection for these addresses"
+msgstr "Använd endast VPN-anslutning för dessa adresser"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:546
-#, c-format
-msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
-"through TCP which is currently not supported in the vpnc software.\n"
-"\n"
-"The connection can still be created, with TCP tunneling disabled, however it "
-"may not work as expected."
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid "_Packet Type"
 msgstr ""
-"VPN-inställningsfilen \"%s\" anger att VPN-trafiken ska tunnlas genom TCP "
-"vilket för tillfället inte stöds i vpnc-programvaran.\n"
-"\n"
-"Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men det "
-"kanske inte fungerar som väntat."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:570
-msgid "Cannot import settings"
-msgstr "Kan inte importera inställningar"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:572
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:589
-msgid "Select file to import"
-msgstr "Välj fil att importera"
-
-#. printf ("in impl_export\n");
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:744
-msgid "Save as..."
-msgstr "Spara som..."
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:774
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "En fil med namnet \"%s\" finns redan."
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:777
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Vill du ersätta den med den du håller på att spara?"
-
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:115
-msgid ""
-"The VPN login failed because the user name and password were not accepted."
+#: ../properties/nm-ppp-dialog.glade.h:46
+msgid "_Telephone Number:"
 msgstr ""
-"VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
-"accepterades."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:117
-msgid "The VPN login failed because the VPN program could not be started."
+#: ../properties/nm-ppp-dialog.glade.h:47
+msgid "connect-delay"
 msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:119
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
-"till VPN-servern."
+#: ../src/nm-ppp-starter.c:140
+#, fuzzy
+msgid "VPN Connection failed"
+msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:121
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
-"ogiltiga."
+#~ msgid "_Group Password:"
+#~ msgstr "_Grupplösenord:"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:123
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
-"konfiguration från VPN-servern."
+#~ msgid "Group Name:"
+#~ msgstr "Gruppnamn:"
 
+#~ msgid "Override user name"
+#~ msgstr "Åsidosätt användarnamn"
+
+#~ msgid "Use domain for authentication"
+#~ msgstr "Använd domän för autentisering"
+
+#~ msgid "_Import..."
+#~ msgstr "_Importera..."
+
+#~ msgid "Compatible Cisco VPN client (vpnc)"
+#~ msgstr "Kompatibel Cisco VPN-klient (vpnc)"
+
+#~ msgid "\tUsername:  %s\n"
+#~ msgstr "\tAnvändarnamn:  %s\n"
+
+#~ msgid "\tDomain:  %s\n"
+#~ msgstr "\tDomän:  %s\n"
+
+#~ msgid ""
+#~ "The following vpnc VPN connection will be created:\n"
+#~ "\n"
+#~ "\tName:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGroup Name:  %s\n"
+#~ "%s%s%s\n"
+#~ "The connection details can be changed using the \"Edit\" button.\n"
+#~ msgstr ""
+#~ "Följande vpnc-VPN-anslutning kommer att skapas:\n"
+#~ "\n"
+#~ "\tNamn:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGruppnamn:  %s\n"
+#~ "%s%s%s\n"
+#~ "Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
+
+#~ msgid "TCP tunneling not supported"
+#~ msgstr "TCP-tunnling stöds inte"
+
+#~ msgid ""
+#~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+#~ "through TCP which is currently not supported in the vpnc software.\n"
+#~ "\n"
+#~ "The connection can still be created, with TCP tunneling disabled, however "
+#~ "it may not work as expected."
+#~ msgstr ""
+#~ "VPN-inställningsfilen \"%s\" anger att VPN-trafiken ska tunnlas genom TCP "
+#~ "vilket för tillfället inte stöds i vpnc-programvaran.\n"
+#~ "\n"
+#~ "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men "
+#~ "det kanske inte fungerar som väntat."
+
+#~ msgid "Cannot import settings"
+#~ msgstr "Kan inte importera inställningar"
+
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
+
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
+#~ "accepterades."
+
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
+#~ "till VPN-servern."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
+#~ "ogiltiga."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
+#~ "konfiguration från VPN-servern."

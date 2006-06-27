@@ -2,7 +2,8 @@
 # Please keep this file sorted alphabetically.
 auth-dialog/gnome-two-password-dialog.c
 auth-dialog/main.c
-nm-pptp.desktop.in
-properties/nm-pptp.c
-properties/nm-pptp-dialog.glade
-src/nm-pptp-service.c
+nm-ppp.desktop.in
+properties/nm-ppp-properties.c
+properties/vpnui_impl.c
+properties/nm-ppp-dialog.glade
+src/nm-ppp-starter.c
