@@ -197,7 +197,7 @@ msgstr "有线网络连接"
 
 #: ../gnome/applet/applet.c:1097
 msgid "Connected to an Ad-Hoc wireless network"
-msgstr "已连接到 Ad-Hoc 无线网络"
+msgstr "已连接到点对点无线网络"
 
 #: ../gnome/applet/applet.c:1099
 #, c-format
