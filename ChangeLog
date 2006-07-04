@@ -1,3 +1,18 @@
+2006-07-04  Tor Krill  <tor@krill.nu>
+
+
+	* src/backends/NetworkManagerArch.c
+		- (nm_system_get_mtu): Added implementation
+		
+		Patch from Valentine Sinitsyn <e_val@inbox.ru>
+		- (nm_system_update_dns) 
+		- (nm_system_restart_mdns_responder): Check if daemon
+			is running before starting. Should fix #344573
+		- (ArchReadConfig)
+		- (nm_system_device_get_system_config): Add explicit
+			test for DHCP config. Dont assume when not static.
+			Should fix #344573
+
 2006-06-21  Dan Williams  <dcbw@redhat.com>
 
 	* nm-dbus-device.c
