@@ -5,6 +5,8 @@
  * Tor Krill <tor@krill.nu> and Will Rea <sillywilly@gmail.com>
  *
  * Updated by Wael Nasreddine <gandalf@siemens-mobiles.org>
+ *
+ * Updated by Valentine Sinitsyn <e_val@inbox.ru>
  * 
  * Heavily based on NetworkManagerDebian.c by Matthew Garrett <mjg59@srcf.ucam.org>
  *
@@ -35,6 +37,7 @@
 #include <signal.h>
 #include <arpa/inet.h>
 #include <glib/gprintf.h>
+#include <glib/gfileutils.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
@@ -364,8 +367,11 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-	nm_spawn_process ("/etc/rc.d/nscd restart");
-
+	/* Check if the daemon was already running - do not start a new instance */
+	if (g_file_test("/var/run/daemons/nscd", G_FILE_TEST_EXISTS))
+	{
+		nm_spawn_process ("/etc/rc.d/nscd restart");
+	}
 }
 
 
@@ -378,7 +384,11 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-	nm_spawn_process ("/etc/rc.d/avahi-daemon restart");
+	/* Check if the daemon was already running - do not start a new instance */
+	if (g_file_test("/var/run/daemons/avahi-daemon", G_FILE_TEST_EXISTS))
+	{
+		nm_spawn_process ("/etc/rc.d/avahi-daemon restart");
+	}	
 }
 
 
@@ -581,6 +591,14 @@ static GHashTable * ArchReadConfig(const char* file, const char* dev)
 				}
 
 			}
+			else
+			{
+				/* This interface is probably using DHCP - check this */
+				if (!g_ascii_strcasecmp(splt[0],"dhcp"))
+				{
+					g_hash_table_insert(ifs,g_strdup("dhcp"),g_strdup("true"));
+				}
+			}
 
 		}
 	}
@@ -666,10 +684,10 @@ void* nm_system_device_get_system_config (NMDevice * dev, NMData *app_data)
 		g_free(sys_data);
 		return NULL;
 	}
-
-	if ((val=g_hash_table_lookup(ifh,nm_device_get_iface(dev))))
+	val=g_hash_table_lookup(ifh,nm_device_get_iface(dev));
+	if (val && !g_hash_table_lookup(ifh, "dhcp"))
 	{
-		// We found an IP-nr and thus have a static configuration
+		/* This device does not use DHCP */
 
 		sys_data->use_dhcp=FALSE;
 		sys_data->config = nm_ip4_config_new();
@@ -707,7 +725,7 @@ void* nm_system_device_get_system_config (NMDevice * dev, NMData *app_data)
 		}
 
 		set_ip4_config_from_resolv_conf (SYSCONFDIR"/resolv.conf", sys_data->config);
-#if 1
+#if 0
 		{
 			int j;
 			nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
