@@ -1,5 +1,9 @@
-2006-07-04  Tor Krill  <tor@krill.nu>
+2006-07-09  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet.c
+		- (nma_about_cb): remove empty documenters tab (Gnome #341324)
+
+2006-07-04  Tor Krill  <tor@krill.nu>
 
 	* src/backends/NetworkManagerArch.c
 		- (nm_system_get_mtu): Added implementation

@@ -319,11 +319,6 @@ static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 		NULL
 	};
 
-	static const gchar *documenters[] =
-	{
-		NULL
-	};
-
 #if !GTK_CHECK_VERSION(2,6,0)
 	GdkPixbuf	*pixbuf;
 	char		*file;
@@ -340,7 +335,7 @@ static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 							    "Copyright \xc2\xa9 2005-2006 Novell, Inc."),
 	                                _("Notification area applet for managing your network devices and connections."),
 	                                authors,
-	                                documenters,
+	                                NULL,
 	                                _("translator-credits"),
 	                                pixbuf);
 	g_object_unref (pixbuf);
@@ -368,7 +363,6 @@ static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 	                       "website", "http://www.gnome.org/projects/NetworkManager/",
 	                       "authors", authors,
 	                       "artists", artists,
-	                       "documenters", documenters,
 	                       "translator-credits", _("translator-credits"),
 	                       "logo-icon-name", GTK_STOCK_NETWORK,
 	                       NULL);
