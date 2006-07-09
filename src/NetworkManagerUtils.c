@@ -423,6 +423,8 @@ void nm_print_device_capabilities (NMDevice *dev)
 
 	caps = nm_device_get_capabilities (dev);
 	driver = nm_device_get_driver (dev);
+	if (!driver)
+		driver = "<unknown>";
 
 	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED))
 	{
