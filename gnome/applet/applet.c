@@ -2450,8 +2450,11 @@ static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
 
 	nmi_passphrase_dialog_destroy (applet);
 #ifdef ENABLE_NOTIFY
-	notify_notification_close (applet->notification, NULL);
-	g_object_unref (applet->notification);
+	if (applet->notification)
+	{
+		notify_notification_close (applet->notification, NULL);
+		g_object_unref (applet->notification);
+	}
 #endif
 
 	if (applet->redraw_timeout_id > 0)

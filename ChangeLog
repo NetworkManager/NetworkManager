@@ -1,6 +1,12 @@
 2006-07-09  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet.c
+		- (nma_destroy): don't pass NULL to notify_notification_close
+			(RH #197917)
+
+2006-07-09  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/applet/applet.c
 		- (nma_about_cb): remove empty documenters tab (Gnome #341324)
 
 2006-07-04  Tor Krill  <tor@krill.nu>
