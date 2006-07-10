@@ -849,14 +849,18 @@ real_act_stage3_ip_config_start (NMDevice *self,
 	{
 		/* Begin a DHCP transaction on the interface */
 		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
+		{
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
+			goto out;
+		}	
 
 		/* DHCP devices will be notified by the DHCP manager when
 		 * stuff happens.
 		 */
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
-
+	
+out:
 	return ret;
 }
 
