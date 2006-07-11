@@ -1,3 +1,7 @@
+2006-07-11  Robert Love  <rml@novell.com>
+
+	* src/src/nm-vpnc-service.c: Backport rekeying improvements from HEAD.
+
 2006-05-15  Dan Williams  <dcbw@redhat.com>
 
 	* configure.in: bump version to 0.6.2 for release
