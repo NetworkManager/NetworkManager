@@ -1,15 +1,15 @@
-# Swedish messages for NetworkManager.
-# Copyright (C) 2004, 2005 Free Software Foundation, Inc.
-# Christian Rose <menthos@menthos.com>, 2004, 2005.
+# Swedish messages for NetworkManager-vpnc.
+# Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
+# Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
-# $Id: sv.po,v 1.1 2005/08/12 18:28:04 rml Exp $
+# $Id: sv.po,v 1.2 2006/07/12 12:49:06 menthos Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-26 01:20+0200\n"
-"PO-Revision-Date: 2005-06-26 01:20+0200\n"
+"POT-Creation-Date: 2006-07-12 14:47+0200\n"
+"PO-Revision-Date: 2006-07-12 14:47+0200\n"
 "Last-Translator: Christian Rose <menthos@menthos.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -17,157 +17,106 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:147
 msgid "_Secondary Password:"
 msgstr "_Andrahandslösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:267
 msgid "_Username:"
 msgstr "_Användarnamn:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:269
 msgid "_Domain:"
 msgstr "_Domän:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:271
 msgid "_Password:"
 msgstr "_Lösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:354
 msgid "Connect _anonymously"
 msgstr "Anslut anon_ymt"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:359
 msgid "Connect as _user:"
 msgstr "Anslut som _användare:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:466
-msgid "Remember password for this session"
-msgstr "Kom ihåg lösenordet för denna session"
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_Kom ihåg lösenord för denna session"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:468
-msgid "Save password in keyring"
-msgstr "Spara lösenordet i nyckelring"
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "_Spara lösenord i nyckelring"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:161
+#: ../auth-dialog/main.c:161
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:162
+#: ../auth-dialog/main.c:162
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:169
+#: ../auth-dialog/main.c:169
 msgid "_Group Password:"
 msgstr "_Grupplösenord:"
 
-#: vpn-daemons/vpnc/nm-vpnc.desktop.in.h:1
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Lägg till, ta bort och redigera VPN-anslutningar"
+
+#: ../nm-vpnc.desktop.in.h:2
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:1
-msgid "<b>Connection Name</b>"
-msgstr "<b>Anslutningsnamn</b>"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Optional Information</b>"
-msgstr "<b>Valfri information</b>"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:3
-msgid "<b>Required Information</b>"
-msgstr "<b>Nödvändig information</b>"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:4
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:5
-msgid "Gateway:"
-msgstr "Gateway:"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:6
-msgid "Group Name:"
-msgstr "Gruppnamn:"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:7
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Namn som används för att identifiera anslutningen till det privata "
-"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:8
-msgid "Only use VPN connection for these addresses"
-msgstr "Använd endast VPN-anslutning för dessa adresser"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:9
-msgid "Override user name"
-msgstr "Åsidosätt användarnamn"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:10
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Ange den information som har tillhandahållits av din systemadministratör "
-"nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när "
-"du ansluter."
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:11
-msgid "Use domain for authentication"
-msgstr "Använd domän för autentisering"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:12
-msgid "_Import..."
-msgstr "_Importera..."
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:83
+#: ../properties/nm-vpnc.c:83
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Kompatibel Cisco VPN-klient (vpnc)"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:448
-#, c-format
-msgid "\tUsername:  %s\n"
-msgstr "\tAnvändarnamn:  %s\n"
+#: ../properties/nm-vpnc.c:447
+msgid "The following vpnc VPN connection will be created:"
+msgstr "Följande VPN-anslutning av typen vpnc kommer att skapas:"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:449
+#: ../properties/nm-vpnc.c:449
 #, c-format
-msgid "\tRoutes:  %s\n"
-msgstr "\tVägar:  %s\n"
+msgid "Name:  %s"
+msgstr "Namn:  %s"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:450
+#: ../properties/nm-vpnc.c:452
 #, c-format
-msgid "\tDomain:  %s\n"
-msgstr "\tDomän:  %s\n"
+msgid "Gateway:  %s"
+msgstr "Gateway:  %s"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:453
+#: ../properties/nm-vpnc.c:454
 #, c-format
-msgid ""
-"The following vpnc VPN connection will be created:\n"
-"\n"
-"\tName:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGroup Name:  %s\n"
-"%s%s%s\n"
-"The connection details can be changed using the \"Edit\" button.\n"
-msgstr ""
-"Följande vpnc-VPN-anslutning kommer att skapas:\n"
-"\n"
-"\tNamn:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGruppnamn:  %s\n"
-"%s%s%s\n"
-"Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
+msgid "Group Name:  %s"
+msgstr "Gruppnamn:  %s"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:458
+#, c-format
+msgid "Username:  %s"
+msgstr "Användarnamn:  %s"
+
+#: ../properties/nm-vpnc.c:463
+#, c-format
+msgid "Domain:  %s"
+msgstr "Domän:  %s"
+
+#: ../properties/nm-vpnc.c:468
+#, c-format
+msgid "Routes:  %s"
+msgstr "Vägar:  %s"
+
+#: ../properties/nm-vpnc.c:472
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Anslutningsdetaljerna kan ändras med hjälp av knappen \"Redigera\"."
+
+#: ../properties/nm-vpnc.c:548
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnling stöds inte"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:546
+#: ../properties/nm-vpnc.c:550
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -182,46 +131,112 @@ msgstr ""
 "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men det "
 "kanske inte fungerar som väntat."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:570
+#: ../properties/nm-vpnc.c:574
 msgid "Cannot import settings"
 msgstr "Kan inte importera inställningar"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:572
+#: ../properties/nm-vpnc.c:576
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:589
+#: ../properties/nm-vpnc.c:593
 msgid "Select file to import"
 msgstr "Välj fil att importera"
 
 #. printf ("in impl_export\n");
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:744
+#: ../properties/nm-vpnc.c:753
 msgid "Save as..."
 msgstr "Spara som..."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:774
+#: ../properties/nm-vpnc.c:783
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "En fil med namnet \"%s\" finns redan."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:777
+#: ../properties/nm-vpnc.c:786
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Vill du ersätta den med den du håller på att spara?"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:115
+#: ../properties/nm-vpnc.c:800
+msgid "Failed to export configuration"
+msgstr "Misslyckades med att exportera konfigurationen"
+
+#: ../properties/nm-vpnc.c:802
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Misslyckades med att spara filen %s"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Anslutningsnamn</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Nödvändig information</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "G_ruppnamn:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "_Valfri information"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "Åsidosätt _användarnamn"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Ange den information som har tillhandahållits av din systemadministratör "
+"nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när "
+"du ansluter."
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "Använd _domän för autentisering"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_Gateway:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "_Importera sparad konfiguration..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Namn som används för att identifiera anslutningen till det privata "
+"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "Använd _endast VPN-anslutning för dessa adresser"
+
+#: ../src/nm-vpnc-service.c:117
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
 "VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
 "accepterades."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:117
+#: ../src/nm-vpnc-service.c:119
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr ""
 "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:119
+#: ../src/nm-vpnc-service.c:121
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
@@ -229,14 +244,14 @@ msgstr ""
 "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
 "till VPN-servern."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:121
+#: ../src/nm-vpnc-service.c:123
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 "VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
 "ogiltiga."
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:123
+#: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
@@ -244,3 +259,85 @@ msgstr ""
 "VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
 "konfiguration från VPN-servern."
 
+#~ msgid "Remember passwords for this session"
+#~ msgstr "Kom ihåg lösenord för denna session"
+
+#~ msgid "Save passwords in keyring"
+#~ msgstr "Spara lösenord i nyckelring"
+
+#~ msgid "Name: %s"
+#~ msgstr "Namn: %s"
+
+#~ msgid "Name:"
+#~ msgstr "Namn:"
+
+#~ msgid "Gateway: %s"
+#~ msgstr "Gateway: %s"
+
+#~ msgid "Gateway:"
+#~ msgstr "Gateway:"
+
+#~ msgid "Group Name: %s"
+#~ msgstr "Gruppnamn: %s"
+
+#~ msgid "Group Name:"
+#~ msgstr "Gruppnamn:"
+
+#~ msgid "Username: %s"
+#~ msgstr "Användarnamn: %s"
+
+#~ msgid "Username:"
+#~ msgstr "Användarnamn:"
+
+#~ msgid "Domain: %s"
+#~ msgstr "Domän: %s"
+
+#~ msgid "Domain:"
+#~ msgstr "Domän:"
+
+#~ msgid "Routes: %s"
+#~ msgstr "Vägar: %s"
+
+#~ msgid "Routes:"
+#~ msgstr "Vägar:"
+
+#~ msgid "Optional Information"
+#~ msgstr "Valfri information"
+
+#~ msgid "Override user name"
+#~ msgstr "Åsidosätt användarnamn"
+
+#~ msgid "Use domain for authentication"
+#~ msgstr "Använd domän för autentisering"
+
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Namn som används för att identifiera anslutningen till det privata "
+#~ "nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
+
+#~ msgid "Only use VPN connection for these addresses"
+#~ msgstr "Använd endast VPN-anslutning för dessa adresser"
+
+#~ msgid "_Import..."
+#~ msgstr "_Importera..."
+
+#~ msgid ""
+#~ "The following vpnc VPN connection will be created:\n"
+#~ "\n"
+#~ "\tName:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGroup Name:  %s\n"
+#~ "%s%s%s\n"
+#~ "The connection details can be changed using the \"Edit\" button.\n"
+#~ msgstr ""
+#~ "Följande vpnc-VPN-anslutning kommer att skapas:\n"
+#~ "\n"
+#~ "\tNamn:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGruppnamn:  %s\n"
+#~ "%s%s%s\n"
+#~ "Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
