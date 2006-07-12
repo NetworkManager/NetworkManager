@@ -1,14 +1,14 @@
-# translation of ru.po to
+# translation of NetworkManager to Russian
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Leonid Kanter <leon@asplinux.ru>, 2006.
 msgid ""
 msgstr ""
-"Project-Id-Version: ru\n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-07-12 11:59+0300\n"
-"PO-Revision-Date: 2006-07-12 15:26+0300\n"
+"PO-Revision-Date: 2006-07-12 18:11+0300\n"
 "Last-Translator: Leonid Kanter <leon@asplinux.ru>\n"
 "Language-Team:  <gnome-cyr@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -214,21 +214,21 @@ msgstr "Подключен к беспроводной сети Ad Hoc"
 #: ../gnome/applet/applet.c:1095
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Беспроводное подключение к '%s' (%d%%)"
+msgstr "Подключен к беспроводной сети '%s' (%d%%)"
 
 #: ../gnome/applet/applet.c:1116
 #, c-format
 msgid "VPN connection to '%s'"
-msgstr "VPN-подключение к '%s'"
+msgstr "Подключен к VPN '%s'"
 
 #: ../gnome/applet/applet.c:1124
 #, c-format
 msgid "VPN connecting to '%s'"
-msgstr "VPN подключается к '%s'"
+msgstr "Подключение к VPN '%s'"
 
 #: ../gnome/applet/applet.c:1537
 msgid "_Connect to Other Wireless Network..."
-msgstr "_Подключиться к другой беспроводной сети..."
+msgstr "Подключиться к _другой беспроводной сети..."
 
 #: ../gnome/applet/applet.c:1558
 msgid "Create _New Wireless Network..."
