@@ -1,5 +1,10 @@
 2006-07-13  Robert Love  <rml@novell.com>
 
+	* src/NetworkManagerDialup.h: Support a DSL class, too.
+	* src/backends/NetworkManagerSuSE.c: Add DSL devices.
+
+2006-07-13  Robert Love  <rml@novell.com>
+
 	* configure.in: Bump version to 0.6.4
 	* NEWS: Update.
 
