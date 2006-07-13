@@ -1023,13 +1023,15 @@ GSList * nm_system_get_dialup_config (void)
 		NMDialUpConfig *config;
 		shvarFile *modem_file;
 		char *name, *buf, *provider_name;
-		int modem;
+		int type;
 
 		/* we only want modems and isdn */
 		if (g_str_has_prefix (dentry, "ifcfg-modem"))
-			modem = 1;
+			type = NM_DIALUP_TYPE_MODEM;
 		else if (g_str_has_prefix (dentry, "ifcfg-ippp"))
-			modem = 0;
+			type = NM_DIALUP_TYPE_ISDN;
+		else if (g_str_has_prefix (dentry, "ifcfg-dsl"))
+			type = NM_DIALUP_TYPE_DSL;
 		else
 			continue;
 
@@ -1049,14 +1051,20 @@ GSList * nm_system_get_dialup_config (void)
 
 		config = g_malloc (sizeof (NMDialUpConfig));
 		config->data = g_strdup (dentry + 6); /* skip the "ifcfg-" prefix */
-		if (modem)
+		if (type == NM_DIALUP_TYPE_MODEM)
 		{
 			config->name = g_strdup_printf ("%s via modem (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_MODEM;
-		} else
+		}
+		else if (type == NM_DIALUP_TYPE_ISDN)
 		{
 			config->name = g_strdup_printf ("%s via ISDN (%s)", provider_name, (char *) config->data);
 			config->type = NM_DIALUP_TYPE_ISDN;
+		}
+		else if (type == NM_DIALUP_TYPE_DSL)
+		{
+			config->name = g_strdup_printf ("%s via DSL (%s)", provider_name, (char *) config->data);
+			config->type = NM_DIALUP_TYPE_DSL;
 		}
 
 		list = g_slist_append (list, config);
