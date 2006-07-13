@@ -36,6 +36,7 @@
 #include "wso-wep-passphrase.h"
 #include "wso-wpa-eap.h"
 #include "wso-wpa-psk.h"
+#include "wso-leap.h"
 
 struct WirelessSecurityManager
 {
@@ -115,6 +116,9 @@ gboolean wsm_set_capabilities (WirelessSecurityManager *wsm, guint32 capabilitie
 				wsm->options = g_slist_append (wsm->options, opt);
 		}
 	}
+
+	if ((opt = wso_leap_new (wsm->glade_file, capabilities)))
+		wsm->options = g_slist_append (wsm->options, opt);
 
 	if (!wsm->options)
 	{

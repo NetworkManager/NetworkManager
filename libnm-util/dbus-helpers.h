@@ -100,6 +100,20 @@ dbus_bool_t	nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 								char **client_cert_file,
 								char **ca_cert_file,
 								int *wpa_version);
+dbus_bool_t	nmu_security_serialize_leap (DBusMessageIter *iter,
+								const char *username,
+								const char *passwd,
+								const char *key_mgmt);
+
+dbus_bool_t	nmu_security_serialize_leap_with_cipher (DBusMessageIter *iter,
+								const char *username,
+								const char *passwd,
+								const char *key_mgmt);
+
+dbus_bool_t	nmu_security_deserialize_leap (DBusMessageIter *iter,
+								char **username,
+								char **passwd,
+								char **key_mgmt);
 
 DBusMessage *	nmu_create_dbus_error_message (DBusMessage *message,
                                         const char *exception_namespace,

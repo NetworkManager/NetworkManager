@@ -120,6 +120,7 @@ typedef enum NMDeviceType
 #define NM_AUTH_TYPE_WPA_PSK_CCMP		0x00000008
 #define NM_AUTH_TYPE_WEP104			0x00000010
 #define NM_AUTH_TYPE_WPA_EAP			0x00000020
+#define NM_AUTH_TYPE_LEAP			0x00000040
 
 /*
  * EAP Methods

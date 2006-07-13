@@ -1,5 +1,26 @@
 2006-07-13  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Thiago Bauermann <thiago.bauermann@gmail.com>
+	* gnome/applet/applet.glade
+	  gnome/applet/Makefile.am
+	  gnome/applet/nm-gconf-wso.c
+	  gnome/applet/nm-gconf-wso-leap.c
+	  gnome/applet/nm-gconf-wso-leap.h
+	  gnome/applet/wireless-security-manager.c
+	  gnome/applet/wso-leap.c
+	  gnome/applet/wso-leap.h
+	  include/NetworkManager.h
+	  libnm-util/dbus-helpers.c
+	  libnm-util/dbus-helpers.h
+	  src/Makefile.am
+	  src/NetworkManagerAP.c
+	  src/nm-ap-security.c
+	  src/nm-ap-security-leap.c
+	  src/nm-ap-security-leap.h
+		- Add LEAP authentication support
+
+2006-07-13  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Timothée Lecomte <timothee.lecomte@ens.fr>
 	* configure.in
 	  src/backends/NetworkManagerArch.c
