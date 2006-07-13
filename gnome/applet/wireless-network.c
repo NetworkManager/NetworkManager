@@ -22,6 +22,8 @@
 
 
 #include <glib.h>
+#include <iwlib.h>
+
 #include "wireless-network.h"
 
 /*
@@ -35,6 +37,7 @@ struct WirelessNetwork
 	char *	essid;
 	gboolean	active;
 	gint8	strength;
+	int		mode;
 	int		capabilities;
 };
 
@@ -170,6 +173,24 @@ void wireless_network_set_capabilities (WirelessNetwork *net, int capabilities)
 	g_return_if_fail (net != NULL);
 
 	net->capabilities = capabilities;
+}
+
+/*
+ * Accessors for mode
+ */
+int wireless_network_get_mode (WirelessNetwork *net)
+{
+	g_return_val_if_fail (net != NULL, FALSE);
+
+	return net->mode;
+}
+
+void wireless_network_set_mode (WirelessNetwork *net, int mode)
+{
+	g_return_if_fail (net != NULL);
+	g_return_if_fail ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA));
+
+	net->mode = mode;
 }
 
 /*

@@ -97,7 +97,7 @@ static void nmi_dbus_get_network_key_callback (GnomeKeyringResult result,
                                                gpointer           data)
 {
 	NMGetNetworkKeyCBData *	cb_data = (NMGetNetworkKeyCBData*) data;
-	NMApplet *		applet = cb_data->applet;
+	NMApplet *			applet = cb_data->applet;
 	DBusMessage *			message = cb_data->message;
 	NetworkDevice *		dev = cb_data->dev;
 	char *				net_path = cb_data->net_path;
@@ -141,7 +141,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	char *			dev_path = NULL;
 	char *			net_path = NULL;
 	char *			essid = NULL;
@@ -178,7 +178,7 @@ nmi_dbus_get_key_for_network (DBusConnection *connection,
          || !temp)
 		new_key = TRUE;
 	g_free (escaped_network);
-	
+
 	/* It's not a new key, so try to get the key from the keyring. */
 	if (!new_key)
 	{
@@ -307,9 +307,9 @@ nmi_dbus_get_networks (DBusConnection *connection,
                        DBusMessage *message,
                        void *user_data)
 {
-	const char * NO_NET_ERROR = "NoNetworks";
-	const char * NO_NET_ERROR_MSG = "There are no wireless networks stored.";
-	NMApplet *	applet = (NMApplet *) user_data;
+	const char * 		NO_NET_ERROR = "NoNetworks";
+	const char * 		NO_NET_ERROR_MSG = "There are no wireless networks stored.";
+	NMApplet *		applet = (NMApplet *) user_data;
 	GSList *			dir_list = NULL;
 	GSList *			elt;
 	DBusMessage *		reply = NULL;
@@ -386,7 +386,7 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
                                  DBusMessage *message,
                                  void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	DBusMessage *		reply = NULL;
 	gchar *			gconf_key = NULL;
 	char *			network = NULL;
@@ -431,13 +431,9 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 		goto out;
 	}
 
-	/* Timestamp */
+	/* Timestamp.  If the timestamp is not set, return zero. */
 	if (!nm_gconf_get_int_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "timestamp", escaped_network, &timestamp) || (timestamp < 0))
-	{
-		nm_warning ("%s:%d - couldn't get 'timestamp' item from GConf for '%s'.",
-				__FILE__, __LINE__, essid);
-		goto out;
-	}
+		timestamp = 0;
 
 	/* Trusted status */
 	if (!nm_gconf_get_bool_helper (client, GCONF_PATH_WIRELESS_NETWORKS, "trusted", escaped_network, &trusted))
@@ -474,15 +470,11 @@ nmi_dbus_get_network_properties (DBusConnection *connection,
 
 	/* Third arg: Trusted (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &trusted);
-	
+
 	/* Fourth arg: List of AP BSSIDs (ARRAY, STRING) */
 	dbus_message_iter_open_container (&iter, DBUS_TYPE_ARRAY, DBUS_TYPE_STRING_AS_STRING, &array_iter);
 	if (bssids_value && (g_slist_length (gconf_value_get_list (bssids_value)) > 0))
-	{
-		g_slist_foreach (gconf_value_get_list (bssids_value),
-				(GFunc) addr_list_append_helper,
-				&array_iter);
-	}
+		g_slist_foreach (gconf_value_get_list (bssids_value), (GFunc) addr_list_append_helper, &array_iter);
 	else
 	{
 		const char *fake = "";
@@ -832,8 +824,6 @@ nmi_save_network_info (NMApplet *applet,
 	char *					key;
 	GConfEntry *				gconf_entry;
 	char *					escaped_network;
-	GnomeKeyringResult			ret;
-	guint32					item_id;
 
 	g_return_if_fail (applet != NULL);
 	g_return_if_fail (essid != NULL);
@@ -845,7 +835,7 @@ nmi_save_network_info (NMApplet *applet,
 	g_free (key);
 	if (!gconf_entry)
 	{
-		nm_warning ("%s:%d - GConf entry for '%s' doesn't exist.", __FILE__, __LINE__, essid);
+		nm_warning ("Failed to create or obtain GConf entry for '%s'.", essid);
 		goto out;
 	}
 	gconf_entry_unref (gconf_entry);
@@ -916,11 +906,13 @@ nmi_save_network_info (NMApplet *applet,
 	/* Stuff the encryption key into the keyring */
 	if (nm_gconf_wso_get_we_cipher (gconf_wso) != IW_AUTH_CIPHER_NONE)
 	{
-		GnomeKeyringAttributeList *attributes;
-		GnomeKeyringAttribute attr;		
-		char *name;
+		GnomeKeyringAttributeList *	attributes;
+		GnomeKeyringAttribute 		attr;		
+		char *					display_name;
+		GnomeKeyringResult			ret;
+		guint32					item_id;
 
-		name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
+		display_name = g_strdup_printf (_("Passphrase for wireless network %s"), essid);
 
 		attributes = gnome_keyring_attribute_list_new ();
 		attr.name = g_strdup ("essid");
@@ -930,15 +922,15 @@ nmi_save_network_info (NMApplet *applet,
 
 		ret = gnome_keyring_item_create_sync (NULL,
 									   GNOME_KEYRING_ITEM_GENERIC_SECRET,
-									   name,
+									   display_name,
 									   attributes,
 									   nm_gconf_wso_get_key (gconf_wso),
 									   TRUE,
 									   &item_id);
 		if (ret != GNOME_KEYRING_RESULT_OK)
-			g_warning ("Error saving passphrase in keyring.  Ret=%d", ret);
+			nm_warning ("Error saving secret for wireless network '%s' in keyring: %d", essid, ret);
 
-		g_free (name);
+		g_free (display_name);
 		gnome_keyring_attribute_list_free (attributes);
 	}
 
@@ -959,7 +951,7 @@ nmi_dbus_update_network_info (DBusConnection *connection,
                               DBusMessage *message,
                               void *user_data)
 {
-	NMApplet *	applet = (NMApplet *) user_data;
+	NMApplet *		applet = (NMApplet *) user_data;
 	char *			essid = NULL;
 	gboolean			automatic;
 	NMGConfWSO *		gconf_wso = NULL;
@@ -1027,8 +1019,8 @@ out:
 DBusHandlerResult nmi_dbus_info_message_handler (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
 	NMApplet *	applet = (NMApplet *)user_data;
-	DBusMessage *		reply = NULL;
-	gboolean			handled;
+	DBusMessage *	reply = NULL;
+	gboolean		handled;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 

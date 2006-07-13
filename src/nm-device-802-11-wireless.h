@@ -65,8 +65,6 @@ struct _NMDevice80211WirelessClass
 
 GType nm_device_802_11_wireless_get_type (void);
 
-NMDevice80211Wireless *	nm_device_802_11_wireless_new (void);
-
 
 static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev);
 static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev)
@@ -91,6 +89,8 @@ const char *	nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self);
 
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 										 const int mode);
+
+int			nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
 NMAccessPoint *	nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *dev);
 
@@ -119,8 +119,6 @@ NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_essid (NMDevice80211
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
 gint8	nm_device_802_11_wireless_get_signal_strength (NMDevice80211Wireless *self);
-
-void		nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self);
 
 
 G_END_DECLS

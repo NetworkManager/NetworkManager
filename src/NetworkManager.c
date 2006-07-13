@@ -19,6 +19,10 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <glib.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -32,6 +36,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <glib/gi18n.h>
 
 #include "NetworkManager.h"
 #include "nm-utils.h"
@@ -693,13 +698,7 @@ write_pidfile (const char *pidfile)
  */
 static void nm_print_usage (void)
 {
-	fprintf (stderr, "\n" "usage : NetworkManager [--no-daemon] [--pid-file=<file>] [--help]\n");
 	fprintf (stderr,
-		"\n"
-		"        --no-daemon             Don't become a daemon\n"
-		"        --pid-file=<path>       Specify the location of a PID file\n"
-		"        --enable-test-devices   Allow dummy devices to be created via DBUS methods [DEBUG]\n"
-		"        --help                  Show this information and exit\n"
 		"\n"
 		"NetworkManager monitors all network connections and automatically\n"
 		"chooses the best connection to use.  It also allows the user to\n"
@@ -715,8 +714,9 @@ static void nm_print_usage (void)
  */
 int main( int argc, char *argv[] )
 {
-	gboolean		become_daemon = TRUE;
+	gboolean		become_daemon = FALSE;
 	gboolean		enable_test_devices = FALSE;
+	gboolean		show_usage = FALSE;
 	char *		owner;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
@@ -727,47 +727,33 @@ int main( int argc, char *argv[] )
 		return (EXIT_FAILURE);
 	}
 
+	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
+	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
+	textdomain (GETTEXT_PACKAGE);
+
 	/* Parse options */
-	while (1)
 	{
-		int c;
-		int option_index = 0;
-		const char *opt;
-
-		static struct option options[] = {
-			{"no-daemon",			0, NULL, 0},
-			{"enable-test-devices",	0, NULL, 0},
-			{"pid-file",			1, NULL, 0},
-			{"help",				0, NULL, 0},
-			{NULL,				0, NULL, 0}
+		GOptionContext  *opt_ctx = NULL;
+		GOptionEntry options[] = {
+			{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
+			{"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
+			{"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
+			{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
+			{NULL}
 		};
+		opt_ctx = g_option_context_new("");
+		g_option_context_add_main_entries(opt_ctx, options, NULL);
+		g_option_context_parse(opt_ctx, &argc, &argv, NULL);
+		g_option_context_free(opt_ctx);
+	}
 
-		c = getopt_long (argc, argv, "", options, &option_index);
-		if (c == -1)
-			break;
-
-		switch (c)
-		{
-			case 0:
-				opt = options[option_index].name;
-				if (strcmp (opt, "help") == 0)
-				{
-					nm_print_usage ();
-					exit (EXIT_SUCCESS);
-				}
-				else if (strcmp (opt, "no-daemon") == 0)
-					become_daemon = FALSE;
-				else if (strcmp (opt, "enable-test-devices") == 0)
-					enable_test_devices = TRUE;
-				else if (strcmp (opt, "pid-file") == 0)
-					user_pidfile = g_strdup (optarg);
-				break;
-
-			default:
-				nm_print_usage ();
-				exit (EXIT_FAILURE);
-				break;
-		}
+	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because of a CLI
+	 * option, it'll become TRUE after this */
+	become_daemon = !become_daemon;
+	if (show_usage == TRUE)
+	{
+		nm_print_usage();
+		exit (EXIT_SUCCESS);
 	}
 
 	if (become_daemon)
@@ -785,6 +771,13 @@ int main( int argc, char *argv[] )
 		pidfile = user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE;
 		write_pidfile (pidfile);
 	}
+
+	/*
+	 * Set the umask to 0022, which results in 0666 & ~0022 = 0644.
+	 * Otherwise, if root (or an su'ing user) has a wacky umask, we could
+	 * write out an unreadable resolv.conf.
+	 */
+	umask (022);
 
 	g_type_init ();
 	if (!g_thread_supported ())

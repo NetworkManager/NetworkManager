@@ -69,7 +69,7 @@ void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
 void			nm_dbus_signal_device_strength_change	(DBusConnection *connection, NMDevice80211Wireless *dev, gint strength);
 
-NMDevice *	nm_dbus_get_device_from_object_path	(NMData *data, const char *path);
+NMDevice *	nm_dbus_get_device_from_escaped_object_path	(NMData *data, const char *path);
 
 NMState		nm_get_app_state_from_data			(NMData *data);
 

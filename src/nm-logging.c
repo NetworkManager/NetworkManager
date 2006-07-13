@@ -46,7 +46,7 @@ fallback_get_backtrace (void)
 	{
 		syslog (LOG_CRIT, "******************* START **********************************");
 		for (i = 0; i < size; i++)
-			syslog (LOG_CRIT, "Frame %d: %s", i, strings[i]);
+			syslog (LOG_CRIT, "Frame %zd: %s", i, strings[i]);
 		free (strings);
 		syslog (LOG_CRIT, "******************* END **********************************");
 	}

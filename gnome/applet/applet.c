@@ -75,15 +75,15 @@
 	#define GTK_STOCK_INFO			GTK_STOCK_DIALOG_INFO
 #endif
 
-static GObject *	nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
-static gboolean	nma_icons_init (NMApplet *applet);
-static void		nma_icons_free (NMApplet *applet);
-static void		nma_about_cb (NMApplet *applet);
-static void		nma_context_menu_update (NMApplet *applet);
-static GtkWidget *	nma_get_instance (NMApplet *applet);
-static void		nma_update_state (NMApplet *applet);
-static void		nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
-static GType		nma_get_type (void);	/* for G_DEFINE_TYPE */
+static GObject *				nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
+static gboolean				nma_icons_init (NMApplet *applet);
+static void					nma_icons_free (NMApplet *applet);
+static void					nma_context_menu_update (NMApplet *applet);
+static GtkWidget *				nma_get_instance (NMApplet *applet);
+static void					nma_update_state (NMApplet *applet);
+static void					nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
+static G_GNUC_NORETURN void		nma_destroy (NMApplet *applet);
+static GType					nma_get_type (void);	/* for G_DEFINE_TYPE */
 
 G_DEFINE_TYPE(NMApplet, nma, EGG_TYPE_TRAY_ICON)
 
@@ -190,8 +190,9 @@ static gboolean nma_update_info (NMApplet *applet)
 {
 	GtkWidget *info_dialog;
 	char *addr = NULL, *broadcast = NULL, *primary_dns = NULL, *secondary_dns = NULL;
-	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL;
+	char *mac = NULL, *iface_and_type = NULL, *route = NULL, *mask = NULL, *speed = NULL;
 	GtkWidget *label;
+	int mbs;
 	const char *iface = NULL, *driver = NULL;
 	NetworkDevice *dev;
 
@@ -225,6 +226,10 @@ static gboolean nma_update_info (NMApplet *applet)
 	primary_dns = (char*) network_device_get_primary_dns (dev);
 	secondary_dns = (char*) network_device_get_secondary_dns (dev);
 
+	mbs = network_device_get_speed (dev);
+	if (mbs)
+		speed = g_strdup_printf ("%d Mb/s", mbs);
+
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
 	else
@@ -232,6 +237,9 @@ static gboolean nma_update_info (NMApplet *applet)
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-interface");
 	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
+
+	label = get_label (info_dialog, applet->info_dialog_xml, "label-speed");
+	gtk_label_set_text (GTK_LABEL (label), mbs ? speed : "Unknown");
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-driver");
 	gtk_label_set_text (GTK_LABEL (label), driver);
@@ -258,6 +266,7 @@ static gboolean nma_update_info (NMApplet *applet)
 	gtk_label_set_text (GTK_LABEL (label), mac);
 
 	g_free (iface_and_type);
+	g_free (speed);
 
 	return TRUE;
 }
@@ -282,7 +291,7 @@ static void about_dialog_activate_link_cb (GtkAboutDialog *about,
 	gnome_url_show (url, NULL);
 }
 
-static void nma_about_cb (NMApplet *applet)
+static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 {
 	static const gchar *authors[] =
 	{
@@ -310,11 +319,6 @@ static void nma_about_cb (NMApplet *applet)
 		NULL
 	};
 
-	static const gchar *documenters[] =
-	{
-		NULL
-	};
-
 #if !GTK_CHECK_VERSION(2,6,0)
 	GdkPixbuf	*pixbuf;
 	char		*file;
@@ -327,10 +331,11 @@ static void nma_about_cb (NMApplet *applet)
 
 	about_dialog = gnome_about_new (_("NetworkManager Applet"),
 	                                VERSION,
-	                                _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
+	                                _("Copyright \xc2\xa9 2004-2006 Red Hat, Inc.\n"
+							    "Copyright \xc2\xa9 2005-2006 Novell, Inc."),
 	                                _("Notification area applet for managing your network devices and connections."),
 	                                authors,
-	                                documenters,
+	                                NULL,
 	                                _("translator-credits"),
 	                                pixbuf);
 	g_object_unref (pixbuf);
@@ -352,17 +357,18 @@ static void nma_about_cb (NMApplet *applet)
 	gtk_show_about_dialog (NULL,
 	                       "name", _("NetworkManager Applet"),
 	                       "version", VERSION,
-	                       "copyright", _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc."),
+	                       "copyright", _("Copyright \xc2\xa9 2004-2005 Red Hat, Inc.\n"
+					                  "Copyright \xc2\xa9 2005-2006 Novell, Inc."),
 	                       "comments", _("Notification area applet for managing your network devices and connections."),
 	                       "website", "http://www.gnome.org/projects/NetworkManager/",
 	                       "authors", authors,
 	                       "artists", artists,
-	                       "documenters", documenters,
 	                       "translator-credits", _("translator-credits"),
 	                       "logo-icon-name", GTK_STOCK_NETWORK,
 	                       NULL);
 #endif
 }
+
 
 #ifndef ENABLE_NOTIFY
 /*
@@ -377,8 +383,8 @@ nma_show_vpn_failure_dialog (const char *title,
 {
 	GtkWidget	*dialog;
 
-	g_return_if_fail (title != NULL, FALSE);
-	g_return_if_fail (msg != NULL, FALSE);
+	g_return_if_fail (title != NULL);
+	g_return_if_fail (msg != NULL);
 
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_ERROR,
 				GTK_BUTTONS_OK, msg, NULL);
@@ -470,6 +476,9 @@ nma_show_vpn_login_banner_dialog (const char *title,
                                    const char *msg)
 {
 	GtkWidget	*dialog;
+
+	g_return_if_fail (title != NULL);
+	g_return_if_fail (msg != NULL);
 
 	dialog = gtk_message_dialog_new_with_markup (NULL, 0, GTK_MESSAGE_INFO,
 					GTK_BUTTONS_OK, msg, NULL);
@@ -1063,11 +1072,6 @@ static void nma_update_state (NMApplet *applet)
 		goto done;
 	}
 
-#if 0
-	if (!act_dev)
-		nma_set_state (applet, NM_STATE_DISCONNECTED);
-#endif
-
 	switch (applet->nm_state)
 	{
 		case NM_STATE_ASLEEP:
@@ -1095,6 +1099,7 @@ static void nma_update_state (NMApplet *applet)
 			break;
 
 		case NM_STATE_CONNECTING:
+			if (act_dev)
 			{
 				pixbuf = nma_act_stage_to_pixbuf (applet, act_dev, active_network, &tip);
 				need_animation = TRUE;
@@ -1576,6 +1581,7 @@ static void nma_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, g
 	AddNetworksCB *	cb_data = (AddNetworksCB *)user_data;
 	NMNetworkMenuItem *	item;
 	GtkCheckMenuItem *	gtk_item;
+	NMApplet *		applet;
 
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (net != NULL);
@@ -1583,22 +1589,23 @@ static void nma_add_networks_helper (NetworkDevice *dev, WirelessNetwork *net, g
 	g_return_if_fail (cb_data->menu != NULL);
 	g_return_if_fail (cb_data->applet != NULL);
 
-	item = network_menu_item_new (cb_data->applet->encryption_size_group);
+	applet = cb_data->applet;
+	item = network_menu_item_new (applet->encryption_size_group);
 	gtk_item = network_menu_item_get_check_item (item);
 
 	gtk_menu_shell_append (GTK_MENU_SHELL (cb_data->menu), GTK_WIDGET (gtk_item));
-	if (   (cb_data->applet->nm_state == NM_STATE_CONNECTED)
-	    || (cb_data->applet->nm_state == NM_STATE_CONNECTING))
+	if (   (applet->nm_state == NM_STATE_CONNECTED)
+	    || (applet->nm_state == NM_STATE_CONNECTING))
 	{
 		if (network_device_get_active (dev) && wireless_network_get_active (net))
 			gtk_check_menu_item_set_active (gtk_item, TRUE);
 	}
-	network_menu_item_update (item, net, cb_data->has_encrypted);
+	network_menu_item_update (applet, item, net, cb_data->has_encrypted);
 
 	g_object_set_data (G_OBJECT (gtk_item), "network", g_strdup (wireless_network_get_essid (net)));
 	g_object_set_data (G_OBJECT (gtk_item), "device", g_strdup (network_device_get_nm_path (dev)));
 	g_object_set_data (G_OBJECT (gtk_item), "nm-item-data", item);
-	g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nma_menu_item_activate), cb_data->applet);
+	g_signal_connect (G_OBJECT (gtk_item), "activate", G_CALLBACK (nma_menu_item_activate), applet);
 
 	gtk_widget_show (GTK_WIDGET (gtk_item));
 }
@@ -2432,8 +2439,7 @@ static void nma_gconf_vpn_connections_notify_callback (GConfClient *client, guin
  * Destroy the applet and clean up its data
  *
  */
-static void G_GNUC_NORETURN
-nma_destroy (NMApplet *applet, gpointer user_data)
+static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
 {
 	if (applet->dropdown_menu)
 		nma_dropdown_menu_clear (applet->dropdown_menu);
@@ -2443,6 +2449,13 @@ nma_destroy (NMApplet *applet, gpointer user_data)
 	nma_icons_free (applet);
 
 	nmi_passphrase_dialog_destroy (applet);
+#ifdef ENABLE_NOTIFY
+	if (applet->notification)
+	{
+		notify_notification_close (applet->notification, NULL);
+		g_object_unref (applet->notification);
+	}
+#endif
 
 	if (applet->redraw_timeout_id > 0)
 	{
@@ -2484,6 +2497,10 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
 	applet->passphrase_dialog = NULL;
+#ifdef ENABLE_NOTIFY
+	applet->notification = NULL;
+#endif
+
 	applet->glade_file = g_build_filename (GLADEDIR, "applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
 	{
@@ -2530,7 +2547,7 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 
 static void nma_icons_free (NMApplet *applet)
 {
-	gint i,j;
+	int i;
 
 	g_object_unref (applet->no_connection_icon);
 	g_object_unref (applet->wired_icon);
@@ -2544,17 +2561,49 @@ static void nma_icons_free (NMApplet *applet)
 	g_object_unref (applet->wireless_100_icon);
 
 	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
+	{
+		int j;
+
 		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
 			g_object_unref (applet->network_connecting_icons[i][j]);
+	}
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 		g_object_unref (applet->vpn_connecting_icons[i]);
 }
 
+static void nma_icons_zero (NMApplet *applet)
+{
+	int i;
+
+	applet->no_connection_icon = NULL;
+	applet->wired_icon = NULL;
+	applet->adhoc_icon = NULL;
+	applet->vpn_lock_icon = NULL;
+
+	applet->wireless_00_icon = NULL;
+	applet->wireless_25_icon = NULL;
+	applet->wireless_50_icon = NULL;
+	applet->wireless_75_icon = NULL;
+	applet->wireless_100_icon = NULL;
+
+	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
+	{
+		int j;
+
+		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
+			applet->network_connecting_icons[i][j] = NULL;
+	}
+
+	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
+		applet->vpn_connecting_icons[i] = NULL;
+
+}
+
 #define ICON_LOAD(x, y)	\
 	{		\
 		GError *err = NULL; \
-		x = gtk_icon_theme_load_icon (icon_theme, y, icon_size, 0, &err); \
+		x = gtk_icon_theme_load_icon (icon_theme, y, 22, 0, &err); \
 		if (x == NULL) { \
 			success = FALSE; \
 			g_warning ("Icon %s missing: %s", y, err->message); \
@@ -2566,12 +2615,14 @@ static void nma_icons_free (NMApplet *applet)
 static gboolean
 nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 {
-	char *	name;
-	int		i, j;
-	gboolean	success = FALSE;
+	int		i;
+	gboolean	success;
 
-	/* Assume icons are square */
-	gint icon_size = 22;
+	/*
+	 * NULL out the icons, so if we error and call nma_icons_free(), we don't hit stale
+	 * data on the not-yet-reached icons.  This can happen off nma_icon_theme_changed().
+	 */
+	nma_icons_zero (applet);
 
 	ICON_LOAD(applet->no_connection_icon, "nm-no-connection");
 	ICON_LOAD(applet->wired_icon, "nm-device-wired");
@@ -2586,8 +2637,12 @@ nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 
 	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
 	{
+		int j;
+
 		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
 		{
+			char *name;
+
 			name = g_strdup_printf ("nm-stage%02d-connecting%02d", i+1, j+1);
 			ICON_LOAD(applet->network_connecting_icons[i][j], name);
 			g_free (name);
@@ -2596,6 +2651,8 @@ nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 	{
+		char *name;
+
 		name = g_strdup_printf ("nm-vpn-connecting%02d", i+1);
 		ICON_LOAD(applet->vpn_connecting_icons[i], name);
 		g_free (name);

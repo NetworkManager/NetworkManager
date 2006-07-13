@@ -107,7 +107,7 @@ nm_gconf_get_bool_helper (GConfClient *client,
 	gc_key = g_strdup_printf ("%s/%s/%s", path, network, key);
 	if ((gc_value = gconf_client_get (client, gc_key, NULL)))
 	{
-		if (gc_value->type == GCONF_VALUE_STRING)
+		if (gc_value->type == GCONF_VALUE_BOOL)
 		{
 			*value = gconf_value_get_bool (gc_value);
 			success = TRUE;

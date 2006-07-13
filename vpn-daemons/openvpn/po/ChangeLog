@@ -1,3 +1,14 @@
+2006-06-16  Robert Love  <rml@novell.com>
+
+	* ../configure.in: Update ALL_LINGUAS.
+	* cs.po, pl.po: Update.
+
+2006-05-18  Robert Love  <rml@novell.com>
+
+	* sv.po: Update.
+	* cs.po, es.po, hu.po, ja.po, pt_BR.po, zh_TW.po, de.po, fr.po, it.po,
+	  pl.po, zh_CN.po: Add.
+
 2006-03-02  Raphael Higino  <raphaelh@cvs.gnome.org>
 
 	* pt_BR.po: Added Brazilian Portuguese translation.

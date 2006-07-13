@@ -1,3 +1,31 @@
+2006-06-28  Robert Love  <rml@novell.com>
+
+	* zh_CN.po: Update.
+
+2006-06-16  Robert Love  <rml@novell.com>
+
+	* pl.po, es.po, ja.po: Update, for I am a polyglot.
+
+2006-06-12  Robert Love  <rml@novell.com>
+
+	* pt_BR.po, fr.po, it.po, de.po, ja.po, zh_TW.po: Update.
+
+2006-06-02  Robert Love  <rml@novell.com>
+
+	* hu.po: Update.
+
+2006-05-30  Robert Love  <rml@novell.com>
+
+	* no.po: Remove.  We have nb.po.
+
+2006-05-29  Stanislav Brabec  <sbrabec@suse.cz>
+
+	* *.po: Updated translations from HEAD branch.
+
+2006-05-18  Robert Love  <rml@novell.com>
+
+	* hu.po: Update.
+
 2006-03-02  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* POTFILES.in: Add two missing files.

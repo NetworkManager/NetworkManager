@@ -149,7 +149,7 @@ void nm_vpn_connection_deactivate (NMVPNConnection *connection)
 
 	if (connection->vpn_iface)
 	{
-		nm_system_device_set_up_down_with_iface (NULL, connection->vpn_iface, FALSE);
+		nm_system_device_set_up_down_with_iface (connection->vpn_iface, FALSE);
 		nm_system_device_flush_routes_with_iface (connection->vpn_iface);
 		nm_system_device_flush_addresses_with_iface (connection->vpn_iface);
 	}

@@ -194,8 +194,7 @@ void wso_wep_auth_combo_cleanup (WirelessSecurityOption *opt, GtkComboBox * comb
 
 
 GtkTreeModel *
-wso_wpa_create_key_type_model (int capabilities,
-                               int *num_added)
+wso_wpa_create_key_type_model (int capabilities, gboolean wpa_eap, int *num_added)
 {
 	GtkListStore *	model;
 	GtkTreeIter	iter;
@@ -209,8 +208,16 @@ wso_wpa_create_key_type_model (int capabilities,
 	name = _("Automatic (Default)");
 	gtk_list_store_append (model, &iter);
 	gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
-					WPA_KEY_TYPE_CIPHER_COL, 0, -1);
+					WPA_KEY_TYPE_CIPHER_COL, NM_AUTH_TYPE_WPA_PSK_AUTO, -1);
 
+	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
+	{
+		name = _("AES-CCMP");
+		gtk_list_store_append (model, &iter);
+		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
+			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_CCMP, -1);
+		num++;
+	}
 	if (capabilities & NM_802_11_CAP_CIPHER_TKIP)
 	{
 		name = _("TKIP");
@@ -219,12 +226,12 @@ wso_wpa_create_key_type_model (int capabilities,
 			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_TKIP, -1);
 		num++;
 	}
-	if (capabilities & NM_802_11_CAP_CIPHER_CCMP)
+	if (wpa_eap && capabilities & NM_802_11_CAP_KEY_MGMT_802_1X)
 	{
-		name = _("AES-CCMP");
+		name = _("Dynamic WEP");
 		gtk_list_store_append (model, &iter);
 		gtk_list_store_set (model, &iter, WPA_KEY_TYPE_NAME_COL, name,
-			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_CCMP, -1);
+			WPA_KEY_TYPE_CIPHER_COL, IW_AUTH_CIPHER_WEP104, -1);
 		num++;
 	}
 

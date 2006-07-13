@@ -57,6 +57,7 @@ static const char *vpnc_binary_paths[] =
 
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
 #define NM_VPNC_UDP_ENCAPSULATION_PORT	0 /* random port */
+#define NM_VPNC_REKEYING_INTERVAL 7200 /* default interval of 2 hours */
 
 typedef struct NmVpncData
 {
@@ -435,6 +436,7 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 {
 	int     i;
 	gboolean has_user_name = FALSE;
+	gboolean has_rekey_interval = FALSE;
 
 	g_return_val_if_fail (user_name != NULL, FALSE);
 	g_return_val_if_fail (password_items != NULL, FALSE);
@@ -452,11 +454,16 @@ static gboolean nm_vpnc_config_write (guint vpnc_fd, const char *user_name, char
 		write_config_option (vpnc_fd, "%s %s\n", data_items[i], data_items[i+1]);
 		if (strcmp (data_items[i], "Xauth username") == 0)
 			has_user_name = TRUE;
+		else if (strcmp (data_items[i], "Rekeying interval") == 0)
+			has_rekey_interval = TRUE;
 	}
 
 	/* if user name isn't specified, use the name of the logged in user */
 	if (!has_user_name)
 		write_config_option (vpnc_fd, "Xauth username %s\n", user_name);
+
+	if (!has_rekey_interval)
+		write_config_option (vpnc_fd, "Rekeying interval %d\n", NM_VPNC_REKEYING_INTERVAL);
 
 	return TRUE;
 }
@@ -485,17 +492,19 @@ typedef struct Option
 static gboolean nm_vpnc_config_options_validate (char **data_items, int num_items)
 {
 	Option	allowed_opts[] = {
-					{ "IPSec gateway",			OPT_TYPE_ADDRESS },
-					{ "IPSec ID",				OPT_TYPE_ASCII },
-					{ "IPSec secret",			OPT_TYPE_ASCII },
-					{ "Xauth username",			OPT_TYPE_ASCII },
-					{ "UDP Encapsulate",		OPT_TYPE_NONE },
-					{ "UDP Encapsulation Port",	OPT_TYPE_ASCII },
-					{ "Domain",				OPT_TYPE_ASCII },
-					{ "IKE DH Group",			OPT_TYPE_ASCII },
-					{ "Perfect Forward Secrecy",	OPT_TYPE_ASCII },
-					{ "Application Version",		OPT_TYPE_ASCII },
-					{ NULL,					OPT_TYPE_UNKNOWN } };
+		{ "IPSec gateway",            OPT_TYPE_ADDRESS },
+		{ "IPSec ID",                 OPT_TYPE_ASCII },
+		{ "IPSec secret",             OPT_TYPE_ASCII },
+		{ "Xauth username",           OPT_TYPE_ASCII },
+		{ "UDP Encapsulate",          OPT_TYPE_NONE },
+		{ "UDP Encapsulation Port",   OPT_TYPE_ASCII },
+		{ "Domain",                   OPT_TYPE_ASCII },
+		{ "IKE DH Group",             OPT_TYPE_ASCII },
+		{ "Perfect Forward Secrecy",  OPT_TYPE_ASCII },
+		{ "Application Version",      OPT_TYPE_ASCII },
+		{ "Rekeying interval",        OPT_TYPE_ASCII },
+		{ NULL,                       OPT_TYPE_UNKNOWN }
+	};
 
 	unsigned int	i;
 
@@ -869,6 +878,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	guint32		ip4_dns_len;
 	guint32 *		ip4_nbns;
 	guint32		ip4_nbns_len;
+	guint32		mss;
 	char *		cisco_def_domain;
 	char *		cisco_banner;
 	gboolean		success = FALSE;
@@ -897,6 +907,10 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 
 	/* For Cisco/vpnc, PtP address == local VPN address */
 	ip4_ptp_address = ip4_address;
+
+	/* and we don't specify an MSS */
+	mss = 0;
+
 #if 0
 	print_vpn_config (ip4_vpn_gateway, tundev, ip4_address, ip4_netmask,
 					ip4_dns, ip4_dns_len, ip4_nbns, ip4_nbns_len,
@@ -914,6 +928,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	                          DBUS_TYPE_UINT32, &ip4_netmask,
 	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+						 DBUS_TYPE_UINT32, &mss,
 	                          DBUS_TYPE_STRING, &cisco_def_domain,
 	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (data->con, signal, NULL))

@@ -40,6 +40,7 @@
 struct OptData
 {
 	int			eap_method;
+	int			key_type;
 	const char *	identity;
 	const char *	passwd;
 	const char *	anon_identity;
@@ -62,6 +63,21 @@ data_free_func (WirelessSecurityOption *opt)
 }
 
 
+static void show_passwords_cb (GtkToggleButton *button, WirelessSecurityOption *opt)
+{
+	GtkWidget *	entry;
+	gboolean		visible;
+
+	visible = gtk_toggle_button_get_active (button);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_passwd_entry");
+	gtk_entry_set_visibility (GTK_ENTRY (entry), visible);
+
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
+	gtk_entry_set_visibility (GTK_ENTRY (entry), visible);
+}
+
+
 static GtkWidget *
 widget_create_func (WirelessSecurityOption *opt,
                     GtkSignalFunc validate_cb,
@@ -69,6 +85,7 @@ widget_create_func (WirelessSecurityOption *opt,
 {
 	GtkWidget *	entry;
 	GtkWidget *	widget;
+	GtkWidget *	checkbutton;
 
 	g_return_val_if_fail (opt != NULL, NULL);
 	g_return_val_if_fail (opt->data != NULL, NULL);
@@ -96,6 +113,9 @@ widget_create_func (WirelessSecurityOption *opt,
 
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_private_key_passwd_entry");
 	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	checkbutton = glade_xml_get_widget (opt->uixml, "show_checkbutton");
+	g_signal_connect (G_OBJECT (checkbutton), "toggled", GTK_SIGNAL_FUNC (show_passwords_cb), opt);
 
 	return widget;
 }
@@ -151,6 +171,11 @@ append_dbus_params_func (WirelessSecurityOption *opt,
 	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (entry), &tree_iter);
 	gtk_tree_model_get (model, &tree_iter, WPA_EAP_VALUE_COL, &opt->data->eap_method, -1);
 
+	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_key_type_combo");
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (entry));
+	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (entry), &tree_iter);
+	gtk_tree_model_get (model, &tree_iter, WPA_KEY_TYPE_CIPHER_COL, &opt->data->key_type, -1);
+
 	entry = glade_xml_get_widget (opt->uixml, "wpa_eap_identity_entry");
 	opt->data->identity = gtk_entry_get_text (GTK_ENTRY (entry)) ? : "";
 
@@ -176,6 +201,7 @@ append_dbus_params_func (WirelessSecurityOption *opt,
 
 	nmu_security_serialize_wpa_eap_with_cipher (&dbus_iter,
 									    opt->data->eap_method,
+									    opt->data->key_type,
 									    opt->data->identity,
 									    opt->data->passwd,
 									    opt->data->anon_identity,
@@ -197,9 +223,12 @@ wso_wpa_eap_new (const char *glade_file,
 	WirelessSecurityOption * opt = NULL;
 	OptData *				data = NULL;
 	GtkWidget *			eap_method_combo;
+	GtkWidget *			key_type_combo;
 	GtkListStore *			model;
+	GtkTreeModel *			tree_model;
 	GtkTreeIter			iter;
 	GtkCellRenderer *		renderer;
+	int					num_added;
 
 	struct {
 		const char *		name;
@@ -242,11 +271,24 @@ wso_wpa_eap_new (const char *glade_file,
 	gtk_combo_box_set_model (GTK_COMBO_BOX (eap_method_combo), GTK_TREE_MODEL (model));
 	gtk_tree_model_get_iter_first (GTK_TREE_MODEL (model), &iter);
 	gtk_combo_box_set_active_iter (GTK_COMBO_BOX (eap_method_combo), &iter);
-	renderer = gtk_cell_renderer_text_new ();
 
 	/* FIXME: Why do we need this here but not in the same place in wso-wpa-psk.c ? */
+	renderer = gtk_cell_renderer_text_new ();
 	gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (eap_method_combo), renderer, TRUE);
 	gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (eap_method_combo), renderer, "text", 0, NULL);
+
+	key_type_combo = glade_xml_get_widget (opt->uixml, "wpa_eap_key_type_combo");
+	tree_model = wso_wpa_create_key_type_model (capabilities, TRUE, &num_added);
+	gtk_combo_box_set_model (GTK_COMBO_BOX (key_type_combo), tree_model);
+	gtk_tree_model_get_iter_first (tree_model, &iter);
+	gtk_combo_box_set_active_iter (GTK_COMBO_BOX (key_type_combo), &iter);
+	if (num_added == 1)
+		gtk_widget_set_sensitive (key_type_combo, FALSE);
+
+	/* FIXME: Why do we need this here but not in the same place in wso-wpa-psk.c ? */
+	renderer = gtk_cell_renderer_text_new ();
+	gtk_cell_layout_pack_start (GTK_CELL_LAYOUT (key_type_combo), renderer, TRUE);
+	gtk_cell_layout_set_attributes (GTK_CELL_LAYOUT (key_type_combo), renderer, "text", 0, NULL);
 
 	/* Option-specific data */
 	opt->data = data = g_malloc0 (sizeof (OptData));

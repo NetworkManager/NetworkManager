@@ -102,11 +102,12 @@ struct _NMDeviceClass
 												 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
-	void			(* cancel_activation)	(NMDevice *self);
 
 	void			(* activation_failure_handler)	(NMDevice *self,
 											 struct NMActRequest *req);
 	void			(* activation_success_handler)	(NMDevice *self,
+											 struct NMActRequest *req);
+	void			(* activation_cancel_handler)		(NMDevice *self,
 											 struct NMActRequest *req);
 
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);

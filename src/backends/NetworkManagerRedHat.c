@@ -209,7 +209,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
  */
 void nm_system_enable_loopback (void)
 {
-	nm_spawn_process ("/sbin/ip link set dev lo up");
+	nm_system_device_set_up_down_with_iface ("lo", TRUE);
 	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
 }
 
@@ -223,8 +223,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	/* Remove routing table entries for lo */
-	nm_spawn_process ("/sbin/ip route flush dev lo");
+	nm_system_device_flush_routes_with_iface ("lo");
 }
 
 
@@ -454,7 +453,7 @@ out:
  * Read in the config file for a device.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	char *				cfg_file_path = NULL;
 	shvarFile *			file;
@@ -929,4 +928,16 @@ void nm_system_set_hostname (NMIP4Config *config)
 gboolean nm_system_should_modify_resolv_conf (void)
 {
 	return TRUE;
+}
+
+
+/*
+ * nm_system_get_mtu
+ *
+ * Return a user-provided or system-mandated MTU for this device or zero if
+ * no such MTU is provided.
+ */
+guint32 nm_system_get_mtu (NMDevice *dev)
+{
+	return 0;
 }

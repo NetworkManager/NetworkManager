@@ -21,6 +21,11 @@
 
 #ifndef APPLET_H
 #define APPLET_H
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
 #include <glade/glade.h>
@@ -33,6 +38,9 @@
 #include "wireless-network.h"
 #include "dbus-method-dispatcher.h"
 
+#ifdef ENABLE_NOTIFY
+#include <libnotify/notify.h>
+#endif
 
 /*
  * Preference locations
@@ -119,17 +127,20 @@ typedef struct
 
 	GtkWidget *		passphrase_dialog;
 	GladeXML *		info_dialog_xml;
+#ifdef ENABLE_NOTIFY
+	NotifyNotification*	notification;
+#endif
 } NMApplet;
 
 typedef struct
 {
-	NMApplet *	applet;
+	NMApplet *		applet;
 	NetworkDevice *	dev;
 	GladeXML *		xml;
 } DriverNotifyCBData;
 
 NetworkDevice *	nma_get_device_for_nm_path			(GSList *dev_list, const char *nm_dev);
-NMApplet *	nma_new							(void);
+NMApplet *		nma_new							(void);
 void				nma_schedule_warning_dialog			(NMApplet *applet, const char *msg);
 gboolean			nma_driver_notify					(gpointer user_data);
 void				nma_show_vpn_failure_alert			(NMApplet *applet, const char *member, const char *vpn_name, const char *error_msg);

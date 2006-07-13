@@ -329,11 +329,11 @@ static GtkDialog *nma_ond_init (GladeXML *xml, NMApplet *applet, gboolean create
 	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, DEV_COLUMN, &dev, -1);
 	g_assert (dev);
 	dev_caps = network_device_get_type_capabilities (dev);
-	/* Can't do WPA2/CCMP Ad-Hoc networks because wpa_supplicant
-	 * doesn't support them.
+	/* Can't do WPA2/CCMP or WPA-EAP Ad-Hoc networks because wpa_supplicant
+	 * doesn't support the former and the latter does not make sense.
 	 */
 	if (create_network)
-		dev_caps &= ~NM_802_11_CAP_PROTO_WPA2;
+		dev_caps &= ~(NM_802_11_CAP_PROTO_WPA2 | NM_802_11_CAP_KEY_MGMT_802_1X);
 	wsm_set_capabilities (wsm, dev_caps);
 
 	security_combo = GTK_COMBO_BOX (glade_xml_get_widget (xml, "security_combo"));
@@ -381,7 +381,7 @@ static GtkDialog *nma_ond_init (GladeXML *xml, NMApplet *applet, gboolean create
 static void nma_ond_response_cb (GtkDialog *dialog, gint response, gpointer data)
 {
 	GladeXML *		xml;
-	NMApplet *	applet;
+	NMApplet *		applet;
 	gboolean			create_network;
 	GtkTreeModel *		model;
 	GtkComboBox *		combo;

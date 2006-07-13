@@ -41,10 +41,13 @@ struct NMIP4Config
 	guint32	ip4_netmask;
 	guint32	ip4_broadcast;
 
+	guint32	mtu;	/* Maximum Transmission Unit of the interface */
+	guint32	mss;	/* Maximum Segment Size of the route */
+
 	GSList *	nameservers;
 	GSList *	domains;
 
-	gchar * hostname;
+	gchar *	hostname;
 	gchar *	nis_domain;
 	GSList *	nis_servers;
 
@@ -326,6 +329,33 @@ guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)
 	return (g_slist_length (config->domains));
 }
 
+guint32 nm_ip4_config_get_mtu (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, 0);
+
+	return config->mtu;
+}
+
+void nm_ip4_config_set_mtu (NMIP4Config *config, guint32 mtu)
+{
+	g_return_if_fail (config != NULL);
+
+	config->mtu = mtu;
+}
+
+guint32 nm_ip4_config_get_mss (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, 0);
+
+	return config->mss;
+}
+
+void nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss)
+{
+	g_return_if_fail (config != NULL);
+
+	config->mss = mss;
+}
 
 /* libnl convenience/conversion functions */
 

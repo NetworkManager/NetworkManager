@@ -45,7 +45,7 @@ struct _NMAPSecurityPrivate
 	gboolean	dispose_has_run;
 };
 
-static NMAPSecurity *
+NMAPSecurity *
 nm_ap_security_new (int we_cipher)
 {
 	NMAPSecurity * security;
@@ -125,15 +125,15 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 
 	/* Deteremine best encryption algorithm to use */
 	caps = nm_ap_get_capabilities (ap);
-	if ((caps & WPA_CCMP_PSK) || (caps & WPA2_CCMP_PSK))
+	if (((caps & WPA_CCMP_PSK) == WPA_CCMP_PSK) || ((caps & WPA2_CCMP_PSK) == WPA2_CCMP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_CCMP));
-	else if ((caps & WPA_TKIP_PSK) || (caps & WPA2_TKIP_PSK))
+	else if (((caps & WPA_TKIP_PSK) == WPA_TKIP_PSK) || ((caps & WPA2_TKIP_PSK) == WPA2_TKIP_PSK))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_psk_new_from_ap (ap, IW_AUTH_CIPHER_TKIP));
-	else if ((caps & WPA_EAP) || (caps & WPA2_EAP))
+	else if (((caps & WPA_EAP) == WPA_EAP) || ((caps & WPA2_EAP) == WPA2_EAP))
 		security = NM_AP_SECURITY (nm_ap_security_wpa_eap_new_from_ap (ap));
-	else if (caps & WEP_WEP104)
+	else if ((caps & WEP_WEP104) == WEP_WEP104)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104));
-	else if (caps & WEP_WEP40)
+	else if ((caps & WEP_WEP40) == WEP_WEP40)
 		security = NM_AP_SECURITY (nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40));
 	else if (!nm_ap_get_encrypted (ap))
 		security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
@@ -142,11 +142,20 @@ nm_ap_security_new_from_ap (NMAccessPoint *ap)
 }
 
 
+guint32
+nm_ap_security_get_default_capabilities (NMAPSecurity *self)
+{
+	g_return_val_if_fail (self != NULL, NM_802_11_CAP_PROTO_NONE);
+
+	return NM_AP_SECURITY_GET_CLASS (self)->get_default_capabilities_func (self);
+}
+
+
 gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
                                         struct wpa_ctrl *ctrl,
                                         int nwid,
-                                        gboolean user_created)
+                                        gboolean adhoc)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (ctrl != NULL, FALSE);
@@ -155,7 +164,8 @@ nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 	if (self->priv->dispose_has_run)
 		return FALSE;
 
-	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self, ctrl, nwid, user_created);
+	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self,
+			ctrl, nwid, adhoc);
 }
 
 void
@@ -213,7 +223,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *self,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	/* Unencrypted network setup */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
@@ -221,6 +231,12 @@ real_write_supplicant_config (NMAPSecurity *self,
 		return FALSE;
 
 	return TRUE;
+}
+
+static guint32
+real_get_default_capabilities (NMAPSecurity *self)
+{
+	return NM_802_11_CAP_PROTO_NONE;
 }
 
 int
@@ -360,6 +376,7 @@ nm_ap_security_class_init (NMAPSecurityClass *klass)
 	klass->copy_constructor_func = real_copy_constructor;
 	klass->serialize_func = real_serialize;
 	klass->write_supplicant_config_func = real_write_supplicant_config;
+	klass->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityPrivate));
 }

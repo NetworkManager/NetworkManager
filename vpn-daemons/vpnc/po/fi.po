@@ -1,0 +1,235 @@
+# translation of NetworkManager-vpnc.po to
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Jyri Palokangas <jmp@netti.fi>, 2006.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-vpnc\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-05-16 17:10+0200\n"
+"PO-Revision-Date: 2006-06-02 10:35+0300\n"
+"Last-Translator: Jyri Palokangas <jmp@netti.fi>\n"
+"Language-Team:  <fi@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.2\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "Toisijainen _salasana:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:267
+msgid "_Username:"
+msgstr "Käyttäjänim_i:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:269
+msgid "_Domain:"
+msgstr "_Toimialue:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:271
+msgid "_Password:"
+msgstr "S_alasana:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:354
+msgid "Connect _anonymously"
+msgstr "Yhdistä nimettö_mästi"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:359
+msgid "Connect as _user:"
+msgstr "_Yhdistä käyttäjänä:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_Muista salasana tämän istunnon ajan"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "Tall_enna salasana avainrenkaaseen"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Sisun täytyy tunnistautua saadaksesi pääsy virtuaaliseen näennäisverkkoon '%s'."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "VPN tunnistautuminen"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "_Ryhmän salasana:"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Lisää, poista ja muokkaa VPN yhteyksiä"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "VPN yhteyshallinta (vpnc)"
+
+#: ../properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Cisco VPN yhteensopiva asiakas (vpnc)"
+
+#: ../properties/nm-vpnc.c:447
+msgid "The following vpnc VPN connection will be created:"
+msgstr "Seuraava vpnc VPN yhteys luodaan:"
+
+#: ../properties/nm-vpnc.c:449
+#, c-format
+msgid "Name:  %s"
+msgstr "Nimi:  %s"
+
+#: ../properties/nm-vpnc.c:452
+#, c-format
+msgid "Gateway:  %s"
+msgstr "Yhdyskäytävä:  %s"
+
+#: ../properties/nm-vpnc.c:454
+#, c-format
+msgid "Group Name:  %s"
+msgstr "Ryhmän nimi:  %s"
+
+#: ../properties/nm-vpnc.c:458
+#, c-format
+msgid "Username:  %s"
+msgstr "Käyttäjänimi:  %s"
+
+#: ../properties/nm-vpnc.c:463
+#, c-format
+msgid "Domain:  %s"
+msgstr "Toimialue:  %s"
+
+#: ../properties/nm-vpnc.c:468
+#, c-format
+msgid "Routes:  %s"
+msgstr "Reitit:  %s"
+
+#: ../properties/nm-vpnc.c:472
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Yhteydenyksityiskohtia voi muuttaa käyttämällä \"Muokkaa\" painiketta."
+
+#: ../properties/nm-vpnc.c:548
+msgid "TCP tunneling not supported"
+msgstr "TCP tunnelointi ei ole tuettuna"
+
+#: ../properties/nm-vpnc.c:550
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"VPN asetustiedosto '%s' määrittää että VPN liikenne tulisi tunneloida TCP:n läpi, vpnc ohjelmisto ei tue tätä tällä hetkellä.\n"
+"\n"
+"Yhteys voidaan silti luoda, TCP tunnelointi poistettuna käytöstä, voi olla että yhteys ei toimi kuten odotetaan."
+
+#: ../properties/nm-vpnc.c:574
+msgid "Cannot import settings"
+msgstr "Asetusten tuonti ei onnistu"
+
+#: ../properties/nm-vpnc.c:576
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "VPN asetustiedosto '%s' ei sisällä kelpoa dataa."
+
+#: ../properties/nm-vpnc.c:593
+msgid "Select file to import"
+msgstr "Valitse tuotava tiedosto"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:748
+msgid "Save as..."
+msgstr "Tallenna nimellä..."
+
+#: ../properties/nm-vpnc.c:778
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Tiedosto nimellä \"%s\" on jo olemassa."
+
+#: ../properties/nm-vpnc.c:781
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Haluatko korvata se tiedostolla jota olet tallentamassa?"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Yhteyden nimi</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Vaaditut tiedot</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>esimerkiksi: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "_Ryhmän nimi:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "Valinnaisia tiet_oja"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "Ohita käyttäjät_unnus"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr "Anna järjestelmänvalvojalta saamasi tiedot tähän. Älä anna salasanaasi tässä, se kysytään kun otat yhteyden."
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "Käytä _toimialuetta tunnistautumiseen"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_Yhdyskäytävä:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "Tuo tallennettu määr_itys..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Nimi jota käytetään yhteyden tunnistukseen yksityisessä verkossa, esim. \"Kampus "
+"VPN\" tai \"Yhtiön verkko\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "Käytä vain VPN yhteyttä näihin _osoitteisiin"
+
+#: ../src/nm-vpnc-service.c:116
+msgid "The VPN login failed because the user name and password were not accepted."
+msgstr "VPN kirjautuminen epäonnistui koska käyttäjätunnusta tai salasanaa ei hyväksytty."
+
+#: ../src/nm-vpnc-service.c:118
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "VPN kirjautuminen epäonnistui koska VPN ohjelmaa ei onnistuttu käynnistämään."
+
+#: ../src/nm-vpnc-service.c:120
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr "VPN kirjautuminen epäonnistui koska VPN ohjelma ei saanut yhteyttä VPN-palvelimeen."
+
+#: ../src/nm-vpnc-service.c:122
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "VPN kirjautuminen epäonnistui koska VPN määritysvalinnat olivat virheelliset."
+
+#: ../src/nm-vpnc-service.c:124
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "VPN kirjautuminen epäonnistui koska VPN ohjelma vastaanotti virheellisen määrityksen VPN-palvelimelta."
+

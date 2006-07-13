@@ -41,6 +41,7 @@ struct OptData
 	gboolean				wpa2;
 	const char *			entry_name;
 	const char *			key_type_combo_name;
+	const char *			show_checkbutton_name;
 	IEEE_802_11_Cipher *	hex_cipher;
 	IEEE_802_11_Cipher *	passphrase_cipher;
 };
@@ -58,12 +59,19 @@ data_free_func (WirelessSecurityOption *opt)
 }
 
 
+static void show_passphrase_cb (GtkToggleButton *button, GtkEntry *entry)
+{
+	gtk_entry_set_visibility (entry, gtk_toggle_button_get_active (button));
+}
+
+
 static GtkWidget *
 widget_create_func (WirelessSecurityOption *opt,
                     GtkSignalFunc validate_cb,
                     gpointer user_data)
 {
 	GtkWidget *	entry;
+	GtkWidget *	checkbutton;
 	GtkWidget *	widget;
 
 	g_return_val_if_fail (opt != NULL, NULL);
@@ -73,6 +81,10 @@ widget_create_func (WirelessSecurityOption *opt,
 	widget = wso_widget_helper (opt);
 	entry = glade_xml_get_widget (opt->uixml, opt->data->entry_name);
 	g_signal_connect (G_OBJECT (entry), "changed", validate_cb, user_data);
+
+	checkbutton = glade_xml_get_widget (opt->uixml, opt->data->show_checkbutton_name);
+	g_signal_connect (G_OBJECT (checkbutton), "toggled", GTK_SIGNAL_FUNC (show_passphrase_cb), GTK_ENTRY (entry));
+
 	return widget;
 }
 
@@ -183,6 +195,7 @@ wso_wpa_psk_new (const char *glade_file,
 	data->wpa2 = wpa2;
 	data->entry_name = "wpa_psk_entry";
 	data->key_type_combo_name = "wpa_psk_type_combo";
+	data->show_checkbutton_name = "show_checkbutton";
 
 	/* Set up our ciphers */
 	data->passphrase_cipher = cipher_wpa_psk_passphrase_new ();
@@ -194,12 +207,7 @@ wso_wpa_psk_new (const char *glade_file,
 
 	key_type_combo = glade_xml_get_widget (opt->uixml, data->key_type_combo_name);
 	g_signal_connect (G_OBJECT (key_type_combo), "changed", (GCallback) key_type_combo_changed_cb, opt);
-	model = wso_wpa_create_key_type_model (capabilities, &num_added);
-	if (!model || !num_added)
-	{
-		wso_free (opt);
-		return NULL;
-	}
+	model = wso_wpa_create_key_type_model (capabilities, FALSE, &num_added);
 	gtk_combo_box_set_model (GTK_COMBO_BOX (key_type_combo), model);
 	gtk_tree_model_get_iter_first (model, &iter);
 	gtk_combo_box_set_active_iter (GTK_COMBO_BOX (key_type_combo), &iter);

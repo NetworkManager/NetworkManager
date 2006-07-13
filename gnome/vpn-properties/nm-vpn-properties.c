@@ -39,10 +39,11 @@
 #include <gtk/gtkwindow.h>
 #include <glade/glade.h>
 #include <gconf/gconf-client.h>
-#include <glib/gi18n-lib.h>
+#include <glib/gi18n.h>
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 #include "nm-vpn-ui-interface.h"
+#include "clipboard.h"
 
 #define NM_GCONF_VPN_CONNECTIONS_PATH "/system/networking/vpn_connections"
 
@@ -67,11 +68,15 @@ find_vpn_ui_by_service_name (const char *service_name)
 {
 	GSList *i;
 
+	g_return_val_if_fail (service_name != NULL, NULL);
+
 	for (i = vpn_types; i != NULL; i = g_slist_next (i)) {
 		NetworkManagerVpnUI *vpn_ui;
+		const char * vpn_ui_service_name;
 
 		vpn_ui = i->data;
-		if (strcmp (vpn_ui->get_service_name (vpn_ui), service_name) == 0)
+		vpn_ui_service_name = vpn_ui->get_service_name (vpn_ui);
+		if (vpn_ui_service_name && strcmp (vpn_ui_service_name, service_name) == 0)
 			return vpn_ui;
 	}
 
@@ -90,7 +95,7 @@ static void
 update_edit_del_sensitivity (void)
 {
 	GtkTreeSelection *selection;
-	gboolean is_editable, is_exportable;
+	gboolean is_editable = FALSE, is_exportable = FALSE;
 	GtkTreeIter iter;
 
 	selection = gtk_tree_view_get_selection (vpn_conn_view);
@@ -98,13 +103,14 @@ update_edit_del_sensitivity (void)
 		is_editable = is_exportable = FALSE;
 	else {
 		NetworkManagerVpnUI *vpn_ui;
-		const char *service_name;
+		const char *service_name = NULL;
 
 		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_USER_CAN_EDIT_COLUMN, &is_editable, -1);
 		gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_SVC_NAME_COLUMN, &service_name, -1);
 
 		vpn_ui = find_vpn_ui_by_service_name (service_name);
-		is_exportable = vpn_ui->can_export (vpn_ui);
+		if (vpn_ui)
+			is_exportable = vpn_ui->can_export (vpn_ui);
 	}
 
 	gtk_widget_set_sensitive (vpn_edit, is_editable);
@@ -236,9 +242,12 @@ static gboolean vpn_druid_vpn_type_page_next (GnomeDruidPage *druidpage,
 
 	/* first hide existing child */
 	w = g_list_nth_data (gtk_container_children (GTK_CONTAINER (vpn_type_details)), 0);
-	if (w != NULL) {
+	if (w)
 		gtk_widget_hide (w);
-	}
+	/* hide the previous widget from the next page, in case the user hit 'back' */
+	w = g_list_nth_data (gtk_container_children (GTK_CONTAINER (vpn_type_details)), 1);
+	if (w)
+		gtk_widget_hide (w);
 
 	/* show appropriate child */
 	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
@@ -266,7 +275,19 @@ static void vpn_druid_vpn_details_page_prepare (GnomeDruidPage *druidpage,
 						GtkWidget *widget,
 						gpointer user_data)
 {
-	gnome_druid_set_buttons_sensitive (druid, TRUE, FALSE, TRUE, FALSE);	
+	gboolean is_valid;
+	NetworkManagerVpnUI *vpn_ui;
+
+	is_valid = FALSE;
+
+	/*printf ("vpn_druid_von_details_page_prepare!\n");*/
+
+	/* validate input, in case we are coming in via 'Back' */
+	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
+	if (vpn_ui != NULL)
+		is_valid = vpn_ui->is_valid (vpn_ui);
+
+	gnome_druid_set_buttons_sensitive (druid, TRUE, is_valid, TRUE, FALSE);	
 }
 
 static gboolean vpn_druid_vpn_details_page_next (GnomeDruidPage *druidpage,
@@ -338,7 +359,11 @@ static gboolean vpn_druid_cancel (GnomeDruid *ignored_druid, gpointer user_data)
 	return FALSE;
 }
 
-
+static gboolean vpn_window_close (GtkWidget *ignored, gpointer user_data)
+{
+	gtk_widget_hide_all (GTK_WIDGET (druid_window));
+	return TRUE;
+}
 
 static void
 add_cb (GtkButton *button, gpointer user_data)
@@ -380,6 +405,7 @@ add_cb (GtkButton *button, gpointer user_data)
 	gtk_window_set_policy (druid_window, FALSE, FALSE, TRUE);
 
 	gtk_widget_show_all (GTK_WIDGET (druid_window));
+
 out:
 	;
 }
@@ -607,7 +633,7 @@ edit_cb (GtkButton *button, gpointer user_data)
 	char *conn_gconf_path;
 	GtkTreeIter iter;
 
-	/*printf ("edit\n");*/
+	printf ("edit_cb\n");
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
@@ -754,10 +780,17 @@ out:
 }
 
 static void
-close_cb (void)
+response_cb (void)
 {
 	gtk_widget_destroy (dialog);
 	gtk_main_quit ();
+}
+
+static gboolean
+delete_event_cb (GtkDialog *the_dialog)
+{
+	gtk_dialog_response (the_dialog, GTK_RESPONSE_DELETE_EVENT);
+	return TRUE;
 }
 
 static void
@@ -769,7 +802,7 @@ export_cb (GtkButton *button, gpointer user_data)
 	const char *conn_name;
 	char *conn_gconf_path;
 
-	/*printf ("edit\n");*/
+	/*printf ("export_cb\n");*/
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
@@ -814,7 +847,7 @@ static void get_all_vpn_connections (void)
 		    gconf_value_get_list_type (value) != GCONF_VALUE_STRING ||
 		    (conn_vpn_data = gconf_value_get_list (value)) == NULL)
 			goto error;
-		
+
 		//conn_user_can_edit = (strcmp (conn_name, "RH VPN Boston") != 0);
 
 		gtk_list_store_append (vpn_conn_list, &iter);
@@ -903,9 +936,11 @@ init_app (void)
 	GtkCellRenderer *renderer;
 	GSList *i;
 	GtkHBox *vpn_type_hbox1;
+	GtkWidget *toplevel;
 	GDir *dir;
 
-	/* TODO: ensure only one copy of this program is running at any time */
+	if (!vpn_get_clipboard ())
+		return FALSE;
 
 	gconf_client = gconf_client_get_default ();
 	gconf_client_add_dir (gconf_client, NM_GCONF_VPN_CONNECTIONS_PATH,
@@ -973,11 +1008,10 @@ init_app (void)
 	gtk_signal_connect (GTK_OBJECT (vpn_export), "clicked", GTK_SIGNAL_FUNC (export_cb), NULL);
 	vpn_delete = glade_xml_get_widget (xml, "delete");
 	gtk_signal_connect (GTK_OBJECT (vpn_delete), "clicked", GTK_SIGNAL_FUNC (delete_cb), NULL);
-	w = glade_xml_get_widget (xml, "close");
-	gtk_signal_connect (GTK_OBJECT (w), "clicked",
-			    GTK_SIGNAL_FUNC (close_cb), NULL);
-	gtk_signal_connect (GTK_OBJECT (dialog), "delete_event",
-			    GTK_SIGNAL_FUNC (close_cb), NULL);
+	g_signal_connect (dialog, "response",
+			  G_CALLBACK (response_cb), NULL);
+	g_signal_connect (dialog, "delete_event",
+			  G_CALLBACK (delete_event_cb), NULL);
 
 	vpn_conn_view = GTK_TREE_VIEW (glade_xml_get_widget (xml, "vpnlist"));
 	vpn_conn_list = gtk_list_store_new (VPNCONN_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
@@ -1024,6 +1058,9 @@ init_app (void)
 	gtk_signal_connect_after (GTK_OBJECT (w), "prepare", GTK_SIGNAL_FUNC (vpn_druid_vpn_confirm_page_prepare), NULL);
 	gtk_signal_connect_after (GTK_OBJECT (w), "finish", GTK_SIGNAL_FUNC (vpn_druid_vpn_confirm_page_finish), NULL);
 
+	toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+	gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+
 	druid_window = GTK_WINDOW (glade_xml_get_widget (xml, "vpn-create-connection"));
 
 	/* make the druid window modal wrt. our main window */
@@ -1053,23 +1090,36 @@ main (int argc, char *argv[])
 	int ret;
 	gboolean bad_opts;
 	gboolean do_import;
-	GError *error = NULL;
 	gchar *import_svc = NULL;
 	gchar *import_file = NULL;
 	GOptionEntry entries[] =  {
-			{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
-			{ "import-file", 'f', 0, G_OPTION_ARG_STRING, &import_file, "File to import", NULL},
-			{ NULL, 0, 0, G_OPTION_ARG_NONE, NULL, NULL, NULL }
+		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
+		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, "File to import", NULL},
+		{ NULL }
 	};
 
-	bindtextdomain (GETTEXT_PACKAGE, NULL);
+	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
 	context = g_option_context_new ("- NetworkManager VPN properties");
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
-	g_option_context_add_group (context, gtk_get_option_group (TRUE));
-	g_option_context_parse (context, &argc, &argv, &error);
+
+#ifdef HAVE_LIBGNOME_2_14
+	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
+			    GNOME_PARAM_GOPTION_CONTEXT, context,
+			    GNOME_PARAM_NONE);
+#else
+	{
+		GError *error = NULL;
+		g_option_context_add_group (context, gtk_get_option_group (TRUE));
+		g_option_context_parse (context, &argc, &argv, &error);
+		g_option_context_free (context);
+	}
+
+	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
+			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
+#endif
 
 	bad_opts = FALSE;
 	do_import = FALSE;
@@ -1086,11 +1136,6 @@ main (int argc, char *argv[])
 		ret = EXIT_FAILURE;
 		goto out;
 	}
-
-	gnome_program_init (GETTEXT_PACKAGE, VERSION, LIBGNOMEUI_MODULE, argc, argv,
-			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
-
-	glade_gnome_init ();
 
 	if (init_app () == FALSE) {
 		ret = EXIT_FAILURE;

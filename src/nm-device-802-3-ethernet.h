@@ -57,8 +57,6 @@ struct _NMDevice8023EthernetClass
 
 GType nm_device_802_3_ethernet_get_type (void);
 
-NMDevice8023Ethernet *	nm_device_802_3_ethernet_new (void);
-
 
 static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev);
 static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev)
@@ -72,6 +70,8 @@ void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
 
 void nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *dev);
+
+int nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
 
 G_END_DECLS
 

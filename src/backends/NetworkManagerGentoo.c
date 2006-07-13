@@ -183,8 +183,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	/* Remove routing table entries for lo */
-	nm_spawn_process ("/sbin/ip route flush dev lo");
+	nm_system_device_flush_routes_with_iface ("lo");
 }
 
 /*
@@ -300,7 +299,7 @@ typedef struct GentooSystemConfigData
  * info before setting stuff too.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev)
+void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
 	char		*cfg_file_path = NULL;
 	FILE		*file = NULL;
@@ -582,4 +581,15 @@ void nm_system_set_hostname (NMIP4Config *config)
 gboolean nm_system_should_modify_resolv_conf (void)
 {
 	return TRUE;
+}
+
+/*
+ * nm_system_get_mtu
+ *
+ * Return a user-provided or system-mandated MTU for this device or zero if
+ * no such MTU is provided.
+ */
+guint32 nm_system_get_mtu (NMDevice *dev)
+{
+	return 0;
 }

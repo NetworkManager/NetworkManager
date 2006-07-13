@@ -1,6 +1,6 @@
 AC_PREREQ(2.52)
 
-AC_INIT(NetworkManager-vpnc, 0.5.0, dcbw@redhat.com, NetworkManager-vpnc)
+AC_INIT(NetworkManager-vpnc, 0.6.2, dcbw@redhat.com, NetworkManager-vpnc)
 AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
@@ -35,7 +35,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(select socket uname)
 
-ALL_LINGUAS="da sv"
+ALL_LINGUAS="cs da de es fi fr hu it ja pl pt_BR sv zh_CN zh_TW"
 AC_SUBST(ALL_LINGUAS)
 
 GETTEXT_PACKAGE=NetworkManager-vpnc

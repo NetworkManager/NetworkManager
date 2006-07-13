@@ -39,6 +39,11 @@ struct _NMAPSecurityWEPPrivate
 	int		auth_algorithm;
 };
 
+static int get_auth_algorithm (NMAPSecurityWEP *security)
+{
+	return security->priv->auth_algorithm;
+}
+
 static void set_description (NMAPSecurityWEP *security)
 {
 	NMAPSecurity * parent = NM_AP_SECURITY (security);
@@ -110,7 +115,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              gboolean adhoc)
 {
 	gboolean			success = FALSE;
 	char *			msg = NULL;
@@ -120,6 +125,16 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 			"SET_NETWORK %i key_mgmt NONE", nwid))
 		goto out;
+
+	/*
+	 * If the user selected "Shared" (aka restricted) key, set it explicitly.  Otherwise,
+	 * let wpa_supplicant default to the right thing, which is an open key.
+	 */
+	if (get_auth_algorithm (NM_AP_SECURITY_WEP (instance)) == IW_AUTH_ALG_SHARED_KEY)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
+			"SET_NETWORK %i auth_alg SHARED", nwid));
+	}
 
 	msg = g_strdup_printf ("SET_NETWORK %i wep_key0 <key>", nwid);
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
@@ -138,6 +153,25 @@ real_write_supplicant_config (NMAPSecurity *instance,
 
 out:
 	return success;
+}
+
+static guint32
+real_get_default_capabilities (NMAPSecurity *instance)
+{
+	guint32	caps = NM_802_11_CAP_NONE;
+
+	switch (nm_ap_security_get_we_cipher (instance))
+	{
+		case IW_AUTH_CIPHER_WEP40:
+			caps |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40);
+			break;
+		case IW_AUTH_CIPHER_WEP104:
+			caps |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP104);
+			break;
+		default:
+			break;
+	}
+	return caps;
 }
 
 static NMAPSecurity *
@@ -167,6 +201,7 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	par_class->copy_constructor_func = real_copy_constructor;
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
+	par_class->get_default_capabilities_func = real_get_default_capabilities;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));
 }

@@ -306,6 +306,8 @@ static DBusMessage *nm_dbus_device_get_driver (DBusConnection *connection, DBusM
 	if ((reply = dbus_message_new_method_return (message)))
 	{
 		const char * driver = nm_device_get_driver (dev);
+		if (!driver)
+			driver = "";
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &driver, DBUS_TYPE_INVALID);
 	}
 
@@ -367,6 +369,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		char *			hw_addr_buf_ptr = &hw_addr_buf[0];
 		dbus_int32_t		mode = -1;
 		dbus_int32_t		strength = -1;
+		dbus_int32_t		speed = 0;
 		char *			active_network_path = NULL;
 		dbus_bool_t		link_active = (dbus_bool_t) nm_device_has_active_link (dev);
 		dbus_uint32_t		capabilities = (dbus_uint32_t) nm_device_get_capabilities (dev);
@@ -419,8 +422,9 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 			NMAccessPointList *	ap_list;
 			NMAPListIter *		iter;
 
-			strength = (dbus_int32_t) nm_device_802_11_wireless_get_signal_strength (wdev);
-			mode = (dbus_int32_t) nm_device_802_11_wireless_get_mode (wdev);
+			strength = nm_device_802_11_wireless_get_signal_strength (wdev);
+			mode = nm_device_802_11_wireless_get_mode (wdev);
+			speed = nm_device_802_11_wireless_get_bitrate (wdev);
 
 			 if (req && (ap = nm_act_request_get_ap (req)))
 			 {
@@ -450,6 +454,9 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 				}
 			}
 		}
+		else
+			speed = nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (dev));
+
 		if (!active_network_path)
 			active_network_path = g_strdup ("");
 
@@ -469,6 +476,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 									DBUS_TYPE_INT32,  &mode,
 									DBUS_TYPE_INT32,  &strength,
 									DBUS_TYPE_BOOLEAN,&link_active,
+									DBUS_TYPE_INT32,  &speed,
 									DBUS_TYPE_UINT32, &capabilities,
 									DBUS_TYPE_UINT32, &type_capabilities,
 									DBUS_TYPE_STRING, &active_network_path,

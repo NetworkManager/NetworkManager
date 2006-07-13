@@ -207,24 +207,10 @@ real_get_generic_capabilities (NMDevice *dev)
 	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
 		caps |= NM_DEVICE_CAP_CARRIER_DETECT;
 
-	if (caps)
-		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
+	caps |= NM_DEVICE_CAP_NM_SUPPORTED;
 
 	return caps;
 }
-
-static NMActStageReturn
-real_act_stage2_config (NMDevice *dev, NMActRequest *req)
-{
-	NMData *	data;
-
-	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	return TRUE;
-}
-
 
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
@@ -280,8 +266,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
 
-	parent_class->act_stage2_config = real_act_stage2_config;
-
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }
 
@@ -332,8 +316,8 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
 	{
-		nm_warning ("cannot open socket on interface %s for ethtool detect; errno=%d",
-				iface, errno);
+		nm_warning ("cannot open socket on interface %s for ethtool detect: %s",
+				iface, strerror (errno));
 		return FALSE;
 	}
 
@@ -356,6 +340,37 @@ out:
 	return supports_ethtool;
 }
 
+
+int
+nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
+{
+	NMSock *			sk;
+	struct ifreq		ifr;
+	struct ethtool_cmd	edata;
+	const char *		iface;
+	int				speed = 0;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
+	{
+		nm_warning ("cannot open socket on interface %s for ethtool: %s",
+				iface, strerror (errno));
+		return FALSE;
+	}
+
+	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+	edata.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (char *) &edata;
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
+		goto out;
+	speed = edata.speed;
+
+out:
+	nm_dev_sock_close (sk);
+	return speed;
+}
 
 
 /**************************************/
