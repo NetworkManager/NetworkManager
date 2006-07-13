@@ -1,4 +1,12 @@
 ==============================================
+NetworkManager-0.6.4
+Overview of changes since NetworkManager-0.6.3
+==============================================
+
+0.6.4 is a bug fix release with many, many bug
+fixes.  See the ChangeLog for details.
+
+==============================================
 NetworkManager-0.6.3
 Overview of changes since NetworkManager-0.6.2
 ==============================================
