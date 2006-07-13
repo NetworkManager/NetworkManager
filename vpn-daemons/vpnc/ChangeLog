@@ -1,3 +1,7 @@
+2006-07-13  Robert Love  <rml@novell.com>
+
+	* configure.in: Bump version to 0.6.4 to match NM release.
+
 2006-07-11  Robert Love  <rml@novell.com>
 
 	* src/src/nm-vpnc-service.c: Backport rekeying improvements from HEAD.
