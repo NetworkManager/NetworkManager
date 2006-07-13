@@ -254,6 +254,19 @@ fi
 AC_DEFINE_UNQUOTED(WPA_SUPPLICANT_BINARY_PATH, "$WPA_SUPPLICANT_BINARY_PATH", [Define to path of wpa_supplicant binary])
 AC_SUBST(WPA_SUPPLICANT_BINARY_PATH)
 
+# ip binary path
+AC_ARG_WITH(ip, AC_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
+if test "x${with_ip}" = x; then
+  AC_PATH_PROG(IP_BINARY_PATH, ip, [], $PATH:/sbin:/usr/sbin)
+  if ! test -x "$IP_BINARY_PATH"; then
+	AC_MSG_ERROR(iproute2 was not installed.  See http://linux-net.osdl.org/index.php/Iproute2)
+  fi
+else
+  IP_BINARY_PATH="$with_ip"
+fi
+AC_DEFINE_UNQUOTED(IP_BINARY_PATH, "$IP_BINARY_PATH", [Define to path of ip binary])
+AC_SUBST(IP_BINARY_PATH)
+
 #### find the actual value for $prefix that we'll end up with
 ##   (I know this is broken and should be done in the Makefile, but
 ##    that's a major pain and almost nobody actually seems to care)

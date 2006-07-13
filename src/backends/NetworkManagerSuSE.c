@@ -23,6 +23,10 @@
  * (C) Copyright 2005-2006 SuSE GmbH
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -94,7 +98,7 @@ void nm_system_device_flush_routes_with_iface (const char *iface)
 	g_return_if_fail (iface != NULL);
 
 	/* Remove routing table entries */
-	buf = g_strdup_printf ("/sbin/ip route flush dev %s", iface);
+	buf = g_strdup_printf (IP_BINARY_PATH " route flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -131,7 +135,7 @@ void nm_system_device_add_default_route_via_device_with_iface (const char *iface
 	g_return_if_fail (iface != NULL);
 
 	/* Add default gateway */
-	buf = g_strdup_printf ("/sbin/ip route add default dev %s", iface);
+	buf = g_strdup_printf (IP_BINARY_PATH " route add default dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -150,7 +154,7 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
 	g_return_if_fail (iface != NULL);
 
 	/* Add default gateway */
-	buf = g_strdup_printf ("/sbin/ip route add %s dev %s", route, iface);
+	buf = g_strdup_printf (IP_BINARY_PATH " route add %s dev %s", route, iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -200,7 +204,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 	g_return_if_fail (iface != NULL);
 
 	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf ("/sbin/ip addr flush dev %s", iface);
+	buf = g_strdup_printf (IP_BINARY_PATH " addr flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -215,7 +219,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 void nm_system_enable_loopback (void)
 {
 	nm_system_device_set_up_down_with_iface ("lo", TRUE);
-	nm_spawn_process ("/sbin/ip addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
+	nm_spawn_process (IP_BINARY_PATH " addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
 }
 
 
@@ -240,7 +244,7 @@ void nm_system_flush_loopback_routes (void)
  */
 void nm_system_delete_default_route (void)
 {
-	nm_spawn_process ("/sbin/ip route del default");
+	nm_spawn_process (IP_BINARY_PATH " route del default");
 }
 
 
@@ -252,7 +256,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_flush_arp_cache (void)
 {
-	nm_spawn_process ("/sbin/ip neigh flush all");
+	nm_spawn_process (IP_BINARY_PATH " neigh flush all");
 }
 
 
@@ -340,7 +344,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	eui[0] ^= 2;
 
 	/* Add the default link-local IPv6 address to a device */
-	buf = g_strdup_printf ("/sbin/ip -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
+	buf = g_strdup_printf (IP_BINARY_PATH " -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
 						eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
 						eui[6], eui[7], nm_device_get_iface (dev));
 	nm_spawn_process (buf);

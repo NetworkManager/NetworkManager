@@ -1,3 +1,16 @@
+2006-07-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Timothée Lecomte <timothee.lecomte@ens.fr>
+	* configure.in
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- Convert hardcoding of 'ip' path to configure-time
+			detected one
+
 2006-07-13  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerDialup.h: Support a DSL class, too.
