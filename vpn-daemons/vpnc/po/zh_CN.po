@@ -1,0 +1,239 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-vpnc HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-07-16 04:58+0200\n"
+"PO-Revision-Date: 2006-07-16 18:13+0800\n"
+"Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
+"Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "次要密码(_S)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:267
+msgid "_Username:"
+msgstr "用户名(_U)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:269
+msgid "_Domain:"
+msgstr "域(_D)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:271
+msgid "_Password:"
+msgstr "密码(_P)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:354
+msgid "Connect _anonymously"
+msgstr "匿名连接(_A)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:359
+msgid "Connect as _user:"
+msgstr "以用户连接(_U)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "本次会话记住密码(_R)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "在密钥环中保存密码(_S)"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "您需要进行身份验证才能访问“%s”。"
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr ""
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "组密码(_G)："
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "添加、删除及编辑 VPN 连接"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "VPN 连接管理器(vpnc)"
+
+#: ../properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:447
+msgid "The following vpnc VPN connection will be created:"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:449
+#, c-format
+msgid "Name:  %s"
+msgstr "名称：%s"
+
+#: ../properties/nm-vpnc.c:452
+#, c-format
+msgid "Gateway:  %s"
+msgstr "网关：%s"
+
+#: ../properties/nm-vpnc.c:454
+#, c-format
+msgid "Group Name:  %s"
+msgstr "组名称：%s"
+
+#: ../properties/nm-vpnc.c:458
+#, c-format
+msgid "Username:  %s"
+msgstr "用户名：%s"
+
+#: ../properties/nm-vpnc.c:463
+#, c-format
+msgid "Domain:  %s"
+msgstr "域：%s"
+
+#: ../properties/nm-vpnc.c:468
+#, c-format
+msgid "Routes:  %s"
+msgstr "路由：%s"
+
+#: ../properties/nm-vpnc.c:472
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "连接细节可使用“编辑”按钮更改。"
+
+#: ../properties/nm-vpnc.c:548
+msgid "TCP tunneling not supported"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:550
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+
+#: ../properties/nm-vpnc.c:574
+msgid "Cannot import settings"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:576
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr ""
+
+#: ../properties/nm-vpnc.c:593
+msgid "Select file to import"
+msgstr "选择要导入的文件"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:753
+msgid "Save as..."
+msgstr "另存为..."
+
+#: ../properties/nm-vpnc.c:783
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "已经存在名为“%s”的文件。"
+
+#: ../properties/nm-vpnc.c:786
+msgid "Do you want to replace it with the one you are saving?"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:800
+msgid "Failed to export configuration"
+msgstr ""
+
+#: ../properties/nm-vpnc.c:802
+#, c-format
+msgid "Failed to save file %s"
+msgstr "保存文件 %s 失败"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>连接名称</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>所需信息</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>如：172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "组名称(_R)："
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "可选信息(_P)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "覆盖用户名(_U)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr ""
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "网关(_G)："
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "导入已存的配置(_I)..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "仅对这些地址使用 VPN 连接(_O)"
+
+#: ../src/nm-vpnc-service.c:117
+msgid ""
+"The VPN login failed because the user name and password were not accepted."
+msgstr ""
+
+#: ../src/nm-vpnc-service.c:119
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr ""
+
+#: ../src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+
+#: ../src/nm-vpnc-service.c:123
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+
+#: ../src/nm-vpnc-service.c:125
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
