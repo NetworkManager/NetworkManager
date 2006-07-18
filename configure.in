@@ -147,6 +147,8 @@ PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
 
+AC_ARG_WITH(notify, AC_HELP_STRING([--with-notify], [Use libnotify]), ac_notify=$withval, ac_notify=auto)
+
 if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GTK, gtk+-2.0)
 	AC_SUBST(GTK_CFLAGS)
@@ -168,11 +170,13 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GNOME_KEYRING_CFLAGS)
 	AC_SUBST(GNOME_KEYRING_LIBS)
 
-	PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
-				[enable_notify=no])
-	if test "x$enable_notify" != "xno"; then
-		AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
-		[Enable notifications with libnotify])
+	if test x"$ac_notify" != xno; then
+		PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
+					[enable_notify=no])
+		if test "x$enable_notify" != "xno"; then
+			AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
+			[Enable notifications with libnotify])
+		fi
 	fi
 fi
 AM_CONDITIONAL(WITH_NOTIFY, test x"$enable_notify" != xno) # can't do it from inside 'if'
