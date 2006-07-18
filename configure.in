@@ -147,7 +147,7 @@ PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
 
-AC_ARG_WITH(notify, AC_HELP_STRING([--with-notify], [Use libnotify]), ac_notify=$withval, ac_notify=auto)
+AC_ARG_WITH(notify, AC_HELP_STRING([--with-notify], [Use libnotify]), enable_notify=$withval, enable_notify=auto)
 
 if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GTK, gtk+-2.0)
@@ -170,7 +170,7 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GNOME_KEYRING_CFLAGS)
 	AC_SUBST(GNOME_KEYRING_LIBS)
 
-	if test x"$ac_notify" != xno; then
+	if test x"$enable_notify" != xno; then
 		PKG_CHECK_MODULES([NOTIFY], [libnotify >= 0.3.0], [enable_notify=yes],
 					[enable_notify=no])
 		if test "x$enable_notify" != "xno"; then
