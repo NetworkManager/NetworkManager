@@ -1,3 +1,7 @@
+2006-06-19  Satoru SATOH <ss@gnome.gr.jp>
+
+	* configure.in (ALL_LINGUAS): Added ja (Japanese).
+
 2006-05-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service.c
