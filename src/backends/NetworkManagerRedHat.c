@@ -27,6 +27,7 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <arpa/inet.h>
+#include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
@@ -44,8 +45,7 @@
  */
 void nm_system_init (void)
 {
-	/* Kill any dhclients lying around */
-	nm_system_kill_all_dhcp_daemons ();
+	nm_generic_init ();
 }
 
 
@@ -57,13 +57,7 @@ void nm_system_init (void)
  */
 void nm_system_device_flush_routes (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
-
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
-
-	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
+	nm_generic_device_flush_routes (dev);
 }
 
 
@@ -75,14 +69,7 @@ void nm_system_device_flush_routes (NMDevice *dev)
  */
 void nm_system_device_flush_routes_with_iface (const char *iface)
 {
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Remove routing table entries */
-	buf = g_strdup_printf (IP_BINARY_PATH " route flush dev %s", iface);
-	nm_spawn_process (buf);
-	g_free (buf);
+	nm_generic_device_flush_routes_with_iface (iface);
 }
 
 
@@ -94,13 +81,7 @@ void nm_system_device_flush_routes_with_iface (const char *iface)
  */
 void nm_system_device_add_default_route_via_device (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
-
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
-
-	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
+	nm_generic_device_add_default_route_via_device (dev);
 }
 
 
@@ -112,14 +93,7 @@ void nm_system_device_add_default_route_via_device (NMDevice *dev)
  */
 void nm_system_device_add_default_route_via_device_with_iface (const char *iface)
 {
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Add default gateway */
-	buf = g_strdup_printf (IP_BINARY_PATH " route add default dev %s", iface);
-	nm_spawn_process (buf);
-	g_free (buf);
+	nm_generic_device_add_default_route_via_device_with_iface (iface);
 }
 
 
@@ -131,14 +105,7 @@ void nm_system_device_add_default_route_via_device_with_iface (const char *iface
  */
 void nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route)
 {
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Add default gateway */
-	buf = g_strdup_printf (IP_BINARY_PATH " route add %s dev %s", route, iface);
-	nm_spawn_process (buf);
-	g_free (buf);
+	nm_generic_device_add_route_via_device_with_iface (iface, route);
 }
 
 
@@ -163,13 +130,7 @@ gboolean nm_system_device_has_active_routes (NMDevice *dev)
  */
 void nm_system_device_flush_addresses (NMDevice *dev)
 {
-	g_return_if_fail (dev != NULL);
-
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
-
-	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
+	nm_generic_device_flush_addresses (dev);
 }
 
 
@@ -181,14 +142,7 @@ void nm_system_device_flush_addresses (NMDevice *dev)
  */
 void nm_system_device_flush_addresses_with_iface (const char *iface)
 {
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf (IP_BINARY_PATH " addr flush dev %s", iface);
-	nm_spawn_process (buf);
-	g_free (buf);
+	nm_generic_device_flush_addresses_with_iface (iface);
 }
 
 
@@ -213,8 +167,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
  */
 void nm_system_enable_loopback (void)
 {
-	nm_system_device_set_up_down_with_iface ("lo", TRUE);
-	nm_spawn_process (IP_BINARY_PATH " addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
+	nm_generic_enable_loopback ();
 }
 
 
@@ -227,7 +180,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	nm_system_device_flush_routes_with_iface ("lo");
+	nm_generic_flush_loopback_routes ();
 }
 
 
@@ -239,7 +192,7 @@ void nm_system_flush_loopback_routes (void)
  */
 void nm_system_delete_default_route (void)
 {
-	nm_spawn_process (IP_BINARY_PATH " route del default");
+	nm_generic_delete_default_route ();
 }
 
 
@@ -251,7 +204,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_flush_arp_cache (void)
 {
-	nm_spawn_process (IP_BINARY_PATH " neigh flush all");
+	nm_generic_flush_arp_cache ();
 }
 
 
@@ -320,27 +273,7 @@ void nm_system_restart_mdns_responder (void)
  */
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
-	char *buf;
-	struct ether_addr hw_addr;
-	unsigned char eui[8];
-
-	if (nm_device_is_802_3_ethernet (dev))
-		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
-	else if (nm_device_is_802_11_wireless (dev))
-		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
-
-	memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
-	memmove (eui+5, eui+3, 3);
-	eui[3] = 0xff;
-	eui[4] = 0xfe;
-	eui[0] ^= 2;
-
-	/* Add the default link-local IPv6 address to a device */
-	buf = g_strdup_printf (IP_BINARY_PATH " -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
-						eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
-						eui[6], eui[7], nm_device_get_iface (dev));
-	nm_spawn_process (buf);
-	g_free (buf);
+	nm_generic_device_add_ip6_link_address (dev);
 }
 
 
@@ -372,82 +305,6 @@ static char *get_current_profile_name (void)
 	svCloseFile (file);
 
 	return buf;
-}
-
-
-/*
- * set_ip4_config_from_resolv_conf
- *
- * Add nameservers and search names from a resolv.conf format file.
- *
- */
-static void set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config)
-{
-	char *	contents = NULL;
-	char **	split_contents = NULL;
-	int		i, len;
-
-	g_return_if_fail (filename != NULL);
-	g_return_if_fail (ip4_config != NULL);
-
-	if (!g_file_get_contents (filename, &contents, NULL, NULL) || (contents == NULL))
-		return;
-
-	if (!(split_contents = g_strsplit (contents, "\n", 0)))
-		goto out;
-	
-	len = g_strv_length (split_contents);
-	for (i = 0; i < len; i++)
-	{
-		char *line = split_contents[i];
-
-		/* Ignore comments */
-		if (!line || (line[0] == ';') || (line[0] == '#'))
-			continue;
-
-		line = g_strstrip (line);
-		if ((strncmp (line, "search", 6) == 0) && (strlen (line) > 6))
-		{
-			char *searches = g_strdup (line + 7);
-			char **split_searches = NULL;
-
-			if (!searches || !strlen (searches))
-				continue;
-
-			/* Allow space-separated search domains */
-			if ((split_searches = g_strsplit (searches, " ", 0)))
-			{
-				int m, srch_len;
-
-				srch_len = g_strv_length (split_searches);
-				for (m = 0; m < srch_len; m++)
-				{
-					if (split_searches[m])
-						nm_ip4_config_add_domain	(ip4_config, split_searches[m]);
-				}
-				g_strfreev (split_searches);
-			}
-			else
-			{
-				/* Only 1 item, add the whole line */
-				nm_ip4_config_add_domain	(ip4_config, searches);
-			}
-
-			g_free (searches);
-		}
-		else if ((strncmp (line, "nameserver", 10) == 0) && (strlen (line) > 10))
-		{
-			guint32	addr = (guint32) (inet_addr (line + 11));
-
-			if (addr != (guint32) -1)
-				nm_ip4_config_add_nameserver (ip4_config, addr);
-		}
-	}
-
-	g_strfreev (split_contents);
-
-out:
-	g_free (contents);
 }
 
 
@@ -582,7 +439,7 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 		{
 			char *filename = g_strdup_printf (SYSCONFDIR"/sysconfig/networking/profiles/%s/resolv.conf", cur_profile_name);
 			
-			set_ip4_config_from_resolv_conf (filename, sys_data->config);
+			nm_generic_set_ip4_config_from_resolv_conf (filename, sys_data->config);
 			g_free (filename);
 			g_free (cur_profile_name);
 		}

@@ -8,7 +8,8 @@ INCLUDES = -I${top_srcdir}				\
 
 noinst_LTLIBRARIES = libnmbackend.la
 
-libnmbackend_la_SOURCES =
+libnmbackend_la_SOURCES =	NetworkManagerGeneric.c	\
+				NetworkManagerGeneric.h
 
 if TARGET_REDHAT
 libnmbackend_la_SOURCES +=	NetworkManagerRedHat.c	\

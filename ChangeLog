@@ -1,3 +1,18 @@
+2006-07-24  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Timothée Lecomte <timothee.lecomte@ens.fr>
+	* src/backends/Makefile.am
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- Genericize common backend functions
+
 2006-07-18  Robert Love  <rml@novell.com>
 
 	* configure.in: Add "--with-notify" option to allow disabling of
