@@ -1,3 +1,8 @@
+2006-07-28  Christophe Merlet  <redfox@redfoxcenter.org>
+
+	* properties/nm-openvpn-dialog.glade.h: fixed typo.
+	* configure.in (ALL_LINGUAS): Added fr (French).
+
 2006-06-19  Satoru SATOH <ss@gnome.gr.jp>
 
 	* configure.in (ALL_LINGUAS): Added ja (Japanese).

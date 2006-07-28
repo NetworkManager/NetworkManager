@@ -1930,7 +1930,7 @@ X.509 with Password Authentication</property>
 	  <child>
 	    <widget class="GtkLabel" id="nm-openvpn-label-importnote">
 	      <property name="visible">True</property>
-	      <property name="label" translatable="yes">Please note that the file you import is not an OpenVPN configuration file. Ask your adminstrator for the file.</property>
+	      <property name="label" translatable="yes">Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file.</property>
 	      <property name="use_underline">False</property>
 	      <property name="use_markup">False</property>
 	      <property name="justify">GTK_JUSTIFY_LEFT</property>

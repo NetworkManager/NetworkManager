@@ -35,7 +35,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(select socket uname)
 
-ALL_LINGUAS="ca da es fi hu ja nl pt_BR sk sv vi zh_CN"
+ALL_LINGUAS="ca da es fi fr hu ja nl pt_BR sk sv vi zh_CN"
 AC_SUBST(ALL_LINGUAS)
 
 GETTEXT_PACKAGE=NetworkManager-openvpn
