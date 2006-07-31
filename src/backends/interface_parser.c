@@ -50,11 +50,13 @@ void add_block(const char *type, const char* name)
 
 void add_data(const char *key,const char *data)
 {
+	if_data *ret;
+
 	// Check if there is a block where we can attach our data
 	if (first == NULL)
 		return;
 			
-	if_data *ret = (if_data*)calloc(1,sizeof(struct _if_data));
+	ret = (if_data*) calloc(1,sizeof(struct _if_data));
 	ret->key = g_strdup(key);
 	ret->data = g_strdup(data);
 	
