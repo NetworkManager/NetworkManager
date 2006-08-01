@@ -31,10 +31,13 @@
 #include <glib/gi18n-lib.h>
 
 #include "applet.h"
+#include "applet-dbus-vpn.h"
 
 static void session_die (GnomeClient *client, gpointer client_data)
 {
-        gtk_main_quit ();
+	NMApplet *applet = client_data;
+	nma_dbus_vpn_deactivate_connection (applet->connection);
+	gtk_main_quit ();
 }
 
 int main (int argc, char *argv[])
@@ -49,9 +52,6 @@ int main (int argc, char *argv[])
     	client = gnome_master_client ();
     	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
 
-    	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
-    	g_signal_connect (client, "die", G_CALLBACK (session_die), NULL);
-
 	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
@@ -59,6 +59,9 @@ int main (int argc, char *argv[])
 	nma = nma_new ();
 	if (!nma)
 		exit (EXIT_FAILURE);
+
+    	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
+    	g_signal_connect (client, "die", G_CALLBACK (session_die), nma);	
 
 	gtk_widget_show_all (GTK_WIDGET (nma));
 	gtk_main ();

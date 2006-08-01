@@ -1,3 +1,7 @@
+2006-08-01  Robert Love  <rml@novell.com>
+
+	* gnome/applet/main.c: Shutdown all VPN connections on logout.
+
 2006-07-31  Robert Love  <rml@novell.com>
 
 	* src/backends/interface_parser.c: Declarations must begin the block.
