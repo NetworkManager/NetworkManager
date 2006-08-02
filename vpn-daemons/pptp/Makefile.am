@@ -1,6 +1,6 @@
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = src auth-dialog properties po
+SUBDIRS = src auth-dialog auth-dialog-general properties po
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
 dbusservice_DATA = nm-ppp-starter.conf
