@@ -193,8 +193,8 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 
 	}
 
-	g_free (keyring_username);
-	g_free (keyring_password);
+	if (keyring_username!=NULL) g_free (keyring_username);
+	if (keyring_password!=NULL) g_free (keyring_password);
 
 	gtk_widget_destroy (dialog);
 
