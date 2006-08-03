@@ -115,7 +115,7 @@ g_warning("Secret: %s",username);
         { 
           g_free(item->data);
           item = g_slist_next(item);
-g_warning("Secret: %s",item->data);
+g_warning("Secret: %s",(char *)item->data);
 		  result = g_slist_append (result, item->data);
         } 
         g_slist_free(secrets);
