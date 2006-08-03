@@ -316,7 +316,6 @@ static void nm_ppp_cancel_helper_timer (NmPPPData *data)
 static void pppd_start_watch_cb (GPid pid, gint status, gpointer user_data)
 {
   guint	error = -1;
-  guint	status2;
 
   NmPPPData *data = (NmPPPData *)user_data;
   nm_warning ("pppd_start_watch_cb: entered");
@@ -371,7 +370,6 @@ static void pppd_start_watch_cb (GPid pid, gint status, gpointer user_data)
 static void pppd_forked_watch_cb (GPid pid, gint status, gpointer user_data)
 {
   guint	error = -1;
-  guint	status2;
 
   NmPPPData *data = (NmPPPData *)user_data;
   nm_warning ("ppp_forked_watch_cb: entered");
@@ -489,6 +487,8 @@ static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const i
       g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
     } */ 
   }
+
+  return 0;
 }
 
 /*
@@ -528,6 +528,8 @@ static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const
 //      g_ptr_array_add (ppp_argv, (gpointer) "lock"); 
 //    } */ 
 //  }
+
+  return 0;
 }
 
 /*
@@ -540,7 +542,6 @@ static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const
 static gint nm_ppp_get_cmdline_btserial (NmPPPData *data, char **data_items, const int num_items, GPtrArray *ppp_argv, GPtrArray *free_later)
 {
   int        i = 0;
-  char **chat_binary;
   char *bdaddr = NULL;
   char *bdchannel=NULL;
 
@@ -562,6 +563,8 @@ static gint nm_ppp_get_cmdline_btserial (NmPPPData *data, char **data_items, con
   g_ptr_array_add (ppp_argv, (gpointer) "/dev/ttyGPRS");
 //  g_ptr_array_add (ppp_argv, (gpointer) "115200");
   g_ptr_array_add (ppp_argv, (gpointer) "57600");
+
+  return 0;
 }
 
 /*
@@ -635,6 +638,7 @@ static gint nm_ppp_get_cmdline_gprs (NmPPPData *data, char **data_items, const i
   g_ptr_array_add (ppp_argv, (gpointer) connect_script);
   g_ptr_array_add (free_later, (gpointer) connect_script);
 
+  return 0;
 }
 
 /*
@@ -645,7 +649,9 @@ static gint nm_ppp_get_cmdline_gprs (NmPPPData *data, char **data_items, const i
  */
 static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const int num_items, GPtrArray *	ppp_argv, GPtrArray *free_later)
 {
-  int                   i = 0;
+  int         i = 0;
+  char **extra_opts;
+  char        **opt;
   // Announce ourselves as NetworkManager to the ip-up/down scripts
   g_ptr_array_add (ppp_argv, (gpointer) "ipparam");
   g_ptr_array_add (ppp_argv, (gpointer) "NetworkManager");
@@ -700,6 +706,17 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 //    } else if ( (strcmp( data_items[i], "usepeerdns-overtunnel" ) == 0) &&
 //		(strcmp( data_items[++i], "yes" ) != 0) ) {
 //      g_ptr_array_add (ppp_argv, (gpointer) "usepeeddns-overtunnel");
+    } else if ( strcmp( data_items[i], "ppp-extra" ) == 0 ) {
+        extra_opts=g_strsplit(data_items[++i]," ",-1);
+        for (opt=extra_opts; *opt !=NULL; opt++) {
+          char *opt_copy = g_strdup(*opt);
+          g_ptr_array_add (ppp_argv, (gpointer) opt_copy);
+          g_ptr_array_add (free_later, (gpointer) opt_copy);
+        }
+        g_strfreev(extra_opts);
+//    } else if ( (strcmp( data_items[i], "usepeerdns-overtunnel" ) == 0) &&
+//		(strcmp( data_items[++i], "yes" ) != 0) ) {
+//      g_ptr_array_add (ppp_argv, (gpointer) "usepeeddns-overtunnel");
     } else if ( (strcmp( data_items[i], "ppp-debug" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       data->debug=TRUE;
@@ -711,6 +728,8 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 
   g_ptr_array_add (ppp_argv, (gpointer) "plugin");
   g_ptr_array_add (ppp_argv, (gpointer) NM_PPP_HELPER_PATH);
+
+  return 0;
 }
 
 /*
@@ -806,6 +825,7 @@ typedef enum OptType
 	OPT_TYPE_UNKNOWN = 0,
 	OPT_TYPE_ADDRESS,
 	OPT_TYPE_ASCII,
+	OPT_TYPE_PPP_EXTRA,
 	OPT_TYPE_NONE
 } OptType;
 
@@ -814,6 +834,12 @@ typedef struct Option
 	const char *name;
 	OptType type;
 } Option;
+
+typedef struct PPPOption
+{
+	const char *name;
+	unsigned int nparams;
+} PPPOption;
 
 /*
  * nm_ppp_config_options_validate
@@ -846,6 +872,7 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { "ppp-noipdefault",	OPT_TYPE_ASCII },
     { "ppp-connect-delay",	OPT_TYPE_ASCII },
     { "ppp-modem", 			OPT_TYPE_ASCII },
+    { "ppp-extra", 			OPT_TYPE_PPP_EXTRA },
     { "bt-bdaddr", 			OPT_TYPE_ASCII },
     { "bt-channel", 		OPT_TYPE_ASCII },
     { "gprs-packet-type", 	OPT_TYPE_ASCII },
@@ -853,6 +880,13 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { "gprs-ip-address", 	OPT_TYPE_ASCII },
     { "gprs-context-num", 	OPT_TYPE_ASCII },
     { NULL,					OPT_TYPE_UNKNOWN } };
+
+  PPPOption allowed_extra_ppp_opts[] = {
+    { "require-mppe-128", 0 },
+    { "refuse-eap",       0 },
+    { "refuse-chap",      0 },
+    { "refuse-mschap",    0 }, 
+    { NULL,               0 } };
   
   unsigned int	i;
 
@@ -882,9 +916,11 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
       Option *opt = NULL;
       unsigned int t, len;
       char *opt_value;
+      char **extra_opts = NULL;
+      PPPOption *allowed = NULL;
+      char **extra_opt = NULL;
       
-      if (!data_items[i] || !data_items[i+1])
-	return FALSE;
+      if (!data_items[i] || !data_items[i+1]) return FALSE;
       opt_value = data_items[i+1];
 
       /* Find the option in the allowed list */
@@ -903,36 +939,60 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
       /* Don't allow control characters at all */
       len = strlen (opt_value);
       for (t = 0; t < len; t++)
-	{
-	  if (iscntrl (opt_value[t]))
+	  {
+	    if (iscntrl (opt_value[t]))
 	    {
 	      nm_warning ("There were invalid characters in the VPN option '%s' - '%s'.", data_items[i], opt_value);
 	      return FALSE;
 	    }
-	}
+	  }
 
       /* Validate the option's data */
       switch (opt->type)
-	{
-	case OPT_TYPE_ASCII:
-	  /* What other characters should we reject?? */
-	  break;
-	  
-	case OPT_TYPE_NONE:
-	  /* These have blank data */
-	  break;
+	  {
+	    case OPT_TYPE_ASCII:
+	      /* What other characters should we reject?? */
+	      break;
+	      
+	    case OPT_TYPE_NONE:
+	      /* These have blank data */
+	      break;
 
-	case OPT_TYPE_ADDRESS:
-	  /* Can be any legal hostname or IP address */
-	  break;
+	    case OPT_TYPE_ADDRESS:
+	      /* Can be any legal hostname or IP address */
+	      break;
 
-	default:
-	  return FALSE;
-	  break;
-	}
+	    case OPT_TYPE_PPP_EXTRA:
+
+	      /* Can be any a string containing any of the options in the allowed list */
+          extra_opts=g_strsplit(opt_value," ",-1);
+          /* Loop over the extra options */
+          for (extra_opt=extra_opts; *extra_opt != NULL; extra_opt++) {
+            unsigned int j;
+            for (j = 0; j < sizeof (allowed_extra_ppp_opts) / sizeof (PPPOption); j++)
+	        {
+	          allowed = &allowed_extra_ppp_opts[j];
+              if (allowed->name && (strcmp(*extra_opt,allowed->name)==0)) {
+                extra_opt+=allowed->nparams;
+                break;
+              }
+	        }
+            if (!allowed->name) {
+	          nm_warning ("The extra ppp option '%s' is not in the allowed list.", *extra_opt);
+              g_strfreev(extra_opts);
+	          return FALSE;
+            }
+          }
+          g_strfreev(extra_opts);
+	      break;
+
+	    default:
+	      return FALSE;
+	      break;
+	  }
     }
 
-  return TRUE;
+    return TRUE;
 }
 
 /*
@@ -944,7 +1004,6 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
 static gboolean nm_ppp_store_auth_info (NmPPPData *data,
                                    char **auth_items, int num_auth_items)
 {
-  char *cmdline;
   int i;
 //  nm_warning("nm_ppp_store_auth_info: enter");       
   g_return_val_if_fail (data != NULL, FALSE);
@@ -1612,7 +1671,6 @@ int main( int argc, char *argv[] )
 {
   struct sigaction	action;
   sigset_t			block_mask;
-  int i;
 
   g_type_init ();
   if (!g_thread_supported ())
