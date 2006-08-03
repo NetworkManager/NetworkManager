@@ -174,7 +174,7 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 		username = gnome_two_password_dialog_get_username (GNOME_TWO_PASSWORD_DIALOG (dialog));
 		password = gnome_two_password_dialog_get_password (GNOME_TWO_PASSWORD_DIALOG (dialog));
 // Statically set the authentication type for now.
-        auth_type = "CHAP";
+        auth_type = g_strdup("CHAP");
 		result = g_slist_append (result, auth_type);
 		result = g_slist_append (result, username);
 		result = g_slist_append (result, password);
