@@ -1,3 +1,4 @@
+# translation of cs.po to Czech
 # translation of cs.po to
 # This file is distributed under the same license as the PACKAGE package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
@@ -7,10 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cs\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-06-13 13:08+0200\n"
-"PO-Revision-Date: 2006-06-13 13:07+0200\n"
+"POT-Creation-Date: 2006-08-03 13:43+0200\n"
+"PO-Revision-Date: 2006-08-03 14:08+0200\n"
 "Last-Translator: Jakub Friedl <jfriedl@suse.cz>\n"
-"Language-Team:  <cs@li.org>\n"
+"Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -317,9 +318,9 @@ msgstr ""
 #: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
+"Ask your administrator for the file."
 msgstr ""
-"Importovaný soubor není soubor s nastavením OpenVPN.\n"
+"Pozor, importovaný soubor není soubor s nastavením OpenVPN.\n"
 "Potřebný soubor si vyžádejte u svého administrátora."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
@@ -417,8 +418,7 @@ msgid ""
 msgstr "Připojení do VPN selhalo. Nelze se spojit s VPN serverem."
 
 #: ../src/nm-openvpn-service.c:133
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
+msgid "The VPN login failed because the VPN configuration options were invalid."
 msgstr "Připojení do VPN selhalo. Chybné volby VPN."
 
 #: ../src/nm-openvpn-service.c:135
@@ -430,3 +430,4 @@ msgstr "Připojení do VPN selhalo. Byly obdrženy chybné volby od VPN serveru.
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN spojení selhalo"
+
