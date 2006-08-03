@@ -60,7 +60,8 @@
                              "lcp-echo-interval=10;" \
                              "use-routes=no;" \
                              "routes=;" \
-                             "ppp-debug=no;"
+                             "ppp-debug=no;" \
+                             "ppp-extra='';"
 #define VPNUI_BTOOTH_DEFAULTS "bt-bdaddr=00:00:00:00:00:00;" \
                               "bt-channel=1;" 
 #define VPNUI_GPRS_DEFAULTS "gprs-packet-type=IP;" \
@@ -232,6 +233,11 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   "ppp-connect-delay"  , VPN_UI_OPTTYPE_SPINNER ,
   "ppp-connect-delay", "PPP-Connect-Delay", _("Interval (in milliseconds) to wait before connecting."),
   NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
+  "ppp-extra", VPN_UI_OPTTYPE_STRING, 
+  "ppp-extra", "PPP-Custom-Options", _("Custom PPP options"),
+  GTK_SIGNAL_FUNC(&editable_changed), NULL, impl );
 
   opt = vpnui_opt_new(
   "ppp-debug"  , VPN_UI_OPTTYPE_YESNO ,
