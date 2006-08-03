@@ -49,6 +49,7 @@
 #include "nm-ppp-starter.h"
 #include "nm-utils.h"
 
+
 static const char *pptp_binary_paths[] =
 {
   "/usr/sbin/pptp",
@@ -80,7 +81,6 @@ typedef struct NmPPPData
   GPid				pid;
   guint		     	quit_timer;
   guint			    helper_timer;
-  guint32		    mtu;
   char              *str_ip4_vpn_gateway;
   char              *connection_type;
   struct in_addr    ip4_vpn_gateway;
@@ -671,9 +671,6 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "mtu");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[i]);
-// Set the mtu value for return to NM.
-//   (Subtract 4 for PPP header)
-      data->mtu=atoi(data_items[i])-4;
     } else if ( (strcmp( data_items[i], "lcp-echo-failure" ) == 0) &&
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "lcp-echo-failure");
@@ -1319,13 +1316,9 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
   guint32		    ip4_nbns_len;
   guint32 		    ip4_nbns1;
   guint32 		    ip4_nbns2;
-  guint32			mtu;
   guint32			mss;
   gboolean		    success = FALSE;
   char *            empty = "";
-  int               i;
-  DBusMessageIter iter, iter_dict;
-
 
   g_return_if_fail (data != NULL);
   g_return_if_fail (con != NULL);
@@ -1343,7 +1336,6 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
   data->num_auth_items=-1;
 
   nm_ppp_cancel_helper_timer (data);
-
 
   if (dbus_message_get_args(message, NULL, 
 			    DBUS_TYPE_STRING, &tundev,
@@ -1375,76 +1367,15 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
       }
 
       if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_PPP_STARTER, NM_DBUS_INTERFACE_PPP_STARTER, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
-	  {
-	    nm_warning ("Not enough memory for new dbus message!");
-	    goto out;
-	  }
+	{
+	  nm_warning ("Not enough memory for new dbus message!");
+	  goto out;
+	}
 
-	  /* PPP does not care about the MSS */
-	  mss = 0;
-	  if (data->mtu <= 0) data->mtu=1500-4;
-      mtu = data->mtu;
+	/* PPP does not care about the MSS */
+	mss = 0;
 
       ip4_vpn_gateway=data->ip4_vpn_gateway.s_addr;
-
-      dbus_message_iter_init_append (signal, &iter);
-      if (!nmu_dbus_dict_open_write (&iter, &iter_dict)) {
-          nm_warning ("dict open write failed!");
-          goto out;
-      }
-
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "gateway", ip4_vpn_gateway)) {
-          nm_warning ("couldn't append gateway to dict");
-          goto out;
-      }
-
-      if (!nmu_dbus_dict_append_string (&iter_dict, "tunnel_device", tundev)) {
-          nm_warning ("couldn't append tundev to dict");
-          goto out;
-      }
-
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "local_address", ip4_address)) {
-          nm_warning ("couldn't append local_address to dict");
-          goto out;
-      }
-
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "ptp_address", ip4_ptp_address)) {
-          nm_warning ("couldn't append ptp_address to dict");
-          goto out;
-      }
-
-      for (i=0; i < ip4_dns_len; i++) {
-        if (!nmu_dbus_dict_append_uint32 (&iter_dict, "dns_server", ip4_dns[i])) {
-            nm_warning ("couldn't append dns_server (number %d) to dict",i);
-            goto out;
-        }
-      }
-
-      for (i=0; i < ip4_nbns_len; i++) {
-        if (!nmu_dbus_dict_append_uint32 (&iter_dict, "nbns_server", ip4_dns[i])) {
-            nm_warning ("couldn't append nbns_server (number %d) to dict",i);
-            goto out;
-        }
-      }
-
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "mtu", mtu)) {
-          nm_warning ("couldn't append mtu to dict");
-          goto out;
-      }
-
-      if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
-          nm_warning ("dict close write failed!");
-          goto out;
-      }
-
-
-/*    Don't bother setting anything that isn't needed!
- 
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "mss", mss)) {
-          nm_warning ("couldn't append mss to dict");
-          goto out;
-      }
-
       dbus_message_append_args (signal, 
                 DBUS_TYPE_UINT32, &ip4_vpn_gateway,
 				DBUS_TYPE_STRING, &tundev,
@@ -1453,12 +1384,11 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
 				DBUS_TYPE_UINT32, &ip4_netmask,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
 				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
-//				DBUS_TYPE_UINT32, &mtu,
 				DBUS_TYPE_UINT32, &mss,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_STRING, &empty,
 				DBUS_TYPE_INVALID);
-*/
+
       if (!dbus_connection_send (data->con, signal, NULL))
       {
 	    nm_warning ("Could not raise the "NM_DBUS_VPN_SIGNAL_IP4_CONFIG" signal!");
