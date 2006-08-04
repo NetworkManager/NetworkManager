@@ -42,7 +42,7 @@
 
 #define BUILD_BLUETOOTH
 
-#define VPNUI_DISPLAY_NAME _("Tunnel via pppd")
+#define VPNUI_DISPLAY_NAME _("pppd tunnel (PPTP, BTGPRS, Dialup)")
 #define VPNUI_SERVICE_NAME "org.freedesktop.NetworkManager.ppp_starter"
 #define VPNUI_BASIC_DEFAULTS "connection-name='';" \
                              "ppp-debug=no;" \
@@ -50,9 +50,9 @@
                              "usepeerdns-overtunnel=yes;" \
                              "ppp-lock=yes;" \
                              "ppp-auth-peer=no;" \
-                             "refuse-eap=no;" \
-                             "refuse-chap=no;" \
-                             "refuse-mschap=no;" \
+                             "ppp-refuse-eap=no;" \
+                             "ppp-refuse-chap=no;" \
+                             "ppp-refuse-mschap=no;" \
                              "lcp-echo-failure=10;" \
                              "lcp-echo-interval=10;" \
                              "use-routes=no;" \
@@ -85,8 +85,8 @@
                              "compress-mppc=no;" \
                              "compress-bsd=no;" \
                              "compress-deflate=no;" \
-                             "mru=1400;" \
-                             "mtu=1400;" 
+                             "mru=1416;" \
+                             "mtu=1416;" 
 #define VPNUI_DIALUP_DEFAULTS "phone-number=THIS DOESN'T DO ANYTHING;" \
                               "ppp-crtscts=yes;" \
                               "ppp-modem=yes;" \
@@ -103,6 +103,7 @@
 #endif
 
 void impl_setup (NetworkManagerVpnUIImpl *impl);
+void impl_hide_and_show (NetworkManagerVpnUIImpl *impl);
 void use_routes_toggled (GtkToggleButton *togglebutton, gpointer user_data);
 void editable_changed (GtkEditable *editable, gpointer user_data);
 void variant_changed (GtkComboBox *combo, gpointer user_data);
@@ -292,11 +293,13 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   "routes"  , VPN_UI_OPTTYPE_STRING , 
   "routes", "X-NM-Routes", _("Specific networks available"),
   GTK_SIGNAL_FUNC(&editable_changed), &vld_routes_if_sens, impl );
+  impl->routes_opt = opt;
 
   opt = vpnui_opt_new(
   "use-routes"  , VPN_UI_OPTTYPE_YESNO , 
   "use-routes", "Use-Routes", _("Limit to specific networks"),
   GTK_SIGNAL_FUNC(&use_routes_toggled), NULL, impl );
+  impl->routes_toggle_opt = opt;
 
   variant = vpnui_variant_new( "pptp","Windows VPN (PPTP)",
                         VPNUI_BASIC_DEFAULTS VPNUI_PPTP_DEFAULTS,
@@ -328,7 +331,7 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
 
 // Attach an import_button
   impl->w_import_button = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
-								       "import-button"));
+								       "import-config-button"));
 }
 
 void 
@@ -372,6 +375,8 @@ variant_changed (GtkComboBox *combo, gpointer user_data)
 
   vpnui_variant_select_byname(impl,variant_name);
 
+  impl_hide_and_show(impl);
+
 //  vpnui_expand_reset_all(impl);
 
   if (impl->callback != NULL) {
@@ -383,3 +388,46 @@ variant_changed (GtkComboBox *combo, gpointer user_data)
 }
 
 
+void 
+impl_hide_and_show (NetworkManagerVpnUIImpl *impl)
+{
+  GtkWidget *serial_options = NULL;
+  GtkWidget *gprs_options = NULL;
+  GtkWidget *bluetooth_front = NULL;
+  GtkWidget *pptp_front = NULL;
+  GtkWidget *dialup_front = NULL;
+  GtkComboBox *combo = NULL;
+  char *variant_name;
+
+  if (impl==NULL) return;
+  if (impl->xml==NULL) return;
+
+  combo = GTK_COMBO_BOX(glade_xml_get_widget(impl->xml, "ppp-connection-type"));
+  if (combo==NULL) return;
+  variant_name=gtk_combo_box_get_active_text(combo);
+  if (variant_name==NULL) return;
+
+//  ppp_options = glade_xml_get_widget(impl->xml, "ppp-options");
+  gprs_options = glade_xml_get_widget(impl->xml, "gprs-options");
+  serial_options = glade_xml_get_widget(impl->xml, "serial-options");
+  bluetooth_front = glade_xml_get_widget(impl->xml, "bluetooth-front");
+  dialup_front = glade_xml_get_widget(impl->xml, "dialup-front");
+  pptp_front = glade_xml_get_widget(impl->xml, "pptp-front");
+
+  if (pptp_front) gtk_widget_hide(pptp_front);
+  if (bluetooth_front) gtk_widget_hide(bluetooth_front);
+  if (dialup_front) gtk_widget_hide(dialup_front);
+  if (gprs_options) gtk_widget_hide(gprs_options);
+  if (serial_options) gtk_widget_hide(serial_options);
+
+  if (strcmp(variant_name,"pptp")==0) {
+    if (pptp_front) gtk_widget_show(pptp_front);
+  } else if (strcmp(variant_name,"dialup")==0) {
+    if (dialup_front) gtk_widget_show(dialup_front);
+    if (serial_options) gtk_widget_show(serial_options);
+  } else if (strcmp(variant_name,"btgprs")==0) {
+    if (bluetooth_front) gtk_widget_show(bluetooth_front);
+    if (gprs_options) gtk_widget_show(gprs_options);
+    if (serial_options) gtk_widget_show(serial_options);
+  }  
+}

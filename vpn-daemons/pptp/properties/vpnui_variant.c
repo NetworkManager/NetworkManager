@@ -104,7 +104,6 @@ vpnui_variant_select (VpnUIVariant *variant)
   for (item=impl->config_options; item != NULL; item = g_slist_next(item)) {
     vpnui_opt_set_default((VpnUIConfigOption *)item->data, impl->defaults);
   }
- 
 }
 
 

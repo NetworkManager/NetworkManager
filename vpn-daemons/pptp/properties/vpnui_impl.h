@@ -6,6 +6,7 @@
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 #include <NetworkManager/nm-vpn-ui-interface.h>
 
+
 struct impl_config
 {
  const char *display_name;
@@ -21,10 +22,13 @@ struct impl_config
 typedef struct _VpnUIConfigOption VpnUIConfigOption;
 typedef struct _NetworkManagerVpnUIImpl NetworkManagerVpnUIImpl;
 
+typedef void (*VpnUIHideShowCallback) (NetworkManagerVpnUIImpl *self);
+
 struct _NetworkManagerVpnUIImpl {
   NetworkManagerVpnUI parent;
 
   NetworkManagerVpnUIDialogValidityCallback callback;
+  VpnUIHideShowCallback do_hide_and_show;
   gpointer callback_user_data;
 
   GladeXML *xml;

@@ -18,6 +18,7 @@
 extern const char *GLADE_FILE;
 extern const char *GLADE_WIDGET;
 extern void impl_setup (NetworkManagerVpnUIImpl *impl);
+extern void impl_hide_and_show (NetworkManagerVpnUIImpl *impl);
 
 static void 
 impl_set_validity_changed_callback (NetworkManagerVpnUI *self, 
@@ -38,14 +39,15 @@ impl_clear_widget (NetworkManagerVpnUIImpl *impl)
 
   g_return_if_fail(impl!=NULL);
 
-  vpnui_opt_set(impl->connection_name_opt,"");
+  if (impl->connection_name_opt!=NULL) vpnui_opt_set(impl->connection_name_opt,"");
   if (impl->defaults!=NULL)
     for (item=impl->config_options; item != NULL; item = g_slist_next(item))
     {
       vpnui_opt_set_default((VpnUIConfigOption *)item->data, impl->defaults);
     }
 
-  vpnui_expand_reset_all(impl);
+//  vpnui_expand_reset_all(impl);
+  impl_hide_and_show(impl); 
 }
 
 static const char *
@@ -97,12 +99,13 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
     }
     str = g_string_free (route_str, FALSE);
 
-    vpnui_opt_set(impl->routes_opt,str);
-    vpnui_opt_set(impl->routes_toggle_opt,"yes");
+    if(impl->routes_opt!=NULL) vpnui_opt_set(impl->routes_opt,str);
+    if(impl->routes_toggle_opt!=NULL) vpnui_opt_set(impl->routes_toggle_opt,"yes");
     g_free (str);
   }
 
-  vpnui_expand_reset_all(impl);
+//  vpnui_expand_reset_all(impl);
+  impl_hide_and_show(impl); 
 
   return impl->widget;
 }
@@ -275,6 +278,8 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
   g_free (basename);
 
+  impl_hide_and_show(impl); 
+
   return file_is_good;
 
 //    if (!file_is_good) {
@@ -291,6 +296,15 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 //      gtk_widget_destroy (dialog);
 //    }
 }
+
+static void
+show_widget (GtkWidget *widget, gpointer user_data)
+{
+  g_warning("Widget show event");
+
+  impl_hide_and_show((NetworkManagerVpnUIImpl *) user_data);
+}
+
 
 static void
 import_button_clicked (GtkButton *button, gpointer user_data)
@@ -385,8 +399,8 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
     }
     str = g_string_free (route_str, FALSE);
 
-    vpnui_opt_set(impl->routes_opt,str);
-    vpnui_opt_set(impl->routes_toggle_opt,"yes");
+    if (impl->routes_opt!=NULL) vpnui_opt_set(impl->routes_opt,str);
+    if (impl->routes_toggle_opt!=NULL) vpnui_opt_set(impl->routes_toggle_opt,"yes");
     g_free (str);
   }
 
@@ -514,6 +528,9 @@ impl_get_object (void)
       gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
 			"clicked", GTK_SIGNAL_FUNC (import_button_clicked), impl);
     }
+
+    gtk_signal_connect (GTK_OBJECT (impl->widget), 
+			"show", GTK_SIGNAL_FUNC (show_widget), impl);
 
     /* make the widget reusable */
     gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event", 

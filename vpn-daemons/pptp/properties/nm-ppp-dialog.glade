@@ -230,14 +230,13 @@
 
 		      <child>
 			<widget class="GtkCheckButton" id="on-main-menu">
-			  <property name="visible">True</property>
 			  <property name="sensitive">False</property>
 			  <property name="can_focus">True</property>
-			  <property name="label" translatable="yes">Show on connection on menu</property>
+			  <property name="label" translatable="yes">Requires existing network connection</property>
 			  <property name="use_underline">True</property>
 			  <property name="relief">GTK_RELIEF_NORMAL</property>
 			  <property name="focus_on_click">True</property>
-			  <property name="active">False</property>
+			  <property name="active">True</property>
 			  <property name="inconsistent">False</property>
 			  <property name="draw_indicator">True</property>
 			</widget>
@@ -705,14 +704,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox31">
+	    <widget class="GtkVBox" id="gprs-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="gprs-options">
+		<widget class="GtkVBox" id="gprs-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">4</property>
@@ -957,14 +956,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox36">
+	    <widget class="GtkVBox" id="auth-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="auth-options">
+		<widget class="GtkVBox" id="auth-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">0</property>
@@ -991,7 +990,7 @@
 			  <property name="column_spacing">0</property>
 
 			  <child>
-			    <widget class="GtkCheckButton" id="ppp-auth">
+			    <widget class="GtkCheckButton" id="ppp-auth-peer">
 			      <property name="visible">True</property>
 			      <property name="tooltip" translatable="yes">When this check box is cleared the &quot;noauth&quot; option is passed to pppd.</property>
 			      <property name="can_focus">True</property>
@@ -1124,14 +1123,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox35">
+	    <widget class="GtkVBox" id="comp-enc-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="comp-enc-options">
+		<widget class="GtkVBox" id="comp-enc-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">6</property>
@@ -1408,14 +1407,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox32">
+	    <widget class="GtkVBox" id="ppp-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="ppp-options">
+		<widget class="GtkVBox" id="ppp-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">6</property>
@@ -2132,14 +2131,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox33">
+	    <widget class="GtkVBox" id="serial-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="serial-options">
+		<widget class="GtkVBox" id="serial-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">4</property>
@@ -2264,14 +2263,14 @@
 	  </child>
 
 	  <child>
-	    <widget class="GtkVBox" id="vbox34">
+	    <widget class="GtkVBox" id="routing-options">
 	      <property name="border_width">10</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkVBox" id="routing-options">
+		<widget class="GtkVBox" id="routing-options-vbox">
 		  <property name="visible">True</property>
 		  <property name="homogeneous">False</property>
 		  <property name="spacing">4</property>
