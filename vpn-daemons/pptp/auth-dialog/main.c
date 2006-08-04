@@ -34,7 +34,7 @@
 #define VPN_SERVICE "org.freedesktop.NetworkManager.ppp_starter"
 
 static GSList *
-lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session)
+lookup_pass (const char *vpn_name, const char *vpn_service, char *auth_type, gboolean *is_session)
 {
 	GSList *passwords;
 	GList *keyring_result;
@@ -46,7 +46,7 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 						      vpn_name,               /* server */
 						      NULL,                   /* object */
 						      vpn_service,            /* protocol */
-						      NULL,                   /* authtype */
+						      auth_type,              /* authtype */
 						      0,                      /* port */
 						      &keyring_result) != GNOME_KEYRING_RESULT_OK)
 		return FALSE;
@@ -89,7 +89,7 @@ static void save_vpn_password (const char *vpn_name, const char *vpn_service, co
 								  username,
 								  NULL,
 								  vpn_name,
-								  "password",
+								  NULL,
 								  vpn_service,
 								  auth_type,
 								  0,
@@ -108,6 +108,7 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 	GSList          *result;
 	char            *prompt;
 	GtkWidget	    *dialog;
+	char            *keyring_authtype;
 	char            *keyring_username;
 	char            *keyring_password;
 	gboolean         keyring_is_session;
@@ -123,13 +124,14 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 
 	/* Use the system user name, since the VPN might have a different user name */
 	if (!retry) {
-		if ((result = lookup_pass (vpn_name, vpn_service, &keyring_is_session)) != NULL) {
+		if ((result = lookup_pass (vpn_name, vpn_service, "CHAP", &keyring_is_session)) != NULL) {
 			return result;
 		}
 	} else {
-		if ((keyring_result = lookup_pass (vpn_name, vpn_service, &keyring_is_session)) != NULL) {
-			keyring_username = g_strdup ((char *) keyring_result->data);
-			keyring_password = g_strdup ((char *) (g_slist_next (keyring_result))->data);
+		if ((keyring_result = lookup_pass (vpn_name, vpn_service, "CHAP", &keyring_is_session)) != NULL) {
+			keyring_authtype = g_strdup ((char *) keyring_result->data);
+			keyring_username = g_strdup ((char *) (g_slist_next (keyring_result))->data);
+			keyring_password = g_strdup ((char *) (g_slist_next (g_slist_next (keyring_result)))->data);
 		}
 		g_slist_foreach (keyring_result, (GFunc)g_free, NULL);
 		g_slist_free (keyring_result);
