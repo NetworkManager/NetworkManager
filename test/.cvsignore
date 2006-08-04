@@ -7,3 +7,4 @@ libnm_glib_test
 nm-dhcp-opt-test
 nm-tool
 nm-online
+test-dbus-dict-helpers
