@@ -61,7 +61,7 @@ struct NMIP4Config
 
 NMIP4Config *nm_ip4_config_new (void)
 {
-	NMIP4Config *config = g_malloc0 (sizeof (NMIP4Config));
+	NMIP4Config *config = g_slice_new0 (NMIP4Config);
 
 	config->refcount = 1;
 
@@ -75,7 +75,7 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 
 	g_return_val_if_fail (src_config != NULL, NULL);
 
-	dst_config = g_malloc0 (sizeof (NMIP4Config));
+	dst_config = g_slice_new0 (NMIP4Config);
 	dst_config->refcount = 1;
 
 	dst_config->ip4_address = nm_ip4_config_get_address (src_config);
@@ -124,7 +124,7 @@ void nm_ip4_config_unref (NMIP4Config *config)
 		g_slist_free (config->nis_servers);
 
 		memset (config, 0, sizeof (NMIP4Config));
-		g_free (config);
+		g_slice_free (NMIP4Config, config);
 	}
 }
 

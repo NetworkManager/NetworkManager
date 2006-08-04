@@ -1,3 +1,15 @@
+2006-08-04  Robert Love  <rml@novell.com>
+
+	Glib Memory Slices!
+	* configure.in: Require glib 2.10 or later.
+	* src/NetworkManager.c, src/NetworkManagerAP.c, src/nm-ip4-config.c,
+	  src/NetworkManagerAPList.c, src/NetworkManagerDbus.c,
+	  src/NetworkManagerDbusUtils.c, src/nm-dbus-nmi.c, src/wpa.c,
+	  src/nm-device-802-11-wireless.c: Convert applicable g_malloc and
+	  g_new calls to g_slice_new.  Likewise for g_free to g_slice_free.
+	  Memory Slices are the greatest thing since bread slices.
+	* src/NetworkManagerAP.c: Also, fix memory leak.
+
 2006-08-01  Robert Love  <rml@novell.com>
 
 	* gnome/applet/main.c: Shutdown all VPN connections on logout.

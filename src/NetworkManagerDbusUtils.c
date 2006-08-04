@@ -32,7 +32,7 @@ struct NMDbusMethodList
 
 NMDbusMethodList * nm_dbus_method_list_new (NMDbusMethod validate_method)
 {
-	NMDbusMethodList	*list = g_malloc0 (sizeof (NMDbusMethodList));
+	NMDbusMethodList	*list = g_slice_new0 (NMDbusMethodList);
 
 	list->validate_method = validate_method;
 	list->methods = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
@@ -92,6 +92,6 @@ void nm_dbus_method_list_free (NMDbusMethodList *list)
 	if (list)
 	{
 		g_hash_table_destroy (list->methods);
-		g_free (list);
+		g_slice_free (NMDbusMethodList, list);
 	}
 }

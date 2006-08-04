@@ -309,7 +309,7 @@ static void free_get_one_network_cb_data (GetOneNetworkCBData *data)
 		data->list = NULL;
 		data->network = NULL;
 		data->data = NULL;
-		g_free (data);
+		g_slice_free (GetOneNetworkCBData, data);
 	}
 }
 
@@ -327,7 +327,7 @@ static void free_get_networks_cb_data (GetNetworksCBData *data)
 		nm_ap_list_unref (data->list);
 		data->data = NULL;
 		data->list = NULL;
-		g_free (data);
+		g_slice_free (GetNetworksCBData, data);
 	}
 }
 
@@ -540,7 +540,7 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 			dbus_message_unref (message);
 			if (net_pcall)
 			{
-				GetOneNetworkCBData *	net_cb_data = g_malloc0 (sizeof (GetOneNetworkCBData));
+				GetOneNetworkCBData *	net_cb_data = g_slice_new0 (GetOneNetworkCBData);
 
 				net_cb_data->data = cb_data->data;
 				net_cb_data->network = g_strdup (value);
@@ -584,7 +584,7 @@ void nm_dbus_update_allowed_networks (DBusConnection *connection, NMAccessPointL
 	dbus_message_unref (message);
 	if (pcall)
 	{
-		GetNetworksCBData *	cb_data = g_malloc0 (sizeof (GetNetworksCBData));
+		GetNetworksCBData *	cb_data = g_slice_new0 (GetNetworksCBData);
 
 		cb_data->data = data;
 		nm_ap_list_ref (list);
@@ -616,7 +616,7 @@ void nm_dbus_update_one_allowed_network (DBusConnection *connection, const char 
 		return;
 	}
 
-	cb_data = g_malloc0 (sizeof (GetOneNetworkCBData));
+	cb_data = g_slice_new0 (GetOneNetworkCBData);
 	cb_data->data = data;
 	cb_data->network = g_strdup (network);
 	cb_data->list = data->allowed_ap_list;

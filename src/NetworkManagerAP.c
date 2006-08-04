@@ -84,7 +84,7 @@ NMAccessPoint * nm_ap_new (void)
 {
 	NMAccessPoint	*ap;
 	
-	ap = g_malloc0 (sizeof (NMAccessPoint));
+	ap = g_slice_new0 (NMAccessPoint);
 	ap->mode = IW_MODE_INFRA;
 	ap->refcount = 1;
 	ap->capabilities = NM_802_11_CAP_PROTO_NONE;
@@ -160,7 +160,7 @@ void nm_ap_unref (NMAccessPoint *ap)
 			g_object_unref (G_OBJECT (ap->security));
 
 		memset (ap, 0, sizeof (NMAccessPoint));
-		g_free (ap);
+		g_slice_free (NMAccessPoint, ap);
 	}
 }
 
@@ -662,6 +662,8 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 		caps |= NM_802_11_CAP_KEY_MGMT_PSK;
 
 	nm_ap_set_capabilities (ap, caps);
+
+	g_slice_free (wpa_ie_data, cap_data);
 }
 
 

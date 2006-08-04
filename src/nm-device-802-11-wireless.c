@@ -535,7 +535,7 @@ wireless_event_helper (gpointer user_data)
 	}
 	g_object_unref (G_OBJECT (self));
 	g_free (cb_data->data);
-	g_free (cb_data);
+	g_slice_free (WirelessEventCBData, cb_data);
 	return FALSE;
 }
 
@@ -553,7 +553,7 @@ nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
 	if (NM_DEVICE (self) != NM_DEVICE (obj))
 		return;
 
-	cb_data = g_malloc0 (sizeof (WirelessEventCBData));
+	cb_data = g_slice_new0 (WirelessEventCBData);
 	cb_data->dev = self;
 	g_object_ref (G_OBJECT (self));
 	cb_data->data = g_malloc (data_len);
@@ -1815,7 +1815,7 @@ free_process_scan_cb_data (NMWirelessScanResults *cb_data)
 		g_free (cb_data->results);
 	g_object_unref (G_OBJECT (cb_data->dev));
 	memset (cb_data, 0, sizeof (NMWirelessScanResults));
-	g_free (cb_data);	
+	g_slice_free (NMWirelessScanResults, cb_data);	
 }
 
 /*
@@ -1997,7 +1997,7 @@ request_and_convert_scan_results (NMDevice80211Wireless *self)
 		 * messages over DBUS.  Plus, that way the main thread is the only thread that has
 		 * to modify the device's access point list.
 		 */
-		scan_results = g_malloc0 (sizeof (NMWirelessScanResults));
+		scan_results = g_slice_new0 (NMWirelessScanResults);
 		g_object_ref (G_OBJECT (self));
 		scan_results->dev = self;
 		scan_results->results = buf;

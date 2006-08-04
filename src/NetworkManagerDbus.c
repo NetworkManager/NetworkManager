@@ -251,7 +251,7 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 	dbus_message_unref (message);
 
 	g_object_unref (G_OBJECT (cb_data->dev));
-	g_free (cb_data);
+	g_slice_free (NMStatusChangeData, cb_data);
 
 	return FALSE;
 }
@@ -265,7 +265,7 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev != NULL);
 
-	cb_data = g_malloc0 (sizeof (NMStatusChangeData));
+	cb_data = g_slice_new0 (NMStatusChangeData);
 	g_object_ref (G_OBJECT (dev));
 	cb_data->data = data;
 	cb_data->dev = dev;

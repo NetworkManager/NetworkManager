@@ -432,7 +432,7 @@ wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 	if (!wpa_ie || wpa_ie_len <= 0)
 		return NULL;
 
-	data = g_malloc0 (sizeof (wpa_ie_data));
+	data = g_slice_new0 (wpa_ie_data);
 
 	if (wpa_ie_len >= 1 && wpa_ie[0] == WPA_RSN_INFO_ELEM)
 		err = wpa_parse_wpa_ie_rsn(wpa_ie, wpa_ie_len, data);
@@ -441,7 +441,7 @@ wpa_ie_data * wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len)
 
 	if (err != 0)
 	{
-		g_free (data);
+		g_slice_free (wpa_ie_data, data);
 		data = NULL;
 	}
 

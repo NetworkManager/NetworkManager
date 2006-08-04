@@ -425,7 +425,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	NMData *			data;
 	GSource *			iosource;
 	
-	data = g_new0 (NMData, 1);
+	data = g_slice_new0 (NMData);
 
 	data->main_context = g_main_context_new ();
 	data->main_loop = g_main_loop_new (data->main_context, FALSE);
@@ -535,7 +535,7 @@ static void nm_data_free (NMData *data)
 
 	nm_hal_deinit (data);
 
-	memset (data, 0, sizeof (NMData));
+	g_slice_free (NMData, data);
 }
 
 int nm_get_sigterm_pipe (void)

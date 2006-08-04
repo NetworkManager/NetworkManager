@@ -46,16 +46,14 @@ struct NMAccessPointList
  */
 NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 {
-	NMAccessPointList *list = g_new0 (NMAccessPointList, 1);
-
-	g_return_val_if_fail (list != NULL, NULL);
+	NMAccessPointList *list = g_slice_new0 (NMAccessPointList);
 
 	nm_ap_list_ref (list);
 	list->type = type;
 	list->mutex = g_mutex_new ();
 	if (!list->mutex)
 	{
-		g_free (list);
+		g_slice_free (NMAccessPointList, list);
 		nm_warning ("nm_ap_list_new() could not create list mutex");
 		return (NULL);
 	}
@@ -116,7 +114,7 @@ void nm_ap_list_unref (NMAccessPointList *list)
 			nm_unlock_mutex (list->mutex, __FUNCTION__);
 
 		g_mutex_free (list->mutex);
-		g_free(list);
+		g_slice_free (NMAccessPointList, list);
 	}
 }
 
@@ -695,12 +693,11 @@ NMAPListIter * nm_ap_list_iter_new (NMAccessPointList *list)
 
 	g_return_val_if_fail (list != NULL, NULL);
 
-	if (!(iter = g_new0 (NMAPListIter, 1)))
-		return (NULL);
+	iter = g_slice_new (NMAPListIter);
 
 	if (!nm_ap_list_lock (list))
 	{
-		g_free (iter);
+		g_slice_free (NMAPListIter, iter);
 		return (NULL);
 	}
 
@@ -745,7 +742,7 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
 
 	nm_ap_list_unlock (iter->list);
 	memset (iter, 0, sizeof (struct NMAPListIter));
-	g_free (iter);
+	g_slice_free (NMAPListIter, iter);
 }
 
 
