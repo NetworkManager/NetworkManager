@@ -48,14 +48,11 @@
                              "ppp-debug=no;" \
                              "usepeerdns=yes;" \
                              "usepeerdns-overtunnel=yes;" \
-                             "encrypt-mppe=yes;" \
-                             "compress-mppc=no;" \
                              "ppp-lock=yes;" \
                              "ppp-auth-peer=no;" \
-                             "compress-bsd=no;" \
-                             "compress-deflate=no;" \
-                             "mru=1000;" \
-                             "mtu=1000;" \
+                             "refuse-eap=no;" \
+                             "refuse-chap=no;" \
+                             "refuse-mschap=no;" \
                              "lcp-echo-failure=10;" \
                              "lcp-echo-interval=10;" \
                              "use-routes=no;" \
@@ -73,13 +70,34 @@
                              "ppp-modem=yes;" \
                              "usepeerdns=yes;" \
                              "ppp-connect-delay=5000;" 
-#define VPNUI_BTGPRS_DEFAULTS "ppp-connection-type=btgprs;" 
+#define VPNUI_BTGPRS_DEFAULTS "ppp-connection-type=btgprs;" \
+                             "encrypt-mppe=no;" \
+                             "encrypt-mppe-128=no;" \
+                             "compress-mppc=no;" \
+                             "compress-bsd=no;" \
+                             "compress-deflate=no;" \
+                             "mru=1000;" \
+                             "mtu=1000;" 
 #define VPNUI_PPTP_DEFAULTS "pptp-remote='';" \
-                             "ppp-connection-type=pptp;" 
+                             "ppp-connection-type=pptp;" \
+                             "encrypt-mppe=no;" \
+                             "encrypt-mppe-128=yes;" \
+                             "compress-mppc=no;" \
+                             "compress-bsd=no;" \
+                             "compress-deflate=no;" \
+                             "mru=1400;" \
+                             "mtu=1400;" 
 #define VPNUI_DIALUP_DEFAULTS "phone-number=THIS DOESN'T DO ANYTHING;" \
                               "ppp-crtscts=yes;" \
                               "ppp-modem=yes;" \
-                              "ppp-connection-type=dialup;" 
+                              "ppp-connection-type=dialup;" \
+                              "encrypt-mppe=no;" \
+                              "encrypt-mppe-128=no;" \
+                              "compress-mppc=no;" \
+                              "compress-bsd=no;" \
+                              "compress-deflate=no;" \
+                              "mru=1000;" \
+                              "mtu=1000;" 
 
 #ifdef NMVPNUI_PPTP_PROPERTIES_C
 #endif
@@ -99,7 +117,7 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   GSList *item;
   VpnUIConfigOption *opt;
   VpnUIVariant *variant;
-  VpnUIExpander *expand;
+//  VpnUIExpander *expand;
   g_return_if_fail(impl!=NULL);
 
   impl->display_name = VPNUI_DISPLAY_NAME;
@@ -185,6 +203,11 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   NULL, NULL, impl );
 
   opt = vpnui_opt_new(
+  "encrypt-mppe-128"  , VPN_UI_OPTTYPE_YESNO , 
+  "encrypt-mppe-128", "Encrypt-MPPE-128", _("Use 128 bit MPPE encryption"),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
   "compress-mppc"  , VPN_UI_OPTTYPE_YESNO , 
   "compress-mppc", "Compress-MPPC", _("Use MPPC compression"),
   NULL, NULL, impl );
@@ -207,6 +230,21 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   opt = vpnui_opt_new(
   "ppp-auth-peer"  , VPN_UI_OPTTYPE_YESNO ,
   "ppp-auth-peer", "Auth-Peer", _("Authenticate remote peer"),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
+  "ppp-refuse-eap"  , VPN_UI_OPTTYPE_YESNO ,
+  "ppp-refuse-eap", "Refuse-EAP", _("Refuse EAP"),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
+  "ppp-refuse-chap"  , VPN_UI_OPTTYPE_YESNO ,
+  "ppp-refuse-chap", "Refuse-CHAP", _("Refuse CHAP"),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
+  "ppp-refuse-mschap"  , VPN_UI_OPTTYPE_YESNO ,
+  "ppp-refuse-mschap", "Refuse-MSCHAP", _("Refuse MSCHAP"),
   NULL, NULL, impl );
 
   opt = vpnui_opt_new(
@@ -275,13 +313,13 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
                         impl);
 //
 //                     GLADE NAME   IMPLEMENTATION_OBJ
-  expand= vpnui_expand_new ("routing-expander",impl);
-  expand= vpnui_expand_new ("dialup-expander",impl);
-  expand= vpnui_expand_new ("pppd-expander",impl);
-  expand= vpnui_expand_new ("pptp-expander",impl);
-  expand= vpnui_expand_new ("bluetooth-expander",impl);
-  expand= vpnui_expand_new ("serial-expander",impl);
-  expand= vpnui_expand_new ("gprs-expander",impl);
+//  expand= vpnui_expand_new ("routing-expander",impl);
+//  expand= vpnui_expand_new ("dialup-expander",impl);
+//  expand= vpnui_expand_new ("pppd-expander",impl);
+//  expand= vpnui_expand_new ("pptp-expander",impl);
+//  expand= vpnui_expand_new ("bluetooth-expander",impl);
+//  expand= vpnui_expand_new ("serial-expander",impl);
+//  expand= vpnui_expand_new ("gprs-expander",impl);
 
 // Attach to press event of the Bluetooth "Find Device" button.
 //    will need libbtcl
@@ -334,7 +372,7 @@ variant_changed (GtkComboBox *combo, gpointer user_data)
 
   vpnui_variant_select_byname(impl,variant_name);
 
-  vpnui_expand_reset_all(impl);
+//  vpnui_expand_reset_all(impl);
 
   if (impl->callback != NULL) {
     gboolean is_valid;
