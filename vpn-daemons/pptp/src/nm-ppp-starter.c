@@ -1296,7 +1296,7 @@ static DBusMessage *nm_ppp_dbus_get_state (DBusConnection *con, DBusMessage *mes
 /*
  * nm_ppp_dbus_notify_pid
  *
- * Recieve the pid of the PPPD process from the PPPD plugin.
+ * Receive the pid of the PPPD process from the PPPD plugin.
  *
  */
 static void nm_ppp_dbus_notify_pid (DBusConnection *con, DBusMessage *message, NmPPPData *data)
@@ -1311,10 +1311,8 @@ static void nm_ppp_dbus_notify_pid (DBusConnection *con, DBusMessage *message, N
           DBUS_TYPE_UINT32, &(data->pid),
           DBUS_TYPE_INVALID)) {
     nm_warning ("PPPD plugin did not send a valid process ID");
-    dbus_message_unref (message);  
     return;
   }
-  dbus_message_unref (message);  
 
   nm_info ("nm-ppp-starter: pppd spawned pid %d", data->pid);
 
@@ -1464,13 +1462,13 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
       }
 
       if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_PPP_STARTER, NM_DBUS_INTERFACE_PPP_STARTER, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
-	{
-	  nm_warning ("Not enough memory for new dbus message!");
-	  goto out;
-	}
+	  {
+	    nm_warning ("Not enough memory for new dbus message!");
+	    goto out;
+	  }
 
-	/* PPP does not care about the MSS */
-	mss = 0;
+	  /* PPP does not care about the MSS */
+	  mss = 0;
 
       ip4_vpn_gateway=data->ip4_vpn_gateway.s_addr;
       dbus_message_append_args (signal, 
