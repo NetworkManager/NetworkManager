@@ -1064,20 +1064,22 @@ static gboolean nm_ppp_dbus_handle_start_vpn (DBusMessage *message, NmPPPData *d
 			      DBUS_TYPE_INVALID))
     {
       nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,NULL);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,"NM made an invalid DBUS request");
       dbus_error_free (&error);
       goto out;
     }
 
   if (!nm_ppp_config_options_validate (data, data_items, num_items))
     {
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,NULL);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD,
+                                                 "Validating options failed");
       goto out;
     }
 
   if (!nm_ppp_store_auth_info (data, auth_items, num_auth_items))
     {
-      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,NULL);
+      nm_ppp_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED,
+                      "Could not store authentication information correctly");
       goto out;
     }
 
