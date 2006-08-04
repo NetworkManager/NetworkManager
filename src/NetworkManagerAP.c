@@ -658,6 +658,8 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_PSK)
 		caps |= NM_802_11_CAP_KEY_MGMT_PSK;
 
+	g_free (cap_data);
+
 	nm_ap_set_capabilities (ap, caps);
 }
 
