@@ -660,52 +660,83 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
     if ( (strcmp( data_items[i], "ppp-lock" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "lock");
+
     } else if ( (strcmp( data_items[i], "ppp-auth-peer" ) == 0) &&
 		(strcmp( data_items[++i], "no" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "noauth");
+
+    } else if ( (strcmp( data_items[i], "ppp-refuse-eap" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "refuse-eap");
+
+    } else if ( (strcmp( data_items[i], "ppp-refuse-chap" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "refuse-chap");
+
+    } else if ( (strcmp( data_items[i], "ppp-refuse-mschap" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "refuse-mschap");
+
     } else if ( (strcmp( data_items[i], "compress-bsd" ) == 0) &&
 		(strcmp( data_items[++i], "no" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "nobsdcomp");
+
     } else if ( (strcmp( data_items[i], "compress-deflate" ) == 0) &&
 		(strcmp( data_items[++i], "no" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "nodeflate");
+
     } else if ( (strcmp( data_items[i], "mru" ) == 0) &&
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "mru");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[i]);
+
     } else if ( (strcmp( data_items[i], "mtu" ) == 0) &&
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "mtu");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[i]);
+
     } else if ( (strcmp( data_items[i], "lcp-echo-failure" ) == 0) &&
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "lcp-echo-failure");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[i]);
+
     } else if ( (strcmp( data_items[i], "lcp-echo-interval" ) == 0) &&
 		(strlen( data_items[++i] ) > 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "lcp-echo-interval");
       g_ptr_array_add (ppp_argv, (gpointer) data_items[i]);
+
     } else if ( (strcmp( data_items[i], "encrypt-mppe" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "require-mppe");
+
+    } else if ( (strcmp( data_items[i], "encrypt-mppe-128" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "require-mppe-128");
+
     } else if ( (strcmp( data_items[i], "compress-mppc" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "require-mppc");
+
     } else if ( (strcmp( data_items[i], "ppp-modem" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "modem");
+
     } else if ( (strcmp( data_items[i], "ppp-crtscts" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "crtscts");
+
     } else if ( (strcmp( data_items[i], "ppp-connect" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "crtscts");
+
     } else if ( (strcmp( data_items[i], "usepeerdns" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "usepeerdns");
+//
 //    } else if ( (strcmp( data_items[i], "usepeerdns-overtunnel" ) == 0) &&
 //		(strcmp( data_items[++i], "yes" ) != 0) ) {
 //      g_ptr_array_add (ppp_argv, (gpointer) "usepeeddns-overtunnel");
+
     } else if ( strcmp( data_items[i], "ppp-extra" ) == 0 ) {
         extra_opts=g_strsplit(data_items[++i]," ",-1);
         for (opt=extra_opts; *opt !=NULL; opt++) {
@@ -717,6 +748,7 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 //    } else if ( (strcmp( data_items[i], "usepeerdns-overtunnel" ) == 0) &&
 //		(strcmp( data_items[++i], "yes" ) != 0) ) {
 //      g_ptr_array_add (ppp_argv, (gpointer) "usepeeddns-overtunnel");
+
     } else if ( (strcmp( data_items[i], "ppp-debug" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       data->debug=TRUE;
@@ -859,7 +891,11 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { "compress-bsd",		OPT_TYPE_ASCII },
     { "compress-deflate",	OPT_TYPE_ASCII },
     { "encrypt-mppe",		OPT_TYPE_ASCII },
+    { "encrypt-mppe-128",	OPT_TYPE_ASCII },
     { "ppp-auth-peer",		OPT_TYPE_ASCII },
+    { "ppp-refuse-eap",		OPT_TYPE_ASCII },
+    { "ppp-refuse-chap",	OPT_TYPE_ASCII },
+    { "ppp-refuse-mschap",	OPT_TYPE_ASCII },
     { "ppp-lock",			OPT_TYPE_ASCII },
     { "mtu",			    OPT_TYPE_ASCII },
     { "mru",		    	OPT_TYPE_ASCII },
