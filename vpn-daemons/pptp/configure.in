@@ -14,6 +14,23 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
+AC_CHECK_PROG(PPPD,pppd,pppd)
+if test "z$PPPD" = "z"; then
+    AC_MSG_ERROR(Cannot compile without pppd)
+fi
+##### Find out the version of PPPD we're using
+PPPD_VERSION=`$PPPD --version 2>&1 | awk '{print $3}'`
+if test "z$PPPD_VERSION" = "z"; then
+    AC_MSG_ERROR(Couldn't determine the version of your pppd package.)
+fi
+if test -d "src/pppd/$PPPD_VERSION"; then
+  AC_MSG_RESULT(Found pppd version $PPPD_VERSION)
+else
+  AC_MSG_ERROR(pppd version $PPPD_VERSION is not supported by the build tools: 
+  the headers need to be added in src/pppd/$PPPD_VERSION and the version added to this test in configure.in)
+fi
+AC_SUBST(PPPD_VERSION)
+
 
 dnl
 dnl Required headers
@@ -80,6 +97,7 @@ AC_SUBST(GCONF_LIBS)
 PKG_CHECK_MODULES(GNOMEKEYRING, gnome-keyring-1)
 AC_SUBST(GNOMEKEYRING_CFLAGS)
 AC_SUBST(GNOMEKEYRING_LIBS)
+
 
 AS_AC_EXPAND(LOCALSTATEDIR, $localstatedir)
 AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
