@@ -5,6 +5,7 @@ INCLUDES = -I${top_srcdir}                  \
 AM_CPPFLAGS =							\
 	$(DBUS_CFLAGS)						\
 	$(GTHREAD_CFLAGS)					\
+	$(PPPD_CFLAGS)							\
 	-Wall							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
@@ -20,7 +21,7 @@ AM_CPPFLAGS =							\
 
 bin_PROGRAMS = nm-ppp-starter
 
-pppdplugindir = $(libdir)/pppd/$(PPPD_VERSION)
+pppdplugindir = $(PPPD_PLUGIN_DIR)
 pppdplugin_PROGRAMS = nm-pppd-plugin.so
 
 nm_ppp_starter_SOURCES =			\
@@ -37,10 +38,6 @@ nm_ppp_starter_SOURCES =			\
 nm_ppp_starter_LDADD = 				\
 				$(DBUS_LIBS)		\
 				$(GTHREAD_LIBS)            
-
-
-nm_pppd_plugin_so_CPPFLAGS = 		\
-				-I pppd/$(PPPD_VERSION)
 
 nm_pppd_plugin_so_SOURCES = 		\
 				nm-pppd-plugin.c 	\
