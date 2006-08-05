@@ -238,7 +238,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
     if (value==NULL) continue;
     if (strlen(value)==0) continue;
     
-    g_string_append_printf (buf, _("\t%s:  %s\n\n"), opt->description, value);
+    g_string_append_printf (buf, _("\t%s:  %s\n"), opt->description, value);
   }
 
   g_string_append (buf, _("The connection details can be changed using the \"Back\" button."));
