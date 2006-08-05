@@ -17,10 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  */
-#include "pppd/pppd.h"
+#include "pppd.h"
 
-#include "pppd/fsm.h"
-#include "pppd/ipcp.h"
+#include "fsm.h"
+#include "ipcp.h"
 
 #include <sys/types.h>
 #include <unistd.h>
