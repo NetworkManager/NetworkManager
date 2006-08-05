@@ -14,22 +14,6 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
-AC_CHECK_PROG(PPPD,pppd,pppd)
-if test "z$PPPD" = "z"; then
-    AC_MSG_ERROR(Cannot compile without pppd)
-fi
-##### Find out the version of PPPD we're using
-PPPD_VERSION=`$PPPD --version 2>&1 | awk '{print $3}'`
-if test "z$PPPD_VERSION" = "z"; then
-    AC_MSG_ERROR(Couldn't determine the version of your pppd package.)
-fi
-if test -d "src/pppd/$PPPD_VERSION"; then
-  AC_MSG_RESULT(Found pppd version $PPPD_VERSION)
-else
-  AC_MSG_ERROR(pppd version $PPPD_VERSION is not supported by the build tools: 
-  the headers need to be added in src/pppd/$PPPD_VERSION and the version added to this test in configure.in)
-fi
-AC_SUBST(PPPD_VERSION)
 
 
 dnl
@@ -37,6 +21,61 @@ dnl Required headers
 dnl
 AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h paths.h sys/ioctl.h sys/time.h syslog.h unistd.h)
+
+AC_ARG_WITH(pppd, AC_HELP_STRING([--with-pppd=DISTRO], [Specify path to pppd.h (and patchlevel.h)]))
+AC_ARG_WITH(pppd-version, AC_HELP_STRING([--with-pppd-version=DISTRO], [Version of pppd.h]))
+if test "z$with_pppd" != "z"; then
+  AC_MSG_CHECKING([for $with_pppd/pppd.h])
+  if test -f "$with_pppd/pppd.h"; then
+    PPPD_CFLAGS="-I $with_pppd"
+    PPPD_VERSION=`grep VERSION $with_pppd/patchlevel.h | awk '{print $3}' | sed -e 's/\s*"\s*//g'`
+    found_pppd_headers=yes
+    AC_MSG_RESULT(found version $PPPD_VERSION)
+  else
+    AC_MSG_ERROR(not found in $with_pppd)
+  fi 
+fi
+
+if test "z$found_pppd_headers" = "z"; then
+  AC_MSG_CHECKING([for pppd.h under $prefix/include])
+  find_pppd_h=`find $prefix/include -name pppd.h | xargs | awk '{print $1}'`
+  if echo $find_pppd_h | grep pppd.h; then
+    with_pppd=`dirname $find_pppd_h`
+    PPPD_CFLAGS="-I $with_pppd"
+    PPPD_VERSION=`grep VERSION $with_pppd/patchlevel.h | awk '{print $3}' | sed -e 's/\s*"\s*//g'`
+    found_pppd_headers=yes
+    AC_MSG_RESULT(found version $PPPD_VERSION)
+  else
+    AC_MSG_RESULT(not found)
+  fi
+fi
+
+if test "z$found_pppd_headers" = "z"; then
+  if test "z$PPPD_VERSION" = "z"; then
+    AC_MSG_RESULT(Couldn't find pppd.h trying to determine pppd version to use in tree headers)
+    ##### Find PPPD executable
+    AC_CHECK_PROG(PPPD,pppd,pppd)
+    if test "z$PPPD" = "z"; then
+        AC_MSG_ERROR(Cannot compile without pppd)
+    fi
+    AC_MSG_RESULT(pppd version not found attempting to run 'pppd --version')
+    PPPD_VERSION=`$PPPD --version 2>&1 | awk '{print $3}'`
+    if test "z$PPPD_VERSION" = "z"; then
+        AC_MSG_ERROR(Couldn't determine the version of your pppd package.)
+    fi
+  fi
+
+  if ! test -d "src/external/$PPPD_VERSION"; then
+    AC_MSG_ERROR(pppd headers could not be found)
+  fi
+
+  AC_MSG_RESULT(Found in source headers for pppd version $PPPD_VERSION)
+  PPPD_CFLAGS="-I ./external/$PPPD_VERSION"
+fi
+
+PPPD_PLUGIN_DIR="$LIBDIR/pppd/$PPPD_VERSION"
+AC_SUBST(PPPD_CFLAGS)
+AC_SUBST(PPPD_PLUGIN_DIR)
 
 dnl
 dnl Checks for typedefs, structures, and compiler characteristics.
