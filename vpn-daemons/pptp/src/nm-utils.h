@@ -128,4 +128,83 @@ G_STMT_START								\
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
+/*
+ * Adding a dict to a DBusMessage
+ */
+
+dbus_bool_t
+nmu_dbus_dict_open_write (DBusMessageIter *iter,
+                          DBusMessageIter *iter_dict);
+
+dbus_bool_t
+nmu_dbus_dict_close_write (DBusMessageIter *iter,
+                           DBusMessageIter *iter_dict);
+
+dbus_bool_t
+nmu_dbus_dict_append_string (DBusMessageIter *iter_dict,
+                             const char * key,
+                             const char * value);
+
+dbus_bool_t
+nmu_dbus_dict_append_byte (DBusMessageIter *iter_dict,
+                           const char * key,
+                           const char value);
+
+dbus_bool_t
+nmu_dbus_dict_append_bool (DBusMessageIter *iter_dict,
+                           const char * key,
+                           const dbus_bool_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_int16 (DBusMessageIter *iter_dict,
+                            const char * key,
+                            const dbus_int16_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_uint16 (DBusMessageIter *iter_dict,
+                             const char * key,
+                             const dbus_uint16_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_int32 (DBusMessageIter *iter_dict,
+                            const char * key,
+                            const dbus_int32_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_uint32 (DBusMessageIter *iter_dict,
+                             const char * key,
+                             const dbus_uint32_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_int64 (DBusMessageIter *iter_dict,
+                            const char * key,
+                            const dbus_int64_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_uint64 (DBusMessageIter *iter_dict,
+                             const char * key,
+                             const dbus_uint64_t value);
+
+dbus_bool_t
+nmu_dbus_dict_append_double (DBusMessageIter *iter_dict,
+                             const char * key,
+                             const double value);
+
+dbus_bool_t
+nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
+                                  const char * key,
+                                  const char * value);
+
+dbus_bool_t
+nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
+                                 const char * key,
+                                 const char * value,
+                                 const dbus_uint32_t value_len);
+
+dbus_bool_t
+nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
+                                   const char * key,
+                                   const char ** items,
+                                   const dbus_uint32_t num_items);
+
 #endif /* NM_UTILS_H */
