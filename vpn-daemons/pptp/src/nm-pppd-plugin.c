@@ -74,11 +74,11 @@ void nm_dbus_kill_connection(NmPPPData *data);
 
 gboolean nm_dbus_prepare_connection(NmPPPData *data)
 {
-    DBusMessage *	message = NULL;
+//    DBusMessage *	message = NULL;
     DBusError		error;
-    DBusObjectPathVTable	 vtable = { NULL, 
-                                        &nm_dbus_message_handler, 
-                                        NULL, NULL, NULL, NULL };
+//    DBusObjectPathVTable	 vtable = { NULL, 
+//                                        &nm_dbus_message_handler, 
+//                                        NULL, NULL, NULL, NULL };
 
     g_return_val_if_fail (data != NULL, FALSE);
     if (data->con != NULL) return TRUE;
@@ -152,7 +152,7 @@ static DBusHandlerResult nm_dbus_message_handler (DBusConnection *con, DBusMessa
 
   handled = FALSE;
   
- reply:
+// reply:
   if (reply)
     {
       dbus_connection_send (con, reply, NULL);
@@ -247,7 +247,7 @@ void nm_exit_notify(void *opaque, int arg)
 
 void nm_ip_down(void *opaque, int arg)
 {   
-  DBusConnection *con = (DBusConnection *)opaque;
+//  DBusConnection *con = (DBusConnection *)opaque;
 
   return;
 }
@@ -270,7 +270,7 @@ void nm_ip_up(void *opaque, int arg)
   guint32		uint_ip4_address  = 0;
   guint32		uint_ip4_ptp_address  = 0;
   guint32		uint_ip4_netmask  = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
-  guint32 i=0;
+//  guint32 i=0;
 
  
   g_return_if_fail (con != NULL);
@@ -471,8 +471,7 @@ gboolean nm_get_auth_items (NmPPPData *data)
  */
 gboolean nm_store_auth_info (NmPPPData *data, char **auth_items, int num_auth_items)
 {
-  int i=0;
-
+//  int i=0;
   g_return_val_if_fail (auth_items != NULL, FALSE);
   g_return_val_if_fail (num_auth_items >= 1, FALSE);
 
