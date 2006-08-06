@@ -40,6 +40,7 @@ impl_clear_widget (NetworkManagerVpnUIImpl *impl)
   g_return_if_fail(impl!=NULL);
 
   if (impl->connection_name_opt!=NULL) vpnui_opt_set(impl->connection_name_opt,"");
+  if (impl->variant_combo!=NULL) gtk_combo_box_set_active(impl->variant_combo,-1);
   if (impl->defaults!=NULL)
     for (item=impl->config_options; item != NULL; item = g_slist_next(item))
     {

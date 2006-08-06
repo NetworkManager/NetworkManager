@@ -80,6 +80,8 @@ vpnui_variant_byname (NetworkManagerVpnUIImpl *impl, const char *name)
   GSList *item;
   VpnUIVariant *variant;
 
+  if (name==NULL) return NULL;
+
   for (item=impl->variants; item != NULL; item = g_slist_next(item))
   {
     variant = (VpnUIVariant *)item->data;
@@ -113,10 +115,9 @@ vpnui_variant_select_byname (NetworkManagerVpnUIImpl *impl, const char *name)
   VpnUIVariant *variant;
 
   g_return_if_fail(impl != NULL);
-  g_return_if_fail(name != NULL);
 
   variant = vpnui_variant_byname(impl,name);
-  g_return_if_fail(variant != NULL);
+  if (variant == NULL) return;
   vpnui_variant_select(variant);
 }
 

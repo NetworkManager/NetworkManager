@@ -393,6 +393,10 @@ impl_hide_and_show (NetworkManagerVpnUIImpl *impl)
 {
   GtkWidget *serial_options = NULL;
   GtkWidget *gprs_options = NULL;
+  GtkWidget *auth_options = NULL;
+  GtkWidget *comp_enc_options = NULL;
+  GtkWidget *routing_options = NULL;
+  GtkWidget *ppp_options = NULL;
   GtkWidget *bluetooth_front = NULL;
   GtkWidget *pptp_front = NULL;
   GtkWidget *dialup_front = NULL;
@@ -404,10 +408,11 @@ impl_hide_and_show (NetworkManagerVpnUIImpl *impl)
 
   combo = GTK_COMBO_BOX(glade_xml_get_widget(impl->xml, "ppp-connection-type"));
   if (combo==NULL) return;
-  variant_name=gtk_combo_box_get_active_text(combo);
-  if (variant_name==NULL) return;
 
-//  ppp_options = glade_xml_get_widget(impl->xml, "ppp-options");
+  ppp_options = glade_xml_get_widget(impl->xml, "ppp-options");
+  auth_options = glade_xml_get_widget(impl->xml, "auth-options");
+  comp_enc_options = glade_xml_get_widget(impl->xml, "comp-enc-options");
+  routing_options = glade_xml_get_widget(impl->xml, "routing-options");
   gprs_options = glade_xml_get_widget(impl->xml, "gprs-options");
   serial_options = glade_xml_get_widget(impl->xml, "serial-options");
   bluetooth_front = glade_xml_get_widget(impl->xml, "bluetooth-front");
@@ -419,15 +424,34 @@ impl_hide_and_show (NetworkManagerVpnUIImpl *impl)
   if (dialup_front) gtk_widget_hide(dialup_front);
   if (gprs_options) gtk_widget_hide(gprs_options);
   if (serial_options) gtk_widget_hide(serial_options);
+  if (ppp_options) gtk_widget_hide(ppp_options);
+  if (auth_options) gtk_widget_hide(auth_options);
+  if (comp_enc_options) gtk_widget_hide(comp_enc_options);
+  if (routing_options) gtk_widget_hide(routing_options);
+
+  variant_name=gtk_combo_box_get_active_text(combo);
+  if (variant_name==NULL) return;
 
   if (strcmp(variant_name,"pptp")==0) {
-    if (pptp_front) gtk_widget_show(pptp_front);
+    if (pptp_front)       gtk_widget_show(pptp_front);
+    if (ppp_options)      gtk_widget_show(ppp_options);
+    if (auth_options)     gtk_widget_show(auth_options);
+    if (comp_enc_options) gtk_widget_show(comp_enc_options);
+    if (routing_options)  gtk_widget_show(routing_options);
   } else if (strcmp(variant_name,"dialup")==0) {
     if (dialup_front) gtk_widget_show(dialup_front);
     if (serial_options) gtk_widget_show(serial_options);
+    if (ppp_options)      gtk_widget_show(ppp_options);
+    if (auth_options)     gtk_widget_show(auth_options);
+    if (comp_enc_options) gtk_widget_show(comp_enc_options);
+    if (routing_options)  gtk_widget_show(routing_options);
   } else if (strcmp(variant_name,"btgprs")==0) {
     if (bluetooth_front) gtk_widget_show(bluetooth_front);
     if (gprs_options) gtk_widget_show(gprs_options);
     if (serial_options) gtk_widget_show(serial_options);
+    if (ppp_options)      gtk_widget_show(ppp_options);
+    if (auth_options)     gtk_widget_show(auth_options);
+    if (comp_enc_options) gtk_widget_show(comp_enc_options);
+    if (routing_options)  gtk_widget_show(routing_options);
   }  
 }

@@ -183,6 +183,7 @@ void vpnui_opt_set(VpnUIConfigOption *opt, const char *value)
           return;
         }
       }
+      gtk_combo_box_set_active(GTK_COMBO_BOX(opt->widget),-1);
 
       break;
   }
