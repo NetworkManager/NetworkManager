@@ -1166,7 +1166,7 @@ static gboolean nm_ppp_dbus_handle_stop_vpn (NmPPPData *data)
  * Stop the running pppd dameon.
  *
  */
-static gboolean nm_ppp_dbus_handle_chap_check (NmPPPData *data)
+/* static gboolean nm_ppp_dbus_handle_chap_check (NmPPPData *data)
 {
   g_return_val_if_fail (data != NULL, FALSE);
 
@@ -1183,7 +1183,7 @@ static gboolean nm_ppp_dbus_handle_chap_check (NmPPPData *data)
     }
 
   return TRUE;
-}
+} */
 
 
 /*
