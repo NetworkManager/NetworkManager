@@ -345,7 +345,7 @@ else
 fi
 
 ## Enable bigendian stuff for sha1 hash code
-if "$target_cpu" = "powerpc"
+if "$target_cpu" = "powerpc"; then
       CPU_CFLAGS="-DWORDS_BIGENDIAN $CPU_CFLAGS"
 fi
 
