@@ -2,3 +2,4 @@ test-ciphers
 Makefile.in
 Makefile
 test-dbus-helpers
+test-dbus-dict-helpers
