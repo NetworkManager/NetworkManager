@@ -50,6 +50,11 @@ ALL_LINGUAS="bg bs ca cs da de el en_CA es fi fr gu hr hu it ja ko lt lv mk nb n
 AC_PROG_INTLTOOL([0.27.2])
 AM_GLIB_GNU_GETTEXT
 
+dnl
+dnl Make sha1.c happy on big endian systems
+dnl
+AC_C_BIGENDIAN
+
 AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware or paldo]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
@@ -342,11 +347,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	unset option
 else
 	AC_MSG_RESULT(no)
-fi
-
-## Enable bigendian stuff for sha1 hash code
-if "$target_cpu" = "powerpc"; then
-      CPU_CFLAGS="-DWORDS_BIGENDIAN $CPU_CFLAGS"
 fi
 
 AC_OUTPUT([
