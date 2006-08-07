@@ -337,6 +337,11 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+## Enable bigendian stuff for sha1 hash code
+if "$target_cpu" = "powerpc"
+      CPU_CFLAGS="-DWORDS_BIGENDIAN $CPU_CFLAGS"
+fi
+
 AC_OUTPUT([
 Makefile
 include/Makefile

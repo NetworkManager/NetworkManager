@@ -1,3 +1,9 @@
+2006-08-06  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christan Chiesa <christanc@gmail.com>
+	* configure.in
+		- Tell sha1.c to use bigendian mode on PPC
+
 2006-08-04  Robert Love  <rml@novell.com>
 
 	* src/NetworkManagerAP.c: Fix memory leak!
