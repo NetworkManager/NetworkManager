@@ -209,7 +209,11 @@ void nm_act_request_set_user_key_pending_call (NMActRequest *req, DBusPendingCal
 {
 	g_return_if_fail (req != NULL);
 
+	if (req->user_key_pcall)
+		dbus_pending_call_unref (req->user_key_pcall);
 	req->user_key_pcall = pcall;
+	if (req->user_key_pcall)
+		dbus_pending_call_ref (req->user_key_pcall);
 }
 
 guint8 nm_act_request_get_dhcp_state (NMActRequest *req)

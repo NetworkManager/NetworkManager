@@ -1,5 +1,10 @@
 2006-08-06  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+		- Refcount pending call objects
+
+2006-08-06  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Christan Chiesa <christanc@gmail.com>
 	* configure.in
 		- Tell sha1.c to use bigendian mode on PPC
