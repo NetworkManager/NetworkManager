@@ -402,7 +402,13 @@ out:
  * Set IPv4 configuration of a VPN device from an NMIP4Config object.
  *
  */
-gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config, char **routes, int num_routes)
+gboolean
+nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
+                                          NMDevice *active_device,
+                                          const char *iface,
+                                          NMIP4Config *config,
+                                          char **routes,
+                                          int num_routes)
 {
 	NMIP4Config *		ad_config = NULL;
 	struct nl_handle *	nlh = NULL;
@@ -413,7 +419,13 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
-		nm_system_device_set_ip4_route (active_device, nm_ip4_config_get_gateway (ad_config), nm_ip4_config_get_gateway (config), 0xFFFFFFFF, nm_ip4_config_get_mss (config));
+	{
+		nm_system_device_set_ip4_route (active_device,
+				nm_ip4_config_get_gateway (ad_config),
+				nm_ip4_config_get_gateway (config),
+				0xFFFFFFFF,
+				nm_ip4_config_get_mss (config));
+	}
 
 	if (iface != NULL && strlen (iface))
 	{
@@ -436,9 +448,13 @@ gboolean nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named, NMDevi
 		if ((request = rtnl_link_alloc ()))
 		{
 			struct rtnl_link * old;
+			guint32 mtu;
 
 			old = iface_to_rtnl_link (iface, nlh);
-			rtnl_link_set_mtu (request, 1412);
+			mtu = nm_ip4_config_get_mtu (config);
+			if (mtu == 0)
+				mtu = 1412;  /* Default to 1412 (vpnc) */
+			rtnl_link_set_mtu (request, mtu);
 			rtnl_link_change (nlh, old, request, 0);
 
 			rtnl_link_put (old);
