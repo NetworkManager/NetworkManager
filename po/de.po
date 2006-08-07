@@ -178,45 +178,45 @@ msgstr "Das Netzwerkgerät »%s (%s)« unterstützt keine Link-Erkennung."
 #: ../gnome/applet/applet.c:963
 #, c-format
 msgid "Preparing device %s for the wired network..."
-msgstr "Vorbereiten des Geräts %s wird für das Kabelnetzwerk âŠ"
+msgstr "Vorbereiten des Geräts %s wird für das Kabelnetzwerk..."
 
 #: ../gnome/applet/applet.c:965
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "Vorbereiten des Geräts %s für das Funknetzwerk »%s« âŠ"
+msgstr "Vorbereiten des Geräts %s für das Funknetzwerk »%s«..."
 
 #: ../gnome/applet/applet.c:972
 #, c-format
 msgid "Configuring device %s for the wired network..."
-msgstr "Konfigurieren des Geräts %s für das Kabelnetzwerk âŠ"
+msgstr "Konfigurieren des Geräts %s für das Kabelnetzwerk..."
 
 #: ../gnome/applet/applet.c:974
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
-msgstr "Versuch, dem Funknetzwerk »%s« beizutreten âŠ"
+msgstr "Versuch, dem Funknetzwerk »%s« beizutreten..."
 
 #: ../gnome/applet/applet.c:981
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "Warten auf den Netzwerkschlüssel für das Funknetzwerk »%s« âŠ"
+msgstr "Warten auf den Netzwerkschlüssel für das Funknetzwerk »%s«..."
 
 #: ../gnome/applet/applet.c:988 ../gnome/applet/applet.c:997
 msgid "Requesting a network address from the wired network..."
-msgstr "Anfordern einer Netzwerkadresse vom Kabelnetzwerk âŠ"
+msgstr "Anfordern einer Netzwerkadresse vom Kabelnetzwerk..."
 
 #: ../gnome/applet/applet.c:990 ../gnome/applet/applet.c:999
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "Anfordern einer Netzwerkadresse vom Funknetzwerk »%s« âŠ"
+msgstr "Anfordern einer Netzwerkadresse vom Funknetzwerk »%s«..."
 
 #: ../gnome/applet/applet.c:1006
 msgid "Finishing connection to the wired network..."
-msgstr "Fertigstellen der Verbindung mit dem Kabelnetzwerk âŠ"
+msgstr "Fertigstellen der Verbindung mit dem Kabelnetzwerk..."
 
 #: ../gnome/applet/applet.c:1008
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
-msgstr "Fertigstellen der Verbindung mit dem Funknetzwerk »%s« âŠ"
+msgstr "Fertigstellen der Verbindung mit dem Funknetzwerk »%s«..."
 
 #: ../gnome/applet/applet.c:1053
 msgid "NetworkManager is not running"
@@ -251,11 +251,11 @@ msgstr "VPN verbindet zu »%s«"
 
 #: ../gnome/applet/applet.c:1489
 msgid "_Connect to Other Wireless Network..."
-msgstr "Mit einem anderen Funknetzwerk _verbinden âŠ"
+msgstr "Mit einem anderen Funknetzwerk _verbinden..."
 
 #: ../gnome/applet/applet.c:1510
 msgid "Create _New Wireless Network..."
-msgstr "_Neues Funknetzwerk erstellen âŠ"
+msgstr "_Neues Funknetzwerk erstellen..."
 
 #: ../gnome/applet/applet.c:1623
 msgid "_VPN Connections"
@@ -263,11 +263,11 @@ msgstr "_VPN-Verbindungen"
 
 #: ../gnome/applet/applet.c:1655
 msgid "_Configure VPN..."
-msgstr "VPN _konfigurieren âŠ"
+msgstr "VPN _konfigurieren..."
 
 #: ../gnome/applet/applet.c:1659
 msgid "_Disconnect VPN..."
-msgstr "VPN _trennen âŠ"
+msgstr "VPN _trennen..."
 
 #: ../gnome/applet/applet.c:1681
 msgid "_Dial Up Connections"
@@ -276,7 +276,7 @@ msgstr "_Einwahlverbindung"
 #: ../gnome/applet/applet.c:1690
 #, c-format
 msgid "Connect to %s..."
-msgstr "Verbinden mit %s âŠ"
+msgstr "Verbinden mit %s..."
 
 #: ../gnome/applet/applet.c:1740
 msgid "No network devices have been found"
@@ -284,7 +284,7 @@ msgstr "Es wurden keine Netzwerkgeräte gefunden"
 
 #: ../gnome/applet/applet.c:1902
 msgid "NetworkManager is not running..."
-msgstr "Der Netzwerk-Manager ist nicht aktiv âŠ"
+msgstr "Der Netzwerk-Manager ist nicht aktiv..."
 
 #. Wireless Enabled item
 #: ../gnome/applet/applet.c:2004
@@ -547,7 +547,7 @@ msgstr "Schnittstelle:"
 
 #: ../gnome/applet/applet.glade.h:29
 msgid "Other Wireless Network..."
-msgstr "Anderes Funknetzwerk âŠ"
+msgstr "Anderes Funknetzwerk..."
 
 #: ../gnome/applet/applet.glade.h:30
 msgid "Subnet Mask:"
