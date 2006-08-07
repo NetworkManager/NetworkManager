@@ -1,3 +1,13 @@
+2006-08-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-service.c
+		- Simplify print_vpn_config() arguments
+
+	Patch from Antony J Mee <A.J.Mee@ncl.ac.uk>
+	* src/vpn-manager/Makefile.am
+	  src/vpn-manager/nm-vpn-service.c
+		- Add new API for passing VPN config options as a dict
+
 2006-08-06  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/applet/applet-dbus-devices.c

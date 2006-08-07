@@ -1,5 +1,6 @@
 INCLUDES = -I${top_srcdir}                       \
            -I${top_srcdir}/include               \
+           -I${top_srcdir}/libnm-util            \
            -I${top_srcdir}/utils                 \
            -I${top_srcdir}/src                   \
            -I${top_srcdir}/src/named-manager
@@ -29,4 +30,6 @@ libvpn_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 						-DSYSCONFDIR=\"$(sysconfdir)\"
 
 
-libvpn_manager_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
+libvpn_manager_la_LIBADD = $(DBUS_LIBS)           \
+                           $(GTHREAD_LIBS)        \
+                           $(top_builddir)/libnm-util/libnm-util.la 
