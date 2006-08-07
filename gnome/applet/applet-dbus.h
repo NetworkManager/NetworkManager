@@ -40,13 +40,4 @@ void			nma_dbus_enable_networking			(NMApplet *applet, gboolean enabled);
 void			nma_free_gui_data_model				(NMApplet *applet);
 void			nma_free_dbus_data_model			(NMApplet *applet);
 
-gboolean		nma_dbus_send_with_callback		(DBusConnection *connection,
-                                                   DBusMessage *msg, 
-                                                   DBusPendingCallNotifyFunction func,
-                                                   gpointer data,
-                                                   DBusFreeFunction free_func,
-                                                   const char *caller);
-void			nma_dbus_send_with_callback_replied(DBusPendingCall *pcall,
-                                                   const char *caller);
-
 #endif

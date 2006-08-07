@@ -57,10 +57,9 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	dbus_pending_call_ref (pcall);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
+	dbus_pending_call_ref (pcall);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -162,12 +161,13 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 									DBUS_TYPE_INT32, &attempt,
 									DBUS_TYPE_BOOLEAN, &new_key,
 									DBUS_TYPE_INVALID);
-		if (dbus_connection_send_with_reply (connection, message, &pcall, INT_MAX) && pcall)
+		if ((pcall = nm_dbus_send_with_callback (connection, message,
+				(DBusPendingCallNotifyFunction) nm_dbus_get_user_key_for_network_cb,
+				req, NULL, __func__)))
 		{
 			nm_act_request_ref (req);
 			nm_act_request_set_stage (req, NM_ACT_STAGE_NEED_USER_KEY);
 			nm_act_request_set_user_key_pending_call (req, pcall);
-			dbus_pending_call_set_notify (pcall, (DBusPendingCallNotifyFunction) nm_dbus_get_user_key_for_network_cb, req, NULL);
 		}
 		else
 			nm_warning ("nm_dbus_get_user_key_for_network(): could not send dbus message");
@@ -357,6 +357,8 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	g_return_if_fail (cb_data->network != NULL);
 	g_return_if_fail (cb_data->list != NULL);
 
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
 	dbus_pending_call_ref (pcall);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
@@ -496,19 +498,12 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->list != NULL);
 	g_return_if_fail (cb_data->data != NULL);
 
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
 	dbus_pending_call_ref (pcall);
 
-	if (!dbus_pending_call_get_completed (pcall))
-	{
-		nm_warning ("pending call was not completed.");
-		goto out;
-	}
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-	{
-		nm_warning ("could not retrieve the reply.");
 		goto out;
-	}
 
 	if (message_is_error (reply))
 	{
@@ -533,24 +528,19 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 		if ((message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworkProperties")))
 		{
 			dbus_int32_t			type_as_int32 = nm_ap_list_get_type (cb_data->list);
-			DBusPendingCall *		net_pcall = NULL;
+			GetOneNetworkCBData *	net_cb_data = g_slice_new0 (GetOneNetworkCBData);
+
+			net_cb_data->data = cb_data->data;
+			net_cb_data->network = g_strdup (value);
+			nm_ap_list_ref (cb_data->list);
+			net_cb_data->list = cb_data->list;
 
 			dbus_message_append_args (message, DBUS_TYPE_STRING, &value, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
-			dbus_connection_send_with_reply (cb_data->data->dbus_connection, message, &net_pcall, -1);
+			nm_dbus_send_with_callback (cb_data->data->dbus_connection, message,
+					(DBusPendingCallNotifyFunction) nm_dbus_get_network_data_cb, net_cb_data,
+					(DBusFreeFunction) free_get_one_network_cb_data, __func__);
 			dbus_message_unref (message);
-			if (net_pcall)
-			{
-				GetOneNetworkCBData *	net_cb_data = g_slice_new0 (GetOneNetworkCBData);
-
-				net_cb_data->data = cb_data->data;
-				net_cb_data->network = g_strdup (value);
-				nm_ap_list_ref (cb_data->list);
-				net_cb_data->list = cb_data->list;
-
-				dbus_pending_call_set_notify (net_pcall, nm_dbus_get_network_data_cb, net_cb_data, (DBusFreeFunction) free_get_one_network_cb_data);
-			}
 		}
-
 		dbus_message_iter_next(&array_iter);
 	}
 	dbus_message_unref (reply);
@@ -570,7 +560,7 @@ void nm_dbus_update_allowed_networks (DBusConnection *connection, NMAccessPointL
 {
 	DBusMessage *		message;
 	dbus_int32_t		type_as_int32 = nm_ap_list_get_type (list);
-	DBusPendingCall *	pcall = NULL;
+	GetNetworksCBData *	cb_data;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (list != NULL);
@@ -578,19 +568,17 @@ void nm_dbus_update_allowed_networks (DBusConnection *connection, NMAccessPointL
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getNetworks")))
 		return;
-
 	dbus_message_append_args (message, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
-	dbus_connection_send_with_reply (connection, message, &pcall, -1);
-	dbus_message_unref (message);
-	if (pcall)
-	{
-		GetNetworksCBData *	cb_data = g_slice_new0 (GetNetworksCBData);
 
-		cb_data->data = data;
-		nm_ap_list_ref (list);
-		cb_data->list = list;
-		dbus_pending_call_set_notify (pcall, nm_dbus_get_networks_cb, cb_data, (DBusFreeFunction) free_get_networks_cb_data);
-	}
+	cb_data = g_slice_new0 (GetNetworksCBData);
+	cb_data->data = data;
+	nm_ap_list_ref (list);
+	cb_data->list = list;
+
+	nm_dbus_send_with_callback (cb_data->data->dbus_connection, message,
+			(DBusPendingCallNotifyFunction) nm_dbus_get_networks_cb, cb_data,
+			(DBusFreeFunction) free_get_networks_cb_data, __func__);
+	dbus_message_unref (message);
 }
 
 
@@ -604,7 +592,6 @@ void nm_dbus_update_one_allowed_network (DBusConnection *connection, const char 
 {
 	DBusMessage *			message;
 	dbus_int32_t			type_as_int32 = NETWORK_TYPE_ALLOWED;
-	DBusPendingCall *		pcall = NULL;
 	GetOneNetworkCBData *	cb_data = NULL;
 
 	g_return_if_fail (connection != NULL);
@@ -615,19 +602,17 @@ void nm_dbus_update_one_allowed_network (DBusConnection *connection, const char 
 		nm_warning ("nm_dbus_update_one_allowed_network(): Couldn't allocate the dbus message");
 		return;
 	}
+	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
 
 	cb_data = g_slice_new0 (GetOneNetworkCBData);
 	cb_data->data = data;
 	cb_data->network = g_strdup (network);
 	cb_data->list = data->allowed_ap_list;
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
-	dbus_connection_send_with_reply (connection, message, &pcall, -1);
+	nm_dbus_send_with_callback (cb_data->data->dbus_connection, message,
+			(DBusPendingCallNotifyFunction) nm_dbus_get_network_data_cb, cb_data,
+			(DBusFreeFunction) free_get_one_network_cb_data, __func__);
 	dbus_message_unref (message);
-	if (!pcall)
-		nm_warning ("nm_dbus_update_one_allowed_network(): pending call was NULL");
-	else
-		dbus_pending_call_set_notify (pcall, nm_dbus_get_network_data_cb, cb_data, (DBusFreeFunction) free_get_one_network_cb_data);
 }
 
 

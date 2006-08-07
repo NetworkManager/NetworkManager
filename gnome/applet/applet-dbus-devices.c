@@ -56,7 +56,7 @@ static void nma_dbus_nm_state_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -97,7 +97,7 @@ void nma_dbus_update_nm_state (NMApplet *applet)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "state")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_nm_state_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -127,7 +127,7 @@ static void nma_dbus_device_get_driver_cb (DBusPendingCall *pcall, void *user_da
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -186,7 +186,7 @@ static void nma_dbus_device_get_driver (NetworkDevice *dev, NMApplet *applet)
 		data->dev = dev;
 		data->applet = applet;
 
-		if (!nma_dbus_send_with_callback (applet->connection, message,
+		if (!nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_device_get_driver_cb, data, NULL, __func__))
 		{
 			network_device_unref (dev);
@@ -212,7 +212,7 @@ static void nma_dbus_update_wireless_enabled_cb (DBusPendingCall *pcall, void *u
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -256,7 +256,7 @@ static void nma_dbus_update_wireless_enabled (NMApplet *applet)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getWirelessEnabled")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_update_wireless_enabled_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -303,7 +303,7 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->parent_op != NULL);
 	g_return_if_fail (cb_data->vendor != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -351,7 +351,7 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->dev != NULL);
 	g_return_if_fail (cb_data->parent_op != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -386,7 +386,7 @@ static void hal_info_vendor_cb (DBusPendingCall *pcall, void *user_data)
 			product_cb_data->parent_op = g_strdup (cb_data->parent_op);
 			product_cb_data->vendor = g_strdup (info_vendor);
 
-			nma_dbus_send_with_callback (cb_data->applet->connection, message,
+			nm_dbus_send_with_callback (cb_data->applet->connection, message,
 					hal_info_product_cb, product_cb_data,
 					(DBusFreeFunction) free_hal_info_cb_data, __func__);
 			dbus_message_unref (message);
@@ -416,7 +416,7 @@ static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->dev != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -451,7 +451,7 @@ static void hal_net_physdev_cb (DBusPendingCall *pcall, void *user_data)
 			vendor_cb_data->dev = cb_data->dev;
 			vendor_cb_data->parent_op = g_strdup (op);
 
-			nma_dbus_send_with_callback (cb_data->applet->connection, message,
+			nm_dbus_send_with_callback (cb_data->applet->connection, message,
 					hal_info_vendor_cb, vendor_cb_data,
 					(DBusFreeFunction) free_hal_info_cb_data, __func__);
 			dbus_message_unref (message);
@@ -490,7 +490,7 @@ static void nma_dbus_update_device_info_from_hal (NetworkDevice *dev, NMApplet *
 		network_device_ref (dev);
 		cb_data->dev = dev;
 
-		nma_dbus_send_with_callback (cb_data->applet->connection, message,
+		nm_dbus_send_with_callback (cb_data->applet->connection, message,
 				hal_net_physdev_cb, cb_data,
 				(DBusFreeFunction) free_hal_info_cb_data, __func__);
 		dbus_message_unref (message);
@@ -555,7 +555,7 @@ static void nma_dbus_net_properties_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->dev_op != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	applet = cb_data->applet;
 
@@ -647,7 +647,7 @@ void nma_dbus_device_update_one_network (NMApplet *applet, const char *dev_path,
 		cb_data->act_net = (active_net_path && strlen (active_net_path)) ? g_strdup (active_net_path) : NULL;
 		cb_data->applet = applet;
 
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 			nma_dbus_net_properties_cb, cb_data,
 			(DBusFreeFunction) free_net_prop_cb_data, __func__);
 		dbus_message_unref (message);
@@ -761,7 +761,7 @@ static void nma_dbus_device_properties_cb (DBusPendingCall *pcall, void *user_da
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -871,7 +871,7 @@ void nma_dbus_device_update_one_device (NMApplet *applet, const char *dev_path)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_device_properties_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -905,7 +905,7 @@ static void nma_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_dat
 	char *				icon = NULL;
 #endif
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	nma_dbus_device_properties_cb (pcall, applet);
 
@@ -961,7 +961,7 @@ void nma_dbus_device_activated (NMApplet *applet, const char *dev_path, const ch
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_device_activated_cb, cb_data, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -972,7 +972,7 @@ static void nma_dbus_device_deactivated_cb (DBusPendingCall *pcall, void *user_d
 {
 	NMApplet *	applet = (NMApplet *) user_data;
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	nma_dbus_device_properties_cb (pcall, applet);
 
@@ -995,7 +995,7 @@ void nma_dbus_device_deactivated (NMApplet *applet, const char *dev_path)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev_path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_device_deactivated_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -1018,7 +1018,7 @@ static void nma_dbus_update_devices_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -1072,7 +1072,7 @@ void nma_dbus_update_devices (NMApplet *applet)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDevices")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_update_devices_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}
@@ -1096,7 +1096,7 @@ static void nma_dbus_update_dialup_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -1158,7 +1158,7 @@ void nma_dbus_update_dialup (NMApplet *applet)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "getDialup")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_update_dialup_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}

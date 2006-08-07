@@ -43,135 +43,17 @@
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
 
 
-/* #define DBUS_PENDING_CALL_DEBUG */
-
-typedef struct PCallInfo
-{
-	DBusPendingCall *	pcall;
-	char *			caller;
-	guint32			id;
-	GTimeVal			start;
-} PCallInfo;
-
-static GStaticMutex pcall_mutex = G_STATIC_MUTEX_INIT;
-static GHashTable *	pcall_table = NULL;
-static guint32		pcall_gid = 0;
-static guint32		pcall_pending = 0;
-
-
-gboolean
-nma_dbus_send_with_callback (DBusConnection *connection,
-                             DBusMessage *msg, 
-                             DBusPendingCallNotifyFunction func,
-                             gpointer data,
-                             DBusFreeFunction free_func,
-                             const char *caller)
-{
-	PCallInfo * info;
-	DBusPendingCall * pcall = NULL;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (msg != NULL, FALSE);
-	g_return_val_if_fail (func != NULL, FALSE);
-	g_return_val_if_fail (caller != NULL, FALSE);
-
-	dbus_connection_send_with_reply (connection, msg, &pcall, -1);
-	if (!pcall)
-	{
-		g_warning ("Error: '%s' couldn't send dbus message.", caller);
-		if (free_func)
-			(*free_func)(data);
-		return FALSE;
-	}
-	dbus_pending_call_set_notify (pcall, func, data, free_func);
-
-	if (!(info = g_malloc0 (sizeof (PCallInfo))))
-		return FALSE;
-	info->caller = g_strdup (caller);
-	info->pcall = pcall;
-	g_get_current_time (&info->start);
-	dbus_pending_call_ref (pcall);
-
-	g_static_mutex_lock (&pcall_mutex);
-	info->id = pcall_gid++;
-	pcall_pending++;
-
-	if (!pcall_table)
-		pcall_table = g_hash_table_new (g_direct_hash, g_direct_equal);
-	g_hash_table_insert (pcall_table, pcall, info);
-
-#ifdef DBUS_PENDING_CALL_DEBUG
-	nm_info ("PCall Debug: registered ID %d (%p), initiated by '%s'.  Total "
-		"pending: %d", info->id, pcall, info->caller, pcall_pending);
-#endif
-
-	g_static_mutex_unlock (&pcall_mutex);
-
-	return TRUE;
-}
-
-void
-nma_dbus_send_with_callback_replied (DBusPendingCall *pcall,
-                                     const char *caller)
-{
-	PCallInfo *	info;
-#ifdef DBUS_PENDING_CALL_DEBUG
-	GTimeVal		now;
-	long			elapsed_ms = 0;
-#endif
-
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (caller != NULL);
-
-	g_static_mutex_lock (&pcall_mutex);
-	if (!(info = g_hash_table_lookup (pcall_table, pcall)))
-	{
-		nm_warning ("Error: couldn't find pending call %p in tracking"
-			" table.", pcall);
-		goto out;
-	}
-
-	pcall_pending--;
-#ifdef DBUS_PENDING_CALL_DEBUG
-	g_get_current_time (&now);
-	if (info->start.tv_usec > now.tv_usec)
-	{
-		now.tv_sec--;
-		now.tv_usec = G_USEC_PER_SEC - (info->start.tv_usec - now.tv_usec);
-	}
-	else
-		now.tv_usec -= info->start.tv_usec;
-	now.tv_sec -= info->start.tv_sec;
-	elapsed_ms = now.tv_sec * G_USEC_PER_SEC + now.tv_usec;
-	elapsed_ms /= 1000;
-
-	nm_info ("PCall Debug: unregistered ID %d (%p), %s -> %s,"
-		" %lums elapsed.  Total pending: %d", info->id, info->pcall, info->caller,
-		caller, elapsed_ms, pcall_pending);
-#endif
-
-	g_hash_table_remove (pcall_table, pcall);
-	g_free (info->caller);
-	dbus_pending_call_unref (info->pcall);
-	g_free (info);
-
-out:
-	g_static_mutex_unlock (&pcall_mutex);
-}
-
-
 /*
  * nma_dbus_filter
  *
  */
 static DBusHandlerResult nma_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
 {
-	NMApplet	*applet = (NMApplet *)user_data;
-	gboolean			 handled = TRUE;
-
-	const char *		object_path;
-	const char *		member;
-	const char *		interface;
+	NMApplet *	applet = (NMApplet *)user_data;
+	gboolean		handled = TRUE;
+	const char *	object_path;
+	const char *	member;
+	const char *	interface;
 
 	g_return_val_if_fail (applet != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);

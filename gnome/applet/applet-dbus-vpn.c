@@ -117,7 +117,7 @@ static void nma_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data->applet != NULL);
 	g_return_if_fail (cb_data->name != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	applet = cb_data->applet;
 
@@ -188,7 +188,7 @@ void nma_dbus_vpn_update_one_vpn_connection (NMApplet *applet, const char *vpn_n
 		cb_data->applet = applet;
 		cb_data->name = g_strdup (vpn_name);
 
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_vpn_properties_cb, cb_data,
 				(DBusFreeFunction) free_vpn_props_cb_data, __func__);
 		dbus_message_unref (message);
@@ -212,7 +212,7 @@ static void nma_dbus_vpn_update_vpn_connections_cb (DBusPendingCall *pcall, void
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (applet != NULL);
 
-	nma_dbus_send_with_callback_replied (pcall, __func__);
+	nm_dbus_send_with_callback_replied (pcall, __func__);
 
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
@@ -268,7 +268,7 @@ void nma_dbus_vpn_update_vpn_connections (NMApplet *applet)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH_VPN, NM_DBUS_INTERFACE_VPN, "getVPNConnections")))
 	{
-		nma_dbus_send_with_callback (applet->connection, message,
+		nm_dbus_send_with_callback (applet->connection, message,
 				nma_dbus_vpn_update_vpn_connections_cb, applet, NULL, __func__);
 		dbus_message_unref (message);
 	}

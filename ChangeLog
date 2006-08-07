@@ -1,5 +1,17 @@
 2006-08-06  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet-dbus-devices.c
+	  gnome/applet/applet-dbus-vpn.c
+	  gnome/applet/applet-dbus.c
+	  gnome/applet/applet-dbus.h
+	  src/nm-dbus-nmi.c
+	  utils/nm-utils.c
+	  utils/nm-utils.h
+		- Make pending call tracking code generic,
+		so we can use it in NM as well as the applet
+
+2006-08-06  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 		- Refcount pending call objects
 
