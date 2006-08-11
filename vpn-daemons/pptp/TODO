@@ -25,7 +25,7 @@ Version 0.7.0-beta
 
 Bugs:
    * Does not seem to remember you login information even if
-     told to do so.
+     told to do so. (FIXED)
    * Still only support for CHAP authentication.
 
 
