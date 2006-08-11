@@ -187,6 +187,7 @@ AC_OUTPUT([
 Makefile
 src/Makefile
 auth-dialog/Makefile
+auth-dialog-general/Makefile
 properties/Makefile
 po/Makefile.in
 nm-ppp-starter.name
