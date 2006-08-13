@@ -230,7 +230,7 @@ libnm_glib_dbus_filter (DBusConnection *connection,
 	{
 		/* Try to reactivate our connection to dbus on the next pass through the event loop */
 		ctx->nm_state = LIBNM_NO_DBUS;
-		dbus_connection_disconnect (ctx->dbus_con);
+		dbus_connection_close (ctx->dbus_con);
 		libnm_glib_schedule_dbus_watcher (ctx);
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
@@ -444,7 +444,7 @@ libnm_glib_ctx_free (libnm_glib_ctx *ctx)
 		g_main_loop_unref (ctx->g_main_loop);
 
 	if (ctx->dbus_con)
-		dbus_connection_disconnect (ctx->dbus_con);
+		dbus_connection_close (ctx->dbus_con);
 
 	if (ctx->callbacks_lock)
 		g_mutex_free (ctx->callbacks_lock);

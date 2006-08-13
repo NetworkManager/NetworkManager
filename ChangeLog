@@ -1,3 +1,9 @@
+2006-08-13  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c
+		- dbus_connection_disconnect() -> dbus_connection_close() for
+		dbus >= 0.90
+
 2006-08-07  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Antony J Mee <A.J.Mee@ncl.ac.uk>
