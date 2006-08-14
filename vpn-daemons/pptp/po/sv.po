@@ -3,14 +3,14 @@
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 # Daniel Nylander <po@danielnylander.se>, 2006.
 #
-# $Id: sv.po,v 1.4 2006/07/16 16:53:19 dnylande Exp $
+# $Id: sv.po,v 1.5 2006/08/14 09:21:39 dnylande Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-07-16 04:57+0200\n"
-"PO-Revision-Date: 2006-07-16 18:28+0100\n"
+"POT-Creation-Date: 2006-08-14 04:55+0200\n"
+"PO-Revision-Date: 2006-08-14 10:52+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -50,12 +50,12 @@ msgstr "_Kom ihåg lösenordet för denna session"
 msgid "_Save password in keyring"
 msgstr "_Spara lösenordet i nyckelring"
 
-#: ../auth-dialog/main.c:138
+#: ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access '%s'."
-msgstr "Du måsta autentisera för att komma åt \"%s\"."
+msgstr "Du måsta autentisera dig för att komma åt \"%s\"."
 
-#: ../auth-dialog/main.c:139
+#: ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
 msgstr "Autentisera anslutning"
 
@@ -68,149 +68,169 @@ msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN-anslutningshanterare (allmän PPP)"
 
 #: ../properties/nm-ppp-properties.c:45
-msgid "Tunnel via pppd"
-msgstr "Tunnla via pppd"
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr "pppd-tunnel (PPTP, BTGPRS, Uppringd)"
 
-#: ../properties/nm-ppp-properties.c:111
+#: ../properties/nm-ppp-properties.c:131
 msgid "Name"
 msgstr "Namn"
 
-#: ../properties/nm-ppp-properties.c:123
+#: ../properties/nm-ppp-properties.c:143
 msgid "PPTP Server"
 msgstr "PPTP-server"
 
-#: ../properties/nm-ppp-properties.c:128
+#: ../properties/nm-ppp-properties.c:148
 msgid "Telephone Number"
 msgstr "Telefonnummer"
 
-#: ../properties/nm-ppp-properties.c:133
+#: ../properties/nm-ppp-properties.c:153
 msgid "Bluetooth Address"
 msgstr "Bluetooth-adress"
 
-#: ../properties/nm-ppp-properties.c:138
+#: ../properties/nm-ppp-properties.c:158
 msgid "Bluetooth Channel"
 msgstr "Bluetooth-kanal"
 
-#: ../properties/nm-ppp-properties.c:143
+#: ../properties/nm-ppp-properties.c:163
 msgid "GPRS APN"
 msgstr "GPRS APN"
 
-#: ../properties/nm-ppp-properties.c:148
+#: ../properties/nm-ppp-properties.c:168
 msgid "GPRS IP"
 msgstr "GPRS-ip"
 
-#: ../properties/nm-ppp-properties.c:153
+#: ../properties/nm-ppp-properties.c:173
 msgid "GPRS Context No."
 msgstr "GPRS-sammanhangsnr"
 
-#: ../properties/nm-ppp-properties.c:158
+#: ../properties/nm-ppp-properties.c:178
 msgid "GPRS Packet Type"
 msgstr "GPRS-pakettyp"
 
-#: ../properties/nm-ppp-properties.c:163
+#: ../properties/nm-ppp-properties.c:183
 msgid "Use CTS/RTS flow control"
 msgstr "Använd CTS/RTS-flödeskontroll"
 
-#: ../properties/nm-ppp-properties.c:168
+#: ../properties/nm-ppp-properties.c:188
 msgid "Connect via a modem"
 msgstr "Anslut via ett modem"
 
-#: ../properties/nm-ppp-properties.c:173
+#: ../properties/nm-ppp-properties.c:193
 msgid "Require IP to be provided"
 msgstr "Kräv att ip tillhandahålls"
 
-#: ../properties/nm-ppp-properties.c:178
-#: ../properties/nm-ppp-dialog.glade.h:35
+#: ../properties/nm-ppp-properties.c:198
+#: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Use Peer DNS"
 msgstr "Använd fjärr-DNS"
 
-#: ../properties/nm-ppp-properties.c:183
+#: ../properties/nm-ppp-properties.c:203
 msgid "Use MPPE encryption"
 msgstr "Använd MPPE-kryptering"
 
-#: ../properties/nm-ppp-properties.c:188
+#: ../properties/nm-ppp-properties.c:208
+msgid "Use 128 bit MPPE encryption"
+msgstr "Använd 128-bitars MPPE-kryptering"
+
+#: ../properties/nm-ppp-properties.c:213
 msgid "Use MPPC compression"
 msgstr "Använd MPPC-komprimering"
 
-#: ../properties/nm-ppp-properties.c:193
+#: ../properties/nm-ppp-properties.c:218
 msgid "Do not use deflate compression"
-msgstr "Använd inte komprimering"
+msgstr "Använd inte Deflate-komprimering"
 
-#: ../properties/nm-ppp-properties.c:198
+#: ../properties/nm-ppp-properties.c:223
 msgid "Do not use BSD compression"
 msgstr "Använd inte BSD-komprimering"
 
-#: ../properties/nm-ppp-properties.c:203
+#: ../properties/nm-ppp-properties.c:228
 msgid "Exclusive device access by pppd"
 msgstr "Exklusiv enhetsåtkomst för pppd"
 
-#: ../properties/nm-ppp-properties.c:208
+#: ../properties/nm-ppp-properties.c:233
 msgid "Authenticate remote peer"
 msgstr "Autentisera fjärrpart"
 
-#: ../properties/nm-ppp-properties.c:213
+#: ../properties/nm-ppp-properties.c:238
+#: ../properties/nm-ppp-dialog.glade.h:32
+msgid "Refuse EAP"
+msgstr "Vägra EAP"
+
+#: ../properties/nm-ppp-properties.c:243
+#: ../properties/nm-ppp-dialog.glade.h:31
+msgid "Refuse CHAP"
+msgstr "Vägra CHAP"
+
+#: ../properties/nm-ppp-properties.c:248
+msgid "Refuse MSCHAP"
+msgstr "Vägra MSCHAP"
+
+#: ../properties/nm-ppp-properties.c:253
 msgid "Maximum transmit unit (in bytes)"
 msgstr "Maximal överföringsenhet (i byte)"
 
-#: ../properties/nm-ppp-properties.c:218
+#: ../properties/nm-ppp-properties.c:258
 msgid "Maximum receive unit (in bytes)"
 msgstr "Maximal mottagningsenhet (i byte)"
 
-#: ../properties/nm-ppp-properties.c:223
+#: ../properties/nm-ppp-properties.c:263
 msgid "Number of failed LCP echos to cause disconnect"
 msgstr "Antal misslyckade LCP-ekon som orsakar frånkoppling"
 
-#: ../properties/nm-ppp-properties.c:228
+#: ../properties/nm-ppp-properties.c:268
 msgid "Interval (in seconds) at which to issue LCP echos"
 msgstr "Intervall (i sekunder) som LCP-ekon ska göras"
 
-#: ../properties/nm-ppp-properties.c:233
+#: ../properties/nm-ppp-properties.c:273
 msgid "Interval (in milliseconds) to wait before connecting."
 msgstr "Intervall (i millisekunder) att vänta före anslutning."
 
-#: ../properties/nm-ppp-properties.c:243
+#: ../properties/nm-ppp-properties.c:278
+msgid "Custom PPP options"
+msgstr "Anpassade PPP-flaggor"
+
+#: ../properties/nm-ppp-properties.c:288
 msgid "Use Peer DNS over the Tunnel"
 msgstr "Använd fjärr-DNS över tunneln"
 
-#: ../properties/nm-ppp-properties.c:249
+#: ../properties/nm-ppp-properties.c:294
 msgid "Specific networks available"
 msgstr "Specifika tillgängliga nätverk"
 
-#: ../properties/nm-ppp-properties.c:254
+#: ../properties/nm-ppp-properties.c:300
 msgid "Limit to specific networks"
 msgstr "Begränsa till specifika nätverk"
 
-#: ../properties/vpnui_impl.c:225
+#: ../properties/vpnui_impl.c:229
 #, c-format
 msgid "The following '%s' connection will be created:"
 msgstr "Följande \"%s\"-anslutning kommer att skapas:"
 
-#: ../properties/vpnui_impl.c:238
+#: ../properties/vpnui_impl.c:242
 #, c-format
-msgid ""
-"\t%s:  %s\n"
-"\n"
+msgid "\t%s:  %s\n"
 msgstr "\t%s:  %s\n"
 
-#: ../properties/vpnui_impl.c:241
+#: ../properties/vpnui_impl.c:245
 msgid "The connection details can be changed using the \"Back\" button."
 msgstr "Anslutningsdetaljerna kan ändras genom att använda knappen \"Bakåt\"."
 
-#: ../properties/vpnui_impl.c:302
+#: ../properties/vpnui_impl.c:317
 msgid "Select file to import"
 msgstr "Välj fil att importera"
 
 #. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:447
+#: ../properties/vpnui_impl.c:462
 msgid "Save as..."
 msgstr "Spara som..."
 
-#: ../properties/vpnui_impl.c:476
+#: ../properties/vpnui_impl.c:491
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "En fil med namnet \"%s\" finns redan."
 
-#: ../properties/vpnui_impl.c:479
+#: ../properties/vpnui_impl.c:494
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Vill du ersätta den med den du håller på att spara?"
 
@@ -219,84 +239,84 @@ msgid "00:00:00:00"
 msgstr "00:00:00:00"
 
 #: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Bluetooth options</b>"
-msgstr "<b>Bluetooth-alternativ</b>"
+msgid "<b>Compression</b>"
+msgstr "<b>Komprimering</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
 msgid "<b>Connection Name</b>"
 msgstr "<b>Anslutningsnamn</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Dial-up options</b>"
-msgstr "<b>Uppringningsalternativ</b>"
+msgid "<b>Delays and TImeouts</b>"
+msgstr "<b>Fördröjningar och tidsgränser</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>GPRS options</b>"
-msgstr "<b>GPRS-alternativ</b>"
+msgid "<b>Encryption</b>"
+msgstr "<b>Kryptering</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>PPP options</b>"
-msgstr "<b>PPP-alternativ</b>"
+msgid "<b>IP Options</b>"
+msgstr "<b>IP-alternativ</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<b>PPTP options</b>"
-msgstr "<b>PPTP-alternativ</b>"
+msgid "<b>Packet Parameters</b>"
+msgstr "<b>Paketparametrar</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<b>Required Information</b>"
-msgstr "<b>Nödvändig information</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:9
-msgid "<b>Routing options</b>"
-msgstr "<b>Routingalternativ</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "<b>Serial options</b>"
-msgstr "<b>Seriealternativ</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:11
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr "En lista på extra flaggor till pppd som de matats in på kommandoraden"
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+msgid "Allow BSD Compression"
+msgstr "Tillåt BSD-komprimering"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
+msgid "Allow Deflate compression"
+msgstr "Tillåt Deflate-komprimering"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
 msgid "Authenticate Peer"
 msgstr "Autentisera fjärrpart"
 
 #: ../properties/nm-ppp-dialog.glade.h:13
-msgid "BSD Compression"
-msgstr "BSD-komprimering"
+msgid "Authentication"
+msgstr "Autentisering"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression and encryption"
-msgstr "Komprimering och kryptering"
+msgid "Compression & Encryption"
+msgstr "Komprimering & kryptering"
 
 #: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection Type:"
-msgstr "Anslutningstyp:"
+msgid "Connection"
+msgstr "Anslutning"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Connection type"
-msgstr "Anslutningstyp"
-
-#: ../properties/nm-ppp-dialog.glade.h:17
 msgid "Debug Output"
 msgstr "Felsökningsutdata"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-msgid "Deflate compression"
-msgstr "Komprimering"
-
-#: ../properties/nm-ppp-dialog.glade.h:19
+#: ../properties/nm-ppp-dialog.glade.h:17
 msgid "Disconnect after this many LCP echo requests fail"
 msgstr "Koppla från när så här många LCP echo-begäranden misslyckats"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:18
 msgid "Exclusive device access (UUCP-style lock)"
 msgstr "Exklusiv enhetsåtkomst (lås i UUCP-stil)"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
+#: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Find Device"
 msgstr "Sök enhet"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
+msgstr "Av säkerhetsskäl kommer flaggor som matats in i rutan ovanför att kontrolleras mot en lista av tillåtna flaggor innan en anslutning etableras.  För närvarande finns det inga flaggor i listan."
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "GPRS Options"
+msgstr "GPRS-alternativ"
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "Hardware RTS/CTS"
@@ -307,12 +327,12 @@ msgid "Host name or IP address of the PPTP server"
 msgstr "Värdnamn eller ip-adress till PPTP-servern"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
-msgid "MPPC Compression"
-msgstr "MPPC-komprimering"
+msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr "Om BSD-komprimering inte tillåts kommer flaggan \"nobsdcomp\" att skickas till pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:25
-msgid "MPPE encryption"
-msgstr "MPPE-kryptering"
+msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr "Om Deflate-komprimering inte tillåts kommer flaggan \"nodeflate\" att skickas till pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Maximum Receive Unit"
@@ -327,74 +347,154 @@ msgid "Modem Connection"
 msgstr "Modemanslutning"
 
 #: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Numeric Tweaks"
-msgstr "Numeriska justeringar"
+msgid "PPP Options"
+msgstr "PPP-alternativ"
 
 #: ../properties/nm-ppp-dialog.glade.h:30
 msgid "Peer DNS through tunnel"
 msgstr "Fjärr-DNS genom tunnel"
 
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "Ange den information som har tillhandahållits av din systemadministratör nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när du ansluter."
+#: ../properties/nm-ppp-dialog.glade.h:33
+msgid "Refuse MS CHAP"
+msgstr "Vägra MS CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Require 128 bit MPPE encryption"
+msgstr "Kräv 128-bitars MPPE-kryptering"
+
+#: ../properties/nm-ppp-dialog.glade.h:35
 msgid "Require Explicit IP Addr"
 msgstr "Kräv explicit ip-addr"
 
-#: ../properties/nm-ppp-dialog.glade.h:33
-msgid "Show on connection on menu"
-msgstr "Visa på anslutning på meny"
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "Require MPPC Compression"
+msgstr "Kräv MPPC-komprimering"
 
-#: ../properties/nm-ppp-dialog.glade.h:34
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "Require MPPE encryption"
+msgstr "Kräv MPPE-kryptering"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "Requires existing network connection"
+msgstr "Kräver en existerande nätverksanslutning"
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "Routing"
+msgstr "Routing"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+msgid "Serial Options"
+msgstr "Seriealternativ"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "Service providers GPRS access point from device config"
+msgstr "GPRS-accesspunkt för tjänsteleverantörer från enhetskonfiguration"
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "Service providers IP address"
+msgstr "IP-adress för tjänsteleverantörer"
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+msgid "Telephone number to dial"
+msgstr "Telefonnummer att ringa"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+msgid ""
+"This is the friendly name that will be used to identify this network connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+"Detta är det namn som kommer att användas för att identifiera detta nätverk, \n"
+"t.ex. \"Campus-VPN\" eller \"Företagsnätverket\""
+
+#: ../properties/nm-ppp-dialog.glade.h:46
 msgid "Time in seconds between echo requests"
 msgstr "Tid i sekunder mellan echo-begäranden"
 
-#: ../properties/nm-ppp-dialog.glade.h:36
+#: ../properties/nm-ppp-dialog.glade.h:47
+msgid "Type:"
+msgstr "Typ:"
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr "När denna är kryssad kommer flaggan \"refuse-chap\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr "När denna är kryssad kommer flaggan \"refuse-eap\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr "När denna är kryssad kommer flaggan \"refuse-mschap\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr "När denna är kryssad kommer flaggan \"lock\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr "När denna är kryssad kommer flaggan \"require-mppc\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
+msgstr "När denna är kryssad ställs pppd-flaggan \"debug\" in och lägger till extra information från insticksmodulen NetworkManager"
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr "När denna är kryssad ställs pppd-flaggan \"noipdefault\" in"
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr "När denna är kryssad ställs pppd-flaggan \"usepeerdns\" in"
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr "När denna inte är kryssad kommer flaggan \"noauth\" att skickas till pppd."
+
+#: ../properties/nm-ppp-dialog.glade.h:58
 msgid "_Access Point Name:"
 msgstr "_Namn på accesspunkt:"
 
-#: ../properties/nm-ppp-dialog.glade.h:37
+#: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Channel:"
 msgstr "_Kanal:"
 
-#: ../properties/nm-ppp-dialog.glade.h:38
+#: ../properties/nm-ppp-dialog.glade.h:60
 msgid "_Context Num"
 msgstr "_Sammanhangsnr"
 
-#: ../properties/nm-ppp-dialog.glade.h:39
+#: ../properties/nm-ppp-dialog.glade.h:61
+msgid "_Custom PPP options:"
+msgstr "_Anpasade PPP-alternativ:"
+
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Device Address:"
 msgstr "_Enhetsadress:"
 
-#: ../properties/nm-ppp-dialog.glade.h:40
+#: ../properties/nm-ppp-dialog.glade.h:63
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-ppp-dialog.glade.h:41
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_IP Address:"
 msgstr "_Ip-adress:"
 
-#: ../properties/nm-ppp-dialog.glade.h:42
+#: ../properties/nm-ppp-dialog.glade.h:65
 msgid "_Import Saved Configuration..."
 msgstr "_Importera sparad konfiguration..."
 
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "_Namn som används för att identifiera anslutningen till det privata nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
-
-#: ../properties/nm-ppp-dialog.glade.h:44
+#: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Only use VPN connection for these addresses"
 msgstr "Använd _endast VPN-anslutning för dessa adresser"
 
-#: ../properties/nm-ppp-dialog.glade.h:45
+#: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Packet Type"
 msgstr "_Pakettyp"
 
-#: ../properties/nm-ppp-dialog.glade.h:46
+#: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Telephone Number:"
 msgstr "_Telefonnummer:"
 
-#: ../properties/nm-ppp-dialog.glade.h:47
+#: ../properties/nm-ppp-dialog.glade.h:69
 msgid "connect-delay"
 msgstr "anslutningsfördröjning"
 
@@ -402,6 +502,43 @@ msgstr "anslutningsfördröjning"
 msgid "VPN Connection failed"
 msgstr "VPN-anslutning misslyckades"
 
+#~ msgid "Tunnel via pppd"
+#~ msgstr "Tunnla via pppd"
+#~ msgid "<b>Bluetooth options</b>"
+#~ msgstr "<b>Bluetooth-alternativ</b>"
+#~ msgid "<b>Dial-up options</b>"
+#~ msgstr "<b>Uppringningsalternativ</b>"
+#~ msgid "<b>GPRS options</b>"
+#~ msgstr "<b>GPRS-alternativ</b>"
+#~ msgid "<b>PPTP options</b>"
+#~ msgstr "<b>PPTP-alternativ</b>"
+#~ msgid "<b>Required Information</b>"
+#~ msgstr "<b>Nödvändig information</b>"
+#~ msgid "<b>Routing options</b>"
+#~ msgstr "<b>Routingalternativ</b>"
+#~ msgid "<b>Serial options</b>"
+#~ msgstr "<b>Seriealternativ</b>"
+#~ msgid "Connection Type:"
+#~ msgstr "Anslutningstyp:"
+#~ msgid "MPPE encryption"
+#~ msgstr "MPPE-kryptering"
+#~ msgid "Numeric Tweaks"
+#~ msgstr "Numeriska justeringar"
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Ange den information som har tillhandahållits av din systemadministratör "
+#~ "nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det "
+#~ "när du ansluter."
+#~ msgid "Show on connection on menu"
+#~ msgstr "Visa på anslutning på meny"
+#~ msgid ""
+#~ "_Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "_Namn som används för att identifiera anslutningen till det privata "
+#~ "nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 #~ msgid "Remember password for this session"
 #~ msgstr "Kom ihåg lösenordet för denna session"
 #~ msgid "Save password in keyring"
@@ -412,16 +549,8 @@ msgstr "VPN-anslutning misslyckades"
 #~ msgstr "Anslutningsnamn"
 #~ msgid "Dial-up options"
 #~ msgstr "Uppringningsalternativ"
-#~ msgid "GPRS options"
-#~ msgstr "GPRS-alternativ"
-#~ msgid "PPP options"
-#~ msgstr "PPP-alternativ"
 #~ msgid "PPTP options"
 #~ msgstr "PPTP-alternativ"
-#~ msgid "Routing options"
-#~ msgstr "Routingalternativ"
-#~ msgid "Serial options"
-#~ msgstr "Seriealternativ"
 #~ msgid "Require Explicit IP Address"
 #~ msgstr "Kräv explicit ip-address"
 #~ msgid "Channel:"
@@ -430,12 +559,6 @@ msgstr "VPN-anslutning misslyckades"
 #~ msgstr "Gateway:"
 #~ msgid "IP Address:"
 #~ msgstr "Ip-adress:"
-#~ msgid ""
-#~ "Name used to identify the connection to the private network, e.g. "
-#~ "\"Campus VPN\" or \"Corporate Network\""
-#~ msgstr ""
-#~ "Namn som används för att identifiera anslutningen till det privata "
-#~ "nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 #~ msgid "Only use VPN connection for these addresses"
 #~ msgstr "Använd endast VPN-anslutning för dessa adresser"
 #~ msgid "_Group Password:"
