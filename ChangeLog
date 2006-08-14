@@ -1,4 +1,11 @@
-2006-08-10  Dan Williams  <dcbw@redhat.com>
+2006-08-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Valentine Sinitsyn <e_val@inbox.ru>
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_exec): spawn wpa_supplicant without debug spew
+		Gnome #346875
+
+2006-08-13  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Valentine Sinitsyn <e_val@inbox.ru>
 	* src/nm-ap-security.c
