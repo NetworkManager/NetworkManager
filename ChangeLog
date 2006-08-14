@@ -1,3 +1,22 @@
+2006-08-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Valentine Sinitsyn <e_val@inbox.ru>
+	* src/nm-ap-security.c
+	  src/nm-ap-security.h
+		- Add authentication_required bits for subclasses to specify whether
+		or not real authentication is required for connections, i.e. whether
+		the AP rejects us when an encryption key is wrong or not.
+
+	* src/nm-ap-security-wep.c
+	  src/nm-ap-security-wpa-eap.c
+	  src/nm-ap-security-wpa-psk.c
+		- Implement authentication_required appropriately for each method
+
+	* src/nm-device-802-11-wireless.c
+		- Be smarter about when to request a key; for example, using a wrong key
+		in WEP shared key mode previously just timed out and did not request
+		a new key
+
 2006-08-06  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christan Chiesa <christanc@gmail.com>

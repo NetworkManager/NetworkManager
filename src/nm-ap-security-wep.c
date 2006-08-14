@@ -174,6 +174,13 @@ real_get_default_capabilities (NMAPSecurity *instance)
 	return caps;
 }
 
+static gboolean
+real_get_authentication_required (NMAPSecurity *instance)
+{
+	/* WEP really requires authentication in Shared mode only */
+	return (get_auth_algorithm (NM_AP_SECURITY_WEP (instance)) == IW_AUTH_ALG_SHARED_KEY);
+}
+
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -202,6 +209,7 @@ nm_ap_security_wep_class_init (NMAPSecurityWEPClass *klass)
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
 	par_class->get_default_capabilities_func = real_get_default_capabilities;
+	par_class->get_authentication_required_func = real_get_authentication_required;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityWEPPrivate));
 }

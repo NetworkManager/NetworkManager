@@ -2112,6 +2112,62 @@ ap_need_key (NMDevice80211Wireless *self,
 }
 
 
+/*
+ * ap_is_auth_required
+ *
+ * Checks whether or not there is an encryption key present for
+ * this connection, and whether or not the authentication method
+ * in use will result in an authentication rejection if the key
+ * is wrong.  For example, Ad Hoc mode networks don't have a
+ * master node and therefore nothing exists to reject the station.
+ * Similarly, Open System WEP access points don't reject a station
+ * when the key is wrong.  Shared Key WEP access points will.
+ *
+ * Theory of operation here is that if:
+ * (a) the NMAPSecurity object specifies that authentication is
+ *     required, and the AP rejects our authentication attempt during
+ *     connection (which shows up as a wpa_supplicant disconnection
+ *     event); or
+ * (b) the NMAPSecurity object specifies that no authentiation is
+ *     required, and either DHCP times out or wpa_supplicant times out;
+ *
+ * then we need a new key from the user because our currenty key
+ * and/or authentication method is likely wrong.
+ *
+ */
+static gboolean
+ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
+{
+	NMAPSecurity *security;
+	int we_cipher;
+	gboolean auth_required = FALSE;
+
+	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (has_key != NULL, FALSE);
+
+	*has_key = FALSE;
+
+	/* Ad Hoc mode doesn't have any master station to validate
+	 * security credentials, so no auth can possibly be required.
+	 */
+	if (nm_ap_get_mode(ap) == IW_MODE_ADHOC)
+		return FALSE;
+
+	/* No encryption obviously means no possiblity of auth
+	 * rejection due to a wrong encryption key.
+	 */
+	security = nm_ap_get_security (ap);
+	we_cipher = nm_ap_security_get_we_cipher (security);
+	if (we_cipher == IW_AUTH_CIPHER_NONE)
+		return FALSE;
+
+	auth_required = nm_ap_security_get_authentication_required (security);
+	*has_key = TRUE;
+
+	return auth_required;
+}
+
+
 /****************************************************************************/
 /* WPA Supplicant control stuff
  *
@@ -2238,15 +2294,42 @@ supplicant_watch_cb (GPid pid,
 }
 
 
+/*
+ * link_timeout_cb
+ *
+ * Called when the link to the access point has been down for a specified
+ * period of time.
+ */
 static gboolean
 link_timeout_cb (gpointer user_data)
 {
 	NMDevice *			dev = NM_DEVICE (user_data);
+ 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);	
+ 	NMActRequest *			req = nm_device_get_act_request (dev);
+ 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+ 	NMData *				data = nm_device_get_app_data (dev);
+ 	gboolean				has_key;
 
 	g_assert (dev);
 
-	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
-	nm_device_set_active_link (dev, FALSE);
+ 	/* Disconnect event during initial authentication and credentials
+ 	 * ARE checked - we are likely to have wrong key.  Ask the user for
+ 	 * another one.
+ 	 */
+ 	if (   (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG)
+ 	    && (ap_is_auth_required (ap, &has_key) && has_key))
+ 	{
+ 		/* Association/authentication failed, we must have bad encryption key */
+ 		nm_info ("Activation (%s/wireless): disconnected during association,"
+ 		         " asking for new key.", nm_device_get_iface (dev));
+ 		supplicant_remove_timeout(self);
+ 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+ 	}
+ 	else
+ 	{
+ 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+ 		nm_device_set_active_link (dev, FALSE);
+ 	}
 
 	return FALSE;
 }
@@ -2340,19 +2423,43 @@ get_supplicant_timeout (NMDevice80211Wireless *self)
 }
 
 
+/*
+ * supplicant_timeout_cb
+ *
+ * Called when the supplicant has been unable to connect to an access point
+ * within a specified period of time.
+ */
 static gboolean
 supplicant_timeout_cb (gpointer user_data)
 {
 	NMDevice *			dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
+	NMActRequest *	req = nm_device_get_act_request (dev);
+	NMAccessPoint *	ap = nm_act_request_get_ap (req);
+	NMData *	data = nm_device_get_app_data (dev);
+	gboolean	has_key;
 
 	g_assert (self);
-
-	nm_info ("Activation (%s/wireless): association took too long (>%us), failing activation.",
-			nm_device_get_iface (dev), get_supplicant_timeout (self));
-
-	if (nm_device_is_activating (dev))
-		nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
+		
+	/* Timed out waiting for authentication success; if the security method
+	 * in use does not require access point side authentication (Open System
+	 * WEP, for example) then we are likely using the wrong authentication
+	 * algorithm or key.  Request new one from the user.
+	 */
+	if (!ap_is_auth_required (ap, &has_key) && has_key)
+	{
+		/* Activation failed, we must have bad encryption key */
+		nm_info ("Activation (%s/wireless): association took too long (>%us), asking for new key.",
+				nm_device_get_iface (dev), get_supplicant_timeout (self));
+		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+	}
+	else
+	{
+		nm_info ("Activation (%s/wireless): association took too long (>%us), failing activation.",
+				nm_device_get_iface (dev), get_supplicant_timeout (self));
+		if (nm_device_is_activating (dev))
+			nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
+	}
 
 	return FALSE;
 }
@@ -2813,6 +2920,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	NMIP4Config *			real_config = NULL;
 	NMAPSecurity *			security;
 	NMData *				data;
+	gboolean		has_key;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2825,10 +2933,13 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	security = nm_ap_get_security (ap);
 	g_assert (security);
 
-	/* FIXME: should we only ask for a new key if the activation request is user-requested? */
-	if (nm_ap_security_get_we_cipher (security) != IW_AUTH_CIPHER_NONE)
+	/* If the security credentials' validity was not checked by any
+	 * peer during authentication process, and DHCP times out, then
+	 * the encryption key is likely wrong.  Ask the user for a new one.
+	 */
+	if (!ap_is_auth_required (ap, &has_key) && has_key)
 	{
-		/* Activation failed, we must have bad WEP key */
+		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);

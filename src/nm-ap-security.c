@@ -150,6 +150,14 @@ nm_ap_security_get_default_capabilities (NMAPSecurity *self)
 	return NM_AP_SECURITY_GET_CLASS (self)->get_default_capabilities_func (self);
 }
 
+gboolean
+nm_ap_security_get_authentication_required (NMAPSecurity *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+	
+	return NM_AP_SECURITY_GET_CLASS (self)->get_authentication_required_func (self);
+}
+
 
 gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
