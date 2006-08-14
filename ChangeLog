@@ -1,3 +1,11 @@
+2006-08-14  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Alex Smith <alex.extreme2@gmail.com>
+	* configure.in
+	  src/backends/Makefile.am
+	  src/backends/NetworkManagerFrugalware.c
+		- Add support for Frugalware
+
 2006-08-13  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Valentine Sinitsyn <e_val@inbox.ru>

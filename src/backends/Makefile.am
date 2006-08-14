@@ -11,6 +11,8 @@ noinst_LTLIBRARIES = libnmbackend.la
 libnmbackend_la_SOURCES =	NetworkManagerGeneric.c	\
 				NetworkManagerGeneric.h
 
+libnmbackend_la_LIBADD =
+
 if TARGET_REDHAT
 libnmbackend_la_SOURCES +=	NetworkManagerRedHat.c	\
 						shvar.c				\
@@ -47,7 +49,12 @@ if TARGET_PALDO
 libnmbackend_la_SOURCES +=	NetworkManagerPaldo.c
 endif
 
-libnmbackend_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
+if TARGET_FRUGALWARE
+libnmbackend_la_SOURCES +=	NetworkManagerFrugalware.c
+libnmbackend_la_LIBADD += -lfwnetconfig -lfwutil
+endif
+
+libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GTHREAD_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					$(GTHREAD_CFLAGS)				\
 					$(HAL_CFLAGS)					\
