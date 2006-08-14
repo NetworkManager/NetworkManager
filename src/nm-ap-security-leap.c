@@ -152,6 +152,13 @@ real_get_default_capabilities (NMAPSecurity *instance)
 	return caps;
 }
 
+static gboolean
+real_get_authentication_required (NMAPSecurity *instance)
+{
+	/* LEAP always requires authentication. */
+	return TRUE;
+}
+
 static NMAPSecurity *
 real_copy_constructor (NMAPSecurity *instance)
 {
@@ -186,6 +193,7 @@ nm_ap_security_leap_class_init (NMAPSecurityLEAPClass *klass)
 	par_class->serialize_func = real_serialize;
 	par_class->write_supplicant_config_func = real_write_supplicant_config;
 	par_class->get_default_capabilities_func = real_get_default_capabilities;
+	par_class->get_authentication_required_func = real_get_authentication_required;
 
 	g_type_class_add_private (object_class, sizeof (NMAPSecurityLEAPPrivate));
 }
