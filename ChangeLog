@@ -1,5 +1,20 @@
 2006-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* Patch from Christian Persch <chpe gnome org>
+	* configure.in
+	  po/LINGUAS
+	  vpn-daemons/openvpn/po/LINGUAS
+	  vpn-daemons/openvpn/configure.in
+	  vpn-daemons/pptp/po/LINGUAS
+	  vpn-daemons/pptp/configure.in
+	  vpn-daemons/vpnc/po/LINGUAS
+	  vpn-daemons/vpnc/configure.in
+		- Convert to LINGUAS method so translators don't have to modify
+		configure.in, just stuff in po/.  Gnome #343132, requires intltool
+		0.35 or higher
+
+2006-08-14  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Alex Smith <alex.extreme2@gmail.com>
 	* configure.in
 	  src/backends/Makefile.am
