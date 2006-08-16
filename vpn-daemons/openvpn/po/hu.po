@@ -4,12 +4,11 @@
 #
 # Gabor Halaszvari <g.halaszvari@portmax.hu>, 2006.
 # Gabor Kelemen <kelemeng@gnome.hu>, 2006.
-
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-26 04:23+0200\n"
+"POT-Creation-Date: 2006-08-15 05:58+0200\n"
 "PO-Revision-Date: 2006-06-05 03:22+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
@@ -17,7 +16,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.2\n"
-"Plural-Forms:  nplurals=1; plural=0;\n"
+"Plural-Forms:   nplurals=2; plural=(n != 1);\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:148
 msgid "_Password:"
@@ -198,7 +197,8 @@ msgstr "TLS hitelesítés:  %s %s"
 
 #: ../properties/nm-openvpn.c:823
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "A kapcsolat paramétereit a \"Szerkesztés\" gombra kattintva tudja módosítani."
+msgstr ""
+"A kapcsolat paramétereit a \"Szerkesztés\" gombra kattintva tudja módosítani."
 
 #: ../properties/nm-openvpn.c:1003
 msgid "Cannot import settings"
@@ -317,12 +317,13 @@ msgstr ""
 "töltse ki, mivel jelszavát csak a kapcsolódás folyamán kell majd megadnia."
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
+#, fuzzy
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
+"Ask your administrator for the file."
 msgstr ""
-"Az Ön által megadott fájl nem egy OpenVPN beállításfájl. "
-"A beállításfájlt kérje el a rendszergazdától."
+"Az Ön által megadott fájl nem egy OpenVPN beállításfájl. A beállításfájlt "
+"kérje el a rendszergazdától."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Remote IP:"
@@ -389,8 +390,8 @@ msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
-"A _magánhálózati kapcsolat azonosítására használt név, például \"Egyetemi VPN\", "
-"vagy \"Vállalati hálózat\""
+"A _magánhálózati kapcsolat azonosítására használt név, például \"Egyetemi VPN"
+"\", vagy \"Vállalati hálózat\""
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
 msgid "_Only use VPN connection for these addresses"
@@ -405,12 +406,13 @@ msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
 msgstr ""
-"A VPN bejelentkezés meghiúsult, mivel a felhasználói név és a jelszó nem került"
-"elfogadásra, vagy a tanúsítvány jelszava hibás volt."
+"A VPN bejelentkezés meghiúsult, mivel a felhasználói név és a jelszó nem "
+"kerültelfogadásra, vagy a tanúsítvány jelszava hibás volt."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr "A VPN bejelentkezés meghiúsult, mivel a VPN programot nem lehet elindítani."
+msgstr ""
+"A VPN bejelentkezés meghiúsult, mivel a VPN programot nem lehet elindítani."
 
 #: ../src/nm-openvpn-service.c:131
 msgid ""
@@ -421,8 +423,10 @@ msgstr ""
 "kiszolgálóval kapcsolatot létesíteni."
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "A VPN bejelentkezés meghiúsult, mivel a VPN beállítások érvénytelenek voltak."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+"A VPN bejelentkezés meghiúsult, mivel a VPN beállítások érvénytelenek voltak."
 
 #: ../src/nm-openvpn-service.c:135
 msgid ""
@@ -435,4 +439,3 @@ msgstr ""
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN kapcsolat hiba"
-
