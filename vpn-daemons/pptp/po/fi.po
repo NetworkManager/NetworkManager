@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-16 12:52+0300\n"
-"PO-Revision-Date: 2006-08-16 13:07+0300\n"
+"POT-Creation-Date: 2006-08-17 07:16+0300\n"
+"PO-Revision-Date: 2006-08-17 07:19+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -207,7 +207,7 @@ msgid "The following '%s' connection will be created:"
 msgstr "Seuraava \"%s\"-yhteys luodaan:"
 
 #: ../properties/vpnui_impl.c:242
-#,  c-format
+#, c-format
 msgid "\t%s:  %s\n"
 msgstr "\t%s:  %s\n"
 
@@ -315,7 +315,9 @@ msgid ""
 "list of allowed options before a connection is established.  Currently there "
 "are no options on the list."
 msgstr ""
-
+"Turvallisuussyistä ylläolevaan laatikkoon syötettyjä valitsimia verrataan "
+"listaan sallituista valitsimista. Tällä hetkellä lista ei sisällä mitään "
+"valitsimia."
 
 #: ../properties/nm-ppp-dialog.glade.h:21
 msgid "GPRS Options"
@@ -447,18 +449,20 @@ msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
 msgstr ""
+"Kun asetettu, annetaan pppd:lle valtsin 'debug' ja NetworkManagerin "
+"liitännäisestä kerätään joitakin lisätietoja"
 
 #: ../properties/nm-ppp-dialog.glade.h:55
 msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr ""
+msgstr "Kun asetettu, tämä asettaa pppd:lle valitsimen 'nopidefault'"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr ""
+msgstr "Kun asetettu, tämä asettaa pppd:lle valitsimen 'usepeerdns'"
 
 #: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr ""
+msgstr "Kun rastia ei ole, annetaan pppd:lle valitsin 'noauth'."
 
 #: ../properties/nm-ppp-dialog.glade.h:58
 msgid "_Access Point Name:"
