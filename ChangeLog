@@ -1,3 +1,8 @@
+2006-08-17  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Do not restart ypbind; our ypbind
+	  package is now DBUS-enabled and listens for the NM signals.
+
 2006-08-14  Dan Williams  <dcbw@redhat.com>
 
 	* Patch from Christian Persch <chpe gnome org>

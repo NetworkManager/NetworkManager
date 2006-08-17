@@ -1000,11 +1000,6 @@ void nm_system_activate_nis (NMIP4Config *config)
 			} else
 				nm_warning ("Could not commit NIS changes to /etc/yp.conf.");
 
-			if (stat ("/usr/sbin/rcypbind", &sb) != -1)
-			{
-				nm_info ("Restarting ypbind.");
-				nm_spawn_process ("/usr/sbin/rcypbind reload");
-			}
 			if (stat ("/usr/sbin/rcautofs", &sb) != -1)
 			{
 				nm_info ("Restarting autofs.");
@@ -1029,41 +1024,6 @@ out_gfree:
  */
 void nm_system_shutdown_nis (void)
 {
-#if 0	/* XXX: let's not touch NIS, for now; probably need to make this a configurable option */
-	char *name, *buf = NULL;
-	shvarFile *file;
-
-	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
-	file = svNewFile (name);
-	if (!file)
-		goto out_gfree;
-
-	buf = svGetValue (file, "DHCLIENT_MODIFY_NIS_CONF");
-	if (!buf)
-		goto out_close;
-
-	if (!strcmp (buf, "yes")) {
-		struct stat sb;
-
-		if (stat ("/usr/sbin/rcypbind", &sb) != -1)
-		{
-			nm_info ("Stopping ypbind.");
-			nm_spawn_process ("/usr/sbin/rcypbind stop");
-		}
-
-		if (stat ("/usr/sbin/rcautofs", &sb) != -1)
-		{
-			nm_info ("Restarting autofs.");
-			nm_spawn_process ("/usr/sbin/rcautofs restart");
-		}
-	}
-
-	free (buf);
-out_close:
-	svCloseFile (file);
-out_gfree:
-	g_free (name);
-#endif
 }
 
 
