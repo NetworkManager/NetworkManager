@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-12 04:16+0200\n"
-"PO-Revision-Date: 2006-05-12 10:41+0200\n"
+"POT-Creation-Date: 2006-08-21 11:27+0200\n"
+"PO-Revision-Date: 2006-08-21 11:28+0200\n"
 "Last-Translator: \n"
 "Language-Team:  <es@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -51,7 +51,8 @@ msgstr "_Guardar la contraseña en el llavero"
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Necesita autenticarse para acceder a la red privada virtual (VPN) «%s»."
+msgstr ""
+"Necesita autenticarse para acceder a la red privada virtual (VPN) «%s»."
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
@@ -195,7 +196,8 @@ msgstr "TLS auth:  %s %s"
 
 #: ../properties/nm-openvpn.c:823
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Los detalles de la conexión se pueden modificar mediante el botón «Editar»."
+msgstr ""
+"Los detalles de la conexión se pueden modificar mediante el botón «Editar»."
 
 #: ../properties/nm-openvpn.c:1003
 msgid "Cannot import settings"
@@ -317,7 +319,7 @@ msgstr ""
 #: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
+"Ask your administrator for the file."
 msgstr ""
 "Fíjese en que el archivo que está importando no es un archivo de "
 "configuración OpenVPN. Pida este archivo a su administrador."
@@ -408,7 +410,8 @@ msgstr ""
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr "El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
+msgstr ""
+"El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
 
 #: ../src/nm-openvpn-service.c:131
 msgid ""
@@ -419,7 +422,8 @@ msgstr ""
 "servidor VPN."
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 "El acceso VPN ha fallado porque las opciones de configuración de VPN eran "
 "incorrectas."
@@ -435,4 +439,3 @@ msgstr ""
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "La conexión VPN ha fallado"
-
