@@ -1,3 +1,10 @@
+2006-08-24  Dan Williams <dcbw@redhat.com>
+
+	Patch from Ed Catmur:
+	* src/NetworkManagerUtils.c
+		- (nm_utils_ip4_netmask_to_prefix): don't infinitely loop
+		if netmask is 0 (Gnome #352634)
+
 2006-08-17  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Do not restart ypbind; our ypbind

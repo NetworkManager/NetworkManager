@@ -705,6 +705,8 @@ int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 {
 	int i = 1;
 
+	g_return_val_if_fail (ip4_netmask != 0, 0);
+
 	/* Just count how many bit shifts we need */
 	ip4_netmask = ntohl (ip4_netmask);
 	while (!(ip4_netmask & 0x1) && ++i)
