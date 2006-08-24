@@ -1,4 +1,4 @@
-SUBDIRS=named-manager vpn-manager dhcp-manager backends
+SUBDIRS=named-manager vpn-manager dhcp-manager supplicant-manager backends
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \

@@ -1,5 +1,14 @@
 2006-08-24  Dan Williams <dcbw@redhat.com>
 
+	* configure.in
+	  src/Makefile.am
+	  src/supplicant-manager/Makefile.am
+	  src/supplicant-manager/nm-supplicant-manager.c
+	  src/supplicant-manager/nm-supplicant-manager.h
+		- Add skeleton bits of the wpa_supplicant manager
+
+2006-08-24  Dan Williams <dcbw@redhat.com>
+
 	Patch from Ed Catmur:
 	* src/NetworkManagerUtils.c
 		- (nm_utils_ip4_netmask_to_prefix): don't infinitely loop
