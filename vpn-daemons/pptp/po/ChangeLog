@@ -1,3 +1,8 @@
+2006-08-26  Clytie Siddall <clytie@riverland.net.au>
+
+	* vi.po: Added Vietnamese translation.
+	* LINGUAS: added "vi" to the list of language codes.
+
 2006-08-21  Francisco Javier F. Serrador  <serrador@openshine.com>
 
 	* es.po: Updated Spanish translation.
