@@ -654,8 +654,8 @@ static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *
 
 	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_IP_CONFIG_GET);
 
-	/* 20 second timeout waiting for IP config signal from VPN service */
-	source = g_timeout_source_new (20000);
+	/* 45 second timeout waiting for IP config signal from VPN service */
+	source = g_timeout_source_new (45000);
 	g_source_set_callback (source, (GSourceFunc) nm_vpn_service_stage4_ip_config_get_timeout, req, NULL);
 	id = g_source_attach (source, service->app_data->main_context);
 	nm_vpn_act_request_set_callback_id (req, id);
