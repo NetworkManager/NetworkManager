@@ -1,16 +1,16 @@
 # Swedish messages for NetworkManager openvpn.
 # Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
-# Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 # Daniel Nylander <po@danielnylander.se>, 2006.
+# Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
-# $Id: sv.po,v 1.4 2006/05/14 12:14:42 dnylande Exp $
+# $Id: sv.po,v 1.5 2006/09/02 15:01:01 dnylande Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-14 12:21+0200\n"
-"PO-Revision-Date: 2006-05-14 13:40+0100\n"
+"POT-Creation-Date: 2006-09-02 08:40+0200\n"
+"PO-Revision-Date: 2006-09-02 16:55+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -318,8 +318,8 @@ msgid "Please enter the information provided by your system administrator below.
 msgstr "Ange den information som har tillhandahållits av din systemadministratör nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när du ansluter."
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
-msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your adminstrator for the file."
-msgstr "Observera att den fil som du importerar inte är en OpenVPN-konfigurationsfil. Be din administratör om filen."
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
+msgstr "Observera att filen som du importerar inte är en konfigurationsfil för OpenVPN. Fråga din administratör efter filen."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Remote IP:"
