@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-09-03 12:21+0200\n"
-"PO-Revision-Date: 2006-08-25 04:38+0200\n"
+"PO-Revision-Date: 2006-09-03 12:57+0200\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -313,7 +313,7 @@ msgid ""
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
 "Entreu la informació proporcionada pel vostre administrador de sistema. No "
-"hi entreu la vostre contrasenya, ja es demanarà en connectar."
+"hi entreu la vostra contrasenya, ja es demanarà en connectar."
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
@@ -377,7 +377,7 @@ msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:30
 msgid "_Gateway:"
-msgstr "_Pasarel·la:"
+msgstr "_Passarel·la:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Import Saved Configuration..."
@@ -404,8 +404,8 @@ msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
 msgstr ""
-"\"No s'ha pogut connectar a la VPN perquè no s'han acceptat el nom d'usuari "
-"i \"\"la contrasenya o la contrasenya certificada és errònia.\""
+"No s'ha pogut connectar a la VPN perquè no s'han acceptat el nom d'usuari, o "
+"la contrasenya o la contrasenya certificada és errònia.\""
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
