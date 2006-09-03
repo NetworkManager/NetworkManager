@@ -1,0 +1,260 @@
+# Catalan translation of NetworkManager-vpnc
+# Copyright © 2005 The Free Software Foundation, Inc.
+# This file is distributed under the same license as the
+#   NetworkManager-vpnc package.
+# Gil Forcada <gilforcada@guifi.net>, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-vpnc\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-09-03 13:03+0200\n"
+"PO-Revision-Date: 2006-08-23 10:55+0200\n"
+"Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
+"Language-Team: Catalan <tradgnome@softcatala.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "Contrasenya _secundària:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:267
+msgid "_Username:"
+msgstr "Nom d'_usuari:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:269
+msgid "_Domain:"
+msgstr "_Domini:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:271
+msgid "_Password:"
+msgstr "_Contrasenya:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:354
+msgid "Connect _anonymously"
+msgstr "Connecta _anònimament"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:359
+msgid "Connect as _user:"
+msgstr "Connecta com a _usuari:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_Recorda la contrasenya per aquesta sessió"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "_Desa la contrasenya a l'anell de claus"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Us heu d'autenticar per poder accedir a la xarxa privada virtual «%s»."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "Autentica la VPN"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "Contrasenya de _grup:"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Afegiu, suprimiu, i editeu connexions VPN"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "Gestor de connexions VPN (vpnc)"
+
+#: ../properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Client VPN compatible amb Cisco (vpnc)"
+
+#: ../properties/nm-vpnc.c:447
+msgid "The following vpnc VPN connection will be created:"
+msgstr "Es crearà la següent connexió VPN de vpnc:"
+
+#: ../properties/nm-vpnc.c:449
+#, c-format
+msgid "Name:  %s"
+msgstr "Nom:  %s"
+
+#: ../properties/nm-vpnc.c:452
+#, c-format
+msgid "Gateway:  %s"
+msgstr "Passarel·la:  %s"
+
+#: ../properties/nm-vpnc.c:454
+#, c-format
+msgid "Group Name:  %s"
+msgstr "Nom del grup:  %s"
+
+#: ../properties/nm-vpnc.c:458
+#, c-format
+msgid "Username:  %s"
+msgstr "Nom d'usuari:  %s"
+
+#: ../properties/nm-vpnc.c:463
+#, c-format
+msgid "Domain:  %s"
+msgstr "Domini:  %s"
+
+#: ../properties/nm-vpnc.c:468
+#, c-format
+msgid "Routes:  %s"
+msgstr "Rutes:  %s"
+
+#: ../properties/nm-vpnc.c:472
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Els detalls de la connexió es poden canviar amb el botó «Edita»."
+
+#: ../properties/nm-vpnc.c:548
+msgid "TCP tunneling not supported"
+msgstr "No està implementat els túnels TCP"
+
+#: ../properties/nm-vpnc.c:550
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"El fitxer de paràmetres de la VPN «%s» especifica que el tràfic VPN s'hauria "
+"de posar en un túnel TCP, que de moment encara no està implementat a "
+"l'aplicació vpnc.\n"
+"\n"
+"Tot i això es pot crear la connexió, amb el túnel a través de TCP "
+"inhabilitat, tanmateix segurament no funcionarà com s'espera."
+
+#: ../properties/nm-vpnc.c:574
+msgid "Cannot import settings"
+msgstr "No es poden importar els paràmetres"
+
+#: ../properties/nm-vpnc.c:576
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "El fitxer de paràmetres VPN «%s», no conté dades vàlides."
+
+#: ../properties/nm-vpnc.c:593
+msgid "Select file to import"
+msgstr "Seleccioneu el fitxer a importar"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:753
+msgid "Save as..."
+msgstr "Anomena i desa..."
+
+#: ../properties/nm-vpnc.c:783
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Ja existeix un fitxer anomenat «%s»."
+
+#: ../properties/nm-vpnc.c:786
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Voleu reemplaçar-lo amb el que voleu desar?"
+
+#: ../properties/nm-vpnc.c:800
+msgid "Failed to export configuration"
+msgstr "No s'ha pogut exportar la configuració"
+
+#: ../properties/nm-vpnc.c:802
+#, c-format
+msgid "Failed to save file %s"
+msgstr "No s'ha pogut desar el fitxer %s"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Nom de la connexió</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Informació necessària</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>exemple: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "Nom del g_rup:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "Informació o_pcional"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "Sobreescriu el nom d'_usuari"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Entreu la informació proporcionada pel vostre administrador de sistema. No "
+"hi entreu la vostra contrasenya, ja es demanarà en connectar."
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "Utilitzeu el _domini per l'autenticació"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_Passarel·la:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "_Importa la configuració desada..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Nom utilitzat per identificar la connexió a la xarxa privada, per exemple "
+"«VPN del Campus» o «Xarxa Corporativa»"
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "_Fes servir només la connexió VPN per aquestes adreces"
+
+#: ../src/nm-vpnc-service.c:117
+msgid ""
+"The VPN login failed because the user name and password were not accepted."
+msgstr ""
+"No s'ha pogut connectar a la VPN perquè no s'han acceptat el nom d'usuari i "
+"la contrasenya."
+
+#: ../src/nm-vpnc-service.c:119
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr ""
+"No s'ha pogut connectar a la VPN perquè no s'ha pogut iniciar l'aplicació "
+"VPN."
+
+#: ../src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"No s'ha pogut connectar a la VPN perquè l'aplicació VPN no s'ha pogut "
+"connectar al servidor VPN."
+
+#: ../src/nm-vpnc-service.c:123
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+"No s'ha pogut connectar a la VPN perquè les opcions de configuració de la "
+"VPN eren errònies."
+
+#: ../src/nm-vpnc-service.c:125
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
+"No s'ha pogut connectar a la VPN perquè l'aplicació VPN ha rebut una "
+"configuració errònia del servidor VPN."
