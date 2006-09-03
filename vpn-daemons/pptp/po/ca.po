@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-08-22 20:57+0200\n"
-"PO-Revision-Date: 2006-08-23 01:17+0200\n"
+"PO-Revision-Date: 2006-09-03 12:42+0200\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>, 2006>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -42,7 +42,7 @@ msgstr "Connecta com a _usuari:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember password for this session"
-msgstr "_Recorda la contrasenya per aquesta sessió"
+msgstr "_Recorda la contrasenya durant aquesta sessió"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save password in keyring"
@@ -382,7 +382,7 @@ msgstr "Requereix l'adreça IP explícitament"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require MPPC Compression"
-msgstr "Requereix el xifratge MPPC"
+msgstr "Requereix la compressió MPPC"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPE encryption"
@@ -422,11 +422,11 @@ msgid ""
 msgstr ""
 "Aquest serà el nom amigable que es farà servir per identificar aquesta "
 "connexió de xarxa, \n"
-"per exemple. «VPN del Campus» o «Xarxa corporativa»"
+"per exemple: «VPN del Campus» o «Xarxa corporativa»"
 
 #: ../properties/nm-ppp-dialog.glade.h:46
 msgid "Time in seconds between echo requests"
-msgstr "Temps en segons entre peticions d'eco"
+msgstr "Temps en segons entre sol·licituds d'eco"
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Type:"
