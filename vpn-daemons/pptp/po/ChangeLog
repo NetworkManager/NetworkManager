@@ -1,3 +1,9 @@
+2006-09-03  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
+
+	* ca.po: Added Catalan translation by
+	Gil Forcada <gilforcada@guifi.net>
+	* LINGUAS: added "ca" to the list of language codes.
+
 2006-08-26  Clytie Siddall <clytie@riverland.net.au>
 
 	* vi.po: Added Vietnamese translation.
