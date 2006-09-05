@@ -1,3 +1,8 @@
+2006-09-05  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/libnm_util/libnm_util.c: change deprecated D-Bus functions
+	(Gnome.org #353838)
+
 2006-08-31  Robert Love  <rml@novell.com>
 
 	* src/vpn-manager/nm-vpn-service.c: Bump timeout to 45s.  Seeing
