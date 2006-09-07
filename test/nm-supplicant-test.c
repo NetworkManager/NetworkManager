@@ -409,6 +409,7 @@ supplicant_timeout_cb (gpointer user_data)
 				sup->iface, get_supplicant_timeout (sup));
 		if (sup->state == STATE_DEVICE_CONFIG)
 			sup->state = STATE_DISCONNECTED;
+		g_main_loop_quit (sup->loop);
 	}
 
 	return FALSE;
