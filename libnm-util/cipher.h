@@ -22,6 +22,8 @@
 #ifndef CIPHER_H
 #define CIPHER_H
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
