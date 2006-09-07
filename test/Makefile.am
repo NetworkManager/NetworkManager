@@ -11,9 +11,16 @@ AM_CPPFLAGS =						\
 	$(HAL_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\
+	-DWPA_SUPPLICANT_BIN=\"$(WPA_SUPPLICANT_BINARY_PATH)\"  \
+	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nm-tool nm-online nminfotest nmtestdevices libnm_glib_test
+noinst_PROGRAMS = nm-tool \
+                  nm-online \
+                  nminfotest \
+                  nmtestdevices \
+                  libnm_glib_test \
+                  nm-supplicant-test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
@@ -34,5 +41,7 @@ nmtestdevices_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
 libnm_glib_test_SOURCES = libnm_glib_test.c
 libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
 			$(top_builddir)/utils/libnmutils.la \
-			../gnome/libnm_glib/libnm_glib.la
+			$(top_builddir)/gnome/libnm_glib/libnm_glib.la
 
+nm_supplicant_test_SOURCES = nm-supplicant-test.c
+nm_supplicant_test_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS)
