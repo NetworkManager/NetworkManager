@@ -1,3 +1,11 @@
+2006-09-07  Dan Williams <dcbw@redhat.com>
+
+	* test/Makefile.am
+	  test/libnm-util/Makefile.am
+	  test/nm-supplicant-test.c
+		- Add test program emulating the way NM drives wpa_supplicant
+		to help debug supplicant issues
+
 2006-09-05  Dan Williams  <dcbw@redhat.com>
 
 	* gnome/libnm_util/libnm_util.c: change deprecated D-Bus functions
