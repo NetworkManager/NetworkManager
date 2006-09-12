@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.7.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-07-04 16:29+0100\n"
+"POT-Creation-Date: 2006-09-12 13:08+0300\n"
 "PO-Revision-Date: 2006-07-04 19:38+0100\n"
 "Last-Translator: Dimitris Glezos <dimitris@glezos.com>\n"
 "Language-Team: Greek <fedora-trans-el@redhat.com>\n"
@@ -22,12 +22,12 @@ msgstr ""
 msgid "Passphrase for wireless network %s"
 msgstr "Συνθηματικό για το ασύρματο δίκτυο %s"
 
-#: ../gnome/applet/applet-dbus.c:383
+#: ../gnome/applet/applet-dbus.c:265
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Η σύνδεση στο ασύρματο δίκτυο  '%s' απέτυχε."
 
-#: ../gnome/applet/applet-dbus.c:388
+#: ../gnome/applet/applet-dbus.c:270
 msgid "Connection to the wired network failed."
 msgstr "Αποτυχία σύνδεσης σε ένα ενσύρματο δίκτυο."
 
@@ -53,11 +53,11 @@ msgstr "Ενσύρματο Ethernet (%s)"
 msgid "Wireless Ethernet (%s)"
 msgstr "Ασύρματο Ethernet (%s)"
 
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:363
+#: ../gnome/applet/applet.c:332 ../gnome/applet/applet.c:358
 msgid "NetworkManager Applet"
 msgstr "Εφαρμογή NetworkManager"
 
-#: ../gnome/applet/applet.c:339
+#: ../gnome/applet/applet.c:334
 msgid ""
 "Copyright © 2004-2006 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
@@ -65,17 +65,18 @@ msgstr ""
 "Copyright © 2004-2006 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 
-#: ../gnome/applet/applet.c:341 ../gnome/applet/applet.c:367
-msgid "Notification area applet for managing your network devices and connections."
+#: ../gnome/applet/applet.c:336 ../gnome/applet/applet.c:362
+msgid ""
+"Notification area applet for managing your network devices and connections."
 msgstr ""
 "Μια μικροεφαρμογή για τη διαχείριση των συσκευών και των συνδέσεων του "
 "δικτύου σας."
 
-#: ../gnome/applet/applet.c:344 ../gnome/applet/applet.c:372
+#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:366
 msgid "translator-credits"
 msgstr "translator-credits"
 
-#: ../gnome/applet/applet.c:365
+#: ../gnome/applet/applet.c:360
 msgid ""
 "Copyright © 2004-2005 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
@@ -83,47 +84,47 @@ msgstr ""
 "Copyright © 2004-2005 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 
-#: ../gnome/applet/applet.c:428
+#: ../gnome/applet/applet.c:422
 msgid "VPN Login Failure"
 msgstr "Αποτυχία αναγνώρισης VPN"
 
-#: ../gnome/applet/applet.c:429
+#: ../gnome/applet/applet.c:423
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "Αδυναμία εκκίνησης σύνδεσης VPN '%s' λόγω αποτυχίας αναγνώρισης."
 
-#: ../gnome/applet/applet.c:433
+#: ../gnome/applet/applet.c:427
 msgid "VPN Start Failure"
 msgstr "Αποτυχία έναργξης VPN"
 
-#: ../gnome/applet/applet.c:434
+#: ../gnome/applet/applet.c:428
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
 "program."
 msgstr ""
-"Αδυναμία εκκίνησης της σύνδεσης VPN '%s' λόγω σφάλματος στην εκκίνηση "
-"του προγράμματος VPN."
+"Αδυναμία εκκίνησης της σύνδεσης VPN '%s' λόγω σφάλματος στην εκκίνηση του "
+"προγράμματος VPN."
 
-#: ../gnome/applet/applet.c:438 ../gnome/applet/applet.c:448
+#: ../gnome/applet/applet.c:432 ../gnome/applet/applet.c:442
 msgid "VPN Connect Failure"
 msgstr "Αποτυχία σύνδεσης VPN"
 
-#: ../gnome/applet/applet.c:439
+#: ../gnome/applet/applet.c:433
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Αδυναμία εκκίνησης της σύνδεσης VPN '%s' λόγω ενός σφάλματος σύνδεσης."
 
-#: ../gnome/applet/applet.c:443
+#: ../gnome/applet/applet.c:437
 msgid "VPN Configuration Error"
 msgstr "Σφάλμα ρύθμισης VPN"
 
-#: ../gnome/applet/applet.c:444
+#: ../gnome/applet/applet.c:438
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "Η σύνδεση VPN '%s' δεν ρυθμίστηκε σωστά."
 
-#: ../gnome/applet/applet.c:449
+#: ../gnome/applet/applet.c:443
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
@@ -132,11 +133,11 @@ msgstr ""
 "Αδυναμία εκκίνησης της σύνδεσης VPN '%s' επειδή ο εξυπηρετητής VPN δεν "
 "επέστρεψε επαρκείς πληροφορίες ρύθμισης δικτύου."
 
-#: ../gnome/applet/applet.c:519
+#: ../gnome/applet/applet.c:513
 msgid "VPN Login Message"
 msgstr "Μήνυμα αναγνώρισης VPN"
 
-#: ../gnome/applet/applet.c:743 ../gnome/applet/applet.c:2510
+#: ../gnome/applet/applet.c:737 ../gnome/applet/applet.c:2507
 #: ../gnome/applet/other-network-dialog.c:458
 #: ../gnome/applet/passphrase-dialog.c:228
 msgid ""
@@ -146,167 +147,169 @@ msgstr ""
 "Η μικροεφαρμογή NetworkManager δεν μπόρεσε να βρεί κάποιους απαιτούμενους "
 "πόρους (δενβρέθηκε το αρχείο glade)"
 
-#: ../gnome/applet/applet.c:755
+#: ../gnome/applet/applet.c:749
 #, c-format
 msgid "The network device \"%s (%s)\" does not support wireless scanning."
 msgstr "Η συσκευή δικτύου \"%s (%s)\" δεν υποστηρίζει ασύρματη σάρωση."
 
-#: ../gnome/applet/applet.c:763
+#: ../gnome/applet/applet.c:757
 #, c-format
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Η συσκευή δικτύου \"%s (%s)\" δεν υποστηρίζει εντοπισμό δεσμού."
 
-#: ../gnome/applet/applet.c:910
+#: ../gnome/applet/applet.c:904
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Προετοιμασία συσκευής %s για το ενσύρματο δίκτυο..."
 
-#: ../gnome/applet/applet.c:912
+#: ../gnome/applet/applet.c:906
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Προετοιμασία συσκευής %s για το ασύρματο δίκτυο '%s'..."
 
-#: ../gnome/applet/applet.c:920
+#: ../gnome/applet/applet.c:914
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Γίνεται ρύθμιση της συσκευής %s για το ενσύρματο δίκτυο..."
 
-#: ../gnome/applet/applet.c:922
+#: ../gnome/applet/applet.c:916
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Προσπάθεια σύνδεσης με το ασύρματο δίκτυο '%s'..."
 
-#: ../gnome/applet/applet.c:930
+#: ../gnome/applet/applet.c:924
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Αναμονή για κλειδί δικτύου για το ασύρματο δίκτυο '%s'..."
 
-#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
+#: ../gnome/applet/applet.c:932 ../gnome/applet/applet.c:942
 msgid "Requesting a network address from the wired network..."
 msgstr "Ζητείται μια διεύθυνση δικτύου από το ενσύρματο δίκτυο..."
 
-#: ../gnome/applet/applet.c:940 ../gnome/applet/applet.c:950
+#: ../gnome/applet/applet.c:934 ../gnome/applet/applet.c:944
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Ζητείται μια διεύθυνση δικτύου από το ασύρματο δίκτυο '%s'..."
 
-#: ../gnome/applet/applet.c:958
+#: ../gnome/applet/applet.c:952
 msgid "Finishing connection to the wired network..."
 msgstr "Η σύνδεση στο ενσύρματο δίκτυο ολοκληρώνεται..."
 
-#: ../gnome/applet/applet.c:960
+#: ../gnome/applet/applet.c:954
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Η σύνδεση στο ασύρματο δίκτυο '%s' ολοκληρώνεται...."
 
-#: ../gnome/applet/applet.c:1077
+#: ../gnome/applet/applet.c:1071
 msgid "NetworkManager is not running"
 msgstr "Το NetworkManager δεν εκτελείται"
 
-#: ../gnome/applet/applet.c:1085 ../gnome/applet/applet.c:1830
+#: ../gnome/applet/applet.c:1079 ../gnome/applet/applet.c:1824
 msgid "Networking disabled"
 msgstr "Απενεργοποίηση δικτύωσης"
 
-#: ../gnome/applet/applet.c:1090
+#: ../gnome/applet/applet.c:1084
 msgid "No network connection"
 msgstr "Δεν υπάρχει σύνδεση δικτύου"
 
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1089
 msgid "Wired network connection"
 msgstr "Ενσύρματη σύνδεση δικτύου"
 
-#: ../gnome/applet/applet.c:1099
+#: ../gnome/applet/applet.c:1093
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Έγινε σύνδεση με ένα Ad-Hoc ασύρματο δίκτυο"
 
-#: ../gnome/applet/applet.c:1101
+#: ../gnome/applet/applet.c:1095
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Ασύρματη σύνδεση στο δίκτυο '%s' (%d%%)"
 
-#: ../gnome/applet/applet.c:1122
+#: ../gnome/applet/applet.c:1116
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "Σύνδεση VPN σε '%s'"
 
-#: ../gnome/applet/applet.c:1130
+#: ../gnome/applet/applet.c:1124
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "Σύνδεση VPN σε '%s'"
 
-#: ../gnome/applet/applet.c:1543
+#: ../gnome/applet/applet.c:1537
 msgid "_Connect to Other Wireless Network..."
 msgstr "_Σύνδεση σε άλλο ασύρματο δίκτυο..."
 
-#: ../gnome/applet/applet.c:1564
+#: ../gnome/applet/applet.c:1558
 msgid "Create _New Wireless Network..."
 msgstr "_Δημιουργία νέου ασύρματου δικτύου..."
 
-#: ../gnome/applet/applet.c:1687
+#: ../gnome/applet/applet.c:1681
 msgid "_VPN Connections"
 msgstr "Συν_δέσεις VPN"
 
-#: ../gnome/applet/applet.c:1732
+#: ../gnome/applet/applet.c:1726
 msgid "_Configure VPN..."
 msgstr "_Ρύθμιση VPN..."
 
-#: ../gnome/applet/applet.c:1736
+#: ../gnome/applet/applet.c:1730
 msgid "_Disconnect VPN..."
 msgstr "Α_ποσύνδεση VPN..."
 
-#: ../gnome/applet/applet.c:1758
+#: ../gnome/applet/applet.c:1752
 msgid "_Dial Up Connections"
 msgstr "Συνδέσεις _dial-up VPN"
 
 #. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1769
+#: ../gnome/applet/applet.c:1763
 #, c-format
 msgid "Connect to %s..."
 msgstr "Σύνδεση στο %s..."
 
-#: ../gnome/applet/applet.c:1775
+#: ../gnome/applet/applet.c:1769
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Αποσύνδεση από %s..."
 
-#: ../gnome/applet/applet.c:1824
+#: ../gnome/applet/applet.c:1818
 msgid "No network devices have been found"
 msgstr "Δε βρέθηκαν συσκευές δικτύου"
 
-#: ../gnome/applet/applet.c:2016
+#: ../gnome/applet/applet.c:2010
 msgid "NetworkManager is not running..."
 msgstr "Ο NetworkManager δεν εκτελείται."
 
 #. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2172
+#: ../gnome/applet/applet.c:2166
 msgid "Enable _Networking"
 msgstr "Ενεργοποίηση _δικτύωσης"
 
 #. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2178
+#: ../gnome/applet/applet.c:2172
 msgid "Enable _Wireless"
 msgstr "Ενεργοποίηση α_σύρματης δικτύωσης"
 
 #. 'Connection Information' item
-#: ../gnome/applet/applet.c:2184
+#: ../gnome/applet/applet.c:2178
 msgid "Connection _Information"
 msgstr "Π_ληροφορίες σύνδεσης"
 
 #. Help item
-#: ../gnome/applet/applet.c:2195
+#: ../gnome/applet/applet.c:2189
 msgid "_Help"
 msgstr "_Βοήθεια"
 
 #. About item
-#: ../gnome/applet/applet.c:2204
+#: ../gnome/applet/applet.c:2198
 msgid "_About"
 msgstr "Πε_ρί"
 
-#: ../gnome/applet/applet.c:2669
+#: ../gnome/applet/applet.c:2666
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
-msgstr "Η μικροεφαρμογή NetworkManager δεν μπόρεσε να βρει κάποιους απαραίτητους πόρους.  Δεν μπορεί να συνεχίσει.\n"
+msgstr ""
+"Η μικροεφαρμογή NetworkManager δεν μπόρεσε να βρει κάποιους απαραίτητους "
+"πόρους.  Δεν μπορεί να συνεχίσει.\n"
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
@@ -417,7 +420,9 @@ msgstr " (μή έγκυρο Unicode)"
 msgid ""
 "By default, the wireless network's name is set to your computer's name, %s, "
 "with no encryption enabled"
-msgstr "Εξ ορισμού, το όνομα του ασύρματου δικτύου έχει οριστεί στο όνομα του υπολογιστή σας, %s, χωρίς ενεργοποιημένη κάποια κρυπτογράφηση"
+msgstr ""
+"Εξ ορισμού, το όνομα του ασύρματου δικτύου έχει οριστεί στο όνομα του "
+"υπολογιστή σας, %s, χωρίς ενεργοποιημένη κάποια κρυπτογράφηση"
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
@@ -427,7 +432,9 @@ msgstr "Δημιουργία νέου ασύρματου δικτύου"
 msgid ""
 "Enter the name and security settings of the wireless network you wish to "
 "create."
-msgstr "Εισάγετε το όνομα και τις ρυθμίσεις ασφάλειας του ασύρματου δικτύου που επιθυμείτε να δημιουργήσετε."
+msgstr ""
+"Εισάγετε το όνομα και τις ρυθμίσεις ασφάλειας του ασύρματου δικτύου που "
+"επιθυμείτε να δημιουργήσετε."
 
 #: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
@@ -439,7 +446,8 @@ msgstr "Υπάρχον ασύρματο δίκτυο"
 
 #: ../gnome/applet/other-network-dialog.c:369
 msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Εισάγετε το όνομα του ασύρματου δικτύου στο οποίο επιθυμείτε να συνδεθείτε."
+msgstr ""
+"Εισάγετε το όνομα του ασύρματου δικτύου στο οποίο επιθυμείτε να συνδεθείτε."
 
 #: ../gnome/applet/other-network-dialog.c:371
 msgid "Connect to Other Wireless Network"
@@ -453,7 +461,9 @@ msgstr "Σφάλμα σύνδεσης στο ασύρματο δίκτυο"
 msgid ""
 "The requested wireless network requires security capabilities unsupported by "
 "your hardware."
-msgstr "Το ζητούμενο ασύρματο δίκτυο απαιτεί δυνατότητες ασφάλειας οι οποίες δεν υποστηρίζονται από το υλικό σας."
+msgstr ""
+"Το ζητούμενο ασύρματο δίκτυο απαιτεί δυνατότητες ασφάλειας οι οποίες δεν "
+"υποστηρίζονται από το υλικό σας."
 
 #: ../gnome/applet/vpn-password-dialog.c:151
 #: ../gnome/applet/vpn-password-dialog.c:188
@@ -466,22 +476,28 @@ msgstr "Αδυναμία εκκίνησης σύνδεσης VPN '%s'"
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
 "Contact your system administrator."
-msgstr "Δεν μπόρεσε να βρεθεί ο διάλογος πιστοποίησης για τον τύπο σύνδεσης VPN '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
+msgstr ""
+"Δεν μπόρεσε να βρεθεί ο διάλογος πιστοποίησης για τον τύπο σύνδεσης VPN '%"
+"s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
 
 #: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
 "type '%s'. Contact your system administrator."
-msgstr "Υπήρξε ένα πρόσβλημα κατά την εκκίνηση του διαλόγου πιστοποίησης για τη σύνδεση VPN τύπου '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
+msgstr ""
+"Υπήρξε ένα πρόσβλημα κατά την εκκίνηση του διαλόγου πιστοποίησης για τη "
+"σύνδεση VPN τύπου '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
 
 #: ../gnome/applet/applet.glade.h:1
 msgid " "
 msgstr " "
 
 #: ../gnome/applet/applet.glade.h:2
-msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr "<span weight=\"bold\" size=\"larger\">Πληροφορίες ενεργής σύνδεσης</span>"
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Πληροφορίες ενεργής σύνδεσης</span>"
 
 #: ../gnome/applet/applet.glade.h:4
 #, no-c-format
@@ -492,9 +508,11 @@ msgid ""
 "A passphrase or encryption key is required to access the wireless network '%"
 "s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Απαιτείται κωδική φράση από το ασύρματο δίκτυο</span>\n"
+"<span weight=\"bold\" size=\"larger\">Απαιτείται κωδική φράση από το "
+"ασύρματο δίκτυο</span>\n"
 "\n"
-"Μια κωδική φράση ή κλειδί κρυπτογράφησης απαιτείται για σύνδεση στο ασύρματο δίκτυο '%s'."
+"Μια κωδική φράση ή κλειδί κρυπτογράφησης απαιτείται για σύνδεση στο ασύρματο "
+"δίκτυο '%s'."
 
 #: ../gnome/applet/applet.glade.h:8
 #, no-c-format
@@ -503,7 +521,8 @@ msgid ""
 "\n"
 "%s  It will not be completely functional."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">Μειωμένη λειτουργικότητα δικτύου</span>\n"
+"<span weight=\"bold\" size=\"larger\">Μειωμένη λειτουργικότητα δικτύου</"
+"span>\n"
 "\n"
 "Το %s  δε θα είναι εντελώς λειτουργικό."
 
@@ -589,10 +608,14 @@ msgid "Key Type:"
 msgstr "Είδος κλειδιού:"
 
 #: ../gnome/applet/applet.glade.h:31
+msgid "Key management:"
+msgstr ""
+
+#: ../gnome/applet/applet.glade.h:32
 msgid "Key:"
 msgstr "Κλειδί:"
 
-#: ../gnome/applet/applet.glade.h:32
+#: ../gnome/applet/applet.glade.h:33
 msgid ""
 "None\n"
 "WEP 128-bit Passphrase\n"
@@ -604,7 +627,7 @@ msgstr ""
 "WEP 64/128-bit Hex\n"
 "WEP 64/128-bit ASCII\n"
 
-#: ../gnome/applet/applet.glade.h:37
+#: ../gnome/applet/applet.glade.h:38
 msgid ""
 "Open System\n"
 "Shared Key"
@@ -612,166 +635,195 @@ msgstr ""
 "Ανοικτό σύστημα\n"
 "Κοινόχρηστο κλειδί"
 
-#: ../gnome/applet/applet.glade.h:39
+#: ../gnome/applet/applet.glade.h:40
 msgid "Other Wireless Network..."
 msgstr "Άλλο ασύρματο δίκτυο..."
 
-#: ../gnome/applet/applet.glade.h:40
+#: ../gnome/applet/applet.glade.h:41
 msgid "Passphrase:"
 msgstr "Συνθηματικό:"
 
-#: ../gnome/applet/applet.glade.h:41
+#: ../gnome/applet/applet.glade.h:42
 msgid "Password:"
 msgstr "Συνθηματικό:"
 
-#: ../gnome/applet/applet.glade.h:42
+#: ../gnome/applet/applet.glade.h:43
 msgid "Primary DNS:"
 msgstr "Πρωτεύων DNS:"
 
-#: ../gnome/applet/applet.glade.h:43
+#: ../gnome/applet/applet.glade.h:44
 msgid "Private Key File:"
 msgstr "Αρχείο προσωπικού κλειδιού:"
 
-#: ../gnome/applet/applet.glade.h:44
+#: ../gnome/applet/applet.glade.h:45
 msgid "Private Key Password:"
 msgstr "Συνθηματικό προσωπικού κλειδιού:"
 
-#: ../gnome/applet/applet.glade.h:45
+#: ../gnome/applet/applet.glade.h:46
 msgid "Secondary DNS:"
 msgstr "Δευτερεύων DNS:"
 
-#: ../gnome/applet/applet.glade.h:46
+#: ../gnome/applet/applet.glade.h:47
 msgid "Select the CA Certificate File"
 msgstr "Επιλέξτε ένα αρχείο πιστοποίησης CA"
 
-#: ../gnome/applet/applet.glade.h:47
+#: ../gnome/applet/applet.glade.h:48
 msgid "Select the Client Certificate File"
 msgstr "Επιλέξτε το αρχείο πιστοποίησης χρήστη"
 
-#: ../gnome/applet/applet.glade.h:48
+#: ../gnome/applet/applet.glade.h:49
 msgid "Select the Private Key File"
 msgstr "Επιλέξτε το αρχείο προσωπικού κλειδιού"
 
-#: ../gnome/applet/applet.glade.h:49
+#: ../gnome/applet/applet.glade.h:50
 msgid "Show key"
 msgstr "Εμφάνιση κλειδιού"
 
-#: ../gnome/applet/applet.glade.h:50
+#: ../gnome/applet/applet.glade.h:51
 msgid "Show passphrase"
 msgstr "Εμφάνιση συνθηματικής φράσης"
 
-#: ../gnome/applet/applet.glade.h:51
+#: ../gnome/applet/applet.glade.h:52
 msgid "Show password"
 msgstr "Εμφάνιση συνθηματικού"
 
-#: ../gnome/applet/applet.glade.h:52
+#: ../gnome/applet/applet.glade.h:53
 msgid "Show passwords"
 msgstr "Εμφάνιση συνθηματικών"
 
-#: ../gnome/applet/applet.glade.h:53
+#: ../gnome/applet/applet.glade.h:54
 msgid "Speed:"
 msgstr "Ταχύτητα:"
 
-#: ../gnome/applet/applet.glade.h:54
+#: ../gnome/applet/applet.glade.h:55
 msgid "Subnet Mask:"
 msgstr "Μάσκα υποδικτύου:"
 
-#: ../gnome/applet/applet.glade.h:55
+#: ../gnome/applet/applet.glade.h:56
 msgid "Type:"
 msgstr "Τύπος:"
 
-#: ../gnome/applet/applet.glade.h:56
+#: ../gnome/applet/applet.glade.h:57
 msgid "User Name:"
 msgstr "Όνομα χρήστη:"
 
-#: ../gnome/applet/applet.glade.h:57
+#: ../gnome/applet/applet.glade.h:58
 msgid "Wireless Network Key Required"
 msgstr "Απαιτείται κλειδί ασύρματου δικτύου"
 
-#: ../gnome/applet/applet.glade.h:58
+#: ../gnome/applet/applet.glade.h:59
 msgid "Wireless _adapter:"
 msgstr "Ασύρματος _προσαρμογέας:"
 
-#: ../gnome/applet/applet.glade.h:59
+#: ../gnome/applet/applet.glade.h:60
 msgid "_Always Trust this Wireless Network"
 msgstr "Να είναι _πάντα έμπιστο αυτό το ασύρματο δίκτυο"
 
-#: ../gnome/applet/applet.glade.h:60
+#: ../gnome/applet/applet.glade.h:61
 msgid "_Don't remind me again"
 msgstr "Να _μη γίνει υπενθύμιση ξανά"
 
-#: ../gnome/applet/applet.glade.h:61
+#: ../gnome/applet/applet.glade.h:62
 msgid "_Fallback on this Network"
 msgstr "_Επιστροφή σε αυτό το δίκτυο"
 
-#: ../gnome/applet/applet.glade.h:62
+#: ../gnome/applet/applet.glade.h:63
 msgid "_Login to Network"
 msgstr "_Είσοδος στο δίκτυο"
 
-#: ../gnome/applet/applet.glade.h:63
+#: ../gnome/applet/applet.glade.h:64
 msgid "_Network Name:"
 msgstr "_Όνομα δικτύου:"
 
-#: ../gnome/applet/applet.glade.h:64
+#: ../gnome/applet/applet.glade.h:65
 msgid "_Wireless Security:"
 msgstr "Ασ_φάλεια ασύρματου δικτύου:"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:383
+#: ../gnome/vpn-properties/nm-vpn-properties.c:389
 msgid "Cannot add VPN connection"
 msgstr "Αδυναμία προσθήκης σύνδεσης VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:385
+#: ../gnome/vpn-properties/nm-vpn-properties.c:391
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr "Δε βρέθηκε κατάλληλο λογισμικό VPN στο σύστημα σας. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
+msgstr ""
+"Δε βρέθηκε κατάλληλο λογισμικό VPN στο σύστημα σας. Επικοινωνήστε με το "
+"διαχειριστή του συστήματος σας."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:437
+#: ../gnome/vpn-properties/nm-vpn-properties.c:433
 msgid "Cannot import VPN connection"
 msgstr "Αδυναμία εισαγωγής σύνδεσης VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:439
+#: ../gnome/vpn-properties/nm-vpn-properties.c:435
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr "Δε βρέθηκε κατάλληλο λογισμικό για τη σύνδεση VPN τύπου '%s' για εισαγωγή του αρχείου '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
+msgstr ""
+"Δε βρέθηκε κατάλληλο λογισμικό για τη σύνδεση VPN τύπου '%s' για εισαγωγή "
+"του αρχείου '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:579
+#: ../gnome/vpn-properties/nm-vpn-properties.c:555
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Σφάλμα ανάκτησης σύνδεσης VPN '%s'"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:582
+#: ../gnome/vpn-properties/nm-vpn-properties.c:558
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr "Δε βρέθηκαν τα αρχεία UI για σύνδεση VPN τύπου '%s'. Επικοινωνήστε με το διαχειριστή του συστήματος σας."
+msgstr ""
+"Δε βρέθηκαν τα αρχεία UI για σύνδεση VPN τύπου '%s'. Επικοινωνήστε με το "
+"διαχειριστή του συστήματος σας."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:739
+#: ../gnome/vpn-properties/nm-vpn-properties.c:714
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Διαγραφή σύνδεσης VPN \"%s\";"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:742
+#: ../gnome/vpn-properties/nm-vpn-properties.c:717
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr "Όλες οι πληροφορίες για τη σύνδεση VPN \"%s\" θα χαθούν και μπορεί να χρειαστεί ο διαχειριστής του συστήματος σας να δώσει πληροφορίες για τη δημιουργία νέας σύνδεσης."
+msgstr ""
+"Όλες οι πληροφορίες για τη σύνδεση VPN \"%s\" θα χαθούν και μπορεί να "
+"χρειαστεί ο διαχειριστής του συστήματος σας να δώσει πληροφορίες για τη "
+"δημιουργία νέας σύνδεσης."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:959
+#: ../gnome/vpn-properties/nm-vpn-properties.c:912
 msgid "Unable to load"
 msgstr "Αδυναμία φόρτωσης"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:961
+#: ../gnome/vpn-properties/nm-vpn-properties.c:914
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Δε μπόρεσαν να βρεθούν οι απαραίτητοι πόροι (το αρχείο glade)!"
 
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1059
+msgid "Create VPN Connection"
+msgstr "Δημιουργία σύνδεσης VPN"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1077
 msgid "Edit VPN Connection"
 msgstr "Επεξεργασία σύνδεσης VPN"
 
@@ -780,66 +832,30 @@ msgid "Add a new VPN connection"
 msgstr "Προσθήκη μιας νέας σύνδεσης VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Choose which type of VPN connection you wish to create."
-msgstr "Επιλέξτε ποιο τύπο σύνδεσης VPN επιθυμείτε να δημιουργήσετε."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "Connect to:"
-msgstr "Σύνδεση σε:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Create VPN Connection"
-msgstr "Δημιουργία σύνδεσης VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Create VPN Connection - 1 of 2"
-msgstr "Δημιουργία σύνδεσης VPN - 1 από 2"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Create VPN Connection - 2 of 2"
-msgstr "Δημιουργία σύνδεσης VPN - 2 από 2"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
 msgstr "Διαγραφή της επιλεγμένης σύνδεσης VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "E_xport"
 msgstr "Ε_ξαγωγή"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Edit the selected VPN connection"
 msgstr "Επεξεργασία της επιλεγμένης σύνδεσης VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Export the VPN settings to a file"
 msgstr "Εξαγωγή των ρυθμίσεων VPN σε ένα αρχείο"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Export the selected VPN connection to a file"
 msgstr "Εξαγωγή της επιλεγμένης σύνδεσης VPN σε ένα αρχείο"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
-msgid "Finish Creating VPN Connection"
-msgstr "Ολοκληρώθηκε η δημιουργία σύνδεσης VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Manage Virtual Private Network Connections"
 msgstr "Διαχείριση συνδέσεων Εικονικών προσωπικών δικτύων (VPN)"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
-msgid ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
-"\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
-msgstr ""
-"Ο βοηθός θα σας οδηγήσει στη δημιουργία μιας σύνδεσης σε ένα Προσωπικό ασύρματο δίκτυο (Virtual Private Network, VPN).\n"
-"\n"
-"Θα χρειαστεί κάποιες πληροφορίες, όπως διευθύνσεις IP και μυστικά.  Παρακαλώ δείτε τον διαχειριστή του συστήματος σας για να αποκτήσετε αυτές τις πληροφορίες."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "VPN Connections"
 msgstr "Συνδέσεις VPN"
 
@@ -875,19 +891,25 @@ msgstr "WPA2 CCMP"
 msgid "WPA2 Automatic"
 msgstr "Αυτόματο WPA2"
 
-#: ../src/nm-ap-security.c:321
+#: ../src/nm-ap-security.c:338
 msgid "none"
 msgstr "κανένα"
 
 #: ../src/nm-netlink-monitor.c:170
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "αδυναμία δημιουργίας netlink socket για παρακολούθηση ενσύρματων συσκευών ethernet - %s"
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"αδυναμία δημιουργίας netlink socket για παρακολούθηση ενσύρματων συσκευών "
+"ethernet - %s"
 
 #: ../src/nm-netlink-monitor.c:188
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "αδυναμία σύνδεσης με το netlink socket για παρακολούθηση ενσύρματων συσκευών ethernet - %s"
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"αδυναμία σύνδεσης με το netlink socket για παρακολούθηση ενσύρματων συσκευών "
+"ethernet - %s"
 
 #: ../src/nm-netlink-monitor.c:425
 msgid "operation took too long"
@@ -935,3 +957,31 @@ msgstr "Χωρίς σύνδεση"
 msgid "The network connection has been disconnected."
 msgstr "Έγινε αποσύνδεση από το δίκτυο."
 
+#~ msgid "Choose which type of VPN connection you wish to create."
+#~ msgstr "Επιλέξτε ποιο τύπο σύνδεσης VPN επιθυμείτε να δημιουργήσετε."
+
+#~ msgid "Connect to:"
+#~ msgstr "Σύνδεση σε:"
+
+#~ msgid "Create VPN Connection - 1 of 2"
+#~ msgstr "Δημιουργία σύνδεσης VPN - 1 από 2"
+
+#~ msgid "Create VPN Connection - 2 of 2"
+#~ msgstr "Δημιουργία σύνδεσης VPN - 2 από 2"
+
+#~ msgid "Finish Creating VPN Connection"
+#~ msgstr "Ολοκληρώθηκε η δημιουργία σύνδεσης VPN"
+
+#~ msgid ""
+#~ "This assistant will guide you through the creation of a connection to a "
+#~ "Virtual Private Network (VPN).\n"
+#~ "\n"
+#~ "It will require some information, such as IP addresses and secrets.  "
+#~ "Please see your system administrator to obtain this information."
+#~ msgstr ""
+#~ "Ο βοηθός θα σας οδηγήσει στη δημιουργία μιας σύνδεσης σε ένα Προσωπικό "
+#~ "ασύρματο δίκτυο (Virtual Private Network, VPN).\n"
+#~ "\n"
+#~ "Θα χρειαστεί κάποιες πληροφορίες, όπως διευθύνσεις IP και μυστικά.  "
+#~ "Παρακαλώ δείτε το διαχειριστή του συστήματος σας για να αποκτήσετε αυτές "
+#~ "τις πληροφορίες."
