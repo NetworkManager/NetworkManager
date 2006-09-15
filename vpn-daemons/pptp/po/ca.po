@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-22 20:57+0200\n"
-"PO-Revision-Date: 2006-09-03 12:42+0200\n"
-"Last-Translator: Gil Forcada <gilforcada@guifi.net>, 2006>\n"
+"POT-Creation-Date: 2006-09-15 22:51+0200\n"
+"PO-Revision-Date: 2006-09-15 23:00+0200\n"
+"Last-Translator: Gil Forcada <gilforcada@guifi.net>, 2006\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -107,21 +107,21 @@ msgstr "Tipus de paquet GPRS"
 
 #: ../properties/nm-ppp-properties.c:183
 msgid "Use CTS/RTS flow control"
-msgstr "Utilitzeu el control de flux CTS/RTS"
+msgstr "Utilitza el control de flux CTS/RTS"
 
 #: ../properties/nm-ppp-properties.c:188
 msgid "Connect via a modem"
-msgstr "Connecteu a través de mòdem"
+msgstr "Connecta a través de mòdem"
 
 #: ../properties/nm-ppp-properties.c:193
 msgid "Require IP to be provided"
-msgstr "Es requereix que especifiqueu la IP"
+msgstr "Requereix que es proporcioni la IP"
 
 # FIXME
 #: ../properties/nm-ppp-properties.c:198
 #: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Use Peer DNS"
-msgstr "Utilitzeu un DNS a iguals"
+msgstr "Utilitza un DNS a iguals"
 
 #: ../properties/nm-ppp-properties.c:203
 msgid "Use MPPE encryption"
@@ -145,7 +145,7 @@ msgstr "No utilitzis compressió BSD"
 
 #: ../properties/nm-ppp-properties.c:228
 msgid "Exclusive device access by pppd"
-msgstr "Accés exclusiu al dispositiu per el pppd"
+msgstr "Accés exclusiu al dispositiu pel pppd"
 
 # FIXME
 #: ../properties/nm-ppp-properties.c:233
@@ -193,7 +193,7 @@ msgstr "Opcions PPP personalitzables"
 # FIXME
 #: ../properties/nm-ppp-properties.c:288
 msgid "Use Peer DNS over the Tunnel"
-msgstr "Utilitza DNS a iguals per el túnel"
+msgstr "Utilitza DNS a iguals pel túnel"
 
 #: ../properties/nm-ppp-properties.c:294
 msgid "Specific networks available"
@@ -270,7 +270,7 @@ msgstr "<i>exemple: 172.16.0.0/16 10.11.12.0/24</i>"
 #: ../properties/nm-ppp-dialog.glade.h:9
 msgid "A list of extra options to pppd as would be typed on the command line"
 msgstr ""
-"Una llista d'opcions extra per el pppd que s'escriurien a la línia d'ordres"
+"Una llista d'opcions extra per al pppd que s'escriurien a la línia d'ordres"
 
 #: ../properties/nm-ppp-dialog.glade.h:10
 msgid "Allow BSD Compression"
@@ -358,7 +358,7 @@ msgstr "Unitat màxima d'enviament"
 
 #: ../properties/nm-ppp-dialog.glade.h:28
 msgid "Modem Connection"
-msgstr "Connexió mòdem"
+msgstr "Connexió amb mòdem"
 
 #: ../properties/nm-ppp-dialog.glade.h:29
 msgid "PPP Options"
@@ -420,8 +420,8 @@ msgid ""
 "connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
 msgstr ""
-"Aquest serà el nom amigable que es farà servir per identificar aquesta "
-"connexió de xarxa, \n"
+"Aquest serà el nom que es farà servir per identificar aquesta connexió de "
+"xarxa, \n"
 "per exemple: «VPN del Campus» o «Xarxa corporativa»"
 
 #: ../properties/nm-ppp-dialog.glade.h:46
@@ -434,39 +434,39 @@ msgstr "Tipus:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr "En activar-ho, l'opció «refuse-chap» es passa al pppd."
+msgstr "Si està activat, es passa, l'opció «refuse-chap» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr "En activar-ho, l'opció «refuse-eap» es passa al pppd."
+msgstr "Si està activat, es passa l'opció «refuse-eap» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:51
 msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr "En activar-ho, l'opció «refuse-mschap» es passa al pppd."
+msgstr "Si està activat, es passa l'opció «refuse-mschap» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:52
 msgid "When checked the 'lock' option is passed to pppd"
-msgstr "En activar-ho, l'opció «lock» es passa al pppd."
+msgstr "Si està activat, es passa l'opció «lock» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:53
 msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr "En activar-ho, l'opció «require-mppc» es passa al pppd."
+msgstr "Si està activat, es passa l'opció «require-mppc» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:54
 msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
 msgstr ""
-"En activar-lo estableix l'opció del pppd «debug» i afegeix alguna informació "
-"extra des del connector del NetworkManager"
+"Si està activat, això estableix l'opció del pppd «debug» i afegeix "
+"informació extra des del connector del NetworkManager"
 
 #: ../properties/nm-ppp-dialog.glade.h:55
 msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr "En activar-ho estableix l'opció del pppd «noipdefault»"
+msgstr "Si està activat, això estableix l'opció del pppd «noipdefault»"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr "En activar-ho estableix l'opció del pppd «userpeerdns»"
+msgstr "Si està activat, això estableix l'opció del pppd «userpeerdns»"
 
 #: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
