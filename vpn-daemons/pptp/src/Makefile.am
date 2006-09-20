@@ -7,6 +7,7 @@ AM_CPPFLAGS =							\
 	$(GTHREAD_CFLAGS)					\
 	$(PPPD_CFLAGS)							\
 	-Wall							\
+	$(NM_VPN_CFLAGS)							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
 	-DBINDIR=\"$(bindir)\"					\
