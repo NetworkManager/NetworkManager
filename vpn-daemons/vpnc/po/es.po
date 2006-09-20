@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-20 23:23+0200\n"
-"PO-Revision-Date: 2006-05-12 10:41+0200\n"
+"POT-Creation-Date: 2006-09-20 23:13+0200\n"
+"PO-Revision-Date: 2006-09-20 23:18+0200\n"
 "Last-Translator: \n"
 "Language-Team:  <es@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -41,14 +41,12 @@ msgid "Connect as _user:"
 msgstr "Conectar como _usuario:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:465
-#, fuzzy
 msgid "_Remember passwords for this session"
-msgstr "_Recordar la contraseña durante esta sesión"
+msgstr "_Recordar contraseñas durante esta sesión"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:467
-#, fuzzy
 msgid "_Save passwords in keyring"
-msgstr "_Guardar la contraseña en el llavero"
+msgstr "_Guardar contraseñas en el depósito de claves"
 
 #: ../auth-dialog/main.c:161
 #, c-format
@@ -61,27 +59,24 @@ msgid "Authenticate VPN"
 msgstr "Autenticar VPN"
 
 #: ../auth-dialog/main.c:169
-#, fuzzy
 msgid "_Group Password:"
-msgstr "_Contraseña:"
+msgstr "_Contraseña de grupo:"
 
 #: ../nm-vpnc.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "Añadir, eliminar y editar conexiones VPN"
 
 #: ../nm-vpnc.desktop.in.h:2
-#, fuzzy
 msgid "VPN Connection Manager (vpnc)"
-msgstr "Gestor de conexiones VPN (OpenVPN)"
+msgstr "Gestor de conexiones VPN (vpnc)"
 
 #: ../properties/nm-vpnc.c:83
 msgid "Compatible Cisco VPN client (vpnc)"
-msgstr ""
+msgstr "Cliente VPN compatible Cisco (vpnc)"
 
 #: ../properties/nm-vpnc.c:447
-#, fuzzy
 msgid "The following vpnc VPN connection will be created:"
-msgstr "Se creará la siguiente conexión OpenVPN:"
+msgstr "Se creará la siguiente conexión VPN vpnc:"
 
 #: ../properties/nm-vpnc.c:449
 #, c-format
@@ -89,14 +84,14 @@ msgid "Name:  %s"
 msgstr "Nombre: %s"
 
 #: ../properties/nm-vpnc.c:452
-#, fuzzy, c-format
+#, c-format
 msgid "Gateway:  %s"
-msgstr "_Pasarela:"
+msgstr "Pasarela: %s"
 
 #: ../properties/nm-vpnc.c:454
-#, fuzzy, c-format
+#, c-format
 msgid "Group Name:  %s"
-msgstr "Nombre: %s"
+msgstr "Nombre de grupo: %s"
 
 #: ../properties/nm-vpnc.c:458
 #, c-format
@@ -104,9 +99,9 @@ msgid "Username:  %s"
 msgstr "Usuario: %s"
 
 #: ../properties/nm-vpnc.c:463
-#, fuzzy, c-format
+#, c-format
 msgid "Domain:  %s"
-msgstr "_Dominio:"
+msgstr "Dominio: %s"
 
 #: ../properties/nm-vpnc.c:468
 #, c-format
@@ -120,7 +115,7 @@ msgstr ""
 
 #: ../properties/nm-vpnc.c:548
 msgid "TCP tunneling not supported"
-msgstr ""
+msgstr "Túnelado TCP no soportado"
 
 #: ../properties/nm-vpnc.c:550
 #, c-format
@@ -182,12 +177,11 @@ msgstr "<i>por ejemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "G_roup Name:"
-msgstr ""
+msgstr "Nombre de g_rupo:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-#, fuzzy
 msgid "O_ptional Information"
-msgstr "<b>Información opcional</b>"
+msgstr "Información o_pcional"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Override _user name"
@@ -204,7 +198,7 @@ msgstr ""
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Use _domain for authentication"
-msgstr ""
+msgstr "Usar _dominio para autenticar"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "_Gateway:"
@@ -227,17 +221,13 @@ msgid "_Only use VPN connection for these addresses"
 msgstr "_Sólamente utilizar la conexión VPN para estas direcciones"
 
 #: ../src/nm-vpnc-service.c:117
-#, fuzzy
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
-msgstr ""
-"El acceso VPN ha fallado porque el nombre de usuario y la contraseña no "
-"fueron aceptadas o la contraseña del certificado es errónea."
+msgstr "El acceso VPN ha fallado porque el nombre de usuario y la contraseña no se aceptaron."
 
 #: ../src/nm-vpnc-service.c:119
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
+msgstr "El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
 
 #: ../src/nm-vpnc-service.c:121
 msgid ""
