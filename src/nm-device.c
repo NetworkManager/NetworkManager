@@ -620,7 +620,7 @@ nm_device_set_active_link (NMDevice *self,
 			}
 		}
 	}
-	nm_dbus_schedule_device_status_change_signal	(app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
+	nm_dbus_schedule_device_status_change_signal (app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 }
 
 
