@@ -375,6 +375,45 @@ void nm_schedule_state_change_signal_broadcast (NMData *data)
 }
 
 
+static void
+nm_error_monitoring_device_link_state (NmNetlinkMonitor *monitor,
+				      GError 	       *error,
+				      NMData	       *data)
+{
+	/* FIXME: Try to handle the error instead of just printing it. */
+	nm_warning ("error monitoring wired ethernet link state: %s\n",
+		    error->message);
+}
+
+static NmNetlinkMonitor *
+nm_monitor_setup (NMData *data)
+{
+	GError *error = NULL;
+	NmNetlinkMonitor *monitor;
+
+	monitor = nm_netlink_monitor_new (data);
+	nm_netlink_monitor_open_connection (monitor, &error);
+	if (error != NULL)
+	{
+		nm_warning ("could not monitor wired ethernet devices: %s",
+			    error->message);
+		g_error_free (error);
+		g_object_unref (monitor);
+		return NULL;
+	}
+
+	g_signal_connect (G_OBJECT (monitor), "error",
+			  G_CALLBACK (nm_error_monitoring_device_link_state),
+			  data);
+
+	nm_netlink_monitor_attach (monitor, data->main_context);
+
+	/* Request initial status of cards */
+	nm_netlink_monitor_request_status (monitor, NULL);
+	return monitor;
+}
+
+
 /*
  * nm_data_new
  *
@@ -413,7 +452,7 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	{
 		nm_data_free (data);
 		nm_warning ("could not initialize data structure locks.");
-		return (NULL);
+		return NULL;
 	}
 	nm_register_mutex_desc (data->dev_list_mutex, "Device List Mutex");
 	nm_register_mutex_desc (data->dialup_list_mutex, "DialUp List Mutex");
@@ -425,15 +464,20 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 	{
 		nm_data_free (data);
 		nm_warning ("could not create access point lists.");
-		return (NULL);
+		return NULL;
+	}
+
+	/* Create watch functions that monitor cards for link status. */
+	if (!(data->netlink_monitor = nm_monitor_setup (data)))
+	{
+		nm_data_free (data);
+		nm_warning ("could not create netlink monitor.");
+		return NULL;
 	}
 
 	data->enable_test_devices = enable_test_devices;
 	data->wireless_enabled = TRUE;
-
-	nm_policy_schedule_device_change_check (data);
-
-	return (data);	
+	return data;
 }
 
 
@@ -462,6 +506,12 @@ static void nm_data_free (NMData *data)
 	/* Kill any active VPN connection */
 	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
 		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
+
+	if (data->netlink_monitor)
+	{
+		g_object_unref (G_OBJECT (data->netlink_monitor));
+		data->netlink_monitor = NULL;
+	}
 
 	/* Stop and destroy all devices */
 	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -501,99 +551,6 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 	g_main_loop_quit (data->main_loop);
 	return FALSE;
 }
-
-static void nm_device_link_activated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
-{
-	NMDevice *dev = NULL;
-
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __func__))
-	{
-		if ((dev = nm_get_device_by_iface (data, interface_name)))
-			g_object_ref (G_OBJECT (dev));
-		nm_unlock_mutex (data->dev_list_mutex, __func__);
-	}
-
-	/* Don't do anything if we already have a link */
-	if (dev)
-	{
-		if (nm_device_is_802_3_ethernet (dev) && !nm_device_has_active_link (dev))
-		{
-			nm_device_set_active_link (dev, TRUE);
-			nm_policy_schedule_device_change_check (data);
-		}
-		g_object_unref (G_OBJECT (dev));
-	}
-}
-
-static void nm_device_link_deactivated (NmNetlinkMonitor *monitor, const gchar *interface_name, NMData *data)
-{
-	NMDevice *dev = NULL;
-
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __func__))
-	{
-		if ((dev = nm_get_device_by_iface (data, interface_name)))
-			g_object_ref (G_OBJECT (dev));
-		nm_unlock_mutex (data->dev_list_mutex, __func__);
-	}
-
-	if (dev)
-	{
-		if (nm_device_is_802_3_ethernet (dev))
-			nm_device_set_active_link (dev, FALSE);
-		g_object_unref (G_OBJECT (dev));
-	}
-}
-
-static void
-nm_error_monitoring_device_link_state (NmNetlinkMonitor *monitor,
-				      GError 	       *error,
-				      NMData	       *data)
-{
-	/* FIXME: Try to handle the error instead of just printing it.
-	 */
-	nm_warning ("error monitoring wired ethernet link state: %s\n",
-		    error->message);
-}
-
-static void
-nm_monitor_wired_link_state (NMData *data)
-{
-	GError *error;
-	NmNetlinkMonitor *monitor;
-
-	monitor = nm_netlink_monitor_new ();
-	
-	error = NULL;
-	nm_netlink_monitor_open_connection (monitor, &error);
-
-	if (error != NULL)
-	{
-		nm_warning ("could not monitor wired ethernet devices: %s",
-			    error->message);
-		g_error_free (error);
-		g_object_unref (monitor);
-		return;
-	}
-
-	g_signal_connect (G_OBJECT (monitor), "interface-connected",
-			  G_CALLBACK (nm_device_link_activated), data);
-
-	g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
-			  G_CALLBACK (nm_device_link_deactivated), data);
-
-	g_signal_connect (G_OBJECT (monitor), "error",
-			  G_CALLBACK (nm_error_monitoring_device_link_state),
-			  data);
-
-	nm_netlink_monitor_attach (monitor, data->main_context);
-
-	/* Request initial status of cards
-	 */
-	nm_netlink_monitor_request_status (monitor, NULL);
-
-	data->netlink_monitor = monitor;
-}
-
 
 static LibHalContext *nm_get_hal_ctx (NMData *data)
 {
@@ -795,7 +752,7 @@ int main( int argc, char *argv[] )
 	{
 		nm_error ("nm_data_new() failed... Not enough memory?");
 		exit (EXIT_FAILURE);
-	}	
+	}
 
 	/* Create our dbus service */
 	nm_data->dbus_connection = nm_dbus_init (nm_data);
@@ -839,15 +796,12 @@ int main( int argc, char *argv[] )
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
 
-	/* Create watch functions that monitor cards for link status. */
-	nm_monitor_wired_link_state (nm_data);
-
 	/* Get modems, ISDN, and so on's configuration from the system */
 	nm_data->dialup_list = nm_system_get_dialup_config ();
 
+	/* Run the main loop */
+	nm_policy_schedule_device_change_check (nm_data);
 	nm_schedule_state_change_signal_broadcast (nm_data);
-
-	/* Wheeee!!! */
 	g_main_loop_run (nm_data->main_loop);
 
 	nm_print_open_socks ();

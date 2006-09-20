@@ -32,6 +32,7 @@
 #include "NetworkManagerMain.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
+#include "NetworkManagerPolicy.h"
 #include "nm-utils.h"
 #include "kernel-types.h"
 
@@ -43,10 +44,19 @@ struct _NMDevice8023EthernetPrivate
 
 	struct ether_addr	hw_addr;
 	char *			carrier_file_path;
+	gulong			link_connected_id;
+	gulong			link_disconnected_id;
 };
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
+
+static void	nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
+                                                        GObject *obj,
+                                                        NMDevice8023Ethernet *self);
+static void	nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
+                                                          GObject *obj,
+                                                          NMDevice8023Ethernet *self);
 
 
 static void
@@ -58,6 +68,77 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 }
 
+static void
+real_init (NMDevice *dev)
+{
+	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMData *				app_data;
+	NmNetlinkMonitor *		monitor;
+
+	app_data = nm_device_get_app_data (NM_DEVICE (self));
+	monitor = app_data->netlink_monitor;
+
+	self->priv->link_connected_id = 
+			g_signal_connect (G_OBJECT (monitor), "interface-connected",
+				G_CALLBACK (nm_device_802_3_ethernet_link_activated), self);
+
+	self->priv->link_disconnected_id = 
+			g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
+				G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
+}
+
+static gboolean
+link_activated_helper (NMDevice8023Ethernet *self)
+{
+	nm_device_set_active_link (NM_DEVICE (self), TRUE);
+	return FALSE;
+}
+
+static void
+nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
+                                         GObject *obj,
+                                         NMDevice8023Ethernet *self)
+{
+	/* Make sure signal is for us */
+	if (NM_DEVICE (self) != NM_DEVICE (obj))
+		return;
+
+	if (!nm_device_has_active_link (NM_DEVICE (self)))
+	{
+		GSource *	source = g_idle_source_new ();
+
+		g_source_set_callback (source, (GSourceFunc) link_activated_helper, self, NULL);
+		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+		g_source_unref (source);
+	}
+}
+
+
+static gboolean
+link_deactivated_helper (NMDevice8023Ethernet *self)
+{
+	nm_device_set_active_link (NM_DEVICE (self), FALSE);
+	return FALSE;
+}
+
+static void
+nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
+                                           GObject *obj,
+                                           NMDevice8023Ethernet *self)
+{
+	/* Make sure signal is for us */
+	if (NM_DEVICE (self) != NM_DEVICE (obj))
+		return;
+
+	if (nm_device_has_active_link (NM_DEVICE (self)))
+	{
+		GSource *	source = g_idle_source_new ();
+
+		g_source_set_callback (source, (GSourceFunc) link_deactivated_helper, self, NULL);
+		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+		g_source_unref (source);
+	}
+}
 
 static gboolean
 probe_link (NMDevice8023Ethernet *self)
@@ -218,6 +299,7 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	NMDevice8023Ethernet *		self = NM_DEVICE_802_3_ETHERNET (object);
 	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
 	NMDeviceClass *			parent_class;  
+	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -232,6 +314,11 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
+
+	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+		self->priv->link_connected_id);
+	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+		self->priv->link_disconnected_id);
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
@@ -263,6 +350,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
+	parent_class->init = real_init;
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
 

@@ -44,4 +44,5 @@ libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
 			$(top_builddir)/gnome/libnm_glib/libnm_glib.la
 
 nm_supplicant_test_SOURCES = nm-supplicant-test.c
-nm_supplicant_test_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS)
+nm_supplicant_test_LDADD = $(GLIB_LIBS)
+nm_supplicant_test_LDFLAGS =  --as-needed

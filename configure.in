@@ -227,6 +227,9 @@ if test x"$with_gnome" != xno; then
 	fi
 fi
 
+GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
+AC_SUBST(GLIB_GENMARSHAL)
+
 AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
 
 if ! test -z "$with_dbus_sys" ; then

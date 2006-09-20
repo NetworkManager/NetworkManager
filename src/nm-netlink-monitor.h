@@ -53,12 +53,16 @@ struct _NmNetlinkMonitorClass
 	GObjectClass parent_class;
 
 	/* Signals */
-	void	(* interface_connected)		(NmNetlinkMonitor	*monitor,
-						 const gchar		*interface);
-	void	(* interface_disconnected)	(NmNetlinkMonitor	*monitor,
-						 const gchar		*interface);
-	void	(* error)			(NmNetlinkMonitor	*monitor,
-						 GError			*error);
+	void	(* interface_connected)		(NmNetlinkMonitor * monitor,
+						 GObject *dev);
+	void	(* interface_disconnected)	(NmNetlinkMonitor * monitor,
+						 GObject *dev);
+	void (* wireless_event)			(NmNetlinkMonitor * monitor,
+						 GObject *dev,
+						 const gchar * data,
+						 int data_len);
+	void	(* error)			(NmNetlinkMonitor * monitor,
+						 GError * error);
 };
 
 enum _NmNetlinkMonitorError 
@@ -76,7 +80,8 @@ enum _NmNetlinkMonitorError
 GType	nm_netlink_monitor_get_type	(void)	G_GNUC_CONST;
 GQuark	nm_netlink_monitor_error_quark	(void)	G_GNUC_CONST;
 
-NmNetlinkMonitor	*nm_netlink_monitor_new	(void);
+struct NMData;
+NmNetlinkMonitor	*nm_netlink_monitor_new	(struct NMData *data);
 
 gboolean
 nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
