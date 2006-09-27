@@ -1,3 +1,9 @@
+2006-09-27  Robert Love  <rml@novell.com>
+
+	Patch by Tambet Ingo <tambet@ximian.com>:
+	* gnome/vpn-properties/nm-vpn-properties.c: Make Renaming a VPN entry
+	  actually work.
+
 2006-09-07  Dan Williams <dcbw@redhat.com>
 
 	* test/Makefile.am
