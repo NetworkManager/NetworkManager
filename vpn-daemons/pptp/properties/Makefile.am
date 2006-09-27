@@ -13,6 +13,7 @@ libnm_pptp_properties_la_CFLAGS =                          \
         $(GTK_CFLAGS)                                   \
         $(GCONF_CFLAGS)                                 \
         $(LIBGNOMEUI_CFLAGS)                            \
+        $(NETWORK_MANAGER_CFLAGS)                       \
         -DICONDIR=\""$(datadir)/pixmaps"\"              \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \
@@ -25,7 +26,8 @@ libnm_pptp_properties_la_LIBADD =       \
         $(GLADE_LIBS)                   \
         $(GTK_LIBS)                     \
         $(GCONF_LIBS)                   \
-        $(LIBGNOMEUI_LIBS)
+        $(LIBGNOMEUI_LIBS)              \
+        $(NETWORK_MANAGER_LIBS)
 
 CLEANFILES = *.bak *.gladep *~
 

@@ -1,3 +1,12 @@
+2006-09-27  Robert Love  <rml@novell.com>
+
+	Patch by Tambet Ingo <tambet@ximian.com>:
+	* configure.in, auth-dialog/main.c, properties/Makefile.am,
+	  properties/nm-pptp.c, src/Makefile.am,
+	  src/nm-vpnc-service-helper.c, src/nm-vpnc-service.c:
+	  Make VPN module compilation more robust, even if NetworkManager is
+	  installed into non-standard prefix.
+
 2006-07-13  Robert Love  <rml@novell.com>
 
 	* configure.in: Bump version to 0.6.4 to match NM release.

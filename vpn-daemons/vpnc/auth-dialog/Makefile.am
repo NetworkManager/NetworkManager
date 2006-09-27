@@ -15,7 +15,7 @@ nm_vpnc_auth_dialog_CPPFLAGS =			\
 	-DGDK_DISABLE_DEPRECATED		\
 	-DGNOME_DISABLE_DEPRECATED		\
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\"	\
-	-DVERSION=\"$(VERSION)\"			\
+	-DVERSION=\"$(VERSION)\"		\
 	$(NULL)
 
 nm_vpnc_auth_dialog_SOURCES =			\

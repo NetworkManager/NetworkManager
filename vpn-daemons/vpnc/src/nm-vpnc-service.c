@@ -41,8 +41,8 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 
-#include <NetworkManager/NetworkManager.h>
-#include <NetworkManager/NetworkManagerVPN.h>
+#include <NetworkManager.h>
+#include <NetworkManagerVPN.h>
 
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
