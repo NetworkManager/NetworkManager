@@ -1,25 +1,22 @@
+2006-09-27  Robert Love  <rml@novell.com>
+
+	Patch by Tambet Ingo <tambet@ximian.com>:
+	* gnome/vpn-properties/nm-vpn-properties.c: Make Renaming a VPN entry
+	  actually work.
+
 2006-09-20  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Leon Bottou <leon@bottou.org>
-
-	* configure.in
-	  src/Makefile.am
-	  src/NetworkManager.c
-	  src/NetworkManagerSystem.c
-	  src/NetworkManagerSystem.h
-	  src/nm-device-802-11-wireless.c
-	  src/nm-device-802-3-ethernet.c
-	  src/nm-device.c
-	  src/nm-device.h
-	  src/nm-marshal.list
-	  src/nm-marshal-main.c
-	  src/nm-netlink-monitor.c
-	  src/nm-netlink-monitor.h
-		- Backport the async scanning patch from HEAD.  NM now issues scan
-		commands and waits a maximum of 10 seconds for a scan completion
-		wireless event.  If any scan completion event is received, NM will
-		query the driver for scan results.  Also triggers scanning via
-		wpa_supplicant during an active connection.
+	* configure.in, src/Makefile.am, src/NetworkManager.c,
+	  src/NetworkManagerSystem.c, src/NetworkManagerSystem.h,
+	  src/nm-device-802-11-wireless.c, src/nm-device-802-3-ethernet.c,
+	  src/nm-device.c, src/nm-device.h, src/nm-marshal.list,
+	  src/nm-marshal-main.c, src/nm-netlink-monitor.c,
+	  src/nm-netlink-monitor.h: Backport the async scanning patch from
+	  HEAD.  NM now issues scan commands and waits a maximum of 10 seconds
+	  for a scan completion wireless event.  If any scan completion event
+	  is received, NM will query the driver for scan results.  Also
+	  triggers scanning via wpa_supplicant during an active connection.
 
 2006-09-07  Dan Williams <dcbw@redhat.com>
 

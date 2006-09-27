@@ -189,6 +189,36 @@ out:
 	return ret;
 }
 
+static void
+remove_vpn_connection (const char *gconf_path, GtkTreeIter *iter)
+{
+	char key[PATH_MAX];
+
+	g_snprintf (key, sizeof (key), "%s/name", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+	g_snprintf (key, sizeof (key), "%s/service_name", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+	g_snprintf (key, sizeof (key), "%s/vpn_data", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+	g_snprintf (key, sizeof (key), "%s/routes", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+	g_snprintf (key, sizeof (key), "%s/user_name", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+
+	g_snprintf (key, sizeof (key), "%s/last_attempt_success", gconf_path);
+	gconf_client_unset (gconf_client, key, NULL);
+
+	gconf_client_unset (gconf_client, gconf_path, NULL);
+	gconf_client_suggest_sync (gconf_client, NULL);
+
+	if (gtk_list_store_remove (vpn_conn_list, iter)) {
+		GtkTreeSelection *selection;
+
+		selection = gtk_tree_view_get_selection (vpn_conn_view);
+		gtk_tree_selection_select_iter (selection, iter);
+	}
+}
+
 static void 
 vpn_druid_vpn_validity_changed (NetworkManagerVpnUI *vpn_ui,
 				gboolean is_valid, 
@@ -631,7 +661,6 @@ edit_cb (GtkButton *button, gpointer user_data)
 	const char *conn_name;
 	char key[PATH_MAX];
 	char *conn_gconf_path;
-	GtkTreeIter iter;
 
 	printf ("edit_cb\n");
 
@@ -675,25 +704,15 @@ edit_cb (GtkButton *button, gpointer user_data)
 
 			gconf_client_suggest_sync (gconf_client, NULL);
 		} else {
-			/* remove old entry */
-			g_snprintf (key, sizeof (key), "%s/name", conn_gconf_path);
-			gconf_client_unset (gconf_client, key, NULL);
-			g_snprintf (key, sizeof (key), "%s/service_name", conn_gconf_path);
-			gconf_client_unset (gconf_client, key, NULL);
-			g_snprintf (key, sizeof (key), "%s/vpn_data", conn_gconf_path);
-			gconf_client_unset (gconf_client, key, NULL);
-			/* TODO: at some point remove routes and user_name */
-			g_snprintf (key, sizeof (key), "%s/routes", conn_gconf_path);
-			gconf_client_unset (gconf_client, key, NULL);
-			g_snprintf (key, sizeof (key), "%s/user_name", conn_gconf_path);
-			gconf_client_unset (gconf_client, key, NULL);
-			gconf_client_unset (gconf_client, conn_gconf_path, NULL);
-			gconf_client_suggest_sync (gconf_client, NULL);
-			gtk_list_store_remove (vpn_conn_list, &iter);
+			GtkTreeSelection *selection;
+			GtkTreeIter iter;
 
-			/* add new entry */
+			selection = gtk_tree_view_get_selection (vpn_conn_view);
+			gtk_tree_selection_get_selected (selection, NULL, &iter);
+			remove_vpn_connection (conn_gconf_path, &iter);
+
 			add_vpn_connection (new_conn_name, vpn_ui->get_service_name (vpn_ui), 
-					    new_conn_data, new_conn_routes);
+								new_conn_data, new_conn_routes);
 		}
 
 		if (new_conn_data != NULL) {
@@ -748,30 +767,8 @@ delete_cb (GtkButton *button, gpointer user_data)
 
 	gtk_tree_model_get (GTK_TREE_MODEL (vpn_conn_list), &iter, VPNCONN_GCONF_COLUMN, &conn_gconf_path, -1);
 
-	if (conn_gconf_path != NULL) {
-		char key[PATH_MAX];
-		
-		g_snprintf (key, sizeof (key), "%s/name", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-		g_snprintf (key, sizeof (key), "%s/service_name", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-		g_snprintf (key, sizeof (key), "%s/vpn_data", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-		g_snprintf (key, sizeof (key), "%s/routes", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-		/* TODO: remove user_name */
-		g_snprintf (key, sizeof (key), "%s/user_name", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-		g_snprintf (key, sizeof (key), "%s/last_attempt_success", conn_gconf_path);
-		gconf_client_unset (gconf_client, key, NULL);
-
-		gconf_client_unset (gconf_client, conn_gconf_path, NULL);
-
-		gconf_client_suggest_sync (gconf_client, NULL);
-
-		if (gtk_list_store_remove (vpn_conn_list, &iter))
-			gtk_tree_selection_select_iter (selection, &iter);
-	}
+	if (conn_gconf_path != NULL)
+		remove_vpn_connection (conn_gconf_path, &iter);
 
 	update_edit_del_sensitivity ();
 
