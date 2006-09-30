@@ -1,3 +1,9 @@
+2006-09-30  Alessio Frusciante  <algol@firenze.linux.it>
+
+	* it.po: Added Italian translation by
+	Francesco Marletta <francesco.marletta@tiscali.it>.
+	* LINGUAS: Added "it" (Italian).
+
 2006-09-15  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* ca.po: Updated Catalan translation with corrections from
