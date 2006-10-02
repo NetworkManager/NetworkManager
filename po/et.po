@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: Networkmanager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-09-27 21:50+0200\n"
-"PO-Revision-Date: 2006-09-27 23:30+0200\n"
+"PO-Revision-Date: 2006-09-30 13:47+0200\n"
 "Last-Translator: Priit Laes <plaes@plaes.org>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
@@ -33,11 +33,11 @@ msgstr "Juhtmega võrku ühendumine ebaõnnestus."
 
 #: ../gnome/applet/applet.c:184
 msgid "Error displaying connection information:"
-msgstr ""
+msgstr "Viga ühendusteabe kuvamisel"
 
 #: ../gnome/applet/applet.c:202
 msgid "Could not find some required resources (the glade file)!"
-msgstr ""
+msgstr "Kõiki vajalikke vahendeid ei õnnestunud leida (glade' fail)!"
 
 #: ../gnome/applet/applet.c:213
 msgid "No active connections!"
@@ -63,6 +63,8 @@ msgid ""
 "Copyright © 2004-2006 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 msgstr ""
+"Autoriõigused © 2004-2006 Red Hat, Inc.\n"
+"Autoriõigused © 2005-2006 Novell, Inc."
 
 #: ../gnome/applet/applet.c:336
 #: ../gnome/applet/applet.c:362
@@ -79,10 +81,12 @@ msgid ""
 "Copyright © 2004-2005 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 msgstr ""
+"Autoriõigused © 2004-2005 Red Hat, Inc.\n"
+"Autoriõigused © 2005-2006 Novell, Inc."
 
 #: ../gnome/applet/applet.c:422
 msgid "VPN Login Failure"
-msgstr ""
+msgstr "Tõrge VPN-võrku sisselogimisel"
 
 #: ../gnome/applet/applet.c:423
 #, c-format
@@ -91,7 +95,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:427
 msgid "VPN Start Failure"
-msgstr ""
+msgstr "Tõrge VPN-võrgu käivitamisel"
 
 #: ../gnome/applet/applet.c:428
 #, c-format
@@ -101,7 +105,7 @@ msgstr ""
 #: ../gnome/applet/applet.c:432
 #: ../gnome/applet/applet.c:442
 msgid "VPN Connect Failure"
-msgstr ""
+msgstr "Tõrge VPN-võrku ühendamisel"
 
 #: ../gnome/applet/applet.c:433
 #, c-format
@@ -110,7 +114,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:437
 msgid "VPN Configuration Error"
-msgstr ""
+msgstr "Tõrge VPN-võrgu seadistuses"
 
 #: ../gnome/applet/applet.c:438
 #, c-format
@@ -124,7 +128,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:513
 msgid "VPN Login Message"
-msgstr ""
+msgstr "VPN-võrgu sisselogimisteade"
 
 #: ../gnome/applet/applet.c:737
 #: ../gnome/applet/applet.c:2507
@@ -195,7 +199,7 @@ msgstr "Võrguhaldur ei tööta"
 #: ../gnome/applet/applet.c:1079
 #: ../gnome/applet/applet.c:1824
 msgid "Networking disabled"
-msgstr ""
+msgstr "Võrguühendus keelatud"
 
 #: ../gnome/applet/applet.c:1084
 msgid "No network connection"
@@ -234,15 +238,15 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:1681
 msgid "_VPN Connections"
-msgstr ""
+msgstr "_VPN ühendused"
 
 #: ../gnome/applet/applet.c:1726
 msgid "_Configure VPN..."
-msgstr ""
+msgstr "VPN-i seadistamine..."
 
 #: ../gnome/applet/applet.c:1730
 msgid "_Disconnect VPN..."
-msgstr ""
+msgstr "VPN-i lahtiühendamine..."
 
 #: ../gnome/applet/applet.c:1752
 msgid "_Dial Up Connections"
@@ -265,7 +269,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.c:2010
 msgid "NetworkManager is not running..."
-msgstr ""
+msgstr "Võrguhaldur ei ole käivitatud"
 
 #. 'Enable Networking' item
 #: ../gnome/applet/applet.c:2166
@@ -285,12 +289,12 @@ msgstr ""
 #. Help item
 #: ../gnome/applet/applet.c:2189
 msgid "_Help"
-msgstr ""
+msgstr "_Abi"
 
 #. About item
 #: ../gnome/applet/applet.c:2198
 msgid "_About"
-msgstr ""
+msgstr "_Võrguhaldurist lähemalt"
 
 #: ../gnome/applet/applet.c:2666
 msgid "The NetworkManager applet could not find some required resources.  It cannot continue.\n"
@@ -306,7 +310,7 @@ msgstr ""
 
 #: ../gnome/applet/wireless-security-option.c:208
 msgid "Automatic (Default)"
-msgstr ""
+msgstr "Automaatne (vaikimisi)"
 
 #: ../gnome/applet/wireless-security-option.c:215
 msgid "AES-CCMP"
@@ -318,23 +322,23 @@ msgstr "TKIP"
 
 #: ../gnome/applet/wireless-security-option.c:231
 msgid "Dynamic WEP"
-msgstr ""
+msgstr "Dünaamiline WEP"
 
 #: ../gnome/applet/wso-none.c:53
 msgid "None"
-msgstr ""
+msgstr "Puudub"
 
 #: ../gnome/applet/wso-wep-ascii.c:138
 msgid "WEP 64/128-bit ASCII"
-msgstr ""
+msgstr "WEP 64/128-bitine ASCII"
 
 #: ../gnome/applet/wso-wep-hex.c:135
 msgid "WEP 64/128-bit Hex"
-msgstr ""
+msgstr "WEP 64/128-bitine Hex"
 
 #: ../gnome/applet/wso-wep-passphrase.c:135
 msgid "WEP 128-bit Passphrase"
-msgstr ""
+msgstr "WEP 128-bitine salasõna"
 
 #: ../gnome/applet/wso-wpa-eap.c:237
 msgid "PEAP"
@@ -362,19 +366,19 @@ msgstr ""
 
 #: ../gnome/applet/wso-wpa-psk.c:178
 msgid "WPA2 Personal"
-msgstr ""
+msgstr "WPA2 Personal"
 
 #: ../gnome/applet/wso-wpa-psk.c:180
 msgid "WPA Personal"
-msgstr ""
+msgstr "WPA Personal"
 
 #: ../gnome/applet/eggtrayicon.c:134
 msgid "Orientation"
-msgstr ""
+msgstr "Suund"
 
 #: ../gnome/applet/eggtrayicon.c:135
 msgid "The orientation of the tray."
-msgstr ""
+msgstr "Salve suund."
 
 #: ../gnome/applet/menu-items.c:88
 #, c-format
@@ -457,7 +461,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:1
 msgid " "
-msgstr ""
+msgstr " "
 
 #: ../gnome/applet/applet.glade.h:2
 msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
@@ -505,7 +509,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:19
 msgid "C_onnect"
-msgstr ""
+msgstr "Ü_hendu"
 
 #: ../gnome/applet/applet.glade.h:20
 msgid "Client Certificate File:"
@@ -513,7 +517,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:21
 msgid "Connection Information"
-msgstr ""
+msgstr "Ühenduse teave"
 
 #: ../gnome/applet/applet.glade.h:22
 msgid "Default Route:"
@@ -521,7 +525,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:23
 msgid "Destination Address:"
-msgstr ""
+msgstr "Sihtaadress:"
 
 #: ../gnome/applet/applet.glade.h:24
 msgid "Driver:"
@@ -533,11 +537,11 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:26
 msgid "Hardware Address:"
-msgstr ""
+msgstr "Raudvaraline aadress:"
 
 #: ../gnome/applet/applet.glade.h:27
 msgid "IP Address:"
-msgstr ""
+msgstr "IP aadress:"
 
 #: ../gnome/applet/applet.glade.h:28
 msgid "Identity:"
@@ -603,7 +607,7 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:46
 msgid "Secondary DNS:"
-msgstr ""
+msgstr "Sekundaarne nimeserver:"
 
 #: ../gnome/applet/applet.glade.h:47
 msgid "Select the CA Certificate File"
@@ -623,15 +627,15 @@ msgstr ""
 
 #: ../gnome/applet/applet.glade.h:51
 msgid "Show passphrase"
-msgstr ""
+msgstr "Näita salasõna"
 
 #: ../gnome/applet/applet.glade.h:52
 msgid "Show password"
-msgstr ""
+msgstr "Näita parooli"
 
 #: ../gnome/applet/applet.glade.h:53
 msgid "Show passwords"
-msgstr ""
+msgstr "Näita salasõnu"
 
 #: ../gnome/applet/applet.glade.h:54
 msgid "Speed:"
@@ -639,7 +643,7 @@ msgstr "Kiirus:"
 
 #: ../gnome/applet/applet.glade.h:55
 msgid "Subnet Mask:"
-msgstr ""
+msgstr "Alamvõrgu mask:"
 
 #: ../gnome/applet/applet.glade.h:56
 msgid "Type:"
@@ -701,7 +705,7 @@ msgstr ""
 #: ../gnome/vpn-properties/nm-vpn-properties.c:555
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
-msgstr ""
+msgstr "%s"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:558
 #, c-format
@@ -869,7 +873,7 @@ msgstr ""
 
 #: ../gnome/applet/applet-dbus-devices.c:983
 msgid "Disconnected"
-msgstr ""
+msgstr "Ühenduseta"
 
 #: ../gnome/applet/applet-dbus-devices.c:984
 msgid "The network connection has been disconnected."
