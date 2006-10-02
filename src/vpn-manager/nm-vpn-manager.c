@@ -44,7 +44,7 @@ struct NMVPNManager
 	NMVPNActRequest *	act_req;
 };
 
-static void nm_vpn_manager_load_services (NMVPNManager *manager, GHashTable *table);
+static void load_services (NMVPNManager *manager, GHashTable *table);
 
 /*
  * nm_vpn_manager_new
@@ -62,7 +62,7 @@ NMVPNManager *nm_vpn_manager_new (NMData *app_data)
 	manager->app_data = app_data;
 
 	manager->service_table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) nm_vpn_service_unref);
-	nm_vpn_manager_load_services (manager, manager->service_table);
+	load_services (manager, manager->service_table);
 
 	return manager;
 }
@@ -469,116 +469,181 @@ void nm_vpn_manager_schedule_vpn_connection_died (NMVPNManager *manager, NMVPNAc
 
 /*********************************************************************/
 
-static void nm_vpn_manager_load_services (NMVPNManager *manager, GHashTable *table)
+#define NAME_TAG "name="
+#define SERVICE_TAG "service="
+#define PROGRAM_TAG "program="
+
+static gboolean
+set_service_from_contents (char ** lines, NMVPNService * service, char **err)
 {
-	GSList		*list = NULL;
-	GDir			*vpn_dir;
+	int			i;
+	guint32		len = g_strv_length (lines);
+	gboolean	have_name = FALSE;
+	gboolean	have_service = FALSE;
+	gboolean	have_program = FALSE;
+
+	g_return_val_if_fail (err != NULL, FALSE);
+	g_return_val_if_fail (*err == NULL, FALSE);
+
+	for (i = 0; i < len; i++) {
+		char * line = lines[i];
+
+		/* Blank lines, or comment lines */
+		if (!line || !strlen (line) || (line[0] == '#'))
+			continue;
+
+		if ((strncmp (line, NAME_TAG, strlen (NAME_TAG)) == 0)) {
+			const char * name = line+strlen (NAME_TAG);
+
+			if (have_name) {
+				*err = "already parsed 'name' tag";
+				return FALSE;
+			}
+
+			nm_vpn_service_set_name (service, name);
+			have_name = TRUE;
+			continue;
+		}
+
+		if ((strncmp (line, SERVICE_TAG, strlen (SERVICE_TAG)) == 0)) {
+			const char * serv_name = line+strlen (SERVICE_TAG);
+
+			/* Minimal service name sanity checking */
+			if (have_service) {
+				*err = "already parsed 'service' tag";
+				return FALSE;
+			}
+
+			if (   !strcmp (serv_name, NM_DBUS_SERVICE)
+			    || !strcmp (serv_name, NMI_DBUS_SERVICE)) {
+				*err = "service name is invalid";
+				return FALSE;
+			}
+
+			nm_vpn_service_set_service_name (service, serv_name);
+			have_service = TRUE;
+			continue;
+		}
+
+		if ((strncmp (line, PROGRAM_TAG, strlen (PROGRAM_TAG)) == 0)) {
+			const char * program = line+strlen (PROGRAM_TAG);
+
+			if (have_program) {
+				*err = "already parsed 'program' tag";
+				return FALSE;
+			}
+			
+			if (!g_path_is_absolute (program)) {
+				*err = "path to program was not absolute";
+				return FALSE;
+			}
+
+			if (!g_file_test (program,   G_FILE_TEST_EXISTS
+			                           | G_FILE_TEST_IS_EXECUTABLE
+			                           | G_FILE_TEST_IS_REGULAR )) {
+				*err = "program does not exist, or is not executable";
+				return FALSE;
+			}
+
+			nm_vpn_service_set_program (service, (const char *)(line+strlen (PROGRAM_TAG)));
+			have_program = TRUE;
+			continue;
+		}
+	}
+
+	if (!have_name || !have_service || !have_program) {
+		*err = "didn't contain all required tags";
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
+struct dup_search_data {
+	const char * name;
+	const char * serv_name;
+	gboolean found;
+};
+
+static void
+find_dup_name (gpointer key, gpointer value, gpointer user_data)
+{
+	struct dup_search_data * data = (struct dup_search_data *) user_data;
+	NMVPNService * service = (NMVPNService *) value;
+	const char * serv_name = nm_vpn_service_get_service_name (service);
+	const char * name = nm_vpn_service_get_name (service);
+
+	/* already found a dupe, do nothing */
+	if (data->found)
+		return;
+
+	if (strcmp (serv_name, data->serv_name) == 0)
+		data->found = TRUE;
+	else if (strcmp (name, data->name) == 0)
+		data->found = TRUE;
+}
+
+
+static void
+load_services (NMVPNManager *manager, GHashTable *table)
+{
+	GDir *		vpn_dir;
+	const char *file_name;
 
 	g_return_if_fail (manager != NULL);
 	g_return_if_fail (table != NULL);
 
 	/* Load allowed service names */
-	if ((vpn_dir = g_dir_open (VPN_SERVICE_FILE_PATH, 0, NULL)))
-	{
-		const char *file_name;
+	if (!(vpn_dir = g_dir_open (VPN_SERVICE_FILE_PATH, 0, NULL)))
+		return;
 
-		while ((file_name = g_dir_read_name (vpn_dir)))
-		{
-			char		*file_path = g_strdup_printf (VPN_SERVICE_FILE_PATH"/%s", file_name);
-			char		*contents;
+	while ((file_name = g_dir_read_name (vpn_dir))) {
+		char *			file_path;
+		char *			contents;
+		char **			lines;
+		NMVPNService *	service;
+		char *			err = NULL;
+		gboolean		success;
 
-			if (g_file_get_contents (file_path, &contents, NULL, NULL) && (contents != NULL))
-			{
-				char	**split_contents = g_strsplit (contents, "\n", 0);
+		file_path = g_strdup_printf (VPN_SERVICE_FILE_PATH"/%s", file_name);
+		if (!g_file_get_contents (file_path, &contents, NULL, NULL))
+			goto free_file_path;
 
-				if (split_contents)
-				{
-					int			i, len;
-					NMVPNService *	service = nm_vpn_service_new (manager, manager->app_data);
-					gboolean		have_name = FALSE;
-					gboolean		have_service = FALSE;
-					gboolean		have_program = FALSE;
+		lines = g_strsplit (contents, "\n", 0);
+		g_free (contents);
+		if (!lines)
+			goto free_file_path;
+ 
+		service = nm_vpn_service_new (manager, manager->app_data);
+		success = set_service_from_contents (lines, service, &err);
+		g_strfreev (lines);
 
-					len = g_strv_length (split_contents);
-					for (i = 0; i < len; i++)
-					{
-						char *line = split_contents[i];
+		if (!success) {
+			nm_warning ("Error loading VPN service file '%s': %s.",
+			            file_path, err);
+			nm_vpn_service_unref (service);
+		} else {
+			const char * serv_name = nm_vpn_service_get_service_name (service);
+			const char * name = nm_vpn_service_get_name (service);
+			struct dup_search_data dup_data = { name, serv_name, FALSE };
 
-						#define NAME_TAG "name="
-						#define SERVICE_TAG "service="
-						#define PROGRAM_TAG "program="
-
-						if (!line || !strlen (line)) continue; 
-
-						/* Comment lines begin with # */
-						if (line[0] == '#') continue;
-
-						if ((strncmp (line, NAME_TAG, strlen (NAME_TAG)) == 0) && !have_name)
-						{
-							char *	name = g_strdup (line+strlen (NAME_TAG));
-							GSList *	dup_elt;
-							gboolean	found = FALSE;
-
-							for (dup_elt = list; dup_elt; dup_elt = g_slist_next (dup_elt))
-							{
-								NMVPNService	*dup_svc = (NMVPNService *)(dup_elt->data);
-								if (dup_svc && nm_vpn_service_get_name (dup_svc) && !strcmp (nm_vpn_service_get_name (dup_svc), name))
-								{
-									found = TRUE;
-									break;
-								}
-							}
-							if (!found)
-								nm_vpn_service_set_name (service, (const char *)name);
-							g_free (name);
-							have_name = TRUE;
-						}
-						else if ((strncmp (line, SERVICE_TAG, strlen (SERVICE_TAG)) == 0) && !have_service)
-						{
-							char *service_name = g_strdup (line+strlen (SERVICE_TAG));
-
-							/* Deny the load if the service name is NetworkManager or NetworkManagerInfo. */
-							if (strcmp (service_name, NM_DBUS_SERVICE) && strcmp (service_name, NM_DBUS_SERVICE))
-								nm_vpn_service_set_service_name (service, (const char *)service_name);
-							else
-								nm_warning ("VPN service name matched NetworkManager or NetworkManagerInfo service names, "
-											"which is not allowed and might be malicious.");
-							g_free (service_name);
-							have_service = TRUE;
-						}
-						else if ((strncmp (line, PROGRAM_TAG, strlen (PROGRAM_TAG)) == 0) && !have_program)
-						{
-							gboolean	program_ok = FALSE;
-							if ((strlen (line) >= strlen (PROGRAM_TAG) + 1))
-							{
-								if ((*(line+strlen (PROGRAM_TAG)) == '/') && (*(line+strlen (line)-1) != '/'))
-								{
-									nm_vpn_service_set_program (service, (const char *)(line+strlen (PROGRAM_TAG)));
-									program_ok = TRUE;
-								}
-							}
-							if (!program_ok)
-								nm_warning ("WARNING: VPN program '%s' invalid in file '%s'", line, file_path);
-							have_program = TRUE;
-						}
-					}
-					g_strfreev (split_contents);
-
-					if (nm_vpn_service_get_name (service) && nm_vpn_service_get_service_name (service) && nm_vpn_service_get_program (service))
-					{
-						nm_info ("Adding VPN service '%s' with name '%s' and program '%s'", nm_vpn_service_get_service_name (service),
-									nm_vpn_service_get_name (service), nm_vpn_service_get_program (service));
-						g_hash_table_insert (table, (char *) nm_vpn_service_get_service_name (service), service);
-					}
-					else
-						nm_vpn_service_unref (service);
-				}
-				g_free (contents);
+			/* Check for duplicates */
+			g_hash_table_foreach (table, find_dup_name, &dup_data);
+			if (dup_data.found) {
+				nm_warning ("Ignoring duplicate VPN service '%s' (%s) from %s.",
+				            name, serv_name, file_path);
+			} else {
+				/* All good, add it */
+				nm_info ("New VPN service '%s' (%s).", name, serv_name);
+				g_hash_table_insert (table, (char *) serv_name, service);
 			}
-			g_free (file_path);
 		}
 
-		g_dir_close (vpn_dir);
+	free_file_path:
+		g_free (file_path);
 	}
+
+	g_dir_close (vpn_dir);
 }
 
