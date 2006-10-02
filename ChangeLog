@@ -1,5 +1,13 @@
 2006-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-manager.c
+		- (nm_vpn_manager_load_services): split and clean up
+		for readability and correctness.  Restrict VPN service
+		files to ending in ".name", as was meant from the
+		beginning (but not coded in).  Better error reporting.
+
+2006-10-01  Dan Williams  <dcbw@redhat.com>
+
 	* utils/nm-utils.h
 		- Clean up formatting of debug/info/warning log messages
 
