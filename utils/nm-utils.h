@@ -63,13 +63,13 @@ G_STMT_END
 #define nm_info(fmt, args...)						\
 G_STMT_START								\
 {									\
-	g_message ("<information>\t" fmt "\n", ##args);			\
+	g_message ("<info>  " fmt "\n", ##args);			\
 } G_STMT_END
 
 #define nm_info_str(fmt_str, args...)						\
 G_STMT_START								\
 {									\
-	g_message ("<information>\t%s\n", fmt_str, ##args);			\
+	g_message ("<info>  %s\n", fmt_str, ##args);			\
 } G_STMT_END
 
 #define nm_debug(fmt, args...)						\
@@ -77,7 +77,7 @@ G_STMT_START								\
 {									\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
-	g_debug ("<debug info>\t[%f] %s (): " fmt "\n", _timestamp,	\
+	g_debug ("<debug> [%f] %s(): " fmt "\n", _timestamp,	\
 		 G_STRFUNC, ##args);				\
 } G_STMT_END
 
@@ -86,21 +86,21 @@ G_STMT_START								\
 {									\
 	gdouble _timestamp;						\
 	nm_get_timestamp (&_timestamp);					\
-	g_debug ("<debug info>\t[%f] %s (): %s\n", _timestamp,	\
+	g_debug ("<debug> [%f] %s(): %s\n", _timestamp,	\
 		 G_STRFUNC, fmt_str, ##args);				\
 } G_STMT_END
 
 #define nm_warning(fmt, args...)					\
 G_STMT_START								\
 {									\
-	g_warning ("<WARNING>\t %s (): " fmt "\n", 			\
+	g_warning ("<WARN>  %s(): " fmt "\n", 			\
 		   G_STRFUNC, ##args);			\
 } G_STMT_END
 
 #define nm_warning_str(fmt_str, args...)					\
 G_STMT_START								\
 {									\
-	g_warning ("<WARNING>\t %s (): %s\n", 			\
+	g_warning ("<WARN>  %s(): %s\n", 			\
 		   G_STRFUNC, fmt_str, ##args);			\
 } G_STMT_END
 
