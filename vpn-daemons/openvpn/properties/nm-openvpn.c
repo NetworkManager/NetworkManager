@@ -225,7 +225,7 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tap), TRUE);
       should_expand = TRUE;
     } else if ( (strcmp (key,   "proto") == 0) &&
-		(strcmp (value, "tcp") == 0) ) {
+		(strcmp (value, "tcp-client") == 0) ) {
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tcp), TRUE);
       should_expand = TRUE;
     } else if (strcmp (key, "cipher") == 0) {
@@ -328,7 +328,7 @@ impl_get_properties (NetworkManagerVpnUI *self)
   data = g_slist_append (data, g_strdup ("remote"));
   data = g_slist_append (data, g_strdup (remote));
   data = g_slist_append (data, g_strdup ("proto"));
-  data = g_slist_append (data, use_tcp ? g_strdup ("tcp") : g_strdup("udp"));
+  data = g_slist_append (data, use_tcp ? g_strdup ("tcp-client") : g_strdup("udp"));
   data = g_slist_append (data, g_strdup ("ca"));
   data = g_slist_append (data, g_strdup (ca));
   data = g_slist_append (data, g_strdup ("cert"));
@@ -980,7 +980,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	should_expand = TRUE;
       }
 
-      if ( strcmp (proto, "tcp") == 0 ) {
+      if ( strcmp (proto, "tcp-client") == 0 ) {
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tcp), TRUE);
 	should_expand = TRUE;
       }
