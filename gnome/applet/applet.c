@@ -144,6 +144,9 @@ static void nma_class_init (NMAppletClass *klass)
 {
 	GObjectClass *gobject_class;
 
+	gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (),
+								ICONDIR);
+
 	gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->constructor = nma_constructor;
 }

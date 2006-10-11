@@ -1,3 +1,24 @@
+2006-10-11  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-dbus-nm.c (nm_dbus_nm_sleep): Add optional boolean argument to
+	dbus "sleep" method to make difference between sleep and disable
+	networking.
+	(nm_dbus_nm_wake): Ditto.
+
+	* src/NetworkManagerMain.h: Add boolean disconnected variable to NMData
+	structure.
+
+	* gnome/vpn-properties/Makefile.am: Use the correct path to icons.
+
+	* gnome/applet/Makefile.am: Ditto.
+
+	* gnome/applet/applet.c (nma_class_init): Append our icon directory to
+        theme search path.
+
+	* gnome/applet/applet-dbus-devices.c (nma_dbus_enable_networking): Add
+	boolean (true) argument to wake/sleep NM dbus calls to notify
+	enabling/disabling networking instead of wake/sleep.
+
 2006-10-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/vpn-manager/nm-vpn-manager.c

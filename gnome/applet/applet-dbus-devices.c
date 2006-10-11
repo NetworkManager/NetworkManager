@@ -1373,6 +1373,9 @@ void nma_dbus_enable_networking (NMApplet *applet, gboolean enabled)
 
 	if ((message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, method)))
 	{
+		gboolean true = TRUE; /* Eek... */
+
+		dbus_message_append_args (message, DBUS_TYPE_BOOLEAN, &true, DBUS_TYPE_INVALID);
 		dbus_connection_send (applet->connection, message, NULL);
 		dbus_message_unref (message);
 	}

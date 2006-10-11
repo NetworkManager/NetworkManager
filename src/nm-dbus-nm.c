@@ -532,8 +532,29 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 	if (app_data->asleep == FALSE)
 	{
 		GSList *elt;
+		DBusMessageIter iter;
 
-		nm_info ("Going to sleep.");
+		dbus_message_iter_init (message, &iter);
+
+		switch (dbus_message_iter_get_arg_type (&iter)) {
+		case DBUS_TYPE_INVALID:
+			/* The boolean argument to differentiate between sleep and disabling networking
+			   is optional and defaults to sleep */
+			app_data->disconnected = FALSE;
+			break;
+		case DBUS_TYPE_BOOLEAN:
+			dbus_message_iter_get_basic (&iter, &app_data->disconnected);
+			break;
+		default:
+			return nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+												 "NetworkManager::sleep called with invalid arguments.");
+			break;
+		}
+
+		if (app_data->disconnected)
+			nm_info ("Disconnected.");
+		else
+			nm_info ("Going to sleep.");
 
 		app_data->asleep = TRUE;
 		/* Not using nm_schedule_state_change_signal_broadcast() here
@@ -564,14 +585,37 @@ static DBusMessage *nm_dbus_nm_sleep (DBusConnection *connection, DBusMessage *m
 static DBusMessage *nm_dbus_nm_wake (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
 {
 	NMData	*app_data;
+	DBusMessageIter iter;
+	gboolean enable_networking = FALSE;
 
 	g_return_val_if_fail (data && data->data && connection && message, NULL);
 
+	dbus_message_iter_init (message, &iter);
+
+	switch (dbus_message_iter_get_arg_type (&iter)) {
+	case DBUS_TYPE_INVALID:
+		/* The boolean argument to differentiate between wake up from sleep and
+		   enabling networking is optional and defaults to wake up. */
+		break;
+	case DBUS_TYPE_BOOLEAN:
+		dbus_message_iter_get_basic (&iter, &enable_networking);
+		break;
+	default:
+		return nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "InvalidArguments",
+											 "NetworkManager::wake called with invalid arguments.");
+		break;
+	}
+
 	app_data = data->data;
-	if (app_data->asleep == TRUE)
-	{
-		nm_info  ("Waking up from sleep.");
-		app_data->asleep = FALSE;
+	/* Restore networking only if we're not disconnected or
+	   enable_networking argument is passed. */
+	if (app_data->asleep && (!app_data->disconnected || enable_networking)) {
+		if (enable_networking)
+			nm_info ("Enabling networking.");
+		else
+			nm_info ("Waking up from sleep.");
+
+		app_data->asleep = app_data->disconnected = FALSE;
 
 		/* Remove all devices from the device list */
 		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
