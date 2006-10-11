@@ -21,13 +21,13 @@ nm_vpn_properties_CFLAGS =                              \
         $(GCONF_CFLAGS)                                 \
         $(GMODULE_CFLAGS)                               \
         $(LIBGNOMEUI_CFLAGS)                            \
-        -DSYSCONFDIR=\"$(sysconfdir)\"			\
-        -DICONDIR=\""$(datadir)/pixmaps"\"              \
+        -DSYSCONFDIR=\"$(sysconfdir)\"                  \
+        -DICONDIR=\""$(datadir)/icons"\"                \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \
         -DGDK_DISABLE_DEPRECATED                        \
         -DGNOME_DISABLE_DEPRECATED                      \
-	-DGNOMELOCALEDIR=\"$(datadir)/locale\"		\
+        -DGNOMELOCALEDIR=\"$(datadir)/locale\"          \
         -DVERSION=\"$(VERSION)\" \
         $(NULL)
 

@@ -17,7 +17,7 @@ nm_applet_CPPFLAGS =									\
 	$(LIBGNOMEUI_CFLAGS)								\
 	$(PANEL_APPLET_CFLAGS)								\
 	$(GNOME_KEYRING_CFLAGS)								\
-	-DICONDIR=\""$(datadir)/pixmaps"\"						\
+	-DICONDIR=\""$(datadir)/icons"\"						\
 	-DGLADEDIR=\""$(gladedir)"\"							\
 	-DBINDIR=\""$(bindir)"\"								\
 	-DSYSCONFDIR=\""$(sysconfdir)"\"						\

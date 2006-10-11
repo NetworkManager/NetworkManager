@@ -144,6 +144,9 @@ static void nma_class_init (NMAppletClass *klass)
 {
 	GObjectClass *gobject_class;
 
+	gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (),
+								ICONDIR);
+
 	gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->constructor = nma_constructor;
 }
@@ -2302,7 +2305,6 @@ static void nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet)
 
 	gtk_widget_set_state (applet->event_box, GTK_STATE_NORMAL);
 }
-
 
 /*
  * nma_setup_widgets
