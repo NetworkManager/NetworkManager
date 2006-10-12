@@ -231,7 +231,7 @@ static gboolean nma_update_info (NMApplet *applet)
 
 	mbs = network_device_get_speed (dev);
 	if (mbs)
-		speed = g_strdup_printf ("%d Mb/s", mbs);
+		speed = g_strdup_printf (_("%d Mb/s"), mbs);
 
 	if (network_device_is_wired (dev))
 		iface_and_type = g_strdup_printf (_("Wired Ethernet (%s)"), iface);
@@ -242,7 +242,7 @@ static gboolean nma_update_info (NMApplet *applet)
 	gtk_label_set_text (GTK_LABEL (label), iface_and_type);
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-speed");
-	gtk_label_set_text (GTK_LABEL (label), mbs ? speed : "Unknown");
+	gtk_label_set_text (GTK_LABEL (label), mbs ? speed : _("Unknown"));
 
 	label = get_label (info_dialog, applet->info_dialog_xml, "label-driver");
 	gtk_label_set_text (GTK_LABEL (label), driver);
@@ -898,7 +898,8 @@ static GdkPixbuf * nma_act_stage_to_pixbuf (NMApplet *applet, NetworkDevice *dev
 	g_return_val_if_fail (tip != NULL, NULL);
 
 	iface = network_device_get_iface (dev);
-	essid = net ? wireless_network_get_essid (net) : NULL;
+	/* Note to translators: this is used if no essid is known */
+	essid = net ? wireless_network_get_essid (net) : _("(unknown)");
 	switch (network_device_get_act_stage (dev))
 	{
 		case NM_ACT_STAGE_DEVICE_PREPARE:
@@ -1096,7 +1097,7 @@ static void nma_update_state (NMApplet *applet)
 					tip = g_strdup (_("Connected to an Ad-Hoc wireless network"));
 				else
 					tip = g_strdup_printf (_("Wireless network connection to '%s' (%d%%)"),
-					                       active_network ? wireless_network_get_essid (active_network) : "(unknown)", strength);
+					                       active_network ? wireless_network_get_essid (active_network) : _("(unknown)"), strength);
 			}
 			pixbuf = nma_get_connected_icon (applet, act_dev);
 			break;

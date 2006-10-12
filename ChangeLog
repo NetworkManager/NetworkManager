@@ -1,3 +1,9 @@
+2006-10-13  Wouter Bolsterlee  <wbolster@gnome.org>
+
+	* gnome/applet/applet.c: (nma_update_info),
+	(nma_act_stage_to_pixbuf), (nma_update_state):
+	Mark missing strings for translation. Fixes bug #343306.
+
 2006-10-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/vpn-manager/nm-vpn-manager.c
