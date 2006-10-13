@@ -53,6 +53,10 @@
 #define NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS \
 	((GIOCondition) (G_IO_HUP))
 
+#define NM_NETLINK_MONITOR_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                           NM_TYPE_NETLINK_MONITOR, \
+                                           NmNetlinkMonitorPrivate))
+
 struct NMData;
 struct _NmNetlinkMonitorPrivate 
 {
@@ -240,9 +244,7 @@ nm_netlink_monitor_close_connection (NmNetlinkMonitor  *monitor)
 static void
 nm_netlink_monitor_init (NmNetlinkMonitor *monitor)
 {
-	monitor->priv = G_TYPE_INSTANCE_GET_PRIVATE (monitor, 
-						     NM_TYPE_NETLINK_MONITOR,
-						     NmNetlinkMonitorPrivate);
+	monitor->priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	monitor->priv->context = NULL;
 	monitor->priv->io_channel = NULL;
 	monitor->priv->event_source = NULL;
