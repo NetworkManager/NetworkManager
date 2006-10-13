@@ -38,6 +38,7 @@
 #include "nm-dbus-nmi.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
+#include "nm-dbus-manager.h"
 
 
 /*
@@ -537,9 +538,10 @@ static gboolean allowed_list_update_pending = FALSE;
  * allowed wireless networks.
  *
  */
-static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
+static gboolean
+nm_policy_allowed_ap_list_update (gpointer user_data)
 {
-	NMData	*data = (NMData *)user_data;
+	NMData * data = (NMData *)user_data;
 
 	allowed_list_update_pending = FALSE;
 
@@ -551,9 +553,8 @@ static gboolean nm_policy_allowed_ap_list_update (gpointer user_data)
 	if (data->allowed_ap_list)
 		nm_ap_list_unref (data->allowed_ap_list);
 	if ((data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED)))
-		nm_dbus_update_allowed_networks (data->dbus_connection, data->allowed_ap_list, data);
-
-	return (FALSE);
+		nm_dbus_update_allowed_networks (data->allowed_ap_list, data);
+	return FALSE;
 }
 
 
@@ -597,7 +598,8 @@ static gboolean device_list_update_pending = FALSE;
  * allowed wireless networks.
  *
  */
-static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
+static gboolean
+nm_policy_device_list_update_from_allowed_list (NMData *data)
 {
 	GSList *	elt;
 
@@ -605,27 +607,30 @@ static gboolean nm_policy_device_list_update_from_allowed_list (NMData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
-	{
+	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt)) {
 		NMDevice	*dev = (NMDevice *)(elt->data);
-		if (nm_device_is_802_11_wireless (dev))
-		{
-			NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
+		NMDevice80211Wireless *	wdev;
 
-			if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN)
-			{
-				/* Once we have the list, copy in any relevant information from our Allowed list and fill
-				 * in the ESSID of base stations that aren't broadcasting their ESSID, if we have their
-				 * MAC address in our allowed list.
-				 */
-				nm_ap_list_copy_essids_by_address (data, wdev, nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
-				nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev), data->allowed_ap_list);
-			}
-			else
-				nm_device_802_11_wireless_copy_allowed_to_dev_list (wdev, data->allowed_ap_list);
+		if (!nm_device_is_802_11_wireless (dev))
+			continue;
 
-			nm_ap_list_remove_duplicate_essids (nm_device_802_11_wireless_ap_list_get (wdev));
+		wdev = NM_DEVICE_802_11_WIRELESS (dev);
+		if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN) {
+			/* Once we have the list, copy in any relevant information from our
+			 * Allowed list and fill in the ESSID of base stations that aren't
+			 * broadcasting their ESSID, if we have their MAC address in our
+			 * allowed list.
+			 */
+			nm_ap_list_copy_essids_by_address (wdev,
+			                                   nm_device_802_11_wireless_ap_list_get (wdev),
+			                                   data->allowed_ap_list);
+			nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev),
+			                            data->allowed_ap_list);
+		} else {
+			nm_device_802_11_wireless_copy_allowed_to_dev_list (wdev, data->allowed_ap_list);
 		}
+
+		nm_ap_list_remove_duplicate_essids (nm_device_802_11_wireless_ap_list_get (wdev));
 	}
 
 	nm_policy_schedule_device_change_check (data);

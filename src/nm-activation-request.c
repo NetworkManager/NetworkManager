@@ -27,6 +27,7 @@
 #include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "nm-dhcp-manager.h"
+#include "nm-dbus-manager.h"
 #include "nm-utils.h"
 
 
@@ -170,7 +171,9 @@ NMActStage nm_act_request_get_stage (NMActRequest *req)
 void nm_act_request_set_stage (NMActRequest *req, NMActStage stage)
 {
 	DBusMessage *		message;
-	char *			dev_path;
+	char *			dev_path = NULL;
+	NMDBusManager *	dbus_mgr = NULL;
+	DBusConnection *dbus_connection;
 
 	g_return_if_fail (req != NULL);
 
@@ -179,23 +182,34 @@ void nm_act_request_set_stage (NMActRequest *req, NMActStage stage)
 	g_return_if_fail (req->data);
 	g_return_if_fail (req->dev);
 
-	if (!(dev_path = nm_dbus_get_object_path_for_device (req->dev)))
-		return;
-
-	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceActivationStage")))
-	{
-		nm_warning ("nm_act_request_set_stage(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		return;
+	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("couldn't get the dbus connection.");
+		goto out;
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_UINT32, &stage, DBUS_TYPE_INVALID);
-	g_free (dev_path);
+	if (!(dev_path = nm_dbus_get_object_path_for_device (req->dev)))
+		goto out;
 
-	if (!dbus_connection_send (req->data->dbus_connection, message, NULL))
-		nm_warning ("nm_act_request_set_stage(): Could not raise the signal!");
+	message = dbus_message_new_signal (NM_DBUS_PATH,
+	                                   NM_DBUS_INTERFACE,
+	                                   "DeviceActivationStage");
+	if (!message) {
+		nm_warning ("couldn't allocate the dbus message.");
+		goto out;
+	}
 
+	dbus_message_append_args (message,
+	                          DBUS_TYPE_OBJECT_PATH, &dev_path,
+	                          DBUS_TYPE_UINT32, &stage,
+	                          DBUS_TYPE_INVALID);
+	dbus_connection_send (dbus_connection, message, NULL);
 	dbus_message_unref (message);
+
+out:
+	g_free (dev_path);
+	g_object_unref (dbus_mgr);
 }
 
 DBusPendingCall * nm_act_request_get_user_key_pending_call (NMActRequest *req)

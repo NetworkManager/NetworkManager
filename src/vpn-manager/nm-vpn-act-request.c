@@ -24,6 +24,8 @@
 #include <string.h>
 #include "nm-vpn-act-request.h"
 #include "nm-dbus-vpn.h"
+#include "nm-dbus-manager.h"
+#include "nm-utils.h"
 
 
 struct NMVPNActRequest
@@ -233,10 +235,20 @@ void nm_vpn_act_request_set_stage (NMVPNActRequest *req, NMVPNActStage stage)
 	old_stage = req->stage;
 	if (old_stage != stage)
 	{
-		DBusConnection *dbus_connection = nm_vpn_service_get_dbus_connection (req->service);
+		NMDBusManager *dbus_mgr;
+		DBusConnection *dbus_connection;
 
-		req->stage = stage;
-		nm_dbus_vpn_signal_vpn_connection_state_change (dbus_connection, req->vpn, req->stage);
+		dbus_mgr = nm_dbus_manager_get (NULL);
+		dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+		if (dbus_connection) {
+			req->stage = stage;
+			nm_dbus_vpn_signal_vpn_connection_state_change (dbus_connection,
+			                                                req->vpn,
+			                                                req->stage);
+		} else {
+			nm_warning ("could not get dbus connection.");
+		}
+		g_object_unref (dbus_mgr);
 	}
 }
 

@@ -44,9 +44,6 @@ void				nm_vpn_manager_deactivate_vpn_connection	(NMVPNManager *manager, NMDevic
 NMVPNConnection *	nm_vpn_manager_find_connection_by_name		(NMVPNManager *manager, const char *con_name);
 NMVPNService *		nm_vpn_manager_find_service_by_name		(NMVPNManager *manager, const char *service_name);
 
-gboolean			nm_vpn_manager_process_signal				(NMVPNManager *manager, DBusMessage *signal);
-gboolean			nm_vpn_manager_process_name_owner_changed	(NMVPNManager *manager, const char *service, const char *old_owner, const char *new_owner);
-
 void				nm_vpn_manager_schedule_vpn_activation_failed(NMVPNManager *manager, NMVPNActRequest *req);
 void				nm_vpn_manager_schedule_vpn_connection_died	(NMVPNManager *manager, NMVPNActRequest *req);
 

@@ -1,5 +1,20 @@
 2006-10-13  Dan Williams  <dcbw@redhat.com>
 
+	* Huge DBus refactor:
+		- Create a "DBus Manager" object which manages the connection and
+		sends signals on NameOwnerChanged and connection/disconnection events,
+		handles reconnection to the bus if NM gets kicked off, and abstracts
+		signal handling
+		- Remove DBusConnection members from places where they are no
+		longer needed due to the refactor, like the dbus-connection
+		property of the named manager, and from NMData
+		- Reformats a bunch of the code to gnome style
+		(8-space tabs, braces on same line as statement, 80-col width).
+		Consider it open season to reformat any bits to gnome style.
+		style that aren't already.
+
+2006-10-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/Makefile.am
 		- Add new files
 

@@ -198,7 +198,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 		automatic = !nm_act_request_get_user_requested (req);
 		app_data = nm_device_get_app_data (NM_DEVICE (self));
 		g_assert (app_data);
-		nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
+		nm_dbus_update_network_info (ap, automatic);
 	}
 }
 
@@ -213,9 +213,8 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self)
 static void
 nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 {
-	NMData *		app_data;
-	gboolean		has_range = FALSE;
-	NMSock *		sk;
+	gboolean	has_range = FALSE;
+	NMSock *	sk;
 	iwrange		range;
 	iwstats		stats;
 	int			percent = -1;
@@ -226,14 +225,10 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 	if (self->priv->scanning)
 		return;
 
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
-
 	/* If we aren't the active device, we don't really have a signal strength
 	 * that would mean anything.
 	 */
-	if (!nm_device_get_act_request (NM_DEVICE (self)))
-	{
+	if (!nm_device_get_act_request (NM_DEVICE (self))) {
 		self->priv->strength = -1;
 		return;
 	}
@@ -266,7 +261,7 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 		self->priv->invalid_strength_counter = 0;
 
 	if (percent != self->priv->strength)
-		nm_dbus_signal_device_strength_change (app_data->dbus_connection, self, percent);
+		nm_dbus_signal_device_strength_change (self, percent);
 
 	self->priv->strength = percent;
 }
@@ -1902,7 +1897,7 @@ convert_scan_results (gpointer user_data)
 		{
 			if ((outdated_ap = (NMAccessPoint *)(elt->data)))
 			{
-				nm_dbus_signal_wireless_network_change	(app_data->dbus_connection, self, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
+				nm_dbus_signal_wireless_network_change	(self, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
 				nm_ap_list_remove_ap (nm_device_802_11_wireless_ap_list_get (self), outdated_ap);
 			}
 		}
@@ -2528,7 +2523,6 @@ link_timeout_cb (gpointer user_data)
  	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);	
  	NMActRequest *			req = nm_device_get_act_request (dev);
  	NMAccessPoint *		ap = nm_act_request_get_ap (req);
- 	NMData *				data = nm_device_get_app_data (dev);
  	gboolean				has_key;
 
 	g_assert (dev);
@@ -2544,7 +2538,7 @@ link_timeout_cb (gpointer user_data)
  		nm_info ("Activation (%s/wireless): disconnected during association,"
  		         " asking for new key.", nm_device_get_iface (dev));
  		supplicant_remove_timeout(self);
- 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+ 		nm_dbus_get_user_key_for_network (req, TRUE);
  	}
  	else
  	{
@@ -2657,7 +2651,6 @@ supplicant_timeout_cb (gpointer user_data)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMActRequest *	req = nm_device_get_act_request (dev);
 	NMAccessPoint *	ap = nm_act_request_get_ap (req);
-	NMData *	data = nm_device_get_app_data (dev);
 	gboolean	has_key;
 
 	g_assert (self);
@@ -2672,7 +2665,7 @@ supplicant_timeout_cb (gpointer user_data)
 		/* Activation failed, we must have bad encryption key */
 		nm_info ("Activation (%s/wireless): association took too long (>%us), asking for new key.",
 				nm_device_get_iface (dev), get_supplicant_timeout (self));
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+		nm_dbus_get_user_key_for_network (req, TRUE);
 	}
 	else
 	{
@@ -3015,7 +3008,6 @@ real_act_stage2_config (NMDevice *dev,
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMData *				data = nm_act_request_get_data (req);
 	const char *			iface;
 	gboolean				ask_user = FALSE;
 
@@ -3026,7 +3018,7 @@ real_act_stage2_config (NMDevice *dev,
 	/* If we need an encryption key, get one */
 	if (ap_need_key (self, ap, &ask_user))
 	{
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, ask_user);
+		nm_dbus_get_user_key_for_network (req, ask_user);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
@@ -3162,7 +3154,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+		nm_dbus_get_user_key_for_network (req, TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 	else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
@@ -3215,7 +3207,7 @@ real_activation_success_handler (NMDevice *dev,
 	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 		nm_ap_set_address (ap, &addr);
 
-	nm_dbus_update_network_info (app_data->dbus_connection, ap, automatic);
+	nm_dbus_update_network_info (ap, automatic);
 }
 
 
@@ -3271,10 +3263,7 @@ real_activation_cancel_handler (NMDevice *dev,
 	parent_class->activation_cancel_handler (dev, req);
 
 	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
-	{
-		NMData *data = nm_device_get_app_data (dev);
-		nm_dbus_cancel_get_user_key_for_network (data->dbus_connection, req);
-	}
+		nm_dbus_cancel_get_user_key_for_network (req);
 }
 
 
@@ -3476,13 +3465,12 @@ add_new_ap_to_device_list (NMDevice80211Wireless *dev,
 	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
 	 * allowed list where we cache known MAC->ESSID associations.
 	 */
-	if (!nm_ap_get_essid (ap))
-	{
+	if (!nm_ap_get_essid (ap)) {
 		NMData *	app_data;
 
 		nm_ap_set_broadcast (ap, FALSE);
 		app_data = nm_device_get_app_data (NM_DEVICE (dev));
-		nm_ap_list_copy_one_essid_by_address (app_data, dev, ap, app_data->allowed_ap_list);
+		nm_ap_list_copy_one_essid_by_address (dev, ap, app_data->allowed_ap_list);
 	}
 
 	/* Add the AP to the device's AP list */

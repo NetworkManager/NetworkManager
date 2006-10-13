@@ -27,6 +27,7 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerDbus.h"
 #include "nm-utils.h"
+#include "nm-dbus-manager.h"
 
 
 struct NMAccessPointList
@@ -433,20 +434,19 @@ NMAccessPoint *nm_ap_list_get_ap_by_address (NMAccessPointList *list, const stru
  *			TRUE if the ap was completely new
  *
  */
-gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointList *list, NMAccessPoint *merge_ap)
+gboolean
+nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev,
+                             NMAccessPointList *list,
+                             NMAccessPoint *merge_ap)
 {
 	NMAccessPoint *			list_ap = NULL;
 	gboolean					strength_changed = FALSE;
 	gboolean					new = FALSE;
-	NMData *					app_data;
 	const struct ether_addr *	merge_bssid;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (list != NULL, FALSE);
 	g_return_val_if_fail (merge_ap != NULL, FALSE);
-
-	app_data = nm_device_get_app_data (NM_DEVICE (dev));
-	g_return_val_if_fail (app_data != NULL, FALSE);
 
 	merge_bssid = nm_ap_get_address (merge_ap);
 	if (nm_ethernet_address_is_valid (merge_bssid) && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid)))
@@ -464,14 +464,13 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 		/* Did the AP's name change? */
 		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid))
 		{
-			nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
-			        dev, list_ap, NETWORK_STATUS_DISAPPEARED, -1);
+			nm_dbus_signal_wireless_network_change (dev, list_ap,
+					NETWORK_STATUS_DISAPPEARED, -1);
 			new = TRUE;
 		}
 
 		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
-		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap))
-		{
+		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap)) {
 			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
 			strength_changed = TRUE;
 		}
@@ -518,26 +517,22 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 		 * artificial, since it clearly exists somewhere.
 		 */
 		nm_ap_set_artificial (list_ap, FALSE);
-	}
-	else
-	{
+	} else {
 		/* Add the merge AP to the list. */
 		nm_ap_list_append_ap (list, merge_ap);
 		list_ap = merge_ap;
 		new = TRUE;
 	}
 
-	if (list_ap && strength_changed && !new)
-	{
+	if (list_ap && strength_changed && !new) {
 		const int new_strength = nm_ap_get_strength (list_ap);
-		nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
-		        dev, list_ap, NETWORK_STATUS_STRENGTH_CHANGED, new_strength);
+		nm_dbus_signal_wireless_network_change (dev, list_ap,
+				NETWORK_STATUS_STRENGTH_CHANGED, new_strength);
 	}
 
-	if (list_ap && new)
-	{
-		nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
-		        dev, list_ap, NETWORK_STATUS_APPEARED, -1);
+	if (list_ap && new) {
+		nm_dbus_signal_wireless_network_change (dev, list_ap,
+				NETWORK_STATUS_APPEARED, -1);
 	}
 
 	return TRUE;
@@ -560,21 +555,21 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 	if (!dest || !source)
 		return;
 
-	if ((iter = nm_ap_list_iter_new (dest)))
-	{
-		while ((dest_ap = nm_ap_list_iter_next (iter)))
-		{
-			NMAccessPoint	*src_ap = NULL;
+	if (!(iter = nm_ap_list_iter_new (dest)))
+		return;
 
-			if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
-			{
-				nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
-				nm_ap_set_security (dest_ap, nm_ap_get_security (src_ap));
-				nm_ap_set_timestamp_via_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
-			}
+	while ((dest_ap = nm_ap_list_iter_next (iter)))
+	{
+		NMAccessPoint	*src_ap = NULL;
+
+		if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
+		{
+			nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
+			nm_ap_set_security (dest_ap, nm_ap_get_security (src_ap));
+			nm_ap_set_timestamp_via_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
 		}
-		nm_ap_list_iter_free (iter);
 	}
+	nm_ap_list_iter_free (iter);
 }
 
 
@@ -586,23 +581,26 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
  * If one is found, copy the essid over to the original access point.
  *
  */
-void nm_ap_list_copy_one_essid_by_address (NMData *app_data,
-								   NMDevice80211Wireless *dev,
-								   NMAccessPoint *ap,
-								   NMAccessPointList *search_list)
+void
+nm_ap_list_copy_one_essid_by_address (NMDevice80211Wireless *dev,
+                                      NMAccessPoint *ap,
+                                      NMAccessPointList *search_list)
 {
-	NMAccessPoint	*found_ap;
+	NMAccessPoint *	found_ap;
 
 	if (!ap || !search_list)
 		return;
 
-	if (!nm_ap_get_essid (ap) && (found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap))))
-	{
-		if (nm_ap_get_essid (found_ap))
-		{
-			nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
-			nm_dbus_signal_wireless_network_change (app_data->dbus_connection, dev, ap, NETWORK_STATUS_APPEARED, 0);
-		}
+	if (!nm_ap_get_essid (ap))
+		return;
+
+	found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap));
+	if (!found_ap)
+		return;
+
+	if (nm_ap_get_essid (found_ap)) {
+		nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
+		nm_dbus_signal_wireless_network_change (dev, ap, NETWORK_STATUS_APPEARED, 0);
 	}
 }
 
@@ -615,10 +613,10 @@ void nm_ap_list_copy_one_essid_by_address (NMData *app_data,
  * its found, copy the source access point's essid to the dest access point.
  *
  */
-void nm_ap_list_copy_essids_by_address (NMData *app_data,
-								NMDevice80211Wireless *dev,
-								NMAccessPointList *dest,
-								NMAccessPointList *source)
+void
+nm_ap_list_copy_essids_by_address (NMDevice80211Wireless *dev,
+                                   NMAccessPointList *dest,
+                                   NMAccessPointList *source)
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
@@ -626,13 +624,12 @@ void nm_ap_list_copy_essids_by_address (NMData *app_data,
 	if (!dest || !source)
 		return;
 
-	if ((iter = nm_ap_list_iter_new (dest)))
-	{
-		while ((dest_ap = nm_ap_list_iter_next (iter)))
-			nm_ap_list_copy_one_essid_by_address (app_data, dev, dest_ap, source);
+	if (!(iter = nm_ap_list_iter_new (dest)))
+		return;
 
-		nm_ap_list_iter_free (iter);
-	}
+	while ((dest_ap = nm_ap_list_iter_next (iter)))
+		nm_ap_list_copy_one_essid_by_address (dev, dest_ap, source);
+	nm_ap_list_iter_free (iter);
 }
 
 

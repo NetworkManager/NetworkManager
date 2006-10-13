@@ -23,6 +23,14 @@
 #define NM_DEVICE_PRIVATE_H
 
 #include "nm-device.h"
+#include "NetworkManagerMain.h"
+
+typedef struct NMDbusCBData {
+	NMDevice *		dev;
+	NMAccessPoint *	ap;
+	NMData *		data;
+} NMDbusCBData;
+
 
 gboolean		nm_device_is_activated (NMDevice *dev);
 

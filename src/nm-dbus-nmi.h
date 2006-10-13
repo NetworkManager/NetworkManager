@@ -25,17 +25,15 @@
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
 
-void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMActRequest *req, const gboolean new_key);
+void			nm_dbus_get_user_key_for_network		(NMActRequest *req, const gboolean new_key);
 
-void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection, NMActRequest *req);
+void			nm_dbus_cancel_get_user_key_for_network	(NMActRequest *req);
 
-NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
+void			nm_dbus_update_network_info			(NMAccessPoint *ap, const gboolean user_requested);
 
-gboolean		nm_dbus_update_network_info			(DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested);
+void			nm_dbus_update_one_allowed_network	(const char *network, NMData *data);
 
-void			nm_dbus_update_one_allowed_network		(DBusConnection *connection, const char *network, NMData *data);
-
-void			nm_dbus_update_allowed_networks		(DBusConnection *connection, NMAccessPointList *list, NMData *data);
+void			nm_dbus_update_allowed_networks		(NMAccessPointList *list, NMData *data);
 
 
 #endif	/* NM_DBUS_NMI_H */

@@ -32,6 +32,7 @@
 #include "nm-vpn-service.h"
 #include "nm-dbus-vpn.h"
 #include "nm-utils.h"
+#include "nm-dbus-manager.h"
 
 #define VPN_SERVICE_FILE_PATH		SYSCONFDIR"/NetworkManager/VPN"
 
@@ -42,6 +43,7 @@ struct NMVPNManager
 	GSList *			connections;
 
 	NMVPNActRequest *	act_req;
+	NMDbusMethodList *	dbus_methods;
 };
 
 static void load_services (NMVPNManager *manager, GHashTable *table);
@@ -55,14 +57,23 @@ static void load_services (NMVPNManager *manager, GHashTable *table);
 NMVPNManager *nm_vpn_manager_new (NMData *app_data)
 {
 	NMVPNManager *	manager;
+	NMDBusManager *	dbus_mgr;
 
 	g_return_val_if_fail (app_data != NULL, NULL);
 
-	manager = g_malloc0 (sizeof (NMVPNManager));
+	manager = g_slice_new0 (NMVPNManager);
 	manager->app_data = app_data;
 
-	manager->service_table = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) nm_vpn_service_unref);
+	manager->service_table = g_hash_table_new_full (g_str_hash,
+	                                                g_str_equal,
+	                                                NULL,
+	                                                (GDestroyNotify) nm_vpn_service_unref);
 	load_services (manager, manager->service_table);
+
+	manager->dbus_methods = nm_dbus_vpn_methods_setup (manager);
+	dbus_mgr = nm_dbus_manager_get (NULL);
+	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods);
+	g_object_unref (dbus_mgr);
 
 	return manager;
 }
@@ -86,8 +97,10 @@ void nm_vpn_manager_dispose (NMVPNManager *manager)
 
 	g_hash_table_destroy (manager->service_table);
 
+	nm_dbus_method_list_unref (manager->dbus_methods);
+
 	memset (manager, 0, sizeof (NMVPNManager));
-	g_free (manager);
+	g_slice_free (NMVPNManager, manager);
 }
 
 
@@ -157,10 +170,17 @@ GSList *nm_vpn_manager_vpn_connection_list_copy (NMVPNManager *manager)
  * Add a new VPN connection if none already exits, otherwise update the existing one.
  *
  */
-NMVPNConnection *nm_vpn_manager_add_connection (NMVPNManager *manager, const char *name, const char *service_name, const char *user_name)
+NMVPNConnection *
+nm_vpn_manager_add_connection (NMVPNManager *manager,
+                               const char *name,
+                               const char *service_name,
+                               const char *user_name)
 {
 	NMVPNConnection *	connection = NULL;
 	NMVPNService *		service;
+	DBusConnection *	dbus_connection;
+	NMDBusManager *		dbus_mgr = NULL;
+	GSList	*			elt;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
@@ -171,28 +191,44 @@ NMVPNConnection *nm_vpn_manager_add_connection (NMVPNManager *manager, const cha
 	if (!(service = nm_vpn_manager_find_service_by_name (manager, service_name)))
 		return NULL;
 
-	if ((connection = nm_vpn_connection_new (name, user_name, service_name, manager->app_data->named_manager,
-												manager->app_data->dbus_connection)))
-	{
-		GSList	*elt;
-
-		/* Remove the existing connection if found */
-		for (elt = manager->connections; elt; elt = g_slist_next (elt))
-		{
-			NMVPNConnection *con = (NMVPNConnection *)(elt->data);
-
-			if (con && nm_vpn_connection_get_name (con) && (strcmp (nm_vpn_connection_get_name (con), name) == 0))
-			{
-				manager->connections = g_slist_remove_link (manager->connections, elt);
-				nm_vpn_connection_unref (con);
-				g_slist_free (elt);
-			}
-		}
-
-		/* Add in the updated connection */
-		manager->connections = g_slist_append (manager->connections, connection);
+	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("couldn't get dbus connection.");
+		goto out;
 	}
 
+	connection = nm_vpn_connection_new (name,
+	                                    user_name,
+	                                    service_name,
+	                                    manager->app_data->named_manager);
+	if (!connection) {
+		nm_warning ("couldn't create VPN connecton for '%s (%s).",
+		            name,
+		            service_name);
+		goto out;
+	}
+
+	/* Remove the existing connection if found */
+	for (elt = manager->connections; elt; elt = g_slist_next (elt)) {
+		NMVPNConnection *con = (NMVPNConnection *)(elt->data);
+
+		
+		if (!con || !nm_vpn_connection_get_name (con))
+			continue;
+		if (strcmp (nm_vpn_connection_get_name (con), name) != 0)
+			continue;
+
+		manager->connections = g_slist_remove_link (manager->connections, elt);
+		nm_vpn_connection_unref (con);
+		g_slist_free (elt);
+	}
+
+	/* Add in the updated connection */
+	manager->connections = g_slist_append (manager->connections, connection);
+
+out:
+	g_object_unref (dbus_mgr);
 	return connection;
 }
 
@@ -264,66 +300,6 @@ NMVPNActRequest *nm_vpn_manager_get_vpn_act_request (NMVPNManager *manager)
 	g_return_val_if_fail (manager != NULL, NULL);
 
 	return manager->act_req;
-}
-
-
-static inline gboolean same_service_name (NMVPNService *service, NMVPNConnection *vpn)
-{
-	g_return_val_if_fail (service != NULL, FALSE);
-	g_return_val_if_fail (vpn != NULL, FALSE);
-
-	return (!strcmp (nm_vpn_service_get_service_name (service), nm_vpn_connection_get_service_name (vpn)));
-}
-
-
-/*
- * nm_vpn_manager_process_signal
- *
- * Possibly process a signal from the bus, if it comes from the currently
- * active VPN daemon, if any.  Return TRUE if processed, FALSE if not.
- *
- */
-gboolean nm_vpn_manager_process_signal (NMVPNManager *manager, DBusMessage *message)
-{
-	const char *		service_name;
-	NMVPNService *		service;
-	gboolean			handled = FALSE;
-
-	g_return_val_if_fail (manager != NULL, FALSE);
-	g_return_val_if_fail (message != NULL, FALSE);
-
-	service_name = dbus_message_get_interface (message);
-	if ((service = nm_vpn_manager_find_service_by_name (manager, service_name)))
-	{
-		nm_vpn_service_process_signal (service, manager->act_req, message);
-		handled = TRUE;
-	}
-
-	return handled;
-}
-
-
-/*
- * nm_vpn_manager_process_name_owner_changed
- *
- * Respond to "service created"/"service deleted" signals from dbus for our active VPN daemon.
- *
- */
-gboolean nm_vpn_manager_process_name_owner_changed (NMVPNManager *manager, const char *changed_service_name, const char *old_owner, const char *new_owner)
-{
-	NMVPNService *		service;
-	gboolean			handled = FALSE;
-
-	g_return_val_if_fail (manager != NULL, FALSE);
-	g_return_val_if_fail (changed_service_name != NULL, FALSE);
-
-	if ((service = nm_vpn_manager_find_service_by_name (manager, changed_service_name)))
-	{
-		nm_vpn_service_name_owner_changed (service, manager->act_req, old_owner, new_owner);
-		handled = TRUE;
-	}
-
-	return handled;
 }
 
 

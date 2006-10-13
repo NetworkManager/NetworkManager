@@ -48,8 +48,8 @@ NMAccessPoint *	nm_ap_list_get_ap_by_essid		(NMAccessPointList *list, const char
 NMAccessPoint *	nm_ap_list_get_ap_by_address		(NMAccessPointList *list, const struct ether_addr *addr);
 
 void				nm_ap_list_copy_properties		(NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_essids_by_address	(NMData *app_data, NMDevice80211Wireless *dev, NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_one_essid_by_address	(NMData *app_data, NMDevice80211Wireless *dev, NMAccessPoint *ap, NMAccessPointList *search_list);
+void				nm_ap_list_copy_essids_by_address	(NMDevice80211Wireless *dev, NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_one_essid_by_address	(NMDevice80211Wireless *dev, NMAccessPoint *ap, NMAccessPointList *search_list);
 
 gboolean			nm_ap_list_merge_scanned_ap		(NMDevice80211Wireless *dev, NMAccessPointList *list, NMAccessPoint *merge_ap);
 

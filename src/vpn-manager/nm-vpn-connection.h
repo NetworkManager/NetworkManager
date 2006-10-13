@@ -27,7 +27,7 @@ typedef struct NMVPNConnection NMVPNConnection;
 
 
 NMVPNConnection *	nm_vpn_connection_new			(const char *name, const char *user_name, const char *service_name,
-												NMNamedManager *named_manager, DBusConnection *dbus_connection);
+												NMNamedManager *named_manager);
 void				nm_vpn_connection_ref			(NMVPNConnection *con);
 void				nm_vpn_connection_unref			(NMVPNConnection *con);
 

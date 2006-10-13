@@ -23,7 +23,7 @@
 #define NM_DBUS_DEVICE_H
 
 
-NMDbusMethodList *nm_dbus_device_methods_setup (void);
+NMDbusMethodList *nm_dbus_device_methods_setup (NMData *data);
 
 
 #endif

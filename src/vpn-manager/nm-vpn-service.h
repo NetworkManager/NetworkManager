@@ -46,12 +46,7 @@ void			nm_vpn_service_set_service_name	(NMVPNService *service, const char *name)
 const char *	nm_vpn_service_get_program		(NMVPNService *service);
 void			nm_vpn_service_set_program		(NMVPNService *service, const char *program);
 
-DBusConnection* nm_vpn_service_get_dbus_connection (NMVPNService *service);
-
-NMVPNState	nm_vpn_service_get_state			(NMVPNService *service);
-
-gboolean		nm_vpn_service_name_owner_changed	(NMVPNService *service, NMVPNActRequest *req, const char *old, const char *new);
-gboolean		nm_vpn_service_process_signal		(NMVPNService *service, NMVPNActRequest *req, DBusMessage *message);
+NMVPNState		nm_vpn_service_get_state		(NMVPNService *service);
 
 void			nm_vpn_service_start_connection	(NMVPNService *service, NMVPNActRequest *req);
 void			nm_vpn_service_stop_connection	(NMVPNService *service, NMVPNActRequest *req);

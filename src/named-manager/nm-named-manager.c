@@ -39,6 +39,7 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 #include "NetworkManagerSystem.h"
+#include "nm-dbus-manager.h"
 
 #ifdef HAVE_SELINUX
 #include <selinux/selinux.h>
@@ -54,26 +55,11 @@
 #define NAMED_DBUS_PATH "/com/redhat/named"
 #endif
 
-enum
-{
-	PROP_0,
-	PROP_DBUS_CONNECTION
-};
-
 G_DEFINE_TYPE(NMNamedManager, nm_named_manager, G_TYPE_OBJECT)
 
-static void nm_named_manager_finalize (GObject *object);
-static void nm_named_manager_dispose (GObject *object);
-static GObject *nm_named_manager_constructor (GType type, guint n_construct_properties,
-					      GObjectConstructParam *construct_properties);
-static void nm_named_manager_set_property (GObject *object,
-					   guint prop_id,
-					   const GValue *value,
-					   GParamSpec *pspec);
-static void nm_named_manager_get_property (GObject *object,
-					   guint prop_id,
-					   GValue *value,
-					   GParamSpec *pspec);
+#define NM_NAMED_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                         NM_TYPE_NAMED_MANAGER, \
+                                         NMNamedManagerPrivate))
 
 static NMIP4Config *get_last_default_domain (NMNamedManager *mgr);
 
@@ -83,139 +69,15 @@ static gboolean rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, G
 
 static gboolean remove_ip4_config_from_named (NMNamedManager *mgr, NMIP4Config *config);
 
-struct NMNamedManagerPrivate
-{
-	gboolean use_named;
-	DBusConnection *connection;
 
+struct NMNamedManagerPrivate {
+	gboolean		use_named;
+	NMDBusManager *	dbus_mgr;
 	GSList *		configs;
 
 	gboolean disposed;
 };
 
-static void
-nm_named_manager_class_init (NMNamedManagerClass *klass)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-
-	object_class->dispose = nm_named_manager_dispose;
-	object_class->finalize = nm_named_manager_finalize;
-	object_class->constructor = nm_named_manager_constructor;
-	object_class->set_property = nm_named_manager_set_property;
-	object_class->get_property = nm_named_manager_get_property;
-
-	g_object_class_install_property (object_class,
-					 PROP_DBUS_CONNECTION,
-					 g_param_spec_pointer ("dbus-connection",
-							       "DBusConnection",
-							       "dbus connection",
-							       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-}
-
-static void
-nm_named_manager_init (NMNamedManager *mgr)
-{
-	mgr->priv = g_new0 (NMNamedManagerPrivate, 1);
-
-	mgr->priv->use_named = FALSE;
-}
-
-static void
-nm_named_manager_set_property (GObject *object,
-			       guint prop_id,
-			       const GValue *value,
-			       GParamSpec *pspec)
-{
-	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
-
-	switch (prop_id)
-	{
-		case PROP_DBUS_CONNECTION:
-			mgr->priv->connection = g_value_get_pointer (value);
-			mgr->priv->use_named = (gboolean) dbus_bus_name_has_owner (mgr->priv->connection,
-										NAMED_DBUS_SERVICE, NULL);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-			break;
-	}
-}
-
-static void
-nm_named_manager_get_property (GObject *object,
-			       guint prop_id,
-			       GValue *value,
-			       GParamSpec *pspec)
-{
-	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
-
-	switch (prop_id)
-	{
-		case PROP_DBUS_CONNECTION:
-			g_value_set_pointer (value, mgr->priv->connection);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-			break;
-	}
-}
-
-static void
-nm_named_manager_dispose (GObject *object)
-{
-	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
-	GSList *elt;
-
-	if (mgr->priv->disposed)
-		return;
-	mgr->priv->disposed = TRUE;
-
-	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
-		remove_ip4_config_from_named (mgr, (NMIP4Config *)(elt->data));
-}
-
-static void
-nm_named_manager_finalize (GObject *object)
-{
-	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
-
-	g_return_if_fail (mgr->priv != NULL);
-
-	g_slist_foreach (mgr->priv->configs, (GFunc) nm_ip4_config_unref, NULL);
-	g_slist_free (mgr->priv->configs);
-
-	g_free (mgr->priv);
-
-	G_OBJECT_CLASS (nm_named_manager_parent_class)->finalize (object);
-}
-
-static GObject *
-nm_named_manager_constructor (GType type, guint n_construct_properties,
-			      GObjectConstructParam *construct_properties)
-{
-	NMNamedManager *mgr;
-	NMNamedManagerClass *klass;
-	GObjectClass *parent_class;  
-
-	klass = NM_NAMED_MANAGER_CLASS (g_type_class_peek (NM_TYPE_NAMED_MANAGER));
-
-	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
-
-	mgr = NM_NAMED_MANAGER (parent_class->constructor (type, n_construct_properties,
-							  construct_properties));
-
-
-	return G_OBJECT (mgr);
-}
-
-NMNamedManager *
-nm_named_manager_new (DBusConnection *connection)
-{
-	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER,
-						  "dbus-connection",
-						  connection,
-					       NULL));
-}
 
 GQuark
 nm_named_manager_error_quark (void)
@@ -234,49 +96,78 @@ nm_named_manager_error_quark (void)
  * Respond to "service created"/"service deleted" signals from dbus for named.
  *
  */
-gboolean
-nm_named_manager_process_name_owner_changed (NMNamedManager *mgr,
-				const char *changed_service_name,
-				const char *old_owner, const char *new_owner)
+static void
+nm_named_manager_name_owner_changed (NMDBusManager *dbus_mgr,
+                                     DBusConnection *connection,
+                                     const char *name,
+                                     const char *old,
+                                     const char *new,
+                                     gpointer user_data)
 {
+	NMNamedManager *mgr = (NMNamedManager *) user_data;
 	gboolean	handled = FALSE;
-	gboolean	old_owner_good = (old_owner && strlen (old_owner));
-	gboolean	new_owner_good = (new_owner && strlen (new_owner));
+	gboolean	old_owner_good = (old && strlen (old));
+	gboolean	new_owner_good = (new && strlen (new));
 
-	g_return_val_if_fail (mgr != NULL, FALSE);
-	g_return_val_if_fail (changed_service_name != NULL, FALSE);
+	g_return_if_fail (mgr != NULL);
+	g_return_if_fail (name != NULL);
 
 	/* Ensure signal is for named's service */
-	if (strcmp (NAMED_DBUS_SERVICE, changed_service_name) != 0)
-		return FALSE;
+	if (strcmp (NAMED_DBUS_SERVICE, name) != 0)
+		return;
 
-	if (!old_owner_good && new_owner_good)
-	{
+	if (!old_owner_good && new_owner_good) {
 		mgr->priv->use_named = TRUE;
 
 		if (!add_all_ip4_configs_to_named (mgr))
 			nm_warning ("Could not set fowarders in named.");
 
 		handled = TRUE;
-	}
-	else if (old_owner_good && !new_owner_good)
-	{
+	} else if (old_owner_good && !new_owner_good) {
 		mgr->priv->use_named = FALSE;
-		/* FIXME: change resolv.conf */
 		handled = TRUE;
 	}
 
-	if (handled)
-	{
+	if (handled) {
 		GError *error = NULL;
-		if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error))
-		{
-			nm_warning ("Could not write resolv.conf.  Error: '%s'", error ? error->message : "(none)");
+		if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error)) {
+			nm_warning ("Could not write resolv.conf.  Error: '%s'",
+			            error ? error->message : "(none)");
 			g_error_free (error);
 		}
 	}
+}
 
-	return handled;
+static void
+nm_named_manager_dbus_connection_changed (NMDBusManager *dbus_mgr,
+                                          DBusConnection *dbus_connection,
+                                          gpointer user_data)
+{
+	NMNamedManager *mgr = (NMNamedManager *) user_data;
+	gboolean handled = FALSE;
+
+	g_return_if_fail (mgr != NULL);
+
+	if (dbus_connection) {
+		if (nm_dbus_manager_name_has_owner (dbus_mgr, NAMED_DBUS_SERVICE)) {
+			mgr->priv->use_named = TRUE;
+			if (!add_all_ip4_configs_to_named (mgr))
+				nm_warning ("Could not set fowarders in named.");
+			handled = TRUE;
+		}
+	} else {
+		mgr->priv->use_named = FALSE;
+		handled = TRUE;
+	}
+
+	if (handled) {
+		GError *error = NULL;
+		if (!rewrite_resolv_conf (mgr, get_last_default_domain (mgr), &error)) {
+			nm_warning ("Could not write resolv.conf.  Error: '%s'",
+			            error ? error->message : "(none)");
+			g_error_free (error);
+		}
+	}
 }
 
 static char *
@@ -439,64 +330,88 @@ add_ip4_config_to_named (NMNamedManager *mgr, NMIP4Config *config)
 {
 	const char *domain;
 	int i, num_nameservers;
+	gboolean		success = FALSE;
 	DBusMessage *	message;
-	DBusMessage *	reply;
+	DBusMessage *	reply = NULL;
 	DBusError		error;
 	gboolean		dflt = FALSE;
+	DBusConnection *dbus_connection;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
+	dbus_error_init (&error);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (mgr->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get dbus connection.");
+		goto out;
+	}
+
 	if (!(domain = get_domain_for_config (config, &dflt)))
-		return FALSE;
+		goto out;
 
-	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "SetForwarders")))
-		return FALSE;
+	message = dbus_message_new_method_call (NAMED_DBUS_SERVICE,
+	                                        NAMED_DBUS_PATH,
+	                                        NAMED_DBUS_INTERFACE,
+	                                        "SetForwarders");
+	if (!message) {
+		nm_warning ("could not allocate dbus message.");
+		goto out;
+	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &domain, DBUS_TYPE_INVALID);
+	dbus_message_append_args (message,
+	                          DBUS_TYPE_STRING, &domain,
+	                          DBUS_TYPE_INVALID);
 
 	num_nameservers = nm_ip4_config_get_num_nameservers (config);
-	for (i = 0; i < num_nameservers; i++)
-	{
+	for (i = 0; i < num_nameservers; i++) {
 		dbus_uint32_t	server = nm_ip4_config_get_nameserver (config, i);
 		dbus_uint16_t	port = htons (53); /* default DNS port */
 		char			fwd_policy = dflt ? 1 : 2; /* 'first' : 'only' */
 
-		dbus_message_append_args (message, DBUS_TYPE_UINT32, &server,
-									DBUS_TYPE_UINT16, &port,
-									DBUS_TYPE_BYTE, &fwd_policy,
-									DBUS_TYPE_INVALID);
+		dbus_message_append_args (message,
+		                          DBUS_TYPE_UINT32, &server,
+		                          DBUS_TYPE_UINT16, &port,
+		                          DBUS_TYPE_BYTE, &fwd_policy,
+		                          DBUS_TYPE_INVALID);
 	}
 
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+	reply = dbus_connection_send_with_reply_and_block (dbus_connection,
+	                                                   message, -1, &error);
 	dbus_message_unref (message);
-
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("Could not set forwarders for zone '%s'.  Error: '%s'.", domain, error.message);
-		dbus_error_free (&error);
-		return FALSE;
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not set forwarders for zone '%s'.  Error: '%s'.",
+		            domain,
+		            error.message);
+		goto out;
 	}
 
-	if (!reply)
-	{
-		nm_warning ("Could not set forwarders for zone '%s', did not receive a reply from named.", domain);
-		dbus_error_free (&error);
-		return FALSE;
+	if (!reply) {
+		nm_warning ("Could not set forwarders for zone '%s', did not receive "
+		            "a reply from named.",
+		            domain);
+		goto out;
 	}
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
-	{
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
 		const char *err_msg = NULL;
-		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
-		nm_warning ("Could not set forwarders for zone '%s'.  Named replied: '%s'", domain, err_msg);
-		dbus_message_unref (reply);
-		return FALSE;
+		dbus_message_get_args (reply,
+		                       NULL,
+		                       DBUS_TYPE_STRING, &err_msg,
+		                       DBUS_TYPE_INVALID);
+		nm_warning ("Could not set forwarders for zone '%s'. "
+		            "Named replied: '%s'",
+		            domain,
+		            err_msg);		
 	}
-	dbus_message_unref (reply);
+	success = TRUE;
 
-	return TRUE;
+out:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	dbus_message_unref (reply);
+	return success;
 }
 
 static gboolean
@@ -515,47 +430,76 @@ add_all_ip4_configs_to_named (NMNamedManager *mgr)
 static gboolean
 remove_one_zone_from_named (NMNamedManager *mgr, const char *zone)
 {
-	DBusMessage *	message;
-	DBusMessage *	reply;
+	gboolean		success = FALSE;
+	DBusMessage *	message = NULL;
+	DBusMessage *	reply = NULL;
 	DBusError		error;
+	DBusConnection *dbus_connection;
 
 	g_return_val_if_fail (mgr != NULL, FALSE);
 	g_return_val_if_fail (zone != NULL, FALSE);
 
-	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "SetForwarders")))
-		return FALSE;
-
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &zone, DBUS_TYPE_INVALID);
-
 	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (mgr->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get dbus connection.");
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (NAMED_DBUS_SERVICE,
+	                                        NAMED_DBUS_PATH,
+	                                        NAMED_DBUS_INTERFACE,
+	                                        "SetForwarders");
+	if (!message) {
+		nm_warning ("could not allocate dbus message.");
+		goto out;
+	}
+
+	dbus_message_append_args (message,
+	                          DBUS_TYPE_STRING, &zone,
+	                          DBUS_TYPE_INVALID);
+
+	reply = dbus_connection_send_with_reply_and_block (dbus_connection,
+	                                                   message,
+	                                                   -1,
+	                                                   &error);
 	dbus_message_unref (message);
 
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("Could not remove forwarders for zone '%s'.  Error: '%s'.", zone, error.message);
-		dbus_error_free (&error);
-		return FALSE;
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not remove forwarders for zone '%s'.  "
+		            "Error: '%s'.",
+		            zone,
+		            error.message);
+		goto out;
 	}
 
-	if (!reply)
-	{
-		nm_warning ("Could not remove forwarders for zone '%s', did not receive a reply from named.", zone);
-		dbus_error_free (&error);
-		return FALSE;
+	if (!reply) {
+		nm_warning ("Could not remove forwarders for zone '%s', did not "
+		            " receive a reply from named.",
+		            zone);
+		goto out;
 	}
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
-	{
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
 		const char *err_msg = NULL;
-		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
-		nm_warning ("Could not remove forwarders for zone '%s'.  Named replied: '%s'", zone, err_msg);
-		dbus_message_unref (reply);
-		return FALSE;
+		dbus_message_get_args (reply,
+		                       NULL,
+		                       DBUS_TYPE_STRING, &err_msg,
+		                       DBUS_TYPE_INVALID);
+		nm_warning ("Could not remove forwarders for zone '%s'.  "
+		            "Named replied: '%s'",
+		            zone,
+		            err_msg);
+		goto out;
 	}
-	dbus_message_unref (reply);
+	success = TRUE;
 
-	return TRUE;
+out:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	dbus_message_unref (reply);
+	return success;
 }
 
 static gboolean
@@ -576,59 +520,75 @@ static void
 remove_all_zones_from_named (NMNamedManager *mgr)
 {
 	DBusMessage *		message;
-	DBusMessage *		reply;
+	DBusMessage *		reply = NULL;
 	DBusError			error;
 	DBusMessageIter	iter;
 	GSList *			zones = NULL;
 	GSList *			elt = NULL;
+	DBusConnection *	dbus_connection;
 
 	g_return_if_fail (mgr != NULL);
 
 	if (!mgr->priv->use_named)
 		return;
 
-	if (!(message = dbus_message_new_method_call (NAMED_DBUS_SERVICE, NAMED_DBUS_PATH, NAMED_DBUS_INTERFACE, "GetForwarders")))
-		return;
+	dbus_connection = nm_dbus_manager_get_dbus_connection (mgr->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get dbus connection.");
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (NAMED_DBUS_SERVICE,
+	                                        NAMED_DBUS_PATH,
+	                                        NAMED_DBUS_INTERFACE,
+	                                        "GetForwarders");
+	if (!message) {
+		nm_warning ("could not allocate dbus message.");
+		goto out;
+	}
 
 	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (mgr->priv->connection, message, -1, &error);
+	reply = dbus_connection_send_with_reply_and_block (dbus_connection,
+	                                                   message,
+	                                                   -1,
+	                                                   &error);
 	dbus_message_unref (message);
 
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("Could not get forwarder list from named.  Error: '%s'.", error.message);
-		dbus_error_free (&error);
-		return;
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not get forwarder list from named.  Error: '%s'.",
+		            error.message);
+		goto out;
 	}
 
-	if (!reply)
-	{
-		nm_warning ("Could not get forarder list from named, did not receive a reply from named.");
-		dbus_error_free (&error);
-		return;
+	if (!reply) {
+		nm_warning ("Could not get forarder list from named, did not receive "
+		            " a reply from named.");
+		goto out;
 	}
 
-	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
-	{
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
 		const char *err_msg = NULL;
-		dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &err_msg, DBUS_TYPE_INVALID);
-		nm_warning ("Could not get forwarder list from named.  Named replied: '%s'", err_msg);
-		dbus_message_unref (reply);
-		return;
+		dbus_message_get_args (reply,
+		                       NULL,
+		                       DBUS_TYPE_STRING, &err_msg,
+		                       DBUS_TYPE_INVALID);
+		nm_warning ("Could not get forwarder list from named.  "
+		            "Named replied: '%s'",
+		            err_msg);
+		goto out;
 	}
 
 	dbus_message_iter_init (reply, &iter);
-	do
-	{
-		/* We depend on zones being the only strings in what named returns obviously */
-		if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING)
-		{
+	do {
+		/* We depend on zones being the only strings in what 
+		 * named returns (obviously)
+		 */
+		if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING) {
 			char *zone = NULL;
 			dbus_message_iter_get_basic (&iter, &zone);
 			zones = g_slist_append (zones, g_strdup (zone));
 		}
 	} while (dbus_message_iter_next (&iter));
-	dbus_message_unref (reply);
 
 	/* Remove all the zones from named */
 	for (elt = zones; elt; elt = g_slist_next (elt))
@@ -636,6 +596,11 @@ remove_all_zones_from_named (NMNamedManager *mgr)
 	
 	g_slist_foreach (zones, (GFunc) g_free, NULL);
 	g_slist_free (zones);
+
+out:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	dbus_message_unref (reply);
 }
 
 gboolean
@@ -733,5 +698,68 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 	}
 
 	return TRUE;
+}
+
+
+static void
+nm_named_manager_init (NMNamedManager *mgr)
+{
+	mgr->priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+	mgr->priv->use_named = FALSE;
+	mgr->priv->dbus_mgr = nm_dbus_manager_get (NULL);
+	g_signal_connect (G_OBJECT (mgr->priv->dbus_mgr),
+	                  "name-owner-changed",
+	                  G_CALLBACK (nm_named_manager_name_owner_changed),
+	                  mgr);
+	g_signal_connect (G_OBJECT (mgr->priv->dbus_mgr),
+	                  "dbus-connection-changed",
+	                  G_CALLBACK (nm_named_manager_dbus_connection_changed),
+	                  mgr);
+}
+
+static void
+nm_named_manager_dispose (GObject *object)
+{
+	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
+	GSList *elt;
+
+	if (mgr->priv->disposed)
+		return;
+	mgr->priv->disposed = TRUE;
+
+	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
+		remove_ip4_config_from_named (mgr, (NMIP4Config *)(elt->data));
+}
+
+static void
+nm_named_manager_finalize (GObject *object)
+{
+	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
+
+	g_return_if_fail (mgr->priv != NULL);
+
+	g_slist_foreach (mgr->priv->configs, (GFunc) nm_ip4_config_unref, NULL);
+	g_slist_free (mgr->priv->configs);
+
+	g_object_unref (mgr->priv->dbus_mgr);
+
+	G_OBJECT_CLASS (nm_named_manager_parent_class)->finalize (object);
+}
+
+NMNamedManager *
+nm_named_manager_new (void)
+{
+	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
+}
+
+static void
+nm_named_manager_class_init (NMNamedManagerClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	object_class->dispose = nm_named_manager_dispose;
+	object_class->finalize = nm_named_manager_finalize;
+
+	g_type_class_add_private (object_class, sizeof (NMNamedManagerPrivate));
 }
 

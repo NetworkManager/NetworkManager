@@ -49,18 +49,13 @@ enum dhcdbd_state
 	DHCDBD_END_OPTIONS,	/* last option in subscription sent */
 };
 
-char *			get_dhcp_match_string					(const char *owner);
-
-NMDHCPManager *	nm_dhcp_manager_new						(NMData *data);
+NMDHCPManager *	nm_dhcp_manager_new						(NMData *data, GMainContext *main_ctx);
 void				nm_dhcp_manager_dispose					(NMDHCPManager *manager);
 
 gboolean			nm_dhcp_manager_begin_transaction			(NMDHCPManager *manager, NMActRequest *req);
 void				nm_dhcp_manager_cancel_transaction			(NMDHCPManager *manager, NMActRequest *req);
 
 NMIP4Config *		nm_dhcp_manager_get_ip4_config			(NMDHCPManager *manager, NMActRequest *req);
-
-gboolean			nm_dhcp_manager_process_signal			(NMDHCPManager *manager, DBusMessage *message);
-gboolean			nm_dhcp_manager_process_name_owner_changed	(NMDHCPManager *manager, const char *changed_service_name, const char *old_owner, const char *new_owner);
 
 guint32			nm_dhcp_manager_get_state_for_device		(NMDHCPManager *manager, NMDevice *dev);
 

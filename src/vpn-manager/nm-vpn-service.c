@@ -25,12 +25,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dbus/dbus.h>
+#include <sys/types.h>
+#include <signal.h>
+
 #include "NetworkManagerDbus.h"
 #include "nm-dbus-vpn.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-act-request.h"
 #include "nm-utils.h"
 #include "dbus-dict-helpers.h"
+#include "nm-dbus-manager.h"
 
 /* define this for getting VPN debug messages */
 #undef NM_DEBUG_VPN_CONFIG
@@ -38,9 +42,12 @@
 struct NMVPNService
 {
 	int				refcount;
-	NMVPNManager *		manager;
-	NMData *			app_data;
-	gboolean			watch_active;
+	NMVPNManager *	manager;
+	NMData *		app_data;
+	GPid			pid;
+	gulong			watch_id;
+	gulong			dbus_con_watch_id;
+	NMDBusManager *	dbus_mgr;
 
 	char *			name;
 	char *			service;
@@ -58,6 +65,21 @@ static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPN
 static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, NMVPNActRequest *req);
 static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *service, NMVPNActRequest *req);
 static void nm_vpn_service_cancel_callback (NMVPNService *service, NMVPNActRequest *req);
+
+static gboolean nm_vpn_service_process_signal (DBusConnection *connection,
+                                               DBusMessage *message,
+                                               gpointer user_data);
+
+static void nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
+                                               DBusConnection *connection,
+                                               const char *name,
+                                               const char *old,
+                                               const char *new,
+                                               gpointer user_data);
+
+static void nm_vpn_service_dbus_connection_changed (NMDBusManager *mgr,
+                                                    DBusConnection *connection,
+                                                    gpointer user_data);
 
 #ifdef NM_DEBUG_VPN_CONFIG
 static void print_vpn_config (NMIP4Config *config,
@@ -80,6 +102,7 @@ NMVPNService *nm_vpn_service_new (NMVPNManager *manager, NMData *app_data)
 	service->state = NM_VPN_STATE_SHUTDOWN;
 	service->app_data = app_data;
 	service->manager = manager;
+	service->dbus_mgr = nm_dbus_manager_get (NULL);
 
 	return service;
 }
@@ -99,9 +122,11 @@ void nm_vpn_service_unref (NMVPNService *service)
 	service->refcount--;
 	if (service->refcount <= 0)
 	{
+		nm_vpn_service_remove_watch (service);
 		g_free (service->name);
 		g_free (service->service);
 		g_free (service->program);
+		g_object_unref (service->dbus_mgr);
 		memset (service, 0, sizeof (NMVPNService));
 		g_free (service);
 	}
@@ -143,7 +168,7 @@ void nm_vpn_service_set_service_name (NMVPNService *service, const char *name)
 	service->service = g_strdup (name);
 
 	/* If the VPN daemon is currently running, tell it to stop */
-	if (!dbus_bus_name_has_owner (service->app_data->dbus_connection, service->service, NULL))
+	if (nm_dbus_manager_name_has_owner (service->dbus_mgr, service->service))
 		nm_vpn_service_stop_connection_internal (service);
 }
 
@@ -179,14 +204,6 @@ static void nm_vpn_service_set_state (NMVPNService *service, const NMVPNState st
 	g_return_if_fail (service != NULL);
 
 	service->state = state;
-}
-
-
-DBusConnection *nm_vpn_service_get_dbus_connection (NMVPNService *service)
-{
-	g_return_val_if_fail (service != NULL, NULL);
-
-	return service->app_data->dbus_connection;
 }
 
 
@@ -283,7 +300,7 @@ void nm_vpn_service_start_connection (NMVPNService *service, NMVPNActRequest *re
 
 	/* Start the daemon if it's not already running */
 	nm_vpn_act_request_ref (req);
-	if (!dbus_bus_name_has_owner (service->app_data->dbus_connection, service->service, NULL))
+	if (!nm_dbus_manager_name_has_owner (service->dbus_mgr, service->service))
 		nm_vpn_service_schedule_stage1_daemon_exec (service, req);
 	else
 		nm_vpn_service_schedule_stage2_daemon_wait (service, req);
@@ -303,7 +320,7 @@ static gboolean nm_vpn_service_stage1_daemon_exec (gpointer user_data)
 	NMVPNConnection *	vpn = NULL;
 	GPtrArray *		vpn_argv;
 	GError *			error = NULL;
-	GPid				pid;
+	gboolean		launched = FALSE;
 
 	g_assert (req != NULL);
 
@@ -320,19 +337,32 @@ static gboolean nm_vpn_service_stage1_daemon_exec (gpointer user_data)
 	g_ptr_array_add (vpn_argv, service->program);
 	g_ptr_array_add (vpn_argv, NULL);
 
-	if (!g_spawn_async (NULL, (char **) vpn_argv->pdata, NULL, 0, NULL, NULL, &pid, &error))
-	{
+	launched = g_spawn_async (NULL,
+	                          (char **) vpn_argv->pdata,
+	                          NULL,
+	                          0,
+	                          NULL,
+	                          NULL,
+	                          &service->pid,
+	                          &error);
+	if (!launched) {
 		g_ptr_array_free (vpn_argv, TRUE);
-		nm_warning ("(VPN Service %s): could not launch the VPN service.  error: '%s'.", service->service, error->message);
+		nm_warning ("(VPN Service %s): could not launch the VPN service.  "
+		            "error: '%s'.",
+		            service->service,
+		            error->message);
 		g_error_free (error);
 		nm_vpn_service_act_request_failed (service, req);
 		goto out;
 	}
 	g_ptr_array_free (vpn_argv, TRUE);
-	nm_info ("VPN Activation (%s) Stage 1 of 4 (Connection Prepare) ran VPN service daemon %s (PID %d)",
-			nm_vpn_connection_get_name (vpn), service->service, pid);
+	nm_info ("VPN Activation (%s) Stage 1 of 4 (Connection Prepare) ran VPN "
+	         "service daemon %s (PID %d)",
+	         nm_vpn_connection_get_name (vpn),
+	         service->service,
+	         service->pid);
 	nm_info ("VPN Activation (%s) Stage 1 of 4 (Connection Prepare) complete.",
-			nm_vpn_connection_get_name (vpn));
+	         nm_vpn_connection_get_name (vpn));
 
 	nm_vpn_service_schedule_stage2_daemon_wait (service, req);
 
@@ -391,8 +421,8 @@ static gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
 	nm_info ("VPN Activation (%s) Stage 2 of 4 (Connection Prepare Wait) "
 				"waiting...", nm_vpn_connection_get_name (vpn));
 
-	service_exists = dbus_bus_name_has_owner (service->app_data->dbus_connection,
-			service->service, NULL);
+	service_exists = nm_dbus_manager_name_has_owner (service->dbus_mgr,
+	                                                 service->service);
 	if (service_exists && (service->state == NM_VPN_STATE_STOPPED))
 	{
 		nm_info ("VPN Activation (%s) Stage 2 of 4 (Connection Prepare Wait) "
@@ -525,6 +555,8 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 	dbus_uint32_t		user_routes_count = 0;
 	DBusMessage *		message;
 	DBusPendingCall *	pcall = NULL;
+	DBusConnection *	dbus_connection;
+	gboolean			success = FALSE;
 
 	g_assert (req != NULL);
 
@@ -534,17 +566,28 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 	vpn = nm_vpn_act_request_get_connection (req);
 	g_assert (vpn != NULL);
 
+	dbus_connection = nm_dbus_manager_get_dbus_connection (service->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("VPN Activation (%s) Stage 3 of 4 (Connect) could not get "
+		            "the DBus connection.",
+		            nm_vpn_connection_get_name (vpn));
+		goto out;
+	}
+
 	nm_vpn_act_request_set_callback_id (req, 0);
 
 	/* Send the start vpn request to the daemon */
 	op = construct_op_from_service_name (service->service);
-	message = dbus_message_new_method_call (service->service, op, service->service, "startConnection");
+	message = dbus_message_new_method_call (service->service,
+	                                        op,
+	                                        service->service,
+	                                        "startConnection");
 	g_free (op);
-	if (!message)
-	{
-		nm_warning ("(VPN Service %s): couldn't allocate dbus message.", service->service);
-		nm_vpn_service_act_request_failed (service, req);
-		return FALSE;
+	if (!message) {
+		nm_warning ("VPN Activation (%s) Stage 3 of 4 (Connect): couldn't "
+		            " allocate dbus message.",
+		            service->service);
+		goto out;
 	}
 
 	name = nm_vpn_connection_get_name (vpn);
@@ -566,16 +609,22 @@ static gboolean nm_vpn_service_stage3_connect (gpointer user_data)
 				  DBUS_TYPE_ARRAY, DBUS_TYPE_STRING, &user_routes, user_routes_count,
 				  DBUS_TYPE_INVALID);
 
-	dbus_connection_send_with_reply (service->app_data->dbus_connection, message, &pcall, -1);
-	if (pcall)
-	{
-		dbus_pending_call_set_notify (pcall, nm_vpn_service_stage3_connect_cb, req, NULL);
+	dbus_connection_send_with_reply (dbus_connection, message, &pcall, -1);
+	if (pcall) {
+		dbus_pending_call_set_notify (pcall,
+		                              nm_vpn_service_stage3_connect_cb,
+		                              req,
+		                              NULL);
 		nm_info ("VPN Activation (%s) Stage 3 of 4 (Connect) request sent,"
-				" waiting for reply...", nm_vpn_connection_get_name (vpn));
+		         " waiting for reply...",
+		         nm_vpn_connection_get_name (vpn));
+		success = TRUE;
 	}
-	else
-		nm_vpn_service_act_request_failed (service, req);
 	dbus_message_unref (message);
+
+out:
+	if (!success)
+		nm_vpn_service_act_request_failed (service, req);
 
 	return FALSE;
 }
@@ -711,8 +760,9 @@ get_dbus_string_helper (DBusMessageIter *iter,
  */
 static void
 nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
-                                     NMVPNActRequest *req,
-                                     DBusMessage *message)
+                                          NMVPNActRequest *req,
+                                          DBusConnection *dbus_connection,
+                                          DBusMessage *message)
 {
 	NMVPNConnection *	vpn;
 	guint32			num;
@@ -722,7 +772,7 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 	gboolean			success = FALSE;
 	DBusMessageIter	iter;
 	DBusMessageIter	subiter;
-	NMIP4Config *		config;
+	NMIP4Config *		config = NULL;
 	NMDevice *		parent_dev;
 
 	g_return_if_fail (service != NULL);
@@ -741,8 +791,7 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 	dbus_message_iter_init (message, &iter);
 
 	/* First arg: IP4 VPN Gateway address (UINT32) */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32)
-	{
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_UINT32) {
 		nm_warning ("Error: couldn't get IP4 VPN Gateway Address"
 		          " from VPN IP Config message.");
 		goto out;
@@ -772,15 +821,13 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 
 	/* Sixth arg: IP4 DNS Server Addresses (ARRAY, UINT32) */
 	if (   !dbus_message_iter_next (&iter)
-	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY))
-	{
+	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)) {
 		nm_warning ("Error: couldn't get IP4 DNS Server Addresses"
 		          " from VPN IP Config message.");
 		goto out;
 	}
 	dbus_message_iter_recurse (&iter, &subiter);
-	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32)
-	{
+	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32) {
 		dbus_message_iter_get_basic (&subiter, &num);
 		if (num)
 			nm_ip4_config_add_nameserver (config, num);
@@ -789,15 +836,13 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 
 	/* Seventh arg: IP4 NBNS Server Addresses (ARRAY, UINT32) */
 	if (   !dbus_message_iter_next (&iter)
-	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY))
-	{
+	    || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)) {
 		nm_warning ("Error: couldn't get IP4 NBNS Server Addresses"
 		          " from VPN IP Config message.");
 		goto out;
 	}
 	dbus_message_iter_recurse (&iter, &subiter);
-	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32)
-	{
+	while (dbus_message_iter_get_arg_type (&subiter) == DBUS_TYPE_UINT32) {
 		dbus_message_iter_get_basic (&subiter, &num);
 		/* We don't do anything with these yet */
 		dbus_message_iter_next (&subiter);
@@ -825,21 +870,24 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 	if (!(parent_dev = nm_vpn_act_request_get_parent_dev (req)))
 		goto out;
 
-	if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config))
-	{
+	if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config)) {
 		nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) complete.",
 				nm_vpn_connection_get_name (vpn));
-		if (login_banner && strlen (login_banner))
-			nm_dbus_vpn_signal_vpn_login_banner (service->app_data->dbus_connection, vpn, login_banner);
+		if (login_banner && strlen (login_banner)) {
+			nm_dbus_vpn_signal_vpn_login_banner (dbus_connection,
+			                                     vpn,
+			                                     login_banner);
+		}
 		success = TRUE;
 		nm_vpn_service_activation_success (service, req);
 	}
 
 out:
-	if (!success)
-	{
+	if (!success) {
 		nm_ip4_config_unref (config);
-		nm_warning ("(VPN Service %s): did not receive valid IP config information.", service->service);
+		nm_warning ("(VPN Service %s): did not receive valid IP config "
+		            "information.",
+		            service->service);
 		nm_vpn_service_act_request_failed (service, req);
 	}
 }
@@ -876,6 +924,7 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 	NMIP4Config *		config = NULL;
 	NMDevice *		parent_dev;
 	NMUDictEntry		entry = { .type = DBUS_TYPE_STRING };
+	DBusConnection *dbus_connection;
 
 	g_return_if_fail (service != NULL);
 	g_return_if_fail (message != NULL);
@@ -887,18 +936,27 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 	nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) reply received.",
 		nm_vpn_connection_get_name (vpn));
 
+	dbus_connection = nm_dbus_manager_get_dbus_connection (service->dbus_mgr);
+	if (!dbus_connection) {
+		nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) could not "
+		         "get the DBus connection.",
+		         nm_vpn_connection_get_name (vpn));
+		goto out;
+	}
+
 	dbus_message_iter_init (message, &iter);
 
 	/* If first arg is (UINT32) then this is an old type message */
-	if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_UINT32)
-	{
+	if (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_UINT32) {
 		nm_warning ("Warning: VPN plugin is using the old IP4Config message type");
-		nm_vpn_service_stage4_ip4_config_get_old (service, req, message);
+		nm_vpn_service_stage4_ip4_config_get_old (service,
+		                                          req,
+		                                          dbus_connection,
+		                                          message);
 		return;
 	}
 
-	if (!nmu_dbus_dict_open_read (&iter, &iter_dict))
-	{
+	if (!nmu_dbus_dict_open_read (&iter, &iter_dict)) {
 		nm_warning ("Warning: couldn't get config dictionary"
 		            " from VPN IP Config message.");
 		goto out;
@@ -908,17 +966,14 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 	nm_ip4_config_set_secondary (config, TRUE);
 
 	/* First arg: Dict Type */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY)
-	{
+	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) {
 		nm_warning ("Error: couldn't get configuration dict"
 		          " from VPN IP Config message.");
 		goto out;
 	}
 
-	while (nmu_dbus_dict_has_dict_entry (&iter_dict))
-	{
-		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry))
-		{
+	while (nmu_dbus_dict_has_dict_entry (&iter_dict)) {
+		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
 			nm_warning ("Error: couldn't read dict entry"
 			            " from VPN IP Config message.");
 			goto out;
@@ -964,12 +1019,14 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 	if (!(parent_dev = nm_vpn_act_request_get_parent_dev (req)))
 		goto out;
 
-	if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config))
-	{
+	if (nm_vpn_connection_set_config (vpn, tundev, parent_dev, config)) {
 		nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) complete.",
 				nm_vpn_connection_get_name (vpn));
-		if (login_banner && strlen (login_banner))
-			nm_dbus_vpn_signal_vpn_login_banner (service->app_data->dbus_connection, vpn, login_banner);
+		if (login_banner && strlen (login_banner)) {
+			nm_dbus_vpn_signal_vpn_login_banner (dbus_connection,
+			                                     vpn,
+			                                     login_banner);
+		}
 		success = TRUE;
 		nm_vpn_service_activation_success (service, req);
 	}
@@ -977,33 +1034,54 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 out:
 	if (tundev) g_free (tundev);
 	if (login_banner) g_free (login_banner);
-	if (!success)
-	{
-		nm_ip4_config_unref (config);
-		nm_warning ("(VPN Service %s): did not receive valid IP config information.", service->service);
+	if (!success) {
+		if (config)
+			nm_ip4_config_unref (config);
+		nm_warning ("(VPN Service %s): did not receive valid IP config "
+		            "information.",
+		            service->service);
 		nm_vpn_service_act_request_failed (service, req);
 	}
 }
 
 
-static void nm_vpn_service_stop_connection_internal (NMVPNService *service)
+static void
+nm_vpn_service_stop_connection_internal (NMVPNService *service)
 {
-	DBusMessage *		message;
-	char *			op;
+	DBusConnection *	dbus_connection;
 
 	g_return_if_fail (service != NULL);
 
-	/* Construct a new method call with the correct service and object path */
-	op = construct_op_from_service_name (service->service);
-	if ((message = dbus_message_new_method_call (service->service, op, service->service, "stopConnection")))
-	{
-		dbus_connection_send (service->app_data->dbus_connection, message, NULL);
-		dbus_message_unref (message);
-	}
-	else
-		nm_warning ("(VPN Service %s): couldn't allocate dbus message.", service->service);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (service->dbus_mgr);
+	if (dbus_connection) {
+		DBusMessage *	message;
+		char *			op;
 
-	g_free (op);
+		/* Construct a new method call with the correct service and object path */
+		op = construct_op_from_service_name (service->service);
+		message = dbus_message_new_method_call (service->service,
+		                                        op,
+		                                        service->service,
+		                                        "stopConnection");
+		g_free (op);
+		if (!message) {
+			nm_warning ("(VPN Service %s): couldn't allocate dbus message.",
+			            service->service);
+		} else {
+			dbus_connection_send (dbus_connection, message, NULL);
+			dbus_message_unref (message);
+		}
+	} else {
+		/* If we have the PID of the VPN service daemon, send it a TERM */
+		if (service->pid) {
+			kill (service->pid, SIGTERM);
+			service->pid = 0;
+		} else {
+			nm_warning ("(VPN Service %s): stop called, but did not have PID "
+			            "for VPN service daemon.",
+			            service->service);
+		}
+	}
 }
 
 
@@ -1033,42 +1111,46 @@ void nm_vpn_service_stop_connection (NMVPNService *service, NMVPNActRequest *req
 }
 
 
-static void nm_vpn_service_add_watch (NMVPNService *service)
+static void
+nm_vpn_service_add_watch (NMVPNService *service)
 {
-	char *	match_string = NULL;
-
 	g_return_if_fail (service != NULL);
 
-	if (service->watch_active)
+	if (service->watch_id)
 		return;
 
 	/* Add a dbus filter for this connection's service name so its signals
 	 * get delivered to us.
 	 */
-	match_string = g_strdup_printf ("type='signal',"
-							  "interface='%s',"
-							  "sender='%s'", service->service, service->service);
-	dbus_bus_add_match (service->app_data->dbus_connection, match_string, NULL);
-	g_free (match_string);
-	service->watch_active = TRUE;
+	nm_dbus_manager_register_signal_handler (service->dbus_mgr,
+	                                         service->service,
+	                                         NULL,
+	                                         nm_vpn_service_process_signal,
+	                                         service);
+	service->watch_id = g_signal_connect (service->dbus_mgr,
+	                                      "name-owner-changed",
+	                                      G_CALLBACK (nm_vpn_service_name_owner_changed),
+	                                      service);
+	service->dbus_con_watch_id = g_signal_connect (service->dbus_mgr,
+	                                               "dbus-connection-changed",
+	                                               G_CALLBACK (nm_vpn_service_dbus_connection_changed),
+	                                               service);
 }
 
 
-static void nm_vpn_service_remove_watch (NMVPNService *service)
+static void
+nm_vpn_service_remove_watch (NMVPNService *service)
 {
-	char *	match_string = NULL;
-
 	g_return_if_fail (service != NULL);
 
-	if (!service->watch_active)
+	if (!service->watch_id)
 		return;
 
-	match_string = g_strdup_printf ("type='signal',"
-							  "interface='%s',"
-							  "sender='%s'", service->service, service->service);
-	dbus_bus_remove_match (service->app_data->dbus_connection, match_string, NULL);
-	g_free (match_string);
-	service->watch_active = FALSE;
+	nm_dbus_manager_remove_signal_handler (service->dbus_mgr, service->service);
+	g_signal_handler_disconnect (service->dbus_mgr, service->watch_id);
+	service->watch_id = 0;
+	g_signal_handler_disconnect (service->dbus_mgr, service->dbus_con_watch_id);
+	service->dbus_con_watch_id = 0;
 }
 
 
@@ -1080,96 +1162,158 @@ static inline gboolean same_service_name (NMVPNService *service, NMVPNConnection
 	return (!strcmp (nm_vpn_service_get_service_name (service), nm_vpn_connection_get_service_name (vpn)));
 }
 
-
-gboolean nm_vpn_service_name_owner_changed (NMVPNService *service, NMVPNActRequest *req, const char *old, const char *new)
+static void
+nm_vpn_service_dbus_connection_changed (NMDBusManager *mgr,
+                                        DBusConnection *dbus_connection,
+                                        gpointer user_data)
 {
+	NMVPNService *	service = (NMVPNService *) user_data;
+
+	g_return_if_fail (service != NULL);
+
+	if (!dbus_connection) {
+		NMVPNActRequest *	req;
+		NMVPNConnection *	vpn;
+		gboolean			valid_vpn = FALSE;
+
+		/* Kill the VPN service since we can't talk to it anymore anyway */
+		nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
+		nm_vpn_service_remove_watch (service);
+
+		req = nm_vpn_manager_get_vpn_act_request (service->manager);
+		if (req && (vpn = nm_vpn_act_request_get_connection (req)))
+			valid_vpn = same_service_name (service, vpn);
+
+		if (valid_vpn) {
+			nm_vpn_act_request_unref (req);
+			nm_vpn_manager_schedule_vpn_connection_died (service->manager, req);
+		}
+	}
+}
+
+static void
+nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
+                                   DBusConnection *connection,
+                                   const char *name,
+                                   const char *old,
+                                   const char *new,
+                                   gpointer user_data)
+{
+	NMVPNService *		service = (NMVPNService *) user_data;
+	NMVPNActRequest *	req;
 	NMVPNConnection *	vpn;
 	gboolean			valid_vpn = FALSE;
 	gboolean			old_owner_good = (old && strlen (old));
 	gboolean			new_owner_good = (new && strlen (new));
 
-	g_return_val_if_fail (service != NULL, FALSE);
+	g_return_if_fail (service != NULL);
 
+	if (strcmp (name, service->service) != 0)
+		return;
+
+	req = nm_vpn_manager_get_vpn_act_request (service->manager);
 	if (req && (vpn = nm_vpn_act_request_get_connection (req)))
 		valid_vpn = same_service_name (service, vpn);
 
-	if (!old_owner_good && new_owner_good)
-	{
+	if (!old_owner_good && new_owner_good) {
 		/* VPN service started. */
 		nm_vpn_service_add_watch (service);
 		nm_vpn_service_set_state (service, NM_VPN_STATE_INIT);
-	}
-	else if (old_owner_good && !new_owner_good)
-	{
+	} else if (old_owner_good && !new_owner_good) {
 		/* VPN service went away. */
 		nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
 		nm_vpn_service_remove_watch (service);
 
-		if (valid_vpn)
-		{
+		if (valid_vpn) {
 			nm_vpn_act_request_unref (req);
 			nm_vpn_manager_schedule_vpn_connection_died (service->manager, req);
 		}
 	}
-
-	return TRUE;
 }
 
 
-gboolean nm_vpn_service_process_signal (NMVPNService *service, NMVPNActRequest *req, DBusMessage *message)
+static gboolean
+nm_vpn_service_process_signal (DBusConnection *connection,
+                               DBusMessage *message,
+                               gpointer user_data)
 {
+	NMVPNService *		service = (NMVPNService *) user_data;
 	NMVPNConnection *	vpn = NULL;
+	NMVPNActRequest *	req;
 	gboolean			valid_vpn = FALSE;
 
-	g_return_val_if_fail (service != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (message != NULL, FALSE);
+	g_return_val_if_fail (service != NULL, FALSE);
 
+	req = nm_vpn_manager_get_vpn_act_request (service->manager);
 	if (req && (vpn = nm_vpn_act_request_get_connection (req)))
 		valid_vpn = same_service_name (service, vpn);
 
-	if (    dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
-		|| dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
-		|| dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED)
-		|| dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD)
-		|| dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
+	if (   dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_LOGIN_FAILED)
+	    || dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED)
+	    || dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_CONNECT_FAILED)
+	    || dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD)
+	    || dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_IP_CONFIG_BAD))
 	{
 		const char *	member = dbus_message_get_member (message);
 		char *		error_msg;
 
-		if (valid_vpn)
-		{
-			if (!dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_msg, DBUS_TYPE_INVALID))
+		if (valid_vpn) {
+			if (!dbus_message_get_args (message,
+			                            NULL,
+			                            DBUS_TYPE_STRING, &error_msg,
+			                            DBUS_TYPE_INVALID)) {
 				error_msg = (char *) "";
-			nm_warning ("VPN failed for service '%s', signal '%s', with message '%s'.", service->service, member, error_msg);
-			nm_dbus_vpn_signal_vpn_failed (service->app_data->dbus_connection, member, vpn, error_msg);
-			/* Don't deal with VPN Connection stopping here, we'll do that when we get the STOPPED or STOPPING signal below */
+			}
+			nm_warning ("VPN failed for service '%s', signal '%s', with "
+			            " message '%s'.",
+			            service->service,
+			            member,
+			            error_msg);
+			nm_dbus_vpn_signal_vpn_failed (connection, member, vpn, error_msg);
+
+			/* Don't deal with VPN Connection stopping here, we'll do that
+			 * when we get the STOPPED or STOPPING signal below.
+			 */
 		}
-	}
-	else if (dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_STATE_CHANGE))
-	{
+	} else if (dbus_message_is_signal (message, service->service,
+	                                   NM_DBUS_VPN_SIGNAL_STATE_CHANGE)) {
 		dbus_uint32_t old_state_int;
 		dbus_uint32_t new_state_int;
 
-		if (dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &old_state_int, DBUS_TYPE_UINT32, &new_state_int, DBUS_TYPE_INVALID))
-		{
+		if (dbus_message_get_args (message,
+		                           NULL,
+		                           DBUS_TYPE_UINT32, &old_state_int,
+		                           DBUS_TYPE_UINT32, &new_state_int,
+		                           DBUS_TYPE_INVALID)) {
 			NMVPNState	old_state = (NMVPNState) old_state_int;
 			NMVPNState	new_state = (NMVPNState) new_state_int;
 
-			nm_info ("VPN service '%s' signaled state change %d -> %d.", service->service, old_state, new_state);
+			nm_info ("VPN service '%s' signaled state change %d -> %d.",
+			         service->service,
+			         old_state,
+			         new_state);
 			nm_vpn_service_set_state (service, new_state);
 
-			/* If the VPN daemon state is now stopped and it was starting, clear the active connection */
-			if (((new_state == NM_VPN_STATE_STOPPED) || (new_state == NM_VPN_STATE_SHUTDOWN) || (new_state == NM_VPN_STATE_STOPPING))
-				&& ((old_state == NM_VPN_STATE_STARTED) || (old_state == NM_VPN_STATE_STARTING))
-				&& valid_vpn)
-			{
+			/* If the VPN daemon state is now stopped and it was starting, 
+			 * clear the active connection.
+			 */
+			if (   (   (new_state == NM_VPN_STATE_STOPPED)
+			        || (new_state == NM_VPN_STATE_SHUTDOWN)
+			        || (new_state == NM_VPN_STATE_STOPPING))
+			    && (   (old_state == NM_VPN_STATE_STARTED)
+			        || (old_state == NM_VPN_STATE_STARTING))
+				&& valid_vpn) {
 				nm_vpn_act_request_unref (req);
 				nm_vpn_manager_schedule_vpn_connection_died (service->manager, req);
 			}
 		}
-	}
-	else if (valid_vpn && dbus_message_is_signal (message, service->service, NM_DBUS_VPN_SIGNAL_IP4_CONFIG))
+	} else if (   valid_vpn
+	           && dbus_message_is_signal (message, service->service,
+	                                      NM_DBUS_VPN_SIGNAL_IP4_CONFIG)) {
 		nm_vpn_service_stage4_ip4_config_get (service, req, message);
+	}
 
 	return TRUE;
 }

@@ -27,27 +27,42 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
-#include "nm-device.h"
-#include "NetworkManagerMain.h"
-
-typedef struct NMDbusCBData
-{
-	NMData		*data;
-	NMDevice		*dev;
-	NMAccessPoint	*ap;
-} NMDbusCBData;
-
-typedef DBusMessage* (*NMDbusMethod) (DBusConnection *, DBusMessage *, NMDbusCBData *);
+typedef struct NMDbusMethodList NMDbusMethodList;
 
 
-NMDbusMethodList *	nm_dbus_method_list_new			(NMDbusMethod validate_method);
+typedef DBusMessage * (* NMDBusHandleMessageFunc)   (DBusConnection *	connection,
+                                                     DBusMessage *		message,
+                                                     gpointer			user_data);
 
-void				nm_dbus_method_list_add_method	(NMDbusMethodList *list, const char *method, NMDbusMethod callback);
 
-gboolean			nm_dbus_method_dispatch			(NMDbusMethodList *list, DBusConnection *connection, DBusMessage *message,
-													gpointer user_data, DBusMessage **reply);
+NMDbusMethodList *	nm_dbus_method_list_new			(const char *path,
+                                                     gboolean is_fallback,
+                                                     gpointer user_data,
+                                                     DBusFreeFunction user_data_free_func);
 
-void				nm_dbus_method_list_free			(NMDbusMethodList *list);
+void				nm_dbus_method_list_ref			(NMDbusMethodList *list);
 
+void				nm_dbus_method_list_unref		(NMDbusMethodList *list);
+
+DBusObjectPathMessageFunction	nm_dbus_method_list_get_custom_handler_func (NMDbusMethodList *list);
+
+gpointer			nm_dbus_method_list_get_user_data (NMDbusMethodList *list);
+
+void				nm_dbus_method_list_set_custom_handler_func (NMDbusMethodList *list,
+                                                     DBusObjectPathMessageFunction handler_func);
+
+void				nm_dbus_method_list_add_method	(NMDbusMethodList *list,
+                                                     const char *method,
+                                                     NMDBusHandleMessageFunc callback);
+
+gboolean			nm_dbus_method_list_dispatch	(NMDbusMethodList *list,
+                                                     DBusConnection *connection,
+                                                     DBusMessage *message,
+                                                     gpointer user_data,
+                                                     DBusMessage **reply);
+
+gboolean			nm_dbus_method_list_get_is_fallback	(NMDbusMethodList *list);
+
+const char *		nm_dbus_method_list_get_path	(NMDbusMethodList *list);
 
 #endif

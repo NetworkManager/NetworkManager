@@ -23,6 +23,8 @@
 #include <string.h>
 #include "nm-vpn-connection.h"
 #include "nm-dbus-vpn.h"
+#include "nm-dbus-manager.h"
+#include "nm-utils.h"
 #include "NetworkManagerSystem.h"
 
 
@@ -36,7 +38,6 @@ struct NMVPNConnection
 	char *		service_name;
 
 	NMNamedManager *named_manager;
-	DBusConnection *dbus_connection;
 
 	/* Change when connection is activated/deactivated */
 	NMDevice *	parent_dev;
@@ -50,8 +51,11 @@ static void	nm_vpn_connection_set_ip4_config	(NMVPNConnection *con, NMIP4Config 
 static void	nm_vpn_connection_set_parent_device(NMVPNConnection *con, NMDevice *parent_dev);
 
 
-NMVPNConnection *nm_vpn_connection_new (const char *name, const char *user_name, const char *service_name,
-								NMNamedManager *named_manager, DBusConnection *dbus_connection)
+NMVPNConnection *
+nm_vpn_connection_new (const char *name,
+                       const char *user_name,
+                       const char *service_name,
+                       NMNamedManager *named_manager)
 {
 	NMVPNConnection	*connection;
 
@@ -59,7 +63,6 @@ NMVPNConnection *nm_vpn_connection_new (const char *name, const char *user_name,
 	g_return_val_if_fail (user_name != NULL, NULL);
 	g_return_val_if_fail (service_name != NULL, NULL);
 	g_return_val_if_fail (named_manager != NULL, NULL);
-	g_return_val_if_fail (dbus_connection != NULL, NULL);
 
 	connection = g_malloc0 (sizeof (NMVPNConnection));
 	connection->refcount = 1;
@@ -70,8 +73,6 @@ NMVPNConnection *nm_vpn_connection_new (const char *name, const char *user_name,
 
 	g_object_ref (named_manager);
 	connection->named_manager = named_manager;
-
-	connection->dbus_connection = dbus_connection;
 
 	return connection;
 }
@@ -117,15 +118,28 @@ void nm_vpn_connection_activate (NMVPNConnection *connection)
 }
 
 
-gboolean nm_vpn_connection_set_config (NMVPNConnection *connection, const char *vpn_iface, NMDevice *dev, NMIP4Config *ip4_config)
+gboolean
+nm_vpn_connection_set_config (NMVPNConnection *connection,
+                              const char *vpn_iface,
+                              NMDevice *dev,
+                              NMIP4Config *ip4_config)
 {
 	gboolean	success = FALSE;
 	int		num_routes = -1;
 	char **	routes;
+	DBusConnection *dbus_connection;
+	NMDBusManager *	dbus_mgr = NULL;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (ip4_config != NULL, FALSE);
+
+	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("couldn't get dbus connection.");
+		goto out;
+	}
 
 	/* IPsec VPNs will not have tunnel device */
 	if (vpn_iface != NULL && strlen (vpn_iface))
@@ -133,12 +147,17 @@ gboolean nm_vpn_connection_set_config (NMVPNConnection *connection, const char *
 	nm_vpn_connection_set_parent_device (connection, dev);
 	nm_vpn_connection_set_ip4_config (connection, ip4_config);
 
-	routes = nm_dbus_vpn_get_routes (connection->dbus_connection, connection, &num_routes);
-	nm_system_vpn_device_set_from_ip4_config (connection->named_manager, connection->parent_dev,
-				connection->vpn_iface, connection->ip4_config, routes, num_routes);
+	routes = nm_dbus_vpn_get_routes (dbus_connection, connection, &num_routes);
+	nm_system_vpn_device_set_from_ip4_config (connection->named_manager,
+	                                          connection->parent_dev,
+	                                          connection->vpn_iface,
+	                                          connection->ip4_config,
+	                                          routes,
+	                                          num_routes);
 	g_strfreev(routes);
 	success = TRUE;
 
+out:
 	return success;
 }
 

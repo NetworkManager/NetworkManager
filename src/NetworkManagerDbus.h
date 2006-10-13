@@ -54,11 +54,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
 }
 
-DBusConnection *nm_dbus_init						(NMData *data);
-
-gboolean		nm_dbus_is_info_daemon_running		(DBusConnection *connection);
-char *		get_name_owner						(DBusConnection *con, const char *name);
-
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
 char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
 
@@ -66,13 +61,19 @@ void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev
 
 void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 
-void			nm_dbus_signal_wireless_network_change	(DBusConnection *connection, NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
-void			nm_dbus_signal_device_strength_change	(DBusConnection *connection, NMDevice80211Wireless *dev, gint strength);
+void			nm_dbus_signal_wireless_network_change	(NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
+void			nm_dbus_signal_device_strength_change	(NMDevice80211Wireless *dev, gint strength);
 
 NMDevice *	nm_dbus_get_device_from_escaped_object_path	(NMData *data, const char *path);
 
 NMState		nm_get_app_state_from_data			(NMData *data);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
+
+DBusMessage *	nm_dbus_new_invalid_args_error (DBusMessage *replyto, const char *namespace);
+
+gboolean nm_dbus_nmi_signal_handler (DBusConnection *connection,
+                                     DBusMessage *message,
+                                     gpointer user_data);
 
 #endif

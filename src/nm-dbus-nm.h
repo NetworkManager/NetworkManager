@@ -22,9 +22,10 @@
 #ifndef NM_DBUS_NM_H
 #define NM_DBUS_NM_H
 
+#include "NetworkManagerMain.h"
 #include "NetworkManagerDbusUtils.h"
 
 
-NMDbusMethodList *nm_dbus_nm_methods_setup (void);
+NMDbusMethodList *nm_dbus_nm_methods_setup (NMData *data);
 
 #endif

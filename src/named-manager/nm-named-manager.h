@@ -50,26 +50,19 @@ G_BEGIN_DECLS
 
 typedef struct NMNamedManagerPrivate NMNamedManagerPrivate;
 
-typedef struct
-{
+typedef struct {
 	GObject parent;
 
 	NMNamedManagerPrivate *priv;
 } NMNamedManager;
 
-typedef struct
-{
+typedef struct {
 	GObjectClass parent;
-
 } NMNamedManagerClass;
 
 GType nm_named_manager_get_type (void);
 
-NMNamedManager * nm_named_manager_new (DBusConnection *connection);
-
-gboolean nm_named_manager_process_name_owner_changed (NMNamedManager *mgr,
-						const char *changed_service_name,
-						const char *old_owner, const char *new_owner);
+NMNamedManager * nm_named_manager_new (void);
 
 gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
 

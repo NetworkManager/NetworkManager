@@ -36,6 +36,6 @@ void				nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *con, NMV
 
 char **			nm_dbus_vpn_get_routes					(DBusConnection *connection, NMVPNConnection *vpn, int *num_items);
 
-NMDbusMethodList *	nm_dbus_vpn_methods_setup				(void);
+NMDbusMethodList *	nm_dbus_vpn_methods_setup				(NMVPNManager *mgr);
 
 #endif

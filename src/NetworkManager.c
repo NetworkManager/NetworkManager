@@ -52,6 +52,10 @@
 #include "nm-named-manager.h"
 #include "nm-vpn-act-request.h"
 #include "nm-dbus-vpn.h"
+#include "nm-dbus-nm.h"
+#include "nm-dbus-manager.h"
+#include "nm-dbus-device.h"
+#include "nm-dbus-net.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dhcp-manager.h"
 #include "nm-logging.h"
@@ -60,6 +64,8 @@
 
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
 
+#define NO_HAL_MSG "Could not initialize connection to the HAL daemon."
+
 /*
  * Globals
  */
@@ -67,6 +73,7 @@ static NMData		*nm_data = NULL;
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
 static void nm_data_free (NMData *data);
+static void nm_hal_deinit (NMData *data);
 
 /*
  * nm_get_device_interface_from_hal
@@ -208,21 +215,6 @@ NMDevice *nm_get_active_device (NMData *data)
 }
 
 
-/* Hal doesn't really give us any way to pass a GMainContext to our
- * mainloop integration function unfortunately.  So we have to use
- * a global.
- */
-GMainContext *main_context = NULL;
-
-/*
- * nm_hal_mainloop_integration
- *
- */
-static void nm_hal_mainloop_integration (LibHalContext *ctx, DBusConnection * dbus_connection)
-{
-	dbus_connection_setup_with_g_main (dbus_connection, main_context);
-}
-
 /*
  * nm_hal_device_added
  *
@@ -348,10 +340,16 @@ void nm_add_initial_devices (NMData *data)
 static gboolean nm_state_change_signal_broadcast (gpointer user_data)
 {
 	NMData *data = (NMData *)user_data;
+	NMDBusManager *dbus_mgr = NULL;
+	DBusConnection *dbus_connection = NULL;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	nm_dbus_signal_state_change (data->dbus_connection, data);
+	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (dbus_connection)
+		nm_dbus_signal_state_change (dbus_connection, data);
+	g_object_unref (dbus_mgr);
 	return FALSE;
 }
 
@@ -411,6 +409,87 @@ nm_monitor_setup (NMData *data)
 	/* Request initial status of cards */
 	nm_netlink_monitor_request_status (monitor, NULL);
 	return monitor;
+}
+
+static gboolean
+nm_hal_init (NMData *data,
+             DBusConnection *connection)
+{
+	gboolean	success = FALSE;
+	DBusError	error;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
+
+	/* Clean up an old context */
+	if (data->hal_ctx) {
+		nm_warning ("a HAL context already existed.  BUG.");
+		nm_hal_deinit (data);
+	}
+
+	/* Initialize a new libhal context */
+	if (!(data->hal_ctx = libhal_ctx_new ())) {
+		nm_warning ("Could not get connection to the HAL service.");
+		goto out;
+	}
+
+	libhal_ctx_set_dbus_connection (data->hal_ctx, connection);
+
+	dbus_error_init (&error);
+	if (!libhal_ctx_init (data->hal_ctx, &error)) {
+		nm_error ("libhal_ctx_init() failed: %s\n"
+			  "Make sure the hal daemon is running?", 
+			  error.message);
+		goto out;
+	}
+
+	libhal_ctx_set_user_data (data->hal_ctx, data->main_context);
+	libhal_ctx_set_device_added (data->hal_ctx, nm_hal_device_added);
+	libhal_ctx_set_device_removed (data->hal_ctx, nm_hal_device_removed);
+	libhal_ctx_set_device_new_capability (data->hal_ctx, nm_hal_device_new_capability);
+
+	libhal_device_property_watch_all (data->hal_ctx, &error);
+	if (dbus_error_is_set (&error)) {
+		nm_error ("libhal_device_property_watch_all(): %s", error.message);
+		libhal_ctx_shutdown (data->hal_ctx, NULL);
+		goto out;
+	}
+
+	/* Add any devices we know about */
+	nm_add_initial_devices (data);
+	success = TRUE;
+
+out:
+	if (!success) {
+		if (dbus_error_is_set (&error))
+			dbus_error_free (&error);
+		if (data->hal_ctx) {
+			libhal_ctx_free (data->hal_ctx);
+			data->hal_ctx = NULL;
+		}
+	}
+
+	return success;
+}
+
+static void
+nm_hal_deinit (NMData *data)
+{
+	DBusError error;
+
+	g_return_if_fail (data != NULL);
+
+	if (!data->hal_ctx)
+		return;
+
+	dbus_error_init (&error);
+	libhal_ctx_shutdown (data->hal_ctx, &error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("libhal shutdown failed - %s", error.message);
+		dbus_error_free (&error);
+	}
+	libhal_ctx_free (data->hal_ctx);
+	data->hal_ctx = NULL;
 }
 
 
@@ -524,6 +603,9 @@ static void nm_data_free (NMData *data)
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
+	nm_dbus_method_list_unref (data->nm_methods);
+	nm_dbus_method_list_unref (data->device_methods);
+
 	nm_vpn_manager_dispose (data->vpn_manager);
 	nm_dhcp_manager_dispose (data->dhcp_manager);
 	g_object_unref (data->named_manager);
@@ -552,81 +634,55 @@ static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, g
 	return FALSE;
 }
 
-static LibHalContext *nm_get_hal_ctx (NMData *data)
+static void
+nm_name_owner_changed_handler (NMDBusManager *mgr,
+                               DBusConnection *connection,
+                               const char *name,
+                               const char *old,
+                               const char *new,
+                               gpointer user_data)
 {
-	LibHalContext *	ctx = NULL;
-	DBusError			error;
+	NMData * data = (NMData *) user_data;
+	gboolean old_owner_good = (old && (strlen (old) > 0));
+	gboolean new_owner_good = (new && (strlen (new) > 0));
 
-	g_return_val_if_fail (data != NULL, NULL);
+	/* Only care about signals from HAL */
+	if (strcmp (name, "org.freedesktop.Hal") != 0)
+		return;
 
-	/* Initialize libhal.  We get a connection to the hal daemon here. */
-	if ((ctx = libhal_ctx_new()) == NULL)
-	{
-		nm_error ("libhal_ctx_new() failed, exiting...");
-		return NULL;
-	}
-
-	nm_hal_mainloop_integration (ctx, data->dbus_connection); 
-	libhal_ctx_set_dbus_connection (ctx, data->dbus_connection);
-	dbus_error_init (&error);
-	if(!libhal_ctx_init (ctx, &error))
-	{
-		nm_error ("libhal_ctx_init() failed: %s\n"
-			  "Make sure the hal daemon is running?", 
-			  error.message);
-
-		dbus_error_free (&error);
-		libhal_ctx_free (ctx);
-		return NULL;
-	}
-
-	libhal_ctx_set_user_data (ctx, data);
-	libhal_ctx_set_device_added (ctx, nm_hal_device_added);
-	libhal_ctx_set_device_removed (ctx, nm_hal_device_removed);
-	libhal_ctx_set_device_new_capability (ctx, nm_hal_device_new_capability);
-
-	dbus_error_init (&error);
-	libhal_device_property_watch_all (ctx, &error);
-	if (dbus_error_is_set (&error))
-	{
-		nm_error ("libhal_device_property_watch_all(): %s", error.message);
-		dbus_error_free (&error);
-		libhal_ctx_free (ctx);
-	}
-
-	return ctx;
-}
-
-
-void nm_hal_init (NMData *data)
-{
-	g_return_if_fail (data != NULL);
-
-	if ((data->hal_ctx = nm_get_hal_ctx (data)))
-		nm_add_initial_devices (data);
-}
-
-
-void nm_hal_deinit (NMData *data)
-{
-	g_return_if_fail (data != NULL);
-
-	if (data->hal_ctx)
-	{
-		DBusError error;
-
-		dbus_error_init (&error);
-		libhal_ctx_shutdown (data->hal_ctx, &error);
-		if (dbus_error_is_set (&error))
-		{
-			nm_warning ("libhal shutdown failed - %s", error.message);
-			dbus_error_free (&error);
+	if (!old_owner_good && new_owner_good) {
+		/* HAL just appeared */
+		if (!nm_hal_init (data, connection)) {
+			nm_error (NO_HAL_MSG);
+			exit (EXIT_FAILURE);
 		}
-		libhal_ctx_free (data->hal_ctx);
-		data->hal_ctx = NULL;
+	} else if (old_owner_good && !new_owner_good) {
+		/* HAL went away.  Bad HAL. */
+		nm_hal_deinit (data);
 	}
 }
 
+static void
+nm_dbus_connection_changed_handler (NMDBusManager *mgr,
+                                    DBusConnection *connection,
+                                    gpointer user_data)
+{
+	NMData *data = (NMData *) user_data;
+	char * 	owner;
+
+	if (!connection) {
+		nm_hal_deinit (data);
+		return;
+	}
+
+	if ((owner = nm_dbus_manager_get_name_owner (mgr, "org.freedesktop.Hal"))) {
+		if (!nm_hal_init (data, connection)) {
+			nm_error (NO_HAL_MSG);
+			exit (EXIT_FAILURE);
+		}
+		g_free (owner);
+	}
+}
 
 static void
 write_pidfile (const char *pidfile)
@@ -669,19 +725,30 @@ static void nm_print_usage (void)
  * main
  *
  */
-int main( int argc, char *argv[] )
+int
+main (int argc, char *argv[])
 {
+	GOptionContext *opt_ctx = NULL;
 	gboolean		become_daemon = FALSE;
 	gboolean		enable_test_devices = FALSE;
 	gboolean		show_usage = FALSE;
-	char *		owner;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
-	
-	if (getuid () != 0)
-	{
+	NMDBusManager *	dbus_mgr;
+	DBusConnection *dbus_connection;
+	int			exit_status = EXIT_FAILURE;
+
+	GOptionEntry options[] = {
+		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
+		{"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
+		{"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
+		{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
+		{NULL}
+	};
+
+	if (getuid () != 0) {
 		g_printerr ("You must be root to run NetworkManager!\n");
-		return (EXIT_FAILURE);
+		goto exit;
 	}
 
 	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
@@ -689,43 +756,33 @@ int main( int argc, char *argv[] )
 	textdomain (GETTEXT_PACKAGE);
 
 	/* Parse options */
-	{
-		GOptionContext  *opt_ctx = NULL;
-		GOptionEntry options[] = {
-			{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
-			{"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
-			{"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
-			{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
-			{NULL}
-		};
-		opt_ctx = g_option_context_new("");
-		g_option_context_add_main_entries(opt_ctx, options, NULL);
-		g_option_context_parse(opt_ctx, &argc, &argv, NULL);
-		g_option_context_free(opt_ctx);
-	}
+	opt_ctx = g_option_context_new("");
+	g_option_context_add_main_entries(opt_ctx, options, NULL);
+	g_option_context_parse(opt_ctx, &argc, &argv, NULL);
+	g_option_context_free(opt_ctx);
 
-	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because of a CLI
-	 * option, it'll become TRUE after this */
-	become_daemon = !become_daemon;
-	if (show_usage == TRUE)
-	{
+	if (show_usage == TRUE) {
 		nm_print_usage();
-		exit (EXIT_SUCCESS);
+		exit_status = EXIT_SUCCESS;
+		goto exit;
 	}
 
-	if (become_daemon)
-	{
-		if (daemon (0, 0) < 0)
-		{
+	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
+
+	/* Tricky: become_daemon is FALSE by default, so unless it's TRUE because
+	 * of a CLI option, it'll become TRUE after this
+	 */
+	become_daemon = !become_daemon;
+	if (become_daemon) {
+		if (daemon (0, 0) < 0) {
 			int saved_errno;
 
 			saved_errno = errno;
-			nm_error ("NetworkManager could not daemonize: %s [error %u]",
-				  g_strerror (saved_errno), saved_errno);
-			exit (EXIT_FAILURE);
+			nm_error ("Could not daemonize: %s [error %u]",
+			          g_strerror (saved_errno),
+			          saved_errno);
+			goto exit;
 		}
-
-		pidfile = user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE;
 		write_pidfile (pidfile);
 	}
 
@@ -748,45 +805,75 @@ int main( int argc, char *argv[] )
 
 	/* Initialize our instance data */
 	nm_data = nm_data_new (enable_test_devices);
-	if (!nm_data)
-	{
-		nm_error ("nm_data_new() failed... Not enough memory?");
-		exit (EXIT_FAILURE);
+	if (!nm_data) {
+		nm_error ("Failed to initialize.");
+		goto pidfile;
 	}
 
-	/* Create our dbus service */
-	nm_data->dbus_connection = nm_dbus_init (nm_data);
-	if (!nm_data->dbus_connection)
-	{
-		nm_error ("nm_dbus_init() failed, exiting. "
-			  "Either dbus is not running, or the "
-			  "NetworkManager dbus security policy "
-			  "was not loaded.");
-		exit (EXIT_FAILURE);
+	/* Initialize our DBus service & connection */
+	dbus_mgr = nm_dbus_manager_get (nm_data->main_context);
+	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
+	if (!dbus_connection) {
+		nm_error ("Failed to initialize. "
+		          "Either dbus is not running, or the "
+		          "NetworkManager dbus security policy "
+		          "was not loaded.");
+		goto done;
 	}
+	g_signal_connect (G_OBJECT (dbus_mgr), "name-owner-changed",
+	                  G_CALLBACK (nm_name_owner_changed_handler), nm_data);
+	g_signal_connect (G_OBJECT (dbus_mgr), "dbus-connection-changed",
+	                  G_CALLBACK (nm_dbus_connection_changed_handler), nm_data);
+	nm_dbus_manager_register_signal_handler (dbus_mgr,
+	                                         NMI_DBUS_INTERFACE,
+	                                         NULL,
+	                                         nm_dbus_nmi_signal_handler,
+	                                         nm_data);
 
-	/* Need to happen after DBUS is initialized */
+	/* Register DBus method handlers for the main NM objects */
+	nm_data->nm_methods = nm_dbus_nm_methods_setup (nm_data);
+	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->nm_methods);
+	nm_data->device_methods = nm_dbus_device_methods_setup (nm_data);
+	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->device_methods);
+	nm_data->net_methods = nm_dbus_net_methods_setup (nm_data);
+
 	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
-	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data);
-	nm_data->named_manager = nm_named_manager_new (nm_data->dbus_connection);
+	if (!nm_data->vpn_manager) {
+		nm_warning ("Failed to start the VPN manager.");
+		goto done;
+	}
+
+	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data, nm_data->main_context);
+	if (!nm_data->dhcp_manager) {
+		nm_warning ("Failed to start the DHCP manager.");
+		goto done;
+	}
+
+	nm_data->named_manager = nm_named_manager_new ();
+	if (!nm_data->named_manager) {
+		nm_warning ("Failed to start the named manager.");
+		goto done;
+	}
+
+	/* Start our DBus service */
+	if (!nm_dbus_manager_start_service (dbus_mgr)) {
+		nm_warning ("Failed to start the named manager.");
+		goto done;
+	}
+
+	/* If Hal is around, grab a device list from it */
+	if (nm_dbus_manager_name_has_owner (dbus_mgr, "org.freedesktop.Hal")) {
+		if (!nm_hal_init (nm_data, dbus_connection)) {
+			nm_error (NO_HAL_MSG);
+			goto done;
+		}
+	}
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
-	if (nm_dbus_is_info_daemon_running (nm_data->dbus_connection))
-	{
+	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE)) {
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
 		nm_dbus_vpn_schedule_vpn_connections_update (nm_data);
 	}
-
-	/* Right before we init hal, we have to make sure our mainloop
-	 * integration function knows about our GMainContext.  HAL doesn't give
-	 * us any way to pass that into its mainloop integration callback, so
-	 * its got to be a global.
-	 */
-	main_context = nm_data->main_context;
-
-	/* If Hal is around, grab a device list from it */
-	if ((owner = get_name_owner (nm_data->dbus_connection, "org.freedesktop.Hal")))
-		nm_hal_init (nm_data);
 
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
@@ -802,16 +889,23 @@ int main( int argc, char *argv[] )
 	/* Run the main loop */
 	nm_policy_schedule_device_change_check (nm_data);
 	nm_schedule_state_change_signal_broadcast (nm_data);
+	exit_status = EXIT_SUCCESS;
 	g_main_loop_run (nm_data->main_loop);
 
+done:
 	nm_print_open_socks ();
 	nm_data_free (nm_data);
+	/* nm_data_free needs the dbus connection, so must kill the
+	 * dbus manager after that.
+	 */
+	g_object_unref (dbus_mgr);
 	nm_logging_shutdown ();
 
-	/* Clean up pidfile */
+pidfile:
 	if (pidfile)
 		unlink (pidfile);
-	g_free (user_pidfile);
+	g_free (pidfile);
 
-	exit (0);
+exit:
+	exit (exit_status);
 }

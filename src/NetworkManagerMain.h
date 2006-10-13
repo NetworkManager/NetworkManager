@@ -31,6 +31,7 @@
 #include "nm-netlink-monitor.h"
 #include "nm-named-manager.h"
 #include "nm-device.h"
+#include "NetworkManagerDbusUtils.h"
 
 
 typedef enum NMIntState
@@ -45,7 +46,6 @@ typedef enum NMIntState
 } NMIntState;
 
 
-typedef struct NMDbusMethodList NMDbusMethodList;
 typedef struct NMActRequest NMActRequest;
 typedef struct NMVPNActRequest NMVPNActRequest;
 typedef struct NMVPNManager NMVPNManager;
@@ -67,11 +67,9 @@ typedef struct NMData
 	NMVPNManager *			vpn_manager;
 	NMDHCPManager *		dhcp_manager;
 
-	DBusConnection *		dbus_connection;
 	NMDbusMethodList *		nm_methods;
 	NMDbusMethodList *		device_methods;
 	NMDbusMethodList *		net_methods;
-	NMDbusMethodList *		vpn_methods;
 
 	GMainContext *			main_context;
 	GMainLoop *			main_loop;
@@ -104,10 +102,6 @@ void			nm_add_initial_devices					(NMData *data);
 void			nm_remove_device						(NMData *data, NMDevice *dev);
 
 void			nm_schedule_state_change_signal_broadcast	(NMData *data);
-
-void			nm_hal_init							(NMData *data);
-
-void			nm_hal_deinit							(NMData *data);
 
 int			nm_get_sigterm_pipe						(void);
 

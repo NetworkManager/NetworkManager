@@ -23,7 +23,15 @@
 #define NM_DBUS_NET_H
 
 #include "NetworkManagerDbusUtils.h"
+#include "NetworkManagerMain.h"
 
-NMDbusMethodList *nm_dbus_net_methods_setup (void);
+
+NMDbusMethodList *nm_dbus_net_methods_setup (NMData *data);
+
+gboolean nm_dbus_net_methods_dispatch (NMDbusMethodList *list,
+                                       DBusConnection *connection,
+                                       DBusMessage *message,
+                                       gpointer uesr_data,
+                                       DBusMessage **reply);
 
 #endif
