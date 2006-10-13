@@ -1,3 +1,18 @@
+2006-10-13  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/Makefile.am
+		- Add new files
+
+	* src/supplicant-manager/nm-supplicant-manager.[ch]:
+		- Make it a minimal GObject
+
+	* src/supplicant-manager/nm-supplicant-settings-verify.[ch]:	
+		- Verify settings destined for wpa_supplicant
+
+	* src/supplicant-manager/nm-supplicant-connection.[ch]:	
+		- Minimal GObject to track wpa_supplicant controlled device
+		connections
+
 2006-10-13  Wouter Bolsterlee  <wbolster@gnome.org>
 
 	* gnome/applet/applet.c: (nma_update_info),

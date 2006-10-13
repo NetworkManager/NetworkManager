@@ -22,6 +22,42 @@
 #ifndef NM_SUPPLICANT_MANAGER_H
 #define NM_SUPPLICANT_MANAGER_H
 
+#include <glib-object.h>
+
+G_BEGIN_DECLS
+
+#define NM_TYPE_SUPPLICANT_MANAGER				(nm_supplicant_manager_get_type ())
+#define NM_SUPPLICANT_MANAGER(obj)				(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))
+#define NM_SUPPLICANT_MANAGER_CLASS(klass)		(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
+#define NM_IS_SUPPLICANT_MANAGER(obj)			(G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SUPPLICANT_MANAGER))
+#define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
+#define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
+
+typedef struct _NMSupplicantManager NMSupplicantManager;
+typedef struct _NMSupplicantManagerClass NMSupplicantManagerClass;
+typedef struct _NMSupplicantManagerPrivate NMSupplicantManagerPrivate;
+
+struct _NMSupplicantManager
+{
+	GObject parent;
+
+	/*< private >*/
+	NMSupplicantManagerPrivate *priv;
+};
+
+struct NMAccessPoint;
+struct wpa_ctrl;
+
+struct _NMSupplicantManagerClass
+{
+	GObjectClass parent;
+
+	/* class members */
+};
+
+GType nm_supplicant_manager_get_type (void);
+
+NMSupplicantManager * nm_supplicant_manager_new (void);
 
 
 #endif /* NM_SUPPLICANT_MANAGER_H */

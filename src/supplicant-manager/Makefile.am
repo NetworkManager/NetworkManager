@@ -2,7 +2,13 @@ INCLUDES = -I${top_srcdir}/utils -I${top_srcdir}/src -I${top_srcdir}/include
 
 noinst_LTLIBRARIES = libsupplicant-manager.la
 
-libsupplicant_manager_la_SOURCES = nm-supplicant-manager.h nm-supplicant-manager.c
+libsupplicant_manager_la_SOURCES = \
+	nm-supplicant-manager.h \
+	nm-supplicant-manager.c \
+	nm-supplicant-connection.h \
+	nm-supplicant-connection.c \
+	nm-supplicant-settings-verify.h \
+	nm-supplicant-settings-verify.c
 
 libsupplicant_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

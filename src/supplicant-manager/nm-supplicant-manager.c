@@ -19,8 +19,71 @@
  *
  */
 
+#include <glib.h>
 #include <dbus/dbus.h>
 #include "nm-supplicant-manager.h"
-#include "nm-device.h"
+
+#define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                              NM_TYPE_SUPPLICANT_MANAGER, \
+                                              NMSupplicantManagerPrivate))
+
+struct _NMSupplicantManagerPrivate {
+	gboolean	running;
+	gboolean	dispose_has_run;
+};
 
 
+NMSupplicantManager *
+nm_supplicant_manager_new (void)
+{
+	NMSupplicantManager * mgr;
+
+	mgr = g_object_new (NM_TYPE_SUPPLICANT_MANAGER, NULL);
+	return mgr;
+}
+
+static void
+nm_supplicant_manager_init (NMSupplicantManager * self)
+{
+	self->priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	self->priv->running = FALSE;
+	self->priv->dispose_has_run = FALSE;
+}
+
+static void
+nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+/*
+	object_class->dispose = nm_supplicant_manager_dispose;
+	object_class->finalize = nm_supplicant_manager_finalize;
+*/
+
+	g_type_class_add_private (object_class, sizeof (NMSupplicantManagerPrivate));
+}
+
+GType
+nm_supplicant_manager_get_type (void)
+{
+	static GType type = 0;
+	if (type == 0) {
+		static const GTypeInfo info = {
+			sizeof (NMSupplicantManagerClass),
+			NULL,	/* base_init */
+			NULL,	/* base_finalize */
+			(GClassInitFunc) nm_supplicant_manager_class_init,
+			NULL,	/* class_finalize */
+			NULL,	/* class_data */
+			sizeof (NMSupplicantManager),
+			0,		/* n_preallocs */
+			(GInstanceInitFunc) nm_supplicant_manager_init,
+			NULL		/* value_table */
+		};
+
+		type = g_type_register_static (G_TYPE_OBJECT,
+								 "NMSupplicantManager",
+								 &info, 0);
+	}
+	return type;
+}
