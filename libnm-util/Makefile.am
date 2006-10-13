@@ -58,7 +58,8 @@ libnm_util_include_HEADERS = 		\
 	cipher-wpa-psk-hex.h		\
 	cipher-wpa-psk-passphrase.h	\
 	dbus-helpers.h				\
-	dbus-method-dispatcher.h
+	dbus-method-dispatcher.h	\
+	dbus-dict-helpers.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc
