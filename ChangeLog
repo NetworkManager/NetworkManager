@@ -1,3 +1,14 @@
+2006-10-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (get_ip4_string, get_ip4_uint32s): have the caller pass
+		the dbus connection and the device object path rather than
+		constructing it inside both functions.  Saves a bit of memory
+		and clarifies a failure path.
+		- (nm_dhcp_manager_get_ip4_config): grab the dbus connection
+		and allocate device path here rather than each of the two
+		functions above.
+
 2006-10-13  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
