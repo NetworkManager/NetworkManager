@@ -689,8 +689,9 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	}
 
 	if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_warning ("Could not acquire the NetworkManager service as it is "
-		            " already taken.  Return: %d", ret);
+		nm_warning ("Could not acquire the NetworkManager service as it"
+		            "is already taken.  Return: %d",
+		            ret);
 		goto out;
 	}
 
