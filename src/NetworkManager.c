@@ -647,18 +647,25 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	/* Only care about signals from HAL */
-	if (strcmp (name, "org.freedesktop.Hal") != 0)
-		return;
-
-	if (!old_owner_good && new_owner_good) {
-		/* HAL just appeared */
-		if (!nm_hal_init (data, connection)) {
-			nm_error (NO_HAL_MSG);
-			exit (EXIT_FAILURE);
+	if (strcmp (name, "org.freedesktop.Hal") == 0) {
+		if (!old_owner_good && new_owner_good) {
+			/* HAL just appeared */
+			if (!nm_hal_init (data, connection)) {
+				nm_error (NO_HAL_MSG);
+				exit (EXIT_FAILURE);
+			}
+		} else if (old_owner_good && !new_owner_good) {
+			/* HAL went away.  Bad HAL. */
+			nm_hal_deinit (data);
 		}
-	} else if (old_owner_good && !new_owner_good) {
-		/* HAL went away.  Bad HAL. */
-		nm_hal_deinit (data);
+	} else if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
+		if (!old_owner_good && new_owner_good) {
+			/* NMI appeared, update stuff */
+			nm_policy_schedule_allowed_ap_list_update (data);
+			nm_dbus_vpn_schedule_vpn_connections_update (data);
+		} else if (old_owner_good && !new_owner_good) {
+			/* nothing */
+		}
 	}
 }
 

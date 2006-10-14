@@ -1,5 +1,11 @@
 2006-10-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (nm_name_owner_changed_handler): handle NMI coming and going,
+		this somehow droppout in the refactor
+
+2006-10-13  Dan Williams  <dcbw@redhat.com>
+
 	* Huge DBus refactor:
 		- Create a "DBus Manager" object which manages the connection and
 		sends signals on NameOwnerChanged and connection/disconnection events,
