@@ -1,3 +1,8 @@
+2006-10-19  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Don't ever restart nscd; just
+	  refresh the cache.
+
 2006-10-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c
