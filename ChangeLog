@@ -1,7 +1,7 @@
 2006-10-19  Robert Love  <rml@novell.com>
 
-	* src/backends/NetworkManagerSuSE.c: Check if NM_NO_NAMED is NOT
-	  defined, not if it is.
+	* src/backends/NetworkManagerSuSE.c: Don't ever restart nscd; just
+	  refresh the cache.
 
 2006-10-11  Tambet Ingo  <tambet@ximian.com>
 
