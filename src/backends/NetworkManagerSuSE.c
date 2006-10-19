@@ -280,14 +280,14 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-#ifdef NM_NO_NAMED
+#ifndef NM_NO_NAMED
+	nm_spawn_process ("/usr/bin/killall -q nscd");
+# else
 	if (nm_spawn_process (SYSCONFDIR"/init.d/nscd status") != 0)
 		nm_spawn_process (SYSCONFDIR"/init.d/nscd restart");
 
 	nm_info ("Clearing nscd hosts cache.");
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
-#else
-	nm_spawn_process ("/usr/bin/killall -q nscd");
 #endif
 }
 

@@ -1,3 +1,8 @@
+2006-10-19  Robert Love  <rml@novell.com>
+
+	* src/backends/NetworkManagerSuSE.c: Check if NM_NO_NAMED is NOT
+	  defined, not if it is.
+
 2006-10-11  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-dbus-nm.c (nm_dbus_nm_sleep): Add optional boolean argument to
@@ -13,7 +18,7 @@
 	* gnome/applet/Makefile.am: Ditto.
 
 	* gnome/applet/applet.c (nma_class_init): Append our icon directory to
-        theme search path.
+	  theme search path.
 
 	* gnome/applet/applet-dbus-devices.c (nma_dbus_enable_networking): Add
 	boolean (true) argument to wake/sleep NM dbus calls to notify
