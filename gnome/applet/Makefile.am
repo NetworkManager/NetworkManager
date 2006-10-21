@@ -82,6 +82,8 @@ nm_applet_SOURCES =			\
 	wso-wpa-eap.h			\
 	wso-wpa-psk.c			\
 	wso-wpa-psk.h			\
+	wso-leap.c			\
+	wso-leap.h			\
 	nm-gconf-wso.c			\
 	nm-gconf-wso.h			\
 	nm-gconf-wso-private.h	\
@@ -91,6 +93,8 @@ nm_applet_SOURCES =			\
 	nm-gconf-wso-wpa-eap.h	\
 	nm-gconf-wso-wpa-psk.c	\
 	nm-gconf-wso-wpa-psk.h	\
+	nm-gconf-wso-leap.c	\
+	nm-gconf-wso-leap.h	\
 	gconf-helpers.c		\
 	gconf-helpers.h		\
 	$(NULL)

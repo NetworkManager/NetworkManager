@@ -474,6 +474,85 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 	return TRUE;
 }
 
+dbus_bool_t
+nmu_security_serialize_leap (DBusMessageIter *iter,
+					    const char *username,
+					    const char *passwd,
+					    const char *key_mgmt)
+{
+	const char *fake_username = "";
+	const char *fake_passwd = "";
+
+	g_return_val_if_fail (iter != NULL, FALSE);
+	g_return_val_if_fail (key_mgmt != NULL, FALSE);
+
+	/* Second arg: Username (STRING) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, username? &username : &fake_username);
+
+	/* Third arg: Password (STRING) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, passwd? &passwd : &fake_passwd);
+
+	/* Fourth arg: Key management (STRING) */
+	dbus_message_iter_append_basic (iter, DBUS_TYPE_STRING, &key_mgmt);
+
+	return TRUE;
+}
+
+dbus_bool_t
+nmu_security_serialize_leap_with_cipher (DBusMessageIter *iter,
+								 const char *username,
+								 const char *passwd,
+								 const char *key_mgmt)
+{
+	g_return_val_if_fail (iter != NULL, FALSE);
+
+	/* First arg: WE Cipher (INT32) */
+	we_cipher_append_helper (iter, NM_AUTH_TYPE_LEAP);
+
+	return nmu_security_serialize_leap (iter, username, passwd, key_mgmt);
+}
+
+dbus_bool_t
+nmu_security_deserialize_leap (DBusMessageIter *iter,
+					      char **username,
+					      char **passwd,
+						 char **key_mgmt)
+{
+	char *		dbus_username;
+	char *		dbus_password;
+	char *		dbus_key_mgmt;
+
+	g_return_val_if_fail (iter != NULL, FALSE);
+	g_return_val_if_fail (username != NULL, FALSE);
+	g_return_val_if_fail (*username == NULL, FALSE);
+	g_return_val_if_fail (passwd != NULL, FALSE);
+	g_return_val_if_fail (*passwd == NULL, FALSE);
+	g_return_val_if_fail (key_mgmt != NULL, FALSE);
+	g_return_val_if_fail (*key_mgmt == NULL, FALSE);
+
+	/* Second arg: Username (STRING) */
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_username);
+	g_return_val_if_fail (dbus_username != NULL, FALSE);
+
+	/* Third arg: Password (STRING) */
+	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_password);
+	g_return_val_if_fail (dbus_password != NULL, FALSE);
+
+	/* Fourth arg: Password (STRING) */
+	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);
+	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING, FALSE);
+	dbus_message_iter_get_basic (iter, &dbus_key_mgmt);
+	g_return_val_if_fail (dbus_key_mgmt != NULL, FALSE);
+
+	*username = strlen (dbus_username) > 0 ? dbus_username : NULL;
+	*passwd = strlen (dbus_password) > 0 ? dbus_password : NULL;
+	*key_mgmt = strlen (dbus_key_mgmt) > 0 ? dbus_key_mgmt : NULL;
+
+	return TRUE;
+}
 
 /*
  * nmu_create_dbus_error_message
