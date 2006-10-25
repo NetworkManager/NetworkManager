@@ -72,12 +72,12 @@ NetworkManager_SOURCES =				\
 		wpa_ctrl.h
 
 nm-marshal.h: Makefile.am nm-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(top_srcdir)/src/nm-marshal.list --header > xgen-gmh \
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > xgen-gmh \
 	&& (cmp -s xgen-gmh nm-marshal.h || cp xgen-gmh nm-marshal.h) \
 	&& rm -f xgen-gmh xgen-gmh~
 
 nm-marshal.c: Makefile.am nm-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(top_srcdir)/src/nm-marshal.list --body > xgen-gmc \
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --body > xgen-gmc \
 	&& cp xgen-gmc nm-marshal.c \
 	&& rm -f xgen-gmc xgen-gmc~
 
