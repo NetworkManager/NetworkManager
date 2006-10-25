@@ -1,5 +1,51 @@
 2006-10-24  Dan Williams  <dcbw@redhat.com>
 
+	Reduce the number of times the Gnome applet wakes up, especially when
+	it's doing absolutely nothing and is hidden.  Initial patch by
+	Chris Aillon.
+
+	* gnome/applet/applet-dbus.c
+		- (nma_dbus_filter): when NM isn't around, or when it goes away,
+			kill the redraw timeout.  When NM starts up, start the redraw
+			timeout.  Also, if we get kicked off the bus for some reason,
+			start the reconnection timeout if one's not already running.
+		- (nma_dbus_init): better handling of error conditions, don't leak
+			a half-initialized dbus connection
+		- (nma_dbus_connection_watcher): consolidate places we reinitialize
+			the applet's data, just call nm_dbus_init_helper()
+		- (nma_start_dbus_connection_watch): new function, starts a periodic
+			timeout that calls nma_dbus_connection_watcher()
+		- (nma_dbus_init_helper): if we get a successful connection, kill the
+			reconnection timeout, and don't start the reconnection timeout
+			unconditionally anymore
+
+	* gnome/applet/applet-dbus.h
+		- Expose nma_start_dbus_connection_watch()
+
+	* gnome/applet/applet.c
+		- (nma_update_state): no longer static, called from applet-dbus.c for
+			immediate UI updates on certain events
+		- (nma_set_running): new function; take over setting applet->running,
+			when not running (ie, NM is not active), don't activate the redraw
+			timeout because we're not showing the applet anyway.  When we are
+			running (ie, NM is active), and only when we're running, start the
+			redraw timeout.
+		- (nma_destroy): kill the redraw timeout by setting 'not running', and
+			kill any reconnection timeout
+		- (nma_get_instance): move one-off dbus initialization code here since
+			nm_dbus_init_helper() gets called more than once, possibly by the
+			reconnection timeout function too.  And, when we start up, if we
+			can't get a connection to the bus, start the reconnection timeout.
+			But don't start the redraw timeout yet, only do that when we get
+			NM's state and find out if it's running or not.
+
+	* gnome/applet/applet.h
+		- Add the reconnection GSource ID
+		- Add prototypes for nma_set_running() and the no-longer-static
+			nma_update_state()
+
+2006-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-dbus-vpn.c
 		- (nm_dbus_vpn_connections_update_from_nmi): don't block on reply; applets
 			should be smart enough to use the VPNConnectionAdded or

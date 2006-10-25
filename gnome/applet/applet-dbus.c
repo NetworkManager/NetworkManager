@@ -72,7 +72,9 @@ static DBusHandlerResult nma_dbus_filter (DBusConnection *connection, DBusMessag
 	{
 		dbus_connection_unref (applet->connection);
 		applet->connection = NULL;
-		applet->nm_running = FALSE;
+		nma_set_running (applet, FALSE);
+		if (!applet->connection_timeout_id)
+			nma_start_dbus_connection_watch (applet);
 	}
 	else if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged"))
 	{
@@ -94,18 +96,25 @@ static DBusHandlerResult nma_dbus_filter (DBusConnection *connection, DBusMessag
 				if (!old_owner_good && new_owner_good && !applet->nm_running)
 				{
 					/* NetworkManager started up */
-					applet->nm_running = TRUE;
+					nma_set_running (applet, TRUE);
 					nma_set_state (applet, NM_STATE_DISCONNECTED);
+
 					nma_dbus_update_nm_state (applet);
 					nma_dbus_update_devices (applet);
 					nma_dbus_update_dialup (applet);
 					nma_dbus_vpn_update_vpn_connections (applet);
+
+					/* Immediate redraw */
+					nma_update_state (applet);
 				}
 				else if (old_owner_good && !new_owner_good)
 				{
-					applet->nm_running = FALSE;
 					nma_set_state (applet, NM_STATE_DISCONNECTED);
+					nma_set_running (applet, FALSE);
 					nmi_passphrase_dialog_destroy (applet);
+
+					/* One last redraw to capture new state before sleeping */
+					nma_update_state (applet);
 				}
 			}
 		}
@@ -322,68 +331,94 @@ static DBusConnection * nma_dbus_init (NMApplet *applet)
 	DBusError		 		error;
 	DBusObjectPathVTable	vtable = { NULL, &nmi_dbus_info_message_handler, NULL, NULL, NULL, NULL };
 	int					acquisition;
+	dbus_bool_t			success = FALSE;
 
 	g_return_val_if_fail (applet != NULL, NULL);
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (dbus_error_is_set (&error))
-	{
+	if (dbus_error_is_set (&error)) {
 		nm_warning ("%s raised:\n %s\n\n", error.name, error.message);
-		dbus_error_free (&error);
-		return NULL;
+		goto error;
 	}
 
 	dbus_error_init (&error);
-	acquisition = dbus_bus_request_name (connection, NMI_DBUS_SERVICE, DBUS_NAME_FLAG_REPLACE_EXISTING, &error);
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("nma_dbus_init() could not acquire its service.  dbus_bus_acquire_service() says: '%s'", error.message);
-		dbus_error_free (&error);
-		return NULL;
+	acquisition = dbus_bus_request_name (connection,
+	                                     NMI_DBUS_SERVICE,
+	                                     DBUS_NAME_FLAG_REPLACE_EXISTING,
+	                                     &error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("could not acquire its service.  dbus_bus_acquire_service()"
+		            " says: '%s'",
+		            error.message);
+		goto error;
 	}
 	if (acquisition == DBUS_REQUEST_NAME_REPLY_EXISTS)
-	     return NULL;
+		goto error;
 
-	if (!dbus_connection_register_object_path (connection, NMI_DBUS_PATH, &vtable, applet))
-	{
-		nm_warning ("nma_dbus_init() could not register a handler for NetworkManagerInfo.  Not enough memory?");
-		return NULL;
+	success = dbus_connection_register_object_path (connection,
+	                                                NMI_DBUS_PATH,
+	                                                &vtable,
+	                                                applet);
+	if (!success) {
+		nm_warning ("could not register a messgae handler for the"
+		            " NetworkManagerInfo service.  Not enough memory?");
+		goto error;
 	}
 
-	if (!dbus_connection_add_filter (connection, nma_dbus_filter, applet, NULL))
-		return NULL;
+	success = dbus_connection_add_filter (connection, nma_dbus_filter, applet, NULL);
+	if (!success)
+		goto error;
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 	dbus_connection_setup_with_g_main (connection, NULL);
 
+	dbus_error_init (&error);
 	dbus_bus_add_match(connection,
 				"type='signal',"
 				"interface='" DBUS_INTERFACE_DBUS "',"
 				"sender='" DBUS_SERVICE_DBUS "'",
 				&error);
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not register signal handlers.  '%s'",
+		            error.message);
+		goto error;
+	}
 
+	dbus_error_init (&error);
 	dbus_bus_add_match(connection,
 				"type='signal',"
 				"interface='" NM_DBUS_INTERFACE "',"
 				"path='" NM_DBUS_PATH "',"
 				"sender='" NM_DBUS_SERVICE "'",
 				&error);
-	if (dbus_error_is_set (&error))
-		dbus_error_free (&error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not register signal handlers.  '%s'",
+		            error.message);
+		goto error;
+	}
 
+	dbus_error_init (&error);
 	dbus_bus_add_match(connection,
 				"type='signal',"
 				"interface='" NM_DBUS_INTERFACE_VPN "',"
 				"path='" NM_DBUS_PATH_VPN "',"
 				"sender='" NM_DBUS_SERVICE "'",
 				&error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("Could not register signal handlers.  '%s'",
+		            error.message);
+		goto error;
+	}
+
+	return connection;
+
+error:
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-
-	return (connection);
+	if (connection)
+		dbus_connection_unref (connection);
+	return NULL;
 }
 
 
@@ -393,62 +428,62 @@ static DBusConnection * nma_dbus_init (NMApplet *applet)
  * Try to reconnect if we ever get disconnected from the bus
  *
  */
-static gboolean nma_dbus_connection_watcher (gpointer user_data)
+static gboolean
+nma_dbus_connection_watcher (gpointer user_data)
 {
-	NMApplet	*applet = (NMApplet *)user_data;
+	NMApplet * applet = (NMApplet *)user_data;
 
 	g_return_val_if_fail (applet != NULL, TRUE);
 
-	if (!applet->connection)
-	{
-		if ((applet->connection = nma_dbus_init (applet)))
-		{
-			applet->nm_running = nma_dbus_nm_is_running (applet->connection);
-			if (applet->nm_running)
-			{
-				nma_set_state (applet, NM_STATE_DISCONNECTED);
-				nma_dbus_update_nm_state (applet);
-				nma_dbus_update_devices (applet);
-				nma_dbus_update_dialup (applet);
-				nma_dbus_vpn_update_vpn_connections (applet);
-			}
-		}
+	nma_dbus_init_helper (applet);
+	if (applet->connection) {
+		applet->connection_timeout_id = 0;
+		return FALSE;  /* Remove timeout */
 	}
 
-	return (TRUE);
+	return TRUE;
+}
+
+
+void
+nma_start_dbus_connection_watch (NMApplet *applet)
+{
+	if (applet->connection_timeout_id)
+		g_source_remove (applet->connection_timeout_id);
+
+	applet->connection_timeout_id = g_timeout_add (5000,
+	                                               (GSourceFunc) nma_dbus_connection_watcher,
+	                                               applet);
 }
 
 
 /*
- * nma_dbus_worker
+ * nma_dbus_init_helper
  *
- * Thread worker function that periodically grabs the NetworkManager state
- * and updates our local applet state to reflect that.
+ * Set up the applet's NMI dbus methods and dbus connection
  *
  */
-void nma_dbus_init_helper (NMApplet *applet)
+void
+nma_dbus_init_helper (NMApplet *applet)
 {
-	GSource *			timeout_source;
-
 	g_return_if_fail (applet != NULL);
 
-	dbus_g_thread_init ();
-
 	applet->connection = nma_dbus_init (applet);
-	applet->nmi_methods = nmi_dbus_nmi_methods_setup ();
+	if (applet->connection) {
+		if (applet->connection_timeout_id) {
+			g_source_remove (applet->connection_timeout_id);
+			applet->connection_timeout_id = 0;
+		}
 
-	timeout_source = g_timeout_source_new (2000);
-	g_source_set_callback (timeout_source, nma_dbus_connection_watcher, applet, NULL);
-	g_source_attach (timeout_source, NULL);
+		if (nma_dbus_nm_is_running (applet->connection)) {
+			nma_set_running (applet, TRUE);
+			nma_dbus_update_nm_state (applet);
+			nma_dbus_update_devices (applet);
+			nma_dbus_update_dialup (applet);
+			nma_dbus_vpn_update_vpn_connections (applet);
 
-	if (applet->connection && nma_dbus_nm_is_running (applet->connection))
-	{
-		applet->nm_running = TRUE;
-		nma_dbus_update_nm_state (applet);
-		nma_dbus_update_devices (applet);
-		nma_dbus_update_dialup (applet);
-		nma_dbus_vpn_update_vpn_connections (applet);
+			/* Immediate redraw */
+			nma_update_state (applet);
+		}
 	}
-
-	g_source_unref (timeout_source);
 }

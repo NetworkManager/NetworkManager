@@ -43,6 +43,7 @@ static inline gboolean message_is_error (DBusMessage *msg)
 }
 
 void			nma_dbus_init_helper				(NMApplet *applet);
+void			nma_start_dbus_connection_watch		(NMApplet *applet);
 void			nma_dbus_enable_wireless			(NMApplet *applet, gboolean enabled);
 void			nma_dbus_enable_networking			(NMApplet *applet, gboolean enabled);
 void			nma_free_gui_data_model				(NMApplet *applet);

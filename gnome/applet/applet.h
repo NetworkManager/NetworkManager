@@ -81,6 +81,7 @@ typedef struct
 	guint		 	gconf_vpn_notify_id;
 	char	*			glade_file;
 	guint			redraw_timeout_id;
+	guint			connection_timeout_id;
 
 	/* Data model elements */
 	gboolean			is_adhoc;
@@ -152,6 +153,8 @@ VPNConnection *	nma_get_first_active_vpn_connection	(NMApplet *applet);
 void				nma_enable_wireless_set_active		(NMApplet *applet);
 
 void				nma_set_state						(NMApplet *applet, NMState state);
+void				nma_set_running						(NMApplet *applet, gboolean running);
+void				nma_update_state					(NMApplet *applet);
 
 int				nm_null_safe_strcmp					(const char *s1, const char *s2);
 
