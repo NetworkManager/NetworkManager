@@ -540,10 +540,7 @@ static gboolean nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 	dbus_connection_send_with_reply (data->dbus_connection, message, &pcall, -1);
 	dbus_message_unref (message);
 	if (pcall)
-	{
 		dbus_pending_call_set_notify (pcall, nm_dbus_vpn_connections_update_cb, data, NULL);
-		dbus_pending_call_block (pcall);
-	}
 
 	return FALSE;
 }

@@ -1,5 +1,12 @@
 2006-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-dbus-vpn.c
+		- (nm_dbus_vpn_connections_update_from_nmi): don't block on reply; applets
+			should be smart enough to use the VPNConnectionAdded or
+			VPNConnectionUpdate signals to grab verified VPN connections from NM
+
+2006-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ap-security-leap.h
 		- Forgot to add to CVS
 
