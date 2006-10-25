@@ -1,3 +1,17 @@
+2006-10-24  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-daemons/nm-dbus-vpnc.c
+		- (nm_dbus_vpn_update_one_connection_cb): unregister pending call in
+			pending call tracker
+		- (nm_dbus_vpn_connections_update_cb): unregister pending call in
+			pending call tracker; register one-vpn-connection update pending
+			call in pending call tracker
+		- (nm_dbus_vpn_update_one_vpn_connection): register one-vpn-connection
+			update pending call in pending call tracker
+		- (nm_dbus_vpn_connections_update_from_nmi): register vpn-connections
+			update pending call in pending call tracker; don't block waiting
+			for call to return
+
 2006-10-19  Robert Love  <rml@novell.com>
 
 	* src/backends/NetworkManagerSuSE.c: Don't ever restart nscd; just

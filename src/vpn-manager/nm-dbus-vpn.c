@@ -406,6 +406,8 @@ nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall,
 	g_return_if_fail (cb_data->data != NULL);
 	g_return_if_fail (cb_data->data->vpn_manager != NULL);
 
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
 	dbus_pending_call_ref (pcall);
 
 	if (!dbus_pending_call_get_completed (pcall))
@@ -502,6 +504,8 @@ nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall,
 	g_return_if_fail (pcall);
 	g_return_if_fail (data != NULL);
 
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
 	dbus_pending_call_ref (pcall);
 
 	if (!dbus_pending_call_get_completed (pcall))
@@ -542,23 +546,21 @@ nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall,
 		                                        NMI_DBUS_INTERFACE,
 		                                        "getVPNConnectionProperties");
 		if (message) {
-			DBusPendingCall * vpn_pcall = NULL;
+			UpdateOneVPNCBData * vpn_cb_data = g_slice_new0 (UpdateOneVPNCBData);
 
 			dbus_message_append_args (message,
 			                          DBUS_TYPE_STRING, &con_name,
 			                          DBUS_TYPE_INVALID);
-			dbus_connection_send_with_reply (dbus_connection, message, &vpn_pcall, -1);
-			dbus_message_unref (message);
-			if (vpn_pcall) {
-				UpdateOneVPNCBData * vpn_cb_data = g_slice_new0 (UpdateOneVPNCBData);
 
-				vpn_cb_data->data = data;
-				vpn_cb_data->vpn = g_strdup (con_name);
-				dbus_pending_call_set_notify (vpn_pcall,
-				                              nm_dbus_vpn_update_one_connection_cb,
-				                              vpn_cb_data,
-				                              (DBusFreeFunction) free_update_one_vpn_cb_data);
-			}
+			vpn_cb_data->data = data;
+			vpn_cb_data->vpn = g_strdup (con_name);
+			nm_dbus_send_with_callback (dbus_connection,
+			                            message,
+			                            (DBusPendingCallNotifyFunction) nm_dbus_vpn_update_one_connection_cb,
+			                            vpn_cb_data,
+			                            (DBusFreeFunction) free_update_one_vpn_cb_data,
+			                            __func__);
+			dbus_message_unref (message);
 		}
 		dbus_message_iter_next (&array_iter);
 	}
@@ -593,7 +595,7 @@ nm_dbus_vpn_update_one_vpn_connection (DBusConnection *connection,
                                        NMData *data)
 {
 	DBusMessage *		message;
-	DBusPendingCall *	pcall = NULL;
+	UpdateOneVPNCBData *cb_data;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (vpn != NULL);
@@ -609,18 +611,17 @@ nm_dbus_vpn_update_one_vpn_connection (DBusConnection *connection,
 	}
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &vpn, DBUS_TYPE_INVALID);
-	dbus_connection_send_with_reply (connection, message, &pcall, -1);
-	dbus_message_unref (message);
-	if (pcall) {
-		UpdateOneVPNCBData * cb_data = g_slice_new0 (UpdateOneVPNCBData);
 
-		cb_data->data = data;
-		cb_data->vpn = g_strdup (vpn);
-		dbus_pending_call_set_notify (pcall,
-		                              nm_dbus_vpn_update_one_connection_cb,
-		                              cb_data,
-		                              (DBusFreeFunction) free_update_one_vpn_cb_data);
-	}
+	cb_data = g_slice_new0 (UpdateOneVPNCBData);
+ 	cb_data->data = data;
+	cb_data->vpn = g_strdup (vpn);
+	nm_dbus_send_with_callback (connection,
+	                            message,
+	                            (DBusPendingCallNotifyFunction) nm_dbus_vpn_update_one_connection_cb,
+	                            cb_data,
+	                            (DBusFreeFunction) free_update_one_vpn_cb_data,
+	                            __func__);
+	dbus_message_unref (message);
 }
 
 
@@ -634,7 +635,6 @@ static gboolean
 nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 {
 	DBusMessage *		message;
-	DBusPendingCall *	pcall;
 	NMDBusManager *		dbus_mgr;
 	DBusConnection *	dbus_connection;
 
@@ -656,15 +656,13 @@ nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 		goto out;
 	}
 
-	dbus_connection_send_with_reply (dbus_connection, message, &pcall, -1);
+	nm_dbus_send_with_callback (dbus_connection,
+	                            message,
+	                            (DBusPendingCallNotifyFunction) nm_dbus_vpn_connections_update_cb,
+	                            data,
+	                            NULL,
+	                            __func__);
 	dbus_message_unref (message);
-	if (pcall) {
-		dbus_pending_call_set_notify (pcall,
-		                              nm_dbus_vpn_connections_update_cb,
-		                              data,
-		                              NULL);
-		dbus_pending_call_block (pcall);
-	}
 
 out:
 	g_object_unref (dbus_mgr);
