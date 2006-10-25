@@ -80,7 +80,6 @@ static gboolean			nma_icons_init (NMApplet *applet);
 static void				nma_icons_free (NMApplet *applet);
 static void				nma_context_menu_update (NMApplet *applet);
 static GtkWidget *			nma_get_instance (NMApplet *applet);
-static void				nma_update_state (NMApplet *applet);
 static void				nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
 static G_GNUC_NORETURN void	nma_destroy (NMApplet *applet);
 static GType				nma_get_type (void);	/* for G_DEFINE_TYPE */
@@ -1050,7 +1049,7 @@ static gboolean animation_timeout (NMApplet *applet)
  * and what our icon on the panel should look like for each type.
  *
  */
-static void nma_update_state (NMApplet *applet)
+void nma_update_state (NMApplet *applet)
 {
 	gboolean			show_applet = TRUE;
 	gboolean			need_animation = FALSE;
@@ -2136,6 +2135,29 @@ static inline void nma_enable_networking_set_active (NMApplet *applet)
 
 
 /*
+ * nma_set_running
+ *
+ * Set whether NM is running to TRUE or FALSE.
+ *
+ */
+void nma_set_running (NMApplet *applet, gboolean running)
+{
+	if (running == applet->nm_running)
+		return;
+
+	applet->nm_running = running;
+
+	/* if NM became active, start drawing our icon, else stop drawing it */
+	if (applet->nm_running && !applet->redraw_timeout_id)
+		applet->redraw_timeout_id = g_timeout_add (1000, (GSourceFunc) nma_redraw_timeout, applet);
+	else if (!applet->nm_running && applet->redraw_timeout_id)
+	{
+		g_source_remove (applet->redraw_timeout_id);
+		applet->redraw_timeout_id = 0;
+	}
+}
+
+/*
  * nma_set_state
  *
  * Set the applet's state to one of the NMState enumerations.
@@ -2460,10 +2482,10 @@ static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
 	}
 #endif
 
-	if (applet->redraw_timeout_id > 0)
-	{
-		gtk_timeout_remove (applet->redraw_timeout_id);
-		applet->redraw_timeout_id = 0;
+	nma_set_running (applet, FALSE);
+	if (applet->connection_timeout_id) {
+		g_source_remove (applet->connection_timeout_id);
+		applet->connection_timeout_id = 0;
 	}
 
 	if (applet->gconf_client)
@@ -2500,6 +2522,8 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 	applet->nm_state = NM_STATE_DISCONNECTED;
 	applet->tooltips = NULL;
 	applet->passphrase_dialog = NULL;
+	applet->connection_timeout_id = 0;
+	applet->redraw_timeout_id = 0;
 #ifdef ENABLE_NOTIFY
 	applet->notification = NULL;
 #endif
@@ -2533,16 +2557,18 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 	 */
 	nma_compat_convert_oldformat_entries (applet->gconf_client);
 
+	/* D-Bus init stuff */
+	dbus_g_thread_init ();
+	applet->nmi_methods = nmi_dbus_nmi_methods_setup ();
 	nma_dbus_init_helper (applet);
+	if (!applet->connection)
+		nma_start_dbus_connection_watch (applet);
 
 	/* Load pixmaps and create applet widgets */
 	nma_setup_widgets (applet);
 
 	g_signal_connect (applet, "destroy", G_CALLBACK (nma_destroy), NULL);
 	g_signal_connect (applet, "style-set", G_CALLBACK (nma_theme_change_cb), NULL);
-
-	/* Start redraw timeout */
-	applet->redraw_timeout_id = g_timeout_add (1000, (GtkFunction) nma_redraw_timeout, applet);
 
 	return GTK_WIDGET (applet);
 }
