@@ -350,6 +350,11 @@ nm_dbus_nm_set_active_device (DBusConnection *connection,
 	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_device_activation (nm_act_request_new (data, dev, ap, TRUE));
 
+	/* empty success message */
+	reply = dbus_message_new_method_return (message);
+	if (!reply)
+		nm_warning ("Could not allocate dbus message.");
+
 out:
 	if (dev)
 		g_object_unref (G_OBJECT (dev));
