@@ -794,12 +794,19 @@ nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
 	response = g_malloc (RESPONSE_SIZE);
 	len = RESPONSE_SIZE;
 #ifdef SUPPLICANT_DEBUG
-	nm_info ("SUP: sending command '%s'", err_msg_cmd ? err_msg_cmd : command);
+	/* Hack: don't print anything out for SCAN commands since they
+	 * happen so often.
+	 */
+	if (strcmp (command, "SCAN") != 0)
+		nm_info ("SUP: sending command '%s'", err_msg_cmd ? err_msg_cmd : command);
 #endif
 	wpa_ctrl_request (ctrl, command, strlen (command), response, &len, NULL);
 	response[len] = '\0';
 #ifdef SUPPLICANT_DEBUG
-	{
+	/* Hack: don't print anything out for SCAN commands since they
+	 * happen so often.
+	 */
+	if (strcmp (command, "SCAN") != 0) {
 		response = kill_newline (response, &len);
 		nm_info ("SUP: response was '%s'", response);
 	}
