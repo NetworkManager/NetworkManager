@@ -1,3 +1,9 @@
+2006-10-25  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+		- (nm_utils_supplicant_request_with_check): suppress messages for the
+			"SCAN" command
+
 2006-10-24  Dan Williams  <dcbw@redhat.com>
 
 	Reduce the number of times the Gnome applet wakes up, especially when
