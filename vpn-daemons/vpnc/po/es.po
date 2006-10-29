@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-09-20 23:13+0200\n"
-"PO-Revision-Date: 2006-09-20 23:18+0200\n"
+"POT-Creation-Date: 2006-10-30 00:19+0100\n"
+"PO-Revision-Date: 2006-10-30 00:22+0100\n"
 "Last-Translator: \n"
 "Language-Team:  <es@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -126,6 +126,9 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
+"El archivo de ajustes de VPN «%s» especifica que el tráfico de VPN debería tunelarse a través de TCP el cual actualmente no está soportado por el software vpnc.\n"
+"\n"
+"La conexión aún se puede crear, con la tunelación TCP desactivada, sin embargo podría no funcionar como se espera."
 
 #: ../properties/nm-vpnc.c:574
 msgid "Cannot import settings"
@@ -185,7 +188,7 @@ msgstr "Información o_pcional"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Override _user name"
-msgstr ""
+msgstr "Nombre de _usuario sobrecargado"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
 msgid ""
@@ -223,11 +226,14 @@ msgstr "_Sólamente utilizar la conexión VPN para estas direcciones"
 #: ../src/nm-vpnc-service.c:117
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
-msgstr "El acceso VPN ha fallado porque el nombre de usuario y la contraseña no se aceptaron."
+msgstr ""
+"El acceso VPN ha fallado porque el nombre de usuario y la contraseña no se "
+"aceptaron."
 
 #: ../src/nm-vpnc-service.c:119
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr "El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
+msgstr ""
+"El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
 
 #: ../src/nm-vpnc-service.c:121
 msgid ""
