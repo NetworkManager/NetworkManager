@@ -1,3 +1,23 @@
+2006-10-30  Tambet Ingo  <tambet@ximian.com>
+
+	* properties/Makefile.am: Include new files pcf-file.[ch] in build.
+	Add NetworkManager to CFLAGS and LDADD.
+
+	* properties/pcf-file.c: Implement.
+
+	* properties/pcf-file.h: Ditto.
+
+	* properties/nm-vpnc.c (import_from_file): Rewrite using new Cisco PCF
+	file parser instead of using GKeyFile (which has slightly different
+	semantics).
+
+	* src/Makefile.am: Add NetworkManager to CFLAGS and LDADD.
+
+	* src/nm-vpnc-service.c: Remove the leading NetworkManager directory
+	from NM includes since the NM pkg-config file already adds that.
+
+	* src/nm-vpnc-service-vpnc-helper.c: Ditto.
+
 2006-06-19  Satoru SATOH <ss@gnome.gr.jp>
 
 	* configure.in (ALL_LINGUAS): Added ja (Japanese).

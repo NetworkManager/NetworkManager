@@ -31,7 +31,8 @@
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 
-#include <NetworkManager/nm-vpn-ui-interface.h>
+#include <nm-vpn-ui-interface.h>
+#include "pcf-file.h"
 
 typedef struct _NetworkManagerVpnUIImpl NetworkManagerVpnUIImpl;
 
@@ -478,95 +479,85 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 static gboolean
 import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 {
-	char *basename;
-	GKeyFile *keyfile;
-	gboolean file_is_good;
+	GHashTable *pcf;
+	const char *buf;
+	gboolean have_value;
+	char *basename = NULL;
+	gboolean expand = FALSE;
+	gboolean success = FALSE;
 
-	/*printf ("path='%s'\n", path);*/
+	pcf = pcf_file_load (path);
+	if (pcf == NULL)
+		return FALSE;
 
-	file_is_good = FALSE;
-	basename = g_path_get_basename (path);
+	/* Connection name */
+	if ((buf = pcf_file_lookup_value (pcf, "main", "Description")) == NULL || strlen (buf) < 1)
+		goto error;
+	gtk_entry_set_text (impl->w_connection_name, buf);
 
-	keyfile = g_key_file_new ();
-	if (g_key_file_load_from_file (keyfile, path, 0, NULL)) {
-		char *connectionname = NULL;
-		char *gateway = NULL;
-		char *groupname = NULL;
-		char *username = NULL;
-		char *domain = NULL;
-		char *tunneling_mode = NULL;
-		char *routes = NULL;
-		gboolean should_expand;
+	/* Gateway */
+	if ((buf = pcf_file_lookup_value (pcf, "main", "Host")) == NULL || strlen (buf) < 1)
+		goto error;
+	gtk_entry_set_text (impl->w_gateway, buf);
 
-		if ((connectionname = g_key_file_get_string (keyfile, "main", "Description", NULL)) == NULL)
-			goto error;
-		if ((gateway = g_key_file_get_string (keyfile, "main", "Host", NULL)) == NULL)
-			goto error;
-		if ((groupname = g_key_file_get_string (keyfile, "main", "GroupName", NULL)) == NULL)
-			goto error;
-		if ((username = g_key_file_get_string (keyfile, "main", "Username", NULL)) == NULL)
-			goto error;
-		if ((domain = g_key_file_get_string (keyfile, "main", "NTDomain", NULL)) == NULL)
-			goto error;
-		if ((tunneling_mode = g_key_file_get_string (keyfile, "main", "TunnelingMode", NULL)) == NULL)
-			goto error;
+	/* Group name */
+	if ((buf = pcf_file_lookup_value (pcf, "main", "GroupName")) == NULL || strlen (buf) < 1)
+		goto error;
+	gtk_entry_set_text (impl->w_group_name, buf);
 
-		/* may not exist */
-		if ((routes = g_key_file_get_string (keyfile, "main", "X-NM-Routes", NULL)) == NULL)
-			routes = g_strdup ("");
+	/* Optional settings */
 
-		/* sanity check data */
-		if (! (strlen (gateway) > 0 &&
-		       strlen (groupname) > 0))
-			goto error;
+	if ((buf = pcf_file_lookup_value (pcf, "main", "UserName")))
+		gtk_entry_set_text (impl->w_username, buf);
+	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+	expand |= have_value;
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), have_value);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), have_value);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), have_value);
 
-		gtk_entry_set_text (impl->w_connection_name, connectionname);
-		gtk_entry_set_text (impl->w_gateway, gateway);
-		gtk_entry_set_text (impl->w_group_name, groupname);
+	if ((buf = pcf_file_lookup_value (pcf, "main", "NTDomain")))
+		gtk_entry_set_text (impl->w_domain, buf);
+	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+	expand |= have_value;
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), have_value);
 
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), strlen (username) > 0);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), strlen (routes) > 0);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), strlen (domain) > 0);
-		gtk_entry_set_text (impl->w_username, username);
-		gtk_entry_set_text (impl->w_routes, routes);
-		gtk_entry_set_text (impl->w_domain, domain);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), strlen (username) > 0);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), strlen (routes) > 0);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), strlen (username) > 0);
+	if ((buf = pcf_file_lookup_value (pcf, "main", "X-NM-Routes")))
+		gtk_entry_set_text (impl->w_routes, buf);
+	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+	expand |= have_value;
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), have_value);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), have_value);
 
-		should_expand = (strlen (username) > 0) || (strlen (domain) > 0) || (strlen (routes) > 0);
-		gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
+	gtk_expander_set_expanded (impl->w_opt_info_expander, expand);
 
+	if ((buf = pcf_file_lookup_value (pcf, "main", "TunnelingMode"))) {
 		/* If applicable, put up warning that TCP tunneling will be disabled */
-		if (strcmp (tunneling_mode, "1") == 0) {
+
+		if (strncmp (buf, "1", 1) == 0) {
 			GtkWidget *dialog;
 
-			dialog = gtk_message_dialog_new (NULL,
-							 GTK_DIALOG_DESTROY_WITH_PARENT,
-							 GTK_MESSAGE_WARNING,
-							 GTK_BUTTONS_CLOSE,
-							 _("TCP tunneling not supported"));
+			basename = g_path_get_basename (path);
+			dialog = gtk_message_dialog_new (NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+											 GTK_MESSAGE_WARNING, GTK_BUTTONS_CLOSE,
+											 _("TCP tunneling not supported"));
 			gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-								  _("The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n\nThe connection can still be created, with TCP tunneling disabled, however it may not work as expected."), basename);
+													  _("The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n\nThe connection can still be created, with TCP tunneling disabled, however it may not work as expected."), basename);
 			gtk_dialog_run (GTK_DIALOG (dialog));
 			gtk_widget_destroy (dialog);
 		}
-
-		file_is_good = TRUE;
-
-	error:
-		g_free (connectionname);
-		g_free (gateway);
-		g_free (groupname);
-		g_free (username);
-		g_free (domain);
-		g_free (tunneling_mode);
 	}
-	g_key_file_free (keyfile);
 
-	if (!file_is_good) {
+	success = TRUE;
+
+ error:	
+	g_hash_table_destroy (pcf);
+
+	if (!success) {
 		GtkWidget *dialog;
-		
+
+		if (!basename)
+			basename = g_path_get_basename (path);
+
 		dialog = gtk_message_dialog_new (NULL,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_WARNING,
@@ -580,7 +571,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
 	g_free (basename);
 
-	return file_is_good;
+	return success;
 }
 
 static void

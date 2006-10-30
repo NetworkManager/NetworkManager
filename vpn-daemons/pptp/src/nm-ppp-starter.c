@@ -43,8 +43,8 @@
 #include <ctype.h>
 #include <netdb.h>
 
-#include <NetworkManager/NetworkManager.h>
-#include <NetworkManager/NetworkManagerVPN.h>
+#include <NetworkManager.h>
+#include <NetworkManagerVPN.h>
 
 #include "nm-ppp-starter.h"
 #include "nm-utils.h"

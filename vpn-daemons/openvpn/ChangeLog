@@ -1,3 +1,16 @@
+2006-10-30  Tambet Ingo  <tambet@ximian.com>
+
+	* properties/Makefile.am: Add NetworkManager to CFLAGS and LDADD.
+
+	* src/Makefile.am: Ditto.
+
+	* properties/nm-openvpn.c: Remove the leading NetworkManager directory
+	from NM includes since the NM pkg-config file already adds that.
+
+	* src/nm-openvpn-service-openvpn-helper.c: Ditto.
+
+	* src/nm-openvpn-service.c: Ditto.
+
 2006-10-04  Tambet Ingo  <tambet@ximian.com>
 
 	* properties/nm-openvpn.c (impl_get_widget, impl_get_properties)

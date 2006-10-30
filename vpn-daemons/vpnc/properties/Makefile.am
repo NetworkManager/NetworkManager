@@ -3,6 +3,8 @@
 lib_LTLIBRARIES = libnm-vpnc-properties.la
 
 libnm_vpnc_properties_la_SOURCES = 			\
+				pcf-file.c		\
+				pcf-file.h		\
 				nm-vpnc.c
 
 gladedir = $(datadir)/gnome-vpn-properties/vpnc
@@ -13,6 +15,7 @@ libnm_vpnc_properties_la_CFLAGS =                          \
         $(GTK_CFLAGS)                                   \
         $(GCONF_CFLAGS)                                 \
         $(LIBGNOMEUI_CFLAGS)                            \
+        $(NETWORK_MANAGER_CFLAGS)                       \
         -DICONDIR=\""$(datadir)/pixmaps"\"              \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \

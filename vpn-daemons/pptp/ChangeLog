@@ -1,3 +1,18 @@
+2006-10-30  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-pppd-plugin.c: Remove the leading NetworkManager directory
+	from NM includes since the NM pkg-config file already adds that.
+
+	* properties/vpnui_impl.c: Ditto.
+
+	* properties/vpnui_impl.h: Ditto.
+
+	* src/nm-ppp-starter.c: Ditto.
+
+	* src/Makefile.am: Add NetworkManager to CFLAGS and LDADD.
+
+	* properties/Makefile.am: Add NetworkManager to CFLAGS and LDADD.
+
 2006-06-20  Satoru SATOH <ss@gnome.gr.jp>
 
 	* configure.in (ALL_LINGUAS): Added ja (Japanese).

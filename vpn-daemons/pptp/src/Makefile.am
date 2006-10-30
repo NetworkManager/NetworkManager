@@ -5,9 +5,10 @@ INCLUDES = -I${top_srcdir}                  \
 AM_CPPFLAGS =							\
 	$(DBUS_CFLAGS)						\
 	$(GTHREAD_CFLAGS)					\
-	$(PPPD_CFLAGS)							\
+	$(NETWORK_MANAGER_CFLAGS)				\
+	$(PPPD_CFLAGS)						\
+	$(NM_VPN_CFLAGS)					\
 	-Wall							\
-	$(NM_VPN_CFLAGS)							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
 	-DBINDIR=\"$(bindir)\"					\
@@ -17,8 +18,8 @@ AM_CPPFLAGS =							\
 	-DLIBDIR=\""$(libdir)"\"				\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
-	-DDATADIR=\"$(datadir)\" \
-    -fPIC
+	-DDATADIR=\"$(datadir)\"				\
+	-fPIC
 
 bin_PROGRAMS = nm-ppp-starter
 
@@ -38,7 +39,8 @@ nm_ppp_starter_SOURCES =			\
 
 nm_ppp_starter_LDADD = 				\
 				$(DBUS_LIBS)		\
-				$(GTHREAD_LIBS)            
+				$(GTHREAD_LIBS)		\
+				$(NETWORK_MANAGER_LIBS)
 
 nm_pppd_plugin_so_SOURCES = 		\
 				nm-pppd-plugin.c 	\

@@ -7,7 +7,7 @@
 #include <glade/glade.h>
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
-#include <NetworkManager/nm-vpn-ui-interface.h>
+#include <nm-vpn-ui-interface.h>
 
 #define NMVPNUI_IMPL_C
 #include "vpnui_impl.h"

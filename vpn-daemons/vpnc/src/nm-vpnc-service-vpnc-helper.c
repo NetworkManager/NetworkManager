@@ -29,7 +29,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
-#include <NetworkManager/NetworkManager.h>
+#include <NetworkManager.h>
 
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
