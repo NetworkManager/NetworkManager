@@ -1,3 +1,19 @@
+2006-11-01  Tambet Ingo  <tambet@ximian.com>
+
+	* properties/nm-vpnc.c (import_from_file): Rewrite using pcf-file
+	parser instead of GKeyFile, which has slightly different syntax.
+
+	* properties/pcf-file.h: Implement.
+
+	* properties/pcf-file.c: Implement.
+
+	* properties/Makefile.am: Add pcf-file.[ch] to build.
+
+	* src/nm-vpnc-service.c (nm_vpnc_dbus_handle_start_vpn): Return
+	dbus message reply instead of emitting signals on errors.
+	(nm_vpnc_dbus_start_vpn): Get the reply from VPN start instead of
+	creating a blank one.
+
 2006-09-27  Robert Love  <rml@novell.com>
 
 	Patch by Tambet Ingo <tambet@ximian.com>:

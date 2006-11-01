@@ -1009,7 +1009,7 @@ nm_openvpn_config_options_validate (char **data_items, int num_items)
  * Parse message arguments and start the VPN connection.
  *
  */
-static gboolean
+static DBusMessage *
 nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
 {
   char **		data_items = NULL;
@@ -1022,10 +1022,11 @@ nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
   const char *	user_name = NULL;
   DBusError		error;
   gboolean		success = FALSE;
-  gint			openvpn_fd = -1;	
+  gint			openvpn_fd = -1;
+  DBusMessage *	reply = NULL;
 
-  g_return_val_if_fail (message != NULL, FALSE);
-  g_return_val_if_fail (data != NULL, FALSE);
+  g_return_val_if_fail (message != NULL, NULL);
+  g_return_val_if_fail (data != NULL, NULL);
 
   nm_openvpn_set_state (data, NM_VPN_STATE_STARTING);
 
@@ -1039,22 +1040,32 @@ nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
 			      DBUS_TYPE_INVALID))
     {
       nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
-      nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+	  reply = nm_dbus_create_error_message (message,
+											NM_DBUS_INTERFACE_OPENVPN,
+											"InvalidArguments",
+											"Invalid method arguments.");
       dbus_error_free (&error);
       goto out;
     }
 
   if (!nm_openvpn_config_options_validate (data_items, num_items))
     {
-      nm_openvpn_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+	  reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_BAD_ARGUMENTS,
+											"Invalid VPN options.");
       goto out;
     }
 
   /* Now we can finally try to activate the VPN */
-  if ((openvpn_fd = nm_openvpn_start_openvpn_binary (data, data_items, num_items, password_items, num_passwords)) >= 0) {
-    // Everything ok
-    success = TRUE;
-  }
+  if ((openvpn_fd = nm_openvpn_start_openvpn_binary (data, data_items, num_items, password_items, num_passwords)) < 0)
+    {
+	  reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_LAUNCH_FAILED,
+											"Failed to run openvpn binary.");
+	  goto out;
+	}
+
+  // Everything ok
+  reply = dbus_message_new_method_return (message);
+  success = TRUE;
 
   
 out:
@@ -1063,7 +1074,8 @@ out:
   dbus_free_string_array (user_routes);
   if (!success)
     nm_openvpn_set_state (data, NM_VPN_STATE_STOPPED);
-  return success;
+
+  return reply;
 }
 
 
@@ -1127,8 +1139,7 @@ nm_openvpn_dbus_start_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPND
 
     case NM_VPN_STATE_STOPPED:
       nm_openvpn_cancel_quit_timer (data);
-      nm_openvpn_dbus_handle_start_vpn (message, data);
-      reply = dbus_message_new_method_return (message);
+      reply = nm_openvpn_dbus_handle_start_vpn (message, data);
       break;
 
     default:

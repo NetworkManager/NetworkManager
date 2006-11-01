@@ -582,7 +582,8 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
  * Parse message arguments and start the VPN connection.
  *
  */
-static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData *data)
+static DBusMessage *
+nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData *data)
 {
 	char **		data_items = NULL;
 	int			num_items = -1;
@@ -594,10 +595,11 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData 
 	const char *	user_name = NULL;
 	DBusError		error;
 	gboolean		success = FALSE;
-	gint			vpnc_fd = -1;	
+	gint			vpnc_fd = -1;
+	DBusMessage *	reply = NULL;
 
-	g_return_val_if_fail (message != NULL, FALSE);
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (message != NULL, NULL);
+	g_return_val_if_fail (data != NULL, NULL);
 
 	nm_vpnc_set_state (data, NM_VPN_STATE_STARTING);
 
@@ -611,34 +613,51 @@ static gboolean nm_vpnc_dbus_handle_start_vpn (DBusMessage *message, NmVpncData 
 				    DBUS_TYPE_INVALID))
 	{
 		nm_warning ("Could not process the request because its arguments were invalid.  dbus said: '%s'", error.message);
-		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+		reply = nm_dbus_create_error_message (message,
+											  NM_DBUS_INTERFACE_VPN,
+											  "InvalidArguments",
+											  "Invalid method arguments.");
 		dbus_error_free (&error);
 		goto out;
 	}
 
 	if (!nm_vpnc_config_options_validate (data_items, num_items))
 	{
-		nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_VPN_CONFIG_BAD);
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_BAD_ARGUMENTS,
+											  "Invalid VPN options.");
 		goto out;
 	}
 
 	/* Now we can finally try to activate the VPN */
-	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (data)) >= 0)
+	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (data)) < 0)
 	{
-		if (nm_vpnc_config_write (vpnc_fd, user_name, password_items, num_passwords, data_items, num_items))
-			success = TRUE;
-		else
-			nm_vpnc_dbus_signal_failure (data, NM_DBUS_VPN_SIGNAL_LAUNCH_FAILED);
-		close (vpnc_fd);
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_LAUNCH_FAILED,
+											  "Failed to run vpnc binary.");
+		goto out;
 	}
 
+	if (!nm_vpnc_config_write (vpnc_fd, user_name, password_items, num_passwords, data_items, num_items))
+	{
+		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_BAD_ARGUMENTS,
+											  "Invalid VPN options.");
+		goto out;
+	}
+
+	reply = dbus_message_new_method_return (message);
+	success = TRUE;
+
 out:
+
+	if (vpnc_fd >= 0)
+		close (vpnc_fd);
+
 	dbus_free_string_array (data_items);
 	dbus_free_string_array (password_items);
 	dbus_free_string_array (user_routes);
 	if (!success)
 		nm_vpnc_set_state (data, NM_VPN_STATE_STOPPED);
-	return success;
+
+	return reply;
 }
 
 
@@ -701,8 +720,7 @@ static DBusMessage *nm_vpnc_dbus_start_vpn (DBusConnection *con, DBusMessage *me
 
 		case NM_VPN_STATE_STOPPED:
 			nm_vpnc_cancel_quit_timer (data);
-			nm_vpnc_dbus_handle_start_vpn (message, data);
-			reply = dbus_message_new_method_return (message);
+			reply = nm_vpnc_dbus_handle_start_vpn (message, data);
 			break;
 
 		default:

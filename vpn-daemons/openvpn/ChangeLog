@@ -1,3 +1,10 @@
+2006-11-01  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-openvpn-service.c (nm_openvpn_dbus_handle_start_vpn): Return
+	dbus message reply instead of emitting signals on errors.
+	(nm_openvpn_dbus_start_vpn): Get the reply from VPN start instead of
+	creating a blank one.
+
 2006-10-04  Tambet Ingo  <tambet@ximian.com>
 
 	* properties/nm-openvpn.c (impl_get_widget, impl_get_properties) 

@@ -1,3 +1,10 @@
+2006-11-01  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-pptp-service.c (nm_pptp_dbus_handle_start_vpn): Return
+	dbus message reply instead of emitting signals on errors.
+	(nm_pptp_dbus_start_vpn): Get the reply from VPN start instead of
+	creating a blank one.
+
 2006-09-27  Robert Love  <rml@novell.com>
 
 	Patch by Tambet Ingo <tambet@ximian.com>:
