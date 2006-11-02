@@ -1,3 +1,8 @@
+2006-11-02  Pema Geyleg  <pgeyleg@gmail.com>
+
+	* LINGUAS: Added "dz".
+	* dz.po: Added Dzongkha Translation.
+
 2006-10-30  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* LINGUAS: Add «nb»

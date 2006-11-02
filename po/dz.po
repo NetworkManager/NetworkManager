@@ -1,0 +1,910 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: networkmanager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-10-30 04:46+0100\n"
+"PO-Revision-Date: 2006-10-31 04:11+0530\n"
+"Last-Translator: yangka <yanang_ka@hotmail.com>\n"
+"Language-Team: dzongkha <pgeyleg@dit.gov.bt>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: dzongkha\n"
+"X-Poedit-Country: bhutan\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: ../gnome/applet/applet-compat.c:171
+#: ../gnome/applet/applet-dbus-info.c:926
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་དོན་ལུ་ཆོག་ཚིག %s"
+
+#: ../gnome/applet/applet-dbus.c:274
+#, c-format
+msgid "Connection to the wireless network '%s' failed."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ལམ་ '%s' འཐུས་ཤོར་འབྱུང་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus.c:279
+msgid "Connection to the wired network failed."
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ལམ་འཐུས་ཤོར་འབྱུང་ཡོདཔ།"
+
+#: ../gnome/applet/applet.c:186
+msgid "Error displaying connection information:"
+msgstr "མཐུད་ལམ་བརྡ་དོན་བཀྲམ་བཏོན་འཛོལ་བ:"
+
+#: ../gnome/applet/applet.c:204
+msgid "Could not find some required resources (the glade file)!"
+msgstr "དགོས་མཁོ་ཅན་གྱི་ཐོན་ཁུངས་ལ་ལོ་འཚོལ་མ་འཐོབ (གེལེཌི་ཡིག་སྣོད)!"
+
+#: ../gnome/applet/applet.c:215
+msgid "No active connections!"
+msgstr "ཤུགས་ལྡན་མཐུད་ལམ་ཚུ་མེདཔ!"
+
+#: ../gnome/applet/applet.c:233
+#, c-format
+msgid "%d Mb/s"
+msgstr "%d ཨེམ་བི/ཨེསི"
+
+#: ../gnome/applet/applet.c:236
+#, c-format
+msgid "Wired Ethernet (%s)"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཨི་ཐར་ནེཊི (%s)"
+
+#: ../gnome/applet/applet.c:238
+#, c-format
+msgid "Wireless Ethernet (%s)"
+msgstr "རླུང་འཕྲིན་ཨི་ཐར་ནེཊི (%s)"
+
+#: ../gnome/applet/applet.c:244
+msgid "Unknown"
+msgstr "མ་ཤེསཔ།"
+
+#: ../gnome/applet/applet.c:334
+#: ../gnome/applet/applet.c:360
+msgid "NetworkManager Applet"
+msgstr "ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་ཨེཔ་ལེཊི།"
+
+#: ../gnome/applet/applet.c:336
+msgid ""
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"འདྲ་བཤུས་དབང་ཆ © 2004-2006 Red Hat, Inc.\n"
+"འདྲ་བཤུས་དབང་ཆ© 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:338
+#: ../gnome/applet/applet.c:364
+msgid "Notification area applet for managing your network devices and connections."
+msgstr "ཁྱོད་རའི་ཡོངས་འབྲེལ་ཐབས་འཕྲུལ་ཚུ་དང་མཐུད་ལམ་ཚུ་གི་དོན་ལུ་བརྡ་བསྐུལ་མངའ་ཁོངས་ཨེཔ་ལེཊི།"
+
+#: ../gnome/applet/applet.c:341
+#: ../gnome/applet/applet.c:368
+msgid "translator-credits"
+msgstr "སྐད་བསྒྱུར་པ་-ངོ་བསྟོད་ཚུ།"
+
+#: ../gnome/applet/applet.c:362
+msgid ""
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"འདྲ་བཤུས་དབང་ཆ © 2004-2005 Red Hat, Inc.\n"
+"འདྲ་བཤུས་དབང་ཆ © 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:424
+msgid "VPN Login Failure"
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འཐུས་ཤོར།"
+
+#: ../gnome/applet/applet.c:425
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a login failure."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ '%s' ནང་བསྐྱོད་འཐུས་ཤོར་ཅིག་ལུ་ཆད་འདི་འགོ་བཙུགས་མ་ཚུགསཔ།"
+
+#: ../gnome/applet/applet.c:429
+msgid "VPN Start Failure"
+msgstr "ཝི་པི་ཨེན་འགོ་བཙུགས་འཐུས་ཤོར།"
+
+#: ../gnome/applet/applet.c:430
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a failure launching the VPN program."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ '%s' ཝི་པི་ཨེན་ལས་རིམ་འདི་གསར་བཙུགས་འབད་ནི་འཐུས་ཤོར་ཅིག་ལུ་ཆད་འགོ་བཙུགས་མ་ཚུགསཔ།"
+
+#: ../gnome/applet/applet.c:434
+#: ../gnome/applet/applet.c:444
+msgid "VPN Connect Failure"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འཐུས་ཤོར།"
+
+#: ../gnome/applet/applet.c:435
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a connection error."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ '%s' མཐུད་ལམ་འཛོལ་བ་ཅིག་ལུ་ཆད་འདི་འགོ་བཙུགས་མ་ཚུགསཔ།"
+
+#: ../gnome/applet/applet.c:439
+msgid "VPN Configuration Error"
+msgstr "ཝི་པི་ཨེན་རིམ་སྒྲིག་འཛོལ་བ།"
+
+#: ../gnome/applet/applet.c:440
+#, c-format
+msgid "The VPN connection '%s' was not correctly configured."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ '%s' ངེས་བདེན་སྦེ་རིམ་སྒྲིག་མ་འབད་བར་ཡོདཔ།"
+
+#: ../gnome/applet/applet.c:445
+#, c-format
+msgid "Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ '%s' ཝི་པི་ཨེན་སར་བར་གྱིས་ཡོངས་འབྲེལ་རིམ་སྒྲིག་ལངམ་ཅིག་སླར་ལོག་མེདཔ་ལས་འགོ་བཙུགས་མ་ཚུགསཔ།"
+
+#: ../gnome/applet/applet.c:515
+msgid "VPN Login Message"
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འཕྲིན་དོན།"
+
+#: ../gnome/applet/applet.c:739
+#: ../gnome/applet/applet.c:2534
+#: ../gnome/applet/other-network-dialog.c:458
+#: ../gnome/applet/passphrase-dialog.c:228
+msgid "The NetworkManager Applet could not find some required resources (the glade file was not found)."
+msgstr "ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་ཨེཔ་ལེཊི་དེ་གིས་དགོས་མཁོ་ཡོད་པའི་ཐོན་ཁུངས་ལ་ལོ་འཚོལ་མ་འཐོབ(གེལེཊི་ཡིག་སྣོད་འདི་འཚོལ་མ་འཐོབ)"
+
+#: ../gnome/applet/applet.c:751
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "ཡོངས་འབྲེལ་ཐབས་འཕྲུལ་འདི་གིས་ \"%s (%s)\" རླུང་འཕྲིན་པར་ལེན་རྒྱབ་སྐྱོར་མི་འབད།"
+
+#: ../gnome/applet/applet.c:759
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "ཡོངས་འབྲེལ་ཐབས་འཕྲུལ་འདི་གིས་ \"%s (%s)\" འབྲེལ་ལམ་སྐྱོན་འཛིན་ནི་རྒྱབ་སྐྱོར་མི་འབད།"
+
+#. Note to translators: this is used if no essid is known
+#: ../gnome/applet/applet.c:901
+#: ../gnome/applet/applet.c:1099
+msgid "(unknown)"
+msgstr "(མ་ཤེསཔ)"
+
+#: ../gnome/applet/applet.c:907
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་འདིའི་དོན་ལུ་ %s ཐབས་འཕྲུལ་གྲ་སྒྲིག་འབད་དོ..."
+
+#: ../gnome/applet/applet.c:909
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདིའི་དོན་ལུ་ %s ཐབས་འཕྲུལ་གྲ་སྒྲིག་འབད་དོ '%s'..."
+
+#: ../gnome/applet/applet.c:917
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་དོན་ལུ་ %s ཐབས་འཕྲུལ་རིམ་སྒྲིག་འབད་དོ..."
+
+#: ../gnome/applet/applet.c:919
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ནི་དཔའ་བཅམ་དོ '%s'..."
+
+#: ../gnome/applet/applet.c:927
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདིའི་དོན་ལུ་ཡོངས་འབྲེལ་ལྡེ་མིག་དོན་ལུ་བསྒུག་དོ '%s'..."
+
+#: ../gnome/applet/applet.c:935
+#: ../gnome/applet/applet.c:945
+msgid "Requesting a network address from the wired network..."
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་འདི་ལས་ཡོངས་འབྲེལ་ཁ་བྱང་ཅིག་ཞུ་བ་འབད་དོ..."
+
+#: ../gnome/applet/applet.c:937
+#: ../gnome/applet/applet.c:947
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་ལས་ཡོངས་འབྲེལ་ཁ་བྱང་ཅིག་ཞུ་བ་འབད་དོ '%s'..."
+
+#: ../gnome/applet/applet.c:955
+msgid "Finishing connection to the wired network..."
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ལམ་མཇུག་བསྡུ་དོ..."
+
+#: ../gnome/applet/applet.c:957
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ལམ་མཇུག་བསྡུ་དོ '%s'..."
+
+#: ../gnome/applet/applet.c:1074
+msgid "NetworkManager is not running"
+msgstr "ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་འདི་གཡོག་བཀོལ་མི་བཏུབ།"
+
+#: ../gnome/applet/applet.c:1082
+#: ../gnome/applet/applet.c:1827
+msgid "Networking disabled"
+msgstr "ཡོངས་འབྲེལ་བཟོ་བ་ལྕོགས་མིན་བཟོ་ཡོདཔ།"
+
+#: ../gnome/applet/applet.c:1087
+msgid "No network connection"
+msgstr "ཡོངས་འབྲེལ་མཐུད་ལམ་མེདཔ།"
+
+#: ../gnome/applet/applet.c:1092
+msgid "Wired network connection"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ་མཐུད་ལམ།"
+
+#: ../gnome/applet/applet.c:1096
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "ནམ་དགོས་རླུང་འཕྲིན་ཡོངས་འབྲེལ་ཅིག་ལུ་མཐུད་ཡོདཔ།"
+
+#: ../gnome/applet/applet.c:1098
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་ '%s' (%d%%)ལུ་མཐུད་ལམ།"
+
+#: ../gnome/applet/applet.c:1119
+#, c-format
+msgid "VPN connection to '%s'"
+msgstr "ཝི་པི་ཨེན་ '%s' ལུ་མཐུད་ལམ།"
+
+#: ../gnome/applet/applet.c:1127
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "ཝི་པི་ཨེན་ '%s' ལུ་མཐུད་དོ།"
+
+#: ../gnome/applet/applet.c:1540
+msgid "_Connect to Other Wireless Network..."
+msgstr "གཞན་རླུང་འཕྲིན་ཡོངས་འབྲེལ་ལུ་མཐུད...(_C)"
+
+#: ../gnome/applet/applet.c:1561
+msgid "Create _New Wireless Network..."
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་གསརཔ་གསར་བསྐྲུན་འབད...(_N)"
+
+#: ../gnome/applet/applet.c:1684
+msgid "_VPN Connections"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཚུ།(_V)"
+
+#: ../gnome/applet/applet.c:1729
+msgid "_Configure VPN..."
+msgstr "ཝི་པི་ཨེན་རིམ་སྒྲིག...(_C)"
+
+#: ../gnome/applet/applet.c:1733
+msgid "_Disconnect VPN..."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་མེདཔ་བཟོ...(_D)"
+
+#: ../gnome/applet/applet.c:1755
+msgid "_Dial Up Connections"
+msgstr "མཐུད་ལམ་ཚུ་ཌེ་ཡེལ་ཨཔ།(_D)"
+
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1766
+#, c-format
+msgid "Connect to %s..."
+msgstr " %s ལུ་མཐུད..."
+
+#: ../gnome/applet/applet.c:1772
+#, c-format
+msgid "Disconnect from %s..."
+msgstr " %s ལས་མཐུད་ལམ་མེདཔ་བཟོ..."
+
+#: ../gnome/applet/applet.c:1821
+msgid "No network devices have been found"
+msgstr "ཡོངས་འབྲེལ་ཐབས་འཕྲུལ་ཚུ་འཚོལ་མ་འཐོབ།"
+
+#: ../gnome/applet/applet.c:2013
+msgid "NetworkManager is not running..."
+msgstr "ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་འདི་གཡོག་བཀོལ་མི་བཏུབ..."
+
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2192
+msgid "Enable _Networking"
+msgstr "ཡོངས་འབྲེལ་བཟོ་བ་ལྕོགས་ཅན་བཟོ།(_N)"
+
+#. 'Enable Wireless' item
+#: ../gnome/applet/applet.c:2198
+msgid "Enable _Wireless"
+msgstr "རླུང་འཕྲིན་ལྕོགས་ཅན་བཟོ།(_W)"
+
+#. 'Connection Information' item
+#: ../gnome/applet/applet.c:2204
+msgid "Connection _Information"
+msgstr "མཐུད་ལམ་བརྡ་དོན།(_I)"
+
+#. Help item
+#: ../gnome/applet/applet.c:2215
+msgid "_Help"
+msgstr "གྲོགས་རམ།(_H)"
+
+#. About item
+#: ../gnome/applet/applet.c:2224
+msgid "_About"
+msgstr "སྐོར་ལས།(_A)"
+
+#: ../gnome/applet/applet.c:2695
+msgid "The NetworkManager applet could not find some required resources.  It cannot continue.\n"
+msgstr "ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་ཨེཔ་ལེཊི་འདི་གིས་དགོས་མཁོ་ཡོད་པའི་ཐོན་ཁུངས་ལ་ལོ་འཚོལ་མ་འཐོབ་ལས་འཕྲོ་མཐུད་མི་བཏུབ།\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "ཀུན་གྱི་རིམ་ལུགས།"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "ལྡེ་མིག་རུབ་སྤྱོད་འབད་ཡོདཔ།"
+
+#: ../gnome/applet/wireless-security-option.c:208
+msgid "Automatic (Default)"
+msgstr "རང་བཞིན (སྔོན་སྒྲིག)"
+
+#: ../gnome/applet/wireless-security-option.c:215
+msgid "AES-CCMP"
+msgstr "ཨེ་ཨི་ཨེསི་-སི་སི་ཨེམ་པི།"
+
+#: ../gnome/applet/wireless-security-option.c:223
+msgid "TKIP"
+msgstr "ཊི་ཀེ་ཨའི་པི།"
+
+#: ../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr "ནུས་ཅན་ཌབ་ལུ་ཨི་པི།"
+
+#: ../gnome/applet/wso-none.c:53
+msgid "None"
+msgstr "ཅི་མེད།"
+
+#: ../gnome/applet/wso-wep-ascii.c:138
+msgid "WEP 64/128-bit ASCII"
+msgstr "ཌབ་ལུ་ཨི་པི ༦༤/༡༢༨-བིཊི་ཨེ་ཨེསི་སི་ཨའི་ཨའི།"
+
+#: ../gnome/applet/wso-wep-hex.c:135
+msgid "WEP 64/128-bit Hex"
+msgstr "ཌབ་ལུ་ཨི་པི་ ༦༤/༡༢༨-བིཊི་ཧེགསི།"
+
+#: ../gnome/applet/wso-wep-passphrase.c:135
+msgid "WEP 128-bit Passphrase"
+msgstr "ཌབ་ལུ་ཨི་པི་ ༡༢༨-བིཊི་ཆོག་ཚིག"
+
+#: ../gnome/applet/wso-wpa-eap.c:237
+msgid "PEAP"
+msgstr "པི་ཨི་ཨེ་པི།"
+
+#: ../gnome/applet/wso-wpa-eap.c:238
+msgid "TLS"
+msgstr "ཊི་ཨེལ་ཨེསི།"
+
+#: ../gnome/applet/wso-wpa-eap.c:239
+msgid "TTLS"
+msgstr "ཊི་ཊི་ཨེལ་ཨེསི།"
+
+#: ../gnome/applet/wso-wpa-eap.c:247
+#: ../src/nm-ap-security-wpa-eap.c:93
+#: ../src/nm-ap-security-wpa-eap.c:117
+msgid "WPA2 Enterprise"
+msgstr "ཌབ་ལུ་པི་ཨེ་ ༢ ཚོང་ལཱ།"
+
+#: ../gnome/applet/wso-wpa-eap.c:249
+#: ../src/nm-ap-security-wpa-eap.c:95
+#: ../src/nm-ap-security-wpa-eap.c:122
+msgid "WPA Enterprise"
+msgstr "ཌབ་ལུ་པི་ཨེ་ཚོང་ལཱ།"
+
+#: ../gnome/applet/wso-wpa-psk.c:178
+msgid "WPA2 Personal"
+msgstr "ཌབ་ལུ་པི་ཨེ་ ༢ རང་དོན།"
+
+#: ../gnome/applet/wso-wpa-psk.c:180
+msgid "WPA Personal"
+msgstr "ཌབ་ལུ་པི་ཨེ་རང་དོན།"
+
+#: ../gnome/applet/eggtrayicon.c:134
+msgid "Orientation"
+msgstr "ཕྱོགས།"
+
+#: ../gnome/applet/eggtrayicon.c:135
+msgid "The orientation of the tray."
+msgstr "ཤོག་སྣོད་འདི་གི་ཕྱོགས་འདི།"
+
+#: ../gnome/applet/menu-items.c:88
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ (%s)"
+
+#: ../gnome/applet/menu-items.c:91
+msgid "_Wired Network"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཡོངས་འབྲེལ།(_W)"
+
+#: ../gnome/applet/menu-items.c:162
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "རླུང་འཕྲིན་ཡོངས་འབྲེལ (%s)"
+msgstr[1] "རླུང་འཕྲིན་ཡོངས་འབྲེལ་ཚུ (%s)"
+
+#: ../gnome/applet/menu-items.c:164
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "རླུང་འཕྲིན་ཡོངས་འབྲེལ།"
+msgstr[1] ""
+
+#: ../gnome/applet/menu-items.c:343
+msgid " (invalid Unicode)"
+msgstr " (ནུས་མེད་ཡི་ནི་ཀོཌི)"
+
+#: ../gnome/applet/other-network-dialog.c:352
+#, c-format
+msgid "By default, the wireless network's name is set to your computer's name, %s, with no encryption enabled"
+msgstr "སྔོན་སྒྲིག་གིས་འབད་རླུང་འཕྲིན་ཡོངས་འབྲེལ་གྱི་མིང་འདི་ཁྱོད་ཀྱི་གློག་རིག་གི་མིང་ལུ་ %s གསང་བཟོ་ལྕོགས་ཅན་དང་གཅིག་ཁར་གཞི་སྒྲིག་ཡོདཔ།"
+
+#: ../gnome/applet/other-network-dialog.c:358
+msgid "Create new wireless network"
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་གསརཔ་གསར་བསྐྲུན་འབད།"
+
+#: ../gnome/applet/other-network-dialog.c:359
+msgid "Enter the name and security settings of the wireless network you wish to create."
+msgstr "ཁྱོད་ར་གིས་གསར་བསྐྲུན་འབད་ནི་ཨིན་མི་རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་གི་མིང་དང་སྲུང་སྐྱོབ་སྒྲིག་སྟངས་ཚུ་བཙུགས།"
+
+#: ../gnome/applet/other-network-dialog.c:363
+msgid "Create New Wireless Network"
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་གསརཔ་གསར་བསྐྲུན་འབད།"
+
+#: ../gnome/applet/other-network-dialog.c:368
+msgid "Existing wireless network"
+msgstr "ཡོད་བཞིན་པའི་རླུང་འཕྲིན་ཡོངས་འབྲེལ།"
+
+#: ../gnome/applet/other-network-dialog.c:369
+msgid "Enter the name of the wireless network to which you wish to connect."
+msgstr "ཁྱོད་ར་གིས་མཐུད་ནི་ཨིན་མི་རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་གི་མིང་འདི་བཙུགས།"
+
+#: ../gnome/applet/other-network-dialog.c:371
+msgid "Connect to Other Wireless Network"
+msgstr "གཞན་རླུང་འཕྲིན་ཡོངས་འབྲེལ་ལུ་མཐུད།"
+
+#: ../gnome/applet/passphrase-dialog.c:215
+msgid "Error connecting to wireless network"
+msgstr "རླུང་འཕྲིན་ཡོངས་འབྲེལ་ལུ་མཐུད་ལམ་འཛོལ་བ།"
+
+#: ../gnome/applet/passphrase-dialog.c:216
+msgid "The requested wireless network requires security capabilities unsupported by your hardware."
+msgstr "ཁྱོད་རའི་སྲ་ཆས་ཀྱིས་འབད་ཞུ་བ་འབད་ཡོད་མི་རླུང་འཕྲིན་ཡོངས་འབྲེལ་དགོས་མཁོའི་སྲུང་རྒྱབ་ལྕོགས་གྲུབ་རྒྱབ་སྐྱོར་མ་འབད་བཡ་ཡོདཔ།"
+
+#: ../gnome/applet/vpn-password-dialog.c:151
+#: ../gnome/applet/vpn-password-dialog.c:188
+#, c-format
+msgid "Cannot start VPN connection '%s'"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འགོ་བཙུགས་མི་བཏུབ '%s'"
+
+#: ../gnome/applet/vpn-password-dialog.c:154
+#, c-format
+msgid "Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་དོན་ལུ་བདེན་བཤད་ཌའི་ལོག་འདི་འཚོལ་མ་འཐོབ '%s'། ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/applet/vpn-password-dialog.c:191
+#, c-format
+msgid "There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་དོན་ལུ་%s'བདེན་བཤད་ཌའི་ལོག་འདི་གསར་བཙུགསའབད་ནི་དཀའ་ངལ་འབྱུང་ཡོདཔ། ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/applet/applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/applet.glade.h:2
+msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">མཐུད་ལམ་བརྡ་དོན་ཤུགས་ལྡན་བཟོ</span>"
+
+#: ../gnome/applet/applet.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">རླུང་འཕྲིན་ཡོངས་འབྲེལ་གྱིས་འབད་ཆོག་ཡིག་ཚིག་དགོས་མཁོ་ཡོདཔ།</span>\n"
+"\n"
+"རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་འཛུལ་སྤྱོད་འབད་ནི་ལུ་ཆོག་ཡིག་ཚིག་ཡང་ན་གསང་བཟོ་ལྡེ་མིག་འདི་དགོས་མཁོ་ཡོདཔ། '%s'."
+
+#: ../gnome/applet/applet.glade.h:8
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">ཡོངས་འབྲེལ་ལས་འགན་མར་ཕབ་འབད་ཡོདཔ།</span>\n"
+"\n"
+"%s འདི་རྩ་བ་ལས་ལས་འགན་མི་བཏུབ། "
+
+#: ../gnome/applet/applet.glade.h:12
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</span>\n"
+"\n"
+"You have chosen to log in to the wireless network '%s'.  If you are sure that this wireless network is secure, click the checkbox below and NetworkManager will not require confirmation on subsequent log ins."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">རླུང་འཕྲིན་ནང་བསྐྱོད་ངེས་དཔྱད</span>\n"
+"\n"
+"ཁྱོད་ཀྱིས་རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་ལུ་ནང་བསྐྱོད་འབད་ནི་ལུ་གདམ་ཁ་འབད་ཡོདཔ '%s'།  ཁྱོད་ཀྱིས་རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་མཐའ་བཙན་བཟོ་ནི་ངེས་ཏིག་ཨིན་པ་ཅིན་ འོག་གི་ཞིབ་དཔྱད་སྒྲོམ་འདི་ཨེབ་གཏང་འབད་ནི་དང་ཡོངས་འབྲེལ་འཛིན་སྐྱོང་པ་འདི་ལུ་ནང་བསྐྱོད་ཤུལ་ལུ་གུ་ངེས་དཔྱད་དགོས་མཁོ་མེདཔ་ཨིན།"
+
+#: ../gnome/applet/applet.glade.h:15
+msgid "Anonymous Identity:"
+msgstr "མིང་མེདཔ་ངོ་རྟགས:"
+
+#: ../gnome/applet/applet.glade.h:16
+msgid "Authentication:"
+msgstr "བདེན་བཤད:"
+
+#: ../gnome/applet/applet.glade.h:17
+msgid "Broadcast Address:"
+msgstr "ཁ་བྱང་རྒྱང་བསྒྲགས་འབད:"
+
+#: ../gnome/applet/applet.glade.h:18
+msgid "CA Certificate File:"
+msgstr "སི་ཨེ་ལག་འཁྱེར་ཡིག་སྣོད:"
+
+#: ../gnome/applet/applet.glade.h:19
+msgid "C_onnect"
+msgstr "མཐུད༔(_o)"
+
+#: ../gnome/applet/applet.glade.h:20
+msgid "Client Certificate File:"
+msgstr "ཞབས་ཏོག་སྤྱོད་མི་ལག་ཁྱེར་ཡིག་སྣོད:"
+
+#: ../gnome/applet/applet.glade.h:21
+msgid "Connection Information"
+msgstr "མཐུད་ལམ་བརྡ་དོན།"
+
+#: ../gnome/applet/applet.glade.h:22
+msgid "Default Route:"
+msgstr "སྔོན་སྒྲིག་འགྲུལ་ལམ:"
+
+#: ../gnome/applet/applet.glade.h:23
+msgid "Destination Address:"
+msgstr "འགྲོ་ཡུལ་ཁ་བྱང་:"
+
+#: ../gnome/applet/applet.glade.h:24
+msgid "Driver:"
+msgstr "འདྲེན་བྱེད:"
+
+#: ../gnome/applet/applet.glade.h:25
+msgid "EAP Method:"
+msgstr "ཨི་ཨེ་པི་ཐབས་ལམ:"
+
+#: ../gnome/applet/applet.glade.h:26
+msgid "Hardware Address:"
+msgstr "སྲ་ཆས་ཁ་བྱང་:"
+
+#: ../gnome/applet/applet.glade.h:27
+msgid "IP Address:"
+msgstr "ཨའི་པི་ཁ་བྱང་:"
+
+#: ../gnome/applet/applet.glade.h:28
+msgid "Identity:"
+msgstr "ངོ་རྟགས:"
+
+#: ../gnome/applet/applet.glade.h:29
+msgid "Interface:"
+msgstr "ངོས་འདྲ་བ:"
+
+#: ../gnome/applet/applet.glade.h:30
+msgid "Key Type:"
+msgstr "ལྡེ་མིག་དབྱེ་བ:"
+
+#: ../gnome/applet/applet.glade.h:31
+msgid "Key management:"
+msgstr "ལྡེ་མིག་འཛིན་སྐྱོང་པ:"
+
+#: ../gnome/applet/applet.glade.h:32
+msgid "Key:"
+msgstr "ལྡེ་མིག:"
+
+#: ../gnome/applet/applet.glade.h:33
+msgid ""
+"None\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
+msgstr ""
+"ཅི་མེད\n"
+"ཌབ་ལུ་ཨི་པི་ ༡༢༨-བིཊི་ཆོག་ཡིག་ཚིག\n"
+"ཌབ་ལུ་ཨི་པི ༦༤/༡༢༨-བིཊི་ཧེགསི\n"
+"ཌབ་ལུ་ཨི་པི ༦༤/༡༢༨-བིཊི་ཨེ་ཨེསི་སི་ཨའི་ཨའི\n"
+
+#: ../gnome/applet/applet.glade.h:38
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"ཀུན་གྱི་རིམ་ལུགས\n"
+"ལྡེ་མིག་རུབ་སྤྱོད་འབད་ཡོདཔ།"
+
+#: ../gnome/applet/applet.glade.h:40
+msgid "Other Wireless Network..."
+msgstr "གཞན་རླུང་འཕྲིན་ཡོངས་འབྲེལ..."
+
+#: ../gnome/applet/applet.glade.h:41
+msgid "Passphrase:"
+msgstr "ཆོག་ཡིག་ཚིག:"
+
+#: ../gnome/applet/applet.glade.h:42
+msgid "Password:"
+msgstr "ཆོག་ཡིག:"
+
+#: ../gnome/applet/applet.glade.h:43
+msgid "Primary DNS:"
+msgstr "གཞི་རིམ་ཌི་ཨེན་ཨེསི:"
+
+#: ../gnome/applet/applet.glade.h:44
+msgid "Private Key File:"
+msgstr "སྒེར་གྱི་ལྡེ་མིག་ཡིག་སྣོད:"
+
+#: ../gnome/applet/applet.glade.h:45
+msgid "Private Key Password:"
+msgstr "སྒེར་གྱི་ལྡེ་མིག་ཆོག་ཡིག:"
+
+#: ../gnome/applet/applet.glade.h:46
+msgid "Secondary DNS:"
+msgstr "གལ་གནད་ཆུང་བའི་ཌི་ཨེན་ཨེསི:"
+
+#: ../gnome/applet/applet.glade.h:47
+msgid "Select the CA Certificate File"
+msgstr "སི་ཨེ་ལག་ཁྱེར་ཡིག་སྣོད་འདི་སེལ་འཐུ་འབད།"
+
+#: ../gnome/applet/applet.glade.h:48
+msgid "Select the Client Certificate File"
+msgstr "ཞབས་ཏོག་སྤྱོད་མི་ལག་ཁྱེར་ཡིག་སྣོད་འདི་སེལ་འཐུ་འབད།"
+
+#: ../gnome/applet/applet.glade.h:49
+msgid "Select the Private Key File"
+msgstr "སྒེར་གྱི་ལྡེ་མིག་ཡིག་སྣོད་འདི་སེལ་འཐུ་འབད།"
+
+#: ../gnome/applet/applet.glade.h:50
+msgid "Show key"
+msgstr "ལྡེ་མིག་སྟོན།"
+
+#: ../gnome/applet/applet.glade.h:51
+msgid "Show passphrase"
+msgstr "ཆོག་ཡིག་ཚིག་སྟོན།"
+
+#: ../gnome/applet/applet.glade.h:52
+msgid "Show password"
+msgstr "ཆོག་ཡིག་སྟོན།"
+
+#: ../gnome/applet/applet.glade.h:53
+msgid "Show passwords"
+msgstr "ཆོག་ཡིག་ཚུ་སྟོན།"
+
+#: ../gnome/applet/applet.glade.h:54
+msgid "Speed:"
+msgstr "མགྱོགས་ཚད:"
+
+#: ../gnome/applet/applet.glade.h:55
+msgid "Subnet Mask:"
+msgstr "སབ་ནེཊི་གདོང་ཁེབས:"
+
+#: ../gnome/applet/applet.glade.h:56
+msgid "Type:"
+msgstr "དབྱེ་བ:"
+
+#: ../gnome/applet/applet.glade.h:57
+msgid "User Name:"
+msgstr "ལག་ལེན་པའི་མིང་:"
+
+#: ../gnome/applet/applet.glade.h:58
+msgid "Wireless Network Key Required"
+msgstr "རླུང་འཕྲིན་ཡཅངས་འབྲེལ་ལྡེ་མིག་དགོས་མཁོ་ཡོདཔ།"
+
+#: ../gnome/applet/applet.glade.h:59
+msgid "Wireless _adapter:"
+msgstr "རླུང་འཕྲིན་མཐུན་བྱེད:(_a)"
+
+#: ../gnome/applet/applet.glade.h:60
+msgid "_Always Trust this Wireless Network"
+msgstr "ཨ་རྟག་ར་རླུང་འཕྲིན་ཡོངས་འབྲེལ་འདི་བློ་གཏད།(_A)"
+
+#: ../gnome/applet/applet.glade.h:61
+msgid "_Don't remind me again"
+msgstr "ང་ལུ་ལོག་དྲན་བསྐུལ་མ་འབད།(_D)"
+
+#: ../gnome/applet/applet.glade.h:62
+msgid "_Fallback on this Network"
+msgstr "ཡོངས་འབྲེལ་འདི་གུ་གློ་བུར་རྒྱབ་ཐག (_F)"
+
+#: ../gnome/applet/applet.glade.h:63
+msgid "_Login to Network"
+msgstr "ཡོངས་འབྲེལ་ལུ་ནང་བསྐྱོད།(_L)"
+
+#: ../gnome/applet/applet.glade.h:64
+msgid "_Network Name:"
+msgstr "ཡོངས་འབྲེལ་མིང་:(_N)"
+
+#: ../gnome/applet/applet.glade.h:65
+msgid "_Wireless Security:"
+msgstr "རླུང་འཕྲིན་སྲུང་རྒྱབ:(_W)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+msgid "Cannot add VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཁ་སྐོང་འབད་མི་བཏུབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:421
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "ཁྱོད་རའི་རིམ་ལུགས་གུ་ཝི་པི་ཨེན་མཉེན་ཆས་དེ་འོས་འབབ་མེདཔ་འཐོབ་ཡོདཔ། ཁྱོད་རའི་བདག་སྐྱོང་པ་རིམ་ལུགས་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+msgid "Cannot import VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ནང་འདྲེན་འབད་མི་བཏུབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:465
+#, c-format
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་དོན་ལུ་ '%s'ཡིག་སྣོད་ནང་འདྲེན་འབད་ནི་ལུ '%s'འོས་འབབ་མཉེན་ཆས་འཚོལ་མ་འཐོབ། ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:585
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་སླར་འདྲེན་འཛོལ་བ '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:588
+#, c-format
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་དོན་ལུ་ཡུ་ཨའི་ཡིག་སྣོད་ཚུ་འཚོལ་མ་འཐོབ '%s'། ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:732
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་བཏོན་གཏང་ནི་ཨིན་ན \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:735
+#, c-format
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདིའི་སྐོར་ལས་བརྡ་དོན་ཆ་མཉམ་ \"%s\"བརླག་སྟོར་ཞུགས་ཡོད་པ་ཅིན་ཁྱོད་ཀྱིས་ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འདི་མཐུད་ལམ་གསརཔ་གསར་བསྐྲུན་འབད་ནི་ལུ་བརྡ་དོན་བྱིན་ནི་ལུ་དགོཔ་ཨིན། "
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:908
+msgid "Unable to load"
+msgstr "མངོན་གསལ་འབད་མི་ཚུགསཔ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:910
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "ཐོན་ཁུངས་དགོཔ་ལ་ལོ་འཚོལ་མ་འཐོབ (གེ་ལེཌི་ཡིག་སྣོད་འདི)!"
+
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1055
+msgid "Create VPN Connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་གསར་བསྐྲུན་འབད།"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1073
+msgid "Edit VPN Connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཞུན་དག་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་གསརཔ་ཅིག་ཁ་སྐོང་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Delete the selected VPN connection"
+msgstr "སེལ་འཐུ་འབད་ཡོད་མི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་བཏོན་གཏང་།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "E_xport"
+msgstr "ཕྱིར་འདྲེན།(_x)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Edit the selected VPN connection"
+msgstr "སེལ་འཐུ་འབད་ཡོད་མི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ཞུན་དག་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Export the VPN settings to a file"
+msgstr "ཝི་པི་ཨེན་སྒྲིག་སྟངས་ཚུ་ཡིག་སྣོད་ཅིག་ལུ་ཕྱིར་འདྲེན་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Export the selected VPN connection to a file"
+msgstr "སེལ་འཐུ་འབད་ཡོད་མི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ཡིག་སྣོད་ཅིག་ལུ་ཕྱིར་འདྲེན་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Manage Virtual Private Network Connections"
+msgstr "བར་ཅུ་ཡལ་སྒེར་དོན་ཡོངས་འབྲེལ་མཐུད་ལམ་ཚུ་འཛིན་སྐྱོང་འབད།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "VPN Connections"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཚུ།"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "༤༠-བིཊི་ཌབ་ལུ་ཨི་པི།"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "༡༠༤-བིཊི་ཌབ་ལུ་ཨི་པི།"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "ཌབ་ལུ་པི་ཨེ་ཊི་ཀེ་ཨའི་པི།"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "ཌབ་ལུ་པི་ཨེ་སི་སི་ཨེམ་པི།"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "ཌབ་ལུ་པི་ཨེ་རང་བཞིན།"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "ཌབ་ལུ་པི་ཨེ་ ༢ ཊི་ཀེ་ཨའི་པི།"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "ཌབ་ལུ་པི་ཨེ་ ༢ སི་སི་ཨེམ་པི།"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "ཌབ་ལུ་པི་ཨེ་ ༢ རང་བཞིན།"
+
+#: ../src/nm-ap-security.c:338
+msgid "none"
+msgstr "ཅི་མེད།"
+
+#: ../src/nm-netlink-monitor.c:174
+#, c-format
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཨི་ཐར་ནེཊི་ཐབས་འཕྲུལ་ཚུ་ལྟ་རྟོག་དོན་ལུ་ནེཊི་ལིངཀ་སོ་ཀེཊི་གསར་བསྐྲུན་འབད་མི་ཚུགསཔ - %s"
+
+#: ../src/nm-netlink-monitor.c:192
+#, c-format
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "བརྒྱུད་ཐག་ཅན་གྱི་ཨི་ཐར་ནེཌི་ཐབས་འཕྲུལ་ཚུ་ལྟ་རྟོག་དོན་ལུ་ནེཊི་ལིངཀ་སོཀེཊི་ལུ་བསྡམས་ནི་ལུ་མི་ཚུགསཔ - %s"
+
+#: ../src/nm-netlink-monitor.c:427
+msgid "operation took too long"
+msgstr "བཀོལ་སྤྱོད་འབད་ནི་རིངམ་བསྒོར་ཡོདཔ།"
+
+#: ../src/nm-netlink-monitor.c:524
+msgid "received data from wrong type of sender"
+msgstr "ཕྱི་འགྱུར་གྱི་དབྱེ་བའི་གཏང་མི་ལས་གནད་སྡུད་འཐོབ་ཡོདཔ།"
+
+#: ../src/nm-netlink-monitor.c:537
+msgid "received data from unexpected sender"
+msgstr "རེ་བ་མེད་བའི་གཏང་མི་ལས་གནད་སྡུད་འཐོབ་ཡོདཔ།"
+
+#: ../src/nm-netlink-monitor.c:666
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "སོ་ཀེཊི་ལྟག་གནད་སྡུད་ལེ་ཤ་གཏང་ཡོདཔ་དང་ལ་ལོ་བརླག་སྟོར་ཞུགས་ཡོདཔ།"
+
+#: ../src/nm-netlink-monitor.c:776
+msgid "error occurred while waiting for data on socket"
+msgstr "སོ་ཀེཊི་གུ་གནད་སྡུད་དོན་ལུ་བསྒུག་པའི་སྐབས་འཛོལ་བ་འབྱུང་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:922
+#, c-format
+msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+msgstr "ཁྱོད་ད་ནམ་དགོས་རླུང་འཕྲིན་ཡོངས་འབྲེལ་'%s' འདི་ལུ་མཐུད་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:927
+#, c-format
+msgid "You are now connected to the wireless network '%s'."
+msgstr "ཁྱོད་ད་རླུང་འཕྲིན་ཡོངས་འབྲེལ་'%s' འདི་ལུ་མཐུད་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:934
+msgid "You are now connected to the wired network."
+msgstr "ཁྱོད་ད་བརྒྱུད་ཐག་ཅན་གྱི་་ཡོངས་འབྲེལ་འདི་ལུ་མཐུད་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:940
+msgid "Connection Established"
+msgstr "མཐུད་ལམ་གཞི་འཛུགས་འབད་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:983
+msgid "Disconnected"
+msgstr "མཐུད་ལམ་བཏོག་ཡོདཔ།"
+
+#: ../gnome/applet/applet-dbus-devices.c:984
+msgid "The network connection has been disconnected."
+msgstr "ཡོངས་འབྲེལ་མཐུད་ལམ་འདི་མཐུད་ལམ་བཏོག་ཡོདཔ།"
+

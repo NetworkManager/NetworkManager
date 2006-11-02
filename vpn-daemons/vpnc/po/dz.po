@@ -1,0 +1,235 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-vpnc.HEAD.pot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-10-30 04:47+0100\n"
+"PO-Revision-Date: 2006-10-31 16:05+0530\n"
+"Last-Translator: norbu <nor_den@hotmail.com>\n"
+"Language-Team: dzongkha <pgyeleg@dit.gov.bt>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: Dzongkha\n"
+"X-Poedit-Country: BHUTAN\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "གལ་གནད་ཆུང་བའི་ཆོག་ཡིག་:(_S)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:267
+msgid "_Username:"
+msgstr "ལག་ལེན་པའི་མིང་:(_U)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:269
+msgid "_Domain:"
+msgstr "ཌོ་མེན་:(_D)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:271
+msgid "_Password:"
+msgstr "ཆོག་ཡིག་:(_P)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:354
+msgid "Connect _anonymously"
+msgstr "མིང་མེད་ཐོག་ལས་མཐུད།(_a)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:359
+msgid "Connect as _user:"
+msgstr "ལག་ལེན་པ་སྦེ་མཐུད་:(_u)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "འ་ནི་ལཱ་ཡུན་གྱི་དོན་ལུ་ ཆོག་ཡིག་ཚུ་སེམས་ཁར་བཞག།(_R)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "ཆོག་ཡིག་ཚུ་ལྡེ་འཁོར་ནང་སྲུང་བཞག་འབད།(_S)"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "བར་ཅུ་ཡལ་སྒེར་དོན་ཡོངས་འབྲེལ་ '%s' འདི་འཛུལ་སྤྱོད་འབད་ནིའི་དོན་ལས་ ཁྱོད་ཀྱིས་བདེན་བཤད་འབད་དགོ།"
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "ཝི་པི་ཨེན་བདེན་བཤད་འབད།"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "སྡེ་ཚན་ཆོག་ཡིག་:(_G)"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཚུ་ ཁ་སྐོང་ རྩ་བསྐྲད་ དང་ཞུན་དག་འབད།"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འཛིན་སྐྱོང་པ་ (ཝི་པི་ཨེན་སི་)"
+
+#: ../properties/nm-vpnc.c:83
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "མཐུན་འགྱུར་ཅན་སིསི་ཀོ་ཝི་པི་ཨེན་ཞབས་ཏོག་སྤྱོད་མི་ (ཝི་པི་ཨེན་སི་)"
+
+#: ../properties/nm-vpnc.c:447
+msgid "The following vpnc VPN connection will be created:"
+msgstr "འོག་གི་ ཝི་པི་ཨེན་སི་ ཝི་པི་ཨེན་ མཐུད་ལམ་འདི་གསར་བསྐྲུན་འབད་འོང་:"
+
+#: ../properties/nm-vpnc.c:449
+#, c-format
+msgid "Name:  %s"
+msgstr "མིང་:  %s"
+
+#: ../properties/nm-vpnc.c:452
+#, c-format
+msgid "Gateway:  %s"
+msgstr "འཛུལ་སྒོ:  %s"
+
+#: ../properties/nm-vpnc.c:454
+#, c-format
+msgid "Group Name:  %s"
+msgstr "སྡེ་ཚན་མིང་:  %s"
+
+#: ../properties/nm-vpnc.c:458
+#, c-format
+msgid "Username:  %s"
+msgstr "ལག་ལེན་པའི་མིང་:  %s"
+
+#: ../properties/nm-vpnc.c:463
+#, c-format
+msgid "Domain:  %s"
+msgstr "ཌོ་མེན:  %s"
+
+#: ../properties/nm-vpnc.c:468
+#, c-format
+msgid "Routes:  %s"
+msgstr "འགྲུལ་ལམ་ཚུ:  %s"
+
+#: ../properties/nm-vpnc.c:472
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "མཐུད་ལམ་གྱི་རྒྱས་བཤད་འདི་ \"Edit\" ཨེབ་རྟ་འདི་ལག་ལེན་འཐབ་ཐོག་ བསྒྱུར་བཅོས་འབད་བཏུབ།"
+
+#: ../properties/nm-vpnc.c:548
+msgid "TCP tunneling not supported"
+msgstr "ཊི་སི་པི་ ཊ་ན་ལིང་ རྒྱབ་སྐྱོར་མ་འབད་བས།"
+
+#: ../properties/nm-vpnc.c:550
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it may not work as expected."
+msgstr ""
+"ཝི་པི་ཨེན་སྒྲིག་སྟངས་ཀྱི་ཡིག་སྣོད་ '%s' གིས་ ཝི་པི་ཨེན་ འགྲུལ་ལམ་འདི་ ཝི་པི་ཨེན་སི་མཉེན་ཆས་ནང་ལུ་ད་ལྟོ་རྒྱབ་སྐྱོར་མ་འབད་མི་ ཊི་སི་པི་བརྒྱུད་དེ་ཊ་ནལ་མ་འབདཝ་འབད་གསལ་བཀོད་འབདཝ་ཨིན།\n"
+"\n"
+"མཐུད་ལམ་འདི་ད་ལྟོ་ཡང་ ཊི་སི་པི་ཊ་ན་ལིང་འདི་ལྕོགས་མིན་བཟོ་ཐོག་ གསར་བསྐྲུན་འབད་བཏུབ་ གང་ལྟར་ཡང་ འདི་ རེ་བ་ལྟར་དུ་ལཱ་མི་འབད།"
+
+#: ../properties/nm-vpnc.c:574
+msgid "Cannot import settings"
+msgstr "སྒྲིག་སྟངས་ཚུ་ནང་འདྲེན་འབད་མི་ཚུགས།"
+
+#: ../properties/nm-vpnc.c:576
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "ཝི་པི་ཨེན་སྒྲིག་སྟངས་ཀྱི་ཡིག་སྣོད་ '%s' ནང་ལུ་ནུས་ཅན་གནད་སྡུད་མེད།"
+
+#: ../properties/nm-vpnc.c:593
+msgid "Select file to import"
+msgstr "ནང་འདྲེན་འབད་ནིའི་དོན་ལས་ཡིག་སྣོད་སེལ་འཐུ་འབད།"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:753
+msgid "Save as..."
+msgstr "བཟུམ་སྦེ་སྲུངས་་་་"
+
+#: ../properties/nm-vpnc.c:783
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "ཡིག་སྣོད་མིང་ \"%s\" འབད་མི་ཧེ་མ་ལས་རང་ཡོདཔ་ཨིན།"
+
+#: ../properties/nm-vpnc.c:786
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "ཁྱོད་ཀྱིས་འདི་ ཁྱོད་ཀྱིས་སྲུང་བཞག་འབད་མི་འདི་གིས་ཚབ་བཙུགས་ནི་ཨིན་ན?"
+
+#: ../properties/nm-vpnc.c:800
+msgid "Failed to export configuration"
+msgstr "རིམ་སྒྲིག་ཕྱིར་འདྲེན་འབད་ནི་ལུ་འཐུས་ཤོར་འབྱུང་ཡོད།"
+
+#: ../properties/nm-vpnc.c:802
+#, c-format
+msgid "Failed to save file %s"
+msgstr "ཡིག་སྣོད %s སྲུང་བཞག་འབད་ནི་འཐུས་ཤོར་འབྱུང་ཡོད།"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>མཐུད་ལམ་མིང་</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>དགོས་མཁོ་ཡོད་པའི་བརྡ་དོན་</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>དཔེར་བརྗོད་: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "སྡེ་ཚན་མིང་:(_r)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "གདམ་ཁ་ཅན་གྱི་བརྡ་དོན།(_p)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "ལག་ལེན་པའི་མིང་མེདཔ་གཏང་།(_u)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་གིས་འོག་ལུ་བྱིན་ཏེ་ཡོད་མི་ བརྡ་དོན་འདི་ཐོ་བཀོད་འབད་གནང་། མཐུད་པའི་སྐབས་ཁྱོད་ནུས་སྤེལ་འབདཝ་ལས་ ཁྱོད་རའི་ཆོག་ཡིག་འདི་ན་ལུ་ཐོ་བཀོད་མ་འབད།"
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "བདེན་བཤད་ཀྱི་དོན་ལུ་ ཌོ་མེན་ལག་ལེན་འཐབ།(_d)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "འཛུལ་སྒོ:(_G)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "སྲུང་བཞག་འབད་ཡོད་པའི་རིམ་སྒྲིག་ནང་འདྲེན་འབད་་་(_I)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "སྒེར་དོན་ཡོངས་འབྲེལ་འདི་གི་མཐུད་ལམ་འདི་ངོས་འཛིན་འབད་ནིའི་དོན་ལས་ལག་ལེན་འཐབ་ཡོད་པའི་མིང་ དཔེར་ན་ \"Campus VPN\" ཡང་ན་ \"Corporate Network\" (_N)"
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "འ་ནི་ཁ་བྱང་ཚུ་གི་དོན་ལུ་ ཝི་པི་ཨེན་མཐུད་ལམ་རྐྱངམ་ཅིག་ལག་ལེན་འཐབ།(_O)"
+
+#: ../src/nm-vpnc-service.c:117
+msgid "The VPN login failed because the user name and password were not accepted."
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འཐུས་ཤོར་འབྱུང་ཡོད་ ག་ཅི་འབད་ཟེར་བ་ཅིན་ ལག་ལེན་པའི་མིང་དང་ཆོག་ཡིག་ཚུ་དང་ལེན་མ་འབད་བས།"
+
+#: ../src/nm-vpnc-service.c:119
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འདི་འཐུས་ཤོར་འབྱུང་ཡོད་ ག་ཅི་འབད་ཟེར་བ་ཅིན་ ཝི་པི་ཨེན་ལས་རིམ་འདི་འགོ་བཙུགས་མ་ཚུགས།"
+
+#: ../src/nm-vpnc-service.c:121
+msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འདི་འཐུས་ཤོར་འབྱུང་ཡོད་ ག་ཅི་འབད་ཟེར་བ་ཅིན་ ཝི་པི་ཨེན་ལས་རིམ་འདི་ ཝི་པི་ཨེན་སར་བར་ལུ་མཐུད་མ་ཚུགས།"
+
+#: ../src/nm-vpnc-service.c:123
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འདི་འཐུས་ཤོར་འབྱུང་ཡོད་ ག་ཅི་འབད་ཟེར་བ་ཅིན་ ཝི་པི་ཨེན་རིམ་སྒྲིག་གདམ་ཁ་ཚུ་ནུས་མེད་ཨིན་པས།"
+
+#: ../src/nm-vpnc-service.c:125
+msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgstr "ཝི་པི་ཨེན་ནང་བསྐྱོད་འདི་འཐུས་ཤོར་འབྱུང་ཡོད་ ག་ཅི་འབད་ཟེར་བ་ཅིན་ ཝི་པི་ཨེཔ་ལས་རིམ་འདི་གིས་ ནུས་མེད་རིམ་སྒྲིག་ཅིག་ ཝི་པི་ཨེན་སར་བར་འདི་ལས་ འཐོབ་ཡོདཔ་ཨིན།"
+

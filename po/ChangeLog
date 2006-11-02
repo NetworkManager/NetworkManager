@@ -1,3 +1,8 @@
+2006-11-02  Pema Geyleg  <pgeyleg@gmail.com>
+
+	* dz.po: Added Dzongkha Translation.
+	* LINGUAS: Added "dz".
+
 2006-11-01  Satoru SATOH  <ss@gnome.gr.jp>
 
 	* ja.po: Fixed wrong plural forms.
