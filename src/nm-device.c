@@ -85,14 +85,22 @@ static NMDeviceType
 discover_device_type (LibHalContext *ctx, const char *udi)
 {
 	char * category = NULL;
+	NMDeviceType type = DEVICE_TYPE_UNKNOWN;
 
 	if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
 		category = libhal_device_get_property_string(ctx, udi, "info.category", NULL);
-	if (category && (!strcmp (category, "net.80211")))
-		return DEVICE_TYPE_802_11_WIRELESS;
-	else if (category && (!strcmp (category, "net.80203")))
-		return DEVICE_TYPE_802_3_ETHERNET;
-	return DEVICE_TYPE_UNKNOWN;
+
+	if (category)
+	{
+		if (!strcmp (category, "net.80211"))
+			type = DEVICE_TYPE_802_11_WIRELESS;
+		else if (!strcmp (category, "net.80203"))
+			type = DEVICE_TYPE_802_3_ETHERNET;
+
+		libhal_free_string (category);
+	}
+
+	return type;
 }
 
 /*

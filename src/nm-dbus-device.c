@@ -489,6 +489,8 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		g_free (ip4_address);
 		g_free (broadcast);
 		g_free (subnetmask);
+		g_free (primary_dns);
+		g_free (secondary_dns);
 	}
 
 	return reply;

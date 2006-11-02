@@ -1,3 +1,25 @@
+2006-11-02  Tambet Ingo  <tambet@ximian.com>
+
+	* src/backends/shvar.c (svCloseFile): Before freeing lineLists, free
+	it's contents.
+
+	* src/backends/NetworkManagerSuSE.c (nm_system_device_free_system_config):
+	Free the SuSEDeviceConfigData structure itself as well.
+
+	* src/nm-device.c (discover_device_type): Free the hal property string
+	when we're done with it.
+
+	* src/nm-dbus-device.c (nm_dbus_device_get_properties): Free
+	primary_dns and secondary_dns once we're done with them.
+
+	* src/NetworkManager.c (nm_data_free): Free DBUS method lists.
+
+	* gnome/applet/menu-items.c (wired_menu_item_update): Free the label
+	text after the GtkLabel is updated.
+
+	* gnome/applet/applet.c (nma_menu_add_dialup_menu): Free label strings
+	after the menu item is created.
+
 2006-11-01  Tambet Ingo  <tambet@ximian.com>
 
 	* include/NetworkManagerVPN.h: Define NM_DBUS_VPN_LAUNCH_FAILED.

@@ -531,6 +531,11 @@ static void nm_data_free (NMData *data)
 	g_main_loop_unref (data->main_loop);
 	g_main_context_unref (data->main_context);
 
+	nm_dbus_method_list_free (data->nm_methods);
+	nm_dbus_method_list_free (data->device_methods);
+	nm_dbus_method_list_free (data->net_methods);
+	nm_dbus_method_list_free (data->vpn_ethods);
+
 	g_io_channel_unref(data->sigterm_iochannel);
 
 	nm_hal_deinit (data);

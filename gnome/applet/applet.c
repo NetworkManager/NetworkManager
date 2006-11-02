@@ -1764,12 +1764,14 @@ static void nma_menu_add_dialup_menu (GtkWidget *menu, NMApplet *applet)
 
 		label = g_strdup_printf (_("Connect to %s..."), name);
 		connect_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
+		g_free (label);
 		g_object_set_data (G_OBJECT (connect_item), "dialup", name);
 		g_signal_connect (G_OBJECT (connect_item), "activate", G_CALLBACK (nma_menu_dialup_connect_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (connect_item));
 
 		label = g_strdup_printf (_("Disconnect from %s..."), name);
 		disconnect_item = GTK_MENU_ITEM (gtk_menu_item_new_with_label (label));
+		g_free (label);
 		g_object_set_data (G_OBJECT (disconnect_item), "dialup", name);
 		g_signal_connect (G_OBJECT (disconnect_item), "activate", G_CALLBACK (nma_menu_dialup_disconnect_item_activate), applet);
 		gtk_menu_shell_append (GTK_MENU_SHELL (dialup_menu), GTK_WIDGET (disconnect_item));
