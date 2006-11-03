@@ -534,7 +534,7 @@ static void nm_data_free (NMData *data)
 	nm_dbus_method_list_free (data->nm_methods);
 	nm_dbus_method_list_free (data->device_methods);
 	nm_dbus_method_list_free (data->net_methods);
-	nm_dbus_method_list_free (data->vpn_ethods);
+	nm_dbus_method_list_free (data->vpn_methods);
 
 	g_io_channel_unref(data->sigterm_iochannel);
 
