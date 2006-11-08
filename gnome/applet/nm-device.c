@@ -164,6 +164,8 @@ void network_device_unref (NetworkDevice *dev)
 		g_free (dev->broadcast);
 		g_free (dev->netmask);
 		g_free (dev->ip4addr);
+		g_free (dev->primary_dns);
+		g_free (dev->secondary_dns);
 		memset (dev, 0, sizeof (NetworkDevice));
 		g_free (dev);
 	}

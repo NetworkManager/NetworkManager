@@ -86,6 +86,7 @@ static void nmi_passphrase_dialog_security_combo_changed (GtkWidget *security_co
 	GtkWidget *	wso_widget;
 	GladeXML *	xml;
 	GtkWidget *	vbox;
+	GList *		children;
 	GList *		elt;
 
 	g_return_if_fail (dialog != NULL);
@@ -98,13 +99,16 @@ static void nmi_passphrase_dialog_security_combo_changed (GtkWidget *security_co
 	vbox = GTK_WIDGET (glade_xml_get_widget (xml, "wireless_security_vbox"));
 
 	/* Remove any previous wireless security widgets */
-	for (elt = gtk_container_get_children (GTK_CONTAINER (vbox)); elt; elt = g_list_next (elt))
+	children = gtk_container_get_children (GTK_CONTAINER (vbox));
+	for (elt = children; elt; elt = g_list_next (elt))
 	{
 		GtkWidget * child = GTK_WIDGET (elt->data);
 
 		if (wso_is_wso_widget (child))
 			gtk_container_remove (GTK_CONTAINER (vbox), child);
 	}
+
+	g_list_free (children);
 
 	/* Determine and add the correct wireless security widget to the dialog */
 	wso_widget = wsm_get_widget_for_active (wsm, GTK_COMBO_BOX (security_combo), GTK_SIGNAL_FUNC (update_button_cb), dialog);

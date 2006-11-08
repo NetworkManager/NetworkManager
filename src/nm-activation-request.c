@@ -94,6 +94,9 @@ void nm_act_request_unref (NMActRequest *req)
 		if (req->ap)
 			nm_ap_unref (req->ap);
 
+		if (req->ip4_config)
+			nm_ip4_config_unref (req->ip4_config);
+
 		if (req->dhcp_timeout > 0)
 		{
 			GSource *	source = g_main_context_find_source_by_id (req->data->main_context, req->dhcp_timeout);

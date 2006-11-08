@@ -485,8 +485,8 @@ static void device_stop_and_free (NMDevice *dev, gpointer user_data)
 {
 	g_return_if_fail (dev != NULL);
 
-	nm_device_set_removed (dev, TRUE);
-	nm_device_deactivate (dev);
+	nm_device_set_removed (dev, TRUE);	
+	nm_device_stop (dev);
 	g_object_unref (G_OBJECT (dev));
 }
 
@@ -507,19 +507,27 @@ static void nm_data_free (NMData *data)
 	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
 		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
 
+	/* Stop and destroy all devices */
+	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
+	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
+	g_slist_free (data->dev_list);
+	data->dev_list = NULL;
+	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+	/* device_stop_and_free() deactivates devices, which triggers state change
+	   signals. Without cleaning the queue, they never get the chance to fire,
+	   keeping the device references alive.
+	*/
+	while (g_main_context_pending (data->main_context))
+		g_main_context_iteration (data->main_context, TRUE);
+
+	g_mutex_free (data->dev_list_mutex);
+
 	if (data->netlink_monitor)
 	{
 		g_object_unref (G_OBJECT (data->netlink_monitor));
 		data->netlink_monitor = NULL;
 	}
-
-	/* Stop and destroy all devices */
-	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
-	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
-	g_slist_free (data->dev_list);
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-
-	g_mutex_free (data->dev_list_mutex);
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
@@ -536,7 +544,7 @@ static void nm_data_free (NMData *data)
 	nm_dbus_method_list_free (data->net_methods);
 	nm_dbus_method_list_free (data->vpn_methods);
 
-	g_io_channel_unref(data->sigterm_iochannel);
+	g_io_channel_unref (data->sigterm_iochannel);
 
 	nm_hal_deinit (data);
 

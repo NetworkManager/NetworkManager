@@ -57,8 +57,6 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	dbus_pending_call_ref (pcall);
-
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
@@ -100,7 +98,8 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter)))
 	{
-		nm_ap_set_security (ap, security);	
+		nm_ap_set_security (ap, security);
+		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
 	nm_act_request_set_user_key_pending_call (req, NULL);
@@ -352,8 +351,6 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	g_return_if_fail (cb_data->network != NULL);
 	g_return_if_fail (cb_data->list != NULL);
 
-	dbus_pending_call_ref (pcall);
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -448,11 +445,17 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 
 	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
 	{
+		GSList *user_addresses;
+
 		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
 		nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 		nm_ap_set_trusted (list_ap, nm_ap_get_trusted (ap));
 		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
-		nm_ap_set_user_addresses (list_ap, nm_ap_get_user_addresses (ap));
+
+		user_addresses = nm_ap_get_user_addresses (ap);
+		nm_ap_set_user_addresses (list_ap, user_addresses);
+		g_slist_foreach (user_addresses, (GFunc) g_free, NULL);
+		g_slist_free (user_addresses);
 	}
 	else
 	{
@@ -489,8 +492,6 @@ static void nm_dbus_get_networks_cb (DBusPendingCall *pcall, void *user_data)
 	g_return_if_fail (cb_data != NULL);
 	g_return_if_fail (cb_data->list != NULL);
 	g_return_if_fail (cb_data->data != NULL);
-
-	dbus_pending_call_ref (pcall);
 
 	if (!dbus_pending_call_get_completed (pcall))
 	{
@@ -614,6 +615,7 @@ void nm_dbus_update_one_allowed_network (DBusConnection *connection, const char 
 	cb_data->data = data;
 	cb_data->network = g_strdup (network);
 	cb_data->list = data->allowed_ap_list;
+	nm_ap_list_ref (cb_data->list);
 
 	dbus_message_append_args (message, DBUS_TYPE_STRING, &network, DBUS_TYPE_INT32, &type_as_int32, DBUS_TYPE_INVALID);
 	dbus_connection_send_with_reply (connection, message, &pcall, -1);

@@ -207,9 +207,9 @@ static DeviceStatusSignals dev_status_signals[] =
 static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 {
 	NMStatusChangeData *cb_data = (NMStatusChangeData *)user_data;
-	DBusMessage *		message;
-	char *			dev_path;
-	const char *		sig = NULL;
+	DBusMessage *		message = NULL;
+	char *			dev_path = NULL;
+	const char *		sig;
 	int				i = 0;
 
 	g_return_val_if_fail (cb_data->data, FALSE);
@@ -220,16 +220,15 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 		i++;
 
 	if (!(sig = dev_status_signals[i].signal))
-		return FALSE;
+		goto out;
 
 	if (!(dev_path = nm_dbus_get_object_path_for_device (cb_data->dev)))
-		return FALSE;
+		goto out;
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, sig)))
 	{
 		nm_warning ("nm_dbus_signal_device_status_change(): Not enough memory for new dbus message!");
-		g_free (dev_path);
-		return FALSE;
+		goto out;
 	}
 
 	/* If the device was wireless, attach the name of the wireless network that failed to activate */
@@ -238,18 +237,21 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 		const char *essid = nm_ap_get_essid (cb_data->ap);
 		if (essid)
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
-		nm_ap_unref (cb_data->ap);
 	}
 	else
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 
-	g_free (dev_path);
-
 	if (!dbus_connection_send (cb_data->data->dbus_connection, message, NULL))
 		nm_warning ("nm_dbus_signal_device_status_change(): Could not raise the signal!");
 
-	dbus_message_unref (message);
+ out:
+	if (message)
+		dbus_message_unref (message);
 
+	if (cb_data->ap)
+		nm_ap_unref (cb_data->ap);
+
+	g_free (dev_path);
 	g_object_unref (G_OBJECT (cb_data->dev));
 	g_free (cb_data);
 

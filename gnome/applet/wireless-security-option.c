@@ -170,14 +170,13 @@ int wso_wep_auth_combo_get_auth_alg (WirelessSecurityOption *opt, GtkComboBox * 
 	GtkTreeIter	iter;
 	GtkTreeModel *	model;
 	int			auth_alg;
-	char *		str;
 
 	g_return_val_if_fail (opt != NULL, -1);
 	g_return_val_if_fail (combo != NULL, -1);
 
 	model = gtk_combo_box_get_model (combo);
 	gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter);
-	gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, AUTH_ALG_COLUMN, &auth_alg, -1);
+	gtk_tree_model_get (model, &iter, AUTH_ALG_COLUMN, &auth_alg, -1);
 	return auth_alg;
 }
 

@@ -66,6 +66,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 
 	nm_device_activation_success_handler (dev, req);
 
+	nm_act_request_unref (req);
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
 	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
@@ -93,6 +94,7 @@ void nm_policy_schedule_activation_finish (NMActRequest *req)
 	g_assert (dev);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_ACTIVATED);
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
@@ -135,6 +137,8 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_device_change_check (data);
 
+	nm_act_request_unref (req);
+
 	return FALSE;
 }
 
@@ -158,6 +162,7 @@ void nm_policy_schedule_activation_failed (NMActRequest *req)
 	g_assert (dev);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_FAILED);
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
@@ -428,6 +433,7 @@ nm_policy_device_change_check (NMData *data)
 		{
 			nm_info ("Will activate connection '%s%s%s'.", nm_device_get_iface (new_dev), ap ? "/" : "", ap ? nm_ap_get_essid (ap) : "");
 			nm_policy_schedule_device_activation (act_req);
+			nm_act_request_unref (act_req);
 		}
 	}
 
@@ -490,10 +496,11 @@ static gboolean nm_policy_device_activation (NMActRequest *req)
 		nm_device_deactivate (old_dev);
 
 	new_dev = nm_act_request_get_dev (req);
-	if (nm_device_is_activating (new_dev))
-		return FALSE;
 
-	nm_device_activation_start (req);
+	if (!nm_device_is_activating (new_dev))
+		nm_device_activation_start (req);
+
+	nm_act_request_unref (req);
 
 	return FALSE;
 }
@@ -518,6 +525,8 @@ void nm_policy_schedule_device_activation (NMActRequest *req)
 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
+
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);

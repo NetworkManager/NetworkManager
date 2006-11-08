@@ -1,3 +1,94 @@
+2006-11-08  Tambet Ingo  <tambet@ximian.com>
+
+	* gnome/applet/wireless-security-option.c
+	(wso_wep_auth_combo_get_auth_alg): Don't request NAME_COLUMN value and
+	then leak it when it's never used. 
+
+	* gnome/applet/wireless-security-manager.c
+	(get_active_option_from_combo): Don't request NAME_COLUMN value and
+	then leak it when it's never used.
+	(wsm_free): Free the glade_file member as well.
+
+	* gnome/applet/vpn-password-dialog.c (child_stdout_data_cb): Free the
+	str variable.
+
+	* gnome/applet/passphrase-dialog.c
+	(nmi_passphrase_dialog_security_combo_changed): Free the result of
+	gtk_container_get_children when done.
+
+	* gnome/applet/nm-device.c (network_device_unref): Free primary_dns
+	and secondary_dns.
+
+	* src/vpn-manager/nm-dbus-vpn.c (nm_dbus_vpn_update_one_connection_cb):
+	Do not increment the reference count of the pending call, we already
+	own it.
+	(nm_dbus_vpn_connections_update_cb): Ditto.
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	(nm_dhcp_manager_get_ip4_config):  Free allocatated variables when done
+	with them.
+
+	* src/backends/NetworkManagerSuSE.c
+	(nm_system_device_get_system_config): Don't leak buf.
+
+	* src/nm-netlink-monitor.c (nm_netlink_monitor_attach): Unref the
+	source after attaching it to a context.
+
+	* src/nm-device.c: Increment the reference count of activation requests
+	when scheduling a callback with it and unreference it when done.
+	(nm_device_set_active_link): Don't allocate an
+	activation request that is never used for anything.
+	(nm_device_activate_stage4_ip_config_get): Unref the ip4_config when
+	done.
+	(nm_device_activate_stage4_ip_config_timeout): Ditto.
+
+	* src/nm-device-802-11-wireless.c: Move the scheduled callback data
+	freeing from callback to destroy notify: Makes sure the data is freed
+	even if the callback never has a chance to run.
+	(supplicant_send_network_config): Free the allocated hex_essid.
+	(nm_device_802_11_wireless_dispose): Free cur_essid.
+
+	* src/nm-dbus-nmi.c (nm_dbus_get_user_key_for_network_cb): Unref the
+	security when done, nm_ap_set_security() makes a copy of it.
+	(nm_dbus_get_network_data_cb): Free user_addresses when done,
+	nm_ap_set_user_addresses() makes a copy of it.
+	(nm_dbus_get_user_key_for_network_cb) Don't increment the ref count of
+	the pending call, we already own it.
+	(nm_dbus_get_network_data_cb): Ditto.
+	(nm_dbus_get_networks_cb): Ditto.
+	(nm_dbus_update_one_allowed_network): Ditto.
+
+	* src/nm-dbus-nm.c (nm_dbus_nm_set_active_device): Scheduled callbacks
+	own the references to activation request, let our reference go after
+	it's scheduled.
+	(nm_dbus_nm_create_wireless_network): Ditto.
+
+	* src/nm-activation-request.c (nm_act_request_unref): Unref the
+	ip4_config as well.
+
+	* src/NetworkManagerPolicy.c (nm_policy_schedule_activation_finish):
+	Grab a reference to NMActRequest before scheduling it to be called
+	later...
+	(nm_policy_activation_finish): ... and release it in callback.
+	(nm_policy_schedule_activation_failed): Ditto.
+	(nm_policy_activation_failed): Ditto.
+	(nm_policy_device_change_check): Ditto.
+	(nm_policy_schedule_device_activation): Ditto.
+
+	* src/NetworkManagerDbus.c (nm_dbus_signal_device_status_change):
+	Use a common path for freeing all allocated variables so that
+	everything gets freed correctly even on case of errors.
+
+	* src/NetworkManagerAP.c (nm_ap_set_user_addresses): Free the old
+	user_addresses GList.
+
+	* src/NetworkManager.c (device_stop_and_free): Use nm_device_stop()
+	instead of nm_device_deactivate() to stop the device's worker thread
+	and remove all references to the device.
+	(nm_data_free): Process pending mainloop events after all devices are
+	shut down - The device stop produces the scheduling of multiple signals
+	which steal references to devices but never have a chance to run.
+
 2006-11-02  Tambet Ingo  <tambet@ximian.com>
 
 	* src/backends/shvar.c (svCloseFile): Before freeing lineLists, free

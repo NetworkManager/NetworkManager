@@ -621,7 +621,9 @@ nm_device_set_active_link (NMDevice *self,
 			if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
 				do_switch = TRUE;
 
-			if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE)))
+			/* FIXME: Why is this activation request created here and never used? */
+			/* if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE))) */
+			if (do_switch)
 			{
 				nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));
 				nm_policy_schedule_device_change_check (app_data);
@@ -714,6 +716,7 @@ nm_device_activate_stage1_device_prepare (NMActRequest *req)
 	nm_device_activate_schedule_stage2_device_config (req);
 
 out:
+	nm_act_request_unref (req);
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
 	return FALSE;
 }
@@ -737,6 +740,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
+	nm_act_request_ref (req);
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...", nm_device_get_iface (self));
 
 	source = g_idle_source_new ();
@@ -810,6 +814,7 @@ nm_device_activate_stage2_device_config (NMActRequest *req)
 	nm_device_activate_schedule_stage3_ip_config_start (req);
 
 out:
+	nm_act_request_unref (req);
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) complete.", iface);
 	return FALSE;
 }
@@ -833,6 +838,7 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_CONFIG);
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage2_device_config, req, NULL);
@@ -918,6 +924,7 @@ nm_device_activate_stage3_ip_config_start (NMActRequest *req)
 
 out:
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
+	nm_act_request_unref (req);
 	return FALSE;
 }
 
@@ -939,6 +946,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_START);
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage3_ip_config_start, req, NULL);
@@ -1059,9 +1067,11 @@ nm_device_activate_stage4_ip_config_get (NMActRequest *req)
 		goto out;
 
 	nm_act_request_set_ip4_config (req, ip4_config);
+	nm_ip4_config_unref (ip4_config);
 	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
+	nm_act_request_unref (req);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) complete.", nm_device_get_iface (self));
 	return FALSE;
 }
@@ -1085,6 +1095,7 @@ nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
+	nm_act_request_ref (req);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) scheduled...",
 			nm_device_get_iface (self));
 
@@ -1154,6 +1165,7 @@ nm_device_activate_stage4_ip_config_timeout (NMActRequest *req)
 	g_assert (ip4_config);
 
 	nm_act_request_set_ip4_config (req, ip4_config);
+	nm_ip4_config_unref (ip4_config);
 	nm_device_activate_schedule_stage5_ip_config_commit (req);
 
 out:
@@ -1236,6 +1248,7 @@ nm_device_activate_stage5_ip_config_commit (NMActRequest *req)
 		nm_policy_schedule_activation_failed (req);
 
 out:
+	nm_act_request_unref (req);
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
 			nm_device_get_iface (self));
 	return FALSE;
@@ -1259,6 +1272,7 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
 	g_assert (self);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_COMMIT);
+	nm_act_request_ref (req);
 
 	source = g_idle_source_new ();
 	g_source_set_callback (source, (GSourceFunc) nm_device_activate_stage5_ip_config_commit, req, NULL);

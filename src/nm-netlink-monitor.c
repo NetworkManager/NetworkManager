@@ -318,6 +318,7 @@ nm_netlink_monitor_attach (NmNetlinkMonitor *monitor,
 			       (GDestroyNotify) 
                                nm_netlink_monitor_clear_event_source);
 	g_source_attach (event_source, context);
+	g_source_unref (event_source);
 	monitor->priv->event_source = event_source;
 }
 

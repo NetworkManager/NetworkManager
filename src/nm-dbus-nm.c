@@ -229,6 +229,7 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	DBusMessage *		reply = NULL;
 	char *			dev_path;
 	NMAccessPoint *	ap = NULL;
+	NMActRequest * req;
 	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -304,7 +305,9 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 
 	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data->data);
-	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, ap, TRUE));
+	req = nm_act_request_new (data->data, dev, ap, TRUE);
+	nm_policy_schedule_device_activation (req);
+	nm_act_request_unref (req);
 
 	/* empty success message */
 	reply = dbus_message_new_method_return (message);
@@ -337,6 +340,7 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	NMAccessPoint *	new_ap = NULL;
 	NMAPSecurity * 	security = NULL;
 	char *			essid = NULL;
+	NMActRequest * req;
 	DBusMessageIter	iter;
 
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -394,7 +398,9 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	g_object_unref (G_OBJECT (security));
 	nm_ap_set_user_created (new_ap, TRUE);
 
-	nm_policy_schedule_device_activation (nm_act_request_new (data->data, dev, new_ap, TRUE));
+	req = nm_act_request_new (data->data, dev, new_ap, TRUE);
+	nm_policy_schedule_device_activation (req);
+	nm_act_request_unref (req);
 
 out:
 	return reply;

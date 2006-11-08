@@ -162,14 +162,13 @@ static WirelessSecurityOption * get_active_option_from_combo (GtkComboBox *combo
 	WirelessSecurityOption * opt = NULL;
 	GtkTreeIter			iter;
 	GtkTreeModel *			model;
-	char *				str;
 
 	g_return_val_if_fail (combo != NULL, NULL);
 
 	model = gtk_combo_box_get_model (combo);
 	g_assert (model);
 	if (gtk_combo_box_get_active_iter (combo, &iter))
-		gtk_tree_model_get (model, &iter, NAME_COLUMN, &str, OPT_COLUMN, &opt, -1);
+		gtk_tree_model_get (model, &iter, OPT_COLUMN, &opt, -1);
 
 	return opt;
 }
@@ -215,6 +214,7 @@ void wsm_free (WirelessSecurityManager *wsm)
 {
 	g_return_if_fail (wsm != NULL);
 
+	g_free (wsm->glade_file);
 	g_slist_foreach (wsm->options, (GFunc) wso_free, NULL);
 	g_slist_free (wsm->options);
 	memset (wsm, 0, sizeof (WirelessSecurityManager));

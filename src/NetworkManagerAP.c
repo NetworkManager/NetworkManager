@@ -537,6 +537,7 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 
 	/* Free existing list */
 	g_slist_foreach (ap->user_addresses, (GFunc) g_free, NULL);
+	g_slist_free (ap->user_addresses);
 
 	/* Copy new list and set as our own */
 	for (elt = list; elt; elt = g_slist_next (elt))
