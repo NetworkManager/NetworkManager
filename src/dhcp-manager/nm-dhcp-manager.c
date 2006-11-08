@@ -586,6 +586,17 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	nm_ip4_config_set_mtu (ip4_config, nm_system_get_mtu (dev));
 
 out:
+	g_free (hostname);
+	g_free (domain_names);
+	g_free (nis_domain);
+
+	g_free (ip4_address);
+	g_free (ip4_netmask);
+	g_free (ip4_broadcast);
+	g_free (ip4_gateway);
+	g_free (ip4_nameservers);
+	g_free (ip4_nis_servers);
+
 	return ip4_config;
 }
 

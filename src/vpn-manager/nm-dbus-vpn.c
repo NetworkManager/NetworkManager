@@ -347,8 +347,6 @@ static void nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall, void *
 	g_return_if_fail (cb_data->data != NULL);
 	g_return_if_fail (cb_data->data->vpn_manager != NULL);
 
-	dbus_pending_call_ref (pcall);
-
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
@@ -417,8 +415,6 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 
 	g_return_if_fail (pcall);
 	g_return_if_fail (data != NULL);
-
-	dbus_pending_call_ref (pcall);
 
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;

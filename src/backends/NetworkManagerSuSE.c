@@ -659,6 +659,8 @@ found:
 		free (mode);
 		free (buf);
 	}
+	else if (buf)
+		g_free (buf);
 
 	sys_data->config = nm_ip4_config_new ();
 
