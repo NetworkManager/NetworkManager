@@ -1758,7 +1758,7 @@ static void nma_menu_add_dialup_menu (GtkWidget *menu, NMApplet *applet)
 	{
 		GtkMenuItem *connect_item, *disconnect_item;
 		char *name = elt->data;
-		const char *label;
+		char *label;
 
 		/* FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item */
 
