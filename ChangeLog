@@ -1,3 +1,11 @@
+2006-11-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_copy_one_essid_by_address): fix bug due to previous
+		code cleanup in revision 1.56; the split of the !nm_ap_get_essid()
+		from the nm_ap_list_get_ap_by_address() call was incorrect and
+		broke hidden SSID matching.  Found by Bill Moss.
+
 2006-10-25  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-dbus-nm.c

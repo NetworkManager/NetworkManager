@@ -588,20 +588,21 @@ nm_ap_list_copy_one_essid_by_address (NMDevice80211Wireless *dev,
 {
 	NMAccessPoint *	found_ap;
 
-	if (!ap || !search_list)
+	g_return_if_fail (ap != NULL);
+
+	if (!search_list)
 		return;
 
-	if (!nm_ap_get_essid (ap))
+	/* Ignore APs that already have an ESSID */
+	if (nm_ap_get_essid (ap))
 		return;
 
 	found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap));
-	if (!found_ap)
+	if (!found_ap || !nm_ap_get_essid (found_ap))
 		return;
 
-	if (nm_ap_get_essid (found_ap)) {
-		nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
-		nm_dbus_signal_wireless_network_change (dev, ap, NETWORK_STATUS_APPEARED, 0);
-	}
+	nm_ap_set_essid (ap, nm_ap_get_essid (found_ap));
+	nm_dbus_signal_wireless_network_change (dev, ap, NETWORK_STATUS_APPEARED, 0);
 }
 
 
