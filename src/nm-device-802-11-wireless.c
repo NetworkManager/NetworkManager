@@ -2960,7 +2960,7 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	const char *		essid;
 	struct wpa_ctrl *	ctrl;
 	gboolean			is_adhoc;
-	char *		hex_essid;
+	char *		hex_essid = NULL;
 	const char *		ap_scan = "AP_SCAN 1";
 	guint32			caps;
 	gboolean			supports_wpa;
