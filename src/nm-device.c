@@ -614,8 +614,7 @@ nm_device_set_active_link (NMDevice *self,
 		 */
 		if (nm_device_is_802_3_ethernet (self) && (nm_device_get_capabilities (self) & NM_DEVICE_CAP_CARRIER_DETECT))
 		{
-			gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
-			NMActRequest *	act_req;
+			gboolean do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
 
 			/* If active device is wireless, switch to this one */
 			if (act_dev && nm_device_is_802_11_wireless (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
