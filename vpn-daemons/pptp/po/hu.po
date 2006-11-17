@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-10-19 06:31+0200\n"
-"PO-Revision-Date: 2006-10-21 18:54+0200\n"
+"POT-Creation-Date: 2006-11-17 06:51+0100\n"
+"PO-Revision-Date: 2006-11-17 14:10+0100\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
 "MIME-Version: 1.0\n"
@@ -137,7 +137,7 @@ msgstr "MPPC tömörítés használata"
 
 #: ../properties/nm-ppp-properties.c:218
 msgid "Do not use deflate compression"
-msgstr ""
+msgstr "Ne használjon deflate tömörítést"
 
 #: ../properties/nm-ppp-properties.c:223
 msgid "Do not use BSD compression"
@@ -275,7 +275,7 @@ msgstr "BSD tömörítés engedélyezése"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
 msgid "Allow Deflate compression"
-msgstr ""
+msgstr "Deflate tömörítés engedélyezése"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
 msgid "Authenticate Peer"
@@ -314,7 +314,10 @@ msgid ""
 "For security reasons, options entered in the box above are checked against a "
 "list of allowed options before a connection is established.  Currently there "
 "are no options on the list."
-msgstr "Biztonsági okokból a fenti mezőben megadott kapcsolók a kapcsolat létrehozása előtt össze lesznek vetve az engedélyezett kapcsolók egy listájával. Jelenleg nincsenek kapcsolók a listában."
+msgstr ""
+"Biztonsági okokból a fenti mezőben megadott kapcsolók a kapcsolat "
+"létrehozása előtt össze lesznek vetve az engedélyezett kapcsolók egy "
+"listájával. Jelenleg nincsenek kapcsolók a listában."
 
 #: ../properties/nm-ppp-dialog.glade.h:21
 msgid "GPRS Options"
@@ -330,11 +333,15 @@ msgstr "A PPTP kiszolgáló gépneve vagy IP címe"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
 msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr "Ha a BSD tömörítés nem engedélyezett, akkor a \"nobsdcomp\" kapcsoló kerül átadásra a pppd-nek"
+msgstr ""
+"Ha a BSD tömörítés nem engedélyezett, akkor a \"nobsdcomp\" kapcsoló kerül "
+"átadásra a pppd-nek"
 
 #: ../properties/nm-ppp-dialog.glade.h:25
 msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr "Ha a deflate tömörítés nem engedélyezett, akkor a \"nodeflate\" kapcsoló kerül átadásra a pppd-nek"
+msgstr ""
+"Ha a deflate tömörítés nem engedélyezett, akkor a \"nodeflate\" kapcsoló "
+"kerül átadásra a pppd-nek"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Maximum Receive Unit"
@@ -405,7 +412,9 @@ msgid ""
 "This is the friendly name that will be used to identify this network "
 "connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "A hálózati kapcsolat azonosítására használt név, például \"Egyetemi VPN\", vagy \"Vállalati hálózat\""
+msgstr ""
+"A hálózati kapcsolat azonosítására használt név, például \"Egyetemi VPN\", "
+"vagy \"Vállalati hálózat\""
 
 #: ../properties/nm-ppp-dialog.glade.h:46
 msgid "Time in seconds between echo requests"
@@ -439,7 +448,9 @@ msgstr "Ezt bejelölve a \"require-mppc\" kapcsoló kerül átadásra a pppd-nek
 msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
-msgstr "Ezt bejelölve beállítja a pppd \"debug\" kapcsolóját és további információkat ad a NetworkManager bővítményről"
+msgstr ""
+"Ezt bejelölve beállítja a pppd \"debug\" kapcsolóját és további "
+"információkat ad a NetworkManager bővítményről"
 
 #: ../properties/nm-ppp-dialog.glade.h:55
 msgid "When checked this sets the pppd 'noipdefault' option"
