@@ -1,3 +1,8 @@
+2006-11-18  Djihed Afifi <djihed@gmail.com> 
+
+	* ar.po: Added Arabic Translation.
+	* LINGUAS: Added ar.
+
 2006-11-02  Pema Geyleg  <pgeyleg@gmail.com>
 
 	* dz.po: Added Dzongkha Translation.

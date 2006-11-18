@@ -1,0 +1,579 @@
+# Arabic translations for PACKAGE package.
+# Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Automatically generated, 2006.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Project\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-11-17 21:14+0000\n"
+"PO-Revision-Date: 2006-11-18 00:59+0100\n"
+"Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
+"Language-Team: Arabic <doc@arabeyes.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n >= 3 && n <= 10 ? 3 : n >= 11 && n <= 99 ? 4 : 5;\n"
+"X-Poedit-Language: Arabic\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+#, fuzzy
+msgid "_Secondary Password:"
+msgstr "جودة كلمة السر:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+#, fuzzy
+msgid "_Username:"
+msgstr "إ_سم المستخدم:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+#, fuzzy
+msgid "_Domain:"
+msgstr "ال_نطاق:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+#, fuzzy
+msgid "_Password:"
+msgstr "_كلمة المرور:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+#, fuzzy
+msgid "Connect _anonymously"
+msgstr "الاتّصال كم_جهول"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+#, fuzzy
+msgid "Connect as _user:"
+msgstr "اتصال _كمستخدم:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+#, fuzzy
+msgid "_Remember password for this session"
+msgstr "ت_خزين كلمة المرور لهذه الجلسة"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+#, fuzzy
+msgid "_Save password in keyring"
+msgstr "حفظ كلمة المرور في _حلقة المفاتيح"
+
+#: ../auth-dialog/main.c:140
+#, fuzzy, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr ""
+"يجب أن تسجل لتنفذ إلى \"%s\".\n"
+"%s"
+
+#: ../auth-dialog/main.c:141
+#, fuzzy
+msgid "Authenticate Connection"
+msgstr "تم إلغاء الإتّصال"
+
+#: ../nm-ppp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr ""
+
+#: ../nm-ppp.desktop.in.h:2
+msgid "VPN Connection Manager (PPP generic)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:131
+#, fuzzy
+msgid "Name"
+msgstr "اسم"
+
+#: ../properties/nm-ppp-properties.c:143
+#, fuzzy
+msgid "PPTP Server"
+msgstr "نادل STUN"
+
+#: ../properties/nm-ppp-properties.c:148
+#, fuzzy
+msgid "Telephone Number"
+msgstr "رقم ال_حساب:"
+
+#: ../properties/nm-ppp-properties.c:153
+#, fuzzy
+msgid "Bluetooth Address"
+msgstr "عنوان البريد الإلكتروني"
+
+#: ../properties/nm-ppp-properties.c:158
+#, fuzzy
+msgid "Bluetooth Channel"
+msgstr "قناة الفيديو"
+
+#: ../properties/nm-ppp-properties.c:163
+msgid "GPRS APN"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:168
+#, fuzzy
+msgid "GPRS IP"
+msgstr "ترجمة IP"
+
+#: ../properties/nm-ppp-properties.c:173
+#, fuzzy
+msgid "GPRS Context No."
+msgstr "لا سياق متوفّر للمصدر '%s'"
+
+#: ../properties/nm-ppp-properties.c:178
+#, fuzzy
+msgid "GPRS Packet Type"
+msgstr "نوع جهاز الخرج"
+
+#: ../properties/nm-ppp-properties.c:183
+msgid "Use CTS/RTS flow control"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:188
+#, fuzzy
+msgid "Connect via a modem"
+msgstr "أخبار USENET عبر %s"
+
+#: ../properties/nm-ppp-properties.c:193
+msgid "Require IP to be provided"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:198
+#: ../properties/nm-ppp-dialog.glade.h:48
+#, fuzzy
+msgid "Use Peer DNS"
+msgstr "انتهى تقديم الزميل"
+
+#: ../properties/nm-ppp-properties.c:203
+#, fuzzy
+msgid "Use MPPE encryption"
+msgstr "التّشفير مطلوب من العملاء"
+
+#: ../properties/nm-ppp-properties.c:208
+msgid "Use 128 bit MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:213
+#, fuzzy
+msgid "Use MPPC compression"
+msgstr "ا_ستعمل امرا مخصصا"
+
+#: ../properties/nm-ppp-properties.c:218
+#, fuzzy
+msgid "Do not use deflate compression"
+msgstr "لا تستخدم خادم  WINS"
+
+#: ../properties/nm-ppp-properties.c:223
+#, fuzzy
+msgid "Do not use BSD compression"
+msgstr "لا تستخدم خادم  WINS"
+
+#: ../properties/nm-ppp-properties.c:228
+msgid "Exclusive device access by pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:233
+#, fuzzy
+msgid "Authenticate remote peer"
+msgstr "انتهى تقديم الزميل"
+
+#: ../properties/nm-ppp-properties.c:238
+#: ../properties/nm-ppp-dialog.glade.h:32
+msgid "Refuse EAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:243
+#: ../properties/nm-ppp-dialog.glade.h:31
+msgid "Refuse CHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:248
+msgid "Refuse MSCHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:253
+msgid "Maximum transmit unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:258
+msgid "Maximum receive unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:263
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:268
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:273
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:278
+#, fuzzy
+msgid "Custom PPP options"
+msgstr "<b>خيارات قائمة المهام</b>"
+
+#: ../properties/nm-ppp-properties.c:288
+msgid "Use Peer DNS over the Tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:294
+#, fuzzy
+msgid "Specific networks available"
+msgstr "كودكات الصوت المتوفرة"
+
+#: ../properties/nm-ppp-properties.c:300
+#, fuzzy
+msgid "Limit to specific networks"
+msgstr "اذهب إلى سطر معيّن"
+
+#: ../properties/vpnui_impl.c:229
+#, fuzzy, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "تعذّر انشاء المجلّد"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr ""
+
+#: ../properties/vpnui_impl.c:317
+#, fuzzy
+msgid "Select file to import"
+msgstr "إنتقي ملفّ للفتح"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+#, fuzzy
+msgid "Save as..."
+msgstr "حفظ كـ..."
+
+#: ../properties/vpnui_impl.c:491
+#, fuzzy, c-format
+msgid "A file named \"%s\" already exists."
+msgstr ""
+"الملف \"%s\" موجود مسبقاً\n"
+".\n"
+"%s"
+
+#: ../properties/vpnui_impl.c:494
+#, fuzzy
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "هل تريد إستبداله بالملف الذي أنت بصدد حفظه؟"
+
+#: ../properties/nm-ppp-dialog.glade.h:1
+#, fuzzy
+msgid "00:00:00:00"
+msgstr "00/00/00"
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+#, fuzzy
+msgid "<b>Compression</b>"
+msgstr "نسبة الضّغط:"
+
+#: ../properties/nm-ppp-dialog.glade.h:3
+#, fuzzy
+msgid "<b>Connection Name</b>"
+msgstr "اسم الموصول"
+
+#: ../properties/nm-ppp-dialog.glade.h:4
+#, fuzzy
+msgid "<b>Delays and TImeouts</b>"
+msgstr "<b>مؤقتات و تأخيرات</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:5
+#, fuzzy
+msgid "<b>Encryption</b>"
+msgstr "التّشفير مطلوب"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+#, fuzzy
+msgid "<b>IP Options</b>"
+msgstr "<b>خيارات العرض:</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+#, fuzzy
+msgid "<b>Packet Parameters</b>"
+msgstr "باراميترات غير صالحة"
+
+#: ../properties/nm-ppp-dialog.glade.h:8
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+#, fuzzy
+msgid "Allow BSD Compression"
+msgstr "حجم Solaris/BSD"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
+#, fuzzy
+msgid "Allow Deflate compression"
+msgstr "السماح بالنوافذ ال_منبثقة"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+#, fuzzy
+msgid "Authenticate Peer"
+msgstr "انتهى تقديم الزميل"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+#, fuzzy
+msgid "Authentication"
+msgstr "توثق"
+
+#: ../properties/nm-ppp-dialog.glade.h:14
+#, fuzzy
+msgid "Compression & Encryption"
+msgstr "التّشفير مطلوب"
+
+#: ../properties/nm-ppp-dialog.glade.h:15
+#, fuzzy
+msgid "Connection"
+msgstr "<b>الاتصال</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:16
+#, fuzzy
+msgid "Debug Output"
+msgstr "جهاز الخرج:"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+#, fuzzy
+msgid "Find Device"
+msgstr "<b>جهاز الإدخال</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+#, fuzzy
+msgid "GPRS Options"
+msgstr "<b>خيارات العرض:</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+#, fuzzy
+msgid "Hardware RTS/CTS"
+msgstr "حجم جهاز آلي"
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+msgid "Host name or IP address of the PPTP server"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+#, fuzzy
+msgid "Maximum Receive Unit"
+msgstr "وحدة المنظّمة (OU)"
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+#, fuzzy
+msgid "Maximum Transmit Unit"
+msgstr "وحدة المنظّمة (OU)"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+#, fuzzy
+msgid "Modem Connection"
+msgstr "اتصال مودم"
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+#, fuzzy
+msgid "PPP Options"
+msgstr "<b>خيارات العرض:</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+msgid "Peer DNS through tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:33
+#, fuzzy
+msgid "Refuse MS CHAP"
+msgstr "أدنى زمن:\t%s ملّي ثانية\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Require 128 bit MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Require Explicit IP Addr"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+#, fuzzy
+msgid "Require MPPC Compression"
+msgstr "التّشفير مطلوب من العملاء"
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+#, fuzzy
+msgid "Require MPPE encryption"
+msgstr "التّشفير مطلوب من العملاء"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+#, fuzzy
+msgid "Requires existing network connection"
+msgstr "يتطلب “%s” اتصالا مشفرا"
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+#, fuzzy
+msgid "Routing"
+msgstr "معلومات جدول التّوجيه"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+#, fuzzy
+msgid "Serial Options"
+msgstr "<b>خيارات العرض:</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "Service providers GPRS access point from device config"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+#, fuzzy
+msgid "Service providers IP address"
+msgstr "عنوان مستكشف ب.إ العام"
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+#, fuzzy
+msgid "Telephone number to dial"
+msgstr "عدد السطور التي ستملأ"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+msgid ""
+"This is the friendly name that will be used to identify this network connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:46
+#, fuzzy
+msgid "Time in seconds between echo requests"
+msgstr "الوقت بالثانية بين تحديثات الحالة"
+
+#: ../properties/nm-ppp-dialog.glade.h:47
+#, fuzzy
+msgid "Type:"
+msgstr "النّوع:"
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:58
+#, fuzzy
+msgid "_Access Point Name:"
+msgstr "النفاذ لاسم الطريقة"
+
+#: ../properties/nm-ppp-dialog.glade.h:59
+#, fuzzy
+msgid "_Channel:"
+msgstr "القناة:"
+
+#: ../properties/nm-ppp-dialog.glade.h:60
+#, fuzzy
+msgid "_Context Num"
+msgstr "عدد القلبات"
+
+#: ../properties/nm-ppp-dialog.glade.h:61
+#, fuzzy
+msgid "_Custom PPP options:"
+msgstr "<b>خيارات قائمة المهام</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:62
+#, fuzzy
+msgid "_Device Address:"
+msgstr "عنوان البريد الإلكتروني"
+
+#: ../properties/nm-ppp-dialog.glade.h:63
+#, fuzzy
+msgid "_Gateway:"
+msgstr "البوّابة"
+
+#: ../properties/nm-ppp-dialog.glade.h:64
+#, fuzzy
+msgid "_IP Address:"
+msgstr "عنوان IP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:65
+#, fuzzy
+msgid "_Import Saved Configuration..."
+msgstr "حدّد سابقة للإعدادات المحفوظة"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Only use VPN connection for these addresses"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+#, fuzzy
+msgid "_Packet Type"
+msgstr "نوع التّنبيه"
+
+#: ../properties/nm-ppp-dialog.glade.h:68
+#, fuzzy
+msgid "_Telephone Number:"
+msgstr "رقم ال_حساب:"
+
+#: ../properties/nm-ppp-dialog.glade.h:69
+#, fuzzy
+msgid "connect-delay"
+msgstr "التأخير الأوّلي:"
+
+#: ../src/nm-ppp-starter.c:140
+#, fuzzy
+msgid "VPN Connection failed"
+msgstr "فشل تسجيل %s إلى %s"
+
