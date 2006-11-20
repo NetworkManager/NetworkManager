@@ -1,5 +1,11 @@
 2006-11-19  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Dan Berrange <dan@berrange.com>  Gnome.org #377262
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- clean up after renamed VPN connection
+
+2006-11-19  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Dan Berrange <dan@berrange.com>  Gnome.org #377205
 	* gnome/applet/applet-dbus-vpn.c
 		- (nma_dbus_vpn_properties_cb): sort VPN connections
