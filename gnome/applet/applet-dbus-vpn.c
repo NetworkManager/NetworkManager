@@ -95,6 +95,15 @@ static void free_vpn_props_cb_data (VpnPropsCBData *data)
 	}
 }
 
+static gint vpn_sorter (gconstpointer a,
+				    gconstpointer b) {
+	VPNConnection *va = (VPNConnection *)a;
+	VPNConnection *vb = (VPNConnection *)b;
+
+	return strcmp(nma_vpn_connection_get_name(va),
+			    nma_vpn_connection_get_name(vb));
+}
+
 /*
  * nma_dbus_vpn_properties_cb
  *
@@ -152,7 +161,7 @@ static void nma_dbus_vpn_properties_cb (DBusPendingCall *pcall, void *user_data)
 			vpn = nma_vpn_connection_new (name);
 			nma_vpn_connection_set_service (vpn, service);
 			nma_vpn_connection_set_stage (vpn, stage);
-			applet->vpn_connections = g_slist_append (applet->vpn_connections, vpn);
+			applet->vpn_connections = g_slist_insert_sorted (applet->vpn_connections, vpn, vpn_sorter);
 		}
 	}
 	dbus_message_unref (reply);

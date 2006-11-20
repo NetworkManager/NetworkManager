@@ -924,6 +924,26 @@ out:
 
 #define VPN_NAME_FILES_DIR SYSCONFDIR"/NetworkManager/VPN"
 
+gint vpn_list_sorter(GtkTreeModel *model,
+		     GtkTreeIter *a,
+		     GtkTreeIter *b,
+		     gpointer user_data) {
+  GValue aval = {0};
+  GValue bval = {0};
+  const char *aname;
+  const char *bname;
+  gint res;
+  gtk_tree_model_get_value(model, a, VPNCONN_NAME_COLUMN, &aval);
+  gtk_tree_model_get_value(model, b, VPNCONN_NAME_COLUMN, &bval);
+  aname = g_value_get_string(&aval);
+  bname = g_value_get_string(&bval);
+  res = strcmp(aname, bname);
+  g_value_unset(&aval);
+  g_value_unset(&bval);
+  return res;
+}
+
+
 static gboolean
 init_app (void)
 {
@@ -1012,6 +1032,15 @@ init_app (void)
 
 	vpn_conn_view = GTK_TREE_VIEW (glade_xml_get_widget (xml, "vpnlist"));
 	vpn_conn_list = gtk_list_store_new (VPNCONN_N_COLUMNS, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
+
+	gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(vpn_conn_list),
+					VPNCONN_NAME_COLUMN,
+					vpn_list_sorter,
+					NULL,
+					NULL);
+	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(vpn_conn_list),
+					     VPNCONN_NAME_COLUMN,
+					     GTK_SORT_ASCENDING);
 
 	gtk_signal_connect_after (GTK_OBJECT (vpn_conn_view), "cursor-changed",
 				  GTK_SIGNAL_FUNC (vpn_list_cursor_changed_cb), NULL);
