@@ -940,7 +940,7 @@ vpn_list_sorter(GtkTreeModel *model,
 	gtk_tree_model_get_value(model, b, VPNCONN_NAME_COLUMN, &bval);
 	aname = g_value_get_string(&aval);
 	bname = g_value_get_string(&bval);
-	res = strcmp(aname, bname);
+	res = strcasecmp(aname, bname);
 	g_value_unset(&aval);
 	g_value_unset(&bval);
 	return res;
