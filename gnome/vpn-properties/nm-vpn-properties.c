@@ -241,8 +241,6 @@ vpn_druid_vpn_validity_changed (NetworkManagerVpnUI *vpn_ui,
 	char *conn_name;
 	GtkTreeIter iter;
 
-	/*printf ("vpn_druid_vpn_validity_changed %d!\n", is_valid);*/
-
 	conn_name = vpn_ui->get_connection_name (vpn_ui);
 
 	/* get list of existing connection names */
@@ -257,7 +255,6 @@ vpn_druid_vpn_validity_changed (NetworkManagerVpnUI *vpn_ui,
 					    -1);
 			
 			if (strcmp (name, conn_name) == 0) {
-				/*printf ("name '%s' is already in use\n", conn_name);*/
 				is_valid = FALSE;
 				break;
 			}
@@ -323,8 +320,6 @@ static void vpn_druid_vpn_details_page_prepare (GnomeDruidPage *druidpage,
 
 	is_valid = FALSE;
 
-	/*printf ("vpn_druid_von_details_page_prepare!\n");*/
-
 	/* validate input, in case we are coming in via 'Back' */
 	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
 	if (vpn_ui != NULL)
@@ -341,8 +336,6 @@ static gboolean vpn_druid_vpn_details_page_next (GnomeDruidPage *druidpage,
 	NetworkManagerVpnUI *vpn_ui;
 
 	is_valid = FALSE;
-
-	/*printf ("vpn_details_next!\n");*/
 
 	/* validate input */
 	vpn_ui = (NetworkManagerVpnUI *) g_slist_nth_data (vpn_types, gtk_combo_box_get_active (vpn_type_combo_box));
@@ -505,8 +498,6 @@ vpn_edit_vpn_validity_changed (NetworkManagerVpnUI *vpn_ui,
 
 	orig_conn_name = (const char *) user_data;
 
-	/*printf ("vpn_edit_vpn_validity_changed %d!\n", is_valid);*/
-
 	conn_name = vpn_ui->get_connection_name (vpn_ui);
 
 	/* get list of existing connection names */
@@ -523,7 +514,6 @@ vpn_edit_vpn_validity_changed (NetworkManagerVpnUI *vpn_ui,
 			/* Can override the original name (stored in user_data, see edit_cb()) */
 			if (strcmp (name, orig_conn_name) != 0) {			
 				if (strcmp (name, conn_name) == 0) {
-					/*printf ("name '%s' is already in use\n", conn_name);*/
 					is_valid = FALSE;
 					break;
 				}
@@ -643,8 +633,6 @@ edit_cb (GtkButton *button, gpointer user_data)
 	GtkTreeIter iter;
 	GtkTreeSelection *selection;
 
-	/*printf ("edit_cb\n");*/
-
 	if (!retrieve_data_from_selected_connection (&current_vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
 
@@ -725,8 +713,6 @@ delete_cb (GtkButton *button, gpointer user_data)
 	GtkWidget *confirm_dialog;
 	int response;
 
-	/*printf ("delete\n");*/
-
 	if ((selection = gtk_tree_view_get_selection (vpn_conn_view)) == NULL)
 		goto out;
 
@@ -782,8 +768,6 @@ export_cb (GtkButton *button, gpointer user_data)
 	GSList *conn_routes;
 	const char *conn_name;
 	char *conn_gconf_path;
-
-	/*printf ("export_cb\n");*/
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
 		goto out;
