@@ -30,7 +30,7 @@ processname=$NETWORKMANAGER_BIN
 pidfile=/var/run/NetworkManager.pid
 
 depend() {
-	need hald
+	need dhcdbd hald
 }
 
 start()

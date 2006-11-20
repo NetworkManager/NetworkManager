@@ -1,3 +1,9 @@
+2006-11-20  Luis Medinas  <metalgod@gentoo.org>
+
+	Fix Gentoo Linux Initscript dependencies.
+
+	* initscript/Gentoo/NetworkManager.in:
+
 2006-11-19  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Dan Berrange <dan@berrange.com>  Gnome.org #377262
