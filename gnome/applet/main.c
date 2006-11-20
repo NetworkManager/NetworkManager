@@ -60,8 +60,8 @@ int main (int argc, char *argv[])
 	if (!nma)
 		exit (EXIT_FAILURE);
 
-    	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
-    	g_signal_connect (client, "die", G_CALLBACK (session_die), nma);	
+	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
+	g_signal_connect (client, "die", G_CALLBACK (session_die), nma);	
 
 	gtk_widget_show_all (GTK_WIDGET (nma));
 	gtk_main ();
