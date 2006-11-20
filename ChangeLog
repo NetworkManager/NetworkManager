@@ -1,3 +1,12 @@
+2006-11-19  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Dan Berrange <dan@berrange.com>
+	* gnome/applet/applet-dbus-vpn.c
+		- (nma_dbus_vpn_properties_cb): sort VPN connections
+
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- (init_app): sort VPN connections
+
 2006-11-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAPList.c
