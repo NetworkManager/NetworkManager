@@ -122,6 +122,7 @@ static gboolean
 add_vpn_connection (const char *conn_name, const char *service_name, GSList *conn_data, GSList *routes)
 {
 	char *gconf_key;
+	GtkTreeSelection *selection;
 	GtkTreeIter iter;
 	char conn_gconf_path[PATH_MAX];
 	char *escaped_conn_name;
@@ -139,7 +140,10 @@ add_vpn_connection (const char *conn_name, const char *service_name, GSList *con
 
 	if (gconf_client_dir_exists (gconf_client, conn_gconf_path, NULL))
 		goto out;
-	       
+
+	if ((selection = gtk_tree_view_get_selection (vpn_conn_view)) == NULL)
+		goto out;
+
 	/* User-visible name of connection */
 	gconf_key = g_strdup_printf ("%s/name", conn_gconf_path);
 	gconf_client_set_string (gconf_client, gconf_key, conn_name, NULL);
@@ -181,6 +185,7 @@ add_vpn_connection (const char *conn_name, const char *service_name, GSList *con
 			    VPNCONN_GCONF_COLUMN, conn_gconf_path,
 			    VPNCONN_USER_CAN_EDIT_COLUMN, &conn_user_can_edit,
 			    -1);
+	gtk_tree_selection_select_iter (selection, &iter);
 
 	ret = TRUE;
 
@@ -661,10 +666,18 @@ edit_cb (GtkButton *button, gpointer user_data)
 	const char *conn_name;
 	char key[PATH_MAX];
 	char *conn_gconf_path;
+	GtkTreeSelection *selection;
+	GtkTreeIter iter;
 
 	printf ("edit_cb\n");
 
 	if (!retrieve_data_from_selected_connection (&vpn_ui, &conn_vpn_data, &conn_routes, &conn_name, &conn_gconf_path))
+		goto out;
+
+	if ((selection = gtk_tree_view_get_selection (vpn_conn_view)) == NULL)
+		goto out;
+
+	if (!gtk_tree_selection_get_selected (selection, NULL, &iter))
 		goto out;
 
 	vpn_edit_widget = vpn_ui->get_widget (vpn_ui, conn_vpn_data, conn_routes, conn_name);
@@ -704,9 +717,6 @@ edit_cb (GtkButton *button, gpointer user_data)
 
 			gconf_client_suggest_sync (gconf_client, NULL);
 		} else {
-			GtkTreeSelection *selection;
-			GtkTreeIter iter;
-
 			selection = gtk_tree_view_get_selection (vpn_conn_view);
 			gtk_tree_selection_get_selected (selection, NULL, &iter);
 			remove_vpn_connection (conn_gconf_path, &iter);
