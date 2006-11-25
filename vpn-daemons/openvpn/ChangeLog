@@ -1,3 +1,9 @@
+2006-11-24  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Helmut Schaa <hschaa@suse.de>
+	* src/nm-openvpn-service.c
+		- Redirect output to syslog
+
 2006-10-30  Tambet Ingo  <tambet@ximian.com>
 
 	* properties/Makefile.am: Add NetworkManager to CFLAGS and LDADD.

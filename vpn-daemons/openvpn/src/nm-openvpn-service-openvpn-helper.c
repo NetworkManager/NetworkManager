@@ -38,10 +38,72 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManager.h>
+#include <syslog.h>
 
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
 
+static void
+nm_log_handler (const gchar *    log_domain,
+                GLogLevelFlags   log_level,
+                const gchar *    message,
+                gpointer         ignored)
+{
+  int syslog_priority;	
+
+  switch (log_level)
+  {
+    case G_LOG_LEVEL_ERROR:
+      syslog_priority = LOG_CRIT;
+      break;
+
+    case G_LOG_LEVEL_CRITICAL:
+      syslog_priority = LOG_ERR;
+      break;
+
+    case G_LOG_LEVEL_WARNING:
+      syslog_priority = LOG_WARNING;
+      break;
+
+    case G_LOG_LEVEL_MESSAGE:
+      syslog_priority = LOG_NOTICE;
+      break;
+
+    case G_LOG_LEVEL_DEBUG:
+      syslog_priority = LOG_DEBUG;
+      break;
+
+    case G_LOG_LEVEL_INFO:
+    default:
+      syslog_priority = LOG_INFO;
+      break;
+  }
+
+  syslog (syslog_priority, "%s", message);
+}
+
+void
+nm_logging_setup ()
+{
+  openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
+  g_log_set_handler (G_LOG_DOMAIN, 
+                     G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+                     nm_log_handler,
+                     NULL);
+}
+
+void
+nm_logging_shutdown (void)
+{
+  closelog ();
+}
+
+void 
+cleanup_and_exit(int n)
+{
+  nm_logging_shutdown();
+  exit(n);
+}
 /*
  * send_config_error
  *
@@ -263,13 +325,15 @@ int main( int argc, char *argv[] )
   g_type_init ();
   if (!g_thread_supported ())
     g_thread_init (NULL);
-  
+
+  nm_logging_setup(); 	
+ 
   dbus_error_init (&error);
   con = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
   if ((con == NULL) || dbus_error_is_set (&error))
     {
       nm_warning ("Could not get the system bus.  Make sure the message bus daemon is running?");
-      exit (1);
+      cleanup_and_exit (1);
     }
   dbus_connection_set_exit_on_disconnect (con, FALSE);
 
@@ -332,12 +396,12 @@ int main( int argc, char *argv[] )
   if (!tundev || !g_utf8_validate (tundev, -1, NULL)) {
     nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a Tunnel Device from openvpn, or the tunnel device was not valid UTF-8.");
     send_config_error (con, "Tunnel Device");
-    exit (1);
+    cleanup_and_exit (1);
   }
   if (!ip4_address) {
     nm_warning ("nm-openvpn-service-openvpn-helper didn't receive an Internal IP4 Address from openvpn.");
     send_config_error (con, "IP4 Address");
-    exit (1);
+    cleanup_and_exit (1);
   }
 
   if (!ip4_netmask) {
@@ -354,6 +418,9 @@ int main( int argc, char *argv[] )
   g_ptr_array_free( ip4_dns, TRUE );
   g_ptr_array_free( ip4_nbns, TRUE );
   
-  exit (exit_code);
+  cleanup_and_exit (exit_code);
+
+  // Dummy return; cleanup_and_exit() takes care of exit()
+  return 0;
 }
 
