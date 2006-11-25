@@ -1,5 +1,25 @@
 2006-11-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/Makefile.am
+		- Since we're including NetworkManagerMain.h in nm-supplicant-interface.c,
+			add HAL cflags/includes and named-manager includes directory
+
+	* src/supplicant-manager/nm-supplicant-interface.h
+		- New state STARTING to handle transition from INIT to READY where
+			the addInterface pending call is still outstanding
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- track pending calls differently since we may have more than one
+			going on at any given time
+		- request scan results from wpa_supplicant; but don't do it more often
+			than every 4 seconds.  Drivers that do background scanning
+			(like the 'ipw' drivers) send a continuous stream of scan completion
+			notifications, so we don't want to hammer the supplicant or dbus
+			with requests for all scan results every time we get a completion
+			notification.
+
+2006-11-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-types.h
 		- new file; move all supplicant manager object typedefs here for
 			#include sanity
