@@ -1,3 +1,9 @@
+2006-11-24  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Helmut Schaa <hschaa@suse.de>
+	* src/nm-openvpn-service-openvpn-helper.c
+		- Redirect output to syslog
+
 2006-11-01  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-openvpn-service.c (nm_openvpn_dbus_handle_start_vpn): Return
