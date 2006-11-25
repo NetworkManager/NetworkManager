@@ -27,6 +27,7 @@
 #include <dbus/dbus.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include "NetworkManagerDbus.h"
 #include "nm-dbus-vpn.h"
@@ -308,6 +309,21 @@ void nm_vpn_service_start_connection (NMVPNService *service, NMVPNActRequest *re
 
 
 /*
+ * nm_vpn_service_child_setup
+ *
+ * Set the process group ID of the newly forked process
+ *
+ */
+static void
+nm_vpn_service_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process at this point */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
+
+/*
  * nm_vpn_service_stage_1_daemon_exec
  *
  * Execute the VPN service daemon.
@@ -341,7 +357,7 @@ static gboolean nm_vpn_service_stage1_daemon_exec (gpointer user_data)
 	                          (char **) vpn_argv->pdata,
 	                          NULL,
 	                          0,
-	                          NULL,
+	                          &nm_vpn_service_child_setup,
 	                          NULL,
 	                          &service->pid,
 	                          &error);

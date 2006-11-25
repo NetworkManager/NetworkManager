@@ -1,3 +1,14 @@
+2006-11-25  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-daemons/nm-vpn-service.c
+		- (supplicant_child_setup): new function
+		- (supplicant_exec): make child process use a new process group id
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_vpn_service_child_setup): new function
+		- (nm_vpn_service_stage1_daemon_exec): make child process use a new
+			process group id
+
 2006-11-19  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Dan Berrange <dan@berrange.com>  Gnome.org #377262
