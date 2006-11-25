@@ -23,6 +23,7 @@
 #define NM_SUPPLICANT_CONNECTION_H
 
 #include <glib-object.h>
+#include "nm-supplicant-types.h"
 #include "nm-device.h"
 
 G_BEGIN_DECLS
@@ -34,7 +35,6 @@ G_BEGIN_DECLS
 #define NM_IS_SUPPLICANT_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_CONNECTION))
 #define NM_SUPPLICANT_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_CONNECTION, NMSupplicantConnectionClass))
 
-typedef struct _NMSupplicantConnection NMSupplicantConnection;
 typedef struct _NMSupplicantConnectionClass NMSupplicantConnectionClass;
 typedef struct _NMSupplicantConnectionPrivate NMSupplicantConnectionPrivate;
 

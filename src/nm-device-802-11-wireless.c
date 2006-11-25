@@ -41,6 +41,8 @@
 #include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
 #include "nm-dbus-nmi.h"
+#include "nm-supplicant-manager.h"
+#include "nm-supplicant-interface.h"
 #include "wpa_ctrl.h"
 #include "cipher.h"
 
@@ -83,6 +85,8 @@ struct _NMDevice80211WirelessPrivate
 	GSource *			pending_scan;
 
 	struct _Supplicant	supplicant;
+
+	NMSupplicantInterface * sup_iface;
 
 	guint32			failed_link_count;
 	GSource *			link_timeout;
@@ -138,6 +142,11 @@ static void		nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
                                                      char *data,
                                                      int data_len,
                                                      NMDevice80211Wireless *self);
+
+static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
+                                       guint32 new_state,
+                                       guint32 old_state,
+                                       NMDevice80211Wireless *self);
 
 
 /*
@@ -390,6 +399,7 @@ real_init (NMDevice *dev)
 	guint32				caps;
 	NMSock *				sk;
 	NmNetlinkMonitor *		monitor;
+	NMSupplicantManager *	sup_mgr;
 
 	self->priv->is_initialized = TRUE;
 	self->priv->scanning = FALSE;
@@ -448,6 +458,20 @@ real_init (NMDevice *dev)
 	self->priv->wireless_event_id = 
 			g_signal_connect (G_OBJECT (monitor), "wireless-event",
 				G_CALLBACK (nm_device_802_11_wireless_event), self);
+
+	sup_mgr = nm_supplicant_manager_get ();
+	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
+	                                                         NM_DEVICE (self));
+	if (self->priv->sup_iface == NULL) {
+		nm_warning ("Couldn't initialize supplicant interface for %s.",
+		            nm_device_get_iface (NM_DEVICE (self)));
+	} else {
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "state",
+		                  G_CALLBACK (supplicant_iface_state_cb),
+		                  self);
+	}
+	g_object_unref (sup_mgr);
 }
 
 
@@ -2385,6 +2409,28 @@ ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
 }
 
 
+/****************************************************************************
+ * WPA Supplicant control stuff
+ *
+ */
+static void
+supplicant_iface_state_cb (NMSupplicantInterface * iface,
+                           guint32 new_state,
+                           guint32 old_state,
+                           NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
+             nm_device_get_iface (NM_DEVICE (self)),
+             new_state,
+             old_state);
+}
+
+
+
+
+
 /****************************************************************************/
 /* WPA Supplicant control stuff
  *
@@ -3323,7 +3369,8 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	/* Only do this part of the cleanup if the object is initialized */
 	if (self->priv->is_initialized)
 	{
-		NMData *	data = nm_device_get_app_data (NM_DEVICE (self));
+		NMData * data = nm_device_get_app_data (NM_DEVICE (self));
+		NMSupplicantManager * sup_mgr;
 
 		self->priv->is_initialized = FALSE;
 
@@ -3337,6 +3384,10 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 		g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
 			self->priv->wireless_event_id);
+
+		sup_mgr = nm_supplicant_manager_get ();
+		nm_supplicant_manager_release_iface (sup_mgr, self->priv->sup_iface);
+		g_object_unref (sup_mgr);
 	}
 
 	/* Chain up to the parent class */

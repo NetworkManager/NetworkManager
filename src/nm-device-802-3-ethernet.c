@@ -33,6 +33,7 @@
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
+#include "nm-supplicant-manager.h"
 #include "nm-utils.h"
 #include "kernel-types.h"
 
@@ -46,6 +47,8 @@ struct _NMDevice8023EthernetPrivate
 	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
+
+	NMSupplicantInterface *  sup_iface;
 };
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
@@ -57,6 +60,11 @@ static void	nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
 static void	nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
                                                           GObject *obj,
                                                           NMDevice8023Ethernet *self);
+
+static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
+                                       guint32 new_state,
+                                       guint32 old_state,
+                                       NMDevice80211Wireless *self);
 
 
 static void
@@ -74,6 +82,7 @@ real_init (NMDevice *dev)
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
 	NMData *				app_data;
 	NmNetlinkMonitor *		monitor;
+	NMSupplicantManager *   sup_mgr;
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	monitor = app_data->netlink_monitor;
@@ -85,6 +94,20 @@ real_init (NMDevice *dev)
 	self->priv->link_disconnected_id = 
 			g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
 				G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
+
+	sup_mgr = nm_supplicant_manager_get ();
+	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
+	                                                         NM_DEVICE (self));
+	if (self->priv->sup_iface == NULL) {
+		nm_warning ("Couldn't initialize supplicant interface for %s.",
+		            nm_device_get_iface (NM_DEVICE (self)));
+	} else {
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "state",
+		                  G_CALLBACK (supplicant_iface_state_cb),
+		                  self);
+	}
+	g_object_unref (sup_mgr);
 }
 
 static gboolean
@@ -300,6 +323,7 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
 	NMDeviceClass *			parent_class;  
 	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
+	NMSupplicantManager *       sup_mgr;
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -314,6 +338,10 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
+	sup_mgr = nm_supplicant_manager_get ();
+	nm_supplicant_manager_release_iface (sup_mgr, self->priv->sup_iface);
+	self->priv->sup_iface = NULL;
+	g_object_unref (sup_mgr);
 
 	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
 		self->priv->link_connected_id);
@@ -381,6 +409,25 @@ nm_device_802_3_ethernet_get_type (void)
 					       &info, 0);
 	}
 	return type;
+}
+
+
+/****************************************************************************
+ * WPA Supplicant control stuff
+ *
+ */
+static void
+supplicant_iface_state_cb (NMSupplicantInterface * iface,
+                           guint32 new_state,
+                           guint32 old_state,
+                           NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
+             nm_device_get_iface (NM_DEVICE (self)),
+             new_state,
+             old_state);
 }
 
 

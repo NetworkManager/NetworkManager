@@ -1,5 +1,53 @@
 2006-11-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-types.h
+		- new file; move all supplicant manager object typedefs here for
+			#include sanity
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+	  src/supplicant-manager/nm-supplicant-interface.h
+		- new file; an object that interfaces an NMDevice object to the
+			supplicant and handles signals from the supplicant.  This object
+			does all necessary DBus communication with wpa_supplicant.
+
+	* src/supplicant-manager/nm-supplicant-manager.c
+	  src/supplicant-manager/nm-supplicant-manager.h
+		- Actually do something.  Track the state of the wpa_supplicant service
+			and deal with its comings & goings.  Handle life events of
+			supplicant interfaces too.
+		- Move NMSupplicantManager typedef to nm-supplicant-types.h
+
+	* src/supplicant-manager/nm-supplicant-connection.h
+		- Move NMSupplicantConnection typedef to nm-supplicant-types.h
+
+	* src/supplicant-manager/Makefile.am
+		- Add new files to build, and add libnm-util to includes
+
+	* src/nm-marshal.list
+		- New marshaler type: VOID:UINT,UINT
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_init): grab a supplicant interface
+		- (nm_device_802_3_ethernet_dispose): release the supplicant interface
+		- (supplicant_iface_state_cb): new function, stub for handling
+			supplicant interface state changes
+
+	* src/nm-device-802-11-wireless.c
+		- (real_init): grab a supplicant interface
+		- (nm_device_802_11_wireless_dispose): release the supplicant interface
+		- (supplicant_iface_state_cb): new function, stub for handling
+			supplicant interface state changes
+
+	* src/NetworkManager.c
+		- (main): create and keep the supplicant manager around for the lifetime
+			of NetworkManager
+
+	* src/Makefile.am
+		- Link to the supplicant manager sub-library and use the supplicant
+			manager includes
+
+2006-11-25  Dan Williams  <dcbw@redhat.com>
+
 	Rework DBus manager signal handling to be more flexible.  Previously,
 	only one signal handler could be registered for a particular interface.
 	The DBus manager now reference counts DBus bus matches and allows multiple

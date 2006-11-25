@@ -55,6 +55,7 @@
 #include "nm-dbus-nm.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-device.h"
+#include "nm-supplicant-manager.h"
 #include "nm-dbus-net.h"
 #include "nm-netlink-monitor.h"
 #include "nm-dhcp-manager.h"
@@ -743,6 +744,7 @@ main (int argc, char *argv[])
 	char *		user_pidfile = NULL;
 	NMDBusManager *	dbus_mgr;
 	DBusConnection *dbus_connection;
+	NMSupplicantManager * sup_mgr = NULL;
 	int			exit_status = EXIT_FAILURE;
 	guint32     id;
 
@@ -846,6 +848,13 @@ main (int argc, char *argv[])
 	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->device_methods);
 	nm_data->net_methods = nm_dbus_net_methods_setup (nm_data);
 
+	/* Initialize the supplicant manager */
+	sup_mgr = nm_supplicant_manager_get ();
+	if (!sup_mgr) {
+		nm_error ("Failed to initialize the supplicant manager.");
+		goto done;
+	}
+
 	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
 	if (!nm_data->vpn_manager) {
 		nm_warning ("Failed to start the VPN manager.");
@@ -907,6 +916,10 @@ done:
 	nm_dbus_manager_remove_signal_handler (dbus_mgr, nm_data->nmi_sig_handler_id);
 
 	nm_data_free (nm_data);
+
+	if (sup_mgr)
+		g_object_unref (sup_mgr);
+
 	/* nm_data_free needs the dbus connection, so must kill the
 	 * dbus manager after that.
 	 */
