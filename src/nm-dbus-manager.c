@@ -30,11 +30,6 @@
 #include <string.h>
 #include "nm-utils.h"
 
-static gboolean nm_dbus_manager_init_bus (NMDBusManager *self);
-static void nm_dbus_manager_cleanup (NMDBusManager *self);
-static void free_signal_handler_data (gpointer data);
-static void start_reconnection_timeout (NMDBusManager *self);
-
 enum {
 	PROP_0,
 	PROP_MAIN_CONTEXT,
@@ -55,12 +50,21 @@ G_DEFINE_TYPE(NMDBusManager, nm_dbus_manager, G_TYPE_OBJECT)
                                         NM_TYPE_DBUS_MANAGER, \
                                         NMDBusManagerPrivate))
 
+typedef struct SignalMatch {
+	guint32  refcount;
+	char *   interface;
+	char *   sender;
+	char *   owner;
+	char *   match;
+	gboolean enabled;
+} SignalMatch;
 
 typedef struct SignalHandlerData {
-	NMDBusSignalHandlerFunc	func;
-	char *					sender;
-	gpointer				user_data;
-	gboolean				enabled;
+	guint32                 id;
+
+	NMDBusSignalHandlerFunc func;
+	gpointer                user_data;
+	SignalMatch *           match;
 } SignalHandlerData;
 
 typedef struct MethodHandlerData {
@@ -69,13 +73,27 @@ typedef struct MethodHandlerData {
 } MethodHandlerData;
 
 struct _NMDBusManagerPrivate {
-	DBusConnection *connection;
-	GMainContext *  main_ctx;
-	GSList *		msg_handlers;
-	GHashTable *	signal_handlers;
-	gboolean		started;
-	gboolean		disposed;
+	DBusConnection * connection;
+	GMainContext *   main_ctx;
+	gboolean         started;
+
+	GSList *         msg_handlers;
+
+	GSList *         matches;
+	GSList *         signal_handlers;
+	guint32          sig_handler_id_counter;
+
+	gboolean         disposed;
 };
+
+
+static gboolean nm_dbus_manager_init_bus (NMDBusManager *self);
+static void nm_dbus_manager_cleanup (NMDBusManager *self);
+static void free_signal_handler_data (SignalHandlerData * data, NMDBusManager * mgr);
+static void start_reconnection_timeout (NMDBusManager *self);
+static void signal_match_unref (SignalMatch * match, NMDBusManager * mgr);
+static void signal_match_disable (SignalMatch * match);
+
 
 NMDBusManager *
 nm_dbus_manager_get (GMainContext *ctx)
@@ -106,11 +124,6 @@ static void
 nm_dbus_manager_init (NMDBusManager *self)
 {
 	self->priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-
-	self->priv->signal_handlers = g_hash_table_new_full (g_str_hash,
-	                                                     g_str_equal,
-	                                                     g_free,
-	                                                     free_signal_handler_data);
 }
 
 static void
@@ -170,7 +183,28 @@ cleanup_handler_data (gpointer item, gpointer user_data)
 	MethodHandlerData * data = (MethodHandlerData *) item;
 
 	nm_dbus_method_list_unref (data->list);
-	g_slice_free (MethodHandlerData, item);
+	memset (data, 0, sizeof (MethodHandlerData));
+	g_slice_free (MethodHandlerData, data);
+}
+
+static void
+free_signal_handler_helper (gpointer item,
+                            gpointer user_data)
+{
+	NMDBusManager * mgr = (NMDBusManager *) user_data;
+	SignalHandlerData * data = (SignalHandlerData *) item;
+
+	free_signal_handler_data (data, mgr);
+}
+
+static void
+signal_match_dispose_helper (gpointer item,
+                             gpointer user_data)
+{
+	NMDBusManager * mgr = (NMDBusManager *) user_data;
+	SignalMatch * match = (SignalMatch *) item;
+
+	signal_match_unref (match, mgr);
 }
 
 static void
@@ -180,11 +214,14 @@ nm_dbus_manager_finalize (GObject *object)
 
 	g_return_if_fail (self->priv != NULL);
 
+	/* Must be done before the dbus connection is disposed */
+	g_slist_foreach (self->priv->signal_handlers, free_signal_handler_helper, self);
+	g_slist_foreach (self->priv->matches, signal_match_dispose_helper, self);
+
 	nm_dbus_manager_cleanup (self);
 	g_main_context_unref (self->priv->main_ctx);
 	g_slist_foreach (self->priv->msg_handlers, cleanup_handler_data, NULL);
 	g_slist_free (self->priv->msg_handlers);
-	g_hash_table_destroy (self->priv->signal_handlers);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->finalize (object);
 }
@@ -242,7 +279,7 @@ static void
 nm_dbus_manager_cleanup (NMDBusManager *self)
 {
 	if (self->priv->connection) {
-		dbus_connection_close (self->priv->connection);
+		dbus_connection_unref (self->priv->connection);
 		self->priv->connection = NULL;
 	}
 	self->priv->started = FALSE;
@@ -274,37 +311,182 @@ nm_dbus_manager_reconnect (gpointer user_data)
 	return success ? FALSE : TRUE;
 }
 
-static char *
-get_match_for (const char *interface, const char *sender)
-{
-	return g_strdup_printf ("type='signal',interface='%s',sender='%s'",
-	                        interface, sender);
-}
-
-static gboolean
-add_match_helper (NMDBusManager *self,
-                  const char *interface,
+static SignalMatch *
+signal_match_new (const char *interface,
                   const char *sender)
 {
-	gboolean success = FALSE;
-	DBusError error;
-	char * match;
+	SignalMatch * match;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (interface != NULL, FALSE);
-	g_return_val_if_fail (sender != NULL, FALSE);
+	g_return_val_if_fail (interface || sender, NULL);
 
-	match = get_match_for (interface, sender);
-	dbus_error_init (&error);
-	dbus_bus_add_match (self->priv->connection, match, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_warning ("failed to add signal match for '%s'.", interface);
-		dbus_error_free (&error);
-	} else {
-		success = TRUE;
+	match = g_slice_new0 (SignalMatch);
+	g_return_val_if_fail (match != NULL, NULL);
+	match->refcount = 1;
+
+	if (interface) {
+		match->interface = g_strdup (interface);
+		if (!match->interface)
+			goto error;
 	}
-	g_free (match);
-	return success;
+
+	if (sender) {
+		match->sender = g_strdup (sender);
+		if (!match->sender)
+			goto error;
+	}
+
+	if (interface && sender) {
+		match->match = g_strdup_printf ("type='signal',interface='%s',sender='%s'",
+		                                interface, sender);
+	} else if (interface && !sender) {
+		match->match = g_strdup_printf ("type='signal',interface='%s'", interface);
+	} else if (sender && !interface) {
+		match->match = g_strdup_printf ("type='signal',sender='%s'", sender);
+	}
+
+	if (!match->match)
+		goto error;
+
+	return match;
+
+error:
+	signal_match_unref (match, NULL);
+	return NULL;
+}
+
+static void
+signal_match_ref (SignalMatch * match)
+{
+	g_return_if_fail (match != NULL);
+	g_return_if_fail (match->refcount > 0);
+
+	match->refcount++;
+}
+
+static void
+signal_match_unref (SignalMatch * match,
+                    NMDBusManager * mgr)
+{
+	DBusError error;
+
+	g_return_if_fail (match != NULL);
+	g_return_if_fail (match->refcount > 0);
+	
+	match->refcount--;
+	if (match->refcount > 0)
+		return;
+
+	/* Remove the DBus bus match on dispose */
+	if (mgr) {
+	 	dbus_error_init (&error);
+		dbus_bus_remove_match (mgr->priv->connection, match->match, &error);
+		if (dbus_error_is_set (&error)) {
+			nm_warning ("failed to remove signal match for sender '%s', "
+			            "interface '%s'.",
+			            match->sender ? match->sender : "(none)",
+			            match->interface ? match->interface : "(none)");
+			dbus_error_free (&error);
+		}
+	}
+	match->enabled = FALSE;
+
+	g_free (match->interface);
+	g_free (match->sender);
+	g_free (match->owner);
+	g_free (match->match);
+	memset (match, 0, sizeof (SignalMatch));
+	g_slice_free (SignalMatch, match);
+}
+
+static SignalMatch *
+find_signal_match (NMDBusManager *self,
+                   const char *interface,
+                   const char *sender)
+{
+	SignalMatch * found = NULL;
+	GSList *      elt;
+
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (interface || sender, NULL);
+
+	for (elt = self->priv->matches; elt; elt = g_slist_next (elt)) {
+		SignalMatch * match = (SignalMatch *) elt->data;
+
+		if (!match)
+			continue;
+
+		if (interface && sender) {
+			if (!match->interface || !match->sender)
+				continue;
+			if (!strcmp (match->interface, interface) && !strcmp (match->sender, sender)) {
+				found = match;
+				break;
+			}
+		} else if (interface && !sender) {
+			if (!match->interface || match->sender)
+				continue;
+			if (!strcmp (match->interface, interface)) {
+				found = match;
+				break;
+			}
+		} else if (sender && !interface) {
+			if (!match->sender || match->interface)
+				continue;
+			if (!strcmp (match->sender, sender)) {
+				found = match;
+				break;
+			}
+		}
+	}
+
+	return found;
+}
+
+static void
+signal_match_enable (NMDBusManager * mgr,
+                     SignalMatch * match,
+                     const char * owner)
+{
+	DBusError error;
+
+	g_return_if_fail (match != NULL);
+
+	if (match->enabled == TRUE)
+		return;
+
+	if (!mgr->priv->connection)
+		return;
+
+	dbus_error_init (&error);
+	dbus_bus_add_match (mgr->priv->connection, match->match, &error);
+	if (dbus_error_is_set (&error)) {
+		nm_warning ("failed to add signal match for sender '%s', "
+		            "interface '%s'.",
+		            match->sender ? match->sender : "(none)",
+		            match->interface ? match->interface : "(none)");
+		dbus_error_free (&error);
+		signal_match_disable (match);
+	} else {
+		g_free (match->owner);
+		if (owner) {
+			match->owner = g_strdup (owner);
+		} else if (match->sender) {
+			match->owner = nm_dbus_manager_get_name_owner (mgr, match->sender);
+			if (match->owner == NULL)
+				nm_warning ("Couldn't get name owner for '%s'.", match->sender);
+		}
+		match->enabled = TRUE;
+	}
+}
+
+static void
+signal_match_disable (SignalMatch * match)
+{
+	g_return_if_fail (match != NULL);
+
+	match->enabled = FALSE;
+	g_free (match->owner);
+	match->owner = NULL;
 }
 
 static void
@@ -321,6 +503,56 @@ start_reconnection_timeout (NMDBusManager *self)
 	g_source_attach (source, self->priv->main_ctx);
 	g_source_unref (source);
 }
+
+static gboolean
+dispatch_signal (NMDBusManager * self,
+                 DBusMessage *   message)
+{
+	gboolean            handled = FALSE;
+	GSList *            elt;
+	const char *        interface;
+	const char *        sender;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	interface = dbus_message_get_interface (message);
+	sender = dbus_message_get_sender (message);
+
+	g_return_val_if_fail (interface != NULL, FALSE);
+	g_return_val_if_fail (sender != NULL, FALSE);
+
+	for (elt = self->priv->signal_handlers; elt; elt = g_slist_next (elt)) {
+		gboolean            dispatch = FALSE;
+		SignalHandlerData *	handler = (SignalHandlerData *) elt->data;
+		SignalMatch *       match = handler->match;
+
+		if (match->sender && !match->interface) {
+			if (!strcmp (match->sender, sender)
+			    || (match->owner && !strcmp (match->owner, sender)))
+				dispatch = TRUE;
+		} else if (match->interface && !match->sender) {
+			if (!strcmp (match->interface, interface))
+				dispatch = TRUE;
+		} else if (match->interface && match->sender) {
+			if (!strcmp (match->interface, interface)
+			    && (!strcmp (match->sender, sender)
+			        || !strcmp (match->owner, sender)))
+				dispatch = TRUE;
+		}
+		if (!dispatch)
+			continue;
+
+		handled = (*handler->func) (self->priv->connection,
+		                            message,
+		                            handler->user_data);
+		if (handled)
+			break;
+	}
+
+	return handled;
+}
+
 
 static DBusHandlerResult
 nm_dbus_manager_signal_handler (DBusConnection *connection,
@@ -358,24 +590,22 @@ nm_dbus_manager_signal_handler (DBusConnection *connection,
 		                                 DBUS_TYPE_STRING, &new_owner,
 		                                 DBUS_TYPE_INVALID);
 		if (success) {
-			SignalHandlerData * sig_data;
+			SignalMatch *       match;
 			gboolean			old_owner_good = (old_owner && strlen (old_owner));
 			gboolean			new_owner_good = (new_owner && strlen (new_owner));
 
-			sig_data = g_hash_table_lookup (self->priv->signal_handlers,
-			                                name);
+			match = find_signal_match (self, NULL, name);
 
 			if (!old_owner_good && new_owner_good) {
-				/* Add any matches registered with us */
-				if (sig_data) {
-					sig_data->enabled = add_match_helper (self,
-					                                      name,
-					                                      sig_data->sender);
+				/* Add any matches for this owner */
+				if (match) {
+					signal_match_enable (self, match, new_owner);
 				}
 			} else if (old_owner_good && !new_owner_good) {
 				/* Mark any matches for services that have gone away as disabled. */
-				if (sig_data)
-					sig_data->enabled = FALSE;
+				if (match) {
+					signal_match_disable (match);
+				}
 			}
 
 			g_signal_emit (G_OBJECT (self), 
@@ -395,18 +625,7 @@ nm_dbus_manager_signal_handler (DBusConnection *connection,
 
 		handled = TRUE;
 	} else {
-		SignalHandlerData *	cb_data;		
-		const char *		interface;
-
-		interface = dbus_message_get_interface (message);
-		if (interface) {
-			if ((cb_data = g_hash_table_lookup (self->priv->signal_handlers,
-			                                    interface))) {
-				handled = (*cb_data->func) (connection,
-				                            message,
-				                            cb_data->user_data);
-			}
-		}
+		handled = dispatch_signal (self, message);
 	}
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
@@ -624,29 +843,6 @@ out:
 	return success;
 }
 
-static void
-register_signal_handler (gpointer key,
-                         gpointer value,
-                         gpointer user_data)
-{
-	NMDBusManager *self = NM_DBUS_MANAGER (user_data);
-	SignalHandlerData *	cb_data = (SignalHandlerData *) value;
-
-	if (nm_dbus_manager_name_has_owner (self, key))
-		add_match_helper (self, key, cb_data->sender);
-}
-
-static gboolean
-nm_dbus_manager_register_signal_handlers (NMDBusManager *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	g_hash_table_foreach (self->priv->signal_handlers,
-	                      register_signal_handler,
-	                      self);
-	return TRUE;
-}
-
 /* Register our service on the bus; shouldn't be called until
  * all necessary message handlers have been registered, because
  * when we register on the bus, clients may start to call.
@@ -657,6 +853,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	DBusError	error;
 	gboolean	success = FALSE;
 	int			flags, ret;
+	GSList *    elt;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -670,8 +867,9 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		goto out;
 
 	/* And our signal handlers */
-	if (!nm_dbus_manager_register_signal_handlers (self))
-		goto out;
+	for (elt = self->priv->matches; elt; elt = g_slist_next (elt)) {
+		signal_match_enable (self, (SignalMatch *) elt->data, NULL);
+	}
 
 	dbus_error_init (&error);
 #if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
@@ -741,83 +939,108 @@ nm_dbus_manager_register_method_list (NMDBusManager *self,
 }
 
 static void
-free_signal_handler_data (gpointer data)
+free_signal_handler_data (SignalHandlerData * data,
+                          NMDBusManager * mgr)
 {
-	SignalHandlerData *	cb_data = (SignalHandlerData *) data;
+	g_return_if_fail (mgr != NULL);
+	g_return_if_fail (data != NULL);
 
-	g_return_if_fail (cb_data != NULL);
+	if (data->match)
+		signal_match_unref (data->match, mgr);
 
-	g_free (cb_data->sender);
-	g_slice_free (SignalHandlerData, cb_data);
+	memset (data, 0, sizeof (SignalHandlerData));
+	g_slice_free (SignalHandlerData, data);
 }
 
-void
+guint32
 nm_dbus_manager_register_signal_handler (NMDBusManager *self,
                                          const char *interface,
                                          const char *sender,
                                          NMDBusSignalHandlerFunc callback,
                                          gpointer user_data)
 {
-	SignalHandlerData *	cb_data;
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+	SignalHandlerData *	sig_handler;
+	SignalMatch * match = NULL;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (interface != NULL);
-	g_return_if_fail (callback != NULL);
+	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (callback != NULL, 0);
 
-	if (!(cb_data = g_slice_new0 (SignalHandlerData)))
-		return;
-	cb_data->sender = sender ? g_strdup (sender) : g_strdup (interface);
-	cb_data->func = callback;
-	cb_data->user_data = user_data;
-	g_hash_table_insert (self->priv->signal_handlers,
-	                     g_strdup (interface),
-	                     cb_data);
+	/* One of interface or sender must be specified */
+	g_return_val_if_fail (interface || sender, 0);
 
-	if (nm_dbus_manager_name_has_owner (self, cb_data->sender))
-		cb_data->enabled = add_match_helper (self, interface, cb_data->sender);
+	if (!(sig_handler = g_slice_new0 (SignalHandlerData))) {
+		nm_warning ("Not enough memory for new signal handler.");
+		return 0;
+	}
+	sig_handler->func = callback;
+	sig_handler->user_data = user_data;
+
+	/* Find or create the DBus bus match */
+	match = find_signal_match (self, interface, sender);
+	if (match != NULL) {
+		sig_handler->match = match;
+		signal_match_ref (match);		
+	} else {
+		sig_handler->match = signal_match_new (interface, sender);
+		if (sig_handler->match == NULL) {
+			nm_warning ("Could not create new signal match.");
+			free_signal_handler_data (sig_handler, self);
+			return 0;
+		}
+	}
+
+	signal_match_enable (self, sig_handler->match, NULL);
+
+	g_static_mutex_lock (&mutex);
+	self->priv->sig_handler_id_counter++;
+	sig_handler->id = self->priv->sig_handler_id_counter;
+	g_static_mutex_unlock (&mutex);
+
+	self->priv->matches = g_slist_append (self->priv->matches, sig_handler->match);
+	self->priv->signal_handlers = g_slist_append (self->priv->signal_handlers,
+	                                              sig_handler);
+
+	return sig_handler->id;
 }
 
 void
 nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
-                                       const char *interface)
+                                       guint32 id)
 {
-	SignalHandlerData *	cb_data;
-	DBusError error;
-	char * match;
+	GSList * elt;
+	SignalHandlerData *	sig_handler = NULL;
 
 	g_return_if_fail (self != NULL);
-	g_return_if_fail (interface != NULL);
+	g_return_if_fail (id > 0);
 
-	cb_data = g_hash_table_lookup (self->priv->signal_handlers, interface);
-	if (!cb_data)
+	for (elt = self->priv->signal_handlers; elt; elt = g_slist_next (elt)) {
+		SignalHandlerData * handler = (SignalHandlerData *) elt->data;
+
+		if (handler && (handler->id == id)) {
+			sig_handler = handler;
+			break;
+		}
+	}
+
+	/* Not found */
+	if (!sig_handler)
 		return;
 
-	if (cb_data->enabled == FALSE)
-		goto out;
-	if (nm_dbus_manager_name_has_owner (self, cb_data->sender))
-		goto out;
-
-	match = get_match_for (interface, cb_data->sender);
- 	dbus_error_init (&error);
-	dbus_bus_remove_match (self->priv->connection, match, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_warning ("failed to remove signal match for '%s'.", interface);
-		dbus_error_free (&error);
-	}
-	g_free (match);
-
-out:
-	g_hash_table_remove (self->priv->signal_handlers, interface);
+	free_signal_handler_data (sig_handler, self);
 }
 
 DBusConnection *
 nm_dbus_manager_get_dbus_connection (NMDBusManager *self)
 {
+	DBusConnection * connection;
 	GValue value = {0,};
 
 	g_return_val_if_fail (self != NULL, NULL);
 
 	g_value_init (&value, G_TYPE_POINTER);
 	g_object_get_property (G_OBJECT (self), "dbus-connection", &value);
-	return g_value_get_pointer (&value);
+	connection = g_value_get_pointer (&value);
+	g_value_unset (&value);
+	return connection;
 }

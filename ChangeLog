@@ -1,5 +1,37 @@
 2006-11-25  Dan Williams  <dcbw@redhat.com>
 
+	Rework DBus manager signal handling to be more flexible.  Previously,
+	only one signal handler could be registered for a particular interface.
+	The DBus manager now reference counts DBus bus matches and allows multiple
+	clients to register signal handlers for the same interface and sender.
+
+	* src/NetworkManager.c
+		- (main): track NMI signal handler ID and remove it when we quit
+
+	* src/NetworkManagerMain.h
+		- Keep track of NMI signal handler ID
+
+	* src/nm-dbus-manager.c
+	  src/nm-dbus-manager.h
+		- rework signal handling; each signal handler references one signal
+			match, but a signal match may be referenced by one or more
+			signal handlers.  Matches are refcounted and are destroyed when the
+			last signal handler that references the match is removed.  This is
+			necessary because two signal handlers may end up requiring the same
+			dbus bus match, so the match must live until the last signal handler
+			is destroyed (for example, with the wpa_supplicant network interface
+			dbus interface).
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_new): track DHCP signal handler id
+		- (nm_dhcp_manager_dispose): remove DHCP signal handler
+
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_add_watch): track VPN service signal handler id
+		- (nm_vpn_service_remove_watch): remove VPN service signal handler
+
+2006-11-25  Dan Williams  <dcbw@redhat.com>
+
 	Suggested by Helmut Schaa <hschaa@suse.de>
 
 	* src/vpn-daemons/nm-vpn-service.c

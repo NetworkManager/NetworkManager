@@ -744,6 +744,7 @@ main (int argc, char *argv[])
 	NMDBusManager *	dbus_mgr;
 	DBusConnection *dbus_connection;
 	int			exit_status = EXIT_FAILURE;
+	guint32     id;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
@@ -831,11 +832,12 @@ main (int argc, char *argv[])
 	                  G_CALLBACK (nm_name_owner_changed_handler), nm_data);
 	g_signal_connect (G_OBJECT (dbus_mgr), "dbus-connection-changed",
 	                  G_CALLBACK (nm_dbus_connection_changed_handler), nm_data);
-	nm_dbus_manager_register_signal_handler (dbus_mgr,
-	                                         NMI_DBUS_INTERFACE,
-	                                         NULL,
-	                                         nm_dbus_nmi_signal_handler,
-	                                         nm_data);
+	id = nm_dbus_manager_register_signal_handler (dbus_mgr,
+	                                              NMI_DBUS_INTERFACE,
+	                                              NULL,
+	                                              nm_dbus_nmi_signal_handler,
+	                                              nm_data);
+	nm_data->nmi_sig_handler_id = id;
 
 	/* Register DBus method handlers for the main NM objects */
 	nm_data->nm_methods = nm_dbus_nm_methods_setup (nm_data);
@@ -901,6 +903,9 @@ main (int argc, char *argv[])
 
 done:
 	nm_print_open_socks ();
+
+	nm_dbus_manager_remove_signal_handler (dbus_mgr, nm_data->nmi_sig_handler_id);
+
 	nm_data_free (nm_data);
 	/* nm_data_free needs the dbus connection, so must kill the
 	 * dbus manager after that.

@@ -80,14 +80,14 @@ void nm_dbus_manager_register_method_list (NMDBusManager *self,
 gboolean nm_dbus_manager_name_has_owner   (NMDBusManager *self,
                                            const char *name);
 
-void nm_dbus_manager_register_signal_handler (NMDBusManager *self,
+guint32 nm_dbus_manager_register_signal_handler (NMDBusManager *self,
                                            const char *interface,
                                            const char *sender,
                                            NMDBusSignalHandlerFunc callback,
                                            gpointer user_data);
 
 void nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
-                                           const char *interface);
+                                           guint32 id);
 
 DBusConnection * nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
 

@@ -46,6 +46,7 @@ struct NMVPNService
 	NMVPNManager *	manager;
 	NMData *		app_data;
 	GPid			pid;
+	guint32         sig_handler_id;
 	gulong			watch_id;
 	gulong			dbus_con_watch_id;
 	NMDBusManager *	dbus_mgr;
@@ -1130,6 +1131,8 @@ void nm_vpn_service_stop_connection (NMVPNService *service, NMVPNActRequest *req
 static void
 nm_vpn_service_add_watch (NMVPNService *service)
 {
+	guint32 id;
+
 	g_return_if_fail (service != NULL);
 
 	if (service->watch_id)
@@ -1138,11 +1141,12 @@ nm_vpn_service_add_watch (NMVPNService *service)
 	/* Add a dbus filter for this connection's service name so its signals
 	 * get delivered to us.
 	 */
-	nm_dbus_manager_register_signal_handler (service->dbus_mgr,
-	                                         service->service,
-	                                         NULL,
-	                                         nm_vpn_service_process_signal,
-	                                         service);
+	id = nm_dbus_manager_register_signal_handler (service->dbus_mgr,
+	                                              service->service,
+	                                              NULL,
+	                                              nm_vpn_service_process_signal,
+	                                              service);
+	service->sig_handler_id = id;
 	service->watch_id = g_signal_connect (service->dbus_mgr,
 	                                      "name-owner-changed",
 	                                      G_CALLBACK (nm_vpn_service_name_owner_changed),
@@ -1162,7 +1166,7 @@ nm_vpn_service_remove_watch (NMVPNService *service)
 	if (!service->watch_id)
 		return;
 
-	nm_dbus_manager_remove_signal_handler (service->dbus_mgr, service->service);
+	nm_dbus_manager_remove_signal_handler (service->dbus_mgr, service->sig_handler_id);
 	g_signal_handler_disconnect (service->dbus_mgr, service->watch_id);
 	service->watch_id = 0;
 	g_signal_handler_disconnect (service->dbus_mgr, service->dbus_con_watch_id);

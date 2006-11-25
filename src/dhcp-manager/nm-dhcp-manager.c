@@ -58,6 +58,7 @@ struct NMDHCPManager {
 	gboolean	running;
 	size_t		dhcp_sn_len;
 	NMDBusManager *	dbus_mgr;
+	guint32     sig_handler_id;
 };
 
 
@@ -90,6 +91,7 @@ nm_dhcp_manager_new (NMData *data,
                      GMainContext *main_ctx)
 {
 	NMDHCPManager *	manager;
+	guint32         id;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (main_ctx != NULL, NULL);
@@ -102,11 +104,12 @@ nm_dhcp_manager_new (NMData *data,
 	                                                   DHCP_SERVICE_NAME);
 	manager->dhcp_sn_len = strlen (DHCP_SERVICE_NAME);
 
-	nm_dbus_manager_register_signal_handler (manager->dbus_mgr,
-	                                         DHCP_SERVICE_NAME ".state",
-	                                         DHCP_SERVICE_NAME,
-	                                         nm_dhcp_manager_process_signal,
-	                                         manager);
+	id = nm_dbus_manager_register_signal_handler (manager->dbus_mgr,
+	                                              DHCP_SERVICE_NAME ".state",
+	                                              DHCP_SERVICE_NAME,
+	                                              nm_dhcp_manager_process_signal,
+	                                              manager);
+	manager->sig_handler_id = id;
 	g_signal_connect (G_OBJECT (manager->dbus_mgr),
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_dhcp_manager_name_owner_changed),
@@ -123,6 +126,9 @@ nm_dhcp_manager_new (NMData *data,
 void nm_dhcp_manager_dispose (NMDHCPManager *manager)
 {
 	g_return_if_fail (manager != NULL);
+
+	nm_dbus_manager_remove_signal_handler (manager->dbus_mgr,
+	                                       manager->sig_handler_id);
 
 	g_object_unref (manager->dbus_mgr);
 	memset (manager, 0, sizeof (NMDHCPManager));

@@ -66,6 +66,7 @@ typedef struct NMData
 	NMNamedManager *		named_manager;
 	NMVPNManager *			vpn_manager;
 	NMDHCPManager *		dhcp_manager;
+	guint32                 nmi_sig_handler_id;
 
 	NMDbusMethodList *		nm_methods;
 	NMDbusMethodList *		device_methods;
