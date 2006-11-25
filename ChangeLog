@@ -1,5 +1,7 @@
 2006-11-25  Dan Williams  <dcbw@redhat.com>
 
+	Suggested by Helmut Schaa <hschaa@suse.de>
+
 	* src/vpn-daemons/nm-vpn-service.c
 		- (supplicant_child_setup): new function
 		- (supplicant_exec): make child process use a new process group id
