@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <unistd.h>
 
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
@@ -2837,6 +2838,20 @@ supplicant_log_stdout (GIOChannel *ioc, GIOCondition condition, gpointer data)
 	return retval;
 }
 
+/*
+ * supplicant_child_setup
+ *
+ * Set the process group ID of the newly forked process
+ *
+ */
+static void
+supplicant_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process at this point */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
 static gboolean
 supplicant_exec (NMDevice80211Wireless *self)
 {
@@ -2851,8 +2866,9 @@ supplicant_exec (NMDevice80211Wireless *self)
 	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
 	argv[3] = NULL;
 
-	success = g_spawn_async_with_pipes ("/", argv, NULL, 0, NULL, NULL,
-	                    &pid, NULL, &sup_stdout, NULL, &error);
+	success = g_spawn_async_with_pipes ("/", argv, NULL, 0,
+	                    &supplicant_child_setup, NULL, &pid, NULL, &sup_stdout,
+	                    NULL, &error);
 	if (!success)
 	{
 		if (error)
