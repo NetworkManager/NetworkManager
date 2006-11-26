@@ -744,6 +744,9 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
 }
 
 
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
+
 /*
  * nm_ap_list_print_members
  *
@@ -752,9 +755,9 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
  */
 void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 {
-	NMAccessPoint	*ap;
-	NMAPListIter	*iter;
-	int			 i = 0;
+	NMAccessPoint * ap;
+	NMAPListIter *  iter;
+	int             i = 0;
 
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (name != NULL);
@@ -762,18 +765,38 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	if (!(iter = nm_ap_list_iter_new (list)))
 		return;
 
-	nm_warning ("AP_LIST_PRINT: printing members of '%s'", name);
-	while ((ap = nm_ap_list_iter_next (iter)))
-	{
-		const GTimeVal *	timestamp = nm_ap_get_timestamp (ap);
-		const GTimeVal *	seen = nm_ap_get_last_seen (ap);
-		NMAPSecurity * 	security = nm_ap_get_security (ap);
-		nm_warning ("\t%d)\tobj=%p, essid='%s', timestamp=%ld, key='%s', enc=%d, addr=%p, strength=%d, %s=%f, rate=%d, inval=%d, mode=%d, seen=%ld",
-				i, ap, nm_ap_get_essid (ap), timestamp->tv_sec, nm_ap_security_get_key (security), nm_ap_get_encrypted (ap),
-				nm_ap_get_address (ap), nm_ap_get_strength (ap), (nm_ap_get_freq (ap) < 20) ? "channel" : "freq", nm_ap_get_freq (ap), nm_ap_get_rate (ap),
-				nm_ap_get_invalid (ap), nm_ap_get_mode (ap), seen->tv_sec);
+	nm_info ("AP_LIST_PRINT: printing members of '%s'", name);
+	while ((ap = nm_ap_list_iter_next (iter))) {
+		const GTimeVal * timestamp = nm_ap_get_timestamp (ap);
+		const GTimeVal * seen = nm_ap_get_last_seen (ap);
+		NMAPSecurity *   security = nm_ap_get_security (ap);
+		const char *     key = "";
+		const struct ether_addr * eth_addr = nm_ap_get_address (ap);
+		char             addr[ETH_ALEN];
+		double           freq = nm_ap_get_freq (ap);
+
+		if (security)
+			key = nm_ap_security_get_key (security);
+
+		memcpy (&addr, eth_addr, ETH_ALEN);
+
+		nm_info ("%d)\t'%s' (%p) stamp=%ld enc=%d addr=" MAC_FMT " strength=%d "
+		         "freq=[%f/%d] rate=%d inval=%d mode=%d seen=%ld",
+		         i,
+		         nm_ap_get_essid (ap),
+		         ap,
+		         timestamp->tv_sec,
+		         nm_ap_get_encrypted (ap),
+		         MAC_ARG (addr),
+		         nm_ap_get_strength (ap),
+		         (freq > 20) ? freq : 0,
+		         (freq < 20) ? (int) freq : 0,
+		         nm_ap_get_rate (ap),
+		         nm_ap_get_invalid (ap),
+		         nm_ap_get_mode (ap),
+		         seen->tv_sec);
 		i++;
 	}
-	nm_warning ("AP_LIST_PRINT: done");
+	nm_info ("AP_LIST_PRINT: done");
 	nm_ap_list_iter_free (iter);
 }
