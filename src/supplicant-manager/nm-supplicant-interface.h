@@ -51,6 +51,11 @@ enum {
 };
 
 
+enum {
+	NM_SUPPLICANT_INTERFACE_SCAN_RESULT_ERROR = 0,
+	NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS
+};
+
 #define NM_TYPE_SUPPLICANT_INTERFACE            (nm_supplicant_interface_get_type ())
 #define NM_SUPPLICANT_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
 #define NM_SUPPLICANT_INTERFACE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
@@ -80,7 +85,9 @@ struct _NMSupplicantInterfaceClass
 
 	void (* removed)      (NMSupplicantInterface * iface);
 
-	void (* scan_results) (NMSupplicantInterface * iface);
+	void (* scanned_ap)   (NMSupplicantInterface * iface, DBusMessage * message);
+
+	void (* scan_result)  (NMSupplicantInterface * iface, guint32 result);
 };
 
 
@@ -93,6 +100,8 @@ void nm_supplicant_interface_set_connection (NMSupplicantInterface * iface,
                                              NMSupplicantConnection * con);
 
 NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
+
+gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
 
 G_END_DECLS
 

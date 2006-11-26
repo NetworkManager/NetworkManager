@@ -1,3 +1,43 @@
+2006-11-26  Dan Williams  <dcbw@redhat.com>
+
+	Scan using wpa_supplicant over DBus.
+
+	* src/nm-device-802-11-wireless.c
+		- remove wireless extensions netlink event handler bits
+			(wireless_event_helper, nm_device_802_11_wireless_event)
+		- remove wireless extensions scan event handler bits
+			(process_scan_results, add_new_ap_to_device_list, hexstr2bin,
+			hex2byte, hex2num, request_and_convert_scan_results,
+			free_process_scan_cb_data, scan_results_timeout,
+			schedule_scan_results_timeout, cancel_scan_results_timeout)
+		- Rename nm_device_802_11_wireless_scan() -> request_wireless_scan()
+			and request scans from the supplicant interface rather than directly
+		- Move functionality of convert_scan_results() to cull_scan_list() and
+			supplicant_iface_scanned_ap_cb()
+		- (supplicant_iface_scan_result_cb): new function; schedule a new scan
+			at the scan interval when the current scan has finished
+		- (supplicant_iface_state_cb): start scanning when the supplicant
+			interface enters the READY state, and stop scanning when it
+			enters the DOWN state
+		- (cull_scan_list): weed out old access points from the scan list
+		- (supplicant_iface_scanned_ap_cb): convert a supplicant scanned access
+			point into an NMAccessPoint and merge it into the device's scan list
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+	  src/supplicant-manager/nm-supplicant-interface.h
+		- Add a new signal "scan-result" which is issued when the supplicant
+			notifies NM that a scan has completed
+		- Add a new signal "scanned-ap" that notifies listeners of a new access
+			point found in the scan.  Called once for each access point that
+			the supplicant interface object receives from the supplicant as a
+			result of the "scanResults" method call
+		- (wpas_iface_query_scan_results): don't wait 4s before querying
+			for the initial scan results
+		- (scan_request_cb): new function; send listeners the result
+			(success, error) of a wireless scan request
+		- (nm_supplicant_interface_request_scan): new function; ask the
+			supplicant to perform an immediate wireless scan
+
 2006-11-25  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/Makefile.am

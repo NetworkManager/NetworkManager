@@ -68,7 +68,8 @@ static void nm_supplicant_interface_set_state (NMSupplicantInterface * self,
 enum {
 	STATE,        /* change in the interface's state */
 	REMOVED,      /* interface was removed by the supplicant */
-	SCAN_RESULTS, /* interface has new scan results */
+	SCANNED_AP,   /* interface saw a new access point from a scan */
+	SCAN_RESULT,  /* result of a wireless scan request */
 	LAST_SIGNAL
 };
 static guint nm_supplicant_interface_signals[LAST_SIGNAL] = { 0 };
@@ -97,6 +98,7 @@ struct _NMSupplicantInterfacePrivate
 	char *                   wpas_net_op;
 	guint32                  wpas_sig_handler_id;
 	GSource *                scan_results_timeout;
+	guint32                  last_scan;
 
 	NMSupplicantConnection * con;
 
@@ -389,15 +391,25 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_TYPE_NONE, 0);
 	klass->removed = NULL;
 
-	nm_supplicant_interface_signals[SCAN_RESULTS] =
-		g_signal_new ("scan-results",
+	nm_supplicant_interface_signals[SCANNED_AP] =
+		g_signal_new ("scanned-ap",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_results),
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scanned_ap),
 		              NULL, NULL,
-		              nm_marshal_VOID__UINT_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-	klass->scan_results = NULL;
+		              g_cclosure_marshal_VOID__POINTER,
+		              G_TYPE_NONE, 1, G_TYPE_POINTER);
+	klass->scanned_ap = NULL;
+
+	nm_supplicant_interface_signals[SCAN_RESULT] =
+		g_signal_new ("scan-result",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_result),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
+	klass->scan_result = NULL;
 }
 
 GType
@@ -473,6 +485,10 @@ bssid_properties_cb (DBusPendingCall * pcall,
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
+	g_signal_emit (G_OBJECT (self),
+	               nm_supplicant_interface_signals[SCANNED_AP],
+	               0,
+	               reply);
 
 out:
 	if (reply)
@@ -558,6 +574,12 @@ scan_results_cb (DBusPendingCall * pcall,
 		goto out;
 	}
 
+	/* Notify listeners of the result of the scan */
+	g_signal_emit (G_OBJECT (self),
+	               nm_supplicant_interface_signals[SCAN_RESULT],
+	               0,
+	               NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS);
+
 	/* Fire off a "properties" call for each returned BSSID */
 	for (item = bssids; *item; item++) {
 		request_bssid_properties (self, *item);
@@ -576,9 +598,10 @@ static gboolean
 request_scan_results (gpointer user_data)
 {
 	NMSupplicantInterface * self = (NMSupplicantInterface *) user_data;
-	DBusMessage * message = NULL;
-	DBusPendingCall * pcall;
-	DBusConnection * connection;
+	DBusMessage *           message = NULL;
+	DBusPendingCall *       pcall;
+	DBusConnection *        connection;
+	GTimeVal                cur_time;
 
 	if (!self || !self->priv->wpas_iface_op) {
 		nm_warning ("Invalid user_data or bad supplicant interface object path.");
@@ -612,6 +635,9 @@ request_scan_results (gpointer user_data)
 	}
 	add_pcall (self, pcall);
 
+	g_get_current_time (&cur_time);
+	self->priv->last_scan = cur_time.tv_sec;
+
 out:
 	if (message)
 		dbus_message_unref (message);
@@ -642,8 +668,12 @@ wpas_iface_query_scan_results (NMSupplicantInterface * self)
 	if (!app_data)
 		return;
 
-	/* Only fetch scan results every 4s max */
-	source = g_timeout_source_new (4000);
+	/* Only fetch scan results every 4s max, but initially do it right away */
+	if (self->priv->last_scan == 0) {
+		source = g_idle_source_new ();
+	} else {
+		source = g_timeout_source_new (4000);
+	}
 	g_source_set_callback (source, request_scan_results, self, NULL);
 	id = g_source_attach (source, app_data->main_context);
 	self->priv->scan_results_timeout = source;
@@ -977,4 +1007,97 @@ nm_supplicant_interface_get_device (NMSupplicantInterface * self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->dev;
+}
+
+static void
+scan_request_cb (DBusPendingCall * pcall,
+                 NMSupplicantInterface * self)
+{
+	DBusError     error;
+	DBusMessage * reply = NULL;
+	guint32       success = FALSE;
+	guint32       scan_result = NM_SUPPLICANT_INTERFACE_SCAN_RESULT_ERROR;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (!dbus_message_get_args (reply,
+	                            &error,
+	                            DBUS_TYPE_UINT32, &success,
+	                            DBUS_TYPE_INVALID)) {
+		nm_warning ("could not get scan request result: %s - %s.",
+		            error.name,
+		            error.message);
+		goto out;
+	}
+
+	/* Notify listeners of the result of the scan */
+	if (success == 1)
+		scan_result = NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS;
+	g_signal_emit (G_OBJECT (self),
+	               nm_supplicant_interface_signals[SCAN_RESULT],
+	               0,
+	               scan_result);	
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	remove_pcall (self, pcall);
+}
+
+gboolean
+nm_supplicant_interface_request_scan (NMSupplicantInterface * self)
+{
+	DBusConnection *  dbus_connection;
+	DBusMessage *     message = NULL;
+	gboolean          success = FALSE;
+	DBusPendingCall * pcall;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (self->priv->state != NM_SUPPLICANT_INTERFACE_STATE_READY, FALSE);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get the dbus connection.");
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_iface_op,
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "scan");
+	if (!message) {
+		nm_warning ("Not enough memory to allocate dbus message.");
+		goto out;
+	}
+
+	pcall = nm_dbus_send_with_callback (dbus_connection,
+	                                    message,
+	                                    (DBusPendingCallNotifyFunction) scan_request_cb,
+	                                    self,
+	                                    NULL,
+	                                    __func__);
+	if (!pcall) {
+		nm_warning ("could not send dbus message.");
+		goto out;
+	}
+	add_pcall (self, pcall);
+	success = TRUE;
+
+out:
+	if (message)
+		dbus_message_unref (message);
+	return success;
 }
