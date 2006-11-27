@@ -1,3 +1,12 @@
+2006-11-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* gnome/applet/menu-items.c
+		- (network_menu_item_update): use gtk_progress_bar_set_fraction()
+			as gtk_progress_set_percentage is deprecated.  Should
+			work as far back as GTK+ 2.4.  Gnome.org #379780
+
 2006-11-26  Dan Williams  <dcbw@redhat.com>
 
 	Scan using wpa_supplicant over DBus.

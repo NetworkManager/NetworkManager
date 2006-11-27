@@ -254,7 +254,7 @@ void network_menu_item_update (NMApplet *applet, NMNetworkMenuItem *item,
 	g_free (display_essid);
 
 	percent = (double) CLAMP (wireless_network_get_strength (network), 0, 100) / 100.0;
-	gtk_progress_set_percentage (GTK_PROGRESS (item->progress), percent);
+	gtk_progress_bar_set_fraction (GTK_PROGRESS_BAR (item->progress), percent);
 
 	/* Deal with the encrypted icon */
 	g_object_set (item->security_image, "visible", is_encrypted, NULL);
