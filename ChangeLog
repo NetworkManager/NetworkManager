@@ -2,6 +2,14 @@
 
 	Patch from Christian Persch <chpe@gnome.org>
 
+	* gnome/applet/applet-dbus-devices.c
+		- (hal_info_product_cb): fix memleak; free duped string.
+			Gnome.org #379908
+
+2006-11-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
 	* gnome/applet/menu-items.c
 		- (network_menu_item_update): use gtk_progress_bar_set_fraction()
 			as gtk_progress_set_percentage is deprecated.  Should

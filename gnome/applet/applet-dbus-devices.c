@@ -322,9 +322,11 @@ static void hal_info_product_cb (DBusPendingCall *pcall, void *user_data)
 
 	if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &info_product, DBUS_TYPE_INVALID))
 	{
-		char *desc = g_strdup_printf ("%s %s", cb_data->vendor, info_product);
+		char *desc;
 
-		network_device_set_desc (cb_data->dev, desc);
+ 		desc = g_strdup_printf ("%s %s", cb_data->vendor, info_product);
+ 		network_device_set_desc (cb_data->dev, desc);
+		g_free (desc);
 	}
 	dbus_message_unref (reply);
 
