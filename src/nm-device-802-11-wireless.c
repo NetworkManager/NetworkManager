@@ -2275,9 +2275,6 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 	/* Remove outdated access points */
 	cull_scan_list (self);
 
-	ap_list = nm_device_802_11_wireless_ap_list_get (self);
-	nm_ap_list_print_members (ap_list, "SCAN");
-
 out:
 	if (ap)
 		nm_ap_unref (ap);
