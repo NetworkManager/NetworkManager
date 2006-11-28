@@ -1,3 +1,8 @@
+2006-11-28  Tambet Ingo  <tambet@ximian.com>
+
+	* properties/pcf-file.c (pcf_utf8_try_convert): Implement.
+	(pcf_file_load): Convert all config file values to UTF-8.
+
 2006-11-01  Tambet Ingo  <tambet@ximian.com>
 
 	* properties/nm-vpnc.c (import_from_file): Rewrite using pcf-file

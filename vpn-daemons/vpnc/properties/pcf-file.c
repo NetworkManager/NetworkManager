@@ -15,6 +15,32 @@ pcf_entry_free (PcfEntry *entry)
 	}
 }
 
+/* Stolen from gaim */
+
+static char *
+pcf_utf8_try_convert (const char *str)
+{
+	char *utf8;
+	gsize converted;
+
+	if (!str)
+		return NULL;
+
+	if (g_utf8_validate (str, -1, NULL))
+		return g_strdup (str);
+
+	utf8 = g_locale_to_utf8 (str, -1, NULL, NULL, NULL);
+	if (utf8)
+		return utf8;
+
+	utf8 = g_convert (str, -1, "UTF-8", "ISO-8859-15", &converted, NULL, NULL);
+	if (utf8 && converted == strlen (str))
+		return utf8;
+
+	g_free (utf8);
+	return NULL;
+}
+
 /*
   The main reader loop here is based on the simple .ini file
   parser from avahi/avahi-daemon/ini-file-parser.c
@@ -87,7 +113,7 @@ pcf_file_load (const char *fname)
             *(e++) = 0;
 
 			entry = g_new (PcfEntry, 1);
-			entry->value = g_strdup (e);
+			entry->value = pcf_utf8_try_convert (e);
 
 			if (*s == '!') {
 				entry->key = g_utf8_strdown (s+1, -1);
