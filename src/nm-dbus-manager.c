@@ -872,10 +872,10 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	}
 
 	dbus_error_init (&error);
-#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
-	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
-#else
+#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR < 60)
 	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
+#else
+	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
 #endif
 	ret = dbus_bus_request_name (self->priv->connection, NM_DBUS_SERVICE,
 	                             flags, &error);

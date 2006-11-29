@@ -26,7 +26,7 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
-#include "nm-marshal.h"
+#include "nm-supplicant-marshal.h"
 
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -159,7 +159,7 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantManagerClass, state),
 		              NULL, NULL,
-		              nm_marshal_VOID__UINT_UINT,
+		              nm_supplicant_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 	klass->state = NULL;
 }

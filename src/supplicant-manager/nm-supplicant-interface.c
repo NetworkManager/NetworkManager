@@ -27,7 +27,7 @@
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-utils.h"
-#include "nm-marshal.h"
+#include "nm-supplicant-marshal.h"
 #include "nm-dbus-manager.h"
 #include "dbus-dict-helpers.h"
 #include "NetworkManagerMain.h"
@@ -377,7 +377,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
 		              NULL, NULL,
-		              nm_marshal_VOID__UINT_UINT,
+		              nm_supplicant_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 	klass->state = NULL;
 

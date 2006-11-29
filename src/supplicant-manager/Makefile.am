@@ -6,6 +6,10 @@ INCLUDES = -I${top_srcdir}/utils \
 
 noinst_LTLIBRARIES = libsupplicant-manager.la
 
+BUILT_SOURCES = \
+	nm-supplicant-marshal.h \
+	nm-supplicant-marshal.c
+
 libsupplicant_manager_la_SOURCES = \
 	nm-supplicant-types.h \
 	nm-supplicant-manager.h \
@@ -15,7 +19,8 @@ libsupplicant_manager_la_SOURCES = \
 	nm-supplicant-interface.c \
 	nm-supplicant-interface.h \
 	nm-supplicant-settings-verify.h \
-	nm-supplicant-settings-verify.c
+	nm-supplicant-settings-verify.c \
+	nm-supplicant-marshal-main.c
 
 libsupplicant_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
@@ -28,3 +33,24 @@ libsupplicant_manager_la_CPPFLAGS = \
 libsupplicant_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS)
+
+$(libsupplicant_manager_la_OBJECTS): $(BUILT_SOURCES)
+
+EXTRA_DIST = \
+	nm-supplicant-marshal.list
+
+CLEANFILES = $(BUILT_SOURCES)
+
+nm-supplicant-marshal.h: nm-supplicant-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal nm-supplicant-marshal.list --header > \
+		xgen-gmh \
+	&& (cmp -s xgen-gmh nm-supplicant-marshal.h || cp xgen-gmh nm-supplicant-marshal.h) \
+	&& rm -f xgen-gmh xgen-gmh~
+
+nm-supplicant-marshal.c: nm-supplicant-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal nm-supplicant-marshal.list --body > \
+		xgen-gmc \
+	&& cp xgen-gmc nm-supplicant-marshal.c \
+	&& rm -f xgen-gmc xgen-gmc~
+
+nm-supplicant-marshal-main.c: nm-supplicant-marshal.c nm-supplicant-marshal.h

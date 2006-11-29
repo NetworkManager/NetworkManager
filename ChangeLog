@@ -1,3 +1,12 @@
+2006-11-29  Tambet Ingo  <tambet@ximian.com>
+
+	Patch by Timo Hoenig <thoenig@suse.de>:
+	* src/nm-dbus-manager.c (nm_dbus_manager_start_service): Make it work with
+	DBUS-1.0.
+
+	* src/supplicant-manager/Makefile.am: Add nm-supplicant-marshal here, since
+	we can't use the one from the main source directory.
+
 2006-11-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
