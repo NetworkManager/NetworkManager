@@ -42,13 +42,13 @@ EXTRA_DIST = \
 CLEANFILES = $(BUILT_SOURCES)
 
 nm-supplicant-marshal.h: nm-supplicant-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal nm-supplicant-marshal.list --header > \
+	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal $(srcdir)/nm-supplicant-marshal.list --header > \
 		xgen-gmh \
 	&& (cmp -s xgen-gmh nm-supplicant-marshal.h || cp xgen-gmh nm-supplicant-marshal.h) \
 	&& rm -f xgen-gmh xgen-gmh~
 
 nm-supplicant-marshal.c: nm-supplicant-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal nm-supplicant-marshal.list --body > \
+	$(GLIB_GENMARSHAL) --prefix=nm_supplicant_marshal $(srcdir)/nm-supplicant-marshal.list --body > \
 		xgen-gmc \
 	&& cp xgen-gmc nm-supplicant-marshal.c \
 	&& rm -f xgen-gmc xgen-gmc~
