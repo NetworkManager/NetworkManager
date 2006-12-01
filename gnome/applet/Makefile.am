@@ -15,7 +15,6 @@ nm_applet_CPPFLAGS =									\
 	$(GTK_CFLAGS)										\
 	$(GCONF_CFLAGS)									\
 	$(LIBGNOMEUI_CFLAGS)								\
-	$(PANEL_APPLET_CFLAGS)								\
 	$(GNOME_KEYRING_CFLAGS)								\
 	-DICONDIR=\""$(datadir)/icons"\"						\
 	-DGLADEDIR=\""$(gladedir)"\"							\
@@ -106,7 +105,6 @@ nm_applet_LDADD =						\
 	$(GTHREAD_LIBS)					\
 	$(GLADE_LIBS)						\
 	$(DBUS_GLIB_LIBS)					\
-	$(PANEL_APPLET_LIBS)				\
 	$(GTK_LIBS)						\
 	$(GCONF_LIBS)						\
 	$(LIBGNOMEUI_LIBS)					\
