@@ -15,6 +15,15 @@ AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
 dnl
+dnl This doesn't depend on gnome support, only on gnome-common, autogen already
+dnl uses gnome-autogen
+dnl
+GNOME_COMMON_INIT
+GNOME_DEBUG_CHECK
+GNOME_COMPILE_WARNINGS([maximum])
+GNOME_MAINTAINER_MODE_DEFINES
+
+dnl
 dnl Required headers
 dnl
 AC_HEADER_STDC

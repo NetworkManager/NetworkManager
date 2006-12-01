@@ -24,11 +24,8 @@ nm_applet_CPPFLAGS =									\
 	-DAUTOSTARTDIR=\""$(datadir)/gnome/autostart"\"			\
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"	\
 	-DDBUS_API_SUBJECT_TO_CHANGE							\
-	-DG_DISABLE_DEPRECATED								\
-	-DGDK_DISABLE_DEPRECATED								\
-	-DGNOME_DISABLE_DEPRECATED							\
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\"					\
-	-DVERSION=\"$(VERSION)\"								\
+	$(DISABLE_DEPRECATED)	\
 	$(NULL)
 
 if WITH_NOTIFY
