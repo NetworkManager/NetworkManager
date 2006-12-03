@@ -1,3 +1,10 @@
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* configure.in
+		- Check for GTK+ 2.10 in preparation for GtkStatusIcon patch
+
 2006-11-29  Tambet Ingo  <tambet@ximian.com>
 
 	Patch by Timo Hoenig <thoenig@suse.de>:
