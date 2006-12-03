@@ -1,3 +1,7 @@
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
+	* POTFILES.in: add missing translatables
+
 2006-11-18  Djihed Afifi <djihed@gmail.com> 
 
 	* ar.po: Added Arabic Translation.
