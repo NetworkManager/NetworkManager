@@ -1,5 +1,5 @@
 Makefile
 Makefile.in
-NetworkManager.1
-NetworkManagerDispatcher.1
+NetworkManager.8
+NetworkManagerDispatcher.8
 nm-tool.1
