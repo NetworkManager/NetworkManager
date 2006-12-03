@@ -1,3 +1,14 @@
+2006-12-03  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Gabor Kelemen <kelemeng@gnome.hu>  (Gnome.org #381890)
+
+	* po/POTFILES.in
+	  po/POTFILES.skip
+		- Move VPN-related translatables to .skip
+
+	* vpn-daemons/pptp/po/POTFILES.in
+		- Update with new translatables
+
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
