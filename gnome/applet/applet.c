@@ -284,12 +284,14 @@ static void nma_show_info_cb (GtkMenuItem *mi, NMApplet *applet)
 	}
 }
 
+#if GTK_CHECK_VERSION (2, 6, 0)
 static void about_dialog_activate_link_cb (GtkAboutDialog *about,
                                            const gchar *url,
                                            gpointer data)
 {
 	gnome_url_show (url, NULL);
 }
+#endif
 
 static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 {
