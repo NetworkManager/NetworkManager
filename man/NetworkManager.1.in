@@ -3,6 +3,7 @@
 .\" Copyright (C) 2005 Robert Love
 .\"
 .TH NETWORKMANAGER "1"
+.SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
 .B NetworkManager [\-\-no-daemon] [\-\-enable-test-devices]

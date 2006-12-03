@@ -1,3 +1,10 @@
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@teco.edu>
+	* man/NetworkManager.1.in
+	  man/NetworkManagerDispatcher.1.in
+		- Add .SH NAME stanzas
+
 2006-11-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

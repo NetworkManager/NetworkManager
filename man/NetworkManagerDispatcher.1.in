@@ -3,6 +3,7 @@
 .\" Copyright (C) 2005 Robert Love
 .\"
 .TH NETWORKMANAGERDISPATCHER "1"
+.SH NAME
 NetworkManagerDispatcher \- daemon that runs commands in response to off/online
 .SH SYNOPSIS
 .B NetworkManagerDispatcher [\-\-no-daemon]
