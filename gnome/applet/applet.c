@@ -515,6 +515,7 @@ void nma_show_vpn_login_banner (NMApplet *applet, const char *vpn_name, const ch
 	title = _("VPN Login Message");
 #ifdef ENABLE_NOTIFY
 	msg = g_strdup_printf ("\n%s", banner);
+	/* gnome-lockscreen is a padlock; exactly what we want for a VPN */
 	nma_send_event_notification (applet, NOTIFY_URGENCY_LOW,
 		title, msg, "gnome-lockscreen");
 #else
