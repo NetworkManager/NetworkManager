@@ -3,6 +3,7 @@
 .\" Copyright (C) 2005 Robert Love
 .\"
 .TH NM-TOOL "1"
+.SH NAME
 nm-tool \- utility to report NetworkManager state 
 .SH SYNOPSIS
 .B nm-tool
@@ -10,5 +11,5 @@ nm-tool \- utility to report NetworkManager state
 The \fInm-tool\fP utility provides information about NetworkManager, device,
 and wireless networks.
 .SH SEE ALSO
-.BR NetworkManager (1),
-.BR NetworkManagerDispatcher (1)
+.BR NetworkManager (8),
+.BR NetworkManagerDispatcher (8)

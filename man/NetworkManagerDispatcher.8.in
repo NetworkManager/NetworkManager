@@ -1,8 +1,9 @@
-.\" NetworkManager(1) manual page
+.\" NetworkManager(8) manual page
 .\"
 .\" Copyright (C) 2005 Robert Love
 .\"
-.TH NETWORKMANAGERDISPATCHER "1"
+.TH NETWORKMANAGERDISPATCHER "8"
+.SH NAME
 NetworkManagerDispatcher \- daemon that runs commands in response to off/online
 .SH SYNOPSIS
 .B NetworkManagerDispatcher [\-\-no-daemon]
@@ -24,5 +25,5 @@ Do not daemonize.  This is useful for debugging.
 .SH FILES
 @sysconfdir@/NetworkManager/dispatcher.d
 .SH SEE ALSO
-.BR NetworkManager (1),
+.BR NetworkManager (8),
 .BR nm-tool (1)
