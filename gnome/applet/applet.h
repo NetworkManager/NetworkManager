@@ -63,7 +63,7 @@ typedef struct VPNConnection VPNConnection;
 
 typedef struct
 {
-	EggTrayIconClass	parent_class;
+	GObjectClass	parent_class;
 } NMAppletClass; 
 
 /*
@@ -72,7 +72,7 @@ typedef struct
  */
 typedef struct
 {
-	EggTrayIcon		parent;
+	GObject                 parent_instance;
 
 	DBusConnection *	connection;
 	DBusMethodDispatcher *	nmi_methods;
@@ -87,12 +87,14 @@ typedef struct
 	gboolean			is_adhoc;
 	gboolean			wireless_enabled;
 	gboolean			nm_running;
+	gboolean			icons_loaded;
 
 	NMState			nm_state;
 	GSList *			device_list;
 	GSList *			dialup_list;
 	GSList *			vpn_connections;
 
+	GtkIconTheme *          icon_theme;
 	GdkPixbuf *		no_connection_icon;
 	GdkPixbuf *		wired_icon;
 	GdkPixbuf *		adhoc_icon;
@@ -113,13 +115,20 @@ typedef struct
 	guint			animation_id;
 
 	/* Direct UI elements */
+#ifdef HAVE_STATUS_ICON
+	GtkStatusIcon *		status_icon;
+	int			size;
+#else
+	EggTrayIcon *		tray_icon;
 	GtkWidget *		pixmap;
+	GtkWidget *		event_box;
+	GtkTooltips *		tooltips;
+#endif /* HAVE_STATUS_ICON */
+
 	GtkWidget *		top_menu_item;
 	GtkWidget *		dropdown_menu;
 	GtkWidget *		vpn_menu;
-	GtkWidget *		event_box;
 	GtkSizeGroup *		encryption_size_group;
-	GtkTooltips *		tooltips;
 
 	GtkWidget *		context_menu;
 	GtkWidget *		enable_networking_item;

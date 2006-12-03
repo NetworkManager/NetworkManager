@@ -46,7 +46,11 @@ nma_send_event_notification (NMApplet *applet,
 
 	notify_icon = icon ? icon : GTK_STOCK_NETWORK;
 
-	applet->notification = notify_notification_new (summary, message, notify_icon, GTK_WIDGET (applet));
+#ifdef HAVE_STATUS_ICON
+	applet->notification = notify_notification_new_with_status_icon (summary, message, notify_icon, applet->status_icon);
+#else
+	applet->notification = notify_notification_new (summary, message, notify_icon, GTK_WIDGET (applet->tray_icon));
+#endif /* HAVE_STATUS_ICON */
 
 	notify_notification_set_urgency (applet->notification, urgency);
 	notify_notification_show (applet->notification, NULL);

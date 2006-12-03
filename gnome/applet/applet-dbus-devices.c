@@ -912,8 +912,14 @@ static void nma_dbus_device_activated_cb (DBusPendingCall *pcall, void *user_dat
 	nma_dbus_device_properties_cb (pcall, applet);
 
 	/* Don't show anything if the applet isn't shown */
-	if (!GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
+#ifdef HAVE_STATUS_ICON
+	if (!gtk_status_icon_get_visible (applet->status_icon) ||
+	    !gtk_status_icon_is_embedded (applet->status_icon))
 		goto out;
+#else
+	if (!GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->tray_icon)))
+		goto out;
+#endif /* HAVE_STATUS_ICON */
 
 #ifdef ENABLE_NOTIFY
 	active_device = nma_get_first_active_device (applet->device_list);
@@ -980,7 +986,13 @@ static void nma_dbus_device_deactivated_cb (DBusPendingCall *pcall, void *user_d
 
 #ifdef ENABLE_NOTIFY
 	/* Don't show anything if the applet isn't shown */
-	if (GTK_WIDGET_VISIBLE (GTK_WIDGET (applet)))
+#ifdef HAVE_STATUS_ICON
+	if (gtk_status_icon_get_visible (applet->status_icon) &&
+	    gtk_status_icon_is_embedded (applet->status_icon))
+#else
+	if (GTK_WIDGET_VISIBLE (GTK_WIDGET (applet->tray_icon)))
+#endif /* HAVE_STATUS_ICON */
+
 	{
 		nma_send_event_notification (applet, NOTIFY_URGENCY_NORMAL, _("Disconnected"),
 			_("The network connection has been disconnected."), "nm-no-connection");

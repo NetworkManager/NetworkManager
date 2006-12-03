@@ -76,15 +76,15 @@
 #endif
 
 static GObject *			nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props);
-static gboolean			nma_icons_init (NMApplet *applet);
+static void			nma_icons_init (NMApplet *applet);
 static void				nma_icons_free (NMApplet *applet);
+static void				nma_icons_zero (NMApplet *applet);
+static gboolean			nma_icons_load_from_disk (NMApplet *applet);
 static void				nma_context_menu_update (NMApplet *applet);
-static GtkWidget *			nma_get_instance (NMApplet *applet);
-static void				nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet);
-static G_GNUC_NORETURN void	nma_destroy (NMApplet *applet);
+static void			nma_finalize (GObject *object);
 static GType				nma_get_type (void);	/* for G_DEFINE_TYPE */
 
-G_DEFINE_TYPE(NMApplet, nma, EGG_TYPE_TRAY_ICON)
+G_DEFINE_TYPE(NMApplet, nma, G_TYPE_OBJECT)
 
 /*
  * nm_null_safe_strcmp
@@ -130,37 +130,33 @@ static void nma_init (NMApplet *applet)
 {
 	applet->animation_id = 0;
 	applet->animation_step = 0;
-	glade_gnome_init ();
+	applet->nm_running = FALSE;
+	applet->device_list = NULL;
+	applet->vpn_connections = NULL;
+	applet->dialup_list = NULL;
+	applet->nm_state = NM_STATE_DISCONNECTED;
+	applet->passphrase_dialog = NULL;
+	applet->connection_timeout_id = 0;
+	applet->redraw_timeout_id = 0;
+	applet->icon_theme = NULL;
+#ifdef ENABLE_NOTIFY
+	applet->notification = NULL;
+#endif
+#ifdef HAVE_STATUS_ICON
+	applet->size = -1;
+#endif
 
-	if (!nma_icons_init (applet))
-		return;
+	nma_icons_zero (applet);
 
 /*	gtk_window_set_default_icon_from_file (ICONDIR"/NMApplet/wireless-applet.png", NULL); */
-	gtk_widget_show (nma_get_instance (applet));
 }
 
 static void nma_class_init (NMAppletClass *klass)
 {
-	GObjectClass *gobject_class;
+	GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-	gtk_icon_theme_append_search_path (gtk_icon_theme_get_default (),
-								ICONDIR);
-
-	gobject_class = G_OBJECT_CLASS (klass);
 	gobject_class->constructor = nma_constructor;
-}
-
-static GObject *nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props)
-{
-	GObject *obj;
-	NMApplet *applet;
-	NMAppletClass *klass;
-
-	klass = NM_APPLET_CLASS (g_type_class_peek (type));
-	obj = G_OBJECT_CLASS (nma_parent_class)->constructor (type, n_props, construct_props);
-	applet =  NM_APPLET (obj);
-
-	return obj;
+	gobject_class->finalize = nma_finalize;
 }
 
 static GtkWidget * get_label (GtkWidget *info_dialog, GladeXML *xml, const char *name)
@@ -342,12 +338,13 @@ static void nma_about_cb (GtkMenuItem *mi, NMApplet *applet)
 	                                pixbuf);
 	g_object_unref (pixbuf);
 
-	gtk_window_set_screen (GTK_WINDOW (about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet)));
+	gtk_window_set_screen (GTK_WINDOW (about_dialog), gtk_widget_get_screen (GTK_WIDGET (applet->tray_icon)));
 	g_signal_connect (about_dialog, "destroy", G_CALLBACK (gtk_widget_destroyed), &about_dialog);
 	gtk_widget_show (about_dialog);
 
 #else
 
+	/* FIXME: unnecessary with libgnomeui >= 2.16.0 */
 	static gboolean been_here = FALSE;
 	if (!been_here)
 	{
@@ -822,7 +819,9 @@ static VPNConnection *nma_get_first_activating_vpn_connection (NMApplet *applet)
 
 static void nma_set_icon (NMApplet *applet, GdkPixbuf *link_icon, GdkPixbuf *vpn_icon)
 {
+#ifndef HAVE_STATUS_ICON
 	GtkRequisition requisition;
+#endif
 	GdkPixbuf	*composite;
 	VPNConnection	*vpn;
 
@@ -839,14 +838,18 @@ static void nma_set_icon (NMApplet *applet, GdkPixbuf *link_icon, GdkPixbuf *vpn
 		gdk_pixbuf_composite (vpn_icon, composite, 0, 0, gdk_pixbuf_get_width (vpn_icon),
 							gdk_pixbuf_get_height (vpn_icon), 0, 0, 1.0, 1.0, GDK_INTERP_NEAREST, 255);
 
+#ifdef HAVE_STATUS_ICON
+	gtk_status_icon_set_from_pixbuf (applet->status_icon, composite);
+#else
 	gtk_image_set_from_pixbuf (GTK_IMAGE (applet->pixmap), composite);
 
 	/* Add some padding to the applet to ensure the
 	 * highlight has some space.
 	 */
-	gtk_widget_set_size_request (GTK_WIDGET (applet), -1, -1);
-	gtk_widget_size_request (GTK_WIDGET (applet), &requisition);
-	gtk_widget_set_size_request (GTK_WIDGET (applet), requisition.width + 6, requisition.height + 2);
+	gtk_widget_set_size_request (GTK_WIDGET (applet->tray_icon), -1, -1);
+	gtk_widget_size_request (GTK_WIDGET (applet->tray_icon), &requisition);
+	gtk_widget_set_size_request (GTK_WIDGET (applet->tray_icon), requisition.width + 6, requisition.height + 2);
+#endif /* HAVE_STATUS_ICON */
 
 	g_object_unref (composite);
 }
@@ -1139,10 +1142,11 @@ void nma_update_state (NMApplet *applet)
 	}
 
 done:
-	if (!applet->tooltips)
-		applet->tooltips = gtk_tooltips_new ();
-
+#ifdef HAVE_STATUS_ICON
+	gtk_status_icon_set_tooltip (applet->status_icon, tip);
+#else
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, tip, NULL);
+#endif /* HAVE_STATUS_ICON */
 	g_free (tip);
 
 	applet->animation_step = 0;
@@ -1156,17 +1160,28 @@ done:
 			applet->animation_id = 0;
 		}
 
+#ifdef HAVE_STATUS_ICON
+		if (pixbuf)
+			nma_set_icon (applet, pixbuf, applet->vpn_lock_icon);
+		else
+			gtk_status_icon_set_from_stock (applet->status_icon, GTK_STOCK_MISSING_IMAGE);
+#else
 		if (pixbuf)
 			nma_set_icon (applet, pixbuf, applet->vpn_lock_icon);
 		else
 			show_applet = FALSE;
+#endif /* HAVE_STATUS_ICON */
 	}
 
 	/* determine if we should hide the notification icon */
+#ifdef HAVE_STATUS_ICON
+	gtk_status_icon_set_visible (applet->status_icon, show_applet);
+#else
 	if (show_applet)
-		gtk_widget_show (GTK_WIDGET (applet));
+		gtk_widget_show (GTK_WIDGET (applet->tray_icon));
 	else
-		gtk_widget_hide (GTK_WIDGET (applet));
+		gtk_widget_hide (GTK_WIDGET (applet->tray_icon));
+#endif /* HAVE_STATUS_ICON */
 }
 
 
@@ -2028,9 +2043,11 @@ static void nma_dropdown_menu_show_cb (GtkWidget *menu, NMApplet *applet)
 	g_return_if_fail (menu != NULL);
 	g_return_if_fail (applet != NULL);
 
-	if (!applet->tooltips)
-		applet->tooltips = gtk_tooltips_new ();
+#ifdef HAVE_STATUS_ICON
+	gtk_status_icon_set_tooltip (applet->status_icon, NULL);
+#else
 	gtk_tooltips_set_tip (applet->tooltips, applet->event_box, NULL, NULL);
+#endif /* HAVE_STATUS_ICON */
 
 	if (applet->dropdown_menu && (menu == applet->dropdown_menu))
 	{
@@ -2234,26 +2251,66 @@ static GtkWidget *nma_context_menu_create (NMApplet *applet)
 }
 
 
+#ifdef HAVE_STATUS_ICON
+
 /*
- * nma_theme_change_cb
+ * nma_status_icon_screen_changed_cb:
  *
- * Destroy the popdown menu when the theme changes
+ * Handle screen change events for the status icon
  *
  */
-static void nma_theme_change_cb (NMApplet *applet)
+static void nma_status_icon_screen_changed_cb (GtkStatusIcon *icon, GParamSpec *pspec, NMApplet *applet)
 {
-	g_return_if_fail (applet != NULL);
-
-	if (applet->dropdown_menu)
-		nma_dropdown_menu_clear (applet->dropdown_menu);
-
-	if (applet->top_menu_item)
-	{
-		gtk_menu_item_remove_submenu (GTK_MENU_ITEM (applet->top_menu_item));
-		applet->dropdown_menu = nma_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
-		g_signal_connect (applet->dropdown_menu, "deactivate", G_CALLBACK (nma_dropdown_menu_deactivate_cb), applet);
-	}
+	nma_icons_init (applet);
 }
+
+/*
+ * nma_status_icon_size_changed_cb:
+ *
+ * Handle size change events for the status icon
+ *
+ */
+static gboolean nma_status_icon_size_changed_cb (GtkStatusIcon *icon, gint size, NMApplet *applet)
+{
+	nma_icons_free (applet);
+
+	applet->size = size;
+	nma_icons_load_from_disk (applet);
+
+	nma_update_state (applet);
+
+	return TRUE;
+}
+
+/*
+ * nma_status_icon_activate_cb:
+ *
+ * Handle left clicks for the status icon
+ *
+ */
+static void nma_status_icon_activate_cb (GtkStatusIcon *icon, NMApplet *applet)
+{
+	gtk_menu_popup (GTK_MENU (applet->dropdown_menu), NULL, NULL,
+			gtk_status_icon_position_menu, icon,
+			1, gtk_get_current_event_time ());
+}
+
+static void nma_status_icon_popup_menu_cb (GtkStatusIcon *icon, guint button, guint32 activate_time, NMApplet *applet)
+{
+	nma_context_menu_update (applet);
+	gtk_menu_popup (GTK_MENU (applet->context_menu), NULL, NULL,
+			gtk_status_icon_position_menu, icon,
+			button, activate_time);
+}
+
+/*
+ * nma_status_icon_popup_menu_cb:
+ *
+ * Handle right clicks for the status icon
+ *
+ */
+
+#else /* !HAVE_STATUS_ICON */
 
 /*
  * nma_menu_position_func
@@ -2331,6 +2388,28 @@ static void nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet)
 }
 
 /*
+ * nma_theme_change_cb
+ *
+ * Destroy the popdown menu when the theme changes
+ *
+ */
+static void nma_theme_change_cb (NMApplet *applet)
+{
+	g_return_if_fail (applet != NULL);
+
+	if (applet->dropdown_menu)
+		nma_dropdown_menu_clear (applet->dropdown_menu);
+
+	if (applet->top_menu_item)
+	{
+		gtk_menu_item_remove_submenu (GTK_MENU_ITEM (applet->top_menu_item));
+		applet->dropdown_menu = nma_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
+		g_signal_connect (applet->dropdown_menu, "deactivate", G_CALLBACK (nma_dropdown_menu_deactivate_cb), applet);
+	}
+}
+#endif /* HAVE_STATUS_ICON */
+
+/*
  * nma_setup_widgets
  *
  * Intialize the applet's widgets and packing, create the initial
@@ -2339,22 +2418,46 @@ static void nma_dropdown_menu_deactivate_cb (GtkWidget *menu, NMApplet *applet)
  */
 static void nma_setup_widgets (NMApplet *applet)
 {
+#ifdef HAVE_STATUS_ICON
+	applet->status_icon = gtk_status_icon_new ();
+
+	g_signal_connect (applet->status_icon, "notify::screen",
+			  G_CALLBACK (nma_status_icon_screen_changed_cb), applet);
+	g_signal_connect (applet->status_icon, "size-changed",
+			  G_CALLBACK (nma_status_icon_size_changed_cb), applet);
+	g_signal_connect (applet->status_icon, "activate",
+			  G_CALLBACK (nma_status_icon_activate_cb), applet);
+	g_signal_connect (applet->status_icon, "popup-menu",
+			  G_CALLBACK (nma_status_icon_popup_menu_cb), applet);
+
+	gtk_status_icon_set_visible (applet->status_icon, TRUE);
+#else
+	applet->tray_icon = egg_tray_icon_new ("NetworkManager");
+	g_object_ref (applet->tray_icon);
+	gtk_object_sink (GTK_OBJECT (applet->tray_icon));
+
 	/* Event box is the main applet widget */
 	applet->event_box = gtk_event_box_new ();
 	gtk_container_set_border_width (GTK_CONTAINER (applet->event_box), 0);
+	g_signal_connect (applet->event_box, "button_press_event", G_CALLBACK (nma_toplevel_menu_button_press_cb), applet);
+
+	applet->pixmap = gtk_image_new ();
+	gtk_container_add (GTK_CONTAINER (applet->event_box), applet->pixmap);
+	gtk_container_add (GTK_CONTAINER (applet->tray_icon), applet->event_box);
+ 	gtk_widget_show_all (GTK_WIDGET (applet->tray_icon));
+
+	gtk_widget_show_all (GTK_WIDGET (applet->tray_icon));
+
+#endif /* HAVE_STATUS_ICON */
 
 	applet->top_menu_item = gtk_menu_item_new();
 	gtk_widget_set_name (applet->top_menu_item, "ToplevelMenu");
 	gtk_container_set_border_width (GTK_CONTAINER (applet->top_menu_item), 0);
 
-	applet->pixmap = gtk_image_new ();
-	gtk_container_add (GTK_CONTAINER (applet->event_box), applet->pixmap);
-	gtk_container_add (GTK_CONTAINER (applet), applet->event_box);
- 	gtk_widget_show_all (GTK_WIDGET (applet));
- 
 	applet->dropdown_menu = nma_dropdown_menu_create (GTK_MENU_ITEM (applet->top_menu_item), applet);
-	g_signal_connect (applet->event_box, "button_press_event", G_CALLBACK (nma_toplevel_menu_button_press_cb), applet);
+#ifndef HAVE_STATUS_ICON
 	g_signal_connect (applet->dropdown_menu, "deactivate", G_CALLBACK (nma_dropdown_menu_deactivate_cb), applet);
+#endif /* !HAVE_STATUS_ICON */
 
 	applet->context_menu = nma_context_menu_create (applet);
 	applet->encryption_size_group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
@@ -2460,13 +2563,15 @@ static void nma_gconf_vpn_connections_notify_callback (GConfClient *client, guin
 
 
 /*
- * nma_destroy
+ * nma_finalize
  *
  * Destroy the applet and clean up its data
  *
  */
-static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
+static void nma_finalize (GObject *object)
 {
+	NMApplet *applet = NM_APPLET (object);
+
 	if (applet->dropdown_menu)
 		nma_dropdown_menu_clear (applet->dropdown_menu);
 	if (applet->top_menu_item)
@@ -2489,45 +2594,40 @@ static void G_GNUC_NORETURN nma_destroy (NMApplet *applet)
 		applet->connection_timeout_id = 0;
 	}
 
-	if (applet->gconf_client)
-		g_object_unref (G_OBJECT (applet->gconf_client));
-
 	nma_free_data_model (applet);
 
 	g_free (applet->glade_file);
 
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_prefs_notify_id);
 	gconf_client_notify_remove (applet->gconf_client, applet->gconf_vpn_notify_id);
-	g_object_unref (G_OBJECT (applet->gconf_client));
+	g_object_unref (applet->gconf_client);
 
 	dbus_method_dispatcher_unref (applet->nmi_methods);
 
-	exit (EXIT_SUCCESS);
+#ifdef HAVE_STATUS_ICON
+	g_object_unref (applet->status_icon);
+#else
+	gtk_widget_destroy (GTK_WIDGET (applet->tray_icon));
+	g_object_unref (applet->tray_icon);
+#endif /* HAVE_STATUS_ICON */
+
+	G_OBJECT_CLASS (nma_parent_class)->finalize (object);
 }
 
 
-/*
- * nma_get_instance
- *
- * Create the initial instance of our wireless applet
- *
- */
-static GtkWidget * nma_get_instance (NMApplet *applet)
+static GObject *nma_constructor (GType type, guint n_props, GObjectConstructParam *construct_props)
 {
-	gtk_widget_hide (GTK_WIDGET (applet));
+	GObject *obj;
+	NMApplet *applet;
 
-	applet->nm_running = FALSE;
-	applet->device_list = NULL;
-	applet->vpn_connections = NULL;
-	applet->dialup_list = NULL;
-	applet->nm_state = NM_STATE_DISCONNECTED;
-	applet->tooltips = NULL;
-	applet->passphrase_dialog = NULL;
-	applet->connection_timeout_id = 0;
-	applet->redraw_timeout_id = 0;
-#ifdef ENABLE_NOTIFY
-	applet->notification = NULL;
+	obj = G_OBJECT_CLASS (nma_parent_class)->constructor (type, n_props, construct_props);
+	applet =  NM_APPLET (obj);
+
+#ifndef HAVE_STATUS_ICON
+	applet->tooltips = gtk_tooltips_new ();
 #endif
+
+	glade_gnome_init ();
 
 	applet->glade_file = g_build_filename (GLADEDIR, "applet.glade", NULL);
 	if (!applet->glade_file || !g_file_test (applet->glade_file, G_FILE_TEST_IS_REGULAR))
@@ -2535,14 +2635,12 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 		nma_schedule_warning_dialog (applet, _("The NetworkManager Applet could not find some required resources (the glade file was not found)."));
 		g_free (applet->glade_file);
 		applet->glade_file = NULL;
-		return NULL;
+		return NULL; // FIXMEchpe
 	}
 
 	applet->info_dialog_xml = glade_xml_new (applet->glade_file, "info_dialog", NULL);
 
 	applet->gconf_client = gconf_client_get_default ();
-	if (!applet->gconf_client)
-		return NULL;
 
 	gconf_client_add_dir (applet->gconf_client, GCONF_PATH_WIRELESS, GCONF_CLIENT_PRELOAD_NONE, NULL);
 	applet->gconf_prefs_notify_id = gconf_client_notify_add (applet->gconf_client, GCONF_PATH_WIRELESS,
@@ -2558,20 +2656,24 @@ static GtkWidget * nma_get_instance (NMApplet *applet)
 	 */
 	nma_compat_convert_oldformat_entries (applet->gconf_client);
 
+	/* Load pixmaps and create applet widgets */
+	nma_setup_widgets (applet);
+
+	nma_icons_init (applet);
+
 	/* D-Bus init stuff */
-	dbus_g_thread_init ();
 	applet->nmi_methods = nmi_dbus_nmi_methods_setup ();
 	nma_dbus_init_helper (applet);
 	if (!applet->connection)
 		nma_start_dbus_connection_watch (applet);
 
-	/* Load pixmaps and create applet widgets */
-	nma_setup_widgets (applet);
+#ifndef HAVE_STATUS_ICON
+	g_signal_connect (applet->tray_icon, "style-set", G_CALLBACK (nma_theme_change_cb), NULL);
 
-	g_signal_connect (applet, "destroy", G_CALLBACK (nma_destroy), NULL);
-	g_signal_connect (applet, "style-set", G_CALLBACK (nma_theme_change_cb), NULL);
+	nma_icons_load_from_disk (applet);
+#endif /* !HAVE_STATUS_ICON */
 
-	return GTK_WIDGET (applet);
+	return obj;
 }
 
 
@@ -2579,27 +2681,43 @@ static void nma_icons_free (NMApplet *applet)
 {
 	int i;
 
-	g_object_unref (applet->no_connection_icon);
-	g_object_unref (applet->wired_icon);
-	g_object_unref (applet->adhoc_icon);
-	g_object_unref (applet->vpn_lock_icon);
+	if (!applet->icons_loaded)
+		return;
 
-	g_object_unref (applet->wireless_00_icon);
-	g_object_unref (applet->wireless_25_icon);
-	g_object_unref (applet->wireless_50_icon);
-	g_object_unref (applet->wireless_75_icon);
-	g_object_unref (applet->wireless_100_icon);
+	if (applet->no_connection_icon)
+		g_object_unref (applet->no_connection_icon);
+	if (applet->wired_icon)
+		g_object_unref (applet->wired_icon);
+	if (applet->adhoc_icon)
+		g_object_unref (applet->adhoc_icon);
+	if (applet->vpn_lock_icon)
+		g_object_unref (applet->vpn_lock_icon);
+
+	if (applet->wireless_00_icon)
+		g_object_unref (applet->wireless_00_icon);
+	if (applet->wireless_25_icon)
+		g_object_unref (applet->wireless_25_icon);
+	if (applet->wireless_50_icon)
+		g_object_unref (applet->wireless_50_icon);
+	if (applet->wireless_75_icon)
+		g_object_unref (applet->wireless_75_icon);
+	if (applet->wireless_100_icon)
+		g_object_unref (applet->wireless_100_icon);
 
 	for (i = 0; i < NUM_CONNECTING_STAGES; i++)
 	{
 		int j;
 
 		for (j = 0; j < NUM_CONNECTING_FRAMES; j++)
-			g_object_unref (applet->network_connecting_icons[i][j]);
+			if (applet->network_connecting_icons[i][j])
+				g_object_unref (applet->network_connecting_icons[i][j]);
 	}
 
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
-		g_object_unref (applet->vpn_connecting_icons[i]);
+		if (applet->vpn_connecting_icons[i])
+			g_object_unref (applet->vpn_connecting_icons[i]);
+
+	nma_icons_zero (applet);
 }
 
 static void nma_icons_zero (NMApplet *applet)
@@ -2628,12 +2746,13 @@ static void nma_icons_zero (NMApplet *applet)
 	for (i = 0; i < NUM_VPN_CONNECTING_FRAMES; i++)
 		applet->vpn_connecting_icons[i] = NULL;
 
+	applet->icons_loaded = FALSE;
 }
 
 #define ICON_LOAD(x, y)	\
 	{		\
 		GError *err = NULL; \
-		x = gtk_icon_theme_load_icon (icon_theme, y, 22, 0, &err); \
+		x = gtk_icon_theme_load_icon (applet->icon_theme, y, size, 0, &err); \
 		if (x == NULL) { \
 			success = FALSE; \
 			g_warning ("Icon %s missing: %s", y, err->message); \
@@ -2643,16 +2762,25 @@ static void nma_icons_zero (NMApplet *applet)
 	}
 
 static gboolean
-nma_icons_load_from_disk (NMApplet *applet, GtkIconTheme *icon_theme)
+nma_icons_load_from_disk (NMApplet *applet)
 {
-	int		i;
+	int 		size, i;
 	gboolean	success;
 
 	/*
 	 * NULL out the icons, so if we error and call nma_icons_free(), we don't hit stale
 	 * data on the not-yet-reached icons.  This can happen off nma_icon_theme_changed().
 	 */
-	nma_icons_zero (applet);
+
+	g_return_val_if_fail (!applet->icons_loaded, FALSE);
+
+#ifdef HAVE_STATUS_ICON
+	size = applet->size;
+	if (size < 0)
+		return FALSE;
+#else
+	size = 22; /* hard-coded */
+#endif /* HAVE_STATUS_ICON */
 
 	ICON_LOAD(applet->no_connection_icon, "nm-no-connection");
 	ICON_LOAD(applet->wired_icon, "nm-device-wired");
@@ -2704,41 +2832,65 @@ out:
 static void nma_icon_theme_changed (GtkIconTheme *icon_theme, NMApplet *applet)
 {
 	nma_icons_free (applet);
-	nma_icons_load_from_disk (applet, icon_theme);
-	/* FIXME: force redraw */
+	nma_icons_load_from_disk (applet);
+	nma_update_state (applet);
 }
 
-static gboolean nma_icons_init (NMApplet *applet)
+static void nma_icons_init (NMApplet *applet)
 {
-	GtkIconTheme *icon_theme;
-	const gchar *style = " \
-		style \"MenuBar\" \
-		{ \
-			GtkMenuBar::shadow_type = GTK_SHADOW_NONE \
-			GtkMenuBar::internal-padding = 0 \
-		} \
-		style \"MenuItem\" \
-		{ \
-			xthickness=0 \
-			ythickness=0 \
-		} \
-		class \"GtkMenuBar\" style \"MenuBar\"\
-		widget \"*ToplevelMenu*\" style \"MenuItem\"\
-		";	
+	const char style[] =
+		"style \"MenuBar\"\n"
+		"{\n"
+			"GtkMenuBar::shadow_type = GTK_SHADOW_NONE\n"
+			"GtkMenuBar::internal-padding = 0\n"
+		"}\n"
+		"style \"MenuItem\"\n"
+		"{\n"
+			"xthickness=0\n"
+			"ythickness=0\n"
+		"}\n"
+		"class \"GtkMenuBar\" style \"MenuBar\"\n"
+		"widget \"*ToplevelMenu*\" style \"MenuItem\"\n";
+	GdkScreen *screen;
+	gboolean path_appended;
+
+	if (applet->icon_theme)
+	{
+		g_signal_handlers_disconnect_by_func (applet->icon_theme,
+						      G_CALLBACK (nma_icon_theme_changed),
+						      applet);
+	}
+
+#ifdef HAVE_STATUS_ICON
+#if GTK_CHECK_VERSION(2, 11, 0)
+	screen = gtk_status_icon_get_screen (applet->status_icon);
+#else
+	screen = gdk_screen_get_default ();
+#endif /* gtk 2.11.0 */
+#else /* !HAVE_STATUS_ICON */
+	screen = gtk_widget_get_screen (GTK_WIDGET (applet->tray_icon));
+#endif /* HAVE_STATUS_ICON */
+	
+	applet->icon_theme = gtk_icon_theme_get_for_screen (screen);
+
+	/* If not done yet, append our search path */
+	path_appended = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (applet->icon_theme),
+					 		    "NMAIconPathAppended"));
+	if (path_appended == FALSE)
+	{
+		gtk_icon_theme_append_search_path (applet->icon_theme, ICONDIR);
+		g_object_set_data (G_OBJECT (applet->icon_theme),
+				   "NMAIconPathAppended",
+				   GINT_TO_POINTER (TRUE));
+	}
+
+	g_signal_connect (applet->icon_theme, "changed", G_CALLBACK (nma_icon_theme_changed), applet);
 
 	/* FIXME: Do we need to worry about other screens? */
 	gtk_rc_parse_string (style);
-
-	icon_theme = gtk_icon_theme_get_default ();
-	if (!nma_icons_load_from_disk (applet, icon_theme))
-		return FALSE;
-	g_signal_connect (icon_theme, "changed", G_CALLBACK (nma_icon_theme_changed), applet);
-	return TRUE;
 }
-
 
 NMApplet *nma_new ()
 {
-	return g_object_new (NM_TYPE_APPLET, "title", "NetworkManager", NULL);
+	return g_object_new (NM_TYPE_APPLET, NULL);
 }
-

@@ -1,5 +1,17 @@
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* gnome/applet/Makefile.am
+	  gnome/applet/applet-dbus-devices.c
+	  gnome/applet/applet-notifications.c
+	  gnome/applet/applet.c
+	  gnome/applet/applet.h
+	  gnome/applet/main.c
+		- Be a GtkStatusIcon on GTK+ >= 2.10
+
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/applet/applet.c
 		- (nma_update_info): fix two unecessary allocations
 

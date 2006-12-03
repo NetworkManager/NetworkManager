@@ -44,10 +44,11 @@ int main (int argc, char *argv[])
 {
 	NMApplet *	nma;
 	GnomeClient *	client;
+	GnomeProgram *	program;
 
-	gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
-			    argc, argv, 
-			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
+	program = gnome_program_init ("nm-applet", VERSION, LIBGNOMEUI_MODULE,
+				      argc, argv, 
+				      GNOME_PARAM_NONE, GNOME_PARAM_NONE);
 
     	client = gnome_master_client ();
     	gnome_client_set_restart_style (client, GNOME_RESTART_ANYWAY);
@@ -57,14 +58,14 @@ int main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 
 	nma = nma_new ();
-	if (!nma)
-		exit (EXIT_FAILURE);
 
 	g_signal_connect (client, "save_yourself", G_CALLBACK (gtk_true), NULL);
 	g_signal_connect (client, "die", G_CALLBACK (session_die), nma);	
 
-	gtk_widget_show_all (GTK_WIDGET (nma));
 	gtk_main ();
 
-	return 0;
+	g_object_unref (nma);
+	g_object_unref (program);
+
+	exit (EXIT_SUCCESS);
 }

@@ -55,8 +55,6 @@ nm_applet_SOURCES =			\
 	passphrase-dialog.h		\
 	menu-items.c			\
 	menu-items.h			\
-	eggtrayicon.c			\
-	eggtrayicon.h			\
 	vpn-password-dialog.c	\
 	vpn-password-dialog.h	\
 	vpn-connection.c		\
@@ -94,6 +92,12 @@ nm_applet_SOURCES =			\
 	gconf-helpers.c		\
 	gconf-helpers.h		\
 	$(NULL)
+
+#if !HAVE_GTK_2_10
+nm_applet_SOURCES += \
+	eggtrayicon.c	\
+	eggtrayicon.h
+#endif
 
 if WITH_NOTIFY
 nm_applet_SOURCES += applet-notifications.c applet-notifications.h
