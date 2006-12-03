@@ -1,5 +1,9 @@
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
+	* pl.po: fix translation of "Wired network connection" (Gnome.org #362221)
+
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
 	* POTFILES.in: add missing translatables
 
 2006-06-28  Robert Love  <rml@novell.com>

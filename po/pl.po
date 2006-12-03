@@ -196,7 +196,7 @@ msgstr "Brak połączenia sieciowego"
 
 #: ../gnome/applet/applet.c:1093
 msgid "Wired network connection"
-msgstr "Połączenie bezprzewodowe"
+msgstr "Połączenie kablowe"
 
 #: ../gnome/applet/applet.c:1097
 msgid "Connected to an Ad-Hoc wireless network"
