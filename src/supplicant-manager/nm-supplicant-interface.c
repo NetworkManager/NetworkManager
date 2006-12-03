@@ -87,22 +87,22 @@ enum {
 
 struct _NMSupplicantInterfacePrivate
 {
-	NMSupplicantManager *    smgr;
-	NMDBusManager *          dbus_mgr;
-	NMDevice *               dev;
+	NMSupplicantManager * smgr;
+	NMDBusManager *       dbus_mgr;
+	NMDevice *            dev;
 
-	guint32                  state;
-	GSList *                 pcalls;
+	guint32               state;
+	GSList *              pcalls;
 
-	char *                   wpas_iface_op;
-	char *                   wpas_net_op;
-	guint32                  wpas_sig_handler_id;
-	GSource *                scan_results_timeout;
-	guint32                  last_scan;
+	char *                wpas_iface_op;
+	char *                wpas_net_op;
+	guint32               wpas_sig_handler_id;
+	GSource *             scan_results_timeout;
+	guint32               last_scan;
 
-	NMSupplicantConnection * con;
+	NMSupplicantConfig *  cfg;
 
-	gboolean                 dispose_has_run;
+	gboolean              dispose_has_run;
 };
 
 static void
@@ -300,9 +300,9 @@ nm_supplicant_interface_dispose (GObject *object)
 		self->priv->dbus_mgr = NULL;
 	}
 
-	if (self->priv->con) {
-		g_object_unref (self->priv->con);
-		self->priv->con = NULL;
+	if (self->priv->cfg) {
+		g_object_unref (self->priv->cfg);
+		self->priv->cfg = NULL;
 	}
 
 	/* Chain up to the parent class */
@@ -951,7 +951,7 @@ nm_supplicant_interface_smgr_state_changed (NMSupplicantManager * smgr,
 
 #if 0
 static void
-add_connection_to_iface (NMSupplicantInterface *self)
+add_config_to_iface (NMSupplicantInterface *self)
 {
 	DBusConnection * dbus_connection;
 	DBusMessage *    message = NULL;
@@ -977,7 +977,7 @@ add_connection_to_iface (NMSupplicantInterface *self)
 #if 0
 	pcall = nm_dbus_send_with_callback (dbus_connection,
 	                                    message,
-	                                    (DBusPendingCallNotifyFunction) nm_supplicant_interface_add_connection_cb,
+	                                    (DBusPendingCallNotifyFunction) nm_supplicant_interface_add_config_cb,
 	                                    self,
 	                                    NULL,
 	                                    __func__);
@@ -989,16 +989,16 @@ out:
 #endif
 
 void
-nm_supplicant_interface_set_connection (NMSupplicantInterface * self,
-                                        NMSupplicantConnection * con)
+nm_supplicant_interface_set_config (NMSupplicantInterface * self,
+                                    NMSupplicantConfig * cfg)
 {
 	g_return_if_fail (self != NULL);
 
-	if (self->priv->con)
-		g_object_unref (self->priv->con);
-	self->priv->con = con;
-	if (self->priv->con)
-		g_object_ref (self->priv->con);
+	if (self->priv->cfg)
+		g_object_unref (self->priv->cfg);
+	self->priv->cfg = cfg;
+	if (self->priv->cfg)
+		g_object_ref (self->priv->cfg);
 }
 
 NMDevice *

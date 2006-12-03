@@ -1,5 +1,17 @@
 2006-12-03  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/Makefile.am
+	  src/supplicant-manager/nm-supplicant-connection.h
+	  src/supplicant-manager/nm-supplicant-connection.c
+	  src/supplicant-manager/nm-supplicant-config.h
+	  src/supplicant-manager/nm-supplicant-config.c
+	  src/supplicant-manager/nm-supplicant-types.h
+	  src/supplicant-manager/nm-supplicant-interface.h
+	  src/supplicant-manager/nm-supplicant-interface.c
+		- Rename NMSupplicantConnection -> NMSupplicantConfig
+
+2006-12-03  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Gabor Kelemen <kelemeng@gnome.hu>  (Gnome.org #381890)
 
 	* po/POTFILES.in

@@ -21,50 +21,50 @@
 
 #include <glib.h>
 
-#include "nm-supplicant-connection.h"
+#include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-utils.h"
 
-#define NM_SUPPLICANT_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
-                                                 NM_TYPE_SUPPLICANT_CONNECTION, \
-                                                 NMSupplicantConnectionPrivate))
+#define NM_SUPPLICANT_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                             NM_TYPE_SUPPLICANT_CONFIG, \
+                                             NMSupplicantConfigPrivate))
 
 
-static void nm_supplicant_connection_set_device (NMSupplicantConnection *con,
-                                                 NMDevice *dev);
+static void nm_supplicant_config_set_device (NMSupplicantConfig *con,
+                                             NMDevice *dev);
 
 
-struct _NMSupplicantConnectionPrivate
+struct _NMSupplicantConfigPrivate
 {
-	NMDevice *dev;
-	GHashTable *config;
-	gboolean	dispose_has_run;
+	NMDevice *   dev;
+	GHashTable * config;
+	gboolean     dispose_has_run;
 };
 
-NMSupplicantConnection *
-nm_supplicant_connection_new (NMDevice *dev)
+NMSupplicantConfig *
+nm_supplicant_config_new (NMDevice *dev)
 {
-	NMSupplicantConnection * scfg;
+	NMSupplicantConfig * scfg;
 
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	scfg = g_object_new (NM_TYPE_SUPPLICANT_CONNECTION, NULL);
-	nm_supplicant_connection_set_device (scfg, dev);
+	scfg = g_object_new (NM_TYPE_SUPPLICANT_CONFIG, NULL);
+	nm_supplicant_config_set_device (scfg, dev);
 	return scfg;
 }
 
 static void
-nm_supplicant_connection_init (NMSupplicantConnection * self)
+nm_supplicant_config_init (NMSupplicantConfig * self)
 {
-	self->priv = NM_SUPPLICANT_CONNECTION_GET_PRIVATE (self);
+	self->priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 	self->priv->config = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
 	                                            g_free);
 	self->priv->dispose_has_run = FALSE;
 }
 
 static void
-nm_supplicant_connection_set_device (NMSupplicantConnection *self,
-                                     NMDevice *dev)
+nm_supplicant_config_set_device (NMSupplicantConfig *self,
+                                 NMDevice *dev)
 {
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (dev != NULL);
@@ -74,9 +74,9 @@ nm_supplicant_connection_set_device (NMSupplicantConnection *self,
 }
 
 gboolean
-nm_supplicant_connection_add_option (NMSupplicantConnection *self,
-                                     const char * key,
-                                     const char * value)
+nm_supplicant_config_add_option (NMSupplicantConfig *self,
+                                 const char * key,
+                                 const char * value)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
@@ -97,8 +97,8 @@ nm_supplicant_connection_add_option (NMSupplicantConnection *self,
 }
 
 gboolean
-nm_supplicant_connection_remove_option (NMSupplicantConnection *self,
-                                        const char * key)
+nm_supplicant_config_remove_option (NMSupplicantConfig *self,
+                                    const char * key)
 {
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
@@ -107,10 +107,10 @@ nm_supplicant_connection_remove_option (NMSupplicantConnection *self,
 }
 
 static void
-nm_supplicant_connection_dispose (GObject *object)
+nm_supplicant_config_dispose (GObject *object)
 {
-	NMSupplicantConnection *		self = NM_SUPPLICANT_CONNECTION (object);
-	NMSupplicantConnectionClass *	klass;
+	NMSupplicantConfig *		self = NM_SUPPLICANT_CONFIG (object);
+	NMSupplicantConfigClass *	klass;
 	GObjectClass *				parent_class;  
 
 	if (self->priv->dispose_has_run)
@@ -132,59 +132,59 @@ nm_supplicant_connection_dispose (GObject *object)
 	}
 
 	/* Chain up to the parent class */
-	klass = NM_SUPPLICANT_CONNECTION_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_CONNECTION));
+	klass = NM_SUPPLICANT_CONFIG_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_CONFIG));
 	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
 	parent_class->dispose (object);
 }
 
 static void
-nm_supplicant_connection_finalize (GObject *object)
+nm_supplicant_config_finalize (GObject *object)
 {
-	NMSupplicantConnection *		self = NM_SUPPLICANT_CONNECTION (object);
-	NMSupplicantConnectionClass *	klass;
-	GObjectClass *		parent_class;  
+	NMSupplicantConfig *      self = NM_SUPPLICANT_CONFIG (object);
+	NMSupplicantConfigClass * klass;
+	GObjectClass *            parent_class;  
 
 	/* Complete object destruction */
 	g_hash_table_destroy (self->priv->config);
 
 	/* Chain up to the parent class */
-	klass = NM_SUPPLICANT_CONNECTION_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_CONNECTION));
+	klass = NM_SUPPLICANT_CONFIG_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_CONFIG));
 	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
 	parent_class->finalize (object);
 }
 
 
 static void
-nm_supplicant_connection_class_init (NMSupplicantConnectionClass *klass)
+nm_supplicant_config_class_init (NMSupplicantConfigClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->dispose = nm_supplicant_connection_dispose;
-	object_class->finalize = nm_supplicant_connection_finalize;
+	object_class->dispose = nm_supplicant_config_dispose;
+	object_class->finalize = nm_supplicant_config_finalize;
 
-	g_type_class_add_private (object_class, sizeof (NMSupplicantConnectionPrivate));
+	g_type_class_add_private (object_class, sizeof (NMSupplicantConfigPrivate));
 }
 
 GType
-nm_supplicant_connection_get_type (void)
+nm_supplicant_config_get_type (void)
 {
 	static GType type = 0;
 	if (type == 0) {
 		static const GTypeInfo info = {
-			sizeof (NMSupplicantConnectionClass),
+			sizeof (NMSupplicantConfigClass),
 			NULL,	/* base_init */
 			NULL,	/* base_finalize */
-			(GClassInitFunc) nm_supplicant_connection_class_init,
+			(GClassInitFunc) nm_supplicant_config_class_init,
 			NULL,	/* class_finalize */
 			NULL,	/* class_data */
-			sizeof (NMSupplicantConnection),
+			sizeof (NMSupplicantConfig),
 			0,		/* n_preallocs */
-			(GInstanceInitFunc) nm_supplicant_connection_init,
+			(GInstanceInitFunc) nm_supplicant_config_init,
 			NULL		/* value_table */
 		};
 
 		type = g_type_register_static (G_TYPE_OBJECT,
-								 "NMSupplicantConnection",
+								 "NMSupplicantConfig",
 								 &info, 0);
 	}
 	return type;

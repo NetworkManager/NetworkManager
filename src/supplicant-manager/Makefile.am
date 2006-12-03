@@ -14,8 +14,8 @@ libsupplicant_manager_la_SOURCES = \
 	nm-supplicant-types.h \
 	nm-supplicant-manager.h \
 	nm-supplicant-manager.c \
-	nm-supplicant-connection.h \
-	nm-supplicant-connection.c \
+	nm-supplicant-config.h \
+	nm-supplicant-config.c \
 	nm-supplicant-interface.c \
 	nm-supplicant-interface.h \
 	nm-supplicant-settings-verify.h \

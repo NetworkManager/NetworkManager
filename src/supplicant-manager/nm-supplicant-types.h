@@ -24,6 +24,6 @@
 
 typedef struct _NMSupplicantManager NMSupplicantManager;
 typedef struct _NMSupplicantInterface NMSupplicantInterface;
-typedef struct _NMSupplicantConnection NMSupplicantConnection;
+typedef struct _NMSupplicantConfig NMSupplicantConfig;
 
 #endif  /* NM_SUPPLICANT_TYPES_H */

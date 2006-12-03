@@ -96,8 +96,8 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
                                                      NMDevice * dev);
 
-void nm_supplicant_interface_set_connection (NMSupplicantInterface * iface,
-                                             NMSupplicantConnection * con);
+void nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
+                                         NMSupplicantConfig * cfg);
 
 NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
