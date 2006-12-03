@@ -28,9 +28,3 @@ src/nm-netlink-monitor.c
 gnome/applet/applet-dbus-devices.c
 src/nm-ap-security-wpa-eap.c
 src/nm-ap-security-leap.c
-vpn-daemons/pptp/auth-dialog/gnome-two-password-dialog.c
-vpn-daemons/pptp/auth-dialog/main.c
-vpn-daemons/pptp/nm-ppp.desktop.in
-vpn-daemons/pptp/properties/nm-pptp-dialog.glade
-vpn-daemons/pptp/properties/nm-pptp.c
-vpn-daemons/pptp/src/nm-pptp-service.c
