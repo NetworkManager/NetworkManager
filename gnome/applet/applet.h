@@ -31,8 +31,15 @@
 #include <glade/glade.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
-#include "eggtrayicon.h"
 #include <net/ethernet.h>
+
+#ifdef GDK_WINDOWING_X11
+#include <gdk/gdkx.h>
+#endif
+
+#ifndef HAVE_STATUS_ICON
+#include "eggtrayicon.h"
+#endif
 
 #include "nm-device.h"
 #include "wireless-network.h"
