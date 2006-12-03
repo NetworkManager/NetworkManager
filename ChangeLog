@@ -1,5 +1,10 @@
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
+	* gnome/applet/applet.c
+		- (nma_update_info): fix two unecessary allocations
+
+2006-12-02  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Michael Biebl <biebl@teco.edu>
 	* configure.in
 	  man/NetworkManager.1.in

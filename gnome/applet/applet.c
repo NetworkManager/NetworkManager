@@ -201,9 +201,8 @@ static gboolean nma_update_info (NMApplet *applet)
 	info_dialog = glade_xml_get_widget (applet->info_dialog_xml, "info_dialog");
 	if (!info_dialog)
 	{
-		char *err = g_strdup (_("Could not find some required resources (the glade file)!"));
+		const char *err = _("Could not find some required resources (the glade file)!");
 		nma_show_socket_err (info_dialog, err);
-		g_free (err);
 		return FALSE;
 	}
 	
@@ -212,9 +211,8 @@ static gboolean nma_update_info (NMApplet *applet)
 
 	if (!dev || !iface)
 	{
-		char *err = g_strdup (_("No active connections!"));
+		const char *err = _("No active connections!");
 		nma_show_socket_err (info_dialog, err);
-		g_free (err);
 		return FALSE;
 	}
 
