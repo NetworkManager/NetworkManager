@@ -1,3 +1,9 @@
+2006-12-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service.c
+		- (nm_vpnc_config_options_validate): allow the 
+			"NAT-Keepalive packet interval" option to pass validation
+
 2006-10-30  Tambet Ingo  <tambet@ximian.com>
 
 	* properties/Makefile.am: Include new files pcf-file.[ch] in build.

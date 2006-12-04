@@ -492,18 +492,19 @@ typedef struct Option
 static gboolean nm_vpnc_config_options_validate (char **data_items, int num_items)
 {
 	Option	allowed_opts[] = {
-		{ "IPSec gateway",            OPT_TYPE_ADDRESS },
-		{ "IPSec ID",                 OPT_TYPE_ASCII },
-		{ "IPSec secret",             OPT_TYPE_ASCII },
-		{ "Xauth username",           OPT_TYPE_ASCII },
-		{ "UDP Encapsulate",          OPT_TYPE_NONE },
-		{ "UDP Encapsulation Port",   OPT_TYPE_ASCII },
-		{ "Domain",                   OPT_TYPE_ASCII },
-		{ "IKE DH Group",             OPT_TYPE_ASCII },
-		{ "Perfect Forward Secrecy",  OPT_TYPE_ASCII },
-		{ "Application Version",      OPT_TYPE_ASCII },
-		{ "Rekeying interval",        OPT_TYPE_ASCII },
-		{ NULL,                       OPT_TYPE_UNKNOWN }
+		{ "IPSec gateway",                 OPT_TYPE_ADDRESS },
+		{ "IPSec ID",                      OPT_TYPE_ASCII },
+		{ "IPSec secret",                  OPT_TYPE_ASCII },
+		{ "Xauth username",                OPT_TYPE_ASCII },
+		{ "UDP Encapsulate",               OPT_TYPE_NONE },
+		{ "UDP Encapsulation Port",        OPT_TYPE_ASCII },
+		{ "Domain",                        OPT_TYPE_ASCII },
+		{ "IKE DH Group",                  OPT_TYPE_ASCII },
+		{ "Perfect Forward Secrecy",       OPT_TYPE_ASCII },
+		{ "Application Version",           OPT_TYPE_ASCII },
+		{ "Rekeying interval",             OPT_TYPE_ASCII },
+		{ "NAT-Keepalive packet interval", OPT_TYPE_ASCII },
+		{ NULL,                            OPT_TYPE_UNKNOWN }
 	};
 
 	unsigned int	i;
