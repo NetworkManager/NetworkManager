@@ -124,6 +124,8 @@ NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
 
+guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
+
 guint32 nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self);
 
 G_END_DECLS

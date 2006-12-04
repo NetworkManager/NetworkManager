@@ -1205,6 +1205,14 @@ out:
 }
 
 guint32
+nm_supplicant_interface_get_state (NMSupplicantInterface * self)
+{
+	g_return_val_if_fail (self != NULL, NM_SUPPLICANT_INTERFACE_STATE_DOWN);
+
+	return self->priv->state;
+}
+
+guint32
 nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self)
 {
 	g_return_val_if_fail (self != NULL, NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED);
