@@ -1,3 +1,12 @@
+2006-12-03  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Nathaniel McCallum <nathaniel@natemccallum.com>
+
+	* properties/nm-ppp-dialog.glade
+	  properties/nm-ppp-properties.c
+	  src/nm-ppp-starter.c
+		- Add option for Stateful MPPE
+
 2006-10-30  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-pppd-plugin.c: Remove the leading NetworkManager directory

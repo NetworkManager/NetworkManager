@@ -716,6 +716,10 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "require-mppe-128");
 
+    } else if ( (strcmp( data_items[i], "encrypt-mppe-stateful" ) == 0) &&
+		(strcmp( data_items[++i], "yes" ) == 0) ) {
+      g_ptr_array_add (ppp_argv, (gpointer) "mppe-stateful");
+
     } else if ( (strcmp( data_items[i], "compress-mppc" ) == 0) &&
 		(strcmp( data_items[++i], "yes" ) == 0) ) {
       g_ptr_array_add (ppp_argv, (gpointer) "require-mppc");
@@ -895,6 +899,7 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { "compress-deflate",	OPT_TYPE_ASCII },
     { "encrypt-mppe",		OPT_TYPE_ASCII },
     { "encrypt-mppe-128",	OPT_TYPE_ASCII },
+    { "encrypt-mppe-stateful",	OPT_TYPE_ASCII },
     { "ppp-auth-peer",		OPT_TYPE_ASCII },
     { "ppp-refuse-eap",		OPT_TYPE_ASCII },
     { "ppp-refuse-chap",	OPT_TYPE_ASCII },
@@ -921,6 +926,7 @@ static gboolean nm_ppp_config_options_validate (NmPPPData *data, char **data_ite
     { NULL,					OPT_TYPE_UNKNOWN } };
 
   PPPOption allowed_extra_ppp_opts[] = {
+    { "mppe-stateful",    0 },
     { "require-mppe-128", 0 },
     { "refuse-eap",       0 },
     { "refuse-chap",      0 },

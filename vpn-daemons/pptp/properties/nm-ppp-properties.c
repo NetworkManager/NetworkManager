@@ -73,6 +73,7 @@
 #define VPNUI_BTGPRS_DEFAULTS "ppp-connection-type=btgprs;" \
                              "encrypt-mppe=no;" \
                              "encrypt-mppe-128=no;" \
+                             "encrypt-mppe-stateful=no;" \
                              "compress-mppc=no;" \
                              "compress-bsd=no;" \
                              "compress-deflate=no;" \
@@ -82,6 +83,7 @@
                              "ppp-connection-type=pptp;" \
                              "encrypt-mppe=no;" \
                              "encrypt-mppe-128=yes;" \
+                             "encrypt-mppe-stateful=yes;" \
                              "compress-mppc=no;" \
                              "compress-bsd=no;" \
                              "compress-deflate=no;" \
@@ -93,6 +95,7 @@
                               "ppp-connection-type=dialup;" \
                               "encrypt-mppe=no;" \
                               "encrypt-mppe-128=no;" \
+                              "encrypt-mppe-stateful=no;" \
                               "compress-mppc=no;" \
                               "compress-bsd=no;" \
                               "compress-deflate=no;" \
@@ -206,6 +209,11 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   opt = vpnui_opt_new(
   "encrypt-mppe-128"  , VPN_UI_OPTTYPE_YESNO , 
   "encrypt-mppe-128", "Encrypt-MPPE-128", _("Use 128 bit MPPE encryption"),
+  NULL, NULL, impl );
+
+  opt = vpnui_opt_new(
+  "encrypt-mppe-stateful"  , VPN_UI_OPTTYPE_YESNO , 
+  "encrypt-mppe-stateful", "Encrypt-MPPE-Stateful", _("Enable stateful MPPE"),
   NULL, NULL, impl );
 
   opt = vpnui_opt_new(
