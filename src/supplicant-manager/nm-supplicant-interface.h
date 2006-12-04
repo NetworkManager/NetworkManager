@@ -51,6 +51,22 @@ enum {
 };
 
 
+/*
+ * Supplicant interface connection states
+ *   The wpa_supplicant state for the connection.
+ */
+enum {
+	NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED = 0,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED,
+	NM_SUPPLICANT_INTERFACE_CON_STATE_LAST
+};
+
 enum {
 	NM_SUPPLICANT_INTERFACE_SCAN_RESULT_ERROR = 0,
 	NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS
@@ -79,15 +95,20 @@ struct _NMSupplicantInterfaceClass
 	GObjectClass parent;
 
 	/* class members */
-	void (* state)        (NMSupplicantInterface * iface,
-	                       guint32 new_state,
-	                       guint32 old_state);
+	void (* state)            (NMSupplicantInterface * iface,
+	                           guint32 new_state,
+	                           guint32 old_state);
 
-	void (* removed)      (NMSupplicantInterface * iface);
+	void (* removed)          (NMSupplicantInterface * iface);
 
-	void (* scanned_ap)   (NMSupplicantInterface * iface, DBusMessage * message);
+	void (* scanned_ap)       (NMSupplicantInterface * iface,
+	                           DBusMessage * message);
 
-	void (* scan_result)  (NMSupplicantInterface * iface, guint32 result);
+	void (* scan_result)      (NMSupplicantInterface * iface, guint32 result);
+
+	void (* connection_state) (NMSupplicantInterface * iface,
+	                           guint32 new_state,
+	                           guint32 old_state);
 };
 
 
@@ -102,6 +123,8 @@ void nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
 NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
+
+guint32 nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self);
 
 G_END_DECLS
 

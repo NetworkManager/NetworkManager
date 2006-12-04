@@ -66,10 +66,11 @@ static void nm_supplicant_interface_set_state (NMSupplicantInterface * self,
 
 /* Signals */
 enum {
-	STATE,        /* change in the interface's state */
-	REMOVED,      /* interface was removed by the supplicant */
-	SCANNED_AP,   /* interface saw a new access point from a scan */
-	SCAN_RESULT,  /* result of a wireless scan request */
+	STATE,             /* change in the interface's state */
+	REMOVED,           /* interface was removed by the supplicant */
+	SCANNED_AP,        /* interface saw a new access point from a scan */
+	SCAN_RESULT,       /* result of a wireless scan request */
+	CONNECTION_STATE,  /* link state of the device's connection */
 	LAST_SIGNAL
 };
 static guint nm_supplicant_interface_signals[LAST_SIGNAL] = { 0 };
@@ -81,6 +82,7 @@ enum {
 	PROP_SUPPLICANT_MANAGER,
 	PROP_DEVICE,
 	PROP_STATE,
+	PROP_CONNECTION_STATE,
 	LAST_PROP
 };
 
@@ -93,6 +95,8 @@ struct _NMSupplicantInterfacePrivate
 
 	guint32               state;
 	GSList *              pcalls;
+
+	guint32               con_state;
 
 	char *                wpas_iface_op;
 	char *                wpas_net_op;
@@ -188,6 +192,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	self->priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
 
 	self->priv->state = NM_SUPPLICANT_INTERFACE_STATE_INIT;
+	self->priv->con_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
 	self->priv->smgr = NULL;
 	self->priv->dev = NULL;
 	self->priv->wpas_iface_op = NULL;
@@ -223,6 +228,9 @@ nm_supplicant_interface_set_property (GObject *      object,
 		case PROP_STATE:
 			/* warn on setting read-only property */
 			break;
+		case PROP_CONNECTION_STATE:
+			/* warn on setting read-only property */
+			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 			break;
@@ -246,6 +254,9 @@ nm_supplicant_interface_get_property (GObject *     object,
 			break;
 		case PROP_STATE:
 			g_value_set_uint (value, self->priv->state);
+			break;
+		case PROP_CONNECTION_STATE:
+			g_value_set_uint (value, self->priv->con_state);
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -410,6 +421,16 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              g_cclosure_marshal_VOID__UINT,
 		              G_TYPE_NONE, 1, G_TYPE_UINT);
 	klass->scan_result = NULL;
+
+	nm_supplicant_interface_signals[CONNECTION_STATE] =
+		g_signal_new ("connection-state",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_state),
+		              NULL, NULL,
+		              nm_supplicant_marshal_VOID__UINT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
+	klass->connection_state = NULL;
 }
 
 GType
@@ -679,6 +700,69 @@ wpas_iface_query_scan_results (NMSupplicantInterface * self)
 	self->priv->scan_results_timeout = source;
 }
 
+static guint32
+wpas_state_string_to_enum (const char * str_state)
+{
+	guint32 enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
+
+	if (!strcmp (str_state, "DISCONNECTED")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
+	} else if (!strcmp (str_state, "INACTIVE")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE;
+	} else if (!strcmp (str_state, "SCANNING")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING;
+	} else if (!strcmp (str_state, "ASSOCIATING")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING;
+	} else if (!strcmp (str_state, "ASSOCIATED")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED;
+	} else if (!strcmp (str_state, "4WAY_HANDSHAKE")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE;
+	} else if (!strcmp (str_state, "GROUP_HANDSHAKE")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE;
+	} else if (!strcmp (str_state, "COMPLETED")) {
+		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED;
+	}
+
+	return enum_state;
+}
+
+static void
+wpas_iface_handle_state_change (NMSupplicantInterface * self,
+                                DBusMessage * message)
+{
+	DBusError error;
+	char *    str_old_state;
+	char *    str_new_state;
+	guint32   old_state, enum_new_state;
+
+	dbus_error_init (&error);
+	if (!dbus_message_get_args (message,
+	                            &error,
+	                            DBUS_TYPE_STRING, &str_new_state,
+	                            DBUS_TYPE_STRING, &str_old_state,
+	                            DBUS_TYPE_INVALID)) {
+		nm_warning ("could not get message arguments: %s - %s",
+		            error.name,
+		            error.message);
+		goto out;
+	}
+
+	enum_new_state = wpas_state_string_to_enum (str_new_state);
+	old_state = self->priv->con_state;
+	self->priv->con_state = enum_new_state;
+	if (self->priv->con_state != old_state) {
+		g_signal_emit (G_OBJECT (self),
+		               nm_supplicant_interface_signals[CONNECTION_STATE],
+		               0,
+		               self->priv->con_state,
+		               old_state);
+	}
+
+out:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+}
+
 static gboolean
 wpas_iface_signal_handler (DBusConnection * connection,
                            DBusMessage * message,
@@ -697,8 +781,15 @@ wpas_iface_signal_handler (DBusConnection * connection,
 	if (strcmp (op, self->priv->wpas_iface_op) != 0)
 		return FALSE;
 
-	if (dbus_message_is_signal (message, WPAS_DBUS_IFACE_INTERFACE, "ScanResultsAvailable")) {
+	if (dbus_message_is_signal (message,
+	                            WPAS_DBUS_IFACE_INTERFACE,
+	                            "ScanResultsAvailable")) {
 		wpas_iface_query_scan_results (self);
+		handled = TRUE;
+	} else if (dbus_message_is_signal (message,
+	                                   WPAS_DBUS_IFACE_INTERFACE,
+	                                   "StateChange")) {
+		wpas_iface_handle_state_change (self, message);
 		handled = TRUE;
 	}
 
@@ -1101,3 +1192,12 @@ out:
 		dbus_message_unref (message);
 	return success;
 }
+
+guint32
+nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self)
+{
+	g_return_val_if_fail (self != NULL, NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED);
+
+	return self->priv->con_state;
+}
+
