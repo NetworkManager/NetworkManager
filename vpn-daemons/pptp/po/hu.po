@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-11-17 06:51+0100\n"
-"PO-Revision-Date: 2006-11-17 14:10+0100\n"
+"POT-Creation-Date: 2006-12-04 20:50+0100\n"
+"PO-Revision-Date: 2006-12-04 23:20+0100\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
 "MIME-Version: 1.0\n"
@@ -17,21 +17,86 @@ msgstr ""
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
-msgid "_Secondary Password:"
-msgstr "Jelszó _még egyszer:"
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:785
+msgid "Authentication Type:"
+msgstr "Hitelesítési típus:"
 
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:850
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+msgid "_Remember for this session"
+msgstr "Meg_jegyzés erre a munkamenetre"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:852
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+msgid "_Save in keyring"
+msgstr "Mentés a _kulcstartóra"
+
+#: ../auth-dialog-general/main.c:71 ../auth-dialog/main.c:140
+#, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr "A(z) \"%s\" eléréséhez hitelesítés szükséges."
+
+#: ../auth-dialog-general/main.c:74 ../auth-dialog/main.c:141
+msgid "Authenticate Connection"
+msgstr "Kapcsolat hitelesítése"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Hitelesítési információk</span>\n"
+"\n"
+"A(z) \"%s\" kapcsolat hitelesítést igényelhet.\n"
+"\n"
+"Válassza ki a megfelelő hitelesítési típust és adja meg alább a szükséges hitelesítési adatokat:\n"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+msgid "Authentication Required"
+msgstr "Hitelesítés szükséges"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+msgid "_Authentication Type:"
+msgstr "_Hitelesítés típusa:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Jelszó:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+msgid "_Remote name:"
+msgstr "_Távoli név:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
 #: ../auth-dialog/gnome-two-password-dialog.c:268
 msgid "_Username:"
 msgstr "_Felhasználónév:"
 
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
+msgid "auth-chap-window"
+msgstr ""
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
+msgid "auth-mschapv2-window"
+msgstr ""
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
+msgid "auth-none-window"
+msgstr ""
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "Jelszó _még egyszer:"
+
 #: ../auth-dialog/gnome-two-password-dialog.c:270
 msgid "_Domain:"
 msgstr "_Tartomány:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:272
-msgid "_Password:"
-msgstr "_Jelszó:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:355
 msgid "Connect _anonymously"
@@ -49,15 +114,6 @@ msgstr "Jelszó meg_jegyzése erre a munkamenetre"
 msgid "_Save password in keyring"
 msgstr "Jelszó mentése a _kulcstartóra"
 
-#: ../auth-dialog/main.c:140
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "A(z) \"%s\" eléréséhez hitelesítés szükséges."
-
-#: ../auth-dialog/main.c:141
-msgid "Authenticate Connection"
-msgstr "Kapcsolat hitelesítése"
-
 #: ../nm-ppp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "VPN kapcsolatok hozzáadása, szerkesztése és eltávolítása"
@@ -65,173 +121,6 @@ msgstr "VPN kapcsolatok hozzáadása, szerkesztése és eltávolítása"
 #: ../nm-ppp.desktop.in.h:2
 msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN kapcsolatkezelő (általános PPP)"
-
-#: ../properties/nm-ppp-properties.c:45
-msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr "pppd alagút (PPTP, BTGPRS, betárcsázós)"
-
-#: ../properties/nm-ppp-properties.c:131
-msgid "Name"
-msgstr "Név"
-
-#: ../properties/nm-ppp-properties.c:143
-msgid "PPTP Server"
-msgstr "PPTP kiszolgáló"
-
-#: ../properties/nm-ppp-properties.c:148
-msgid "Telephone Number"
-msgstr "Telefonszám"
-
-#: ../properties/nm-ppp-properties.c:153
-msgid "Bluetooth Address"
-msgstr "Bluetooth cím"
-
-#: ../properties/nm-ppp-properties.c:158
-msgid "Bluetooth Channel"
-msgstr "Bluetooth csatorna"
-
-#: ../properties/nm-ppp-properties.c:163
-msgid "GPRS APN"
-msgstr "GPRS APN"
-
-#: ../properties/nm-ppp-properties.c:168
-msgid "GPRS IP"
-msgstr "GPRS IP"
-
-#: ../properties/nm-ppp-properties.c:173
-msgid "GPRS Context No."
-msgstr "GPRS kontextusszám"
-
-#: ../properties/nm-ppp-properties.c:178
-msgid "GPRS Packet Type"
-msgstr "GPRS csomagtípus"
-
-#: ../properties/nm-ppp-properties.c:183
-msgid "Use CTS/RTS flow control"
-msgstr "CTS/RTS folyamvezérlés használata"
-
-#: ../properties/nm-ppp-properties.c:188
-msgid "Connect via a modem"
-msgstr "Csatlakozás modemen keresztül"
-
-#: ../properties/nm-ppp-properties.c:193
-msgid "Require IP to be provided"
-msgstr "IP megadásának megkövetelése"
-
-#: ../properties/nm-ppp-properties.c:198
-#: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Use Peer DNS"
-msgstr "Egyenrangú DNS használata"
-
-#: ../properties/nm-ppp-properties.c:203
-msgid "Use MPPE encryption"
-msgstr "MPPE titkosítás használata"
-
-#: ../properties/nm-ppp-properties.c:208
-msgid "Use 128 bit MPPE encryption"
-msgstr "128 bites MPPE titkosítás használata"
-
-#: ../properties/nm-ppp-properties.c:213
-msgid "Use MPPC compression"
-msgstr "MPPC tömörítés használata"
-
-#: ../properties/nm-ppp-properties.c:218
-msgid "Do not use deflate compression"
-msgstr "Ne használjon deflate tömörítést"
-
-#: ../properties/nm-ppp-properties.c:223
-msgid "Do not use BSD compression"
-msgstr "Ne használjon BSD tömörítést"
-
-#: ../properties/nm-ppp-properties.c:228
-msgid "Exclusive device access by pppd"
-msgstr "A pppd általi kizárólagos eszközelérés"
-
-#: ../properties/nm-ppp-properties.c:233
-msgid "Authenticate remote peer"
-msgstr "Távoli fél hitelesítése"
-
-#: ../properties/nm-ppp-properties.c:238
-#: ../properties/nm-ppp-dialog.glade.h:32
-msgid "Refuse EAP"
-msgstr "EAP visszautasítása"
-
-#: ../properties/nm-ppp-properties.c:243
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Refuse CHAP"
-msgstr "CHAP visszautasítása"
-
-#: ../properties/nm-ppp-properties.c:248
-msgid "Refuse MSCHAP"
-msgstr "MSCHAP visszautasítása"
-
-#: ../properties/nm-ppp-properties.c:253
-msgid "Maximum transmit unit (in bytes)"
-msgstr "Legnagyobb átviteli egység (MTU, bájtokban)"
-
-#: ../properties/nm-ppp-properties.c:258
-msgid "Maximum receive unit (in bytes)"
-msgstr "Legnagyobb fogadási egység (bájtokban)"
-
-#: ../properties/nm-ppp-properties.c:263
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr "Bontást okozó meghiúsult LCP visszhangok száma"
-
-#: ../properties/nm-ppp-properties.c:268
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr "LCP visszhangok kiadásának időköze (másodpercben)"
-
-#: ../properties/nm-ppp-properties.c:273
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr "Kapcsolódás előtti várakozás időköze (ezredmásodpercben)."
-
-#: ../properties/nm-ppp-properties.c:278
-msgid "Custom PPP options"
-msgstr "Egyéni PPP beállítások"
-
-#: ../properties/nm-ppp-properties.c:288
-msgid "Use Peer DNS over the Tunnel"
-msgstr "Egyenrangú DNS használata az alagútban"
-
-#: ../properties/nm-ppp-properties.c:294
-msgid "Specific networks available"
-msgstr "Elérhető hálózatok"
-
-#: ../properties/nm-ppp-properties.c:300
-msgid "Limit to specific networks"
-msgstr "Korlátozás adott hálózatokra"
-
-#: ../properties/vpnui_impl.c:229
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr "A következő \"%s\" kapcsolat kerül létrehozásra:"
-
-#: ../properties/vpnui_impl.c:242
-#, c-format
-msgid "\t%s:  %s\n"
-msgstr "\t%s: %s\n"
-
-#: ../properties/vpnui_impl.c:245
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr "A kapcsolat részletei a \"Vissza\" gomb segítségével módosíthatók."
-
-#: ../properties/vpnui_impl.c:317
-msgid "Select file to import"
-msgstr "Válassza ki az importálandó fájlt"
-
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:462
-msgid "Save as..."
-msgstr "Mentés másként..."
-
-#: ../properties/vpnui_impl.c:491
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "A(z) \"%s\" nevű fájl már létezik."
-
-#: ../properties/vpnui_impl.c:494
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Le akarja cserélni azzal, amit épp menteni készül?"
 
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
@@ -302,14 +191,19 @@ msgid "Disconnect after this many LCP echo requests fail"
 msgstr "Bontás ennyi meghiúsult LCP visszhang kérés után"
 
 #: ../properties/nm-ppp-dialog.glade.h:18
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "Az alapos MPPE engedélyezése"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Exclusive device access (UUCP-style lock)"
 msgstr "Kizárólagos eszközhozzáférés (UUCP stílusú zár)"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Find Device"
 msgstr "Eszköz keresése"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:21
 msgid ""
 "For security reasons, options entered in the box above are checked against a "
 "list of allowed options before a connection is established.  Currently there "
@@ -319,95 +213,105 @@ msgstr ""
 "létrehozása előtt össze lesznek vetve az engedélyezett kapcsolók egy "
 "listájával. Jelenleg nincsenek kapcsolók a listában."
 
-#: ../properties/nm-ppp-dialog.glade.h:21
+#: ../properties/nm-ppp-dialog.glade.h:22
 msgid "GPRS Options"
 msgstr "GPRS beállítások"
 
-#: ../properties/nm-ppp-dialog.glade.h:22
+#: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Hardware RTS/CTS"
 msgstr "Hardveres RTS/CTS"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
+#: ../properties/nm-ppp-dialog.glade.h:24
 msgid "Host name or IP address of the PPTP server"
 msgstr "A PPTP kiszolgáló gépneve vagy IP címe"
 
-#: ../properties/nm-ppp-dialog.glade.h:24
+#: ../properties/nm-ppp-dialog.glade.h:25
 msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 msgstr ""
 "Ha a BSD tömörítés nem engedélyezett, akkor a \"nobsdcomp\" kapcsoló kerül "
 "átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
+#: ../properties/nm-ppp-dialog.glade.h:26
 msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
 msgstr ""
 "Ha a deflate tömörítés nem engedélyezett, akkor a \"nodeflate\" kapcsoló "
 "kerül átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:26
+#: ../properties/nm-ppp-dialog.glade.h:27
 msgid "Maximum Receive Unit"
 msgstr "Legnagyobb fogadási egység"
 
-#: ../properties/nm-ppp-dialog.glade.h:27
+#: ../properties/nm-ppp-dialog.glade.h:28
 msgid "Maximum Transmit Unit"
 msgstr "Legnagyobb átviteli egység"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
+#: ../properties/nm-ppp-dialog.glade.h:29
 msgid "Modem Connection"
 msgstr "Modemes kapcsolat"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
+#: ../properties/nm-ppp-dialog.glade.h:30
 msgid "PPP Options"
 msgstr "PPP beállításai"
 
-#: ../properties/nm-ppp-dialog.glade.h:30
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Peer DNS through tunnel"
 msgstr "Egyenrangú DNS alagúton keresztül"
 
+#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "CHAP visszautasítása"
+
 #: ../properties/nm-ppp-dialog.glade.h:33
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "EAP visszautasítása"
+
+#: ../properties/nm-ppp-dialog.glade.h:34
 msgid "Refuse MS CHAP"
 msgstr "MS CHAP visszautasítása"
 
-#: ../properties/nm-ppp-dialog.glade.h:34
+#: ../properties/nm-ppp-dialog.glade.h:35
 msgid "Require 128 bit MPPE encryption"
 msgstr "128 bites MPPE titkosítás megkövetelése"
 
-#: ../properties/nm-ppp-dialog.glade.h:35
+#: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require Explicit IP Addr"
 msgstr "Explicit IP cím megkövetelése"
 
-#: ../properties/nm-ppp-dialog.glade.h:36
+#: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPC Compression"
 msgstr "MPPC tömörítés megkövetelése"
 
-#: ../properties/nm-ppp-dialog.glade.h:37
+#: ../properties/nm-ppp-dialog.glade.h:38
 msgid "Require MPPE encryption"
 msgstr "MPPE titkosítás megkövetelése"
 
-#: ../properties/nm-ppp-dialog.glade.h:38
+#: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Requires existing network connection"
 msgstr "Meglévő hálózati kapcsolatot igényel"
 
-#: ../properties/nm-ppp-dialog.glade.h:39
+#: ../properties/nm-ppp-dialog.glade.h:40
 msgid "Routing"
 msgstr "Útválasztás"
 
-#: ../properties/nm-ppp-dialog.glade.h:40
+#: ../properties/nm-ppp-dialog.glade.h:41
 msgid "Serial Options"
 msgstr "Soros beállítások"
 
-#: ../properties/nm-ppp-dialog.glade.h:41
+#: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
 msgstr "Szolgáltató GPRS elérési pontja az eszközbeállításokból"
 
-#: ../properties/nm-ppp-dialog.glade.h:42
+#: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
 msgstr "Szolgáltató IP címe"
 
-#: ../properties/nm-ppp-dialog.glade.h:43
+#: ../properties/nm-ppp-dialog.glade.h:44
 msgid "Telephone number to dial"
 msgstr "Hívandó telefonszám"
 
-#: ../properties/nm-ppp-dialog.glade.h:44
+#: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
 "This is the friendly name that will be used to identify this network "
 "connection, \n"
@@ -416,35 +320,40 @@ msgstr ""
 "A hálózati kapcsolat azonosítására használt név, például \"Egyetemi VPN\", "
 "vagy \"Vállalati hálózat\""
 
-#: ../properties/nm-ppp-dialog.glade.h:46
+#: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
 msgstr "A visszhangkérések közti idő másodpercben"
 
-#: ../properties/nm-ppp-dialog.glade.h:47
+#: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Type:"
 msgstr "Típus:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "Egyenrangú DNS használata"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
 msgstr "Ezt bejelölve a \"refuse-chap\" kapcsoló kerül átadásra a pppd-nek."
 
-#: ../properties/nm-ppp-dialog.glade.h:50
+#: ../properties/nm-ppp-dialog.glade.h:51
 msgid "When checked the \"refuse-eap\" option is passed to pppd."
 msgstr "Ezt bejelölve a \"refuse-eap\" kapcsoló kerül átadásra a pppd-nek."
 
-#: ../properties/nm-ppp-dialog.glade.h:51
+#: ../properties/nm-ppp-dialog.glade.h:52
 msgid "When checked the \"refuse-mschap\" option is passed to pppd."
 msgstr "Ezt bejelölve a \"refuse-mschap\" kapcsoló kerül átadásra a pppd-nek."
 
-#: ../properties/nm-ppp-dialog.glade.h:52
+#: ../properties/nm-ppp-dialog.glade.h:53
 msgid "When checked the 'lock' option is passed to pppd"
 msgstr "Ezt bejelölve a \"lock\" kapcsoló kerül átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:53
+#: ../properties/nm-ppp-dialog.glade.h:54
 msgid "When checked the 'require-mppc' option is passed to pppd"
 msgstr "Ezt bejelölve a \"require-mppc\" kapcsoló kerül átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:54
+#: ../properties/nm-ppp-dialog.glade.h:55
 msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
@@ -452,65 +361,217 @@ msgstr ""
 "Ezt bejelölve beállítja a pppd \"debug\" kapcsolóját és további "
 "információkat ad a NetworkManager bővítményről"
 
-#: ../properties/nm-ppp-dialog.glade.h:55
+#: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
 msgstr "Ezt bejelölve a \"noipdefault\" kapcsoló kerül átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:56
+#: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When checked this sets the pppd 'usepeerdns' option"
 msgstr "Ezt bejelölve a \"usepeerdns\" kapcsoló kerül átadásra a pppd-nek"
 
-#: ../properties/nm-ppp-dialog.glade.h:57
+#: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
 msgstr "Ezt törölve a \"noauth\" kapcsoló kerül átadásra a pppd-nek."
 
-#: ../properties/nm-ppp-dialog.glade.h:58
+#: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Access Point Name:"
 msgstr "_Elérési pont neve:"
 
-#: ../properties/nm-ppp-dialog.glade.h:59
+#: ../properties/nm-ppp-dialog.glade.h:60
 msgid "_Channel:"
 msgstr "_Csatorna:"
 
-#: ../properties/nm-ppp-dialog.glade.h:60
+#: ../properties/nm-ppp-dialog.glade.h:61
 msgid "_Context Num"
 msgstr "_Kontextusszám"
 
-#: ../properties/nm-ppp-dialog.glade.h:61
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Custom PPP options:"
 msgstr "Eg_yéni PPP kapcsolók:"
 
-#: ../properties/nm-ppp-dialog.glade.h:62
+#: ../properties/nm-ppp-dialog.glade.h:63
 msgid "_Device Address:"
 msgstr "Eszköz cí_me:"
 
-#: ../properties/nm-ppp-dialog.glade.h:63
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Gateway:"
 msgstr "Á_tjáró:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-ppp-dialog.glade.h:65
 msgid "_IP Address:"
 msgstr "_IP cím:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
+#: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Import Saved Configuration..."
 msgstr "Mentett beállítás _importálása..."
 
-#: ../properties/nm-ppp-dialog.glade.h:66
+#: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Csak ezekhez a címekhez használja a VPN kapcsolatot"
 
-#: ../properties/nm-ppp-dialog.glade.h:67
+#: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Packet Type"
 msgstr "Cs_omagtípus"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
+#: ../properties/nm-ppp-dialog.glade.h:69
 msgid "_Telephone Number:"
 msgstr "Tele_fonszám:"
 
-#: ../properties/nm-ppp-dialog.glade.h:69
+#: ../properties/nm-ppp-dialog.glade.h:70
 msgid "connect-delay"
 msgstr "Kapcsolat késleltetése"
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr "pppd alagút (PPTP, BTGPRS, betárcsázós)"
+
+#: ../properties/nm-ppp-properties.c:134
+msgid "Name"
+msgstr "Név"
+
+#: ../properties/nm-ppp-properties.c:146
+msgid "PPTP Server"
+msgstr "PPTP kiszolgáló"
+
+#: ../properties/nm-ppp-properties.c:151
+msgid "Telephone Number"
+msgstr "Telefonszám"
+
+#: ../properties/nm-ppp-properties.c:156
+msgid "Bluetooth Address"
+msgstr "Bluetooth cím"
+
+#: ../properties/nm-ppp-properties.c:161
+msgid "Bluetooth Channel"
+msgstr "Bluetooth csatorna"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr "GPRS APN"
+
+#: ../properties/nm-ppp-properties.c:171
+msgid "GPRS IP"
+msgstr "GPRS IP"
+
+#: ../properties/nm-ppp-properties.c:176
+msgid "GPRS Context No."
+msgstr "GPRS kontextusszám"
+
+#: ../properties/nm-ppp-properties.c:181
+msgid "GPRS Packet Type"
+msgstr "GPRS csomagtípus"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr "CTS/RTS folyamvezérlés használata"
+
+#: ../properties/nm-ppp-properties.c:191
+msgid "Connect via a modem"
+msgstr "Csatlakozás modemen keresztül"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr "IP megadásának megkövetelése"
+
+#: ../properties/nm-ppp-properties.c:206
+msgid "Use MPPE encryption"
+msgstr "MPPE titkosítás használata"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr "128 bites MPPE titkosítás használata"
+
+#: ../properties/nm-ppp-properties.c:221
+msgid "Use MPPC compression"
+msgstr "MPPC tömörítés használata"
+
+#: ../properties/nm-ppp-properties.c:226
+msgid "Do not use deflate compression"
+msgstr "Ne használjon deflate tömörítést"
+
+#: ../properties/nm-ppp-properties.c:231
+msgid "Do not use BSD compression"
+msgstr "Ne használjon BSD tömörítést"
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr "A pppd általi kizárólagos eszközelérés"
+
+#: ../properties/nm-ppp-properties.c:241
+msgid "Authenticate remote peer"
+msgstr "Távoli fél hitelesítése"
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr "MSCHAP visszautasítása"
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr "Legnagyobb átviteli egység (MTU, bájtokban)"
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr "Legnagyobb fogadási egység (bájtokban)"
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr "Bontást okozó meghiúsult LCP visszhangok száma"
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr "LCP visszhangok kiadásának időköze (másodpercben)"
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr "Kapcsolódás előtti várakozás időköze (ezredmásodpercben)."
+
+#: ../properties/nm-ppp-properties.c:286
+msgid "Custom PPP options"
+msgstr "Egyéni PPP beállítások"
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr "Egyenrangú DNS használata az alagútban"
+
+#: ../properties/nm-ppp-properties.c:302
+msgid "Specific networks available"
+msgstr "Elérhető hálózatok"
+
+#: ../properties/nm-ppp-properties.c:308
+msgid "Limit to specific networks"
+msgstr "Korlátozás adott hálózatokra"
+
+#: ../properties/vpnui_impl.c:229
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "A következő \"%s\" kapcsolat kerül létrehozásra:"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr "\t%s: %s\n"
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr "A kapcsolat részletei a \"Vissza\" gomb segítségével módosíthatók."
+
+#: ../properties/vpnui_impl.c:317
+msgid "Select file to import"
+msgstr "Válassza ki az importálandó fájlt"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "Mentés másként..."
+
+#: ../properties/vpnui_impl.c:491
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "A(z) \"%s\" nevű fájl már létezik."
+
+#: ../properties/vpnui_impl.c:494
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Le akarja cserélni azzal, amit épp menteni készül?"
 
 #: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
