@@ -86,6 +86,7 @@ struct _NMDevice80211WirelessPrivate
 
 	struct _Supplicant	supplicant;
 
+	NMSupplicantManager *   sup_mgr;
 	NMSupplicantInterface * sup_iface;
 
 	guint32			failed_link_count;
@@ -126,6 +127,11 @@ static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        guint32 old_state,
                                        NMDevice80211Wireless *self);
 
+static void supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
+                                                  guint32 new_state,
+                                                  guint32 old_state,
+                                                  NMDevice80211Wireless *self);
+
 static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
                                             DBusMessage * message,
                                             NMDevice80211Wireless * self);
@@ -133,6 +139,11 @@ static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 static void supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
                                              guint32 result,
                                              NMDevice80211Wireless * self);
+
+static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
+                                     guint32 new_state,
+                                     guint32 old_state,
+                                     NMDevice80211Wireless *self);
 
 /*
  * nm_device_802_11_wireless_update_bssid
@@ -377,13 +388,45 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 }
 
 static void
+init_supplicant_interface (NMDevice80211Wireless * self)
+{
+	g_return_if_fail (self != NULL);
+
+	self->priv->sup_iface = nm_supplicant_manager_get_iface (self->priv->sup_mgr,
+	                                                         NM_DEVICE (self));
+	if (self->priv->sup_iface == NULL) {
+		nm_warning ("Couldn't initialize supplicant interface for %s.",
+		            nm_device_get_iface (NM_DEVICE (self)));
+	} else {
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "state",
+		                  G_CALLBACK (supplicant_iface_state_cb),
+		                  self);
+
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "scanned-ap",
+		                  G_CALLBACK (supplicant_iface_scanned_ap_cb),
+		                  self);
+
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "scan-result",
+		                  G_CALLBACK (supplicant_iface_scan_result_cb),
+		                  self);
+
+		g_signal_connect (G_OBJECT (self->priv->sup_iface),
+		                  "connection-state",
+		                  G_CALLBACK (supplicant_iface_connection_state_cb),
+		                  self);
+	}
+}
+
+static void
 real_init (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMData *				app_data;
 	guint32				caps;
 	NMSock *				sk;
-	NMSupplicantManager *	sup_mgr;
 
 	self->priv->is_initialized = TRUE;
 	self->priv->scanning = FALSE;
@@ -438,29 +481,14 @@ real_init (NMDevice *dev)
 		nm_dev_sock_close (sk);
 	}
 
-	sup_mgr = nm_supplicant_manager_get ();
-	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
-	                                                         NM_DEVICE (self));
-	if (self->priv->sup_iface == NULL) {
-		nm_warning ("Couldn't initialize supplicant interface for %s.",
-		            nm_device_get_iface (NM_DEVICE (self)));
-	} else {
-		g_signal_connect (G_OBJECT (self->priv->sup_iface),
-		                  "state",
-		                  G_CALLBACK (supplicant_iface_state_cb),
-		                  self);
-
-		g_signal_connect (G_OBJECT (self->priv->sup_iface),
-		                  "scanned-ap",
-		                  G_CALLBACK (supplicant_iface_scanned_ap_cb),
-		                  self);
-
-		g_signal_connect (G_OBJECT (self->priv->sup_iface),
-		                  "scan-result",
-		                  G_CALLBACK (supplicant_iface_scan_result_cb),
-		                  self);
+	self->priv->sup_mgr = nm_supplicant_manager_get ();
+	g_signal_connect (G_OBJECT (self->priv->sup_mgr),
+	                  "state",
+	                  G_CALLBACK (supplicant_mgr_state_cb),
+	                  self);
+	if (nm_supplicant_manager_get_state (self->priv->sup_mgr) == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
+		init_supplicant_interface (self);
 	}
-	g_object_unref (sup_mgr);
 }
 
 static void
@@ -1752,6 +1780,13 @@ request_wireless_scan (gpointer user_data)
 		goto out;
 	}
 
+	/* Make sure we have a valid supplicant interface */
+	if (   !self->priv->sup_iface
+	    || nm_supplicant_interface_get_state (self->priv->sup_iface) != NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		schedule_scan (self);
+		goto out;
+	}
+
 	self->priv->scanning = TRUE;
 	if (!nm_supplicant_interface_request_scan (self->priv->sup_iface)) {
 		/* Some sort of error requesting the scan */
@@ -2284,6 +2319,45 @@ out:
 		self->priv->scanning = FALSE;
 }
 
+
+static void
+supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
+                                      guint32 new_state,
+                                      guint32 old_state,
+                                      NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+}
+
+
+static void
+supplicant_mgr_state_cb (NMSupplicantInterface * iface,
+                         guint32 new_state,
+                         guint32 old_state,
+                         NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	if (new_state == old_state)
+		return;
+
+	/* If the supplicant went away, release the supplicant interface */
+	if (new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
+		if (self->priv->sup_iface) {
+			NMData * app_data = nm_device_get_app_data (NM_DEVICE (self));
+
+			nm_supplicant_manager_release_iface (self->priv->sup_mgr,
+			                                     self->priv->sup_iface);
+			self->priv->sup_iface = NULL;
+			nm_policy_schedule_device_change_check (app_data);
+		}
+	} else if (new_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
+		if (!self->priv->sup_iface) {
+			/* request a supplicant interface from the supplicant manager */
+			init_supplicant_interface (self);
+		}
+	}
+}
 
 /****************************************************************************/
 /* WPA Supplicant control stuff
@@ -3221,24 +3295,30 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	self->priv->dispose_has_run = TRUE;
 
 	/* Only do this part of the cleanup if the object is initialized */
-	if (self->priv->is_initialized)
-	{
-		NMSupplicantManager * sup_mgr;
+	if (!self->priv->is_initialized)
+		goto out;
 
-		self->priv->is_initialized = FALSE;
+	self->priv->is_initialized = FALSE;
 
-		/* General cleanup, free references to other objects */
-		nm_device_802_11_wireless_ap_list_clear (self);
-		if (self->priv->ap_list)
-			nm_ap_list_unref (self->priv->ap_list);
+	/* General cleanup, free references to other objects */
+	nm_device_802_11_wireless_ap_list_clear (self);
+	if (self->priv->ap_list)
+		nm_ap_list_unref (self->priv->ap_list);
 
-		cancel_pending_scan (self);
+	cancel_pending_scan (self);
 
-		sup_mgr = nm_supplicant_manager_get ();
-		nm_supplicant_manager_release_iface (sup_mgr, self->priv->sup_iface);
-		g_object_unref (sup_mgr);
+	if (self->priv->sup_iface) {
+		nm_supplicant_manager_release_iface (self->priv->sup_mgr,
+		                                     self->priv->sup_iface);
+		self->priv->sup_iface = NULL;
 	}
 
+	if (self->priv->sup_mgr) {
+		g_object_unref (self->priv->sup_mgr);
+		self->priv->sup_mgr = NULL;
+	}
+
+out:
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 	G_OBJECT_CLASS (parent_class)->dispose (object);

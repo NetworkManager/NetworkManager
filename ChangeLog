@@ -1,5 +1,28 @@
 2006-12-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (init_supplicant_interface): new function; pull supplicant interface
+			setup code out into standalone function since it must be called from
+			two different places
+		- (real_init): sup_mgr is now in private object data; get and track
+			the supplicant manager object over the NMDevice subclass' lifetime
+			and register a signal handler for its state signals; only try to
+			initialize the supplicant interface if the supplicant manager is in
+			the IDLE state (and therefore is ready for requests)
+		- (request_wireless_scan): reschedule the scan request if (a) there is
+			no supplicant interface yet (meaning wpa_supplicant isn't running
+			or isn't ready yet), or (b) if the supplicant interface isn't ready
+			for requests yet
+		- (supplicant_iface_connection_state_cb): new function; stub for
+			handling supplicant interface connection state signals
+		- (supplicant_mgr_state_cb): do the right thing when wpa_supplicant
+			comes and goes
+		- (nm_device_802_11_wireless_dispose): clean up spacing; release the
+			supplicant manager object that's being tracked starting with this
+			commit
+
+2006-12-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 		- (nm_supplicant_interface_set_property): track signal handler ID
 		- (nm_supplicant_interface_dispose): remove signal handler on dispose
