@@ -90,6 +90,7 @@ enum {
 struct _NMSupplicantInterfacePrivate
 {
 	NMSupplicantManager * smgr;
+	gulong                smgr_state_sig_handler;
 	NMDBusManager *       dbus_mgr;
 	NMDevice *            dev;
 
@@ -210,16 +211,18 @@ nm_supplicant_interface_set_property (GObject *      object,
                                       GParamSpec *   pspec)
 {
 	NMSupplicantInterface * self = NM_SUPPLICANT_INTERFACE (object);
+	gulong id;
 
 	switch (prop_id) {
 		case PROP_SUPPLICANT_MANAGER:
 			self->priv->smgr = NM_SUPPLICANT_MANAGER (g_value_get_object (value));
 			g_object_ref (G_OBJECT (self->priv->smgr));
 			
-			g_signal_connect (G_OBJECT (self->priv->smgr),
-			                  "state",
-			                  G_CALLBACK (nm_supplicant_interface_smgr_state_changed),
-			                  self);
+			id = g_signal_connect (G_OBJECT (self->priv->smgr),
+			                       "state",
+			                       G_CALLBACK (nm_supplicant_interface_smgr_state_changed),
+			                       self);
+			self->priv->smgr_state_sig_handler = id;
 			break;
 		case PROP_DEVICE:
 			self->priv->dev = NM_DEVICE (g_value_get_object (value));
@@ -291,6 +294,8 @@ nm_supplicant_interface_dispose (GObject *object)
 	}
 
 	if (self->priv->smgr) {
+		g_signal_handler_disconnect (G_OBJECT (self->priv->smgr),
+		                             self->priv->smgr_state_sig_handler);
 		g_object_unref (self->priv->smgr);
 		self->priv->smgr = NULL;
 	}
@@ -304,8 +309,10 @@ nm_supplicant_interface_dispose (GObject *object)
 	clear_pcalls (self);
 
 	if (self->priv->dbus_mgr) {
-		nm_dbus_manager_remove_signal_handler (self->priv->dbus_mgr,
-		                                       self->priv->wpas_sig_handler_id);
+		if (self->priv->wpas_sig_handler_id) {
+			nm_dbus_manager_remove_signal_handler (self->priv->dbus_mgr,
+			                                       self->priv->wpas_sig_handler_id);
+		}
 
 		g_object_unref (self->priv->dbus_mgr);
 		self->priv->dbus_mgr = NULL;

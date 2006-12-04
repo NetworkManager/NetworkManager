@@ -1,5 +1,11 @@
 2006-12-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (nm_supplicant_interface_set_property): track signal handler ID
+		- (nm_supplicant_interface_dispose): remove signal handler on dispose
+
+2006-12-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.[ch]
 		- (nm_supplicant_interface_get_state): new function
 
