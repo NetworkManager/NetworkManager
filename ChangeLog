@@ -1,6 +1,12 @@
 2006-12-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
+		- (supplicant_iface_scanned_ap_cb): remove erroneous & from WPA & RSN
+			IE handling blocks that cause mis-parsing of the IE
+
+2006-12-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
 		- (init_supplicant_interface): new function; pull supplicant interface
 			setup code out into standalone function since it must be called from
 			two different places

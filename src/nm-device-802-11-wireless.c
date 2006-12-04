@@ -2228,7 +2228,7 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 
 		HANDLE_DICT_ARRAY_ITEM("wpaie", DBUS_TYPE_BYTE,
 			{
-				guint8 * ie = (guint8 *) &entry.bytearray_value;
+				guint8 * ie = (guint8 *) entry.bytearray_value;
 				if (entry.array_len <= 0 || entry.array_len > WPA_MAX_IE_LEN)
 					goto next;
 				nm_ap_add_capabilities_from_ie (ap, ie, entry.array_len);
@@ -2236,7 +2236,7 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 
 		HANDLE_DICT_ARRAY_ITEM("rsnie", DBUS_TYPE_BYTE,
 			{
-				guint8 * ie = (guint8 *) &entry.bytearray_value;
+				guint8 * ie = (guint8 *) entry.bytearray_value;
 				if (entry.array_len <= 0 || entry.array_len > WPA_MAX_IE_LEN)
 					goto next;
 				nm_ap_add_capabilities_from_ie (ap, ie, entry.array_len);
