@@ -1168,7 +1168,7 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface * self)
 	DBusPendingCall * pcall;
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (self->priv->state != NM_SUPPLICANT_INTERFACE_STATE_READY, FALSE);
+	g_return_val_if_fail (self->priv->state == NM_SUPPLICANT_INTERFACE_STATE_READY, FALSE);
 
 	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
 	if (!dbus_connection) {
