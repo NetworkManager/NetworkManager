@@ -1,5 +1,11 @@
 2006-12-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (bssid_properties_cb): don't treat DBus errors as valid
+			scanned AP messages
+
+2006-12-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.[ch]
 		- (nm_supplicant_interface_get_connection_state): new function
 		- define new supplicant connection states

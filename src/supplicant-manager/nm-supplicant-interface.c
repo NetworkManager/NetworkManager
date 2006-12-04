@@ -506,6 +506,17 @@ bssid_properties_cb (DBusPendingCall * pcall,
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		if (!dbus_set_error_from_message (&error, reply)) {
+			nm_warning ("Couldn't set error from DBus message.");
+			goto out;
+		}
+		nm_warning ("Couldn't retrieve BSSID properties: %s - %s",
+		            error.name,
+		            error.message);
+		goto out;
+	}
+
 	g_signal_emit (G_OBJECT (self),
 	               nm_supplicant_interface_signals[SCANNED_AP],
 	               0,
