@@ -2209,8 +2209,9 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 				if (ssid_len <= 0)
 					goto next;
 				/* Stupid ieee80211 layer uses <hidden> */
-				if ((ssid_len == 8) && (memcmp (entry.bytearray_value, "<hidden>", 8) == 0))
-					goto out;
+				if (((ssid_len == 8) || (ssid_len == 9))
+				        && (memcmp (entry.bytearray_value, "<hidden>", 8) == 0))
+					goto next;
 				memset (&ssid, 0, sizeof (ssid));
 				memcpy (&ssid, entry.bytearray_value, ssid_len);
 				ssid[32] = '\0';
