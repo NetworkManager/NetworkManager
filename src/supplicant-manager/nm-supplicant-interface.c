@@ -312,6 +312,7 @@ nm_supplicant_interface_dispose (GObject *object)
 		if (self->priv->wpas_sig_handler_id) {
 			nm_dbus_manager_remove_signal_handler (self->priv->dbus_mgr,
 			                                       self->priv->wpas_sig_handler_id);
+			self->priv->wpas_sig_handler_id = 0;
 		}
 
 		g_object_unref (self->priv->dbus_mgr);
