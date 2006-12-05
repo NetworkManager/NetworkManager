@@ -1010,6 +1010,7 @@ nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
                                        guint32 id)
 {
 	GSList * elt;
+	GSList * found_elt = NULL;
 	SignalHandlerData *	sig_handler = NULL;
 
 	g_return_if_fail (self != NULL);
@@ -1020,15 +1021,20 @@ nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
 
 		if (handler && (handler->id == id)) {
 			sig_handler = handler;
+			found_elt = elt;
 			break;
 		}
 	}
 
 	/* Not found */
-	if (!sig_handler)
+	if (!sig_handler || !found_elt)
 		return;
 
+	/* Remove and free the signal handler */
+	self->priv->signal_handlers = g_slist_remove_link (self->priv->signal_handlers,
+	                                                   found_elt);
 	free_signal_handler_data (sig_handler, self);
+	g_slist_free_1 (found_elt);
 }
 
 DBusConnection *
