@@ -216,12 +216,19 @@ nm_dbus_manager_finalize (GObject *object)
 
 	/* Must be done before the dbus connection is disposed */
 	g_slist_foreach (self->priv->signal_handlers, free_signal_handler_helper, self);
+	g_slist_free (self->priv->signal_handlers);
+	self->priv->signal_handlers = NULL;
+
 	g_slist_foreach (self->priv->matches, signal_match_dispose_helper, self);
+	g_slist_free (self->priv->matches);
+	self->priv->matches = NULL;
 
 	nm_dbus_manager_cleanup (self);
 	g_main_context_unref (self->priv->main_ctx);
+
 	g_slist_foreach (self->priv->msg_handlers, cleanup_handler_data, NULL);
 	g_slist_free (self->priv->msg_handlers);
+	self->priv->msg_handlers = NULL;
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->finalize (object);
 }
