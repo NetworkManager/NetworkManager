@@ -988,6 +988,8 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
 			free_signal_handler_data (sig_handler, self);
 			return 0;
 		}
+		self->priv->matches = g_slist_append (self->priv->matches,
+		                                      sig_handler->match);
 	}
 
 	signal_match_enable (self, sig_handler->match, NULL);
@@ -997,7 +999,6 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
 	sig_handler->id = self->priv->sig_handler_id_counter;
 	g_static_mutex_unlock (&mutex);
 
-	self->priv->matches = g_slist_append (self->priv->matches, sig_handler->match);
 	self->priv->signal_handlers = g_slist_append (self->priv->signal_handlers,
 	                                              sig_handler);
 
