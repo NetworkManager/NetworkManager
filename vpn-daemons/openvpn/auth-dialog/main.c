@@ -327,8 +327,9 @@ main (int argc, char *argv[])
   static gchar    *vpn_service = NULL;
   GError          *error = NULL;
   GOptionContext  *context;
+  GnomeProgram    *program = NULL;
   int          bytes_read;
-  static GOptionEntry entries[] = 
+  GOptionEntry entries[] =
     {
       { "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
       { "name", 'n', 0, G_OPTION_ARG_STRING, &vpn_name, "Name of VPN connection", NULL},
@@ -345,8 +346,12 @@ main (int argc, char *argv[])
 
   context = g_option_context_new ("- openvpn auth dialog");
   g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
-  g_option_context_add_group (context, gtk_get_option_group (TRUE));
-  g_option_context_parse (context, &argc, &argv, &error);
+
+  program = gnome_program_init ("nm-openvpn-auth-dialog", VERSION,
+				LIBGNOMEUI_MODULE,
+				argc, argv,
+				GNOME_PARAM_GOPTION_CONTEXT, context,
+				GNOME_PARAM_NONE);
 
   if (vpn_name == NULL || vpn_service == NULL) {
     fprintf (stderr, "Have to supply both name and service\n");
@@ -357,11 +362,6 @@ main (int argc, char *argv[])
     fprintf (stderr, "This dialog only works with the '%s' service\n", VPN_SERVICE);
     goto out;		
   }
-
-  gnome_program_init ("nm-openvpn-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
-		      argc, argv, 
-		      GNOME_PARAM_NONE, GNOME_PARAM_NONE);
-
 
   gconf_client = gconf_client_get_default();
   escaped_name = gconf_escape_key (vpn_name, strlen (vpn_name));
@@ -435,8 +435,10 @@ main (int argc, char *argv[])
   bytes_read = fread (buf, sizeof (char), sizeof (buf), stdin);
 
  out:
-  g_object_unref (gconf_client);
-  g_option_context_free (context);
+  if (gconf_client)
+    g_object_unref (gconf_client);
+
+  g_object_unref (program);
 
   g_free (connection_type);
   g_free (key);
