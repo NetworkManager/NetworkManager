@@ -224,7 +224,7 @@ get_passwords (const char *vpn_name,
     gnome_two_password_dialog_set_show_password_secondary (GNOME_TWO_PASSWORD_DIALOG (dialog),
 							   TRUE);
     gnome_two_password_dialog_set_password_secondary_label (GNOME_TWO_PASSWORD_DIALOG (dialog),
-							    _("Certificate password:") );
+							    _("Certificate pass_word:") );
 
     /* if retrying, put in the passwords from the keyring */
     if (keyring_password != NULL) {

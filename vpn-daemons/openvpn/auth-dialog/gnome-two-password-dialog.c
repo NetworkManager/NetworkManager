@@ -63,7 +63,8 @@ struct GnomeTwoPasswordDialogDetails
 	GtkWidget *password_entry;
 	GtkWidget *password_entry_secondary;
 	GtkWidget *domain_entry;
-	
+
+	GtkWidget *table_alignment;
 	GtkWidget *table;
 	
 	GtkWidget *remember_session_button;
@@ -82,10 +83,6 @@ struct GnomeTwoPasswordDialogDetails
 /* Caption table rows indices */
 static const guint CAPTION_TABLE_USERNAME_ROW = 0;
 static const guint CAPTION_TABLE_PASSWORD_ROW = 1;
-
-/* Layout constants */
-static const guint DIALOG_BORDER_WIDTH = 6;
-static const guint CAPTION_TABLE_BORDER_WIDTH = 4;
 
 /* GnomeTwoPasswordDialogClass methods */
 static void gnome_two_password_dialog_class_init (GnomeTwoPasswordDialogClass *password_dialog_class);
@@ -218,26 +215,17 @@ userpass_radio_button_clicked (GtkWidget *widget, gpointer callback_data)
 }
 
 static void
-add_row (GtkWidget *table, int row, const char *label_text, GtkWidget *entry, int offset)
+add_row (GtkWidget *table, int row, const char *label_text, GtkWidget *entry)
 {
 	GtkWidget *label;
 
 	label = gtk_label_new_with_mnemonic (label_text);
-	gtk_misc_set_alignment (GTK_MISC (label), 1.0, 0.5);
+	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 
-	gtk_table_attach (GTK_TABLE (table), label,
-			  0, 1,
-			  row, row + 1,
-			  GTK_FILL,
-			  (GTK_FILL|GTK_EXPAND),
-			  offset, 0);
-	
-	gtk_table_attach (GTK_TABLE (table), entry,
-			  1, 2,
-			  row, row + 1,
-			  (GTK_FILL|GTK_EXPAND),
-			  (GTK_FILL|GTK_EXPAND),
-			  0, 0);
+	gtk_table_attach_defaults (GTK_TABLE (table), label,
+				   0, 1, row, row + 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), entry,
+				   1, 2, row, row + 1);
 
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
 }
@@ -256,11 +244,14 @@ add_table_rows (GnomeTwoPasswordDialog *password_dialog)
 	int offset;
 
 	if (password_dialog->details->anon_support_on) {
-		offset = 20;
+		offset = 12;
 	}
 	else {
 		offset = 0;
 	}
+
+	gtk_alignment_set_padding (GTK_ALIGNMENT (password_dialog->details->table_alignment),
+				   0, 0, offset, 0);
 
 	table = password_dialog->details->table;
 	/* This will not kill the entries, since they are ref:ed */
@@ -269,15 +260,15 @@ add_table_rows (GnomeTwoPasswordDialog *password_dialog)
 	
 	row = 0;
 	if (password_dialog->details->show_username)
-		add_row (table, row++, _("_Username:"), password_dialog->details->username_entry, offset);
+		add_row (table, row++, _("_Username:"), password_dialog->details->username_entry);
 	if (password_dialog->details->show_domain)
-		add_row (table, row++, _("_Domain:"), password_dialog->details->domain_entry, offset);
+		add_row (table, row++, _("_Domain:"), password_dialog->details->domain_entry);
 	if (password_dialog->details->show_password)
 		add_row (table, row++, password_dialog->details->primary_password_label,
-			 password_dialog->details->password_entry, offset);
+			 password_dialog->details->password_entry);
 	if (password_dialog->details->show_password_secondary)
 		add_row (table, row++, password_dialog->details->secondary_password_label, 
-			 password_dialog->details->password_entry_secondary, offset);
+			 password_dialog->details->password_entry_secondary);
 
 	gtk_widget_show_all (table);
 }
@@ -325,30 +316,36 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 			   gboolean	 readonly_username)
 {
 	GnomeTwoPasswordDialog *password_dialog;
+	GtkDialog *dialog;
 	GtkWidget *table;
 	GtkLabel *message_label;
 	GtkWidget *hbox;
 	GtkWidget *vbox;
+	GtkWidget *main_vbox;
 	GtkWidget *dialog_icon;
 	GSList *group;
 
 	password_dialog = GNOME_TWO_PASSWORD_DIALOG (gtk_widget_new (gnome_two_password_dialog_get_type (), NULL));
+	dialog = GTK_DIALOG (password_dialog);
 
 	gtk_window_set_title (GTK_WINDOW (password_dialog), dialog_title);
-	gtk_dialog_add_buttons (GTK_DIALOG (password_dialog),
+	gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
+
+	gtk_dialog_add_buttons (dialog,
 				GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 				GTK_STOCK_OK, GTK_RESPONSE_OK,
 				NULL);
+	gtk_dialog_set_default_response (GTK_DIALOG (password_dialog), GTK_RESPONSE_OK);
 
 	/* Setup the dialog */
-	gtk_dialog_set_has_separator (GTK_DIALOG (password_dialog), FALSE);
+	gtk_dialog_set_has_separator (dialog, FALSE);
+        gtk_container_set_border_width (GTK_CONTAINER (dialog), 5);
+        gtk_box_set_spacing (GTK_BOX (dialog->vbox), 2); /* 2 * 5 + 2 = 12 */
+        gtk_container_set_border_width (GTK_CONTAINER (dialog->action_area), 5);
+        gtk_box_set_spacing (GTK_BOX (dialog->action_area), 6);
 
  	gtk_window_set_position (GTK_WINDOW (password_dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal (GTK_WINDOW (password_dialog), TRUE);
-
- 	gtk_container_set_border_width (GTK_CONTAINER (password_dialog), DIALOG_BORDER_WIDTH);
-
-	gtk_dialog_set_default_response (GTK_DIALOG (password_dialog), GTK_RESPONSE_OK);
 
 	g_signal_connect (password_dialog, "show",
 			  G_CALLBACK (dialog_show_callback), password_dialog);
@@ -370,8 +367,7 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (password_dialog->details->connect_with_no_userpass_button), TRUE);
 	}
 	
-	
-	password_dialog->details->radio_vbox = gtk_vbox_new (FALSE, 0);
+	password_dialog->details->radio_vbox = gtk_vbox_new (FALSE, 6);
 	gtk_box_pack_start (GTK_BOX (password_dialog->details->radio_vbox),
 		password_dialog->details->connect_with_no_userpass_button,
 		FALSE, FALSE, 0);	
@@ -384,9 +380,12 @@ gnome_two_password_dialog_new (const char	*dialog_title,
                           G_CALLBACK (userpass_radio_button_clicked), password_dialog);	
 
 	/* The table that holds the captions */
+	password_dialog->details->table_alignment = gtk_alignment_new (0.0, 0.0, 0.0, 0.0);
+
 	password_dialog->details->table = table = gtk_table_new (3, 2, FALSE);
 	gtk_table_set_col_spacings (GTK_TABLE (table), 12);
 	gtk_table_set_row_spacings (GTK_TABLE (table), 6);
+	gtk_container_add (GTK_CONTAINER (password_dialog->details->table_alignment), table);
 
 	password_dialog->details->username_entry = gtk_entry_new ();
 	password_dialog->details->domain_entry = gtk_entry_new ();
@@ -394,6 +393,12 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 	password_dialog->details->password_entry_secondary = gtk_entry_new ();
 
 	/* We want to hold on to these during the table rearrangement */
+#if GLIB_CHECK_VERSION (2, 10, 0)
+	g_object_ref_sink (password_dialog->details->username_entry);
+	g_object_ref_sink (password_dialog->details->domain_entry);
+        g_object_ref_sink (password_dialog->details->password_entry);
+        g_object_ref_sink (password_dialog->details->password_entry_secondary);
+#else
 	g_object_ref (password_dialog->details->username_entry);
 	gtk_object_sink (GTK_OBJECT (password_dialog->details->username_entry));
 	g_object_ref (password_dialog->details->domain_entry);
@@ -402,6 +407,7 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 	gtk_object_sink (GTK_OBJECT (password_dialog->details->password_entry));
         g_object_ref (password_dialog->details->password_entry_secondary);
 	gtk_object_sink (GTK_OBJECT (password_dialog->details->password_entry_secondary));
+#endif
 	
 	gtk_entry_set_visibility (GTK_ENTRY (password_dialog->details->password_entry), FALSE);
 	gtk_entry_set_visibility (GTK_ENTRY (password_dialog->details->password_entry_secondary), FALSE);
@@ -426,38 +432,32 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 
 	/* Adds some eye-candy to the dialog */
 	hbox = gtk_hbox_new (FALSE, 12);
+ 	gtk_container_set_border_width (GTK_CONTAINER (hbox), 5);
 	dialog_icon = gtk_image_new_from_stock (GTK_STOCK_DIALOG_AUTHENTICATION, GTK_ICON_SIZE_DIALOG);
 	gtk_misc_set_alignment (GTK_MISC (dialog_icon), 0.5, 0.0);
 	gtk_box_pack_start (GTK_BOX (hbox), dialog_icon, FALSE, FALSE, 0);
 
-	gtk_box_set_spacing (GTK_BOX (GTK_DIALOG (password_dialog)->vbox), 12);
- 	gtk_container_set_border_width (GTK_CONTAINER(hbox), 6);
-	gtk_box_set_spacing (GTK_BOX (hbox), 12);
-
 	/* Fills the vbox */
-	vbox = gtk_vbox_new (FALSE, 0);
+	main_vbox = gtk_vbox_new (FALSE, 18);
 
 	if (message) {
 		message_label = GTK_LABEL (gtk_label_new (message));
 		gtk_label_set_justify (message_label, GTK_JUSTIFY_LEFT);
 		gtk_label_set_line_wrap (message_label, TRUE);
 
-		gtk_box_pack_start (GTK_BOX (vbox),
-				    GTK_WIDGET (message_label),
-				    TRUE,	/* expand */
-				    TRUE,	/* fill */
-				    5);		/* padding */
+		gtk_box_pack_start (GTK_BOX (main_vbox), GTK_WIDGET (message_label),
+				    FALSE, FALSE, 0);
 	}
+
+	vbox = gtk_vbox_new (FALSE, 6);
+	gtk_box_pack_start (GTK_BOX (main_vbox), vbox, FALSE, FALSE, 0);
+
 	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->radio_vbox,
-                            TRUE, TRUE, 5);
-	gtk_box_pack_start (GTK_BOX (vbox), table, 
-			    TRUE, TRUE, 5);
+                            FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->table_alignment,
+			    FALSE, FALSE, 0);
 
-	/* Configure the table */
-	gtk_container_set_border_width (GTK_CONTAINER (table),
-					CAPTION_TABLE_BORDER_WIDTH);
-
-	gtk_box_pack_start (GTK_BOX (hbox), vbox, TRUE, TRUE, 5);
+	gtk_box_pack_start (GTK_BOX (hbox), main_vbox, FALSE, FALSE, 0);
 
 	gtk_box_pack_start (GTK_BOX (GTK_DIALOG (password_dialog)->vbox),
 			    hbox,
@@ -473,9 +473,9 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 		gtk_check_button_new_with_mnemonic (_("_Save password in keyring"));
 
 	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_session_button, 
-			    TRUE, TRUE, 6);
+			    FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_forever_button, 
-			    TRUE, TRUE, 0);
+			    FALSE, FALSE, 0);
 	
 	
 	gnome_two_password_dialog_set_username (password_dialog, username);
