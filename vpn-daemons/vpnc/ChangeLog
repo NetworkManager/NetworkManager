@@ -1,3 +1,10 @@
+2006-12-07  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* auth-dialog/main.c
+		- Fix memleak by unrefing the GnomeProgram instance (Gnome.org #383123)
+
 2006-12-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service.c

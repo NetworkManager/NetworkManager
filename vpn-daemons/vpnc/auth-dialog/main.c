@@ -229,7 +229,8 @@ main (int argc, char *argv[])
 	static gchar *vpn_service = NULL;
 	GError *error = NULL;
 	GOptionContext *context;
-	static GOptionEntry entries[] = 
+	GnomeProgram *program;
+	GOptionEntry entries[] =
 		{
 			{ "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
 			{ "name", 'n', 0, G_OPTION_ARG_STRING, &vpn_name, "Name of VPN connection", NULL},
@@ -246,8 +247,13 @@ main (int argc, char *argv[])
 	
 	context = g_option_context_new ("- vpnc auth dialog");
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
-	g_option_context_add_group (context, gtk_get_option_group (TRUE));
-	g_option_context_parse (context, &argc, &argv, &error);
+	
+	program = gnome_program_init ("nm-vpnc-auth-dialog", VERSION,
+				      LIBGNOMEUI_MODULE,
+				      argc, argv,
+				      GNOME_PARAM_GOPTION_CONTEXT, context,
+				      GNOME_PARAM_NONE);
+	  
 
 	if (vpn_name == NULL || vpn_service == NULL) {
 		fprintf (stderr, "Have to supply both name and service\n");
@@ -259,10 +265,6 @@ main (int argc, char *argv[])
 		goto out;		
 	}
 
-	gnome_program_init ("nm-vpnc-auth-dialog", VERSION, LIBGNOMEUI_MODULE,
-			    argc, argv, 
-			    GNOME_PARAM_NONE, GNOME_PARAM_NONE);
-	  
 	passwords = get_passwords (vpn_name, vpn_service, retry);
 	if (passwords == NULL)
 		goto out;
@@ -283,7 +285,7 @@ main (int argc, char *argv[])
 	fread (buf, sizeof (char), sizeof (buf), stdin);
 
 out:
-	g_option_context_free (context);
+	g_object_unref (program);
 
 	return passwords != NULL ? 0 : 1;
 }
