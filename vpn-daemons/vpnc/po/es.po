@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-10-30 00:19+0100\n"
-"PO-Revision-Date: 2006-10-30 00:22+0100\n"
+"PO-Revision-Date: 2006-12-09 22:11+0100\n"
 "Last-Translator: \n"
 "Language-Team:  <es@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -34,7 +34,7 @@ msgstr "_Contraseña:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:354
 msgid "Connect _anonymously"
-msgstr "Conectar como -anónimo"
+msgstr "Conectar como _anónimo"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:359
 msgid "Connect as _user:"
@@ -188,7 +188,7 @@ msgstr "Información o_pcional"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Override _user name"
-msgstr "Nombre de _usuario sobrecargado"
+msgstr "Ignorar nombre de _usuario"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
 msgid ""
