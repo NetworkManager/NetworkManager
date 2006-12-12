@@ -8,3 +8,5 @@ nm-dhcp-opt-test
 nm-tool
 nm-online
 test-dbus-dict-helpers
+nm-supplicant-test
+nmnetlinktest
