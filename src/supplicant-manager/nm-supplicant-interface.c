@@ -815,6 +815,91 @@ wpas_iface_signal_handler (DBusConnection * connection,
 	return handled;
 }
 
+static void
+iface_state_cb (DBusPendingCall * pcall,
+                NMSupplicantInterface * self)
+{
+	DBusError     error;
+	DBusMessage * reply = NULL;
+	char *        state_str = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (!dbus_message_get_args (reply,
+	                            &error,
+	                            DBUS_TYPE_STRING, &state_str,
+	                            DBUS_TYPE_INVALID)) {
+		nm_warning ("could not get scan results: %s - %s.",
+		            error.name,
+		            error.message);
+		goto out;
+	}
+
+	self->priv->con_state = wpas_state_string_to_enum (state_str);
+	nm_supplicant_interface_set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	remove_pcall (self, pcall);
+}
+
+static void
+wpas_iface_get_state (NMSupplicantInterface *self)
+{
+	DBusMessage *           message = NULL;
+	DBusPendingCall *       pcall;
+	DBusConnection *        connection;
+
+	if (!self || !self->priv->wpas_iface_op) {
+		nm_warning ("Invalid user_data or bad supplicant interface object path.");
+		goto out;
+	}
+
+	connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!connection) {
+		nm_warning ("could not get dbus connection.");
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_iface_op,
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "state");
+	if (!message) {
+		nm_warning ("could not allocate dbus message.");
+		goto out;
+	}
+
+	pcall = nm_dbus_send_with_callback (connection,
+	                                    message,
+	                                    (DBusPendingCallNotifyFunction) iface_state_cb,
+	                                    self,
+	                                    NULL,
+	                                    __func__);
+	if (!pcall) {
+		nm_warning ("could not send dbus message.");
+		goto out;
+	}
+	add_pcall (self, pcall);
+
+out:
+	if (message)
+		dbus_message_unref (message);
+}
 
 #define WPAS_ERROR_INVALID_IFACE \
 	WPAS_DBUS_INTERFACE ".InvalidInterface"
@@ -868,8 +953,8 @@ nm_supplicant_interface_add_cb (DBusPendingCall * pcall,
 		                                              self);
 		self->priv->wpas_sig_handler_id = id;
 
-		/* Interface added to the supplicant; transition to the READY state. */
-		nm_supplicant_interface_set_state (self, NM_SUPPLICANT_INTERFACE_STATE_READY);
+		/* Interface added to the supplicant; get its initial state. */
+		wpas_iface_get_state (self);
 	}
 
 out:
