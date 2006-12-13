@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-pptp HEAD\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-12-04 20:50+0100\n"
-"PO-Revision-Date: 2006-12-04 23:20+0100\n"
+"PO-Revision-Date: 2006-12-13 12:42+0100\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
 "MIME-Version: 1.0\n"
@@ -223,7 +223,7 @@ msgstr "Hardveres RTS/CTS"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
 msgid "Host name or IP address of the PPTP server"
-msgstr "A PPTP kiszolgáló gépneve vagy IP címe"
+msgstr "A PPTP kiszolgáló gépneve vagy IP-címe"
 
 #: ../properties/nm-ppp-dialog.glade.h:25
 msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
@@ -277,7 +277,7 @@ msgstr "128 bites MPPE titkosítás megkövetelése"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require Explicit IP Addr"
-msgstr "Explicit IP cím megkövetelése"
+msgstr "Explicit IP-cím megkövetelése"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPC Compression"
@@ -305,7 +305,7 @@ msgstr "Szolgáltató GPRS elérési pontja az eszközbeállításokból"
 
 #: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
-msgstr "Szolgáltató IP címe"
+msgstr "Szolgáltató IP-címe"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
 msgid "Telephone number to dial"
@@ -399,7 +399,7 @@ msgstr "Á_tjáró:"
 
 #: ../properties/nm-ppp-dialog.glade.h:65
 msgid "_IP Address:"
-msgstr "_IP cím:"
+msgstr "_IP-cím:"
 
 #: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Import Saved Configuration..."
