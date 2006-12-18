@@ -1,5 +1,12 @@
 2006-12-18  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/dbus-dict-helpers.c
+		- (_nmu_dbus_dict_entry_get_array, _nmu_dbus_dict_entry_get_string_array,
+		   _nmu_dbus_dict_entry_get_byte_array): replace usage of
+		   dbus_message_iter_get_array_len()  (Gnome.org #382898)
+
+2006-12-18  Dan Williams  <dcbw@redhat.com>
+
 	* gnome/libnm_glib/libnm_glib.c
 		- Change dbus_connection_close() -> dbus_connection_unref()
 
