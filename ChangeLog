@@ -1,3 +1,13 @@
+2006-12-18  Dan Williams  <dcbw@redhat.com>
+
+	Patch by Timo Hoenig <thoenig@suse.de>:
+	* src/NetworkManagerDbus.c (nm_dbus_init): Make it work with DBUS-1.0.
+
+2006-12-18  Dan Williams  <dcbw@redhat.com>
+
+	* gnome/libnm_glib/libnm_glib.c
+		- Change dbus_connection_close() -> dbus_connection_unref()
+
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@teco.edu>

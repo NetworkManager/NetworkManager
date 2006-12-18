@@ -833,10 +833,10 @@ DBusConnection *nm_dbus_init (NMData *data)
 	}
 
 	dbus_error_init (&error);
-#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR >= 60)
-	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;	/* Prohibit replacement is now the default */
-#else
+#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR < 60)
 	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
+#else
+	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
 #endif
 	ret = dbus_bus_request_name (connection, NM_DBUS_SERVICE, flags, &error);
 	if (dbus_error_is_set (&error))
