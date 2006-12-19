@@ -164,7 +164,7 @@ static struct nl_cache * get_link_cache (struct nl_handle *nlh)
 	if (!link_cache)
 		link_cache = rtnl_link_alloc_cache (nlh);
 	if (!link_cache)
-		nm_warning ("ERROR: couldn't allocate rtnl link cache!");
+		nm_warning ("couldn't allocate rtnl link cache!");
 	else
 		nl_cache_update (nlh, link_cache);
 	g_static_mutex_unlock (&mutex);
@@ -189,7 +189,7 @@ static void iface_to_rtnl_index (const char *iface, struct nl_handle *nlh, struc
 			rtnl_addr_set_ifindex (addr, i);
 	}
 	else
-		nm_warning ("iface_to_rtnl_link() couldn't allocate link cache.");
+		nm_warning ("couldn't allocate link cache.");
 }
 
 
@@ -204,7 +204,7 @@ static struct rtnl_link * iface_to_rtnl_link (const char *iface, struct nl_handl
 	if ((cache = get_link_cache (nlh)))
 		have_link = rtnl_link_get_by_name (cache, iface);
 	else
-		nm_warning ("iface_to_rtnl_link() couldn't allocate link cache.");
+		nm_warning ("couldn't allocate link cache.");
 
 	return have_link;
 }
@@ -218,7 +218,7 @@ static struct nl_handle * new_nl_handle (void)
 	nl_handle_set_pid (nlh, (pthread_self() << 16 | getpid()));
 	if (nl_connect(nlh, NETLINK_ROUTE) < 0)
 	{
-		fprintf(stderr, "new_nl_handle: couldn't connecto to netlink: %s\n", nl_geterror());
+		nm_warning("couldn't connect to netlink: %s\n", nl_geterror());
 		nl_handle_destroy (nlh);
 		nlh = NULL;
 	}
@@ -302,11 +302,11 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	{
 		iface_to_rtnl_index (nm_device_get_iface (dev), nlh, addr);
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-			nm_warning ("nm_system_device_set_from_ip4_config(%s): error %d returned from rtnl_addr_add():\n%s", nm_device_get_iface (dev), err, nl_geterror());
+			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", nm_device_get_iface (dev), err, nl_geterror());
 		rtnl_addr_put (addr);
 	}
 	else
-		nm_warning ("nm_system_device_set_from_ip4_config(): couldn't create rtnl address!\n");
+		nm_warning ("couldn't create rtnl address!\n");
 
 	nl_close (nlh);
 	nl_handle_destroy (nlh);
@@ -438,11 +438,11 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 			int err = 0;
 			iface_to_rtnl_index (iface, nlh, addr);
 			if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-				nm_warning ("nm_system_device_set_from_ip4_config(): error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+				nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
 			rtnl_addr_put (addr);
 		}
 		else
-			nm_warning ("nm_system_vpn_device_set_from_ip4_config(): couldn't create rtnl address!\n");
+			nm_warning ("couldn't create rtnl address!\n");
 
 		/* Set the MTU */
 		if ((request = rtnl_link_alloc ()))
