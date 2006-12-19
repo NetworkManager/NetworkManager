@@ -19,8 +19,7 @@ noinst_PROGRAMS = nm-tool \
                   nm-online \
                   nminfotest \
                   nmtestdevices \
-                  libnm_glib_test \
-                  nm-supplicant-test
+                  libnm_glib_test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
