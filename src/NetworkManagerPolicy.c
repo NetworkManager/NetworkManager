@@ -41,6 +41,9 @@
 #include "nm-dbus-manager.h"
 
 
+static GStaticMutex dev_change_mutex = G_STATIC_MUTEX_INIT;
+
+
 /*
  * nm_policy_activation_finish
  *
@@ -290,7 +293,9 @@ nm_policy_device_change_check (NMData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	g_static_mutex_lock (&dev_change_mutex);	
 	data->dev_change_check_idle_id = 0;
+	g_static_mutex_unlock (&dev_change_mutex);	
 
 	old_dev = nm_get_active_device (data);
 
@@ -450,22 +455,19 @@ out:
  */
 void nm_policy_schedule_device_change_check (NMData *data)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
-
 	g_return_if_fail (data != NULL);
 
-	g_static_mutex_lock (&mutex);
+	g_static_mutex_lock (&dev_change_mutex);
 
-	if (data->dev_change_check_idle_id == 0)
-	{
-		GSource *	source = g_idle_source_new ();
+	if (data->dev_change_check_idle_id == 0) {
+		GSource * source = g_idle_source_new ();
 
 		g_source_set_callback (source, (GSourceFunc) nm_policy_device_change_check, data, NULL);
 		data->dev_change_check_idle_id = g_source_attach (source, data->main_context);
 		g_source_unref (source);
 	}
 
-	g_static_mutex_unlock (&mutex);
+	g_static_mutex_unlock (&dev_change_mutex);
 }
 
 
