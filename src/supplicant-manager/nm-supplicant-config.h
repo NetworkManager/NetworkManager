@@ -60,10 +60,19 @@ NMSupplicantConfig * nm_supplicant_config_new (NMDevice *dev);
 
 gboolean nm_supplicant_config_add_option (NMSupplicantConfig *scfg,
                                           const char * key,
-                                          const char * value);
+                                          const char * value,
+                                          gint32 len);
 
 gboolean nm_supplicant_config_remove_option (NMSupplicantConfig *self,
                                              const char * key);
+
+guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self);
+
+void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
+                                       guint32 ap_scan);
+
+gboolean nm_supplicant_config_add_to_dbus_message (NMSupplicantConfig * self,
+                                                   DBusMessage * message);
 
 G_END_DECLS
 

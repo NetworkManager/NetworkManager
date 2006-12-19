@@ -107,15 +107,4 @@ struct nl_addr *	nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr);
 
 int				nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 
-char *			nm_utils_supplicant_request (struct wpa_ctrl *ctrl,
-										const char *format,
-										...);
-
-gboolean			nm_utils_supplicant_request_with_check (struct wpa_ctrl *ctrl,
-										const char *expected,
-										const char *func,
-										const char *alt_cmd_for_err_msg,
-										const char *format,
-										...);
-
 #endif

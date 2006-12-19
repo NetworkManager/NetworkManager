@@ -25,6 +25,8 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 
+#include "supplicant-manager/nm-supplicant-types.h"
+
 /* Grr */
 #ifndef NM_DEVICE_802_11_WIRELESS_DEFINED
 #define NM_DEVICE_802_11_WIRELESS_DEFINED
@@ -53,24 +55,23 @@ struct _NMAPSecurity
 };
 
 struct NMAccessPoint;
-struct wpa_ctrl;
 
 struct _NMAPSecurityClass
 {
 	GObjectClass parent;
 
 	/* class members */
-	NMAPSecurity *	(*copy_constructor_func)	(NMAPSecurity *self);
+	NMAPSecurity * (*copy_constructor_func)            (NMAPSecurity *self);
 
-	int	(*serialize_func)				(NMAPSecurity *self, DBusMessageIter *iter);
+	int            (*serialize_func)                   (NMAPSecurity *self,
+	                                                    DBusMessageIter *iter);
 
-	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self,
-									  struct wpa_ctrl *ctrl,
-									  int nwid,
-									  gboolean adhoc);
+	gboolean       (*write_supplicant_config_func)     (NMAPSecurity *self,
+	                                                    NMSupplicantConfig * config,
+	                                                    gboolean adhoc);
 
-	guint32 (*get_default_capabilities_func)(NMAPSecurity *self);
-	gboolean (*get_authentication_required_func)(NMAPSecurity *self);
+	guint32        (*get_default_capabilities_func)    (NMAPSecurity *self);
+	gboolean       (*get_authentication_required_func) (NMAPSecurity *self);
 };
 
 
@@ -92,8 +93,7 @@ int			nm_ap_security_serialize (NMAPSecurity *self,
 									DBusMessageIter *iter);
 
 gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
-									struct wpa_ctrl *ctrl,
-									int nwid,
+                                    NMSupplicantConfig * config,
 									gboolean adhoc);
 
 const char *	nm_ap_security_get_description (NMAPSecurity *self);

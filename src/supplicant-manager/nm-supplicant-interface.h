@@ -109,6 +109,10 @@ struct _NMSupplicantInterfaceClass
 	void (* connection_state) (NMSupplicantInterface * iface,
 	                           guint32 new_state,
 	                           guint32 old_state);
+
+	void (* connection_error) (NMSupplicantInterface * iface,
+	                           const char * name,
+	                           const char * message);
 };
 
 
@@ -117,8 +121,10 @@ GType nm_supplicant_interface_get_type (void);
 NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
                                                      NMDevice * dev);
 
-void nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
-                                         NMSupplicantConfig * cfg);
+gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
+                                             NMSupplicantConfig * cfg);
+
+void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
 NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 

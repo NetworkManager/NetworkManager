@@ -19,11 +19,14 @@
  * (C) Copyright 2006 Red Hat, Inc.
  */
 
+#include <string.h>
 #include <glib.h>
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-utils.h"
+#include "dbus-dict-helpers.h"
+#include "cipher.h"
 
 #define NM_SUPPLICANT_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                              NM_TYPE_SUPPLICANT_CONFIG, \
@@ -34,11 +37,19 @@ static void nm_supplicant_config_set_device (NMSupplicantConfig *con,
                                              NMDevice *dev);
 
 
+struct option {
+	char * key;
+	char * value;
+	guint32 len;
+	enum OptType type;
+};
+
 struct _NMSupplicantConfigPrivate
 {
-	NMDevice *   dev;
-	GHashTable * config;
-	gboolean     dispose_has_run;
+	NMDevice * dev;
+	GSList *   config;
+	guint32    ap_scan;
+	gboolean   dispose_has_run;
 };
 
 NMSupplicantConfig *
@@ -57,8 +68,8 @@ static void
 nm_supplicant_config_init (NMSupplicantConfig * self)
 {
 	self->priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
-	self->priv->config = g_hash_table_new_full (g_str_hash, g_str_equal, g_free,
-	                                            g_free);
+	self->priv->config = NULL;
+	self->priv->ap_scan = 1;
 	self->priv->dispose_has_run = FALSE;
 }
 
@@ -76,34 +87,100 @@ nm_supplicant_config_set_device (NMSupplicantConfig *self,
 gboolean
 nm_supplicant_config_add_option (NMSupplicantConfig *self,
                                  const char * key,
-                                 const char * value)
+                                 const char * value,
+                                 gint32 len)
 {
+	GSList * elt;
+	struct option * opt;
+	OptType type;
+
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	if (!nm_supplicant_settings_verify_setting (key, value)) {
-		nm_debug ("Key '%s' and/or value '%s' invalid.", key, value);
+	if (len < 0)
+		len = strlen (value);
+
+	type = nm_supplicant_settings_verify_setting (key, value, len);
+	if (type == TYPE_INVALID) {
+		char buf[255];
+		memset (&buf[0], 0, sizeof (buf));
+		memcpy (&buf[0], value, len > 254 ? 254 : len);
+		nm_debug ("Key '%s' and/or value '%s' invalid.", key, buf);
 		return FALSE;
 	}
 
-	if (g_hash_table_lookup (self->priv->config, key)) {
-		nm_debug ("Key '%s' already in table.", key);
-		return FALSE;
+	for (elt = self->priv->config; elt; elt = g_slist_next (elt)) {
+		struct option * tmp_opt = (struct option *) elt->data;
+
+		if (strcmp (tmp_opt->key, key) == 0) {
+			nm_debug ("Key '%s' already in table.", key);
+			return FALSE;
+		}
 	}
 
-	g_hash_table_insert (self->priv->config, g_strdup (key), g_strdup (value));
+	opt = g_slice_new0 (struct option);
+	if (opt == NULL) {
+		nm_debug ("Couldn't allocate memory for new config option.");
+		return FALSE;
+	}
+	opt->key = g_strdup (key);
+	if (opt->key == NULL) {
+		nm_debug ("Couldn't allocate memory for new config option key.");
+		g_slice_free (struct option, opt);
+		return FALSE;
+	}
+	opt->value = g_malloc0 (sizeof (char) * len);
+	if (opt->value == NULL) {
+		nm_debug ("Couldn't allocate memory for new config option value.");
+		g_free (opt->key);
+		g_slice_free (struct option, opt);
+		return FALSE;
+	}
+	memcpy (opt->value, value, len);
+
+	opt->len = len;
+	opt->type = type;	
+	self->priv->config = g_slist_append (self->priv->config, opt);
+
 	return TRUE;
+}
+
+static void
+free_option (struct option * opt)
+{
+	g_return_if_fail (opt != NULL);
+	g_free (opt->key);
+	g_free (opt->value);
 }
 
 gboolean
 nm_supplicant_config_remove_option (NMSupplicantConfig *self,
                                     const char * key)
 {
+	GSList * elt;
+	GSList * found = NULL;
+
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (key != NULL, FALSE);
 
-	return g_hash_table_remove (self->priv->config, key);
+	for (elt = self->priv->config; elt; elt = g_slist_next (elt)) {
+		struct option * opt = (struct option *) elt->data;
+
+		if (strcmp (opt->key, key) == 0) {
+			found = elt;
+			break;
+		}
+	}
+
+	if (!found)
+		return FALSE;
+
+	self->priv->config = g_slist_remove_link (self->priv->config, found);
+	free_option (found->data);
+	g_slice_free (struct option, found->data);
+	g_slist_free1 (found);
+	return TRUE;
 }
 
 static void
@@ -143,9 +220,15 @@ nm_supplicant_config_finalize (GObject *object)
 	NMSupplicantConfig *      self = NM_SUPPLICANT_CONFIG (object);
 	NMSupplicantConfigClass * klass;
 	GObjectClass *            parent_class;  
+	GSList *                  elt;
 
 	/* Complete object destruction */
-	g_hash_table_destroy (self->priv->config);
+	for (elt = self->priv->config; elt; elt = g_slist_next (elt)) {
+		free_option (elt->data);
+		g_slice_free (struct option, elt->data);
+	}
+	g_slist_free (self->priv->config);
+	self->priv->config = NULL;
 
 	/* Chain up to the parent class */
 	klass = NM_SUPPLICANT_CONFIG_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_CONFIG));
@@ -188,4 +271,88 @@ nm_supplicant_config_get_type (void)
 								 &info, 0);
 	}
 	return type;
+}
+
+guint32
+nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self)
+{
+	g_return_val_if_fail (self != NULL, 1);
+
+	return self->priv->ap_scan;
+}
+
+void
+nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
+                                  guint32 ap_scan)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (ap_scan >= 0 && ap_scan <=2);
+
+	self->priv->ap_scan = ap_scan;
+}
+
+gboolean
+nm_supplicant_config_add_to_dbus_message (NMSupplicantConfig * self,
+                                          DBusMessage * message)
+{
+	GSList * elt;
+	DBusMessageIter iter, iter_dict;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (message != NULL, FALSE);
+
+	dbus_message_iter_init_append (message, &iter);
+
+	if (!nmu_dbus_dict_open_write (&iter, &iter_dict)) {
+		nm_warning ("dict open write failed!");
+		goto out;
+	}
+
+	for (elt = self->priv->config; elt; elt = g_slist_next (elt)) {
+		struct option * opt = (struct option *) elt->data;
+
+		switch (opt->type) {
+			case TYPE_INT:
+				if (!nmu_dbus_dict_append_string (&iter_dict, opt->key, opt->value)) {
+					nm_warning ("couldn't append INT option '%s' to dict", opt->key);
+					goto out;
+				}
+				break;
+
+			case TYPE_KEYWORD:
+				if (!nmu_dbus_dict_append_string (&iter_dict, opt->key, opt->value)) {
+					nm_warning ("couldn't append KEYWORD option '%s' to dict", opt->key);
+					goto out;
+				}
+				break;
+
+			case TYPE_BYTES:
+				{
+					if (!nmu_dbus_dict_append_byte_array (&iter_dict,
+					                                      opt->key,
+					                                      opt->value,
+					                                      opt->len)) {
+						nm_warning ("couldn't append BYTES option '%s' to dict", opt->key);
+						goto out;
+					}
+				}
+				break;
+
+			default:
+				nm_warning ("unknown option '%s', type %d", opt->key, opt->type);
+				goto out;
+				break;
+		}
+	}
+
+	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
+		nm_warning ("dict close write failed!");
+		goto out;
+	}
+
+	success = TRUE;
+
+out:
+	return success;
 }

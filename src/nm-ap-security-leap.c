@@ -29,7 +29,7 @@
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
 #include "nm-device-802-11-wireless.h"
-#include "NetworkManagerUtils.h"
+#include "nm-supplicant-config.h"
 
 #define NM_AP_SECURITY_LEAP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_LEAP, NMAPSecurityLEAPPrivate))
 
@@ -98,42 +98,32 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *instance,
-                              struct wpa_ctrl *ctrl,
-                              int nwid,
+                              NMSupplicantConfig * config,
                               gboolean user_created)
 {
-	NMAPSecurityLEAP *	self = NM_AP_SECURITY_LEAP (instance);
-	gboolean			success = FALSE;
-	char *			msg;
-	const char *		password = nm_ap_security_get_key(instance);
+	NMAPSecurityLEAP * self = NM_AP_SECURITY_LEAP (instance);
+	gboolean           success = FALSE;
+	const char *       password = nm_ap_security_get_key (instance);
 
 	g_return_val_if_fail (nm_ap_security_get_we_cipher (instance) == NM_AUTH_TYPE_LEAP, FALSE);
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA", nwid))
+	if (!nm_supplicant_config_add_option (config, "proto", "WPA", -1))
 		   goto out;
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt %s",
-					    nwid, self->priv->key_mgmt))
+	if (!nm_supplicant_config_add_option (config, "key_mgmt", self->priv->key_mgmt, -1))
 		   goto out;
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i eap LEAP", nwid))
+	if (!nm_supplicant_config_add_option (config, "eap", "LEAP", -1))	
 		goto out;
 
-	if (self->priv->username && strlen (self->priv->username) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i identity \"%s\"",
-						    nwid, self->priv->username))
+	if (self->priv->username && strlen (self->priv->username) > 0) {
+		if (!nm_supplicant_config_add_option (config, "identity", self->priv->username, -1))
 			goto out;
+	}
 
-	if (password && strlen (password) > 0)
-	{
-		msg = g_strdup_printf ("SET_NETWORK %i password <password>", nwid);
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i password \"%s\"",
-						    nwid, password))
-		{
-			g_free (msg);
+	if (password && strlen (password) > 0) {
+		if (!nm_supplicant_config_add_option (config, "password", password, -1))
 			goto out;
-		}
-		g_free (msg);
 	}
 
 	success = TRUE;

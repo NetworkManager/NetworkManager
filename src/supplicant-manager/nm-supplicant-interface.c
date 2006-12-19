@@ -28,6 +28,7 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-utils.h"
 #include "nm-supplicant-marshal.h"
+#include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
 #include "dbus-dict-helpers.h"
 #include "NetworkManagerMain.h"
@@ -71,6 +72,7 @@ enum {
 	SCANNED_AP,        /* interface saw a new access point from a scan */
 	SCAN_RESULT,       /* result of a wireless scan request */
 	CONNECTION_STATE,  /* link state of the device's connection */
+	CONNECTION_ERROR,  /* an error occurred during a connection request */
 	LAST_SIGNAL
 };
 static guint nm_supplicant_interface_signals[LAST_SIGNAL] = { 0 };
@@ -95,7 +97,8 @@ struct _NMSupplicantInterfacePrivate
 	NMDevice *            dev;
 
 	guint32               state;
-	GSList *              pcalls;
+	GSList *              assoc_pcalls;
+	GSList *              other_pcalls;
 
 	guint32               con_state;
 
@@ -110,61 +113,61 @@ struct _NMSupplicantInterfacePrivate
 	gboolean              dispose_has_run;
 };
 
-static void
-add_pcall (NMSupplicantInterface * self,
-           DBusPendingCall * pcall)
+static GSList *
+pcall_list_add_pcall (GSList * pcall_list,
+                      DBusPendingCall * pcall)
 {
 	GSList * elt;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (pcall != NULL);
+	g_return_val_if_fail (pcall != NULL, pcall_list);
 
-	for (elt = self->priv->pcalls; elt; elt = g_slist_next (elt)) {
+	for (elt = pcall_list; elt; elt = g_slist_next (elt)) {
 		if (pcall == elt->data)
-			return;
+			return pcall_list;
 	}
 
-	self->priv->pcalls = g_slist_append (self->priv->pcalls, pcall);
+	return g_slist_append (pcall_list, pcall);
 }
 
-static void
-remove_pcall (NMSupplicantInterface * self,
-              DBusPendingCall * pcall)
+static GSList *
+pcall_list_remove_pcall (GSList * pcall_list,
+                         DBusPendingCall * pcall)
 {
 	GSList * elt;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (pcall != NULL);
+	g_return_val_if_fail (pcall != NULL, pcall_list);
 
-	for (elt = self->priv->pcalls; elt; elt = g_slist_next (elt)) {
-		DBusPendingCall * list_pcall = (DBusPendingCall *) elt->data;
+	for (elt = pcall_list; elt; elt = g_slist_next (elt)) {
+		DBusPendingCall * item = (DBusPendingCall *) elt->data;
 
-		if (list_pcall == pcall) {
+		if (item == pcall) {
 			if (!dbus_pending_call_get_completed (pcall))
 				dbus_pending_call_cancel (pcall);
-			self->priv->pcalls = g_slist_remove_link (self->priv->pcalls, elt);
+			dbus_pending_call_unref (pcall);
+			pcall_list = g_slist_remove_link (pcall_list, elt);
 			g_slist_free_1 (elt);
-			return;
+			goto out;
 		}
 	}
+
+out:
+	return pcall_list;
 }
 
-static void
-clear_pcalls (NMSupplicantInterface * self)
+static GSList *
+pcall_list_clear (GSList * pcall_list)
 {
 	GSList * elt;
 
-	g_return_if_fail (self != NULL);
-
-	for (elt = self->priv->pcalls; elt; elt = g_slist_next (elt)) {
+	for (elt = pcall_list; elt; elt = g_slist_next (elt)) {
 		DBusPendingCall * pcall = (DBusPendingCall *) elt->data;
 
 		if (!dbus_pending_call_get_completed (pcall))
 			dbus_pending_call_cancel (pcall);
 		dbus_pending_call_unref (pcall);
 	}
-	g_slist_free (self->priv->pcalls);
-	self->priv->pcalls = NULL;
+	g_slist_free (pcall_list);
+	return NULL;
 }
 
 
@@ -197,7 +200,8 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	self->priv->smgr = NULL;
 	self->priv->dev = NULL;
 	self->priv->wpas_iface_op = NULL;
-	self->priv->pcalls = NULL;
+	self->priv->assoc_pcalls = NULL;
+	self->priv->other_pcalls = NULL;
 	self->priv->dispose_has_run = FALSE;
 
 	self->priv->dbus_mgr = nm_dbus_manager_get (NULL);
@@ -306,7 +310,8 @@ nm_supplicant_interface_dispose (GObject *object)
 	}
 
 	/* Cancel pending calls before unrefing the dbus manager */
-	clear_pcalls (self);
+	self->priv->other_pcalls = pcall_list_clear (self->priv->other_pcalls);
+	self->priv->assoc_pcalls = pcall_list_clear (self->priv->assoc_pcalls);
 
 	if (self->priv->dbus_mgr) {
 		if (self->priv->wpas_sig_handler_id) {
@@ -337,11 +342,15 @@ nm_supplicant_interface_finalize (GObject *object)
 	NMSupplicantInterfaceClass * klass;
 	GObjectClass *               parent_class;
 
-	if (self->priv->wpas_iface_op)
+	if (self->priv->wpas_iface_op) {
 		g_free (self->priv->wpas_iface_op);
+		self->priv->wpas_iface_op = NULL;
+	}
 
-	if (self->priv->wpas_net_op)
+	if (self->priv->wpas_net_op) {
 		g_free (self->priv->wpas_net_op);
+		self->priv->wpas_net_op = NULL;
+	}
 
 	/* Chain up to the parent class */
 	klass = NM_SUPPLICANT_INTERFACE_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_INTERFACE));
@@ -439,6 +448,16 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              nm_supplicant_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 	klass->connection_state = NULL;
+
+	nm_supplicant_interface_signals[CONNECTION_ERROR] =
+		g_signal_new ("connection-error",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
+		              NULL, NULL,
+		              nm_supplicant_marshal_VOID__CHAR_CHAR,
+		              G_TYPE_NONE, 2, G_TYPE_CHAR, G_TYPE_CHAR);
+	klass->connection_error = NULL;
 }
 
 GType
@@ -464,6 +483,22 @@ nm_supplicant_interface_get_type (void)
 								 &info, 0);
 	}
 	return type;
+}
+
+static void
+emit_error_helper (NMSupplicantInterface * self,
+                   const char * name,
+                   const char * message)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (name != NULL);
+	g_return_if_fail (message != NULL);
+
+	g_signal_emit (G_OBJECT (self),
+	               nm_supplicant_interface_signals[CONNECTION_ERROR],
+	               0,
+	               name,
+	               message);
 }
 
 
@@ -535,7 +570,7 @@ out:
 		dbus_message_unref (reply);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	remove_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
 }
 
 static void
@@ -574,7 +609,7 @@ request_bssid_properties (NMSupplicantInterface * self,
 		nm_warning ("could not send dbus message.");
 		goto out;
 	}
-	add_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_add_pcall (self->priv->other_pcalls, pcall);
 
 out:
 	if (message)
@@ -631,7 +666,7 @@ out:
 		dbus_message_unref (reply);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	remove_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
 }
 
 static gboolean
@@ -673,7 +708,7 @@ request_scan_results (gpointer user_data)
 		nm_warning ("could not send dbus message.");
 		goto out;
 	}
-	add_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_add_pcall (self->priv->other_pcalls, pcall);
 
 	g_get_current_time (&cur_time);
 	self->priv->last_scan = cur_time.tv_sec;
@@ -836,11 +871,22 @@ iface_state_cb (DBusPendingCall * pcall,
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		if (!dbus_set_error_from_message (&error, reply)) {
+			nm_warning ("couldn't get error information.");
+		} else {
+			nm_warning ("could not get interface state: %s - %s.",
+			            error.name,
+			            error.message);
+		}
+		goto out;
+	}
+
 	if (!dbus_message_get_args (reply,
 	                            &error,
 	                            DBUS_TYPE_STRING, &state_str,
 	                            DBUS_TYPE_INVALID)) {
-		nm_warning ("could not get scan results: %s - %s.",
+		nm_warning ("could not get interface state: %s - %s.",
 		            error.name,
 		            error.message);
 		goto out;
@@ -854,7 +900,7 @@ out:
 		dbus_message_unref (reply);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	remove_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
 }
 
 static void
@@ -894,7 +940,7 @@ wpas_iface_get_state (NMSupplicantInterface *self)
 		nm_warning ("could not send dbus message.");
 		goto out;
 	}
-	add_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_add_pcall (self->priv->other_pcalls, pcall);
 
 out:
 	if (message)
@@ -962,7 +1008,7 @@ out:
 		dbus_message_unref (reply);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	remove_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
 }
 
 
@@ -1034,7 +1080,7 @@ nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface * self,
 		nm_warning ("could not send dbus message.");
 		goto out;
 	}
-	add_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_add_pcall (self->priv->other_pcalls, pcall);
 
 out:
 	if (message)
@@ -1107,7 +1153,8 @@ nm_supplicant_interface_set_state (NMSupplicantInterface * self,
 		/* If the interface is transitioning to DOWN and there's are
 		 * in-progress pending calls, cancel them.
 		 */
-		clear_pcalls (self);
+		self->priv->other_pcalls = pcall_list_clear (self->priv->other_pcalls);
+		self->priv->assoc_pcalls = pcall_list_clear (self->priv->assoc_pcalls);
 	}
 
 	self->priv->state = new_state;
@@ -1144,15 +1191,94 @@ nm_supplicant_interface_smgr_state_changed (NMSupplicantManager * smgr,
 	}
 }
 
-#if 0
+
 static void
-add_config_to_iface (NMSupplicantInterface *self)
+remove_network_cb (DBusPendingCall * pcall,
+                   NMSupplicantInterface * self)
 {
-	DBusConnection * dbus_connection;
-	DBusMessage *    message = NULL;
+	DBusError error;
+	DBusMessage * reply = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't remove network from supplicant interface: %s - %s",
+		            error.name,
+		            error.message);
+	}
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
+}
+
+static void
+disconnect_cb (DBusPendingCall * pcall,
+               NMSupplicantInterface * self)
+{
+	DBusError error;
+	DBusMessage * reply = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't disconnect supplicant interface: %s - %s",
+		            error.name,
+		            error.message);
+	}
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
+}
+
+void
+nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
+{
+	DBusMessage *     message = NULL;
 	DBusPendingCall * pcall = NULL;
+	DBusConnection *  dbus_connection;
 
 	g_return_if_fail (self != NULL);
+
+	/* Clear and cancel all pending calls related to a prior
+	 * connection attempt.
+	 */
+	self->priv->assoc_pcalls = pcall_list_clear (self->priv->assoc_pcalls);
+
+	/* Don't do anything if there is no connection to the supplicant yet. */
+	if (!self->priv->wpas_iface_op)
+		return;
 
 	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
 	if (!dbus_connection) {
@@ -1160,40 +1286,403 @@ add_config_to_iface (NMSupplicantInterface *self)
 		goto out;
 	}
 
+	/* Don't try to disconnect if the supplicant interface is already
+	 * disconnected.
+	 */
+	if (self->priv->con_state != NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
+	    && self->priv->con_state != NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE) {
+		if (self->priv->wpas_net_op) {
+			g_free (self->priv->wpas_net_op);
+			self->priv->wpas_net_op = NULL;
+		}
+		return;
+	}
+
+	/* Remove any network that was added by NetworkManager */
+	if (self->priv->wpas_net_op) {
+		message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+		                                        self->priv->wpas_iface_op,
+		                                        WPAS_DBUS_IFACE_INTERFACE,
+		                                        "removeNetwork");
+		if (!message) {
+			nm_warning ("Couldn't create dbus message.");
+			goto out;
+		}
+
+		if (!dbus_message_append_args (message,
+		                               DBUS_TYPE_OBJECT_PATH, &self->priv->wpas_net_op,
+		                               DBUS_TYPE_INVALID)) {
+			nm_warning ("Couldn't compose removeNetwork dbus message.");
+			goto out;
+		}
+
+		pcall = nm_dbus_send_with_callback (dbus_connection,
+		                                    message,
+		                                    (DBusPendingCallNotifyFunction) remove_network_cb,
+		                                    self,
+		                                    NULL,
+		                                    __func__);
+		dbus_message_unref (message);
+		g_free (self->priv->wpas_net_op);
+		self->priv->wpas_net_op = NULL;
+	}
+
+	/* Send a general disconnect command */
 	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
-	                                        WPAS_DBUS_IFACE_INTERFACE,
 	                                        self->priv->wpas_iface_op,
-	                                        "addNetwork");
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "disconnect");
 	if (!message) {
 		nm_warning ("Couldn't create dbus message.");
 		goto out;
 	}
 
-#if 0
 	pcall = nm_dbus_send_with_callback (dbus_connection,
 	                                    message,
-	                                    (DBusPendingCallNotifyFunction) nm_supplicant_interface_add_config_cb,
+	                                    (DBusPendingCallNotifyFunction) disconnect_cb,
 	                                    self,
 	                                    NULL,
 	                                    __func__);
-#endif
 
 out:
-	;
+	if (message)
+		dbus_message_unref (message);
 }
-#endif
 
-void
+#define WPAS_DBUS_IFACE_NETWORK	WPAS_DBUS_INTERFACE ".Network"
+
+static void
+select_network_cb (DBusPendingCall * pcall,
+                   NMSupplicantInterface * self)
+{
+	DBusError        error;
+	DBusMessage *    reply = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall)) {
+		emit_error_helper (self, "SelectNetworkError", "pending call not yet completed");
+		goto out;
+	}
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall))) {
+		emit_error_helper (self, "SelectNetworkError", "could not steal reply");
+		goto out;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't select network config: %s - %s",
+		            error.name,
+		            error.message);
+		emit_error_helper (self, error.name, error.message);
+		goto out;
+	}
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->assoc_pcalls = pcall_list_remove_pcall (self->priv->assoc_pcalls, pcall);
+}
+
+static void
+set_network_cb (DBusPendingCall * pcall,
+                NMSupplicantInterface * self)
+{
+	DBusError        error;
+	DBusMessage *    reply = NULL;
+	DBusConnection * dbus_connection;
+	DBusMessage *    message = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get the dbus connection.");
+		emit_error_helper (self, "SetNetworkError", "could not get the dbus connection.");
+		goto out;
+	}
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall)) {
+		emit_error_helper (self, "SetNetworkError", "pending call not yet completed");
+		goto out;
+	}
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall))) {
+		emit_error_helper (self, "SetNetworkError", "could not steal reply");
+		goto out;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't set network config: %s - %s",
+		            error.name,
+		            error.message);
+		emit_error_helper (self, error.name, error.message);
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_iface_op,
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "selectNetwork");
+	if (!message) {
+		nm_warning ("Couldn't create dbus message.");
+		emit_error_helper (self, "SetNetworkError", "could not create dbus message.");
+		goto out;
+	}
+
+	if (!dbus_message_append_args (message,
+	                               DBUS_TYPE_OBJECT_PATH, &self->priv->wpas_net_op,
+	                               DBUS_TYPE_INVALID)) {
+		emit_error_helper (self, "SetNetworkError", "could not add arguments to message.");
+		goto out;
+	}
+
+	nm_dbus_send_with_callback (dbus_connection,
+	                            message,
+	                            (DBusPendingCallNotifyFunction) select_network_cb,
+	                            self,
+	                            NULL,
+	                            __func__);
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (message)
+		dbus_message_unref (message);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->assoc_pcalls = pcall_list_remove_pcall (self->priv->assoc_pcalls, pcall);
+}
+
+static void
+add_network_cb (DBusPendingCall * pcall,
+                NMSupplicantInterface * self)
+{
+	DBusError error;
+	DBusMessage * reply = NULL;
+	DBusMessage * message = NULL;
+	DBusConnection * dbus_connection = NULL;
+	char * net_op = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get the dbus connection.");
+		emit_error_helper (self, "AddNetworkError", "could not get the dbus connection.");
+		goto out;
+	}
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall)) {
+		emit_error_helper (self, "AddNetworkError", "pending call not yet completed.");
+		goto out;
+	}
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall))) {
+		emit_error_helper (self, "AddNetworkError", "could not steal reply");
+		goto out;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't add a network to the supplicant interface: %s - %s",
+		            error.name,
+		            error.message);
+		emit_error_helper (self, error.name, error.message);
+		goto out;
+	}
+
+	if (!dbus_message_get_args (reply,
+	                            &error,
+	                            DBUS_TYPE_OBJECT_PATH, &net_op,
+	                            DBUS_TYPE_INVALID)) {
+		nm_warning ("couldn't get network object path from the supplicant: %s - %s",
+		            error.name,
+		            error.message);
+		emit_error_helper (self, error.name, error.message);
+		goto out;
+	}
+	self->priv->wpas_net_op = g_strdup (net_op);
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_net_op,
+	                                        WPAS_DBUS_IFACE_NETWORK,
+	                                        "set");
+	if (!message) {
+		nm_warning ("Couldn't create dbus message.");
+		emit_error_helper (self, "AddNetworkError", "could not create dbus message.");
+		goto out;
+	}
+
+	if (!nm_supplicant_config_add_to_dbus_message (self->priv->cfg, message)) {
+		emit_error_helper (self, "AddNetworkError", "could not add config to dbus message.");
+		goto out;
+	}
+
+	nm_dbus_send_with_callback (dbus_connection,
+	                            message,
+	                            (DBusPendingCallNotifyFunction) set_network_cb,
+	                            self,
+	                            NULL,
+	                            __func__);
+	dbus_message_unref (message);
+	
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->assoc_pcalls = pcall_list_remove_pcall (self->priv->assoc_pcalls, pcall);
+}
+
+static void
+set_ap_scan_cb (DBusPendingCall * pcall,
+                NMSupplicantInterface * self)
+{
+	DBusError error;
+	DBusMessage * reply = NULL;
+	DBusMessage * message = NULL;
+	DBusConnection * dbus_connection = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (self != NULL);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get the dbus connection.");
+		emit_error_helper (self, "SetAPScanError", "could not get the dbus connection.");
+		goto out;
+	}
+
+	dbus_error_init (&error);
+
+	nm_dbus_send_with_callback_replied (pcall, __func__);
+
+	if (!dbus_pending_call_get_completed (pcall)) {
+		emit_error_helper (self, "SetAPScanError", "pending call not yet completed.");
+		goto out;
+	}
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall))) {
+		emit_error_helper (self, "SetAPScanError", "could not steal reply");
+		goto out;
+	}
+
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
+		dbus_set_error_from_message (&error, reply);
+		nm_warning ("Couldn't send AP scan mode to the supplicant interface: %s - %s",
+		            error.name,
+		            error.message);
+		emit_error_helper (self, error.name, error.message);
+		goto out;
+	}
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_iface_op,
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "addNetwork");
+	if (!message) {
+		nm_warning ("Couldn't create dbus message.");
+		emit_error_helper (self, "SetAPScanError", "couldn't create addNetwork message");
+		goto out;
+	}
+
+	pcall = nm_dbus_send_with_callback (dbus_connection,
+	                                    message,
+	                                    (DBusPendingCallNotifyFunction) add_network_cb,
+	                                    self,
+	                                    NULL,
+	                                    __func__);
+	
+out:
+	if (reply)
+		dbus_message_unref (reply);
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	self->priv->assoc_pcalls = pcall_list_remove_pcall (self->priv->assoc_pcalls, pcall);
+}
+
+#include <stdio.h>
+gboolean
 nm_supplicant_interface_set_config (NMSupplicantInterface * self,
                                     NMSupplicantConfig * cfg)
 {
-	g_return_if_fail (self != NULL);
+	DBusConnection *  dbus_connection;
+	DBusMessage *     message = NULL;
+	DBusPendingCall * pcall = NULL;
+	gboolean          success = FALSE;
+	guint32           ap_scan;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	dbus_connection = nm_dbus_manager_get_dbus_connection (self->priv->dbus_mgr);
+	if (!dbus_connection) {
+		nm_warning ("could not get the dbus connection.");
+		goto out;
+	}
+
+	nm_supplicant_interface_disconnect (self);
 
 	if (self->priv->cfg)
 		g_object_unref (self->priv->cfg);
 	self->priv->cfg = cfg;
-	if (self->priv->cfg)
-		g_object_ref (self->priv->cfg);
+
+	if (cfg == NULL) {
+		success = TRUE;
+		goto out;
+	}
+
+	g_object_ref (self->priv->cfg);
+
+	message = dbus_message_new_method_call (WPAS_DBUS_SERVICE,
+	                                        self->priv->wpas_iface_op,
+	                                        WPAS_DBUS_IFACE_INTERFACE,
+	                                        "setAPScan");
+	if (!message) {
+		nm_warning ("Couldn't create dbus message.");
+		goto out;
+	}
+
+	ap_scan = nm_supplicant_config_get_ap_scan (self->priv->cfg);
+	if (!dbus_message_append_args (message,
+	                               DBUS_TYPE_UINT32, &ap_scan,
+	                               DBUS_TYPE_INVALID))
+	{
+		nm_warning ("couldn't set ap scan message arguments.");
+		goto out;
+	}
+
+	pcall = nm_dbus_send_with_callback (dbus_connection,
+	                                    message,
+	                                    (DBusPendingCallNotifyFunction) set_ap_scan_cb,
+	                                    self,
+	                                    NULL,
+	                                    __func__);
+	success = TRUE;
+
+out:
+	if (message)
+		dbus_message_unref (message);
+	return success;
 }
 
 NMDevice *
@@ -1249,7 +1738,7 @@ out:
 		dbus_message_unref (reply);
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	remove_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_remove_pcall (self->priv->other_pcalls, pcall);
 }
 
 gboolean
@@ -1288,7 +1777,7 @@ nm_supplicant_interface_request_scan (NMSupplicantInterface * self)
 		nm_warning ("could not send dbus message.");
 		goto out;
 	}
-	add_pcall (self, pcall);
+	self->priv->other_pcalls = pcall_list_add_pcall (self->priv->other_pcalls, pcall);
 	success = TRUE;
 
 out:

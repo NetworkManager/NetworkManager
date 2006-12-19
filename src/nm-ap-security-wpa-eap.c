@@ -30,7 +30,7 @@
 #include "nm-ap-security-private.h"
 #include "dbus-helpers.h"
 #include "nm-device-802-11-wireless.h"
-#include "NetworkManagerUtils.h"
+#include "nm-supplicant-config.h"
 
 #define NM_AP_SECURITY_WPA_EAP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WPA_EAP, NMAPSecurityWPA_EAPPrivate))
 
@@ -167,24 +167,22 @@ get_eap_method (int eap_method)
 
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *instance,
-                              struct wpa_ctrl *ctrl,
-                              int nwid,
+                              NMSupplicantConfig * config,
                               gboolean adhoc)
 {
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
-	gboolean			success = FALSE;
-	char *			msg;
-	const char *		identity = self->priv->identity;
-	const char *		anon_identity = self->priv->anon_identity;
-	const char *		passwd = self->priv->passwd;
-	const char *		private_key_passwd = self->priv->private_key_passwd;
-	const char *		private_key_file = self->priv->private_key_file;
-	const char *		ca_cert_file = self->priv->ca_cert_file;
-	const char *		client_cert_file = self->priv->client_cert_file;
-	int				wpa_version = self->priv->wpa_version;
-	int 				key_mgmt = self->priv->key_mgmt;
-	int				eap_method = self->priv->eap_method;
-	int				key_type = self->priv->key_type;
+	gboolean              success = FALSE;
+	const char *          identity = self->priv->identity;
+	const char *          anon_identity = self->priv->anon_identity;
+	const char *          passwd = self->priv->passwd;
+	const char *          private_key_passwd = self->priv->private_key_passwd;
+	const char *          private_key_file = self->priv->private_key_file;
+	const char *          ca_cert_file = self->priv->ca_cert_file;
+	const char *          client_cert_file = self->priv->client_cert_file;
+	int                   wpa_version = self->priv->wpa_version;
+	int                   key_mgmt = self->priv->key_mgmt;
+	int                   eap_method = self->priv->eap_method;
+	int                   key_type = self->priv->key_type;
 
 	g_return_val_if_fail (nm_ap_security_get_we_cipher (instance) == NM_AUTH_TYPE_WPA_EAP, FALSE);
 	g_return_val_if_fail (key_mgmt == IW_AUTH_KEY_MGMT_802_1X, FALSE);
@@ -204,80 +202,66 @@ real_write_supplicant_config (NMAPSecurity *instance,
 
 	/* WPA-EAP network setup */
 
-	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA", nwid))
+	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA) {
+		if (!nm_supplicant_config_add_option (config, "proto", "WPA", -1))
 			goto out;
-	}
-	else
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA2", nwid))
+	} else {
+		if (!nm_supplicant_config_add_option (config, "proto", "WPA2", -1))
 			goto out;
 	}
 
-	if (key_type != IW_AUTH_CIPHER_WEP104)
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt WPA-EAP", nwid))
+	if (key_type != IW_AUTH_CIPHER_WEP104) {
+		if (!nm_supplicant_config_add_option (config, "key_mgmt", "WPA-EAP", -1))
 			goto out;
-	}
-	else
-	{
+	} else {
 		/* So-called Dynamic WEP */
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt IEEE8021X", nwid))
+		if (!nm_supplicant_config_add_option (config, "key_mgmt", "IEEE8021X", -1))
 			goto out;
 	}
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i eap %s", nwid, get_eap_method (eap_method)))
+	if (!nm_supplicant_config_add_option (config, "eap", get_eap_method (eap_method), -1))
 		goto out;
 
-	if (identity && strlen (identity) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i identity \"%s\"", nwid, identity))
+	if (identity && strlen (identity) > 0) {
+		if (!nm_supplicant_config_add_option (config, "identity", identity, -1))
 			goto out;
-
-	if (passwd && strlen (passwd) > 0)
-	{
-		msg = g_strdup_printf ("SET_NETWORK %i password <password>", nwid);
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i password \"%s\"", nwid, passwd))
-		{
-			g_free (msg);
-			goto out;
-		}
-		g_free (msg);
 	}
 
-	if (anon_identity && strlen (anon_identity) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i anonymous_identity \"%s\"", nwid, anon_identity))
+	if (passwd && strlen (passwd) > 0) {
+		if (!nm_supplicant_config_add_option (config, "password", passwd, -1))
 			goto out;
-
-	if (private_key_file && strlen (private_key_file) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i private_key \"%s\"", nwid, private_key_file))
-			goto out;
-
-	if (private_key_passwd && strlen (private_key_passwd) > 0)
-	{
-		msg = g_strdup_printf ("SET_NETWORK %i private_key_passwd <key>", nwid);
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg, "SET_NETWORK %i private_key_passwd \"%s\"", nwid, private_key_passwd))
-		{
-			g_free (msg);
-			goto out;
-		}
-		g_free (msg);
 	}
 
-	if (client_cert_file && strlen (client_cert_file) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i client_cert \"%s\"", nwid, client_cert_file))
+	if (anon_identity && strlen (anon_identity) > 0) {
+		if (!nm_supplicant_config_add_option (config, "anonymous_identity", anon_identity, -1))
 			goto out;
+	}
 
-	if (ca_cert_file && strlen (ca_cert_file) > 0)
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i ca_cert \"%s\"", nwid, ca_cert_file))
+	if (private_key_file && strlen (private_key_file) > 0) {
+		if (!nm_supplicant_config_add_option (config, "private_key", private_key_file, -1))
 			goto out;
+	}
+
+	if (private_key_passwd && strlen (private_key_passwd) > 0) {
+		if (!nm_supplicant_config_add_option (config, "private_key_passwd", private_key_passwd, -1))
+			goto out;
+	}
+
+	if (client_cert_file && strlen (client_cert_file) > 0) {
+		if (!nm_supplicant_config_add_option (config, "client_cert", client_cert_file, -1))
+			goto out;
+	}
+
+	if (ca_cert_file && strlen (ca_cert_file) > 0) {
+		if (!nm_supplicant_config_add_option (config, "ca_cert", ca_cert_file, -1))
+			goto out;
+	}
 
 	/*
 	 * Set the pairwise and group cipher, if the user provided one.  If user selected "Automatic", we
 	 * let wpa_supplicant sort it out.  Likewise, if the user selected "Dynamic WEP", we do nothing.
 	 */
-	if (key_type != NM_AUTH_TYPE_WPA_PSK_AUTO && key_type != IW_AUTH_CIPHER_WEP104)
-	{
+	if (key_type != NM_AUTH_TYPE_WPA_PSK_AUTO && key_type != IW_AUTH_CIPHER_WEP104) {
 		const char *cipher;
 
 		/*
@@ -289,12 +273,10 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		else /* IW_AUTH_CIPHER_CCMP */
 			cipher = "CCMP";
 
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i pairwise %s", nwid, cipher))
+		if (!nm_supplicant_config_add_option (config, "pairwise", cipher, -1))
 			goto out;
 
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-				"SET_NETWORK %i group %s", nwid, cipher))
+		if (!nm_supplicant_config_add_option (config, "group", cipher, -1))
 			goto out;
 	}
 

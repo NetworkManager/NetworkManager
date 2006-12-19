@@ -255,11 +255,15 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		highest_priority_dev = NM_DEVICE (best_wired_dev);
 	else if (best_wireless_dev)
 	{
+		gboolean can_activate;
+
+		can_activate = nm_device_802_11_wireless_can_activate (best_wireless_dev);
+
 		*ap = nm_device_802_11_wireless_get_best_ap (best_wireless_dev);
 		/* If the device doesn't have a "best" ap, then we can't use it */
 		if (!*ap)
 			highest_priority_dev = NULL;
-		else
+		else if (can_activate == TRUE)
 			highest_priority_dev = NM_DEVICE (best_wireless_dev);
 	}
 

@@ -31,9 +31,8 @@
 #include "nm-ap-security-wpa-eap.h"
 #include "nm-ap-security-leap.h"
 #include "nm-device-802-11-wireless.h"
-#include "wpa_ctrl.h"
+#include "nm-supplicant-config.h"
 #include "nm-utils.h"
-#include "NetworkManagerUtils.h"
 
 #define NM_AP_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY, NMAPSecurityPrivate))
 
@@ -169,19 +168,18 @@ nm_ap_security_get_authentication_required (NMAPSecurity *self)
 
 gboolean
 nm_ap_security_write_supplicant_config (NMAPSecurity *self,
-                                        struct wpa_ctrl *ctrl,
-                                        int nwid,
+                                        NMSupplicantConfig * config,
                                         gboolean adhoc)
 {
+	NMAPSecurityClass * class = NM_AP_SECURITY_GET_CLASS (self);
+
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (ctrl != NULL, FALSE);
-	g_return_val_if_fail (nwid >= 0, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
 
 	if (self->priv->dispose_has_run)
 		return FALSE;
 
-	return NM_AP_SECURITY_GET_CLASS (self)->write_supplicant_config_func (self,
-			ctrl, nwid, adhoc);
+	return class->write_supplicant_config_func (self, config, adhoc);
 }
 
 void
@@ -238,13 +236,11 @@ real_serialize (NMAPSecurity *self, DBusMessageIter *iter)
 
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *self,
-                              struct wpa_ctrl *ctrl,
-                              int nwid,
+                              NMSupplicantConfig * config,
                               gboolean adhoc)
 {
-	/* Unencrypted network setup */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i key_mgmt NONE", nwid))
+	/* Unencrypted network */
+	if (!nm_supplicant_config_add_option (config, "key_mgmt", "NONE", -1))
 		return FALSE;
 
 	return TRUE;

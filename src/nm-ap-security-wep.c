@@ -30,7 +30,7 @@
 #include "dbus-helpers.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
-#include "NetworkManagerUtils.h"
+#include "nm-supplicant-config.h"
 
 #define NM_AP_SECURITY_WEP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP_SECURITY_WEP, NMAPSecurityWEPPrivate))
 
@@ -113,40 +113,39 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 
 static gboolean 
 real_write_supplicant_config (NMAPSecurity *instance,
-                              struct wpa_ctrl *ctrl,
-                              int nwid,
+                              NMSupplicantConfig * config,
                               gboolean adhoc)
 {
-	gboolean			success = FALSE;
-	char *			msg = NULL;
-	const char *		key = nm_ap_security_get_key (instance);
+	gboolean     success = FALSE;
+	const char * key = nm_ap_security_get_key (instance);
+	char *       bin_key = NULL;
 
 	/* WEP network setup */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i key_mgmt NONE", nwid))
+	if (!nm_supplicant_config_add_option (config, "key_mgmt", "NONE", -1))
 		goto out;
 
 	/*
 	 * If the user selected "Shared" (aka restricted) key, set it explicitly.  Otherwise,
 	 * let wpa_supplicant default to the right thing, which is an open key.
 	 */
-	if (get_auth_algorithm (NM_AP_SECURITY_WEP (instance)) == IW_AUTH_ALG_SHARED_KEY)
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
-			"SET_NETWORK %i auth_alg SHARED", nwid));
+	if (get_auth_algorithm (NM_AP_SECURITY_WEP (instance)) == IW_AUTH_ALG_SHARED_KEY) {
+		if (!nm_supplicant_config_add_option (config, "auth_alg", "SHARED", -1))
+			goto out;
 	}
 
-	msg = g_strdup_printf ("SET_NETWORK %i wep_key0 <key>", nwid);
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, msg,
-			"SET_NETWORK %i wep_key0 %s", nwid, key))
-	{
-		g_free (msg);
+	bin_key = cipher_hexstr2bin(key, strlen (key));
+	if (bin_key == NULL) {
+		nm_warning ("Not enough memory to convert key.");
 		goto out;
 	}
-	g_free (msg);
 
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i wep_tx_keyidx 0", nwid))
+	if (!nm_supplicant_config_add_option (config, "wep_key0", bin_key, -1)) {
+		g_free (bin_key);
+		goto out;
+	}
+	g_free (bin_key);
+
+	if (!nm_supplicant_config_add_option (config, "wep_tx_keyidx", "0", -1))
 		goto out;
 
 	success = TRUE;

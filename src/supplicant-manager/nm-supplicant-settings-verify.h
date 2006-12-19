@@ -22,10 +22,16 @@
 #ifndef NM_SUPPLICANT_SETTINGS_VERIFY_H
 #define NM_SUPPLICANT_SETTINGS_VERIFY_H
 
-gboolean nm_supplicant_settings_verify_setting (const char * key,
-                                                const char * value);
+typedef enum OptType {
+	TYPE_INVALID = 0,
+	TYPE_INT,
+	TYPE_BYTES,
+	TYPE_KEYWORD
+} OptType;
 
-
+OptType nm_supplicant_settings_verify_setting (const char * key,
+                                               const char * value,
+                                               const guint32 len);
 
 
 #endif /* NM_SUPPLICANT_SETTINGS_VERIFY_H */
