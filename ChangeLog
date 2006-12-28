@@ -1,3 +1,22 @@
+2006-12-28  Dan Williams  <dcbw@redhat.com>
+
+	Use a single thread for everything.  With the move to wpa_supplicant
+	and communication over D-Bus, there's no reason for multiple threads.
+	Almost all of the blocking code has been removed, with one exception in
+	the DHCP manager and a few in the VPN manager.  This commit removes the
+	per-device worker thread and fixes activation cancellation in the absence
+	of threads.  Further removal of thread-related code would be removing
+	any locking code (like the device list lock) and simplification of logic
+	around areas of code or data structures that are currently locked.
+
+	* autoip.c
+	  dhcp-manager/nm-dhcp-manager.c 
+	  nm-device-802-11-wireless.c
+	  nm-device-802-3-ethernet.c
+	  nm-device.c
+	  nm-device.h
+		- Remove usage of multiple threads
+
 2006-12-19  Dan Williams  <dcbw@redhat.com>
 
 	Big wpa_supplicant + dbus update; need latest wpa_supplicant from CVS

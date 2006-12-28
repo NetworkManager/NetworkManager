@@ -560,11 +560,8 @@ nm_completion_dhcp_bound_test (int tries,
                                nm_completion_args args)
 {
 	NMActRequest *	req = args[0];
-	NMDevice *	dev = args[1];
 
 	if (state_is_bound (nm_act_request_get_dhcp_state (req)))
-		return TRUE;
-	if (nm_device_activation_should_cancel (dev))
 		return TRUE;
 	return FALSE;
 }
@@ -618,8 +615,6 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	args[1] = dev;
 	nm_wait_for_completion (30, G_USEC_PER_SEC / 10,
 			nm_completion_dhcp_bound_test, NULL, args);
-	if (nm_device_activation_should_cancel (dev))
-		return NULL;
 
 	if (!state_is_bound (nm_act_request_get_dhcp_state (req))) {
 		nm_warning ("Tried to get IP4 Config for a device when dhcdbd "

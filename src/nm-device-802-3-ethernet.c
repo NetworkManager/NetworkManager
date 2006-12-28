@@ -110,57 +110,33 @@ real_init (NMDevice *dev)
 	g_object_unref (sup_mgr);
 }
 
-static gboolean
-link_activated_helper (NMDevice8023Ethernet *self)
-{
-	nm_device_set_active_link (NM_DEVICE (self), TRUE);
-	return FALSE;
-}
-
 static void
 nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
                                          GObject *obj,
                                          NMDevice8023Ethernet *self)
 {
+	NMDevice * dev = NM_DEVICE (self);
+
 	/* Make sure signal is for us */
-	if (NM_DEVICE (self) != NM_DEVICE (obj))
+	if (dev != NM_DEVICE (obj))
 		return;
 
-	if (!nm_device_has_active_link (NM_DEVICE (self)))
-	{
-		GSource *	source = g_idle_source_new ();
-
-		g_source_set_callback (source, (GSourceFunc) link_activated_helper, self, NULL);
-		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (source);
-	}
+	nm_device_set_active_link (dev, TRUE);
 }
 
-
-static gboolean
-link_deactivated_helper (NMDevice8023Ethernet *self)
-{
-	nm_device_set_active_link (NM_DEVICE (self), FALSE);
-	return FALSE;
-}
 
 static void
 nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
                                            GObject *obj,
                                            NMDevice8023Ethernet *self)
 {
+	NMDevice * dev = NM_DEVICE (self);
+
 	/* Make sure signal is for us */
-	if (NM_DEVICE (self) != NM_DEVICE (obj))
+	if (dev != NM_DEVICE (obj))
 		return;
 
-	if (nm_device_has_active_link (NM_DEVICE (self)))
-	{
-		GSource *	source = g_idle_source_new ();
-
-		g_source_set_callback (source, (GSourceFunc) link_deactivated_helper, self, NULL);
-		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (source);
-	}
+	nm_device_set_active_link (dev, FALSE);
 }
 
 static gboolean
@@ -316,6 +292,22 @@ real_get_generic_capabilities (NMDevice *dev)
 	return caps;
 }
 
+static gboolean
+real_can_interrupt_activation (NMDevice *dev)
+{
+	gboolean interrupt = FALSE;
+
+	/* Devices that support carrier detect can interrupt activation
+	 * if the link becomes inactive.
+	 */
+	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
+		if (nm_device_has_active_link (dev) == FALSE) {
+			interrupt = TRUE;
+		}
+	}
+	return interrupt;
+}
+
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
@@ -381,6 +373,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->init = real_init;
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
+	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }

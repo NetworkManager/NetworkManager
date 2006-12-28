@@ -2785,6 +2785,7 @@ remove_supplicant_connection_timeout (NMDevice80211Wireless *self)
 	/* Remove any pending timeouts on the request */
 	if (self->priv->supplicant.con_timeout != NULL) {
 		g_source_destroy (self->priv->supplicant.con_timeout);
+		g_source_unref (self->priv->supplicant.con_timeout);
 		self->priv->supplicant.con_timeout = NULL;
 	}
 }
@@ -2831,6 +2832,35 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	}
 
 	return FALSE;
+}
+
+
+static gboolean
+start_supplicant_connection_timeout (NMDevice80211Wireless *self)
+{
+	GMainContext * context;
+	NMDevice *     dev;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	dev = NM_DEVICE (self);
+
+	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
+	self->priv->supplicant.con_timeout = g_timeout_source_new (25000);
+	if (self->priv->supplicant.con_timeout == NULL) {
+		nm_warning ("Activation (%s/wireless): couldn't start supplicant "
+		            "timeout timer.",
+		            nm_device_get_iface (dev));
+		return FALSE;
+	}
+	g_source_set_callback (self->priv->supplicant.con_timeout,
+	                       supplicant_connection_timeout_cb,
+	                       self,
+	                       NULL);
+	context = nm_device_get_main_context (dev);
+	g_source_attach (self->priv->supplicant.con_timeout, context);
+
+	return TRUE;
 }
 
 
@@ -2912,7 +2942,6 @@ real_act_stage2_config (NMDevice *dev,
 	const char *            iface = nm_device_get_iface (dev);
 	gboolean                ask_user = FALSE;
 	NMSupplicantConfig *	config = NULL;
-	GMainContext *          context;
 	gulong                  id = 0;
 
 	g_assert (ap);
@@ -2932,9 +2961,6 @@ real_act_stage2_config (NMDevice *dev,
 		goto out;
 	}
 
-	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
-		goto out;
-
 	/* Hook up error signal handler to capture association errors */
 	id = g_signal_connect (G_OBJECT (self->priv->supplicant.iface),
 	                       "connection-error",
@@ -2948,19 +2974,8 @@ real_act_stage2_config (NMDevice *dev,
 		goto out;
 	}
 
-	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	self->priv->supplicant.con_timeout = g_timeout_source_new (25000);
-	if (!self->priv->supplicant.con_timeout) {
-		nm_warning ("Activation (%s/wireless): couldn't start supplicant "
-		            "timeout timer.", iface);
+	if (!start_supplicant_connection_timeout (self))
 		goto out;
-	}
-	g_source_set_callback (self->priv->supplicant.con_timeout,
-	                       supplicant_connection_timeout_cb,
-	                       self,
-	                       NULL);
-	context = nm_device_get_main_context (dev);
-	g_source_attach (self->priv->supplicant.con_timeout, context);
 
 	/* We'll get stage3 started when the supplicant connects */
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -3188,6 +3203,8 @@ real_activation_cancel_handler (NMDevice *dev,
 
 	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
 		nm_dbus_cancel_get_user_key_for_network (req);
+
+	cleanup_association_attempt (self, TRUE);
 }
 
 

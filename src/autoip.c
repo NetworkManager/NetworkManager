@@ -198,8 +198,6 @@ static int peekfd (NMDevice *dev, int sk, struct timeval *timeout)
 			return RET_ERROR;
 		if (FD_ISSET(sk, &fs))
 			return RET_SUCCESS;
-		if (nm_device_activation_should_cancel (dev))
-			return RET_CEASED;
 		gettimeofday (&now, NULL);
 	};
 	return RET_TIMEOUT;
@@ -261,10 +259,6 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	{
 		struct timeval	timeout;
 		int			err;
-
-		/* Make sure we haven't been told to quit */
-		if (nm_device_activation_should_cancel (dev))
-			goto out;
 
 		if (nprobes < PROBE_NUM)
 		{

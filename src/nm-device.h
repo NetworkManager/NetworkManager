@@ -165,12 +165,7 @@ NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 void			nm_device_set_ip4_config	(NMDevice *dev,
 								 NMIP4Config *config);
 
-void			nm_device_bring_up		(NMDevice *dev);
-gboolean		nm_device_bring_up_wait	(NMDevice *self,
-								 gboolean cancelable);
 void			nm_device_bring_down	(NMDevice *dev);
-gboolean		nm_device_bring_down_wait (NMDevice *self,
-								  gboolean cancelable);
 gboolean		nm_device_is_up		(NMDevice *dev);
 
 void *		nm_device_get_system_config_data	(NMDevice *dev);
@@ -196,7 +191,6 @@ void			nm_device_deactivate		(NMDevice *dev);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 void			nm_device_activation_cancel	(NMDevice *dev);
-gboolean		nm_device_activation_should_cancel (NMDevice *self);
 
 void			nm_device_activation_failure_handler	(NMDevice *dev,
 											 struct NMActRequest *req);
