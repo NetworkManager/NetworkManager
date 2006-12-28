@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gnome-torrent\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-09-13 07:18+0100\n"
-"PO-Revision-Date: 2006-09-14 07:11-0000\n"
+"POT-Creation-Date: 2006-12-28 18:54+0000\n"
+"PO-Revision-Date: 2006-12-28 18:54-0000\n"
 "Last-Translator: David Lodge <dave@cirt.net>\n"
 "Language-Team: en_GB <en@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -16,27 +16,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Password:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "_Secondary Password:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "_Username:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Domain:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Connect _anonymously"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Connect as _user:"
 
@@ -58,6 +58,9 @@ msgid "Authenticate VPN"
 msgstr "Authenticate VPN"
 
 #: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "Certificate pass_word:"
+
 #: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Certificate password:"
