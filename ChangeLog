@@ -1,3 +1,13 @@
+2007-01-01  Dan Williams  <dcbw@redhat.com>
+
+	Found by Bill Moss:
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (nm_supplicant_interface_disconnect): fix cleanup logic when
+			the supplicant interface wasn't already disconnected.  Always
+			call removeNetwork and disconnect unless the supplicant interface
+			is in the DISCONNECTED or INACTIVE state.
+
 2006-12-28  Dan Williams  <dcbw@redhat.com>
 
 	Use a single thread for everything.  With the move to wpa_supplicant

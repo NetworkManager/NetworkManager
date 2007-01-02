@@ -1289,8 +1289,8 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 	/* Don't try to disconnect if the supplicant interface is already
 	 * disconnected.
 	 */
-	if (self->priv->con_state != NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
-	    && self->priv->con_state != NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE) {
+	if (self->priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
+	    || self->priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE) {
 		if (self->priv->wpas_net_op) {
 			g_free (self->priv->wpas_net_op);
 			self->priv->wpas_net_op = NULL;
