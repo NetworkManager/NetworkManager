@@ -1,3 +1,8 @@
+2007-01-03  Erdal Ronahi <erdal.ronahi@gmail.com>
+
+	* LINGUAS: Added Kurdish (ku)
+	* ku.po: Added initial Kurdish translations
+
 2006-12-28  David Lodge <dave@cirt.net>
 
 	* LINGUAS: Added English (British)
