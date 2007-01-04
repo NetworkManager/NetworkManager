@@ -150,17 +150,13 @@ NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (data != NULL, NULL);
 
-	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-		return NULL;
-
 	/* Iterate over the device list looking for the device with the matching object path. */
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
 		char *compare_path;
 		char *escaped_compare_path;
 		int len;
 
-		if (!(dev = (NMDevice *)(elt->data)))
+		if (!(dev = NM_DEVICE (elt->data)))
 			continue;
 
 		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
@@ -179,7 +175,6 @@ NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char 
 		g_free (escaped_compare_path);
 		dev = NULL;
 	}
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 	return dev;
 }
@@ -237,7 +232,7 @@ nm_dbus_signal_device_status_change (gpointer user_data)
 	g_return_val_if_fail (cb_data->data, FALSE);
 	g_return_val_if_fail (cb_data->dev, FALSE);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -284,8 +279,9 @@ out:
 
 void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status)
 {
-	NMStatusChangeData	*cb_data = NULL;
-	GSource			*source;
+	NMStatusChangeData * cb_data = NULL;
+	GSource *            source;
+	guint                id;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (dev != NULL);
@@ -294,18 +290,17 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 	g_object_ref (G_OBJECT (dev));
 	cb_data->data = data;
 	cb_data->dev = dev;
-	if (ap)
-	{
+	if (ap) {
 		nm_ap_ref (ap);
 		cb_data->ap = ap;
 	}
 	cb_data->status = status;
 
-	source = g_idle_source_new ();
-	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, nm_dbus_signal_device_status_change, cb_data, NULL);
-	g_source_attach (source, data->main_context);
-	g_source_unref (source);
+	id = g_idle_add (nm_dbus_signal_device_status_change, cb_data);
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	}
 }
 
 
@@ -386,7 +381,7 @@ nm_dbus_signal_wireless_network_change (NMDevice80211Wireless *dev,
 	g_return_if_fail (dev != NULL);
 	g_return_if_fail (ap != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -455,7 +450,7 @@ nm_dbus_signal_device_strength_change (NMDevice80211Wireless *dev,
 
 	g_return_if_fail (dev != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");

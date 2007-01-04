@@ -706,7 +706,7 @@ nm_named_manager_init (NMNamedManager *mgr)
 {
 	mgr->priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
 	mgr->priv->use_named = FALSE;
-	mgr->priv->dbus_mgr = nm_dbus_manager_get (NULL);
+	mgr->priv->dbus_mgr = nm_dbus_manager_get ();
 	g_signal_connect (G_OBJECT (mgr->priv->dbus_mgr),
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_named_manager_name_owner_changed),

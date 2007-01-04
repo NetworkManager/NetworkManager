@@ -204,7 +204,7 @@ nm_supplicant_interface_init (NMSupplicantInterface * self)
 	self->priv->other_pcalls = NULL;
 	self->priv->dispose_has_run = FALSE;
 
-	self->priv->dbus_mgr = nm_dbus_manager_get (NULL);
+	self->priv->dbus_mgr = nm_dbus_manager_get ();
 }
 
 
@@ -745,13 +745,14 @@ wpas_iface_query_scan_results (NMSupplicantInterface * self)
 
 	/* Only fetch scan results every 4s max, but initially do it right away */
 	if (self->priv->last_scan == 0) {
-		source = g_idle_source_new ();
+		id = g_idle_add (request_scan_results, self);
 	} else {
-		source = g_timeout_source_new (4000);
+		id = g_timeout_add (4000, request_scan_results, self);
 	}
-	g_source_set_callback (source, request_scan_results, self, NULL);
-	id = g_source_attach (source, app_data->main_context);
-	self->priv->scan_results_timeout = source;
+	if (id > 0) {
+		source = g_main_context_find_source_by_id (NULL, id);
+		self->priv->scan_results_timeout = source;
+	}
 }
 
 static guint32

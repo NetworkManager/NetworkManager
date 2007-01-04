@@ -89,17 +89,13 @@ void nm_act_request_unref (NMActRequest *req)
 	g_return_if_fail (req != NULL);
 
 	req->refcount--;
-	if (req->refcount <= 0)
-	{
+	if (req->refcount <= 0) {
 		g_object_unref (G_OBJECT (req->dev));
 		if (req->ap)
 			nm_ap_unref (req->ap);
 
 		if (req->dhcp_timeout > 0)
-		{
-			GSource *	source = g_main_context_find_source_by_id (req->data->main_context, req->dhcp_timeout);
-			g_source_destroy (source);
-		}
+			g_source_remove (req->dhcp_timeout);
 
 		memset (req, 0, sizeof (NMActRequest));
 		g_free (req);
@@ -182,7 +178,7 @@ void nm_act_request_set_stage (NMActRequest *req, NMActStage stage)
 	g_return_if_fail (req->data);
 	g_return_if_fail (req->dev);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get the dbus connection.");

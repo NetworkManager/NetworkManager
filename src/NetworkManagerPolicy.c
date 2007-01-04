@@ -41,9 +41,6 @@
 #include "nm-dbus-manager.h"
 
 
-static GStaticMutex dev_change_mutex = G_STATIC_MUTEX_INIT;
-
-
 /*
  * nm_policy_activation_finish
  *
@@ -51,11 +48,12 @@ static GStaticMutex dev_change_mutex = G_STATIC_MUTEX_INIT;
  * on the main thread.
  *
  */
-static gboolean nm_policy_activation_finish (NMActRequest *req)
+static gboolean nm_policy_activation_finish (gpointer user_data)
 {
-	NMDevice			*dev = NULL;
-	NMData			*data = NULL;
-	NMAccessPoint *	ap = NULL;
+	NMActRequest *  req = (NMActRequest *) user_data;
+	NMDevice *      dev = NULL;
+	NMData *        data = NULL;
+	NMAccessPoint * ap = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -84,26 +82,24 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
  */
 void nm_policy_schedule_activation_finish (NMActRequest *req)
 {
-	GSource *		source;
-	NMData *		data;
-	NMDevice *	dev;
+	GSource *  source;
+	NMDevice * dev;
+	guint      id;
 
 	g_return_if_fail (req != NULL);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_ACTIVATED);
+	id = g_idle_add (nm_policy_activation_finish, req);
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	}
 
-	source = g_idle_source_new ();
-	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, (GSourceFunc) nm_policy_activation_finish, req, NULL);
-	g_source_attach (source, data->main_context);
-	g_source_unref (source);
-	nm_info ("Activation (%s) Finish handler scheduled.", nm_device_get_iface (dev));
+	nm_info ("Activation (%s) Finish handler scheduled.",
+	         nm_device_get_iface (dev));
 }
 
 
@@ -113,11 +109,12 @@ void nm_policy_schedule_activation_finish (NMActRequest *req)
  * Clean up a failed activation.
  *
  */
-static gboolean nm_policy_activation_failed (NMActRequest *req)
+static gboolean nm_policy_activation_failed (gpointer user_data)
 {
-	NMDevice *	dev = NULL;
-	NMData *		data = NULL;
-	NMAccessPoint *ap = NULL;
+	NMActRequest *  req = (NMActRequest *) user_data;
+	NMDevice *      dev = NULL;
+	NMData *        data = NULL;
+	NMAccessPoint * ap = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -133,7 +130,7 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
         ap = nm_act_request_get_ap (req);
 
 	nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
-	nm_dbus_schedule_device_status_change_signal	(data, dev, ap, DEVICE_ACTIVATION_FAILED);
+	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_ACTIVATION_FAILED);
 
 	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data);
@@ -149,25 +146,22 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
  */
 void nm_policy_schedule_activation_failed (NMActRequest *req)
 {
-	GSource *		source;
-	NMData *		data;
-	NMDevice *	dev;
+	GSource *  source;
+	NMDevice * dev;
+	guint      id;
 
 	g_return_if_fail (req != NULL);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_FAILED);
+	id = g_idle_add (nm_policy_activation_failed, req);
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	}
 
-	source = g_idle_source_new ();
-	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, (GSourceFunc) nm_policy_activation_failed, req, NULL);
-	g_source_attach (source, data->main_context);
-	g_source_unref (source);
 	nm_info ("Activation (%s) failure scheduled...", nm_device_get_iface (dev));
 }
 
@@ -288,32 +282,26 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
  *
  */
 static gboolean
-nm_policy_device_change_check (NMData *data)
+nm_policy_device_change_check (gpointer user_data)
 {
-	NMAccessPoint *	ap = NULL;
-	NMDevice *		new_dev = NULL;
-	NMDevice *		old_dev = NULL;
-	gboolean			do_switch = FALSE;
+	NMData *        data = (NMData *) user_data;
+	NMAccessPoint * ap = NULL;
+	NMDevice *      new_dev = NULL;
+	NMDevice *      old_dev = NULL;
+	gboolean        do_switch = FALSE;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	g_static_mutex_lock (&dev_change_mutex);	
 	data->dev_change_check_idle_id = 0;
-	g_static_mutex_unlock (&dev_change_mutex);	
 
 	old_dev = nm_get_active_device (data);
 
-	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-		return FALSE;
-
-	if (old_dev)
-	{
+	if (old_dev) {
 		guint32 caps = nm_device_get_capabilities (old_dev);
 
 		/* Don't interrupt a currently activating device. */
 		if (   nm_device_is_activating (old_dev)
-		    && !nm_device_can_interrupt_activation (old_dev))
-		{
+		    && !nm_device_can_interrupt_activation (old_dev)) {
 			nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
 			goto out;
 		}
@@ -322,8 +310,7 @@ nm_policy_device_change_check (NMData *data)
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
 		if ((nm_device_is_802_3_ethernet (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			|| (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
-		{
+			|| (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))) {
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
 				nm_device_get_iface (old_dev));
 			goto out;
@@ -350,46 +337,37 @@ nm_policy_device_change_check (NMData *data)
 	 *		c) same device, same access point?  do nothing
 	 */
 
-	if (!old_dev && !new_dev)
-	{
+	if (!old_dev && !new_dev) {
 		; /* Do nothing, wait for something like link-state to change, or an access point to be found */
-	}
-	else if (!old_dev && new_dev)
-	{
+	} else if (!old_dev && new_dev) {
 		/* Activate new device */
 		nm_info ("SWITCH: no current connection, found better connection '%s'.", nm_device_get_iface (new_dev));
 		do_switch = TRUE;
-	}
-	else if (old_dev && !new_dev)
-	{
+	} else if (old_dev && !new_dev) {
 		/* Terminate current connection */
 		nm_info ("SWITCH: terminating current connection '%s' because it's no longer valid.", nm_device_get_iface (old_dev));
 		nm_device_deactivate (old_dev);
 		do_switch = TRUE;
-	}
-	else if (old_dev && new_dev)
-	{
+	} else if (old_dev && new_dev) {
 		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
 		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
 		gboolean		old_has_link = nm_device_has_active_link (old_dev);
 
-		if (nm_device_is_802_3_ethernet (old_dev))
-		{
+		if (nm_device_is_802_3_ethernet (old_dev)) {
 			/* Only switch if the old device was not user requested, and we are switching to
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
 			 * above will prefer a wired device to a wireless device.
 			 */
-			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev))
-			{
-				nm_info ("SWITCH: found better connection '%s' than current connection '%s'.", nm_device_get_iface (new_dev), nm_device_get_iface (old_dev));
+			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev)) {
+				nm_info ("SWITCH: found better connection '%s' than current "
+				         "connection '%s'.",
+				         nm_device_get_iface (new_dev),
+				         nm_device_get_iface (old_dev));
 				do_switch = TRUE;
 			}
-		}
-		else if (nm_device_is_802_11_wireless (old_dev))
-		{
+		} else if (nm_device_is_802_11_wireless (old_dev)) {
 			/* Only switch if the old device's wireless config is invalid */
-			if (nm_device_is_802_11_wireless (new_dev))
-			{
+			if (nm_device_is_802_11_wireless (new_dev)) {
 				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
 				const char *	old_essid = nm_ap_get_essid (old_ap);
 				int			old_mode = nm_ap_get_mode (old_ap);
@@ -411,8 +389,7 @@ nm_policy_device_change_check (NMData *data)
 				if ((old_dev == new_dev) && nm_device_is_activating (new_dev) && same_essid)
 					same_request = TRUE;
 
-				if (!same_request && (!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC))
-				{
+				if (!same_request && (!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC)) {
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
 					         "same_ssid=%d, have_link=%d",
@@ -421,21 +398,18 @@ nm_policy_device_change_check (NMData *data)
 					         same_essid, old_has_link);
 					do_switch = TRUE;
 				}
-			} /* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
-			else if (nm_device_is_802_3_ethernet (new_dev))
-			{
-				if (!old_user_requested)
+			} else if (nm_device_is_802_3_ethernet (new_dev)) {
+				/* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
+ 				if (!old_user_requested)
 					do_switch = TRUE;
 			}
 		}
 	}
 
-	if (do_switch && (nm_device_is_802_3_ethernet (new_dev) || (nm_device_is_802_11_wireless (new_dev) && ap)))
-	{
+	if (do_switch && (nm_device_is_802_3_ethernet (new_dev) || (nm_device_is_802_11_wireless (new_dev) && ap))) {
 		NMActRequest *	act_req = NULL;
 
-		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE)))
-		{
+		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE))) {
 			nm_info ("Will activate connection '%s%s%s'.", nm_device_get_iface (new_dev), ap ? "/" : "", ap ? nm_ap_get_essid (ap) : "");
 			nm_policy_schedule_device_activation (act_req);
 		}
@@ -445,7 +419,6 @@ nm_policy_device_change_check (NMData *data)
 		nm_ap_unref (ap);
 
 out:
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	return FALSE;
 }
 
@@ -459,19 +432,15 @@ out:
  */
 void nm_policy_schedule_device_change_check (NMData *data)
 {
+	guint id;
+
 	g_return_if_fail (data != NULL);
 
-	g_static_mutex_lock (&dev_change_mutex);
+	if (data->dev_change_check_idle_id > 0)
+		return;
 
-	if (data->dev_change_check_idle_id == 0) {
-		GSource * source = g_idle_source_new ();
-
-		g_source_set_callback (source, (GSourceFunc) nm_policy_device_change_check, data, NULL);
-		data->dev_change_check_idle_id = g_source_attach (source, data->main_context);
-		g_source_unref (source);
-	}
-
-	g_static_mutex_unlock (&dev_change_mutex);
+	id = g_idle_add (nm_policy_device_change_check, data);
+	data->dev_change_check_idle_id = id;
 }
 
 
@@ -482,11 +451,13 @@ void nm_policy_schedule_device_change_check (NMData *data)
  * activation on the requested device.
  *
  */
-static gboolean nm_policy_device_activation (NMActRequest *req)
+static gboolean
+nm_policy_device_activation (gpointer user_data)
 {
-	NMData *		data;
-	NMDevice *	new_dev = NULL;
-	NMDevice *	old_dev = NULL;
+	NMActRequest * req = (NMActRequest *) user_data;
+	NMData *       data;
+	NMDevice *     new_dev = NULL;
+	NMDevice *     old_dev = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -512,30 +483,29 @@ static gboolean nm_policy_device_activation (NMActRequest *req)
  * Activate a particular device (and possibly access point)
  *
  */
-void nm_policy_schedule_device_activation (NMActRequest *req)
+void
+nm_policy_schedule_device_activation (NMActRequest * req)
 {
-	GSource *		source;
-	NMData *		data;
-	NMDevice *	dev;
+	GSource *  source;
+	NMDevice * dev;
+	guint      id;
 
 	g_return_if_fail (req != NULL);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	source = g_idle_source_new ();
-	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, (GSourceFunc) nm_policy_device_activation, req, NULL);
-	g_source_attach (source, data->main_context);
-	g_source_unref (source);
+	id = g_idle_add (nm_policy_device_activation, req);
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
+		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
+	}
+
 	nm_info ("Device %s activation scheduled...", nm_device_get_iface (dev));
 }
 
 
-static gboolean allowed_list_update_pending = FALSE;
+static guint allowed_list_update_id = 0;
 
 /*
  * nm_policy_allowed_ap_list_update
@@ -549,7 +519,7 @@ nm_policy_allowed_ap_list_update (gpointer user_data)
 {
 	NMData * data = (NMData *)user_data;
 
-	allowed_list_update_pending = FALSE;
+	allowed_list_update_id = 0;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -572,30 +542,24 @@ nm_policy_allowed_ap_list_update (gpointer user_data)
  */
 void nm_policy_schedule_allowed_ap_list_update (NMData *app_data)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+	GSource * source;
+	guint     id;
 
 	g_return_if_fail (app_data != NULL);
-	g_return_if_fail (app_data->main_context != NULL);
 
-	g_static_mutex_lock (&mutex);
+	if (allowed_list_update_id > 0)
+		return;
 
-	if (allowed_list_update_pending == FALSE)
-	{
-		GSource *source = g_idle_source_new ();
-		/* We want this idle source to run before any other idle source */
+	id = g_idle_add (nm_policy_allowed_ap_list_update, app_data);
+	allowed_list_update_id = id;
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
 		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-		g_source_set_callback (source, nm_policy_allowed_ap_list_update, app_data, NULL);
-		g_source_attach (source, app_data->main_context);
-		g_source_unref (source);
-
-		allowed_list_update_pending = TRUE;
 	}
-
-	g_static_mutex_unlock (&mutex);
 }
 
 
-static gboolean device_list_update_pending = FALSE;
+static gboolean device_list_update_id = 0;
 
 /*
  * nm_policy_device_list_update_from_allowed_list
@@ -605,11 +569,12 @@ static gboolean device_list_update_pending = FALSE;
  *
  */
 static gboolean
-nm_policy_device_list_update_from_allowed_list (NMData *data)
+nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 {
-	GSList *	elt;
+	NMData * data = (NMData *) user_data;
+	GSList * elt;
 
-	device_list_update_pending = FALSE;
+	device_list_update_id = 0;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
@@ -652,27 +617,21 @@ nm_policy_device_list_update_from_allowed_list (NMData *data)
  * the allowed list, in the main thread.
  *
  */
-void nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
+void
+nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+	GSource	* source;
+	guint     id;
 
 	g_return_if_fail (app_data != NULL);
-	g_return_if_fail (app_data->main_context != NULL);
 
-	g_static_mutex_lock (&mutex);
+	if (device_list_update_id > 0)
+		return;
 
-	if (device_list_update_pending == FALSE)
-	{
-		GSource	*source = g_idle_source_new ();
-
-		/* We want this idle source to run before any other idle source */
+	id = g_idle_add (nm_policy_device_list_update_from_allowed_list, app_data);
+	device_list_update_id = id;
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
 		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-		g_source_set_callback (source, (GSourceFunc) nm_policy_device_list_update_from_allowed_list, app_data, NULL);
-		g_source_attach (source, app_data->main_context);
-		g_source_unref (source);
-
-		device_list_update_pending = TRUE;
 	}
-
-	g_static_mutex_unlock (&mutex);
 }

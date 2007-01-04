@@ -52,127 +52,7 @@ struct NMSock
 	NMDevice *dev;
 };
 
-static GSList		*sock_list = NULL;
-static GStaticMutex	 sock_list_mutex = G_STATIC_MUTEX_INIT;
-
-typedef struct MutexDesc
-{
-	GMutex	*mutex;
-	char		*desc;
-} MutexDesc;
-
-GSList	*mutex_descs = NULL;
-
-/*#define LOCKING_DEBUG*/
-
-
-static MutexDesc *nm_find_mutex_desc (GMutex *mutex)
-{
-	GSList	*elt;
-
-	for (elt = mutex_descs; elt; elt = g_slist_next (elt))
-	{
-		MutexDesc	*desc = (MutexDesc *)(elt->data);
-		if (desc && (desc->mutex == mutex))
-			return desc;
-	}
-
-	return NULL;
-}
-
-
-/*
- * nm_register_mutex_desc
- * 
- * Associate a description with a particular mutex.
- *
- */
-void nm_register_mutex_desc (GMutex *mutex, const char *string)
-{
-	if (!(nm_find_mutex_desc (mutex)))
-	{
-		MutexDesc	*desc = g_malloc0 (sizeof (MutexDesc));
-		desc->mutex = mutex;
-		desc->desc = g_strdup (string);
-		mutex_descs = g_slist_append (mutex_descs, desc);
-	}
-}
-
-
-/*
- * nm_try_acquire_mutex
- *
- * Tries to acquire a given mutex, sleeping a bit between tries.
- *
- * Returns:	FALSE if mutex was not acquired
- *			TRUE  if mutex was successfully acquired
- */
-gboolean nm_try_acquire_mutex (GMutex *mutex, const char *func)
-{
-	g_return_val_if_fail (mutex != NULL, FALSE);
-
-	if (g_mutex_trylock (mutex))
-	{
-#ifdef LOCKING_DEBUG
-		if (func)
-		{
-			MutexDesc	*desc = nm_find_mutex_desc (mutex);
-			nm_debug ("MUTEX: <%s %p> acquired by %s", desc ? desc->desc : "(none)", mutex, func);
-		}
-#endif
-		return (TRUE);
-	}
-
-#ifdef LOCKING_DEBUG
-	if (func)
-	{
-		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		nm_debug ("MUTEX: <%s %p> FAILED to be acquired by %s", desc ? desc->desc : "(none)", mutex, func);
-	}
-#endif
-	return (FALSE);
-}
-
-
-/*
- * nm_lock_mutex
- *
- * Blocks until a mutex is grabbed, with debugging.
- *
- */
-void nm_lock_mutex (GMutex *mutex, const char *func)
-{
-#ifdef LOCKING_DEBUG
-	if (func)
-	{
-		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		nm_debug ("MUTEX: <%s %p> being acquired by %s", desc ? desc->desc : "(none)", mutex, func);
-	}
-#endif
-	g_mutex_lock (mutex);
-}
-
-
-/*
- * nm_unlock_mutex
- *
- * Simply unlocks a mutex, balances nm_try_acquire_mutex()
- *
- */
-void nm_unlock_mutex (GMutex *mutex, const char *func)
-{
-	g_return_if_fail (mutex != NULL);
-
-#ifdef LOCKING_DEBUG	
-	if (func)
-	{
-		MutexDesc	*desc = nm_find_mutex_desc (mutex);
-		nm_debug ("MUTEX: <%s %p> released by %s", desc ? desc->desc : "(none)", mutex, func);
-	}
-#endif
-
-	g_mutex_unlock (mutex);
-}
+static GSList * sock_list = NULL;
 
 
 /*
@@ -223,9 +103,7 @@ NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, c
 		g_object_ref (G_OBJECT (sock->dev));
 
 	/* Add the sock to our global sock list for tracking */
-	g_static_mutex_lock (&sock_list_mutex);
 	sock_list = g_slist_append (sock_list, sock);
-	g_static_mutex_unlock (&sock_list_mutex);
 
 	return sock;
 }
@@ -251,18 +129,14 @@ void nm_dev_sock_close (NMSock *sock)
 
 	memset (sock, 0, sizeof (NMSock));
 
-	g_static_mutex_lock (&sock_list_mutex);
-	for (elt = sock_list; elt; elt = g_slist_next (elt))
-	{
+	for (elt = sock_list; elt; elt = g_slist_next (elt)) {
 		NMSock	*temp_sock = (NMSock *)(elt->data);
-		if (temp_sock == sock)
-		{
+		if (temp_sock == sock) {
 			sock_list = g_slist_remove_link (sock_list, elt);
 			g_slist_free (elt);
 			break;
 		}
 	}
-	g_static_mutex_unlock (&sock_list_mutex);
 
 	g_free (sock);
 }
@@ -294,18 +168,14 @@ void nm_print_open_socks (void)
 	int		 i = 0;
 
 	nm_debug ("Open Sockets List:");
-	g_static_mutex_lock (&sock_list_mutex);
-	for (elt = sock_list; elt; elt = g_slist_next (elt))
-	{
+	for (elt = sock_list; elt; elt = g_slist_next (elt)) {
 		NMSock	*sock = (NMSock *)(elt->data);
-		if (sock)
-		{
+		if (sock) {
 			i++;
 			nm_debug ("  %d: %s fd:%d F:'%s' D:'%s'", i, sock->dev ? nm_device_get_iface (sock->dev) : "",
 				sock->fd, sock->func, sock->desc);
 		}
 	}
-	g_static_mutex_unlock (&sock_list_mutex);
 	nm_debug ("Open Sockets List Done.");
 }
 

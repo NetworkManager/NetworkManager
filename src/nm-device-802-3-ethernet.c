@@ -47,6 +47,7 @@ struct _NMDevice8023EthernetPrivate
 	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
+	guint           link_source_id;
 
 	NMSupplicantInterface *  sup_iface;
 };
@@ -72,6 +73,7 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 {
 	self->priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
+	self->priv->link_source_id = 0;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 }
@@ -197,18 +199,15 @@ nm_device_802_3_periodic_update (gpointer data)
 static void
 real_start (NMDevice *dev)
 {
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-	GSource *				source;
-	guint				source_id;
+	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
+	guint                  id;
 
 	self->priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
 			nm_device_get_iface (NM_DEVICE (dev)));
 
-	/* Peridoically update link status and signal strength */
-	source = g_timeout_source_new (2000);
-	g_source_set_callback (source, nm_device_802_3_periodic_update, self, NULL);
-	source_id = g_source_attach (source, nm_device_get_main_context (dev));
-	g_source_unref (source);
+	/* Peridoically update link status */
+	id = g_timeout_add (2000, nm_device_802_3_periodic_update, self);
+	self->priv->link_source_id = id;
 }
 
 
@@ -339,6 +338,11 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 		self->priv->link_connected_id);
 	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
 		self->priv->link_disconnected_id);
+
+	if (self->priv->link_source_id) {
+		g_source_remove (self->priv->link_source_id);
+		self->priv->link_source_id = 0;
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));

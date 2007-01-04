@@ -104,7 +104,7 @@ NMVPNService *nm_vpn_service_new (NMVPNManager *manager, NMData *app_data)
 	service->state = NM_VPN_STATE_SHUTDOWN;
 	service->app_data = app_data;
 	service->manager = manager;
-	service->dbus_mgr = nm_dbus_manager_get (NULL);
+	service->dbus_mgr = nm_dbus_manager_get ();
 
 	return service;
 }
@@ -390,9 +390,8 @@ out:
 
 static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-	NMVPNConnection *	vpn = NULL;
-	guint			id;
+	NMVPNConnection * vpn = NULL;
+	guint             id;
 
 	g_assert (service != NULL);
 	g_assert (req != NULL);
@@ -403,12 +402,10 @@ static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, N
 	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_PREPARE);
 	nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_service_stage1_daemon_exec, req, NULL);
-	id = g_source_attach (source, service->app_data->main_context);
+	id = g_idle_add (nm_vpn_service_stage1_daemon_exec, req);
 	nm_vpn_act_request_set_callback_id (req, id);
-	g_source_unref (source);
-	nm_info ("VPN Activation (%s) Stage 1 of 4 (Connection Prepare) scheduled...", nm_vpn_connection_get_name (vpn));
+	nm_info ("VPN Activation (%s) Stage 1 of 4 (Connection Prepare) scheduled...",
+	         nm_vpn_connection_get_name (vpn));
 }
 
 
@@ -462,9 +459,8 @@ static gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
 
 static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-	NMVPNConnection *	vpn = NULL;
-	guint			id;
+	NMVPNConnection * vpn = NULL;
+	guint             id;
 
 	g_assert (service != NULL);
 	g_assert (req != NULL);
@@ -476,12 +472,11 @@ static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, N
 
 	nm_vpn_act_request_set_daemon_wait_count (req, nm_vpn_act_request_get_daemon_wait_count (req) + 1);
 
-	source = g_timeout_source_new (200);
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_service_stage2_daemon_wait, req, NULL);
-	id = g_source_attach (source, service->app_data->main_context);
+	id = g_timeout_add (200, nm_vpn_service_stage2_daemon_wait, req);
 	nm_vpn_act_request_set_callback_id (req, id);
-	g_source_unref (source);
-	nm_info ("VPN Activation (%s) Stage 2 of 4 (Connection Prepare Wait) scheduled...", nm_vpn_connection_get_name (vpn));
+	nm_info ("VPN Activation (%s) Stage 2 of 4 (Connection Prepare Wait) "
+	         "scheduled...",
+	         nm_vpn_connection_get_name (vpn));
 }
 
 
@@ -649,9 +644,8 @@ out:
 
 static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-	NMVPNConnection *	vpn = NULL;
-	guint			id;
+	NMVPNConnection * vpn = NULL;
+	guint             id;
 
 	g_assert (service != NULL);
 	g_assert (req != NULL);
@@ -661,16 +655,14 @@ static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPN
 
 	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_CONNECT);
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_service_stage3_connect, req, NULL);
-	id = g_source_attach (source, service->app_data->main_context);
+	id = g_idle_add (nm_vpn_service_stage3_connect, req);
 	nm_vpn_act_request_set_callback_id (req, id);
-	g_source_unref (source);
-	nm_info ("VPN Activation (%s) Stage 3 of 4 (Connect) scheduled...", nm_vpn_connection_get_name (vpn));
+	nm_info ("VPN Activation (%s) Stage 3 of 4 (Connect) scheduled...",
+	         nm_vpn_connection_get_name (vpn));
 }
 
 
-static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer *user_data)
+static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
 	NMVPNService *		service;
@@ -701,9 +693,8 @@ static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer *user_data
 
 static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *service, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-	NMVPNConnection *	vpn = NULL;
-	guint			id;
+	NMVPNConnection * vpn = NULL;
+	guint             id;
 
 	g_assert (service != NULL);
 	g_assert (req != NULL);
@@ -714,27 +705,26 @@ static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *
 	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_IP_CONFIG_GET);
 
 	/* 20 second timeout waiting for IP config signal from VPN service */
-	source = g_timeout_source_new (20000);
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_service_stage4_ip_config_get_timeout, req, NULL);
-	id = g_source_attach (source, service->app_data->main_context);
+	id = g_timeout_add (20000, nm_vpn_service_stage4_ip_config_get_timeout, req);
 	nm_vpn_act_request_set_callback_id (req, id);
-	g_source_unref (source);
-	nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) timeout scheduled...", nm_vpn_connection_get_name (vpn));
+	nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) timeout "
+	         " scheduled...",
+	         nm_vpn_connection_get_name (vpn));
 }
 
 
 static void nm_vpn_service_cancel_callback (NMVPNService *service, NMVPNActRequest *req)
 {
-	guint	id;
+	guint     id;
 
 	g_return_if_fail (service != NULL);
 	g_return_if_fail (req != NULL);
 
-	if ((id = nm_vpn_act_request_get_callback_id (req)) != 0)
-	{
-		g_source_destroy (g_main_context_find_source_by_id (service->app_data->main_context, id));
-		nm_vpn_act_request_set_callback_id (req, 0);
-	}
+	if ((id = nm_vpn_act_request_get_callback_id (req)) == 0)
+		return;
+
+	g_source_destroy (g_main_context_find_source_by_id (NULL, id));
+	nm_vpn_act_request_set_callback_id (req, 0);
 }
 
 

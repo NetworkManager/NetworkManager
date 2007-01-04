@@ -55,6 +55,7 @@ nm_dbus_nm_get_devices (DBusConnection *connection,
 	DBusMessage *	reply = NULL;
 	DBusMessageIter	iter;
 	DBusMessageIter	iter_array;
+	GSList	*       elt;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -74,33 +75,20 @@ nm_dbus_nm_get_devices (DBusConnection *connection,
 	}
 
 	dbus_message_iter_init_append (reply, &iter);
-	if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__)) {
-		GSList	*elt;
+	dbus_message_iter_open_container (&iter,
+	                                  DBUS_TYPE_ARRAY,
+	                                  DBUS_TYPE_OBJECT_PATH_AS_STRING,
+	                                  &iter_array);
 
-		dbus_message_iter_open_container (&iter,
-		                                  DBUS_TYPE_ARRAY,
-		                                  DBUS_TYPE_OBJECT_PATH_AS_STRING,
-		                                  &iter_array);
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
+		NMDevice *	dev = NM_DEVICE (elt->data);
+		char *		op = nm_dbus_get_object_path_for_device (dev);
 
-		for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-			NMDevice *	dev = (NMDevice *) elt->data;
-			char *		op = nm_dbus_get_object_path_for_device (dev);
-
-			dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &op);
-			g_free (op);
-		}
-
-		dbus_message_iter_close_container (&iter, &iter_array);
-
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-	} else {
-		dbus_message_unref (reply);
-		reply = nm_dbus_create_error_message (message,
-		                                      NM_DBUS_INTERFACE,
-		                                      "Retry",
-		                                      "NetworkManager could not lock "
-		                                      " device list, try again.");
+		dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_OBJECT_PATH, &op);
+		g_free (op);
 	}
+
+	dbus_message_iter_close_container (&iter, &iter_array);
 
 	return reply;
 }
@@ -114,6 +102,8 @@ nm_dbus_nm_get_dialup (DBusConnection *connection,
 	NMData * data = (NMData *) user_data;
 	DBusMessage * reply = NULL;
 	DBusMessageIter iter;
+	DBusMessageIter iter_array;
+	GSList *        elt;
 
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -133,31 +123,18 @@ nm_dbus_nm_get_dialup (DBusConnection *connection,
 	}
 
 	dbus_message_iter_init_append (reply, &iter);
-	if (nm_try_acquire_mutex (data->dialup_list_mutex, __FUNCTION__)) {
-		DBusMessageIter iter_array;
-		GSList *elt;
+	dbus_message_iter_open_container (&iter,
+	                                  DBUS_TYPE_ARRAY,
+	                                  DBUS_TYPE_STRING_AS_STRING,
+	                                  &iter_array);
 
-		dbus_message_iter_open_container (&iter,
-		                                  DBUS_TYPE_ARRAY,
-		                                  DBUS_TYPE_STRING_AS_STRING,
-		                                  &iter_array);
-
-		for (elt = data->dialup_list; elt; elt = g_slist_next (elt)) {
-			NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
-			dbus_message_iter_append_basic (&iter_array,
-			                                DBUS_TYPE_STRING, &config->name);
-		}
-
-		dbus_message_iter_close_container (&iter, &iter_array);
-		nm_unlock_mutex (data->dialup_list_mutex, __FUNCTION__);
-	} else {
-		dbus_message_unref (reply);
-		reply = nm_dbus_create_error_message (message,
-		                                      NM_DBUS_INTERFACE,
-		                                      "Retry",
-		                                      "NetworkManager could not lock "
-		                                      " dialup list, try again.");
+	for (elt = data->dialup_list; elt; elt = g_slist_next (elt)) {
+		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
+		dbus_message_iter_append_basic (&iter_array,
+		                                DBUS_TYPE_STRING, &config->name);
 	}
+
+	dbus_message_iter_close_container (&iter, &iter_array);
 
 	return reply;
 }
@@ -187,7 +164,6 @@ nm_dbus_nm_activate_dialup (DBusConnection *connection,
 		goto out;
 	}
 
-	nm_lock_mutex (data->dialup_list_mutex, __FUNCTION__);
 	if (!nm_system_activate_dialup (data->dialup_list, dialup)) {
 		reply = nm_dbus_create_error_message (message,
 		                                      NM_DBUS_INTERFACE,
@@ -197,7 +173,6 @@ nm_dbus_nm_activate_dialup (DBusConnection *connection,
 	} else {
 		data->modem_active = TRUE;
 	}
-	nm_unlock_mutex (data->dialup_list_mutex, __FUNCTION__);
 
 out:
 	return reply;
@@ -230,7 +205,6 @@ nm_dbus_nm_deactivate_dialup (DBusConnection *connection,
 		goto out;
 	}
 
-	nm_lock_mutex (data->dialup_list_mutex, __FUNCTION__);
 	if (!nm_system_deactivate_dialup (data->dialup_list, dialup)) {
 		reply = nm_dbus_create_error_message (message,
 		                                      NM_DBUS_INTERFACE,
@@ -240,7 +214,6 @@ nm_dbus_nm_deactivate_dialup (DBusConnection *connection,
 	} else {
 		data->modem_active = FALSE;
 	}
-	nm_unlock_mutex (data->dialup_list_mutex, __FUNCTION__);
 
 out:
 	return reply;
@@ -557,6 +530,7 @@ nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 	NMData *		data = (NMData *) user_data;
 	gboolean		enabled = FALSE;
 	DBusMessage *	reply = NULL;
+	GSList *        elt;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -573,19 +547,15 @@ nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 	data->wireless_enabled = enabled;
 
 	if (!enabled) {
-		GSList * elt;
-
 		/* Down all wireless devices */
-		nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
 		for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-			NMDevice * dev = (NMDevice *)(elt->data);
+			NMDevice * dev = NM_DEVICE (elt->data);
 
 			if (nm_device_is_802_11_wireless (dev)) {
 				nm_device_deactivate (dev);
 				nm_device_bring_down (dev);
 			}
 		}
-		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
 	nm_policy_schedule_device_change_check (data);
@@ -641,19 +611,15 @@ nm_dbus_nm_sleep (DBusConnection *connection,
 	/* Just deactivate and down all devices from the device list,
 	 * we'll remove them in 'wake' for speed's sake.
 	 */
-	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
 	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-		NMDevice *dev = (NMDevice *)(elt->data);
+		NMDevice *dev = NM_DEVICE (elt->data);
 		nm_device_set_removed (dev, TRUE);
 		nm_device_deactivate_quickly (dev);
 		nm_system_device_set_up_down (dev, FALSE);
 	}
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
-	nm_lock_mutex (data->dialup_list_mutex, __FUNCTION__);
 	nm_system_deactivate_all_dialup (data->dialup_list);
 	data->modem_active = FALSE;
-	nm_unlock_mutex (data->dialup_list_mutex, __FUNCTION__);
 
 	return NULL;
 }
@@ -676,12 +642,10 @@ nm_dbus_nm_wake (DBusConnection *connection,
 	data->asleep = FALSE;
 
 	/* Remove all devices from the device list */
-	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
 	while (g_slist_length (data->dev_list))
-		nm_remove_device (data, (NMDevice *)(data->dev_list->data));
+		nm_remove_device (data, NM_DEVICE (data->dev_list->data));
 	g_slist_free (data->dev_list);
 	data->dev_list = NULL;
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 
 	nm_add_initial_devices (data);
 

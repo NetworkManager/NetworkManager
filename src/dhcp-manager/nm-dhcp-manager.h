@@ -49,7 +49,7 @@ enum dhcdbd_state
 	DHCDBD_END_OPTIONS,	/* last option in subscription sent */
 };
 
-NMDHCPManager *	nm_dhcp_manager_new						(NMData *data, GMainContext *main_ctx);
+NMDHCPManager *	nm_dhcp_manager_new						(NMData *data);
 void				nm_dhcp_manager_dispose					(NMDHCPManager *manager);
 
 gboolean			nm_dhcp_manager_begin_transaction			(NMDHCPManager *manager, NMActRequest *req);

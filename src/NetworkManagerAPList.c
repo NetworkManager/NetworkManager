@@ -32,10 +32,9 @@
 
 struct NMAccessPointList
 {
-	guint		 refcount;
-	NMNetworkType	 type;
-	GSList		*ap_list;
-	GMutex		*mutex;
+	guint         refcount;
+	NMNetworkType type;
+	GSList *      ap_list;
 };
 
 
@@ -51,16 +50,7 @@ NMAccessPointList *nm_ap_list_new (NMNetworkType type)
 
 	nm_ap_list_ref (list);
 	list->type = type;
-	list->mutex = g_mutex_new ();
-	if (!list->mutex)
-	{
-		g_slice_free (NMAccessPointList, list);
-		nm_warning ("nm_ap_list_new() could not create list mutex");
-		return (NULL);
-	}
-	nm_register_mutex_desc (list->mutex, "AP List Mutex");
-
-	return (list);
+	return list;
 }
 
 
@@ -104,17 +94,9 @@ void nm_ap_list_unref (NMAccessPointList *list)
 		return;
 
 	list->refcount--;
-	if (list->refcount <= 0)
-	{
-		gboolean	acquired = nm_try_acquire_mutex (list->mutex, __FUNCTION__);
-
+	if (list->refcount <= 0) {
 		g_slist_foreach (list->ap_list, nm_ap_list_element_free, NULL);
 		g_slist_free (list->ap_list);
-
-		if (acquired)
-			nm_unlock_mutex (list->mutex, __FUNCTION__);
-
-		g_mutex_free (list->mutex);
 		g_slice_free (NMAccessPointList, list);
 	}
 }
@@ -128,20 +110,9 @@ void nm_ap_list_unref (NMAccessPointList *list)
  */
 guint nm_ap_list_size (NMAccessPointList *list)
 {
-	guint size;
-
 	g_return_val_if_fail (list != NULL, 0);
 
-	if (!nm_ap_list_lock (list))
-	{
-		nm_warning ("nm_ap_list_size() could not acquire AP list mutex." );
-		return 0;
-	}
-
-	size = g_slist_length (list->ap_list);
-	nm_ap_list_unlock (list);
-
-	return size;
+	return g_slist_length (list->ap_list);
 }
 
 
@@ -169,16 +140,8 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
 
-	if (!nm_ap_list_lock (list))
-	{
-		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
-		return;
-	}
-
 	nm_ap_ref (ap);
 	list->ap_list = g_slist_append (list->ap_list, ap);
-
-	nm_ap_list_unlock (list);
 }
 
 
@@ -195,25 +158,16 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
 
-	if (!nm_ap_list_lock (list))
-	{
-		nm_warning ("nm_ap_list_remove_ap() could not acquire AP list mutex." );
-		return;
-	}
+	for (elt = list->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * list_ap = (NMAccessPoint *) elt->data;
 
-	for (elt = list->ap_list; elt; elt = g_slist_next (elt))
-	{
-		NMAccessPoint	*list_ap = (NMAccessPoint *)(elt->data);
-
-		if (list_ap == ap)
-		{
+		if (list_ap == ap) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
 			nm_ap_unref (list_ap);
 			g_slist_free (elt);
 			break;
 		}
 	}
-	nm_ap_list_unlock (list);
 }
 
 
@@ -230,25 +184,16 @@ void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (network != NULL);
 
-	if (!nm_ap_list_lock (list))
-	{
-		nm_warning ("nm_ap_list_remove_ap_by_essid() could not acquire AP list mutex." );
-		return;
-	}
+	for (elt = list->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * list_ap = (NMAccessPoint *) elt->data;
 
-	for (elt = list->ap_list; elt; elt = g_slist_next (elt))
-	{
-		NMAccessPoint	*list_ap = (NMAccessPoint *)(elt->data);
-
-		if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), network) == 0)
-		{
+		if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), network) == 0) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
 			nm_ap_unref (list_ap);
 			g_slist_free (elt);
 			break;
 		}
 	}
-	nm_ap_list_unlock (list);
 }
 
 /* nm_ap_list_remove_duplicate_essids
@@ -268,20 +213,12 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 
 	g_return_if_fail (list != NULL);
 
-	if (!nm_ap_list_lock (list))
-	{
-		nm_warning ("nm_ap_list_append_ap() could not acquire AP list mutex." );
-		return;
-	}
+	for (elt_i = list->ap_list; elt_i; elt_i = g_slist_next (elt_i)) {
+		NMAccessPoint * list_ap_i = (NMAccessPoint *) elt_i->data;
+		gboolean        found = FALSE;
 
-	for (elt_i = list->ap_list; elt_i; elt_i = g_slist_next (elt_i))
-	{
-		NMAccessPoint   *list_ap_i = (NMAccessPoint *)(elt_i->data);
-		gboolean         found = FALSE;
-
-		for (elt_j = list->ap_list; elt_j < elt_i; elt_j = g_slist_next (elt_j))
-		{
-			NMAccessPoint   *list_ap_j = (NMAccessPoint *)(elt_j->data);
+		for (elt_j = list->ap_list; elt_j < elt_i; elt_j = g_slist_next (elt_j)) {
+			NMAccessPoint   *list_ap_j = (NMAccessPoint *) elt_j->data;
 
 			if ((found = (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0)))
 				break;
@@ -294,33 +231,27 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 		list_ap_max = (NMAccessPoint *)(elt_i->data);
 		max_strength = nm_ap_get_strength (list_ap_i);
 
-		for (elt_j = g_slist_next (elt_i); elt_j; elt_j = g_slist_next (elt_j))
-		{
-			NMAccessPoint   *list_ap_j = (NMAccessPoint *)(elt_j->data);
+		for (elt_j = g_slist_next (elt_i); elt_j; elt_j = g_slist_next (elt_j)) {
+			NMAccessPoint   *list_ap_j = (NMAccessPoint *) elt_j->data;
 
 			strengthj = nm_ap_get_strength (list_ap_j);
-			if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0)
-			{
-				if (strengthj > max_strength)
-				{
+			if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0) {
+				if (strengthj > max_strength) {
 					removal_list = g_slist_append (removal_list, list_ap_max);
 					list_ap_max = list_ap_j;
 					max_strength = strengthj;
-				}
-				else
+				} else {
 					removal_list = g_slist_append (removal_list, list_ap_j);
+				}
 			}
 		}
 	}
-	nm_ap_list_unlock (list);
 
-	for (elt = removal_list; elt; elt = g_slist_next (elt))
-	{
+	for (elt = removal_list; elt; elt = g_slist_next (elt)) {
 		if ((removal_ap = (NMAccessPoint *)(elt->data)))
 			nm_ap_list_remove_ap (list, removal_ap);
 	}
 	g_slist_free (removal_list);
-
 }
 
 
@@ -648,40 +579,11 @@ NMNetworkType nm_ap_list_get_type (NMAccessPointList *list)
 }
 
 
-/*
- * nm_ap_list_lock
- *
- * Grab exclusive access to an access point list
- *
- */
-gboolean nm_ap_list_lock (NMAccessPointList *list)
-{
-	g_return_val_if_fail (list != NULL, FALSE);
-
-	return (nm_try_acquire_mutex (list->mutex, __FUNCTION__));
-}
-
-
-/*
- * nm_ap_list_unlock
- *
- * Give up access to an access point list
- *
- */
-void nm_ap_list_unlock (NMAccessPointList *list)
-{
-	g_return_if_fail (list != NULL);
-
-	nm_unlock_mutex (list->mutex, __FUNCTION__);
-}
-
-
-
 struct NMAPListIter
 {
-	NMAccessPointList	*list;
-	GSList			*cur_pos;
-	gboolean			 valid;
+	NMAccessPointList * list;
+	GSList *            cur_pos;
+	gboolean            valid;
 };
 
 
@@ -693,17 +595,11 @@ NMAPListIter * nm_ap_list_iter_new (NMAccessPointList *list)
 
 	iter = g_slice_new (NMAPListIter);
 
-	if (!nm_ap_list_lock (list))
-	{
-		g_slice_free (NMAPListIter, iter);
-		return (NULL);
-	}
-
 	iter->list = list;
 	iter->cur_pos = list->ap_list;
 	iter->valid = FALSE;
 
-	return (iter);
+	return iter;
 }
 
 
@@ -723,10 +619,9 @@ NMAccessPoint * nm_ap_list_iter_next (NMAPListIter *iter)
 {
 	g_return_val_if_fail (iter != NULL, NULL);
 
-	if (iter->valid)
+	if (iter->valid) {
 		iter->cur_pos = g_slist_next (iter->cur_pos);
-	else
-	{
+	} else {
 		iter->valid = TRUE;
 		iter->cur_pos = iter->list->ap_list;
 	}
@@ -738,7 +633,6 @@ void nm_ap_list_iter_free (NMAPListIter *iter)
 {
 	g_return_if_fail (iter != NULL);
 
-	nm_ap_list_unlock (iter->list);
 	memset (iter, 0, sizeof (struct NMAPListIter));
 	g_slice_free (NMAPListIter, iter);
 }

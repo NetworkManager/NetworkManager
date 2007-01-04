@@ -1,3 +1,23 @@
+2007-01-04  Dan Williams  <dcbw@redhat.com>
+
+	Threading removal related cleanups:
+
+	- Use the glib default main context.  Remove the device main context
+		member from NMDevice, and the main_context member from NMData.  Change
+		all the idle and timeout scheduler functions to use plain
+		g_idle_add() and g_timeout_add().
+
+	- As a side-effect of the first change, nm_dbus_manager_get() no longer
+		takes an argument; fix that up too.
+
+	- Remove all locking, which is useless since we no longer use threads.  For
+		example, nm_get_device_by_iface_locked() has been removed.  The global
+		device list lock, the AP List lock, and all static locks in
+		NetworkManagerPolicy.c have been removed.  The locking utility functions
+		in NetworkManagerUtils.c have also been removed.
+
+	- Other cleanups in spacing and code style
+
 2007-01-01  Dan Williams  <dcbw@redhat.com>
 
 	Found by Bill Moss:

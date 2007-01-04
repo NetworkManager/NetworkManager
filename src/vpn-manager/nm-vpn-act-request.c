@@ -238,7 +238,7 @@ void nm_vpn_act_request_set_stage (NMVPNActRequest *req, NMVPNActStage stage)
 		NMDBusManager *dbus_mgr;
 		DBusConnection *dbus_connection;
 
-		dbus_mgr = nm_dbus_manager_get (NULL);
+		dbus_mgr = nm_dbus_manager_get ();
 		dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 		if (dbus_connection) {
 			req->stage = stage;

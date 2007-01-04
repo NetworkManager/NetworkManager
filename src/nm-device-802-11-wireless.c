@@ -62,7 +62,7 @@ typedef struct Supplicant {
 	guint                   iface_scan_result_id;
 	guint                   iface_con_state_id;
 
-	GSource *               con_timeout;
+	guint                   con_timeout_id;
 } Supplicant;
 
 struct _NMDevice80211WirelessPrivate
@@ -85,12 +85,13 @@ struct _NMDevice80211WirelessPrivate
 	NMAccessPointList *	ap_list;
 	guint8			scan_interval; /* seconds */
 	guint32			last_scan;
-	GSource *			pending_scan;
+	guint               pending_scan_id;
 
 	Supplicant          supplicant;
 
-	guint32			failed_link_count;
-	GSource *			link_timeout;
+	guint32             failed_link_count;
+	guint               periodic_source_id;
+	guint               link_timeout_id;
 
 	/* Static options from driver */
 	guint8			we_version;
@@ -556,15 +557,12 @@ nm_device_802_11_periodic_update (gpointer data)
 static void
 real_start (NMDevice *dev)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	GSource *				source;
-	guint				source_id;
+	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
+	guint                   id;
 
 	/* Peridoically update link status and signal strength */
-	source = g_timeout_source_new (2000);
-	g_source_set_callback (source, nm_device_802_11_periodic_update, self, NULL);
-	source_id = g_source_attach (source, nm_device_get_main_context (dev));
-	g_source_unref (source);
+	id = g_timeout_add (2000, nm_device_802_11_periodic_update, self);
+	self->priv->periodic_source_id = id;
 }
 
 static void
@@ -1142,25 +1140,24 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
                                              NMDevice80211Wireless *self,
                                              NMWirelessScanInterval interval)
 {
-	static guint	source_id = 0;
-	GSource *		source = NULL;
-	GSList *		elt;
-	gboolean		found = FALSE;
-	guint8		seconds = nm_wireless_scan_interval_to_seconds (interval);
+	static guint source_id = 0;
+	GSList *     elt;
+	gboolean     found = FALSE;
+	guint8       seconds = nm_wireless_scan_interval_to_seconds (interval);
 
 	g_return_if_fail (data != NULL);
 
-	if (source_id != 0)
+	if (source_id != 0) {
 		g_source_remove (source_id);
+		source_id = 0;
+	}
 
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
 		NMDevice *d = (NMDevice *)(elt->data);
 		if (self && (NM_DEVICE (self) != d))
 			continue;
 
-		if (d && nm_device_is_802_11_wireless (d))
-		{
+		if (d && nm_device_is_802_11_wireless (d)) {
 			NM_DEVICE_802_11_WIRELESS (d)->priv->scan_interval = seconds;
 			if (self && (NM_DEVICE (self) == d))
 				found = TRUE;
@@ -1174,12 +1171,8 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
 	if (self && !found)
 		self->priv->scan_interval = seconds;
 
-	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE)
-	{
-		source = g_timeout_source_new (120000);
-		g_source_set_callback (source, set_scan_interval_cb, (gpointer) data, NULL);
-		source_id = g_source_attach (source, data->main_context);
-		g_source_unref (source);
+	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE) {
+		source_id = g_timeout_add (120000, set_scan_interval_cb, data);
 	}
 }
 
@@ -1801,10 +1794,9 @@ request_wireless_scan (gpointer user_data)
 	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED) || !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 		goto out;
 
-	if (self->priv->pending_scan) {
-		g_source_destroy (self->priv->pending_scan);
-		g_source_unref (self->priv->pending_scan);	/* Balance g_timeout_source_new() */
-		self->priv->pending_scan = NULL;
+	if (self->priv->pending_scan_id) {
+		g_source_remove (self->priv->pending_scan_id);
+		self->priv->pending_scan_id = 0;
 	}
 
 	/* Reschedule ourselves if all wireless is disabled, we're asleep,
@@ -1857,15 +1849,16 @@ out:
 static void
 schedule_scan (NMDevice80211Wireless *self)
 {
+	guint id;
+
 	g_return_if_fail (self != NULL);
 
 	cancel_pending_scan (self);
 
-	self->priv->pending_scan = g_timeout_source_new (self->priv->scan_interval * 1000);
-	g_source_set_callback (self->priv->pending_scan,
-	                       request_wireless_scan, self, NULL);
-	g_source_attach (self->priv->pending_scan,
-	                 nm_device_get_main_context (NM_DEVICE (self)));
+	id = g_timeout_add (self->priv->scan_interval * 1000,
+	                    request_wireless_scan,
+	                    self);
+	self->priv->pending_scan_id = id;
 }
 
 
@@ -1874,10 +1867,9 @@ cancel_pending_scan (NMDevice80211Wireless *self)
 {
 	g_return_if_fail (self != NULL);
 
-	if (self->priv->pending_scan) {
-		g_source_destroy (self->priv->pending_scan);  /* Balance g_source_attach() */
-		g_source_unref (self->priv->pending_scan);  /* Balance g_timeout_source_new() */
-		self->priv->pending_scan = NULL;
+	if (self->priv->pending_scan_id) {
+		g_source_remove (self->priv->pending_scan_id);
+		self->priv->pending_scan_id = 0;
 	}
 }
 
@@ -2116,9 +2108,7 @@ cull_scan_list (NMDevice80211Wireless * self)
 	}
 	nm_ap_list_iter_free (iter);
 
-	/* Ok, now remove outdated ones.  We have to do it after the lock
-	 * because nm_ap_list_remove_ap() locks the list too.
-	 */
+	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		if (!(outdated_ap = (NMAccessPoint *)(elt->data)))
 			continue;
@@ -2363,9 +2353,9 @@ remove_link_timeout (NMDevice80211Wireless *self)
 {
 	g_return_if_fail (self != NULL);
 
-	if (self->priv->link_timeout != NULL) {
-		g_source_destroy (self->priv->link_timeout);
-		self->priv->link_timeout = NULL;
+	if (self->priv->link_timeout_id) {
+		g_source_remove (self->priv->link_timeout_id);
+		self->priv->link_timeout_id = 0;
 	}
 }
 
@@ -2386,6 +2376,10 @@ link_timeout_cb (gpointer user_data)
 	gboolean                has_key;
 
 	g_assert (dev);
+
+	if (self->priv->link_timeout_id) {
+		self->priv->link_timeout_id = 0;
+	}
 
 	req = nm_device_get_act_request (dev);
 	if (req)
@@ -2433,7 +2427,6 @@ schedule_state_handler (NMDevice80211Wireless * self,
                         guint32 old_state)
 {
 	struct state_cb_data * cb_data;
-	GSource * source;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (handler != NULL, FALSE);
@@ -2452,10 +2445,7 @@ schedule_state_handler (NMDevice80211Wireless * self,
 	cb_data->new_state = new_state;
 	cb_data->old_state = old_state;
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source, handler, cb_data, NULL);
-	g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-	g_source_unref (source);
+	g_idle_add (handler, cb_data);
 
 	return TRUE;
 }
@@ -2483,13 +2473,7 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 
 		/* Start the scanning timeout for devices that can do scanning */
 		if (nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_WIRELESS_SCAN) {
-			guint source_id;
-
-			self->priv->pending_scan = g_idle_source_new ();
-			g_source_set_callback (self->priv->pending_scan,
-					request_wireless_scan, self, NULL);
-			source_id = g_source_attach (self->priv->pending_scan,
-					nm_device_get_main_context (NM_DEVICE (self)));
+			self->priv->pending_scan_id = g_idle_add (request_wireless_scan, self);
 		}
 
 		/* Device may be able to be activated now */
@@ -2568,11 +2552,8 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			gboolean has_link = nm_device_has_active_link (NM_DEVICE (self));
 
 			/* Start the link timeout so we allow some time for reauthentication */
-			if (!has_link && (self->priv->link_timeout == NULL) && !self->priv->scanning) {
-				GMainContext * context = nm_device_get_main_context (dev);
-				self->priv->link_timeout = g_timeout_source_new (12000);
-				g_source_set_callback (self->priv->link_timeout, link_timeout_cb, self, NULL);
-				g_source_attach (self->priv->link_timeout, context);
+			if (!has_link && (self->priv->link_timeout_id == 0) && !self->priv->scanning) {
+				self->priv->link_timeout_id = g_timeout_add (12000, link_timeout_cb, self);
 			}
 		} else {
 			nm_device_set_active_link (dev, FALSE);
@@ -2754,7 +2735,7 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
                                       NMDevice80211Wireless * self)
 {
 	struct iface_con_error_cb_data * cb_data;
-	GSource * source;
+	guint                            id;
 
 	g_return_if_fail (self != NULL);
 
@@ -2768,13 +2749,7 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
 	cb_data->name = g_strdup (name);
 	cb_data->message = g_strdup (message);
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source,
-	                       supplicant_iface_connection_error_cb_handler,
-	                       cb_data,
-	                       NULL);
-	g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-	g_source_unref (source);
+	id = g_idle_add (supplicant_iface_connection_error_cb_handler, cb_data);
 }
 
 static void
@@ -2783,10 +2758,9 @@ remove_supplicant_connection_timeout (NMDevice80211Wireless *self)
 	g_return_if_fail (self != NULL);
 
 	/* Remove any pending timeouts on the request */
-	if (self->priv->supplicant.con_timeout != NULL) {
-		g_source_destroy (self->priv->supplicant.con_timeout);
-		g_source_unref (self->priv->supplicant.con_timeout);
-		self->priv->supplicant.con_timeout = NULL;
+	if (self->priv->supplicant.con_timeout_id) {
+		g_source_remove (self->priv->supplicant.con_timeout_id);
+		self->priv->supplicant.con_timeout_id = 0;
 	}
 }
 
@@ -2840,26 +2814,21 @@ start_supplicant_connection_timeout (NMDevice80211Wireless *self)
 {
 	GMainContext * context;
 	NMDevice *     dev;
+	guint          id;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	dev = NM_DEVICE (self);
 
 	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	self->priv->supplicant.con_timeout = g_timeout_source_new (25000);
-	if (self->priv->supplicant.con_timeout == NULL) {
+	id = g_timeout_add (25000, supplicant_connection_timeout_cb, self);
+	if (id <= 0) {
 		nm_warning ("Activation (%s/wireless): couldn't start supplicant "
 		            "timeout timer.",
 		            nm_device_get_iface (dev));
 		return FALSE;
 	}
-	g_source_set_callback (self->priv->supplicant.con_timeout,
-	                       supplicant_connection_timeout_cb,
-	                       self,
-	                       NULL);
-	context = nm_device_get_main_context (dev);
-	g_source_attach (self->priv->supplicant.con_timeout, context);
-
+	self->priv->supplicant.con_timeout_id = id;
 	return TRUE;
 }
 
@@ -3267,6 +3236,11 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	if (self->priv->supplicant.mgr) {
 		g_object_unref (self->priv->supplicant.mgr);
 		self->priv->supplicant.mgr = NULL;
+	}
+
+	if (self->priv->periodic_source_id) {
+		g_source_remove (self->priv->periodic_source_id);
+		self->priv->periodic_source_id = 0;
 	}
 
 out:

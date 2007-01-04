@@ -55,9 +55,6 @@ gboolean			nm_ap_list_merge_scanned_ap		(NMDevice80211Wireless *dev, NMAccessPoi
 
 NMNetworkType		nm_ap_list_get_type				(NMAccessPointList *list);
 
-gboolean			nm_ap_list_lock				(NMAccessPointList *list);
-void				nm_ap_list_unlock				(NMAccessPointList *list);
-
 NMAPListIter *		nm_ap_list_iter_new				(NMAccessPointList *list);
 NMAccessPoint *	nm_ap_list_iter_get_ap			(NMAPListIter *iter);
 NMAccessPoint *	nm_ap_list_iter_next			(NMAPListIter *iter);

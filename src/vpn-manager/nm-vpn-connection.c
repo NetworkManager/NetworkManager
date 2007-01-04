@@ -134,7 +134,7 @@ nm_vpn_connection_set_config (NMVPNConnection *connection,
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (ip4_config != NULL, FALSE);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get dbus connection.");

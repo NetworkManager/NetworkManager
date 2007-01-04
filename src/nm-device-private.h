@@ -34,8 +34,6 @@ typedef struct NMDbusCBData {
 
 gboolean		nm_device_is_activated (NMDevice *dev);
 
-GMainContext *	nm_device_get_main_context (NMDevice *dev);
-
 NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
 
 void			nm_device_activate_schedule_stage3_ip_config_start (struct NMActRequest *req);

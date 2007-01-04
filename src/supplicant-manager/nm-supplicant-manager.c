@@ -66,15 +66,12 @@ NMSupplicantManager *
 nm_supplicant_manager_get (void)
 {
 	static NMSupplicantManager * singleton = NULL;
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 
-	g_static_mutex_lock (&mutex);
 	if (!singleton) {
 		singleton = NM_SUPPLICANT_MANAGER (g_object_new (NM_TYPE_SUPPLICANT_MANAGER, NULL));
 	} else {
 		g_object_ref (singleton);
 	}
-	g_static_mutex_unlock (&mutex);
 
 	g_assert (singleton);
 	return singleton;
@@ -88,7 +85,7 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 
 	self->priv->dispose_has_run = FALSE;
 	self->priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
-	self->priv->dbus_mgr = nm_dbus_manager_get (NULL);
+	self->priv->dbus_mgr = nm_dbus_manager_get ();
 
 	nm_supplicant_manager_startup (self);
 

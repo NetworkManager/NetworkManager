@@ -720,7 +720,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 					gboolean is_connected = !!((gboolean) (interface_info->ifi_flags & IFF_RUNNING));
 					NMDevice * dev;
 
-					if ((dev = nm_get_device_by_iface_locked (monitor->priv->app_data, iface)))
+					if ((dev = nm_get_device_by_iface (monitor->priv->app_data, iface)))
 					{
 						if (is_connected) {
 							g_signal_emit (G_OBJECT (monitor), 
@@ -731,7 +731,6 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 								       nm_netlink_monitor_signals[INTERFACE_DISCONNECTED],
 								       0, dev);
 						}
-						g_object_unref (G_OBJECT (dev));
 					}
 				}
 				g_free (iface);
@@ -739,7 +738,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 				char * iface = nm_system_get_iface_from_rtnl_index (interface_info->ifi_index);
 				if (iface != NULL) {
 					NMDevice *dev;
-					if ((dev = nm_get_device_by_iface_locked (monitor->priv->app_data, iface)))
+					if ((dev = nm_get_device_by_iface (monitor->priv->app_data, iface)))
 					{
 						char * data = g_malloc0 (data_len);
 						memcpy (data, RTA_DATA (attribute), data_len);
@@ -747,7 +746,6 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 							       nm_netlink_monitor_signals[WIRELESS_EVENT],
 							       0, dev, data, data_len);
 						g_free (data);
-						g_object_unref (G_OBJECT (dev));
 					}
 				}
 				g_free (iface);

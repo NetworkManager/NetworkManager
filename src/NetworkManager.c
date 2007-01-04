@@ -137,42 +137,26 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	if ((dev = nm_get_device_by_iface (data, iface)))
 		return (NULL);
 
-	if ((dev = nm_device_new (iface, udi, test_device, test_device_type, data)))
-	{
-		/* Attempt to acquire mutex for device list addition.  If acquire fails,
-		 * just ignore the device addition entirely.
-		 */
-		if (nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-		{
+	if ((dev = nm_device_new (iface, udi, test_device, test_device_type, data))) {
 			nm_info ("Now managing %s device '%s'.",
-				nm_device_is_802_11_wireless (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)", nm_device_get_iface (dev));
+			         nm_device_is_802_11_wireless (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)",
+			         nm_device_get_iface (dev));
 
 			data->dev_list = g_slist_append (data->dev_list, dev);
 			nm_device_deactivate (dev);
 
-			nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-
 			nm_policy_schedule_device_change_check (data);
 			nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ADDED);
-		}
-		else
-		{
-			/* If we couldn't add the device to our list, free its data. */
-			nm_warning ("could not acquire device list mutex." );
-			g_object_unref (G_OBJECT (dev));
-			dev = NULL;
-		}
 	}
 
-	return (dev);
+	return dev;
 }
 
 
 /*
  * nm_remove_device
  *
- * Removes a particular device from the device list.  Requires that
- * the device list is locked, if needed.
+ * Removes a particular device from the device list.
  */
 void nm_remove_device (NMData *data, NMDevice *dev)
 {
@@ -198,21 +182,19 @@ void nm_remove_device (NMData *data, NMDevice *dev)
  */
 NMDevice *nm_get_active_device (NMData *data)
 {
-	NMDevice *	dev = NULL;
-	GSList *		elt;
+	GSList * elt;
 	
 	g_return_val_if_fail (data != NULL, NULL);
 
-	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
-		if ((dev = (NMDevice *)(elt->data)) && nm_device_get_act_request (dev))
-			break;
-		dev = NULL;
-	}
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
+		NMDevice * dev = NM_DEVICE (elt->data);
 
-	return dev;
+		g_assert (dev);
+		if (nm_device_get_act_request (dev))
+			return dev;
+	}
+
+	return NULL;
 }
 
 
@@ -247,23 +229,18 @@ static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
  */
 static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 {
-	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
-	NMDevice	*dev;
+	NMData *   data;
+	NMDevice * dev;
 
-	g_return_if_fail (data != NULL);
+	data = (NMData *) libhal_ctx_get_user_data (ctx);
+ 	g_return_if_fail (data != NULL);
 
 	nm_debug ("Device removed (hal udi is '%s').", udi );
 
-	if (!nm_try_acquire_mutex (data->dev_list_mutex, __FUNCTION__))
-		return;
-
-	if ((dev = nm_get_device_by_udi (data, udi)))
-	{
+	if ((dev = nm_get_device_by_udi (data, udi))) {
 		nm_remove_device (data, dev);
 		nm_policy_schedule_device_change_check (data);
 	}
-
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 }
 
 
@@ -346,7 +323,7 @@ static gboolean nm_state_change_signal_broadcast (gpointer user_data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (dbus_connection)
 		nm_dbus_signal_state_change (dbus_connection, data);
@@ -361,16 +338,16 @@ static gboolean nm_state_change_signal_broadcast (gpointer user_data)
  */
 void nm_schedule_state_change_signal_broadcast (NMData *data)
 {
-	guint	 id = 0;
-	GSource	*source;
+	guint	  id = 0;
+	GSource	* source;
 
 	g_return_if_fail (data != NULL);
 
-	source = g_idle_source_new ();
-	g_source_set_priority (source, G_PRIORITY_HIGH);
-	g_source_set_callback (source, nm_state_change_signal_broadcast, data, NULL);
-	id = g_source_attach (source, data->main_context);
-	g_source_unref (source);
+	id = g_idle_add (nm_state_change_signal_broadcast, data);
+	source = g_main_context_find_source_by_id (NULL, id);
+	if (source) {
+		g_source_set_priority (source, G_PRIORITY_HIGH);
+	}
 }
 
 
@@ -405,7 +382,7 @@ nm_monitor_setup (NMData *data)
 			  G_CALLBACK (nm_error_monitoring_device_link_state),
 			  data);
 
-	nm_netlink_monitor_attach (monitor, data->main_context);
+	nm_netlink_monitor_attach (monitor, NULL);
 
 	/* Request initial status of cards */
 	nm_netlink_monitor_request_status (monitor, NULL);
@@ -444,7 +421,7 @@ nm_hal_init (NMData *data,
 		goto out;
 	}
 
-	libhal_ctx_set_user_data (data->hal_ctx, data->main_context);
+	libhal_ctx_set_user_data (data->hal_ctx, data);
 	libhal_ctx_set_device_added (data->hal_ctx, nm_hal_device_added);
 	libhal_ctx_set_device_removed (data->hal_ctx, nm_hal_device_removed);
 	libhal_ctx_set_device_new_capability (data->hal_ctx, nm_hal_device_new_capability);
@@ -502,40 +479,26 @@ nm_hal_deinit (NMData *data)
  */
 static NMData *nm_data_new (gboolean enable_test_devices)
 {
-	NMData *			data;
-	GSource *			iosource;
-	
+	NMData * data;
+	guint    id;
+
 	data = g_slice_new0 (NMData);
 
-	data->main_context = g_main_context_new ();
-	data->main_loop = g_main_loop_new (data->main_context, FALSE);
+	data->main_loop = g_main_loop_new (NULL, FALSE);
 
 	/* Allow clean shutdowns by having the thread which receives the signal
 	 * notify the main thread to quit, rather than having the receiving
 	 * thread try to quit the glib main loop.
 	 */
-	if (pipe (data->sigterm_pipe) < 0)
-	{
+	if (pipe (data->sigterm_pipe) < 0) {
 		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
 		return NULL;
 	}
 	data->sigterm_iochannel = g_io_channel_unix_new (data->sigterm_pipe[0]);
-	iosource = g_io_create_watch (data->sigterm_iochannel, G_IO_IN | G_IO_ERR);
-	g_source_set_callback (iosource, (GSourceFunc) sigterm_pipe_handler, data, NULL);
-	g_source_attach (iosource, data->main_context);
-	g_source_unref (iosource);
-
-	/* Initialize the device list mutex to protect additions/deletions to it. */
-	data->dev_list_mutex = g_mutex_new ();
-	data->dialup_list_mutex = g_mutex_new ();
-	if (!data->dev_list_mutex || !data->dialup_list_mutex)
-	{
-		nm_data_free (data);
-		nm_warning ("could not initialize data structure locks.");
-		return NULL;
-	}
-	nm_register_mutex_desc (data->dev_list_mutex, "Device List Mutex");
-	nm_register_mutex_desc (data->dialup_list_mutex, "DialUp List Mutex");
+	id = g_io_add_watch (data->sigterm_iochannel,
+	                     G_IO_IN | G_IO_ERR,
+	                     sigterm_pipe_handler,
+	                     data);
 
 	/* Initialize the access point lists */
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
@@ -594,12 +557,8 @@ static void nm_data_free (NMData *data)
 	}
 
 	/* Stop and destroy all devices */
-	nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
 	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
 	g_slist_free (data->dev_list);
-	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
-
-	g_mutex_free (data->dev_list_mutex);
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
@@ -612,8 +571,6 @@ static void nm_data_free (NMData *data)
 	g_object_unref (data->named_manager);
 
 	g_main_loop_unref (data->main_loop);
-	g_main_context_unref (data->main_context);
-
 	g_io_channel_unref(data->sigterm_iochannel);
 
 	nm_hal_deinit (data);
@@ -821,7 +778,7 @@ main (int argc, char *argv[])
 	}
 
 	/* Initialize our DBus service & connection */
-	dbus_mgr = nm_dbus_manager_get (nm_data->main_context);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_error ("Failed to initialize. "
@@ -861,7 +818,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data, nm_data->main_context);
+	nm_data->dhcp_manager = nm_dhcp_manager_new (nm_data);
 	if (!nm_data->dhcp_manager) {
 		nm_warning ("Failed to start the DHCP manager.");
 		goto done;

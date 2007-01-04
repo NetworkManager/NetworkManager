@@ -413,7 +413,7 @@ nm_dbus_vpn_update_one_connection_cb (DBusPendingCall *pcall,
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get the dbus connection.");
@@ -511,7 +511,7 @@ nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall,
 	if (!dbus_pending_call_get_completed (pcall))
 		goto out;
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get the dbus connection.");
@@ -640,7 +640,7 @@ nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get the dbus connection.");
@@ -678,17 +678,15 @@ out:
  */
 void nm_dbus_vpn_schedule_vpn_connections_update (NMData *app_data)
 {
-	GSource	*source = NULL;
+	GSource	* source = NULL;
+	guint id;
 
 	g_return_if_fail (app_data != NULL);
-	g_return_if_fail (app_data->main_context != NULL);
 
-	source = g_idle_source_new ();
-	/* We want this idle source to run before any other idle source */
+	id = g_idle_add ((GSourceFunc) nm_dbus_vpn_connections_update_from_nmi,
+	                 app_data);
+	source = g_main_context_find_source_by_id (NULL, id);
 	g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	g_source_set_callback (source, (GSourceFunc) nm_dbus_vpn_connections_update_from_nmi, app_data, NULL);
-	g_source_attach (source, app_data->main_context);
-	g_source_unref (source);
 }
 
 

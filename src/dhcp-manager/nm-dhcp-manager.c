@@ -54,7 +54,6 @@ static void nm_dhcp_manager_dbus_connection_changed (NMDBusManager *dbus_mgr,
 
 struct NMDHCPManager {
 	NMData *	data;
-	GMainContext *	main_ctx;
 	gboolean	running;
 	size_t		dhcp_sn_len;
 	NMDBusManager *	dbus_mgr;
@@ -87,19 +86,16 @@ static gboolean state_is_down (guint8 state)
 
 
 NMDHCPManager *
-nm_dhcp_manager_new (NMData *data,
-                     GMainContext *main_ctx)
+nm_dhcp_manager_new (NMData *data)
 {
 	NMDHCPManager *	manager;
 	guint32         id;
 
 	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (main_ctx != NULL, NULL);
 
 	manager = g_slice_new0 (NMDHCPManager);
 	manager->data = data;
-	manager->main_ctx = main_ctx;
-	manager->dbus_mgr = nm_dbus_manager_get (NULL);
+	manager->dbus_mgr = nm_dbus_manager_get ();
 	manager->running = nm_dbus_manager_name_has_owner (manager->dbus_mgr,
 	                                                   DHCP_SERVICE_NAME);
 	manager->dhcp_sn_len = strlen (DHCP_SERVICE_NAME);
@@ -206,10 +202,11 @@ out:
  *
  */
 static gboolean
-nm_dhcp_manager_handle_timeout (NMActRequest *req)
+nm_dhcp_manager_handle_timeout (gpointer user_data)
 {
-	NMData *		data;
-	NMDevice *	dev;
+	NMActRequest * req = (NMActRequest *) user_data;
+	NMData *       data;
+	NMDevice *     dev;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -245,9 +242,9 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 	char *			path;
 	const guint32		opt1 = 31;  /* turns off ALL actions and dhclient-script just writes options to dhcdbd */
 	const guint32		opt2 = 2;   /* dhclient is run in ONE SHOT mode and releases existing leases when brought down */
-	GSource *		source;
 	DBusConnection *	dbus_connection;
 	gboolean		success = FALSE;
+	guint           id;
 
 	g_return_val_if_fail (manager != NULL, FALSE);
 	g_return_val_if_fail (req != NULL, FALSE);
@@ -304,13 +301,10 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 	}
 
 	/* Set up a timeout on the transaction to kill it after NM_DHCP_TIMEOUT seconds */
-	source = g_timeout_source_new (NM_DHCP_TIMEOUT * 1000);
-	g_source_set_callback (source,
-	                       (GSourceFunc) nm_dhcp_manager_handle_timeout,
-	                       req,
-	                       NULL);
-	nm_act_request_set_dhcp_timeout (req, g_source_attach (source, manager->main_ctx));
-	g_source_unref (source);
+	id = g_timeout_add (NM_DHCP_TIMEOUT * 1000,
+	                    nm_dhcp_manager_handle_timeout,
+	                    req);
+	nm_act_request_set_dhcp_timeout (req, id);
 	success = TRUE;
 
 out:
@@ -328,9 +322,8 @@ remove_timeout (NMDHCPManager *manager, NMActRequest *req)
 
 	/* Remove any pending timeouts on the request */
 	if ((id = nm_act_request_get_dhcp_timeout (req)) > 0) {
-		GSource * source = g_main_context_find_source_by_id (manager->main_ctx, id);
+		g_source_remove (id);
 		nm_act_request_set_dhcp_timeout (req, 0);
-		g_source_destroy (source);
 	}
 }
 

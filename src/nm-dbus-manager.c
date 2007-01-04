@@ -32,7 +32,6 @@
 
 enum {
 	PROP_0,
-	PROP_MAIN_CONTEXT,
 	PROP_DBUS_CONNECTION
 };
 
@@ -74,7 +73,6 @@ typedef struct MethodHandlerData {
 
 struct _NMDBusManagerPrivate {
 	DBusConnection * connection;
-	GMainContext *   main_ctx;
 	gboolean         started;
 
 	GSList *         msg_handlers;
@@ -96,25 +94,17 @@ static void signal_match_disable (SignalMatch * match);
 
 
 NMDBusManager *
-nm_dbus_manager_get (GMainContext *ctx)
+nm_dbus_manager_get (void)
 {
 	static NMDBusManager *singleton = NULL;
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 
-	/* Ensure that if singleton is NULL, that ctx is non-NULL */
-	g_return_val_if_fail (singleton ? TRUE : (ctx ? TRUE : FALSE), NULL);
-
-	g_static_mutex_lock (&mutex);
 	if (!singleton) {
-		singleton = NM_DBUS_MANAGER (g_object_new (NM_TYPE_DBUS_MANAGER,
-		                                           "main-context", ctx,
-		                                           NULL));
+		singleton = NM_DBUS_MANAGER (g_object_new (NM_TYPE_DBUS_MANAGER, NULL));
 		if (!nm_dbus_manager_init_bus (singleton))
 			start_reconnection_timeout (singleton);
 	} else {
 		g_object_ref (singleton);
 	}
-	g_static_mutex_unlock (&mutex);
 
 	g_assert (singleton);
 	return singleton;
@@ -135,14 +125,6 @@ nm_dbus_manager_set_property (GObject *object,
 	NMDBusManager *self = NM_DBUS_MANAGER (object);
 
 	switch (prop_id) {
-		case PROP_MAIN_CONTEXT:
-			if (!self->priv->main_ctx) {
-				self->priv->main_ctx = g_value_get_pointer (value);
-				g_main_context_ref (self->priv->main_ctx);
-			} else {
-				nm_warning ("already have a valid main context.");
-			}
-			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 			break;
@@ -224,7 +206,6 @@ nm_dbus_manager_finalize (GObject *object)
 	self->priv->matches = NULL;
 
 	nm_dbus_manager_cleanup (self);
-	g_main_context_unref (self->priv->main_ctx);
 
 	g_slist_foreach (self->priv->msg_handlers, cleanup_handler_data, NULL);
 	g_slist_free (self->priv->msg_handlers);
@@ -242,14 +223,6 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 	object_class->finalize = nm_dbus_manager_finalize;
 	object_class->get_property = nm_dbus_manager_get_property;
 	object_class->set_property = nm_dbus_manager_set_property;
-
-	g_object_class_install_property (object_class,
-	                                 PROP_MAIN_CONTEXT,
-	                                 g_param_spec_pointer ("main-context",
-	                                     "GMainContext",
-	                                     "The mainloop context.",
-	                                     G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY)
-	                                );
 
 	g_object_class_install_property (object_class,
 	                                 PROP_DBUS_CONNECTION,
@@ -499,16 +472,8 @@ signal_match_disable (SignalMatch * match)
 static void
 start_reconnection_timeout (NMDBusManager *self)
 {
-	GSource * source;
-
 	/* Schedule timeout for reconnection attempts */
-	source = g_timeout_source_new (3000);
-	g_source_set_callback (source,
-	                       (GSourceFunc) nm_dbus_manager_reconnect,
-	                       self,
-	                       NULL);
-	g_source_attach (source, self->priv->main_ctx);
-	g_source_unref (source);
+	g_timeout_add (3000, nm_dbus_manager_reconnect, self);
 }
 
 static gboolean
@@ -751,8 +716,6 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 	DBusError	error;
 	gboolean	success = FALSE;
 
-	g_return_val_if_fail (self->priv->main_ctx, FALSE);
-
 	if (self->priv->connection) {
 		nm_warning ("DBus Manager already has a valid connection.");
 		return FALSE;
@@ -772,7 +735,7 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 
 	dbus_connection_set_exit_on_disconnect (self->priv->connection, FALSE);	
 	dbus_connection_setup_with_g_main (self->priv->connection,
-	                                   self->priv->main_ctx);
+	                                   g_main_context_default ());
 
 	if (!dbus_connection_add_filter (self->priv->connection,
 	                                 nm_dbus_manager_signal_handler,
@@ -966,7 +929,6 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
                                          NMDBusSignalHandlerFunc callback,
                                          gpointer user_data)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	SignalHandlerData *	sig_handler;
 	SignalMatch * match = NULL;
 
@@ -1001,10 +963,8 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
 
 	signal_match_enable (self, sig_handler->match, NULL);
 
-	g_static_mutex_lock (&mutex);
 	self->priv->sig_handler_id_counter++;
 	sig_handler->id = self->priv->sig_handler_id_counter;
-	g_static_mutex_unlock (&mutex);
 
 	self->priv->signal_handlers = g_slist_append (self->priv->signal_handlers,
 	                                              sig_handler);

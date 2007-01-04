@@ -67,7 +67,7 @@ struct _NMDBusManagerClass {
 
 GType nm_dbus_manager_get_type (void);
 
-NMDBusManager * nm_dbus_manager_get       (GMainContext *ctx);
+NMDBusManager * nm_dbus_manager_get       (void);
 
 char * nm_dbus_manager_get_name_owner     (NMDBusManager *self,
                                            const char *name);

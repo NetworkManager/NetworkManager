@@ -141,7 +141,7 @@ nm_dbus_get_user_key_for_network (NMActRequest *req,
 
 	g_return_if_fail (req != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -222,7 +222,7 @@ nm_dbus_cancel_get_user_key_for_network (NMActRequest *req)
 
 	g_return_if_fail (req != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -271,7 +271,7 @@ nm_dbus_update_network_info (NMAccessPoint *ap,
 
 	g_return_if_fail (ap != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -559,7 +559,7 @@ nm_dbus_get_networks_cb (DBusPendingCall *pcall,
 		goto out;
 	}
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get dbus connection.");
@@ -630,7 +630,7 @@ nm_dbus_update_allowed_networks (NMAccessPointList *list,
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (data != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");
@@ -686,7 +686,7 @@ nm_dbus_update_one_allowed_network (const char *network,
 
 	g_return_if_fail (data != NULL);
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("could not get the dbus connection.");

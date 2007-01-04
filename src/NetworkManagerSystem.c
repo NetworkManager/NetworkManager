@@ -157,17 +157,14 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 
 static struct nl_cache * get_link_cache (struct nl_handle *nlh)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	static struct nl_cache * link_cache = NULL;
 
-	g_static_mutex_lock (&mutex);
 	if (!link_cache)
 		link_cache = rtnl_link_alloc_cache (nlh);
 	if (!link_cache)
 		nm_warning ("couldn't allocate rtnl link cache!");
 	else
 		nl_cache_update (nlh, link_cache);
-	g_static_mutex_unlock (&mutex);
 
 	return link_cache;
 }

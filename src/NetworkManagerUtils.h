@@ -44,11 +44,6 @@ typedef enum SockType
 typedef struct NMSock NMSock;
 
 
-gboolean		nm_try_acquire_mutex			(GMutex *mutex, const char *func);
-void			nm_lock_mutex					(GMutex *mutex, const char *func);
-void			nm_unlock_mutex				(GMutex *mutex, const char *func);
-void			nm_register_mutex_desc			(GMutex *mutex, const char *string);
-
 NMSock *		nm_dev_sock_open				(NMDevice *dev, SockType type, const char *func_name, const char *desc);
 void			nm_dev_sock_close				(NMSock *sock);
 int			nm_dev_sock_get_fd				(NMSock *sock);

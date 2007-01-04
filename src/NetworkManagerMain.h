@@ -72,21 +72,18 @@ typedef struct NMData
 	NMDbusMethodList *		device_methods;
 	NMDbusMethodList *		net_methods;
 
-	GMainContext *			main_context;
 	GMainLoop *			main_loop;
 	gboolean				enable_test_devices;
 
 	guint				dev_change_check_idle_id;
 
 	GSList *				dev_list;
-	GMutex *				dev_list_mutex;
 
 	gboolean				wireless_enabled;
 	gboolean				modem_active;
 	gboolean				asleep;
 
 	GSList *				dialup_list;
-	GMutex *				dialup_list_mutex;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;

@@ -71,7 +71,7 @@ NMVPNManager *nm_vpn_manager_new (NMData *app_data)
 	load_services (manager, manager->service_table);
 
 	manager->dbus_methods = nm_dbus_vpn_methods_setup (manager);
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods);
 	g_object_unref (dbus_mgr);
 
@@ -191,7 +191,7 @@ nm_vpn_manager_add_connection (NMVPNManager *manager,
 	if (!(service = nm_vpn_manager_find_service_by_name (manager, service_name)))
 		return NULL;
 
-	dbus_mgr = nm_dbus_manager_get (NULL);
+	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (!dbus_connection) {
 		nm_warning ("couldn't get dbus connection.");
@@ -400,15 +400,10 @@ static gboolean nm_vpn_manager_vpn_activation_failed (gpointer user_data)
 
 void nm_vpn_manager_schedule_vpn_activation_failed (NMVPNManager *manager, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-
 	g_return_if_fail (manager != NULL);
 	g_return_if_fail (req != NULL);
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_manager_vpn_activation_failed, req, NULL);
-	g_source_attach (source, manager->app_data->main_context);
-	g_source_unref (source);
+	g_idle_add (nm_vpn_manager_vpn_activation_failed, req);
 }
 
 
@@ -431,15 +426,10 @@ static gboolean nm_vpn_manager_vpn_connection_died (gpointer user_data)
 
 void nm_vpn_manager_schedule_vpn_connection_died (NMVPNManager *manager, NMVPNActRequest *req)
 {
-	GSource *			source = NULL;
-
 	g_return_if_fail (manager != NULL);
 	g_return_if_fail (req != NULL);
 
-	source = g_idle_source_new ();
-	g_source_set_callback (source, (GSourceFunc) nm_vpn_manager_vpn_connection_died, req, NULL);
-	g_source_attach (source, manager->app_data->main_context);
-	g_source_unref (source);
+	g_idle_add (nm_vpn_manager_vpn_connection_died, req);
 }
 
 
