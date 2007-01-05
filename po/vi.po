@@ -1,13 +1,13 @@
 # Vietnamese translation for Network Manager.
-# Copyright © 2006 Gnome i18n Project for Vietnamese.
-# Clytie Siddall <clytie@riverland.net.au>, 2006.
+# Copyright © 2007 Gnome i18n Project for Vietnamese.
+# Clytie Siddall <clytie@riverland.net.au>, 2006-2007.
 # 
 msgid ""
 ""
 msgstr "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-24 13:57+0200\n"
-"PO-Revision-Date: 2006-08-24 23:09+0930\n"
+"POT-Creation-Date: 2007-01-02 04:01+0000\n"
+"PO-Revision-Date: 2007-01-05 14:47+1030\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <gnomevi-list@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -22,125 +22,136 @@ msgstr "Project-Id-Version: NetworkManager HEAD\n"
 msgid "Passphrase for wireless network %s"
 msgstr "Cụm từ mật khẩu cho mạng vô tuyến %s"
 
-#: ../gnome/applet/applet-dbus.c:265
+#: ../gnome/applet/applet-dbus.c:274
 #, c-format
 msgid "Connection to the wireless network '%s' failed."
 msgstr "Lỗi kết nối đến mạng vô tuyến « %s »."
 
-#: ../gnome/applet/applet-dbus.c:270
+#: ../gnome/applet/applet-dbus.c:279
 msgid "Connection to the wired network failed."
 msgstr "Lỗi kết nối đến mạng tuyến."
 
-#: ../gnome/applet/applet.c:184
+#: ../gnome/applet/applet.c:182
 msgid "Error displaying connection information:"
 msgstr "Gặp lỗi khi hiển thị thông tin kết nối:"
 
-#: ../gnome/applet/applet.c:202
+#: ../gnome/applet/applet.c:200
 msgid "Could not find some required resources (the glade file)!"
 msgstr "Không tìm thấy một số tài nguyên cần thiết (tập tin glade) !"
 
-#: ../gnome/applet/applet.c:213
+#: ../gnome/applet/applet.c:210
 msgid "No active connections!"
 msgstr "Không có kết nối hoạt động !"
 
-#: ../gnome/applet/applet.c:234
+#: ../gnome/applet/applet.c:227
+#, c-format
+msgid "%d Mb/s"
+msgstr "%d Mb/g"
+
+#: ../gnome/applet/applet.c:230
 #, c-format
 msgid "Wired Ethernet (%s)"
 msgstr "Ethernet tuyến (%s)"
 
-#: ../gnome/applet/applet.c:236
+#: ../gnome/applet/applet.c:232
 #, c-format
 msgid "Wireless Ethernet (%s)"
 msgstr "Ethernet vô tuyến (%s)"
 
-#: ../gnome/applet/applet.c:332
-#: ../gnome/applet/applet.c:358
+#: ../gnome/applet/applet.c:238
+msgid "Unknown"
+msgstr "Không rõ"
+
+#: ../gnome/applet/applet.c:330
+#: ../gnome/applet/applet.c:357
 msgid "NetworkManager Applet"
 msgstr "Tiểu dụng Quản Lý Mạng"
 
-#: ../gnome/applet/applet.c:334
+#: ../gnome/applet/applet.c:332
 msgid ""
 "Copyright © 2004-2006 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 msgstr "Tác quyền © năm 2004-2006 của Red Hat, Inc.\n"
 "Tác quyền © năm 2005-2006 của Novell, Inc."
 
-#: ../gnome/applet/applet.c:336
-#: ../gnome/applet/applet.c:362
+#: ../gnome/applet/applet.c:334
+#: ../gnome/applet/applet.c:361
 msgid ""
 "Notification area applet for managing your network devices and connections."
 msgstr "Tiểu dụng vùng thông báo để quản lý các thiết bị và kết nối mạng của bạn."
 
-#: ../gnome/applet/applet.c:339
-#: ../gnome/applet/applet.c:366
+#: ../gnome/applet/applet.c:337
+#: ../gnome/applet/applet.c:365
 msgid "translator-credits"
 msgstr "Nhóm Việt hóa Gnome <gnomevi-list@lists.sourceforge.net>"
 
-#: ../gnome/applet/applet.c:360
+#: ../gnome/applet/applet.c:359
 msgid ""
 "Copyright © 2004-2005 Red Hat, Inc.\n"
 "Copyright © 2005-2006 Novell, Inc."
 msgstr "Tác quyền © năm 2004-2005 của Red Hat, Inc.\n"
 "Tác quyền © năm 2005-2006 của Novell, Inc."
 
-#: ../gnome/applet/applet.c:422
+#: ../gnome/applet/applet.c:421
 msgid "VPN Login Failure"
 msgstr "Lỗi đăng nhập VPN"
 
-#: ../gnome/applet/applet.c:423
+#: ../gnome/applet/applet.c:422
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a login failure."
 msgstr "Không thể khởi chạy kết nối VPN « %s » do lỗi đăng nhập."
 
-#: ../gnome/applet/applet.c:427
+#: ../gnome/applet/applet.c:426
 msgid "VPN Start Failure"
 msgstr "Lỗi khởi chạy VPN"
 
-#: ../gnome/applet/applet.c:428
+#: ../gnome/applet/applet.c:427
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
 "program."
 msgstr "Không thể khởi chạy kết nối VPN « %s » do lỗi khởi chạy chương trình VPN."
 
-#: ../gnome/applet/applet.c:432
-#: ../gnome/applet/applet.c:442
+#: ../gnome/applet/applet.c:431
+#: ../gnome/applet/applet.c:441
 msgid "VPN Connect Failure"
 msgstr "Lỗi kết nối VPN"
 
-#: ../gnome/applet/applet.c:433
+#: ../gnome/applet/applet.c:432
 #, c-format
 msgid "Could not start the VPN connection '%s' due to a connection error."
 msgstr "Không thể khởi chạy kết nối VPN « %s » do lỗi kết nối."
 
-#: ../gnome/applet/applet.c:437
+#: ../gnome/applet/applet.c:436
 msgid "VPN Configuration Error"
 msgstr "Lỗi cấu hình VPN"
 
-#: ../gnome/applet/applet.c:438
+#: ../gnome/applet/applet.c:437
 #, c-format
 msgid "The VPN connection '%s' was not correctly configured."
 msgstr "Chưa cấu hình đúng sự kết nối VPN « %s »."
 
-#: ../gnome/applet/applet.c:443
+#: ../gnome/applet/applet.c:442
 #, c-format
 msgid ""
 "Could not start the VPN connection '%s' because the VPN server did not "
 "return an adequate network configuration."
-msgstr "Không thể khởi chạy kết nối VPN « %s » vì trình phục vụ VPN chưa trả lại cấu hình mạng thích hợp."
+msgstr "Không thể khởi chạy kết nối VPN « %s » vì trình phục vụ VPN chưa trả lại cấu "
+"hình mạng thích hợp."
 
-#: ../gnome/applet/applet.c:513
+#: ../gnome/applet/applet.c:512
 msgid "VPN Login Message"
 msgstr "Thông điệp đăng nhập VPN"
 
 #: ../gnome/applet/applet.c:737
-#: ../gnome/applet/applet.c:2507
+#: ../gnome/applet/applet.c:2635
 #: ../gnome/applet/other-network-dialog.c:458
 #: ../gnome/applet/passphrase-dialog.c:228
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr "Tiểu dụng Quản Lý Mạng không tìm thấy một số tài nguyên cần thiết (không tìm thấy tập tin glade)."
+msgstr "Tiểu dụng Quản Lý Mạng không tìm thấy một số tài nguyên cần thiết (không tìm "
+"thấy tập tin glade)."
 
 #: ../gnome/applet/applet.c:749
 #, c-format
@@ -152,160 +163,167 @@ msgstr "Thiết bị mạng « %s (%s) » không hỗ trợ khả năng quét v�
 msgid "The network device \"%s (%s)\" does not support link detection."
 msgstr "Thiết bị mạng « %s (%s) » không hỗ trợ khả năng phát hiện liên kết."
 
-#: ../gnome/applet/applet.c:904
+#.Note to translators: this is used if no essid is known
+#: ../gnome/applet/applet.c:905
+#: ../gnome/applet/applet.c:1103
+msgid "(unknown)"
+msgstr "(không rõ)"
+
+#: ../gnome/applet/applet.c:911
 #, c-format
 msgid "Preparing device %s for the wired network..."
 msgstr "Đang chuẩn bị thiết bị %s cho mạng tuyến..."
 
-#: ../gnome/applet/applet.c:906
+#: ../gnome/applet/applet.c:913
 #, c-format
 msgid "Preparing device %s for the wireless network '%s'..."
 msgstr "Đang chuẩn bị thiết bị %s cho mạng vô tuyến « %s »..."
 
-#: ../gnome/applet/applet.c:914
+#: ../gnome/applet/applet.c:921
 #, c-format
 msgid "Configuring device %s for the wired network..."
 msgstr "Đang cấu hình thiết bị %s cho mạng tuyến..."
 
-#: ../gnome/applet/applet.c:916
+#: ../gnome/applet/applet.c:923
 #, c-format
 msgid "Attempting to join the wireless network '%s'..."
 msgstr "Đang thử tham gia mạng vô tuyến « %s »..."
 
-#: ../gnome/applet/applet.c:924
+#: ../gnome/applet/applet.c:931
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
 msgstr "Đang đợi Khóa Mạng cho mạng vô tuyến « %s »..."
 
-#: ../gnome/applet/applet.c:932
-#: ../gnome/applet/applet.c:942
+#: ../gnome/applet/applet.c:939
+#: ../gnome/applet/applet.c:949
 msgid "Requesting a network address from the wired network..."
 msgstr "Đang yêu cầu địa chỉ mạng từ mạng tuyến..."
 
-#: ../gnome/applet/applet.c:934
-#: ../gnome/applet/applet.c:944
+#: ../gnome/applet/applet.c:941
+#: ../gnome/applet/applet.c:951
 #, c-format
 msgid "Requesting a network address from the wireless network '%s'..."
 msgstr "Đang yêu cầu địa chỉ mạng từ mạng vô tuyến « %s »..."
 
-#: ../gnome/applet/applet.c:952
+#: ../gnome/applet/applet.c:959
 msgid "Finishing connection to the wired network..."
 msgstr "Đang kết nối xong tới mạng tuyến..."
 
-#: ../gnome/applet/applet.c:954
+#: ../gnome/applet/applet.c:961
 #, c-format
 msgid "Finishing connection to the wireless network '%s'..."
 msgstr "Đang kết nối xong tới mạng vô tuyến « %s »..."
 
-#: ../gnome/applet/applet.c:1071
+#: ../gnome/applet/applet.c:1078
 msgid "NetworkManager is not running"
 msgstr "Trình NetworkManager không đang chạy"
 
-#: ../gnome/applet/applet.c:1079
-#: ../gnome/applet/applet.c:1824
+#: ../gnome/applet/applet.c:1086
+#: ../gnome/applet/applet.c:1843
 msgid "Networking disabled"
 msgstr "Chạy mạng bị tắt"
 
-#: ../gnome/applet/applet.c:1084
+#: ../gnome/applet/applet.c:1091
 msgid "No network connection"
 msgstr "Không có kết nối mạng"
 
-#: ../gnome/applet/applet.c:1089
+#: ../gnome/applet/applet.c:1096
 msgid "Wired network connection"
 msgstr "Kết nối mạng tuyến"
 
-#: ../gnome/applet/applet.c:1093
+#: ../gnome/applet/applet.c:1100
 msgid "Connected to an Ad-Hoc wireless network"
 msgstr "Đã kết nối tới một mạng vô tuyến Như Có"
 
-#: ../gnome/applet/applet.c:1095
+#: ../gnome/applet/applet.c:1102
 #, c-format
 msgid "Wireless network connection to '%s' (%d%%)"
 msgstr "Kết nối mạng vô tuyến tới « %s » (%d%%)"
 
-#: ../gnome/applet/applet.c:1116
+#: ../gnome/applet/applet.c:1123
 #, c-format
 msgid "VPN connection to '%s'"
 msgstr "Kết nối VPN tới « %s »"
 
-#: ../gnome/applet/applet.c:1124
+#: ../gnome/applet/applet.c:1131
 #, c-format
 msgid "VPN connecting to '%s'"
 msgstr "Đang kết nối VPN tới « %s »..."
 
-#: ../gnome/applet/applet.c:1537
+#: ../gnome/applet/applet.c:1556
 msgid "_Connect to Other Wireless Network..."
 msgstr "Kết nối tới mạng vô tuyến khá_c..."
 
-#: ../gnome/applet/applet.c:1558
+#: ../gnome/applet/applet.c:1577
 msgid "Create _New Wireless Network..."
 msgstr "Tạo mạ_ng vô tuyến mới..."
 
-#: ../gnome/applet/applet.c:1681
+#: ../gnome/applet/applet.c:1700
 msgid "_VPN Connections"
 msgstr "Kết nối _VPN"
 
-#: ../gnome/applet/applet.c:1726
+#: ../gnome/applet/applet.c:1745
 msgid "_Configure VPN..."
 msgstr "_Cấu hình VPN..."
 
-#: ../gnome/applet/applet.c:1730
+#: ../gnome/applet/applet.c:1749
 msgid "_Disconnect VPN..."
 msgstr "N_gắt kết nối VPN..."
 
-#: ../gnome/applet/applet.c:1752
+#: ../gnome/applet/applet.c:1771
 msgid "_Dial Up Connections"
 msgstr "Kết nối _quay số"
 
 #.FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1763
+#: ../gnome/applet/applet.c:1782
 #, c-format
 msgid "Connect to %s..."
 msgstr "Kết nối đến %s..."
 
-#: ../gnome/applet/applet.c:1769
+#: ../gnome/applet/applet.c:1788
 #, c-format
 msgid "Disconnect from %s..."
 msgstr "Ngắt kết nối từ %s..."
 
-#: ../gnome/applet/applet.c:1818
+#: ../gnome/applet/applet.c:1837
 msgid "No network devices have been found"
 msgstr "Không tìm thấy thiết bị mạng nào"
 
-#: ../gnome/applet/applet.c:2010
+#: ../gnome/applet/applet.c:2029
 msgid "NetworkManager is not running..."
 msgstr "Trình NetworkManager không đang chạy..."
 
 #.'Enable Networking' item
-#: ../gnome/applet/applet.c:2166
+#: ../gnome/applet/applet.c:2210
 msgid "Enable _Networking"
 msgstr "Bật chạy _mạng"
 
 #.'Enable Wireless' item
-#: ../gnome/applet/applet.c:2172
+#: ../gnome/applet/applet.c:2216
 msgid "Enable _Wireless"
 msgstr "Bật _vô tuyến"
 
 #.'Connection Information' item
-#: ../gnome/applet/applet.c:2178
+#: ../gnome/applet/applet.c:2222
 msgid "Connection _Information"
 msgstr "Thông t_in kết nối"
 
 #.Help item
-#: ../gnome/applet/applet.c:2189
+#: ../gnome/applet/applet.c:2233
 msgid "_Help"
 msgstr "Trợ _giúp"
 
 #.About item
-#: ../gnome/applet/applet.c:2198
+#: ../gnome/applet/applet.c:2242
 msgid "_About"
 msgstr "_Giới thiệu"
 
-#: ../gnome/applet/applet.c:2666
+#: ../gnome/applet/applet.c:2824
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
-msgstr "Tiểu dụng Quản Lý Mạng không tìm thấy một số tài nguyên nên không thể tiếp tục.\n"
+msgstr "Tiểu dụng Quản Lý Mạng không tìm thấy một số tài nguyên nên không thể tiếp "
+"tục.\n"
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
@@ -421,8 +439,7 @@ msgstr " (Unicode không hợp lệ)"
 msgid ""
 "By default, the wireless network's name is set to your computer's name, %s, "
 "with no encryption enabled"
-msgstr "Mặc định là tên của mạng vô tuyến được đặt thành tên của máy tính của bạn, %s, "
-"không có mật mã được bật."
+msgstr "Mặc định là tên của mạng vô tuyến được đặt thành tên của máy tính của bạn, %s, không có mật mã được bật."
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
@@ -458,7 +475,8 @@ msgstr "Gặp lỗi khi kết nối đến mạng vô tuyến"
 msgid ""
 "The requested wireless network requires security capabilities unsupported by "
 "your hardware."
-msgstr "Mạng vô tuyến đã yêu cầu cũng cần thiết khả năng bảo mật không được hỗ trợ bởi phần cứng của bạn."
+msgstr "Mạng vô tuyến đã yêu cầu cũng cần thiết khả năng bảo mật không được hỗ trợ "
+"bởi phần cứng của bạn."
 
 #: ../gnome/applet/vpn-password-dialog.c:151
 #: ../gnome/applet/vpn-password-dialog.c:188
@@ -471,14 +489,16 @@ msgstr "Không thể khởi chạy kết nối VPN tới « %s »"
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
 "Contact your system administrator."
-msgstr "Không tìm thấy hộp thoại xác thực cho kết nối VPN kiểu « %s ». Hãy liên lạc với nhà quản trị hệ thống."
+msgstr "Không tìm thấy hộp thoại xác thực cho kết nối VPN kiểu « %s ». Hãy liên lạc "
+"với nhà quản trị hệ thống."
 
 #: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
 msgid ""
 "There was a problem launching the authentication dialog for VPN connection "
 "type '%s'. Contact your system administrator."
-msgstr "Gặp lỗi khi khởi chạy hộp thoại xác thực cho kết nối VPN kiểu « %s ». Hãy liên lạc với nhà quản trị hệ thống."
+msgstr "Gặp lỗi khi khởi chạy hộp thoại xác thực cho kết nối VPN kiểu « %s ». Hãy "
+"liên lạc với nhà quản trị hệ thống."
 
 #: ../gnome/applet/applet.glade.h:1
 msgid " "
@@ -524,7 +544,9 @@ msgid ""
 msgstr "<span weight=\"bold\" size=\"larger\">Xác nhận đăng nhập vào mạng vô tuyến</"
 "span>\n"
 "\n"
-"Bạn đã chọn đăng nhập vào mạng vô tuyến « %s ». Nếu bạn có chắc là mạng này bảo mật, hãy đánh dấu trong hộp chọn bên dưới, vậy trình Quản Lý Mạng sẽ không cần thiết xác nhận khi đăng nhập sau."
+"Bạn đã chọn đăng nhập vào mạng vô tuyến « %s ». Nếu bạn có chắc là mạng này "
+"bảo mật, hãy đánh dấu trong hộp chọn bên dưới, vậy trình Quản Lý Mạng sẽ "
+"không cần thiết xác nhận khi đăng nhập sau."
 
 #: ../gnome/applet/applet.glade.h:15
 msgid "Anonymous Identity:"
@@ -720,57 +742,61 @@ msgstr "Tê_n mạng:"
 msgid "_Wireless Security:"
 msgstr "_Bảo mật vô tuyến:"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:389
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
 msgid "Cannot add VPN connection"
 msgstr "Không thể thêm kết nối VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:391
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr "Không tìm thấy phần mềm VPN thích hợp nằm trong hệ thống của bạn. Hãy liên lạc với nhà quản trị hệ thống."
+msgstr "Không tìm thấy phần mềm VPN thích hợp nằm trong hệ thống của bạn. Hãy liên "
+"lạc với nhà quản trị hệ thống."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:433
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
 msgid "Cannot import VPN connection"
 msgstr "Không thể nhập kết nối VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:435
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr "Không tìm thấy phần mềm thích hợp cho kiểu kết nối VPN « %s » để nhập tập tin « %s ». Hãy liên lạc với nhà quản trị hệ thống."
+msgstr "Không tìm thấy phần mềm thích hợp cho kiểu kết nối VPN « %s » để nhập tập "
+"tin « %s ». Hãy liên lạc với nhà quản trị hệ thống."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:555
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Gặp lỗi khi lấy kết nối VPN « %s »"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:558
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr "Không tìm thấy những tập tin giao diện người dùng cho kiểu kết nối VPN « %s ». Hãy liên lạc với nhà quản trị hệ thống."
+msgstr "Không tìm thấy những tập tin giao diện người dùng cho kiểu kết nối VPN « %s "
+"». Hãy liên lạc với nhà quản trị hệ thống."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:714
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Xóa bỏ kết nối VPN « %s » không?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr "Mọi thông tin về kết nối VPN « %s » sẽ bị mất; bạn có thể sẽ cần xin nhà quản trị hệ thống cung cấp thông tin để tạo kết nối mới."
+msgstr "Mọi thông tin về kết nối VPN « %s » sẽ bị mất; bạn có thể sẽ cần xin nhà "
+"quản trị hệ thống cung cấp thông tin để tạo kết nối mới."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:912
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
 msgid "Unable to load"
 msgstr "Không thể tải"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:914
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Không tìm thấy một số tài nguyên cần thiết (tải tập tin glade) !"
 
@@ -782,7 +808,7 @@ msgstr "Không tìm thấy một số tài nguyên cần thiết (tải tập ti
 #.GTK_STOCK_APPLY,
 #.GTK_RESPONSE_ACCEPT,
 #.NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1059
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
 msgid "Create VPN Connection"
 msgstr "Tạo kết nối VPN"
 
@@ -795,7 +821,7 @@ msgstr "Tạo kết nối VPN"
 #.gtk_window_set_modal (druid_window, TRUE);
 #.gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
 #.Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1077
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
 msgid "Edit VPN Connection"
 msgstr "Sửa kết nối VPN"
 
@@ -842,91 +868,98 @@ msgid "104-bit WEP"
 msgstr "104-bit WEP"
 
 # Literal: don't translate / Nghĩa chữ: đừng dịch
-#: ../src/nm-ap-security-wpa-psk.c:50
+#: ../src/nm-ap-security-wpa-psk.c:51
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
 # Literal: don't translate / Nghĩa chữ: đừng dịch
-#: ../src/nm-ap-security-wpa-psk.c:52
+#: ../src/nm-ap-security-wpa-psk.c:53
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:54
+#: ../src/nm-ap-security-wpa-psk.c:55
 msgid "WPA Automatic"
 msgstr "WPA Tự động"
 
 # Literal: don't translate / Nghĩa chữ: đừng dịch
-#: ../src/nm-ap-security-wpa-psk.c:59
+#: ../src/nm-ap-security-wpa-psk.c:60
 msgid "WPA2 TKIP"
 msgstr "WPA2 TKIP"
 
 # Literal: don't translate / Nghĩa chữ: đừng dịch
-#: ../src/nm-ap-security-wpa-psk.c:61
+#: ../src/nm-ap-security-wpa-psk.c:62
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:63
+#: ../src/nm-ap-security-wpa-psk.c:64
 msgid "WPA2 Automatic"
 msgstr "WPA2 Tự động"
 
-#: ../src/nm-ap-security.c:338
+#: ../src/nm-ap-security.c:334
 msgid "none"
 msgstr "không có"
 
-#: ../src/nm-netlink-monitor.c:170
+#: ../src/nm-netlink-monitor.c:174
 #, c-format
 msgid ""
 "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "không thể tạo ổ cắm kiểu liên kết mạng (netlink), để theo dõi các thiết bị Ethernet tuyến — %s"
+msgstr "không thể tạo ổ cắm kiểu liên kết mạng (netlink), để theo dõi các thiết bị "
+"Ethernet tuyến — %s"
 
-#: ../src/nm-netlink-monitor.c:188
+#: ../src/nm-netlink-monitor.c:192
 #, c-format
 msgid ""
 "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "không thể đóng kết tới ổ cắm kiểu liên kết mạng (netlink), để theo dõi các thiết bị Ethernet tuyến — %s"
+msgstr "không thể đóng kết tới ổ cắm kiểu liên kết mạng (netlink), để theo dõi các "
+"thiết bị Ethernet tuyến — %s"
 
-#: ../src/nm-netlink-monitor.c:425
+#: ../src/nm-netlink-monitor.c:427
 msgid "operation took too long"
 msgstr "thao tác quá lâu"
 
-#: ../src/nm-netlink-monitor.c:522
+#: ../src/nm-netlink-monitor.c:524
 msgid "received data from wrong type of sender"
 msgstr "đã nhận dữ liệu từ bộ gởi kiểu sai"
 
-#: ../src/nm-netlink-monitor.c:535
+#: ../src/nm-netlink-monitor.c:537
 msgid "received data from unexpected sender"
 msgstr "đã nhận dữ liệu từ bộ gởi bất ngờ"
 
-#: ../src/nm-netlink-monitor.c:664
+#: ../src/nm-netlink-monitor.c:666
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "quá nhiều dữ liệu đã được gởi qua ổ cắm nên một phần bị mất"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../src/nm-netlink-monitor.c:776
 msgid "error occurred while waiting for data on socket"
 msgstr "gặp lỗi khi đợi dữ liệu trên ổ cắm"
 
-#: ../gnome/applet/applet-dbus-devices.c:922
+#: ../gnome/applet/applet-dbus-devices.c:930
 #, c-format
 msgid "You are now connected to the Ad-Hoc wireless network '%s'."
 msgstr "Bây giờ bạn có kết nối hoạt động đến mạng vô tuyến Như Có « %s »."
 
-#: ../gnome/applet/applet-dbus-devices.c:927
+#: ../gnome/applet/applet-dbus-devices.c:935
 #, c-format
 msgid "You are now connected to the wireless network '%s'."
 msgstr "Bây giờ bạn có kết nối hoạt động đến mạng vô tuyến « %s »."
 
-#: ../gnome/applet/applet-dbus-devices.c:934
+#: ../gnome/applet/applet-dbus-devices.c:942
 msgid "You are now connected to the wired network."
 msgstr "Bây giờ bạn có kết nối hoạt động đến mạng tuyến."
 
-#: ../gnome/applet/applet-dbus-devices.c:940
+#: ../gnome/applet/applet-dbus-devices.c:948
 msgid "Connection Established"
 msgstr "Kết nối đã được thiết lập"
 
-#: ../gnome/applet/applet-dbus-devices.c:983
+#: ../gnome/applet/applet-dbus-devices.c:997
 msgid "Disconnected"
 msgstr "Bị ngắt kết nối"
 
-#: ../gnome/applet/applet-dbus-devices.c:984
+#: ../gnome/applet/applet-dbus-devices.c:998
 msgid "The network connection has been disconnected."
 msgstr "Kết nối mạng đã bị ngắt."
+
+#: ../src/nm-ap-security-leap.c:66
+#: ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
