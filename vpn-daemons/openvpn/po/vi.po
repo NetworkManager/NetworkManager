@@ -1,13 +1,13 @@
 # Vietnamese translation for Network Manager Open-VPN.
-# Copyright © 2006 Gnome i18n Project for Vietnamese.
-# Clytie Siddall <clytie@riverland.net.au>, 2006.
+# Copyright © 2007 Gnome i18n Project for Vietnamese.
+# Clytie Siddall <clytie@riverland.net.au>, 2006-2007.
 # 
 msgid ""
-msgstr ""
-"Project-Id-Version: NetworkManager-openvpn\n"
+""
+msgstr "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-26 04:57+0200\n"
-"PO-Revision-Date: 2006-08-26 18:30+0930\n"
+"POT-Creation-Date: 2007-01-02 04:01+0000\n"
+"PO-Revision-Date: 2007-01-04 22:57+1030\n"
 "Last-Translator: Clytie Siddall <clytie@riverland.net.au>\n"
 "Language-Team: Vietnamese <gnomevi-list@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -16,27 +16,27 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Generator: LocFactoryEditor 1.6fc1\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Mật khẩu :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "Mật khẩu _phụ :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "_Tên người dùng:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Miền:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Kết nối vô d_anh"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Kết nối _với tư cách người dùng:"
 
@@ -57,7 +57,11 @@ msgstr "Bạn cần phải xác thực để truy cập Mạng Riêng Ảo (VPN)
 msgid "Authenticate VPN"
 msgstr "Xác thực VPN"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "Mật _khẩu chứng nhận:"
+
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Mật khẩu chứng nhận:"
 
@@ -86,18 +90,21 @@ msgstr "Tên: %s"
 msgid "Connection Type: X.509 Certificates"
 msgstr "Kiểu kết nối: chứng nhận X.509"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
+#: ../properties/nm-openvpn.c:742
+#: ../properties/nm-openvpn.c:769
 #: ../properties/nm-openvpn.c:781
 #, c-format
 msgid "CA:  %s"
 msgstr "Nhà cầm quyền chứng nhận: %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:745
+#: ../properties/nm-openvpn.c:784
 #, c-format
 msgid "Cert:  %s"
 msgstr "Chứng nhận: %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:748
+#: ../properties/nm-openvpn.c:787
 #, c-format
 msgid "Key:  %s"
 msgstr "Khóa: %s"
@@ -125,7 +132,8 @@ msgstr "IP ở xa: %s"
 msgid "Connection Type: Password"
 msgstr "Kiểu kết nối: mật khẩu"
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:772
+#: ../properties/nm-openvpn.c:790
 #, c-format
 msgid "Username:  %s"
 msgstr "Tên người dùng: %s"
@@ -211,7 +219,8 @@ msgstr "Tập tin thiết lập VPN « %s » không chứa dữ liệu hợp l�
 msgid "Select file to import"
 msgstr "Chọn tập tin cần nhập"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1122
+#: ../properties/nm-openvpn.c:1134
 msgid "Select CA to use"
 msgstr "Chọn nhà cầm quyền chứng nhận (CA) cần dùng"
 
@@ -231,7 +240,7 @@ msgstr "Chọn khoá dùng chung cần dùng"
 msgid "Select TA to use"
 msgstr "Chọn TA cần dùng"
 
-#. printf ("in impl_export\n");
+#.printf ("in impl_export\n");
 #: ../properties/nm-openvpn.c:1326
 msgid "Save as..."
 msgstr "Lưu dạng..."
@@ -310,17 +319,15 @@ msgstr "Mật khẩu"
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Hãy gõ dưới đây thông tin được cung cấp bởi nhà quản trị hệ thống. Đừng gõ mật "
-"khẩu vào đây: bạn sẽ được nhắc gõ nó trong khi kết nối."
+msgstr "Hãy gõ dưới đây thông tin được cung cấp bởi nhà quản trị hệ thống. Đừng gõ "
+"mật khẩu vào đây: bạn sẽ được nhắc gõ nó trong khi kết nối."
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
-msgstr ""
-"Ghi chú : tập tin nhập không phải là tập tin cấu hình OpenVPN. Hãy xin nhà quản "
-"trị hệ thống cung cấp tập tin đó."
+msgstr "Ghi chú : tập tin nhập không phải là tập tin cấu hình OpenVPN. Hãy xin nhà "
+"quản trị hệ thống cung cấp tập tin đó."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Remote IP:"
@@ -368,8 +375,7 @@ msgid ""
 "Pre-shared key\n"
 "Password Authentication\n"
 "X.509 with Password Authentication"
-msgstr ""
-"Chứng nhận X.509\n"
+msgstr "Chứng nhận X.509\n"
 "Khoá dùng chung sẵn\n"
 "Xác thực bằng mật khẩu\n"
 "X.509 và xác thực bằng mật khẩu"
@@ -386,8 +392,7 @@ msgstr "_Nhập cấu hình đã lưu..."
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
-msgstr ""
-"Tê_n dùng để nhận diện kết nối cho mạng riêng, v.d. « VPN đại học » hay « "
+msgstr "Tê_n dùng để nhận diện kết nối cho mạng riêng, v.d. « VPN đại học » hay « "
 "mạng công ty »."
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
@@ -402,8 +407,7 @@ msgstr "không có"
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr ""
-"Việc đăng nhập VPN bị lỗi, vì tên người dùng và mật khẩu bị từ chối, hoặc vì "
+msgstr "Việc đăng nhập VPN bị lỗi, vì tên người dùng và mật khẩu bị từ chối, hoặc vì "
 "mật khẩu chứng nhận là sai."
 
 #: ../src/nm-openvpn-service.c:129
@@ -414,23 +418,20 @@ msgstr "Việc đăng nhập VPN bị lỗi, vì không thể khởi chạy chư
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr ""
-"Việc đăng nhập VPN bị lỗi, vì chương trình VPN không thể kết nối đến máy "
+msgstr "Việc đăng nhập VPN bị lỗi, vì chương trình VPN không thể kết nối đến máy "
 "phục vụ VPN."
 
 #: ../src/nm-openvpn-service.c:133
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"Việc đăng nhập VPN bị lỗi, vì những tùy chọn cấu hình VPN không phải là hợp "
+msgstr "Việc đăng nhập VPN bị lỗi, vì những tùy chọn cấu hình VPN không phải là hợp "
 "lệ."
 
 #: ../src/nm-openvpn-service.c:135
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr ""
-"Việc đăng nhập VPN bị lỗi, vì chương trình VPN đã nhận cấu hình không hợp lệ "
+msgstr "Việc đăng nhập VPN bị lỗi, vì chương trình VPN đã nhận cấu hình không hợp lệ "
 "từ máy phục vụ VPN."
 
 #: ../src/nm-openvpn-service.c:137
