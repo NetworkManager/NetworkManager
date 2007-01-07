@@ -1500,7 +1500,20 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
  
       ip4_vpn_gateway=data->ip4_vpn_gateway.s_addr;
 
-#ifdef NM_VPN_USE_DBUS_DICT_INTERFACE
+#ifdef NM_VPN_USE_OLD_DBUS_INTERFACE
+      dbus_message_append_args (signal, 
+                DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+				DBUS_TYPE_STRING, &tundev,
+				DBUS_TYPE_UINT32, &ip4_address,
+				DBUS_TYPE_UINT32, &ip4_ptp_address,
+				DBUS_TYPE_UINT32, &ip4_netmask,
+				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
+				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
+				DBUS_TYPE_UINT32, &mss,
+				DBUS_TYPE_STRING, &empty,
+				DBUS_TYPE_STRING, &empty,
+				DBUS_TYPE_INVALID);
+#else
       dbus_message_iter_init_append (signal, &iter);
       if (!nmu_dbus_dict_open_write (&iter, &iter_dict)) {
           nm_warning ("dict open write failed!");
@@ -1559,19 +1572,6 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
           goto out;
       } 
 */
-#else
-      dbus_message_append_args (signal, 
-                DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-				DBUS_TYPE_STRING, &tundev,
-				DBUS_TYPE_UINT32, &ip4_address,
-				DBUS_TYPE_UINT32, &ip4_ptp_address,
-				DBUS_TYPE_UINT32, &ip4_netmask,
-				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
-				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
-				DBUS_TYPE_UINT32, &mss,
-				DBUS_TYPE_STRING, &empty,
-				DBUS_TYPE_STRING, &empty,
-				DBUS_TYPE_INVALID);
 #endif
       if (!dbus_connection_send (data->con, signal, NULL))
       {
