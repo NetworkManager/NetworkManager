@@ -161,9 +161,9 @@ gnome_two_password_dialog_finalize (GObject *object)
 	g_object_unref (password_dialog->details->password_entry_secondary);
 
 	g_free (password_dialog->details->remember_label_text);
-	g_free (password_dialog->details);
-
 	g_free (password_dialog->details->secondary_password_label);
+
+	g_free (password_dialog->details);
 
 	if (G_OBJECT_CLASS (parent_class)->finalize != NULL)
 		(* G_OBJECT_CLASS (parent_class)->finalize) (object);
