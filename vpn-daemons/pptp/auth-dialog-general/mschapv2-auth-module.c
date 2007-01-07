@@ -133,7 +133,7 @@ impl_get_object (void)
 {
   char *glade_file;
   GnomeGenericAuthModuleImpl *impl;
-  GtkWidget *w;
+//  GtkWidget *w;
 
   impl = g_new0 (GnomeGenericAuthModuleImpl, 1);
   glade_file = g_strdup_printf ("%s/%s", GLADEDIR, GLADE_FILE);

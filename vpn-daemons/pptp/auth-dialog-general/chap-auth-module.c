@@ -25,8 +25,8 @@ struct _GnomeGenericAuthModuleImpl {
 };
 
 #define GLADE_FILE "nm-ppp-auth.glade"
-//#define GLADE_WIDGET "auth-chap-widget"
-#define GLADE_WIDGET "table1"
+#define GLADE_WIDGET "auth-chap-widget"
+//#define GLADE_WIDGET "table1"
 
 #define AUTH_TYPE "CHAP"
 #define AUTH_TYPE_DISPLAY_NAME "CHAP Version 1"
@@ -34,8 +34,8 @@ struct _GnomeGenericAuthModuleImpl {
 static void 
 entry_changed (GtkWidget *widget,gpointer data)
 {
-   GnomeGenericAuthModuleImpl *impl = (GnomeGenericAuthModuleImpl *) data;
-   g_warning("Entry: %s",gtk_entry_get_text(GTK_ENTRY(widget)));
+//   GnomeGenericAuthModuleImpl *impl = (GnomeGenericAuthModuleImpl *) data;
+   g_warning("Entry: %s (%s)",gtk_entry_get_text(GTK_ENTRY(widget)), gtk_widget_get_name(widget));
 }
 
 static void 
@@ -47,11 +47,11 @@ GtkWidget *w;
 g_warning("Clearing widget");
    gtk_entry_set_text(impl->w_username,"");
    gtk_entry_set_text(impl->w_password,"");
-//   gtk_widget_grab_focus (GTK_WIDGET(impl->w_username));
-g_warning("Username %s", GTK_WIDGET_CAN_FOCUS(impl->widget) ? "Can focus" : "Can't focus" );
-g_warning("Username %s", GTK_WIDGET_VISIBLE(impl->widget) ? "Is visible" : "Is not visible");
-g_warning("Username %s", GTK_WIDGET_SENSITIVE(impl->widget) ? "Is sensitive" : "Is not sensitive");
-        g_warning("Widget:  %s",gtk_widget_get_name(impl->widget));
+   gtk_widget_grab_focus (GTK_WIDGET(impl->w_username));
+//g_warning("Username %s", GTK_WIDGET_CAN_FOCUS(impl->w_username) ? "Can focus" : "Can't focus" );
+//g_warning("Username %s", GTK_WIDGET_VISIBLE(impl->w_username) ? "Is visible" : "Is not visible");
+//g_warning("Username %s", GTK_WIDGET_SENSITIVE(impl->w_username) ? "Is sensitive" : "Is not sensitive");
+//g_warning("Widget:  %s",gtk_widget_get_name(impl->widget));
      impl->w_username = GTK_ENTRY(glade_xml_get_widget(impl->xml, "username"));
    	g_signal_connect (impl->w_username, "changed", G_CALLBACK (entry_changed), impl);
 //     gtk_widget_grab_focus (GTK_WIDGET(impl->w_username));
@@ -98,7 +98,6 @@ impl_set_secret (GnomeGenericAuthModule *self, const char *object, const char *s
 {
   GnomeGenericAuthModuleImpl *impl = (GnomeGenericAuthModuleImpl *) self->data;
 
-g_warning("Setting secret: %s=%s",object,secret);
   if (strcmp(object,"password")==0) {
     gtk_entry_set_text(impl->w_password,secret);
   } else {
@@ -150,8 +149,9 @@ impl_get_object (void)
 {
   char *glade_file;
   GnomeGenericAuthModuleImpl *impl;
-  GtkWidget *w;
+//  GtkWidget *w;
 
+g_warning("get widget");
   impl = g_new0 (GnomeGenericAuthModuleImpl, 1);
   glade_file = g_strdup_printf ("%s/%s", GLADEDIR, GLADE_FILE);
   impl->xml = glade_xml_new (glade_file, NULL, GETTEXT_PACKAGE);
@@ -166,7 +166,6 @@ impl_get_object (void)
 
    	impl->w_username = GTK_ENTRY(glade_xml_get_widget(impl->xml,"username"));
    	impl->w_password = GTK_ENTRY(glade_xml_get_widget(impl->xml,"password"));
-
    	g_signal_connect (impl->w_username, "activate", G_CALLBACK (goto_next), impl);
    	g_signal_connect (impl->w_password, "activate", G_CALLBACK (goto_next), impl);
    

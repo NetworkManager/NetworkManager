@@ -33,36 +33,13 @@
 
 #define SERVICE_NAME "org.freedesktop.NetworkManager.ppp_starter"
 
-static void save_auth_info (const char *connection_name, const char *service_name, const char *keyring, 
-			       const char *auth_type, const char *username, const char *password)
-{
-	guint32 item_id;
-	GnomeKeyringResult keyring_result;
-
-	keyring_result = gnome_keyring_set_network_password_sync (keyring,
-								  username,
-								  NULL,
-								  connection_name,
-								  "password",
-								  service_name,
-								  auth_type,
-								  0,
-								  password,
-								  &item_id);
-	if (keyring_result != GNOME_KEYRING_RESULT_OK)
-	{
-		g_warning ("Couldn't store authentication information in keyring, code %d", (int) keyring_result);
-	}
-
-}
-
 static GSList *
 get_passwords (const char *connection_name, const char *service_name, gboolean retry)
 {
 	GSList          *result;
 	char            *prompt;
 	GnomeGenericAuthDialog *dialog;
-	GnomeGenericAuthDialogRemember remember;
+//	GnomeGenericAuthDialogRemember remember;
 
 	result = NULL;
 
@@ -95,27 +72,20 @@ get_passwords (const char *connection_name, const char *service_name, gboolean r
         GSList *secrets;
         GSList *item;
 		const char *username;
-		char *password;
+//		char *password;
 		const char *auth_type;
 
 		username = gnome_generic_auth_dialog_get_user (dialog);
-		secrets = gnome_generic_auth_dialog_get_secrets (dialog);
         auth_type = gnome_generic_auth_dialog_get_auth_type (dialog);
-// DEBUG: Force auth_type, username, password
-//		result = g_slist_append (result, g_strdup("CHAP"));
-//		result = g_slist_append (result, g_strdup("username"));
-//		result = g_slist_append (result, g_strdup("password"));
+		secrets = gnome_generic_auth_dialog_get_secrets (dialog);
 
 		result = g_slist_append (result, g_strdup(auth_type));
-g_warning("Secret: %s",auth_type);
 		result = g_slist_append (result, g_strdup(username));
-g_warning("Secret: %s",username);
 
         for (item=secrets; item!=NULL; item=g_slist_next(item))
         { 
           g_free(item->data);
           item = g_slist_next(item);
-g_warning("Secret: %s",(char *)item->data);
 		  result = g_slist_append (result, item->data);
         } 
         g_slist_free(secrets);

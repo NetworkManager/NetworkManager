@@ -67,6 +67,7 @@ struct GnomeGenericAuthDialogDetails
 
 	GtkWidget *current_widget;
 	GtkWidget *widget_holder;
+	GtkWidget *current_widget_old_parent;
 	GtkComboBox *auth_type_combo;
 
 
@@ -96,8 +97,8 @@ static void gnome_generic_auth_dialog_finalize         (GObject                *
 
 
 /* GtkDialog callbacks */
-static void dialog_show_callback                 (GtkWidget              *widget,
-						  gpointer                callback_data);
+//static void dialog_show_callback                 (GtkWidget              *widget,
+//						  gpointer                callback_data);
 static void dialog_close_callback                (GtkWidget              *widget,
 						  gpointer                callback_data);
 
@@ -220,7 +221,7 @@ load_all_modules (GnomeGenericAuthDialog *dialog)
 
 		while ((f = g_dir_read_name (dir)) != NULL) {
 			char *so_path;
-			GKeyFile *keyfile;
+//			GKeyFile *keyfile;
 
 			if (!g_str_has_suffix (f, ".so"))
 				continue;
@@ -277,9 +278,49 @@ gnome_generic_auth_dialog_finalize (GObject *object)
 		(* G_OBJECT_CLASS (parent_class)->finalize) (object);
 }
 
-static void
-dialog_close_callback (GtkWidget *widget, gpointer callback_data)
+static void auth_widget_reparent(GnomeGenericAuthDialog *dialog, GtkWidget *new_parent)
 {
+  if (dialog->details->current_widget==NULL) {
+    if (dialog->details->current_widget_old_parent!=NULL) {
+      g_error("parent previously was not restored to widget");
+    }
+    return;
+  }
+  if ((new_parent==NULL) && (dialog->details->current_widget_old_parent==NULL)) {
+    return;
+  } else if (new_parent==NULL) {
+    gtk_widget_reparent(dialog->details->current_widget,dialog->details->current_widget_old_parent);
+    dialog->details->current_widget_old_parent=NULL;
+    return;
+  } else if (dialog->details->current_widget_old_parent==NULL) {
+    dialog->details->current_widget_old_parent=gtk_widget_get_parent(dialog->details->current_widget);
+  }
+
+  gtk_widget_reparent(dialog->details->current_widget,new_parent);
+}
+
+static void auth_widget_get_current(GnomeGenericAuthDialog *dialog)
+{
+    GSList *auth_modules;
+
+    if (dialog->details->current_widget!=NULL) {
+        auth_widget_reparent(dialog,NULL);
+        dialog->details->current_widget=NULL;
+    }
+
+    auth_modules=dialog->details->auth_modules;
+
+    if (dialog->details->current_module != NULL) {
+        dialog->details->current_widget = dialog->details->current_module->get_widget (dialog->details->current_module);
+    }
+}
+
+static void
+dialog_close_callback (GtkWidget *widget, gpointer user_data)
+{
+	GnomeGenericAuthDialog *dialog = (GnomeGenericAuthDialog *) user_data;
+
+    auth_widget_reparent(dialog,NULL); 
 	gtk_widget_hide (widget);
 }
 
@@ -287,13 +328,12 @@ static void
 auth_type_changed_callback (GtkWidget *widget, gpointer user_data) 
 {
 	GnomeGenericAuthDialog *dialog = (GnomeGenericAuthDialog *) user_data;
-    GnomeGenericAuthModule *module;
     GList *i;
     GList *children;
     GtkWidget *w;
     GSList *auth_modules;
     GtkWidget *widget_holder;
-    GtkWidget *widget_holder_parent;
+//    GtkWidget *widget_holder_parent;
     GtkComboBox *auth_type_combo;
 
     auth_modules=dialog->details->auth_modules;
@@ -303,51 +343,20 @@ auth_type_changed_callback (GtkWidget *widget, gpointer user_data)
     g_return_if_fail(widget_holder!=NULL);
     g_return_if_fail(GTK_IS_CONTAINER(widget_holder));
 
-//	g_object_ref (G_OBJECT (widget_holder));
-    if (dialog->details->current_widget!=NULL) {
-        gtk_widget_hide_all(dialog->details->current_widget);
-    	/* remove existing VPN widget */
-    	children = gtk_container_get_children (GTK_CONTAINER (widget_holder));
-    	for (i = children; i != NULL; i = g_list_next (i)) {
-    		w = GTK_WIDGET (i->data);
-    		g_object_ref (G_OBJECT (w));
-    		gtk_widget_hide_all (w);
-    		gtk_container_remove (GTK_CONTAINER (widget_holder), w);
-    	}
-    	g_list_free (children);
-    }
+    auth_widget_reparent(dialog,NULL);
 
 	/* show appropriate child */
-	module = (GnomeGenericAuthModule *) 
+	dialog->details->current_module = (GnomeGenericAuthModule *) 
             g_slist_nth_data (auth_modules, 
                  gtk_combo_box_get_active (GTK_COMBO_BOX(auth_type_combo)));
-	if (module == NULL) return;
+	if (dialog->details->current_module == NULL) return;
 
-	w = module->get_widget (module);
-	if (w != NULL) {	
-		GtkWidget *old_parent;
-		gtk_widget_ref (w);
-		gtk_widget_hide_all (w);
-		old_parent = gtk_widget_get_parent (w);
-		if (old_parent != NULL)
-    		gtk_container_remove (GTK_CONTAINER (old_parent), w);
-		gtk_container_add (GTK_CONTAINER (widget_holder), w);
-		gtk_widget_unref (w);
+    auth_widget_get_current(dialog);
+    auth_widget_reparent(dialog,dialog->details->widget_holder);
 
-		gtk_widget_show_all (w);
-        gtk_widget_grab_focus (w);
-	}
-
-    dialog->details->current_module=module;
-    dialog->details->current_widget=w;
-//	widget_holder_parent = gtk_widget_get_parent (widget_holder);
-//		if (widget_holder_parent != NULL)
-//         gtk_container_resize_children (GTK_CONTAINER (widget_holder_parent));
-//    gtk_container_resize_children (GTK_CONTAINER (widget_holder));
-//    gtk_container_resize_children (GTK_CONTAINER (dialog));
-//	g_object_unref (G_OBJECT (widget_holder));
-
-//		vpn_ui->set_validity_changed_callback (vpn_ui, vpn_druid_vpn_validity_changed, NULL);
+//    dialog->details->current_module->set_validity_changed_callback (
+//          dialog->details->current_module, 
+//          auth_widget_validity_changed, NULL);
 }
 
 gboolean
@@ -678,7 +687,6 @@ gnome_generic_auth_dialog_lookup_in_keyring (GnomeGenericAuthDialog	*dialog) {
    for (item = keyring_result; item != NULL; item=g_list_next(item)) {
      data = (GnomeKeyringNetworkPasswordData *)item->data;
      if (strcmp(data->authtype,first_auth_type)==0) {
-g_warning("Setting: '%s' '%s' '%s' '%s' '%d' '%s' '%s'",data->user,data->server,data->domain,data->protocol,data->port,data->object,data->password);
        if (data->user!=NULL) gnome_generic_auth_dialog_set_user(dialog, data->user);
        if (data->server!=NULL) gnome_generic_auth_dialog_set_server(dialog, data->server);
        if (data->domain!=NULL) gnome_generic_auth_dialog_set_domain(dialog, data->domain);
@@ -744,7 +752,6 @@ gnome_generic_auth_dialog_new (const char	*dialog_title,
     } 
 
     load_all_modules(dialog);
-
 
     if (dialog->details->auth_modules==NULL) {
       g_warning("gnome-generic-auth-dialog: Cannot find any authentication modules!");
@@ -844,7 +851,7 @@ gnome_generic_auth_dialog_new (const char	*dialog_title,
 			    TRUE,	/* fill */
 			    0);       	/* padding */
 	
-	gtk_widget_show_all (GTK_DIALOG (dialog)->vbox);
+	gtk_widget_show (GTK_DIALOG (dialog)->vbox);
 
 	dialog->details->remember_session_button =
 		gtk_check_button_new_with_mnemonic (_("_Remember for this session"));
@@ -876,6 +883,7 @@ gnome_generic_auth_dialog_run_and_block (GnomeGenericAuthDialog *dialog)
 
     save_to_keyring_as_needed(dialog);
 
+    auth_widget_reparent(dialog,NULL);
 	gtk_widget_hide (GTK_WIDGET (dialog));
 
 	return button_clicked == GTK_RESPONSE_OK;
