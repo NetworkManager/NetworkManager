@@ -2,7 +2,6 @@ Makefile.in.in
 Makefile
 Makefile.in
 POTFILES
-da.gmo
-sv.gmo
+*.gmo
 *.pot
 stamp-it
