@@ -772,6 +772,19 @@ static gint nm_ppp_get_cmdline_ppp (NmPPPData *data, char **data_items, const in
 }
 
 /*
+ * nm_pptp_child_setup
+ *
+ * Set the process group ID of the newly forked process
+ *
+ */
+void nm_pptp_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+  /* We are in the child process at this point */
+  pid_t pid = getpid ();
+  setpgid (pid, pid);
+}
+
+/*
  * nm_ppp_start_vpn_binary
  *
  * Start the ppp binary with a set of arguments and a config file.
@@ -836,7 +849,7 @@ static gint nm_ppp_start_ppp_binary (NmPPPData *data, char **data_items, const i
     }
 
   if (!g_spawn_async_with_pipes (NULL, (char **) ppp_argv->pdata, NULL,
-				 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &stdin_fd,
+				 G_SPAWN_DO_NOT_REAP_CHILD, &nm_pptp_child_setup, NULL, &pid, &stdin_fd,
 				 NULL, NULL, &error))
     {
       g_ptr_array_foreach(free_later,(GFunc)g_free,NULL);
