@@ -1,5 +1,5 @@
 Makefile.in
 Makefile
-nm-pptp-auth-dialog
+nm-ppp-auth-dialog
 .libs
 .deps
