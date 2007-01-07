@@ -73,7 +73,7 @@ if test "z$found_pppd_headers" = "z"; then
   PPPD_CFLAGS="-I ./external/$PPPD_VERSION"
 fi
 
-PPPD_PLUGIN_DIR="$libdir/pppd/$PPPD_VERSION"
+PPPD_PLUGIN_DIR="$libexecdir/pppd/$PPPD_VERSION"
 AC_SUBST(PPPD_CFLAGS)
 AC_SUBST(PPPD_PLUGIN_DIR)
 
