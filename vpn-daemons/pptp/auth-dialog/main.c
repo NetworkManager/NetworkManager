@@ -178,8 +178,8 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 // Statically set the authentication type for now.
         auth_type = g_strdup("CHAP");
 		result = g_slist_append (result, auth_type);
-		result = g_slist_append (result, username);
-		result = g_slist_append (result, password);
+		result = g_slist_append (result, g_strdup(username));
+		result = g_slist_append (result, g_strdup(password));
 
 		switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog)))
 		{
@@ -198,6 +198,7 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 	if (keyring_username!=NULL) g_free (keyring_username);
 	if (keyring_password!=NULL) g_free (keyring_password);
 
+	gtk_widget_hide (dialog);
 	gtk_widget_destroy (dialog);
 
 	return result;
