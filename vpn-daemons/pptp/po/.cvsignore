@@ -4,4 +4,5 @@ Makefile.in
 POTFILES
 *.gmo
 *.pot
+.intltool-merge-cache
 stamp-it
