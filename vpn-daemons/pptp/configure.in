@@ -143,9 +143,9 @@ AS_AC_EXPAND(SBINDIR, $sbindir)
 AS_AC_EXPAND(LIBDIR, $libdir)
 AS_AC_EXPAND(LIBEXECDIR, $libexecdir)
 
-AC_ARG_ENABLE(nm-vpn-dbus-dict, [  --enable-nm-vpn-dbus-dict  Build Plugin to use newer DBUS Dict NetworkManager VPN interface [default=no]], enable_nm_vpn_dbus_dict="$enableval", enable_nm_vpn_dbus_dict=no)
-if test "x$enable_nm_vpn_dbus_dict" = "xyes" ; then
-    NM_VPN_CFLAGS="NM_VPN_USE_DBUS_DICT_INTERFACE"
+AC_ARG_ENABLE(nm-vpn-dbus-dict, [  --enable-nm-vpn-dbus-old  Build Plugin to use newer DBUS Dict NetworkManager VPN interface [default=no]], enable_nm_vpn_dbus_dict="$enableval", enable_nm_vpn_dbus_old=no)
+if test "x$enable_nm_vpn_dbus_old" = "xyes" ; then
+    NM_VPN_CFLAGS="-DNM_VPN_USE_OLD_DBUS_INTERFACE"
 fi
 AC_ARG_ENABLE(bluetooth, [  --enable-bluetooth  Build Bluetooth bits [default=no]], enable_bluetooth="$enableval", enable_bluetooth=no)
 if test "x$enable_bluetooth" = "xyes" ; then
