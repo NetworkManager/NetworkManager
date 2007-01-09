@@ -1,0 +1,918 @@
+# Slovenian translation of NetworkManager.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the NetworkManager package.
+#
+# Matic Žgur <mr.zgur@gmail.com>, 2007.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2006-11-17 05:31+0100\n"
+"PO-Revision-Date: 2007-01-09 16:11+0100\n"
+"Last-Translator: Matic Žgur <mr.zgur@gmail.com>\n"
+"Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
+"X-Poedit-Language: Slovenian\n"
+
+#: ../gnome/applet/applet-compat.c:171
+#: ../gnome/applet/applet-dbus-info.c:926
+#, c-format
+msgid "Passphrase for wireless network %s"
+msgstr "Šifrirna fraza za brezžično omrežje %s"
+
+#: ../gnome/applet/applet-dbus.c:274
+#, c-format
+msgid "Connection to the wireless network '%s' failed."
+msgstr "Povezava z brezžičnim omrežjem %s ni uspela"
+
+#: ../gnome/applet/applet-dbus.c:279
+msgid "Connection to the wired network failed."
+msgstr "Povezava z žičnim omrežjem ni uspela."
+
+#: ../gnome/applet/applet.c:182
+msgid "Error displaying connection information:"
+msgstr "Napaka pri prikazovanju informacij o povezavi:"
+
+#: ../gnome/applet/applet.c:200
+msgid "Could not find some required resources (the glade file)!"
+msgstr "Ni mogoče najti nekaterih zahtevanih virov (datoteke glade)!"
+
+#: ../gnome/applet/applet.c:210
+msgid "No active connections!"
+msgstr "Ni aktivnih povezav!"
+
+#: ../gnome/applet/applet.c:227
+#, c-format
+msgid "%d Mb/s"
+msgstr "%d Mb/s"
+
+#: ../gnome/applet/applet.c:230
+#, c-format
+msgid "Wired Ethernet (%s)"
+msgstr "Žični eternet (%s)"
+
+#: ../gnome/applet/applet.c:232
+#, c-format
+msgid "Wireless Ethernet (%s)"
+msgstr "Brezžični eternet (%s)"
+
+#: ../gnome/applet/applet.c:238
+msgid "Unknown"
+msgstr "Neznano"
+
+#: ../gnome/applet/applet.c:330
+#: ../gnome/applet/applet.c:357
+msgid "NetworkManager Applet"
+msgstr "Programček NetworkManager"
+
+#: ../gnome/applet/applet.c:332
+msgid ""
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"Copyright © 2004-2006 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:334
+#: ../gnome/applet/applet.c:361
+msgid "Notification area applet for managing your network devices and connections."
+msgstr "Programček za območje obvestil za upravljanje vaših mrežnih naprav in povezav."
+
+#: ../gnome/applet/applet.c:337
+#: ../gnome/applet/applet.c:365
+msgid "translator-credits"
+msgstr "Matic Žgur <mr.zgur@gmail.com>"
+
+#: ../gnome/applet/applet.c:359
+msgid ""
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+msgstr ""
+"Copyright © 2004-2005 Red Hat, Inc.\n"
+"Copyright © 2005-2006 Novell, Inc."
+
+#: ../gnome/applet/applet.c:421
+msgid "VPN Login Failure"
+msgstr "Neuspela prijava VPN"
+
+#: ../gnome/applet/applet.c:422
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a login failure."
+msgstr "Ni mogoče začeti povezave VPN '%s' zaradi neuspele prijave."
+
+#: ../gnome/applet/applet.c:426
+msgid "VPN Start Failure"
+msgstr "Neuspel zagon VPN"
+
+#: ../gnome/applet/applet.c:427
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a failure launching the VPN program."
+msgstr "Ni mogoče začeti povezave VPN '%s' zaradi neuspelega zagona programa VPN."
+
+#: ../gnome/applet/applet.c:431
+#: ../gnome/applet/applet.c:441
+msgid "VPN Connect Failure"
+msgstr "Neuspela povezava VPN"
+
+#: ../gnome/applet/applet.c:432
+#, c-format
+msgid "Could not start the VPN connection '%s' due to a connection error."
+msgstr "Ni mogoče začeti povezave VPN '%s' zaradi napake pri povezavi."
+
+#: ../gnome/applet/applet.c:436
+msgid "VPN Configuration Error"
+msgstr "Napaka nastavitev VPN"
+
+#: ../gnome/applet/applet.c:437
+#, c-format
+msgid "The VPN connection '%s' was not correctly configured."
+msgstr "Povezava VPN '%s' ni pravilno nastavljena."
+
+#: ../gnome/applet/applet.c:442
+#, c-format
+msgid "Could not start the VPN connection '%s' because the VPN server did not return an adequate network configuration."
+msgstr "Ni mogoče začeti povezave VPN '%s', ker strežnik VPN ni vrnil ustreznih nastavitev."
+
+#: ../gnome/applet/applet.c:512
+msgid "VPN Login Message"
+msgstr "Prijavno sporočilo VPN"
+
+#: ../gnome/applet/applet.c:737
+#: ../gnome/applet/applet.c:2635
+#: ../gnome/applet/other-network-dialog.c:458
+#: ../gnome/applet/passphrase-dialog.c:228
+msgid "The NetworkManager Applet could not find some required resources (the glade file was not found)."
+msgstr "Programček NetworkManager ne more najti nekaterih zahtevanih virov (datoteka glade ni bila najdena)."
+
+#: ../gnome/applet/applet.c:749
+#, c-format
+msgid "The network device \"%s (%s)\" does not support wireless scanning."
+msgstr "Omrežna naprava \"%s (%s)\" ne podpira skeniranja brezžičnih omrežij."
+
+#: ../gnome/applet/applet.c:757
+#, c-format
+msgid "The network device \"%s (%s)\" does not support link detection."
+msgstr "Omrežna naprava \"%s (%s)\" ne podpira odkrivanja povezav."
+
+#. Note to translators: this is used if no essid is known
+#: ../gnome/applet/applet.c:905
+#: ../gnome/applet/applet.c:1103
+msgid "(unknown)"
+msgstr "(neznano)"
+
+#: ../gnome/applet/applet.c:911
+#, c-format
+msgid "Preparing device %s for the wired network..."
+msgstr "Pripravljanje naprave %s na žično omrežje ..."
+
+#: ../gnome/applet/applet.c:913
+#, c-format
+msgid "Preparing device %s for the wireless network '%s'..."
+msgstr "Pripravljanje naprave %s na rezžično omrežje '%s' ..."
+
+#: ../gnome/applet/applet.c:921
+#, c-format
+msgid "Configuring device %s for the wired network..."
+msgstr "Nastavljanje naprave %s za žično omrežje ..."
+
+#: ../gnome/applet/applet.c:923
+#, c-format
+msgid "Attempting to join the wireless network '%s'..."
+msgstr "Poskus pridruževanja brezžičnemu omrežju '%s' ..."
+
+#: ../gnome/applet/applet.c:931
+#, c-format
+msgid "Waiting for Network Key for the wireless network '%s'..."
+msgstr "Čakanje na omrežni ključ za brezžično omrežje '%s' ..."
+
+#: ../gnome/applet/applet.c:939
+#: ../gnome/applet/applet.c:949
+msgid "Requesting a network address from the wired network..."
+msgstr "Zahtevanje omrežnega naslova iz žičnega omrežja ..."
+
+#: ../gnome/applet/applet.c:941
+#: ../gnome/applet/applet.c:951
+#, c-format
+msgid "Requesting a network address from the wireless network '%s'..."
+msgstr "Zahtevanje omrežnega naslova iz brezžičnega omrežja '%s' ..."
+
+#: ../gnome/applet/applet.c:959
+msgid "Finishing connection to the wired network..."
+msgstr "Zaključevanje povezave v žično omrežje ..."
+
+#: ../gnome/applet/applet.c:961
+#, c-format
+msgid "Finishing connection to the wireless network '%s'..."
+msgstr "Zaključevanje povezave v brezžično omrežje '%s' ..."
+
+#: ../gnome/applet/applet.c:1078
+msgid "NetworkManager is not running"
+msgstr "NetworkManager ni zagnan"
+
+#: ../gnome/applet/applet.c:1086
+#: ../gnome/applet/applet.c:1843
+msgid "Networking disabled"
+msgstr "Omrežje onemogočeno"
+
+#: ../gnome/applet/applet.c:1091
+msgid "No network connection"
+msgstr "Nobene omrežne povezave"
+
+#: ../gnome/applet/applet.c:1096
+msgid "Wired network connection"
+msgstr "Žična omrežna povezava"
+
+#: ../gnome/applet/applet.c:1100
+msgid "Connected to an Ad-Hoc wireless network"
+msgstr "Povezan v ad-hoc brezžično omrežje"
+
+#: ../gnome/applet/applet.c:1102
+#, c-format
+msgid "Wireless network connection to '%s' (%d%%)"
+msgstr "Brezžična omrežna povezava z '%s' (%d%%)"
+
+#: ../gnome/applet/applet.c:1123
+#, c-format
+msgid "VPN connection to '%s'"
+msgstr "Povezave VPN z '%s'"
+
+#: ../gnome/applet/applet.c:1131
+#, c-format
+msgid "VPN connecting to '%s'"
+msgstr "Povezovanje VPN z '%s'"
+
+#: ../gnome/applet/applet.c:1556
+msgid "_Connect to Other Wireless Network..."
+msgstr "Po_veži se v drugo brezžično omrežje ..."
+
+#: ../gnome/applet/applet.c:1577
+msgid "Create _New Wireless Network..."
+msgstr "_Ustvari novo brezžično omrežje ..."
+
+#: ../gnome/applet/applet.c:1700
+msgid "_VPN Connections"
+msgstr "_Povezave VPN"
+
+#: ../gnome/applet/applet.c:1745
+msgid "_Configure VPN..."
+msgstr "_Nastavi VPN ..."
+
+#: ../gnome/applet/applet.c:1749
+msgid "_Disconnect VPN..."
+msgstr "_Prekini povezavo z VPN ..."
+
+#: ../gnome/applet/applet.c:1771
+msgid "_Dial Up Connections"
+msgstr "_Klicna povezava"
+
+#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
+#: ../gnome/applet/applet.c:1782
+#, c-format
+msgid "Connect to %s..."
+msgstr "Poveži se v %s ..."
+
+#: ../gnome/applet/applet.c:1788
+#, c-format
+msgid "Disconnect from %s..."
+msgstr "Prekini povezavo z %s ..."
+
+#: ../gnome/applet/applet.c:1837
+msgid "No network devices have been found"
+msgstr "Najdena ni bila nobena omrežna naprava"
+
+#: ../gnome/applet/applet.c:2029
+msgid "NetworkManager is not running..."
+msgstr "NetworkManager ni zagnan ..."
+
+#. 'Enable Networking' item
+#: ../gnome/applet/applet.c:2210
+msgid "Enable _Networking"
+msgstr "Omogoči _omrežje"
+
+#. 'Enable Wireless' item
+#: ../gnome/applet/applet.c:2216
+msgid "Enable _Wireless"
+msgstr "Omogoči _brezžično omrežje"
+
+#. 'Connection Information' item
+#: ../gnome/applet/applet.c:2222
+msgid "Connection _Information"
+msgstr "_Informacije o povezavi"
+
+#. Help item
+#: ../gnome/applet/applet.c:2233
+msgid "_Help"
+msgstr "_Pomoč"
+
+#. About item
+#: ../gnome/applet/applet.c:2242
+msgid "_About"
+msgstr "_O Programu"
+
+#: ../gnome/applet/applet.c:2824
+msgid "The NetworkManager applet could not find some required resources.  It cannot continue.\n"
+msgstr "Programček NetworkManager ne more najti nekaterih zahtevanih virov.  Ni mogoče nadaljevati.\n"
+
+#: ../gnome/applet/wireless-security-option.c:157
+msgid "Open System"
+msgstr "Odprti sistem"
+
+#: ../gnome/applet/wireless-security-option.c:160
+msgid "Shared Key"
+msgstr "Deljeni ključ"
+
+#: ../gnome/applet/wireless-security-option.c:208
+msgid "Automatic (Default)"
+msgstr "Samodejno (privzeto)"
+
+#: ../gnome/applet/wireless-security-option.c:215
+msgid "AES-CCMP"
+msgstr "AES-CCMP"
+
+#: ../gnome/applet/wireless-security-option.c:223
+msgid "TKIP"
+msgstr "TKIP"
+
+#: ../gnome/applet/wireless-security-option.c:231
+msgid "Dynamic WEP"
+msgstr "Dinamični WEP"
+
+#: ../gnome/applet/wso-none.c:53
+msgid "None"
+msgstr "Brez"
+
+#: ../gnome/applet/wso-wep-ascii.c:138
+msgid "WEP 64/128-bit ASCII"
+msgstr "WEP 64/128-bit ASCII"
+
+#: ../gnome/applet/wso-wep-hex.c:135
+msgid "WEP 64/128-bit Hex"
+msgstr "WEP 64/128-bit Hex"
+
+#: ../gnome/applet/wso-wep-passphrase.c:135
+msgid "WEP 128-bit Passphrase"
+msgstr "WEP 128-bit šifrirna fraza"
+
+#: ../gnome/applet/wso-wpa-eap.c:237
+msgid "PEAP"
+msgstr "PEAP"
+
+#: ../gnome/applet/wso-wpa-eap.c:238
+msgid "TLS"
+msgstr "TLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:239
+msgid "TTLS"
+msgstr "TTLS"
+
+#: ../gnome/applet/wso-wpa-eap.c:247
+#: ../src/nm-ap-security-wpa-eap.c:93
+#: ../src/nm-ap-security-wpa-eap.c:117
+msgid "WPA2 Enterprise"
+msgstr "Podjetniški WPA2"
+
+#: ../gnome/applet/wso-wpa-eap.c:249
+#: ../src/nm-ap-security-wpa-eap.c:95
+#: ../src/nm-ap-security-wpa-eap.c:122
+msgid "WPA Enterprise"
+msgstr "Podjetniški WPA"
+
+#: ../gnome/applet/wso-wpa-psk.c:178
+msgid "WPA2 Personal"
+msgstr "Osebni WPA2"
+
+#: ../gnome/applet/wso-wpa-psk.c:180
+msgid "WPA Personal"
+msgstr "Osebni WPA"
+
+#: ../gnome/applet/eggtrayicon.c:134
+msgid "Orientation"
+msgstr "Usmerjenost"
+
+#: ../gnome/applet/eggtrayicon.c:135
+msgid "The orientation of the tray."
+msgstr "Usmeritev pladnja."
+
+#: ../gnome/applet/menu-items.c:88
+#, c-format
+msgid "Wired Network (%s)"
+msgstr "Žično omrežje (%s)"
+
+#: ../gnome/applet/menu-items.c:91
+msgid "_Wired Network"
+msgstr "Ž_ično omrežje"
+
+#: ../gnome/applet/menu-items.c:162
+#, c-format
+msgid "Wireless Network (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "Brezžično omrežje (%s)"
+msgstr[1] "Brezžični omrežji (%s)"
+msgstr[2] "Brezžična omrežja (%s)"
+msgstr[3] "Brezžična omrežja (%s)"
+
+#: ../gnome/applet/menu-items.c:164
+msgid "Wireless Network"
+msgid_plural "Wireless Networks"
+msgstr[0] "Brezžično omrežje"
+msgstr[1] "Brezžični omrežji"
+msgstr[2] "Brezžična omrežja"
+msgstr[3] "Brezžična omrežja"
+
+#: ../gnome/applet/menu-items.c:343
+msgid " (invalid Unicode)"
+msgstr " (neveljaven Unicode)"
+
+#: ../gnome/applet/other-network-dialog.c:352
+#, c-format
+msgid "By default, the wireless network's name is set to your computer's name, %s, with no encryption enabled"
+msgstr "Privzeto je ime brezžičnega omrežja nastavljeno na ime vašega računalnika, %s, brez omogočenega šifriranja"
+
+#: ../gnome/applet/other-network-dialog.c:358
+msgid "Create new wireless network"
+msgstr "Ustvari novo brezžično omrežje"
+
+#: ../gnome/applet/other-network-dialog.c:359
+msgid "Enter the name and security settings of the wireless network you wish to create."
+msgstr "Vnesite ime in varnostne nastavitve brezžičnega omrežja, ki ga želite ustvariti."
+
+#: ../gnome/applet/other-network-dialog.c:363
+msgid "Create New Wireless Network"
+msgstr "Ustvari novo brezžično omrežje"
+
+#: ../gnome/applet/other-network-dialog.c:368
+msgid "Existing wireless network"
+msgstr "Obstoječe brezžično omrežje"
+
+#: ../gnome/applet/other-network-dialog.c:369
+msgid "Enter the name of the wireless network to which you wish to connect."
+msgstr "Vnesite ime brezžičnega omrežja, v katerega se želite povezati."
+
+#: ../gnome/applet/other-network-dialog.c:371
+msgid "Connect to Other Wireless Network"
+msgstr "Poveži se v drugo brezžično omrežje"
+
+#: ../gnome/applet/passphrase-dialog.c:215
+msgid "Error connecting to wireless network"
+msgstr "Napaka pri povezovanju z brezžičnim omrežjem"
+
+#: ../gnome/applet/passphrase-dialog.c:216
+msgid "The requested wireless network requires security capabilities unsupported by your hardware."
+msgstr "Zahtevano brezžično omrežje zahteva varnostne zmožnosti, ki so nepodprte z vašo strojno opremo."
+
+#: ../gnome/applet/vpn-password-dialog.c:151
+#: ../gnome/applet/vpn-password-dialog.c:188
+#, c-format
+msgid "Cannot start VPN connection '%s'"
+msgstr "Ni mogoče začeti povezave VPN '%s'"
+
+#: ../gnome/applet/vpn-password-dialog.c:154
+#, c-format
+msgid "Could not find the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "Ni mogoče najti pogovornega okna za overitev za povezavo VPN vrste '%s'. Kontaktirajte sistemskega administratorja."
+
+#: ../gnome/applet/vpn-password-dialog.c:191
+#, c-format
+msgid "There was a problem launching the authentication dialog for VPN connection type '%s'. Contact your system administrator."
+msgstr "Pri zagonu pogovornega okna za overovitev za povezavo VPN vrste '%s' je prišlo do problema. Kontaktirajte sistemskega administratorja."
+
+#: ../gnome/applet/applet.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../gnome/applet/applet.glade.h:2
+msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">Informacije o aktivni povezavi</span>"
+
+#: ../gnome/applet/applet.glade.h:4
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless Network</span>\n"
+"\n"
+"A passphrase or encryption key is required to access the wireless network '%s'."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Šifrirna fraza, ki jo zahteva brezžično omrežje</span>\n"
+"\n"
+"Za dostop do brezžičnega omrežja '%s' je zahtevana šifrirna fraza ali šifrirni ključ."
+
+#: ../gnome/applet/applet.glade.h:8
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
+"\n"
+"%s  It will not be completely functional."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Zmanjšana uporabnost omrežja</span>\n"
+"\n"
+"%s  ne bo popolnoma uporaben."
+
+#: ../gnome/applet/applet.glade.h:12
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</span>\n"
+"\n"
+"You have chosen to log in to the wireless network '%s'.  If you are sure that this wireless network is secure, click the checkbox below and NetworkManager will not require confirmation on subsequent log ins."
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Potrditev prijave v brezžično omrežje</span>\n"
+"\n"
+"Izbrali ste prijavo v brezžično omrežje '%s'. Če ste prepričani, da je to brezžično omrežje varno, kliknite potrditveno polje spodaj in NetworkManager ne bo več zahteval potrditve za nadaljnje prijave."
+
+#: ../gnome/applet/applet.glade.h:15
+msgid "Anonymous Identity:"
+msgstr "Anonimna identiteta:"
+
+#: ../gnome/applet/applet.glade.h:16
+msgid "Authentication:"
+msgstr "Overovitev:"
+
+#: ../gnome/applet/applet.glade.h:17
+msgid "Broadcast Address:"
+msgstr "Naslov za razpršeno oddajanje:"
+
+#: ../gnome/applet/applet.glade.h:18
+msgid "CA Certificate File:"
+msgstr "Datoteka overiteljevega (CA) certifikata:"
+
+#: ../gnome/applet/applet.glade.h:19
+msgid "C_onnect"
+msgstr "Po_veži se"
+
+#: ../gnome/applet/applet.glade.h:20
+msgid "Client Certificate File:"
+msgstr "Datoteka odjemalčevega certifikata:"
+
+#: ../gnome/applet/applet.glade.h:21
+msgid "Connection Information"
+msgstr "Informacije o povezavi"
+
+#: ../gnome/applet/applet.glade.h:22
+msgid "Default Route:"
+msgstr "Privzeta smer:"
+
+#: ../gnome/applet/applet.glade.h:23
+msgid "Destination Address:"
+msgstr "Ciljni naslov:"
+
+#: ../gnome/applet/applet.glade.h:24
+msgid "Driver:"
+msgstr "Gonilnik:"
+
+#: ../gnome/applet/applet.glade.h:25
+msgid "EAP Method:"
+msgstr "Metoda EAP:"
+
+#: ../gnome/applet/applet.glade.h:26
+msgid "Hardware Address:"
+msgstr "Naslov strojne opreme:"
+
+#: ../gnome/applet/applet.glade.h:27
+msgid "IP Address:"
+msgstr "IP naslov:"
+
+#: ../gnome/applet/applet.glade.h:28
+msgid "Identity:"
+msgstr "Identiteta:"
+
+#: ../gnome/applet/applet.glade.h:29
+msgid "Interface:"
+msgstr "Vmesnik:"
+
+#: ../gnome/applet/applet.glade.h:30
+msgid "Key Type:"
+msgstr "Vrsta ključa:"
+
+#: ../gnome/applet/applet.glade.h:31
+msgid "Key management:"
+msgstr "Upravljanje s ključi:"
+
+#: ../gnome/applet/applet.glade.h:32
+msgid "Key:"
+msgstr "Ključ:"
+
+#: ../gnome/applet/applet.glade.h:33
+msgid ""
+"None\n"
+"WEP 128-bit Passphrase\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
+msgstr ""
+"Brez\n"
+"WEP 128-bit šifrirna fraza\n"
+"WEP 64/128-bit Hex\n"
+"WEP 64/128-bit ASCII\n"
+
+#: ../gnome/applet/applet.glade.h:38
+msgid ""
+"Open System\n"
+"Shared Key"
+msgstr ""
+"Odprti sistem\n"
+"Deljeni ključ"
+
+#: ../gnome/applet/applet.glade.h:40
+msgid "Other Wireless Network..."
+msgstr "Drugo brezžično omrežje ..."
+
+#: ../gnome/applet/applet.glade.h:41
+msgid "Passphrase:"
+msgstr "Šifrirna fraza:"
+
+#: ../gnome/applet/applet.glade.h:42
+msgid "Password:"
+msgstr "Geslo:"
+
+#: ../gnome/applet/applet.glade.h:43
+msgid "Primary DNS:"
+msgstr "Primarni DNS;"
+
+#: ../gnome/applet/applet.glade.h:44
+msgid "Private Key File:"
+msgstr "Datoteka zasebnega ključa:"
+
+#: ../gnome/applet/applet.glade.h:45
+msgid "Private Key Password:"
+msgstr "Geslo zasebnega ključa:"
+
+#: ../gnome/applet/applet.glade.h:46
+msgid "Secondary DNS:"
+msgstr "Sekundarni DNS:"
+
+#: ../gnome/applet/applet.glade.h:47
+msgid "Select the CA Certificate File"
+msgstr "Izberite datoteko overiteljevega (CA) certifikata"
+
+#: ../gnome/applet/applet.glade.h:48
+msgid "Select the Client Certificate File"
+msgstr "Izberite datoteko odjemalčevega certifikata"
+
+#: ../gnome/applet/applet.glade.h:49
+msgid "Select the Private Key File"
+msgstr "Izberite datoteko zasebnega ključa"
+
+#: ../gnome/applet/applet.glade.h:50
+msgid "Show key"
+msgstr "Pokaži ključ"
+
+#: ../gnome/applet/applet.glade.h:51
+msgid "Show passphrase"
+msgstr "Pokaži šifrirno frazo"
+
+#: ../gnome/applet/applet.glade.h:52
+msgid "Show password"
+msgstr "Pokaži geslo"
+
+#: ../gnome/applet/applet.glade.h:53
+msgid "Show passwords"
+msgstr "Pokaži gesla"
+
+#: ../gnome/applet/applet.glade.h:54
+msgid "Speed:"
+msgstr "Hitrost:"
+
+#: ../gnome/applet/applet.glade.h:55
+msgid "Subnet Mask:"
+msgstr "Maska podomrežja:"
+
+#: ../gnome/applet/applet.glade.h:56
+msgid "Type:"
+msgstr "Vrsta:"
+
+#: ../gnome/applet/applet.glade.h:57
+msgid "User Name:"
+msgstr "Uporabniško ime:"
+
+#: ../gnome/applet/applet.glade.h:58
+msgid "Wireless Network Key Required"
+msgstr "Zahtevan ključ brezžičnega omrežja"
+
+#: ../gnome/applet/applet.glade.h:59
+msgid "Wireless _adapter:"
+msgstr "Brezžični _vmesnik:"
+
+#: ../gnome/applet/applet.glade.h:60
+msgid "_Always Trust this Wireless Network"
+msgstr "Vedno _zaupaj temu brezžičnemu omrežju"
+
+#: ../gnome/applet/applet.glade.h:61
+msgid "_Don't remind me again"
+msgstr "_Ne spomni me več"
+
+#: ../gnome/applet/applet.glade.h:62
+msgid "_Fallback on this Network"
+msgstr ""
+
+#: ../gnome/applet/applet.glade.h:63
+msgid "_Login to Network"
+msgstr "_Prijava v omrežje"
+
+#: ../gnome/applet/applet.glade.h:64
+msgid "_Network Name:"
+msgstr "_Ime omrežja:"
+
+#: ../gnome/applet/applet.glade.h:65
+msgid "_Wireless Security:"
+msgstr "_Zaščita omrežja:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+msgid "Cannot add VPN connection"
+msgstr "Ni mogoče dodati povezave VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "Ustrezna programska oprema za VPN ni bila najdena na vašem sistemu. Kontaktirajte vašega sistemskega administratorja."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
+msgid "Cannot import VPN connection"
+msgstr "Ni mogoče uvoziti povezave VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#, c-format
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "Ni mogoče najti ustrezne programske opreme za povezavo VPN vrste '%s' za uvoz datoteke '%s'. Kontaktirajte vašega sistemskega administratorja."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "Napaka pri pridobivanju povezave VPN '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#, c-format
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "Ni mogoče najti datotek uporabniškega vmesnika za povezavo VPN vrste \"%s\". Kontaktirajte vašega sistemskega administratorja."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "Ali želite izbrisati povezavo VPN \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#, c-format
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "Vse informacije o povezavi VPN \"%s\" bodo izgubljene in mogoče boste potrebovali vašega sistemskega administratorja, da vam priskrbi informacije za ustvarjanje nove povezave."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+msgid "Unable to load"
+msgstr "Ni mogoče naložiti"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "Ni mogoče najti nekaterih potrebnih virov (datoteke glade)!"
+
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
+msgid "Create VPN Connection"
+msgstr "Ustvari povezavo VPN"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
+msgid "Edit VPN Connection"
+msgstr "Uredi povezavo VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "Dodaj novo povezavo VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Delete the selected VPN connection"
+msgstr "Izbriši izbrano povezavo VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "E_xport"
+msgstr "I_zvozi"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Edit the selected VPN connection"
+msgstr "Uredi izbrano povezavo VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Export the VPN settings to a file"
+msgstr "Izvozi nastavitve VPN v datoteko"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Export the selected VPN connection to a file"
+msgstr "Izvozi izbrano povezavo VPN v datoteko"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Manage Virtual Private Network Connections"
+msgstr "Upravljanje povezav navideznega zasebnega omrežja (VPN)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "VPN Connections"
+msgstr "Povezave VPN"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40-bitni WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104-bitni WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "Samodejni WPA"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "Samodejni WPA2"
+
+#: ../src/nm-ap-security.c:338
+msgid "none"
+msgstr "brez"
+
+#: ../src/nm-netlink-monitor.c:174
+#, c-format
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "ni mogoče ustvariti netlink vtiča (netlink socket) za nadzor žičnih eternet naprav - %s"
+
+#: ../src/nm-netlink-monitor.c:192
+#, c-format
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "ni mogoče vzpostaviti vezi z netlink vtičem (netlink socket) za nadzor žičnih eternet naprav - %s"
+
+#: ../src/nm-netlink-monitor.c:427
+msgid "operation took too long"
+msgstr "operacija je trajala predolgo"
+
+#: ../src/nm-netlink-monitor.c:524
+msgid "received data from wrong type of sender"
+msgstr "prejeti podatki od pošiljatelja napačne vrste"
+
+#: ../src/nm-netlink-monitor.c:537
+msgid "received data from unexpected sender"
+msgstr "prejeti podatki od nepričakovanega pošiljatelja"
+
+#: ../src/nm-netlink-monitor.c:666
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "preveč podatkov je bilo poslano preko vtiča in nekaj se jih je izgubilo"
+
+#: ../src/nm-netlink-monitor.c:776
+msgid "error occurred while waiting for data on socket"
+msgstr "med čakanjem na podatke na vtiču je prišlo do napake"
+
+#: ../gnome/applet/applet-dbus-devices.c:930
+#, c-format
+msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+msgstr "Zdaj ste povezani v ad-hoc brezžično omrežje '%s'."
+
+#: ../gnome/applet/applet-dbus-devices.c:935
+#, c-format
+msgid "You are now connected to the wireless network '%s'."
+msgstr "Zdaj ste povezani z brezžičnim omrežjem '%s'."
+
+#: ../gnome/applet/applet-dbus-devices.c:942
+msgid "You are now connected to the wired network."
+msgstr "Zdaj ste povezani z žičnim omrežjem."
+
+#: ../gnome/applet/applet-dbus-devices.c:948
+msgid "Connection Established"
+msgstr "Povezava vzpostavljena"
+
+#: ../gnome/applet/applet-dbus-devices.c:997
+msgid "Disconnected"
+msgstr "Prekinjena povezava"
+
+#: ../gnome/applet/applet-dbus-devices.c:998
+msgid "The network connection has been disconnected."
+msgstr "Omrežna povezava je bila prekinjena."
+
+#: ../src/nm-ap-security-leap.c:66
+#: ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
+
