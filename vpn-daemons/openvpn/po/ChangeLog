@@ -1,3 +1,8 @@
+2007-01-10  Matic Zgur <mr.zgur@gmail.com>
+
+	* sl.po: Added Slovenian translation.
+	* LINGUAS: Added sl to the list of languages
+
 2007-01-05  Clytie Siddall <clytie@riverland.net.au>
 
 	* vi.po: Updated Vietnamese translation.

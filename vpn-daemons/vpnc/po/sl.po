@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-01-09 03:29+0000\n"
-"PO-Revision-Date: 2007-01-09 16:06+0100\n"
+"PO-Revision-Date: 2007-01-10 15:21+0100\n"
 "Last-Translator: Matic Žgur <mr.zgur@gmail.com>\n"
 "Language-Team: Slovenian GNOME Translation Team <gnome-si@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
@@ -206,7 +206,7 @@ msgstr "_Uvozi shranjene nastavitve ..."
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
 msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "_Ime, uporabljeno za identificiranje povezave zasebnemu omrežju, npr. \"Campus VPN\" ali \"Corporate Network\""
+msgstr "_Ime, uporabljeno za identificiranje povezave v zasebno omrežje, npr. \"Campus VPN\" ali \"Corporate Network\""
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Only use VPN connection for these addresses"
