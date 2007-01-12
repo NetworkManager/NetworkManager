@@ -1,0 +1,439 @@
+# translation of NetworkManager-openvpn.HEAD.po to Macedonian
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Jovan Naumovski <jovan@lugola.net>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-openvpn.HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-01-12 03:25+0000\n"
+"PO-Revision-Date: 2007-01-12 20:58+0100\n"
+"Last-Translator: Jovan Naumovski <jovan@lugola.net>\n"
+"Language-Team: Macedonian <ossm-members@hedona.on.net.mk>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:145
+msgid "_Password:"
+msgstr "_Лозинка:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:146
+msgid "_Secondary Password:"
+msgstr "_Втора лозинка:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:263
+msgid "_Username:"
+msgstr "_Корисничко име:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:265
+msgid "_Domain:"
+msgstr "_Домен:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:357
+msgid "Connect _anonymously"
+msgstr "Поврзи се _анонимно"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:362
+msgid "Connect as _user:"
+msgstr "Поврзи се како _корисник:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:471
+msgid "_Remember password for this session"
+msgstr "_Запамети ја лозинката за оваа сесија"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:473
+msgid "_Save password in keyring"
+msgstr "_Зачувај ја лозинката во приврзок"
+
+#: ../auth-dialog/main.c:214
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Треба да ја потврдите автентичноста за да пристапите кон виртуелната приватна мрежа „%s“."
+
+#: ../auth-dialog/main.c:215
+msgid "Authenticate VPN"
+msgstr "Потврди автентичност за виртуелна приватна мрежа"
+
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "Лозин_ка на сертификат:"
+
+#: ../auth-dialog/main.c:252
+msgid "Certificate password:"
+msgstr "Лозинка на сертификат:"
+
+#: ../nm-openvpn.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Додавајте, отстранувајте и уредувајте ВПМ врски"
+
+#: ../nm-openvpn.desktop.in.h:2
+msgid "VPN Connection Manager (OpenVPN)"
+msgstr "Менаџер на ВМП врски (OpenVPN)"
+
+#: ../properties/nm-openvpn.c:130
+msgid "OpenVPN Client"
+msgstr "OpenVPN клиент"
+
+#: ../properties/nm-openvpn.c:729
+msgid "The following OpenVPN connection will be created:"
+msgstr "Следната OpenVPN врска ќе биде креирана:"
+
+#: ../properties/nm-openvpn.c:731
+#, c-format
+msgid "Name:  %s"
+msgstr "Име:  %s"
+
+#: ../properties/nm-openvpn.c:739
+msgid "Connection Type: X.509 Certificates"
+msgstr "Тип на врска: X.509 сертификати"
+
+#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
+#: ../properties/nm-openvpn.c:781
+#, c-format
+msgid "CA:  %s"
+msgstr "CA:  %s"
+
+#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#, c-format
+msgid "Cert:  %s"
+msgstr "Серт.:  %s"
+
+#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#, c-format
+msgid "Key:  %s"
+msgstr "Клуч:  %s"
+
+#: ../properties/nm-openvpn.c:752
+msgid "Connection Type: Shared Key"
+msgstr "Тип на врска: Споделен клуч"
+
+#: ../properties/nm-openvpn.c:755
+#, c-format
+msgid "Shared Key:  %s"
+msgstr "Споделен клуч:  %s"
+
+#: ../properties/nm-openvpn.c:758
+#, c-format
+msgid "Local IP:  %s"
+msgstr "Локална IP адреса:  %s"
+
+#: ../properties/nm-openvpn.c:761
+#, c-format
+msgid "Remote IP:  %s"
+msgstr "Оддалечена IP адреса:  %s"
+
+#: ../properties/nm-openvpn.c:766
+msgid "Connection Type: Password"
+msgstr "Тип на врска: лозинка"
+
+#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#, c-format
+msgid "Username:  %s"
+msgstr "Корисничко име:  %s"
+
+#: ../properties/nm-openvpn.c:778
+msgid "Connection Type: X.509 with Password Authentication"
+msgstr "Тип на врска: X.509 со автентикација на лозинка"
+
+#: ../properties/nm-openvpn.c:796
+#, c-format
+msgid "Remote:  %s"
+msgstr "Оддалечено:  %s"
+
+#: ../properties/nm-openvpn.c:799
+#, c-format
+msgid "Device: %s"
+msgstr "Уред: %s"
+
+#: ../properties/nm-openvpn.c:799
+msgid "TAP"
+msgstr "TAP"
+
+#: ../properties/nm-openvpn.c:799
+msgid "TUN"
+msgstr "TUN"
+
+#: ../properties/nm-openvpn.c:802
+#, c-format
+msgid "Protocol: %s"
+msgstr "Протокол: %s"
+
+#: ../properties/nm-openvpn.c:802
+msgid "TCP"
+msgstr "TCP"
+
+#: ../properties/nm-openvpn.c:802
+msgid "UDP"
+msgstr "UDP"
+
+#: ../properties/nm-openvpn.c:806
+#, c-format
+msgid "Routes:  %s"
+msgstr "Рутирања:  %s"
+
+#: ../properties/nm-openvpn.c:810
+#, c-format
+msgid "Use LZO Compression: %s"
+msgstr "Користи LZO компресија: %s"
+
+#: ../properties/nm-openvpn.c:810
+msgid "Yes"
+msgstr "Да"
+
+#: ../properties/nm-openvpn.c:810
+msgid "No"
+msgstr "Не"
+
+#: ../properties/nm-openvpn.c:814
+#, c-format
+msgid "Cipher:  %s"
+msgstr "Шифра:  %s"
+
+#: ../properties/nm-openvpn.c:819
+#, c-format
+msgid "TLS auth:  %s %s"
+msgstr "TLS авт.:  %s %s"
+
+#: ../properties/nm-openvpn.c:823
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Деталите за врската можат да се променат со користење на копчето \"Уреди\"."
+
+#: ../properties/nm-openvpn.c:1003
+msgid "Cannot import settings"
+msgstr "Не можам да ги увезам поставувањата"
+
+#: ../properties/nm-openvpn.c:1005
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "Датотеката со VPN поставувања '%s' не содржи валидни податоци."
+
+#: ../properties/nm-openvpn.c:1042
+msgid "Select file to import"
+msgstr "Изберете датотека за увезување"
+
+#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+msgid "Select CA to use"
+msgstr "Одберете сертификат кој ќе се употребува"
+
+#: ../properties/nm-openvpn.c:1125
+msgid "Select certificate to use"
+msgstr "Одберете сертификат кој ќе се употребува"
+
+#: ../properties/nm-openvpn.c:1128
+msgid "Select key to use"
+msgstr "Одберете клуч кој ќе се употребува"
+
+#: ../properties/nm-openvpn.c:1131
+msgid "Select shared key to use"
+msgstr "Одберете споделен клуч кој ќе се употребува"
+
+#: ../properties/nm-openvpn.c:1137
+msgid "Select TA to use"
+msgstr "Одберте TA кое  ќе се употребува"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-openvpn.c:1326
+msgid "Save as..."
+msgstr "Зачувај како..."
+
+#: ../properties/nm-openvpn.c:1356
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Датотеката со името \"%s\" веќе постои."
+
+#: ../properties/nm-openvpn.c:1359
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Дали сакате да ја замените со онаа која ја зачувувате?"
+
+#: ../properties/nm-openvpn.c:1373
+msgid "Failed to export configuration"
+msgstr "Не успеав да ја извезам конфигурацијата"
+
+#: ../properties/nm-openvpn.c:1375
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Не можам да ја зачувам датотеката %s"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "0"
+msgstr "0"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "1"
+msgstr "1"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<b>Connection Name</b>"
+msgstr "<b>Име на врска</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "<b>Optional Information</b>"
+msgstr "<b>Додатни информации</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "<b>Required Information</b>"
+msgstr "<b>Потребни информации</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>пример: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
+msgid "CA  file:"
+msgstr "CA  датотека:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Certificate:"
+msgstr "Сертификат:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "Connection Type:"
+msgstr "Тип на врска:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Direction:"
+msgstr "Насока:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key:"
+msgstr "Клуч:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Local IP:"
+msgstr "Локална IP адреса:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Password"
+msgstr "Лозинка"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Ве молам, внесете ги информациите добиени од Вашиот администратор на системот. Не "
+"ја внесувајте Вашата лозинка овде, бидејќи ќе Ви биде побарана при поврзување."
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
+msgstr ""
+"Забележете дека датотеката која ја увезувате не е OpenVPN конфигурациска датотека. "
+"Датотеката побарајте ја кај Вашиот администратор на системот."
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Remote IP:"
+msgstr "Оддалечена IP адреса:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Shared Key:"
+msgstr "Споделен клуч:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Shared key"
+msgstr "Споделен клуч"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "Use LZO compression"
+msgstr "Користи LZO компресија"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use TAP device"
+msgstr "Користи TAP уред"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Use TCP connection"
+msgstr "Користи TCP врска"
+
+#: ../properties/nm-openvpn-dialog.glade.h:22
+msgid "Use TLS auth:"
+msgstr "Користи TLS авторизација:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid "Use cipher:"
+msgstr "Користи шифра:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "Username:"
+msgstr "Корисничко име:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "X.509"
+msgstr "X.509"
+
+#: ../properties/nm-openvpn-dialog.glade.h:26
+msgid ""
+"X.509 Certificates\n"
+"Pre-shared key\n"
+"Password Authentication\n"
+"X.509 with Password Authentication"
+msgstr ""
+"X.509 сертификати\n"
+"Однапред споделен клуч\n"
+"Автентикација на лозинка\n"
+"X.509 со автентикација на лозинка"
+
+#: ../properties/nm-openvpn-dialog.glade.h:30
+msgid "_Gateway:"
+msgstr "_Премин:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:31
+msgid "_Import Saved Configuration..."
+msgstr "_Увези зачувана конфигурација..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:32
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Име кое ќе се користи за идентификација на врската до приватната мрежа, на "
+"пр. \"ВПМ на универзитетот\" или \"Мрежа на здружението\""
+
+#: ../properties/nm-openvpn-dialog.glade.h:33
+msgid "_Only use VPN connection for these addresses"
+msgstr "Користи _само ВПМ врски за овие адреси"
+
+#: ../properties/nm-openvpn-dialog.glade.h:34
+msgid "none"
+msgstr "ништо"
+
+#: ../src/nm-openvpn-service.c:127
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
+msgstr ""
+"ВПМ најавувањето не успеа, бидејќи корисничкото име и лозинка не беа прифатени "
+"или лозинката на сертификатот беше грешна."
+
+#: ../src/nm-openvpn-service.c:129
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "ВПМ најавувањето не успеа, бидејќи ВПМ програмот не можеше да се стартува."
+
+#: ../src/nm-openvpn-service.c:131
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"ВПМ најавувањето не успеа, бидејќи ВПМ програмот не можеше да се поврзи со "
+"ВПМ серверот."
+
+#: ../src/nm-openvpn-service.c:133
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "ВПМ најавувањето не успеа, бидејќи ВПМ опциите на конфигурацијата беа невалидни."
+
+#: ../src/nm-openvpn-service.c:135
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
+"ВПМ најавувањето не успеа, бидејќи ВПМ програмот доби невалидна конфигурација "
+"од ВМП серверот."
+
+#: ../src/nm-openvpn-service.c:137
+msgid "VPN connection failed"
+msgstr "ВПМ врската не успеа"
+
