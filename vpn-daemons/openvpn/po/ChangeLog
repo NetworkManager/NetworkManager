@@ -1,3 +1,8 @@
+2007-01-12  Jovan Naumovski  <jovan@lugola.net>
+
+	* mk.po: Added Macedonian translaion.
+	* LINGUAS: Added mk to the list
+
 2007-01-10  Matic Zgur <mr.zgur@gmail.com>
 
 	* sl.po: Added Slovenian translation.
