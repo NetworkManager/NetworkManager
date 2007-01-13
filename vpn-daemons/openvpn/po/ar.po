@@ -7,42 +7,43 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-11-17 21:14+0000\n"
+"POT-Creation-Date: 2007-01-04 01:55+0000\n"
 "PO-Revision-Date: 2006-11-18 00:57+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n >= 3 && n <= 10 ? 3 : n >= 11 && n <= 99 ? 4 : 5;\n"
+"Plural-Forms: nplurals=6; plural=n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n >= "
+"3 && n <= 10 ? 3 : n >= 11 && n <= 99 ? 4 : 5;\n"
 "X-Poedit-Language: Arabic\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 #, fuzzy
 msgid "_Password:"
 msgstr "_كلمة المرور:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 #, fuzzy
 msgid "_Secondary Password:"
 msgstr "جودة كلمة السر:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 #, fuzzy
 msgid "_Username:"
 msgstr "إ_سم المستخدم:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 #, fuzzy
 msgid "_Domain:"
 msgstr "ال_نطاق:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 #, fuzzy
 msgid "Connect _anonymously"
 msgstr "الاتّصال كم_جهول"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 #, fuzzy
 msgid "Connect as _user:"
 msgstr "اتصال _كمستخدم:"
@@ -68,6 +69,10 @@ msgid "Authenticate VPN"
 msgstr "فشل التّوثيق.\n"
 
 #: ../auth-dialog/main.c:227
+#, fuzzy
+msgid "Certificate pass_word:"
+msgstr "جودة كلمة السر:"
+
 #: ../auth-dialog/main.c:252
 #, fuzzy
 msgid "Certificate password:"
@@ -101,21 +106,18 @@ msgstr "اسم"
 msgid "Connection Type: X.509 Certificates"
 msgstr "رجاء نوع اتصالك:"
 
-#: ../properties/nm-openvpn.c:742
-#: ../properties/nm-openvpn.c:769
+#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
 #: ../properties/nm-openvpn.c:781
 #, fuzzy, c-format
 msgid "CA:  %s"
 msgstr "_هتف"
 
-#: ../properties/nm-openvpn.c:745
-#: ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
 #, c-format
 msgid "Cert:  %s"
 msgstr ""
 
-#: ../properties/nm-openvpn.c:748
-#: ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
 #, fuzzy, c-format
 msgid "Key:  %s"
 msgstr "[مفتاح]"
@@ -145,8 +147,7 @@ msgstr "IP ال_بعيد:"
 msgid "Connection Type: Password"
 msgstr "نوع الاتصال - الصفحة %d/%d"
 
-#: ../properties/nm-openvpn.c:772
-#: ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
 #, fuzzy, c-format
 msgid "Username:  %s"
 msgstr "اسم المستخدم: "
@@ -237,8 +238,7 @@ msgstr ""
 msgid "Select file to import"
 msgstr "إنتقي ملفّ للفتح"
 
-#: ../properties/nm-openvpn.c:1122
-#: ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
 #, fuzzy
 msgid "Select CA to use"
 msgstr "إختر جهاز دخل الصوت لاستخدامه"
@@ -357,11 +357,15 @@ msgid "Password"
 msgstr "كلمة السّر"
 
 #: ../properties/nm-openvpn-dialog.glade.h:14
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
 msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
-msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
 msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
@@ -432,7 +436,9 @@ msgid "_Import Saved Configuration..."
 msgstr "حدّد سابقة للإعدادات المحفوظة"
 
 #: ../properties/nm-openvpn-dialog.glade.h:32
-msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
 msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
@@ -445,7 +451,9 @@ msgid "none"
 msgstr "لا يوجد"
 
 #: ../src/nm-openvpn-service.c:127
-msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
 msgstr ""
 
 #: ../src/nm-openvpn-service.c:129
@@ -453,19 +461,23 @@ msgid "The VPN login failed because the VPN program could not be started."
 msgstr ""
 
 #: ../src/nm-openvpn-service.c:131
-msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
 msgstr ""
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 
 #: ../src/nm-openvpn-service.c:135
-msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
 msgstr ""
 
 #: ../src/nm-openvpn-service.c:137
 #, fuzzy
 msgid "VPN connection failed"
 msgstr "فشل تسجيل %s إلى %s"
-
