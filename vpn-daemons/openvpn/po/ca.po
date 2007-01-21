@@ -5,40 +5,40 @@
 # NetworkManager package.
 # Josep Puigdemont Casamajó <josep.puigdemont@gmail.com>, 2006.
 # Gil Forcada <gilforcada@guifi.net>, 2006.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-09-03 12:21+0200\n"
-"PO-Revision-Date: 2006-09-03 12:57+0200\n"
+"POT-Creation-Date: 2007-01-21 12:11+0100\n"
+"PO-Revision-Date: 2007-01-17 03:09+0100\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Contrasenya:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "Contrasenya _secundària:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "Nom d'_usuari:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Domini:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Connecta _anònimament"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Connecta com a _usuari:"
 
@@ -59,7 +59,11 @@ msgstr "Us heu d'autenticar per poder accedir a la xarxa privada virtual «%s».
 msgid "Authenticate VPN"
 msgstr "Autentica la VPN"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "Contrasenya del _certificat:"
+
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Contrasenya del certificat:"
 
