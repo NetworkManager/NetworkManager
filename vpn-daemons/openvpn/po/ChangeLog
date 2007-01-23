@@ -1,3 +1,9 @@
+2007-01-23  Theppitak Karoonboonyanan  <thep@linux.thai.net>
+
+	* th.po: Added Thai translation by
+	Supranee Thirawatthanasuk <supranee@opentle.org> and me.
+	* LINGUAS: Added 'th'.
+
 2007-01-21  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* ca.po: Updated Catalan translation by
