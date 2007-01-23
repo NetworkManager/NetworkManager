@@ -1,15 +1,15 @@
 # Thai translation of NetworkManager.
-# Copyright (C) 2006 THE NetworkManager'S COPYRIGHT HOLDER
+# Copyright (C) 2007 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 # Isriya Paireepairit <markpeak@gmail.com>, 2006.
-# Theppitak Karoonboonyanan <thep@linux.thai.net>, 2006.
+# Theppitak Karoonboonyanan <thep@linux.thai.net>, 2006-2007.
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-12-16 06:09+0100\n"
-"PO-Revision-Date: 2006-12-16 12:15+0700\n"
+"POT-Creation-Date: 2007-01-23 23:12+0700\n"
+"PO-Revision-Date: 2007-01-23 23:15+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@linux.thai.net>\n"
 "Language-Team: Thai <l10n@opentle.org>\n"
 "MIME-Version: 1.0\n"
@@ -77,8 +77,7 @@ msgstr ""
 #: ../gnome/applet/applet.c:334 ../gnome/applet/applet.c:361
 msgid ""
 "Notification area applet for managing your network devices and connections."
-msgstr ""
-"แอพเพล็ตพื้นที่แจ้งเหตุสำหรับจัดการอุปกรณ์เครือข่ายและการเชื่อมต่อ"
+msgstr "แอพเพล็ตพื้นที่แจ้งเหตุสำหรับจัดการอุปกรณ์เครือข่ายและการเชื่อมต่อ"
 
 #: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:365
 msgid "translator-credits"
@@ -112,8 +111,7 @@ msgstr "เริ่มต้น VPN ไม่สำเร็จ"
 msgid ""
 "Could not start the VPN connection '%s' due to a failure launching the VPN "
 "program."
-msgstr ""
-"ไม่สามารถเริ่มการเชื่อมต่อ VPN '%s' เนื่องจากเรียกโปรแกรม VPN ไม่ได้"
+msgstr "ไม่สามารถเริ่มการเชื่อมต่อ VPN '%s' เนื่องจากเรียกโปรแกรม VPN ไม่ได้"
 
 #: ../gnome/applet/applet.c:431 ../gnome/applet/applet.c:441
 msgid "VPN Connect Failure"
@@ -152,8 +150,7 @@ msgstr "ข้อความล็อกอิน VPN"
 msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
-msgstr ""
-"แอพเพล็ต NetworkManager ไม่พบข้อมูลบางอย่างที่ต้องใช้ (ไม่พบแฟ้ม glade)"
+msgstr "แอพเพล็ต NetworkManager ไม่พบข้อมูลบางอย่างที่ต้องใช้ (ไม่พบแฟ้ม glade)"
 
 #: ../gnome/applet/applet.c:749
 #, c-format
@@ -320,8 +317,7 @@ msgstr "เ_กี่ยวกับ"
 msgid ""
 "The NetworkManager applet could not find some required resources.  It cannot "
 "continue.\n"
-msgstr ""
-"แอพเพล็ต NetworkManager หาข้อมูลที่ต้องการไม่สำเร็จ ไม่สามารถดำเนินการต่อได้\n"
+msgstr "แอพเพล็ต NetworkManager หาข้อมูลที่ต้องการไม่สำเร็จ ไม่สามารถดำเนินการต่อได้\n"
 
 #: ../gnome/applet/wireless-security-option.c:157
 msgid "Open System"
@@ -413,11 +409,13 @@ msgstr "เครือข่าย_มีสาย"
 #: ../gnome/applet/menu-items.c:162
 #, c-format
 msgid "Wireless Network (%s)"
-msgstr "เครือข่ายไร้สาย (%s)"
+msgid_plural "Wireless Networks (%s)"
+msgstr[0] "เครือข่ายไร้สาย (%s)"
 
 #: ../gnome/applet/menu-items.c:164
 msgid "Wireless Network"
-msgstr "เครือข่ายไร้สาย"
+msgid_plural "Wireless Networks"
+msgstr[0] "เครือข่ายไร้สาย"
 
 #: ../gnome/applet/menu-items.c:343
 msgid " (invalid Unicode)"
@@ -429,8 +427,7 @@ msgid ""
 "By default, the wireless network's name is set to your computer's name, %s, "
 "with no encryption enabled"
 msgstr ""
-"ตามปกติแล้ว ชื่อเครือข่ายไร้สายจะใช้ชื่อเครื่องคอมพิวเตอร์ของคุณ (%s) "
-"โดยไม่เปิดใช้การเข้ารหัส"
+"ตามปกติแล้ว ชื่อเครือข่ายไร้สายจะใช้ชื่อเครื่องคอมพิวเตอร์ของคุณ (%s) โดยไม่เปิดใช้การเข้ารหัส"
 
 #: ../gnome/applet/other-network-dialog.c:358
 msgid "Create new wireless network"
@@ -440,8 +437,7 @@ msgstr "สร้างเครือข่ายไร้สายใหม่
 msgid ""
 "Enter the name and security settings of the wireless network you wish to "
 "create."
-msgstr ""
-"ป้อนชื่อ และข้อมูลด้านการรักษาความปลอดภัยของเครือข่ายไร้สายที่ต้องการสร้าง"
+msgstr "ป้อนชื่อ และข้อมูลด้านการรักษาความปลอดภัยของเครือข่ายไร้สายที่ต้องการสร้าง"
 
 #: ../gnome/applet/other-network-dialog.c:363
 msgid "Create New Wireless Network"
@@ -467,8 +463,7 @@ msgstr "เกิดข้อผิดพลาดในการเชื่อ
 msgid ""
 "The requested wireless network requires security capabilities unsupported by "
 "your hardware."
-msgstr ""
-"เครือข่ายไร้สายที่ระบุ ต้องการความสามารถด้านการรักษาความปลอดภัยที่อุปกรณ์ของคุณไม่มี"
+msgstr "เครือข่ายไร้สายที่ระบุ ต้องการความสามารถด้านการรักษาความปลอดภัยที่อุปกรณ์ของคุณไม่มี"
 
 #: ../gnome/applet/vpn-password-dialog.c:151
 #: ../gnome/applet/vpn-password-dialog.c:188
@@ -481,8 +476,7 @@ msgstr "ไม่สามารถเริ่มการเชื่อมต
 msgid ""
 "Could not find the authentication dialog for VPN connection type '%s'. "
 "Contact your system administrator."
-msgstr ""
-"หาคำโต้ตอบสำหรับการเชื่อมต่อ VPN ชนิด '%s' ไม่พบ กรุณาติดต่อผู้ดูแลระบบของคุณ"
+msgstr "หาคำโต้ตอบสำหรับการเชื่อมต่อ VPN ชนิด '%s' ไม่พบ กรุณาติดต่อผู้ดูแลระบบของคุณ"
 
 #: ../gnome/applet/vpn-password-dialog.c:191
 #, c-format
@@ -500,8 +494,7 @@ msgstr " "
 #: ../gnome/applet/applet.glade.h:2
 msgid ""
 "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">ข้อมูลการเชื่อมต่อที่ใช้งานอยู่</span>"
+msgstr "<span weight=\"bold\" size=\"larger\">ข้อมูลการเชื่อมต่อที่ใช้งานอยู่</span>"
 
 #: ../gnome/applet/applet.glade.h:4
 #, no-c-format
@@ -537,8 +530,7 @@ msgid ""
 "that this wireless network is secure, click the checkbox below and "
 "NetworkManager will not require confirmation on subsequent log ins."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">ยืนยันการล็อกอินเข้าเครือข่ายไร้สาย</"
-"span>\n"
+"<span weight=\"bold\" size=\"larger\">ยืนยันการล็อกอินเข้าเครือข่ายไร้สาย</span>\n"
 "\n"
 "คุณได้เลือกล็อกอินเข้าสู่เครือข่ายไร้สาย '%s' ถ้าคุณแน่ใจว่าเครือข่ายนี้ปลอดภัย "
 "ให้คลิกตัวเลือกด้านล่าง และ NetworkManager จะไม่ถามยืนยันกับคุณอีก"
@@ -747,8 +739,7 @@ msgstr "ไม่สามารถเพิ่มการเชื่อมต
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr ""
-"ไม่มีซอฟต์แวร์ VPN ที่เหมาะสมอยู่ในระบบ กรุณาติดต่อผู้ดูแลระบบ"
+msgstr "ไม่มีซอฟต์แวร์ VPN ที่เหมาะสมอยู่ในระบบ กรุณาติดต่อผู้ดูแลระบบ"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:461
 msgid "Cannot import VPN connection"
@@ -759,8 +750,7 @@ msgstr "ไม่สามารถนำเข้าการเชื่อม
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr ""
-"ไม่มีซอฟต์แวร์ VPN แบบ '%s' ที่เหมาะสมจากแฟ้มนำเข้า '%s' กรุณาติดต่อผู้ดูแลระบบ"
+msgstr "ไม่มีซอฟต์แวร์ VPN แบบ '%s' ที่เหมาะสมจากแฟ้มนำเข้า '%s' กรุณาติดต่อผู้ดูแลระบบ"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:580
 #, c-format
@@ -772,8 +762,7 @@ msgstr "เกิดปัญหาในการรับข้อมูลก
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr ""
-"ไม่พบแฟ้ม UI สำหรับการเชื่อมต่อ VPN แบบ '%s' กรุณาติดต่อผู้ดูแลระบบ"
+msgstr "ไม่พบแฟ้ม UI สำหรับการเชื่อมต่อ VPN แบบ '%s' กรุณาติดต่อผู้ดูแลระบบ"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:727
 #, c-format
@@ -863,31 +852,31 @@ msgstr "WEP 40 บิต"
 msgid "104-bit WEP"
 msgstr "WEP 104 บิต"
 
-#: ../src/nm-ap-security-wpa-psk.c:50
+#: ../src/nm-ap-security-wpa-psk.c:51
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:52
+#: ../src/nm-ap-security-wpa-psk.c:53
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:54
+#: ../src/nm-ap-security-wpa-psk.c:55
 msgid "WPA Automatic"
 msgstr "WPA อัตโนมัติ"
 
-#: ../src/nm-ap-security-wpa-psk.c:59
+#: ../src/nm-ap-security-wpa-psk.c:60
 msgid "WPA2 TKIP"
 msgstr "WPA2 TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:61
+#: ../src/nm-ap-security-wpa-psk.c:62
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:63
+#: ../src/nm-ap-security-wpa-psk.c:64
 msgid "WPA2 Automatic"
 msgstr "WPA2 อัตโนมัติ"
 
-#: ../src/nm-ap-security.c:338
+#: ../src/nm-ap-security.c:334
 msgid "none"
 msgstr "ไม่มี"
 
@@ -895,15 +884,13 @@ msgstr "ไม่มี"
 #, c-format
 msgid ""
 "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"ไม่สามารถสร้างซ็อกเก็ต netlink สำหรับติดตามอุปกรณ์อีเทอร์เน็ตแบบมีสายได้ - %s"
+msgstr "ไม่สามารถสร้างซ็อกเก็ต netlink สำหรับติดตามอุปกรณ์อีเทอร์เน็ตแบบมีสายได้ - %s"
 
 #: ../src/nm-netlink-monitor.c:192
 #, c-format
 msgid ""
 "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"ไม่สามารถ bind กับซ็อกเก็ต netlink เพื่อติดตามอุปกรณ์อีเทอร์เน็ตแบบมีสายได้ - %s"
+msgstr "ไม่สามารถ bind กับซ็อกเก็ต netlink เพื่อติดตามอุปกรณ์อีเทอร์เน็ตแบบมีสายได้ - %s"
 
 #: ../src/nm-netlink-monitor.c:427
 msgid "operation took too long"
@@ -921,7 +908,7 @@ msgstr "ได้รับข้อมูลจากผู้ส่งที่
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "ข้อมูลถูกส่งผ่านซ็อกเก็ตมากเกินไป และบางส่วนสูญหาย"
 
-#: ../src/nm-netlink-monitor.c:776
+#: ../src/nm-netlink-monitor.c:774
 msgid "error occurred while waiting for data on socket"
 msgstr "เกิดปัญหาระหว่างรอข้อมูลจากซ็อกเก็ต"
 
@@ -954,4 +941,3 @@ msgstr "การเชื่อมต่อเครือข่ายถูก
 #: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
 msgid "LEAP"
 msgstr "LEAP"
-
