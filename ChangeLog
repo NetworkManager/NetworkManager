@@ -1,3 +1,8 @@
+2007-01-27  Jürg Billeter  <j@bitron.ch>
+
+	* src/backends/NetworkManagerPaldo.c
+		- (nm_system_update_dns): clear nscd hosts cache
+
 2007-01-04  Dan Williams  <dcbw@redhat.com>
 
 	Threading removal related cleanups:

@@ -37,6 +37,7 @@
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
+#include "nm-utils.h"
 
 /*
  * nm_system_init
@@ -217,6 +218,8 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
+	nm_info ("Clearing nscd hosts cache.");
+	nm_spawn_process ("/usr/sbin/nscd -i hosts");
 }
 
 
