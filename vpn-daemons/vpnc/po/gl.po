@@ -1,0 +1,242 @@
+# translation of gl.po to Galego
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Ignacio Casal Quinteiro <icq@cvs.gnome.org>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: gl\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-01-26 11:53+0100\n"
+"PO-Revision-Date: 2007-01-26 12:07+0100\n"
+"Last-Translator: Ignacio Casal Quinteiro <icq@cvs.gnome.org>\n"
+"Language-Team: Galego <trasno@ceu.fi.udc.es>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:144
+msgid "_Secondary Password:"
+msgstr "Contrasinal _secundario:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "Nome de _usuario:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
+msgid "_Domain:"
+msgstr "_Dominio:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_Contrasinal:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
+msgid "Connect _anonymously"
+msgstr "Conectar como _anónimo"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:356
+msgid "Connect as _user:"
+msgstr "Conectar como _usuario:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_Lembrar contrasinais para esta sesión"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "_Gardar contrasinais no anel"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Necesita autenticarse para acceder á rede privada virtual '%s'."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "Autenticar VPN"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "Contrasinal de _grupo:"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Engadir, eliminar e editar conexións VPN"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "Xestor de conexións VPN (vpnc)"
+
+#: ../properties/nm-vpnc.c:84
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Cliente VPN compatible Cisco (vpnc)"
+
+#: ../properties/nm-vpnc.c:448
+msgid "The following vpnc VPN connection will be created:"
+msgstr "Crearase a seguinte conexión VPN vpnc:"
+
+#: ../properties/nm-vpnc.c:450
+#, c-format
+msgid "Name:  %s"
+msgstr "Nome: %s"
+
+#: ../properties/nm-vpnc.c:453
+#, c-format
+msgid "Gateway:  %s"
+msgstr "Pasarela: %s"
+
+#: ../properties/nm-vpnc.c:455
+#, c-format
+msgid "Group Name:  %s"
+msgstr "Nome de grupo: %s"
+
+#: ../properties/nm-vpnc.c:459
+#, c-format
+msgid "Username:  %s"
+msgstr "Nome de usuario: %s"
+
+#: ../properties/nm-vpnc.c:464
+#, c-format
+msgid "Domain:  %s"
+msgstr "Dominio: %s"
+
+#: ../properties/nm-vpnc.c:469
+#, c-format
+msgid "Routes:  %s"
+msgstr "Rutas: %s"
+
+#: ../properties/nm-vpnc.c:473
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Os detalles da conexión pódense modificar mediante o botón \"Editar\"."
+
+#: ../properties/nm-vpnc.c:542
+msgid "TCP tunneling not supported"
+msgstr "Túnel TCP non soportado"
+
+#: ../properties/nm-vpnc.c:544
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"O ficheiro de axustes de VPN '%s' especifica que o tráfico de VPN debería ir a través de TCP o cal actualmente non está soportado polo software vpnc.\n"
+"\n"
+"A conexión aínda se pode crear, co túnel TCP desactivado, porén podería non funcionar como se espera."
+
+#: ../properties/nm-vpnc.c:565
+msgid "Cannot import settings"
+msgstr "Non se poden importar os axustes"
+
+#: ../properties/nm-vpnc.c:567
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "O ficheiro de axustes '%s' non contén datos válidos."
+
+#: ../properties/nm-vpnc.c:584
+msgid "Select file to import"
+msgstr "Seleccione un ficheiro para importar"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:744
+msgid "Save as..."
+msgstr "Gardar como..."
+
+#: ../properties/nm-vpnc.c:774
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Xa existe un ficheiro co nome \"%s\"."
+
+#: ../properties/nm-vpnc.c:777
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Desexa reemprazalo co ficheiro que está gardando?"
+
+#: ../properties/nm-vpnc.c:791
+msgid "Failed to export configuration"
+msgstr "Fallou a exportación da configuración"
+
+#: ../properties/nm-vpnc.c:793
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Ocorreu un erro ao gardar o ficheiro %s"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Nome da conexión</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Información obrigatoria</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>exemplo: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "Nome de g_rupo:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "Información o_pcional"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "Ignorar nome de _usuario"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr "Introduza a información proporcionada polo seu administrador de sistemas aquí embaixo. Non introduza o seu contrasinal, posto que se lle pedirá cando conecte."
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "Usar _dominio para autenticar"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_Pasarela:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "_Importar a configuración gardada..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr "O _nome empregado para identificar a conexión á rede privada, por exemplo: \"VPN do campus\" ou \"Rede corporativa\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "_Só empregar a conexión VPN para estes enderezos"
+
+#: ../src/nm-vpnc-service.c:117
+msgid "The VPN login failed because the user name and password were not accepted."
+msgstr "O acceso VPN fallou porque o nome de usuario e o contrasinal non se aceptaron."
+
+#: ../src/nm-vpnc-service.c:119
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "O acceso VPN fallou porque non se puido iniciar o programa VPN."
+
+#: ../src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr "O acceso VPN fallou porque non se puido conectar co servidor VPN."
+
+#: ../src/nm-vpnc-service.c:123
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "O acceso VPN fallou porque as opcións de configuración de VPN eran inválidas."
+
+#: ../src/nm-vpnc-service.c:125
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "O acceso VPN fallou porque o programa VPN recibiu unha configuración incorrecta do servidor VPN."
+

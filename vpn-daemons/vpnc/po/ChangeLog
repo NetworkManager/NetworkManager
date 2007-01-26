@@ -1,3 +1,7 @@
+2007-01-26  Ignacio Casal Quinteiro  <nacho.resa@gmail.com>
+
+	* gl.po: Added 'gl' to ALL_LINGUAS.
+
 2007-01-13  Raphael Higino  <raphaelh@svn.gnome.org>
 
 	* LINGUAS: Added pt_BR.
