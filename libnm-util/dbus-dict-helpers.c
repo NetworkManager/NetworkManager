@@ -37,18 +37,22 @@
  *
  */
 dbus_bool_t
-nmu_dbus_dict_open_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
+nmu_dbus_dict_open_write (DBusMessageIter *iter,
+                          DBusMessageIter *iter_dict)
 {	
+	dbus_bool_t result;
+
 	if (!iter || !iter_dict)
 		return FALSE;
 
-	return dbus_message_iter_open_container (iter,
-					  DBUS_TYPE_ARRAY,
-					  DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
-					  DBUS_TYPE_STRING_AS_STRING
-					  DBUS_TYPE_VARIANT_AS_STRING
-					  DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
-					  iter_dict);
+	result = dbus_message_iter_open_container (iter,
+	                                           DBUS_TYPE_ARRAY,
+	                                           DBUS_DICT_ENTRY_BEGIN_CHAR_AS_STRING
+	                                           DBUS_TYPE_STRING_AS_STRING
+	                                           DBUS_TYPE_VARIANT_AS_STRING
+	                                           DBUS_DICT_ENTRY_END_CHAR_AS_STRING,
+	                                           iter_dict);
+	return result;
 }
 
 
@@ -58,12 +62,14 @@ nmu_dbus_dict_open_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
  *
  * @param iter valid dbus message iterator, same as passed to
  *    nmu_dbus_dict_open_write()
- * @param iter_dict a dbus dict iterator returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict a dbus dict iterator returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @return TRUE on success, FALSE on failure
  *
  */
 dbus_bool_t
-nmu_dbus_dict_close_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
+nmu_dbus_dict_close_write (DBusMessageIter *iter,
+                           DBusMessageIter *iter_dict)
 {	
 	if (!iter || !iter_dict)
 		return FALSE;
@@ -75,8 +81,7 @@ nmu_dbus_dict_close_write (DBusMessageIter *iter, DBusMessageIter *iter_dict)
 static const char *
 _nmu_get_type_as_string_from_type (const int type)
 {
-	switch (type)
-	{
+	switch (type) {
 		case DBUS_TYPE_BYTE:
 			return DBUS_TYPE_BYTE_AS_STRING;
 		case DBUS_TYPE_BOOLEAN:
@@ -115,12 +120,14 @@ _nmu_dbus_add_dict_entry_start (DBusMessageIter *iter_dict,
                                 const int value_type)
 {
 	if (!dbus_message_iter_open_container (iter_dict,
-					  DBUS_TYPE_DICT_ENTRY,
-					  NULL,
-					  iter_dict_entry))
+	                                       DBUS_TYPE_DICT_ENTRY,
+	                                       NULL,
+	                                       iter_dict_entry))
 		return FALSE;
 
-	if (!dbus_message_iter_append_basic (iter_dict_entry, DBUS_TYPE_STRING, &key))
+	if (!dbus_message_iter_append_basic (iter_dict_entry,
+	                                     DBUS_TYPE_STRING,
+	                                     &key))
 		return FALSE;
 
 	return TRUE;
@@ -154,21 +161,24 @@ _nmu_dbus_add_dict_entry_basic (DBusMessageIter *iter_dict,
 	if (!type_as_string)
 		return FALSE;
 
-	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
-			key, value_type))
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
+	                                     &iter_dict_entry,
+	                                     key,
+	                                     value_type))
 		return FALSE;
 
 	if (!dbus_message_iter_open_container (&iter_dict_entry,
-					  DBUS_TYPE_VARIANT,
-					  type_as_string,
-					  &iter_dict_val))
+	                                       DBUS_TYPE_VARIANT,
+	                                       type_as_string,
+	                                       &iter_dict_val))
 		return FALSE;
 
 	if (!dbus_message_iter_append_basic (&iter_dict_val, value_type, value))
 		return FALSE;
 
-	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
-			&iter_dict_val))
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
+	                                   &iter_dict_entry,
+	                                   &iter_dict_val))
 		return FALSE;
 
 	return TRUE;
@@ -184,33 +194,85 @@ _nmu_dbus_add_dict_entry_byte_array (DBusMessageIter *iter_dict,
 	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
 	dbus_uint32_t i;
 
-	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
-			key, DBUS_TYPE_ARRAY))
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
+	                                     &iter_dict_entry,
+	                                     key,
+	                                     DBUS_TYPE_ARRAY))
 		return FALSE;
 
 	if (!dbus_message_iter_open_container (&iter_dict_entry,
-					  DBUS_TYPE_VARIANT,
-					  DBUS_TYPE_ARRAY_AS_STRING
-					  DBUS_TYPE_BYTE_AS_STRING,
-					  &iter_dict_val))
+	                                       DBUS_TYPE_VARIANT,
+	                                       DBUS_TYPE_ARRAY_AS_STRING
+	                                       DBUS_TYPE_BYTE_AS_STRING,
+	                                       &iter_dict_val))
 		return FALSE;
 
-	if (!dbus_message_iter_open_container (&iter_dict_val, DBUS_TYPE_ARRAY,
-			DBUS_TYPE_BYTE_AS_STRING, &iter_array))
+	if (!dbus_message_iter_open_container (&iter_dict_val,
+	                                       DBUS_TYPE_ARRAY,
+	                                       DBUS_TYPE_BYTE_AS_STRING,
+	                                       &iter_array))
 		return FALSE;
 
-	for (i = 0; i < value_len; i++)
-	{
-		if (!dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_BYTE,
-				&(value[i])))
+	for (i = 0; i < value_len; i++) {
+		if (!dbus_message_iter_append_basic (&iter_array,
+		                                     DBUS_TYPE_BYTE,
+		                                     &(value[i])))
 			return FALSE;
 	}
 	
 	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
 		return FALSE;
 
-	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
-			&iter_dict_val))
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
+	                                   &iter_dict_entry,
+	                                   &iter_dict_val))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+static dbus_bool_t
+_nmu_dbus_add_dict_entry_uint32_array (DBusMessageIter *iter_dict,
+                                       const char *key,
+                                       const dbus_uint32_t *value,
+                                       const dbus_uint32_t value_len)
+{
+	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
+	dbus_uint32_t i;
+
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
+	                                     &iter_dict_entry,
+	                                     key,
+	                                     DBUS_TYPE_ARRAY))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_entry,
+	                                       DBUS_TYPE_VARIANT,
+	                                       DBUS_TYPE_ARRAY_AS_STRING
+	                                       DBUS_TYPE_UINT32_AS_STRING,
+	                                       &iter_dict_val))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (&iter_dict_val,
+	                                       DBUS_TYPE_ARRAY,
+	                                       DBUS_TYPE_UINT32_AS_STRING,
+	                                       &iter_array))
+		return FALSE;
+
+	for (i = 0; i < value_len; i++) {
+		if (!dbus_message_iter_append_basic (&iter_array,
+		                                     DBUS_TYPE_UINT32,
+		                                     &(value[i])))
+			return FALSE;
+	}
+	
+	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
+		return FALSE;
+
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
+	                                   &iter_dict_entry,
+	                                   &iter_dict_val))
 		return FALSE;
 
 	return TRUE;
@@ -226,33 +288,38 @@ _nmu_dbus_add_dict_entry_string_array (DBusMessageIter *iter_dict,
 	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
 	dbus_uint32_t i;
 
-	if (!_nmu_dbus_add_dict_entry_start (iter_dict, &iter_dict_entry,
-			key, DBUS_TYPE_ARRAY))
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
+	                                     &iter_dict_entry,
+	                                     key,
+	                                     DBUS_TYPE_ARRAY))
 		return FALSE;
 
 	if (!dbus_message_iter_open_container (&iter_dict_entry,
-					  DBUS_TYPE_VARIANT,
-					  DBUS_TYPE_ARRAY_AS_STRING
-					  DBUS_TYPE_STRING_AS_STRING,
-					  &iter_dict_val))
+	                                       DBUS_TYPE_VARIANT,
+	                                       DBUS_TYPE_ARRAY_AS_STRING
+	                                       DBUS_TYPE_STRING_AS_STRING,
+	                                       &iter_dict_val))
 		return FALSE;
 
-	if (!dbus_message_iter_open_container (&iter_dict_val, DBUS_TYPE_ARRAY,
-			DBUS_TYPE_BYTE_AS_STRING, &iter_array))
+	if (!dbus_message_iter_open_container (&iter_dict_val,
+	                                       DBUS_TYPE_ARRAY,
+	                                       DBUS_TYPE_BYTE_AS_STRING,
+	                                       &iter_array))
 		return FALSE;
 
-	for (i = 0; i < num_items; i++)
-	{
-		if (!dbus_message_iter_append_basic (&iter_array, DBUS_TYPE_STRING,
-				&(items[i])))
+	for (i = 0; i < num_items; i++) {
+		if (!dbus_message_iter_append_basic (&iter_array,
+		                                     DBUS_TYPE_STRING,
+		                                     &(items[i])))
 			return FALSE;
 	}
 	
 	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
 		return FALSE;
 
-	if (!_nmu_dbus_add_dict_entry_end (iter_dict, &iter_dict_entry,
-			&iter_dict_val))
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
+	                                   &iter_dict_entry,
+	                                   &iter_dict_val))
 		return FALSE;
 
 	return TRUE;
@@ -261,7 +328,8 @@ _nmu_dbus_add_dict_entry_string_array (DBusMessageIter *iter_dict,
 /**
  * Add a string entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The string value
  * @return TRUE on success, FALSE on failure
@@ -272,14 +340,16 @@ nmu_dbus_dict_append_string (DBusMessageIter *iter_dict,
                              const char * key,
                              const char * value)
 {
-	if (!key || !value) return FALSE;
+	if (!key || !value)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_STRING, &value);
 }
 
 /**
  * Add a byte entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The byte value
  * @return TRUE on success, FALSE on failure
@@ -290,14 +360,16 @@ nmu_dbus_dict_append_byte (DBusMessageIter *iter_dict,
                            const char * key,
                            const char value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BYTE, &value);
 }
 
 /**
  * Add a boolean entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The boolean value
  * @return TRUE on success, FALSE on failure
@@ -308,14 +380,16 @@ nmu_dbus_dict_append_bool (DBusMessageIter *iter_dict,
                            const char * key,
                            const dbus_bool_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_BOOLEAN, &value);
 }
 
 /**
  * Add a 16-bit signed integer entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 16-bit signed integer value
  * @return TRUE on success, FALSE on failure
@@ -326,14 +400,16 @@ nmu_dbus_dict_append_int16 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int16_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT16, &value);
 }
 
 /**
  * Add a 16-bit unsigned integer entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 16-bit unsigned integer value
  * @return TRUE on success, FALSE on failure
@@ -344,14 +420,16 @@ nmu_dbus_dict_append_uint16 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint16_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT16, &value);
 }
 
 /**
  * Add a 32-bit signed integer to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 32-bit signed integer value
  * @return TRUE on success, FALSE on failure
@@ -362,14 +440,16 @@ nmu_dbus_dict_append_int32 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int32_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT32, &value);
 }
 
 /**
  * Add a 32-bit unsigned integer entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 32-bit unsigned integer value
  * @return TRUE on success, FALSE on failure
@@ -380,14 +460,16 @@ nmu_dbus_dict_append_uint32 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint32_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT32, &value);
 }
 
 /**
  * Add a 64-bit integer entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 64-bit integer value
  * @return TRUE on success, FALSE on failure
@@ -398,14 +480,16 @@ nmu_dbus_dict_append_int64 (DBusMessageIter *iter_dict,
                             const char * key,
                             const dbus_int64_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_INT64, &value);
 }
 
 /**
  * Add a 64-bit unsigned integer entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The 64-bit unsigned integer value
  * @return TRUE on success, FALSE on failure
@@ -416,14 +500,16 @@ nmu_dbus_dict_append_uint64 (DBusMessageIter *iter_dict,
                              const char * key,
                              const dbus_uint64_t value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_UINT64, &value);
 }
 
 /**
  * Add a double-precision floating point entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The double-precision floating point value
  * @return TRUE on success, FALSE on failure
@@ -434,14 +520,16 @@ nmu_dbus_dict_append_double (DBusMessageIter *iter_dict,
                              const char * key,
                              const double value)
 {
-	if (!key) return FALSE;
+	if (!key)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_DOUBLE, &value);
 }
 
 /**
  * Add a DBus object path entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The DBus object path value
  * @return TRUE on success, FALSE on failure
@@ -452,14 +540,16 @@ nmu_dbus_dict_append_object_path (DBusMessageIter *iter_dict,
                                   const char * key,
                                   const char * value)
 {
-	if (!key || !value) return FALSE;
+	if (!key || !value)
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_basic (iter_dict, key, DBUS_TYPE_OBJECT_PATH, &value);
 }
 
 /**
  * Add a byte array entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param value The byte array
  * @param value_len The length of the byte array, in bytes
@@ -472,16 +562,146 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
                                  const char * value,
                                  const dbus_uint32_t value_len)
 {
-	if (!key) return FALSE;
-	if (!value && (value_len != 0)) return FALSE;
+	if (!key)
+		return FALSE;
+	if (!value && (value_len != 0))
+		return FALSE;
 	return _nmu_dbus_add_dict_entry_byte_array (iter_dict, key, value, value_len);
 }
 
 
 /**
- * Add a string array entry to the dict.
+ * Add a uint32 array entry to the dict.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_write}
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param value The uint32 array
+ * @param value_len The length of the uint32 array, in # of elements
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_append_uint32_array (DBusMessageIter *iter_dict,
+                                   const char * key,
+                                   const dbus_uint32_t * value,
+                                   const dbus_uint32_t value_len)
+{
+	if (!key)
+		return FALSE;
+	if (!value && (value_len != 0))
+		return FALSE;
+	return _nmu_dbus_add_dict_entry_uint32_array (iter_dict, key, value, value_len);
+}
+
+
+/**
+ * Begin a string array entry in the dict
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
+ * @param key The key of the dict item
+ * @param iter_dict_entry A private DBusMessageIter provided by the caller to
+ *    be passed to {@link nmu_dbus_dict_end_string_array}
+ * @param iter_dict_val A private DBusMessageIter provided by the caller to
+ *    be passed to {@link nmu_dbus_dict_end_string_array}
+ * @param iter_array On return, the DBusMessageIter to be passed to 
+ *    {@link nmu_dbus_dict_string_array_add_element}
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_begin_string_array (DBusMessageIter *iter_dict,
+                                  const char *key,
+                                  DBusMessageIter *iter_dict_entry,
+                                  DBusMessageIter *iter_dict_val,
+                                  DBusMessageIter *iter_array)
+{
+	if (!iter_dict || !iter_dict_entry || !iter_dict_val || !iter_array)
+		return FALSE;
+
+	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
+	                                     iter_dict_entry,
+	                                     key,
+	                                     DBUS_TYPE_ARRAY))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (iter_dict_entry,
+	                                       DBUS_TYPE_VARIANT,
+	                                       DBUS_TYPE_ARRAY_AS_STRING
+	                                       DBUS_TYPE_STRING_AS_STRING,
+	                                       iter_dict_val))
+		return FALSE;
+
+	if (!dbus_message_iter_open_container (iter_dict_val,
+	                                       DBUS_TYPE_ARRAY,
+	                                       DBUS_TYPE_BYTE_AS_STRING,
+	                                       iter_array))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+/**
+ * Add a single string element to a string array dict entry
+ *
+ * @param iter_array A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_begin_string_array}'s iter_array parameter
+ * @param elem The string element to be added to the dict entry's string array
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_string_array_add_element (DBusMessageIter *iter_array,
+                                        const char *elem)
+{
+	if (!iter_array || !elem)
+		return FALSE;
+	return dbus_message_iter_append_basic (iter_array, DBUS_TYPE_STRING, &elem);
+}
+
+
+/**
+ * End a string array dict entry
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
+ * @param iter_dict_entry A private DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_end_string_array}
+ * @param iter_dict_val A private DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_end_string_array}
+ * @param iter_array A DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_end_string_array}
+ * @return TRUE on success, FALSE on failure
+ *
+ */
+dbus_bool_t
+nmu_dbus_dict_end_string_array (DBusMessageIter *iter_dict,
+                                DBusMessageIter *iter_dict_entry,
+                                DBusMessageIter *iter_dict_val,
+                                DBusMessageIter *iter_array)
+{
+	if (!iter_dict || !iter_dict_entry || !iter_dict_val || !iter_array)
+		return FALSE;
+
+	if (!dbus_message_iter_close_container (iter_dict_val, iter_array))
+		return FALSE;
+
+	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
+	                                   iter_dict_entry,
+	                                   iter_dict_val))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+/**
+ * Convenience function to add an entire string array to the dict.
+ *
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_write}
  * @param key The key of the dict item
  * @param items The array of strings
  * @param num_items The number of strings in the array
@@ -490,13 +710,37 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
  */
 dbus_bool_t
 nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
-                                   const char * key,
-                                   const char ** items,
+                                   const char *key,
+                                   const char **items,
                                    const dbus_uint32_t num_items)
 {
-	if (!key) return FALSE;
-	if (!items && (num_items != 0)) return FALSE;
-	return _nmu_dbus_add_dict_entry_string_array (iter_dict, key, items, num_items);
+	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
+	dbus_uint32_t i;
+
+	if (!key)
+		return FALSE;
+	if (!items && (num_items != 0))
+		return FALSE;
+
+	if (!nmu_dbus_dict_begin_string_array (iter_dict,
+	                                       key,
+	                                       &iter_dict_entry,
+	                                       &iter_dict_val,
+	                                       &iter_array))
+		return FALSE;
+
+	for (i = 0; i < num_items; i++) {
+		if (!nmu_dbus_dict_string_array_add_element (&iter_array, items[i]))
+			return FALSE;
+	}
+
+	if (!nmu_dbus_dict_end_string_array (iter_dict,
+	                                     &iter_dict_entry,
+	                                     &iter_dict_val,
+	                                     &iter_array))
+		return FALSE;
+
+	return TRUE;
 }
 
 
@@ -508,7 +752,8 @@ nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
  * Start reading from a dbus dict.
  *
  * @param iter A valid DBusMessageIter pointing to the start of the dict
- * @param iter_dict (out) A DBusMessageIter to be passed to {@link nmu_dbus_dict_read_next_entry}
+ * @param iter_dict (out) A DBusMessageIter to be passed to
+ *    {@link nmu_dbus_dict_read_next_entry}
  * @return TRUE on success, FALSE on failure
  *
  */
@@ -543,26 +788,22 @@ _nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
 	entry->array_type = DBUS_TYPE_BYTE;
 
 	buffer = malloc (BYTE_ARRAY_ITEM_SIZE * BYTE_ARRAY_CHUNK_SIZE);
-	if (!buffer)
-	{
+	if (!buffer) {
 		fprintf (stderr, "%s out of memory trying to retrieve a byte "
-				"array.\n", __func__);
+		         "array.\n", __func__);
 		goto done;
 	}
 
 	entry->bytearray_value = buffer;
 	entry->array_len = 0;
-	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_BYTE)
-	{
+	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_BYTE) {
 		char byte;
 
-		if ((count % BYTE_ARRAY_CHUNK_SIZE) == 0 && count != 0)
-		{
+		if ((count % BYTE_ARRAY_CHUNK_SIZE) == 0 && count != 0) {
 			buffer = realloc (buffer, BYTE_ARRAY_ITEM_SIZE * (count + BYTE_ARRAY_CHUNK_SIZE));
-			if (buffer == NULL)
-			{
+			if (buffer == NULL) {
 				fprintf (stderr, "%s() out of memory trying to retrieve"
-						"the string array.\n", __func__);
+				         "the string array.\n", __func__);
 				goto done;
 			}
 		}
@@ -575,10 +816,64 @@ _nmu_dbus_dict_entry_get_byte_array (DBusMessageIter *iter,
 	}
 
 	/* Zero-length arrays are valid. */
-	if (entry->array_len == 0)
-	{
+	if (entry->array_len == 0) {
 		free (entry->bytearray_value);
-		entry->strarray_value = NULL;
+		entry->bytearray_value = NULL;
+	}
+
+	success = TRUE;
+
+done:
+	return success;
+}
+
+#define UINT32_ARRAY_CHUNK_SIZE 4
+#define UINT32_ARRAY_ITEM_SIZE (sizeof (dbus_uint32_t))
+
+static dbus_bool_t
+_nmu_dbus_dict_entry_get_uint32_array (DBusMessageIter *iter,
+                                       int array_type,
+                                       NMUDictEntry *entry)
+{
+	dbus_uint32_t count = 0;
+	dbus_bool_t success = FALSE;
+	dbus_uint32_t * buffer;
+
+	entry->uint32array_value = NULL;
+	entry->array_type = DBUS_TYPE_UINT32;
+
+	buffer = malloc (UINT32_ARRAY_ITEM_SIZE * UINT32_ARRAY_CHUNK_SIZE);
+	if (!buffer) {
+		fprintf (stderr, "%s out of memory trying to retrieve a uint32 "
+		         "array.\n", __func__);
+		goto done;
+	}
+
+	entry->uint32array_value = buffer;
+	entry->array_len = 0;
+	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_UINT32) {
+		dbus_uint32_t uint32;
+
+		if ((count % UINT32_ARRAY_CHUNK_SIZE) == 0 && count != 0) {
+			buffer = realloc (buffer, UINT32_ARRAY_ITEM_SIZE * (count + UINT32_ARRAY_CHUNK_SIZE));
+			if (buffer == NULL) {
+				fprintf (stderr, "%s() out of memory trying to retrieve"
+				         "the string array.\n", __func__);
+				goto done;
+			}
+		}
+		entry->uint32array_value = buffer;
+
+		dbus_message_iter_get_basic (iter, &uint32);
+		entry->uint32array_value[count] = uint32;
+		entry->array_len = ++count;
+		dbus_message_iter_next (iter);
+	}
+
+	/* Zero-length arrays are valid. */
+	if (entry->array_len == 0) {
+		free (entry->uint32array_value);
+		entry->uint32array_value = NULL;
 	}
 
 	success = TRUE;
@@ -603,27 +898,23 @@ _nmu_dbus_dict_entry_get_string_array (DBusMessageIter *iter,
 	entry->array_type = DBUS_TYPE_STRING;
 
 	buffer = (char **)malloc (STR_ARRAY_ITEM_SIZE * STR_ARRAY_CHUNK_SIZE);
-	if (buffer == NULL)
-	{
+	if (buffer == NULL) {
 		fprintf (stderr, "%s() out of memory trying to retrieve a string"
-				" array.\n", __func__);
+		         " array.\n", __func__);
 		goto done;
 	}
 
 	entry->strarray_value = buffer;
 	entry->array_len = 0;
-	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING)
-	{
+	while (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_STRING) {
 		const char *value;
 		char *str;
 
-		if ((count % STR_ARRAY_CHUNK_SIZE) == 0 && count != 0)
-		{
+		if ((count % STR_ARRAY_CHUNK_SIZE) == 0 && count != 0) {
 			buffer = realloc (buffer, STR_ARRAY_ITEM_SIZE * (count + STR_ARRAY_CHUNK_SIZE));
-			if (buffer == NULL)
-			{
+			if (buffer == NULL) {
 				fprintf (stderr, "%s() out of memory trying to retrieve"
-						"the string array.\n", __func__);
+				         "the string array.\n", __func__);
 				goto done;
 			}
 		}
@@ -631,10 +922,9 @@ _nmu_dbus_dict_entry_get_string_array (DBusMessageIter *iter,
 
 		dbus_message_iter_get_basic (iter, &value);
 		str = strdup (value);
-		if (str == NULL)
-		{
+		if (str == NULL) {
 			fprintf (stderr, "%s() out of memory trying to duplicate"
-					"the string array.\n", __func__);
+			         "the string array.\n", __func__);
 			goto done;
 		}
 		entry->strarray_value[count] = str;
@@ -643,8 +933,7 @@ _nmu_dbus_dict_entry_get_string_array (DBusMessageIter *iter,
 	}
 
 	/* Zero-length arrays are valid. */
-	if (entry->array_len == 0)
-	{
+	if (entry->array_len == 0) {
 		free (entry->strarray_value);
 		entry->strarray_value = NULL;
 	}
@@ -669,17 +958,22 @@ _nmu_dbus_dict_entry_get_array (DBusMessageIter *iter_dict_val,
 
 	dbus_message_iter_recurse (iter_dict_val, &iter_array);
 
- 	switch (array_type)
-	{
+ 	switch (array_type) {
 		case DBUS_TYPE_BYTE:
-		{
 			success = _nmu_dbus_dict_entry_get_byte_array (&iter_array,
-						array_type, entry);
+			                                               array_type,
+			                                               entry);
 			break;
-		}
+		case DBUS_TYPE_UINT32:
+			success = _nmu_dbus_dict_entry_get_uint32_array (&iter_array,
+			                                                 array_type,
+			                                                 entry);
+			break;
 		case DBUS_TYPE_STRING:
 			success = _nmu_dbus_dict_entry_get_string_array (&iter_array,
-						array_type, entry);
+			                                                 array_type,
+			                                                 entry);
+			break;
 		default:
 			break;
 	}
@@ -694,87 +988,74 @@ _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
 {
 	dbus_bool_t success = TRUE;
 
-	switch (entry->type)
-	{
-		case DBUS_TYPE_STRING:
-		{
+	switch (entry->type) {
+		case DBUS_TYPE_STRING: {
 			const char *v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->str_value = strdup (v);
 			break;
 		}
-		case DBUS_TYPE_BOOLEAN:
-		{
+		case DBUS_TYPE_BOOLEAN: {
 			dbus_bool_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->bool_value = v;
 			break;
 		}
-		case DBUS_TYPE_BYTE:
-		{
+		case DBUS_TYPE_BYTE: {
 			char v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->byte_value = v;
 			break;
 		}
-		case DBUS_TYPE_INT16:
-		{
+		case DBUS_TYPE_INT16: {
 			dbus_int16_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);			
 			entry->int16_value = v;
 			break;
 		}
-		case DBUS_TYPE_UINT16:
-		{
+		case DBUS_TYPE_UINT16: {
 			dbus_uint16_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);			
 			entry->uint16_value = v;
 			break;
 		}
-		case DBUS_TYPE_INT32:
-		{
+		case DBUS_TYPE_INT32: {
 			dbus_int32_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);			
 			entry->int32_value = v;
 			break;
 		}
-		case DBUS_TYPE_UINT32:
-		{
+		case DBUS_TYPE_UINT32: {
 			dbus_uint32_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);			
 			entry->uint32_value = v;
 			break;
 		}
-		case DBUS_TYPE_INT64:
-		{
+		case DBUS_TYPE_INT64: {
 			dbus_int64_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->int64_value = v;
 			break;
 		}
-		case DBUS_TYPE_UINT64:
-		{
+		case DBUS_TYPE_UINT64: {
 			dbus_uint64_t v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->uint64_value = v;
 			break;
 		}
-		case DBUS_TYPE_DOUBLE:
-		{
+		case DBUS_TYPE_DOUBLE: {
 			double v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->double_value = v;
 			break;
 		}
-		case DBUS_TYPE_OBJECT_PATH:
-		{
+		case DBUS_TYPE_OBJECT_PATH: {
 			char *v;
 			dbus_message_iter_get_basic (iter_dict_val, &v);
 			entry->str_value = strdup (v);
 			break;
 		}
-		case DBUS_TYPE_ARRAY:
-		{
+		case DBUS_TYPE_ARRAY: {
 			success = _nmu_dbus_dict_entry_get_array (iter_dict_val, entry);
 			break;
 		}
@@ -793,10 +1074,13 @@ _nmu_dbus_dict_fill_value_from_variant (NMUDictEntry *entry,
  * {@link nmu_dbus_dict_entry_clear} function.
  *
  * The returned entry object will be filled with the type and value of the next
- * entry in the dict, or the type will be DBUS_TYPE_INVALID if an error occurred.
+ * entry in the dict, or the type will be DBUS_TYPE_INVALID if an error
+ * occurred.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_read}
- * @param entry A valid dict entry object into which the dict key and value will be placed
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_read}
+ * @param entry A valid dict entry object into which the dict key and value
+ *    will be placed
  * @return TRUE on success, FALSE on failure
  *
  */
@@ -843,15 +1127,16 @@ error:
 /**
  * Return whether or not there are additional dictionary entries.
  *
- * @param iter_dict A valid DBusMessageIter returned from {@link nmu_dbus_dict_open_read}
- * @return TRUE if more dict entries exists, FALSE if no more dict entries exist
+ * @param iter_dict A valid DBusMessageIter returned from
+ *    {@link nmu_dbus_dict_open_read}
+ * @return TRUE if more dict entries exists, FALSE if no more dict entries
+ *    exist
  *
  */
 dbus_bool_t
 nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict)
 {
-	if (!iter_dict)
-	{
+	if (!iter_dict) {
 		fprintf (stderr, "%s called with invalid arguments; this is an "
 				"error in the program.\n", __func__);
 		return FALSE;
@@ -868,26 +1153,30 @@ nmu_dbus_dict_has_dict_entry (DBusMessageIter *iter_dict)
 void
 nmu_dbus_dict_entry_clear (NMUDictEntry *entry)
 {
-	dbus_uint32_t i;
 	if (!entry)
 		return;
-	switch (entry->type)
-	{
+	switch (entry->type) {
 		case DBUS_TYPE_OBJECT_PATH:
 		case DBUS_TYPE_STRING:
 			free (entry->str_value);
 			break;
 		case DBUS_TYPE_ARRAY:
-			switch (entry->array_type)
-			{
-				case DBUS_TYPE_BYTE:
+			switch (entry->array_type) {
+				case DBUS_TYPE_BYTE: {
 					free (entry->bytearray_value);
 					break;
-				case DBUS_TYPE_STRING:
+				}
+				case DBUS_TYPE_UINT32: {
+					free (entry->uint32array_value);
+					break;
+				}
+				case DBUS_TYPE_STRING: {
+					int i;
 					for (i = 0; i < entry->array_len; i++)
 						free (entry->strarray_value[i]);
 					free (entry->strarray_value);
 					break;
+				}
 			}
 			break;
 	}

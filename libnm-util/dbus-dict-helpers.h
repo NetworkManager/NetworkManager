@@ -100,6 +100,29 @@ nmu_dbus_dict_append_byte_array (DBusMessageIter *iter_dict,
                                  const dbus_uint32_t value_len);
 
 dbus_bool_t
+nmu_dbus_dict_append_uint32_array (DBusMessageIter *iter_dict,
+                                   const char * key,
+                                   const dbus_uint32_t * value,
+                                   const dbus_uint32_t value_len);
+
+dbus_bool_t
+nmu_dbus_dict_begin_string_array (DBusMessageIter *iter_dict,
+                                  const char *key,
+                                  DBusMessageIter *iter_dict_entry,
+                                  DBusMessageIter *iter_dict_val,
+                                  DBusMessageIter *iter_array);
+
+dbus_bool_t
+nmu_dbus_dict_string_array_add_element (DBusMessageIter *iter_array,
+                                        const char *elem);
+
+dbus_bool_t
+nmu_dbus_dict_end_string_array (DBusMessageIter *iter_dict,
+                                DBusMessageIter *iter_dict_entry,
+                                DBusMessageIter *iter_dict_val,
+                                DBusMessageIter *iter_array);
+
+dbus_bool_t
 nmu_dbus_dict_append_string_array (DBusMessageIter *iter_dict,
                                    const char * key,
                                    const char ** items,
@@ -127,6 +150,7 @@ typedef struct NMUDictEntry {
 		dbus_uint64_t uint64_value;
 		double double_value;
 		char * bytearray_value;
+		dbus_uint32_t * uint32array_value;
 		char ** strarray_value;
 	};
 	dbus_uint32_t array_len;

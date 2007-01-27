@@ -1,3 +1,17 @@
+2007-01-26  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/dbus-dict-helpers.c
+	  libnm-util/dbus-dict-helpers.h
+		- Coordinate style with wpa_supplicant version to minimize diff
+		- Add uint32 array support
+		- (nmu_dbus_dict_append_uint32_array): new function
+		- (nmu_dbus_dict_begin_string_array, nmu_dbus_dict_string_array_add_element,
+		   nmu_dbus_dict_end_string_array): bring over from wpa_supplicant
+			version; allow adding string array elements individually
+
+	* test/libnm-util/test-dbus-dict-helpers.c
+		- Test uint32 arrays
+
 2007-01-27  Jürg Billeter  <j@bitron.ch>
 
 	* src/backends/NetworkManagerPaldo.c

@@ -50,6 +50,7 @@ DECLARE_ENTRY(UInt64Entry, dbus_uint64_t)
 DECLARE_ENTRY(DoubleEntry, double)
 DECLARE_ENTRY(OPEntry, const char *)
 DECLARE_ENTRY(ByteArrayEntry, const char *)
+DECLARE_ENTRY(UInt32ArrayEntry, dbus_uint32_t *)
 DECLARE_ENTRY(StringArrayEntry, char **)
 
 struct DictEntries {
@@ -66,6 +67,8 @@ struct DictEntries {
 	struct OPEntry op;
 	struct ByteArrayEntry bytearr;
 	struct ByteArrayEntry zlbytearr;
+	struct UInt32ArrayEntry uint32arr;
+	struct UInt32ArrayEntry zluint32arr;
 	struct StringArrayEntry strarr;
 	struct StringArrayEntry zlstrarr;
 };
@@ -83,9 +86,17 @@ struct DictEntries {
 #define TEST_KEY_OP          "ObjectPath"
 #define TEST_KEY_BYTEARR     "ByteArray"
 #define TEST_KEY_ZLBYTEARR   "ZLByteArray"
+#define UINT32ARR_LEN	4
+#define TEST_KEY_UINT32ARR   "UInt32Array"
+#define TEST_KEY_ZLUINT32ARR "ZLUInt32Array"
 #define STRARR_LEN	2
 #define TEST_KEY_STRINGARR   "StringArray"
 #define TEST_KEY_ZLSTRINGARR "ZLStringArray"
+
+#define UINT32ARR_ELEM0 0xdeadbeef
+#define UINT32ARR_ELEM1 0x1337bead
+#define UINT32ARR_ELEM2 0x11111113
+#define UINT32ARR_ELEM3 0xbdefac44
 
 struct DictEntries entries = {
 	{ TEST_KEY_STRING,   "foobar22",       FALSE, DBUS_TYPE_STRING },
@@ -101,6 +112,8 @@ struct DictEntries entries = {
 	{ TEST_KEY_OP,       "/com/it/foobar", FALSE, DBUS_TYPE_OBJECT_PATH },
 	{ TEST_KEY_BYTEARR,  "qazwsxedcrfvtgb",FALSE, DBUS_TYPE_BYTE },
 	{ TEST_KEY_ZLBYTEARR,NULL,             FALSE, DBUS_TYPE_BYTE },
+	{ TEST_KEY_UINT32ARR,NULL,             FALSE, DBUS_TYPE_UINT32 },
+	{ TEST_KEY_ZLUINT32ARR,NULL,           FALSE, DBUS_TYPE_UINT32 },
 	{ TEST_KEY_STRINGARR,NULL,             FALSE, DBUS_TYPE_STRING },
 	{ TEST_KEY_ZLSTRINGARR,NULL,           FALSE, DBUS_TYPE_STRING }
 };
@@ -171,6 +184,21 @@ test_write_dict (DBusMessage *message)
 	}
 	if (!nmu_dbus_dict_append_byte_array (&iter_dict, entries.zlbytearr.key, entries.zlbytearr.val, 0)) {
 		err_string = "failed to append zero-length byte array entry";
+		goto done;
+	}
+	entries.uint32arr.val = malloc (sizeof (dbus_uint32_t) * UINT32ARR_LEN);
+	entries.uint32arr.val[0] = UINT32ARR_ELEM0;
+	entries.uint32arr.val[1] = UINT32ARR_ELEM1;
+	entries.uint32arr.val[2] = UINT32ARR_ELEM2;
+	entries.uint32arr.val[3] = UINT32ARR_ELEM3;
+	if (!nmu_dbus_dict_append_uint32_array (&iter_dict, entries.uint32arr.key,
+			(const dbus_uint32_t *) entries.uint32arr.val, UINT32ARR_LEN)) {
+		err_string = "failed to append uint32 array entry";
+		goto done;
+	}
+	if (!nmu_dbus_dict_append_uint32_array (&iter_dict, entries.zluint32arr.key,
+			(const dbus_uint32_t *)entries.zluint32arr.val, 0)) {
+		err_string = "failed to append zero-length uint32 array entry";
 		goto done;
 	}
 	entries.strarr.val = malloc (sizeof (char *) * STRARR_LEN);
@@ -251,8 +279,7 @@ test_read_dict (DBusMessage *message)
 		goto done;
 	}
 
-	while (nmu_dbus_dict_has_dict_entry (&iter_dict))
-	{
+	while (nmu_dbus_dict_has_dict_entry (&iter_dict)) {
 		dbus_uint32_t bytearr_len = strlen (entries.bytearr.val);
 
 		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
@@ -275,6 +302,13 @@ test_read_dict (DBusMessage *message)
 				!memcmp (entry.bytearray_value, entries.bytearr.val, bytearr_len))
 		TEST_CASE_ARRAY (TEST_KEY_ZLBYTEARR, entries.zlbytearr, 0,
 				entry.bytearray_value == entries.zlbytearr.val)
+		TEST_CASE_ARRAY (TEST_KEY_UINT32ARR, entries.uint32arr, UINT32ARR_LEN,
+				(entry.uint32array_value[0] == UINT32ARR_ELEM0 &&
+				 entry.uint32array_value[1] == UINT32ARR_ELEM1 &&
+				 entry.uint32array_value[2] == UINT32ARR_ELEM2 &&
+				 entry.uint32array_value[3] == UINT32ARR_ELEM3))
+		TEST_CASE_ARRAY (TEST_KEY_ZLUINT32ARR, entries.zluint32arr, 0,
+				entry.uint32array_value == entries.zluint32arr.val)
 		TEST_CASE_ARRAY (TEST_KEY_STRINGARR, entries.strarr, STRARR_LEN,
 				(!strcmp (entry.strarray_value[0], "foo") && !strcmp (entry.strarray_value[1], "bar")))
 		TEST_CASE_ARRAY (TEST_KEY_ZLSTRINGARR, entries.zlstrarr, 0,
@@ -291,6 +325,7 @@ test_read_dict (DBusMessage *message)
 		|| !entries.uint16.found || !entries.int32.found || !entries.uint32.found
 		|| !entries.int64.found || !entries.uint64.found || !entries.dbl.found
 		|| !entries.op.found || !entries.bytearr.found || !entries.zlbytearr.found
+		|| !entries.uint32arr.found || !entries.zluint32arr.found
 		|| !entries.strarr.found || !entries.zlstrarr.found) {
 		err_string = "A required entry was not found in the dict.";
 		goto done;
