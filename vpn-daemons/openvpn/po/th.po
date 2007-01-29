@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-01-23 21:56+0700\n"
-"PO-Revision-Date: 2007-01-23 22:52+0700\n"
+"PO-Revision-Date: 2007-01-29 22:10+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@linux.thai.net>\n"
 "Language-Team: Thai <l10n.opentle.org>\n"
 "MIME-Version: 1.0\n"
@@ -55,7 +55,7 @@ msgstr "คุณจะต้องยืนยันตัวบุคคลเ
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
-msgstr "ยืนยันตัวบุคคล VPN"
+msgstr "ยืนยันตัวบุคคลกับ VPN"
 
 #: ../auth-dialog/main.c:227
 msgid "Certificate pass_word:"
@@ -275,7 +275,7 @@ msgstr "<b>ข้อมูลเสริม</b>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "<b>Required Information</b>"
-msgstr "<b>ข้อมูลที่ต้องการ</b>"
+msgstr "<b>ข้อมูลจำเป็น</b>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:6
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
