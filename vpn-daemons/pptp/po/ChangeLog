@@ -1,3 +1,8 @@
+2007-01-30  Theppitak Karoonboonyanan  <thep@linux.thai.net>
+
+	* th.po: Added Thai translation.
+	* LINGUAS: Added 'th'.
+
 2007-01-21  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* ca.po: Updated Catalan translation by
