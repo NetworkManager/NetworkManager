@@ -1,3 +1,12 @@
+2007-01-30  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+	  src/Makefile.am
+		- Add configure bits to pick up libnm-util
+
+	* src/nm-vpnc-service.c
+		- Convert to new dict-based IP4Config signal format
+
 2006-12-07  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

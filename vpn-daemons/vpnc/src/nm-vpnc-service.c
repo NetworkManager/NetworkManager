@@ -46,6 +46,7 @@
 
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
+#include "dbus-dict-helpers.h"
 
 
 static const char *vpnc_binary_paths[] =
@@ -868,7 +869,10 @@ print_vpn_config (guint32 ip4_vpn_gateway,
  * Signal the bus 
  *
  */
-static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *message, NmVpncData *data)
+static void
+nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con,
+                                        DBusMessage *message,
+                                        NmVpncData *data)
 {
 	guint32		ip4_vpn_gateway;
 	char *		tundev;
@@ -879,11 +883,11 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	guint32		ip4_dns_len;
 	guint32 *		ip4_nbns;
 	guint32		ip4_nbns_len;
-	guint32		mss;
 	char *		cisco_def_domain;
 	char *		cisco_banner;
 	gboolean		success = FALSE;
 	DBusMessage *	signal;
+	DBusMessageIter   iter, iter_dict;
 
 	g_return_if_fail (data != NULL);
 	g_return_if_fail (con != NULL);
@@ -896,21 +900,18 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	nm_vpnc_cancel_helper_timer (data);
 
 	if (!dbus_message_get_args(message, NULL,
-	                          DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-	                          DBUS_TYPE_STRING, &tundev,
-	                          DBUS_TYPE_UINT32, &ip4_address,
-	                          DBUS_TYPE_UINT32, &ip4_netmask,
-	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, &ip4_dns_len,
-	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, &ip4_nbns_len,
-	                          DBUS_TYPE_STRING, &cisco_def_domain,
-	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID))
+	                           DBUS_TYPE_UINT32, &ip4_vpn_gateway,
+	                           DBUS_TYPE_STRING, &tundev,
+	                           DBUS_TYPE_UINT32, &ip4_address,
+	                           DBUS_TYPE_UINT32, &ip4_netmask,
+	                           DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, &ip4_dns_len,
+	                           DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, &ip4_nbns_len,
+	                           DBUS_TYPE_STRING, &cisco_def_domain,
+	                           DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID))
 		goto out;
 
 	/* For Cisco/vpnc, PtP address == local VPN address */
 	ip4_ptp_address = ip4_address;
-
-	/* and we don't specify an MSS */
-	mss = 0;
 
 #if 0
 	print_vpn_config (ip4_vpn_gateway, tundev, ip4_address, ip4_netmask,
@@ -918,22 +919,88 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 					cisco_def_domain, cisco_banner);
 #endif
 
-	if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
+	signal = dbus_message_new_signal (NM_DBUS_PATH_VPNC,
+	                                  NM_DBUS_INTERFACE_VPNC,
+	                                  NM_DBUS_VPN_SIGNAL_IP4_CONFIG);
+	if (signal == NULL)
 		goto out;
 
-	dbus_message_append_args (signal,
-	                          DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-	                          DBUS_TYPE_STRING, &tundev,
-	                          DBUS_TYPE_UINT32, &ip4_address,
-	                          DBUS_TYPE_UINT32, &ip4_ptp_address,
-	                          DBUS_TYPE_UINT32, &ip4_netmask,
-	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
-	                          DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
-						 DBUS_TYPE_UINT32, &mss,
-	                          DBUS_TYPE_STRING, &cisco_def_domain,
-	                          DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (data->con, signal, NULL))
-	{
+	dbus_message_iter_init_append (signal, &iter);
+	if (!nmu_dbus_dict_open_write (&iter, &iter_dict)) {
+		nm_warning ("dict open write failed!");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "gateway", ip4_vpn_gateway)) {
+		nm_warning ("couldn't append gateway to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_string (&iter_dict, "tundev", tundev)) {
+		nm_warning ("couldn't append tundev to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "local_addr", ip4_address)) {
+		nm_warning ("couldn't append local_address to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "ptp_addr", ip4_ptp_address)) {
+		nm_warning ("couldn't append ptp_address to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "netmask", ip4_netmask)) {
+		nm_warning ("couldn't append local_address to dict");
+		goto out;
+	}
+
+	if (ip4_dns_len > 0) {
+		if (!nmu_dbus_dict_append_uint32_array (&iter_dict,
+		                                        "dns_server",
+		                                        ip4_dns,
+		                                        ip4_dns_len)) {
+			nm_warning ("couldn't append dns_servers to dict");
+			goto out;
+		}
+	}
+
+	if (ip4_nbns_len > 0) {
+		if (!nmu_dbus_dict_append_uint32_array (&iter_dict,
+		                                        "nbns_server",
+		                                        ip4_nbns,
+		                                        ip4_nbns_len)) {
+			nm_warning ("couldn't append nbns_servers to dict");
+			goto out;
+		}
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "mtu", 1412)) {
+		nm_warning ("couldn't append mtu to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_string (&iter_dict,
+	                                  "dns_domain",
+	                                  cisco_def_domain)) {
+		nm_warning ("couldn't append DNS domain");
+	}
+
+	if (cisco_banner && strlen (cisco_banner)) {
+		if (!nmu_dbus_dict_append_string (&iter_dict,
+		                                  "banner",
+		                                  cisco_banner)) {
+			nm_warning ("couldn't append login banner");
+		}
+	}
+
+	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
+		nm_warning ("dict close write failed!");
+		goto out;
+	}
+
+	if (!dbus_connection_send (data->con, signal, NULL)) {
 		nm_warning ("Could not raise the "NM_DBUS_VPN_SIGNAL_IP4_CONFIG" signal!");
 		goto out;
 	}
@@ -943,8 +1010,7 @@ static void nm_vpnc_dbus_process_helper_ip4_config (DBusConnection *con, DBusMes
 	success = TRUE;
 
 out:
-	if (!success)
-	{
+	if (!success) {
 		nm_warning ("Received invalid IP4 Config information from helper, terminating vpnc.");
 		nm_vpnc_dbus_handle_stop_vpn (data);
 	}
