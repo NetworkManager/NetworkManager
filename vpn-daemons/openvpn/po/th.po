@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-01-23 21:56+0700\n"
-"PO-Revision-Date: 2007-01-29 22:10+0700\n"
+"PO-Revision-Date: 2007-01-30 12:01+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@linux.thai.net>\n"
 "Language-Team: Thai <l10n.opentle.org>\n"
 "MIME-Version: 1.0\n"
@@ -51,7 +51,7 @@ msgstr "_บันทึกรหัสผ่านลงในพวงกุ�
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "คุณจะต้องยืนยันตัวบุคคลเพื่อเข้าถึง Virtual Private Network '%s'"
+msgstr "คุณจะต้องยืนยันตัวบุคคลเพื่อเข้าใช้ Virtual Private Network '%s'"
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
@@ -389,8 +389,7 @@ msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
-"_ชื่อที่ใช้แทนการเชื่อมต่อไปยังเครือข่ายส่วนบุคคล เช่น \"Campus VPN\" หรือ \"Corporate "
-"Network\""
+"_ชื่อที่ใช้แทนการเชื่อมต่อไปยังเครือข่ายส่วนบุคคล เช่น \"VPN มหาวิทยาลัย\" หรือ \"เครือข่ายบริษัท\""
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
 msgid "_Only use VPN connection for these addresses"
