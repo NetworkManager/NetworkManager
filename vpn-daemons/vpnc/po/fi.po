@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-16 13:09+0300\n"
+"POT-Creation-Date: 2007-01-31 11:01+0300\n"
 "PO-Revision-Date: 2006-08-16 13:13+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
@@ -17,27 +17,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_Toissijainen salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:267
+#: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
 msgstr "_Käyttäjätunnus:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:269
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "_Toimialue:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:271
+#: ../auth-dialog/gnome-two-password-dialog.c:262
 msgid "_Password:"
 msgstr "_Salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:354
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
 msgstr "Yhdistä _anonyymisti"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:359
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
 msgstr "Yhdistä _käyttäjänä:"
 
@@ -70,53 +70,53 @@ msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-yhteyksien hallinta (vpnc)"
 
-#: ../properties/nm-vpnc.c:83
+#: ../properties/nm-vpnc.c:84
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Yhteensopiva Cisco VPN-asiakas (vpnc)"
 
-#: ../properties/nm-vpnc.c:447
+#: ../properties/nm-vpnc.c:448
 msgid "The following vpnc VPN connection will be created:"
 msgstr "Seuraava vpnc-yhteys luodaan:"
 
-#: ../properties/nm-vpnc.c:449
+#: ../properties/nm-vpnc.c:450
 #, c-format
 msgid "Name:  %s"
 msgstr "Nimi:  %s"
 
-#: ../properties/nm-vpnc.c:452
+#: ../properties/nm-vpnc.c:453
 #, c-format
 msgid "Gateway:  %s"
 msgstr "Yhdyskäytävä: %s"
 
-#: ../properties/nm-vpnc.c:454
+#: ../properties/nm-vpnc.c:455
 #, c-format
 msgid "Group Name:  %s"
 msgstr "Ryhmän nimi:  %s"
 
-#: ../properties/nm-vpnc.c:458
+#: ../properties/nm-vpnc.c:459
 #, c-format
 msgid "Username:  %s"
 msgstr "Käyttäjätunnus:  %s"
 
-#: ../properties/nm-vpnc.c:463
+#: ../properties/nm-vpnc.c:464
 #, c-format
 msgid "Domain:  %s"
 msgstr "Toimialue:  %s"
 
-#: ../properties/nm-vpnc.c:468
+#: ../properties/nm-vpnc.c:469
 #, c-format
 msgid "Routes:  %s"
 msgstr "Reitit:  %s"
 
-#: ../properties/nm-vpnc.c:472
+#: ../properties/nm-vpnc.c:473
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Yhteyden yksityiskohtia voi muuttaa valitsemalla \"Muokkaa\"."
 
-#: ../properties/nm-vpnc.c:548
+#: ../properties/nm-vpnc.c:542
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnelointi ei ole tuettu"
 
-#: ../properties/nm-vpnc.c:550
+#: ../properties/nm-vpnc.c:544
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -128,41 +128,41 @@ msgstr ""
 "VPN-asetustiedosto \"%s\" määrittelee, että VPN-liikenne tulisi tunneloida "
 "TCP-yhteyden läpi, mutta vpnc ei vielä tue tätä ominaisuutta.\n"
 "\n"
-"Yhteys voidaan edelleen luoda ilman TCP-tunnelointia, mutta se ei ehkä "
-"toimi kuten oli tarkoitus."
+"Yhteys voidaan edelleen luoda ilman TCP-tunnelointia, mutta se ei ehkä toimi "
+"kuten oli tarkoitus."
 
-#: ../properties/nm-vpnc.c:574
+#: ../properties/nm-vpnc.c:565
 msgid "Cannot import settings"
 msgstr "Asetuksia ei voi tuoda"
 
-#: ../properties/nm-vpnc.c:576
+#: ../properties/nm-vpnc.c:567
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "VPN-asetustiedosto \"%s\" ei sisällä kelvollisia tietoja."
 
-#: ../properties/nm-vpnc.c:593
+#: ../properties/nm-vpnc.c:584
 msgid "Select file to import"
 msgstr "Valitse tuotava tiedosto"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:753
+#: ../properties/nm-vpnc.c:744
 msgid "Save as..."
 msgstr "Tallenna nimellä..."
 
-#: ../properties/nm-vpnc.c:783
+#: ../properties/nm-vpnc.c:774
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Tiedosto \"%s\" on jo olemassa."
 
-#: ../properties/nm-vpnc.c:786
+#: ../properties/nm-vpnc.c:777
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Haluatko korvata sen tiedostolla jota olet tallentamassa?"
 
-#: ../properties/nm-vpnc.c:800
+#: ../properties/nm-vpnc.c:791
 msgid "Failed to export configuration"
 msgstr "Asetuksia ei voitu viedä"
 
-#: ../properties/nm-vpnc.c:802
+#: ../properties/nm-vpnc.c:793
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Tiedostoa \"%s\" ei voitu tallentaa"
@@ -223,17 +223,18 @@ msgstr ""
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Käytä VPN-yhteyttä näille osotteille"
 
-#: ../src/nm-vpnc-service.c:117
+#: ../src/nm-vpnc-service.c:118
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
-"VPN-kirjautuminen ei onnistunut, koska käyttäjätunnusta ja salasanaa ei hyväksytty."
+"VPN-kirjautuminen ei onnistunut, koska käyttäjätunnusta ja salasanaa ei "
+"hyväksytty."
 
-#: ../src/nm-vpnc-service.c:119
+#: ../src/nm-vpnc-service.c:120
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "VPN-kirjautuminen epäonnistui, koska VPN-ohjelmaa ei voitu käynnistää."
 
-#: ../src/nm-vpnc-service.c:121
+#: ../src/nm-vpnc-service.c:122
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
@@ -241,14 +242,14 @@ msgstr ""
 "VPN-kirjatuminen epäonnistui, koska VPN-ohjelma ei saanut yhteyttä VPN-"
 "palvelimeen."
 
-#: ../src/nm-vpnc-service.c:123
+#: ../src/nm-vpnc-service.c:124
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 "VPN-kirjautuminen epäonnistui, koska VPN-asetuksten valinnat olivat "
 "virheelliset."
 
-#: ../src/nm-vpnc-service.c:125
+#: ../src/nm-vpnc-service.c:126
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-16 12:49+0300\n"
-"PO-Revision-Date: 2006-11-28 14:18+0300\n"
+"POT-Creation-Date: 2007-01-31 11:01+0300\n"
+"PO-Revision-Date: 2007-01-31 11:01+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -17,27 +17,27 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "_Toissijainen salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "_Käyttäjätunnus:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Toimialue:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Yhdistä _anonyymisti"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Yhdistä _käyttäjänä:"
 
@@ -58,7 +58,11 @@ msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "Varmenteen _salasana:"
+
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Varmennettu salasana:"
 
@@ -319,7 +323,7 @@ msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
-"Huomaa, ettei tuotava tiedosto ole OpenVPN-asetustiedosto. Kysy " 
+"Huomaa, ettei tuotava tiedosto ole OpenVPN-asetustiedosto. Kysy "
 "ylläpitäjältäsi oikeaa tiedostoa."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
@@ -436,4 +440,3 @@ msgstr ""
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN-yhteyden avaus epäonnistui"
-

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-17 07:16+0300\n"
-"PO-Revision-Date: 2006-11-28 14:17+0300\n"
+"POT-Creation-Date: 2007-01-31 10:57+0300\n"
+"PO-Revision-Date: 2007-01-31 10:57+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -17,21 +17,87 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
-msgid "_Secondary Password:"
-msgstr "_Toissijainen salasana:"
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
+msgid "Authentication Type:"
+msgstr "Todentamistapa:"
 
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+msgid "_Remember for this session"
+msgstr "_Muista tämän istunnon ajan"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+msgid "_Save in keyring"
+msgstr "_Tallenna avainrenkaaseen"
+
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
+#, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii todentamista."
+
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
+msgid "Authenticate Connection"
+msgstr "Todenna VPN-yhteys"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Tietoja todentamisesta</span>\n"
+"\n"
+"Yhteys \"%s\" saattaa vaatia todentamista.\n"
+"\n"
+"Valitse sopiva todentamistapa ja syötä allaoleviin kenttiin tarvittavat "
+"tiedot:\n"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+msgid "Authentication Required"
+msgstr "Todentaminen vaaditaan"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+msgid "_Authentication Type:"
+msgstr "_Todentamistapa:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Salasana:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+msgid "_Remote name:"
+msgstr "_Nimi palvelimella:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
 #: ../auth-dialog/gnome-two-password-dialog.c:268
 msgid "_Username:"
 msgstr "_Käyttäjätunnus:"
 
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
+msgid "auth-chap-window"
+msgstr "auth-chap-ikkuna"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
+msgid "auth-mschapv2-window"
+msgstr "auth-mschapv2-ikkuna"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
+msgid "auth-none-window"
+msgstr "auth-none-ikkuna"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "_Toissijainen salasana:"
+
 #: ../auth-dialog/gnome-two-password-dialog.c:270
 msgid "_Domain:"
 msgstr "_Toimialue:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:272
-msgid "_Password:"
-msgstr "_Salasana:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:355
 msgid "Connect _anonymously"
@@ -49,15 +115,6 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save password in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:140
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii todentamista."
-
-#: ../auth-dialog/main.c:141
-msgid "Authenticate Connection"
-msgstr "Todenna VPN-yhteys"
-
 #: ../nm-ppp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
@@ -65,173 +122,6 @@ msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
 #: ../nm-ppp.desktop.in.h:2
 msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN-yhteyksien hallinta (yleinen PPP)"
-
-#: ../properties/nm-ppp-properties.c:45
-msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr "pppd-tunneli (PPTP, BTGPRS, Dialup)"
-
-#: ../properties/nm-ppp-properties.c:131
-msgid "Name"
-msgstr "Nimi"
-
-#: ../properties/nm-ppp-properties.c:143
-msgid "PPTP Server"
-msgstr "PPTP-palvelin"
-
-#: ../properties/nm-ppp-properties.c:148
-msgid "Telephone Number"
-msgstr "Puhelinnumero"
-
-#: ../properties/nm-ppp-properties.c:153
-msgid "Bluetooth Address"
-msgstr "Bluetooth-osoite"
-
-#: ../properties/nm-ppp-properties.c:158
-msgid "Bluetooth Channel"
-msgstr "Bluetooth-kanava"
-
-#: ../properties/nm-ppp-properties.c:163
-msgid "GPRS APN"
-msgstr "GPRS APN"
-
-#: ../properties/nm-ppp-properties.c:168
-msgid "GPRS IP"
-msgstr "GPRS-IP-osoite"
-
-#: ../properties/nm-ppp-properties.c:173
-msgid "GPRS Context No."
-msgstr "GPRS-kontekstin numero"
-
-#: ../properties/nm-ppp-properties.c:178
-msgid "GPRS Packet Type"
-msgstr "GPRS pakettityyppi"
-
-#: ../properties/nm-ppp-properties.c:183
-msgid "Use CTS/RTS flow control"
-msgstr "Käytä CTS/RTS-vuonohjausta"
-
-#: ../properties/nm-ppp-properties.c:188
-msgid "Connect via a modem"
-msgstr "Yhdistä modeemin avulla"
-
-#: ../properties/nm-ppp-properties.c:193
-msgid "Require IP to be provided"
-msgstr "Vaadi annettu IP"
-
-#: ../properties/nm-ppp-properties.c:198
-#: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Use Peer DNS"
-msgstr "Käytä saatua DNS-määrittelyä"
-
-#: ../properties/nm-ppp-properties.c:203
-msgid "Use MPPE encryption"
-msgstr "Käytä MPPE-salausta"
-
-#: ../properties/nm-ppp-properties.c:208
-msgid "Use 128 bit MPPE encryption"
-msgstr "Käytä 128-bittistä MPPE-salausta"
-
-#: ../properties/nm-ppp-properties.c:213
-msgid "Use MPPC compression"
-msgstr "Käytä MPPC-pakkausta"
-
-#: ../properties/nm-ppp-properties.c:218
-msgid "Do not use deflate compression"
-msgstr "Älä käytä deflate-pakkausta"
-
-#: ../properties/nm-ppp-properties.c:223
-msgid "Do not use BSD compression"
-msgstr "Älä käytä BSD-pakkausta"
-
-#: ../properties/nm-ppp-properties.c:228
-msgid "Exclusive device access by pppd"
-msgstr "Varaa laite pppd:n käyttöön"
-
-#: ../properties/nm-ppp-properties.c:233
-msgid "Authenticate remote peer"
-msgstr "Todenna VPN-yhteys"
-
-#: ../properties/nm-ppp-properties.c:238
-#: ../properties/nm-ppp-dialog.glade.h:32
-msgid "Refuse EAP"
-msgstr "Kiellä EAP"
-
-#: ../properties/nm-ppp-properties.c:243
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Refuse CHAP"
-msgstr "Kiellä CHAP"
-
-#: ../properties/nm-ppp-properties.c:248
-msgid "Refuse MSCHAP"
-msgstr "Kiellä MSCHAP"
-
-#: ../properties/nm-ppp-properties.c:253
-msgid "Maximum transmit unit (in bytes)"
-msgstr "Suurin lähetysyksikkö MTU (tavuina)"
-
-#: ../properties/nm-ppp-properties.c:258
-msgid "Maximum receive unit (in bytes)"
-msgstr "Suurin vastaanottoyksikkö MRU (tavuina)"
-
-#: ../properties/nm-ppp-properties.c:263
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr "Epäonnistuneiden LCP ECHO-viestien määrä, joka katkaisee yhteyden"
-
-#: ../properties/nm-ppp-properties.c:268
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr "LCP ECHO-viestien väli sekunteina"
-
-#: ../properties/nm-ppp-properties.c:273
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr "Ennen yhteyden avausta odotettava aika millisekuntena."
-
-#: ../properties/nm-ppp-properties.c:278
-msgid "Custom PPP options"
-msgstr "Omat PPP-valitsimet"
-
-#: ../properties/nm-ppp-properties.c:288
-msgid "Use Peer DNS over the Tunnel"
-msgstr "Käytä yhteyden DNS-asetuksia tunnelissa"
-
-#: ../properties/nm-ppp-properties.c:294
-msgid "Specific networks available"
-msgstr "Halutut verkot ovat saatavilla"
-
-#: ../properties/nm-ppp-properties.c:300
-msgid "Limit to specific networks"
-msgstr "Rajaa haluttuihin verkkoihin"
-
-#: ../properties/vpnui_impl.c:229
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr "Seuraava \"%s\"-yhteys luodaan:"
-
-#: ../properties/vpnui_impl.c:242
-#, c-format
-msgid "\t%s:  %s\n"
-msgstr "\t%s:  %s\n"
-
-#: ../properties/vpnui_impl.c:245
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr "Yhteyden yksityiskohtia voi muuttaa valitsemalla \"Takaisin\"."
-
-#: ../properties/vpnui_impl.c:317
-msgid "Select file to import"
-msgstr "Valitse tuotava tiedosto"
-
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:462
-msgid "Save as..."
-msgstr "Tallenna nimellä..."
-
-#: ../properties/vpnui_impl.c:491
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Tiedosto \"%s\" on jo olemassa."
-
-#: ../properties/vpnui_impl.c:494
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Haluatko korvata sen tiedostolla jota olet tallentamassa?"
 
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
@@ -302,14 +192,19 @@ msgid "Disconnect after this many LCP echo requests fail"
 msgstr "Katkaise yhteys, kun näin monta LCP ECHO-pyyntö epäonnistuu"
 
 #: ../properties/nm-ppp-dialog.glade.h:18
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "Käytä tilallista MPPE:tä"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Exclusive device access (UUCP-style lock)"
 msgstr "Laite varattu käyttöön (UUCP-tyylinen lukko)"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Find Device"
 msgstr "Etsi laite"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:21
 msgid ""
 "For security reasons, options entered in the box above are checked against a "
 "list of allowed options before a connection is established.  Currently there "
@@ -319,95 +214,105 @@ msgstr ""
 "listaan sallituista valitsimista. Tällä hetkellä lista ei sisällä mitään "
 "valitsimia."
 
-#: ../properties/nm-ppp-dialog.glade.h:21
+#: ../properties/nm-ppp-dialog.glade.h:22
 msgid "GPRS Options"
 msgstr "GPRS-valitsimet"
 
-#: ../properties/nm-ppp-dialog.glade.h:22
+#: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Hardware RTS/CTS"
 msgstr "Laitetason RTS/CTS"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
+#: ../properties/nm-ppp-dialog.glade.h:24
 msgid "Host name or IP address of the PPTP server"
 msgstr "PPTP-palvelimen konenimi tai IP-osoite"
 
-#: ../properties/nm-ppp-dialog.glade.h:24
+#: ../properties/nm-ppp-dialog.glade.h:25
 msgid ""
 "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 msgstr ""
 "Jos BSD-pakkaus ei ole sallittu, annetaan pppd:lle valitsin 'nobsdcomp'"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
+#: ../properties/nm-ppp-dialog.glade.h:26
 msgid ""
 "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
 msgstr ""
 "Jos deflate-pakkaus ei ole sallittu, annetaan pppd:lle valitsin 'nodeflate'"
 
-#: ../properties/nm-ppp-dialog.glade.h:26
+#: ../properties/nm-ppp-dialog.glade.h:27
 msgid "Maximum Receive Unit"
 msgstr "MRU"
 
-#: ../properties/nm-ppp-dialog.glade.h:27
+#: ../properties/nm-ppp-dialog.glade.h:28
 msgid "Maximum Transmit Unit"
 msgstr "MTU"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
+#: ../properties/nm-ppp-dialog.glade.h:29
 msgid "Modem Connection"
 msgstr "Modeemiyhteys"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
+#: ../properties/nm-ppp-dialog.glade.h:30
 msgid "PPP Options"
 msgstr "PPP-valinnat"
 
-#: ../properties/nm-ppp-dialog.glade.h:30
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Peer DNS through tunnel"
 msgstr "Yhteyden DNS-asetukset tunnelin kautta"
 
+#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "Kiellä CHAP"
+
 #: ../properties/nm-ppp-dialog.glade.h:33
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "Kiellä EAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:34
 msgid "Refuse MS CHAP"
 msgstr "Kiellä MS CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:34
+#: ../properties/nm-ppp-dialog.glade.h:35
 msgid "Require 128 bit MPPE encryption"
 msgstr "Vaadi 128-bittinen MPPE-salaus"
 
-#: ../properties/nm-ppp-dialog.glade.h:35
+#: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require Explicit IP Addr"
 msgstr "Vaadi erikseen annettu IP-osoite"
 
-#: ../properties/nm-ppp-dialog.glade.h:36
+#: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPC Compression"
 msgstr "Vaadi MPPC-pakkaus"
 
-#: ../properties/nm-ppp-dialog.glade.h:37
+#: ../properties/nm-ppp-dialog.glade.h:38
 msgid "Require MPPE encryption"
 msgstr "Vaadi MPPE-salaus"
 
-#: ../properties/nm-ppp-dialog.glade.h:38
+#: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Requires existing network connection"
 msgstr "Vaatii olemassaolevan verkkoyhteyden"
 
-#: ../properties/nm-ppp-dialog.glade.h:39
+#: ../properties/nm-ppp-dialog.glade.h:40
 msgid "Routing"
 msgstr "Reititys"
 
-#: ../properties/nm-ppp-dialog.glade.h:40
+#: ../properties/nm-ppp-dialog.glade.h:41
 msgid "Serial Options"
 msgstr "Sarjaportin valinnat"
 
-#: ../properties/nm-ppp-dialog.glade.h:41
+#: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
 msgstr "Palveluntarjoan GPRS APN laitteen asetuksista"
 
-#: ../properties/nm-ppp-dialog.glade.h:42
+#: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
 msgstr "Palveluntarjoajan IP-osoite"
 
-#: ../properties/nm-ppp-dialog.glade.h:43
+#: ../properties/nm-ppp-dialog.glade.h:44
 msgid "Telephone number to dial"
 msgstr "Käytettävä puhelinnumero"
 
-#: ../properties/nm-ppp-dialog.glade.h:44
+#: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
 "This is the friendly name that will be used to identify this network "
 "connection, \n"
@@ -416,35 +321,40 @@ msgstr ""
 "Nimi, jota käytetään verkkoyhteyden tunnistamiseen, esimerkiksi "
 "\"Kampusverkko\" tai \"Yritysverkko\"."
 
-#: ../properties/nm-ppp-dialog.glade.h:46
+#: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
 msgstr "ECHO-pyyntöjen välissä oleva aika sekunteina"
 
-#: ../properties/nm-ppp-dialog.glade.h:47
+#: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Type:"
 msgstr "Tyyppi:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "Käytä saatua DNS-määrittelyä"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
 msgstr "Kun asetettu, annetaan pppd:lle valitsin 'refuse-chap'."
 
-#: ../properties/nm-ppp-dialog.glade.h:50
+#: ../properties/nm-ppp-dialog.glade.h:51
 msgid "When checked the \"refuse-eap\" option is passed to pppd."
 msgstr "Kun asetettu, annetaan pppd:lle valitsin 'refuse-eap'."
 
-#: ../properties/nm-ppp-dialog.glade.h:51
+#: ../properties/nm-ppp-dialog.glade.h:52
 msgid "When checked the \"refuse-mschap\" option is passed to pppd."
 msgstr "Kun asetettu, annetaan pppd:lle valitsin 'refuse-mschap'"
 
-#: ../properties/nm-ppp-dialog.glade.h:52
+#: ../properties/nm-ppp-dialog.glade.h:53
 msgid "When checked the 'lock' option is passed to pppd"
 msgstr "Kun asetettu, annetaan pppd:lle valitsin 'lock'"
 
-#: ../properties/nm-ppp-dialog.glade.h:53
+#: ../properties/nm-ppp-dialog.glade.h:54
 msgid "When checked the 'require-mppc' option is passed to pppd"
 msgstr "Kun asetettu, annetaan pppd:lle valitsin 'require-mppc'"
 
-#: ../properties/nm-ppp-dialog.glade.h:54
+#: ../properties/nm-ppp-dialog.glade.h:55
 msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
@@ -452,65 +362,217 @@ msgstr ""
 "Kun asetettu, annetaan pppd:lle valtsin 'debug' ja NetworkManagerin "
 "liitännäisestä kerätään joitakin lisätietoja"
 
-#: ../properties/nm-ppp-dialog.glade.h:55
+#: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
 msgstr "Kun asetettu, tämä asettaa pppd:lle valitsimen 'nopidefault'"
 
-#: ../properties/nm-ppp-dialog.glade.h:56
+#: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When checked this sets the pppd 'usepeerdns' option"
 msgstr "Kun asetettu, tämä asettaa pppd:lle valitsimen 'usepeerdns'"
 
-#: ../properties/nm-ppp-dialog.glade.h:57
+#: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
 msgstr "Kun rastia ei ole, annetaan pppd:lle valitsin 'noauth'."
 
-#: ../properties/nm-ppp-dialog.glade.h:58
+#: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Access Point Name:"
 msgstr "_APN:"
 
-#: ../properties/nm-ppp-dialog.glade.h:59
+#: ../properties/nm-ppp-dialog.glade.h:60
 msgid "_Channel:"
 msgstr "_Kanava:"
 
-#: ../properties/nm-ppp-dialog.glade.h:60
+#: ../properties/nm-ppp-dialog.glade.h:61
 msgid "_Context Num"
 msgstr "_Kontekstin numero"
 
-#: ../properties/nm-ppp-dialog.glade.h:61
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Custom PPP options:"
 msgstr "_Omat PPP-valitsimet:"
 
-#: ../properties/nm-ppp-dialog.glade.h:62
+#: ../properties/nm-ppp-dialog.glade.h:63
 msgid "_Device Address:"
 msgstr "Laitteen käyttö:"
 
-#: ../properties/nm-ppp-dialog.glade.h:63
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-ppp-dialog.glade.h:65
 msgid "_IP Address:"
 msgstr "_IP-osoite:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
+#: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Import Saved Configuration..."
 msgstr "Tuo tallennettu määrittely..."
 
-#: ../properties/nm-ppp-dialog.glade.h:66
+#: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Käytä VPN-yhteyttä näille osotteille"
 
-#: ../properties/nm-ppp-dialog.glade.h:67
+#: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Packet Type"
 msgstr "_Pakettityyppi"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
+#: ../properties/nm-ppp-dialog.glade.h:69
 msgid "_Telephone Number:"
 msgstr "_Puhelinnumero:"
 
-#: ../properties/nm-ppp-dialog.glade.h:69
+#: ../properties/nm-ppp-dialog.glade.h:70
 msgid "connect-delay"
 msgstr "yhteysviive"
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr "pppd-tunneli (PPTP, BTGPRS, Dialup)"
+
+#: ../properties/nm-ppp-properties.c:134
+msgid "Name"
+msgstr "Nimi"
+
+#: ../properties/nm-ppp-properties.c:146
+msgid "PPTP Server"
+msgstr "PPTP-palvelin"
+
+#: ../properties/nm-ppp-properties.c:151
+msgid "Telephone Number"
+msgstr "Puhelinnumero"
+
+#: ../properties/nm-ppp-properties.c:156
+msgid "Bluetooth Address"
+msgstr "Bluetooth-osoite"
+
+#: ../properties/nm-ppp-properties.c:161
+msgid "Bluetooth Channel"
+msgstr "Bluetooth-kanava"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr "GPRS APN"
+
+#: ../properties/nm-ppp-properties.c:171
+msgid "GPRS IP"
+msgstr "GPRS-IP-osoite"
+
+#: ../properties/nm-ppp-properties.c:176
+msgid "GPRS Context No."
+msgstr "GPRS-kontekstin numero"
+
+#: ../properties/nm-ppp-properties.c:181
+msgid "GPRS Packet Type"
+msgstr "GPRS pakettityyppi"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr "Käytä CTS/RTS-vuonohjausta"
+
+#: ../properties/nm-ppp-properties.c:191
+msgid "Connect via a modem"
+msgstr "Yhdistä modeemin avulla"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr "Vaadi annettu IP"
+
+#: ../properties/nm-ppp-properties.c:206
+msgid "Use MPPE encryption"
+msgstr "Käytä MPPE-salausta"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr "Käytä 128-bittistä MPPE-salausta"
+
+#: ../properties/nm-ppp-properties.c:221
+msgid "Use MPPC compression"
+msgstr "Käytä MPPC-pakkausta"
+
+#: ../properties/nm-ppp-properties.c:226
+msgid "Do not use deflate compression"
+msgstr "Älä käytä deflate-pakkausta"
+
+#: ../properties/nm-ppp-properties.c:231
+msgid "Do not use BSD compression"
+msgstr "Älä käytä BSD-pakkausta"
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr "Varaa laite pppd:n käyttöön"
+
+#: ../properties/nm-ppp-properties.c:241
+msgid "Authenticate remote peer"
+msgstr "Todenna VPN-yhteys"
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr "Kiellä MSCHAP"
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr "Suurin lähetysyksikkö MTU (tavuina)"
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr "Suurin vastaanottoyksikkö MRU (tavuina)"
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr "Epäonnistuneiden LCP ECHO-viestien määrä, joka katkaisee yhteyden"
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr "LCP ECHO-viestien väli sekunteina"
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr "Ennen yhteyden avausta odotettava aika millisekuntena."
+
+#: ../properties/nm-ppp-properties.c:286
+msgid "Custom PPP options"
+msgstr "Omat PPP-valitsimet"
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr "Käytä yhteyden DNS-asetuksia tunnelissa"
+
+#: ../properties/nm-ppp-properties.c:302
+msgid "Specific networks available"
+msgstr "Halutut verkot ovat saatavilla"
+
+#: ../properties/nm-ppp-properties.c:308
+msgid "Limit to specific networks"
+msgstr "Rajaa haluttuihin verkkoihin"
+
+#: ../properties/vpnui_impl.c:229
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "Seuraava \"%s\"-yhteys luodaan:"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr "\t%s:  %s\n"
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr "Yhteyden yksityiskohtia voi muuttaa valitsemalla \"Takaisin\"."
+
+#: ../properties/vpnui_impl.c:317
+msgid "Select file to import"
+msgstr "Valitse tuotava tiedosto"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "Tallenna nimellä..."
+
+#: ../properties/vpnui_impl.c:491
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Tiedosto \"%s\" on jo olemassa."
+
+#: ../properties/vpnui_impl.c:494
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Haluatko korvata sen tiedostolla jota olet tallentamassa?"
 
 #: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
@@ -658,9 +720,6 @@ msgstr "VPN-yhteys epäonnistui"
 #~ msgstr ""
 #~ "Huomaa, ettei tuotava tiedosto ole OpenVPN-asetustiedosto. Kysy "
 #~ "ylläpitäjältäsi oikeaa tiedostoa."
-
-#~ msgid "Remote IP:"
-#~ msgstr "Palvelimen IP-osoite:"
 
 #~ msgid "Shared Key:"
 #~ msgstr "Jaettu avain:"
