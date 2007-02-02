@@ -170,16 +170,10 @@ PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
 
-AC_ARG_WITH(notify, AC_HELP_STRING([--with-notify], [Use libnotify]), enable_notify=$withval, enable_notify=auto)
-
 if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GTK, gtk+-2.0)
 	AC_SUBST(GTK_CFLAGS)
 	AC_SUBST(GTK_LIBS)
-
-	PKG_CHECK_MODULES(GDK_PIXBUF, gdk-pixbuf-2.0)
-	AC_SUBST(GDK_PIXBUF_CFLAGS)
-	AC_SUBST(GDK_PIXBUF_LIBS)
 
 	PKG_CHECK_MODULES(GLADE, libglade-2.0)
 	AC_SUBST(GLADE_CFLAGS)
@@ -193,27 +187,6 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GNOME_KEYRING_CFLAGS)
 	AC_SUBST(GNOME_KEYRING_LIBS)
 
-	LIBNOTIFY_REQUIRED=0.3.0
-
-	# Building with GTK+ >= 2.10 will use the GtkStatusIcon applet
-	# implementation.  Earlier versions of GTK+ will use the EggTrayIcon
-	# applet implementation.
-
-	PKG_CHECK_EXISTS([gtk+-2.0 >= 2.10],[have_gtk_2_10=yes LIBNOTIFY_REQUIRED=0.4.3],[have_gtk_2_10=no])
-	if test x"$have_gtk_2_10" != xno; then
-		AC_DEFINE_UNQUOTED([HAVE_STATUS_ICON], [1],
-			[Use GtkStatusIcon for the applet's icon rather than an EggTrayIcon])
-	fi
-
-	if test x"$enable_notify" != xno; then
-		PKG_CHECK_MODULES([NOTIFY], [libnotify >= $LIBNOTIFY_REQUIRED], [enable_notify=yes],
-					[enable_notify=no])
-		if test "x$enable_notify" != "xno"; then
-			AC_DEFINE_UNQUOTED([ENABLE_NOTIFY], [1],
-			[Enable notifications with libnotify])
-		fi
-	fi
-
 	PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
 	AC_SUBST(LIBGNOMEUI_CFLAGS)
 	AC_SUBST(LIBGNOMEUI_LIBS)
@@ -223,9 +196,6 @@ if test x"$with_gnome" != xno; then
 		AC_DEFINE([HAVE_LIBGNOME_2_14],[1],[Define if we have libgnome 2.14])
 	fi
 fi
-
-AM_CONDITIONAL(WITH_NOTIFY, test x"$enable_notify" != xno) # can't do it from inside 'if'
-AM_CONDITIONAL([HAVE_GTK_2_10],[test "$have_gtk_2_10" = "yes"])
 
 PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)
@@ -385,8 +355,6 @@ libnm-util/libnm-util.pc
 libnm-util/Makefile
 dispatcher-daemon/Makefile
 gnome/Makefile
-gnome/applet/Makefile
-gnome/applet/icons/Makefile
 gnome/libnm_glib/libnm_glib.pc
 gnome/libnm_glib/Makefile
 gnome/vpn-properties/Makefile

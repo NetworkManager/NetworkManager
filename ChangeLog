@@ -1,5 +1,13 @@
 2007-02-02  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+	  gnome/Makefile.am
+	  nm-applet.desktop
+	  Makefile.am
+		- Remove last bits referencing gnome applet
+
+2007-02-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-service.c
 		- (nm_vpn_service_stage4_ip4_config_get): use uint32 arrays for DNS
 			and NBNS server addresses
