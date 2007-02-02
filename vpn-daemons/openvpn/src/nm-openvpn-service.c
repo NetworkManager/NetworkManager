@@ -1254,7 +1254,6 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   guint32		ip4_dns_len;
   guint32 *		ip4_nbns;
   guint32		ip4_nbns_len;
-  guint32		mss;
   gboolean		success = FALSE;
   char *                empty = "";
 
@@ -1280,6 +1279,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 			    DBUS_TYPE_INVALID))
     {
       DBusMessage	*signal;
+      DBusMessageIter iter, iter_dict;
 
       if (!(signal = dbus_message_new_signal (NM_DBUS_PATH_OPENVPN, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_SIGNAL_IP4_CONFIG)))
 	{
@@ -1287,21 +1287,61 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 	  goto out;
 	}
 
-	/* OpenVPN does not care about the MSS */
-	mss = 0;
+	dbus_message_iter_init_append (signal, &iter);
+	if (!nmu_dbus_dict_open_write (&iter, &iter_dict)) {
+		nm_warning ("dict open write failed!");
+		goto out;
+	}
 
-      dbus_message_append_args (signal,
-				DBUS_TYPE_UINT32, &ip4_vpn_gateway,
-				DBUS_TYPE_STRING, &tundev,
-				DBUS_TYPE_UINT32, &ip4_address,
-				DBUS_TYPE_UINT32, &ip4_ptpaddr,
-				DBUS_TYPE_UINT32, &ip4_netmask,
-				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_dns, ip4_dns_len,
-				DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &ip4_nbns, ip4_nbns_len,
-				DBUS_TYPE_UINT32, &mss,
-				DBUS_TYPE_STRING, &empty,
-				DBUS_TYPE_STRING, &empty,
-				DBUS_TYPE_INVALID);
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "gateway", ip4_vpn_gateway)) {
+		nm_warning ("couldn't append gateway to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_string (&iter_dict, "tundev", tundev)) {
+		nm_warning ("couldn't append tundev to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "local_addr", ip4_address)) {
+		nm_warning ("couldn't append local_address to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "ptp_addr", ip4_ptp_address)) {
+		nm_warning ("couldn't append ptp_address to dict");
+		goto out;
+	}
+
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "netmask", ip4_netmask)) {
+		nm_warning ("couldn't append local_address to dict");
+		goto out;
+	}
+
+	if (ip4_dns_len > 0) {
+		if (!nmu_dbus_dict_append_uint32_array (&iter_dict,
+		                                        "dns_server",
+		                                        ip4_dns,
+		                                        ip4_dns_len)) {
+			nm_warning ("couldn't append dns_servers to dict");
+			goto out;
+		}
+	}
+
+	if (ip4_nbns_len > 0) {
+		if (!nmu_dbus_dict_append_uint32_array (&iter_dict,
+		                                        "nbns_server",
+		                                        ip4_nbns,
+		                                        ip4_nbns_len)) {
+			nm_warning ("couldn't append nbns_servers to dict");
+			goto out;
+		}
+	}
+
+	if (!nmu_dbus_dict_close_write (&iter, &iter_dict)) {
+		nm_warning ("dict close write failed!");
+		goto out;
+	}
 
       if (!dbus_connection_send (data->con, signal, NULL))
 	{
