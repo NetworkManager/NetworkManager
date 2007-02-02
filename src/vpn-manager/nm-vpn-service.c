@@ -900,12 +900,16 @@ out:
 }
 
 
-#define HANDLE_DICT_ITEM(in_key, in_type, op) \
+#define HANDLE_DICT_ITEM(in_key, in_type, in_ary_type, op) \
 	if (!strcmp (entry.key, in_key)) { \
 		if (entry.type != in_type) { \
 			nm_warning (in_key "had invalid type in VPN IP Config message."); \
 		} else { \
-			op \
+			if (in_type == DBUS_TYPE_ARRAY && entry.array_type != in_ary_type) { \
+				nm_warning (in_key "had invalid type in VPN IP Config message."); \
+			} else { \
+				op \
+			} \
 		} \
 		goto next; \
 	}
@@ -980,6 +984,8 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 	}
 
 	while (nmu_dbus_dict_has_dict_entry (&iter_dict)) {
+		int i;
+
 		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
 			nm_warning ("Error: couldn't read dict entry"
 			            " from VPN IP Config message.");
@@ -987,33 +993,39 @@ nm_vpn_service_stage4_ip4_config_get (NMVPNService *service,
 		}
 
 		/* IP specific options */
-		HANDLE_DICT_ITEM("gateway", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_gateway (config, entry.uint32_value); });
-		HANDLE_DICT_ITEM("local_addr", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_address (config, entry.uint32_value); });
-		HANDLE_DICT_ITEM("ptp_addr", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_ptp_address (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("gateway", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_gateway (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("local_addr", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_address (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("ptp_addr", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_ptp_address (config, entry.uint32_value); });
 		/* If no netmask, default to Class C address */
-		HANDLE_DICT_ITEM("local_netmask", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_netmask (config,  entry.uint32_value ? entry.uint32_value : 0x00FF); });
+		HANDLE_DICT_ITEM("local_netmask", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_netmask (config,  entry.uint32_value ? entry.uint32_value : 0x00FF); });
 		/* Multiple DNS servers are allowed */
-		HANDLE_DICT_ITEM("dns_server", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_add_nameserver (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("dns_server", DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32,
+			{
+				for (i = 0; i < entry.array_len; i++)
+					nm_ip4_config_add_nameserver (config, entry.uint32array_value[i]);
+			});
 		/* Multiple NBNS servers are allowed */
-		HANDLE_DICT_ITEM("nbns_server", DBUS_TYPE_UINT32,
-				{ /* We don't do anything with these yet */ ; });
-
+		HANDLE_DICT_ITEM("nbns_server", DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32,
+			{
+				for (i = 0; i < entry.array_len; i++) {
+					/* We don't do anything with these yet */
+				}
+			});
 		/* Generic options */
-		HANDLE_DICT_ITEM("mss", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_mss (config, entry.uint32_value); });
-		HANDLE_DICT_ITEM("mtu", DBUS_TYPE_UINT32,
-				{ nm_ip4_config_set_mtu (config, entry.uint32_value); });
-		HANDLE_DICT_ITEM("tundev", DBUS_TYPE_STRING,
-				{ if (strlen (entry.str_value)) tundev = g_strdup (entry.str_value); });
-		HANDLE_DICT_ITEM("dns_domain", DBUS_TYPE_STRING,
-				{ if (strlen (entry.str_value)) nm_ip4_config_add_domain (config, entry.str_value); });
-		HANDLE_DICT_ITEM("login_banner", DBUS_TYPE_STRING,
-				{ if (strlen (entry.str_value)) login_banner = g_strdup (entry.str_value); });
+		HANDLE_DICT_ITEM("mss", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_mss (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("mtu", DBUS_TYPE_UINT32, 0,
+			{ nm_ip4_config_set_mtu (config, entry.uint32_value); });
+		HANDLE_DICT_ITEM("tundev", DBUS_TYPE_STRING, 0,
+			{ if (strlen (entry.str_value)) tundev = g_strdup (entry.str_value); });
+		HANDLE_DICT_ITEM("dns_domain", DBUS_TYPE_STRING, 0,
+			{ if (strlen (entry.str_value)) nm_ip4_config_add_domain (config, entry.str_value); });
+		HANDLE_DICT_ITEM("login_banner", DBUS_TYPE_STRING, 0,
+			{ if (strlen (entry.str_value)) login_banner = g_strdup (entry.str_value); });
 
 	next:
 		nmu_dbus_dict_entry_clear (&entry);
