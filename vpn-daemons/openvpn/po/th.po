@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-23 21:56+0700\n"
-"PO-Revision-Date: 2007-01-30 12:01+0700\n"
+"POT-Creation-Date: 2007-02-02 20:52+0700\n"
+"PO-Revision-Date: 2007-02-02 20:53+0700\n"
 "Last-Translator: Theppitak Karoonboonyanan <thep@linux.thai.net>\n"
 "Language-Team: Thai <l10n.opentle.org>\n"
 "MIME-Version: 1.0\n"
@@ -286,30 +286,34 @@ msgid "CA  file:"
 msgstr "แฟ้ม CA:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "แฟ้ม CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Certificate:"
 msgstr "ใบรับรอง:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Connection Type:"
 msgstr "ชนิดการเชื่อมต่อ:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Direction:"
 msgstr "ทิศทาง:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key:"
 msgstr "กุญแจ:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP:"
 msgstr "IP ฝั่งนี้:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password"
 msgstr "รหัสผ่าน"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -317,54 +321,54 @@ msgstr ""
 "กรุณาป้อนข้อมูลที่คุณได้มาจากผู้ดูแลระบบของคุณในแบบฟอร์มข้างล่างนี้ ไม่ต้องป้อนรหัสผ่านที่นี่ "
 "เพราะคุณจะถูกถามเมื่อเชื่อมต่อ"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
 "โปรดสังเกตว่าแฟ้มที่คุณนำเข้าไม่ใช่แฟ้มค่าตั้ง OpenVPN กรุณาขอแฟ้มค่าตั้งนี้จากผู้ดูแลระบบของคุณ"
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
 msgstr "IP ฝั่งโน้น:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared Key:"
 msgstr "กุญแจร่วม:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Shared key"
 msgstr "กุญแจร่วม"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use LZO compression"
 msgstr "ใช้การบีบบอัด LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use TAP device"
 msgstr "ใช้อุปกรณ์ TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use TCP connection"
 msgstr "ใช้การเชื่อมต่อ TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
 msgstr "ใช้การยืนยันตัวบุคคลของ TLS:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
 msgstr "ใช้วิธีเข้ารหัสลับ:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Username:"
 msgstr "ชื่อผู้ใช้:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -376,26 +380,27 @@ msgstr ""
 "การยืนยันตัวบุคคลด้วยรหัสผ่าน\n"
 "X.509 พร้อมการยืนยันตัวบุคคลด้วยรหัสผ่าน"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "เ_กตเวย์:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "_Import Saved Configuration..."
 msgstr "_นำเข้าค่าตั้งที่บันทึกไว้..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
-"_ชื่อที่ใช้แทนการเชื่อมต่อไปยังเครือข่ายส่วนบุคคล เช่น \"VPN มหาวิทยาลัย\" หรือ \"เครือข่ายบริษัท\""
+"_ชื่อที่ใช้แทนการเชื่อมต่อไปยังเครือข่ายส่วนบุคคล เช่น \"VPN มหาวิทยาลัย\" หรือ \"เครือข่ายบริษัท"
+"\""
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr "ใ_ช้การเชื่อมต่อ VPN กับที่อยู่เหล่านี้เท่านั้น"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid "none"
 msgstr "ไม่มี"
 
@@ -426,8 +431,7 @@ msgstr "การเข้าระบบ VPN ล้มเหลว เพรา
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr ""
-"การเข้าระบบ VPN ล้มเหลว เพราะโปรแกรม VPN ได้รับค่าตั้งที่ไม่ถูกต้องจากเซิร์ฟเวอร์ VPN"
+msgstr "การเข้าระบบ VPN ล้มเหลว เพราะโปรแกรม VPN ได้รับค่าตั้งที่ไม่ถูกต้องจากเซิร์ฟเวอร์ VPN"
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
