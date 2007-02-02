@@ -40,18 +40,11 @@ typedef gboolean (* NMDBusSignalHandlerFunc) (DBusConnection * connection,
 #define NM_IS_DBUS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_DBUS_MANAGER))
 #define NM_DBUS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass)) 
 
-typedef struct _NMDBusManager NMDBusManager;
-typedef struct _NMDBusManagerClass NMDBusManagerClass;
-typedef struct _NMDBusManagerPrivate NMDBusManagerPrivate;
-
-struct _NMDBusManager {
+typedef struct {
 	GObject parent;
+} NMDBusManager;
 
-	/*< private >*/
-	NMDBusManagerPrivate *priv;
-};
-
-struct _NMDBusManagerClass {
+typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
@@ -63,7 +56,7 @@ struct _NMDBusManagerClass {
 	                                 const char *name,
 	                                 const char *old_owner,
 	                                 const char *new_owner);
-};
+} NMDBusManagerClass;
 
 GType nm_dbus_manager_get_type (void);
 
@@ -90,6 +83,7 @@ void nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
                                            guint32 id);
 
 DBusConnection * nm_dbus_manager_get_dbus_connection (NMDBusManager *self);
+DBusGConnection * nm_dbus_manager_get_connection (NMDBusManager *self);
 
 G_END_DECLS
 

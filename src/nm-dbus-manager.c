@@ -31,11 +31,6 @@
 #include "nm-utils.h"
 
 enum {
-	PROP_0,
-	PROP_DBUS_CONNECTION
-};
-
-enum {
 	DBUS_CONNECTION_CHANGED = 0,
 	NAME_OWNER_CHANGED,
 	NUMBER_OF_SIGNALS
@@ -71,8 +66,10 @@ typedef struct MethodHandlerData {
 	NMDBusManager *		self;
 } MethodHandlerData;
 
-struct _NMDBusManagerPrivate {
+typedef struct {
 	DBusConnection * connection;
+	DBusGConnection *g_connection;
+	DBusGProxy *     proxy;
 	gboolean         started;
 
 	GSList *         msg_handlers;
@@ -80,9 +77,7 @@ struct _NMDBusManagerPrivate {
 	GSList *         matches;
 	GSList *         signal_handlers;
 	guint32          sig_handler_id_counter;
-
-	gboolean         disposed;
-};
+} NMDBusManagerPrivate;
 
 
 static gboolean nm_dbus_manager_init_bus (NMDBusManager *self);
@@ -113,50 +108,6 @@ nm_dbus_manager_get (void)
 static void
 nm_dbus_manager_init (NMDBusManager *self)
 {
-	self->priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-}
-
-static void
-nm_dbus_manager_set_property (GObject *object,
-                              guint prop_id,
-                              const GValue *value,
-                              GParamSpec *pspec)
-{
-	NMDBusManager *self = NM_DBUS_MANAGER (object);
-
-	switch (prop_id) {
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-			break;
-	}
-}
-
-static void
-nm_dbus_manager_get_property (GObject *object,
-                               guint prop_id,
-                               GValue *value,
-                               GParamSpec *pspec)
-{
-	NMDBusManager *self = NM_DBUS_MANAGER (object);
-
-	switch (prop_id) {
-		case PROP_DBUS_CONNECTION:
-			g_value_set_pointer (value, self->priv->connection);
-			break;
-		default:
-			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-			break;
-	}
-}
-
-static void
-nm_dbus_manager_dispose (GObject *object)
-{
-	NMDBusManager *self = NM_DBUS_MANAGER (object);
-
-	if (self->priv->disposed)
-		return;
-	self->priv->disposed = TRUE;
 }
 
 static void
@@ -193,23 +144,19 @@ static void
 nm_dbus_manager_finalize (GObject *object)
 {
 	NMDBusManager *	self = NM_DBUS_MANAGER (object);
-
-	g_return_if_fail (self->priv != NULL);
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (object);
 
 	/* Must be done before the dbus connection is disposed */
-	g_slist_foreach (self->priv->signal_handlers, free_signal_handler_helper, self);
-	g_slist_free (self->priv->signal_handlers);
-	self->priv->signal_handlers = NULL;
+	g_slist_foreach (priv->signal_handlers, free_signal_handler_helper, self);
+	g_slist_free (priv->signal_handlers);
 
-	g_slist_foreach (self->priv->matches, signal_match_dispose_helper, self);
-	g_slist_free (self->priv->matches);
-	self->priv->matches = NULL;
+	g_slist_foreach (priv->matches, signal_match_dispose_helper, self);
+	g_slist_free (priv->matches);
 
 	nm_dbus_manager_cleanup (self);
 
-	g_slist_foreach (self->priv->msg_handlers, cleanup_handler_data, NULL);
-	g_slist_free (self->priv->msg_handlers);
-	self->priv->msg_handlers = NULL;
+	g_slist_foreach (priv->msg_handlers, cleanup_handler_data, NULL);
+	g_slist_free (priv->msg_handlers);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->finalize (object);
 }
@@ -219,18 +166,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-	object_class->dispose = nm_dbus_manager_dispose;
 	object_class->finalize = nm_dbus_manager_finalize;
-	object_class->get_property = nm_dbus_manager_get_property;
-	object_class->set_property = nm_dbus_manager_set_property;
-
-	g_object_class_install_property (object_class,
-	                                 PROP_DBUS_CONNECTION,
-	                                 g_param_spec_pointer ("dbus-connection",
-	                                     "DBusConnection",
-	                                     "The application's dbus connection.",
-	                                     G_PARAM_READABLE)
-	                                );
 
 	nm_dbus_manager_signals[DBUS_CONNECTION_CHANGED] =
 		g_signal_new ("dbus-connection-changed",
@@ -258,37 +194,42 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 static void
 nm_dbus_manager_cleanup (NMDBusManager *self)
 {
-	if (self->priv->connection) {
-		dbus_connection_unref (self->priv->connection);
-		self->priv->connection = NULL;
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	if (priv->g_connection) {
+		dbus_g_connection_unref (priv->g_connection);
+		priv->g_connection = NULL;
+		priv->connection = NULL;
 	}
-	self->priv->started = FALSE;
+
+	if (priv->proxy) {
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
+
+	priv->started = FALSE;
 }
 
 static gboolean
 nm_dbus_manager_reconnect (gpointer user_data)
 {
 	NMDBusManager *self = NM_DBUS_MANAGER (user_data);
-	gboolean success = FALSE;
 
 	g_assert (self != NULL);
 
 	if (nm_dbus_manager_init_bus (self)) {
 		if (nm_dbus_manager_start_service (self)) {
 			nm_info ("reconnected to the system bus.");
-			g_signal_emit (G_OBJECT (self), 
-					nm_dbus_manager_signals[DBUS_CONNECTION_CHANGED],
-					0, self->priv->connection);
-			success = TRUE;
+			g_signal_emit (self,
+						   nm_dbus_manager_signals[DBUS_CONNECTION_CHANGED],
+						   0,
+						   NM_DBUS_MANAGER_GET_PRIVATE (self)->connection);
+			return TRUE;
 		}
 	}
 
-	if (!success) {
-		nm_dbus_manager_cleanup (self);
-	}
-
-	/* Remove the source only if reconnection was successful */
-	return success ? FALSE : TRUE;
+	nm_dbus_manager_cleanup (self);
+	return FALSE;
 }
 
 static SignalMatch *
@@ -359,7 +300,7 @@ signal_match_unref (SignalMatch * match,
 	/* Remove the DBus bus match on dispose */
 	if (mgr) {
 	 	dbus_error_init (&error);
-		dbus_bus_remove_match (mgr->priv->connection, match->match, &error);
+		dbus_bus_remove_match (NM_DBUS_MANAGER_GET_PRIVATE (mgr)->connection, match->match, &error);
 		if (dbus_error_is_set (&error)) {
 			nm_warning ("failed to remove signal match for sender '%s', "
 			            "interface '%s'.",
@@ -389,7 +330,7 @@ find_signal_match (NMDBusManager *self,
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (interface || sender, NULL);
 
-	for (elt = self->priv->matches; elt; elt = g_slist_next (elt)) {
+	for (elt = NM_DBUS_MANAGER_GET_PRIVATE (self)->matches; elt; elt = g_slist_next (elt)) {
 		SignalMatch * match = (SignalMatch *) elt->data;
 
 		if (!match)
@@ -427,6 +368,7 @@ signal_match_enable (NMDBusManager * mgr,
                      SignalMatch * match,
                      const char * owner)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (mgr);
 	DBusError error;
 
 	g_return_if_fail (match != NULL);
@@ -434,11 +376,11 @@ signal_match_enable (NMDBusManager * mgr,
 	if (match->enabled == TRUE)
 		return;
 
-	if (!mgr->priv->connection)
+	if (!priv->connection)
 		return;
 
 	dbus_error_init (&error);
-	dbus_bus_add_match (mgr->priv->connection, match->match, &error);
+	dbus_bus_add_match (priv->connection, match->match, &error);
 	if (dbus_error_is_set (&error)) {
 		nm_warning ("failed to add signal match for sender '%s', "
 		            "interface '%s'.",
@@ -480,6 +422,7 @@ static gboolean
 dispatch_signal (NMDBusManager * self,
                  DBusMessage *   message)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	gboolean            handled = FALSE;
 	GSList *            elt;
 	const char *        interface;
@@ -489,12 +432,14 @@ dispatch_signal (NMDBusManager * self,
 	g_return_val_if_fail (message != NULL, FALSE);
 
 	interface = dbus_message_get_interface (message);
+	if (!interface)
+		return FALSE;
+
 	sender = dbus_message_get_sender (message);
 
-	g_return_val_if_fail (interface != NULL, FALSE);
 	g_return_val_if_fail (sender != NULL, FALSE);
 
-	for (elt = self->priv->signal_handlers; elt; elt = g_slist_next (elt)) {
+	for (elt = priv->signal_handlers; elt; elt = g_slist_next (elt)) {
 		gboolean            dispatch = FALSE;
 		SignalHandlerData *	handler = (SignalHandlerData *) elt->data;
 		SignalMatch *       match = handler->match;
@@ -515,7 +460,7 @@ dispatch_signal (NMDBusManager * self,
 		if (!dispatch)
 			continue;
 
-		handled = (*handler->func) (self->priv->connection,
+		handled = (*handler->func) (priv->connection,
 		                            message,
 		                            handler->user_data);
 		if (handled)
@@ -532,73 +477,13 @@ nm_dbus_manager_signal_handler (DBusConnection *connection,
                                 void *user_data)
 {
 	NMDBusManager *	self = NM_DBUS_MANAGER (user_data);
-	gboolean		handled = FALSE;
+	gboolean		handled;
 
 	g_return_val_if_fail (connection != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 	g_return_val_if_fail (self != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 
-	if (dbus_message_get_type (message) != DBUS_MESSAGE_TYPE_SIGNAL)
-		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-
-	if (0) {
-		const char * interface = dbus_message_get_interface (message);
-		const char * path = dbus_message_get_path (message);
-		const char * member = dbus_message_get_member (message);
-		const char * sig = dbus_message_get_signature (message);
-		nm_info ("(signal) iface: %s, path: %s, member: %s, sig: %s",
-				interface, path, member, sig);
-	}
-
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_DBUS, "NameOwnerChanged")) {
-		gboolean success;
-		const char * name;
-		const char * old_owner;
-		const char * new_owner;
-
-		success = dbus_message_get_args (message, NULL,
-		                                 DBUS_TYPE_STRING, &name,
-		                                 DBUS_TYPE_STRING, &old_owner,
-		                                 DBUS_TYPE_STRING, &new_owner,
-		                                 DBUS_TYPE_INVALID);
-		if (success) {
-			SignalMatch *       match;
-			gboolean			old_owner_good = (old_owner && strlen (old_owner));
-			gboolean			new_owner_good = (new_owner && strlen (new_owner));
-
-			match = find_signal_match (self, NULL, name);
-
-			if (!old_owner_good && new_owner_good) {
-				/* Add any matches for this owner */
-				if (match) {
-					signal_match_enable (self, match, new_owner);
-				}
-			} else if (old_owner_good && !new_owner_good) {
-				/* Mark any matches for services that have gone away as disabled. */
-				if (match) {
-					signal_match_disable (match);
-				}
-			}
-
-			g_signal_emit (G_OBJECT (self), 
-					nm_dbus_manager_signals[NAME_OWNER_CHANGED],
-					0, connection, name, old_owner, new_owner);
-			handled = TRUE;
-		}
-	} else if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected")) {
-		/* Clean up existing connection */
-		nm_info ("disconnected by the system bus.");
-		nm_dbus_manager_cleanup (self);
-		g_signal_emit (G_OBJECT (self), 
-				nm_dbus_manager_signals[DBUS_CONNECTION_CHANGED],
-				0, NULL);
-
-		start_reconnection_timeout (self);
-
-		handled = TRUE;
-	} else {
-		handled = dispatch_signal (self, message);
-	}
+	handled = dispatch_signal (self, message);
 
 	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
@@ -607,46 +492,22 @@ char *
 nm_dbus_manager_get_name_owner (NMDBusManager *self,
                                 const char *name)
 {
-	DBusError		error;
-	DBusMessage *	message;
-	DBusMessage *	reply = NULL;
-	char *		owner = NULL;
+	char *owner = NULL;
+	GError *err = NULL;
 
-	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 	g_return_val_if_fail (name != NULL, NULL);
 
-	message = dbus_message_new_method_call (DBUS_SERVICE_DBUS,
-	                                        DBUS_PATH_DBUS,
-	                                        DBUS_INTERFACE_DBUS,
-	                                        "GetNameOwner");
-	if (!message) {
-		nm_warning ("Not enough memory for DBus message.");
-		goto out;
+	if (!dbus_g_proxy_call (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+							"GetNameOwner", &err,
+							G_TYPE_STRING, name,
+							G_TYPE_INVALID,
+							G_TYPE_STRING, &owner,
+							G_TYPE_INVALID)) {
+		nm_warning ("Error on GetNameOwner DBUS call: %s", err->message);
+		g_error_free (err);
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (self->priv->connection,
-	                                                   message, 2000, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_warning ("Did not get reply from DBus.  Message: %s", error.message);
-		dbus_error_free (&error);
-		goto out;
-	}
-
-	if (reply) {
-		const char *tmp_name = NULL;
-		if (dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING,
-		                           &tmp_name, DBUS_TYPE_INVALID))
-			owner = g_strdup (tmp_name);
-	}
-
-out:
-	if (reply)
-		dbus_message_unref (reply);
-	if (message)
-		dbus_message_unref (message);
 	return owner;
 }
 
@@ -654,24 +515,23 @@ gboolean
 nm_dbus_manager_name_has_owner (NMDBusManager *self,
                                 const char *name)
 {
-	DBusError	error;
-	gboolean	running = FALSE;
+	gboolean has_owner = FALSE;
+	GError *err = NULL;
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), FALSE);
 	g_return_val_if_fail (name != NULL, FALSE);
 
-	if (!self->priv->connection) {
-		nm_warning ("Called when manager had no dbus connection.");
-		return FALSE;
+	if (!dbus_g_proxy_call (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+							"NameHasOwner", &err,
+							G_TYPE_STRING, name,
+							G_TYPE_INVALID,
+							G_TYPE_BOOLEAN, &has_owner,
+							G_TYPE_INVALID)) {
+		nm_warning ("Error on NameHasOwner DBUS call: %s", err->message);
+		g_error_free (err);
 	}
 
-	dbus_error_init (&error);
-	running = dbus_bus_name_has_owner (self->priv->connection, name, &error);
-	if (dbus_error_is_set (&error)) {
-		running = FALSE;
-		dbus_error_free (&error);
-	}
-	return running;
+	return has_owner;
 }
 
 static DBusHandlerResult
@@ -710,34 +570,100 @@ nm_dbus_manager_message_handler (DBusConnection *connection,
 	                 : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
+static void
+proxy_name_owner_changed (DBusGProxy *proxy,
+						  const char *name,
+						  const char *old_owner,
+						  const char *new_owner,
+						  gpointer user_data)
+{
+	NMDBusManager *self = NM_DBUS_MANAGER (user_data);
+	SignalMatch *match;
+	gboolean old_owner_good = (old_owner && strlen (old_owner));
+	gboolean new_owner_good = (new_owner && strlen (new_owner));
+
+	match = find_signal_match (self, NULL, name);
+
+	if (!old_owner_good && new_owner_good) {
+		/* Add any matches for this owner */
+		if (match) {
+			signal_match_enable (self, match, new_owner);
+		}
+	} else if (old_owner_good && !new_owner_good) {
+		/* Mark any matches for services that have gone away as disabled. */
+		if (match) {
+			signal_match_disable (match);
+		}
+	}
+
+	g_signal_emit (G_OBJECT (self), 
+				   nm_dbus_manager_signals[NAME_OWNER_CHANGED],
+				   0,
+				   NM_DBUS_MANAGER_GET_PRIVATE (self)->connection,
+				   name, old_owner, new_owner);
+}
+
+static void
+destroy_cb (DBusGProxy *proxy, gpointer user_data)
+{
+	NMDBusManager *self = NM_DBUS_MANAGER (user_data);
+
+	/* Clean up existing connection */
+	nm_info ("disconnected by the system bus.");
+	nm_dbus_manager_cleanup (self);
+
+	g_signal_emit (G_OBJECT (self), 
+				   nm_dbus_manager_signals[DBUS_CONNECTION_CHANGED],
+				   0, NULL);
+
+	start_reconnection_timeout (self);
+}
+
 static gboolean
 nm_dbus_manager_init_bus (NMDBusManager *self)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+	GError *err = NULL;
 	DBusError	error;
 	gboolean	success = FALSE;
 
-	if (self->priv->connection) {
+	if (priv->connection) {
 		nm_warning ("DBus Manager already has a valid connection.");
 		return FALSE;
 	}
 
 	dbus_connection_set_change_sigpipe (TRUE);
-	
-	dbus_error_init (&error);
-	self->priv->connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (dbus_error_is_set (&error)) {
+
+	priv->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+	if (!priv->g_connection) {
 		nm_warning ("Could not get the system bus.  Make sure "
 		            "the message bus daemon is running!  Message: %s",
-		            error.message);
-		dbus_error_free (&error);
+		            err->message);
+		g_error_free (err);
 		goto out;
 	}
 
-	dbus_connection_set_exit_on_disconnect (self->priv->connection, FALSE);	
-	dbus_connection_setup_with_g_main (self->priv->connection,
-	                                   g_main_context_default ());
+	priv->connection = dbus_g_connection_get_connection (priv->g_connection);
+	dbus_connection_set_exit_on_disconnect (priv->connection, FALSE);
 
-	if (!dbus_connection_add_filter (self->priv->connection,
+	priv->proxy = dbus_g_proxy_new_for_name (priv->g_connection,
+											 "org.freedesktop.DBus",
+											 "/org/freedesktop/DBus",
+											 "org.freedesktop.DBus");
+
+	g_signal_connect (priv->proxy, "destroy",
+					  G_CALLBACK (destroy_cb),
+					  self);
+
+	dbus_g_proxy_add_signal (priv->proxy, "NameOwnerChanged",
+							 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+							 G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy,
+								 "NameOwnerChanged",
+								 G_CALLBACK (proxy_name_owner_changed),
+								 self, NULL);
+
+	if (!dbus_connection_add_filter (priv->connection,
 	                                 nm_dbus_manager_signal_handler,
 	                                 self,
 	                                 NULL)) {
@@ -750,7 +676,7 @@ nm_dbus_manager_init_bus (NMDBusManager *self)
 
 	/* Monitor DBus signals for service start/stop announcements */
 	dbus_error_init (&error);
-	dbus_bus_add_match (self->priv->connection,
+	dbus_bus_add_match (priv->connection,
 				"type='signal',"
 				"interface='" DBUS_INTERFACE_DBUS "',"
 				"sender='" DBUS_SERVICE_DBUS "'",
@@ -772,12 +698,11 @@ out:
 static gboolean
 nm_dbus_manager_register_method_handlers (NMDBusManager *self)
 {
+	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 	gboolean success = FALSE;
 	GSList * elt;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	for (elt = self->priv->msg_handlers; elt; elt = g_slist_next (elt)) {
+	for (elt = priv->msg_handlers; elt; elt = g_slist_next (elt)) {
 		MethodHandlerData *		data = (MethodHandlerData *) elt->data;
 		DBusObjectPathVTable	vtable = {NULL, &nm_dbus_manager_message_handler,
 		                                  NULL, NULL, NULL, NULL};
@@ -794,10 +719,10 @@ nm_dbus_manager_register_method_handlers (NMDBusManager *self)
 		 */
 		path = nm_dbus_method_list_get_path (data->list);
 		if (nm_dbus_method_list_get_is_fallback (data->list)) {
-			ret = dbus_connection_register_fallback (self->priv->connection,
+			ret = dbus_connection_register_fallback (priv->connection,
 			                                         path, &vtable, data);
 		} else {
-			ret = dbus_connection_register_object_path (self->priv->connection,
+			ret = dbus_connection_register_object_path (priv->connection,
 			                                            path, &vtable, data);
 		}
 
@@ -820,14 +745,17 @@ out:
 gboolean
 nm_dbus_manager_start_service (NMDBusManager *self)
 {
-	DBusError	error;
-	gboolean	success = FALSE;
-	int			flags, ret;
-	GSList *    elt;
+	NMDBusManagerPrivate *priv;
+	int flags;
+	int request_name_result;
+	GSList *elt;
+	GError *err = NULL;
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), FALSE);
 
-	if (self->priv->started) {
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	if (priv->started) {
 		nm_warning ("Service has already started.");
 		return FALSE;
 	}
@@ -837,61 +765,67 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		goto out;
 
 	/* And our signal handlers */
-	for (elt = self->priv->matches; elt; elt = g_slist_next (elt)) {
+	for (elt = priv->matches; elt; elt = g_slist_next (elt)) {
 		signal_match_enable (self, (SignalMatch *) elt->data, NULL);
 	}
 
-	dbus_error_init (&error);
 #if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR < 60)
 	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
 #else
 	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
 #endif
-	ret = dbus_bus_request_name (self->priv->connection, NM_DBUS_SERVICE,
-	                             flags, &error);
-	if (dbus_error_is_set (&error)) {
+
+	if (!dbus_g_proxy_call (priv->proxy, "RequestName", &err,
+							G_TYPE_STRING, NM_DBUS_SERVICE,
+							G_TYPE_UINT, flags,
+							G_TYPE_INVALID,
+							G_TYPE_UINT, &request_name_result,
+							G_TYPE_INVALID)) {
 		nm_warning ("Could not acquire the NetworkManager service.\n"
-		            "  Message: '%s'", error.message);
-		dbus_error_free (&error);
+		            "  Message: '%s'", err->message);
+		g_error_free (err);
 		goto out;
 	}
 
-	if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		nm_warning ("Could not acquire the NetworkManager service as it"
 		            "is already taken.  Return: %d",
-		            ret);
+		            request_name_result);
 		goto out;
 	}
 
-	self->priv->started = TRUE;
-	success = TRUE;
+	priv->started = TRUE;
 
 out:
-	if (!success)
+	if (!priv->started)
 		nm_dbus_manager_cleanup (self);
-	return success;
+
+	return priv->started;
 }
 
 void
 nm_dbus_manager_register_method_list (NMDBusManager *self,
                                       NMDbusMethodList *list)
 {
+	NMDBusManagerPrivate *priv;
 	MethodHandlerData * data;
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
 	g_return_if_fail (list != NULL);
 
-	if (self->priv->started) {
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	if (priv->started) {
 		nm_warning ("DBus Manager object already started!");
 		return;
 	}
 
-	if (self->priv->connection == NULL) {
+	if (priv->connection == NULL) {
 		nm_warning ("DBus Manager object not yet initialized!");
 		return;
 	}
 
-	if (g_slist_find (self->priv->msg_handlers, list)) {
+	if (g_slist_find (priv->msg_handlers, list)) {
 		nm_warning ("Handler already registered.");
 		return;
 	}
@@ -905,7 +839,7 @@ nm_dbus_manager_register_method_list (NMDBusManager *self,
 	nm_dbus_method_list_ref (list);
 	data->list = list;
 	data->self = self;
-	self->priv->msg_handlers = g_slist_append (self->priv->msg_handlers, data);	
+	priv->msg_handlers = g_slist_append (priv->msg_handlers, data);	
 }
 
 static void
@@ -929,14 +863,17 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
                                          NMDBusSignalHandlerFunc callback,
                                          gpointer user_data)
 {
+	NMDBusManagerPrivate *priv;
 	SignalHandlerData *	sig_handler;
 	SignalMatch * match = NULL;
 
-	g_return_val_if_fail (self != NULL, 0);
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
 	/* One of interface or sender must be specified */
 	g_return_val_if_fail (interface || sender, 0);
+
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
 	if (!(sig_handler = g_slice_new0 (SignalHandlerData))) {
 		nm_warning ("Not enough memory for new signal handler.");
@@ -957,17 +894,17 @@ nm_dbus_manager_register_signal_handler (NMDBusManager *self,
 			free_signal_handler_data (sig_handler, self);
 			return 0;
 		}
-		self->priv->matches = g_slist_append (self->priv->matches,
-		                                      sig_handler->match);
+		priv->matches = g_slist_append (priv->matches,
+										sig_handler->match);
 	}
 
 	signal_match_enable (self, sig_handler->match, NULL);
 
-	self->priv->sig_handler_id_counter++;
-	sig_handler->id = self->priv->sig_handler_id_counter;
+	priv->sig_handler_id_counter++;
+	sig_handler->id = priv->sig_handler_id_counter;
 
-	self->priv->signal_handlers = g_slist_append (self->priv->signal_handlers,
-	                                              sig_handler);
+	priv->signal_handlers = g_slist_append (priv->signal_handlers,
+											sig_handler);
 
 	return sig_handler->id;
 }
@@ -976,14 +913,17 @@ void
 nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
                                        guint32 id)
 {
+	NMDBusManagerPrivate *priv;
 	GSList * elt;
 	GSList * found_elt = NULL;
 	SignalHandlerData *	sig_handler = NULL;
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
 	g_return_if_fail (id > 0);
 
-	for (elt = self->priv->signal_handlers; elt; elt = g_slist_next (elt)) {
+	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
+
+	for (elt = priv->signal_handlers; elt; elt = g_slist_next (elt)) {
 		SignalHandlerData * handler = (SignalHandlerData *) elt->data;
 
 		if (handler && (handler->id == id)) {
@@ -998,8 +938,8 @@ nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
 		return;
 
 	/* Remove and free the signal handler */
-	self->priv->signal_handlers = g_slist_remove_link (self->priv->signal_handlers,
-	                                                   found_elt);
+	priv->signal_handlers = g_slist_remove_link (priv->signal_handlers,
+												 found_elt);
 	free_signal_handler_data (sig_handler, self);
 	g_slist_free_1 (found_elt);
 }
@@ -1007,14 +947,15 @@ nm_dbus_manager_remove_signal_handler (NMDBusManager *self,
 DBusConnection *
 nm_dbus_manager_get_dbus_connection (NMDBusManager *self)
 {
-	DBusConnection * connection;
-	GValue value = {0,};
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 
-	g_return_val_if_fail (self != NULL, NULL);
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->connection;
+}
 
-	g_value_init (&value, G_TYPE_POINTER);
-	g_object_get_property (G_OBJECT (self), "dbus-connection", &value);
-	connection = g_value_get_pointer (&value);
-	g_value_unset (&value);
-	return connection;
+DBusGConnection *
+nm_dbus_manager_get_connection (NMDBusManager *self)
+{
+	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
+
+	return NM_DBUS_MANAGER_GET_PRIVATE (self)->g_connection;
 }

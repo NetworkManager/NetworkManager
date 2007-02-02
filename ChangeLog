@@ -1,3 +1,17 @@
+2007-02-02  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-dbus-manager.c:
+	* src/nm-dbus-manager.h:
+		- Convert all internal DBUS code to use dbus-glib bindings.
+		- Remove GObject properties, we don't need them here.
+		- Don't explicitly set things to NULL after freeing, glib is
+		  happy to do it if asked nicely (G_DEBUG=gc-friendly).
+		- Make public API argument checks type safe.
+		- Remove unnecessary (and wrong) cast to GObject for the first
+		  argument to g_signal_* calls - The first argument is a gpointer.
+		- Export DBusGConnection to other cool classes that (are going to)
+		  use dbus-glib.
+
 2007-01-26  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/dbus-dict-helpers.c
