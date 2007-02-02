@@ -1540,18 +1540,14 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
           goto out;
       }
 
-      for (i=0; i < ip4_dns_len; i++) {
-        if (!nmu_dbus_dict_append_uint32 (&iter_dict, "dns_server", ip4_dns[i])) {
-            nm_warning ("couldn't append dns_server (number %d) to dict",i);
-            goto out;
-        }
+      if (!nmu_dbus_dict_append_uint32_array (&iter_dict, "dns_server", ip4_dns, ip4_dns_len)) {
+          nm_warning ("couldn't append dns_servers to dict");
+          goto out;
       }
 
-      for (i=0; i < ip4_nbns_len; i++) {
-        if (!nmu_dbus_dict_append_uint32 (&iter_dict, "nbns_server", ip4_dns[i])) {
-            nm_warning ("couldn't append nbns_server (number %d) to dict",i);
-            goto out;
-        }
+      if (!nmu_dbus_dict_append_uint32_array (&iter_dict, "nbns_server", ip4_nbns, ip4_nbns_len)) {
+          nm_warning ("couldn't append nbns_servers to dict");
+          goto out;
       }
 
       if (!nmu_dbus_dict_append_uint32 (&iter_dict, "mtu", mtu)) {
@@ -1563,16 +1559,8 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
           nm_warning ("dict close write failed!");
           goto out;
       }
-
-
-/*    Don't bother setting anything that isn't needed! 
- 
-      if (!nmu_dbus_dict_append_uint32 (&iter_dict, "mss", mss)) {
-          nm_warning ("couldn't append mss to dict");
-          goto out;
-      } 
-*/
 #endif
+
       if (!dbus_connection_send (data->con, signal, NULL))
       {
 	    nm_warning ("Could not raise the "NM_DBUS_VPN_SIGNAL_IP4_CONFIG" signal!");
