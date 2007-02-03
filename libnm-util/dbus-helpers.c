@@ -259,15 +259,25 @@ nmu_security_serialize_wpa_eap (DBusMessageIter *iter,
 						  const char *ca_cert_file,
 						  int wpa_version)
 {
+	dbus_int32_t	eap;
+	dbus_int32_t	phase2;
+
 	g_return_val_if_fail (iter != NULL, FALSE);
 	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
-	g_return_val_if_fail ((eap_method == NM_EAP_METHOD_MD5)
-				    || (eap_method == NM_EAP_METHOD_MSCHAP)
-				    || (eap_method == NM_EAP_METHOD_OTP)
-				    || (eap_method == NM_EAP_METHOD_GTC)
-				    || (eap_method == NM_EAP_METHOD_PEAP)
-				    || (eap_method == NM_EAP_METHOD_TLS)
-				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
+	eap = NM_EAP_TO_EAP_METHOD(eap_method);
+	g_return_val_if_fail ((eap == NM_EAP_METHOD_MD5)
+				    || (eap == NM_EAP_METHOD_MSCHAP)
+				    || (eap == NM_EAP_METHOD_OTP)
+				    || (eap == NM_EAP_METHOD_GTC)
+				    || (eap == NM_EAP_METHOD_PEAP)
+				    || (eap == NM_EAP_METHOD_TLS)
+				    || (eap == NM_EAP_METHOD_TTLS), FALSE);
+	phase2 = NM_EAP_TO_PHASE2_METHOD(eap_method);
+	g_return_val_if_fail ((phase2 == NM_PHASE2_AUTH_NONE)
+				    || (phase2 == NM_PHASE2_AUTH_PAP)
+				    || (phase2 == NM_PHASE2_AUTH_MSCHAP)
+				    || (phase2 == NM_PHASE2_AUTH_MSCHAPV2)
+				    || (phase2 == NM_PHASE2_AUTH_GTC), FALSE);
 	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
 				    || (key_type == IW_AUTH_CIPHER_CCMP)
 				    || (key_type == IW_AUTH_CIPHER_TKIP)
@@ -323,24 +333,13 @@ nmu_security_serialize_wpa_eap_with_cipher (DBusMessageIter *iter,
 	dbus_bool_t	result;
 
 	g_return_val_if_fail (iter != NULL, FALSE);
-	g_return_val_if_fail ((wpa_version == IW_AUTH_WPA_VERSION_WPA) || (wpa_version == IW_AUTH_WPA_VERSION_WPA2), FALSE);
-	g_return_val_if_fail ((eap_method == NM_EAP_METHOD_MD5)
-				    || (eap_method == NM_EAP_METHOD_MSCHAP)
-				    || (eap_method == NM_EAP_METHOD_OTP)
-				    || (eap_method == NM_EAP_METHOD_GTC)
-				    || (eap_method == NM_EAP_METHOD_PEAP)
-				    || (eap_method == NM_EAP_METHOD_TLS)
-				    || (eap_method == NM_EAP_METHOD_TTLS), FALSE);
-	g_return_val_if_fail ((key_type == NM_AUTH_TYPE_WPA_PSK_AUTO)
-				    || (key_type == IW_AUTH_CIPHER_CCMP)
-				    || (key_type == IW_AUTH_CIPHER_TKIP)
-				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
+	/* validity of remaining arguments is checked in nmu_security_serialize_wpa_eap() which we call below */
 
 	/* First arg: WE Cipher (INT32) */
 	we_cipher_append_helper (iter, NM_AUTH_TYPE_WPA_EAP);
 
-	result = nmu_security_serialize_wpa_eap (iter, eap_method, key_type, identity, passwd, anon_identity, private_key_passwd,
-									 private_key_file, client_cert_file, ca_cert_file, wpa_version);
+	result = nmu_security_serialize_wpa_eap (iter, eap_method, key_type, identity, passwd, anon_identity,
+									 private_key_passwd, private_key_file, client_cert_file, ca_cert_file, wpa_version);
 
 	return result;
 }
@@ -370,6 +369,8 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 	char *		dbus_ca_cert_file;
 	dbus_int32_t	dbus_wpa_version;
 	dbus_int32_t	dbus_eap_method;
+	dbus_int32_t	dbus_eap;
+	dbus_int32_t	dbus_phase2;
 	dbus_int32_t	dbus_key_type;
 
 	g_return_val_if_fail (iter != NULL, FALSE);
@@ -392,15 +393,23 @@ nmu_security_deserialize_wpa_eap (DBusMessageIter *iter,
 	g_return_val_if_fail (wpa_version != NULL, FALSE);
 
 	/* Second arg: EAP method (INT32) */
+	/* Hack: this is really a bitfield of EAP method and phase2 method */
 	g_return_val_if_fail (dbus_message_iter_get_arg_type (iter) == DBUS_TYPE_INT32, FALSE);
 	dbus_message_iter_get_basic (iter, &dbus_eap_method);
-	g_return_val_if_fail ((dbus_eap_method == NM_EAP_METHOD_MD5)
-				    || (dbus_eap_method == NM_EAP_METHOD_MSCHAP)
-				    || (dbus_eap_method == NM_EAP_METHOD_OTP)
-				    || (dbus_eap_method == NM_EAP_METHOD_GTC)
-				    || (dbus_eap_method == NM_EAP_METHOD_PEAP)
-				    || (dbus_eap_method == NM_EAP_METHOD_TLS)
-				    || (dbus_eap_method == NM_EAP_METHOD_TTLS), FALSE);
+	dbus_eap = NM_EAP_TO_EAP_METHOD(dbus_eap_method);
+	g_return_val_if_fail ((dbus_eap == NM_EAP_METHOD_MD5)
+				    || (dbus_eap == NM_EAP_METHOD_MSCHAP)
+				    || (dbus_eap == NM_EAP_METHOD_OTP)
+				    || (dbus_eap == NM_EAP_METHOD_GTC)
+				    || (dbus_eap == NM_EAP_METHOD_PEAP)
+				    || (dbus_eap == NM_EAP_METHOD_TLS)
+				    || (dbus_eap == NM_EAP_METHOD_TTLS), FALSE);
+	dbus_phase2 = NM_EAP_TO_PHASE2_METHOD(dbus_eap_method);
+	g_return_val_if_fail ((dbus_phase2 == NM_PHASE2_AUTH_NONE)
+				    || (dbus_phase2 == NM_PHASE2_AUTH_PAP)
+				    || (dbus_phase2 == NM_PHASE2_AUTH_MSCHAP)
+				    || (dbus_phase2 == NM_PHASE2_AUTH_MSCHAPV2)
+				    || (dbus_phase2 == NM_PHASE2_AUTH_GTC), FALSE);
 
 	/* Third arg: Key type (INT32) */
 	g_return_val_if_fail (dbus_message_iter_next (iter), FALSE);

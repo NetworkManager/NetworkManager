@@ -38,6 +38,7 @@ struct _NMAPSecurityWPA_EAPPrivate
 {
 	int		eap_method;
 	int		key_type;
+	int		phase2_type;
 	int		wpa_version;
 	int		key_mgmt;
 	char *	identity;
@@ -56,6 +57,7 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	NMAPSecurityWPA_EAP *	security = NULL;
 	int					eap_method;
 	int					key_type;
+	int					phase2_type;
 	int					wpa_version;
 	char *				identity = NULL;
 	char *				passwd = NULL;
@@ -77,8 +79,9 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), NM_AUTH_TYPE_WPA_EAP);
 	if ((private_key_passwd && strlen (private_key_passwd) > 0) || (passwd && strlen (passwd) > 0))
 		nm_ap_security_set_key (NM_AP_SECURITY (security), "FIXME", 5);
-	security->priv->eap_method = eap_method;
 	security->priv->key_type = key_type;
+	security->priv->eap_method = NM_EAP_TO_EAP_METHOD (eap_method);
+	security->priv->phase2_type = NM_EAP_TO_PHASE2_METHOD (eap_method);
 	security->priv->wpa_version = wpa_version;
 	security->priv->key_mgmt = IW_AUTH_KEY_MGMT_802_1X;
 	security->priv->identity = g_strdup (identity);
@@ -132,7 +135,7 @@ real_serialize (NMAPSecurity *instance, DBusMessageIter *iter)
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 
 	if (!nmu_security_serialize_wpa_eap (iter,
-			self->priv->eap_method,
+			self->priv->eap_method |	self->priv->phase2_type,
 			self->priv->key_type,
 			self->priv->identity ? : "",
 			self->priv->passwd ? : "",
@@ -185,6 +188,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	int 				key_mgmt = self->priv->key_mgmt;
 	int				eap_method = self->priv->eap_method;
 	int				key_type = self->priv->key_type;
+	int				phase2_type = self->priv->phase2_type;
 
 	g_return_val_if_fail (nm_ap_security_get_we_cipher (instance) == NM_AUTH_TYPE_WPA_EAP, FALSE);
 	g_return_val_if_fail (key_mgmt == IW_AUTH_KEY_MGMT_802_1X, FALSE);
@@ -201,6 +205,11 @@ real_write_supplicant_config (NMAPSecurity *instance,
 				    || (key_type == IW_AUTH_CIPHER_CCMP)
 				    || (key_type == IW_AUTH_CIPHER_TKIP)
 				    || (key_type == IW_AUTH_CIPHER_WEP104), FALSE);
+	g_return_val_if_fail ((phase2_type == NM_PHASE2_AUTH_NONE)
+			         || (phase2_type == NM_PHASE2_AUTH_PAP)
+				    || (phase2_type == NM_PHASE2_AUTH_MSCHAP)
+				    || (phase2_type == NM_PHASE2_AUTH_MSCHAPV2)
+				    || (phase2_type == NM_PHASE2_AUTH_GTC), FALSE);
 
 	/* WPA-EAP network setup */
 
@@ -224,6 +233,29 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	{
 		/* So-called Dynamic WEP */
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i key_mgmt IEEE8021X", nwid))
+			goto out;
+	}
+
+	/* phase2 options can be used with Dynamic WEP, WPA-EAP-TTLS, WPA-EAP-PEAP */
+	/* do nothing if phase2 == NM_PHASE2_AUTH_NONE */
+	if (phase2_type == NM_PHASE2_AUTH_PAP)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i phase2 \"auth=PAP\"", nwid))
+			goto out;
+	}
+	if (phase2_type == NM_PHASE2_AUTH_MSCHAP)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i phase2 \"auth=MSCHAP\"", nwid))
+			goto out;
+	}
+	if (phase2_type == NM_PHASE2_AUTH_MSCHAPV2)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i phase2 \"auth=MSCHAPV2\"", nwid))
+			goto out;
+	}
+	if (phase2_type == NM_PHASE2_AUTH_GTC)
+	{
+		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i phase2 \"auth=GTC\"", nwid))
 			goto out;
 	}
 
@@ -336,6 +368,7 @@ real_copy_constructor (NMAPSecurity *instance)
 
 	dst->priv->eap_method = self->priv->eap_method;
 	dst->priv->key_type = self->priv->key_type;
+	dst->priv->phase2_type = self->priv->phase2_type;
 	dst->priv->wpa_version = self->priv->wpa_version;
 	dst->priv->key_mgmt = self->priv->key_mgmt;
 	dst->priv->identity = g_strdup (self->priv->identity);

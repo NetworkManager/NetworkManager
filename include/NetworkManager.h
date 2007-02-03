@@ -122,6 +122,17 @@ typedef enum NMDeviceType
 #define NM_AUTH_TYPE_WPA_EAP			0x00000020
 #define NM_AUTH_TYPE_LEAP			0x00000040
 
+
+/*
+ * EAP Method in libnm-util is a bitfield of (EAP Method) | (Phase2 Method)
+ */
+
+#define NM_EAP_METHOD_MASK			0x0000ffff
+#define NM_PHASE2_METHOD_MASK			0xffff0000
+
+#define NM_EAP_TO_EAP_METHOD(eap)    (eap & NM_EAP_METHOD_MASK)
+#define NM_EAP_TO_PHASE2_METHOD(eap) (eap & NM_PHASE2_METHOD_MASK)
+
 /*
  * EAP Methods
  */
@@ -132,6 +143,16 @@ typedef enum NMDeviceType
 #define NM_EAP_METHOD_PEAP			0x00000010	/* EAP-PEAP */
 #define NM_EAP_METHOD_TLS			0x00000020	/* EAP-TLS */
 #define NM_EAP_METHOD_TTLS			0x00000040	/* EAP-TTLS */
+
+/*
+ * Phase2 Methods
+ */
+#define NM_PHASE2_AUTH_NONE			0x00000000
+#define NM_PHASE2_AUTH_PAP			0x00010000
+#define NM_PHASE2_AUTH_MSCHAP			0x00020000
+#define NM_PHASE2_AUTH_MSCHAPV2		0x00030000
+#define NM_PHASE2_AUTH_GTC			0x00040000
+
 
 /*
  * Wireless network update types

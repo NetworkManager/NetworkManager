@@ -1,5 +1,20 @@
 2007-02-03  Dan Williams  <dcbw@redhat.com>
 
+	Patch from:
+	Volker Braun <volker.braun@physik.hu-berlin.de>
+	Stefan Schmidt <stefan@datenfreihafen.org>
+
+	* include/NetworkManager.h
+		- Add options for various EAP Phase 2 auth  methods
+
+	* src/nm-ap-security-wpa-eap.c
+		- Track phase2 type and send to wpa_supplicant during connection attempt
+
+	* libnm-util/dbus-helpers.c
+		- handle phase2 type
+
+2007-02-03  Dan Williams  <dcbw@redhat.com>
+
 	* Remove last bits of applet; applet is now in it's own module in SVN,
 		"network-manager-applet"
 
