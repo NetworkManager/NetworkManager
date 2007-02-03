@@ -1,30 +1,11 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-gnome/applet/applet-compat.c
-gnome/applet/applet-dbus-info.c
-gnome/applet/applet-dbus.c
-gnome/applet/applet.c
-gnome/applet/wireless-security-option.c
-gnome/applet/wso-none.c
-gnome/applet/wso-wep-ascii.c
-gnome/applet/wso-wep-hex.c
-gnome/applet/wso-wep-passphrase.c
-gnome/applet/wso-wpa-eap.c
-gnome/applet/wso-wpa-psk.c
-gnome/applet/eggtrayicon.c
-gnome/applet/menu-items.c
-gnome/applet/other-network-dialog.c
-gnome/applet/passphrase-dialog.c
-gnome/applet/vpn-password-dialog.c
-gnome/applet/applet.glade
-gnome/applet/wso-wpa-psk.c
 gnome/vpn-properties/nm-vpn-properties.c
 gnome/vpn-properties/nm-vpn-properties.glade
 src/nm-ap-security-wep.c
 src/nm-ap-security-wpa-psk.c
 src/nm-ap-security.c
 src/nm-netlink-monitor.c
-gnome/applet/applet-dbus-devices.c
 src/nm-ap-security-wpa-eap.c
 src/nm-ap-security-leap.c
