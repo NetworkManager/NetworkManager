@@ -1,0 +1,432 @@
+# translation of NetworkManager-openvpn.HEAD.po to Punjabi
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# A S Alam <aalam@users.sf.net>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-openvpn.HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-03 18:38+0000\n"
+"PO-Revision-Date: 2007-02-04 09:00+0530\n"
+"Last-Translator: A S Alam <aalam@users.sf.net>\n"
+"Language-Team: Punjabi <fedora-trans-pa@redhat.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:145
+msgid "_Password:"
+msgstr "ਗੁਪਤ-ਕੋਡ(_P):"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:146
+msgid "_Secondary Password:"
+msgstr "ਸੈਕੰਡਰੀ ਗੁਪਤ-ਕੋਡ(_S):"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:263
+msgid "_Username:"
+msgstr "ਉਪਭੋਗੀ ਨਾਂ(_U):"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:265
+msgid "_Domain:"
+msgstr "ਡੋਮੇਨ(_D):"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:357
+msgid "Connect _anonymously"
+msgstr "ਅਗਿਆਤ ਵਾਂਗ ਜੁੜੋ(_a)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:362
+msgid "Connect as _user:"
+msgstr "ਉਪਭੋਗੀ ਵਾਂਗ ਜੁੜੋ(_u):"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:471
+msgid "_Remember password for this session"
+msgstr "ਇਹ ਸ਼ੈਸ਼ਨ ਲਈ ਗੁਪਤ-ਕੋਡ ਸੰਭਾਲੋ(_R)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:473
+msgid "_Save password in keyring"
+msgstr "ਛੱਲੇ 'ਚ ਗੁਪਤ-ਕੋਡ ਸੰਭਾਲੋ(_S)"
+
+#: ../auth-dialog/main.c:214
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr ""
+"ਤੁਹਾਨੂੰ ਵੁਰਚੁਅਲ ਪ੍ਰਾਈਵੇਟ ਨੈੱਟਵਰਕ (VPN) '%s' ਦੀ ਵਰਤੋਂ ਵਾਸਤੇ "
+"ਪਰਮਾਣਿਤ ਹੋਣ ਦੀ ਲੋੜ ਹੈ।"
+
+#: ../auth-dialog/main.c:215
+msgid "Authenticate VPN"
+msgstr "ਪਰਮਾਣਿਤ VPN"
+
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "ਸਰਟੀਫਿਕੇਟ ਗੁਪਤ-ਕੋਡ(_w):"
+
+#: ../auth-dialog/main.c:252
+msgid "Certificate password:"
+msgstr "ਸਰਟੀਫਿਕੇਟ ਗੁਪਤ-ਕੋਡ:"
+
+#: ../nm-openvpn.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਸ਼ਾਮਿਲ, ਹਟਾਓ ਜਾਂ ਸੋਧ"
+
+#: ../nm-openvpn.desktop.in.h:2
+msgid "VPN Connection Manager (OpenVPN)"
+msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਮੈਨੇਜਰ(OpenVPN)"
+
+#: ../properties/nm-openvpn.c:130
+msgid "OpenVPN Client"
+msgstr "OpenVPN ਕਲਾਂਇਟ"
+
+#: ../properties/nm-openvpn.c:729
+msgid "The following OpenVPN connection will be created:"
+msgstr "ਹੇਠ ਦਿੱਤਾ OpenVPN ਕੁਨੈਕਸ਼ਨ ਬਣਾਇਆ ਜਾਵੇਗਾ:"
+
+#: ../properties/nm-openvpn.c:731
+#, c-format
+msgid "Name:  %s"
+msgstr "ਨਾਂ:  %s"
+
+#: ../properties/nm-openvpn.c:739
+msgid "Connection Type: X.509 Certificates"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ: X.509 ਸਰਟੀਫਿਕੇਟ"
+
+#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
+#: ../properties/nm-openvpn.c:781
+#, c-format
+msgid "CA:  %s"
+msgstr "CA:  %s"
+
+#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#, c-format
+msgid "Cert:  %s"
+msgstr "ਸਰਟੀ:  %s"
+
+#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#, c-format
+msgid "Key:  %s"
+msgstr "ਕੁੰਜੀ: %s"
+
+#: ../properties/nm-openvpn.c:752
+msgid "Connection Type: Shared Key"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ: ਸਾਂਝੀ ਕੁੰਜੀ"
+
+#: ../properties/nm-openvpn.c:755
+#, c-format
+msgid "Shared Key:  %s"
+msgstr "ਸਾਂਝੀ ਕੁੰਜੀ:  %s"
+
+#: ../properties/nm-openvpn.c:758
+#, c-format
+msgid "Local IP:  %s"
+msgstr "ਲੋਕਲ IP:  %s"
+
+#: ../properties/nm-openvpn.c:761
+#, c-format
+msgid "Remote IP:  %s"
+msgstr "ਰਿਮੋਟ IP:  %s"
+
+#: ../properties/nm-openvpn.c:766
+msgid "Connection Type: Password"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ: ਗੁਪਤ-ਕੋਡ"
+
+#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#, c-format
+msgid "Username:  %s"
+msgstr "ਉਪਭੋਗੀ ਨਾਂ:  %s"
+
+#: ../properties/nm-openvpn.c:778
+msgid "Connection Type: X.509 with Password Authentication"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ: ਗੁਪਤ-ਕੋਡ ਪਰਮਾਣਕਿਤਾ ਨਾਲ X.509"
+
+#: ../properties/nm-openvpn.c:796
+#, c-format
+msgid "Remote:  %s"
+msgstr "ਰਿਮੋਟ: %s"
+
+#: ../properties/nm-openvpn.c:799
+#, c-format
+msgid "Device: %s"
+msgstr "ਜੰਤਰ: %s"
+
+#: ../properties/nm-openvpn.c:799
+msgid "TAP"
+msgstr "TAP"
+
+#: ../properties/nm-openvpn.c:799
+msgid "TUN"
+msgstr "TUN"
+
+#: ../properties/nm-openvpn.c:802
+#, c-format
+msgid "Protocol: %s"
+msgstr "ਪ੍ਰੋਟੋਕਾਲ: %s"
+
+#: ../properties/nm-openvpn.c:802
+msgid "TCP"
+msgstr "TCP"
+
+#: ../properties/nm-openvpn.c:802
+msgid "UDP"
+msgstr "UDP"
+
+#: ../properties/nm-openvpn.c:806
+#, c-format
+msgid "Routes:  %s"
+msgstr "ਰੂਟ:  %s"
+
+#: ../properties/nm-openvpn.c:810
+#, c-format
+msgid "Use LZO Compression: %s"
+msgstr "LZO ਨਪੀੜਨ ਵਰਤੋਂ: %s"
+
+#: ../properties/nm-openvpn.c:810
+msgid "Yes"
+msgstr "ਹਾਂ"
+
+#: ../properties/nm-openvpn.c:810
+msgid "No"
+msgstr "ਨਹੀਂ"
+
+#: ../properties/nm-openvpn.c:814
+#, c-format
+msgid "Cipher:  %s"
+msgstr "ਕੀਪਰ:  %s"
+
+#: ../properties/nm-openvpn.c:819
+#, c-format
+msgid "TLS auth:  %s %s"
+msgstr "TLS ਪਰਮਾਣ:  %s %s"
+
+#: ../properties/nm-openvpn.c:823
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "ਕੁਨੈਕਸ਼ਨ ਵੇਰਵੇ ਨੂੰ \"ਸੋਧ\" ਬਟਨ ਦੀ ਵਰਤੋਂ ਕਰਕੇ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ।"
+
+#: ../properties/nm-openvpn.c:1003
+msgid "Cannot import settings"
+msgstr "ਸੈਟਿੰਗ ਆਯਾਤ ਨਹੀਂ ਕੀਤੀ ਜਾ ਸਕਦੀ"
+
+#: ../properties/nm-openvpn.c:1005
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "VPN ਸੈਟਿੰਗ ਫਾਇਲ '%s' ਗਲਤ ਡਾਟਾ ਮਿਲਿਆ ਸੀ।"
+
+#: ../properties/nm-openvpn.c:1042
+msgid "Select file to import"
+msgstr "ਆਯਾਤ ਕਰਨ ਲਈ ਫਾਇਲ ਚੁਣੋ"
+
+#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+msgid "Select CA to use"
+msgstr "ਵਰਤਣ ਵਾਸਤੇ CA ਚੁਣੋ"
+
+#: ../properties/nm-openvpn.c:1125
+msgid "Select certificate to use"
+msgstr "ਵਰਤਣ ਵਾਸਤੇ ਸਰਟੀਫਿਕੇਟ ਚੁਣੋ"
+
+#: ../properties/nm-openvpn.c:1128
+msgid "Select key to use"
+msgstr "ਵਰਤਣ ਵਾਸਤੇ ਕੁੰਜੀ"
+
+#: ../properties/nm-openvpn.c:1131
+msgid "Select shared key to use"
+msgstr "ਵਰਤਣ ਵਾਸਤੇ ਸਾਂਝੀ ਕੁੰਜੀ ਵਰਤੋਂ"
+
+#: ../properties/nm-openvpn.c:1137
+msgid "Select TA to use"
+msgstr "ਵਰਤਣ ਵਾਸਤੇ TA ਵਰਤੋਂ"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-openvpn.c:1326
+msgid "Save as..."
+msgstr "ਇੰਝ ਸੰਭਾਲੋ..."
+
+#: ../properties/nm-openvpn.c:1356
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "\"%s\" ਨਾਂ ਨਾਲ ਫਾਇਲ ਪਹਿਲਾਂ ਹੀ ਮੌਜੂਦ ਹੈ।"
+
+#: ../properties/nm-openvpn.c:1359
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "ਕੀ ਤੁਸੀਂ ਇਸ ਨੂੰ ਆਪਣੇ ਵਲੋਂ ਸੰਭਾਲੀ ਜਾਣ ਵਾਲੀ ਨਾਲ ਬਦਲਣਾ ਚਾਹੁੰਦੇ ਹੋ?"
+
+#: ../properties/nm-openvpn.c:1373
+msgid "Failed to export configuration"
+msgstr "ਸੰਰਚਨਾ ਨਿਰਯਾਤ ਕਰਨ ਲਈ ਫੇਲ੍ਹ"
+
+#: ../properties/nm-openvpn.c:1375
+#, c-format
+msgid "Failed to save file %s"
+msgstr "ਫਾਇਲ %s ਸੰਭਾਲਣ ਲਈ ਫੇਲ੍ਹ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "0"
+msgstr "0"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "1"
+msgstr "1"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<b>Connection Name</b>"
+msgstr "<b>ਕੁਨੈਕਸ਼ਨ ਨਾਂ</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "<b>Optional Information</b>"
+msgstr "<b>ਚੋਣਵੀਂ ਜਾਣਕਾਰੀ</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "<b>Required Information</b>"
+msgstr "<b>ਲੋੜੀਦੀ ਜਾਣਕਾਰੀ</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>ਜਿਵੇਂ: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
+msgid "CA  file:"
+msgstr "CA  ਫਾਇਲ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "CA ਫਾਇਲ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "Certificate:"
+msgstr "ਸਰਟੀਫਕੇਟ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Connection Type:"
+msgstr "ਕੁਨੈਕਸ਼ਨ ਕਿਸਮ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Direction:"
+msgstr "ਦਿਸ਼ਾ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Key:"
+msgstr "ਕੁੰਜੀ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Local IP:"
+msgstr "ਲੋਕਲ IP:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Password"
+msgstr "ਗੁਪਤ-ਕੋਡ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
+msgstr ""
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Remote IP:"
+msgstr "ਰਿਮੋਟ IP:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Shared Key:"
+msgstr "ਸਾਂਝੀ ਕੁੰਜੀ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "Shared key"
+msgstr "ਸਾਂਝੀ ਕੁੰਜੀ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use LZO compression"
+msgstr "LZO ਨਪੀੜਨ ਵਰਤੋਂ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Use TAP device"
+msgstr "TAP ਜੰਤਰ ਵਰਤੋਂ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:22
+msgid "Use TCP connection"
+msgstr "TCP ਕੁਨੈਕਸ਼ਨ ਵਰਤੋਂ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid "Use TLS auth:"
+msgstr "TLS ਪਰਾਮਣਿਤ ਵਰਤੋਂ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "Use cipher:"
+msgstr "ਕੀਪਰ ਵਰਤੋਂ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "Username:"
+msgstr "ਉਪਭੋਗੀ ਨਾਂ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:26
+msgid "X.509"
+msgstr "X.509"
+
+#: ../properties/nm-openvpn-dialog.glade.h:27
+msgid ""
+"X.509 Certificates\n"
+"Pre-shared key\n"
+"Password Authentication\n"
+"X.509 with Password Authentication"
+msgstr ""
+
+#: ../properties/nm-openvpn-dialog.glade.h:31
+msgid "_Gateway:"
+msgstr "ਗੇਟਵੇ(_G):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:32
+msgid "_Import Saved Configuration..."
+msgstr "ਸੰਭਾਲੀ ਸੰਰਚਨਾ ਆਯਾਤ(_I)..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:33
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-openvpn-dialog.glade.h:34
+msgid "_Only use VPN connection for these addresses"
+msgstr "ਇਹ ਸਿਰਨਾਵਿਆਂ ਲਈ ਸਿਰਫ਼ VPN ਕੁਨੈਕਸ਼ਨ ਵਰਤੋਂ(_O)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+msgid "none"
+msgstr "ਕੋਈ ਨਹੀਂ"
+
+#: ../src/nm-openvpn-service.c:127
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
+msgstr ""
+
+#: ../src/nm-openvpn-service.c:129
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "VPN ਲਾਗਇਨ ਫੇਲ੍ਹ ਹੋ ਗਿਆ ਹੈ, ਕਿਉਂਕਿ VPN ਪ੍ਰੋਗਰਾਮ ਸ਼ੁਰੂ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ।"
+
+#: ../src/nm-openvpn-service.c:131
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"VPN ਲਾਗਇਨ ਫੇਲ੍ਹ ਹੋ ਗਿਆ ਹੈ, ਕਿਉਂਕਿ VPN ਪ੍ਰੋਗਰਾਮ VPN ਸਰਵਰ ਨਾਲ "
+"ਜੁੜ ਨਹੀਂ ਸਕਿਆ।"
+
+#: ../src/nm-openvpn-service.c:133
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "VPN ਲਾਗਇਨ ਫੇਲ੍ਹ ਹੋ ਗਿਆ ਹੈ, ਕਿਉਂਕਿ VPN ਸੰਰਚਨਾ ਚੋਣਾਂ ਗਲਤ ਹਨ।"
+
+#: ../src/nm-openvpn-service.c:135
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "VPN ਲਾਗਇਨ ਫੇਲ੍ਹ ਹੋ ਗਿਆ ਹੈ, ਕਿਉਂਕਿ VPN ਪ੍ਰੋਗਰਾਮ ਨੇ VPN ਸਰਵਰ ਤੋਂ ਗਲਤ ਸੰਰਚਨਾ ਮਿਲੀ ਹੈ।"
+
+#: ../src/nm-openvpn-service.c:137
+msgid "VPN connection failed"
+msgstr "VPN ਕੁਨੈਕਸ਼ਨ ਫੇਲ੍ਹ"
+
