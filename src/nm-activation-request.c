@@ -52,7 +52,7 @@ NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *a
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	if (nm_device_is_802_11_wireless (dev))
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		g_return_val_if_fail (ap != NULL, NULL);
 
 	req = g_malloc0 (sizeof (NMActRequest));

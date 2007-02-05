@@ -1,5 +1,36 @@
 2007-02-05  Tambet Ingo  <tambet@ximian.com>
 
+	Make NMDevice abstract class, remove almost all references to it's
+	subclasses (the last place gets removed with new policy manager). Add
+	NMDeviceInterface (which NMDevice implements) so that when we have
+	NMDevice exported over DBUS, there's a common NMDevice interface which
+	all instances have, plus there's a device specific interface for each
+	specific type.
+	Remove functions (nm_device_is_802_3_ethernet) and
+	(nm_device_is_802_11_wireless). There are already standard GObject macros
+	for type safe checks.
+	Use the updated supplican manager API.
+
+	* src/nm-device-interface.h: 
+	* src/nm-device-interface.c: 
+	* src/nm-call-store.h: 
+	* src/nm-call-store.c: Implement.
+
+	* src/supplicant-manager/nm-supplicant-interface.c:
+	* src/supplicant-manager/nm-supplicant-interface.h:
+	* src/supplicant-manager/nm-supplicant-manager.c:
+	* src/supplicant-manager/nm-supplicant-manager.h:
+		- Remove all private data type references from public header files.
+		- Remove all references to other NM classes, this class is just a
+		  proxy between wpa_supplicant and NM so it doesn't have to know
+		  any internals.
+		- Convert to dbus-glib bindings.
+		- Type safe checks for public methods' arguments.
+		- Store pending DBUS call ids to NMCallStore.
+
+	* src/supplicant-manager/nm-supplicant-config.c:
+		- Store config values in a GHashTable instead of GSList.
+
 	* src/NetworkManagerMain.h: Remove all references to DHCP manager.
 
 	* src/NetworkManager.c: Don't initialize the DHCP manager, it's a

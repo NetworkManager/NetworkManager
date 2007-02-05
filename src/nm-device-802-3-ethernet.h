@@ -27,6 +27,7 @@
 #include <net/ethernet.h>
 
 #include "nm-device.h"
+#include "NetworkManagerMain.h"
 
 G_BEGIN_DECLS
 
@@ -58,18 +59,14 @@ struct _NMDevice8023EthernetClass
 GType nm_device_802_3_ethernet_get_type (void);
 
 
-static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev);
-static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	return (G_OBJECT_TYPE (dev) == NM_TYPE_DEVICE_802_3_ETHERNET);
-}
+NMDevice8023Ethernet *nm_device_802_3_ethernet_new (const char *iface,
+													const char *udi,
+													const char *driver,
+													gboolean test_dev,
+													NMData *app_data);
 
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
-
-void nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *dev);
 
 int nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
 

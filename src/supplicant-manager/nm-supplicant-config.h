@@ -24,7 +24,6 @@
 
 #include <glib-object.h>
 #include "nm-supplicant-types.h"
-#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -35,28 +34,20 @@ G_BEGIN_DECLS
 #define NM_IS_SUPPLICANT_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_CONFIG))
 #define NM_SUPPLICANT_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_CONFIG, NMSupplicantConfigClass))
 
-typedef struct _NMSupplicantConfigClass NMSupplicantConfigClass;
-typedef struct _NMSupplicantConfigPrivate NMSupplicantConfigPrivate;
-
 struct _NMSupplicantConfig
 {
 	GObject parent;
-
-	/*< private >*/
-	NMSupplicantConfigPrivate *priv;
 };
 
-struct _NMSupplicantConfigClass
+typedef struct
 {
 	GObjectClass parent;
-
-	/* class members */
-};
+} NMSupplicantConfigClass;
 
 
 GType nm_supplicant_config_get_type (void);
 
-NMSupplicantConfig * nm_supplicant_config_new (NMDevice *dev);
+NMSupplicantConfig * nm_supplicant_config_new (const char *ifname);
 
 gboolean nm_supplicant_config_add_option (NMSupplicantConfig *scfg,
                                           const char * key,
@@ -71,8 +62,7 @@ guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self);
 void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
                                        guint32 ap_scan);
 
-gboolean nm_supplicant_config_add_to_dbus_message (NMSupplicantConfig * self,
-                                                   DBusMessage * message);
+GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig * self);
 
 G_END_DECLS
 

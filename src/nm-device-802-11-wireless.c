@@ -33,6 +33,7 @@
 
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
+#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerDbus.h"
@@ -135,7 +136,7 @@ static void supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
                                                   NMDevice80211Wireless *self);
 
 static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
-                                            DBusMessage * message,
+                                            GHashTable *properties,
                                             NMDevice80211Wireless * self);
 
 static void supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
@@ -390,6 +391,8 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv->supplicant.iface_error_id = 0;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
+
+	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_11_WIRELESS);
 }
 
 static void
@@ -402,7 +405,8 @@ init_supplicant_interface (NMDevice80211Wireless * self)
 	sup = (Supplicant *) &self->priv->supplicant;
 
 	sup->iface = nm_supplicant_manager_get_iface (sup->mgr,
-	                                             NM_DEVICE (self));
+												  nm_device_get_iface (NM_DEVICE (self)),
+												  TRUE);
 	if (sup->iface == NULL) {
 		nm_warning ("Couldn't initialize supplicant interface for %s.",
 		            nm_device_get_iface (NM_DEVICE (self)));
@@ -644,39 +648,6 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
 	g_return_if_fail (addr != NULL);
 
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
-}
-
-
-/*
- * nm_device_802_11_wireless_set_address
- *
- * Set a device's hardware address
- *
- */
-void
-nm_device_802_11_wireless_set_address (NMDevice80211Wireless *self)
-{
-	NMDevice *dev = NM_DEVICE (self);
-	struct ifreq req;
-	NMSock *sk;
-	int ret;
-
-	g_return_if_fail (self != NULL);
-
-	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
-	if (!sk)
-		return;
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
-
-	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret)
-		goto out;
-
-	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-
-out:
-	nm_dev_sock_close (sk);
 }
 
 
@@ -1157,7 +1128,7 @@ nm_device_802_11_wireless_set_scan_interval (NMData *data,
 		if (self && (NM_DEVICE (self) != d))
 			continue;
 
-		if (d && nm_device_is_802_11_wireless (d)) {
+		if (d && NM_IS_DEVICE_802_11_WIRELESS (d)) {
 			NM_DEVICE_802_11_WIRELESS (d)->priv->scan_interval = seconds;
 			if (self && (NM_DEVICE (self) == d))
 				found = TRUE;
@@ -2054,6 +2025,110 @@ ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
  *
  */
 
+/*
+ * merge_scanned_ap
+ *
+ * Given an AP list and an access point, merge the access point into the list.
+ * If the AP is already in the list, merge just the /attributes/ together for that
+ * AP, if its not already in the list then just add it.  This doesn't merge all
+ * attributes, just ones that are likely to be new from the scan.
+ *
+ */
+static void
+merge_scanned_ap (NMDevice80211Wireless *dev,
+				  NMAccessPoint *merge_ap)
+{
+	
+	NMAccessPointList *list;
+	NMAccessPoint *list_ap = NULL;
+	gboolean strength_changed = FALSE;
+	gboolean new = FALSE;
+	const struct ether_addr *merge_bssid;
+
+	list = nm_device_802_11_wireless_ap_list_get (dev);
+
+	merge_bssid = nm_ap_get_address (merge_ap);
+	if (nm_ethernet_address_is_valid (merge_bssid) && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid)))
+	{
+		/* First, we check for an address match.  If the merge AP has a valid
+		 * BSSID and the same address as a list AP, then the merge AP and
+		 * the list AP must be the same physical AP. The list AP properties must
+		 * be from a previous scan so the time_last_seen's are not equal.  Update
+		 * encryption, authentication method, strength, and the time_last_seen. */
+
+		const char *	devlist_essid = nm_ap_get_essid (list_ap);
+		const char *	merge_essid = nm_ap_get_essid (merge_ap);
+		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+
+		/* Did the AP's name change? */
+		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
+			nm_dbus_signal_wireless_network_change (dev, list_ap,
+													NETWORK_STATUS_DISAPPEARED, -1);
+			new = TRUE;
+		}
+
+		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
+		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap)) {
+			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
+			strength_changed = TRUE;
+		}
+
+		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
+
+		/* If the AP is noticed in a scan, it's automatically no longer
+		 * artificial, since it clearly exists somewhere.
+		 */
+		nm_ap_set_artificial (list_ap, FALSE);
+
+		/* Have to change AP's name _after_ dbus signal for old network name
+		 * has gone out.
+		 */
+		nm_ap_set_essid (list_ap, merge_essid);
+	}
+	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
+	{
+		/* Second, we check for an ESSID match. In this case,
+		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
+		 * encryption and authentication method. Update the strength and address
+		 * except when the time_last_seen of the list AP is the same as the
+		 * time_last_seen of the merge AP and the strength of the list AP is greater
+		 * than or equal to the strength of the merge AP. If the time_last_seen's are
+		 * equal, the merge AP and the list AP come from the same scan.
+		 * Update the time_last_seen. */
+
+		const GTimeVal *	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const GTimeVal *	list_ap_seen = nm_ap_get_last_seen (list_ap);
+		const int			merge_ap_strength = nm_ap_get_strength (merge_ap);
+
+		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
+
+		if (!((list_ap_seen->tv_sec == merge_ap_seen->tv_sec)
+			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength)))
+		{
+			nm_ap_set_strength (list_ap, merge_ap_strength);
+			nm_ap_set_address (list_ap, nm_ap_get_address (merge_ap));
+		}
+		nm_ap_set_last_seen (list_ap, merge_ap_seen);
+		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
+
+		/* If the AP is noticed in a scan, it's automatically no longer
+		 * artificial, since it clearly exists somewhere.
+		 */
+		nm_ap_set_artificial (list_ap, FALSE);
+	} else {
+		/* Add the merge AP to the list. */
+		nm_ap_list_append_ap (list, merge_ap);
+		list_ap = merge_ap;
+		new = TRUE;
+	}
+
+	if (list_ap && new) {
+		nm_dbus_signal_wireless_network_change (dev, list_ap,
+												NETWORK_STATUS_APPEARED, -1);
+	}
+}
+
 static void
 cull_scan_list (NMDevice80211Wireless * self)
 {
@@ -2121,28 +2196,6 @@ out:
 	nm_policy_schedule_device_change_check (app_data);
 }
 
-#define HANDLE_DICT_ITEM(in_key, in_type, op) \
-	if (!strcmp (entry.key, in_key)) { \
-		if (entry.type != in_type) { \
-			nm_warning (in_key "had invalid type in scanned AP message."); \
-		} else { \
-			op \
-		} \
-		goto next; \
-	}
-
-#define HANDLE_DICT_ARRAY_ITEM(in_key, in_ary_type, op) \
-	if (!strcmp (entry.key, in_key)) { \
-		if (entry.type != DBUS_TYPE_ARRAY) { \
-			nm_warning (in_key "had invalid type in scanned AP message."); \
-		} else if (entry.array_type != in_ary_type) { \
-			nm_warning (in_key "had invalid array type in scanned AP message."); \
-		} else { \
-			op \
-		} \
-		goto next; \
-	}
-
 #define SET_QUALITY_MEMBER(qual_item, lc_member, uc_member) \
 	if (lc_member != -1) { \
 		qual_item.lc_member = lc_member; \
@@ -2151,176 +2204,80 @@ out:
 		qual_item.updated |= IW_QUAL_##uc_member##_INVALID; \
 	}
 
-
-#define IEEE80211_CAP_ESS       0x0001
-#define IEEE80211_CAP_IBSS      0x0002
-#define IEEE80211_CAP_PRIVACY   0x0010
-
 static void
-supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
-                                DBusMessage * message,
-                                NMDevice80211Wireless * self)
+set_ap_strength_from_properties (NMDevice80211Wireless *self,
+								 NMAccessPoint *ap,
+								 GHashTable *properties)
 {
-	DBusMessageIter iter, iter_dict;
-	NMUDictEntry        entry = { .type = DBUS_TYPE_STRING };
-	NMAccessPoint *     ap = NULL;
-	GTimeVal            cur_time;
-	NMAccessPointList * ap_list;
-	int                 qual = -1, level = -1, noise = -1;
-	NMData *            app_data;
-	struct iw_quality   quality;
+	int qual, level, noise;
+	struct iw_quality quality;
+	GValue *value;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (message != NULL);
-	g_return_if_fail (iface != NULL);
+	value = (GValue *) g_hash_table_lookup (properties, "quality");
+	qual = value ? g_value_get_int (value) : -1;
 
-	if (!(app_data = nm_device_get_app_data (NM_DEVICE (self))))
-		goto out;
+	value = (GValue *) g_hash_table_lookup (properties, "level");
+	level = value ? g_value_get_int (value) : -1;
 
-	/* Convert the scanned AP into a NMAccessPoint */
-	dbus_message_iter_init (message, &iter);
-
-	if (!nmu_dbus_dict_open_read (&iter, &iter_dict)) {
-		nm_warning ("Warning: couldn't get properties dictionary"
-		            " from scanned AP message.");
-		goto out;
-	}
-
-	/* First arg: Dict Type */
-	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_ARRAY) {
-		nm_warning ("Error: couldn't get properties dictionary"
-		          " from scanned AP message.");
-		goto out;
-	}
-
-	ap = nm_ap_new ();
-	if (!ap) {
-		nm_warning ("could not allocate new access point.");
-		goto out;
-	}
-
-	while (nmu_dbus_dict_has_dict_entry (&iter_dict)) {
-		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
-			nm_warning ("Error: couldn't read properties dictionary entry"
-			            " from scanned AP message.");
-			goto out;
-		}
-
-		HANDLE_DICT_ARRAY_ITEM("ssid", DBUS_TYPE_BYTE,
-			{
-				char ssid[33];
-				int ssid_len = sizeof (ssid);
-
-				if (entry.array_len < sizeof (ssid))
-					ssid_len = entry.array_len;
-				if (ssid_len <= 0)
-					goto next;
-				/* Stupid ieee80211 layer uses <hidden> */
-				if (((ssid_len == 8) || (ssid_len == 9))
-				        && (memcmp (entry.bytearray_value, "<hidden>", 8) == 0))
-					goto next;
-				memset (&ssid, 0, sizeof (ssid));
-				memcpy (&ssid, entry.bytearray_value, ssid_len);
-				ssid[32] = '\0';
-				nm_ap_set_essid (ap, ssid);
-			});
-		HANDLE_DICT_ARRAY_ITEM("bssid", DBUS_TYPE_BYTE,
-			{
-				struct ether_addr addr;
-				if (entry.array_len != ETH_ALEN)
-					goto next;
-				memset (&addr, 0, sizeof (struct ether_addr));
-				memcpy (&addr, entry.bytearray_value, ETH_ALEN);
-				nm_ap_set_address (ap, &addr);
-			});
-
-		HANDLE_DICT_ARRAY_ITEM("wpaie", DBUS_TYPE_BYTE,
-			{
-				guint8 * ie = (guint8 *) entry.bytearray_value;
-				if (entry.array_len <= 0 || entry.array_len > WPA_MAX_IE_LEN)
-					goto next;
-				nm_ap_add_capabilities_from_ie (ap, ie, entry.array_len);
-			});
-
-		HANDLE_DICT_ARRAY_ITEM("rsnie", DBUS_TYPE_BYTE,
-			{
-				guint8 * ie = (guint8 *) entry.bytearray_value;
-				if (entry.array_len <= 0 || entry.array_len > WPA_MAX_IE_LEN)
-					goto next;
-				nm_ap_add_capabilities_from_ie (ap, ie, entry.array_len);
-			});
-
-		HANDLE_DICT_ITEM("frequency", DBUS_TYPE_INT32,
-			{
-				double freq = (double) entry.double_value;
-				nm_ap_set_freq (ap, freq);
-			});
-
-		HANDLE_DICT_ITEM("maxrate", DBUS_TYPE_INT32,
-			{ nm_ap_set_rate (ap, entry.int32_value); });
-
-		HANDLE_DICT_ITEM("quality", DBUS_TYPE_INT32,
-			{ qual = entry.int32_value; });
-
-		HANDLE_DICT_ITEM("level", DBUS_TYPE_INT32,
-			{ level = entry.int32_value; });
-
-		HANDLE_DICT_ITEM("noise", DBUS_TYPE_INT32,
-			{ noise = entry.int32_value; });
-
-		HANDLE_DICT_ITEM("capabilities", DBUS_TYPE_UINT16,
-			{
-				guint32 caps = entry.uint16_value;
-
-				if (caps & IEEE80211_CAP_ESS)
-					nm_ap_set_mode (ap, IW_MODE_INFRA);
-				else if (caps & IEEE80211_CAP_IBSS)
-					nm_ap_set_mode (ap, IW_MODE_ADHOC);
-
-				if (caps & IEEE80211_CAP_PRIVACY) {
-					if (nm_ap_get_capabilities (ap) & NM_802_11_CAP_PROTO_NONE)
-						nm_ap_add_capabilities_for_wep (ap);
-				}
-			});
-
-	next:
-		nmu_dbus_dict_entry_clear (&entry);
-	};
-
-	g_get_current_time (&cur_time);
-	self->priv->last_scan = cur_time.tv_sec;
-	nm_ap_set_last_seen (ap, &cur_time);
-
-	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
-	 * allowed list where we cache known MAC->ESSID associations.
-	 */
-	if (!nm_ap_get_essid (ap)) {
-		nm_ap_set_broadcast (ap, FALSE);
-		nm_ap_list_copy_one_essid_by_address (self, ap, app_data->allowed_ap_list);
-	}
+	value = (GValue *) g_hash_table_lookup (properties, "noise");
+	noise = value ? g_value_get_int (value) : -1;
 
 	/* Calculate and set the AP's signal quality */
 	memset (&quality, 0, sizeof (struct iw_quality));
 	SET_QUALITY_MEMBER (quality, qual, QUAL);
 	SET_QUALITY_MEMBER (quality, level, LEVEL);
 	SET_QUALITY_MEMBER (quality, noise, NOISE);
-	nm_ap_set_strength (ap, wireless_qual_to_percent (&quality,
-						(const iwqual *)(&self->priv->max_qual),
-						(const iwqual *)(&self->priv->avg_qual)));
+
+	nm_ap_set_strength (ap, wireless_qual_to_percent
+						(&quality,
+						 (const iwqual *)(&self->priv->max_qual),
+						 (const iwqual *)(&self->priv->avg_qual)));
+}
+
+static void
+supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
+								GHashTable *properties,
+                                NMDevice80211Wireless * self)
+{
+	NMAccessPoint *ap;
+	GTimeVal *last_seen;
+	NMData *app_data;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (properties != NULL);
+	g_return_if_fail (iface != NULL);
+
+	if (!(app_data = nm_device_get_app_data (NM_DEVICE (self))))
+		return;
+
+	ap = nm_ap_new_from_properties (properties);
+	if (!ap)
+		return;
+
+	set_ap_strength_from_properties (self, ap, properties);
+
+	last_seen = (GTimeVal *) nm_ap_get_last_seen (ap);
+	self->priv->last_scan = last_seen->tv_sec;
+
+	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
+	 * allowed list where we cache known MAC->ESSID associations.
+	 */
+	if (!nm_ap_get_essid (ap)) {
+		nm_ap_set_broadcast (ap, FALSE);
+		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
+	}
 
 	/* Add the AP to the device's AP list */
-	ap_list = nm_device_802_11_wireless_ap_list_get (self);
-	nm_ap_list_merge_scanned_ap (self, ap_list, ap);
+	merge_scanned_ap (self, ap);
 
 	/* Once we have the list, copy in any relevant information from our Allowed list. */
-	nm_ap_list_copy_properties (ap_list, app_data->allowed_ap_list);
+	nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self),
+								app_data->allowed_ap_list);
 
 	/* Remove outdated access points */
 	cull_scan_list (self);
 
-out:
-	if (ap)
-		nm_ap_unref (ap);
+	nm_ap_unref (ap);
 }
 
 
@@ -2389,6 +2346,7 @@ link_timeout_cb (gpointer user_data)
 		nm_device_set_active_link (dev, FALSE);
 		if (nm_device_is_activating (dev)) {
 			cleanup_association_attempt (self, TRUE);
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 			nm_policy_schedule_activation_failed (req);
 		}
 		return FALSE;
@@ -2404,6 +2362,7 @@ link_timeout_cb (gpointer user_data)
 		nm_info ("Activation (%s/wireless): disconnected during association,"
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		nm_dbus_get_user_key_for_network (req, TRUE);
 	} else {
 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
@@ -2659,6 +2618,7 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 
 			if (nm_device_is_activating (dev)) {
 				NMActRequest * req = nm_device_get_act_request (dev);
+				nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 				nm_policy_schedule_activation_failed (req);
 			} else if (nm_device_is_activated (dev)) {
 				nm_policy_schedule_device_change_check (app_data);
@@ -2718,6 +2678,7 @@ supplicant_iface_connection_error_cb_handler (gpointer user_data)
 	         cb_data->message);
 
 	cleanup_association_attempt (self, TRUE);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
 	nm_policy_schedule_activation_failed (req);
 
 out:
@@ -2794,6 +2755,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		         "asking for new key.",
 		         nm_device_get_iface (dev));
 
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		nm_dbus_get_user_key_for_network (req, TRUE);
 	} else {
 		if (nm_device_is_activating (dev)) {
@@ -2801,6 +2763,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 			         "failing activation.",
 			         nm_device_get_iface (dev));
 
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 			nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
 		}
 	}
@@ -2812,7 +2775,6 @@ supplicant_connection_timeout_cb (gpointer user_data)
 static gboolean
 start_supplicant_connection_timeout (NMDevice80211Wireless *self)
 {
-	GMainContext * context;
 	NMDevice *     dev;
 	guint          id;
 
@@ -2858,7 +2820,7 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	config = nm_supplicant_config_new (NM_DEVICE (self));
+	config = nm_supplicant_config_new (nm_device_get_iface (NM_DEVICE (self)));
 	if (config == NULL)
 		goto out;
 
@@ -2900,6 +2862,28 @@ error:
 
 /****************************************************************************/
 
+static void
+real_set_hw_address (NMDevice *dev)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	struct ifreq req;
+	NMSock *sk;
+	int ret;
+
+	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
+	if (!sk)
+		return;
+
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
+
+	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+	if (ret == 0)
+		memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+
+	nm_dev_sock_close (sk);
+}
+
 
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev,
@@ -2919,6 +2903,7 @@ real_act_stage2_config (NMDevice *dev,
 
 	/* If we need an encryption key, get one */
 	if (ap_need_key (self, ap, &ask_user)) {
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		nm_dbus_get_user_key_for_network (req, ask_user);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
@@ -3062,6 +3047,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		nm_dbus_get_user_key_for_network (req, TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
@@ -3275,6 +3261,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->init = real_init;
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
+	parent_class->set_hw_address = real_set_hw_address;
 
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
@@ -3317,3 +3304,32 @@ nm_device_802_11_wireless_get_type (void)
 	return type;
 }
 
+NMDevice80211Wireless *
+nm_device_802_11_wireless_new (const char *iface,
+							   const char *udi,
+							   const char *driver,
+							   gboolean test_dev,
+							   NMData *app_data)
+{
+	GObject *obj;
+
+	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (app_data != NULL, NULL);
+
+	obj = g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
+						NM_DEVICE_INTERFACE_UDI, udi,
+						NM_DEVICE_INTERFACE_IFACE, iface,
+						NM_DEVICE_INTERFACE_DRIVER, driver,
+						NM_DEVICE_INTERFACE_APP_DATA, app_data,
+						NULL);
+
+	/* FIXME */
+/* 	g_signal_connect (obj, "state-changed", */
+/* 					  (GCallback) state_changed_cb, */
+/* 					  NULL); */
+
+	return NM_DEVICE_802_11_WIRELESS (obj);
+
+}

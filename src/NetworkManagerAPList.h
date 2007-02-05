@@ -26,8 +26,6 @@
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerAP.h"
-#include "nm-device.h"
-#include "nm-device-802-11-wireless.h"
 
 typedef struct NMAccessPointList	NMAccessPointList;
 typedef struct NMAPListIter		NMAPListIter;
@@ -48,10 +46,8 @@ NMAccessPoint *	nm_ap_list_get_ap_by_essid		(NMAccessPointList *list, const char
 NMAccessPoint *	nm_ap_list_get_ap_by_address		(NMAccessPointList *list, const struct ether_addr *addr);
 
 void				nm_ap_list_copy_properties		(NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_essids_by_address	(NMDevice80211Wireless *dev, NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_one_essid_by_address	(NMDevice80211Wireless *dev, NMAccessPoint *ap, NMAccessPointList *search_list);
-
-gboolean			nm_ap_list_merge_scanned_ap		(NMDevice80211Wireless *dev, NMAccessPointList *list, NMAccessPoint *merge_ap);
+void				nm_ap_list_copy_essids_by_address	(NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_one_essid_by_address	(NMAccessPoint *ap, NMAccessPointList *search_list);
 
 NMNetworkType		nm_ap_list_get_type				(NMAccessPointList *list);
 

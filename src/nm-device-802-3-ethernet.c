@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "nm-device-802-3-ethernet.h"
+#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "NetworkManagerMain.h"
 #include "nm-activation-request.h"
@@ -76,6 +77,8 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	self->priv->link_source_id = 0;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
+
+	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_3_ETHERNET);
 }
 
 static void
@@ -99,7 +102,8 @@ real_init (NMDevice *dev)
 
 	sup_mgr = nm_supplicant_manager_get ();
 	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
-	                                                         NM_DEVICE (self));
+															 nm_device_get_iface (NM_DEVICE (self)),
+															 FALSE);
 	if (self->priv->sup_iface == NULL) {
 		nm_warning ("Couldn't initialize supplicant interface for %s.",
 		            nm_device_get_iface (NM_DEVICE (self)));
@@ -211,6 +215,31 @@ real_start (NMDevice *dev)
 }
 
 
+NMDevice8023Ethernet *
+nm_device_802_3_ethernet_new (const char *iface,
+							  const char *udi,
+							  const char *driver,
+							  gboolean test_dev,
+							  NMData *app_data)
+{
+	GObject *obj;
+
+	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (app_data != NULL, NULL);
+
+	obj = g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
+						NM_DEVICE_INTERFACE_UDI, udi,
+						NM_DEVICE_INTERFACE_IFACE, iface,
+						NM_DEVICE_INTERFACE_DRIVER, driver,
+						NM_DEVICE_INTERFACE_APP_DATA, app_data,
+						NULL);
+
+	return NM_DEVICE_802_3_ETHERNET (obj);
+}
+
+
 /*
  * nm_device_802_3_ethernet_get_address
  *
@@ -227,35 +256,25 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_a
 }
 
 
-/*
- * nm_device_802_3_ethernet_set_address
- *
- * Set a device's hardware address
- *
- */
-void
-nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *self)
+static void
+real_set_hw_address (NMDevice *dev)
 {
-	NMDevice *dev = NM_DEVICE (self);
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 	struct ifreq req;
 	NMSock *sk;
 	int ret;
 
-	g_return_if_fail (self != NULL);
-
 	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
 	if (!sk)
 		return;
+
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
 
 	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret)
-		goto out;
+	if (ret == 0)
+		memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
 
-	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-
-out:
 	nm_dev_sock_close (sk);
 }
 
@@ -370,6 +389,9 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
+	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
+
+	/* virtual methods */
 	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
@@ -378,8 +400,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
-
-	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
+	parent_class->set_hw_address = real_set_hw_address;
 }
 
 GType

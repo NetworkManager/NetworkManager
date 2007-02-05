@@ -316,9 +316,9 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	sys_data = g_malloc0 (sizeof (SuSEDeviceConfigData));
 	sys_data->use_dhcp = TRUE;
 
-	if (nm_device_is_802_3_ethernet (dev))
+	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
 		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
-	else if (nm_device_is_802_11_wireless (dev))
+	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
 
 	sprintf (mac, "%02x:%02x:%02x:%02x:%02x:%02x",

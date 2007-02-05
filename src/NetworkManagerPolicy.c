@@ -63,7 +63,7 @@ static gboolean nm_policy_activation_finish (gpointer user_data)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-    if (nm_device_is_802_11_wireless (dev))
+    if (NM_IS_DEVICE_802_11_WIRELESS (dev))
         ap = nm_act_request_get_ap (req);
 
 	nm_device_activation_success_handler (dev, req);
@@ -126,7 +126,7 @@ static gboolean nm_policy_activation_failed (gpointer user_data)
 
 	nm_device_activation_failure_handler (dev, req);
 
-    if (nm_device_is_802_11_wireless (dev))
+    if (NM_IS_DEVICE_802_11_WIRELESS (dev))
         ap = nm_act_request_get_ap (req);
 
 	nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
@@ -204,7 +204,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
 			continue;
 
-		if (nm_device_is_802_3_ethernet (dev))
+		if (NM_IS_DEVICE_802_3_ETHERNET (dev))
 		{
 			/* We never automatically choose devices that don't support carrier detect */
 			if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
@@ -222,7 +222,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 				best_wired_prio = prio;
 			}
 		}
-		else if (nm_device_is_802_11_wireless (dev) && data->wireless_enabled)
+		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) && data->wireless_enabled)
 		{
 			/* Don't automatically choose a device that doesn't support wireless scanning */
 			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
@@ -309,8 +309,8 @@ nm_policy_device_change_check (gpointer user_data)
 		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
-		if ((nm_device_is_802_3_ethernet (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			|| (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))) {
+		if ((NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			|| (NM_IS_DEVICE_802_11_WIRELESS (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))) {
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
 				nm_device_get_iface (old_dev));
 			goto out;
@@ -353,7 +353,7 @@ nm_policy_device_change_check (gpointer user_data)
 		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
 		gboolean		old_has_link = nm_device_has_active_link (old_dev);
 
-		if (nm_device_is_802_3_ethernet (old_dev)) {
+		if (NM_IS_DEVICE_802_3_ETHERNET (old_dev)) {
 			/* Only switch if the old device was not user requested, and we are switching to
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
 			 * above will prefer a wired device to a wireless device.
@@ -365,9 +365,9 @@ nm_policy_device_change_check (gpointer user_data)
 				         nm_device_get_iface (old_dev));
 				do_switch = TRUE;
 			}
-		} else if (nm_device_is_802_11_wireless (old_dev)) {
+		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
 			/* Only switch if the old device's wireless config is invalid */
-			if (nm_device_is_802_11_wireless (new_dev)) {
+			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
 				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
 				const char *	old_essid = nm_ap_get_essid (old_ap);
 				int			old_mode = nm_ap_get_mode (old_ap);
@@ -398,7 +398,7 @@ nm_policy_device_change_check (gpointer user_data)
 					         same_essid, old_has_link);
 					do_switch = TRUE;
 				}
-			} else if (nm_device_is_802_3_ethernet (new_dev)) {
+			} else if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
 				/* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
  				if (!old_user_requested)
 					do_switch = TRUE;
@@ -406,7 +406,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	if (do_switch && (nm_device_is_802_3_ethernet (new_dev) || (nm_device_is_802_11_wireless (new_dev) && ap))) {
+	if (do_switch && (NM_IS_DEVICE_802_3_ETHERNET (new_dev) || (NM_IS_DEVICE_802_11_WIRELESS (new_dev) && ap))) {
 		NMActRequest *	act_req = NULL;
 
 		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE))) {
@@ -582,7 +582,7 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 		NMDevice	*dev = (NMDevice *)(elt->data);
 		NMDevice80211Wireless *	wdev;
 
-		if (!nm_device_is_802_11_wireless (dev))
+		if (!NM_IS_DEVICE_802_11_WIRELESS (dev))
 			continue;
 
 		wdev = NM_DEVICE_802_11_WIRELESS (dev);
@@ -592,8 +592,7 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 			 * broadcasting their ESSID, if we have their MAC address in our
 			 * allowed list.
 			 */
-			nm_ap_list_copy_essids_by_address (wdev,
-			                                   nm_device_802_11_wireless_ap_list_get (wdev),
+			nm_ap_list_copy_essids_by_address (nm_device_802_11_wireless_ap_list_get (wdev),
 			                                   data->allowed_ap_list);
 			nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev),
 			                            data->allowed_ap_list);

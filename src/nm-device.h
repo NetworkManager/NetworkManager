@@ -94,6 +94,8 @@ struct _NMDeviceClass
 	void			(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
 
+	void        (* set_hw_address) (NMDevice *self);
+
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
@@ -124,12 +126,6 @@ struct _NMDeviceClass
 
 
 GType nm_device_get_type (void);
-
-NMDevice *	nm_device_new (const char *iface, 
-						const char *udi,
-						gboolean test_dev,
-						NMDeviceType test_dev_type,
-						struct NMData *app_data);
 
 void		nm_device_stop (NMDevice *self);
 
@@ -196,6 +192,8 @@ void			nm_device_activation_success_handler	(NMDevice *dev,
 											 struct NMActRequest *req);
 
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
+
+NMDeviceState nm_device_get_state (NMDevice *device);
 
 G_END_DECLS
 

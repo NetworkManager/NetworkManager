@@ -28,10 +28,19 @@
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-marshal.h"
 
+typedef struct {
+	NMDBusManager *	dbus_mgr;
+	guint32         state;
+	GSList *        ifaces;
+	gboolean        dispose_has_run;
+} NMSupplicantManagerPrivate;
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                               NM_TYPE_SUPPLICANT_MANAGER, \
                                               NMSupplicantManagerPrivate))
+
+G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
+
 
 static void nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
                                                       DBusConnection *connection,
@@ -54,14 +63,6 @@ enum {
 static guint nm_supplicant_manager_signals[LAST_SIGNAL] = { 0 };
 
 
-struct _NMSupplicantManagerPrivate {
-	NMDBusManager *	dbus_mgr;
-	guint32         state;
-	GSList *        ifaces;
-	gboolean        dispose_has_run;
-};
-
-
 NMSupplicantManager *
 nm_supplicant_manager_get (void)
 {
@@ -81,15 +82,15 @@ nm_supplicant_manager_get (void)
 static void
 nm_supplicant_manager_init (NMSupplicantManager * self)
 {
-	self->priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
-	self->priv->dispose_has_run = FALSE;
-	self->priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
-	self->priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->dispose_has_run = FALSE;
+	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
+	priv->dbus_mgr = nm_dbus_manager_get ();
 
 	nm_supplicant_manager_startup (self);
 
-	g_signal_connect (G_OBJECT (self->priv->dbus_mgr),
+	g_signal_connect (priv->dbus_mgr,
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_supplicant_manager_name_owner_changed),
 	                  self);
@@ -98,17 +99,15 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 static void
 nm_supplicant_manager_dispose (GObject *object)
 {
-	NMSupplicantManager *      self = NM_SUPPLICANT_MANAGER (object);
-	NMSupplicantManagerClass * klass;
-	GObjectClass *             parent_class;  
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
 
-	if (self->priv->dispose_has_run) {
+	if (priv->dispose_has_run) {
 		/* If dispose did already run, return. */
 		return;
 	}
 
 	/* Make sure dispose does not run twice. */
-	self->priv->dispose_has_run = TRUE;
+	priv->dispose_has_run = TRUE;
 
 	/* 
 	 * In dispose, you are supposed to free all types referenced from this
@@ -116,27 +115,13 @@ nm_supplicant_manager_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
-	if (self->priv->dbus_mgr) {
-		g_object_unref (G_OBJECT (self->priv->dbus_mgr));
-		self->priv->dbus_mgr = NULL;
+	if (priv->dbus_mgr) {
+		g_object_unref (G_OBJECT (priv->dbus_mgr));
+		priv->dbus_mgr = NULL;
 	}
 
 	/* Chain up to the parent class */
-	klass = NM_SUPPLICANT_MANAGER_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_MANAGER));
-	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
-	parent_class->dispose (object);
-}
-
-static void
-nm_supplicant_manager_finalize (GObject *object)
-{
-	NMSupplicantManagerClass * klass;
-	GObjectClass *             parent_class;  
-
-	/* Chain up to the parent class */
-	klass = NM_SUPPLICANT_MANAGER_CLASS (g_type_class_peek (NM_TYPE_SUPPLICANT_MANAGER));
-	parent_class = G_OBJECT_CLASS (g_type_class_peek_parent (klass));
-	parent_class->finalize (object);
+	G_OBJECT_CLASS (nm_supplicant_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -144,10 +129,9 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 {
 	GObjectClass * object_class = G_OBJECT_CLASS (klass);
 
-	object_class->dispose = nm_supplicant_manager_dispose;
-	object_class->finalize = nm_supplicant_manager_finalize;
-
 	g_type_class_add_private (object_class, sizeof (NMSupplicantManagerPrivate));
+
+	object_class->dispose = nm_supplicant_manager_dispose;
 
 	/* Signals */
 	nm_supplicant_manager_signals[STATE] =
@@ -158,32 +142,6 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 		              NULL, NULL,
 		              nm_supplicant_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
-	klass->state = NULL;
-}
-
-GType
-nm_supplicant_manager_get_type (void)
-{
-	static GType type = 0;
-	if (type == 0) {
-		static const GTypeInfo info = {
-			sizeof (NMSupplicantManagerClass),
-			NULL,	/* base_init */
-			NULL,	/* base_finalize */
-			(GClassInitFunc) nm_supplicant_manager_class_init,
-			NULL,	/* class_finalize */
-			NULL,	/* class_data */
-			sizeof (NMSupplicantManager),
-			0,		/* n_preallocs */
-			(GInstanceInitFunc) nm_supplicant_manager_init,
-			NULL		/* value_table */
-		};
-
-		type = g_type_register_static (G_TYPE_OBJECT,
-								 "NMSupplicantManager",
-								 &info, 0);
-	}
-	return type;
 }
 
 static void
@@ -215,28 +173,26 @@ nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 guint32
 nm_supplicant_manager_get_state (NMSupplicantManager * self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), FALSE);
 
-	return self->priv->state;
+	return NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->state;
 }
 
 static void
 nm_supplicant_manager_set_state (NMSupplicantManager * self, guint32 new_state)
 {
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 	guint32 old_state;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (new_state < NM_SUPPLICANT_MANAGER_STATE_LAST);
-
-	if (new_state == self->priv->state)
+	if (new_state == priv->state)
 		return;
 
-	old_state = self->priv->state;
-	self->priv->state = new_state;
-	g_signal_emit (G_OBJECT (self),
+	old_state = priv->state;
+	priv->state = new_state;
+	g_signal_emit (self,
 	               nm_supplicant_manager_signals[STATE],
 	               0,
-	               self->priv->state,
+	               priv->state,
 	               old_state);
 }
 
@@ -246,7 +202,7 @@ nm_supplicant_manager_startup (NMSupplicantManager * self)
 	gboolean running;
 
 	/* FIXME: convert to pending call */
-	running = nm_dbus_manager_name_has_owner (self->priv->dbus_mgr,
+	running = nm_dbus_manager_name_has_owner (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->dbus_mgr,
 	                                          WPAS_DBUS_SERVICE);
 	if (running) {
 		nm_supplicant_manager_set_state (self, NM_SUPPLICANT_MANAGER_STATE_IDLE);
@@ -255,38 +211,33 @@ nm_supplicant_manager_startup (NMSupplicantManager * self)
 
 NMSupplicantInterface *
 nm_supplicant_manager_get_iface (NMSupplicantManager * self,
-                                 NMDevice * dev)
+								 const char *ifname,
+								 gboolean is_wireless)
 {
+	NMSupplicantManagerPrivate *priv;
 	NMSupplicantInterface * iface = NULL;
 	GSList * elt;
-	const char * ifname;
 
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (NM_IS_SUPPLICANT_MANAGER (self), NULL);
+	g_return_val_if_fail (ifname != NULL, NULL);
+
+	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 
 	/* Ensure we don't already have this interface */
-	ifname = nm_device_get_iface (dev);
-	for (elt = self->priv->ifaces; elt; elt = g_slist_next (elt)) {
+	for (elt = priv->ifaces; elt; elt = g_slist_next (elt)) {
 		NMSupplicantInterface * if_tmp = (NMSupplicantInterface *) elt->data;
-		NMDevice * if_dev = nm_supplicant_interface_get_device (if_tmp);
 
-		if (!strcmp (nm_device_get_iface (if_dev), ifname)) {
+		if (!strcmp (ifname, nm_supplicant_interface_get_device (if_tmp))) {
 			iface = if_tmp;
 			break;
 		}
 	}
 
 	if (!iface) {
-		iface = nm_supplicant_interface_new (self, dev);
+		iface = nm_supplicant_interface_new (self, ifname, is_wireless);
 		if (iface)
-			self->priv->ifaces = g_slist_append (self->priv->ifaces, iface);
+			priv->ifaces = g_slist_append (priv->ifaces, iface);
 	}
-
-	/* Object should have 2 references by now; one from the object's creation
-	 * which is for the caller of this function, and one for the supplicant
-	 * manager (because it's kept in the ifaces list) which is grabbed below.
-	 */
-	g_object_ref (iface);
 
 	return iface;
 }
@@ -295,25 +246,25 @@ void
 nm_supplicant_manager_release_iface (NMSupplicantManager * self,
                                      NMSupplicantInterface * iface)
 {
+	NMSupplicantManagerPrivate *priv;
 	GSList * elt;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (iface != NULL);
+	g_return_if_fail (NM_IS_SUPPLICANT_MANAGER (self));
+	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (iface));
 
-	for (elt = self->priv->ifaces; elt; elt = g_slist_next (elt)) {
+	priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+
+	for (elt = priv->ifaces; elt; elt = g_slist_next (elt)) {
 		NMSupplicantInterface * if_tmp = (NMSupplicantInterface *) elt->data;
 
 		if (if_tmp == iface) {
 			/* Remove the iface from the supplicant manager's list and
 			 * dereference to match additional reference in get_iface.
 			 */
-			self->priv->ifaces = g_slist_remove_link (self->priv->ifaces, elt);
+			priv->ifaces = g_slist_remove_link (priv->ifaces, elt);
 			g_slist_free_1 (elt);
 			g_object_unref (iface);
 			break;
 		}
 	}
-
-	/* One further dereference to match g_object_new() initial refcount of 1 */
-	g_object_unref (iface);
 }

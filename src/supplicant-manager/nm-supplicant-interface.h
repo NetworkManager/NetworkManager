@@ -23,8 +23,8 @@
 #define NM_SUPPLICANT_INTERFACE_H
 
 #include <glib-object.h>
+#include <dbus/dbus.h>
 #include "nm-supplicant-types.h"
-#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -79,18 +79,12 @@ enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
-typedef struct _NMSupplicantInterfaceClass NMSupplicantInterfaceClass;
-typedef struct _NMSupplicantInterfacePrivate NMSupplicantInterfacePrivate;
-
 struct _NMSupplicantInterface
 {
 	GObject parent;
-
-	/*< private >*/
-	NMSupplicantInterfacePrivate *priv;
 };
 
-struct _NMSupplicantInterfaceClass
+typedef struct
 {
 	GObjectClass parent;
 
@@ -113,20 +107,21 @@ struct _NMSupplicantInterfaceClass
 	void (* connection_error) (NMSupplicantInterface * iface,
 	                           const char * name,
 	                           const char * message);
-};
+} NMSupplicantInterfaceClass;
 
 
 GType nm_supplicant_interface_get_type (void);
 
 NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
-                                                     NMDevice * dev);
+													 const char *ifname,
+													 gboolean is_wireless);
 
 gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
                                              NMSupplicantConfig * cfg);
 
 void nm_supplicant_interface_disconnect (NMSupplicantInterface * iface);
 
-NMDevice * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
+const char * nm_supplicant_interface_get_device (NMSupplicantInterface * iface);
 
 gboolean nm_supplicant_interface_request_scan (NMSupplicantInterface * self);
 

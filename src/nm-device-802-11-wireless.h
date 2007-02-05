@@ -29,6 +29,7 @@
 
 #include "nm-device.h"
 #include "NetworkManagerAP.h"
+#include "NetworkManagerMain.h"
 
 struct NMAccessPointList;
 
@@ -65,22 +66,17 @@ struct _NMDevice80211WirelessClass
 
 GType nm_device_802_11_wireless_get_type (void);
 
-
-static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev);
-static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev)
-{
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	return (G_OBJECT_TYPE (dev) == NM_TYPE_DEVICE_802_11_WIRELESS);
-}
+NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *iface,
+													  const char *udi,
+													  const char *driver,
+													  gboolean test_dev,
+													  NMData *app_data);
 
 void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 										  const char *essid);
 
 void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
 								   struct ether_addr *addr);
-
-void nm_device_802_11_wireless_set_address (NMDevice80211Wireless *dev);
 
 void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
                                                     struct ether_addr *bssid);

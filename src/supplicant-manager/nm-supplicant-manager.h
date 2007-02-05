@@ -57,24 +57,18 @@ enum {
 #define NM_IS_SUPPLICANT_MANAGER_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_MANAGER))
 #define NM_SUPPLICANT_MANAGER_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
 
-typedef struct _NMSupplicantManagerClass NMSupplicantManagerClass;
-typedef struct _NMSupplicantManagerPrivate NMSupplicantManagerPrivate;
-
 struct _NMSupplicantManager
 {
 	GObject parent;
-
-	/*< private >*/
-	NMSupplicantManagerPrivate *priv;
 };
 
-struct _NMSupplicantManagerClass
+typedef struct
 {
 	GObjectClass parent;
 
 	/* class members */
 	void (* state)  (NMSupplicantManager * mgr, guint32 new_state, guint32 old_state);
-};
+} NMSupplicantManagerClass;
 
 GType nm_supplicant_manager_get_type (void);
 
@@ -83,7 +77,8 @@ NMSupplicantManager * nm_supplicant_manager_get (void);
 guint32 nm_supplicant_manager_get_state (NMSupplicantManager * mgr);
 
 NMSupplicantInterface * nm_supplicant_manager_get_iface (NMSupplicantManager * mgr,
-                                                         NMDevice * dev);
+                                                         const char *ifname,
+														 gboolean is_wireless);
 
 void nm_supplicant_manager_release_iface (NMSupplicantManager * mgr,
                                           NMSupplicantInterface * iface);

@@ -32,11 +32,15 @@ typedef struct NMDbusCBData {
 } NMDbusCBData;
 
 
+void			nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
+
 gboolean		nm_device_is_activated (NMDevice *dev);
 
 NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
 
 void			nm_device_activate_schedule_stage3_ip_config_start (struct NMActRequest *req);
+
+void			nm_device_state_changed (NMDevice *device, NMDeviceState state);
 
 
 #endif	/* NM_DEVICE_PRIVATE_H */

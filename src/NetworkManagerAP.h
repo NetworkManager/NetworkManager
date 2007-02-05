@@ -33,6 +33,7 @@ typedef struct NMAccessPoint NMAccessPoint;
 
 NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
+NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
 
 void				nm_ap_unref			(NMAccessPoint *ap);
 void				nm_ap_ref				(NMAccessPoint *ap);

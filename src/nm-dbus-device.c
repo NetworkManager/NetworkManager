@@ -173,9 +173,9 @@ nm_dbus_device_get_hw_address (DBusConnection *connection,
 	}
 
 	memset (&addr, 0, sizeof (struct ether_addr));
-	if (nm_device_is_802_3_ethernet (data->dev)) {
+	if (NM_IS_DEVICE_802_3_ETHERNET (data->dev)) {
 		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (data->dev), &addr);
-	} else if (nm_device_is_802_11_wireless (data->dev)) {
+	} else if (NM_IS_DEVICE_802_11_WIRELESS (data->dev)) {
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (data->dev), &addr);
 	}
 	memset (char_addr, 0, 20);
@@ -199,7 +199,7 @@ nm_dbus_device_get_mode (DBusConnection *connection,
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->dev != NULL, NULL);
 
-	if (!nm_device_is_802_11_wireless (data->dev)) {
+	if (!NM_IS_DEVICE_802_11_WIRELESS (data->dev)) {
 		reply = new_invalid_device_type_error (message);
 		goto out;
 	}
@@ -260,7 +260,7 @@ nm_dbus_device_get_active_network (DBusConnection *connection,
 
 	/* Only wireless devices have an active network */
 	dev = data->dev;
-	if (!nm_device_is_802_11_wireless (dev))
+	if (!NM_IS_DEVICE_802_11_WIRELESS (dev))
 	{
 		reply = new_invalid_device_type_error (message);
 		goto out;
@@ -318,7 +318,7 @@ nm_dbus_device_get_networks (DBusConnection *connection,
 	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (data->dev != NULL, NULL);
 
-	if (!nm_device_is_802_11_wireless (data->dev)) {
+	if (!NM_IS_DEVICE_802_11_WIRELESS (data->dev)) {
 		reply = new_invalid_device_type_error (message);
 		goto out;
 	}
@@ -516,9 +516,9 @@ nm_dbus_device_get_properties (DBusConnection *connection,
 	act_stage = active ? nm_act_request_get_stage (nm_device_get_act_request (dev)) : NM_ACT_STAGE_UNKNOWN;
 
 	memset (hw_addr_buf, 0, 20);
-	if (nm_device_is_802_3_ethernet (dev))
+	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
 		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
-	else if (nm_device_is_802_11_wireless (dev))
+	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
 	iw_ether_ntop (&hw_addr, hw_addr_buf);
 
@@ -543,7 +543,7 @@ nm_dbus_device_get_properties (DBusConnection *connection,
 	primary_dns = nm_utils_inet_ip4_address_as_string (primary_dns_addr);
 	secondary_dns = nm_utils_inet_ip4_address_as_string (secondary_dns_addr);
 
-	if (nm_device_is_802_11_wireless (dev)) {
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
 		NMDevice80211Wireless *	wdev = NM_DEVICE_802_11_WIRELESS (dev);
 		NMActRequest *		req = nm_device_get_act_request (dev);
 		NMAccessPoint *	ap;

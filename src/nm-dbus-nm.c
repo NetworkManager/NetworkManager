@@ -266,7 +266,7 @@ nm_dbus_nm_set_active_device (DBusConnection *connection,
 		goto out;
 	}
 
-	if (nm_device_is_802_11_wireless (dev)) {
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
 		NMAPSecurity * 	security = NULL;
 		char *			essid = NULL;
 		gboolean			fallback = FALSE;
@@ -315,7 +315,7 @@ nm_dbus_nm_set_active_device (DBusConnection *connection,
 	 		g_object_unref (G_OBJECT (security));
 
 		nm_info ("User Switch: %s / %s", dev_path, essid);
-	} else if (nm_device_is_802_3_ethernet (dev)) {
+	} else if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
 		nm_info ("User Switch: %s", dev_path);
 	}
 
@@ -382,7 +382,7 @@ nm_dbus_nm_create_wireless_network (DBusConnection *connection,
 		goto out;
 	}
 
-	if (   !nm_device_is_802_11_wireless (dev)
+	if (   !NM_IS_DEVICE_802_11_WIRELESS (dev)
 		|| !dbus_message_iter_next (&iter)
 		|| (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)) {
 		reply = nm_dbus_new_invalid_args_error (message, NM_DBUS_INTERFACE);
@@ -551,7 +551,7 @@ nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 		for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
 			NMDevice * dev = NM_DEVICE (elt->data);
 
-			if (nm_device_is_802_11_wireless (dev)) {
+			if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
 				nm_device_deactivate (dev);
 				nm_device_bring_down (dev);
 			}

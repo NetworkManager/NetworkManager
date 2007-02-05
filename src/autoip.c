@@ -224,9 +224,9 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	memset (&saddr, 0, sizeof (saddr));
 	strncpy (saddr.sa_data, nm_device_get_iface (dev), sizeof (saddr.sa_data));
 
-	if (nm_device_is_802_3_ethernet (dev))
+	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
 		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
-	else if (nm_device_is_802_11_wireless (dev))
+	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
 	else
 		goto out;

@@ -133,6 +133,105 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 }
 
 
+#define IEEE80211_CAP_ESS       0x0001
+#define IEEE80211_CAP_IBSS      0x0002
+#define IEEE80211_CAP_PRIVACY   0x0010
+
+
+static void
+foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
+{
+	GValue *variant = (GValue *) value;
+	NMAccessPoint *ap = (NMAccessPoint *) user_data;
+
+	if (G_VALUE_HOLDS_BOXED (variant)) {
+		GArray *array = g_value_get_boxed (variant);
+
+		if (!strcmp (key, "ssid")) {
+			char ssid[33];
+			int ssid_len = sizeof (ssid);
+
+			if (array->len < sizeof (ssid))
+				ssid_len = array->len;
+			if (ssid_len <= 0)
+				return;
+			/* Stupid ieee80211 layer uses <hidden> */
+			if (((ssid_len == 8) || (ssid_len == 9))
+				&& (memcmp (array->data, "<hidden>", 8) == 0))
+				return;
+			memset (&ssid, 0, sizeof (ssid));
+			memcpy (&ssid, array->data, ssid_len);
+			ssid[32] = '\0';
+			nm_ap_set_essid (ap, ssid);
+		} else if (!strcmp (key, "bssid")) {
+			struct ether_addr addr;
+
+			if (array->len != ETH_ALEN)
+				return;
+			memset (&addr, 0, sizeof (struct ether_addr));
+			memcpy (&addr, array->data, ETH_ALEN);
+			nm_ap_set_address (ap, &addr);
+		} else if (!strcmp (key, "wpaie")) {
+			guint8 * ie = (guint8 *) array->data;
+			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
+				return;
+			nm_ap_add_capabilities_from_ie (ap, ie, array->len);
+		} else if (!strcmp (key, "rsnie")) {
+			guint8 * ie = (guint8 *) array->data;
+			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
+				return;
+			nm_ap_add_capabilities_from_ie (ap, ie, array->len);
+		}
+	} else if (G_VALUE_HOLDS_INT (variant)) {
+		gint32 int_val = g_value_get_int (variant);
+
+		if (!strcmp (key, "frequency")) {
+			double freq = (double) int_val;
+			nm_ap_set_freq (ap, freq);
+		} else if (!strcmp (key, "maxrate")) {
+			nm_ap_set_rate (ap, int_val);
+		}
+	} else if (G_VALUE_HOLDS_UINT (variant)) {
+		guint32 val = g_value_get_uint (variant);
+
+		if (!strcmp (key, "capabilities")) {
+			if (val & IEEE80211_CAP_ESS) {
+				nm_ap_set_mode (ap, IW_MODE_INFRA);
+			} else if (val & IEEE80211_CAP_IBSS) {
+				nm_ap_set_mode (ap, IW_MODE_ADHOC);
+			}
+
+			if (val & IEEE80211_CAP_PRIVACY) {
+				if (nm_ap_get_capabilities (ap) & NM_802_11_CAP_PROTO_NONE)
+					nm_ap_add_capabilities_for_wep (ap);
+			}
+		}
+	}
+}
+
+
+NMAccessPoint *
+nm_ap_new_from_properties (GHashTable *properties)
+{
+	NMAccessPoint *ap;
+	GTimeVal cur_time;
+
+	g_return_val_if_fail (properties != NULL, NULL);
+
+	ap = nm_ap_new ();
+
+	g_hash_table_foreach (properties, foreach_property_cb, ap);
+
+	g_get_current_time (&cur_time);
+	nm_ap_set_last_seen (ap, &cur_time);
+
+	if (!nm_ap_get_essid (ap))
+		nm_ap_set_broadcast (ap, FALSE);
+
+	return ap;
+}
+
+
 /*
  * AP refcounting functions
  */

@@ -104,6 +104,84 @@ static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *u
 
 
 /*
+ * nm_device_test_wireless_extensions
+ *
+ * Test whether a given device is a wireless one or not.
+ *
+ */
+static NMDeviceType
+discover_device_type (LibHalContext *ctx, const char *udi)
+{
+	char * category = NULL;
+
+	if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
+		category = libhal_device_get_property_string(ctx, udi, "info.category", NULL);
+	if (category && (!strcmp (category, "net.80211")))
+		return DEVICE_TYPE_802_11_WIRELESS;
+	else if (category && (!strcmp (category, "net.80203")))
+		return DEVICE_TYPE_802_3_ETHERNET;
+	return DEVICE_TYPE_UNKNOWN;
+}
+
+/*
+ * nm_get_device_driver_name
+ *
+ * Get the device's driver name from HAL.
+ *
+ */
+static char *
+nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
+{
+	char	*	driver_name = NULL;
+	char *	physdev_udi = NULL;
+
+	g_return_val_if_fail (ctx != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
+
+	physdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
+	if (physdev_udi && libhal_device_property_exists (ctx, physdev_udi, "info.linux.driver", NULL))
+	{
+		char *drv = libhal_device_get_property_string (ctx, physdev_udi, "info.linux.driver", NULL);
+		driver_name = g_strdup (drv);
+		g_free (drv);
+	}
+	g_free (physdev_udi);
+
+	return driver_name;
+}
+
+
+static NMDevice *
+create_nm_device (LibHalContext *ctx,
+				  const char *iface,
+				  const char *udi)
+{
+	NMDevice *dev;
+	char *driver;
+	NMDeviceType type;
+
+	type = discover_device_type (ctx, udi);
+	driver = nm_get_device_driver_name (ctx, udi);
+
+	switch (type) {
+	case DEVICE_TYPE_802_11_WIRELESS:
+		dev = (NMDevice *) nm_device_802_11_wireless_new (iface, udi, driver, FALSE, nm_data);
+		break;
+	case DEVICE_TYPE_802_3_ETHERNET:
+		dev = (NMDevice *) nm_device_802_3_ethernet_new (iface, udi, driver, FALSE, nm_data);
+		break;
+
+	default:
+		g_assert_not_reached ();
+	}
+
+	g_free (driver);
+
+	return dev;
+}
+
+
+/*
  * nm_create_device_and_add_to_list
  *
  * Create a new network device and add it to our device list.
@@ -136,16 +214,16 @@ NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, cons
 	if ((dev = nm_get_device_by_iface (data, iface)))
 		return (NULL);
 
-	if ((dev = nm_device_new (iface, udi, test_device, test_device_type, data))) {
-			nm_info ("Now managing %s device '%s'.",
-			         nm_device_is_802_11_wireless (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)",
-			         nm_device_get_iface (dev));
+	if ((dev = create_nm_device (data->hal_ctx, iface, udi))) {
+		nm_info ("Now managing %s device '%s'.",
+				 NM_IS_DEVICE_802_11_WIRELESS (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)",
+				 nm_device_get_iface (dev));
 
-			data->dev_list = g_slist_append (data->dev_list, dev);
-			nm_device_deactivate (dev);
+		data->dev_list = g_slist_append (data->dev_list, dev);
+		nm_device_deactivate (dev);
 
-			nm_policy_schedule_device_change_check (data);
-			nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ADDED);
+		nm_policy_schedule_device_change_check (data);
+		nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ADDED);
 	}
 
 	return dev;
@@ -549,15 +627,14 @@ static void nm_data_free (NMData *data)
 	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
 		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
 
-	if (data->netlink_monitor)
-	{
-		g_object_unref (G_OBJECT (data->netlink_monitor));
-		data->netlink_monitor = NULL;
-	}
-
 	/* Stop and destroy all devices */
 	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
 	g_slist_free (data->dev_list);
+
+	if (data->netlink_monitor) {
+		g_object_unref (G_OBJECT (data->netlink_monitor));
+		data->netlink_monitor = NULL;
+	}
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);

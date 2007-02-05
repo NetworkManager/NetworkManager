@@ -12,8 +12,12 @@ INCLUDES = -I${top_srcdir}                   \
 sbin_PROGRAMS = NetworkManager
 
 NetworkManager_SOURCES =				\
+		nm-call-store.c				\
+		nm-call-store.h				\
 		nm-device.c				\
 		nm-device.h				\
+		nm-device-interface.c			\
+		nm-device-interface.h			\
 		nm-device-private.h			\
 		nm-device-802-3-ethernet.c	\
 		nm-device-802-3-ethernet.h	\
