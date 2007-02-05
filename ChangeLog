@@ -1,5 +1,11 @@
 2007-02-05  Tambet Ingo  <tambet@ximian.com>
 
+	* src/nm-device-802-11-wireless.c (supplicant_iface_scan_result_cb): 
+	* src/supplicant-manager/nm-supplicant-interface.h
+	* src/supplicant-manager/nm-supplicant-interface.c
+	(nm_supplicant_interface_class_init): Change the "scan-result" signal's
+	argument to boolean from enum.
+
 	Make NMDevice abstract class, remove almost all references to it's
 	subclasses (the last place gets removed with new policy manager). Add
 	NMDeviceInterface (which NMDevice implements) so that when we have

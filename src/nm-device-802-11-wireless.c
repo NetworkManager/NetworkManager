@@ -140,7 +140,7 @@ static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
                                             NMDevice80211Wireless * self);
 
 static void supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
-                                             guint32 result,
+                                             gboolean result,
                                              NMDevice80211Wireless * self);
 
 static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
@@ -1735,7 +1735,7 @@ nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self)
 }
 
 static void supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
-                                             guint32 result,
+                                             gboolean result,
                                              NMDevice80211Wireless * self)
 {
 	g_return_if_fail (self != NULL);

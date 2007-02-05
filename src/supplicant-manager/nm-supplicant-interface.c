@@ -404,8 +404,8 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_result),
 		              NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
-		              G_TYPE_NONE, 1, G_TYPE_UINT);
+		              g_cclosure_marshal_VOID__BOOLEAN,
+		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
 	nm_supplicant_interface_signals[CONNECTION_STATE] =
 		g_signal_new ("connection-state",
@@ -506,7 +506,7 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		g_signal_emit (info->interface,
 					   nm_supplicant_interface_signals[SCAN_RESULT],
 					   0,
-					   NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS);
+					   TRUE);
 
 		/* Fire off a "properties" call for each returned BSSID */
 		for (i = 0; i < array->len; i++) {
@@ -1104,7 +1104,7 @@ scan_request_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	g_signal_emit (info->interface,
 	               nm_supplicant_interface_signals[SCAN_RESULT],
 	               0,
-				   success ? NM_SUPPLICANT_INTERFACE_SCAN_RESULT_SUCCESS : NM_SUPPLICANT_INTERFACE_SCAN_RESULT_ERROR);
+				   success ? TRUE : FALSE);
 }
 
 gboolean
