@@ -6,8 +6,14 @@ INCLUDES = -I${top_srcdir}                       \
 
 noinst_LTLIBRARIES = libdhcp-manager.la
 
-libdhcp_manager_la_SOURCES =	nm-dhcp-manager.c	\
-						nm-dhcp-manager.h
+BUILT_SOURCES = \
+	nm-dhcp-marshal.h \
+	nm-dhcp-marshal.c
+
+libdhcp_manager_la_SOURCES = \
+	nm-dhcp-manager.c \
+	nm-dhcp-manager.h \
+	nm-dhcp-marshal-main.c
 
 libdhcp_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 						$(GTHREAD_CFLAGS)				\
@@ -22,3 +28,21 @@ libdhcp_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 
 
 libdhcp_manager_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
+
+EXTRA_DIST = nm-dhcp-marshal.list
+CLEANFILES = $(BUILT_SOURCES)
+
+nm-dhcp-marshal.h: nm-dhcp-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_dhcp_marshal $(srcdir)/nm-dhcp-marshal.list --header > \
+		xgen-gmh \
+	&& (cmp -s xgen-gmh nm-dhcp-marshal.h || cp xgen-gmh nm-dhcp-marshal.h) \
+	&& rm -f xgen-gmh xgen-gmh~
+
+nm-dhcp-marshal.c: nm-dhcp-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_dhcp_marshal $(srcdir)/nm-dhcp-marshal.list --body > \
+		xgen-gmc \
+	&& cp xgen-gmc nm-dhcp-marshal.c \
+	&& rm -f xgen-gmc xgen-gmc~
+
+nm-dhcp-marshal-main.c: nm-dhcp-marshal.c nm-dhcp-marshal.h
+

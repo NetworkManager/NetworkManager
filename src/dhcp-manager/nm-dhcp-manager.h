@@ -21,16 +21,18 @@
 #ifndef NM_DHCP_MANAGER_H
 #define NM_DHCP_MANAGER_H
 
-#include "NetworkManagerMain.h"
-#include "nm-device.h"
+#include <glib/gtypes.h>
+#include <glib-object.h>
+#include "nm-ip4-config.h"
 
-/*
- * FIXME: These should go in a header shared by NetworkManager and dhcdbd,
- * but right now NetworkManager and dhcdbd do not share any header.  The
- * following is copied (and cleaned up) from dhcdbd.h.
- */
-enum dhcdbd_state
-{
+#define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
+#define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManager))
+#define NM_DHCP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
+#define NM_IS_DHCP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
+#define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
+#define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
+
+typedef enum {
 	DHCDBD_NBI=0,		/* no broadcast interfaces found */
 	DHCDBD_PREINIT,	/* configuration started */
 	DHCDBD_BOUND,		/* lease obtained */
@@ -47,16 +49,28 @@ enum dhcdbd_state
 	DHCDBD_ABEND,		/* dhclient exited abnormally */
 	DHCDBD_END,		/* dhclient exited normally */
 	DHCDBD_END_OPTIONS,	/* last option in subscription sent */
-};
+} NMDHCPState;
 
-NMDHCPManager *	nm_dhcp_manager_new						(NMData *data);
-void				nm_dhcp_manager_dispose					(NMDHCPManager *manager);
+typedef struct {
+	GObject parent;
+} NMDHCPManager;
 
-gboolean			nm_dhcp_manager_begin_transaction			(NMDHCPManager *manager, NMActRequest *req);
-void				nm_dhcp_manager_cancel_transaction			(NMDHCPManager *manager, NMActRequest *req);
+typedef struct {
+	GObjectClass parent;
 
-NMIP4Config *		nm_dhcp_manager_get_ip4_config			(NMDHCPManager *manager, NMActRequest *req);
+	/* Signals */
+	void (*state_changed) (NMDHCPManager *manager, char *iface, NMDHCPState state);
+	void (*timeout)       (NMDHCPManager *manager, char *iface);
+} NMDHCPManagerClass;
 
-guint32			nm_dhcp_manager_get_state_for_device		(NMDHCPManager *manager, NMDevice *dev);
+GType nm_dhcp_manager_get_type (void);
 
-#endif
+NMDHCPManager *nm_dhcp_manager_get                  (void);
+gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager, const char *iface);
+void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
+													 const char *iface,
+													 gboolean blocking);
+NMIP4Config   *nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
+NMDHCPState    nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, const char *iface);
+
+#endif /* NM_DHCP_MANAGER_H */
