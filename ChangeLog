@@ -1,3 +1,33 @@
+2007-02-05  Tambet Ingo  <tambet@ximian.com>
+
+	* src/NetworkManagerMain.h: Remove all references to DHCP manager.
+
+	* src/NetworkManager.c: Don't initialize the DHCP manager, it's a
+	singleton now.
+
+	* src/nm-device.c: Use the new DHCP manager API.
+
+	* src/nm-activation-request.c:
+	* src/nm-activation-request.h:
+		- Remove all dhcp related properties and methods.
+
+	* src/dhcp-manager/nm-dhcp-marshal-main.c: Add.
+
+	* src/dhcp-manager/nm-dhcp-marshal.list: Add.
+
+	* src/dhcp-manager/nm-dhcp-manager.c:
+	* src/dhcp-manager/nm-dhcp-manager.h:
+		- Convert it to GObject since we need to signal state changes.
+		- Remove all references to other NM classes, this class is one
+		  of the lowest classes in our hierarchy.
+		- One less class to use NMActRequest.
+		- Make it singleton, one less user of NMData.
+		- Remove a couple of sleep() calls.
+		- Convert a bunch of low-level dbus API calls to dbus-glib calls.
+		  One less class to use the NM's custom tailored signal handlig.
+
+	* Makefile.am: Generate marshallers, add them to build.
+
 2007-02-02  Dan Williams  <dcbw@redhat.com>
 
 	* configure.in

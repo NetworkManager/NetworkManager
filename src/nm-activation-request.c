@@ -26,7 +26,6 @@
 #include "nm-activation-request.h"
 #include "nm-device.h"
 #include "NetworkManagerDbus.h"
-#include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 
@@ -43,9 +42,6 @@ struct NMActRequest
 
 	NMActStage		stage;
 	DBusPendingCall *	user_key_pcall;
-
-	guint32			dhcp_state;
-	guint			dhcp_timeout;
 };
 
 
@@ -71,7 +67,6 @@ NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *a
 	req->ap = ap;
 
 	req->user_requested = user_requested;
-	req->dhcp_state = nm_dhcp_manager_get_state_for_device (data->dhcp_manager, dev);
 
 	return req;
 }
@@ -93,9 +88,6 @@ void nm_act_request_unref (NMActRequest *req)
 		g_object_unref (G_OBJECT (req->dev));
 		if (req->ap)
 			nm_ap_unref (req->ap);
-
-		if (req->dhcp_timeout > 0)
-			g_source_remove (req->dhcp_timeout);
 
 		memset (req, 0, sizeof (NMActRequest));
 		g_free (req);
@@ -225,32 +217,3 @@ void nm_act_request_set_user_key_pending_call (NMActRequest *req, DBusPendingCal
 	if (req->user_key_pcall)
 		dbus_pending_call_ref (req->user_key_pcall);
 }
-
-guint8 nm_act_request_get_dhcp_state (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, 0);
-
-	return req->dhcp_state;
-}
-
-void nm_act_request_set_dhcp_state (NMActRequest *req, guint8 dhcp_state)
-{
-	g_return_if_fail (req != NULL);
-
-	req->dhcp_state = dhcp_state;
-}
-
-guint nm_act_request_get_dhcp_timeout (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, 0);
-
-	return req->dhcp_timeout;
-}
-
-void nm_act_request_set_dhcp_timeout (NMActRequest *req, guint dhcp_timeout)
-{
-	g_return_if_fail (req != NULL);
-
-	req->dhcp_timeout = dhcp_timeout;
-}
-

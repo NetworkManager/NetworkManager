@@ -62,8 +62,9 @@ struct _NMDevicePrivate
 
 	/* IP configuration info */
 	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
-	gboolean			use_dhcp;
 	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
+	NMDHCPManager *     dhcp_manager;
+	gulong              dhcp_signal_id;
 };
 
 static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
@@ -175,7 +176,7 @@ nm_device_new (const char *iface,
 
 	/* Grab IP config data for this device from the system configuration files */
 	dev->priv->system_config_data = nm_system_device_get_system_config (dev, app_data);
-	dev->priv->use_dhcp = nm_system_device_get_use_dhcp (dev);
+	nm_device_set_use_dhcp (dev, nm_system_device_get_use_dhcp (dev));
 
 	/* Allow distributions to flag devices as disabled */
 	if (nm_system_device_get_disabled (dev))
@@ -217,7 +218,6 @@ nm_device_init (NMDevice * self)
 	self->priv->act_source_id = 0;
 
 	self->priv->system_config_data = NULL;
-	self->priv->use_dhcp = TRUE;
 	self->priv->ip4_config = NULL;
 }
 
@@ -724,19 +724,27 @@ real_act_stage3_ip_config_start (NMDevice *self,
 	if (nm_device_get_use_dhcp (self))
 	{
 		/* Begin a DHCP transaction on the interface */
-		if (!nm_dhcp_manager_begin_transaction (data->dhcp_manager, req))
-		{
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
-			goto out;
-		}	
+		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+		gboolean success;
 
-		/* DHCP devices will be notified by the DHCP manager when
-		 * stuff happens.
-		 */
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		/* DHCP manager will cancel any transaction already in progress and we do not
+		   want to cancel this activation if we get "down" state from that. */
+		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_signal_id);
+
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager,
+													 nm_device_get_iface (self));
+
+		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_signal_id);
+
+		if (success) {
+			/* DHCP devices will be notified by the DHCP manager when
+			 * stuff happens.	
+			 */
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		} else
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
-	
-out:
+
 	return ret;
 }
 
@@ -859,9 +867,14 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
-	if (nm_device_get_use_dhcp (self))
-		real_config = nm_dhcp_manager_get_ip4_config (data->dhcp_manager, req);
-	else
+	if (nm_device_get_use_dhcp (self)) {
+		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
+													  nm_device_get_iface (self));
+
+		if (real_config && nm_ip4_config_get_mtu (real_config) == 0)
+			/* If the DHCP server doesn't set the MTU, get it from backend. */
+			nm_ip4_config_set_mtu (real_config, nm_system_get_mtu (self));
+	} else
 		real_config = nm_system_device_new_ip4_system_config (self);
 
 	if (real_config)
@@ -1138,7 +1151,9 @@ real_activation_cancel_handler (NMDevice *self,
 	g_return_if_fail (req != NULL);
 
 	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START)
-		nm_dhcp_manager_cancel_transaction (self->priv->app_data->dhcp_manager, req);
+		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
+											nm_device_get_iface (self),
+											TRUE);
 }
 
 
@@ -1212,7 +1227,9 @@ nm_device_deactivate_quickly (NMDevice *self)
 	 */
 	if ((act_request = nm_device_get_act_request (self)))
 	{
- 		nm_dhcp_manager_cancel_transaction (app_data->dhcp_manager, act_request);
+		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
+											nm_device_get_iface (self),
+											FALSE);
 		nm_act_request_unref (act_request);
 		self->priv->act_request = NULL;
 	}
@@ -1385,21 +1402,72 @@ nm_device_can_interrupt_activation (NMDevice *self)
 
 /* IP Configuration stuff */
 
+static void
+dhcp_state_changed (NMDHCPManager *dhcp_manager,
+					const char *iface,
+					NMDHCPState state,
+					gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMActRequest *req;
+
+	req = nm_device_get_act_request (device);
+	if (!req)
+		return;
+
+	if (!strcmp (nm_device_get_iface (device), iface) &&
+		nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START) {
+		switch (state) {
+		case DHCDBD_BOUND:	/* lease obtained */
+		case DHCDBD_RENEW:	/* lease renewed */
+		case DHCDBD_REBOOT:	/* have valid lease, but now obtained a different one */
+		case DHCDBD_REBIND:	/* new, different lease */
+			nm_device_activate_schedule_stage4_ip_config_get (req);
+			break;
+		case DHCDBD_TIMEOUT: /* timed out contacting DHCP server */
+			nm_device_activate_schedule_stage4_ip_config_timeout (req);
+			break;
+		case DHCDBD_FAIL: /* all attempts to contact server timed out, sleeping */
+		case DHCDBD_ABEND: /* dhclient exited abnormally */
+		case DHCDBD_END: /* dhclient exited normally */
+			nm_policy_schedule_activation_failed (req);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 gboolean
 nm_device_get_use_dhcp (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	return self->priv->use_dhcp;
+	return NM_DEVICE_GET_PRIVATE (self)->dhcp_manager ? TRUE : FALSE;
 }
 
 void
 nm_device_set_use_dhcp (NMDevice *self,
                         gboolean use_dhcp)
 {
-	g_return_if_fail (self != NULL);
+	NMDevicePrivate *priv;
 
-	self->priv->use_dhcp = use_dhcp;
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (use_dhcp) {
+		if (!priv->dhcp_manager) {
+			priv->dhcp_manager = nm_dhcp_manager_get ();
+			priv->dhcp_signal_id = g_signal_connect (priv->dhcp_manager, "state-changed",
+													 G_CALLBACK (dhcp_state_changed),
+													 self);
+		}
+	} else if (priv->dhcp_manager) {
+		g_signal_handler_disconnect (priv->dhcp_manager, priv->dhcp_signal_id);
+		g_object_unref (priv->dhcp_manager);
+		priv->dhcp_manager = NULL;
+	}
 }
 
 
@@ -1651,6 +1719,8 @@ nm_device_dispose (GObject *object)
 		g_source_remove (self->priv->act_source_id);
 		self->priv->act_source_id = 0;
 	}
+
+	nm_device_set_use_dhcp (self, FALSE);
 
 	/* Chain up to the parent class */
 	klass = NM_DEVICE_CLASS (g_type_class_peek (NM_TYPE_DEVICE));
