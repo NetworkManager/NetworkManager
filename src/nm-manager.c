@@ -1,0 +1,417 @@
+#include <string.h>
+
+#include "nm-manager.h"
+#include "nm-utils.h"
+#include "nm-dbus-manager.h"
+#include "nm-device-802-11-wireless.h"
+#include "NetworkManagerSystem.h"
+// #include "NetworkManagerDbus.h"
+
+static void manager_state_changed (NMManager *manager);
+static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
+
+typedef struct {
+	GSList *devices;
+	gboolean wireless_enabled;
+	gboolean sleeping;
+} NMManagerPrivate;
+
+#define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
+
+G_DEFINE_TYPE (NMManager, nm_manager, G_TYPE_OBJECT)
+
+enum {
+	DEVICE_ADDED,
+	DEVICE_REMOVED,
+	STATE_CHANGE,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_STATE,
+	PROP_WIRELESS_ENABLED,
+
+	LAST_PROP
+};
+
+static void
+nm_manager_init (NMManager *msg)
+{
+}
+
+static void
+device_stop_and_free (gpointer data, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (data);
+
+	nm_device_set_removed (device, TRUE);
+	nm_device_deactivate (device);
+	g_object_unref (device);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
+
+	g_slist_foreach (priv->devices,
+					 device_stop_and_free,
+					 NULL);
+	g_slist_free (priv->devices);
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_WIRELESS_ENABLED:
+		manager_set_wireless_enabled (NM_MANAGER (object), g_value_get_boolean (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_STATE:
+		g_value_set_uint (value, nm_manager_get_state (NM_MANAGER (object)));
+		break;
+	case PROP_WIRELESS_ENABLED:
+		g_value_set_boolean (value, priv->wireless_enabled);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_manager_class_init (NMManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
+
+	/* virtual methods */
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->finalize = finalize;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_MANAGER_STATE,
+							"State",
+							"Current state",
+							0, 5, 0, /* FIXME */
+							G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED,
+							   "WirelessEnabled",
+							   "Is wireless enabled",
+							   TRUE,
+							   G_PARAM_READWRITE));
+
+	/* signals */
+	signals[DEVICE_ADDED] =
+		g_signal_new ("device-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, device_added),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	signals[DEVICE_REMOVED] =
+		g_signal_new ("device-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, device_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	signals[STATE_CHANGE] =
+		g_signal_new ("state-change",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, state_change),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__UCHAR,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_UCHAR);
+}
+
+NMManager *
+nm_manager_new (void)
+{
+	GObject *object;
+	DBusGConnection *connection;
+
+	object = g_object_new (NM_TYPE_MANAGER, NULL);
+
+	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	dbus_g_connection_register_g_object (connection,
+										 NM_DBUS_PATH,
+										 object);
+
+	return (NMManager *) object;
+}
+
+static void
+manager_state_changed (NMManager *manager)
+{
+	g_signal_emit (manager, signals[STATE_CHANGE], 0, nm_manager_get_state (manager));
+}
+
+static void
+manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+
+	if (priv->wireless_enabled == enabled)
+		return;
+
+	priv->wireless_enabled = enabled;
+
+	/* Tear down all wireless devices */
+	for (iter = priv->devices; iter; iter = iter->next) {
+		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data)) {
+			NMDevice *dev = NM_DEVICE (iter->data);
+
+			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+				nm_device_deactivate (dev);
+				nm_device_bring_down (dev);
+			}
+		}
+	}
+}
+
+static void
+manager_device_added (NMManager *manager, NMDevice *device)
+{
+	g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
+}
+
+static void
+manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+
+	/* Only these state changes can modify the manager state */
+	if (state == NM_DEVICE_STATE_ACTIVATED || state == NM_DEVICE_STATE_FAILED ||
+		state == NM_DEVICE_STATE_CANCELLED || state == NM_DEVICE_STATE_DISCONNECTED)
+
+		manager_state_changed (manager);
+}
+
+void
+nm_manager_add_device (NMManager *manager, NMDevice *device)
+{
+	NMManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
+
+	g_signal_connect (device, "state-changed",
+					  G_CALLBACK (manager_device_state_changed),
+					  manager);
+	nm_device_deactivate (device);
+
+	manager_device_added (manager, device);
+}
+
+static void
+manager_device_removed (NMManager *manager, NMDevice *device)
+{
+	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
+}
+ 
+void
+nm_manager_remove_device (NMManager *manager, NMDevice *device)
+{
+	NMManagerPrivate *priv;
+	GSList *iter;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		if (iter->data == device) {
+			priv->devices = g_slist_delete_link (priv->devices, iter);
+
+			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
+
+			nm_device_set_removed (device, TRUE);
+			nm_device_stop (device);
+	
+			manager_device_removed (manager, device);
+			g_object_unref (device);
+			break;
+		}
+	}
+}
+
+GSList *
+nm_manager_get_devices (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->devices;
+}
+
+NMDevice *
+nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_iface (device), iface))
+			return device;
+	}
+
+	return NULL;
+}
+
+NMDevice *
+nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_udi (device), udi))
+			return device;
+	}
+
+	return NULL;
+}
+
+NMState
+nm_manager_get_state (NMManager *manager)
+{
+	NMManagerPrivate *priv;
+	GSList *iter;
+	NMState state = NM_STATE_DISCONNECTED;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->sleeping)
+		return NM_STATE_ASLEEP;
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+
+		if (nm_device_has_active_link (dev))
+			return NM_STATE_CONNECTED;
+
+		if (nm_device_is_activating (dev))
+			state = NM_STATE_CONNECTING;
+	}
+
+	return state;
+}
+
+gboolean
+nm_manager_wireless_enabled (NMManager *manager)
+{
+	gboolean enabled;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	g_object_get (manager, NM_MANAGER_WIRELESS_ENABLED, &enabled, NULL);
+
+	return enabled;
+}
+
+void
+nm_manager_sleep (NMManager *manager, gboolean sleep)
+{
+	NMManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->sleeping == sleep)
+		return;
+
+	priv->sleeping = sleep;
+
+	if (sleep) {
+		GSList *iter;
+
+		nm_info ("Going to sleep.");
+
+		/* Just deactivate and down all devices from the device list,
+		 * we'll remove them in 'wake' for speed's sake.
+		 */
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *dev = NM_DEVICE (iter->data);
+
+			nm_device_set_removed (dev, TRUE);
+			nm_device_deactivate_quickly (dev);
+			nm_system_device_set_up_down (dev, FALSE);
+		}
+	} else {
+		nm_info  ("Waking up from sleep.");
+
+		while (g_slist_length (priv->devices))
+			nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
+
+		priv->devices = NULL;
+	}
+
+	manager_state_changed (manager);
+}
+
+NMDevice *
+nm_manager_get_active_device (NMManager *manager)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
+			return dev;
+	}
+
+	return NULL;
+}

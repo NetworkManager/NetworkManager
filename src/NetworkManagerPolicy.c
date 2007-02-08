@@ -40,6 +40,20 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-dbus-manager.h"
 
+struct NMPolicy {
+	NMManager *manager;
+	guint device_state_changed_idle_id;
+};
+
+/* NMPolicy is supposed to be one of the highest classes of the
+   NM class hierarchy and the only public API it needs is:
+   NMPolicy *nm_policy_new (NMManager *manager);
+   void nm_policy_destroy (NMPolicy *policy);
+
+   Until this hasn't fixed, keep the global policy around.
+*/
+static NMPolicy *global_policy;
+
 
 /*
  * nm_policy_activation_finish
@@ -286,15 +300,16 @@ nm_policy_device_change_check (gpointer user_data)
 {
 	NMData *        data = (NMData *) user_data;
 	NMAccessPoint * ap = NULL;
-	NMDevice *      new_dev = NULL;
-	NMDevice *      old_dev = NULL;
+	NMDevice *      new_dev;
+	NMDevice *      old_dev;
 	gboolean        do_switch = FALSE;
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
 	data->dev_change_check_idle_id = 0;
 
-	old_dev = nm_get_active_device (data);
+	g_assert (global_policy != NULL);
+	old_dev = nm_manager_get_active_device (global_policy->manager);
 
 	if (old_dev) {
 		guint32 caps = nm_device_get_capabilities (old_dev);
@@ -455,16 +470,13 @@ static gboolean
 nm_policy_device_activation (gpointer user_data)
 {
 	NMActRequest * req = (NMActRequest *) user_data;
-	NMData *       data;
-	NMDevice *     new_dev = NULL;
-	NMDevice *     old_dev = NULL;
+	NMDevice *     new_dev;
+	NMDevice *     old_dev;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
-	if ((old_dev = nm_get_active_device (data)))
+	g_assert (global_policy != NULL);
+	if ((old_dev = nm_manager_get_active_device (global_policy->manager)))
 		nm_device_deactivate (old_dev);
 
 	new_dev = nm_act_request_get_dev (req);
@@ -633,4 +645,137 @@ nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
 	if (source) {
 		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
 	}
+}
+
+/*****************************************************************************/
+
+static void
+device_change_check_done (gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+	policy->device_state_changed_idle_id = 0;
+}
+
+static void
+schedule_change_check (NMPolicy *policy)
+{
+	if (policy->device_state_changed_idle_id > 0)
+		return;
+
+	/* FIXME: Uncomment this when nm_policy_schedule_device_change_check and
+	   all it's callers have been removed. */
+#if 0
+	policy->device_state_changed_idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+															nm_policy_device_change_check,
+															policy,
+															device_change_check_done);
+#endif
+}
+
+static void
+device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
+		schedule_change_check (policy);
+}
+
+static void
+device_carrier_changed (NMDevice *device, gboolean carrier_on, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
+}
+
+static void
+device_added (NMManager *manager, NMDevice *device, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	g_signal_connect (device, "state-changed",
+					  G_CALLBACK (device_state_changed),
+					  policy);
+
+	g_signal_connect (device, "carrier-changed",
+					  G_CALLBACK (device_carrier_changed),
+					  policy);
+
+	/* FIXME: */
+	{
+		NMData *nm_data = nm_device_get_app_data (device);
+		nm_data->dev_list = g_slist_append (nm_data->dev_list, device);
+	}
+
+	/* FIXME: Uncomment once the patch to add these signals to wireless devices is committed */
+#if 0
+	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+		g_signal_connect (device, "network-added",
+						  G_CALLBACK (wireless_networks_changed),
+						  policy);
+		g_signal_connect (device, "network-removed",
+						  G_CALLBACK (wireless_networks_changed),
+						  policy);
+	}
+#endif
+
+	schedule_change_check (policy);
+}
+
+static void
+device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	/* FIXME: */
+	{
+		NMData *nm_data = nm_device_get_app_data (device);
+		nm_data->dev_list = g_slist_remove (nm_data->dev_list, device);
+	}
+
+	schedule_change_check (policy);
+}
+
+static void
+state_changed (NMManager *manager, NMState state, gpointer user_data)
+{
+	/* FIXME: Do cool stuff here */
+}
+
+NMPolicy *
+nm_policy_new (NMManager *manager)
+{
+	NMPolicy *policy;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	g_assert (global_policy == NULL);
+
+	policy = g_slice_new (NMPolicy);
+	policy->manager = g_object_ref (manager);
+
+	g_signal_connect (manager, "device-added",
+					  G_CALLBACK (device_added), policy);
+
+	g_signal_connect (manager, "device-removed",
+					  G_CALLBACK (device_removed), policy);
+
+	g_signal_connect (manager, "state-change",
+					  G_CALLBACK (state_changed), policy);
+
+	global_policy = policy;
+
+	return policy;
+}
+
+void
+nm_policy_destroy (NMPolicy *policy)
+{
+	if (policy) {
+		g_object_unref (policy->manager);
+		g_slice_free (NMPolicy, policy);
+	}
+
+	global_policy = NULL;
 }

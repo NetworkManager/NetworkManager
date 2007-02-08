@@ -305,44 +305,16 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 
 
 /*
- * nm_get_app_state_from_data
- *
- * Return the state of the network connection
- *
- */
-NMState nm_get_app_state_from_data (NMData *data)
-{
-	NMDevice *	act_dev = NULL;
-
-	g_return_val_if_fail (data != NULL, NM_STATE_DISCONNECTED);
-
-	if (data->asleep == TRUE)
-		return NM_STATE_ASLEEP;
-
-	act_dev = nm_get_active_device (data);
-	if (!act_dev && !data->modem_active)
-		return NM_STATE_DISCONNECTED;
-
-	if (nm_device_is_activating (act_dev))
-		return NM_STATE_CONNECTING;
-	else
-		return NM_STATE_CONNECTED;
-}
-
-
-/*
  * nm_dbus_signal_state_change
  *
  * Signal a change in state
  *
  */
-void nm_dbus_signal_state_change (DBusConnection *connection, NMData *data)
+void nm_dbus_signal_state_change (DBusConnection *connection, NMState state)
 {
 	DBusMessage *	message;
-	NMState		state;
-
+	
 	g_return_if_fail (connection != NULL);
-	g_return_if_fail (data != NULL);
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, NM_DBUS_SIGNAL_STATE_CHANGE)))
 	{
@@ -350,7 +322,6 @@ void nm_dbus_signal_state_change (DBusConnection *connection, NMData *data)
 		return;
 	}
 
-	state = nm_get_app_state_from_data (data);
 	dbus_message_append_args (message, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (connection, message, NULL))
 		nm_warning ("nm_dbus_signal_state_change(): Could not raise the signal!");

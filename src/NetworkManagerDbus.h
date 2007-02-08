@@ -59,14 +59,12 @@ char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
 
 void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status);
 
-void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
+void			nm_dbus_signal_state_change			(DBusConnection *connection, NMState state);
 
 void			nm_dbus_signal_wireless_network_change	(NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
 void			nm_dbus_signal_device_strength_change	(NMDevice80211Wireless *dev, gint strength);
 
 NMDevice *	nm_dbus_get_device_from_escaped_object_path	(NMData *data, const char *path);
-
-NMState		nm_get_app_state_from_data			(NMData *data);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
 

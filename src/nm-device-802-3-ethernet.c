@@ -284,23 +284,10 @@ real_get_generic_capabilities (NMDevice *dev)
 {
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
 	guint32		caps = NM_DEVICE_CAP_NONE;
-	const char *	udi = NULL;
-	char *		usb_test = NULL;
-	NMData *		app_data;
 
 	/* cipsec devices are also explicitly unsupported at this time */
 	if (strstr (nm_device_get_iface (dev), "cipsec"))
 		return NM_DEVICE_CAP_NONE;
-
-	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
-	app_data = nm_device_get_app_data (dev);
-	udi = nm_device_get_udi (dev);
-	if (    libhal_device_property_exists (app_data->hal_ctx, udi, "usb.interface.class", NULL)
-		&& (usb_test = libhal_device_get_property_string (app_data->hal_ctx, udi, "usb.interface.class", NULL)))
-	{
-		libhal_free_string (usb_test);
-		return NM_DEVICE_CAP_NONE;
-	}
 
 	if (supports_ethtool_carrier_detect (self) || supports_mii_carrier_detect (self))
 		caps |= NM_DEVICE_CAP_CARRIER_DETECT;

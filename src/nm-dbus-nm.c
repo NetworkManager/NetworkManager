@@ -419,7 +419,7 @@ out:
 	return reply;
 }
 
-
+#if 0
 static DBusMessage *
 nm_dbus_nm_create_test_device (DBusConnection *connection,
                                DBusMessage *message,
@@ -521,6 +521,7 @@ out:
 		g_object_unref (G_OBJECT (dev));
 	return reply;
 }
+#endif
 
 static DBusMessage *
 nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
@@ -606,7 +607,7 @@ nm_dbus_nm_sleep (DBusConnection *connection,
 	/* Not using nm_schedule_state_change_signal_broadcast() here
 	 * because we want the signal to go out ASAP.
 	 */
-	nm_dbus_signal_state_change (connection, data);
+	nm_dbus_signal_state_change (connection, NM_STATE_ASLEEP);
 
 	/* Just deactivate and down all devices from the device list,
 	 * we'll remove them in 'wake' for speed's sake.
@@ -642,18 +643,23 @@ nm_dbus_nm_wake (DBusConnection *connection,
 	data->asleep = FALSE;
 
 	/* Remove all devices from the device list */
+	/* FIXME: Well, not really. This whole file will be gone soon. */
+#if 0
 	while (g_slist_length (data->dev_list))
 		nm_remove_device (data, NM_DEVICE (data->dev_list->data));
 	g_slist_free (data->dev_list);
 	data->dev_list = NULL;
 
 	nm_add_initial_devices (data);
+#endif
 
 	nm_schedule_state_change_signal_broadcast (data);
 	nm_policy_schedule_device_change_check (data);
 
 	return NULL;
 }
+
+
 
 static DBusMessage *
 nm_dbus_nm_get_state (DBusConnection *connection,
@@ -673,7 +679,8 @@ nm_dbus_nm_get_state (DBusConnection *connection,
 		goto out;
 	}
 
-	state = nm_get_app_state_from_data (data);
+	/* FIXME: This function is deprecated and doesn't work anymore */
+	state = NM_STATE_UNKNOWN;
 	dbus_message_append_args (reply, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID);
 
 out:
@@ -706,8 +713,10 @@ NMDbusMethodList *nm_dbus_nm_methods_setup (NMData *data)
 	nm_dbus_method_list_add_method (list, "sleep",				nm_dbus_nm_sleep);
 	nm_dbus_method_list_add_method (list, "wake",				nm_dbus_nm_wake);
 	nm_dbus_method_list_add_method (list, "state",				nm_dbus_nm_get_state);
+#if 0
 	nm_dbus_method_list_add_method (list, "createTestDevice",		nm_dbus_nm_create_test_device);
 	nm_dbus_method_list_add_method (list, "removeTestDevice",		nm_dbus_nm_remove_test_device);
+#endif
 
 	return list;
 }

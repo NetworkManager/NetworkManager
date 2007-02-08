@@ -38,6 +38,7 @@
 
 struct NMVPNManager
 {
+	NMManager *         nm_manager;
 	NMData *			app_data;
 	GHashTable *		service_table;
 	GSList *			connections;
@@ -54,14 +55,16 @@ static void load_services (NMVPNManager *manager, GHashTable *table);
  * Create a new VPN manager instance.
  *
  */
-NMVPNManager *nm_vpn_manager_new (NMData *app_data)
+NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
 {
 	NMVPNManager *	manager;
 	NMDBusManager *	dbus_mgr;
 
+	g_return_val_if_fail (NM_IS_MANAGER (nm_manager), NULL);
 	g_return_val_if_fail (app_data != NULL, NULL);
 
 	manager = g_slice_new0 (NMVPNManager);
+	manager->nm_manager = g_object_ref (nm_manager);
 	manager->app_data = app_data;
 
 	manager->service_table = g_hash_table_new_full (g_str_hash,
@@ -98,6 +101,7 @@ void nm_vpn_manager_dispose (NMVPNManager *manager)
 	g_hash_table_destroy (manager->service_table);
 
 	nm_dbus_method_list_unref (manager->dbus_methods);
+	g_object_unref (manager->nm_manager);
 
 	memset (manager, 0, sizeof (NMVPNManager));
 	g_slice_free (NMVPNManager, manager);
@@ -330,7 +334,7 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 	if (!(service = nm_vpn_manager_find_service_by_name (manager, service_name)))
 		return;
 
-	if (!(parent_dev = nm_get_active_device (manager->app_data)))
+	if (!(parent_dev = nm_manager_get_active_device (manager->nm_manager)))
 	{
 		nm_warning ("nm_vpn_manager_activate_vpn_connection(): no currently active network device, won't activate VPN.");
 		return;

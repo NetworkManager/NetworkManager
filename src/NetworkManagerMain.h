@@ -25,25 +25,12 @@
 #include <glib.h>
 #include <glib/gthread.h>
 #include <dbus/dbus.h>
-#include <libhal.h>
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
 #include "nm-netlink-monitor.h"
 #include "nm-named-manager.h"
 #include "nm-device.h"
 #include "NetworkManagerDbusUtils.h"
-
-
-typedef enum NMIntState
-{
-	NM_INT_STATE_UNKNOWN = 0,
-	NM_INT_STATE_ASLEEP,
-	NM_INT_STATE_CONFIGURE_AP,
-	NM_INT_STATE_CONFIGURE_DEV,
-	NM_INT_STATE_CONFIGURE_IP,
-	NM_INT_STATE_CONNECTED,
-	NM_INT_STATE_DISCONNECTED
-} NMIntState;
 
 
 typedef struct NMActRequest NMActRequest;
@@ -54,8 +41,6 @@ typedef struct NMData
 {
 	GIOChannel *			sigterm_iochannel;
 	int					sigterm_pipe[2];
-
-	LibHalContext *		hal_ctx;
 
 	NmNetlinkMonitor *		netlink_monitor;
 
@@ -84,15 +69,6 @@ typedef struct NMData
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
 
-
-NMDevice *	nm_get_active_device					(NMData *data);
-
-NMDevice *	nm_create_device_and_add_to_list			(NMData *data, const char *udi, const char *iface,
-														gboolean test_device, NMDeviceType test_device_type);
-
-void			nm_add_initial_devices					(NMData *data);
-
-void			nm_remove_device						(NMData *data, NMDevice *dev);
 
 void			nm_schedule_state_change_signal_broadcast	(NMData *data);
 

@@ -42,6 +42,8 @@ NetworkManager_SOURCES =				\
 		nm-dbus-net.h				\
 		nm-dbus-nmi.c				\
 		nm-dbus-nmi.h				\
+		nm-hal-manager.c			\
+		nm-hal-manager.h			\
 		nm-ip4-config.c			\
 		nm-ip4-config.h			\
 		NetworkManager.c			\
@@ -54,6 +56,8 @@ NetworkManager_SOURCES =				\
 		NetworkManagerSystem.h		\
 		nm-logging.c				\
 		nm-logging.h				\
+		nm-manager.c				\
+		nm-manager.h				\
 		nm-netlink-monitor.c		\
 		nm-netlink-monitor.h		\
 		nm-activation-request.c		\

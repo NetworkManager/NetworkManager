@@ -27,7 +27,6 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
-#include <libhal.h>
 #include <getopt.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -41,6 +40,8 @@
 #include "NetworkManager.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+#include "nm-manager.h"
+#include "nm-hal-manager.h"	
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
@@ -64,329 +65,14 @@
 
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
 
-#define NO_HAL_MSG "Could not initialize connection to the HAL daemon."
-
 /*
  * Globals
  */
 static NMData		*nm_data = NULL;
+static NMManager *manager = NULL;
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
 static void nm_data_free (NMData *data);
-static void nm_hal_deinit (NMData *data);
-
-/*
- * nm_get_device_interface_from_hal
- *
- */
-static char *nm_get_device_interface_from_hal (LibHalContext *ctx, const char *udi)
-{
-	char *iface = NULL;
-
-	if (libhal_device_property_exists (ctx, udi, "net.interface", NULL))
-	{
-		/* Only use Ethernet and Wireless devices at the moment */
-		if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
-		{
-			char *category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
-			if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211")))
-			{
-				char *temp = libhal_device_get_property_string (ctx, udi, "net.interface", NULL);
-				iface = g_strdup (temp);
-				libhal_free_string (temp);
-			}
-			libhal_free_string (category);
-		}
-	}
-
-	return (iface);
-}
-
-
-/*
- * nm_device_test_wireless_extensions
- *
- * Test whether a given device is a wireless one or not.
- *
- */
-static NMDeviceType
-discover_device_type (LibHalContext *ctx, const char *udi)
-{
-	char * category = NULL;
-
-	if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
-		category = libhal_device_get_property_string(ctx, udi, "info.category", NULL);
-	if (category && (!strcmp (category, "net.80211")))
-		return DEVICE_TYPE_802_11_WIRELESS;
-	else if (category && (!strcmp (category, "net.80203")))
-		return DEVICE_TYPE_802_3_ETHERNET;
-	return DEVICE_TYPE_UNKNOWN;
-}
-
-/*
- * nm_get_device_driver_name
- *
- * Get the device's driver name from HAL.
- *
- */
-static char *
-nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
-{
-	char	*	driver_name = NULL;
-	char *	physdev_udi = NULL;
-
-	g_return_val_if_fail (ctx != NULL, NULL);
-	g_return_val_if_fail (udi != NULL, NULL);
-
-	physdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
-	if (physdev_udi && libhal_device_property_exists (ctx, physdev_udi, "info.linux.driver", NULL))
-	{
-		char *drv = libhal_device_get_property_string (ctx, physdev_udi, "info.linux.driver", NULL);
-		driver_name = g_strdup (drv);
-		g_free (drv);
-	}
-	g_free (physdev_udi);
-
-	return driver_name;
-}
-
-
-static NMDevice *
-create_nm_device (LibHalContext *ctx,
-				  const char *iface,
-				  const char *udi)
-{
-	NMDevice *dev;
-	char *driver;
-	NMDeviceType type;
-
-	type = discover_device_type (ctx, udi);
-	driver = nm_get_device_driver_name (ctx, udi);
-
-	switch (type) {
-	case DEVICE_TYPE_802_11_WIRELESS:
-		dev = (NMDevice *) nm_device_802_11_wireless_new (iface, udi, driver, FALSE, nm_data);
-		break;
-	case DEVICE_TYPE_802_3_ETHERNET:
-		dev = (NMDevice *) nm_device_802_3_ethernet_new (iface, udi, driver, FALSE, nm_data);
-		break;
-
-	default:
-		g_assert_not_reached ();
-	}
-
-	g_free (driver);
-
-	return dev;
-}
-
-
-/*
- * nm_create_device_and_add_to_list
- *
- * Create a new network device and add it to our device list.
- *
- * Returns:		newly allocated device on success
- *				NULL on failure
- */
-NMDevice * nm_create_device_and_add_to_list (NMData *data, const char *udi, const char *iface,
-					     gboolean test_device, NMDeviceType test_device_type)
-{
-	NMDevice	*dev = NULL;
-
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (udi  != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (strlen (iface) > 0, NULL);
-
-	/* If we are called to create a test devices, but test devices weren't enabled
-	 * on the command-line, don't create the device.
-	 */
-	if (!data->enable_test_devices && test_device)
-	{
-		nm_warning ("attempted to create a test device, "
-			    "but test devices were not enabled "
-			    "on the command line.");
-		return (NULL);
-	}
-
-	/* Make sure the device is not already in the device list */
-	if ((dev = nm_get_device_by_iface (data, iface)))
-		return (NULL);
-
-	if ((dev = create_nm_device (data->hal_ctx, iface, udi))) {
-		nm_info ("Now managing %s device '%s'.",
-				 NM_IS_DEVICE_802_11_WIRELESS (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)",
-				 nm_device_get_iface (dev));
-
-		data->dev_list = g_slist_append (data->dev_list, dev);
-		nm_device_deactivate (dev);
-
-		nm_policy_schedule_device_change_check (data);
-		nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_ADDED);
-	}
-
-	return dev;
-}
-
-
-/*
- * nm_remove_device
- *
- * Removes a particular device from the device list.
- */
-void nm_remove_device (NMData *data, NMDevice *dev)
-{
-	g_return_if_fail (data != NULL);
-	g_return_if_fail (dev != NULL);
-
-	nm_device_set_removed (dev, TRUE);
-	nm_device_stop (dev);
-	nm_dbus_schedule_device_status_change_signal (data, dev, NULL, DEVICE_REMOVED);
-
-	g_object_unref (G_OBJECT (dev));
-
-	/* Remove the device entry from the device list and free its data */
-	data->dev_list = g_slist_remove (data->dev_list, dev);
-}
-
-
-/*
- * nm_get_active_device
- *
- * Return the currently active device.
- *
- */
-NMDevice *nm_get_active_device (NMData *data)
-{
-	GSList * elt;
-	
-	g_return_val_if_fail (data != NULL, NULL);
-
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-		NMDevice * dev = NM_DEVICE (elt->data);
-
-		g_assert (dev);
-		if (nm_device_get_act_request (dev))
-			return dev;
-	}
-
-	return NULL;
-}
-
-
-/*
- * nm_hal_device_added
- *
- */
-static void nm_hal_device_added (LibHalContext *ctx, const char *udi)
-{
-	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
-	char		*iface = NULL;
-
-	g_return_if_fail (data != NULL);
-
-	nm_debug ("New device added (hal udi is '%s').", udi );
-
-	/* Sometimes the device's properties (like net.interface) are not set up yet,
-	 * so this call will fail, and it will actually be added when hal sets the device's
-	 * capabilities a bit later on.
-	 */
-	if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
-	{
-		nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
-		g_free (iface);
-	}
-}
-
-
-/*
- * nm_hal_device_removed
- *
- */
-static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
-{
-	NMData *   data;
-	NMDevice * dev;
-
-	data = (NMData *) libhal_ctx_get_user_data (ctx);
- 	g_return_if_fail (data != NULL);
-
-	nm_debug ("Device removed (hal udi is '%s').", udi );
-
-	if ((dev = nm_get_device_by_udi (data, udi))) {
-		nm_remove_device (data, dev);
-		nm_policy_schedule_device_change_check (data);
-	}
-}
-
-
-/*
- * nm_hal_device_new_capability
- *
- */
-static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, const char *capability)
-{
-	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
-
-	g_return_if_fail (data != NULL);
-
-	/*nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
-
-	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
-	{
-		char *iface;
-
-		if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, udi)))
-		{
-			nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
-			g_free (iface);
-		}
-	}
-}
-
-
-/*
- * nm_add_initial_devices
- *
- * Add all devices that hal knows about right now (ie not hotplug devices)
- *
- */
-void nm_add_initial_devices (NMData *data)
-{
-	char **	net_devices;
-	int		num_net_devices;
-	int		i;
-	DBusError	error;
-
-	g_return_if_fail (data != NULL);
-
-	dbus_error_init (&error);
-	/* Grab a list of network devices */
-	net_devices = libhal_find_device_by_capability (data->hal_ctx, "net", &num_net_devices, &error);
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("could not find existing networking devices: %s", error.message);
-		dbus_error_free (&error);
-	}
-
-	if (net_devices)
-	{
-		for (i = 0; i < num_net_devices; i++)
-		{
-			char *iface;
-
-			if ((iface = nm_get_device_interface_from_hal (data->hal_ctx, net_devices[i])))
-			{
-				nm_create_device_and_add_to_list (data, net_devices[i], iface, FALSE, DEVICE_TYPE_UNKNOWN);
-				g_free (iface);
-			}
-		}
-	}
-
-	libhal_free_string_array (net_devices);
-}
-
 
 /*
  * nm_state_change_signal_broadcast
@@ -394,17 +80,18 @@ void nm_add_initial_devices (NMData *data)
  */
 static gboolean nm_state_change_signal_broadcast (gpointer user_data)
 {
-	NMData *data = (NMData *)user_data;
-	NMDBusManager *dbus_mgr = NULL;
-	DBusConnection *dbus_connection = NULL;
+	NMState state;
+	NMDBusManager *dbus_mgr;
+	DBusConnection *dbus_connection;
 
-	g_return_val_if_fail (data != NULL, FALSE);
+	state = nm_manager_get_state (manager);
 
 	dbus_mgr = nm_dbus_manager_get ();
 	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 	if (dbus_connection)
-		nm_dbus_signal_state_change (dbus_connection, data);
+		nm_dbus_signal_state_change (dbus_connection, state);
 	g_object_unref (dbus_mgr);
+
 	return FALSE;
 }
 
@@ -415,16 +102,10 @@ static gboolean nm_state_change_signal_broadcast (gpointer user_data)
  */
 void nm_schedule_state_change_signal_broadcast (NMData *data)
 {
-	guint	  id = 0;
-	GSource	* source;
-
-	g_return_if_fail (data != NULL);
-
-	id = g_idle_add (nm_state_change_signal_broadcast, data);
-	source = g_main_context_find_source_by_id (NULL, id);
-	if (source) {
-		g_source_set_priority (source, G_PRIORITY_HIGH);
-	}
+	g_idle_add_full (G_PRIORITY_HIGH,
+					 nm_state_change_signal_broadcast,
+					 NULL,
+					 NULL);
 }
 
 
@@ -465,88 +146,6 @@ nm_monitor_setup (NMData *data)
 	nm_netlink_monitor_request_status (monitor, NULL);
 	return monitor;
 }
-
-static gboolean
-nm_hal_init (NMData *data,
-             DBusConnection *connection)
-{
-	gboolean	success = FALSE;
-	DBusError	error;
-
-	g_return_val_if_fail (data != NULL, FALSE);
-	g_return_val_if_fail (connection != NULL, FALSE);
-
-	/* Clean up an old context */
-	if (data->hal_ctx) {
-		nm_warning ("a HAL context already existed.  BUG.");
-		nm_hal_deinit (data);
-	}
-
-	/* Initialize a new libhal context */
-	if (!(data->hal_ctx = libhal_ctx_new ())) {
-		nm_warning ("Could not get connection to the HAL service.");
-		goto out;
-	}
-
-	libhal_ctx_set_dbus_connection (data->hal_ctx, connection);
-
-	dbus_error_init (&error);
-	if (!libhal_ctx_init (data->hal_ctx, &error)) {
-		nm_error ("libhal_ctx_init() failed: %s\n"
-			  "Make sure the hal daemon is running?", 
-			  error.message);
-		goto out;
-	}
-
-	libhal_ctx_set_user_data (data->hal_ctx, data);
-	libhal_ctx_set_device_added (data->hal_ctx, nm_hal_device_added);
-	libhal_ctx_set_device_removed (data->hal_ctx, nm_hal_device_removed);
-	libhal_ctx_set_device_new_capability (data->hal_ctx, nm_hal_device_new_capability);
-
-	libhal_device_property_watch_all (data->hal_ctx, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_error ("libhal_device_property_watch_all(): %s", error.message);
-		libhal_ctx_shutdown (data->hal_ctx, NULL);
-		goto out;
-	}
-
-	/* Add any devices we know about */
-	nm_add_initial_devices (data);
-	success = TRUE;
-
-out:
-	if (!success) {
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-		if (data->hal_ctx) {
-			libhal_ctx_free (data->hal_ctx);
-			data->hal_ctx = NULL;
-		}
-	}
-
-	return success;
-}
-
-static void
-nm_hal_deinit (NMData *data)
-{
-	DBusError error;
-
-	g_return_if_fail (data != NULL);
-
-	if (!data->hal_ctx)
-		return;
-
-	dbus_error_init (&error);
-	libhal_ctx_shutdown (data->hal_ctx, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_warning ("libhal shutdown failed - %s", error.message);
-		dbus_error_free (&error);
-	}
-	libhal_ctx_free (data->hal_ctx);
-	data->hal_ctx = NULL;
-}
-
 
 /*
  * nm_data_new
@@ -601,16 +200,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 }
 
 
-static void device_stop_and_free (NMDevice *dev, gpointer user_data)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_device_set_removed (dev, TRUE);
-	nm_device_deactivate (dev);
-	g_object_unref (G_OBJECT (dev));
-}
-
-
 /*
  * nm_data_free
  *
@@ -626,10 +215,6 @@ static void nm_data_free (NMData *data)
 	/* Kill any active VPN connection */
 	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
 		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
-
-	/* Stop and destroy all devices */
-	g_slist_foreach (data->dev_list, (GFunc) device_stop_and_free, NULL);
-	g_slist_free (data->dev_list);
 
 	if (data->netlink_monitor) {
 		g_object_unref (G_OBJECT (data->netlink_monitor));
@@ -647,8 +232,6 @@ static void nm_data_free (NMData *data)
 
 	g_main_loop_unref (data->main_loop);
 	g_io_channel_unref(data->sigterm_iochannel);
-
-	nm_hal_deinit (data);
 
 	g_slice_free (NMData, data);
 }
@@ -679,19 +262,7 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
 	gboolean old_owner_good = (old && (strlen (old) > 0));
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
-	/* Only care about signals from HAL */
-	if (strcmp (name, "org.freedesktop.Hal") == 0) {
-		if (!old_owner_good && new_owner_good) {
-			/* HAL just appeared */
-			if (!nm_hal_init (data, connection)) {
-				nm_error (NO_HAL_MSG);
-				exit (EXIT_FAILURE);
-			}
-		} else if (old_owner_good && !new_owner_good) {
-			/* HAL went away.  Bad HAL. */
-			nm_hal_deinit (data);
-		}
-	} else if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
+	if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
 		if (!old_owner_good && new_owner_good) {
 			/* NMI appeared, update stuff */
 			nm_policy_schedule_allowed_ap_list_update (data);
@@ -699,28 +270,6 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
 		} else if (old_owner_good && !new_owner_good) {
 			/* nothing */
 		}
-	}
-}
-
-static void
-nm_dbus_connection_changed_handler (NMDBusManager *mgr,
-                                    DBusConnection *connection,
-                                    gpointer user_data)
-{
-	NMData *data = (NMData *) user_data;
-	char * 	owner;
-
-	if (!connection) {
-		nm_hal_deinit (data);
-		return;
-	}
-
-	if ((owner = nm_dbus_manager_get_name_owner (mgr, "org.freedesktop.Hal"))) {
-		if (!nm_hal_init (data, connection)) {
-			nm_error (NO_HAL_MSG);
-			exit (EXIT_FAILURE);
-		}
-		g_free (owner);
 	}
 }
 
@@ -774,6 +323,8 @@ main (int argc, char *argv[])
 	gboolean		show_usage = FALSE;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
+	NMPolicy *policy;
+	NMHalManager *hal_manager = NULL;
 	NMDBusManager *	dbus_mgr;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
@@ -864,8 +415,6 @@ main (int argc, char *argv[])
 	}
 	g_signal_connect (G_OBJECT (dbus_mgr), "name-owner-changed",
 	                  G_CALLBACK (nm_name_owner_changed_handler), nm_data);
-	g_signal_connect (G_OBJECT (dbus_mgr), "dbus-connection-changed",
-	                  G_CALLBACK (nm_dbus_connection_changed_handler), nm_data);
 	id = nm_dbus_manager_register_signal_handler (dbus_mgr,
 	                                              NMI_DBUS_INTERFACE,
 	                                              NULL,
@@ -880,6 +429,9 @@ main (int argc, char *argv[])
 	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->device_methods);
 	nm_data->net_methods = nm_dbus_net_methods_setup (nm_data);
 
+	manager = nm_manager_new ();
+	policy = nm_policy_new (manager);
+
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();
 	if (!sup_mgr) {
@@ -887,7 +439,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	nm_data->vpn_manager = nm_vpn_manager_new (nm_data);
+	nm_data->vpn_manager = nm_vpn_manager_new (manager, nm_data);
 	if (!nm_data->vpn_manager) {
 		nm_warning ("Failed to start the VPN manager.");
 		goto done;
@@ -905,13 +457,9 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	/* If Hal is around, grab a device list from it */
-	if (nm_dbus_manager_name_has_owner (dbus_mgr, "org.freedesktop.Hal")) {
-		if (!nm_hal_init (nm_data, dbus_connection)) {
-			nm_error (NO_HAL_MSG);
-			goto done;
-		}
-	}
+	hal_manager = nm_hal_manager_new (manager, nm_data);
+	if (!hal_manager)
+		goto done;
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
 	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE)) {
@@ -940,6 +488,12 @@ done:
 	nm_print_open_socks ();
 
 	nm_dbus_manager_remove_signal_handler (dbus_mgr, nm_data->nmi_sig_handler_id);
+
+	nm_hal_manager_destroy (hal_manager);
+	nm_policy_destroy (policy);
+
+	if (manager)
+		g_object_unref (manager);
 
 	nm_data_free (nm_data);
 

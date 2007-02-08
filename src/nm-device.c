@@ -419,55 +419,15 @@ void
 nm_device_set_active_link (NMDevice *self,
                            const gboolean link_active)
 {
-	NMData *		app_data;
-	NMActRequest *	req;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (self->priv->app_data != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	app_data = self->priv->app_data;
-	req = nm_device_get_act_request (self);
-
-	if (self->priv->link_active == link_active)
-		return;
-
-	self->priv->link_active = link_active;
-
-	/* Deactivate a currently active device */
-	if (!link_active && req) {
-		nm_policy_schedule_device_change_check (app_data);
-	} else if (link_active && !req) {
-		NMDevice *	act_dev = nm_get_active_device (app_data);
-		NMActRequest *	act_dev_req = act_dev ? nm_device_get_act_request (act_dev) : NULL;
-
-		/* Should we switch to this device now that it has a link?
-		 *
-		 * Only auto-switch for wired devices, AND...
-		 *
-		 * only switch to fully-supported devices, since ones that don't have carrier detection
-		 * capability usually report the carrier as "always on" even if its not really on.  User
-		 * must manually choose semi-supported devices.
-		 *
-		 */
-		if (NM_IS_DEVICE_802_3_ETHERNET (self) && (nm_device_get_capabilities (self) & NM_DEVICE_CAP_CARRIER_DETECT))
-		{
-			gboolean 		do_switch = act_dev ? FALSE : TRUE;	/* If no currently active device, switch to this one */
-			NMActRequest *	act_req;
-
-			/* If active device is wireless, switch to this one */
-			if (act_dev && NM_IS_DEVICE_802_11_WIRELESS (act_dev) && act_dev_req && !nm_act_request_get_user_requested (act_dev_req))
-				do_switch = TRUE;
-
-			if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE)))
-			{
-				nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));
-				nm_policy_schedule_device_change_check (app_data);
-			}
-		}
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	if (priv->link_active != link_active) {
+		priv->link_active = link_active;
+		g_signal_emit_by_name (self, "carrier-changed", link_active);
 	}
-
-	g_signal_emit_by_name (self, "carrier_changed", link_active);
-	nm_dbus_schedule_device_status_change_signal (app_data, self, NULL, link_active ? DEVICE_CARRIER_ON : DEVICE_CARRIER_OFF);
 }
 
 
@@ -1862,7 +1822,7 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 		break;
 	}
 
-	g_signal_emit_by_name (device, "state_changed", state);
+	g_signal_emit_by_name (device, "state-changed", state);
 }
 
 

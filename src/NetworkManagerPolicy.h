@@ -23,9 +23,16 @@
 #define NETWORK_MANAGER_POLICY_H
 
 #include "NetworkManager.h"
+#include "nm-manager.h"
 #include "nm-device.h"
 #include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
+
+typedef struct NMPolicy NMPolicy;
+
+NMPolicy *nm_policy_new (NMManager *manager);
+void nm_policy_destroy (NMPolicy *policy);
+
 
 void			nm_policy_schedule_device_change_check	(NMData *data);
 

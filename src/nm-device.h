@@ -42,13 +42,6 @@
 # define nm_ioctl_info(fmt, args...) do { } while(0)
 #endif
 
-typedef enum NMWirelessScanInterval
-{
-	NM_WIRELESS_SCAN_INTERVAL_INIT = 0,
-	NM_WIRELESS_SCAN_INTERVAL_ACTIVE,
-	NM_WIRELESS_SCAN_INTERVAL_INACTIVE
-} NMWirelessScanInterval;
-
 typedef enum NMActStageReturn
 {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,

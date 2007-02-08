@@ -83,7 +83,7 @@ nm_device_interface_init (gpointer g_iface)
 							G_PARAM_READABLE));
 
 	/* Signals */
-	g_signal_new ("state_changed",
+	g_signal_new ("state-changed",
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMDeviceInterface, state_changed),
@@ -92,7 +92,7 @@ nm_device_interface_init (gpointer g_iface)
 				  G_TYPE_NONE, 1,
 				  G_TYPE_UINT);
 
-	g_signal_new ("carrier_changed",
+	g_signal_new ("carrier-changed",
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMDeviceInterface, carrier_changed),
