@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-04 01:55+0000\n"
+"POT-Creation-Date: 2007-02-07 08:57+0000\n"
 "PO-Revision-Date: 2006-11-18 00:57+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
@@ -328,96 +328,101 @@ msgstr "إنتقاء ملف"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
 #, fuzzy
+msgid "CA file:"
+msgstr "إنتقاء ملف"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+#, fuzzy
 msgid "Certificate:"
 msgstr "شهادا_ت"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 #, fuzzy
 msgid "Connection Type:"
 msgstr "نوع الاتصال - الصفحة %d/%d"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 #, fuzzy
 msgid "Direction:"
 msgstr "<b>الإتجاه:</b>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 #, fuzzy
 msgid "Key:"
 msgstr "[مفتاح]"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 #, fuzzy
 msgid "Local IP:"
 msgstr "IP الم_حلّي:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 #, fuzzy
 msgid "Password"
 msgstr "كلمة السّر"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 #, fuzzy
 msgid "Remote IP:"
 msgstr "IP ال_بعيد:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 #, fuzzy
 msgid "Shared Key:"
 msgstr "اتفاق على المفتاح"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 #, fuzzy
 msgid "Shared key"
 msgstr "اتفاق على المفتاح"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 #, fuzzy
 msgid "Use LZO compression"
 msgstr "ا_ستعمل امرا مخصصا"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 #, fuzzy
 msgid "Use TAP device"
 msgstr "لا يمكن استخدام جهاز الصوت"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 #, fuzzy
 msgid "Use TCP connection"
 msgstr "ال_اسم المستخدم للاتصال:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 #, fuzzy
 msgid "Use TLS auth:"
 msgstr "TLS غير متوفر"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 #, fuzzy
 msgid "Use cipher:"
 msgstr "استخدام الثّلاث نقاط"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 #, fuzzy
 msgid "Username:"
 msgstr "اسم المستخدم:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -425,27 +430,27 @@ msgid ""
 "X.509 with Password Authentication"
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 #, fuzzy
 msgid "_Gateway:"
 msgstr "البوّابة"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 #, fuzzy
 msgid "_Import Saved Configuration..."
 msgstr "حدّد سابقة للإعدادات المحفوظة"
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr ""
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 #, fuzzy
 msgid "none"
 msgstr "لا يوجد"
