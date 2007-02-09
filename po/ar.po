@@ -1,62 +1,62 @@
+# translation of NetworkManager.HEAD.ar.po to Arabic
 # Arabic translations for PACKAGE package.
 # Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
-# Automatically generated, 2006.
 #
+# Automatically generated, 2006.
+# Khaled Hosny <khaledhosny@eglug.org>, 2007.
 msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-07 08:57+0000\n"
-"PO-Revision-Date: 2006-11-18 00:58+0100\n"
-"Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
+"PO-Revision-Date: 2007-02-09 15:37+0200\n"
+"Last-Translator: Khaled Hosny <khaledhosny@eglug.org>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n == 0 ? 0 : n == 1 ? 1 : n == 2 ? 2 : n >= "
-"3 && n <= 10 ? 3 : n >= 11 && n <= 99 ? 4 : 5;\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && n<=10 ? 2 : 3\n"
 "X-Poedit-Language: Arabic\n"
+"X-Generator: KBabel 1.11.4\n"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:417
-#, fuzzy
 msgid "Cannot add VPN connection"
-msgstr "لا يمكن اقامة اتصال مع %s."
+msgstr "لا يمكن إضافة اتصال VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:419
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr ""
+msgstr "لم يُعثر على برمجيات VPN مناسبة على نظامك. اتصل بمدير نظامك."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:461
-#, fuzzy
 msgid "Cannot import VPN connection"
-msgstr "لا يمكن اقامة اتصال مع %s."
+msgstr "لا يمكن استيراد اتصال VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:463
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr ""
+msgstr "لم أجد برمجيات مناسبة لاتصال VPN من نوع '%s' لاستيرادها للملف '%s'. اتصل بمدير نظامك."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:580
-#, fuzzy, c-format
+#, c-format
 msgid "Error retrieving VPN connection '%s'"
-msgstr "خطأ أثناء فتح اتصال brlapi"
+msgstr "خطأ أثناء فتح اتصال VPN '%s'"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:583
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr ""
+msgstr "لم أعثر على ملفات واجهة المستخدم لاتصال VPN من نوع '%s'. اتصل بمدير نظامك."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:727
-#, fuzzy, c-format
+#, c-format
 msgid "Delete VPN connection \"%s\"?"
-msgstr "نوع الاتصال - الصفحة %d/%d"
+msgstr "حذف اتصال VPN \"%s\"؟"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:730
 #, c-format
@@ -64,16 +64,15 @@ msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr ""
+msgstr "ستُفقد كل معلومات اتصال VPN  \"%s\" و قد تحتاج أن يعطيك مدير نظامك معلومات لإنشاء اتصال جديد."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:924
-#, fuzzy
 msgid "Unable to load"
-msgstr "لا يمكن تحميل·'%s':·%s"
+msgstr "تعذّر التحميل"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:926
 msgid "Cannot find some needed resources (the glade file)!"
-msgstr ""
+msgstr "لم أعثر على بعض الموارد المطلوبة (ملف glade)!"
 
 #. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
 #. NULL,
@@ -84,9 +83,8 @@ msgstr ""
 #. GTK_RESPONSE_ACCEPT,
 #. NULL));
 #: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-#, fuzzy
 msgid "Create VPN Connection"
-msgstr "نوع الاتصال - الصفحة %d/%d"
+msgstr "انشيء اتصال VPN"
 
 #. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
 #. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
@@ -98,555 +96,116 @@ msgstr "نوع الاتصال - الصفحة %d/%d"
 #. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
 #. Edit dialog
 #: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-#, fuzzy
 msgid "Edit VPN Connection"
-msgstr "نوع الاتصال - الصفحة %d/%d"
+msgstr "حرر اتصال VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-#, fuzzy
 msgid "Add a new VPN connection"
-msgstr "إضافة قائمة مهام جديدة"
+msgstr "أضف اتصال VPN جديد"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-#, fuzzy
 msgid "Delete the selected VPN connection"
-msgstr "حذف وصلة الموقع المزار المنتقات"
+msgstr "احذف اتصال VPN المُنتقى"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "E_xport"
-msgstr ""
+msgstr "_صدِّر"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-#, fuzzy
 msgid "Edit the selected VPN connection"
-msgstr "انقر لتحرير اللوحة المنتقات"
+msgstr "حرر  اتصال VPN المُنتقى"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-#, fuzzy
 msgid "Export the VPN settings to a file"
-msgstr "لا يمكن استيراد تعيينات AccessX من الملف '%s'"
+msgstr "صِّر اعدادات VPN إلى ملف"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Export the selected VPN connection to a file"
-msgstr ""
+msgstr "صدِّر اعدادات VPN المنتقاة إلى ملف"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Manage Virtual Private Network Connections"
-msgstr ""
+msgstr "أدر اتصالات الشبكة الخاصة التخيّليّة"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-#, fuzzy
 msgid "VPN Connections"
-msgstr "الإتّصالات النّشطة"
+msgstr "إتّصالات VPN"
 
 #: ../src/nm-ap-security-wep.c:52
-#, fuzzy
 msgid "40-bit WEP"
-msgstr "سري كبير [40]"
+msgstr "40-bit WEP"
 
 #: ../src/nm-ap-security-wep.c:54
-#, fuzzy
 msgid "104-bit WEP"
-msgstr "عدد صحيح بقيمة 16 بت غير موقع"
+msgstr "104-bit WEP"
 
 #: ../src/nm-ap-security-wpa-psk.c:51
 msgid "WPA TKIP"
-msgstr ""
+msgstr "WPA TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:53
 msgid "WPA CCMP"
-msgstr ""
+msgstr "WPA CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:55
-#, fuzzy
 msgid "WPA Automatic"
-msgstr "تنزيلات آلية"
+msgstr "WPA آلي"
 
 #: ../src/nm-ap-security-wpa-psk.c:60
 msgid "WPA2 TKIP"
-msgstr ""
+msgstr "WPA2 TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:62
 msgid "WPA2 CCMP"
-msgstr ""
+msgstr "WPA2 CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:64
-#, fuzzy
 msgid "WPA2 Automatic"
-msgstr "تنزيلات آلية"
+msgstr "WPA2 آلي"
 
 #: ../src/nm-ap-security.c:334
-#, fuzzy
 msgid "none"
-msgstr "لا يوجد"
+msgstr "بلا"
 
 #: ../src/nm-netlink-monitor.c:174
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "لم أتمكن من إنشاء مقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
 
 #: ../src/nm-netlink-monitor.c:192
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "لم أتمكن من الربط بمقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
 
 #: ../src/nm-netlink-monitor.c:427
-#, fuzzy
 msgid "operation took too long"
-msgstr "سلسلة الشّهادة طويلة جدّاً"
+msgstr "استغرقت العملية زمنا طويلا"
 
 #: ../src/nm-netlink-monitor.c:524
 msgid "received data from wrong type of sender"
-msgstr ""
+msgstr "تلقيت بيانات من نوع خطأ من المرسلين"
 
 #: ../src/nm-netlink-monitor.c:537
 msgid "received data from unexpected sender"
-msgstr ""
+msgstr "تلقيت بيانات من مرسل غير متوقّع"
 
 #: ../src/nm-netlink-monitor.c:666
 msgid "too much data was sent over socket and some of it was lost"
-msgstr ""
+msgstr "أرسل الكثير جدا من البيانات عبر المقبس وفُقِد بعضها"
 
 #: ../src/nm-netlink-monitor.c:774
 msgid "error occurred while waiting for data on socket"
-msgstr ""
+msgstr "حدث خطأ بينما ننتظر البيانات على المقبس"
 
 #: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
 msgid "WPA2 Enterprise"
-msgstr ""
+msgstr "WPA2 مشروعات"
 
 #: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
 msgid "WPA Enterprise"
-msgstr ""
+msgstr "WPA مشروعات"
 
 #: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
 msgid "LEAP"
-msgstr ""
+msgstr "LEAP"
 
-#, fuzzy
-#~ msgid "Passphrase for wireless network %s"
-#~ msgstr "مراقبة قوة الرابط الهوائي للشبكة"
-
-#, fuzzy
-#~ msgid "Connection to the wireless network '%s' failed."
-#~ msgstr "فشل الاتصال بخادم القواميس %s:%d"
-
-#, fuzzy
-#~ msgid "Connection to the wired network failed."
-#~ msgstr "فشل الاتصال بخادم القواميس %s:%d"
-
-#, fuzzy
-#~ msgid "Error displaying connection information:"
-#~ msgstr "سطر لعرض المعلومات"
-
-#, fuzzy
-#~ msgid "No active connections!"
-#~ msgstr "جاري جلب اتّصالات الإنترنت النّشطة"
-
-#, fuzzy
-#~ msgid "%d Mb/s"
-#~ msgstr "مب"
-
-#, fuzzy
-#~ msgid "Wired Ethernet (%s)"
-#~ msgstr "واجهة إيثرنت"
-
-#, fuzzy
-#~ msgid "Wireless Ethernet (%s)"
-#~ msgstr "واجهة إيثرنت"
-
-#, fuzzy
-#~ msgid "Unknown"
-#~ msgstr "مجهول"
-
-#, fuzzy
-#~ msgid "NetworkManager Applet"
-#~ msgstr "بريمج جافا"
-
-#, fuzzy
-#~ msgid "translator-credits"
-#~ msgstr "Yousef Raffah يوسف رفه (yousef@raffah.com)"
-
-#, fuzzy
-#~ msgid "VPN Login Failure"
-#~ msgstr "فشل في توقيع الشّهادة"
-
-#, fuzzy
-#~ msgid "VPN Start Failure"
-#~ msgstr "فشل في توقيع الشّهادة"
-
-#, fuzzy
-#~ msgid "VPN Connect Failure"
-#~ msgstr "فشل في توقيع الشّهادة"
-
-#, fuzzy
-#~ msgid "VPN Configuration Error"
-#~ msgstr "خطأ أثناء حفظ الإعدادات: %s."
-
-#, fuzzy
-#~ msgid "VPN Login Message"
-#~ msgstr "رسالة إجتماع رديئة"
-
-#, fuzzy
-#~ msgid "(unknown)"
-#~ msgstr "(مجهول)"
-
-#, fuzzy
-#~ msgid "Preparing device %s for the wired network..."
-#~ msgstr "تحميل المعلومات لجهاز شبكة"
-
-#, fuzzy
-#~ msgid "Preparing device %s for the wireless network '%s'..."
-#~ msgstr "تحميل المعلومات لجهاز شبكة"
-
-#, fuzzy
-#~ msgid "Configuring device %s for the wired network..."
-#~ msgstr "تحميل المعلومات لجهاز شبكة"
-
-#, fuzzy
-#~ msgid "Finishing connection to the wired network..."
-#~ msgstr "نصّب اتصال شبكة بهذا الخادم"
-
-#, fuzzy
-#~ msgid "Finishing connection to the wireless network '%s'..."
-#~ msgstr "نصّب اتصال شبكة بهذا الخادم"
-
-#, fuzzy
-#~ msgid "NetworkManager is not running"
-#~ msgstr "GDM لا يعمل"
-
-#, fuzzy
-#~ msgid "Networking disabled"
-#~ msgstr "<b>بريمجات معطلة</b>"
-
-#, fuzzy
-#~ msgid "No network connection"
-#~ msgstr "لم توجد أجهزة شبكة"
-
-#, fuzzy
-#~ msgid "Wired network connection"
-#~ msgstr "نوع الاتصال - الصفحة %d/%d"
-
-#, fuzzy
-#~ msgid "Wireless network connection to '%s' (%d%%)"
-#~ msgstr "نصّب اتصال شبكة بهذا الخادم"
-
-#, fuzzy
-#~ msgid "VPN connection to '%s'"
-#~ msgstr "الإتّصال بالنّادل"
-
-#, fuzzy
-#~ msgid "VPN connecting to '%s'"
-#~ msgstr "ا_ستعادة الحالة الأصلية"
-
-#, fuzzy
-#~ msgid "Create _New Wireless Network..."
-#~ msgstr "إنشاء قائمة مراسَلين جديدة"
-
-#, fuzzy
-#~ msgid "_VPN Connections"
-#~ msgstr "الإتّصالات النّشطة"
-
-#, fuzzy
-#~ msgid "_Configure VPN..."
-#~ msgstr "إعداد خادم _X..."
-
-#, fuzzy
-#~ msgid "_Dial Up Connections"
-#~ msgstr "الاتّصالات المشفّرة فقط"
-
-#, fuzzy
-#~ msgid "Connect to %s..."
-#~ msgstr "الاتصال بالنّادل..."
-
-#, fuzzy
-#~ msgid "Disconnect from %s..."
-#~ msgstr "أخبار من %s"
-
-#, fuzzy
-#~ msgid "NetworkManager is not running..."
-#~ msgstr "GDM لا يعمل"
-
-#, fuzzy
-#~ msgid "Enable _Networking"
-#~ msgstr "مكّن ال_تّسجيل"
-
-#, fuzzy
-#~ msgid "Enable _Wireless"
-#~ msgstr "الواجهة اللّاسلكيّة"
-
-#, fuzzy
-#~ msgid "Connection _Information"
-#~ msgstr "بيانات سيّئة"
-
-#, fuzzy
-#~ msgid "_Help"
-#~ msgstr "م_ساعدة"
-
-#, fuzzy
-#~ msgid "_About"
-#~ msgstr "_حول"
-
-#, fuzzy
-#~ msgid "Open System"
-#~ msgstr "_فتح مراقب النظام"
-
-#, fuzzy
-#~ msgid "Shared Key"
-#~ msgstr "اتفاق على المفتاح"
-
-#, fuzzy
-#~ msgid "Automatic (Default)"
-#~ msgstr "إفتراض الحروف"
-
-#, fuzzy
-#~ msgid "Dynamic WEP"
-#~ msgstr "_مفتاح WEP:"
-
-#, fuzzy
-#~ msgid "None"
-#~ msgstr "لا شيء"
-
-#, fuzzy
-#~ msgid "TLS"
-#~ msgstr "TLS غير متوفر"
-
-#, fuzzy
-#~ msgid "WPA2 Personal"
-#~ msgstr "المعلومات الشخصية"
-
-#, fuzzy
-#~ msgid "WPA Personal"
-#~ msgstr "المعلومات الشخصية"
-
-#, fuzzy
-#~ msgid "Orientation"
-#~ msgstr "الإتّجاه"
-
-#, fuzzy
-#~ msgid "The orientation of the tray."
-#~ msgstr "إتجاه الطبق."
-
-#, fuzzy
-#~ msgid "Wired Network (%s)"
-#~ msgstr "واجهة الشبكة"
-
-#, fuzzy
-#~ msgid "_Wired Network"
-#~ msgstr "واجهة الشبكة"
-
-#, fuzzy
-#~ msgid "Wireless Network (%s)"
-#~ msgid_plural "Wireless Networks (%s)"
-#~ msgstr[0] "واجهة الشبكة"
-#~ msgstr[1] ""
-
-#, fuzzy
-#~ msgid "Wireless Network"
-#~ msgid_plural "Wireless Networks"
-#~ msgstr[0] "واجهة الشبكة"
-#~ msgstr[1] ""
-
-#, fuzzy
-#~ msgid " (invalid Unicode)"
-#~ msgstr " (يونيكود غير صحيح)"
-
-#, fuzzy
-#~ msgid "Create new wireless network"
-#~ msgstr "إنشاء قائمة مراسَلين جديدة"
-
-#, fuzzy
-#~ msgid "Create New Wireless Network"
-#~ msgstr "إنشاء قائمة مراسَلين جديدة"
-
-#, fuzzy
-#~ msgid "Existing wireless network"
-#~ msgstr "مراقبة قوة الرابط الهوائي للشبكة"
-
-#, fuzzy
-#~ msgid "Cannot start VPN connection '%s'"
-#~ msgstr "لا يمكن بدأ تشغيل الشاشة الجديدة"
-
-#, fuzzy
-#~ msgid " "
-#~ msgstr " "
-
-#, fuzzy
-#~ msgid "Authentication:"
-#~ msgstr "توثق"
-
-#, fuzzy
-#~ msgid "Broadcast Address:"
-#~ msgstr "عنوان البريد الإلكتروني"
-
-#, fuzzy
-#~ msgid "CA Certificate File:"
-#~ msgstr "سلطة شهادة (CA) غير صحيحة"
-
-#, fuzzy
-#~ msgid "C_onnect"
-#~ msgstr "إِ_تّصل"
-
-#, fuzzy
-#~ msgid "Client Certificate File:"
-#~ msgstr "شهادة عميل SSL"
-
-#, fuzzy
-#~ msgid "Connection Information"
-#~ msgstr "بيانات سيّئة"
-
-#, fuzzy
-#~ msgid "Default Route:"
-#~ msgstr "إفتراض الحروف"
-
-#, fuzzy
-#~ msgid "Destination Address:"
-#~ msgstr "عنوان البريد الإلكتروني"
-
-#, fuzzy
-#~ msgid "Driver:"
-#~ msgstr "<b>الدافعة</b>"
-
-#, fuzzy
-#~ msgid "EAP Method:"
-#~ msgstr "طريقة NAT"
-
-#, fuzzy
-#~ msgid "Hardware Address:"
-#~ msgstr "عنوان العتاد:"
-
-#, fuzzy
-#~ msgid "IP Address:"
-#~ msgstr "عنوان IP:"
-
-#, fuzzy
-#~ msgid "Identity:"
-#~ msgstr "الهويّة"
-
-#, fuzzy
-#~ msgid "Interface:"
-#~ msgstr "الواجهة"
-
-#, fuzzy
-#~ msgid "Key Type:"
-#~ msgstr "نوع _مفتاح:"
-
-#, fuzzy
-#~ msgid "Key management:"
-#~ msgstr "إدارة الحسابات"
-
-#, fuzzy
-#~ msgid "Key:"
-#~ msgstr "[مفتاح]"
-
-#, fuzzy
-#~ msgid ""
-#~ "Open System\n"
-#~ "Shared Key"
-#~ msgstr "فشل فتح شاشة نظام نوافذ X '%s'\n"
-
-#, fuzzy
-#~ msgid "Other Wireless Network..."
-#~ msgstr "مراقبة قوة الرابط الهوائي للشبكة"
-
-#, fuzzy
-#~ msgid "Password:"
-#~ msgstr "كلمة المرور:"
-
-#, fuzzy
-#~ msgid "Primary DNS:"
-#~ msgstr "<b>خوادم DNS</b>"
-
-#, fuzzy
-#~ msgid "Private Key File:"
-#~ msgstr "جاري احداث مفتاح خاص."
-
-#, fuzzy
-#~ msgid "Private Key Password:"
-#~ msgstr "جاري احداث مفتاح خاص."
-
-#, fuzzy
-#~ msgid "Secondary DNS:"
-#~ msgstr "<b>خوادم DNS</b>"
-
-#, fuzzy
-#~ msgid "Select the CA Certificate File"
-#~ msgstr "سلطة شهادة (CA) غير صحيحة"
-
-#, fuzzy
-#~ msgid "Select the Client Certificate File"
-#~ msgstr "لا أستطيع اختيار ملف"
-
-#, fuzzy
-#~ msgid "Select the Private Key File"
-#~ msgstr "لا أستطيع اختيار ملف"
-
-#, fuzzy
-#~ msgid "Show key"
-#~ msgstr "اتفاق على المفتاح"
-
-#, fuzzy
-#~ msgid "Show passphrase"
-#~ msgstr "اظهار التفاصيل"
-
-#, fuzzy
-#~ msgid "Show password"
-#~ msgstr "أ_ظهر كلمة المرور"
-
-#, fuzzy
-#~ msgid "Show passwords"
-#~ msgstr "تذكر كلمات السر"
-
-#, fuzzy
-#~ msgid "Speed:"
-#~ msgstr "السرعة:"
-
-#, fuzzy
-#~ msgid "Subnet Mask:"
-#~ msgstr "العنوان العددي:"
-
-#, fuzzy
-#~ msgid "Type:"
-#~ msgstr "النّوع:"
-
-#, fuzzy
-#~ msgid "User Name:"
-#~ msgstr "إسم المستخدم"
-
-#, fuzzy
-#~ msgid "Wireless Network Key Required"
-#~ msgstr "مراقبة قوة الرابط الهوائي للشبكة"
-
-#, fuzzy
-#~ msgid "Wireless _adapter:"
-#~ msgstr "الواجهة اللّاسلكيّة"
-
-#, fuzzy
-#~ msgid "_Don't remind me again"
-#~ msgstr "لا تسألني ثانيةً"
-
-#, fuzzy
-#~ msgid "_Fallback on this Network"
-#~ msgstr "مساعدة حول هذا التّطبيق"
-
-#, fuzzy
-#~ msgid "_Login to Network"
-#~ msgstr "إذهب إلى موقع الشبكة"
-
-#, fuzzy
-#~ msgid "_Network Name:"
-#~ msgstr "اسم الشبكة (_ESSID):"
-
-#, fuzzy
-#~ msgid "_Wireless Security:"
-#~ msgstr "تنبيه أمني"
-
-#, fuzzy
-#~ msgid "Connection Established"
-#~ msgstr "تم إلغاء الإتّصال"
-
-#, fuzzy
-#~ msgid "Disconnected"
-#~ msgstr "قطع الإتصال"
