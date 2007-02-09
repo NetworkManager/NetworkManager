@@ -1,3 +1,61 @@
+2007-02-09  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-device-802-11-wireless.c:
+		- Add "network-added" and "network-removed" signals.
+		- Use gobject boilerplate macros to define the GObject.
+		- Implement wireless device activation.
+		- Remove activation_failure_handler and activation_success_handler
+		  and instead listen on state-changed signals and run the same code
+		  from there.
+
+	* src/nm-device.c:
+		- Implment NMDeviceInterface::deactivate.
+		- Remove activation_failure_handler and activation_success_handler
+		  virtual methods. Each device which is interested in these events
+		  can just listen on it's state changed signals.
+
+	* src/NetworkManagerPolicy.c:
+		- Move a bit more NMData usage to NMManager.
+		- Remove activation scheduling bits.
+		- Add listeners for wireless device's "network-added" and
+		  "network-removed" signals.
+		- Listen device changed signals and deactivate currently activated
+		  device when another device start activating (for now).
+		- Remove (nm_policy_schedule_device_change_check): There's never a need
+		  for calling this, the policy code knows exactly when this should happen,
+		  by listening on events from NMManager and NMDevices.
+
+	* src/nm-device-802-3-ethernet.c (nm_device_802_3_ethernet_activate):
+	Implement.
+
+	* src/nm-dbus-nm.c (nm_dbus_nm_set_active_device): Call the activation
+	method on the specific device instead of going to through policy code
+	and determining the device type by passed in AP's existance.
+
+	* src/nm-device-interface.c (nm_device_interface_deactivate): Implement the
+	abstract NMDevice deactivation.
+
+2007-02-08  Tambet Ingo  <tambet@ximian.com>
+
+	* src/NetworkManager.c:
+		- Set up all the shiny new managers.
+
+	* src/NetworkManagerPolicy.c:
+		- Add the beginnings of new NMPolicy code. Instead of requireing all
+		  classes to call into policy code, make the policy code kind of like
+		  a supervisor that monitors what's going on and drives the whole NM.
+
+	* src/nm-hal-manager.c: 
+	* src/nm-hal-manager.h:
+		- Collect all libhal code scattered around NM to this one class.
+		- Listen libhal and NMManager events and add/remove devices to
+		  NMManager.
+
+	* src/nm-manager.c:
+	* src/nm-manager.h:
+		- Implment a replacement for NMData. NMData is now officially
+		deprecated.
+
 2007-02-05  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-device-802-11-wireless.c (supplicant_iface_scan_result_cb): 
