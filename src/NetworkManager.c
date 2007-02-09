@@ -40,6 +40,7 @@
 #include "NetworkManager.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
+#include "nm-device-interface.h"
 #include "nm-manager.h"
 #include "nm-hal-manager.h"	
 #include "nm-device.h"
@@ -479,7 +480,6 @@ main (int argc, char *argv[])
 	nm_data->dialup_list = nm_system_get_dialup_config ();
 
 	/* Run the main loop */
-	nm_policy_schedule_device_change_check (nm_data);
 	nm_schedule_state_change_signal_broadcast (nm_data);
 	exit_status = EXIT_SUCCESS;
 	g_main_loop_run (nm_data->main_loop);

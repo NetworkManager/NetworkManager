@@ -3,6 +3,7 @@
 #include "nm-manager.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
+#include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
 // #include "NetworkManagerDbus.h"
@@ -39,8 +40,12 @@ enum {
 };
 
 static void
-nm_manager_init (NMManager *msg)
+nm_manager_init (NMManager *manager)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	priv->wireless_enabled = TRUE;
+	priv->sleeping = FALSE;
 }
 
 static void
@@ -49,7 +54,7 @@ device_stop_and_free (gpointer data, gpointer user_data)
 	NMDevice *device = NM_DEVICE (data);
 
 	nm_device_set_removed (device, TRUE);
-	nm_device_deactivate (device);
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 	g_object_unref (device);
 }
 
@@ -199,7 +204,7 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 			NMDevice *dev = NM_DEVICE (iter->data);
 
 			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-				nm_device_deactivate (dev);
+				nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 				nm_device_bring_down (dev);
 			}
 		}
@@ -239,7 +244,7 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
 					  manager);
-	nm_device_deactivate (device);
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 
 	manager_device_added (manager, device);
 }

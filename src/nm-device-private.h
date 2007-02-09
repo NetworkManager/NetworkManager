@@ -40,6 +40,8 @@ NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
 
 void			nm_device_activate_schedule_stage3_ip_config_start (struct NMActRequest *req);
 
+void			nm_device_activate (NMDevice *device, NMActRequest *req);
+
 void			nm_device_state_changed (NMDevice *device, NMDeviceState state);
 
 

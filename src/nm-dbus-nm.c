@@ -35,6 +35,7 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManager.h"
 #include "nm-ap-security.h"
+#include "nm-device-interface.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 
@@ -266,6 +267,9 @@ nm_dbus_nm_set_active_device (DBusConnection *connection,
 		goto out;
 	}
 
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
+	nm_schedule_state_change_signal_broadcast (data);
+
 	if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
 		NMAPSecurity * 	security = NULL;
 		char *			essid = NULL;
@@ -315,13 +319,13 @@ nm_dbus_nm_set_active_device (DBusConnection *connection,
 	 		g_object_unref (G_OBJECT (security));
 
 		nm_info ("User Switch: %s / %s", dev_path, essid);
+		nm_device_802_11_wireless_activate (NM_DEVICE_802_11_WIRELESS (dev), ap, TRUE);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
 		nm_info ("User Switch: %s", dev_path);
+		nm_device_802_3_ethernet_activate (NM_DEVICE_802_3_ETHERNET (dev), TRUE);
+	} else {
+		nm_warning ("Unhandled device activation");
 	}
-
-	nm_device_deactivate (dev);
-	nm_schedule_state_change_signal_broadcast (data);
-	nm_policy_schedule_device_activation (nm_act_request_new (data, dev, ap, TRUE));
 
 	/* empty success message */
 	reply = dbus_message_new_method_return (message);
@@ -356,7 +360,6 @@ nm_dbus_nm_create_wireless_network (DBusConnection *connection,
 	NMAPSecurity * 	security = NULL;
 	char *			essid = NULL;
 	DBusMessageIter	iter;
-	NMActRequest *	req;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -410,8 +413,7 @@ nm_dbus_nm_create_wireless_network (DBusConnection *connection,
 	g_object_unref (G_OBJECT (security));
 	nm_ap_set_user_created (new_ap, TRUE);
 
-	req = nm_act_request_new (data, dev, new_ap, TRUE);
-	nm_policy_schedule_device_activation (req);
+	nm_device_802_11_wireless_activate (NM_DEVICE_802_11_WIRELESS (dev), new_ap, TRUE);
 
 out:
 	if (dev)
@@ -553,13 +555,11 @@ nm_dbus_nm_set_wireless_enabled (DBusConnection *connection,
 			NMDevice * dev = NM_DEVICE (elt->data);
 
 			if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
-				nm_device_deactivate (dev);
+				nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 				nm_device_bring_down (dev);
 			}
 		}
 	}
-
-	nm_policy_schedule_device_change_check (data);
 
 out:
 	return reply;
@@ -615,7 +615,7 @@ nm_dbus_nm_sleep (DBusConnection *connection,
 	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
 		NMDevice *dev = NM_DEVICE (elt->data);
 		nm_device_set_removed (dev, TRUE);
-		nm_device_deactivate_quickly (dev);
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 		nm_system_device_set_up_down (dev, FALSE);
 	}
 
@@ -654,7 +654,6 @@ nm_dbus_nm_wake (DBusConnection *connection,
 #endif
 
 	nm_schedule_state_change_signal_broadcast (data);
-	nm_policy_schedule_device_change_check (data);
 
 	return NULL;
 }

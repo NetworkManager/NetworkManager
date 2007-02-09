@@ -50,7 +50,18 @@
 
 /* #define IW_QUAL_DEBUG */
 
+G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
+
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
+
+enum {
+	NETWORK_ADDED,
+	NETWORK_REMOVED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef struct Supplicant {
 	NMSupplicantManager *   mgr;
@@ -149,6 +160,19 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                                      NMDevice80211Wireless *self);
 
 static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
+
+
+static void
+network_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
+{
+	g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
+}
+
+static void
+network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
+{
+	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
+}
 
 
 /*
@@ -593,6 +617,28 @@ real_deactivate (NMDevice *dev)
 
 	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
 	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+}
+
+
+void
+nm_device_802_11_wireless_activate (NMDevice80211Wireless *self,
+									NMAccessPoint *ap,
+									gboolean user_requested)
+{
+	NMDevice *device;
+	NMActRequest *req;
+
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
+	g_return_if_fail (ap != NULL);
+
+	device = NM_DEVICE (self);
+	req = nm_act_request_new (nm_device_get_app_data (device),
+							  device,
+							  ap,
+							  user_requested);
+
+	nm_device_activate (device, req);
+	nm_act_request_unref (req);
 }
 
 
@@ -2062,6 +2108,7 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 
 		/* Did the AP's name change? */
 		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
+			network_removed (dev, list_ap);
 			nm_dbus_signal_wireless_network_change (dev, list_ap,
 													NETWORK_STATUS_DISAPPEARED, -1);
 			new = TRUE;
@@ -2085,6 +2132,8 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		 * has gone out.
 		 */
 		nm_ap_set_essid (list_ap, merge_essid);
+
+		network_added (dev, list_ap);
 	}
 	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
 	{
@@ -2119,6 +2168,7 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 	} else {
 		/* Add the merge AP to the list. */
 		nm_ap_list_append_ap (list, merge_ap);
+		network_added (dev, merge_ap);
 		list_ap = merge_ap;
 		new = TRUE;
 	}
@@ -2137,26 +2187,18 @@ cull_scan_list (NMDevice80211Wireless * self)
 	NMAccessPoint *     outdated_ap;
 	GSList *            outdated_list = NULL;
 	GSList *            elt;
-	NMActRequest *      req;
 	NMAccessPoint *     cur_ap = NULL;
 	NMAPListIter *      iter = NULL;
-	NMData *            app_data;
 
 	g_return_if_fail (self != NULL);
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
-
-	if ((req = nm_device_get_act_request (NM_DEVICE (self))))
-		cur_ap = nm_act_request_get_ap (req);
 
 	g_get_current_time (&cur_time);
 
 	if (!(ap_list = nm_device_802_11_wireless_ap_list_get (self)))
-		goto out;
+		return;
 
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
-		goto out;
+		return;
 
 	/* Walk the access point list and remove any access points older than
 	 * thrice the inactive scan interval.
@@ -2187,13 +2229,11 @@ cull_scan_list (NMDevice80211Wireless * self)
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		if (!(outdated_ap = (NMAccessPoint *)(elt->data)))
 			continue;
+		network_removed (self, outdated_ap);
 		nm_dbus_signal_wireless_network_change (self, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
 		nm_ap_list_remove_ap (nm_device_802_11_wireless_ap_list_get (self), outdated_ap);
 	}
 	g_slist_free (outdated_list);
-
-out:
-	nm_policy_schedule_device_change_check (app_data);
 }
 
 #define SET_QUALITY_MEMBER(qual_item, lc_member, uc_member) \
@@ -2428,15 +2468,10 @@ supplicant_iface_state_cb_handler (gpointer user_data)
              old_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		NMData * app_data = nm_device_get_app_data (NM_DEVICE (self));
-
 		/* Start the scanning timeout for devices that can do scanning */
 		if (nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_WIRELESS_SCAN) {
 			self->priv->pending_scan_id = g_idle_add (request_wireless_scan, self);
 		}
-
-		/* Device may be able to be activated now */
-		nm_policy_schedule_device_change_check (app_data);
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cancel_pending_scan (self);
 		cleanup_association_attempt (self, FALSE);
@@ -2609,7 +2644,6 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 	if (new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
 		if (self->priv->supplicant.iface) {
 			NMDevice * dev = NM_DEVICE (self);
-			NMData *   app_data = nm_device_get_app_data (dev);
 
 			cleanup_association_attempt (self, FALSE);
 			cleanup_supplicant_interface (self);
@@ -2620,8 +2654,6 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 				NMActRequest * req = nm_device_get_act_request (dev);
 				nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 				nm_policy_schedule_activation_failed (req);
-			} else if (nm_device_is_activated (dev)) {
-				nm_policy_schedule_device_change_check (app_data);
 			}
 		}
 	} else if (new_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
@@ -3074,14 +3106,17 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 
 
 static void
-real_activation_success_handler (NMDevice *dev,
-                                 NMActRequest *req)
+activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMActRequest *req;
 	struct ether_addr	addr;
-	NMAccessPoint *	ap = nm_act_request_get_ap (req);
+	NMAccessPoint *	ap;
 	gboolean			automatic;
 	NMData *			app_data;
+
+	req = nm_device_get_act_request (dev);
+	ap = nm_act_request_get_ap (req);
 
 	app_data = nm_act_request_get_data (req);
 	g_assert (app_data);
@@ -3106,13 +3141,14 @@ real_activation_success_handler (NMDevice *dev,
 
 
 static void
-real_activation_failure_handler (NMDevice *dev,
-                                 NMActRequest *req)
+activation_failure_handler (NMDevice *dev)
 {
 	NMData *			app_data;
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMActRequest *req;
 	NMAccessPoint *	ap;
 
+	req = nm_device_get_act_request (dev);
 	app_data = nm_act_request_get_data (req);
 	g_assert (app_data);
 
@@ -3253,6 +3289,8 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *parent_class = NM_DEVICE_CLASS (klass);
 
+	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
+
 	object_class->dispose = nm_device_802_11_wireless_dispose;
 	object_class->finalize = nm_device_802_11_wireless_finalize;
 
@@ -3271,38 +3309,46 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 
-	parent_class->activation_failure_handler = real_activation_failure_handler;
-	parent_class->activation_success_handler = real_activation_success_handler;
 	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
-	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
+	/* Signals */
+	signals[NETWORK_ADDED] =
+		g_signal_new ("network-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_added),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_POINTER);
+
+	signals[NETWORK_REMOVED] =
+		g_signal_new ("network-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_POINTER);
 }
 
-GType
-nm_device_802_11_wireless_get_type (void)
+
+static void
+state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
-	static GType type = 0;
-	if (type == 0)
-	{
-		static const GTypeInfo info =
-		{
-			sizeof (NMDevice80211WirelessClass),
-			NULL,	/* base_init */
-			NULL,	/* base_finalize */
-			(GClassInitFunc) nm_device_802_11_wireless_class_init,
-			NULL,	/* class_finalize */
-			NULL,	/* class_data */
-			sizeof (NMDevice80211Wireless),
-			0,		/* n_preallocs */
-			(GInstanceInitFunc) nm_device_802_11_wireless_init,
-			NULL		/* value_table */
-		};
-		type = g_type_register_static (NM_TYPE_DEVICE,
-					       "NMDevice80211Wireless",
-					       &info, 0);
+	switch (state) {
+	case NM_DEVICE_STATE_ACTIVATED:
+		activation_success_handler (device);
+		break;
+	case NM_DEVICE_STATE_FAILED:
+		activation_failure_handler (device);
+		break;
+	default:
+		break;
 	}
-	return type;
 }
+
 
 NMDevice80211Wireless *
 nm_device_802_11_wireless_new (const char *iface,
@@ -3325,10 +3371,9 @@ nm_device_802_11_wireless_new (const char *iface,
 						NM_DEVICE_INTERFACE_APP_DATA, app_data,
 						NULL);
 
-	/* FIXME */
-/* 	g_signal_connect (obj, "state-changed", */
-/* 					  (GCallback) state_changed_cb, */
-/* 					  NULL); */
+	g_signal_connect (obj, "state-changed",
+					  G_CALLBACK (state_changed_cb),
+					  NULL);
 
 	return NM_DEVICE_802_11_WIRELESS (obj);
 

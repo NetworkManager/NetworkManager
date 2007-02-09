@@ -448,8 +448,6 @@ nm_dbus_device_set_link_active (DBusConnection *connection,
 	}
 
 	nm_device_set_active_link (data->dev, have_link);
-	nm_policy_schedule_device_change_check (data->data);
-
 out:
 	return reply;
 }

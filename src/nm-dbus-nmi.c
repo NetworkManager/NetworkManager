@@ -20,6 +20,7 @@
  */
 
 #include "NetworkManager.h"
+#include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerAPList.h"
@@ -93,8 +94,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 		 * here...  ad nauseum.  Figure out how to deal with a failure here.
 		 */
 		nm_ap_list_append_ap (data->invalid_ap_list, ap);
-		nm_device_deactivate (dev);
-		nm_policy_schedule_device_change_check (data);
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 
 		goto out;
 	}

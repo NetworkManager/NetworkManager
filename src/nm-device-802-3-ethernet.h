@@ -65,6 +65,9 @@ NMDevice8023Ethernet *nm_device_802_3_ethernet_new (const char *iface,
 													gboolean test_dev,
 													NMData *app_data);
 
+void nm_device_802_3_ethernet_activate (NMDevice8023Ethernet *self,
+										gboolean user_requested);
+
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
 

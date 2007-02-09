@@ -78,7 +78,7 @@ struct _NMDevicePrivate
 };
 
 static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
-
+static void nm_device_deactivate (NMDeviceInterface *device);
 void nm_device_bring_up (NMDevice *dev);
 gboolean nm_device_bring_up_wait (NMDevice *self, gboolean cancelable);
 
@@ -93,6 +93,8 @@ nm_device_set_address (NMDevice *device)
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
+	/* interface implementation */
+	device_interface_class->deactivate = nm_device_deactivate;
 }
 
 
@@ -195,7 +197,7 @@ nm_device_stop (NMDevice *self)
 {
 	g_return_if_fail (self != NULL);
 
-	nm_device_deactivate (self);
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
 	nm_device_bring_down (self);
 }
 
@@ -296,7 +298,7 @@ nm_device_get_driver (NMDevice *self)
 NMDeviceType
 nm_device_get_device_type (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, DEVICE_TYPE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_DEVICE (self), DEVICE_TYPE_UNKNOWN);
 
 	return self->priv->type;
 }
@@ -434,45 +436,37 @@ nm_device_set_active_link (NMDevice *self,
 /*
  * nm_device_activation_start
  *
- * Tell the device thread to begin activation.
- *
- * Returns:	TRUE on success activation beginning
- *			FALSE on error beginning activation (bad params, couldn't create thread)
- *
+ * Tell the device to begin activation.
  */
-gboolean
-nm_device_activation_start (NMActRequest *req)
+void
+nm_device_activate (NMDevice *device,
+					NMActRequest *req)
 {
 	NMDevicePrivate *priv;
-	NMData *		data = NULL;
-	NMDevice *	self = NULL;
+	NMData *data = NULL;
 
-	g_return_val_if_fail (req != NULL, FALSE);
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (req != NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
+		/* Already activating or activated */
+		return;
+
+	nm_info ("Activation (%s) started...", nm_device_get_iface (device));
 
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-
-	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
-		/* Already activating or activated */
-		return FALSE;
-
 	nm_act_request_ref (req);
-	self->priv->act_request = req;
-
-	nm_info ("Activation (%s) started...", nm_device_get_iface (self));
+	priv->act_request = req;
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	nm_device_activate_schedule_stage1_device_prepare (req);
 
 	nm_schedule_state_change_signal_broadcast (data);
-	nm_dbus_schedule_device_status_change_signal (data, self, NULL, DEVICE_ACTIVATING);
-
-	return TRUE;
+	nm_dbus_schedule_device_status_change_signal (data, device, NULL, DEVICE_ACTIVATING);
 }
 
 
@@ -1192,9 +1186,10 @@ nm_device_deactivate_quickly (NMDevice *self)
  * Remove a device's routing table entries and IP address.
  *
  */
-void
-nm_device_deactivate (NMDevice *self)
+static void
+nm_device_deactivate (NMDeviceInterface *device)
 {
+	NMDevice *self = NM_DEVICE (device);
 	NMData *		app_data;
 	NMIP4Config *	config;
 
@@ -1295,28 +1290,6 @@ nm_device_is_activated (NMDevice *dev)
 	return activated;
 }
 
-
-void
-nm_device_activation_failure_handler (NMDevice *self,
-                                      struct NMActRequest *req)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (req != NULL);
-
-	if (NM_DEVICE_GET_CLASS (self)->activation_failure_handler)
-		NM_DEVICE_GET_CLASS (self)->activation_failure_handler (self, req);
-}
-
-
-void nm_device_activation_success_handler (NMDevice *self,
-                                           struct NMActRequest *req)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (req != NULL);
-
-	if (NM_DEVICE_GET_CLASS (self)->activation_success_handler)
-		NM_DEVICE_GET_CLASS (self)->activation_success_handler (self, req);
-}
 
 gboolean
 nm_device_can_interrupt_activation (NMDevice *self)
@@ -1816,7 +1789,7 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
-		nm_device_deactivate (device);
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 		break;
 	default:
 		break;

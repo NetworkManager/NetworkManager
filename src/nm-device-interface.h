@@ -51,5 +51,6 @@ struct _NMDeviceInterface {
 
 GType nm_device_interface_get_type (void);
 
+void nm_device_interface_deactivate (NMDeviceInterface *device);
 
 #endif /* NM_DEVICE_INTERFACE_H */

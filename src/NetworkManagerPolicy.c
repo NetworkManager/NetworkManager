@@ -36,6 +36,7 @@
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-dbus-nmi.h"
+#include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-dbus-manager.h"
@@ -44,6 +45,8 @@ struct NMPolicy {
 	NMManager *manager;
 	guint device_state_changed_idle_id;
 };
+
+static void schedule_change_check (NMPolicy *policy);
 
 /* NMPolicy is supposed to be one of the highest classes of the
    NM class hierarchy and the only public API it needs is:
@@ -80,9 +83,6 @@ static gboolean nm_policy_activation_finish (gpointer user_data)
     if (NM_IS_DEVICE_802_11_WIRELESS (dev))
         ap = nm_act_request_get_ap (req);
 
-	nm_device_activation_success_handler (dev, req);
-
-	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
 	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
 
@@ -138,17 +138,14 @@ static gboolean nm_policy_activation_failed (gpointer user_data)
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	nm_device_activation_failure_handler (dev, req);
-
     if (NM_IS_DEVICE_802_11_WIRELESS (dev))
         ap = nm_act_request_get_ap (req);
 
-	nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
 	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_ACTIVATION_FAILED);
 
-	nm_device_deactivate (dev);
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 	nm_schedule_state_change_signal_broadcast (data);
-	nm_policy_schedule_device_change_check (data);
+	schedule_change_check ((gpointer) global_policy);
 
 	return FALSE;
 }
@@ -187,7 +184,7 @@ void nm_policy_schedule_activation_failed (NMActRequest *req)
  * "locked" on one device at this time.
  *
  */
-static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **ap)
+static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoint **ap)
 {
 	GSList *				elt;
 	NMDevice8023Ethernet *	best_wired_dev = NULL;
@@ -196,14 +193,12 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 	guint				best_wireless_prio = 0;
 	NMDevice *			highest_priority_dev = NULL;
 
-	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (ap != NULL, NULL);
 
-	if (data->asleep)
+	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return NULL;
 
-	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt))
-	{
+	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
 		guint		dev_type;
 		gboolean		link_active;
 		guint		prio = 0;
@@ -218,8 +213,7 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 		if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
 			continue;
 
-		if (NM_IS_DEVICE_802_3_ETHERNET (dev))
-		{
+		if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
 			/* We never automatically choose devices that don't support carrier detect */
 			if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 				continue;
@@ -236,8 +230,8 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 				best_wired_prio = prio;
 			}
 		}
-		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) && data->wireless_enabled)
-		{
+		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) &&
+				 nm_manager_wireless_enabled (policy->manager)) {
 			/* Don't automatically choose a device that doesn't support wireless scanning */
 			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 				continue;
@@ -298,18 +292,13 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 static gboolean
 nm_policy_device_change_check (gpointer user_data)
 {
-	NMData *        data = (NMData *) user_data;
+	NMPolicy *policy = (NMPolicy *) user_data;
 	NMAccessPoint * ap = NULL;
 	NMDevice *      new_dev;
 	NMDevice *      old_dev;
 	gboolean        do_switch = FALSE;
 
-	g_return_val_if_fail (data != NULL, FALSE);
-
-	data->dev_change_check_idle_id = 0;
-
-	g_assert (global_policy != NULL);
-	old_dev = nm_manager_get_active_device (global_policy->manager);
+	old_dev = nm_manager_get_active_device (policy->manager);
 
 	if (old_dev) {
 		guint32 caps = nm_device_get_capabilities (old_dev);
@@ -332,7 +321,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	new_dev = nm_policy_auto_get_best_device (data, &ap);
+	new_dev = nm_policy_auto_get_best_device (policy, &ap);
 
 	/* Four cases here:
 	 *
@@ -361,7 +350,7 @@ nm_policy_device_change_check (gpointer user_data)
 	} else if (old_dev && !new_dev) {
 		/* Terminate current connection */
 		nm_info ("SWITCH: terminating current connection '%s' because it's no longer valid.", nm_device_get_iface (old_dev));
-		nm_device_deactivate (old_dev);
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
 		do_switch = TRUE;
 	} else if (old_dev && new_dev) {
 		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
@@ -421,13 +410,18 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	if (do_switch && (NM_IS_DEVICE_802_3_ETHERNET (new_dev) || (NM_IS_DEVICE_802_11_WIRELESS (new_dev) && ap))) {
-		NMActRequest *	act_req = NULL;
-
-		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE))) {
-			nm_info ("Will activate connection '%s%s%s'.", nm_device_get_iface (new_dev), ap ? "/" : "", ap ? nm_ap_get_essid (ap) : "");
-			nm_policy_schedule_device_activation (act_req);
-		}
+	if (do_switch) {
+		if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
+			nm_info ("Will activate connection '%s'.",
+					 nm_device_get_iface (new_dev));
+			nm_device_802_3_ethernet_activate (NM_DEVICE_802_3_ETHERNET (new_dev), FALSE);
+		} else if (NM_IS_DEVICE_802_11_WIRELESS (new_dev) && ap) {
+			nm_info ("Will activate connection '%s/%s'.",
+					 nm_device_get_iface (new_dev),
+					 nm_ap_get_essid (ap));
+			nm_device_802_11_wireless_activate (NM_DEVICE_802_11_WIRELESS (new_dev), ap, FALSE);
+		} else
+			nm_warning ("Unhandled device activation");
 	}
 
 	if (ap)
@@ -435,85 +429,6 @@ nm_policy_device_change_check (gpointer user_data)
 
 out:
 	return FALSE;
-}
-
-
-/*
- * nm_policy_schedule_device_change_check
- *
- * Queue up an idle handler to deal with state changes that could
- * cause us to activate a different device or wireless network.
- *
- */
-void nm_policy_schedule_device_change_check (NMData *data)
-{
-	guint id;
-
-	g_return_if_fail (data != NULL);
-
-	if (data->dev_change_check_idle_id > 0)
-		return;
-
-	id = g_idle_add (nm_policy_device_change_check, data);
-	data->dev_change_check_idle_id = id;
-}
-
-
-/*
- * nm_policy_device_activation
- *
- * Handle device activation, shutting down all other devices and starting
- * activation on the requested device.
- *
- */
-static gboolean
-nm_policy_device_activation (gpointer user_data)
-{
-	NMActRequest * req = (NMActRequest *) user_data;
-	NMDevice *     new_dev;
-	NMDevice *     old_dev;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	g_assert (global_policy != NULL);
-	if ((old_dev = nm_manager_get_active_device (global_policy->manager)))
-		nm_device_deactivate (old_dev);
-
-	new_dev = nm_act_request_get_dev (req);
-	if (nm_device_is_activating (new_dev))
-		return FALSE;
-
-	nm_device_activation_start (req);
-
-	return FALSE;
-}
-
-
-/*
- * nm_policy_schedule_device_activation
- *
- * Activate a particular device (and possibly access point)
- *
- */
-void
-nm_policy_schedule_device_activation (NMActRequest * req)
-{
-	GSource *  source;
-	NMDevice * dev;
-	guint      id;
-
-	g_return_if_fail (req != NULL);
-
-	dev = nm_act_request_get_dev (req);
-	g_assert (dev);
-
-	id = g_idle_add (nm_policy_device_activation, req);
-	source = g_main_context_find_source_by_id (NULL, id);
-	if (source) {
-		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	}
-
-	nm_info ("Device %s activation scheduled...", nm_device_get_iface (dev));
 }
 
 
@@ -590,7 +505,7 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
-	for (elt = data->dev_list; elt != NULL; elt = g_slist_next (elt)) {
+	for (elt = nm_manager_get_devices (global_policy->manager); elt; elt = elt->next) {
 		NMDevice	*dev = (NMDevice *)(elt->data);
 		NMDevice80211Wireless *	wdev;
 
@@ -615,7 +530,7 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 		nm_ap_list_remove_duplicate_essids (nm_device_802_11_wireless_ap_list_get (wdev));
 	}
 
-	nm_policy_schedule_device_change_check (data);
+	schedule_change_check ((gpointer) global_policy);
 	
 	return FALSE;
 }
@@ -662,14 +577,10 @@ schedule_change_check (NMPolicy *policy)
 	if (policy->device_state_changed_idle_id > 0)
 		return;
 
-	/* FIXME: Uncomment this when nm_policy_schedule_device_change_check and
-	   all it's callers have been removed. */
-#if 0
 	policy->device_state_changed_idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
 															nm_policy_device_change_check,
 															policy,
 															device_change_check_done);
-#endif
 }
 
 static void
@@ -683,6 +594,14 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 
 static void
 device_carrier_changed (NMDevice *device, gboolean carrier_on, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
+}
+
+static void
+wireless_networks_changed (NMDevice80211Wireless *device, NMAccessPoint *ap, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
@@ -708,8 +627,6 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 		nm_data->dev_list = g_slist_append (nm_data->dev_list, device);
 	}
 
-	/* FIXME: Uncomment once the patch to add these signals to wireless devices is committed */
-#if 0
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
 		g_signal_connect (device, "network-added",
 						  G_CALLBACK (wireless_networks_changed),
@@ -718,7 +635,6 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 						  G_CALLBACK (wireless_networks_changed),
 						  policy);
 	}
-#endif
 
 	schedule_change_check (policy);
 }
@@ -740,7 +656,18 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 static void
 state_changed (NMManager *manager, NMState state, gpointer user_data)
 {
-	/* FIXME: Do cool stuff here */
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	if (state == NM_ACT_STAGE_DEVICE_PREPARE) {
+		/* A device starts activation, bring all devices down
+		 * Remove this when we support multiple active devices.
+		 */
+
+		NMDevice *old_dev;
+		
+		if ((old_dev = nm_manager_get_active_device (policy->manager)))
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
+	}
 }
 
 NMPolicy *

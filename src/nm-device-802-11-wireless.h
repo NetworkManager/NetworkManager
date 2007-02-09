@@ -69,6 +69,10 @@ struct _NMDevice80211Wireless
 struct _NMDevice80211WirelessClass
 {
 	NMDeviceClass parent;
+
+	/* Signals */
+	void (*network_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*network_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
 };
 
 
@@ -79,6 +83,10 @@ NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *iface,
 													  const char *driver,
 													  gboolean test_dev,
 													  NMData *app_data);
+
+void nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
+										 NMAccessPoint *ap,
+										 gboolean user_requested);
 
 void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 										  const char *essid);

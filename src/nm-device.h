@@ -107,10 +107,6 @@ struct _NMDeviceClass
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
 
-	void			(* activation_failure_handler)	(NMDevice *self,
-											 struct NMActRequest *req);
-	void			(* activation_success_handler)	(NMDevice *self,
-											 struct NMActRequest *req);
 	void			(* activation_cancel_handler)		(NMDevice *self,
 											 struct NMActRequest *req);
 
@@ -169,20 +165,13 @@ NMDevice *	nm_get_device_by_iface	(struct NMData *data,
 
 gboolean		nm_device_is_test_device	(NMDevice *dev);
 
-gboolean		nm_device_activation_start	(struct NMActRequest *req);
 void			nm_device_activate_schedule_stage1_device_prepare		(struct NMActRequest *req);
 void			nm_device_activate_schedule_stage2_device_config		(struct NMActRequest *req);
 void			nm_device_activate_schedule_stage4_ip_config_get		(struct NMActRequest *req);
 void			nm_device_activate_schedule_stage4_ip_config_timeout	(struct NMActRequest *req);
-void			nm_device_deactivate		(NMDevice *dev);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 void			nm_device_activation_cancel	(NMDevice *dev);
-
-void			nm_device_activation_failure_handler	(NMDevice *dev,
-											 struct NMActRequest *req);
-void			nm_device_activation_success_handler	(NMDevice *dev,
-											 struct NMActRequest *req);
 
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 
