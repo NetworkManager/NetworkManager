@@ -1,42 +1,44 @@
 # French translation of NetworkManager-OpenVPN.
-# Copyright (C) 2006 The GNOME Foundation.
+# Copyright (C) 2006-2007 The GNOME Foundation.
 # This file is distributed under the same license as the NetworkManager-OpenVPN package
 #
-# Haïkel GUÉMAR <karlthered@gmail.com>, 2006.
+# Haïkel Guémar <karlthered@gmail.com>, 2006.
+# Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
+# Stéphane Raimbault <stephane.raimbault@gmail.com>, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn 0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-07-28 16:46+0200\n"
-"PO-Revision-Date: 2006-07-28 15:10+0200\n"
-"Last-Translator: Haïkel GUÉMAR <karlthered@gmail.com>\n"
+"POT-Creation-Date: 2007-02-11 04:57+0100\n"
+"PO-Revision-Date: 2007-02-11 05:00+0100\n"
+"Last-Translator: Stéphane Raimbault <stephane.raimbault@gmail.com>\n"
 "Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Mot de passe :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "Mot de passe _secondaire :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "Nom d'_utilisateur :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Domaine :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Connexion _anonyme"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Se _connecter en tant que :"
 
@@ -57,7 +59,11 @@ msgstr "Authentifiez-vous pour accéder au réseau privé virtuel « %s »."
 msgid "Authenticate VPN"
 msgstr "Authentifier VPN"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "_Mot de passe du certificat :"
+
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Mot de passe du certificat :"
 
@@ -90,7 +96,7 @@ msgstr "Type de connexion: Certificats X.509"
 #: ../properties/nm-openvpn.c:781
 #, c-format
 msgid "CA:  %s"
-msgstr "CA :  %s"
+msgstr "AC :  %s"
 
 #: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
 #, c-format
@@ -234,7 +240,7 @@ msgstr "Sélectionner l'authentification TLS à utiliser"
 #. printf ("in impl_export\n");
 #: ../properties/nm-openvpn.c:1326
 msgid "Save as..."
-msgstr "Enregistrer sous ..."
+msgstr "Enregistrer sous..."
 
 #: ../properties/nm-openvpn.c:1356
 #, c-format
@@ -280,33 +286,37 @@ msgstr "<i>exemple : 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "CA  file:"
-msgstr "Fichier CA :"
+msgstr "Fichier AC :"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "Fichier AC :"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Certificate:"
 msgstr "Certificat :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Connection Type:"
 msgstr "Type de connexion :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Direction:"
 msgstr "Direction :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key:"
 msgstr "Clé :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP:"
 msgstr "Adresse IP locale :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password"
 msgstr "Mot de passe"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -314,7 +324,7 @@ msgstr ""
 "Veuillez saisir les informations fournies par votre administrateur système "
 "ci-dessous. N'entrez pas votre mot de passe avant d'y être invité."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
@@ -322,47 +332,47 @@ msgstr ""
 "Veuillez noter que le fichier importé n'est pas un fichier de configuration "
 "OpenVPN. Demandez le fichier à votre administrateur."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
 msgstr "Adresse IP distante :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared Key:"
 msgstr "Clé partagée :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Shared key"
 msgstr "Clé partagée"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use LZO compression"
 msgstr "Utiliser la compression LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use TAP device"
 msgstr "Utiliser le périphérique TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use TCP connection"
 msgstr "Utiliser une connexion TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
 msgstr "Utiliser une authentification TLS :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
 msgstr "Utiliser le chiffrement :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Username:"
 msgstr "Nom d'utilisateur :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -374,15 +384,15 @@ msgstr ""
 "Mot de passe d'authentification\n"
 "X.509 avec mot de passe d'authentification"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "_Passerelle :"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "_Import Saved Configuration..."
 msgstr "_Importer la configuration enregistrée..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
@@ -390,11 +400,11 @@ msgstr ""
 "_Nom utilisé pour identifier la connexion au réseau privé, p. ex. « Campus "
 "VPN sa » ou « Réseau d'entreprise »"
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr "Utiliser _uniquement une connexion VPN pour ces adresses"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid "none"
 msgstr "aucun"
 
