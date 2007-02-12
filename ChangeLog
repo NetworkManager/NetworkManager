@@ -1,5 +1,13 @@
 2007-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): don't print out a message every time
+			a semi-supported device is stuck with.  Exacerbated by ipw cards
+			which issue quickly successive scan result notifications, which in
+			turn triggers a device change check, which prints the message.
+
+2007-02-12  Dan Williams  <dcbw@redhat.com>
+
 	Don't wake up every 2 seconds to poke a wired device's 'carrier' file
 	in sysfs; instead rely on netlink events.
 

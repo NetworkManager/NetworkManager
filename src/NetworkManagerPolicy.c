@@ -316,13 +316,10 @@ nm_policy_device_change_check (NMData *data)
 		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
 		 * explicitly choose to move to another device, we're not going to move for them.
 		 */
-		if ((nm_device_is_802_3_ethernet (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			|| (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN)))
-		{
-			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
-				nm_device_get_iface (old_dev));
+		if ((nm_device_is_802_3_ethernet (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT)))
 			goto out;
-		}
+		if (nm_device_is_802_11_wireless (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
+			goto out;
 	}
 
 	new_dev = nm_policy_auto_get_best_device (data, &ap);
