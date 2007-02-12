@@ -1,5 +1,21 @@
 2007-02-12  Dan Williams  <dcbw@redhat.com>
 
+	Better handle ipw cards and their drivers which issue quickly successive
+	scan result notifications due to background scanning.  Batch up scan result
+	requests as a result of a notification.  (already done in trunk, but
+	differently)
+
+	* src/nm-device-802-11-wireless.c
+		- (wireless_event_helper): don't blindly request scan results; do
+			nothing if there's already a scan result request in-progress.  If
+			not, schedule a scan result request for 5 seconds in the future.
+		- (schedule_scan_results_timeout): new argument 'seconds', specifies
+			how long of a timeout to schedule
+		- (nm_device_802_11_wireless_scan): after requesting a scan, schedule
+			the scan timeout for 10 seconds
+
+2007-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): don't print out a message every time
 			a semi-supported device is stuck with.  Exacerbated by ipw cards

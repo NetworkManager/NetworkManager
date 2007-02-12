@@ -104,6 +104,8 @@ typedef struct
 
 static void	nm_device_802_11_wireless_ap_list_clear (NMDevice80211Wireless *self);
 
+static void schedule_scan_results_timeout (NMDevice80211Wireless *self, guint32 seconds);
+
 static void nm_device_802_11_wireless_scan_done (gpointer user_data);
 
 static gboolean nm_device_802_11_wireless_scan (gpointer user_data);
@@ -538,9 +540,12 @@ wireless_event_helper (gpointer user_data)
 				}
 				break;
 			case SIOCGIWSCAN:
-				cancel_scan_results_timeout (self);
-				request_and_convert_scan_results (self);
-				schedule_scan (self);
+				/* Batch together scan result updates; cards that background
+				 * scan (like ipw cards) send notifications of new scan results
+				 * in very quick succession.
+				 */
+				if (!self->priv->scan_timeout)
+					schedule_scan_results_timeout (self, 5);
 				break;
 		}
 		pos += iwe->len;
@@ -2053,7 +2058,7 @@ scan_results_timeout (NMDevice80211Wireless *self)
  *
  */
 static void
-schedule_scan_results_timeout (NMDevice80211Wireless *self)
+schedule_scan_results_timeout (NMDevice80211Wireless *self, guint32 seconds)
 {
 	GMainContext *	context;
 
@@ -2061,8 +2066,7 @@ schedule_scan_results_timeout (NMDevice80211Wireless *self)
 
 	cancel_scan_results_timeout (self);
 
-	/* Wait 10 seconds for scan results */
-	self->priv->scan_timeout = g_timeout_source_new (10000);
+	self->priv->scan_timeout = g_timeout_source_new (seconds * 1000);
 	g_source_set_callback (self->priv->scan_timeout,
 						   (GSourceFunc) scan_results_timeout,
 						   self,
@@ -2189,7 +2193,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 
 	if (success)
 	{
-		schedule_scan_results_timeout (self);
+		schedule_scan_results_timeout (self, 10);
 	}
 	else
 	{
