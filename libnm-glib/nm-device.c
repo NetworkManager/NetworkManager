@@ -147,23 +147,6 @@ nm_device_get_driver (NMDevice *device)
 	return driver;
 }
 
-gboolean
-nm_device_get_use_dhcp (NMDevice *device)
-{
-	gboolean dhcp = FALSE;
-	GValue value = {0,};
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE,
-							  "UseDhcp",
-							  &value))
-		dhcp = g_value_get_boolean (&value);
-
-	return dhcp;
-}
-
 guint32
 nm_device_get_ip4_address (NMDevice *device)
 {

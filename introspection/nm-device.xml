@@ -11,7 +11,6 @@
     <property name="Driver" type="s" access="read"/>
     <property name="Capabilities" type="i" access="read"/>
     <property name="Ip4Address" type="i" access="read"/>
-    <property name="UseDhcp" type="b" access="read"/>
     <property name="State" type="u" access="read"/>
 
     <!-- Ugh, but I see no other way of getting the type on the caller

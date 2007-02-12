@@ -7,7 +7,7 @@
       <arg name="user_requested" type="b"/>
     </method>
 
-    <property name="Address" type="s" access="read"/>
+    <property name="HwAddress" type="s" access="read"/>
     <property name="Speed" type="i" access="read"/>
   </interface>
 </node>

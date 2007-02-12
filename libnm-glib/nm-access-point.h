@@ -25,7 +25,6 @@ GType nm_access_point_get_type (void);
 NMAccessPoint *nm_access_point_new (DBusGConnection *connection, const char *path);
 
 char     *nm_access_point_get_address      (NMAccessPoint *ap);
-gboolean  nm_access_point_is_broadcast     (NMAccessPoint *ap);
 int       nm_access_point_get_capabilities (NMAccessPoint *ap);
 gboolean  nm_access_point_is_encrypted     (NMAccessPoint *ap);
 char     *nm_access_point_get_essid        (NMAccessPoint *ap);

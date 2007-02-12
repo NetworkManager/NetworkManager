@@ -33,7 +33,6 @@ void      nm_device_deactivate (NMDevice *device);
 char     *nm_device_get_iface (NMDevice *device);
 char     *nm_device_get_udi (NMDevice *device);
 char     *nm_device_get_driver (NMDevice *device);
-gboolean  nm_device_get_use_dhcp (NMDevice *device);
 guint32   nm_device_get_ip4_address (NMDevice *device);
 NMDeviceState nm_device_get_state (NMDevice *device);
 

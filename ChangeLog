@@ -1,5 +1,16 @@
 2007-02-12  Tambet Ingo  <tambet@ximian.com>
 
+	* libnm-glib/nm-device.c (nm_device_get_use_dhcp): Remove.
+
+	* libnm-glib/nm-access-point.c (nm_access_point_is_broadcast): Remove.
+
+	* introspection/nm-device-802-3-ethernet.xml: Rename 'Address' property to
+	'HwAddress'.
+
+	* introspection/nm-device.xml: Remove 'UseDhcp' property.
+
+	* introspection/nm-access-point.xml: Remove 'Broadcast' property.
+
 	Totally break NetworkManager. Please use 0.6 branch until futher notice.
 
 	* src/:

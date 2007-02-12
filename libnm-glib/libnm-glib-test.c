@@ -54,9 +54,6 @@ dump_device (NMDevice *device)
 	g_print ("Driver: %s\n", str);
 	g_free (str);
 
-	b = nm_device_get_use_dhcp (device);
-	g_print ("Use DHCP: %s\n", b ? "yes" : "no");
-
 	u = nm_device_get_ip4_address (device);
 	g_print ("IP address: %d\n", u);
 

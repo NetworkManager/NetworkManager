@@ -43,23 +43,6 @@ nm_access_point_get_address (NMAccessPoint *ap)
 	return address;
 }
 
-gboolean
-nm_access_point_is_broadcast (NMAccessPoint *ap)
-{
-	GValue value = {0,};
-	int broadcast = FALSE;
-
-	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), FALSE);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Broadcast",
-							  &value))
-		broadcast = g_value_get_boolean (&value);
-
-	return broadcast;
-}
-
 int
 nm_access_point_get_capabilities (NMAccessPoint *ap)
 {
