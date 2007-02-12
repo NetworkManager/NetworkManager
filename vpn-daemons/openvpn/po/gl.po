@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gl\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-30 20:01+0100\n"
-"PO-Revision-Date: 2007-01-30 20:17+0100\n"
+"POT-Creation-Date: 2007-02-12 10:12+0100\n"
+"PO-Revision-Date: 2007-02-12 10:13+0100\n"
 "Last-Translator: Ignacio Casal Quinteiro <icq@cvs.gnome.org>\n"
 "Language-Team: Galego <trasno@ceu.fi.udc.es>\n"
 "MIME-Version: 1.0\n"
@@ -286,82 +286,91 @@ msgid "CA  file:"
 msgstr "Ficheiro CA:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "Ficheiro CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Certificate:"
 msgstr "Certificado:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Connection Type:"
 msgstr "Tipo de conexión:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Direction:"
 msgstr "Enderezo:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key:"
 msgstr "Clave:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP:"
 msgstr "IP local:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password"
 msgstr "Contrasinal"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
-msgstr "Introduza a información proporcionada polo seu administrador de sistemas aquí embaixo. Non introduza o seu contrasinal, posto que se lle pedirá cando conecte."
+msgstr ""
+"Introduza a información proporcionada polo seu administrador de sistemas "
+"aquí embaixo. Non introduza o seu contrasinal, posto que se lle pedirá cando "
+"conecte."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
-msgstr "Observe que o ficheiro que está importando non é un ficheiro de configuración OpenVPN. Pregúntelle ao seu administrador polo ficheiro."
+msgstr ""
+"Observe que o ficheiro que está importando non é un ficheiro de "
+"configuración OpenVPN. Pregúntelle ao seu administrador polo ficheiro."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
 msgstr "IP remota:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared Key:"
 msgstr "Clave compartida:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Shared key"
 msgstr "Clave compartida"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use LZO compression"
 msgstr "Usar compresión LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use TAP device"
 msgstr "Usar dispositivo TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use TCP connection"
 msgstr "Usar conexión TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
 msgstr "Usar auth TLS:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
 msgstr "Usar cifrado:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Username:"
 msgstr "Nome de usuario:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -373,25 +382,27 @@ msgstr ""
 "Autenticación por contrasinal\n"
 "X.509 con autenticación por contrasinal"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "_Pasarela:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "_Import Saved Configuration..."
 msgstr "_Importar a configuración gardada...."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
-msgstr "O _nome empregado para identificar a conexión á rede privada, por exemplo: \"VPN do campus\" ou \"Rede corporativa\""
+msgstr ""
+"O _nome empregado para identificar a conexión á rede privada, por exemplo: "
+"\"VPN do campus\" ou \"Rede corporativa\""
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr "Usar _só a conexión VPN para estes enderezos"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid "none"
 msgstr "ningún"
 
@@ -399,7 +410,9 @@ msgstr "ningún"
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr "O acceso VPN fallou porque o nome de usuario e o contrasinal non foron aceptados ou o contrasinal do certificado é erróneo."
+msgstr ""
+"O acceso VPN fallou porque o nome de usuario e o contrasinal non foron "
+"aceptados ou o contrasinal do certificado é erróneo."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
@@ -419,7 +432,9 @@ msgstr "O acceso VPN fallou porque as opcións de configuración de VPN eran inv
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr "O acceso VPN fallou porque o programa VPN recibiu unha configuración incorrecta do servidor VPN."
+msgstr ""
+"O acceso VPN fallou porque o programa VPN recibiu unha configuración "
+"incorrecta do servidor VPN."
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
