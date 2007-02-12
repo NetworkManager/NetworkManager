@@ -1,3 +1,16 @@
+2007-02-12  Dan Williams  <dcbw@redhat.com>
+
+	Don't wake up every 2 seconds to poke a wired device's 'carrier' file
+	in sysfs; instead rely on netlink events.
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_init): only listen for netlink link events for cards that
+			support carrier detect.  For those that don't, explicitly set
+			link to TRUE
+		- (probe_link, nm_device_802_3_periodic_update, real_start): removed
+		- (real_update_link): return link = TRUE for non-carrier-detect cards,
+			and poke sysfs' 'carrier' file for carrier-detect cards
+
 2007-02-09  Dan Williams  <dcbw@redhat.com>
 
     * src/NetworkManager.conf

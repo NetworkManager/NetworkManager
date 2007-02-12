@@ -74,17 +74,30 @@ real_init (NMDevice *dev)
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
 	NMData *				app_data;
 	NmNetlinkMonitor *		monitor;
+	guint32				caps;
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	monitor = app_data->netlink_monitor;
 
-	self->priv->link_connected_id = 
+	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
+		/* Only listen to netlink for cards that support carrier detect */
+		self->priv->link_connected_id = 
 			g_signal_connect (G_OBJECT (monitor), "interface-connected",
 				G_CALLBACK (nm_device_802_3_ethernet_link_activated), self);
 
-	self->priv->link_disconnected_id = 
+		self->priv->link_disconnected_id = 
 			g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
 				G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
+
+		self->priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
+				nm_device_get_iface (NM_DEVICE (dev)));
+	} else {
+		self->priv->link_connected_id = 0;
+		self->priv->link_disconnected_id = 0;
+		self->priv->carrier_file_path = NULL;
+		nm_device_set_active_link (NM_DEVICE (dev), TRUE);
+	}
 }
 
 static gboolean
@@ -140,76 +153,34 @@ nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
 	}
 }
 
-static gboolean
-probe_link (NMDevice8023Ethernet *self)
-{
-	gboolean				have_link = FALSE;
-	gchar *				contents;
-	gsize				length;
-
-	if (nm_device_get_removed (NM_DEVICE (self)))
-		return FALSE;
-
-	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL))
-	{
-		have_link = (gboolean) atoi (contents);
-		g_free (contents);
-	}
-
-	/* We say that non-carrier-detect devices always have a link, because
-	 * they never get auto-selected by NM.  The user has to force them on us,
-	 * so we just hope the user knows whether or not the cable's plugged in.
-	 */
-	if (!have_link && !(nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_CARRIER_DETECT))
-		have_link = TRUE;
-
-	return have_link;
-}
-
-
 static void
 real_update_link (NMDevice *dev)
 {
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
+	gboolean	have_link = FALSE;
+	guint32	caps;
+	gchar *	contents;
+	gsize	length;
 
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
-}
+	if (nm_device_get_removed (NM_DEVICE (self)))
+		goto out;
 
+	/* Devices that don't support carrier detect are always "on" and
+	 * must be manually chosen by the user.
+	 */
+	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
+		have_link = TRUE;
+		goto out;
+	}
 
-/*
- * nm_device_802_3_periodic_update
- *
- * Periodically update device statistics and link state.
- *
- */
-static gboolean
-nm_device_802_3_periodic_update (gpointer data)
-{
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (data);
+	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL)) {
+		have_link = atoi (contents) > 0 ? TRUE : FALSE;
+		g_free (contents);
+	}
 
-	g_return_val_if_fail (self != NULL, TRUE);
-
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
-
-	return TRUE;
-}
-
-
-static void
-real_start (NMDevice *dev)
-{
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-	GSource *				source;
-	guint				source_id;
-
-	self->priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
-			nm_device_get_iface (NM_DEVICE (dev)));
-
-	/* Peridoically update link status and signal strength */
-	source = g_timeout_source_new (2000);
-	g_source_set_callback (source, nm_device_802_3_periodic_update, self, NULL);
-	source_id = g_source_attach (source, nm_device_get_main_context (dev));
-	g_source_unref (source);
+out:
+	nm_device_set_active_link (NM_DEVICE (self), have_link);
 }
 
 
@@ -315,10 +286,14 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	 * reference.
 	 */
 
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->link_connected_id);
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->link_disconnected_id);
+	if (self->priv->link_connected_id > 0) {
+		g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+			self->priv->link_connected_id);
+	}
+	if (self->priv->link_disconnected_id > 0) {
+		g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+			self->priv->link_disconnected_id);
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
@@ -332,7 +307,8 @@ nm_device_802_3_ethernet_finalize (GObject *object)
 	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
 	NMDeviceClass *			parent_class;  
 
-	g_free (self->priv->carrier_file_path);
+	if (self->priv->carrier_file_path)
+		g_free (self->priv->carrier_file_path);
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
@@ -351,7 +327,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->init = real_init;
-	parent_class->start = real_start;
 	parent_class->update_link = real_update_link;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
