@@ -347,7 +347,7 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 
 	NmNetlinkMonitorStatusPacket packet;
 	struct sockaddr_nl recipient = { .nl_pad = 0 };
-	static guint32 sequence_number;
+	static guint32 sequence_number = 0;
 	int fd, saved_errno;
 	ssize_t num_bytes_sent;
 	size_t num_bytes_to_send, total_bytes_sent;
