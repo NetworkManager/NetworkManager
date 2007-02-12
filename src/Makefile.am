@@ -34,12 +34,6 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDbusUtils.h	\
 		nm-dbus-manager.h			\
 		nm-dbus-manager.c			\
-		nm-dbus-nm.c				\
-		nm-dbus-nm.h				\
-		nm-dbus-device.c			\
-		nm-dbus-device.h			\
-		nm-dbus-net.c				\
-		nm-dbus-net.h				\
 		nm-dbus-nmi.c				\
 		nm-dbus-nmi.h				\
 		nm-hal-manager.c			\
@@ -94,9 +88,30 @@ nm-marshal.c: Makefile.am nm-marshal.list
 
 nm-marshal-main.c: nm-marshal.c nm-marshal.h
 
+nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
+	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=nm-access-point-glue.h $(top_srcdir)/introspection/nm-access-point.xml
+
+nm-manager-glue.h: $(top_srcdir)/introspection/nm-manager.xml
+	dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=nm-manager-glue.h $(top_srcdir)/introspection/nm-manager.xml
+
+nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
+	dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=nm-device-interface-glue.h $(top_srcdir)/introspection/nm-device.xml
+
+nm-device-802-3-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-802-3-ethernet.xml
+	dbus-binding-tool --prefix=nm_device_802_3_ethernet --mode=glib-server --output=nm-device-802-3-ethernet-glue.h $(top_srcdir)/introspection/nm-device-802-3-ethernet.xml
+
+nm-device-802-11-wireless-glue.h: $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
+	dbus-binding-tool --prefix=nm_device_802_11_wireless --mode=glib-server --output=nm-device-802-11-wireless-glue.h $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
+
+
 built_sources = 					\
 	nm-marshal.h					\
 	nm-marshal.c					\
+	nm-access-point-glue.h				\
+	nm-manager-glue.h				\
+	nm-device-interface-glue.h			\
+	nm-device-802-3-ethernet-glue.h			\
+	nm-device-802-11-wireless-glue.h		\
 	$(NULL)
 
 $(NetworkManager_OBJECTS): $(built_sources)

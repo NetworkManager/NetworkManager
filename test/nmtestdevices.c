@@ -129,7 +129,7 @@ static void set_link_active (DBusConnection *connection, char *dev, gboolean act
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (dev != NULL);
 
-	message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev, NM_DBUS_INTERFACE_DEVICES, "setLinkActive");
+	message = dbus_message_new_method_call (NM_DBUS_SERVICE, dev, NM_DBUS_INTERFACE_DEVICE, "setLinkActive");
 	if (message == NULL)
 	{
 		fprintf (stderr, "Couldn't allocate the dbus message\n");

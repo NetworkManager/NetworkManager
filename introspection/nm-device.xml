@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.Device">
+    <method name="Deactivate">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_deactivate"/>
+    </method>
+
+    <property name="Udi" type="s" access="read"/>
+    <property name="Interface" type="s" access="read"/>
+    <property name="Driver" type="s" access="read"/>
+    <property name="Capabilities" type="i" access="read"/>
+    <property name="Ip4Address" type="i" access="read"/>
+    <property name="UseDhcp" type="b" access="read"/>
+    <property name="State" type="u" access="read"/>
+
+    <!-- Ugh, but I see no other way of getting the type on the caller
+         based on dbus object path only -->
+    <property name="DeviceType" type="u" access="read"/>
+
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
+    </signal>
+
+    <signal name="CarrierChanged">
+      <arg name="carrier_on" type="b"/>
+    </signal>
+
+  </interface>
+</node>

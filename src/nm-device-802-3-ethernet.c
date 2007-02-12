@@ -38,6 +38,15 @@
 #include "nm-utils.h"
 #include "kernel-types.h"
 
+static gboolean impl_device_802_3_ethernet_activate (NMDevice8023Ethernet *device,
+													 gboolean user_requested,
+													 GError **err);
+
+#include "nm-device-802-3-ethernet-glue.h"
+
+
+G_DEFINE_TYPE (NMDevice8023Ethernet, nm_device_802_3_ethernet, NM_TYPE_DEVICE)
+
 #define NM_DEVICE_802_3_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetPrivate))
 
 struct _NMDevice8023EthernetPrivate
@@ -51,6 +60,14 @@ struct _NMDevice8023EthernetPrivate
 	guint           link_source_id;
 
 	NMSupplicantInterface *  sup_iface;
+};
+
+enum {
+	PROP_0,
+	PROP_HW_ADDRESS,
+	PROP_SPEED,
+
+	LAST_PROP
 };
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
@@ -260,6 +277,17 @@ nm_device_802_3_ethernet_activate (NMDevice8023Ethernet *self,
 }
 
 
+static gboolean
+impl_device_802_3_ethernet_activate (NMDevice8023Ethernet *device,
+									 gboolean user_requested,
+									 GError **err)
+{
+	nm_device_802_3_ethernet_activate (device, user_requested);
+
+	return TRUE;
+}
+
+
 /*
  * nm_device_802_3_ethernet_get_address
  *
@@ -337,8 +365,6 @@ static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
 	NMDevice8023Ethernet *		self = NM_DEVICE_802_3_ETHERNET (object);
-	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
-	NMDeviceClass *			parent_class;  
 	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
 	NMSupplicantManager *       sup_mgr;
 
@@ -370,23 +396,37 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 		self->priv->link_source_id = 0;
 	}
 
-	/* Chain up to the parent class */
-	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	G_OBJECT_CLASS (parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
 }
 
 static void
 nm_device_802_3_ethernet_finalize (GObject *object)
 {
-	NMDevice8023Ethernet *		self = NM_DEVICE_802_3_ETHERNET (object);
-	NMDevice8023EthernetClass *	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (object);
-	NMDeviceClass *			parent_class;  
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
 
-	g_free (self->priv->carrier_file_path);
+	g_free (priv->carrier_file_path);
 
-	/* Chain up to the parent class */
-	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	G_OBJECT_CLASS (parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->finalize (object);
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	/* FIXME: */
+/* 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object); */
+
+	switch (prop_id) {
+/* 	case PROP_HW_ADDRESS: */
+/* 		g_value_set_int (value, ); */
+/* 		break; */
+	case PROP_SPEED:
+		g_value_set_int (value, nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (object)));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 
@@ -399,6 +439,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 
 	/* virtual methods */
+	object_class->get_property = get_property;
 	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
@@ -408,32 +449,26 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
-}
 
-GType
-nm_device_802_3_ethernet_get_type (void)
-{
-	static GType type = 0;
-	if (type == 0)
-	{
-		static const GTypeInfo info =
-		{
-			sizeof (NMDevice8023EthernetClass),
-			NULL,	/* base_init */
-			NULL,	/* base_finalize */
-			(GClassInitFunc) nm_device_802_3_ethernet_class_init,
-			NULL,	/* class_finalize */
-			NULL,	/* class_data */
-			sizeof (NMDevice8023Ethernet),
-			0,		/* n_preallocs */
-			(GInstanceInitFunc) nm_device_802_3_ethernet_init,
-			NULL		/* value_table */
-		};
-		type = g_type_register_static (NM_TYPE_DEVICE,
-					       "NMDevice8023Ethernet",
-					       &info, 0);
-	}
-	return type;
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_HW_ADDRESS,
+		 g_param_spec_int (NM_DEVICE_802_3_ETHERNET_HW_ADDRESS,
+							"MAC Address",
+							"Hardware MAC address",
+							0, G_MAXINT32, 0,
+							G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_SPEED,
+		 g_param_spec_int (NM_DEVICE_802_3_ETHERNET_SPEED,
+							"Speed",
+							"Speed",
+							0, G_MAXINT32, 0,
+							G_PARAM_READABLE));
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+									 &dbus_glib_nm_device_802_3_ethernet_object_info);
 }
 
 

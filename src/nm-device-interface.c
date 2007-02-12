@@ -1,6 +1,10 @@
 
 #include "nm-device-interface.h"
 
+static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
+
+#include "nm-device-interface-glue.h"
+
 static void
 nm_device_interface_init (gpointer g_iface)
 {
@@ -60,14 +64,6 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_boolean (NM_DEVICE_INTERFACE_USE_DHCP,
-							   "Use DHCP",
-							   "Use DHCP",
-							   TRUE,
-							   G_PARAM_READWRITE));
-
-	g_object_interface_install_property
-		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_STATE,
 							"State",
 							"State",
@@ -100,6 +96,9 @@ nm_device_interface_init (gpointer g_iface)
 				  g_cclosure_marshal_VOID__BOOLEAN,
 				  G_TYPE_NONE, 1,
 				  G_TYPE_BOOLEAN);
+
+	dbus_g_object_type_install_info (iface_type,
+									 &dbus_glib_nm_device_interface_object_info);
 
 	initialized = TRUE;
 }
@@ -139,4 +138,14 @@ nm_device_interface_deactivate (NMDeviceInterface *device)
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
 
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device);
+}
+
+static gboolean
+impl_device_deactivate (NMDeviceInterface *device, GError **err)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+
+	nm_device_interface_deactivate (device);
+
+	return TRUE;
 }

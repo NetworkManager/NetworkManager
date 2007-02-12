@@ -67,9 +67,6 @@ char * nm_dbus_manager_get_name_owner     (NMDBusManager *self,
 
 gboolean nm_dbus_manager_start_service    (NMDBusManager *self);
 
-void nm_dbus_manager_register_method_list (NMDBusManager *self,
-                                           NMDbusMethodList *list);
-
 gboolean nm_dbus_manager_name_has_owner   (NMDBusManager *self,
                                            const char *name);
 

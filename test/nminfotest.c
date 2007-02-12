@@ -203,8 +203,8 @@ static void get_networks_of_type (DBusConnection *connection, NMNetworkType type
 static void get_user_key_for_network (DBusConnection *connection)
 {
 	DBusMessage *	message;
-	const char *	dev_path = NM_DBUS_PATH_DEVICES"/eth1";
-	const char *	net_path = NM_DBUS_PATH_DEVICES"/Networks/wireless-ap";
+	const char *	dev_path = NM_DBUS_PATH_DEVICE"/eth1";
+	const char *	net_path = NM_DBUS_PATH_DEVICE"/Networks/wireless-ap";
 	const char *	essid = "wireless-ap";
 	const int		attempts = 0;
 	const gboolean	new_key = FALSE;

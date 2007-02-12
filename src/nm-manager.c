@@ -8,6 +8,11 @@
 #include "NetworkManagerSystem.h"
 // #include "NetworkManagerDbus.h"
 
+static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
+static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
+
+#include "nm-manager-glue.h"
+
 static void manager_state_changed (NMManager *manager);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
@@ -160,9 +165,12 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, state_change),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UCHAR,
+					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_UCHAR);
+					  G_TYPE_UINT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
+									 &dbus_glib_nm_manager_object_info);
 }
 
 NMManager *
@@ -290,6 +298,20 @@ nm_manager_get_devices (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->devices;
 }
 
+static gboolean
+impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+
+	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
+
+	for (iter = priv->devices; iter; iter = iter->next)
+		g_ptr_array_add (*devices, nm_dbus_get_object_path_for_device (NM_DEVICE (iter->data)));
+
+	return TRUE;
+}
+
 NMDevice *
 nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
 {
@@ -402,6 +424,14 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 	}
 
 	manager_state_changed (manager);
+}
+
+static gboolean
+impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err)
+{
+	nm_manager_sleep (manager, sleep);
+
+	return TRUE;
 }
 
 NMDevice *

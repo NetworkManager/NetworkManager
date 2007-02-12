@@ -36,6 +36,7 @@
 #include "NetworkManagerSystem.h"
 #include "nm-vpn-manager.h"
 #include "nm-dhcp-manager.h"
+#include "nm-dbus-manager.h"
 #include "nm-dbus-nmi.h"
 #include "nm-utils.h"
 #include "autoip.h"
@@ -131,6 +132,8 @@ constructor (GType type,
 {
 	GObject *object;
 	NMDevice *dev;
+	NMDBusManager *manager;
+	char *path;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
 																   n_construct_params,
@@ -174,6 +177,13 @@ constructor (GType type,
 		NM_DEVICE_GET_CLASS (dev)->init (dev);
 
 	NM_DEVICE_GET_CLASS (dev)->start (dev);
+
+	manager = nm_dbus_manager_get ();
+
+	path = nm_dbus_get_object_path_for_device (dev);
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
+										 path, object);
+	g_free (path);
 
 	return object;
 }
@@ -1662,9 +1672,6 @@ set_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_USE_DHCP:
-		nm_device_set_use_dhcp (NM_DEVICE (object), g_value_get_boolean (value));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1695,9 +1702,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
 		g_value_set_uint (value, priv->ip4_address);
-		break;
-	case NM_DEVICE_INTERFACE_PROP_USE_DHCP:
-		g_value_set_boolean (value, nm_device_get_use_dhcp (NM_DEVICE (object)));
 		break;
 	case NM_DEVICE_INTERFACE_PROP_STATE:
 		g_value_set_uint (value, priv->state);
@@ -1758,10 +1762,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,
 									  NM_DEVICE_INTERFACE_IP4_ADDRESS);
-
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_USE_DHCP,
-									  NM_DEVICE_INTERFACE_USE_DHCP);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_STATE,

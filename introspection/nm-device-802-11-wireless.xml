@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.Device.Wireless">
+
+    <method name="Activate">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_activate"/>
+      <arg name="access_point" type="o" direction="in"/>
+      <arg name="user_requested" type="b" direction="in"/>
+    </method>
+
+    <method name="GetActiveNetworks">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_active_networks"/>
+      <arg name="networks" type="ao" direction="out"/>
+    </method>
+
+    <property name="Address" type="s" access="read"/>
+    <property name="Mode" type="i" access="read"/>
+    <property name="ActiveNetwork" type="o" access="read"/>
+
+    <signal name="NetworkAdded">
+      <arg name="network" type="o"/>
+    </signal>
+
+    <signal name="NetworkRemoved">
+      <arg name="network" type="o"/>
+    </signal>
+
+  </interface>
+</node>

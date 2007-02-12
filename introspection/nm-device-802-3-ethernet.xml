@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.Device.Wired">
+    <method name="Activate">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_802_3_ethernet_activate"/>
+      <arg name="user_requested" type="b"/>
+    </method>
+
+    <property name="Address" type="s" access="read"/>
+    <property name="Speed" type="i" access="read"/>
+  </interface>
+</node>

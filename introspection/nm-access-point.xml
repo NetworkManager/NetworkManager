@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.AccessPoint">
+    <property name="Address" type="s" access="read"/>
+    <property name="Broadcast" type="b" access="read"/>
+    <property name="Capabilities" type="i" access="read"/>
+    <property name="Encrypted" type="b" access="read"/>
+    <property name="Essid" type="s" access="read"/>
+    <property name="Frequency" type="d" access="read"/>
+    <property name="HWAddress" type="s" access="read"/>
+    <property name="Mode" type="i" access="read"/>
+    <property name="Rate" type="i" access="read"/>
+    <property name="Strength" type="i" access="read"/>
+
+    <signal name="StrengthChanged">
+      <arg name="strength" type="y"/>
+    </signal>
+
+  </interface>
+</node>
+

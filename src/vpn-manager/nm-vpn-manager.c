@@ -75,7 +75,8 @@ NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
 
 	manager->dbus_methods = nm_dbus_vpn_methods_setup (manager);
 	dbus_mgr = nm_dbus_manager_get ();
-	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods);
+	/* FIXME */
+/* 	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods); */
 	g_object_unref (dbus_mgr);
 
 	return manager;

@@ -48,6 +48,18 @@
 #include "cipher.h"
 #include "dbus-dict-helpers.h"
 
+static gboolean impl_device_activate (NMDevice80211Wireless *device,
+									  const char *ap_path,
+									  gboolean user_requested,
+									  GError **err);
+
+static gboolean impl_device_get_active_networks (NMDevice80211Wireless *device,
+												 GPtrArray **networks,
+												 GError **err);
+
+#include "nm-device-802-11-wireless-glue.h"
+
+
 /* #define IW_QUAL_DEBUG */
 
 G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
@@ -642,6 +654,27 @@ nm_device_802_11_wireless_activate (NMDevice80211Wireless *self,
 }
 
 
+static gboolean
+impl_device_activate (NMDevice80211Wireless *device,
+					  const char *ap_path,
+					  gboolean user_requested,
+					  GError **err)
+{
+	NMAccessPoint *ap;
+
+	ap = nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (device, ap_path);
+	if (!ap) {
+		g_set_error (err, 0, 0, /* FIXME */
+					 "Invalid Access Point");
+		return FALSE;
+	}
+
+	nm_device_802_11_wireless_activate (device, ap, user_requested);
+
+	return TRUE;
+}
+
+
 /*
  * nm_device_copy_allowed_to_dev_list
  *
@@ -1117,6 +1150,36 @@ nm_device_802_11_wireless_ap_list_get (NMDevice80211Wireless *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->ap_list;
+}
+
+
+static gboolean
+impl_device_get_active_networks (NMDevice80211Wireless *device,
+								 GPtrArray **networks,
+								 GError **err)
+{
+	NMAccessPointList *ap_list;
+
+	*networks = g_ptr_array_new ();
+
+	ap_list = nm_device_802_11_wireless_ap_list_get (device);
+	if (ap_list) {
+		NMAPListIter *list_iter;
+
+		if ((list_iter = nm_ap_list_iter_new (ap_list))) {
+			NMAccessPoint *ap;
+
+			while ((ap = nm_ap_list_iter_next (list_iter))) {
+				if (nm_ap_get_essid (ap)) {
+					g_ptr_array_add (*networks,
+									 nm_dbus_get_object_path_for_network (NM_DEVICE (device), ap));
+				}
+			}
+			nm_ap_list_iter_free (list_iter);
+		}
+	}
+
+	return TRUE;
 }
 
 
@@ -3331,6 +3394,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  g_cclosure_marshal_VOID__POINTER,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_POINTER);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+									 &dbus_glib_nm_device_802_11_wireless_object_info);
 }
 
 

@@ -1,6 +1,7 @@
 SUBDIRS = 				\
 	   utils				\
 	   libnm-util			\
+	   libnm-glib			\
 	   src				\
 	   dispatcher-daemon	\
 	   gnome				\

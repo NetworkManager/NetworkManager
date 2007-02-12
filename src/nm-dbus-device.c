@@ -654,7 +654,7 @@ nm_dbus_device_message_handler (DBusConnection *connection,
 
 	/* Test whether or not the _networks_ of a device were queried instead of the device itself */
 	object_path = g_strdup_printf ("%s/%s/Networks/",
-	                               NM_DBUS_PATH_DEVICES,
+	                               NM_DBUS_PATH_DEVICE,
 	                               nm_device_get_iface (dev));
 	escaped_object_path = nm_dbus_escape_object_path (object_path);
 	g_free (object_path);
@@ -703,7 +703,7 @@ NMDbusMethodList *nm_dbus_device_methods_setup (NMData *data)
 
 	g_return_val_if_fail (data != NULL, NULL);
 	
-	list = nm_dbus_method_list_new (NM_DBUS_PATH_DEVICES, TRUE, data, NULL);
+	list = nm_dbus_method_list_new (NM_DBUS_PATH_DEVICE, TRUE, data, NULL);
 	nm_dbus_method_list_set_custom_handler_func (list, nm_dbus_device_message_handler);
 
 	nm_dbus_method_list_add_method (list, "getProperties",		nm_dbus_device_get_properties);

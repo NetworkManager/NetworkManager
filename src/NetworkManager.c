@@ -225,9 +225,6 @@ static void nm_data_free (NMData *data)
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
-	nm_dbus_method_list_unref (data->nm_methods);
-	nm_dbus_method_list_unref (data->device_methods);
-
 	nm_vpn_manager_dispose (data->vpn_manager);
 	g_object_unref (data->named_manager);
 
@@ -422,13 +419,6 @@ main (int argc, char *argv[])
 	                                              nm_dbus_nmi_signal_handler,
 	                                              nm_data);
 	nm_data->nmi_sig_handler_id = id;
-
-	/* Register DBus method handlers for the main NM objects */
-	nm_data->nm_methods = nm_dbus_nm_methods_setup (nm_data);
-	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->nm_methods);
-	nm_data->device_methods = nm_dbus_device_methods_setup (nm_data);
-	nm_dbus_manager_register_method_list (dbus_mgr, nm_data->device_methods);
-	nm_data->net_methods = nm_dbus_net_methods_setup (nm_data);
 
 	manager = nm_manager_new ();
 	policy = nm_policy_new (manager);

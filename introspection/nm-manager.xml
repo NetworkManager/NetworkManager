@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager">
+    <method name="GetDevices">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_devices"/>
+      <arg name="devices" type="ao" direction="out"/>
+    </method>
+
+    <method name="Sleep">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
+      <arg name="sleep" type="b" direction="in"/>
+    </method>
+
+    <property name="WirelessEnabled" type="b" access="readwrite"/>
+    <property name="State" type="u" access="read"/>
+
+    <signal name="StateChange">
+      <arg name="state" type="u"/>
+    </signal>
+
+    <signal name="DeviceAdded">
+      <arg name="state" type="o"/>
+    </signal>
+
+    <signal name="DeviceRemoved">
+      <arg name="state" type="o"/>
+    </signal>
+
+  </interface>
+</node>

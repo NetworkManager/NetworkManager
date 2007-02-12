@@ -29,10 +29,12 @@
 
 #define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
 #define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH_DEVICES		"/org/freedesktop/NetworkManager/Devices"
-#define	NM_DBUS_INTERFACE_DEVICES	"org.freedesktop.NetworkManager.Devices"
-#define	NM_DBUS_PATH_DHCP			"/org/freedesktop/NetworkManager/DhcpOptions"
-#define	NM_DBUS_INTERFACE_DHCP		"org.freedesktop.NetworkManager.DhcpOptions"
+#define	NM_DBUS_PATH_DEVICE			"/org/freedesktop/NetworkManager/Device"
+#define	NM_DBUS_INTERFACE_DEVICE	"org.freedesktop.NetworkManager.Device"
+#define NM_DBUS_INTERFACE_DEVICE_WIRED "org.freedesktop.NetworkManager.Device.Wired"
+#define NM_DBUS_INTERFACE_DEVICE_WIRELESS "org.freedesktop.NetworkManager.Device.Wireless"
+#define NM_DBUS_PATH_ACCESS_POINT "/org/freedesktop/NetworkManager/AccessPoint"
+#define NM_DBUS_INTERFACE_ACCESS_POINT "org.freedesktop.NetworkManager.AccessPoint"
 
 #define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
 #define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"

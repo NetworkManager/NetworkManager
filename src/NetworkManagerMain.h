@@ -48,10 +48,6 @@ typedef struct NMData
 	NMVPNManager *			vpn_manager;
 	guint32                 nmi_sig_handler_id;
 
-	NMDbusMethodList *		nm_methods;
-	NMDbusMethodList *		device_methods;
-	NMDbusMethodList *		net_methods;
-
 	GMainLoop *			main_loop;
 	gboolean				enable_test_devices;
 

@@ -114,7 +114,7 @@ fi
 IWLIB=-liw
 AC_SUBST(IWLIB)
 
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.60)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.72)
 
 ##### Find out the version of DBUS we're using
 dbus_version=`pkg-config --modversion dbus-1`
@@ -353,6 +353,8 @@ src/supplicant-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
+libnm-glib/libnm-glib.pc
+libnm-glib/Makefile
 dispatcher-daemon/Makefile
 gnome/Makefile
 gnome/libnm_glib/libnm_glib.pc

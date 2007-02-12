@@ -104,7 +104,7 @@ char * nm_dbus_get_object_path_for_device (NMDevice *dev)
 
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev));
 	escaped_object_path = nm_dbus_escape_object_path (object_path);
 	g_free (object_path);
 
@@ -128,7 +128,7 @@ char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
 	if (!nm_ap_get_essid (ap))
 		return NULL;
 
-	object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap));
+	object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev), nm_ap_get_essid (ap));
 	escaped_object_path = nm_dbus_escape_object_path (object_path);
 	g_free (object_path);
 
@@ -159,7 +159,7 @@ NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char 
 		if (!(dev = NM_DEVICE (elt->data)))
 			continue;
 
-		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
+		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev));
 		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
 		g_free (compare_path);
 		len = strlen (escaped_compare_path);

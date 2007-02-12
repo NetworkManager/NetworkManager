@@ -127,7 +127,7 @@ static void detail_network (DBusConnection *connection, const char *path, const 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (path != NULL);
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICE, "getProperties")))
 	{
 		fprintf (stderr, "detail_network(): couldn't create new dbus message.\n");
 		return;
@@ -214,7 +214,7 @@ get_driver_name (DBusConnection *connection, const char *path)
 
 	g_return_val_if_fail (path != NULL, NULL);
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICES, "getDriver")))
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICE, "getDriver")))
 	{
 		nm_warning ("%s(): Couldn't allocate the dbus message", __func__);
 		return NULL;
@@ -266,7 +266,7 @@ static void detail_device (DBusConnection *connection, const char *path)
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (path != NULL);
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICES, "getProperties")))
+	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE_DEVICE, "getProperties")))
 	{
 		fprintf (stderr, "detail_device(): couldn't create new dbus message.\n");
 		return;

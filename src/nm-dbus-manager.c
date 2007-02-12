@@ -72,8 +72,6 @@ typedef struct {
 	DBusGProxy *     proxy;
 	gboolean         started;
 
-	GSList *         msg_handlers;
-
 	GSList *         matches;
 	GSList *         signal_handlers;
 	guint32          sig_handler_id_counter;
@@ -154,9 +152,6 @@ nm_dbus_manager_finalize (GObject *object)
 	g_slist_free (priv->matches);
 
 	nm_dbus_manager_cleanup (self);
-
-	g_slist_foreach (priv->msg_handlers, cleanup_handler_data, NULL);
-	g_slist_free (priv->msg_handlers);
 
 	G_OBJECT_CLASS (nm_dbus_manager_parent_class)->finalize (object);
 }
@@ -695,49 +690,6 @@ out:
 	return success;
 }
 
-static gboolean
-nm_dbus_manager_register_method_handlers (NMDBusManager *self)
-{
-	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-	gboolean success = FALSE;
-	GSList * elt;
-
-	for (elt = priv->msg_handlers; elt; elt = g_slist_next (elt)) {
-		MethodHandlerData *		data = (MethodHandlerData *) elt->data;
-		DBusObjectPathVTable	vtable = {NULL, &nm_dbus_manager_message_handler,
-		                                  NULL, NULL, NULL, NULL};
-		dbus_bool_t				ret = FALSE;
-		const char *			path;
-
-		if (!nm_dbus_method_list_get_path (data->list)) {
-			nm_warning ("DBus message handler had no path.");
-			continue;
-		}
-
-		/* If the method list object specifies a custom handler, use that
-		 * instead of our default built-in one.
-		 */
-		path = nm_dbus_method_list_get_path (data->list);
-		if (nm_dbus_method_list_get_is_fallback (data->list)) {
-			ret = dbus_connection_register_fallback (priv->connection,
-			                                         path, &vtable, data);
-		} else {
-			ret = dbus_connection_register_object_path (priv->connection,
-			                                            path, &vtable, data);
-		}
-
-		if (ret == FALSE) {
-			nm_warning ("Could not register DBus message handler for path %s.",
-			            path);
-			goto out;
-		}
-	}
-	success = TRUE;
-
-out:
-	return success;
-}
-
 /* Register our service on the bus; shouldn't be called until
  * all necessary message handlers have been registered, because
  * when we register on the bus, clients may start to call.
@@ -759,10 +711,6 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		nm_warning ("Service has already started.");
 		return FALSE;
 	}
-
-	/* Register our method handlers */
-	if (!nm_dbus_manager_register_method_handlers (self))
-		goto out;
 
 	/* And our signal handlers */
 	for (elt = priv->matches; elt; elt = g_slist_next (elt)) {
@@ -801,45 +749,6 @@ out:
 		nm_dbus_manager_cleanup (self);
 
 	return priv->started;
-}
-
-void
-nm_dbus_manager_register_method_list (NMDBusManager *self,
-                                      NMDbusMethodList *list)
-{
-	NMDBusManagerPrivate *priv;
-	MethodHandlerData * data;
-
-	g_return_if_fail (NM_IS_DBUS_MANAGER (self));
-	g_return_if_fail (list != NULL);
-
-	priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
-
-	if (priv->started) {
-		nm_warning ("DBus Manager object already started!");
-		return;
-	}
-
-	if (priv->connection == NULL) {
-		nm_warning ("DBus Manager object not yet initialized!");
-		return;
-	}
-
-	if (g_slist_find (priv->msg_handlers, list)) {
-		nm_warning ("Handler already registered.");
-		return;
-	}
-
-	data = g_slice_new0 (MethodHandlerData);
-	if (!data) {
-		nm_warning ("Not enough memory to register the handler.");
-		return;
-	}
-
-	nm_dbus_method_list_ref (list);
-	data->list = list;
-	data->self = self;
-	priv->msg_handlers = g_slist_append (priv->msg_handlers, data);	
 }
 
 static void

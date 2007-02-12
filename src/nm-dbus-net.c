@@ -59,7 +59,7 @@ nm_dbus_get_ap_from_object_path (const char *path,
 	while ((ap = nm_ap_list_iter_next (iter))) {
 		int len;
 
-		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
+		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_PATH_DEVICE,
 				nm_device_get_iface (dev), nm_ap_get_essid (ap));
 		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
 
