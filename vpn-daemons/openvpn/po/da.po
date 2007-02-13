@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-13 20:58+0100\n"
-"PO-Revision-Date: 2007-02-13 20:57+0100\n"
+"PO-Revision-Date: 2007-02-13 21:04+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
 "Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
 "MIME-Version: 1.0\n"
@@ -52,9 +52,7 @@ msgstr "_Gem adgangskode i nøglering"
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
-"Brugerverifikation er påkrævet for at tilslutte til det virtuelle private "
-"netværk '%s'."
+msgstr "Brugerverifikation er påkrævet for at tilslutte til det virtuelle private netværk '%s'."
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
@@ -94,18 +92,21 @@ msgstr "Navn:  %s"
 msgid "Connection Type: X.509 Certificates"
 msgstr "Forbindelsestype: X.509-certifikater"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
+#: ../properties/nm-openvpn.c:742
+#: ../properties/nm-openvpn.c:769
 #: ../properties/nm-openvpn.c:781
 #, c-format
 msgid "CA:  %s"
 msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:745
+#: ../properties/nm-openvpn.c:784
 #, c-format
 msgid "Cert:  %s"
 msgstr "Cert:  %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:748
+#: ../properties/nm-openvpn.c:787
 #, c-format
 msgid "Key:  %s"
 msgstr "Nøgle:  %s"
@@ -133,7 +134,8 @@ msgstr "Fjern IP:  %s"
 msgid "Connection Type: Password"
 msgstr "Forbindelsestype: Adgangskode"
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:772
+#: ../properties/nm-openvpn.c:790
 #, c-format
 msgid "Username:  %s"
 msgstr "Brugernavn:  %s"
@@ -199,7 +201,7 @@ msgstr "Kode:  %s"
 #: ../properties/nm-openvpn.c:819
 #, c-format
 msgid "TLS auth:  %s %s"
-msgstr "TLS godkendelse: %s %s"
+msgstr "TLS-godkendelse: %s %s"
 
 #: ../properties/nm-openvpn.c:823
 msgid "The connection details can be changed using the \"Edit\" button."
@@ -218,7 +220,8 @@ msgstr "VPN-opsætningsfilen '%s' indeholder ikke gyldige data."
 msgid "Select file to import"
 msgstr "Vælg fil der skal importeres"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1122
+#: ../properties/nm-openvpn.c:1134
 msgid "Select CA to use"
 msgstr "Vælg CA der skal bruges"
 
@@ -318,20 +321,12 @@ msgid "Password"
 msgstr "Adgangskode:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Indtast oplysninger fra din systemadministrator nedenfor. Du skal ikke "
-"indtaste din adgangskode her, da du bliver spurgt om den ved tilslutning."
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Indtast oplysninger fra din systemadministrator nedenfor. Du skal ikke indtaste din adgangskode her, da du bliver spurgt om den ved tilslutning."
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your administrator for the file."
-msgstr ""
-"Bemærk venligst at filen du importerer ikke er en OpenVPN-konfigurationsfil. "
-"Spørg din administrator efter filen."
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
+msgstr "Bemærk venligst at filen du importerer ikke er en OpenVPN-konfigurationsfil. Spørg din administrator efter filen."
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
@@ -359,7 +354,7 @@ msgstr "Brug TCP-forbindelse"
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
-msgstr "Brug TLS godkendelse:"
+msgstr "Brug TLS-godkendelse:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
@@ -394,12 +389,8 @@ msgid "_Import Saved Configuration..."
 msgstr "_Importér gemt konfiguration..."
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Navn brugt til at identificere forbindelsen til det private netværk, f.eks. "
-"\"Universitetets VPN\" eller \"Virksomhedens netværk\""
+msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "_Navn brugt til at identificere forbindelsen til det private netværk, f.eks. \"Universitetets VPN\" eller \"Virksomhedens netværk\""
 
 #: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
@@ -410,39 +401,27 @@ msgid "none"
 msgstr "ingen"
 
 #: ../src/nm-openvpn-service.c:127
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
-msgstr ""
-"VPN-tjenesten fejlede fordi brugernavn og adgangskode blev afvist eller "
-"certifikat-adgangskoden var forkert."
+msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
+msgstr "VPN-tjenesten fejlede fordi brugernavn og adgangskode blev afvist eller certifikat-adgangskoden var forkert."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "VPN-tjenesten fejlede fordi VPN-programmet ikke kunne startes."
 
 #: ../src/nm-openvpn-service.c:131
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"VPN-tjenesten fejlede fordi VPN-programmet ikke kunne forbinde til VPN-"
-"serveren."
+msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgstr "VPN-tjenesten fejlede fordi VPN-programmet ikke kunne forbinde til VPN-serveren."
 
 #: ../src/nm-openvpn-service.c:133
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
+msgid "The VPN login failed because the VPN configuration options were invalid."
 msgstr "VPN-tjenesten fejlede fordi VPN-konfigurationen var ugyldig."
 
 #: ../src/nm-openvpn-service.c:135
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"VPN-tjenesten fejlede fordi VPN-programmet modtog en ugyldig konfiguration "
-"fra VPN-serveren."
+msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgstr "VPN-tjenesten fejlede fordi VPN-programmet modtog en ugyldig konfiguration fra VPN-serveren."
 
 #
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN-forbindelsen fejlede"
+
