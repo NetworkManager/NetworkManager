@@ -1,3 +1,15 @@
+2007-02-12  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Helmut Schaa <hschaa@suse.de>
+
+	* vpn-daemons/pptp/configure.in
+	  vpn-daemons/pptp/Makefile.am
+	  vpn-daemons/openvpn/configure.in
+	  vpn-daemons/openvpn/Makefile.am
+	  vpn-daemons/vpnc/configure.in
+	  vpn-daemons/vpnc/Makefile.am
+		- Add --without-gnome switch which disables building gnome bits
+
 2007-02-12  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-device.c (nm_device_get_use_dhcp): Remove.
