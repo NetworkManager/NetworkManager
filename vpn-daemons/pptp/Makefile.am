@@ -1,6 +1,10 @@
 AUTOMAKE_OPTIONS = foreign
 
+if WITH_GNOME
 SUBDIRS = src auth-dialog properties po
+else
+SUBDIRS = src
+endif
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
 dbusservice_DATA = nm-pptp-service.conf
@@ -8,6 +12,7 @@ dbusservice_DATA = nm-pptp-service.conf
 nmvpnservicedir = $(sysconfdir)/NetworkManager/VPN
 nmvpnservice_DATA = nm-pptp-service.name
 
+if WITH_GNOME
 desktopdir = $(datadir)/applications
 desktop_in_files = nm-pptp.desktop.in
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
@@ -15,6 +20,7 @@ desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 
 icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-pptp-settings.png
+endif
 
 EXTRA_DIST = $(nmvpnservice_DATA) \
              $(dbusservice_DATA)  \

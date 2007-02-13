@@ -1,5 +1,17 @@
 2007-02-12  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Helmut Schaa <hschaa@suse.de>
+
+	* vpn-daemons/pptp/configure.in
+	  vpn-daemons/pptp/Makefile.am
+	  vpn-daemons/openvpn/configure.in
+	  vpn-daemons/openvpn/Makefile.am
+	  vpn-daemons/vpnc/configure.in
+	  vpn-daemons/vpnc/Makefile.am
+		- Add --without-gnome switch which disables building gnome bits
+
+2007-02-12  Dan Williams  <dcbw@redhat.com>
+
 	Better handle ipw cards and their drivers which issue quickly successive
 	scan result notifications due to background scanning.  Batch up scan result
 	requests as a result of a notification.  (already done in trunk, but
