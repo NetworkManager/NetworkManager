@@ -1,656 +1,28 @@
 # Danish translation of NetworkManager.
-# Copyright (C) 2004-2006
+# Copyright (C) 2004-2007
 # This file is distributed under the same license as the NetworkManager package.
 # David Nielsen <dnielsen@breakmygentoo.net>, 2004.
 # Martin Willemoes Hansen <mwh@sysrq.dk>, 2004.
-# Lasse Bang Mikkelsen <lbm@fatalerror.dk>, 2005, 06.
+# Lasse Bang Mikkelsen <lbm@fatalerror.dk>, 2005, 06, 07.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-01-26 15:17+0100\n"
-"PO-Revision-Date: 2006-01-26 15:18+0100\n"
+"POT-Creation-Date: 2007-02-13 20:50+0100\n"
+"PO-Revision-Date: 2007-02-13 20:50+0100\n"
 "Last-Translator: Lasse Bang Mikkelsen <lbm@fatalerror.dk>\n"
-"Language-Team: Danish <dansk@klid.dk>\n"
+"Language-Team: Danish <dansk@dansk-gruppen.dk>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:934
-#, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "Adgangskode til trådløst netværk %s"
-
-#: ../gnome/applet/applet-dbus.c:274
-#, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "Tilslutning til det trådløse netværk '%s' mislykkedes."
-
-#: ../gnome/applet/applet-dbus.c:279
-msgid "Connection to the wired network failed."
-msgstr "Tilslutning til det kablede netværk mislykkedes."
-
-#: ../gnome/applet/applet.c:180
-msgid "Error displaying connection information: "
-msgstr "Fejl ved visning af forbindelses-information: "
-
-#: ../gnome/applet/applet.c:199
-msgid "Could not find some required resources (the glade file)!"
-msgstr "Kunne ikke finde nogle krævede ressourcer (glade-filen)!"
-
-#: ../gnome/applet/applet.c:210
-msgid "No active connections!"
-msgstr "Ingen aktive forbindelser!"
-
-#: ../gnome/applet/applet.c:225
-#, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "Kablet Ethernet (%s)"
-
-#: ../gnome/applet/applet.c:227
-#, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "Trådløst Ethernet (%s)"
-
-#: ../gnome/applet/applet.c:321 ../gnome/applet/applet.c:346
-msgid "NetworkManager Applet"
-msgstr "NetworkManager-panelprogram"
-
-#: ../gnome/applet/applet.c:323 ../gnome/applet/applet.c:348
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "Copyright © 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:324 ../gnome/applet/applet.c:349
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr ""
-"Statusfelt-panelprogram til håndtering af dine netværks-enheder og -"
-"forbindelser."
-
-#: ../gnome/applet/applet.c:327 ../gnome/applet/applet.c:354
-msgid "translator-credits"
-msgstr ""
-"David Nielsen\n"
-"Martin Willemoes Hansen\n"
-"Lasse Bang Mikkelsen\n"
-"\n"
-"Dansk-gruppen <dansk@dansk-gruppen.dk>\n"
-"Mere info: http://www.dansk-gruppen.dk"
-
-#: ../gnome/applet/applet.c:439
-msgid "VPN Error"
-msgstr "VPN fejl"
-
-#: ../gnome/applet/applet.c:443
-msgid "VPN Login Failure"
-msgstr "VPN logind-fejl"
-
-#: ../gnome/applet/applet.c:444
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "Kunne ikke etablere VPN-forbindelsen '%s' pågrund af en logind-fejl."
-
-#: ../gnome/applet/applet.c:448
-msgid "VPN Start Failure"
-msgstr "VPN etablerings-fejl"
-
-#: ../gnome/applet/applet.c:449
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr ""
-"Kunne ikke etablere VPN-forbindelsen '%s' pågrund af fejl ved start af VPN-"
-"program."
-
-#: ../gnome/applet/applet.c:453 ../gnome/applet/applet.c:463
-msgid "VPN Connect Failure"
-msgstr "VPN tilslutnings-fejl"
-
-#: ../gnome/applet/applet.c:454
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr ""
-"Kunne ikke etablere VPN-forbindelsen '%s' pågrund af en forbindelses-fejl."
-
-#: ../gnome/applet/applet.c:458
-msgid "VPN Configuration Error"
-msgstr "VPN konfigurations-fejl"
-
-#: ../gnome/applet/applet.c:459
-#, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "VPN-forbindelsen '%s' er ikke konfigureret korrekt."
-
-#: ../gnome/applet/applet.c:464
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr ""
-"Kunne ikke etablere VPN-forbindelsen '%s' fordi VPN-serveren ikke "
-"returnerede en passende netværks-konfiguration."
-
-#: ../gnome/applet/applet.c:472
-#, c-format
-msgid "The VPN service said: \"%s\""
-msgstr "VPN-tjenesten sagde: \"%s\""
-
-#: ../gnome/applet/applet.c:541
-#, c-format
-msgid "VPN connection '%s' said:"
-msgstr "VPN-forbindelsen '%s' sagde:"
-
-#: ../gnome/applet/applet.c:543
-msgid "VPN Login Message"
-msgstr "VPN logind-meddelelse"
-
-#: ../gnome/applet/applet.c:760 ../gnome/applet/applet.c:2514
-#: ../gnome/applet/other-network-dialog.c:457
-#: ../gnome/applet/passphrase-dialog.c:209
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"NetworkManager panelprogrammet kunne ikke finde nogle krævede ressourcer "
-"(glade-filen blev ikke fundet)."
-
-#: ../gnome/applet/applet.c:772
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "Netværks-enheden \"%s (%s)\" understøtter ikke trådløs scanning."
-
-#: ../gnome/applet/applet.c:780
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "Netværks-enheden \"%s (%s)\" understøtter ikke link-detektering."
-
-#: ../gnome/applet/applet.c:928
-#, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "Klargører enheden %s til det kablede netværk..."
-
-#: ../gnome/applet/applet.c:930
-#, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "Klargører enheden %s til det trådløse netværk '%s'..."
-
-#: ../gnome/applet/applet.c:938
-#, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "Konfigurerer enheden %s til det kablede netværk..."
-
-#: ../gnome/applet/applet.c:940
-#, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "Forsøger at tilslutte til det trådløse netværk '%s'..."
-
-#: ../gnome/applet/applet.c:948
-#, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "Venter på netværksnøglen til det trådløse netværk '%s'..."
-
-#: ../gnome/applet/applet.c:956 ../gnome/applet/applet.c:966
-msgid "Requesting a network address from the wired network..."
-msgstr "Forespørger en netværks-adresse fra det kablede netværk..."
-
-#: ../gnome/applet/applet.c:958 ../gnome/applet/applet.c:968
-#, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "Forespørger en netværks-adresse fra det trådløse netværk '%s'..."
-
-#: ../gnome/applet/applet.c:976
-msgid "Finishing connection to the wired network..."
-msgstr "Færdiggører tilslutning til det kablede netværk..."
-
-#: ../gnome/applet/applet.c:978
-#, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "Færdiggører tilslutning til det trådløse netværk '%s'..."
-
-#: ../gnome/applet/applet.c:1095
-msgid "NetworkManager is not running"
-msgstr "NetworkManager kører ikke"
-
-#: ../gnome/applet/applet.c:1108 ../gnome/applet/applet.c:1842
-msgid "Networking disabled"
-msgstr "Netværks-understøttelse deaktiveret"
-
-#: ../gnome/applet/applet.c:1113
-msgid "No network connection"
-msgstr "Ingen netværks-forbindelse"
-
-#: ../gnome/applet/applet.c:1118
-msgid "Wired network connection"
-msgstr "Kablet netværks-forbindelse"
-
-#: ../gnome/applet/applet.c:1122
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Tilsluttet til et trådløst ad hoc netværk"
-
-#: ../gnome/applet/applet.c:1124
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Trådløs netværks-forbindelse til '%s' (%d%%)"
-
-#: ../gnome/applet/applet.c:1146
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "VPN-forbindelse til '%s'"
-
-#: ../gnome/applet/applet.c:1154
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "VPN tilslutter til '%s'"
-
-#: ../gnome/applet/applet.c:1567
-msgid "_Connect to Other Wireless Network..."
-msgstr "_Tilslut til andet trådløst netværk..."
-
-#: ../gnome/applet/applet.c:1588
-msgid "Create _New Wireless Network..."
-msgstr "Opret _nyt trådløst netværk..."
-
-#: ../gnome/applet/applet.c:1709
-msgid "_VPN Connections"
-msgstr "_VPN-forbindelser"
-
-#: ../gnome/applet/applet.c:1744
-msgid "_Configure VPN..."
-msgstr "_Konfigurér VPN..."
-
-#: ../gnome/applet/applet.c:1748
-msgid "_Disconnect VPN..."
-msgstr "_Afbryd VPN..."
-
-#: ../gnome/applet/applet.c:1770
-msgid "_Dial Up Connections"
-msgstr "_Opkalds-forbindelser"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1781
-#, c-format
-msgid "Connect to %s..."
-msgstr "Tilslut til %s..."
-
-#: ../gnome/applet/applet.c:1787
-#, c-format
-msgid "Disconnect from %s..."
-msgstr "Afbryd fra %s..."
-
-#: ../gnome/applet/applet.c:1836
-msgid "No network devices have been found"
-msgstr "Ingen netværks-enheder blev fundet"
-
-#: ../gnome/applet/applet.c:2028
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager kører ikke..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2184
-msgid "Enable _Networking"
-msgstr "Aktivér _netværks-understøttelse"
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2190
-msgid "Enable _Wireless"
-msgstr "Aktivér _trådløst netværk"
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2196
-msgid "Connection _Information"
-msgstr "Forbindelses-_information"
-
-#. Help item
-#: ../gnome/applet/applet.c:2207
-msgid "_Help"
-msgstr "_Hjælp"
-
-#. About item
-#: ../gnome/applet/applet.c:2216
-msgid "_About"
-msgstr "_Om"
-
-#: ../gnome/applet/applet.c:2633
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr ""
-"NetworkManager panelprogrammet kunne ikke finde nogle krævede ressourcer - "
-"kan ikke fortsætte.\n"
-
-#: ../gnome/applet/wireless-security-option.c:158
-msgid "Open System"
-msgstr "Åbent system"
-
-#: ../gnome/applet/wireless-security-option.c:161
-msgid "Shared Key"
-msgstr "Delt nøgle"
-
-#: ../gnome/applet/wireless-security-option.c:212
-msgid "TKIP (Default)"
-msgstr "TKIP (forvalgt)"
-
-#: ../gnome/applet/wireless-security-option.c:221
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr "Ingen"
-
-#: ../gnome/applet/wso-wep-ascii.c:128
-msgid "WEP 40/128-bit ASCII"
-msgstr "WEP 40/128-bit ASCII"
-
-#: ../gnome/applet/wso-wep-hex.c:125
-msgid "WEP 40/128-bit hex"
-msgstr "WEP 40/128-bit hex"
-
-#: ../gnome/applet/wso-wep-passphrase.c:125
-msgid "WEP Passphrase"
-msgstr "WEP-adgangskode:"
-
-#: ../gnome/applet/eggtrayicon.c:128
-msgid "Orientation"
-msgstr "Retning"
-
-#: ../gnome/applet/eggtrayicon.c:129
-msgid "The orientation of the tray."
-msgstr "Retningen på statusikonet."
-
-#: ../gnome/applet/menu-items.c:87
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "Kablet netværk (%s)"
-
-#: ../gnome/applet/menu-items.c:90
-msgid "_Wired Network"
-msgstr "_Kablet netværk"
-
-#: ../gnome/applet/menu-items.c:161
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Trådløst netværk (%s)"
-msgstr[1] "Trådløse netværk (%s)"
-
-#: ../gnome/applet/menu-items.c:163
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Trådløst netværk"
-msgstr[1] "Trådløse netværk"
-
-#: ../gnome/applet/menu-items.c:330
-msgid " (invalid Unicode)"
-msgstr " (ugyldig Unicode)"
-
-#: ../gnome/applet/other-network-dialog.c:354
-#, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr ""
-"Som standard navngives det trådløse netværk til din maskines navn, %s, uden "
-"nogen kryptering slået til"
-
-#: ../gnome/applet/other-network-dialog.c:360
-msgid "Create new wireless network"
-msgstr "Opret nyt trådløst netværk"
-
-#: ../gnome/applet/other-network-dialog.c:361
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Indtast navn- og sikkerhedsopsætning på det trådløse netværk du ønsker at "
-"oprette."
-
-#: ../gnome/applet/other-network-dialog.c:365
-msgid "Create New Wireless Network"
-msgstr "Opret nyt trådløst netværk"
-
-#: ../gnome/applet/other-network-dialog.c:370
-msgid "Existing wireless network"
-msgstr "Eksisterende trådløst netværk"
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Indtast navnet på det trådløse netværk du ønsker at tilslutte dig."
-
-#: ../gnome/applet/other-network-dialog.c:373
-msgid "Connect to Other Wireless Network"
-msgstr "Tilslut til andet trådløst netværk"
-
-#: ../gnome/applet/vpn-password-dialog.c:152
-#: ../gnome/applet/vpn-password-dialog.c:189
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "Kan ikke etablere VPN-forbindelsen '%s'"
-
-#: ../gnome/applet/vpn-password-dialog.c:155
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr ""
-"Kunne ikke finde godkendelses-vinduet til VPN-forbindelsestypen '%s'. "
-"Kontakt din system-administrator."
-
-#: ../gnome/applet/vpn-password-dialog.c:192
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr ""
-"Der opstod en fejl ved start af godkendelses-vinduet til VPN-"
-"forbindelsestypen '%s'. Kontakt din system-administrator."
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Information om aktiv forbindelse</span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Adgangskode påkrævet af trådløst "
-"netværk</span>\n"
-"\n"
-"En adgangskode eller krypteringsnøgle er påkrævet, for at opnå adgang til "
-"det trådløse netværk '%s'."
-
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Reduceret netværks-funktionalitet</"
-"span>\n"
-"\n"
-"%s  Den vil ikke være fuldstændig funktionsdygtig."
-
-#: ../gnome/applet/applet.glade.h:12
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Bekræftelse af logind på trådløst "
-"netværk</span>\n"
-"\n"
-"Du har valgt at logge på det trådløse netværk '%s'.  Hvis du er sikker på at "
-"dette trådløse netværk er sikkert, afkryds nedenstående afkrydsningsfelt og "
-"NetworkManager vil ikke spørge i fremtiden."
-
-#: ../gnome/applet/applet.glade.h:15
-msgid "Authentication:"
-msgstr "Godkendelse:"
-
-#: ../gnome/applet/applet.glade.h:16
-msgid "Broadcast Address:"
-msgstr "Rundsendings-adresse:"
-
-#: ../gnome/applet/applet.glade.h:17
-msgid "C_onnect"
-msgstr "T_ilslut"
-
-#: ../gnome/applet/applet.glade.h:18
-msgid "Connection Information"
-msgstr "Forbindelses-information"
-
-#: ../gnome/applet/applet.glade.h:19
-msgid "Default Route:"
-msgstr "Standard rute:"
-
-#: ../gnome/applet/applet.glade.h:20
-msgid "Destination Address:"
-msgstr "Destinations-adresse:"
-
-#: ../gnome/applet/applet.glade.h:21
-msgid "Hardware Address:"
-msgstr "Hardware-adresse:"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "IP Address:"
-msgstr "IP-adresse:"
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Interface:"
-msgstr "Enhed:"
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Key:"
-msgstr "Nøgle:"
-
-#: ../gnome/applet/applet.glade.h:25
-msgid ""
-"None\n"
-"WEP Passphrase\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
-msgstr ""
-"Ingen\n"
-"WEP-adgangskode\n"
-"WEP 40/128-bit hex\n"
-"WEP 40/128-bit ASCII\n"
-
-#: ../gnome/applet/applet.glade.h:30
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr ""
-"Åbent system\n"
-"Delt nøgle"
-
-#: ../gnome/applet/applet.glade.h:32
-msgid "Other Wireless Network..."
-msgstr "Andet trådløst netværk..."
-
-#: ../gnome/applet/applet.glade.h:33
-msgid "Passphrase:"
-msgstr "Adgangskode:"
-
-#: ../gnome/applet/applet.glade.h:34
-msgid "Password:"
-msgstr "Adgangskode:"
-
-#: ../gnome/applet/applet.glade.h:35
-msgid "Primary DNS:"
-msgstr "Primær DNS:"
-
-#: ../gnome/applet/applet.glade.h:36
-msgid "Secondary DNS:"
-msgstr "Sekundær DNS:"
-
-#: ../gnome/applet/applet.glade.h:37
-msgid "Subnet Mask:"
-msgstr "Undernet-maske:"
-
-#: ../gnome/applet/applet.glade.h:38
-msgid "Type:"
-msgstr "Type:"
-
-#: ../gnome/applet/applet.glade.h:39
-msgid "User Name:"
-msgstr "Brugernavn:"
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Wireless Network Key Required"
-msgstr "Nøgle til trådløst netværk påkrævet"
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Wireless _adapter:"
-msgstr "Trådløs _adapter:"
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "_Always Trust this Wireless Network"
-msgstr "_Stol altid på dette trådløse netværk"
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "_Don't remind me again"
-msgstr "_Påmind mig ikke igen"
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "_Login to Network"
-msgstr "_Log på netværk"
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "_Network Name:"
-msgstr "_Netværksnavn:"
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "_Wireless Security:"
-msgstr "Trådløs sikkerhed:"
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "leap_subwindow"
-msgstr "leap_subwindow"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "wep_key_subwindow"
-msgstr "wep_key_subwindow"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "wep_passphrase_subwindow"
-msgstr "wep_passphrase_subwindow"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "wpa_psk_subwindow"
-msgstr "wpa_psk_subwindow"
-
-#: ../gnome/applet/wso-wpa-psk.c:171
-msgid "WPA2 Personal"
-msgstr "Personlig WPA2"
-
-#: ../gnome/applet/wso-wpa-psk.c:173
-msgid "WPA Personal"
-msgstr "Personlig WPA"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:358
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
 msgid "Cannot add VPN connection"
 msgstr "Kan ikke tilføje VPN-forbindelse"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:360
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -658,11 +30,11 @@ msgstr ""
 "Ingen passende VPN-programmel blev fundet på dit system. Kontakt din system-"
 "administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:412
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
 msgid "Cannot import VPN connection"
 msgstr "Kan ikke importere VPN-forbindelse"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:414
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -671,12 +43,12 @@ msgstr ""
 "Kan ikke finde passende programmel til VPN-forbindelsestypen '%s', til "
 "import af filen '%s'. Kontakt din system-administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:554
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Fejl ved hentning af VPN-forbindelsen '%s'"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:557
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -685,12 +57,12 @@ msgstr ""
 "Kunne ikke finde brugergrænseflade-filerne til VPN-forbindelsestypen '%s'. "
 "Kontakt din system-administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:717
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Slet VPN-forbindelsen \"%s\"?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:720
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -701,16 +73,36 @@ msgstr ""
 "muligvis brug for din system-administrator, som kan give dig de nødvendige "
 "informationer til oprettelse af en ny forbindelse."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
 msgid "Unable to load"
 msgstr "Kan ikke indlæse"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:928
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Kan ikke finde nogle krævede ressourcer (glade-filen)!"
 
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
+msgid "Create VPN Connection"
+msgstr "Opret VPN-forbindelse"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1043
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
 msgid "Edit VPN Connection"
 msgstr "Redigér VPN-forbindelse"
 
@@ -719,101 +111,70 @@ msgid "Add a new VPN connection"
 msgstr "Tilføj ny VPN-forbindelse"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Choose which type of VPN connection you wish to create."
-msgstr "Vælg hvilken type VPN-forbindelse du ønsker at oprette."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "Connect to:"
-msgstr "Tilslut til:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Create VPN Connection"
-msgstr "Opret VPN-forbindelse"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Create VPN Connection - 1 of 2"
-msgstr "Opret VPN-forbindelse - 1 af 2"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Create VPN Connection - 2 of 2"
-msgstr "Opret VPN-forbindelse - 2 af 2"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
 msgstr "Slet den valgte VPN-forbindelse"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "E_xport"
 msgstr "E_ksportér"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Edit the selected VPN connection"
 msgstr "Redigér den valgte VPN-forbindelse"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Export the VPN settings to a file"
 msgstr "Eksportér VPN-opsætningen til en fil"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Export the selected VPN connection to a file"
 msgstr "Eksportér den valgte VPN-forbindelse til en fil"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
-msgid "Finish Creating VPN Connection"
-msgstr "Færdiggør oprettelse af VPN-forbindelse"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Manage Virtual Private Network Connections"
 msgstr "Håndtér virtuelle private netværks-forbindelser (VPN)"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
-msgid ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
-"\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
-msgstr ""
-"Denne vil guide dig gennem oprettelsen af en forbindelse til et virtuelt "
-"privat netværk (VPN).\n"
-"\n"
-"Denne guide vil kræve nogle informationer, såsom IP-adresser og "
-"adgangskode.  Henvend dig venligst til din system-administrator for at få "
-"disse informationer."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "VPN Connections"
 msgstr "VPN-forbindelser"
 
-#: ../src/nm-ap-security-wep.c:47
+#: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
 msgstr "40-bit WEP"
 
-#: ../src/nm-ap-security-wep.c:49
+#: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
 msgstr "104-bit WEP"
 
-#: ../src/nm-ap-security-wpa-psk.c:50
+#: ../src/nm-ap-security-wpa-psk.c:51
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:52
+#: ../src/nm-ap-security-wpa-psk.c:53
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:57
+#: ../src/nm-ap-security-wpa-psk.c:55
+msgid "WPA Automatic"
+msgstr "WPA automatisk"
+
+#: ../src/nm-ap-security-wpa-psk.c:60
 msgid "WPA2 TKIP"
 msgstr "WPA2 TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:59
+#: ../src/nm-ap-security-wpa-psk.c:62
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security.c:310
+#: ../src/nm-ap-security-wpa-psk.c:64
+msgid "WPA2 Automatic"
+msgstr "WPA2 automatisk"
+
+#: ../src/nm-ap-security.c:334
 msgid "none"
 msgstr "ingen"
 
-#: ../src/nm-netlink-monitor.c:154
+#: ../src/nm-netlink-monitor.c:174
 #, c-format
 msgid ""
 "unable to create netlink socket for monitoring wired ethernet devices - %s"
@@ -821,7 +182,7 @@ msgstr ""
 "kan ikke oprette netlink sokkel til overvågning af kablede ethernet enheder "
 "- %s"
 
-#: ../src/nm-netlink-monitor.c:172
+#: ../src/nm-netlink-monitor.c:192
 #, c-format
 msgid ""
 "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
@@ -829,22 +190,528 @@ msgstr ""
 "kan ikke tilslutte netlink sokkel til overvågning af kablede ethernet "
 "enheder - %s"
 
-#: ../src/nm-netlink-monitor.c:405
+#: ../src/nm-netlink-monitor.c:427
 msgid "operation took too long"
 msgstr "handlingen overskred tidsgrænsen"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/nm-netlink-monitor.c:524
 msgid "received data from wrong type of sender"
 msgstr "modtog data fra forkert type afsender"
 
-#: ../src/nm-netlink-monitor.c:515
+#: ../src/nm-netlink-monitor.c:537
 msgid "received data from unexpected sender"
 msgstr "modtog data fra uventet afsender"
 
-#: ../src/nm-netlink-monitor.c:646
+#: ../src/nm-netlink-monitor.c:666
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "for meget data var sendt over sokkelen og noget gik tabt"
 
-#: ../src/nm-netlink-monitor.c:735
+#: ../src/nm-netlink-monitor.c:774
 msgid "error occurred while waiting for data on socket"
 msgstr "der opstod en fejl mens der blev ventet på data på sokkelen"
+
+#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
+msgid "WPA2 Enterprise"
+msgstr "WPA2 i virksomhed"
+
+#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
+msgid "WPA Enterprise"
+msgstr "WPA i virksomhed"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
+
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "Adgangskode til trådløst netværk %s"
+
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "Tilslutning til det trådløse netværk '%s' mislykkedes."
+
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "Tilslutning til det kablede netværk mislykkedes."
+
+#~ msgid "Error displaying connection information: "
+#~ msgstr "Fejl ved visning af forbindelses-information: "
+
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr "Kunne ikke finde nogle krævede ressourcer (glade-filen)!"
+
+#~ msgid "No active connections!"
+#~ msgstr "Ingen aktive forbindelser!"
+
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "Kablet Ethernet (%s)"
+
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "Trådløst Ethernet (%s)"
+
+#~ msgid "NetworkManager Applet"
+#~ msgstr "NetworkManager-panelprogram"
+
+#~ msgid "Copyright © 2004-2005 Red Hat, Inc."
+#~ msgstr "Copyright © 2004-2005 Red Hat, Inc."
+
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr ""
+#~ "Statusfelt-panelprogram til håndtering af dine netværks-enheder og -"
+#~ "forbindelser."
+
+#~ msgid "translator-credits"
+#~ msgstr ""
+#~ "David Nielsen\n"
+#~ "Martin Willemoes Hansen\n"
+#~ "Lasse Bang Mikkelsen\n"
+#~ "\n"
+#~ "Dansk-gruppen <dansk@dansk-gruppen.dk>\n"
+#~ "Mere info: http://www.dansk-gruppen.dk"
+
+#~ msgid "VPN Error"
+#~ msgstr "VPN fejl"
+
+#~ msgid "VPN Login Failure"
+#~ msgstr "VPN logind-fejl"
+
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr ""
+#~ "Kunne ikke etablere VPN-forbindelsen '%s' pågrund af en logind-fejl."
+
+#~ msgid "VPN Start Failure"
+#~ msgstr "VPN etablerings-fejl"
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr ""
+#~ "Kunne ikke etablere VPN-forbindelsen '%s' pågrund af fejl ved start af "
+#~ "VPN-program."
+
+#~ msgid "VPN Connect Failure"
+#~ msgstr "VPN tilslutnings-fejl"
+
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr ""
+#~ "Kunne ikke etablere VPN-forbindelsen '%s' pågrund af en forbindelses-fejl."
+
+#~ msgid "VPN Configuration Error"
+#~ msgstr "VPN konfigurations-fejl"
+
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "VPN-forbindelsen '%s' er ikke konfigureret korrekt."
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr ""
+#~ "Kunne ikke etablere VPN-forbindelsen '%s' fordi VPN-serveren ikke "
+#~ "returnerede en passende netværks-konfiguration."
+
+#~ msgid "The VPN service said: \"%s\""
+#~ msgstr "VPN-tjenesten sagde: \"%s\""
+
+#~ msgid "VPN connection '%s' said:"
+#~ msgstr "VPN-forbindelsen '%s' sagde:"
+
+#~ msgid "VPN Login Message"
+#~ msgstr "VPN logind-meddelelse"
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "NetworkManager panelprogrammet kunne ikke finde nogle krævede ressourcer "
+#~ "(glade-filen blev ikke fundet)."
+
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "Netværks-enheden \"%s (%s)\" understøtter ikke trådløs scanning."
+
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "Netværks-enheden \"%s (%s)\" understøtter ikke link-detektering."
+
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "Klargører enheden %s til det kablede netværk..."
+
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "Klargører enheden %s til det trådløse netværk '%s'..."
+
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "Konfigurerer enheden %s til det kablede netværk..."
+
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "Forsøger at tilslutte til det trådløse netværk '%s'..."
+
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "Venter på netværksnøglen til det trådløse netværk '%s'..."
+
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "Forespørger en netværks-adresse fra det kablede netværk..."
+
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "Forespørger en netværks-adresse fra det trådløse netværk '%s'..."
+
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "Færdiggører tilslutning til det kablede netværk..."
+
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "Færdiggører tilslutning til det trådløse netværk '%s'..."
+
+#~ msgid "NetworkManager is not running"
+#~ msgstr "NetworkManager kører ikke"
+
+#~ msgid "Networking disabled"
+#~ msgstr "Netværks-understøttelse deaktiveret"
+
+#~ msgid "No network connection"
+#~ msgstr "Ingen netværks-forbindelse"
+
+#~ msgid "Wired network connection"
+#~ msgstr "Kablet netværks-forbindelse"
+
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Tilsluttet til et trådløst ad hoc netværk"
+
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Trådløs netværks-forbindelse til '%s' (%d%%)"
+
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "VPN-forbindelse til '%s'"
+
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "VPN tilslutter til '%s'"
+
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "_Tilslut til andet trådløst netværk..."
+
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "Opret _nyt trådløst netværk..."
+
+#~ msgid "_VPN Connections"
+#~ msgstr "_VPN-forbindelser"
+
+#~ msgid "_Configure VPN..."
+#~ msgstr "_Konfigurér VPN..."
+
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "_Afbryd VPN..."
+
+#~ msgid "_Dial Up Connections"
+#~ msgstr "_Opkalds-forbindelser"
+
+#~ msgid "Connect to %s..."
+#~ msgstr "Tilslut til %s..."
+
+#~ msgid "Disconnect from %s..."
+#~ msgstr "Afbryd fra %s..."
+
+#~ msgid "No network devices have been found"
+#~ msgstr "Ingen netværks-enheder blev fundet"
+
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "NetworkManager kører ikke..."
+
+#~ msgid "Enable _Networking"
+#~ msgstr "Aktivér _netværks-understøttelse"
+
+#~ msgid "Enable _Wireless"
+#~ msgstr "Aktivér _trådløst netværk"
+
+#~ msgid "Connection _Information"
+#~ msgstr "Forbindelses-_information"
+
+#~ msgid "_Help"
+#~ msgstr "_Hjælp"
+
+#~ msgid "_About"
+#~ msgstr "_Om"
+
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr ""
+#~ "NetworkManager panelprogrammet kunne ikke finde nogle krævede ressourcer "
+#~ "- kan ikke fortsætte.\n"
+
+#~ msgid "Open System"
+#~ msgstr "Åbent system"
+
+#~ msgid "Shared Key"
+#~ msgstr "Delt nøgle"
+
+#~ msgid "TKIP (Default)"
+#~ msgstr "TKIP (forvalgt)"
+
+#~ msgid "AES-CCMP"
+#~ msgstr "AES-CCMP"
+
+#~ msgid "None"
+#~ msgstr "Ingen"
+
+#~ msgid "WEP 40/128-bit ASCII"
+#~ msgstr "WEP 40/128-bit ASCII"
+
+#~ msgid "WEP 40/128-bit hex"
+#~ msgstr "WEP 40/128-bit hex"
+
+#~ msgid "WEP Passphrase"
+#~ msgstr "WEP-adgangskode:"
+
+#~ msgid "Orientation"
+#~ msgstr "Retning"
+
+#~ msgid "The orientation of the tray."
+#~ msgstr "Retningen på statusikonet."
+
+#~ msgid "Wired Network (%s)"
+#~ msgstr "Kablet netværk (%s)"
+
+#~ msgid "_Wired Network"
+#~ msgstr "_Kablet netværk"
+
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "Trådløst netværk (%s)"
+#~ msgstr[1] "Trådløse netværk (%s)"
+
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "Trådløst netværk"
+#~ msgstr[1] "Trådløse netværk"
+
+#~ msgid " (invalid Unicode)"
+#~ msgstr " (ugyldig Unicode)"
+
+#~ msgid ""
+#~ "By default, the wireless network's name is set to your computer's name, %"
+#~ "s, with no encryption enabled"
+#~ msgstr ""
+#~ "Som standard navngives det trådløse netværk til din maskines navn, %s, "
+#~ "uden nogen kryptering slået til"
+
+#~ msgid "Create new wireless network"
+#~ msgstr "Opret nyt trådløst netværk"
+
+#~ msgid ""
+#~ "Enter the name and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr ""
+#~ "Indtast navn- og sikkerhedsopsætning på det trådløse netværk du ønsker at "
+#~ "oprette."
+
+#~ msgid "Create New Wireless Network"
+#~ msgstr "Opret nyt trådløst netværk"
+
+#~ msgid "Existing wireless network"
+#~ msgstr "Eksisterende trådløst netværk"
+
+#~ msgid "Enter the name of the wireless network to which you wish to connect."
+#~ msgstr "Indtast navnet på det trådløse netværk du ønsker at tilslutte dig."
+
+#~ msgid "Connect to Other Wireless Network"
+#~ msgstr "Tilslut til andet trådløst netværk"
+
+#~ msgid "Cannot start VPN connection '%s'"
+#~ msgstr "Kan ikke etablere VPN-forbindelsen '%s'"
+
+#~ msgid ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgstr ""
+#~ "Kunne ikke finde godkendelses-vinduet til VPN-forbindelsestypen '%s'. "
+#~ "Kontakt din system-administrator."
+
+#~ msgid ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "Der opstod en fejl ved start af godkendelses-vinduet til VPN-"
+#~ "forbindelsestypen '%s'. Kontakt din system-administrator."
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Information om aktiv forbindelse</"
+#~ "span>"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Adgangskode påkrævet af trådløst "
+#~ "netværk</span>\n"
+#~ "\n"
+#~ "En adgangskode eller krypteringsnøgle er påkrævet, for at opnå adgang til "
+#~ "det trådløse netværk '%s'."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduceret netværks-funktionalitet</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  Den vil ikke være fuldstændig funktionsdygtig."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
+#~ "that this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent log ins."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Bekræftelse af logind på trådløst "
+#~ "netværk</span>\n"
+#~ "\n"
+#~ "Du har valgt at logge på det trådløse netværk '%s'.  Hvis du er sikker på "
+#~ "at dette trådløse netværk er sikkert, afkryds nedenstående "
+#~ "afkrydsningsfelt og NetworkManager vil ikke spørge i fremtiden."
+
+#~ msgid "Authentication:"
+#~ msgstr "Godkendelse:"
+
+#~ msgid "Broadcast Address:"
+#~ msgstr "Rundsendings-adresse:"
+
+#~ msgid "C_onnect"
+#~ msgstr "T_ilslut"
+
+#~ msgid "Connection Information"
+#~ msgstr "Forbindelses-information"
+
+#~ msgid "Default Route:"
+#~ msgstr "Standard rute:"
+
+#~ msgid "Destination Address:"
+#~ msgstr "Destinations-adresse:"
+
+#~ msgid "Hardware Address:"
+#~ msgstr "Hardware-adresse:"
+
+#~ msgid "IP Address:"
+#~ msgstr "IP-adresse:"
+
+#~ msgid "Interface:"
+#~ msgstr "Enhed:"
+
+#~ msgid "Key:"
+#~ msgstr "Nøgle:"
+
+#~ msgid ""
+#~ "None\n"
+#~ "WEP Passphrase\n"
+#~ "WEP 40/128-bit hex\n"
+#~ "WEP 40/128-bit ASCII\n"
+#~ msgstr ""
+#~ "Ingen\n"
+#~ "WEP-adgangskode\n"
+#~ "WEP 40/128-bit hex\n"
+#~ "WEP 40/128-bit ASCII\n"
+
+#~ msgid ""
+#~ "Open System\n"
+#~ "Shared Key"
+#~ msgstr ""
+#~ "Åbent system\n"
+#~ "Delt nøgle"
+
+#~ msgid "Other Wireless Network..."
+#~ msgstr "Andet trådløst netværk..."
+
+#~ msgid "Passphrase:"
+#~ msgstr "Adgangskode:"
+
+#~ msgid "Password:"
+#~ msgstr "Adgangskode:"
+
+#~ msgid "Primary DNS:"
+#~ msgstr "Primær DNS:"
+
+#~ msgid "Secondary DNS:"
+#~ msgstr "Sekundær DNS:"
+
+#~ msgid "Subnet Mask:"
+#~ msgstr "Undernet-maske:"
+
+#~ msgid "Type:"
+#~ msgstr "Type:"
+
+#~ msgid "User Name:"
+#~ msgstr "Brugernavn:"
+
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "Nøgle til trådløst netværk påkrævet"
+
+#~ msgid "Wireless _adapter:"
+#~ msgstr "Trådløs _adapter:"
+
+#~ msgid "_Always Trust this Wireless Network"
+#~ msgstr "_Stol altid på dette trådløse netværk"
+
+#~ msgid "_Don't remind me again"
+#~ msgstr "_Påmind mig ikke igen"
+
+#~ msgid "_Login to Network"
+#~ msgstr "_Log på netværk"
+
+#~ msgid "_Network Name:"
+#~ msgstr "_Netværksnavn:"
+
+#~ msgid "_Wireless Security:"
+#~ msgstr "Trådløs sikkerhed:"
+
+#~ msgid "leap_subwindow"
+#~ msgstr "leap_subwindow"
+
+#~ msgid "wep_key_subwindow"
+#~ msgstr "wep_key_subwindow"
+
+#~ msgid "wep_passphrase_subwindow"
+#~ msgstr "wep_passphrase_subwindow"
+
+#~ msgid "wpa_psk_subwindow"
+#~ msgstr "wpa_psk_subwindow"
+
+#~ msgid "WPA2 Personal"
+#~ msgstr "Personlig WPA2"
+
+#~ msgid "WPA Personal"
+#~ msgstr "Personlig WPA"
+
+#~ msgid "Choose which type of VPN connection you wish to create."
+#~ msgstr "Vælg hvilken type VPN-forbindelse du ønsker at oprette."
+
+#~ msgid "Connect to:"
+#~ msgstr "Tilslut til:"
+
+#~ msgid "Create VPN Connection - 1 of 2"
+#~ msgstr "Opret VPN-forbindelse - 1 af 2"
+
+#~ msgid "Create VPN Connection - 2 of 2"
+#~ msgstr "Opret VPN-forbindelse - 2 af 2"
+
+#~ msgid "Finish Creating VPN Connection"
+#~ msgstr "Færdiggør oprettelse af VPN-forbindelse"
+
+#~ msgid ""
+#~ "This assistant will guide you through the creation of a connection to a "
+#~ "Virtual Private Network (VPN).\n"
+#~ "\n"
+#~ "It will require some information, such as IP addresses and secrets.  "
+#~ "Please see your system administrator to obtain this information."
+#~ msgstr ""
+#~ "Denne vil guide dig gennem oprettelsen af en forbindelse til et virtuelt "
+#~ "privat netværk (VPN).\n"
+#~ "\n"
+#~ "Denne guide vil kræve nogle informationer, såsom IP-adresser og "
+#~ "adgangskode.  Henvend dig venligst til din system-administrator for at få "
+#~ "disse informationer."
