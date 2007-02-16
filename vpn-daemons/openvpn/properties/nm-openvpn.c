@@ -52,6 +52,7 @@ struct _NetworkManagerVpnUIImpl {
 
   GtkEntry       *w_connection_name;
   GtkEntry       *w_remote;
+  GtkEntry       *w_port;
   GtkEntry       *w_ca;
   GtkEntry       *w_cert;
   GtkEntry       *w_key;
@@ -92,6 +93,7 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
 {
   gtk_entry_set_text (impl->w_connection_name, "");
   gtk_entry_set_text (impl->w_remote,   "");
+  gtk_entry_set_text (impl->w_port,   "1194");
   gtk_entry_set_text (impl->w_ca,   "");
   gtk_entry_set_text (impl->w_cert, "");
   gtk_entry_set_text (impl->w_key,  "");
@@ -187,6 +189,8 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 
     if (strcmp (key, "remote") == 0) {
       gtk_entry_set_text (impl->w_remote, value);
+    } else if (strcmp (key, "port") == 0) {
+      gtk_entry_set_text (impl->w_port, value);
     } else if (strcmp (key, "ca") == 0) {
       gtk_entry_set_text (impl->w_ca, value);
     } else if (strcmp (key, "cert") == 0) {
@@ -279,6 +283,7 @@ impl_get_properties (NetworkManagerVpnUI *self)
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
   const char *connectionname;
   const char *remote;
+  const char *port;
   const char *ca;
   const char *cert;
   const char *key;
@@ -294,6 +299,7 @@ impl_get_properties (NetworkManagerVpnUI *self)
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
+  port                  = gtk_entry_get_text (impl->w_port);
   ca                     = gtk_entry_get_text (impl->w_ca);
   cert                   = gtk_entry_get_text (impl->w_cert);
   key                    = gtk_entry_get_text (impl->w_key);
@@ -327,6 +333,8 @@ impl_get_properties (NetworkManagerVpnUI *self)
   data = g_slist_append (data, use_tap ? g_strdup ("tap") : g_strdup("tun"));
   data = g_slist_append (data, g_strdup ("remote"));
   data = g_slist_append (data, g_strdup (remote));
+  data = g_slist_append (data, g_strdup ("port"));
+  data = g_slist_append (data, g_strdup (port));
   data = g_slist_append (data, g_strdup ("proto"));
   data = g_slist_append (data, use_tcp ? g_strdup ("tcp-client") : g_strdup("udp"));
   data = g_slist_append (data, g_strdup ("ca"));
@@ -411,6 +419,26 @@ impl_get_routes (NetworkManagerVpnUI *self)
 }
 
 
+/** Checks if port is an integer and
+ *  less than 65 
+ */
+static gboolean
+check_port (const char *port)
+{
+  int d;
+
+  if (sscanf (port, "%d", &d) != 1) {
+    return FALSE;
+  }
+
+  if (d < 1 || d > 65536 ) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
 /** Checks if ip is in notation
  * a.b.c.d where a,b,c,d in {0..255}
  */
@@ -484,10 +512,12 @@ impl_is_valid (NetworkManagerVpnUI *self)
   const char *routes_entry;
   const char *connectionname;
   const char *remote;
+  const char *port;
   gint connection_type =   gtk_combo_box_get_active (GTK_COMBO_BOX (impl->w_connection_type));
 
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   remote                 = gtk_entry_get_text (impl->w_remote);
+  port	                 = gtk_entry_get_text (impl->w_port);
   use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
   routes_entry           = gtk_entry_get_text (impl->w_routes);
 
@@ -496,7 +526,11 @@ impl_is_valid (NetworkManagerVpnUI *self)
   if ( (strlen (connectionname) == 0) ||
        (strlen (remote) == 0) ||
        (strstr (remote, " ") != NULL)  ||
-       (strstr (remote, "\t") != NULL) ) {
+       (strstr (remote, "\t") != NULL) || 
+       (strlen (port) == 0) ||
+       (strstr (port, " ") != NULL)  ||
+       (strstr (port, "\t") != NULL)  ||
+       (!check_port (port)) ) {
 
     is_valid = FALSE;
 
@@ -679,6 +713,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
   const char *connectionname;
   const char *remote;
+  const char *port;
   const char *ca;
   const char *cert;
   const char *key;
@@ -701,6 +736,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   connection_type        = gtk_combo_box_get_active (impl->w_connection_type);
   remote                 = gtk_entry_get_text (impl->w_remote);
+  port                  = gtk_entry_get_text (impl->w_port);
   cert                   = gtk_entry_get_text (impl->w_cert);
   key                    = gtk_entry_get_text (impl->w_key);
   shared_key             = gtk_entry_get_text (impl->w_shared_key);
@@ -796,6 +832,9 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   g_string_append_printf (buf, _("Remote:  %s"), remote);
 
   g_string_append (buf, "\n\t");
+  g_string_append_printf (buf, _("Port:  %s"), port);
+
+  g_string_append (buf, "\n\t");
   g_string_append_printf( buf, _("Device: %s"), ((use_tap) ? _("TAP") : _("TUN")));
 
   g_string_append (buf, "\n\t");
@@ -840,6 +879,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
   if (g_key_file_load_from_file (keyfile, path, 0, NULL)) {
     char *connectionname = NULL;
     char *remote = NULL;
+    char *port = NULL;
     char *ca = NULL;
     char *cert = NULL;
     char *key = NULL;
@@ -860,6 +900,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     connectionname  = g_key_file_get_string (keyfile, "openvpn", "description", NULL);
     connection_type = g_key_file_get_string (keyfile, "openvpn", "connection-type", NULL);
     remote          = g_key_file_get_string (keyfile, "openvpn", "remote", NULL);
+    port            = g_key_file_get_string (keyfile, "openvpn", "port", NULL);
     dev             = g_key_file_get_string (keyfile, "openvpn", "dev", NULL);
     proto           = g_key_file_get_string (keyfile, "openvpn", "proto", NULL);
     ca              = g_key_file_get_string (keyfile, "openvpn", "ca", NULL);
@@ -881,10 +922,12 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     /* sanity check data */
     if ( (connectionname != NULL) &&
 	 (remote != NULL ) &&
+	 (port != NULL ) &&
 	 (dev != NULL) &&
 	 (proto != NULL) &&
 	 (connection_type != NULL) &&
 	 (strlen (remote) > 0) &&
+	 (strlen (port) > 0) &&
 	 (strlen (dev) > 0) &&
 	 (strlen (proto) > 0) &&
 	 (strlen (connectionname) > 0) ) {
@@ -969,6 +1012,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
       gtk_entry_set_text (impl->w_connection_name, connectionname);
       gtk_entry_set_text (impl->w_remote, remote);
+      gtk_entry_set_text (impl->w_port, port);
 
       if ( (lzo != NULL) && (strcmp(lzo, "yes") == 0) ) {
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), TRUE);
@@ -1012,6 +1056,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     g_free (connectionname);
     g_free (connection_type);
     g_free (remote);
+    g_free (port);
     g_free (dev);
     g_free (proto);
     g_free (ca);
@@ -1185,6 +1230,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   GSList *i;
   const char *connection_type = NULL;
   const char *remote = NULL;
+  const char *port = NULL;
   const char *dev = NULL;
   const char *proto = NULL;
   const char *ca = NULL;
@@ -1212,6 +1258,8 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
     if (strcmp (k, "remote") == 0) {
       remote = value;
+    } else if (strcmp (k, "port") == 0) {
+      port = value;
     } else if (strcmp (k, "dev") == 0) {
       dev = value;
     } else if (strcmp (k, "proto") == 0) {
@@ -1271,6 +1319,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     "description=%s\n"
 	     "connection-type=%s\n"
 	     "remote=%s\n"
+	     "port=%s\n"
 	     "dev=%s\n"
 	     "proto=%s\n"
 	     "ca=%s\n"
@@ -1288,6 +1337,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	     /* Description */ connection_name,
 	     /* conn type */   connection_type,
 	     /* Host */        remote,
+	     /* Port */        port,
 	     /* TUN or TAP */  dev,
 	     /* TCP or UDP */  proto,
 	     /* CA */          ca,
@@ -1429,6 +1479,7 @@ impl_get_object (void)
 
     impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-connection-name"));
     impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
+    impl->w_port                  = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-port"));
     impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
     impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
     impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
@@ -1484,6 +1535,8 @@ impl_get_object (void)
     gtk_signal_connect (GTK_OBJECT (impl->w_connection_name),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_remote),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_port),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_routes),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);

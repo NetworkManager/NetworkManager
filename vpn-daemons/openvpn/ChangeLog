@@ -1,3 +1,9 @@
+2007-02-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Jon Nettleton
+
+	Add port option to config dialog.
+
 2006-11-24  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Helmut Schaa <hschaa@suse.de>
