@@ -895,6 +895,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
     char *cipher = NULL;
     char *ta = NULL;
     char *ta_dir = NULL;
+    gint connection_type_sel = 0;
     gboolean should_expand;
 
     connectionname  = g_key_file_get_string (keyfile, "openvpn", "description", NULL);
@@ -946,6 +947,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_password_ca, ca);
 	  gtk_entry_set_text (impl->w_cert, cert);
 	  gtk_entry_set_text (impl->w_key, key);
+          connection_type_sel = NM_OPENVPN_CONTYPE_X509;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -962,6 +964,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_shared_key, shared_key);
 	  gtk_entry_set_text (impl->w_local_ip, local_ip);
 	  gtk_entry_set_text (impl->w_remote_ip, remote_ip);
+          connection_type_sel = NM_OPENVPN_CONTYPE_SHAREDKEY;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -972,6 +975,28 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_username, username);
 	  gtk_entry_set_text (impl->w_password_ca, ca);
 	  gtk_entry_set_text (impl->w_ca, ca);
+          connection_type_sel = NM_OPENVPN_CONTYPE_PASSWORD;
+	} else {
+	  file_is_good = FALSE;
+	}
+      } else if (strcmp (connection_type, "x509userpass") == 0) {
+	if ( (ca != NULL ) &&
+	     (cert != NULL ) &&
+	     (key != NULL ) &&
+             (username != NULL ) &&
+	     (strlen(ca) > 0) &&
+	     (strlen(cert) > 0) &&
+	     (strlen(key) > 0) &&
+             (strlen(username) > 0) ) {
+
+	  gtk_entry_set_text (impl->w_ca, ca);
+	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_cert, cert);
+	  gtk_entry_set_text (impl->w_key, key);
+	  gtk_entry_set_text (impl->w_username, username);
+	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_ca, ca);
+          connection_type_sel = NM_OPENVPN_CONTYPE_X509USERPASS;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -984,11 +1009,11 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
       file_is_good = FALSE;
     }
 
-    if (cipher != NULL) {
+    if ((cipher != NULL) && (strlen (cipher) > 0)) {
       set_cipher(impl->w_cipher, impl->w_use_cipher, cipher);
     }
 
-    if (ta != NULL) {
+    if ((ta != NULL) && (strlen (ta) > 0)) {
       gtk_entry_set_text (impl->w_ta, ta);
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta), TRUE);
@@ -998,13 +1023,13 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one), TRUE);
     }
 
-    if (ta_dir != NULL) {
+    if ((ta_dir != NULL) && (strlen (ta_dir) > 0)) {
       if (strcmp(ta_dir, "0") == 0)
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_zero), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_zero), TRUE);
       else if (strcmp(ta_dir, "1") == 0)
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_one), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_one), TRUE);
       else
-	gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_none), TRUE);
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(impl->w_ta_dir_none), TRUE);
     }
 
     if (file_is_good) {
@@ -1012,7 +1037,15 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
       gtk_entry_set_text (impl->w_connection_name, connectionname);
       gtk_entry_set_text (impl->w_remote, remote);
-      gtk_entry_set_text (impl->w_port, port);
+
+      if ( check_port (port) ) {
+        gtk_entry_set_text (impl->w_port, port);
+      } else {
+        gtk_entry_set_text (impl->w_port, "1194");
+      } 
+
+      gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_connection_type), connection_type_sel);
+      connection_type_changed (GTK_COMBO_BOX (impl->w_connection_type), impl);
 
       if ( (lzo != NULL) && (strcmp(lzo, "yes") == 0) ) {
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), TRUE);
@@ -1228,22 +1261,22 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 {
   FILE *f;
   GSList *i;
-  const char *connection_type = NULL;
-  const char *remote = NULL;
-  const char *port = NULL;
-  const char *dev = NULL;
-  const char *proto = NULL;
-  const char *ca = NULL;
-  const char *cert = NULL;
-  const char *key = NULL;
-  const char *lzo = NULL;
-  const char *shared_key = NULL;
-  const char *local_ip = NULL;
-  const char *remote_ip = NULL;
-  const char *username = NULL;
-  const char *cipher = NULL;
-  const char *ta = NULL;
-  const char *ta_dir = NULL;
+  const char *connection_type = "";
+  const char *remote = "";
+  const char *port = "";
+  const char *dev = "";
+  const char *proto = "";
+  const char *ca = "";
+  const char *cert = "";
+  const char *key = "";
+  const char *lzo = "";
+  const char *shared_key = "";
+  const char *local_ip = "";
+  const char *remote_ip = "";
+  const char *username = "";
+  const char *cipher = "";
+  const char *ta = "";
+  const char *ta_dir = "";
   char *routes_str = NULL;
   gboolean ret;
 
@@ -1295,7 +1328,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
   if (routes != NULL) {
     GString *str;
 
-    str = g_string_new ("routes=");
+    str = g_string_new ("");
     for (i = routes; i != NULL; i = g_slist_next (i)) {
       const char *route;
 

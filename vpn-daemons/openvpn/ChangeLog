@@ -2,6 +2,12 @@
 
 	Patch from Jon Nettleton
 
+	Fix import/export (Gnome.org #408500)
+
+2007-02-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Jon Nettleton
+
 	Add port option to config dialog.
 
 2006-11-24  Dan Williams  <dcbw@redhat.com>
