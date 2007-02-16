@@ -75,7 +75,7 @@ nm_client_new (void)
 
 	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
 	if (!connection) {
-		g_warning ("Couldn't connect to system bus: %d", err->message);
+		g_warning ("Couldn't connect to system bus: %s", err->message);
 		g_error_free (err);
 		return NULL;
 	}

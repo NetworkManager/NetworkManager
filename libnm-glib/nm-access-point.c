@@ -1,5 +1,6 @@
 #include "nm-access-point.h"
 #include "NetworkManager.h"
+#include "nm-utils.h"
 
 #include "nm-access-point-bindings.h"
 
@@ -43,11 +44,11 @@ nm_access_point_get_address (NMAccessPoint *ap)
 	return address;
 }
 
-int
+guint32
 nm_access_point_get_capabilities (NMAccessPoint *ap)
 {
 	GValue value = {0,};
-	int caps = 0;
+	guint32 caps = 0;
 
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
@@ -55,7 +56,7 @@ nm_access_point_get_capabilities (NMAccessPoint *ap)
 							  NM_DBUS_INTERFACE_ACCESS_POINT,
 							  "Capabilities",
 							  &value))
-		caps = g_value_get_int (&value);
+		caps = g_value_get_uint (&value);
 
 	return caps;
 }
@@ -94,9 +95,22 @@ nm_access_point_get_essid (NMAccessPoint *ap)
 	return essid;
 }
 
-double
+gdouble
 nm_access_point_get_frequency (NMAccessPoint *ap)
 {
+	GValue value = {0,};
+	double freq = 0.0;
+
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), freq);
+
+	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
+							  NM_DBUS_INTERFACE_ACCESS_POINT,
+							  "Frequency",
+							  &value))
+		freq = g_value_get_double (&value);
+
+	return freq;
+
 }
 
 char *
@@ -133,11 +147,11 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 	return mode;
 }
 
-int
+guint32
 nm_access_point_get_rate (NMAccessPoint *ap)
 {
 	GValue value = {0,};
-	int rate = 0;
+	guint32 rate = 0;
 
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
@@ -145,7 +159,7 @@ nm_access_point_get_rate (NMAccessPoint *ap)
 							  NM_DBUS_INTERFACE_ACCESS_POINT,
 							  "Rate",
 							  &value))
-		rate = g_value_get_int (&value);
+		rate = g_value_get_uint (&value);
 
 	return rate;
 }

@@ -55,8 +55,6 @@ struct _NMAPSecurityWPA_EAPClass
 GType nm_ap_security_wpa_eap_get_type (void);
 
 NMAPSecurityWPA_EAP * nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter);
-
-struct NMAccessPoint;
-NMAPSecurityWPA_EAP * nm_ap_security_wpa_eap_new_from_ap (struct NMAccessPoint *ap);
+NMAPSecurityWPA_EAP * nm_ap_security_wpa_eap_new (guint32 capabilities);
 
 #endif	/* NM_AP_SECURITY_WPA_EAP_H */

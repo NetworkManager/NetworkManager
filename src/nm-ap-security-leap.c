@@ -71,11 +71,9 @@ out:
 
 
 NMAPSecurityLEAP *
-nm_ap_security_leap_new_from_ap (NMAccessPoint *ap)
+nm_ap_security_leap_new (void)
 {
-	NMAPSecurityLEAP *	security = NULL;
-
-	g_return_val_if_fail (ap != NULL, NULL);
+	NMAPSecurityLEAP *security;
 
 	security = g_object_new (NM_TYPE_AP_SECURITY_LEAP, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), NM_AUTH_TYPE_LEAP);

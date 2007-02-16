@@ -103,6 +103,9 @@ nm-device-802-3-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-802-3-eth
 nm-device-802-11-wireless-glue.h: $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
 	dbus-binding-tool --prefix=nm_device_802_11_wireless --mode=glib-server --output=nm-device-802-11-wireless-glue.h $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
 
+nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
+	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=nm-ip4-config-glue.h $(top_srcdir)/introspection/nm-ip4-config.xml
+
 
 built_sources = 					\
 	nm-marshal.h					\
@@ -112,6 +115,7 @@ built_sources = 					\
 	nm-device-interface-glue.h			\
 	nm-device-802-3-ethernet-glue.h			\
 	nm-device-802-11-wireless-glue.h		\
+	nm-ip4-config-glue.h				\
 	$(NULL)
 
 $(NetworkManager_OBJECTS): $(built_sources)

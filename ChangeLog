@@ -1,3 +1,28 @@
+2007-02-16  Tambet Ingo  <tambet@ximian.com>
+
+	* introspection/nm-ip4-config.xml: Implement.
+
+	* libnm-glib/libnm-glib-test.c: Use new DBUS API in tests.
+
+	* libnm-glib/nm-ip4-config.c:
+	* libnm-glib/nm-ip4-config.c: Implement.
+
+	* src/nm-ap-security[-*]: Remove circular dependencies between APs and AP
+	securities. APs reference security.
+
+	* src/nm-device-802-11-wireless.c: Implement missing properties that need to
+	be exported over DBUS.
+
+	* src/nm-device-802-3-ethernet.c: Ditto.
+
+	* src/NetworkManagerAP.c:
+	* src/NetworkManagerAP.h:
+		- Convert to GObject, export over DBUS.
+
+	* src/nm-ip4-config.h:
+	* src/nm-ip4-config.h:
+		- Convert to GObject, export over DBUS.
+
 2007-02-12  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Helmut Schaa <hschaa@suse.de>

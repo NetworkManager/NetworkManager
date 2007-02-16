@@ -99,7 +99,7 @@ void nm_vpn_connection_unref (NMVPNConnection *connection)
 		if (connection->parent_dev)
 			g_object_unref (G_OBJECT (connection->parent_dev));
 		if (connection->ip4_config)
-			nm_ip4_config_unref (connection->ip4_config);
+			g_object_unref (connection->ip4_config);
 		g_free (connection->vpn_iface);
 
 		g_object_unref (connection->named_manager);
@@ -231,15 +231,12 @@ static void nm_vpn_connection_set_ip4_config (NMVPNConnection *con, NMIP4Config 
 
 	if (con->ip4_config)
 	{
-		nm_ip4_config_unref (con->ip4_config);
+		g_object_unref (con->ip4_config);
 		con->ip4_config = NULL;
 	}
 
 	if (ip4_config)
-	{
-		nm_ip4_config_ref (ip4_config);
-		con->ip4_config = ip4_config;
-	}
+		con->ip4_config = g_object_ref (ip4_config);
 }
 
 static void nm_vpn_connection_set_parent_device (NMVPNConnection *con, NMDevice *parent_dev)

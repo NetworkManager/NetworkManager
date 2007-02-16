@@ -461,7 +461,7 @@ out:
 	{
 		sys_data->use_dhcp = TRUE;
 		/* Clear out the config */
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 		sys_data->config = NULL;
 	}
 
@@ -485,7 +485,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 		return;
 
 	if (sys_data->config)
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 }
 
 

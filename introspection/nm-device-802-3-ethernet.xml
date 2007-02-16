@@ -4,7 +4,7 @@
   <interface name="org.freedesktop.NetworkManager.Device.Wired">
     <method name="Activate">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_802_3_ethernet_activate"/>
-      <arg name="user_requested" type="b"/>
+      <arg name="user_requested" type="b" direction="in"/>
     </method>
 
     <property name="HwAddress" type="s" access="read"/>

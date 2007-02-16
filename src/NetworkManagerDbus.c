@@ -259,7 +259,7 @@ nm_dbus_signal_device_status_change (gpointer user_data)
 		const char *essid = nm_ap_get_essid (cb_data->ap);
 		if (essid)
 			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
-		nm_ap_unref (cb_data->ap);
+		g_object_unref (cb_data->ap);
 	} else {
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
 	}
@@ -290,10 +290,9 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 	g_object_ref (G_OBJECT (dev));
 	cb_data->data = data;
 	cb_data->dev = dev;
-	if (ap) {
-		nm_ap_ref (ap);
-		cb_data->ap = ap;
-	}
+	if (ap)
+		cb_data->ap = g_object_ref (ap);
+
 	cb_data->status = status;
 
 	id = g_idle_add (nm_dbus_signal_device_status_change, cb_data);

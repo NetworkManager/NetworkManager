@@ -49,7 +49,6 @@ typedef struct NMData
 	guint32                 nmi_sig_handler_id;
 
 	GMainLoop *			main_loop;
-	gboolean				enable_test_devices;
 
 	guint				dev_change_check_idle_id;
 

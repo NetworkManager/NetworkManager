@@ -7,6 +7,7 @@ sbin_PROGRAMS = NetworkManagerDispatcher
 NetworkManagerDispatcher_CPPFLAGS = 		\
 	$(DBUS_CFLAGS)						\
 	$(GTHREAD_CFLAGS)					\
+	-I$(top_builddir)/libnm-glib \
 	-Wall							\
 	-DDBUS_API_SUBJECT_TO_CHANGE			\
 	-DBINDIR=\"$(bindir)\"				\
@@ -18,7 +19,8 @@ NetworkManagerDispatcher_CPPFLAGS = 		\
 NetworkManagerDispatcher_SOURCES =	NetworkManagerDispatcher.c
 
 NetworkManagerDispatcher_LDADD =		\
-				$(DBUS_LIBS)	\
-				$(GTHREAD_LIBS)	\
-				$(top_builddir)/utils/libnmutils.la
+	$(DBUS_LIBS)	\
+	$(GTHREAD_LIBS)	\
+	$(top_builddir)/utils/libnmutils.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la
 

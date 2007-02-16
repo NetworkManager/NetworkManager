@@ -891,7 +891,7 @@ nm_vpn_service_stage4_ip4_config_get_old (NMVPNService *service,
 
 out:
 	if (!success) {
-		nm_ip4_config_unref (config);
+		g_object_unref (config);
 		nm_warning ("(VPN Service %s): did not receive valid IP config "
 		            "information.",
 		            service->service);
@@ -1055,7 +1055,7 @@ out:
 	if (login_banner) g_free (login_banner);
 	if (!success) {
 		if (config)
-			nm_ip4_config_unref (config);
+			g_object_unref (config);
 		nm_warning ("(VPN Service %s): did not receive valid IP config "
 		            "information.",
 		            service->service);

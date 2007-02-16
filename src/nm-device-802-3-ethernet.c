@@ -413,15 +413,19 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
-	/* FIXME: */
-/* 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object); */
+	NMDevice8023Ethernet *device = NM_DEVICE_802_3_ETHERNET (object);
+	struct ether_addr hw_addr;
+	char hw_addr_buf[20];
 
 	switch (prop_id) {
-/* 	case PROP_HW_ADDRESS: */
-/* 		g_value_set_int (value, ); */
-/* 		break; */
+	case PROP_HW_ADDRESS:
+		memset (hw_addr_buf, 0, 20);
+		nm_device_802_3_ethernet_get_address (device, &hw_addr);
+		iw_ether_ntop (&hw_addr, hw_addr_buf);
+		g_value_set_string (value, &hw_addr_buf[0]);
+		break;
 	case PROP_SPEED:
-		g_value_set_int (value, nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (object)));
+		g_value_set_int (value, nm_device_802_3_ethernet_get_speed (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -453,19 +457,19 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_int (NM_DEVICE_802_3_ETHERNET_HW_ADDRESS,
-							"MAC Address",
-							"Hardware MAC address",
-							0, G_MAXINT32, 0,
-							G_PARAM_READABLE));
+		 g_param_spec_string (NM_DEVICE_802_3_ETHERNET_HW_ADDRESS,
+							  "MAC Address",
+							  "Hardware MAC address",
+							  NULL,
+							  G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
 		 g_param_spec_int (NM_DEVICE_802_3_ETHERNET_SPEED,
-							"Speed",
-							"Speed",
-							0, G_MAXINT32, 0,
-							G_PARAM_READABLE));
+						   "Speed",
+						   "Speed",
+						   0, G_MAXINT32, 0,
+						   G_PARAM_READABLE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_3_ethernet_object_info);

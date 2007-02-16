@@ -409,7 +409,8 @@ found:
 
 				cipher = cipher_wpa_psk_passphrase_new ();
 				nm_ap_set_capabilities (ap, NM_802_11_CAP_PROTO_WPA);
-				security = nm_ap_security_wpa_psk_new_from_ap (ap, NM_AUTH_TYPE_WPA_PSK_AUTO);
+				security = nm_ap_security_wpa_psk_new (NM_802_11_CAP_PROTO_WPA,
+													   NM_AUTH_TYPE_WPA_PSK_AUTO);
 				hash = ieee_802_11_cipher_hash (cipher, buf, key);
 				if (hash)
 				{
@@ -447,7 +448,7 @@ found:
 					cipher = cipher_wep64_hex_new ();
 					real_key = key;
 				}
-				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP40);
+				security = nm_ap_security_wep_new (IW_AUTH_CIPHER_WEP40);
 			}
 			else
 			{
@@ -471,7 +472,7 @@ found:
 					real_key = g_strjoinv (NULL, keyv);
 					g_strfreev (keyv);
 				}
-				security = nm_ap_security_wep_new_from_ap (ap, IW_AUTH_CIPHER_WEP104);
+				security = nm_ap_security_wep_new (IW_AUTH_CIPHER_WEP104);
 			}
 			hash = ieee_802_11_cipher_hash (cipher, buf, real_key);
 			if (hash)
@@ -489,7 +490,7 @@ found:
 		{
 			NMAPSecurity *	security;
 
-			security = nm_ap_security_new (IW_AUTH_CIPHER_NONE);
+			security = nm_ap_security_new (NM_DEVICE_CAP_NONE, FALSE);
 			nm_ap_set_security (ap, security);
 			g_object_unref (G_OBJECT (security));
 		}
@@ -506,7 +507,7 @@ found:
 			/* New AP, just add it to the list */
 			nm_ap_list_append_ap (app_data->allowed_ap_list, ap);
 		}
-		nm_ap_unref (ap);
+		g_object_unref (ap);
 
 		nm_debug ("Adding '%s' to the list of trusted networks", buf);
 
@@ -608,7 +609,7 @@ out:
 		nm_debug ("error, enable dhcp");
 		sys_data->use_dhcp = TRUE;
 		/* Clear out the config */
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 		sys_data->config = NULL;
 	}
 
@@ -665,7 +666,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 		return;
 
 	if (sys_data->config)
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 }
 
 

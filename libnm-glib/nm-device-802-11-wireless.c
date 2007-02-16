@@ -1,5 +1,6 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-private.h"
+#include "nm-utils.h"
 
 #include "nm-device-802-11-wireless-bindings.h"
 
@@ -30,7 +31,7 @@ nm_device_802_11_wireless_new (DBusGConnection *connection, const char *path)
 }
 
 char *
-nm_device_802_11_wireless_get_address (NMDevice80211Wireless *device)
+nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device)
 {
 	GValue value = {0,};
 	char *address = NULL;
@@ -39,7 +40,7 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *device)
 
 	if (nm_dbus_get_property (DBUS_G_PROXY (device),
 							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "Address",
+							  "HwAddress",
 							  &value))
 		address = g_strdup (g_value_get_string (&value));
 
@@ -56,11 +57,28 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 
 	if (nm_dbus_get_property (DBUS_G_PROXY (device),
 							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "Node",
+							  "Mode",
 							  &value))
 		mode = g_value_get_int (&value);
 
 	return mode;
+}
+
+int
+nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
+{
+	GValue value = {0,};
+	int bitrate = 0;
+
+	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
+
+	if (nm_dbus_get_property (DBUS_G_PROXY (device),
+							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+							  "Bitrate",
+							  &value))
+		bitrate = g_value_get_int (&value);
+
+	return bitrate;
 }
 
 NMAccessPoint *

@@ -22,15 +22,39 @@
 #ifndef NM_IP4_CONFIG_H
 #define NM_IP4_CONFIG_H
 
-#include <glib.h>
+#include <glib/gtypes.h>
+#include <glib-object.h>
 
-typedef struct NMIP4Config NMIP4Config;
+#define NM_TYPE_IP4_CONFIG            (nm_ip4_config_get_type ())
+#define NM_IP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP4_CONFIG, NMIP4Config))
+#define NM_IP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
+#define NM_IS_IP4_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_IP4_CONFIG))
+#define NM_IS_IP4_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_IP4_CONFIG))
+#define NM_IP4_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
+
+typedef struct {
+	GObject parent;
+} NMIP4Config;
+
+typedef struct {
+	GObjectClass parent;
+} NMIP4ConfigClass;
+
+#define NM_IP4_CONFIG_ADDRESS "address"
+#define NM_IP4_CONFIG_GATEWAY "gateway"
+#define NM_IP4_CONFIG_NETMASK "netmask"
+#define NM_IP4_CONFIG_BROADCAST "broadcast"
+#define NM_IP4_CONFIG_HOSTNAME "hostname"
+#define NM_IP4_CONFIG_NAMESERVERS "nameservers"
+#define NM_IP4_CONFIG_DOMAINS "domains"
+#define NM_IP4_CONFIG_NIS_DOMAIN "nis-domain"
+#define NM_IP4_CONFIG_NIS_SERVERS "nis-servers"
+
+GType nm_ip4_config_get_type (void);
 
 
 NMIP4Config *	nm_ip4_config_new				(void);
 NMIP4Config *	nm_ip4_config_copy				(NMIP4Config *config);
-void			nm_ip4_config_ref				(NMIP4Config *config);
-void			nm_ip4_config_unref				(NMIP4Config *config);
 
 gboolean		nm_ip4_config_get_secondary		(NMIP4Config *config);
 void			nm_ip4_config_set_secondary		(NMIP4Config *config, gboolean secondary);
@@ -86,5 +110,4 @@ void			nm_ip4_config_set_mss			(NMIP4Config *config, guint32 mss);
 
 struct rtnl_addr *	nm_ip4_config_to_rtnl_addr	(NMIP4Config *config, guint32 flags);
 
-
-#endif
+#endif /* NM_IP4_CONFIG_H */

@@ -576,7 +576,7 @@ out:
 	{
 		sys_data->use_dhcp = TRUE;
 		/* Clear out the config */
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 		sys_data->config = NULL;
 	}
 	

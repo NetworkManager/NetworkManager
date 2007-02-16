@@ -425,7 +425,7 @@ nm_policy_device_change_check (gpointer user_data)
 	}
 
 	if (ap)
-		nm_ap_unref (ap);
+		g_object_unref (ap);
 
 out:
 	return FALSE;

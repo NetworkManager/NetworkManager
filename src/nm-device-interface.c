@@ -1,5 +1,6 @@
 
 #include "nm-device-interface.h"
+#include "nm-ip4-config.h"
 
 static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
 
@@ -61,6 +62,14 @@ nm_device_interface_init (gpointer g_iface)
 							"IP4 address",
 							0, G_MAXUINT32, 0, /* FIXME */
 							G_PARAM_READWRITE));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_object (NM_DEVICE_INTERFACE_IP4_CONFIG,
+							  "IP4 Config",
+							  "IP4 Config",
+							  G_TYPE_OBJECT,
+							  G_PARAM_READWRITE));
 
 	g_object_interface_install_property
 		(g_iface,

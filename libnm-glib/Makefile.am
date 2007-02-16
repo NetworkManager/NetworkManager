@@ -20,7 +20,8 @@ libnminclude_HEADERS = \
 	nm-device.h		\
 	nm-device-802-3-ethernet.h \
 	nm-device-802-11-wireless.h \
-	nm-access-point.h
+	nm-access-point.h \
+	nm-ip4-config.h
 
 libnm_glib_la_SOURCES = \
 	nm-client.c		\
@@ -29,6 +30,7 @@ libnm_glib_la_SOURCES = \
 	nm-device-802-3-ethernet.c \
 	nm-device-802-11-wireless.c \
 	nm-access-point.c	\
+	nm-ip4-config.c		\
 	nm-utils.c		\
 	nm-utils.h		\
 	$(BUILT_SOURCES)

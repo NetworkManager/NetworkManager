@@ -356,7 +356,7 @@ static NMIP4Config *netdevice_file_get_ip4_config (GKeyFile *file)
 	
 	if (ipaddress == NULL)
 	{
-		nm_ip4_config_unref (ip4_config);
+		g_object_unref (ip4_config);
 		return NULL;
 	}
 
@@ -463,7 +463,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 		return;
 
 	if (sys_data->config)
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 }
 
 

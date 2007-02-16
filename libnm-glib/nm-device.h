@@ -5,6 +5,7 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "NetworkManager.h"
+#include "nm-ip4-config.h"
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
@@ -34,6 +35,10 @@ char     *nm_device_get_iface (NMDevice *device);
 char     *nm_device_get_udi (NMDevice *device);
 char     *nm_device_get_driver (NMDevice *device);
 guint32   nm_device_get_ip4_address (NMDevice *device);
+NMIP4Config *nm_device_get_ip4_config (NMDevice *device);
 NMDeviceState nm_device_get_state (NMDevice *device);
+
+NMDeviceType  nm_device_type_for_path (DBusGConnection *connection,
+									   const char *path);
 
 #endif /* NM_DEVICE_H */

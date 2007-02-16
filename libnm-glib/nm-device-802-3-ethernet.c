@@ -1,5 +1,6 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-private.h"
+#include "nm-utils.h"
 
 #include "nm-device-802-3-ethernet-bindings.h"
 
@@ -47,7 +48,7 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *device)
 }
 
 char *
-nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *device)
+nm_device_802_3_ethernet_get_hw_address (NMDevice8023Ethernet *device)
 {
 	char *address = NULL;
 	GValue value = {0,};
@@ -56,7 +57,7 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *device)
 
 	if (nm_dbus_get_property (DBUS_G_PROXY (device),
 							  NM_DBUS_INTERFACE_DEVICE_WIRED,
-							  "Address",
+							  "HwAddress",
 							  &value))
 		address = g_strdup (g_value_get_string (&value));
 

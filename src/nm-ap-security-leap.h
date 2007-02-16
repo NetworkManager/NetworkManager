@@ -54,8 +54,6 @@ struct _NMAPSecurityLEAPClass
 GType nm_ap_security_leap_get_type (void);
 
 NMAPSecurityLEAP * nm_ap_security_leap_new_deserialize (DBusMessageIter *iter);
-
-struct NMAccessPoint;
-NMAPSecurityLEAP * nm_ap_security_leap_new_from_ap (struct NMAccessPoint *ap);
+NMAPSecurityLEAP * nm_ap_security_leap_new (void);
 
 #endif	/* NM_AP_SECURITY_LEAP_H */

@@ -1,5 +1,6 @@
 #include "nm-device.h"
 #include "nm-device-private.h"
+#include "nm-utils.h"
 
 #include "nm-device-bindings.h"
 
@@ -162,6 +163,30 @@ nm_device_get_ip4_address (NMDevice *device)
 		address = g_value_get_uint (&value);
 
 	return address;
+}
+
+NMIP4Config *
+nm_device_get_ip4_config (NMDevice *device)
+{
+	NMIP4Config *config = NULL;
+	GValue value = {0,};
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+
+	if (nm_dbus_get_property (DBUS_G_PROXY (device),
+							  NM_DBUS_INTERFACE_DEVICE,
+							  "Ip4Config",
+							  &value)) {
+		DBusGConnection *connection = NULL;
+
+		g_assert (G_VALUE_TYPE (&value) == DBUS_TYPE_G_OBJECT_PATH);
+
+		g_object_get (device, "connection", &connection, NULL);
+
+		config = nm_ip4_config_new (connection, (const char *) g_value_get_boxed (&value));
+	}
+
+	return config;
 }
 
 NMDeviceState

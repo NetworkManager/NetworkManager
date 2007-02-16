@@ -508,7 +508,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 		/* New AP, just add it to the list */
 		nm_ap_list_append_ap (cb_data->list, ap);
 	}
-	nm_ap_unref (ap);
+	g_object_unref (ap);
 
 	/* Ensure all devices get new information copied into their device lists */
 	nm_policy_schedule_device_ap_lists_update_from_allowed (cb_data->data);

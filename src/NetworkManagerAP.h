@@ -19,24 +19,49 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
-#ifndef NETWORK_MANAGER_AP_H
-#define NETWORK_MANAGER_AP_H
+#ifndef NM_ACCESS_POINT_H
+#define NM_ACCESS_POINT_H
 
 #include <glib.h>
+#include <glib/gtypes.h>
+#include <glib-object.h>
 #include <time.h>
 #include "NetworkManager.h"
-#include "wpa.h"
 #include "nm-ap-security.h"
 
-typedef struct NMAccessPoint NMAccessPoint;
+#define NM_TYPE_AP            (nm_ap_get_type ())
+#define NM_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AP, NMAccessPoint))
+#define NM_AP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_AP, NMAccessPointClass))
+#define NM_IS_AP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_AP))
+#define NM_IS_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_AP))
+#define NM_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AP, NMAccessPointClass))
 
+#define NM_AP_ADDRESS "address"
+#define NM_AP_CAPABILITIES "capabilities"
+#define NM_AP_ENCRYPTED "encrypted"
+#define NM_AP_ESSID "essid"
+#define NM_AP_FREQUENCY "frequency"
+#define NM_AP_HWADDRESS "hwaddress"
+#define NM_AP_MODE "mode"
+#define NM_AP_RATE "rate"
+#define NM_AP_STRENGTH "strength"
+
+typedef struct {
+	GObject parent;
+} NMAccessPoint;
+
+typedef struct {
+	GObjectClass parent;
+
+	/* Signals */
+	void (*strength_changed) (NMAccessPoint *ap, gint8 strength);
+} NMAccessPointClass;
+
+GType nm_ap_get_type (void);
 
 NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
-
-void				nm_ap_unref			(NMAccessPoint *ap);
-void				nm_ap_ref				(NMAccessPoint *ap);
 
 const GTimeVal *	nm_ap_get_timestamp				(const NMAccessPoint *ap);
 void				nm_ap_set_timestamp				(NMAccessPoint *ap, glong sec, glong usec);
@@ -50,7 +75,7 @@ const char *		nm_ap_get_orig_essid	(const NMAccessPoint *ap);
 guint32			nm_ap_get_capabilities	(NMAccessPoint *ap);
 void				nm_ap_set_capabilities	(NMAccessPoint *ap, guint32 capabilities);
 
-gboolean			nm_ap_get_encrypted		(const NMAccessPoint *ap);
+gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
 
 NMAPSecurity *		nm_ap_get_security		(const NMAccessPoint *ap);
 void				nm_ap_set_security		(NMAccessPoint *ap, NMAPSecurity *security);
@@ -58,16 +83,16 @@ void				nm_ap_set_security		(NMAccessPoint *ap, NMAPSecurity *security);
 const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
-int				nm_ap_get_mode			(const NMAccessPoint *ap);
+int				nm_ap_get_mode			(NMAccessPoint *ap);
 void				nm_ap_set_mode			(NMAccessPoint *ap, const int mode);
 
-gint8			nm_ap_get_strength		(const NMAccessPoint *ap);
+gint8			nm_ap_get_strength		(NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 
-double			nm_ap_get_freq			(const NMAccessPoint *ap);
+double			nm_ap_get_freq			(NMAccessPoint *ap);
 void				nm_ap_set_freq			(NMAccessPoint *ap, double freq);
 
-guint16			nm_ap_get_rate			(const NMAccessPoint *ap);
+guint16			nm_ap_get_rate			(NMAccessPoint *ap);
 void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 
 gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
@@ -79,7 +104,7 @@ void				nm_ap_set_fallback		(NMAccessPoint *ap, gboolean fallback);
 gboolean			nm_ap_get_artificial	(const NMAccessPoint *ap);
 void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 
-gboolean			nm_ap_get_broadcast		(const NMAccessPoint *ap);
+gboolean			nm_ap_get_broadcast		(NMAccessPoint *ap);
 void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
 
 const GTimeVal *	nm_ap_get_last_seen		(const NMAccessPoint *ap);
@@ -102,4 +127,4 @@ void				nm_ap_add_capabilities_for_wep (NMAccessPoint *ap);
  */
 gboolean			nm_ap_has_manufacturer_default_essid	(NMAccessPoint *ap);
 
-#endif
+#endif /* NM_ACCESS_POINT_H */

@@ -95,21 +95,18 @@ out:
 }
 
 NMAPSecurityWPA_PSK *
-nm_ap_security_wpa_psk_new_from_ap (NMAccessPoint *ap, int we_cipher)
+nm_ap_security_wpa_psk_new (guint32 capabilities, int we_cipher)
 {
-	NMAPSecurityWPA_PSK *	security = NULL;
-	guint32				caps;
+	NMAPSecurityWPA_PSK *security;
 
-	g_return_val_if_fail (ap != NULL, NULL);
 	g_return_val_if_fail (we_cipher == NM_AUTH_TYPE_WPA_PSK_AUTO || we_cipher == IW_AUTH_CIPHER_TKIP || (we_cipher == IW_AUTH_CIPHER_CCMP), NULL);
 
 	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_PSK, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), we_cipher);
 
-	caps = nm_ap_get_capabilities (ap);
-	if (caps & NM_802_11_CAP_PROTO_WPA2)
+	if (capabilities & NM_802_11_CAP_PROTO_WPA2)
 		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA2;
-	else if (caps & NM_802_11_CAP_PROTO_WPA)
+	else if (capabilities & NM_802_11_CAP_PROTO_WPA)
 		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA;
 	security->priv->key_mgt = IW_AUTH_KEY_MGMT_PSK;
 

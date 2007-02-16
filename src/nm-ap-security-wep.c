@@ -83,11 +83,10 @@ out:
 }
 
 NMAPSecurityWEP *
-nm_ap_security_wep_new_from_ap (NMAccessPoint *ap, int we_cipher)
+nm_ap_security_wep_new (int we_cipher)
 {
-	NMAPSecurityWEP *	security = NULL;
+	NMAPSecurityWEP *security;
 
-	g_return_val_if_fail (ap != NULL, NULL);
 	g_return_val_if_fail ((we_cipher == IW_AUTH_CIPHER_WEP40) || (we_cipher == IW_AUTH_CIPHER_WEP104), NULL);
 
 	security = g_object_new (NM_TYPE_AP_SECURITY_WEP, NULL);

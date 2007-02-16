@@ -100,24 +100,17 @@ out:
 
 
 NMAPSecurityWPA_EAP *
-nm_ap_security_wpa_eap_new_from_ap (NMAccessPoint *ap)
+nm_ap_security_wpa_eap_new (guint32 capabilities)
 {
-	NMAPSecurityWPA_EAP *	security = NULL;
-	guint32				caps;
-
-	g_return_val_if_fail (ap != NULL, NULL);
+	NMAPSecurityWPA_EAP *security;
 
 	security = g_object_new (NM_TYPE_AP_SECURITY_WPA_EAP, NULL);
 	nm_ap_security_set_we_cipher (NM_AP_SECURITY (security), NM_AUTH_TYPE_WPA_EAP);
 
-	caps = nm_ap_get_capabilities (ap);
-	if (caps & NM_802_11_CAP_PROTO_WPA2)
-	{
+	if (capabilities & NM_802_11_CAP_PROTO_WPA2) {
 		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA2;
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA2 Enterprise"));
-	}
-	else
-	{
+	} else {
 		security->priv->wpa_version = IW_AUTH_WPA_VERSION_WPA;
 		nm_ap_security_set_description (NM_AP_SECURITY (security), _("WPA Enterprise"));
 	}

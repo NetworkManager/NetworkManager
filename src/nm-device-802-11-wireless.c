@@ -66,6 +66,17 @@ G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
 
+
+enum {
+	PROP_0,
+	PROP_HW_ADDRESS,
+	PROP_MODE,
+	PROP_BITRATE,
+	PROP_ACTIVE_NETWORK,
+
+	LAST_PROP
+};
+
 enum {
 	NETWORK_ADDED,
 	NETWORK_REMOVED,
@@ -707,7 +718,7 @@ nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
 		NMAccessPoint *	dst_ap = nm_ap_new_from_ap (src_ap);
 
 		nm_ap_list_append_ap (dev_list, dst_ap);
-		nm_ap_unref (dst_ap);
+		g_object_unref (dst_ap);
 	}
 	nm_ap_list_iter_free (iter);
 }
@@ -918,8 +929,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 				&& !nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid)
 				&& nm_device_802_11_wireless_ap_list_get_ap_by_essid (self, essid))
 			{
-				nm_ap_ref (cur_ap);
-				return cur_ap;
+				return (NMAccessPoint *) g_object_ref (cur_ap);
 			}
 		}
 	}
@@ -961,7 +971,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 		best_ap = get_best_fallback_ap (self);
 
 	if (best_ap)
-		nm_ap_ref (best_ap);
+		g_object_ref (best_ap);
 
 	return best_ap;
 }
@@ -1019,7 +1029,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 		 */
 		nm_ap_set_capabilities (ap, nm_ap_security_get_default_capabilities (security));
 		nm_ap_list_append_ap (dev_ap_list, ap);
-		nm_ap_unref (ap);
+		g_object_unref (ap);
 	}
 	else
 	{
@@ -1030,7 +1040,8 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 
 		/* If we didn't get any security info, make some up. */
 		if (!security)
-			security = nm_ap_security_new_from_ap (ap);
+			security = nm_ap_security_new (nm_ap_get_capabilities (ap),
+										   nm_ap_get_encrypted (ap));
 	}
 	g_assert (security);
 	nm_ap_set_security (ap, security);
@@ -1171,8 +1182,11 @@ impl_device_get_active_networks (NMDevice80211Wireless *device,
 
 			while ((ap = nm_ap_list_iter_next (list_iter))) {
 				if (nm_ap_get_essid (ap)) {
-					g_ptr_array_add (*networks,
-									 nm_dbus_get_object_path_for_network (NM_DEVICE (device), ap));
+					/* FIXME: In theory, it should be possible to use something like:
+					   g_ptr_array_add (*networks, ap);
+					   and let dbus-glib get the already registered object path, but it crashes
+					   NM currently. Figure it out. */
+					g_ptr_array_add (*networks, g_strdup (g_object_get_data (ap, "dbus_glib_object_path")));
 				}
 			}
 			nm_ap_list_iter_free (list_iter);
@@ -2042,7 +2056,8 @@ ap_need_key (NMDevice80211Wireless *self,
 		 * settings were changed.
 		 */
 		if (we_cipher != IW_AUTH_CIPHER_NONE)
-			nm_ap_set_security (ap, nm_ap_security_new_from_ap (ap));
+			nm_ap_set_security (ap, nm_ap_security_new (nm_ap_get_capabilities (ap),
+														nm_ap_get_encrypted (ap)));
 	}
 	else
 	{
@@ -2380,7 +2395,7 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 	/* Remove outdated access points */
 	cull_scan_list (self);
 
-	nm_ap_unref (ap);
+	g_object_unref (ap);
 }
 
 
@@ -3345,6 +3360,44 @@ nm_device_802_11_wireless_finalize (GObject *object)
 	G_OBJECT_CLASS (parent_class)->finalize (object);
 }
 
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
+	struct ether_addr hw_addr;
+	char hw_addr_buf[20];
+
+	switch (prop_id) {
+	case PROP_HW_ADDRESS:
+		memset (hw_addr_buf, 0, 20);
+		nm_device_802_11_wireless_get_address (device, &hw_addr);
+		iw_ether_ntop (&hw_addr, hw_addr_buf);
+		g_value_set_string (value, &hw_addr_buf[0]);
+		break;
+	case PROP_MODE:
+		g_value_set_int (value, nm_device_802_11_wireless_get_mode (device));
+		break;
+	case PROP_BITRATE:
+		g_value_set_int (value, nm_device_802_11_wireless_get_bitrate (device));
+		break;
+	case PROP_ACTIVE_NETWORK:
+		/* FIXME: */
+#if 0
+		req = nm_device_get_act_request (NM_DEVICE (device));
+		if (req && ap = nm_act_request_get_ap (req)) {
+			NMAccessPoint *tmp_ap;
+
+			if ((tmp_ap = nm_device_802_11_wireless_ap_list_get_ap_by_essid (device, nm_ap_get_essid (ap))))
+				g_value_set_object (value, tmp_ap);
+		}
+#endif
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
 
 static void
 nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
@@ -3354,6 +3407,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMDevice80211WirelessPrivate));
 
+	object_class->get_property = get_property;
 	object_class->dispose = nm_device_802_11_wireless_dispose;
 	object_class->finalize = nm_device_802_11_wireless_finalize;
 
@@ -3374,6 +3428,36 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_802_11_WIRELESS_HW_ADDRESS,
+							  "MAC Address",
+							  "Hardware MAC address",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_MODE,
+		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_MODE,
+						   "Mode",
+						   "Mode",
+						   0, G_MAXINT32, 0,
+						   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_BITRATE,
+		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_BITRATE,
+						   "Bitrate",
+						   "Bitrate",
+						   0, G_MAXINT32, 0,
+						   G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_NETWORK,
+		 g_param_spec_object (NM_DEVICE_802_11_WIRELESS_ACTIVE_NETWORK,
+							  "Active network",
+							  "Currently active network",
+							  G_TYPE_OBJECT,
+							  G_PARAM_READABLE));
+
 	/* Signals */
 	signals[NETWORK_ADDED] =
 		g_signal_new ("network-added",
@@ -3381,9 +3465,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_added),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_POINTER);
+					  G_TYPE_OBJECT);
 
 	signals[NETWORK_REMOVED] =
 		g_signal_new ("network-removed",
@@ -3391,9 +3475,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_removed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_POINTER);
+					  G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_11_wireless_object_info);

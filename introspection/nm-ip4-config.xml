@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.IP4Config">
+    <property name="Address" type="u" access="read"/>
+    <property name="Gateway" type="u" access="read"/>
+    <property name="Netmask" type="u" access="read"/>
+    <property name="Broadcast" type="u" access="read"/>
+    <property name="Hostname" type="s" access="read"/>
+    <property name="Nameservers" type="au" access="read"/>
+    <property name="Domains" type="as" access="read"/>
+    <property name="NisDomain" type="s" access="read"/>
+    <property name="NisServers" type="au" access="read"/>
+  </interface>
+</node>
+

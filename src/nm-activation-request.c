@@ -61,11 +61,7 @@ NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *a
 
 	g_object_ref (G_OBJECT (dev));
 	req->dev = dev;
-
-	if (ap)
-		nm_ap_ref (ap);
-	req->ap = ap;
-
+	req->ap = ap ? g_object_ref (ap) : NULL;
 	req->user_requested = user_requested;
 
 	return req;
@@ -87,7 +83,7 @@ void nm_act_request_unref (NMActRequest *req)
 	if (req->refcount <= 0) {
 		g_object_unref (G_OBJECT (req->dev));
 		if (req->ap)
-			nm_ap_unref (req->ap);
+			g_object_unref (req->ap);
 
 		memset (req, 0, sizeof (NMActRequest));
 		g_free (req);
@@ -139,14 +135,12 @@ void nm_act_request_set_ip4_config (NMActRequest *req, NMIP4Config *ip4_config)
 
 	if (req->ip4_config)
 	{
-		nm_ip4_config_unref (req->ip4_config);
+		g_object_unref (req->ip4_config);
 		req->ip4_config = NULL;
 	}
+
 	if (ip4_config)
-	{
-		nm_ip4_config_ref (ip4_config);
-		req->ip4_config = ip4_config;
-	}
+		req->ip4_config = g_object_ref (ip4_config);
 }
 
 NMActStage nm_act_request_get_stage (NMActRequest *req)

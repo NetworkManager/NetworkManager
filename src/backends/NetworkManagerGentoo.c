@@ -425,7 +425,7 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 	g_return_if_fail(sys_data != NULL);
 
 	if (sys_data->config)
-		nm_ip4_config_unref (sys_data->config);
+		g_object_unref (sys_data->config);
 
         g_free (sys_data);
 }

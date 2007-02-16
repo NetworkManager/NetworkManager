@@ -23,16 +23,29 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-ap-security.h"
+#include "nm-dbus-manager.h"
 #include <wireless.h>
+#include "wpa.h"
 
+#include "nm-access-point-glue.h"
+
+/* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
+static const char * default_essid_list[] =
+{
+	"linksys",
+	"linksys-a",
+	"linksys-g",
+	"default",
+	"belkin54g",
+	"NETGEAR",
+	NULL
+};
 
 /*
  * Encapsulates Access Point information
  */
-struct NMAccessPoint
+typedef struct
 {
-	guint			refcount;
-
 	/* Scanned or cached values */
 	char *			essid;
 	char *			orig_essid;
@@ -60,19 +73,229 @@ struct NMAccessPoint
 	NMAPSecurity *		security;
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
+} NMAccessPointPrivate;
+
+#define NM_AP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_AP, NMAccessPointPrivate))
+
+G_DEFINE_TYPE (NMAccessPoint, nm_ap, G_TYPE_OBJECT)
+
+enum {
+	STRENGTH_CHANGED,
+
+	LAST_SIGNAL
 };
 
-/* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
-static const char * default_essid_list[] =
-{
-	"linksys",
-	"linksys-a",
-	"linksys-g",
-	"default",
-	"belkin54g",
-	"NETGEAR",
-	NULL
+static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_ADDRESS,
+	PROP_CAPABILITIES,
+	PROP_ENCRYPTED,
+	PROP_ESSID,
+	PROP_FREQUENCY,
+	PROP_HWADDRESS,
+	PROP_MODE,
+	PROP_RATE,
+	PROP_STRENGTH,
+
+	LAST_PROP
 };
+
+static void
+nm_ap_init (NMAccessPoint *ap)
+{
+}
+
+static void
+finalize (GObject *object)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+
+	g_free (priv->essid);
+	g_free (priv->orig_essid);
+	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
+	g_slist_free (priv->user_addresses);
+
+	if (priv->security)
+		g_object_unref (G_OBJECT (priv->security));
+
+	G_OBJECT_CLASS (nm_ap_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+	const char *essid;
+	int mode;
+
+	switch (prop_id) {
+	case PROP_CAPABILITIES:
+		priv->capabilities = g_value_get_uint (value);
+		break;
+	case PROP_ESSID:
+		essid = g_value_get_string (value);
+
+		if (priv->essid) {
+			g_free (priv->essid);
+			g_free (priv->orig_essid);
+			priv->essid = NULL;
+			priv->orig_essid = NULL;
+		}
+
+		if (essid) {
+			priv->orig_essid = g_strdup (essid);
+			priv->essid = nm_utils_essid_to_utf8 (essid);
+		}
+
+		break;
+	case PROP_FREQUENCY:
+		priv->freq = g_value_get_double (value);
+		break;
+	case PROP_MODE:
+		mode = g_value_get_int (value);
+
+		if (mode == IW_MODE_ADHOC || mode == IW_MODE_INFRA)
+			priv->mode = mode;
+		else
+			g_warning ("Invalid mode");
+		break;
+	case PROP_RATE:
+		priv->rate = g_value_get_uint (value);
+		break;
+	case PROP_STRENGTH:
+		nm_ap_set_strength (NM_AP (object), g_value_get_int (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->capabilities);
+		break;
+	case PROP_ENCRYPTED:
+		g_value_set_boolean (value, priv->capabilities & NM_802_11_CAP_PROTO_NONE);
+		break;
+	case PROP_ESSID:
+		g_value_set_string (value, priv->essid);
+		break;
+	case PROP_FREQUENCY:
+		g_value_set_double (value, priv->freq);
+		break;
+	case PROP_MODE:
+		g_value_set_int (value, priv->mode);
+		break;
+	case PROP_RATE:
+		g_value_set_uint (value, priv->rate);
+		break;
+	case PROP_STRENGTH:
+		g_value_set_int (value, priv->strength);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_ap_class_init (NMAccessPointClass *ap_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+
+	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
+
+	/* virtual methods */
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->finalize = finalize;
+
+	/* properties */
+
+	/* FIXME: address */
+
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_AP_CAPABILITIES,
+							"Capabilities",
+							"Capabilities",
+							NM_802_11_CAP_NONE, NM_802_11_CAP_CIPHER_CCMP, NM_802_11_CAP_PROTO_NONE,
+							G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_ENCRYPTED,
+		 g_param_spec_boolean (NM_AP_ENCRYPTED,
+							   "Encrypted",
+							   "Is encrypted",
+							   FALSE,
+							   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ESSID,
+		 g_param_spec_string (NM_AP_ESSID,
+							  "ESSID",
+							  "ESSID",
+							  NULL,
+							  G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_FREQUENCY,
+		 g_param_spec_double (NM_AP_FREQUENCY,
+							  "Frequency",
+							  "Frequency",
+							  0.0, 10000.0, 0.0, /* FIXME */
+							  G_PARAM_READWRITE));
+
+	/* FIXME: HWAddress */
+	
+	g_object_class_install_property
+		(object_class, PROP_MODE,
+		 g_param_spec_int (NM_AP_MODE,
+						   "Mode",
+						   "Mode",
+						   IW_MODE_ADHOC, IW_MODE_INFRA, IW_MODE_INFRA,
+						   G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_RATE,
+		 g_param_spec_uint (NM_AP_RATE,
+							"Rate",
+							"Rate",
+							0, G_MAXUINT16, 0,
+							G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_STRENGTH,
+		 g_param_spec_int (NM_AP_STRENGTH,
+						   "Strength",
+						   "Strength",
+						   G_MININT8, G_MAXINT8, 0,
+						   G_PARAM_READWRITE));
+
+	/* Signals */
+	signals[STRENGTH_CHANGED] =
+		g_signal_new ("strength_changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMAccessPointClass, strength_changed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__CHAR,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_CHAR);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (ap_class),
+									 &dbus_glib_nm_access_point_object_info);
+}
 
 /*
  * nm_ap_new
@@ -80,17 +303,23 @@ static const char * default_essid_list[] =
  * Create a new, blank user access point info structure
  *
  */
-NMAccessPoint * nm_ap_new (void)
+NMAccessPoint *nm_ap_new (void)
 {
-	NMAccessPoint	*ap;
-	
-	ap = g_slice_new0 (NMAccessPoint);
-	ap->mode = IW_MODE_INFRA;
-	ap->refcount = 1;
-	ap->capabilities = NM_802_11_CAP_PROTO_NONE;
-	ap->broadcast = TRUE;
+	NMDBusManager *manager;
+	GObject *object;
+	char *path;
+	static guint32 counter = 0;
 
-	return ap;
+	object = g_object_new (NM_TYPE_AP, NULL);
+
+	manager = nm_dbus_manager_get ();
+
+	path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
+										 path, object);
+	g_free (path);
+
+	return (NMAccessPoint *) object;
 }
 
 
@@ -100,34 +329,40 @@ NMAccessPoint * nm_ap_new (void)
  * Create a new user access point info structure, duplicating an existing one
  *
  */
-NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
+NMAccessPoint *
+nm_ap_new_from_ap (NMAccessPoint *src_ap)
 {
 	NMAccessPoint *	new_ap;
+	NMAccessPointPrivate *src_priv;
+	NMAccessPointPrivate *new_priv;
 
-	g_return_val_if_fail (src_ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (src_ap), NULL);
 
-	if (!(new_ap = nm_ap_new()))
+	if (!(new_ap = nm_ap_new ()))
 	{
 		nm_warning ("nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
-		return (NULL);
+		return NULL;
 	}
 
-	if (src_ap->essid && (strlen (src_ap->essid) > 0))
+	src_priv = NM_AP_GET_PRIVATE (src_ap);
+	new_priv = NM_AP_GET_PRIVATE (new_ap);
+
+	if (src_priv->essid && (strlen (src_priv->essid) > 0))
 	{
-		new_ap->essid = g_strdup (src_ap->essid);
-		new_ap->orig_essid = g_strdup (src_ap->orig_essid);
+		new_priv->essid = g_strdup (src_priv->essid);
+		new_priv->orig_essid = g_strdup (src_priv->orig_essid);
 	}
-	memcpy (&new_ap->address, &src_ap->address, sizeof (struct ether_addr));
-	new_ap->mode = src_ap->mode;
-	new_ap->strength = src_ap->strength;
-	new_ap->freq = src_ap->freq;
-	new_ap->rate = src_ap->rate;
-	new_ap->capabilities = src_ap->capabilities;
-	new_ap->artificial = src_ap->artificial;
-	new_ap->broadcast = src_ap->broadcast;
+	memcpy (&new_priv->address, &src_priv->address, sizeof (struct ether_addr));
+	new_priv->mode = src_priv->mode;
+	new_priv->strength = src_priv->strength;
+	new_priv->freq = src_priv->freq;
+	new_priv->rate = src_priv->rate;
+	new_priv->capabilities = src_priv->capabilities;
+	new_priv->artificial = src_priv->artificial;
+	new_priv->broadcast = src_priv->broadcast;
 
-	if (src_ap->security)
-		new_ap->security = nm_ap_security_new_copy (src_ap->security);
+	if (src_priv->security)
+		new_priv->security = nm_ap_security_new_copy (src_priv->security);
 
 	return new_ap;
 }
@@ -136,7 +371,6 @@ NMAccessPoint * nm_ap_new_from_ap (NMAccessPoint *src_ap)
 #define IEEE80211_CAP_ESS       0x0001
 #define IEEE80211_CAP_IBSS      0x0002
 #define IEEE80211_CAP_PRIVACY   0x0010
-
 
 static void
 foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
@@ -233,61 +467,33 @@ nm_ap_new_from_properties (GHashTable *properties)
 
 
 /*
- * AP refcounting functions
- */
-void nm_ap_ref (NMAccessPoint *ap)
-{
-	g_return_if_fail (ap != NULL);
-
-	ap->refcount++;
-}
-
-void nm_ap_unref (NMAccessPoint *ap)
-{
-	g_return_if_fail (ap != NULL);
-	g_return_if_fail (ap->refcount > 0);
-
-	ap->refcount--;
-	if (ap->refcount == 0)
-	{
-		g_free (ap->essid);
-		g_free (ap->orig_essid);
-		g_slist_foreach (ap->user_addresses, (GFunc)g_free, NULL);
-		g_slist_free (ap->user_addresses);
-
-		if (ap->security)
-			g_object_unref (G_OBJECT (ap->security));
-
-		memset (ap, 0, sizeof (NMAccessPoint));
-		g_slice_free (NMAccessPoint, ap);
-	}
-}
-
-
-/*
  * Get/set functions for timestamp
  *
  */
 const GTimeVal *nm_ap_get_timestamp (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, 0);
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
 
-	return (&ap->timestamp);
+	return (&NM_AP_GET_PRIVATE (ap)->timestamp);
 }
 
 void nm_ap_set_timestamp (NMAccessPoint *ap, glong sec, glong usec)
 {
-	g_return_if_fail (ap != NULL);
+	NMAccessPointPrivate *priv;
 
-	ap->timestamp.tv_sec = sec;
-	ap->timestamp.tv_usec = usec;
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	priv->timestamp.tv_sec = sec;
+	priv->timestamp.tv_usec = usec;
 }
 
 void nm_ap_set_timestamp_via_timestamp (NMAccessPoint *ap, const GTimeVal *timestamp)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->timestamp = *timestamp;
+	NM_AP_GET_PRIVATE (ap)->timestamp = *timestamp;
 }
 
 /*
@@ -296,51 +502,43 @@ void nm_ap_set_timestamp_via_timestamp (NMAccessPoint *ap, const GTimeVal *times
  */
 const char * nm_ap_get_essid (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return ap->essid;
+	return NM_AP_GET_PRIVATE (ap)->essid;
 }
 
 const char * nm_ap_get_orig_essid (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return ap->orig_essid;
+	return NM_AP_GET_PRIVATE (ap)->orig_essid;
 }
 
 void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	if (ap->essid)
-	{
-		g_free (ap->essid);
-		g_free (ap->orig_essid);
-		ap->essid = NULL;
-		ap->orig_essid = NULL;
-	}
-
-	if (essid)
-	{
-		ap->orig_essid = g_strdup (essid);
-		ap->essid = nm_utils_essid_to_utf8 (essid);
-	}
+	g_object_set (ap, NM_AP_ESSID, essid, NULL);
 }
 
 
 guint32 nm_ap_get_capabilities (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NM_802_11_CAP_NONE);
+	guint32 caps;
 
-	return ap->capabilities;
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_CAP_NONE);
+
+	g_object_get (ap, NM_AP_CAPABILITIES, &caps, NULL);
+
+	return caps;
 }
 
 
 void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->capabilities = capabilities;
+	g_object_set (ap, NM_AP_CAPABILITIES, capabilities, NULL);
 }
 
 
@@ -348,11 +546,15 @@ void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
  * Accessor function for encrypted flag
  *
  */
-gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
+gboolean nm_ap_get_encrypted (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, FALSE);
+	gboolean encrypted;
 
-	return (!(ap->capabilities & NM_802_11_CAP_PROTO_NONE));
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+
+	g_object_get (ap, NM_AP_ENCRYPTED, &encrypted, NULL);
+
+	return encrypted;
 }
 
 
@@ -362,23 +564,27 @@ gboolean nm_ap_get_encrypted (const NMAccessPoint *ap)
  */
 NMAPSecurity * nm_ap_get_security (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return ap->security;
+	return NM_AP_GET_PRIVATE (ap)->security;
 }
 
 void nm_ap_set_security (NMAccessPoint *ap, NMAPSecurity *security)
 {
-	g_return_if_fail (ap != NULL);
+	NMAccessPointPrivate *priv;
 
-	if (ap->security)
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->security)
 	{
-		g_object_unref (G_OBJECT (ap->security));
-		ap->security = NULL;
+		g_object_unref (G_OBJECT (priv->security));
+		priv->security = NULL;
 	}
 
 	if (security)
-		ap->security = nm_ap_security_new_copy (security);
+		priv->security = nm_ap_security_new_copy (security);
 }
 
 
@@ -388,17 +594,17 @@ void nm_ap_set_security (NMAccessPoint *ap, NMAPSecurity *security)
  */
 const struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return &ap->address;
+	return &NM_AP_GET_PRIVATE (ap)->address;
 }
 
 void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 	g_return_if_fail (addr != NULL);
 
-	memcpy (&ap->address, addr, sizeof (struct ether_addr));
+	memcpy (&NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (struct ether_addr));
 }
 
 
@@ -406,19 +612,22 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
  * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
  *
  */
-int nm_ap_get_mode (const NMAccessPoint *ap)
+int nm_ap_get_mode (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, -1);
+	int mode;
 
-	return ap->mode;
+	g_return_val_if_fail (NM_IS_AP (ap), -1);
+
+	g_object_get (ap, NM_AP_MODE, &mode, NULL);
+
+	return mode;
 }
 
 void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
 {
-	g_return_if_fail (ap != NULL);
-	g_return_if_fail ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA));
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->mode = mode;
+	g_object_set (ap, NM_AP_MODE, mode, NULL);
 }
 
 
@@ -426,18 +635,29 @@ void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
  * Get/set functions for strength
  *
  */
-gint8 nm_ap_get_strength (const NMAccessPoint *ap)
+gint8 nm_ap_get_strength (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, 0);
+	gint8 strength;
 
-	return (ap->strength);
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_STRENGTH, &strength, NULL);
+
+	return strength;
 }
 
-void  nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
+void nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
 {
-	g_return_if_fail (ap != NULL);
+	NMAccessPointPrivate *priv;
 
-	ap->strength = strength;
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->strength != strength) {
+		priv->strength = strength;
+		g_signal_emit (ap, signals[STRENGTH_CHANGED], 0, strength);
+	}
 }
 
 
@@ -445,18 +665,22 @@ void  nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
  * Get/set functions for frequency
  *
  */
-double nm_ap_get_freq (const NMAccessPoint *ap)
+double nm_ap_get_freq (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, 0);
+	double freq;
 
-	return (ap->freq);
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_FREQUENCY, &freq, NULL);
+
+	return freq;
 }
 
 void nm_ap_set_freq (NMAccessPoint *ap, const double freq)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->freq = freq;
+	g_object_set (ap, NM_AP_FREQUENCY, freq, NULL);
 }
 
 
@@ -464,18 +688,22 @@ void nm_ap_set_freq (NMAccessPoint *ap, const double freq)
  * Get/set functions for rate
  *
  */
-guint16 nm_ap_get_rate (const NMAccessPoint *ap)
+guint16 nm_ap_get_rate (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, 0);
+	guint16 rate;
 
-	return (ap->rate);
+	g_return_val_if_fail (NM_IS_AP (ap), 0);
+
+	g_object_get (ap, NM_AP_RATE, &rate, NULL);
+
+	return rate;
 }
 
 void nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->rate = rate;
+	g_object_set (ap, NM_AP_RATE, rate, NULL);
 }
 
 
@@ -487,16 +715,16 @@ void nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
  */
 gboolean nm_ap_get_invalid (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, TRUE);
+	g_return_val_if_fail (NM_IS_AP (ap), TRUE);
 
-	return (ap->invalid);
+	return NM_AP_GET_PRIVATE (ap)->invalid;
 }
 
 void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->invalid = invalid;
+	NM_AP_GET_PRIVATE (ap)->invalid = invalid;
 }
 
 
@@ -507,16 +735,16 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
  */
 gboolean nm_ap_get_fallback (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return (ap->fallback);
+	return NM_AP_GET_PRIVATE (ap)->fallback;
 }
 
 void nm_ap_set_fallback (NMAccessPoint *ap, gboolean fallback)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->fallback = fallback;
+	NM_AP_GET_PRIVATE (ap)->fallback = fallback;
 }
 
 
@@ -528,16 +756,16 @@ void nm_ap_set_fallback (NMAccessPoint *ap, gboolean fallback)
  */
 gboolean nm_ap_get_artificial (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return (ap->artificial);
+	return NM_AP_GET_PRIVATE (ap)->artificial;
 }
 
 void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->artificial = artificial;
+	NM_AP_GET_PRIVATE (ap)->artificial = artificial;
 }
 
 
@@ -545,17 +773,19 @@ void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
  * Get/Set functions to indicate whether an access point is broadcasting
  * (hidden).  This is a superset of artificial.
  */
-gboolean nm_ap_get_broadcast (const NMAccessPoint *ap)
+gboolean nm_ap_get_broadcast (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, TRUE);
-	return ap->broadcast;
+	g_return_val_if_fail (NM_IS_AP (ap), TRUE);
+
+	return NM_AP_GET_PRIVATE (ap)->broadcast;
 }
 
 
 void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
 {
-	g_return_if_fail (ap != NULL);
-	ap->broadcast = broadcast;
+	g_return_if_fail (NM_IS_AP (ap));
+
+	NM_AP_GET_PRIVATE (ap)->broadcast = broadcast;
 }
 
 
@@ -566,16 +796,16 @@ void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
  */
 const GTimeVal *nm_ap_get_last_seen (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return (&ap->last_seen);
+	return &NM_AP_GET_PRIVATE (ap)->last_seen;
 }
 
 void nm_ap_set_last_seen (NMAccessPoint *ap, const GTimeVal *last_seen)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->last_seen = *last_seen;
+	NM_AP_GET_PRIVATE (ap)->last_seen = *last_seen;
 }
 
 
@@ -588,16 +818,16 @@ void nm_ap_set_last_seen (NMAccessPoint *ap, const GTimeVal *last_seen)
  */
 gboolean nm_ap_get_user_created (const NMAccessPoint *ap)
 {
-	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return (ap->user_created);
+	return NM_AP_GET_PRIVATE (ap)->user_created;
 }
 
 void nm_ap_set_user_created (NMAccessPoint *ap, gboolean user_created)
 {
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
-	ap->user_created = user_created;
+	NM_AP_GET_PRIVATE (ap)->user_created = user_created;
 }
 
 
@@ -615,27 +845,30 @@ GSList *nm_ap_get_user_addresses (const NMAccessPoint *ap)
 	GSList	*new = NULL;
 	GSList	*elt = NULL;
 
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	for (elt = ap->user_addresses; elt; elt = g_slist_next (elt))
+	for (elt = NM_AP_GET_PRIVATE (ap)->user_addresses; elt; elt = g_slist_next (elt))
 	{
 		if (elt->data)
 			new = g_slist_append (new, g_strdup (elt->data));
 	}
 
 	/* Return a _deep__copy_ of the address list */
-	return (new);
+	return new;
 }
 
 void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 {
+	NMAccessPointPrivate *priv;
 	GSList	*elt = NULL;
 	GSList	*new = NULL;
 
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
 
 	/* Free existing list */
-	g_slist_foreach (ap->user_addresses, (GFunc) g_free, NULL);
+	g_slist_foreach (priv->user_addresses, (GFunc) g_free, NULL);
 
 	/* Copy new list and set as our own */
 	for (elt = list; elt; elt = g_slist_next (elt))
@@ -644,7 +877,7 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 			new = g_slist_append (new, g_strdup (elt->data));
 	}
 
-	ap->user_addresses = new;
+	priv->user_addresses = new;
 }
 
 
@@ -653,8 +886,8 @@ gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
 	const char **default_essid = default_essid_list;
 	const char *this_essid;
 
-	g_return_val_if_fail (ap != NULL, FALSE);
-	this_essid = ap->essid;
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+	this_essid = NM_AP_GET_PRIVATE (ap)->essid;
 
 	while (*default_essid)
 	{
@@ -717,7 +950,7 @@ void nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *secu
 	guint32 caps;
 	int cipher;
 
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 	g_return_if_fail (security != NULL);
 
 	cipher = nm_ap_security_get_we_cipher (security);
@@ -731,7 +964,7 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 	wpa_ie_data *	cap_data;
 	guint32		caps;
 
-	g_return_if_fail (ap != NULL);
+	g_return_if_fail (NM_IS_AP (ap));
 
 	if (!(cap_data = wpa_parse_wpa_ie (wpa_ie, length)))
 		return;
@@ -768,8 +1001,12 @@ void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, gu
 
 void nm_ap_add_capabilities_for_wep (NMAccessPoint *ap)
 {
-	g_return_if_fail (ap != NULL);
+	NMAccessPointPrivate *priv;
 
-	ap->capabilities |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
-	ap->capabilities &= ~NM_802_11_CAP_PROTO_NONE;
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	priv->capabilities |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
+	priv->capabilities &= ~NM_802_11_CAP_PROTO_NONE;
 }

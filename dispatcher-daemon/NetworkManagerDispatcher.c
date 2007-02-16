@@ -37,22 +37,14 @@
 
 #include "NetworkManager.h"
 #include "nm-utils.h"
-
-
-enum NMDAction
-{
-	NMD_DEVICE_DONT_KNOW,
-	NMD_DEVICE_NOW_INACTIVE,
-	NMD_DEVICE_NOW_ACTIVE,
-};
-typedef enum NMDAction	NMDAction;
+#include "nm-client.h"
 
 
 #define NM_SCRIPT_DIR		SYSCONFDIR"/NetworkManager/dispatcher.d"
 
 #define NMD_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManagerDispatcher.pid"
 
-static DBusConnection *nmd_dbus_init (void);
+GHashTable *device_signals_hash;
 
 /*
  * nmd_permission_check
@@ -66,7 +58,8 @@ static DBusConnection *nmd_dbus_init (void);
  *	- Executable by the owner.
  *
  */
-static inline gboolean nmd_permission_check (struct stat *s)
+static inline gboolean
+nmd_permission_check (struct stat *s)
 {
 	if (!S_ISREG (s->st_mode))
 		return FALSE;
@@ -86,18 +79,21 @@ static inline gboolean nmd_permission_check (struct stat *s)
  * Call scripts in /etc/NetworkManager.d when devices go down or up
  *
  */
-static void nmd_execute_scripts (NMDAction action, char *iface_name)
+static void
+nmd_execute_scripts (NMDeviceState state, char *iface_name)
 {
 	GDir *		dir;
 	const char *	file_name;
 	const char *	char_act;
 
-	if (action == NMD_DEVICE_NOW_ACTIVE)
+	if (state == NM_DEVICE_STATE_ACTIVATED)
 		char_act = "up";
-	else if (action == NMD_DEVICE_NOW_INACTIVE)
+	else if (state == NM_DEVICE_STATE_DISCONNECTED)
 		char_act = "down";
 	else
 		return;
+
+	nm_info ("Device %s is now %s.", iface_name, char_act);
 
 	if (!(dir = g_dir_open (NM_SCRIPT_DIR, 0, NULL)))
 	{
@@ -107,7 +103,7 @@ static void nmd_execute_scripts (NMDAction action, char *iface_name)
 
 	while ((file_name = g_dir_read_name (dir)))
 	{
-		char *		file_path = g_strdup_printf (NM_SCRIPT_DIR"/%s", file_name);
+		char *file_path = g_build_filename (NM_SCRIPT_DIR, file_name, NULL);
 		struct stat	s;
 
 		if ((file_name[0] != '.') && (stat (file_path, &s) == 0))
@@ -131,182 +127,56 @@ static void nmd_execute_scripts (NMDAction action, char *iface_name)
 	g_dir_close (dir);
 }
 
-
-/*
- * nmd_get_device_name
- *
- * Queries NetworkManager for the name of a device, specified by a device path
- */
-static char * nmd_get_device_name (DBusConnection *connection, char *path)
+static void
+device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
-	DBusMessage *	message;
-	DBusMessage *	reply;
-	DBusError		error;
-	char *		dbus_dev_name = NULL;
-	char *		dev_name = NULL;
+	if (state == NM_DEVICE_STATE_ACTIVATED || state == NM_DEVICE_STATE_DISCONNECTED) {
+		char *iface;
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE, path, NM_DBUS_INTERFACE, "getName")))
-	{
-		nm_warning ("Couldn't allocate the dbus message");
-		return NULL;
+		iface = nm_device_get_iface (device);
+		nmd_execute_scripts (state, iface);
+		g_free (iface);
 	}
-
-	dbus_error_init (&error);
-	reply = dbus_connection_send_with_reply_and_block (connection, message, -1, &error);
-	dbus_message_unref (message);
-	if (dbus_error_is_set (&error))
-	{
-		nm_warning ("%s raised: %s", error.name, error.message);
-		dbus_error_free (&error);
-		return NULL;
-	}
-
-	/* now analyze reply */
-	if (!dbus_message_get_args (reply, NULL, DBUS_TYPE_STRING, &dbus_dev_name, DBUS_TYPE_INVALID))
-	{
-		nm_warning ("There was an error getting the device name from NetworkManager." );
-		dev_name = NULL;
-	}
-	else
-		dev_name = g_strdup (dbus_dev_name);
-	
-	dbus_message_unref (reply);
-
-	return dev_name;
 }
 
-/*
- * nmd reinit_dbus
- *
- * Reconnect to the system message bus if the connection was dropped.
- *
- */
-static gboolean nmd_reinit_dbus (gpointer user_data)
+static void
+device_add_listener (NMClient *client, NMDevice *device, gpointer user_data)
 {
-	if (nmd_dbus_init ())
-	{
-		nm_info ("Successfully reconnected to the system bus.");
-		return FALSE;
+	guint id;
+
+	if (!g_hash_table_lookup (device_signals_hash, device)) {
+		id = g_signal_connect (device, "state-changed",
+							   G_CALLBACK (device_state_changed),
+							   NULL);
+
+		g_hash_table_insert (device_signals_hash, g_object_ref (device), GUINT_TO_POINTER (id));
 	}
-	else
-		return TRUE;
 }
 
-/*
- * nmd_dbus_filter
- *
- * Handles dbus messages from NetworkManager, dispatches device active/not-active messages
- */
-static DBusHandlerResult nmd_dbus_filter (DBusConnection *connection, DBusMessage *message, void *user_data)
+static void
+device_remove_listener (NMClient *client, NMDevice *device, gpointer user_data)
 {
-	const char	*object_path;
-	DBusError		 error;
-	char			*dev_object_path = NULL;
-	gboolean		 handled = FALSE;
-	NMDAction		 action = NMD_DEVICE_DONT_KNOW;
+	guint id;
 
-	dbus_error_init (&error);
-	object_path = dbus_message_get_path (message);
-
-	if (dbus_message_is_signal (message, DBUS_INTERFACE_LOCAL, "Disconnected"))
-	{
-		dbus_connection_unref (connection);
-		connection = NULL;
-		g_timeout_add (3000, nmd_reinit_dbus, NULL);
-		handled = TRUE;
+	id = GPOINTER_TO_UINT (g_hash_table_lookup (device_signals_hash, device));
+	if (id) {
+		g_signal_handler_disconnect (device, id);
+		g_hash_table_remove (device_signals_hash, device);
 	}
-
-	if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNoLongerActive"))
-		action = NMD_DEVICE_NOW_INACTIVE;
-	else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE, "DeviceNowActive"))
-		action = NMD_DEVICE_NOW_ACTIVE;
-
-	if (action != NMD_DEVICE_DONT_KNOW)
-	{
-		if (dbus_message_get_args (message, &error, DBUS_TYPE_OBJECT_PATH, &dev_object_path, DBUS_TYPE_INVALID))
-		{
-			char *	dev_iface_name = NULL;
-
-			dev_object_path = nm_dbus_unescape_object_path (dev_object_path);
-			if (dev_object_path)
-				dev_iface_name = nmd_get_device_name (connection, dev_object_path);
-
-			if (dev_object_path && dev_iface_name)
-			{
-				nm_info ("Device %s (%s) is now %s.", dev_object_path, dev_iface_name,
-						(action == NMD_DEVICE_NOW_INACTIVE ? "down" :
-						(action == NMD_DEVICE_NOW_ACTIVE ? "up" : "error")));
-
-				nmd_execute_scripts (action, dev_iface_name);
-			}
-
-			g_free (dev_object_path);
-			g_free (dev_iface_name);
-
-			handled = TRUE;
-		}
-	}
-
-	return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
 }
 
-/*
- * nmd_dbus_init
- *
- * Initialize a connection to NetworkManager
- */
-static DBusConnection *nmd_dbus_init (void)
+static void
+add_existing_device_listeners (NMClient *client)
 {
-	DBusConnection *connection = NULL;
-	DBusError		 error;
+	GSList *list, *iter;
 
-	/* connect to NetworkManager service on the system bus */
-	dbus_error_init (&error);
-	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if (connection == NULL)
-	{
-		nm_warning ("nmd_dbus_init(): could not connect to the message bus.  dbus says: '%s'", error.message);
-		dbus_error_free (&error);
-		return (NULL);
-	}
+	list = nm_client_get_devices (client);
+	for (iter = list; iter; iter = iter->next)
+		device_add_listener (client, NM_DEVICE (iter->data), NULL);
 
-	dbus_connection_set_exit_on_disconnect (connection, FALSE);
-	dbus_connection_setup_with_g_main (connection, NULL);
-
-	if (!dbus_connection_add_filter (connection, nmd_dbus_filter, NULL, NULL))
-		return (NULL);
-
-	dbus_bus_add_match (connection,
-				"type='signal',"
-				"interface='" NM_DBUS_INTERFACE "',"
-				"sender='" NM_DBUS_SERVICE "',"
-				"path='" NM_DBUS_PATH "'", &error);
-	if (dbus_error_is_set (&error))
-		return (NULL);
-
-	return (connection);
+	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
+	g_slist_free (list);
 }
-
-/*
- * nmd_print_usage
- *
- * Prints program usage.
- *
- */
-static void nmd_print_usage (void)
-{
-	fprintf (stderr, "\n" "usage : NetworkManagerDispatcher [--no-daemon] [--pid-file=<file>] [--help]\n");
-	fprintf (stderr,
-		"\n"
-		"        --no-daemon        Do not daemonize\n"
-		"        --pid-file=<path>  Specify the location of a PID file\n"
-		"        --help             Show this information and exit\n"
-		"\n"
-		"NetworkManagerDispatcher listens for device messages from NetworkManager\n"
-		"and runs scripts in " NM_SCRIPT_DIR "\n"
-		"\n");
-}
-
 
 static void
 write_pidfile (const char *pidfile)
@@ -331,88 +201,75 @@ write_pidfile (const char *pidfile)
  * main
  *
  */
-int main (int argc, char *argv[])
+int
+main (int argc, char *argv[])
 {
-	gboolean		become_daemon = TRUE;
-	GMainLoop *	loop  = NULL;
-	DBusConnection	*connection = NULL;
-	char *		pidfile = NULL;
-	char *		user_pidfile = NULL;
+	GError *err = NULL;
+	GOptionContext *opt_ctx;
+	GMainLoop *loop;
+	int ret = EXIT_FAILURE;
+	NMClient *client;
+	gboolean no_daemon = FALSE;
+	char *pidfile = NMD_DEFAULT_PID_FILE;
 
-	/* Parse options */
-	while (1)
-	{
-		int c;
-		int option_index = 0;
-		const char *opt;
+	GOptionEntry entries[] = {
+		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &no_daemon, "Do not daemonize", NULL },
+		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &pidfile, "Specify the location of a PID file", "filename" },
+		{ NULL }
+	};
 
-		static struct option options[] = {
-			{"no-daemon",	0, NULL, 0},
-			{"pid-file",	1, NULL, 0},
-			{"help",		0, NULL, 0},
-			{NULL,		0, NULL, 0}
-		};
+	opt_ctx = g_option_context_new (NULL);
+	g_option_context_set_summary (opt_ctx,
+								  "NetworkManagerDispatcher listens for device messages from NetworkManager\n"
+								  "and runs scripts in " NM_SCRIPT_DIR);
+	g_option_context_add_main_entries (opt_ctx, entries, NULL);
 
-		c = getopt_long (argc, argv, "", options, &option_index);
-		if (c == -1)
-			break;
-
-		switch (c)
-		{
-			case 0:
-				opt = options[option_index].name;
-				if (strcmp (opt, "help") == 0)
-				{
-					nmd_print_usage ();
-					return 0;
-				}
-				else if (strcmp (opt, "no-daemon") == 0)
-					become_daemon = FALSE;
-				else if (strcmp (opt, "pid-file") == 0)
-					user_pidfile = g_strdup (optarg);
-				else
-				{
-					nmd_print_usage ();
-					return 1;
-				}
-				break;
-
-			default:
-				nmd_print_usage ();
-				return 1;
-				break;
-		}
+	if (!g_option_context_parse (opt_ctx, &argc, &argv, &err)) {
+		g_print ("%s\n", err->message);
+		g_error_free (err);
+		goto out;
 	}
 
-	openlog("NetworkManagerDispatcher", (become_daemon) ? LOG_CONS : LOG_CONS | LOG_PERROR, (become_daemon) ? LOG_DAEMON : LOG_USER);
+	openlog ("NetworkManagerDispatcher",
+			 (no_daemon) ? LOG_CONS | LOG_PERROR : LOG_CONS,
+			 (no_daemon) ? LOG_USER : LOG_DAEMON);
 
-	if (become_daemon)
-	{
-		if (daemon (FALSE, FALSE) < 0)
-		{
-	     	nm_warning ("NetworkManagerDispatcher could not daemonize: %s", strerror (errno));
-		     exit (1);
+	if (!no_daemon) {
+		if (daemon (FALSE, FALSE) < 0) {
+			nm_warning ("NetworkManagerDispatcher could not daemonize: %s", strerror (errno));
+			goto out;
 		}
 
-		pidfile = user_pidfile ? user_pidfile : NMD_DEFAULT_PID_FILE;
 		write_pidfile (pidfile);
 	}
 
 	g_type_init ();
-	if (!g_thread_supported ())
-		g_thread_init (NULL);
 
-	/* Connect to the NetworkManager dbus service and run the main loop */
-	if ((connection = nmd_dbus_init ()))
-	{
-		loop = g_main_loop_new (NULL, FALSE);
-		g_main_loop_run (loop);
-	}
+	client = nm_client_new ();
+	if (!client)
+		goto out;
 
-	/* Clean up pidfile */
-	if (pidfile)
-		unlink (pidfile);
-	g_free (user_pidfile);
+	device_signals_hash = g_hash_table_new_full (NULL, NULL, (GDestroyNotify) g_object_unref, NULL);
 
-	return 0;
+	g_signal_connect (client, "device-added",
+					  G_CALLBACK (device_add_listener), NULL);
+	g_signal_connect (client, "device-removed",
+					  G_CALLBACK (device_remove_listener), NULL);
+
+	add_existing_device_listeners (client);
+
+	loop = g_main_loop_new (NULL, FALSE);
+	g_main_loop_run (loop);
+	g_main_loop_unref (loop);
+	g_object_unref (client);
+	g_hash_table_destroy (device_signals_hash);
+
+	ret = EXIT_SUCCESS;
+
+ out:
+	g_option_context_free (opt_ctx);
+	closelog ();
+	unlink (pidfile);
+
+	return ret;
 }

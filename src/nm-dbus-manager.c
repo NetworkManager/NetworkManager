@@ -109,16 +109,6 @@ nm_dbus_manager_init (NMDBusManager *self)
 }
 
 static void
-cleanup_handler_data (gpointer item, gpointer user_data)
-{
-	MethodHandlerData * data = (MethodHandlerData *) item;
-
-	nm_dbus_method_list_unref (data->list);
-	memset (data, 0, sizeof (MethodHandlerData));
-	g_slice_free (MethodHandlerData, data);
-}
-
-static void
 free_signal_handler_helper (gpointer item,
                             gpointer user_data)
 {
@@ -527,42 +517,6 @@ nm_dbus_manager_name_has_owner (NMDBusManager *self,
 	}
 
 	return has_owner;
-}
-
-static DBusHandlerResult
-nm_dbus_manager_message_handler (DBusConnection *connection,
-                                 DBusMessage *message,
-                                 void *user_data)
-{
-	MethodHandlerData *	data = (MethodHandlerData *) user_data;
-	NMDBusManager *		self = data->self;
-	NMDbusMethodList *	list = data->list;
-	DBusObjectPathMessageFunction	custom_handler_func;
-	gboolean			handled = FALSE;
-	DBusMessage *		reply = NULL;
-	void *				hdlr_user_data;
-
-	g_return_val_if_fail (self != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-	g_return_val_if_fail (list != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-
-	hdlr_user_data = nm_dbus_method_list_get_user_data (list);
-
-	/* Try the method lists' custom handler first */
-	custom_handler_func = nm_dbus_method_list_get_custom_handler_func (list);
-	if (custom_handler_func) {
-		handled = (*custom_handler_func) (connection, message, hdlr_user_data);
-	} else {
-		/* Generic handler for lists that don't specify a custom handler */
-		handled = nm_dbus_method_list_dispatch (list, connection, message,
-		                                        hdlr_user_data, &reply);
-		if (reply) {
-			dbus_connection_send (connection, reply, NULL);
-			dbus_message_unref (reply);
-		}
-	}
-
-	return handled ? DBUS_HANDLER_RESULT_HANDLED
-	                 : DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
 }
 
 static void

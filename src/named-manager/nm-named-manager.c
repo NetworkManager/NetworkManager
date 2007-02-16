@@ -622,8 +622,7 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 		add_all_ip4_configs_to_named (mgr);
 	}
 
-	nm_ip4_config_ref (config);
-	mgr->priv->configs = g_slist_append (mgr->priv->configs, config);
+	mgr->priv->configs = g_slist_append (mgr->priv->configs, g_object_ref (config));
 
 	/* Activate the zone config */
 	if (mgr->priv->use_named)
@@ -678,7 +677,7 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config)
 		remove_ip4_config_from_named (mgr, config);
 
 	mgr->priv->configs = g_slist_remove (mgr->priv->configs, config);
-	nm_ip4_config_unref (config);	
+	g_object_unref (config);	
 
 	/* Clear out and reload configs since we may need a new
 	 * default zone if the one we are removing was the old
@@ -738,7 +737,7 @@ nm_named_manager_finalize (GObject *object)
 
 	g_return_if_fail (mgr->priv != NULL);
 
-	g_slist_foreach (mgr->priv->configs, (GFunc) nm_ip4_config_unref, NULL);
+	g_slist_foreach (mgr->priv->configs, (GFunc) g_object_unref, NULL);
 	g_slist_free (mgr->priv->configs);
 
 	g_object_unref (mgr->priv->dbus_mgr);

@@ -23,10 +23,10 @@ GType nm_device_802_11_wireless_get_type (void);
 
 NMDevice80211Wireless *nm_device_802_11_wireless_new         (DBusGConnection *connection,
 															  const char *path);
-int                   nm_device_802_11_wireless_get_speed   (NMDevice80211Wireless *device);
-char                 *nm_device_802_11_wireless_get_address (NMDevice80211Wireless *device);
 
+char                 *nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device);
 int                   nm_device_802_11_wireless_get_mode    (NMDevice80211Wireless *device);
+int                   nm_device_802_11_wireless_get_bitrate   (NMDevice80211Wireless *device);
 NMAccessPoint        *nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device);
 
 GSList               *nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device);

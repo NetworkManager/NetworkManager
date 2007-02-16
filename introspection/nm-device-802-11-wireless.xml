@@ -14,8 +14,9 @@
       <arg name="networks" type="ao" direction="out"/>
     </method>
 
-    <property name="Address" type="s" access="read"/>
+    <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>
+    <property name="Bitrate" type="i" access="read"/>
     <property name="ActiveNetwork" type="o" access="read"/>
 
     <signal name="NetworkAdded">

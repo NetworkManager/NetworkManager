@@ -69,19 +69,6 @@ void nm_ap_list_ref (NMAccessPointList *list)
 
 
 /*
- * nm_ap_list_element_free
- *
- * Frees each member of an access point list before the list is
- * disposed of. 
- *
- */
-static void nm_ap_list_element_free (void *element, void *user_data)
-{
-	nm_ap_unref (element);
-}
-
-
-/*
  * nm_ap_list_unref
  *
  * Decreases the refcount of the ap list, and if it reaches
@@ -95,7 +82,7 @@ void nm_ap_list_unref (NMAccessPointList *list)
 
 	list->refcount--;
 	if (list->refcount <= 0) {
-		g_slist_foreach (list->ap_list, nm_ap_list_element_free, NULL);
+		g_slist_foreach (list->ap_list, (GFunc) g_object_unref, NULL);
 		g_slist_free (list->ap_list);
 		g_slice_free (NMAccessPointList, list);
 	}
@@ -140,8 +127,7 @@ void nm_ap_list_append_ap (NMAccessPointList *list, NMAccessPoint *ap)
 	g_return_if_fail (list != NULL);
 	g_return_if_fail (ap != NULL);
 
-	nm_ap_ref (ap);
-	list->ap_list = g_slist_append (list->ap_list, ap);
+	list->ap_list = g_slist_append (list->ap_list, g_object_ref (ap));
 }
 
 
@@ -163,7 +149,7 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 		if (list_ap == ap) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
-			nm_ap_unref (list_ap);
+			g_object_unref (list_ap);
 			g_slist_free (elt);
 			break;
 		}
@@ -189,7 +175,7 @@ void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network
 
 		if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), network) == 0) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
-			nm_ap_unref (list_ap);
+			g_object_unref (list_ap);
 			g_slist_free (elt);
 			break;
 		}

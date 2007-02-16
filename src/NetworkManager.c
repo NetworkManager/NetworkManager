@@ -154,7 +154,7 @@ nm_monitor_setup (NMData *data)
  * Create data structure used in callbacks from libhal.
  *
  */
-static NMData *nm_data_new (gboolean enable_test_devices)
+static NMData *nm_data_new (void)
 {
 	NMData * data;
 	guint    id;
@@ -195,7 +195,6 @@ static NMData *nm_data_new (gboolean enable_test_devices)
 		return NULL;
 	}
 
-	data->enable_test_devices = enable_test_devices;
 	data->wireless_enabled = TRUE;
 	return data;
 }
@@ -317,7 +316,6 @@ main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
 	gboolean		become_daemon = FALSE;
-	gboolean		enable_test_devices = FALSE;
 	gboolean		show_usage = FALSE;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
@@ -331,8 +329,7 @@ main (int argc, char *argv[])
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
-		{"pid-file", 0, 0, G_OPTION_ARG_STRING, &user_pidfile, "Specify the location of a PID file", NULL},
-		{"enable-test-devices", 0, 0, G_OPTION_ARG_NONE, &enable_test_devices, "Allow dummy devices to be created via DBUS methods [DEBUG]", NULL},
+		{"pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename"},
 		{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
 		{NULL}
 	};
@@ -395,7 +392,7 @@ main (int argc, char *argv[])
 	nm_system_init();
 
 	/* Initialize our instance data */
-	nm_data = nm_data_new (enable_test_devices);
+	nm_data = nm_data_new ();
 	if (!nm_data) {
 		nm_error ("Failed to initialize.");
 		goto pidfile;

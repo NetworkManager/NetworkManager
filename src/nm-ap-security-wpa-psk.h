@@ -54,8 +54,6 @@ struct _NMAPSecurityWPA_PSKClass
 GType nm_ap_security_wpa_psk_get_type (void);
 
 NMAPSecurityWPA_PSK * nm_ap_security_wpa_psk_new_deserialize (DBusMessageIter *iter, int we_cipher);
-
-struct NMAccessPoint;
-NMAPSecurityWPA_PSK * nm_ap_security_wpa_psk_new_from_ap (struct NMAccessPoint *ap, int we_cipher);
+NMAPSecurityWPA_PSK * nm_ap_security_wpa_psk_new (guint32 capabilities, int we_cipher);
 
 #endif	/* NM_AP_SECURITY_WPA_PSK_H */

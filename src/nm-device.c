@@ -1396,16 +1396,17 @@ nm_device_get_ip4_config (NMDevice *self)
 void
 nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 {
-	NMIP4Config *old_config;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	old_config = self->priv->ip4_config;
+	if (priv->ip4_config) {
+		g_object_unref (priv->ip4_config);
+		priv->ip4_config = NULL;
+	}
+
 	if (config)
-		nm_ip4_config_ref (config);
-	self->priv->ip4_config = config;
-	if (old_config)
-		nm_ip4_config_unref (old_config);
+		priv->ip4_config = g_object_ref (config);
 }
 
 
@@ -1611,11 +1612,7 @@ nm_device_dispose (GObject *object)
 	 */
 
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
-	if (self->priv->ip4_config)
-	{
-		nm_ip4_config_unref (self->priv->ip4_config);
-		self->priv->ip4_config = NULL;
-	}
+	nm_device_set_ip4_config (self, NULL);
 
 	if (self->priv->act_request)
 	{
@@ -1703,6 +1700,9 @@ get_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
 		g_value_set_uint (value, priv->ip4_address);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
+		g_value_set_object (value, priv->ip4_config);
+		break;
 	case NM_DEVICE_INTERFACE_PROP_STATE:
 		g_value_set_uint (value, priv->state);
 		break;
@@ -1762,6 +1762,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,
 									  NM_DEVICE_INTERFACE_IP4_ADDRESS);
+
+	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_IP4_CONFIG,
+									  NM_DEVICE_INTERFACE_IP4_CONFIG);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_STATE,
