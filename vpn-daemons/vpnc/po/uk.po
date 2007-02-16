@@ -1,0 +1,254 @@
+# Ukrainian translation of NetworkManager vpnc
+# Copyright (C) Free Software Foundation, 2005
+# This file is distributed under the same license as the NetworkManager package.
+# Maxim Dziumanenko <dziumanenko@gmail.com>, 2005-2007
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager vpnc\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-16 18:06+0200\n"
+"PO-Revision-Date: 2007-02-16 03:32+0200\n"
+"Last-Translator: Maxim Dziumanenko <dziumanenko@gmail.com>\n"
+"Language-Team: Ukrainian <uk@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:144
+msgid "_Secondary Password:"
+msgstr "_Вторинний пароль:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "_Ім'я:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
+msgid "_Domain:"
+msgstr "_Домен"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_Пароль:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
+msgid "Connect _anonymously"
+msgstr "З'єднуватись _анонімно"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:356
+msgid "Connect as _user:"
+msgstr "З'єднуватись як _користувач:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "Па_м'ятати пароль для цього сеансу"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "З_берегти пароль у в'язці паролів"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Для доступу до приватної мережі '%s' потрібна автентифікація."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "Автентифікація VPN"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "Пароль _групи:"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Додавання, видалення та редагування з'єднань типу VPN"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "Менеджер з'єднань VPN (vpnc)"
+
+#: ../properties/nm-vpnc.c:84
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "Сумісний з Cisco VPN клієнт (vpnc)"
+
+#: ../properties/nm-vpnc.c:448
+msgid "The following vpnc VPN connection will be created:"
+msgstr "Буде створено з'єднання vpnc VPN:"
+
+#: ../properties/nm-vpnc.c:450
+#, c-format
+msgid "Name:  %s"
+msgstr "Назва:  %s"
+
+#: ../properties/nm-vpnc.c:453
+#, c-format
+msgid "Gateway:  %s"
+msgstr "Шлюз:  %s"
+
+#: ../properties/nm-vpnc.c:455
+#, c-format
+msgid "Group Name:  %s"
+msgstr "Назва групи:  %s"
+
+#: ../properties/nm-vpnc.c:459
+#, c-format
+msgid "Username:  %s"
+msgstr "Ім'я:  %s"
+
+#: ../properties/nm-vpnc.c:464
+#, c-format
+msgid "Domain:  %s"
+msgstr "Домен:  %s"
+
+#: ../properties/nm-vpnc.c:469
+#, c-format
+msgid "Routes:  %s"
+msgstr "Маршрутизатори:  %s"
+
+#: ../properties/nm-vpnc.c:473
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Подробиці про з'єднання можна змінити кнопкою \"Правка\"."
+
+#: ../properties/nm-vpnc.c:542
+msgid "TCP tunneling not supported"
+msgstr "Тунелювання TCP не підтримується"
+
+#: ../properties/nm-vpnc.c:544
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"У файлі параметрів VPN '%s' вказано, що трафік VPN повинен тунелюватись "
+"через TCP, що наразі не підтримується програмою vpnc.\n"
+"\n"
+"З'єднання буде створено з вимкненим тунелюванням TCP, але воно може не "
+"працювати належним чином."
+
+#: ../properties/nm-vpnc.c:565
+msgid "Cannot import settings"
+msgstr "Не вдається імпортувати параметри"
+
+#: ../properties/nm-vpnc.c:567
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "Файл параметрів VPN '%s' містить некоректні дані."
+
+#: ../properties/nm-vpnc.c:584
+msgid "Select file to import"
+msgstr "Виберіть файл для імпорту"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:744
+msgid "Save as..."
+msgstr "Зберегти як..."
+
+#: ../properties/nm-vpnc.c:774
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Файл з назвою \"%s\" вже існує."
+
+#: ../properties/nm-vpnc.c:777
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Замінити його?"
+
+#: ../properties/nm-vpnc.c:791
+msgid "Failed to export configuration"
+msgstr "Помилка експорту конфігурації"
+
+#: ../properties/nm-vpnc.c:793
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Помилка збереження файлу %s"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Назва з'єднання</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Обов'язкова інформація</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>приклад: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "Назва г_рупи:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "_Не обов'язкова інформація"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "Перевизначати ім'я _користувача'"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Нижче введіть інформацію, що надана системним адміністратором. Не вводьте "
+"тут ваш пароль, пароль буде запитаний на етапі встановлення з'єднання."
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "Використовувати _домен для автентифікації"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_Шлюз:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "_Імпорт збереженої конфігурації..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Назва, що використовується для ідентифікації з'єднання з приватною мережею, "
+"наприклад \"Campus VPN\" чи \"Corporate Network\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "Використовувати VPN _лише для цих адрес"
+
+#: ../src/nm-vpnc-service.c:118
+msgid ""
+"The VPN login failed because the user name and password were not accepted."
+msgstr ""
+"Помилка входу у VPN, оскільки ім'я користувача та пароль не були прийняті."
+
+#: ../src/nm-vpnc-service.c:120
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "Помилка входу у VPN, оскільки не вдається запустити програму VPN."
+
+#: ../src/nm-vpnc-service.c:122
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"Помилка входу у VPN, оскільки програма VPN не може з'єднатись з сервером VPN."
+
+#: ../src/nm-vpnc-service.c:124
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr "Помилка входу у VPN, оскільки конфігурація VPN була неправильною."
+
+#: ../src/nm-vpnc-service.c:126
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
+"Помилка входу у VPN, оскільки програма VPN отримала неправильну конфігурацію "
+"від сервера VPN."

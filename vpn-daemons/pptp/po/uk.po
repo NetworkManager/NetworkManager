@@ -1,0 +1,576 @@
+# Ukrainian translation of NetworkManager pptp
+# Copyright (C) Free Software Foundation, 2005
+# This file is distributed under the same license as the NetworkManager package.
+# Maxim Dziumanenko <dziumanenko@gmail.com>, 2005-2007
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager pptp\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-16 17:16+0200\n"
+"PO-Revision-Date: 2007-02-16 03:32+0200\n"
+"Last-Translator: Maxim Dziumanenko <dziumanenko@gmail.com>\n"
+"Language-Team: Ukrainian <uk@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
+msgid "Authentication Type:"
+msgstr "Тип автентифікації:"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+msgid "_Remember for this session"
+msgstr "Па_м'ятати для цього сеансу"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+msgid "_Save in keyring"
+msgstr "З_берегти у в'язці паролів"
+
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
+#, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr "Для доступу до мережі '%s' потрібна автентифікація."
+
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
+msgid "Authenticate Connection"
+msgstr "Автентифікація з'єднання'"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">Інформація про автентифікацію</span>\n"
+"\n"
+"З'єднання '%s' вимагає певної форми автентифікації.\n"
+"\n"
+"Виберіть тип автентифікації та вкажіть необхідні параметри:\n"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+msgid "Authentication Required"
+msgstr "Потрібна автентифікація"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+msgid "_Authentication Type:"
+msgstr "Тип _автентифікації:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Пароль:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+msgid "_Remote name:"
+msgstr "_Віддалена адреса IP:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Ім'я:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
+msgid "auth-chap-window"
+msgstr "auth-chap-window"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
+msgid "auth-mschapv2-window"
+msgstr "auth-mschapv2-window"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
+msgid "auth-none-window"
+msgstr "auth-none-window"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "_Вторинний пароль:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_Домен"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "З'єднуватись _анонімно"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "З'єднуватись як _користувач:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+msgid "_Remember password for this session"
+msgstr "Па_м'ятати пароль для цього сеансу"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+msgid "_Save password in keyring"
+msgstr "З_берегти пароль у в'язці паролів"
+
+#: ../nm-ppp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Додавання, видалення та редагування з'єднань типу VPN"
+
+#: ../nm-ppp.desktop.in.h:2
+msgid "VPN Connection Manager (PPP generic)"
+msgstr "Менеджер з'єднань VPN (загальний PPP)"
+
+#: ../properties/nm-ppp-dialog.glade.h:1
+msgid "00:00:00:00"
+msgstr "00:00:00:00"
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+msgid "<b>Compression</b>"
+msgstr "<b>Стиснення</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:3
+msgid "<b>Connection Name</b>"
+msgstr "<b>Назва з'єднання</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:4
+msgid "<b>Delays and TImeouts</b>"
+msgstr "<b>Затримки та таймаути</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:5
+msgid "<b>Encryption</b>"
+msgstr "<b>Шифрування</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+msgid "<b>IP Options</b>"
+msgstr "<b>Параметри IP</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<b>Packet Parameters</b>"
+msgstr "<b>Параметри пакету</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:8
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>приклад: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr "Список додаткових параметрів pppd, у вигляді у якому вони б вводились у командному рядку"
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+msgid "Allow BSD Compression"
+msgstr "Увімкнути стиснення BSD"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
+msgid "Allow Deflate compression"
+msgstr "Увімкнути стиснення Deflate"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+msgid "Authenticate Peer"
+msgstr "Автентифікація рівного"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+msgid "Authentication"
+msgstr "Автентифікація"
+
+#: ../properties/nm-ppp-dialog.glade.h:14
+msgid "Compression & Encryption"
+msgstr "Стиснення та шифрування"
+
+#: ../properties/nm-ppp-dialog.glade.h:15
+msgid "Connection"
+msgstr "З'єднання"
+
+#: ../properties/nm-ppp-dialog.glade.h:16
+msgid "Debug Output"
+msgstr "Параметри налагодження"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr "Вимикати після великої кількості помилок при запитах LCP"
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "Увімкнути MPPE"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr "Ексклюзивна адреса пристрою (блокування у стилі UUCP)"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "Find Device"
+msgstr "Пошук пристрою"
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid ""
+"For security reasons, options entered in the box above are checked against a "
+"list of allowed options before a connection is established.  Currently there "
+"are no options on the list."
+msgstr ""
+"З міркувань безпеки, перед встановленням з'єднання параметри, введені у наведеному вище текстовому полі, звіряються зі "
+"списком дозволених параметрів.  Наразі у списку немає значень."
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "GPRS Options"
+msgstr "Параметри GPRS"
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+msgid "Hardware RTS/CTS"
+msgstr "Апаратний контроль RTS/CTS"
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid "Host name or IP address of the PPTP server"
+msgstr "Назва вузла або адреса IP сервера PPTP"
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+msgid ""
+"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr ""
+"Якщо стиснення типу BSD не допускається, програмі pppd передається параметр 'nobsdcomp'"
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+msgid ""
+"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr ""
+"Якщо стиснення типу BSD не допускається, програмі pppd передається параметр 'nodefate'"
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+msgid "Maximum Receive Unit"
+msgstr "Максимальна одиниця прийому (MRU)"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+msgid "Maximum Transmit Unit"
+msgstr "Максимальна одиниця передачі (MTU)"
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+msgid "Modem Connection"
+msgstr "Модемне з'єднання"
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+msgid "PPP Options"
+msgstr "Параметри PPP"
+
+#: ../properties/nm-ppp-dialog.glade.h:31
+msgid "Peer DNS through tunnel"
+msgstr "Передавати DNS крізь тунель"
+
+#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "Не допускати CHAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:33
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "Не допускати EAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Refuse MS CHAP"
+msgstr "Не допускати MS CHAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Require 128 bit MPPE encryption"
+msgstr "Вимагається 128-бітне шифрування MPPE"
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "Require Explicit IP Addr"
+msgstr "Вимагається явне вказування адреси IP"
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "Require MPPC Compression"
+msgstr "Використовувати стиснення MPPC"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "Require MPPE encryption"
+msgstr "Потрібне шифрування типу MPPE"
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "Requires existing network connection"
+msgstr "Потрібне існуюче мережне з'єднання'"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+msgid "Routing"
+msgstr "Маршрутизація"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "Serial Options"
+msgstr "Параметри послідовного порту"
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "Service providers GPRS access point from device config"
+msgstr "Точка доступу постачальника послуг GPRS з конфігурації пристрою"
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+msgid "Service providers IP address"
+msgstr "Адреса IP постачальник послуг"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+msgid "Telephone number to dial"
+msgstr "Телефонний номер"
+
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid ""
+"This is the friendly name that will be used to identify this network "
+"connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+"_Назва, що використовується для ідентифікації з'єднання з приватною мережею, "
+"наприклад \"Campus VPN\" чи \"Corporate Network\""
+
+#: ../properties/nm-ppp-dialog.glade.h:47
+msgid "Time in seconds between echo requests"
+msgstr "Час у секундах між запитами"
+
+#: ../properties/nm-ppp-dialog.glade.h:48
+msgid "Type:"
+msgstr "Тип:"
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "Використовувати Peer DNS"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"refuse-chap\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"refuse-eap\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"refuse-mschap\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"lock\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"require-mppc\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid ""
+"When checked this sets the pppd 'debug' option and adds some extra "
+"information from the NetworkManager plugin"
+msgstr "Якщо відмічено, програмі pppd передається параметр \"debug\" та додається додаткова інформація від модуля NetworkManager."
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr "Якщо відмічено, програмі pppd передається параметр \"noipdefault\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"usepeerdns\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:58
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr "Якщо відмічено, програмі  pppd передається параметр \"noauth\"."
+
+#: ../properties/nm-ppp-dialog.glade.h:59
+msgid "_Access Point Name:"
+msgstr "Назва _точки доступу:"
+
+#: ../properties/nm-ppp-dialog.glade.h:60
+msgid "_Channel:"
+msgstr "_Канал:"
+
+#: ../properties/nm-ppp-dialog.glade.h:61
+msgid "_Context Num"
+msgstr "Номер _контексту"
+
+#: ../properties/nm-ppp-dialog.glade.h:62
+msgid "_Custom PPP options:"
+msgstr "_Інші параметри PPP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:63
+msgid "_Device Address:"
+msgstr "Адреса _пристрою:"
+
+#: ../properties/nm-ppp-dialog.glade.h:64
+msgid "_Gateway:"
+msgstr "_Шлюз:"
+
+#: ../properties/nm-ppp-dialog.glade.h:65
+msgid "_IP Address:"
+msgstr "Адреса _IP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Import Saved Configuration..."
+msgstr "_Імпорт збереженої конфігурації..."
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+msgid "_Only use VPN connection for these addresses"
+msgstr "Використовувати VPN _лише для цих адрес"
+
+#: ../properties/nm-ppp-dialog.glade.h:68
+msgid "_Packet Type"
+msgstr "Тип _пакетів"
+
+#: ../properties/nm-ppp-dialog.glade.h:69
+msgid "_Telephone Number:"
+msgstr "Номер _телефону:"
+
+#: ../properties/nm-ppp-dialog.glade.h:70
+msgid "connect-delay"
+msgstr "connect-delay"
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr "pppd tunnel (PPTP, BTGPRS, Dialup)"
+
+#: ../properties/nm-ppp-properties.c:134
+msgid "Name"
+msgstr "Назва"
+
+#: ../properties/nm-ppp-properties.c:146
+msgid "PPTP Server"
+msgstr "Сервер PPTP"
+
+#: ../properties/nm-ppp-properties.c:151
+msgid "Telephone Number"
+msgstr "Номер телефону"
+
+#: ../properties/nm-ppp-properties.c:156
+msgid "Bluetooth Address"
+msgstr "Адреса Bluetooth"
+
+#: ../properties/nm-ppp-properties.c:161
+msgid "Bluetooth Channel"
+msgstr "Канал Bluetooth"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr "GPRS APN"
+
+#: ../properties/nm-ppp-properties.c:171
+msgid "GPRS IP"
+msgstr "GPRS IP"
+
+#: ../properties/nm-ppp-properties.c:176
+msgid "GPRS Context No."
+msgstr "Номер контексту GPRS"
+
+#: ../properties/nm-ppp-properties.c:181
+msgid "GPRS Packet Type"
+msgstr "Тип пакетів GPRS"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr "Контроль потоку через CTS/RTS"
+
+#: ../properties/nm-ppp-properties.c:191
+msgid "Connect via a modem"
+msgstr "З'єднуватись через модем"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr "Вимагати надання IP"
+
+#: ../properties/nm-ppp-properties.c:206
+msgid "Use MPPE encryption"
+msgstr "Використовувати шифрування MPPE"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr "128-бітне шифрування MPPE"
+
+#: ../properties/nm-ppp-properties.c:221
+msgid "Use MPPC compression"
+msgstr "Використовувати шифрування MPPC"
+
+#: ../properties/nm-ppp-properties.c:226
+msgid "Do not use deflate compression"
+msgstr "Не використовувати стиснення deflate"
+
+#: ../properties/nm-ppp-properties.c:231
+msgid "Do not use BSD compression"
+msgstr "Не використовувати стиснення BSD"
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr "Ексклюзивний доступ pppd до пристрою"
+
+#: ../properties/nm-ppp-properties.c:241
+msgid "Authenticate remote peer"
+msgstr "Автентифікація віддаленої сторони"
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr "Не приймати MSCHAP"
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr "Максимальна одиниця передачі MTU (у байтах)"
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr "Максимальна одиниця прийому MRU (у байтах)"
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr "Кількість помилок у LCP-запитах для розриву з'єднання"
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr "Інтервал (у секундах) з яким видаються LCP-запити"
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr "Інтервал очікування (у мілісекундах) перед з'єднанням."
+
+#: ../properties/nm-ppp-properties.c:286
+msgid "Custom PPP options"
+msgstr "Інші параметри PPP"
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr "Використовувати Peer DNS через Tunnel"
+
+#: ../properties/nm-ppp-properties.c:302
+msgid "Specific networks available"
+msgstr "Доступні певні мережі"
+
+#: ../properties/nm-ppp-properties.c:308
+msgid "Limit to specific networks"
+msgstr "Обмеження певними мережами"
+
+#: ../properties/vpnui_impl.c:229
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "Буде створено наступне з'єднання '%s':"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr "\t%s:  %s\n"
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr "Подробиці про з'єднання можна змінити кнопкою \"Назад\"."
+
+#: ../properties/vpnui_impl.c:317
+msgid "Select file to import"
+msgstr "Виберіть файл для імпорту"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "Зберегти як..."
+
+#: ../properties/vpnui_impl.c:491
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Файл з назвою \"%s\" вже існує."
+
+#: ../properties/vpnui_impl.c:494
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Замінити його?"
+
+#: ../src/nm-ppp-starter.c:140
+msgid "VPN Connection failed"
+msgstr "Помилка з'єднання VPN"
+
