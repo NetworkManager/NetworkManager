@@ -2,7 +2,7 @@
 
 	* nm-openvpn.desktop.in: Use NoDisplay=true since only reason for
 	  the desktop is to setup a MIME type association (similar to #333854)
-       
+
 2007-02-16  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Jon Nettleton
