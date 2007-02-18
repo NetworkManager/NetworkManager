@@ -1,0 +1,792 @@
+# NetworkManager - Polish translation.
+msgid ""
+msgstr ""
+"Project-Id-Version: 1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-18 23:57+0100\n"
+"PO-Revision-Date: 2006-09-28 21:26+0100\n"
+"Last-Translator: Wadim Dziedzic <nikdo@aviary.pl>\n"
+"Language-Team: PL <PL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+msgid "Cannot add VPN connection"
+msgstr "Nie można dodać połączenia VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+"Nie znaleziono oprogramowania dla VPN. Proszę skontaktować się z "
+"administratorem."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
+msgid "Cannot import VPN connection"
+msgstr "Nie można zaimportować połączenia VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"Nie znaleziono oprogramowania dla połączenia VPN typu '%s' do importu pliku "
+"'%s'. Proszę skontaktować się z administratorem."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "Napotkano błąd podczas wyszukiwania połączenia VPN '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"Nie znaleziono plików interfejsu dla połączenia VPN typu: '%s'. Proszę "
+"skontaktować się z administratorem."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "Naprawdę usunąć połączenie VPN \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"Wszystkie dane połączenia VPN \"%s\" zostaną utracone. Utworzenie nowego "
+"połączenia może wymagać udziału administratora sieci."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+msgid "Unable to load"
+msgstr "Nie można odczytać"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "Nie można znaleźć plików zasobów (pliki glade)."
+
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
+msgid "Create VPN Connection"
+msgstr "Tworzenie połączenia VPN"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
+msgid "Edit VPN Connection"
+msgstr "Edytuj połączenia VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "Dodaj połączenie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Delete the selected VPN connection"
+msgstr "Usuń wybrane połączenie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "E_xport"
+msgstr "E_ksportuj"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Edit the selected VPN connection"
+msgstr "Edytuj wybrane połączenie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Export the VPN settings to a file"
+msgstr "Eksportuj ustawienia VPN do pliku"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Export the selected VPN connection to a file"
+msgstr "Eksportuj wybrane połączenie VPN do pliku"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Manage Virtual Private Network Connections"
+msgstr "Zarządzanie połączeniami Virtual Private Network"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "VPN Connections"
+msgstr "Połączenia VPN"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40 bitowy WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104 bitowy WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:51
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:53
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:55
+msgid "WPA Automatic"
+msgstr "WPA Automatic"
+
+#: ../src/nm-ap-security-wpa-psk.c:60
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:62
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:64
+msgid "WPA2 Automatic"
+msgstr "WPA2 Automatic"
+
+#: ../src/nm-ap-security.c:326
+msgid "none"
+msgstr "brak"
+
+#: ../src/nm-netlink-monitor.c:174
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"nie można utworzyć gniazda netlink dla monitorowania przewodowych urządzeń "
+"ethernet - %s"
+
+#: ../src/nm-netlink-monitor.c:192
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"nie można utworzyć dowiązania do gniazda netlink dla monitorowania "
+"przewodowych urządzeń ethernet - %s"
+
+#: ../src/nm-netlink-monitor.c:427
+msgid "operation took too long"
+msgstr "operacja zajęła zbyt dużo czasu"
+
+#: ../src/nm-netlink-monitor.c:524
+msgid "received data from wrong type of sender"
+msgstr "otrzymano dane od nadawcy nieprawidłowego typu"
+
+#: ../src/nm-netlink-monitor.c:537
+msgid "received data from unexpected sender"
+msgstr "otrzymano dane od nieoczekiwanego nadawcy"
+
+#: ../src/nm-netlink-monitor.c:666
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "część danych została utracona, ponieważ wysłano ich zbyt dużo"
+
+#: ../src/nm-netlink-monitor.c:774
+msgid "error occurred while waiting for data on socket"
+msgstr "napotkano błąd podczas oczekiwania na dane"
+
+#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:112
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:115
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:80
+msgid "LEAP"
+msgstr "LEAP"
+
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "Hasło dla sieci bezprzewodowej %s"
+
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "Połączenie z siecią bezprzewodową '%s' zakończone niepowodzeniem."
+
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "Połączenie z siecią przewodową zakończone niepowodzeniem."
+
+#~ msgid "Error displaying connection information:"
+#~ msgstr "Błąd podczas wyświetlania informacji o połączeniu:"
+
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr "Nie znaleziono wymaganych plików zasobów (plik glade)."
+
+#~ msgid "No active connections!"
+#~ msgstr "Brak aktywnych połączeń."
+
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "Ethernet przewodowy (%s)"
+
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "Ethernet bezprzewodowy (%s)"
+
+#~ msgid "NetworkManager Applet"
+#~ msgstr "Aplet NetworkManager"
+
+#~ msgid ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr ""
+#~ "Aplet paska systemowego do zarządzania urządzeniami i połączeniami "
+#~ "sieciowymi."
+
+#~ msgid "translator-credits"
+#~ msgstr "AviaryPL dla Novell Polska sp. z o.o. 2006"
+
+#~ msgid ""
+#~ "Copyright © 2004-2005 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+
+#~ msgid "VPN Login Failure"
+#~ msgstr "Błąd logowania VPN"
+
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr "Nie można uruchomić połączenia VPN '%s' z powodu błędu logowania."
+
+#~ msgid "VPN Start Failure"
+#~ msgstr "Błąd uruchamiania VPN"
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr ""
+#~ "Nie można uruchomić połączenia VPN '%s' z powodu błędu uruchamiania "
+#~ "programu VPN."
+
+#~ msgid "VPN Connect Failure"
+#~ msgstr "Błąd połączenia VPN"
+
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr "Nie można uruchomić połączenia VPN '%s' z powodu błędu połączenia."
+
+#~ msgid "VPN Configuration Error"
+#~ msgstr "Błąd konfiguracji VPN"
+
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "Połączenie VPN '%s' nie zostało poprawnie skonfigurowane."
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr ""
+#~ "Nie można uruchomić połączenia VPN '%s' ponieważ serwer VPN nie zwrócił "
+#~ "odpowiedniej konfiguracji sieci."
+
+#~ msgid "VPN Login Message"
+#~ msgstr "Wiadomość logowania VPN"
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "Nie znaleziono wymaganych przez aplet NetworkManager plików zasobów "
+#~ "(pliku glade)."
+
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "Urządzenie \"%s (%s)\" nie obsługuje skanowania bezprzewodowego."
+
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "Urządzenie \"%s (%s)\" nie obsługuje wykrywania połączenia."
+
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "Przygotowywanie urządzenia %s do sieci przewodowej..."
+
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "Przygotowywanie urządzenia %s do sieci bezprzewodowej '%s'..."
+
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "Konfigurowanie urządzenia %s dla sieci przewodowej..."
+
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "Próba dołączenia do sieci bezprzewodowej '%s'..."
+
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "Oczekiwanie na klucz sieci bezprzewodowej '%s'..."
+
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "Wysyłanie żądania adresu do sieci przewodowej..."
+
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "Wysyłanie żądania adresu do sieci bezprzewodowej '%s'..."
+
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "Zamykanie połączenia z siecią przewodową..."
+
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "Zamykanie połączenia z siecią bezprzewodową '%s'..."
+
+#~ msgid "NetworkManager is not running"
+#~ msgstr "Aplet NetworkManager nie jest uruchomiony"
+
+#~ msgid "Networking disabled"
+#~ msgstr "Sieć wyłączona"
+
+#~ msgid "No network connection"
+#~ msgstr "Brak połączenia sieciowego"
+
+#~ msgid "Wired network connection"
+#~ msgstr "Połączenie przewodowe"
+
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Połączono z siecią bezprzewodową Ad-Hoc"
+
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Połączenie bezprzewodowe z '%s' (%d%%)"
+
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "Połączenie VPN z '%s'"
+
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "Łączenie VPN z '%s'"
+
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "_Połącz z inną siecią bezprzewodową..."
+
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "Utwórz _nową sieć bezprzewodową..."
+
+#~ msgid "_VPN Connections"
+#~ msgstr "Połączenia _VPN"
+
+#~ msgid "_Configure VPN..."
+#~ msgstr "_Skonfiguruj VPN..."
+
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "_Rozłącz VPN..."
+
+#~ msgid "_Dial Up Connections"
+#~ msgstr "Połączenia wdzwaniane"
+
+#~ msgid "Connect to %s..."
+#~ msgstr "Połącz z '%s'..."
+
+#~ msgid "Disconnect from %s..."
+#~ msgstr "Rozłącz z '%s'"
+
+#~ msgid "No network devices have been found"
+#~ msgstr "Nie znaleziono urządzeń sieciowych"
+
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "Aplet NetworkManager nie jest uruchomiony..."
+
+#~ msgid "Enable _Networking"
+#~ msgstr "_Włącz  sieć"
+
+#~ msgid "Enable _Wireless"
+#~ msgstr "Włącz _bezprzewodowe"
+
+#~ msgid "Connection _Information"
+#~ msgstr "_Informacje o połączeniu"
+
+#~ msgid "_Help"
+#~ msgstr "_Pomoc"
+
+#~ msgid "_About"
+#~ msgstr "Inform_acje"
+
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr ""
+#~ "Nie znaleziono wymaganych zasobów. Program NetworkManager zostanie "
+#~ "zamknięty.\n"
+
+#~ msgid "Open System"
+#~ msgstr "System otwarty"
+
+#~ msgid "Shared Key"
+#~ msgstr "Klucz współdzielony"
+
+#~ msgid "Automatic (Default)"
+#~ msgstr "Automatyczny (domyślny)"
+
+#~ msgid "AES-CCMP"
+#~ msgstr "AES-CCMP"
+
+#~ msgid "TKIP"
+#~ msgstr "TKIP"
+
+#~ msgid "Dynamic WEP"
+#~ msgstr "Dynamiczny WEP"
+
+#~ msgid "None"
+#~ msgstr "Brak"
+
+#~ msgid "WEP 64/128-bit ASCII"
+#~ msgstr "WEP 64/128-bit ASCII"
+
+#~ msgid "WEP 64/128-bit Hex"
+#~ msgstr "WEP 64/128-bit Hex"
+
+#~ msgid "WEP 128-bit Passphrase"
+#~ msgstr "WEP z 128 bitowym hasłem"
+
+#~ msgid "TLS"
+#~ msgstr "TLS"
+
+#~ msgid "TTLS"
+#~ msgstr "TTLS"
+
+#~ msgid "WPA2 Personal"
+#~ msgstr "WPA2 Personal"
+
+#~ msgid "WPA Personal"
+#~ msgstr "WPA Personal"
+
+# NOTSURE
+#~ msgid "Orientation"
+#~ msgstr "Orientacja"
+
+#~ msgid "The orientation of the tray."
+#~ msgstr "Orientacja paska."
+
+#~ msgid "Wired Network (%s)"
+#~ msgstr "Sieć przewodowa (%s)"
+
+#~ msgid "_Wired Network"
+#~ msgstr "Sieć _przewodowa"
+
+# NOTSURE mnogie
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "Sieć bezprzewodowa (%s)"
+#~ msgstr[1] "Sieci bezprzewodowe (%s)"
+#~ msgstr[2] "Sieci bezprzewodowe (%s)"
+
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "Sieć bezprzewodowa"
+#~ msgstr[1] "Sieci bezprzewodowe"
+#~ msgstr[2] "Sieci bezprzewodowych"
+
+#~ msgid " (invalid Unicode)"
+#~ msgstr "(błędny Unicode)"
+
+#~ msgid ""
+#~ "By default, the wireless network's name is set to your computer's name, %"
+#~ "s, with no encryption enabled"
+#~ msgstr ""
+#~ "Domyślnie nazwa sieci bezprzewodowej jest taka sama jak nazwa komputera - "
+#~ "%s, szyfrowanie wyłączone"
+
+#~ msgid "Create new wireless network"
+#~ msgstr "Utwórz nową sieć bezprzewodową"
+
+#~ msgid ""
+#~ "Enter the name and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr ""
+#~ "Proszę podać nazwę i parametry bezpieczeństwa dla nowej sieci "
+#~ "bezprzewodowej."
+
+#~ msgid "Create New Wireless Network"
+#~ msgstr "Utwórz nową sieć bezprzewodową"
+
+#~ msgid "Existing wireless network"
+#~ msgstr "Istniejąca sieć bezprzewodowa"
+
+#~ msgid "Enter the name of the wireless network to which you wish to connect."
+#~ msgstr "Proszę podać nazwę sieci bezprzewodowej do połączenia."
+
+#~ msgid "Connect to Other Wireless Network"
+#~ msgstr "Połącz z inną siecią bezprzewodową"
+
+#~ msgid "Error connecting to wireless network"
+#~ msgstr "Błąd łączenia z siecią bezprzewodową"
+
+#~ msgid ""
+#~ "The requested wireless network requires security capabilities unsupported "
+#~ "by your hardware."
+#~ msgstr ""
+#~ "Ustawienia bezpieczeństwa sieci bezprzewodowej nie są obsługiwane przez "
+#~ "używane urządzenie."
+
+#~ msgid "Cannot start VPN connection '%s'"
+#~ msgstr "Nie można uruchomić połączenia VPN '%s'"
+
+#~ msgid ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgstr ""
+#~ "Nie znaleziono okna uwierzytelniania dla połączenia VPN typu '%s'. Proszę "
+#~ "skontaktować się z administratorem."
+
+#~ msgid ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "Napotkano problem podczas otwierania okna uwierzytelniania połączenia VPN "
+#~ "typu '%s'. Proszę skontaktować się z administratorem."
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Informacje o aktywnych "
+#~ "połączeniach</span>"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Sieć bezprzewodowa wymaga hasła</"
+#~ "span>\n"
+#~ "\n"
+#~ "Aby połączyć się z siecią bezprzewodową '%s' wymagane jest hasło lub "
+#~ "klucz szyfrowania."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Ograniczone działanie sieci</span>\n"
+#~ "\n"
+#~ "%s  nie będzie działać całkowicie."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
+#~ "that this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent log ins."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Potwierdzenie logowania do sieci "
+#~ "bezprzewodowej</span>\n"
+#~ "\n"
+#~ "Wybrano logowanie do sieci bezprzewodowej '%s'. Jeśli sieć można uznać za "
+#~ "bezpieczną, należy zaznaczyć opcję poniżej i program NetworkManager nie "
+#~ "będzie już wymagał potwierdzenia przy następnych połączeniach."
+
+#~ msgid "Anonymous Identity:"
+#~ msgstr "Tożsamość anonimowa:"
+
+#~ msgid "Authentication:"
+#~ msgstr "Uwierzytelnianie:"
+
+#~ msgid "Broadcast Address:"
+#~ msgstr "Adres rozgłaszania"
+
+#~ msgid "CA Certificate File:"
+#~ msgstr "Plik certyfikatu CA:"
+
+#~ msgid "C_onnect"
+#~ msgstr "P_ołącz"
+
+#~ msgid "Client Certificate File:"
+#~ msgstr "Plik certyfikatu klienta:"
+
+#~ msgid "Connection Information"
+#~ msgstr "Informacje o połączeniu"
+
+#~ msgid "Default Route:"
+#~ msgstr "Trasa domyślna:"
+
+#~ msgid "Destination Address:"
+#~ msgstr "Adres docelowy:"
+
+#~ msgid "Driver:"
+#~ msgstr "Sterownik:"
+
+#~ msgid "EAP Method:"
+#~ msgstr "Metoda EAP:"
+
+#~ msgid "Hardware Address:"
+#~ msgstr "Adres sprzętowy:"
+
+#~ msgid "IP Address:"
+#~ msgstr "Adres IP:"
+
+#~ msgid "Identity:"
+#~ msgstr "Tożsamość:"
+
+#~ msgid "Interface:"
+#~ msgstr "Interfejs:"
+
+#~ msgid "Key Type:"
+#~ msgstr "Typ klucza:"
+
+#~ msgid "Key management:"
+#~ msgstr "Zarzadzanie kluczami:"
+
+#~ msgid "Key:"
+#~ msgstr "Klucz:"
+
+#~ msgid ""
+#~ "None\n"
+#~ "WEP 128-bit Passphrase\n"
+#~ "WEP 64/128-bit Hex\n"
+#~ "WEP 64/128-bit ASCII\n"
+#~ msgstr ""
+#~ "Brak\n"
+#~ "128 bitowe Hasło WEP\n"
+#~ "WEP 64/128-bit Hex\n"
+#~ "WEP 64/128-bit ASCII\n"
+
+#~ msgid ""
+#~ "Open System\n"
+#~ "Shared Key"
+#~ msgstr ""
+#~ "System otwarty\n"
+#~ "Klucz współdzielony"
+
+#~ msgid "Other Wireless Network..."
+#~ msgstr "Inna sieć bezprzewodowa..."
+
+#~ msgid "Passphrase:"
+#~ msgstr "Hasło WEP:"
+
+#~ msgid "Password:"
+#~ msgstr "Hasło:"
+
+#~ msgid "Primary DNS:"
+#~ msgstr "Podstawowy DNS:"
+
+#~ msgid "Private Key File:"
+#~ msgstr "Plik klucza prywatnego:"
+
+#~ msgid "Private Key Password:"
+#~ msgstr "Hasło klucza prywatnego:"
+
+#~ msgid "Secondary DNS:"
+#~ msgstr "Zapasowy DNS:"
+
+#~ msgid "Select the CA Certificate File"
+#~ msgstr "Plik certyfikatu CA"
+
+#~ msgid "Select the Client Certificate File"
+#~ msgstr "Plik certyfikatu klienta"
+
+#~ msgid "Select the Private Key File"
+#~ msgstr "Plik klucza prywatnego"
+
+#~ msgid "Show key"
+#~ msgstr "Pokaż klucz"
+
+#~ msgid "Show passphrase"
+#~ msgstr "Pokaż hasło WEP"
+
+#~ msgid "Show password"
+#~ msgstr "Pokaż hasło"
+
+#~ msgid "Show passwords"
+#~ msgstr "Pokaż hasła"
+
+#~ msgid "Speed:"
+#~ msgstr "Prędkość:"
+
+#~ msgid "Subnet Mask:"
+#~ msgstr "Maska podsieci:"
+
+#~ msgid "Type:"
+#~ msgstr "Typ:"
+
+#~ msgid "User Name:"
+#~ msgstr "Nazwa użytkownika:"
+
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "Wymagany klucz sieci bezprzewodowej"
+
+#~ msgid "Wireless _adapter:"
+#~ msgstr "Urządzenie _bezprzewodowe:"
+
+#~ msgid "_Always Trust this Wireless Network"
+#~ msgstr "_Zawsze ufaj tej sieci bezprzewodowej"
+
+#~ msgid "_Don't remind me again"
+#~ msgstr "_Nie przypominaj więcej"
+
+#~ msgid "_Fallback on this Network"
+#~ msgstr "Śieć _domyślna"
+
+#~ msgid "_Login to Network"
+#~ msgstr "Za_loguj do sieci"
+
+#~ msgid "_Network Name:"
+#~ msgstr "N_azwa sieci:"
+
+#~ msgid "_Wireless Security:"
+#~ msgstr "B_ezpieczeństwo sieci:"
+
+#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+#~ msgstr "Połączono z bezprzewodową siecią Ad-Hoc '%s'."
+
+#~ msgid "You are now connected to the wireless network '%s'."
+#~ msgstr "Połączono z siecią bezprzewodową '%s'."
+
+#~ msgid "You are now connected to the wired network."
+#~ msgstr "Połączono z siecią przewodową."
+
+#~ msgid "Connection Established"
+#~ msgstr "Połączenie nawiązane"
+
+#~ msgid "Disconnected"
+#~ msgstr "Rozłączono"
+
+#~ msgid "The network connection has been disconnected."
+#~ msgstr "Połączenie sieciowe zostało rozłączone."
+
+#~ msgid "Choose which type of VPN connection you wish to create."
+#~ msgstr "Proszę wybrać typ połączenia VPN do utworzenia."
+
+#~ msgid "Connect to:"
+#~ msgstr "Połącz z:"
+
+#~ msgid "Create VPN Connection - 1 of 2"
+#~ msgstr "Tworzenie połączenia VPN - krok 1 z 2"
+
+#~ msgid "Create VPN Connection - 2 of 2"
+#~ msgstr "Tworzenie połączenia VPN - krok 1 z 2"
+
+#~ msgid "Finish Creating VPN Connection"
+#~ msgstr "Kończenie tworzenie połączenia VPN"
+
+#~ msgid ""
+#~ "This assistant will guide you through the creation of a connection to a "
+#~ "Virtual Private Network (VPN).\n"
+#~ "\n"
+#~ "It will require some information, such as IP addresses and secrets.  "
+#~ "Please see your system administrator to obtain this information."
+#~ msgstr ""
+#~ "Niniejszy asystent pomaga w tworzeniu połączenia VPN (Virtual Private "
+#~ "Network)\n"
+#~ "\n"
+#~ "Potrzebne będą dane na temat adresów IP oraz uwierzytelniania. Aby "
+#~ "uzyskać te informacje, należy skontaktować się administratorem."
