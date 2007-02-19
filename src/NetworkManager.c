@@ -53,11 +53,8 @@
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
 #include "nm-dbus-vpn.h"
-#include "nm-dbus-nm.h"
 #include "nm-dbus-manager.h"
-#include "nm-dbus-device.h"
 #include "nm-supplicant-manager.h"
-#include "nm-dbus-net.h"
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
 
