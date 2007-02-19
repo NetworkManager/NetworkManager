@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-31 11:01+0300\n"
-"PO-Revision-Date: 2007-01-31 11:01+0300\n"
+"POT-Creation-Date: 2007-02-19 21:58+0300\n"
+"PO-Revision-Date: 2007-02-19 21:58+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -287,30 +287,34 @@ msgid "CA  file:"
 msgstr "CA-tiedosto:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "CA-tiedosto:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Certificate:"
 msgstr "Varmenne:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Connection Type:"
 msgstr "Yhteyden tyyppi:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Direction:"
 msgstr "Suunta:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key:"
 msgstr "Avain:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP:"
 msgstr "Paikallinen IP-osoite:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password"
 msgstr "Salasana"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -318,7 +322,7 @@ msgstr ""
 "Syötä järjestelmän ylläpitäjältä saamasi tiedot alla oleviin kohtiin. Älä "
 "syötä tähän salasanaasi, sillä se kysytään vasta otettaessa yhteyttä."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
@@ -326,47 +330,47 @@ msgstr ""
 "Huomaa, ettei tuotava tiedosto ole OpenVPN-asetustiedosto. Kysy "
 "ylläpitäjältäsi oikeaa tiedostoa."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
 msgstr "Palvelimen IP-osoite:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared Key:"
 msgstr "Jaettu avain:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Shared key"
 msgstr "Jaettu avain"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use LZO compression"
 msgstr "Käytä LZO-pakkausta"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use TAP device"
 msgstr "Käytä TAP-laitetta"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use TCP connection"
 msgstr "Käytä TCP-yhteyttä"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
 msgstr "Käytä TLS-todentamista:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
 msgstr "Käytä salausmenetelmää:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Username:"
 msgstr "Käyttäjätunnus:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -378,15 +382,15 @@ msgstr ""
 "Salasanalla todentaminen\n"
 "X.509 salasanatodennuksella"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "_Import Saved Configuration..."
 msgstr "Tuo tallennettu määrittely..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
@@ -394,11 +398,11 @@ msgstr ""
 "_Nimi, josta yhteys yksityiseen verkkoon tunnistetaan: esimerkiksi "
 "\"Kampusverkko\" tai \"Työpaikan verkko\"."
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Käytä VPN-yhteyttä näille osotteille"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid "none"
 msgstr "ei mitään"
 
