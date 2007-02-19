@@ -37,7 +37,4 @@ void nm_policy_destroy (NMPolicy *policy);
 void			nm_policy_schedule_allowed_ap_list_update (NMData *app_data);
 void			nm_policy_schedule_device_ap_lists_update_from_allowed	(NMData *app_data);
 
-void			nm_policy_schedule_activation_finish	(NMActRequest *req);
-void			nm_policy_schedule_activation_failed	(NMActRequest *req);
-
 #endif /* NETWORK_MANAGER_POLICY_H */

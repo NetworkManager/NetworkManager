@@ -45,9 +45,58 @@ struct NMVPNManager
 
 	NMVPNActRequest *	act_req;
 	NMDbusMethodList *	dbus_methods;
+	gulong				device_signal_id;
 };
 
 static void load_services (NMVPNManager *manager, GHashTable *table);
+
+static void
+nm_name_owner_changed_handler (NMDBusManager *mgr,
+                               DBusConnection *connection,
+                               const char *name,
+                               const char *old,
+                               const char *new,
+                               gpointer user_data)
+{
+	NMVPNManager *vpn_manager = (NMVPNManager *) user_data;
+	gboolean old_owner_good = (old && (strlen (old) > 0));
+	gboolean new_owner_good = (new && (strlen (new) > 0));
+
+	if (strcmp (name, NMI_DBUS_SERVICE) == 0 && (!old_owner_good && new_owner_good))
+		/* NMI appeared, update stuff */
+		nm_dbus_vpn_schedule_vpn_connections_update (vpn_manager);
+}
+
+static gboolean
+nm_dbus_nmi_vpn_signal_handler (DBusConnection *connection,
+								DBusMessage *message,
+								gpointer user_data)
+{
+	NMVPNManager *manager = (NMVPNManager *) user_data;
+	const char * object_path;
+	gboolean	handled = FALSE;
+
+	if (!(object_path = dbus_message_get_path (message)))
+		return FALSE;
+
+	if (strcmp (object_path, NMI_DBUS_PATH) != 0)
+		return FALSE;
+
+	if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "VPNConnectionUpdate")) {
+		char *name = NULL;
+
+		if (dbus_message_get_args (message,
+		                           NULL,
+		                           DBUS_TYPE_STRING, &name,
+		                           DBUS_TYPE_INVALID)) {
+			nm_debug ("NetworkManagerInfo triggered update of VPN connection '%s'", name);
+			nm_dbus_vpn_update_one_vpn_connection (connection, manager, name);
+			handled = TRUE;
+		}
+	}
+
+	return handled;
+}
 
 /*
  * nm_vpn_manager_new
@@ -75,6 +124,21 @@ NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
 
 	manager->dbus_methods = nm_dbus_vpn_methods_setup (manager);
 	dbus_mgr = nm_dbus_manager_get ();
+
+	g_signal_connect (dbus_mgr,
+					  "name-owner-changed",
+	                  G_CALLBACK (nm_name_owner_changed_handler),
+					  manager);
+
+	nm_dbus_manager_register_signal_handler (dbus_mgr,
+											 NMI_DBUS_INTERFACE,
+											 NULL,
+											 nm_dbus_nmi_vpn_signal_handler,
+											 manager);
+
+	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE))
+		nm_dbus_vpn_schedule_vpn_connections_update (manager);
+
 	/* FIXME */
 /* 	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods); */
 	g_object_unref (dbus_mgr);
@@ -308,6 +372,16 @@ NMVPNActRequest *nm_vpn_manager_get_vpn_act_request (NMVPNManager *manager)
 }
 
 
+static void
+device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+{
+	NMVPNManager *manager = (NMVPNManager *) user_data;
+
+	if (state == NM_DEVICE_STATE_DISCONNECTED)
+		nm_vpn_manager_deactivate_vpn_connection (manager, device);
+}
+
+
 /*
  * nm_vpn_manager_activate_vpn_connection
  *
@@ -345,6 +419,10 @@ void nm_vpn_manager_activate_vpn_connection (NMVPNManager *manager, NMVPNConnect
 					 user_routes, user_routes_count);
 	manager->act_req = req;
 
+	manager->device_signal_id = g_signal_connect (parent_dev, "state-changed",
+												  G_CALLBACK (device_state_changed),
+												  manager);
+
 	nm_vpn_service_start_connection (service, req);
 }
 
@@ -364,6 +442,11 @@ void nm_vpn_manager_deactivate_vpn_connection (NMVPNManager *manager, NMDevice *
 
 	if (!manager->act_req || (dev != nm_vpn_act_request_get_parent_dev (manager->act_req)))
 		return;
+
+	if (manager->device_signal_id) {
+		g_signal_handler_disconnect (dev, manager->device_signal_id);
+		manager->device_signal_id = 0;
+	}
 
 	if (nm_vpn_act_request_is_activating (manager->act_req)
 		|| nm_vpn_act_request_is_activated (manager->act_req)

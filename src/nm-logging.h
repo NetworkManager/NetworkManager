@@ -24,10 +24,8 @@
 
 #include <glib.h>
 
-void
-nm_logging_setup (gboolean become_daemon);
+void nm_logging_setup     (gboolean become_daemon);
+void nm_logging_backtrace (void);
+void nm_logging_shutdown  (void);
 
-void
-nm_logging_shutdown (void);
-
-#endif
+#endif /* NM_LOGGING_H */

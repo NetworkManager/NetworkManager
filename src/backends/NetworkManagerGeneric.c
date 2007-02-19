@@ -59,10 +59,6 @@ void nm_generic_device_add_default_route_via_device (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
-
 	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
 }
 
@@ -114,10 +110,6 @@ void nm_generic_device_flush_routes (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
-
 	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
 }
 
@@ -148,10 +140,6 @@ void nm_generic_device_flush_routes_with_iface (const char *iface)
 void nm_generic_device_flush_addresses (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
-
-	/* Not really applicable for test devices */
-	if (nm_device_is_test_device (dev))
-		return;
 
 	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
 }

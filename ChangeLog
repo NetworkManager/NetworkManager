@@ -1,3 +1,41 @@
+2007-02-19  Tambet Ingo  <tambet@ximian.com>
+
+	* src/vpn-manager/nm-vpn-manager.c: Handle the DBUS state changes itself.
+	Handle device state changes and disconnect VPN if it's device deactivates.
+
+	* src/nm-dbus-nm.c: 
+	* src/nm-dbus-nm.h: 
+	* src/nm-dbus-device.c: 
+	* src/nm-dbus-device.c: 
+	* src/nm-dbus-net.c: 
+	* src/nm-dbus-net.h: Remove. All of it is implemented byt the new dbus API.
+
+	* src/NetworkManagerMain.h: Get rid of all but 3 properties of NMData.
+
+	* src/nm-device.c (nm_device_get_by_udi):
+	(nm_device_get_by_iface): Remove. This doesn't belong here and is already
+	implemented in the correct location (NMManager).
+	Rip out all the test_device stuff.
+
+	* src/NetworkManagerPolicy.c: Remove the leftover activation success and
+	failure handlers, it's all done by NMDevice already.
+
+	* src/NetworkManager.c: Move the signal handling here from nm-logging.c
+	Remove the iochannel hack to route the unix signals to the main thread since
+	we're not threaded anymore.
+
+	* src/NetworkManagerAP.c: Implement HWAddress property.
+
+	* src/NetworkManagerDbus.c: Remove the dbus signal sending code, it happens
+	automatically with dbus-glib.
+
+	* src/nm-netlink-monitor.c: 
+	* src/nm-netlink-monitor.h:
+		- Move it low in the class hierarchy, don't reference any NM types.
+		- Remove private data from the header.
+		- Use type safe checks in public API methods.
+		- Make it a singleton so we don't have to pass the single reference around.
+
 2007-02-16  Tambet Ingo  <tambet@ximian.com>
 
 	* introspection/nm-ip4-config.xml: Implement.

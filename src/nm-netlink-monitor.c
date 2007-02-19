@@ -55,113 +55,113 @@
 
 #define NM_NETLINK_MONITOR_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                            NM_TYPE_NETLINK_MONITOR, \
-                                           NmNetlinkMonitorPrivate))
+                                           NMNetlinkMonitorPrivate))
 
-struct NMData;
-struct _NmNetlinkMonitorPrivate 
-{
+typedef struct {
 	GMainContext *	context;
 	GIOChannel *	io_channel;
 	GSource *		event_source;
-	struct NMData *app_data;
-};
-
-static void nm_netlink_monitor_finalize (GObject *object);
-static void nm_netlink_monitor_class_install_signals (NmNetlinkMonitorClass *service_class);
+} NMNetlinkMonitorPrivate;
 
 static gboolean 
 nm_netlink_monitor_event_handler (GIOChannel       *channel,
 				  GIOCondition      io_condition,
-				  NmNetlinkMonitor *monitor);
+				  NMNetlinkMonitor *monitor);
 static gboolean 
 nm_netlink_monitor_error_handler (GIOChannel       *channel,
 				  GIOCondition      io_condition,
-				  NmNetlinkMonitor *monitor);
+				  NMNetlinkMonitor *monitor);
 static gboolean 
 nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
 				       GIOCondition      io_condition,
-				       NmNetlinkMonitor *monitor);
+				       NMNetlinkMonitor *monitor);
 enum
 {
   INTERFACE_CONNECTED = 0,
   INTERFACE_DISCONNECTED,
   WIRELESS_EVENT,
   ERROR,
-  NUMBER_OF_SIGNALS
+
+  LAST_SIGNAL
 };
 
-static guint nm_netlink_monitor_signals[NUMBER_OF_SIGNALS];
+static guint signals[LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE (NmNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
+G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
 
 static void
-nm_netlink_monitor_class_init (NmNetlinkMonitorClass *monitor_class)
+nm_netlink_monitor_init (NMNetlinkMonitor *monitor)
 {
-	GObjectClass *gobject_class;
+}
 
-	gobject_class = G_OBJECT_CLASS (monitor_class);
+static void 
+finalize (GObject *object)
+{
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (object);
 
-	gobject_class->finalize = nm_netlink_monitor_finalize;
+	if (priv->io_channel)
+		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
 
-	nm_netlink_monitor_class_install_signals (monitor_class);
-
-	g_type_class_add_private (monitor_class, sizeof (NmNetlinkMonitorPrivate));
+	G_OBJECT_CLASS (nm_netlink_monitor_parent_class)->finalize (object);
 }
 
 static void
-nm_netlink_monitor_class_install_signals (NmNetlinkMonitorClass	*monitor_class)
+nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 {
-  GObjectClass *object_class;
+	GObjectClass *object_class = G_OBJECT_CLASS (monitor_class);
 
-  object_class = G_OBJECT_CLASS (monitor_class);
+	g_type_class_add_private (monitor_class, sizeof (NMNetlinkMonitorPrivate));
 
-  nm_netlink_monitor_signals[INTERFACE_CONNECTED] =
-    g_signal_new ("interface-connected",
-		  G_OBJECT_CLASS_TYPE (object_class),
-		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (NmNetlinkMonitorClass, interface_connected),
-		  NULL, NULL, nm_marshal_VOID__OBJECT,
-		  G_TYPE_NONE, 1, G_TYPE_OBJECT);
-  monitor_class->interface_connected = NULL;
+	/* Virtual methods */
+	object_class->finalize = finalize;
 
-  nm_netlink_monitor_signals[INTERFACE_DISCONNECTED] =
-    g_signal_new ("interface-disconnected",
-		  G_OBJECT_CLASS_TYPE (object_class),
-		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (NmNetlinkMonitorClass, interface_disconnected),
-		  NULL, NULL, nm_marshal_VOID__OBJECT,
-		  G_TYPE_NONE, 1, G_TYPE_OBJECT);
-  monitor_class->interface_disconnected = NULL;
+	/* Signals */
+	signals[INTERFACE_CONNECTED] =
+		g_signal_new ("interface-connected",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_LAST,
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_connected),
+					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
+					  G_TYPE_NONE, 1, G_TYPE_STRING);
 
-  nm_netlink_monitor_signals[WIRELESS_EVENT] =
-    g_signal_new ("wireless-event",
-		  G_OBJECT_CLASS_TYPE (object_class),
-		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (NmNetlinkMonitorClass, wireless_event),
-		  NULL, NULL, nm_marshal_VOID__OBJECT_POINTER_INT,
-		  G_TYPE_NONE, 3, G_TYPE_OBJECT, G_TYPE_POINTER, G_TYPE_INT);
-  monitor_class->wireless_event = NULL;
+	signals[INTERFACE_DISCONNECTED] =
+		g_signal_new ("interface-disconnected",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_LAST,
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_disconnected),
+					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
+					  G_TYPE_NONE, 1, G_TYPE_STRING);
 
-  nm_netlink_monitor_signals[ERROR] =
-    g_signal_new ("error",
-		  G_OBJECT_CLASS_TYPE (object_class),
-		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (NmNetlinkMonitorClass, error),
-		  NULL, NULL, nm_marshal_VOID__POINTER,
-		  G_TYPE_NONE, 1, G_TYPE_POINTER);
-  monitor_class->error = NULL;
+	signals[WIRELESS_EVENT] =
+		g_signal_new ("wireless-event",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_LAST,
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, wireless_event),
+					  NULL, NULL, nm_marshal_VOID__STRING_POINTER_INT,
+					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_INT);
+
+	signals[ERROR] =
+		g_signal_new ("error",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_LAST,
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
+					  NULL, NULL, nm_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
 gboolean
-nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
-				    GError	     **error)
+nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
+									GError **error)
 {
+	NMNetlinkMonitorPrivate *priv;
 	struct sockaddr_nl monitor_address = { .nl_family = 0 };
 	int fd, saved_errno;
 	GError *channel_error;
 	GIOFlags channel_flags;
 
-	g_return_val_if_fail (monitor->priv->io_channel == NULL, FALSE);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
 	fd = socket (PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 
@@ -195,10 +195,10 @@ nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 		return FALSE;
 	}
 
-	monitor->priv->io_channel = g_io_channel_unix_new (fd);
+	priv->io_channel = g_io_channel_unix_new (fd);
 
 	channel_error = NULL;
-	g_io_channel_set_encoding (monitor->priv->io_channel,
+	g_io_channel_set_encoding (priv->io_channel,
 				   NULL	/* encoding */, 
 				   &channel_error);
 
@@ -207,12 +207,12 @@ nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 	 */
 	g_assert (channel_error == NULL);
 
-	g_io_channel_set_close_on_unref (monitor->priv->io_channel,
+	g_io_channel_set_close_on_unref (priv->io_channel,
 					 TRUE);
 
-	channel_flags = g_io_channel_get_flags (monitor->priv->io_channel);
+	channel_flags = g_io_channel_get_flags (priv->io_channel);
 	channel_error = NULL;
-	g_io_channel_set_flags (monitor->priv->io_channel,
+	g_io_channel_set_flags (priv->io_channel,
 				channel_flags | G_IO_FLAG_NONBLOCK,
 				&channel_error);
 
@@ -226,43 +226,23 @@ nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
 }
 
 void
-nm_netlink_monitor_close_connection (NmNetlinkMonitor  *monitor)
+nm_netlink_monitor_close_connection (NMNetlinkMonitor  *monitor)
 {
-	g_return_if_fail (monitor->priv->io_channel != NULL);
+	NMNetlinkMonitorPrivate *priv;
 
-	if (monitor->priv->event_source != NULL)
+	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_if_fail (priv->io_channel != NULL);
+
+	if (priv->event_source != NULL)
 		nm_netlink_monitor_detach (monitor);
 
-	g_io_channel_shutdown (monitor->priv->io_channel,
+	g_io_channel_shutdown (priv->io_channel,
 			       TRUE /* flush pending data */,
 			       NULL);
 
-	g_io_channel_unref (monitor->priv->io_channel);
-	monitor->priv->io_channel = NULL;
-}
-
-static void
-nm_netlink_monitor_init (NmNetlinkMonitor *monitor)
-{
-	monitor->priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
-	monitor->priv->context = NULL;
-	monitor->priv->io_channel = NULL;
-	monitor->priv->event_source = NULL;
-}
-
-static void 
-nm_netlink_monitor_finalize (GObject *object)
-{
-	NmNetlinkMonitor *monitor;
-	GObjectClass *gobject_class;
-
-	monitor = NM_NETLINK_MONITOR (object);
-	gobject_class = G_OBJECT_CLASS (nm_netlink_monitor_parent_class);
-
-	if (monitor->priv->io_channel != NULL)
-		nm_netlink_monitor_close_connection (monitor);
-
-	gobject_class->finalize (object);
+	g_io_channel_unref (priv->io_channel);
+	priv->io_channel = NULL;
 }
 
 GQuark
@@ -276,41 +256,42 @@ nm_netlink_monitor_error_quark (void)
 	return error_quark;
 }
 
-NmNetlinkMonitor *
-nm_netlink_monitor_new (struct NMData *data)
+NMNetlinkMonitor *
+nm_netlink_monitor_get (void)
 {
-	NmNetlinkMonitor *instance;
+	static NMNetlinkMonitor *singleton = NULL;
 
-	g_return_val_if_fail (data != NULL, NULL);
+	if (!singleton)
+		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
+	else
+		g_object_ref (singleton);
 
-	instance = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR,
-				NULL, NULL));
-	instance->priv->app_data = data;
-
-	return instance;
+	return singleton;
 }
 
 static void
-nm_netlink_monitor_clear_event_source (NmNetlinkMonitor *monitor)
+nm_netlink_monitor_clear_event_source (NMNetlinkMonitor *monitor)
 {
-	monitor->priv->event_source = NULL;
+	NM_NETLINK_MONITOR_GET_PRIVATE (monitor)->event_source = NULL;
 }
 
 void
-nm_netlink_monitor_attach (NmNetlinkMonitor *monitor, 
+nm_netlink_monitor_attach (NMNetlinkMonitor *monitor, 
 			   GMainContext     *context)
 {
+	NMNetlinkMonitorPrivate *priv;
 	GSource *event_source;
 
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
-	g_return_if_fail (monitor->priv->context == NULL);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_if_fail (priv->context == NULL);
 
 	if (context == NULL)
 		context = g_main_context_default ();
 
-	monitor->priv->context = g_main_context_ref (context);
+	priv->context = g_main_context_ref (context);
 
-	event_source = g_io_create_watch (monitor->priv->io_channel,
+	event_source = g_io_create_watch (priv->io_channel,
 					  NM_NETLINK_MONITOR_EVENT_CONDITIONS |
 					  NM_NETLINK_MONITOR_ERROR_CONDITIONS |
 					  NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS);
@@ -320,33 +301,37 @@ nm_netlink_monitor_attach (NmNetlinkMonitor *monitor,
 			       (GDestroyNotify) 
                                nm_netlink_monitor_clear_event_source);
 	g_source_attach (event_source, context);
-	monitor->priv->event_source = event_source;
+	priv->event_source = event_source;
 }
 
 void
-nm_netlink_monitor_detach (NmNetlinkMonitor *monitor)
+nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
 {
+	NMNetlinkMonitorPrivate *priv;
+
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
-	g_return_if_fail (monitor->priv->context != NULL);
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_if_fail (priv->context != NULL);
 
-	g_source_destroy (monitor->priv->event_source);
-	monitor->priv->event_source = NULL;
+	g_source_destroy (priv->event_source);
+	priv->event_source = NULL;
 
-	g_main_context_unref (monitor->priv->context);
-	monitor->priv->context = NULL;
+	g_main_context_unref (priv->context);
+	priv->context = NULL;
 }
 
 gboolean
-nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
+nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
 				   GError           **error)
 {
 	typedef struct
 	{
 		struct nlmsghdr  header;
 		struct rtgenmsg  request;
-	} NmNetlinkMonitorStatusPacket;
+	} NMNetlinkMonitorStatusPacket;
 
-	NmNetlinkMonitorStatusPacket packet;
+	NMNetlinkMonitorStatusPacket packet;
+	NMNetlinkMonitorPrivate *priv;
 	struct sockaddr_nl recipient = { .nl_pad = 0 };
 	static guint32 sequence_number;
 	int fd, saved_errno;
@@ -356,13 +341,17 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 	const gchar *buffer;
 	GError *socket_error;
 
-	fd = g_io_channel_unix_get_fd (monitor->priv->io_channel);
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+
+	fd = g_io_channel_unix_get_fd (priv->io_channel);
 
 	recipient.nl_family = AF_NETLINK;
 	recipient.nl_pid = 0; /* going to kernel */
 	recipient.nl_groups = RTMGRP_LINK;
 
-	memset (&packet, 0, sizeof (NmNetlinkMonitorStatusPacket));
+	memset (&packet, 0, sizeof (NMNetlinkMonitorStatusPacket));
 	packet.header.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtgenmsg));
 	packet.header.nlmsg_flags = NLM_F_ROOT | NLM_F_MATCH | NLM_F_REQUEST;
 	packet.header.nlmsg_type = RTM_GETLINK;
@@ -436,7 +425,7 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 		else
 		{
 			g_signal_emit (G_OBJECT (monitor), 
-					nm_netlink_monitor_signals[ERROR],
+						   signals[ERROR],
 					0, socket_error);
 			g_error_free (socket_error);
 		}
@@ -590,7 +579,7 @@ out:
 static gboolean 
 nm_netlink_monitor_event_handler (GIOChannel       *channel,
 				  GIOCondition      io_condition,
-				  NmNetlinkMonitor *monitor)
+				  NMNetlinkMonitor *monitor)
 {
 	GError *error;
 	gchar *received_bytes=NULL;
@@ -624,8 +613,8 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 	if (error != NULL) 
 	{
 		g_signal_emit (G_OBJECT (monitor), 
-			       nm_netlink_monitor_signals[ERROR],
-			       0, error);
+					   signals[ERROR],
+					   0, error);
 		g_error_free (error);
 		return FALSE;
 	}
@@ -668,8 +657,8 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 						       "it was lost"));
 
 				g_signal_emit (G_OBJECT (monitor), 
-						nm_netlink_monitor_signals[ERROR],
-						0, error);
+							   signals[ERROR],
+							   0, error);
 				g_error_free (error);
 				error = NULL;
 				continue;
@@ -687,8 +676,8 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 						     "%s", g_strerror (error_message->error));
 
 				g_signal_emit (G_OBJECT (monitor), 
-						nm_netlink_monitor_signals[ERROR],
-						0, error);
+							   signals[ERROR],
+							   0, error);
 				g_error_free (error);
 				error = NULL;
 				continue;
@@ -718,35 +707,27 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 				{
 					/* The !! weirdness is to cannonicalize the value to 0 or 1. */
 					gboolean is_connected = !!((gboolean) (interface_info->ifi_flags & IFF_RUNNING));
-					NMDevice * dev;
 
-					if ((dev = nm_get_device_by_iface (monitor->priv->app_data, iface)))
-					{
-						if (is_connected) {
-							g_signal_emit (G_OBJECT (monitor), 
-								       nm_netlink_monitor_signals[INTERFACE_CONNECTED],
-								       0, dev);
-						} else {
-							g_signal_emit (G_OBJECT (monitor), 
-								       nm_netlink_monitor_signals[INTERFACE_DISCONNECTED],
-								       0, dev);
-						}
+					if (is_connected) {
+						g_signal_emit (G_OBJECT (monitor), 
+								       signals[INTERFACE_CONNECTED],
+								       0, iface);
+					} else {
+						g_signal_emit (G_OBJECT (monitor), 
+								       signals[INTERFACE_DISCONNECTED],
+								       0, iface);
 					}
 				}
 				g_free (iface);
 			} else if (attribute->rta_type == IFLA_WIRELESS) {
 				char * iface = nm_system_get_iface_from_rtnl_index (interface_info->ifi_index);
 				if (iface != NULL) {
-					NMDevice *dev;
-					if ((dev = nm_get_device_by_iface (monitor->priv->app_data, iface)))
-					{
-						char * data = g_malloc0 (data_len);
-						memcpy (data, RTA_DATA (attribute), data_len);
-						g_signal_emit (G_OBJECT (monitor), 
-							       nm_netlink_monitor_signals[WIRELESS_EVENT],
-							       0, dev, data, data_len);
-						g_free (data);
-					}
+					char * data = g_malloc0 (data_len);
+					memcpy (data, RTA_DATA (attribute), data_len);
+					g_signal_emit (G_OBJECT (monitor), 
+							       signals[WIRELESS_EVENT],
+							       0, iface, data, data_len);
+					g_free (data);
 				}
 				g_free (iface);
 			}
@@ -760,7 +741,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 static gboolean 
 nm_netlink_monitor_error_handler (GIOChannel       *channel,
 				  GIOCondition      io_condition,
-				  NmNetlinkMonitor *monitor)
+				  NMNetlinkMonitor *monitor)
 {
 	GError *socket_error;
  
@@ -774,15 +755,15 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 			 _("error occurred while waiting for data on socket"));
 
 	g_signal_emit (G_OBJECT (monitor), 
-		       nm_netlink_monitor_signals[ERROR],
-		       0, socket_error);
+				   signals[ERROR],
+				   0, socket_error);
 	return TRUE;
 }
 
 static gboolean 
 nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
 				       GIOCondition      io_condition,
-				       NmNetlinkMonitor *monitor)
+				       NMNetlinkMonitor *monitor)
 {
 
 	g_return_val_if_fail (!(io_condition & 

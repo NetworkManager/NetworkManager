@@ -34,7 +34,6 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerSystem.h"
-#include "nm-vpn-manager.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-nmi.h"
@@ -213,61 +212,6 @@ nm_device_stop (NMDevice *self)
 
 
 /*
- * nm_get_device_by_udi
- *
- * Search through the device list for a device with a given UDI.
- *
- */
-NMDevice *
-nm_get_device_by_udi (NMData *data,
-                      const char *udi)
-{
-	GSList	*elt;
-	
-	g_return_val_if_fail (data != NULL, NULL);
-	g_return_val_if_fail (udi  != NULL, NULL);
-
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
-		NMDevice	*dev = NULL;
-		if ((dev = NM_DEVICE (elt->data)))
-		{
-			if (nm_null_safe_strcmp (nm_device_get_udi (dev), udi) == 0)
-				return dev;
-		}
-	}
-
-	return NULL;
-}
-
-
-/*
- * nm_get_device_by_iface
- *
- * Search through the device list for a device with a given iface.
- *
- */
-NMDevice *
-nm_get_device_by_iface (NMData *data,
-                        const char *iface)
-{
-	GSList	*elt;
-	
-	g_return_val_if_fail (data  != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-		NMDevice	*dev = NM_DEVICE (elt->data);
-
-		g_assert (dev);
-		if (nm_null_safe_strcmp (nm_device_get_iface (dev), iface) == 0)
-			return dev;
-	}
-	return NULL;
-}
-
-
-/*
  * Get/set functions for UDI
  */
 const char *
@@ -323,20 +267,6 @@ nm_device_set_device_type (NMDevice *dev, NMDeviceType type)
 	NM_DEVICE_GET_PRIVATE (dev)->type = type;
 }
 
-
-static gboolean
-real_is_test_device (NMDevice *dev)
-{
-	return FALSE;
-}
-
-gboolean
-nm_device_is_test_device (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_GET_CLASS (self)->is_test_device (self);
-}
 
 /*
  * Accessor for capabilities
@@ -474,9 +404,6 @@ nm_device_activate (NMDevice *device,
 
 	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	nm_device_activate_schedule_stage1_device_prepare (req);
-
-	nm_schedule_state_change_signal_broadcast (data);
-	nm_dbus_schedule_device_status_change_signal (data, device, NULL, DEVICE_ACTIVATING);
 }
 
 
@@ -516,7 +443,6 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 		goto out;
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
@@ -610,7 +536,6 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -727,7 +652,6 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -873,7 +797,6 @@ nm_device_activate_stage4_ip_config_get (gpointer user_data)
 	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
 	{
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -967,7 +890,6 @@ nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 		goto out;
 	} else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE)) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -1055,10 +977,8 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 			NM_DEVICE_GET_CLASS (self)->update_link (self);
 
 		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED);
-		nm_policy_schedule_activation_finish (req);
 	} else {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-		nm_policy_schedule_activation_failed (req);
 	}
 
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
@@ -1139,7 +1059,6 @@ nm_device_activation_cancel (NMDevice *self)
 	nm_act_request_unref (self->priv->act_request);
 	self->priv->act_request = NULL;
 
-	nm_schedule_state_change_signal_broadcast (self->priv->app_data);
 	nm_info ("Activation (%s): cancelled.", nm_device_get_iface (self));
 }
 
@@ -1155,20 +1074,13 @@ nm_device_activation_cancel (NMDevice *self)
 gboolean
 nm_device_deactivate_quickly (NMDevice *self)
 {
-	NMData *		app_data;
 	NMActRequest *	act_request;
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (self->priv->app_data != NULL, FALSE);
 
 	nm_system_shutdown_nis ();
 
-	app_data = self->priv->app_data;
-	nm_vpn_manager_deactivate_vpn_connection (app_data->vpn_manager, self);
-
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
-		nm_dbus_schedule_device_status_change_signal (app_data, self, NULL, DEVICE_NO_LONGER_ACTIVE);
-	else if (nm_device_is_activating (self))
+	if (nm_device_is_activating (self))
 		nm_device_activation_cancel (self);
 
 	/* Tear down an existing activation request, which may not have happened
@@ -1229,7 +1141,6 @@ nm_device_deactivate (NMDeviceInterface *device)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
-	nm_schedule_state_change_signal_broadcast (self->priv->app_data);
 }
 
 
@@ -1343,7 +1254,7 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 		case DHCDBD_FAIL: /* all attempts to contact server timed out, sleeping */
 		case DHCDBD_ABEND: /* dhclient exited abnormally */
 		case DHCDBD_END: /* dhclient exited normally */
-			nm_policy_schedule_activation_failed (req);
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 			break;
 		default:
 			break;
@@ -1730,7 +1641,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
 
-	klass->is_test_device = real_is_test_device;
 	klass->activation_cancel_handler = real_activation_cancel_handler;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;

@@ -42,7 +42,7 @@ typedef struct _NMDevice8023Ethernet NMDevice8023Ethernet;
 typedef struct _NMDevice8023EthernetClass NMDevice8023EthernetClass;
 typedef struct _NMDevice8023EthernetPrivate NMDevice8023EthernetPrivate;
 
-#define NM_DEVICE_802_3_ETHERNET_HW_ADDRESS "hw_address"
+#define NM_DEVICE_802_3_ETHERNET_HW_ADDRESS "hw-address"
 #define NM_DEVICE_802_3_ETHERNET_SPEED "speed"
 
 struct _NMDevice8023Ethernet

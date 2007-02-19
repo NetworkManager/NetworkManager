@@ -26,8 +26,10 @@
 #include "nm-vpn-manager.h"
 #include "nm-vpn-connection.h"
 
-void				nm_dbus_vpn_schedule_vpn_connections_update	(NMData *app_data);
-void				nm_dbus_vpn_update_one_vpn_connection		(DBusConnection *connection, const char *vpn, NMData *data);
+void				nm_dbus_vpn_schedule_vpn_connections_update	(NMVPNManager *manager);
+void				nm_dbus_vpn_update_one_vpn_connection		(DBusConnection *connection,
+																 NMVPNManager *manager,
+																 const char *vpn);
 
 void				nm_dbus_vpn_signal_vpn_connection_update	(DBusConnection *con, NMVPNConnection *vpn, const char *signal);
 void				nm_dbus_vpn_signal_vpn_failed				(DBusConnection *con, const char *signal, NMVPNConnection *vpn, const char *error_msg);

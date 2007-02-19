@@ -27,23 +27,6 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 										   NULL);
 }
 
-char *
-nm_access_point_get_address (NMAccessPoint *ap)
-{
-	GValue value = {0,};
-	char *address = NULL;
-
-	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Address",
-							  &value))
-		address = g_strdup (g_value_get_string (&value));
-
-	return address;
-}
-
 guint32
 nm_access_point_get_capabilities (NMAccessPoint *ap)
 {
@@ -123,7 +106,7 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 
 	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
 							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "HWAddress",
+							  "HwAddress",
 							  &value))
 		address = g_strdup (g_value_get_string (&value));
 

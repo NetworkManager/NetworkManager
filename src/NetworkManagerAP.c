@@ -89,12 +89,11 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_ADDRESS,
 	PROP_CAPABILITIES,
 	PROP_ENCRYPTED,
 	PROP_ESSID,
 	PROP_FREQUENCY,
-	PROP_HWADDRESS,
+	PROP_HW_ADDRESS,
 	PROP_MODE,
 	PROP_RATE,
 	PROP_STRENGTH,
@@ -179,6 +178,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
+	char hw_addr_buf[20];
 
 	switch (prop_id) {
 	case PROP_CAPABILITIES:
@@ -192,6 +192,11 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_FREQUENCY:
 		g_value_set_double (value, priv->freq);
+		break;
+	case PROP_HW_ADDRESS:
+		memset (hw_addr_buf, 0, 20);
+		iw_ether_ntop (&priv->address, hw_addr_buf);
+		g_value_set_string (value, &hw_addr_buf[0]);
 		break;
 	case PROP_MODE:
 		g_value_set_int (value, priv->mode);
@@ -221,8 +226,6 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	object_class->finalize = finalize;
 
 	/* properties */
-
-	/* FIXME: address */
 
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
@@ -256,7 +259,13 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							  0.0, 10000.0, 0.0, /* FIXME */
 							  G_PARAM_READWRITE));
 
-	/* FIXME: HWAddress */
+	g_object_class_install_property
+		(object_class, PROP_HW_ADDRESS,
+		 g_param_spec_string (NM_AP_HW_ADDRESS,
+							  "MAC Address",
+							  "Hardware MAC address",
+							  NULL,
+							  G_PARAM_READABLE));
 	
 	g_object_class_install_property
 		(object_class, PROP_MODE,

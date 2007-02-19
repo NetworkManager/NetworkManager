@@ -78,8 +78,6 @@ struct _NMDeviceClass
 {
 	GObjectClass parent;
 
-	gboolean		(* is_test_device)	(NMDevice *self);
-
 	const char *	(* has_active_link)	(NMDevice *self);
 	void			(* set_active_link)	(NMDevice *self, gboolean active);
 	void			(* update_link)	(NMDevice *self);
@@ -157,13 +155,6 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 struct NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
-/* Utility routines */
-NMDevice *	nm_get_device_by_udi	(struct NMData *data,
-								 const char *udi);
-NMDevice *	nm_get_device_by_iface	(struct NMData *data,
-								 const char *iface);
-
-gboolean		nm_device_is_test_device	(NMDevice *dev);
 
 void			nm_device_activate_schedule_stage1_device_prepare		(struct NMActRequest *req);
 void			nm_device_activate_schedule_stage2_device_config		(struct NMActRequest *req);

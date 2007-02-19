@@ -36,12 +36,11 @@
 #define NM_IS_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_AP))
 #define NM_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AP, NMAccessPointClass))
 
-#define NM_AP_ADDRESS "address"
 #define NM_AP_CAPABILITIES "capabilities"
 #define NM_AP_ENCRYPTED "encrypted"
 #define NM_AP_ESSID "essid"
 #define NM_AP_FREQUENCY "frequency"
-#define NM_AP_HWADDRESS "hwaddress"
+#define NM_AP_HW_ADDRESS "hw-address"
 #define NM_AP_MODE "mode"
 #define NM_AP_RATE "rate"
 #define NM_AP_STRENGTH "strength"

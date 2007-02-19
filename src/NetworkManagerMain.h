@@ -25,12 +25,8 @@
 #include <glib.h>
 #include <glib/gthread.h>
 #include <dbus/dbus.h>
-#include "NetworkManager.h"
-#include "NetworkManagerAP.h"
-#include "nm-netlink-monitor.h"
+#include "NetworkManagerAPList.h"
 #include "nm-named-manager.h"
-#include "nm-device.h"
-#include "NetworkManagerDbusUtils.h"
 
 
 typedef struct NMActRequest NMActRequest;
@@ -39,34 +35,12 @@ typedef struct NMVPNManager NMVPNManager;
 
 typedef struct NMData
 {
-	GIOChannel *			sigterm_iochannel;
-	int					sigterm_pipe[2];
-
-	NmNetlinkMonitor *		netlink_monitor;
-
 	NMNamedManager *		named_manager;
-	NMVPNManager *			vpn_manager;
-	guint32                 nmi_sig_handler_id;
-
-	GMainLoop *			main_loop;
-
-	guint				dev_change_check_idle_id;
 
 	GSList *				dev_list;
-
-	gboolean				wireless_enabled;
-	gboolean				modem_active;
-	gboolean				asleep;
-
-	GSList *				dialup_list;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
-
-
-void			nm_schedule_state_change_signal_broadcast	(NMData *data);
-
-int			nm_get_sigterm_pipe						(void);
 
 #endif

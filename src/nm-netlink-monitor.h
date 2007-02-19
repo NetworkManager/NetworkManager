@@ -27,46 +27,14 @@
 G_BEGIN_DECLS
 
 #define NM_TYPE_NETLINK_MONITOR	    (nm_netlink_monitor_get_type ())
-#define NM_NETLINK_MONITOR(obj)	    (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NETLINK_MONITOR, NmNetlinkMonitor))
-#define NM_NETLINK_MONITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_NETLINK_MONITOR, NmNetlinkMonitorClass))
+#define NM_NETLINK_MONITOR(obj)	    (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitor))
+#define NM_NETLINK_MONITOR_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitorClass))
 #define NM_IS_NETLINK_MONITOR(obj)	 (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_NETLINK_MONITOR))
 #define NM_IS_NETLINK_MONITOR_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NM_TYPE_NETLINK_MONITOR))
-#define NM_NETLINK_MONITOR_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_NETLINK_MONITOR, NmNetlinkMonitorClass))
+#define NM_NETLINK_MONITOR_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_NETLINK_MONITOR, NMNetlinkMonitorClass))
 #define NM_NETLINK_MONITOR_ERROR	   (nm_netlink_monitor_error_quark ())
 
-
-typedef struct _NmNetlinkMonitor	NmNetlinkMonitor;
-typedef struct _NmNetlinkMonitorClass   NmNetlinkMonitorClass;
-typedef struct _NmNetlinkMonitorPrivate NmNetlinkMonitorPrivate;
-typedef enum   _NmNetlinkMonitorError   NmNetlinkMonitorError;
-
-struct _NmNetlinkMonitor 
-{
-	GObject parent; 
-
-	/*< private >*/
-	NmNetlinkMonitorPrivate *priv;
-};
-
-struct _NmNetlinkMonitorClass 
-{
-	GObjectClass parent_class;
-
-	/* Signals */
-	void	(* interface_connected)		(NmNetlinkMonitor * monitor,
-						 GObject *dev);
-	void	(* interface_disconnected)	(NmNetlinkMonitor * monitor,
-						 GObject *dev);
-	void (* wireless_event)			(NmNetlinkMonitor * monitor,
-						 GObject *dev,
-						 const gchar * data,
-						 int data_len);
-	void	(* error)			(NmNetlinkMonitor * monitor,
-						 GError * error);
-};
-
-enum _NmNetlinkMonitorError 
-{
+typedef enum {
 	NM_NETLINK_MONITOR_ERROR_GENERIC = 0,
 	NM_NETLINK_MONITOR_ERROR_OPENING_SOCKET,
 	NM_NETLINK_MONITOR_ERROR_BINDING_TO_SOCKET,
@@ -75,26 +43,41 @@ enum _NmNetlinkMonitorError
 	NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
 	NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
 	NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET
-};
+} NMNetlinkMonitorError;
+
+typedef struct {
+	GObject parent; 
+} NMNetlinkMonitor;
+
+typedef struct {
+	GObjectClass parent_class;
+
+	/* Signals */
+	void (*interface_connected)    (NMNetlinkMonitor *monitor, const char *iface);
+	void (*interface_disconnected) (NMNetlinkMonitor *monitor, const char *iface);
+	void (*wireless_event)         (NMNetlinkMonitor *monitor,
+									const char *iface,
+									const gchar *data,
+									int data_len);
+
+	void (*error)                  (NMNetlinkMonitor *monitor,
+									GError *error);
+} NMNetlinkMonitorClass;
+
 
 GType	nm_netlink_monitor_get_type	(void)	G_GNUC_CONST;
 GQuark	nm_netlink_monitor_error_quark	(void)	G_GNUC_CONST;
 
-struct NMData;
-NmNetlinkMonitor	*nm_netlink_monitor_new	(struct NMData *data);
+NMNetlinkMonitor *nm_netlink_monitor_get (void);
 
-gboolean
-nm_netlink_monitor_open_connection (NmNetlinkMonitor  *monitor,
-				    GError	     **error);
-
-void
-nm_netlink_monitor_close_connection (NmNetlinkMonitor  *monitor);
-
-void	nm_netlink_monitor_attach	(NmNetlinkMonitor	*monitor,
-					 GMainContext		*context);
-void	nm_netlink_monitor_detach	(NmNetlinkMonitor	*monitor);
-
-gboolean	nm_netlink_monitor_request_status	(NmNetlinkMonitor *monitor,
-							 GError		**error);
+gboolean          nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
+													  GError **error);
+void              nm_netlink_monitor_close_connection (NMNetlinkMonitor *monitor);
+void              nm_netlink_monitor_attach	          (NMNetlinkMonitor	*monitor,
+													   GMainContext *context);
+void              nm_netlink_monitor_detach	          (NMNetlinkMonitor *monitor);
+gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
+													   GError **error);
 G_END_DECLS
+
 #endif  /* NM_NETLINK_MONITOR_H */

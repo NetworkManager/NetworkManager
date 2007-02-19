@@ -32,21 +32,6 @@
 #include "NetworkManagerAPList.h"
 
 
-typedef enum
-{
-	DEVICE_STATUS_INVALID,
-	DEVICE_NOW_ACTIVE,
-	DEVICE_NO_LONGER_ACTIVE,
-	DEVICE_ACTIVATING,
-	DEVICE_ACTIVATION_FAILED,
-	DEVICE_ACTIVATION_CANCELED,
-	DEVICE_ADDED,
-	DEVICE_REMOVED,
-	DEVICE_CARRIER_ON,
-	DEVICE_CARRIER_OFF
-} DeviceStatus;
-
-
 static inline gboolean message_is_error (DBusMessage *msg)
 {
 	g_return_val_if_fail (msg != NULL, FALSE);
@@ -56,14 +41,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
 char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
-
-void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status);
-
-void			nm_dbus_signal_state_change			(DBusConnection *connection, NMState state);
-
-void			nm_dbus_signal_wireless_network_change	(NMDevice80211Wireless *dev, NMAccessPoint *ap, NMNetworkStatus status, gint strength);
-void			nm_dbus_signal_device_strength_change	(NMDevice80211Wireless *dev, gint strength);
-
 NMDevice *	nm_dbus_get_device_from_escaped_object_path	(NMData *data, const char *path);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);

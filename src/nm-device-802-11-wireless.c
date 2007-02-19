@@ -276,6 +276,8 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 	NMSock *	sk;
 	iwrange		range;
 	iwstats		stats;
+	NMActRequest *req;
+	NMAccessPoint *ap = NULL;
 	int			percent = -1;
 
 	g_return_if_fail (self != NULL);
@@ -287,7 +289,12 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 	/* If we aren't the active device, we don't really have a signal strength
 	 * that would mean anything.
 	 */
-	if (!nm_device_get_act_request (NM_DEVICE (self))) {
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (req)
+		ap = nm_act_request_get_ap (req);
+
+	if (!ap) {
 		self->priv->strength = -1;
 		return;
 	}
@@ -320,7 +327,7 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self)
 		self->priv->invalid_strength_counter = 0;
 
 	if (percent != self->priv->strength)
-		nm_dbus_signal_device_strength_change (self, percent);
+		nm_ap_set_strength (ap, (gint8) percent);
 
 	self->priv->strength = percent;
 }
@@ -1896,9 +1903,8 @@ request_wireless_scan (gpointer user_data)
 	/* Reschedule ourselves if all wireless is disabled, we're asleep,
 	 * or we are currently activating.
 	 */
-	if (    (app_data->wireless_enabled == FALSE)
-		|| (app_data->asleep == TRUE)
-		|| (nm_device_is_activating (NM_DEVICE (self)) == TRUE))
+	/* FIXME: Make sure we're allowed to scan: is networking enabled? is wireless enabled? */
+	if (nm_device_is_activating (NM_DEVICE (self)))
 	{
 		nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_INIT);
 		schedule_scan (self);
@@ -2187,8 +2193,6 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		/* Did the AP's name change? */
 		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
 			network_removed (dev, list_ap);
-			nm_dbus_signal_wireless_network_change (dev, list_ap,
-													NETWORK_STATUS_DISAPPEARED, -1);
 			new = TRUE;
 		}
 
@@ -2250,11 +2254,6 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		list_ap = merge_ap;
 		new = TRUE;
 	}
-
-	if (list_ap && new) {
-		nm_dbus_signal_wireless_network_change (dev, list_ap,
-												NETWORK_STATUS_APPEARED, -1);
-	}
 }
 
 static void
@@ -2308,7 +2307,6 @@ cull_scan_list (NMDevice80211Wireless * self)
 		if (!(outdated_ap = (NMAccessPoint *)(elt->data)))
 			continue;
 		network_removed (self, outdated_ap);
-		nm_dbus_signal_wireless_network_change (self, outdated_ap, NETWORK_STATUS_DISAPPEARED, -1);
 		nm_ap_list_remove_ap (nm_device_802_11_wireless_ap_list_get (self), outdated_ap);
 	}
 	g_slist_free (outdated_list);
@@ -2465,7 +2463,6 @@ link_timeout_cb (gpointer user_data)
 		if (nm_device_is_activating (dev)) {
 			cleanup_association_attempt (self, TRUE);
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
-			nm_policy_schedule_activation_failed (req);
 		}
 		return FALSE;
 	}
@@ -2729,9 +2726,7 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 			nm_device_set_active_link (NM_DEVICE (self), FALSE);
 
 			if (nm_device_is_activating (dev)) {
-				NMActRequest * req = nm_device_get_act_request (dev);
 				nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
-				nm_policy_schedule_activation_failed (req);
 			}
 		}
 	} else if (new_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
@@ -2789,7 +2784,6 @@ supplicant_iface_connection_error_cb_handler (gpointer user_data)
 
 	cleanup_association_attempt (self, TRUE);
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
-	nm_policy_schedule_activation_failed (req);
 
 out:
 	g_free (cb_data->name);
@@ -2874,7 +2868,6 @@ supplicant_connection_timeout_cb (gpointer user_data)
 			         nm_device_get_iface (dev));
 
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
-			nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
 		}
 	}
 

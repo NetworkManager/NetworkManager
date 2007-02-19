@@ -35,6 +35,7 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-supplicant-manager.h"
+#include "nm-netlink-monitor.h"
 #include "nm-utils.h"
 #include "kernel-types.h"
 
@@ -73,12 +74,12 @@ enum {
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
 
-static void	nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
-                                                        GObject *obj,
-                                                        NMDevice8023Ethernet *self);
-static void	nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
-                                                          GObject *obj,
-                                                          NMDevice8023Ethernet *self);
+static void	nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
+													 const char *iface,
+													 gpointer user_data);
+static void	nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
+													   const char *iface,
+													   gpointer user_data);
 
 static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        guint32 new_state,
@@ -103,19 +104,18 @@ real_init (NMDevice *dev)
 {
 	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
 	NMData *				app_data;
-	NmNetlinkMonitor *		monitor;
+	NMNetlinkMonitor *		monitor;
 	NMSupplicantManager *   sup_mgr;
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	monitor = app_data->netlink_monitor;
+	monitor = nm_netlink_monitor_get ();
 
-	self->priv->link_connected_id = 
-			g_signal_connect (G_OBJECT (monitor), "interface-connected",
-				G_CALLBACK (nm_device_802_3_ethernet_link_activated), self);
+	self->priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
+													  G_CALLBACK (nm_device_802_3_ethernet_link_activated), self);
 
-	self->priv->link_disconnected_id = 
-			g_signal_connect (G_OBJECT (monitor), "interface-disconnected",
-				G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
+	self->priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
+														 G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
+	g_object_unref (monitor);
 
 	sup_mgr = nm_supplicant_manager_get ();
 	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
@@ -134,32 +134,28 @@ real_init (NMDevice *dev)
 }
 
 static void
-nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
-                                         GObject *obj,
-                                         NMDevice8023Ethernet *self)
+nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
+                                         const char *iface,
+                                         gpointer user_data)
 {
-	NMDevice * dev = NM_DEVICE (self);
+	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (dev != NM_DEVICE (obj))
-		return;
-
-	nm_device_set_active_link (dev, TRUE);
+	if (!strcmp (nm_device_get_iface (dev), iface))
+		nm_device_set_active_link (dev, TRUE);
 }
 
 
 static void
-nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
-                                           GObject *obj,
-                                           NMDevice8023Ethernet *self)
+nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
+                                           const char *iface,
+                                           gpointer user_data)
 {
-	NMDevice * dev = NM_DEVICE (self);
+	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (dev != NM_DEVICE (obj))
-		return;
-
-	nm_device_set_active_link (dev, FALSE);
+	if (!strcmp (nm_device_get_iface (dev), iface))
+		nm_device_set_active_link (dev, FALSE);
 }
 
 static gboolean
@@ -365,8 +361,8 @@ static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
 	NMDevice8023Ethernet *		self = NM_DEVICE_802_3_ETHERNET (object);
-	NMData *					data = nm_device_get_app_data (NM_DEVICE (self));
 	NMSupplicantManager *       sup_mgr;
+	NMNetlinkMonitor *monitor;
 
 	if (self->priv->dispose_has_run)
 		/* If dispose did already run, return. */
@@ -386,10 +382,12 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	self->priv->sup_iface = NULL;
 	g_object_unref (sup_mgr);
 
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->link_connected_id);
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->link_disconnected_id);
+	monitor = nm_netlink_monitor_get ();
+	g_signal_handler_disconnect (monitor,
+								 self->priv->link_connected_id);
+	g_signal_handler_disconnect (monitor,
+								 self->priv->link_disconnected_id);
+	g_object_unref (monitor);
 
 	if (self->priv->link_source_id) {
 		g_source_remove (self->priv->link_source_id);

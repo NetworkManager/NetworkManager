@@ -118,6 +118,28 @@ dump_ip4_config (NMIP4Config *cfg)
 }
 
 static void
+dump_access_point (NMAccessPoint *ap)
+{
+	char *str;
+
+	str = nm_access_point_get_essid (ap);
+	g_print ("\tEssid: %s\n", str);
+	g_free (str);
+
+	str = nm_access_point_get_hw_address (ap);
+	g_print ("\tMAC Address: %s\n", str);
+	g_free (str);
+
+	g_print ("\tCapabilities: %d\n", nm_access_point_get_capabilities (ap));
+	g_print ("\tEncrypted: %d\n", nm_access_point_is_encrypted (ap));
+	g_print ("\tFrequency: %f\n", nm_access_point_get_frequency (ap));
+
+	g_print ("\tMode: %d\n", nm_access_point_get_mode (ap));
+	g_print ("\tRate: %d\n", nm_access_point_get_rate (ap));
+	g_print ("\tStrength: %d\n", nm_access_point_get_strength (ap));
+}
+
+static void
 dump_wireless (NMDevice80211Wireless *device)
 {
 	char *str;
@@ -134,31 +156,7 @@ dump_wireless (NMDevice80211Wireless *device)
 	g_print ("Networks:\n");
 	networks = nm_device_802_11_wireless_get_networks (device);
 	for (iter = networks; iter; iter = iter->next) {
-		NMAccessPoint *ap = NM_ACCESS_POINT (iter->data);
-
-		str = nm_access_point_get_essid (ap);
-		g_print ("\tEssid: %s\n", str);
-		g_free (str);
-
-		/* This is not provided by NM yet */
-#if 0
-		str = nm_access_point_get_address (ap);
-		g_print ("\tAddress: %s\n", str);
-		g_free (str);
-
-		str = nm_access_point_get_hw_address (ap);
-		g_print ("\tMAC Address: %s\n", str);
-		g_free (str);
-#endif
-
-		g_print ("\tCapabilities: %d\n", nm_access_point_get_capabilities (ap));
-		g_print ("\tEncrypted: %d\n", nm_access_point_is_encrypted (ap));
-		g_print ("\tFrequency: %f\n", nm_access_point_get_frequency (ap));
-
-		g_print ("\tMode: %d\n", nm_access_point_get_mode (ap));
-		g_print ("\tRate: %d\n", nm_access_point_get_rate (ap));
-		g_print ("\tStrength: %d\n", nm_access_point_get_strength (ap));
-
+		dump_access_point (NM_ACCESS_POINT (iter->data));
 		g_print ("\n");
 	}
 

@@ -52,7 +52,6 @@
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
-#include "nm-vpn-act-request.h"
 #include "nm-dbus-vpn.h"
 #include "nm-dbus-nm.h"
 #include "nm-dbus-manager.h"
@@ -62,90 +61,54 @@
 #include "nm-netlink-monitor.h"
 #include "nm-logging.h"
 
-#define NM_WIRELESS_LINK_STATE_POLL_INTERVAL (5 * 1000)
-
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
 
 /*
  * Globals
  */
-static NMData		*nm_data = NULL;
 static NMManager *manager = NULL;
+static GMainLoop *main_loop = NULL;
+static NMData *nm_data = NULL;
 
-static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
 static void nm_data_free (NMData *data);
 
-/*
- * nm_state_change_signal_broadcast
- *
- */
-static gboolean nm_state_change_signal_broadcast (gpointer user_data)
-{
-	NMState state;
-	NMDBusManager *dbus_mgr;
-	DBusConnection *dbus_connection;
-
-	state = nm_manager_get_state (manager);
-
-	dbus_mgr = nm_dbus_manager_get ();
-	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
-	if (dbus_connection)
-		nm_dbus_signal_state_change (dbus_connection, state);
-	g_object_unref (dbus_mgr);
-
-	return FALSE;
-}
-
-
-/*
- * nm_schedule_state_change_signal_broadcast
- *
- */
-void nm_schedule_state_change_signal_broadcast (NMData *data)
-{
-	g_idle_add_full (G_PRIORITY_HIGH,
-					 nm_state_change_signal_broadcast,
-					 NULL,
-					 NULL);
-}
-
-
 static void
-nm_error_monitoring_device_link_state (NmNetlinkMonitor *monitor,
-				      GError 	       *error,
-				      NMData	       *data)
+nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
+									   GError *error,
+									   gpointer user_data)
 {
 	/* FIXME: Try to handle the error instead of just printing it. */
 	nm_warning ("error monitoring wired ethernet link state: %s\n",
-		    error->message);
+				error->message);
 }
 
-static NmNetlinkMonitor *
-nm_monitor_setup (NMData *data)
+static gboolean
+nm_monitor_setup (void)
 {
 	GError *error = NULL;
-	NmNetlinkMonitor *monitor;
+	NMNetlinkMonitor *monitor;
 
-	monitor = nm_netlink_monitor_new (data);
+	monitor = nm_netlink_monitor_get ();
 	nm_netlink_monitor_open_connection (monitor, &error);
 	if (error != NULL)
 	{
 		nm_warning ("could not monitor wired ethernet devices: %s",
-			    error->message);
+					error->message);
 		g_error_free (error);
 		g_object_unref (monitor);
-		return NULL;
+		return FALSE;
 	}
 
 	g_signal_connect (G_OBJECT (monitor), "error",
 			  G_CALLBACK (nm_error_monitoring_device_link_state),
-			  data);
+			  NULL);
 
 	nm_netlink_monitor_attach (monitor, NULL);
 
 	/* Request initial status of cards */
 	nm_netlink_monitor_request_status (monitor, NULL);
-	return monitor;
+
+	return TRUE;
 }
 
 /*
@@ -157,25 +120,8 @@ nm_monitor_setup (NMData *data)
 static NMData *nm_data_new (void)
 {
 	NMData * data;
-	guint    id;
 
 	data = g_slice_new0 (NMData);
-
-	data->main_loop = g_main_loop_new (NULL, FALSE);
-
-	/* Allow clean shutdowns by having the thread which receives the signal
-	 * notify the main thread to quit, rather than having the receiving
-	 * thread try to quit the glib main loop.
-	 */
-	if (pipe (data->sigterm_pipe) < 0) {
-		nm_error ("Couldn't create pipe: %s", g_strerror (errno));
-		return NULL;
-	}
-	data->sigterm_iochannel = g_io_channel_unix_new (data->sigterm_pipe[0]);
-	id = g_io_add_watch (data->sigterm_iochannel,
-	                     G_IO_IN | G_IO_ERR,
-	                     sigterm_pipe_handler,
-	                     data);
 
 	/* Initialize the access point lists */
 	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
@@ -187,15 +133,6 @@ static NMData *nm_data_new (void)
 		return NULL;
 	}
 
-	/* Create watch functions that monitor cards for link status. */
-	if (!(data->netlink_monitor = nm_monitor_setup (data)))
-	{
-		nm_data_free (data);
-		nm_warning ("could not create netlink monitor.");
-		return NULL;
-	}
-
-	data->wireless_enabled = TRUE;
 	return data;
 }
 
@@ -208,43 +145,14 @@ static NMData *nm_data_new (void)
  */
 static void nm_data_free (NMData *data)
 {
-	NMVPNActRequest *req;
-
 	g_return_if_fail (data != NULL);
-
-	/* Kill any active VPN connection */
-	if ((req = nm_vpn_manager_get_vpn_act_request (data->vpn_manager)))
-		nm_vpn_manager_deactivate_vpn_connection (data->vpn_manager, nm_vpn_act_request_get_parent_dev (req));
-
-	if (data->netlink_monitor) {
-		g_object_unref (G_OBJECT (data->netlink_monitor));
-		data->netlink_monitor = NULL;
-	}
 
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
-	nm_vpn_manager_dispose (data->vpn_manager);
 	g_object_unref (data->named_manager);
 
-	g_main_loop_unref (data->main_loop);
-	g_io_channel_unref(data->sigterm_iochannel);
-
 	g_slice_free (NMData, data);
-}
-
-int nm_get_sigterm_pipe (void)
-{
-	return nm_data->sigterm_pipe[1];
-}
-
-static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer user_data)
-{
-	NMData *		data = user_data;
-
-	nm_info ("Caught terminiation signal");
-	g_main_loop_quit (data->main_loop);
-	return FALSE;
 }
 
 static void
@@ -260,14 +168,91 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
-		if (!old_owner_good && new_owner_good) {
+		if (!old_owner_good && new_owner_good)
 			/* NMI appeared, update stuff */
 			nm_policy_schedule_allowed_ap_list_update (data);
-			nm_dbus_vpn_schedule_vpn_connections_update (data);
-		} else if (old_owner_good && !new_owner_good) {
-			/* nothing */
-		}
 	}
+}
+
+static void
+nm_signal_handler (int signo)
+{
+	static int in_fatal = 0;
+
+	/* avoid loops */
+	if (in_fatal > 0)
+		return;
+	++in_fatal;
+
+	switch (signo)
+	{
+		case SIGSEGV:
+		case SIGBUS:
+		case SIGILL:
+		case SIGABRT:
+			nm_warning ("Caught signal %d.  Generating backtrace...", signo);
+			nm_logging_backtrace ();
+			exit (1);
+			break;
+
+		case SIGFPE:
+		case SIGPIPE:
+			/* let the fatal signals interrupt us */
+			--in_fatal;
+
+			nm_warning ("Caught signal %d, shutting down abnormally.  Generating backtrace...", signo);
+			nm_logging_backtrace ();
+			g_main_loop_quit (main_loop);
+			break;
+
+		case SIGINT:
+		case SIGTERM:
+			/* let the fatal signals interrupt us */
+			--in_fatal;
+
+			nm_warning ("Caught signal %d, shutting down normally.", signo);
+			g_main_loop_quit (main_loop);
+			break;
+
+		case SIGHUP:
+			--in_fatal;
+			/* FIXME:
+			 * Reread config stuff like system config files, VPN service files, etc
+			 */
+			break;
+
+		case SIGUSR1:
+			--in_fatal;
+			/* FIXME:
+			 * Play with log levels or something
+			 */
+			break;
+
+		default:
+			signal (signo, nm_signal_handler);
+			break;
+	}
+}
+
+static void
+setup_signals (void)
+{
+	struct sigaction action;
+	sigset_t mask;
+
+	sigemptyset (&mask);
+	action.sa_handler = nm_signal_handler;
+	action.sa_mask = mask;
+	action.sa_flags = 0;
+	sigaction (SIGTERM,  &action, NULL);
+	sigaction (SIGINT,  &action, NULL);
+	sigaction (SIGILL,  &action, NULL);
+	sigaction (SIGBUS,  &action, NULL);
+	sigaction (SIGFPE,  &action, NULL);
+	sigaction (SIGHUP,  &action, NULL);
+	sigaction (SIGSEGV, &action, NULL);
+	sigaction (SIGABRT, &action, NULL);
+	sigaction (SIGUSR1,  &action, NULL);
 }
 
 static void
@@ -321,11 +306,11 @@ main (int argc, char *argv[])
 	char *		user_pidfile = NULL;
 	NMPolicy *policy;
 	NMHalManager *hal_manager = NULL;
+	NMVPNManager *vpn_manager = NULL;
 	NMDBusManager *	dbus_mgr;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
 	int			exit_status = EXIT_FAILURE;
-	guint32     id;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
@@ -385,11 +370,14 @@ main (int argc, char *argv[])
 	if (!g_thread_supported ())
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
-	
+
+	setup_signals ();
+
 	nm_logging_setup (become_daemon);
 	nm_info ("starting...");
 
-	nm_system_init();
+	nm_system_init ();
+	main_loop = g_main_loop_new (NULL, FALSE);
 
 	/* Initialize our instance data */
 	nm_data = nm_data_new ();
@@ -397,6 +385,10 @@ main (int argc, char *argv[])
 		nm_error ("Failed to initialize.");
 		goto pidfile;
 	}
+
+	/* Create watch functions that monitor cards for link status. */
+	if (!nm_monitor_setup ())
+		goto done;
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
@@ -408,14 +400,17 @@ main (int argc, char *argv[])
 		          "was not loaded.");
 		goto done;
 	}
-	g_signal_connect (G_OBJECT (dbus_mgr), "name-owner-changed",
-	                  G_CALLBACK (nm_name_owner_changed_handler), nm_data);
-	id = nm_dbus_manager_register_signal_handler (dbus_mgr,
-	                                              NMI_DBUS_INTERFACE,
-	                                              NULL,
-	                                              nm_dbus_nmi_signal_handler,
-	                                              nm_data);
-	nm_data->nmi_sig_handler_id = id;
+
+	g_signal_connect (dbus_mgr,
+					  "name-owner-changed",
+	                  G_CALLBACK (nm_name_owner_changed_handler),
+					  nm_data);
+
+	nm_dbus_manager_register_signal_handler (dbus_mgr,
+											 NMI_DBUS_INTERFACE,
+											 NULL,
+											 nm_dbus_nmi_signal_handler,
+											 nm_data);
 
 	manager = nm_manager_new ();
 	policy = nm_policy_new (manager);
@@ -427,8 +422,8 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	nm_data->vpn_manager = nm_vpn_manager_new (manager, nm_data);
-	if (!nm_data->vpn_manager) {
+	vpn_manager = nm_vpn_manager_new (manager, nm_data);
+	if (!vpn_manager) {
 		nm_warning ("Failed to start the VPN manager.");
 		goto done;
 	}
@@ -450,10 +445,8 @@ main (int argc, char *argv[])
 		goto done;
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
-	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE)) {
+	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE))
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
-		nm_dbus_vpn_schedule_vpn_connections_update (nm_data);
-	}
 
 	/* We run dhclient when we need to, and we don't want any stray ones
 	 * lying around upon launch.
@@ -463,18 +456,15 @@ main (int argc, char *argv[])
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
 
-	/* Get modems, ISDN, and so on's configuration from the system */
-	nm_data->dialup_list = nm_system_get_dialup_config ();
-
 	/* Run the main loop */
-	nm_schedule_state_change_signal_broadcast (nm_data);
 	exit_status = EXIT_SUCCESS;
-	g_main_loop_run (nm_data->main_loop);
+	g_main_loop_run (main_loop);
 
 done:
 	nm_print_open_socks ();
 
-	nm_dbus_manager_remove_signal_handler (dbus_mgr, nm_data->nmi_sig_handler_id);
+	if (vpn_manager)
+		nm_vpn_manager_dispose (vpn_manager);
 
 	nm_hal_manager_destroy (hal_manager);
 	nm_policy_destroy (policy);
