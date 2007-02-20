@@ -402,7 +402,6 @@ nm_device_activate (NMDevice *device,
 	nm_act_request_ref (req);
 	priv->act_request = req;
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	nm_device_activate_schedule_stage1_device_prepare (req);
 }
 
@@ -472,7 +471,6 @@ nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_PREPARE);
 	id = g_idle_add (nm_device_activate_stage1_device_prepare, req);
 	self->priv->act_source_id = id;
 
@@ -567,7 +565,6 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_DEVICE_CONFIG);
 	id = g_idle_add (nm_device_activate_stage2_device_config, req);
 	self->priv->act_source_id = id;
 
@@ -680,7 +677,6 @@ nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_START);
 	id = g_idle_add (nm_device_activate_stage3_ip_config_start, req);
 	self->priv->act_source_id = id;
 
@@ -827,7 +823,6 @@ nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
 	id = g_idle_add (nm_device_activate_stage4_ip_config_get, req);
 	self->priv->act_source_id = id;
 
@@ -921,7 +916,6 @@ nm_device_activate_schedule_stage4_ip_config_timeout (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_GET);
 	id = g_idle_add (nm_device_activate_stage4_ip_config_timeout, req);
 	self->priv->act_source_id = id;
 
@@ -1003,7 +997,6 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
 
-	nm_act_request_set_stage (req, NM_ACT_STAGE_IP_CONFIG_COMMIT);
 	id = g_idle_add (nm_device_activate_stage5_ip_config_commit, req);
 	self->priv->act_source_id = id;
 
@@ -1170,48 +1163,6 @@ nm_device_is_activating (NMDevice *device)
 }
 
 
-/*
- * nm_device_is_activated
- *
- * Return whether or not the device is successfully activated.
- *
- */
-gboolean
-nm_device_is_activated (NMDevice *dev)
-{
-	NMActRequest *	req;
-	NMActStage	stage;
-	gboolean		activated = FALSE;
-
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	if (!(req = nm_device_get_act_request (dev)))
-		return FALSE;
-
-	stage = nm_act_request_get_stage (req);
-	switch (stage)
-	{
-		case NM_ACT_STAGE_ACTIVATED:
-			activated = TRUE;
-			break;
-
-		case NM_ACT_STAGE_DEVICE_PREPARE:
-		case NM_ACT_STAGE_DEVICE_CONFIG:
-		case NM_ACT_STAGE_NEED_USER_KEY:
-		case NM_ACT_STAGE_IP_CONFIG_START:
-		case NM_ACT_STAGE_IP_CONFIG_GET:
-		case NM_ACT_STAGE_IP_CONFIG_COMMIT:
-		case NM_ACT_STAGE_FAILED:
-		case NM_ACT_STAGE_CANCELLED:
-		case NM_ACT_STAGE_UNKNOWN:
-		default:
-			break;
-	}
-
-	return activated;
-}
-
-
 gboolean
 nm_device_can_interrupt_activation (NMDevice *self)
 {
@@ -1239,8 +1190,7 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	if (!req)
 		return;
 
-	if (!strcmp (nm_device_get_iface (device), iface) &&
-		nm_act_request_get_stage (req) == NM_ACT_STAGE_IP_CONFIG_START) {
+	if (!strcmp (nm_device_get_iface (device), iface) && nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 		switch (state) {
 		case DHCDBD_BOUND:	/* lease obtained */
 		case DHCDBD_RENEW:	/* lease renewed */

@@ -539,7 +539,7 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	if (state == NM_ACT_STAGE_DEVICE_PREPARE) {
+	if (state == NM_STATE_CONNECTING) {
 		/* A device starts activation, bring all devices down
 		 * Remove this when we support multiple active devices.
 		 */

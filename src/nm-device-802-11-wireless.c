@@ -1916,7 +1916,7 @@ request_wireless_scan (gpointer user_data)
 	 * for the case we lose this connection shortly, it will reach this point and then
 	 * nm_device_is_activated will return FALSE, letting the scan proceed.
 	 */
-	if ((self->priv->num_freqs > 14) && nm_device_is_activated (NM_DEVICE (self)) == TRUE)
+	if (self->priv->num_freqs > 14 && nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED)
 	{
 		nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 		schedule_scan (self);
@@ -2471,7 +2471,7 @@ link_timeout_cb (gpointer user_data)
 	 * ARE checked - we are likely to have wrong key.  Ask the user for
 	 * another one.
 	 */
-	if (   (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG)
+	if ((nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG)
 	    && (ap_is_auth_required (ap, &has_key) && has_key)) {
 		/* Association/authentication failed, we must have bad encryption key */
 		nm_info ("Activation (%s/wireless): disconnected during association,"
@@ -2607,7 +2607,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
 		 */
-		if (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG) {
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG) {
 			NMAccessPoint * ap = nm_act_request_get_ap (req);
 
 			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
@@ -2617,7 +2617,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			nm_device_activate_schedule_stage3_ip_config_start (req);
 		}
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
-		if (nm_device_is_activated (dev) || nm_device_is_activating (dev)) {
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
 			gboolean has_link = nm_device_has_active_link (NM_DEVICE (self));
 
 			/* Start the link timeout so we allow some time for reauthentication */
@@ -3263,7 +3263,7 @@ real_activation_cancel_handler (NMDevice *dev,
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 	parent_class->activation_cancel_handler (dev, req);
 
-	if (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY)
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
 		nm_dbus_cancel_get_user_key_for_network (req);
 
 	cleanup_association_attempt (self, TRUE);
@@ -3273,15 +3273,10 @@ real_activation_cancel_handler (NMDevice *dev,
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
-	NMActRequest *			req;
-	gboolean interrupt = FALSE;
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
+		return TRUE;
 
-	if (   (req = nm_device_get_act_request (dev))
-	    && (nm_act_request_get_stage (req) == NM_ACT_STAGE_NEED_USER_KEY))
-	{
-		interrupt = TRUE;
-	}
-	return interrupt;
+	return FALSE;
 }
 
 
@@ -3360,6 +3355,8 @@ get_property (GObject *object, guint prop_id,
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
 	struct ether_addr hw_addr;
 	char hw_addr_buf[20];
+	NMAccessPoint *ap;
+	NMActRequest *req;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -3375,16 +3372,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, nm_device_802_11_wireless_get_bitrate (device));
 		break;
 	case PROP_ACTIVE_NETWORK:
-		/* FIXME: */
-#if 0
 		req = nm_device_get_act_request (NM_DEVICE (device));
-		if (req && ap = nm_act_request_get_ap (req)) {
+		if (req && (ap = nm_act_request_get_ap (req))) {
 			NMAccessPoint *tmp_ap;
 
 			if ((tmp_ap = nm_device_802_11_wireless_ap_list_get_ap_by_essid (device, nm_ap_get_essid (ap))))
 				g_value_set_object (value, tmp_ap);
 		}
-#endif
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

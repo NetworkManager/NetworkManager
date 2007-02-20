@@ -17,6 +17,10 @@ typedef struct {
 
 typedef struct {
 	NMDeviceClass parent;
+
+	/* Signals */
+	void (*network_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*network_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
 } NMDevice80211WirelessClass;
 
 GType nm_device_802_11_wireless_get_type (void);

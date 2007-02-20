@@ -18,6 +18,9 @@ typedef struct {
 
 typedef struct {
 	DBusGProxyClass parent;
+
+	/* Signals */
+	void (*strength_changed) (NMAccessPoint *ap, gint8 strength);
 } NMAccessPointClass;
 
 GType nm_access_point_get_type (void);

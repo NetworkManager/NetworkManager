@@ -6,6 +6,18 @@
 
 G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 
+enum {
+	NETWORK_ADDED,
+	NETWORK_REMOVED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+static void network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
+static void network_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
+
 static void
 nm_device_802_11_wireless_init (NMDevice80211Wireless *device)
 {
@@ -14,20 +26,63 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless *device)
 static void
 nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
+
+	/* signals */
+	signals[NETWORK_ADDED] =
+		g_signal_new ("network-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_added),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	signals[NETWORK_ADDED] =
+		g_signal_new ("network-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
 }
 
 NMDevice80211Wireless *
 nm_device_802_11_wireless_new (DBusGConnection *connection, const char *path)
 {
+	NMDevice80211Wireless *device;
+	DBusGProxy *proxy;
+
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return (NMDevice80211Wireless *) g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
-												   "name", NM_DBUS_SERVICE,
-												   "path", path, 
-												   "interface", NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-												   "connection", connection,
-												   NULL);
+	device = (NMDevice80211Wireless *) g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
+													 "name", NM_DBUS_SERVICE,
+													 "path", path, 
+													 "interface", NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+													 "connection", connection,
+													 NULL);
+
+	proxy = DBUS_G_PROXY (device);
+
+	dbus_g_proxy_add_signal (proxy, "NetworkAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+								 "NetworkAdded",
+								 G_CALLBACK (network_added_proxy),
+								 NULL,
+								 NULL);
+
+	dbus_g_proxy_add_signal (proxy, "NetworkRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+								 "NetworkRemoved",
+								 G_CALLBACK (network_removed_proxy),
+								 NULL,
+								 NULL);
+
+	return device;
 }
 
 char *
@@ -95,8 +150,10 @@ nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 							  &value)) {
 		DBusGConnection *connection = NULL;
 
+		g_assert (G_VALUE_TYPE (&value) == DBUS_TYPE_G_OBJECT_PATH);
+
 		g_object_get (device, "connection", &connection, NULL);
-		ap = nm_access_point_new (connection, g_value_get_string (&value));
+		ap = nm_access_point_new (connection, (const char *) g_value_get_boxed (&value));
 	}
 
 	return ap;
@@ -148,4 +205,30 @@ nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
 		g_warning ("Error in wireless_activate: %s", err->message);
 		g_error_free (err);
 	}
+}
+
+static void
+network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+{
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (proxy);
+	NMAccessPoint *ap;
+	DBusGConnection *connection = NULL;
+
+	g_object_get (proxy, "connection", &connection, NULL);
+	ap = nm_access_point_new (connection, path);
+	g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
+	g_object_unref (ap);
+}
+
+static void
+network_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+{
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (proxy);
+	NMAccessPoint *ap;
+	DBusGConnection *connection = NULL;
+
+	g_object_get (proxy, "connection", &connection, NULL);
+	ap = nm_access_point_new (connection, path);
+	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
+	g_object_unref (ap);
 }

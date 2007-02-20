@@ -6,6 +6,16 @@
 
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, DBUS_TYPE_G_PROXY)
 
+enum {
+	STRENGTH_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+static void strength_changed_proxy (NMAccessPoint *ap, guchar strength);
+
 static void
 nm_access_point_init (NMAccessPoint *ap)
 {
@@ -14,17 +24,47 @@ nm_access_point_init (NMAccessPoint *ap)
 static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+
+	/* signals */
+	signals[STRENGTH_CHANGED] =
+		g_signal_new ("strength-changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMAccessPointClass, strength_changed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__UCHAR,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_UCHAR);
+
 }
 
 NMAccessPoint *
 nm_access_point_new (DBusGConnection *connection, const char *path)
 {
-	return (NMAccessPoint *) g_object_new (NM_TYPE_ACCESS_POINT,
-										   "name", NM_DBUS_SERVICE,
-										   "path", path, 
-										   "interface", NM_DBUS_INTERFACE_ACCESS_POINT,
-										   "connection", connection,
-										   NULL);
+	NMAccessPoint *ap;
+
+	ap = (NMAccessPoint *) g_object_new (NM_TYPE_ACCESS_POINT,
+										 "name", NM_DBUS_SERVICE,
+										 "path", path, 
+										 "interface", NM_DBUS_INTERFACE_ACCESS_POINT,
+										 "connection", connection,
+										 NULL);
+
+	dbus_g_proxy_add_signal (DBUS_G_PROXY (ap), "StrengthChanged", G_TYPE_UCHAR, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (DBUS_G_PROXY (ap),
+								 "StrengthChanged",
+								 G_CALLBACK (strength_changed_proxy),
+								 NULL,
+								 NULL);
+
+	return ap;
+}
+
+static void
+strength_changed_proxy (NMAccessPoint *ap, guchar strength)
+{
+	g_signal_emit (ap, signals[STRENGTH_CHANGED], 0, strength);
 }
 
 guint32

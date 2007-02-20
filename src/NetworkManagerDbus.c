@@ -41,12 +41,6 @@
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
 
-#if 0
-static char *get_nmi_match_string (const char *owner);
-
-static gpointer nm_dbus_reinit (gpointer user_data);
-#endif
-
 /*
  * nm_dbus_create_error_message
  *
@@ -129,50 +123,6 @@ char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
 	g_free (object_path);
 
 	return escaped_object_path;
-}
-
-
-/*
- * nm_dbus_get_device_from_escaped_object_path
- *
- * Returns the device associated with an _escaped_ dbus object path
- *
- */
-NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char *path)
-{
-	NMDevice *dev = NULL;
-	GSList *	elt;
-
-	g_return_val_if_fail (path != NULL, NULL);
-	g_return_val_if_fail (data != NULL, NULL);
-
-	/* Iterate over the device list looking for the device with the matching object path. */
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
-		char *compare_path;
-		char *escaped_compare_path;
-		int len;
-
-		if (!(dev = NM_DEVICE (elt->data)))
-			continue;
-
-		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev));
-		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
-		g_free (compare_path);
-		len = strlen (escaped_compare_path);
-
-		/* Compare against our constructed path, but ignore any trailing elements */
-		if (    (strncmp (path, escaped_compare_path, len) == 0)
-			&& ((path[len] == '\0' || path[len] == '/')))
-		{
-			g_free (escaped_compare_path);
-			g_object_ref (G_OBJECT (dev));
-			break;
-		}
-		g_free (escaped_compare_path);
-		dev = NULL;
-	}
-
-	return dev;
 }
 
 

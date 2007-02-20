@@ -93,21 +93,21 @@ nm_client_new (void)
 	dbus_g_proxy_connect_signal (proxy,
 								 "StateChange",
 								 G_CALLBACK (client_state_change_proxy),
-								 client,
+								 NULL,
 								 NULL);
 
 	dbus_g_proxy_add_signal (proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (proxy,
 								 "DeviceAdded",
 								 G_CALLBACK (client_device_added_proxy),
-								 client,
+								 NULL,
 								 NULL);
 
 	dbus_g_proxy_add_signal (proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (proxy,
 								 "DeviceRemoved",
 								 G_CALLBACK (client_device_removed_proxy),
-								 client,
+								 NULL,
 								 NULL);
 
 	return client;
@@ -116,7 +116,7 @@ nm_client_new (void)
 static void
 client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (user_data);
+	NMClient *client = NM_CLIENT (proxy);
 
 	g_signal_emit (client, signals[STATE_CHANGE], 0, state);
 }
@@ -124,7 +124,7 @@ client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 static void
 client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (user_data);
+	NMClient *client = NM_CLIENT (proxy);
 	NMDevice *device;
 	DBusGConnection *connection = NULL;
 
@@ -137,7 +137,7 @@ client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 static void
 client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (user_data);
+	NMClient *client = NM_CLIENT (proxy);
 	NMDevice *device;
 	DBusGConnection *connection = NULL;
 

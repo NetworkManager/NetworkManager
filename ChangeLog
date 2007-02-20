@@ -1,3 +1,31 @@
+2007-02-20  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-glib/nm-device-802-11-wireless.c: Add "network-added" and
+	"network-removed" signals.
+
+	* libnm-glib/libnm-glib.pc.in: Require NetworkManager >= 0.7.0.
+
+	* libnm-glib/nm-access-point.c: Add "strength-changed" signal, emit it
+	when receiving the signal from dbus.
+
+	* src/nm-device-802-11-wireless.c (get_property): Fix PROP_ACTIVE_NETWORK
+	property.
+
+	* src/NetworkManagerPolicy.c (state_changed): Fix a typo to make the
+	deactivation of the previously activated device working again.
+
+	* src/nm-activation-request.c: Remove NMActStage property and it's getter
+	and setter.
+
+	* src/nm-device.c (nm_device_is_activated): Remove.
+	state == NM_DEVICE_STATE_ACTIVATED is just as easy to use.
+
+	* include/NetworkManager.h: Remove NM_DBUS_NO_DEVICES_ERROR,
+	NM_DBUS_NO_DIALUP_ERROR, NM_DBUS_NO_NETWORKS_ERROR,
+	NM_DBUS_NO_ACTIVE_DEVICE_ERROR, NM_DBUS_NO_ACTIVE_NET_ERROR errors and
+	NM_DBUS_SIGNAL_STATE_CHANGE signal.
+	Remove NMNetworkStatus and NMActStage enums.
+
 2007-02-19  Tambet Ingo  <tambet@ximian.com>
 
 	* src/vpn-manager/nm-vpn-manager.c: Handle the DBUS state changes itself.

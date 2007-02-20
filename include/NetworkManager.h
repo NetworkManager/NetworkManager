@@ -41,22 +41,7 @@
 #define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
 
 
-/*
- * Some common errors
- */
-#define NM_DBUS_NO_DEVICES_ERROR		"org.freedesktop.NetworkManager.NoDevices"
-#define NM_DBUS_NO_DIALUP_ERROR		"org.freedesktop.NetworkManager.NoDialup"
-#define NM_DBUS_NO_NETWORKS_ERROR		"org.freedesktop.NetworkManager.NoNetworks"
-#define NM_DBUS_NO_ACTIVE_DEVICE_ERROR	"org.freedesktop.NetworkManager.NoActiveDevice"
-#define NM_DBUS_NO_ACTIVE_NET_ERROR	"org.freedesktop.NetworkManager.NoActiveNetwork"
-
 #define NMI_DBUS_USER_KEY_CANCELED_ERROR	"org.freedesktop.NetworkManagerInfo.CanceledError"
-
-
-/*
- * NetworkManager signals
- */
-#define NM_DBUS_SIGNAL_STATE_CHANGE	"StateChange"
 
 
 /*
@@ -136,17 +121,6 @@ typedef enum NMDeviceType
 #define NM_EAP_METHOD_TTLS			0x00000040	/* EAP-TTLS */
 
 /*
- * Wireless network update types
- */
-typedef enum
-{
-	NETWORK_STATUS_DISAPPEARED = 0,
-	NETWORK_STATUS_APPEARED,
-	NETWORK_STATUS_STRENGTH_CHANGED
-} NMNetworkStatus;
-
-
-/*
  * Wireless network types
  */
 typedef enum NMNetworkType
@@ -156,24 +130,6 @@ typedef enum NMNetworkType
 	NETWORK_TYPE_INVALID,
 	NETWORK_TYPE_DEVICE
 } NMNetworkType;
-
-
-/*
- * Device activation stages
- */
-typedef enum NMActStage
-{
-	NM_ACT_STAGE_UNKNOWN = 0,
-	NM_ACT_STAGE_DEVICE_PREPARE,
-	NM_ACT_STAGE_DEVICE_CONFIG,
-	NM_ACT_STAGE_NEED_USER_KEY,
-	NM_ACT_STAGE_IP_CONFIG_START,
-	NM_ACT_STAGE_IP_CONFIG_GET,
-	NM_ACT_STAGE_IP_CONFIG_COMMIT,
-	NM_ACT_STAGE_ACTIVATED,
-	NM_ACT_STAGE_FAILED,
-	NM_ACT_STAGE_CANCELLED
-} NMActStage;
 
 
 /*

@@ -44,9 +44,6 @@ gboolean			nm_act_request_get_user_requested	(NMActRequest *req);
 NMIP4Config *		nm_act_request_get_ip4_config		(NMActRequest *req);
 void				nm_act_request_set_ip4_config		(NMActRequest *req, NMIP4Config *ip4_config);
 
-NMActStage		nm_act_request_get_stage			(NMActRequest *req);
-void				nm_act_request_set_stage			(NMActRequest *req, NMActStage stage);
-
 DBusPendingCall *	nm_act_request_get_user_key_pending_call	(NMActRequest *req);
 void				nm_act_request_set_user_key_pending_call	(NMActRequest *req, DBusPendingCall *pcall);
 

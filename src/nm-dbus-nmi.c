@@ -185,7 +185,6 @@ nm_dbus_get_user_key_for_network (NMActRequest *req,
 		                                    __func__);
 		if (pcall) {
 			nm_act_request_ref (req);
-			nm_act_request_set_stage (req, NM_ACT_STAGE_NEED_USER_KEY);
 			nm_act_request_set_user_key_pending_call (req, pcall);
 		}
 	} else {
