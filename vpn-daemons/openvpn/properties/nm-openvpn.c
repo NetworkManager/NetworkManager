@@ -75,6 +75,13 @@ struct _NetworkManagerVpnUIImpl {
   GtkEntry       *w_username;
   GtkEntry       *w_password_ca;
   GtkButton      *w_button_password_ca;
+  GtkEntry       *w_x509userpass_ca;
+  GtkEntry       *w_x509userpass_cert;
+  GtkEntry       *w_x509userpass_key;
+  GtkEntry       *w_x509userpass_username;
+  GtkButton      *w_button_x509userpass_ca;
+  GtkButton      *w_button_x509userpass_cert;
+  GtkButton      *w_button_x509userpass_key;
   GtkCheckButton *w_use_cipher;
   GtkComboBox    *w_cipher;
   GtkCheckButton *w_use_ta;
@@ -102,6 +109,10 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
   gtk_entry_set_text (impl->w_remote_ip,  "");
   gtk_entry_set_text (impl->w_username,  "");
   gtk_entry_set_text (impl->w_password_ca,  "");
+  gtk_entry_set_text (impl->w_x509userpass_ca,  "");
+  gtk_entry_set_text (impl->w_x509userpass_cert,  "");
+  gtk_entry_set_text (impl->w_x509userpass_key,  "");
+  gtk_entry_set_text (impl->w_x509userpass_username,  "");
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), FALSE);
   gtk_entry_set_text (impl->w_routes, "");
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
@@ -571,16 +582,15 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
   } else if ( connection_type == NM_OPENVPN_CONTYPE_X509USERPASS ) {
 
-    const char *username;
     const char *ca;
     const char *cert;
     const char *key;
+    const char *username;
 
-    username    = gtk_entry_get_text (impl->w_username);
-    ca          = gtk_entry_get_text (impl->w_password_ca);
-    cert                   = gtk_entry_get_text (impl->w_cert);
-    key                    = gtk_entry_get_text (impl->w_key);
-
+    ca          = gtk_entry_get_text (impl->w_x509userpass_ca);
+    cert        = gtk_entry_get_text (impl->w_x509userpass_cert);
+    key         = gtk_entry_get_text (impl->w_x509userpass_key);
+    username    = gtk_entry_get_text (impl->w_x509userpass_username);
 
     if (strlen (username) > 0 &&
 	strlen (ca) > 0 &&
@@ -601,9 +611,9 @@ impl_is_valid (NetworkManagerVpnUI *self)
     const char *cert;
     const char *key;
 
-    ca                     = gtk_entry_get_text (impl->w_ca);
-    cert                   = gtk_entry_get_text (impl->w_cert);
-    key                    = gtk_entry_get_text (impl->w_key);
+    ca          = gtk_entry_get_text (impl->w_ca);
+    cert        = gtk_entry_get_text (impl->w_cert);
+    key         = gtk_entry_get_text (impl->w_key);
 
     /* initial sanity checking */
     if (strlen (ca) > 0 &&
@@ -689,9 +699,33 @@ editable_changed (GtkEditable *editable, gpointer user_data)
   // connection we do not expect the value to change
   if ( GTK_ENTRY (editable) == impl->w_ca ) {
     gtk_entry_set_text ( impl->w_password_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_ca)));
+    gtk_entry_set_text ( impl->w_x509userpass_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_ca)));
   } else if ( GTK_ENTRY (editable) == impl->w_password_ca ) {
     gtk_entry_set_text ( impl->w_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_password_ca)));
+    gtk_entry_set_text ( impl->w_x509userpass_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_password_ca)));
+  } else if ( GTK_ENTRY (editable) == impl->w_x509userpass_ca ) {
+    gtk_entry_set_text ( impl->w_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_x509userpass_ca)));
+    gtk_entry_set_text ( impl->w_password_ca, gtk_entry_get_text (GTK_ENTRY (impl->w_x509userpass_ca)));
   }
+
+  if ( GTK_ENTRY (editable) == impl->w_cert ) {
+    gtk_entry_set_text ( impl->w_x509userpass_cert, gtk_entry_get_text (GTK_ENTRY (impl->w_cert)));
+  } else if ( GTK_ENTRY (editable) == impl->w_x509userpass_cert ) {
+    gtk_entry_set_text ( impl->w_cert, gtk_entry_get_text (GTK_ENTRY (impl->w_x509userpass_cert)));
+  }
+
+  if ( GTK_ENTRY (editable) == impl->w_key ) {
+    gtk_entry_set_text ( impl->w_x509userpass_key, gtk_entry_get_text (GTK_ENTRY (impl->w_key)));
+  } else if ( GTK_ENTRY (editable) == impl->w_x509userpass_key ) {
+    gtk_entry_set_text ( impl->w_key, gtk_entry_get_text (GTK_ENTRY (impl->w_x509userpass_key)));
+  }
+
+  if ( GTK_ENTRY (editable) == impl->w_username ) {
+    gtk_entry_set_text ( impl->w_x509userpass_username, gtk_entry_get_text (GTK_ENTRY (impl->w_username)));
+  } else if ( GTK_ENTRY (editable) == impl->w_x509userpass_username ) {
+    gtk_entry_set_text ( impl->w_username, gtk_entry_get_text (GTK_ENTRY (impl->w_x509userpass_username)));
+  }
+
 }
 
 
@@ -809,7 +843,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
     break;
 
   case NM_OPENVPN_CONTYPE_X509USERPASS:
-    ca = gtk_entry_get_text (impl->w_ca);
+    ca = gtk_entry_get_text (impl->w_x509userpass_ca);
 
     g_string_append (buf, _("Connection Type: X.509 with Password Authentication"));
 
@@ -945,8 +979,11 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
 	  gtk_entry_set_text (impl->w_ca, ca);
 	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_x509userpass_ca, ca);
 	  gtk_entry_set_text (impl->w_cert, cert);
+	  gtk_entry_set_text (impl->w_x509userpass_cert, cert);
 	  gtk_entry_set_text (impl->w_key, key);
+	  gtk_entry_set_text (impl->w_x509userpass_key, key);
           connection_type_sel = NM_OPENVPN_CONTYPE_X509;
 	} else {
 	  file_is_good = FALSE;
@@ -973,8 +1010,10 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	     (strlen(username) > 0) ) {
 
 	  gtk_entry_set_text (impl->w_username, username);
-	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_x509userpass_username, username);
 	  gtk_entry_set_text (impl->w_ca, ca);
+	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_x509userpass_ca, ca);
           connection_type_sel = NM_OPENVPN_CONTYPE_PASSWORD;
 	} else {
 	  file_is_good = FALSE;
@@ -991,11 +1030,13 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
 	  gtk_entry_set_text (impl->w_ca, ca);
 	  gtk_entry_set_text (impl->w_password_ca, ca);
+	  gtk_entry_set_text (impl->w_x509userpass_ca, ca);
 	  gtk_entry_set_text (impl->w_cert, cert);
+	  gtk_entry_set_text (impl->w_x509userpass_cert, cert);
 	  gtk_entry_set_text (impl->w_key, key);
+	  gtk_entry_set_text (impl->w_x509userpass_key, key);
 	  gtk_entry_set_text (impl->w_username, username);
-	  gtk_entry_set_text (impl->w_password_ca, ca);
-	  gtk_entry_set_text (impl->w_ca, ca);
+	  gtk_entry_set_text (impl->w_x509userpass_username, username);
           connection_type_sel = NM_OPENVPN_CONTYPE_X509USERPASS;
 	} else {
 	  file_is_good = FALSE;
@@ -1150,36 +1191,15 @@ connection_type_changed (GtkComboBox *box, gpointer user_data)
   case NM_OPENVPN_CONTYPE_X509:
   case NM_OPENVPN_CONTYPE_SHAREDKEY:
   case NM_OPENVPN_CONTYPE_PASSWORD:
+  case NM_OPENVPN_CONTYPE_X509USERPASS:
   {
     gtk_notebook_set_current_page( impl->w_settings_notebook, sel );
-    for (i = NM_OPENVPN_CONTYPE_X509; i <= NM_OPENVPN_CONTYPE_PASSWORD; ++i) {
+    for (i = NM_OPENVPN_CONTYPE_X509; i <= NM_OPENVPN_CONTYPE_X509USERPASS; ++i) {
       GtkWidget *tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook), i));
       gtk_widget_set_sensitive( tab, (i == sel));
       gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), (i == sel));
     }
   }
-  break;
-  case NM_OPENVPN_CONTYPE_X509USERPASS:
-  {
-    GtkWidget *tab;
-
-    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						  NM_OPENVPN_CONTYPE_X509));
-    gtk_widget_set_sensitive( tab, TRUE);
-    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
-
-    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						  NM_OPENVPN_CONTYPE_SHAREDKEY));
-    gtk_widget_set_sensitive( tab, FALSE);
-    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), FALSE);
-
-    tab = GTK_WIDGET ( gtk_notebook_get_nth_page( GTK_NOTEBOOK (impl->w_settings_notebook),
-						  NM_OPENVPN_CONTYPE_PASSWORD));
-    gtk_widget_set_sensitive( tab, TRUE);
-    gtk_widget_set_sensitive( GTK_WIDGET ( gtk_notebook_get_tab_label( GTK_NOTEBOOK (impl->w_settings_notebook), tab) ), TRUE);
-
-  }
-  gtk_notebook_set_current_page( impl->w_settings_notebook, NM_OPENVPN_CONTYPE_X509 );
   break;
   }
 }
@@ -1211,6 +1231,15 @@ open_button_clicked (GtkButton *button, gpointer user_data)
   } else if ( button == impl->w_button_password_ca ) {
     msg = _("Select CA to use");
     entry = impl->w_password_ca;
+  } else if ( button == impl->w_button_x509userpass_ca ) {
+    msg = _("Select CA to use");
+    entry = impl->w_x509userpass_ca;
+  } else if ( button == impl->w_button_x509userpass_cert ) {
+    msg = _("Select certificate to use");
+    entry = impl->w_x509userpass_cert;
+  } else if ( button == impl->w_button_x509userpass_key ) {
+    msg = _("Select key to use");
+    entry = impl->w_x509userpass_key;
   } else if ( button == impl->w_button_ta ) {
     msg = _("Select TA to use");
     entry = impl->w_ta;
@@ -1544,6 +1573,15 @@ impl_get_object (void)
     impl->w_password_ca            = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-password-ca" ) );
     impl->w_button_password_ca     = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-password-but-ca" ) );
 
+    impl->w_x509userpass_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-ca" ) );
+    impl->w_x509userpass_cert                   = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-cert" ) );
+    impl->w_x509userpass_key                    = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-key" ) );
+    impl->w_x509userpass_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-username" ) );
+
+    impl->w_button_x509userpass_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-ca" ) );
+    impl->w_button_x509userpass_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-cert" ) );
+    impl->w_button_x509userpass_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-key" ) );
+
     impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
     impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
     populate_cipher(impl->w_cipher);
@@ -1589,6 +1627,14 @@ impl_get_object (void)
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_password_ca),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_ca),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_cert),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_key),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_username),
+			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_ta),
 			"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
@@ -1601,6 +1647,12 @@ impl_get_object (void)
     gtk_signal_connect (GTK_OBJECT (impl->w_button_shared_key),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_button_password_ca),
+			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_ca),
+			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_cert),
+			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+    gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_key),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
     gtk_signal_connect (GTK_OBJECT (impl->w_button_ta),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
