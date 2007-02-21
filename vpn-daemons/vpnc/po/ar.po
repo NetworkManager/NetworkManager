@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-11-17 21:14+0000\n"
-"PO-Revision-Date: 2007-02-09 15:56+0200\n"
-"Last-Translator: Khaled Hosny <khaledhosny@eglug.org>\n"
+"POT-Creation-Date: 2007-02-21 13:50+0000\n"
+"PO-Revision-Date: 2007-02-21 15:50+0100\n"
+"Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -20,27 +20,27 @@ msgstr ""
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_كلمة سر ثانوية:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:267
+#: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
 msgstr "ا_سم المستخدم:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:269
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "ال_نطاق:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:271
+#: ../auth-dialog/gnome-two-password-dialog.c:262
 msgid "_Password:"
 msgstr "_كلمة السر:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:354
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
 msgstr "اتصل كشخص م_جهول"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:359
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
 msgstr "اتصل _كمستخدم:"
 
@@ -167,70 +167,85 @@ msgid "Failed to save file %s"
 msgstr "فشب حفظ الملف %s"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Information</b>"
+msgstr "<b>معلومات الإتصال</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Connection Name</b>"
 msgstr "<b>اسم الإتصال</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Required Information</b>"
-msgstr "<b>معلومات مطلوبة</b>"
-
 #: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required</b>"
+msgstr "مطلوب"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Connection Name"
+msgstr "اسم الإتصال"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "G_roup Name:"
 msgstr "اسم الم_جمعة:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "O_ptional Information"
-msgstr "معلومات ا_ختيارية"
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو \"Corporate Network\""
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "خياري"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
 msgstr "تخطّى اسم ال_مستخدم"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
 msgstr "من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا حيث أنك ستسأل عنها عند الإتصال."
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid "Please note that the file you import is not a Cisco VPN or VPNC configuration file. Ask your adminstrator for the file."
+msgstr "ملاحظة: الملف الذي تريد استيراده ليس ملف VPN أو VPNC. اتصل بالمدير حول هذا الملف."
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
 msgstr "استخدم ال_نطاق للتوثّق"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "ال_بوّابة:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:14
 msgid "_Import Saved Configuration..."
 msgstr "ا_ستورد اعدادات محفوظة..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو \"Corporate Network\""
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "_Only use VPN connection for these addresses"
 msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
 
-#: ../src/nm-vpnc-service.c:117
+#: ../src/nm-vpnc-service.c:118
 msgid "The VPN login failed because the user name and password were not accepted."
 msgstr "فشل ولوج VPN لأن اسم المستخدم أو كلمة السر لم تُقبل."
 
-#: ../src/nm-vpnc-service.c:119
+#: ../src/nm-vpnc-service.c:120
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكن بدأه."
 
-#: ../src/nm-vpnc-service.c:121
+#: ../src/nm-vpnc-service.c:122
 msgid "The VPN login failed because the VPN program could not connect to the VPN server."
 msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكنه الإتصال بخادم VPN."
 
-#: ../src/nm-vpnc-service.c:123
+#: ../src/nm-vpnc-service.c:124
 msgid "The VPN login failed because the VPN configuration options were invalid."
 msgstr "فشل ولوج VPN لأن خيارات اعدادات VPN غير صالحة."
 
-#: ../src/nm-vpnc-service.c:125
+#: ../src/nm-vpnc-service.c:126
 msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
 msgstr "فشل ولوج VPN لأن برنامج VPN لم يتلقى اعدادات صالحة من خادم VPN."
+
+#~ msgid "O_ptional Information"
+#~ msgstr "معلومات ا_ختيارية"
 
