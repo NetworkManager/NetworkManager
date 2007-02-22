@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-02 06:44+0200\n"
-"PO-Revision-Date: 2007-02-02 05:42+0200\n"
+"POT-Creation-Date: 2007-02-23 00:49+0200\n"
+"PO-Revision-Date: 2007-02-23 00:48+0200\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
@@ -167,30 +167,46 @@ msgid "Failed to save file %s"
 msgstr "Неуспех при запазването на файла „%s“"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Information</b>"
+msgstr "<b>Информация за връзката</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Connection Name</b>"
 msgstr "<b>Име на връзката</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Required Information</b>"
-msgstr "<b>Задължителна информация</b>"
-
 #: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required</b>"
+msgstr "<b>Задължителна</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Connection Name"
+msgstr "Име на връзката"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "G_roup Name:"
 msgstr "Име на _групата:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "O_ptional Information"
-msgstr "_Незадължителна информация"
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Име, което се ползва за различаването на връзката към частната мрежа, напр. "
+"„Корпоративна мрежа“."
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "Незадължителна"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
 msgstr "Задаване на друго _потребителско име"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -198,27 +214,27 @@ msgstr ""
 "Въведете отдолу информацията предоставена от системния ви администратор. Не "
 "въвеждайте паролата си. За нея ще бъдете запитани при свързване."
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"Please note that the file you import is not a Cisco VPN or VPNC "
+"configuration file. Ask your adminstrator for the file."
+msgstr ""
+"Файлът, който внесохте, не е файл с настройки за ВЧМ на Cisco (VPNC). "
+"Помолете системния си администратор да ви предостави такъв файл."
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
 msgstr "Използване на _домейн за идентификацията"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "_Шлюз:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:14
 msgid "_Import Saved Configuration..."
 msgstr "_Внасяне на запазени настройки..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Име, което се ползва за различаването на връзката към частната мрежа, напр. "
-"„Корпоративна мрежа“."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "_Only use VPN connection for these addresses"
 msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
 
