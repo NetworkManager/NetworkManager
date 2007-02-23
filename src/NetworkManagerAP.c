@@ -912,12 +912,14 @@ static guint32 add_capabilities_from_cipher (guint32 caps, int cipher)
 {
 	if (cipher & IW_AUTH_CIPHER_WEP40)
 	{
-		caps |= (NM_802_11_CAP_PROTO_WEP & NM_802_11_CAP_CIPHER_WEP40);
+		caps |= NM_802_11_CAP_PROTO_WEP;
+		caps |= NM_802_11_CAP_CIPHER_WEP40;
 		caps &= ~NM_802_11_CAP_PROTO_NONE;
 	}
 	if (cipher & IW_AUTH_CIPHER_WEP104)
 	{
-		caps |= (NM_802_11_CAP_PROTO_WEP & NM_802_11_CAP_CIPHER_WEP104);
+		caps |= NM_802_11_CAP_PROTO_WEP;
+		caps |= NM_802_11_CAP_CIPHER_WEP104;
 		caps &= ~NM_802_11_CAP_PROTO_NONE;
 	}
 	if (cipher & IW_AUTH_CIPHER_TKIP)

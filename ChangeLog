@@ -1,3 +1,11 @@
+2007-02-23  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Andy Whitcroft <apw@shadowen.org> (Gnome.org #410426)
+
+	* src/NetworkManagerAP.c
+		- (add_capabilities_from_cipher): fix addition of WEP capabilities by
+			OR-ing rather than AND-ing
+
 2007-02-20  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-device-802-11-wireless.c: Add "network-added" and
