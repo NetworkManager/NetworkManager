@@ -53,6 +53,7 @@ static const char *vpnc_binary_paths[] =
 {
 	"/usr/sbin/vpnc",
 	"/sbin/vpnc",
+	"/usr/local/sbin/vpnc",
 	NULL
 };
 
