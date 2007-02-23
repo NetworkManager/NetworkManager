@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-13 18:25+0000\n"
-"PO-Revision-Date: 2007-01-13 16:59-0300\n"
+"POT-Creation-Date: 2007-01-13 19:02+0000\n"
+"PO-Revision-Date: 2007-02-23 00:17-0300\n"
 "Last-Translator: Raphael Higino <phhigino@gmail.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
@@ -49,6 +49,11 @@ msgid ""
 "\n"
 "Please select an appropriate authentication type and provide the necessary credentials below:\n"
 msgstr ""
+"<span weight=\"bold\" size=\"larger\">Informações de Autenticação</span>\n"
+"\n"
+"A conexão '%s' pode precisar de alguma forma de autenticação.\n"
+"\n"
+"Por favor, selecione um tipo apropriado de autenticação e forneça as credenciais necessárias abaixo:\n"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:8
 msgid "Authentication Required"
@@ -73,19 +78,16 @@ msgid "_Username:"
 msgstr "Nome do _usuário:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:15
-#, fuzzy
 msgid "auth-chap-window"
-msgstr "Definir o ícone da janela"
+msgstr "auth-chap-window"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:16
-#, fuzzy
 msgid "auth-mschapv2-window"
-msgstr "Definir o ícone da janela"
+msgstr "auth-mschapv2-window"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:17
-#, fuzzy
 msgid "auth-none-window"
-msgstr "Definir o ícone da janela"
+msgstr "auth-none-window"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:147
 msgid "_Secondary Password:"
@@ -109,15 +111,15 @@ msgstr "_Lembrar a senha para esta sessão"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save password in keyring"
-msgstr "Salvar a senha no chaveiro"
+msgstr "_Salvar senha no chaveiro"
 
 #: ../nm-ppp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
-msgstr ""
+msgstr "Adicione, remova e edite conexões VPN"
 
 #: ../nm-ppp.desktop.in.h:2
 msgid "VPN Connection Manager (PPP generic)"
-msgstr ""
+msgstr "Gerenciador de Conexões VPN (PPP genérico)"
 
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
@@ -132,9 +134,8 @@ msgid "<b>Connection Name</b>"
 msgstr "<b>Nome da conexão</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
-#, fuzzy
 msgid "<b>Delays and TImeouts</b>"
-msgstr "<b>Temporizadores e Atrasos</b>"
+msgstr "<b>Atrasos e Tempo Esgotado</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>Encryption</b>"
@@ -145,9 +146,8 @@ msgid "<b>IP Options</b>"
 msgstr "<b>Opções de IP</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:7
-#, fuzzy
 msgid "<b>Packet Parameters</b>"
-msgstr "Parâmetros inválidos"
+msgstr "<b>Parâmetros dos pacotes</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:8
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -155,17 +155,15 @@ msgstr "<i>exemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-ppp-dialog.glade.h:9
 msgid "A list of extra options to pppd as would be typed on the command line"
-msgstr ""
+msgstr "Uma lista de opções extra para o pppd como seriam digitadas na linha de comando"
 
 #: ../properties/nm-ppp-dialog.glade.h:10
-#, fuzzy
 msgid "Allow BSD Compression"
-msgstr "Nível de compressão do PNG:"
+msgstr "Permitir compressão BSD"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
-#, fuzzy
 msgid "Allow Deflate compression"
-msgstr "Nível de compressão do PNG:"
+msgstr "Permitir compressão Deflate"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
 msgid "Authenticate Peer"
@@ -189,57 +187,52 @@ msgstr "Saída de depuração"
 
 #: ../properties/nm-ppp-dialog.glade.h:17
 msgid "Disconnect after this many LCP echo requests fail"
-msgstr ""
+msgstr "Desconectar após esta quantidade de falhas nos pedidos de eco LCP"
 
 #: ../properties/nm-ppp-dialog.glade.h:18
 #: ../properties/nm-ppp-properties.c:216
-#, fuzzy
 msgid "Enable stateful MPPE"
-msgstr "Habilitar 'Início rápido'"
+msgstr "Habilitar MPPE com estados"
 
 #: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Exclusive device access (UUCP-style lock)"
-msgstr ""
+msgstr "Acesso exclusivo ao dispositivo (trava ao estilo UUCP)"
 
 #: ../properties/nm-ppp-dialog.glade.h:20
-#, fuzzy
 msgid "Find Device"
-msgstr "Dispositivo de saída:"
+msgstr "Localizar Dispositivo"
 
 #: ../properties/nm-ppp-dialog.glade.h:21
 msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
-msgstr ""
+msgstr "Por razões de segurança, as opções definidas na caixa abaixo são verificadas contra uma lista de opções permitidas antes que uma conexão seja estabecida. Atualmente não há nenhuma opção na lista."
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "GPRS Options"
 msgstr "Opções de GPRS"
 
 #: ../properties/nm-ppp-dialog.glade.h:23
-#, fuzzy
 msgid "Hardware RTS/CTS"
-msgstr "Volume de dispositivo de hardware"
+msgstr "Hardware RTS/CTS"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
 msgid "Host name or IP address of the PPTP server"
-msgstr ""
+msgstr "Nome da máquina ou endereço IP do servidor PPTP"
 
 #: ../properties/nm-ppp-dialog.glade.h:25
 msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr ""
+msgstr "Se a compressão BSD não for permitida, a opção 'nobsdcomp' é passada ao pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
 msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr ""
+msgstr "Se a compressão Deflate não for permitida, a opção 'nodefate' é passada ao pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:27
-#, fuzzy
 msgid "Maximum Receive Unit"
-msgstr "Unidade Organizacional (OU)"
+msgstr "Unidade máxima de recepção"
 
 #: ../properties/nm-ppp-dialog.glade.h:28
-#, fuzzy
 msgid "Maximum Transmit Unit"
-msgstr "Unidade Organizacional (OU)"
+msgstr "Unidade máxima de transmissão"
 
 #: ../properties/nm-ppp-dialog.glade.h:29
 msgid "Modem Connection"
@@ -251,7 +244,7 @@ msgstr "Opções de PPP"
 
 #: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Peer DNS through tunnel"
-msgstr ""
+msgstr "DNS do ponto através do túnel"
 
 #: ../properties/nm-ppp-dialog.glade.h:32
 #: ../properties/nm-ppp-properties.c:251
@@ -269,56 +262,51 @@ msgstr "Recusar MS CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:35
 msgid "Require 128 bit MPPE encryption"
-msgstr ""
+msgstr "Exigir criptografia MPPE de 128 bits"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require Explicit IP Addr"
-msgstr ""
+msgstr "Exigir endereço IP explícito"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
-#, fuzzy
 msgid "Require MPPC Compression"
-msgstr "Nível de compressão do PNG:"
+msgstr "Exigir compressão MPPC"
 
 #: ../properties/nm-ppp-dialog.glade.h:38
-#, fuzzy
 msgid "Require MPPE encryption"
-msgstr "Exige que os clientes usem criptografia"
+msgstr "Exigir criptografia MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:39
-#, fuzzy
 msgid "Requires existing network connection"
-msgstr "“%s” Requer uma Conexão Criptografada"
+msgstr "Exige uma conexão de rede existente"
 
 #: ../properties/nm-ppp-dialog.glade.h:40
-#, fuzzy
 msgid "Routing"
-msgstr "Informações da Tabela de Roteamento"
+msgstr "Roteamento"
 
 #: ../properties/nm-ppp-dialog.glade.h:41
-#, fuzzy
 msgid "Serial Options"
-msgstr "Opções gerais"
+msgstr "Opções seriais"
 
 #: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
-msgstr ""
+msgstr "Ponto de acesso GPRS do provedor a partir do dispositivo de configuração"
 
 #: ../properties/nm-ppp-dialog.glade.h:43
-#, fuzzy
 msgid "Service providers IP address"
-msgstr "Endereço do detector de IP público"
+msgstr "Endereço IP do provedor"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
-#, fuzzy
 msgid "Telephone number to dial"
-msgstr "O número de linhas a preencher"
+msgstr "Número de telefone para discar"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
 "This is the friendly name that will be used to identify this network connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
 msgstr ""
+"Este é o nome amigável que será usado para identificar essa conexão de rede, \n"
+"p. ex. \"VPN do Campus\" ou \"Rede Corporativa\""
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
@@ -330,45 +318,44 @@ msgstr "Tipo:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
 #: ../properties/nm-ppp-properties.c:201
-#, fuzzy
 msgid "Use Peer DNS"
-msgstr "Introdução de peer completa"
+msgstr "Usar DNS do ponto"
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr ""
+msgstr "Quando marcado, a opção \"refuse-chap\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:51
 msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr ""
+msgstr "Quando marcado, a opção \"refuse-eap\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:52
 msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr ""
+msgstr "Quando marcado, a opção \"refuse-mschap\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:53
 msgid "When checked the 'lock' option is passed to pppd"
-msgstr ""
+msgstr "Quando marcado, a opção \"lock\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:54
 msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr ""
+msgstr "Quando marcado, a opção \"require-mppc\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:55
 msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
-msgstr ""
+msgstr "Quando marcado, isto ativa a opção \"debug\" do pppd e adiciona alguma informação extra do plug-in NetworkManager"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr ""
+msgstr "Quando marcado, isto ativa a opção \"noipdefault\" do pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr ""
+msgstr "Quando marcado, isto ativa a opção \"usepeerdns\" do pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr ""
+msgstr "Quando desmarcado, a opção \"noauth\" é passada ao pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Access Point Name:"
@@ -383,9 +370,8 @@ msgid "_Context Num"
 msgstr "Número de _contexto"
 
 #: ../properties/nm-ppp-dialog.glade.h:62
-#, fuzzy
 msgid "_Custom PPP options:"
-msgstr "Exibir opções gerais"
+msgstr "Opções PPP _personalizadas:"
 
 #: ../properties/nm-ppp-dialog.glade.h:63
 msgid "_Device Address:"
@@ -405,7 +391,7 @@ msgstr "_Importar configuração salva..."
 
 #: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "Usar _apenas conexões VPN para estes endereços"
 
 #: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Packet Type"
@@ -416,22 +402,20 @@ msgid "_Telephone Number:"
 msgstr "Número de _telefone:"
 
 #: ../properties/nm-ppp-dialog.glade.h:70
-#, fuzzy
 msgid "connect-delay"
-msgstr "Atraso Inicial:"
+msgstr "atraso-de-conexão"
 
 #: ../properties/nm-ppp-properties.c:45
 msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr ""
+msgstr "túnel pppd (PPTP, BTGPRS, Discada)"
 
 #: ../properties/nm-ppp-properties.c:134
 msgid "Name"
 msgstr "Nome"
 
 #: ../properties/nm-ppp-properties.c:146
-#, fuzzy
 msgid "PPTP Server"
-msgstr "O servidor STUN"
+msgstr "Servidor PPTP"
 
 #: ../properties/nm-ppp-properties.c:151
 msgid "Telephone Number"
@@ -446,27 +430,24 @@ msgid "Bluetooth Channel"
 msgstr "Canal Bluetooth"
 
 #: ../properties/nm-ppp-properties.c:166
-#, fuzzy
 msgid "GPRS APN"
-msgstr "Opções de GPRS"
+msgstr "APN GPRS"
 
 #: ../properties/nm-ppp-properties.c:171
 msgid "GPRS IP"
 msgstr "IP GPRS"
 
 #: ../properties/nm-ppp-properties.c:176
-#, fuzzy
 msgid "GPRS Context No."
-msgstr "Nenhum contexto disponível para a fonte '%s'"
+msgstr "Número de contexto GPRS"
 
 #: ../properties/nm-ppp-properties.c:181
-#, fuzzy
 msgid "GPRS Packet Type"
-msgstr "O arquivo é do tipo: %s"
+msgstr "Tipo de pacote GPRS"
 
 #: ../properties/nm-ppp-properties.c:186
 msgid "Use CTS/RTS flow control"
-msgstr ""
+msgstr "Usar controle de fluxo CTS/RTS"
 
 #: ../properties/nm-ppp-properties.c:191
 msgid "Connect via a modem"
@@ -474,89 +455,80 @@ msgstr "Conectar via modem"
 
 #: ../properties/nm-ppp-properties.c:196
 msgid "Require IP to be provided"
-msgstr ""
+msgstr "Exigir que um IP seja fornecido"
 
 #: ../properties/nm-ppp-properties.c:206
-#, fuzzy
 msgid "Use MPPE encryption"
-msgstr "Exige que os clientes usem criptografia"
+msgstr "Usar criptografia MPPE"
 
 #: ../properties/nm-ppp-properties.c:211
 msgid "Use 128 bit MPPE encryption"
-msgstr ""
+msgstr "Usar criptografia MPPE de 128 bits"
 
 #: ../properties/nm-ppp-properties.c:221
-#, fuzzy
 msgid "Use MPPC compression"
-msgstr "Nível de compressão do PNG:"
+msgstr "Usar compressão MPPC"
 
 #: ../properties/nm-ppp-properties.c:226
-#, fuzzy
 msgid "Do not use deflate compression"
-msgstr "Não usar servidor WINS"
+msgstr "Não usar compressão deflate"
 
 #: ../properties/nm-ppp-properties.c:231
-#, fuzzy
 msgid "Do not use BSD compression"
-msgstr "Não usar servidor WINS"
+msgstr "Não usar compressão BSD"
 
 #: ../properties/nm-ppp-properties.c:236
 msgid "Exclusive device access by pppd"
-msgstr ""
+msgstr "Acesso exclusivo ao dispositivo pelo pppd"
 
 #: ../properties/nm-ppp-properties.c:241
-#, fuzzy
 msgid "Authenticate remote peer"
-msgstr "Introdução de peer completa"
+msgstr "Autenticar ponto remoto"
 
 #: ../properties/nm-ppp-properties.c:256
-#, fuzzy
 msgid "Refuse MSCHAP"
-msgstr "Recusar CHAP"
+msgstr "Recusar MSCHAP"
 
 #: ../properties/nm-ppp-properties.c:261
 msgid "Maximum transmit unit (in bytes)"
-msgstr ""
+msgstr "Unidade de transmissão máxima (em bytes)"
 
 #: ../properties/nm-ppp-properties.c:266
 msgid "Maximum receive unit (in bytes)"
-msgstr ""
+msgstr "Unidade de recepção máxima (em bytes)"
 
 #: ../properties/nm-ppp-properties.c:271
 msgid "Number of failed LCP echos to cause disconnect"
-msgstr ""
+msgstr "Número de ecos LCP falhos para causar disconexão"
 
 #: ../properties/nm-ppp-properties.c:276
 msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr ""
+msgstr "Intervalo (em segundos) para emitir ecos LCP"
 
 #: ../properties/nm-ppp-properties.c:281
 msgid "Interval (in milliseconds) to wait before connecting."
-msgstr ""
+msgstr "Intervalo (em milissegundos) para esperar antes de conectar."
 
 #: ../properties/nm-ppp-properties.c:286
-#, fuzzy
 msgid "Custom PPP options"
-msgstr "Exibir opções gerais"
+msgstr "Opções PPP personalizadas"
 
 #: ../properties/nm-ppp-properties.c:296
 msgid "Use Peer DNS over the Tunnel"
-msgstr ""
+msgstr "Usar DNS do ponto no túnel"
 
 #: ../properties/nm-ppp-properties.c:302
-#, fuzzy
 msgid "Specific networks available"
-msgstr "Codecs de Áudio Disponíveis"
+msgstr "Redes específicas disponíveis"
 
 #: ../properties/nm-ppp-properties.c:308
-#, fuzzy
 msgid "Limit to specific networks"
-msgstr "Vai para uma linha específica"
+msgstr "Limitar a redes específicas"
 
 #: ../properties/vpnui_impl.c:229
-#, fuzzy, c-format
+#, c-format
 msgid "The following '%s' connection will be created:"
-msgstr "A pasta não pôde ser criada"
+msgstr "A seguinte conexão \"%s\" será criada:"
 
 #: ../properties/vpnui_impl.c:242
 #, c-format
@@ -565,7 +537,7 @@ msgstr "\t%s:  %s\n"
 
 #: ../properties/vpnui_impl.c:245
 msgid "The connection details can be changed using the \"Back\" button."
-msgstr ""
+msgstr "Os detalhes da conexão podem ser alterados usando o botão \"Voltar\"."
 
 #: ../properties/vpnui_impl.c:317
 msgid "Select file to import"
