@@ -1,5 +1,12 @@
 2007-02-23  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Volker Braun <volker.braun@physik.hu-berlin.de>
+
+	* NetworkManager.pc.in
+		- Add 'libnm-util' to Requires
+
+2007-02-23  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Andy Whitcroft <apw@shadowen.org> (Gnome.org #410426)
 
 	* src/NetworkManagerAP.c
