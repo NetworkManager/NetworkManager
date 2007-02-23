@@ -1,3 +1,14 @@
+2007-02-23  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Loic Minier <lool+gnome@via.ecp.fr> (Gnome.org #411155)
+
+	* configure.in
+		- Fix up AC_SUBST clutter
+		- Get GObject library link flags
+
+	* gnome/libnm_glib/Makefile.am
+		- Link with GObject link flags
+
 2007-02-12  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Helmut Schaa <hschaa@suse.de>

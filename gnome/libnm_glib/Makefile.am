@@ -5,6 +5,7 @@ lib_LTLIBRARIES=libnm_glib.la
 libnm_glib_la_CPPFLAGS =			\
 	$(DBUS_CFLAGS)				\
 	$(GTHREAD_CFLAGS)			\
+	$(GOBJECT_CFLAGS)				\
 	-DDBUS_API_SUBJECT_TO_CHANGE
 
 libnm_glib_la_SOURCES=	\
@@ -13,7 +14,8 @@ libnm_glib_la_SOURCES=	\
 
 libnm_glib_la_LDFLAGS=	\
 	$(DBUS_LIBS)		\
-	$(GTHREAD_LIBS)
+	$(GTHREAD_LIBS)	\
+	$(GOBJECT_LIBS)
 
 libnm_glib_la_LIBADD = $(top_builddir)/utils/libnmutils.la 
 
