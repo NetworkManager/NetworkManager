@@ -1,0 +1,642 @@
+# GNOME NetworkManager - PPTP klient
+#
+# Copyright (C) 2007 The GNOME Project.
+# This file is distributed under the same license as the epiphany package.
+#
+# Priit Laes <amd@store20.com>, 2007.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-pptp\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-02 04:49+0000\n"
+"PO-Revision-Date: 2007-02-25 15:58+0200\n"
+"Last-Translator: Priit Laes <plaes@plaes.org>\n"
+"Language-Team: Estonian <gnome-et@linux.ee>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
+#, fuzzy
+msgid "Authentication Type:"
+msgstr "Autentimise tüüp"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+#, fuzzy
+msgid "_Remember for this session"
+msgstr "Parooli meeldejätmine selle seansi ajaks"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+#, fuzzy
+msgid "_Save in keyring"
+msgstr "Parooli salvestamine võtmerõngasse"
+
+#: ../auth-dialog-general/main.c:48
+#: ../auth-dialog/main.c:140
+#, fuzzy, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr ""
+"Sa pead \"%s\" ligipääsuks sisse logima.\n"
+"%s"
+
+#: ../auth-dialog-general/main.c:51
+#: ../auth-dialog/main.c:141
+#, fuzzy
+msgid "Authenticate Connection"
+msgstr "Ühendus tühistatud"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary credentials below:\n"
+msgstr ""
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+#, fuzzy
+msgid "Authentication Required"
+msgstr "Autentimine on vajalik"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+#, fuzzy
+msgid "_Authentication Type:"
+msgstr "Autentimise tüüp"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+#, fuzzy
+msgid "_Password:"
+msgstr "_Parool:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+#, fuzzy
+msgid "_Remote name:"
+msgstr "Nimi Puudub"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Kasutajanimi:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
+#, fuzzy
+msgid "auth-chap-window"
+msgstr "Sulgeb käesoleva akna"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
+#, fuzzy
+msgid "auth-mschapv2-window"
+msgstr "Sulgeb käesoleva akna"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
+#, fuzzy
+msgid "auth-none-window"
+msgstr "Puudub (samasse aknasse)"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+#, fuzzy
+msgid "_Secondary Password:"
+msgstr "%s - Vajalik on parool"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+#, fuzzy
+msgid "_Domain:"
+msgstr "_Domeen:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+#, fuzzy
+msgid "Connect _anonymously"
+msgstr "Ühendu _anonüümselt"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+#, fuzzy
+msgid "Connect as _user:"
+msgstr "Ühendu ka_sutajana:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+#, fuzzy
+msgid "_Remember password for this session"
+msgstr "_Jäta parool selle sessiooni ajaks meelde"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+#, fuzzy
+msgid "_Save password in keyring"
+msgstr "Parooli salvestamine võtmerõngasse"
+
+#: ../nm-ppp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr ""
+
+#: ../nm-ppp.desktop.in.h:2
+msgid "VPN Connection Manager (PPP generic)"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:1
+#, fuzzy
+msgid "00:00:00:00"
+msgstr "0:00 / 0:00"
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+msgid "<b>Compression</b>"
+msgstr "<b>Pakkimine:</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:3
+#, fuzzy
+msgid "<b>Connection Name</b>"
+msgstr "Nimi Puudub"
+
+#: ../properties/nm-ppp-dialog.glade.h:4
+#, fuzzy
+msgid "<b>Delays and TImeouts</b>"
+msgstr "Fotod ja muusika"
+
+#: ../properties/nm-ppp-dialog.glade.h:5
+msgid "<b>Encryption</b>"
+msgstr "<b>Krüpteering</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+#, fuzzy
+msgid "<b>IP Options</b>"
+msgstr "GTK+ sätted"
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+#, fuzzy
+msgid "<b>Packet Parameters</b>"
+msgstr "Algoritmi parameetrid"
+
+#: ../properties/nm-ppp-dialog.glade.h:8
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+#, fuzzy
+msgid "Allow BSD Compression"
+msgstr "Tihenduse suhe %4.2f%%\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
+#, fuzzy
+msgid "Allow Deflate compression"
+msgstr "Tihenduse suhe %4.2f%%\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+#, fuzzy
+msgid "Authenticate Peer"
+msgstr "Tõrge autentimisel.\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+#, fuzzy
+msgid "Authentication"
+msgstr "Autentimine"
+
+#: ../properties/nm-ppp-dialog.glade.h:14
+#, fuzzy
+msgid "Compression & Encryption"
+msgstr "Nõua krüptimist"
+
+#: ../properties/nm-ppp-dialog.glade.h:15
+#, fuzzy
+msgid "Connection"
+msgstr "Ühendus"
+
+#: ../properties/nm-ppp-dialog.glade.h:16
+#, fuzzy
+msgid "Debug Output"
+msgstr "# Väljundmuutujad"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+#: ../properties/nm-ppp-properties.c:216
+#, fuzzy
+msgid "Enable stateful MPPE"
+msgstr "Peitmisnuppude peitmine lubatud"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+#, fuzzy
+msgid "Find Device"
+msgstr "Võrguseade:\t%s\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+#, fuzzy
+msgid "GPRS Options"
+msgstr "GTK+ sätted"
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+#, fuzzy
+msgid "Hardware RTS/CTS"
+msgstr "Riistvaraline seade"
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid "Host name or IP address of the PPTP server"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+#, fuzzy
+msgid "Maximum Receive Unit"
+msgstr "km"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+#, fuzzy
+msgid "Maximum Transmit Unit"
+msgstr "km"
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+#, fuzzy
+msgid "Modem Connection"
+msgstr "Modemiühendus"
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+#, fuzzy
+msgid "PPP Options"
+msgstr "GTK+ sätted"
+
+#: ../properties/nm-ppp-dialog.glade.h:31
+msgid "Peer DNS through tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:33
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:34
+#, fuzzy
+msgid "Refuse MS CHAP"
+msgstr "Keskmine aeg:\t%s ms\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Require 128 bit MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+#, fuzzy
+msgid "Require Explicit IP Addr"
+msgstr "       AADR := { IP_AADRESS | any }\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+#, fuzzy
+msgid "Require MPPC Compression"
+msgstr "Tihenduse suhe %4.2f%%\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+#, fuzzy
+msgid "Require MPPE encryption"
+msgstr "Nõua klientidelt krüptimise kasutamist"
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+#, fuzzy
+msgid "Requires existing network connection"
+msgstr "Kasutan ühendust serveriga %s:%d.\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+#, fuzzy
+msgid "Routing"
+msgstr "Ruutingutabeli hankimine"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+#, fuzzy
+msgid "Serial Options"
+msgstr "GTK+ sätted"
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "Service providers GPRS access point from device config"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+#, fuzzy
+msgid "Service providers IP address"
+msgstr ""
+"Staatiline IP aadress\n"
+"DHCP"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+#, fuzzy
+msgid "Telephone number to dial"
+msgstr "Imporditavate ridade arv"
+
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid ""
+"This is the friendly name that will be used to identify this network connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:47
+#, fuzzy
+msgid "Time in seconds between echo requests"
+msgstr "Sekundites määratud ajavahemik olekuuenduste vahel"
+
+#: ../properties/nm-ppp-dialog.glade.h:48
+#, fuzzy
+msgid "Type:"
+msgstr "Tüüp:"
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+#: ../properties/nm-ppp-properties.c:201
+#, fuzzy
+msgid "Use Peer DNS"
+msgstr "    -d, --domain          DNS domeeni nimi\n"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:58
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:59
+#, fuzzy
+msgid "_Access Point Name:"
+msgstr "Programmi <b>%(name)s</b> käivitamine (%(prog)s)"
+
+#: ../properties/nm-ppp-dialog.glade.h:60
+#, fuzzy
+msgid "_Channel:"
+msgstr "_Kanal:"
+
+#: ../properties/nm-ppp-dialog.glade.h:61
+#, fuzzy
+msgid "_Context Num"
+msgstr "arv,kümnendkohti"
+
+#: ../properties/nm-ppp-dialog.glade.h:62
+#, fuzzy
+msgid "_Custom PPP options:"
+msgstr "Bonobo aktiveerimisvõtmed"
+
+#: ../properties/nm-ppp-dialog.glade.h:63
+#, fuzzy
+msgid "_Device Address:"
+msgstr "Aadressi tüüp"
+
+#: ../properties/nm-ppp-dialog.glade.h:64
+#, fuzzy
+msgid "_Gateway:"
+msgstr "Värav"
+
+#: ../properties/nm-ppp-dialog.glade.h:65
+#, fuzzy
+msgid "_IP Address:"
+msgstr "IP aadress"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+#, fuzzy
+msgid "_Import Saved Configuration..."
+msgstr "Teksti importimise häälestamine"
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+msgid "_Only use VPN connection for these addresses"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:68
+#, fuzzy
+msgid "_Packet Type"
+msgstr "tundmatu paketi tüüp"
+
+#: ../properties/nm-ppp-dialog.glade.h:69
+#, fuzzy
+msgid "_Telephone Number:"
+msgstr "Telefoninumber"
+
+#: ../properties/nm-ppp-dialog.glade.h:70
+#, fuzzy
+msgid "connect-delay"
+msgstr "sekundist viivitust"
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:134
+#, fuzzy
+msgid "Name"
+msgstr "Nimi"
+
+#: ../properties/nm-ppp-properties.c:146
+#, fuzzy
+msgid "PPTP Server"
+msgstr "Serveri logiraamatufail:"
+
+#: ../properties/nm-ppp-properties.c:151
+#, fuzzy
+msgid "Telephone Number"
+msgstr "Telefoninumber"
+
+#: ../properties/nm-ppp-properties.c:156
+#, fuzzy
+msgid "Bluetooth Address"
+msgstr "Aadressi tüüp"
+
+#: ../properties/nm-ppp-properties.c:161
+#, fuzzy
+msgid "Bluetooth Channel"
+msgstr "<b>Kanali nimi:</b> %s"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:171
+#, fuzzy
+msgid "GPRS IP"
+msgstr "<b>IP andmed</b>"
+
+#: ../properties/nm-ppp-properties.c:176
+#, fuzzy
+msgid "GPRS Context No."
+msgstr "Allikas '%s' jaoks pole konteksti saadaval"
+
+#: ../properties/nm-ppp-properties.c:181
+#, fuzzy
+msgid "GPRS Packet Type"
+msgstr "tundmatu paketi tüüp"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:191
+#, fuzzy
+msgid "Connect via a modem"
+msgstr "Modemi kaudu Internetti ühendumine"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:206
+#, fuzzy
+msgid "Use MPPE encryption"
+msgstr "Nõua klientidelt krüptimise kasutamist"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:221
+#, fuzzy
+msgid "Use MPPC compression"
+msgstr "Tihenduse suhe %4.2f%%\n"
+
+#: ../properties/nm-ppp-properties.c:226
+#, fuzzy
+msgid "Do not use deflate compression"
+msgstr "WINS serverit ei kasutata"
+
+#: ../properties/nm-ppp-properties.c:231
+#, fuzzy
+msgid "Do not use BSD compression"
+msgstr "WINS serverit ei kasutata"
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:241
+#, fuzzy
+msgid "Authenticate remote peer"
+msgstr "Ainult kaugfailid"
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:286
+#, fuzzy
+msgid "Custom PPP options"
+msgstr "Bonobo aktiveerimisvõtmed"
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:302
+#, fuzzy
+msgid "Specific networks available"
+msgstr "Fail ei ole kättesaadav"
+
+#: ../properties/nm-ppp-properties.c:308
+#, fuzzy
+msgid "Limit to specific networks"
+msgstr "Paneeliga seotud rakendused"
+
+#: ../properties/vpnui_impl.c:229
+#, fuzzy, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "Kataloogi pole võimalik luua"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr ""
+
+#: ../properties/vpnui_impl.c:317
+#, fuzzy
+msgid "Select file to import"
+msgstr "Vali fail, mida importida"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "Salvesta kui..."
+
+#: ../properties/vpnui_impl.c:491
+#, fuzzy, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Fail nimega \"%s\" on juba olemas."
+
+#: ../properties/vpnui_impl.c:494
+#, fuzzy
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Kas sa soovid seda salvestatava failiga asendada?"
+
+#: ../src/nm-ppp-starter.c:140
+#, fuzzy
+msgid "VPN Connection failed"
+msgstr "%u ebaõnnestunud ühenduse loomise katset"
+
