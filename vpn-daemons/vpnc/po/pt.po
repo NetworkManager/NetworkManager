@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 2.18\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-08 20:44+0000\n"
-"PO-Revision-Date: 2007-02-08 18:30+0000\n"
+"POT-Creation-Date: 2007-02-25 17:09+0000\n"
+"PO-Revision-Date: 2007-02-25 17:15+0000\n"
 "Last-Translator: Duarte Loreto <happyguy_pt@hotmail.com>\n"
 "Language-Team: Portuguese <gnome_pt@yahoogroups.com>\n"
 "MIME-Version: 1.0\n"
@@ -168,30 +168,46 @@ msgid "Failed to save file %s"
 msgstr "Falha ao gravar o ficheiro %s"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Information</b>"
+msgstr "<b>Informação de Ligação</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Connection Name</b>"
 msgstr "<b>Nome da Ligação</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Required Information</b>"
-msgstr "<b>Informação Necessária</b>"
-
 #: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required</b>"
+msgstr "<b>Necessária</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Connection Name"
+msgstr "Nome da Ligação"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "G_roup Name:"
 msgstr "Nome do G_rupo:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "O_ptional Information"
-msgstr "Informação O_pcional"
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Nome utilizado para identificar a ligação à rede privada, por. ex. \"VPN da "
+"Universidade\" ou \"Rede da Empresa\""
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "Opcional"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
 msgstr "Ignorar o nome do _utilizador"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -200,43 +216,43 @@ msgstr ""
 "sistema. Não introduza aqui a sua senha pois essa ser-lhe-á pedida quando se "
 "ligar."
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"Please note that the file you import is not a Cisco VPN or VPNC "
+"configuration file. Ask your adminstrator for the file."
+msgstr ""
+"Note que o ficheiro que importou não é um ficheiro de configuração "
+"de VPN ou VPNC Cisco. Peça o ficheiro ao administrador da sua rede."
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
 msgstr "Utilizar o _domínio para a autenticação"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:14
 msgid "_Import Saved Configuration..."
 msgstr "_Importar a Configuração Gravada..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Nome utilizado para identificar a ligação à rede privada, por. ex. \"VPN da "
-"Universidade\" ou \"Rede da Empresa\""
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Apenas utilizar ligação VPN para estes endereços"
 
-#: ../src/nm-vpnc-service.c:118
+#: ../src/nm-vpnc-service.c:119
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
 "O início de sessão VPN falhou porque o utilizador e senha não foram aceites."
 
-#: ../src/nm-vpnc-service.c:120
+#: ../src/nm-vpnc-service.c:121
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr ""
 "O início de sessão VPN falhou porque não foi possível iniciar a aplicação de "
 "VPN."
 
-#: ../src/nm-vpnc-service.c:122
+#: ../src/nm-vpnc-service.c:123
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
@@ -244,16 +260,19 @@ msgstr ""
 "O início de sessão VPN falhou porque a aplicação de VPN foi incapaz de se "
 "ligar ao servidor de VPN."
 
-#: ../src/nm-vpnc-service.c:124
+#: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 "O início de sessão VPN falhou porque as opções de configuração são inválidas."
 
-#: ../src/nm-vpnc-service.c:126
+#: ../src/nm-vpnc-service.c:127
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
 "O início de sessão VPN falhou porque a aplicação de VPN recebeu uma "
 "configuração inválida do servidor de VPN."
+
+#~ msgid "O_ptional Information"
+#~ msgstr "Informação O_pcional"
