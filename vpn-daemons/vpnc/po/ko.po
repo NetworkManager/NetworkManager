@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nm-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-26 00:24+0900\n"
-"PO-Revision-Date: 2007-01-26 00:30+0900\n"
+"POT-Creation-Date: 2007-02-25 12:31+0900\n"
+"PO-Revision-Date: 2007-02-25 12:34+0900\n"
 "Last-Translator: Young-Ho Cha <ganadist@gmail.com>\n"
 "Language-Team: GNOME Korea <gnome-kr-hackers@lists.kldp.net>\n"
 "MIME-Version: 1.0\n"
@@ -123,8 +123,8 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
-"VPN 설정 파일 '%s'에 VPN연결이 TCP를 통해 터널을 뚫도록 되어있습니다만, "
-"vpnc 소프트웨어에서 현재 지원하지 않습니다.\n"
+"VPN 설정 파일 '%s'에 VPN연결이 TCP를 통해 터널을 뚫도록 되어있습니다만, vpnc "
+"소프트웨어에서 현재 지원하지 않습니다.\n"
 "\n"
 "TCP 터널링이 꺼진채로 연결이 만들어집니다만, 제대로 동작하지 않을 것입니다."
 
@@ -165,30 +165,45 @@ msgid "Failed to save file %s"
 msgstr "파일 %s(으)로 저장 실패"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Information</b>"
+msgstr "<b>연결 정보</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Connection Name</b>"
 msgstr "<b>연결 이름</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Required Information</b>"
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required</b>"
 msgstr "<b>필수 정보</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:3
+#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>예: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Connection Name"
+msgstr "연결 이름"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "G_roup Name:"
 msgstr "그룹 이름(_R):"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "O_ptional Information"
-msgstr "기타 정보(_P)"
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"\"Campus VPN\"이나 \"Corporate Network\"같이 사설 네트워크 연결에 쓸 이름"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "추가 정보"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
 msgstr "사용자 이름 덮어쓰기(_U)"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -196,51 +211,56 @@ msgstr ""
 "시스템 관리자에게 받은 정보를 입력하십시오. 연결될 때 나타나는 화면에 열쇠글"
 "을 입력하지 마십시오."
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"Please note that the file you import is not a Cisco VPN or VPNC "
+"configuration file. Ask your adminstrator for the file."
+msgstr ""
+"가져온 파일이 Cisco VPN이나 VPNC설정 파일이 아닙니다. 관리자에게 "
+"문의하십시오."
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
 msgstr "인증에 도메인 사용(_D)"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "게이트웨이(_G):"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:14
 msgid "_Import Saved Configuration..."
 msgstr "저장된 설정 가져오기(_I)..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "사설 네트워크 연결에 쓸 이름(_N)"
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "_Only use VPN connection for these addresses"
 msgstr "VPN 연결에 이 주소만 사용(_O)"
 
-#: ../src/nm-vpnc-service.c:117
+#: ../src/nm-vpnc-service.c:119
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr "사용자 이름과 열쇠글이 틀려서 로그인 실패했습니다."
 
-#: ../src/nm-vpnc-service.c:119
+#: ../src/nm-vpnc-service.c:121
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "VPN 프로그램을 시작할 수 없어서 로그인 실패했습니다."
 
-#: ../src/nm-vpnc-service.c:121
+#: ../src/nm-vpnc-service.c:123
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
 msgstr "VPN 프로그램이 VPN 서버에 연결하지 못해서 로그인 실패했습니다."
 
-#: ../src/nm-vpnc-service.c:123
+#: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr "VPN 설정 옵션이 잘못되어서 로그인 실패했습니다."
 
-#: ../src/nm-vpnc-service.c:125
+#: ../src/nm-vpnc-service.c:127
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
 "VPN 프로그램이 VPN 서버에서 잘못된 설정값을 받아서 로그인 실패했습니다."
+
+#~ msgid "O_ptional Information"
+#~ msgstr "기타 정보(_P)"
