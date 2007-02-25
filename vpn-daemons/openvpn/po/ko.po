@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: nm-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-25 23:51+0900\n"
-"PO-Revision-Date: 2007-01-26 00:31+0900\n"
+"POT-Creation-Date: 2007-02-25 12:30+0900\n"
+"PO-Revision-Date: 2007-02-25 12:31+0900\n"
 "Last-Translator: Young-Ho Cha <ganadist@gmail.com>\n"
 "Language-Team: GNOME Korea <gnome-kr-hackers@lists.kldp.net>\n"
 "MIME-Version: 1.0\n"
@@ -285,86 +285,90 @@ msgid "CA  file:"
 msgstr "CA 파일:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "CA file:"
+msgstr "CA 파일:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Certificate:"
 msgstr "인증서:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Connection Type:"
 msgstr "연결 형식:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Direction:"
 msgstr "방향:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key:"
 msgstr "키:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP:"
 msgstr "로컬 IP:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password"
 msgstr "열쇠글"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
-"시스템 관리자에게 받은 정보를 입력하십시오. 연결될 때 나타나는 화면에 "
-"열쇠글을 입력하지 마십시오."
+"시스템 관리자에게 받은 정보를 입력하십시오. 연결될 때 나타나는 화면에 열쇠글"
+"을 입력하지 마십시오."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
-"가져올 파일은 OpenVPN 설정파일이 아닙니다.  관리자에게 파일에 대해 "
-"문의하시기 바랍니다."
+"가져올 파일은 OpenVPN 설정파일이 아닙니다.  관리자에게 파일에 대해 문의하시"
+"기 바랍니다."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid "Remote IP:"
 msgstr "원격 IP:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared Key:"
 msgstr "공유키:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Shared key"
 msgstr "공유키"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use LZO compression"
 msgstr "LZO 압축 사용"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use TAP device"
 msgstr "TAP 장치 사용"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use TCP connection"
 msgstr "TCP 연결 사용"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use TLS auth:"
 msgstr "TLS 인증 사용:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use cipher:"
 msgstr "cipher 사용:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Username:"
 msgstr "사용자이름:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -376,26 +380,25 @@ msgstr ""
 "열쇠글 인증\n"
 "X.509 열쇠글 인증"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "게이트웨이(_G):"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "_Import Saved Configuration..."
 msgstr "저장된 설정 가져오기(_I)..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
-msgstr ""
-"사설 네트워크 연결에 쓸 이름(_N)"
+msgstr "사설 네트워크 연결에 쓸 이름(_N)"
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "_Only use VPN connection for these addresses"
 msgstr "VPN 연결에 이 주소만 사용(_O)"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid "none"
 msgstr "없음"
 
@@ -403,8 +406,7 @@ msgstr "없음"
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr ""
-"사용자 이름과 열쇠글 또는 인증서 열쇠글이 틀려서 로그인 실패했습니다."
+msgstr "사용자 이름과 열쇠글 또는 인증서 열쇠글이 틀려서 로그인 실패했습니다."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
@@ -414,14 +416,12 @@ msgstr "VPN 프로그램을 시작할 수 없어서 로그인 실패했습니다
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr ""
-"VPN 프로그램이 VPN 서버에 연결하지 못해서 로그인 실패했습니다."
+msgstr "VPN 프로그램이 VPN 서버에 연결하지 못해서 로그인 실패했습니다."
 
 #: ../src/nm-openvpn-service.c:133
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"VPN 설정 옵션이 잘못되어서 로그인 실패했습니다."
+msgstr "VPN 설정 옵션이 잘못되어서 로그인 실패했습니다."
 
 #: ../src/nm-openvpn-service.c:135
 msgid ""
