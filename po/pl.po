@@ -1,29 +1,28 @@
-# NetworkManager - Polish translation.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-18 23:57+0100\n"
-"PO-Revision-Date: 2006-09-28 21:26+0100\n"
-"Last-Translator: Wadim Dziedzic <nikdo@aviary.pl>\n"
+"POT-Creation-Date: 2007-02-27 00:12+0100\n"
+"PO-Revision-Date: 2007-02-27 00:17+0100\n"
+"Last-Translator: wadim dziedzic <nikdo@aviary.pl>\n"
 "Language-Team: PL <PL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
-"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:417
 msgid "Cannot add VPN connection"
 msgstr "Nie można dodać połączenia VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Nie znaleziono oprogramowania dla VPN. Proszę skontaktować się z "
-"administratorem."
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "Nie znaleziono oprogramowania dla VPN. Proszę skontaktować się z administratorem."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:461
 msgid "Cannot import VPN connection"
@@ -31,12 +30,8 @@ msgstr "Nie można zaimportować połączenia VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:463
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Nie znaleziono oprogramowania dla połączenia VPN typu '%s' do importu pliku "
-"'%s'. Proszę skontaktować się z administratorem."
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "Nie znaleziono oprogramowania dla połączenia VPN typu '%s' do importu pliku '%s'. Proszę skontaktować się z administratorem."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:580
 #, c-format
@@ -45,12 +40,8 @@ msgstr "Napotkano błąd podczas wyszukiwania połączenia VPN '%s'"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:583
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"Nie znaleziono plików interfejsu dla połączenia VPN typu: '%s'. Proszę "
-"skontaktować się z administratorem."
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "Nie znaleziono plików interfejsu dla połączenia VPN typu: '%s'. Proszę skontaktować się z administratorem."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:727
 #, c-format
@@ -59,13 +50,8 @@ msgstr "Naprawdę usunąć połączenie VPN \"%s\"?"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:730
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"Wszystkie dane połączenia VPN \"%s\" zostaną utracone. Utworzenie nowego "
-"połączenia może wymagać udziału administratora sieci."
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "Wszystkie dane połączenia VPN \"%s\" zostaną utracone. Utworzenie nowego połączenia może wymagać udziału administratora sieci."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:924
 msgid "Unable to load"
@@ -170,48 +156,221 @@ msgstr "brak"
 
 #: ../src/nm-netlink-monitor.c:174
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"nie można utworzyć gniazda netlink dla monitorowania przewodowych urządzeń "
-"ethernet - %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "nie można utworzyć gniazda netlink dla monitorowania przewodowych urządzeń ethernet - %s"
 
 #: ../src/nm-netlink-monitor.c:192
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"nie można utworzyć dowiązania do gniazda netlink dla monitorowania "
-"przewodowych urządzeń ethernet - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "nie można utworzyć dowiązania do gniazda netlink dla monitorowania przewodowych urządzeń ethernet - %s"
 
-#: ../src/nm-netlink-monitor.c:427
+#: ../src/nm-netlink-monitor.c:416
 msgid "operation took too long"
 msgstr "operacja zajęła zbyt dużo czasu"
 
-#: ../src/nm-netlink-monitor.c:524
+#: ../src/nm-netlink-monitor.c:513
 msgid "received data from wrong type of sender"
 msgstr "otrzymano dane od nadawcy nieprawidłowego typu"
 
-#: ../src/nm-netlink-monitor.c:537
+#: ../src/nm-netlink-monitor.c:526
 msgid "received data from unexpected sender"
 msgstr "otrzymano dane od nieoczekiwanego nadawcy"
 
-#: ../src/nm-netlink-monitor.c:666
+#: ../src/nm-netlink-monitor.c:655
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "część danych została utracona, ponieważ wysłano ich zbyt dużo"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../src/nm-netlink-monitor.c:755
 msgid "error occurred while waiting for data on socket"
 msgstr "napotkano błąd podczas oczekiwania na dane"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:112
+#: ../src/nm-ap-security-wpa-eap.c:93
+#: ../src/nm-ap-security-wpa-eap.c:112
 msgid "WPA2 Enterprise"
 msgstr "WPA2 Enterprise"
 
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:115
+#: ../src/nm-ap-security-wpa-eap.c:95
+#: ../src/nm-ap-security-wpa-eap.c:115
 msgid "WPA Enterprise"
 msgstr "WPA Enterprise"
 
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:80
+#: ../src/nm-ap-security-leap.c:66
+#: ../src/nm-ap-security-leap.c:80
 msgid "LEAP"
 msgstr "LEAP"
+
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "Hasło dla sieci bezprzewodowej %s"
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "Połączenie z siecią bezprzewodową '%s' zakończone niepowodzeniem."
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "Połączenie z siecią przewodową zakończone niepowodzeniem."
+#~ msgid "Error displaying connection information:"
+#~ msgstr "Błąd podczas wyświetlania informacji o połączeniu:"
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr "Nie znaleziono wymaganych plików zasobów (plik glade)."
+#~ msgid "No active connections!"
+#~ msgstr "Brak aktywnych połączeń."
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "Ethernet przewodowy (%s)"
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "Ethernet bezprzewodowy (%s)"
+#~ msgid "NetworkManager Applet"
+#~ msgstr "Aplet NetworkManager"
+#~ msgid ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr ""
+#~ "Aplet paska systemowego do zarządzania urządzeniami i połączeniami "
+#~ "sieciowymi."
+#~ msgid "translator-credits"
+#~ msgstr "AviaryPL dla Novell Polska sp. z o.o. 2006"
+#~ msgid ""
+#~ "Copyright © 2004-2005 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgid "VPN Login Failure"
+#~ msgstr "Błąd logowania VPN"
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr "Nie można uruchomić połączenia VPN '%s' z powodu błędu logowania."
+#~ msgid "VPN Start Failure"
+#~ msgstr "Błąd uruchamiania VPN"
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr ""
+#~ "Nie można uruchomić połączenia VPN '%s' z powodu błędu uruchamiania "
+#~ "programu VPN."
+#~ msgid "VPN Connect Failure"
+#~ msgstr "Błąd połączenia VPN"
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr "Nie można uruchomić połączenia VPN '%s' z powodu błędu połączenia."
+#~ msgid "VPN Configuration Error"
+#~ msgstr "Błąd konfiguracji VPN"
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "Połączenie VPN '%s' nie zostało poprawnie skonfigurowane."
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr ""
+#~ "Nie można uruchomić połączenia VPN '%s' ponieważ serwer VPN nie zwrócił "
+#~ "odpowiedniej konfiguracji sieci."
+#~ msgid "VPN Login Message"
+#~ msgstr "Wiadomość logowania VPN"
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "Nie znaleziono wymaganych przez aplet NetworkManager plików zasobów "
+#~ "(pliku glade)."
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "Urządzenie \"%s (%s)\" nie obsługuje skanowania bezprzewodowego."
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "Urządzenie \"%s (%s)\" nie obsługuje wykrywania połączenia."
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "Przygotowywanie urządzenia %s do sieci przewodowej..."
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "Przygotowywanie urządzenia %s do sieci bezprzewodowej '%s'..."
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "Konfigurowanie urządzenia %s dla sieci przewodowej..."
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "Próba dołączenia do sieci bezprzewodowej '%s'..."
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "Oczekiwanie na klucz sieci bezprzewodowej '%s'..."
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "Wysyłanie żądania adresu do sieci przewodowej..."
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "Wysyłanie żądania adresu do sieci bezprzewodowej '%s'..."
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "Zamykanie połączenia z siecią przewodową..."
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "Zamykanie połączenia z siecią bezprzewodową '%s'..."
+#~ msgid "NetworkManager is not running"
+#~ msgstr "Aplet NetworkManager nie jest uruchomiony"
+#~ msgid "Networking disabled"
+#~ msgstr "Sieć wyłączona"
+#~ msgid "No network connection"
+#~ msgstr "Brak połączenia sieciowego"
+#~ msgid "Wired network connection"
+#~ msgstr "Połączenie przewodowe"
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Połączono z siecią bezprzewodową Ad-Hoc"
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Połączenie bezprzewodowe z '%s' (%d%%)"
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "Połączenie VPN z '%s'"
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "Łączenie VPN z '%s'"
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "_Połącz z inną siecią bezprzewodową..."
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "Utwórz _nową sieć bezprzewodową..."
+#~ msgid "_VPN Connections"
+#~ msgstr "Połączenia _VPN"
+#~ msgid "_Configure VPN..."
+#~ msgstr "_Skonfiguruj VPN..."
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "_Rozłącz VPN..."
+#~ msgid "_Dial Up Connections"
+#~ msgstr "Połączenia wdzwaniane"
+#~ msgid "Connect to %s..."
+#~ msgstr "Połącz z '%s'..."
+#~ msgid "Disconnect from %s..."
+#~ msgstr "Rozłącz z '%s'"
+#~ msgid "No network devices have been found"
+#~ msgstr "Nie znaleziono urządzeń sieciowych"
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "Aplet NetworkManager nie jest uruchomiony..."
+#~ msgid "Enable _Networking"
+#~ msgstr "_Włącz  sieć"
+#~ msgid "Enable _Wireless"
+#~ msgstr "Włącz _bezprzewodowe"
+#~ msgid "Connection _Information"
+#~ msgstr "_Informacje o połączeniu"
+#~ msgid "_Help"
+#~ msgstr "_Pomoc"
+#~ msgid "_About"
+#~ msgstr "Inform_acje"
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr ""
+#~ "Nie znaleziono wymaganych zasobów. Program NetworkManager zostanie "
+#~ "zamknięty.\n"
+#~ msgid "Open System"
+#~ msgstr "System otwarty"
+#~ msgid "Shared Key"
+#~ msgstr "Klucz współdzielony"
+#~ msgid "Automatic (Default)"
+#~ msgstr "Automatyczny (domyślny)"
+#~ msgid "AES-CCMP"
+#~ msgstr "AES-CCMP"
+#~ msgid "TKIP"
+#~ msgstr "TKIP"
+#~ msgid "Dynamic WEP"
+#~ msgstr "Dynamiczny WEP"
+#~ msgid "None"
+#~ msgstr "Brak"
+#~ msgid "WEP 64/128-bit ASCII"
+#~ msgstr "WEP 64/128-bit ASCII"
+#~ msgid "WEP 64/128-bit Hex"
+#~ msgstr "WEP 64/128-bit Hex"
+#~ msgid "WEP 128-bit Passphrase"
+#~ msgstr "WEP z 128 bitowym hasłem"
+#~ msgid "TLS"
+#~ msgstr "TLS"
+#~ msgid "TTLS"
+#~ msgstr "TTLS"
+#~ msgid "WPA2 Personal"
+#~ msgstr "WPA2 Personal"
+#~ msgid "WPA Personal"
+#~ msgstr "WPA Personal"
+
