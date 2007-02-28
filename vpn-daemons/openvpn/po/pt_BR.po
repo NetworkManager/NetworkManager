@@ -2,14 +2,15 @@
 # Copyright (C) 2004-2007 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 # Raphael Higino <phhigino@gmail.com>, 2004-2007.
+# Washington Lins <washington-lins@uol.com.br>, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-02 04:49+0000\n"
-"PO-Revision-Date: 2007-02-21 10:36-0300\n"
-"Last-Translator: Raphael Higino <phhigino@gmail.com>\n"
+"POT-Creation-Date: 2007-02-28 03:06-0300\n"
+"PO-Revision-Date: 2007-02-28 03:12-0300\n"
+"Last-Translator: Washington Lins <washington-lins@uol.com.br>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -72,300 +73,333 @@ msgstr "Adicione, remova e edite conexões VPN"
 msgid "VPN Connection Manager (OpenVPN)"
 msgstr "Gerenciador de Conexões VPN (OpenVPN)"
 
-#: ../properties/nm-openvpn.c:130
+#: ../properties/nm-openvpn.c:143
 msgid "OpenVPN Client"
 msgstr "Cliente OpenVPN"
 
-#: ../properties/nm-openvpn.c:729
+#: ../properties/nm-openvpn.c:799
 msgid "The following OpenVPN connection will be created:"
 msgstr "As seguintes conexões OpenVPN serão criadas:"
 
-#: ../properties/nm-openvpn.c:731
+#: ../properties/nm-openvpn.c:801
 #, c-format
 msgid "Name:  %s"
 msgstr "Nome:  %s"
 
-#: ../properties/nm-openvpn.c:739
+#: ../properties/nm-openvpn.c:809
 msgid "Connection Type: X.509 Certificates"
 msgstr "Tipo de Conexão: Certificados X.509"
 
-#: ../properties/nm-openvpn.c:742
-#: ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
+#: ../properties/nm-openvpn.c:812 ../properties/nm-openvpn.c:839
+#: ../properties/nm-openvpn.c:851
 #, c-format
 msgid "CA:  %s"
 msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:745
-#: ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:815 ../properties/nm-openvpn.c:854
 #, c-format
 msgid "Cert:  %s"
 msgstr "Cert:  %s"
 
-#: ../properties/nm-openvpn.c:748
-#: ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:818 ../properties/nm-openvpn.c:857
 #, c-format
 msgid "Key:  %s"
 msgstr "Chave:  %s"
 
-#: ../properties/nm-openvpn.c:752
+#: ../properties/nm-openvpn.c:822
 msgid "Connection Type: Shared Key"
 msgstr "Tipo de Conexão: Chave Compartilhada"
 
-#: ../properties/nm-openvpn.c:755
+#: ../properties/nm-openvpn.c:825
 #, c-format
 msgid "Shared Key:  %s"
 msgstr "Chave Compartilhada:  %s"
 
-#: ../properties/nm-openvpn.c:758
+#: ../properties/nm-openvpn.c:828
 #, c-format
 msgid "Local IP:  %s"
 msgstr "IP Local:  %s"
 
-#: ../properties/nm-openvpn.c:761
+#: ../properties/nm-openvpn.c:831
 #, c-format
 msgid "Remote IP:  %s"
 msgstr "IP Remoto:  %s"
 
-#: ../properties/nm-openvpn.c:766
+#: ../properties/nm-openvpn.c:836
 msgid "Connection Type: Password"
 msgstr "Tipo de Conexão: Senha"
 
-#: ../properties/nm-openvpn.c:772
-#: ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:842 ../properties/nm-openvpn.c:860
 #, c-format
 msgid "Username:  %s"
 msgstr "Nome do usuário:  %s"
 
-#: ../properties/nm-openvpn.c:778
+#: ../properties/nm-openvpn.c:848
 msgid "Connection Type: X.509 with Password Authentication"
 msgstr "Tipo de Conexão: X.509 com Autenticação de Senha"
 
-#: ../properties/nm-openvpn.c:796
+#: ../properties/nm-openvpn.c:866
 #, c-format
 msgid "Remote:  %s"
 msgstr "Remoto:  %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:869
+#, c-format
+msgid "Port:  %s"
+msgstr "Porta:  %s"
+
+#: ../properties/nm-openvpn.c:872
 #, c-format
 msgid "Device: %s"
 msgstr "Dispositivo: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:872
 msgid "TAP"
 msgstr "TAP"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:872
 msgid "TUN"
 msgstr "TUN"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 #, c-format
 msgid "Protocol: %s"
 msgstr "Protocolo: %s"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 msgid "TCP"
 msgstr "TCP"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 msgid "UDP"
 msgstr "UDP"
 
-#: ../properties/nm-openvpn.c:806
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Routes:  %s"
 msgstr "Rotas:  %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 #, c-format
 msgid "Use LZO Compression: %s"
 msgstr "Usar Compressão LZO: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 msgid "Yes"
 msgstr "Sim"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 msgid "No"
 msgstr "Não"
 
-#: ../properties/nm-openvpn.c:814
+#: ../properties/nm-openvpn.c:887
 #, c-format
 msgid "Cipher:  %s"
 msgstr "Cifragem:  %s"
 
-#: ../properties/nm-openvpn.c:819
+#: ../properties/nm-openvpn.c:892
 #, c-format
 msgid "TLS auth:  %s %s"
 msgstr "Autenticação TLS:  %s %s"
 
-#: ../properties/nm-openvpn.c:823
+#: ../properties/nm-openvpn.c:896
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Os detalhes da conexão podem ser alterados usando o botão \"Editar\"."
 
-#: ../properties/nm-openvpn.c:1003
+#: ../properties/nm-openvpn.c:1121
 msgid "Cannot import settings"
 msgstr "Não é possível importar configurações"
 
-#: ../properties/nm-openvpn.c:1005
+#: ../properties/nm-openvpn.c:1123
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "O arquivo de configurações de VPN '%s' não contém dados válidos."
 
-#: ../properties/nm-openvpn.c:1042
+#: ../properties/nm-openvpn.c:1161
 msgid "Select file to import"
 msgstr "Selecione o arquivo a importar"
 
-#: ../properties/nm-openvpn.c:1122
-#: ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1220 ../properties/nm-openvpn.c:1232
+#: ../properties/nm-openvpn.c:1235
 msgid "Select CA to use"
 msgstr "Selecione o CA a usar"
 
-#: ../properties/nm-openvpn.c:1125
+#: ../properties/nm-openvpn.c:1223 ../properties/nm-openvpn.c:1238
 msgid "Select certificate to use"
 msgstr "Selecione o certificado a usar"
 
-#: ../properties/nm-openvpn.c:1128
+#: ../properties/nm-openvpn.c:1226 ../properties/nm-openvpn.c:1241
 msgid "Select key to use"
 msgstr "Selecione a chave a usar"
 
-#: ../properties/nm-openvpn.c:1131
+#: ../properties/nm-openvpn.c:1229
 msgid "Select shared key to use"
 msgstr "Selecione a chave compartilhada a usar"
 
-#: ../properties/nm-openvpn.c:1137
+#: ../properties/nm-openvpn.c:1244
 msgid "Select TA to use"
 msgstr "Selecione TA para usar"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
+#: ../properties/nm-openvpn.c:1438
 msgid "Save as..."
 msgstr "Salvar como..."
 
-#: ../properties/nm-openvpn.c:1356
+#: ../properties/nm-openvpn.c:1468
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Um arquivo chamado \"%s\" já existe."
 
-#: ../properties/nm-openvpn.c:1359
+#: ../properties/nm-openvpn.c:1471
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Você deseja substituí-la com aquela que você está salvando?"
 
-#: ../properties/nm-openvpn.c:1373
+#: ../properties/nm-openvpn.c:1485
 msgid "Failed to export configuration"
 msgstr "Falha ao exportar configuração"
 
-#: ../properties/nm-openvpn.c:1375
+#: ../properties/nm-openvpn.c:1487
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Falha ao salvar o arquivo %s"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "(Default: 1194)"
+msgstr "(Padrão: 1194)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
 msgid "0"
 msgstr "0"
 
-#: ../properties/nm-openvpn-dialog.glade.h:2
+#: ../properties/nm-openvpn-dialog.glade.h:3
 msgid "1"
 msgstr "1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:3
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "<b>Connection Information</b>"
+msgstr "<b>Informações da Conexão</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "<b>Connection Name</b>"
 msgstr "<b>Nome da Conexão</b>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>Informações Opcionais</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>Informações Requeridas</b>"
-
 #: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "<b>Required</b>"
+msgstr "<b>Requeridas</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn-dialog.glade.h:8
 msgid "CA  file:"
 msgstr "Arquivo  CA:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:8
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "CA file:"
 msgstr "Arquivo CA:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Certificate:"
 msgstr "Certificado:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Connection Name"
+msgstr "Nome da Conexão"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Connection Type:"
 msgstr "Tipo de Conexão:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Direction:"
 msgstr "Direção:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Gateway _Port:"
+msgstr "_Porta do Gateway:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid "Key:"
 msgstr "Chave:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Local IP:"
 msgstr "IP Local:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Nome usado para identificar a conexão à rede privada, por ex. \"VPN do "
+"Campus\" ou \"Rede Corporativa\""
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Optional"
+msgstr "Opcional"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Password"
 msgstr "Senha"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "Por favor, digite abaixo as informações fornecidas pelo seu administrador de sistema. Não digite sua senha aqui, já que ela será solicitada ao conectar."
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Por favor, digite abaixo as informações fornecidas pelo seu administrador de "
+"sistema. Não digite sua senha aqui, já que ela será solicitada ao conectar."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
-msgstr "Por favor, note que o arquivo que você importou não é um arquivo de configuração OpenVPN. Peça o arquivo ao seu administrador."
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your adminstrator for the file."
+msgstr ""
+"Por favor, observe que o arquivo que você importou não é um arquivo de "
+"configuração OpenVPN. Peça ao seu administrador pelo arquivo."
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Remote IP:"
 msgstr "IP Remoto:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Shared Key:"
 msgstr "Chave Compartilhada:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Shared key"
 msgstr "Chave compartilhada"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Use LZO compression"
 msgstr "Usar compressão LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "Use TAP device"
 msgstr "Usar dispositivo TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "Use TCP connection"
 msgstr "Usar conexão TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "Use TLS auth:"
 msgstr "Usar autenticação TLS:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:29
 msgid "Use cipher:"
 msgstr "Usar cifragem:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:30
 msgid "Username:"
 msgstr "Nome do usuário:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:27
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -377,45 +411,60 @@ msgstr ""
 "Autenticação de Senha\n"
 "X.509 com Autenticação de Senha"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "_Gateway:"
-msgstr "_Gateway:"
+#: ../properties/nm-openvpn-dialog.glade.h:36
+msgid "X.509/Pass"
+msgstr "X.509/Senha"
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
+#: ../properties/nm-openvpn-dialog.glade.h:37
+msgid "_Gateway Address:"
+msgstr "Endereço do _Gateway:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:38
 msgid "_Import Saved Configuration..."
 msgstr "_Importar Configurações Salvas..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
-msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "_Nome usado para identificar a conexão à rede privada, por ex. \"VPN do Campus\" ou \"Rede Corporativa\""
-
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:39
 msgid "_Only use VPN connection for these addresses"
 msgstr "Usar conexões VPN _apenas para estes endereços"
 
-#: ../properties/nm-openvpn-dialog.glade.h:35
+#: ../properties/nm-openvpn-dialog.glade.h:40
 msgid "none"
 msgstr "nenhum"
 
 #: ../src/nm-openvpn-service.c:127
-msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
-msgstr "A autenticação VPN falhou porque o nome do usuário e a senha não foram aceitas ou a senha do certificado estava errada."
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
+msgstr ""
+"A autenticação VPN falhou porque o nome do usuário e a senha não foram "
+"aceitas ou a senha do certificado estava errada."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "A autenticação VPN falhou porque o programa não pôde ser iniciado."
 
 #: ../src/nm-openvpn-service.c:131
-msgid "The VPN login failed because the VPN program could not connect to the VPN server."
-msgstr "A autenticação VPN falhou porque o programa VPN não pôde se conectar ao servidor VPN."
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr ""
+"A autenticação VPN falhou porque o programa VPN não pôde se conectar ao "
+"servidor VPN."
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "A autenticação VPN falhou porque as opções de configuração VPN eram inválidas."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+"A autenticação VPN falhou porque as opções de configuração VPN eram "
+"inválidas."
 
 #: ../src/nm-openvpn-service.c:135
-msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
-msgstr "A autenticação VPN falhou porque o programa VPN recebeu uma configuração inválida do servidor VPN."
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr ""
+"A autenticação VPN falhou porque o programa VPN recebeu uma configuração "
+"inválida do servidor VPN."
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
@@ -423,673 +472,985 @@ msgstr "Falha na conexão VPN"
 
 #~ msgid "Please wait while getting data."
 #~ msgstr "Por favor, aguarde enquanto os dados são obtidos."
+
 #~ msgid "Please ensure that your network settings are correct."
 #~ msgstr ""
 #~ "Por favor, certifique-se de que suas configurações de rede estão corretas."
+
 #~ msgid "Refreshing catalog data"
 #~ msgstr "Atualizando dados do catálogo"
+
 #~ msgid "Downloading catalog information"
 #~ msgstr "Baixando informações do catálogo"
+
 #~ msgid "Verifying"
 #~ msgstr "Verificando"
+
 #~ msgid "Unable to verify package signature for"
 #~ msgstr "Impossível verificar a assinatura do pacote para"
+
 #~ msgid "There is no package signature for"
 #~ msgstr "Não há assinatura do pacote para"
+
 #~ msgid "Preparing Transaction"
 #~ msgstr "Preparando a Transação"
+
 #~ msgid "Installing"
 #~ msgstr "Instalando"
+
 #~ msgid "Removing"
 #~ msgstr "Removendo"
+
 #~ msgid "Configuring"
 #~ msgstr "Configuração"
+
 #~ msgid "Licensed under the GNU General Public License, version 2"
 #~ msgstr "Licensiado sob a Licensa Pública Geral GNU (GPL), versão 2"
+
 #~ msgid "Registration"
 #~ msgstr "Registro"
+
 #~ msgid "Email:"
 #~ msgstr "Email:"
+
 #~ msgid "Registration Code:"
 #~ msgstr "Código de Registro:"
+
 #~ msgid "Register"
 #~ msgstr "Registrar"
+
 #~ msgid "Please fill in both email and registration code."
 #~ msgstr "Por favor, preencha tanto o email quanto o código de ativação."
+
 #~ msgid "Unable to activate"
 #~ msgstr "Impossível ativar"
+
 #~ msgid ""
 #~ "Please ensure you typed the email address and registration code correctly"
 #~ msgstr ""
 #~ "Por favor, certifique-se de que digitou o endereço de email e o código de "
 #~ "ativação corretamente"
+
 #~ msgid "C"
 #~ msgstr "C"
+
 #~ msgid ""
 #~ "Unable to show help because the help files were missing.  Please report "
 #~ "this to your vendor."
 #~ msgstr ""
 #~ "Impossível mostrar a ajuda porque os arquivos da ajuda estão faltando. "
 #~ "Por favor, informe isso ao seu vendedor."
+
 #~ msgid ""
 #~ "Unable to show help because there are no applications available to view "
 #~ "help."
 #~ msgstr ""
 #~ "Impossível mostrar a ajuda porque não há aplicações disponíveis para ver "
 #~ "a ajuda."
+
 #~ msgid "Are you sure you want to open %d package information windows?"
 #~ msgstr ""
 #~ "Você tem certeza de que deseja abrir %d janelas de informação de pacotes?"
+
 #~ msgid "Run Now"
 #~ msgstr "Executar Agora"
+
 #~ msgid "Perform installations and removals"
 #~ msgstr "Executa instalações e remoções"
+
 #~ msgid "Catalogs"
 #~ msgstr "Catálogos"
+
 #~ msgid "Change your catalog subscriptions"
 #~ msgstr "Altera suas assinaturas de catálogos"
+
 #~ msgid "Refresh"
 #~ msgstr "Atualizar"
+
 #~ msgid "Refresh catalog data"
 #~ msgstr "Atualiza dados do catálogo"
+
 #~ msgid "Mark for _Installation"
 #~ msgstr "Marcar para _Instalação"
+
 #~ msgid "Mark selected packages for installation"
 #~ msgstr "Marca o pacote selecionado para instalação"
+
 #~ msgid "Mark for _Removal"
 #~ msgstr "Marcar para _Remoção"
+
 #~ msgid "Mark selected packages for removal"
 #~ msgstr "Marca o pacote selecionado para remoção"
+
 #~ msgid "_Cancel"
 #~ msgstr "_Cancelar"
+
 #~ msgid "Cancel marked package actions"
 #~ msgstr "Cancela as ações nos pacotes marcados"
+
 #~ msgid "Package information"
 #~ msgstr "Informações do pacote"
+
 #~ msgid "_File"
 #~ msgstr "_Arquivo"
+
 #~ msgid "_Edit"
 #~ msgstr "_Editar"
+
 #~ msgid "_View"
 #~ msgstr "_Ver"
+
 #~ msgid "_Actions"
 #~ msgstr "Açõe_s"
+
 #~ msgid "_Help"
 #~ msgstr "Aj_uda"
+
 #~ msgid "Connect to daemon..."
 #~ msgstr "Conectar ao servidor..."
+
 #~ msgid "Connect to a remote daemon"
 #~ msgstr "Conectar a um servidor remoto"
+
 #~ msgid "Install from _File..."
 #~ msgstr "Instalar do _Arquivo"
+
 #~ msgid "Install a package from a local file"
 #~ msgstr "Instala um pacote a partir de um arquivo local"
+
 #~ msgid "Install from _URL..."
 #~ msgstr "Instalar da _URL..."
+
 #~ msgid "Install a package from a remote URL"
 #~ msgstr "Instala um pacote a partir de uma URL remota"
+
 #~ msgid "_Mount Directory..."
 #~ msgstr "_Montar Diretório..."
+
 #~ msgid "Mount a directory as a catalog"
 #~ msgstr "Monta um diretório como um catálogo"
+
 #~ msgid "U_nmount Directory..."
 #~ msgstr "_Desmontar Diretório..."
+
 #~ msgid "Unmount a directory"
 #~ msgstr "Desmonta um diretório"
+
 #~ msgid "_Register..."
 #~ msgstr "_Registrar..."
+
 #~ msgid "Register daemon"
 #~ msgstr "Servidor de registro"
+
 #~ msgid "Quit"
 #~ msgstr "Sair"
+
 #~ msgid "Quit Red Carpet"
 #~ msgstr "Sai do Red Carpet"
+
 #~ msgid "Select _All"
 #~ msgstr "Selecionar _Todos"
+
 #~ msgid "Select all items"
 #~ msgstr "Seleciona todos os itens"
+
 #~ msgid "Deselect all items"
 #~ msgstr "Desseleciona todos os itens"
+
 #~ msgid "Edit services"
 #~ msgstr "Edita serviços"
+
 #~ msgid "Catalog _Subscriptions..."
 #~ msgstr "A_ssinaturas de Catálogos..."
+
 #~ msgid "Edit your catalog subscriptions"
 #~ msgstr "Edita suas assinaturas de catálogos"
+
 #~ msgid "_Preferences..."
 #~ msgstr "_Preferências..."
+
 #~ msgid "Edit your Red Carpet preferences"
 #~ msgstr "Edita suas preferências do Red Carpet"
+
 #~ msgid "_Users..."
 #~ msgstr "_Usuários..."
+
 #~ msgid "Edit user permissions for this daemon"
 #~ msgstr "Edita suas permissões para este servidor"
+
 #~ msgid "_Sidebar"
 #~ msgstr "_Barra Lateral"
+
 #~ msgid "Hide or show the Pending Actions sidebar"
 #~ msgstr "Oculta ou mostra a barra lateral de Ações Pendentes"
+
 #~ msgid "_Advanced Search Options"
 #~ msgstr "Opções _Avançadas de Busca"
+
 #~ msgid "Hide or show advanced search options"
 #~ msgstr "Oculta ou mostra opções avançadas de busca"
+
 #~ msgid "_Catalog Names"
 #~ msgstr "Nomes dos _Catálogos"
+
 #~ msgid "Hide or show catalog names in package lists"
 #~ msgstr "Oculta ou mostra os nomes dos catálogos em listas de pacotes"
+
 #~ msgid "Package _Information..."
 #~ msgstr "_Informação sobre o Pacote..."
+
 #~ msgid "View information about currently selected packages"
 #~ msgstr "Mostra informações sobre os pacotes atualmente selecionados"
+
 #~ msgid "_Daemon Information..."
 #~ msgstr "Informações sobre o _Servidor..."
+
 #~ msgid "View information about this daemon"
 #~ msgstr "Mostra informações sobre este servidor"
+
 #~ msgid "Run _Now"
 #~ msgstr "Executar _Agora"
+
 #~ msgid "Run the current transaction"
 #~ msgstr "Executa a transação atual"
+
 #~ msgid "_Verify System Dependencies"
 #~ msgstr "_Verificar as Dependências do Sistema"
+
 #~ msgid "Verify that all system dependencies are met"
 #~ msgstr "Verifica que todas as dependências do sistema estão satisfeitas"
+
 #~ msgid "Mark for I_nstallation"
 #~ msgstr "Marcar para I_nstalação"
+
 #~ msgid "Mark this package for installation"
 #~ msgstr "Marca este pacote para instalação"
+
 #~ msgid "Mark this package for removal"
 #~ msgstr "Marca este pacote para remoção"
+
 #~ msgid "Cancel installation or removal mark"
 #~ msgstr "Cancela as marcas de instalação ou remoção"
+
 #~ msgid "Re_fresh Catalog Data"
 #~ msgstr "A_tualizar Dados do Catálogo"
+
 #~ msgid "Download latest catalog data"
 #~ msgstr "Baixa os últimos dados do catálogo"
+
 #~ msgid "_Contents"
 #~ msgstr "_Conteúdo"
+
 #~ msgid "View Red Carpet help"
 #~ msgstr "Mostra a ajuda do Red Carpet"
+
 #~ msgid "_About..."
 #~ msgstr "_Sobre..."
+
 #~ msgid "About Red Carpet"
 #~ msgstr "Sobre o Red Carpet"
+
 #~ msgid "Go to the '%s' page"
 #~ msgstr "Vai para a página de '%s'"
+
 #~ msgid "installed"
 #~ msgstr "instalado"
+
 #~ msgid "not installed"
 #~ msgstr "não instalado"
+
 #~ msgid "Found %d matching bundles"
 #~ msgstr "%d pacotes correspondentes encontrados"
+
 #~ msgid "Found 1 matching bundle"
 #~ msgstr "Um pacote correspondente encontrado"
+
 #~ msgid "No matching bundles found"
 #~ msgstr "Nenhum pacote correspondente encontrado"
+
 #~ msgid "All Bundles"
 #~ msgstr "Todos os pacotes"
+
 #~ msgid "Uninstalled Bundles"
 #~ msgstr "Pacotes não instalados"
+
 #~ msgid "Installed Bundles"
 #~ msgstr "Pacotes instalados"
+
 #~ msgid "Catalog:"
 #~ msgstr "Catálogo:"
+
 #~ msgid "Status"
 #~ msgstr "Status"
+
 #~ msgid "Version"
 #~ msgstr "Versão"
+
 #~ msgid "Installed"
 #~ msgstr "Instalado"
+
 #~ msgid "Type"
 #~ msgstr "Tipo"
+
 #~ msgid "All Catalogs"
 #~ msgstr "Todos os catálogos"
+
 #~ msgid "All Subscribed Catalogs"
 #~ msgstr "Todos os catálogos assinados"
+
 #~ msgid "No Catalog/Unknown Catalog"
 #~ msgstr "Nenhum Catálogo/Catálogo Desconhecido"
+
 #~ msgid ""
 #~ "Unable to connect to the daemon:\n"
 #~ " '%s'."
 #~ msgstr ""
 #~ "Impossível conectar ao servidor:\n"
 #~ " '%s'."
+
 #~ msgid ""
 #~ "Detected Red Carpet Daemon version %d.%d.%d.\n"
 #~ "Version %d.%d.%d (or newer) is required"
 #~ msgstr ""
 #~ "A versão %d.%d.%d do servidor Red Carpet foi detectada.\n"
 #~ "A versão %d.%d.%d (ou mais recente) é necessária"
+
 #~ msgid ""
 #~ "Detected protocol version %d.  Version %d is required.  You must update "
 #~ "your version of rcd."
 #~ msgstr ""
 #~ "A versão %d do protocolo foi detectada. A versão %d é necessária. Você "
 #~ "tem que atualizar sua versão do rcd."
+
 #~ msgid "Starting daemon..."
 #~ msgstr "Iniciando o servidor..."
+
 #~ msgid ""
 #~ "Red Carpet requires a Red Carpet Daemon to be running.\n"
 #~ "Would you like to start one now?"
 #~ msgstr ""
 #~ "O Red Carpet necessita de um servidor Red Carpet para executar.\n"
 #~ "Você gostaria de iniciar um agora?"
+
 #~ msgid "Connect to this system"
 #~ msgstr "Conectar a este sistema"
+
 #~ msgid "Connect to a remote system"
 #~ msgstr "Conectar a um sistema remoto"
+
 #~ msgid "Server:"
 #~ msgstr "Servidor:"
+
 #~ msgid "User name:"
 #~ msgstr "Nome do usuário:"
+
 #~ msgid "Password:"
 #~ msgstr "Senha:"
+
 #~ msgid "Connect"
 #~ msgstr "Conectar"
+
 #~ msgid "ZENworks Error Console"
 #~ msgstr "Console de Erros do ZENworks"
+
 #~ msgid "Lost contact with the daemon!"
 #~ msgstr "O contato com o servidor foi perdido!"
+
 #~ msgid "Exit Red Carpet"
 #~ msgstr "Sair do Red Carpet"
+
 #~ msgid "Dependency Resolution"
 #~ msgstr "Resolução de Dependências"
+
 #~ msgid "Verifying System"
 #~ msgstr "Verificando o Sistema"
+
 #~ msgid "Resolving Dependencies"
 #~ msgstr "Resolvendo Dependências"
+
 #~ msgid ""
 #~ "You must agree to the licenses covering this software before installing "
 #~ "it."
 #~ msgstr ""
 #~ "Você deve concordar com a licensa que cobre este software antes de "
 #~ "instalá-lo."
+
 #~ msgid "I Agree"
 #~ msgstr "Eu Concordo"
+
 #~ msgid "Dependency Resolution Failed"
 #~ msgstr "A Resolução de Dependências Falhou"
+
 #~ msgid "System Verified"
 #~ msgstr "Sistema Verificado"
+
 #~ msgid ""
 #~ "All package dependencies are satisfied, and no corrective actions are "
 #~ "required."
 #~ msgstr ""
 #~ "Todas as dependências de pacotes estão satisfeitas, e nenhuma ação "
 #~ "corretiva é necessária."
+
 #~ msgid "Requested Installations"
 #~ msgstr "Instalações Solicitadas"
+
 #~ msgid "Requested Removals"
 #~ msgstr "Remoções Solicitadas"
+
 #~ msgid "Required Removals"
 #~ msgstr "Remoções Requeridas"
+
 #~ msgid "Continue"
 #~ msgstr "Continuar"
+
 #~ msgid "Catalog"
 #~ msgstr "Catálogo"
+
 #~ msgid "Package"
 #~ msgstr "Pacote"
+
 #~ msgid "Current Version"
 #~ msgstr "Versão Atual"
+
 #~ msgid "New Version"
 #~ msgstr "Versão Nova"
+
 #~ msgid "Size"
 #~ msgstr "Tamanho"
+
 #~ msgid "All"
 #~ msgstr "Todos"
+
 #~ msgid "Installations"
 #~ msgstr "Instalações"
+
 #~ msgid "Removals"
 #~ msgstr "Remoções"
+
 #~ msgid "Upgrades"
 #~ msgstr "Atualizações"
+
 #~ msgid "Timeframe (days):"
 #~ msgstr "Período (dias):"
+
 #~ msgid "Bundle"
 #~ msgstr "Pacote"
+
 #~ msgid "Unknown"
 #~ msgstr "Desconhecido"
+
 #~ msgid "Searching..."
 #~ msgstr "Procurando..."
+
 #~ msgid "Time"
 #~ msgstr "Tempo"
+
 #~ msgid "Action"
 #~ msgstr "Ação"
+
 #~ msgid "User"
 #~ msgstr "Usuário"
+
 #~ msgid "Old Version"
 #~ msgstr "Versão Antiga"
+
 #~ msgid "History"
 #~ msgstr "Histórico"
+
 #~ msgid "_History"
 #~ msgstr "_Histórico"
+
 #~ msgid "No results found."
 #~ msgstr "Nenhum resultado encontrado."
+
 #~ msgid "%s is not a valid package"
 #~ msgstr "%s não é um pacote válido"
+
 #~ msgid "There are no valid packages to install"
 #~ msgstr "Não há pacotes válidos para instalar"
+
 #~ msgid "Install from File"
 #~ msgstr "Instalar do Arquivo"
+
 #~ msgid "Downloading %s..."
 #~ msgstr "Baixando %s..."
+
 #~ msgid "Install from URL"
 #~ msgstr "Instalar da URL"
+
 #~ msgid "Package URL:"
 #~ msgstr "URL do pacote:"
+
 #~ msgid "ERROR: You cannot specify both -h/--host and -l/--local options"
 #~ msgstr ""
 #~ "ERRO: Você não pode especificar tanto as opções -h/--host e -l/--local"
+
 #~ msgid "ERROR: You cannot specify a user to a local daemon"
 #~ msgstr "ERRO: Você não pode especificar um usuário para um servidor local"
+
 #~ msgid "Mirror"
 #~ msgstr "Espelho"
+
 #~ msgid "Location"
 #~ msgstr "Localização"
+
 #~ msgid "Choose a Mirror"
 #~ msgstr "Escolha um Espelho"
+
 #~ msgid "Unable to unmount '%s'"
 #~ msgstr "Impossível desmontar '%s'"
+
 #~ msgid "Browse..."
 #~ msgstr "Navegar..."
+
 #~ msgid "Mount Directory"
 #~ msgstr "Montar Diretório"
+
 #~ msgid "Mount catalog"
 #~ msgstr "Montar catálogo"
+
 #~ msgid "Mount a directory as catalog"
 #~ msgstr "Monta um diretório como um catálogo"
+
 #~ msgid "Catalog Name:"
 #~ msgstr "Nome do Catálogo:"
+
 #~ msgid "Look for packages recursively"
 #~ msgstr "Procurar por pacotes recursivamente"
+
 #~ msgid "Please choose the path for catalog."
 #~ msgstr "Por favor, escolha o caminho para o catálogo."
+
 #~ msgid "Unmount Catalog"
 #~ msgstr "Desmontar Catálogo"
+
 #~ msgid "Unmount?"
 #~ msgstr "Desmontar?"
+
 #~ msgid "%s News"
 #~ msgstr "Notícias de %s"
+
 #~ msgid "Connect to a locally running daemon"
 #~ msgstr "Conecta a um servidor executando localmente"
+
 #~ msgid "hostname"
 #~ msgstr "nome da máquina"
+
 #~ msgid "Contact daemon on specified host"
 #~ msgstr "Contatar um servidor numa máquina específica"
+
 #~ msgid "username"
 #~ msgstr "nome do usuário"
+
 #~ msgid "Specify user name"
 #~ msgstr "Especifica o nome do usuário"
+
 #~ msgid "password"
 #~ msgstr "senha"
+
 #~ msgid "Print client version and exit"
 #~ msgstr "Imprime informações sobre cliente e sai"
+
 #~ msgid "Get usage information"
 #~ msgstr "Obter informações de uso"
+
 #~ msgid "Usage: %s <options> ..."
 #~ msgstr "Uso: %s <opções> ..."
+
 #~ msgid "newer"
 #~ msgstr "mais recente"
+
 #~ msgid "older"
 #~ msgstr "mais antigo"
+
 #~ msgid "upgrade"
 #~ msgstr "atualizar"
+
 #~ msgid "downgrade"
 #~ msgstr "instalar versão anterior"
+
 #~ msgid "install"
 #~ msgstr "instalar"
+
 #~ msgid "remove"
 #~ msgstr "remover"
+
 #~ msgid "Found %d matching packages"
 #~ msgstr "Encontrados %d pacotes correspondentes"
+
 #~ msgid "Found 1 matching package"
 #~ msgstr "Encontrado 1 pacote correspondente"
+
 #~ msgid "No matching packages found"
 #~ msgstr "Nenhum pacote correspondente encontrado"
+
 #~ msgid "Looking for updates..."
 #~ msgstr "Procurando atualizações..."
+
 #~ msgid "Found %d matching patches"
 #~ msgstr "Encontrados %d patches correspondentes"
+
 #~ msgid "Found 1 matching patch"
 #~ msgstr "Encontrado 1 patch correspondente"
+
 #~ msgid "No matching patches found"
 #~ msgstr "Nenhum patch correspondente encontrado"
+
 #~ msgid "Package Information"
 #~ msgstr "Informação Sobre o Pacote"
+
 #~ msgid "Unnamed"
 #~ msgstr "Sem Nome"
+
 #~ msgid "Dependencies"
 #~ msgstr "Dependências"
+
 #~ msgid "Provides"
 #~ msgstr "Fornece"
+
 #~ msgid "Requires"
 #~ msgstr "Requer"
+
 #~ msgid "Conflicts With"
 #~ msgstr "Conflita Com"
+
 #~ msgid "Release"
 #~ msgstr "Liberação"
+
 #~ msgid "Package Size"
 #~ msgstr "Tamanho do Pacote"
+
 #~ msgid "Installed Size"
 #~ msgstr "Tamanho Instalado"
+
 #~ msgid "Section"
 #~ msgstr "Seção"
+
 #~ msgid "Summary"
 #~ msgstr "Sumário"
+
 #~ msgid "Description"
 #~ msgstr "Descrição"
+
 #~ msgid "Info"
 #~ msgstr "Informação"
+
 #~ msgid "Importance"
 #~ msgstr "Importância"
+
 #~ msgid "Patches"
 #~ msgstr "Patches"
+
 #~ msgid "YOU Patches"
 #~ msgstr "VOCÊ faz o patch"
+
 #~ msgid "Searching for matching patches..."
 #~ msgstr "Procurando por patches correspondentes..."
+
 #~ msgid "No matching patches found."
 #~ msgstr "Nenhum patch correspondente encontrado."
+
 #~ msgid "%.1f%% completed"
 #~ msgstr "%.1f%% completo"
+
 #~ msgid "Updating System"
 #~ msgstr "Atualizando o Sistema"
+
 #~ msgid "Download cancelled"
 #~ msgstr "Download cancelado"
+
 #~ msgid "Transaction cancelled"
 #~ msgstr "Transação cancelada"
+
 #~ msgid "Transaction Finished"
 #~ msgstr "Transação Terminada"
+
 #~ msgid "Downloading packages"
 #~ msgstr "Baixando os pacotes"
+
 #~ msgid "Download Failed"
 #~ msgstr "O Download Falhou"
+
 #~ msgid "Unknown Error"
 #~ msgstr "Erro Desconhecido"
+
 #~ msgid "Processing Transaction"
 #~ msgstr "Processando a Transação"
+
 #~ msgid "The transaction has completed successfully"
 #~ msgstr "A transação foi completada com sucesso"
+
 #~ msgid "Transaction failed"
 #~ msgstr "A Transação falhou"
+
 #~ msgid "Transaction Failed"
 #~ msgstr "A Transação Falhou"
+
 #~ msgid "Interval to refresh catalog data (in hours):"
 #~ msgstr "Intervalo para atualizar os dados do catálogo (em horas):"
+
 #~ msgid "Packages"
 #~ msgstr "Pacotes"
+
 #~ msgid "Require package signatures"
 #~ msgstr "Requisitar assinaturas dos pacotes"
+
 #~ msgid "Maximum number of packages to download at once:"
 #~ msgstr "Número máximo de pacotes para baixar de uma só vez:"
+
 #~ msgid "Enable package rollback"
 #~ msgstr "Habilitar rollback de pacotes"
+
 #~ msgid "Proxy"
 #~ msgstr "Proxy"
+
 #~ msgid "Use a proxy"
 #~ msgstr "Usar um proxy"
+
 #~ msgid "Proxy URL:"
 #~ msgstr "URL do proxy:"
+
 #~ msgid "You do not have permissions to view proxy settings"
 #~ msgstr "Você não tem permissão para ver as configurações de proxy"
+
 #~ msgid "Cache downloaded packages and metadata"
 #~ msgstr "Fazer cache dos pacotes e dos metadados baixados"
+
 #~ msgid "Location of cached data:"
 #~ msgstr "Localização dos dados em cache:"
+
 #~ msgid "Expiration"
 #~ msgstr "Expiração"
+
 #~ msgid "Cache expires"
 #~ msgstr "O cache expira"
+
 #~ msgid "Maximum age in days:"
 #~ msgstr "Idade máxima em dias:"
+
 #~ msgid "Maximum size in MB:"
 #~ msgstr "Tamanho máximo em MB:"
+
 #~ msgid "Current cache size:"
 #~ msgstr "Tamanho atual do cache:"
+
 #~ msgid "Are you sure you want to delete the package files in your cache?"
 #~ msgstr ""
 #~ "Você tem certeza de que quer excluir os arquivos de pacote no seu cache?"
+
 #~ msgid "Empty Cache"
 #~ msgstr "Esvaziar o cache"
+
 #~ msgid "%d MB"
 #~ msgstr "%d MB"
+
 #~ msgid "Value"
 #~ msgstr "Valor"
+
 #~ msgid "Loading preferences..."
 #~ msgstr "Carregando preferências..."
+
 #~ msgid "%s Preferences"
 #~ msgstr "%s Preferências"
+
 #~ msgid "Search"
 #~ msgstr "Procurar"
+
 #~ msgid "S_earch Packages"
 #~ msgstr "Procurar Pacot_es"
+
 #~ msgid "Searching for matching packages..."
 #~ msgstr "Procurando por pacotes correspondentes..."
+
 #~ msgid "No matching packages found."
 #~ msgstr "Nenhum pacote correspondente encontrado."
+
 #~ msgid "All Packages"
 #~ msgstr "Todos os Pacotes"
+
 #~ msgid "Updates"
 #~ msgstr "Atualizações"
+
 #~ msgid "Uninstalled Packages"
 #~ msgstr "Pacotes Não Instalados"
+
 #~ msgid "Installed Packages"
 #~ msgstr "Pacotes Instalados"
+
 #~ msgid "All Sections"
 #~ msgstr "Todas as Seções"
+
 #~ msgid "Productivity"
 #~ msgstr "Produtividade"
+
 #~ msgid "Imaging"
 #~ msgstr "Imagens"
+
 #~ msgid "Personal Info. Mgmt"
 #~ msgstr "Ger. de Inform. Pessoais"
+
 #~ msgid "X Windows"
 #~ msgstr "X Windows"
+
 #~ msgid "Games"
 #~ msgstr "Jogos"
+
 #~ msgid "Multimedia"
 #~ msgstr "Multimídia"
+
 #~ msgid "Internet"
 #~ msgstr "Internet"
+
 #~ msgid "Utilities"
 #~ msgstr "Utilitários"
+
 #~ msgid "System"
 #~ msgstr "Sistema"
+
 #~ msgid "Documentation"
 #~ msgstr "Documentação"
+
 #~ msgid "Libraries"
 #~ msgstr "Bibliotecas"
+
 #~ msgid "Development"
 #~ msgstr "Desenvolvimento"
+
 #~ msgid "Development Tools"
 #~ msgstr "Ferramentas de Desenvolvimento"
+
 #~ msgid "Miscellaneous"
 #~ msgstr "Miscelânea"
+
 #~ msgid "Search descriptions"
 #~ msgstr "Procurar nas descrições"
+
 #~ msgid "Match:"
 #~ msgstr "Correspondência:"
+
 #~ msgid "The daemon identified itself as:"
 #~ msgstr "O servidor se identificou como:"
+
 #~ msgid "System type"
 #~ msgstr "Tipo de sistema"
+
 #~ msgid "Server URL"
 #~ msgstr "URL do servidor"
+
 #~ msgid "Server supports enhanced features."
 #~ msgstr "O servidor suporta recursos melhorados."
+
 #~ msgid "Unable to contact the daemon."
 #~ msgstr "Impossível contatar o servidor."
+
 #~ msgid "Dump daemon info to XML file"
 #~ msgstr "Descarregar informações do servidor em um arquivo XML"
+
 #~ msgid "Could not open file '%s': %s"
 #~ msgstr "Não foi possível abrir o arquivo '%s': %s"
+
 #~ msgid "Choose file to write XML to"
 #~ msgstr "Escolha o arquivo no qual escrever o XML"
+
 #~ msgid "Add Service"
 #~ msgstr "Adicionar Serviço"
+
 #~ msgid "Service URL"
 #~ msgstr "URL do Serviço"
+
 #~ msgid "Service type"
 #~ msgstr "Tipo de serviço"
+
 #~ msgid "Registration key"
 #~ msgstr "Chave de registro"
+
 #~ msgid "Edit Services"
 #~ msgstr "Editar os Serviços"
+
 #~ msgid "URL"
 #~ msgstr "URL"
+
 #~ msgid "_Remove service"
 #~ msgstr "_Remover serviço"
+
 #~ msgid "_Add service"
 #~ msgstr "_Adicionar serviço"
+
 #~ msgid "Pending Actions"
 #~ msgstr "Ações Pendentes"
+
 #~ msgid "%d pending install"
 #~ msgstr "%d instalação pendente"
+
 #~ msgid "%d pending installs"
 #~ msgstr "%d instalações pendentes"
+
 #~ msgid "%d pending removal"
 #~ msgstr "%d remoção pendente"
+
 #~ msgid "%d pending removals"
 #~ msgstr "%d remoções pendentes"
+
 #~ msgid "No pending actions"
 #~ msgstr "Nenhuma ação pendente"
+
 #~ msgid "Installed Software"
 #~ msgstr "Software Instalado"
+
 #~ msgid "I_nstalled Software"
 #~ msgstr "Software I_nstalado"
+
 #~ msgid "Available Software"
 #~ msgstr "Software Disponível"
+
 #~ msgid "A_vailable Software"
 #~ msgstr "Software Disponí_vel"
+
 #~ msgid "Connected to %s"
 #~ msgstr "Conectar a %s"
+
 #~ msgid "Subscribed"
 #~ msgstr "Assinado"
+
 #~ msgid "Catalog Name"
 #~ msgstr "Nome do Catálogo"
+
 #~ msgid "%s Catalog Subscriptions"
 #~ msgstr "Assinaturas do Catálogo %s"
+
 #~ msgid ""
 #~ "You do not have permission to subscribe or unsubscribe from catalogs.  "
 #~ "You will be unable to make any changes to the subscriptions."
 #~ msgstr ""
 #~ "Você não tem permissão para assinar ou cancelar assinaturas de catálagos. "
 #~ "Você não poderá fazer qualquer alteração nas assinaturas."
+
 #~ msgid "Untitled"
 #~ msgstr "Sem Título"
+
 #~ msgid "Are you sure you want to quit?"
 #~ msgstr "Você tem certeza de que deseja sair?"
+
 #~ msgid "_Pending Actions"
 #~ msgstr "Ações _Pendentes"
+
 #~ msgid "_Updates"
 #~ msgstr "_Atualizações"
+
 #~ msgid "_Update All"
 #~ msgstr "_Atualizar Todos"
+
 #~ msgid "The system is up-to-date."
 #~ msgstr "O sistema está atualizado."
+
 #~ msgid "There are no software updates available in any subscribed catalogs."
 #~ msgstr ""
 #~ "Não há nenhuma atualização de software disponível em qualquer dos "
 #~ "catálogos assinados."
+
 #~ msgid "Privilege"
 #~ msgstr "Privilégio"
+
 #~ msgid ""
 #~ "If you remove superuser privileges from yourself, you will be unable to "
 #~ "re-add them.\n"
@@ -1100,69 +1461,97 @@ msgstr "Falha na conexão VPN"
 #~ "poderá readicioná-los.\n"
 #~ "\n"
 #~ "Você tem certeza de que deseja fazer isto?"
+
 #~ msgid "Enabled"
 #~ msgstr "Habilitado"
+
 #~ msgid "Edit Users"
 #~ msgstr "Editar Usuários"
+
 #~ msgid "Confirm:"
 #~ msgstr "Confirmar:"
+
 #~ msgid "Password can not be empty."
 #~ msgstr "A senha não pode ser vazia."
+
 #~ msgid "Passwords do not match."
 #~ msgstr "A senha não está correta."
+
 #~ msgid "Set %s's password"
 #~ msgstr "Definir a senha de %s"
+
 #~ msgid "Users"
 #~ msgstr "Usuários"
+
 #~ msgid "Add"
 #~ msgstr "Adicionar"
+
 #~ msgid "Are you sure you want to delete '%s'?"
 #~ msgstr "Você tem certeza de que deseja excluir '%s'?"
+
 #~ msgid "Privileges"
 #~ msgstr "Privilégios"
+
 #~ msgid "Add new user"
 #~ msgstr "Adicionar novo usuário"
+
 #~ msgid "Invalid user name."
 #~ msgstr "Nome de usuário inválido."
+
 #~ msgid "Orientation"
 #~ msgstr "Orientação"
+
 #~ msgid "The orientation of the tray."
 #~ msgstr "A orientação da bandeja."
+
 #~ msgid ""
 #~ "There appears to be a Red Carpet update icon already running.  Exiting."
 #~ msgstr ""
 #~ "Parece já haver um ícone de atualização do Red Carpet em execução. O "
 #~ "programa será fechado."
+
 #~ msgid "Brought to you by:"
 #~ msgstr "Trazido a você por:"
+
 #~ msgid "With love from:"
 #~ msgstr "Com o amor de:"
+
 #~ msgid "Best wishes from:"
 #~ msgstr "Os melhores desejos de:"
+
 #~ msgid "Sincerely:"
 #~ msgstr "Sinceramente:"
+
 #~ msgid "Developed by chimps:"
 #~ msgstr "Desenvolvido por chimpanzés:"
+
 #~ msgid "Group Activation"
 #~ msgstr "Ativação do Grupo"
+
 #~ msgid "Activate"
 #~ msgstr "Ativar"
+
 #~ msgid "Channels"
 #~ msgstr "Canais"
+
 #~ msgid "_Activate..."
 #~ msgstr "_Ativar..."
+
 #~ msgid ""
 #~ "Activate daemon against a Red Carpet Express or Red Carpet Enterprise "
 #~ "server"
 #~ msgstr ""
 #~ "Ativa o servidor contra um servidor Red Carpet Express ou Red Carpet "
 #~ "Enterprise"
+
 #~ msgid "Red Carpet Ne_ws..."
 #~ msgstr "Notícias sobre o Red Carpet"
+
 #~ msgid "View the latest Red Carpet news"
 #~ msgstr "Mostra as últimas notícias sobre o Red Carpet"
+
 #~ msgid "Channel"
 #~ msgstr "Canal"
+
 #~ msgid "Channel:"
 #~ msgstr "Canais:"
-
