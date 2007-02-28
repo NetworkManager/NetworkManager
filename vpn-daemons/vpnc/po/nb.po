@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Norwegian bokmål translation of NetworkManager's vpnc support.
+# Copyright (C) 2006-2007 Red Hat, Inc.
+# This file is distributed under the same license as the NetworkManager package.
+# Kjartan Maraas <kmaraas@gnome.org>, 2006-2007.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: OpenVPN xx\n"
+"Project-Id-Version: vpnc\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-10-30 10:12+0100\n"
-"PO-Revision-Date: 2006-10-30 10:14+0100\n"
+"PO-Revision-Date: 2007-02-28 14:35+0100\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian bokmal <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -71,7 +71,7 @@ msgstr "Håndtering av VPN-tilkobling (vpnc)"
 
 #: ../properties/nm-vpnc.c:83
 msgid "Compatible Cisco VPN client (vpnc)"
-msgstr ""
+msgstr "Kompatibel Cisco VPN-klient (vpnc)"
 
 #: ../properties/nm-vpnc.c:447
 msgid "The following vpnc VPN connection will be created:"
@@ -113,7 +113,7 @@ msgstr "Tilkoblingsdetaljene kan endres med «Rediger»-knappen."
 
 #: ../properties/nm-vpnc.c:548
 msgid "TCP tunneling not supported"
-msgstr ""
+msgstr "TCP-tunnelering ikke støttet"
 
 #: ../properties/nm-vpnc.c:550
 #, c-format
@@ -124,6 +124,9 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
+"Filen «%s» med innstillinger for VPN spesifiserer at VPN-trafikk skal tunneleres gjennom TCP, men dette er ikke støttet i vpnc-programvaren.\n"
+"\n"
+"Tilkoblingen kan fremdeles opprettes med TCP-tunnelering deaktivert, men det er ikke sikkert at dette vil fungere som forventet."
 
 #: ../properties/nm-vpnc.c:574
 msgid "Cannot import settings"
@@ -132,7 +135,7 @@ msgstr "Kan ikke importere innstillinger"
 #: ../properties/nm-vpnc.c:576
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr ""
+msgstr "Filen «%s» med innstillinger for VPN inneholder ikke gyldige data."
 
 #: ../properties/nm-vpnc.c:593
 msgid "Select file to import"
@@ -189,11 +192,11 @@ msgstr "Overstyr br_ukernavn"
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
-msgstr ""
+msgstr "Vennligst oppgi informasjonen du har fått av din systemadministrator under. Ikke oppgi passordet her da du vil bli spurt om dette når du kobler til."
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Use _domain for authentication"
-msgstr ""
+msgstr "Bruk _domene for autentisering"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "_Gateway:"
@@ -207,34 +210,34 @@ msgstr "_Importer lagret konfigurasjon..."
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
-msgstr ""
+msgstr "_Navn som brukes til å identifisere tilkoblingen til det private nettverket. F.eks. «Mitt VPN» eller «Jobbnettverk»"
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "K_un bruk VPN-tilkoblingen for disse adressene"
 
 #: ../src/nm-vpnc-service.c:117
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
-msgstr ""
+msgstr "Pålogging til VPN feilet fordi brukernavn og passord ikke ble godtatt."
 
 #: ../src/nm-vpnc-service.c:119
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
+msgstr "Pålogging til VPN feilet fordi VPN-programmet ikke kunne startes."
 
 #: ../src/nm-vpnc-service.c:121
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr ""
+msgstr "Pålogging til VPN feilet fordi VPN-programmet ikke kunne koble til VPN-tjeneren."
 
 #: ../src/nm-vpnc-service.c:123
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
+msgstr "Pålogging til VPN feilet fordi VPN-konfigurasjonsvalgene var ugyldige."
 
 #: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr ""
+msgstr "Pålogging til VPN feilet fordi VPN-programmet mottok en ugyldig konfigurasjon fra VPN-tjeneren."
