@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Norwegian bokmål translation of NetworkManager's pptp support.
+# Copyright (C) 2006-2007 Kjartan Maraas
+# This file is distributed under the same license as the NetworkManager package.
+# Kjartan Maraas <kmaraas@gnome.org>, 2006-2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: pptp xx\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2006-10-30 10:05+0100\n"
-"PO-Revision-Date: 2006-10-30 10:09+0100\n"
+"PO-Revision-Date: 2007-02-28 14:28+0100\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian bokmal <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -106,7 +106,7 @@ msgstr "GPRS pakketype"
 
 #: ../properties/nm-ppp-properties.c:183
 msgid "Use CTS/RTS flow control"
-msgstr ""
+msgstr "Bruk CTS/RTS-flytkontroll"
 
 #: ../properties/nm-ppp-properties.c:188
 msgid "Connect via a modem"
@@ -114,12 +114,12 @@ msgstr "Koble til via modem"
 
 #: ../properties/nm-ppp-properties.c:193
 msgid "Require IP to be provided"
-msgstr ""
+msgstr "Krev at IP oppgis"
 
 #: ../properties/nm-ppp-properties.c:198
 #: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Use Peer DNS"
-msgstr ""
+msgstr "Bruk peer-DNS"
 
 #: ../properties/nm-ppp-properties.c:203
 msgid "Use MPPE encryption"
@@ -134,23 +134,20 @@ msgid "Use MPPC compression"
 msgstr "Bruk MPPC-komprimering"
 
 #: ../properties/nm-ppp-properties.c:218
-#, fuzzy
 msgid "Do not use deflate compression"
-msgstr "Bruk LZO-komprimering"
+msgstr "Ikke bruk «deflate»-komprimering"
 
 #: ../properties/nm-ppp-properties.c:223
-#, fuzzy
 msgid "Do not use BSD compression"
-msgstr "Bruk LZO-komprimering"
+msgstr "Ikke bruk BSD-komprimering"
 
 #: ../properties/nm-ppp-properties.c:228
 msgid "Exclusive device access by pppd"
-msgstr ""
+msgstr "Ekslusiv aksess til enheten for pppd"
 
 #: ../properties/nm-ppp-properties.c:233
-#, fuzzy
 msgid "Authenticate remote peer"
-msgstr "Autentiser VPN"
+msgstr "Autentiser ekstern peer"
 
 #: ../properties/nm-ppp-properties.c:238
 #: ../properties/nm-ppp-dialog.glade.h:32
@@ -168,11 +165,11 @@ msgstr "Ikke tillat MSCHAP"
 
 #: ../properties/nm-ppp-properties.c:253
 msgid "Maximum transmit unit (in bytes)"
-msgstr ""
+msgstr "Maksimal overføringsenhet (i byte)"
 
 #: ../properties/nm-ppp-properties.c:258
 msgid "Maximum receive unit (in bytes)"
-msgstr ""
+msgstr "Maksimal enhet for mottak (i byte)"
 
 #: ../properties/nm-ppp-properties.c:263
 msgid "Number of failed LCP echos to cause disconnect"
@@ -188,7 +185,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-properties.c:278
 msgid "Custom PPP options"
-msgstr ""
+msgstr "Egendefinerte PPP-flagg"
 
 #: ../properties/nm-ppp-properties.c:288
 msgid "Use Peer DNS over the Tunnel"
@@ -203,19 +200,18 @@ msgid "Limit to specific networks"
 msgstr ""
 
 #: ../properties/vpnui_impl.c:229
-#, fuzzy, c-format
+#, c-format
 msgid "The following '%s' connection will be created:"
-msgstr "Følgende OpenVPN-tilkobling vil bli opprettet:"
+msgstr "Følgende «%s»-tilkobling vil bli opprettet:"
 
 #: ../properties/vpnui_impl.c:242
-#, fuzzy, c-format
+#, c-format
 msgid "\t%s:  %s\n"
-msgstr "CA:  %s"
+msgstr "\t%s:  %s\n"
 
 #: ../properties/vpnui_impl.c:245
-#, fuzzy
 msgid "The connection details can be changed using the \"Back\" button."
-msgstr "Tilkoblingsdetaljene kan endres med «Rediger»-knappen."
+msgstr "Tilkoblingsdetaljene kan endres med «Tilbake»-knappen."
 
 #: ../properties/vpnui_impl.c:317
 msgid "Select file to import"
@@ -249,7 +245,7 @@ msgstr "<b>Navn på tilkobling</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
 msgid "<b>Delays and TImeouts</b>"
-msgstr ""
+msgstr "<b>Pauser og tidsavbrudd</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>Encryption</b>"
@@ -261,7 +257,7 @@ msgstr "<b>IP-alternativer</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:7
 msgid "<b>Packet Parameters</b>"
-msgstr ""
+msgstr "<b>Pakkeparametere</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:8
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -277,12 +273,11 @@ msgstr "Tillat BSD-komprimering"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
 msgid "Allow Deflate compression"
-msgstr ""
+msgstr "Tillat deflate-komprimering"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
-#, fuzzy
 msgid "Authenticate Peer"
-msgstr "Autentiser VPN"
+msgstr "Autentiser peer"
 
 #: ../properties/nm-ppp-dialog.glade.h:13
 msgid "Authentication"
@@ -290,7 +285,7 @@ msgstr "Autentisering"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
 msgid "Compression & Encryption"
-msgstr ""
+msgstr "Komprimering & Kryptering"
 
 #: ../properties/nm-ppp-dialog.glade.h:15
 msgid "Connection"
@@ -298,7 +293,7 @@ msgstr "Tilkobling:"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
 msgid "Debug Output"
-msgstr ""
+msgstr "Feilsøkingsutskrift"
 
 #: ../properties/nm-ppp-dialog.glade.h:17
 msgid "Disconnect after this many LCP echo requests fail"
@@ -325,7 +320,7 @@ msgstr "GPRS-alternativer"
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "Hardware RTS/CTS"
-msgstr ""
+msgstr "RTS/CTS i maskinvare"
 
 #: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Host name or IP address of the PPTP server"
@@ -363,36 +358,35 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:33
 msgid "Refuse MS CHAP"
-msgstr ""
+msgstr "Nekt MS CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:34
 msgid "Require 128 bit MPPE encryption"
-msgstr ""
+msgstr "Krev 128-bit MPPE-kryptering"
 
 #: ../properties/nm-ppp-dialog.glade.h:35
 msgid "Require Explicit IP Addr"
-msgstr ""
+msgstr "Krev eksplisitt IP-adresse"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
-#, fuzzy
 msgid "Require MPPC Compression"
-msgstr "Bruk LZO-komprimering"
+msgstr "Krev MPPC-komprimering"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPE encryption"
-msgstr ""
+msgstr "Krev MPPE-kryptering"
 
 #: ../properties/nm-ppp-dialog.glade.h:38
 msgid "Requires existing network connection"
-msgstr ""
+msgstr "Krever eksisterende nettverkstilkobling"
 
 #: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Routing"
-msgstr ""
+msgstr "Ruting"
 
 #: ../properties/nm-ppp-dialog.glade.h:40
 msgid "Serial Options"
-msgstr ""
+msgstr "Alternativer for seriellport"
 
 #: ../properties/nm-ppp-dialog.glade.h:41
 msgid "Service providers GPRS access point from device config"
@@ -400,11 +394,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers IP address"
-msgstr ""
+msgstr "IP-adresse for tjenestetilbyder"
 
 #: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Telephone number to dial"
-msgstr ""
+msgstr "Telefonnummer som skal ringes opp"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
 msgid ""
@@ -415,11 +409,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:46
 msgid "Time in seconds between echo requests"
-msgstr ""
+msgstr "Tid i sekunder mellom ekko-forespørsler"
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Type:"
-msgstr ""
+msgstr "Type:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
@@ -465,7 +459,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Channel:"
-msgstr ""
+msgstr "_Kanal:"
 
 #: ../properties/nm-ppp-dialog.glade.h:60
 msgid "_Context Num"
@@ -473,7 +467,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:61
 msgid "_Custom PPP options:"
-msgstr ""
+msgstr "_Egendefinerte PPP-flagg:"
 
 #: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Device Address:"
@@ -493,7 +487,7 @@ msgstr "_Importer lagret konfigurasjon..."
 
 #: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "K_un bruk VPN-tilkoblingen for disse adressene"
 
 #: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Packet Type"
@@ -505,7 +499,7 @@ msgstr "_Telefonnummer:"
 
 #: ../properties/nm-ppp-dialog.glade.h:69
 msgid "connect-delay"
-msgstr ""
+msgstr "connect-delay"
 
 #: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
