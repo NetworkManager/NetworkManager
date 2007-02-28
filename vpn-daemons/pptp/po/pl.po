@@ -6,14 +6,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: YaST (@memory@)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-27 00:31+0100\n"
+"POT-Creation-Date: 2007-02-28 20:42+0100\n"
 "PO-Revision-Date: 2007-02-27 00:59+0100\n"
 "Last-Translator: wadim dziedzic <nikdo@aviary.pl>\n"
 "Language-Team: Polish <i18n@suse.de>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2;\n"
 
 #: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
 msgid "Authentication Type:"
@@ -29,14 +30,12 @@ msgstr "_Zapamiętaj hasło w tej sesji"
 msgid "_Save in keyring"
 msgstr "Z_apamiętaj hasło"
 
-#: ../auth-dialog-general/main.c:48
-#: ../auth-dialog/main.c:140
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access '%s'."
 msgstr "Aby uzyskać dostęp do '%s', należy wykonać uwierzytelnianie."
 
-#: ../auth-dialog-general/main.c:51
-#: ../auth-dialog/main.c:141
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
 msgstr "Uwierzytelnienie połączenia"
 
@@ -47,7 +46,8 @@ msgid ""
 "\n"
 "The connection '%s' may need some form of authentication.\n"
 "\n"
-"Please select an appropriate authentication type and provide the necessary credentials below:\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Informacje o uwierzytelnianiu</span>\n"
 "\n"
@@ -166,9 +166,8 @@ msgid "Allow Deflate compression"
 msgstr "Zezwój na kompresję deflate"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
-#, fuzzy
 msgid "Authenticate Peer"
-msgstr "Uwierzytelnij "
+msgstr "Uwierzytelnianie klienta"
 
 #: ../properties/nm-ppp-dialog.glade.h:13
 msgid "Authentication"
@@ -204,8 +203,13 @@ msgid "Find Device"
 msgstr "Znajdź urządzenie"
 
 #: ../properties/nm-ppp-dialog.glade.h:21
-msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
-msgstr "Z powodów bezpieczeństwa, przed połączeniem, wyżej podane opcje sprawdzane są z listę dozwolonych opcji. Obecnie brak opcji na tej liście."
+msgid ""
+"For security reasons, options entered in the box above are checked against a "
+"list of allowed options before a connection is established.  Currently there "
+"are no options on the list."
+msgstr ""
+"Z powodów bezpieczeństwa, przed połączeniem, wyżej podane opcje sprawdzane "
+"są z listę dozwolonych opcji. Obecnie brak opcji na tej liście."
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "GPRS Options"
@@ -220,12 +224,17 @@ msgid "Host name or IP address of the PPTP server"
 msgstr "Nazwa lub adres IP serwera PPTP"
 
 #: ../properties/nm-ppp-dialog.glade.h:25
-msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr "Gdy kompresja BSD jest wyłączona, do pppd przekazywana jest opcja 'nobsdcomp'"
+msgid ""
+"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr ""
+"Gdy kompresja BSD jest wyłączona, do pppd przekazywana jest opcja 'nobsdcomp'"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
-msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr "Gdy kompresja deflate jest wyłączona, do pppd przekazywana jest opcja 'nodeflate'"
+msgid ""
+"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr ""
+"Gdy kompresja deflate jest wyłączona, do pppd przekazywana jest opcja "
+"'nodeflate'"
 
 #: ../properties/nm-ppp-dialog.glade.h:27
 msgid "Maximum Receive Unit"
@@ -303,7 +312,8 @@ msgstr "Numer telefonu do wybrania"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
-"This is the friendly name that will be used to identify this network connection, \n"
+"This is the friendly name that will be used to identify this network "
+"connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
 msgstr ""
 "Nazwa identyfikująca połączenie do sieci prywatnej. \n"
@@ -343,8 +353,12 @@ msgid "When checked the 'require-mppc' option is passed to pppd"
 msgstr "Gdy włączone, do pppd przekazywana jest opcja 'require-mppc'"
 
 #: ../properties/nm-ppp-dialog.glade.h:55
-msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
-msgstr "Gdy włączone, ustawiana jest opcja 'debug' pppd i dodawane sa informacje z wtyczki NetworkManagera"
+msgid ""
+"When checked this sets the pppd 'debug' option and adds some extra "
+"information from the NetworkManager plugin"
+msgstr ""
+"Gdy włączone, ustawiana jest opcja 'debug' pppd i dodawane sa informacje z "
+"wtyczki NetworkManagera"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
@@ -483,9 +497,8 @@ msgid "Exclusive device access by pppd"
 msgstr "Wyłączny dostęp do urządzenia dla pppd"
 
 #: ../properties/nm-ppp-properties.c:241
-#, fuzzy
 msgid "Authenticate remote peer"
-msgstr "Uwierzytelnij "
+msgstr "Uwierzytelnianie zdalnego klienta"
 
 #: ../properties/nm-ppp-properties.c:256
 msgid "Refuse MSCHAP"
@@ -578,20 +591,24 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #, fuzzy
 #~ msgid "Connection Type: Password"
 #~ msgstr "Hasło _dodatkowe:"
+
 #~ msgid "Username:  %s"
 #~ msgstr "Nazwa użytkownika: %s"
 
 #, fuzzy
 #~ msgid "Remote:  %s"
 #~ msgstr "Trasy: %s"
+
 #~ msgid "Routes:  %s"
 #~ msgstr "Trasy: %s"
 
 #, fuzzy
 #~ msgid "Cipher:  %s"
 #~ msgstr "Nazwa: %s"
+
 #~ msgid "Cannot import settings"
 #~ msgstr "Nie można zaimportować ustawień"
+
 #~ msgid "The VPN settings file '%s' does not contain valid data."
 #~ msgstr "Plik ustawień VPN '%s' nie zawiera poprawnych danych."
 
@@ -602,20 +619,24 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #, fuzzy
 #~ msgid "Select key to use"
 #~ msgstr "Plik do zaimportowania"
+
 #~ msgid "Failed to export configuration"
 #~ msgstr "Eksport konfiguracji nie powiódł się."
+
 #~ msgid "Failed to save file %s"
 #~ msgstr "Zapis pliku %s zakończony niepowodzeniem"
 
 #, fuzzy
 #~ msgid "<b>Optional Information</b>"
 #~ msgstr "Informacje _dodatkowe"
+
 #~ msgid "<b>Required Information</b>"
 #~ msgstr "<b>Informacje wymagane</b>"
 
 #, fuzzy
 #~ msgid "Password"
 #~ msgstr "_Hasło:"
+
 #~ msgid ""
 #~ "Please enter the information provided by your system administrator below. "
 #~ "Do not enter your password here as you will be prompted when connecting."
@@ -634,39 +655,50 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnego użytkownika i "
 #~ "hasła."
+
 #~ msgid "The VPN login failed because the VPN program could not be started."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu niemożności uruchomienia "
 #~ "programu VPN."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program could not connect to the VPN "
 #~ "server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu braku połączenia z "
 #~ "serwerem VPN."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN configuration options were invalid."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnych opcji "
 #~ "konfiguracyjnych."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program received an invalid "
 #~ "configuration from the VPN server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu otrzymania od serwera "
 #~ "VPN błędnej konfiguracji."
+
 #~ msgid "_Group Password:"
 #~ msgstr "Hasło _grupy:"
+
 #~ msgid "Compatible Cisco VPN client (vpnc)"
 #~ msgstr "Klient kompatybilny z Cisco VPN (vpnc)"
+
 #~ msgid "Gateway:  %s"
 #~ msgstr "Brama: %s"
+
 #~ msgid "Group Name:  %s"
 #~ msgstr "Nazwa grupy: %s"
+
 #~ msgid "Domain:  %s"
 #~ msgstr "Domena: %s"
+
 #~ msgid "TCP tunneling not supported"
 #~ msgstr "Tunelowanie TCP nie jest obsługiwane"
+
 #~ msgid ""
 #~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
 #~ "through TCP which is currently not supported in the vpnc software.\n"
@@ -678,10 +710,12 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #~ "TCP. Opcja nie jest jednak obsługiwana przez program vpnc\n"
 #~ "\n"
 #~ "Połączenie z wyłączonym tunelowaniem TCP może nie działać poprawnie."
+
 #~ msgid "G_roup Name:"
 #~ msgstr "Nazwa g_rupy:"
+
 #~ msgid "Override _user name"
 #~ msgstr "Wymuś _nazwę użytkownika"
+
 #~ msgid "Use _domain for authentication"
 #~ msgstr "Użyj _domeny do uwierzytelniania"
-
