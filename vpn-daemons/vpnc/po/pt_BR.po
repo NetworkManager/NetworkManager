@@ -1,136 +1,120 @@
-# Portugese (Brasilian) message file for YaST2 (@memory@).
-# Copyright (C) 2005 SUSE Linux Products GmbH.
-# Copyright (C) 2002 SuSE Linux AG.
-# Copyright (C) 1999-2000, 2001 SuSE GmbH.
-# Karl Eichwalder <ke@suse.de>, 1999.
-# Ralf Lanz <rlanz@genix.com.br>, 1999.
+# Brazilian Portuguese translation of NetworkManager-vpnc.
+# Copyright (C) 2007 Free Software Foundation, Inc.
+# This file is distributed under the same license as the NetworkManager-vpnc package.
+# Raphael Higino <phhigino@gmail.com>, 2007.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: YaST (@memory@)\n"
+"Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-16 17:10+0200\n"
-"PO-Revision-Date: 2002-07-01 14:56+0200\n"
-"Last-Translator: Ralf Lanz <rlanz@genix.com.br>\n"
-"Language-Team: Brazilian Portuguese <i18n@suse.de>\n"
+"POT-Creation-Date: 2007-03-02 20:11-0300\n"
+"PO-Revision-Date: 2007-02-25 10:40-0300\n"
+"Last-Translator: Washington Lins <washington-lins@uol.com.br>\n"
+"Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n>1;\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:147
-#, fuzzy
 msgid "_Secondary Password:"
-msgstr "V&erifique a Senha:"
+msgstr "_Senha secundária:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:267
-#, fuzzy
 msgid "_Username:"
-msgstr "Nome de &Usuário:"
+msgstr "Nome do _usuário:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:269
-#, fuzzy
 msgid "_Domain:"
-msgstr "&Domínio:"
+msgstr "_Domínio:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:271
-#, fuzzy
 msgid "_Password:"
-msgstr "Senha:"
+msgstr "_Senha:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:354
-#, fuzzy
 msgid "Connect _anonymously"
-msgstr "Conexões"
+msgstr "Conectar _anonimamente"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:359
-#, fuzzy
 msgid "Connect as _user:"
-msgstr "Conectado Como "
+msgstr "Conectar como o _usuário:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:465
-#, fuzzy
 msgid "_Remember passwords for this session"
-msgstr "Entre novamente a senha para &verificação:"
+msgstr "_Lembrar senhas para esta sessão"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:467
-#, fuzzy
 msgid "_Save passwords in keyring"
-msgstr "Configurar Criptografia de senha"
+msgstr "_Salvar senhas no chaveiro"
 
 #: ../auth-dialog/main.c:161
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
+msgstr "Você precisa se autenticar para acessar a Rede Privada Virtual '%s'."
 
 #: ../auth-dialog/main.c:162
-#, fuzzy
 msgid "Authenticate VPN"
-msgstr "Autenticação"
+msgstr "Autenticar VPN"
 
 #: ../auth-dialog/main.c:169
-#, fuzzy
 msgid "_Group Password:"
-msgstr "Senha:"
+msgstr "Senha do _grupo:"
 
 #: ../nm-vpnc.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
-msgstr ""
+msgstr "Adiciona, remove e edita conexões VPN"
 
 #: ../nm-vpnc.desktop.in.h:2
-#, fuzzy
 msgid "VPN Connection Manager (vpnc)"
-msgstr "Gerenciamento de Conexão"
+msgstr "Gerenciador de conexões VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:83
+#: ../properties/nm-vpnc.c:84
 msgid "Compatible Cisco VPN client (vpnc)"
-msgstr ""
+msgstr "Cliente VPN compatível com Cisco (vpnc)"
 
-#: ../properties/nm-vpnc.c:447
-#, fuzzy
+#: ../properties/nm-vpnc.c:448
 msgid "The following vpnc VPN connection will be created:"
-msgstr "Os seguintes scanners serão desativados:"
+msgstr "A seguinte conexão VPN vpnc será criada:"
 
-#: ../properties/nm-vpnc.c:449
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:450
+#, c-format
 msgid "Name:  %s"
-msgstr "No&me:"
+msgstr "Nome:  %s"
 
-#: ../properties/nm-vpnc.c:452
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:453
+#, c-format
 msgid "Gateway:  %s"
-msgstr "Gateway: %1"
+msgstr "Gateway:   %s"
 
-#: ../properties/nm-vpnc.c:454
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:455
+#, c-format
 msgid "Group Name:  %s"
-msgstr "Nome de Grupo:"
+msgstr "Nome do grupo:  %s"
 
-#: ../properties/nm-vpnc.c:458
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:459
+#, c-format
 msgid "Username:  %s"
-msgstr "Nome de Usuário: %1"
+msgstr "Nome do usuário:  %s"
 
-#: ../properties/nm-vpnc.c:463
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:464
+#, c-format
 msgid "Domain:  %s"
-msgstr "&Domínio:"
+msgstr "Domínio:  %s"
 
-#: ../properties/nm-vpnc.c:468
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:469
+#, c-format
 msgid "Routes:  %s"
-msgstr "Rotas: %1"
+msgstr "Rotas:  %s"
 
-#: ../properties/nm-vpnc.c:472
+#: ../properties/nm-vpnc.c:473
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr ""
+msgstr "Os detalhes da conexão podem ser alterados usando o botão \"Editar\"."
 
-#: ../properties/nm-vpnc.c:548
-#, fuzzy
+#: ../properties/nm-vpnc.c:542
 msgid "TCP tunneling not supported"
-msgstr "Sem suporte no momento."
+msgstr "Tunelamento TCP não suportado"
 
-#: ../properties/nm-vpnc.c:550
+#: ../properties/nm-vpnc.c:544
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -139,119 +123,154 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
+"O arquivo de configurações de VPN '%s' especifica que o tráfico VPN deve ser "
+"tunelado por TCP que, atualmente, não é suportado pelo software vpnc.\n"
+"\n"
+"A conexão ainda pode ser criada, com tunelamento por TCP desativado, mas "
+"pode não funcionar como experado."
 
-#: ../properties/nm-vpnc.c:574
-#, fuzzy
+#: ../properties/nm-vpnc.c:565
 msgid "Cannot import settings"
-msgstr "Não pode gravar configurações!"
+msgstr "Não é possível importar as configurações"
 
-#: ../properties/nm-vpnc.c:576
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:567
+#, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "O arquivo especificado não contém uma chave TSIG."
+msgstr "O arquivo de configurações de VPN '%s' não contém dados válidos."
 
-#: ../properties/nm-vpnc.c:593
-#, fuzzy
+#: ../properties/nm-vpnc.c:584
 msgid "Select file to import"
-msgstr "Selecione um arquivo para carregar."
+msgstr "Selecione o arquivo para importar"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:748
+#: ../properties/nm-vpnc.c:744
 msgid "Save as..."
-msgstr "Salvar como ..."
+msgstr "Salvar como..."
 
-#: ../properties/nm-vpnc.c:778
-#, fuzzy, c-format
+#: ../properties/nm-vpnc.c:774
+#, c-format
 msgid "A file named \"%s\" already exists."
-msgstr "Um host denominado %1 já existe."
+msgstr "Um arquivo com o nome \"%s\" já existe."
 
-#: ../properties/nm-vpnc.c:781
-#, fuzzy
+#: ../properties/nm-vpnc.c:777
 msgid "Do you want to replace it with the one you are saving?"
-msgstr "Você quer realmente reinicializar suas configurações?"
+msgstr "Deseja substituí-lo com o arquivo que você está salvando?"
+
+#: ../properties/nm-vpnc.c:791
+msgid "Failed to export configuration"
+msgstr "Falha ao exportar a configuração"
+
+#: ../properties/nm-vpnc.c:793
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Falha ao salvar o arquivo %s"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
-#, fuzzy
-msgid "<b>Connection Name</b>"
-msgstr "<b>Descrição: </b>"
+msgid "<b>Connection Information</b>"
+msgstr "<b>Informações da conexão</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-#, fuzzy
-msgid "<b>Required Information</b>"
-msgstr "<p><b>Informações de Suporte</b></p>\n"
+msgid "<b>Connection Name</b>"
+msgstr "<b>Nome da conexão</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr ""
+msgid "<b>Required</b>"
+msgstr "<b>Requerido</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-#, fuzzy
-msgid "G_roup Name:"
-msgstr "Nome de Grupo:"
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>exemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-#, fuzzy
-msgid "O_ptional Information"
-msgstr "Informações Opcionais"
+msgid "Connection Name"
+msgstr "Nome da conexão"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-#, fuzzy
-msgid "Override _user name"
-msgstr "Ou tecle nome-de-&usuário:"
+msgid "G_roup Name:"
+msgstr "Nome _do grupo:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Nome usado para identificar a conexão à rede privada, p. ex. \"VPN do Campus"
+"\" ou \"Rede Corporativa\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "Opcional"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "Override _user name"
+msgstr "Ignorar nome do _usuário"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
-
-#: ../properties/nm-vpnc-dialog.glade.h:8
-#, fuzzy
-msgid "Use _domain for authentication"
-msgstr "Autenticação de Usuário"
-
-#: ../properties/nm-vpnc-dialog.glade.h:9
-#, fuzzy
-msgid "_Gateway:"
-msgstr "Gateway"
-
-#: ../properties/nm-vpnc-dialog.glade.h:10
-#, fuzzy
-msgid "_Import Saved Configuration..."
-msgstr "Configuração do &Servidor..."
+"Por favor, digite as informações fornecidas pelo seu administrador de "
+"sistemas. Não digite sua senha aqui, já que ela será pedida ao conectar."
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
 msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
+"Please note that the file you import is not a Cisco VPN or VPNC "
+"configuration file. Ask your adminstrator for the file."
 msgstr ""
+"Por favor, observe que arquivo que você importou não é um arquivo de "
+"configuração Cisco VPN ou VPNC. Pergunte ao seu administrador pelo arquivo."
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgid "Use _domain for authentication"
+msgstr "Usar _domínio para autenticação"
 
-#: ../src/nm-vpnc-service.c:116
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_Gateway:"
+msgstr "_Gateway:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:14
+msgid "_Import Saved Configuration..."
+msgstr "_Importar configuração salva..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:15
+msgid "_Only use VPN connection for these addresses"
+msgstr "Usar conexão VPN _apenas para estes endereços"
+
+#: ../src/nm-vpnc-service.c:118
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
-
-#: ../src/nm-vpnc-service.c:118
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
+"A autenticação na VPN falhou porque o nome do usuário e a senha não foram "
+"aceitos."
 
 #: ../src/nm-vpnc-service.c:120
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr ""
+"A autenticação na VPN falhou porque o programa VPN não pôde ser iniciado."
+
+#: ../src/nm-vpnc-service.c:122
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
 msgstr ""
+"A autenticação na VPN falhou porque o programa VPN não pôde conectar ao "
+"servidor VPN."
 
-#: ../src/nm-vpnc-service.c:122
+#: ../src/nm-vpnc-service.c:124
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
+"A autenticação na VPN falhou porque as opções de configuração de VPN eram "
+"inválidas."
 
-#: ../src/nm-vpnc-service.c:124
+#: ../src/nm-vpnc-service.c:126
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
+"A autenticação na VPN falhou porque o programa VPN recebeu uma configuração "
+"inválida do servidor VPN."
+
+#~ msgid "O_ptional Information"
+#~ msgstr "_Informações opcionais"
