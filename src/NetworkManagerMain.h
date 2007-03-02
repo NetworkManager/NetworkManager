@@ -37,8 +37,6 @@ typedef struct NMData
 {
 	NMNamedManager *		named_manager;
 
-	GSList *				dev_list;
-
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;

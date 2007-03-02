@@ -6,6 +6,12 @@
 
 G_DEFINE_TYPE (NMDevice, nm_device, DBUS_TYPE_G_PROXY)
 
+#define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
+
+typedef struct {
+	NMDeviceState state;
+} NMDevicePrivate;
+
 enum {
 	STATE_CHANGED,
 
@@ -49,6 +55,8 @@ nm_device_class_init (NMDeviceClass *device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
 
+	g_type_class_add_private (device_class, sizeof (NMDevicePrivate));
+
 	/* virtual methods */
 	object_class->constructor = constructor;
 
@@ -69,8 +77,12 @@ static void
 device_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
-	g_signal_emit (device, signals[STATE_CHANGED], 0, state);
+	if (priv->state != state) {
+		priv->state = state;
+		g_signal_emit (device, signals[STATE_CHANGED], 0, state);
+	}
 }
 
 NMDevice *
@@ -192,18 +204,23 @@ nm_device_get_ip4_config (NMDevice *device)
 NMDeviceState
 nm_device_get_state (NMDevice *device)
 {
-	NMDeviceState state = NM_DEVICE_STATE_UNKNOWN;
-	GValue value = {0,};
+	NMDevicePrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE,
-							  "State",
-							  &value))
-		state = g_value_get_uint (&value);
+	priv = NM_DEVICE_GET_PRIVATE (device);
 
-	return state;
+	if (priv->state == NM_DEVICE_STATE_UNKNOWN) {
+		GValue value = {0,};
+
+		if (nm_dbus_get_property (DBUS_G_PROXY (device),
+								  NM_DBUS_INTERFACE_DEVICE,
+								  "State",
+								  &value))
+			priv->state = g_value_get_uint (&value);
+	}
+
+	return priv->state;
 }
 
 NMDeviceType

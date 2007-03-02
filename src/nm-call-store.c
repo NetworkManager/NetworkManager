@@ -69,12 +69,12 @@ typedef struct {
 } StoreForeachInfo;
 
 static void
-call_callback (gpointer key, gpointer value, gpointer user_data)
+call_callback (gpointer call_id, gpointer user_data)
 {
 	StoreForeachInfo *info = (StoreForeachInfo *) user_data;
 
 	if (info->count >= 0) {
-		if (info->callback (info->object, key, info->user_data))
+		if (info->callback (info->object, call_id, info->user_data))
 			info->count++;
 		else
 			info->count = -1;
@@ -82,12 +82,42 @@ call_callback (gpointer key, gpointer value, gpointer user_data)
 }
 
 static void
+prepend_id (gpointer key, gpointer value, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_prepend (*list, key);
+}
+
+static GSList *
+get_call_ids (GHashTable *hash)
+{
+	GSList *ids = NULL;
+
+	g_hash_table_foreach (hash, prepend_id, &ids);
+
+	return ids;
+}
+
+static void
 call_all_callbacks (gpointer key, gpointer value, gpointer user_data)
 {
 	StoreForeachInfo *info = (StoreForeachInfo *) user_data;
+	GSList *ids;
 
 	info->object = G_OBJECT (key);
-	g_hash_table_foreach ((GHashTable *) value, call_callback, info);
+
+	/* Create a copy of the hash keys (call_ids) so that the callback is
+	   free to modify the store */
+	ids = get_call_ids ((GHashTable *) value);
+	g_slist_foreach (ids, call_callback, info);
+	g_slist_free (ids);
+}
+
+static void
+duplicate_hash (gpointer key, gpointer value, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, key, value);
 }
 
 int
@@ -108,6 +138,7 @@ nm_call_store_foreach (NMCallStore *store,
 
 	if (object) {
 		GHashTable *call_ids_hash;
+		GSList *ids;
 
 		call_ids_hash = g_hash_table_lookup (store, object);
 		if (!call_ids_hash) {
@@ -115,9 +146,19 @@ nm_call_store_foreach (NMCallStore *store,
 			return -1;
 		}
 
-		g_hash_table_foreach (call_ids_hash, call_callback, &info);
+		/* Create a copy of the hash keys (call_ids) so that the callback is
+		   free to modify the store */
+		ids = get_call_ids (call_ids_hash);
+		g_slist_foreach (ids, call_callback, &info);
+		g_slist_free (ids);
 	} else {
-		g_hash_table_foreach (store, call_all_callbacks, &info);
+		GHashTable *copy;
+
+		/* Create a copy of the main store so that callbacks can modify it */
+		copy = g_hash_table_new (NULL, NULL);
+		g_hash_table_foreach (store, duplicate_hash, copy);
+		g_hash_table_foreach (copy, call_all_callbacks, &info);
+		g_hash_table_destroy (copy);
 	}
 
 	return info.count;

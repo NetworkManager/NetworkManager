@@ -1,3 +1,57 @@
+2007-03-02  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-glib/nm-device-802-11-wireless.c: Cache networks (bssids) list.
+	We get signalled when it changes.
+
+	* libnm-glib/nm-client.c: Cache NMState and device list, we get signalled
+	when it changes.
+
+	* libnm-glib/nm-device.c: Cache the device state property.
+
+	* libnm-glib/nm-access-point.c: Cache the strength property.
+
+	* src/nm-device-802-11-wireless.c: Fix wireless device scanning scheduler.
+	The new algorithm is to start from SCAN_INTERVAL_MIN (currently defined as 0)
+	and add a SCAN_INTERVAL_STEP (currently 20 seconds) with each successful scan
+	until SCAN_INTERVAL_MAX (currently 120 seconds) is reached. Do not scan while
+	the device is down, activating, or activated (in case of A/B/G cards).
+	Remove some old dead ifdef'ed out code that used to configure wireless devices,
+	it's all done through supplicant now.
+
+	* src/supplicant-manager/nm-supplicant-interface.c: Fix the reference
+	counting issues with pending calls which caused leaks and crashes when
+	interface was removed (now that the interface actually gets removed).
+
+	* src/nm-call-store.c: Make a copy of data before running a foreach
+	with user callback on it - The most common usage pattern is to cancel
+	(and thus remove) all pending calls with foreach which would modify
+	the hash table we're iterating over.
+
+	* src/nm-manager.c: When a device is added, make sure it is "up". When
+	it's removed or disabled due to disabling wireless or networking, bring
+	it down.
+
+	* include/NetworkManager.h: Add new device state NM_DEVICE_STATE_DOWN.
+
+	* src/nm-device-802-11-wireless.c: 
+	* src/nm-device-802-3-ethernet.c: 
+	* src/nm-device.c:
+		- Remove "init" virtual function, all gobjects have a place for that
+		  already (constructor).
+		- Replace "start" virtual function with "bring_up", devices can be
+		  brought up and down more than just on startup now.
+		- Add "is_up" virtual function.
+		- Implement one way to bring a device down instead of previous 4 different
+		  ways, each of witch did something different.
+
+	* src/NetworkManagerUtils.c (nm_dev_sock_open): This doesn't need an NMDevice,
+	all it needs is the device interface.
+
+	Get rid of NMData.dev_list (3 members to go).
+	Get rif of NMData in a lot of places.
+
+	* gnome/libnm_glib/libnm_glib.c: Make it compile again.
+
 2007-02-23  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Andy Whitcroft <apw@shadowen.org> (Gnome.org #410426)

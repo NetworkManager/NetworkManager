@@ -44,7 +44,11 @@ typedef enum SockType
 typedef struct NMSock NMSock;
 
 
-NMSock *		nm_dev_sock_open				(NMDevice *dev, SockType type, const char *func_name, const char *desc);
+NMSock *		nm_dev_sock_open				(const char *iface,
+												 SockType type,
+												 const char *func_name,
+												 const char *desc);
+
 void			nm_dev_sock_close				(NMSock *sock);
 int			nm_dev_sock_get_fd				(NMSock *sock);
 void			nm_print_open_socks				(void);

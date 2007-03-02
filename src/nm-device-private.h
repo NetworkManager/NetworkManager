@@ -25,15 +25,8 @@
 #include "nm-device.h"
 #include "NetworkManagerMain.h"
 
-typedef struct NMDbusCBData {
-	NMDevice *		dev;
-	NMAccessPoint *	ap;
-	NMData *		data;
-} NMDbusCBData;
-
-
 void			nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
-
+void			nm_device_set_active_link	(NMDevice *dev, const gboolean active);
 NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
 
 void			nm_device_activate_schedule_stage3_ip_config_start (struct NMActRequest *req);

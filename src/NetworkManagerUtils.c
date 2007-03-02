@@ -49,7 +49,7 @@ struct NMSock
 	int	fd;
 	char *func;
 	char *desc;
-	NMDevice *dev;
+	char *iface;
 };
 
 static GSList * sock_list = NULL;
@@ -61,12 +61,12 @@ static GSList * sock_list = NULL;
  * Open a socket to a network device and store some debug info about it.
  *
  */
-NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, const char *desc)
+NMSock *
+nm_dev_sock_open (const char *iface, SockType type, const char *func_name, const char *desc)
 {
 	NMSock	*sock = NULL;
 
-	sock = g_malloc0 (sizeof (NMSock));
-
+	sock = g_slice_new (NMSock);
 	sock->fd = -1;
 
 	switch (type)
@@ -91,19 +91,17 @@ NMSock *nm_dev_sock_open (NMDevice *dev, SockType type, const char *func_name, c
 
 	if (sock->fd < 0)
 	{
-		g_free (sock);
-		nm_warning ("Could not open control socket for device '%s'.", dev ? nm_device_get_iface (dev) : "none");
+		g_slice_free (NMSock, sock);
+		nm_warning ("Could not open control socket for device '%s'.", iface ? iface : "none");
 		return NULL;
 	}
 
 	sock->func = func_name ? g_strdup (func_name) : NULL;
 	sock->desc = desc ? g_strdup (desc) : NULL;
-	sock->dev = dev;
-	if (sock->dev)
-		g_object_ref (G_OBJECT (sock->dev));
+	sock->iface = iface ? g_strdup (iface) : NULL;
 
 	/* Add the sock to our global sock list for tracking */
-	sock_list = g_slist_append (sock_list, sock);
+	sock_list = g_slist_prepend (sock_list, sock);
 
 	return sock;
 }
@@ -124,8 +122,7 @@ void nm_dev_sock_close (NMSock *sock)
 	close (sock->fd);
 	g_free (sock->func);
 	g_free (sock->desc);
-	if (sock->dev)
-		g_object_unref (G_OBJECT (sock->dev));
+	g_free (sock->iface);
 
 	memset (sock, 0, sizeof (NMSock));
 
@@ -138,7 +135,7 @@ void nm_dev_sock_close (NMSock *sock)
 		}
 	}
 
-	g_free (sock);
+	g_slice_free (NMSock, sock);
 }
 
 
@@ -172,8 +169,8 @@ void nm_print_open_socks (void)
 		NMSock	*sock = (NMSock *)(elt->data);
 		if (sock) {
 			i++;
-			nm_debug ("  %d: %s fd:%d F:'%s' D:'%s'", i, sock->dev ? nm_device_get_iface (sock->dev) : "",
-				sock->fd, sock->func, sock->desc);
+			nm_debug ("  %d: %s fd:%d F:'%s' D:'%s'", i, sock->iface ? sock->iface : "",
+					  sock->fd, sock->func, sock->desc);
 		}
 	}
 	nm_debug ("Open Sockets List Done.");

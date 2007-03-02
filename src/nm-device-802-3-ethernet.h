@@ -23,7 +23,6 @@
 #define NM_DEVICE_802_3_ETHERNET_H
 
 #include <glib-object.h>
-#include <dbus/dbus.h>
 #include <net/ethernet.h>
 
 #include "nm-device.h"
@@ -38,25 +37,16 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_802_3_ETHERNET_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_802_3_ETHERNET))
 #define NM_DEVICE_802_3_ETHERNET_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetClass))
 
-typedef struct _NMDevice8023Ethernet NMDevice8023Ethernet;
-typedef struct _NMDevice8023EthernetClass NMDevice8023EthernetClass;
-typedef struct _NMDevice8023EthernetPrivate NMDevice8023EthernetPrivate;
-
 #define NM_DEVICE_802_3_ETHERNET_HW_ADDRESS "hw-address"
 #define NM_DEVICE_802_3_ETHERNET_SPEED "speed"
 
-struct _NMDevice8023Ethernet
-{
+typedef struct {
 	NMDevice parent;
+} NMDevice8023Ethernet;
 
-	/*< private >*/
-	NMDevice8023EthernetPrivate *priv;
-};
-
-struct _NMDevice8023EthernetClass
-{
+typedef struct {
 	NMDeviceClass parent;
-};
+} NMDevice8023EthernetClass;
 
 
 GType nm_device_802_3_ethernet_get_type (void);

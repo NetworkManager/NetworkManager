@@ -82,6 +82,7 @@ struct _NMDeviceClass
 	void			(* set_active_link)	(NMDevice *self, gboolean active);
 	void			(* update_link)	(NMDevice *self);
 
+	gboolean		(* is_up)			(NMDevice *self);
 	void			(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
 
@@ -90,8 +91,6 @@ struct _NMDeviceClass
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	void			(* init)				(NMDevice *self);
-	void			(* start)				(NMDevice *self);
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest *req);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest *req);
 	NMActStageReturn	(* act_stage3_ip_config_start)(NMDevice *self,
@@ -114,8 +113,6 @@ struct _NMDeviceClass
 
 GType nm_device_get_type (void);
 
-void		nm_device_stop (NMDevice *self);
-
 const char *	nm_device_get_udi		(NMDevice *dev);
 
 const char *	nm_device_get_iface		(NMDevice *dev);
@@ -128,14 +125,7 @@ guint32		nm_device_get_type_capabilities	(NMDevice *dev);
 
 struct NMData *	nm_device_get_app_data	(NMDevice *dev);
 
-gboolean		nm_device_get_removed	(NMDevice *dev);
-void			nm_device_set_removed	(NMDevice *dev,
-								 const gboolean removed);
-
 gboolean		nm_device_has_active_link	(NMDevice *dev);
-void			nm_device_set_active_link	(NMDevice *dev,
-									 const gboolean active);
-
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
 struct in6_addr *	nm_device_get_ip6_address	(NMDevice *dev);
@@ -148,8 +138,10 @@ NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 void			nm_device_set_ip4_config	(NMDevice *dev,
 								 NMIP4Config *config);
 
-void			nm_device_bring_down	(NMDevice *dev);
-gboolean		nm_device_is_up		(NMDevice *dev);
+gboolean		nm_device_is_up	(NMDevice *dev);
+void			nm_device_bring_up (NMDevice *dev, gboolean wait);
+void			nm_device_bring_down (NMDevice *dev, gboolean wait);
+
 
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 

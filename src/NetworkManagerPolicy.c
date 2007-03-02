@@ -427,20 +427,15 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 void
 nm_policy_schedule_device_ap_lists_update_from_allowed (NMData *app_data)
 {
-	GSource	* source;
-	guint     id;
-
 	g_return_if_fail (app_data != NULL);
 
 	if (device_list_update_id > 0)
 		return;
 
-	id = g_idle_add (nm_policy_device_list_update_from_allowed_list, app_data);
-	device_list_update_id = id;
-	source = g_main_context_find_source_by_id (NULL, id);
-	if (source) {
-		g_source_set_priority (source, G_PRIORITY_HIGH_IDLE);
-	}
+	device_list_update_id = g_idle_add_full (G_PRIORITY_HIGH_IDLE,
+											 nm_policy_device_list_update_from_allowed_list,
+											 app_data,
+											 NULL);
 }
 
 /*****************************************************************************/
@@ -502,12 +497,6 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 					  G_CALLBACK (device_carrier_changed),
 					  policy);
 
-	/* FIXME: */
-	{
-		NMData *nm_data = nm_device_get_app_data (device);
-		nm_data->dev_list = g_slist_append (nm_data->dev_list, device);
-	}
-
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
 		g_signal_connect (device, "network-added",
 						  G_CALLBACK (wireless_networks_changed),
@@ -524,12 +513,6 @@ static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-
-	/* FIXME: */
-	{
-		NMData *nm_data = nm_device_get_app_data (device);
-		nm_data->dev_list = g_slist_remove (nm_data->dev_list, device);
-	}
 
 	schedule_change_check (policy);
 }

@@ -28,8 +28,6 @@
 #include "nm-device.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "nm-device-802-3-ethernet.h"
-#include "nm-device-802-11-wireless.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
@@ -60,7 +58,6 @@ struct _NMDevicePrivate
 	NMDeviceType		type;
 	guint32			capabilities;
 	char *			driver;
-	gboolean			removed;
 
 	gboolean			link_active;
 	guint32			ip4_address;
@@ -79,9 +76,6 @@ struct _NMDevicePrivate
 
 static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
 static void nm_device_deactivate (NMDeviceInterface *device);
-void nm_device_bring_up (NMDevice *dev);
-gboolean nm_device_bring_up_wait (NMDevice *self, gboolean cancelable);
-
 
 static void
 nm_device_set_address (NMDevice *device)
@@ -108,7 +102,6 @@ nm_device_init (NMDevice * self)
 	self->priv->type = DEVICE_TYPE_UNKNOWN;
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	self->priv->driver = NULL;
-	self->priv->removed = FALSE;
 
 	self->priv->link_active = FALSE;
 	self->priv->ip4_address = 0;
@@ -131,6 +124,7 @@ constructor (GType type,
 {
 	GObject *object;
 	NMDevice *dev;
+	NMDevicePrivate *priv;
 	NMDBusManager *manager;
 	char *path;
 
@@ -142,24 +136,17 @@ constructor (GType type,
 		return NULL;
 
 	dev = NM_DEVICE (object);
+	priv = NM_DEVICE_GET_PRIVATE (dev);
 
-	dev->priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
-	if (!(dev->priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
+	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
+	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		g_object_unref (G_OBJECT (dev));
 		return NULL;
 	}
 
-	/* Have to bring the device up before checking link status and other stuff */
-	nm_device_bring_up_wait (dev, FALSE);
-
-	nm_device_update_ip4_address (dev);
-
-	/* Update the device's hardware address */
-	nm_device_set_address (dev);
-
 	/* Grab IP config data for this device from the system configuration files */
-	dev->priv->system_config_data = nm_system_device_get_system_config (dev, dev->priv->app_data);
+	priv->system_config_data = nm_system_device_get_system_config (dev, priv->app_data);
 	nm_device_set_use_dhcp (dev, nm_system_device_get_use_dhcp (dev));
 
 	/* Allow distributions to flag devices as disabled */
@@ -170,12 +157,6 @@ constructor (GType type,
 	}
 
 	nm_print_device_capabilities (dev);
-
-	/* Call type-specific initialization */
-	if (NM_DEVICE_GET_CLASS (dev)->init)
-		NM_DEVICE_GET_CLASS (dev)->init (dev);
-
-	NM_DEVICE_GET_CLASS (dev)->start (dev);
 
 	manager = nm_dbus_manager_get ();
 
@@ -188,26 +169,41 @@ constructor (GType type,
 }
 
 
+static gboolean
+real_is_up (NMDevice *self)
+{
+	NMSock *		sk;
+	struct ifreq	ifr;
+	int			err;
+	const char *iface;
+
+	iface = nm_device_get_iface (self);
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
+		return FALSE;
+
+	/* Get device's flags */
+	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+
+	nm_ioctl_info ("%s: About to GET IFFLAGS.", iface);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
+	nm_ioctl_info ("%s: Done with GET IFFLAGS.", iface);
+
+	nm_dev_sock_close (sk);
+	if (!err)
+		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
+
+	if (errno != ENODEV)
+	{
+		nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", iface, errno);
+	}
+
+	return FALSE;
+}
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
 	return 0;
-}
-
-
-static void
-real_start (NMDevice *dev)
-{
-}
-
-
-void
-nm_device_stop (NMDevice *self)
-{
-	g_return_if_fail (self != NULL);
-
-	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
-	nm_device_bring_down (self);
 }
 
 
@@ -311,27 +307,6 @@ nm_device_get_app_data (NMDevice *self)
 
 
 /*
- * Get/Set for "removed" flag
- */
-gboolean
-nm_device_get_removed (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, TRUE);
-
-	return self->priv->removed;
-}
-
-void
-nm_device_set_removed (NMDevice *self,
-                       const gboolean removed)
-{
-	g_return_if_fail (self != NULL);
-
-	self->priv->removed = removed;
-}
-
-
-/*
  * nm_device_get_act_request
  *
  * Return the devices activation request, if any.
@@ -383,7 +358,6 @@ nm_device_activate (NMDevice *device,
 					NMActRequest *req)
 {
 	NMDevicePrivate *priv;
-	NMData *data = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (req != NULL);
@@ -395,9 +369,6 @@ nm_device_activate (NMDevice *device,
 		return;
 
 	nm_info ("Activation (%s) started...", nm_device_get_iface (device));
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	nm_act_request_ref (req);
 	priv->act_request = req;
@@ -417,14 +388,10 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 {
 	NMActRequest *   req = (NMActRequest *) user_data;
 	NMDevice *       self;
-	NMData *         data;
 	const char *     iface;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -504,14 +471,10 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 {
 	NMActRequest *   req = (NMActRequest *) user_data;
 	NMDevice *       self;
-	NMData *         data;
 	const char *     iface;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -524,9 +487,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG);
 
-	/* Bring the device up */
-	if (!nm_device_is_up (self))
-		nm_device_bring_up (self);
+	nm_device_bring_up (self, FALSE);
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, req);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -577,11 +538,7 @@ static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *self,
                                  NMActRequest *req)
 {	
-	NMData *			data = NULL;
 	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_SUCCESS;
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	/* DHCP devices try DHCP, non-DHCP default to SUCCESS */
 	if (nm_device_get_use_dhcp (self))
@@ -622,15 +579,11 @@ static gboolean
 nm_device_activate_stage3_ip_config_start (gpointer user_data)
 {
 	NMActRequest *   req = (NMActRequest *) user_data;
-	NMData *         data = NULL;
 	NMDevice *       self = NULL;
 	const char *     iface;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -719,7 +672,6 @@ real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMActRequest *req,
                                 NMIP4Config **config)
 {
-	NMData *			data;
 	NMIP4Config *		real_config = NULL;
 	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -727,8 +679,6 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	g_assert (req);
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	if (nm_device_get_use_dhcp (self)) {
 		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
@@ -748,8 +698,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	else
 	{
 		/* Make sure device is up even if config fails */
-		if (!nm_device_is_up (self))
-			nm_device_bring_up (self);
+		nm_device_bring_up (self, FALSE);
 	}
 
 	return ret;
@@ -766,16 +715,12 @@ static gboolean
 nm_device_activate_stage4_ip_config_get (gpointer user_data)
 {
 	NMActRequest *   req = (NMActRequest *) user_data;
-	NMData *         data = NULL;
 	NMDevice *       self = NULL;
 	NMIP4Config *    ip4_config = NULL;
 	NMActStageReturn ret;
 	const char *     iface = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -859,16 +804,12 @@ static gboolean
 nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 {
 	NMActRequest *   req = (NMActRequest *) user_data;
-	NMData *         data = NULL;
 	NMDevice *       self = NULL;
 	NMIP4Config *    ip4_config = NULL;
 	const char *     iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -934,15 +875,11 @@ static gboolean
 nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 {
 	NMActRequest * req = (NMActRequest *) user_data;
-	NMData *       data = NULL;
 	NMDevice *     self = NULL;
 	NMIP4Config *  ip4_config = NULL;
 	const char *   iface;
 
 	g_return_val_if_fail (req != NULL, FALSE);
-
-	data = nm_act_request_get_data (req);
-	g_assert (data);
 
 	self = nm_act_request_get_dev (req);
 	g_assert (self);
@@ -1035,8 +972,6 @@ nm_device_activation_cancel (NMDevice *self)
 	if (!nm_device_is_activating (self))
 		return;
 
-	g_assert (self->priv->app_data);
-
 	nm_info ("Activation (%s): cancelling...", nm_device_get_iface (self));
 
 	/* Break the activation chain */
@@ -1105,22 +1040,18 @@ static void
 nm_device_deactivate (NMDeviceInterface *device)
 {
 	NMDevice *self = NM_DEVICE (device);
-	NMData *		app_data;
 	NMIP4Config *	config;
 
 	g_return_if_fail (self != NULL);
-	g_return_if_fail (self->priv->app_data != NULL);
 
 	nm_info ("Deactivating device %s.", nm_device_get_iface (self));
 
 	nm_device_deactivate_quickly (self);
 
-	app_data = self->priv->app_data;
-
 	/* Remove any device nameservers and domains */
 	if ((config = nm_device_get_ip4_config (self)))
 	{
-		nm_named_manager_remove_ip4_config (app_data->named_manager, config);
+		nm_named_manager_remove_ip4_config (self->priv->app_data->named_manager, config);
 		nm_device_set_ip4_config (self, NULL);
 	}
 
@@ -1296,13 +1227,13 @@ nm_device_update_ip4_address (NMDevice *self)
 	const char *	iface;
 	
 	g_return_if_fail (self  != NULL);
-	g_return_if_fail (self->priv->app_data != NULL);
-	g_return_if_fail (nm_device_get_iface (self) != NULL);
-
-	if ((sk = nm_dev_sock_open (self, DEV_GENERAL, __func__, NULL)) == NULL)
-		return;
 
 	iface = nm_device_get_iface (self);
+	g_return_if_fail (iface != NULL);
+
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
+		return;
+
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, iface, sizeof (req.ifr_name) - 1);
 
@@ -1320,62 +1251,15 @@ nm_device_update_ip4_address (NMDevice *self)
 }
 
 
-/*
- * nm_device_set_up_down
- *
- * Set the up flag on the device on or off
- *
- */
-static void
-nm_device_set_up_down (NMDevice *self,
-                       gboolean up)
-{
-	g_return_if_fail (self != NULL);
-
-	nm_system_device_set_up_down (self, up);
-
-	/*
-	 * Make sure that we have a valid MAC address, some cards reload firmware when they
-	 * are brought up.
-	 */
-	nm_device_set_address (self);
-}
-
-
-/*
- * Interface state functions: bring up, down, check
- *
- */
 gboolean
 nm_device_is_up (NMDevice *self)
 {
-	NMSock *		sk;
-	struct ifreq	ifr;
-	int			err;
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	if (NM_DEVICE_GET_CLASS (self)->is_up)
+		return NM_DEVICE_GET_CLASS (self)->is_up (self);
 
-	if ((sk = nm_dev_sock_open (self, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
-		return (FALSE);
-
-	/* Get device's flags */
-	strncpy (ifr.ifr_name, nm_device_get_iface (self), sizeof (ifr.ifr_name) - 1);
-
-	nm_ioctl_info ("%s: About to GET IFFLAGS.", nm_device_get_iface (self));
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
-	nm_ioctl_info ("%s: Done with GET IFFLAGS.", nm_device_get_iface (self));
-
-	nm_dev_sock_close (sk);
-	if (!err)
-		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
-
-	if (errno != ENODEV)
-	{
-		nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d",
-				nm_device_get_iface (self), errno );
-	}
-
-	return FALSE;
+	return TRUE;
 }
 
 /* I really wish nm_v_wait_for_completion_or_timeout could translate these
@@ -1386,56 +1270,65 @@ nm_completion_device_is_up_test (int tries,
                                  nm_completion_args args)
 {
 	NMDevice *self = NM_DEVICE (args[0]);
-	gboolean *err = args[1];
-	gboolean cancelable = GPOINTER_TO_INT (args[2]);
 
-	g_return_val_if_fail (self != NULL, TRUE);
-	g_return_val_if_fail (err != NULL, TRUE);
-
-	*err = FALSE;
-	if (cancelable /* && nm_device_activation_should_cancel (self) */) {
-		*err = TRUE;
-		return TRUE;
-	}
 	if (nm_device_is_up (self))
 		return TRUE;
 	return FALSE;
 }
 
 void
-nm_device_bring_up (NMDevice *self)
+nm_device_bring_up (NMDevice *self, gboolean wait)
 {
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	nm_device_set_up_down (self, TRUE);
-}
+	if (nm_device_is_up (self))
+		return;
 
-gboolean
-nm_device_bring_up_wait (NMDevice *self,
-                         gboolean cancelable)
-{
-	gboolean err = FALSE;
-	nm_completion_args args;
+	nm_info ("Bringing up device %s", nm_device_get_iface (self));
 
-	g_return_val_if_fail (self != NULL, TRUE);
+	nm_system_device_set_up_down (self, TRUE);
+	nm_device_update_ip4_address (self);
+	nm_device_set_address (self);
 
-	nm_device_bring_up (self);
+	if (NM_DEVICE_GET_CLASS (self)->bring_up)
+		NM_DEVICE_GET_CLASS (self)->bring_up (self);
 
-	args[0] = self;
-	args[1] = &err;
-	args[2] = GINT_TO_POINTER (cancelable);
-	nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
-	if (err)
-		nm_info ("failed to bring up device %s", self->priv->iface);
-	return err;
+	if (wait) {
+		nm_completion_args args;
+
+		args[0] = self;
+		nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
+	}
+
+	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 }
 
 void
-nm_device_bring_down (NMDevice *self)
+nm_device_bring_down (NMDevice *self, gboolean wait)
 {
-	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	nm_device_set_up_down (self, FALSE);
+	if (!nm_device_is_up (self))
+		return;
+
+	nm_info ("Bringing down device %s", nm_device_get_iface (self));
+
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
+
+	if (NM_DEVICE_GET_CLASS (self)->bring_down)
+		NM_DEVICE_GET_CLASS (self)->bring_down (self);
+
+	nm_system_device_set_up_down (self, FALSE);
+
+	if (wait) {
+		nm_completion_args args;
+
+		args[0] = self;
+		nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
+	}
+
+	nm_device_state_changed (self, NM_DEVICE_STATE_DOWN);
 }
 
 /*
@@ -1471,6 +1364,8 @@ nm_device_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
+
+	nm_device_bring_down (self, FALSE);
 
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
 	nm_device_set_ip4_config (self, NULL);
@@ -1591,10 +1486,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
 
+	klass->is_up = real_is_up;
 	klass->activation_cancel_handler = real_activation_cancel_handler;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;
-	klass->start = real_start;
 	klass->act_stage1_prepare = real_act_stage1_prepare;
 	klass->act_stage2_config = real_act_stage2_config;
 	klass->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
@@ -1643,13 +1538,22 @@ nm_device_class_init (NMDeviceClass *klass)
 void
 nm_device_state_changed (NMDevice *device, NMDeviceState state)
 {
+	const char *iface;
+	NMDeviceState old_state;
+
 	g_return_if_fail (NM_IS_DEVICE (device));
 
+	iface = nm_device_get_iface (device);
+	old_state = device->priv->state;
 	device->priv->state = state;
 
 	switch (state) {
+	case NM_DEVICE_STATE_DOWN:
+		if (old_state == NM_DEVICE_STATE_ACTIVATED)
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+		break;
 	case NM_DEVICE_STATE_ACTIVATED:
-		nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (device));
+		nm_info ("Activation (%s) successful, device activated.", iface);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));

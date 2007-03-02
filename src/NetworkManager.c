@@ -403,14 +403,15 @@ main (int argc, char *argv[])
 	                  G_CALLBACK (nm_name_owner_changed_handler),
 					  nm_data);
 
+	manager = nm_manager_new ();
+	g_object_set_data (manager, "NM_DATA_HACK", nm_data);
+	policy = nm_policy_new (manager);
+
 	nm_dbus_manager_register_signal_handler (dbus_mgr,
 											 NMI_DBUS_INTERFACE,
 											 NULL,
 											 nm_dbus_nmi_signal_handler,
-											 nm_data);
-
-	manager = nm_manager_new ();
-	policy = nm_policy_new (manager);
+											 manager);
 
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();

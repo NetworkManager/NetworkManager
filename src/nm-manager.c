@@ -58,7 +58,6 @@ device_stop_and_free (gpointer data, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (data);
 
-	nm_device_set_removed (device, TRUE);
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 	g_object_unref (device);
 }
@@ -209,12 +208,10 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	/* Tear down all wireless devices */
 	for (iter = priv->devices; iter; iter = iter->next) {
 		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data)) {
-			NMDevice *dev = NM_DEVICE (iter->data);
-
-			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-				nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
-				nm_device_bring_down (dev);
-			}
+			if (enabled)
+				nm_device_bring_up (NM_DEVICE (iter->data), FALSE);
+			else
+				nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
 		}
 	}
 }
@@ -252,6 +249,12 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
 					  manager);
+
+	if (!priv->sleeping) {
+		if (!NM_IS_DEVICE_802_11_WIRELESS (device) || priv->wireless_enabled)
+			nm_device_bring_up (device, TRUE);
+	}
+
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 
 	manager_device_added (manager, device);
@@ -280,9 +283,6 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device)
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
-			nm_device_set_removed (device, TRUE);
-			nm_device_stop (device);
-	
 			manager_device_removed (manager, device);
 			g_object_unref (device);
 			break;
@@ -407,13 +407,8 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 		/* Just deactivate and down all devices from the device list,
 		 * we'll remove them in 'wake' for speed's sake.
 		 */
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *dev = NM_DEVICE (iter->data);
-
-			nm_device_set_removed (dev, TRUE);
-			nm_device_deactivate_quickly (dev);
-			nm_system_device_set_up_down (dev, FALSE);
-		}
+		for (iter = priv->devices; iter; iter = iter->next)
+			nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
 	} else {
 		nm_info  ("Waking up from sleep.");
 

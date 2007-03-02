@@ -30,6 +30,8 @@
 #include "libnm_glib.h"
 
 #define	DBUS_NO_SERVICE_ERROR			"org.freedesktop.DBus.Error.ServiceDoesNotExist"
+#define NM_DBUS_SIGNAL_STATE_CHANGE	"StateChange"
+
 
 struct libnm_glib_ctx
 {

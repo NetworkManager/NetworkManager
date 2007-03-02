@@ -149,7 +149,7 @@ nm_supplicant_info_new (NMSupplicantInterface *interface,
 	NMSupplicantInfo *info;
 
 	info = g_slice_new0 (NMSupplicantInfo);
-	info->interface = interface;
+	info->interface = g_object_ref (interface);
 	info->proxy = g_object_ref (proxy);
 	info->store = store;
 
@@ -160,7 +160,7 @@ static void
 nm_supplicant_info_set_call (NMSupplicantInfo *info, DBusGProxyCall *call)
 {
 	if (call) {
-		nm_call_store_add (info->store, g_object_ref (info->proxy), (gpointer) call);
+		nm_call_store_add (info->store, info->proxy, (gpointer) call);
 		info->call = call;
 	}
 }
@@ -174,6 +174,7 @@ nm_supplicant_info_destroy (gpointer user_data)
 		nm_call_store_remove (info->store, G_OBJECT (info->proxy), info->call);
 
 	g_object_unref (info->proxy);
+	g_object_unref (info->interface);
 
 	g_slice_free (NMSupplicantInfo, info);
 }

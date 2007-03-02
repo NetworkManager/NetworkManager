@@ -6,6 +6,12 @@
 
 G_DEFINE_TYPE (NMAccessPoint, nm_access_point, DBUS_TYPE_G_PROXY)
 
+#define NM_ACCESS_POINT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACCESS_POINT, NMAccessPointPrivate))
+
+typedef struct {
+	int strength;
+} NMAccessPointPrivate;
+
 enum {
 	STRENGTH_CHANGED,
 
@@ -25,6 +31,8 @@ static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+
+	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
 	/* signals */
 	signals[STRENGTH_CHANGED] =
@@ -64,7 +72,12 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 static void
 strength_changed_proxy (NMAccessPoint *ap, guchar strength)
 {
-	g_signal_emit (ap, signals[STRENGTH_CHANGED], 0, strength);
+	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
+
+	if (priv->strength != strength) {
+		priv->strength = strength;
+		g_signal_emit (ap, signals[STRENGTH_CHANGED], 0, strength);
+	}
 }
 
 guint32
@@ -190,16 +203,21 @@ nm_access_point_get_rate (NMAccessPoint *ap)
 int
 nm_access_point_get_strength (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	int strength = 0;
+	NMAccessPointPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Strength",
-							  &value))
-		strength = g_value_get_int (&value);
+	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 
-	return strength;
+	if (priv->strength == 0) {
+		GValue value = {0,};
+	
+		if (nm_dbus_get_property (DBUS_G_PROXY (ap),
+								  NM_DBUS_INTERFACE_ACCESS_POINT,
+								  "Strength",
+								  &value))
+			priv->strength = g_value_get_int (&value);
+	}
+
+	return priv->strength;
 }

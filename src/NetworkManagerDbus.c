@@ -135,11 +135,11 @@ nm_dbus_nmi_signal_handler (DBusConnection *connection,
                             DBusMessage *message,
                             gpointer user_data)
 {
-	NMData * data = (NMData *) user_data;
+	NMManager *manager = NM_MANAGER (user_data);
 	const char * object_path;
 	gboolean	handled = FALSE;
 
-	g_return_val_if_fail (data != NULL, FALSE);
+	g_return_val_if_fail (manager != NULL, FALSE);
 
 	if (!(object_path = dbus_message_get_path (message)))
 		return FALSE;
@@ -155,16 +155,21 @@ nm_dbus_nmi_signal_handler (DBusConnection *connection,
 		                           DBUS_TYPE_STRING, &network,
 		                           DBUS_TYPE_INVALID)) {
 			/* Update a single wireless network's data */
-			nm_debug ("NetworkManagerInfo triggered update of wireless network "
-			          "'%s'",
-			          network);
-			nm_dbus_update_one_allowed_network (network, data);
+			nm_debug ("NetworkManagerInfo triggered update of wireless network '%s'", network);
+			nm_dbus_update_one_allowed_network (network,
+												(NMData *) g_object_get_data (manager, "NM_DATA_HACK"));
 			handled = TRUE;
 		}
 	} else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "UserInterfaceActivated")) {
-		nm_device_802_11_wireless_set_scan_interval (data,
-		                                             NULL,
-		                                             NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+		GSList *iter;
+
+		for (iter = nm_manager_get_devices (manager); iter; iter = iter-> next) {
+			NMDevice *device = NM_DEVICE (iter->data);
+
+			if (NM_IS_DEVICE_802_11_WIRELESS (device))
+				nm_device_802_11_wireless_reset_scan_interval (NM_DEVICE_802_11_WIRELESS (device));
+		}
+
 		handled = TRUE;
 	}
 

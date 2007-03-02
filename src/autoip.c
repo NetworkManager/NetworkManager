@@ -214,15 +214,17 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
+	const char *iface;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (out_ip != NULL, FALSE);
 
 	out_ip->s_addr = 0;
+	iface = nm_device_get_iface (dev);
 
 	/* initialize saddr */
 	memset (&saddr, 0, sizeof (saddr));
-	strncpy (saddr.sa_data, nm_device_get_iface (dev), sizeof (saddr.sa_data));
+	strncpy (saddr.sa_data, iface, sizeof (saddr.sa_data));
 
 	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
 		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
@@ -232,16 +234,16 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		goto out;
 
 	/* open an ARP socket */
-	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
+	if ((sk = nm_dev_sock_open (iface, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
 	{
-		nm_warning ("%s: Couldn't open network control socket.", nm_device_get_iface (dev));
+		nm_warning ("%s: Couldn't open network control socket.", iface);
 		goto out;
 	}
 
 	/* bind to the ARP socket */
 	if (bind (nm_dev_sock_get_fd (sk), &saddr, sizeof (saddr)) < 0)
 	{
-		nm_warning ("%s: Couldn't bind to the device.", nm_device_get_iface (dev));
+		nm_warning ("%s: Couldn't bind to the device.", iface);
 		goto out;
 	}
 
@@ -317,7 +319,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 			}
 
 		#ifdef ARP_DEBUG
-			nm_warning ("autoip: (%s) recv arp type=%d, op=%d, ", nm_device_get_iface (dev), ntohs(p.ethhdr.ether_type), ntohs(p.operation));
+			nm_warning ("autoip: (%s) recv arp type=%d, op=%d, ", iface, ntohs(p.ethhdr.ether_type), ntohs(p.operation));
 			{
 				struct in_addr a;
 				memcpy (&(a.s_addr), &(p.sInaddr), sizeof (a.s_addr));
@@ -335,7 +337,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 				&& (memcmp (&addr, &p.tHaddr, ETH_ALEN) != 0))
 			{
 			#ifdef ARP_DEBUG
-				nm_warning ("autoip: (%s) ARP conflict for IP address %s.\n", nm_device_get_iface (dev), inet_ntoa(ip));
+				nm_warning ("autoip: (%s) ARP conflict for IP address %s.\n", iface, inet_ntoa(ip));
 			#endif
 
 				/* Ok, start all over again */

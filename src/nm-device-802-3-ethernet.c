@@ -21,7 +21,6 @@
 
 #include <glib.h>
 #include <glib/gi18n.h>
-#include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <net/ethernet.h>
@@ -30,14 +29,11 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "NetworkManagerMain.h"
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerPolicy.h"
 #include "nm-supplicant-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-utils.h"
-#include "kernel-types.h"
 
 static gboolean impl_device_802_3_ethernet_activate (NMDevice8023Ethernet *device,
 													 gboolean user_requested,
@@ -50,8 +46,7 @@ G_DEFINE_TYPE (NMDevice8023Ethernet, nm_device_802_3_ethernet, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_802_3_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetPrivate))
 
-struct _NMDevice8023EthernetPrivate
-{
+typedef struct {
 	gboolean	dispose_has_run;
 
 	struct ether_addr	hw_addr;
@@ -61,7 +56,7 @@ struct _NMDevice8023EthernetPrivate
 	guint           link_source_id;
 
 	NMSupplicantInterface *  sup_iface;
-};
+} NMDevice8023EthernetPrivate;
 
 enum {
 	PROP_0,
@@ -74,63 +69,42 @@ enum {
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
 
-static void	nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
-													 const char *iface,
-													 gpointer user_data);
-static void	nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
-													   const char *iface,
-													   gpointer user_data);
-
 static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        guint32 new_state,
                                        guint32 old_state,
                                        NMDevice80211Wireless *self);
 
 
-static void
-nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
+static GObject*
+constructor (GType type,
+			 guint n_construct_params,
+			 GObjectConstructParam *construct_params)
 {
-	self->priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
-	self->priv->dispose_has_run = FALSE;
-	self->priv->link_source_id = 0;
+	GObject *object;
 
-	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
+	object = G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->constructor (type,
+																				  n_construct_params,
+																				  construct_params);
+	if (!object)
+		return NULL;
 
-	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_3_ETHERNET);
+	NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object)->carrier_file_path =
+		g_strdup_printf ("/sys/class/net/%s/carrier", nm_device_get_iface (NM_DEVICE (object)));
+
+	return object;
 }
 
 static void
-real_init (NMDevice *dev)
+nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 {
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-	NMData *				app_data;
-	NMNetlinkMonitor *		monitor;
-	NMSupplicantManager *   sup_mgr;
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
 
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	monitor = nm_netlink_monitor_get ();
+	priv->dispose_has_run = FALSE;
+	priv->link_source_id = 0;
 
-	self->priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
-													  G_CALLBACK (nm_device_802_3_ethernet_link_activated), self);
+	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
 
-	self->priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
-														 G_CALLBACK (nm_device_802_3_ethernet_link_deactivated), self);
-	g_object_unref (monitor);
-
-	sup_mgr = nm_supplicant_manager_get ();
-	self->priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr,
-															 nm_device_get_iface (NM_DEVICE (self)),
-															 FALSE);
-	if (self->priv->sup_iface == NULL) {
-		nm_warning ("Couldn't initialize supplicant interface for %s.",
-		            nm_device_get_iface (NM_DEVICE (self)));
-	} else {
-		g_signal_connect (G_OBJECT (self->priv->sup_iface),
-		                  "state",
-		                  G_CALLBACK (supplicant_iface_state_cb),
-		                  self);
-	}
-	g_object_unref (sup_mgr);
+	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_3_ETHERNET);
 }
 
 static void
@@ -165,10 +139,8 @@ probe_link (NMDevice8023Ethernet *self)
 	gchar *				contents;
 	gsize				length;
 
-	if (nm_device_get_removed (NM_DEVICE (self)))
-		return FALSE;
-
-	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL))
+	if (g_file_get_contents (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->carrier_file_path,
+							 &contents, &length, NULL))
 	{
 		have_link = (gboolean) atoi (contents);
 		g_free (contents);
@@ -188,9 +160,7 @@ probe_link (NMDevice8023Ethernet *self)
 static void
 real_update_link (NMDevice *dev)
 {
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+	nm_device_set_active_link (dev, probe_link NM_DEVICE_802_3_ETHERNET (dev));
 }
 
 
@@ -203,28 +173,76 @@ real_update_link (NMDevice *dev)
 static gboolean
 nm_device_802_3_periodic_update (gpointer data)
 {
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (data);
-
-	g_return_val_if_fail (self != NULL, TRUE);
-
-	nm_device_set_active_link (NM_DEVICE (self), probe_link (self));
+	nm_device_set_active_link (NM_DEVICE (data),
+							   probe_link NM_DEVICE_802_3_ETHERNET (data));
 
 	return TRUE;
 }
 
+static gboolean
+real_is_up (NMDevice *device)
+{
+	if (!NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device))
+		return FALSE;
+
+	return NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->link_source_id != 0;
+}
 
 static void
-real_start (NMDevice *dev)
+real_bring_up (NMDevice *dev)
 {
-	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
-	guint                  id;
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+	NMNetlinkMonitor *monitor;
+	NMSupplicantManager *sup_mgr;
+	const char *iface;
 
-	self->priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
-			nm_device_get_iface (NM_DEVICE (dev)));
+	monitor = nm_netlink_monitor_get ();
+	priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
+												G_CALLBACK (nm_device_802_3_ethernet_link_activated),
+												dev);
+	priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
+												   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
+												   dev);
+	g_object_unref (monitor);
+
+	iface = nm_device_get_iface (dev);
+	sup_mgr = nm_supplicant_manager_get ();
+	priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr, iface, FALSE);
+	if (priv->sup_iface)
+		g_signal_connect (priv->sup_iface,
+		                  "state",
+		                  G_CALLBACK (supplicant_iface_state_cb),
+		                  dev);
+	else
+		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
+	g_object_unref (sup_mgr);
 
 	/* Peridoically update link status */
-	id = g_timeout_add (2000, nm_device_802_3_periodic_update, self);
-	self->priv->link_source_id = id;
+	priv->link_source_id = g_timeout_add (2000, nm_device_802_3_periodic_update, dev);
+}
+
+
+static void
+real_bring_down (NMDevice *dev)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+	NMSupplicantManager *sup_mgr;
+	NMNetlinkMonitor *monitor;
+
+	if (priv->link_source_id) {
+		g_source_remove (priv->link_source_id);
+		priv->link_source_id = 0;
+	}
+
+	sup_mgr = nm_supplicant_manager_get ();
+	nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
+	priv->sup_iface = NULL;
+	g_object_unref (sup_mgr);
+
+	monitor = nm_netlink_monitor_get ();
+	g_signal_handler_disconnect (monitor, priv->link_connected_id);
+	g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+	g_object_unref (monitor);
 }
 
 
@@ -296,7 +314,7 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_a
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (addr != NULL);
 
-	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
+	memcpy (addr, &(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
 }
 
 
@@ -308,7 +326,7 @@ real_set_hw_address (NMDevice *dev)
 	NMSock *sk;
 	int ret;
 
-	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
+	sk = nm_dev_sock_open (nm_device_get_iface (dev), DEV_GENERAL, __FUNCTION__, NULL);
 	if (!sk)
 		return;
 
@@ -317,7 +335,8 @@ real_set_hw_address (NMDevice *dev)
 
 	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
 	if (ret == 0)
-		memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+		memcpy (&(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->hw_addr),
+				&(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
 
 	nm_dev_sock_close (sk);
 }
@@ -355,46 +374,6 @@ real_can_interrupt_activation (NMDevice *dev)
 		}
 	}
 	return interrupt;
-}
-
-static void
-nm_device_802_3_ethernet_dispose (GObject *object)
-{
-	NMDevice8023Ethernet *		self = NM_DEVICE_802_3_ETHERNET (object);
-	NMSupplicantManager *       sup_mgr;
-	NMNetlinkMonitor *monitor;
-
-	if (self->priv->dispose_has_run)
-		/* If dispose did already run, return. */
-		return;
-
-	/* Make sure dispose does not run twice. */
-	self->priv->dispose_has_run = TRUE;
-
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
-	sup_mgr = nm_supplicant_manager_get ();
-	nm_supplicant_manager_release_iface (sup_mgr, self->priv->sup_iface);
-	self->priv->sup_iface = NULL;
-	g_object_unref (sup_mgr);
-
-	monitor = nm_netlink_monitor_get ();
-	g_signal_handler_disconnect (monitor,
-								 self->priv->link_connected_id);
-	g_signal_handler_disconnect (monitor,
-								 self->priv->link_disconnected_id);
-	g_object_unref (monitor);
-
-	if (self->priv->link_source_id) {
-		g_source_remove (self->priv->link_source_id);
-		self->priv->link_source_id = 0;
-	}
-
-	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
 }
 
 static void
@@ -441,13 +420,14 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 
 	/* virtual methods */
+	object_class->constructor = constructor;
 	object_class->get_property = get_property;
-	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
-	parent_class->init = real_init;
-	parent_class->start = real_start;
+	parent_class->is_up = real_is_up;
+	parent_class->bring_up = real_bring_up;
+	parent_class->bring_down = real_bring_down;
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
@@ -511,7 +491,7 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
 	{
 		nm_warning ("cannot open socket on interface %s for ethtool detect: %s",
 				iface, strerror (errno));
@@ -547,7 +527,7 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __func__, NULL)) == NULL)
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
 	{
 		nm_warning ("cannot open socket on interface %s for ethtool: %s",
 				iface, strerror (errno));
@@ -608,7 +588,7 @@ supports_mii_carrier_detect (NMDevice8023Ethernet *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
 	{
 		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d",
 				iface, errno);

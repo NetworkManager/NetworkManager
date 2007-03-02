@@ -48,14 +48,6 @@ G_BEGIN_DECLS
 #define NM_DEVICE_802_11_WIRELESS_BITRATE "bitrate"
 #define NM_DEVICE_802_11_WIRELESS_ACTIVE_NETWORK "active-network"
 
-typedef enum NMWirelessScanInterval
-{
-	NM_WIRELESS_SCAN_INTERVAL_INIT = 0,
-	NM_WIRELESS_SCAN_INTERVAL_ACTIVE,
-	NM_WIRELESS_SCAN_INTERVAL_INACTIVE
-} NMWirelessScanInterval;
-
-
 #ifndef NM_DEVICE_802_11_WIRELESS_DEFINED
 #define NM_DEVICE_802_11_WIRELESS_DEFINED
 typedef struct _NMDevice80211Wireless NMDevice80211Wireless;
@@ -116,9 +108,7 @@ NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wirele
 													const char *essid,
 													NMAPSecurity *security);
 
-void			nm_device_802_11_wireless_set_scan_interval (struct NMData *data,
-                                                            NMDevice80211Wireless *dev,
-                                                            NMWirelessScanInterval interval);
+void			nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *dev);
 
 void	nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
 											  struct NMAccessPointList *allowed_list);
@@ -135,8 +125,6 @@ NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_essid (NMDevice80211
 													const char *essid);
 
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
-
-gint8	nm_device_802_11_wireless_get_signal_strength (NMDevice80211Wireless *self);
 
 gboolean nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self);
 

@@ -226,7 +226,6 @@ test_devices (NMClient *client)
 		g_print ("\n");
 	}
 
-	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
 	g_slist_free (list);
 
 	return TRUE;
@@ -288,15 +287,12 @@ do_stuff (gpointer user_data)
 			g_signal_connect (device, "state-changed",
 							  G_CALLBACK (device_state_changed),
 							  NULL);
-			/* FIXME: This ref is never released */
-			g_object_ref (device);
 
 			nm_device_802_3_ethernet_activate (device, TRUE);
 			break;
 		}
 	}
 
-	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
 	g_slist_free (list);
 
 	return FALSE;
