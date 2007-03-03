@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD.hu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-25 11:57+0000\n"
-"PO-Revision-Date: 2007-02-23 22:01+0100\n"
+"POT-Creation-Date: 2007-03-03 18:09+0100\n"
+"PO-Revision-Date: 2007-03-03 18:47+0100\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@gnome.hu>\n"
 "MIME-Version: 1.0\n"
@@ -16,11 +16,11 @@ msgstr ""
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
 msgid "Cannot add VPN connection"
 msgstr "Nem lehet VPN kapcsolatot hozzáadni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -28,11 +28,11 @@ msgstr ""
 "Nem található megfelelő VPN szoftver a rendszerén. Lépjen kapcsolatba a "
 "rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
 msgid "Cannot import VPN connection"
 msgstr "Nem lehet VPN kapcsolatot importálni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -41,12 +41,12 @@ msgstr ""
 "Nem található a(z) \"%s\" kapcsolattípusnak megfelelő VPN szoftver a(z) \"%s"
 "\" fájl importálásához. Lépjen kapcsolatba a rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Hiba a(z) \"%s\" VPN kapcsolat lekérése közben"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -55,12 +55,12 @@ msgstr ""
 "Nem találhatóak a(z) \"%s\" VPN kapcsolathoz tartozó felhasználóifelület-"
 "fájlok. Lépjen kapcsolatba a rendszergazdával."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Törli a(z) \"%s\" VPN kapcsolatot?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -71,36 +71,16 @@ msgstr ""
 "kapcsolat létrehozásához szükséges információkért lehetséges, hogy a "
 "rendszergazdára is szüksége lesz."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
 msgid "Unable to load"
 msgstr "Nem lehet betölteni"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "Nem található néhány szükséges erőforrás (a glade fájl)!"
 
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "VPN kapcsolat létrehozása"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
 msgid "Edit VPN Connection"
 msgstr "VPN kapcsolat szerkesztése"
 
@@ -109,30 +89,66 @@ msgid "Add a new VPN connection"
 msgstr "Új VPN kapcsolat hozzáadása"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "Válassza ki a létrehozni kívánt VPN kapcsolat típusát."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "Kapcsolódás:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "VPN kapcsolat létrehozása"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "VPN kapcsolat létrehozása - 1/2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "VPN kapcsolat létrehozása - 2/2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
 msgstr "A kijelölt VPN kapcsolat törlése"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "E_xport"
 msgstr "E_xportálás"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
 msgid "Edit the selected VPN connection"
 msgstr "A kijelölt VPN kapcsolat szerkesztése"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
 msgid "Export the VPN settings to a file"
 msgstr "A VPN beállítások exportálása fájlba"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
 msgid "Export the selected VPN connection to a file"
 msgstr "A kiválasztott VPN kapcsolat exportálása fájlba"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "VPN kapcsolat létrehozásának befejezése"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
 msgid "Manage Virtual Private Network Connections"
 msgstr "Virtuális magánhálózati (VPN) kapcsolatok kezelése"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+"Ez a varázsló végigvezeti egy virtuális magánhálózati (VPN) kapcsolat létrehozásán.\n"
+"\n"
+"Ehhez bizonyos információkra lesz szükség, mint például IP címekre és titkokra. Ezek beszerzéséhez keresse meg a rendszergazdát."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
 msgstr "VPN kapcsolatok"
 
@@ -144,78 +160,77 @@ msgstr "40 bites WEP"
 msgid "104-bit WEP"
 msgstr "104 bites WEP"
 
-#: ../src/nm-ap-security-wpa-psk.c:51
+#: ../src/nm-ap-security-wpa-psk.c:50
 msgid "WPA TKIP"
 msgstr "WPA TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:53
+#: ../src/nm-ap-security-wpa-psk.c:52
 msgid "WPA CCMP"
 msgstr "WPA CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:55
+#: ../src/nm-ap-security-wpa-psk.c:54
 msgid "WPA Automatic"
 msgstr "WPA automatikus"
 
-#: ../src/nm-ap-security-wpa-psk.c:60
+#: ../src/nm-ap-security-wpa-psk.c:59
 msgid "WPA2 TKIP"
 msgstr "WPA2 TKIP"
 
-#: ../src/nm-ap-security-wpa-psk.c:62
+#: ../src/nm-ap-security-wpa-psk.c:61
 msgid "WPA2 CCMP"
 msgstr "WPA2 CCMP"
 
-#: ../src/nm-ap-security-wpa-psk.c:64
+#: ../src/nm-ap-security-wpa-psk.c:63
 msgid "WPA2 Automatic"
 msgstr "WPA2 automatikus"
 
-#: ../src/nm-ap-security.c:326
+#: ../src/nm-ap-security.c:338
 msgid "none"
 msgstr "nincs"
 
-#: ../src/nm-netlink-monitor.c:174
+#: ../src/nm-netlink-monitor.c:170
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "nem lehet netlink foglalatot létrehozni a vezetékes ethernet kártyák "
 "megfigyelésére - %s"
 
-#: ../src/nm-netlink-monitor.c:192
+#: ../src/nm-netlink-monitor.c:188
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "nem lehet kapcsolódni a netlink foglalathoz a vezetékes ethernet kártyák "
 "megfigyelésére - %s"
 
-#: ../src/nm-netlink-monitor.c:416
+#: ../src/nm-netlink-monitor.c:426
 msgid "operation took too long"
 msgstr "a művelet túl sokáig tartott"
 
-#: ../src/nm-netlink-monitor.c:513
+#: ../src/nm-netlink-monitor.c:523
 msgid "received data from wrong type of sender"
 msgstr "téves feladótól érkezett adat"
 
-#: ../src/nm-netlink-monitor.c:526
+#: ../src/nm-netlink-monitor.c:536
 msgid "received data from unexpected sender"
 msgstr "nem várt feladótól érkezett adat"
 
-#: ../src/nm-netlink-monitor.c:655
+#: ../src/nm-netlink-monitor.c:665
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "túl sok adat lett átküldve a foglalaton és ezek egy része elveszett"
 
-#: ../src/nm-netlink-monitor.c:755
+#: ../src/nm-netlink-monitor.c:775
 msgid "error occurred while waiting for data on socket"
 msgstr "hiba lépett fel adatokra várakozás közben a foglalaton"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:112
+#: ../src/nm-ap-security-wpa-eap.c:96 ../src/nm-ap-security-wpa-eap.c:120
 msgid "WPA2 Enterprise"
 msgstr "WPA2 Enterprise"
 
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:115
+#: ../src/nm-ap-security-wpa-eap.c:98 ../src/nm-ap-security-wpa-eap.c:125
 msgid "WPA Enterprise"
 msgstr "WPA Enterprise"
 
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:80
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
 msgid "LEAP"
 msgstr "LEAP"
+
