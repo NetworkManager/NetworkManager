@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: ru\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-28 11:34+0200\n"
-"PO-Revision-Date: 2007-02-28 19:41+0200\n"
+"PO-Revision-Date: 2007-03-03 16:49+0200\n"
 "Last-Translator: Leonid Kanter <leon@asplinux.ru>\n"
 "Language-Team:  <gnome-cyr@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -50,6 +50,11 @@ msgid ""
 "Please select an appropriate authentication type and provide the necessary "
 "credentials below:\n"
 msgstr ""
+"<span weight=\"bold\" size=\"larger\">Сведения аутентификации</span>\n"
+"\n"
+"Для соединения '%s' могут потребоваться некоторые сведения аутентификации.\n"
+"\n"
+"Выберите подходящий тип аутентификации и предоставьте необходимые параметры ниже:\n"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:8
 msgid "Authentication Required"
@@ -188,7 +193,7 @@ msgstr "Разрывать соединение после указанного 
 #: ../properties/nm-ppp-dialog.glade.h:18
 #: ../properties/nm-ppp-properties.c:216
 msgid "Enable stateful MPPE"
-msgstr ""
+msgstr "Включить stateful MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Exclusive device access (UUCP-style lock)"
@@ -203,7 +208,7 @@ msgid ""
 "For security reasons, options entered in the box above are checked against a "
 "list of allowed options before a connection is established.  Currently there "
 "are no options on the list."
-msgstr ""
+msgstr "В"
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "GPRS Options"
@@ -243,7 +248,7 @@ msgstr "Параметры PPP"
 
 #: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Peer DNS through tunnel"
-msgstr ""
+msgstr "Получать DNS через туннель"
 
 #: ../properties/nm-ppp-dialog.glade.h:32
 #: ../properties/nm-ppp-properties.c:251
@@ -265,7 +270,7 @@ msgstr "Требовать шифрование MPPE 128 бит"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require Explicit IP Addr"
-msgstr ""
+msgstr "Требовать исключительный адрес IP"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPC Compression"
@@ -289,7 +294,7 @@ msgstr "Параметры последовательного соединени
 
 #: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
-msgstr ""
+msgstr "Использовать настройку точки доступа GPRS из конфигурации устройства"
 
 #: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
@@ -304,7 +309,7 @@ msgid ""
 "This is the friendly name that will be used to identify this network "
 "connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr ""
+msgstr "Запоминающееся имя для этого соединения, например, \"Корпоративная сеть\""
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
@@ -317,7 +322,7 @@ msgstr "Тип:"
 #: ../properties/nm-ppp-dialog.glade.h:49
 #: ../properties/nm-ppp-properties.c:201
 msgid "Use Peer DNS"
-msgstr ""
+msgstr "Получать адреса серверов DNS"
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
@@ -343,19 +348,19 @@ msgstr "Передавать демону pppd параметр \"require-mppc\"
 msgid ""
 "When checked this sets the pppd 'debug' option and adds some extra "
 "information from the NetworkManager plugin"
-msgstr ""
+msgstr "Если этот параметр установлен, демону pppd передаётся параметр 'debug' и добавляется некоторая дополнительная информация от модуля NetworkManager"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr ""
+msgstr "Передавать демону pppd параметр \"noipdefault\""
 
 #: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr ""
+msgstr "Передавать демону pppd параметр \"usepeerdns\""
 
 #: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr ""
+msgstr "Передавать демону pppd параметр \"noauth\""
 
 #: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Access Point Name:"
@@ -367,7 +372,7 @@ msgstr "_Канал:"
 
 #: ../properties/nm-ppp-dialog.glade.h:61
 msgid "_Context Num"
-msgstr ""
+msgstr "_Номер контекста"
 
 #: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Custom PPP options:"
@@ -391,7 +396,7 @@ msgstr "_Импорт сохранённой конфигурации..."
 
 #: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Only use VPN connection for these addresses"
-msgstr ""
+msgstr "_Использовать соединение VPN только для этих адресов"
 
 #: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Packet Type"
@@ -439,11 +444,11 @@ msgstr "GPRS IP"
 
 #: ../properties/nm-ppp-properties.c:176
 msgid "GPRS Context No."
-msgstr ""
+msgstr "Номер контекста GPRS"
 
 #: ../properties/nm-ppp-properties.c:181
 msgid "GPRS Packet Type"
-msgstr ""
+msgstr "Тип пакетов GPRS"
 
 #: ../properties/nm-ppp-properties.c:186
 msgid "Use CTS/RTS flow control"
@@ -455,7 +460,7 @@ msgstr "Подключиться при помощи модема"
 
 #: ../properties/nm-ppp-properties.c:196
 msgid "Require IP to be provided"
-msgstr ""
+msgstr "Требовать предоставляния IP"
 
 #: ../properties/nm-ppp-properties.c:206
 msgid "Use MPPE encryption"
@@ -479,11 +484,11 @@ msgstr "Не использовать компрессию BSD"
 
 #: ../properties/nm-ppp-properties.c:236
 msgid "Exclusive device access by pppd"
-msgstr ""
+msgstr "Исключительный доступ к устройству демоном pppd"
 
 #: ../properties/nm-ppp-properties.c:241
 msgid "Authenticate remote peer"
-msgstr ""
+msgstr "Аутентифицировать вторую сторону"
 
 #: ../properties/nm-ppp-properties.c:256
 msgid "Refuse MSCHAP"
@@ -491,7 +496,7 @@ msgstr "Отклонять MSCHAP"
 
 #: ../properties/nm-ppp-properties.c:261
 msgid "Maximum transmit unit (in bytes)"
-msgstr ""
+msgstr "Maximum transmit unit (в байтах)"
 
 #: ../properties/nm-ppp-properties.c:266
 msgid "Maximum receive unit (in bytes)"
@@ -515,15 +520,15 @@ msgstr "Дополнительные параметры PPP"
 
 #: ../properties/nm-ppp-properties.c:296
 msgid "Use Peer DNS over the Tunnel"
-msgstr ""
+msgstr "Получать адреса серверов DNS"
 
 #: ../properties/nm-ppp-properties.c:302
 msgid "Specific networks available"
-msgstr ""
+msgstr "Доступны указанные сети"
 
 #: ../properties/nm-ppp-properties.c:308
 msgid "Limit to specific networks"
-msgstr ""
+msgstr "Только для указанных сетей"
 
 #: ../properties/vpnui_impl.c:229
 #, c-format
