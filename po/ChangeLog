@@ -1,3 +1,8 @@
+2007-03-02  Leonardo Ferreira Fontenelle  <leonardof@svn.gnome.org>
+
+	* pt_BR.po: Updated Brazilian Portuguese translation by Raphael Higino
+	<phhigino@gmail.com>, initially committed to trunk.
+
 2006-12-02  Dan Williams  <dcbw@redhat.com>
 
 	* pl.po: fix translation of "Wired network connection" (Gnome.org #362221)
