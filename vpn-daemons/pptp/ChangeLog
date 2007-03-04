@@ -1,3 +1,7 @@
+2007-03-05  Priit Laes  <plaes@svn.gnome.org>
+
+	* configure.in: Added et to LINGUAS.
+
 2007-03-02  Leonardo Ferreira Fontenelle  <leonardof@svn.gnome.org>
 
 	* configure.in: Added pt_BR to LINGUAS.
