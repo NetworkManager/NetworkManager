@@ -5,9 +5,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn 0.3.2\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-01 20:27+0800\n"
-"PO-Revision-Date: 2007-01-31 21:28+0800\n"
-"Last-Translator: Chao-Hsiung Liao <pesder.liao@msa.hinet.net>\n"
+"POT-Creation-Date: 2007-02-27 03:40+0000\n"
+"PO-Revision-Date: 2007-03-01 21:06+0800\n"
+"Last-Translator: Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>\n"
 "Language-Team: Chinese (traditional) <community@linuxhall.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -71,298 +71,328 @@ msgstr "加入、移除與編輯 VPN 連線"
 msgid "VPN Connection Manager (OpenVPN)"
 msgstr "VPN 連線管理程式 (OpenVPN)"
 
-#: ../properties/nm-openvpn.c:130
+#: ../properties/nm-openvpn.c:143
 msgid "OpenVPN Client"
 msgstr "OpenVPN 客戶端"
 
-#: ../properties/nm-openvpn.c:729
+#: ../properties/nm-openvpn.c:799
 msgid "The following OpenVPN connection will be created:"
 msgstr "將建立下列 OpenVPN 連線:"
 
-#: ../properties/nm-openvpn.c:731
+#: ../properties/nm-openvpn.c:801
 #, c-format
 msgid "Name:  %s"
 msgstr "名稱:  %s"
 
-#: ../properties/nm-openvpn.c:739
+#: ../properties/nm-openvpn.c:809
 msgid "Connection Type: X.509 Certificates"
 msgstr "連線類型: X.509 憑證"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
+#: ../properties/nm-openvpn.c:812
+#: ../properties/nm-openvpn.c:839
+#: ../properties/nm-openvpn.c:851
 #, c-format
 msgid "CA:  %s"
 msgstr "憑證機構:  %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:815
+#: ../properties/nm-openvpn.c:854
 #, c-format
 msgid "Cert:  %s"
 msgstr "憑證:  %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:818
+#: ../properties/nm-openvpn.c:857
 #, c-format
 msgid "Key:  %s"
 msgstr "金鑰:  %s"
 
-#: ../properties/nm-openvpn.c:752
+#: ../properties/nm-openvpn.c:822
 msgid "Connection Type: Shared Key"
 msgstr "連線類型: 分享式金鑰"
 
-#: ../properties/nm-openvpn.c:755
+#: ../properties/nm-openvpn.c:825
 #, c-format
 msgid "Shared Key:  %s"
 msgstr "分享金鑰:  %s"
 
-#: ../properties/nm-openvpn.c:758
+#: ../properties/nm-openvpn.c:828
 #, c-format
 msgid "Local IP:  %s"
 msgstr "本地端 IP:  %s"
 
-#: ../properties/nm-openvpn.c:761
+#: ../properties/nm-openvpn.c:831
 #, c-format
 msgid "Remote IP:  %s"
 msgstr "遠端 IP:  %s"
 
-#: ../properties/nm-openvpn.c:766
+#: ../properties/nm-openvpn.c:836
 msgid "Connection Type: Password"
 msgstr "連線類型: 密碼 "
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:842
+#: ../properties/nm-openvpn.c:860
 #, c-format
 msgid "Username:  %s"
 msgstr "使用者名稱:  %s"
 
-#: ../properties/nm-openvpn.c:778
+#: ../properties/nm-openvpn.c:848
 msgid "Connection Type: X.509 with Password Authentication"
 msgstr "連線類型: 具密碼驗證的 X.509 憑證"
 
-#: ../properties/nm-openvpn.c:796
+#: ../properties/nm-openvpn.c:866
 #, c-format
 msgid "Remote:  %s"
 msgstr "遠端:  %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:869
+#, c-format
+msgid "Port:  %s"
+msgstr "連接埠:  %s"
+
+#: ../properties/nm-openvpn.c:872
 #, c-format
 msgid "Device: %s"
 msgstr "裝置: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:872
 msgid "TAP"
 msgstr "TAP"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:872
 msgid "TUN"
 msgstr "TUN"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 #, c-format
 msgid "Protocol: %s"
 msgstr "通訊協定: %s"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 msgid "TCP"
 msgstr "TCP"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:875
 msgid "UDP"
 msgstr "UDP"
 
-#: ../properties/nm-openvpn.c:806
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Routes:  %s"
 msgstr "路由:  %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 #, c-format
 msgid "Use LZO Compression: %s"
 msgstr "使用 LZO 壓縮: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 msgid "Yes"
 msgstr "是"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:883
 msgid "No"
 msgstr "否"
 
-#: ../properties/nm-openvpn.c:814
+#: ../properties/nm-openvpn.c:887
 #, c-format
 msgid "Cipher:  %s"
 msgstr "加密器:  %s"
 
-#: ../properties/nm-openvpn.c:819
+#: ../properties/nm-openvpn.c:892
 #, c-format
 msgid "TLS auth:  %s %s"
 msgstr "TLS 驗證:  %s %s"
 
-#: ../properties/nm-openvpn.c:823
+#: ../properties/nm-openvpn.c:896
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "連線詳細資訊可以使用「編輯」按鈕改變。"
 
-#: ../properties/nm-openvpn.c:1003
+#: ../properties/nm-openvpn.c:1121
 msgid "Cannot import settings"
 msgstr "不能匯入設定值"
 
-#: ../properties/nm-openvpn.c:1005
+#: ../properties/nm-openvpn.c:1123
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "VPN 設定檔「%s」沒有包含有效的資料。"
 
-#: ../properties/nm-openvpn.c:1042
+#: ../properties/nm-openvpn.c:1161
 msgid "Select file to import"
 msgstr "選取要匯入的檔案"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1220
+#: ../properties/nm-openvpn.c:1232
+#: ../properties/nm-openvpn.c:1235
 msgid "Select CA to use"
 msgstr "選取要使用的憑證機構"
 
-#: ../properties/nm-openvpn.c:1125
+#: ../properties/nm-openvpn.c:1223
+#: ../properties/nm-openvpn.c:1238
 msgid "Select certificate to use"
 msgstr "選取要使用的憑證"
 
-#: ../properties/nm-openvpn.c:1128
+#: ../properties/nm-openvpn.c:1226
+#: ../properties/nm-openvpn.c:1241
 msgid "Select key to use"
 msgstr "選取要使用的金鑰"
 
-#: ../properties/nm-openvpn.c:1131
+#: ../properties/nm-openvpn.c:1229
 msgid "Select shared key to use"
 msgstr "選擇要使用的分享金鑰"
 
-#: ../properties/nm-openvpn.c:1137
+#: ../properties/nm-openvpn.c:1244
 msgid "Select TA to use"
 msgstr "選取要使用的 TA"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
+#: ../properties/nm-openvpn.c:1438
 msgid "Save as..."
 msgstr "另存為..."
 
-#: ../properties/nm-openvpn.c:1356
+#: ../properties/nm-openvpn.c:1468
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "已存在一個名為「%s」的檔案。"
 
-#: ../properties/nm-openvpn.c:1359
+#: ../properties/nm-openvpn.c:1471
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "是否要以儲存的版本來替換它？"
 
-#: ../properties/nm-openvpn.c:1373
+#: ../properties/nm-openvpn.c:1485
 msgid "Failed to export configuration"
 msgstr "匯出組態失敗"
 
-#: ../properties/nm-openvpn.c:1375
+#: ../properties/nm-openvpn.c:1487
 #, c-format
 msgid "Failed to save file %s"
 msgstr "儲存檔案「%s」時失敗"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "(Default: 1194)"
+msgstr "(預設值: 1194)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
 msgid "0"
 msgstr "0"
 
-#: ../properties/nm-openvpn-dialog.glade.h:2
+#: ../properties/nm-openvpn-dialog.glade.h:3
 msgid "1"
 msgstr "1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:3
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "<b>Connection Information</b>"
+msgstr "<b>連線資訊</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "<b>Connection Name</b>"
 msgstr "<b>連線名稱</b>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>選擇性資訊</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>必要的資訊</b>"
-
 #: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "<b>Required</b>"
+msgstr "<b>必要的</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>範例: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn-dialog.glade.h:8
 msgid "CA  file:"
 msgstr "CA 檔案:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:8
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "CA file:"
+msgstr "CA 檔案:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Certificate:"
 msgstr "憑證:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Connection Name"
+msgstr "連線名稱"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Connection Type:"
 msgstr "連線類型:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Direction:"
 msgstr "方向:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Gateway _Port:"
+msgstr "通訊閘連接埠(_P):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid "Key:"
 msgstr "金鑰:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Local IP:"
 msgstr "本地端 IP:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "用來識別連線到私人網路的名稱，例如「Campus VPN」或「Corporate Network」"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Optional"
+msgstr "選擇性的"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Password"
 msgstr "密碼"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"請在下面輸入您的系統管理者提供的資訊。請勿在此輸入密碼，當進行連線時便會提示"
-"您輸入。"
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "請在下面輸入您的系統管理者提供的資訊。請勿在此輸入密碼，當進行連線時便會提示您輸入。"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your administrator for the file."
-msgstr ""
-"請注意您所匯入的檔案並非 OpenVPN 組態檔案。請向您的系統管理者索取該檔案。"
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your adminstrator for the file."
+msgstr "請注意您所匯入的檔案並非 OpenVPN 組態檔案。請向您的系統管理者索取該檔案。"
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Remote IP:"
 msgstr "遠端 IP:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Shared Key:"
 msgstr "分享金鑰:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Shared key"
 msgstr "分享金鑰"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Use LZO compression"
 msgstr "使用 LZO 壓縮"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "Use TAP device"
 msgstr "使用 TAP 裝置"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "Use TCP connection"
 msgstr "使用 TCP 連線"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "Use TLS auth:"
 msgstr "使用 TLS 驗證:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:29
 msgid "Use cipher:"
 msgstr "使用加密器:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:30
 msgid "Username:"
 msgstr "使用者名稱:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -374,33 +404,28 @@ msgstr ""
 "密碼驗證\n"
 "X.509 密碼驗證"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "_Gateway:"
-msgstr "通訊閘(_G):"
+#: ../properties/nm-openvpn-dialog.glade.h:36
+msgid "X.509/Pass"
+msgstr "X.509/通過"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:37
+msgid "_Gateway Address:"
+msgstr "通訊閘位址(_G):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:38
 msgid "_Import Saved Configuration..."
 msgstr "匯入儲存的組態(_I)..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"用來識別連線到私人網路的名稱，例如「Campus VP_N」或「Corporate Network」"
-
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:39
 msgid "_Only use VPN connection for these addresses"
 msgstr "只對這些位址使用 _VPN 連線"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:40
 msgid "none"
 msgstr "無"
 
 #: ../src/nm-openvpn-service.c:127
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
+msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
 msgstr "VPN 登入失敗，因為使用者名稱與密碼不符或憑證密碼錯誤。"
 
 #: ../src/nm-openvpn-service.c:129
@@ -408,22 +433,18 @@ msgid "The VPN login failed because the VPN program could not be started."
 msgstr "VPN 登入失敗，因為 VPN 程式無法啟動。"
 
 #: ../src/nm-openvpn-service.c:131
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
+msgid "The VPN login failed because the VPN program could not connect to the VPN server."
 msgstr "VPN 登入失敗，因為 VPN 程式無法連線至 VPN 伺服器。"
 
 #: ../src/nm-openvpn-service.c:133
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
+msgid "The VPN login failed because the VPN configuration options were invalid."
 msgstr "VPN 登入失敗，因為 VPN 組態選項無效。"
 
 #: ../src/nm-openvpn-service.c:135
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
+msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
 msgstr "VPN 登入失敗，因為 VPN 程式從 VPN 伺服器接收到無效的組態。"
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN 連線失敗"
+
