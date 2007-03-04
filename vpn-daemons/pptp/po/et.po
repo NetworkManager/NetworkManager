@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-02 04:49+0000\n"
-"PO-Revision-Date: 2007-02-25 15:58+0200\n"
-"Last-Translator: Priit Laes <plaes@plaes.org>\n"
+"PO-Revision-Date: 2007-03-02 23:16+0200\n"
+"Last-Translator: Ivar Smolin <okul@linux.ee>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -70,7 +70,6 @@ msgstr "Autentimise tüüp"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:10
 #: ../auth-dialog/gnome-two-password-dialog.c:272
-#, fuzzy
 msgid "_Password:"
 msgstr "_Parool:"
 
@@ -105,7 +104,6 @@ msgid "_Secondary Password:"
 msgstr "%s - Vajalik on parool"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:270
-#, fuzzy
 msgid "_Domain:"
 msgstr "_Domeen:"
 
@@ -138,18 +136,16 @@ msgid "VPN Connection Manager (PPP generic)"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:1
-#, fuzzy
 msgid "00:00:00:00"
-msgstr "0:00 / 0:00"
+msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:2
 msgid "<b>Compression</b>"
 msgstr "<b>Pakkimine:</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
-#, fuzzy
 msgid "<b>Connection Name</b>"
-msgstr "Nimi Puudub"
+msgstr "<b>Ühenduse nimi</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
 #, fuzzy
@@ -161,9 +157,8 @@ msgid "<b>Encryption</b>"
 msgstr "<b>Krüpteering</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:6
-#, fuzzy
 msgid "<b>IP Options</b>"
-msgstr "GTK+ sätted"
+msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:7
 #, fuzzy
@@ -179,14 +174,12 @@ msgid "A list of extra options to pppd as would be typed on the command line"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:10
-#, fuzzy
 msgid "Allow BSD Compression"
-msgstr "Tihenduse suhe %4.2f%%\n"
+msgstr "BSD-tihendus on lubatud"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
-#, fuzzy
 msgid "Allow Deflate compression"
-msgstr "Tihenduse suhe %4.2f%%\n"
+msgstr "Deflate-tihendus on lubatud"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
 #, fuzzy
@@ -194,14 +187,12 @@ msgid "Authenticate Peer"
 msgstr "Tõrge autentimisel.\n"
 
 #: ../properties/nm-ppp-dialog.glade.h:13
-#, fuzzy
 msgid "Authentication"
 msgstr "Autentimine"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
-#, fuzzy
 msgid "Compression & Encryption"
-msgstr "Nõua krüptimist"
+msgstr "Tihendus ja krüptimine"
 
 #: ../properties/nm-ppp-dialog.glade.h:15
 #, fuzzy
@@ -259,24 +250,20 @@ msgid "If Deflate compression is not allowed the 'nodefate' option is passed to 
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:27
-#, fuzzy
 msgid "Maximum Receive Unit"
-msgstr "km"
+msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:28
-#, fuzzy
 msgid "Maximum Transmit Unit"
-msgstr "km"
+msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:29
-#, fuzzy
 msgid "Modem Connection"
 msgstr "Modemiühendus"
 
 #: ../properties/nm-ppp-dialog.glade.h:30
-#, fuzzy
 msgid "PPP Options"
-msgstr "GTK+ sätted"
+msgstr "PPP-valikud"
 
 #: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Peer DNS through tunnel"
@@ -359,9 +346,8 @@ msgid "Time in seconds between echo requests"
 msgstr "Sekundites määratud ajavahemik olekuuenduste vahel"
 
 #: ../properties/nm-ppp-dialog.glade.h:48
-#, fuzzy
 msgid "Type:"
-msgstr "Tüüp:"
+msgstr "Liik:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
 #: ../properties/nm-ppp-properties.c:201
@@ -469,17 +455,14 @@ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
 msgstr ""
 
 #: ../properties/nm-ppp-properties.c:134
-#, fuzzy
 msgid "Name"
 msgstr "Nimi"
 
 #: ../properties/nm-ppp-properties.c:146
-#, fuzzy
 msgid "PPTP Server"
-msgstr "Serveri logiraamatufail:"
+msgstr "PPTP Server"
 
 #: ../properties/nm-ppp-properties.c:151
-#, fuzzy
 msgid "Telephone Number"
 msgstr "Telefoninumber"
 
@@ -583,9 +566,8 @@ msgid "Interval (in milliseconds) to wait before connecting."
 msgstr ""
 
 #: ../properties/nm-ppp-properties.c:286
-#, fuzzy
 msgid "Custom PPP options"
-msgstr "Bonobo aktiveerimisvõtmed"
+msgstr "PPP kohandatud valikud"
 
 #: ../properties/nm-ppp-properties.c:296
 msgid "Use Peer DNS over the Tunnel"
@@ -616,9 +598,8 @@ msgid "The connection details can be changed using the \"Back\" button."
 msgstr ""
 
 #: ../properties/vpnui_impl.c:317
-#, fuzzy
 msgid "Select file to import"
-msgstr "Vali fail, mida importida"
+msgstr "Imporditava faili valimine"
 
 #. printf ("in impl_export\n");
 #: ../properties/vpnui_impl.c:462
