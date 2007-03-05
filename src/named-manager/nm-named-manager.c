@@ -498,7 +498,9 @@ remove_one_zone_from_named (NMNamedManager *mgr, const char *zone)
 out:
 	if (dbus_error_is_set (&error))
 		dbus_error_free (&error);
-	dbus_message_unref (reply);
+	if (reply)
+		dbus_message_unref (reply);
+
 	return success;
 }
 

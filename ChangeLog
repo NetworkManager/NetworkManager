@@ -1,5 +1,31 @@
 2007-03-02  Tambet Ingo  <tambet@ximian.com>
 
+	* libnm-glib/nm-device-802-11-wireless.c
+	(nm_device_802_11_wireless_get_capabilities): Implement.
+
+	* libnm-glib/nm-device.c (nm_device_get_capabilities): Implement.
+
+	* src/nm-device-802-11-wireless.c: Add "WirelessCapabilities" property.
+
+	* src/named-manager/nm-named-manager.c (remove_one_zone_from_named): Unref the
+	reply only if it's not NULL. Not sure why this started happening right now.
+
+	* src/nm-manager.c (device_stop_and_free): Remove. No need to have different
+	code paths for when devices get removed on shutdown or when a device is just
+	removed.
+	(finalize): Don't use a g_slist_foreach() when removing devices, the list data
+	gets freed so any signal from a device (disconnected for instance) would invoke
+	NMState update which would crash.
+	(nm_manager_remove_device): Bring the device down when it gets removed.
+
+	* src/NetworkManagerPolicy.c (nm_policy_auto_get_best_device): Remove
+	the unused dev_type.
+
+	* src/nm-hal-manager.c (create_device_and_add_to_list): Don't keep the
+	reference to the added device, NMManager will own it (if it wants).
+
+	* test/nm-tool.c: Rewrite using libnm-glib.
+
 	* libnm-glib/nm-device-802-11-wireless.c: Cache networks (bssids) list.
 	We get signalled when it changes.
 

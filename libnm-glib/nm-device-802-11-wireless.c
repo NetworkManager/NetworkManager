@@ -161,6 +161,23 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
 	return bitrate;
 }
 
+guint32
+nm_device_802_11_wireless_get_capabilities (NMDevice80211Wireless *device)
+{
+	guint32 caps = 0;
+	GValue value = {0,};
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+
+	if (nm_dbus_get_property (DBUS_G_PROXY (device),
+							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+							  "WirelessCapabilities",
+							  &value))
+		caps = g_value_get_uint (&value);
+
+	return caps;
+}
+
 static NMAccessPoint *
 get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if_not_found)
 {

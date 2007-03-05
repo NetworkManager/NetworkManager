@@ -79,6 +79,7 @@ enum {
 	PROP_MODE,
 	PROP_BITRATE,
 	PROP_ACTIVE_NETWORK,
+	PROP_CAPABILITIES,
 
 	LAST_PROP
 };
@@ -3048,6 +3049,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	struct ether_addr hw_addr;
 	char hw_addr_buf[20];
 	NMAccessPoint *ap;
@@ -3065,6 +3067,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_BITRATE:
 		g_value_set_int (value, nm_device_802_11_wireless_get_bitrate (device));
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACTIVE_NETWORK:
 		req = nm_device_get_act_request (NM_DEVICE (device));
@@ -3140,6 +3145,13 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 							  "Currently active network",
 							  G_TYPE_OBJECT,
 							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_CAPABILITIES,
+							"Wireless Capabilities",
+							"Wireless Capabilities",
+							0, G_MAXUINT32, NM_802_11_CAP_NONE,
+							G_PARAM_READABLE));
 
 	/* Signals */
 	signals[NETWORK_ADDED] =

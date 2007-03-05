@@ -18,6 +18,7 @@
     <property name="Mode" type="i" access="read"/>
     <property name="Bitrate" type="i" access="read"/>
     <property name="ActiveNetwork" type="o" access="read"/>
+    <property name="WirelessCapabilities" type="u" access="read"/>
 
     <signal name="NetworkAdded">
       <arg name="network" type="o"/>

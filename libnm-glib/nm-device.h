@@ -34,6 +34,7 @@ void      nm_device_deactivate (NMDevice *device);
 char     *nm_device_get_iface (NMDevice *device);
 char     *nm_device_get_udi (NMDevice *device);
 char     *nm_device_get_driver (NMDevice *device);
+guint32   nm_device_get_capabilities (NMDevice *device);
 guint32   nm_device_get_ip4_address (NMDevice *device);
 NMIP4Config *nm_device_get_ip4_config (NMDevice *device);
 NMDeviceState nm_device_get_state (NMDevice *device);

@@ -54,23 +54,13 @@ nm_manager_init (NMManager *manager)
 }
 
 static void
-device_stop_and_free (gpointer data, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (data);
-
-	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-	g_object_unref (device);
-}
-
-static void
 finalize (GObject *object)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
+	NMManager *manager = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	g_slist_foreach (priv->devices,
-					 device_stop_and_free,
-					 NULL);
-	g_slist_free (priv->devices);
+	while (g_slist_length (priv->devices))
+		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
 }
@@ -283,6 +273,7 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device)
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
+			nm_device_bring_down (device, FALSE);
 			manager_device_removed (manager, device);
 			g_object_unref (device);
 			break;

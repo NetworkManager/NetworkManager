@@ -80,13 +80,11 @@ static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoin
 		return NULL;
 
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
-		guint		dev_type;
 		gboolean		link_active;
 		guint		prio = 0;
 		NMDevice *	dev = (NMDevice *)(elt->data);
 		guint32		caps;
 
-		dev_type = nm_device_get_device_type (dev);
 		link_active = nm_device_has_active_link (dev);
 		caps = nm_device_get_capabilities (dev);
 

@@ -1,6 +1,7 @@
 SUBDIRS=test-common libnm-util
 
 INCLUDES = -I${top_srcdir}                    \
+           -I${top_srcdir}/libnm-glib         \
            -I${top_srcdir}/gnome/libnm_glib   \
            -I${top_srcdir}/utils              \
            -I${top_srcdir}/include
@@ -23,7 +24,7 @@ noinst_PROGRAMS = nm-tool \
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
-		$(top_builddir)/utils/libnmutils.la
+		$(top_builddir)/libnm-glib/libnm-glib.la
 
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\

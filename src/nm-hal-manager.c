@@ -130,6 +130,7 @@ create_device_and_add_to_list (NMHalManager *manager, const char *udi, const cha
 				 nm_device_get_iface (dev));
 
 		nm_manager_add_device (manager->nm_manager, dev);
+		g_object_unref (dev);
 	}
 
 	return dev;

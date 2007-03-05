@@ -9,7 +9,7 @@
     <property name="Udi" type="s" access="read"/>
     <property name="Interface" type="s" access="read"/>
     <property name="Driver" type="s" access="read"/>
-    <property name="Capabilities" type="i" access="read"/>
+    <property name="Capabilities" type="u" access="read"/>
     <property name="Ip4Address" type="i" access="read"/>
     <property name="State" type="u" access="read"/>
     <property name="Ip4Config" type="o" access="read"/>

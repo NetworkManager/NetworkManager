@@ -161,6 +161,23 @@ nm_device_get_driver (NMDevice *device)
 }
 
 guint32
+nm_device_get_capabilities (NMDevice *device)
+{
+	guint32 caps = 0;
+	GValue value = {0,};
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+
+	if (nm_dbus_get_property (DBUS_G_PROXY (device),
+							  NM_DBUS_INTERFACE_DEVICE,
+							  "Capabilities",
+							  &value))
+		caps = g_value_get_uint (&value);
+
+	return caps;
+}
+
+guint32
 nm_device_get_ip4_address (NMDevice *device)
 {
 	guint32 address = 0;
