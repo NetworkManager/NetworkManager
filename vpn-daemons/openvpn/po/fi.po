@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-03-06 05:54+0300\n"
-"PO-Revision-Date: 2007-03-06 05:57+0300\n"
+"PO-Revision-Date: 2007-03-06 06:06+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -286,7 +286,7 @@ msgstr "<b>Yhteyden nimi</b>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:6
 msgid "<b>Required</b>"
-msgstr "<b>Vaaditut</b>"
+msgstr "<b>Vaaditut tiedot</b>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -338,7 +338,7 @@ msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Optional"
-msgstr "Valinnaiset"
+msgstr "Valinnaiset tiedot"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Password"
