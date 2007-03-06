@@ -1,5 +1,9 @@
 2007-03-06  Ignacio Casal Quinteiro  <nacho.resa@gmail.com>
 
+	* configure.in: Added 'fr' to ALL_LINGUAS.
+
+2007-03-06  Ignacio Casal Quinteiro  <nacho.resa@gmail.com>
+
 	* configure.in: Added 'gl' to ALL_LINGUAS.
 
 2007-03-05  Priit Laes  <plaes@svn.gnome.org>
