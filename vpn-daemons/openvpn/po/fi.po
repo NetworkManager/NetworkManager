@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-03-06 05:54+0300\n"
-"PO-Revision-Date: 2007-03-06 06:06+0300\n"
+"PO-Revision-Date: 2007-03-06 06:08+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -426,7 +426,7 @@ msgstr "Tuo tallennettu määrittely..."
 
 #: ../properties/nm-openvpn-dialog.glade.h:39
 msgid "_Only use VPN connection for these addresses"
-msgstr "_Käytä VPN-yhteyttä näille osotteille"
+msgstr "_Käytä VPN-yhteyttä näille osoitteille"
 
 #: ../properties/nm-openvpn-dialog.glade.h:40
 msgid "none"
