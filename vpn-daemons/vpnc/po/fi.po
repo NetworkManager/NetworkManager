@@ -9,7 +9,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-03-06 06:00+0300\n"
-"PO-Revision-Date: 2007-03-06 06:01+0300\n"
+"PO-Revision-Date: 2007-03-06 06:05+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -68,11 +68,11 @@ msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
 
 #: ../nm-vpnc.desktop.in.h:2
 msgid "VPN Connection Manager (vpnc)"
-msgstr "VPN-yhteyksien hallinta (vpnc)"
+msgstr "VPN-yhteysohjelmisto (vpnc)"
 
 #: ../properties/nm-vpnc.c:84
 msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Yhteensopiva Cisco VPN-asiakas (vpnc)"
+msgstr "Cisco-yhteensopiva VPN-asiakas (vpnc)"
 
 #: ../properties/nm-vpnc.c:448
 msgid "The following vpnc VPN connection will be created:"
@@ -81,7 +81,7 @@ msgstr "Seuraava vpnc-yhteys luodaan:"
 #: ../properties/nm-vpnc.c:450
 #, c-format
 msgid "Name:  %s"
-msgstr "Nimi:  %s"
+msgstr "Nimi: %s"
 
 #: ../properties/nm-vpnc.c:453
 #, c-format
@@ -91,22 +91,22 @@ msgstr "Yhdyskäytävä: %s"
 #: ../properties/nm-vpnc.c:455
 #, c-format
 msgid "Group Name:  %s"
-msgstr "Ryhmän nimi:  %s"
+msgstr "Ryhmän nimi: %s"
 
 #: ../properties/nm-vpnc.c:459
 #, c-format
 msgid "Username:  %s"
-msgstr "Käyttäjätunnus:  %s"
+msgstr "Käyttäjätunnus: %s"
 
 #: ../properties/nm-vpnc.c:464
 #, c-format
 msgid "Domain:  %s"
-msgstr "Toimialue:  %s"
+msgstr "Toimialue: %s"
 
 #: ../properties/nm-vpnc.c:469
 #, c-format
 msgid "Routes:  %s"
-msgstr "Reitit:  %s"
+msgstr "Reitit: %s"
 
 #: ../properties/nm-vpnc.c:473
 msgid "The connection details can be changed using the \"Edit\" button."
@@ -177,7 +177,7 @@ msgstr "<b>Yhteyden nimi</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
 msgid "<b>Required</b>"
-msgstr "<b>Vaaditut</b>"
+msgstr "<b>Vaaditut tiedot</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -201,7 +201,7 @@ msgstr ""
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Optional"
-msgstr "Valinnaiset"
+msgstr "Valinnaiset tiedot"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
