@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-31 11:01+0300\n"
-"PO-Revision-Date: 2006-08-16 13:13+0300\n"
+"POT-Creation-Date: 2007-03-06 06:00+0300\n"
+"PO-Revision-Date: 2007-03-06 06:01+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -168,30 +168,46 @@ msgid "Failed to save file %s"
 msgstr "Tiedostoa \"%s\" ei voitu tallentaa"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Information</b>"
+msgstr "<b>Tietoja yhteydestä</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
 msgid "<b>Connection Name</b>"
 msgstr "<b>Yhteyden nimi</b>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Required Information</b>"
-msgstr "<b>Vaaditut tiedot</b>"
-
 #: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<b>Required</b>"
+msgstr "<b>Vaaditut</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>esimerkki: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Connection Name"
+msgstr "Yhteyden nimi"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "G_roup Name:"
 msgstr "_Ryhmän nimi:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "O_ptional Information"
-msgstr "_Lisätiedot"
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Yksilöllinen VPN-verkon nimi, esimerkiksi \"Kampusverkko\" tai "
+"\"Työpaikan verkko\"."
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Optional"
+msgstr "Valinnaiset"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Override _user name"
 msgstr "Ohita _käyttäjätunnus"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -199,42 +215,42 @@ msgstr ""
 "Syötä järjestelmän ylläpitäjältä saamasi tiedot alla oleviin kohtiin. Älä "
 "syötä tähän salasanaasi, sillä se kysytään vasta otettaessa yhteyttä."
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"Please note that the file you import is not a Cisco VPN or VPNC "
+"configuration file. Ask your adminstrator for the file."
+msgstr ""
+"Huomaa, että tuotava tiedosto ei ole Cisco VPN tai vpnc-asetustiedosto. "
+"Kysy ylläpitäjältäsi oikeaa tiedostoa."
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
 msgstr "Käytä _toimialuetta tunnistautumiseen"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:14
 msgid "_Import Saved Configuration..."
 msgstr "Tuo tallennettu määrittely..."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Nimi, josta yhteys yksityiseen verkkoon tunnistetaan: esimerkiksi "
-"\"Kampusverkko\" tai \"Työpaikan verkko\"."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Käytä VPN-yhteyttä näille osotteille"
 
-#: ../src/nm-vpnc-service.c:118
+#: ../src/nm-vpnc-service.c:119
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
 "VPN-kirjautuminen ei onnistunut, koska käyttäjätunnusta ja salasanaa ei "
 "hyväksytty."
 
-#: ../src/nm-vpnc-service.c:120
+#: ../src/nm-vpnc-service.c:121
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "VPN-kirjautuminen epäonnistui, koska VPN-ohjelmaa ei voitu käynnistää."
 
-#: ../src/nm-vpnc-service.c:122
+#: ../src/nm-vpnc-service.c:123
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
@@ -242,20 +258,23 @@ msgstr ""
 "VPN-kirjatuminen epäonnistui, koska VPN-ohjelma ei saanut yhteyttä VPN-"
 "palvelimeen."
 
-#: ../src/nm-vpnc-service.c:124
+#: ../src/nm-vpnc-service.c:125
 msgid ""
 "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
 "VPN-kirjautuminen epäonnistui, koska VPN-asetuksten valinnat olivat "
 "virheelliset."
 
-#: ../src/nm-vpnc-service.c:126
+#: ../src/nm-vpnc-service.c:127
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
 "VPN-kirjautumien epäonnstui, koska VPN-ohjelma sai epäyhteensopivat "
 "asetukset VPN-palvelimelta."
+
+#~ msgid "O_ptional Information"
+#~ msgstr "_Lisätiedot"
 
 #~ msgid "Certificate password:"
 #~ msgstr "Varmennettu salasana:"
@@ -370,13 +389,6 @@ msgstr ""
 
 #~ msgid "Password"
 #~ msgstr "Salasana"
-
-#~ msgid ""
-#~ "Please note that the file you import is not an OpenVPN configuration "
-#~ "file. Ask your administrator for the file."
-#~ msgstr ""
-#~ "Huomaa, ettei tuotava tiedosto ole OpenVPN-asetustiedosto. Kysy "
-#~ "ylläpitäjältäsi oikeaa tiedostoa."
 
 #~ msgid "Remote IP:"
 #~ msgstr "Palvelimen IP-osoite:"
