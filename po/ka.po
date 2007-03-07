@@ -1,0 +1,220 @@
+# translation of NetworkManager.HEAD.po to Georgian
+# Vladimer Sichinava ვლადიმერ სიჭინავა <vsichi@gnome.org>, 2007.
+# Malkhaz Barkalaya მალზახ ბარკალაია <malxaz@gmail.com>
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager.HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-03-02 03:30+0000\n"
+"PO-Revision-Date: 2007-03-07 01:51+0100\n"
+"Last-Translator: Vladimer Sichinava ვლადიმერ სიჭინავა <vsichi@gnome.org>\n"
+"Language-Team: Georgian <http://mail.gnome.org/mailman/listinfo/gnome-ge-list>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+msgid "Cannot add VPN connection"
+msgstr "ვერ მოინახა VPN შეერთება"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr "VPN-პროგრამა არ არის თქვენს სისტემაში. მიმართეთ სისადმინს."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
+msgid "Cannot import VPN connection"
+msgstr "ვერ მოხერხდა VPN-შეერთების იმპორტი"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"ვერ მოიძენა '%s' VPN-შეერთებისათვის'%s' ფაილის "
+"იმპორტისათვის საჭირო პროგრამა. მიმართეთ სისადმინს."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "ვერ განხორციელდა VPN-შეერთება '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"ვერ მოიძენა '%s' VPN-შეერთებისათვის UI ფაილი. "
+"მიმართეთ სისადმინს."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "წავშალოთ VPN-შეერთება \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"დაკარგულია მთელი ინფორმაცია \"%s\" VPN-შეერთების შესახებ. მიმართეთ სისადმინს "
+"ახლის შესაქმნელად."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+msgid "Unable to load"
+msgstr "შეუძლებელია ჩატვირთვა"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "ვერ მოინახა ზოგი საჭირო რესურსი (ფაილი დაზიანებულია)!"
+
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
+msgid "Create VPN Connection"
+msgstr "VPN-შეერთების შექმნა"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
+msgid "Edit VPN Connection"
+msgstr "VPN-შეერთების რედაქტირება"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "ახალი VPN-შეერთების დამატება"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Delete the selected VPN connection"
+msgstr ""
+"მითითებული VPN-შეერთების "
+"წაშლა"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "E_xport"
+msgstr "_ექსპორტი"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Edit the selected VPN connection"
+msgstr "მითითებული VPN-შეერთების რედაქტირება"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Export the VPN settings to a file"
+msgstr "VPN-პარამეტრების ფაილში ექსპორტი"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Export the selected VPN connection to a file"
+msgstr "VPN-შეერთების ფაილში ექსპორტი"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Manage Virtual Private Network Connections"
+msgstr "VPN(ვირტუალური პირადი ქსელის) შეერთების მართვა"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "VPN Connections"
+msgstr "VPN-შეერთებები"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40-ბიტიანი WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104-ბიტიანი WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:51
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:53
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:55
+msgid "WPA Automatic"
+msgstr "WPA Automatic"
+
+#: ../src/nm-ap-security-wpa-psk.c:60
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:62
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:64
+msgid "WPA2 Automatic"
+msgstr "WPA2 Automatic"
+
+#: ../src/nm-ap-security.c:326
+msgid "none"
+msgstr "არცერთი"
+
+#: ../src/nm-netlink-monitor.c:174
+#, c-format
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "ვერ ხერხდება netlink-სოკეტის შექმნა კაბელიანი ეთერნეტ-მოწყობილობის მართვისათვის - %s"
+
+#: ../src/nm-netlink-monitor.c:192
+#, c-format
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"ვერ ხერხდება netlink-სოკეტის "
+"განწესება კაბელიანი "
+"ეთერნეტ-მოწყობილობის "
+"მართვისათვის - %s"
+
+#: ../src/nm-netlink-monitor.c:416
+msgid "operation took too long"
+msgstr "ოპერაცია მეტისმეტად დიდხანს გრძელდება"
+
+#: ../src/nm-netlink-monitor.c:513
+msgid "received data from wrong type of sender"
+msgstr "მიღებულია მონაცემები არასწორი ტიპის გამომგზავნისაგან"
+
+#: ../src/nm-netlink-monitor.c:526
+msgid "received data from unexpected sender"
+msgstr "მიღებულია მონაცემები გამომგზავნისაგან, ვისგანაც არ იყო მოსალოდნელი"
+
+#: ../src/nm-netlink-monitor.c:655
+msgid "too much data was sent over socket and some of it was lost"
+msgstr ""
+"სოკეტის გავლით გაგზავნილი იყო მეტისმეტად ბევრი "
+"მონაცემი და მათი ნაწილი დაიკარგა"
+
+#: ../src/nm-netlink-monitor.c:755
+msgid "error occurred while waiting for data on socket"
+msgstr "შეცდომა სოკეტისაგან მონაცემთა მიღების ლოდინისას"
+
+#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:112
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:115
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:80
+msgid "LEAP"
+msgstr "LEAP"
+
