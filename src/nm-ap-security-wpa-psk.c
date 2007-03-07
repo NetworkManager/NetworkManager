@@ -165,7 +165,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		goto out;
 	}
 
-	if (!nm_supplicant_config_add_option (config, "psk", bin_key, -1)) {
+	if (!nm_supplicant_config_add_option (config, "psk", bin_key, strlen (key) / 2)) {
 		g_free (bin_key);
 		goto out;
 	}

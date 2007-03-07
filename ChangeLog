@@ -1,3 +1,10 @@
+2007-03-07  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Simon Geard <delgarde@ihug.co.nz>  (Gnome.org #394956)
+	* src/nm-ap-security-wpa-psk.c
+		- (real_write_supplicant_config): work with PSKs that may contain
+			zeros in the binary format rather than treating it as a string
+
 2007-03-02  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-device-802-11-wireless.c
