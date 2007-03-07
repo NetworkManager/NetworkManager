@@ -1,3 +1,7 @@
+2007-03-07  Vladimer Sichinava  <vsichi@gnome.org>
+
+        * configure.in: Added 'ka' to ALL_LINGUAS.
+
 2007-03-06  Ignacio Casal Quinteiro  <nacho.resa@gmail.com>
 
 	* configure.in: Added 'gl' to ALL_LINGUAS.
