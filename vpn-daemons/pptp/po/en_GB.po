@@ -1,0 +1,438 @@
+# English (British) translation for gnome-torrent
+# Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the gnome-torrent package.
+# David Lodge <dave@cirt.net>, 2006
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gnome-torrent\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-03-11 23:41+0000\n"
+"PO-Revision-Date: 2007-03-11 23:41-0000\n"
+"Last-Translator: David Lodge <dave@cirt.net>\n"
+"Language-Team: en_GB <en@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "_Secondary Password:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Username:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_Domain:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Password:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "Connect _anonymously"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "Connect as _user:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+msgid "_Remember password for this session"
+msgstr "_Remember password for this session"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+msgid "_Save password in keyring"
+msgstr "_Save password in keyring"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "You need to authenticate to access the Virtual Private Network '%s'."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate PPTP VPN"
+msgstr "Authenticate PPTP VPN"
+
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Add, Remove, and Edit VPN Connections"
+
+#: ../nm-pptp.desktop.in.h:2
+msgid "VPN Connection Manager (PPTP)"
+msgstr "VPN Connection Manager (PPTP)"
+
+#: ../properties/nm-pptp.c:79
+msgid "PPTP Client"
+msgstr "PPTP Client"
+
+#: ../properties/nm-pptp.c:387
+msgid "The following PPTP connection will be created:"
+msgstr "The following PPTP connection will be created:"
+
+#: ../properties/nm-pptp.c:389
+#, c-format
+msgid "Name:  %s"
+msgstr "Name:  %s"
+
+#: ../properties/nm-pptp.c:392
+#, c-format
+msgid "Remote:  %s"
+msgstr "Remote:  %s"
+
+#: ../properties/nm-pptp.c:395
+#, c-format
+msgid "Username:  %s"
+msgstr "Username:  %s"
+
+#: ../properties/nm-pptp.c:399
+#, c-format
+msgid "Routes:  %s"
+msgstr "Routes:  %s"
+
+#: ../properties/nm-pptp.c:403
+#, c-format
+msgid "Use MPPC Compression: %s"
+msgstr "Use MPPC Compression: %s"
+
+#: ../properties/nm-pptp.c:403
+#: ../properties/nm-pptp.c:405
+msgid "Yes"
+msgstr "Yes"
+
+#: ../properties/nm-pptp.c:403
+#: ../properties/nm-pptp.c:405
+msgid "No"
+msgstr "No"
+
+#: ../properties/nm-pptp.c:405
+#, c-format
+msgid "Use MPPE Encryption: %s"
+msgstr "Use MPPE Encryption: %s"
+
+#: ../properties/nm-pptp.c:408
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "The connection details can be changed using the \"Edit\" button."
+
+#: ../properties/nm-pptp.c:484
+msgid "Cannot import settings"
+msgstr "Cannot import settings"
+
+#: ../properties/nm-pptp.c:486
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "The VPN settings file '%s' does not contain valid data."
+
+#: ../properties/nm-pptp.c:504
+msgid "Select file to import"
+msgstr "Select file to import"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-pptp.c:626
+msgid "Save as..."
+msgstr "Save as..."
+
+#: ../properties/nm-pptp.c:656
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "A file named \"%s\" already exists."
+
+#: ../properties/nm-pptp.c:659
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Do you want to replace it with the one you are saving?"
+
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Connection Name</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Required Information</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "MS CHAP-v1/v2"
+msgstr "MS CHAP-v1/v2"
+
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Require MPPE encryption"
+msgstr "Require MPPE encryption"
+
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Use MPPC compression"
+msgstr "Use MPPC compression"
+
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Username:"
+msgstr "Username:"
+
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid ""
+"Your password must be defined \n"
+"in /etc/ppp/chap-secrets"
+msgstr ""
+"Your password must be defined \n"
+"in /etc/ppp/chap-secrets"
+
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "_Gateway:"
+msgstr "_Gateway:"
+
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "_Import Saved Configuration..."
+msgstr "_Import Saved Configuration..."
+
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "_Only use VPN connection for these addresses"
+msgstr "_Only use VPN connection for these addresses"
+
+#. No sophisticated error message for now
+#: ../src/nm-pptp-service.c:126
+msgid "VPN Connection failed"
+msgstr "VPN Connection failed"
+
+#~ msgid "Authentication Type:"
+#~ msgstr "Authentication Type:"
+#~ msgid "_Remember for this session"
+#~ msgstr "_Remember for this session"
+#~ msgid "_Save in keyring"
+#~ msgstr "_Save in keyring"
+#~ msgid "Authenticate Connection"
+#~ msgstr "Authenticate Connection"
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+#~ "\n"
+#~ "The connection '%s' may need some form of authentication.\n"
+#~ "\n"
+#~ "Please select an appropriate authentication type and provide the "
+#~ "necessary credentials below:\n"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+#~ "\n"
+#~ "The connection '%s' may need some form of authentication.\n"
+#~ "\n"
+#~ "Please select an appropriate authentication type and provide the "
+#~ "necessary credentials below:\n"
+#~ msgid "Authentication Required"
+#~ msgstr "Authentication Required"
+#~ msgid "_Authentication Type:"
+#~ msgstr "_Authentication Type:"
+#~ msgid "_Remote name:"
+#~ msgstr "_Remote name:"
+#~ msgid "auth-chap-window"
+#~ msgstr "auth-chap-window"
+#~ msgid "auth-mschapv2-window"
+#~ msgstr "auth-mschapv2-window"
+#~ msgid "auth-none-window"
+#~ msgstr "auth-none-window"
+#~ msgid "00:00:00:00"
+#~ msgstr "00:00:00:00"
+#~ msgid "<b>Compression</b>"
+#~ msgstr "<b>Compression</b>"
+#~ msgid "<b>Delays and TImeouts</b>"
+#~ msgstr "<b>Delays and TImeouts</b>"
+#~ msgid "<b>Encryption</b>"
+#~ msgstr "<b>Encryption</b>"
+#~ msgid "<b>IP Options</b>"
+#~ msgstr "<b>IP Options</b>"
+#~ msgid "<b>Packet Parameters</b>"
+#~ msgstr "<b>Packet Parameters</b>"
+#~ msgid ""
+#~ "A list of extra options to pppd as would be typed on the command line"
+#~ msgstr ""
+#~ "A list of extra options to pppd as would be typed on the command line"
+#~ msgid "Allow BSD Compression"
+#~ msgstr "Allow BSD Compression"
+#~ msgid "Allow Deflate compression"
+#~ msgstr "Allow Deflate compression"
+#~ msgid "Authentication"
+#~ msgstr "Authentication"
+#~ msgid "Compression & Encryption"
+#~ msgstr "Compression & Encryption"
+#~ msgid "Connection"
+#~ msgstr "Connection"
+#~ msgid "Debug Output"
+#~ msgstr "Debug Output"
+#~ msgid "Disconnect after this many LCP echo requests fail"
+#~ msgstr "Disconnect after this many LCP echo requests fail"
+#~ msgid "Enable stateful MPPE"
+#~ msgstr "Enable stateful MPPE"
+#~ msgid "Exclusive device access (UUCP-style lock)"
+#~ msgstr "Exclusive device access (UUCP-style lock)"
+#~ msgid "Find Device"
+#~ msgstr "Find Device"
+#~ msgid ""
+#~ "For security reasons, options entered in the box above are checked "
+#~ "against a list of allowed options before a connection is established.  "
+#~ "Currently there are no options on the list."
+#~ msgstr ""
+#~ "For security reasons, options entered in the box above are checked "
+#~ "against a list of allowed options before a connection is established.  "
+#~ "Currently there are no options on the list."
+#~ msgid "GPRS Options"
+#~ msgstr "GPRS Options"
+#~ msgid "Hardware RTS/CTS"
+#~ msgstr "Hardware RTS/CTS"
+#~ msgid "Host name or IP address of the PPTP server"
+#~ msgstr "Host name or IP address of the PPTP server"
+#~ msgid ""
+#~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+#~ msgstr ""
+#~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+#~ msgid ""
+#~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
+#~ "pppd"
+#~ msgstr ""
+#~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
+#~ "pppd"
+#~ msgid "Maximum Receive Unit"
+#~ msgstr "Maximum Receive Unit"
+#~ msgid "Maximum Transmit Unit"
+#~ msgstr "Maximum Transmit Unit"
+#~ msgid "Modem Connection"
+#~ msgstr "Modem Connection"
+#~ msgid "PPP Options"
+#~ msgstr "PPP Options"
+#~ msgid "Peer DNS through tunnel"
+#~ msgstr "Peer DNS through tunnel"
+#~ msgid "Refuse CHAP"
+#~ msgstr "Refuse CHAP"
+#~ msgid "Refuse EAP"
+#~ msgstr "Refuse EAP"
+#~ msgid "Refuse MS CHAP"
+#~ msgstr "Refuse MS CHAP"
+#~ msgid "Require 128 bit MPPE encryption"
+#~ msgstr "Require 128 bit MPPE encryption"
+#~ msgid "Require Explicit IP Addr"
+#~ msgstr "Require Explicit IP Addr"
+#~ msgid "Require MPPC Compression"
+#~ msgstr "Require MPPC Compression"
+#~ msgid "Requires existing network connection"
+#~ msgstr "Requires existing network connection"
+#~ msgid "Routing"
+#~ msgstr "Routing"
+#~ msgid "Serial Options"
+#~ msgstr "Serial Options"
+#~ msgid "Service providers GPRS access point from device config"
+#~ msgstr "Service providers GPRS access point from device config"
+#~ msgid "Service providers IP address"
+#~ msgstr "Service providers IP address"
+#~ msgid "Telephone number to dial"
+#~ msgstr "Telephone number to dial"
+#~ msgid "Time in seconds between echo requests"
+#~ msgstr "Time in seconds between echo requests"
+#~ msgid "Type:"
+#~ msgstr "Type:"
+#~ msgid "Use Peer DNS"
+#~ msgstr "Use Peer DNS"
+#~ msgid "When checked the \"refuse-chap\" option is passed to pppd."
+#~ msgstr "When checked the \"refuse-chap\" option is passed to pppd."
+#~ msgid "When checked the \"refuse-eap\" option is passed to pppd."
+#~ msgstr "When checked the \"refuse-eap\" option is passed to pppd."
+#~ msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+#~ msgstr "When checked the \"refuse-mschap\" option is passed to pppd."
+#~ msgid "When checked the 'lock' option is passed to pppd"
+#~ msgstr "When checked the 'lock' option is passed to pppd"
+#~ msgid "When checked the 'require-mppc' option is passed to pppd"
+#~ msgstr "When checked the 'require-mppc' option is passed to pppd"
+#~ msgid ""
+#~ "When checked this sets the pppd 'debug' option and adds some extra "
+#~ "information from the NetworkManager plugin"
+#~ msgstr ""
+#~ "When checked this sets the pppd 'debug' option and adds some extra "
+#~ "information from the NetworkManager plugin"
+#~ msgid "When checked this sets the pppd 'noipdefault' option"
+#~ msgstr "When checked this sets the pppd 'noipdefault' option"
+#~ msgid "When checked this sets the pppd 'usepeerdns' option"
+#~ msgstr "When checked this sets the pppd 'usepeerdns' option"
+#~ msgid ""
+#~ "When this check box is cleared the \"noauth\" option is passed to pppd."
+#~ msgstr ""
+#~ "When this check box is cleared the \"noauth\" option is passed to pppd."
+#~ msgid "_Access Point Name:"
+#~ msgstr "_Access Point Name:"
+#~ msgid "_Channel:"
+#~ msgstr "_Channel:"
+#~ msgid "_Context Num"
+#~ msgstr "_Context Num"
+#~ msgid "_Custom PPP options:"
+#~ msgstr "_Custom PPP options:"
+#~ msgid "_Device Address:"
+#~ msgstr "_Device Address:"
+#~ msgid "_IP Address:"
+#~ msgstr "_IP Address:"
+#~ msgid "_Packet Type"
+#~ msgstr "_Packet Type"
+#~ msgid "_Telephone Number:"
+#~ msgstr "_Telephone Number:"
+#~ msgid "connect-delay"
+#~ msgstr "connect-delay"
+#~ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+#~ msgstr "pppd tunnel (PPTP, BTGPRS, Dial-up)"
+#~ msgid "PPTP Server"
+#~ msgstr "PPTP Server"
+#~ msgid "Telephone Number"
+#~ msgstr "Telephone Number"
+#~ msgid "Bluetooth Address"
+#~ msgstr "Bluetooth Address"
+#~ msgid "Bluetooth Channel"
+#~ msgstr "Bluetooth Channel"
+#~ msgid "GPRS APN"
+#~ msgstr "GPRS APN"
+#~ msgid "GPRS IP"
+#~ msgstr "GPRS IP"
+#~ msgid "GPRS Context No."
+#~ msgstr "GPRS Context No."
+#~ msgid "GPRS Packet Type"
+#~ msgstr "GPRS Packet Type"
+#~ msgid "Use CTS/RTS flow control"
+#~ msgstr "Use CTS/RTS flow control"
+#~ msgid "Connect via a modem"
+#~ msgstr "Connect via a modem"
+#~ msgid "Require IP to be provided"
+#~ msgstr "Require IP to be provided"
+#~ msgid "Use 128 bit MPPE encryption"
+#~ msgstr "Use 128 bit MPPE encryption"
+#~ msgid "Do not use deflate compression"
+#~ msgstr "Do not use deflate compression"
+#~ msgid "Do not use BSD compression"
+#~ msgstr "Do not use BSD compression"
+#~ msgid "Exclusive device access by pppd"
+#~ msgstr "Exclusive device access by pppd"
+#~ msgid "Authenticate remote peer"
+#~ msgstr "Authenticate remote peer"
+#~ msgid "Refuse MSCHAP"
+#~ msgstr "Refuse MSCHAP"
+#~ msgid "Maximum transmit unit (in bytes)"
+#~ msgstr "Maximum transmit unit (in bytes)"
+#~ msgid "Maximum receive unit (in bytes)"
+#~ msgstr "Maximum receive unit (in bytes)"
+#~ msgid "Number of failed LCP echos to cause disconnect"
+#~ msgstr "Number of failed LCP echos to cause disconnect"
+#~ msgid "Interval (in seconds) at which to issue LCP echos"
+#~ msgstr "Interval (in seconds) at which to issue LCP echos"
+#~ msgid "Interval (in milliseconds) to wait before connecting."
+#~ msgstr "Interval (in milliseconds) to wait before connecting."
+#~ msgid "Custom PPP options"
+#~ msgstr "Custom PPP options"
+#~ msgid "Use Peer DNS over the Tunnel"
+#~ msgstr "Use Peer DNS over the Tunnel"
+#~ msgid "Specific networks available"
+#~ msgstr "Specific networks available"
+#~ msgid "Limit to specific networks"
+#~ msgstr "Limit to specific networks"
+

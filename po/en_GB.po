@@ -5,807 +5,64 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager \n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2005-10-15 11:09+0100\n"
-"Last-Translator: James Ogley <james@usr-local-bin.org>\n"
+"POT-Creation-Date: 2007-03-11 23:36+0000\n"
+"PO-Revision-Date: 2007-03-11 23:36-0000\n"
+"Last-Translator: David Lodge <dave@cirt.net>\n"
 "Language-Team: English (British) <en@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
-#, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "Passphrase for wireless network %s"
-
-#
-#: ../gnome/applet/applet-dbus.c:265
-#, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "Connection to the wireless network '%s' failed."
-
-#: ../gnome/applet/applet-dbus.c:270
-msgid "Connection to the wired network failed."
-msgstr "Connection to the wired network failed."
-
-#: ../gnome/applet/applet.c:184
-#, fuzzy
-msgid "Error displaying connection information:"
-msgstr "Error displaying connection information: "
-
-#: ../gnome/applet/applet.c:202
-#, fuzzy
-msgid "Could not find some required resources (the glade file)!"
-msgstr ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-
-#: ../gnome/applet/applet.c:213
-msgid "No active connections!"
-msgstr "No active connections!"
-
-#: ../gnome/applet/applet.c:234
-#, fuzzy, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "Wired Network (%s)"
-
-#: ../gnome/applet/applet.c:236
-#, fuzzy, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "Wireless Network (%s)"
-
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
-msgid "NetworkManager Applet"
-msgstr "NetworkManager Applet"
-
-#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-#, fuzzy
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "Copyright (C) 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr ""
-"Notification area applet for managing your network devices and connections."
-
-#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
-msgid "translator-credits"
-msgstr "David Lodge <dave@cirt.net>James Ogley <james@usr-local-bin.org>"
-
-#: ../gnome/applet/applet.c:426
-msgid "VPN Login Failure"
-msgstr "VPN Login Failure"
-
-#: ../gnome/applet/applet.c:427
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "Could not start the VPN connection '%s' due to a login failure."
-
-#: ../gnome/applet/applet.c:431
-msgid "VPN Start Failure"
-msgstr "VPN Start Failure"
-
-#: ../gnome/applet/applet.c:432
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-
-#: ../gnome/applet/applet.c:436 ../gnome/applet/applet.c:446
-msgid "VPN Connect Failure"
-msgstr "VPN Connect Failure"
-
-#: ../gnome/applet/applet.c:437
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr "Could not start the VPN connection '%s' due to a connection error."
-
-#: ../gnome/applet/applet.c:441
-msgid "VPN Configuration Error"
-msgstr "VPN Configuration Error"
-
-#: ../gnome/applet/applet.c:442
-#, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "The VPN connection '%s' was not correctly configured."
-
-#: ../gnome/applet/applet.c:447
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-
-#: ../gnome/applet/applet.c:517
-msgid "VPN Login Message"
-msgstr "VPN Login Message"
-
-#: ../gnome/applet/applet.c:741 ../gnome/applet/applet.c:2508
-#: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:228
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-
-#: ../gnome/applet/applet.c:753
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "The network device \"%s (%s)\" does not support wireless scanning."
-
-#: ../gnome/applet/applet.c:761
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "The network device \"%s (%s)\" does not support link detection."
-
-#: ../gnome/applet/applet.c:908
-#, fuzzy, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "Connecting to a wired network..."
-
-#
-#: ../gnome/applet/applet.c:910
-#, fuzzy, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "Connecting to wireless network '%s'..."
-
-#: ../gnome/applet/applet.c:918
-#, fuzzy, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "Connecting to a wired network..."
-
-#
-#: ../gnome/applet/applet.c:920
-#, fuzzy, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "Connecting to wireless network '%s'..."
-
-#
-#: ../gnome/applet/applet.c:928
-#, fuzzy, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "Connecting to wireless network '%s'..."
-
-#: ../gnome/applet/applet.c:936 ../gnome/applet/applet.c:946
-#, fuzzy
-msgid "Requesting a network address from the wired network..."
-msgstr "Connecting to a wired network..."
-
-#
-#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
-#, fuzzy, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "Connecting to wireless network '%s'..."
-
-#: ../gnome/applet/applet.c:956
-#, fuzzy
-msgid "Finishing connection to the wired network..."
-msgstr "Connecting to a wired network..."
-
-#
-#: ../gnome/applet/applet.c:958
-#, fuzzy, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "Connecting to wireless network '%s'..."
-
-#: ../gnome/applet/applet.c:1075
-msgid "NetworkManager is not running"
-msgstr "NetworkManager is not running"
-
-#: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1828
-msgid "Networking disabled"
-msgstr ""
-
-#: ../gnome/applet/applet.c:1088
-msgid "No network connection"
-msgstr "No network connection"
-
-#: ../gnome/applet/applet.c:1093
-msgid "Wired network connection"
-msgstr "Wired network connection"
-
-#
-#: ../gnome/applet/applet.c:1097
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Connected to an Ad-Hoc wireless network"
-
-#: ../gnome/applet/applet.c:1099
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Wireless network connection to '%s' (%d%%)"
-
-#: ../gnome/applet/applet.c:1120
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "VPN connection to '%s'"
-
-#: ../gnome/applet/applet.c:1128
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "VPN connecting to '%s'"
-
-#: ../gnome/applet/applet.c:1541
-msgid "_Connect to Other Wireless Network..."
-msgstr "_Connect to Other Wireless Network..."
-
-#: ../gnome/applet/applet.c:1562
-msgid "Create _New Wireless Network..."
-msgstr "Create _New Wireless Network..."
-
-#: ../gnome/applet/applet.c:1685
-msgid "_VPN Connections"
-msgstr "_VPN Connections"
-
-#: ../gnome/applet/applet.c:1730
-msgid "_Configure VPN..."
-msgstr "_Configure VPN..."
-
-#: ../gnome/applet/applet.c:1734
-msgid "_Disconnect VPN..."
-msgstr "_Disconnect VPN..."
-
-#: ../gnome/applet/applet.c:1756
-msgid "_Dial Up Connections"
-msgstr "_Dial Up Connections"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1767
-#, c-format
-msgid "Connect to %s..."
-msgstr "Connect to %s..."
-
-#: ../gnome/applet/applet.c:1773
-#, fuzzy, c-format
-msgid "Disconnect from %s..."
-msgstr "Connect to %s..."
-
-#: ../gnome/applet/applet.c:1822
-msgid "No network devices have been found"
-msgstr "No network devices have been found"
-
-#: ../gnome/applet/applet.c:2014
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager is not running..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2170
-msgid "Enable _Networking"
-msgstr ""
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2176
-msgid "Enable _Wireless"
-msgstr ""
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2182
-msgid "Connection _Information"
-msgstr "Connection _Information"
-
-#. Help item
-#: ../gnome/applet/applet.c:2193
-msgid "_Help"
-msgstr "_Help"
-
-#. About item
-#: ../gnome/applet/applet.c:2202
-msgid "_About"
-msgstr "_About"
-
-#: ../gnome/applet/applet.c:2667
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr ""
-"The NetworkManager Applet could not find some required resources.  It cannot "
-"continue.\n"
-
-#: ../gnome/applet/wireless-security-option.c:157
-msgid "Open System"
-msgstr ""
-
-#: ../gnome/applet/wireless-security-option.c:160
-msgid "Shared Key"
-msgstr ""
-
-#: ../gnome/applet/wireless-security-option.c:208
-msgid "Automatic (Default)"
-msgstr ""
-
-#: ../gnome/applet/wireless-security-option.c:215
-msgid "AES-CCMP"
-msgstr ""
-
-#: ../gnome/applet/wireless-security-option.c:223
-msgid "TKIP"
-msgstr ""
-
-#: ../gnome/applet/wireless-security-option.c:231
-msgid "Dynamic WEP"
-msgstr ""
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr ""
-
-#: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 64/128-bit ASCII"
-msgstr ""
-
-#: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 64/128-bit Hex"
-msgstr ""
-
-#: ../gnome/applet/wso-wep-passphrase.c:135
-#, fuzzy
-msgid "WEP 128-bit Passphrase"
-msgstr "Passphrase:"
-
-#: ../gnome/applet/wso-wpa-eap.c:237
-msgid "PEAP"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-eap.c:238
-msgid "TLS"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-eap.c:239
-msgid "TTLS"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
-#: ../src/nm-ap-security-wpa-eap.c:116
-msgid "WPA2 Enterprise"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
-#: ../src/nm-ap-security-wpa-eap.c:121
-msgid "WPA Enterprise"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-psk.c:178
-msgid "WPA2 Personal"
-msgstr ""
-
-#: ../gnome/applet/wso-wpa-psk.c:180
-msgid "WPA Personal"
-msgstr ""
-
-#: ../gnome/applet/eggtrayicon.c:134
-msgid "Orientation"
-msgstr "Orientation"
-
-#: ../gnome/applet/eggtrayicon.c:135
-msgid "The orientation of the tray."
-msgstr "The orientation of the tray."
-
-#: ../gnome/applet/menu-items.c:88
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "Wired Network (%s)"
-
-#: ../gnome/applet/menu-items.c:91
-msgid "_Wired Network"
-msgstr "_Wired Network"
-
-#: ../gnome/applet/menu-items.c:162
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Wireless Network (%s)"
-msgstr[1] "Wireless Networks (%s)"
-
-#
-#: ../gnome/applet/menu-items.c:164
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Wireless Network"
-msgstr[1] "Wireless Networks"
-
-#: ../gnome/applet/menu-items.c:343
-msgid " (invalid Unicode)"
-msgstr " (invalid Unicode)"
-
-#: ../gnome/applet/other-network-dialog.c:352
-#, fuzzy, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr "By default, the ESSID is set to your computer's name,"
-
-#
-#: ../gnome/applet/other-network-dialog.c:358
-msgid "Create new wireless network"
-msgstr "Create new wireless network"
-
-#: ../gnome/applet/other-network-dialog.c:359
-#, fuzzy
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Enter the ESSID and security settings of the wireless network you wish to "
-"create."
-
-#: ../gnome/applet/other-network-dialog.c:363
-msgid "Create New Wireless Network"
-msgstr "Create New Wireless Network..."
-
-#
-#: ../gnome/applet/other-network-dialog.c:368
-#, fuzzy
-msgid "Existing wireless network"
-msgstr "Custom wireless network"
-
-#: ../gnome/applet/other-network-dialog.c:369
-#, fuzzy
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Enter the ESSID of the wireless network to which you wish to connect."
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Connect to Other Wireless Network"
-msgstr "Connect to Other Wireless Network"
-
-#: ../gnome/applet/passphrase-dialog.c:215
-#, fuzzy
-msgid "Error connecting to wireless network"
-msgstr "Scanning for wireless networks..."
-
-#: ../gnome/applet/passphrase-dialog.c:216
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr ""
-
-#: ../gnome/applet/vpn-password-dialog.c:151
-#: ../gnome/applet/vpn-password-dialog.c:188
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "Cannot start VPN connection '%s'"
-
-#: ../gnome/applet/vpn-password-dialog.c:154
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-
-#: ../gnome/applet/vpn-password-dialog.c:191
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-#, fuzzy
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-
-#: ../gnome/applet/applet.glade.h:12
-#, fuzzy, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen log in to the wireless network '%s'.  If you are sure this "
-"wireless network is secure, click the checkbox below and NetworkManager will "
-"not require confirmation on subsequent connections."
-
-#: ../gnome/applet/applet.glade.h:15
-msgid "Anonymous Identity:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:16
-#, fuzzy
-msgid "Authentication:"
-msgstr "Orientation"
-
-#: ../gnome/applet/applet.glade.h:17
-msgid "Broadcast Address:"
-msgstr "Broadcast Address:"
-
-#: ../gnome/applet/applet.glade.h:18
-msgid "CA Certificate File:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:19
-msgid "C_onnect"
-msgstr "C_onnect"
-
-#: ../gnome/applet/applet.glade.h:20
-msgid "Client Certificate File:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:21
-msgid "Connection Information"
-msgstr "Connection Information"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "Default Route:"
-msgstr "Default Route:"
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Destination Address:"
-msgstr "Destination Address:"
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Driver:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:25
-msgid "EAP Method:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:26
-msgid "Hardware Address:"
-msgstr "Hardware Address:"
-
-#: ../gnome/applet/applet.glade.h:27
-msgid "IP Address:"
-msgstr "IP Address:"
-
-#: ../gnome/applet/applet.glade.h:28
-msgid "Identity:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:29
-msgid "Interface:"
-msgstr "Interface:"
-
-#: ../gnome/applet/applet.glade.h:30
-#, fuzzy
-msgid "Key Type:"
-msgstr "_Key Type:"
-
-#: ../gnome/applet/applet.glade.h:31
-#, fuzzy
-msgid "Key:"
-msgstr "Hex Key:"
-
-#: ../gnome/applet/applet.glade.h:32
-msgid ""
-"None\n"
-"WEP 128-bit Passphrase\n"
-"WEP 64/128-bit Hex\n"
-"WEP 64/128-bit ASCII\n"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:37
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:39
-msgid "Other Wireless Network..."
-msgstr "Other Wireless Networks..."
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Passphrase:"
-msgstr "Passphrase:"
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Password:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "Primary DNS:"
-msgstr "Primary DNS:"
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "Private Key File:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "Private Key Password:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "Secondary DNS:"
-msgstr "Secondary DNS:"
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "Select the CA Certificate File"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "Select the Client Certificate File"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "Select the Private Key File"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "Show key"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:50
-#, fuzzy
-msgid "Show passphrase"
-msgstr "Passphrase:"
-
-#: ../gnome/applet/applet.glade.h:51
-msgid "Show password"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:52
-msgid "Show passwords"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:53
-msgid "Speed:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:54
-msgid "Subnet Mask:"
-msgstr "Subnet Mask:"
-
-#: ../gnome/applet/applet.glade.h:55
-#, fuzzy
-msgid "Type:"
-msgstr "_Key Type:"
-
-#: ../gnome/applet/applet.glade.h:56
-msgid "User Name:"
-msgstr ""
-
-#: ../gnome/applet/applet.glade.h:57
-msgid "Wireless Network Key Required"
-msgstr "Wireless Network Key Required"
-
-#
-#: ../gnome/applet/applet.glade.h:58
-msgid "Wireless _adapter:"
-msgstr "Wireless _adapter:"
-
-#
-#: ../gnome/applet/applet.glade.h:59
-msgid "_Always Trust this Wireless Network"
-msgstr "_Always Trust this Wireless Network"
-
-#: ../gnome/applet/applet.glade.h:60
-msgid "_Don't remind me again"
-msgstr "_Don't remind me again"
-
-#: ../gnome/applet/applet.glade.h:61
-msgid "_Login to Network"
-msgstr "_Login to Network"
-
-#: ../gnome/applet/applet.glade.h:62
-msgid "_Network Name:"
-msgstr ""
-
-#
-#: ../gnome/applet/applet.glade.h:63
-#, fuzzy
-msgid "_Wireless Security:"
-msgstr "Wireless _adapter:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:383
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
 msgid "Cannot add VPN connection"
 msgstr "Cannot add VPN connection"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:385
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "No suitable VPN software was found on your system. Contact your system administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:437
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
 msgid "Cannot import VPN connection"
 msgstr "Cannot import VPN connection"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:439
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:579
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Error retrieving VPN connection '%s'"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:582
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:739
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "Delete VPN connection \"%s\"?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:742
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:959
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
 msgid "Unable to load"
 msgstr "Unable to load"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:961
-#, fuzzy
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
 msgid "Cannot find some needed resources (the glade file)!"
-msgstr ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
+msgstr "Cannot find some needed resources (the glade file)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
 msgid "Edit VPN Connection"
 msgstr "Edit VPN Connection"
 
@@ -864,17 +121,13 @@ msgstr "Manage Virtual Private Network Connections"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
+"This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN).\n"
 "\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
+"It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information."
 msgstr ""
-"This assistant will guide you through the creation of a connection to a "
-"Virtual Private Network (VPN).\n"
+"This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN).\n"
 "\n"
-"It will require some information, such as IP addresses and secrets.  Please "
-"see your system administrator to obtain this information."
+"It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
@@ -882,215 +135,463 @@ msgstr "VPN Connections"
 
 #: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
-msgstr ""
+msgstr "40-bit WEP"
 
 #: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
-msgstr ""
+msgstr "104-bit WEP"
 
 #: ../src/nm-ap-security-wpa-psk.c:50
 msgid "WPA TKIP"
-msgstr ""
+msgstr "WPA TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:52
 msgid "WPA CCMP"
-msgstr ""
+msgstr "WPA CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:54
 msgid "WPA Automatic"
-msgstr ""
+msgstr "WPA Automatic"
 
 #: ../src/nm-ap-security-wpa-psk.c:59
 msgid "WPA2 TKIP"
-msgstr ""
+msgstr "WPA2 TKIP"
 
 #: ../src/nm-ap-security-wpa-psk.c:61
 msgid "WPA2 CCMP"
-msgstr ""
+msgstr "WPA2 CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:63
 msgid "WPA2 Automatic"
-msgstr ""
+msgstr "WPA2 Automatic"
 
-#: ../src/nm-ap-security.c:320
+#: ../src/nm-ap-security.c:338
 msgid "none"
-msgstr ""
+msgstr "none"
 
-#: ../src/nm-netlink-monitor.c:154
+#: ../src/nm-netlink-monitor.c:170
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "unable to create netlink socket for monitoring wired ethernet devices - %s"
 
-#: ../src/nm-netlink-monitor.c:172
+#: ../src/nm-netlink-monitor.c:188
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 
-#: ../src/nm-netlink-monitor.c:405
+#: ../src/nm-netlink-monitor.c:426
 msgid "operation took too long"
 msgstr "operation took too long"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/nm-netlink-monitor.c:523
 msgid "received data from wrong type of sender"
 msgstr "received data from wrong type of sender"
 
-#: ../src/nm-netlink-monitor.c:515
+#: ../src/nm-netlink-monitor.c:536
 msgid "received data from unexpected sender"
 msgstr "received data from unexpected sender"
 
-#: ../src/nm-netlink-monitor.c:646
+#: ../src/nm-netlink-monitor.c:665
 msgid "too much data was sent over socket and some of it was lost"
 msgstr "too much data was sent over socket and some of it was lost"
 
-#: ../src/nm-netlink-monitor.c:735
+#: ../src/nm-netlink-monitor.c:775
 msgid "error occurred while waiting for data on socket"
 msgstr "error occurred while waiting for data on socket"
 
-#
-#: ../gnome/applet/applet-dbus-devices.c:898
-#, fuzzy, c-format
-msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Connected to an Ad-Hoc wireless network"
+#: ../src/nm-ap-security-wpa-eap.c:96
+#: ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../src/nm-ap-security-wpa-eap.c:98
+#: ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../src/nm-ap-security-leap.c:66
+#: ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
 
 #
-#: ../gnome/applet/applet-dbus-devices.c:903
-#, fuzzy, c-format
-msgid "You are now connected to the wireless network '%s'."
-msgstr "Connecting to wireless network '%s'..."
-
-#: ../gnome/applet/applet-dbus-devices.c:910
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "Passphrase for wireless network %s"
+#
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "Connection to the wireless network '%s' failed."
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "Connection to the wired network failed."
 #, fuzzy
-msgid "You are now connected to the wired network."
-msgstr "Connecting to a wired network..."
+#~ msgid "Error displaying connection information:"
+#~ msgstr "Error displaying connection information: "
 
-#: ../gnome/applet/applet-dbus-devices.c:916
-msgid "Connection Established"
-msgstr ""
-
-#: ../gnome/applet/applet-dbus-devices.c:959
 #, fuzzy
-msgid "Disconnected"
-msgstr "_Disconnect VPN..."
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgid "No active connections!"
+#~ msgstr "No active connections!"
 
-#: ../gnome/applet/applet-dbus-devices.c:960
-msgid "The network connection has been disconnected."
-msgstr ""
+#, fuzzy
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "Wired Network (%s)"
 
+#, fuzzy
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "Wireless Network (%s)"
+#~ msgid "NetworkManager Applet"
+#~ msgstr "NetworkManager Applet"
+
+#, fuzzy
+#~ msgid "Copyright © 2004-2005 Red Hat, Inc."
+#~ msgstr "Copyright (C) 2004-2005 Red Hat, Inc."
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgid "translator-credits"
+#~ msgstr "David Lodge <dave@cirt.net>James Ogley <james@usr-local-bin.org>"
+#~ msgid "VPN Login Failure"
+#~ msgstr "VPN Login Failure"
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr "Could not start the VPN connection '%s' due to a login failure."
+#~ msgid "VPN Start Failure"
+#~ msgstr "VPN Start Failure"
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgid "VPN Connect Failure"
+#~ msgstr "VPN Connect Failure"
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr "Could not start the VPN connection '%s' due to a connection error."
+#~ msgid "VPN Configuration Error"
+#~ msgstr "VPN Configuration Error"
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "The VPN connection '%s' was not correctly configured."
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgid "VPN Login Message"
+#~ msgstr "VPN Login Message"
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "The network device \"%s (%s)\" does not support link detection."
+
+#, fuzzy
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "Connecting to a wired network..."
+
+#
+#, fuzzy
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "Connecting to wireless network '%s'..."
+
+#, fuzzy
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "Connecting to a wired network..."
+
+#
+#, fuzzy
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "Connecting to wireless network '%s'..."
+
+#
+#, fuzzy
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "Connecting to wireless network '%s'..."
+
+#, fuzzy
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "Connecting to a wired network..."
+
+#
+#, fuzzy
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "Connecting to wireless network '%s'..."
+
+#, fuzzy
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "Connecting to a wired network..."
+
+#
+#, fuzzy
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "Connecting to wireless network '%s'..."
+#~ msgid "NetworkManager is not running"
+#~ msgstr "NetworkManager is not running"
+#~ msgid "No network connection"
+#~ msgstr "No network connection"
+#~ msgid "Wired network connection"
+#~ msgstr "Wired network connection"
+
+#
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Connected to an Ad-Hoc wireless network"
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Wireless network connection to '%s' (%d%%)"
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "VPN connection to '%s'"
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "VPN connecting to '%s'"
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "_Connect to Other Wireless Network..."
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "Create _New Wireless Network..."
+#~ msgid "_VPN Connections"
+#~ msgstr "_VPN Connections"
+#~ msgid "_Configure VPN..."
+#~ msgstr "_Configure VPN..."
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "_Disconnect VPN..."
+#~ msgid "_Dial Up Connections"
+#~ msgstr "_Dial Up Connections"
+#~ msgid "Connect to %s..."
+#~ msgstr "Connect to %s..."
+#, fuzzy
+#~ msgid "Disconnect from %s..."
+#~ msgstr "Connect to %s..."
+#~ msgid "No network devices have been found"
+#~ msgstr "No network devices have been found"
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "NetworkManager is not running..."
+#~ msgid "Connection _Information"
+#~ msgstr "Connection _Information"
+#~ msgid "_Help"
+#~ msgstr "_Help"
+#~ msgid "_About"
+#~ msgstr "_About"
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr ""
+#~ "The NetworkManager Applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+
+#, fuzzy
+#~ msgid "WEP 128-bit Passphrase"
+#~ msgstr "Passphrase:"
+#~ msgid "Orientation"
+#~ msgstr "Orientation"
+#~ msgid "The orientation of the tray."
+#~ msgstr "The orientation of the tray."
+#~ msgid "Wired Network (%s)"
+#~ msgstr "Wired Network (%s)"
+#~ msgid "_Wired Network"
+#~ msgstr "_Wired Network"
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "Wireless Network (%s)"
+#~ msgstr[1] "Wireless Networks (%s)"
+
+#
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "Wireless Network"
+#~ msgstr[1] "Wireless Networks"
+#~ msgid " (invalid Unicode)"
+#~ msgstr " (invalid Unicode)"
+#, fuzzy
+#~ msgid ""
+#~ "By default, the wireless network's name is set to your computer's name, %"
+#~ "s, with no encryption enabled"
+#~ msgstr "By default, the ESSID is set to your computer's name,"
+
+#
+#~ msgid "Create new wireless network"
+#~ msgstr "Create new wireless network"
+#, fuzzy
+#~ msgid ""
+#~ "Enter the name and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr ""
+#~ "Enter the ESSID and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgid "Create New Wireless Network"
+#~ msgstr "Create New Wireless Network..."
+
+#
+#, fuzzy
+#~ msgid "Existing wireless network"
+#~ msgstr "Custom wireless network"
+
+#, fuzzy
+#~ msgid "Enter the name of the wireless network to which you wish to connect."
+#~ msgstr ""
+#~ "Enter the ESSID of the wireless network to which you wish to connect."
+#~ msgid "Connect to Other Wireless Network"
+#~ msgstr "Connect to Other Wireless Network"
+
+#, fuzzy
+#~ msgid "Error connecting to wireless network"
+#~ msgstr "Scanning for wireless networks..."
+#~ msgid "Cannot start VPN connection '%s'"
+#~ msgstr "Cannot start VPN connection '%s'"
+#~ msgid ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgstr ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgid ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgid " "
+#~ msgstr " "
+
+#, fuzzy
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+
+#, fuzzy
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
+#~ "that this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent log ins."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
+#~ "this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent connections."
+
+#, fuzzy
+#~ msgid "Authentication:"
+#~ msgstr "Orientation"
+#~ msgid "Broadcast Address:"
+#~ msgstr "Broadcast Address:"
+#~ msgid "C_onnect"
+#~ msgstr "C_onnect"
+#~ msgid "Connection Information"
+#~ msgstr "Connection Information"
+#~ msgid "Default Route:"
+#~ msgstr "Default Route:"
+#~ msgid "Destination Address:"
+#~ msgstr "Destination Address:"
+#~ msgid "Hardware Address:"
+#~ msgstr "Hardware Address:"
+#~ msgid "IP Address:"
+#~ msgstr "IP Address:"
+#~ msgid "Interface:"
+#~ msgstr "Interface:"
+
+#, fuzzy
+#~ msgid "Key Type:"
+#~ msgstr "_Key Type:"
+
+#, fuzzy
+#~ msgid "Key:"
+#~ msgstr "Hex Key:"
+#~ msgid "Other Wireless Network..."
+#~ msgstr "Other Wireless Networks..."
+#~ msgid "Passphrase:"
+#~ msgstr "Passphrase:"
+#~ msgid "Primary DNS:"
+#~ msgstr "Primary DNS:"
+#~ msgid "Secondary DNS:"
+#~ msgstr "Secondary DNS:"
+
+#, fuzzy
+#~ msgid "Show passphrase"
+#~ msgstr "Passphrase:"
+#~ msgid "Subnet Mask:"
+#~ msgstr "Subnet Mask:"
+
+#, fuzzy
+#~ msgid "Type:"
+#~ msgstr "_Key Type:"
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "Wireless Network Key Required"
+
+#
+#~ msgid "Wireless _adapter:"
+#~ msgstr "Wireless _adapter:"
+#
+#~ msgid "_Always Trust this Wireless Network"
+#~ msgstr "_Always Trust this Wireless Network"
+#~ msgid "_Don't remind me again"
+#~ msgstr "_Don't remind me again"
+#~ msgid "_Login to Network"
+#~ msgstr "_Login to Network"
+#
+#, fuzzy
+#~ msgid "_Wireless Security:"
+#~ msgstr "Wireless _adapter:"
+
+#
+#, fuzzy
+#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+#~ msgstr "Connected to an Ad-Hoc wireless network"
+
+#
+#, fuzzy
+#~ msgid "You are now connected to the wireless network '%s'."
+#~ msgstr "Connecting to wireless network '%s'..."
+
+#, fuzzy
+#~ msgid "You are now connected to the wired network."
+#~ msgstr "Connecting to a wired network..."
+
+#, fuzzy
+#~ msgid "Disconnected"
+#~ msgstr "_Disconnect VPN..."
 #~ msgid ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
 #~ "different wireless network will be used if any are available."
 #~ msgstr ""
 #~ "The requested wireless network '%s' does not appear to be in range.  A "
 #~ "different wireless network will be used if any are available."
-
 #~ msgid "VPN Error"
 #~ msgstr "VPN Error"
-
 #~ msgid "The VPN service said: \"%s\""
 #~ msgstr "The VPN service said: \"%s\""
-
 #~ msgid "VPN connection '%s' said:"
 #~ msgstr "VPN connection '%s' said:"
 
-#
-#~ msgid "_Wireless Enabled"
-#~ msgstr "_Wireless Enabled"
-
-#~ msgid "_Passphrase:"
-#~ msgstr "_Passphrase:"
-
-#~ msgid "_ASCII Key:"
-#~ msgstr "_ASCII Key:"
-
-#~ msgid "_Hex Key:"
-#~ msgstr "_Hex Key:"
-
-#~ msgid ", with no encryption enabled."
-#~ msgstr ", with no encryption enabled."
-
-#~ msgid "ASCII Key:"
-#~ msgstr "ASCII Key:"
-
-#~ msgid ""
-#~ "128-bit Passphrase (WEP)\n"
-#~ "ASCII Key (WEP)\n"
-#~ "Hex Key (WEP)"
-#~ msgstr ""
-#~ "128-bit Passphrase (WEP)\n"
-#~ "ASCII Key (WEP)\n"
-#~ "Hex Key (WEP)"
-
-#~ msgid ""
-#~ "128-bit passphrase (WEP)\n"
-#~ "ASCII key (WEP)\n"
-#~ "Hex key (WEP)"
-#~ msgstr ""
-#~ "128-bit passphrase (WEP)\n"
-#~ "ASCII key (WEP)\n"
-#~ "Hex key (WEP)"
-
-#~ msgid "Connect with _encryption enabled"
-#~ msgstr "Connect with _encryption enabled"
-
-#
-#~ msgid "Wireless _network:"
-#~ msgstr "Wireless _network:"
-
-#~ msgid "_Key type:"
-#~ msgstr "_Key type:"
-
-#~ msgid "<span weight=\"bold\">Wireless Networks:</span>"
-#~ msgstr "<span weight=\"bold\">Wireless Networks:</span>"
-
-#~ msgid "Modify Wireless Networks"
-#~ msgstr "Modify Wireless Networks"
-
-#~ msgid "*"
-#~ msgstr "*"
-
-#~ msgid "You must log in to access the private network %s"
-#~ msgstr "You must log in to access the private network %s"
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
-#~ "\n"
-#~ "Could not start the VPN connection '%s' due to a login failure.\n"
-#~ "\n"
-#~ "The VPN service said: \"%s\""
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">VPN Login Failure</span>\n"
-#~ "\n"
-#~ "Could not start the VPN connection '%s' due to a login failure.\n"
-#~ "\n"
-#~ "The VPN service said: \"%s\""
-
-#~ msgid "Pause Wireless Scanning"
-#~ msgstr "Pause Wireless Scanning"
-
-#~ msgid "Resume Wireless Scanning"
-#~ msgstr "Resume Wireless Scanning"
-
-#~ msgid "Stop All Wireless Devices"
-#~ msgstr "Stop All Wireless Devices"
-
-#~ msgid "Start All Wireless Devices"
-#~ msgstr "Start All Wireless Devices"
-
-#~ msgid "_About..."
-#~ msgstr "_About..."
-
-#~ msgid "progress bar label|%d %%"
-#~ msgstr "%d %%"
-
-#~ msgid "_OK"
-#~ msgstr "_OK"
-
-#~ msgid "You must log in to access the Virtual Private Network '%s'."
-#~ msgstr "You must log in to access the Virtual Private Network '%s'."
-
-#~ msgid "%s"
-#~ msgstr "%s"
