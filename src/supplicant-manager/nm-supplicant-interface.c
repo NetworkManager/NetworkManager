@@ -160,7 +160,7 @@ static void
 nm_supplicant_info_set_call (NMSupplicantInfo *info, DBusGProxyCall *call)
 {
 	if (call) {
-		nm_call_store_add (info->store, info->proxy, (gpointer) call);
+		nm_call_store_add (info->store, G_OBJECT (info->proxy), (gpointer) call);
 		info->call = call;
 	}
 }
