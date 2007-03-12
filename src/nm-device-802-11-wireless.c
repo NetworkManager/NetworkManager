@@ -570,7 +570,7 @@ real_is_up (NMDevice *device)
 	return NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id != 0;
 }
 
-static void
+static gboolean
 real_bring_up (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
@@ -589,6 +589,8 @@ real_bring_up (NMDevice *dev)
 
 	/* Peridoically update link status and signal strength */
 	priv->periodic_source_id = g_timeout_add (2000, nm_device_802_11_periodic_update, self);
+
+	return TRUE;
 }
 
 static void

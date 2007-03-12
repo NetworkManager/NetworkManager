@@ -83,7 +83,7 @@ struct _NMDeviceClass
 	void			(* update_link)	(NMDevice *self);
 
 	gboolean		(* is_up)			(NMDevice *self);
-	void			(* bring_up)		(NMDevice *self);
+	gboolean		(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
 
 	void        (* set_hw_address) (NMDevice *self);
@@ -139,7 +139,7 @@ void			nm_device_set_ip4_config	(NMDevice *dev,
 								 NMIP4Config *config);
 
 gboolean		nm_device_is_up	(NMDevice *dev);
-void			nm_device_bring_up (NMDevice *dev, gboolean wait);
+gboolean		nm_device_bring_up (NMDevice *dev, gboolean wait);
 void			nm_device_bring_down (NMDevice *dev, gboolean wait);
 
 

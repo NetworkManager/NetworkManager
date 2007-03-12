@@ -1,3 +1,31 @@
+2007-03-12  Dan Williams  <dcbw@redhat.com>
+
+	Get rid of 2 second poll of sysfs 'carrier' file for wired devices.  Useless
+	for non-carrier-detect capable devices, and useless for carrier-detect
+	devices since we get notifications from netlink about carrier status anyway.
+
+	* src/nm-device-802-3-ethernet.c
+		- remove 'link_source_id' member from private data
+		- (probe_link): remove and collapse into real_update_link()
+		- (nm_device_802_3_periodic_update): remove
+		- (real_is_up): check for sup_iface rather than link_source_id
+		- (real_bring_up): return gboolean for success/fail; require that
+			sup_iface be valid for device bringup to succeed
+		- (real_bring_down): zero out link signal ids
+
+	* src/nm-device.c
+		- (nm_device_activate_stage2_device_config): fail activation if device
+			bringup fails
+		- (real_act_stage4_get_ip4_config): fail activation if device bringup
+			fails
+		- (nm_device_bring_up): return success/fail
+
+	* src/nm-device.h
+		- bring_up now returns success/fail
+
+	* src/nm-device-802-11-wireless.c
+		- (real_bring_up): return success from bringup
+
 2007-03-07  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Simon Geard <delgarde@ihug.co.nz>  (Gnome.org #394956)

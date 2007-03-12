@@ -487,7 +487,10 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG);
 
-	nm_device_bring_up (self, FALSE);
+	if (!nm_device_bring_up (self, FALSE)) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		goto out;
+	}
 
 	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, req);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
@@ -698,7 +701,8 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	else
 	{
 		/* Make sure device is up even if config fails */
-		nm_device_bring_up (self, FALSE);
+		if (!nm_device_bring_up (self, FALSE))
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	return ret;
@@ -1276,13 +1280,15 @@ nm_completion_device_is_up_test (int tries,
 	return FALSE;
 }
 
-void
+gboolean
 nm_device_bring_up (NMDevice *self, gboolean wait)
 {
-	g_return_if_fail (NM_IS_DEVICE (self));
+	gboolean success;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
 	if (nm_device_is_up (self))
-		return;
+		return TRUE;
 
 	nm_info ("Bringing up device %s", nm_device_get_iface (self));
 
@@ -1290,8 +1296,11 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 	nm_device_update_ip4_address (self);
 	nm_device_set_address (self);
 
-	if (NM_DEVICE_GET_CLASS (self)->bring_up)
-		NM_DEVICE_GET_CLASS (self)->bring_up (self);
+	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
+		success = NM_DEVICE_GET_CLASS (self)->bring_up (self);
+		if (!success)
+			return FALSE;
+	}
 
 	if (wait) {
 		nm_completion_args args;
@@ -1301,6 +1310,8 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 	}
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
+
+	return TRUE;
 }
 
 void

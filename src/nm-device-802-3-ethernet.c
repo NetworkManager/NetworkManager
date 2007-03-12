@@ -53,7 +53,6 @@ typedef struct {
 	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
-	guint           link_source_id;
 
 	NMSupplicantInterface *  sup_iface;
 } NMDevice8023EthernetPrivate;
@@ -100,7 +99,6 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
 
 	priv->dispose_has_run = FALSE;
-	priv->link_source_id = 0;
 
 	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
 
@@ -132,52 +130,33 @@ nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
 		nm_device_set_active_link (dev, FALSE);
 }
 
-static gboolean
-probe_link (NMDevice8023Ethernet *self)
-{
-	gboolean				have_link = FALSE;
-	gchar *				contents;
-	gsize				length;
-
-	if (g_file_get_contents (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->carrier_file_path,
-							 &contents, &length, NULL))
-	{
-		have_link = (gboolean) atoi (contents);
-		g_free (contents);
-	}
-
-	/* We say that non-carrier-detect devices always have a link, because
-	 * they never get auto-selected by NM.  The user has to force them on us,
-	 * so we just hope the user knows whether or not the cable's plugged in.
-	 */
-	if (!have_link && !(nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_CARRIER_DETECT))
-		have_link = TRUE;
-
-	return have_link;
-}
-
-
 static void
 real_update_link (NMDevice *dev)
 {
-	nm_device_set_active_link (dev, probe_link NM_DEVICE_802_3_ETHERNET (dev));
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+	gboolean have_link = FALSE;
+	guint32 caps;
+	gchar * contents;
+	gsize length;
+
+	/* Devices that don't support carrier detect are always "on" and
+	 * must be manually chosen by the user.
+	 */
+	caps = nm_device_get_capabilities (dev);
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
+		have_link = TRUE;
+		goto out;
+	}
+
+	if (g_file_get_contents (priv->carrier_file_path, &contents, &length, NULL)) {
+		have_link = atoi (contents) > 0 ? TRUE : FALSE;
+		g_free (contents);
+	}
+
+out:
+	nm_device_set_active_link (dev, have_link);
 }
 
-
-/*
- * nm_device_802_3_periodic_update
- *
- * Periodically update device statistics and link state.
- *
- */
-static gboolean
-nm_device_802_3_periodic_update (gpointer data)
-{
-	nm_device_set_active_link (NM_DEVICE (data),
-							   probe_link NM_DEVICE_802_3_ETHERNET (data));
-
-	return TRUE;
-}
 
 static gboolean
 real_is_up (NMDevice *device)
@@ -185,40 +164,51 @@ real_is_up (NMDevice *device)
 	if (!NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device))
 		return FALSE;
 
-	return NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->link_source_id != 0;
+	return !!NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->sup_iface;
 }
 
-static void
+static gboolean
 real_bring_up (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
-	NMNetlinkMonitor *monitor;
 	NMSupplicantManager *sup_mgr;
 	const char *iface;
-
-	monitor = nm_netlink_monitor_get ();
-	priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
-												G_CALLBACK (nm_device_802_3_ethernet_link_activated),
-												dev);
-	priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
-												   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
-												   dev);
-	g_object_unref (monitor);
+	guint32 caps;
 
 	iface = nm_device_get_iface (dev);
 	sup_mgr = nm_supplicant_manager_get ();
 	priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr, iface, FALSE);
-	if (priv->sup_iface)
-		g_signal_connect (priv->sup_iface,
-		                  "state",
-		                  G_CALLBACK (supplicant_iface_state_cb),
-		                  dev);
-	else
+	if (!priv->sup_iface) {
 		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
+		g_object_unref (sup_mgr);
+		return FALSE;
+	}
+
+	g_signal_connect (priv->sup_iface,
+	                  "state",
+	                  G_CALLBACK (supplicant_iface_state_cb),
+	                  dev);
+
 	g_object_unref (sup_mgr);
 
-	/* Peridoically update link status */
-	priv->link_source_id = g_timeout_add (2000, nm_device_802_3_periodic_update, dev);
+	caps = nm_device_get_capabilities (dev);
+	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
+		/* Only listen to netlink for cards that support carrier detect */
+		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
+		priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
+													G_CALLBACK (nm_device_802_3_ethernet_link_activated),
+													dev);
+		priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
+													   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
+													   dev);
+		g_object_unref (monitor);
+	} else {
+		priv->link_connected_id = 0;
+		priv->link_disconnected_id = 0;
+		nm_device_set_active_link (dev, TRUE);
+	}
+
+	return TRUE;
 }
 
 
@@ -229,11 +219,6 @@ real_bring_down (NMDevice *dev)
 	NMSupplicantManager *sup_mgr;
 	NMNetlinkMonitor *monitor;
 
-	if (priv->link_source_id) {
-		g_source_remove (priv->link_source_id);
-		priv->link_source_id = 0;
-	}
-
 	sup_mgr = nm_supplicant_manager_get ();
 	nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
 	priv->sup_iface = NULL;
@@ -241,7 +226,9 @@ real_bring_down (NMDevice *dev)
 
 	monitor = nm_netlink_monitor_get ();
 	g_signal_handler_disconnect (monitor, priv->link_connected_id);
+	priv->link_connected_id = 0;
 	g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+	priv->link_disconnected_id = 0;
 	g_object_unref (monitor);
 }
 
