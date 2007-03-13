@@ -1,3 +1,11 @@
+2007-03-13  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@ximian.com>
+
+	* src/nm-ap-security-leap.c
+		- (nm_ap_security_leap_class_init): override default get_authentication_required
+		- (real_get_authentication_required): LEAP requires authentication
+
 2007-03-07  Vladimer Sichinava  <vsichi@gnome.org>
 
         * configure.in: Added 'ka' to ALL_LINGUAS.
