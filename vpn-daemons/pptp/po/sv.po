@@ -1,112 +1,169 @@
 # Swedish messages for NetworkManager.
-# Copyright (C) 2004, 2005 Free Software Foundation, Inc.
-# Christian Rose <menthos@menthos.com>, 2004, 2005.
+# Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
+# Daniel Nylander <po@danielnylander.se>, 2006, 2007.
+# Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
-# $Id: sv.po,v 1.1 2005/12/21 21:50:06 ajmee Exp $
+# $Id: sv.po,v 1.6 2006/12/05 06:26:57 dnylande Exp $
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-06-26 01:20+0200\n"
-"PO-Revision-Date: 2005-06-26 01:20+0200\n"
-"Last-Translator: Christian Rose <menthos@menthos.com>\n"
-"Language-Team: Swedish <sv@li.org>\n"
+"POT-Creation-Date: 2007-03-14 23:01+0100\n"
+"PO-Revision-Date: 2007-03-14 23:00+0100\n"
+"Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:147
 msgid "_Secondary Password:"
 msgstr "_Andrahandslösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:268
 msgid "_Username:"
 msgstr "_Användarnamn:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:270
 msgid "_Domain:"
 msgstr "_Domän:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:272
 msgid "_Password:"
 msgstr "_Lösenord:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:355
 msgid "Connect _anonymously"
 msgstr "Anslut anon_ymt"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:360
 msgid "Connect as _user:"
 msgstr "Anslut som _användare:"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:466
-msgid "Remember password for this session"
-msgstr "Kom ihåg lösenordet för denna session"
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+msgid "_Remember password for this session"
+msgstr "_Kom ihåg lösenordet för denna session"
 
-#: vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:468
-msgid "Save password in keyring"
-msgstr "Spara lösenordet i nyckelring"
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+msgid "_Save password in keyring"
+msgstr "_Spara lösenordet i nyckelring"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:161
+#: ../auth-dialog/main.c:161
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
+msgstr ""
+"Du måste autentisera dig för att komma åt det virtuella privata nätverket \"%"
+"s\"."
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:162
-msgid "Authenticate VPN"
-msgstr "Autentisera VPN"
+#: ../auth-dialog/main.c:162
+msgid "Authenticate PPTP VPN"
+msgstr "Autentisera PPTP VPN"
 
-#: vpn-daemons/vpnc/auth-dialog/main.c:169
-msgid "_Group Password:"
-msgstr "_Grupplösenord:"
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Lägg till, ta bort och redigera VPN-anslutningar"
 
-#: vpn-daemons/vpnc/nm-vpnc.desktop.in.h:1
-msgid "VPN Connection Manager (vpnc)"
-msgstr "VPN-anslutningshanterare (vpnc)"
+#: ../nm-pptp.desktop.in.h:2
+msgid "VPN Connection Manager (PPTP)"
+msgstr "VPN-anslutningshanterare (PPTP)"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:1
+#: ../properties/nm-pptp.c:79
+msgid "PPTP Client"
+msgstr "PPTP-klient"
+
+#: ../properties/nm-pptp.c:387
+msgid "The following PPTP connection will be created:"
+msgstr "Följande PPTP-anslutning kommer att skapas:"
+
+#: ../properties/nm-pptp.c:389
+#, c-format
+msgid "Name:  %s"
+msgstr "Namn:  %s"
+
+#: ../properties/nm-pptp.c:392
+#, c-format
+msgid "Remote:  %s"
+msgstr "Fjärr:  %s"
+
+#: ../properties/nm-pptp.c:395
+#, c-format
+msgid "Username:  %s"
+msgstr "Användarnamn:  %s"
+
+#: ../properties/nm-pptp.c:399
+#, c-format
+msgid "Routes:  %s"
+msgstr "Vägar:  %s"
+
+#: ../properties/nm-pptp.c:403
+#, c-format
+msgid "Use MPPC Compression: %s"
+msgstr "Använd MPPC-komprimering: %s"
+
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
+msgid "Yes"
+msgstr "Ja"
+
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
+msgid "No"
+msgstr "Nej"
+
+#: ../properties/nm-pptp.c:405
+#, c-format
+msgid "Use MPPE Encryption: %s"
+msgstr "Använd MPPE-kryptering: %s"
+
+#: ../properties/nm-pptp.c:408
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr ""
+"Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\"."
+
+#: ../properties/nm-pptp.c:484
+msgid "Cannot import settings"
+msgstr "Kan inte importera inställningar"
+
+#: ../properties/nm-pptp.c:486
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
+
+#: ../properties/nm-pptp.c:504
+msgid "Select file to import"
+msgstr "Välj fil att importera"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-pptp.c:626
+msgid "Save as..."
+msgstr "Spara som..."
+
+#: ../properties/nm-pptp.c:656
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "En fil med namnet \"%s\" finns redan."
+
+#: ../properties/nm-pptp.c:659
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Vill du ersätta den med den du håller på att spara?"
+
+#: ../properties/nm-pptp-dialog.glade.h:1
 msgid "<b>Connection Name</b>"
 msgstr "<b>Anslutningsnamn</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Optional Information</b>"
-msgstr "<b>Valfri information</b>"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:3
+#: ../properties/nm-pptp-dialog.glade.h:2
 msgid "<b>Required Information</b>"
 msgstr "<b>Nödvändig information</b>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:4
+#: ../properties/nm-pptp-dialog.glade.h:3
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:5
-msgid "Gateway:"
-msgstr "Gateway:"
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "MS CHAP-v1/v2"
+msgstr "MS CHAP-v1/v2"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:6
-msgid "Group Name:"
-msgstr "Gruppnamn:"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:7
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Namn som används för att identifiera anslutningen till det privata "
-"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:8
-msgid "Only use VPN connection for these addresses"
-msgstr "Använd endast VPN-anslutning för dessa adresser"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:9
-msgid "Override user name"
-msgstr "Åsidosätt användarnamn"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-pptp-dialog.glade.h:5
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -115,132 +172,544 @@ msgstr ""
 "nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när "
 "du ansluter."
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:11
-msgid "Use domain for authentication"
-msgstr "Använd domän för autentisering"
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Require MPPE encryption"
+msgstr "Kräv MPPE-kryptering"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc-dialog.glade.h:12
-msgid "_Import..."
-msgstr "_Importera..."
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Use MPPC compression"
+msgstr "Använd MPPC-komprimering"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:83
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Kompatibel Cisco VPN-klient (vpnc)"
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Username:"
+msgstr "Användarnamn:"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:448
-#, c-format
-msgid "\tUsername:  %s\n"
-msgstr "\tAnvändarnamn:  %s\n"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:449
-#, c-format
-msgid "\tRoutes:  %s\n"
-msgstr "\tVägar:  %s\n"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:450
-#, c-format
-msgid "\tDomain:  %s\n"
-msgstr "\tDomän:  %s\n"
-
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:453
-#, c-format
+#: ../properties/nm-pptp-dialog.glade.h:9
 msgid ""
-"The following vpnc VPN connection will be created:\n"
-"\n"
-"\tName:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGroup Name:  %s\n"
-"%s%s%s\n"
-"The connection details can be changed using the \"Edit\" button.\n"
+"Your password must be defined \n"
+"in /etc/ppp/chap-secrets"
 msgstr ""
-"Följande vpnc-VPN-anslutning kommer att skapas:\n"
-"\n"
-"\tNamn:  %s\n"
-"\n"
-"\tGateway:  %s\n"
-"\tGruppnamn:  %s\n"
-"%s%s%s\n"
-"Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
+"Ditt lösenord måste definieras \n"
+"i /etc/ppp/chap-secrets"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:544
-msgid "TCP tunneling not supported"
-msgstr "TCP-tunnling stöds inte"
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "_Gateway:"
+msgstr "_Gateway:"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:546
-#, c-format
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "_Import Saved Configuration..."
+msgstr "_Importera sparad konfiguration..."
+
+#: ../properties/nm-pptp-dialog.glade.h:13
 msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
-"through TCP which is currently not supported in the vpnc software.\n"
-"\n"
-"The connection can still be created, with TCP tunneling disabled, however it "
-"may not work as expected."
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
 msgstr ""
-"VPN-inställningsfilen \"%s\" anger att VPN-trafiken ska tunnlas genom TCP "
-"vilket för tillfället inte stöds i vpnc-programvaran.\n"
-"\n"
-"Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men det "
-"kanske inte fungerar som väntat."
+"_Namn som används för att identifiera anslutningen till det privata "
+"nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:570
-msgid "Cannot import settings"
-msgstr "Kan inte importera inställningar"
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "_Only use VPN connection for these addresses"
+msgstr "Använd _endast VPN-anslutning för dessa adresser"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:572
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
+#. No sophisticated error message for now
+#: ../src/nm-pptp-service.c:126
+msgid "VPN Connection failed"
+msgstr "VPN-anslutning misslyckades"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:589
-msgid "Select file to import"
-msgstr "Välj fil att importera"
+#~ msgid "Authentication Type:"
+#~ msgstr "Autentiseringstyp:"
 
-#. printf ("in impl_export\n");
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:744
-msgid "Save as..."
-msgstr "Spara som..."
+#~ msgid "_Remember for this session"
+#~ msgstr "_Kom ihåg för denna session"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:774
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "En fil med namnet \"%s\" finns redan."
+#~ msgid "_Save in keyring"
+#~ msgstr "_Spara i nyckelring"
 
-#: vpn-daemons/vpnc/properties/nm-vpnc.c:777
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Vill du ersätta den med den du håller på att spara?"
+#~ msgid "Authenticate Connection"
+#~ msgstr "Autentisera anslutning"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:115
-msgid ""
-"The VPN login failed because the user name and password were not accepted."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
-"accepterades."
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+#~ "\n"
+#~ "The connection '%s' may need some form of authentication.\n"
+#~ "\n"
+#~ "Please select an appropriate authentication type and provide the "
+#~ "necessary credentials below:\n"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Autentiseringsinformation</span>\n"
+#~ "\n"
+#~ "Anslutningen \"%s\" kan behöva någon form av autentisering.\n"
+#~ "\n"
+#~ "Välj en lämplig autentiseringstyp och tillhandahåll nödvändig information "
+#~ "nedan:\n"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:117
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
+#~ msgid "Authentication Required"
+#~ msgstr "Autentisering krävs"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:119
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
-"till VPN-servern."
+#~ msgid "_Authentication Type:"
+#~ msgstr "_Autentiseringstyp:"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:121
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
-"ogiltiga."
+#~ msgid "_Remote name:"
+#~ msgstr "_Fjärrnamn:"
 
-#: vpn-daemons/vpnc/src/nm-vpnc-service.c:123
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
-"konfiguration från VPN-servern."
+#~ msgid "auth-chap-window"
+#~ msgstr "auth-chap-window"
 
+#~ msgid "auth-mschapv2-window"
+#~ msgstr "auth-mschapv2-window"
+
+#~ msgid "auth-none-window"
+#~ msgstr "auth-none-window"
+
+#~ msgid "00:00:00:00"
+#~ msgstr "00:00:00:00"
+
+#~ msgid "<b>Compression</b>"
+#~ msgstr "<b>Komprimering</b>"
+
+#~ msgid "<b>Delays and TImeouts</b>"
+#~ msgstr "<b>Fördröjningar och tidsgränser</b>"
+
+#~ msgid "<b>Encryption</b>"
+#~ msgstr "<b>Kryptering</b>"
+
+#~ msgid "<b>IP Options</b>"
+#~ msgstr "<b>IP-alternativ</b>"
+
+#~ msgid "<b>Packet Parameters</b>"
+#~ msgstr "<b>Paketparametrar</b>"
+
+#~ msgid ""
+#~ "A list of extra options to pppd as would be typed on the command line"
+#~ msgstr ""
+#~ "En lista på extra flaggor till pppd som de matats in på kommandoraden"
+
+#~ msgid "Allow BSD Compression"
+#~ msgstr "Tillåt BSD-komprimering"
+
+#~ msgid "Allow Deflate compression"
+#~ msgstr "Tillåt Deflate-komprimering"
+
+#~ msgid "Authentication"
+#~ msgstr "Autentisering"
+
+#~ msgid "Compression & Encryption"
+#~ msgstr "Komprimering & kryptering"
+
+#~ msgid "Connection"
+#~ msgstr "Anslutning"
+
+#~ msgid "Debug Output"
+#~ msgstr "Felsökningsutdata"
+
+#~ msgid "Disconnect after this many LCP echo requests fail"
+#~ msgstr "Koppla från när så här många LCP echo-begäranden misslyckats"
+
+#~ msgid "Enable stateful MPPE"
+#~ msgstr "Aktivera \"stateful MPPE\""
+
+#~ msgid "Exclusive device access (UUCP-style lock)"
+#~ msgstr "Exklusiv enhetsåtkomst (lås i UUCP-stil)"
+
+#~ msgid "Find Device"
+#~ msgstr "Sök enhet"
+
+#~ msgid ""
+#~ "For security reasons, options entered in the box above are checked "
+#~ "against a list of allowed options before a connection is established.  "
+#~ "Currently there are no options on the list."
+#~ msgstr ""
+#~ "Av säkerhetsskäl kommer flaggor som matats in i rutan ovanför att "
+#~ "kontrolleras mot en lista av tillåtna flaggor innan en anslutning "
+#~ "etableras.  För närvarande finns det inga flaggor i listan."
+
+#~ msgid "GPRS Options"
+#~ msgstr "GPRS-alternativ"
+
+#~ msgid "Hardware RTS/CTS"
+#~ msgstr "Hårdvaru-RTS/CTS"
+
+#~ msgid "Host name or IP address of the PPTP server"
+#~ msgstr "Värdnamn eller ip-adress till PPTP-servern"
+
+#~ msgid ""
+#~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+#~ msgstr ""
+#~ "Om BSD-komprimering inte tillåts kommer flaggan \"nobsdcomp\" att skickas "
+#~ "till pppd"
+
+#~ msgid ""
+#~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
+#~ "pppd"
+#~ msgstr ""
+#~ "Om Deflate-komprimering inte tillåts kommer flaggan \"nodeflate\" att "
+#~ "skickas till pppd"
+
+#~ msgid "Maximum Receive Unit"
+#~ msgstr "Största mottagningsenhet"
+
+#~ msgid "Maximum Transmit Unit"
+#~ msgstr "Största överföringsenhet"
+
+#~ msgid "Modem Connection"
+#~ msgstr "Modemanslutning"
+
+#~ msgid "PPP Options"
+#~ msgstr "PPP-alternativ"
+
+#~ msgid "Peer DNS through tunnel"
+#~ msgstr "Fjärr-DNS genom tunnel"
+
+#~ msgid "Refuse CHAP"
+#~ msgstr "Vägra CHAP"
+
+#~ msgid "Refuse EAP"
+#~ msgstr "Vägra EAP"
+
+#~ msgid "Refuse MS CHAP"
+#~ msgstr "Vägra MS CHAP"
+
+#~ msgid "Require 128 bit MPPE encryption"
+#~ msgstr "Kräv 128-bitars MPPE-kryptering"
+
+#~ msgid "Require Explicit IP Addr"
+#~ msgstr "Kräv explicit ip-addr"
+
+#~ msgid "Require MPPC Compression"
+#~ msgstr "Kräv MPPC-komprimering"
+
+#~ msgid "Requires existing network connection"
+#~ msgstr "Kräver en existerande nätverksanslutning"
+
+#~ msgid "Routing"
+#~ msgstr "Routing"
+
+#~ msgid "Serial Options"
+#~ msgstr "Seriealternativ"
+
+#~ msgid "Service providers GPRS access point from device config"
+#~ msgstr "GPRS-accesspunkt för tjänsteleverantörer från enhetskonfiguration"
+
+#~ msgid "Service providers IP address"
+#~ msgstr "IP-adress för tjänsteleverantörer"
+
+#~ msgid "Telephone number to dial"
+#~ msgstr "Telefonnummer att ringa"
+
+#~ msgid ""
+#~ "This is the friendly name that will be used to identify this network "
+#~ "connection, \n"
+#~ "e.g. \"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Detta är det namn som kommer att användas för att identifiera detta "
+#~ "nätverk, \n"
+#~ "t.ex. \"Campus-VPN\" eller \"Företagsnätverket\""
+
+#~ msgid "Time in seconds between echo requests"
+#~ msgstr "Tid i sekunder mellan echo-begäranden"
+
+#~ msgid "Type:"
+#~ msgstr "Typ:"
+
+#~ msgid "Use Peer DNS"
+#~ msgstr "Använd fjärr-DNS"
+
+#~ msgid "When checked the \"refuse-chap\" option is passed to pppd."
+#~ msgstr ""
+#~ "När denna är kryssad kommer flaggan \"refuse-chap\" att skickas till pppd."
+
+#~ msgid "When checked the \"refuse-eap\" option is passed to pppd."
+#~ msgstr ""
+#~ "När denna är kryssad kommer flaggan \"refuse-eap\" att skickas till pppd."
+
+#~ msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+#~ msgstr ""
+#~ "När denna är kryssad kommer flaggan \"refuse-mschap\" att skickas till "
+#~ "pppd."
+
+#~ msgid "When checked the 'lock' option is passed to pppd"
+#~ msgstr "När denna är kryssad kommer flaggan \"lock\" att skickas till pppd."
+
+#~ msgid "When checked the 'require-mppc' option is passed to pppd"
+#~ msgstr ""
+#~ "När denna är kryssad kommer flaggan \"require-mppc\" att skickas till "
+#~ "pppd."
+
+#~ msgid ""
+#~ "When checked this sets the pppd 'debug' option and adds some extra "
+#~ "information from the NetworkManager plugin"
+#~ msgstr ""
+#~ "När denna är kryssad ställs pppd-flaggan \"debug\" in och lägger till "
+#~ "extra information från insticksmodulen NetworkManager"
+
+#~ msgid "When checked this sets the pppd 'noipdefault' option"
+#~ msgstr "När denna är kryssad ställs pppd-flaggan \"noipdefault\" in"
+
+#~ msgid "When checked this sets the pppd 'usepeerdns' option"
+#~ msgstr "När denna är kryssad ställs pppd-flaggan \"usepeerdns\" in"
+
+#~ msgid ""
+#~ "When this check box is cleared the \"noauth\" option is passed to pppd."
+#~ msgstr ""
+#~ "När denna inte är kryssad kommer flaggan \"noauth\" att skickas till pppd."
+
+#~ msgid "_Access Point Name:"
+#~ msgstr "_Namn på accesspunkt:"
+
+#~ msgid "_Channel:"
+#~ msgstr "_Kanal:"
+
+#~ msgid "_Context Num"
+#~ msgstr "_Sammanhangsnr"
+
+#~ msgid "_Custom PPP options:"
+#~ msgstr "_Anpasade PPP-alternativ:"
+
+#~ msgid "_Device Address:"
+#~ msgstr "_Enhetsadress:"
+
+#~ msgid "_IP Address:"
+#~ msgstr "_Ip-adress:"
+
+#~ msgid "_Packet Type"
+#~ msgstr "_Pakettyp"
+
+#~ msgid "_Telephone Number:"
+#~ msgstr "_Telefonnummer:"
+
+#~ msgid "connect-delay"
+#~ msgstr "anslutningsfördröjning"
+
+#~ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+#~ msgstr "pppd-tunnel (PPTP, BTGPRS, Uppringd)"
+
+#~ msgid "Name"
+#~ msgstr "Namn"
+
+#~ msgid "PPTP Server"
+#~ msgstr "PPTP-server"
+
+#~ msgid "Telephone Number"
+#~ msgstr "Telefonnummer"
+
+#~ msgid "Bluetooth Address"
+#~ msgstr "Bluetooth-adress"
+
+#~ msgid "Bluetooth Channel"
+#~ msgstr "Bluetooth-kanal"
+
+#~ msgid "GPRS APN"
+#~ msgstr "GPRS APN"
+
+#~ msgid "GPRS IP"
+#~ msgstr "GPRS-ip"
+
+#~ msgid "GPRS Context No."
+#~ msgstr "GPRS-sammanhangsnr"
+
+#~ msgid "GPRS Packet Type"
+#~ msgstr "GPRS-pakettyp"
+
+#~ msgid "Use CTS/RTS flow control"
+#~ msgstr "Använd CTS/RTS-flödeskontroll"
+
+#~ msgid "Connect via a modem"
+#~ msgstr "Anslut via ett modem"
+
+#~ msgid "Require IP to be provided"
+#~ msgstr "Kräv att ip tillhandahålls"
+
+#~ msgid "Use 128 bit MPPE encryption"
+#~ msgstr "Använd 128-bitars MPPE-kryptering"
+
+#~ msgid "Do not use deflate compression"
+#~ msgstr "Använd inte Deflate-komprimering"
+
+#~ msgid "Do not use BSD compression"
+#~ msgstr "Använd inte BSD-komprimering"
+
+#~ msgid "Exclusive device access by pppd"
+#~ msgstr "Exklusiv enhetsåtkomst för pppd"
+
+#~ msgid "Authenticate remote peer"
+#~ msgstr "Autentisera fjärrpart"
+
+#~ msgid "Refuse MSCHAP"
+#~ msgstr "Vägra MSCHAP"
+
+#~ msgid "Maximum transmit unit (in bytes)"
+#~ msgstr "Maximal överföringsenhet (i byte)"
+
+#~ msgid "Maximum receive unit (in bytes)"
+#~ msgstr "Maximal mottagningsenhet (i byte)"
+
+#~ msgid "Number of failed LCP echos to cause disconnect"
+#~ msgstr "Antal misslyckade LCP-ekon som orsakar frånkoppling"
+
+#~ msgid "Interval (in seconds) at which to issue LCP echos"
+#~ msgstr "Intervall (i sekunder) som LCP-ekon ska göras"
+
+#~ msgid "Interval (in milliseconds) to wait before connecting."
+#~ msgstr "Intervall (i millisekunder) att vänta före anslutning."
+
+#~ msgid "Custom PPP options"
+#~ msgstr "Anpassade PPP-flaggor"
+
+#~ msgid "Use Peer DNS over the Tunnel"
+#~ msgstr "Använd fjärr-DNS över tunneln"
+
+#~ msgid "Specific networks available"
+#~ msgstr "Specifika tillgängliga nätverk"
+
+#~ msgid "Limit to specific networks"
+#~ msgstr "Begränsa till specifika nätverk"
+
+#~ msgid "Tunnel via pppd"
+#~ msgstr "Tunnla via pppd"
+
+#~ msgid "<b>Bluetooth options</b>"
+#~ msgstr "<b>Bluetooth-alternativ</b>"
+
+#~ msgid "<b>Dial-up options</b>"
+#~ msgstr "<b>Uppringningsalternativ</b>"
+
+#~ msgid "<b>GPRS options</b>"
+#~ msgstr "<b>GPRS-alternativ</b>"
+
+#~ msgid "<b>PPTP options</b>"
+#~ msgstr "<b>PPTP-alternativ</b>"
+
+#~ msgid "<b>Routing options</b>"
+#~ msgstr "<b>Routingalternativ</b>"
+
+#~ msgid "<b>Serial options</b>"
+#~ msgstr "<b>Seriealternativ</b>"
+
+#~ msgid "Connection Type:"
+#~ msgstr "Anslutningstyp:"
+
+#~ msgid "MPPE encryption"
+#~ msgstr "MPPE-kryptering"
+
+#~ msgid "Numeric Tweaks"
+#~ msgstr "Numeriska justeringar"
+
+#~ msgid "Show on connection on menu"
+#~ msgstr "Visa på anslutning på meny"
+
+#~ msgid "Remember password for this session"
+#~ msgstr "Kom ihåg lösenordet för denna session"
+
+#~ msgid "Save password in keyring"
+#~ msgstr "Spara lösenordet i nyckelring"
+
+#~ msgid "Bluetooth options"
+#~ msgstr "Bluetooth-alternativ"
+
+#~ msgid "Connection Name"
+#~ msgstr "Anslutningsnamn"
+
+#~ msgid "Dial-up options"
+#~ msgstr "Uppringningsalternativ"
+
+#~ msgid "Require Explicit IP Address"
+#~ msgstr "Kräv explicit ip-address"
+
+#~ msgid "Channel:"
+#~ msgstr "Kanal:"
+
+#~ msgid "Gateway:"
+#~ msgstr "Gateway:"
+
+#~ msgid "IP Address:"
+#~ msgstr "Ip-adress:"
+
+#~ msgid "Only use VPN connection for these addresses"
+#~ msgstr "Använd endast VPN-anslutning för dessa adresser"
+
+#~ msgid "_Group Password:"
+#~ msgstr "_Grupplösenord:"
+
+#~ msgid "Group Name:"
+#~ msgstr "Gruppnamn:"
+
+#~ msgid "Override user name"
+#~ msgstr "Åsidosätt användarnamn"
+
+#~ msgid "Use domain for authentication"
+#~ msgstr "Använd domän för autentisering"
+
+#~ msgid "_Import..."
+#~ msgstr "_Importera..."
+
+#~ msgid "Compatible Cisco VPN client (vpnc)"
+#~ msgstr "Kompatibel Cisco VPN-klient (vpnc)"
+
+#~ msgid "\tDomain:  %s\n"
+#~ msgstr "\tDomän:  %s\n"
+
+#~ msgid ""
+#~ "The following vpnc VPN connection will be created:\n"
+#~ "\n"
+#~ "\tName:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGroup Name:  %s\n"
+#~ "%s%s%s\n"
+#~ "The connection details can be changed using the \"Edit\" button.\n"
+#~ msgstr ""
+#~ "Följande vpnc-VPN-anslutning kommer att skapas:\n"
+#~ "\n"
+#~ "\tNamn:  %s\n"
+#~ "\n"
+#~ "\tGateway:  %s\n"
+#~ "\tGruppnamn:  %s\n"
+#~ "%s%s%s\n"
+#~ "Anslutningsdetaljerna kan ändras genom att använda knappen \"Redigera\".\n"
+
+#~ msgid "TCP tunneling not supported"
+#~ msgstr "TCP-tunnling stöds inte"
+
+#~ msgid ""
+#~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+#~ "through TCP which is currently not supported in the vpnc software.\n"
+#~ "\n"
+#~ "The connection can still be created, with TCP tunneling disabled, however "
+#~ "it may not work as expected."
+#~ msgstr ""
+#~ "VPN-inställningsfilen \"%s\" anger att VPN-trafiken ska tunnlas genom TCP "
+#~ "vilket för tillfället inte stöds i vpnc-programvaran.\n"
+#~ "\n"
+#~ "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men "
+#~ "det kanske inte fungerar som väntat."
+
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom användarnamnet och lösenordet inte "
+#~ "accepterades."
+
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde startas."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet inte kunde ansluta "
+#~ "till VPN-servern."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-konfigurationsalternativen var "
+#~ "ogiltiga."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "VPN-inloggningen misslyckades eftersom VPN-programmet mottog en ogiltig "
+#~ "konfiguration från VPN-servern."
