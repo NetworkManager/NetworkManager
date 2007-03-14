@@ -53,7 +53,7 @@ msgstr "_Spara lösenordet i nyckelring"
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
+msgstr "Du måste autentisera för att komma åt VPN-nätverket \"%s\"."
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
