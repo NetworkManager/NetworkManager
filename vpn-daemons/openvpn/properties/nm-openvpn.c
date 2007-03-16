@@ -49,6 +49,7 @@ struct _NetworkManagerVpnUIImpl {
   GladeXML *xml;
 
   GtkWidget *widget;
+  GtkDialog *advanced;
 
   GtkEntry       *w_connection_name;
   GtkEntry       *w_remote;
@@ -62,6 +63,7 @@ struct _NetworkManagerVpnUIImpl {
   GtkCheckButton *w_use_tap;
   GtkCheckButton *w_use_tcp;
   GtkExpander    *w_opt_info_expander;
+  GtkButton      *w_advanced_button;
   GtkButton      *w_import_button;
   GtkButton      *w_button_ca;
   GtkButton      *w_button_cert;
@@ -87,6 +89,7 @@ struct _NetworkManagerVpnUIImpl {
   GtkCheckButton *w_use_ta;
   GtkEntry       *w_ta;
   GtkButton      *w_button_ta;
+  GtkLabel       *w_ta_dir_label;
   GtkRadioButton *w_ta_dir_none;
   GtkRadioButton *w_ta_dir_zero;
   GtkRadioButton *w_ta_dir_one;
@@ -119,7 +122,6 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_lzo), FALSE);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tap), FALSE);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_tcp), FALSE);
-  gtk_expander_set_expanded (impl->w_opt_info_expander, FALSE);
   gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_connection_type), 0);
   connection_type_changed (GTK_COMBO_BOX (impl->w_connection_type), impl);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_cipher), FALSE);
@@ -128,6 +130,7 @@ openvpn_clear_widget (NetworkManagerVpnUIImpl *impl)
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), FALSE);
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta), FALSE);
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta), FALSE);
+  gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_label), FALSE);
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none), FALSE);
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero), FALSE);
   gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one), FALSE);
@@ -281,7 +284,6 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
     should_expand = TRUE;
   }
 
-  gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
   gtk_container_resize_children (GTK_CONTAINER (impl->widget));
 
   return impl->widget;
@@ -667,6 +669,8 @@ use_editable_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 			      gtk_toggle_button_get_active (togglebutton));
     gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta),
 			      gtk_toggle_button_get_active (togglebutton));
+    gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_label),
+			      gtk_toggle_button_get_active (togglebutton));
     gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none),
 			      gtk_toggle_button_get_active (togglebutton));
     gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero),
@@ -770,7 +774,7 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
   connectionname         = gtk_entry_get_text (impl->w_connection_name);
   connection_type        = gtk_combo_box_get_active (impl->w_connection_type);
   remote                 = gtk_entry_get_text (impl->w_remote);
-  port                  = gtk_entry_get_text (impl->w_port);
+  port                   = gtk_entry_get_text (impl->w_port);
   cert                   = gtk_entry_get_text (impl->w_cert);
   key                    = gtk_entry_get_text (impl->w_key);
   shared_key             = gtk_entry_get_text (impl->w_shared_key);
@@ -984,7 +988,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_x509userpass_cert, cert);
 	  gtk_entry_set_text (impl->w_key, key);
 	  gtk_entry_set_text (impl->w_x509userpass_key, key);
-          connection_type_sel = NM_OPENVPN_CONTYPE_X509;
+	  connection_type_sel = NM_OPENVPN_CONTYPE_X509;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -1001,7 +1005,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_shared_key, shared_key);
 	  gtk_entry_set_text (impl->w_local_ip, local_ip);
 	  gtk_entry_set_text (impl->w_remote_ip, remote_ip);
-          connection_type_sel = NM_OPENVPN_CONTYPE_SHAREDKEY;
+	  connection_type_sel = NM_OPENVPN_CONTYPE_SHAREDKEY;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -1014,7 +1018,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_ca, ca);
 	  gtk_entry_set_text (impl->w_password_ca, ca);
 	  gtk_entry_set_text (impl->w_x509userpass_ca, ca);
-          connection_type_sel = NM_OPENVPN_CONTYPE_PASSWORD;
+	  connection_type_sel = NM_OPENVPN_CONTYPE_PASSWORD;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -1037,7 +1041,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	  gtk_entry_set_text (impl->w_x509userpass_key, key);
 	  gtk_entry_set_text (impl->w_username, username);
 	  gtk_entry_set_text (impl->w_x509userpass_username, username);
-          connection_type_sel = NM_OPENVPN_CONTYPE_X509USERPASS;
+	  connection_type_sel = NM_OPENVPN_CONTYPE_X509USERPASS;
 	} else {
 	  file_is_good = FALSE;
 	}
@@ -1059,6 +1063,7 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
       gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_ta), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_button_ta), TRUE);
+      gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_label), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_none), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_zero), TRUE);
       gtk_widget_set_sensitive (GTK_WIDGET (impl->w_ta_dir_one), TRUE);
@@ -1109,8 +1114,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	gtk_entry_set_text (impl->w_routes, routes);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
       }
-
-      gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
     } else {
       GtkWidget *dialog;
 
@@ -1149,6 +1152,15 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
   g_free (basename);
 
   return file_is_good;
+}
+
+static void
+advanced_button_clicked (GtkButton *button, gpointer user_data)
+{
+  NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+  
+  gtk_dialog_run (impl->advanced);
+  gtk_widget_hide (GTK_WIDGET(impl->advanced));
 }
 
 static void
@@ -1538,6 +1550,7 @@ impl_get_object (void)
   if (impl->xml != NULL) {
 
     impl->widget = glade_xml_get_widget(impl->xml, "nm-openvpn-widget");
+    impl->advanced = GTK_DIALOG (glade_xml_get_widget(impl->xml, "nm-openvpn-advanced-dialog"));
 
     impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-connection-name"));
     impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
@@ -1546,6 +1559,9 @@ impl_get_object (void)
     impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
     impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
 									 "openvpn-optional-information-expander"));
+    impl->w_advanced_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
+								       "openvpn-advanced-button"));
+
     impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
 								       "openvpn-import-button"));
 
@@ -1589,6 +1605,7 @@ impl_get_object (void)
     impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
     impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
     impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
+    impl->w_ta_dir_label           = GTK_LABEL( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-label" ) );
     impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
     impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
     impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
@@ -1657,6 +1674,9 @@ impl_get_object (void)
     gtk_signal_connect (GTK_OBJECT (impl->w_button_ta),
 			"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
 
+    gtk_signal_connect (GTK_OBJECT (impl->w_advanced_button),
+			"clicked", GTK_SIGNAL_FUNC (advanced_button_clicked), impl);
+
     gtk_signal_connect (GTK_OBJECT (impl->w_import_button),
 			"clicked", GTK_SIGNAL_FUNC (import_button_clicked), impl);
 
@@ -1665,6 +1685,8 @@ impl_get_object (void)
 
     /* make the widget reusable */
     gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event",
+			GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
+    gtk_signal_connect (GTK_OBJECT (impl->advanced), "delete-event",
 			GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
 
     openvpn_clear_widget (impl);
