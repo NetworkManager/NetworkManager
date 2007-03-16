@@ -14,12 +14,15 @@
 #define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE, NMDeviceClass))
 
+#define NM_DEVICE_CONNECTION "connection"
+#define NM_DEVICE_PATH "path"
+
 typedef struct {
-	DBusGProxy parent;
+	GObject parent;
 } NMDevice;
 
 typedef struct {
-	DBusGProxyClass parent;
+	GObjectClass parent;
 
 	/* Signals */
 	void (*state_changed) (NMDevice *device, NMDeviceState state);
@@ -38,6 +41,7 @@ guint32   nm_device_get_capabilities (NMDevice *device);
 guint32   nm_device_get_ip4_address (NMDevice *device);
 NMIP4Config *nm_device_get_ip4_config (NMDevice *device);
 NMDeviceState nm_device_get_state (NMDevice *device);
+char     *nm_device_get_description (NMDevice *device);
 
 NMDeviceType  nm_device_type_for_path (DBusGConnection *connection,
 									   const char *path);

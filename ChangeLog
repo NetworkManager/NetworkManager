@@ -1,3 +1,22 @@
+2007-03-16  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-glib/nm-device.c (nm_device_get_description): Implement.
+
+	* libnm-glib/nm-client.c (nm_client_manager_is_running): Implement. Also add a
+	"manager-running" signal that notifies the appearance/disappearance of NM.
+	(nm_client_sleep): Implement.
+
+	* libnm-glib/nm-device.c:
+	* libnm-glib/nm-device-802-11-wireless.c: 
+	* libnm-glib/nm-device-802-3-ethernet.c: 
+
+	Don't inherit from DBusGProxy, add a proxy to private
+	data. The reason is, classes inherited from NMDevice wouldn't get any dbus signals
+	for anything but their own dbus interface. DBusGProxy objects support only one
+	interfaces and to work around this, NMDevice has spearate proxy for each dbus
+	interface. The nice side effect of this change is that we do not create a new
+	DBusGProxy object for each property access.
+
 2007-03-15  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-device-802-11-wireless.c (constructor): Initialize the iw_ext structures

@@ -1,5 +1,4 @@
 #include "nm-ip4-config.h"
-#include "nm-device-private.h"
 #include "nm-utils.h"
 
 

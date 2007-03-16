@@ -298,6 +298,20 @@ do_stuff (gpointer user_data)
 	return FALSE;
 }
 
+static void
+manager_running (NMClient *client, gboolean running, gpointer user_data)
+{
+	if (running) {
+		g_print ("NM appeared\n");
+		/* 	test_wireless_enabled (client); */
+		test_get_state (client);
+		test_devices (client);
+
+		/* 	g_idle_add (do_stuff, client); */
+	} else
+		g_print ("NM disappeared\n");
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -310,16 +324,13 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-/* 	test_wireless_enabled (client); */
-	test_get_state (client);
-	test_devices (client);
+	g_signal_connect (client, "manager-running", G_CALLBACK (manager_running), NULL);
+	manager_running (client, nm_client_manager_is_running (client), NULL);
 
 	g_signal_connect (client, "device-added",
 					  G_CALLBACK (device_added_cb), NULL);
 	g_signal_connect (client, "device-removed",
 					  G_CALLBACK (device_removed_cb), NULL);
-
-/* 	g_idle_add (do_stuff, client); */
 
 	g_main_loop_run (g_main_loop_new (NULL, FALSE));
 

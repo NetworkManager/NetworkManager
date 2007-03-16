@@ -1,5 +1,109 @@
 #include "nm-utils.h"
 
+char *
+nm_dbus_get_string_property (DBusGProxy *proxy,
+							 const char *interface,
+							 const char *prop_name)
+{
+	GError *err = NULL;
+	char *str = NULL;
+	GValue value = {0,};
+
+	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), NULL);
+
+	if (dbus_g_proxy_call (proxy, "Get", &err,
+						   G_TYPE_STRING, interface,
+						   G_TYPE_STRING, prop_name,
+						   G_TYPE_INVALID,
+						   G_TYPE_VALUE, &value,
+						   G_TYPE_INVALID)) {
+		str = g_strdup (g_value_get_string (&value));
+	} else {
+		g_warning ("Error in device_get_property: %s\n", err->message);
+		g_error_free (err);
+	}
+
+	return str;
+}
+
+char *
+nm_dbus_get_object_path_property (DBusGProxy *proxy,
+								  const char *interface,
+								  const char *prop_name)
+{
+	GError *err = NULL;
+	char *path = NULL;
+	GValue value = {0,};
+
+	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), NULL);
+
+	if (dbus_g_proxy_call (proxy, "Get", &err,
+						   G_TYPE_STRING, interface,
+						   G_TYPE_STRING, prop_name,
+						   G_TYPE_INVALID,
+						   G_TYPE_VALUE, &value,
+						   G_TYPE_INVALID)) {
+		path = g_strdup (g_value_get_boxed (&value));
+	} else {
+		g_warning ("Error in device_get_property: %s\n", err->message);
+		g_error_free (err);
+	}
+
+	return path;
+}
+
+gint32
+nm_dbus_get_int_property (DBusGProxy *proxy,
+						  const char *interface,
+						  const char *prop_name)
+{
+	GError *err = NULL;
+	gint32 i = 0;
+	GValue value = {0,};
+
+	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), 0);
+
+	if (dbus_g_proxy_call (proxy, "Get", &err,
+						   G_TYPE_STRING, interface,
+						   G_TYPE_STRING, prop_name,
+						   G_TYPE_INVALID,
+						   G_TYPE_VALUE, &value,
+						   G_TYPE_INVALID)) {
+		i = g_value_get_int (&value);
+	} else {
+		g_warning ("Error in device_get_property: %s\n", err->message);
+		g_error_free (err);
+	}
+
+	return i;
+}
+
+guint32
+nm_dbus_get_uint_property (DBusGProxy *proxy,
+						   const char *interface,
+						   const char *prop_name)
+{
+	GError *err = NULL;
+	guint32 i = 0;
+	GValue value = {0,};
+
+	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), 0);
+
+	if (dbus_g_proxy_call (proxy, "Get", &err,
+						   G_TYPE_STRING, interface,
+						   G_TYPE_STRING, prop_name,
+						   G_TYPE_INVALID,
+						   G_TYPE_VALUE, &value,
+						   G_TYPE_INVALID)) {
+		i = g_value_get_uint (&value);
+	} else {
+		g_warning ("Error in device_get_property: %s\n", err->message);
+		g_error_free (err);
+	}
+
+	return i;
+}
+
 gboolean
 nm_dbus_get_property (DBusGProxy *proxy,
 					  const char *interface,

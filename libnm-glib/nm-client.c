@@ -1,4 +1,5 @@
 #include <dbus/dbus-glib.h>
+#include <string.h>
 #include "nm-client.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
@@ -11,12 +12,15 @@ G_DEFINE_TYPE (NMClient, nm_client, DBUS_TYPE_G_PROXY)
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
+	DBusGProxy *bus_proxy;
+	gboolean manager_running;
 	NMState state;
 	gboolean have_device_list;
 	GHashTable *devices;
 } NMClientPrivate;
 
 enum {
+	MANAGER_RUNNING,
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGE,
@@ -25,6 +29,12 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+static void proxy_name_owner_changed (DBusGProxy *proxy,
+									  const char *name,
+									  const char *old_owner,
+									  const char *new_owner,
+									  gpointer user_data);
 
 static void client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
 static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
@@ -46,7 +56,20 @@ finalize (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
+	g_object_unref (priv->bus_proxy);
 	g_hash_table_destroy (priv->devices);
+}
+
+static void
+manager_running (NMClient *client, gboolean running)
+{
+	if (!running) {
+		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+
+		priv->state = NM_STATE_UNKNOWN;
+		g_hash_table_remove_all (priv->devices);
+		priv->have_device_list = FALSE;
+	}
 }
 
 static void
@@ -59,7 +82,18 @@ nm_client_class_init (NMClientClass *client_class)
 	/* virtual methods */
 	object_class->finalize = finalize;
 
+	client_class->manager_running = manager_running;
+
 	/* signals */
+	signals[MANAGER_RUNNING] =
+		g_signal_new ("manager-running",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMClientClass, manager_running),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__BOOLEAN,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_BOOLEAN);
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -90,6 +124,36 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_UINT);
 
+}
+
+static void
+setup_bus_listener (NMClient *client, DBusGConnection *connection)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GError *err = NULL;
+
+	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
+												 "org.freedesktop.DBus",
+												 "/org/freedesktop/DBus",
+												 "org.freedesktop.DBus");
+
+	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+							 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+							 G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->bus_proxy,
+								 "NameOwnerChanged",
+								 G_CALLBACK (proxy_name_owner_changed),
+								 client, NULL);
+
+	if (!dbus_g_proxy_call (priv->bus_proxy,
+							"NameHasOwner", &err,
+							G_TYPE_STRING, NM_DBUS_SERVICE,
+							G_TYPE_INVALID,
+							G_TYPE_BOOLEAN, &priv->manager_running,
+							G_TYPE_INVALID)) {
+		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
+		g_error_free (err);
+	}
 }
 
 NMClient *
@@ -137,7 +201,28 @@ nm_client_new (void)
 								 NULL,
 								 NULL);
 
+	setup_bus_listener (client, connection);
+
 	return client;
+}
+
+static void
+proxy_name_owner_changed (DBusGProxy *proxy,
+						  const char *name,
+						  const char *old_owner,
+						  const char *new_owner,
+						  gpointer user_data)
+{
+	if (name && !strcmp (name, NM_DBUS_SERVICE)) {
+		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (user_data);
+
+		if (new_owner && strlen (new_owner) > 0)
+			priv->manager_running = TRUE;
+		else
+			priv->manager_running = FALSE;
+
+		g_signal_emit (NM_CLIENT (user_data), signals[MANAGER_RUNNING], 0, priv->manager_running);
+	}
 }
 
 static void
@@ -206,6 +291,14 @@ client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
 		g_hash_table_remove (NM_CLIENT_GET_PRIVATE (client)->devices, path);
 	}
+}
+
+gboolean
+nm_client_manager_is_running (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->manager_running;
 }
 
 static void
@@ -308,3 +401,17 @@ nm_client_get_state (NMClient *client)
 
 	return priv->state;
 }
+
+void
+nm_client_sleep (NMClient *client, gboolean sleep)
+{
+	GError *err = NULL;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	if (!org_freedesktop_NetworkManager_sleep (DBUS_G_PROXY (client), sleep, &err)) {
+		g_warning ("Error in sleep: %s", err->message);
+		g_error_free (err);
+	}
+}
+

@@ -9,8 +9,11 @@ G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
 
 typedef struct {
+	DBusGProxy *wireless_proxy;
 	gboolean have_network_list;
 	GHashTable *networks;
+
+	gboolean disposed;
 } NMDevice80211WirelessPrivate;
 
 enum {
@@ -30,9 +33,59 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless *device)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 
+	priv->disposed = FALSE;
 	priv->networks = g_hash_table_new_full (g_str_hash, g_str_equal,
 											(GDestroyNotify) g_free,
 											(GDestroyNotify) g_object_unref);
+}
+
+static GObject*
+constructor (GType type,
+			 guint n_construct_params,
+			 GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMDevice80211WirelessPrivate *priv;
+
+	object = G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->constructor (type,
+																				   n_construct_params,
+																				   construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
+
+	priv->wireless_proxy = dbus_g_proxy_new_for_name (nm_device_get_connection (NM_DEVICE (object)),
+													  NM_DBUS_SERVICE,
+													  nm_device_get_path (NM_DEVICE (object)),
+													  NM_DBUS_INTERFACE_DEVICE_WIRELESS);
+
+	dbus_g_proxy_add_signal (priv->wireless_proxy, "NetworkAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->wireless_proxy, "NetworkAdded",
+								 G_CALLBACK (network_added_proxy),
+								 object, NULL);
+
+	dbus_g_proxy_add_signal (priv->wireless_proxy, "NetworkRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->wireless_proxy, "NetworkRemoved",
+								 G_CALLBACK (network_removed_proxy),
+								 object, NULL);
+	
+	return object;
+}
+
+static void
+dispose (GObject *object)
+{
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
+
+	if (priv->disposed)
+		return;
+
+	priv->disposed = TRUE;
+
+	g_object_unref (priv->wireless_proxy);
+
+	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 }
 
 static void
@@ -41,6 +94,8 @@ finalize (GObject *object)
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->networks);
+
+	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->finalize (object);
 }
 
 static void
@@ -51,6 +106,8 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 	g_type_class_add_private (device_class, sizeof (NMDevice80211WirelessPrivate));
 
 	/* virtual methods */
+	object_class->constructor = constructor;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* signals */
@@ -78,104 +135,49 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 NMDevice80211Wireless *
 nm_device_802_11_wireless_new (DBusGConnection *connection, const char *path)
 {
-	NMDevice80211Wireless *device;
-	DBusGProxy *proxy;
-
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	device = (NMDevice80211Wireless *) g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
-													 "name", NM_DBUS_SERVICE,
-													 "path", path, 
-													 "interface", NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-													 "connection", connection,
-													 NULL);
-
-	proxy = DBUS_G_PROXY (device);
-
-	dbus_g_proxy_add_signal (proxy, "NetworkAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-								 "NetworkAdded",
-								 G_CALLBACK (network_added_proxy),
-								 NULL,
-								 NULL);
-
-	dbus_g_proxy_add_signal (proxy, "NetworkRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-								 "NetworkRemoved",
-								 G_CALLBACK (network_removed_proxy),
-								 NULL,
-								 NULL);
-
-	return device;
+	return (NMDevice80211Wireless *) g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
+												   NM_DEVICE_CONNECTION, connection,
+												   NM_DEVICE_PATH, path,
+												   NULL);
 }
 
 char *
 nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device)
 {
-	GValue value = {0,};
-	char *address = NULL;
-
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "HwAddress",
-							  &value))
-		address = g_strdup (g_value_get_string (&value));
-
-	return address;
+	return nm_dbus_get_string_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
+										NM_DBUS_INTERFACE_DEVICE_WIRELESS, "HwAddress");
 }
 
 int
 nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 {
-	GValue value = {0,};
-	int mode = 0;
-
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "Mode",
-							  &value))
-		mode = g_value_get_int (&value);
-
-	return mode;
+	return nm_dbus_get_int_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
+									 NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Mode");
 }
 
 int
 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
 {
-	GValue value = {0,};
-	int bitrate = 0;
-
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "Bitrate",
-							  &value))
-		bitrate = g_value_get_int (&value);
-
-	return bitrate;
+	return nm_dbus_get_int_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
+									 NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Bitrate");
 }
 
 guint32
 nm_device_802_11_wireless_get_capabilities (NMDevice80211Wireless *device)
 {
-	guint32 caps = 0;
-	GValue value = {0,};
+	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "WirelessCapabilities",
-							  &value))
-		caps = g_value_get_uint (&value);
-
-	return caps;
+	return nm_dbus_get_uint_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
+									  NM_DBUS_INTERFACE_DEVICE_WIRELESS, "WirelessCapabilities");
 }
 
 static NMAccessPoint *
@@ -186,11 +188,7 @@ get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if
 
 	ap = g_hash_table_lookup (priv->networks, path);
 	if (!ap && create_if_not_found) {
-		DBusGConnection *connection = NULL;
-
-		g_object_get (device, "connection", &connection, NULL);
-		ap = nm_access_point_new (connection, path);
-
+		ap = nm_access_point_new (nm_device_get_connection (NM_DEVICE (device)), path);
 		if (ap)
 			g_hash_table_insert (priv->networks, g_strdup (path), ap);
 	}
@@ -201,17 +199,18 @@ get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if
 NMAccessPoint *
 nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 {
-	GValue value = {0,};
+	GError *err = NULL;
+	char *path;
 	NMAccessPoint *ap = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (device),
-							  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-							  "ActiveNetwork",
-							  &value)) {
-		g_assert (G_VALUE_TYPE (&value) == DBUS_TYPE_G_OBJECT_PATH);
-		ap = get_network (device, (const char *) g_value_get_boxed (&value), TRUE);
+	path = nm_dbus_get_object_path_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
+											 NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+											 "ActiveNetwork");
+	if (path) {
+		ap = get_network (device, path, TRUE);
+		g_free (path);
 	}
 
 	return ap;
@@ -242,7 +241,9 @@ nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device)
 		return list;
 	}
 
-	if (!org_freedesktop_NetworkManager_Device_Wireless_get_active_networks (DBUS_G_PROXY (device), &array, &err)) {
+	if (!org_freedesktop_NetworkManager_Device_Wireless_get_active_networks
+		(NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->wireless_proxy, &array, &err)) {
+
 		g_warning ("Error in get_networks: %s", err->message);
 		g_error_free (err);
 	} else {
@@ -273,10 +274,10 @@ nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
 	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device));
 	g_return_if_fail (NM_IS_ACCESS_POINT (ap));
 
-	if (!org_freedesktop_NetworkManager_Device_Wireless_activate (DBUS_G_PROXY (device),
-																  dbus_g_proxy_get_path (DBUS_G_PROXY (ap)),
-																  user_requested,
-																  &err)) {
+	if (!org_freedesktop_NetworkManager_Device_Wireless_activate
+		(NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->wireless_proxy,
+		 dbus_g_proxy_get_path (DBUS_G_PROXY (ap)), user_requested, &err)) {
+
 		g_warning ("Error in wireless_activate: %s", err->message);
 		g_error_free (err);
 	}
@@ -285,7 +286,7 @@ nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
 static void
 network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (proxy);
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *ap;
 
 	ap = get_network (device, path, TRUE);
@@ -296,7 +297,7 @@ network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 static void
 network_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (proxy);
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *ap;
 
 	ap = get_network (device, path, FALSE);
