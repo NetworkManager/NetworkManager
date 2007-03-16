@@ -62,6 +62,7 @@ NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
 
+const char *		nm_ap_get_dbus_path (NMAccessPoint *ap);
 const GTimeVal *	nm_ap_get_timestamp				(const NMAccessPoint *ap);
 void				nm_ap_set_timestamp				(NMAccessPoint *ap, glong sec, glong usec);
 void				nm_ap_set_timestamp_via_timestamp	(NMAccessPoint *ap, const GTimeVal *timestamp);

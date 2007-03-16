@@ -33,7 +33,6 @@
 struct NMActRequest
 {
 	int				refcount;
-	NMData *			data;
 	NMDevice *		dev;
 	NMAccessPoint *	ap;
 	NMIP4Config *		ip4_config;
@@ -44,11 +43,10 @@ struct NMActRequest
 };
 
 
-NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *ap, gboolean user_requested)
+NMActRequest * nm_act_request_new (NMDevice *dev, NMAccessPoint *ap, gboolean user_requested)
 {
 	NMActRequest *	req;
 
-	g_return_val_if_fail (data != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
 
 	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
@@ -56,7 +54,6 @@ NMActRequest * nm_act_request_new (NMData *data, NMDevice *dev, NMAccessPoint *a
 
 	req = g_malloc0 (sizeof (NMActRequest));
 	req->refcount = 1;
-	req->data = data;
 
 	g_object_ref (G_OBJECT (dev));
 	req->dev = dev;
@@ -94,14 +91,6 @@ NMDevice * nm_act_request_get_dev (NMActRequest *req)
 	g_return_val_if_fail (req != NULL, NULL);
 
 	return req->dev;
-}
-
-
-NMData * nm_act_request_get_data (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, NULL);
-
-	return req->data;
 }
 
 

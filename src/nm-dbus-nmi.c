@@ -52,11 +52,11 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (req != NULL);
 
-	data = nm_act_request_get_data (req);
-	g_assert (data);
-
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
+
+	data = nm_device_get_app_data (dev);
+	g_assert (data);
 
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);

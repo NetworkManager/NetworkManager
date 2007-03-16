@@ -1,3 +1,27 @@
+2007-03-15  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-device-802-11-wireless.c (constructor): Initialize the iw_ext structures
+	with zeroes before passing them to functions - the functions never do that and
+	reading the values back may produce wrong values.
+	(real_bring_up): Store the signal handler id ...
+	(real_bring_down): ... So that it can be removed here.
+	Disconnect the supplicant interface here as well.
+	(nm_device_802_11_wireless_ap_list_get_ap_by_obj_path): Use the dbus object path
+	from the access point instead of old $device/Networks/$essid.
+
+	* src/nm-manager.c (nm_manager_get_state): Return NM_STATE_CONNECTED when the
+	device state is connected (instead of just having link/carrier).
+
+	* src/nm-activation-request.c: Don't store NMData in activation request, it's
+	already easily accessible through the device.
+
+	* src/NetworkManagerAP.c (nm_ap_init): Construct the dbus object path here and
+	store it within the object.
+	(nm_ap_get_dbus_path): Export it to public as well.
+
+	* src/dhcp-manager/nm-dhcp-manager.c (nm_dhcp_manager_get): Keep the ownership
+	of the singleton.
+
 2007-03-12  Dan Williams  <dcbw@redhat.com>
 
 	Get rid of 2 second poll of sysfs 'carrier' file for wired devices.  Useless

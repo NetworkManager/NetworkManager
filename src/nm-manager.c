@@ -354,7 +354,7 @@ nm_manager_get_state (NMManager *manager)
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 
-		if (nm_device_has_active_link (dev))
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
 			return NM_STATE_CONNECTED;
 
 		if (nm_device_is_activating (dev))

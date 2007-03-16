@@ -98,6 +98,7 @@ typedef struct Supplicant {
 	NMSupplicantInterface * iface;
 
 	/* signal handler ids */
+	guint                   mgr_state_id;
 	guint                   iface_error_id;
 	guint                   iface_state_id;
 	guint                   iface_scanned_ap_id;
@@ -426,7 +427,8 @@ constructor (GType type,
 		struct iw_range range;
 		struct iwreq wrq;
 
-		memset (&wrq, 0, sizeof (wrq));
+		memset (&wrq, 0, sizeof (struct iwreq));
+		memset (&range, 0, sizeof (struct iw_range));
 		strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 		wrq.u.data.pointer = (caddr_t) &range;
 		wrq.u.data.length = sizeof (struct iw_range);
@@ -579,10 +581,10 @@ real_bring_up (NMDevice *dev)
 	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
 
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
-	g_signal_connect (priv->supplicant.mgr,
-	                  "state",
-	                  G_CALLBACK (supplicant_mgr_state_cb),
-	                  self);
+	priv->supplicant.mgr_state_id = g_signal_connect (priv->supplicant.mgr,
+													  "state",
+													  G_CALLBACK (supplicant_mgr_state_cb),
+													  self);
 	if (nm_supplicant_manager_get_state (priv->supplicant.mgr) == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
 		init_supplicant_interface (self);
 	}
@@ -608,11 +610,20 @@ real_bring_down (NMDevice *dev)
 
 	cleanup_supplicant_interface (self);
 
+	if (priv->supplicant.iface) {
+		nm_supplicant_interface_disconnect (priv->supplicant.iface);
+		priv->supplicant.iface = NULL;
+	}
+
+	if (priv->supplicant.mgr_state_id) {
+		g_signal_handler_disconnect (priv->supplicant.mgr, priv->supplicant.mgr_state_id);
+		priv->supplicant.mgr_state_id = 0;
+	}
+
 	if (priv->supplicant.mgr) {
 		g_object_unref (priv->supplicant.mgr);
 		priv->supplicant.mgr = NULL;
 	}
-
 }
 
 static void
@@ -651,8 +662,7 @@ nm_device_802_11_wireless_activate (NMDevice80211Wireless *self,
 	g_return_if_fail (ap != NULL);
 
 	device = NM_DEVICE (self);
-	req = nm_act_request_new (nm_device_get_app_data (device),
-							  device,
+	req = nm_act_request_new (device,
 							  ap,
 							  user_requested);
 
@@ -1117,31 +1127,28 @@ NMAccessPoint *
 nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *self,
                                                       const char *obj_path)
 {
-	NMAccessPoint *	ret_ap = NULL;
-	char *			built_path;
-	char *			dev_path;
+	NMAccessPointList *ap_list;
+	NMAccessPoint *ap = NULL;
 
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (obj_path != NULL, NULL);
+	ap_list = nm_device_802_11_wireless_ap_list_get (self);
+	if (ap_list) {
+		NMAPListIter *list_iter;
 
-	if (!self->priv->ap_list)
-		return NULL;
+		if ((list_iter = nm_ap_list_iter_new (ap_list))) {
+			gboolean found = FALSE;
 
-	dev_path = nm_dbus_get_object_path_for_device (NM_DEVICE (self));
-	dev_path = nm_dbus_unescape_object_path (dev_path);
-	built_path = g_strdup_printf ("%s/Networks/", dev_path);
-	g_free (dev_path);
+			while (!found && (ap = nm_ap_list_iter_next (list_iter))) {
+				if (!strcmp (obj_path, nm_ap_get_dbus_path (ap)))
+					found = TRUE;
+			}
+			nm_ap_list_iter_free (list_iter);
 
-	if (strncmp (built_path, obj_path, strlen (built_path)) == 0)
-	{
-		char *essid = g_strdup (obj_path + strlen (built_path));
-
-		ret_ap = nm_ap_list_get_ap_by_essid (self->priv->ap_list, essid);
-		g_free (essid);
+			if (!found)
+				ap = NULL;
+		}
 	}
-	g_free (built_path);
 
-	return ret_ap;
+	return ap;
 }
 
 
@@ -2957,7 +2964,7 @@ activation_failure_handler (NMDevice *dev)
 	NMAccessPoint *	ap;
 
 	req = nm_device_get_act_request (dev);
-	app_data = nm_act_request_get_data (req);
+	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
 
 	if ((ap = nm_act_request_get_ap (req)))

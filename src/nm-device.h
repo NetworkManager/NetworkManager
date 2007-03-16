@@ -78,8 +78,6 @@ struct _NMDeviceClass
 {
 	GObjectClass parent;
 
-	const char *	(* has_active_link)	(NMDevice *self);
-	void			(* set_active_link)	(NMDevice *self, gboolean active);
 	void			(* update_link)	(NMDevice *self);
 
 	gboolean		(* is_up)			(NMDevice *self);

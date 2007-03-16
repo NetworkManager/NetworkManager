@@ -89,10 +89,8 @@ nm_dhcp_manager_get (void)
 
 	if (!singleton)
 		singleton = nm_dhcp_manager_new ();
-	else
-		g_object_ref (singleton);
 
-	return singleton;
+	return g_object_ref (singleton);
 }
 
 static void

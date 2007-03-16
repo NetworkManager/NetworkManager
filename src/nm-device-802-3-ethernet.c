@@ -268,8 +268,7 @@ nm_device_802_3_ethernet_activate (NMDevice8023Ethernet *self,
 	g_return_if_fail (NM_IS_DEVICE_802_3_ETHERNET (self));
 
 	device = NM_DEVICE (self);
-	req = nm_act_request_new (nm_device_get_app_data (device),
-							  device,
+	req = nm_act_request_new (device,
 							  NULL,
 							  user_requested);
 

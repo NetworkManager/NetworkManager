@@ -46,6 +46,8 @@ static const char * default_essid_list[] =
  */
 typedef struct
 {
+	char *dbus_path;
+
 	/* Scanned or cached values */
 	char *			essid;
 	char *			orig_essid;
@@ -104,6 +106,10 @@ enum {
 static void
 nm_ap_init (NMAccessPoint *ap)
 {
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
+	static guint32 counter = 0;
+
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
 }
 
 static void
@@ -111,6 +117,7 @@ finalize (GObject *object)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 
+	g_free (priv->dbus_path);
 	g_free (priv->essid);
 	g_free (priv->orig_essid);
 	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
@@ -314,19 +321,15 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
  */
 NMAccessPoint *nm_ap_new (void)
 {
-	NMDBusManager *manager;
 	GObject *object;
-	char *path;
-	static guint32 counter = 0;
 
 	object = g_object_new (NM_TYPE_AP, NULL);
+	if (!object)
+		return NULL;
 
-	manager = nm_dbus_manager_get ();
-
-	path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
-										 path, object);
-	g_free (path);
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (nm_dbus_manager_get ()),
+										 nm_ap_get_dbus_path (NM_AP (object)),
+										 object);
 
 	return (NMAccessPoint *) object;
 }
@@ -472,6 +475,14 @@ nm_ap_new_from_properties (GHashTable *properties)
 		nm_ap_set_broadcast (ap, FALSE);
 
 	return ap;
+}
+
+const char *
+nm_ap_get_dbus_path (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_AP (ap), NULL);
+
+	return NM_AP_GET_PRIVATE (ap)->dbus_path;
 }
 
 
