@@ -41,7 +41,7 @@ dnl
 AC_ARG_WITH(gnome, AC_HELP_STRING([--without-gnome], [Build NetworkManager-pptp without GNOME support, e.g. vpn service only]))
 AM_CONDITIONAL(WITH_GNOME, test x"$with_gnome" != xno)
 
-ALL_LINGUAS="bg da de en_GB et fr gl ka pt_BR sv"
+ALL_LINGUAS="bg ca da de en_GB et fr gl ka pt_BR sv"
 AC_SUBST(ALL_LINGUAS)
 
 GETTEXT_PACKAGE=NetworkManager-pptp
