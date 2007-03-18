@@ -24,7 +24,6 @@
 
 #include <glib-object.h>
 #include <dbus/dbus.h>
-#include <net/ethernet.h>
 
 
 #include "nm-device.h"
@@ -76,11 +75,6 @@ static inline gboolean nm_device_is_802_11_wireless (NMDevice *dev)
 
 void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 										  const char *essid);
-
-void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
-								   struct ether_addr *addr);
-
-void nm_device_802_11_wireless_set_address (NMDevice80211Wireless *dev);
 
 void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
                                                     struct ether_addr *bssid);

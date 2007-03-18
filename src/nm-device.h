@@ -25,6 +25,7 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
 
 #include "NetworkManager.h"
 #include "nm-ip4-config.h"
@@ -167,6 +168,9 @@ gboolean		nm_device_is_up		(NMDevice *dev);
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 struct NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
+
+void		nm_device_get_hw_address (NMDevice *dev, struct ether_addr *addr);
+void		nm_device_update_hw_address (NMDevice *dev);
 
 /* Utility routines */
 NMDevice *	nm_get_device_by_udi	(struct NMData *data,

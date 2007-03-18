@@ -24,7 +24,6 @@
 
 #include <glib-object.h>
 #include <dbus/dbus.h>
-#include <net/ethernet.h>
 
 #include "nm-device.h"
 
@@ -65,11 +64,6 @@ static inline gboolean nm_device_is_802_3_ethernet (NMDevice *dev)
 
 	return (G_OBJECT_TYPE (dev) == NM_TYPE_DEVICE_802_3_ETHERNET);
 }
-
-void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
-								   struct ether_addr *addr);
-
-void nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *dev);
 
 int nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
 

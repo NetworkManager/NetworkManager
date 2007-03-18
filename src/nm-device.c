@@ -52,6 +52,8 @@ struct _NMDevicePrivate
 	char *			driver;
 	gboolean			removed;
 
+	struct ether_addr	hw_addr;
+
 	gboolean			link_active;
 	guint32			ip4_address;
 	struct in6_addr	ip6_address;
@@ -183,12 +185,7 @@ nm_device_new (const char *iface,
 	nm_device_bring_up_wait (dev, FALSE);
 
 	nm_device_update_ip4_address (dev);
-
-	/* Update the device's hardware address */
-	if (nm_device_is_802_3_ethernet (dev))
-		nm_device_802_3_ethernet_set_address (NM_DEVICE_802_3_ETHERNET (dev));
-	else if (nm_device_is_802_11_wireless (dev))
-		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (dev));
+	nm_device_update_hw_address (dev);
 
 	/* Grab IP config data for this device from the system configuration files */
 	dev->priv->system_config_data = nm_system_device_get_system_config (dev, app_data);
@@ -255,6 +252,8 @@ nm_device_init (NMDevice * self)
 	self->priv->loop = NULL;
 	self->priv->worker = NULL;
 	self->priv->worker_started = FALSE;
+
+	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 }
 
 static guint32
@@ -1726,6 +1725,42 @@ nm_device_update_ip4_address (NMDevice *self)
 }
 
 
+void
+nm_device_get_hw_address (NMDevice *self,
+                          struct ether_addr *addr)
+{
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (addr != NULL);
+
+	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
+}
+
+void
+nm_device_update_hw_address (NMDevice *self)
+{
+	struct ifreq req;
+	NMSock *sk;
+	int ret;
+
+	g_return_if_fail (self != NULL);
+
+	sk = nm_dev_sock_open (self, DEV_GENERAL, __FUNCTION__, NULL);
+	if (!sk)
+		return;
+	memset (&req, 0, sizeof (struct ifreq));
+	strncpy (req.ifr_name, nm_device_get_iface (self), sizeof (req.ifr_name) - 1);
+
+	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
+	if (ret)
+		goto out;
+
+	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+
+out:
+	nm_dev_sock_close (sk);
+}
+
+
 /*
  * nm_device_set_up_down
  *
@@ -1744,10 +1779,7 @@ nm_device_set_up_down (NMDevice *self,
 	 * Make sure that we have a valid MAC address, some cards reload firmware when they
 	 * are brought up.
 	 */
-	if (nm_device_is_802_3_ethernet (self))
-		nm_device_802_3_ethernet_set_address (NM_DEVICE_802_3_ETHERNET (self));
-	else if (nm_device_is_802_11_wireless (self))
-		nm_device_802_11_wireless_set_address (NM_DEVICE_802_11_WIRELESS (self));
+	nm_device_update_hw_address (self);
 }
 
 

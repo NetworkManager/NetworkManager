@@ -278,11 +278,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
   struct ether_addr hw_addr;
   unsigned char eui[8];
 
-  if (nm_device_is_802_3_ethernet (dev))
-    nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
-  else if (nm_device_is_802_11_wireless (dev))
-    nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
-
+  nm_device_get_hw_address (dev, &hw_addr);
   memcpy (eui, &(hw_addr.ether_addr_octet), sizeof (hw_addr.ether_addr_octet));
   memmove(eui+5, eui+3, 3);
   eui[3] = 0xff;

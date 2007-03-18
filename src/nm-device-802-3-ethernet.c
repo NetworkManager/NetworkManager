@@ -24,7 +24,6 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <net/ethernet.h>
 #include <stdlib.h>
 
 #include "nm-device-802-3-ethernet.h"
@@ -42,7 +41,6 @@ struct _NMDevice8023EthernetPrivate
 {
 	gboolean	dispose_has_run;
 
-	struct ether_addr	hw_addr;
 	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
@@ -64,8 +62,6 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 {
 	self->priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
-
-	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 }
 
 static void
@@ -181,55 +177,6 @@ real_update_link (NMDevice *dev)
 
 out:
 	nm_device_set_active_link (NM_DEVICE (self), have_link);
-}
-
-
-/*
- * nm_device_802_3_ethernet_get_address
- *
- * Get a device's hardware address
- *
- */
-void
-nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_addr *addr)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (addr != NULL);
-
-	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
-}
-
-
-/*
- * nm_device_802_3_ethernet_set_address
- *
- * Set a device's hardware address
- *
- */
-void
-nm_device_802_3_ethernet_set_address (NMDevice8023Ethernet *self)
-{
-	NMDevice *dev = NM_DEVICE (self);
-	struct ifreq req;
-	NMSock *sk;
-	int ret;
-
-	g_return_if_fail (self != NULL);
-
-	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
-	if (!sk)
-		return;
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
-
-	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret)
-		goto out;
-
-	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-
-out:
-	nm_dev_sock_close (sk);
 }
 
 

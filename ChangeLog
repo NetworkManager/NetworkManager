@@ -1,3 +1,8 @@
+2007-03-17  Dan Williams  <dcbw@redhat.com>
+
+	Consolidate common code for updating and getting the hardware address
+	into nm-device.c.
+
 2007-03-13  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo <tambet@ximian.com>

@@ -24,7 +24,6 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
-#include <net/ethernet.h>
 #include <iwlib.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -63,8 +62,6 @@ struct _NMDevice80211WirelessPrivate
 {
 	gboolean	dispose_has_run;
 	gboolean	is_initialized;
-
-	struct ether_addr	hw_addr;
 
 	char *			cur_essid;
 	gint8			strength;
@@ -385,7 +382,6 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv->dispose_has_run = FALSE;
 	self->priv->is_initialized = FALSE;
 
-	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 	self->priv->supplicant.pid = -1;
 }
 
@@ -702,56 +698,6 @@ nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
 		nm_ap_unref (dst_ap);
 	}
 	nm_ap_list_iter_free (iter);
-}
-
-
-/*
- * nm_device_802_11_wireless_get_address
- *
- * Get a device's hardware address
- *
- */
-void
-nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
-                                       struct ether_addr *addr)
-{
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (addr != NULL);
-
-	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
-}
-
-
-/*
- * nm_device_802_11_wireless_set_address
- *
- * Set a device's hardware address
- *
- */
-void
-nm_device_802_11_wireless_set_address (NMDevice80211Wireless *self)
-{
-	NMDevice *dev = NM_DEVICE (self);
-	struct ifreq req;
-	NMSock *sk;
-	int ret;
-
-	g_return_if_fail (self != NULL);
-
-	sk = nm_dev_sock_open (dev, DEV_GENERAL, __FUNCTION__, NULL);
-	if (!sk)
-		return;
-	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
-
-	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret)
-		goto out;
-
-	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-
-out:
-	nm_dev_sock_close (sk);
 }
 
 

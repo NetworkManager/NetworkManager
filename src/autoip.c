@@ -226,12 +226,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	memset (&saddr, 0, sizeof (saddr));
 	strncpy (saddr.sa_data, nm_device_get_iface (dev), sizeof (saddr.sa_data));
 
-	if (nm_device_is_802_3_ethernet (dev))
-		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
-	else if (nm_device_is_802_11_wireless (dev))
-		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
-	else
-		goto out;
+	nm_device_get_hw_address (dev, &addr);
 
 	/* open an ARP socket */
 	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)

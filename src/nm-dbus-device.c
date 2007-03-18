@@ -123,10 +123,7 @@ static DBusMessage *nm_dbus_device_get_hw_address (DBusConnection *connection, D
 		char *			ptr = &char_addr[0];
 
 		memset (&addr, 0, sizeof (struct ether_addr));
-		if (nm_device_is_802_3_ethernet (dev))
-			nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
-		else if (nm_device_is_802_11_wireless (dev))
-			nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
+		nm_device_get_hw_address (dev, &addr);
 		memset (char_addr, 0, 20);
 		iw_ether_ntop (&addr, char_addr);
 		dbus_message_append_args (reply, DBUS_TYPE_STRING, &ptr, DBUS_TYPE_INVALID);
@@ -386,10 +383,7 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 		guint32			secondary_dns_addr = 0;
 
 		memset (hw_addr_buf, 0, 20);
-		if (nm_device_is_802_3_ethernet (dev))
-			nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &hw_addr);
-		else if (nm_device_is_802_11_wireless (dev))
-			nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &hw_addr);
+		nm_device_get_hw_address (dev, &hw_addr);
 		iw_ether_ntop (&hw_addr, hw_addr_buf);
 
 		ip4config = nm_device_get_ip4_config (dev);
