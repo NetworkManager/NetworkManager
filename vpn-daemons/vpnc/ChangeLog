@@ -1,3 +1,7 @@
+2007-03-19  Kjartan Maraas  <kmaraas@gnome.org>
+
+	* configure.in: Add nb to ALL_LINGUAS.
+
 2007-03-16  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* cconfiure.in: Added ca to ALL_LINGUAS.
