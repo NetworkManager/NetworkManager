@@ -1,0 +1,218 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: networkmanager.networkmanager-0-6-0-release.pot\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-03-19 15:44+0000\n"
+"PO-Revision-Date: 2007-03-20 10:17+0530\n"
+"Last-Translator: sonam pelden <sonaa_peldn@yahoo.com>\n"
+"Language-Team: Dzongkha <pgeyleg@dit.gov.bt>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Poedit-Language: Dzongkha\n"
+"X-Poedit-Country: Bhutan\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
+msgid "Cannot add VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ཁ་སྐོང་བརྐྱབ་མ་ཚུགས་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
+msgid "No suitable VPN software was found on your system. Contact your system administrator."
+msgstr "ཁྱོད་ཀྱི་རིམ་ལུགས་གུ་འོས་འབབ་ལྡན་པའི་ཝི་པི་ཨེན་མཉེན་ཆས་ཐོབ་མ་ཚུགས། ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་ལུ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
+msgid "Cannot import VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ནང་འདྲེན་འབད་མ་ཚུགས་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
+#, c-format
+msgid "Cannot find suitable software for VPN connection type '%s' to import the file '%s'. Contact your system administrator."
+msgstr "ཡིག་སྣོད་'%s'ནང་འདྲེན་འབད་ནི་ལུ་ ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་ '%s'གི་དོན་ལུ་མཉེན་ཆས་འོས་འབབ་ལྡན་པ་འདི་ཐོབ་མ་ཚུགས།  ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་ལུ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་'%s'སླར་འདྲེན་འབདཝ་ད་འཛོལ་བ་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
+#, c-format
+msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་དབྱེ་བ་'%s'གི་དོན་ལུ་  ཡུ་ཨའི་ཡིག་སྣོད་ཚུ་ཐོབ་མ་ཚུགས།  ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འདི་ལུ་འབྲེལ་བ་འཐབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་བཏོན་གཏང་ག\"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
+#, c-format
+msgid "All information about the VPN connection \"%s\" will be lost and you may need your system administrator to provide information to create a new connection."
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་\"%s\" གི་སྐོར་ལས་བརྡ་དོན་ཆ་མཉམ་བརླག་སྟོར་ཞུགས་ནི་དང་  མཐུད་ལམ་གསརཔ་ཅིག་གསར་བསྐྲུན་འབད་ནི་ལུ་  བརྡ་དོན་བྱིན་མི་ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འདི་དགོཔ་ཨིན།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
+msgid "Unable to load"
+msgstr "མངོན་གསལ་འབད་མ་ཚུགས་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "དགོ་པའི་བྱུང་ཁུངས་ (གེལེཌི་ཡིག་སྣོད་) ལ་ལོ་ཅིག་ཐོབ་མི་ཚུགས!"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
+msgid "Edit VPN Connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཞུན་དག་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་གསརཔ་ཅིག་ཁ་སྐོང་བརྐྱབ་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "ཁྱོད་ཀྱིས་ཝི་པི་ཨེན་མཐེད་ལམ་ག་བཟུམ་གསར་བསྐྲུན་འབད་ནི་ཨིན་ན་གདམ་ཁ་བརྐྱབ།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "མཐུད:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་གསར་བསྐྲུན་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ ༢་ཀྱི་ - ༡་གསར་བསྐྲུན་འབད་ "
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ ༢་ཀྱི་ -༢་གསར་བསྐྲུན་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "སེལ་འཐུ་འབད་དེ་ཡོད་པའི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་བཏོན་གཏང་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "ཕྱིར་འདྲེན་འབད། (_x)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "སེལ་འཐུ་འབད་དེ་ཡོད་པའི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ཞུན་དག་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "ཝི་པི་ཨེན་སྒྲིག་སྟངས་ཚུ་ཡིག་སྣོད་གཅིག་ལུ་ཕྱིར་འདྲེན་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "སེལ་འཐུ་འབད་དེ་ཡོད་པའི་ཝི་པི་ཨེན་མཐུད་ལམ་འདི་ཡིག་སྣོད་གཅིག་ལུ་ཕྱིར་འདྲེན་འབད་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་གསར་བསྐྲུན་འབད་ཚར་ནུག་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "བར་ཅུ་ཡལ་སྒེར་སྡེ་ཡོངས་འབྲེལ་མཐུད་ལམ་ཚུ་འཛིན་སྐྱོང་འཐབ་"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information."
+msgstr ""
+"ལས་རོགས་འདི་གིས་  མཐུད་ལམ་གསར་བསྐྲུན་འབད་ནི་ལས་རྒྱུད་དེ་ བར་ཅུ་ཡལ་སྒེར་སྡེའི་ཡོངས་འབྲེལ་(ཝི་པི་ཨེན་)ཅིག་ལུ་ཁྱོད་འཁྱིདཔ་ཨིན།\n"
+"\n"
+"དེ་ལུ་བརྡ་དོན་ལ་ལོ་ཅིག་དགོཔ་ཨིན་  དེ་ཡང་  ཨའི་པི་ཁ་བྱང་དང་གསང་བ་བཟུམ་ཨིན།  བརྡ་དོན་འདི་ཐོབ་ནི་ལུ་ཁྱོད་རའི་རིམ་ལུགས་བདག་སྐྱོང་པ་འདི་ལྟ་གནང་།"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "ཝི་པི་ཨེན་མཐུད་ལམ་ཚུ་"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "༤༠་-བིཊི་ཌབ་ལུ་ཨི་པི་"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "༡༠༤-བིཊི་ཌབ་ལུ་ཨི་པི་"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "ཌབ་ལུ་པི་ཨེ་ཊི་ཀེ་ཨའི་པི་"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "ཌབ་ལུ་པི་ཨེ་  སི་སི་ཨེམ་པི་"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "ཌབ་ལུ་པི་ཨེ་རང་བཞིན་"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "ཌབ་ལུ་པི་ཨེ་༢་  ཊི་ཀེ་ཨའི་པི་"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "ཌབ་ལུ་པི་ཨེ་༢་ སི་སི་ཨེམ་པི་"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "ཌབ་ལུ་པི་ཨེ་༢་ རང་བཞིན་"
+
+#: ../src/nm-ap-security.c:338
+msgid "none"
+msgstr "ཅི་མེད་"
+
+#: ../src/nm-netlink-monitor.c:170
+#, c-format
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr "ཝིརཌ་ཨི་ཐར་ནེཊི་ཐབས་འཕྲུལ་-%sལྟ་རྟོག་འབད་ནིའི་དོན་ལུ་  ནེཊི་འབྲེལ་ལམ་སོ་ཀེཊི་གསར་བསྐྲུན་འབད་མ་ཚུགས།"
+
+#: ../src/nm-netlink-monitor.c:188
+#, c-format
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr "ཝིརཌི་ཨི་ཐར་ནེཊེ་ཐབས་འཕྲུལ་ཚུ་-%sལྟ་རྟོག་འབད་ནིའི་དོན་ལུ་  ནེཊི་འབྲེལ་ལམ་སོ་ཀེཊི་ལུ་བསྡམ་མ་ཚུགས།"
+
+#: ../src/nm-netlink-monitor.c:426
+msgid "operation took too long"
+msgstr "བཀོལ་སྤྱོད་འདི་གནམ་མེད་ས་མེད་རིངམ་འགོརཝ་ཨིན་"
+
+#: ../src/nm-netlink-monitor.c:523
+msgid "received data from wrong type of sender"
+msgstr "གནས་སྡུད་འདི་གཏང་མི་དབྱེ་བ་ཕྱི་འགྱུར་ལས་ཐོབ་ནུག་"
+
+#: ../src/nm-netlink-monitor.c:536
+msgid "received data from unexpected sender"
+msgstr "གནས་སྡུད་འདི་རེ་བ་མེད་པའི་གཏང་མི་ལས་ཐོབ་ནུག་"
+
+#: ../src/nm-netlink-monitor.c:665
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "སོ་ཀེཊི་ལུ་གནས་སྡུད་འདི་གནམ་མེད་ས་མེད་གཏང་ཡོདཔ་དང་  ལ་ལོ་ཅིག་བརླག་སྟོར་ཞུགས་ནུག་"
+
+#: ../src/nm-netlink-monitor.c:775
+msgid "error occurred while waiting for data on socket"
+msgstr "སོ་ཀེཊི་གུ་གནས་སྡུད་ཀྱི་དོན་ལུ་བསྒུགཔ་ད་འཛོལ་བ་བྱུང་ཡོདཔ་"
+
+#: ../src/nm-ap-security-wpa-eap.c:96
+#: ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "ཌབ་ལུ་པི་ཨེ་༢་ ཚོང་ལས་"
+
+#: ../src/nm-ap-security-wpa-eap.c:98
+#: ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "ཌབ་ལུ་པི་ཨེ་ཚོང་ལས་"
+
+#: ../src/nm-ap-security-leap.c:66
+#: ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "ཨེལ་ཨི་ཨེ་པི་"
+
