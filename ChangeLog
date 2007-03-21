@@ -1,3 +1,7 @@
+2007-03-21  Pema Geyleg  <pema.geyleg@gmail.com>
+
+	*configure.in: Added 'dz' to the list
+
 2007-03-17  Dan Williams  <dcbw@redhat.com>
 
 	Consolidate common code for updating and getting the hardware address
