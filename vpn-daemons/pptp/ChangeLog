@@ -1,3 +1,7 @@
+2007-03-21  Pema Geyleg  <pema.geyleg@gmail.com>
+
+	* configure.in: Added 'dz' to ALL_LINGUAS
+
 2007-03-16  Josep Puigdemont i Casamajó  <josep.puigdemont@gmail.com>
 
 	* configure.in: Added ca to ALL_LINGUAS.
