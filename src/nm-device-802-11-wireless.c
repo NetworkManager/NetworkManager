@@ -1943,9 +1943,9 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		 * be from a previous scan so the time_last_seen's are not equal.  Update
 		 * encryption, authentication method, strength, and the time_last_seen. */
 
-		const char *	devlist_essid = nm_ap_get_essid (list_ap);
-		const char *	merge_essid = nm_ap_get_essid (merge_ap);
-		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const char *devlist_essid = nm_ap_get_essid (list_ap);
+		const char *merge_essid = nm_ap_get_essid (merge_ap);
+		const glong	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
 		/* Did the AP's name change? */
 		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
@@ -1985,13 +1985,13 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		 * equal, the merge AP and the list AP come from the same scan.
 		 * Update the time_last_seen. */
 
-		const GTimeVal *	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
-		const GTimeVal *	list_ap_seen = nm_ap_get_last_seen (list_ap);
-		const int			merge_ap_strength = nm_ap_get_strength (merge_ap);
+		const glong merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const glong list_ap_seen = nm_ap_get_last_seen (list_ap);
+		const int	merge_ap_strength = nm_ap_get_strength (merge_ap);
 
 		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
 
-		if (!((list_ap_seen->tv_sec == merge_ap_seen->tv_sec)
+		if (!((list_ap_seen == merge_ap_seen)
 			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength)))
 		{
 			nm_ap_set_strength (list_ap, merge_ap_strength);
@@ -2038,10 +2038,10 @@ cull_scan_list (NMDevice80211Wireless * self)
 	 * thrice the inactive scan interval.
 	 */
 	while ((outdated_ap = nm_ap_list_iter_next (iter))) {
-		const GTimeVal * ap_time = nm_ap_get_last_seen (outdated_ap);
-		gboolean         keep_around = FALSE;
-		guint            prune_interval_s;
-		const char *     ssid;
+		const glong  ap_time = nm_ap_get_last_seen (outdated_ap);
+		gboolean     keep_around = FALSE;
+		guint        prune_interval_s;
+		const char * ssid;
 
 		/* Don't ever prune the AP we're currently associated with */
 		ssid = nm_ap_get_essid (outdated_ap);
@@ -2052,7 +2052,7 @@ cull_scan_list (NMDevice80211Wireless * self)
 
 		prune_interval_s = SCAN_INTERVAL_MAX * 3;
 
-		if (!keep_around && (ap_time->tv_sec + prune_interval_s < cur_time.tv_sec))
+		if (!keep_around && (ap_time + prune_interval_s < cur_time.tv_sec))
 			outdated_list = g_slist_append (outdated_list, outdated_ap);
 	}
 	nm_ap_list_iter_free (iter);

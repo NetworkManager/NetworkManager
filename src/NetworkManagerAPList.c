@@ -526,7 +526,7 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	nm_info ("AP_LIST_PRINT: printing members of '%s'", name);
 	while ((ap = nm_ap_list_iter_next (iter))) {
 		const GTimeVal * timestamp = nm_ap_get_timestamp (ap);
-		const GTimeVal * seen = nm_ap_get_last_seen (ap);
+		const glong		 seen = nm_ap_get_last_seen (ap);
 		NMAPSecurity *   security = nm_ap_get_security (ap);
 		const char *     key = "";
 		const struct ether_addr * eth_addr = nm_ap_get_address (ap);
@@ -552,7 +552,7 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 		         nm_ap_get_rate (ap),
 		         nm_ap_get_invalid (ap),
 		         nm_ap_get_mode (ap),
-		         seen->tv_sec);
+		         seen);
 		i++;
 	}
 	nm_info ("AP_LIST_PRINT: done");

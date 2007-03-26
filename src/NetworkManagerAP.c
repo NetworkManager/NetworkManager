@@ -68,7 +68,7 @@ typedef struct
 										 * implies Ad-Hoc, but not necessarily
 										 * the other way around.
 										 */
-	GTimeVal			last_seen;	/* Last time the AP was seen in a scan */
+	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
 
 	/* Things from user prefs/NetworkManagerInfo */
 	gboolean			fallback;
@@ -224,6 +224,7 @@ static void
 nm_ap_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
+	guint32 all_caps;
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
@@ -234,12 +235,30 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	/* properties */
 
+	all_caps =   NM_802_11_CAP_NONE
+	           | NM_802_11_CAP_PROTO_NONE
+	           | NM_802_11_CAP_PROTO_WEP
+	           | NM_802_11_CAP_PROTO_WPA
+	           | NM_802_11_CAP_PROTO_WPA2
+	           | NM_802_11_CAP_RESERVED1
+	           | NM_802_11_CAP_RESERVED2
+	           | NM_802_11_CAP_KEY_MGMT_PSK
+	           | NM_802_11_CAP_KEY_MGMT_802_1X
+	           | NM_802_11_CAP_RESERVED3
+	           | NM_802_11_CAP_RESERVED4
+	           | NM_802_11_CAP_RESERVED5
+	           | NM_802_11_CAP_RESERVED6
+	           | NM_802_11_CAP_CIPHER_WEP40
+	           | NM_802_11_CAP_CIPHER_WEP104
+	           | NM_802_11_CAP_CIPHER_TKIP
+	           | NM_802_11_CAP_CIPHER_CCMP;
+
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
 		 g_param_spec_uint (NM_AP_CAPABILITIES,
 							"Capabilities",
 							"Capabilities",
-							NM_802_11_CAP_NONE, NM_802_11_CAP_CIPHER_CCMP, NM_802_11_CAP_PROTO_NONE,
+							NM_802_11_CAP_NONE, all_caps, NM_802_11_CAP_PROTO_NONE,
 							G_PARAM_READWRITE));
 
 	g_object_class_install_property
@@ -469,7 +488,7 @@ nm_ap_new_from_properties (GHashTable *properties)
 	g_hash_table_foreach (properties, foreach_property_cb, ap);
 
 	g_get_current_time (&cur_time);
-	nm_ap_set_last_seen (ap, &cur_time);
+	nm_ap_set_last_seen (ap, cur_time.tv_sec);
 
 	if (!nm_ap_get_essid (ap))
 		nm_ap_set_broadcast (ap, FALSE);
@@ -814,18 +833,18 @@ void nm_ap_set_broadcast (NMAccessPoint *ap, gboolean broadcast)
  * APs older than a certain date are dropped from the list.
  *
  */
-const GTimeVal *nm_ap_get_last_seen (const NMAccessPoint *ap)
+glong nm_ap_get_last_seen (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return &NM_AP_GET_PRIVATE (ap)->last_seen;
+	return NM_AP_GET_PRIVATE (ap)->last_seen;
 }
 
-void nm_ap_set_last_seen (NMAccessPoint *ap, const GTimeVal *last_seen)
+void nm_ap_set_last_seen (NMAccessPoint *ap, const glong last_seen)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 
-	NM_AP_GET_PRIVATE (ap)->last_seen = *last_seen;
+	NM_AP_GET_PRIVATE (ap)->last_seen = last_seen;
 }
 
 

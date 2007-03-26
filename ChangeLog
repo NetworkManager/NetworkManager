@@ -1,3 +1,19 @@
+2007-03-26  Tambet Ingo  <tambet@ximian.com>
+
+	* src/vpn-manager/nm-dbus-vpn.c (dbus_message_handler): Implement DBUS message
+	handler for VPN.
+
+	* src/vpn-manager/nm-vpn-manager.c (nm_vpn_manager_new): Register VPN interface
+	on DBUS again.
+
+2007-03-26  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAPList.c
+	* src/nm-device-802-11-wireless.c
+	* src/NetworkManagerAP.c:
+		- Store last seen as glong instead of GTimeVal.
+		- Fix the upper bound of capabilities, it's a bitfield.
+
 2007-03-16  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-device.c (nm_device_get_description): Implement.

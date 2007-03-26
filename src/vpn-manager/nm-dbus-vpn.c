@@ -901,6 +901,32 @@ nm_dbus_vpn_deactivate_connection (DBusConnection *connection,
 }
 
 
+static DBusHandlerResult
+dbus_message_handler (DBusConnection *con, DBusMessage *message, void *user_data)
+{
+	DBusMessage *reply = NULL;
+	DBusHandlerResult result = DBUS_HANDLER_RESULT_HANDLED;
+
+	if (dbus_message_has_member (message, "getVPNConnections"))
+		reply = nm_dbus_vpn_get_vpn_connections (con, message, user_data);
+	else if (dbus_message_has_member (message, "getVPNConnectionProperties"))
+		reply = nm_dbus_vpn_get_vpn_connection_properties (con, message, user_data);
+	else if (dbus_message_has_member (message, "activateVPNConnection"))
+		reply = nm_dbus_vpn_activate_connection (con, message, user_data);
+	else if (dbus_message_has_member (message, "deactivateVPNConnection"))
+		reply = nm_dbus_vpn_deactivate_connection (con, message, user_data);
+	else
+		result = DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (reply) {
+		dbus_connection_send (con, reply, NULL);
+		dbus_message_unref (reply);
+	}
+
+	return result;
+}
+
+
 /*
  * nm_dbus_vpn_methods_setup
  *
@@ -908,20 +934,20 @@ nm_dbus_vpn_deactivate_connection (DBusConnection *connection,
  * org.freedesktop.NetworkManager.VPNConnections object.
  *
  */
-NMDbusMethodList *nm_dbus_vpn_methods_setup (NMVPNManager *mgr)
+gboolean
+nm_dbus_vpn_methods_setup (NMVPNManager *mgr)
 {
-	NMDbusMethodList *	list;
+	NMDBusManager *dbus_mgr;
+	gboolean success;
+	DBusObjectPathVTable vtable = { NULL, &dbus_message_handler, NULL, NULL, NULL, NULL };
 
-	list = nm_dbus_method_list_new (NM_DBUS_PATH_VPN, FALSE, mgr, NULL);
- 
- 	nm_dbus_method_list_add_method (list, "getVPNConnections",
- 	                                nm_dbus_vpn_get_vpn_connections);
-	nm_dbus_method_list_add_method (list, "getVPNConnectionProperties",
-	                                nm_dbus_vpn_get_vpn_connection_properties);
-	nm_dbus_method_list_add_method (list, "activateVPNConnection",
-	                                nm_dbus_vpn_activate_connection);
-	nm_dbus_method_list_add_method (list, "deactivateVPNConnection",
-	                                nm_dbus_vpn_deactivate_connection);
+	dbus_mgr = nm_dbus_manager_get ();
+	success = dbus_connection_register_object_path (nm_dbus_manager_get_dbus_connection (dbus_mgr),
+													NM_DBUS_PATH_VPN, &vtable, mgr);
+	if (!success)
+		nm_warning ("Could not register a dbus handler for VPN. Not enough memory?");
 
-	return list;
+	g_object_unref (dbus_mgr);
+
+	return success;
 }

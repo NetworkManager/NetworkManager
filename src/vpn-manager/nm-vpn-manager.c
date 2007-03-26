@@ -44,7 +44,6 @@ struct NMVPNManager
 	GSList *			connections;
 
 	NMVPNActRequest *	act_req;
-	NMDbusMethodList *	dbus_methods;
 	gulong				device_signal_id;
 };
 
@@ -122,7 +121,11 @@ NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
 	                                                (GDestroyNotify) nm_vpn_service_unref);
 	load_services (manager, manager->service_table);
 
-	manager->dbus_methods = nm_dbus_vpn_methods_setup (manager);
+	if (!nm_dbus_vpn_methods_setup (manager)) {
+		nm_vpn_manager_dispose (manager);
+		return NULL;
+	}
+
 	dbus_mgr = nm_dbus_manager_get ();
 
 	g_signal_connect (dbus_mgr,
@@ -139,8 +142,6 @@ NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
 	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE))
 		nm_dbus_vpn_schedule_vpn_connections_update (manager);
 
-	/* FIXME */
-/* 	nm_dbus_manager_register_method_list (dbus_mgr, manager->dbus_methods); */
 	g_object_unref (dbus_mgr);
 
 	return manager;
@@ -165,7 +166,6 @@ void nm_vpn_manager_dispose (NMVPNManager *manager)
 
 	g_hash_table_destroy (manager->service_table);
 
-	nm_dbus_method_list_unref (manager->dbus_methods);
 	g_object_unref (manager->nm_manager);
 
 	memset (manager, 0, sizeof (NMVPNManager));

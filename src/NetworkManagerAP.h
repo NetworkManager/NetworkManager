@@ -107,8 +107,8 @@ void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
 gboolean			nm_ap_get_broadcast		(NMAccessPoint *ap);
 void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
 
-const GTimeVal *	nm_ap_get_last_seen		(const NMAccessPoint *ap);
-void				nm_ap_set_last_seen		(NMAccessPoint *ap, const GTimeVal *last_seen);
+glong			nm_ap_get_last_seen		(const NMAccessPoint *ap);
+void				nm_ap_set_last_seen		(NMAccessPoint *ap, const glong last_seen);
 
 gboolean			nm_ap_get_user_created	(const NMAccessPoint *ap);
 void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
