@@ -199,7 +199,6 @@ get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if
 NMAccessPoint *
 nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 {
-	GError *err = NULL;
 	char *path;
 	NMAccessPoint *ap = NULL;
 
@@ -214,6 +213,16 @@ nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 	}
 
 	return ap;
+}
+
+NMAccessPoint *
+nm_device_802_11_wireless_get_network_by_path (NMDevice80211Wireless *device,
+											   const char *object_path)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
+	g_return_val_if_fail (object_path != NULL, NULL);
+
+	return get_network (device, object_path, TRUE);
 }
 
 static void

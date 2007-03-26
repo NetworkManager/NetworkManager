@@ -5,8 +5,10 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
-#include "NetworkManager.h"
+#include <NetworkManager.h>
+#include <NetworkManagerVPN.h>
 #include "nm-device.h"
+#include "nm-vpn-connection.h"
 
 #define NM_TYPE_CLIENT            (nm_client_get_type ())
 #define NM_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CLIENT, NMClient))
@@ -27,6 +29,10 @@ typedef struct {
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
 	void (*state_change) (NMClient *client, NMState state);
+
+	void (*vpn_connection_added) (NMClient *client, NMVPNConnection *connection);
+	void (*vpn_connection_removed) (NMClient *client, NMVPNConnection *connection);
+	void (*vpn_state_change) (NMClient *client, NMVPNActStage state);
 } NMClientClass;
 
 GType nm_client_get_type (void);
@@ -36,9 +42,23 @@ NMClient *nm_client_new                  (void);
 
 gboolean  nm_client_manager_is_running   (NMClient *client);
 GSList   *nm_client_get_devices          (NMClient *client);
+NMDevice *nm_client_get_device_by_path   (NMClient *client,
+										  const char *object_path);
+
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
 NMState   nm_client_get_state            (NMClient *client);
 void      nm_client_sleep                (NMClient *client, gboolean sleep);
+
+/* VPN */
+
+GSList   *nm_client_get_vpn_connections  (NMClient *client);
+NMVPNConnection *nm_client_get_vpn_connection_by_name (NMClient *client,
+													   const char *name);
+
+void      nm_client_remove_vpn_connection (NMClient *client,
+										   NMVPNConnection *connection);
+
+NMVPNActStage nm_client_get_vpn_state    (NMClient *client);
 
 #endif /* NM_CLIENT_H */

@@ -34,6 +34,9 @@ int                   nm_device_802_11_wireless_get_bitrate   (NMDevice80211Wire
 guint32               nm_device_802_11_wireless_get_capabilities (NMDevice80211Wireless *device);
 NMAccessPoint        *nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device);
 
+NMAccessPoint        *nm_device_802_11_wireless_get_network_by_path (NMDevice80211Wireless *device,
+																	 const char *object_path);
+
 GSList               *nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device);
 void                  nm_device_802_11_wireless_activate     (NMDevice80211Wireless *device,
 															  NMAccessPoint *ap,

@@ -1,5 +1,10 @@
 2007-03-26  Tambet Ingo  <tambet@ximian.com>
 
+	* libnm-glib/nm-vpn-connection.h: 
+	* libnm-glib/nm-vpn-connection.c: Implement.
+
+	* libnm-glib/nm-client.c: Add VPN support.
+
 	* src/vpn-manager/nm-dbus-vpn.c (dbus_message_handler): Implement DBUS message
 	handler for VPN.
 

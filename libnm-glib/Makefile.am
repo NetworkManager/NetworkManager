@@ -21,7 +21,8 @@ libnminclude_HEADERS = \
 	nm-device-802-3-ethernet.h \
 	nm-device-802-11-wireless.h \
 	nm-access-point.h \
-	nm-ip4-config.h
+	nm-ip4-config.h \
+	nm-vpn-connection.h
 
 libnm_glib_la_SOURCES = \
 	nm-client.c		\
@@ -33,6 +34,8 @@ libnm_glib_la_SOURCES = \
 	nm-ip4-config.c		\
 	nm-utils.c		\
 	nm-utils.h		\
+	nm-vpn-connection.c	\
+	nm-marshal-main.c	\
 	$(BUILT_SOURCES)
 
 libnm_glib_la_LDFLAGS = $(GLIB_LIBS) $(DBUS_LIBS)
@@ -43,6 +46,20 @@ AM_CPPFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_LDADD = $(GLIB_LIBS) $(DBUS_LIBS) $(top_builddir)/libnm-glib/libnm-glib.la
+
+nm-marshal.h: Makefile.am nm-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \
+	xgen-gmh \
+	&& (cmp -s xgen-gmh nm-marshal.h || cp xgen-gmh nm-marshal.h) \
+	&& rm -f xgen-gmh xgen-gmh~
+
+nm-marshal.c: Makefile.am nm-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --body > \
+	xgen-gmc \
+	&& cp xgen-gmc nm-marshal.c \
+	&& rm -f xgen-gmc xgen-gmc~
+
+nm-marshal-main.c: nm-marshal.c nm-marshal.h
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager.xml
 	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=nm-client-bindings.h $(top_srcdir)/introspection/nm-manager.xml
@@ -65,7 +82,7 @@ pkgconfig_DATA = libnm-glib.pc
 
 DISTCLEANFILES = libnm-glib.pc
 
-EXTRA_DIST = libnm-glib.pc.in
+EXTRA_DIST = libnm-glib.pc.in nm-marshal.list
 
 CLEANFILES = \
 	$(BUILT_SOURCES)
