@@ -5,7 +5,9 @@ BUILT_SOURCES = \
 	nm-device-bindings.h \
 	nm-device-802-3-ethernet-bindings.h \
 	nm-device-802-11-wireless-bindings.h \
-	nm-access-point-bindings.h
+	nm-access-point-bindings.h \
+	nm-marshal.h \
+	nm-marshal.c
 
 lib_LTLIBRARIES = libnm-glib.la
 
@@ -35,8 +37,7 @@ libnm_glib_la_SOURCES = \
 	nm-utils.c		\
 	nm-utils.h		\
 	nm-vpn-connection.c	\
-	nm-marshal-main.c	\
-	$(BUILT_SOURCES)
+	nm-marshal-main.c
 
 libnm_glib_la_LDFLAGS = $(GLIB_LIBS) $(DBUS_LIBS)
 

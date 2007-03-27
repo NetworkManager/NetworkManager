@@ -1,3 +1,7 @@
+2007-03-27  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-glib/Makefile.am: Fix the build issue.
+
 2007-03-26  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-vpn-connection.h: 
