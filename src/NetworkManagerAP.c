@@ -192,7 +192,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ENCRYPTED:
-		g_value_set_boolean (value, priv->capabilities & NM_802_11_CAP_PROTO_NONE);
+		g_value_set_boolean (value, !(priv->capabilities & NM_802_11_CAP_PROTO_NONE));
 		break;
 	case PROP_ESSID:
 		g_value_set_string (value, priv->essid);
@@ -467,7 +467,10 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			}
 
 			if (val & IEEE80211_CAP_PRIVACY) {
-				if (nm_ap_get_capabilities (ap) & NM_802_11_CAP_PROTO_NONE)
+				guint cur_caps;
+
+				cur_caps = nm_ap_get_capabilities (ap);
+				if (cur_caps & NM_802_11_CAP_NONE || cur_caps & NM_802_11_CAP_PROTO_NONE)
 					nm_ap_add_capabilities_for_wep (ap);
 			}
 		}

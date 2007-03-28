@@ -1,3 +1,13 @@
+2007-03-28  Tambet Ingo  <tambet@ximian.com>
+
+	* src/supplicant-manager/nm-supplicant-config.c (get_hash_cb): Marshal the
+	data to correct types instead of always using string.
+
+	* src/NetworkManagerAP.c (get_property): AP is encrypted if capabilities does
+	_not_ have NM_802_11_CAP_PROTO_NONE.
+	(foreach_property_cb): Set AP capabilities if it's not set or if the protocol
+	is not set.
+
 2007-03-27  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/Makefile.am: Fix the build issue.

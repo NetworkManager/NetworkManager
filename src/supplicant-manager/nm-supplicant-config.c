@@ -20,7 +20,9 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 #include <glib.h>
+#include <dbus/dbus-glib.h>
 
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
@@ -192,10 +194,29 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 {
 	ConfigOption *opt = (ConfigOption *) value;
 	GValue *variant;
+	GArray *array;
 
 	variant = g_slice_new0 (GValue);
-	g_value_init (variant, G_TYPE_STRING);
-	g_value_set_string (variant, opt->value);
+
+	switch (opt->type) {
+	case TYPE_INT:
+		g_value_init (variant, G_TYPE_INT);
+		g_value_set_int (variant, atoi (opt->value));
+		break;
+	case TYPE_BYTES:
+		array = g_array_new (TRUE, TRUE, sizeof (char));
+		g_array_append_vals (array, opt->value, opt->len);
+		g_value_init (variant, dbus_g_type_get_collection ("GArray", G_TYPE_CHAR));
+		g_value_set_boxed (variant, array);
+		break;
+	case TYPE_KEYWORD:
+		g_value_init (variant, G_TYPE_STRING);
+		g_value_set_string (variant, opt->value);
+		break;
+	default:
+		g_slice_free (GValue, variant);
+		return;
+	}
 
 	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), variant);
 }
@@ -203,7 +224,10 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 static void
 destroy_hash_value (gpointer data)
 {
-	g_slice_free (GValue, data);
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
 }
 
 GHashTable *
