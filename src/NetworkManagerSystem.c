@@ -56,7 +56,12 @@
  * nm_system_device_set_ip4_route
  *
  */
-static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, int ip4_dest, int ip4_netmask, int mss)
+static gboolean
+nm_system_device_set_ip4_route (NMDevice *dev,
+                                int ip4_gateway,
+                                int ip4_dest,
+                                int ip4_netmask,
+                                int mss)
 {
 	NMSock *			sk;
 	gboolean			success = FALSE;
@@ -64,8 +69,7 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	struct sockaddr_in *p;
 	const char *		iface;
 	int				err;
-
-	iface = nm_device_get_iface (dev);
+	struct rtentry	rtent2;
 
 	/*
 	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
@@ -75,7 +79,9 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	if (ip4_gateway == 0)
 		return TRUE;
 
-	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
+	iface = nm_device_get_iface (dev);
+
+	if ((sk = nm_dev_sock_open (iface, NETWORK_CONTROL, __func__, NULL)) == NULL)
 		return FALSE;
 
 	memset (&rtent, 0, sizeof (struct rtentry));
@@ -93,63 +99,70 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	rtent.rt_window	= 0;
 	rtent.rt_flags		= RTF_UP | RTF_GATEWAY | (rtent.rt_window ? RTF_WINDOW : 0);
 
-	if (mss)
-	{
+	if (mss) {
 		rtent.rt_flags |= RTF_MTU;
 		rtent.rt_mtu = mss;
 	}
 
-	nm_ioctl_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
+	nm_ioctl_info ("%s: About to CADDRT\n", iface);
 	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-	nm_ioctl_info ("%s: About to CADDRT\n", nm_device_get_iface (dev));
-
-	if (err == -1)
-	{
-		if (errno == ENETUNREACH)	/* possibly gateway is over the bridge */
-		{						/* try adding a route to gateway first */
-			struct rtentry	rtent2;
-			
-			memset (&rtent2, 0, sizeof(struct rtentry));
-			p				= (struct sockaddr_in *)&rtent2.rt_dst;
-			p->sin_family		= AF_INET;
-			p				= (struct sockaddr_in *)&rtent2.rt_gateway;
-			p->sin_family		= AF_INET;
-			p->sin_addr.s_addr	= ip4_gateway;
-			p				= (struct sockaddr_in *)&rtent2.rt_genmask;
-			p->sin_family		= AF_INET;
-			p->sin_addr.s_addr	= 0xffffffff;
-			rtent2.rt_dev		= (char *)iface;
-			rtent2.rt_metric	= 0;
-			rtent2.rt_flags	= RTF_UP | RTF_HOST;
-
-			if (mss)
-			{
-				rtent2.rt_flags |= RTF_MTU;
-				rtent2.rt_mtu = mss;
-			}
-
-			nm_ioctl_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-			err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
-			nm_ioctl_info ("%s: About to CADDRT (2)\n", nm_device_get_iface (dev));
-
-			if (!err)
-			{
-				nm_ioctl_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-				err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
-				nm_ioctl_info ("%s: About to CADDRT (3)\n", nm_device_get_iface (dev));
-
-				if (!err)
-					success = TRUE;
-				else
-					nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, strerror (errno));
-			}
-		}
-		else
-			nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, strerror (errno));
-	}
-	else
+	nm_ioctl_info ("%s: About to CADDRT\n", iface);
+	if (err == 0) {
+		/* Everything good */
 		success = TRUE;
+		goto out;
+	}
 
+	if (errno != ENETUNREACH) {
+		nm_warning ("Failed to set IPv4 default route on '%s': %s",
+		            iface,
+		            strerror (errno));
+		goto out;
+	}
+		
+	/* Gateway might be over a bridge; try adding a route to gateway first */
+	memset (&rtent2, 0, sizeof(struct rtentry));
+	p				= (struct sockaddr_in *)&rtent2.rt_dst;
+	p->sin_family		= AF_INET;
+	p				= (struct sockaddr_in *)&rtent2.rt_gateway;
+	p->sin_family		= AF_INET;
+	p->sin_addr.s_addr	= ip4_gateway;
+	p				= (struct sockaddr_in *)&rtent2.rt_genmask;
+	p->sin_family		= AF_INET;
+	p->sin_addr.s_addr	= 0xffffffff;
+	rtent2.rt_dev		= (char *)iface;
+	rtent2.rt_metric	= 0;
+	rtent2.rt_flags	= RTF_UP | RTF_HOST;
+
+	if (mss) {
+		rtent2.rt_flags |= RTF_MTU;
+		rtent2.rt_mtu = mss;
+	}
+
+	/* Add route to gateway over bridge */
+	nm_ioctl_info ("%s: About to CADDRT (2)\n", iface);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent2);
+	nm_ioctl_info ("%s: About to CADDRT (2)\n", iface);
+	if (err) {
+		nm_warning ("Failed to add IPv4 default route on '%s': %s",
+		            iface,
+		            strerror (errno));
+		goto out;
+	}
+
+	/* Try adding the route again */
+	nm_ioctl_info ("%s: About to CADDRT (3)\n", iface);
+	err = ioctl (nm_dev_sock_get_fd (sk), SIOCADDRT, &rtent);
+	nm_ioctl_info ("%s: About to CADDRT (3)\n", iface);
+	if (!err) {
+		success = TRUE;
+	} else {
+		nm_warning ("Failed to set IPv4 default route on '%s': %s",
+		            iface,
+		            strerror (errno));
+	}
+
+out:
 	nm_dev_sock_close (sk);
 	return success;
 }

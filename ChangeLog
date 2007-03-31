@@ -1,3 +1,9 @@
+2007-03-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_ip4_route): clean up and fix argument
+			to nm_dev_sock_open()
+
 2007-03-28  Tambet Ingo  <tambet@ximian.com>
 
 	* src/supplicant-manager/nm-supplicant-config.c (get_hash_cb): Marshal the
