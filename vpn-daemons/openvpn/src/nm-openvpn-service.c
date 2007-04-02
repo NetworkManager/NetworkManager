@@ -1308,7 +1308,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 		goto out;
 	}
 
-	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "ptp_addr", ip4_ptp_address)) {
+	if (!nmu_dbus_dict_append_uint32 (&iter_dict, "ptp_addr", ip4_ptpaddr)) {
 		nm_warning ("couldn't append ptp_address to dict");
 		goto out;
 	}
