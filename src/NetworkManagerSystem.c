@@ -230,7 +230,7 @@ static struct nl_handle * new_nl_handle (void)
 	nl_handle_set_pid (nlh, (pthread_self() << 16 | getpid()));
 	if (nl_connect(nlh, NETLINK_ROUTE) < 0)
 	{
-		fprintf(stderr, "new_nl_handle: couldn't connecto to netlink: %s\n", nl_geterror());
+		nm_warning ("%s: couldn't connecto to netlink: %s", __func__, nl_geterror());
 		nl_handle_destroy (nlh);
 		nlh = NULL;
 	}
