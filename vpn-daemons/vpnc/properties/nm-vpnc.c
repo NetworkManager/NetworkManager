@@ -56,7 +56,6 @@ struct _NetworkManagerVpnUIImpl {
 	GtkEntry *w_domain;
 	GtkCheckButton *w_use_routes;
 	GtkEntry *w_routes;
-	GtkExpander *w_opt_info_expander;
 	GtkButton *w_import_button;
 };
 
@@ -75,7 +74,6 @@ vpnc_clear_widget (NetworkManagerVpnUIImpl *impl)
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), FALSE);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), FALSE);
-	gtk_expander_set_expanded (impl->w_opt_info_expander, FALSE);
 }
 
 static const char *
@@ -152,10 +150,6 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 
 		should_expand = TRUE;
 	}
-
-	gtk_expander_set_expanded (impl->w_opt_info_expander, should_expand);
-
-	gtk_container_resize_children (GTK_CONTAINER (impl->widget));
 
 	return impl->widget;
 }
@@ -528,8 +522,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), have_value);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), have_value);
 
-	gtk_expander_set_expanded (impl->w_opt_info_expander, expand);
-
 	if ((buf = pcf_file_lookup_value (pcf, "main", "TunnelingMode"))) {
 		/* If applicable, put up warning that TCP tunneling will be disabled */
 
@@ -828,9 +820,7 @@ impl_get_object (void)
 	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-routes"));
 	impl->w_use_domain             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-domain"));
 	impl->w_domain                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-domain"));
-	impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml, 
-									     "vpnc-optional-information-expander"));
-	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
+	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
 									   "vpnc-import-button"));
 	impl->callback                 = NULL;
 
