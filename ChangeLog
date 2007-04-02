@@ -1,3 +1,9 @@
+2007-04-02  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Matthew Barnes <mbarnes@redhat.com>
+	* gnome/libnm_glib/libnm_glib.c
+		- Close private connections before unreffing (gnome.org #405646)
+
 2007-03-21  Pema Geyleg  <pema.geyleg@gmail.com>
 
 	*configure.in: Added 'dz' to the list
