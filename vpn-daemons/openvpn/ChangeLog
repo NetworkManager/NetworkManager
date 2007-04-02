@@ -1,6 +1,12 @@
 2007-04-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
+	* properties/nm-openvpn-dialog.glade
+		- HIGify (gnome.org #423753)
+
+2007-04-02  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
 	* src/nm-openvpn-service.c
 		- (nm_openvpn_dbus_process_helper_ip4_config): build fix (gnome.org #423757)
 
