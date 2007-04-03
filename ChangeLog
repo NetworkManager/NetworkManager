@@ -1,5 +1,13 @@
 2007-04-02  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Jean Tourrilhes <jt@hpl.hp.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (process_scan_results): use iwlib stream parsing to fix 64-bit value
+			leakage issues
+
+2007-04-02  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Matthew Barnes <mbarnes@redhat.com>
 	* gnome/libnm_glib/libnm_glib.c
 		- Close private connections before unreffing (gnome.org #405646)

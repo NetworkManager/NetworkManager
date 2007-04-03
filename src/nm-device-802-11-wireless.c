@@ -3554,56 +3554,37 @@ process_scan_results (NMDevice80211Wireless *dev,
                       const guint8 *res_buf,
                       guint32 res_buf_len)
 {
-	char *pos, *end, *custom, *genie, *gpos, *gend;
+	char *genie, *gpos, *gend, *custom;
 	NMAccessPoint *ap = NULL;
 	size_t clen;
-	struct iw_param iwp;
 	int maxrate;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
+	struct stream_descr	stream;
+	struct wireless_scan *	wscan = NULL;
+	int			ret;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (res_buf != NULL, FALSE);
 	g_return_val_if_fail (res_buf_len > 0, FALSE);
 
-	pos = (char *) res_buf;
-	end = (char *) res_buf + res_buf_len;
+	/* Init stream descriptor */
+	iw_init_event_stream(&stream, (char *) res_buf, res_buf_len);
 
-	while (pos + IW_EV_LCP_LEN <= end)
-	{
+	while (1) {
 		int ssid_len;
 
-		/* Event data may be unaligned, so make a local, aligned copy
-		 * before processing. */
-		memcpy (&iwe_buf, pos, IW_EV_LCP_LEN);
-		if (iwe->len <= IW_EV_LCP_LEN)
+		/* Extract an event */
+		ret = iw_extract_event_stream(&stream, &iwe_buf, dev->priv->we_version);
+		if(ret <= 0)
 			break;
 
-		custom = pos + IW_EV_POINT_LEN;
-		if (dev->priv->we_version > 18 &&
-		    (iwe->cmd == SIOCGIWESSID ||
-		     iwe->cmd == SIOCGIWENCODE ||
-		     iwe->cmd == IWEVGENIE ||
-		     iwe->cmd == IWEVCUSTOM))
-		{
-			/* WE-19 removed the pointer from struct iw_point */
-			char *dpos = (char *) &iwe_buf.u.data.length;
-			int dlen = dpos - (char *) &iwe_buf;
-			memcpy (dpos, pos + IW_EV_LCP_LEN, sizeof (struct iw_event) - dlen);
-		}
-		else
-		{
-			memcpy (&iwe_buf, pos, sizeof (struct iw_event));
-			custom += IW_EV_POINT_OFF;
-		}
-
-		switch (iwe->cmd)
-		{
+		iwe = &iwe_buf;		/* Prevent gcc unstrict-aliasing */
+		switch (iwe->cmd) {
 			case SIOCGIWAP:
 				/* New access point record */
 
 				/* Merge previous AP */
-				if (ap)
-				{
+				if (ap) {
 					add_new_ap_to_device_list (dev, ap);
 					nm_ap_unref (ap);
 					ap = NULL;
@@ -3612,10 +3593,10 @@ process_scan_results (NMDevice80211Wireless *dev,
 				/* New AP with some defaults */
 				ap = nm_ap_new ();
 				nm_ap_set_address (ap, (const struct ether_addr *)(iwe->u.ap_addr.sa_data));
+				maxrate = 0;
 				break;
 			case SIOCGIWMODE:
-				switch (iwe->u.mode)
-				{
+				switch (iwe->u.mode) {
 					case IW_MODE_ADHOC:
 						nm_ap_set_mode (ap, IW_MODE_ADHOC);
 						break;
@@ -3629,13 +3610,12 @@ process_scan_results (NMDevice80211Wireless *dev,
 				break;
 			case SIOCGIWESSID:
 				ssid_len = iwe->u.essid.length;
-				if (custom + ssid_len > end)
+				if (!iwe->u.essid.pointer)
 					break;
-				if (iwe->u.essid.flags && (ssid_len > 0) && (ssid_len <= IW_ESSID_MAX_SIZE))
-				{
+				if (iwe->u.essid.flags && (ssid_len > 0) && (ssid_len <= IW_ESSID_MAX_SIZE)) {
 					gboolean set = TRUE;
 					char *essid = g_malloc (IW_ESSID_MAX_SIZE + 1);
-					memcpy (essid, custom, ssid_len);
+					memcpy (essid, iwe->u.essid.pointer, ssid_len);
 					essid[ssid_len] = '\0';
 					if (!strlen(essid))
 						set = FALSE;
@@ -3655,8 +3635,7 @@ process_scan_results (NMDevice80211Wireless *dev,
 									(const iwqual *)(&dev->priv->avg_qual)));
 				break;
 			case SIOCGIWENCODE:
-				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED))
-				{
+				if (!(iwe->u.data.flags & IW_ENCODE_DISABLED)) {
 					/* Only add WEP capabilities if this AP doesn't have
 					 * any encryption capabilities yet.
 					 */
@@ -3665,39 +3644,25 @@ process_scan_results (NMDevice80211Wireless *dev,
 				}
 				break;
 			case SIOCGIWRATE:
-				clen = iwe->len;
-				if (custom + clen > end)
-					break;
-				maxrate = 0;
-				while (((ssize_t) clen) >= sizeof(struct iw_param))
-				{
-					/* the payload may be unaligned, so we align it */
-					memcpy(&iwp, custom, sizeof (struct iw_param));
-					if (iwp.value > maxrate)
-						maxrate = iwp.value;
-					clen -= sizeof (struct iw_param);
-					custom += sizeof (struct iw_param);
+				if(iwe->u.bitrate.value > maxrate) {
+					maxrate = iwe->u.bitrate.value;
+					nm_ap_set_rate (ap, maxrate);
 				}
-				nm_ap_set_rate (ap, maxrate);
 				break;
 			case IWEVGENIE:
-				gpos = genie = custom;
+				gpos = genie = iwe->u.data.pointer;
 				gend = genie + iwe->u.data.length;
-				if (gend > end)
-				{
-					nm_warning ("get_scan_results(): IWEVGENIE overflow.");
+				if (!iwe->u.data.pointer) {
+					nm_warning ("%s: IWEVGENIE overflow.", __func__);
 					break;
 				}
-				while ((gpos + 1 < gend) && (gpos + 2 + (guint8) gpos[1] <= gend))
-				{
+				while ((gpos + 1 < gend) && (gpos + 2 + (guint8) gpos[1] <= gend)) {
 					guint8 ie = gpos[0], ielen = gpos[1] + 2;
-					if (ielen > WPA_MAX_IE_LEN)
-					{
+					if (ielen > WPA_MAX_IE_LEN) {
 						gpos += ielen;
 						continue;
 					}
-					switch (ie)
-					{
+					switch (ie) {
 						case WPA_GENERIC_INFO_ELEM:
 							if ((ielen < 2 + 4) || (memcmp (&gpos[2], "\x00\x50\xf2\x01", 4) != 0))
 								break;
@@ -3711,11 +3676,11 @@ process_scan_results (NMDevice80211Wireless *dev,
 				}
 				break;
 			case IWEVCUSTOM:
+				custom = iwe->u.data.pointer;
 				clen = iwe->u.data.length;
-				if (custom + clen > end)
+				if (!iwe->u.data.pointer)
 					break;
-				if (clen > 7 && ((strncmp (custom, "wpa_ie=", 7) == 0) || (strncmp (custom, "rsn_ie=", 7) == 0)))
-				{
+				if (clen > 7 && ((strncmp (custom, "wpa_ie=", 7) == 0) || (strncmp (custom, "rsn_ie=", 7) == 0))) {
 					char *spos;
 					int bytes;
 					char *ie_buf;
@@ -3725,8 +3690,7 @@ process_scan_results (NMDevice80211Wireless *dev,
 					if (bytes & 1)
 						break;
 					bytes /= 2;
-					if (bytes > WPA_MAX_IE_LEN)
-					{
+					if (bytes > WPA_MAX_IE_LEN) {
 						nm_warning ("get_scan_results(): IE was too long (%d bytes).", bytes);
 						break;
 					}
@@ -3743,11 +3707,9 @@ process_scan_results (NMDevice80211Wireless *dev,
 				break;
 		}
 
-		pos += iwe->len;
 	}
 
-	if (ap)
-	{
+	if (ap) {
 		add_new_ap_to_device_list (dev, ap);
 		nm_ap_unref (ap);
 		ap = NULL;
