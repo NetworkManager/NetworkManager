@@ -1,3 +1,11 @@
+2007-04-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Denis Leroy <denis@poolshark.org>
+	* src/nm-vpnc-service.c
+	  properties/nm-vpnc.c
+	  properties/nm-vpnc-dialog.glade
+		- Add config options for NAT keepalive, NAT Traversal, and Weak DES
+
 2007-04-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

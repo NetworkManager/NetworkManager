@@ -55,6 +55,10 @@ struct _NetworkManagerVpnUIImpl {
 	GtkCheckButton *w_use_domain;
 	GtkEntry *w_domain;
 	GtkCheckButton *w_use_routes;
+	GtkCheckButton *w_use_keepalive;
+	GtkEntry *w_keepalive;
+	GtkCheckButton *w_disable_natt;
+	GtkCheckButton *w_enable_singledes;
 	GtkEntry *w_routes;
 	GtkButton *w_import_button;
 };
@@ -67,13 +71,18 @@ vpnc_clear_widget (NetworkManagerVpnUIImpl *impl)
 	gtk_entry_set_text (impl->w_group_name, "");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), FALSE);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), FALSE);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), FALSE);
 	gtk_entry_set_text (impl->w_username, "");
 	gtk_entry_set_text (impl->w_routes, "");
 	gtk_entry_set_text (impl->w_domain, "");
+	gtk_entry_set_text (impl->w_keepalive, "");
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), FALSE);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), FALSE);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), FALSE);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), FALSE);
 }
 
 static const char *
@@ -93,11 +102,8 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 {
 	GSList *i;
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-	gboolean should_expand;
 
 	vpnc_clear_widget (impl);
-
-	should_expand = FALSE;
 
 	if (connection_name != NULL)
 		gtk_entry_set_text (impl->w_connection_name, connection_name);
@@ -117,12 +123,18 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 			gtk_entry_set_text (impl->w_username, value);
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
 			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
-			should_expand = TRUE;
 		} else if (strcmp (key, "Domain") == 0) {
 			gtk_entry_set_text (impl->w_domain, value);
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
 			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
-			should_expand = TRUE;
+		} else if (strcmp (key, "NAT-Keepalive packet interval") == 0) {
+			gtk_entry_set_text (impl->w_keepalive, value);
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), TRUE);
+			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), TRUE);
+		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), TRUE);
+		} else if (strcmp (key, "Enable Single DES") == 0) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), TRUE);
 		}
 	}
 
@@ -147,8 +159,6 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 		g_free (str);
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), TRUE);
 		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
-
-		should_expand = TRUE;
 	}
 
 	return impl->widget;
@@ -165,7 +175,11 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	const char *secret;
 	gboolean use_alternate_username;
 	const char *username;
+	gboolean use_keepalive;
+	const char *keepalive;
 	gboolean use_domain;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *domain;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
@@ -174,6 +188,10 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	keepalive              = gtk_entry_get_text (impl->w_keepalive);
+	use_keepalive          = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	domain                 = gtk_entry_get_text (impl->w_domain);
 
 	data = NULL;
@@ -188,6 +206,18 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	if (use_domain) {
 		data = g_slist_append (data, g_strdup ("Domain"));
 		data = g_slist_append (data, g_strdup (domain));
+	}
+	if (use_keepalive) {
+		data = g_slist_append (data, g_strdup ("NAT-Keepalive packet interval"));
+		data = g_slist_append (data, g_strdup (keepalive));
+	}
+	if (enable_singledes) {
+		data = g_slist_append (data, g_strdup ("Enable Single DES"));
+		data = g_slist_append (data, g_strdup (""));
+	}
+	if (disable_natt) {
+		data = g_slist_append (data, g_strdup ("Disable NAT Traversal"));
+		data = g_slist_append (data, g_strdup (""));
 	}
 
 	return data;
@@ -260,6 +290,10 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	gboolean use_routes;
 	const char *routes_entry;
 	gboolean use_domain;
+	gboolean use_keepalive;
+	const char* keepalive;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *domain_entry;
 
 	is_valid = FALSE;
@@ -270,9 +304,13 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	routes_entry           = gtk_entry_get_text (impl->w_routes);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
 	domain_entry           = gtk_entry_get_text (impl->w_domain);
+	use_keepalive          = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive));
+	keepalive              = gtk_entry_get_text (impl->w_keepalive);
 
 	/* initial sanity checking */
 	if (strlen (connectionname) > 0 &&
@@ -280,6 +318,7 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	    strlen (groupname) > 0 &&
 	    ((!use_alternate_username) || (use_alternate_username && strlen (username) > 0)) &&
 	    ((!use_routes) || (use_routes && strlen (routes_entry) > 0)) &&
+	    ((!use_keepalive) || (use_keepalive && strlen (keepalive) > 0)) &&
 	    ((!use_domain) || (use_domain && strlen (domain_entry) > 0)))
 		is_valid = TRUE;
 
@@ -287,6 +326,11 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	if (is_valid &&
 	    (strstr (gateway, " ") != NULL ||
 	     strstr (gateway, "\t") != NULL)) {
+		is_valid = FALSE;
+	}
+
+	/* validate keepalive: must be non-zero */
+	if (use_keepalive && atoi(keepalive) == 0) {
 		is_valid = FALSE;
 	}
 
@@ -388,6 +432,22 @@ use_domain_toggled (GtkToggleButton *togglebutton, gpointer user_data)
 }
 
 static void 
+use_keepalive_toggled (GtkToggleButton *togglebutton, gpointer user_data)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), 
+				  gtk_toggle_button_get_active (togglebutton));
+
+	if (impl->callback != NULL) {
+		gboolean is_valid;
+
+		is_valid = impl_is_valid (&(impl->parent));
+		impl->callback (&(impl->parent), is_valid, impl->callback_user_data);
+	}
+}
+
+static void 
 editable_changed (GtkEditable *editable, gpointer user_data)
 {
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
@@ -423,9 +483,13 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	gboolean use_alternate_username;
 	const char *username;
 	gboolean use_routes;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *routes;
 	gboolean use_domain;
 	const char *domain;
+	gboolean use_keepalive;
+	const char *keepalive;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
@@ -433,11 +497,15 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	routes                 = gtk_entry_get_text (impl->w_routes);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
 	domain                 = gtk_entry_get_text (impl->w_domain);
+	use_keepalive          = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive));
+	keepalive              = gtk_entry_get_text (impl->w_keepalive);
 
-	buf = g_string_sized_new (512);
+	buf = g_string_sized_new (1024);
 
 	g_string_append (buf, _("The following vpnc VPN connection will be created:"));
 	g_string_append (buf, "\n\n\t");
@@ -462,6 +530,18 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 		g_string_append (buf, "\n\t");
 		g_string_append_printf (buf, _("Routes:  %s"), routes);
 	}
+	if (use_keepalive) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("NAT-Keepalive packet interval:  %s"), keepalive);
+	}
+	if (enable_singledes) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Enable Single DES"));
+	}
+	if (disable_natt) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Disable NAT Traversal"));
+	}
 
 	g_string_append (buf, "\n\n");
 	g_string_append (buf, _("The connection details can be changed using the \"Edit\" button."));
@@ -477,7 +557,6 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	const char *buf;
 	gboolean have_value;
 	char *basename = NULL;
-	gboolean expand = FALSE;
 	gboolean success = FALSE;
 
 	pcf = pcf_file_load (path);
@@ -504,21 +583,33 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 	if ((buf = pcf_file_lookup_value (pcf, "main", "UserName")))
 		gtk_entry_set_text (impl->w_username, buf);
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
-	expand |= have_value;
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), have_value);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), have_value);
-	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), have_value);
 
 	if ((buf = pcf_file_lookup_value (pcf, "main", "NTDomain")))
 		gtk_entry_set_text (impl->w_domain, buf);
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
-	expand |= have_value;
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), have_value);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), have_value);
+
+	buf = pcf_file_lookup_value (pcf, "main", "ForceKeepAlives");
+	have_value = (buf == NULL ? FALSE : strcmp (buf, "0") != 0);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), have_value);
+	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), have_value);
+	gtk_entry_set_text (impl->w_keepalive, have_value ? buf : "");
+
+	buf = pcf_file_lookup_value (pcf, "main", "SingleDES");
+	have_value = (buf ? strncmp (buf, "1", 1) == 0 : FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), have_value);
+
+	/* Default is enabled, only disabled if explicit EnableNat=0 exists */
+	buf = pcf_file_lookup_value (pcf, "main", "EnableNat");
+	have_value = (buf ? strncmp (buf, "0", 1) == 0 : FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), have_value);
 
 	if ((buf = pcf_file_lookup_value (pcf, "main", "X-NM-Routes")))
 		gtk_entry_set_text (impl->w_routes, buf);
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
-	expand |= have_value;
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), have_value);
 	gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), have_value);
 
@@ -617,6 +708,9 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	FILE *f;
 	GSList *i;
 	const char *gateway = NULL;
+	const char *keepalive = "0";
+	const char *enablenat = "1";
+	const char *singledes = "0";
 	const char *groupname = NULL;
 	const char *username = NULL;
 	const char *domain = NULL;
@@ -640,6 +734,12 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 			username = value;
 		} else if (strcmp (key, "Domain") == 0) {
 			domain = value;
+		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
+			enablenat = "0";
+		} else if (strcmp (key, "Enable Single DES") == 0) {
+			singledes = "1";
+		} else if (strcmp (key, "NAT-Keepalive packet interval") == 0) {
+			keepalive = value;
 		}
 	}
 
@@ -685,14 +785,14 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 		 "SaveUserPassword=0\n"
 		 "EnableBackup=0\n"
 		 "BackupServer=\n"
-		 "EnableNat=1\n"
+		 "EnableNat=%s\n"
 		 "CertStore=0\n"
 		 "CertName=\n"
 		 "CertPath=\n"
 		 "CertSubjectName=\n"
 		 "CertSerialHash=\n"
 		 "DHGroup=2\n"
-		 "ForceKeepAlives=0\n"
+		 "ForceKeepAlives=%s\n"
 		 "enc_GroupPwd=\n"
 		 "UserPassword=\n"
 		 "enc_UserPassword=\n"
@@ -706,13 +806,17 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 		 "SendCertChain=0\n"
 		 "VerifyCertDN=\n"
 		 "EnableSplitDNS=1\n"
+		 "SingleDES=%s\n"
 		 "SPPhonebook=\n"
 		 "%s",
 		 /* Description */ connection_name,
 		 /* Host */        gateway,
 		 /* GroupName */   groupname,
 		 /* Username */    username != NULL ? username : "",
+		 /* EnableNat */   enablenat,
+		 /* KeepAlive */   keepalive != NULL ? keepalive : "",
 		 /* NTDomain */    domain != NULL ? domain : "",
+		 /* SingleDES */   singledes,
 		 /* X-NM-Routes */ routes_str != NULL ? routes_str : "");
 
 	fclose (f);
@@ -817,6 +921,10 @@ impl_get_object (void)
 	impl->w_use_alternate_username = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-alternate-username"));
 	impl->w_username               = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-username"));
 	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-routes"));
+	impl->w_use_keepalive          = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-keepalive"));
+	impl->w_keepalive              = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-keepalive"));
+	impl->w_disable_natt           = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-disable-natt"));
+	impl->w_enable_singledes       = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-enable-singledes"));
 	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-routes"));
 	impl->w_use_domain             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-domain"));
 	impl->w_domain                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-domain"));
@@ -832,6 +940,8 @@ impl_get_object (void)
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_use_domain), 
 			    "toggled", GTK_SIGNAL_FUNC (use_domain_toggled), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_use_keepalive), 
+			    "toggled", GTK_SIGNAL_FUNC (use_keepalive_toggled), impl);
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_connection_name), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
@@ -844,6 +954,8 @@ impl_get_object (void)
 	gtk_signal_connect (GTK_OBJECT (impl->w_routes), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 	gtk_signal_connect (GTK_OBJECT (impl->w_domain), 
+			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_keepalive), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
