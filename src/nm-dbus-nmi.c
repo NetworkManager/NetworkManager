@@ -87,9 +87,7 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 		 * here...  ad nauseum.  Figure out how to deal with a failure here.
 		 */
 		nm_ap_list_append_ap (data->invalid_ap_list, ap);
-		nm_device_deactivate (dev);
-		nm_policy_schedule_device_change_check (data);
-
+		nm_policy_schedule_activation_failed (req);
 		goto out;
 	}
 
