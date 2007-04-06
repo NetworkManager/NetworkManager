@@ -1,0 +1,490 @@
+# translation of NetworkManager-openvpn.HEAD.ar.po to Arabic
+# Arabic translations for PACKAGE package.
+# Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Automatically generated, 2006.
+# Khaled Hosny <khaledhosny@eglug.org>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: Project\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-04-06 10:12+0100\n"
+"PO-Revision-Date: 2007-03-20 12:40+0100\n"
+"Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
+"Language-Team: Arabic <doc@arabeyes.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && "
+"n<=10 ? 2 : 3\n"
+"X-Poedit-Language: Arabic\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:148
+msgid "_Password:"
+msgstr "_كلمة السر:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:149
+msgid "_Secondary Password:"
+msgstr "كلمة سر _ثانوية:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Username:"
+msgstr "ا_سم المستخدم:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:274
+msgid "_Domain:"
+msgstr "ال_نطاق:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect _anonymously"
+msgstr "اتّصل كم_جهول"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:365
+msgid "Connect as _user:"
+msgstr "اتصل _كمستخدم:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:471
+msgid "_Remember password for this session"
+msgstr "_تذكّر كلمة السر لهذه الجلسة"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:473
+msgid "_Save password in keyring"
+msgstr "ا_حفظ كلمة السر في حلقة المفاتيح"
+
+#: ../auth-dialog/main.c:214
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "تحتاج إلى التوثيق لتَنفُذ إلى الشبكة الخاصة التخيلية '%s'."
+
+#: ../auth-dialog/main.c:215
+msgid "Authenticate VPN"
+msgstr "وثِّق VPN"
+
+#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+msgid "Certificate password:"
+msgstr "كلمة سر الشهادة:"
+
+#: ../nm-openvpn.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "أضِف، احذِف، و حرِّر اتصالات VPN"
+
+#: ../nm-openvpn.desktop.in.h:2
+msgid "VPN Connection Manager (OpenVPN)"
+msgstr "مدير اتصالت VPN (OpenVPN)"
+
+#: ../properties/nm-openvpn.c:146
+msgid "OpenVPN Client"
+msgstr "عميل OpenVPN"
+
+#: ../properties/nm-openvpn.c:803
+msgid "The following OpenVPN connection will be created:"
+msgstr "ستُنشأ اتصالات OpenVPN التالية:"
+
+#: ../properties/nm-openvpn.c:805
+#, c-format
+msgid "Name:  %s"
+msgstr "الإسم: %s"
+
+#: ../properties/nm-openvpn.c:813
+msgid "Connection Type: X.509 Certificates"
+msgstr "نوع الإتصال: X.509 Certificates"
+
+#: ../properties/nm-openvpn.c:816 ../properties/nm-openvpn.c:843
+#: ../properties/nm-openvpn.c:855
+#, c-format
+msgid "CA:  %s"
+msgstr "CA:  %s"
+
+#: ../properties/nm-openvpn.c:819 ../properties/nm-openvpn.c:858
+#, c-format
+msgid "Cert:  %s"
+msgstr "شهادة:  %s"
+
+#: ../properties/nm-openvpn.c:822 ../properties/nm-openvpn.c:861
+#, c-format
+msgid "Key:  %s"
+msgstr "مفتاح: %s"
+
+#: ../properties/nm-openvpn.c:826
+msgid "Connection Type: Shared Key"
+msgstr "نوع الإتصال: مفتاح مشترَك"
+
+#: ../properties/nm-openvpn.c:829
+#, c-format
+msgid "Shared Key:  %s"
+msgstr "مفتاح مشترَك: %s"
+
+#: ../properties/nm-openvpn.c:832
+#, c-format
+msgid "Local IP:  %s"
+msgstr "IP م_حلّي:  %s"
+
+#: ../properties/nm-openvpn.c:835
+#, c-format
+msgid "Remote IP:  %s"
+msgstr "IP بعيد:  %s"
+
+#: ../properties/nm-openvpn.c:840
+msgid "Connection Type: Password"
+msgstr "نوع الإتصال: كلمة سّر"
+
+#: ../properties/nm-openvpn.c:846 ../properties/nm-openvpn.c:864
+#, c-format
+msgid "Username:  %s"
+msgstr "اسم المستخدم:  %s"
+
+#: ../properties/nm-openvpn.c:852
+msgid "Connection Type: X.509 with Password Authentication"
+msgstr "نوع الإتصال: X.509 مع توثق عبر كلمة سر"
+
+#: ../properties/nm-openvpn.c:870
+#, c-format
+msgid "Remote:  %s"
+msgstr "عن بعد:  %s"
+
+#: ../properties/nm-openvpn.c:873
+#, c-format
+msgid "Port:  %s"
+msgstr "ميناء:  %s"
+
+#: ../properties/nm-openvpn.c:876
+#, c-format
+msgid "Device: %s"
+msgstr "الجهاز: %s"
+
+#: ../properties/nm-openvpn.c:876
+msgid "TAP"
+msgstr "TAP"
+
+#: ../properties/nm-openvpn.c:876
+msgid "TUN"
+msgstr "TUN"
+
+#: ../properties/nm-openvpn.c:879
+#, c-format
+msgid "Protocol: %s"
+msgstr "البروتوكول: %s"
+
+#: ../properties/nm-openvpn.c:879
+msgid "TCP"
+msgstr "TCP"
+
+#: ../properties/nm-openvpn.c:879
+msgid "UDP"
+msgstr "UDP"
+
+#: ../properties/nm-openvpn.c:883
+#, c-format
+msgid "Routes:  %s"
+msgstr "المسارات:  %s"
+
+#: ../properties/nm-openvpn.c:887
+#, c-format
+msgid "Use LZO Compression: %s"
+msgstr "ا_ستعمل ضغط LZO: %s"
+
+#: ../properties/nm-openvpn.c:887
+msgid "Yes"
+msgstr "نعم"
+
+#: ../properties/nm-openvpn.c:887
+msgid "No"
+msgstr "لا"
+
+#: ../properties/nm-openvpn.c:891
+#, c-format
+msgid "Cipher:  %s"
+msgstr "شيفرة:  %s"
+
+#: ../properties/nm-openvpn.c:896
+#, c-format
+msgid "TLS auth:  %s %s"
+msgstr "توثيق TLS:  %s %s "
+
+#: ../properties/nm-openvpn.c:900
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "يمكن تغيير تفاصيل الإتصال باستخدام زر \"حرِّر\"."
+
+#: ../properties/nm-openvpn.c:1124
+msgid "Cannot import settings"
+msgstr "تعذّر استيراد الإعدادات"
+
+#: ../properties/nm-openvpn.c:1126
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "لا يحتوي ملف اعدادات VPN '%s' على بيانات صالحة."
+
+#: ../properties/nm-openvpn.c:1173
+msgid "Select file to import"
+msgstr "انتقِ ملفّ للإستيراد"
+
+#: ../properties/nm-openvpn.c:1232 ../properties/nm-openvpn.c:1244
+#: ../properties/nm-openvpn.c:1247
+msgid "Select CA to use"
+msgstr "انتقِ CA ليُستخدم"
+
+#: ../properties/nm-openvpn.c:1235 ../properties/nm-openvpn.c:1250
+msgid "Select certificate to use"
+msgstr "انتقِ شهادة لتُستخدم"
+
+#: ../properties/nm-openvpn.c:1238 ../properties/nm-openvpn.c:1253
+msgid "Select key to use"
+msgstr "انتقِ مفتاحا ليُستخدم"
+
+#: ../properties/nm-openvpn.c:1241
+msgid "Select shared key to use"
+msgstr "انتقِ مفتاحا مُشارَكا ليُستخدم"
+
+#: ../properties/nm-openvpn.c:1256
+msgid "Select TA to use"
+msgstr "انتقِ TA ليُستخدم"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-openvpn.c:1450
+msgid "Save as..."
+msgstr "احفظ كـ..."
+
+#: ../properties/nm-openvpn.c:1480
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "يوجد ملف بالإسم \"%s\" مسبقاً."
+
+#: ../properties/nm-openvpn.c:1483
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "أتريد استبداله بالملف الذي تقوم بحفظه؟"
+
+#: ../properties/nm-openvpn.c:1497
+msgid "Failed to export configuration"
+msgstr "فشل تصدير الإعدادات"
+
+#: ../properties/nm-openvpn.c:1499
+#, c-format
+msgid "Failed to save file %s"
+msgstr "فشل حفظ الملف %s"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "(Default: 1194)"
+msgstr "(افتراضي: 1194)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "0"
+msgstr "0"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "1"
+msgstr "1"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "65536"
+msgstr "65536"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "<b>Connection Information</b>"
+msgstr "<b>معلومات الإتصال</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "<b>Connection Name</b>"
+msgstr "<b>اسم الإتصال</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Advanced"
+msgstr "متقدم"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "CA file:"
+msgstr "ملفّ CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Certificate:"
+msgstr "شهادة:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Connection Name"
+msgstr "<b>اسم الإتصال</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Connection Type:"
+msgstr "نوع الإتصال:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Direction:"
+msgstr "الإتجاه:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Gateway _Port:"
+msgstr "ال_بوّابة:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Key:"
+msgstr "مفتاح:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Local IP:"
+msgstr "IP محلًي:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو "
+"\"Corporate Network\""
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Network"
+msgstr "شبكة"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "OpenVPN Advanced Options"
+msgstr "خيارات OpenVPN متقدمة"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "OpenVPN Configuration"
+msgstr "اعدادات OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Password"
+msgstr "كلمة السّر"
+
+#: ../properties/nm-openvpn-dialog.glade.h:22
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا "
+"حيث أنك ستسأل عنها عند الإتصال."
+
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
+msgstr ""
+"من فضلك لا حظ أن الملف الذي استوردته ليس ملف إعدادات OpenVPN. اسأل مدير "
+"نظامك عن الملف."
+
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "Remote IP:"
+msgstr "IPعن بعد:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "Shared Key:"
+msgstr "مفتاح مشترَك:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:26
+msgid "Shared key"
+msgstr "مفتاح مشترَك"
+
+#: ../properties/nm-openvpn-dialog.glade.h:27
+msgid "TLS-Auth"
+msgstr "TLS-Auth"
+
+#: ../properties/nm-openvpn-dialog.glade.h:28
+msgid "Use LZO compression"
+msgstr "استعمل ضغط LZO"
+
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "Use TAP device"
+msgstr "استخدم جهاز TAP"
+
+#: ../properties/nm-openvpn-dialog.glade.h:30
+msgid "Use TCP connection"
+msgstr "استخدم اتصال TCP"
+
+#: ../properties/nm-openvpn-dialog.glade.h:31
+msgid "Use TLS auth:"
+msgstr "استخدم توثيق TLS:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:32
+msgid "Use cipher:"
+msgstr "استخدم الشيفرة:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:33
+msgid "Username:"
+msgstr "اسم المستخدم:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:34
+msgid "X.509"
+msgstr "X.509"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+msgid ""
+"X.509 Certificates\n"
+"Pre-shared key\n"
+"Password Authentication\n"
+"X.509 with Password Authentication"
+msgstr ""
+"شهادات X.509\n"
+"مفتاح قبل المُشاركة\n"
+"توثيق بكلمة سر\n"
+"X.509 مع توثيق بكلمة سر"
+
+#: ../properties/nm-openvpn-dialog.glade.h:39
+msgid "X.509/Pass"
+msgstr "X.509/Pass"
+
+#: ../properties/nm-openvpn-dialog.glade.h:40
+msgid "_Gateway Address:"
+msgstr "عنوان ال_بوّابة:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:41
+msgid "_Import Saved Configuration..."
+msgstr "ا_ستورد اعدادات محفوظة..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:42
+msgid "_Only use VPN connection for these addresses"
+msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
+
+#: ../properties/nm-openvpn-dialog.glade.h:43
+msgid "none"
+msgstr "لا شيء"
+
+#: ../src/nm-openvpn-service.c:127
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
+msgstr ""
+"فشل ولوج VPN لأن اسم المستخدم أو كلمة السر لم تُقبل أو أن كلمة سر الشهادة "
+"كانت خطأ."
+
+#: ../src/nm-openvpn-service.c:129
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكن بدأه."
+
+#: ../src/nm-openvpn-service.c:131
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكنه الإتصال بخادم VPN."
+
+#: ../src/nm-openvpn-service.c:133
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr "فشل ولوج VPN لأن خيارات اعدادات VPN غير صالحة."
+
+#: ../src/nm-openvpn-service.c:135
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "فشل ولوج VPN لأن برنامج VPN لم يتلقى اعدادات صالحة من خادم VPN."
+
+#: ../src/nm-openvpn-service.c:137
+msgid "VPN connection failed"
+msgstr "فشل اتصال VPN"
+
+#~ msgid "Certificate pass_word:"
+#~ msgstr "كلمة سر ال_شهادة:"
+
+#~ msgid "<b>Required</b>"
+#~ msgstr "<b>مطلوب</b>"
+
+#~ msgid "CA  file:"
+#~ msgstr "ملفّ  CA:"
+
+#~ msgid "Optional"
+#~ msgstr "خياري"

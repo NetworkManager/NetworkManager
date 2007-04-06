@@ -1,0 +1,237 @@
+# translation of NetworkManager.HEAD.ar.po to Arabic
+# Arabic translations for PACKAGE package.
+# Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Automatically generated, 2006.
+# Khaled Hosny <khaledhosny@eglug.org>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: Project\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-04-06 10:12+0100\n"
+"PO-Revision-Date: 2007-02-09 15:37+0200\n"
+"Last-Translator: Khaled Hosny <khaledhosny@eglug.org>\n"
+"Language-Team: Arabic <doc@arabeyes.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && "
+"n<=10 ? 2 : 3\n"
+"X-Poedit-Language: Arabic\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
+msgid "Cannot add VPN connection"
+msgstr "لا يمكن إضافة اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr "لم يُعثر على برمجيات VPN مناسبة على نظامك. اتصل بمدير نظامك."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
+msgid "Cannot import VPN connection"
+msgstr "لا يمكن استيراد اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"لم أجد برمجيات مناسبة لاتصال VPN من نوع '%s' لاستيرادها للملف '%s'. اتصل "
+"بمدير نظامك."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "خطأ أثناء فتح اتصال VPN '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"لم أعثر على ملفات واجهة المستخدم لاتصال VPN من نوع '%s'. اتصل بمدير نظامك."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "حذف اتصال VPN \"%s\"؟"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"ستُفقد كل معلومات اتصال VPN  \"%s\" و قد تحتاج أن يعطيك مدير نظامك معلومات "
+"لإنشاء اتصال جديد."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
+msgid "Unable to load"
+msgstr "تعذّر التحميل"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "لم أعثر على بعض الموارد المطلوبة (ملف glade)!"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
+msgid "Edit VPN Connection"
+msgstr "حرر اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "أضف اتصال VPN جديد"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+#, fuzzy
+msgid "Connect to:"
+msgstr "إتّصالات VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "انشيء اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+#, fuzzy
+msgid "Create VPN Connection - 1 of 2"
+msgstr "انشيء اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+#, fuzzy
+msgid "Create VPN Connection - 2 of 2"
+msgstr "انشيء اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "احذف اتصال VPN المُنتقى"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "_صدِّر"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "حرر  اتصال VPN المُنتقى"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "صِّر اعدادات VPN إلى ملف"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "صدِّر اعدادات VPN المنتقاة إلى ملف"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+#, fuzzy
+msgid "Finish Creating VPN Connection"
+msgstr "انشيء اتصال VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "أدر اتصالات الشبكة الخاصة التخيّليّة"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "إتّصالات VPN"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40-bit WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104-bit WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "WPA آلي"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "WPA2 آلي"
+
+#: ../src/nm-ap-security.c:338
+msgid "none"
+msgstr "بلا"
+
+#: ../src/nm-netlink-monitor.c:170
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"لم أتمكن من إنشاء مقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
+
+#: ../src/nm-netlink-monitor.c:188
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"لم أتمكن من الربط بمقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
+
+#: ../src/nm-netlink-monitor.c:426
+msgid "operation took too long"
+msgstr "استغرقت العملية زمنا طويلا"
+
+#: ../src/nm-netlink-monitor.c:523
+msgid "received data from wrong type of sender"
+msgstr "تلقيت بيانات من نوع خطأ من المرسلين"
+
+#: ../src/nm-netlink-monitor.c:536
+msgid "received data from unexpected sender"
+msgstr "تلقيت بيانات من مرسل غير متوقّع"
+
+#: ../src/nm-netlink-monitor.c:665
+msgid "too much data was sent over socket and some of it was lost"
+msgstr "أرسل الكثير جدا من البيانات عبر المقبس وفُقِد بعضها"
+
+#: ../src/nm-netlink-monitor.c:775
+msgid "error occurred while waiting for data on socket"
+msgstr "حدث خطأ بينما ننتظر البيانات على المقبس"
+
+#: ../src/nm-ap-security-wpa-eap.c:96 ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "WPA2 مشروعات"
+
+#: ../src/nm-ap-security-wpa-eap.c:98 ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "WPA مشروعات"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
